@@ -7,7 +7,12 @@ Unicode qualifying spec
   sort UChars  = List UChar          % name emphasises list implementation, which facilitates pattern matching
   sort UString                       % probably just UChars, but might want a more compact representation
 
-  def legal_uchar? n = (n < 65536)
+  def legal_uchar? n = (n < 65536)   % actually much more complex than this 
+                                     % At least from XML perspective, not all 16 bit values are characters.
+                                     % and some characters can be more than 16 bits, 
+                                     % From the grammar given in the normative XML web site:
+                                     %  Char ::=  #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF] 
+                                     %  /* any Unicode character, excluding the surrogate blocks, FFFE, and FFFF. */
 
   %% ------------------------------------------------------------------------
 
@@ -15,7 +20,8 @@ Unicode qualifying spec
 
   def uchar = Char.ord
 
-  op print_uchar  : UChar -> String  % may need to encode it as several ascii characters
+  op print_uchar  : UChar -> String  % may need to encode it, so might need encoding function as first argument
+                                     % unless there is a standard Unicode -> ASCII encoding
 
   %% ------------------------------------------------------------------------
 
