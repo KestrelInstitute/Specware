@@ -264,9 +264,13 @@ CUtils qualifying spec {
 
   % --------------------------------------------------------------------------------
 
-  op addNewTypeDefn: CSpec * TypeDefn -> CSpec * Type
-  def addNewTypeDefn(cspc,tdef as (tname,typ)) =
-    case findTypeDefn(cspc,typ) of
+  (**
+   * adds a new type definition to cspc; definition in xcspc are
+   * also searched (for incremental code generation)
+   *)
+  op addNewTypeDefn: CSpec * CSpec * TypeDefn -> CSpec * Type
+  def addNewTypeDefn(cspc,xcspc,tdef as (tname,typ)) =
+    case findTypeDefnInCSpecs([cspc,xcspc],typ) of
       | Some s -> (cspc,Base s)
       | None -> (addTypeDefn(cspc,tdef),Base tname)
 
@@ -276,11 +280,12 @@ CUtils qualifying spec {
   % struct definition exists in the cspec that has the same fields
   % returns the struct definition that contains the same fields as
   % the input struct definition.
-  op addNewStructDefn: CSpec * StructDefn * Boolean -> CSpec * Type
-  def addNewStructDefn(cspc,(sname,sfields),useRefTypes?) =
+  op addNewStructDefn: CSpec * CSpec * StructDefn * Boolean -> CSpec * Type
+  def addNewStructDefn(cspc,xcspc,(sname,sfields),useRefTypes?) =
     let structs = getStructDefns(cspc) in
+    let xstructs = getStructDefns(xcspc) in
     let (cspc,struct) = 
-      case List.find (fn(sname0,sfields0) -> sfields = sfields0) structs of
+      case List.find (fn(sname0,sfields0) -> sfields = sfields0) (structs@xstructs) of
         | Some (sname,_) -> (cspc,Struct sname)
         | None -> let cspc = addStructDefn(cspc,(sname,sfields)) in
                   let struct = Struct sname in
@@ -288,17 +293,18 @@ CUtils qualifying spec {
     in
     let typ = if useRefTypes? then Ptr(struct) else struct in
     let typ =
-        case findTypeDefn(cspc,typ) of
+        case findTypeDefnInCSpecs([cspc,xcspc],typ) of
 	| Some s -> Base s
 	| None -> typ
     in
     (cspc,typ)
 
 
-  op addNewUnionDefn: CSpec * UnionDefn -> CSpec * Type
-  def addNewUnionDefn(cspc,(sname,sfields)) =
-    let structs = getUnionDefns(cspc) in
-    case List.find (fn(sname0,sfields0) -> sfields = sfields0) structs of
+  op addNewUnionDefn: CSpec * CSpec * UnionDefn -> CSpec * Type
+  def addNewUnionDefn(cspc,xcspc,(sname,sfields)) =
+    let unions = getUnionDefns(cspc) in
+    let xunions = getUnionDefns(xcspc) in
+    case List.find (fn(sname0,sfields0) -> sfields = sfields0) (unions@xunions) of
       | Some (sname,_) -> (cspc,Union sname)
       | None -> let cspc = addUnionDefn(cspc,(sname,sfields)) in
                 (cspc,Union sname)
@@ -361,6 +367,16 @@ CUtils qualifying spec {
 	 }
       in
       mergeCSpecs(cons(cspc,cspcs))
+
+  op printCType: C.Type -> String
+  def printCType(t) =
+    let pr = ppType(t,prettysNone[]) in
+    let txt = PrettyPrint.format(80,pr) in
+    PrettyPrint.toString(txt)
+
+  op printCTypes: String -> List C.Type -> String
+  def printCTypes sep types =
+    (foldl (fn(t,s) -> s^sep^(printCType t)) "" types)
 
   op printCSpecToX: CSpec * String * Boolean * (|File|Terminal|String)-> String
   def printCSpecToX (cspc,fname,asHeader,X) =
@@ -679,6 +695,14 @@ CUtils qualifying spec {
     in
     findTypeDefn0(typedefns)
 
+  op findTypeDefnInCSpecs: List(CSpec) * Type -> Option String
+  def findTypeDefnInCSpecs(cspcl,typ) =
+    case cspcl of
+      | [] -> None
+      | cspc::cspcl -> (case findTypeDefn(cspc,typ) of
+			  | Some x -> Some x
+			  | None -> findTypeDefnInCSpecs(cspcl,typ))
+
   % --------------------------------------------------------------------------------
 
   op findStructUnionTypeDefn: CSpec * Type -> Option StructUnionTypeDefn
@@ -687,7 +711,9 @@ CUtils qualifying spec {
       | Base n -> List.find (fn|(TypeDefn (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
       | Struct n -> List.find (fn|(Struct (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
       | Union n -> List.find (fn|(Union (n0,t)) -> n0=n | _ -> false) cspc.structUnionTypeDefns
-      | _ -> None
+      | _ -> 
+        %let _ = writeLine("definition for type "^(printCType typ)^" not found.") in
+        None
 
   op structUnionTypeDefnGT: CSpec -> (StructUnionTypeDefn * StructUnionTypeDefn) -> Boolean
   def structUnionTypeDefnGT cspc (sut1,sut2) =
@@ -1115,6 +1141,101 @@ CUtils qualifying spec {
     in
     (hdr,cspc)
 
-	       
+
+  % --------------------------------------------------------------------------------
+
+  op deleteUnusedTypes: CSpec -> CSpec
+  def deleteUnusedTypes(cspc) =
+    let usedtypes = usedCTypes(cspc) in
+    let suts = filter (fn(TypeDefn(n,_)) -> List.member(Base n,usedtypes)
+		       | (Struct(n,_)) -> List.member(Struct n,usedtypes)
+		       | (Union(n,_)) -> List.member(Union n,usedtypes))
+               cspc.structUnionTypeDefns
+    in
+    setStructUnionTypeDefns(cspc,suts)
+
+  % --------------------------------------------------------------------------------
+
+  op usedCTypes: CSpec -> List C.Type
+  def usedCTypes(cspc) =
+    let types = flatten (map usedCTypesFnDefn cspc.fnDefns) in
+    let types = (flatten (map usedCTypesVarDefn cspc.varDefns))@types in
+    let types = (flatten (map usedCTypesVarDefn cspc.constDefns))@types in
+    let types = (flatten (map usedCTypesVarDecl cspc.vars))@types in
+    let types = (flatten (map usedCTypesFnDecl cspc.fns))@types in
+    let types = mkUnique types in
+    %let _ = printCSpecToTerminal(cspc) in
+    let types = flatten (map (usedCTypesType cspc []) types) in
+    let types = mkUnique types in
+    types
+
+  op usedCTypesFnDefn: FnDefn -> List C.Type
+  def usedCTypesFnDefn(_,vdecls,rtype,stmt) =
+    let types = flatten (map usedCTypesVarDecl vdecls) in
+    let types = cons(rtype,types) in
+    let types = (usedCTypeStmt stmt)@types in
+    types
+
+  op usedCTypesFnDecl: FnDecl -> List C.Type
+  def usedCTypesFnDecl(_,ptypes,rtype) =
+    cons(rtype,ptypes)
+
+  op usedCTypesVarDefn: VarDefn -> List C.Type
+  def usedCTypesVarDefn(_,t,_) = [t]
+
+  op usedCTypesVarDecl: VarDecl -> List C.Type
+  def usedCTypesVarDecl(_,t) = [t]
+
+  op usedCTypesVarDecl1: VarDecl1 -> List C.Type
+  def usedCTypesVarDecl1(_,t,_) = [t]
+
+  op usedCTypeStmt: Stmt -> List C.Type
+  def usedCTypeStmt(stmt) =
+    case stmt of
+      | Block(vdecls1,stmts) ->
+        let types = flatten (map usedCTypesVarDecl1 vdecls1) in
+	let types = (flatten (map usedCTypeStmt stmts))@types in
+	types
+      | If(_,s1,s2) -> concat(usedCTypeStmt(s1),usedCTypeStmt(s2))
+      | While(_,s) -> usedCTypeStmt(s)
+      | IfThen(_,s) -> usedCTypeStmt(s)
+      | Switch(_,stmts) -> flatten (map usedCTypeStmt stmts)
+      | _ -> []
+
+  op usedCTypesType: CSpec -> List C.Type -> C.Type -> List C.Type
+  def usedCTypesType cspc visited t =
+    let
+      def usedTypes4SUT(t) =
+	case findStructUnionTypeDefn(cspc,t) of
+	  | Some (TypeDefn(_,t)) -> [t]
+	  | Some (Union(_,vdecls)) -> flatten(map usedCTypesVarDecl vdecls)
+	  | Some (Struct(_,vdecls)) -> flatten(map usedCTypesVarDecl vdecls)
+	  | _ -> []
+    in
+    let newtypes =
+      case t of
+	| Ptr(t) -> [t]
+	| Array(t) -> [t]
+	| Base _ -> usedTypes4SUT(t)
+	| Struct _ -> usedTypes4SUT(t)
+	| Union _ -> usedTypes4SUT(t)
+	| ArrayWithSize(_,t) -> [t]
+	| Fn(types,typ) -> cons(typ,types)
+	| _ -> []
+    in
+    let newtypes = filter (fn(t) -> ~(member(t,visited))) newtypes in
+    let visited = visited @ newtypes in
+    cons(t,flatten (map (usedCTypesType cspc visited) newtypes))
+
+  % --------------------------------------------------------------------------------
+
+  op prependBlockStmt: Block * Stmt -> Stmt
+  def prependBlockStmt(block,stmt) =
+    case block of
+      | ([],[]) -> stmt
+      | (decls,stmts) ->
+        case stmt of
+	  | Block(decls1,stmts1) -> Block(decls@decls1,stmts@stmts1)
+	  | _ -> Block(decls,stmts@[stmt])
 
 }

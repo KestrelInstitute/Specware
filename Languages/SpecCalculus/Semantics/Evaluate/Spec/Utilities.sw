@@ -882,6 +882,22 @@ def mergeSpecs(spc1,spc2) =
   let spc = setProperties(spc,props) in
   spc
 
+% --------------------------------------------------------------------------------
+(**
+ * returns the list of qualified id's that are declared in the spec (sorts and ops)
+ *)
+
+op getDeclaredQualifiedIds: Spec -> List QualifiedId
+def getDeclaredQualifiedIds(spc) =
+  let qids = foldriAQualifierMap
+             (fn(q,id,_,qids) -> cons(Qualified(q,id),qids))
+	     [] spc.sorts
+  in
+  let qids = foldriAQualifierMap
+             (fn(q,id,_,qids) -> cons(Qualified(q,id),qids))
+	     qids spc.ops
+  in
+  qids
 
 
 endspec

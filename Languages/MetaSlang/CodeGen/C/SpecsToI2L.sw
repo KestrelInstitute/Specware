@@ -73,13 +73,21 @@ SpecsToI2L qualifying spec {
 
   op generateI2LCodeSpec: AnnSpec.Spec * Boolean * List(QualifiedId) -> ImpUnit
   def generateI2LCodeSpec(spc, useRefTypes, constrOps) =
+    generateI2LCodeSpecFilter(spc,useRefTypes,constrOps,(fn(_) -> true))
+
+  op generateI2LCodeSpecFilter: AnnSpec.Spec * Boolean * List(QualifiedId) * (QualifiedId -> Boolean) -> ImpUnit
+  def generateI2LCodeSpecFilter(spc, useRefTypes, constrOps, filter) =
     %let _ = writeLine(";;   phase 1: Generating i2l...") in
     let ctxt = {specname="", isToplevel=true, useRefTypes=useRefTypes, constrOps=constrOps, currentOpSort=None} in
     %let spc = normalizeArrowSortsInSpec(spc) in
     let transformedOps = foldriAQualifierMap
                           (fn(qid,name,opinfo,l1) ->
-			   let trOp = opinfo2declOrDefn(ctxt,spc,Qualified(qid,name),opinfo,None) in
-			   List.concat(l1,[trOp])
+			   if filter(Qualified(qid,name)) then
+			     let trOp = opinfo2declOrDefn(ctxt,spc,Qualified(qid,name),opinfo,None) in
+			     List.concat(l1,[trOp])
+			   else
+			     %let _ = writeLine("skipping "^(printQualifiedId(Qualified(qid,name)))) in
+			     l1
 			   )
 			   [] spc.ops
     in
@@ -105,10 +113,14 @@ SpecsToI2L qualifying spec {
 	       decls = {
 			typedefs = foldriAQualifierMap 
 	                           (fn(qid,name,sortinfo,l2) ->
-				    (case sortinfo2typedef(ctxt,spc,Qualified(qid,name),sortinfo) of
-				      | Some typedef -> concat(l2,[typedef])
-				      | None -> l2)
-				      )
+				    if filter(Qualified(qid,name)) then
+				      (case sortinfo2typedef(ctxt,spc,Qualified(qid,name),sortinfo) of
+					 | Some typedef -> concat(l2,[typedef])
+					 | None -> l2)
+				    else 
+				      %let _ = writeLine("skipping "^(printQualifiedId(Qualified(qid,name)))) in
+				      l2
+					)
 			           [] spc.sorts,
 			opdecls  = List.foldl (fn | (OpDecl d,l3) -> concat(l3,[d]) | (_,l4) -> l4)
 	                           [] transformedOps,
@@ -792,8 +804,33 @@ SpecsToI2L qualifying spec {
 	         let eqfname = (eq,eid) in
 		 FunCall(eqfname,[],[t2e t1,t2e t2])
 		)
-	  | _ -> fail(errmsg^"\n[term sort must be a base sort]") %primEq()
-	         
+          | Product(fields,_) ->
+	    let eqterm = getEqTermFromProductFields(fields,srt,t1,t2) in
+	    let (exp,_) = t2e(eqterm) in
+	    exp
+	  | _ -> fail(errmsg^"\n[term sort must be a base or product sort]") %primEq()
+
+  op getEqTermFromProductFields: List(Id * Sort) * Sort * Term * Term -> Term
+  def getEqTermFromProductFields(fields,osrt,varx,vary) =
+    foldr (fn((fid,fsrt),body) ->
+	   let b = sortAnn(osrt) in
+	   let projsrt = Arrow(osrt,fsrt,b) in
+	   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),boolSort b,b) in
+	   let proj = Fun(Project(fid),projsrt,b) in
+	   let t1 = Apply(proj,varx,b) in
+	   let t2 = Apply(proj,vary,b) in
+	   let t = Apply(Fun(Equals,eqsort,b),Record([("1",t1),("2",t2)],b),b) in
+	   if body = mkTrue() then t
+	   else
+	     let andqid = Qualified("Boolean","&") in
+	     let andSrt = Arrow(Product([("1",boolSort b),("2",boolSort b)],b),boolSort b,b) in
+	     let andTerm = Fun(Op(andqid,Infix(Right,15)),andSrt,b) in
+	     Apply(andTerm,Record([("1",t),("2",body)],b),b)
+	     %IfThenElse(t,body,mkFalse(),b)
+	    )
+    (mkTrue()) fields
+
+
   op getBuiltinExpr: CgContext * Spec * Term * List(Term) -> Option Expr
   def getBuiltinExpr(ctxt,spc,term,args) =
     let

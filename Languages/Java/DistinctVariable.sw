@@ -51,7 +51,7 @@ op renameVarMatch: (Pattern * Term * Term) * Var * Var -> Pattern * Term * Term
 
 def renameVarMatch((pat, cond, patBody), oldV, newV) =
   let boundVars = patVars(pat) in
-  let def newBody(patBody) = if exists (fn (var) -> equalVar?(var, oldV)) boundVars
+  let def newBody(patBody) = if exists (fn (variable) -> equalVar?(variable, oldV)) boundVars
 			       then patBody
 			     else renameVar(patBody, oldV, newV) in
   let newCaseBody = newBody(patBody) in
@@ -168,20 +168,20 @@ def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
     else distinctVarLetNoNewVar(v, newLetTerm, letBody, newIds)
     | _ -> (term,ids)
 
-def distinctVarLetNewVar(var as (vId, vSrt), letTerm, letBody, ids) =
+def distinctVarLetNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
   let newId = findNewId(vId, ids) in
   let newIds = cons(vId, ids) in
   let newVar = (newId, vSrt) in
-  let renamedLetBody = renameVar(letBody, var, newVar) in
+  let renamedLetBody = renameVar(letBody, variable, newVar) in
   let (newLetBody, finalIds) = distinctVar(renamedLetBody, newIds) in
   let res = (mkLet([(mkVarPat(newVar), letTerm)], newLetBody)) in
   (withAnnT(res,termAnn(letTerm)),finalIds)
 
 
-def distinctVarLetNoNewVar(var as (vId, vSrt), letTerm, letBody, ids) =
+def distinctVarLetNoNewVar(variable as (vId, vSrt), letTerm, letBody, ids) =
   let newIds = cons(vId, ids) in
   let (newLetBody, finalIds) = distinctVar(letBody, newIds) in
-  let res = (mkLet([(mkVarPat(var), letTerm)], newLetBody)) in
+  let res = (mkLet([(mkVarPat(variable), letTerm)], newLetBody)) in
   (withAnnT(res,termAnn(letTerm)),finalIds)
 
 

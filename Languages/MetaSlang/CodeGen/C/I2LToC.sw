@@ -25,24 +25,26 @@ I2LToC qualifying spec {
   sort CStmts = C.Stmts
 
   sort CgContext = {
+		    xcspc : CSpec,                 % for incrementatl code generation, this field holds the existing cspec that is extended
 		    useRefTypes : Boolean,
 		    currentFunName: Option(String)
 		   }
 
   op defaultCgContext: CgContext
   def defaultCgContext = {
+			  xcspc = emptyCSpec(""),
 			  useRefTypes = true,
 			  currentFunName = None
 			 }
 
   op setCurrentFunName: CgContext * String -> CgContext
   def setCurrentFunName(ctxt,id) =
-    {useRefTypes=ctxt.useRefTypes,currentFunName=Some id}
+    {xcspc=ctxt.xcspc,useRefTypes=ctxt.useRefTypes,currentFunName=Some id}
 
-  op generateC4ImpUnit: ImpUnit * Boolean -> CSpec
-  def generateC4ImpUnit(impunit, useRefTypes) =
-    let _ = writeLine(";;   phase 2: generating C...") in
-    let ctxt = {useRefTypes=useRefTypes,currentFunName=None} in
+  op generateC4ImpUnit: ImpUnit * CSpec * Boolean -> CSpec
+  def generateC4ImpUnit(impunit, xcspc, useRefTypes) =
+    %let _ = writeLine(";;   phase 2: generating C...") in
+    let ctxt = {xcspc=xcspc,useRefTypes=useRefTypes,currentFunName=None} in
     let cspc = emptyCSpec(impunit.name) in
     let cspc = addBuiltIn(ctxt,cspc) in
     let cspc = List.foldl
@@ -75,8 +77,14 @@ I2LToC qualifying spec {
 		 c4MapDecl(ctxt,cspc,typedef))
 		cspc impunit.decls.mapDecls
     in
-    let cspc = sortStructUnionTypeDefns cspc
+    let cspc = postProcessCSpec cspc
     in
+    cspc
+
+  op postProcessCSpec: CSpec -> CSpec
+  def postProcessCSpec(cspc) =
+    let cspc = sortStructUnionTypeDefns cspc in
+    let cspc = deleteUnusedTypes cspc in
     cspc
 
   op addBuiltIn: CgContext * CSpec -> CSpec
@@ -141,10 +149,14 @@ I2LToC qualifying spec {
 	  %	      ^"the one you specified for op/var \""
 	  %	      ^vname^"\".")
       | _ -> (case optinitstr of
-		| None -> addVar(cspc,(vname,ctype))
+		| None -> addVar(cspc,voidToInt(vname,ctype))
 		| Some initstr -> addVarDefn(cspc,(vname,ctype,Var(initstr,Void))) % ok,ok, ... 
 	     )
-  
+
+  op voidToInt: VarDecl -> VarDecl
+  def voidToInt(vname,ctype) =
+    if ctype = Void then (vname,Int) else (vname,ctype)
+
   (*
    * for each non-constant variable definition X an function get$X() and a
    * boolean variable _X_initialized is generated 
@@ -229,7 +241,7 @@ I2LToC qualifying spec {
 			     let fname = List.foldr (fn(id,s) -> if s="" then id else s^"_"^id) "" ids in
 			     let (cspc,vardecl) = addMapForMapDecl(ctxt,cspc,fname,types,rtype) in
 			     % todo: add a initializer for the field!
-			     (addVar(cspc,vardecl),"&"^fname,true)
+			     (addVar(cspc,voidToInt vardecl),"&"^fname,true)
 	  | _ -> (cspc,"0",false)
     in
     let (vname,vtype,e) = vdecl in
@@ -245,7 +257,7 @@ I2LToC qualifying spec {
     let fid = (qname2id mdecl.name) in
     let paramtypes = List.map (fn(_,t)->t) mdecl.params in
     let (cspc,vardecl) = addMapForMapDecl(ctxt,cspc,fid,paramtypes,mdecl.returntype) in
-    addVar(cspc,vardecl)
+    addVar(cspc,voidToInt vardecl)
 
   % addMapForMapDecl is responsible for creating the arrays and access functions for
   % n-ary vars. The inputs are the name of the var, the argument types and the return type.
@@ -327,7 +339,7 @@ I2LToC qualifying spec {
       | Struct fields -> 
         let (cspc,sfields) = structUnionFields(cspc,fields) in
 	let structname = genName(cspc,"Product",length(getStructDefns(cspc))) in
-	let (cspc,structtype) = addNewStructDefn(cspc,(structname,sfields),ctxt.useRefTypes) in
+	let (cspc,structtype) = addNewStructDefn(cspc,ctxt.xcspc,(structname,sfields),ctxt.useRefTypes) in
 	(cspc,structtype)
       | Tuple types ->
 	let fields = addFieldNamesToTupleTypes(types) in
@@ -336,11 +348,11 @@ I2LToC qualifying spec {
 	let (cspc,ufields) = structUnionFields(cspc,fields) in
 	let unionname = genName(cspc,"CoProduct",length(getUnionDefns(cspc))) in
 	let structname = genName(cspc,"CoProductS",length(getStructDefns(cspc))) in
-	let (cspc,uniontype) = addNewUnionDefn(cspc,(unionname,ufields)) in
+	let (cspc,uniontype) = addNewUnionDefn(cspc,ctxt.xcspc,(unionname,ufields)) in
 	%let uniontype = Union unionname in
 	let sfields = [("sel",ArrayWithSize(coproductSelectorStringLength,Char)),
 		       ("alt",uniontype)] in
-	let (cspc,structtype) = addNewStructDefn(cspc,(structname,sfields),ctxt.useRefTypes) in
+	let (cspc,structtype) = addNewStructDefn(cspc,ctxt.xcspc,(structname,sfields),ctxt.useRefTypes) in
 	(cspc,structtype)
       | Ref rtype ->
 	let (cspc,ctype) = c4Type(ctxt,cspc,rtype) in
@@ -355,7 +367,7 @@ I2LToC qualifying spec {
 	let (cspc,ctypes) = c4Types(ctxt,cspc,types) in
 	let (cspc,ctype) = c4Type(ctxt,cspc,rtype) in
 	let tname = genName(cspc,"fn",length(getTypeDefns(cspc))) in
-	let (cspc,ctype) = addNewTypeDefn(cspc,(tname,Fn(ctypes,ctype))) in
+	let (cspc,ctype) = addNewTypeDefn(cspc,ctxt.xcspc,(tname,Fn(ctypes,ctype))) in
 	(cspc,ctype)
 
       %| Any -> (cspc,Ptr(Void))
@@ -373,7 +385,7 @@ I2LToC qualifying spec {
 	let arraytype = ArrayWithSize(constName,ctype) in
 	let structname = genName(cspc,"BoundList",length(getStructDefns(cspc))) in
 	let sfields = [("length",Int),("data",arraytype)] in
-	let (cspc,structtype) = addNewStructDefn(cspc,(structname,sfields),ctxt.useRefTypes) in
+	let (cspc,structtype) = addNewStructDefn(cspc,ctxt.xcspc,(structname,sfields),ctxt.useRefTypes) in
 	(cspc,structtype)
 
       | _ -> (System.print(typ);
@@ -879,7 +891,7 @@ I2LToC qualifying spec {
   op c4StadCode: CgContext * CSpec * CBlock * List(StadCode) * CStmt * StadCode -> CSpec * CBlock * CStmts
   def c4StadCode(ctxt,cspc,block,allstads,returnstmt,stadcode) =
     % decls are empty, so the following 2 lines have no effect:
-    let declscspc = generateC4ImpUnit(stadcode.decls,ctxt.useRefTypes) in
+    let declscspc = generateC4ImpUnit(stadcode.decls,ctxt.xcspc,ctxt.useRefTypes) in
     let cspc = mergeCSpecs([cspc,declscspc]) in
     let (cspc,block,stepstmts) =
        List.foldl
@@ -981,9 +993,13 @@ I2LToC qualifying spec {
   op getSelCompareExp: CgContext * CExp * String -> CExp
   def getSelCompareExp(ctxt,expr,selstr) =
     let strncmp = Fn("strncmp",[Ptr(Char),Ptr(Char),Int],Int) in
+    let hasConstructor = Fn("hasConstructor",[Ptr(Void),Ptr(Char)],Int) in
     let expr = if ctxt.useRefTypes then Unary(Contents,expr) else expr in
-    let apply = Apply(strncmp,[StructRef(expr,"sel"),Const(String(selstr)),Var("COPRDCTSELSIZE",Int)]) in
-    Binary(Eq,apply,Const(Int(true,0)))
+    case expr of
+      | Unary(Contents,expr) -> Apply(hasConstructor,[expr,Const(String(selstr))])
+      | _ -> 
+        let apply = Apply(strncmp,[StructRef(expr,"sel"),Const(String(selstr)),Var("COPRDCTSELSIZE",Int)]) in
+	Binary(Eq,apply,Const(Int(true,0)))
 
   op getSelCompareExp0: CgContext * CExp * String -> CExp
   def getSelCompareExp0(ctxt,expr,selstr) =

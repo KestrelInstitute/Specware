@@ -138,12 +138,12 @@ def flatType?(srt) =
 op baseVar?: Spec * Var -> Boolean
 op userVar?: Spec * Var -> Boolean
 
-def baseVar?(spc,var) =
-  let (id, srt) = var in
+def baseVar?(spc,variable) =
+  let (id, srt) = variable in
   baseType?(spc,srt)
 
-def userVar?(spc,var) =
-  ~ (baseVar?(spc,var))
+def userVar?(spc,variable) =
+  ~ (baseVar?(spc,variable))
 
 (**
   * disabled this op def, the new srtId op is in ToJavaBase; it also handles other kinds of types.
@@ -456,8 +456,8 @@ def lift(spc,oper, (formals, body)) =
     if caseTerm?(body)
       then
 	case caseTerm(body) of
-	  | Var (var, _) ->
-	  if equalVar?(var, firstUserVar)
+	  | Var (variable, _) ->
+	  if equalVar?(variable, firstUserVar)
 	    then 
 	      let (newBody, newK, newOds) = liftCaseTopCase(oper, body, 1) in
 	      (newBody, newOds)

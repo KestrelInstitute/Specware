@@ -24,17 +24,20 @@ SpecCalc qualifying spec {
     %let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
     %let cSpec = generateCSpecFromTransformedSpec envSpec in
     {
-      %envSpec <- return (transformSpecForCodeGen base envSpec);
+      %envSpec <- return (subtractSpec (specOf oscSpec.modeSpec) base);
+      %print("envSpec="^(printSpec envSpec));
+      %oscSpec <- return (mapOscarSpec (fn(spc) -> mergeSpecs(spc,envSpec)) oscSpec);
       oscSpec <- return (mapOscarSpec (fn(spc) -> transformSpecForCodeGen base spc) oscSpec);
       envSpec <- return (specOf oscSpec.modeSpec);
-      print("envSpec="^(printSpec envSpec));
+      %print("envSpec="^(printSpec envSpec));
       cSpec <- generateCSpecFromTransformedSpecEnv envSpec;
       cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
       cSpec <- ProcMapEnv.fold delFnDeclForProc cSpec oscSpec.procedures;
+      cSpec <- return(CG.postProcessCSpec cSpec);
       printToFileEnv(cSpec,None);
-      %(fail "success"; % useful during development; forces re-elaboration of any example spec
+      (fail "success"; % useful during development; forces re-elaboration of any example spec
        return cSpec
-      %)
+      )
     }
 
   (**
@@ -74,30 +77,34 @@ SpecCalc qualifying spec {
     return (delFn(cspc,showQualifiedId procId))
 
   op generateCProcedure : Spec.Spec -> CSpec -> Id.Id -> Procedure -> Env CSpec
-  def generateCProcedure envSpec cSpec procId (procedure as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
+  def generateCProcedure envSpec cspc procId (procedure as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
     let mmspc = mergeModeSpecs procedure in
-    %let mmspc = subtractSpec mmspc envSpec in
     let mmspc = cleanupModeSpec(mmspc,parameters) in
+    let newqids = getDeclaredQualifiedIds(subtractSpec mmspc envSpec) in
+    let newqids = filter (fn(qid) -> ~(builtinSortOp qid)) newqids in
+    %let _ = writeLine("new decls in proc "^(printQualifiedId procId)^(foldl(fn(Qualified(q,id),s) -> s^"\n  "^(q^"."^id)) ": [" newqids)^"]") in
     %let _ = writeLine("proc "^(printQualifiedId procId)^", merged mode-spec="^(printSpec mmspc)) in
-    let mmspc = transformSpecForCodeGenNoAdd mmspc in
-    let mcspc = generateCSpecFromTransformedSpec(mmspc) in
-    %let cSpec = mergeCSpecs([cSpec,mcspc]) in
-    %let cSpec = delFn(cSpec,showQualifiedId procId) in
+    let filter = (fn(qid) -> member(qid,newqids)) in
+    %let _ = printCSpecToFile(cSpec,"/tmp/cSpecInGenerateProcedure.c") in
+    let mcspc = generateCSpecFromTransformedSpecIncrFilter cspc mmspc filter in
+    %let _ = printCSpecToFile(mcspc,"/tmp/mcspcInGenerateProcedure.c") in
+    let cspc = mergeCSpecs([cspc,mcspc]) in
     let initSpec = Mode.modeSpec (initial bSpec) in
     let varDecls =
       List.map (fn argRef ->
 		let spc = specOf initSpec in
 		let (names,fxty,(tyVars,srt),_) = Op.deref (spc, argRef) in
-		(OpRef.show argRef, sortToCType cSpec spc srt))
+		let (cspc,ctype) = sortToCType cspc spc srt in
+		(OpRef.show argRef, ctype))
                 parameters
     in
-    let returnType =
+    let (cspc,returnType) =
       case returnInfo of
-        | None -> Void 
+        | None -> (cspc,Void)
         | Some retRef ->
 	    let spc = specOf initSpec in
             let (names,fixity,(tyVars,srt),_) = Op.deref (spc, retRef) in
-	    sortToCType cSpec spc srt
+	    sortToCType cspc spc srt
     in
     let def handler id procedure except =
       case except of
@@ -114,8 +121,8 @@ SpecCalc qualifying spec {
       graph <- catch (convertBSpec bSpec) (handler procId procedure);
       graph <- catch (structGraph graph) (handler procId procedure);
       %print(printGraph(graph));
-      procStmt <- return (graphToC envSpec graph);
-      return (addFnDefnOverwrite(cSpec,(showQualifiedId procId,varDecls,returnType,procStmt)))
+      (cspc,procStmt) <- return (graphToC cspc envSpec graph);
+      return (addFnDefnOverwrite(cspc,(showQualifiedId procId,varDecls,returnType,procStmt)))
     }
 
   op nodeContent : Node -> NodeContent
@@ -127,96 +134,127 @@ a C abstract syntax tree. As far as I know, this does not handle breaks and cont
 with a loop or out of a conditional.
 
 \begin{spec}
-  op graphToC : Spec.Spec -> Struct.Graph -> Stmt
-  def graphToC envSpec graph =
-    let cspc = emptyCSpec("") in
-    let def consume first last =
+  op graphToC : CSpec -> Spec.Spec -> Struct.Graph -> CSpec * Stmt
+  def graphToC cspc envSpec graph =
+    let def consume cspc first last =
       if first = ~1 then
-        ReturnVoid
+        (cspc,ReturnVoid)
       else if first = last then
-        Nop
+        (cspc,Nop)
       else
         % let _ = writeLine ("first = " ^ (Nat.toString first) ^ " last = " ^ (Nat.toString last)) in
           case nodeContent (nth (graph, first)) of
-            | Block {statements, next} -> 
-                let stmts = map statementToC statements in
-                reduceStmt stmts (consume next last) 
 
-            | Return (spc,term) -> termToCStmtNew spc term % Return (termToCExp term)
+            | Block {statements, next} -> 
+                let (cspc,stmts) = List.foldl (fn(statement,(cspc,stmts)) ->
+					       let (cspc,stmt) = statementToC cspc statement in
+					       (cspc,concat(stmts,[stmt]))
+					      ) (cspc,[]) statements in
+		let (cspc,rest) = consume cspc next last in
+                (cspc,reduceStmt stmts rest)
+
+            | Return (spc,term) -> termToCStmtNew cspc spc term % Return (termToCExp term)
 
             | IfThen {condition, trueBranch, cont} ->
 		let (spc,condition) = condition in
-                let stmt = IfThen (termToCExp cspc spc condition, consume trueBranch cont) in
-                let rest = consume cont last in
-                reduceStmt [stmt] rest
+		let (cspc,block,cexp) = termToCExp cspc spc condition in
+		let (cspc,trueExp) = consume cspc trueBranch cont in
+                let stmt = IfThen (cexp,trueExp) in
+		let stmt = prependBlockStmt(block,stmt) in
+                let (cspc,rest) = consume cspc cont last in
+                (cspc,reduceStmt [stmt] rest)
 
             | IfThenElse {condition, trueBranch, falseBranch, cont} ->
 		let (spc,condition) = condition in
-                let trueStmt = consume trueBranch cont in
-                let falseStmt = consume falseBranch cont in
-                let ifStmt = If (termToCExp cspc spc condition, trueStmt, falseStmt) in
-                let rest = consume cont last in
-                reduceStmt [ifStmt] rest
+		let (cspc,block,condExp) = termToCExp cspc spc condition in
+                let (cspc,trueStmt) = consume cspc trueBranch cont in
+                let (cspc,falseStmt) = consume cspc falseBranch cont in
+                let ifStmt = If (condExp, trueStmt, falseStmt) in
+		let stmt = prependBlockStmt(block,ifStmt) in
+                let (cspc,rest) = consume cspc cont last in
+                (cspc,reduceStmt [stmt] rest)
 
             | Loop {condition, preTest?, body, cont} ->
 		let (spc,condition) = condition in
-                let bodyStmt = consume body first in
-                let whileStmt = While (termToCExp cspc spc condition, bodyStmt) in
-                let rest = consume cont last in
-                reduceStmt [whileStmt] rest
+                let (cspc,bodyStmt) = consume cspc body first in
+		let (cspc,block,condExp) = termToCExp cspc spc condition in
+                let whileStmt = While (condExp, bodyStmt) in
+		let stmt = prependBlockStmt(block,whileStmt) in
+                let (cspc,rest) = consume cspc cont last in
+                (cspc,reduceStmt [stmt] rest)
 
             | Branch {condition, trueBranch, falseBranch} ->
 		let (spc,condition) = condition in
                 let _ = writeLine ("ignoring branch") in
-                Nop
+                (cspc,Nop)
 
-      def reduceStmt stmts s2 =
+      def reduceStmt (stmts:Stmts) s2 =
         case s2 of
           | Block ([],moreStmts) -> Block ([],stmts ++ moreStmts)
           | Nop -> Block ([],stmts)
           | _ -> Block ([],stmts ++ [s2])
 
-      def statementToC stat =
+      def statementToC cspc stat =
         case stat of
-          | Assign (spc,term) -> termToCStmtNew spc term
-          | Proc (spc,term) -> termToCStmtNew spc term
-          | Return (spc,term) -> termToCStmtNew spc term
+          | Assign (spc,term) -> termToCStmtNew cspc spc term
+          | Proc (spc,term) -> termToCStmtNew cspc spc term
+          | Return (spc,term) -> termToCStmtNew cspc spc term
     in
       if graph = [] then
-        Nop
+        (cspc,Nop)
       else
-        consume 0 (length graph)
+        consume cspc 0 (length graph)
 
-  op termToCStmtNew : Spec.Spec -> MS.Term -> CStmt
-  def termToCStmtNew spc term =
-    let cspc = emptyCSpec("") in
+  op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> CSpec * CStmt
+  def termToCStmtNew cspc spc term =
+    let (cspc,block,stmt) =
     case term of
       | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
           (case lhs of
-            | Fun (Op (Qualified (_,"ignore'"),fxty),srt,pos) -> (Exp (termToCExp cspc spc rhs))
-            | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) -> (Return (termToCExp cspc spc rhs))
+            | Fun (Op (Qualified (_,"ignore'"),fxty),srt,pos) -> 
+	      let (cspc,block,cexp) = termToCExp cspc spc rhs in
+	      (cspc,block,Exp cexp)
+            | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) ->
+	      let (cspc,block,cexp) = termToCExp cspc spc rhs in
+	      (cspc,block,Return cexp)
             | _ ->
               (case rhs of
                 | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),fxty),_,pos), Fun (Op (Qualified (_,"active"),fxty),srt,_),  _), idx,_),expr,_) ->
-                      Exp (Binary(Set,ArrayRef (Var ("active",sortToCType cspc spc srt), termToCExp cspc spc idx),termToCExp cspc spc expr))
+		  let (cspc,ctype) = sortToCType cspc spc srt in
+		  let (cspc,block,cexp1) = termToCExp cspc spc idx in
+		  let (cspc,block,cexp2) = termToCExpB cspc spc block expr in
+		  (cspc,block,Exp (Binary(Set,ArrayRef (Var ("active",ctype),cexp1),cexp2)))
                 | Apply (Fun (Op (Qualified (_,"update"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),fxty),_,_)), ("2",Fun (Nat n,_,_)), ("3",expr)],_), _) ->
-                    if n = 0 then
-                      Exp (Binary(Set,Unary(Contents,Var ("sp",sortToCType cspc spc srt)),termToCExp cspc spc expr))
-                    else
-                      Exp (Binary(Set,Unary(Contents,
-                          Binary(Add,Var ("sp",sortToCType cspc spc srt), Const (Int (true,n)))), termToCExp cspc spc expr))
-                | _ -> Exp (Binary(Set,termToCExp cspc spc lhs, termToCExp cspc spc rhs))))
+		  let (cspc,ctype) = sortToCType cspc spc srt in
+		  let (cspc,block,cexp) = termToCExp cspc spc expr in
+		  (cspc,block,
+		   if n = 0 then
+		     Exp (Binary(Set,Unary(Contents,Var ("sp",ctype)),cexp))
+		   else
+		     Exp (Binary(Set,Unary(Contents,
+					   Binary(Add,Var ("sp",ctype), Const (Int (true,n)))),cexp)))
+                | _ ->
+		  let (cspc,block,cexp1) = termToCExp cspc spc lhs in
+		  let (cspc,block,cexp2) = termToCExpB cspc spc block rhs in
+		  (cspc,block,Exp (Binary(Set,cexp1, cexp2)))))
       | Apply (Fun (Op (procId,fxty),procSort,pos),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
           % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
           (case returnTerm of
             | Record ([],_) ->
-                (Exp (termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      (cspc,block,Exp cexp)
             | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) ->
-                (Return (termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
-            | _ -> (Exp (Binary(Set,termToCExp cspc spc returnTerm,
-				termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))))
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      (cspc,block,Return cexp)
+            | _ ->
+	      let (cspc,block,cexp1) = termToCExp cspc spc returnTerm in
+	      let (cspc,block,cexp2) = termToCExpB cspc spc block (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      (cspc,block,Exp (Binary(Set,cexp1,cexp2)))
+	     )
       | _ -> % let _ = writeLine ("termToCStmt: ignoring term: " ^ (printTerm term)) in
-         Nop
+         (cspc,([],[]),Nop)
+    in
+    (cspc,prependBlockStmt(block,stmt))
 
 }
 \end{spec}

@@ -17,7 +17,7 @@ def builtinSortOp(qid) =
   let Qualified(q,i) = qid in
   %(q="Nat" & (i="Nat" or i="PosNat" or i="toString" or i="natToString" or i="show" or i="stringToNat"))
   %or
-  (q="Integer" & (i="Integer" or i="NonZeroInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or
+  ((q="Integer" or q="Nat" or q="PosNat") & (i="Integer" or i="NonZeroInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or i="<" or i="~" or
 		  i=">" or i=">=" or i="toString" or i="intToString" or i="show" or i="stringToInt"))
   or
   (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or
@@ -42,9 +42,13 @@ def identifyIntSorts(spc) =
 	| Base(Qualified(_(*"Nat"*),"Nat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
 	| Base(Qualified(_(*"Nat"*),"PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
 	| Base(Qualified(_(*"Integer"*),"NZInteger"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
-        % the following 2 lines actually do not belong here, they "repair" something that happens in PSL:
+        % the following 6 lines actually do not belong here, they "repair" something that happens in PSL:
         % the qualifier of base types get lost. Thats also the reason why ih the above lines the qualifier
         % is commented out
+	| Base(Qualified("String","String"),_,b) -> srt
+	| Base(Qualified(s,"String"),tv,b) -> Base(Qualified("String","String"),tv,b)
+	| Base(Qualified("Char","Char"),_,b) -> srt
+	| Base(Qualified(s,"Char"),tv,b) -> Base(Qualified("Char","Char"),tv,b)
 	| Base(Qualified("List","List"),_,b) -> srt
 	| Base(Qualified(s,"List"),tv,b) -> Base(Qualified("List","List"),tv,b)
 	| _ -> srt
@@ -604,6 +608,7 @@ def getMissingFromBase(bspc,spc,ignore) = addMissingFromBaseTo(bspc,spc,ignore,e
 
 op addMissingFromBaseTo: Spec * Spec * (QualifiedId -> Boolean) * Spec -> Spec
 def addMissingFromBaseTo(bspc,spc,ignore,initSpec) =
+  %let _ = writeLine("addMissingFromBaseTo, spc="^(printSpec spc)) in
   let minfo =
     foldriAQualifierMap
     (fn(qu,i,(names,tyvars,defs),minfo) ->
@@ -660,10 +665,10 @@ def addMissingFromSort(bspc,spc,ignore,srt,minfo) =
 	   %let _ = writeLine("sort \""^printQualifiedId(qid)^"\" found in spec.") in
 	   minfo
 	 | None -> (case findTheSort(bspc,qid) of
-		      | None -> fail("can't happen: couldn't find sort def for "^q^"."^id%printQualifiedId(qid)
+		      | None -> minfo %fail("can't happen: couldn't find sort def for "^q^"."^id%printQualifiedId(qid)
 				     %^"\n"^(printSpec bspc)
 				     %^"\n"^(printSpec spc)
-				    )
+				 %   )
 		      | Some sinfo ->
 		        %let _ = writeLine("adding sort \""^printQualifiedId(qid)^"\" from base spec.") in
 		        addSortInfo2SortOpInfos(qid,sinfo,minfo)
@@ -702,7 +707,11 @@ def addMissingFromTerm(bspc,spc,ignore,term,minfo) =
 	   (case findTheOp(spc,qid) of
 	      | Some _ -> minfo
 	      | None -> (case findTheOp(bspc,qid) of
-			   | None -> fail("can't happen: couldn't find op \""^printQualifiedId(qid)^"\"")
+			   | None -> minfo
+			             %fail("can't happen: couldn't find op \""^printQualifiedId(qid)^"\""
+				     %^"\n"^(printSpec bspc)
+				     %^"\n"^(printSpec spc)
+			             %)
 			   | Some opinfo ->
 			     %let _ = writeLine("adding op "^printQualifiedId(qid)^" from base spec.") in
 			     addOpInfo2SortOpInfos(qid,opinfo,minfo)

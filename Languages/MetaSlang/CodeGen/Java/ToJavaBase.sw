@@ -110,7 +110,7 @@ op varToFormalParam: Var -> FormPar * Collected
 %def varToFormalParam_v2(var as (id, srt as Base (Qualified (q, srtId), _, _))) =
 %  (false, tt(srtId), (id, 0))
 
-def varToFormalParam(var as (id, srt)) =
+def varToFormalParam(variable as (id, srt)) =
   let (ty,col) = tt_v3(srt) in
   ((false, ty, (id, 0)),col)
 
@@ -331,7 +331,7 @@ def srtId_internal(srt,addIds?) =
     | Product(fields,_) -> 
       let (l,str,col) = foldl (fn((id,fsrt),(types,str,col)) ->
 			       let (str0,col0) = srtId(fsrt) in
-			       let str = str ^ (if str = "" then "" else "$$") ^ str0 in
+			       let str = str ^ (if str = "" then "" else "$_$") ^ str0 in
 			       let str = if addIds? then str^"$"^id else str in
 			       let col = concatCollected(col,col0) in
 			       let types = concat(types,[tt_v2(str0)]) in

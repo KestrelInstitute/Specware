@@ -47,6 +47,20 @@ spec
    *)
   op generateCSpecFromTransformedSpec: AnnSpec.Spec -> CSpec
 
+  (**
+   * generate a CSpec from an already transformed MetaSlang spec,
+   * the filter function is used to selectively generate code only
+   * for those ops and sorts x for which filter(x) is true.
+   * The CSpec parameter is used for incremental code generation.
+   *)
+  op generateCSpecFromTransformedSpecIncrFilter: CSpec -> AnnSpec.Spec -> (QualifiedId -> Boolean) -> CSpec
+
+  (**
+   * same as generateCSpecFromTransformedSpec, only that the additional CSpec
+   * is used to lookup already existing definitions in the CSpec
+   *)
+  op generateCSpecFromTransformedSpecIncr: CSpec -> AnnSpec.Spec -> CSpec
+
   op generateCSpecFromTransformedSpecEnv: AnnSpec.Spec -> Env CSpec
 
   (**
@@ -54,6 +68,8 @@ spec
    * base name for the generated file, if omitted it defaults to "cgenout"
    *)
   op printToFile: CSpec * Option(String) -> ()
+
+  op postProcessCSpec: CSpec -> CSpec
 
   (**
    * monadic version of printToFile
@@ -63,12 +79,12 @@ spec
   (**
    * transforms a MetaSlang sort to a C type
    *)
-  op sortToCType: CSpec -> AnnSpec.Spec -> Sort -> CType
+  op sortToCType: CSpec -> AnnSpec.Spec -> Sort -> (CSpec * CType)
 
   (**
    * transforms a MetaSlang term to a C expression
    *)
-  op termToCExp: CSpec -> AnnSpec.Spec -> MS.Term -> CExp
+  op termToCExp: CSpec -> AnnSpec.Spec -> MS.Term -> (CSpec * Block * CExp)
 
   (**
    * returns the string representation of the qualified id
@@ -113,11 +129,20 @@ spec
     generateCSpecFromTransformedSpec spc
 
   def generateCSpecFromTransformedSpec spc =
+    let xcspc = emptyCSpec("") in
+    generateCSpecFromTransformedSpecIncr xcspc spc
+
+  def generateCSpecFromTransformedSpecIncr xcspc spc =
+    let filter = (fn(_) -> true) in
+    generateCSpecFromTransformedSpecIncrFilter xcspc spc filter
+
+  def generateCSpecFromTransformedSpecIncrFilter xcspc spc filter =
     let useRefTypes = true in
     let constrOps = [] in
-    let impunit = generateI2LCodeSpec(spc,useRefTypes,constrOps) in
-    let cspec = generateC4ImpUnit(impunit, useRefTypes) in
+    let impunit = generateI2LCodeSpecFilter(spc,useRefTypes,constrOps,filter) in
+    let cspec = generateC4ImpUnit(impunit, xcspc, useRefTypes) in
     cspec
+    
 
   def generateCSpecFromTransformedSpecEnv spc =
     return (generateCSpecFromTransformedSpec spc)
@@ -154,20 +179,24 @@ spec
     let ctxt2 = I2LToC.defaultCgContext in
     let tyvars = [] in
     let i2lType = sort2type(ctxt1,spc,tyvars,srt) in
-    let (cspc,ctype) = c4Type(ctxt2,cspc,i2lType) in
-    ctype
+    c4Type(ctxt2,cspc,i2lType)
 
   def termToCExp cspc spc term =  
-    %let _ = writeLine("termToCExp("^printTermWithSorts(term)^")...") in
+    let block = ([],[]) in
+    termToCExpB cspc spc block term
+
+  op termToCExpB: CSpec -> AnnSpec.Spec -> Block -> MS.Term -> (CSpec * Block * CExp)
+  def termToCExpB cspc spc block term =  
     let ctxt1 = SpecsToI2L.defaultCgContext in
     let ctxt2 = I2LToC.defaultCgContext in
     let i2lExp = term2expression(ctxt1,spc,term) in
-    let block = ([],[]) in
-    let (cspc,block,cexp) = c4Expression(ctxt2,cspc,block,i2lExp) in
-    cexp
+    c4Expression(ctxt2,cspc,block,i2lExp)
 
   def showQualifiedId(qid as Qualified(q,id)) =
     I2LToC.qname2id (q,id)
+
+  def postProcessCSpec(cspc) =
+    I2LToC.postProcessCSpec cspc
 
 
 end-spec
