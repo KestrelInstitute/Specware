@@ -748,7 +748,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			name=qualifier();
 			match(LITERAL_qualifying);
-			item=scTerm(false, null);
+			item=scTerm(true, null);
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {

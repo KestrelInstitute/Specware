@@ -183,14 +183,14 @@ public final class ProofElement extends MemberElement {
 
         printer.markProof(this, printer.BODY_BEGIN); // BODY begin
         printer.print(" ");
-        printer.print(getProofString()); // NOI18N
+        printer.println(getProofString()); // NOI18N
 
 /*        if (print(getImports(), printer)) {
             printer.println(""); // NOI18N
             printer.println(""); // NOI18N
         }
 */
-        printer.println(""); // NOI18N
+
         printer.markProof(this, printer.BODY_END); // BODY end
 //        printer.print("endspec"); // NOI18N
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.28  2003/06/23 18:00:18  weilyn
+ * internal release version
+ *
  * Revision 1.27  2003/04/23 01:16:24  weilyn
  * DiagElemInfo.java
  *
@@ -301,7 +304,7 @@ private scQualify[Token unitIdToken] returns[ElementFactory.Item qualify]
 }
     : name=qualifier                    //{headerEnd = LT(0);}
       "qualifying"
-      item=scTerm[false, null]            /*{if (childItem != null) children.add(childItem);}
+      item=scTerm[true, null]            /*{if (childItem != null) children.add(childItem);}
                                         {qualify = builder.createQualification(name);
                                          if (unitIdToken != null) {
                                              begin = unitIdToken;

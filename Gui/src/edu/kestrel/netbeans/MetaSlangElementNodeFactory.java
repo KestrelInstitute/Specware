@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.12  2003/04/26 02:30:53  weilyn
+ * Added GoToUnitDefinitionAction support
+ *
  * Revision 1.11  2003/04/23 00:43:19  weilyn
  * Added UnitID object support and diagram element node support
  *
@@ -109,8 +112,9 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	SystemAction.get(EditAction.class),
 	//SystemAction.get(OpenAction.class),
 	null,
+        SystemAction.get(CompileSpecAction.class),
  //       SystemAction.get(ProcessUnitAction.class),
-//        null,
+        null,
 	SystemAction.get(CutAction.class),
 	SystemAction.get(CopyAction.class),
 	SystemAction.get(PasteAction.class),

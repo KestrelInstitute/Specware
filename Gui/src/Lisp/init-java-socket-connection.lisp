@@ -5,7 +5,7 @@
 
 (in-package :cl-user)
 
-(defvar *socket-number* 4323)
+(defvar *socket-number* 4324)
 
 (defun print-result (arg)
   (format t "~% Connection to Java ~A" arg)

@@ -47,7 +47,7 @@ public class LispSocketManager {
     private static Set machines = new HashSet() ;
     private static String lispFile     = "";
     private static String lispHost     = "localhost";
-    private static int    lispPort     = 4323;
+    private static int    lispPort     = 4324;
     private static int    pollInterval = 1000;
     private static int    pollCount    = 300;
     private static int    javaTimeout   = -1;
@@ -67,10 +67,6 @@ public class LispSocketManager {
     
     static private Class lispSocketManagerClass;
     static private Class stringClass;
-    
-    // These prevent infinite calls to connectToLisp() in case something weird happened
-    static private int numConnectionTries = 0;
-    static private final int MAX_TRIES = 2;
    
     /** Creates a new instance of LispSocketManager */
     public LispSocketManager() {
@@ -310,6 +306,31 @@ public class LispSocketManager {
             ParseSourceRequest.pushProcessUnitError(fileObj, lineNum, colNum, errorMsg);
         }
     }
+    
+    public static void compileSpec(String pathName, String fileName, String specName) {
+        if (connectToLisp()) {
+            String message = "";
+            message = message + "(CL-USER::GENERATE-INCREMENTAL-LISP ";
+            message = message + "\"" + pathName;
+            message = message + (Utilities.isWindows() ? "\\\" " : "/\" ");
+            message = message + "\"" + fileName;
+            if (!specName.equals("")) 
+                message = message + "#" + specName;
+            message = message + "\"";
+            message = message + ")";
+            
+            if (DEBUG) {
+                Util.log ("LispSocketManager.compileSpec sending message: "+message);
+            }
+
+            try {
+                toLispStream.write(message.getBytes());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.compileSpec caught exception: "+ioe.getMessage());
+            }
+        }
+    }
+    
     
     public static void generateLispCode(String pathName, String fileName) {
         if (connectToLisp()) {
