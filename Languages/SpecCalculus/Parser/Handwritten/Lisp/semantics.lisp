@@ -487,13 +487,13 @@ If we want the precedence to be optional:
 (defun make-two-name-expression (name-1 name-2 l r)
   (make-fun (cond ((and ms::usingNewBooleans?
 			(equal name-1 "Boolean"))
-		   (cond ((equal name "~") (cons :|Not| nil))
-			 ((equal name "&")  (cons :|And| nil))
-			 ((equal name "or") (cons :|Or| nil))
-			 ;;((equal name ("&&") (cons :|And| nil))
-			 ;;((equal name ("||") (cons :|Or| nil))
-			 ((equal name "=>") (cons :|Implies| nil))
-			 ((equal name "<=>")(cons :|Iff| nil))
+		   (cond ((equal name-2 "~") (cons :|Not| nil))
+			 ((equal name-2 "&")  (cons :|And| nil))
+			 ((equal name-2 "or") (cons :|Or| nil))
+			 ;;((equal name-2 ("&&") (cons :|And| nil))
+			 ;;((equal name-2 ("||") (cons :|Or| nil))
+			 ((equal name-2 "=>") (cons :|Implies| nil))
+			 ((equal name-2 "<=>")(cons :|Iff| nil))
 			 (t 
 			  (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity)))))
 		   (t 
