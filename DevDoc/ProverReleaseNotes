@@ -131,6 +131,16 @@ For Specware Release 4.1 we have added the following capabilities:
    and eventually into a more robust theorem prover than what Snark
    currently provides.
 
+   If the user wishes to only use the Snark prover he needs to
+   explicity state this using a "with" clause as part of the proof
+   term: 
+
+   prove <thm> in <spc> using <lemma>, <lemma>, ... with Snark
+
+   If he only wants to use the inequality prover he would substitute
+   "FourierM" for "Snark" in the above term.  If the "with" clause is
+   left out the Specware will use both as described above.
+
 5. A more structured prover base library.
 
    We have included a prover library that shadows the old base
