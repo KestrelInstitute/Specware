@@ -235,15 +235,16 @@ MetaSlang qualifying spec {
 
  op withAnnS: fa(a) ASort a * a -> ASort a
  def withAnnS(s,a) =
+  % Avoid creating new structure if possible
   case s of
-     | Arrow     (s1,s2,    _) -> Arrow     (s1,s2,    a)
-     | Product   (fields,   _) -> Product   (fields,   a)
-     | CoProduct (fields,   _) -> CoProduct (fields,   a)
-     | Quotient  (s,t,      _) -> Quotient  (s,t,      a)
-     | Subsort   (s,t,      _) -> Subsort   (s,t,      a)
-     | Base     (qid,srts, _) -> Base     (qid,srts, a)
-     | TyVar     (tv,       _) -> TyVar     (tv,       a)
-     | MetaTyVar (tv,       _) -> MetaTyVar (tv,       a)
+     | Arrow     (s1,s2,    b) -> if a = b then s else Arrow     (s1,s2,    a)
+     | Product   (fields,   b) -> if a = b then s else Product   (fields,   a)
+     | CoProduct (fields,   b) -> if a = b then s else CoProduct (fields,   a)
+     | Quotient  (s,t,      b) -> if a = b then s else Quotient  (s,t,      a)
+     | Subsort   (s,t,      b) -> if a = b then s else Subsort   (s,t,      a)
+     | Base      (qid,srts, b) -> if a = b then s else Base      (qid,srts, a)
+     | TyVar     (tv,       b) -> if a = b then s else TyVar     (tv,       a)
+     | MetaTyVar (tv,       b) -> if a = b then s else MetaTyVar (tv,       a)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Sorts
@@ -785,6 +786,43 @@ MetaSlang qualifying spec {
 
       | SortedTerm  (M, srt,   _) -> existsSubTerm pred? M)
 
+ %% folds function over all the subterms in top-down order
+ %% Other orders such as evaluation order would be useful
+ op foldSubTerms : fa(b,r) (ATerm b * r -> r) -> r -> ATerm b -> r
+
+ def foldSubTerms f val term = 
+  let newVal = f(term,val) in
+  case term of
+    | Var _                   -> newVal
+    | Fun _                   -> newVal
+
+    | Apply     (M, N, _)     -> foldSubTerms f (foldSubTerms f newVal M) N
+
+    | Record    (fields, _)   -> foldl (fn ((_,M),val) -> foldSubTerms f val M)
+				     newVal fields
+
+    | Let       (decls, N, _) -> foldl (fn ((_,M),val) -> foldSubTerms f val M)
+				     (foldSubTerms f newVal N) decls
+
+    | LetRec    (decls, N, _) -> foldl (fn ((_,M),val) -> (foldSubTerms f val M))
+				     (foldSubTerms f newVal N) decls
+
+    | Seq       (Ms,       _) -> foldl f newVal Ms
+
+    | IfThenElse(M, N, P,  _) -> foldSubTerms f
+				     (foldSubTerms f (foldSubTerms f newVal M) N)
+				     P
+
+    | Bind      (_,_,M,    _) -> foldSubTerms f newVal M
+
+    | Lambda    (rules,    _) -> foldl (fn ((_, c, M),val) ->
+					    foldSubTerms f (foldSubTerms f val c) M)
+				     newVal rules     
+
+    | ApplyN    (Ms,       _) -> foldl f newVal Ms
+
+    | SortedTerm(M,   _,   _) -> foldSubTerms f newVal M
+ 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Replacement
