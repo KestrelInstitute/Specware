@@ -690,6 +690,7 @@ spec
      | MetaTyVar           _  -> (case unlinkSort srt of
 				    | MetaTyVar (mtv1, _) -> mtv = mtv1 
 				    | t -> occurs (mtv, t))
+     | And       (srts,    _) -> exists (fn s -> occurs (mtv, s)) srts
 
  def occursT (mtv, pred) =
    case pred of
@@ -703,6 +704,7 @@ spec
      | Let        (decls, body,   _) -> occursT (mtv, body) or exists (fn (p, M) -> occursT (mtv, M)) decls
      | LetRec     (decls, body,   _) -> occursT (mtv, body) or exists (fn (p, M) -> occursT (mtv, M)) decls
      | Lambda     (rules,         _) -> exists (fn (p, c, M) -> occursT (mtv, M)) rules
+     | And        (tms,           _) -> exists (fn t -> occursT (mtv, t)) tms
      | _  -> false
 
  (* Apply substitution as variable linking *)
