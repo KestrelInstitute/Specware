@@ -219,6 +219,8 @@ SpecCalc qualifying spec {
                | _ -> ppNil)
           ]
 
+      | Other other_term -> ppOtherTerm other_term
+
   def ppQualifier(Qualified(Qualifier,Id))  =
     if Qualifier = UnQualified then ppString Id
       else ppString(Qualifier^"."^Id)
@@ -373,5 +375,8 @@ SpecCalc qualifying spec {
 %            fail ("No match in ppPropertyType with: '"
 %               ^ (Lisp_toString any)
 %               ^ "'")
+
+  op ppOtherTerm : fa (a) OtherTerm a -> Doc % Used for extensions to Specware
+
 }
 \end{spec}

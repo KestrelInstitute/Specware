@@ -5,6 +5,7 @@ This constructs Specware and refines various abstract sorts.
 \begin{spec}
 let Specware4 = spec {
   import /Languages/SpecCalculus/Semantics/Specware
+  import /Languages/SpecCalculus/Semantics/Evaluate/NoOther
 
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists
   import Cat qualifying

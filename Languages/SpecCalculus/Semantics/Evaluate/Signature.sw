@@ -9,25 +9,28 @@ SpecCalc qualifying spec {
 
   %% Generic mechanism:
 
-  op evaluateTerm        : SCTerm                                             -> SpecCalc.Env Value
-  op evaluateLet         : List (Decl Position) -> SCTerm                     -> SpecCalc.Env ValueInfo
+  op evaluateTerm        : SCTerm                                                                   -> SpecCalc.Env Value
+  op evaluateLet         : List (Decl Position) -> SCTerm                                           -> SpecCalc.Env ValueInfo
 
   %% Specific kinds of terms:
 
-  op evaluateURI         : Position -> RelativeURI                            -> SpecCalc.Env ValueInfo
-  op evaluateSpec        : List (SpecElem Position)              -> Position  -> SpecCalc.Env ValueInfo
-  op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))  -> SpecCalc.Env ValueInfo
-  op evaluateLispCompile : ValueInfo * SCTerm * Option String                 -> SpecCalc.Env ValueInfo
-  op evaluateDiag        : List (DiagElem Position)                           -> SpecCalc.Env ValueInfo
-  op evaluateDiagMorph   : SCTerm * SCTerm * (List (DiagMorphRule Position))  -> SpecCalc.Env ValueInfo
-  op evaluateColimit     : SCTerm                                             -> SpecCalc.Env ValueInfo
-  op evaluateTermInfo    : SCTerm                                             -> SpecCalc.Env ValueInfo
-  op evaluatePrint       : SCTerm                                             -> SpecCalc.Env ValueInfo
-  op evaluateQualify     : SCTerm -> Qualifier                                -> SpecCalc.Env ValueInfo
-  op evaluateTranslate   : SCTerm -> TranslateExpr Position                   -> SpecCalc.Env ValueInfo
-  op evaluateSubstitute  : SCTerm * SCTerm                       -> Position  -> SpecCalc.Env ValueInfo
+  op evaluateURI         : Position -> RelativeURI                                                  -> SpecCalc.Env ValueInfo
+  op evaluateSpec        : List (SpecElem Position)                                     -> Position -> SpecCalc.Env ValueInfo
+  op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
+  op evaluateLispCompile : ValueInfo * SCTerm * Option String                                       -> SpecCalc.Env ValueInfo
+  op evaluateDiag        : List (DiagElem Position)                                                 -> SpecCalc.Env ValueInfo
+  op evaluateDiagMorph   : SCTerm * SCTerm * (List (DiagMorphRule Position))                        -> SpecCalc.Env ValueInfo
+  op evaluateColimit     : SCTerm                                                                   -> SpecCalc.Env ValueInfo
+  op evaluateTermInfo    : SCTerm                                                                   -> SpecCalc.Env ValueInfo
+  op evaluatePrint       : SCTerm                                                                   -> SpecCalc.Env ValueInfo
+  op evaluateQualify     : SCTerm -> Qualifier                                                      -> SpecCalc.Env ValueInfo
+  op evaluateTranslate   : SCTerm -> TranslateExpr Position                                         -> SpecCalc.Env ValueInfo
+  op evaluateSubstitute  : SCTerm * SCTerm                                              -> Position -> SpecCalc.Env ValueInfo
   op evaluateProve       : ClaimName * SCTerm * ProverName * Assertions * ProverOptions -> Position -> SpecCalc.Env ValueInfo
-  op evaluateObligations : SCTerm                                             -> SpecCalc.Env ValueInfo
+  op evaluateObligations : SCTerm                                                                   -> SpecCalc.Env ValueInfo
+
+  %% Hook for extensions to specware
+  op evaluateOther       : OtherTerm Position                                           -> Position -> SpecCalc.Env ValueInfo  % used for extensions to Specware
 
   %% Lower-level support routines:
 
@@ -35,7 +38,7 @@ SpecCalc qualifying spec {
   op coerceToSpec : Value -> Value
 
   %% Hooks to create an environment in which monad can be run
-  op Specware.ignoredState : State
+  op Specware.ignoredState    : State
   op Specware.toplevelHandler : Exception -> SpecCalc.Monad Boolean % SpecCalc.Monad = SpecCalc.Env, but type checker gets confused if we use Env
 
   %% These are hooks to handwritten function that save and restore the
@@ -44,8 +47,8 @@ SpecCalc qualifying spec {
   %% save it. In this way, the work done to load, elaborate and store specs
   %% in the Specware environment, is saved.
 
-  op Specware.saveSpecwareState: SpecCalc.Env ()
-  op Specware.restoreSavedSpecwareState: SpecCalc.Env ()
+  op Specware.saveSpecwareState         : SpecCalc.Env ()
+  op Specware.restoreSavedSpecwareState : SpecCalc.Env ()
 
 }
 \end{spec}

@@ -3,6 +3,8 @@ spec {
   import ../AbstractSyntax/Printer
   import /Provers/Proof
 
+  sort OtherValue                % Used for extensions to Specware
+
   sort Value =
     | Spec     Spec
     | Morph    Morphism
@@ -11,6 +13,7 @@ spec {
     | Proof    Proof
     | InProcess			  % Used for catching circular definitions
     % | DiagMorph
+    | Other    OtherValue         % Used for extensions to Specware
 
   op showValue : Value -> String
   def showValue value = ppFormat (ppValue value)
@@ -23,4 +26,7 @@ spec {
       | Diag    spec_diagram  -> ppDiagram  spec_diagram
       | Colimit spec_colimit  -> ppColimit  spec_colimit
       | InProcess             -> ppString "InProcess"
+      | Other   other_value   -> ppOtherValue other_value
+
+  op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 }

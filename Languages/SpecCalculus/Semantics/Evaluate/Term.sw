@@ -97,5 +97,7 @@ This is a monadic interpreter for the Spec Calculus.
             | _ -> raise (TypeCheck ((positionOf sub_term),
                         "attempting to generate code from an object that is not a specification")))
         }
+
+    | Other args -> SpecCalc.evaluateOther args pos  % used for extensions to Specware
 }
 \end{spec}

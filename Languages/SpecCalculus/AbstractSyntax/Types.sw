@@ -77,16 +77,26 @@ one to override an existing definition.
   sort ClaimName = Name
 \end{spec}
 
+In a basic Specware image, OtherTerm is unspecified, but in an extension
+such as PSL or Planware, it might be refined to an application-specific 
+term, or a coproduct of such terms.
+
+\begin{spec}
+
+  sort OtherTerm a  % hook for extensions
+
+\end{spec}
+
 The following is the sort given to us by the parser.
 
 \begin{spec}
   sort Term a = (Term_ a) * a
   sort Term_ a = 
-    | Print (Term a)
-    | Prove ClaimName * Term Position * ProverName * Assertions * ProverOptions
-    | URI RelativeURI
-    | Spec List (SpecElem a)
-    | Diag List (DiagElem a)
+    | Print   (Term a)
+    | Prove   ClaimName * Term Position * ProverName * Assertions * ProverOptions
+    | URI     RelativeURI
+    | Spec    List (SpecElem a)
+    | Diag    List (DiagElem a)
     | Colimit (Term a)
 
 \end{spec}
@@ -103,7 +113,7 @@ to the domain and codomain of the morphisms.
 \end{spec}
 
 \begin{spec}
-    | Qualify (Term a) * Name
+    | Qualify   (Term a) * Name
     | Translate (Term a) * (TranslateExpr a)
 \end{spec}
 
@@ -149,6 +159,15 @@ the proof obligations as conjectures.
     | Obligations (Term a)
 \end{spec}
 
+The following is a hook for creating applications that are 
+extensions to Specware.  If more than one new term is needed,
+you can make OtherTerm a coproduct of the desired terms.
+
+\begin{spec}
+    | Other (OtherTerm a)
+\end{spec}
+
+
 The following are declarations that appear in a file or listed
 within a \verb+let+. As noted above, at present the identifiers
 bound by a let or listed in a file are unstructured.
@@ -161,7 +180,8 @@ A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
 and sorts or for requalifying things. For now, a translation is just a
-mapping from names to names.
+mapping from names to names, annotated with the full list of aliases
+to be used in the target info.
 
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
@@ -261,6 +281,7 @@ them to be presented in any order.
                        | OptionName QualifiedId
                        | Error   (String * String)  % error msg, problematic string
 \end{spec}
+
 A \verb+NatTranComp+ element is a component in a natural transformation
 between diagrams. The components are indexed by vertices in the shape.
 The term in the component must evaluate to a morphism.
