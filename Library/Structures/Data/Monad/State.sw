@@ -120,17 +120,19 @@ in Monad qualifying spec
 
   op renewGlobalVar : fa (a) String * a -> Monad ()
   def renewGlobalVar (name,value) =
-    if MonadicStateInternal.newGlobalVar (name,value) then
-      return ()
-    else
-      return ()
+    return
+      (if MonadicStateInternal.newGlobalVar (name,value) then
+        ()
+      else
+        ())
 
   op newGlobalVar : fa (a) String * a -> Monad ()
   def newGlobalVar (name,value) =
-    if MonadicStateInternal.newGlobalVar (name,value) then
-      return ()
-    else
-      return ()
+    return (
+      if MonadicStateInternal.newGlobalVar (name,value) then
+        ()
+      else
+        ())
       % raise (redefinedGlobalVariable name)
     
   op writeGlobalVar : fa (a) String * a -> Monad ()
@@ -141,19 +143,20 @@ in Monad qualifying spec
       raise (undefinedGlobalVariable name)
 
   op readGlobalVar : fa (a) String -> Monad a
-  def readGlobalVar name =
-    case MonadicStateInternal.readGlobalVar name of
-      | Some value -> return value
-      | None -> raise (undefinedGlobalVariable name)
+  def readGlobalVar name = 
+    return
+      (case MonadicStateInternal.readGlobalVar name of
+        | Some value -> value
+        | None -> fail ("Undefined global variable: " ++ name))
 
   op newVar : fa (a) a -> Monad (VarRef a)
   def newVar value = return (MonadicStateInternal.newVar value)
 
   op readVar : fa (a) VarRef a -> Monad a
-  def readVar (VarRef value) = return value
+  def readVar ref = return (let (VarRef value) = ref in value)
 
-
-  op writeVar : fa (a) VarRef a * a -> Monad (VarRef a)
-  def writeVar (varRef,value) = return (MonadicStateInternal.writeVar (varRef,value))
+  op writeVar : fa (a) VarRef a * a -> Monad ()
+  def writeVar (varRef,value) = 
+    return (let _ = MonadicStateInternal.writeVar (varRef,value) in ())
 endspec
 \end{spec}
