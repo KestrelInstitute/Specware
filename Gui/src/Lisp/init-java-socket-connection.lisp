@@ -54,18 +54,20 @@
   (format *java-socket* "(format t \"~a~%\")" str)
   (force-output *java-socket*))
 (defun read-method-call-from-java-socket ()
-  (loop for val = (read-line *java-socket*)
-	until (equal val *end-method-string*)
-	collect val))
+  (let ((methodName (read-line *java-socket*))
+	(numArgs (read *java-socket*)))
+    (cons methodName
+	  (loop for i from 1 to numArgs
+                collect (read-line *java-socket*))))
 |#
 
 (defun jstatic (method cl &rest args)
   ;; for the moment the class is assumed
   (declare (ignore cl))
   (format *java-socket-stream* "~a~%" method)
+  (format *java-socket-stream* "~a~%" (length args))
   (loop for arg in args
          do (format *java-socket-stream* "~a~%" arg))
-  (format *java-socket-stream* "~a~%" *end-method-string*)
   (force-output *java-socket-stream*))
 
 (defvar *current-path-name*)
