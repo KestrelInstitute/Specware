@@ -210,6 +210,30 @@ The following corresponds to the :show command.
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
+\begin{spec}
+  op evaluateJavaGen_fromLisp : String * Option String -> Boolean
+  def evaluateJavaGen_fromLisp (path,targetFile) = 
+    let target =
+      case targetFile of
+        | None -> None
+        | Some name -> Some (maybeAddSuffix name ".java") in
+    let run = {
+      restoreSavedSpecwareState;
+      currentURI <- pathToCanonicalURI ".";
+      setCurrentURI currentURI;
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      spcInfo <- evaluateURI position uri;
+      evaluateJavaGen (spcInfo, (URI uri, position), target);
+      saveSpecwareState;
+      return true
+    } in
+    case catch run toplevelHandler ignoredState of
+      | (Ok val,_) -> val
+      | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
 
 \begin{spec}
   op evaluateURI_fromJava : String -> Boolean

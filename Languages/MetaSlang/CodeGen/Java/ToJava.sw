@@ -399,14 +399,18 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
     | _ ->
     if baseType?(srt)
       then
-	let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), None), []) in
-	%%Fix here
+	let (vars, body) = srtTermDelta(srt, trm) in
+	let (_, jE, _) = termToExpression(empty, body, 1) in
+	let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), Some (Expr (jE))), []) in
+	%%Fixed here
 	let newClsDecls = addFldDeclToClsDecls("primops", fldDecl, clsDecls) in
 	newClsDecls
     else
       let Base (Qualified (_, srtId), _, _) = srt in
-      let fldDecl = ([Static], tt(srtId), ((id, 0), None), []) in
-      %%Fix here
+      let (vars, body) = srtTermDelta(srt, trm) in
+      let (_, jE, _) = termToExpression(empty, body, 1) in
+      let fldDecl = ([Static], tt(srtId), ((id, 0), Some (Expr (jE))), []) in
+      %%Fixed here
       let newClsDecls = addFldDeclToClsDecls(srtId, fldDecl, clsDecls) in
       newClsDecls
       

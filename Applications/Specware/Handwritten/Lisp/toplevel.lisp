@@ -10,6 +10,7 @@
 
 (defvar *last-uri-loaded* nil)
 (defvar *last-swl-args* nil)
+(defvar *last-swj-args* nil)
 
 (defun sw0 (x)
    (Specware::runSpecwareURI x))
@@ -54,6 +55,22 @@
    (if r-args
        (progn (setq *last-swl-args* args)
 	      (funcall 'swl (string (first r-args))
+		       (if (not (null (second r-args)))
+			   (string (second r-args)) nil)))
+     (format t "No previous unit evaluated~%"))))
+
+;; Not sure if an optional URI make sense for swj
+(defun swj (x &optional y)
+   (Specware::evaluateJavaGen_fromLisp x
+                         (if y (cons :|Some| y)
+                               '(:|None|))))
+(top-level:alias ("swj" :case-sensitive) (&optional &rest args)
+   (let ((r-args (if (not (null args))
+		     args
+		   *last-swj-args*)))
+   (if r-args
+       (progn (setq *last-swj-args* args)
+	      (funcall 'swj (string (first r-args))
 		       (if (not (null (second r-args)))
 			   (string (second r-args)) nil)))
      (format t "No previous unit evaluated~%"))))

@@ -79,6 +79,24 @@
 
     (format t "~%~% FINISHED")))
 
+(defun generate-java (path-name file-name)
+  (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
+  (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
+	 (file-name-uri (concatenate 'string "/Gui/src/" file-name))
+	 (full-path-name (user::path-namestring full-file-name)))
+    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S " full-file-name file-name-uri full-path-name)
+    (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
+    (excl::chdir  full-path-name)
+    (setq *default-pathname-defaults* (excl::current-directory))
+
+    (format t "~% GENERATING JAVA FOR ~S" file-name-uri)
+    (let ((output-str (with-output-to-string (str)
+		      (let ((*standard-output* str))
+			(user::swj file-name-uri)))))
+    (jstatic "setGenerateJavaResults" "edu.kestrel.netbeans.lisp.LispProcessManager" path-name file-name output-str))
+
+    (format t "~%~% FINISHED")))
+
 (defpackage "SPECWARE")
 (defun Specware::reportErrorToJava (file line col msg)
   (let* ((filepath (parse-namestring file))

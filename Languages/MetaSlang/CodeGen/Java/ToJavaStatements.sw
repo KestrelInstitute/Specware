@@ -130,9 +130,10 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k) =
     | Fun (Embed (id, _) , srt, _) -> translateConstructToExpr(tcx, srtId(termSort(term)), id, argsTerm, k)
     | Fun (Op (Qualified (q, id), _), _, _) ->
     let srt = termSort(term) in
-    %%Fix here
-    let dom = srtDom(srt) in
-    let rng = srtRange(srt) in
+    %%Fixed here
+    let args = applyArgsToTerms(argsTerm) in
+    let dom = map termSort args in
+    let rng = srt in
     if all (fn (srt) -> baseType?(srt)) dom
       then
 	if baseType?(rng)

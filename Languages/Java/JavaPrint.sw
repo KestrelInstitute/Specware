@@ -240,8 +240,8 @@ Java qualifying spec
                    ppType t,
                    toPretty " ",
                    ppVarDecl vd,
-                   toPretty ", ", 
-                   ppVarDecls vds,
+                   %toPretty ", ", 
+                   %ppVarDecls vds,
                    toPretty ";"]
 
 %%%% variable declarations
