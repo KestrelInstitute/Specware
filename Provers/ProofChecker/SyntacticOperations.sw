@@ -30,13 +30,14 @@ spec
 
   op patt2expr : Pattern -> Expression
   def patt2expr = fn
-    | variable(v,_)    -> EVAR v
-    | embedding(t,c,p) -> (EMBED t c) __ (patt2expr p)
-    | record(fS,pS)    -> let eS = map (patt2expr, pS) in
-                          ERECORD fS eS
-    | tuple pS         -> let eS = map (patt2expr, pS) in
-                          ETUPLE eS
-    | alias(_,p)       -> patt2expr p
+    | variable(v,_)         -> VAR v
+    | embedding(t,c,None)   -> (EMBED t c)
+    | embedding(t,c,Some p) -> (EMBED t c) __ (patt2expr p)
+    | record(fS,pS)         -> let eS = map (patt2expr, pS) in
+                               RECORD fS eS
+    | tuple pS              -> let eS = map (patt2expr, pS) in
+                               TUPLE eS
+    | alias(_,p)            -> patt2expr p
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -45,11 +46,12 @@ spec
 
   op pattAliasAssumptions : Pattern -> Expression
   def pattAliasAssumptions = fn
-    | variable _       -> TRUE
-    | embedding(_,_,p) -> pattAliasAssumptions p
-    | record(_,pS)     -> conjoinAll (map (pattAliasAssumptions, pS))
-    | tuple pS         -> conjoinAll (map (pattAliasAssumptions, pS))
-    | alias((v,_),p)   -> EVAR v == patt2expr p &&& pattAliasAssumptions p
+    | variable _            -> TRUE
+    | embedding(_,_,None)   -> TRUE
+    | embedding(_,_,Some p) -> pattAliasAssumptions p
+    | record(_,pS)          -> conjoinAll (map (pattAliasAssumptions, pS))
+    | tuple pS              -> conjoinAll (map (pattAliasAssumptions, pS))
+    | alias((v,_),p)        -> VAR v == patt2expr p &&& pattAliasAssumptions p
 
   op pattAssumptions : Pattern * Expression -> Expression
   def pattAssumptions(p,e) =
@@ -62,11 +64,12 @@ spec
 
   op pattBoundVars : Pattern -> BoundVars
   def pattBoundVars = fn
-    | variable bv      -> singleton bv
-    | embedding(t,c,p) -> pattBoundVars p
-    | record(_,pS)     -> flatten (map (pattBoundVars, pS))
-    | tuple pS         -> flatten (map (pattBoundVars, pS))
-    | alias(bv,p)      -> bv |> pattBoundVars p
+    | variable bv           -> singleton bv
+    | embedding(t,c,None)   -> empty
+    | embedding(t,c,Some p) -> pattBoundVars p
+    | record(_,pS)          -> flatten (map (pattBoundVars, pS))
+    | tuple pS              -> flatten (map (pattBoundVars, pS))
+    | alias(bv,p)           -> bv |> pattBoundVars p
 
   op pattVars : Pattern -> FSet Variable
   def pattVars p =
@@ -253,16 +256,17 @@ spec
     | e                        -> e
 
   def typeSubstInPatt sbs = fn
-    | variable(v,t)    -> variable (v, typeSubstInType sbs t)
-    | embedding(t,c,p) -> embedding (typeSubstInType sbs t,
-                                     c,
-                                     typeSubstInPatt sbs p)
-    | record(fS,pS)    -> let newPS = map (typeSubstInPatt sbs, pS) in
-                          record (fS, newPS)
-    | tuple pS         -> let newPS = map (typeSubstInPatt sbs, pS) in
-                          tuple newPS
-    | alias((v,t),p)   -> alias ((v, typeSubstInType sbs t),
-                                 typeSubstInPatt sbs p)
+    | variable(v,t)         -> variable (v, typeSubstInType sbs t)
+    | embedding(t,c,None)   -> embedding (typeSubstInType sbs t, c, None)
+    | embedding(t,c,Some p) -> embedding (typeSubstInType sbs t,
+                                          c,
+                                          Some (typeSubstInPatt sbs p))
+    | record(fS,pS)         -> let newPS = map (typeSubstInPatt sbs, pS) in
+                               record (fS, newPS)
+    | tuple pS              -> let newPS = map (typeSubstInPatt sbs, pS) in
+                               tuple newPS
+    | alias((v,t),p)        -> alias ((v, typeSubstInType sbs t),
+                                      typeSubstInPatt sbs p)
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -380,17 +384,18 @@ spec
 
   op pattSubst : PatternSubstitution -> Pattern -> Pattern
   def pattSubst (old,new) = fn
-    | variable(v,t)    -> if v = old
-                          then variable(new,t)
-                          else variable(v,  t)
-    | embedding(t,c,p) -> embedding (t, c, pattSubst (old,new) p)
-    | record(fS,pS)    -> let newPS = map (pattSubst (old,new), pS) in
-                          record (fS, newPS)
-    | tuple pS         -> let newPS = map (pattSubst (old,new), pS) in
-                          tuple newPS
-    | alias((v,t),p)   -> if v = old
-                          then alias ((new, t), pattSubst (old,new) p)
-                          else alias ((v,   t), pattSubst (old,new) p)
+    | variable(v,t)         -> if v = old
+                               then variable(new,t)
+                               else variable(v,  t)
+    | embedding(t,c,None)   -> embedding (t, c, None)
+    | embedding(t,c,Some p) -> embedding (t, c, Some (pattSubst (old,new) p))
+    | record(fS,pS)         -> let newPS = map (pattSubst (old,new), pS) in
+                               record (fS, newPS)
+    | tuple pS              -> let newPS = map (pattSubst (old,new), pS) in
+                               tuple newPS
+    | alias((v,t),p)        -> if v = old
+                               then alias ((new, t), pattSubst (old,new) p)
+                               else alias ((v,   t), pattSubst (old,new) p)
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -598,16 +603,16 @@ spec
                           variable (v, newT)))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         t:Type, c:Constructor, p:Pattern, newT:Type)
+         t:Type, c:Constructor, p?:Pattern?, newT:Type)
        typeSubstInTypeAt (t, old, new, pos, newT) =>
-       typeSubstInPattAt (embedding (t, c, p), old, new, 0 |> pos,
-                          embedding (newT, c, p)))
+       typeSubstInPattAt (embedding (t, c, p?), old, new, 0 |> pos,
+                          embedding (newT, c, p?)))
     &&
     (fa (old:Type, new:Type, pos:Position,
          t:Type, c:Constructor, p:Pattern, newP:Pattern)
        typeSubstInPattAt (p, old, new, pos, newP) =>
-       typeSubstInPattAt (embedding (t, c, p), old, new, 1 |> pos,
-                          embedding (t, c, newP)))
+       typeSubstInPattAt (embedding (t, c, Some p), old, new, 1 |> pos,
+                          embedding (t, c, Some newP)))
     &&
     (fa (old:Type, new:Type, pos:Position,
          i:Nat, fS:Fields, pS:Patterns, newPi:Pattern)

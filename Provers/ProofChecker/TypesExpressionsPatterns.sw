@@ -142,11 +142,16 @@ spec
 
   A third difference is that, since we model product types explicitly and not
   as abbreviations of record types with predefined fields, we must model tuple
-  patterns, accordingly. *)
+  patterns, accordingly.
+
+  Since we explictly model components of sum types that have no type, we also
+  model embedding patterns with no argument pattern, using `Option'. *)
+
+  type Pattern? = Option Pattern
 
   type Pattern =
     | variable  BoundVar
-    | embedding Type * Constructor * Pattern
+    | embedding Type * Constructor * Pattern?
     | record    Fields * Patterns
     | tuple     Patterns
     | alias     BoundVar * Pattern
@@ -225,10 +230,13 @@ spec
    && (fa (v:Variable, t:Type)
          predT t
       => predP (variable (v, t)))
+   && (fa (t:Type, c:Constructor)
+         predT t
+      => predP (embedding (t, c, None)))
    && (fa (t:Type, c:Constructor, p:Pattern)
          predT t
       && predP p
-      => predP (embedding (t, c, p)))
+      => predP (embedding (t, c, Some p)))
    && (fa (fS:Fields, pS:Patterns)
          (fa(p) p in? pS => predP p)
       => predP (record (fS, pS)))
@@ -284,8 +292,8 @@ spec
 
   % expressions:
 
-  op EVAR : Variable -> Expression
-  def EVAR v = nullary (variable v)
+  op VAR : Variable -> Expression
+  def VAR v = nullary (variable v)
 
   op TRUE : Expression
   def TRUE = nullary tru
@@ -342,14 +350,14 @@ spec
   op IF : Expression -> Expression -> Expression -> Expression
   def IF e0 e1 e2 = ifThenElse (e0, e1, e2)
 
-  op ERECORD : Fields -> Expressions -> Expression
-  def ERECORD fS eS = nary (record fS, eS)
+  op RECORD : Fields -> Expressions -> Expression
+  def RECORD fS eS = nary (record fS, eS)
 
-  op ETUPLE : Expressions -> Expression
-  def ETUPLE eS = nary (tuple, eS)
+  op TUPLE : Expressions -> Expression
+  def TUPLE eS = nary (tuple, eS)
 
   op PAIR : Expression -> Expression -> Expression
-  def PAIR e1 e2 = ETUPLE (e1 |> e2 |> empty)
+  def PAIR e1 e2 = TUPLE (e1 |> e2 |> empty)
 
   op FN : BoundVar -> Expression -> Expression
   def FN bv e = binding (abstraction, singleton bv, e)
@@ -398,8 +406,11 @@ spec
   op PVAR : BoundVar -> Pattern
   def PVAR = embed variable
 
+  op PEMBED0 : Type -> Constructor -> Pattern
+  def PEMBED0 t c = embedding (t, c, None)
+
   op PEMBED : Type -> Constructor -> Pattern -> Pattern
-  def PEMBED t c p = embedding (t, c, p)
+  def PEMBED t c p = embedding (t, c, Some p)
 
   op PRECORD : Fields -> Patterns -> Pattern
   def PRECORD fS pS = record (fS, pS)
