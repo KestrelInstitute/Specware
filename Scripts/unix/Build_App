@@ -90,7 +90,8 @@ $BATCH_LISP <<-XXXX
 	(let ((master-file "${MAIN_BUILD_FILE}"))
 	  (exiting-on-errors 
 	    (load master-file))
-	  (generate-new-lisp-application "$LISP" "${APP_NAME}.${EXECUTABLE_EXTENSION}" "${APP_DIR}/distribution-${LISP_MODE}" (list master-file) nil))
+	  (generate-new-lisp-application "$LISP" "${APP_NAME}.${EXECUTABLE_EXTENSION}"
+	     "${APP_DIR}/distribution-${LISP_MODE}" (list master-file) nil))
         (exit-from-lisp 0)
 XXXX
 RC=$?
