@@ -26,10 +26,15 @@ SpecCalc qualifying spec
  def removeVarOpCaptures spc =
    let new_sorts = mapSortInfos (fn info -> info << {dfn = deconflictSort info.dfn}) spc.sorts in
    let new_ops   = mapOpInfos   (fn info -> info << {dfn = deconflictTerm info.dfn}) spc.ops   in
-   let new_props = map          (fn (ptype, name, tvs, fm) -> (ptype, name, tvs, deconflictTerm fm)) spc.properties in
-   spc << {sorts      = new_sorts,
-	   ops        = new_ops,
-	   properties = new_props}
+   let new_elts  = map (fn el ->
+			case el of
+			  | Property(ptype, name, tvs, fm) -> Property(ptype, name, tvs, deconflictTerm fm)
+			  | _ -> el)
+                     spc.elements
+   in
+   spc << {sorts    = new_sorts,
+	   ops      = new_ops,
+	   elements = new_elts}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

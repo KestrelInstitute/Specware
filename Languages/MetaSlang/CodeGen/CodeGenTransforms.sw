@@ -101,7 +101,7 @@ def unfoldSortAliases spc =
     | Some (q0, id0, info) ->
       let (tvs, srt) = unpackFirstSortDef info in
       let Base (qid, psrts, _) = srt in
-      let qid0 = mkQualifiedId (q0, id0) in
+      let qid0 = Qualified (q0, id0) in
       % let _ = writeLine ("sort alias found: "^printQualifiedId qid0^" = "^printQualifiedId qid) in
       % let srts = filter (fn (q1, id1, _) -> ~((q1 = q0) && (id1 = id0))) srts in
       let sortmap = foldl (fn ((q, id, info), srtmap) ->
@@ -113,6 +113,13 @@ def unfoldSortAliases spc =
 			  srts
       in
       let spc = setSorts (spc, sortmap) in
+      let spc = setElements(spc, filterSpecElements (fn el ->
+						     case el of
+						       | Sort qidi -> ~(qid0 =qidi)
+						       | SortDef qidi -> ~(qid0 =qidi)
+						       | _ -> true)
+			           spc.elements)
+      in
       let
         def mapSrt s =
 	  case s of
@@ -260,69 +267,74 @@ def poly2monoForSnark (spc, keepPolyMorphic?) =
 
 op poly2monoInternal: Spec * Boolean * Boolean -> Spec
 def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
-  let srts = spc.sorts in
-  let ops = spc.ops in
-  let (srts, minfo) =
-      foldriAQualifierMap
-        (fn (q, id, info, (map, minfo)) ->
-	 let pos = sortAnn info.dfn in
-	 let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
-         let (new_defs, minfo) =
-	     foldl (fn (def0, (defs, minfo)) ->
-		    let (tvs, srt) = unpackSort def0 in
-		    let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
-		    let ndef = maybePiSort (tvs, srt) in
-		    let defs = concat (defs, [ndef]) in
-		    %let minfo = concat (minfo, minfo0) in
-		    (defs, minfo)) 
-	           ([]:List Sort, minfo) 
-		   old_defs
-	 in
-	 let dfn = maybeAndSort (old_decls ++ new_defs, pos) in
-	 (insertAQualifierMap (map, q, id, info << {dfn = dfn}), 
-	  minfo))
-        (emptyASortMap, emptyMonoInfo) 
-	srts
+  let def processSortinfo (Qualified(q,id), info, sortmap, minfo) =
+        let pos = sortAnn info.dfn in
+	let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
+	let (new_defs, minfo) =
+	    foldl (fn (def0, (defs, minfo)) ->
+		   let (tvs, srt) = unpackSort def0 in
+		   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
+		   let ndef = maybePiSort (tvs, srt) in
+		   let defs = concat (defs, [ndef]) in
+		   %let minfo = concat (minfo, minfo0) in
+		   (defs, minfo)) 
+		  ([]:List Sort, minfo) 
+		  old_defs
+	in
+	let dfn = maybeAndSort (old_decls ++ new_defs, pos) in
+	(insertAQualifierMap (sortmap, q, id, info << {dfn = dfn}), 
+	 minfo)
+
+      def processOpinfo (Qualified(q,id), info, opmap, minfo) =
+	let pos = termAnn info.dfn in
+	let (tvs, srt, _) = unpackFirstOpDef info in
+	let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+	let (new_decls_and_defs, minfo) =
+	    foldl (fn (def0, (defs, minfo)) ->
+		   let (tvs, srt, trm) = unpackTerm def0 in
+		   let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
+		   let (trm, minfo) = p2mTerm (spc, modifyConstructors?, trm, minfo) in
+		   let ndef = maybePiTerm (tvs, SortedTerm (trm, srt, termAnn def0)) in
+		   let defs = concat (defs, [ndef]) in
+		   %let minfo = concat (minfo, minfo0) in
+		   (defs, minfo)) 
+		  ([], minfo) 
+		  (old_decls ++ old_defs)
+	in
+	let dfn = maybeAndTerm (new_decls_and_defs, pos) in
+	(insertAQualifierMap (opmap, q, id, info << {dfn = dfn}), 
+	 minfo)
   in
-  let (ops, minfo) =
-      foldriAQualifierMap
-        (fn (q, id, info, (map, minfo)) ->
-	 let pos = termAnn info.dfn in
-	 let (tvs, srt, _) = unpackFirstOpDef info in
-	 let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-	 let (new_decls_and_defs, minfo) =
-	     foldl (fn (def0, (defs, minfo)) ->
-		    let (tvs, srt, trm) = unpackTerm def0 in
-		    let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
-		    let (trm, minfo) = p2mTerm (spc, modifyConstructors?, trm, minfo) in
-		    let ndef = maybePiTerm (tvs, SortedTerm (trm, srt, termAnn def0)) in
-		    let defs = concat (defs, [ndef]) in
-		    %let minfo = concat (minfo, minfo0) in
-		    (defs, minfo)) 
-	           ([], minfo) 
-		   (old_decls ++ old_defs)
-	 in
-	 let dfn = maybeAndTerm (new_decls_and_defs, pos) in
-	 (insertAQualifierMap (map, q, id, info << {dfn = dfn}), 
-	  minfo))
-        (emptyAOpMap, minfo)
-	ops
+  let def modElts(elts,minfo,ops,srts) =
+        List.foldl (fn (el,(r_elts,minfo,ops,srts)) ->
+	       case el of
+		 | OpDef qid ->
+		   let Some opinfo = findTheOp(spc,qid) in
+		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
+		   incorporateMinfo(r_elts,el,new_minfo,minfo,ops,srts)
+		 | SortDef qid ->
+		   let Some sortinfo = findTheSort(spc,qid) in
+		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
+		   incorporateMinfo(r_elts,el,new_minfo,minfo,ops,srts)
+		 | Property(ptype, pname, tv, t) ->
+		   let (t, new_minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
+		   let nprop = Property(ptype, pname, tv, t) in
+		   incorporateMinfo(r_elts,nprop,new_minfo,minfo,ops,srts)
+		 | Import(s_tm,i_sp,elts) ->
+		   let (i_elts,minfo,ops,srts) = modElts(elts,minfo,ops,srts) in
+		   (Cons(Import(s_tm,i_sp,rev i_elts),r_elts),minfo,ops,srts)
+		 | _ -> (Cons(el,r_elts), minfo,ops,srts))
+          ([],minfo,ops,srts) elts
   in
-  let (props, minfo) =
-    foldr (fn ((ptype, pname, tv, t), (props, minfo)) ->
-	   let (t, minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
-	   let nprop = (ptype, pname, tv, t) in
-	   (cons (nprop, props), minfo))
-          ([], minfo) 
-	  spc.properties
-  in
-  let srts = foldr (fn (info , map) -> 
+  let (elts, minfo, ops, srts) = modElts(spc.elements,emptyMonoInfo,spc.ops,spc.sorts) in
+  let elts = rev elts in
+  let srts = foldl (fn (info , map) -> 
 		    let Qualified (q, id) = primarySortName info in
 		    insertAQualifierMap (map, q, id, info))
                    srts 
 		   minfo.sorts
   in
-  let ops = foldr (fn (info, map) -> 
+  let ops = foldl (fn (info, map) -> 
 		   let Qualified (q, id) = primaryOpName info in
 		   insertAQualifierMap (map, q, id, info))
                   ops 
@@ -351,9 +363,9 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		 emptyAOpMap 
 		 ops)
   in
-  let spc = setSorts      (spc, srts)  in
-  let spc = setOps        (spc, ops)   in
-  let spc = setProperties (spc, props) in
+  let spc = setSorts    (spc, srts) in
+  let spc = setOps      (spc, ops)  in
+  let spc = setElements (spc, elts) in
   spc
 
 op p2mSort: Spec * Boolean * MS.Sort * SortOpInfos -> MS.Sort * SortOpInfos
@@ -720,6 +732,28 @@ def getSortNameSuffix (instlist) =
     | [] -> ""
     | srt::instlist -> "_" ^ (sortId srt)^ (getSortNameSuffix instlist)
 
+op  incorporateMinfo: SpecElements * SpecElement * SortOpInfos * SortOpInfos * OpMap * SortMap
+       -> SpecElements * SortOpInfos * OpMap * SortMap
+%% Add newly added ops and sorts to elts before el (note elts are in reverse of their final order)
+def incorporateMinfo(elts,el,
+		     new_minfo as {ops = new_ops,sorts = new_sorts},
+		     old_minfo as {ops = old_ops,sorts = old_sorts},
+		     ops,srts) =
+  let def newSorts(new_sorts) =
+        if new_sorts = old_sorts then []
+	  else let srtinfo :: r_sorts = new_sorts in
+	       let qid = primarySortName srtinfo in
+	       Cons(SortDef qid,newSorts r_sorts)
+      def newOps(new_ops) =
+        if new_ops = old_ops then []
+	  else let srtinfo :: r_ops = new_ops in
+	       let qid = primaryOpName srtinfo in
+	       Cons(OpDef qid,Cons(Op qid,newOps r_ops))
+  in
+    ([el] ++ newOps new_ops ++ newSorts new_sorts ++ elts,
+     new_minfo,ops,srts)
+  
+
 op addOpInfo2SortOpInfos: QualifiedId * OpInfo * SortOpInfos -> SortOpInfos
 def addOpInfo2SortOpInfos (nqid, opinfo, minfo) =
   let ops = minfo.ops in
@@ -837,9 +871,13 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
        spc.ops
   in
   let minfo =
-      foldr (fn (info, minfo) -> addMissingFromTerm (bspc, spc, ignore, info.4, minfo))
-            minfo 
-	    spc.properties
+      foldrSpecElements
+        (fn (el, minfo) ->
+	 case el of
+	   | Property info -> addMissingFromTerm (bspc, spc, ignore, info.4, minfo)
+	   | _ -> minfo)
+	minfo 
+	spc.elements
   in
   if isEmptySortOpInfos? minfo then 
     initSpec 
@@ -1163,7 +1201,7 @@ def addProductSortConstructorsFromSort (spc, qid, info) =
 	 in
 	 let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 	 let opnames = [opqid] in
-	 (addLocalOpName (setOps (spc, newops), opqid), opnames))
+	 (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames))
       | _ -> (spc, [])
 
  (**
@@ -1214,7 +1252,7 @@ def addProductAccessorsFromSort (spc, qid, info) =
 		     in
 		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
 		     let opnames = cons (opqid, opnames) in
-		     (addLocalOpName (setOps (spc, newops), opqid), opnames))
+		     (addElementAfter (setOps (spc, newops), OpDef opqid, SortDef qid), opnames))
 	            (spc, [])
 		    fields)
       | _ -> (spc, [])

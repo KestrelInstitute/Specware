@@ -87,30 +87,45 @@ Change UnQualified to new_qualifier in all qualified names
 	in
 	  foldOverQualifierMap qualifyStep emptyAQualifierMap sortMap
   
-      def convertProperties properties =
-        let def qualifyStep (pt, qid, tvs, fmla) =
-          %% Translation can cause names to become duplicated, but won't remove duplicates
-          let new_name = translateQualifiedId qid in
-          let newProp = (pt, new_name, tvs, fmla) in
-	  newProp 
+      def convertElements elts =
+        let def qualifyElt el =
+	    case el of
+	      | Import (sp_tm,sp,els) ->
+	        if qualifiedSpec? sp then el
+		  else Import(sp_tm,convertElementsRec sp,convertElements els)
+	      | Op      qid -> Op      (translateQualifiedId qid)
+	      | OpDef   qid -> OpDef   (translateQualifiedId qid)
+	      | Sort    qid -> Sort    (translateQualifiedId qid)
+	      | SortDef qid -> SortDef (translateQualifiedId qid)
+	      | Property(pt, qid, tvs, fmla) ->
+	        %% Translation can cause names to become duplicated, but won't remove duplicates
+	        let new_name = translateQualifiedId qid in
+		let newProp = (pt, new_name, tvs, fmla) in
+		Property newProp
+	      | _ -> el
 	in
-	  List.map qualifyStep properties
+	  List.map qualifyElt elts
+
+      def convertElementsRec sp =
+	let sp = setElements(sp,convertElements sp.elements) in
+	markQualified sp
 
       def convertSpec sp =
-       let {importInfo = {imports,localOps,localSorts,localProperties}, sorts, ops, properties}
+       let {sorts, ops, elements, qualified?}
            = mapSpecUnqualified (translateOp, translateSort, translatePattern) sp
        in 
        {
-	newSorts      <- convertSortMap sorts;
-	newOps        <- convertOpMap   ops;
-	newProperties <- return (convertProperties properties);
-	return {importInfo = {imports         = imports,
-			      localOps        = map translateQualifiedId localOps,
-			      localSorts      = map translateQualifiedId localSorts,
-			      localProperties = map translateQualifiedId localProperties},  
+	newSorts    <- convertSortMap sorts;
+	newOps      <- convertOpMap   ops;
+	newElements <- return (convertElements elements);
+	return {%importInfo = {imports         = imports,
+		%	      localOps        = map translateQualifiedId localOps,
+		%	      localSorts      = map translateQualifiedId localSorts,
+		%	      localProperties = map translateQualifiedId localProperties},  
 		sorts      = newSorts,
 		ops        = newOps,
-		properties = newProperties}
+		elements   = newElements,
+	        qualified? = true}
        }
     in 
       convertSpec spc

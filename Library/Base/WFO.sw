@@ -1,4 +1,5 @@
 WFO qualifying spec
+  import Empty				% Avoid importing base spec
 
   op  wfo: [a] (a * a -> Boolean) -> Boolean
 

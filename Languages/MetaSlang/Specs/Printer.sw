@@ -43,7 +43,7 @@ AnnSpecPrinter qualifying spec
 
  type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
 
- type context = {
+ type PrContext = {
 		 pp                 : ATermPrinter,
 		 printSort          : Boolean,
 		 markSubterm        : Boolean,
@@ -53,6 +53,7 @@ AnnSpecPrinter qualifying spec
 		 sosIndicesToEnable : IntegerSet.Set
                 }
  
+ type IndexLines = Integer * Lines
 
  %% ========================================================================
 
@@ -66,14 +67,15 @@ AnnSpecPrinter qualifying spec
  op latexSpec                    : [a] ASpec       a -> String
 
  op printSpecToFile              : [a] String * ASpec a -> ()
+ op printFlatSpecToFile          : [a] String * ASpec a -> ()
  op latexSpecToFile              : [a] String * ASpec a -> ()
  op printSpecToTerminal          : [a]          ASpec a -> ()
  op printSpecWithSortsToTerminal : [a]          ASpec a -> ()
 
  op isShortTuple                 : [a] Nat * List (Id * a) -> Boolean
- op ppTerm                       : [a] context -> Path * ParentTerm -> ATerm    a -> Pretty
- op ppSort                       : [a] context -> Path * ParentSort -> ASort    a -> Pretty
- op ppPattern                    : [a] context -> Path * Boolean    -> APattern a -> Pretty
+ op ppTerm                       : [a] PrContext -> Path * ParentTerm -> ATerm    a -> Pretty
+ op ppSort                       : [a] PrContext -> Path * ParentSort -> ASort    a -> Pretty
+ op ppPattern                    : [a] PrContext -> Path * Boolean    -> APattern a -> Pretty
  op termToPretty                 : [a] ATerm a -> Pretty
  op printTermToTerminal          : [a] ATerm a -> ()
 %op printSort                    : [a] ASort a -> String
@@ -81,18 +83,19 @@ AnnSpecPrinter qualifying spec
 %op printSortScheme              : [a] ASortScheme a -> String
 %op printPattern                 : [a] APattern a -> String
 %op printTermWithSorts           : [a] ATerm a -> String
- op ppProperty                   : [a] context -> Nat * AProperty a -> Line
- op ppSpec                       : [a] context -> ASpec a -> Pretty  
- op ppSpecR                      : [a] context -> ASpec a -> Pretty
- op ppSpecHidingImportedStuff    : [a] context -> Spec -> ASpec a -> Pretty
- op ppSpecAll                    : [a] context -> ASpec a -> Pretty
- op ppSortDecls                  : [a] context -> ASortMap a -> Lines
- op ppOpDecls                    : [a] context -> AOpMap a -> Lines
+ op ppProperty                   : [a] PrContext -> Nat * AProperty a -> Line
+ op ppSpec                       : [a] PrContext -> ASpec a -> Pretty  
+ op ppSpecR                      : [a] PrContext -> ASpec a -> Pretty
+ op ppSpecHidingImportedStuff    : [a] PrContext -> Spec -> ASpec a -> Pretty
+ op ppSpecAll                    : [a] PrContext -> ASpec a -> Pretty
+ op ppSpecFlat                   : [a] PrContext -> ASpec a -> Pretty
  op specToPrettyVerbose          : [a] ASpec a -> Pretty
+ op specToPrettyFlat             : [a] ASpec a -> Pretty
  op specToPretty                 : [a] ASpec a -> Pretty
  op specToPrettyR                : [a] ASpec a -> Pretty
 %op printSpec                    : [a] ASpec a -> String
  op printSpecVerbose             : [a] ASpec a -> String
+ op printSpecFlat                : [a] ASpec a -> String
 %op printSpecToTerminal          : [a] ASpec a -> ()
 %op printSpecToFile              : [a] String * ASpec a -> ()
  op printMarkedSpecToFile        : [a] String * String * IntegerSet.Set * IntegerSet.Set * ASpec a ->          NatMap.Map (List Nat)
@@ -144,7 +147,7 @@ AnnSpecPrinter qualifying spec
 	  | _  ->  None)
      | _ -> None
 
- def initialize (pp, printSort?) : context = 
+ def initialize (pp, printSort?) : PrContext = 
    {pp                 = pp,
     printSort          = printSort?,
     markSubterm        = false,
@@ -153,7 +156,7 @@ AnnSpecPrinter qualifying spec
     indicesToDisable   = IntegerSet.empty,
     sosIndicesToEnable = IntegerSet.empty}
  
- def initializeMark (pp, indicesToDisable, sosIndicesToEnable) : context = 
+ def initializeMark (pp, indicesToDisable, sosIndicesToEnable) : PrContext = 
    {pp                 = pp,
     printSort          = false,
     markSubterm        = true, 
@@ -162,8 +165,8 @@ AnnSpecPrinter qualifying spec
     indicesToDisable   = indicesToDisable,
     sosIndicesToEnable = sosIndicesToEnable}
  
- def printSort?   (c:context) = c.printSort
- def markSubterm? (c:context) = c.markSubterm
+ def printSort?   (c:PrContext) = c.printSort
+ def markSubterm? (c:PrContext) = c.markSubterm
  
  def [a] termFixity (term : ATerm a) : Fixity = 
    case term of
@@ -938,22 +941,36 @@ def AnnSpecPrinter.printTerm term =
 		  else 
 		    string "")
    in
-     (1, blockFill (0, 
-		   [(0, button1), 
-		    (0, button2), 
-		    (0, case (pt:PropertyType) of
-			  | Theorem    -> pp.Theorem 
-			  | Axiom      -> pp.Axiom 
-			  | Conjecture -> pp.Conjecture), 
-		    (0, pp.ppFormulaDesc (" "^ (if q = UnQualified then "" else q^".")^id)), 
-		    (0, string " "), 
-		    (0, pp.Is), 
-		    % (0, if null tyVars then string "" else string " sort"), 
-		    (0, ppForallTyVars pp tyVars), 
-		    (0, string " "), 
-		    (3, ppTerm context ([index, propertyIndex], Top) term)]))
+     (1, blockFill (0, [(0, button1), 
+			(0, button2), 
+			(0, case (pt:PropertyType) of
+			      | Theorem    -> pp.Theorem 
+			      | Axiom      -> pp.Axiom 
+			      | Conjecture -> pp.Conjecture), 
+			(0, pp.ppFormulaDesc (" "^ (if q = UnQualified then "" else q^".")^id)), 
+			(0, string " "), 
+			(0, pp.Is), 
+			% (0, if null tyVars then string "" else string " sort"), 
+			(0, ppForallTyVars pp tyVars), 
+			(0, string " "), 
+			(3, ppTerm context ([index, propertyIndex], Top) term)]))
 
- def [a] ppOpDecl (context : context) (info, (index, lines)) =
+ op  ppOpDeclOp: [a] PrContext -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDeclOp context blankLine? info_res =
+   ppOpDecl context true false blankLine? info_res
+
+ op  ppOpDeclDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDeclDef context info_res =
+   ppOpDecl context false true true info_res
+
+ op  ppOpDeclOpDef: [a] PrContext -> (AOpInfo a * IndexLines) -> IndexLines
+ def ppOpDeclOpDef context info_res =
+   ppOpDecl context true true true info_res
+
+
+ op  ppOpDecl: [a] PrContext -> Boolean -> Boolean -> Boolean -> (AOpInfo a * IndexLines) -> IndexLines
+ %% If printDef? is false print "op ..." else print "def ..."
+ def ppOpDecl context printOp? printDef? blankLine? (info, (index, lines)) =
    let pp : ATermPrinter = context.pp in
    let 
      def ppOpName (qid as Qualified (q, id)) =
@@ -1040,7 +1057,8 @@ def AnnSpecPrinter.printTerm term =
 	let n = length defs  in
 	if m <= 1 then
 	  if n <= 1 then
-	    [(0, string " ")]
+	    %% Precede with new line only if both op and def 
+	    (if blankLine? then [(0, string " ")] else [])
 	  else
 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
 	else
@@ -1055,11 +1073,21 @@ def AnnSpecPrinter.printTerm term =
 	 | ([], dfn :: _) -> [dfn]
 	 | _ -> decls
    in
-   let ppDecls = map ppDecl decls in
-   let ppDefs  = map ppDef  defs  in
+   let ppDecls = if printOp? then map ppDecl decls else [] in
+   let ppDefs  = if printDef? then map ppDef  defs else [] in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
- def [a] ppSortDecl (context : context) (info, (index, lines)) =
+ op  ppSortDeclSort: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
+ def ppSortDeclSort context info_res =
+   ppSortDecl context false info_res
+
+ op  ppSortDeclDef: [a] PrContext -> (ASortInfo a * IndexLines) -> IndexLines
+ def ppSortDeclDef context info_res =
+   ppSortDecl context true info_res
+
+ op  ppSortDecl: [a] PrContext -> Boolean -> (ASortInfo a * IndexLines) -> IndexLines
+ %% If printDef? is false print "op ..." else print "def ..."
+ def ppSortDecl context printDef? (info, (index, lines)) =
    let pp : ATermPrinter = context.pp in
    let 
      def ppSortName (qid as Qualified (q, id)) =
@@ -1109,11 +1137,8 @@ def AnnSpecPrinter.printTerm term =
 	  else
 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
    in
-   let ppDecls = case defs of 
-		   | [] -> map ppDecl decls % if no defs, print decl
-		   | _ -> []                % but if there are defs, suppress printing of decls
-   in
-   let ppDefs  = map ppDef  defs  in
+   let ppDecls = if printDef? then [] else map ppDecl decls in
+   let ppDefs  = if printDef? then map ppDef  defs else []  in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
    % op isBuiltIn? : Import -> Boolean
@@ -1123,105 +1148,190 @@ def AnnSpecPrinter.printTerm term =
    % spec_ref = "Integer" or spec_ref = "List" or 
    % spec_ref = "General"
 
+
+ type ImportDirections = | NotSpec (List Spec)
+                         | Verbose
+                         | Recursive	% Make smarter to avoid repetitions?
+
  %% Top-level print module; lower-level print spec
  def ppSpec context spc = 
-   let pp : ATermPrinter = context.pp in
-   % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
+   let pp  = context.pp in
    blockAll (0, 
 	     [(0, blockFill (0, 
 			     [(0, pp.Spec), 
 			      (0, string " ")]))]
 	     ++
-	     (map (fn (specCalcTerm, spc) -> (1, prettysNone [pp.Import, string (showTerm specCalcTerm)]))
-	          spc.importInfo.imports) 
-	     ++
-	     (ppSortDecls context spc.sorts)
-	     ++
-	     (ppOpDecls   context spc.ops)
-	     ++
-	     (ListUtilities.mapWithIndex (ppProperty context) spc.properties)
+	     (ppSpecElements context spc (NotSpec Nil) spc.elements)
 	     ++
 	     [(0, pp.EndSpec), 
 	      (0, string "")])
 
- def ppSpecR context spc = 
-   let pp : ATermPrinter = context.pp in
-   % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
-   blockAll (0, 
-	     [(0, blockFill (0, 
-			     [(0, pp.Spec), 
-			      (0, string " ")]))]
-	     ++
-	     (map (fn (specCalcTerm, spc) -> (1, prettysNone [pp.Import, string (showTerm specCalcTerm)]))
-	          spc.importInfo.imports) 
-	     ++
-	     (ppSortDecls context spc.sorts)
-	     ++
-	     (ppOpDecls context spc.ops)
-	     ++
-	     (ListUtilities.mapWithIndex (ppProperty context) spc.properties)
-	     ++
-	     [(0, pp.EndSpec), 
-	      (0, string "")])
+ %% shw: Don't see how this is different from above
+ def ppSpecR context spc = ppSpec context spc
 
- def [a] ppSpecHidingImportedStuff context base_spec spc =
+ def ppSpecHidingImportedStuff context base_spec spc =
    %% Also suppress printing import of base specs
-   let pp : ATermPrinter = context.pp in
-   let 
-     def local_sort_info? (info : ASortInfo a) = List.exists (fn qid -> localSort? (qid, spc)) info.names 
-     def local_op_info?   (info : AOpInfo   a) = List.exists (fn qid -> localOp?   (qid, spc)) info.names 
-   in
+   let pp  = context.pp in
    blockAll (0, 
 	     [(0, blockFill (0, 
 			     [(0, pp.Spec), 
 			      (0, string " ")]))]
 	     ++
-	     (let base_imports = base_spec.importInfo.imports in
-	      let non_base_imports = 
-	          filter (fn (_, imp_spec) -> 
-			  if imp_spec = base_spec then
-			    false % not not imported, i.e. imported
-			  else
-			    List.foldl (fn ((_, base_imp_spec), not_imported?) ->
-					if imp_spec = base_imp_spec then
-					  false % not not imported, i.e. imported
-					else
-					  not_imported?)
-			    true % begin assuming not imported
-			    base_imports)
-		         spc.importInfo.imports
-	      in
-	      let pps : Lines =
-	          List.map (fn (specCalcTerm, _) -> 
-			    (1, prettysFill [pp.Import, 
-					     %% TODO: indenting this way isn't quite right,
-					     %% since it will indent inside string literals
-					     %% But pretty printers make it inordinately 
-					     %% difficult to do simple things like indentation.
-					     string (indentString "  " (showTerm specCalcTerm))]))
-		           non_base_imports
-	      in
-		pps)
-	     ++
-	     (let local_sorts = filterSortMap local_sort_info? spc.sorts in
-	      ppSortDecls context local_sorts)
-	     ++
-	     (let local_ops = filterOpMap local_op_info? spc.ops in
-	      ppOpDecls context local_ops)
-	     ++
-	     (let pps : Lines =
-	      List.foldr (fn (prop, pps) ->
-			  if ~(localProperty? (prop.2, spc)) then
-			    pps
-			  else
-			    Cons (ppProperty context (0, prop), pps)) % Ok to keep index at 0?
-	                 []   
-			 spc.properties
-	      in
-		pps)
+	     (ppSpecElements context spc (NotSpec [base_spec]) spc.elements)
 	     ++
 	     [(0, pp.EndSpec), 
 	      (0, string "")])
+
+ def ppSpecAll context spc =
+   let pp  = context.pp in
+   blockAll (0, 
+	     [(0, blockFill (0, 
+			     [(0, pp.Spec), 
+			      (0, string " ")]))]
+	     ++
+	     (ppSpecElements context spc Verbose spc.elements)
+	     ++
+	     [(0, pp.EndSpec), 
+	      (0, string "")])
+
+ def ppSpecFlat context spc =
+   let pp  = context.pp in
+   blockAll (0, 
+	     [(0, blockFill (0, 
+			     [(0, pp.Spec), 
+			      (0, string " ")]))]
+	     ++
+	     (ppSpecElements context spc Recursive spc.elements)
+	     ++
+	     [(0, pp.EndSpec), 
+	      (0, string "")])
+
+
+ op  ppSpecElements: [a] PrContext -> ASpec a -> ImportDirections -> ASpecElements a -> Lines
+ def ppSpecElements context spc import_directions elements =
+   (ppASpecElementsAux context spc import_directions elements (0,[])).2
+ 
+ op  ppASpecElementsAux: [a] PrContext -> ASpec a -> ImportDirections -> ASpecElements a -> IndexLines
+                           -> IndexLines
+ op  ppSpecElementsAux: [a]      PrContext -> ASpec a -> ImportDirections -> SpecElements -> IndexLines
+                           -> IndexLines
+ def ppASpecElementsAux context spc import_directions elements result =
+   let
+     def ppSpecElement(el,afterOp?,result as (index,ppResult)) =
+       case el of
+	 | Import (im_sp_tm,im_sp,im_elements) ->
+	   (case import_directions of
+	     | NotSpec ign_specs ->
+	       if member(im_sp,ign_specs) then result
+	       else (index,
+		     Cons((1, prettysFill [context.pp.Import, 
+					   %% TODO: indenting this way isn't quite right,
+					   %% since it will indent inside string literals
+					   %% But pretty printers make it inordinately 
+					   %% difficult to do simple things like indentation.
+					   string (indentString "  " (showTerm im_sp_tm))]),
+			  ppResult))
+	     | Verbose ->
+	       (index,
+		Cons((2, blockFill (0, 
+				    [(0, string "import "), 
+				     (0, string (showTerm im_sp_tm)), 
+				     (0, string " |-> "), 
+				     (0, ppSpecAll context im_sp)])),
+		     ppResult))
+	     | Recursive ->
+	       ppSpecElementsAux context spc
+	         import_directions im_elements result)
+	       
+	 | Op qid ->
+	   (case findTheOp(spc,qid) of
+	      | Some opinfo ->
+	        ppOpDeclOp context (~afterOp?) (opinfo,result))
+	 | OpDef qid ->
+	   (case findTheOp(spc,qid) of
+	      | Some opinfo -> ppOpDeclDef context (opinfo,result))
+	 | Sort qid ->
+	   (case findTheSort(spc,qid) of
+	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result))
+	 | SortDef qid ->
+	   (case findTheSort(spc,qid) of
+	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result))
+	 | Property prop ->
+	   (index+1,
+	    Cons(ppProperty context (index, prop),ppResult))
+
+     def aux(elements,afterOp?,result) =
+         case elements of
+	   | [] -> result
+	   | (Op qid1) :: (OpDef qid2) :: r_els ->
+	     (case findTheOp(spc,qid1) of
+	      | Some opinfo ->
+		if qid1 = qid2
+		  then ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
+		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result)))
+	   | el :: r_els -> ppSpecElement(el,afterOp?,aux(r_els,(embed? Op) el,result))
+   in
+     aux(elements,true,result)
+       
+
+ %% Identical tedt copy to body of ppASpecElementsAux, but different types
+ def ppSpecElementsAux context spc import_directions elements result =
+   let
+     def ppSpecElement(el,afterOp?,result as (index,ppResult)) =
+       case el of
+	 | Import (im_sp_tm,im_sp,im_elements) ->
+	   (case import_directions of
+	     | NotSpec ign_specs ->
+	       if member(im_sp,ign_specs) then result
+	       else (index,
+		     Cons((1, prettysFill [context.pp.Import, 
+					   %% TODO: indenting this way isn't quite right,
+					   %% since it will indent inside string literals
+					   %% But pretty printers make it inordinately 
+					   %% difficult to do simple things like indentation.
+					   string (indentString "  " (showTerm im_sp_tm))]),
+			  ppResult))
+	     | Verbose ->
+	       (index,
+		Cons((2, blockFill (0, 
+				    [(0, string "import "), 
+				     (0, string (showTerm im_sp_tm)), 
+				     (0, string " |-> "), 
+				     (0, ppSpecAll context im_sp)])),
+		     ppResult))
+	     | Recursive ->
+	       ppSpecElementsAux context spc
+	         import_directions im_elements result)
+	       
+	 | Op qid ->
+	   (case findTheOp(spc,qid) of
+	      | Some opinfo ->
+	        ppOpDeclOp context (~afterOp?) (opinfo,result))
+	 | OpDef qid ->
+	   (case findTheOp(spc,qid) of
+	      | Some opinfo -> ppOpDeclDef context (opinfo,result))
+	 | Sort qid ->
+	   (case findTheSort(spc,qid) of
+	      | Some sortinfo -> ppSortDeclSort context (sortinfo,result))
+	 | SortDef qid ->
+	   (case findTheSort(spc,qid) of
+	      | Some sortinfo -> ppSortDeclDef context (sortinfo,result))
+	 | Property prop ->
+	   (index+1,
+	    Cons(ppProperty context (index, prop),ppResult))
+
+     def aux(elements,afterOp?,result) =
+         case elements of
+	   | [] -> result
+	   | (Op qid1) :: (OpDef qid2) :: r_els ->
+	     (case findTheOp(spc,qid1) of
+	      | Some opinfo ->
+		if qid1 = qid2
+		  then ppOpDeclOpDef context (opinfo,aux(r_els, false, result))
+		else ppOpDeclOp context afterOp? (opinfo,aux(Cons(OpDef qid2,r_els), true, result)))
+	   | el :: r_els -> ppSpecElement(el,afterOp?,aux(r_els,(embed? Op) el,result))
+   in
+     aux(elements,true,result)
 
   op indentString : String -> String -> String
  def indentString prefix s =
@@ -1237,52 +1347,11 @@ def AnnSpecPrinter.printTerm term =
    in
      implode (rev s)
 
- def ppSpecAll context spc = 
-   let pp : ATermPrinter = context.pp in
-   % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
-   let ppImports = map (fn (specCalcTerm, spc) ->
-			(2, blockFill (0, 
-				       [(0, string "import "), 
-					(0, string (showTerm specCalcTerm)), 
-					(0, string " |-> "), 
-					(0, ppSpecAll context spc)])))
-                       spc.importInfo.imports 
-   in
-     blockAll (0, 
-               [(0, blockFill (0, 
-			       [(0, pp.Spec), 
-				(0, string " ")
-			       ]))]
-               ++
-               ppImports 
-               ++
-               (ppSortDecls context spc.sorts)
-               ++
-               (ppOpDecls context spc.ops)
-               ++
-               (ListUtilities.mapWithIndex (ppProperty context) spc.properties)
-               ++
-               [(0, pp.EndSpec), 
-                (0, string "")])
-
- def ppSortDecls context sorts =  
-   let undefined_sorts = filterSortMap (fn info -> ~ (definedSortInfo? info)) sorts in
-   let   defined_sorts = filterSortMap definedSortInfo?                       sorts in
-   %% print "sort <name>" for all the undefined sorts before printing any of the defined sorts
-   let (index, pps) = foldSortInfos (ppSortDecl context) (0,     [])  undefined_sorts in
-   let (index, pps) = foldSortInfos (ppSortDecl context) (index, pps)   defined_sorts in
-   pps
-
- def ppOpDecls context ops =  
-   let undefined_ops = filterOpMap (fn info -> ~ (definedOpInfo? info)) ops in
-   let   defined_ops = filterOpMap definedOpInfo?                       ops in
-   %% print "op <name> : ..." for all the undefined ops before printing any of the defined ops
-   let (index, pps) = foldOpInfos (ppOpDecl context) (0,     [])  undefined_ops in
-   let (index, pps) = foldOpInfos (ppOpDecl context) (index, pps)   defined_ops in
-   pps
-   
  def specToPrettyVerbose spc = 
    ppSpecAll (initialize (asciiPrinter, false)) spc
+
+ def specToPrettyFlat spc = 
+   ppSpecFlat (initialize (asciiPrinter, false)) spc
    
  def specToPretty spc = 
    let base_spec = SpecCalc.getBaseSpec () in
@@ -1296,6 +1365,9 @@ def AnnSpecPrinter.printTerm term =
    
  def printSpecVerbose spc =
    PrettyPrint.toString (format (80, specToPrettyVerbose spc))
+
+ def printSpecFlat spc =
+   PrettyPrint.toString (format (80, specToPrettyFlat spc))
    
  def printSpecToTerminal spc =
    (toTerminal (format (80, specToPretty spc)); 
@@ -1303,6 +1375,9 @@ def AnnSpecPrinter.printTerm term =
    
  def printSpecToFile (fileName, spc) = 
    toFile (fileName, format (90, specToPretty spc))
+
+ def printFlatSpecToFile (fileName, spc) = 
+   toFile (fileName, format (90, specToPrettyFlat spc))
    
  def printMarkedSpecToFile (fileName, pathFileName, indicesToDisable, sosIndicesToEnable, spc) = 
    let context = initializeMark (asciiPrinter, indicesToDisable, sosIndicesToEnable) in
@@ -1374,13 +1449,16 @@ def AnnSpecPrinter.printTerm term =
 	spc.ops
    in
    let (counter, properties) = 
-       foldl (fn ((pt, qid, tvs, _), (counter, list)) -> 
-	      (counter + 1, 
-	       cons (string ("  \\pdfoutline goto num "^ Nat.toString counter^
-			     "  {"^ printQualifiedId qid ^ "}"), 
-		     list))) 
+       foldl (fn (el, result as (counter, list)) ->
+	      case el of
+		| Property(pt, qid, tvs, _) ->
+	          (counter + 1, 
+		   cons (string ("  \\pdfoutline goto num "^ Nat.toString counter^
+				 "  {"^ printQualifiedId qid ^ "}"), 
+			 list))
+		| _ -> result)
              (1, []) 
-	     spc.properties
+	     spc.elements
    in
    let properties = rev properties    in
    let sortCount  = length sorts      in

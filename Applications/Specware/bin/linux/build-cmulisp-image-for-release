@@ -189,4 +189,4 @@ find . -type d -name "CVS" -print | xargs /bin/rm -rf
 #  Make tar file
 # ================================================================================
 
-tar cvf "$SPECWARE4"/Specware.tar *
+tar cvzf "$SPECWARE4"/Specware.tar *

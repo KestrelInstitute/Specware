@@ -37,18 +37,22 @@ SpecCalc qualifying spec
   op morphismObligations: Morphism * GlobalContext * Position -> Spec
   def morphismObligations ({dom, cod, sortMap, opMap, sm_tm=_},globalContext,pos) =
     % let tcc = MetaSlangTypeCheck.checkSpec(domain2) in
-    let translated_dom_axioms = mapPartial (fn prop ->
-					    case prop of
-					      | (Axiom, name, tyvars, fm) ->
-					        if exists (fn (codProp) ->
-							   equalProperty?(codProp, prop))
-						     cod.properties
-						  then None
-						else 
-						  Some (Conjecture, name, tyvars,
-							translateTerm (fm, sortMap, opMap))
-					      | _ -> None) 
-					   dom.properties
+    let translated_dom_axioms =
+        foldrSpecElements (fn (el,newprops) ->
+			   case el of
+			     | Property(Axiom, name, tyvars, fm) ->
+			       let new_fm = translateTerm (fm, sortMap, opMap) in
+			       if existsSpecElement?
+				    (fn el ->
+				     case el of
+				       | Property(_,_,tvs,fm1) ->
+				         tyvars = tvs && equalTerm?(new_fm,fm1)
+				       | _ -> false)
+				    cod.elements
+			       then newprops
+			       else Cons(mkConjecture(name, tyvars, new_fm),newprops)
+			   | _ -> newprops) 
+	  [] dom.elements
     in
     let dom_definitions_not_in_cod
        = foldriAQualifierMap
@@ -69,29 +73,17 @@ SpecCalc qualifying spec
 	   dom.ops
     in
     let obligation_props = translated_dom_axioms ++ dom_definitions_not_in_cod in
-    let import_of_cod = {imports = case findUnitIdforUnit(Spec cod,globalContext) of
-				    | Some unitId -> [((UnitId (SpecPath_Relative unitId),pos),
-						       cod)]
-				    | _ -> [],
-			 localOps     = emptyOpNames,
-			 localSorts   = emptySortNames,
-			 localProperties = map propertyName obligation_props}
-    in
-    let ob_spc = {importInfo = import_of_cod,
-		  ops        = cod.ops,
-		  sorts      = cod.sorts,
-		  properties = cod.properties ++ obligation_props}
-    in
-      ob_spc
+    let ob_spc = cod << {elements = cod.elements ++ obligation_props} in
+    ob_spc
 
-  op  defToConjecture: Spec * Qualifier * Id * MS.Term -> Properties
+  op  defToConjecture: Spec * Qualifier * Id * MS.Term -> SpecElements
   def defToConjecture (spc, q, id, term) =
     let opName = Qualified (q, id) in
     let srt = termSortEnv(spc,term) in
     let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
     let liftedFmlas = removePatternTop(spc, initialFmla) in
     %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
-    map (fn(fmla) -> (Conjecture, Qualified (q, id ^ "_def"), [], fmla)) liftedFmlas
+    map (fn(fmla) -> mkConjecture(Qualified (q, id ^ "_def"), [], fmla)) liftedFmlas
 
   op translateTerm: MS.Term * MorphismSortMap * MorphismOpMap -> MS.Term
   def translateTerm (tm, sortMap, opMap) =

@@ -294,15 +294,8 @@ efficiently, but cmulisp may do better with local functions.
     pattern  = pat, 
     body     = body}
 
- def insertOper (liftInfo:LiftInfo, {qName, opName, opers, counter, usedNames, spc} : LLEnv) =
-   { 
-    opName  = opName, 
-    qName   = qName, 
-    opers   = Map.update (opers, liftInfo.ident, liftInfo), 
-    counter = counter, 
-    usedNames = usedNames, 
-    spc     = spc
-   }
+ def insertOper (liftInfo:LiftInfo, env) =
+   env << {opers = Map.update (env.opers, liftInfo.ident, liftInfo)}
 
  op  freshName: Id * LLEnv -> Id
  def freshName (name, env) =
@@ -815,20 +808,20 @@ def toAny     = Term `TranslationBasic.toAny`
 	opers     = Map.emptyMap, 
 	usedNames = Ref empty} 
 
-     def insertOpers (opers, q, spc) =
+     def insertOpers (opers, q, r_elts, r_ops) =
        case opers of
-	 | [] -> spc
-	 | {name = id, ident, pattern, freeVars, body, closure}::opers -> 
+	 | [] -> (r_elts, r_ops)
+	 | {name = id, ident, pattern, freeVars, body, closure}::m_opers -> 
 	   let info = abstractName (mkEnv (q, id), id, freeVars, pattern, body) in
 	   % TODO: Real names
-	   let spc = addNewOpAux (info << {names = [Qualified (q, id)]}, spc) in
-	   insertOpers (opers, q, spc)
+	   let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)]}, r_elts, r_ops) in
+	   insertOpers (m_opers, q, r_elts, r_ops)
 
-     def doOp (q, id, info, spc) = 
+     def doOp (q, id, info, r_elts, r_ops) = 
        %let _ = String.writeLine ("lambdaLift \""^id^"\"...") in
-       if ~ (definedOpInfo? info) then
-	 addNewOpAux (info << {names = [Qualified (q, id)]},
-		      spc)
+       if ~ (definedOpInfo? info)
+	 then addNewOpAux (info << {names = [Qualified (q, id)]},
+			   r_elts, r_ops)
        else
 	 let (tvs, srt, term) = unpackFirstOpDef info in
 	 case term of 
@@ -839,11 +832,11 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let term = Lambda ([(pat, cond, term)], a) in
 	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
 	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
-	     let spc = addNewOpAux (info << {names = [Qualified (q, id)], 
-					     dfn   = new_dfn},
-				    spc)
+	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
+							 dfn   = new_dfn},
+						r_elts, r_ops)
 	     in
-	       insertOpers (opers, q, spc)
+	       insertOpers (opers, q, r_elts, r_ops)
 
 	   | _ ->
 	     let env = mkEnv (q, id) in
@@ -851,48 +844,56 @@ def toAny     = Term `TranslationBasic.toAny`
 	     let (opers, term) = lambdaLiftTerm (env, term) in
 	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
 	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
-	     let spc = addNewOpAux (info << {names = [Qualified (q, id)], 
-					     dfn   = new_dfn},
-				    spc)
+	     let (r_elts, r_ops) = addNewOpAux (info << {names = [Qualified (q, id)], 
+							 dfn   = new_dfn},
+						r_elts, r_ops)
 	     in
-	       insertOpers (opers, q, spc)
+	       insertOpers (opers, q, r_elts, r_ops)
 
-     def doProp ((pt, pn as Qualified (qname, name), tvs, fmla), spc) =
+     def doProp ((pt, pn as Qualified (qname, name), tvs, fmla),r_elts,r_ops) =
        let env = mkEnv (qname, name) in
        let pos = termAnn(fmla) in
        let fmla = withAnnT(termInnerTerm fmla, pos) in
        let term = makeVarTerm fmla in
        let (opers, term) = lambdaLiftTerm (env, term) in
        let newProp = (pt, pn, tvs, term) in
-       let spc = addProperty (newProp, spc) in
-       insertOpers (opers, UnQualified, spc)
+       let r_elts = Cons(Property newProp,r_elts) in
+       insertOpers (opers, qname, r_elts, r_ops)
 
+     def liftElts(elts,result) =
+       foldr
+         (fn (el,(r_elts,r_ops)) ->
+	  case el of
+	   | Import (s_tm,i_sp,s_elts) ->
+	     let (newElts,newOps) = liftElts(s_elts,([],r_ops)) in
+	     (Cons(Import(s_tm,i_sp,newElts),r_elts),
+	      newOps)
+	   | OpDef(Qualified(q,id)) ->
+	     (case findAQualifierMap(r_ops,q,id) of
+	       | Some info -> doOp(q,id,info,r_elts,r_ops))
+	   | Property p -> doProp(p,r_elts,r_ops)
+	   | _ -> (Cons(el,r_elts),r_ops))
+	 result
+	 elts
    in
-   let ops   = spc.ops in
-   let props = spc.properties in
-   let spc   = {importInfo = spc.importInfo, 
-		sorts      = spc.sorts, 
-		ops        = emptyAQualifierMap, 
-		properties = []}
-   in
-   let spc = foldl doProp spc props in
-   foldriAQualifierMap doOp spc ops
+   let (newElts,newOps) = liftElts(spc.elements, ([],spc.ops)) in
+   spc << {ops        = newOps, 
+	   elements   = newElts}
 
- op  addNewOp : fa (a) QualifiedId * Fixity * ATerm a * ASpec a -> ASpec a
- def addNewOp (name as Qualified (q, id), fixity, dfn, spc) =
-   let info = {names = [name],
-	       fixity = fixity, 
-	       dfn    = dfn,
-	       fullyQualified? = false}
-   in
-     addNewOpAux (info, spc)
+% op  addNewOp : fa (a) QualifiedId * Fixity * ATerm a * ASpec a -> ASpec a
+% def addNewOp (name as Qualified (q, id), fixity, dfn, spc) =
+%   let info = {names = [name],
+%	       fixity = fixity, 
+%	       dfn    = dfn,
+%	       fullyQualified? = false}
+%   in
+%     addNewOpAux (info, spc)
 
- op  addNewOpAux : fa (a) AOpInfo a * ASpec a -> ASpec a
- def addNewOpAux (info, spc) =
+ op  addNewOpAux : fa (a) AOpInfo a * ASpecElements a * AOpMap a -> ASpecElements a * AOpMap a
+ def addNewOpAux (info, elts, ops) =
    let name as Qualified (q, id) = primaryOpName info in
-   let new_ops = insertAQualifierMap (spc.ops, q, id, info) in
-   let spc = setOps (spc, new_ops) in
-   addLocalOpName (spc, name)
+   let new_ops = insertAQualifierMap (ops, q, id, info) in
+   (Cons(OpDef name,elts), new_ops)
 
 endspec
 

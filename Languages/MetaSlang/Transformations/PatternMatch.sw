@@ -824,7 +824,7 @@ def eliminateTerm context term =
 *****)
 	 
 
- def translateMatch (spc : Spec) = 
+ def translateMatch spc = 
    % sjw: Moved (Ref 0) in-line so it is reexecuted for each call so the counter is reinitialized for each
    % call. (This was presumably what was intended as otherwise there would be no need for mkContext
    % to be a function). This means that compiled functions will have the same generated variables
@@ -838,38 +838,42 @@ def eliminateTerm context term =
 	errorIndex = Ref 0,   % used to distinguish error messages
 	term       = None} 
    in
-     {importInfo    = spc.importInfo,
-      sorts         = mapSortInfos (fn info ->
-				    let Qualified (_,id) = primarySortName info in
-				    let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
-				    let new_defs =
-				        map (fn dfn ->
-					     let (tvs, srt) = unpackSort dfn in
-					     let new_sort = eliminateSort (mkContext id) srt in
-					     maybePiSort (tvs, new_sort))
-					    old_defs
-				    in
-				    let new_dfn = maybeAndSort (old_decls ++ new_defs, sortAnn info.dfn) in
-				    info << {dfn = new_dfn}) 
-                                   spc.sorts,
-      ops           = mapOpInfos (fn info ->
-				  let Qualified (_,id) = primaryOpName info in
-				  let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-				  let new_defs = 
-				      map (fn dfn ->
-					   let (tvs, srt, term) = unpackTerm dfn in
-					   let new_srt = eliminateSort (mkContext id) srt in
-					   let new_tm  = eliminateTerm (mkContext id) term in
-					   maybePiTerm (tvs, SortedTerm (new_tm, new_srt, termAnn term)))
-				          old_defs
-				  in
-				  let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
-				  info << {dfn = new_dfn})
-                                 spc.ops,
-      properties    = map (fn (pt, pname as Qualified(_, id), tyvars, term) -> 
-    		  	      (pt, pname, tyvars, eliminateTerm (mkContext id) term)) 
-                          spc.properties
-     } : Spec
+     {%importInfo    = spc.importInfo,
+      sorts      = mapSortInfos (fn info ->
+				 let Qualified (_,id) = primarySortName info in
+				 let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
+				 let new_defs =
+				     map (fn dfn ->
+					  let (tvs, srt) = unpackSort dfn in
+					  let new_sort = eliminateSort (mkContext id) srt in
+					  maybePiSort (tvs, new_sort))
+					 old_defs
+				 in
+				 let new_dfn = maybeAndSort (old_decls ++ new_defs, sortAnn info.dfn) in
+				 info << {dfn = new_dfn}) 
+				spc.sorts,
+      ops        = mapOpInfos (fn info ->
+			       let Qualified (_,id) = primaryOpName info in
+			       let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+			       let new_defs = 
+				   map (fn dfn ->
+					let (tvs, srt, term) = unpackTerm dfn in
+					let new_srt = eliminateSort (mkContext id) srt in
+					let new_tm  = eliminateTerm (mkContext id) term in
+					maybePiTerm (tvs, SortedTerm (new_tm, new_srt, termAnn term)))
+				       old_defs
+			       in
+			       let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
+			       info << {dfn = new_dfn})
+			      spc.ops,
+      elements   = map (fn el ->
+			 case el of
+			   | Property (pt, pname as Qualified(_, id), tyvars, term) -> 
+    		  	     Property (pt, pname, tyvars, eliminateTerm (mkContext id) term)
+			   | _ -> el) 
+                     spc.elements,
+      qualified? = spc.qualified?
+     }
 
 }
 

@@ -1,10 +1,7 @@
-\section{Simple MetaSlang Pretty Printer}
+(* Simple MetaSlang Pretty Printer *)
 
-A simple pretty printer for MetaSlang.
-
-\begin{spec}
 SpecCalc qualifying spec 
-{
+
  import ../AbstractSyntax/SimplePrinter
  import AnnSpec
 
@@ -18,62 +15,67 @@ SpecCalc qualifying spec
 
  %% called via ppObj attribute in specCat
  %% (see /Languages/MetaSlang/Specs/Categories/AsRecord.sw)
-  op ppASpec : fa (a) ASpec a -> Pretty
- def ppASpec (spc as {importInfo,sorts,ops,properties}) = 
-   let ppImports = ppNil in
-   % let {imports,localOps,localSorts} = importInfo in
-   % let ppNames =
-   % map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) imports in
-   % ppSep ppNewline ppNames in
-
-   % this assume that a name used to index into the sort map also appears
-   % in the list of names for that sort.
+  op ppASpec : Spec -> Pretty
+ def ppASpec (spc as {sorts,ops,elements,qualified?}) = 
    let 
-     def doSortInfo sortInfo = ppASortInfo sortInfo %ppConcat [ppString "type ", ppASortInfo sortInfo]
-     def doOpInfo   opInfo   = ppAOpInfo   opInfo   %ppConcat [ppString "op  ",   ppAOpInfo   opInfo]
-   in
-     ppConcat [
-       ppString "spec {",
-       ppIndent (ppSep ppNewline (
-          [ppImports]
-          ++ (map doSortInfo (sortInfosAsList spc))
-          ++ (map doOpInfo (opInfosAsList spc))
-          ++ (map ppAProperty properties))),
-       ppString "}"
+     def lookupSort(Qualified(q,id)) =
+       case findAQualifierMap(sorts,q,id) of
+	 | Some v -> v
+     def lookupOp(Qualified(q,id)) =
+       case findAQualifierMap(ops,q,id) of
+	 | Some v -> v
+     def ppAOp qId = ppAOpInfo (lookupOp qId)
+     def ppASort qId = ppASortInfo (lookupSort qId)
+     def ppComment str = ppString str	% !! May need to change
+     def ppElements elts =
+       foldr (fn (el,result) ->
+	      case el of
+		| Property prop -> Cons(ppAProperty prop,result)
+		| Op qId        -> Cons(ppAOp qId,result) % Currently does def as well
+		| OpDef qId     -> result  % Cons(ppAOpDef qId,result)
+		| Sort qId      -> Cons(ppASort qId, result)
+		| SortDef qId   -> result  % Cons(ppASortDef qId,result)
+		| Comment str   -> Cons(ppComment str, result)
+		| Import(_,_,impElts) -> (ppElements impElts) ++ result)
+	 [] elts
+  in
+     
+     ppConcat [ppString "spec ",
+	       ppIndent (ppSep ppNewline (ppElements elements)),
+	       ppString "endspec"
 	      ]
 
  %% not called by Specware per se (see PSL)
-  op ppASpecLocal : fa (a) ASpec a -> Pretty
- def ppASpecLocal (spc as {importInfo,sorts,ops,properties}) = 
-   let {imports,localOps,localSorts,localProperties=_} = importInfo in
-   let ppImports =
-       let ppNames =
-           map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) 
-	       spc.importInfo.imports 
-       in
-	 ppSep ppNewline ppNames 
-   in
-   % this assume that a name used to index into the sort map also appears
-   % in the list of names for that sort.
+  op ppASpecLocal : Spec -> Pretty
+ def ppASpecLocal (spc as {sorts,ops,elements,qualified?}) = 
    let 
-     def doSortInfo sortInfo = ppASortInfo sortInfo
-     def doOpInfo   opInfo   = ppAOpInfo   opInfo
-   in
-    ppConcat [
-      ppString "spec {",
-      ppIndent (ppConcat [
-        ppNewline,
-        ppSep ppNewline [
-          ppImports,    
-          ppSep ppNewline (map doSortInfo (filter (fn info -> member (primarySortName info, localSorts))
-					          (sortInfosAsList spc))),
-          ppSep ppNewline (map doOpInfo   (filter (fn info -> member (primaryOpName   info, localOps))
-					           (opInfosAsList spc))),
-          ppSep ppNewline (map ppAProperty (localProperties spc))
-        ]
-      ]),
-      ppString "}"
-	     ]
+     def lookupSort(Qualified(q,id)) =
+       case findAQualifierMap(sorts,q,id) of
+	 | Some v -> v
+     def lookupOp(Qualified(q,id)) =
+       case findAQualifierMap(ops,q,id) of
+	 | Some v -> v
+     def ppAOp qId = ppAOpInfo (lookupOp qId)
+     def ppASort qId = ppASortInfo (lookupSort qId)
+     def ppComment str = ppString str	% !! May need to change
+     def ppElements elts =
+       foldr (fn (el,result) ->
+	      case el of
+		| Property prop -> Cons(ppAProperty prop,result)
+		| Op qId        -> Cons(ppAOp qId,result) % Currently does def as well
+		| OpDef qId     -> result  % Cons(ppAOpDef qId,result)
+		| Sort qId      -> Cons(ppASort qId, result)
+		| SortDef qId   -> result  % Cons(ppASortDef qId,result)
+		| Comment str   -> Cons(ppComment str, result)
+		| Import(specCalcTerm,_,_) -> Cons(ppString("import " ^ (showTerm specCalcTerm)), result))
+	 [] elts
+  in
+     
+     ppConcat [ppString "spec ",
+	       ppIndent (ppSep ppNewline (ppElements elements)),
+	       ppString "endspec"
+	      ]
+
 
  %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
   op ppASortInfo : fa (a) ASortInfo a -> Pretty
@@ -236,5 +238,4 @@ SpecCalc qualifying spec
      | Conjecture -> ppString "conjecture"
      | mystery ->
        fail ("No match in ppPropertyType with mysterious property: '" ^ (anyToString mystery) ^ "'")
-}
-\end{spec}
+endspec

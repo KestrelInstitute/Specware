@@ -1,4 +1,4 @@
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import /Languages/MetaSlang/Specs/Categories/AsRecord
   import /Languages/MetaSlang/Specs/Printer
   import /Languages/SpecCalculus/AbstractSyntax/Printer
@@ -6,7 +6,7 @@ SpecCalc qualifying spec {
 
   sort OtherValue                % Used for extensions to Specware
 
-  sort SCTerm			 % Defined in Evaluate/Signature.sw
+  sort SCTerm			 % Defined in ../AbstractSyntax/Types
 
   sort Value =
     | Spec        Spec
@@ -63,4 +63,4 @@ SpecCalc qualifying spec {
   (* tentative *)
   def ppInterp {dom=_, med=_, cod=_, d2m=_, c2m=_} =
     ppString "<some interp>"
-}
+endspec

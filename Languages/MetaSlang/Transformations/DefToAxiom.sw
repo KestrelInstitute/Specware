@@ -178,23 +178,22 @@ Prover qualifying spec
     else [mkDefEquality (srt, name, term)]
 *)
 
-  op axiomFromOpTop: Spec * Qualifier * Id * OpInfo -> Properties
-  def axiomFromOpTop (spc, q, id, info) =
-    axiomFromOpDefTop (spc, q, id, info) ++ 
-    axiomFromOpSrtTop (spc, q, id, info)
 
-  op axiomFromOpDefTop: Spec * Qualifier * Id * OpInfo -> Properties
-  def axiomFromOpDefTop (spc, q, id, info) =
+  op axiomFromOpTop: Spec * QualifiedId * OpInfo -> SpecElements
+  def axiomFromOpTop (spc, qid, info) =
+    axiomFromOpDefTop (spc, qid, info) ++ 
+    axiomFromOpSrtTop (spc, qid, info)
+
+  op axiomFromOpDefTop: Spec * QualifiedId * OpInfo -> SpecElements
+  def axiomFromOpDefTop (spc, qid as Qualified(q,id), info) =
     case opInfoDefs info of
       | [] -> []
       | defs ->
         %% new: fold over all defs (but presumably just one for now)
         foldl (fn (dfn, props) ->
 	       let (tvs, srt, term) = unpackTerm dfn in
-	       let localOps = spc.importInfo.localOps in
-	       if memberQualifiedId (q, id, localOps) then
+	       if localOp? (qid, spc) then
 		 let pos = termAnn term in
-		 let qid = Qualified (q, id) in
 		 let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
 		 %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
 		 %let unTupleAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
@@ -204,7 +203,8 @@ Prover qualifying spec
 		 let liftedFmlas = removePatternTop(spc, initialFmla) in
 		 %let simplifiedLiftedFmlas = map (fn fmla -> simplify (spc, fmla)) liftedFmlas in
 		 %let _ = if id = "p" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
-		 let defAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) liftedFmlas in
+		 let defAxioms = map (fn (fmla:MS.Term) ->
+				      Property(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) liftedFmlas in
 		 %%let ax:Property = (Axiom, id^"_def", [], hd (unLambdaDef (spc, srt, qid, term))) in
 		 %let _ = writeLine (id^": in axiomFromOpDef Def part") in
 		 props ++ defAxioms ++ unTupleAxioms
@@ -215,21 +215,19 @@ Prover qualifying spec
 	      []
 	      defs
 
-   op axiomFromOpSrtTop: Spec * Qualifier * Id * OpInfo -> Properties
-  def axiomFromOpSrtTop (spc, q, id, info) =
+   op axiomFromOpSrtTop: Spec * QualifiedId * OpInfo -> SpecElements
+  def axiomFromOpSrtTop (spc, qid as Qualified(q,id), info) =
     let srt = firstOpDefInnerSort info in
-    let localOps = spc.importInfo.localOps in
-    if memberQualifiedId (q, id, localOps) then
+    if true then   %localOp? (qid, spc) then
       let pos = sortAnn srt in
-      let qid = Qualified (q, id) in
       let subTypeFmla = opSubsortAxiom (spc, qid, srt) in
       let liftedFmlas = removePatternTop(spc, subTypeFmla) in
       let subTypeAxioms =
           map (fn (fmla : MS.Term) -> 
-	       (Axiom, 
-		mkQualifiedId (q, id^"_def"), 
-		[], 
-		withAnnT (fmla, pos))) 
+	       Property(Axiom, 
+			mkQualifiedId (q, id^"_def"), 
+			[], 
+			withAnnT (fmla, pos))) 
 	      liftedFmlas 
       in
 	%(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (subTypeFmla, pos)) in
@@ -238,6 +236,7 @@ Prover qualifying spec
       %let _ = writeLine (id^": in axiomFromOpDef Def part is not local") in
       %let _ = debug "not local op" in
       []
+
 
   op foldRecordFmla: Spec * Sort * MS.Term -> List MS.Term
   def foldRecordFmla (spc, srt, fmla) =
@@ -290,12 +289,12 @@ Prover qualifying spec
     in
       mkSubstProjForVarRec (vars, fields)
 
-  op axiomFromPropTop: Spec * Property -> Properties
+  op axiomFromPropTop: Spec * Property -> SpecElements
   def axiomFromPropTop(spc, prop) =
     let (pt, pn, tv, fmla) = prop in
     let pos = termAnn(fmla) in
     let newFmlas = removePatternTop(spc, fmla) in
-    let newProps = map (fn f -> (pt, pn, tv, f)) newFmlas in
+    let newProps = map (fn f -> Property(pt, pn, tv, f)) newFmlas in
     newProps
 
 endspec

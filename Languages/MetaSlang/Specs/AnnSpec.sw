@@ -27,15 +27,16 @@ AnnSpec qualifying spec
 
  type ASpecs b = List (ASpec b)
 
- type ASpec b = {importInfo   : ImportInfo,	% importInfo is ignored by equality test on specs
-		 sorts        : ASortMap    b,
-		 ops          : AOpMap      b,
-		 properties   : AProperties b}
+ type ASpec b = {%importInfo : ImportInfo, 	% importInfo is ignored by equality test on specs
+		 sorts      : ASortMap    b,
+		 ops        : AOpMap      b,
+		 elements   : ASpecElements b,
+		 qualified? : Boolean}
 
- type ImportInfo = {imports         : Imports,
-		    localOps        : OpNames,
-		    localSorts      : SortNames,
-		    localProperties : PropertyNames}
+% type ImportInfo = {imports         : Imports,
+%		    localOps        : OpNames,
+%		    localSorts      : SortNames,
+%		    localProperties : PropertyNames}
 
  type SortNames      = List SortName
  type OpNames        = List OpName
@@ -47,10 +48,6 @@ AnnSpec qualifying spec
  type Aliases      = QualifiedIds
  type QualifiedIds = List QualifiedId 
 
-  op someAliasIsLocal? : Aliases * QualifiedIds -> Boolean
- def someAliasIsLocal? (aliases, local_names) =
-   exists (fn qid -> member (qid, local_names)) aliases 
-    
  type Imports = List Import
  type Import  = (SpecCalc.Term Position) * Spec
 
@@ -65,9 +62,43 @@ AnnSpec qualifying spec
 		     dfn    : ATerm b,
 		     fullyQualified?: Boolean}
 
- type AProperties   b  = List (AProperty b) 
- type AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
- type PropertyType     = | Axiom | Theorem | Conjecture
+ type ASpecElements b  = List (ASpecElement b)
+ type ASpecElement b =
+   | Import ((SpecCalc.Term Position) * Spec * SpecElements)
+   | Op QualifiedId
+   | OpDef QualifiedId
+   | Sort QualifiedId
+   | SortDef QualifiedId
+   | Property (AProperty b)
+   | Comment String
+
+ type SpecElement  = ASpecElement  StandardAnnotation
+ type SpecElements = ASpecElements StandardAnnotation
+
+ op  propertyElement?: [a] ASpecElement a -> Boolean
+ def propertyElement? p =
+   case p of
+     | Property _ -> true
+     | _ -> false
+
+ op  sameSpecElement?: [a] ASpecElement a * ASpecElement a -> Boolean
+ def sameSpecElement?(e1,e2) =
+   case e1 of
+     | Import(_,s1,_) ->
+       (case e2 of
+	 | Import(_,s2,_) -> s1 = s2
+	 | _ -> false)
+     | Property p1 ->
+	(case e2 of
+	 | Property p2 -> propertyName p1 = propertyName p2
+	 | _ -> false)
+     | _ -> e1 = e2
+
+ type AProperty   a = PropertyType * PropertyName * TyVars * ATerm a
+ type PropertyType  = | Axiom | Theorem | Conjecture
+ type AProperties a = List(AProperty a)
+ type Property      = AProperty   StandardAnnotation
+ type Properties    = AProperties StandardAnnotation
  
  op primarySortName : [b] ASortInfo b -> SortName
  op primaryOpName   : [b] AOpInfo   b -> OpName
@@ -235,19 +266,30 @@ AnnSpec qualifying spec
    
  def firstSortDefInnerSort info =
    sortInnerSort (hd (sortInfoDefs info)) % fail if no decl but no def
-   
+
+ %%% Qualification flag
+ op qualifiedSpec?: [a] ASpec a -> Boolean
+ op markQualified:  [a] ASpec a -> ASpec a
+ 
+ def qualifiedSpec? spc = spc.qualified?
+ def markQualified  spc = spc << {qualified? = true}
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
-  op mapSpec : [b] TSP_Maps b -> ASpec b -> ASpec b
- def mapSpec tsp {importInfo, sorts, ops, properties} =
+ %%% Can't make mapSpec polymorphic because elements in imports have to be Standard
+
+ type TSP_Maps_St = TSP_Maps StandardAnnotation
+  op mapSpec : TSP_Maps_St -> Spec -> Spec
+ def mapSpec tsp {sorts, ops, elements, qualified?} =
    {
-    importInfo       = importInfo,
-    sorts            = mapSpecSorts      tsp sorts,
-    ops              = mapSpecOps        tsp ops,
-    properties       = mapSpecProperties tsp properties
+    %importInfo   = importInfo,
+    sorts        = mapSpecSorts    tsp sorts,
+    ops          = mapSpecOps      tsp ops,
+    elements     = mapSpecProperties tsp elements,
+    qualified?   = qualified?
    }
 
   op mapSpecSorts : [b] TSP_Maps b -> ASortMap b -> ASortMap b 
@@ -261,13 +303,14 @@ AnnSpec qualifying spec
               ops
 
  %%% Only map over unqualified ops (for use in qualify)
- op  mapSpecUnqualified : [b] TSP_Maps b -> ASpec b -> ASpec b
- def mapSpecUnqualified tsp {importInfo, sorts, ops, properties} =
+ op  mapSpecUnqualified : TSP_Maps_St -> Spec -> Spec
+ def mapSpecUnqualified tsp {sorts, ops, elements, qualified?} =
    {
-    importInfo       = importInfo,
-    sorts            = mapSpecSorts tsp sorts,
-    ops              = mapSpecOpsUnqualified tsp ops,
-    properties       = mapSpecProperties tsp properties
+    %importInfo   = importInfo,
+    sorts        = mapSpecSorts tsp sorts,
+    ops          = mapSpecOpsUnqualified tsp ops,
+    elements     = mapSpecProperties tsp elements,
+    qualified?   = qualified?
    }
 
  op  mapSpecOpsUnqualified : [b] TSP_Maps b -> AOpMap b -> AOpMap b
@@ -421,23 +464,115 @@ AnnSpec qualifying spec
 	())
      ops
 
-  op mapSpecProperties : [b] TSP_Maps b -> AProperties b ->  AProperties b 
- def mapSpecProperties tsp properties =
-   map (fn (pt, nm, tvs, term) -> 
-           (pt, nm, tvs, mapTerm tsp term))
-       properties
+  op mapSpecProperties : TSP_Maps StandardAnnotation -> SpecElements -> SpecElements 
+ def mapSpecProperties tsp elements =
+   map (fn el ->
+	case el of
+	  | Property(pt, nm, tvs, term) -> Property(pt, nm, tvs, mapTerm tsp term)
+	  | Import (s_tm,i_sp,elts) -> Import (s_tm,i_sp,mapSpecProperties tsp elts)
+	  | _ -> el)
+       elements
+
+ op  mapSpecElements: (SpecElement -> SpecElement) -> SpecElements -> SpecElements
+ def mapSpecElements f elements =
+   map (fn el ->
+	case el of
+	  | Import (s_tm,i_sp,elts) -> f(Import (s_tm,i_sp,mapSpecElements f elts))
+	  | _ -> f el)
+     elements
+
+ op  mapPartialSpecElements: (SpecElement -> Option SpecElement) -> SpecElements -> SpecElements
+ def mapPartialSpecElements f elements =
+   mapPartial
+     (fn el ->
+      case f el of
+	| Some(Import (s_tm,i_sp,elts)) ->
+	  Some(Import (s_tm,i_sp,mapPartialSpecElements f elts))
+	| new_el -> new_el)
+     elements
+
+ op  filterSpecElements: (SpecElement -> Boolean) -> SpecElements -> SpecElements
+ def filterSpecElements p elements =
+   mapPartial
+     (fn el ->
+      if ~(p el) then None
+	else 
+	  Some(case el of
+		 | Import (s_tm,i_sp,elts) ->
+		   Import (s_tm,i_sp,filterSpecElements p elts)
+		 | _ ->  el))
+     elements
+
+
+ op  foldlSpecElements: [a] (SpecElement * a -> a) -> a -> SpecElements -> a
+ def foldlSpecElements f ini els =
+   foldl (fn (el,result) ->
+	  case el of
+	    | Import (s_tm,i_sp,elts) ->
+	      let result1 = foldlSpecElements f (f(el,result)) elts in
+	      f(el,result1)
+	    | _ -> f(el,result))
+     ini els
+
+ op  foldrSpecElements: [a] (SpecElement * a -> a) -> a -> SpecElements -> a
+ def foldrSpecElements f ini els =
+   foldr (fn (el,result) ->
+	  case el of
+	    | Import (s_tm,i_sp,elts) ->
+	      let result1 = foldrSpecElements f result elts in
+	      f(el,result1)
+	    | _ -> f(el,result))
+     ini els
+
+ op  mapFoldrSpecElements: [a] (SpecElement * a -> a) -> a -> SpecElements -> a
+ def mapFoldrSpecElements f ini els =
+   foldr (fn (el,result) ->
+	  case el of
+	    | Import (s_tm,i_sp,elts) ->
+	      let result1 = mapFoldrSpecElements f result elts in
+	      f(el,result1)
+	    | _ -> f(el,result))
+     ini els
+
+ op  existsSpecElement?: (SpecElement -> Boolean) -> SpecElements -> Boolean
+ def existsSpecElement? p els =
+   foldrSpecElements (fn (el,result) -> result || p el) false els
+
+ %% Just removes duplicate imports although could also remove other duplicate elements
+ %% but this would be more expensive and maybe not that helpful
+ op  removeDuplicateImports: Spec -> Spec
+ def removeDuplicateImports spc =
+   let def mapEls(els,imports) =
+         case els of
+	   | [] -> ([],imports)
+	   | el::r_els ->
+	     (case el of
+	       | Import (s_tm,i_sp,s_els) ->
+		 if member(i_sp,imports)
+		   then mapEls(r_els,imports)
+		   else let (reduced_s_els,imports) = mapEls(s_els,imports) in
+		        let (reduced_els,  imports) = mapEls(r_els,Cons(i_sp,imports)) in
+			(Cons(Import (s_tm,i_sp,reduced_s_els),reduced_els),imports)
+	       | _ ->
+		 let (reduced_els,imports) = mapEls(r_els,imports) in
+		 (Cons(el,reduced_els),imports))
+   in
+   let (reduced_els,_) = mapEls(spc.elements,[]) in
+   spc << {elements = reduced_els}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
-  op appSpec    : [a] appTSP a -> ASpec a    -> ()
+ type appTSP_St = appTSP StandardAnnotation
+
+  op appSpec    : appTSP_St -> Spec -> ()
  def appSpec tsp_apps spc = 
    (
     appSpecOps        tsp_apps spc.ops;
     appSpecSorts      tsp_apps spc.sorts; 
-    appSpecProperties tsp_apps spc.properties
+    appSpecElements   tsp_apps spc.elements
    )
 
   op appSpecSorts : [a] appTSP a -> ASortMap a -> ()
@@ -448,11 +583,14 @@ AnnSpec qualifying spec
  def appSpecOps tsp ops =
    appAQualifierMap (fn info -> appTerm tsp info.dfn) ops
     
-  op appSpecProperties : [a] appTSP a -> AProperties a -> ()
- def appSpecProperties tsp properties =
-    app (fn (_, _, _, term) -> 
-	 appTerm tsp term)
-        properties
+  op appSpecElements :  appTSP_St -> SpecElements -> ()
+ def appSpecElements tsp elements =
+    app (fn  el ->
+	 case el of
+	  | Property(_, _, _, term) -> appTerm tsp term
+	  | Import (_,_,elts) -> appSpecElements tsp elts
+	  | _ -> ())
+        elements
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Sorts, Ops
@@ -537,77 +675,194 @@ AnnSpec qualifying spec
  %%%                Spec Consructors
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op emptySpec           : [a] ASpec         a
- op emptyImports        : Imports
- op emptyAProperties    : [a] AProperties   a
- op emptyASortMap       : [a] AQualifierMap a
- op emptyAOpMap         : [a] AQualifierMap a
- op initialSpecInCat    : [a] ASpec         a
+ op emptySpec         : [a] ASpec         a
+ op emptyImports      : Imports
+ op emptyAElements    : [a] ASpecElements   a
+ op emptyASortMap     : [a] AQualifierMap a
+ op emptyAOpMap       : [a] AQualifierMap a
+ op initialSpecInCat  : [a] ASpec         a
 
- %% Create new spec with altered name, imports, sorts, ops, properties, etc.
+ %% Create new spec with altered name, imports, sorts, ops, elements, etc.
 
- op setImportInfo       : [a] ASpec a * ImportInfo       -> ASpec a
- op setImports          : [a] ASpec a * Imports          -> ASpec a
- op setLocalOps         : [a] ASpec a * OpNames          -> ASpec a
- op setLocalSorts       : [a] ASpec a * SortNames        -> ASpec a
- op setLocalProperties  : [a] ASpec a * PropertyNames    -> ASpec a
- op setSorts            : [a] ASpec a * ASortMap    a    -> ASpec a
- op setOps              : [a] ASpec a * AOpMap      a    -> ASpec a
- op setProperties       : [a] ASpec a * AProperties a    -> ASpec a
+% op setImportInfo    : [a] ASpec a * ImportInfo       -> ASpec a
+ op setImports       : [a] ASpec a * Imports          -> ASpec a
+ op setLocalOps      : [a] ASpec a * OpNames          -> ASpec a
+ op setLocalSorts    : [a] ASpec a * SortNames        -> ASpec a
+ op setLocalElements : [a] ASpec a * PropertyNames    -> ASpec a
+ op setSorts         : [a] ASpec a * ASortMap    a    -> ASpec a
+ op setOps           : [a] ASpec a * AOpMap      a    -> ASpec a
+ op setElements      : [a] ASpec a * ASpecElements a  -> ASpec a
+ op appendElement    : [a] ASpec a * ASpecElement a   -> ASpec a
+ op prependElement   : [a] ASpec a * ASpecElement a   -> ASpec a
+ op addElementAfter  : [a] ASpec a * ASpecElement a * ASpecElement a -> ASpec a
+
 
  % substract the ops and sorts in the second argument from those
  % appearing in the first.
- op subtractSpec        : [a] ASpec a -> ASpec a -> ASpec a
- op subtractSpecProperties: [a] ASpec a * ASpec a -> ASpec a
+ op subtractSpec        :      Spec -> Spec -> Spec
+ op subtractLocalSpecElements: [a] ASpec a * ASpec a -> ASpec a
+ op subtractSpecProperties:    Spec * Spec -> Spec
 
- %% Create new spec with added sort, op, property, import, etc.
 
- op localOp?            : [a] QualifiedId * ASpec a -> Boolean
- op localSort?          : [a] QualifiedId * ASpec a -> Boolean
- op localProperty?      : [a] QualifiedId * ASpec a -> Boolean
- op localProperties     : [a] ASpec a -> AProperties a
+ op someSortAliasIsLocal? : [b] Aliases * ASpec b -> Boolean
+ op someOpAliasIsLocal?   : [b] Aliases * ASpec b -> Boolean
+
+ op getQIdIfOp: [a] ASpecElement a -> Option QualifiedId
+
+ op localOp?          : [a] QualifiedId * ASpec a -> Boolean
+ op localSort?        : [a] QualifiedId * ASpec a -> Boolean
+ op localProperty?    : [a] QualifiedId * ASpec a -> Boolean
+ op localProperties   : [a] ASpec a -> AProperties a
+ op allProperties     : Spec -> Properties
+ op localOps          : [a] ASpec a -> List QualifiedId
+ op hasLocalOp?       : [a] ASpec a -> Boolean
+ op localSorts        : [a] ASpec a -> List QualifiedId
+ op hasLocalSort?     : [a] ASpec a -> Boolean
+ op localImports      : [a] ASpec a -> Imports
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                ImportedSpecs operations 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def emptyImports         = []
- def [a] emptyAProperties = []
- def emptyASortMap        = emptyAQualifierMap
- def emptyAOpMap          = emptyAQualifierMap
- def emptyImportInfo      = {imports      = emptyImports,
-                             localOps     = emptyOpNames,
-                             localSorts   = emptySortNames,
-			     localProperties = emptyPropertyNames}
+ def emptyImports       = []
+ def [a] emptyAElements = []
+ def emptyASortMap      = emptyAQualifierMap
+ def emptyAOpMap        = emptyAQualifierMap
+% def emptyImportInfo    = {imports      = emptyImports,
+%			   localOps     = emptyOpNames,
+%			   localSorts   = emptySortNames,
+%			   localProperties = emptyPropertyNames}
 
  def emptySpec = 
-  {importInfo       = emptyImportInfo,
-   sorts            = emptyASortMap,
-   ops              = emptyAOpMap,
-   properties       = emptyAProperties}
+  {%importInfo     = emptyImportInfo,
+   sorts          = emptyASortMap,
+   ops            = emptyAOpMap,
+   elements       = emptyAElements,
+   qualified?     = true}
 
  def initialSpecInCat = 
-  {importInfo       = emptyImportInfo,  
-   sorts            = emptyASortMap,   
-   ops              = emptyAOpMap,     
-   properties       = emptyAProperties}
+  {%importInfo     = emptyImportInfo,  
+   sorts          = emptyASortMap,   
+   ops            = emptyAOpMap,     
+   elements       = emptyAElements,
+   qualified?     = true}
 
- def setImports         (spc, new_imports)     = spc << {importInfo = spc.importInfo << {imports         = new_imports}}
- def setLocalOps        (spc, new_local_ops)   = spc << {importInfo = spc.importInfo << {localOps        = new_local_ops}}
- def setLocalSorts      (spc, new_local_sorts) = spc << {importInfo = spc.importInfo << {localSorts      = new_local_sorts}}
- def setLocalProperties (spc, new_local_props) = spc << {importInfo = spc.importInfo << {localProperties = new_local_props}}
+% def setImports       (spc, new_imports)     =
+%   spc << {importInfo = spc.importInfo << {imports         = new_imports}}
+% def setLocalOps      (spc, new_local_ops)   =
+%   spc << {importInfo = spc.importInfo << {localOps        = new_local_ops}}
+% def setLocalSorts    (spc, new_local_sorts) =
+%   spc << {importInfo = spc.importInfo << {localSorts      = new_local_sorts}}
+% def setLocalElements (spc, new_local_props) =
+%   spc << {importInfo = spc.importInfo << {localProperties = new_local_props}}
 
- def setImportInfo (spc, new_import_info) = spc << {importInfo = new_import_info}
- def setSorts      (spc, new_sorts)       = spc << {sorts      = new_sorts}
- def setOps        (spc, new_ops)         = spc << {ops        = new_ops}
- def setProperties (spc, new_properties)  = spc << {properties = new_properties}
+% def setImportInfo (spc, new_import_info) = spc << {importInfo = new_import_info}
+ def setSorts   (spc, new_sorts)    = spc << {sorts      = new_sorts}
+ def setOps     (spc, new_ops)      = spc << {ops        = new_ops}
+ def setElements(spc, new_elements) = spc << {elements = new_elements}
 
- def localOp?       (Qualified (q, id), spc) = memberQualifiedId (q, id, spc.importInfo.localOps)
- def localSort?     (Qualified (q, id), spc) = memberQualifiedId (q, id, spc.importInfo.localSorts)
- def localProperty? (Qualified (q, id), spc) = memberQualifiedId (q, id, spc.importInfo.localProperties)
+ def appendElement  (spc, new_element) = spc << {elements = spc.elements ++ [new_element]}
+ def prependElement (spc, new_element) = spc << {elements = Cons(new_element,spc.elements)}
+ def addElementAfter(spc, new_element, old_element) =
+   spc << {elements = let elts = spc.elements in
+	              let i = index(elts,old_element) in
+		      take(i,elts) ++ [new_element] ++ drop(i,elts)}
+
+ def someOpAliasIsLocal? (aliases, spc) =
+   exists (fn el ->
+	   case el of
+	     | Op qid    -> member(qid,aliases)
+	     | OpDef qid -> member(qid,aliases)
+	     | _ -> false)
+     spc.elements
+ 
+ def someSortAliasIsLocal? (aliases, spc) =
+   exists (fn el ->
+	   case el of
+	     | Sort qid    -> member(qid,aliases)
+	     | SortDef qid -> member(qid,aliases)
+	     | _ -> false)
+     spc.elements
+    
+ def getQIdIfOp el =
+   case el of
+     | Op qid    -> Some qid
+     | OpDef qid -> Some qid
+     | _ -> None
+
+ def localOp?       (qid, spc) = exists (fn el ->
+					  case el of
+					   | Op qid1    -> qid = qid1
+					   | OpDef qid1 -> qid = qid1
+					   | _ -> false)
+                                   spc.elements
+ def localSort?     (qid, spc) = exists (fn el ->
+					  case el of
+					   | Sort qid1    -> qid = qid1
+					   | SortDef qid1 -> qid = qid1
+					   | _ -> false)
+                                   spc.elements
+ def localProperty? (qid, spc) = exists (fn el ->
+					  case el of
+					   | Property (_,qid1,_,_) -> qid = qid1
+					   | _ -> false)
+                                   spc.elements
 
  def localProperties spc =
-   filter (fn p -> localProperty? (propertyName p, spc)) spc.properties
+    mapPartial (fn el ->
+		case el of
+		  | Property p -> Some p
+		  | _ -> None)
+       spc.elements
+
+ def localOps  spc =
+    removeDuplicates(mapPartial (fn el ->
+				 case el of
+				   | Op qid -> Some qid
+				   | OpDef qid -> Some qid
+				   | _ -> None)
+		       spc.elements)
+
+ def localSorts  spc =
+    removeDuplicates(mapPartial (fn el ->
+				 case el of
+				   | Sort qid -> Some qid
+				   | SortDef qid -> Some qid
+				   | _ -> None)
+		       spc.elements)
+
+
+ def allProperties spc =
+   foldrSpecElements (fn (el,result) ->
+		      case el of
+		       | Property p -> Cons(p,result)
+		       | _ -> result)
+     []
+     spc.elements
+
+ def hasLocalOp? spc =
+   exists (fn el ->
+	   case el of
+	     | Op _    -> true
+	     | OpDef _ -> true
+	     | _ -> false)
+     spc.elements
+
+ def hasLocalSort? spc =
+   exists (fn el ->
+	   case el of
+	     | Sort _    -> true
+	     | SortDef _ -> true
+	     | _ -> false)
+     spc.elements
+
+ def localImports spc =
+   mapPartial (fn el ->
+	       case el of
+		 | Import(sp_tm,sp,_) -> Some(sp_tm,sp)
+		 | _ -> None)
+     spc.elements
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -685,8 +940,8 @@ AnnSpec qualifying spec
                        emptyAQualifierMap 
                        xMap
 
-  op mapDiffSorts : [a] ASortMap a -> ASortMap a -> ASortMap a
- def mapDiffSorts xMap yMap =
+  op  mapDiffSorts : [a] ASortMap a -> ASortMap a -> ASortMap a
+  def mapDiffSorts xMap yMap =
    foldriAQualifierMap (fn (q, id, x_info, newMap) ->
 			case findAQualifierMap (yMap, q, id) of
                           | None -> 
@@ -704,28 +959,67 @@ AnnSpec qualifying spec
                        emptyAQualifierMap 
                        xMap
 
- def subtractSpec x y = 
-   {importInfo = x.importInfo,
-    properties = foldr (fn (x, props) ->
-			if member (x, y.properties) then
-			  props
-			else
-			  Cons (x, props)) 
-                       [] x.properties,
-    ops        = mapDiffOps   x.ops   y.ops,
-    sorts      = mapDiffSorts x.sorts y.sorts}
+  def subtractSpec x y = 
+    {%importInfo = x.importInfo,
+     elements = filterSpecElements (fn el ->
+				    (case el of
+				      | Import(_,i_sp,_) -> ~(i_sp = y)
+				      | _ -> true)
+				    && ~(existsSpecElement? (fn el2 -> sameSpecElement?(el2, el))
+						 y.elements))
+		   x.elements,
+     ops      = mapDiffOps   x.ops   y.ops,
+     sorts    = mapDiffSorts x.sorts y.sorts,
+     qualified? = x.qualified?}
 
   def subtractSpecProperties(spec1, spec2) =
-    let spec2PropNames = map (fn (pt, pn, tv, tm) -> pn) spec2.properties in
-    let newProperties =
-        filter (fn (pt, pn, tv, tm) -> ~(member(pn, spec2PropNames))) spec1.properties in
+    let spec2PropNames = foldrSpecElements (fn (el,result) ->
+					    case el of
+					      | Property(_, pn, _, _) -> Cons(pn,result)
+					      | _ -> result)
+                           []
+			   spec2.elements
+    in
+    let newElements =
+        filterSpecElements (fn el ->
+			    case el of
+			      | Property(_, pn, _, _) -> ~(member(pn, spec2PropNames))
+			      | _ -> ~(existsSpecElement? (fn el2 -> sameSpecElement?(el2, el))
+				         spec2.elements))
+	  spec1.elements
+    in
     {
-     importInfo = spec1.importInfo,
-     properties = newProperties,
+     %importInfo = spec1.importInfo,
+     elements = newElements,
      ops   = spec1.ops,
      %ops   = mapDiffOps spec1.ops spec2.ops,
-     sorts = spec1.sorts
+     sorts = spec1.sorts,
      %sorts = mapDiffSorts spec1.sorts spec2.sorts
+     qualified? = spec1.qualified?
+   }
+ 
+  def subtractLocalSpecElements(spec1, spec2) =
+    let spec2PropNames = mapPartial (fn el ->
+				     case el of
+				       | Property(_, pn, _, _) -> Some pn
+				       | _ -> None)
+          spec2.elements
+    in
+    let newElements =
+        filter (fn el ->
+		case el of
+		  | Property(_, pn, _, _) -> ~(member(pn, spec2PropNames))
+		  | _ -> ~(member(el, spec2.elements)))
+	  spec1.elements
+    in
+    {
+     %importInfo = spec1.importInfo,
+     elements = newElements,
+     ops   = spec1.ops,
+     %ops   = mapDiffOps spec1.ops spec2.ops,
+     sorts = spec1.sorts,
+     %sorts = mapDiffSorts spec1.sorts spec2.sorts
+     qualified? = spec1.qualified?
    }
   
   op addDisjointImport: Spec * Spec -> Spec
@@ -747,7 +1041,7 @@ AnnSpec qualifying spec
    let spc      = setSorts (spc, newSorts) in
    let newOps   = foldriAQualifierMap mergeOpStep   spc.ops   imported_spec.ops   in
    let spc      = setOps   (spc, newOps)   in
-   setProperties (spc, spc.properties ++ imported_spec.properties)
+   setElements (spc, spc.elements ++ imported_spec.elements)
 
 
 endspec

@@ -2,6 +2,7 @@
 
 spec
 
+  import Base/Empty      % So that spec can avoid importing Base spec
   import Base/String     % imported by System       imports Char, List       
   import Base/Char       % imported by String       imports Integer          
   import Base/List       % imported by String       imports Integer, Option

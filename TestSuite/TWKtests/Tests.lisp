@@ -53,6 +53,7 @@
 	    (:optional ";; Directory $TESTDIR/Snark/Switch/ does not exist, will create.")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/Switch/p1.sw")
 	    "    Snark Log file: $TESTDIR/Snark/Switch/p1.log"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark."
 	    "")
   )
@@ -67,9 +68,9 @@
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/ThreeValue/ThreeP.log")
 	    (:optional ";; ensure-directories-exist: creating")
 	    (:optional ";;   $TESTDIR/Snark/ThreeValue/ThreeP.log")
-	    (:alternatives ";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will create."
-	     (";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will"
-	      ";;   create."))
+	    (:optional ";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will create.")
+	    (:optional ";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will")
+	    (:optional ";;   create.")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/ThreeValue/ThreeP.sw")
 	    "    Snark Log file: $TESTDIR/Snark/ThreeValue/ThreeP.log"
 	    "ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark."

@@ -284,7 +284,7 @@ Extract rewrite rules from a specification.
 
  def specRules context spc = 
      let spc      = normalizeSpec spc            in
-     let axmRules = flatten (List.map (axiomRules context) spc.properties) in
+     let axmRules = flatten (List.map (axiomRules context) (allProperties spc)) in
      let opRules  = foldriAQualifierMap
                       (fn (q,id,opinfo,val) ->
 		        (defRule (context,q,id,opinfo)) ++ val)

@@ -1,35 +1,43 @@
 Prover qualifying spec
  import DefToAxiom
  import SortToAxiom
- import OpToAxiom
+% import OpToAxiom
 
   op explicateHiddenAxioms: Spec -> Spec
   def explicateHiddenAxioms spc =
-    let def axiomFromSortDef(qname,name,sortDecl,sortAxioms) = sortAxioms ++ axiomFromSortDefTop(spc,qname,name,sortDecl) in
-    let def axiomFromOp(qname,name,decl,defAxioms) = defAxioms ++ axiomFromOpTop(spc,qname,name,decl) in
-    %let def axiomFromProp(prop,props) = props ++ axiomFromPropTop(spc,prop) in
-    let def mergeAxiomsByPos(oas, nas) =
-      let def cmpGt(oax as (_, _, _, oat), nax as (_, _, _, nat)) =
-        let old_pos:Position = termAnn(oat) in
-	let new_pos = termAnn(nat) in
-	case compare(old_pos, new_pos) of
-	  | Greater -> false
-	  | _ -> true in
-      case (oas,nas) of
-        | ([],nas) -> nas
-        | (oas,[]) -> oas
-        | (oa::oas,na::nas) ->
-            if cmpGt(oa, na) then
-              Cons(na, mergeAxiomsByPos(Cons(oa,oas),nas))
-            else Cons(oa, mergeAxiomsByPos(oas,Cons(na,nas))) in
-    let newSortAxioms = foldriAQualifierMap axiomFromSortDef [] spc.sorts in
-    let newDefAxioms = foldriAQualifierMap axiomFromOp [] spc.ops in
-    %let newPropAxioms = foldr axiomFromProp [] spc.properties in
-    let newProperties = mergeAxiomsByPos(spc.properties, newSortAxioms) in
-    let newProperties = mergeAxiomsByPos(newProperties, newDefAxioms) in
-    %let newProperties = mergeAxiomsByPos(newProperties, newPropAxioms) in
+%    let def axiomFromSortDef(qname,name,sortDecl,sortAxioms) = sortAxioms ++ axiomFromSortDefTop(spc,qname,name,sortDecl) in
+%    let def axiomFromOp(qname,name,decl,defAxioms) = defAxioms ++ axiomFromOpTop(spc,qname,name,decl) in
+%    %let def axiomFromProp(prop,props) = props ++ axiomFromPropTop(spc,prop) in
+
+%    let newSortAxioms = foldriAQualifierMap axiomFromSortDef [] spc.sorts in
+%    let newDefAxioms = foldriAQualifierMap axiomFromOp [] spc.ops in
+%    %let newPropAxioms = foldr axiomFromProp [] spc.elements in
+%    let newElements = mergeAxiomsByPos(spc.elements, newSortAxioms) in
+%    let newElements = mergeAxiomsByPos(newElements, newDefAxioms) in
+%    %let newElements = mergeAxiomsByPos(newElements, newPropAxioms) in
     %%let _ = debug("explicateHidden") in 
-    %simplifySpec((setProperties(spc, newProperties)))
-    setProperties(spc, newProperties)
+    %simplifySpec((setElements(spc, newElements)))
+    let def expandElts(elts,result) =
+	  foldr
+	    (fn (el,r_elts) ->
+	     case el of
+	      | Import (s_tm,i_sp,s_elts) ->
+		let newElts = expandElts(s_elts,[]) in
+		Cons(Import(s_tm,i_sp,newElts),r_elts)
+	      | SortDef qid ->
+	        (case AnnSpec.findTheSort(spc,qid) of
+		   | Some sortinfo ->
+		     Cons(el,axiomFromSortDefTop(spc,qid,sortinfo) ++ r_elts))
+	      | Op qid ->
+	        (case AnnSpec.findTheOp(spc,qid) of
+		   | Some opinfo -> Cons(el,axiomFromOpSrtTop(spc,qid,opinfo) ++ r_elts))
+	      | OpDef qid ->
+	        (case AnnSpec.findTheOp(spc,qid) of
+		   | Some opinfo -> Cons(el,axiomFromOpDefTop(spc,qid,opinfo) ++ r_elts))
+	      | _ -> Cons(el,r_elts) )
+	    result
+	    elts
+    in
+    setElements(spc, expandElts(spc.elements,[]))
 
 endspec

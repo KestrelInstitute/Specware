@@ -535,11 +535,17 @@ snark qualifying spec
   op snarkProperties: Spec -> List LispCell
 
   def snarkProperties(spc) =
-    let properties = spc.properties in
+    % let properties = spc.properties in
     let context = newContext in
     let snarkProperties =
-          map(fn (prop) -> snarkProperty(context, spc, prop))
-	      properties in
+        foldrSpecElements
+	  (fn (el,result) ->
+	   case el of
+	     | Property prop ->
+	       Cons(snarkProperty(context, spc, prop),result)
+	     | _ -> result)
+	  [] spc.elements
+    in
     let snarkSubsortProperties = snarkSubsortProperties(context, spc) in
      snarkSubsortProperties ++ snarkProperties
 

@@ -1,4 +1,4 @@
-PosSpecToSpec qualifying spec {
+PosSpecToSpec qualifying spec
  %%  convert pos terms to standard terms
 
  import ../StandardSpec
@@ -38,37 +38,38 @@ PosSpecToSpec qualifying spec {
 %   mapSpec (convertPTerm, convertPSort, fn x -> x)
 %     spc
  
-  let {importInfo, sorts, ops, properties} = spc in
-  let {imports = _, localOps, localSorts, localProperties} = importInfo in
+  let {sorts, ops, elements, qualified?} = spc in
+%  let {imports = _, localOps, localSorts, localProperties} = importInfo in
   let tsp = (convertPTerm, convertPSort, fn x -> x) in
-  { importInfo       = importInfo,
+  { %importInfo       = importInfo,
 
-    ops              = if localOps = [] then ops
-                       else
-		       mapOpInfosUnqualified (fn info ->
-					      if someAliasIsLocal? (info.names, localOps) then
-						info << {dfn = mapTerm tsp info.dfn}
-					      else 
-						info)
-                                  ops,
+    ops        = if ~(hasLocalOp? spc) then ops
+		   else
+		   mapOpInfosUnqualified (fn info ->
+					  if someOpAliasIsLocal? (info.names, spc) then
+					    info << {dfn = mapTerm tsp info.dfn}
+					  else 
+					    info)
+			      ops,
 
-    sorts            = if localSorts = [] then sorts
-                       else
-		       mapSortInfos (fn info ->
-				     if someAliasIsLocal? (info.names, localSorts) then
-				       info << {dfn = mapSort tsp info.dfn}
-				     else 
-				       info)
-                                    sorts,
+    sorts      = if ~(hasLocalSort? spc) then sorts
+		   else
+		   mapSortInfos (fn info ->
+				 if someSortAliasIsLocal? (info.names, spc) then
+				   info << {dfn = mapSort tsp info.dfn}
+				 else 
+				   info)
+				sorts,
 
-    properties       = if localProperties = [] then properties
-                       else
-		       map (fn prop as (pt, qid, tvs, term) -> 
-			       (pt, qid, tvs, 
-				if member (qid, localProperties) then
-				  mapTerm tsp term
-				else 
-				  term))
-			   properties
+    elements   =  map (fn el ->
+		       case el of
+			 | Property (pt, qid, tvs, term) -> 
+			   Property(pt, qid, tvs, 
+				    mapTerm tsp term)
+			 | _ -> el)
+		       elements,
+
+    qualified? = qualified?
    }
-}
+endspec
+

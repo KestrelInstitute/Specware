@@ -1,5 +1,5 @@
 Utilities qualifying spec  
- import StandardSpec    % defines sorts Spec, Term, etc.
+ import MSTerm    % defines sorts Spec, Term, etc.
  import /Library/Legacy/DataStructures/IntSetSplay
  import /Library/Legacy/DataStructures/ListPair 
  import /Library/Legacy/DataStructures/ListUtilities
@@ -550,6 +550,7 @@ Utilities qualifying spec
  %% Remove op definitions, axioms, and theorems from a spec.
 
  op convertConjecturesToAxioms : Spec -> Spec
+(* Not used ?
  def convertConjecturesToAxioms (spc : Spec) =
    setProperties (spc, 
 		  List.map (fn (ty,n,t,f) ->
@@ -558,7 +559,7 @@ Utilities qualifying spec
 			       | _ -> ty,
 			     n,t,f))
                            spc.properties)
-
+*)
 
  %- ----------------------------------------------------------------
 
@@ -729,10 +730,9 @@ Utilities qualifying spec
 	 info << {dfn = maybeAndTerm (old_decls ++ new_defs, pos)}
 
    in
-   {importInfo       = spc.importInfo,
-    sorts            = mapSortInfos letRecToLetTermSortInfo spc.sorts,
-    ops              = mapOpInfos   letRecToLetTermOpInfo   spc.ops,
-    properties       = spc.properties}
+   spc <<
+   {sorts = mapSortInfos letRecToLetTermSortInfo spc.sorts,
+    ops   = mapOpInfos   letRecToLetTermOpInfo   spc.ops}
 
  op  patternVars  : Pattern -> List Var
  def patternVars(p) = 

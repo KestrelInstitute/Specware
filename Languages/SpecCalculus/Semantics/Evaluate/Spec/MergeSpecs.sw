@@ -7,15 +7,15 @@ SpecCalc qualifying spec
  * merges the two given specs into one
  *)
 
- op mergeSpecs: Spec * Spec -> Spec
+ op  mergeSpecs: Spec * Spec -> Spec
  def mergeSpecs (spc1, spc2) =
-   let importInfo = {
-		     imports = listUnion(spc1.importInfo.imports,spc2.importInfo.imports),
-		     localOps = listUnion(spc1.importInfo.localOps,spc2.importInfo.localOps),
-		     localSorts = listUnion(spc1.importInfo.localSorts,spc2.importInfo.localSorts),
-		     localProperties = listUnion(spc1.importInfo.localProperties,spc2.importInfo.localProperties)
-		    }
-   in
+%   let importInfo = {
+%		     imports = listUnion(spc1.importInfo.imports,spc2.importInfo.imports),
+%		     localOps = listUnion(spc1.importInfo.localOps,spc2.importInfo.localOps),
+%		     localSorts = listUnion(spc1.importInfo.localSorts,spc2.importInfo.localSorts),
+%		     localProperties = listUnion(spc1.importInfo.localProperties,spc2.importInfo.localProperties)
+%		    }
+%   in
    let srts = foldriAQualifierMap
                 (fn (q, id, info, map) ->
 		 insertAQualifierMap (map, q, id, info))
@@ -28,21 +28,16 @@ SpecCalc qualifying spec
 	       spc1.ops 
 	       spc2.ops
    in
-   let props = foldr (fn(prop as (pname,_,_,_),props) ->
-		      if exists (fn(pname0,_,_,_) -> pname=pname0) props then
-			props
-		      else 
-			cons(prop,props))
-                     spc1.properties 
-		     spc2.properties
-  in
-  let spc = initialSpecInCat in  % maybe emptySpec would be ok, but this is safer
-  let spc = setImportInfo (spc, importInfo) in
-  let spc = setSorts      (spc, srts)  in
-  let spc = setOps        (spc, ops)   in
-  let spc = setProperties (spc, props) in
-  spc
+   let elts = mergeSpecElements(spc1.elements,spc2.elements)
+   in
+   let spc = initialSpecInCat in  % maybe emptySpec would be ok, but this is safer
+   let spc = setSorts    (spc, srts)  in
+   let spc = setOps      (spc, ops)   in
+   let spc = setElements (spc, elts) in
+   spc
 
+ op  mergeSpecElements: SpecElements * SpecElements -> SpecElements
+ %%% ??? Is this used ???
 
  % ------------------------------------------------------------------------
 

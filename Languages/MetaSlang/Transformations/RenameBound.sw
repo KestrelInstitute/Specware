@@ -79,13 +79,19 @@ spec
 
   def renameInSpec s =
     let c = emptyContext () in
-    let {importInfo, sorts, ops, properties} = s in
+    let {sorts, ops, elements, qualified?} = s in
     let ops        = mapOpInfos (renameOp c) ops in
-    let properties = map (renameFormula c) properties in
-    {importInfo = importInfo,
+    let elements = mapSpecElements (fn el ->
+				    case el of
+				     | Property p -> Property (renameFormula c p)
+				     | _ -> el)
+		     elements
+    in
+    {%importInfo = importInfo,
      sorts      = sorts,
      ops        = ops,
-     properties = properties}
+     elements   = elements,
+     qualified? = qualified?}
 
   def renameFormula c (pt,name, tyvars, term) =
     (pt,name, tyvars, renameTerm c term)

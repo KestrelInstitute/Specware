@@ -76,19 +76,20 @@ TypeChecker qualifying spec
     %%   AstEnvironment.init adds default imports, etc.
     %%
     let initial_env  = initialEnv (given_spec, filename) in
-    let {importInfo = importInfo as {imports = _, localOps, localSorts, localProperties},
+    let {%importInfo = importInfo as {imports = _, localOps, localSorts, localProperties},
 	 sorts      = given_sorts, 
 	 ops        = given_ops, 
-	 properties = given_props} 
+	 elements   = given_elts,
+	 qualified? = qualified?} 
         = given_spec
     in
     let 
 
       def elaborate_local_sorts (sorts, env) =
-	if localSorts = [] then sorts
+	if ~(hasLocalSort? given_spec) then sorts
 	else
 	mapSortInfos (fn info ->
-		      if someAliasIsLocal? (info.names, localSorts) then
+		      if someSortAliasIsLocal? (info.names, given_spec) then
 			let
                           def elaborate_dfn dfn =
 			    let (tvs, srt) = unpackSort dfn in
@@ -106,7 +107,10 @@ TypeChecker qualifying spec
       def elaborate_local_ops (ops, env, poly?, incr?) =
 	if incr?
 	  then
-	    foldl (fn (Qualified(q,id),ops) ->
+	    foldl (fn (el,ops) ->
+		   case getQIdIfOp el of
+		     | None -> ops
+		     | Some(Qualified(q,id)) ->
 		   case findAQualifierMap(ops,q,id) of
 		     | Some info ->
 		       let
@@ -125,10 +129,10 @@ TypeChecker qualifying spec
 		       let new_dfn = maybeAndTerm (new_defs, termAnn info.dfn) in
 		       let new_info = info << {dfn = new_dfn} in
 		       insertAQualifierMap(ops,q,id,new_info))
-	       ops localOps
+	       ops given_spec.elements
 	  else
 	    mapOpInfos (fn info ->
-			if someAliasIsLocal? (info.names, localOps) then
+			if someOpAliasIsLocal? (info.names, given_spec) then
 			  let
 			    def elaborate_dfn dfn =
 			      let pos = termAnn dfn in
@@ -149,23 +153,24 @@ TypeChecker qualifying spec
 			  info)
 		       ops
 
-      def elaborate_local_props (props, env) =
-	if localProperties = [] then props
-	else
-	map (fn (prop as (prop_type, name, tvs, fm)) ->
-	     if member (name, localProperties) then 
-	       let elaborated_fm = elaborateTermTop (env, fm, type_bool) in
-	       (prop_type, name, tvs, elaborated_fm)
-	     else
-	       prop)
-	    props
+      def elaborate_local_props (elts, env) =
+	map (fn el ->
+	     case el of
+	       | Property (prop_type, name, tvs, fm) ->
+	         let elaborated_fm = elaborateTermTop (env, fm, type_bool) in
+	         Property(prop_type, name, tvs, elaborated_fm)
+	       | _ -> el)
+	    elts
 
 
       def reelaborate_local_ops (ops, env) =
-	foldl (fn (Qualified(q,id),ops) ->
+	foldl (fn (el,ops) ->
+	       case getQIdIfOp el of
+		 | None -> ops
+		 | Some(Qualified(q,id)) ->
 	       case findAQualifierMap(ops,q,id) of
 		 | Some info -> insertAQualifierMap(ops,q,id,checkOp(info, env)))
-	   ops localOps
+	   ops given_spec.elements
 
 %	if localOps = [] then ops
 %	else
@@ -195,7 +200,7 @@ TypeChecker qualifying spec
     let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false, true) in
 
     %% Elaborate properties
-    let elaborated_props = elaborate_local_props (given_props, env_with_elaborated_sorts) in
+    let elaborated_elts = elaborate_local_props (given_elts, env_with_elaborated_sorts) in
 
     %% ======================================================================
     %%                           PASS TWO  
@@ -204,13 +209,14 @@ TypeChecker qualifying spec
     %% sjw: 7/17/01 Added a second pass so that order is not so important
     let second_pass_env = secondPass env_with_elaborated_sorts in
 
-    let final_sorts =   elaborate_local_sorts (elaborated_sorts, second_pass_env) in
+    let final_sorts = elaborate_local_sorts (elaborated_sorts, second_pass_env) in
     let final_ops   = reelaborate_local_ops   (elaborated_ops,   second_pass_env) in
-    let final_props =   elaborate_local_props (elaborated_props, second_pass_env) in
-    let final_spec = {importInfo   = importInfo,   
-		      sorts        = final_sorts, 
-		      ops          = final_ops, 
-		      properties   = final_props}
+    let final_elts = elaborate_local_props (elaborated_elts, second_pass_env) in
+    let final_spec = {%importInfo = importInfo,   
+		      sorts      = final_sorts, 
+		      ops        = final_ops, 
+		      elements   = final_elts,
+		      qualified? = qualified?}
     in
     %% We no longer check that all metaTyVars have been resolved,
     %% because we don't need to know the type for _

@@ -1340,7 +1340,14 @@ SpecToLisp qualifying spec {
 
  def toLispEnv spc =
    % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
-   let spc = setProperties (spc, []) in % axioms are irrelevant for code generation
+   %% axioms are irrelevant for code generation
+   let spc = setElements(spc,mapPartialSpecElements 
+			       (fn el ->
+				case el of
+			         | Property _ -> None
+			         | _ -> Some el)
+			       spc.elements)
+   in
    let spc = (if removeCurrying?   then removeCurrying   spc else spc) in
    let spc = (if instantiateHOFns? then	instantiateHOFns spc else spc) in
    let spc = (if lambdaLift?       then lambdaLift       spc else spc) in
@@ -1366,17 +1373,24 @@ SpecToLisp qualifying spec {
       
  %% Just generates code for the local defs
  def localDefsToLispFile (spc, file, preamble) =
-   let localOps = spc.importInfo.localOps in
+   %let localOps = spc.importInfo.localOps in
    let spc = setOps (spc, 
 		     mapiAQualifierMap
 		       (fn (q, id, info) ->
-			if memberQualifiedId (q, id, localOps) then
+			if localOp? (Qualified(q, id), spc) then
 			  info
 			else 
 			  let pos = termAnn info.dfn in
 			  let (tvs, srt, _) = unpackFirstOpDef info in
 			  info << {dfn = maybePiTerm (tvs, SortedTerm (Any pos, srt, pos))})
 		       spc.ops)
+   in
+   let spc = setElements(spc,mapPartialSpecElements 
+			       (fn el ->
+				case el of
+			         | OpDef _ -> Some el
+			         | _ -> None)
+			       spc.elements)
    in 
      toLispFile (spc, file, preamble)
      

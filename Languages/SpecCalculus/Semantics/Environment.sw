@@ -120,6 +120,22 @@ UnitId_Dependency.
       } in
       run prog 
 
+  op  getBaseImportSpec : () -> Spec
+  def getBaseImportSpec() =
+    let prog = {
+      (optBaseUnitId,baseSpec) <- getBase;
+      case optBaseUnitId of
+       | None -> raise (Fail "No Base Spec")
+       | Some uid -> return (baseSpec << {elements = [Import((UnitId uid,noPos),baseSpec,baseSpec.elements)]})
+      } in
+    run prog 
+
+  op  importOfSpec: Option RelativeUnitId * Spec -> Spec
+  def importOfSpec(optUnitId,spc) =
+    spc << {elements = case optUnitId of
+			 | None -> []
+			 | Some unitid ->
+	                   [Import((UnitId unitid,noPos), spc, spc.elements)]}
 
   op clearBaseNames : Env ()
   def clearBaseNames =  writeGlobalVar ("BaseNames", [])

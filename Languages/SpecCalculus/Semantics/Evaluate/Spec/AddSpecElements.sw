@@ -11,6 +11,7 @@ SpecCalc qualifying spec
   %%% some of which may be identical
   %%% Collect the info's for such references
   let new_names = rev (removeDuplicates new_names) in % don't let duplicate names get into a sortinfo!
+  let primaryName = hd new_names in
   let new_info = {names = new_names, 
 		  dfn   = new_dfn}
   in
@@ -88,7 +89,9 @@ SpecCalc qualifying spec
          raise (SpecError (pos, 
                          "Sort "^(printAliases new_names)^" refers to multiple prior sorts"));
      sp <- return (setSorts (old_spec, new_sorts));
-     foldM (fn sp -> fn name -> return (addLocalSortName (sp, name))) sp new_names
+     return (appendElement (sp, if definedSort? new_dfn
+			          then SortDef primaryName
+				  else Sort primaryName))
     }
 
   %% called by evaluateSpecElem and LiftPattern
@@ -97,6 +100,7 @@ SpecCalc qualifying spec
   %%% some of which may be identical
   %%% Collect the info's for such references
   let new_names = rev (removeDuplicates new_names) in % don't let duplicate names get into an opinfo!
+  let primaryName = hd new_names in
   let new_info = {names  = new_names, 
 		  fixity = new_fixity, 
 		  dfn    = new_dfn,
@@ -199,7 +203,9 @@ SpecCalc qualifying spec
                          "Op "^(printAliases new_names)^" refers to multiple prior ops"));
 
     sp <- return (setOps (old_spec, new_ops));
-    foldM (fn sp -> fn name -> return (addLocalOpName (sp, name))) sp new_names
+    return (appendElement (sp, if definedTerm? new_dfn
+			         then OpDef primaryName
+				 else Op primaryName))
    }
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -216,7 +222,7 @@ SpecCalc qualifying spec
 
  %% called by evaluateSpecImport
  def addImport ((specCalcTerm, imported_spec), spc) =
-   setImports (spc, cons ((specCalcTerm, imported_spec), spc.importInfo.imports))
+   appendElement (spc, Import(specCalcTerm, imported_spec, imported_spec.elements))
 
  %% called by evaluateSpecElem 
  def addAxiom       ((name, tvs, formula), spc) = addProperty ((Axiom      : PropertyType, name, tvs, formula), spc) 
@@ -224,43 +230,44 @@ SpecCalc qualifying spec
  def addTheorem     ((name, tvs, formula), spc) = addProperty ((Theorem    : PropertyType, name, tvs, formula), spc) 
 
  def addTheoremLast ((name, tvs, formula), spc) =  
-   setProperties (spc, spc.properties ++ [(Theorem : PropertyType, name, tvs, formula)])
+   setElements (spc, spc.elements ++ [Property(Theorem, name, tvs, formula)])
 
  def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
  def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
 
  def addProperty (new_property, spc) =
-   let spc = setProperties (spc, spc.properties ++ [new_property]) in
-   addLocalPropertyName(spc,propertyName new_property)
+   let spc = setElements (spc, spc.elements ++ [Property new_property]) in
+   spc    % addLocalPropertyName(spc,propertyName new_property)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op addLocalSortName     : [a] ASpec a * QualifiedId -> ASpec a
- op addLocalOpName       : [a] ASpec a * QualifiedId -> ASpec a
- op addLocalPropertyName : [a] ASpec a * QualifiedId -> ASpec a
+% op addLocalSortName     : [a] ASpec a * QualifiedId -> ASpec a
+% op addLocalOpName       : [a] ASpec a * QualifiedId -> ASpec a
+% op addLocalPropertyName : [a] ASpec a * QualifiedId -> ASpec a
  op addToNames           : QualifiedId * QualifiedIds -> QualifiedIds
 
- def addLocalSortName (spc, new_local_sort) =
-   let localSorts = spc.importInfo.localSorts in
-   if memberNames (new_local_sort, localSorts) then
-     spc
-   else 
-     setLocalSorts (spc, addToNames (new_local_sort, localSorts))
+% def addLocalSortName (spc, new_local_sort) =
+%   let localSorts = spc.importInfo.localSorts in
+%   if memberNames (new_local_sort, localSorts) then
+%     spc
+%   else 
+%     setLocalSorts (spc, addToNames (new_local_sort, localSorts))
 
- def addLocalOpName (spc, new_local_op) =
-   let localOps = spc.importInfo.localOps in
-   if memberNames (new_local_op, localOps) then
-     spc
-   else 
-     setLocalOps (spc, addToNames (new_local_op, localOps))
+% def addLocalOpName (spc, new_local_op) =
+%   let localOps = spc.importInfo.localOps in
+%   if memberNames (new_local_op, localOps) then
+%     spc
+%   else 
+%     setLocalOps (spc, addToNames (new_local_op, localOps))
 
+(* Obsolete ?
  def addLocalPropertyName (spc, new_local_op) =
    let localProperties = spc.importInfo.localProperties in
    if memberNames (new_local_op, localProperties) then
      spc
    else 
      setLocalProperties (spc, addToNames (new_local_op, localProperties))
-
+*)
  def addToNames (qid, qids) = cons (qid, qids)
 
 endspec

@@ -686,7 +686,7 @@ spec
     PrettyPrint.toString(format(80,ppValue (initialize(asciiPrinter,false)) v))
 
 
-  op  ppValue: context -> Value -> Pretty
+  op  ppValue: PrContext -> Value -> Pretty
   def ppValue context v =
     case v of
       | Int         n  -> string (toString n)

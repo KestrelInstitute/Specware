@@ -687,29 +687,27 @@ Note: The code below does not yet match the documentation above, but should.
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
 
     in
-    let {importInfo = {imports,localOps,localSorts,localProperties}, sorts, ops, properties}
+    let {sorts, ops, elements, qualified?}
          = 
          mapSpec (translateOp op_id_map, translateSort sort_id_map, translatePattern) spc
     in 
     {
      newSorts <- translateSortMap sorts;
      newOps   <- translateOpMap   ops;
-     return {importInfo = {imports      = [],
-			   localOps     = map (translateOpQualifiedId op_id_map) localOps,
-			   localSorts   = foldl (fn (ty, local_types) -> 
-						 let new_type = translateSortQualifiedId sort_id_map ty in
-						 %% Avoid adding Boolean or Boolean.Boolean to local sorts,
-						 %% since it is built in.
-						 if new_type = Boolean_Boolean || new_type = unqualified_Boolean then
-						   local_types
-						 else
-						   local_types ++ [new_type])
-			                        []
-						localSorts,
-			   localProperties = localProperties},  
-	     sorts      = newSorts,
+     return {sorts      = newSorts,
 	     ops        = newOps,
-	     properties = properties}
+	     elements   = mapSpecElements
+	                    (fn el ->
+			     case el of
+			       | Op      qid -> Op      (translateOpQualifiedId op_id_map qid)
+			       | OpDef   qid -> OpDef   (translateOpQualifiedId op_id_map qid) 
+			       | Sort    qid -> Sort    (translateOpQualifiedId sort_id_map qid) 
+			       | SortDef qid -> SortDef (translateOpQualifiedId sort_id_map qid)
+			       | Property (pt, nm, tvs, term) ->
+			         Property (pt, (translateOpQualifiedId op_id_map nm), tvs, term)
+			       | _ -> el)
+			    elements,
+	     qualified? = false}	% conservative
     }
 
 endspec

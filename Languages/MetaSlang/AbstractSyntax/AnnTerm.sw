@@ -957,7 +957,7 @@ MetaSlang qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- sort TSP_Maps b = (ATerm    b -> ATerm    b) *
+ type TSP_Maps b = (ATerm    b -> ATerm    b) *
                    (ASort    b -> ASort    b) *
                    (APattern b -> APattern b)
 
@@ -1755,17 +1755,17 @@ MetaSlang qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- sort appTSP a = (ATerm    a -> ()) *
+ type appTSP a = (ATerm    a -> ()) *
                  (ASort    a -> ()) *
                  (APattern a -> ())
 
- sort ATermOpt a = Option(ATerm a)
- sort ASortOpt a = Option(ASort a)
+ type ATermOpt a = Option(ATerm a)
+ type ASortOpt a = Option(ASort a)
 
- sort ASortScheme  b = TyVars * ASort b
- sort ATermScheme  b = TyVars * ATerm b
- sort ASortSchemes b = List (ASortScheme b)
- sort ATermSchemes b = List (ATermScheme b)
+ type ASortScheme  b = TyVars * ASort b
+ type ATermScheme  b = TyVars * ATerm b
+ type ASortSchemes b = List (ASortScheme b)
+ type ATermSchemes b = List (ATermScheme b)
 
  op appTerm        : [a] appTSP a -> ATerm        a -> ()
  op appSort        : [a] appTSP a -> ASort        a -> ()

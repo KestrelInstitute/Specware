@@ -102,12 +102,13 @@ spec
 
  def initialEnv (spc, file) = 
    let errs : List (String * Position) = [] in
-   let {importInfo, sorts, ops, properties} = spc in
+   let {sorts, ops, elements, qualified?} = spc in
    let MetaTyVar (tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in
-   let spc = {importInfo   = importInfo,
-	      sorts        = sorts,
-	      ops          = ops,
-	      properties   = properties
+   let spc = {%importInfo = importInfo,
+	      sorts      = sorts,
+	      ops        = ops,
+	      elements   = elements,
+	      qualified? = qualified?
 	     } : Spec
    in
    let env = {importMap  = StringMap.empty, % importMap,

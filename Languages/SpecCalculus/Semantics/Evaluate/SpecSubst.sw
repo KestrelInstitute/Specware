@@ -1,9 +1,8 @@
-\section{Substitution (Prototype)}
+(** Substitution (Prototype) **)
 
-Dialog about adding this feature is at end of file
+(* Dialog about adding this feature is at end of file *)
 
-\begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import Translate                                    % for auxTranslateSpec
   import SpecUnion                                    % for specUnion
@@ -16,7 +15,7 @@ SpecCalc qualifying spec {
     let should_be_empty_spec = subtractSpec sub_spec original_spec in
     {when (~ (should_be_empty_spec.sorts      = emptyASortMap) or
            ~ (should_be_empty_spec.ops        = emptyAOpMap)   or
-           ~ (should_be_empty_spec.properties = emptyProperties))
+           ~ (should_be_empty_spec.elements = emptyAElements))
           (raise (TypeCheck (term_pos, warnAboutMissingItems should_be_empty_spec)));
      auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos}
 
@@ -42,25 +41,73 @@ SpecCalc qualifying spec {
     %% Warning: this assumes that dom_spec is a subspec of spc
     %%    S' = M(S - dom(M)) U cod(M)
     let dom_spec           = SpecCalc.dom sm            in     % dom(M)
+    let dom_spec_term      = case sm_tm of
+			       | (SpecMorph (dom_spec_tm,_,_),_) -> 
+				  dom_spec_tm
+			       | _ -> 
+				 %% sm_tm could be a UnitId, which isn't very helpful
+				 %% in which case, see if sm cached a term used to construct it
+				 case sm.sm_tm of
+				   | Some (SpecMorph (dom_spec_tm,_,_),_) -> dom_spec_tm
+				   | _ -> (Quote (Spec dom_spec),sm_tm.2) % could check cache first
+
+    in
     let cod_spec           = SpecCalc.cod sm            in     % cod(M)
-    let residue            = subtractSpec spc dom_spec  in     % S - dom(M)
+    let cod_spec_term      = case sm_tm of
+			       | (SpecMorph (_,cod_spec_tm,_),_) -> 
+				  cod_spec_tm
+			       | _ -> 
+				 %% sm_tm could be a UnitId, which isn't very helpful
+				 %% in which case, see if sm cached a term used to construct it
+				 case sm.sm_tm of
+				   | Some (SpecMorph (_,cod_spec_tm,_),_) -> cod_spec_tm
+				   | _ -> sm_tm
+    in
+    %% S - dom(M)
+    let residue = subtractSpecLeavingImportStubs(spc,dom_spec,dom_spec_term,cod_spec,cod_spec_term) in
     {translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
-     new_spec <- specUnion [translated_residue, cod_spec];     % M(S - dom(M)) U cod(M)
-     cod_spec_term <- return (case sm_tm of
-				| (SpecMorph (_,cod_spec_tm,_),_) -> 
-				   cod_spec_tm
-				| _ -> 
-				  %% sm_tm could be a UnitId, which isn't very helpful
-				  %% in which case, see if sm cached a term used to construct it
-				  case sm.sm_tm of
-				    | Some (SpecMorph (_, cod_spec_tm, _), _) -> cod_spec_tm
-				    | _ -> sm_tm);
-     return (setImportInfo (new_spec,
-			    {imports         = [(cod_spec_term, cod_spec)],
-			     localOps        = translate_op_names   spc.importInfo.localOps,  
-			     localSorts      = translate_sort_names spc.importInfo.localSorts,
-			     localProperties = spc.importInfo.localProperties
-			    }))}
+     %% Add the elements separately so we can put preserve order
+     new_spec <- specUnion [translated_residue, cod_spec << {elements = []}];     % M(S - dom(M)) U cod(M)
+     return (removeDuplicateImports
+              (new_spec << {elements = addSpecElementsReplacingImports
+			                 (new_spec.elements,
+					  [Import(cod_spec_term, cod_spec, cod_spec.elements)])}))}
+
+  %% Version of subtractSpec that leaves stubs of replaced imports so that targets can be replaced at
+  %% The same place as originals. If it 
+  op  subtractSpecLeavingImportStubs: Spec * Spec * SCTerm * Spec * SCTerm -> Spec
+  def subtractSpecLeavingImportStubs(x, y, y_spec_term, rep_spec, rep_spec_term) = 
+    {%importInfo = x.importInfo,
+     elements = let y_import = Import(y_spec_term, y, []) in
+                mapPartialSpecElements
+                  (fn el -> if sameSpecElement?(el,y_import)
+		             then Some(Import(rep_spec_term, rep_spec,[]))
+			    else if existsSpecElement? (fn el2 -> sameSpecElement?(el2, el))
+		                 y.elements
+			     then case el of
+			           | Import(x,y,_) -> Some(Import(x,y,[]))
+			           | _ -> None
+			    else Some el)
+		   x.elements,
+     ops      = mapDiffOps   x.ops   y.ops,
+     sorts    = mapDiffSorts x.sorts y.sorts,
+     qualified? = x.qualified?}
+
+  %% 
+  op  addSpecElementsReplacingImports: SpecElements * SpecElements -> SpecElements
+  def addSpecElementsReplacingImports(elts1,elts2) =
+    foldl (fn (el,result_elts) ->
+	   case el of
+	     | Import(sp_tm,sp,imp_elts) ->
+	       if existsSpecElement? (fn el1 -> sameSpecElement?(el,el1)) result_elts
+		 then mapSpecElements
+		        (fn el1 -> if sameSpecElement?(el,el1)
+				     then Import(sp_tm,sp,sp.elements)
+				   else el1)
+		        result_elts
+	        else addSpecElementsReplacingImports(result_elts,imp_elts)
+	     | _ -> result_elts ++ [el])
+      elts1 elts2
 
   op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
   def convertIdMap m =
@@ -87,10 +134,14 @@ SpecCalc qualifying spec {
   def warnAboutMissingItems should_be_empty_spec = 
     let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
     let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
-    let props_msg = (foldl (fn ((_, prop_name, _, _), str) ->
-			    if str = "" then printQualifiedId(prop_name) else str^", "^printQualifiedId(prop_name))
-		           ""			 
-			   should_be_empty_spec.properties)
+    let props_msg = (foldl (fn (el,str) ->
+			    case el of
+			      | Property(_, prop_name, _, _) ->
+			        if str = "" then printQualifiedId(prop_name)
+				  else str^", "^printQualifiedId(prop_name)
+			      | _ -> str) % Should check other items?
+		       ""			 
+		       should_be_empty_spec.elements)
     in
     "\n" ^
     (if sorts_msg = "" then 
@@ -125,9 +176,9 @@ SpecCalc qualifying spec {
 %%%    foldriAQualifierMap (fn (_, _, _, n) -> n + 1) 0 qmap
 
 
-}
-\end{spec}
+endspec
 
+(*
 From  AC :
 
  While the exact syntax still needs to be pinned down, in the end today 
@@ -209,7 +260,7 @@ From Lindsay:
  Perhaps it would have been a simpler presentation in the slice category 
  over SH. The formal parameter lifts in a canonical way into an object in 
  the slice. Then I think ts looks like any other pushout square. Perhaps 
- this suggests having something in the syntax (eg a variant of import), 
+ this suggests having something in the syntax (eg a variant of import, 
  that indicates the context of a spec that can be shared). This has been 
  discussed before.
  
@@ -234,7 +285,7 @@ From Lambert
  imagine something like
  
     M' = substitute(S,M)
-    M" = substitute(T,M')
+    M'' = substitute(T,M')
  
  where T imports S.  (The "Design Decisions" document suggests a way to
  retrieve M' from S and S', which however requires white magic.)
@@ -247,9 +298,9 @@ From AC
  
  It's conceivable, but:
  
- 1) I'd definitely hate to write cod(substitute(S,M)) to get S';
+ (1) I'd definitely hate to write cod(substitute(S,M)) to get S';
  
- 2) the coercion of a colimit to an apex is expected, but I don't see any 
+ (2) the coercion of a colimit to an apex is expected, but I don't see any 
  intrinsic, general reason why a morphism should be coerced to its 
  codomain as opposed to its domain, since a morphism is a triple 
  <dom,cod,map>... In a colimit, there is one spec and a bunch of 
@@ -269,7 +320,7 @@ From Lindsay:
 
 From Lambert
  
- In this case, yes :)  In general, I think there is a certain
+ In this case, yes ( :)  In general, I think there is a certain
  human tendency to think in terms of destination in preference
  to origin; e.g. if someone says "The train that just passed by
  was the Paris train", you'd assume they meant the train TO
@@ -321,5 +372,5 @@ From JLM
  pendantic to include "cod of", but programmers are used to adhering to
  pendantic rules.  Making it optional, with perhaps a style-guide, seems
  like a good compromise.
-}
-\end{spec}
+
+*)

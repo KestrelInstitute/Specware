@@ -122,6 +122,58 @@ coherence conditions of the morphism elements.
 	      | _ ->
 	        raise (MorphError (position, "Unrecognized target type " ^ (explicitPrintQualifiedId qid)))
 
+      def add_wildcard_rules op_map sort_map dom_q cod_q position =
+	%% Special hack for aggregate mappings: X._ +-> Y._
+	%% Find all dom sorts/ops qualified by X, and requalify them with Y
+	(if basicQualifier? dom_q then
+	   {raise_later (TranslationError ("Illegal to translate from base : " ^ dom_q, position));
+	    return (op_map, sort_map)}
+	 else
+	   let
+	     def extend_sort_map (sort_q, sort_id, _ (* sort_info *), sort_map) =
+	       if sort_q = dom_q then
+		 %% This is a candidate to be translated...
+		 case findAQualifierMap (sort_map, sort_q, sort_id) of
+		   | None -> 
+		     %% No rule yet for this candidate...
+		     let new_cod_qid = mkQualifiedId (cod_q, sort_id) in
+		     return (insertAQualifierMap (sort_map, sort_q, sort_id, new_cod_qid))
+		   | _ -> 
+		     {raise_later (TranslationError ("Multiple (wild) rules for source type "^
+						     (explicitPrintQualifiedId (mkQualifiedId (sort_q, sort_id))),
+						     position));
+		      return sort_map}
+	       else
+		 return sort_map
+
+	     def extend_op_map (op_q, op_id, _ (* op_info *), op_map) =
+	       if op_q = dom_q then
+		 %% This is a candidate to be translated...
+		 case findAQualifierMap (op_map, op_q, op_id) of
+		   | None -> 
+		     %% No rule yet for this candidate...
+		     let new_cod_qid = mkQualifiedId (cod_q, op_id) in
+		     {new_cod_qid <- (if syntactic_qid? new_cod_qid then
+					{raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId new_cod_qid) ^ 
+									"' is syntax, not an op, hence cannot be the target of a translation.",
+									position));
+					 return new_cod_qid}
+				      else return new_cod_qid);
+		      return (insertAQualifierMap (op_map, op_q, op_id, new_cod_qid)) }
+		   | _ -> 
+		     %% Candidate already has a rule (e.g. via some explicit mapping)...
+		     {raise_later (TranslationError ("Multiple (wild) rules for source op "^
+						     (explicitPrintQualifiedId (mkQualifiedId (op_q, op_id))),
+						     position));
+		      return op_map}						  
+	       else
+		 return op_map 
+	   in 
+	     {%% Check each dom type and op to see if this abstract ambiguous rule applies...
+	      sort_map <- foldOverQualifierMap extend_sort_map sort_map dom_spec.sorts;
+	      op_map   <- foldOverQualifierMap extend_op_map   op_map   dom_spec.ops;
+	      return (op_map, sort_map)})
+
       def insert (op_map,sort_map) ((sm_rule,position) : (SpecMorphRule Position)) =
 	case sm_rule of
           | Sort (dom_qid, cod_qid) ->
@@ -174,6 +226,10 @@ coherence conditions of the morphism elements.
 		      | _ -> raise (MorphError (position, "Multiple rules for source op " ^ (explicitPrintQualifiedId dom_qid)))
 		 }
                | _ -> raise (MorphError (position, "Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid))))
+
+	  | Ambiguous (Qualified(dom_q, "_"), Qualified(cod_q,"_")) -> 
+	    add_wildcard_rules op_map sort_map dom_q cod_q position
+
 
           | Ambiguous (dom_qid, cod_qid) ->
             (let dom_sorts = findAllSorts (dom_spec, dom_qid) in

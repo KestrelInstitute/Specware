@@ -521,4 +521,20 @@ emacs interface functions.
       | [] -> false
       | s :: _ -> deviceString? s
 
+ %%% Find relationship between Specs
+ op  importPathsBetween: Spec * Spec -> List (List (Term_ Position))
+ def importPathsBetween(spc1,spc2) =
+   let def findPaths(sp,path) =
+         if sp = spc2
+	   then [path]
+	   else foldl (fn (el,result) ->
+		       case el of
+			 | Import(i_stm,i_spc,_) ->
+			   findPaths(i_spc,Cons(i_stm.1,path)) ++ result
+			 | _ -> result)
+	          [] sp.elements
+   in
+     findPaths(spc1,[])
+
+
 endspec

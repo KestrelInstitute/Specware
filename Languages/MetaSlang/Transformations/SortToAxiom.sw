@@ -3,13 +3,12 @@ Prover qualifying spec
  import ../Specs/Utilities
  import DefToAxiom
 
- op  axiomFromSortDefTop: Spec * Qualifier * Id * SortInfo -> Properties
- def axiomFromSortDefTop (spc, q, id, info) =
+ op  axiomFromSortDefTop: Spec * QualifiedId * SortInfo -> SpecElements
+ def axiomFromSortDefTop (spc, sort_name, info) =
    if definedSortInfo? info then
      let srt_def = firstSortDefInnerSort info in
-     let localSorts = spc.importInfo.localSorts in
+%     let localSorts = spc.importInfo.localSorts in
 %     if memberQualifiedId (q, id, localSorts) then
-       let sort_name = Qualified (q, id) in
        let axioms = 
 	   case srt_def of
 	     | CoProduct _ -> axiomFromCoProductDefTop (spc, sort_name, srt_def)
@@ -26,17 +25,17 @@ Prover qualifying spec
      %let _ = writeLine(name^": in axiomFromSortDef NOT def part") in
      []
 
- op  axiomFromSubSortDefTop: Spec * QualifiedId * Sort -> Properties
+ op  axiomFromSubSortDefTop: Spec * QualifiedId * Sort -> SpecElements
  def axiomFromSubSortDefTop (spc, name, srt as Subsort (supSort, subSortTerm, b)) =
     []
 
- op  axiomFromProductDefTop: Spec * QualifiedId * Sort -> Properties
+ op  axiomFromProductDefTop: Spec * QualifiedId * Sort -> SpecElements
  def axiomFromProductDefTop (spc, name, srt as Product (fields, b)) =
     let projectAxioms = mkProjectAxioms(spc, name, srt, fields) in
     let equalityAxiom = mkProdEqualityAxiom(spc, name, srt, fields) in
     %    let constructAxiom = mkConstructAxiom(spc, name, fields) in
     %    Cons(constructAxiom, projectAxioms)
-    Cons(equalityAxiom, projectAxioms)
+    Cons(Property equalityAxiom, projectAxioms)
 
  op  mkProdEqualityAxiom: Spec * QualifiedId * Sort * Fields -> Property
  def mkProdEqualityAxiom(spc, name as Qualified (prodQ, prodSrtId), srt, fields) =
@@ -58,12 +57,12 @@ Prover qualifying spec
    %let _ = writeLine("fmla is: "^printTerm(fmla)) in
    (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
 
- op  mkProjectAxioms: Spec * QualifiedId * Sort * Fields -> Properties
+ op  mkProjectAxioms: Spec * QualifiedId * Sort * Fields -> SpecElements
  def mkProjectAxioms(spc, name, srt, fields) =
    let recordArg as Record(resFields, _) =  mkRecordTerm(spc, name, srt, "") in
    ListPair.map (fn (field, res) -> mkProjectAxiom(spc, name, srt, field, recordArg, res)) (fields, resFields)
 
- op  mkProjectAxiom: Spec * QualifiedId * Sort * Field * MS.Term * (Id * MS.Term) -> Property
+ op  mkProjectAxiom: Spec * QualifiedId * Sort * Field * MS.Term * (Id * MS.Term) -> SpecElement
  def mkProjectAxiom(spc, name as Qualified(prodQ, prodSrtId), srt, field as (fId, fSrt), arg, (_, res)) =
    let projQid as Qualified(projQ,projId) = getAccessorOpName(prodSrtId,name,fId) in
    let lhs = mkProjectTerm(spc, name, srt, field, arg) in
@@ -71,7 +70,7 @@ Prover qualifying spec
    let eql = mkEquality(fSrt, lhs, rhs) in
    let bndVars = freeVars(eql) in
    let fmla = mkBind(Forall, bndVars, eql) in
-   (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
+   Property(Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
 
  op  mkRecordTerm: Spec * QualifiedId * Sort * String -> MS.Term
  def  mkRecordTerm(spc, srtName, srt as Product (fields, b), prefix) =
@@ -130,13 +129,13 @@ Prover qualifying spec
    (Axiom, mkQualifiedId(srtQ, srtId^"_def"), [], fmla)
     
   
- op  axiomFromCoProductDefTop: Spec * QualifiedId * Sort -> Properties
+ op  axiomFromCoProductDefTop: Spec * QualifiedId * Sort -> SpecElements
  def axiomFromCoProductDefTop(spc, name, srt as CoProduct (fields, b)) =
    let disEqAxioms = mkDisEqsForFields(spc, srt, name, fields) in
    let exhaustAxioms = exhaustAxioms(spc, srt, name, fields) in
    exhaustAxioms++disEqAxioms
 
- op  exhaustAxioms: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Properties
+ op  exhaustAxioms: Spec * Sort * QualifiedId * List (Id * Option Sort) -> SpecElements
  def exhaustAxioms(spc, srt, name as Qualified(qname, id), fields) =
    let newVar = (id^"_Var", mkBase(name, [])) in
    let eqDisjuncts = mkEqFmlasForFields(srt, newVar, fields) in
@@ -145,8 +144,8 @@ Prover qualifying spec
    let predDisjuncts = mkPredFmlasForFields(srt, newVar, fields) in
    let predTm = mkSimpOrs(predDisjuncts) in
    let predFmla = mkBind(Forall, [newVar], predTm) in
-   [(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla),
-    (Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla)]
+   [Property(Axiom, mkQualifiedId(qname, id^"_def"), [], eqFmla),
+    Property(Axiom, mkQualifiedId(qname, id^"_def"), [], predFmla)]
 
  op  mkEqFmlasForFields: Sort * Var * List (Id * Option Sort) -> List MS.Term
  def mkEqFmlasForFields(srt, var, fields) =
@@ -169,7 +168,7 @@ Prover qualifying spec
        let restPreds = mkPredFmlasForFields(srt, var, restFields) in
        Cons(predFmla, restPreds)
 
- op  mkDisEqsForFields: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Properties
+ op  mkDisEqsForFields: Spec * Sort * QualifiedId * List (Id * Option Sort) -> SpecElements
  def mkDisEqsForFields(spc, srt, name, fields) =
    case fields of
      | [] -> []
@@ -178,11 +177,11 @@ Prover qualifying spec
        let restDisEqs = mkDisEqsForFields(spc, srt, name, restFields) in
 	diseqs++restDisEqs
 
- op  mkDisEqsForIdAndRest: Id * Sort * QualifiedId * Option Sort * List (Id * Option Sort) -> Properties
+ op  mkDisEqsForIdAndRest: Id * Sort * QualifiedId * Option Sort * List (Id * Option Sort) -> SpecElements
  def mkDisEqsForIdAndRest(id, srt, name, optSrt, restFields) =
    foldr (fn ((id2, optSrt2), props) ->
 	  let disEq = mkDisEqForTwoConstructors(id, srt, name, optSrt, id2, optSrt2) in
-	  Cons(disEq, props))
+	  Cons(Property disEq, props))
          [] 
 	 restFields
 

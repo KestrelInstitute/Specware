@@ -1,7 +1,6 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUnion.sl, v1.3
 
 SpecUnion qualifying spec 
-{
  import ../Environment  % foldM    
  import /Languages/MetaSlang/Specs/StandardSpec
  import /Library/Legacy/DataStructures/ListUtilities
@@ -11,40 +10,40 @@ SpecUnion qualifying spec
  op specUnion  : List Spec -> Env Spec
  op sortsUnion : List Spec -> Env SortMap
  op opsUnion   : List Spec -> Env OpMap
- op propsUnion : List Spec -> Env Properties
+ op eltsUnion : List Spec -> Env SpecElements
 
  %% specUnion is called by specColimit to create apex spec, 
  %% and also by applySpecMorphismSubstitution to stich together 
  %% the translated and non-translated portions of the subject spec.
 
  def specUnion specs =
-  let merged_imports     = importsUnion    specs in
-  %% let merged_local_ops   = localOpsUnion   specs in
-  %% let merged_local_sorts = localSortsUnion specs in
-  let merged_local_sorts = foldl (fn (spc, names) -> names ++ spc.importInfo.localSorts)      [] specs in
-  let merged_local_ops   = foldl (fn (spc, names) -> names ++ spc.importInfo.localOps)        [] specs in
-  let merged_local_props = foldl (fn (spc, names) -> names ++ spc.importInfo.localProperties) [] specs in
-  let merged_import_info = {imports         = merged_imports,
-			    localOps        = merged_local_ops,
-			    localSorts      = merged_local_sorts,
-			    localProperties = merged_local_props} 
-  in
+%  let merged_imports     = importsUnion    specs in
+%  %% let merged_local_ops   = localOpsUnion   specs in
+%  %% let merged_local_sorts = localSortsUnion specs in
+%  let merged_local_sorts = foldl (fn (spc, names) -> names ++ spc.importInfo.localSorts)      [] specs in
+%  let merged_local_ops   = foldl (fn (spc, names) -> names ++ spc.importInfo.localOps)        [] specs in
+%  let merged_local_elts = foldl (fn (spc, names) -> names ++ spc.importInfo.localProperties) [] specs in
+%  let merged_import_info = {imports         = merged_imports,
+%			    localOps        = merged_local_ops,
+%			    localSorts      = merged_local_sorts,
+%			    localProperties = merged_local_elts} 
+%  in
   {
    merged_sorts  <- sortsUnion specs;
    merged_ops    <- opsUnion   specs;
-   merged_props  <- propsUnion specs;
-   merged_spec   <- return {importInfo = merged_import_info,
-			    sorts      = merged_sorts,
+   merged_elts  <- eltsUnion specs;
+   merged_spec   <- return {sorts      = merged_sorts,
 			    ops        = merged_ops,
-			    properties = merged_props};
-   return (compressDefs merged_spec)
+			    elements   = merged_elts,
+			    qualified? = false};
+   return (compressDefs (removeDuplicateImports merged_spec))
   }
 
  %% TODO: The terms for the imports might not remain in a meaningful URI context -- relativize to new context
- def importsUnion specs =
-  foldl (fn (spc, imports) -> listUnion (spc.importInfo.imports, imports))
-        []
-        specs
+% def importsUnion specs =
+%  foldl (fn (spc, imports) -> listUnion (spc.importInfo.imports, imports))
+%        []
+%        specs
 
 %%% def localSortsUnion specs =
 %%%  foldl (fn (spc, local_sorts) -> listUnion (spc.importInfo.localSorts, local_sorts))
@@ -68,10 +67,10 @@ SpecUnion qualifying spec
         emptyOpMap
 	specs
 
- def propsUnion specs =
-  foldM (fn combined_props -> fn next_spec -> 
-	 unionProps combined_props next_spec.properties)
-        [] % emptyProps
+ def eltsUnion specs =
+  foldM (fn combined_elts -> fn next_spec -> 
+	 unionElts combined_elts next_spec.elements)
+        [] % emptyElts
 	specs
  
 
@@ -125,9 +124,10 @@ SpecUnion qualifying spec
    in
     foldOverQualifierMap augmentOpMap old_op_map new_op_map 
 
- def unionProps old_props new_props =
+ def unionElts old_elts new_elts =
    %% TODO:  These might refer incorrectly into old specs
    %% TODO:  listUnion assumes = test on elements, we might want something smarter such as equivTerm?
-   return (listUnion (old_props, new_props))
+   %% TODO: This might be very inefficient
+   return (listUnion (old_elts, new_elts))
 
-}
+endspec

@@ -34,20 +34,25 @@ def SpecCalc.evaluateExtendMorph term = {
 op extendMorphism: Morphism * Spec -> Morphism
 
 def extendMorphism(morph, base_spc) =
-  let baseHypothesis = base_spc.properties in
+  %let baseHypothesis = base_spc.properties in
   let dom = morph.dom in
   let cod = morph.cod in
   let opMap = morph.opMap in
-  let properties = dom.properties in
-  let axioms = filter (fn (propType,_,_,_) -> propType = Axiom) properties in
-  let axiomFmlas = map (fn (_,_,_,fmla) -> fmla) axioms in
+  let axiomFmlas = mapFoldrSpecElements (fn (el,result) ->
+					 case el of
+					   | Property(Axiom,_,_,fmla) ->
+					     Cons(fmla,result)
+					   | _ -> result)
+		     [] dom.elements
+  in
+  %let axiomFmlas = map (fn (_,_,_,fmla) -> fmla) axioms in
   let newAxiomFmlas = map (fn (fmla) -> substOpMap(opMap, fmla)) axiomFmlas in
   let incompleteAxioms = filter (fn (fmla) -> termOpsInSpec?(fmla, dom)) newAxiomFmlas in
   let _ = if specwareDebug? then map (fn (f:MS.Term) -> printTermToTerminal(f)) incompleteAxioms else [()] in
   let testAxiom = hd incompleteAxioms in
   let _ = if specwareDebug? then printTermToTerminal(testAxiom) else () in
   let (existentialTest, ansVars) = mkExistential(dom, testAxiom) in
-  let succ = proveForAns(ansVars, existentialTest, subtractSpec cod base_spc, baseHypothesis, base_spc, [Lisp.list []], "foo.log") in
+  let succ = proveForAns(ansVars, existentialTest, subtractSpec cod base_spc, base_spc, base_spc, [Lisp.list []], "foo.log") in
     if succ 
       then extendMorphismWithAnswer(morph, ansVars)
     else morph
@@ -313,7 +318,7 @@ def substOpMap (opMap, term) =
 									   hashSuffix = None});
 *)
  
- op proveForAns: Vars * Property * Spec * List Property * Spec * List LispCell * String -> Boolean
+ op proveForAns: Vars * Property * Spec * Spec * Spec * List LispCell * String -> Boolean
 
  def proveForAns(ansVars, claim, spc, base_hypothesis, base_spc, prover_options, snarkLogFileName) =
    let (_ (* claim_type *),claim_name,_,_) = claim in
@@ -326,10 +331,8 @@ def substOpMap (opMap, term) =
    let snarkSortDecls = snarkSorts(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
-   let snarkBaseHypothesis = map (fn (prop) -> snarkProperty(context, base_spc, prop))
-                                 base_hypothesis in
-   let hypothesis = spc.properties in
-   let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
+   let snarkBaseHypothesis = snarkProperties base_hypothesis in
+   let snarkHypothesis = snarkProperties spc in
    let snarkConjecture = snarkAnswer(context, spc, claim, ansVars) in
    let snarkEvalForm = makeSnarkAnsEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in

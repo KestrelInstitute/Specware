@@ -7,10 +7,10 @@
   :output '(";;; Elaborating spec at $TESTDIR/ProblematicTypes"
 	    ""
 	    "spec  "
-	    " type LineColumn = Nat"
-	    " type Position = Nat"
-	    " type LineColumnByte = Nat"
 	    " type Filename = String"
+	    " type LineColumn = Nat"
+	    " type LineColumnByte = Nat"
+	    " type Position = Nat"
 	    "endspec"
 	    ""
 	    ""))

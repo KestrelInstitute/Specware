@@ -1573,11 +1573,10 @@ example_chianti =
 
 
 
-(*
+
 % uncomment for consistency check:
 contradictory = prove contradictory in owl
    options
    "(use-resolution t) (use-hyperresolution) (use-negative-hyperresolution) (use-paramodulation) (use-factoring) (use-literal-ordering-with-hyperresolution 'literal-ordering-p)(use-literal-ordering-with-negative-hyperresolution  'literal-ordering-p)(use-literal-ordering-with-paramodulation 'literal-ordering-p) (use-ac-connectives) (assert-supported t)(run-time-limit 60000) (use-code-for-numbers t) "
-
-*) 
+ 
 

@@ -28,7 +28,7 @@ spec
 
  sort SpecCalc.TranslateRules a = List (SpecCalc.TranslateRule a)
 
- sort PropertyMap = Properties % TODO: convert   once properties are in qualified map
+ sort PropertyMap = List Property % TODO: convert   once properties are in qualified map
  sort MorphismPropMap          % TODO: make real once properties are in qualified map
 
 
@@ -76,7 +76,7 @@ spec
 
  def specColimit dg =
 
-  let base_spec = getBaseSpec () in  % TODO: base spec should be an arg to specColimit, or part of monad
+  let base_spec = getBaseImportSpec () in  % TODO: base spec should be an arg to specColimit, or part of monad
 
   let 
      def extract_sorts (spc : Spec) =
@@ -245,10 +245,11 @@ spec
            let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_translation_expr) in
 	   % let _ = toScreen ("\nTranslated Spec: "^ (printSpec translated_spec) ^ "\n") in
            cons (translated_spec, translated_specs))
-         [base_spec]
+         []
          dg
   in
-  let apex_spec : Spec = run (specUnion translated_specs) in
+  let apex_spec = run (specUnion (Cons (base_spec, translated_specs))) in
+  let apex_spec = removeDuplicateOpSortElements apex_spec in
 
   %% -------------------------------------------------------------------------------------------------------------
   %% (4a) Test for ambiguity in result
@@ -594,6 +595,33 @@ spec
  %%%	      update new_sm_map dom_qid cod_qid)
  %%%         PolyMap.emptyMap 
  %%%         translate_rules
+
+ %% Misc support
+ op  removeDuplicateOpSortElements: Spec -> Spec
+ def removeDuplicateOpSortElements spc =
+   let def canonOp qid =
+         case findTheOp(spc,qid) of
+	   | Some opinfo -> primaryOpName opinfo
+	   | _ -> qid
+       def canonSort qid =
+         case findTheSort(spc,qid) of
+	   | Some sortinfo -> primarySortName sortinfo
+	   | _ -> qid
+       def addIfNew(el,newElts) =
+	 if member(el,newElts) then newElts
+	   else Cons(el,newElts)
+       
+   in
+   let newElts = foldl (fn (el,newElts) ->
+			case el of
+			  | Op      qid -> addIfNew (Op     (canonOp   qid), newElts)
+			  | OpDef   qid -> addIfNew (OpDef  (canonOp   qid), newElts)
+			  | Sort    qid -> addIfNew (Sort   (canonSort qid), newElts)
+			  | SortDef qid -> addIfNew (SortDef(canonSort qid), newElts)
+			  | _ -> Cons(el,newElts))
+		   [] spc.elements
+   in
+   spc << {elements = rev newElts}
 
  
  %% ================================================================================

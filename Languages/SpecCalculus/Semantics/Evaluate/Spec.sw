@@ -1,7 +1,7 @@
 \subsection{Evalution of a Spec form in the Spec Calculus}
 
 \begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import Signature 
   import UnitId/Utilities
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
@@ -26,14 +26,16 @@ and then qualify the resulting spec if the spec was given a name.
     when (~(member(unitStr,noElaboratingMessageFiles)))
        (print (";;; Elaborating spec at " ^ unitStr ^ "\n"));
     (optBaseUnitId,baseSpec) <- getBase;
-    (pos_spec,TS,depUIDs) <- evaluateSpecElems (if anyImports? spec_elements
-						  then emptySpec % some import will include baseSpec
-						  else baseSpec)
-		               spec_elements;
+    (pos_spec,TS,depUIDs) <-
+      evaluateSpecElems
+	(if anyImports? spec_elements
+	   then emptySpec % some import will include baseSpec
+	  else importOfSpec(optBaseUnitId,baseSpec))
+	spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
 %    full_spec <- explicateHiddenAxiomsM compressed_spec;
-    return (Spec compressed_spec,TS,depUIDs)
+    return (Spec (removeDuplicateImports compressed_spec),TS,depUIDs)
   }
 \end{spec}
 
@@ -46,25 +48,22 @@ axioms, etc.
   def evaluateSpecElems starting_spec specElems = {
       %% Use the name starting_spec to avoid any possible confusion with the
       %% op initialSpecInCat, which refers to the initial spec in the category of specs.
-      (spcWithImports,TS,depUIDs) <- foldM evaluateSpecImport (starting_spec,0,[]) specElems;
-      fullSpec <- foldM evaluateSpecElem spcWithImports specElems;
+      (TS,depUIDs) <- foldM checkImports (0,[]) specElems;
+      fullSpec <- foldM evaluateSpecElem starting_spec specElems;
       return (fullSpec,TS,depUIDs)
     }
 
-  op evaluateSpecImport : (ASpec Position * TimeStamp * UnitId_Dependency)
-                          -> SpecElem Position
-                          -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
-  def evaluateSpecImport val (elem, position) =
+  op  checkImports : (TimeStamp * UnitId_Dependency)
+                     -> SpecElem Position
+                     -> SpecCalc.Env (TimeStamp * UnitId_Dependency)
+  def checkImports val (elem, position) =
     case elem of
       | Import terms -> 
-        foldM (fn (spc,cTS,cDepUIDs) -> fn term ->
+        foldM (fn (cTS,cDepUIDs) -> fn term ->
 	       {
 		(value,iTS,depUIDs) <- evaluateTermInfo term;
 		(case coerceToSpec value of
-		   | Spec impSpec -> {
-				      newSpc <- mergeImport term impSpec spc position;
-				      return (newSpc, max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
-				     }
+		   | Spec _ -> return (max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
 		   | InProcess -> 
 		     (case (valueOf term) of
 			| UnitId (UnitId_Relative   x) -> raise (CircularDefinition x)
@@ -86,7 +85,17 @@ axioms, etc.
                           -> SpecCalc.Env (ASpec Position)
   def evaluateSpecElem spc (elem, position) =
     case elem of
-      | Import terms -> return spc
+      | Import terms ->
+        foldM (fn spc -> fn term ->
+	       {
+		(value,_,_) <- evaluateTermInfo term;
+		(case coerceToSpec value of
+		   | Spec impSpec -> mergeImport term impSpec spc position
+		   %% Already checked
+		   | _ -> raise (Fail ("Shouldn't happen!")))
+		  })
+              spc               
+              terms
       | Sort (names, dfn) ->
           addSort names dfn spc position
       | Op (names, fxty, dfn) ->
@@ -101,34 +110,32 @@ axioms, etc.
 
   def mergeImport spec_term imported_spec spec_a position =
     let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, (spc, combined_sorts)) =
-      let oldSortInfo = findAQualifierMap (combined_sorts,imported_qualifier, imported_id) in {
-          mergedSorts <- SpecCalc.mergeSortInfo imported_sort_info oldSortInfo position;
-          return (spc,
-		  insertAQualifierMap (combined_sorts,
-                                       imported_qualifier,
-                                       imported_id,
-                                       mergedSorts))
+	let oldSortInfo = findAQualifierMap (combined_sorts,imported_qualifier, imported_id) in {
+	mergedSorts <- SpecCalc.mergeSortInfo imported_sort_info oldSortInfo position;
+	return (spc,
+		insertAQualifierMap (combined_sorts,
+				     imported_qualifier,
+				     imported_id,
+				   mergedSorts))
         } in
     let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, (spc, combined_ops)) =
-      let oldOpInfo = findAQualifierMap (combined_ops,imported_qualifier, imported_id) in {
-           mergedOps <- SpecCalc.mergeOpInfo imported_op_info oldOpInfo position;
-           return (spc,
-		   insertAQualifierMap (combined_ops,
-                                        imported_qualifier,
-                                        imported_id,
-                                        mergedOps))
-        } in
+	let oldOpInfo = findAQualifierMap (combined_ops,imported_qualifier, imported_id) in {
+	mergedOps <- SpecCalc.mergeOpInfo imported_op_info oldOpInfo position;
+	return (spc,
+		insertAQualifierMap (combined_ops,
+				     imported_qualifier,
+				     imported_id,
+				     mergedOps))
+	} in
     {
-      spec_b <- return (addImport ((spec_term, imported_spec), spec_a)); 
+      spec_b <- return (addImport ((spec_term, imported_spec), spec_a));
       (_, sorts_b) <- if spec_a = emptySpec then return (spec_b,imported_spec.sorts)
                        else foldOverQualifierMap mergeSortStep (spec_b, spec_b.sorts) imported_spec.sorts;
       spec_c <- return (setSorts (spec_b, sorts_b));
       (_, ops_c) <- if spec_a = emptySpec then return (spec_c,imported_spec.ops)
                      else foldOverQualifierMap mergeOpStep (spec_c, spec_c.ops) imported_spec.ops;
       spec_d <- return (setOps (spec_c, ops_c));
-      spec_e <- return (setProperties (spec_d, if spec_a = emptySpec then imported_spec.properties
-					        else listUnion (imported_spec.properties,spec_d.properties)));
-      return spec_e
+      return spec_d
     }
 \end{spec}
 
@@ -150,5 +157,5 @@ such time as the current one can made monadic.
   op explicateHiddenAxiomsM: Spec -> SpecCalc.Env Spec
   def explicateHiddenAxiomsM spc =
     return spc % (explicateHiddenAxioms spc)
-}
+endspec
 \end{spec}

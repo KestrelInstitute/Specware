@@ -1,31 +1,29 @@
-StandardSpec qualifying spec {
+StandardSpec qualifying spec
  import AnnSpec
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars - should be abstracted
  import /Library/Legacy/DataStructures/StringMapSplay % for makeTyVarMap
 
+ type SortMap      = ASortMap        StandardAnnotation
+ type OpMap        = AOpMap          StandardAnnotation
 
- sort SortMap      = ASortMap        StandardAnnotation
- sort OpMap        = AOpMap          StandardAnnotation
+ type SortInfo     = ASortInfo       StandardAnnotation 
+ type OpInfo       = AOpInfo         StandardAnnotation
 
- sort SortInfo     = ASortInfo       StandardAnnotation 
- sort OpInfo       = AOpInfo         StandardAnnotation
+% type Property     = AProperty       StandardAnnotation
 
- sort Properties   = AProperties     StandardAnnotation
- sort Property     = AProperty       StandardAnnotation
+ type Specs        = ASpecs          StandardAnnotation
+ % type Sorts        = ASorts          StandardAnnotation
+ % type Ops          = AOps            StandardAnnotation
 
- sort Specs        = ASpecs          StandardAnnotation
- % sort Sorts        = ASorts          StandardAnnotation
- % sort Ops          = AOps            StandardAnnotation
+ type MetaSortScheme= AMetaSortScheme StandardAnnotation
 
- sort MetaSortScheme  = AMetaSortScheme StandardAnnotation
+ op emptySortMap  : SortMap    
+ op emptyOpMap    : OpMap      
+ op emptyElements : SpecElements 
 
- op emptySortMap    : SortMap    
- op emptyOpMap      : OpMap      
- op emptyProperties : Properties 
-
- def emptySortMap    = emptyASortMap
- def emptyOpMap      = emptyASortMap
- def emptyProperties = emptyAProperties
+ def emptySortMap  = emptyASortMap
+ def emptyOpMap    = emptyASortMap
+ def emptyElements = emptyAElements
 
  sort MetaTyVarsContext = {map     : Ref (NatMap.Map String),
                            counter : Ref Nat}
@@ -135,4 +133,5 @@ StandardSpec qualifying spec {
  def mkConsPattern (p1 : MS.Pattern, p2 : MS.Pattern, pos, element_type) : MS.Pattern =
   let list_type  = Base (Qualified("List","List"), [element_type], pos) in
   EmbedPat ("Cons", Some (RecordPat ([("1",p1), ("2",p2)], pos)), list_type, pos)
-}
+
+endspec

@@ -21,7 +21,7 @@ as done here.
 
 \begin{spec}
 SpecCalc qualifying spec 
-{
+
  import Types
  import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
 
@@ -457,5 +457,5 @@ SpecCalc qualifying spec
 
   op ppOtherTerm : [a] OtherTerm a -> Doc % Used for extensions to Specware
 
-}
+endspec
 \end{spec}

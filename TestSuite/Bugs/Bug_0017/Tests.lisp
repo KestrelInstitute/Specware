@@ -10,10 +10,10 @@
 	    ""
 	    "spec  "
 	    " "
-	    " op  X.fubaz : Nat"
+	    (:optional " op  X.fubaz : Nat")
 	    " def X.fubaz = 12345"
 	    " "
-	    " op  Y.fubaz : Nat"
+	    (:optional " op  Y.fubaz : Nat")
 	    " def Y.fubaz = 12345"
 	    "endspec"
 	    ""

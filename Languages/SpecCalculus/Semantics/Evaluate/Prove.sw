@@ -1,6 +1,6 @@
 SpecCalc qualifying spec {
   import UnitId
-  import SpecUnion
+  %import SpecUnion
   import /Languages/Snark/SpecToSnark
   import /Provers/DP/ToFourierMotzkin
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
@@ -29,7 +29,7 @@ SpecCalc qualifying spec {
      expandedSpec <- return (transformSpecForFirstOrderProver baseSpec userSpec);
      _ <- return (writeLine("    Expanded spec file: " ^ finalSpecFileName));
      _ <- return (writeLine("    Snark Log file: " ^ proverLogFileName));
-     _ <- return (printSpecToFile(finalSpecFileName, expandedSpec));
+     _ <- return (printFlatSpecToFile(finalSpecFileName, expandedSpec));
      _ <- return (if specwareDebug? then writeString(printSpec(expandedSpec)) else ());
      proverOptions <- 
        (case possibleOptions of
@@ -213,11 +213,11 @@ SpecCalc qualifying spec {
  def proveInSpec (proofName, claimName, spc, specName, baseSpc, rewriteSpc, proverName,
 		  assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = {
    result <-
-   let baseHypothesis = baseSpc.properties in
-   let rewriteHypothesis = rewriteSpc.properties in
+   let baseHypothesis = allProperties baseSpc in
+   let rewriteHypothesis = allProperties rewriteSpc in
    let _ = debug("pinspec") in
    let findClaimInSpec = firstUpTo (fn (_, propertyName, _, _) -> claimNameMatch(claimName, propertyName))
-                                   spc.properties in
+                                   (allProperties spc) in
    case findClaimInSpec of
      | None -> raise (Proof (pos, "Claim name is not in spec."))
      | Some (claim, validHypothesis) ->
@@ -336,8 +336,8 @@ SpecCalc qualifying spec {
                          String * List LispCell * Boolean * AnswerVar * String -> Boolean
 
  def proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-			 rewriteHypothesis, rewriteSpc,
-			 proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
+			      rewriteHypothesis, rewriteSpc,
+			      proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
    let _ = debug("preovWithHyp") in
    let _ = if ~(proverName = "Snark") then writeLine(proverName ^ " is not supported; using Snark instead.") else () in
    let (claimType,claimName,_,_) = claim in
@@ -455,7 +455,11 @@ SpecCalc qualifying spec {
 	   Lisp.list [Lisp.list [Lisp.symbol("CL-USER","*ERROR-OUTPUT*"),
 				 Lisp.symbol("CL-USER","LOGFILE")],
 		      Lisp.list [Lisp.symbol("CL-USER","*STANDARD-OUTPUT*"),
-				 Lisp.symbol("CL-USER","LOGFILE")]],
+				 Lisp.symbol("CL-USER","LOGFILE")],
+		      Lisp.list [Lisp.symbol("CL-USER","*PRINT-LEVEL*"),
+				 Lisp.symbol("CL-USER","NIL")],
+		      Lisp.list [Lisp.symbol("CL-USER","*PRINT-LENGTH*"),
+				 Lisp.symbol("CL-USER","NIL")]],
 	   Lisp.list([Lisp.symbol("CL","WRITE-LINE"), Lisp.string("Snark is invoked by evaluating:")]),
 	   Lisp.list([Lisp.symbol("CL","PPRINT"),
 		      Lisp.quote(Lisp.list[Lisp.symbol("CL","LET"), Lisp.list []] Lisp.++ snarkProverDecls)])

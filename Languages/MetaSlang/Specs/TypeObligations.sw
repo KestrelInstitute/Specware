@@ -10,6 +10,9 @@ spec
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/EquivPreds
 
+ %type SpecElement  = QualifiedId * TyVars * MS.Term 
+ type TypeCheckConditions = SpecElements * StringSet.Set
+
  op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
@@ -111,9 +114,6 @@ spec
      ()
  
 
- type TypeCheckCondition  = QualifiedId * TyVars * MS.Term 
- type TypeCheckConditions = List(TypeCheckCondition) * StringSet.Set
-
  op addCondition : TypeCheckConditions * Gamma * MS.Term -> 
 		   TypeCheckConditions
  op addFailure :   TypeCheckConditions * Gamma * String -> 
@@ -148,11 +148,14 @@ spec
 % def range = SpecEnvironment.range
 % def inferType = SpecEnvironment.inferType
 
+ op  mkConjecture: QualifiedId * TyVars * MS.Term -> SpecElement
+ def mkConjecture(qid,tvs,fm) =
+   Property(Conjecture,qid,tvs,fm)
 
  def addFailure((tcc,claimNames),(_,_,_,_,name as Qualified(qid, id),_,_),description) = 
      let descName = id^" :"^description in
      let name = mkQualifiedId(qid, descName) in
-     (Cons((name,[],mkFalse()),tcc),StringSet.add(claimNames,descName))
+     (Cons(mkConjecture(name,[],mkFalse()),tcc),StringSet.add(claimNames,descName))
 
  def makeVerificationCondition((decls,tvs,spc,qid,name as Qualified(qual, id),_,_),term,claimNames) = 
      let
@@ -177,7 +180,8 @@ spec
 
  def addCondition(tcc as (tccs,claimNames),gamma,term) =
    case makeVerificationCondition(gamma,term,claimNames) of
-     | Some condn -> let Qualified(_, cname) = condn.1 in (Cons(condn,tccs),StringSet.add(claimNames,cname))
+     | Some condn -> let Qualified(_, cname) = condn.1 in
+                     (Cons(mkConjecture condn,tccs),StringSet.add(claimNames,cname))
      | None       -> tcc
 
 % Generate a fresh name with respect to all the
@@ -453,10 +457,10 @@ spec
 	let fields = ListPair.zip(fs,fields)    in
 	let (gamma,terms) = 
 	    List.foldr
-	    (fn (((_,tau),(id,p)),(g,terms))-> 
-	     let (gamma,trm) = bindPattern(g,p,tau) in 
-	     (gamma,cons((id,trm),terms)))
-		  (gamma,[]) fields
+	      (fn (((_,tau),(id,p)),(g,terms))-> 
+	       let (gamma,trm) = bindPattern(g,p,tau) in 
+	       (gamma,cons((id,trm),terms)))
+	      (gamma,[]) fields
 	in
 	let trm = mkRecord(terms) in
 	returnPattern(gamma, trm, patternSort pat,tau)
@@ -559,14 +563,14 @@ spec
    let sname = StringUtilities.freshName(id,claimNames) in
    let name = mkQualifiedId(qual, sname) in
    let condn = (name,tvs,form) in
-   (Cons(condn,tccs),StringSet.add(claimNames,sname))
+   (Cons(mkConjecture condn,tccs),StringSet.add(claimNames,sname))
 
  op  addErrorCondition: TypeCheckConditions * Gamma * String -> TypeCheckConditions
  %% Impossible obligation str is an indication of the error
  def addErrorCondition((tccs,claimNames),(_,_,_,_,Qualified(qual, id),_,_),str) =
    let sname = StringUtilities.freshName(id^"_"^str,claimNames) in
    let condn = (mkQualifiedId(qual, sname),[],mkFalse()) in
-   (Cons(condn,tccs),StringSet.add(claimNames,sname))
+   (Cons(mkConjecture condn,tccs),StringSet.add(claimNames,sname))
 
 %
 % Simplify term obtained from pattern matching compilation
@@ -710,7 +714,7 @@ spec
 		    " could not be made subsort of "^
 		    printSort sigma)
 
- op  equivalenceConjectures: MS.Term * Spec -> List TypeCheckCondition
+ op  equivalenceConjectures: MS.Term * Spec -> SpecElements
  def equivalenceConjectures (r,spc) =
    let name = nameFromTerm r in
    let qual = qualifierFromTerm r in
@@ -721,15 +725,18 @@ spec
    let y = ("y",elty) in
    let z = ("z",elty) in
    [%% fa(x,y,z) r(x,y) && r(y,z) => r(x,z)
-    (mkQualifiedId(qual, name^"_transitive"),tyVars,
-     mkBind(Forall,[x,y,z],mkImplies(MS.mkAnd(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar z])),
-				     mkAppl(r,[mkVar x,mkVar z])))),
+    mkConjecture(mkQualifiedId(qual, name^"_transitive"),tyVars,
+		 mkBind(Forall,[x,y,z],
+			mkImplies(MS.mkAnd(mkAppl(r,[mkVar x,mkVar y]),
+					   mkAppl(r,[mkVar y,mkVar z])),
+				  mkAppl(r,[mkVar x,mkVar z])))),
     %% fa(x,y) r(x,y) => r(y,x)
-    (mkQualifiedId(qual, name^"_symmetric"),tyVars,
-     mkBind(Forall,[x,y],mkImplies(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar x])))),
+    mkConjecture(mkQualifiedId(qual, name^"_symmetric"),tyVars,
+		 mkBind(Forall,[x,y],mkImplies(mkAppl(r,[mkVar x,mkVar y]),
+					       mkAppl(r,[mkVar y,mkVar x])))),
     %% fa(x) r(x,x)
-    (mkQualifiedId(qual, name^"_reflexive"),tyVars,
-     mkBind(Forall,[x],mkAppl(r,[mkVar x,mkVar x])))]
+    mkConjecture(mkQualifiedId(qual, name^"_reflexive"),tyVars,
+		 mkBind(Forall,[x],mkAppl(r,[mkVar x,mkVar x])))]
 
  op  nameFromTerm: MS.Term -> String
  def nameFromTerm t =
@@ -743,80 +750,89 @@ spec
      | Fun(Op(Qualified(q,id),_),_,_) -> q
      | _ -> UnQualified
 
+ op  insertQID: QualifiedId * StringMap Nat -> StringMap Nat
+ def insertQID(Qualified(q,id), m) =
+   if q = UnQualified
+     then m
+     else StringMap.insert (m, id, 0)
+
  def checkSpec spc = 
-   let localOps = spc.importInfo.localOps in
-   let names = foldl (fn (Qualified (q, id), m) ->
-		      if q = UnQualified then 
-			m
-		      else 
-			StringMap.insert (m, id, 0))
+   %let localOps = spc.importInfo.localOps in
+   let names = foldl (fn (el,m) ->
+		      case el of
+			| Op qid    -> insertQID(qid, m)
+			| OpDef qid -> insertQID(qid, m)
+			| _ -> m)
                      empty 
-		     localOps
+		     spc.elements
    in
    let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, tau, Ref names) in
    let tcc = ([],empty) in
-   %% Definitions of ops
-   let tcc = 
-       foldriAQualifierMap
-         (fn (q, id, info, tcc) ->
-
-	  if member (Qualified (q, id), localOps) then
-	    foldl (fn (dfn, tcc) ->
-		   let (tvs, tau, term) = unpackTerm dfn in
-		   let usedNames = addLocalVars (term, StringSet.empty) in
-		   %let term = etaExpand (spc, usedNames, tau, term) in
-		   let term = renameTerm (emptyContext ()) term in 
-		   let taus = case tau of
-		                | And (srts, _) -> srts
-				| _ -> [tau]
-		   in
-		   foldl (fn (tau, tcc) ->
-			  (tcc, 
-			   gamma0 
-			   tvs
-			   %% Was unfoldStripSort but that cause infinite recursion.
-			   %% Is stripSubsorts sufficient (or necessary)?
-			   (Some (stripSubsorts(spc, tau)))
-			   (Some (Qualified (q, id), (curriedParams term).1))
-			   (Qualified (q, id ^ "_Obligation")))
-			   |- 
-			  term ?? tau)
-		         tcc
-		         taus)
-	          tcc 
-		  (opInfoDefs info)
-	  else 
-	    tcc)
-	 tcc 
-	 spc.ops
-   in
-   %% Properties (Axioms etc.)
-   let tcc = foldl (fn (pr as (_,pname as Qualified (q, id),tvs,fm),tcc) ->
-		    let fm = renameTerm (emptyContext()) fm in
-		    (tcc, gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
-		     |- fm ?? boolSort)
-                   tcc 
-		   (localProperties spc)
-   in
-   %% Quotient relations are equivalence relations
-   let quotientRelations: Ref(List MS.Term) = Ref [] in
-   let _ = appSpec (fn _ -> (), 
-		    fn s -> case s of
-			      | Quotient(_,r,_) ->
-		                if List.exists (fn rx -> equalTerm?(r,rx)) (!quotientRelations) then
-				  ()
-				else 
-				  let _ = (quotientRelations := Cons(r,!quotientRelations)) in 
-				  ()
-			      | _ -> (),
-		    fn _ -> ())
-                   spc
-     in
-     let tcc = foldl (fn (r,(tccs,names)) -> ((equivalenceConjectures(r,spc)) ++ tccs,names))
-                     tcc 
-		     (!quotientRelations)
+   let (tccs,claimNames) =
+       foldl (fn (el,tcc) ->
+	      let (tccs,claimNames) =
+		  case el of
+		   | OpDef (qid as Qualified(q, id)) ->
+		     (case findTheOp(spc,qid) of
+			| Some opinfo ->
+			  foldr (fn (dfn, tcc) ->
+				 let (tvs, tau, term) = unpackTerm dfn in
+				 let usedNames = addLocalVars (term, StringSet.empty) in
+				 %let term = etaExpand (spc, usedNames, tau, term) in
+				 let term = renameTerm (emptyContext ()) term in 
+				 let taus = case tau of
+					      | And (srts, _) -> srts
+					      | _ -> [tau]
+				 in
+				   foldr (fn (tau, tcc) ->
+					  (tcc, 
+					   gamma0 
+					   tvs
+					   %% Was unfoldStripSort but that cause infinite recursion.
+					   %% Is stripSubsorts sufficient (or necessary)?
+					   (Some (stripSubsorts(spc, tau)))
+					   (Some (qid, (curriedParams term).1))
+					   (Qualified (q, id ^ "_Obligation")))
+					   |- 
+					   term ?? tau)
+				     tcc
+				     taus)
+			    tcc 
+			    (opInfoDefs opinfo))
+		   | SortDef qid ->
+		     (case findTheSort(spc,qid) of
+			| Some sortinfo ->
+			  let quotientRelations: Ref(List MS.Term) = Ref [] in
+			  let _ = List.app (fn srt ->
+				       appSort (fn _ -> (), 
+						fn s ->
+						case s of
+						  | Quotient(_,r,_) ->
+						    if List.exists (fn rx -> equalTerm?(r,rx))
+							 (!quotientRelations) then ()
+						    else 
+						    let _ = (quotientRelations := Cons(r,!quotientRelations)) in 
+						    ()
+						  | _ -> (),
+						fn _ -> ())
+					 srt)
+				    (sortInfoDefs sortinfo)
+			  in
+			  foldr (fn (r,(tccs,names)) -> (equivalenceConjectures(r,spc) ++ tccs,names))
+			    tcc 
+			    (!quotientRelations))
+		   | Property(_,pname as Qualified (q, id),tvs,fm) ->
+		     let fm = renameTerm (emptyContext()) fm in
+		     (tcc, gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
+		     |-
+		     fm ?? boolSort
+		   | _ -> tcc
+	      in
+	      let tcc = (Cons(el,tccs),claimNames) in
+	      tcc)
+         tcc spc.elements
      in			       
-       tcc
+       (rev tccs,claimNames)
 
  op  wfoSpecTerm: SpecCalc.Term Position
  def wfoSpecTerm = (UnitId (SpecPath_Relative {path       = ["Library","Base","WFO"], 
@@ -830,14 +846,12 @@ spec
      | Some wfoSpec ->
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
-   let tcSpec = spc << {importInfo = {imports         = [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)],
-				      % importedSpec  = Some (addDisjointImport(spc,wfoSpec)),
-				      localOps        = emptyOpNames,
-				      localSorts      = emptySortNames,
-				      localProperties = emptyPropertyNames}}
-   in
-   let tcSpec = addDisjointImport (tcSpec, wfoSpec) in
-   addConjectures (rev (checkSpec spc).1, tcSpec)
+   let (new_elements,_) = checkSpec spc in
+   removeDuplicateImports		% could be done more efficiently for special case
+     (spc << {elements = Cons(Import(wfoSpecTerm,wfoSpec,wfoSpec.elements),new_elements),
+	      ops      = insertAQualifierMap(spc.ops,"WFO","wfo",
+					     case findTheOp(wfoSpec,Qualified("WFO","wfo"))
+					       of Some x -> x)})
 
 % op  boundVars   : Gamma -> List Var
 % op  boundTyVars : Gamma -> TyVars
