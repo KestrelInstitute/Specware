@@ -13,7 +13,7 @@ SpecCalc qualifying spec {
 \end{spec}
 
 \begin{spec}
-  def evaluateLet decls term = {
+  def SpecCalc.evaluateLet decls term = {
       context <- getLocalContext;
       evaluateLocalDecls decls;
       valueInfo <- evaluateTermInfo term;

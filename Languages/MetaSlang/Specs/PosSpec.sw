@@ -4,6 +4,8 @@
 PosSpec qualifying spec {
  import AnnSpec
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
+ import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+
 
  sort Position = (Nat * Nat) * (Nat * Nat)
 
@@ -291,6 +293,49 @@ PosSpec qualifying spec {
   in
   let sp = setOps (old_spec, new_ops) in
   addLocalOpName (sp, name)
+
+ % ------------------------------------------------------------------------
+
+ op mergePSortInfo: PSortInfo * Option PSortInfo * Qualifier * Id -> PSortInfo
+ def mergePSortInfo(newPSortInfo,optOldPSortInfo,qualifier,id) =
+   case (newPSortInfo,optOldPSortInfo) of
+     | (_,None) -> newPSortInfo
+     | ((new_sort_names, new_type_vars, new_opt_def),
+	Some (old_sort_names, old_type_vars, old_opt_def)) ->
+   (if ~(length new_type_vars = length old_type_vars)
+     then fail ("Merged Sorts "^qualifier^"."^id^" have different type variable lists")
+   else
+   let sort_names = listUnion(new_sort_names,old_sort_names) in
+   case (new_opt_def, old_opt_def) of
+       | (None,   None)   -> (sort_names, new_type_vars, None)
+       | (Some _, None)   -> (sort_names, new_type_vars, new_opt_def)
+       | (None,   Some _) -> (sort_names, new_type_vars, old_opt_def)
+       | (Some sNew, Some sOld) ->
+         if sNew = sOld % Could use a smarter equivalence test
+	   then (sort_names, new_type_vars, new_opt_def)
+	   else fail ("Merged Sorts "^qualifier^"."^id^" have different definitions"))
+
+ op mergePOpInfo: POpInfo * Option POpInfo * Qualifier * Id -> POpInfo
+ def mergePOpInfo(newPOpInfo,optOldPOpInfo,qualifier,id) =
+   case (newPOpInfo,optOldPOpInfo) of
+     | (_,None) -> newPOpInfo
+     | ((new_op_names, new_fixity, new_sort_scheme, new_opt_def),
+	Some (old_op_names, old_fixity, old_sort_scheme, old_opt_def)) ->
+   (if ~(new_fixity = old_fixity)
+     then fail ("Merged Ops "^qualifier^"."^id^" have different fixity")
+   else
+   if ~(new_sort_scheme = old_sort_scheme) % Could use a smarter equivalence test
+     then fail ("Merged Ops "^qualifier^"."^id^" have different sorts")
+   else
+   let op_names = listUnion(new_op_names,old_op_names) in
+   case (new_opt_def, old_opt_def) of
+       | (None,   None)   -> (op_names, new_fixity, new_sort_scheme, None)
+       | (Some _, None)   -> (op_names, new_fixity, new_sort_scheme, new_opt_def)
+       | (None,   Some _) -> (op_names, new_fixity, new_sort_scheme, old_opt_def)
+       | (Some sNew, Some sOld) ->
+         if sNew = sOld   % Could use a smarter equivalence test
+	   then (op_names, new_fixity, new_sort_scheme, new_opt_def)
+	   else fail ("Merged Ops "^qualifier^"."^id^" have different definitions"))
 
  % ------------------------------------------------------------------------
 

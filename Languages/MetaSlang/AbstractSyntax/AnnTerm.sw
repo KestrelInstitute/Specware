@@ -594,17 +594,17 @@ MetaSlang qualifying spec {
 	 let newS2 = mapRec s2 in
 	 if newS1 = s1 & newS2 = s2 then srt
 	   else Arrow (newS1,  newS2, a)
-       | Quotient  (srt, trm,  a) ->
-	 let newSrt = mapRec srt in
+       | Quotient  (ssrt, trm,  a) ->
+	 let newSsrt = mapRec ssrt in
 	 let newTrm =  mapTerm tsp_maps trm in
-	 if newSrt = srt & newTrm = trm then srt
-	   else Quotient (newSrt, newTrm,  a)
-       | Subsort   (srt, trm,  a) ->
-	 let newSrt = mapRec srt in
+	 if newSsrt = ssrt & newTrm = trm then srt
+	   else Quotient (newSsrt, newTrm,  a)
+       | Subsort   (ssrt, trm,  a) ->
+	 let newSsrt = mapRec ssrt in
 	 let newTrm =  mapTerm tsp_maps trm in
-	 if newSrt = srt & newTrm = trm then srt
-	   else Subsort (newSrt, newTrm,  a)
-     % | Subset    (srt, trm,  a) -> Subset    (mapRec srt, mapTerm tsp_maps trm, a)
+	 if newSsrt = ssrt & newTrm = trm then srt
+	   else Subsort (newSsrt, newTrm,  a)
+     % | Subset    (ssrt, trm,  a) -> Subset    (mapRec ssrt, mapTerm tsp_maps trm, a)
        | Base      (qid, srts, a) ->
 	 let newSrts = map mapRec srts in
 	 if newSrts = srts then srt

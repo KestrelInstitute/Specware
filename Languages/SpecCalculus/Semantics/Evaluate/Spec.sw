@@ -8,6 +8,7 @@ SpecCalc qualifying spec {
   import URI/Utilities
   % import ../../../MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
+  import /Languages/MetaSlang/Specs/PosSpec
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -82,33 +83,43 @@ and then qualify the resulting spec if the spec was given a name.
 
  def mergeImport ((spec_term, imported_spec), spec_a) =
    let spec_b = addImport ((showTerm spec_term, imported_spec), spec_a) in
-   let spec_c = setSorts (spec_b,
-     foldriAQualifierMap
-       (fn (imported_qualifier, 
-            imported_id, 
-            imported_sort_info, 
-            combined_psorts) ->
-              insertAQualifierMap (combined_psorts,
-                                   imported_qualifier,
-                                   imported_id,
-                                   convertSortInfoToPSortInfo imported_sort_info))
-     spec_b.sorts
-     imported_spec.sorts)
+   let spec_c = setSorts
+                  (spec_b,
+		   foldriAQualifierMap
+		     (fn (imported_qualifier, 
+			  imported_id, 
+			  imported_sort_info, 
+			  combined_psorts) ->
+		      let newPSortInfo = convertSortInfoToPSortInfo imported_sort_info in
+		      let oldPSortInfo = findAQualifierMap(combined_psorts,imported_qualifier,
+							   imported_id) in
+		      insertAQualifierMap(combined_psorts,
+					  imported_qualifier,
+					  imported_id,
+					  mergePSortInfo(newPSortInfo,oldPSortInfo,
+							 imported_qualifier,imported_id)))
+		     spec_b.sorts
+		     imported_spec.sorts)
    in
-   let spec_d = setOps (spec_c,
-     foldriAQualifierMap
-       (fn (imported_qualifier, 
-            imported_id, 
-            imported_op_info, 
-            combined_pops) ->
-              insertAQualifierMap (combined_pops,
-                                   imported_qualifier,
-                                   imported_id,
-                                   convertOpInfoToPOpInfo imported_op_info))
-       spec_c.ops
-       imported_spec.ops)
+   let spec_d = setOps(spec_c,
+                       foldriAQualifierMap
+		         (fn (imported_qualifier, 
+			      imported_id, 
+			      imported_op_info, 
+			      combined_pops) ->
+			  let newPOpInfo = convertOpInfoToPOpInfo imported_op_info in
+			  let oldPOpInfo = findAQualifierMap(combined_pops,imported_qualifier,
+							     imported_id) in
+			  insertAQualifierMap(combined_pops,
+					      imported_qualifier,
+					      imported_id,
+					      mergePOpInfo(newPOpInfo,oldPOpInfo,
+							   imported_qualifier,imported_id)))
+			 spec_c.ops
+			 imported_spec.ops)
    in
      spec_d
+
 \end{spec}
 
 The following wraps the existing \verb+elaborateSpec+ in a monad until
