@@ -20,11 +20,12 @@ spec
 
   def fresh ns prefix =
     let n =
-	case StringMap.find (State.! ns, prefix)
+	case StringMap.find (! ns, prefix)
 	  of None   -> 0
 	   | Some n -> n in
-    (ns State.:= StringMap.insert (State.! ns, prefix, n + 1);
-     prefix ^ "_" ^ Nat.toString n)
+    (ns State.:= StringMap.insert (! ns, prefix, n + 1);
+     if n = 0 then prefix
+       else prefix ^ "_" ^ toString n)
 
 endspec
 

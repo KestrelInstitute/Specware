@@ -1,12 +1,14 @@
 TypeObligations qualifying
 spec 
-  import /Languages/MetaSlang/Transformations/CurryUtils
-  import /Languages/MetaSlang/Transformations/PatternMatch
-  import /Languages/MetaSlang/Transformations/Simplify
-  import /Languages/MetaSlang/Transformations/LambdaLift
-  import /Languages/MetaSlang/Transformations/ProverPattern
-  import /Languages/MetaSlang/Transformations/InstantiateHOFns
-  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
+ import /Languages/MetaSlang/Transformations/CurryUtils
+ import /Languages/MetaSlang/Transformations/PatternMatch
+ import /Languages/MetaSlang/Transformations/Simplify
+ import /Languages/MetaSlang/Transformations/LambdaLift
+ import /Languages/MetaSlang/Transformations/ProverPattern
+ import /Languages/MetaSlang/Transformations/InstantiateHOFns
+ import /Languages/MetaSlang/Transformations/RenameBound
+ import /Languages/SpecCalculus/Semantics/Evaluate/Signature
+
  op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
@@ -27,15 +29,17 @@ spec
  op  insertLet    : List (Pattern * MS.Term) * Gamma -> Gamma
  op  insertLetRec : List (Var * MS.Term) * Gamma -> Gamma
 
- def assertSubtypeCond(term,srt:Sort,gamma) = 
+ op  assertSubtypeCond: MS.Term * MS.Sort * Gamma -> Gamma
+ def assertSubtypeCond(term,srt,gamma) = 
      case srt
        of Subsort(srt,pred,_) ->
           let (ds,tvs,spc,qid,name,names) = gamma in
-          assertSubtypeCond(term,srt,(cons(Cond(mkLetOrApply(pred,term)):Decl,ds),
+          assertSubtypeCond(term,srt,(cons(Cond(mkLetOrApply(pred,term,gamma)),ds),
 				      tvs,spc,qid,name,names))
         | _ -> gamma
 
- def mkLetOrApply(fntm,arg) =
+ op  mkLetOrApply: MS.Term * MS.Term * Gamma -> MS.Term
+ def mkLetOrApply(fntm,arg,gamma) =
    case fntm of
      | Lambda ([(VarPat(v as (vn,srt),_),Fun(Bool true, _,_),bod)],_) ->
        % mkLet([(VarPat(v,a),arg)],bod)
@@ -47,9 +51,9 @@ spec
 		    id, id)
 	     bod
 	 | _ ->
-	   if exists(fn (vn1,_) -> vn = vn1) (freeVars arg)    % Name clash
-	     then let vn1 = vn^"1" in
-	          mkLetOrApply(mkLambda(mkVarPat(vn1,srt),substitute(bod,[(v,mkVar(vn1,srt))])),arg)
+	   let vn1 = freshName(gamma,vn) in
+	   if ~(vn1 = vn)
+	     then mkLetOrApply(mkLambda(mkVarPat(vn1,srt),substitute(bod,[(v,mkVar(vn1,srt))])),arg,gamma)
 	     else mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
      | _ -> mkApply(fntm,arg)
 
@@ -383,12 +387,12 @@ spec
      else
      case tau1 
        of Subsort(tau2,pred,_) -> 
-	  let gamma = assertCond(mkLetOrApply(pred,M),gamma) in
+	  let gamma = assertCond(mkLetOrApply(pred,M,gamma),gamma) in
           returnPatternRec(pairs,gamma,M,tau2,sigma1)
 	| _ -> 
      case sigma1 
        of Subsort(sigma2,pred,_) -> 
-	  let gamma = assertCond(mkLetOrApply(pred,M),gamma) in
+	  let gamma = assertCond(mkLetOrApply(pred,M,gamma),gamma) in
 	  returnPatternRec(pairs,gamma,M,tau1,sigma2)
 	| _ -> (gamma,M)
  
@@ -564,14 +568,14 @@ spec
      case tau1 
        of Subsort(tau2,pred,_) -> 
 %	  let _ = String.writeLine("Asserting "^printTerm pred) in
-	  let gamma = assertCond(mkLetOrApply(pred,M),gamma) in
+	  let gamma = assertCond(mkLetOrApply(pred,M,gamma),gamma) in
           subtypeRec(pairs,tcc,gamma,M,tau2,sigma)
 	| _ -> 
      case sigma1 
        of Subsort(sigma2,pred,_) -> 
 %	  let _ = String.writeLine("Verifying "^printTerm pred) in
 	  let tcc = subtypeRec(pairs,tcc,gamma,M,tau,sigma2) in
-	  let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M)) in
+	  let tcc = addCondition(tcc,gamma,mkLetOrApply(pred,M,gamma)) in
 	  tcc
 	| _ ->
      case (tau1,sigma1)
@@ -579,7 +583,7 @@ spec
           let (xVarTm,gamma1) = freshVars("X",sigma1,gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVarTm,sigma1,tau1) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,
-				  mkLetOrApply(M,xVarTm),tau2,sigma2) in
+				  mkLetOrApply(M,xVarTm,gamma1),tau2,sigma2) in
 	  tcc
         | (Product(fields1,_),Product(fields2,_)) -> 
 	  let tcc = ListPair.foldl 
@@ -674,7 +678,8 @@ spec
 	 foldriAQualifierMap
 	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
 	     if member(Qualified(qname, name),localOps) then
-		 foldl (fn ((type_vars, term), tcc) ->
+	         foldl (fn ((type_vars, term), tcc) ->
+			 let term = renameTerm (emptyContext()) term in 
 			 (tcc,gamma0 tvs (Some(Qualified(qname,name),(curriedParams term).1))
 			        (name^"_Obligation"))
 			      |- term ?? tau)
@@ -687,7 +692,8 @@ spec
      let baseProperties = (getBaseSpec()).properties in
      let tcc = foldr (fn (pr as (_,name,tvs,fm),tcc) ->
 		       if member(pr,baseProperties) then tcc
-			 else (tcc,gamma0 tvs None (name^"_Obligation"))  |- fm ?? boolSort)
+			 else let fm = renameTerm (emptyContext()) fm in
+			      (tcc,gamma0 tvs None (name^"_Obligation"))  |- fm ?? boolSort)
                  tcc spc.properties
      in
      %% Quotient relations are equivalence relations
