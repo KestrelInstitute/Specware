@@ -11,6 +11,7 @@ SpecCalc qualifying spec
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
   import Monad
+
 \end{spec}
 
 The Monad/Base spec supplies declarations of
@@ -57,6 +58,9 @@ UnitId_Dependency.
   sort UnitId_Dependency = List UnitId
   sort ValidatedUIDs = List UnitId
   sort ValueInfo = Value * TimeStamp * UnitId_Dependency
+  %% See validateCache in Evaluate/UnitId.sw -- it chases dependencies recursively,
+  %% so we should not need to take unions of dependencies.
+
   sort GlobalContext = PolyMap.Map (UnitId, ValueInfo)
   sort LocalContext  = PolyMap.Map (RelativeUID, ValueInfo)
   % sort State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
