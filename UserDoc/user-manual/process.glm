@@ -443,7 +443,7 @@ are processed.</para>
 <section>
 <title>Typechecking Specs</title>
 
-<para>The user can construct specs by explicitly listing the sorts,
+<para>The user can construct specs by explicitly listing the types,
 ops, and axioms comprising the spec, possibly after importing one or
 more spec. When these spec definitions are processed, &Specware;
 typechecks all the expressions that appear in the spec. Typechecking
@@ -451,7 +451,7 @@ means checking that the expressions are type-correct, according to the
 rules of the &Metaslang; language.</para>
 
 <para>In general, only some of the ops and variables that appear in an
-expression have explicit type (i.e., sort) information. Typechecking
+expression have explicit type information. Typechecking
 also involves reconstructing the types of those ops and variables that
 lack explicit type information.</para>
 
@@ -459,7 +459,7 @@ lack explicit type information.</para>
 correctness of expressions while reconstructing the missing type
 information. This is done by deriving and solving type constraints
 from the expression. For instance, if it is known that an op [[f]] has
-sort [[A -> B]] then the type of the variable [[x]] in the expression
+type [[A -> B]] then the type of the variable [[x]] in the expression
 [[f(x)]] must be [[A]], and the type of the whole expression must be
 [[B]].</para>
 
@@ -536,10 +536,10 @@ that the Lisp program unit is defined by:</para>
 <title>Displaying Unit Values</title>
 
 <para>When a unit definition is processed, a unit value is produced.
-For example, a spec is essentially a set of sorts, ops, and axioms.  A
+For example, a spec is essentially a set of types, ops, and axioms.  A
 spec can be constructed by means of various operations in the
 &Metaslang; language, but the final result is always a spec, i.e., a
-set of sorts, ops, and axioms.</para>
+set of types, ops, and axioms.</para>
 
 <para>The [[L::show]] command is used to display the value of a
 unit. Like [[L::sw]], it is also supplied in the XEmacs buffer of the

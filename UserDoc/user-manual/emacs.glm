@@ -65,7 +65,7 @@ them are available in the &Specware menu in the menubar.
 	<entry colname="key">&nbsp; [[M-.]]</entry>
         <entry colname="name">&nbsp; [[sw:meta-point]]</entry>
 	<entry colname="descr">&nbsp; 
-	  Prompts for op or sort name (with default based on symbol at
+	  Prompts for op or type name (with default based on symbol at
 	  point), and goes to its definition. Searches only the units
 	  that have been loaded. First searches for definitions
 	  visible from the current unit.
@@ -167,7 +167,7 @@ These are the commands available in the *common-lisp* buffer.
 	<entry colname="key">&nbsp; [[M-.]]</entry>
         <entry colname="name">&nbsp; [[sw:meta-point]]</entry>
 	<entry colname="descr">&nbsp; 
-	  Prompts for op or sort name (with default based on symbol at
+	  Prompts for op or type name (with default based on symbol at
 	  point), and goes to its definition. Searches only the units
 	  that have been loaded.
 	</entry>

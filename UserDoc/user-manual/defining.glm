@@ -34,7 +34,7 @@ without risk of naming clashes.</para>
 <para>A unit term is text written in the &Metaslang;
 language. &Metaslang; features various ways to construct specs,
 morphisms, and all the other kinds of units. For instance, it is
-possible to construct a spec by explicitly listing its sorts, ops, and
+possible to construct a spec by explicitly listing its types, ops, and
 axioms.  It is also possible to construct a spec by applying the
 colimit operation to a diagram of specs and morphisms.</para>
 
@@ -110,13 +110,13 @@ containing the following text:</para>
 
 [[
 ||    spec
-||      sort X
+||      type X
 ||    endspec
 ]]
 
 <para>The absolute path of the file in the file system is
 <"c:\users\me\specware\one\two\A.sw">. The unit is a spec containing
-just a sort [[X]]. The identifier of the unit is [[/one/two/A]]. Note
+just a type [[X]]. The identifier of the unit is [[/one/two/A]]. Note
 that the path components are separated by ``/'' (forward slash), even
 though the underlying file system uses ``\'' (backward slash). Unit
 identifier are sequences of word symbols separated by ``/'',
@@ -154,17 +154,17 @@ text:</para>
 
 [[
 ||    B = spec
-||      sort Y
+||      type Y
 ||    endspec
 ||
 ||    three = spec
 ||      import B
-||      sort Z
+||      type Z
 ||    endspec
 ]]
 
-<para>This file defines two specs, one containing just a sort [[Y]],
-the other containing just a sort [[Z]]. The identifier of the first
+<para>This file defines two specs, one containing just a type [[Y]],
+the other containing just a type [[Z]]. The identifier of the first
 spec is [[/one/two/three#B]], the identifier of the second spec is
 [[/one/two/three#three]].</para>
 

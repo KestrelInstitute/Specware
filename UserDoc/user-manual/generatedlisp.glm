@@ -6,12 +6,12 @@
 The translation of executable specs to Lisp code is straightforward
 for the most part as Lisp is a higher-order functional
 language. Functional expressions go to lambda expressions and most
-&Specware; sorts are implemented as Lisp lists and vectors apart
+&Specware; types are implemented as Lisp lists and vectors apart
 from the strings, numbers, characters and booleans which are
 implemented by the corresponding Lisp datatypes. This guide is meant
 primarily to help the user in calling and debugging the functions
 generated from a spec, so we concentrate on the translation of op
-names to Lisp names and the implementation of sorts. The
+names to Lisp names and the implementation of types. The
 implementation details of procedural constructs such as
 pattern-matching are omitted. The interested user is free to examine
 the Lisp code itself, which is simple but verbose for pattern-matching
@@ -148,10 +148,10 @@ returning.
 
 
 <section>
-<title>Representation of Other Sorts</title>
+<title>Representation of Other Types</title>
 
 <para>
-[[Character]] and [[String]] sorts are represented as Lisp characters and
+[[Character]] and [[String]] types are represented as Lisp characters and
 strings, [[Nat]] and [[Integer]] as Lisp integers, lists are represented using
 Lisp lists, and [[Boolean]] [[true]] and [[false]] by the symbols [[L:T]] and [[L:NIL]].
 </para>
@@ -182,7 +182,7 @@ Restrictions and comprehensions are implemented using their supersort.
 A quotient is represented as as a vector of three elements: the
 quotient tag (which is the value of the Lisp variable
 [[L:SLANG-BUILT-IN::QUOTIENT-TAG]]), the representation of the quotient
-relation, and the actual value in the underlying sort.
+relation, and the actual value in the underlying type.
 </para>
 </section>
 </chapter>
