@@ -13,10 +13,10 @@ SpecCalc qualifying spec {
   %sort Spec = MetaSlang.Spec
 
   %% Need to add error detection code
-  def SpecCalc.evaluateLispCompile(valueInfo as (Spec spc,_,_),cterm) =
+  def SpecCalc.evaluateLispCompile(valueInfo as (Spec spc,_,_), cterm, optFileNm) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cURI <- SpecCalc.getURI(cterm);
-     lispFileName <- URItoLispFile cURI;
+     lispFileName <- URItoLispFile (cURI, optFileNm);
      let _ = ensureDirectoriesExist lispFileName in
      let _ = toLispFile(spc, lispFileName,[]) in
      {print("Compiled");
@@ -26,9 +26,12 @@ SpecCalc qualifying spec {
 Make a lisp file name for a URI.
 
 \begin{spec}
-  op URItoLispFile: URI -> SpecCalc.Env String
-  def URItoLispFile uri =
+  op URItoLispFile: URI * Option String -> SpecCalc.Env String
+  def URItoLispFile (uri, optFileNm) =
     % let dirPath = uriDirPath uri in
+    case optFileNm
+      of Some filNam -> return filNam
+       | _ ->
     {prefix <- removeLastElem uri;
      mainName <- lastElem uri;
      let filNm = (uriToPath prefix)

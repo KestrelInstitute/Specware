@@ -81,20 +81,21 @@ The following is designed to allow for use by a lisp read-eval-print loop.
 Allow the user to compile a URI from the lisp interface.
 
 \begin{spec}
-  op compileSpecwareURIenv : String * State -> (SpecCalc.Result Value) * State
-  def compileSpecwareURIenv (path,specwareState) = 
+  op compileSpecwareURIenv : String * Option String * State
+                            -> (SpecCalc.Result Value) * State
+  def compileSpecwareURIenv (path,targetfile,specwareState) = 
     let run = {
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       uri <- pathToRelativeURI path; 
-      catch (evaluateAndLispCompile uri) toplevelHandler
+      catch (evaluateAndLispCompile (uri, targetfile)) toplevelHandler
     } in
     run specwareState
 
-  op evaluateAndLispCompile: RelativeURI -> SpecCalc.Env Value
-  def evaluateAndLispCompile uri =
+  op evaluateAndLispCompile: RelativeURI * Option String -> SpecCalc.Env Value
+  def evaluateAndLispCompile (uri, targetfile) =
     {spcInfo <- evaluateTermInfo(URI uri,pos0);
-     (value,_,_) <- evaluateLispCompile(spcInfo,(URI uri,pos0));
+     (value,_,_) <- evaluateLispCompile(spcInfo,(URI uri,pos0), targetfile);
      return value}
 \end{spec}
 

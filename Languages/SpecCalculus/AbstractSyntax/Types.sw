@@ -118,9 +118,10 @@ name of the target language. Perhaps it should be a constructor.
 Also perhaps we should say where to put the output. The idea is that
 is should go in the file with the same root name as the URI calling
 compiler (but with a .lisp suffix) .. but the term may not have a URI.
+The third argument is an optional file name to store the result.
 
 \begin{spec}
-    | Generate (String * (Term a))
+    | Generate (String * (Term a) * Option String)
 \end{spec}
 
 The following are declarations that appear in a file or listed
@@ -140,7 +141,7 @@ mapping from names to names.
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
 \begin{spec}
-  sort TranslateExpr a = List (TranslateMap a)
+  sort TranslateExpr a = List (TranslateMap a) * a
   sort TranslateMap a = ((QualifiedId * QualifiedId) * a)
 \end{spec}
 

@@ -66,12 +66,13 @@ This is a monadic interpreter for the Spec Calculus.
     | Translate (sub_term, translation) ->
         SpecCalc.evaluateTranslate sub_term translation
 
-    | Generate (language, sub_term as (term,position)) -> {
+    | Generate (language, sub_term as (term,position), optFile) -> {
           (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
           (case value of
             | Spec spc -> 
                 (case language of
-                   | "lisp" -> evaluateLispCompile ((value,timeStamp,depURIs),sub_term)
+                   | "lisp" -> evaluateLispCompile ((value,timeStamp,depURIs),
+						   sub_term,optFile)
                    | "spec" -> {
                           print (showValue value);
                           return (value,timeStamp,depURIs)

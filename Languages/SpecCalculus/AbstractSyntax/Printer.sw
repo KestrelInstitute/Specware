@@ -77,13 +77,12 @@ SpecCalc qualifying spec {
             ppString " qualifying ",
             ppTerm term
           ]
-(*
-      | Translate (term, translation) ->
+      | Translate (term, (translation,_)) ->
           let def ppTranslatePair ((left,right),pos) =
             ppConcat [
-              ppTerm left,
-              ppString " |-> ",
-              ppTerm right
+              ppQualifier left,
+              ppString " -> ",
+              ppQualifier right
             ] in
           ppConcat [
             ppString "{",
@@ -92,7 +91,6 @@ SpecCalc qualifying spec {
             ppString " translating ",
             ppTerm term
           ]
-*)
       | Let (decls, term) ->
           ppConcat [
             ppString "let {",
@@ -159,11 +157,18 @@ SpecCalc qualifying spec {
             ppTerm term
           ]
 *)
-      | Generate (target,term) ->
-          ppConcat [
+      | Generate (target,term,optFileNm) ->
+          ppConcat ([
             ppString ("generate " ^ target ^ " "),
             ppTerm term
           ]
+	 ++ (case optFileNm
+	       of Some filNm -> [ppString(" in " ^ filNm)]
+		| _ -> []))
+
+  def ppQualifier(Qualified(Qualifier,Id))  =
+    if Qualifier = UnQualified then ppString Id
+      else ppString(Qualifier^"."^Id)
 
   op ppDiagElem : fa (a) DiagElem a -> Doc
   def ppDiagElem (elem,position) =

@@ -69,6 +69,12 @@ and then qualify the resulting spec if the spec was given a name.
       | Claim (Axiom, name, tyVars, term) ->
           return (addAxiom ((name,tyVars,term), spc),
                   cTS,cDepURIs)
+      | Claim (Theorem, name, tyVars, term) ->
+          return (addTheorem ((name,tyVars,term), spc),
+		  cTS,cDepURIs)
+      | Claim (Conjecture, name, tyVars, term) ->
+          return (addConjecture ((name,tyVars,term), spc),
+		  cTS,cDepURIs)
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
 
  def mergeImport ((spec_term, imported_spec), spec_a) =
