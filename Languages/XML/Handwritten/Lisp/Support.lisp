@@ -4,8 +4,8 @@
 (defun XML::printXML (datum-and-table)
   (let* ((datum (car datum-and-table))
 	 (table (cdr datum-and-table)))
-    (let ((doc (generate_Document datum table)))
-      (print_Document_to_String-1 doc))))
+    (let ((doc (generate_Document-2 datum table)))
+      (print_Document_to_String doc))))
 
 ;;;; ;;; ------------------------------------------------------------------------
 ;;;;
