@@ -12,7 +12,10 @@ SpecCalc qualifying spec {
       domValue <- SpecCalc.evaluateTermInfo domTerm;
       codValue <- SpecCalc.evaluateTermInfo codTerm;
       raise (Unsupported ((positionOf domTerm),
-                          "diagram morphisms not available yet"))
+                          "diagram morphisms not available yet\n" 
+			  ^ "Dom   = " ^ showValue domValue ^"\"
+			  ^ "Cod   = " ^ showValue codValue ^"\"
+			  ^ toString (List.length morphRules) " rules"))
     }
 }
 \end{spec}
