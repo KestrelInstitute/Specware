@@ -1,13 +1,11 @@
 
 XML qualifying spec
 
-  import /Languages/MetaSlang/Specs/Elaborate/SortDescriptor
+  import XML_SortDescriptors
   import ../XML_Sig
   import ../Utilities/XML_Unicode
   import Make_XML_Things
   import Magic
-
-  sort SortExpansionTable = List (SortDescriptor * SortDescriptor)
 
   def indentation_chardata (vspacing, indent) : UChars =
     (repeat_char (UChar.newline, vspacing)) ^  (repeat_char (UChar.space, indent))
@@ -19,7 +17,7 @@ XML qualifying spec
       cons (char, repeat_char (char, n - 1))
 
   def fa (X) generate_Document (datum : X,
-				table as (main_entry as (main_sort, _) :: _) : SortExpansionTable)
+				table as (main_entry as (main_sort, _) :: _) : SortDescriptorExpansionTable)
     : Document =
     let Base ((qualifier, main_id), _) = main_sort in
     let dtd = {internal = None,
@@ -32,21 +30,6 @@ XML qualifying spec
 		   [WhiteSpace [UChar.newline, UChar.newline]],
 		   generate_Element (main_id, datum, main_sort, table, 2, 0, true),
 		   [])
-
- def expand_SortDescriptor (sd : SortDescriptor, table : SortExpansionTable) =
-   let
-      def aux sd =
-	let possible_entry = find (fn (x,_) -> x = sd) table in
-	case possible_entry of
-	  | None -> sd
-	  | Some (_, expansion) ->
-	    case expansion of
-	      | Base     _      -> aux expansion
-	      | Subsort  (x, _) -> aux x
-	      | Quotient (x, _) -> aux x
-	      | _               -> expansion
-   in
-     aux sd
 
   def print_qid (qualifier, id) =
     if qualifier = id then
@@ -85,7 +68,7 @@ XML qualifying spec
   def fa (X) generate_Element (name     : String,
 			       datum    : X,
 			       sd       : SortDescriptor,
-			       table    : SortExpansionTable,
+			       table    : SortDescriptorExpansionTable,
 			       vspacing : Nat,
 			       indent   : Nat,
 			       show_type? : Boolean)
@@ -119,7 +102,7 @@ XML qualifying spec
   def fa (X) generate_content (datum      : X,
 			       sd         : SortDescriptor,
 			       sd_pattern : SortDescriptor,
-			       table      : SortExpansionTable,
+			       table      : SortDescriptorExpansionTable,
 			       vspacing   : Nat,
 			       indent     : Nat)
     : Option Content =
@@ -257,7 +240,7 @@ XML qualifying spec
   def fa (X) generate_Content_Item (datum      : X,
 				    sd         : SortDescriptor,
 				    sd_pattern : SortDescriptor,
-				    table      : SortExpansionTable,
+				    table      : SortDescriptorExpansionTable,
 				    vspacing   : Nat,
 				    indent     : Nat)
     : Option CharData * Content_Item =
