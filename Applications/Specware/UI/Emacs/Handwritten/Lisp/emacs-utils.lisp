@@ -31,6 +31,17 @@ Notes:
 	(lep::eval-in-emacs string)))
     #-allegro (format t "~a" string)))
 
+;; This is a special hack to simplify test scripts:
+(defun kill-emacs-and-then-lisp ()
+  ;; Send kill-emacs command while lisp is still running,
+  ;;  so that communcation with xemacs remains active long
+  ;;  enough for emacs to actually read the following command
+  ;;  and react:
+  (emacs::eval-in-emacs "(kill-emacs 0)") 
+  ;; The parent emacs process should now be on a path to die.
+  ;; We don't really care if it dies before or after the 
+  ;; following command kills lisp:
+  (exit-from-lisp 0))
 
 (defvar *select-term-number-in-spec*)
 
