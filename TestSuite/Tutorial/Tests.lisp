@@ -1,3 +1,4 @@
+(cl-user::sw-init)
 
 ;;; Tutorial example
 (test ("FindMatches" :sw "$SPECWARE/UserDoc/tutorial/example/MatchingSpecs#FindMatches"
@@ -44,9 +45,10 @@ p6: Conjecture word_matching_Obligation1 in MatchingObligations#FindMatches0_Obl
                        :output ";;; Generating lisp file find-matches.lisp
 "
 		       :files '("$TESTDIR/find-matches.lisp"))
-      ("Load find-matches.lisp" :lisp "(specware::compile-and-load-lisp-file \"$TESTDIR/find-matches.lisp\")")
+      ("Load find-matches.lisp" :lisp "(let (#+allegro excl:*redefinition-warnings*)
+                                         (specware::compile-and-load-lisp-file \"$TESTDIR/find-matches.lisp\"))")
       ("swll MatchingTest#Test" :swll "$SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
-                       :output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingTest#Test
+				:output ";;; Elaborating spec at $SPECWARE/UserDoc/tutorial/example/MatchingTest#Test
 ;;; Generating lisp file /tmp/cl-current-file.lisp
 ")
       ("test_find_matches" :swe "test_find_matches(\"**V*ALN**EC*E*S\",

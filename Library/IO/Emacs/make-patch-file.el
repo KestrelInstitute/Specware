@@ -1,5 +1,7 @@
 (require 'compare-w)
 
+(defvar *copy-new-defs-without-asking* t)
+
 (defun sw:make-patch-file (file)
   (interactive "FPatch file name: ")
   (save-excursion
@@ -25,7 +27,8 @@
 		(progn
 		  (sw:copy-to-patch-buffer new-buffer patch-file-buffer
 					(point new-buffer) (point-max new-buffer)
-					new-window old-window (point old-buffer) dont-ask)
+					new-window old-window (point old-buffer)
+					(or *copy-new-defs-without-asking* dont-ask))
 		  (goto-char (point-max new-buffer) new-buffer))
 	      (progn
 		(with-current-buffer new-buffer
@@ -58,7 +61,8 @@
 			(with-current-buffer new-buffer
 			  (sw:copy-to-patch-buffer new-buffer patch-file-buffer
 						   (point) (progn (beginning-of-defun -1) (point))
-						   new-window old-window (point old-buffer) dont-ask)))
+						   new-window old-window (point old-buffer)
+						   (or *copy-new-defs-without-asking* dont-ask))))
 		      ;; Start again at matching definition in old buffer
 		      (unless (eq (point new-buffer) (point-max new-buffer))
 			(goto-char (point-min) old-buffer)
