@@ -531,8 +531,7 @@ spec
     &&
     (fa (old:Type, new:Type, pos:Position, eo:BindingExprOperator,
          vS:Variables, tS:Types, e:Expression, i:Nat, newTi:Type)
-       i < length vS &&
-       length vS = length tS &&
+       i < length tS &&
        isTypeSubstInTypeAt? (tS!i, old, new, pos, newTi) =>
        isTypeSubstInExprAt? (binding (eo, vS, tS, e), old, new, (i+1) |> pos,
                              binding (eo, vS, update(tS,i,newTi), e)))
@@ -574,16 +573,14 @@ spec
     &&
     (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
          pS:Patterns, eS:Expressions, newEi:Expression)
-       i < length pS &&
-       length pS = length eS &&
+       i < length eS &&
        isTypeSubstInExprAt? (eS!i, old, new, pos, newEi) =>
        isTypeSubstInExprAt? (casE (e, pS, eS), old, new, (2*i+2) |> pos,
                              casE (e, pS, update(eS,i,newEi))))
     &&
     (fa (old:Type, new:Type, pos:Position, e:Expression, vS:Variables, tS:Types,
          eS:Expressions, e:Expression, i:Nat, newTi:Type)
-       i < length vS &&
-       length vS = length tS &&
+       i < length tS &&
        isTypeSubstInTypeAt? (tS!i, old, new, pos, newTi) =>
        isTypeSubstInExprAt? (recursiveLet (vS, tS, eS, e),
                              old, new, (2*i+1) |> pos,
@@ -591,8 +588,7 @@ spec
     &&
     (fa (old:Type, new:Type, pos:Position, e:Expression, vS:Variables, tS:Types,
          eS:Expressions, e:Expression, i:Nat, newEi:Expression)
-       i < length vS &&
-       length vS = length tS &&
+       i < length eS &&
        isTypeSubstInExprAt? (eS!i, old, new, pos, newEi) =>
        isTypeSubstInExprAt? (recursiveLet (vS, tS, eS, e),
                              old, new, (2*i+2) |> pos,

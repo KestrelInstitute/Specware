@@ -4,6 +4,39 @@ again. *)
 
 
 
+%%% ops to check conditions on types:
+
+  (* Check whether type is sum type with distinct constructors and with the
+  same non-zero number of constructors and optional component types. If so,
+  return constructors and optional component types. *)
+
+  op checkSumType : Type -> MayFail (Constructors * Type?s)
+  def checkSumType t =
+    case t of
+      | sum (cS, t?S) ->
+        if noRepetitions? cS
+        && length cS > 0
+        && length cS = length t?S
+        then OK (cS, t?S)
+        else FAIL
+      | _ -> FAIL
+
+
+  (* Check whether type is record type with distinct fields and with the same
+  number of fields and component types. If so, return fields and component
+  types. *)
+
+  op checkRecordType : Type -> MayFail (Fields * Types)
+  def checkRecordType t =
+    case t of
+      | nary (record fS, tS) ->
+        if noRepetitions? fS
+        && length fS = length tS then OK (fS, tS)
+        else FAIL
+      | _ -> FAIL
+
+
+
 %%% non-constructive ops for checking proofs:
 
   def checkExtraTypeVars = the (fn checkExtraTypeVars ->
