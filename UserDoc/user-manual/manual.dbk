@@ -4,6 +4,7 @@
  <!ENTITY model SYSTEM "model.dbk">
  <!ENTITY defining SYSTEM "defining.dbk">
  <!ENTITY process SYSTEM "process.dbk">
+ <!ENTITY prove SYSTEM "prove.dbk">
  <!ENTITY generatedlisp SYSTEM "generatedlisp.dbk">
  <!ENTITY debug SYSTEM "debug.dbk">
 
@@ -43,6 +44,7 @@
 &model;
 &defining;
 &process;
+&prove;
 &generatedlisp;
 &debug;
 

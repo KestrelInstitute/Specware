@@ -2,17 +2,17 @@
 <title>Proving Properties in Specs</title>
 
 <para>
-&Specware provides a mechanism for verifying the correctness of
+&Specware; provides a mechanism for verifying the correctness of
 properties specified either specified in &Metaslang specs or
 automatically generated as proof obligations arising from refinements
-or typechecking.  Currently &Specware comes packaged with the &Snark
+or typechecking.  Currently &Specware; comes packaged with the Snark
 first-order theorem prover.  Interaction with Snark is through the
 proof unit described below.
 </para>
 </section>
 
 <section>
-<title>Section 1:  The Proof Unit</title>
+<title>The Proof Unit</title>
 <para>
 The user invokes the Snark theorem prover by constructing a proof
 term.  A typical proof term is of the form:
@@ -26,7 +26,7 @@ term.  A typical proof term is of the form:
 <para>
 If this term is in file <"proof.sw"> then issuing the command
 [[ :sw proof ]] will result in translating [[hypothesis1]], [[hypothesis2]] and [[property]]
-to &Snark and then invoking the &Snark prover to try to prove [[property]]
+to Snark and then invoking the Snark prover to try to prove [[property]]
 from [[hypothesis1]] and [[hypothesis2]] using the options in the [[options]]
 list. Note that [[property]], [[hypothesis1]], and [[hypothesis2]] are all
 properties (i.e. axioms, conjectures, or theorems) that appear in
@@ -38,34 +38,36 @@ all the properties that appear in [[spec_term]] prior to [[property]]
 will be used to prove [[property]].
 </para>
 <para>
-After &Snark completes &Specware will report on the success or failure
+After Snark completes &Specware; will report on the success or failure
 of the Snark proof.
 </para>
+</section>
 
 <section>
 <title>Proof errors</title>
 <para>
-&Specware will report an error if [[property]] does not occur in
+&Specware; will report an error if [[property]] does not occur in
 [[spec_term]] or if one of the axioms do not occur in [[spec_term]]
 prior to [[property]].
 </para>
 <para>
-&Snark will likely break into lisp if then user inputs an incorrect
+Snark will likely break into lisp if then user inputs an incorrect
 option.
 </para>
+</section>
 
 <section>
 <title>Proof Log Files</title>
 <para>
-In the course of its execution &Snark typically outputs a lot of
+In the course of its execution Snark typically outputs a lot of
 information as well as a proof when it finds one.  All this output can
 be overwhelming to the user, yet invaluable in understanding why his
-proofs succeeded or failed.  To deal with all this output &Specware
-redirects all the &Snark output to log files. In our example above,
-that executed a proof in the file <"proof.sw">, &Specware will create
+proofs succeeded or failed.  To deal with all this output &Specware;
+redirects all the Snark output to log files. In our example above,
+that executed a proof in the file <"proof.sw">, &Specware; will create
 a subdirectory called  <"snark>" at the same level as <"proof.sw">.
 In that directory log file, <"proof.log"> will be created that
-contains all the &Snark output.
+contains all the Snark output.
 </para>
 </section>
 
@@ -83,7 +85,7 @@ include more than one proof as follows:
 ]]
 
 <para>
-In this case &Snark will be invoked three separate times, writing
+In this case Snark will be invoked three separate times, writing
 three different log files.  In this case an additional subdirectory
 will be created under <"snark">, called <"proof">.  The three log
 files will then be: <"snark/proof/p1.log">, <"snark/proof/p1a.log">,
@@ -92,15 +94,15 @@ and <"snark/proof/p2.log">.
 </section>
 
 <section>
-<title>Interrupting &Snark</title>
+<title>Interrupting Snark</title>
 <para>
-As is the case with any first-order prover, &Snark is likely to either
+As is the case with any first-order prover, Snark is likely to either
 loop for ever or run for a longer time than the user would like.  The
-user can provide a time limit for &Snark by using an appropriate
+user can provide a time limit for Snark by using an appropriate
 option.  However there are likely to be times when the user wants to
-stop &Snark in the middle of execution.  He can do this by typing
+stop Snark in the middle of execution.  He can do this by typing
 Cntrl-C, Cntrl-C in the *common-lisp* buffer.  This will then
-interrupt &Snark and place the user in the Lisp debugger.  He can exit
+interrupt Snark and place the user in the Lisp debugger.  He can exit
 the debugger by issuing the [[:pop]] command.  A log file will still
 be written that he can look at if he needs to.
 </para>
@@ -108,12 +110,12 @@ be written that he can look at if he needs to.
 
 <section>
 <title>The Prover Base Library</title>
-&Specware has a base library that is implicitly imported by every
+&Specware; has a base library that is implicitly imported by every
 spec.  Unfortunately, the axioms in this library are not necessarily
-written to be useful by &Snark.  Instead of having &Snark use these
-libraries we have created a separate base library for &Snark.  This
+written to be useful by Snark.  Instead of having Snark use these
+libraries we have created a separate base library for Snark.  This
 library is located at <"/Library/Base/ProverBase.sw">.  The axioms in
-this spec are automatically sent to &Snark as part of any proof.
+this spec are automatically sent to Snark as part of any proof.
 </para>
 </section>
 
@@ -140,3 +142,4 @@ wide range of proofs.  Axioms that are specific to different proofs
 should be created in separate specs and imported where needed.
 </para>
 </section>
+</chapter>
