@@ -52,14 +52,8 @@ FSet qualifying spec
   op /\ infixr 25 : [a] FSet a * FSet a -> FSet a
   def /\ (s1,s2) = toFSet (fromFSet s1 /\ fromFSet s2)
 
-  op //\\ : [a] FSet (FSet a) -> FSet a
-  def //\\ setOfSets = toFSet (//\\ (map fromFSet (fromFSet setOfSets)))
-
   op \/ infixr 24 : [a] FSet a * FSet a -> FSet a
   def \/ (s1,s2) = toFSet (fromFSet s1 \/ fromFSet s2)
-
-  op \\// : [a] FSet (FSet a) -> FSet a
-  def \\// setOfSets = toFSet (\\// (map fromFSet (fromFSet setOfSets)))
 
   op -- infixl 25 : [a] FSet a * FSet a -> FSet a
   def -- (s1,s2) = toFSet (fromFSet s1 -- fromFSet s2)
@@ -109,6 +103,14 @@ FSet qualifying spec
 
   op fold : [a,b] ((b * (b * a -> b) * FSet a) | foldable?) -> b
   def fold(c,f,s) = fold (c, f, fromFSet s)
+
+  % we must strengthen the domain to non-empty sets of sets,
+  % because in spec `Sets' we have `//\\ empty = full':
+  op //\\ : [a] NonEmptyFSet (FSet a) -> FSet a
+  def //\\ setOfSets = toFSet (//\\ (map fromFSet (fromFSet setOfSets)))
+
+  op \\// : [a] FSet (FSet a) -> FSet a
+  def \\// setOfSets = toFSet (\\// (map fromFSet (fromFSet setOfSets)))
 
   op forall? : [a] (a -> Boolean) -> FSet a -> Boolean
   def forall? p s = fromFSet s <= p
