@@ -1,6 +1,6 @@
 \subsection{Name Qualifing in Specs}
 
-Derived from r1.7 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
+Synchronized with r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
 
 \begin{spec}
 SpecCalc qualifying spec {

@@ -1,6 +1,6 @@
 \subsection{Interpreter for Spec Calculus}
 
-Derived from r1.7 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
+Synchronized with r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
 
 \begin{spec}
 SpecCalc qualifying spec {
@@ -86,8 +86,5 @@ This is a monadic interpreter for the Spec Calculus.
             | _ -> raise (TypeCheck ((positionOf sub_term),
                         "compiling a term that is not a specification")))
         }
-\end{spec}
-
-\begin{spec}
 }
 \end{spec}

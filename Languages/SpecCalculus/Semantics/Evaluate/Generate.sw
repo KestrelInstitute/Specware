@@ -1,6 +1,6 @@
 \subsection{Generation from Specs}
 
-Derived from r1.4  SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalCompile.sl
+Synchronized with r1.6 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalCompile.sl
 
 \begin{spec}
 SpecCalc qualifying spec {
@@ -28,15 +28,14 @@ Make a lisp file name for a URI.
 
 \begin{spec}
   op URItoLispFile: URI * Option String -> SpecCalc.Env String
-  def URItoLispFile (uri, optFileNm) =
-    % let dirPath = uriDirPath uri in
+  def URItoLispFile ((uri as {path,hashSuffix}), optFileNm) =
     case optFileNm
       of Some filNam -> return filNam
        | _ ->
-    {prefix <- removeLastElem uri;
-     mainName <- lastElem uri;
-     let filNm = (uriToPath prefix)
-                ^ "/lisp/" ^ mainName ^ ".lisp"
+    {prefix <- removeLastElem path;
+     mainName <- lastElem path;
+     let filNm = (uriToPath {path=prefix,hashSuffix=None})
+        ^ "/lisp/" ^ mainName ^ ".lisp"
      in
      {print("Lisp file name " ^ filNm ^ "\n");
       return filNm}}

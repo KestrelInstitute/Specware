@@ -1,6 +1,6 @@
 \subsection{Evalution of a diagram term in the Spec Calculus}
 
-Derived from r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagram.sl
+Synchronized with r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagram.sl
 
 \begin{spec}
 SpecCalc qualifying spec {

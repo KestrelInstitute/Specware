@@ -1,6 +1,6 @@
 \section{The Specware Environment}
 
-Derived from r1.3 SW4/Languages/SpecCalculus/Semantics/Environment.sl
+Synchronized with r1.4 SW4/Languages/SpecCalculus/Semantics/Environment.sl
 
 The environment is the monadic context for the spec calculus interpreter. 
 The monad handles, state, (very primitive) IO, and exceptions. In principle,
@@ -227,7 +227,7 @@ URI that corresponds to "/". The latter needs thought.
 
 \begin{spec}
   op initialSpecwareState : State
-  def initialSpecwareState = (emptyMap, emptyMap, Some (["/"]))
+  def initialSpecwareState = (emptyMap, emptyMap, Some {path=["/"], hashSuffix=None})
 \end{spec}
 
 There is no caching of computed values to files at present. This means

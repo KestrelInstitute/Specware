@@ -88,10 +88,11 @@
   (max n1 n2))
 (defun |!max|-1 (x) (|!max| (car x) (cdr x)))
 
-(defun fromNat (x)
-  x
-)
+(defun fromNat (x) x)
 
-(defun INTEGER-SPEC::fromNat (x)
-  x
-)
+(defun INTEGER-SPEC::fromNat (x) x)
+
+(defun toNat (x)
+   (if (< x 0)
+      (error "Nat.toNat: argument < 0")
+      x))

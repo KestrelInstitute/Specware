@@ -1,6 +1,6 @@
 \section{SPECPATH handling}
 
-Derived from r1.2 SW4/Languages/SpecCalculus/Semantics/SpecPath.sl
+Synchronized with r1.3 SW4/Languages/SpecCalculus/Semantics/SpecPath.sl
 
 This will be moved.
 
@@ -41,7 +41,7 @@ variable, then it will appear twice is the list of URI's we generate.
   def getSpecPath =
     let strings =
       case getEnv "SPECPATH" of
-        | None -> [getCurrentDirectory ()]
+        | None ->  [getCurrentDirectory (),"/"]
         | Some str -> (splitAtChar #: str) ++ [getCurrentDirectory ()]
     in
       mapM pathToCanonicalURI strings

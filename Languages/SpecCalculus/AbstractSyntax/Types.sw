@@ -1,6 +1,6 @@
 \section{Spec Calculus Abstract Syntax}
 
-Derived om r1.5 SW4/Languages/SpecCalculus/AbstractSyntax/Types.sl
+Synchronized with r1.7 SW4/Languages/SpecCalculus/AbstractSyntax/Types.sl
 
 \begin{spec}
 SpecCalc qualifying spec {
@@ -51,11 +51,14 @@ term or a list of bindings. Thus a canonical URI may resolve to two
 possible path names. Later we may want to have URIs with network addresses.
 
 \begin{spec}
-  sort URI = List String
+  sort URI = {
+      path : List String,
+      hashSuffix : Option String
+   }
 
   sort RelativeURI =
-    | URI_Relative  (List String)
-    | SpecPath_Relative (List String)
+    | URI_Relative URI
+    | SpecPath_Relative URI
 \end{spec}
 
 The sort \verb+Name+ is used everywhere that one can expect a

@@ -121,18 +121,29 @@ These are called only from evaluateURI.
 The following converts a relative URI into a list of candidate canonical
 URIs.
 
+The inner case in the function below is temporary. It is there to make
+it easy to experiment with different URI path resolution strategies..
+
 \begin{spec}
   op generateURIList : RelativeURI -> Env (List URI)
   def generateURIList uri =
     case uri of
-      | SpecPath_Relative elems -> {
+      | SpecPath_Relative {path,hashSuffix} -> {
             specPath <- getSpecPath;
-            return (map (fn root -> normalizeURI (root ++ elems)) specPath)
+            return (map (fn {path=root,hashSuffix=_} ->
+                 normalizeURI {path = root ++ path,
+                               hashSuffix = hashSuffix})
+                 specPath)
           }
-      | URI_Relative elems -> {
-            currentURI <- getCurrentURI;
-            root <- removeLastElem currentURI;
-            return [normalizeURI (root ++ elems)]
+      | URI_Relative {path=newPath,hashSuffix=newSuffix} -> {
+            {path=currentPath,hashSuffix=currentSuffix} <- getCurrentURI;
+            (case (currentPath,currentSuffix,newPath,newSuffix) of
+              | (_,Some _,[elem],None) ->
+                    return [normalizeURI {path=currentPath,hashSuffix=Some elem}]
+              | (_,_,_,_) -> {
+                    root <- removeLastElem currentPath;
+                    return [normalizeURI {path=root++newPath,hashSuffix=newSuffix}]
+                 })
           }
 \end{spec}
    
@@ -148,11 +159,8 @@ to one of many bindings in a file. For example \verb|/a/b#c|.
 
 \begin{spec}
   op generateFileList : URI -> Env (List (URI * String))
-  def generateFileList uri = {
-      prefix <- removeLastElem uri;
-      return [(uri, (uriToPath uri) ^ ".sw"),
-              (uri, (uriToPath prefix) ^ ".sw")]
-    }
+  def generateFileList uri =
+      return [(uri, (uriToPath uri) ^ ".sw")]
 \end{spec}
       
 Given a term find a canonical URI for it.
@@ -200,16 +208,13 @@ handled correctly.
                    bindInGlobalContext uri
                      (value,max(timeStamp,fileWriteTime fileName),depURIs)
                  }
-             | Decls decls -> {
-                   rootURI <- removeLastElem uri;
-                   evaluateGlobalDecls rootURI decls
-                 })
+             | Decls decls -> evaluateGlobalDecls uri decls)
     }
 
   op evaluateGlobalDecls : URI -> (List (Decl Position)) -> Env ()
-  def evaluateGlobalDecls rootURI decls =
+  def evaluateGlobalDecls {path,hashSuffix} decls =
     let def evaluateGlobalDecl (name,term) =
-      let newURI = rootURI ++ [name] in {
+      let newURI = {path=path,hashSuffix=Some name} in {
         setCurrentURI newURI;
         valueInfo <- SpecCalc.evaluateTermInfo term;
         bindInGlobalContext newURI valueInfo
@@ -247,10 +252,6 @@ are not are removed from the environment.
   op upToDate?: URI * TimeStamp -> Boolean
   def upToDate?(uri,timeStamp) =
     let fileName = (uriToPath uri) ^ ".sw" in
-    (fileExistsAndReadable fileName)
-      & (fileWriteTime fileName) <= timeStamp
-\end{spec}
-
-\begin{spec}
+    (fileWriteTime fileName) <= timeStamp
 }
 \end{spec}

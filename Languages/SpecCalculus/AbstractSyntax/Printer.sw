@@ -1,6 +1,6 @@
 \section{SpecCalc pretty printer}
 
-Derived from r1.6 SW4/Languages/SpecCalculus/AbstractSyntax/PrettyPrinter.sl
+Synchronized with r1.8 SW4/Languages/SpecCalculus/AbstractSyntax/PrettyPrinter.sl
 
 This is a pretty printer for the spec calculus. This is almost but
 not quite throw away code. In my opinion, it should be separate from
@@ -31,7 +31,7 @@ SpecCalc qualifying spec {
   def showURI uri = ppFormat (ppURI uri)
 
   op ppURI : URI -> Doc
-  def ppURI uri = 
+  def ppURI {path,hashSuffix}  = 
     let def ppElem elem =
       ppConcat [
           ppString "\"",
@@ -41,8 +41,10 @@ SpecCalc qualifying spec {
     in
       ppConcat [
           ppString "[",
-          ppSep (ppString " ") (map ppElem uri),
-          ppString "]"
+          ppSep (ppString " ") (map ppElem path),
+          (case hashSuffix of
+            | None -> ppNil
+            | Some suffix -> ppString (" # " ^ suffix))
         ]
 
   op showRelativeURI : RelativeURI -> String
@@ -160,13 +162,13 @@ SpecCalc qualifying spec {
           ]
 *)
       | Generate (target,term,optFileNm) ->
-          ppConcat ([
+          ppConcat [
             ppString ("generate " ^ target ^ " "),
-            ppTerm term
+            ppTerm term,
+            (case optFileNm of
+	           | Some filNm -> ppString(" in " ^ filNm)
+               | _ -> ppNil)
           ]
-	 ++ (case optFileNm
-	       of Some filNm -> [ppString(" in " ^ filNm)]
-		| _ -> []))
 
   def ppQualifier(Qualified(Qualifier,Id))  =
     if Qualifier = UnQualified then ppString Id
@@ -193,11 +195,10 @@ SpecCalc qualifying spec {
           ]
 
   op ppRelativeURI : RelativeURI -> Doc
-  def ppRelativeURI uri =
-    case uri of
-        | SpecPath_Relative elems ->
-            ppAppend (ppString "/") (ppSep (ppString "/") (map ppString elems))
-        | URI_Relative elems -> ppSep (ppString "/") (map ppString elems)
+  def ppRelativeURI relURI =
+    case relURI of
+        | SpecPath_Relative uri -> ppAppend (ppString "/") (ppURI uri)
+        | URI_Relative uri -> ppURI uri
 
   op ppDecls : fa (a) List (Decl a) -> Doc
   def ppDecls decls =
