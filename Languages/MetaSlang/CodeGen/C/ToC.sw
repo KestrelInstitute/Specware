@@ -316,7 +316,7 @@ later to unfold sort definitions.
           if n = 0 then
             Apply (Unary Contents, [Var ("sp",sortToCType srt)])
           else
-            Apply (Unary Contents, [Apply (Binary Add, [Var ("sp",sortToCType srt), Const (Int (true,n))])])
+            Apply (Unary Contents, [Apply (Binary Add, [Var ("sp",sortToCType srt), Const (Int n)])])
       | Apply (Apply (Fun (Op (Qualified ("Array","index"),fxty),srt,pos), arrayTerm,_), indexTerm,_) ->
           let cArray = termToCExp arrayTerm in
           let cIndex = termToCExp indexTerm in
@@ -373,9 +373,9 @@ pendant on the C side.
   def funToCExp fun srt = 
     case fun of
       | Equals -> Binary Eq
-      | Nat val -> Const (Int (true,val))
+      | Nat val -> Const (Int val)
       | Char val -> Const (Char val)
-      | Bool val -> Const (Int (true, if val then 1 else 0))
+      | Bool val -> Const (Int (if val then 1 else 0))
       | String val -> Const (String val)
       | Op (Qualified("Store","nilPtr"),_) -> Var ("NULL",Void)
       | Op (Qualified("Nat","+"),_) -> Binary Add
