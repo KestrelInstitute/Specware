@@ -92,6 +92,7 @@ spec
    *)
   op showQualifiedId: QualifiedId -> String
 
+
 % --------------------------------------------------------------------------------
 
   def transformSpecForCodeGen basespc spc =
@@ -139,6 +140,7 @@ spec
   def generateCSpecFromTransformedSpecIncrFilter xcspc spc filter =
     let useRefTypes = true in
     let constrOps = [] in
+    %let _ = writeLine(printSpec spc) in
     let impunit = generateI2LCodeSpecFilter(spc,useRefTypes,constrOps,filter) in
     let cspec = generateC4ImpUnit(impunit, xcspc, useRefTypes) in
     cspec
@@ -170,6 +172,9 @@ spec
     return (printToFile(cspec,optFile))
 
   def generateCCode(basespc, spc, _ (*fullspec*), optFile) =
+    let _ = writeLine(";; bit-string special translation is turned "^
+		      (if bitStringSpecial then "on" else "off"))
+    in
     let cspec = generateCSpec basespc spc in
     printToFile(cspec,optFile)
 

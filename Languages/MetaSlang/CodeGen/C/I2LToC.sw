@@ -4,9 +4,10 @@
 
 I2LToC qualifying spec {
 
-  import C      % from languages/especs/code-generation/c.sl
-  import I2L    % from languages/especs/code-generation/i2l.sl
-  import CUtils % from languages/especs/code-generation/c-utils.sl
+  import C
+  import I2L
+  import CUtils
+  import CGenOptions
 
   % import ESpecsCodeGenerationOptions
 
@@ -27,24 +28,30 @@ I2LToC qualifying spec {
   sort CgContext = {
 		    xcspc : CSpec,                 % for incrementatl code generation, this field holds the existing cspec that is extended
 		    useRefTypes : Boolean,
-		    currentFunName: Option(String)
+		    currentFunName: Option(String),
+		    currentFunParams: CVarDecls
 		   }
 
   op defaultCgContext: CgContext
   def defaultCgContext = {
 			  xcspc = emptyCSpec(""),
 			  useRefTypes = true,
-			  currentFunName = None
+			  currentFunName = None,
+			  currentFunParams = []
 			 }
 
   op setCurrentFunName: CgContext * String -> CgContext
   def setCurrentFunName(ctxt,id) =
-    {xcspc=ctxt.xcspc,useRefTypes=ctxt.useRefTypes,currentFunName=Some id}
+    {xcspc=ctxt.xcspc,useRefTypes=ctxt.useRefTypes,currentFunName=Some id,currentFunParams=ctxt.currentFunParams}
+
+  op setCurrentFunParams: CgContext * CVarDecls -> CgContext
+  def setCurrentFunParams(ctxt,params) =
+    {xcspc=ctxt.xcspc,useRefTypes=ctxt.useRefTypes,currentFunName=ctxt.currentFunName,currentFunParams=params}
 
   op generateC4ImpUnit: ImpUnit * CSpec * Boolean -> CSpec
   def generateC4ImpUnit(impunit, xcspc, useRefTypes) =
     %let _ = writeLine(";;   phase 2: generating C...") in
-    let ctxt = {xcspc=xcspc,useRefTypes=useRefTypes,currentFunName=None} in
+    let ctxt = {xcspc=xcspc,useRefTypes=useRefTypes,currentFunName=None,currentFunParams=[]} in
     let cspc = emptyCSpec(impunit.name) in
     let cspc = addBuiltIn(ctxt,cspc) in
     let cspc = List.foldl
@@ -211,6 +218,7 @@ I2LToC qualifying spec {
 			   let fdefn = (fname,vardecls,rtype,stmt) in
 			   addFnDefn(cspc,fdefn)
       | Exp expr ->
+	let ctxt = setCurrentFunParams(ctxt,vardecls) in
         let (cspc,block as (decls,stmts),cexpr) = c4Expression(ctxt,cspc,([],[]),expr) in
 	let (stmts1,cexpr1) = commaExprToStmts(ctxt,cexpr) in
 	let stmts2 = conditionalExprToStmts(ctxt,cexpr1,(fn(e)->Return(e))) in
@@ -333,6 +341,9 @@ I2LToC qualifying spec {
 	zip(fieldnames,types)
 
     in
+    case c4TypeSpecial(ctxt,cspc,typ) of
+      | Some res -> res
+      | _ ->
     case typ of
       | Primitive S -> (cspc,c4PrimitiveType(ctxt,S))
       | Base(tname) -> (cspc,Base (qname2id tname))
@@ -412,6 +423,18 @@ I2LToC qualifying spec {
       | "Boolean" -> Int
       | _ -> System.fail("no such primitive type: \""^s^"\"")
 
+
+  % handle special cases of types:
+
+  op c4TypeSpecial: CgContext * CSpec * I2L.Type -> Option(CSpec * CType)
+  def c4TypeSpecial(ctxt,cspc,typ) =
+    if bitStringSpecial then
+      case typ of
+	| Base(_,"BitString") -> Some (cspc,UnsignedInt)
+	| _ -> None
+    else
+      None
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %                                                                     %
   %                            EXPRESSIONS                              %
@@ -477,7 +500,7 @@ I2LToC qualifying spec {
       | Builtin bexp -> c4BuiltInExpr(ctxt,cspc,block,bexp)
 
       | Let (id,type,idexpr,expr) ->
-        let (id,expr) = substVarIfDeclared(id,decls,expr) in
+        let (id,expr) = substVarIfDeclared(ctxt,id,decls,expr) in
         let (cspc,ctype) = c4Type(ctxt,cspc,type) in
 	let (cspc,(decls,stmts),idcexpr) = c4Expression(ctxt,cspc,block,idexpr) in
 	let letvardecl = (id,ctype) in
@@ -632,7 +655,7 @@ I2LToC qualifying spec {
 		in
 		  (case vlist of
 		     | [Some id] -> % contains exactly one var
-		     let (id,expr) = substVarIfDeclared(id,decls,expr) in
+		     let (id,expr) = substVarIfDeclared(ctxt,id,decls,expr) in
 		     let (cspc,idtype) = c4Type(ctxt,cspc,type) in
 		     let structref = if ctxt.useRefTypes then Unary(Contents,cexpr0) else cexpr0 in
 		     let valexp = StructRef(StructRef(structref,"alt"),selstr) in
@@ -729,10 +752,12 @@ I2LToC qualifying spec {
   % --------------------------------------------------------------------------------
   op c4Expression: CgContext * CSpec * CBlock * I2L.Expression -> CSpec * CBlock * CExp
   def c4Expression(ctxt,cspc,block,exp) =
-    c4Expression_(ctxt,cspc,block,exp,false,false)
+    case c4SpecialExpr(ctxt,cspc,block,exp) of
+      | Some res -> res
+      | None -> c4Expression_(ctxt,cspc,block,exp,false,false)
+
   op c4LhsExpression: CgContext * CSpec * CBlock * I2L.Expression -> CSpec * CBlock * CExp
   def c4LhsExpression(ctxt,cspc,block,exp) =
-    %let _ = System.print(exp) in
     c4Expression_(ctxt,cspc,block,exp,true,false)
 
   op c4InitializerExpression: CgContext * CSpec * CBlock * I2L.Expression -> CSpec * CBlock * CExp
@@ -803,14 +828,14 @@ I2LToC qualifying spec {
     let def c4e(e) = c4Expression(ctxt,cspc,block,e) in
     let
       def c42e f e1 e2 = 
-	let (cspc,b,ce1) = c4e(e1) in
-	let (cspc,b,ce2) = c4e(e2) in
-	(cspc,b,f(ce1,ce2))
+	let (cspc,block,ce1) = c4Expression(ctxt,cspc,block,e1) in
+	let (cspc,block,ce2) = c4Expression(ctxt,cspc,block,e2) in
+	(cspc,block,f(ce1,ce2))
     in
     let
       def c41e f e1 =
-	let (cspc,b,ce1) = c4e(e1) in
-	(cspc,b,f(ce1))
+	let (cspc,block,ce1) = c4Expression(ctxt,cspc,block,e1) in
+	(cspc,block,f(ce1))
     in
     let
       def strequal(ce1,ce2) =
@@ -859,6 +884,38 @@ I2LToC qualifying spec {
   def ctrue = Var("TRUE",Int)
   op cfalse: CExp
   def cfalse = Var("FALSE",Int)
+
+  % --------------------------------------------------------------------------------
+
+  (**
+   * code for handling special case, e.g. the bitstring operators
+   *)
+
+  op c4SpecialExpr: CgContext * CSpec * CBlock * I2L.Expression -> Option(CSpec * CBlock * CExp)
+  def c4SpecialExpr(ctxt,cspc,block,(exp,_)) =
+    let def c4e(e) = c4Expression(ctxt,cspc,block,e) in
+    let
+      def c42e f e1 e2 = 
+	let (cspc,block,ce1) = c4Expression(ctxt,cspc,block,e1) in
+	let (cspc,block,ce2) = c4Expression(ctxt,cspc,block,e2) in
+	Some (cspc,block,f(ce1,ce2))
+      def c41e f e1 =
+	let (cspc,block,ce1) = c4Expression(ctxt,cspc,block,e1) in
+	Some (cspc,block,f(ce1))
+    in
+    if ~bitStringSpecial then None
+    else 
+      case exp of
+	| Var(_,"Zero") -> Some(cspc,block,Const(Int(true,0)))
+	| Var(_,"One") -> Some(cspc,block,Const(Int(true,1)))
+	| FunCall((_,"leftShift"),[],[e1,e2]) -> c42e (fn(c1,c2) -> Binary(ShiftLeft,c1,c2)) e1 e2
+	| FunCall((_,"rightShift"),[],[e1,e2]) -> c42e (fn(c1,c2) -> Binary(ShiftRight,c1,c2)) e1 e2
+	| FunCall((_,"andBits"),[],[e1,e2]) -> c42e (fn(c1,c2) -> Binary(BitAnd,c1,c2)) e1 e2
+	| FunCall((_,"orBits"),[],[e1,e2]) -> c42e (fn(c1,c2) -> Binary(BitOr,c1,c2)) e1 e2
+	| FunCall((_,"xorBits"),[],[e1,e2]) -> c42e (fn(c1,c2) -> Binary(BitXor,c1,c2)) e1 e2
+	| FunCall((_,"complement"),[],[e]) -> c41e (fn(ce) -> Unary(BitNot,ce)) e
+	| FunCall((_,"notZero"),[],[e]) -> Some(c4e e)
+	| _ -> None
 
   % --------------------------------------------------------------------------------
 
@@ -1012,13 +1069,16 @@ I2LToC qualifying spec {
 
   % checks whether id is already declared in var decls; if yes, a new name is generated
   % and id is substituted in expression
-  op substVarIfDeclared: String * CVarDecls1 * Expression -> String * Expression
-  def substVarIfDeclared(id,decls,expr) =
+  op substVarIfDeclared: CgContext * String * CVarDecls1 * Expression -> String * Expression
+  def substVarIfDeclared(ctxt,id,decls,expr) =
     let
       def isDeclared(id) =
 	case List.find (fn(vname,_,_) -> vname = id) decls of
 	  | Some _ -> true
-	  | None -> false
+	  | None ->
+	    case List.find (fn(vname,_) -> vname = id) ctxt.currentFunParams of
+	      | Some _ -> true
+	      | None -> false
     in
     let
       def determineId(id) =
