@@ -397,7 +397,7 @@ spec
 
 
  def instantiateScheme (env, pos, types, srt) = 
-   let (tvs, _) = unpackSort srt in
+   let (tvs, sss) = unpackSort srt in
    if ~(length types = length tvs) then
      (error (env, 
 	     "\nInstantiation list (" ^ 
@@ -406,7 +406,7 @@ spec
 	     (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^
 	     " )",
 	     pos);
-      srt)
+      sss)
    else
      let (new_mtvs, new_srt) = metafySort srt in
      (ListPair.app (fn (typ, mtv) -> 
