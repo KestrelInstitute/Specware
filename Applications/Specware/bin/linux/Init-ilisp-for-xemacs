@@ -96,6 +96,4 @@ if [ ! -e ilisp-pkg.x86f ]; then
   RC=1
 fi
 
-echo ""
-
 exit $RC
