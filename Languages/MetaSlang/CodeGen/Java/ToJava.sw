@@ -365,6 +365,11 @@ def unfoldToCoProduct(spc,srt) =
            if usrt = srt then srt else
 	     unfoldToCoProduct(spc,usrt)
 
+(**
+ * adds the methods that correspond to the cases to the subclasses of the co-product sort class
+ * each sub-class get one method, except in the case where there is a "default" (wild- or var-pattern) 
+ * case and the constructor is not mentioned as case in the case construct.
+ *)
 op addMethDeclToSummands: Spec * Id * Id * MethDecl * Term * JcgInfo -> JcgInfo
 def addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
@@ -377,11 +382,21 @@ def addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo) =
     let cases = caseCases(body) in
     % find the missing constructors:
     let missingsummands = getMissingConstructorIds(srt,cases) in
-    %let _ = (writeLine("missing cases in "^opId^" for sort "^srthId^":");
-	      %	   app (fn(id) -> writeLine("  "^id)) missingsummands)
+    %let jcginfo = foldr (fn(consId,jcginfo) -> addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo))
+    %              jcginfo missingsummands
     %in
-    let jcginfo = foldr (fn(consId,jcginfo) -> addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo))
-    jcginfo missingsummands
+    let jcginfo = 
+        case findVarOrWildPat cases of
+	  | Some _ -> jcginfo % don't add anything for the missing summands in presence of a default case
+	  | None   ->
+	    %let _ = if length(missingsummands) > 0 then
+	    %          (writeLine("missing cases in "^opId^" for sort "^srthId^":");
+	    %	       app (fn(id) -> writeLine("  "^id)) missingsummands)
+	    %	    else ()
+	    %in
+	    foldr (fn(consId,jcginfo) ->
+		   addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo)
+		  ) jcginfo missingsummands
     in
       %% cases = List (pat, cond, body)
       foldr (fn((pat, _, cb), newJcgInfo) -> addSumMethDeclToClsDecls(opId,srthId, caseTerm, pat, cb, methodDecl, newJcgInfo, spc)) jcginfo cases

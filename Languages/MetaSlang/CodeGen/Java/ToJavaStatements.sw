@@ -341,6 +341,7 @@ def getVarsPattern(pat) =
       ([],true) args
     | Some (VarPat((vid,_),_)) -> ([vid],true)
     | None -> ([],true)
+    | Some(WildPat _) -> (["ignored"],true)
     | Some(pat) -> ([],false)
 
 op translateCaseCasesToSwitches: TCx * Id * Java.Expr * Id * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
