@@ -160,7 +160,7 @@ RemoveCurrying qualifying spec
       | Lambda([(pat,_,body)],_)  ->
 	let bodySort = termSortEnv(spc,body) in
 	if arrow? (spc,bodySort)
-	  then flattenLambda(getParams pat,body,bodySort,spc)
+	  then flattenLambda([pat],body,bodySort,spc)
 	else
 	let newBody = unCurryTermRec body in
 	if newBody = body
@@ -207,13 +207,13 @@ RemoveCurrying qualifying spec
         def unCurryArrowAux(rng,accumDomSrts) =
 	  (case stripSubsorts(spc,rng) of
 	    | Arrow(dom, restRng, _) ->
-	      let expandedDomSrts = 
-                  foldl (fn (dom_srt, dom_srts) ->
-			 case productOpt (spc, dom_srt) of
-			   | Some fields -> dom_srts ++ (map (fn (_,s) -> s) fields)
-			   | _ -> dom_srts ++ [dom_srt])
-		        []
-		        accumDomSrts
+	      let expandedDomSrts = accumDomSrts
+%                  foldl (fn (dom_srt, dom_srts) ->
+%			 case productOpt (spc, dom_srt) of
+%			   | Some fields -> dom_srts ++ (map (fn (_,s) -> s) fields)
+%			   | _ -> dom_srts ++ [dom_srt])
+%		        []
+%		        accumDomSrts
 	      in
 	      (true,(unCurryArrowAux(restRng,expandedDomSrts ++ [dom])).2)
 	    | _ ->
