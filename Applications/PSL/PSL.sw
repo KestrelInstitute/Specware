@@ -44,7 +44,7 @@ let PSL = spec {
   def V.union = E.union
   def V.member? = E.member?
 
-  % sort Systems.Elem = ATerm ()
+  sort Systems.Elem = ATerm Position
 % These shouldn't be here.
   def Systems.ppElem term = SpecCalc.ppATerm term
   def Shape.ppDom = ppTaggedElem
