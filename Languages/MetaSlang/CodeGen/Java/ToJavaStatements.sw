@@ -5,88 +5,80 @@ import ToJavaBase
 
 sort Term = JGen.Term
 
-% monadic
-op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
-op termToExpressionRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+% defined in ToJavaHO
+op translateLambdaToExprM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
 
-% functional
-op termToExpression: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-op termToExpressionRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op termToExpressionAsgNV: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op termToExpressionAsgV: Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op termToExpressionAsgF: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op translateTermsToExpressions: TCx * List Term * Nat * Nat * Spec -> (Block * List Java.Expr * Nat * Nat) * Collected
-op translateApplyToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-op translateRecordToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-op translateIfThenElseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-op translateLetToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-op translateCaseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-op specialTermToExpression: TCx * JGen.Term * Nat * Nat * Spec -> Option ((Block * Java.Expr * Nat * Nat) * Collected)
+%defined in ToJavaSpecial
+op specialTermToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Option (Block * Java.Expr * Nat * Nat))
 
 
-
-def termToExpressionM(tcx,term,k,l) =
-  {
-   spc <- getEnvSpec;
-   ((block,expr,k,l),col) <- return(termToExpression(tcx,term,k,l,spc));
-   addCollected col;
-   return (block,expr,k,l)
-  }
 
 (**
  * toplevel entry point for translating a meta-slang term to a java expression 
  * (in general preceded by statements)
  *) 
-def termToExpression(tcx, term, k, l, spc) =
-  termToExpression_internal(tcx,term,k,l,spc,true)
+op termToExpressionM: TCx * JGen.Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def termToExpressionM(tcx, term, k, l) =
+  termToExpression_internalM(tcx,term,k,l,true)
 
-def termToExpression_internal(tcx, term, k, l, spc, _ (*addRelaxChoose?*)) =
-  %let _ = writeLine("termToExpression: "^printTerm(term)) in
-  case specialTermToExpression(tcx,term,k,l,spc) of
-    | Some result -> result
-    | None -> 
-    %let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
-    case term of
-      | Var ((id, srt), _) ->
-      (case StringMap.find(tcx, id) of
-	 | Some (newV) -> ((mts, newV, k, l),nothingCollected)
-	 | _ -> ((mts, mkVarJavaExpr(id), k, l),nothingCollected))
-      | Fun (Op (Qualified (q, id), _), srt, _) -> 
-	 if baseType?(spc,srt) 
-	   then ((mts, mkQualJavaExpr(primitiveClassName, id), k, l),nothingCollected)
-	 else
-	   (case srt of
-	      | Base (Qualified (q, srtId), _, _) -> ((mts, mkQualJavaExpr(srtId, id), k, l),nothingCollected)
-	      | Boolean _                         -> ((mts, mkQualJavaExpr("Boolean", id), k, l),nothingCollected)
-	      | Arrow(dom,rng,_) -> translateLambdaToExpr(tcx,term,k,l,spc)
-	      | _ -> unsupportedInTerm(term,k,l,"term not supported by Java code generator: "^(printTerm term))
+op termToExpression_internalM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
+  {
+   specialResult <- specialTermToExpressionM(tcx,term,k,l);
+   spc <- getEnvSpec;
+   case specialResult of
+     | Some result -> return result
+     | None -> 
+       %let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
+       case term of
+	 | Var ((id, srt), _) ->
+	   (case StringMap.find(tcx, id) of
+	      | Some (newV) -> return (mts, newV, k, l)
+	      | _ -> return (mts, mkVarJavaExpr(id), k, l))
+	 | Fun (Op (Qualified (q, id), _), srt, _) -> 
+	   if baseType?(spc,srt) then
+	      return (mts, mkQualJavaExpr(primitiveClassName, id), k, l)
+	   else
+	     (case srt of
+		| Base (Qualified (q, srtId), _, _) -> return (mts, mkQualJavaExpr(srtId, id), k, l)
+		| Boolean _                         -> return (mts, mkQualJavaExpr("Boolean", id), k, l)
+		| Arrow(dom,rng,_) -> translateLambdaToExprM(tcx,term,k,l)
+		| _ -> raise(UnsupportedTermFormat(printTerm term),termAnn term)
 	      )
-      | Fun (Nat (n),_,__) -> ((mts, mkJavaNumber(n), k, l),nothingCollected)
-      | Fun (Bool (b),_,_) -> ((mts, mkJavaBool(b), k, l),nothingCollected)
-      | Fun (String(s),_,_) -> ((mts, mkJavaString(s), k, l),nothingCollected)
-      | Fun (Char(c),_,_) -> ((mts, mkJavaChar(c), k, l),nothingCollected)
-      | Fun (Embed (c, _), srt, _) -> 
-	      if flatType? srt then
-		let (sid,col) = srtId(srt) in
-		((mts, mkMethInv(sid, c, []), k, l),col)
-	      else
-		translateLambdaToExpr(tcx,term,k,l,spc)
-      | Apply (opTerm, argsTerm, _) -> translateApplyToExpr(tcx, term, k, l, spc)
-      | Record _ -> translateRecordToExpr(tcx, term, k, l, spc)
-      | IfThenElse _ -> translateIfThenElseToExpr(tcx, term, k, l, spc)
-      | Let _ -> translateLetToExpr(tcx, term, k, l, spc)
-      | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*) translateLambdaToExpr(tcx,term,k,l,spc)
-      | _ ->
-	     if caseTerm?(term)
-	       then translateCaseToExpr(tcx, term, k, l, spc)
-	     else
+	 | Fun (Nat (n),_,__) -> return(mts, mkJavaNumber(n), k, l)
+	 | Fun (Bool (b),_,_) -> return(mts, mkJavaBool(b), k, l)
+	 | Fun (String(s),_,_) -> return(mts, mkJavaString(s), k, l)
+	 | Fun (Char(c),_,_) -> return(mts, mkJavaChar(c), k, l)
+	 | Fun (Embed (c, _), srt, _) -> 
+		if flatType? srt then
+		  {
+		   sid <- srtIdM srt;
+		   return (mts, mkMethInv(sid, c, []), k, l)
+		  }
+		else
+		  translateLambdaToExprM(tcx,term,k,l)
+	 | Apply (opTerm, argsTerm, _) -> translateApplyToExprM(tcx, term, k, l)
+	 | Record _ -> translateRecordToExprM(tcx, term, k, l)
+	 | IfThenElse _ -> translateIfThenElseToExprM(tcx, term, k, l)
+	 | Let _ -> translateLetToExprM(tcx, term, k, l)
+	 | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*) translateLambdaToExprM(tcx,term,k,l)
+	 | _ ->
+	   if caseTerm?(term) then
+	     translateCaseToExprM(tcx, term, k, l)
+	   else
 	       %let _ = print term in
-	       unsupportedInTerm(term,k,l,"term not supported by Java code generator(2): "^(printTerm term))
+	       %unsupportedInTerm(term,k,l,"term not supported by Java code generator(2): "^(printTerm term))
+	       raise(UnsupportedTermFormat(printTerm term),termAnn term)
+  }
 
+% --------------------------------------------------------------------------------
 
-def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
-  let
+op translateApplyToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+%op translateApplyToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
+def translateApplyToExprM(tcx, term as Apply (opTerm, argsTerm, _), k, l) =
+  {
+   spc <- getEnvSpec;
+   let
     def opvarcase(id) =
       let srt = inferTypeFoldRecords(spc,term) in
       let args = applyArgsToTerms(argsTerm) in
@@ -114,280 +106,329 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
 	    then
 	      case utlist_internal (fn(srt) -> userType?(spc,srt) & ~(baseTypeAlias?(spc,srt))) (concat(dom,[srt])) of
 		| Some s ->
-		  %let _ = writeLine(" ut found user type "^printSort(s)) in
-		  let (sid,col1) = srtId s in
-		  let (res,col2) = translateBaseApplToExpr(tcx,id,argsTerm,k,l,sid,spc) in
-		  (res,concatCollected(col1,col2))
+		  {
+		   sid <- srtIdM s;
+		   translateBaseApplToExprM(tcx,id,argsTerm,k,l,sid)
+		  }
 		| None ->
-		  translatePrimBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
-	  else translateBaseArgsApplToExpr(tcx, id, argsTerm, rng, k, l, spc)
+		  translatePrimBaseApplToExprM(tcx, id, argsTerm, k, l)
+	  else translateBaseArgsApplToExprM(tcx, id, argsTerm, rng, k, l)
       else
-	translateUserApplToExpr(tcx, id, dom, argsTerm, k, l, spc)
-  in
-  case opTerm of
-    | Fun (Restrict,      srt, _) -> translateRestrictToExpr  (tcx, srt, argsTerm, k, l, spc)
-    | Fun (Relax,         srt, _) -> translateRelaxToExpr     (tcx,      argsTerm, k, l, spc)
-    | Fun (Quotient,      srt, _) -> translateQuotientToExpr  (tcx, srt, argsTerm, k, l, spc)
-    | Fun (Choose,        srt, _) -> translateChooseToExpr    (tcx,      argsTerm, k, l, spc)
-    | Fun (Not,           srt, _) -> translateNotToExpr       (tcx,      argsTerm, k, l, spc)
-    | Fun (And,           srt, _) -> translateAndToExpr       (tcx,      argsTerm, k, l, spc)
-    | Fun (Or,            srt, _) -> translateOrToExpr        (tcx,      argsTerm, k, l, spc)
-    | Fun (Implies,       srt, _) -> translateImpliesToExpr   (tcx,      argsTerm, k, l, spc)
-    | Fun (Iff,           srt, _) -> translateIffToExpr       (tcx,      argsTerm, k, l, spc)
-    | Fun (Equals,        srt, _) -> translateEqualsToExpr    (tcx,      argsTerm, k, l, spc)
-    | Fun (NotEquals,     srt, _) -> translateNotEqualsToExpr (tcx,      argsTerm, k, l, spc)
-    | Fun (Project id,    srt, _) -> translateProjectToExpr   (tcx, id,  argsTerm, k, l, spc)
-    | Fun (Embed (id, _), srt, _) ->
-      let (sid,col1) = srtId(inferTypeFoldRecords(spc,term)) in
-      let (res,col2) = translateConstructToExpr(tcx, sid, id, argsTerm, k, l, spc) in
-      (res,concatCollected(col1,col2))
-    | Fun (Op (Qualified (q, id), _), _, _) ->
-      let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
-      opvarcase(id)
-    | _ -> translateOtherTermApply(tcx,opTerm,argsTerm,k,l,spc)
+	translateUserApplToExprM(tcx, id, dom, argsTerm, k, l)
+   in
+   case opTerm of
+     | Fun (Restrict,      srt, _) -> translateRestrictToExprM  (tcx, srt, argsTerm, k, l)
+     | Fun (Relax,         srt, _) -> translateRelaxToExprM     (tcx,      argsTerm, k, l)
+     | Fun (Quotient,      srt, _) -> translateQuotientToExprM  (tcx, srt, argsTerm, k, l)
+     | Fun (Choose,        srt, _) -> translateChooseToExprM    (tcx,      argsTerm, k, l)
+     | Fun (Not,           srt, _) -> translateNotToExprM       (tcx,      argsTerm, k, l)
+     | Fun (And,           srt, _) -> translateAndToExprM       (tcx,      argsTerm, k, l)
+     | Fun (Or,            srt, _) -> translateOrToExprM        (tcx,      argsTerm, k, l)
+     | Fun (Implies,       srt, _) -> translateImpliesToExprM   (tcx,      argsTerm, k, l)
+     | Fun (Iff,           srt, _) -> translateIffToExprM       (tcx,      argsTerm, k, l)
+     | Fun (Equals,        srt, _) -> translateEqualsToExprM    (tcx,      argsTerm, k, l)
+     | Fun (NotEquals,     srt, _) -> translateNotEqualsToExprM (tcx,      argsTerm, k, l)
+     | Fun (Project id,    srt, _) -> translateProjectToExprM   (tcx, id,  argsTerm, k, l)
+     | Fun (Embed (id, _), srt, _) ->
+       {
+	sid <- srtIdM (inferTypeFoldRecords(spc,term));
+	translateConstructToExprM(tcx, sid, id, argsTerm, k, l)
+       }
+     | Fun (Op (Qualified (q, id), _), _, _) ->
+       let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
+       opvarcase(id)
+     | _ -> translateOtherTermApplyM(tcx,opTerm,argsTerm,k,l)
     %| _ -> (writeLine("translateApplyToExpr: not yet supported term: "^printTerm(term));errorResultExp(k,l))
 
+  }
 
-op translateRestrictToExpr: TCx * Sort * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateRestrictToExpr(tcx, srt, argsTerm, k, l, spc) =
+% --------------------------------------------------------------------------------
+
+op translateRestrictToExprM: TCx * Sort * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateRestrictToExprM(tcx, srt, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
-  let ((newBlock, newArg, newK, newL),col1) = termToExpression(tcx, arg, k, l, spc) in
-  case srt of
-    | Base (Qualified (q, srtId), _, _) ->
-      ((newBlock, mkNewClasInst(srtId, [newArg]), newK, newL),col1)
-    | Boolean _ ->
-      ((newBlock, mkNewClasInst("Boolean", [newArg]), newK, newL),col1)
-    | _ -> 
-      (case findMatchingRestritionType(spc,srt) of
-	 | Some (Base(Qualified(q,srtId),_,_)) ->
-	   ((newBlock,mkNewClasInst(srtId,[newArg]), newK, newL),col1)
-	 | None -> %fail("unsupported sort in restrict term: "^printSort(srt))
-	   unsupportedInSort(srt,k,l,"unsupported sort in restrict term: "^printSort(srt))
-	  )
+  {
+   (newBlock, newArg, newK, newL) <- termToExpressionM(tcx, arg, k, l);
+   case srt of
+     | Base (Qualified (q, srtId), _, _) ->
+       return (newBlock, mkNewClasInst(srtId, [newArg]), newK, newL)
+     | Boolean _ ->
+       return (newBlock, mkNewClasInst("Boolean", [newArg]), newK, newL)
+     | _ -> 
+       {
+	spc <- getEnvSpec;
+	case findMatchingRestritionType(spc,srt) of
+	  | Some (Base(Qualified(q,srtId),_,_)) ->
+	    return (newBlock,mkNewClasInst(srtId,[newArg]), newK, newL)
+	  | None ->
+	    raise(UnsupportedSortInRestrict(printSort srt),sortAnn srt)
+       }
+  }
 
-op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateRelaxToExpr(tcx, argsTerm, k, l, spc) =
+op translateRelaxToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateRelaxToExprM(tcx, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
-  let ((newBlock, newArg, newK, newL),col) = termToExpression_internal(tcx, arg, k, l, spc,false) in
-  ((newBlock, mkFldAcc(newArg, "relax"), newK, newL),col)
+  {
+   (newBlock, newArg, newK, newL) <- termToExpression_internalM(tcx,arg,k,l,false);
+   return (newBlock, mkFldAcc(newArg, "relax"), newK, newL)
+  }
 
- op translateQuotientToExpr: TCx * Sort * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateQuotientToExpr(tcx, srt, argsTerm, k, l, spc) =
+op translateQuotientToExprM: TCx * Sort * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateQuotientToExprM(tcx, srt, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
-  let ((newBlock, newArg, newK, newL),col0) = termToExpression(tcx, arg, k, l, spc) in
-  %let Base (Qualified (q, srtId), _, _) = srt in
-  let (srtId,col1) = srtId srt in
-  let col = concatCollected(col0,col1) in
-  ((newBlock, mkNewClasInst(srtId, [newArg]), newK, newL),col)
+  {
+   (newBlock, newArg, newK, newL) <- termToExpressionM(tcx, arg, k, l);
+   srtId <- srtIdM srt;
+   return (newBlock, mkNewClasInst(srtId, [newArg]), newK, newL)
+  }
 
- op translateChooseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateChooseToExpr(tcx, argsTerm, k, l, spc) =
+op translateChooseToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateChooseToExprM(tcx, argsTerm, k, l) =
   let [arg] = applyArgsToTerms(argsTerm) in
-  let ((newBlock, newArg, newK, newL),col) = termToExpression_internal(tcx, arg, k, l, spc, false) in
-  ((newBlock, mkFldAcc(newArg, "choose"), newK, newL),col)
+  {
+   (newBlock, newArg, newK, newL) <- termToExpression_internalM(tcx,arg,k,l,false);
+   return (newBlock, mkFldAcc(newArg, "choose"), newK, newL)
+  }
 
- op translateNotToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateNotToExpr(tcx, argsTerm, k, l, spc) =
+op translateNotToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateNotToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
-  let ((newBlock, [jE1], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkJavaNot jE1, newK, newL),col)
+  {
+   (newBlock, [jE1], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   return (newBlock, mkJavaNot jE1, newK, newL)
+  }
 
- op translateAndToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateAndToExpr(tcx, argsTerm, k, l, spc) =
+op translateAndToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateAndToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
-  let ((newBlock, [jE1, jE2], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkJavaAnd(jE1, jE2), newK, newL),col)
+  {
+   (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   return (newBlock, mkJavaAnd(jE1, jE2), newK, newL)
+  }
 
- op translateOrToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateOrToExpr(tcx, argsTerm, k, l, spc) =
+op translateOrToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateOrToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
-  let ((newBlock, [jE1, jE2], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkJavaOr(jE1, jE2), newK, newL),col)
+  {
+   (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   return (newBlock, mkJavaOr(jE1, jE2), newK, newL)
+  }
 
- op translateImpliesToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateImpliesToExpr(tcx, argsTerm, k, l, spc) =
+op translateImpliesToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateImpliesToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
-  let ((newBlock, [jE1, jE2], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkJavaImplies(jE1, jE2), newK, newL),col)
+  {
+   (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   return (newBlock, mkJavaImplies(jE1, jE2), newK, newL)
+  }
 
- op translateIffToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateIffToExpr(tcx, argsTerm, k, l, spc) =
+op translateIffToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateIffToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
-  let ((newBlock, [jE1, jE2], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkJavaIff(jE1, jE2), newK, newL),col)
+  {
+   (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   return (newBlock, mkJavaIff(jE1, jE2), newK, newL)
+  }
 
- op translateEqualsToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateEqualsToExpr(tcx, argsTerm, k, l, spc) =
+op translateEqualsToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateEqualsToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
-  let ((newBlock, [jE1, jE2], newK, newL),col1) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let (sid,col2) = srtId(inferTypeFoldRecords(spc,hd(args))) in
-  let col = concatCollected(col1,col2) in
-  ((newBlock, mkJavaEq(jE1, jE2, sid), newK, newL),col)
+  {
+   spc <- getEnvSpec;
+   (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   sid <- srtIdM(inferTypeFoldRecords(spc,hd(args)));
+   return (newBlock, mkJavaEq(jE1, jE2, sid), newK, newL)
+  }
 
- op translateNotEqualsToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateNotEqualsToExpr(tcx, argsTerm, k, l, spc) =
+op translateNotEqualsToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateNotEqualsToExprM(tcx, argsTerm, k, l) =
   let args = applyArgsToTerms argsTerm in
-  let ((newBlock, [jE1, jE2], newK, newL),col1) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let (sid,col2) = srtId(inferTypeFoldRecords(spc,hd(args))) in
-  let col = concatCollected(col1,col2) in
-  ((newBlock, mkJavaNotEq(jE1, jE2, sid), newK, newL),col)
+  {
+   spc <- getEnvSpec;
+   (newBlock, [jE1, jE2], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   sid <- srtIdM(inferTypeFoldRecords(spc,hd(args)));
+   return (newBlock, mkJavaNotEq(jE1, jE2, sid), newK, newL)
+  }
 
- op translateProjectToExpr: TCx * Id * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateProjectToExpr(tcx, id, argsTerm, k, l, spc) =
+op translateProjectToExprM: TCx * Id * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateProjectToExprM(tcx, id, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
   let id = getFieldName id in
-  let ((newBlock, [e], newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkFldAcc(e, id), newK, newL),col)
+  {
+   (newBlock, [e], newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   return (newBlock, mkFldAcc(e, id), newK, newL)
+  }
 
- op translateConstructToExpr: TCx * Id * Id * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateConstructToExpr(tcx, srtId, opId, argsTerm, k, l, spc) =
+op translateConstructToExprM: TCx * Id * Id * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateConstructToExprM(tcx, srtId, opId, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
-  let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  ((newBlock, mkMethInv(srtId, opId, javaArgs), newK, newL),col)
+  {
+   (newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   return (newBlock, mkMethInv(srtId, opId, javaArgs), newK, newL)
+  }
 
- op translatePrimBaseApplToExpr: TCx * Id * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translatePrimBaseApplToExpr(tcx, opId, argsTerm, k, l, spc) =
-  translateBaseApplToExpr(tcx,opId,argsTerm,k,l,primitiveClassName,spc)
+op translatePrimBaseApplToExprM: TCx * Id * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translatePrimBaseApplToExprM(tcx, opId, argsTerm, k, l) =
+  translateBaseApplToExprM(tcx,opId,argsTerm,k,l,primitiveClassName)
 
- op translateBaseApplToExpr: TCx * Id * Term * Nat * Nat * Id * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateBaseApplToExpr(tcx, opId, argsTerm, k, l, clsId, spc) =
+op translateBaseApplToExprM: TCx * Id * Term * Nat * Nat * Id -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateBaseApplToExprM(tcx, opId, argsTerm, k, l, clsId) =
   let args = applyArgsToTerms(argsTerm) in
-  let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let res = if javaBaseOp?(opId)
-	      then 
-		if (length args) = 2
-		  then (newBlock, mkBinExp(opId, javaArgs), newK, newL)
-		else (newBlock, mkUnExp(opId, javaArgs), newK, newL)
-	    else (newBlock, mkMethInv(clsId, opId, javaArgs), newK, newL)
-  in
-    (res,col)
+  {
+   (newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   let res = if javaBaseOp?(opId)
+	       then 
+		 if (length args) = 2
+		   then (newBlock, mkBinExp(opId, javaArgs), newK, newL)
+		 else (newBlock, mkUnExp(opId, javaArgs), newK, newL)
+	     else (newBlock, mkMethInv(clsId, opId, javaArgs), newK, newL)
+   in
+   return res
+  }
 
- op translateBaseArgsApplToExpr: TCx * Id * Term * JGen.Type * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateBaseArgsApplToExpr(tcx, opId, argsTerm, rng, k, l, spc) =
+op translateBaseArgsApplToExprM: TCx * Id * Term * JGen.Type * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateBaseArgsApplToExprM(tcx, opId, argsTerm, rng, k, l) =
   let args = applyArgsToTerms(argsTerm) in
-  let ((newBlock, javaArgs, newK, newL),col1) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let (res,col2) = if javaBaseOp?(opId)
-	      then ((newBlock, mkBinExp(opId, javaArgs), newK, newL),nothingCollected)
-	    else 
-	      let (sid,col) = srtId(rng) in
-	      ((newBlock, mkMethInv(sid, opId, javaArgs), newK, newL),col)
-  in
-  let col = concatCollected(col1,col2) in
-  (res,col)
+  {
+   (newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+   if javaBaseOp?(opId) then
+     return (newBlock, mkBinExp(opId, javaArgs), newK, newL)
+   else
+     {
+      sid <- srtIdM rng;
+      return (newBlock, mkMethInv(sid, opId, javaArgs), newK, newL)
+     }
+  }
 
-op translateUserApplToExpr: TCx * Id * List JGen.Type * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
+op translateUserApplToExprM: TCx * Id * List JGen.Type * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateUserApplToExprM(tcx, opId, dom, argsTerm, k, l) =
   let args = applyArgsToTerms(argsTerm) in
-  case findIndex (fn(srt) -> userType?(spc,srt)) dom of
-    | Some(h, _) -> 
-      let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
-      if javaBaseOp?(opId) then % this might occur if the term is a relax/choose
-	if (length args) = 2
-	  then ((newBlock, mkBinExp(opId,javaArgs), newK, newL),col)
-	else ((newBlock,mkUnExp(opId,javaArgs), newK, newL),col)
-      else
-      let topJArg = nth(javaArgs, h) in
-      let resJArgs = deleteNth(h, javaArgs) in
-      ((newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL),col)
-    | _ -> %(warnNoCode(opId,None);errorResultExp(k,l))
-      unsupportedInTerm(argsTerm,k,l,"no user type found in argument list of application.")
+  {
+   spc <- getEnvSpec;
+   case findIndex (fn(srt) -> userType?(spc,srt)) dom of
+     | Some(h, _) ->
+       {
+	(newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, args, k, l);
+	% this might occur if the term is a relax/choose
+	if javaBaseOp?(opId) then 
+	  if (length args) = 2 then 
+	    return (newBlock, mkBinExp(opId,javaArgs), newK, newL)
+	  else
+	    return (newBlock,mkUnExp(opId,javaArgs), newK, newL)
+	else
+	  let topJArg = nth(javaArgs, h) in
+	  let resJArgs = deleteNth(h, javaArgs) in
+	  return (newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL)
+       }
+    | _ -> raise(NoUserTypeInApplArgList(printTerm argsTerm),termAnn argsTerm)
+  }
 
-def translateRecordToExpr(tcx, term as Record (fields, _), k, l, spc) =
+op translateRecordToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateRecordToExprM(tcx, term as Record (fields, _), k, l) =
   let recordTerms = recordFieldsToTerms(fields) in
-  let recordSrt = inferTypeFoldRecords(spc,term) in
-  let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, recordTerms, k, l, spc) in
-  let srts = sortsAsList(spc) in
-  case findMatchingUserTypeOption(spc,recordSrt) of
-  %let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(recordSrt, srt)) srts in
-  %case foundSrt of
-     | Some (Base(Qualified(_,recordClassId),_,_)) ->  ((newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL),col)
+  {
+   spc <- getEnvSpec;
+   recordSrt <- return(inferTypeFoldRecords(spc,term));
+   (newBlock, javaArgs, newK, newL) <- translateTermsToExpressionsM(tcx, recordTerms, k, l);
+   case findMatchingUserTypeOption(spc,recordSrt) of
+     | Some (Base(Qualified(_,recordClassId),_,_)) ->
+       return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
      | None -> %
-       %let _ = warn("Could not find sort definition for \""^printSort(recordSrt)^"\"") in
        if fieldsAreNumbered fields then
-	 let (recordClassId,col1) = srtId recordSrt in
-	 let col2 = addProductSortToCollected(recordSrt,col) in
-	 ((newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL),concatCollected(col1,col2))
+	 {
+	  recordClassId <- srtIdM recordSrt;
+	  addProductSort recordSrt;
+	  return (newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL)
+	 }
        else
-	 unsupportedInSort(recordSrt,k,l,"product sort must be introduced as a sort definition")
+	 raise(NotSupported("product sort must be introduced as a sort definition"),termAnn term)
+  }
 
+% --------------------------------------------------------------------------------
 
-def translateIfThenElseToExpr(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
-  let ((b0, jT0, k0, l0),col1) = termToExpression(tcx, t0, k, l, spc) in
-  let ((b1, jT1, k1, l1),col2) = termToExpression(tcx, t1, k0, l0, spc) in  
-  let ((b2, jT2, k2, l2),col3) = termToExpression(tcx, t2, k1, l1, spc) in
-  let col = concatCollected(col1,concatCollected(col2,col3)) in
-  (case b1++b2 of
+op translateIfThenElseToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateIfThenElseToExprM(tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
+  {
+   (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
+   (b1, jT1, k1, l1) <- termToExpressionM(tcx, t1, k0, l0);  
+   (b2, jT2, k2, l2) <- termToExpressionM(tcx, t2, k1, l1);
+   (case b1++b2 of
      | [] ->
-     let vExpr = CondExp (Un (Prim (Paren (jT0))), Some (jT1, (Un (Prim (Paren (jT2))), None))) in
-     ((b0, vExpr, k2, l2),col)
-     | _ -> translateIfThenElseToStatement(tcx, term, k, l, spc))
+       let vExpr = CondExp (Un (Prim (Paren (jT0))), Some (jT1, (Un (Prim (Paren (jT2))), None))) in
+       return (b0, vExpr, k2, l2)
+     | _ -> translateIfThenElseToStatementM(tcx, term, k, l))
+  }
 
-def translateIfThenElseToStatement(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
-  let ((b0, jT0, k0, l0),col1) = termToExpression(tcx, t0, k+1, l, spc) in
-  let v = mkIfRes(k) in
-  let ((b1, k1, l1),col2) = termToExpressionAsgV(v, tcx, t1, k0, l0, spc) in  
-  let ((b2, k2, l2),col3) = termToExpressionAsgV(v, tcx, t2, k1, l1, spc) in  
-  let (sid,col4) = srtId(inferTypeFoldRecords(spc,t2)) in
-  let col = concatCollected(col1,concatCollected(col2,concatCollected(col3,col4))) in
-  let vDecl = mkVarDecl(v, sid) in
-%  let vAss1 = mkVarAssn(v, jT1) in
-%  let vAss2 = mkVarAssn(v, jT2) in
-%  let ifStmt = mkIfStmt(jT0, b1++[vAss1], b2++[vAss2]) in
-  let ifStmt = mkIfStmt(jT0, b1, b2) in
-  let vExpr = mkVarJavaExpr(v) in
-  (([vDecl]++b0++[ifStmt], vExpr, k2, l2),col)
+op translateIfThenElseToStatementM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateIfThenElseToStatementM(tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
+  {
+   spc <- getEnvSpec;
+   (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k+1, l);
+   v <- return(mkIfRes(k));
+   (b1, k1, l1) <- termToExpressionAsgVM(v, tcx, t1, k0, l0);
+   (b2, k2, l2) <- termToExpressionAsgVM(v, tcx, t2, k1, l1);
+   sid <- srtIdM(inferTypeFoldRecords(spc,t2));
+   vDecl <- return(mkVarDecl(v, sid));
+   let ifStmt = mkIfStmt(jT0, b1, b2) in
+   let vExpr = mkVarJavaExpr(v) in
+   return([vDecl]++b0++[ifStmt], vExpr, k2, l2)
+  }
 
-def translateLetToExpr(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
+op translateLetToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateLetToExprM(tcx, term as Let (letBindings, letBody, _), k, l) =
   case letBindings of
     | [(VarPat (v as (vid,_), _), letTerm)] ->
-    %let _ = writeLine("let "^vid^" = ...") in
-    let (vId, vSrt) = v in
-    let vSrt = findMatchingUserType(spc,vSrt) in
-    let (sid,col0) = srtId(vSrt) in
-    let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
-    let ((b1, jLetBody, k1, l1),col2) = termToExpression(tcx, letBody, k0, l0, spc) in
-    %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
-    let col = concatCollected(col0,concatCollected(col1,col2)) in
-    ((b0++b1, jLetBody, k1, l1),col)
-    | (pat,_)::_ -> unsupportedInTerm(term,k,l,"pattern not (yet) supported: "^printPattern(pat))
+      let (vId, vSrt) = v in
+      {
+       spc <- getEnvSpec;
+       vSrt <- return(findMatchingUserType(spc,vSrt));
+       sid <- srtIdM vSrt;
+       (b0, k0, l0) <- termToExpressionAsgNVM(sid, vId, tcx, letTerm, k, l);
+       (b1, jLetBody, k1, l1) <- termToExpressionM(tcx, letBody, k0, l0);
+       return (b0++b1, jLetBody, k1, l1)
+      }
+    | (pat,_)::_ -> patternNotSupportedM pat
 
-def translateLetRet(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
+op translateLetRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateLetRetM(tcx, term as Let (letBindings, letBody, _), k, l) =
   case letBindings of
     | [(VarPat (v as (vid,_), _), letTerm)] ->
-    %let _ = writeLine("let "^vid^" = ...") in
-    let (vId, vSrt) = v in
-    let vSrt = findMatchingUserType(spc,vSrt) in
-    let (sid,col0) = srtId(vSrt) in
-    let ((b0, k0, l0),col1) = termToExpressionAsgNV(sid, vId, tcx, letTerm, k, l, spc) in
-    let ((b1, k1, l1),col2) = termToExpressionRet(tcx, letBody, k0, l0, spc) in
-    %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
-    let col = concatCollected(col0,concatCollected(col1,col2)) in
-    ((b0++b1, k1, l1),col)
-    | (pat,_)::_ -> unsupportedInTermRet(term,k,l,"pattern not (yet) supported: "^printPattern(pat))
+      let (vId, vSrt) = v in
+      {
+       spc <- getEnvSpec;
+       vSrt <- return(findMatchingUserType(spc,vSrt));
+       sid <- srtIdM vSrt;
+       (b0, k0, l0) <- termToExpressionAsgNVM(sid, vId, tcx, letTerm, k, l);
+       (b1, k1, l1) <- termToExpressionRetM(tcx, letBody, k0, l0);
+       return (b0++b1, k1, l1)
+      }
+    | (pat,_)::_ -> patternNotSupportedM pat
 
 
-def translateCaseToExpr(tcx, term, k, l, spc) =
-  let caseType = inferTypeFoldRecords(spc,term) in
-  let (caseTypeId,col0) = srtId(caseType) in
-  let caseTerm = caseTerm(term) in
-  let cases  = caseCases(term) in
-  %% cases = List (pat, cond, body)
-  let ((caseTermBlock, caseTermJExpr, k0, l0),col1) =
-    case caseTerm of
-      | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
-      | _ ->
-        let (caseTermSrt,col0) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
-	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	let col = concatCollected(col0,col1) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
-  in
-    let cres = mkCres(l) in
-    let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitches(tcx, caseTypeId, caseTermJExpr, cres, cases, k0, l0, l, spc) in
-    let switchStatement = Stmt (Switch (caseTermJExpr, casesSwitches)) in
-    let cresJavaExpr = mkVarJavaExpr(cres) in
-    let col = concatCollected(col0,concatCollected(col1,col2)) in
-    ((caseTermBlock++[switchStatement], cresJavaExpr, finalK, finalL),col)
+op translateCaseToExprM: TCx * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateCaseToExprM(tcx, term, k, l) =
+  {
+   spc <- getEnvSpec;
+   caseType <- return(inferTypeFoldRecords(spc,term));
+   caseTypeId <- srtIdM caseType;
+   caseTerm <- return(caseTerm term);
+   cases  <- return(caseCases term);
+   (caseTermBlock, caseTermJExpr, k0, l0) <-
+       case caseTerm of
+	 | Var _ ->  termToExpressionM(tcx, caseTerm, k, l+1)
+	 | _ ->
+	   {
+	    caseTermSrt <- srtIdM(inferTypeFoldRecords(spc,caseTerm));
+	    tgt <- return(mkTgt(l));
+	    (caseTermBlock, k0, l0) <- termToExpressionAsgNVM(caseTermSrt, tgt, tcx, caseTerm, k, l+1);
+	    return (caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
+	   };
+    cres <- return(mkCres l);
+    (casesSwitches, finalK, finalL) <- translateCaseCasesToSwitchesM(tcx, caseTypeId, caseTermJExpr, cres, cases, k0, l0, l);
+    switchStatement <- return(Stmt (Switch (caseTermJExpr, casesSwitches)));
+    cresJavaExpr <- return(mkVarJavaExpr cres);
+    return (caseTermBlock++[switchStatement], cresJavaExpr, finalK, finalL)
+   }
 
 op getVarsPattern: Option Pattern -> List Id * Boolean
 def getVarsPattern(pat) =
@@ -407,64 +448,78 @@ def getVarsPattern(pat) =
     | Some(WildPat _) -> (["ignored"],true)
     | Some(pat) -> ([],false)
 
-op translateCaseCasesToSwitches: TCx * Id * Java.Expr * Id * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitches(tcx, _(* caseType *), caseExpr, cres, cases, k0, l0, l, spc) =
+op translateCaseCasesToSwitchesM: TCx * Id * Java.Expr * Id * Match * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+def translateCaseCasesToSwitchesM(tcx, _(* caseType *), caseExpr, cres, cases, k0, l0, l) =
   let
     def mkCaseInit(cons,coSrt) =
-      let (caseType,col0) = srtId coSrt in
-      let sumdType = mkSumd(cons, caseType) in
-      let subId = mkSub(cons, l) in
-      let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-      (mkVarInit(subId, sumdType, castExpr),col0)
+      {
+       caseType <- srtIdM coSrt;
+       let sumdType = mkSumd(cons, caseType) in
+       let subId = mkSub(cons, l) in
+       let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
+       return (mkVarInit(subId, sumdType, castExpr))
+      }
   in
-	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let
     def translateCaseCaseToSwitch(c, ks, ls) =
       case c of
         | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	  let (patVars,ok?) = getVarsPattern(argsPat) in
 	  if ~ ok? then
-	    (
-	     patternNotSupported pat;
-	     %issueUnsupportedError(b,"pattern not supported");
-	     ((([],[]),k0,l0),nothingCollected))
+	    {
+	     patternNotSupportedM pat;
+	     return (([],[]),k0,l0)
+	    }
 	  else
-	  let subId = mkSub(cons, l) in
-	  %let sumdType = mkSumd(cons, caseType) in
-	  let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	  let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(cres, newTcx, body, ks, ls, spc) in
-	  let coSrt = unfoldToSubsort(spc,coSrt) in
-	  let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	  let (caseType,col3) = srtId coSrt in
-	  %let tagId = mkTag(cons) in
-	  let tagId = mkTagCId(cons) in
-	  let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	  let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-	  let col = concatCollected(col1,concatCollected(col2,col3)) in
-	  ((switchElement, newK, newL),col)
+	    let subId = mkSub(cons, l) in
+	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
+	    {
+	     spc <- getEnvSpec;
+	     (caseBlock, newK, newL) <- termToExpressionAsgVM(cres, newTcx, body, ks, ls);
+	     coSrt <- return(unfoldToSubsort(spc,coSrt));
+	     initBlock <- mkCaseInit(cons,coSrt);
+	     caseType <- srtIdM coSrt;
+	     tagId <- return(mkTagCId(cons));
+	     switchLab <- return(JCase (mkFldAccViaClass(caseType, tagId)));
+	     switchElement <- return ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]);
+	     return (switchElement, newK, newL)
+	    }
        | (WildPat(srt,_),_,body) ->
-	let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	let switchLab = Default in
-	let switchElement = ([switchLab],caseBlock) in
-	((switchElement,newK,newL),col)
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     switchLab <- return Default;
+	     switchElement <- return([switchLab],caseBlock);
+	     return (switchElement,newK,newL)
+	    }
        | (VarPat((id,srt),_),_,body) ->
-	let tcx = StringMap.insert(tcx,id,caseExpr) in
-	let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	let switchLab = Default in
-	let switchElement = ([switchLab],caseBlock) in
-	((switchElement,newK,newL),col)
-       | (pat,_,_) -> (patternNotSupported pat; ((([],[]),ks,ls),nothingCollected))
+	    let tcx = StringMap.insert(tcx,id,caseExpr) in
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     switchLab <- return Default;
+	     switchElement <- return([switchLab],caseBlock);
+	     return(switchElement,newK,newL)
+	    }
+       | (pat,_,_) ->
+	    {
+	     patternNotSupportedM pat;
+	     return (([],[]),ks,ls)
+	    }
   in
     let
       def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
 	case cases of
-	  | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
+	  | Nil -> 
+	    {
+	     spc <- getEnvSpec;
+	     return (if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr)
+	    }
 	  | hdCase::restCases ->
-	    let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	    let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
-	    let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL,hasDefaultLabel?) in
-	    let col = concatCollected(col1,col2) in
-	    ((List.cons(hdSwitch, restSwitch), restK, restL),col)
+	    {
+	     (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
+	     hasDefaultLabel? <- return(if hasDefaultLabel? then true else member(Default,hdSwitch.1));
+	     (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL,hasDefaultLabel?);
+	     return (List.cons(hdSwitch, restSwitch), restK, restL)
+	    }
     in
       translateCasesToSwitchesRec(cases, k0, l0, false)
 
@@ -489,6 +544,26 @@ def patternNotSupported pat =
     | SortedPat _ -> errmsg "sorted"
     | _ -> errmsg "unknown"
 
+op patternNotSupportedM: [a] Pattern -> JGenEnv a
+def patternNotSupportedM pat =
+  let
+    def errmsg whatpat =
+      raise(NotSupported(whatpat^"-pattern not supported: "^printPattern(pat)),patAnn pat)
+  in
+  case pat of
+    | AliasPat _ -> errmsg "alias"
+    | VarPat _ -> errmsg "var"
+    | EmbedPat _ -> errmsg "embed"
+    | WildPat _ -> errmsg "wild"
+    | RecordPat _ -> errmsg "record"
+    | BoolPat _ -> errmsg "boolean"
+    | NatPat _ -> errmsg "nat"
+    | StringPat _ -> errmsg "string"
+    | CharPat _ -> errmsg "char"
+    | RelaxPat _ -> errmsg "relax"
+    | QuotientPat _ -> errmsg "quotient"
+    | SortedPat _ -> errmsg "sorted"
+    | _ -> errmsg "unknown"
 
 op addSubsToTcx: TCx * List Id * Id -> TCx
 def addSubsToTcx(tcx, args, subId) =
@@ -523,87 +598,92 @@ def relaxChooseTerm(spc,t) =
       relaxChooseTerm(spc,t)
       | _ -> t
 
-def translateTermsToExpressions(tcx, terms, k, l, spc) =
+
+op translateTermsToExpressionsM: TCx * List Term * Nat * Nat -> JGenEnv (Block * List Java.Expr * Nat * Nat)
+def translateTermsToExpressionsM(tcx, terms, k, l) =
     case terms of
-    | [] -> (([], [], k, l),nothingCollected)
+    | [] ->  return ([], [], k, l)
     | term::terms ->
-    let ((newBody, jTerm, newK, newL),col1) = termToExpression(tcx, term, k, l, spc) in
-    let ((restBody, restJTerms, restK, restL),col2) = translateTermsToExpressions(tcx, terms, newK, newL, spc) in
-    let col = concatCollected(col1,col2) in
-    ((newBody++restBody, cons(jTerm, restJTerms), restK, restL),col)
+      {
+       (newBody, jTerm, newK, newL) <- termToExpressionM(tcx, term, k, l);
+       (restBody, restJTerms, restK, restL) <- translateTermsToExpressionsM(tcx, terms, newK, newL);
+       return (newBody++restBody, cons(jTerm, restJTerms), restK, restL)
+      }
 
-op translateIfThenElseRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op translateCaseRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-
-% monadic version
-
-def termToExpressionRetM(tcx,term,k,l) =
-  {
-   spc <- getEnvSpec;
-   ((block,k,l),col) <- return(termToExpressionRet(tcx,term,k,l,spc));
-   addCollected col;
-   return (block,k,l)
-  }
-
-def termToExpressionRet(tcx, term, k, l, spc) =
+op termToExpressionRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def termToExpressionRetM(tcx, term, k, l) =
   if caseTerm?(term)
-    then translateCaseRet(tcx, term, k, l, spc)
+    then translateCaseRetM(tcx, term, k, l)
   else
     case term of
-      | IfThenElse _ -> translateIfThenElseRet(tcx, term, k, l, spc)
-      | Let _ -> translateLetRet(tcx,term,k,l,spc)
-      | Record ([],_) -> (([Stmt(Return None)],k,l),nothingCollected)
-      | Seq([t],_) -> termToExpressionRet(tcx,t,k,l,spc)
+      | IfThenElse _ -> translateIfThenElseRetM(tcx, term, k, l)
+      | Let _ -> translateLetRetM(tcx,term,k,l)
+      | Record ([],_) -> return ([Stmt(Return None)],k,l)
+      | Seq([t],_) -> termToExpressionRetM(tcx,t,k,l)
       | Seq(t1::terms,b) ->
-	let ((s1,expr,k,l),col1) = termToExpression(tcx,t1,k,l,spc) in
-	let s2 = [Stmt(Expr(expr))] in
-	let ((s3,k,l),col2) = termToExpressionRet(tcx,Seq(terms,b),k,l,spc) in
-	((s1++s2++s3,k,l),concatCollected(col1,col2))
-      | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) -> 
-        let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
-	%let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
+        {
+	 (s1,expr,k,l) <- termToExpressionM(tcx,t1,k,l);
+	 s2 <- return [Stmt(Expr(expr))];
+	 (s3,k,l) <- termToExpressionRetM(tcx,Seq(terms,b),k,l);
+	 return (s1++s2++s3,k,l)
+	}
+      | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) ->
 	let def mkPrim p = CondExp(Un(Prim p),None) in
-	let newException = mkPrim(NewClsInst(ForCls(([],"IllegalArgumentException"),[argexpr],None))) in
-	let throwStmt = Throw(newException) in
-	let block = [Stmt throwStmt] in
-	((block,k,l),col)
+	{
+	 (s,argexpr,k,l) <- termToExpressionM(tcx,t,k,l);
+	 newException <- return(mkPrim(NewClsInst(ForCls(([],"IllegalArgumentException"),[argexpr],None))));
+	 throwStmt <- return(Throw newException);
+	 block <- return [Stmt throwStmt];
+	 return (block,k,l)
+	}
       | _ ->
-        let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
-	let stmts = if isVoid?(spc,inferTypeFoldRecords(spc,term))
-		      then [Stmt(Expr jE),Stmt(Return None)]
-		    else [Stmt(Return(Some(jE)))]
-	in
-	%let retStmt = Stmt (Return (Some (jE))) in
-	((b++stmts, newK, newL),col)
+	{
+	 spc <- getEnvSpec;
+	 (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
+	 stmts <-
+	     if isVoid?(spc,inferTypeFoldRecords(spc,term)) then
+	       return [Stmt(Expr jE),Stmt(Return None)]
+	     else
+	       return [Stmt(Return(Some(jE)))];
+	 return (b++stmts, newK, newL)
+	}
 
-def translateIfThenElseRet(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
-  let ((b0, jT0, k0, l0),col1) = termToExpression(tcx, t0, k, l, spc) in
-  let ((b1, k1, l1),col2) = termToExpressionRet(tcx, t1, k0, l0, spc) in  
-  let ((b2, k2, l2),col3) = termToExpressionRet(tcx, t2, k1, l1, spc) in
-  let col = concatCollected(col1,concatCollected(col2,col3)) in
-  let ifStmt = mkIfStmt(jT0, b1, b2) in
-    ((b0++[ifStmt], k2, l2),col)
+% --------------------------------------------------------------------------------
 
-def translateCaseRet(tcx, term, k, l, spc) =
-  let caseType_ = inferTypeFoldRecords(spc,term) in
-  let (caseTypeId,col0) = srtId(caseType_) in
-  let caseTerm = caseTerm(term) in
-  let cases  = caseCases(term) in
-  %% cases = List (pat, cond, body)
-  let ((caseTermBlock, caseTermJExpr, k0, l0),col1) =
-    case caseTerm of
-      | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
-      | _ ->
-        let (caseTermSrt,col0) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
-	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	let col = concatCollected(col0,col1) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
-  in
-  let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesRet(tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
-  let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
-  let col = concatCollected(col0,concatCollected(col1,col2)) in
-  ((caseTermBlock++[switchStatement], finalK, finalL),col)
+op translateIfThenElseRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateIfThenElseRetM(tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
+  {
+   (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
+   (b1, k1, l1) <- termToExpressionRetM(tcx, t1, k0, l0);
+   (b2, k2, l2) <- termToExpressionRetM(tcx, t2, k1, l1);
+   let ifStmt = mkIfStmt(jT0, b1, b2) in
+   return (b0++[ifStmt], k2, l2)
+  }
+
+% --------------------------------------------------------------------------------
+
+op translateCaseRetM: TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateCaseRetM(tcx, term, k, l) =
+  {
+   spc <- getEnvSpec;
+   caseType_ <- return(inferTypeFoldRecords(spc,term));
+   caseTypeId <- srtIdM caseType_;
+   caseTerm <- return(caseTerm term);
+   cases  <- return(caseCases term);
+   (caseTermBlock, caseTermJExpr, k0, l0) <-
+        case caseTerm of
+	  | Var _ ->  termToExpressionM(tcx, caseTerm, k, l+1)
+	  | _ ->
+	    {
+	     caseTermSrt <- srtIdM(inferTypeFoldRecords(spc,caseTerm));
+	     tgt <- return(mkTgt l);
+	     (caseTermBlock, k0, l0) <- termToExpressionAsgNVM(caseTermSrt, tgt, tcx, caseTerm, k, l+1);
+	     return (caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
+	    };
+   (casesSwitches, finalK, finalL) <- translateCaseCasesToSwitchesRetM(tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l);
+   switchStatement <- return(Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)));
+   return(caseTermBlock++[switchStatement], finalK, finalL)
+  }
 
 op unfoldToSubsort: Spec * Sort -> Sort
 def unfoldToSubsort(spc,srt) =
@@ -619,447 +699,454 @@ def unfoldToSubsort(spc,srt) =
       | Subsort _ -> usrt
       | _ -> srt
 
-op translateCaseCasesToSwitchesRet: TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesRet(tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
+op translateCaseCasesToSwitchesRetM: TCx * Id * Java.Expr * Match * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+def translateCaseCasesToSwitchesRetM(tcx, _(* caseType *), caseExpr, cases, k0, l0, l) =
   let def mkCaseInit(cons,caseSort) =
-        let (caseType,col) = srtId(caseSort) in
-        let sumdType = mkSumd(cons, caseType) in
-	let subId = mkSub(cons, l) in
-	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	(mkVarInit(subId, sumdType, castExpr),col)
+        {
+	 caseType <- srtIdM caseSort;
+	 sumdType <- return(mkSumd(cons, caseType));
+	 subId <- return(mkSub(cons, l));
+	 castExpr <- return(CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None));
+	 return (mkVarInit(subId, sumdType, castExpr))
+	}
   in
-	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         case c of
           | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	    let (patVars,ok?) = getVarsPattern(argsPat) in
 	    if ~ ok? then
-	      (patternNotSupported pat;((([],[]),k0,l0),nothingCollected))
-	      %(issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected))
+	      patternNotSupportedM pat
 	    else
 	    let subId = mkSub(cons, l) in
-	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	    let ((caseBlock, newK, newL),col1) = termToExpressionRet(newTcx, body, ks, ls, spc) in
-	    let coSrt = unfoldToSubsort(spc,coSrt) in
-	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	    let (caseType,col3) = srtId coSrt in
-	    let tagId = mkTagCId(cons) in
-	    let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	    let switchElement = ([switchLab], [initBlock]++caseBlock) in
-	    let col = concatCollected(col1,concatCollected(col2,col3)) in
-	    ((switchElement, newK, newL),col)
+	    {
+	     spc <- getEnvSpec;
+	     (caseBlock, newK, newL) <- termToExpressionRetM(newTcx, body, ks, ls);
+	     coSrt <- return(unfoldToSubsort(spc,coSrt));
+	     initBlock <- mkCaseInit(cons,coSrt);
+	     caseType <- srtIdM coSrt;
+	     tagId <- return(mkTagCId cons);
+	     switchLab <- return(JCase (mkFldAccViaClass(caseType, tagId)));
+	     let switchElement = ([switchLab], [initBlock]++caseBlock) in
+	     return (switchElement, newK, newL)
+	    }
 	  | (WildPat(srt,_),_,body) ->
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     let switchLab = Default in
+	     let switchElement = ([switchLab],caseBlock) in
+	     return (switchElement,newK,newL)
+	    }
 	  | (VarPat((id,srt),_),_,body) ->
 	    let tcx = StringMap.insert(tcx,id,caseExpr) in
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (patternNotSupported pat;
-			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
-			     ((([],[]),ks,ls),nothingCollected))
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     let switchLab = Default in
+	     let switchElement = ([switchLab],caseBlock) in
+	     return (switchElement,newK,newL)
+	    }
+	  | (pat,_,_) -> patternNotSupportedM pat
   in
   let def translateCasesToSwitchesRec(cases,kr,lr,hasDefaultLabel?) =
          case cases of
-	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
+	   | Nil ->
+	     {
+	      spc <- getEnvSpec;
+	      return(if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr)
+	     }
 	   | hdCase::restCases ->
-	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
-	      let col = concatCollected(col1,col2) in
-	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
+	     {
+	      (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
+	      hasDefaultLabel? <- return(if hasDefaultLabel? then true else member(Default,hdSwitch.1));
+	      (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?);
+	      return (List.cons(hdSwitch, restSwitch), restK, restL)
+	     }
   in
     translateCasesToSwitchesRec(cases, k0, l0, false)
 
 
-op translateIfThenElseAsgNV: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op translateCaseAsgNV: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
 
-def termToExpressionAsgNV(srtId, vId, tcx, term, k, l, spc) =
+op termToExpressionAsgNVM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def termToExpressionAsgNVM(srtId, vId, tcx, term, k, l) =
   if caseTerm?(term)
-    then translateCaseAsgNV(srtId, vId, tcx, term, k, l, spc)
+    then translateCaseAsgNVM(srtId, vId, tcx, term, k, l)
   else
     case term of
-      | IfThenElse _ -> translateIfThenElseAsgNV(srtId, vId, tcx, term, k, l, spc)
+      | IfThenElse _ -> translateIfThenElseAsgNVM(srtId, vId, tcx, term, k, l)
       | _ ->
-        let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
-	let vInit = mkVarInit(vId, srtId, jE) in
-	((b++[vInit], newK, newL),col)
+        {
+	 (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
+	 let vInit = mkVarInit(vId, srtId, jE) in
+	 return (b++[vInit], newK, newL)
+	}
 
-def translateIfThenElseAsgNV(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
-  let ((b0, jT0, k0, l0),col1) = termToExpression(tcx, t0, k, l, spc) in
-  let ((b1, k1, l1),col2) = termToExpressionAsgV(vId, tcx, t1, k0, l0, spc) in  
-  let ((b2, k2, l2),col3) = termToExpressionAsgV(vId, tcx, t2, k1, l1, spc) in
-  let col = concatCollected(col1,concatCollected(col2,col3)) in
-  let varDecl = mkVarDecl(vId, srtId) in
-  let ifStmt = mkIfStmt(jT0, b1, b2) in
-    (([varDecl]++b0++[ifStmt], k2, l2),col)
+op translateIfThenElseAsgNVM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateIfThenElseAsgNVM(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
+  {
+   (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
+   (b1, k1, l1) <- termToExpressionAsgVM(vId, tcx, t1, k0, l0);
+   (b2, k2, l2) <- termToExpressionAsgVM(vId, tcx, t2, k1, l1);
+   let varDecl = mkVarDecl(vId, srtId) in
+   let ifStmt = mkIfStmt(jT0, b1, b2) in
+   return ([varDecl]++b0++[ifStmt], k2, l2)
+  }
 
-def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
-  let caseType = inferTypeFoldRecords(spc,term) in
-  let (caseTypeId,col0) = srtId(caseType) in
-  let caseTerm = caseTerm(term) in
-  let cases  = caseCases(term) in
-  %% cases = List (pat, cond, body)
-  let ((caseTermBlock, caseTermJExpr, k0, l0),col1) =
-    case caseTerm of
-      | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
-      | _ ->
-        let (caseTermSrt,col1) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
-	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	let col = concatCollected(col1,col2) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
-  in
-   let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesAsgNV(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
+op translateCaseAsgNVM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateCaseAsgNVM(vSrtId, vId, tcx, term, k, l) =
+  {
+   spc <- getEnvSpec;
+   caseType <- return(inferTypeFoldRecords(spc,term));
+   caseTypeId <- srtIdM caseType;
+   caseTerm <- return(caseTerm term);
+   cases <- return(caseCases term);
+   (caseTermBlock, caseTermJExpr, k0, l0) <-
+       case caseTerm of
+	 | Var _ -> termToExpressionM(tcx, caseTerm, k, l+1)
+	 | _ ->
+	   {
+	    caseTermSrt <- srtIdM(inferTypeFoldRecords(spc,caseTerm));
+	    tgt <- return(mkTgt l);
+	    (caseTermBlock, k0, l0) <- termToExpressionAsgNVM(caseTermSrt, tgt, tcx, caseTerm, k, l+1);
+	    return(caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
+	   };
+   (casesSwitches, finalK, finalL) <- translateCaseCasesToSwitchesAsgNVM(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l);
    let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
    let declV = mkVarDecl(vId, vSrtId) in
-   let col = concatCollected(col0,concatCollected(col1,col2)) in
-   (([declV]++caseTermBlock++[switchStatement], finalK, finalL),col)
+   return ([declV]++caseTermBlock++[switchStatement], finalK, finalL)
+  }
 
 
-op translateCaseCasesToSwitchesAsgNV: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
+op translateCaseCasesToSwitchesAsgNVM: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l) =
   let def mkCaseInit(cons,srt) =
-        let (caseType,col) = srtId srt in
-        let sumdType = mkSumd(cons, caseType) in
-	let subId = mkSub(cons, l) in
-	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	(mkVarInit(subId, sumdType, castExpr),col)
+        {
+	 caseType <- srtIdM srt;
+	 let sumdType = mkSumd(cons, caseType) in
+	 let subId = mkSub(cons, l) in
+	 let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
+	 return (mkVarInit(subId, sumdType, castExpr))
+	}
   in
-	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         case c of
           | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	    let (patVars,ok?) = getVarsPattern(argsPat) in
 	    if ~ ok? then
-	      (
-	       patternNotSupported pat;
-	       %issueUnsupportedError(b,"pattern not supported");
-	       ((([],[]),k0,l0),nothingCollected))
+	      patternNotSupportedM pat
 	    else
 	    let subId = mkSub(cons, l) in
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	    let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
-	    let coSrt = unfoldToSubsort(spc,coSrt) in
-	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	    let tagId = mkTagCId(cons) in
-	    let (caseType,col3) = srtId coSrt in
-	    let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	    let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-	    let col = concatCollected(col1,concatCollected(col2,col3)) in
-	    ((switchElement, newK, newL),col)
+	    {
+	     spc <- getEnvSpec;
+	     (caseBlock, newK, newL) <- termToExpressionAsgVM(oldVId, newTcx, body, ks, ls);
+	     coSrt <- return(unfoldToSubsort(spc,coSrt));
+	     initBlock <- mkCaseInit(cons,coSrt);
+	     tagId <- return(mkTagCId cons);
+	     caseType <- srtIdM coSrt;
+	     let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
+	     let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	     return (switchElement, newK, newL)
+	    }
 	  | (WildPat(srt,_),_,body) ->
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     let switchLab = Default in
+	     let switchElement = ([switchLab],caseBlock) in
+	     return (switchElement,newK,newL)
+	    }
 	  | (VarPat((id,srt),_),_,body) ->
 	    let tcx = StringMap.insert(tcx,id,caseExpr) in
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (
-			  patternNotSupported pat;
-			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
-			     ((([],[]),ks,ls),nothingCollected))
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     let switchLab = Default in
+	     let switchElement = ([switchLab],caseBlock) in
+	     return (switchElement,newK,newL)
+	    }
+	  | (pat,_,_) -> patternNotSupportedM pat
   in
    let def translateCasesToSwitchesRec(cases,kr,lr,hasDefaultLabel?) =
          case cases of
-	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
+	   | Nil ->
+	     {
+	      spc <- getEnvSpec;
+	      return (if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr)
+	     }
 	   | hdCase::restCases ->
-	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
-	      let col = concatCollected(col1,col2) in
-	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
+	     {
+	      (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
+	      hasDefaultLabel? <- return(if hasDefaultLabel? then true else member(Default,hdSwitch.1));
+	      (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?);
+	      return (List.cons(hdSwitch, restSwitch), restK, restL)
+	     }
+   in
+     translateCasesToSwitchesRec(cases, k0, l0, false)
+
+op termToExpressionAsgVM: Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def termToExpressionAsgVM(vId, tcx, term, k, l) =
+  if caseTerm?(term)
+    then translateCaseAsgVM(vId, tcx, term, k, l)
+  else
+    case term of
+      | IfThenElse _ -> translateIfThenElseAsgVM(vId, tcx, term, k, l)
+      | _ ->
+        {
+	 (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
+	 let vAssn = mkVarAssn(vId, jE) in
+	 return (b++[vAssn], newK, newL)
+	}
+
+op translateIfThenElseAsgVM: Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateIfThenElseAsgVM(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
+  {
+   (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
+   (b1, k1, l1) <- termToExpressionAsgVM(vId, tcx, t1, k0, l0);
+   (b2, k2, l2) <- termToExpressionAsgVM(vId, tcx, t2, k1, l1);
+   let ifStmt = mkIfStmt(jT0, b1, b2) in
+   return (b0++[ifStmt], k2, l2)
+  }
+
+op translateCaseAsgVM: Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateCaseAsgVM(vId, tcx, term, k, l) =
+  {
+   spc <- getEnvSpec;
+   caseType <- return(inferTypeFoldRecords(spc,term));
+   caseTypeId <- srtIdM caseType;
+   caseTerm <- return(caseTerm(term));
+   cases <- return(caseCases(term));
+   (caseTermBlock, caseTermJExpr, k0, l0) <-
+           case caseTerm of
+	     | Var _ -> termToExpressionM(tcx, caseTerm, k, l+1)
+	     | _ ->
+	       {
+		caseTermSrt <- srtIdM(inferTypeFoldRecords(spc,caseTerm));
+		tgt <- return(mkTgt l);
+		(caseTermBlock, k0, l0) <- termToExpressionAsgNVM(caseTermSrt, tgt, tcx, caseTerm, k, l+1);
+		return (caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
+	       };
+   (casesSwitches, finalK, finalL) <- translateCaseCasesToSwitchesAsgVM(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l);
+   let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
+   return (caseTermBlock++[switchStatement], finalK, finalL)
+  }
+
+
+op translateCaseCasesToSwitchesAsgVM: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l) =
+  let
+    def mkCaseInit(cons,coSrt) =
+      {
+	caseType <- srtIdM coSrt;
+        sumdType <- return(mkSumd(cons, caseType));
+	subId <- return(mkSub(cons, l));
+	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
+	return(mkVarInit(subId, sumdType, castExpr))
+       }
+  in
+  let
+    def translateCaseCaseToSwitch(c, ks, ls) =
+        case c of
+          | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+	    let (patVars,ok?) = getVarsPattern(argsPat) in
+	    if ~ ok? then
+	      {
+	       patternNotSupportedM pat;
+	       return(([],[]),k0,l0)
+	      }
+	    else
+	      let subId = mkSub(cons, l) in
+	      let newTcx = addSubsToTcx(tcx, patVars, subId) in
+	      {
+	       spc <- getEnvSpec;
+	       (caseBlock, newK, newL) <- termToExpressionAsgVM(oldVId, newTcx, body, ks, ls);
+	       coSrt <- return(unfoldToSubsort(spc,coSrt));
+	       initBlock <- mkCaseInit(cons,coSrt);
+	       caseType <- srtIdM coSrt;
+	       tagId <- return(mkTagCId(cons));
+	       switchLab <- return(JCase (mkFldAccViaClass(caseType, tagId)));
+	       switchElement <- return ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]);
+	       return (switchElement, newK, newL)
+	      }
+	  | (WildPat(srt,_),_,body) ->
+	      {
+	       (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	       let switchLab = Default in
+	       let switchElement = ([switchLab],caseBlock) in
+	       return (switchElement,newK,newL)
+	      }
+	  | (VarPat((id,srt),_),_,body) ->
+	      let tcx = StringMap.insert(tcx,id,caseExpr) in
+	      {
+	       (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	       let switchLab = Default in
+	       let switchElement = ([switchLab],caseBlock) in
+	       return(switchElement,newK,newL)
+	      }
+	  | (pat,_,_) -> {
+			  patternNotSupportedM pat;
+			  return(([],[]),ks,ls)
+			 }
+  in
+  let
+    def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
+      case cases of
+	| Nil ->
+	  {
+	   spc <- getEnvSpec;
+	   return (if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr)
+	  }
+	| hdCase::restCases ->
+	  {
+	   (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
+	   hasDefaultLabel? <- return(if hasDefaultLabel? then true else member(Default,hdSwitch.1));
+	   (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?);
+	   return(List.cons(hdSwitch, restSwitch), restK, restL)
+	  }
    in
      translateCasesToSwitchesRec(cases, k0, l0, false)
 
 
-
-op translateIfThenElseAsgV: Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op translateCaseAsgV: Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-
-def termToExpressionAsgV(vId, tcx, term, k, l, spc) =
+op termToExpressionAsgFM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def termToExpressionAsgFM(cId, fId, tcx, term, k, l) =
   if caseTerm?(term)
-    then translateCaseAsgV(vId, tcx, term, k, l, spc)
+    then translateCaseAsgFM(cId, fId, tcx, term, k, l)
   else
     case term of
-      | IfThenElse _ -> translateIfThenElseAsgV(vId, tcx, term, k, l, spc)
+      | IfThenElse _ -> translateIfThenElseAsgFM(cId, fId, tcx, term, k, l)
       | _ ->
-        let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
-	let vAssn = mkVarAssn(vId, jE) in
-	((b++[vAssn], newK, newL),col)
+        {
+	 (b, jE, newK, newL) <- termToExpressionM(tcx, term, k, l);
+	 let fAssn = mkFldAssn(cId, fId, jE) in
+	 return (b++[fAssn], newK, newL)
+	}
 
-def translateIfThenElseAsgV(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
-  let ((b0, jT0, k0, l0),col1) = termToExpression(tcx, t0, k, l, spc) in
-  let ((b1, k1, l1),col2) = termToExpressionAsgV(vId, tcx, t1, k0, l0, spc) in  
-  let ((b2, k2, l2),col3) = termToExpressionAsgV(vId, tcx, t2, k1, l1, spc) in
-  let col = concatCollected(col1,concatCollected(col2,col3)) in
-  let ifStmt = mkIfStmt(jT0, b1, b2) in
-    ((b0++[ifStmt], k2, l2),col)
+op translateIfThenElseAsgFM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateIfThenElseAsgFM(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k, l) =
+  {
+   (b0, jT0, k0, l0) <- termToExpressionM(tcx, t0, k, l);
+   (b1, k1, l1) <- termToExpressionAsgFM(cId, fId, tcx, t1, k0, l0);
+   (b2, k2, l2) <- termToExpressionAsgFM(cId, fId, tcx, t2, k1, l1);
+   let ifStmt = mkIfStmt(jT0, b1, b2) in
+   return (b0++[ifStmt], k2, l2)
+  }
 
-%def translateCaseAsgV(vId, tcx, term, k, l, spc) =
-def translateCaseAsgV(vId, tcx, term, k, l, spc) =
-  let caseType = inferTypeFoldRecords(spc,term) in
-  let (caseTypeId,col0) = srtId(caseType) in
-  let caseTerm = caseTerm(term) in
-  let cases  = caseCases(term) in
-  %% cases = List (pat, cond, body)
-  let ((caseTermBlock, caseTermJExpr, k0, l0),col1) =
-    case caseTerm of
-      | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
-      | _ ->
-        let (caseTermSrt,col1) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
-	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	let col = concatCollected(col1,col2) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
-  in
-   let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesAsgV(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
+op translateCaseAsgFM: Id * Id * TCx * Term * Nat * Nat -> JGenEnv (Block * Nat * Nat)
+def translateCaseAsgFM(cId, fId, tcx, term, k, l) =
+  {
+   spc <- getEnvSpec;
+   caseType <- return(inferTypeFoldRecords(spc,term));
+   caseTypeId <- srtIdM caseType;
+   caseTerm <- return(caseTerm term);
+   cases <- return(caseCases term);
+   (caseTermBlock, caseTermJExpr, k0, l0) <-
+        case caseTerm of
+	  | Var _ ->  termToExpressionM(tcx, caseTerm, k, l+1)
+	  | _ ->
+	    {
+	     caseTermSrt <- srtIdM(inferTypeFoldRecords(spc,caseTerm));
+	     tgt <- return(mkTgt l);
+	     (caseTermBlock, k0, l0) <- termToExpressionAsgNVM(caseTermSrt, tgt, tcx, caseTerm, k, l+1);
+	     return (caseTermBlock, mkVarJavaExpr(tgt), k0, l0)
+	    };
+   (casesSwitches, finalK, finalL) <- translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l);
    let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
-   let col = concatCollected(col0,concatCollected(col1,col2)) in
-   ((caseTermBlock++[switchStatement], finalK, finalL),col)
+   return (caseTermBlock++[switchStatement], finalK, finalL)
+  }
 
 
-op translateCaseCasesToSwitchesAsgV: Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesAsgV(oldVId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
+op translateCaseCasesToSwitchesAsgFM: Id * Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat -> JGenEnv (SwitchBlock * Nat * Nat)
+def translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l) =
   let def mkCaseInit(cons,coSrt) =
-	let (caseType,col) = srtId coSrt in
-        let sumdType = mkSumd(cons, caseType) in
-	let subId = mkSub(cons, l) in
-	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	(mkVarInit(subId, sumdType, castExpr),col)
+        {
+	 caseType <- srtIdM coSrt;
+	 let sumdType = mkSumd(cons, caseType) in
+	 let subId = mkSub(cons, l) in
+	 let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
+	 return (mkVarInit(subId, sumdType, castExpr))
+	}
   in
-	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
         case c of
           | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
 	    let (patVars,ok?) = getVarsPattern(argsPat) in
 	    if ~ ok? then
-	      (
-	       patternNotSupported pat;
-	       %issueUnsupportedError(b,"pattern not supported");
-	       ((([],[]),k0,l0),nothingCollected))
+	      patternNotSupportedM pat
 	    else
 	    let subId = mkSub(cons, l) in
 	    %let sumdType = mkSumd(cons, caseType) in
 	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	    let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
-	    let coSrt = unfoldToSubsort(spc,coSrt) in
-	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	    let (caseType,col3) = srtId coSrt in
-	    %let tagId = mkTag(cons) in
-	    let tagId = mkTagCId(cons) in
-	    let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	    let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-	    let col = concatCollected(col1,concatCollected(col2,col3)) in
-	    ((switchElement, newK, newL),col)
+	    {
+	     spc <- getEnvSpec;
+	     (caseBlock, newK, newL) <- termToExpressionAsgFM(cId, fId, newTcx, body, ks, ls);
+	     coSrt <- return(unfoldToSubsort(spc,coSrt));
+	     initBlock <- mkCaseInit(cons,coSrt);
+	     caseType <- srtIdM coSrt;
+	     let tagId = mkTagCId(cons) in
+	     let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
+	     let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	     return (switchElement, newK, newL)
+	    }
 	  | (WildPat(srt,_),_,body) ->
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     let switchLab = Default in
+	     let switchElement = ([switchLab],caseBlock) in
+	     return(switchElement,newK,newL)
+	    }
 	  | (VarPat((id,srt),_),_,body) ->
 	    let tcx = StringMap.insert(tcx,id,caseExpr) in
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (
-			  patternNotSupported pat;
-			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
-			     ((([],[]),ks,ls),nothingCollected))
+	    {
+	     (caseBlock, newK, newL) <- termToExpressionRetM(tcx, body, ks, ls);
+	     let switchLab = Default in
+	     let switchElement = ([switchLab],caseBlock) in
+	     return (switchElement,newK,newL)
+	    }
+	  | (pat,_,_) -> patternNotSupportedM pat
+
   in
    let def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
          case cases of
-	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
+	   | Nil ->
+	     {
+	      spc <- getEnvSpec;
+	      return (if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr)
+	     }
 	   | hdCase::restCases ->
-	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
-	      let col = concatCollected(col1,col2) in
-	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
-   in
-     translateCasesToSwitchesRec(cases, k0, l0, false)
-
-
-op translateIfThenElseAsgF: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-op translateCaseAsgF: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
-
-def termToExpressionAsgF(cId, fId, tcx, term, k, l, spc) =
-  if caseTerm?(term)
-    then translateCaseAsgF(cId, fId, tcx, term, k, l, spc)
-  else
-    case term of
-      | IfThenElse _ -> translateIfThenElseAsgF(cId, fId, tcx, term, k, l, spc)
-      | _ ->
-        let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
-	let fAssn = mkFldAssn(cId, fId, jE) in
-	((b++[fAssn], newK, newL),col)
-
-def translateIfThenElseAsgF(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
-  let ((b0, jT0, k0, l0),col1) = termToExpression(tcx, t0, k, l, spc) in
-  let ((b1, k1, l1),col2) = termToExpressionAsgF(cId, fId, tcx, t1, k0, l0, spc) in  
-  let ((b2, k2, l2),col3) = termToExpressionAsgF(cId, fId, tcx, t2, k1, l1, spc) in
-  let col = concatCollected(col1,concatCollected(col2,col3)) in
-  let ifStmt = mkIfStmt(jT0, b1, b2) in
-  ((b0++[ifStmt], k2, l2),col)
-
-%def translateCaseAsgF(cId, tcx, term, k, l, spc) =
-def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
-  let caseType = inferTypeFoldRecords(spc,term) in
-  let (caseTypeId,col0) = srtId(caseType) in
-  let caseTerm = caseTerm(term) in
-  let cases  = caseCases(term) in
-  %% cases = List (pat, cond, body)
-  let ((caseTermBlock, caseTermJExpr, k0, l0),col1) =
-    case caseTerm of
-      | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
-      | _ ->
-        let (caseTermSrt,col1) = srtId(inferTypeFoldRecords(spc,caseTerm)) in
-	let tgt = mkTgt(l) in
-        let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
-	let col = concatCollected(col1,col2) in
-	((caseTermBlock, mkVarJavaExpr(tgt), k0, l0),col)
-  in
-   let ((casesSwitches, finalK, finalL),col2) = translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
-   let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
-   let col = concatCollected(col0,concatCollected(col1,col2)) in
-   ((caseTermBlock++[switchStatement], finalK, finalL),col)
-
-
-op translateCaseCasesToSwitchesAsgF: Id * Id * TCx * Id * Java.Expr * Match * Nat * Nat * Nat * Spec -> (SwitchBlock * Nat * Nat) * Collected
-def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l, spc) =
-  let def mkCaseInit(cons,coSrt) =
-	let (caseType,col) = srtId coSrt in
-        let sumdType = mkSumd(cons, caseType) in
-	let subId = mkSub(cons, l) in
-	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	(mkVarInit(subId, sumdType, castExpr),col)
-  in
-	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
-  let def translateCaseCaseToSwitch(c, ks, ls) =
-        case c of
-          | (pat as EmbedPat (cons, argsPat, coSrt, b), _, body) ->
-	    let (patVars,ok?) = getVarsPattern(argsPat) in
-	    if ~ ok? then (
-			   patternNotSupported pat;
-			   %issueUnsupportedError(b,"pattern not supported");
-			   ((([],[]),k0,l0),nothingCollected))
-	    else
-	    let subId = mkSub(cons, l) in
-	    %let sumdType = mkSumd(cons, caseType) in
-	    let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	    let ((caseBlock, newK, newL),col1) = termToExpressionAsgF(cId, fId, newTcx, body, ks, ls, spc) in
-	    let coSrt = unfoldToSubsort(spc,coSrt) in
-	    let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	    let (caseType,col3) = srtId coSrt in
-	    %let tagId = mkTag(cons) in
-	    let tagId = mkTagCId(cons) in
-	    let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	    let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-	    let col = concatCollected(col1,concatCollected(col2,col3)) in
-	    ((switchElement, newK, newL),col)
-	  | (WildPat(srt,_),_,body) ->
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
-	  | (VarPat((id,srt),_),_,body) ->
-	    let tcx = StringMap.insert(tcx,id,caseExpr) in
-	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
-	    let switchLab = Default in
-	    let switchElement = ([switchLab],caseBlock) in
-	    ((switchElement,newK,newL),col)
-	  | (pat,_,_) -> (
-			  patternNotSupported pat;
-			  %issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
-			     ((([],[]),ks,ls),nothingCollected))
-  in
-   let def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
-         case cases of
-	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
-	   | hdCase::restCases ->
-	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
-	      let col = concatCollected(col1,col2) in
-	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
+	     {
+	      (hdSwitch, hdK, hdL) <- translateCaseCaseToSwitch(hdCase, kr, lr);
+	      hasDefaultLabel? <- return(if hasDefaultLabel? then true else member(Default,hdSwitch.1));
+	      (restSwitch, restK, restL) <- translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?);
+	      return (List.cons(hdSwitch, restSwitch), restK, restL)
+	     }
    in
      translateCasesToSwitchesRec(cases, k0, l0, false)
 
 (**
  * implements v3:p48:r3
  *)
-op translateOtherTermApply: TCx * Term * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
-def translateOtherTermApply(tcx,opTerm,argsTerm,k,l,spc) =
+op translateOtherTermApplyM: TCx * Term * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
+def translateOtherTermApplyM(tcx,opTerm,argsTerm,k,l) =
   let
-    def doArgs(terms,k,l,block,exprs,col) =
+    def doArgs(terms,k,l,block,exprs) =
       case terms of
-	| [] -> ((block,exprs,k,l),col)
+	| [] -> return (block,exprs,k,l)
 	| t::terms ->
-	  let ((si,ei,ki,li),coli) = termToExpression(tcx,t,k,l,spc) in
-	  let block = concatBlock(block,si) in
-	  let exprs = concat(exprs,[ei]) in
-	  let col = concatCollected(col,coli) in
-	  doArgs(terms,ki,li,block,exprs,col)
+	  {
+	   (si,ei,ki,li) <- termToExpressionM(tcx,t,k,l);
+	   let block = concatBlock(block,si) in
+	   let exprs = concat(exprs,[ei]) in
+	   doArgs(terms,ki,li,block,exprs)
+	  }
   in
-  let ((s,e,k0,l0),col1) = termToExpression(tcx,opTerm,k,l,spc) in
-  let argterms = applyArgsToTerms(argsTerm) in
-  let ((block,exprs,k,l),col2) = doArgs(argterms,k,l,[],[],nothingCollected) in
-  let japply = mkMethExprInv(e,"apply",exprs) in
-  let col = concatCollected(col1,col2) in
-  ((s++block,japply,k,l),col)
+  {
+   (s,e,k0,l0) <- termToExpressionM(tcx,opTerm,k,l);
+   argterms <- return(applyArgsToTerms argsTerm);
+   (block,exprs,k,l) <- doArgs(argterms,k,l,[],[]);
+   let japply = mkMethExprInv(e,"apply",exprs) in
+   return (s++block,japply,k,l)
+  }
 
 op concatBlock: Block * Block -> Block
 def concatBlock(b1,b2) =
   concat(b1,b2)
-
-op errorResultExp: Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
-def errorResultExp(k,l) =
-  ((mts,mkJavaNumber(0),k,l),nothingCollected)
-op errorResultExpRet: Nat * Nat -> (Block * Nat * Nat) * Collected
-def errorResultExpRet(k,l) =
-  ((mts,k,l),nothingCollected)
-
-op unsupportedInTerm: Term * Nat * Nat * String -> (Block * Java.Expr * Nat * Nat) * Collected
-def unsupportedInTerm(t,k,l,msg) =
-  let pos = termAnn(t) in
-  let _ = issueUnsupportedError(pos,msg) in
-  errorResultExp(k,l)
-
-op unsupportedInTermRet: Term * Nat * Nat * String -> (Block * Nat * Nat) * Collected
-def unsupportedInTermRet(t,k,l,msg) =
-  let pos = termAnn(t) in
-  let _ = issueUnsupportedError(pos,msg) in
-  errorResultExpRet(k,l)
-
-op unsupportedInRet: Position * Nat * Nat * String -> (Block * Nat * Nat) * Collected
-def unsupportedInRet(pos,k,l,msg) =
-  let _ = issueUnsupportedError(pos,msg) in
-  errorResultExpRet(k,l)
-
-op unsupportedInSort: Sort * Nat * Nat * String -> (Block * Java.Expr * Nat * Nat) * Collected
-def unsupportedInSort(s,k,l,msg) =
-  let pos = sortAnn(s) in
-  let _ = issueUnsupportedError(pos,msg) in
-  errorResultExp(k,l)
-
-def warnNoCode(pos:Position,opId,optreason) =
-  let msg = ("warning: no code has been generated for op \""^opId^"\""
-	     ^ (case optreason of
-		  | Some str -> ", reason: "^str
-		  | _ -> "."))
-  in
-    issueUnsupportedError(pos,msg)
 
 endspec

@@ -194,18 +194,6 @@ def mkAsrtStmt(asrtOpId,fpars) =
   let expr = mkMethodInvFromFormPars(asrtOpId,fpars) in
   [Stmt(Expr(mkMethInvName(([],"assert"),[expr])))]
 
-op mkAssertFromDom: List Sort * Spec -> Block * Collected
-def mkAssertFromDom(dom, spc) =
-  case dom of
-    | [Subsort(_, subPred, _)] ->
-      let ((stmt, jPred, newK, newL),col) = termToExpression(empty, subPred, 1, 1, spc) in
-      (case (stmt, newK, newL) of
-	 | ([], 1, 1) -> ([Stmt(Expr(mkMethInvName(([],"assert"), [jPred])))],col)
-	 | _ -> %fail ("Type pred generated statements: not supported"))
-	     (issueUnsupportedError(termAnn(subPred),"subsort format not supported");([],nothingCollected))
-	 )
-    | _ -> ([],nothingCollected)
-
 op mkAssertFromDomM: List Sort -> JGenEnv Block
 def mkAssertFromDomM dom =
   case dom of
@@ -219,11 +207,6 @@ def mkAssertFromDomM dom =
 	   raise(NotSupported("subsort format not supported; can't create assert statement: "^(printTerm subPred)),termAnn(subPred))
       }
     | _ -> return []
-
-op mkPrimArgsMethodBody: Term * Spec -> Block * Collected
-def mkPrimArgsMethodBody(body, spc) =
-  let ((b, k, l),col) = termToExpressionRet(empty, body, 1, 1, spc) in
-  (b,col)
 
 op mkPrimArgsMethodBodyM: Term -> JGenEnv Block
 def mkPrimArgsMethodBodyM body =
@@ -616,7 +599,8 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
 	    {
 	     (vars, body) <- return(srtTermDelta(srt, trm));
 	     (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
-	     let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), Some (Expr (jE))), []) in
+	     jtype <- baseSrtToJavaTypeM srt;
+	     let fldDecl = ([Static], jtype, ((id, 0), Some (Expr (jE))), []) in
 	     addFldDeclToClsDeclsM(primitiveClassName, fldDecl)
 	    }
 	else
@@ -634,23 +618,34 @@ op insertClsDeclsForCollectedProductSorts : JGenEnv ()
 def insertClsDeclsForCollectedProductSorts =
   {
    psrts <- getProductSorts;
+   %println("#psrts ="^(Integer.toString(length psrts)));
    if psrts = [] then
      return ()
    else
      {
-      psrts <- return(uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts);
-      clearCollectedProductSortsM;
+      psrts <- return(uniqueSort (fn(s1,s2) -> compare((sortId s1),(sortId s2))) psrts);
+      %clearCollectedProductSortsM;
+      %psrts0 <- getProductSorts;
+      %println("#psrts0 ="^(Integer.toString(length psrts0)));
       let
        def insertSort (srt) =
-	 let (id,_) = srtId srt in
-	 let sort_info = {names = [mkUnQualifiedId id],
-			  dfn   = srt}
-	 in
-	 sortToClsDecls (UnQualified, id, sort_info)
+	 {
+	  id <- srtIdM srt;
+	  let sort_info = {names = [mkUnQualifiedId id],
+			   dfn   = srt}
+	  in
+	  sortToClsDecls (UnQualified, id, sort_info)
+	 }
       in
 	{
-	 foldM (fn _ -> fn srt -> insertSort srt) () psrts;
-	 insertClsDeclsForCollectedProductSorts
+	 psrts0 <- getProductSorts;
+	 %println("#psrts0 ="^(Integer.toString(length psrts0)));
+	 mapM (fn srt -> insertSort srt) psrts;
+	 psrts1 <- getProductSorts;
+	 %println("#psrts1 ="^(Integer.toString(length psrts1)));
+	 ifM ((length psrts1) > (length psrts0))
+	    insertClsDeclsForCollectedProductSorts;
+	 return ()
 	}
      }
   }
@@ -666,7 +661,6 @@ def clearCollectedProductSortsM =
    putProductSorts [];
    putArrowClasses []
   }
-  %{clsDecls=cd,collected=nothingCollected}
 
 % --------------------------------------------------------------------------------
 (**

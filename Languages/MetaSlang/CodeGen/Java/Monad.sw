@@ -46,24 +46,6 @@ def put s = fn _ -> (Ok (), s)
 
 %% --------------------------------------------------------------------------------
 
-op getJcgInfo: JGenEnv JcgInfo
-def getJcgInfo = fn state -> (Ok {
-				  clsDecls = state.clsDecls,
-				  collected = {
-					       arrowclasses = state.arrowclasses,
-					       productSorts = state.productSorts
-					      }
-				 }, state)
-
-op putJcgInfo: JcgInfo -> JGenEnv ()
-def putJcgInfo jcginfo =
-  fn state ->
-  (Ok (), state << {
-		    clsDecls = jcginfo.clsDecls,
-		    arrowclasses = jcginfo.collected.arrowclasses,
-		    productSorts = jcginfo.collected.productSorts
-		   })
-
 op addClsDecl: ClsDecl -> JGenEnv ()
 def addClsDecl decl =
   fn state ->
@@ -78,14 +60,6 @@ op putClsDecls: List ClsDecl -> JGenEnv ()
 def putClsDecls clsDecls =
   fn state ->
   (Ok (), state << { clsDecls = clsDecls })
-
-op addCollected: Collected -> JGenEnv ()
-def addCollected col =
-  fn state ->
-  (Ok (), state << {
-		    arrowclasses = (state.arrowclasses ++ col.arrowclasses),
-		    productSorts = (state.productSorts ++ col.productSorts)
-		   })
 
 op getClsDecls: JGenEnv (List ClsDecl)
 def getClsDecls =

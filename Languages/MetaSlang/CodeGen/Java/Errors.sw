@@ -14,10 +14,17 @@ sort JGenError =
        | UnsupportedSubsort String
        | UnsupportedPattern String
        | UnsupportTermInCase String
+       | UnsupportedTermFormat String
+       | UnsupportedSortInRestrict String
+       | NoUserTypeInApplArgList String
+       | UnsupportedLambdaTerm String
 
 op errToString: JGenError -> String
 def errToString err =
   case err of
+    | UnsupportedLambdaTerm termstr -> "not yet supported: stand-alone lambda terms: '"^termstr^"'"
+    | NoUserTypeInApplArgList termstr -> "no user type found in argument list of application "^termstr
+    | UnsupportedSortInRestrict srtstr -> "unsupported sort in restrict term: "^srtstr
     | UnsupportTermInCase termstr -> "term format not supported for toplevel case term: '"^termstr^"'"
     | UnsupportedPattern patstr -> "pattern format not supported: '"^(patstr)^"'"
     | UnsupportedSubsort termstr -> "unsupported term for subsort: '"^termstr^"'; only operator names are supported."
@@ -25,6 +32,7 @@ def errToString err =
     | NotSupported s -> "Feature not supported: "^s
     | Fail msg -> msg
     | UnsupportedSubsortTerm srt -> "this format of subsorts/quotients is currently not supported: "^srt
+    | UnsupportedTermFormat termstr -> "term format not supported: '"^termstr^"'"
 
 % --------------------------------------------------------------------------------
 % Error api

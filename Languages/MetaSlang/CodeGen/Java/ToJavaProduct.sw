@@ -4,21 +4,20 @@ import ToJavaBase
 import ToJavaStatements
 import Monad
 
-op mkProdConstrDecl: Id * List (Id * Sort) * Spec -> ConstrDecl * Collected
-def mkProdConstrDecl(id,fields,spc) =
-%  let formParams = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) ->
-%			fieldToFormalParam(fieldProj, fieldType)) fields in
-  let (formParams,col) = foldl (fn((fieldProj,fieldType),(fpars,col)) ->
-				%let _ = writeLine("fieldType = "^printSort(fieldType)) in
-				let (fieldType,col0) = findMatchingUserTypeCol(spc,fieldType) in
-				let (fieldTypeId,col1) = srtId fieldType in
-				let fpar = fieldToFormalParam(fieldProj, fieldTypeId) in
-				(concat(fpars,[fpar]),concatCollected(col,concatCollected(col0,col1)))
-			       ) ([],nothingCollected) fields
-  in
-  let fieldProjs = map (fn(fieldProj, _) -> fieldProj) fields in
-  let prodConstrBody = mkProdConstBody(fieldProjs) in
-  (([], id, formParams, [], prodConstrBody),col)
+op mkProdConstrDecl: Id * List (Id * Sort) -> JGenEnv ConstrDecl
+def mkProdConstrDecl(id,fields) =
+  {
+   formParams <- foldM (fn fpars -> fn(fieldProj,fieldType) ->
+			{
+			 fieldType <- findMatchingUserTypeM fieldType;
+			 fieldTypeId <- srtIdM fieldType;
+			 let fpar = fieldToFormalParam(fieldProj, fieldTypeId) in
+			 return (concat(fpars,[fpar]))
+			}) [] fields;
+   fieldProjs <- return(map (fn(fieldProj, _) -> fieldProj) fields);
+   let prodConstrBody = mkProdConstBody(fieldProjs) in
+   return([], id, formParams, [], prodConstrBody)
+  }
 
 op mkProdConstBody: List Id -> Block
 def mkProdConstBody(fieldProjs) =
@@ -39,46 +38,43 @@ def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
 op productToClsDecls: Id * Sort -> JGenEnv ()
 def productToClsDecls(id, srtDef as Product (fields, _)) =
   {
-   spc <- getEnvSpec;
-   let (prodFieldsDecls,col1) = foldl (fn((fieldProj,fieldType),(decls,col)) ->
-				      %let _ = writeLine("fieldType = "^printSort(fieldType)) in
-				      let (fieldType,col0) = findMatchingUserTypeCol(spc,fieldType) in
-				      let (fieldTypeId,col1) = srtId fieldType in
-				      let decl = fieldToFldDecl(fieldProj, fieldTypeId) in
-				      (concat(decls,[decl]),concatCollected(col,concatCollected(col0,col1)))
-				     ) ([],nothingCollected) fields
-   in
-   let (equalityConjunction,col2) = mkEqualityBodyForProduct(fields) in
-   let prodMethodDecl =  mkEqualityMethDecl(id) in
-   let prodMethodBody = [Stmt (Return (Some (equalityConjunction)))] in
-   let prodMethodDecl = setMethodBody(prodMethodDecl, prodMethodBody) in
-   let (prodConstrDecls,col3) = mkProdConstrDecl(id,fields,spc) in
-   let clsDecl = mkProductTypeClsDecl(id, prodFieldsDecls, [prodMethodDecl], [prodConstrDecls]) in
-   let col = concatCollected(col1,concatCollected(col2,col3)) in
-   {
-    addClsDecl clsDecl;
-    addCollected col
-   }
+   prodFieldsDecls <- foldM (fn decls -> fn(fieldProj,fieldType) ->
+			     {
+			      fieldType <- findMatchingUserTypeM fieldType;
+			      fieldTypeId <- srtIdM fieldType;
+			      let decl = fieldToFldDecl(fieldProj, fieldTypeId) in
+			      return (concat(decls,[decl]))
+			     }) [] fields;
+   equalityConjunction <- mkEqualityBodyForProduct fields;
+   prodMethodDecl <- return(mkEqualityMethDecl id);
+   prodMethodBody <- return [Stmt (Return (Some (equalityConjunction)))];
+   prodMethodDecl <- return(setMethodBody(prodMethodDecl, prodMethodBody));
+   prodConstrDecls <- mkProdConstrDecl(id,fields);
+   clsDecl <- return(mkProductTypeClsDecl(id, prodFieldsDecls, [prodMethodDecl], [prodConstrDecls]));
+   addClsDecl clsDecl
   }
 
-op mkEqualityBodyForProduct: List Field -> Java.Expr * Collected
+op mkEqualityBodyForProduct: List Field -> JGenEnv Java.Expr
 def mkEqualityBodyForProduct(fields) =
   case fields of
-    | [] -> (CondExp (Un (Prim (Bool true)), None),nothingCollected)
+    | [] -> return(CondExp (Un (Prim (Bool true)), None))
     | [(id, srt)] -> 
        let id = getFieldName id in
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
        let e2 = CondExp (Un (Prim (Name (["eqarg"],id))), None) in
-       let (sid,col) = srtId(srt) in
-       (mkJavaEq(e1, e2, sid),col)
+       {
+	sid <- srtIdM srt;
+	return (mkJavaEq(e1, e2, sid))
+       }
     | (id, srt)::fields ->
        let id = getFieldName id in
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
        let e2 = CondExp (Un (Prim (Name (["eqarg"], id))), None) in
-       let (sid,col1) = srtId(srt) in
-       let eq = mkJavaEq(e1, e2, sid) in
-       let (restEq,col2) = mkEqualityBodyForProduct(fields) in
-       let col = concatCollected(col1,col2) in
-       (CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None),col)
+       {
+	sid <- srtIdM srt;
+	eq <- return( mkJavaEq(e1, e2, sid));
+	restEq <- mkEqualityBodyForProduct(fields);
+	return(CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None))
+       }
 
 endspec

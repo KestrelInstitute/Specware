@@ -15,23 +15,27 @@ import Monad
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
-op baseSrtToJavaType: Sort -> Java.Type
-def baseSrtToJavaType(srt) =
+op baseSrtToJavaTypeM: Sort -> JGenEnv Java.Type
+def baseSrtToJavaTypeM(srt) =
   if boolSort?(srt)
-    then tt("Boolean")
+    then return(tt("Boolean"))
   else
     if stringSort?(srt)
-      then tt("String")
+      then return(tt("String"))
     else
       if charSort?(srt)
-	then tt("Char")
+	then return(tt("Char"))
       else
 	if integerSort?(srt)
-	  then tt("Integer")
+	  then return(tt("Integer"))
 	else
 	  if natSort?(srt)
-	    then tt("Integer")
-	  else tt((srtId srt).1)
+	    then return(tt("Integer"))
+	  else
+	    {
+	     id <- srtIdM srt;
+	     return (tt id)
+	    }
 
 op emptyJSpec: JSpec
 def emptyJSpec = (None, [], [])
@@ -91,15 +95,6 @@ op mkPrimOpsClsDecl: ClsDecl
 def mkPrimOpsClsDecl =
   ([], (primitiveClassName, None, []), emptyClsBody)
 
-%% TO BE REMOVED
-op varsToFormalParams: Spec -> Vars -> List FormPar * Collected
-def varsToFormalParams spc vars =
-%  map varToFormalParam vars
-  foldl (fn(v,(fp,col)) ->
-	 let (fp0,col0) = varToFormalParam spc v in
-	 (concat(fp,[fp0]),concatCollected(col,col0))) ([],nothingCollected) vars
-
-
 op varsToFormalParamsM: Vars -> JGenEnv (List FormPar)
 def varsToFormalParamsM vars =
   foldM (fn fps -> fn v ->
@@ -107,11 +102,6 @@ def varsToFormalParamsM vars =
 	  fp0 <- varToFormalParamM v;
 	  return(concat(fps,[fp0]))
 	 }) [] vars
-
-op varToFormalParam: Spec -> Var -> FormPar * Collected
-def varToFormalParam spc (variable as (id, srt)) =
-  let (ty,col) = tt_v3 spc srt in
-  ((false, ty, (id, 0)),col)
 
 op varToFormalParamM: Var -> JGenEnv FormPar
 def varToFormalParamM(id,srt) =
@@ -230,12 +220,14 @@ def isFinalVar?(id) =
   else
       false
 
-op mkFinalVarDecl: Spec -> Id * Sort * Java.Expr -> BlockStmt * Collected
-def mkFinalVarDecl spc (varid,srt,exp) =
-  let (typ,col) = tt_v3 spc srt in
-  let isfinal = true in
-  let vdecl = ((varid,0),Some(Expr exp)) in
-  (LocVarDecl(isfinal,typ,vdecl,[]),col)
+op mkFinalVarDeclM: Id * Sort * Java.Expr -> JGenEnv BlockStmt
+def mkFinalVarDeclM(varid,srt,exp) =
+  {
+   typ <- tt_v3M srt;
+   let isfinal = true in
+   let vdecl = ((varid,0),Some(Expr exp)) in
+   return (LocVarDecl(isfinal,typ,vdecl,[]))
+  }
 
 op isIdentityAssignment?: Java.BlockStmt -> Boolean
 def isIdentityAssignment?(stmt) =
@@ -281,31 +273,6 @@ def isVoid?(spc,srt) =
 (**
  * the new implementation of tt uses type information in order to generate the arrow type (v3)
  *)
-op tt_v3: Spec -> Sort -> Java.Type * Collected
-def tt_v3 spc srt =
-  case srt of
-    | Base(Qualified(_,id),_,_) -> (tt_v2(id),nothingCollected)
-    | Boolean _                 -> (tt_v2("Boolean"),nothingCollected)
-    | Arrow(srt0,srt1,_) -> 
-      let (sid,col) = srtId(srt) in
-      (mkJavaObjectType(sid),col)
-    | Product([],_) -> (JVoid,nothingCollected)
-    | Product(_,_) ->
-      let (sid,col) = srtId(srt) in
-      (mkJavaObjectType(sid),col)
-    | TyVar id -> 
-      let id = "Object" in
-      (mkJavaObjectType(id),nothingCollected)
-    | Subsort(srt,_,_) -> tt_v3 spc srt
-    | _ ->
-      (case findMatchingUserTypeOption(spc,srt) of
-	 | Some usrt -> tt_v3 spc usrt
-	 | None -> fail("tt_v3 failed for sort "^(printSort srt))
-	)
-%    | _ -> (issueUnsupportedError(sortAnn(srt),"unsupported sort "^printSort(srt));
-%	    let id = "Object" in
-%	    (mkJavaObjectType(id),nothingCollected))
-
 op tt_v3M: Sort -> JGenEnv Java.Type
 def tt_v3M srt =
   {
@@ -335,27 +302,28 @@ def tt_v3M srt =
        )
   }
 
-op tt_id: Spec -> Sort -> Id * Collected
-def tt_id spc srt = 
-  let (ty,col) = tt_v3 spc srt in
-  (getJavaTypeId(ty),col)
+op tt_idM: Sort -> JGenEnv Id
+def tt_idM srt =
+  {
+   ty <- tt_v3M srt;
+   return (getJavaTypeId(ty))
+  }
+
 
 op JVoid: Java.Type
 def JVoid = (Basic Void,0)
 
 %op sortId: Sort -> String 
-def CodeGenTransforms.sortId(srt) = (project 1)(srtId srt)
+%def CodeGenTransforms.sortId(srt) = (project 1)(srtId srt)
+def CodeGenTransforms.sortId(srt) = 
+  case srtIdM srt initialState of
+    | (Ok id,_) -> id
+    | _ -> fail("fail in CodeGenTransforms.sortId("^(printSort srt)^")")
 
 (**
  * srtId returns for a given type the string representation accorinding the rules
  * in v3 page 67 for class names. It replaces the old version in LiftPattern.sw
  *)
-%% TO BE REMOVED
-op srtId: Sort -> String * Collected
-def srtId(srt) =
-  let (_,s,col) = srtId_internal(srt,true) in
-  (s,col)
-
 op srtIdM: Sort -> JGenEnv String
 def srtIdM srt =
   {
@@ -426,71 +394,6 @@ def srtId_internalM(srt,addIds?) =
            %(issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
 	   % ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
 
-%% TO BE REMOVED
-op srtId_internal: Sort * Boolean -> List Java.Type * String * Collected
-def srtId_internal(srt,addIds?) =
-  %let _ = writeLine("srtId("^(printSort srt)^")...") in
-  case srt of
-    | Base (Qualified (q, id), tvs, _) -> 
-      let (id,col) = 
-               if length(tvs)>0 & (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
-		 foldl (fn(srt,(s,col)) ->
-			let (id0,col0) = srtId(srt) in
-			(s^"$"^id0,concatCollected(col,col0))
-		       ) (id,nothingCollected) tvs
-	       else (id,nothingCollected)
-      in
-      ([tt_v2 id],id,col)
-    | Boolean _ -> ([tt_v2 "Boolean"],"Boolean",nothingCollected)
-    | Product([],_) -> ([JVoid],"void",nothingCollected)
-    | Product(fields,_) -> 
-      let (l,str,col) = foldl (fn((id,fsrt),(types,str,col)) ->
-			       let (str0,col0) = srtId(fsrt) in
-			       let str = str ^ (if str = "" then "" else "$_$") ^ str0 in
-			       let str = if addIds? then str^"$"^id else str in
-			       let col = concatCollected(col,col0) in
-			       let types = concat(types,[tt_v2(str0)]) in
-			       (types,str,col)) ([],"",nothingCollected) fields
-      in
-      let col = if addIds? then addProductSortToCollected(srt,col) else col in
-      (l,str,col)
-    | CoProduct(fields,_) -> 
-      let (l,str,col) = foldl (fn((id,optfsrt),(types,str,col)) ->
-			       let (str0,col0) = case optfsrt of
-			                           | Some fsrt -> srtId(fsrt)
-			                           | None -> ("",nothingCollected) in
-			       let str = str ^ (if str = "" then "" else "$_$") ^ str0 in
-			       let str = if addIds? then str^"$"^id else str in
-			       let col = concatCollected(col,col0) in
-			       let types = concat(types,[tt_v2(str0)]) in
-			       (types,str,col)) ([],"",nothingCollected) fields
-      in
-%      fail("getting sort id from co-product sort: "^str)
-      (l,str,col)
-    | Arrow(dsrt,rsrt,_) ->
-      let (dtypes,dsrtid,col2) = srtId_internal(dsrt,false) in
-      let (_,rsrtid,col1) = srtId_internal(rsrt,addIds?) in
-      let (pars,_) = foldl (fn(ty,(pars,nmb)) -> 
-			    let fpar = (false,ty,("arg"^Integer.toString(nmb),0)) in
-			    (concat(pars,[fpar]),nmb+1)
-			   ) ([],1) dtypes in
-      let methHdr = ([],Some(tt_v2(rsrtid)),"apply",pars,[]) in
-      let id = dsrtid^"$To$"^rsrtid in
-      let clsDecl = mkArrowClassDecl(id,(methHdr,None)) in
-      %let col3 = {arrowclasses=[clsDecl],productSorts=[]} in
-      let col = addArrowClassToCollected(clsDecl,concatCollected(col1,col2)) in
-      %let col = concatCollected(col1,concatCollected(col2,col3)) in
-      ([tt_v2 id],id,col)
-    | TyVar(id,_) ->
-      let id = "Object" in
-      ([tt_v2 id],id,nothingCollected)
-    %| _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
-    | Subsort(srt,_,_) -> srtId_internal(srt,addIds?)
-    | Quotient(srt,_,_) -> srtId_internal(srt,addIds?)
-    | _ -> %let _ = print srt in
-           (issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
-	    ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
-
 op getJavaTypeId: Java.Type -> Id
 def getJavaTypeId(jt) =
   case jt of
@@ -512,7 +415,7 @@ def getJavaTypeId(jt) =
  * generates a string representation of the type id1*id2*...*idn -> id
  * the ids are MetaSlang sort ids 
  *)
-op mkArrowSrtId: List Id * Id -> String * Collected
+op mkArrowSrtId: List Id * Id -> JGenEnv String
 def mkArrowSrtId(domidlist,ranid) =
   let p = Internal "" in
   let ran = Base(mkUnQualifiedId(ranid),[],p) in
@@ -523,7 +426,7 @@ def mkArrowSrtId(domidlist,ranid) =
   in
   let dom = Product(fields,p) in
   let srt = Arrow(dom,ran,p) in
-  srtId(srt)
+  srtIdM srt
 
 op mkJavaObjectType: Id -> Java.Type
 def mkJavaObjectType(id) =
@@ -974,13 +877,20 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
     (pkg,imp,cidecls)
 
 
-op findMatchingUserTypeCol: Spec * Sort -> Sort * Collected
-def findMatchingUserTypeCol(spc,srt) =
-  case findMatchingUserTypeOption(spc,srt) of
-    | Some s -> (s,nothingCollected)
-    | None -> (srt,(case srt of
-		      | Product _ -> addProductSortToCollected(srt,nothingCollected)
-		      | _ -> nothingCollected))
+op findMatchingUserTypeM: Sort -> JGenEnv Sort
+def findMatchingUserTypeM srt =
+  {
+   spc <- getEnvSpec;
+   case findMatchingUserTypeOption(spc,srt) of
+     | Some s -> return s
+     | None ->
+       {
+	case srt of
+	  | Product _ -> addProductSort srt
+	  | _ -> return ();
+	return srt
+       }
+  }
 
 
 (**
@@ -1133,29 +1043,6 @@ def findVarOrWildPat(cases) =
 	 | _ -> findVarOrWildPat(cases)
 	)
 
-op concatCollected: Collected * Collected -> Collected
-def concatCollected(col1,col2) =
-  {
-   arrowclasses=concat(col1.arrowclasses,col2.arrowclasses),
-   productSorts=concat(col1.productSorts,col2.productSorts)
-  }
-
-op addArrowClassToCollected: ClsDecl * Collected -> Collected
-def addArrowClassToCollected(decl,col as {arrowclasses,productSorts}) =
-  {
-   arrowclasses = cons(decl,arrowclasses),
-   productSorts = productSorts
-  }
-
-op addProductSortToCollected: Sort * Collected -> Collected
-def addProductSortToCollected(srt, col as {arrowclasses,productSorts}) =
-  %let _ = writeLine("collecting product sort "^printSort(srt)^"...") in
-  {
-   arrowclasses = arrowclasses,
-   productSorts = if exists (fn(psrt) -> equalSort?(srt,psrt)) productSorts then productSorts
-		  else cons(srt,productSorts)
-  }
-
 op addProductSortToEnv: Sort -> JGenEnv ()
 def addProductSortToEnv srt =
   %let _ = writeLine("collecting product sort "^printSort(srt)^"...") in
@@ -1166,12 +1053,6 @@ def addProductSortToEnv srt =
    else
      addProductSort srt
   }
-
-op nothingCollected: Collected
-def nothingCollected = {
-			arrowclasses = [],
-			productSorts = []
-		       }
 
 op packageNameToPath: String -> String
 def packageNameToPath(s) =

@@ -4,23 +4,26 @@ import ToJavaBase
 import ToJavaStatements
 import Monad
 
-op mkEqualityBodyForSum: List Field -> Java.Expr * Collected
+op mkEqualityBodyForSum: List Field -> JGenEnv Java.Expr
 def mkEqualityBodyForSum(fields) =
   case fields of
-    | [] -> (CondExp (Un (Prim (Bool true)), None),nothingCollected)
+    | [] -> return(CondExp (Un (Prim (Bool true)), None))
     | [(id, srt)] -> 
        let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
        let e2 = CondExp (Un (Prim (Name (["eqargsub"], mkArgProj(id)))), None) in
-       let (sid,col) = srtId(srt) in
-       (mkJavaEq(e1, e2, sid),col)
+       {
+	sid <- srtIdM srt;
+	return (mkJavaEq(e1, e2, sid))
+       }
     | (id, srt)::fields ->
        let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
        let e2 = CondExp (Un (Prim (Name (["eqargsub"], mkArgProj(id)))), None) in
-       let (sid,col1) = srtId(srt) in
-       let eq = mkJavaEq(e1, e2, sid) in
-       let (restEq,col2) = mkEqualityBodyForSum(fields) in
-       let col = concatCollected(col1,col2) in
-       (CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None),col)
+       {
+	sid <- srtIdM srt;
+	eq <- return(mkJavaEq(e1, e2, sid));
+	restEq <- mkEqualityBodyForSum(fields);
+	return(CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None))
+       }
 
 op sumTypeToClsDecl: Id * List FldDecl * List MethDecl -> ClsDecl
 def sumTypeToClsDecl(id, fldDecls, sumConstructorMethDecls) =
@@ -36,29 +39,31 @@ def sumArgToClsDecl(ty, c) =
   let summandId = mkSummandId(ty, c) in
   ([], (summandId, Some ([], ty), []), emptyClsBody)
 
-op fieldsToFormalParams: List (Id * Sort) -> List FormPar * Collected
+op fieldsToFormalParams: List (Id * Sort) -> JGenEnv (List FormPar)
 def fieldsToFormalParams(args) =
   fieldsToX (fn(fieldProj,fieldType) -> fieldToFormalParam(mkArgProj(fieldProj), fieldType)) args
 
-op fieldsToFldDecls: List (Id * Sort) -> List FldDecl * Collected
+op fieldsToFldDecls: List (Id * Sort) -> JGenEnv (List FldDecl)
 def fieldsToFldDecls(args) =
   fieldsToX (fn(fieldProj,fieldType) -> fieldToFldDecl(mkArgProj(fieldProj), fieldType)) args
 
-op fieldsToX: fa(A) (Id * Id -> A) -> List (Id * Sort) -> List A * Collected
+op fieldsToX: fa(A) (Id * Id -> A) -> List (Id * Sort) -> JGenEnv (List A)
 def fieldsToX fun (args) =
-  foldl (fn((fieldProj, srt),(fpars,col)) ->
-	 let (fieldType,col0) = srtId srt in
-	 let fpar = fun(fieldProj, fieldType) in
-	 let col = concatCollected(col,col0) in
-	 let fpars = concat(fpars,[fpar]) in
-	 (fpars,col)
-	) ([],nothingCollected) args
+  foldM (fn fpars -> fn(fieldProj,srt) ->
+	 {
+	  fieldType <- srtIdM srt;
+	  fpar <- return(fun(fieldProj, fieldType));
+	  let fpars = concat(fpars,[fpar]) in
+	  return fpars
+	 }) [] args
 
-op sumToConsMethodDecl: Id * Id * List (Id * Sort) -> MethDecl * Collected
+op sumToConsMethodDecl: Id * Id * List (Id * Sort) -> JGenEnv MethDecl
 def sumToConsMethodDecl(id, c, args) =
-  let (formalParams,col) = fieldsToFormalParams(args) in
-  let constBody = mkSumConstructBody(mkSummandId(id, c), length args) in
-  ((([Static,Public], Some (tt(id)), c, formalParams, []), Some (constBody)),col)
+  {
+   formalParams <- fieldsToFormalParams args;
+   let constBody = mkSumConstructBody(mkSummandId(id, c), length args) in
+   return(([Static,Public], Some (tt(id)), c, formalParams, []), Some (constBody))
+  }
 
 op mkSumConstructBody: Id * Nat -> Block
 def mkSumConstructBody(id, n) =
@@ -68,15 +73,16 @@ def mkSumConstructBody(id, n) =
   let args = if n = 0 then [] else mkArgs(1) in
   [Stmt (Return (Some (CondExp(Un (Prim (NewClsInst (ForCls (([], id), args, None)))), None))))]
 
-op mkSumConstrDecl: Id * Id * Id * List (Id * Sort) -> ConstrDecl * Collected
+op mkSumConstrDecl: Id * Id * Id * List (Id * Sort) -> JGenEnv ConstrDecl
 def mkSumConstrDecl(id, mainSumClassId, tagId, fields) =
   let tagfield = FldAcc(ViaPrim(This None,"tag")) in
   let constrConstant = mkFldAccViaClass(mainSumClassId,tagId) in
   let assignTagExpr = Ass(tagfield,Assgn,constrConstant):Java.Expr in
-  %let formParams = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFormalParam(mkArgProj(fieldProj), fieldType)) fields in
-  let (formParams,col) = fieldsToFormalParams(fields) in
-  let sumConstrBody = mkSumConstBody(length(formParams)) in
-  (([], id, formParams, [], [Stmt(Expr(assignTagExpr))] ++ sumConstrBody),col)
+  {
+   formParams <- fieldsToFormalParams fields;
+   let sumConstrBody = mkSumConstBody(length(formParams)) in
+   return([], id, formParams, [], [Stmt(Expr(assignTagExpr))] ++ sumConstrBody)
+  }
 
 op mkSumConstBody: Nat -> Block
 def mkSumConstBody(n) =
@@ -88,62 +94,67 @@ def mkSumConstBody(n) =
     let restAssns = mkSumConstBody(n-1) in
     restAssns++[assn]
 
-op sumToClsDecl: Id * Id * List (Id * Sort) -> ClsDecl * Collected
+op sumToClsDecl: Id * Id * List (Id * Sort) -> JGenEnv ClsDecl
 def sumToClsDecl(id, c, args) =
   let summandId = mkSummandId(id, c) in
-  %let fldDecls = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFldDecl(mkArgProj(fieldProj), fieldType)) args in
-  let (fldDecls,col0) = fieldsToFldDecls args in
-  let eqMethDecl = mkEqualityMethDecl(id) in
-  let (eqMethBody,col1) = mkSumEqMethBody(id, c, summandId, args) in
-  let eqMethDecl = setMethodBody(eqMethDecl, eqMethBody) in
-  let (constrDecl,col2) = mkSumConstrDecl(mkSummandId(id, c), id, mkTagCId(c), args) in
-  let col = concatCollected(col0,concatCollected(col1,col2)) in
-  (([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl])),col)
-%  map (fn (a, _) -> sumArgToClsDecl(id, c)) args
+  {
+   fldDecls <- fieldsToFldDecls args;
+   eqMethDecl <- return(mkEqualityMethDecl id);
+   eqMethBody <- mkSumEqMethBody(id, c, summandId, args);
+   eqMethDecl <- return(setMethodBody(eqMethDecl, eqMethBody));
+   constrDecl <- mkSumConstrDecl(mkSummandId(id, c), id, mkTagCId(c), args);
+   return([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl]))
+  }
 
-op mkSumEqMethBody: Id * Id * Id * List Field -> Block * Collected
+op mkSumEqMethBody: Id * Id * Id * List Field -> JGenEnv Block
 def mkSumEqMethBody(clsId, consId, summandId, flds) =
-  let (eqExpr,col) = mkEqualityBodyForSum(flds) in
-  let s = mkVarInit("eqargsub", summandId, CondExp (Un (Cast ((Name ([], summandId), 0), Prim (Name ([], "eqarg")))), None)) in
-  let tagEqExpr = mkTagEqExpr(clsId, consId) in
-  %let instanceExpr = CondExp (InstOf (Un (Prim (Name ([], "eqarg"))), (Name ([], summandId), 0)) , None) in
-  %let negateInstanceExpr = CondExp (Un (Un (LogNot, Prim (Paren (instanceExpr)))) , None) in
-  ([mkIfStmt(tagEqExpr, [s, Stmt (Return (Some (eqExpr)))], [Stmt (Return (Some (CondExp (Un (Prim (Bool false)), None))))])],col)
+  {
+   eqExpr <- mkEqualityBodyForSum flds;
+   let s = mkVarInit("eqargsub", summandId, CondExp (Un (Cast ((Name ([], summandId), 0), Prim (Name ([], "eqarg")))), None)) in
+   let tagEqExpr = mkTagEqExpr(clsId, consId) in
+   return [mkIfStmt(tagEqExpr, [s, Stmt (Return (Some (eqExpr)))], [Stmt (Return (Some (CondExp (Un (Prim (Bool false)), None))))])]
+  }
 
 op coProductToClsDecls: Id * Sort -> JGenEnv ()
 def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
    let tagFieldDecl = fieldToFldDecl("tag", "Integer") in
-   let def mkTagCFieldDeclsFromSummands(summands, sumNum) = 
-        (case summands of
-	   | Nil -> []
-	   | (cons, _)::rest -> 
-	      let varDeclId = (mkTagCId(cons), 0):VarDeclId in
-	      let varInit = (Expr (CondExp (Un (Prim (IntL sumNum)), None))):VarInit in
-	      let fldDecl = ([Static,Final], tt("Integer"), (varDeclId, (Some varInit)), []):FldDecl in
-	      List.cons(fldDecl, mkTagCFieldDeclsFromSummands(rest, sumNum+1))) in
+   let
+     def mkTagCFieldDeclsFromSummands(summands, sumNum) = 
+       (case summands of
+	  | Nil -> []
+	  | (cons, _)::rest -> 
+	    let varDeclId = (mkTagCId(cons), 0):VarDeclId in
+	    let varInit = (Expr (CondExp (Un (Prim (IntL sumNum)), None))):VarInit in
+	    let fldDecl = ([Static,Final], tt("Integer"), (varDeclId, (Some varInit)), []):FldDecl in
+	    List.cons(fldDecl, mkTagCFieldDeclsFromSummands(rest, sumNum+1)))
+   in
    let tagCFieldDecls = mkTagCFieldDeclsFromSummands(summands, 1) in
-   let (sumConstructorMethDecls,col0) = foldl (fn(summand,(summands,col)) ->
-				       let (summand,col0) =
+   {
+    sumConstructorMethDecls <- foldM (fn summands -> fn summand ->
+				      {
+				       summand <-
 				         case summand of
 					   | (cons, Some (Product (args, _))) -> sumToConsMethodDecl(id, cons, args)
 					   | (cons, Some (srt)) -> sumToConsMethodDecl(id, cons, [("1", srt)])
-					   | (cons, None) -> sumToConsMethodDecl(id, cons, [])
-				       in
-				       (concat(summands,[summand]),concatCollected(col,col0))
-				    ) ([],nothingCollected) summands
-  in
-  let sumTypeClsDecl = sumTypeToClsDecl(id, [tagFieldDecl]++tagCFieldDecls, sumConstructorMethDecls) in
-  let sumClsDeclsCols = map (fn(cons, Some (Product (args, _))) -> sumToClsDecl(id, cons, args) |
-			   (cons, Some (srt)) -> sumToClsDecl(id, cons, [("1", srt)]) |
-			   (cons, None) -> sumToClsDecl(id, cons, [])) summands
-  in
-  let sumClsDecls = foldr (fn((clsdecl,_),clsdecls) -> cons(clsdecl,clsdecls)) [] sumClsDeclsCols in
-  let col1 = foldl (fn((_,col0),col) -> concatCollected(col0,col)) nothingCollected sumClsDeclsCols in
-  let col = concatCollected(col0,col1) in
+					   | (cons, None) -> sumToConsMethodDecl(id, cons, []);
+				       return (concat(summands,[summand]))
+				      }) [] summands;
+    sumTypeClsDecl <- return(sumTypeToClsDecl(id, [tagFieldDecl]++tagCFieldDecls, sumConstructorMethDecls));
+    sumClsDecls <- mapM (fn summand ->
+			 case summand of
+			   | (cons, Some(Product(args,_))) -> sumToClsDecl(id,cons,args)
+			   | (cons, Some(srt)) -> sumToClsDecl(id,cons,[("1",srt)])
+			   | (cons, None) -> sumToClsDecl(id,cons,[])
+			  ) summands;
+%  let sumClsDeclsCols = map (fn(cons, Some (Product (args, _))) -> sumToClsDecl(id, cons, args) |
+%			   (cons, Some (srt)) -> sumToClsDecl(id, cons, [("1", srt)]) |
+%			   (cons, None) -> sumToClsDecl(id, cons, [])) summands
+%  in
+%  let sumClsDecls = foldr (fn((clsdecl,_),clsdecls) -> cons(clsdecl,clsdecls)) [] sumClsDeclsCols in
+%  let col1 = foldl (fn((_,col0),col) -> concatCollected(col0,col)) nothingCollected sumClsDeclsCols in
+%  let col = concatCollected(col0,col1) in
   %(cons(sumTypeClsDecl, sumClsDecls),col)
-  {
-   addClsDecls(cons(sumTypeClsDecl, sumClsDecls));
-   addCollected col
-  }
+   addClsDecls(cons(sumTypeClsDecl, sumClsDecls))
+ }
 
 endspec
