@@ -130,20 +130,20 @@ ListADT qualifying spec {
   def sortDefs(defs) = 
       let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 leq nm1) defs in
       let defMap = 
-	  List.foldl (fn((name,term),map)-> Map.update(map,name,(name,term)))
-	  Map.emptyMap defs
+	  List.foldl (fn((name,term),map)-> STHMap.update(map,name,(name,term)))
+	  STHMap.emptyMap defs
       in
       let map = 
 	  List.foldl
 	    (fn((name,term),map) -> 
 		let opers = ops(term,Set.empty) in
 		let opers = Set.toList opers in
-		Map.update(map,name,opers))
-	     Map.emptyMap defs
+		STHMap.update(map,name,opers))
+	     STHMap.emptyMap defs
        in
-       let find = fn name -> (case Map.apply(map,name) of None -> [] | Some l -> l) in
+       let find = fn name -> (case STHMap.apply(map,name) of None -> [] | Some l -> l) in
        let names = TopSort.topSort(EQUAL,find,List.map (fn(n,_)-> n) defs) in
-       let defs  = List.mapPartial (fn name -> Map.apply(defMap,name)) names in
+       let defs  = List.mapPartial (fn name -> STHMap.apply(defMap,name)) names in
        defs
 
   %% Printing of characters is temporarily wrong due to bug in lexer.
