@@ -881,6 +881,7 @@ spec {
 
   % ========================================================================
 
+  %% express as table to simplify ad hoc additions via lisp code:
   def sortCognizantOperators : List (Id * Id) =
     [ ("XML" ,          "parseXML"),
       ("<unqualified>", "parseXML"),
@@ -892,8 +893,12 @@ spec {
       ("<unqualified>", "parseUnicodeXML"),
 
       ("XML" ,          "printUnicodeXML"),
-      ("<unqualified>", "printUnicodeXML")
-      ]
+      ("<unqualified>", "printUnicodeXML"),
+
+      ("XML",           "internalize_Document"), 
+      ("<unqualified>", "internalize_Document") 
+
+     ]
 
   def sortCognizantOperator? (f1 : MS.Fun) : Boolean = 
     case f1 of
