@@ -190,9 +190,28 @@ XML qualifying spec
 				  element.content.items)
 	    in
 	      Some (magicCastFromList data)
-	  | ("Char",    "Char")   -> fail "decoding char"
+
+	  | ("Char",    "Char")   -> 
+	     let possible_datum = element.content.trailer in
+	     Some (magicCastFromChar
+		   (case possible_datum of
+ 		      | Some char_data -> 
+		        %% '<...> "abcd" <...>'  => "abcd", as opposed to " \"abcd\" ",
+		        %% which would print back out as '<...> " "abcd" " <...>'
+		        (case ustring (trim_whitespace_and_quotes (string char_data)) of
+			   | 38 :: 35 ::           k :: 59 :: [] -> chr (                   k) % &#k;
+			   | 38 :: 35 ::      j :: k :: 59 :: [] -> chr (          10 * j + k) % &#jk;
+			   | 38 :: 35 :: i :: j :: k :: 59 :: [] -> chr (100 * i + 10 * j + k) % &#ijk;
+			   | _ -> 
+			     let _ = toScreen ("\nUsing default value of \\Z for Char \n") in
+			     #Z)
+		      | None -> 
+			let _ = toScreen ("\nUsing default value of \\Z for Char \n") in
+			#Z))
+
 	  | ("Option" , "Option") -> fail "decoding option"
-	  | (x, y) -> fail ("decoding " ^ x ^ "." ^ y))
+	  | _ ->
+	     Some (read_ad_hoc_string (sd_pattern, element.content)))
       | CoProduct sd_options ->
 	(let element_name = string element.stag.name in
 	 case (find (fn sd_option -> 
@@ -212,15 +231,24 @@ XML qualifying spec
 		 | _ ->
 		   fail ("looking for coproduct element: " ^ (print_SortDescriptor sd_pattern) ^ "\n" ))
            | _ ->
-	     fail ("decoding CoProduct: XML " ^ element_name ^ " datum doesn't match any of " ^ 
-		   (foldl (fn ((name, _), result) ->
-			   case result of
-			     | "" -> name
-			     | _ -> result ^ ", " ^ name)
-		          ""
-			  sd_options)
-		   ^ " coproduct options"))
+	     case xml_items of
+	       | [(_, Element (Full elt))] -> 
+                 %% looking at "<n> <baz> ,,, </baz>  </n>" while expecting a coproduct with possible constructor baz
+   	         %% which can happen while looking at "<foo> <1> ... </1> .... <n> <baz> ,,, </baz> </n> ... </foo>"
+	         %% ? also check for name to be "1" "2" etc.? (or would that make explicitly named products fail?)
+	         internalize_PossibleElement (elt, sd_pattern, table)
+	       | _ -> 
+	         fail ("decoding CoProduct: XML datum named " ^ element_name ^ " doesn't match any of " ^ 
+		       (foldl (fn ((name, _), result) ->
+			       case result of
+				 | "" -> name
+				 | _ -> result ^ ", " ^ name)
+			      ""
+			      sd_options)
+		       ^ " coproduct options"))
       | _ ->
 	fail "unrecognized type"
+
+  op read_ad_hoc_string : fa (X) SortDescriptor * Content -> X
 
 endspec

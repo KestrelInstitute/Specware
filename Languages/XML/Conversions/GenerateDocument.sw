@@ -216,10 +216,13 @@ XML qualifying spec
 				   vspacing,
 				   indent))
 	  | qid ->
-	    indent_ustring (ustring ("?? Base: " ^ (print_qid qid) ^  " ?? ")))
+	    let str = write_ad_hoc_string (sd_pattern, datum) in
+	    indent_ustring (ustring str))
 
       | _ ->
 	indent_ustring (ustring ("?? unrecognized type  ?? "))
+
+  op write_ad_hoc_string : fa (X) SortDescriptor * X -> String
 
   def fa (X) generate_Content_Item (datum      : X,
 				    sd         : SortDescriptor,

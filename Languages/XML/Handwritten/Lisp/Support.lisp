@@ -53,3 +53,14 @@
     (let ((doc (generate_Document-2 datum table)))
       (print_Document_to_UString doc))))
 
+;;; misc -- hooks that attempt to bypass metaslang types
+;;; for example, this should succeed in reading and writing floats
+;;; even though metaslang is unaware of them
+
+(defun XML::WRITE_AD_HOC_STRING-2 (sort-descriptor datum)
+  (format nil "~S" datum))
+
+(defun  XML::READ_AD_HOC_STRING-2 (sort-descriptor xml-element-content) 
+  (let ((items   (car xml-element-content)) 
+	(trailer (cdr xml-element-content))) 
+    (read-from-string (unicode::|!string| (cdr trailer)))))
