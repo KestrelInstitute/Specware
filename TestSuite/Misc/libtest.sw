@@ -109,7 +109,7 @@ spec
     tester ("(isAscii ( #3 )) = true", (isAscii ( #3 )) = true);
     tester ("(isAscii ( #A )) = true", (isAscii ( #A )) = true);
     tester ("(isAscii ( #a )) = true", (isAscii ( #a )) = true);
-    tester ("(isAscii ( #\\xff )) = false", (isAscii ( #\xff )) = false);
+    tester ("(isAscii ( #\\xff )) = true", (isAscii ( #\xff )) = true); % was false, but ascii now considered 0--255
 % Char [ 18]:  op toUpperCase : Char -> Char
     tester ("(toUpperCase ( #! )) = #!", (toUpperCase ( #! )) = #!);
     tester ("(toUpperCase ( #3 )) = #3", (toUpperCase ( #3 )) = #3);
