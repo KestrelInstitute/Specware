@@ -1,3 +1,5 @@
+obsolete -- booleans are now built-in
+
 spec
 
   (*
