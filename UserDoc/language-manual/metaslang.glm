@@ -1154,11 +1154,16 @@ See further the &Specware; Tutorial.
 <section><title>Obligators</title>
 <para>
 <<
-||`obligator ::= obligations `morphism-term
+||`obligator ::= obligations `unit-term
 >>
+Restriction.
+The `unit-term of an `obligator must either be a `spec-term
+or a `morphism-term.
+</para>
+<para>
 The result of elaborating an `obligator is a `spec
-containing the proof obligations engendered by the morphism
-resulting from elaborating its `morphism-term.
+containing the proof obligations engendered by the `spec or morphism
+resulting from elaborating its `unit-term.
 These proof obligations are expressed as `conjectures;
 they can be discharged by proving them, using `proof-terms.
 See further the &Specware; User Manual.
@@ -1352,8 +1357,8 @@ Sample `proof-term:
 The elaboration of a `proof-term invokes the prover suggested
 by the `prover-name (currently only SNARK).
 The property to be proved is the `claim of the first
-`claim-name; the hypotheses (assumptions) that may be used
-in the proof.
+`claim-name; the `claim-list lists the hypotheses (assumptions)
+that may be used in the proof.
 The `prover-options are prover-specific and are not
 further described here.
 For details, see the &Specware; User Manual.
@@ -2715,7 +2720,7 @@ Implicit restriction will take place when needed.
 For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
 of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
 a subsort of [[Nat]], to accommodate the division operator
-[[~]], whose second argument has sort [[PosNat]].
+[[div]], whose second argument has sort [[PosNat]].
 But note that implicit restriction engenders the same proof
 obligation as results when using an explicit `restrictor.
 </para>
@@ -2952,7 +2957,8 @@ below is not a total function, the context must enforce
 that the function can not be applied to values for which it
 is undefined.
 Otherwise, the `spec is incorrect.
-The &Specware; system does not attempt to detect this condition.
+&SpecwareV; does not attempt to generate proof obligations for
+establishing this.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -4082,8 +4088,7 @@ the context guarantees that integer [[i]], where it is subjected
 to the `restrictor, satisfies the nonnegativity
 restriction on natural numbers, and will be accepted and
 achieve [[Nat]]-hood.
-Formally, the proof obligation here is [[((i < 0) =
-false) => ((i >= 0) = true)]].
+Formally, the proof obligation here is [[~(i < 0) => (i >= 0)]].
 This is a theorem from the Theory of Integers.
 </para>
 <!--====================================================================-->
@@ -4096,7 +4101,7 @@ Implicit restriction will take place when needed.
 For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
 of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
 a subsort of [[Nat]], to accommodate the division operator
-[[~]], whose second argument has sort [[PosNat]].
+[[div]], whose second argument has sort [[PosNat]].
 But note that implicit restriction engenders the same proof
 obligation as results when using an explicit `restrictor.
 </para>

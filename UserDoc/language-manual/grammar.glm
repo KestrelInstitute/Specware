@@ -193,7 +193,7 @@ easy reference.
 <formalpara><title>Obligators</title>
 <para>
 <<
-||  `obligator ::= obligations `morphism-term
+||  `obligator ::= obligations `unit-term
 >>
 </para>
 </formalpara>
