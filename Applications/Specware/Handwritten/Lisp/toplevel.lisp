@@ -432,6 +432,7 @@
 (defvar *last-swc-args* nil)
 
 (defun swc-internal (x &optional y)
+;;  (format t "swc-internal: x=~A, y=~A~%" x y)
    (Specware::evaluateCGen_fromLisp-2 (subst-home x) (if y (cons :|Some| (subst-home y))
 						       '(:|None|)))
    (values))
@@ -441,23 +442,31 @@
 		    (toplevel-parse-args args)
 		  *last-swc-args*)))
     (if r-args
-	(progn (setq *last-swc-args* r-args)
-	       (swc-internal (string (first r-args))
-			     (if (not (null (second r-args)))
-				 (string (second r-args)) nil)))
+	(progn
+	  (setq *last-swc-args* r-args)
+	  (let* (
+		 (unitid (string (first r-args)))
+		 (arg2 (if (null (second r-args)) nil (string (second r-args))))
+		 (cfilename (if arg2 arg2 (getCFileNameFromUnitid unitid)))
+		 )
+	    (progn
+	      (funcall 'swc-internal unitid cfilename)
+	      )
+	    ))
       (format t "No previous unit evaluated~%"))))
 
 #+allegro
-(top-level:alias ("swc" :case-sensitive) (&optional &rest args)
-  (let ((r-args (if (not (null args))
-		    args
-		  *last-swc-args*)))
-    (if r-args
-	(progn (setq *last-swc-args* args)
-	       (funcall 'swc-internal (string (first r-args))
-			(if (not (null (second r-args)))
-			    (string (second r-args)) nil)))
-      (format t "No previous unit evaluated~%"))))
+(top-level:alias ("swc" :case-sensitive :string) (&optional args)
+  (swc args))
+;;  (let ((r-args (if (not (null args))
+;;		    args
+;;		  *last-swc-args*)))
+;;    (if r-args
+;;	(progn (setq *last-swc-args* args)
+;;	       (funcall 'swc-internal (string (first r-args))
+;;			(if (not (null (second r-args)))
+;;			    (string (second r-args)) nil)))
+;;     (format t "No previous unit evaluated~%"))))
 
 (defvar *last-make-args* nil)
 (defvar *make-verbose* t)
@@ -471,64 +480,73 @@
 	(sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
 	(make-file "swcmake.mk")
 	)
-   (if make-args
        (progn
 	 (setq *last-make-args* make-args)
 	 (let* (
 		(unitid (first make-args))
-		(cbase (cl:substitute #\_  #\# (string unitid)))
+		(cbase (getCFileNameFromUnitid unitid))
 		(user-make-file (concatenate 'string cbase user-make-file-suffix))
 		)
-	   (progn
-	     (when *make-verbose* 
+	   (if make-args
 	       (progn
-		 (format t ";; using make command:                     ~S~%" make-command)
-		 (format t ";; looking for user-defined make rules in: ~S~%" user-make-file)
-		 (format t ";; using system make rules in:             ~S~%" sw-make-file)
-		 (format t ";; generating local make rules in:         ~S~%" make-file)
-		 (format t ";; invoking :swc ~A ~A~%" unitid cbase))
-	       )
-	     (funcall 'swc-internal (string unitid) (string cbase))
-	     (when *make-verbose* (format t ";; generating makefile ~S~%" make-file))
-	     (with-open-file (mf make-file :direction :output :if-exists :new-version)
-	       (progn
-		 (format mf "# ----------------------------------------------~%")
-		 (format mf "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT~%")
-		 (format mf "# ----------------------------------------------~%")
-		 (format mf "~%~%")
-		 (format mf "# the toplevel target extracted from the :make command line:~%")
-		 (format mf "all : ~A~%" cbase)
-		 (format mf "~%")
-		 (format mf "# include the predefined make rules and variable:~%")
-		 (format mf "include ~A~%" sw-make-file)
-		 (when (IO-SPEC::fileExistsAndReadable user-make-file)
+		 (when *make-verbose* 
 		   (progn
-		     (format mf "~%")
-		     (format mf "# include the existing user make file:~%")
-		     (format mf "include ~A~%" user-make-file))
+		     (format t ";; using make command:                     ~S~%" make-command)
+		     (format t ";; looking for user-defined make rules in: ~S~%" user-make-file)
+		     (format t ";; using system make rules in:             ~S~%" sw-make-file)
+		     (format t ";; generating local make rules in:         ~S~%" make-file)
+		     (format t ";; invoking :swc ~A ~A~%" unitid cbase))
 		   )
-		 (format mf "~%")
-		 (format mf "# dependencies and rule for main target:~%")
-		 (format mf "~A: ~A.o $(USERFILES) $(GCLIB)~%" cbase cbase)
-		 (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(USERFILES) $(LOADLIBES) $(LDLIBS)~%" cbase cbase)
-		 ))
-	     (when *make-verbose* (format t ";; invoking make~%"))
-	     (run-cmd (format nil "~A -f ~A" make-command make-file))
-	     ))
+		 (funcall 'swc-internal (string unitid) (string cbase))
+		 (when *make-verbose* (format t ";; generating makefile ~S~%" make-file))
+		 (with-open-file (mf make-file :direction :output :if-exists :new-version)
+		   (progn
+		     (format mf "# ----------------------------------------------~%")
+		     (format mf "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT~%")
+		     (format mf "# ----------------------------------------------~%")
+		     (format mf "~%~%")
+		     (format mf "# the toplevel target extracted from the :make command line:~%")
+		     (format mf "all : ~A~%" cbase)
+		     (format mf "~%")
+		     (format mf "# include the predefined make rules and variable:~%")
+		     (format mf "include ~A~%" sw-make-file)
+		     (when (IO-SPEC::fileExistsAndReadable user-make-file)
+		       (progn
+			 (format mf "~%")
+			 (format mf "# include the existing user make file:~%")
+			 (format mf "include ~A~%" user-make-file))
+		       )
+		     (format mf "~%")
+		     (format mf "# dependencies and rule for main target:~%")
+		     (format mf "~A: ~A.o $(USERFILES) $(GCLIB)~%" cbase cbase)
+		     (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(USERFILES) $(LOADLIBES) $(LDLIBS)~%" cbase cbase)
+		     ))
+		 (when *make-verbose* (format t ";; invoking make~%"))
+		 (run-cmd (format nil "~A -f ~A" make-command make-file))
+		 )
+	     ;; else: no make-args
+	     (progn
+	       (format t "No previous unit evaluated")
+	       (if (IO-SPEC::fileExistsAndReadable make-file)
+		   (progn
+		     (format t "; using existing make-file ~s...~%" make-file)
+		     (run-cmd (format nil "~A -f ~A" make-command make-file))
+		     )
+		 (format t " and no previous make-file found; please supply a unit-id as argument.~%")
+		 )
+	       )
+	     )
+	   )
 	 )
-     (progn
-       (format t "Usage:~%")
-       (format t "  :make <unit-id>~%")
-       (format t "Description:~%")
-       (format t "  invokes \":swc <unit-id> <cfile-basename>\", where <cfile-basename> ~%")
-       (format t "  is the <unit-id> with #'s replaced by underscores. For example~%")
-       (format t "     :make foo#bar~%")
-       (format t "  invokes :swc foo#bar foo_bar.~%")
-       (format t "  \":make\" also generates a Makefile and calls the shell command \"make foo_bar\",~%")
-       (format t "  which generates the executable \"foo_bar\" from the generated C-files~%")
-       (format t "  \"foo_bar.[ch]\". The make-program that is used can be changed by setting the~%")
-       (format t "  \"SPECWARE4_MAKE\" environment variable.~%")
-       ))))
+       )
+ )
+ 
+
+;; returns the name of the cfile from the given unitid
+;; by substituting #' with underscores
+(defun getCFileNameFromUnitid (unitId)
+  (cl:substitute #\_  #\# (string unitid))
+  )
 
 #-allegro
 (defun run-cmd (cmd)
