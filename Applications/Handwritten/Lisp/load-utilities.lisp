@@ -139,9 +139,10 @@
 					     #+(or mcl cmu) "/tmp/"
 					     ))
 (defun temporaryDirectory-0 ()
-  #+allegro      (SYSTEM:temporary-directory)
-  #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
-  #+(or mcl cmu) "/tmp/")
+  (namestring 
+   #+allegro      (SYSTEM:temporary-directory)
+   #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
+   #+(or mcl cmu) "/tmp/"))
 
 (defun setTemporaryDirectory ()
   (setq temporaryDirectory (temporaryDirectory-0)))

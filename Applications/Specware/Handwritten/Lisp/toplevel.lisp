@@ -116,7 +116,7 @@
 
 (defun swll (x &optional y)
   (let ((lisp-file-name (or y (concatenate 'string
-					   (specware::temporaryDirectory-0)
+					   specware::temporaryDirectory
 					   "cl-current-file"))))
     (if (Specware::evaluateLispCompileLocal_fromLisp-2
 	 x (cons :|Some| lisp-file-name))
@@ -184,7 +184,7 @@
 ;;;    (probe-file (make-pathname :directory full-dir-list))))
 
 (defun swe (x)
-  (let* ((tmp-dir (format nil "~Aswe/" (specware::temporaryDirectory-0)))
+  (let* ((tmp-dir (format nil "~Aswe/" specware::temporaryDirectory))
 	 (tmp-name (format nil "swe_tmp_~D_~D"
 			   (incf *tmp-counter*) 
 			   (ymd-hms)))
