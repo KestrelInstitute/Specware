@@ -18,7 +18,7 @@ spec
 
  sort Decl  = 
    | Var Var 
-   | Cond MS.Term 
+   | Cond MS.Term                 
    | LetRec List (Var * MS.Term) 
    | Let List (Pattern * MS.Term)
 
@@ -284,7 +284,7 @@ spec
 	     | Not        -> tcc 
 	     | And        -> tcc 
 	     | Or         -> tcc 
-	     | Cond       -> tcc 
+	     | Implies    -> tcc 
 	     | Iff        -> tcc 
 	     | Equals     -> tcc 
 	     | NotEquals  -> tcc 
@@ -336,9 +336,9 @@ spec
 	  | "or" -> Some (p,q,false)  % p or q -- can assume ~p in q
 	  | "=>" -> Some (p,q,true)   % p => q -- can assume  p in q
 	  | _ -> None)
-     | (Fun(And,  _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p & q  -- can assume  p in q
-     | (Fun(Or,   _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,false)  % p or q -- can assume ~p in q
-     | (Fun(Cond, _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p => q -- can assume  p in q
+     | (Fun(And,     _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p & q  -- can assume  p in q
+     | (Fun(Or,      _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,false)  % p or q -- can assume ~p in q
+     | (Fun(Implies, _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p => q -- can assume  p in q
      | _ -> None
 
  op  checkLambda: TypeCheckConditions * Gamma * Match * Sort * Option MS.Term

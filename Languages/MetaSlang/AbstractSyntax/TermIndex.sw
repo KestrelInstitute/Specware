@@ -75,7 +75,7 @@ spec
       | (Fun(Not,           _,_)) ->  1
       | (Fun(And,           _,_)) ->  2
       | (Fun(Or,            _,_)) ->  3
-      | (Fun(Cond,          _,_)) ->  4
+      | (Fun(Implies,       _,_)) ->  4
       | (Fun(Iff,           _,_)) ->  5
       | (Fun(Equals,        _,_)) ->  6 % was 1
       | (Fun(NotEquals,     _,_)) ->  7

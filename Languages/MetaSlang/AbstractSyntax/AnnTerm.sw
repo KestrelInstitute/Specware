@@ -129,7 +129,7 @@ MetaSlang qualifying spec {
   | Not
   | And
   | Or
-  | Cond
+  | Implies
   | Iff
   | Equals 
   | NotEquals 
@@ -534,7 +534,7 @@ MetaSlang qualifying spec {
      | (Not,                Not         )       -> true
      | (And,                And         )       -> true
      | (Or,                 Or          )       -> true
-     | (Cond,               Cond        )       -> true
+     | (Implies,            Implies     )       -> true
      | (Iff,                Iff         )       -> true
      | (Equals,             Equals      )       -> true
      | (NotEquals,          NotEquals   )       -> true
@@ -640,7 +640,7 @@ MetaSlang qualifying spec {
      | (Not,                Not         )       -> true
      | (And,                And         )       -> true
      | (Or,                 Or          )       -> true
-     | (Cond,               Cond        )       -> true
+     | (Implies,            Implies     )       -> true
      | (Iff,                Iff         )       -> true
      | (Equals,             Equals      )       -> true
      | (NotEquals,          NotEquals   )       -> true

@@ -132,7 +132,7 @@ spec
       | Apply(Fun(Op(Qualified("Integer","show"),_),_,_),t,_) -> intToString(t)
       | Apply(Fun(Op(Qualified("Integer","stringToInt"),_),_,_),t,_) -> stringToInt(t)
       | Apply(Fun(Op(Qualified("Nat","stringToNat"),_),_,_),t,_) -> stringToInt(t)
-      | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),Record([(_,t1),(_,t2)],_),_) -> infixOp(CdAnd,t1,t2)
+      | Apply(Fun(Op(Qualified("Boolean","&"), _),_,_),Record([(_,t1),(_,t2)],_),_) -> infixOp(CdAnd,t1,t2)
       | Apply(Fun(Op(Qualified("Boolean","or"),_),_,_),Record([(_,t1),(_,t2)],_),_) -> infixOp(CdOr,t1,t2)
       | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),Record([(_,t1),(_,t2)],_),b) ->
 	let t = IfThenElse(t1,t2,mkTrue(),b) in
@@ -144,6 +144,20 @@ spec
 	let t = IfThenElse(t1,t2,nott2,b) in
 	let res = termToExpression(tcx,t,k,l,spc) in
 	Some res
+
+      | Apply(Fun(And,     _, _), Record([(_,t1),(_,t2)],_),_) -> infixOp(CdAnd,t1,t2)
+      | Apply(Fun(Or,      _, _), Record([(_,t1),(_,t2)],_),_) -> infixOp(CdOr,t1,t2)
+      | Apply(Fun(Implies, _, _), Record([(_,t1),(_,t2)],_),b) ->
+	let t = IfThenElse(t1,t2,mkTrue(),b) in
+	let res = termToExpression(tcx,t,k,l,spc) in
+	Some res
+      | Apply(Fun(Iff,     _, _), Record([(_,t1),(_,t2)],_),b) ->
+	let srt = Arrow(boolSort,boolSort,b):Sort in
+	let nott2 = Apply(Fun(Not,srt,b),t2,b) in
+	let t = IfThenElse(t1,t2,nott2,b) in
+	let res = termToExpression(tcx,t,k,l,spc) in
+	Some res
+
       | Apply(Fun(Op(Qualified("Char",fun as "isNum"),_),_,_),t,_) -> 
 	%let _ = writeLine("isNum used.") in
 	charFun(fun,t)

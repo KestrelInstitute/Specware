@@ -157,7 +157,7 @@ AnnSpecPrinter qualifying spec {
                                | _ -> fixity)
         | And            -> Infix (Right, 15) 
         | Or             -> Infix (Right, 14) 
-        | Cond           -> Infix (Right, 13) 
+        | Implies        -> Infix (Right, 13) 
         | Iff            -> Infix (Right, 12) 
         | Equals         -> Infix (Left, 20) % was 10 ??
         | NotEquals      -> Infix (Left, 20) 
@@ -186,7 +186,7 @@ AnnSpecPrinter qualifying spec {
     | Not                   -> pp.Not
     | And                   -> pp.And
     | Or                    -> pp.Or
-    | Cond                  -> pp.Cond
+    | Implies               -> pp.Implies
     | Iff                   -> pp.Iff
     | Equals                -> pp.Equals
     | NotEquals             -> pp.NotEquals

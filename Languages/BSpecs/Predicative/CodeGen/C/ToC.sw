@@ -204,6 +204,23 @@ is suffices for now.
                         else
                           fail "abstBlockToCStmts: right guard not syntactic negation of left"
                     | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
+            | ((Guard leftGuard)::leftBlock, (Guard rightGuard)::[]) ->
+                 (case (leftGuard,rightGuard) of
+                    | (Apply(Fun(Not,_),newLeft),_) ->
+                        if newLeft = rightGuard then
+                          let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
+                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
+                          (IfThen (cGuard,Block ([],leftCode)))
+                        else
+                          fail "abstStmtToCStmt: left guard not syntactic negation of right"
+                    | (_,Apply(Fun(Not,_), newRight)) ->
+                        if leftGuard = newRight then
+                          let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
+                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
+                          (IfThen (cGuard,Block ([],leftCode)))
+                        else
+                          fail "abstBlockToCStmts: right guard not syntactic negation of left"
+                    | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
             | ((Guard leftGuard)::[], (Guard rightGuard)::rightBlock) ->
                  (case (leftGuard,rightGuard) of
                     | (Apply(Fun(Op(Imported("Boolean","~"),_),_),newLeft),_) ->
@@ -214,6 +231,23 @@ is suffices for now.
                         else
                           fail "abstStmtToCStmt: left guard not syntactic negation of right"
                     | (_,Apply(Fun(Op(Imported("Boolean","~"),_),_),newRight)) ->
+                        if leftGuard = newRight then
+                          let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
+                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
+                          (IfThen (cGuard,Block ([],rightCode)))
+                        else
+                          fail "abstBlockToCStmts: right guard not syntactic negation of left"
+                    | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
+            | ((Guard leftGuard)::[], (Guard rightGuard)::rightBlock) ->
+                 (case (leftGuard,rightGuard) of
+                    | (Apply(Fun(Not, _),newLeft), _) ->
+                        if newLeft = rightGuard then
+                          let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
+                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
+                          (IfThen (cGuard,Block ([],rightCode)))
+                        else
+                          fail "abstStmtToCStmt: left guard not syntactic negation of right"
+                    | (_,Apply(Fun(Not, _), newRight)) ->
                         if leftGuard = newRight then
                           let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
                           let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
@@ -232,6 +266,25 @@ is suffices for now.
                         else
                           fail "abstStmtToCStmt: left guard not syntactic negation of right"
                     | (_,Apply(Fun(Op(Imported("Boolean","~"),_),_),newRight)) ->
+                        if leftGuard = newRight then
+                          let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
+                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
+                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
+                          (If (cGuard,Block ([],leftCode),Block ([],rightCode)))
+                        else
+                          fail "abstBlockToCStmts: right guard not syntactic negation of left"
+                    | _ -> fail "abstBlockToCStmts: neither guard in branch is negated")
+            | ((Guard leftGuard)::leftBlock, (Guard rightGuard)::rightBlock) ->
+                 (case (leftGuard,rightGuard) of
+                    | (Apply(Fun(Not,_),newLeft),_) ->
+                        if newLeft = rightGuard then
+                          let cGuard = termToCExp (codeGenInfo,spc,rightGuard) in
+                          let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
+                          let rightCode = abstCodeToCStmts codeGenInfo spc rightBlock in
+                          (If (cGuard,Block ([],rightCode),Block ([],leftCode)))
+                        else
+                          fail "abstStmtToCStmt: left guard not syntactic negation of right"
+                    | (_,Apply(Fun(Not,_),newRight)) ->
                         if leftGuard = newRight then
                           let cGuard = termToCExp (codeGenInfo,spc,leftGuard) in
                           let leftCode = abstCodeToCStmts codeGenInfo spc leftBlock in
@@ -406,10 +459,12 @@ The operator "getConjList" takes a term of the form "$a_1 \wedge a_2 \wedge
 \begin{spec}
   op getConjList: PTerm -> List PTerm
   def getConjList(t) =
-    case t
-      of Apply(Fun(Op(Imported("Boolean","&"),_),_),Record [(_,t1),(_,term)])
+    case t of
+      | Apply(Fun(Op(Imported("Boolean","&"),_),_),Record [(_,t1),(_,term)])
              -> List.concat(getConjList t1,getConjList(term))
-       | _   -> [t]
+      | Apply(Fun(And,_),Record [(_,t1),(_,term)])
+             -> List.concat(getConjList t1,getConjList(term))
+      | _   -> [t]
 
 \end{spec}
 
@@ -684,6 +739,12 @@ pendant on the C side.
       | Op (Imported("Boolean","~"),_) -> Unary LogNot
       | Op (Imported("Boolean","&"),_) -> Binary LogAnd
       | Op (Imported("Boolean","or"),_) -> Binary LogOr
+      | Not       -> Unary  LogNot
+      | And       -> Binary LogAnd
+      | Or        -> Binary LogOr
+     %| Implies   -> Binary Log??
+     %| Iff       -> Binary Log??
+      | NotEquals -> Binary NotEq
       | Op (Imported("Static","doubleAdd"),_) -> Binary Add
       | Op (Imported("Static","doubleMult"),_) -> Binary Mul
       | Op (Imported("Static","doubleSubt"),_) -> Binary Sub

@@ -59,7 +59,7 @@ AnnTermPrinter qualifying spec {
     Not                : Pretty,
     And                : Pretty,
     Or                 : Pretty,
-    Cond               : Pretty,
+    Implies            : Pretty,
     Iff                : Pretty,
     Equals             : Pretty,
     NotEquals          : Pretty,
@@ -142,7 +142,7 @@ AnnTermPrinter qualifying spec {
     Not                = string "~",
     And                = string "&&",
     Or                 = string "||",
-    Cond               = string "=>",
+    Implies            = string "=>",
     Iff                = string "<=>",
     Equals             = string "=",
     NotEquals          = string "~=",
@@ -249,7 +249,7 @@ AnnTermPrinter qualifying spec {
     Not                = lengthString (1, "$\\neg$"              ),
     And                = lengthString (1, "$\\&$"                ),
     Or                 = lengthString (2, "\\SWor\\ "            ),
-    Cond               = lengthString (1, "$\\Rightarrow$"       ),
+    Implies            = lengthString (1, "$\\Rightarrow$"       ),
     Iff                = lengthString (2, "$\\Leftrightarrow$"   ),
     Equals             = lengthString (3, "\\ = \\ "             ),
     NotEquals          = lengthString (1, "$\\neg$\\=\\"         ), % TODO: this is just a guess
@@ -343,7 +343,7 @@ AnnTermPrinter qualifying spec {
     Not                = lengthString ( 1, "$\\neg$"               ),
     And                = lengthString ( 1, "$\\&$"                 ),
     Or                 = lengthString ( 2, "\\SWor\\ "             ),
-    Cond               = lengthString ( 1, "$\\Rightarrow$"        ),
+    Implies            = lengthString ( 1, "$\\Rightarrow$"        ),
     Iff                = lengthString ( 2, "$\\Leftrightarrow$"    ),
     Equals             = lengthString ( 3, "\\ = \\ "              ),
     NotEquals          = lengthString ( 1, "$\\neg$\\=\\"          ), % TODO: this is just a guess
@@ -435,7 +435,7 @@ AnnTermPrinter qualifying spec {
     Not                = lengthString ( 1, "<b>~</b>"            ), % TODO: guessing...
     And                = lengthString ( 2, "<b>&&</b>"           ), % TODO: guessing...
     Or                 = lengthString ( 2, "<b>||</b>"           ), % TODO: guessing...
-    Cond               = lengthString ( 2, "<b>=></b>"           ), % TODO: guessing...
+    Implies            = lengthString ( 2, "<b>=></b>"           ), % TODO: guessing...
     Iff                = lengthString ( 2, "<b>&lt;=></b>"       ), % TODO: guessing...
     Equals             = lengthString ( 2, "<b>=</b>"            ), % TODO: why was this length 2 instead of 1?
     NotEquals          = lengthString ( 2, "<b>~=</b>"           ), % TODO: guessing...

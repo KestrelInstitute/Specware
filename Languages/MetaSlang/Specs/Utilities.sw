@@ -957,6 +957,8 @@ Utilities qualifying spec
      | _ ->
    IfThenElse(t1,t2,t3,noPos)
 
+ %% Utilities.mkOr, etc:
+
  op  mkOr: MS.Term * MS.Term -> MS.Term 
  def mkOr(t1,t2) = 
      case (t1,t2)
@@ -1030,7 +1032,7 @@ Utilities qualifying spec
 	     Record([("1",lhs),("2",rhs)],_),_) ->
         let (rVs,rLhsCjs,rRhs) = forallComponents rhs in
 	(rVs,getConjuncts lhs ++ rLhsCjs,rRhs)
-      | Apply(Fun(Cond, _,_),
+      | Apply(Fun(Implies, _,_),
 	     Record([("1",lhs),("2",rhs)],_),_) ->
         let (rVs,rLhsCjs,rRhs) = forallComponents rhs in
 	(rVs,getConjuncts lhs ++ rLhsCjs,rRhs)
@@ -1229,28 +1231,30 @@ Utilities qualifying spec
 	if evalConstant?(N1) & evalConstant?(N2)
 	  then Some(mkBool(equalTerm?(N1,N2)))
 	  else None
+      | Apply(Fun(NotEquals,_,_),Record([(_,N1),(_,N2)], _),_) ->
+	if evalConstant?(N1) & evalConstant?(N2)
+	  then Some(mkBool(~ (equalTerm?(N1,N2))))
+	  else None
       | Apply(Fun(Not,  _,_),arg,                       _) -> 
-	if evalConstant? arg then
-	  case arg of
-	    | Fun (Bool b,_,aa) -> Some(Fun (Bool (~ b), boolSort,aa))
-	    | _ -> None
-	else
-	  None
+	  (case arg of
+	     | Fun (Bool b,_,aa) -> Some(Fun (Bool (~ b), boolSort,noPos))
+	     | _ -> None)
       | Apply(Fun(And,  _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	if evalConstant?(N1) & evalConstant?(N2) then
-	  evalBinary(bool  &,booleanVals,fields,boolSort)
-	else
-	  None
+	  (case (N1, N2) of
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 & b2), boolSort, noPos))
+	     | _ -> None)
       | Apply(Fun(Or,   _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	if evalConstant?(N1) & evalConstant?(N2) then
-	  evalBinary(bool or,booleanVals,fields,boolSort)
-	else
-	  None
-      | Apply(Fun(Cond, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
-	if evalConstant?(N1) & evalConstant?(N2) then
-	  evalBinary(bool =>,booleanVals,fields,boolSort)
-	else
-	  None
+	  (case (N1, N2) of
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 or b2), boolSort, noPos))
+	     | _ -> None)
+      | Apply(Fun(Implies, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
+	  (case (N1, N2) of
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 => b2), boolSort, noPos))
+	     | _ -> None)
+      | Apply(Fun(Iff, _,_),Record(fields as [(_,N1),(_,N2)], _),_) -> 
+	  (case (N1, N2) of
+	     | (Fun(Bool b1,_,_), Fun(Bool b2,_,_)) -> Some (Fun (Bool (b1 <=> b2), boolSort, noPos))
+	     | _ -> None)
       | _ -> None
 
   op  printDefinedOps: fa(a) ASpec a -> String

@@ -247,7 +247,7 @@ snark qualifying spec
        | Or ->
 	 let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
 	 Lisp.cons(Lisp.symbol("SNARK", "OR"), Lisp.list snarkArgs)
-       | Cond ->
+       | Implies ->
 	 let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
 	 Lisp.cons(Lisp.symbol("SNARK", "IMPLIES"), Lisp.list snarkArgs)
        | Iff ->

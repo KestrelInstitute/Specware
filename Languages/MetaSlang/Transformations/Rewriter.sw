@@ -94,7 +94,7 @@ spec MetaSlangRewriter
 	  | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
 		   Record([(_,M),(_,N)], _),_) -> 
 	     (Some (substitute(M,S)),N)
-	  | Apply(Fun(Cond, _,_), Record([(_,M),(_,N)], _),_) -> 
+	  | Apply(Fun(Implies, _,_), Record([(_,M),(_,N)], _),_) -> 
 	     (Some (substitute(M,S)),N)
 	  | _ -> (None,formula)
    in
@@ -127,13 +127,10 @@ spec MetaSlangRewriter
 
  def negate term =
    case term of
-     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),p,_) -> p
-     | Apply(Fun(Op(Qualified("Boolean","or"),_),_,_),
-	     Record([(_,M),(_,N)], _),_) ->
-       Utilities.mkAnd(negate M,negate N)
-     | Apply(Not,p,_) -> p
-     | Apply(Or, Record([(_,M),(_,N)], _),_) ->
-       Utilities.mkAnd(negate M,negate N)
+     | Apply(Fun(Op(Qualified("Boolean","~"), _),_,_), p,                        _) -> p
+     | Apply(Fun(Op(Qualified("Boolean","or"),_),_,_), Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
+     | Apply (Not, p,                        _) -> p
+     | Apply (Or,  Record([(_,M),(_,N)], _), _) -> Utilities.mkAnd(negate M,negate N)
      | _ -> mkNot term
 
  (* Unnecessary as equality can be done as a built-in rule
@@ -206,7 +203,10 @@ spec MetaSlangRewriter
 
  def rewriteSubTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
      (case term of
-        %% | Apply(Fun(Not,s,_),arg,b) ->  Apply(Fun(Not,s,b), arg, b) % TODO: what is the proper form here?
+        | Apply(Fun(Not,s,_),arg,b) ->  
+	   LazyList.map 
+		(fn (arg,a) -> (Apply(Fun(Not,s,b), arg, b),a)) 
+		(rewriteTerm(solvers,boundVars,arg,rules))
         | Apply(Fun(And,s,_),Record([(l1,M),(l2,N)], _),b) -> 
 	   LazyList.map 
 		(fn (N,a) -> (Apply(Fun(And,s,b),
@@ -225,14 +225,14 @@ spec MetaSlangRewriter
 	   LazyList.map 
 		(fn (M,a) -> (Apply(Fun(Or,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
 		(rewriteTerm(solvers,boundVars,M,rules))) 
-        | Apply(Fun(Cond,s,_),Record([(l1,M),(l2,N)], _),b) -> 
+        | Apply(Fun(Implies,s,_),Record([(l1,M),(l2,N)], _),b) -> 
 	   LazyList.map 
-		(fn (N,a) -> (Apply(Fun(Cond,s,b),
+		(fn (N,a) -> (Apply(Fun(Implies,s,b),
 				    Record([(l1,M),(l2,N)],b),b),a)) 
 		(rewriteTerm(solvers,boundVars,N,rules)) @@
 	   (fn () -> 
 	   LazyList.map 
-		(fn (M,a) -> (Apply(Fun(Cond,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
+		(fn (M,a) -> (Apply(Fun(Implies,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
 		(rewriteTerm(solvers,boundVars,M,rules))) 
         | Apply(Fun(Iff,s,_),Record([(l1,M),(l2,N)], _),b) -> 
 	   LazyList.map 

@@ -437,7 +437,7 @@ def mkThisExpr() =
 op mkBaseJavaBinOp: Id -> Java.BinOp
 def mkBaseJavaBinOp(id) =
   case id of
-    | "&&" -> CdAnd
+    | "&"  -> CdAnd  % was "&&" but I think that's buggy in Specware 4.0
     | "or" -> CdOr
     | "=" -> Eq
     | ">" -> Gt
@@ -459,7 +459,7 @@ def mkBaseJavaUnOp(id) =
 op javaBaseOp?: Id -> Boolean
 def javaBaseOp?(id) =
   case id of
-    | "&&" -> true
+    | "&" -> true  % was "&&" but I think that's buggy in Specware 4.0
     | "or" -> true
     | "=" -> true
     | ">" -> true
@@ -485,10 +485,33 @@ def mkUnExp(opId, javaArgs) =
   let [ja] = javaArgs in
   CondExp (Un (Un (mkBaseJavaUnOp(opId), Prim (Paren (ja)))), None)
 
+op mkJavaNot: Java.Expr -> Java.Expr
+def mkJavaNot e1 =
+  CondExp (Un (Un (LogNot, Prim (Paren (e1)))), None)
+
+op mkJavaAnd: Java.Expr * Java.Expr -> Java.Expr
+def mkJavaAnd(e1, e2) =
+  CondExp (Bin (CdAnd, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
+
+op mkJavaOr: Java.Expr * Java.Expr -> Java.Expr
+def mkJavaOr (e1, e2) =
+  CondExp (Bin (CdOr, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
+
+op mkJavaImplies : Java.Expr * Java.Expr -> Java.Expr % TODO: def?
+op mkJavaIff     : Java.Expr * Java.Expr -> Java.Expr % TODO: def?
+
 op mkJavaEq: Java.Expr * Java.Expr * Id -> Java.Expr
 def mkJavaEq(e1, e2, t1) =
   if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat" or t1 = "Char")
     then CondExp (Bin (Eq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
+  else
+    CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
+%    CondExp (Un (Prim (MethInv (ViaName (([t1], "equals"), [e2])))), None)
+
+op mkJavaNotEq: Java.Expr * Java.Expr * Id -> Java.Expr
+def mkJavaNotEq(e1, e2, t1) =
+  if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat" or t1 = "Char")
+    then CondExp (Bin (NotEq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
   else
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
 %    CondExp (Un (Prim (MethInv (ViaName (([t1], "equals"), [e2])))), None)

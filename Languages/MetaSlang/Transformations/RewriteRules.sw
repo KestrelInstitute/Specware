@@ -442,7 +442,7 @@ is rewritten to
             | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
 		Record([(_,M),(_,N)], _),_) -> 
 		(Some (substitute(M,S)): Option MS.Term,N)
-            | Apply(Fun(Cond,_,_), Record([(_,M),(_,N)], _),_) -> 
+            | Apply(Fun(Implies,_,_), Record([(_,M),(_,N)], _),_) -> 
 		(Some (substitute(M,S)): Option MS.Term,N)
 	    | _ -> (None,formula)
      in

@@ -983,6 +983,26 @@ SpecsToI2L qualifying spec {
         -> let e1 = t2e t1 in
 	   Some(Builtin(BoolNot(e1)))
 
+      | (Fun(Not,_,_),[t1])
+        -> let e1 = t2e t1 in
+	   Some(Builtin(BoolNot(e1)))
+      | (Fun(And,_,_),[t1,t2])
+        -> let (e1,e2) = (t2e t1,t2e t2) in
+	   Some(Builtin(BoolAnd(e1,e2)))
+      | (Fun(Or,_,_),[t1,t2])
+        -> let (e1,e2) = (t2e t1,t2e t2) in
+	   Some(Builtin(BoolOr(e1,e2)))
+      | (Fun(Implies,_,_),[t1,t2])
+        -> let (e1,e2) = (t2e t1,t2e t2) in
+	   Some(Builtin(BoolImplies(e1,e2)))
+      | (Fun(Iff,_,_),[t1,t2])
+        -> let (e1,e2) = (t2e t1,t2e t2) in
+	   Some(Builtin(BoolEquiv(e1,e2)))
+      | (Fun(NotEquals, _,_),[t1,t2]) 
+        -> let (e1,e2) = (t2e t1,t2e t2) in
+	   let eqterm = (Builtin(Equals(e1,e2)),Primitive "Boolean") in
+	   Some(Builtin(BoolNot(eqterm)))
+
       % var refs:
 %      | (Fun(Op(Qualified("ESpecPrimitives","ref"),_),_,_),[t1])
 %	-> let def qid2varname(qid) =

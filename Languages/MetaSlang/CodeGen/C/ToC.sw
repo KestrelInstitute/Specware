@@ -415,6 +415,11 @@ pendant on the C side.
       | Op (Qualified("Boolean","~"),_) -> Unary LogNot
       | Op (Qualified("Boolean","&"),_) -> Binary LogAnd
       | Op (Qualified("Boolean","or"),_) -> Binary LogOr
+
+      | Not       -> Unary LogNot
+      | And       -> Binary LogAnd
+      | Or        -> Binary LogOr
+      | NotEquals -> Binary NotEq
  
       % | Op (qid,_) -> Fn (showQualifiedId (removePrime qid), [], sortToCType srt)
       | Op (qid,_) -> Var (showQualifiedId (removePrime qid),sortToCType srt)

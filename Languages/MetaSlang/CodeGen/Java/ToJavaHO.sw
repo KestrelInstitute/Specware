@@ -101,7 +101,7 @@ spec
 	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in
 	 standalone(mkReturnStmt(rexp),(["int","int"],"int"),(["Integer","Integer"],"Integer"),k,l)
      else
-     if (id = "&&" or id = "or") &
+     if (id = "&" or id = "or") &
         (spcname = "Boolean")
        then
 	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in

@@ -65,7 +65,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 	          case fun of
 		    | And       -> Some " &&"
 		    | Or        -> Some " ||"
-		    | Cond      -> Some " =>"
+		    | Implies   -> Some " =>"
 		    | Iff       -> Some " <=>"
 		    | Equals    -> Some " ="
 		    | NotEquals -> Some " ~="
@@ -351,7 +351,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Not       -> ppString "~"
       | And       -> ppString "&&"
       | Or        -> ppString "||"
-      | Cond      -> ppString "=>"
+      | Implies   -> ppString "=>"
       | Iff       -> ppString "<=>"
       | Equals    -> ppString "="
       | NotEquals -> ppString "~="

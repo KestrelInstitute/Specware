@@ -746,7 +746,7 @@ SpecCalc qualifying spec
      | (Not,                Not         )       -> true
      | (And,                And         )       -> true
      | (Or,                 Or          )       -> true
-     | (Cond,               Cond        )       -> true
+     | (Implies,            Implies     )       -> true
      | (Iff,                Iff         )       -> true
      | (Equals,             Equals      )       -> true
      | (NotEquals,          NotEquals   )       -> true

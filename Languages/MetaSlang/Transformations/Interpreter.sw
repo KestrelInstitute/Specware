@@ -202,7 +202,7 @@ spec
 		     | _ -> default ())
 		| _  -> default())
 	   | _  -> default())
-      | Fun(Cond,_,_) ->
+      | Fun(Implies,_,_) ->
 	(case a of
 	   | RecordVal(fields) -> 
 	     (case fields of
