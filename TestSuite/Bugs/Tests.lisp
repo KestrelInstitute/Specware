@@ -52,7 +52,7 @@ endspec
 ;;; Elaborating spec at $TESTDIR/Bug_0053/Subst#B
 
 spec  
- import M
+ import B
  type Interval = {start:Nat.Nat, stop:Nat.Nat}
  def isEmptyInterval? {start = x, stop = y} = x = y
 endspec
