@@ -1,20 +1,16 @@
 <appendix><title>Inbuilts and Base Libraries</title>
 
 <para>
-This appendix provides a brief description of the `type-names and `ops
-that are either ``inbuilt'' or provided by
-the current base libraries.
+This appendix provides a brief description of the types and operators
+that are either ``inbuilt'' or provided by the current base libraries.
 The base libraries are automatically imported by every user-defined `spec.
 The title of each section of this appendix
-is the qualifier of the `type-names and `ops given therein.
-For example, the full `op-name for `op [[~]] described
-in Section ``Boolean'' is [[Boolean.~]].
-</para>
-
-<para>
-Some of the descriptions for the inbuilts
-use pseudo-`declarations, which are not actually
-legal Metaslang but suggest the intention.
+is the qualifier of the `type- and `op-names given therein.
+For example, the full `name for `op [[++]] described
+in Section ``List'' is [[List.++]].
+However, for the <emphasis>unary</emphasis> operator [[-]] on integers,
+the qualifier is [[Integer_]] .
+Note, also, that inbuilts cannot be qualified.
 </para>
 
 <para>
@@ -31,11 +27,15 @@ with the &Specware; distribution, for details (e.g. axioms).
 
 <!-- Equality ****************************************************** -->
 
-<section><title>Equality</title>
+<section><title>Inbuilts</title>
  <para>
   <variablelist>
    <varlistentry>
-    <term><command>Ops</command></term>
+    <term><command>Inbuilt Type</command></term>
+    <listitem><para>[[Boolean]]</para></listitem>
+   </varlistentry>
+   <varlistentry>
+    <term><command>Inbuilt Ops</command></term>
     <listitem>
      <para>
         <informaltable frame="sides" colsep="1">
@@ -65,46 +65,6 @@ with the &Specware; distribution, for details (e.g. axioms).
         <entry colname="type">&nbsp; [[[a] a * a -> a]]</entry>
         <entry colname="desc">&nbsp; tests if the parameters are unequal</entry>
        </row>
-          </tbody>
-         </tgroup>
-        </informaltable>
-     </para>
-    </listitem>
-   </varlistentry>
-  </variablelist>
- </para>
-</section>
-
-<!-- Boolean ****************************************************** -->
-
-<section><title>Boolean</title>
- <para>
-(Note that [[true]] and [[false]] are actually not `constructors
-but `boolean-literals.)
-  <variablelist>
-   <varlistentry>
-    <term><command>Type</command></term>
-    <listitem><para>[[type Boolean = | true | false]]</para></listitem>
-   </varlistentry>
-   <varlistentry>
-    <term><command>Ops</command></term>
-    <listitem>
-     <para>
-      <informaltable frame="sides" colsep="1">
-       <tgroup cols="4">
-        <colspec colname="name" colnum="1" colwidth="50"  rowsep="1">
-        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
-        <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
-        <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
-        <thead>
-       <row>
-        <entry colname="name">&nbsp; Name</entry>
-        <entry colname="fxty">&nbsp; Fixity</entry>
-        <entry colname="type">&nbsp; Type</entry>
-        <entry colname="desc">&nbsp; Description</entry>
-       </row>
-        </thead>
-        <tbody>
        <row>
         <entry colname="name">&nbsp; [[~]]</entry>
         <entry colname="fxty">&nbsp; </entry>
@@ -136,10 +96,49 @@ but `boolean-literals.)
         <entry colname="desc">&nbsp; logical equivalence</entry>
        </row>
        <row>
+        <entry colname="name">&nbsp; [[<<]]</entry>
+        <entry colname="fxty">&nbsp; [[L 25]]</entry>
+        <entry colname="type">&nbsp; [[{$x$:$A$,]]...[[,$y$:$B$,]]...[[} * {$x$:$A$,]]...[[,$z$:$C$,]]...[[} -> {$x$:$A$,]]...[[,$y$:$B$,]]...[[,$z$:$C$,]]...[[}]]</entry>
+        <entry colname="desc">&nbsp; see Section `Applications under <emphasis>record update</emphasis></entry>
+       </row>
+        </tbody>
+       </tgroup>
+      </informaltable>
+     </para>
+    </listitem>
+   </varlistentry>
+  </variablelist>
+ </para>
+</section>
+
+<!-- Boolean ****************************************************** -->
+
+<section><title>Boolean</title>
+ <para>
+  <variablelist>
+    <term><command>Ops</command></term>
+    <listitem>
+     <para>
+      <informaltable frame="sides" colsep="1">
+       <tgroup cols="4">
+        <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
+        <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
+        <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
+        <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
+        <thead>
+       <row>
+        <entry colname="name">&nbsp; Name</entry>
+        <entry colname="fxty">&nbsp; Fixity</entry>
+        <entry colname="type">&nbsp; Type</entry>
+        <entry colname="desc">&nbsp; Description</entry>
+       </row>
+        </thead>
+        <tbody>
+       <row>
         <entry colname="name">&nbsp; [[toString]]</entry>
         <entry colname="fxty">&nbsp; </entry>
         <entry colname="type">&nbsp; [[Boolean -> String]]</entry>
-        <entry colname="desc">&nbsp; converts Boolean value to string</entry>
+        <entry colname="desc">&nbsp; converts logical value to string</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[show]]</entry>
@@ -151,7 +150,7 @@ but `boolean-literals.)
         <entry colname="name">&nbsp; [[compare]]</entry>
         <entry colname="fxty">&nbsp; </entry>
         <entry colname="type">&nbsp; [[Boolean * Boolean -> Comparison]]</entry>
-        <entry colname="desc">&nbsp; compares two Boolean values</entry>
+        <entry colname="desc">&nbsp; compares two logical values</entry>
        </row>
         </tbody>
        </tgroup>
@@ -847,14 +846,14 @@ but `boolean-literals.)
        <row>
         <entry colname="name">&nbsp; [[map]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[[a,b] (a->b) -> List a -> List b]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a -> b) -> List a -> List b]]</entry>
         <entry colname="desc">&nbsp; applies function to each element of a list and returns
             the list consisting of the results</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[mapPartial]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[[a,b] (a->Option b) -> List a -> List b]]</entry>
+        <entry colname="type">&nbsp; [[[a,b] (a -> Option b) -> List a -> List b]]</entry>
         <entry colname="desc">&nbsp; like [[map]] but replacing each result [[Some $y$]]
             by $y$ and deleting [[None]] results.</entry>
        </row>
@@ -880,7 +879,7 @@ but `boolean-literals.)
        <row>
         <entry colname="name">&nbsp; [[exists]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="type">&nbsp; [[[a] (a->Boolean) -> List a -> Boolean]]</entry>
+        <entry colname="type">&nbsp; [[[a] (a -> Boolean) -> List a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; true if some element of the list satisfies
             the predicate given as first parameter</entry>
        </row>
@@ -1098,46 +1097,6 @@ but `boolean-literals.)
             is [[Some $x$]], it uses the function
             given as first parameter to convert
             $x$ to a string</entry>
-       </row>
-          </tbody>
-         </tgroup>
-        </informaltable>
-     </para>
-    </listitem>
-   </varlistentry>
-  </variablelist>
- </para>
-</section>
-
-<!-- Records ***************************************************** -->
-
-<section><title>Records</title>
- <para>
-  <variablelist>
-   <varlistentry>
-    <term><command>Op</command></term>
-    <listitem>
-     <para>
-        <informaltable frame="sides" colsep="1">
-         <tgroup cols="4">
-          <colspec colname="name" colnum="1" colwidth="65"  rowsep="1">
-          <colspec colname="fxty" colnum="2" colwidth="41"  rowsep="1">
-          <colspec colname="type" colnum="3" colwidth="150" rowsep="1">
-          <colspec colname="desc" colnum="4" colwidth="160" rowsep="1">
-          <thead>
-       <row>
-        <entry colname="name">&nbsp; Name</entry>
-        <entry colname="fxty">&nbsp; Fixity</entry>
-        <entry colname="type">&nbsp; Type</entry>
-        <entry colname="desc">&nbsp; Description</entry>
-       </row>
-          </thead>
-          <tbody>
-       <row>
-        <entry colname="name">&nbsp; [[<<]]</entry>
-        <entry colname="fxty">&nbsp; [[L 25]]</entry>
-        <entry colname="type">&nbsp; [[{$x$:$A$,]]...[[,$y$:$B$,]]...[[} * {$x$:$A$,]]...[[,$z$:$C$,]]...[[} -> {$x$:$A$,]]...[[,$y$:$B$,]]...[[,$z$:$C$,]]...[[}]]</entry>
-        <entry colname="desc">&nbsp; see Section `Applications under <emphasis>record update</emphasis></entry>
        </row>
           </tbody>
          </tgroup>

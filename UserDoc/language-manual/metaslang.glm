@@ -75,8 +75,7 @@ accompanying text will indicate how they are to be resolved.
 In &Metaslang;, <emphasis>`op</emphasis> is used
 used as an abbreviation for
 <quote>`op-name</quote>, where `op-names
-are declared names representing
-values.
+are declared `names representing values.
 (<emphasis>Op</emphasis> for <emphasis>operator</emphasis>, a
 term used for historical reasons, although including
 things normally not considered operators.)
@@ -94,13 +93,9 @@ A model is an assignment of sets of values (called
 declared -- explicitly or implicitly -- in the `spec.
 The notion of <emphasis>value</emphasis> includes
 numbers, strings, arrays, functions, etcetera.
-A typed value can be thought of as a pair
-($T$, $V$),
-in which 
-$T$ is a type and
-$V$ is a value that is an
-inhabitant of 
-$T$.
+A typed value can be thought of as a pair ($T$, $V$),
+in which $T$ is a type and $V$ is a value that is an
+inhabitant of $T$.
 For example, the `expressions [[0 : Nat]] and [[0 : Integer]]
 correspond, semantically, to the typed values
 ($N$, 0) and
@@ -130,10 +125,10 @@ example, given the above assignment to [[Even]], the function
 that increments a number by 1 does not map all even numbers
 to even numbers, and therefore can not -- in the same model
 -- be assigned to [[next]].
-Additionally, the axioms of the `spec have to be satisfied by
-the model.
+Additionally, the `claims (axioms, theorems and conjectures)
+of the `spec have to be satisfied in the model.
 The axiom labeled [[nextEffect]] above states that
-the function assigned to `op-name [[next]]
+the function assigned to `op [[next]]
 maps any value of the type assigned to `type-name [[Even]]
 to a different value.
 So the squaring function, although type-respecting, could not
@@ -142,7 +137,7 @@ be assigned to [[next]] since it maps 0 to itself.
 <!-- ================================================================= -->
 <para>
 If all type-respecting combinations of assignments of types to
-`type-names and `ops to `op-names fail the axioms test, the
+`type-names and values to `ops fail the one or more `claims, the
 `spec has no models and is called
 <emphasis>inconsistent</emphasis>.
 Although usually undesirable, an inconsistent `spec is not by
@@ -160,7 +155,7 @@ the assignments of that model, and more generally on an
 <emphasis>environment</emphasis>: a model possibly extended
 with assignments to `local-variables.
 For example, the meaning of the `claim
-[[fa(x : Even) ~(next x = x)]] in the axiom [[nextEffect]]
+[[fa(x : Even) ~(next x = x)]] in axiom [[nextEffect]]
 depends on the meanings of [[Even]] and [[next]],
 while the sub-expression [[next x]], for example, also depends on
 an assignment (of an <quote>even</quote> value) to [[x]].
@@ -178,8 +173,8 @@ When an environment is extended with an assignment to a
 new assignment in the new environment.
 In terms of &Metaslang; text, within the scope of the binding of
 `local-variables, synonymous `ops and earlier introduced
-`local-variables (that is, having the same `name) are
-<quote>hidden</quote>; any use of the `name in that scope
+`local-variables (that is, having the same `simple-name) are
+<quote>hidden</quote>; any use of the `simple-name in that scope
 refers to the textually most recently introduced
 `local-variable.
 For example, given:
@@ -213,7 +208,7 @@ these requirements exist for a given `spec, it is considered
 This is determined by &Specware; while elaborating the `spec,
 and signaled as an error.
 Type-incorrectness differs from inconsistency in that the
-meaning of the axioms does not come into play, and the
+meaning of the `claims does not come into play, and the
 question whether an ill-formed `spec is consistent is moot.
 </para>
 <!-- ================================================================= -->
@@ -311,7 +306,7 @@ below).
 <para>
 A type is called discrete if the equality predicate [[=]]
 for that type is constructive.
-The base-library types [[Boolean]], [[Integer]], [[NonZeroInteger]], [[Nat]], [[PosNat]],
+The inbuilt and base-library types [[Boolean]], [[Integer]], [[NonZeroInteger]], [[Nat]], [[PosNat]],
 [[Char]], [[String]] and [[Compare]] are all discrete.
 Types [[List $T$]] and [[Option $T$]] are discrete when
 $T$ is.
@@ -348,7 +343,7 @@ more <quote>marks</quote> (ASCII characters).
 Within a composite (multi-mark) `symbol, no whitespace is
 allowed, but whitespace may be needed between two `symbols if
 together they could be taken for one `symbol; in particular,
-two `names that follow each other should be separated by
+two `simple-names that follow each other should be separated by
 whitespace.
 <!-- OBSOLETE
 More precisely, whitespace is required between two `symbols
@@ -362,7 +357,7 @@ The first is after the
 Without such whitespace, [[(*]] introduces a `block-comment.
 The second is before or after the `special-symbol [[_]] (the
 presentation of a `wildcard-pattern) when immediately followed
-or preceded by a `name or another [[_]].
+or preceded by a `simple-name or another [[_]].
 ETELOSBO -->
 More precisely, whitespace is required between two adjacent
 `symbols for each of the following combinations, in which
@@ -415,9 +410,9 @@ presentations of the same `spec are entirely equivalent:
 <section id="Symbols"><title>Symbols and Names</title>
 <para>
 <<
-||`symbol ::= `name | `literal | `special-symbol
+||`symbol ::= `simple-name | `literal | `special-symbol
 ||
-||`name ::= `word-symbol | `non-word-symbol
+||`simple-name ::= `word-symbol | `non-word-symbol
 ||
 ||`word-symbol ::= `word-start-mark { `word-continue-mark }*
 ||
@@ -442,9 +437,9 @@ presentations of the same `spec are entirely equivalent:
 ||
 ||`special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
 >>
-Sample `names:
+Sample `simple-names:
 [[
-||    Date                    $$$$            ?!
+||    Date                    $$$$          ?!
 ||    yymmdd2date             <*>           :=:
 ||    well_ordered?           ~==           
 ]]
@@ -457,18 +452,18 @@ can <emphasis>not</emphasis> occur in a `non-word-symbol:
 ]]
 Restriction.
 As mentioned before, no whitespace is allowed in `symbols:
-while [[anode]] is a single `name, both [[a node]] and
-[[an ode]] consist of two `names.
-Further, the case (lower or upper) of `letters in `names is
+while [[anode]] is a single `simple-name, both [[a node]] and
+[[an ode]] consist of two `simple-names.
+Further, the case (lower or upper) of `letters in `simple-names is
 significant: [[grandparent]], [[grandParent]] and
-[[grandpaRent]] are three different `names.
+[[grandpaRent]] are three different `simple-names.
 </para>
 <!-- ================================================================= -->
 <para>
 Restriction.
-In general, `names can be chosen freely.
+In general, `simple-names can be chosen freely.
 However, the following <emphasis>reserved symbols</emphasis> have a
-special meaning and must not be used for `names:
+special meaning and must not be used for `simple-names:
 <!-- !! echo RESWORDS | abc -w meta -->
 [[
 ||    as              endspec       infixr           relax
@@ -491,16 +486,16 @@ allowed inside any reserved symbol.
 </para>
 <!-- ================================================================= -->
 <para>
-`Non-word-symbols can be used to choose convenient `names
+`Non-word-symbols can be used to choose convenient `simple-names
 for `operators that, conventionally, are written with
 non-alphabetic marks.
 </para>
 <!-- ================================================================= -->
 <para>
 Some &Metaslang; users follow the convention of using
-`names that start with a capital letter for
+`simple-names that start with a capital letter for
 `unit-identifiers and `type-names and for `constructors,
-while `word-symbols chosen for `op-names and `field-names start with a
+while `word-symbols chosen for `ops and `field-names start with a
 lower-case `letter.
 Both plain `local-variables and `local-type-variables are often chosen
 to be single lower-case `letters: [[x]], [[y]], [[z]],
@@ -511,7 +506,7 @@ preferred for `local-type-variables.
 the mark [[?]].
 These are just conventions that users are free to follow or
 ignore, but in particular some convention distinguishing 
-`constructors from `op-names and `local-variables is
+`constructors from `ops and `local-variables is
 recommended.
 </para>
 </section>
@@ -731,7 +726,7 @@ file <"C:/units/Layout/Tools/Pivot.sw">,
 while [[Props#SDF]] refers to the `unit-term of
 `infile-unit-definition [[SDF = ...]] contained
 in file  <"C:/units/Layout/Props.sw">.
-As a special case, a `unit-term with the same name as the file may be
+As a special case, a `unit-term with the same `name as the file may be
 referenced without a `fragment-identifier. For example, in the current
 case, if the file  <"C:/units/Layout/Props.sw"> contains the  `unit-term of
 `infile-unit-definition [[Props = ...]], then this `unit-term can be referred to
@@ -766,8 +761,8 @@ When used as a `spec-term, the elaboration of a
 `unit-identifier must yield a `spec.
 </para>
 <para>
-The elaboration of a `spec-term, if defined, yields a
-``closed'' `spec-form as defined in the next subsection.
+The elaboration of a `spec-term, if defined, yields an
+``expanded'' `spec-form as defined in the next subsection.
 </para>
 <!-- ***************************************************************** -->
 <section><title>Spec Forms</title>
@@ -784,7 +779,7 @@ Sample `spec-forms:
 </para>
 <!-- ================================================================= -->
 <para>
-A <emphasis>closed</emphasis> `spec-form is a `spec-form
+An <emphasis>expanded</emphasis> `spec-form is a `spec-form
 containing no `import-declarations.
 </para>
 <para>
@@ -799,12 +794,13 @@ Chapter.
 <section><title>Qualifications</title>
 <!--====================================================================-->
 <para>
-Names of types and `ops may be <emphasis>unqualified</emphasis>
+`Names of types and `ops may be <emphasis>simple</emphasis>
 or <emphasis>qualified</emphasis>.
-The difference is that `unqualified-names do not contain a
+The difference is that `simple-names are ``unqualified'': they
+do not contain a
 dot sign ``[[.]]'', while `qualified-names are prefixed with
-a ```qualifier'' followed by a dot.  Examples of unqualified
-names are [[Date]], [[today]] and [[<*>]].
+a ```qualifier'' followed by a dot.  Examples of
+`simple-names are [[Date]], [[today]] and [[<*>]].
 Examples of `qualified-names are 
 [[Calendar.Date]], [[Calendar.today]] and [[Monoid.<*>]].
 </para>
@@ -819,7 +815,7 @@ Unlike in earlier versions of Specware, there is no rigid
 relationship between `qualifiers and the `unit-identifiers
 identifying `specs.
 The author of a collection of `specs may use the `qualifier
-deemed most appropriate for any `type-name or `op-name.
+deemed most appropriate for any `type- or `op-name.
 For example, there could be a single `spec dubbed
 [[SetsAndBags]] that introduces two new `ops, one called
 [[Set.union]] and one called [[Bag.union]].
@@ -830,33 +826,33 @@ belongs together.
 </para>
 
 <para>
-`Type-names and `op-names are <emphasis>introduced</emphasis> in a
+`Type-names and `ops are <emphasis>introduced</emphasis> in a
 `declaration or `definition, and may then be
 <emphasis>employed</emphasis> elsewhere in the same `spec.
-Thus, all occurrences of a `type-name or `op-name can be divided
+Thus, all occurrences of a `type- or `op-name can be divided
 into ``introductions'' and ``employs''.
-The name as introduced in an introduction is the 
-<emphasis>full name</emphasis> of the type or `op.
-If that name is unqualified, the full name is unqualified.
-If the name as introduced is qualified, then so is the full
-name.
+The `name as introduced in an introduction is the 
+<emphasis>full</emphasis> `name of the type or `op.
+If that `name is a `simple-name, the full `name is a `simple-name.
+If the `name as introduced is a `qualified-name, then so is the full
+`name.
 </para>
 
 <para>
 For employs the rules are slightly different.  First, if the
-name employed
+`name employed
 occurs just like that in an introduction, then it is the
-full name.
-Also, if the name employed is qualified, it is the full name.
-Otherwise, the name as employed may be unqualified
-shorthand for a qualified full name.
+full `name.
+Also, if the `name employed is qualified, it is the full `name.
+Otherwise, the `name as employed may be unqualified
+shorthand for a qualified full `name.
 For example, given an employ of the unqualified `type-name
-[[Date]], possible qualified full names for it are
+[[Date]], possible qualified full `names for it are
 [[Calendar.Date]], [[DateAndTime.Date]],
-[[Diary.Date]], and so on.  But, of course, the full name
+[[Diary.Date]], and so on.  But, of course, the full `name
 must be one that is introduced in the `spec.
 If there is precisely one `qualified-name introduced whose last part is
-the same as the `unqualified-name employed, then that name is the full name.
+the same as the `simple-name employed, then that `name is the full `name.
 Otherwise, type information may be employed to disambiguate
 (``resolve overloading'').
 </para>
@@ -878,11 +874,11 @@ Here is an illustration of the various possibilities:
 In the definition of type [[Fruit.Basket]] we have three
 unqualified employs of `type-names, viz. [[Apple]], [[Pear]] and
 [[Date]].
-The name [[Apple]] is introduced like that, so the employ
-[[Apple]] already uses the full name; it does not refer to
+The `name [[Apple]] is introduced like that, so the employ
+[[Apple]] already uses the full `name; it does not refer to
 [[Fruit.Apple]].
-The name [[Pear]] is nowhere introduced just like that, so the employ
-must be shorthand for some qualified full name.  There is
+The `name [[Pear]] is nowhere introduced just like that, so the employ
+must be shorthand for some qualified full `name.  There is
 only one applicable introduction, namely [[Fruit.Pear]].
 Finally, for [[Date]] there are two candidates:
 [[Fruit.Date]] and [[Calendar.Date]].  This is ambiguous,
@@ -894,13 +890,13 @@ depending on the intention.
 
 <para>
 It is possible to give a qualification in one go to all
-`unqualified-names introduced in a `spec.
+`simple-names introduced in a `spec.
 If $Q$ is a `qualifier, and
 $S$ is a term denoting a `spec, then
 the term [[$Q$ qualifying
 $S$]] denotes the same `spec as
 $S$, except that each introduction
-of an `unqualified-name $N$ is
+of an `simple-name $N$ is
 replaced by an introduction of the `qualified-name
 [[$Q$.$N$]].
 Employs that before referred to the unqualified introduction
@@ -937,21 +933,20 @@ is the same as that of
 ||
 ||`qualifier ::= `word-symbol
 ||
-||`qualifiable-name ::= `unqualified-name | `qualified-name
+||`name ::= `simple-name | `qualified-name
 ||
-||`unqualified-name ::= `name
-||
-||`qualified-name ::= `qualifier . `name
+||`qualified-name ::= `qualifier . `simple-name
 >>
 Restriction.
-`Qualifiers cannot be reserved symbols.
+`Qualifiers cannot be reserved symbols, with the exception of
+[[Boolean]], which is allowed as a `qualifier.
 </para>
 <para>
 Sample `spec-qualification:
 [[
 ||    Weight qualifying /Units#Weights
 ]]
-Sample `qualifiable-names:
+Sample `names:
 [[
 ||    Key
 ||    $$
@@ -968,7 +963,7 @@ $R$ with each unqualified
 replaced by the `qualified-name
 [[$Q$.$N$]].
 The same replacement applies to all employs of
-$N$ identifying that introduced `name.
+$N$ identifying that introduced `simple-name.
 As always, the result of the replacement is required to be a well-formed
 `spec.
 </para>
@@ -999,17 +994,16 @@ results in:
 ||
 ||`name-map-item ::= `type-name-map-item | `op-name-map-item
 ||
-||`type-name-map-item ::= [ type ] `qualifiable-name +-> `qualifiable-name
+||`type-name-map-item ::= [ type ] `name +-> `name
 ||
-||`op-name-map-item ::=
-||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
+||`op-name-map-item ::= [ op ] `annotable-name +-> `annotable-name
 ||
-||`annotable-qualifiable-name ::= `qualifiable-name [ : `type-descriptor ]
+||`annotable-name ::= `name [ : `type-descriptor ]
 >>
 Restriction.
 A `spec-translation may not map two different `type-names or two different
-`op-names to the same `name.  Note that this implies that
-`type- and `op-names cannot be translated to `names defined in
+`op-names to the same `simple-name.  Note that this implies that
+`type- and `op-names cannot be translated to `simple-names defined in
 the base libraries.
 </para>
 <para>
@@ -1025,8 +1019,7 @@ $M$\<subscript>1\</subscript> +->
 $N$\<subscript>1\</subscript>, ...
 $M<subscript>n</subscript>$ +->
 $N<subscript>n</subscript>$ }]]
-is $R$ with each occurrence of a
-`qualifiable-name
+is $R$ with each occurrence of a `name
 $M<subscript>i</subscript>$
 replaced by
 $N<subscript>i</subscript>$.
@@ -1039,13 +1032,13 @@ the type given by the `type-descriptor.
 If the right-hand side of a `name-map-item carries a type
 annotation, its `type-descriptor must conform to the type of
 the `op-name in the resulting `spec.
-Without such annotation on either side, if a `qualifiable-name
+Without such annotation on either side, if a `name
 to be translated is introduced both as a `type-name and as an
 `op-name in $R$, it must be preceded by [[type]] or [[op]] to
 indicate which of the two is meant.
 Otherwise the indication [[type]] or [[op]] is not
 required, but allowed; if present, it must correspond to the kind of
-`name (`type-name or `op-name) to be translated.
+`simple-name (`type-name or `op-name) to be translated.
 </para>
 <para>
 For example, the elaboration of
@@ -1094,7 +1087,7 @@ $N$.
 First, remove from $R$ all
 `declarations of $D$, and subject
 the result to the effect of $N$,
-meaning that all name translations of
+meaning that all `name translations of
 $N$ and all extensions with
 `declarations are performed.
 Then add the `declarations of $C$,
@@ -1135,9 +1128,8 @@ is a categorical colimit of this pushout diagram:
 Although isomorphic to the result that would be obtained 
 by using a `diagram-colimit, $T$
 is more ``user-oriented'' in two ways:
-the names in $T$ are names from
-$C$, and axioms of
-$D$ not repeated in
+the `names in $T$ are `names from
+$C$, and `claims of $D$ not repeated in
 $C$ are not repeated here either.
 </para>
 <para>
@@ -1188,7 +1180,7 @@ which is the apex of the cocone forming the
 colimit in the category of `specs and `spec-morphisms.
 As always, the result is required to be well formed.
 See further the &Specware; Tutorial.
-<!-- TODO: weird names -->
+<!-- TODO: weird `names -->
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -1221,7 +1213,7 @@ See further the &Specware; User Manual.
 ||
 ||`spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
-A morphism is a formal mapping between two closed `spec-forms that
+A morphism is a formal mapping between two expanded `spec-forms that
 describes exactly how one is translated or extended into the other.
 It consists of the two `specs, referred to as ``domain'' and
 ``codomain'', and a mapping of all `type- and `op-names introduced in
@@ -1244,23 +1236,23 @@ $M<subscript>n</subscript>$ +->
 $N<subscript>n</subscript>$ }]]
 let $R$ be the result of elaborating $S$, and let
 $S'$ be $R$ with each occurrence of a
-`qualifiable-name
+`name
 $M<subscript>i</subscript>$
 replaced by
 $N<subscript>i</subscript>$.
 The same rules apply as for `spec-translation [[translate $S$
 by {]]...[[}]], and the result $S'$ must be well formed, with the
 exception that the restriction on `spec-translations requiring
-different `type- or `op-names to be mapped to different `names
+different `type- or `op-names to be mapped to different `simple-names
 does not apply here.
 Let $T'$ be the result of elaborating $T$.
 Then, first, each `type-name or `op-name introduced in
 $S'$ must also be introduced in $T'$.
 Further, no `type-name or `op-name originating from a
 library `spec may have been subject to translation.
-Finally, each axiom in $S'$ must be a theorem that follows
-from the axioms of $T'$.
-Collectively, the axioms in $S'$
+Finally, each `claim in $S'$ must be a theorem that follows
+from the `claims of $T'$.
+Collectively, the `claims in $S'$
 are known as the <emphasis>proof obligations</emphasis>
 engendered by the morphism.
 They are the formal expression of the requirement that the step from
@@ -1308,7 +1300,7 @@ elaborating $S$ and $T$, respectively, and whose mapping is given
 by the list of `name-map-items in $M$, using type annotations and
 indicators [[type]] and [[op]] as described for `spec-translations,
 and extended to all domain `type- and `op-names not yet covered
-by having these map to themselves.  (In particular, `names from
+by having these map to themselves.  (In particular, `simple-names from
 the base-libraries always map to themselves.)
 </para>
 </section>
@@ -1340,9 +1332,9 @@ the base-libraries always map to themselves.)
 ||     `diagram-node
 ||   | `diagram-edge
 ||
-||`diagram-node ::= `name +-> `spec-term
+||`diagram-node ::= `simple-name +-> `spec-term
 ||
-||`diagram-edge ::= `name : `name -> `name +-> `morphism-term
+||`diagram-edge ::= `simple-name : `simple-name -> `simple-name +-> `morphism-term
 ||     
 >>
 Restriction.
@@ -1351,7 +1343,7 @@ When used as a `diagram-term, the elaboration of a
 </para>
 <para>
 Restriction.
-In a `diagram, the first `name of each `diagram-node and
+In a `diagram, the first `simple-name of each `diagram-node and
 `diagram-edge must be unique (i.e., not be used more than
 once in that `diagram).  Further, for each `diagram-edge
 [[$E$ :
@@ -1396,7 +1388,7 @@ from elaborating the corresponding `spec-terms and
 ** ||
 ** ||`where-term ::= `unit-term where `local-bindings end
 ** ||
-** ||`local-bindings ::= `name = `unit-term { `name = `unit-term }*
+** ||`local-bindings ::= `simple-name = `unit-term { `simple-name = `unit-term }*
 ** >>
 ** </para>
 ** </section>
@@ -1499,9 +1491,9 @@ On elaboration, these are ``expanded''.
 The effect is as if the bodies of these imported `specs (themselves
 in elaborated form, which means that all `import-declarations
 have been expanded, all translations performed and all
-shorthand employs of names have been resolved to full names,
-after which only declarations or definitions of types, ops
-and claims are left)
+shorthand employs of `names have been resolved to full `names,
+after which only declarations or definitions of types, `ops
+and `claims are left)
 is inserted in place in the receiving `spec.
 </para>
 
@@ -1542,7 +1534,7 @@ There are a few restrictions, which are meant to catch
 unintentional naming mistakes.
 First, if two different imported `specs each introduce a
 type or `op
-with the same (full) name, the introductions must be
+with the same (full) `name, the introductions must be
 identical declarations or definitions, or one may be a
 declaration and the other a ``compatible'' definition.
 For example, given
@@ -1566,7 +1558,7 @@ for the case of an ``imported'' declaration together with a
 definition in the receiving `spec.
 Similarly for `op-names, with the addition that an
 `op-definition in the receiving `spec
-must be compatible with an `op-declaration for the same name
+must be compatible with an `op-declaration for the same `name
 in an imported `spec.
 The latter is again a special case of the general requirement that
 import expansion must result in a well-formed `spec.
@@ -1576,7 +1568,7 @@ import expansion must result in a well-formed `spec.
 What is specifically excluded by the above, is giving a
 definition of a type or `op in some `spec, import it, and then
 redefining or declaring that type or `op with the same full
-name in the receiving `spec.
+`name in the receiving `spec.
 </para>
 
 <!--====================================================================-->
@@ -1615,13 +1607,12 @@ If `spec $A$ is imported by
 $B$, each model of
 $B$ is necessarily a model of
 $A$ (after <quote>forgetting</quote>
-any `names newly introduced by $B$).
+any `simple-names newly introduced by $B$).
 So $A$ is then refined by
 $B$, and the morphism from
 $A$ to $B$ is
 known as the <quote>import morphism</quote>.
-As it does not involve translation of `type-names or
-`op-names,
+As it does not involve translation of `type- or `op-names,
 it can be denoted by [[morphism $A$
 -> $B$ {}]].
 </para>
@@ -1634,14 +1625,14 @@ it can be denoted by [[morphism $A$
 ||
 ||`formal-type-parameters ::= `local-type-variable | ( `local-type-variable-list )
 ||
-||`local-type-variable ::= `name
+||`local-type-variable ::= `simple-name
 ||
 ||`local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
 ||
 >>
 Restriction.
 Each `local-type-variable of the `formal-type-parameters must
-be a different `name.
+be a different `simple-name.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -1656,7 +1647,7 @@ Sample `type-declarations:
 <para>
 Every `type-name used in a `spec must be declared (in the
 same `spec or in an imported `spec, included the
-<quote>base-library</quote> `specs that are always implicitly imported).
+``base-library'' `specs that are always implicitly imported).
 A `type-name may have <emphasis>type parameters</emphasis>.
 Given the example `type-declarations above, some valid
 `type-descriptors that can be used in this context are [[Array Date]],
@@ -1803,7 +1794,7 @@ current `spec, or in a later `spec importing the current
 <para>
 Restriction.
 When an `infix-operator (see below) is overloaded,
-all `op-declarations for the `op-name must have the same
+all `op-declarations for the `op must have the same
 `fixity.
 </para>
      ====================== TEY TON ================================== -->
@@ -1818,7 +1809,7 @@ all `op-declarations for the `op-name must have the same
 -->
 <!-- ================================================================= -->
 <para>
-An `op-declaration introduces an `op-name with an associated type.
+An `op-declaration introduces an `op with an associated type.
 The type can be <quote>monomorphic</quote>, like [[String]], or
 <quote>polymorphic</quote> (indicated by a `type-variable-binder).
 In the latter case, an indexed family of values is assigned to
@@ -1892,7 +1883,7 @@ the singleton set {[[()]]}, containing just the unit type.
 Only binary `ops (those having some type
 [[$S$ * $T$ -> $U$]])
 may be declared with a `fixity.
-When declared with a `fixity, the `op-name may be used in infix
+When declared with a `fixity, the `op may be used in infix
 notation, and then it is called an `infix-operator.
 For [[o]] above, this means that [[o(f, g)]] and [[f o g]]
 may be used, interchangeably, with no difference in meaning.
@@ -1979,7 +1970,7 @@ Disambiguation.
 The grammar for `formal-application is ambiguous for cases
 like
 $M N P$, in which
-$M$ is any `name, and
+$M$ is any `simple-name, and
 $N$ is an `infix-operator.
 The ambiguity is resolved in favor of the reading
 as a `formal-infix-application, and then the
@@ -2162,7 +2153,7 @@ Otherwise, the `spec is ill formed.
 ||
 ||`claim-kind ::= axiom | theorem | conjecture
 ||
-||`claim-name ::= `name
+||`claim-name ::= `simple-name
 ||
 ||`claim ::= [ `type-variable-binder ] `expression
 >>
@@ -2252,6 +2243,7 @@ future revisions of Metaslang.
 ||
 ||`closed-type-descriptor ::=
 ||      `type-name
+||    | Boolean
 ||    | `local-type-variable
 ||    | `type-record
 ||    | `type-restriction
@@ -2275,6 +2267,7 @@ Sample `type-descriptors:
 ||    a * Order a * a
 ||    PartialFunction (Key, Value)
 ||    Key
+||    Boolean
 ||    a
 ||    {center : XYpos, radius : Length}
 ||    (Nat | even)
@@ -2282,6 +2275,8 @@ Sample `type-descriptors:
 ||    Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ||    (Nat * Nat)
 ]]
+The meaning of the `type-descriptor [[Boolean]] is the ``inbuilt'' type
+inhabited by the two logical (truth) values [[true]] and [[false]].
 The meaning of a parenthesized `type-descriptor
 [[($T$)]] is the same
 as that of the enclosed `type-descriptor
@@ -2304,18 +2299,18 @@ or `type-variable-binder in which it is introduced.
 <!-- ================================================================= -->
 <para>
 Disambiguation.
-A single `name used as a `type-descriptor is a `local-type-variable
+A single `simple-name used as a `type-descriptor is a `local-type-variable
 when it occurs in the scope of a `formal-type-parameters
 or `type-variable-binder in which it is introduced, and
 then it identifies the textually most recent introduction.
-Otherwise, the `name is a `type-name.
+Otherwise, the `simple-name is a `type-name.
 </para>
 <!-- ================================================================= -->
 <para>
 A `local-type-variable used as a `type-descriptor has no meaning by
 itself, and where relevant to the semantics is either
-<quote>indexed away</quote> (for parameterized types) or
-<quote>instantiated away</quote> (when introduced in a
+``indexed away'' (for parameterized types) or
+``instantiated away'' (when introduced in a
 `formal-type-parameters or `type-variable-binder) before a
 meaning is ascribed to the construct in which it occurs.
 Textually, it has a scope just like a plain `local-variable.
@@ -2328,7 +2323,7 @@ Textually, it has a scope just like a plain `local-variable.
 ||
 ||`type-summand ::= '| `constructor [ `slack-type-descriptor ]
 ||
-||`constructor ::= `name
+||`constructor ::= `simple-name
 ||
 >>
 Sample `type-sum:
@@ -2336,7 +2331,7 @@ Sample `type-sum:
 ||    | Point XYpos | Line XYpos * XYpos
 ]]
 Restriction.
-The `constructors of a `type-sum must all be different `names.
+The `constructors of a `type-sum must all be different `simple-names.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2614,7 +2609,7 @@ in the indexed family of types for the `type-name of the
 <section id="Type-names"><title>Type-names</title>
 <para>
 <<
-||`type-name ::= `qualifiable-name
+||`type-name ::= `name
 >>
 Sample `type-names:
 [[
@@ -2648,7 +2643,7 @@ original assignment.)
 ||
 ||`field-typer ::= `field-name : `type-descriptor
 ||
-||`field-name ::= `name
+||`field-name ::= `simple-name
 ||
 >>
 Sample `type-record:
@@ -2667,7 +2662,7 @@ constituent `field-typers, or else at least two.
 <para>
 A `type-record is like a `type-product, except that the
 components, called <quote>fields</quote>, are identified by
-name instead of by position.
+`name instead of by position.
 The ordering of the `field-typers has no significance:
 [[{center : XYpos, radius : Length}]]
 denotes the same <emphasis>record type</emphasis> as
@@ -2676,7 +2671,7 @@ Therefore we assume in the following, without loss of generality, that
 the fields are ordered lexicographically according to their
 `field-names (as in a dictionary: [[a]] comes
 before [[ab]] comes before [[b]]) using some fixed collating
-order for all marks that may comprise a name.
+order for all marks that may comprise a `name.
 Then each field of a record type with
 $n$ fields has a
 <emphasis>position</emphasis> in the range 1 to
@@ -2949,7 +2944,11 @@ has three inhabitants.
 ||    | ( `expression )
 ||    | ( `inbuilt-op )
 ||
-||`inbuilt-op ::= => | '|'| | && | = | ~= | <<
+||`inbuilt-op ::= `inbuilt-prefix-op | `inbuilt-infix-op
+||
+||`inbuilt-prefix-op ::=  ~
+||
+||`inbuilt-infix-op ::=  =>  |  <=>  |  '|'|  |  &&  |  =  |  ~=  |  <<
 >>
 (The distinctions `tight- and `closed- for `expressions lack
 semantic significance, and merely serve the purpose of avoiding
@@ -2966,12 +2965,14 @@ Sample `expressions:
 ||    fa(x,y) (x <= y)  <=>  ((x < y) or (x = y))
 ||    f(x, x)
 ||    [] : List Arg
-||    <=>
+||    abs(x-y)
+||    restrict posNat? (n+1)
+||    ++
 ||    x
 ||    3260
 ||    z.re
 ||    ("George", Poodle : Dog, 10)
-||    {name = "George", kind = Poodle : Dog, age = 10}
+||    {`name = "George", kind = Poodle : Dog, age = 10}
 ||    (writeLine "key not found"; embed Missing)
 ||    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 ||    project 2
@@ -2991,10 +2992,10 @@ The meaning of a parenthesized `expression
 [[($E$)]] is the same
 as that of the enclosed `expression
 $E$.
-The meaning of a parenthesized `inbuilt-op
-[[($I$)]] is the same
-as that of the `lambda-form
-[[fn (x,y) -> x $I$ y]].
+The meaning of a parenthesized `inbuilt-prefix-op [[($P$)]] is the same
+as that of the `lambda-form [[fn x -> $P$ x]].
+The meaning of a parenthesized `inbuilt-infix-op [[($I$)]] is the same
+as that of the `lambda-form [[fn (x,y) -> x $I$ y]].
 Note that this function is strict in both arguments, unlike $I$ itself.
 </para>
 <!-- ================================================================= -->
@@ -3015,12 +3016,12 @@ introduced.
 <!-- ================================================================= -->
 <para>
 Disambiguation.
-A single `name used as an `expression is a `local-variable
+A single `simple-name used as an `expression is a `local-variable
 when it occurs in the scope of a `local-variable-list
 or `variable-pattern in which a synonymous `local-variable
 is introduced, and then it identifies the textually most recent
 introduction.
-Otherwise, the `name is an `op-name or an `embedder; for the
+Otherwise, the `simple-name is an `op-name or an `embedder; for the
 disambiguation between the latter two, see <link linkend="Embedders"><emphasis>Embedders</emphasis></link>.
 </para>
 <!-- ================================================================= -->
@@ -3110,7 +3111,7 @@ the `application
 ||`rec-let-binding-sequence ::= `rec-let-binding { `rec-let-binding }*
 ||
 ||`rec-let-binding ::=
-||    def `name `formal-parameter-sequence [ : `type-descriptor ] `equals `expression
+||    def `simple-name `formal-parameter-sequence [ : `type-descriptor ] `equals `expression
 ||
 ||`formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
@@ -3152,7 +3153,7 @@ would be [[def f\<superscript>+\</superscript> e x = x + e]], and the
 `let-expression would become [[f\<superscript>+\</superscript> e (f\<superscript>+\</superscript> e x)]].
 The only difference in meaning is that the models of the
 transformed `spec assign a value to the newly introduced
-`op-name [[f\<superscript>+\</superscript>]].
+`op [[f\<superscript>+\</superscript>]].
 </para>
 <!-- ================================================================= -->
 <para>
@@ -3200,7 +3201,7 @@ The value of an `if-expression
 ||
 ||`annotable-variable ::= `local-variable [ : `type-descriptor ]
 ||
-||`local-variable ::= `name
+||`local-variable ::= `simple-name
 ||
 >>
 Sample `quantifications:
@@ -3210,7 +3211,7 @@ Sample `quantifications:
 ]]
 Restriction.
 Each `local-variable of the `local-variable-list must
-be a different `name.
+be a different `simple-name.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -3309,7 +3310,10 @@ increase clarity.
 ||
 ||`prefix-application ::= `application-head `actual-parameter
 ||
-||`application-head ::= `closed-expression | `prefix-application
+||`application-head ::=
+||      `closed-expression
+||    | `inbuilt-prefix-op
+||    | `prefix-application
 ||
 ||`actual-parameter ::= `closed-expression
 ||
@@ -3317,7 +3321,7 @@ increase clarity.
 ||
 ||`operand ::= `tight-expression
 ||
-||`infix-operator ::= `op-name | `inbuilt-op
+||`infix-operator ::= `op-name | `inbuilt-infix-op
 >>
 Sample `applications:
 [[
@@ -3411,8 +3415,8 @@ $T$.
 </para>
 <!-- ================================================================= -->
 <para>
-The value of `application $H P$ is the value returned by
-function $H$ for the argument value $P$.
+The value of `prefix-application $H P$ is the value returned by
+function $(H$ for the argument value $P$.
 </para>
 <para>
 The meaning of `infix-application $P N Q$, in which $P$ and $Q$ are
@@ -3509,8 +3513,8 @@ A `restrict-expression
 [[restrict $P$]] $E$
 is a convenient notation for the `let-expression
 [[let relax $P$]] [[$V$ = $E$ in $V$]], where
-$V$ is some unique fresh `name, that
-is, it is any `name that does not already occur in the
+$V$ is some unique fresh `simple-name, that
+is, it is any `simple-name that does not already occur in the
 `spec, directly or indirectly through an import.
 </para>
 <!--====================================================================-->
@@ -3555,7 +3559,7 @@ obligation as results when using an explicit
 <section id="Op-names"><title>Op-names</title>
 <para>
 <<
-||`op-name ::= `qualifiable-name
+||`op-name ::= `name
 >>
 Sample `op-names:
 [[
@@ -3637,7 +3641,7 @@ except for <quote>significant</quote> whitespace in
 <!--====================================================================-->
 <para>
 `Literals provide denotations for the inhabitants of the
-<quote>base-library</quote> types [[Boolean]], [[Nat]], [[Char]]
+inbuilt and ``base-library'' types [[Boolean]], [[Nat]], [[Char]]
 and [[String]].
 The value of a `literal is independent of the environment.
 </para>
@@ -3769,7 +3773,7 @@ the actual effect may depend on the operating environment:
 <informaltable frame="none">
 <tgroup cols="4">
 <tbody>
-<row><entry>[[    ]]</entry><entry>glyph</entry><entry>decimal</entry><entry>name</entry></row>
+<row><entry>[[    ]]</entry><entry>glyph</entry><entry>decimal</entry><entry>`name</entry></row>
 <row><entry>[[]]</entry><entry>[[]]</entry><entry>[[]]</entry><entry>[[]]</entry></row>
 <row><entry>[[]]</entry><entry>[[ \a]]</entry><entry>&nbsp;&nbsp;&nbsp;7</entry><entry>bell</entry></row>
 <row><entry>[[]]</entry><entry>[[ \b]]</entry><entry>&nbsp;&nbsp;&nbsp;8</entry><entry>backspace</entry></row>
@@ -3818,7 +3822,7 @@ The <quote>null</quote> character can be obtained by using
 ||`significant-whitespace ::= `space | `tab | `newline
 >>
 The presentation of a `significant-whitespace is the
-whitespace suggested by the name (`space, `tab or `newline).
+whitespace suggested by the `name (`space, `tab or `newline).
 </para>
 <!--====================================================================-->
 <para>
@@ -3843,7 +3847,7 @@ The value of a `string-literal is the sequence of characters
 denoted by the `string-literal-glyphs comprising its
 `string-body, where
 the value of a `significant-whitespace is the
-whitespace character suggested by the name (space,
+whitespace character suggested by the `name (space,
 horizontal tab or newline).
 For example, the `string-literal [["seepage"]] is different
 from [["see page"]]; the latter denotes an eight-character
@@ -3889,11 +3893,11 @@ Disambiguation.
 A `closed-expression of the form
 [[$M$.$N$]],
 in which $M$ is a `word-symbol and
-$N$ is a `name, is interpreted as
-an `op-name if
+$N$ is a `simple-name, is interpreted as
+an `op if
 [[$M$.$N$]]
 occurs as the `op-name of an `op-declaration or `op-definition
-in the `spec in which it occurs or in the set of `names
+in the `spec in which it occurs or in the set of `simple-names
 imported from another `spec through an `import-declaration.
 Otherwise,
 [[$M$.$N$]]
@@ -3979,7 +3983,7 @@ there is no need to ever annotate it with a `type-descriptor.)
 >>
 Sample `record-display:
 [[
-||    {name = "George", kind = Poodle : Dog, age = 10}
+||    {`name = "George", kind = Poodle : Dog, age = 10}
 ]]
 The value of a `record-display is the record whose
 components are the respective values of the `expressions of
@@ -4334,8 +4338,8 @@ $T$]] [[| fa((x,y) :]]
 $S$ [[*]]
 [[$S$)]]
 [[$Q$(x,y) => f x = f y}]],
-where the `names [[f]], [[x]] and [[y]] must be replaced by
-``fresh'' `names not clashing with `names already in use in
+where the `simple-names [[f]], [[x]] and [[y]] must be replaced by
+``fresh'' `simple-names not clashing with `simple-names already in use in
 $S$,
 $T$ or
 $Q$.
@@ -4419,8 +4423,8 @@ Sample `embedders:
 ||    embed Cons
 ]]
 Disambiguation.
-If an `expression consists of a single `name, which, in the
-context, is both the `name of a `constructor and the `name
+If an `expression consists of a single `simple-name, which, in the
+context, is both the `simple-name of a `constructor and the `simple-name
 of an `op or a `local-variable in scope, then it is
 interpreted as the latter of the various possibilities.
 For example, in the context of
@@ -4439,9 +4443,9 @@ has value [[no]].
 The interpretation as `embedder is forced by using
 the [[embed]] keyword:
 the value of [[which embed yes]] is [["Yes!"]].
-By using `names that begin with a capital `letter for
+By using `simple-names that begin with a capital `letter for
 `constructors, and 
-`names that do not begin with a capital `letter for
+`simple-names that do not begin with a capital `letter for
 `ops and `local-variables, the risk of an accidental wrong
 interpretation can be avoided.
 </para>
@@ -4704,15 +4708,15 @@ inferred.
 <!--====================================================================-->
 <para>
 Disambiguation.
-A single `name used as a `pattern is an `embed-pattern
+A single `simple-name used as a `pattern is an `embed-pattern
 if it is a `constructor of the type of the `pattern.
-Otherwise, the `name is a `variable-pattern.
+Otherwise, the `simple-name is a `variable-pattern.
 </para>
 <!--====================================================================-->
 <para>
 Restriction.
 Each `local-variable in a `pattern must be a different
-`name, disregarding any `local-variables introduced in
+`simple-name, disregarding any `local-variables introduced in
 `expressions or `type-descriptors contained in the `pattern.
 (For example, [[Line (z, z)]] is not a lawful `pattern,
 since [[z]] is repeated; but [[n : {n : Nat | n < p}]]
@@ -4780,10 +4784,10 @@ replacing each `field-patterner consisting of a single
 `field-name $F$ by the
 `field-patterner [[$F$ = $F$]]
 and replacing each `wildcard-pattern [[_]] in
-$P$ by a unique fresh `name, that is,
-any `name that does not already occur in the `spec, directly or
+$P$ by a unique fresh `simple-name, that is,
+any `simple-name that does not already occur in the `spec, directly or
 indirectly through an import.
-For example, assuming that the `name [[v7944]]
+For example, assuming that the `simple-name [[v7944]]
 is fresh, a tame variant of
 [[
 ||    s0 as _ :: s1 as (Push {top, pop = rest}) :: ss
@@ -4884,7 +4888,7 @@ $P<subscript>t</subscript>$ are the
 six `local-variables [[s0]], [[s1]], [[ss]], [[rest]] and
 [[v7944]].
 In general, they are the accepting `local-variables of the
-original `pattern together with any fresh `names used for
+original `pattern together with any fresh `simple-names used for
 taming.
 Let the value $x$ being matched
 against the pattern be
@@ -4912,7 +4916,7 @@ original `pattern, with acceptance binding
 ||    top = 200
 ||    rest = Empty
 ]]
-obtained by <quote>forgetting</quote> the fresh `name
+obtained by <quote>forgetting</quote> the fresh `simple-name
 [[v7944]].
 </para>
 </section>

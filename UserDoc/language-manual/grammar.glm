@@ -33,9 +33,9 @@ easy reference.
 <formalpara><title>Symbols and Names</title>
 <para>
 <<
-||  `symbol ::= `name | `literal | `special-symbol
+||  `symbol ::= `simple-name | `literal | `special-symbol
 ||  
-||  `name ::= `word-symbol | `non-word-symbol
+||  `simple-name ::= `word-symbol | `non-word-symbol
 ||  
 ||  `word-symbol ::= `word-start-mark { `word-continue-mark }*
 ||  
@@ -149,11 +149,9 @@ easy reference.
 ||  
 ||  `qualifier ::= `word-symbol
 ||  
-||  `qualifiable-name ::= `unqualified-name | `qualified-name
+||  `name ::= `simple-name | `qualified-name
 ||  
-||  `unqualified-name ::= `name
-||  
-||  `qualified-name ::= `qualifier . `name
+||  `qualified-name ::= `qualifier . `simple-name
 >>
 </para>
 </formalpara>
@@ -167,12 +165,11 @@ easy reference.
 ||  
 ||  `name-map-item ::= `type-name-map-item | `op-name-map-item
 ||  
-||  `type-name-map-item ::= [ type ] `qualifiable-name +-> `qualifiable-name
+||  `type-name-map-item ::= [ type ] `name +-> `name
 ||  
-||  `op-name-map-item ::=
-||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
+||  `op-name-map-item ::= [ op ] `annotable-name +-> `annotable-name
 ||  
-||  `annotable-qualifiable-name ::= `qualifiable-name [ : `type-descriptor ]
+||  `annotable-name ::= `name [ : `type-descriptor ]
 >>
 </para>
 </formalpara>
@@ -226,9 +223,9 @@ easy reference.
 ||     `diagram-node
 ||   | `diagram-edge
 ||  
-||  `diagram-node ::= `name +-> `spec-term
+||  `diagram-node ::= `simple-name +-> `spec-term
 ||  
-||  `diagram-edge ::= `name : `name -> `name +-> `morphism-term
+||  `diagram-edge ::= `simple-name : `simple-name -> `simple-name +-> `morphism-term
 ||     
 >>
 </para>
@@ -297,7 +294,7 @@ easy reference.
 ||  
 ||  `formal-type-parameters ::= `local-type-variable | ( `local-type-variable-list )
 ||  
-||  `local-type-variable ::= `name
+||  `local-type-variable ::= `simple-name
 ||  
 ||  `local-type-variable-list ::= `local-type-variable { , `local-type-variable }*
 ||  
@@ -358,7 +355,7 @@ easy reference.
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
-||  `claim-name ::= `name
+||  `claim-name ::= `simple-name
 ||  
 ||  `claim ::= [ `type-variable-binder ] `expression
 >>
@@ -383,6 +380,7 @@ easy reference.
 ||  
 ||  `closed-type-descriptor ::=
 ||      `type-name
+||    | Boolean
 ||    | `local-type-variable
 ||    | `type-record
 ||    | `type-restriction
@@ -401,7 +399,7 @@ easy reference.
 ||  
 ||  `type-summand ::= '| `constructor [ `slack-type-descriptor ]
 ||  
-||  `constructor ::= `name
+||  `constructor ::= `simple-name
 ||  
 >>
 </para>
@@ -443,7 +441,7 @@ easy reference.
 <formalpara><title>Type-names</title>
 <para>
 <<
-||  `type-name ::= `qualifiable-name
+||  `type-name ::= `name
 >>
 </para>
 </formalpara>
@@ -457,7 +455,7 @@ easy reference.
 ||  
 ||  `field-typer ::= `field-name : `type-descriptor
 ||  
-||  `field-name ::= `name
+||  `field-name ::= `simple-name
 ||  
 >>
 </para>
@@ -519,7 +517,11 @@ easy reference.
 ||    | ( `expression )
 ||    | ( `inbuilt-op )
 ||  
-||  `inbuilt-op ::= => | '|'| | && | = | ~= | <<
+||  `inbuilt-op ::= `inbuilt-prefix-op | `inbuilt-infix-op
+||  
+||  `inbuilt-prefix-op ::=  ~
+||  
+||  `inbuilt-infix-op ::=  =>  |  <=>  |  '|'|  |  &&  |  =  |  ~=  |  <<
 >>
 </para>
 </formalpara>
@@ -553,7 +555,7 @@ easy reference.
 ||  `rec-let-binding-sequence ::= `rec-let-binding { `rec-let-binding }*
 ||  
 ||  `rec-let-binding ::=
-||    def `name `formal-parameter-sequence [ : `type-descriptor ] `equals `expression
+||    def `simple-name `formal-parameter-sequence [ : `type-descriptor ] `equals `expression
 ||  
 ||  `formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
@@ -580,7 +582,7 @@ easy reference.
 ||  
 ||  `annotable-variable ::= `local-variable [ : `type-descriptor ]
 ||  
-||  `local-variable ::= `name
+||  `local-variable ::= `simple-name
 ||  
 >>
 </para>
@@ -601,7 +603,10 @@ easy reference.
 ||  
 ||  `prefix-application ::= `application-head `actual-parameter
 ||  
-||  `application-head ::= `closed-expression | `prefix-application
+||  `application-head ::=
+||      `closed-expression
+||    | `inbuilt-prefix-op
+||    | `prefix-application
 ||  
 ||  `actual-parameter ::= `closed-expression
 ||  
@@ -609,7 +614,7 @@ easy reference.
 ||  
 ||  `operand ::= `tight-expression
 ||  
-||  `infix-operator ::= `op-name | `inbuilt-op
+||  `infix-operator ::= `op-name | `inbuilt-infix-op
 >>
 </para>
 </formalpara>
@@ -625,7 +630,7 @@ easy reference.
 <formalpara><title>Op-names</title>
 <para>
 <<
-||  `op-name ::= `qualifiable-name
+||  `op-name ::= `name
 >>
 </para>
 </formalpara>
