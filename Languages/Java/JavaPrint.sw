@@ -192,7 +192,8 @@ Java qualifying spec
       prettysAll
         (addEmptys
            (List.flatten
-              [List.map ppStaticInits cb.staticInits,
+              [List.map toPretty cb.handwritten,
+	       List.map ppStaticInits cb.staticInits,
                List.map ppFldDecl cb.flds,
                List.map ppConstrDecl cb.constrs,
                List.map ppMethDecl cb.meths,
@@ -692,8 +693,10 @@ Java qualifying spec
 
   def ppCondExp (be : BinExp, rest : Option (Expr * CondExp), omitBrackets? : Boolean)
                                                      : Pretty =
+    let (openbr,closebr) = case rest of None -> ("","") | Some _ -> ("(",")") in
       prettysNone
-        [ppBinExp(be,omitBrackets?),
+        [toPretty openbr,
+	 ppBinExp(be,omitBrackets?),
          case rest of 
             None        -> emptyPretty ()
           | Some (e,(ce1,ce2)) -> 
@@ -701,7 +704,9 @@ Java qualifying spec
                 [toPretty " ? ",
                  ppExpr e,
                  toPretty " : ",
-                 ppCondExp (ce1,ce2,false)]]
+                 ppCondExp (ce1,ce2,false)],
+	 toPretty closebr
+	]
 
 %%%% binary expression 
 
@@ -921,7 +926,8 @@ Java qualifying spec
                 ("MyClass",
                  Some ([],"SuperClass"),
                  [([],"SuperI1"), ([],"SuperI2")]),
-                 {staticInits = [],
+                 {handwritten = [],
+		  staticInits = [],
                   constrs = [],
                   flds =
                      [([Private],(Basic JInt,2),

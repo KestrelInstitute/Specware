@@ -34,7 +34,8 @@ sort SuperCls = Option Name
 sort SuperInterf = List Name
 
 sort ClsBody = 
-  { staticInits : List Block,
+  { handwritten : List String,
+    staticInits : List Block,
     flds        : List FldDecl,
     constrs     : List ConstrDecl, 
     meths       : List MethDecl,
@@ -350,6 +351,7 @@ def mapNameClsDecl ii (mods,hdr as (id,supercls,superifs),bdy) =
 op mapNameClsBody: (Ident -> Ident) -> ClsBody -> ClsBody
 def mapNameClsBody ii bdy =
   {
+   handwritten = bdy.handwritten,
    staticInits = map (mapNameBlock ii) bdy.staticInits,
    flds = map (mapNameFldDecl ii) bdy.flds,
    constrs = map (mapNameConstrDecl ii) bdy.constrs,
