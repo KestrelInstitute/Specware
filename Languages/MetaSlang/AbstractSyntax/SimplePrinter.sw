@@ -534,20 +534,21 @@ infix with brackets. And similarly when we see an \verb+Equals+.
              ppSep (ppString ",") (map ppASort srts),
              ppString ")"
            ]
-%      | PBase (qid,[],_) -> ppQualifiedId qid
-%      | PBase (qid,[srt],_) ->
-%           ppConcat [
-%             ppQualifiedId qid,
-%             ppString " ",
-%             ppASort srt
-%           ]
-%      | PBase (qid,srts,_) ->
-%           ppConcat [
-%             ppQualifiedId qid,
-%             ppString " (",
-%             ppSep (ppString ",") (map ppASort srts),
-%             ppString ")"
-%           ]
+     %| PBase (qid,[],_) -> ppQualifiedId qid
+     %| PBase (qid,[srt],_) ->
+     %      ppConcat [
+     %        ppQualifiedId qid,
+     %        ppString " ",
+     %        ppASort srt
+     %      ]
+     %| PBase (qid,srts,_) ->
+     %      ppConcat [
+     %        ppQualifiedId qid,
+     %        ppString " (",
+     %        ppSep (ppString ",") (map ppASort srts),
+     %        ppString ")"
+     %      ]
+      | Boolean _ -> ppString "Boolean"
       | TyVar (tyVar,_) -> ppString tyVar
       | MetaTyVar (tyVar,_) -> 
          let ({link, uniqueId, name}) = ! tyVar in

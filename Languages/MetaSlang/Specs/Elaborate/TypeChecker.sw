@@ -236,6 +236,7 @@ spec {
 					      ^":"^newline
                                               ^(printSort aSrt), 
                                               pos))
+		       | Boolean _ -> ()
                        | TyVar     (tv,      _) -> insert tv
                        | Product   (fields,  _) ->
 			 app (fn (_, s)      -> record_type_vars_used s) fields
