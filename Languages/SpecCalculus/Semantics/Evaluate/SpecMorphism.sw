@@ -280,46 +280,48 @@ Should we check to see if qid is in cod_map??
     let {dom, cod, sortMap, opMap, sm_tm=_} = sm in
     let 
       def verify_sort_def (dom_q, dom_id, dom_info : SortInfo, _) = 
-	let dom_qid = Qualified(dom_q, dom_id) in
 	let (_,dom_sort) = unpackFirstSortDef dom_info in
-	{
-	 translated_sort <- return (translateSortViaSM (dom_sort, sortMap, opMap));
-	 Some cod_qid <- return (evalPartial sortMap dom_qid);
-	 (Some cod_info) <- return (findTheSort (cod_spec, cod_qid));
-	 (_,cod_sort)  <- return (unpackFirstSortDef cod_info);
-	 if equalSort? (translated_sort, cod_sort) then
-	   return ()
-	 else if equivSort? cod_spec (translated_sort, cod_sort) then
-	   return ()
-	 else
-	   let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
-	             "\nThe domain sort " ^ (printSort dom_sort) ^
-		     "\n  translates to " ^ (printSort translated_sort) ^
-		     "\n   which is not " ^ (printSort cod_sort)
-	   in
-	   raise (MorphError (pos, msg))
-	    }
+	case dom_sort of
+	  | Any _ -> return ()
+	  | _ ->
+	    let dom_qid         = Qualified (dom_q, dom_id) in
+	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
+	    let Some cod_qid    = evalPartial sortMap dom_qid in
+	    let (Some cod_info) = findTheSort (cod_spec, cod_qid) in
+	    let cod_sort        = firstSortDefInnerSort cod_info in
+	    if equalSort? (translated_sort, cod_sort) then
+	      return ()
+	    else if equivSort? cod_spec (translated_sort, cod_sort) then
+	      return ()
+	    else 
+	      let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+		        "\nThe domain type " ^ (printSort dom_sort) ^
+			"\n  translates to " ^ (printSort translated_sort) ^
+			"\n   which is not " ^ (printSort cod_sort)
+	      in
+		raise (MorphError (pos, msg))
 
       def verify_op_type (dom_q, dom_id, dom_info : OpInfo, _) = 
-	let dom_qid = Qualified(dom_q, dom_id) in
 	let (_,dom_sort,_) = unpackFirstOpDef dom_info in
-	{
-	 translated_sort <- return (translateSortViaSM (dom_sort, sortMap, opMap));
-	 Some cod_qid <- return (evalPartial opMap dom_qid);
-	 (Some cod_info) <- return (findTheOp (cod_spec, cod_qid));
-	 (_,cod_sort,_)  <- return (unpackFirstOpDef cod_info);
-	 if equalSort? (translated_sort, cod_sort) then
-	   return ()
-	 else if equivSort? cod_spec (translated_sort, cod_sort) then
-	   return ()
-	 else
-	   let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
-	             "\nThe domain sort " ^ (printSort dom_sort) ^
-		     "\n  translates to " ^ (printSort translated_sort) ^
-		     "\n   which is not " ^ (printSort cod_sort)
-	   in
-	   raise (MorphError (pos, msg))
-	    }
+	case dom_sort of
+	  | Any _ -> return ()
+	  | _ ->
+	    let dom_qid         = Qualified (dom_q, dom_id) in
+	    let translated_sort = translateSortViaSM (dom_sort, sortMap, opMap) in
+	    let Some cod_qid    = evalPartial opMap dom_qid in
+	    let Some cod_info   = findTheOp (cod_spec, cod_qid) in
+	    let cod_sort        = firstOpDefInnerSort cod_info in
+	    if equalSort? (translated_sort, cod_sort) then
+	      return ()
+	    else if equivSort? cod_spec (translated_sort, cod_sort) then
+	      return ()
+	    else
+	      let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+		        "\nThe domain type " ^ (printSort dom_sort) ^
+			"\n  translates to " ^ (printSort translated_sort) ^
+			"\n   which is not " ^ (printSort cod_sort)
+	      in
+		raise (MorphError (pos, msg))
     in
       {
        foldOverQualifierMap verify_sort_def () dom_spec.sorts;
