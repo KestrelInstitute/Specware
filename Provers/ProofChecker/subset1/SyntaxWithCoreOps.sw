@@ -102,6 +102,11 @@ spec
     (fa(v) v in? domain sbs =>
            exprFreeVars (sbs @ v) /\ captVars v e = empty)
 
+  % multiple variable declarations:
+
+  op multiVarDecls : ((FSeq Variable * FSeq Type) | equiLong) -> Context
+  def multiVarDecls(vS,tS) = map (embed varDeclaration) (zip (vS, tS))
+
 
   % positional type substitution:
 
