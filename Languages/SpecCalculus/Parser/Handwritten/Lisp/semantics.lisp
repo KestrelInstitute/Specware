@@ -725,11 +725,21 @@ If we want the precedence to be optional:
 ;;  {t ; stmts} = monadSeq (t, {stmts})
 ;;  {p <- t ; stmts} = monadBind (t, (fn p -> {stmts}))
 
+;;;(defun make-monad-term-expression (expression monad-stmt-list l r)
+;;;  (let* (;; (seqIdent    (make-one-name-reference "monadSeq" l r))
+;;;         (seqIdent    (make-unqualified-op-ref "monadSeq" l r))
+;;;         ;; (seqTerm     (make-long-ident-term seqIdent l r))
+;;;         (tupleTerm   (make-tuple-display (list expression monad-stmt-list) l r))
+;;;         (application (make-application seqIdent (list tupleTerm) l r)))
+;;;    application))
+
 (defun make-monad-term-expression (expression monad-stmt-list l r)
   (let* (;; (seqIdent    (make-one-name-reference "monadSeq" l r))
-         (seqIdent    (make-unqualified-op-ref "monadSeq" l r))
+         (seqIdent    (make-unqualified-op-ref "monadBind" l r))
          ;; (seqTerm     (make-long-ident-term seqIdent l r))
-         (tupleTerm   (make-tuple-display (list expression monad-stmt-list) l r))
+         (branch      (make-branch (make-wildcard-pattern l r) monad-stmt-list l r))
+         (fun         (make-lambda-form (list branch) l r))
+         (tupleTerm   (make-tuple-display (list expression fun) l r))
          (application (make-application seqIdent (list tupleTerm) l r)))
     application))
 
