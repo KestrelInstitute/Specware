@@ -141,7 +141,8 @@
 	      (prog1
 		  (handler-bind ((error #'(lambda (signal) 
 					    (throw 'problem (list signal index)))))
-		    (let ((s-expressions '())
+		    (let ((sexp nil)
+			  (s-expressions '())
 			  (n (length trimmed-string)))
 		      (loop
 			(multiple-value-setq (sexp index)
