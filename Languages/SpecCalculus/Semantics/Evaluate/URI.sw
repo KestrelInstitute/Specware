@@ -194,8 +194,8 @@ handled correctly.
 
 \begin{spec}
   op loadFile : URI -> String -> Env ()
-  def loadFile uri fileName = {
-      print ("Loading: " ^ fileName ^ "\n");
+  def loadFile uri fileName = %{
+      % print ("Loading: " ^ fileName ^ "\n");
       case (parseFile fileName) of
         | None -> raise (ParserError fileName)
         | Some specFile -> 
@@ -213,7 +213,7 @@ handled correctly.
                      (value,max(timeStamp,fileWriteTime fileName),depURIs)
                  }
              | Decls decls -> evaluateGlobalDecls uri fileName decls)
-    }
+  %  }
 
   op evaluateGlobalDecls : URI -> String -> List (Decl Position) -> Env ()
   def evaluateGlobalDecls {path,hashSuffix} fileName decls =

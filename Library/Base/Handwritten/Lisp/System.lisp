@@ -7,7 +7,7 @@
 (defun |!warn| (s) (warn "~a" s))
 (defmacro |!time| (x) (time x))
 #-Lispworks
-(defun getenv (x) (re::getenv x))
+(defun getenv (x) (specware::getenv x))
 (defparameter temporaryDirectory (namestring #+allegro(SYSTEM:temporary-directory)
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*))
 

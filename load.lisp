@@ -4,22 +4,25 @@
 
 ;;; ---------------
 
-(defun cur-directory ()
-  (excl::current-directory))
+(defun current-directory ()
+  #+allegro(excl::current-directory)
+  #+Lispworks(hcl:get-working-directory)  ;(current-pathname)
+  )
 
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
-  (excl::chdir directory)
-  (setq lisp::*default-pathname-defaults* (excl::current-directory)))
+  #+allegro(excl::chdir directory)
+  #+Lispworks (hcl:change-directory directory)
+  (setq lisp::*default-pathname-defaults* (current-directory)))
 
 (defun make-sw4 (new-directory)
-  (let ((old-directory (cur-directory)))
+  (let ((old-directory (current-directory)))
     (change-directory new-directory)
     (unwind-protect (load "load.lisp")
     (change-directory old-directory))))
 
 (defun make-system (new-directory)
-  (let ((old-directory (cur-directory)))
+  (let ((old-directory (current-directory)))
     (change-directory new-directory)
     (unwind-protect (load "system.lisp")
     (change-directory old-directory))))

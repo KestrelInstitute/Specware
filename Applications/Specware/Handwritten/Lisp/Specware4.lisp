@@ -1,8 +1,8 @@
 #+Lispworks
 (setq *default-package-use-list* '("CL"))
 
-(defpackage "Specware")
-(in-package "Specware")
+(defpackage "SPECWARE")
+(in-package "SPECWARE")
 
 (terpri) ; purely cosmetic
 
@@ -48,9 +48,12 @@
     (make-pathname :defaults file :type "lisp"))
    (load (make-pathname :defaults file :type nil)))
 
+(defun load-lisp-file (file &rest ignore)
+  (load (make-pathname :defaults file :type "lisp")))
+
 ;; This defines the RE package .. this will go away when the bootstrap
 ;; is complete.
-(compile-and-load-lisp-file "re-legacy")
+;(compile-and-load-lisp-file "re-legacy")
 
 ;; The following list should be generated automatically!
 ;; The list is used only in this file.

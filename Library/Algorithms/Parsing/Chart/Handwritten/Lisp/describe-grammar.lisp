@@ -27,7 +27,7 @@
 ;; The following is called from Languages/SpecCalculus/Parser/Handwritten/Lisp/system.lisp
 ;; to print a postscript version of the bnf for the grammar each time the system is built.
 (defun print-grammar-ps-file (&optional just-rerun-latex?)
-  (let* ((parser-lisp-dir (sys::current-directory))
+  (let* ((parser-lisp-dir (specware::current-directory))
 	 (parser-tex-dir  (make-pathname :directory (append (reverse (cdr (reverse (pathname-directory parser-lisp-dir))))
 							    '("TeX"))))
 	 (*default-pathname-defaults* parser-tex-dir)

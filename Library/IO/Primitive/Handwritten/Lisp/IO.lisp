@@ -26,7 +26,7 @@
       9999999999))
 
 (defun getCurrentDirectory ()
-  (convert-windows-filename (namestring (sys::current-directory))))
+  (convert-windows-filename (namestring (specware::current-directory))))
 
 (defun convert-windows-filename (filestr)
   (let ((strip-c-colon-nm

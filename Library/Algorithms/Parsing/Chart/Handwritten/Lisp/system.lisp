@@ -2,7 +2,7 @@
 
 (in-package "USER")
 
-(re::load-lisp-file "parser-package" :compiled? nil)
+(specware::load-lisp-file "parser-package" :compiled? nil)
 
 (setq *features* (remove :DEBUG-PARSER    *features*))
 (setq *features* (remove :OPTIMIZE-PARSER *features*))
@@ -63,27 +63,27 @@
 
 ;(sys::resize-areas :new #x6000000) ; big! (hmm... too big...)
 
-(re::compile-and-load-lisp-file "comment-hack")
-(re::compile-and-load-lisp-file "parse-decls")
+(specware::compile-and-load-lisp-file "comment-hack")
+(specware::compile-and-load-lisp-file "parse-decls")
 
-#+DEBUG-PARSER (re::compile-and-load-lisp-file "parse-debug-1")
+#+DEBUG-PARSER (specware::compile-and-load-lisp-file "parse-debug-1")
 
-(re::compile-and-load-lisp-file "parse-add-rules")
-(re::compile-and-load-lisp-file "seal-parser")
+(specware::compile-and-load-lisp-file "parse-add-rules")
+(specware::compile-and-load-lisp-file "seal-parser")
 
-(re::compile-and-load-lisp-file "parse-node-utilities")
+(specware::compile-and-load-lisp-file "parse-node-utilities")
 
-(re::compile-and-load-lisp-file "tokenizer-decls")
-(re::compile-and-load-lisp-file "tokenizer")
+(specware::compile-and-load-lisp-file "tokenizer-decls")
+(specware::compile-and-load-lisp-file "tokenizer")
 
-(re::compile-and-load-lisp-file "parse-semantics")
-;;   (re::compile-and-load-lisp-file  "pprint") ; will be here soon 
+(specware::compile-and-load-lisp-file "parse-semantics")
+;;   (specware::compile-and-load-lisp-file  "pprint") ; will be here soon 
 
-(re::compile-and-load-lisp-file "parse-top")
+(specware::compile-and-load-lisp-file "parse-top")
 
-#+DEBUG-PARSER (re::compile-and-load-lisp-file "parse-debug-2")
+#+DEBUG-PARSER (specware::compile-and-load-lisp-file "parse-debug-2")
 
-(re::compile-and-load-lisp-file "describe-grammar")
+(specware::compile-and-load-lisp-file "describe-grammar")
 
 ;(parser4::load-slang-parser "/usr/local/specware/parser/sw-ops") ; object, arrow, span, pullback, etc.
 

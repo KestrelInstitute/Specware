@@ -1,18 +1,15 @@
 ;; Emacs-lisp interaction in terms of re::
 ;; for continuous compatibility.
 
-(defpackage :re)
-(defpackage :sp)
+;;----------------------------
 
-(in-package "RE")
+(defpackage :emacs)
+(in-package :emacs)
 
 (defun re::emacs-eval (string)
   #+allegro(lep::eval-in-emacs string)
   #+Lispworks(eval string))
 
-;;----------------------------
-
-(defpackage :emacs)
 (defvar emacs::*procs* 0)
 
 (defun emacs::make-process (sym)
@@ -48,7 +45,7 @@
 (defvar emacs::*browser-bin* "netscape ")
 
 ;;; sjw: 3/15/01 Use -remote instead of starting a new netscape image
-(defun sp::call-netscape-with-url (url)
+(defun specware::call-netscape-with-url (url)
   (run-shell-command
    (format nil "~A -remote \"openURL(~A)\"" emacs::*browser-bin* url)
    ;(concatenate 'string emacs::*browser-bin* "  " url)

@@ -40,8 +40,6 @@ Notes:
 (defun emacs::mspe-object-selected (n)
    (setq *select-term-number-in-spec* n))
 
-(defun re::mspe-object-selected (n)
-  (setq *select-term-number-in-spec* n))
   ;;; JUNK to be deleted?
   ;;  (setq ri::*selected-msp-object*
   ;;    (object-for-mspe-number n))

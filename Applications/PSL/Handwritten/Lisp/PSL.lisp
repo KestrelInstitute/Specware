@@ -1,8 +1,8 @@
 #+Lispworks
 (setq *default-package-use-list* '("CL"))
 
-(defpackage "Specware")
-(in-package "Specware")
+(defpackage "SPECWARE")
+(in-package "SPECWARE")
 
 (defpackage "EMACS")   ;; needed by the parser
 (defpackage "METASLANG")   ;; needed by the parser
@@ -53,7 +53,7 @@
 
 ;; This defines the RE package .. this will go away when the bootstrap
 ;; is complete.
-(compile-and-load-lisp-file "re-legacy")
+;(compile-and-load-lisp-file "re-legacy")
 
 ;;; (sw) ;; The following list should be generated automatically!
 ;;; (sw) ;; The list is used only in this file.

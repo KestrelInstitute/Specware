@@ -27,29 +27,13 @@
 ;; This is a common load file for all the build files in this direcrtor. 
 ;; This loads and compiles all he files pertaing to the specializer.
 
-(defun cur-directory ()
-  (excl::current-directory))
-
-(defun change-directory (directory)
-  ;; (lisp::format t "Changing to: ~A~%" directory)
-  (excl::chdir directory)
-  (setq lisp::*default-pathname-defaults* (excl::current-directory)))
-
-(defun make-system (new-directory)
-  (let ((old-directory (cur-directory)))
-    (change-directory new-directory)
-    (unwind-protect (load "system.lisp")
-      (change-directory old-directory))))
 
 ;; All library paths are relative to the Specware4 root directory.
 (setq baseDir (sys:getenv "SPECWARE4"))
 
-(defun compile-and-load-lisp-file (file)
-   (excl::compile-file-if-needed (make-pathname :defaults file :type "lisp"))
-   (load (make-pathname :defaults file :type nil)))
 ;; ========
 
-(compile-and-load-lisp-file "tokenizer")
+(specware::compile-and-load-lisp-file "tokenizer")
 
 (defparameter *specware4-tokenizer*
   #'extract-specware4-tokens-from-file)
@@ -57,8 +41,8 @@
 ;; *specware4-parser* is referenced in semantics.lisp, so declare it first...
 (defparameter *specware4-parser* nil)
 
-(compile-and-load-lisp-file "semantics")
-(compile-and-load-lisp-file "parser-interface")
+(specware::compile-and-load-lisp-file "semantics")
+(specware::compile-and-load-lisp-file "parser-interface")
 
 (setq *specware4-parser* (load-parser "rules" :name 'SPECWARE4-PARSER :case-sensitive? t))
   

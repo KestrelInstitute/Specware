@@ -18,10 +18,10 @@
   (setq *Menu-commands* ()))
 
 (defun eval-menu-commands ()
-  (re::emacs-eval (format nil "(progn ~A ~A ~A)"
-			  "(select-frame *current-specware-ui-foci-frame*) "
-			  "(switch-to-buffer *mspe-buffer*) "
-			  (apply #'concatenate (cons 'string (reverse *Menu-commands*))))))
+  (emacs-eval (format nil "(progn ~A ~A ~A)"
+		      "(select-frame *current-specware-ui-foci-frame*) "
+		      "(switch-to-buffer *mspe-buffer*) "
+		      (apply #'concatenate (cons 'string (reverse *Menu-commands*))))))
 
 ;;; --------------------------------------
 
