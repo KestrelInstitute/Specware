@@ -87,7 +87,7 @@ XML qualifying spec
     %%                       | PI        PI
     %%                       | Comment   Comment
     %%
-    let xml_items         = element.content.items   in
+    let xml_items = element.content.items in
     case sd_pattern of
       | Product sd_fields ->
         %% Note that datum_elements is a heterogenous list,
