@@ -1,5 +1,7 @@
 PFunctions qualifying spec
 
+  import Logic
+
   (* Functions are always total in Metaslang. Partial functions can be modeled
   using Option:
   - (f x = Some y) means that f maps x to y, while
@@ -20,5 +22,11 @@ PFunctions qualifying spec
 
   op undefinedAt? : [a,b] PFunction(a,b) * a -> Boolean
   def undefinedAt?(f,x) = embed? None (f x)
+
+  op finite? : [a,b] PFunction(a,b) -> Boolean
+  def [a,b] finite? f =
+    Logic.finite? (fn(x:a) -> definedAt?(f,x))
+
+  type FFunction(a,b) = (PFunction(a,b) | finite?)
 
 endspec

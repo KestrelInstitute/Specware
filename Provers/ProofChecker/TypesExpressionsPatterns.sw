@@ -123,6 +123,6 @@ spec
    && (fa (var:Name, t:Type, p:Pattern)
          pred (typ t)
       && pred (patt p)
-      => pred (patt (alias (var, t, p))))
+      => pred (patt (alias ((var, t), p))))
 
 endspec

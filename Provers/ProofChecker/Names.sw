@@ -1,5 +1,7 @@
 spec
 
+  import Libs/MyBase
+
   (* As in LD, we leave names abstract because the logic is parameterized
   over them. In addition, this allows us to refine them in different ways,
   obtaining different instances of the proof checker. *)

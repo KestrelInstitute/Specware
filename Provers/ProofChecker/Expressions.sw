@@ -1,7 +1,5 @@
 spec
 
-  import Libs/FiniteSequences
-
   import Names
 
   (* Since expressions are defined in terms of types and patterns, we declare
@@ -58,5 +56,19 @@ spec
     | nonRecursiveLet  Pattern * Expression * Expression
     | tuple            FSeqNE Expression
     | tupleProjection  Expression * PosNat
+
+  op conjoinAll : FSeq Expression -> Expression
+  def conjoinAll =
+    the (fn (conjoinAll : FSeq Expression -> Expression) ->
+      (conjoinAll empty = tru) &&
+      (fa(e,exprs) conjoinAll (e |> exprs) =
+                   conjunction (e, conjoinAll exprs)))
+
+  op disjoinAll : FSeq Expression -> Expression
+  def disjoinAll =
+    the (fn (disjoinAll : FSeq Expression -> Expression) ->
+      (disjoinAll empty = tru) &&
+      (fa(e,exprs) disjoinAll (e |> exprs) =
+                   disjunction (e, disjoinAll exprs)))
 
 endspec

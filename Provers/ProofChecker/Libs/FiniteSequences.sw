@@ -25,8 +25,7 @@ FSeq qualifying spec
   import PartialFunctions
 
   op definedAtFirstNNaturals? : [a] PFunction(Nat,a) * Nat -> Boolean
-  axiom definedAtFirstNNaturals?_def is fa(f,n)
-    definedAtFirstNNaturals?(f,n) =
+  def definedAtFirstNNaturals?(f,n) =
     (fa (i:Nat) i <  n =>   definedAt?(f,i)) &&
     (fa (i:Nat) i >= n => undefinedAt?(f,i))
 
@@ -89,19 +88,17 @@ FSeq qualifying spec
   def elem (s,i) = the (fn x -> seqFunction s i = Some x)
 
   op in? infixl 20 : [a] a * FSeq a -> Boolean
-  axiom in?_def is fa(x,s)
-    x in? s = (ex (i:Nat) seqFunction s i = Some x)
+  def in? (x,s) =
+    (ex (i:Nat) seqFunction s i = Some x)
 
   % every element satisfies predicate:
   op forall? : [a] FSeq a * Predicate a -> Boolean
-  axiom forall?_def is fa(s,p)
-    forall?(s,p) =
+  def forall?(s,p) =
     (fa (i:Nat) i < length s => p (s elem i))
 
   % some element satisfies predicate:
   op exists? : fa(a) FSeq a * Predicate a -> Boolean
-  axiom exists?_def is fa(s,p)
-    exists?(s,p) =
+  def exists?(s,p) =
     (ex (i:Nat) i < length s &&  p (s elem i))
 
   % extract subsequence from i to j (both inclusive):
@@ -180,6 +177,13 @@ FSeq qualifying spec
                                then Some (s elem i).2
                                else None))
 
+  op flatten : [a] FSeq (FSeq a) -> FSeq a
+  def [a] flatten =
+    the (fn (flatten : FSeq (FSeq a) -> FSeq a) ->
+      (flatten empty = empty) &&
+      (fa(seq,seqOfSeqs) flatten (seq |> seqOfSeqs) =
+                         seq ++ flatten seqOfSeqs))
+
   % non-empty sequences:
   type FSeqNE a = {s : FSeq a | ~(empty? s)}
 
@@ -202,8 +206,7 @@ FSeq qualifying spec
     subFromLong (s, 1, length s - 1)
 
   op noRepetitions? : [a] FSeq a -> Boolean
-  axiom noRepetitions?_def is fa(s)
-    noRepetitions? s =
+  def noRepetitions? s =
     (fa (i:Nat, j:Nat) i < length s && j < length s && (i ~= j) =>
                        s elem i ~= s elem j)
 

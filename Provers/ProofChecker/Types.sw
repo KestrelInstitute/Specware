@@ -1,7 +1,5 @@
 spec
 
-  import Libs/FiniteSequences
-
   import Names
 
   (* Since types are defined in terms of expressions, we declare a type for

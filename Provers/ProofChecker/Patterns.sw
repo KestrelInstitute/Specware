@@ -1,7 +1,5 @@
 spec
 
-  import Libs/FiniteSequences
-
   import Names
 
   (* Since patterns are defined in terms of types, we declare a (meta) type
@@ -19,10 +17,13 @@ spec
   types, not necessarily sum types. The inference rules require the decorating
   type of an embedding pattern to be a sum type. *)
 
+  % useful notion (frequently used):
+  type TypedVar = Name * Type
+
   type Pattern =
-    | variable  Name * Type
+    | variable  TypedVar
     | embedding Type * Name * Pattern
     | record    FSeq (Name * Pattern)
-    | alias     Name * Type * Pattern
+    | alias     TypedVar * Pattern
 
 endspec

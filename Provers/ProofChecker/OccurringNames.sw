@@ -3,8 +3,6 @@ spec
   (* This spec defines various ops that collect variables and other names
   occurring in syntactic entities (e.g. free variables in expressions). *)
 
-  import Libs/StructureConversions
-
   import Judgements
 
   % variables introduced by pattern:
@@ -12,29 +10,23 @@ spec
   op pattVars : Pattern -> FSet Name
 
   op pattSeqVars : FSeq Pattern -> FSet Name
-  def pattSeqVars patts =  % given patts = p1, ..., pn
-    % compute pattVars p1, ..., pattVars pn:
-    let varSets:FSeq(FSet Name) = map (pattVars, patts) in
-    % compute pattVars p1 \/ ... \/ pattVars pn:
-    foldl (varSets, empty, (\/))
+  def pattSeqVars patts =
+    unionAll (map (pattVars, patts))
 
   def pattVars = fn
     | variable(v,_)    -> singleton v
     | embedding(_,_,p) -> pattVars p
-    | record comps     -> let patts = map (project 2, comps) in
+    | record comps     -> let (_, patts) = unzip comps in
                           pattSeqVars patts
-    | alias(v,_,p)     -> pattVars p with v
+    | alias((v,_),p)   -> pattVars p with v
 
   % free variables in expression:
 
   op exprFreeVars : Expression -> FSet Name
 
   op exprSeqFreeVars : FSeq Expression -> FSet Name
-  def exprSeqFreeVars exprs =  % given exprs = e1, ..., en
-    % compute exprFreeVars e1, ..., exprFreeVars en:
-    let varSets:FSeq(FSet Name) = map (exprFreeVars, exprs) in
-    % compute exprFreeVars e1 \/ ... \/ exprFreeVars en:
-    foldl (varSets, empty, (\/))
+  def exprSeqFreeVars exprs =
+    unionAll (toSet (map (exprFreeVars, exprs)))
 
   def exprFreeVars = fn
     | variable v               -> singleton v
@@ -44,7 +36,7 @@ spec
     | equation(e1,e2)          -> exprFreeVars e1 \/ exprFreeVars e2
     | ifThenElse(e0,e1,e2)     -> exprFreeVars e0 \/
                                   exprFreeVars e1 \/ exprFreeVars e2
-    | record comps             -> let exprs = map (project 2, comps) in
+    | record comps             -> let (_, exprs) = unzip comps in
                                   exprSeqFreeVars exprs
     | recordProjection(e,_)    -> exprFreeVars e
     | recordUpdate(e1,e2)      -> exprFreeVars e1 \/ exprFreeVars e2
@@ -53,20 +45,16 @@ spec
     | restriction(_,e)         -> exprFreeVars e
     | quotienter _             -> empty
     | choice(_,e)              -> exprFreeVars e
-    | cas(e,branches)          -> let exprs = map (project 2, branches) in
-                                  let patts = map (project 1, branches) in
+    | cas(e,branches)          -> let (patts,exprs) = unzip branches in
                                   let def branchVars
                                           (e:Expression, p:Pattern) : FSet Name =
                                           exprFreeVars e -- pattVars p in
-                                  let varSets:FSeq(FSet Name) =
-                                      map2 (branchVars, exprs, patts) in
-                                  foldl (varSets, empty, (\/))
-    | recursiveLet(asgments,e) -> let exprs = map (project 2, asgments) in
-                                  let binds = map (project 1, asgments) in
-                                  let boundVars =
-                                      toSet (map (project 1, binds)) in
+                                  unionAll (map2 (branchVars, exprs, patts))
+                                  \/ exprFreeVars e
+    | recursiveLet(asgments,e) -> let (binds, exprs) = unzip asgments in
+                                  let (vars, _) = unzip binds in
                                   (exprSeqFreeVars exprs \/ exprFreeVars e)
-                                  -- boundVars
+                                  -- toSet vars
     | tru                      -> empty
     | fals                     -> empty
     | negation e               -> exprFreeVars e
@@ -75,12 +63,10 @@ spec
     | implication(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
     | equivalence(e1,e2)       -> exprFreeVars e1 \/ exprFreeVars e2
     | inequation(e1,e2)        -> exprFreeVars e1 \/ exprFreeVars e2
-    | universal(binds,e)       -> let boundVars =
-                                      toSet (map (project 1, binds)) in
-                                  exprFreeVars e -- boundVars
-    | existential(binds,e)     -> let boundVars =
-                                      toSet (map (project 1, binds)) in
-                                  exprFreeVars e -- boundVars
+    | universal(binds,e)       -> let (vars, _) = unzip binds in
+                                  exprFreeVars e -- toSet vars
+    | existential(binds,e)     -> let (vars, _) = unzip binds in
+                                  exprFreeVars e -- toSet vars
     | existential1((v,_),e)    -> exprFreeVars e wout v
     | nonRecursiveLet(p,e,e1)  -> exprFreeVars e \/
                                   (exprFreeVars e1 -- pattVars p)
@@ -112,8 +98,7 @@ spec
 
   op collectFromContext : Context * (ContextElement -> FSet Name) -> FSet Name
   def collectFromContext (cx, collectFunc) =
-    let nameSets:FSeq(FSet Name) = map (collectFunc, cx) in
-    foldl (nameSets, empty, (\/))
+    unionAll (map (collectFunc, cx))
 
   op contextTypes    : Context -> FSet Name
   op contextOps      : Context -> FSet Name
