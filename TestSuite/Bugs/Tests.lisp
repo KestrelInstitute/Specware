@@ -77,6 +77,18 @@ endspec
 
 ")
 
+ ("Bug 0069 : Translate from base"
+  :show   "Bug_0069/TranslateFromBase#M" 
+  :output "??")
+
+ ("Bug 0069 : Translate into base"
+  :show   "Bug_0069/TranslateIntoBase#M" 
+  :output "??")
+
+ ("Bug 0069 : Morphism from base"
+  :show   "Bug_0069/MorphismFromBase#M" 
+  :output "??")
+
  ("Bug 0083 : Ambiguous op not detected"
   :show   "Bug_0083/Ambop#C" 
   :output ";;; Elaborating spec at $TESTDIR/Bug_0083/Ambop#C
