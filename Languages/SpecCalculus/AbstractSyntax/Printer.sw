@@ -122,12 +122,14 @@ SpecCalc qualifying spec
           def ppTranslateRule (rule, _(* position *)) = 
 	    case rule of          
 	      | Sort (left_qid, right_qid, aliases) ->
-	        ppConcat [ppQualifier left_qid,
+	        ppConcat [ppString " type ",
+			  ppQualifier left_qid,
 			  ppString " +-> ",
-			  ppQualifier right_qid]
+			  ppString (printAliases aliases)] % ppQualifier right_qid
 
 	      | Op ((left_qid,_), (right_qid, _), aliases) ->
-		ppConcat [ppQualifier left_qid,
+		ppConcat [ppString " op ",
+			  ppQualifier left_qid,
 			  ppString " +-> ",
 			  ppQualifier right_qid]
 
@@ -186,12 +188,14 @@ SpecCalc qualifying spec
 	  def ppSpecMorphRule (rule, _(* position *)) = 
 	    case rule of          
 	      | Sort (left_qid, right_qid) ->
-	        ppConcat [ppQualifier left_qid,
+	        ppConcat [ppString " type ",
+			  ppQualifier left_qid,
 			  ppString " +-> ",
 			  ppQualifier right_qid]
 	       
 	      | Op ((left_qid, _), (right_qid, _)) ->
-		ppConcat [ppQualifier left_qid,
+		ppConcat [ppString " op ",
+			  ppQualifier left_qid,
 			  ppString " +-> ",
 			  ppQualifier right_qid]
 
