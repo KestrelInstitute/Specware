@@ -237,7 +237,7 @@
 (defun filestring? (str)
   (or (find #\/ str)
       (not (or (member str '("end-spec" "endspec") :test 'string=)
-	       (not (find #\} str))))))
+	       (find #\} str)))))
 
 (defvar *last-swl-args* nil)
 
