@@ -42,8 +42,8 @@
 		    (t
 		     (format t "~&Received EOF.~%"))))))
       
-      (setq *in-specware-shell?* nil))
-    (format t "Exiting Specware Shell. :sw-shell to reenter.~%")))
+      (setq *in-specware-shell?* nil)
+      (format t "~%Exiting Specware Shell. :sw-shell to reenter."))))
 
 (defun sw-shell-command (command)
   (let ((ch (read-char-no-hang)))

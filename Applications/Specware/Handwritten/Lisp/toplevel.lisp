@@ -735,9 +735,11 @@
 	(let* ((dirpath (specware::current-directory))
 	       (newdir (namestring dirpath)))
 	  #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
+	  (emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
+					(specware::ensure-final-slash newdir)))
 	  (when (under-ilisp?)
-	    (emacs::eval-in-emacs (format nil "(setq default-directory ~s
-                                               lisp-prev-l/c-dir/file (cons default-directory nil))"
+	    (emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
+                                                     (cons default-directory nil))"
 					  (specware::ensure-final-slash newdir))))
 	  (princ newdir)
 	  (values)))))
