@@ -25,5 +25,9 @@
 
     
 (defmacro exiting-on-errors (&body body)
-  `(handler-bind ((condition (function bail-out)))
+  `(handler-bind ((storage-condition                    (function bail-out))
+		  (error                                (function bail-out))
+		  (synchronous-operating-system-signal  (function bail-out))
+		  (interrupt-signal                     (function bail-out))
+		  )
      ,@body))
