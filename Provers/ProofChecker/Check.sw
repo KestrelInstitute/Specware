@@ -77,6 +77,20 @@ spec
     else FAIL
     else FAIL
 
+  op checkLastNVars : Context -> Nat -> MayFail (Context * Variables * Types)
+  def checkLastNVars cx n =
+    if length cx >= n then
+    let cxTail:Context = lastN (cx, n) in
+    if forall? (cxTail, embed? varDeclaration) then
+    let def getVarAndType (ce:ContextElement) : Option (Variable * Type) =
+          case ce of varDeclaration(v,t) -> Some (v, t)
+                   | _                   -> None in
+    let vtS:FSeq(Variable*Type) = removeNones (map (getVarAndType, cxTail)) in
+    let (vS:Variables, tS:Types) = unzip vtS in
+    OK (firstN (cx, length cx - n), vS, tS)
+    else FAIL
+    else FAIL
+
   op checkTypeDecl : Context -> TypeName -> MayFail Nat
   def checkTypeDecl cx tn =
     if cx = empty then FAIL
@@ -146,207 +160,6 @@ spec
     else   FAIL
     | _ -> FAIL
 
-
-  op check : Proof -> MayFail Judgement   % defined below
-
-
-  op checkContext : Proof -> MayFail Context
-  def checkContext prf =
-    case check prf of
-      | OK (wellFormedContext cx) -> OK cx
-      | _ -> FAIL
-
-  op checkType : Proof -> MayFail (Context * Type)
-  def checkType prf =
-    case check prf of
-      | OK (wellFormedType (cx, t)) -> OK (cx, t)
-      | _ -> FAIL
-
-  op checkTypeWithContext : Context -> Proof -> MayFail Type
-  def checkTypeWithContext cx prf =
-    case check prf of
-      | OK (wellFormedType (cx1, t)) ->
-        if cx1 = cx then OK t else FAIL
-      | _ -> FAIL
-
-  op checkTypesWithContext : Context -> Proofs -> MayFail Types
-  def checkTypesWithContext cx prfS =
-    checkSequence (map (checkTypeWithContext cx, prfS))
-
-  op checkType?sWithContext : Context -> Proof?s -> MayFail Type?s
-  def checkType?sWithContext cx prf?S =
-    checkOptionSequence (map (mapOption (checkTypeWithContext cx), prf?S))
-
-  op checkSumType : Proof -> MayFail (Context * Constructors * Type?s)
-  def checkSumType prf =
-    case check prf of
-      | OK (wellFormedType (cx, sum (cS, t?S))) ->
-        if length cS = length t?S then OK (cx, cS, t?S) else FAIL
-      | _ -> FAIL
-
-  op checkRecordType : Proof -> MayFail (Context * Fields * Types)
-  def checkRecordType prf =
-    case check prf of
-      | OK (wellFormedType (cx, nary (record fS, tS))) ->
-        if length fS = length tS then OK (cx, fS, tS) else FAIL
-      | _ -> FAIL
-
-  op checkProductType : Proof -> MayFail (Context * Types)
-  def checkProductType prf =
-    case check prf of
-      | OK (wellFormedType (cx, nary (product, tS))) -> OK (cx, tS)
-      | _ -> FAIL
-
-  op checkSubType : Proof -> MayFail (Context * Type * Expression)
-  def checkSubType prf =
-    case check prf of
-      | OK (wellFormedType (cx, subQuot (sub, t, r))) -> OK (cx, t, r)
-      | _ -> FAIL
-
-  op checkSubType2 : Context -> Type -> Proof -> MayFail (Expression)
-  def checkSubType2 cx t prf =
-    case check prf of
-      | OK (wellFormedType (cx1, subQuot (sub, t1, r))) ->
-        if cx1 = cx && t1 = t then OK r else FAIL
-      | _ -> FAIL
-
-  op checkQuotientType : Proof -> MayFail (Context * Type * Expression)
-  def checkQuotientType prf =
-    case check prf of
-      | OK (wellFormedType (cx, subQuot (quotienT, t, q))) -> OK (cx, t, q)
-      | _ -> FAIL
-
-  op checkQuotientType2 : Context -> Type -> Proof -> MayFail (Expression)
-  def checkQuotientType2 cx t prf =
-    case check prf of
-      | OK (wellFormedType (cx1, subQuot (quotienT, t1, q))) ->
-        if cx1 = cx && t1 = t then OK q else FAIL
-      | _ -> FAIL
-
-  op checkExpr : Proof -> MayFail (Context * Expression * Type)
-  def checkExpr prf =
-    case check prf of
-      | OK (wellTypedExpr (cx, e, t)) -> OK (cx, e, t)
-      | _ -> FAIL
-
-  op checkExprWithContext : Context -> Proof -> MayFail (Expression * Type)
-  def checkExprWithContext cx prf =
-    case check prf of
-      | OK (wellTypedExpr (cx1, e, t)) ->
-        if cx1 = cx then OK (e, t) else FAIL
-      | _ -> FAIL
-
-  op checkExprWithContextAndType :
-     Context -> Type -> Proof -> MayFail (Expression)
-  def checkExprWithContextAndType cx t prf =
-    case check prf of
-      | OK (wellTypedExpr (cx1, e, t1)) ->
-        if cx1 = cx && t1 = t then OK e else FAIL
-      | _ -> FAIL
-
-  op checkTheorem : Proof -> MayFail (Context * Expression)
-  def checkTheorem prf =
-    case check prf of
-      | OK (theoreM (cx, e)) -> OK (cx, e)
-      | _ -> FAIL
-
-  op checkTheoremOpDef : Proof -> MayFail (Context * Variable * Type * Expression)
-  def checkTheoremOpDef prf =
-    case checkTheorem prf of
-      | OK (cx, binding (existential1, vS, tS,
-                         binary (equation, nullary (variable v), e))) ->
-        if vS = singleton v
-        && length tS = 1 then
-        let t:Type = first tS in
-        OK (cx, v, t, e)
-        else FAIL
-      | _ -> FAIL
-
-  op checkTheoremReflexivity :
-     Proof -> MayFail (Context * Variable * Type * Expression)
-  def checkTheoremReflexivity prf =
-    case checkTheorem prf of
-      | OK (cx, binding (universal, vS, tS, binary (application, q, vv))) ->
-        if length vS = 1
-        && length tS = 1 then
-        let v:Variable = first vS in
-        let t:Type     = first tS in
-        if exprFreeVars q = empty
-        &&  vv = PAIR (VAR v) (VAR v) then
-        OK (cx, v, t, q)
-        else FAIL
-        else FAIL
-      | _ -> FAIL
-
-  op checkTheoremSymmetry :
-     Context -> Type -> Expression -> Proof -> MayFail ()
-  def checkTheoremSymmetry cx t q prf =
-    case checkTheorem prf of
-      | OK (cx1, binding (universal, vS, tS, e)) ->
-        if cx1 = cx
-        && length vS = 2 then
-        let v1:Variable = vS!0 in
-        let v2:Variable = vS!1 in
-        if v1 ~= v2
-        && tS = seq2 (t, t)
-        && e = (q @ PAIR (VAR v1) (VAR v2)
-                ==>
-                q @ PAIR (VAR v2) (VAR v1)) then
-        OK ()
-        else FAIL
-        else FAIL
-      | _ -> FAIL
-
-  op checkTheoremTransitivity :
-     Context -> Type -> Expression -> Proof -> MayFail ()
-  def checkTheoremTransitivity cx t q prf =
-    case checkTheorem prf of
-      | OK (cx1, binding (universal, vS, tS, e)) ->
-        if cx1 = cx
-        && length vS = 3 then
-        let v1:Variable = vS!0 in
-        let v2:Variable = vS!1 in
-        let v3:Variable = vS!2 in
-        if v1 ~= v2
-        && v2 ~= v3
-        && v3 ~= v1
-        && tS = seq3 (t, t, t)
-        && e = (q @ PAIR (VAR v1) (VAR v2)
-                &&&
-                q @ PAIR (VAR v2) (VAR v3)
-                ==>
-                q @ PAIR (VAR v1) (VAR v3)) then
-        OK ()
-        else FAIL
-        else FAIL
-      | _ -> FAIL
-
-  op checkTheoremEquation : Proof -> MayFail (Context * Expression * Expression)
-  def checkTheoremEquation prf =
-    case checkTheorem prf of
-      | OK (cx, binary (equation, e1, e2)) -> OK (cx, e1, e2)
-      | _ -> FAIL
-
-  op checkTheoremEquationGiven :
-     Context -> Expression -> Expression -> Proof -> MayFail ()
-  def checkTheoremEquationGiven cx e1 e2 prf =
-    case checkTheorem prf of
-      | OK (cx1, e) ->
-        if cx1 = cx && e = (e1 == e2) then OK () else FAIL
-      | _ -> FAIL
-
-  op checkTypeEquivalence : Proof -> MayFail (Context * Type * Type)
-  def checkTypeEquivalence prf =
-    case check prf of
-      | OK (typeEquivalence (cx, t1, t2)) -> OK (cx, t1, t2)
-      | _ -> FAIL
-
-  op checkTypeEquivalenceWithContext : Context -> Proof -> MayFail (Type * Type)
-  def checkTypeEquivalenceWithContext cx prf =
-    case check prf of
-      | OK (typeEquivalence (cx1, t1, t2)) ->
-        if cx1 = cx then OK (t1, t2) else FAIL
-      | _ -> FAIL
 
   op typeSubstInTypeAt : Type       * Type * Type * Position -> MayFail Type
   op typeSubstInExprAt : Expression * Type * Type * Position -> MayFail Expression
@@ -565,6 +378,249 @@ spec
               | OK newP -> OK (alias (v, t, newP))
               | FAIL    -> FAIL
           else FAIL
+
+
+  op check : Proof -> MayFail Judgement   % defined below
+
+
+  op checkContext : Proof -> MayFail Context
+  def checkContext prf =
+    case check prf of
+      | OK (wellFormedContext cx) -> OK cx
+      | _ -> FAIL
+
+  op checkType : Proof -> MayFail (Context * Type)
+  def checkType prf =
+    case check prf of
+      | OK (wellFormedType (cx, t)) -> OK (cx, t)
+      | _ -> FAIL
+
+  op checkTypeWithContext : Context -> Proof -> MayFail Type
+  def checkTypeWithContext cx prf =
+    case check prf of
+      | OK (wellFormedType (cx1, t)) ->
+        if cx1 = cx then OK t else FAIL
+      | _ -> FAIL
+
+  op checkTypesWithContext : Context -> Proofs -> MayFail Types
+  def checkTypesWithContext cx prfS =
+    checkSequence (map (checkTypeWithContext cx, prfS))
+
+  op checkType?sWithContext : Context -> Proof?s -> MayFail Type?s
+  def checkType?sWithContext cx prf?S =
+    checkOptionSequence (map (mapOption (checkTypeWithContext cx), prf?S))
+
+  op checkSumType : Proof -> MayFail (Context * Constructors * Type?s)
+  def checkSumType prf =
+    case check prf of
+      | OK (wellFormedType (cx, sum (cS, t?S))) ->
+        if length cS = length t?S then OK (cx, cS, t?S) else FAIL
+      | _ -> FAIL
+
+  op checkRecordType : Proof -> MayFail (Context * Fields * Types)
+  def checkRecordType prf =
+    case check prf of
+      | OK (wellFormedType (cx, nary (record fS, tS))) ->
+        if length fS = length tS then OK (cx, fS, tS) else FAIL
+      | _ -> FAIL
+
+  op checkProductType : Proof -> MayFail (Context * Types)
+  def checkProductType prf =
+    case check prf of
+      | OK (wellFormedType (cx, nary (product, tS))) -> OK (cx, tS)
+      | _ -> FAIL
+
+  op checkSubType : Proof -> MayFail (Context * Type * Expression)
+  def checkSubType prf =
+    case check prf of
+      | OK (wellFormedType (cx, subQuot (sub, t, r))) -> OK (cx, t, r)
+      | _ -> FAIL
+
+  op checkSubType2 : Context -> Type -> Proof -> MayFail (Expression)
+  def checkSubType2 cx t prf =
+    case check prf of
+      | OK (wellFormedType (cx1, subQuot (sub, t1, r))) ->
+        if cx1 = cx && t1 = t then OK r else FAIL
+      | _ -> FAIL
+
+  op checkQuotientType : Proof -> MayFail (Context * Type * Expression)
+  def checkQuotientType prf =
+    case check prf of
+      | OK (wellFormedType (cx, subQuot (quotienT, t, q))) -> OK (cx, t, q)
+      | _ -> FAIL
+
+  op checkQuotientType2 : Context -> Type -> Proof -> MayFail (Expression)
+  def checkQuotientType2 cx t prf =
+    case check prf of
+      | OK (wellFormedType (cx1, subQuot (quotienT, t1, q))) ->
+        if cx1 = cx && t1 = t then OK q else FAIL
+      | _ -> FAIL
+
+  op checkExpr : Proof -> MayFail (Context * Expression * Type)
+  def checkExpr prf =
+    case check prf of
+      | OK (wellTypedExpr (cx, e, t)) -> OK (cx, e, t)
+      | _ -> FAIL
+
+  op checkExprWithContext : Context -> Proof -> MayFail (Expression * Type)
+  def checkExprWithContext cx prf =
+    case check prf of
+      | OK (wellTypedExpr (cx1, e, t)) ->
+        if cx1 = cx then OK (e, t) else FAIL
+      | _ -> FAIL
+
+  op checkExprWithContextAndType :
+     Context -> Type -> Proof -> MayFail Expression
+  def checkExprWithContextAndType cx t prf =
+    case check prf of
+      | OK (wellTypedExpr (cx1, e, t1)) ->
+        if cx1 = cx && t1 = t then OK e else FAIL
+      | _ -> FAIL
+
+  op checkExprsWithContextAndTypes :
+     Context -> Types -> Proofs -> MayFail Expressions
+  def checkExprsWithContextAndTypes cx tS prfS =
+    case checkSequence (map (checkExprWithContext cx, prfS)) of
+      | OK exTyS ->
+        let (eS, tS1) = unzip exTyS in
+        if tS1 = tS then OK eS else FAIL
+      | _ -> FAIL
+
+  op checkTheorem : Proof -> MayFail (Context * Expression)
+  def checkTheorem prf =
+    case check prf of
+      | OK (theoreM (cx, e)) -> OK (cx, e)
+      | _ -> FAIL
+
+  op checkTheoremWithContext : Context -> Proof -> MayFail Expression
+  def checkTheoremWithContext cx prf =
+    case check prf of
+      | OK (theoreM (cx1, e)) ->
+        if cx1 = cx then OK e else FAIL
+      | _ -> FAIL
+
+  op checkTheoremGiven : Context -> Expression -> Proof -> MayFail ()
+  def checkTheoremGiven cx e prf =
+    case check prf of
+      | OK (theoreM (cx1, e1)) ->
+        if cx1 = cx && e1 = e then OK () else FAIL
+      | _ -> FAIL
+
+  op checkTheoremOpDef : Proof -> MayFail (Context * Variable * Type * Expression)
+  def checkTheoremOpDef prf =
+    case checkTheorem prf of
+      | OK (cx, binding (existential1, vS, tS,
+                         binary (equation, nullary (variable v), e))) ->
+        if vS = singleton v
+        && length tS = 1 then
+        let t:Type = first tS in
+        OK (cx, v, t, e)
+        else FAIL
+      | _ -> FAIL
+
+  op checkTheoremReflexivity :
+     Proof -> MayFail (Context * Variable * Type * Expression)
+  def checkTheoremReflexivity prf =
+    case checkTheorem prf of
+      | OK (cx, binding (universal, vS, tS, binary (application, q, vv))) ->
+        if length vS = 1
+        && length tS = 1 then
+        let v:Variable = first vS in
+        let t:Type     = first tS in
+        if exprFreeVars q = empty
+        &&  vv = PAIR (VAR v) (VAR v) then
+        OK (cx, v, t, q)
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkTheoremSymmetry :
+     Context -> Type -> Expression -> Proof -> MayFail ()
+  def checkTheoremSymmetry cx t q prf =
+    case checkTheorem prf of
+      | OK (cx1, binding (universal, vS, tS, e)) ->
+        if cx1 = cx
+        && length vS = 2 then
+        let v1:Variable = vS!0 in
+        let v2:Variable = vS!1 in
+        if v1 ~= v2
+        && tS = seq2 (t, t)
+        && e = (q @ PAIR (VAR v1) (VAR v2)
+                ==>
+                q @ PAIR (VAR v2) (VAR v1)) then
+        OK ()
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkTheoremTransitivity :
+     Context -> Type -> Expression -> Proof -> MayFail ()
+  def checkTheoremTransitivity cx t q prf =
+    case checkTheorem prf of
+      | OK (cx1, binding (universal, vS, tS, e)) ->
+        if cx1 = cx
+        && length vS = 3 then
+        let v1:Variable = vS!0 in
+        let v2:Variable = vS!1 in
+        let v3:Variable = vS!2 in
+        if v1 ~= v2
+        && v2 ~= v3
+        && v3 ~= v1
+        && tS = seq3 (t, t, t)
+        && e = (q @ PAIR (VAR v1) (VAR v2)
+                &&&
+                q @ PAIR (VAR v2) (VAR v3)
+                ==>
+                q @ PAIR (VAR v1) (VAR v3)) then
+        OK ()
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkTheoremEquation : Proof -> MayFail (Context * Expression * Expression)
+  def checkTheoremEquation prf =
+    case checkTheorem prf of
+      | OK (cx, binary (equation, e1, e2)) -> OK (cx, e1, e2)
+      | _ -> FAIL
+
+  op checkTheoremEquationGiven :
+     Context -> Expression -> Expression -> Proof -> MayFail ()
+  def checkTheoremEquationGiven cx e1 e2 prf =
+    case checkTheorem prf of
+      | OK (cx1, e) ->
+        if cx1 = cx && e = (e1 == e2) then OK () else FAIL
+      | _ -> FAIL
+
+  op checkTheoremCongruence :
+     Context -> Expression -> Expression -> Proof -> MayFail ()
+  def checkTheoremCongruence cx e q prf =
+    case checkTheorem prf of
+      | OK (cx1, binding (universal, vS, tS, e0)) ->
+        if cx1 = cx
+        && length vS = 2 then
+        let v1:Variable = vS!0 in
+        let v2:Variable = vS!1 in
+        if v1 ~= v2
+        && ~(v1 in? exprFreeVars e)
+        && ~(v2 in? exprFreeVars e)
+        && e0 = (q @ PAIR (VAR v1) (VAR v2) ==> e @ VAR v1 == e @ VAR v2) then
+        OK ()
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkTypeEquivalence : Proof -> MayFail (Context * Type * Type)
+  def checkTypeEquivalence prf =
+    case check prf of
+      | OK (typeEquivalence (cx, t1, t2)) -> OK (cx, t1, t2)
+      | _ -> FAIL
+
+  op checkTypeEquivalenceWithContext : Context -> Proof -> MayFail (Type * Type)
+  def checkTypeEquivalenceWithContext cx prf =
+    case check prf of
+      | OK (typeEquivalence (cx1, t1, t2)) ->
+        if cx1 = cx then OK (t1, t2) else FAIL
+      | _ -> FAIL
 
 
   def check = fn
@@ -850,30 +906,93 @@ spec
       (case checkTheoremEquation prf1 of OK (cx, e1, e2) ->
       OK (wellTypedExpr (cx, e1 ~== e2, BOOL))
       | _ -> FAIL)
+    | exRecordUpdate (prf1, prf2) ->
+      (case checkExpr prf1 of OK (cx, e1, t1) ->
+      (case checkExprWithContext cx prf2 of OK (e2, t2) ->
+      (case checkRecordTypeUnion t1 t2 of OK t ->
+      OK (wellTypedExpr (cx, e1 <<< e2, t))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exRestriction (prfTy, prfEx, prfTh) ->
+      (case checkSubType prfTy of OK (cx, t, r) ->
+      (case checkExprWithContext cx prfEx of OK (e, t1) ->
+      if t1 = t then
+      (case checkTheoremGiven cx (r @ e) prfTh of OK () ->
+      OK (wellTypedExpr (cx, RESTRICT r e, t \ r))
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exChoice (prfTy, prfEx, prfTh) ->
+      (case checkQuotientType prfTy of OK (cx, t, q) ->
+      (case checkExprWithContext cx prfEx of OK (e, arrow (t0, t1)) ->
+      if t0 = t then
+      (case checkTheoremCongruence cx e q prfTh of OK () ->
+      OK (wellTypedExpr (cx, CHOOSE q e, t/q --> t1))
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exConjunction prf ->
+      (case checkExpr prf of
+         OK (cx, ifThenElse (e1, e2, nullary falsE), boolean) ->
+      OK (wellTypedExpr (cx, e1 &&& e2, BOOL))
+      | _ -> FAIL)
+    | exDisjunction prf ->
+      (case checkExpr prf of
+         OK (cx, ifThenElse (e1, nullary truE, e2), boolean) ->
+      OK (wellTypedExpr (cx, e1 ||| e2, BOOL))
+      | _ -> FAIL)
+    | exImplication prf ->
+      (case checkExpr prf of
+         OK (cx, ifThenElse (e1, e2, nullary truE), boolean) ->
+      OK (wellTypedExpr (cx, e1 ==> e2, BOOL))
+      | _ -> FAIL)
+    | exEquivalence (prf1, prf2) ->
+      (case checkExpr prf1 of OK (cx, e1, boolean) ->
+      (case checkExprWithContext cx prf2 of OK (e2, boolean) ->
+      OK (wellTypedExpr (cx, e1 <==> e2, BOOL))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exRecord (prf, prfS) ->
+      (case checkRecordType prf of OK (cx, fS, tS) ->
+      (case checkExprsWithContextAndTypes cx tS prfS of OK eS ->
+      OK (wellTypedExpr (cx, RECORD fS eS, TRECORD fS tS))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exTuple (prf, prfS) ->
+      (case checkProductType prf of OK (cx, tS) ->
+      (case checkExprsWithContextAndTypes cx tS prfS of OK eS ->
+      OK (wellTypedExpr (cx, TUPLE eS, PRODUCT tS))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exAbstraction (prf, nVars) ->
+      (case checkExpr prf of OK (cx, e, t) ->
+      (case checkLastNVars cx nVars of OK (cx0, vS, tS) ->
+      OK (wellTypedExpr (cx0, FNN vS tS e, PRODUCT tS --> t))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exUniversal (prf, nVars) ->
+      (case checkExpr prf of OK (cx, e, t) ->
+      (case checkLastNVars cx nVars of OK (cx0, vS, tS) ->
+      OK (wellTypedExpr (cx0, FAA vS tS e, PRODUCT tS --> t))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exExistential (prf, nVars) ->
+      (case checkExpr prf of OK (cx, e, t) ->
+      (case checkLastNVars cx nVars of OK (cx0, vS, tS) ->
+      OK (wellTypedExpr (cx0, EXX vS tS e, PRODUCT tS --> t))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exExistential1 (prf, nVars) ->
+      (case checkExpr prf of OK (cx, e, t) ->
+      (case checkLastNVars cx nVars of OK (cx0, vS, tS) ->
+      OK (wellTypedExpr (cx0, EXX1 vS tS e, PRODUCT tS --> t))
+      | _ -> FAIL)
+      | _ -> FAIL)
 
 (*@@@
-    | exRecordUpdate (prf1, prf2) ->
-
-         pj (wellTypedExpr (cx, e1, TRECORD (fS ++ fS1) (tS ++ tS1)))
-      && pj (wellTypedExpr (cx, e2, TRECORD (fS ++ fS2) (tS ++ tS2)))
-      && length fS = length tS
-      && toSet fS1 /\ toSet fS2 = empty
-      => pj (wellTypedExpr (cx,
-                            e1 <<< e2,
-                            TRECORD (fS ++ fS1 ++ fS2) (tS ++ tS1 ++ tS2))))
-
-    | exRestriction          Proof * Proof * Proof
-    | exChoice               Proof * Proof * Proof
-    | exConjunction          Proof * Proof
-    | exDisjunction          Proof * Proof
-    | exImplication          Proof * Proof
-    | exEquivalence          Proof * Proof
-    | exRecord               Proof * Proofs
-    | exTuple                Proof * Proofs
-    | exAbstraction          Proof * Nat
-    | exUniversal            Proof
-    | exExistential          Proof
-    | exExistential1         Proof
     | exIfThenElse           Proof * Proof * Proof
     | exOpInstance           Proof * Proofs * Operation
     | exEmbedder0            Proof * Constructor

@@ -84,16 +84,16 @@ spec
     | exRecordUpdate         Proof * Proof
     | exRestriction          Proof * Proof * Proof
     | exChoice               Proof * Proof * Proof
-    | exConjunction          Proof * Proof
-    | exDisjunction          Proof * Proof
-    | exImplication          Proof * Proof
+    | exConjunction          Proof
+    | exDisjunction          Proof
+    | exImplication          Proof
     | exEquivalence          Proof * Proof
     | exRecord               Proof * Proofs
     | exTuple                Proof * Proofs
     | exAbstraction          Proof * Nat
-    | exUniversal            Proof
-    | exExistential          Proof
-    | exExistential1         Proof
+    | exUniversal            Proof * Nat
+    | exExistential          Proof * Nat
+    | exExistential1         Proof * Nat
     | exIfThenElse           Proof * Proof * Proof
     | exOpInstance           Proof * Proofs * Operation
     | exEmbedder0            Proof * Constructor
