@@ -42,6 +42,14 @@ FSeq qualifying spec
   def seqSuchThat =
     inverse seqFunction
 
+  op length : [a] FSeq a -> Nat
+  def length s =
+    the (fn len -> definedAtFirstNNaturals? (seqFunction s, len))
+
+  % return i-th element:
+  op ! infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
+  def ! (s,i) = the (fn x -> seqFunction s i = Some x)
+
   op empty : [a] FSeq a
   def empty = seqSuchThat (fn(i:Nat) -> None)
 
@@ -58,9 +66,9 @@ FSeq qualifying spec
   def ++ (s1,s2) =
     seqSuchThat (fn(i:Nat) ->
      % first (length s1) elements are from s1:
-          if i < length s1             then Some (s1 elem i)
+          if i < length s1             then Some (s1!i)
      % following (length s2) elements are from s2:
-     else if i < length s1 + length s2 then Some (s2 elem (i - length s1))
+     else if i < length s1 + length s2 then Some (s2!(i - length s1))
      % there are no other elements:
      else None)
 
@@ -90,14 +98,6 @@ FSeq qualifying spec
   def update(s,i,x) =
     seqSuchThat (fn(j:Nat) -> if j = i then Some x else seqFunction s j)
 
-  op length : [a] FSeq a -> Nat
-  def length s =
-    the (fn len -> definedAtFirstNNaturals? (seqFunction s, len))
-
-  % return i-th element:
-  op elem infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
-  def elem (s,i) = the (fn x -> seqFunction s i = Some x)
-
   op in? infixl 20 : [a] a * FSeq a -> Boolean
   def in? (x,s) =
     (ex (i:Nat) seqFunction s i = Some x)
@@ -105,12 +105,12 @@ FSeq qualifying spec
   % every element satisfies predicate:
   op forall? : [a] FSeq a * Predicate a -> Boolean
   def forall?(s,p) =
-    (fa (i:Nat) i < length s => p (s elem i))
+    (fa (i:Nat) i < length s => p (s!i))
 
   % some element satisfies predicate:
   op exists? : fa(a) FSeq a * Predicate a -> Boolean
   def exists?(s,p) =
-    (ex (i:Nat) i < length s &&  p (s elem i))
+    (ex (i:Nat) i < length s &&  p (s!i))
 
   % extract subsequence from i to j (both inclusive):
   op subFromTo : [a] {(s,i,j) : FSeq a * Nat * Nat |
@@ -145,14 +145,14 @@ FSeq qualifying spec
   op map : [a,b] (a -> b) * FSeq a -> FSeq b
   def map(f,s) =
     seqSuchThat (fn(i:Nat) -> if i < length s
-                              then Some (f (s elem i))
+                              then Some (f (s!i))
                               else None)
 
   op map2 : [a,b,c] {(f,s1,s2) : (a * b -> c) * FSeq a * FSeq b |
                      length s1 = length s2} -> FSeq c
   def map2(f,s1,s2) =
     seqSuchThat (fn(i:Nat) -> if i < length s1 % = length s2
-                              then Some (f (s1 elem i, s2 elem i))
+                              then Some (f (s1!i, s2!i))
                               else None)
 
   op filter : [a] FSeq a * Predicate a -> FSeq a
@@ -176,16 +176,16 @@ FSeq qualifying spec
                  -> FSeq (a * b)
   def zip(s1,s2) =
     seqSuchThat (fn(i:Nat) -> if i < length s1 % = length s2
-                              then Some (s1 elem i, s2 elem i)
+                              then Some (s1!i, s2!i)
                               else None)
 
   op unzip : [a,b] FSeq (a * b) -> FSeq a * FSeq b
   def unzip s =
     (seqSuchThat (fn(i:Nat) -> if i < length s
-                               then Some (s elem i).1
+                               then Some (s!i).1
                                else None),
      seqSuchThat (fn(i:Nat) -> if i < length s
-                               then Some (s elem i).2
+                               then Some (s!i).2
                                else None))
 
   op flatten : [a] FSeq (FSeq a) -> FSeq a
@@ -200,7 +200,7 @@ FSeq qualifying spec
     let s = filter (s, embed? Some) in
     the (fn r -> length r = length s &&
                  (fa(i:Nat) i < length r =>
-                    Some (r elem i) = s elem i))
+                    Some (r!i) = s!i))
 
   type Permutation = Bijection(Nat,Nat)
 
@@ -215,7 +215,7 @@ FSeq qualifying spec
   def [a] permute(s,p) =
     the (fn (r : FSeq a) ->
       length r = length s &&
-      (fa(i:Nat) i < length s => s elem i = r elem (p i)))
+      (fa(i:Nat) i < length s => s!i = r!(p i)))
 
   op permuted? : [a] FSeq a * FSeq a -> Boolean
   def permuted?(s1,s2) =
@@ -227,12 +227,10 @@ FSeq qualifying spec
   type FSeqNE a = {s : FSeq a | ~(empty? s)}
 
   op first : [a] FSeqNE a -> a
-  def first s =
-    s elem 0
+  def first s = s!0
 
   op last : [a] FSeqNE a -> a
-  def last s =
-    s elem (length s - 1)
+  def last s = s!(length s - 1)
 
   % left tail (i.e. remove last element):
   op ltail : [a] FSeqNE a -> FSeq a
@@ -246,14 +244,13 @@ FSeq qualifying spec
 
   op noRepetitions? : [a] FSeq a -> Boolean
   def noRepetitions? s =
-    (fa (i:Nat, j:Nat) i < length s && j < length s && (i ~= j) =>
-                       s elem i ~= s elem j)
+    (fa (i:Nat, j:Nat) i < length s && j < length s && i ~= j => s!i ~= s!j)
 
   % sequences without repetitions:
   type FSeqNR a = (FSeq a | noRepetitions?)
 
   op indexOf : [a] {(s,x) : FSeqNR a * a | x in? s} -> Nat
   def indexOf(s,x) =
-    the (fn(i:Nat) -> s elem i = x)
+    the (fn(i:Nat) -> s!i = x)
 
 endspec

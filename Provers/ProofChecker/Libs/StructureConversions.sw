@@ -43,7 +43,7 @@ spec
   def FMap.fromSequences(domSeq,rngSeq) =
     FMap.mapSuchThat (fn x ->
       if x in? domSeq
-      then let i = indexOf (domSeq, x) in Some (rngSeq elem i)
+      then let i = indexOf (domSeq, x) in Some (rngSeq!i)
       else None)
 
 endspec
