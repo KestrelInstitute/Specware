@@ -53,6 +53,7 @@ SpecCalc qualifying spec {
       | Diag    dg  -> SpecCalc.print (printDiagram  base_spec reverse_context dg)
       | Colimit col -> SpecCalc.print (printColimit  base_spec reverse_context col)
       | Other other -> evaluateOtherPrint other (positionOf term)
+      | Proof _     -> SpecCalc.print ""
       | InProcess   -> SpecCalc.print "No value!");
    SpecCalc.print "\n";
    return (value, time_stamp, depUnitIds)
