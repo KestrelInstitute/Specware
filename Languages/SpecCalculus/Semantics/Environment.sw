@@ -75,6 +75,7 @@ UnitId_Dependency.
     run {
       print "\nDeclaring globals ...";
       newGlobalVar ("BaseInfo", (None : Option RelativeUnitId, initialSpecInCat)); % as opposed to emptySpec, which doesn't contain Boolean, etc.
+      newGlobalVar ("BaseNames", ([] : QualifiedIds)); % cache for quick access
       newGlobalVar ("GlobalContext", PolyMap.emptyMap);
       newGlobalVar ("LocalContext", PolyMap.emptyMap);
       newGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
@@ -83,11 +84,32 @@ UnitId_Dependency.
       return ()
     }
 
+  op setBase : ((Option RelativeUnitId) * Spec) -> Env ()
+  def setBase (baseInfo as (_, base_spec)) = 
+    let base_sort_names = 
+        foldriAQualifierMap (fn (q, id, _, names) ->
+			     cons (Qualified(q, id), names))
+	                    [mkQualifiedId("Boolean", "Boolean"),
+			     mkUnQualifiedId "Boolean"] 
+			    base_spec.sorts
+    in
+    let base_op_names = 
+        foldriAQualifierMap (fn (q, id, _, names) ->
+			     cons (Qualified(q, id), names))
+	                    [] 
+			    base_spec.ops
+    in			    
+    let base_names = (base_sort_names, base_op_names) in			   
+    {
+     writeGlobalVar ("BaseInfo",  baseInfo);
+     writeGlobalVar ("BaseNames", base_names)  % cache for quick access
+    }
+
   op getBase : Env ((Option RelativeUnitId) * Spec)
   def getBase = readGlobalVar "BaseInfo"
 
-  op setBase : ((Option RelativeUnitId) * Spec) -> Env ()
-  def setBase baseInfo = writeGlobalVar ("BaseInfo", baseInfo)
+  op getBaseNamesM : Env (QualifiedIds * QualifiedIds)
+  def getBaseNamesM = readGlobalVar "BaseNames"
 
   op getBaseSpec : () -> Spec
   def getBaseSpec() =
@@ -98,6 +120,14 @@ UnitId_Dependency.
          | Some _ -> return baseSpec
       } in
       run prog 
+
+  op clearBaseNames : Env ()
+  def clearBaseNames =  writeGlobalVar ("BaseNames", [])
+
+  op getBaseNames : () -> QualifiedIds * QualifiedIds
+  def getBaseNames () =
+    let prog = {x <- getBaseNamesM; return x} in
+    run prog
 
   op showGlobalContext : Env String
   def showGlobalContext = {

@@ -114,9 +114,12 @@ get a unit from a unit id string.
     let prog = { (optBaseUnitId,_) <- getBase;
 		 case optBaseUnitId of
 		   | None   -> 
-		     { emptyGlobalContext;
-		       setBaseToPath "/Library/Base";
-		       return true }
+		     { 
+		      %% maybe following two should be invoked inseparably...
+		      emptyGlobalContext;
+		      clearBaseNames;
+		      setBaseToPath "/Library/Base";
+		      return true }
 		   | Some _ -> return false }
     in
     run (catch prog toplevelHandler)
@@ -126,7 +129,9 @@ get a unit from a unit id string.
   op reintializeSpecware : () -> Boolean
   def reinitializeSpecware () =
     let prog = {
+      %% maybe following two should be invoked inseparably...
       emptyGlobalContext;
+      clearBaseNames;
       reloadBase;
       return true
     } in
