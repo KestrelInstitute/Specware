@@ -47,4 +47,5 @@ Palo Alto, CA, 94304
 Phone/FAX: (650) 320-8888
 Email: info@kt-llc.com" accord-version)))
 
-;; The phone/FAX number is that for KT.
+#+cmu
+(push *restart-init-function* ext:*after-save-initializations*)
