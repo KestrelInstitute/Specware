@@ -260,6 +260,7 @@ with a loop or out of a conditional.
 		let (spc,condition) = condition in
                 let (cspc,bodyStmt) = consume cspc body (cons (first, seen)) in
 		let (cspc,block,condExp) = termToCExp cspc spc condition in
+		%% !! Only correct if preTest? is true
                 let whileStmt = While (condExp, bodyStmt) in
 		let stmt = prependBlockStmt(block,whileStmt) in
                 let (cspc,rest) = consume cspc cont (cons (first, seen)) in
@@ -285,7 +286,7 @@ with a loop or out of a conditional.
       if graph = [] then
         (cspc,Nop)
       else
-        consume cspc 0 [(length graph)]
+        consume cspc (findTopIndex graph) [(length graph)]
 
   op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> Boolean -> CSpec * CStmt
   def termToCStmtNew cspc spc term final? =

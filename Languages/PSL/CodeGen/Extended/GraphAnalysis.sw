@@ -43,12 +43,19 @@ spec
 	     body      : Index,
 %	     endLoop   : Index,
 	     cont      : Index }
+    | Deleted				% So we can delete nodes without reindexing
 
   op noContinue: Index			% To represent return destination
   def noContinue = ~ 1
     
   sort Node = Index * NodeContent * List Index % predecessors
   sort Graph = List Node		% In some topological order
+
+  op  deletedNode?: Node -> Boolean
+  def deletedNode? nd =
+    case nd of
+      | (_,Deleted,_) -> true
+      | _ -> false
 
   op nodeContent: Nat * Graph -> NodeContent
   def nodeContent(i,g) = (nth(g,i)).2
@@ -73,6 +80,7 @@ spec
       | IfThenElse {condition, trueBranch, falseBranch, cont} ->
         [trueBranch, falseBranch]
       | Loop {condition, preTest?, body, cont} -> [body,cont]
+      | _ -> []
 
   op setNodeContent: Index * NodeContent * Graph -> Graph
   def setNodeContent(i,newNodeContent,g) =
@@ -124,6 +132,22 @@ spec
     let g = removePredecessor(oldSucc,i,g) in
     addPredecessor(newSucc,i,g)
 
+  op addPredecessors: List NodeContent -> Graph
+  def addPredecessors contentsList =
+    mapi (fn (i,nc) -> (0,nc,findPredecessors(i,contentsList))) contentsList
+
+  op findPredecessors: Index * List NodeContent -> List Index
+  def findPredecessors(i,contentsList) =
+    filter (fn j -> member(i,nodeSuccessors(nth(contentsList,j))))
+      (enumerate(0,(length contentsList) - 1))
+	    
+  op  spliceOutNode: Index * Index * Graph -> Graph
+  def spliceOutNode(i,i_s,g) =
+    let g = foldl (fn (pred,g) -> changeSuccessor(pred,i,i_s,g))
+	      g (predecessors(i,g))
+    in
+    let g = replaceNth(i,g,(0,Deleted,[])) in
+    removePredecessor(i_s,i,g)
 	    
   op setDFSIndex: Index * Nat * Graph -> Graph
   def setDFSIndex(i,newDFSI,g) =
@@ -191,7 +215,12 @@ spec
       breadthFirst([i],[j],[],[],g)
 
   op findTopIndex: Graph -> Index
-  def findTopIndex _ = 0
+  def findTopIndex g =
+    case List.find (fn i -> ~(deletedNode?(nth(g,i))))
+           (tabulate(length g,id))
+      of Some i -> i
+       | None -> noContinue
+
 %     % Index of node with no predecessors
 %     case findOptionIndex
 %            (fn (nd,i) -> if nd.3 = [] then Some i else None)
@@ -229,21 +258,23 @@ spec
     %% with structured nodes replacing simple nodes.
     %% This makes it easier to use indices as references before the whole
     %% graph is computed.
+    let _ = debug("Input:\n"^printGraph baseG) in
+    let baseG = preStructureSimplifyGraph baseG in
     let topIndex = findTopIndex(baseG) in
+    if topIndex = noContinue then baseG
+    else
     let baseG = insertDFSIndices (baseG,topIndex) in
     %% DFS indices tell which nodes are higher in the graph and are used to
     %% to determine which links are looping links
-    %% let - = print(printGraph baseG) in
+    let _ = debug("Before Structuring:\n"^printGraph baseG) in
     let
       def buildStructuredGraph(nd,exits,g) =
 	if member(nd,exits) or nd = noContinue then g
 	else
-	case loopPredecessors(nd,baseG) of
+	case loopPredecessors(nd,g) of
 	  | []  -> buildStraightLine(nd,exits,g)
 	  | preds ->
-	    let loopExits = exitNodes(Cons(nd,getAllPredecessorsBackTo(preds,[nd],
-								       baseG)),
-				      baseG) in
+	    let loopExits = exitNodes(Cons(nd,getAllPredecessorsBackTo(preds,[nd], g)), g) in
 	    (case loopExit?(nd,loopExits,g) of
 	       | Some (cond,body,cont) -> buildLoop(nd,true,nd,cond,body,cont,exits,loopExits,g)
 	       | None ->
@@ -291,16 +322,18 @@ spec
 	      then Some(negateEnvTerm condition,falseBranch,trueBranch)
 	      else None
 	  | _ -> None
-	    
+
       def buildStraightLine(nd,exits,g) =
         if nd = noContinue then g else
-	case nodeContent(nd,baseG) of
+	case nodeContent(nd,g) of
 	  | Block {statements = _, next} ->
 	    buildStructuredGraphRec(next,nd,exits,g)
 	  | Branch {condition, trueBranch, falseBranch} ->
-	    let cont = commonSuccessor(trueBranch,falseBranch,baseG) in
+	    let cont = commonSuccessor(trueBranch,falseBranch,g) in
 	    let g = buildStructuredGraphRec(trueBranch, nd,[cont],g) in
 	    let g = buildStructuredGraphRec(falseBranch,nd,[cont],g) in
+	    %% May have been changed by restructuring
+	    let Branch{condition, trueBranch, falseBranch} = nodeContent(nd,g) in
 	    let g = if cont = trueBranch or cont = falseBranch or cont = noContinue
 	                then g
 			else buildStructuredGraphRec(cont,nd,exits,g) in
@@ -326,8 +359,52 @@ spec
       %% Assumes first node of baseG is the head of the graph
       | _::_ ->
         let g = buildStructuredGraph (topIndex, [], baseG) in
-	%let _ = print(printGraph g) in
+	let _ = debug("After Structuring:\n"^printGraph g) in
+	let g = postStructureSimplifyGraph g in
+	let _ = debug("Final:\n"^printGraph g) in
 	g
+
+  op  preStructureSimplifyGraph: Graph -> Graph
+  def preStructureSimplifyGraph g =
+    %% Remove noOp nodes
+    (foldl (fn (nd,(i,g)) ->
+	   (i + 1,
+	    if noOpNode? nd
+	      then spliceOutNode(i,hd(successors(i,g)),g)  % Only one successor
+	      else g))
+      (0,g) g).2
+
+  op  postStructureSimplifyGraph: Graph -> Graph
+  def postStructureSimplifyGraph g =
+    %% if p then do s until p --> while p do s
+    (foldl (fn (nd,(i,g)) ->
+	   (i + 1,
+	    case nd of
+	     | (_,IfThen {condition = ifCond, trueBranch, cont = ifCont},_) ->
+	       (case nodeContent(trueBranch,g) of
+		 | Loop{condition = loopCond,
+			preTest? = false,
+			body=loopBody,
+			cont = loopCont} ->
+		   (if loopCont = ifCont & ifCond = loopCond
+		     then let g = spliceOutNode(i,trueBranch,g) in
+		          setNodeContent(trueBranch,
+					 Loop{condition = loopCond,
+					      preTest? = true,
+					      body = loopBody,
+					      cont = loopCont},
+					 g)
+		     else g)
+		 | _ -> g)
+	     | _ -> g))
+      (0,g) g).2
+
+  op  noOpNode?: Node -> Boolean
+  def noOpNode? (_,content,_) =
+    case content of
+      | Block{statements = [],next = _} -> true
+      | _ -> false    
+
 
   op printGraph: Graph -> String
   op printNode : Node * Index -> String
@@ -335,7 +412,10 @@ spec
   op printNodeContent : NodeContent -> String
 
   def printGraph(g) =
-    let (str,_) = foldl (fn (nd,(str,i)) -> (str ^ "\n" ^ printNode (nd,i),i+1))
+    let (str,_) = foldl (fn (nd,(str,i)) ->
+			 if deletedNode? nd
+			   then (str,i+1)
+			   else (str ^ "\n" ^ printNode (nd,i),i+1))
                     ("",0) g
     in str
 
@@ -352,7 +432,7 @@ spec
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
 	    ^ "False branch: " ^ (Integer.toString falseBranch)
 	  | Block {statements, next} ->
-	    "Block: " ^ show "; " (map printStat statements)
+	    "Block: " ^ (show "; " (map printStat statements))
 	    ^ "\n  "
 	    ^ "Next: " ^ (Integer.toString next)
 	  | Return t ->
@@ -376,15 +456,6 @@ spec
       | Assign t -> "Assign " ^ (printEnvTerm t)
       | Proc t -> "Proc " ^ (printEnvTerm t)
       | Return t -> "Return " ^ (printEnvTerm t)
-
-  op addPredecessors: List NodeContent -> Graph
-  def addPredecessors contentsList =
-    mapi (fn (i,nc) -> (0,nc,findPredecessors(i,contentsList))) contentsList
-
-  op findPredecessors: Index * List NodeContent -> List Index
-  def findPredecessors(i,contentsList) =
-    filter (fn j -> member(i,nodeSuccessors(nth(contentsList,j))))
-      (enumerate(0,(length contentsList) - 1))
 
   % --------------------------------------------------------------------------------
 
