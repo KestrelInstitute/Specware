@@ -68,7 +68,9 @@ SpecCalc qualifying spec {
     new_spec <- specUnion [translated_residue, cod_spec];     % M(S - dom(M)) U cod(M)
     spec_ref <- return (case sm_tm of
 			  | (SpecMorph (_,cod_spec_tm,_),_) -> showTerm cod_spec_tm
-			  | _ -> "cod ("^showTerm sm_tm^")");
+			  | _ -> 
+			    let sm_desc = showTerm sm_tm in
+			    sm_desc^" (* effect is to import codomain of "^sm_desc^ " *) ");
     return (setImportInfo (new_spec,
 			   {imports      = [(spec_ref, cod_spec)],
 			    importedSpec = Some cod_spec,

@@ -50,6 +50,17 @@ MetaSlang qualifying spec {
   then id
   else qualifier^"."^id
 
+ def printAliases aliases = 
+  case aliases of
+    | [] -> fail "printAliases: empty name list"
+    | [name] -> printQualifiedId name
+    | first::rest -> 
+      "{" ^ (printQualifiedId first) ^
+      (foldl (fn (qid, str) -> str ^ ", " ^ printQualifiedId qid)
+             ""
+	     rest)
+      ^ "}"
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Type Variables
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

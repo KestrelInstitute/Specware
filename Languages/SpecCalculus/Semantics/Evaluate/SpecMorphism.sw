@@ -5,7 +5,8 @@ Synchronized with r1.4 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSpecMor
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
-  import Spec/Utilities % for coerceToSpec
+  import URI/Utilities                                % for uriToPath, if used...
+  import Spec/Utilities                               % for coerceToSpec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
 \end{spec}
 
@@ -14,6 +15,18 @@ coherence conditions of the morphism elements.
 
 \begin{spec}
   def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules) = {
+    %% -------------------------------------------
+    %% next three lines are optional:
+    uri      <- getCurrentURI;
+    filename <- return ((uriToPath uri) ^ ".sw");
+    print (";;; Processing spec morphism "
+	   ^ (case uri.hashSuffix of
+		| Some nm -> nm ^ " "
+		| _ -> "")
+	   ^ "in "
+	   ^ filename
+	   ^ "\n");
+    %% -------------------------------------------
     (domValue,domTimeStamp,domDepURIs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepURIs) <- evaluateTermInfo codTerm;
     case (coerceToSpec domValue, coerceToSpec codValue) of

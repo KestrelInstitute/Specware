@@ -4,6 +4,7 @@ Much extended from r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagra
 
 \begin{spec}
 SpecCalc qualifying spec {
+  import URI/Utilities                                    % for uriToPath, if used...
   import Signature
   import /Languages/MetaSlang/Specs/Categories/AsRecord
   import /Library/Legacy/DataStructures/ListUtilities     % for listUnion
@@ -17,7 +18,19 @@ Lots of proof obligations. Needs thought.
   def SpecCalc.evaluateDiag elems = {
     (dgm : SpecDiagram, timeStamp, depURIs) <-
          foldM evaluateDiagElem ((emptyDiagram (specCat ())),0,[]) elems;
-      return (Diag dgm,timeStamp,depURIs)
+    %% -------------------------------------------
+    %% next three lines are optional:
+    uri      <- getCurrentURI;
+    filename <- return ((uriToPath uri) ^ ".sw");
+    print (";;; Processing spec diagram "
+	   ^ (case uri.hashSuffix of
+		| Some nm -> nm ^ " "
+		| _ -> "")
+	   ^ "in "
+	   ^ filename
+	   ^ "\n");
+    %% -------------------------------------------
+    return (Diag dgm,timeStamp,depURIs)
     }
 \end{spec}
 

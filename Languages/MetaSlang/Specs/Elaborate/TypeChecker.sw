@@ -328,56 +328,70 @@ spec {
              | _ -> srt)
 
        | Base (given_sort_qid, instance_sorts, pos) ->
+	 let def given_sort_str () =
+	      (printQualifiedId given_sort_qid)
+	      ^(case instance_sorts of
+		  | Nil    -> ""    
+		  | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
+						  str^", "^ "??")
+					   ""
+					   tl) 
+		              ^ ")")
+	 in
          (case findAllSorts (env.internal, given_sort_qid) of
-           | sort_info::r -> 
-             %% TODO: complain if ambiguous
-             (case sort_info of (main_name::_, found_ty_vars, _) -> 
-               ((if ~(length found_ty_vars = length instance_sorts) then
-                   let given_sort_str =
-                        (printQualifiedId main_name)
-                       ^ (case instance_sorts of
-                            | Nil    -> ""    
-                            | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
-                                                            str^", "^ "??")
-                                                     ""
-                                                     tl) 
-                                        ^ ")")
-                   in
-                   let found_sort_str =
-                        (printQualifiedId main_name)
-                       ^ (case found_ty_vars of
-                            | Nil    -> ""    
-                            | hd::tl -> "("^ hd ^ (foldl (fn (ty_var, str) ->
-                                                          str^", "^ ty_var) 
-                                                   ""
-                                                   tl) 
-                                       ^ ")")
-                   in                                
-                   error (env, 
-                          "Sort reference "^given_sort_str^" does not match declared sort "
-                          ^found_sort_str, 
-                          pos)
-                 else ()); 
-                Base (main_name,
-                       map (fn instance_sort -> checkSort (env, instance_sort))
-                           instance_sorts, 
-                       pos)))
-           | [] -> 
-             (let given_sort_str =
-                   (printQualifiedId given_sort_qid)
-                  ^(case instance_sorts of
-                      | Nil    -> ""    
-                      | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
-                                                      str^", "^ "??")
-                                               ""
-                                               tl) 
-                                 ^ ")")
-                   in
-              error (env, 
-                     "Sort identifier in "^given_sort_str^" has not been declared", 
-                     pos);
-              Base (given_sort_qid, instance_sorts, pos)))
 
+           | [] -> 
+             (error (env, 
+                     "Sort identifier in "^(given_sort_str ())^" has not been declared", 
+                     pos);
+              Base (given_sort_qid, instance_sorts, pos))
+
+           | (first_info as (first_aliases,first_ty_vars,_))::other_infos -> 
+	     let _ =
+	         (%% Check for errors...
+		  %% Note: If multiple candidates are returned, then given_sort_qid must be unqualified,
+		  %%       so if some candidate has given_sort_qid as an exact alias, then that
+		  %%       candidate will be first in the list (see comments for findAllSorts),
+		  %%       in which case choose it.
+		  if ((null other_infos) or
+		      exists (fn alias -> alias = given_sort_qid)
+		             first_aliases)
+		    then
+		      (if ~(length first_ty_vars = length instance_sorts) then
+			 let found_sort_str = (printAliases first_aliases)
+					      ^ (case first_ty_vars of
+						   | Nil    -> ""    
+						   | hd::tl -> "("^ hd ^ (foldl (fn (ty_var, str) ->
+										 str^", "^ ty_var) 
+						                                ""
+										tl) 
+					                       ^ ")")
+			 in                                
+			 error (env, 
+				"Sort reference "^(given_sort_str ())^" does not match declared sort "^found_sort_str, 
+				pos)
+		       else 
+			 %%  Normal case goes through here:
+			 %%  either there are no other infos or the first info has as unqualified alias,
+			 %%  and the number of type vars equals the number of instance sorts.
+			 ())
+		  else
+		    %% We know that there are multiple options 
+		    %% (which implies that the given_sort_qid is unqualified), 
+		    %% and that none of them are unqualified, so complain.
+		    let candidates_str = foldl (fn ((aliases, _, _), str) -> 
+						str ^", "^  printAliases aliases)
+		                               (printAliases first_aliases)
+					       other_infos
+		    in
+		      error (env, 
+			     "Sort reference "^(given_sort_str ())^" is ambiguous among "^candidates_str,
+			     pos))
+             in
+	     Base (hd first_aliases,
+		   map (fn instance_sort -> checkSort (env, instance_sort)) instance_sorts, 
+		   pos))
+		
       | CoProduct (fields, pos) ->  
         CoProduct (map (fn (id, None)   -> (id, None) 
                          | (id, Some s) -> (id, Some (checkSort (env, s))))
@@ -737,7 +751,7 @@ spec {
                          (cons ((id, srt), vars), 
                           addVariable (env, id, srt)))
                           ([], env) vars 
- in
+	  in
           let vars = rev vars in
              Bind (bind, vars, elaborateTerm (env, term, term_sort), 
               pos)        
@@ -757,7 +771,7 @@ spec {
                       let alpha = freshMetaTyVar pos in
                       let t = elaborateTerm (env, t, alpha) in
                       cons (t, elab ts))
- in
+	  in
               Seq (elab terms, pos) 
 
     | ApplyN ([t1 as Fun (Embedded _, _, _), t2], pos) -> 

@@ -124,6 +124,8 @@ such time as the current one can made monadic.
    { uri      <- getCurrentURI;
      filename <- return ((uriToPath uri) ^ ".sw");
      hackMemory ();
+     %% -------------------------------------------
+     %% next line is optional:
      print (";;; Processing spec "
 			^ (case uri.hashSuffix of
 			     | Some nm -> nm ^ " "
@@ -131,6 +133,7 @@ such time as the current one can made monadic.
 			^ "in "
             ^ filename
             ^ "\n");
+     %% -------------------------------------------
      case elaboratePosSpec (spc, filename) of
        | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
        | Error msg   -> raise  (OldTypeCheck msg)

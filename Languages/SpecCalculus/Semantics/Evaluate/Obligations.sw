@@ -55,7 +55,7 @@ SpecCalc qualifying spec
     in
       ob_spc
 
-  op translateTerm: Term * MorphismSortMap * MorphismOpMap -> Term
+  op translateTerm: StandardSpec.Term * MorphismSortMap * MorphismOpMap -> StandardSpec.Term
   def translateTerm (tm, sortMap, opMap) =
     let def findName m QId =
 	  case evalPartial m QId of
