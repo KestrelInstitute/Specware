@@ -384,8 +384,6 @@ MetaSlang qualifying spec {
         Subsort   (x2, t2,  _)) -> equalSort? (x1, x2) & equalTerm? (t1, t2)
      | (Base      (q1, xs1, _), 
         Base      (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
-     | (Base     (q1, xs1, _), 
-        Base     (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
      | (TyVar     (v1,      _), 
         TyVar     (v2,      _)) -> v1 = v2
 
