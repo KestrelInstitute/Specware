@@ -11,33 +11,45 @@ M-.
 <section>
 <title>&Specware Mode commands</title>
 
-linefeed	newline-and-indent
-tab		sw:indent-line
-M-*		sw:switch-to-lisp
-M-,		continue-specware-meta-point
-M-.		specware-meta-point
-M-|		sw:electric-pipe
-M-tab		sw:back-to-outer-indent
-M-C-\		sw:indent-region
-M-C-i		sw:back-to-outer-indent
-M-C-q		sw:indent-sexp
+[[
+||tab		sw:indent-line
+||M-tab		sw:back-to-outer-indent
+||linefeed	newline-and-indent
+||M-C-q		sw:indent-sexp
+||M-C-\		sw:indent-region
+||M-*		sw:switch-to-lisp
+||M-.		sw:meta-point
+||M-,		sw:continue-meta-point
+||M-|		sw:electric-pipe
+||
+||C-c %		extract-sexp
+||C-c ;		comment-region
+||C-c l		sw:switch-to-lisp
+||C-c C-p		sw:process-file
+||C-c !		cd-current-directory
+]]
 
-C-c %		extract-sexp
-C-c '		insert-close-quote
-C-c ;		comment-region
-C-c `		insert-open-quote
-C-c b		insert-beta
-C-c d		insert-degree
-C-c e		insert-emptyset
-C-c l		sw:switch-to-lisp
-C-c n		insert-negation
-C-c s		insert-circle-s
-C-c t		insert-center-dot
-C-c u		insert-mu
-C-c x		insert-times
-C-c return	sw:insert-form
-C-c C-m		sw:insert-form
-C-c C-p		process-specware-file
+</section>
+
+<section>
+<title>&Specware Interaction Commands</title>
+
+These are the commands available in the *common-lisp- buffer.
+
+[[
+||tab		sw:indent-line
+||M-tab		sw:back-to-outer-indent
+||linefeed	newline-and-indent
+||M-C-q		sw:indent-sexp
+||M-C-\		sw:indent-region
+||M-*		sw:switch-to-lisp
+||M-.		sw:meta-point
+||M-,		sw:continue-meta-point
+||M-|		sw:electric-pipe
+||
+||C-c l		sw:switch-to-lisp
+]]
+
 
 
 <para>
