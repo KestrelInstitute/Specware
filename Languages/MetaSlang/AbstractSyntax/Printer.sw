@@ -96,7 +96,8 @@ AnnTermPrinter qualifying spec {
               %%        Perhaps that should be disallowed. (It is now).
               qualifier = "Nat"       or 
               qualifier = "String"    or
-              qualifier = "Integer"   or 
+              qualifier = "Integer"   or
+	      qualifier = "Integer_"   or
               qualifier = "General"   or
               qualifier = "Char"      or
               qualifier = "List" 
