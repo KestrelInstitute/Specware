@@ -351,7 +351,7 @@ SpecsToI2L qualifying spec {
   % unfold to special sort in order to get the necessary information to generate code
   % e.g. unfold to sort of the form {n:Nat|n<C} which is needed to generate arrays
   op unfoldToSpecials: Spec * Sort -> Sort
-  def unfoldToSpecials(spc,srt) = srt
+  def unfoldToSpecials(_(*spc*),srt) = srt
   def unfoldToSpecials_(spc,srt) =
   let
     def unfoldToSpecials0(srt) =

@@ -1,6 +1,7 @@
 SpecCalc qualifying spec {
   import Convert
   import ../../MetaSlang/CodeGen/C/ToC
+  import ../../MetaSlang/CodeGen/CodeGenTransforms
   import /Languages/PSL/Semantics/Evaluate/Specs/Op/Legacy
 
   % sort Spec.Spec = ASpec Position
@@ -9,16 +10,17 @@ SpecCalc qualifying spec {
   def oscarToC oscSpec base =
     let cSpec = emptyCSpec in
     let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
+    let envSpec = addMissingFromBase(base,envSpec,builtinSortOp) in
     let cSpec = generateCTypes cSpec envSpec in
     let cSpec = generateCVars cSpec envSpec in
     let cSpec = generateCFunctions cSpec envSpec in {
-      cSpec <- ProcMapEnv.fold generateCProcedure cSpec oscSpec.procedures;
+      cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
       print (PrettyPrint.toString (format (80, ppCSpec cSpec)));
       return cSpec
     }
 
-  op generateCProcedure : CSpec -> Id.Id -> Procedure -> Env CSpec
-  def generateCProcedure cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
+  op generateCProcedure : Spec.Spec -> CSpec -> Id.Id -> Procedure -> Env CSpec
+  def generateCProcedure spc cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
     let initSpec = Mode.modeSpec (initial bSpec) in
     let varDecls =
       List.map (fn argRef -> let (names,fxty,(tyVars,srt),_) = Op.deref (specOf initSpec, argRef) in

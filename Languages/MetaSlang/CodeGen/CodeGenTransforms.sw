@@ -9,6 +9,26 @@ import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
 % --------------------------------------------------------------------------------
 
+% --------------------------------------------------------------------------------
+
+op builtinSortOp: QualifiedId -> Boolean
+def builtinSortOp(qid) =
+  let Qualified(q,i) = qid in
+  %(q="Nat" & (i="Nat" or i="PosNat" or i="toString" or i="natToString" or i="show" or i="stringToNat"))
+  %or
+  (q="Integer" & (i="Integer" or i="NonZeroInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or
+		  i=">" or i=">=" or i="toString" or i="intToString" or i="show" or i="stringToInt"))
+  or
+  (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or
+		  i="=>" or i="<=>" or i="~="))
+  or
+  (q="Char" & (i="Char" or i="chr" or i="isUpperCase" or i="isLowerCase" or i="isAlpha" or
+	       i="isNum" or i="isAlphaNum" or i="isAscii" or i="toUpperCase" or i="toLowerCase"))
+  or
+  (q="String" & (i="String" or i="writeLine" or i="toScreen" or i="concat" or i="++" or
+		 i="^" or i="newline" or i="length" or i="substring"))
+
+% --------------------------------------------------------------------------------
 (**
  * identifies the int sorts with the Integer types; this makes sense, if the base spec is not part of the
  * code generation and treated as builtin unit
@@ -597,6 +617,7 @@ def addMissingFromBase(bspc,spc,ignore) =
 
 op addMissingFromSort: Spec * Spec * (QualifiedId -> Boolean) * MS.Sort * SortOpInfos -> SortOpInfos
 def addMissingFromSort(bspc,spc,ignore,srt,minfo) =
+  %let _ = writeLine("addMissingFromSort: "^(printSort srt)) in
   case srt of
     | Arrow(srt1,srt2,_) ->
       let minfo = addMissingFromSort(bspc,spc,ignore,srt1,minfo) in
@@ -605,13 +626,16 @@ def addMissingFromSort(bspc,spc,ignore,srt,minfo) =
     | CoProduct(fields,_) -> foldl (fn((_,Some srt),minfo) -> addMissingFromSort(bspc,spc,ignore,srt,minfo)|_ -> minfo) minfo fields
     | Quotient(srt,term,_) -> addMissingFromTerm(bspc,spc,ignore,term,addMissingFromSort(bspc,spc,ignore,srt,minfo))
     | Subsort(srt,term,_) -> addMissingFromTerm(bspc,spc,ignore,term,addMissingFromSort(bspc,spc,ignore,srt,minfo))
-    | Base(qid,srts,_) ->
+    | Base(qid as Qualified(q,id),srts,_) ->
       if ignore(qid) then minfo else
       let minfo = foldl (fn(srt,minfo) -> addMissingFromSort(bspc,spc,ignore,srt,minfo)) minfo srts in
       (case findTheSort(spc,qid) of
 	 | Some _ -> minfo
 	 | None -> (case findTheSort(bspc,qid) of
-		      | None -> fail("can't happen: couldn't find sort definition for "^printQualifiedId(qid))
+		      | None -> fail("can't happen: couldn't find sort def for "^printQualifiedId(qid)
+				     %^"\n"^(printSpec bspc)
+				     %^"\n"^(printSpec spc)
+				    )
 		      | Some sinfo ->
 		        %let _ = writeLine("adding sort "^printQualifiedId(qid)^" from base spec.") in
 		        addSortInfo2SortOpInfos(qid,sinfo,minfo)
@@ -1027,5 +1051,12 @@ def conformOpDeclsTerm(spc,srt,term,_) =
 	  | _ -> t
     in
     mapSpec (adjustApplTerm,id,id) spc
+
+% --------------------------------------------------------------------------------
+% debug
+
+op showSorts: Spec -> ()
+def showSorts(spc) =
+  appSpec ((fn(_)->()),(fn(srt)->writeLine(printSort(srt))),(fn(_)->())) spc
 
 endspec
