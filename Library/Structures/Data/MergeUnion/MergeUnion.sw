@@ -29,7 +29,7 @@ spec {
 
  op initMergeUnionMap    : fa (a, b) Map(a, b) -> MergeUnionMap(a,b)
  op merge                : fa (a,b) MergeUnionMap (a,b) * MergeUnionNode (a,b) * MergeUnionNode (a,b) -> MergeUnionMap (a,b)
- op extractQuotientLists : fa (a,b) MergeUnionMap (a,b) -> List (a * List (MergeUnionNode (a,b)))
+ op extractQuotientLists : fa (a,b) MergeUnionMap (a,b) -> List (List (MergeUnionNode (a,b)))
 
  def initMergeUnionMap key_value_map =
   foldMap (fn new_mu_map -> fn key -> fn value ->
@@ -93,7 +93,8 @@ spec {
              (emptyMap : Map (a, List (MergeUnionNode (a,b))))
    	     mu_map
   in
-  foldMap (fn result -> fn key -> fn mu_node_list -> Cons ((key, mu_node_list), result))
+  foldMap (fn result -> fn _ -> fn mu_node_list ->  % ignore root key 
+	   Cons (mu_node_list, result))
           []
           root_map
 
