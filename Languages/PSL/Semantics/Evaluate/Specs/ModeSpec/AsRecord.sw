@@ -15,7 +15,7 @@ ModeSpec qualifying spec
       hidden : OpRefSet.Set,
       invariants : ClaimRefSet.Set,
       context : HigherOrderMatching.Context,
-      rewriteRules : RewriteRules,
+      rewriteRules : DemodRewriteRules,
       elaborated? : Boolean
     }
 
@@ -38,7 +38,7 @@ ModeSpec qualifying spec
   op ModeSpec.context : ModeSpec -> HigherOrderMatching.Context
   def ModeSpec.context modeSpec = modeSpec.context
 
-  op ModeSpec.rewriteRules : ModeSpec -> RewriteRules
+  op ModeSpec.rewriteRules : ModeSpec -> DemodRewriteRules
   def ModeSpec.rewriteRules modeSpec = modeSpec.rewriteRules
 
   op ModeSpec.elaborated? : ModeSpec -> Boolean
@@ -51,7 +51,7 @@ ModeSpec qualifying spec
       hidden = empty,
       invariants = invariants,
       context = makeContext emptySpec,
-      rewriteRules = {unconditional=[],conditional=[]},
+      rewriteRules = {unconditional=empty,conditional=empty},
       elaborated? = false
     }
 
@@ -115,7 +115,7 @@ ModeSpec qualifying spec
       elaborated? = elaborated? modeSpec
     }
 
-  op withRewriteRules infixl 18 : ModeSpec * RewriteRules -> ModeSpec
+  op withRewriteRules infixl 18 : ModeSpec * DemodRewriteRules -> ModeSpec
   def withRewriteRules (modeSpec,rules) = {
       spc = specOf modeSpec,
       variables = variables modeSpec,
@@ -153,9 +153,8 @@ ModeSpec qualifying spec
       newSpec <- SpecEnv.addOp (specOf modeSpec) opInfo position;
       if elaborated? modeSpec then
         let Qualified (qual,id) = idOf opInfo in
-        let rule : RewriteRules =
-          {unconditional = defRule (context modeSpec,qual,id,opInfo), conditional=[]} in
-        let rules = mergeRules [rule,rewriteRules modeSpec] in
+        let rules = defRule (context modeSpec,qual,id,opInfo) in
+        let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
         return ((modeSpec withSpec newSpec)
                           withRewriteRules rules)
       else
@@ -174,9 +173,8 @@ ModeSpec qualifying spec
       ref <- refOf opInfo;
       if elaborated? modeSpec then
         let Qualified (qual,id) = idOf opInfo in
-        let rule : RewriteRules =
-          {unconditional = defRule (context modeSpec,qual,id,opInfo), conditional=[]} in
-        let rules = mergeRules [rule,rewriteRules modeSpec] in
+        let rules = defRule (context modeSpec,qual,id,opInfo) in
+        let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
         return (((modeSpec withSpec newSpec)
                          withRewriteRules rules)
                          withVariables (insert (variables modeSpec, ref)))
@@ -235,16 +233,16 @@ ModeSpec qualifying spec
   % op ModeSpecEnv.printRules : ModeSpec -> Env ()
   def ModeSpecEnv.printRules modeSpec =
     let {unconditional,conditional} = rewriteRules modeSpec in
-    let _ = map printRule unconditional in
-    let _ = map printRule conditional in
+    let _ = map printRule (listRules unconditional) in
+    let _ = map printRule (listRules conditional) in
     return ()
 
   % op addClaim : ModeSpec -> Claim.Claim -> Position -> Env ModeSpec
   def ModeSpec.addClaim modeSpec property position = {
       newSpec <- addClaim (specOf modeSpec) property position;
       if elaborated? modeSpec then
-        let newRules : RewriteRules = {conditional = axiomRules (context modeSpec) property,unconditional=[]} in
-        let rules = mergeRules [newRules,rewriteRules modeSpec] in
+        let newRules = axiomRules (context modeSpec) property in
+        let rules = addUnconditionalRules(newRules,rewriteRules modeSpec) in
         return ((modeSpec withSpec newSpec)
                          withRewriteRules rules)
       else
@@ -272,7 +270,7 @@ ModeSpec qualifying spec
       newModeSpec <- return (setElaborated (modeSpec withSpec elabSpec));
       % norm <- normalize newModeSpec;
       ctxt <- return (makeContext (specOf newModeSpec));
-      rules <- return (specRules ctxt (specOf newModeSpec));
+      rules <- return (demodRules (specRules ctxt (specOf newModeSpec)));
       return ((newModeSpec withContext ctxt) withRewriteRules rules)
     }
 
@@ -290,9 +288,10 @@ ModeSpec qualifying spec
     }
 
   def ModeSpec.simplifyInvariants ruleModeSpec modeSpec =
+    let rules = mergeDemodRules [rewriteRules ruleModeSpec, rewriteRules modeSpec] in
     let
       def doTerm count trm =
-        let lazy = rewriteRecursive (context ruleModeSpec,[],mergeRules [rewriteRules ruleModeSpec, rewriteRules modeSpec],trm) in
+        let lazy = rewriteRecursivePre (context ruleModeSpec,[],rules,trm) in
         case lazy of
           | Nil -> trm
           | Cons([],tl) -> trm
@@ -342,7 +341,7 @@ ModeSpec qualifying spec
   def ModeSpec.simplifyInvariant (modeSpec,claimRef) =
     let
       def doTerm count trm =
-        let lazy = rewriteRecursive (context modeSpec,[],rewriteRules modeSpec,trm) in
+        let lazy = rewriteRecursivePre (context modeSpec,[],rewriteRules modeSpec,trm) in
         case lazy of
           | Nil ->
               % let _ = writeLine "appToSpec: Nil no change" in
@@ -386,7 +385,7 @@ ModeSpec qualifying spec
     newVars <- return (union (variables ms1, variables ms2));
     newHidden <- return (union (hidden ms1, hidden ms2));
     newInvars <- return (union (invariants ms1, invariants ms2));
-    newRules <- return (mergeRules [rewriteRules ms1, rewriteRules ms2]);
+    newRules <- return (mergeDemodRules [rewriteRules ms1, rewriteRules ms2]);
     newElab <- return ((elaborated? ms1) & (elaborated? ms2));
     return {
         spc = newSpc,

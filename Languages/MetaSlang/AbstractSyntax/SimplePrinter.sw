@@ -154,10 +154,10 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppIndent (ppATerm term)
              ]
           | LetRec (decls,term,_) ->
-              let def ppDecl (var,term) =
+              let def ppDecl (v,term) =
                 ppGrConcat [
                   ppString "def ",
-                  ppAVarWithoutSort var,
+                  ppAVarWithoutSort v,
                   ppString " = ",
                   ppATerm term
                 ] in
@@ -171,7 +171,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppNewline,
                 ppATerm term
              ]
-          | Var (var,_) -> ppAVarWithoutSort var
+          | Var (v,_) -> ppAVarWithoutSort v
           | Fun (fun,srt,_) -> ppAFun fun
           | Lambda ([(pattern,_,term)],_) ->
               ppGrConcat [
@@ -243,7 +243,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString " as ",
             ppAPattern pat2
           ]
-      | VarPat (var,_) -> ppAVarWithoutSort var
+      | VarPat (v,_) -> ppAVarWithoutSort v
       | EmbedPat (constr,pat,srt,_) ->
           ppGrConcat [
             ppString constr,

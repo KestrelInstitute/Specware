@@ -3,9 +3,8 @@
 
 \begin{spec}
 spec MetaSlangRewriter
- import ../AbstractSyntax/DeMod
  import /Library/Legacy/DataStructures/LazyList
- import RewriteRules
+ import DeModRewriteRules
  
  sort Context = HigherOrderMatching.Context
 
@@ -297,15 +296,15 @@ spec MetaSlangRewriter
 
 \begin{spec}
 
- sort Rewriter a = List Var * MS.Term * Demod.demod RewriteRule -> LazyList (MS.Term * a) 
+ sort Rewriter a = List Var * MS.Term * Demod RewriteRule -> LazyList (MS.Term * a) 
  %sort Matcher  a = List Var * Term * Term -> LazyList a
  sort Strategy   = | Innermost | Outermost
 
  op rewriteTerm    : fa(a) {strategy:Strategy,rewriter:Rewriter a,context:Context}
-                           * List Var * MS.Term * Demod.demod RewriteRule
+                           * List Var * MS.Term * Demod RewriteRule
                            -> LazyList (MS.Term * a)
  op rewriteSubTerm : fa(a) {strategy:Strategy,rewriter:Rewriter a,context:Context}
-                           * List Var * MS.Term * Demod.demod RewriteRule
+                           * List Var * MS.Term * Demod RewriteRule
                            -> LazyList (MS.Term * a)
 
  def rewriteTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
@@ -443,13 +442,12 @@ spec MetaSlangRewriter
      fn (_,term1,_)::(_,term2,_)::_ -> term1 = term2
       | _ -> false
 
- def addDemodRules(newRules: List RewriteRule,rules: Demod.demod RewriteRule)
-     : Demod.demod RewriteRule =
-   Demod.addRules(List.map (fn rl -> (rl.lhs,rl)) newRules,
-		  rules)
-
  op rewriteRecursive : 
     Context * List Var * RewriteRules * MS.Term -> LazyList (History)
+
+ op rewriteRecursivePre : 
+    Context * List Var * DemodRewriteRules * MS.Term -> LazyList (History)
+
 
 %%
 %% Apply unconditional rewrite rules using inner-most strategy.
@@ -459,7 +457,9 @@ spec MetaSlangRewriter
  def rewriteRecursive(context,boundVars,rules,term) = 
      let rules = {unconditional = addDemodRules(rules.unconditional,Demod.empty),
 		  conditional   = addDemodRules(rules.conditional,Demod.empty)}
-     in
+     in rewriteRecursivePre(context,boundVars,rules,term)
+
+ def rewriteRecursivePre(context,boundVars,rules,term) = 
      let	
         def rewritesToTrue(rules,term,subst,history): Option Subst = 
 	    case rewriteRec(rules,subst,term,history,false) : LazyList History

@@ -373,7 +373,7 @@ ArityNormalize qualifying spec {
           in
           let decls = 
               map 
-              (fn(var,trm) -> (var,normalizeArityTopLevel(sp,gamma,usedNames,trm)))
+              (fn(v,trm) -> (v,normalizeArityTopLevel(sp,gamma,usedNames,trm)))
               decls in
           let term =  normalizeArity(sp,gamma,usedNames,term) in
           mkLetRec(decls,term)

@@ -49,7 +49,7 @@ spec
 
  def  TermIndex.empty = TermDiscNet.EmptyDiscNet
 
- sort sym_entry = | Star | S Nat
+ sort sym_entry = | Star | SymS Nat
 
  op printPath: List Key -> ()
  def printPath path = 
@@ -65,7 +65,7 @@ spec
 
 
  def getFunIndex = 
-     fn (Fun(Op(qid,fixity),_,_):MS.Term) -> 
+     fn (Fun(Op(qid,fixity),_,_)) -> 
 	Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
       | _ -> 0
 
@@ -109,7 +109,7 @@ spec
     def makePath(p,entry: sym_entry) = 
 	case entry
 	  of Star -> p ++ [Integer.~ 1]
-	   | S x  -> p ++ [x]
+	   | SymS x  -> p ++ [x]
 
     op  getTerms : TermDiscNet.disc_net * List Integer * sym_entry -> IntegerSet.Set
 
@@ -131,7 +131,7 @@ spec
 		let set1     = getTerms(index,p,Star)	in
 		let set2 = 
 			if arity = 0 
-			    then getTerms(index,p,S(indexT))
+			    then getTerms(index,p,SymS(indexT))
 			else 
 			    getList(p ++ [indexT],1,subTerms)
 		in
