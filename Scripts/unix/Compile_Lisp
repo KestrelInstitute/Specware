@@ -58,7 +58,8 @@ MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 $BATCH_LISP <<-XXXX
 	#+Allegro (format t "Allegro version%") 
 	#+CMU     (format t "CMU version%") 
-	#+MCL     (format t "OpenMCL version%") 
+	#+MCL     (format t "OpenMCL version%")
+	(format t "compiling...~%")
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
 	#+Allegro (enlarge-stack) 
