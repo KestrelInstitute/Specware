@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/04/01 02:29:40  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.3  2003/03/29 03:13:59  weilyn
  * Added support for morphism nodes.
  *
@@ -182,6 +185,9 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     if (key instanceof ColimitElement) {
         return new Node[] { factory.createColimitNode((ColimitElement)key) };
     }
+    /*if (key instanceof URIElement) {
+        return new Node[] { factory.createURINode((URIElement)key) };
+    }*/
     if (NOT_KEY.equals(key))
       return new Node[] { factory.createWaitNode() };
     // never should get here
@@ -326,6 +332,9 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
         if ((elementType & SourceElementFilter.COLIMIT) != 0) {
             keys.addAll(Arrays.asList(element.getColimits()));
         }
+        /*if ((elementType & SourceElementFilter.URI) != 0) {
+            keys.addAll(Arrays.asList(element.getURIs()));
+        }*/
     }
 
 
@@ -340,7 +349,8 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
                                propName.equals(ElementProperties.PROP_PROOFS) ||
                                propName.equals(ElementProperties.PROP_MORPHISMS) ||
                                propName.equals(ElementProperties.PROP_DIAGRAMS) ||
-                               propName.equals(ElementProperties.PROP_COLIMITS));
+                               propName.equals(ElementProperties.PROP_COLIMITS)/* ||
+                               propName.equals(ElementProperties.PROP_URIS)*/);
 			       
             if (!refresh && ElementProperties.PROP_STATUS.equals(evt.getPropertyName())) {
                 Integer val = (Integer) evt.getNewValue();

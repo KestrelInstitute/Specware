@@ -32,16 +32,16 @@ public class DiagramElementNode extends MemberElementNode {
     };
 
     /** Menu labels */
-/*    private static final String MENU_CREATE_IMPORT;
-    private static final String MENU_CREATE_SORT;
+    private static final String MENU_CREATE_DIAG_ELEM;
+/*    private static final String MENU_CREATE_SORT;
     private static final String MENU_CREATE_OP;
     private static final String MENU_CREATE_DEF;
     private static final String MENU_CREATE_CLAIM;*/
 
     static {
         ResourceBundle bundle = NbBundle.getBundle(DiagramElementNode.class);
-/*        MENU_CREATE_IMPORT = bundle.getString("MENU_CREATE_IMPORT");
-        MENU_CREATE_SORT = bundle.getString("MENU_CREATE_SORT");
+        MENU_CREATE_DIAG_ELEM = bundle.getString("MENU_CREATE_DIAG_ELEM");
+/*        MENU_CREATE_SORT = bundle.getString("MENU_CREATE_SORT");
         MENU_CREATE_OP = bundle.getString("MENU_CREATE_OP");
         MENU_CREATE_DEF = bundle.getString("MENU_CREATE_DEF");
         MENU_CREATE_CLAIM = bundle.getString("MENU_CREATE_CLAIM");*/
@@ -103,7 +103,11 @@ public class DiagramElementNode extends MemberElementNode {
         SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
 		public void run() throws SourceException {
 		    DiagramElement el = (DiagramElement) element;
-		    el.getSource().removeDiagram(el);
+                    if (el.getSource() != null) {
+                        el.getSource().removeDiagram(el);
+                    } else {
+                        ((ColimitElement) el.getParent()).removeDiagram(el);
+                    }
 		}
 	    });
         super.destroy();
@@ -258,9 +262,10 @@ public class DiagramElementNode extends MemberElementNode {
         SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
 		public void run() throws SourceException {
 		    DiagramElement diagram = (DiagramElement) element;
-/*		    if (addingElement instanceof ImportElement) {
-			diagram.addImport((ImportElement)addingElement);
-                    } else if (addingElement instanceof SortElement) {
+		    if (addingElement instanceof DiagElemElement) {
+			diagram.addDiagElem((DiagElemElement)addingElement);
+                    }
+/*                    } else if (addingElement instanceof SortElement) {
 			spec.addSort((SortElement)addingElement);
 		    } else if (addingElement instanceof OpElement) {
 			OpElement me = (OpElement) addingElement;
@@ -294,9 +299,10 @@ public class DiagramElementNode extends MemberElementNode {
 		    public void run() throws SourceException {
 			if (addingElement instanceof MemberElement) {
 			    if (origDiagram != null) {
-/*                                if (addingElement instanceof ImportElement) {
-				    origDiagram.removeImport((ImportElement)addingElement);
-				} else if (addingElement instanceof SortElement) {
+                                if (addingElement instanceof DiagElemElement) {
+				    origDiagram.removeDiagElem((DiagElemElement)addingElement);
+                                }
+/*				} else if (addingElement instanceof SortElement) {
 				    origSpec.removeSort((SortElement)addingElement);
 				} else if (addingElement instanceof OpElement) {
 				    origSpec.removeOp((OpElement)addingElement);

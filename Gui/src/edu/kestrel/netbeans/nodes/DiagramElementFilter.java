@@ -6,8 +6,8 @@ package edu.kestrel.netbeans.nodes;
 */
 public class DiagramElementFilter extends SourceElementFilter {
 
-    /** Specifies a child representing an import. */
-//    public static final int     IMPORT = 1;
+    /** Specifies a child representing a diagElem. */
+    public static final int     DIAG_ELEM = 1;
     /** Specifies a child representing a sort. */
 //    public static final int     SORT = 2;
     /** Specifies a child representing an op. */
@@ -17,13 +17,13 @@ public class DiagramElementFilter extends SourceElementFilter {
     /** Specifies a child representing a claim . */
 //    public static final int     CLAIM = 16;
     /** Does not specify a child type. */
-    public static final int     ALL = 0;// = IMPORT | SORT | OP | DEF | CLAIM;
+    public static final int     ALL = DIAG_ELEM;// | SORT | OP | DEF | CLAIM;
                                       
 
     /** Default order and filtering.
     * Places all imports, sorts, ops, defs and claims together in one block.
     */
-    public static final int[]   DEFAULT_ORDER = { 0 };// = {IMPORT | SORT | OP | DEF | CLAIM};
+    public static final int[]   DEFAULT_ORDER = { DIAG_ELEM };// | SORT | OP | DEF | CLAIM};
 
     /** stores property value */
     private boolean             sorted = true;

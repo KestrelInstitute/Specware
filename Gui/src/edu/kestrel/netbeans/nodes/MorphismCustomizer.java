@@ -1,14 +1,7 @@
-/*
- * ProveCustomizer.java
- *
- * Created on February 19, 2003, 3:09 PM
- */
-
 package edu.kestrel.netbeans.nodes;
 
 import edu.kestrel.netbeans.editor.MetaSlangSyntax;
-import edu.kestrel.netbeans.model.ClaimElement;
-import edu.kestrel.netbeans.model.SpecElement;
+import edu.kestrel.netbeans.model.MorphismElement;
 import edu.kestrel.netbeans.nodes.MemberCustomizer;
 import edu.kestrel.netbeans.nodes.SourceEditSupport.ExceptionalRunnable;
 
@@ -27,29 +20,21 @@ import org.openide.src.SourceException;
  */
 public class MorphismCustomizer extends javax.swing.JPanel {
     /** Source of the localized human presentable strings. */
-    static ResourceBundle bundle = NbBundle.getBundle(ProveCustomizer.class);
-    
-    public static final String USE_ALL_CLAIMS = "--- All Claims ---";
-    public static final String USE_NO_CLAIMS = "--- NONE ---";
-    public static final String USE_RESOLUTION_YES = "Yes";
-    public static final String USE_RESOLUTION_NO = "No";
-    public static final String USE_RESOLUTION_DEFAULT = "Use default";
-    
-    /*Prove*/SpecElement element;
+    static ResourceBundle bundle = NbBundle.getBundle(MorphismCustomizer.class);
+        
+    MorphismElement element;
     
     boolean isOK = true;
         
-    /** Creates new customizer ProveCustomizer */
-    public MorphismCustomizer(SpecElement newProveElem, SpecElement parentSpecElem, ClaimElement claimElement) {
+    /** Creates new customizer MorphismCustomizer */
+    public MorphismCustomizer(MorphismElement newMorphismElem) {
         initComponents();
 
-        this.element = newProveElem;
+        this.element = newMorphismElem;
         
         if (this.element != null) {
 	    nameTextField.setText(element.getName());
-            ClaimElement[] allClaims = parentSpecElem.getClaims();
-            //String[] allClaimNames = new String[allClaims.length];
-            if (allClaims.length > 1) {
+/*            if (allClaims.length > 1) {
                 usingComboBox.addItem(USE_ALL_CLAIMS);
             } else {
                 usingComboBox.addItem(USE_NO_CLAIMS);
@@ -64,11 +49,11 @@ public class MorphismCustomizer extends javax.swing.JPanel {
             useResolutionComboBox.addItem(USE_RESOLUTION_DEFAULT);
             useResolutionComboBox.addItem(USE_RESOLUTION_YES);
             useResolutionComboBox.addItem(USE_RESOLUTION_NO);
-	}
+*/	}
         
         //borders
         setBorder (new CompoundBorder(
-                       new TitledBorder(bundle.getString("CTL_ProveFrame")),
+                       new TitledBorder(bundle.getString("CTL_MorphismFrame")),
                        new EmptyBorder(new java.awt.Insets(5, 5, 5, 5)))
                        );
     }
@@ -81,65 +66,41 @@ public class MorphismCustomizer extends javax.swing.JPanel {
     private void initComponents() {//GEN-BEGIN:initComponents
         jPanel1 = new javax.swing.JPanel();
         nameLabel = new javax.swing.JLabel();
-        usingLabel = new javax.swing.JLabel();
-        optionsLabel = new javax.swing.JLabel();
-        resolutionLabel = new javax.swing.JLabel();
-        jLabel1 = new javax.swing.JLabel();
+        sourceLabel = new javax.swing.JLabel();
+        targetLabel = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         nameTextField = new javax.swing.JTextField();
-        usingComboBox = new javax.swing.JComboBox();
-        jPanel3 = new javax.swing.JPanel();
-        useResolutionComboBox = new javax.swing.JComboBox();
-        jPanel4 = new javax.swing.JPanel();
-        timeLimitTextField = new javax.swing.JTextField();
-        jLabel2 = new javax.swing.JLabel();
+        sourceComboBox = new javax.swing.JComboBox();
+        targetComboBox = new javax.swing.JComboBox();
 
         setLayout(new java.awt.BorderLayout());
 
         setPreferredSize(new java.awt.Dimension(300, 200));
-        jPanel1.setLayout(new java.awt.GridLayout(5, 1, 10, 10));
+        jPanel1.setLayout(new java.awt.GridLayout(3, 1, 10, 10));
 
         jPanel1.setPreferredSize(new java.awt.Dimension(125, 200));
         nameLabel.setText("Name");
         jPanel1.add(nameLabel);
 
-        usingLabel.setText("Prove Using");
-        jPanel1.add(usingLabel);
+        sourceLabel.setText("Source");
+        jPanel1.add(sourceLabel);
 
-        optionsLabel.setText("Options:");
-        jPanel1.add(optionsLabel);
-
-        resolutionLabel.setText("     Use Resolution");
-        jPanel1.add(resolutionLabel);
-
-        jLabel1.setText("     Time Limit");
-        jPanel1.add(jLabel1);
+        targetLabel.setText("Target");
+        jPanel1.add(targetLabel);
 
         add(jPanel1, java.awt.BorderLayout.WEST);
 
-        jPanel2.setLayout(new java.awt.GridLayout(5, 1, 10, 10));
+        jPanel2.setLayout(new java.awt.GridLayout(3, 1, 10, 10));
 
         jPanel2.setPreferredSize(new java.awt.Dimension(150, 200));
-        nameTextField.setText("newProof");
+        nameTextField.setText("newMorphism");
         jPanel2.add(nameTextField);
 
-        jPanel2.add(usingComboBox);
+        sourceComboBox.setEditable(true);
+        jPanel2.add(sourceComboBox);
 
-        jPanel2.add(jPanel3);
-
-        jPanel2.add(useResolutionComboBox);
-
-        jPanel4.setLayout(new java.awt.GridLayout(1, 0, 10, 0));
-
-        timeLimitTextField.setText("0");
-        timeLimitTextField.setMaximumSize(new java.awt.Dimension(10, 20));
-        timeLimitTextField.setPreferredSize(new java.awt.Dimension(10, 20));
-        jPanel4.add(timeLimitTextField);
-
-        jLabel2.setText("     Seconds");
-        jPanel4.add(jLabel2);
-
-        jPanel2.add(jPanel4);
+        targetComboBox.setEditable(true);
+        jPanel2.add(targetComboBox);
 
         add(jPanel2, java.awt.BorderLayout.EAST);
 
@@ -177,38 +138,94 @@ public class MorphismCustomizer extends javax.swing.JPanel {
         }
     }
 
+    private void sourceComboBoxFocusLost (java.awt.event.FocusEvent evt) {
+        if (evt != null && evt.isTemporary())
+            return;
+
+        final String newSourcePath = (String)sourceComboBox.getSelectedItem();
+        String oldSourcePath = element.getSourceURI().getPath();
+        boolean ok = false;
+        Exception x = null;
+
+        if (oldSourcePath == null || !oldSourcePath.equals(newSourcePath)) {
+            try {
+                SourceEditSupport.runAsUser(element, new ExceptionalRunnable() {
+                    public void run() throws SourceException {
+                        element.getSourceURI().setPath(newSourcePath);
+                    }
+                });
+                ok = true;
+            }
+            catch (SourceException e) {
+                x = e;
+            }
+        } else
+            return;
+        isOK = ok;
+        if (!ok) {
+            sourceComboBox.setSelectedItem(oldSourcePath);
+        }
+        if (x != null) {
+            ErrorManager.getDefault().notify(x);
+        }
+    }
+    
+    private void targetComboBoxFocusLost (java.awt.event.FocusEvent evt) {
+        if (evt != null && evt.isTemporary())
+            return;
+
+        final String newTargetPath = (String)targetComboBox.getSelectedItem();
+        String oldTargetPath = element.getDestinationURI().getPath();
+        boolean ok = false;
+        Exception x = null;
+
+        if (oldTargetPath == null || !oldTargetPath.equals(newTargetPath)) {
+            try {
+                SourceEditSupport.runAsUser(element, new ExceptionalRunnable() {
+                    public void run() throws SourceException {
+                        element.getDestinationURI().setPath(newTargetPath);
+                    }
+                });
+                ok = true;
+            }
+            catch (SourceException e) {
+                x = e;
+            }
+        } else
+            return;
+        isOK = ok;
+        if (!ok) {
+            targetComboBox.setSelectedItem(oldTargetPath);
+        }
+        if (x != null) {
+            ErrorManager.getDefault().notify(x);
+        }
+    }
+    
     public boolean isOK() {
         nameTextFieldFocusLost(null);
+        sourceComboBoxFocusLost(null);
+        targetComboBoxFocusLost(null);
         return isOK;
     }    
         
-    public String getSelectedUsingClaim() {
-        return (String)usingComboBox.getSelectedItem();
+    public String getSelectedSource() {
+        return (String)sourceComboBox.getSelectedItem();
     }
     
-    public String getSelectedUseResolution() {
-        return (String)useResolutionComboBox.getSelectedItem();
-    }
-    
-    public String getTimeLimit() {
-        return (String)timeLimitTextField.getText();
+    public String getSelectedTarget() {
+        return (String)targetComboBox.getSelectedItem();
     }
     
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JTextField timeLimitTextField;
-    private javax.swing.JLabel resolutionLabel;
-    private javax.swing.JPanel jPanel4;
-    private javax.swing.JLabel jLabel1;
-    private javax.swing.JPanel jPanel3;
-    private javax.swing.JLabel jLabel2;
-    private javax.swing.JComboBox usingComboBox;
+    private javax.swing.JLabel sourceLabel;
+    private javax.swing.JComboBox sourceComboBox;
+    private javax.swing.JComboBox targetComboBox;
     private javax.swing.JLabel nameLabel;
-    private javax.swing.JLabel optionsLabel;
     private javax.swing.JPanel jPanel2;
-    private javax.swing.JLabel usingLabel;
+    private javax.swing.JLabel targetLabel;
     private javax.swing.JPanel jPanel1;
     private javax.swing.JTextField nameTextField;
-    private javax.swing.JComboBox useResolutionComboBox;
     // End of variables declaration//GEN-END:variables
     
 }

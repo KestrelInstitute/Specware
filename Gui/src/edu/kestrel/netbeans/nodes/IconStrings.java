@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:39  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:58  weilyn
  * Added support for morphism nodes.
  *
@@ -59,11 +62,17 @@ interface IconStrings {
      static final String MORPHISM =
         "edu/kestrel/resources/images/MorphismNodeIcon"; // NOI18N     
      
+     static final String DIAG_ELEM =
+        "edu/kestrel/resources/images/DiagElemNodeIcon"; // NOI18N
+     
      static final String DIAGRAM =
         "edu/kestrel/resources/images/DiagramNodeIcon"; // NOI18N     
 
      static final String COLIMIT =
         "edu/kestrel/resources/images/ColimitNodeIcon"; // NOI18N     
+     
+    /* static final String URI =
+        "edu/kestrel/resources/images/URINodeIcon"; // NOI18N     */
      
      static final String WAIT =
         "edu/kestrel/resources/images/wait"; // NOI18N
@@ -85,5 +94,19 @@ interface IconStrings {
 
      static final String IMPORTS_CATEGORY =
         "edu/kestrel/resources/images/ImportNodeIcon"; // NOI18N
+     
+     static final String DIAGRAMS_CATEGORY =
+        "edu/kestrel/resources/images/DiagramNodeIcon"; // NOI18N   
 
+     static final String DIAG_ELEMS_CATEGORY =
+        "edu/kestrel/resources/images/DiagElemNodeIcon"; // NOI18N
+     
+     static final String SOURCE_CATEGORY =
+        "edu/kestrel/resources/images/DiagElemNodeIcon"; // NOI18N
+     
+     static final String TARGET_CATEGORY =
+        "edu/kestrel/resources/images/DiagElemNodeIcon"; // NOI18N
+     
+     static final String OBJECT =
+        "edu/kestrel/resources/images/URINodeIcon"; // NOI18N     
 }

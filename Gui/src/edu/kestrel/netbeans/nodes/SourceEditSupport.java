@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/01 02:29:40  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.7  2003/03/29 03:13:59  weilyn
  * Added support for morphism nodes.
  *
@@ -82,11 +85,11 @@ class SourceEditSupport {
     };
     
     static final String[] DIAGRAM_MENU_NAMES = {
-    
+        bundle.getString("MENU_CREATE_DIAG_ELEM"),
     };
     
     static final String[] COLIMIT_MENU_NAMES = {
-    
+        //bundle.getString("MENU_CREATE_DIAGRAM"),    
     };    
 
     /* Get the new types that can be created in this node.
@@ -137,8 +140,8 @@ class SourceEditSupport {
      */
     public static NewType[] createNewTypes(DiagramElement element) {
 	return new NewType[] {
-/*	    new SpecElementNewType(element, (byte) 0),
-            new SpecElementNewType(element, (byte) 1),
+	    new DiagramElementNewType(element, (byte) 0),
+/*            new SpecElementNewType(element, (byte) 1),
             new SpecElementNewType(element, (byte) 2),
             new SpecElementNewType(element, (byte) 3),
             new SpecElementNewType(element, (byte) 4),*/
@@ -151,7 +154,7 @@ class SourceEditSupport {
      */
     public static NewType[] createNewTypes(ColimitElement element) {
 	return new NewType[] {
-/*	    new SpecElementNewType(element, (byte) 0),
+/*	    new ColimitElementNewType(element, (byte) 0),
             new SpecElementNewType(element, (byte) 1),
             new SpecElementNewType(element, (byte) 2),
             new SpecElementNewType(element, (byte) 3),
@@ -448,7 +451,7 @@ class SourceEditSupport {
 	 * @return localized name.
 	 */
 	public String getName() {
-	    return PROOF_MENU_NAMES[kind];
+	    return DIAGRAM_MENU_NAMES[kind];
 	}
 
 	/** Help context */
@@ -462,15 +465,15 @@ class SourceEditSupport {
 
 	    Element newElement = null;
 
-/*	    try {
+	    try {
 		switch (kind) {
 		case 0:
 		    {
-			// Adding import
-			ImportElement e = new ImportElement();
-			e.setName("<name of unit to import>");
-			MemberCustomizer cust = new MemberCustomizer(e, "Import");
-			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			// Adding diagElem
+			DiagElemElement e = new DiagElemElement();
+			e.setName("<new diagram element>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Diagram Element");
+			if (openCustomizer(cust, "TIT_NewDiagElem") && cust.isOK()) // NOI18N
 			    newElement = e;
 			break;
 		    }
@@ -480,7 +483,7 @@ class SourceEditSupport {
 	    catch (SourceException exc) {
 		// shouldn't happen - memory implementation
 		// is not based on java source.
-	    }*/
+	    }
 
 	    if (newElement == null)
 		return;
@@ -489,9 +492,9 @@ class SourceEditSupport {
 	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
 		    public void run() throws SourceException {
 			switch (kind) {
-/*			case 0:
-			    ((SpecElement)element).addImport((ImportElement)addingElement);
-			    return;*/
+			case 0:
+			    ((DiagramElement)element).addDiagElem((DiagElemElement)addingElement);
+			    return;
 			}
                         
 		    }
@@ -534,15 +537,15 @@ class SourceEditSupport {
 
 	    Element newElement = null;
 
-/*	    try {
+	    try {
 		switch (kind) {
 		case 0:
 		    {
-			// Adding import
-			ImportElement e = new ImportElement();
-			e.setName("<name of unit to import>");
-			MemberCustomizer cust = new MemberCustomizer(e, "Import");
-			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			// Adding diagram
+			DiagramElement e = new DiagramElement();
+			e.setName("newDiagram");
+			MemberCustomizer cust = new MemberCustomizer(e, "Diagram");
+			if (openCustomizer(cust, "TIT_NewDiagram") && cust.isOK()) // NOI18N
 			    newElement = e;
 			break;
 		    }
@@ -552,7 +555,7 @@ class SourceEditSupport {
 	    catch (SourceException exc) {
 		// shouldn't happen - memory implementation
 		// is not based on java source.
-	    }*/
+	    }
 
 	    if (newElement == null)
 		return;
@@ -561,9 +564,9 @@ class SourceEditSupport {
 	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
 		    public void run() throws SourceException {
 			switch (kind) {
-/*			case 0:
-			    ((SpecElement)element).addImport((ImportElement)addingElement);
-			    return;*/
+			case 0:
+			    ((ColimitElement)element).addDiagram((DiagramElement)addingElement);
+			    return;
 			}
                         
 		    }
@@ -699,6 +702,15 @@ class SourceEditSupport {
 		return findSource(mm.getParent());
 	    }           
         }
+/*	if (element instanceof URIElement) {
+	    URIElement mm = (URIElement) element;
+	    SourceElement source = mm.getSource();
+	    if (source != null) {
+		return source;
+	    } else {
+		return findSource(mm.getParent());
+	    }
+	}*/
         if (element instanceof MemberElement) {
 	    return findSource(((MemberElement) element).getParent());
 	}
@@ -739,6 +751,8 @@ class SourceEditSupport {
             cookie.getSource().addDiagram((DiagramElement)elem);
         } else if (elem instanceof MorphismElement) {
             cookie.getSource().addMorphism((MorphismElement)elem);
+        } else if (elem instanceof ColimitElement) {
+            cookie.getSource().addColimit((ColimitElement)elem);            
         }
 	
     }
@@ -798,6 +812,17 @@ class SourceEditSupport {
 	src.removeColimit(colimit);
     }
 
+/*    static void removeURI(URIElement uri) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(uri);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeURI(uri);
+    }*/
+    
     /* default */static class PackagePaste implements NodeTransfer.Paste {
 	private static PasteType[] EMPTY_TYPES = new PasteType[0];                         
 	/** True, if the paste should remove the original class element.
@@ -835,6 +860,11 @@ class SourceEditSupport {
 	    this.element = element;
 	}
 
+/*        PackagePaste(URIElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+*/
         public PasteType[] types(Node target) {
 	    DataObject obj = (DataObject)target.getCookie(DataObject.class);
 	    if (element == null || obj == null) 
@@ -891,7 +921,9 @@ class SourceEditSupport {
                                         removeDiagram((DiagramElement)elem);
                                     } else if (elem instanceof ColimitElement) {
                                         removeColimit((ColimitElement)elem);
-                                    }
+                                    } /*else if (elem instanceof URIElement) {
+                                        removeURI((URIElement)elem);
+                                    }*/
  				} catch (SourceException e) {
 				    ex[0] = e;
 				} 

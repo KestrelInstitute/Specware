@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:39  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:58  weilyn
  * Added support for morphism nodes.
  *
@@ -93,6 +96,12 @@ public interface ElementNodeFactory {
     */
     public Node createMorphismNode (MorphismElement element);
     
+    /** Make a node representing a diagElem.
+    * @param element the diagElem
+    * @return a diagElem node instance
+    */
+    public Node createDiagElemNode (DiagElemElement element);
+    
     /** Make a node representing a diagram.
     * @param element the diagram
     * @return a diagram node instance
@@ -105,6 +114,8 @@ public interface ElementNodeFactory {
     */
     public Node createColimitNode (ColimitElement element);
 
+    public Node createUnitIDObjectNode (Object object);
+    
     /** Make a node indicating that the creation of children
     * is still under way.
     * It should be used when the process is slow.

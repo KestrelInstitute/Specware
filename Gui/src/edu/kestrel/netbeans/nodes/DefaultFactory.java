@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/01 02:29:39  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.7  2003/03/29 03:13:58  weilyn
  * Added support for morphism nodes.
  *
@@ -252,6 +255,19 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     }
   }
   
+    public Node createUnitIDObjectNode(Object object) {
+	return new UnitIDObjectNode(object);
+    }
+    
+    /** Make a node representing a diagElem
+   * @param element the diagElem
+   * @return a diagElem node instance
+   *
+   */
+  public Node createDiagElemNode(DiagElemElement element) {
+    return new DiagElemElementNode(element, writeable);
+  }
+
   /* Returns the node asociated with specified element.
    * @return ElementNode
    */
@@ -312,18 +328,25 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
    * @return children for the colimit element
    */
   final protected Children createColimitChildren(ColimitElement element, ElementNodeFactory factory ) {
-    if (ElementNode.sourceOptions.getCategoriesUsage()) {
+/*    if (ElementNode.sourceOptions.getCategoriesUsage()) {
       ColimitChildren children = new ColimitCategorizingChildren(factory, element, writeable);
       ColimitElementFilter filter = new ColimitElementFilter();
       filter.setOrder(new int[] {FILTER_CATEGORIES});
       children.setFilter(filter);
       return children;
     }
-    else {
+    else {*/
       return new ColimitChildren(factory, element);
-    }
+    //}
   }
 
+  /* Returns the node asociated with specified element.
+   * @return ElementNode
+   */
+  /*public Node createURINode (final URIElement element) {
+    return new URIElementNode(element, writeable);
+  }*/
+  
   /* Creates and returns the instance of the node
    * representing the status 'WAIT' of the DataNode.
    * It is used when it spent more time to create elements hierarchy.
@@ -428,62 +451,82 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
   /** Filters under each morphism category node */
   static final int[][] MORPHISM_FILTERS = new int[][] {
+    { MorphismElementFilter.SOURCE },
+    { MorphismElementFilter.TARGET },
   };
 
   /** The names of the morphism category nodes */
   static final String[] MORPHISM_NAMES = new String[] {
+    ElementNode.bundle.getString("Source"), //NO18N
+    ElementNode.bundle.getString("Target"), // NO18N
   };
 
   /** The short descriptions of the morphism category nodes */
   static final String[] MORPHISM_SHORTDESCRS = new String[] {
+    ElementNode.bundle.getString("Source_HINT"), //NO18N
+    ElementNode.bundle.getString("Target_HINT"), // NO18N
   };
 
   /** Help IDs for the individual categories */
   static final String[] MORPHISM_HELP_IDS = new String[] {
+    "org.openide.src.nodes.ElementCategory.Source", // NO18N
+    "org.openide.src.nodes.ElementCategory.Target", // NO18N
   };
   
   /** Array of the icons used for category nodes */
   static final String[] MORPHISM_CATEGORY_ICONS = new String[] {
+    SOURCE_CATEGORY,
+    TARGET_CATEGORY,
   };
   
   /** Filters under each diagram category node */
   static final int[][] DIAGRAM_FILTERS = new int[][] {
+      { DiagramElementFilter.DIAG_ELEM },
   };
 
   /** The names of the diagram category nodes */
   static final String[] DIAGRAM_NAMES = new String[] {
+      ElementNode.bundle.getString("DiagElems"), //NO18N
   };
 
   /** The short descriptions of the diagram category nodes */
   static final String[] DIAGRAM_SHORTDESCRS = new String[] {
+      ElementNode.bundle.getString("DiagElems_HINT"), //NO18N
   };
 
   /** Help IDs for the individual categories */
   static final String[] DIAGRAM_HELP_IDS = new String[] {
+      "org.openide.src.nodes.ElementCategory.DiagElems", // NO18N
   };
   
   /** Array of the icons used for category nodes */
   static final String[] DIAGRAM_CATEGORY_ICONS = new String[] {
+      DIAG_ELEMS_CATEGORY,
   };
   
   /** Filters under each colimit category node */
   static final int[][] COLIMIT_FILTERS = new int[][] {
+    { ColimitElementFilter.DIAGRAM },
   };
 
   /** The names of the colimit category nodes */
   static final String[] COLIMIT_NAMES = new String[] {
+    ElementNode.bundle.getString("Diagrams"), //NO18N
   };
 
   /** The short descriptions of the colimit category nodes */
   static final String[] COLIMIT_SHORTDESCRS = new String[] {
+    ElementNode.bundle.getString("Diagrams_HINT"), //NO18N
   };
 
   /** Help IDs for the individual categories */
   static final String[] COLIMIT_HELP_IDS = new String[] {
+    "org.openide.src.nodes.ElementCategory.Diagrams", // NO18N
   };
   
   /** Array of the icons used for category nodes */
   static final String[] COLIMIT_CATEGORY_ICONS = new String[] {
+      DIAGRAMS_CATEGORY,
   };
   
   /*
@@ -520,6 +563,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     }
         
     protected Node[] createNodes(Object key) {
+        Util.log("DefaultFactory.Spec.createNodes");
       if (key instanceof Integer) {
 	return new Node[]{new SpecElementCategoryNode(((Integer)key).intValue(), factory, element, writeable)};
       } 
@@ -838,13 +882,13 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
     private void initializeCategories() {
       activeCategories = new TreeSet();
-/*      if (element.getImports().length > 0) {
+      if (element.getSourceUnitID() != null) {
         activeCategories.add(CATEGORIES[0]);
       }
-      if (element.getSorts().length > 0) {
+      if (element.getTargetUnitID() != null) {
 	activeCategories.add(CATEGORIES[1]);
       }
-      if (element.getOps().length > 0) {
+/*      if (element.getOps().length > 0) {
 	activeCategories.add(CATEGORIES[2]);
       }
       if (element.getDefs().length > 0) {
@@ -856,6 +900,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     }
         
     protected Node[] createNodes(Object key) {
+      System.out.println("DefaultFactory.createNodes with key="+key);
       if (key instanceof Integer) {
 	return new Node[]{new MorphismElementCategoryNode(((Integer)key).intValue(), factory, element, writeable)};
       } 
@@ -910,12 +955,13 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
      */
     MorphismElementCategoryNode(int index, ElementNodeFactory factory, MorphismElement element, boolean writeable) {
       this(index, new MorphismChildren(factory, element));
+      System.out.println("DefaultFactory.MorphismElementCategoryNode with index = "+index);
       this.element = element;
       newTypeIndex = writeable ? index : -1;
       switch (index) {
-/*      case 0: setName("Imports"); break; //NOI18N
-      case 1: setName("Sorts"); break; // NOI18N
-      case 2: setName("Ops"); break; // NOI18N
+      case 0: setName("Source"); break; //NOI18N
+      case 1: setName("Target"); break; // NOI18N
+/*      case 2: setName("Ops"); break; // NOI18N
       case 3: setName("Defs"); break; // NOI18N
       case 4: setName("Claims"); break; // NOI18N*/
       }
@@ -1005,10 +1051,10 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
     private void initializeCategories() {
       activeCategories = new TreeSet();
-/*      if (element.getImports().length > 0) {
+      if (element.getDiagElems().length > 0) {
         activeCategories.add(CATEGORIES[0]);
       }
-      if (element.getSorts().length > 0) {
+/*      if (element.getSorts().length > 0) {
 	activeCategories.add(CATEGORIES[1]);
       }
       if (element.getOps().length > 0) {
@@ -1080,8 +1126,8 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       this.element = element;
       newTypeIndex = writeable ? index : -1;
       switch (index) {
-/*      case 0: setName("Imports"); break; //NOI18N
-      case 1: setName("Sorts"); break; // NOI18N
+      case 0: setName("Diagram Elements"); break; //NOI18N
+/*      case 1: setName("Sorts"); break; // NOI18N
       case 2: setName("Ops"); break; // NOI18N
       case 3: setName("Defs"); break; // NOI18N
       case 4: setName("Claims"); break; // NOI18N*/
@@ -1122,11 +1168,11 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 	return new NewType[0];
       }
       switch (newTypeIndex) {
-/*      case 0:
+      case 0:
 	return new NewType[] {
-	  new SourceEditSupport.SpecElementNewType(element, (byte) 0)
+	  new SourceEditSupport.DiagramElementNewType(element, (byte) 0)
 	    };
-      case 1:
+/*      case 1:
 	return new NewType[] {
 	  new SourceEditSupport.SpecElementNewType(element, (byte) 1),
 	    };
@@ -1160,7 +1206,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
    * Simple descendant of ColimitChildren that distributes nodes from the colimit to various
    * categories. 
    */
-  static class ColimitCategorizingChildren extends ColimitChildren {
+/*  static class ColimitCategorizingChildren extends ColimitChildren {
     boolean writeable;
     TreeSet activeCategories;
         
@@ -1172,21 +1218,9 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
     private void initializeCategories() {
       activeCategories = new TreeSet();
-/*      if (element.getImports().length > 0) {
+      if (element.getDiagrams().length > 0) {
         activeCategories.add(CATEGORIES[0]);
       }
-      if (element.getSorts().length > 0) {
-	activeCategories.add(CATEGORIES[1]);
-      }
-      if (element.getOps().length > 0) {
-	activeCategories.add(CATEGORIES[2]);
-      }
-      if (element.getDefs().length > 0) {
-	activeCategories.add(CATEGORIES[3]);
-      }
-      if (element.getClaims().length > 0) {
-	activeCategories.add(CATEGORIES[4]);
-      } */     
     }
         
     protected Node[] createNodes(Object key) {
@@ -1222,7 +1256,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       return super.getKeysOfType(type);
     }
   }
-  
+  */
   /**
    * Category node - represents one section under colimit element node.
    */
@@ -1247,16 +1281,12 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       this.element = element;
       newTypeIndex = writeable ? index : -1;
       switch (index) {
-/*      case 0: setName("Imports"); break; //NOI18N
-      case 1: setName("Sorts"); break; // NOI18N
-      case 2: setName("Ops"); break; // NOI18N
-      case 3: setName("Defs"); break; // NOI18N
-      case 4: setName("Claims"); break; // NOI18N*/
+      case 0: setName("Diagrams"); break; //NOI18N
       }
     }
 
     /** Create new element node.
-     * @param index The index of type (0=imports, 1=sorts, 2=ops, 3=defs, 4=claims)
+     * @param index The index of type (0=diagrams)
      * @param children the colimit children of this node
      */
     private ColimitElementCategoryNode(int index, ColimitChildren children) {
@@ -1289,26 +1319,10 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 	return new NewType[0];
       }
       switch (newTypeIndex) {
-/*      case 0:
+      case 0:
 	return new NewType[] {
-	  new SourceEditSupport.SpecElementNewType(element, (byte) 0)
+	  new SourceEditSupport.ColimitElementNewType(element, (byte) 0)
 	    };
-      case 1:
-	return new NewType[] {
-	  new SourceEditSupport.SpecElementNewType(element, (byte) 1),
-	    };
-      case 2:
-	return new NewType[] {
-	  new SourceEditSupport.SpecElementNewType(element, (byte) 2),
-	    };
-      case 3:
-	return new NewType[] {
-	  new SourceEditSupport.SpecElementNewType(element, (byte) 3),
-	    };
-      case 4:
-	return new NewType[] {
-	  new SourceEditSupport.SpecElementNewType(element, (byte) 4),
-	    };            */
       default:
 	return super.getNewTypes();
       }

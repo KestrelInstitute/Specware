@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:39  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:58  weilyn
  * Added support for morphism nodes.
  *
@@ -33,6 +36,7 @@ package edu.kestrel.netbeans.nodes;
 import org.openide.nodes.Node;
 
 import edu.kestrel.netbeans.model.*;
+import edu.kestrel.netbeans.Util;
 
 /** A factory used to create
 * instances of hierarchy node implementations.
@@ -116,11 +120,21 @@ public class FilterFactory implements ElementNodeFactory {
         return delegate.createMorphismNode( element );
     }
     
+    /** Make a node representing a diagElem
+    * @param element the diagElem
+    * @return a diagElem node instance
+    */
+    public Node createDiagElemNode (DiagElemElement element) {
+        System.out.println("FilterFactory.createDiagElemNode");
+        return delegate.createDiagElemNode( element );
+    }
+    
     /** Make a node representing a diagram
     * @param element the diagram
     * @return a diagram node instance
     */
     public Node createDiagramNode (DiagramElement element) {
+        System.out.println("FilterFactory.createDiagramNode");
         return delegate.createDiagramNode( element );
     }
 
@@ -129,9 +143,18 @@ public class FilterFactory implements ElementNodeFactory {
     * @return a proof node instance
     */
     public Node createColimitNode (ColimitElement element) {
+        Util.trace("Filterfactory.createColimitNode");
         return delegate.createColimitNode( element );
     }
 
+    /** Make a node representing a uri
+    * @param element the uri
+    * @return a uri node instance
+    */
+    public Node createUnitIDObjectNode (Object object) {
+        return delegate.createUnitIDObjectNode(object);
+    }
+    
     /** Make a node indicating that the creation of children
     * is still under way.
     * It should be used when the process is slow.

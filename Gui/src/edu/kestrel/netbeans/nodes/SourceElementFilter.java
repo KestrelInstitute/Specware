@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/04/01 02:29:40  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.3  2003/03/29 03:13:59  weilyn
  * Added support for morphism nodes.
  *
@@ -40,12 +43,13 @@ public class SourceElementFilter {
     public static final int       MORPHISM = 4;
     public static final int       DIAGRAM = 8;
     public static final int       COLIMIT = 16;
+    //public static final int       URI = 32;
     public static final int       ALL = SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT;
     /** Default order of the top-level element types in the hierarchy.
     * A list, each of whose elements is a bitwise disjunction of element types.
     * By default, only classes and interfaces are listed, and these together.
     */
-    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT};
+    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT };
 
     /** stores property value */
     private int[]                 order = null;

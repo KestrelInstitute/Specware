@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/01 02:29:41  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.7  2003/03/29 03:13:59  weilyn
  * Added support for morphism nodes.
  *
@@ -75,6 +78,8 @@ public final class SourceOptions extends SystemOption {
     private static final byte T_MORPHISM = 7;
     private static final byte T_DIAGRAM = 8;
     private static final byte T_COLIMIT = 9;
+    //private static final byte T_URI = 10;
+    private static final byte T_DIAG_ELEM = 11;
 
     /** Names of all properties. */
     static final String[] PROP_NAMES = {
@@ -88,6 +93,8 @@ public final class SourceOptions extends SystemOption {
         "morphismElementFormat", // N0I18N
         "diagramElementFormat", // N0I18N
         "colimitElementFormat", // N0I18N
+        "uriElementFormat", //NOI18N
+        "diagElemElementFormat", // NOI18N
     };
     
     static Element[] TEST_ELEMENTS;
@@ -160,11 +167,17 @@ public final class SourceOptions extends SystemOption {
     /** Property name of the morphism display format. */
     public static final String PROP_MORPHISM_FORMAT = PROP_NAMES[T_MORPHISM];
 
+    /** Property name of the diagElem display format. */
+    public static final String PROP_DIAG_ELEM_FORMAT = PROP_NAMES[T_DIAG_ELEM];
+    
     /** Property name of the diagram display format. */
     public static final String PROP_DIAGRAM_FORMAT = PROP_NAMES[T_DIAGRAM];
     
     /** Property name of the colimit display format. */
     public static final String PROP_COLIMIT_FORMAT = PROP_NAMES[T_COLIMIT];
+
+    /** Property name of the uri display format. */
+   // public static final String PROP_uri_FORMAT = PROP_NAMES[T_URI];
 
     /** Property name of the 'categories usage' property. */
     public static final String PROP_CATEGORIES_USAGE = "categoriesUsage"; // NOI18N
@@ -312,6 +325,20 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_MORPHISM);
     }
 
+    /** Set the diagElem format.
+    * @param format the new format
+    */
+    public void setDiagElemElementFormat(ElementFormat format) {
+        setElementFormat(T_DIAG_ELEM, format);
+    }
+    
+    /** Get the diagElem format.
+    * @return the current format
+    */
+    public ElementFormat getDiagElemElementFormat() {
+        return getElementFormat(T_DIAG_ELEM);
+    }
+
     /** Set the diagram format.
     * @param format the new format
     */
@@ -339,6 +366,20 @@ public final class SourceOptions extends SystemOption {
     public ElementFormat getColimitElementFormat() {
         return getElementFormat(T_COLIMIT);
     }
+
+    /** Set the uri format.
+    * @param format the new format
+    */
+   /* public void setURIElementFormat(ElementFormat format) {
+        setElementFormat(T_URI, format);
+    }*/
+    
+    /** Get the uri format.
+    * @return the current format
+    */
+    /*public ElementFormat getURIElementFormat() {
+        return getElementFormat(T_URI);
+    }*/
 
     // ============= getters for long form of formats =================
 
@@ -406,6 +447,14 @@ public final class SourceOptions extends SystemOption {
         return DEFAULT_FORMATS_LONG[T_MORPHISM];
     }
 
+    /** Get the diagElem format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getDiagElemElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_DIAG_ELEM];
+    }
+
     /** Get the diagram format for longer hints.
     * @return the current format
     */
@@ -421,6 +470,14 @@ public final class SourceOptions extends SystemOption {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_COLIMIT];
     }
+
+    /** Get the uri format for longer hints.
+    * @return the current format
+    */
+    /*public ElementFormat getURIElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_URI];
+    }*/
 
     // ============= categories of elements usage ===================
 

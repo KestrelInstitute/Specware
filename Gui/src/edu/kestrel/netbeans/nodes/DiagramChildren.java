@@ -45,8 +45,8 @@ public class DiagramChildren extends Children.Keys implements FilterCookie {
 
     static {
         propToFilter = new HashMap ();
-/*        propToFilter.put (ElementProperties.PROP_IMPORTS, new Integer (SpecElementFilter.IMPORT));        
-        propToFilter.put (ElementProperties.PROP_SORTS, new Integer (SpecElementFilter.SORT));
+        propToFilter.put (ElementProperties.PROP_DIAG_ELEMS, new Integer (DiagramElementFilter.DIAG_ELEM));        
+/*        propToFilter.put (ElementProperties.PROP_SORTS, new Integer (SpecElementFilter.SORT));
         propToFilter.put (ElementProperties.PROP_OPS, new Integer (SpecElementFilter.OP));
         propToFilter.put (ElementProperties.PROP_DEFS, new Integer (SpecElementFilter.DEF));
         propToFilter.put (ElementProperties.PROP_CLAIMS, new Integer (SpecElementFilter.CLAIM));*/
@@ -150,10 +150,10 @@ public class DiagramChildren extends Children.Keys implements FilterCookie {
     * The node is created using node factory.
     */
     protected Node[] createNodes (final Object key) {
-/*        if (key instanceof ImportElement) {
-            return new Node[] { hookNodeName(factory.createImportNode((ImportElement)key)) };
+        if (key instanceof DiagElemElement) {
+            return new Node[] { hookNodeName(factory.createDiagElemNode((DiagElemElement)key)) };
         }
-        if (key instanceof SortElement) {
+/*        if (key instanceof SortElement) {
             return new Node[] { hookNodeName(factory.createSortNode((SortElement)key)) };
         }
         if (key instanceof OpElement) {
@@ -200,14 +200,15 @@ public class DiagramChildren extends Children.Keys implements FilterCookie {
         setKeys(keys);
     }
 
-    /** Filters and returns the keys of specified type.
+    /** Filters and returns the keys of 
+     ified type.
     */
     protected Collection getKeysOfType (final int elementType) {
         LinkedList keys = new LinkedList();
-/*        if ((elementType & SpecElementFilter.IMPORT) != 0) {
-            keys.addAll(Arrays.asList(element.getImports()));
+        if ((elementType & DiagramElementFilter.DIAG_ELEM) != 0) {
+            keys.addAll(Arrays.asList(element.getDiagElems()));
         }
-        if ((elementType & SpecElementFilter.SORT) != 0) {
+/*        if ((elementType & SpecElementFilter.SORT) != 0) {
             keys.addAll(Arrays.asList(element.getSorts()));
         }
         if ((elementType & SpecElementFilter.OP) != 0) {
@@ -248,9 +249,9 @@ public class DiagramChildren extends Children.Keys implements FilterCookie {
             if (src != element) {
                 if (src instanceof MemberElement &&
                     (propName == null || ElementProperties.PROP_NAME == propName)) {
-/*                    if (src instanceof ImportElement) 
-                        filter = SpecElementFilter.IMPORT;
-                    else if (src instanceof SortElement) 
+                    if (src instanceof DiagElemElement) 
+                        filter = DiagramElementFilter.DIAG_ELEM;
+/*                    else if (src instanceof SortElement) 
                         filter = SpecElementFilter.SORT;
                     else if (src instanceof OpElement) 
                         filter = SpecElementFilter.OP;
