@@ -1,15 +1,23 @@
 Char qualifying spec
 
-  import Nat
+  import Integer
 
-  % sorts:
+  (* We consider the 8-bit characters occupying decimal positions 0 to 255 in
+  the ISO-8859-1 code table (the first 128 characters of that code table are
+  the ASCII characters). Thus, we define sort Char by isomorphism with natural
+  numbers less than 256. *)
 
-  % sort Char
+  sort Char.Char  % qualifier required for internal parsing reasons
 
-  % ops whose Lisp code is hand-written:
+  % maps character to its position in the code table:
+  op ord : Char -> {n : Nat | n < 256}
 
- %op ord : Char -> {n : Nat | n < 256}
-  op chr : {n : Nat | n < 256} -> Char
+  axiom ord_is_isomorphism is
+    bijective? ord
+
+  % other ops on characters:
+
+  op chr         : {n : Nat | n < 256} -> Char
   op isUpperCase : Char -> Boolean
   op isLowerCase : Char -> Boolean
   op isAlpha     : Char -> Boolean
@@ -18,9 +26,10 @@ Char qualifying spec
   op isAscii     : Char -> Boolean
   op toUpperCase : Char -> Char
   op toLowerCase : Char -> Char
+  op compare     : Char * Char -> Comparison
 
   axiom chr_def is
-    fa (n : Nat) n < 256 => ord(chr n) = n
+    chr = inverse ord
 
   axiom isUpperCase_def is
     fa (c : Char) isUpperCase c <=> (ord #A <= ord c & ord c <= ord #Z)
@@ -50,15 +59,6 @@ Char qualifying spec
                                     then chr(ord c - ord #A + ord #a)
                                     else c)
 
-  % ops whose Lisp code is generated:
-
-  op compare : Char * Char -> Comparison
-
   def compare(c1,c2) = compare(ord c1, ord c2)
-
-  % ops conceptually belonging to this spec but introduced elsewhere:
-
-  % op toString : Char -> String  % deprecated
-  % op show     : Char -> String
 
 endspec

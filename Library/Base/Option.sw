@@ -2,11 +2,7 @@ Option qualifying spec
 
   import Compare
 
-  % sorts:
-
   sort Option a = | None | Some a
-
-  % ops whose Lisp code is generated:
 
   op some      : fa(a) a -> Option a
   op none      : fa(a) Option a
@@ -35,9 +31,5 @@ Option qualifying spec
     case opt of
       | None   -> None
       | Some x -> Some(f x)
-
-  % ops conceptually belonging to this spec but introduced elsewhere:
-
-  % op show : fa(a) (a -> String) -> Option a -> String
 
 endspec

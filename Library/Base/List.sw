@@ -1,13 +1,19 @@
 List qualifying spec
 
-  import Option
-  import Nat
+  import Option, Integer
 
   % sorts:
 
-  % sort List a = | Nil | Cons a * List a
+  sort List.List a = | Nil | Cons a * List.List a
+       % qualifier required for internal parsing reasons
 
-  % ops whose Lisp code is generated:
+  axiom induction is sort fa(a)
+    fa (p : List a -> Boolean)
+      p Nil &  % base
+      (fa (x:a, l:List a) p l => p(Cons(x,l))) =>  % step
+      (fa (l:List a) p l)
+
+  % ops on lists:
 
   op nil             : fa(a)   List a
   op cons            : fa(a)   a * List a -> List a
@@ -232,9 +238,5 @@ List qualifying spec
     case l of
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
-
-  % ops conceptually belonging to this spec but introduced elsewhere:
-
-  % op show : String -> List String -> String
 
 endspec

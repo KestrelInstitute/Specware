@@ -1,15 +1,20 @@
 String qualifying spec
 
-  import Char
-  import List
+  import Char, List
 
-  % sorts:
+  (* A string is a finite sequence of characters (of sort Char). Thus, we
+  define sort String by isomorphism with lists of characters. *)
 
-  % sort String
+  sort String.String  % qualifier required for internal parsing reasons
 
-  % ops whose Lisp code is hand-written:
+  % maps string to list of component characters:
+  op explode : String -> List Char
 
- %op explode       : String -> List Char
+  axiom explode_is_isomorphism is
+    bijective? explode
+
+  % other ops on strings:
+
   op implode       : List Char -> String
   op length        : String -> Nat
   op concat        : String * String -> String
@@ -28,9 +33,10 @@ String qualifying spec
   op newline       : String
   op toScreen      : String -> ()  % deprecated
   op writeLine     : String -> ()  % deprecated
+  op compare       : String * String -> Comparison
 
   axiom implode_def is
-    fa (s : String) implode(explode s) = s
+    implode = inverse explode
 
   axiom length_def is
     fa (s : String) length s = List.length(explode s)
@@ -81,18 +87,20 @@ String qualifying spec
   axiom leq_def is
     fa (s1,s2 : String)  s1 leq s2  <=>  s1 lt s2  or  s1 = s2
 
-  axiom newline_def is  newline = "\n"
+  axiom newline_def is
+    newline = "\n"
 
-  % ops whose Lisp code is generated:
+  theorem toScreen_def is
+    fa (s : String) toScreen s = ()
 
-  op compare : String * String -> Comparison
+  theorem writeLine_def is
+    fa (s : String) writeLine s = ()
 
   def compare(s1,s2) = if s1 lt s2 then Less
                   else if s2 lt s1 then Greater
                   else (* s1 = s2 *)    Equal
 
-  % ops conceptually belonging to other specs but introduced here,
-  % whose Lisp code is hand-written:
+  % ops with different qualifiers:
 
   op Boolean.toString : Boolean -> String  % deprecated
   op Integer.toString : Integer -> String  % deprecated
@@ -104,6 +112,16 @@ String qualifying spec
 
   op Nat.natToString  : Nat -> String
   op Nat.stringToNat  : (String | Nat.natConvertible) -> Nat
+
+  op Boolean.show           : Boolean -> String
+  op Compare.show           : Comparison -> String
+  op Option.show            : fa(a) (a -> String) -> Option a -> String
+  op Integer.intConvertible : String -> Boolean
+  op Integer.show           : Integer -> String
+  op Nat.natConvertible     : String -> Boolean
+  op Nat.show               : Nat -> String
+  op List.show              : String -> List String -> String
+  op Char.show              : Char -> String
 
   axiom boolean_toString_def is
     fa (x : Boolean) Boolean.toString x = (if x then "true" else "false")
@@ -137,7 +155,8 @@ String qualifying spec
   axiom char_toString_def is
     fa (c : Char) Char.toString c = implode [c]
 
-  axiom intToString_def is  intToString = Integer.toString
+  axiom intToString_def is
+    intToString = Integer.toString
 
   axiom stringToInt_def is
     fa (s : String) intConvertible s =>
@@ -146,7 +165,8 @@ String qualifying spec
                         then Integer.~(stringToNat(substring(s,1,length s)))
                         else stringToNat s)
 
-  axiom natToString_def is  natToString = Nat.toString
+  axiom natToString_def is
+    natToString = Nat.toString
 
   axiom stringToNat_def is
     fa (s : String) natConvertible s =>
@@ -170,19 +190,6 @@ String qualifying spec
                    | hd::tl -> stringToNatAux
                                 (tl, res * 10 + charToDigit hd) in
         stringToNatAux(explode s, 0))
-
-  % ops conceptually belonging to other specs but introduced here,
-  % whose Lisp code is generated:
-
-  op Boolean.show           : Boolean -> String
-  op Compare.show           : Comparison -> String
-  op Option.show            : fa(a) (a -> String) -> Option a -> String
-  op Integer.intConvertible : String -> Boolean
-  op Integer.show           : Integer -> String
-  op Nat.natConvertible     : String -> Boolean
-  op Nat.show               : Nat -> String
-  op List.show              : String -> List String -> String
-  op Char.show              : Char -> String
 
   def Boolean.show b = Boolean.toString b
 

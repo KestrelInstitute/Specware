@@ -1,25 +1,86 @@
 Integer qualifying spec
 
-  import Compare
+  import Nat, Compare, Functions
 
-  % sorts:
+  sort Integer.Integer  % qualifier required for internal parsing reasons
 
- %sort Integer
-  sort NonZeroInteger = {i : Integer | ~(i = 0)}
+  % true for non-negative integers:
+  op natural? : Integer -> Boolean
 
-  % ops whose Lisp code is hand-written:
+  (* The following sort definition defines the naturals to be a subset of the
+  integers. However, since the naturals have been axiomatized in spec Nat,
+  this definition really constrains the integers to be a superset of the
+  naturals. In addition, it allows us to take advantage of the automatic
+  insertions of relax and restrict to map between naturals and integers. Note
+  that the qualifier Nat in Nat.Nat is needed because otherwise the following
+  sort definition would introduce a new unqualified sort Nat. *)
 
- %op ~             : Integer -> Integer
- %op +   infixl 25 : Integer * Integer -> Integer
+  sort Nat.Nat = (Integer | natural?)
+
+  % unary minus:
+  op Integer_.- : Integer -> Integer
+     % qualifier needed to avoid confusion with binary -;
+     % ending "_" to avoid conflicts with user-defined qualifiers
+
+  % for backward compatibility:
+  op Integer.~ : Integer -> Integer
+     % qualifier required to avoid parsing confusion with boolean negation ~
+  axiom backward_compatible_unary_minus_def is
+    Integer.~ = -
+
+  % negative integers are obtained by negating positive ones:
+  axiom negative_integers is
+    fa(i:Integer) ~(natural? i) => (ex(n:PosNat) i = -n)
+
+  % negating distinct positive integers yield distinct negative ones:
+  axiom unary_minus_injective_on_positives is
+    fa(n1,n2:PosNat) n1 ~= n2 => -n1 ~= -n2
+
+  % negating a negative integer yields the positive one we started from:
+  axiom minus_negative is
+    fa(n:PosNat) -(-n) = n
+
+  % negating zero is a no-op
+  axiom minus_zero is
+    -0 = 0
+
+  theorem unary_minus_involution is
+    fa(i:Integer) -(-i) = i
+
+  theorem unary_minus_bijective is
+    bijective? -
+
+  sort NonZeroInteger = {i : Integer | i ~= 0}
+
+  % other ops on integers:
+
+  op +   infixl 25 : Integer * Integer -> Integer
   op -   infixl 25 : Integer * Integer -> Integer
   op *   infixl 27 : Integer * Integer -> Integer
   op div infixl 26 : Integer * NonZeroInteger -> Integer
   op rem infixl 26 : Integer * NonZeroInteger -> Integer
+  op <=  infixl 20 : Integer * Integer -> Boolean
   op <   infixl 20 : Integer * Integer -> Boolean
- %op <=  infixl 20 : Integer * Integer -> Boolean
+  op >=  infixl 20 : Integer * Integer -> Boolean
+  op >   infixl 20 : Integer * Integer -> Boolean
+  op abs           : Integer -> {i : Integer | i >= 0}
+  op min           : Integer * Integer -> Integer
+  op max           : Integer * Integer -> Integer
+  op compare       : Integer * Integer -> Comparison
+  op pred          : Nat -> Integer
+
+  axiom addition_def1 is
+    fa(i:Integer) i+0 = 0 & 0+i = 0
+  axiom addition_def2 is
+    fa(n1,n2:PosNat)   n1  +   n2  = plus(n1,n2)
+                   & (-n1) + (-n2) = -(plus(n1,n2))
+                   &   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
+                                                    else minus(n1,n2))
+                   & (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
+                                                    else -(minus(n1,n2)))
 
   axiom subtraction_def is
-    fa (x,y : Integer) (x - y) = x + (Integer.~ y)
+    fa (x,y : Integer) (x - y) = x + (- y)
 
   axiom multiplication_def is
     fa (x,y : Integer) 0 * y = 0
@@ -39,26 +100,20 @@ Integer qualifying spec
     fa (x : Integer, y : NonZeroInteger)
        x rem y = x - y * (x div y)
 
- %axiom less_than_equal_def is
- %  fa (x,y : Integer) x <= y <=> (x < y or x = y)
+  axiom less_than_equal_def is
+    fa (x,y : Integer) x <= y <=> natural? (y - x)
+
+  theorem natural?_and_less_than_equal is
+    fa(i:Integer) natural? i <=> 0 <= i
 
   axiom less_than_def is
-    fa (x,y : Integer) x < y <=> (x <= y & ~(x = y))
-
-  % ops whose Lisp code is generated:
-
-  op >  infixl 20 : Integer * Integer -> Boolean
-  op >= infixl 20 : Integer * Integer -> Boolean
-  op abs          : Integer -> {i : Integer | i >= 0}
-  op min          : Integer * Integer -> Integer
-  op max          : Integer * Integer -> Integer
-  op compare      : Integer * Integer -> Comparison
-
-  def > (x,y) = y <  x
+    fa (x,y : Integer) x < y <=> (x <= y & x ~= y)
 
   def >= (x,y) = y <= x
 
-  def abs x = if x >= 0 then x else Integer.~ x
+  def > (x,y) = y <  x
+
+  def abs x = if x >= 0 then x else - x
 
   def min(x,y) = if x < y then x else y
 
@@ -68,11 +123,6 @@ Integer qualifying spec
                  else if x > y then Greater
                  else (* x = y *)   Equal
 
-  % ops conceptually belonging to this spec but introduced elsewhere:
-
-  % op toString    : Integer -> String  % deprecated
-  % op show        : Integer -> String
-  % op intToString : Integer -> String
-  % op stringToInt : (String | ...) -> Integer
+  def pred x = x - 1
 
 endspec

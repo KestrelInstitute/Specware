@@ -1,27 +1,20 @@
 Functions qualifying spec
 
-  import Boolean
+  sort Function(a,b) = a -> b
+  sort Injection(a,b)  = (Function(a,b) | injective?)
+  sort Surjection(a,b) = (Function(a,b) | surjective?)
+  sort Bijection(a,b)  = (Function(a,b) | bijective?)
 
-  % sorts:
-
-  sort Injective(a,b)  = ((a -> b) | injective?)
-  sort Surjective(a,b) = ((a -> b) | surjective?)
-  sort Bijective(a,b)  = ((a -> b) | bijective?)
-
-  % ops whose Lisp code is generated:
-
-  op id          : fa(a) a -> a
-  op o infixl 24 : fa(a,b,c) (b -> c) * (a -> b) -> (a -> c)
+  op id          : fa(a) Function(a,a)
+  op o infixl 24 : fa(a,b,c) Function(b,c) * Function(a,b) -> Function(a,c)
+  op injective?  : fa(a,b) Function(a,b) -> Boolean
+  op surjective? : fa(a,b) Function(a,b) -> Boolean
+  op bijective?  : fa(a,b) Function(a,b) -> Boolean
+  op inverse     : fa(a,b) Bijection(a,b) -> Bijection(b,a)
 
   def id x = x
+
   def o (f,g) x = f(g x)
-
-  % ops for which no code can be generated (only used for specification):
-
-  op injective?  : fa(a,b) (a -> b) -> Boolean
-  op surjective? : fa(a,b) (a -> b) -> Boolean
-  op bijective?  : fa(a,b) (a -> b) -> Boolean
-  op inverse     : fa(a,b) Bijective(a,b) -> Bijective(b,a)
 
   axiom injective?_def is sort fa(a,b)
     fa (f : a -> b) injective? f <=> (fa (x,y : a) f x = f y => x = y)
@@ -33,6 +26,6 @@ Functions qualifying spec
     fa (f : a -> b) bijective? f <=> injective? f & surjective? f
 
   axiom inverse_def is sort fa(a,b)
-    fa (f : Bijective(a,b))  (inverse f) o f = id  &  f o (inverse f) = id
+    fa (f : Bijection(a,b))  (inverse f) o f = id  &  f o (inverse f) = id
 
 endspec

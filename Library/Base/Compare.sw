@@ -1,15 +1,9 @@
 Compare qualifying spec
 
-  import Boolean
-
-  % sorts:
-
   sort Comparison =
     | Less
     | Equal
     | Greater
-
-  % ops whose Lisp code is generated:
 
   op compare : Comparison * Comparison -> Comparison
 
@@ -18,13 +12,6 @@ Compare qualifying spec
                                cmp2 = Greater) then Less
                       else (*  cmp1 = Greater or
                                cmp2 = Less *)       Greater
-
-  % ops conceptually belonging to this spec but introduced elsewhere:
-
-  % op show : Comparison -> String
-
-  % ops conceptually belonging to other specs but introduced here,
-  % whose Lisp code is generated:
 
   op Boolean.compare : Boolean * Boolean -> Comparison
 
