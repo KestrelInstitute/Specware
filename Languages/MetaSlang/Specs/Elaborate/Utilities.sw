@@ -631,8 +631,9 @@ spec
      of CoProduct(row,_)   -> occursOptRow(v,row)
       | Product(row,_)     -> occursRow(v,row)
       | Arrow(t1,t2,_)     -> occurs(v,t1) or occurs(v,t2)
-      | Quotient(t,pred,_) -> occurs(v,t)  or occursT(v,pred)
-      | Subsort(t,pred,_)  -> occurs(v,t)  or occursT(v,pred)
+      %% sjw 3/404 It seems safe to ignore the predicates and it fixes bug 82
+      | Quotient(t,pred,_) -> occurs(v,t)  %or occursT(v,pred)
+      | Subsort(t,pred,_)  -> occurs(v,t)  %or occursT(v,pred)
       | Base(_,srts,_)     -> exists (fn s -> occurs(v,s)) srts
       | TyVar _            -> false 
       | MetaTyVar _        -> (case unlinkSort srt of
