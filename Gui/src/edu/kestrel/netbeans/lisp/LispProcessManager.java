@@ -22,6 +22,7 @@ import edu.kestrel.netbeans.Util;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.io.*;
 
 import org.openide.TopManager;
 import org.openide.filesystems.FileSystem;
@@ -57,22 +58,43 @@ public class LispProcessManager {
 
     public static boolean connectToLisp() {
         if (JavaLinkDist.query(true)) {
-//            writeToOutput("LispProcessManager.connectToLisp --> Already Connected");
+            //writeToOutput("LispProcessManager.connectToLisp --> Already Connected");
             return true;
         } else if (JavaLinkDist.connect(lispHost, lispPort, javaHost, javaPort, pollInterval, javaTimeout)) {
-//            writeToOutput("LispProcessManager.connectToLisp --> New Connection Established");
+            //writeToOutput("LispProcessManager.connectToLisp --> New Connection Established");
             return true;
         } else {
-//            writeToOutput("LispProcessManager.connectToLisp --> Failed to Connect to LISP " + JavaLinkDist.query());
-//            writeToOutput("LispServer = "+ lispServer + "\n Lisp Process "+lispProcess + "\n");
+            //writeToOutput("LispProcessManager.connectToLisp --> Failed to Connect to LISP " + JavaLinkDist.query());
+            //writeToOutput("LispServer = "+ lispServer + "\n Lisp Process "+lispProcess + "\n");
+
             if (lispServer == null){
                 lispServer = new ExternalLispProcess();
                 try {
                     lispProcess = lispServer.createProcess();
-//                    writeToOutput("****  lispServer.createProcess returned "+lispServer);
+                    //writeToOutput("****  lispServer.createProcess returned "+lispProcess);
                     Thread.sleep(5000);
+                    
+                    String s = null;
+                    BufferedReader stdInput = new BufferedReader(new 
+                         InputStreamReader(lispProcess.getInputStream()));
+
+                    BufferedReader stdError = new BufferedReader(new 
+                         InputStreamReader(lispProcess.getErrorStream()));
+
+                    // read the output from the command
+                    //System.out.println("Here is the standard output of the command:\n");
+                    while ((s = stdInput.readLine()) != null) {
+                        System.out.println(s);
+                    }
+
+                    // read any errors from the attempted command
+                    //System.out.println("Here is the standard error of the command (if any):\n");
+                    while ((s = stdError.readLine()) != null) {
+                        System.out.println(s);
+                    }
+
                 } catch (Exception e) {
-                    writeToOutput("LispProcessManager.connectToLisp.Exception "+e+" starting Lisp");
+                    writeToOutput("LispProcessManager.connectToLisp.Exception \""+e+"\" while starting Lisp");
                 }
 //                writeToOutput("LispProcessManager.connectToLisp --> Calling Connect to Lisp again");
                 if (lispProcess != null) {
