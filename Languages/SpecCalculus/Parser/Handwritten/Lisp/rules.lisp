@@ -139,9 +139,9 @@
    (1 :SC-TRANSLATE)
    (1 :SC-QUALIFY)
    (1 :SC-DIAG)
+   (1 :SC-COLIMIT)
    ;; (1 :SC-DOM)
    ;; (1 :SC-COD)
-   ;; (1 :SC-COLIMIT)
    ;; (1 :SC-LIMIT)
    ;; (1 :SC-APEX)
    ;; (1 :SC-SHAPE)
@@ -1282,6 +1282,14 @@ If we want the precedence to be optional:
   (make-sc-diag-edge 1 2 3 4 ':left-lc ':right-lc))
 
 ;;; ========================================================================
+;;;  SC-COLIMIT
+;;; ========================================================================
+
+(define-sw-parser-rule :SC-COLIMIT ()
+  (:tuple "colim" (1 :SC-TERM))
+  (make-sc-colimit 1 ':left-lc ':right-lc))
+
+;;; ========================================================================
 ;;;  SC-DIAG-MORPH
 ;;; ========================================================================
 
@@ -1292,7 +1300,6 @@ If we want the precedence to be optional:
 
 ;;; ========================================================================
 ;;;  SC-LIMIT
-;;;  SC-COLIMIT
 ;;;  SC-APEX
 ;;; ========================================================================
 

@@ -29,6 +29,7 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45TRANSLATE} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45QUALIFY} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45DIAG} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45COLIMIT} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45SPEC\char45MORPH} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45HIDE} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45EXPORT} 
@@ -483,6 +484,8 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\ \grnonterminal {SC\char45DIAG\char45NODE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grnonterminal {MAPS\char45TO}\  \grnonterminal {SC\char45TERM}
 \\
 \\ \grnonterminal {SC\char45DIAG\char45EDGE} \> $::=$ \> \>    \grnonterminal {NAME}\  \grterminal {\char58}\  \grnonterminal {NAME}\  \grterminal {\char45\char62}\  \grnonterminal {NAME}\  \grnonterminal {MAPS\char45TO}\  \grnonterminal {SC\char45TERM}
+\\
+\\ \grnonterminal {SC\char45COLIMIT} \> $::=$ \> \>    \grterminal {colim}\  \grnonterminal {SC\char45TERM}
 \\
 \\ \grnonterminal {SC\char45SPEC\char45MORPH} \> $::=$ \> \>   \grterminal {morphism}  \grnonterminal {SC\char45TERM}  \grterminal {\char45\char62}  \grnonterminal {SC\char45TERM}\\  \>  \>  \>\ \ \ \ \ \ \ \ \ \ \ \   \grterminal {\{}  \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} 
 \\  \>  \>  \> \ \ \ \ \ \ \ \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45SPEC\char45MORPH\char45ELEM} \bnfrepeatclose  \grterminal {\}}
