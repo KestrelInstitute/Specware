@@ -286,13 +286,18 @@ def removePatternCase(term) =
 
   op varUnion: List Var * List Var -> List Var
   def varUnion(vl1, vl2) = foldl insertNewVar vl1 vl2
-    
+
   op removePatternBind: Term -> CondTerms
   def removePatternBind(term as Bind (binder, bndVars, body, b)) =
+    let printT = printTerm(term) in
+    %let _ = if printT = "fa(n : NN) p n = fa(n1 : NN) (~(lte(n1, n)) => lte(n, n1))"
+    %           then debug("rpb!")
+    %        else () in
     let bodyConds = removePattern(body) in
     let def mkLeafCase(condTerm) =
           let (newVars, newCond, newBody) = condTerm in
-	  let r = (varUnion(bndVars,newVars), newCond, newBody) in
+	  %let r = (varUnion(bndVars,newVars), newCond, newBody) in
+	  let r = (newVars, mkTrue(), mkBind(binder, bndVars, mkSimpImplies(newCond, newBody))) in
 	  %let _ = debug("rpb") in
 	  r in
     let res = map (fn (condTerm) -> mkLeafCase(condTerm)) bodyConds in

@@ -20,7 +20,7 @@ SpecCalc qualifying spec {
      rewriteProverSpec <- getRewriteProverSpec;
      %proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
      %(Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
-     proverLogFileName <- UIDtoLogFile(unitId, prover_name);
+     proverLogFileName <- UIDtoLogFile(unitId, if prover_name = "Both" then "Snark" else prover_name);
      _ <- return (ensureDirectoriesExist proverLogFileName);
      proof_name <- return (UIDtoProofName unitId);
      spec_name <- return (SpecTermToSpecName(spec_term));
@@ -73,6 +73,7 @@ SpecCalc qualifying spec {
     let xspc = transformSpecForFirstOrderProverInt spc in
     if proverUseBase? then let _ = writeLine("PRB") in xspc else
       let xBaseSpec = transformSpecForFirstOrderProverInt basespc in
+      %let xBaseSpec = basespc in
       %let res = subtractSpec xspc xBaseSpec in
       let res = subtractSpecProperties(xspc, xBaseSpec) in
       res
@@ -352,6 +353,7 @@ SpecCalc qualifying spec {
    let context = newContext in
    let snarkBaseHypothesis = map (fn (prop) -> snarkProperty(context, base_spc, prop))
                                  base_hypothesis in
+   %let snarkBaseHypothesis = [] in
    let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewrite_spc, prop))
                                      rewrite_hypothesis in
    %let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
