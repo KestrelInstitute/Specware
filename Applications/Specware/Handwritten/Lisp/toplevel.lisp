@@ -3,11 +3,6 @@
 
 ;; Toplevel Lisp aliases for Specware
 
-;; The lisp code supporting the saving/restoring of the Specware state
-;; to/from the lisp environment can be found in specware-state.lisp.
-;; The latter must be loaded before this and the generated lisp code for
-;; Specware.
-
 (defvar *last-uri-loaded* nil)
 (defvar *last-swl-args* nil)
 (defvar *last-swj-args* nil)
@@ -17,8 +12,20 @@
    (values))
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
+(defun set-base (x)
+   (Specware::setBase_fromLisp x)
+   (values))
+#+allegro
+(top-level:alias ("set-base" :case-sensitive) (x) (set-base x))
+
+(defun show-base-unit-id ()
+   (Specware::showBase_fromLisp)
+   (values))
+#+allegro
+(top-level:alias ("show-base-unit-id" :case-sensitive) () (show-base-unit-id))
+
 (defun sw-re-init ()
-   (setq *specware-global-context* nil)
+   (Specware::reinitializeSpecware)
    (values))
 (defun sw-init ()
    (sw-re-init))

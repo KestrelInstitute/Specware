@@ -2,6 +2,7 @@
 (in-package "SPECWARE")
 
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
+;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
 
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
@@ -40,6 +41,7 @@
 (snark:make-snark-system t)
 
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
+;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
@@ -71,6 +73,7 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
+    "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
     "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     )
   )
@@ -98,8 +101,7 @@
 ||#
 
 ;; The following are specific to Specware and languages that
-;; extend Specware. The order is significant: specware-state
-;; must be loaded before the generated lisp file.
+;; extend Specware. 
 ;;
 ;; The list below is used only in this file.
 
@@ -107,9 +109,6 @@
   '(
     ;; Functions that are assumed by the MetaSlang to Lisp compiler
     "Applications/Handwritten/Lisp/meta-slang-runtime"
-
-    ;; Functions for saving/restoring the Specware state to/from the lisp environment
-    "Applications/Specware/Handwritten/Lisp/specware-state"
 
     ;; The generated lisp code.  This also initializes the Specware
     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
@@ -145,8 +144,8 @@
 (make-system (concatenate 'string
 			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
-;;; Preload the base specs
-(cl-user::sw "/Library/Base")
+;;; Initialization includes preloading the base spec.
+(Specware::initializeSpecware)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")

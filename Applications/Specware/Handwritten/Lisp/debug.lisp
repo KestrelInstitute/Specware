@@ -1,6 +1,10 @@
 ;;; Utilities for help in debugging MetaSlang programs in Lisp
 (in-package "CL-USER")
 
+;; When the following boolean is true, then all exceptions (not just Fail)
+;; take the user into the Lisp debugger.
+(defvar SpecCalc::specwareWizard? nil)
+
 #+allegro
 (defun quiet-do-command (&rest args)
   (let ((top-level:*auto-zoom* nil)
