@@ -131,7 +131,7 @@ information on how to send the mail."
   (define-key m '(control meta y) 'fi:pop-input)
   (define-key m "\er" 'fi:re-search-backward-input)
   (define-key m "\es" 'fi:re-search-forward-input)
-  (define-key m "\e." 'slang-meta-point)
+  (define-key m "\e." 'specware-meta-point)
   (define-key m "\e*" 'switch-to-lisp))
 
 (defun cleanup-fi:lisp-listener-mode ()
@@ -149,3 +149,5 @@ information on how to send the mail."
 	 fi:lisp-listener-mode-map)
     (cleanup-fi:lisp-listener-mode)
   (add-hook 'fi:lisp-listener-mode-hook 'cleanup-fi:lisp-listener-mode))
+
+(pushnew ".fasl" completion-ignored-extensions)

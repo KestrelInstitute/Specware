@@ -10,7 +10,7 @@
       "sw-msp-emacs"
       "sw-utilities"
       "sw-init"
-      "slang-mode"
-      "slang-font"
+      "specware-mode"
+      "sw-font"
       ))
 

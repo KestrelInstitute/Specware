@@ -313,7 +313,7 @@ StandardSpec qualifying spec {
  %% (Would we ever want both  FOO.FOO x and FOO.FOO x y  as distinct sorts?)
  %% but we might have two or more sorts X.S, Y.S, etc.
  %% If the qualifier is UnQualified then we return unqualified answer first so as to
- %% give preference to it.
+ %% give preference to it because there is no other way to refer to this entry.
  def findAllSorts (spc, Qualified (qualifier,id)) =
   let found = (case findAQualifierMap (spc.sorts, qualifier, id) of
                 | Some sort_info -> [sort_info]
@@ -334,7 +334,6 @@ StandardSpec qualifying spec {
      | None         -> []
 		
  %%  find all the matches to id in every second level map
- %%  ?? Prefer match to unqualified entry ??
  op wildFindUnQualified : fa (a) AQualifierMap a * Id -> List a
  def wildFindUnQualified (qualifier_map, id) =
   StringMap.foldri (fn (qualifier, qmap, results) ->

@@ -293,6 +293,11 @@ AnnSpec qualifying spec {
  op addLocalSortName    : fa(a) ASpec a * QualifiedId -> ASpec a
  op addLocalOpName      : fa(a) ASpec a * QualifiedId -> ASpec a
 
+ op localOp?            : fa(a) QualifiedId * ASpec a -> Boolean
+ op localSort?          : fa(a) QualifiedId * ASpec a -> Boolean
+
+
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                ImportedSpecs operations 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -400,4 +405,15 @@ AnnSpec qualifying spec {
            sorts      = sorts,
            ops        = ops,
            properties = properties}
+
+ def localOp?(Qualified(qualifier,op_name),
+	      spc as {importInfo = {imports, importedSpec, localOps, localSorts},
+		      sorts, ops, properties})
+   = memberQualifiedId(qualifier,op_name,localOps)
+
+ def localSort?(Qualified(qualifier,sort_name),
+	      spc as {importInfo = {imports, importedSpec, localOps, localSorts},
+		      sorts, ops, properties})
+   = memberQualifiedId(qualifier,sort_name,localSorts)
+
 }

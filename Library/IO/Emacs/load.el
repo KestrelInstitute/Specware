@@ -30,7 +30,7 @@
 (mapc 'sw:load-specware-emacs-file sw:specware-emacs-files)
 
 (setq auto-mode-alist
-  (list* '("\\.sl$" . slang-mode)
-	 '("\\.spec$" . slang-mode)
-	 '("\\.sw$" . slang-mode)
+  (list* '("\\.sl$" . specware-mode)
+	 '("\\.spec$" . specware-mode)
+	 '("\\.sw$" . specware-mode)
 	 auto-mode-alist))
