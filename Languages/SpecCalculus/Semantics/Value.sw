@@ -57,10 +57,10 @@ SpecCalc qualifying spec {
   op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 
   (* tentative *)
-  def ppPrism {dom, sms, pmode, tm} =
+  def ppPrism {dom=_, sms=_, pmode=_, tm=_} =
     ppString "<some prism>"
 
   (* tentative *)
-  def ppInterp {dom, med, cod, d2m, c2m} =
+  def ppInterp {dom=_, med=_, cod=_, d2m=_, c2m=_} =
     ppString "<some interp>"
 }
