@@ -23,6 +23,10 @@ extracted as a spec in its own right and then be imported.
 Caveat Emptor: the spec has not been "tested" -- whatever that
 means...
 
+2005:03:18
+LM
+Added clarifying comments about the role of the conjectures
+
 *)
 
 Monad qualifying spec
@@ -36,6 +40,14 @@ Monad qualifying spec
     op id : [a] Arrow(a,a)
 
     op o infixl 24 : [a,b,c] Arrow(b,c) * Arrow(a,b) -> Arrow(a,c)
+
+    % The following conjectures should morally be axioms.
+    % The point is that this spec is meant to be imported
+    % (indirectly) in specs defining specific monads by
+    % supplying definitions for Monad, monadBind and return,
+    % thereby fixing Arrow, id and o.  These conjectures
+    % are imported then as well and turn into the proof
+    % obligations on the actual definitions supplied.
 
     conjecture idNeutral is
       [a,b] fa(f : Arrow(a,b)) id o f = f && f o id = f
