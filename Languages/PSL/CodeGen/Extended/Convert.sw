@@ -427,10 +427,26 @@ are no longer needed. *)
 
   op getTransitionGuardAndActions : Transition -> Env (Option MSlang.Term * List MSlang.Term)
   def getTransitionGuardAndActions transition = 
+    let ms = modeSpec (transSpec transition) in
     {
-     guard_terms  <- foldVariants (fn l -> fn claim -> return (cons (term claim,l))) [] (modeSpec (transSpec transition));
-     action_terms <- foldVariables infoToBindings [] (modeSpec (transSpec transition));
-     action_terms <- return (rev action_terms);
+     %% foldVariants  maps over spec properties (i.e. axioms, theorems, etc.) 
+     %%   looking for those listed as invariants in the modespec
+     %% foldVariables maps over spec ops
+     print ("\nInvariants: " ^ (anyToString (invariants ms)) ^ "\n");
+     (guard_terms, aux_action_terms)  <- foldVariants (fn (guards, actions) -> fn claim -> 
+						       if claim.2 = "Guard" then
+							 return (cons (term claim,guards),
+								 actions)
+						       else
+							 return (guards,
+								 cons (term claim, actions)))
+                                                      ([], [])
+						      ms;
+     action_terms <- foldVariables infoToBindings [] ms;
+     print ("Aux    terms: " ^ (anyToString aux_action_terms) ^ "\n");
+     print ("Action terms: " ^ (anyToString action_terms)     ^ "\n");
+     action_terms <- return (aux_action_terms ++ (rev action_terms));
+     print ("Guard  terms: " ^ (anyToString guard_terms)  ^ "\n");
      case guard_terms of
        | [] ->
          return (None, action_terms)
