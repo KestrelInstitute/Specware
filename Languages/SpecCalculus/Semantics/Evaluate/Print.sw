@@ -12,8 +12,8 @@ SpecCalc qualifying spec {
        | Diag dgm -> print
            (ppFormat
               (ppDiagram
-                 (mapDiagram dgm (fn o -> subtractSpec o baseSpec) (fn a -> a))))
-       | InProcess -> print "Not value!");
+                 (mapDiagram dgm (fn obj -> subtractSpec obj baseSpec) (fn a -> a))))
+       | InProcess -> print "No value!");
      return (value,timeStamp,depURIs)
    }
 }

@@ -1,5 +1,5 @@
 spec {
-  import Context
+  import PSpec
   import /Languages/MetaSlang/Specs/Categories/AsRecord 
   import ../AbstractSyntax/SimplePrinter
 
