@@ -137,6 +137,7 @@ Prover qualifying spec
       | Record(_) -> removePatternRecord(term)
       | Bind (_) -> removePatternBind(term)
       | Let(_) -> removePatternLet(term)
+      | LetRec(_) -> removePatternLetRec(term)
       | Var(_) -> removePatternVar(term)
       | Fun(_) -> removePatternFun(term)
       | Lambda(_) -> removePatternLambda(term)
@@ -379,5 +380,8 @@ def removePatternCase(term) =
 
   op removePatternSortedTerm: Term -> CondTerms
   def removePatternSortedTerm(term) = [([], mkTrue(), term)]
+
+  op removePatternLetRec: Term -> CondTerms
+  def removePatternLetRec(term) = [([], mkTrue(), term)]
 
 endspec
