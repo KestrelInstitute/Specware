@@ -29,8 +29,8 @@ SpecCalc qualifying spec
    % this assume that a name used to index into the sort map also appears
    % in the list of names for that sort.
    let 
-     def doSortInfo sortInfo = ppConcat [ppString "type ", ppASortInfo sortInfo]
-     def doOpInfo   opInfo   = ppConcat [ppString "op  ",   ppAOpInfo   opInfo]
+     def doSortInfo sortInfo = ppASortInfo sortInfo %ppConcat [ppString "type ", ppASortInfo sortInfo]
+     def doOpInfo   opInfo   = ppAOpInfo   opInfo   %ppConcat [ppString "op  ",   ppAOpInfo   opInfo]
    in
      ppConcat [
        ppString "spec {",
