@@ -65,7 +65,7 @@ else
     export LISP_EXECUTABLE=$CMULISP
     xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
            -l "$SPECWARE4"/Library/IO/Emacs/compile-misc-ilisp-files \
-           -geometry =150x60+20+20 
+           -geometry =100x20-0+80
     echo "With luck, xemacs is now done compiling."
     echo " "
     echo "Should now see three or more x86f files, including:"
