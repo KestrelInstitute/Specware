@@ -156,7 +156,9 @@ Prover qualifying spec
 	  let pos = termAnn(term) in
 	  let opName = mkQualifiedId(qname, name) in
 	  let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
+	  %let _ = if name = "queens_gs_aux_1" then writeLine("initialFmla: "^printTerm(initialFmla)) else () in
 	  let liftedFmlas = proverPattern(initialFmla) in
+	  %let _ = if name = "queens_gs_aux_1" then map (fn (lf) -> writeLine("LiftedAxioms: " ^ printTerm(lf))) liftedFmlas else [] in
 	  let axioms = map (fn(fmla:Term) -> (Axiom, name^"_def", [], withAnnT(fmla, pos))) liftedFmlas in
 	  %%let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
 	  	%let _ = writeLine(name^": in axiomFromOpDef Def part") in
@@ -188,8 +190,8 @@ Prover qualifying spec
             if cmpGt(oa, na) then
               Cons(na, mergeAxiomsByPos(Cons(oa,oas),nas))
             else Cons(oa, mergeAxiomsByPos(oas,Cons(na,nas))) in
-    let newAxioms = foldriAQualifierMap axiomFromOpDef [] norm_spc.ops in
-    let newProperties = mergeAxiomsByPos(spc.properties, newAxioms) in
+    let newDefAxioms = foldriAQualifierMap axiomFromOpDef [] norm_spc.ops in
+    let newProperties = mergeAxiomsByPos(spc.properties, newDefAxioms) in
     %%let _ = debug("explicateHidden") in 
     setProperties(spc, newProperties)
 

@@ -18,7 +18,7 @@ Prover qualifying spec
   op condTermToFmla: CondTerm -> Term
   def condTermToFmla(condTerm) =
     let (vars, cond, term) = condTerm in
-    let body = mkImplies(cond, term) in
+    let body = mkSimpImplies(cond, term) in
     let res = case vars of
                 | Nil -> body
                 | _ -> mkBind(Forall, vars, body) in
@@ -226,14 +226,32 @@ def removePatternCase(term) =
           if member(id, ids) then findNewIdRec(mkNewId(id, num), ids, num+1) else id in
     let newId = findNewIdRec(id, ids, 1) in
  *)
+
+  op insertNewVar: Var * List Var -> List Var
+  def insertNewVar(v, l) =
+    case l of
+      | [] -> [v]
+      | v1::l1 ->
+          if equalVar?(v, v1) then
+            l
+          else
+            Cons (v1, insertNewVar (v, l1))
+
+  op varUnion: List Var * List Var -> List Var
+  def varUnion(vl1, vl2) = foldl insertNewVar vl1 vl2
     
   op removePatternBind: Term -> CondTerms
   def removePatternBind(term as Bind (binder, bndVars, body, b)) =
     let bodyConds = removePattern(body) in
     let def mkLeafCase(condTerm) =
           let (newVars, newCond, newBody) = condTerm in
-	  (bndVars++newVars, newCond, newBody) in
-    map (fn (condTerm) -> mkLeafCase(condTerm)) bodyConds
+	  let r = (varUnion(bndVars,newVars), newCond, newBody) in
+	  %let _ = debug("rpb") in
+	  r in
+    let res = map (fn (condTerm) -> mkLeafCase(condTerm)) bodyConds in
+    %let _ = writeLine("RemovePatternBind: "^printTerm(term)) in
+    %let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in
+    res
 
   op patternToTerms: Pattern -> List Term
   def patternToTerms(pat) =
@@ -324,7 +342,7 @@ def removePatternCase(term) =
           let condTermsForCond = removePattern(cond) in
 	  map (fn (vs, c, t) -> (vars++vs, Utilities.mkAnd(c, t))) condTermsForCond in
     let def patternTermListToVarsConds(patternTermList) =
-          let _ = debug("patternTermList") in
+          %let _ = debug("patternTermList") in
 	  let varsCondsList = map (fn (pat, term) -> varsCondRecurse(patternAndTermToVarsConds(pat, term))) patternTermList in
 	  let def initialFun(x) = x in
 	  let def interimFun(varsCond1, varsCond2) =

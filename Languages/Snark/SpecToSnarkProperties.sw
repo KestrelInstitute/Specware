@@ -3,6 +3,8 @@ snark qualifying spec
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
   import /Languages/MetaSlang/Transformations/ProverPattern
+  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+  import /Languages/SpecCalculus/Semantics/Evaluate/UnitId
 %  import /Languages/MetaSlang/Transformations/Match
 %  import /Languages/MetaSlang/CodeGen/Lisp/Lisp
 %  import /Languages/MetaSlang/Specs/StandardSpec
@@ -21,13 +23,16 @@ snark qualifying spec
   op snark_assert: LispCell
   def snark_assert = Lisp.symbol("SNARK","ASSERT")
 
+  op snark_assert_rewrite: LispCell
+  def snark_assert_rewrite = Lisp.symbol("SNARK","ASSERT-REWRITE")
+
   op snark_prove: LispCell
   def snark_prove = Lisp.symbol("SNARK","PROVE")
 
   def snarkPBaseSort(spc, s:Sort, rng?):LispCell = 
 	          case s of
-		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
-		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
+		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
 		    | Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
                       %let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
@@ -55,8 +60,8 @@ snark qualifying spec
       let
 	def builtinSnarkSort(s) =
 	  case s of 
-	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
-	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
+	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
       let builtinScheme = find (fn (_, srt) -> builtinSort?(srt)) schemes in
         (case builtinScheme of
@@ -72,8 +77,8 @@ snark qualifying spec
   def snarkPPBaseSort(_(* sp *):Spec, s:Sort, rng?):LispCell = 
     let res =
     case s of
-      | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
-      | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
+      | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
+      | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
       | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
 				      else Lisp.symbol("SNARK",id)
       | Product _ -> Lisp.symbol("SNARK","TRUE")
@@ -180,6 +185,54 @@ snark qualifying spec
 	      else Lisp.cons(Lisp.symbol("SNARK","="), Lisp.list [snarkArg1, snarkArg2])
 
 
+  op proverNatSort: () -> Sort
+  
+  def proverNatSort() =
+    let baseProverSpec = run getBaseProverSpec in
+    let optSrt = findTheSort(baseProverSpec, mkUnQualifiedId("ProverNat")) in
+    let Some (names, _, [(_, srt)]) = optSrt in
+    srt
+  
+  op getBaseProverSpec : Env Spec
+  def getBaseProverSpec = 
+    {
+     (optBaseUnitId,baseSpec) <- getBase;
+     proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
+     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
+     return (subtractSpec baseProverSpec baseSpec)
+    }
+
+(*  def getBaseSpec () : SpecCalc.Env Spec =
+    getBaseProverSpec()
+*)
+  op srtPred: Spec * Sort * Var -> MS.Term
+
+  def srtPred(spc, srt, var) =
+    let varTerm = mkVar(var) in
+    let def topPredBaseSrt(srt) =
+         case srt of
+	   | Base(Qualified("Nat","Nat"),_,_) -> topPredBaseSrt(proverNatSort())
+	   | Base (qid, _, _) -> (Some qid, mkTrue())
+	   | Subsort (supSrt, predFn, _) ->
+	   let (supBaseSrt, supPred) = topPredBaseSrt(supSrt) in
+	   let pred = (simplify spc (mkApply(predFn, varTerm))) in
+	     (case supBaseSrt of
+		| Some qid -> (Some qid, Utilities.mkAnd(supPred, pred))
+	        | _ -> (None, Utilities.mkAnd(supPred, pred))) 
+           | _ -> (None, mkTrue()) in
+    let (topBaseQId, topPred) = topPredBaseSrt(srt) in
+    case topBaseQId of
+      | Some topBaseQId ->
+      let optSrt = findTheSort(spc, topBaseQId) in
+      (case optSrt of
+	 | Some (names, _, schemes) ->
+	 (case schemes of
+	    | [(_, newSrt)] -> Utilities.mkAnd(topPred, srtPred(spc, newSrt, var))
+	    | _ -> topPred)
+	 | _ -> topPred)
+      | _ -> topPred
+     
+
   op mkSnarkFmla: Context * Spec * String * StringSet.Set * Vars * MS.Term -> LispCell
 
   def mkSnarkFmla(context, sp, dpn, vars, globalVars, fmla) =
@@ -188,7 +241,11 @@ snark qualifying spec
 	let snarkBndList = snarkBndVars(sp, bndVars, globalVars) in
 	let newVars = map(fn (var, srt) -> specId(var))
 	                 bndVars in
-	let snarkFmla = mkSnarkFmla(context, sp, dpn, StringSet.addList(vars, newVars), globalVars, term) in
+	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, (var, srt)), res)) (mkTrue()) (bndVars:(List Var))):MS.Term in
+	let newTerm = case bndr of
+	                | Forall -> Utilities.mkSimpImplies(bndVarsPred, term)
+	                | Exists -> Utilities.mkAnd(bndVarsPred, term) in
+	let snarkFmla = mkSnarkFmla(context, sp, dpn, StringSet.addList(vars, newVars), globalVars, newTerm) in
 	   Lisp.list [Lisp.symbol("SNARK",bndrString bndr),
 		      snarkBndList,
 		      snarkFmla]
@@ -273,6 +330,13 @@ snark qualifying spec
   def snarkProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
     let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], fmla) in
       Lisp.list [snark_assert, Lisp.quote(snarkFmla),
+		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
+
+  op snarkRewrite: Context * Spec * Property -> LispCell
+
+  def snarkRewrite(context, spc, prop as (ptype, name, tyvars, fmla)) =
+    let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], fmla) in
+      Lisp.list [snark_assert_rewrite, Lisp.quote(snarkFmla),
 		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
 
   op snarkConjectureRemovePattern: Context * Spec * Property -> LispCell
