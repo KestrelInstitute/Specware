@@ -47,23 +47,33 @@ class MorphismB extends Member implements Binding.Morphism, TextBinding.Containe
     protected Element cloneElement() {
         MorphismElement x = new MorphismElement();
         MorphismElement my = (MorphismElement)getElement();
-        try {
-            x.setName(my.getName());
-            x.setSource(my.getSource());
-        } catch (SourceException ex) {
-            // should NOT happen.
-        }
+        copyProperties(x);
         return x;
     }
     
     private MorphismElement cloneMorphism() {
-        return (MorphismElement)cloneElement();
+        Element orig = getElement();
+        MorphismElement el = new MorphismElement();
+        copyProperties(el);
+        return el;
     }
     
-    protected int classifyProperty(String name) {
+    protected void copyProperties(MorphismElement target) {
+        MorphismElement my = (MorphismElement)getElement();
+        try {
+            target.setName(my.getName());
+            target.setSourceUnitID(my.getSourceUnitID());
+            target.setTargetUnitID(my.getTargetUnitID());
+            target.setSource(my.getSource());
+        } catch (SourceException ex) {
+            // should NOT happen.
+        }
+    }
+    
+/*    protected int classifyProperty(String name) {
         return CLASS_HEADER;
     }
-    
+  */  
     public ElementBinding findBindingAt(int pos) {
         ElementBinding b = super.findBindingAt(pos);
         if (b == this) {
@@ -74,7 +84,38 @@ class MorphismB extends Member implements Binding.Morphism, TextBinding.Containe
         return b;
     }
 
-    /* ============== CONTAINER MANAGEMENT METHODS ================= */
+    /**
+     * Requests a change of member's name.
+     */
+    public void changeName(final String name) throws SourceException {
+        if (!source.isGeneratorEnabled())
+            return;
+        
+	super.changeName(name);
+    }
+    
+    /** Changes sourceUnitID
+     */
+    public void changeSourceUnitID(UnitID newSourceUnitID) throws SourceException {
+        if (!source.isGeneratorEnabled())
+            return;
+        MorphismElement el = (MorphismElement)cloneElement();
+        el.setSourceUnitID(newSourceUnitID);
+        regenerateHeader(el);
+    }
+  
+    /** Changes targetUnitID
+     */
+    public void changeTargetUnitID(UnitID newTargetUnitID) throws SourceException {
+        if (!source.isGeneratorEnabled())
+            return;
+        MorphismElement el = (MorphismElement)cloneElement();
+        el.setTargetUnitID(newTargetUnitID);
+        regenerateHeader(el);
+    }
+
+    
+  /* ============== CONTAINER MANAGEMENT METHODS ================= */
     
     public boolean canInsertAfter(Binding b) {
         if (container == null) {
