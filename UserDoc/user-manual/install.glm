@@ -57,13 +57,14 @@ Windows 2000.</para>
 Before running the &Specware; 4.0 installer, you should have a recent
 version of XEmacs (21.1 or higher) installed on your machine.
 If you already have XEmacs, then proceed to the next step.  Otherwise,
-open the XEmacs folder provided on the setup CD and run <"setup.exe">.
+open the XEmacs folder provided on the setup CD, and run <"setup.exe">.
 Select "Install from Local Directory" as the Installation Method, and click 
 "Next" through the remaining steps to accept the default configuration.
 
 Note: If you choose not to complete this step of installing XEmacs, a text-only version of
 Specware will be installed instead.
 </para>
+</step>
 
 <step>
 <para>
