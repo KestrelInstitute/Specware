@@ -8,29 +8,38 @@ M e t a s l a n g   L i b r a r y   S k e l e t o n
 
 GENERAL NOTIONS
 
-  Relations and Functions
-    Functions
-    * associative
-    * commutative
-    * idempotent
-    * fixpoint
-    * function update
-    Predicates
-    Relations
-    * domain
-    * range
-    * composition
-    * identity
-    * total
-    * injective
-    * surjective
-    * functional
-    * transitive
-    * reflexive
-    * symmetric
-    * equivalence relation
-    * congruence relation
-    Symmetries
+  Functions
+  * associative
+  * commutative
+  * idempotent
+  * fixpoint
+  * function update
+
+  Predicates
+  * epsilon
+  * iota
+  * min
+  * max
+  * finite
+
+  Relations
+  * domain
+  * range
+  * composition
+  * identity
+  * total
+  * injective
+  * surjective
+  * functional
+  * transitive
+  * reflexive
+  * symmetric
+  * equivalence relation
+  * congruence relation
+
+  Symmetries
+
+  Assertions
 
   Naturals
 
