@@ -45,7 +45,7 @@ WordMatching = colimit diagram {
 FindMatches0 = spec
 
   import WordMatching
-  import Matches
+  import MatchingSpecs#Matches
 
   op find_matches : Message * List Word -> List Match
   def find_matches(msg,wrds) =
