@@ -196,7 +196,8 @@
 		     slash-dir)))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
 				      (sw::normalize-filename root-dir)))
-    
+    (sw:eval-in-lisp-no-value
+     (format "(namestring (specware::change-directory %S))" dir))
     (simulate-input-expression "(time (load \"Specware4.lisp\"))")
     (continue-form-when-ready
      (`(build-specware4-continue (, root-dir) (, dir) (, bin-dir)
