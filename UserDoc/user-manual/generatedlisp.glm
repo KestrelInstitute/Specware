@@ -24,7 +24,7 @@ constructs.
 <para>
 &Specware ops are implemented using lisp defuns if they are functions,
 defparameter otherwise. Their names are uppercased and put in the
-package with the same name as the qualifier or [[L:SW-SPEC]] if
+package with the same name as the qualifier, or [[L:SW-SPEC]] if
 unqualified. However, if the name is that of a built-in Lisp symbol,
 the name is prepended with the character "!" and not uppercased. If
 the qualifier of the op is the same as a built-in lisp package then
@@ -59,7 +59,7 @@ is
 All &Specware functions are unary. Multiple argument functions are
 modeled using either functions with product domains, or curried
 functions. For efficiency we wish to exploit Common Lisp's support of
-nary functions. Arity normalization aims to minimize unpacking and
+n-ary functions. Arity normalization aims to minimize unpacking and
 packing of products when passing arguments to functions with product
 domains, and currying normalization aims to minimize closure creation
 when calling curried functions. The saving is particularly important
@@ -72,7 +72,7 @@ to the function.
 
 <para>
 For each function whose argument is a product, two entry points are
-created: an nary function whose name is derived from the op as
+created: an n-ary function whose name is derived from the op as
 described above, and a unary function whose name has "[[L:-1]]"
 appended. E.g. for 
 </para>
@@ -81,13 +81,13 @@ appended. E.g. for
 ]]
 <para>
 there are two lisp functions [[L:#'MIN]] and [[L:#'MIN-1]].
-A call with an explicit product is translated to the nary version,
+A call with an explicit product is translated to the n-ary version,
 otherwise the unary version is used. For example, [[min(1,2)]] translates
 to [[L:(MIN 1 2)]], and [[ foldr min inf l ]] translates to 
 [[L:(FOLDR-1-1-1 #'MIN-1 INF L)]].
 When generating lisp for a definition, the form is examined to see whether the
-definition is naturally nary. If it is, then the primary definition is
-nary and the unary function is defined in terms of the nary function,
+definition is naturally n-ary. If it is, then the primary definition is
+n-ary and the unary function is defined in terms of the n-ary function,
 otherwise the situation is reversed. For example, given the definition
 </para>
 [[
@@ -135,7 +135,7 @@ primary version.
 </para>
 
 <para>
-As well as producing more efficient code the currying normalization
+As well as producing more efficient code, the currying normalization
 makes code easier to debug using the Common Lisp trace facility. For
 example if a function has a call of the form [[ foldr x y z]], this
 call is implemented as [[L:(FOLDR-1-1-1 x y z)]], so you can trace

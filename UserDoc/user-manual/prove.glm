@@ -27,11 +27,13 @@ proof term.  A typical proof term is of the form: </para>
 [[hypothesis2]] and [[property]] to Snark and then invoking the Snark
 prover to try to prove [[property]] from [[hypothesis1]] and
 [[hypothesis2]] using the options in the [[options]] list. Note that
-[[property]], [[hypothesis1]], and [[hypothesis2]] are all properties
+the properties
+[[property]], [[hypothesis1]], and [[hypothesis2]] must all be
+names of claims
 (i.e. axioms, conjectures, or theorems) that appear in [[spec_term]].
 Note also that [[hypothesis1]] and [[hypothesis2]] are required to
-appear earlier in [[spec_term]] than [[property]].  For most users the
-[[options]] list will be omitted.  Additionally the [[using]] part can
+appear earlier in [[spec_term]] than [[property]].  Most users will
+omit the [[options]] list.  Additionally, the [[using]] part can
 be omitted as well.  In this case all the properties that appear in
 [[spec_term]] prior to [[property]] will be used to prove
 [[property]].  </para>
@@ -48,7 +50,7 @@ failure of the Snark proof.  </para>
 in [[spec_term]] or if one of the axioms do not occur in [[spec_term]]
 prior to [[property]].  </para>
 
-<para> Snark will likely break into Lisp if then user inputs an
+<para> Snark will likely break into Lisp if the user inputs an
 incorrect option.  </para>
 
 </section>
@@ -63,7 +65,7 @@ proofs succeeded or failed.  To deal with all this output &Specware;
 redirects all the Snark output to log files. In our example above,
 which executed a proof in the file <"proof.sw">, &Specware; will
 create a subdirectory called <"snark"> at the same level as
-<"proof.sw">.  In that directory log file, <"proof.log"> will be
+<"proof.sw">.  In that directory a log file called <"proof.log"> will be
 created that contains all the Snark output.</para>
 
 </section>
@@ -93,11 +95,11 @@ three log files will then be: <"snark/proof/p1.log">,
 <title>Interrupting Snark</title>
 
 <para> As is the case with any first-order prover, Snark is likely to
-either loop for ever or run for a longer time than the user would
-like.  The user can provide a time limit for Snark by using an
-appropriate option.  However there are likely to be times when the
+either loop forever or run for a longer time than the user can
+wait.  The user can provide a time limit for Snark by using an
+appropriate option.  However, there are likely to be times when the
 user wants to stop Snark in the middle of execution.  He can do this
-by typing Cntrl-C, Cntrl-C in the *common-lisp* buffer.  This will
+by typing Cntrl-C Cntrl-C in the *common-lisp* buffer.  This will
 then interrupt Snark and place the user in the Lisp debugger.  He can
 exit the debugger by issuing the [[:pop]] command.  A log file will
 still be written that he can look at if he needs to.  </para>
@@ -129,7 +131,7 @@ may seem unnecessary.  We are currently working on making this
 interface as robust and predictable as possible, and welcome any
 feedback the user can offer.  </para>
 
-<para> One are where the user can directly experiment is with the
+<para> One area where the user can directly experiment is with the
 axioms that make up the [[ProverBase]].  The axioms that make up an
 effective prover library are best determined by an experimental
 evolutionary process.  The user is welcome to play with the axioms in

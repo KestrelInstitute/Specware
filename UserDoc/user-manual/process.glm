@@ -111,7 +111,7 @@ multiple-unit file, i.e., it must contain a sequence of one or more
 unit definitions. If this is not the case, the unit identifier cannot
 be resolved and an error is signaled by &Specware;. If that is the
 case, a unit definition is searched in the file, whose path elements
-(at the left of ``='') is the same as the path element that follows
+(to the left of ``='') is the same as the path element that follows
 ``#'' in the original unit identifier. If no such unit definition is
 found, the unit identifier cannot be resolved and an error is signaled
 by &Specware;. If such a unit definition is found, its unit term (at
@@ -227,7 +227,7 @@ the left of ``='') is the same as the path element that follows ``#''
 in the original unit identifier. If no such unit definition is found,
 the unit identifier cannot be resolved and an error is signaled by
 &Specware;. If instead such a unit definition is found, its unit term
-(at the right of ``='') is the final result of
+(to the right of ``='') is the final result of
 resolution.</para></listitem>
 
 </orderedlist>
@@ -297,7 +297,7 @@ the left of ``='') is the same as the path element that follows ``#''
 in the original unit identifier. If no such unit definition is found,
 the unit identifier cannot be resolved and an error is signaled by
 &Specware;. If instead such a unit definition is found, its unit term
-(at the right of ``='') is the final result of
+(to the right of ``='') is the final result of
 resolution.</para></listitem>
 
 </orderedlist>
@@ -375,7 +375,7 @@ terms.</para>
 
 <para>The unit defining text is written in the &Metaslang;
 language. It can be anything that can appear in a single-unit file or
-at the right of ``='' in a unit definition is a multiple-unit file.
+to the right of ``='' in a unit definition is a multiple-unit file.
 The only restriction is that it must fit in one line.  &Specware;
 parses and evaluates the text. If it references other units, &Specware;
 recursively resolves the unit identifiers and parses and evaluates
@@ -621,7 +621,7 @@ absolute directory paths of the underlying operating system,
 surrounded by double quotes. The ``\'' signs inside the directory
 paths must be escaped with ``\'', because the string is processed by
 Lisp. For example, in order to set &swpath; to <"c:\users\me"> it is
-necessary to write [[L::swpath "c"\\users\\me"]].</para>
+necessary to write [[L::swpath "c:\\users\\me"]].</para>
 
 <para>Changes to &swpath; only apply to the currently running
 &Specware; session. If &Specware; is quit and then restarted, &swpath;

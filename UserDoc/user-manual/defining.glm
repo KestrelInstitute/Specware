@@ -15,18 +15,16 @@ unique identifiers within the application.</para>
 <section>
 <title>Unit Identifiers</title>
 
-<para>The units comprising an application are organized in a
-tree. This provides a convenient and mundane way to organize the units
+<para>A unit identifier is a finite, non-empty sequence of word
+symbols (word symbols are defined in the &Metaslang; grammar).  The
+sequence of word symbols is essentially a ``path'' in a tree: the
+units comprising an application are organized in a tree.</para>
+
+<para>This provides a convenient and mundane way to organize the units
 comprising an application. Libraries are subtrees of the whole
 tree. Parallel development of different parts of an application can be
 carried out in different subtrees that can be later put together
 without risk of naming clashes.</para>
-
-<para>The identifier of a unit is the path of the unit in the
-tree. More precisely, it is a finite, non-empty sequence of path
-elements, where a path element is a word symbol (i.e., a sequence of
-letters, digits, underscores, or question marks, starting with a
-letter).</para>
 
 </section>
 
@@ -67,7 +65,7 @@ form a complete path in the tree.
 file system of the underlying operating system. The file system has
 essentially a tree structure. The tree of units comprising a
 &Specware; application is mapped to subtrees of the file system; the
-path elements comprising a path are mapped to file and directory
+word symbols comprising a path are mapped to file and directory
 names.</para>
 
 <para>Future versions of &Specware; will have a more sophisticated UI
@@ -81,19 +79,18 @@ even be made totally transparent to the user.</para>
 
 <para>The mapping of the conceptual unit tree to the file system is
 defined by the environment variable &swpath;. Similarly to the
-``path'' environment variable in the operating system, &swpath; is a
-string consisting of a semicolon-separated list of absolute directory
+``path'' environment variable in operating systems, &swpath; is a
+string consisting of a colon-separated list of absolute directory
 paths in the file system. See <xref linkend="swpath"> for information
 on how to inspect and set &swpath;.</para>
 
-<para>Roughly speaking, the unit tree consist of all the units defined
+<para>Roughly speaking, the unit tree consists of all the units defined
 in <".sw"> files under the directories listed in &swpath;. The
 identifier of each unit is its path from the directory in &swpath;
-under whose subtree the file defining the unit is: if the unit is in
-the subtree of the directory <"dir"> of &swpath;, its identifier is
-its absolute path in the file system ``minus'' the <"dir"> prefix.
-This approximate statement is made precise and illustrated by examples
-below.</para>
+under which the file defining the unit is: if the unit is under
+directory <"dir">, its identifier is its absolute path in the file
+system ``minus'' the <"dir"> prefix.  This approximate statement is
+made precise and illustrated by examples below.</para>
 
 </section>
 
@@ -107,7 +104,11 @@ prefixed by the path from the directory in &swpath; to the
 file.</para>
 
 <para>For example, suppose that &swpath; includes the directory
-<"c:\users\me\specware">. The user creates a file named <"A.sw">
+<"\users\me\specware"> (assuming the Windows operating system;
+currently, since &swpath; is colon-separated, it is not possible to
+use drive letters in directories; &Specware; automatically prefixes
+directories with <"c:">; this restriction will be removed in future
+versions of &Specware;). The user creates a file named <"A.sw">
 immediately under the directory <"c:\users\me\specware\one\two">,
 containing the following text:</para>
 
@@ -120,8 +121,10 @@ containing the following text:</para>
 <para>The absolute path of the file in the file system is
 <"c:\users\me\specware\one\two\A.sw">. The unit is a spec containing
 just a sort [[X]]. The identifier of the unit is [[/one/two/A]]. Note
-that the path components are separated by ``/'', even though the
-underlying file system uses ``\'' (backward slash).</para>
+that the path components are separated by ``/'' (forward slash), even
+though the underlying file system uses ``\'' (backward slash). Unit
+identifier are sequences of word symbols separated by ``/'',
+regardless of the underlying operating system.</para>
 
 </section>
 
@@ -131,22 +134,24 @@ underlying file system uses ``\'' (backward slash).</para>
 <para>It is also possible to put multiple units inside a <".sw">
 file. The file must be in the subtree of one of the directories in
 &swpath;. Instead of just containing a unit term, the file contains
-one or more unit definitions. A unit definition consists of a path
-element, ``='' (equal), and a unit term.</para>
+one or more unit definitions. A unit definition consists of a word
+symbol, ``='' (equal), and a unit term.</para>
 
 <para>This case works almost exactly as if the file were replaced by a
 directory with the same name (without <".sw">) containing one <".sw">
-file for every unit defined therein. Each such file has the path
-element of the unit as name (plus <".sw">) and the term of the unit as
+file for every unit defined therein. Each such file has the word
+symbol of the unit as name (plus <".sw">) and the term of the unit as
 content.</para>
 
 <para>The only difference between the case of multiple units per file
 and the almost equivalent case where the file is replaced by a
 directory containing single-unit files, is that in the former case the
-last separator is not ``/'' but ``#'' (sharp).</para>
+last separator is not ``/'' but ``#'' (sharp). (This is reminiscent of
+the URI syntax, where subparts of a document are referred to using
+``#''.)</para>
 
 <para>Suppose, as in the previous example, that &swpath; includes the
-directory <"c:\users\me\specware">. The user creates a file named
+directory <"\users\me\specware">. The user creates a file named
 <"three.sw"> immediately under the directory
 <"c:\users\me\specware\one\two">, containing the following
 text:</para>
@@ -169,12 +174,12 @@ spec is [[/one/two/three#B]], the identifier of the second spec is
 <para>As a particular instance of the case of multiple units per file,
 it is possible to have just one unit definition in the file. This is
 different from just having a unit term in a file. If the file contains
-a unit definition, then the path element at the left of ``='' is part
+a unit definition, then the word symbol at the left of ``='' is part
 of the unit's identifier, together with ``#'' and the file path
 (relative to the directory in &swpath;).  If instead the file contains
 a unit term, then the identifier of the unit is the file path
 (relative to the directory in &swpath;), without any ``#'' and
-additional path element.</para>
+additional word symbol.</para>
 
 <para>Despite the possibility of having one unit definition in a file,
 in this manual we use the term ``multiple-unit file'' to denote a file
@@ -196,7 +201,7 @@ system.</para>
 <para>The content of the <".sw"> files can be edited with any desired
 text editor. A possibility is to use XEmacs, which is started when
 &Specware; is started and is used to interact with &Specware;. The
-XEmacs-&Specware; combo can be thought as a (rather limited)
+XEmacs-&Specware; combo can be thought of as a (rather limited)
 Integrated Development Environment (IDE).</para>
 
 <para>Note that unit definitions can be managed without running
