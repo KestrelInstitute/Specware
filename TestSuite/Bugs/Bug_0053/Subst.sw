@@ -7,6 +7,7 @@ A = spec
 endspec
 
 B = spec
+  op tick : Nat -> Nat
   def reset = 0
   def tick c = c+1
 endspec
