@@ -315,6 +315,13 @@ Some basic operations for debugging. There should be a proper IO monad.
       (Ok (), state)
 \end{spec}
 
+The following is used when one wants to guard a command with a predicate.
+
+\begin{spec}
+  op when : Boolean -> Env () -> Env ()
+  def when p command = if p then (fn s -> (command s)) else return ()
+\end{spec}
+
 The following is essentially a \verb+foldl+ over a list but within a
 monad. We may want to change the order this function takes its arguments
 and the structure of the argument (ie. curried or not) to be consistent
