@@ -181,6 +181,36 @@ Note: The code below does not yet match the documentation above, but should.
     in
       foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules
 
+  op  translateOpQualifiedId:   AQualifierMap(QualifiedId * Aliases) -> QualifiedId -> QualifiedId
+  op  translateSortQualifiedId: AQualifierMap(QualifiedId * Aliases) -> QualifiedId -> QualifiedId
+  op  translateOp:   AQualifierMap(QualifiedId * Aliases) -> MS.Term -> MS.Term
+  op  translateSort: AQualifierMap(QualifiedId * Aliases) -> MS.Sort -> MS.Sort
+
+  def translateOpQualifiedId op_id_map (qid as Qualified (qualifier, id)) =
+    case findAQualifierMap (op_id_map, qualifier,id) of
+      | Some (nQId,_) -> nQId
+      | None -> qid
+
+  def translateSortQualifiedId sort_id_map (qid as Qualified (qualifier, id)) =
+    case findAQualifierMap (sort_id_map, qualifier,id) of
+      | Some (nQId,_) -> nQId
+      | None -> qid
+
+  def translateOp op_id_map op_term =
+    case op_term of
+      | Fun (Op (qid, fixity), srt, a) ->
+	let new_qid = translateOpQualifiedId op_id_map qid in
+	if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
+      | _ -> op_term
+
+  def translateSort sort_id_map sort_term =
+    case sort_term of
+      | Base (qid, srts, a) ->
+	 let new_qid = translateSortQualifiedId sort_id_map qid in
+	 if new_qid = qid then sort_term else Base (new_qid, srts, a)
+      | _ -> sort_term
+
+
   op auxTranslateSpec :
         Spec
      -> AQualifierMap (QualifiedId * Aliases) * AQualifierMap (QualifiedId * Aliases)
@@ -191,40 +221,16 @@ Note: The code below does not yet match the documentation above, but should.
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_qualifier in all qualified names ??
     let
-      def translateOpQualifiedId (qid as Qualified (qualifier, id)) =
-        case findAQualifierMap (op_id_map, qualifier,id) of
-          | Some (nQId,_) -> nQId
-          | None -> qid
-  
-      def translateSortQualifiedId (qid as Qualified (qualifier, id)) =
-        case findAQualifierMap (sort_id_map, qualifier,id) of
-          | Some (nQId,_) -> nQId
-          | None -> qid
-  
-      def translateOpQualifiedIdToAliases (qid as Qualified (qualifier, id)) =
+      def translateOpQualifiedIdToAliases op_id_map (qid as Qualified (qualifier, id)) =
         case findAQualifierMap (op_id_map, qualifier,id) of
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
-      def translateSortQualifiedIdToAliases (qid as Qualified (qualifier, id)) =
+      def translateSortQualifiedIdToAliases sort_id_map (qid as Qualified (qualifier, id)) =
         case findAQualifierMap (sort_id_map, qualifier,id) of
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
-      def translateOp op_term =
-        case op_term of
-          | Fun (Op (qid, fixity), srt, a) ->
-            let new_qid = translateOpQualifiedId qid in
-            if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
-          | _ -> op_term
-
-      def translateSort sort_term =
-        case sort_term of
-          | Base (qid, srts, a) ->
-             let new_qid = translateSortQualifiedId qid in
-             if new_qid = qid then sort_term else Base (new_qid, srts, a)
-          | _ -> sort_term
-
       def translatePattern pat = pat
 
       def translateOpMap old_ops =
@@ -246,7 +252,7 @@ Note: The code below does not yet match the documentation above, but should.
 						   else 
 						     Cons(new_alias, new_aliases))
 					          new_aliases
-					          (translateOpQualifiedIdToAliases old_alias))
+					          (translateOpQualifiedIdToAliases op_id_map old_alias))
 				           [] 
 					   old_aliases)
 	      in
@@ -282,7 +288,7 @@ Note: The code below does not yet match the documentation above, but should.
 						   else 
 						     Cons(new_alias, new_aliases))
 					          new_aliases
-					          (translateSortQualifiedIdToAliases old_alias))
+					          (translateSortQualifiedIdToAliases sort_id_map old_alias))
 				           [] 
 					   old_aliases)
 	      in
@@ -303,7 +309,7 @@ Note: The code below does not yet match the documentation above, but should.
 
     in
     let {importInfo = {imports,importedSpec,localOps,localSorts}, sorts, ops, properties}
-         = mapSpec (translateOp, translateSort, translatePattern) spc
+         = mapSpec (translateOp op_id_map, translateSort sort_id_map, translatePattern) spc
     in {
       newSorts <- translateSortMap sorts;
       newOps   <- translateOpMap   ops;
@@ -311,8 +317,8 @@ Note: The code below does not yet match the documentation above, but should.
 	      importInfo = {
 			    imports      = [],
 			    importedSpec = None,
-			    localOps     = map translateOpQualifiedId   localOps,
-			    localSorts   = map translateSortQualifiedId localSorts
+			    localOps     = map (translateOpQualifiedId     op_id_map) localOps,
+			    localSorts   = map (translateSortQualifiedId sort_id_map) localSorts
 			   },  
 	      sorts      = newSorts,
 	      ops        = newOps,

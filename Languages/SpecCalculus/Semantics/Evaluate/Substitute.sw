@@ -81,22 +81,20 @@ SpecCalc qualifying spec {
 			    localOps     = emptyOpNames,  % local_op_names   new_spec cod_spec
 			    localSorts   = emptySortNames % local_sort_names new_spec cod_spec
 			   }))}
-			    
+
+  op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
+  def convertIdMap m =
+    foldMap (fn op_id_map -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
+	     insertAQualifierMap (op_id_map, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
+      emptyAQualifierMap m
+
   op applyMorphism : Morphism -> Spec -> Position -> Env Spec 
   def applyMorphism sm spc position =
    %% The opMap and sortMap in sm are PolyMap's  :  dom_qid -> cod_qid
    %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
-   let op_id_map = foldMap (fn op_id_map -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
-			    insertAQualifierMap (op_id_map, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
-                           emptyAQualifierMap
-			   (opMap sm)
-   in
-   let sort_id_map = foldMap (fn sort_id_map -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
-			      insertAQualifierMap (sort_id_map, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
-                             emptyAQualifierMap
-			     (sortMap sm)
-   in
+   let op_id_map   = convertIdMap (opMap sm)   in
+   let sort_id_map = convertIdMap (sortMap sm) in
    auxTranslateSpec spc (op_id_map, sort_id_map) position
     
   %% ======================================================================  
