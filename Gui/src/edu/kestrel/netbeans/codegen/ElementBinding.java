@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:34  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:53  weilyn
  * Added support for morphism nodes.
  *
@@ -717,6 +720,10 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
             mark(element, what);
         }
 
+        public void markDiagElem(DiagElemElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+        
         public void markDiagram(DiagramElement element, int what) throws ElementPrinterInterruptException {
             mark(element, what);
         }
@@ -724,6 +731,10 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
         public void markColimit(ColimitElement element, int what) throws ElementPrinterInterruptException {
             mark(element, what);
         }
+
+        /*public void markURI(URIElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }*/
         
     }
 }
