@@ -81,8 +81,8 @@ spec
      case d
        of Var (x,srt) -> x^":"^printSort srt
 	| Cond term -> "assert "^printTerm term
-	| LetRec (decls) -> printTerm (LetRec(decls,Record([],noPos),noPos))
-	| Let decls -> printTerm (Let(decls,Record([],noPos),noPos))
+	| LetRec (decls) -> printTerm (LetRec(decls,mkRecord([]),noPos))
+	| Let decls -> printTerm (Let(decls,mkRecord([]),noPos))
 
  op printGamma: Gamma -> ()
  def printGamma(decls,_,_,_,_,_,_) = 
@@ -171,7 +171,7 @@ spec
  op  freshVar: Id * Sort * Gamma -> MS.Term * Gamma
  def freshVar(name0,sigma1,gamma) =
    let x = freshName(gamma,name0) in
-   let xVar   = Var((x,sigma1),noPos) in
+   let xVar   = mkVar(x,sigma1) in
    let gamma1 = insert((x,sigma1),gamma) in
    (xVar,gamma1)
 
@@ -344,18 +344,25 @@ spec
    let tcc = foldl (checkRule(gamma,dom,rng,optArg)) tcc rules  in
    let rules = 
        (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	 in
-   let x  = freshName(gamma,"D")			 in
+   let x  = useNameFrom(gamma,optArg,"D")			 in
    let vs = [mkVar(x,dom)] 	        	         in
-   let (_,_,spc,_,Qualified(_, name),_,_) = gamma			 in
+   let (_,_,spc,_,Qualified(_, name),_,_) = gamma        in
    let context:PatternMatch.Context = {counter = Ref 0,
-		  spc = spc,
-		  funName = name,
-		  term = None}				 in
+				       spc = spc,
+				       funName = name,
+				       term = None}      in
    let trm = match(context,vs,rules,mkFalse(),mkFalse()) in
    (case simplifyMatch(trm)
       of Fun(Bool true,_,_) -> tcc
        | trm -> addCondition(tcc,gamma,mkBind(Forall,[(x,dom)],trm)))
 
+ op  useNameFrom: Gamma * Option MS.Term * String -> String
+ def useNameFrom(gamma,optTm,default) =
+   let base_name = case optTm of
+		    | Some(Var((nm,_),_)) -> nm
+                    | _ -> default
+   in
+   freshName(gamma,base_name)
 
 % 
 % This should also capture that the previous patterns failed.
@@ -410,15 +417,16 @@ spec
 	(gamma,t1)
       | VarPat(v as (_,srt),_) -> 
 	let gamma1 = insert(v,gamma) in
-	returnPattern(gamma1,Var(v,noPos),srt,tau)
+	returnPattern(gamma1,mkVar(v),srt,tau)
       | EmbedPat(constr,Some p,tau_,_) -> 
 	let tau1 = patternSort p in
 	let (gamma1,t1) = bindPattern(gamma,p,tau1) in
-	let t2 = Apply(Fun(Embed(constr,true),
-			   Arrow(tau1,tau_,noPos),noPos),t1,noPos) in
+	let t2 = mkApply(mkFun(Embed(constr,true),
+			       mkArrow(tau1,tau_)),
+			 t1) in
 	returnPattern(gamma1,t2,tau_,tau)
       | EmbedPat(constr,None,tau_,_) -> 
-	returnPattern(gamma,Fun(Embed(constr,false),tau_,noPos),tau_,tau)
+	returnPattern(gamma,mkFun(Embed(constr,false),tau_),tau_,tau)
       | RecordPat(fields,_) -> 
 	let fs     = product(getSpec gamma,tau) in
 	let fields = ListPair.zip(fs,fields)    in
@@ -429,30 +437,30 @@ spec
 	     (gamma,cons((id,trm),terms)))
 		  (gamma,[]) fields
 	in
-	let trm = Record(terms,noPos) in
+	let trm = mkRecord(terms) in
 	returnPattern(gamma, trm, patternSort pat,tau)
       | WildPat(sigma,_)	-> 
 	let v = freshName(gamma,"P") in
 	let v = (v,sigma)            in
 	let gamma1 = insert(v,gamma) in
-	(gamma1,Var(v,noPos))
+	(gamma1,mkVar(v))
      | StringPat(s,_) 	->      
-       returnPattern(gamma,Fun(String s,stringSort,noPos),stringSort,tau)
+       returnPattern(gamma,mkFun(String s,stringSort),stringSort,tau)
      | BoolPat(b,_) 		->      
-       returnPattern(gamma,Fun(Bool b,boolSort,noPos),boolSort,tau)
+       returnPattern(gamma,mkFun(Bool b,boolSort),boolSort,tau)
      | CharPat(ch,_) 	->      
-       returnPattern(gamma,Fun(Char ch,charSort,noPos),charSort,tau)
+       returnPattern(gamma,mkFun(Char ch,charSort),charSort,tau)
      | NatPat(i,_) 		->      
-       returnPattern(gamma,Fun(Nat i,natSort,noPos),natSort,tau)
+       returnPattern(gamma,mkFun(Nat i,natSort),natSort,tau)
      | RelaxPat(p,pred,_) 	-> 
-       let tau1 = Subsort(tau,pred,noPos) in
+       let tau1 = mkSubsort(tau,pred) in
        let (gamma,trm) = bindPattern(gamma,p,tau1) in
-       (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos))
+       (gamma,mkApply(mkFun(Relax,mkArrow(tau1,tau)),trm))
      | QuotientPat(p,pred,_) 	-> 
        let Quotient(tau1,_,_) = unfoldBase(gamma,tau) in
        let (gamma,trm) = bindPattern(gamma,p,tau1)
        in
-       (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos))
+       (gamma,mkApply(mkFun(Quotient,mkArrow(tau1,tau)),trm))
 
 %% Well-foundedness condition
 
@@ -615,8 +623,9 @@ spec
 	  let tcc = ListPair.foldl 
 		(fn((_,t1),(id,t2),tcc) -> 
 		     subtypeRec(pairs,tcc,gamma,
-				Apply(Fun(Project id,Arrow(sigma1,t1,noPos),noPos),
-				      M,noPos),t1,t2))
+				mkApply(mkFun(Project id,mkArrow(sigma1,t1)),
+					M),
+				t1,t2))
 		 tcc (fields1,fields2)
           in
           tcc
@@ -625,15 +634,11 @@ spec
 		(fn((_,t1),(id,t2),tcc) -> 
 		   (case (t1,t2)
 	              of (Some t1,Some t2) -> 
-			 let gamma = assertCond(Apply(Fun(Embedded id,
-							  Arrow(sigma,boolSort,noPos),
-							  noPos),
-						      M,noPos),
+			 let gamma = assertCond(mkApply(mkFun(Embedded id, mkArrow(sigma,boolSort)),
+							M),
 						gamma) in
 		         subtypeRec(pairs,tcc,gamma,
-				    Apply(Fun(Select id,
-					      Arrow(sigma,t1,noPos),noPos),
-					  M,noPos),
+				    mkApply(mkFun(Select id, mkArrow(sigma,t1)), M),
 				    t1,t2)
 	               | (None,None) -> tcc
 	               | _ -> System.fail "CoProduct mismatch"))
@@ -654,9 +659,9 @@ spec
 			       let gamma1 = insert((x,s1),gamma) in
 			       let gamma2 = insert((x,s2),gamma) in
 			       let tcc = subtypeRec(pairs,tcc,gamma1,
-						    Var((x,s1),noPos),s1,s2) in
+						    mkVar(x,s1),s1,s2) in
 			       let tcc = subtypeRec(pairs,tcc,gamma2,
-						    Var((x,s2),noPos),s2,s1) in
+						    mkVar(x,s2),s2,s1) in
 			       tcc)
 			 tcc (srts1,srts2)
  	      in
