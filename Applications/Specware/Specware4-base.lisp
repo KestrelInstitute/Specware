@@ -12,7 +12,7 @@
 (defpackage "EDGE")
 (defpackage "FUNCTIONS")
 (defpackage "FUNCTOR")
-(defpackage "HASHTABLE")
+(defpackage "HASHTABLE-SPEC")
 (defpackage "IO-SPEC")
 (defpackage "INFIX")
 (defpackage "INTEGER-SPEC")
@@ -12635,7 +12635,7 @@
 (defparameter TOPSORT::mkLeaf '(:|Leaf|))
 
 (defun TOPSORT::dfs (test g vs) 
-  (let ((|!t| (HASHTABLE::initialize test (LIST-SPEC::|!length| vs)))) 
+  (let ((|!t| (HASHTABLE-SPEC::initialize test (LIST-SPEC::|!length| vs)))) 
     (labels 
       ((dfsLoop (vs) 
         (block 
@@ -12654,14 +12654,14 @@
                                    (cons :|Node| (vector pV7 ps qs)))))))))) 
          (error "Nonexhaustive match failure in dfs")))
        (marked (v) 
-        (let ((pV2 (HASHTABLE::lookup v |!t|))) 
+        (let ((pV2 (HASHTABLE-SPEC::lookup v |!t|))) 
           (block 
            nil 
            (if (eq (car pV2) :|Some|) 
                (return t) 
                (if (eq (car pV2) :|None|) (return nil))) 
            (error "Nonexhaustive match failure in dfs"))))
-       (mark (v) (HASHTABLE::insert v nil |!t|))) (dfsLoop vs))))
+       (mark (v) (HASHTABLE-SPEC::insert v nil |!t|))) (dfsLoop vs))))
 
 (defun TOPSORT::inorderL (|!t| ls) 
   (block 
@@ -26896,6 +26896,18 @@
 (defun SPECCALC::URItoJavaFile-1-1 (x1 x2) 
   (funcall (SPECCALC::URItoJavaFile-1 x1) x2))
 
+(defun SPECCALC::uriToFullPath (pV1 path) 
+  (declare (ignore pV1)) 
+  (let ((device? (SPECCALC::deviceString? (LIST-SPEC::hd path)))) 
+    (let ((mainPath 
+           (STRING-SPEC::concatList 
+            (LIST-SPEC::foldr-1-1-1 
+             #'(lambda (x) 
+                (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
+             nil 
+             (if device? (LIST-SPEC::tl path) path))))) 
+      (if device? (STRING-SPEC::^ (LIST-SPEC::hd path) mainPath) mainPath))))
+
 (defun SPECCALC::URItoLispFile (pV4 pV5) 
   (block 
    nil 
@@ -26916,7 +26928,7 @@
                   (STRING-SPEC::^ 
                    (STRING-SPEC::^ 
                     (STRING-SPEC::^ 
-                     (SPECCALC::uriToPath '(:|None|) prefix) 
+                     (SPECCALC::uriToFullPath '(:|None|) prefix) 
                      "/lisp/") 
                     mainName) 
                    ".lisp")) 
@@ -37333,18 +37345,6 @@
 (defun SPECCALC::ppMorphism-1 (x) 
   (SPECCALC::ppMorphism (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
 
-(defun SPECCALC::uriToFullPath (pV1 path) 
-  (declare (ignore pV1)) 
-  (let ((device? (SPECCALC::deviceString? (LIST-SPEC::hd path)))) 
-    (let ((mainPath 
-           (STRING-SPEC::concatList 
-            (LIST-SPEC::foldr-1-1-1 
-             #'(lambda (x) 
-                (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
-             nil 
-             (if device? (LIST-SPEC::tl path) path))))) 
-      (if device? (STRING-SPEC::^ (LIST-SPEC::hd path) mainPath) mainPath))))
-
 (defun SPECCALC::uriToFullPath-1 (x) (SPECCALC::uriToFullPath (car x) (cdr x)))
 
 (defun SPECCALC::generateFileList-1 (uri) 
@@ -39953,16 +39953,47 @@
                                                                                                                "IO" 
                                                                                                                (cons 
                                                                                                                 "BOOTSTRAP" 
-                                                                                                                nil)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+                                                                                                                (cons 
+                                                                                                                 "HASHTABLE" 
+                                                                                                                 nil))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+
+
+(defparameter SPECTOLISP::notReallyLispStrings 
+  (cons 
+   "C" 
+   (cons 
+    "D" 
+    (cons 
+     "I" 
+     (cons 
+      "M" 
+      (cons 
+       "N" 
+       (cons 
+        "P" 
+        (cons 
+         "S" 
+         (cons 
+          "V" 
+          (cons 
+           "X" 
+           (cons 
+            "Y" 
+            (cons 
+             "Z" 
+             (cons "KEY" (cons "NAME" (cons "VALUE" (cons "PATTERN" nil))))))))))))))))
 
 
 (defun SPECTOLISP::isLispString (id) 
   (cl:or 
    (STRINGSET::|!member| SPECTOLISP::lispStrings id) 
-   (LISP-SPEC::uncell 
-    (LISP-SPEC::|!apply| 
-     (LISP-SPEC::|!symbol| "CL" "FIND-SYMBOL") 
-     (cons (LISP-SPEC::|!string| id) (cons (LISP-SPEC::|!string| "CL") nil))))))
+   (cl:and 
+    (LISP-SPEC::uncell 
+     (LISP-SPEC::|!apply| 
+      (LISP-SPEC::|!symbol| "CL" "FIND-SYMBOL") 
+      (cons (LISP-SPEC::|!string| id) (cons (LISP-SPEC::|!string| "CL") nil)))) 
+    (BOOLEAN-SPEC::~ (LIST-SPEC::|!member| id SPECTOLISP::notReallyLispStrings)))))
+
 
 (defparameter SPECTOLISP::userStrings (cons :|Ref| STRINGSET::empty))
 
