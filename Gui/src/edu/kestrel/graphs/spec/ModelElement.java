@@ -149,9 +149,22 @@ public abstract class ModelElement implements Storable {
     
     /** sets the value field of this model element. */
     public void setValue(Object value) {
-        //Dbg.pr("setValue("+value+")");
+        Dbg.pr("setValue("+value+")");
         this.value = value;
     }
+    
+    /** returns a short representation of the element's value as string to be used in popup windows etc.
+     */
+    public String getShortName() {
+        if (getValue() == null) return "";
+        String name = getValue().toString();
+        if (name.length() > XGraphConstants.maxShortNameLength) {
+            name = name.substring(0,XGraphConstants.maxShortNameLength) + "...";
+        }
+        return name;
+    }
+    
+    
     
     /** inserts a freshly created representation element into the given graph.
      * @paran elem the graph element that is used as representation element
@@ -193,6 +206,7 @@ public abstract class ModelElement implements Storable {
         while(iter.hasMoreElements()) {
             XGraphElement n = (XGraphElement) iter.nextElement();
             sync(n);
+            n.repaintGraph();
         }
     }
     
@@ -205,7 +219,7 @@ public abstract class ModelElement implements Storable {
      * list of representations.
      */
     protected void sync(XGraphElement n) {
-        n.setUserObject(getValue());
+        n.setFullUserObject(getValue());
     }
     
     protected static String Representation = "Representation";
