@@ -6,15 +6,6 @@ DIFFERENCES BETWEEN SPECWARE 4 AND SPECWARE 3
 *** PUT DISCLAIMER HERE ***
 
 
-Version
--------
-
-The version number of Specware 3 is 3, while the version number of
-Specware 4 is 4. As it turns out, 3 and 4 are different numbers. (This
-is a joke and should be erased before adding this file to the
-release.)
-
-
 File extensions
 ---------------
 
