@@ -7,26 +7,66 @@
 # files. See man bash for details. The 'set -v' turns on echoing of
 # lines read. this will be removed later.
 
-set -v
-
-# We assume SPECWARE4 has been set.
-
-if [ -z $SPECWARE4 ]; then
-	echo "Failed to build image, SPECWARE4 environment variable not set"
-	exit 1
-fi
+act='build image'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
-LISP=${LISP:-/usr/local/acl/acl61/alisp}
+set -v
 
-cd $SPECWARE4/Applications/Specware
+# Test whether SPECWARE4 has been set
 
-SWPATH=$SPECWARE4:.
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE";;
+esac
+
+# Try to find lisp executable:
+
+if [ -z "$LISP" ]; then
+   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+      if [ -x "$L" ]; then
+         LISP="$L"; break
+      fi
+   done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
+
+if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/Applications/Specware" 2>&1
+   exit 1
+fi
+
+cd "$SPECWARE4"/Applications/Specware
+
+export SWPATH; SWPATH="$SPECWARE4":.
 
 if [ ! -f lisp/Specware4.lisp ] ; then
-	echo "Failed to build image: could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp"
-	exit 1
+   echo "Failed to $act: could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp" 2>&1
+   exit 1
 fi
 
 cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
