@@ -478,7 +478,7 @@
       (format t "No previous unit evaluated~%"))))
 
 #+allegro
-(top-level:alias ("swpf" :case-sensitive) (&optional &rest args)
+(top-level:alias ("swpu" :case-sensitive) (&optional &rest args)
   (let ((r-args (if (not (null args))
 		    args
 		  *last-swpf-args*)))
