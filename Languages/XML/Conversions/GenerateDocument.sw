@@ -84,7 +84,7 @@ XML qualifying spec
 		"[?? Product ??]"
 	   | Quotient _ ->
 		"[?? Quotient ??]"
-	   | Quotient _ ->
+	   | Subset _ ->
 		"[?? Subset ??]"
 	   | _ ->
 		"[?? Mystery sort ??]"
