@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Package: Parser; Base: 10; Syntax: Common-Lisp -*-
+;;; -*- Mode: LISP; Package: Parser4; Base: 10; Syntax: Common-Lisp -*-
 
 (in-package "PARSER4") 
 

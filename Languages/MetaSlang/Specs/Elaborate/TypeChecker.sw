@@ -34,33 +34,33 @@ spec {
 
   %% ========================================================================
 
-  % op elaboratePosSpecMaybeFail   : List Spec     * Spec                        -> Spec
-  % op elaboratePosSpecReportError : List Spec     * Spec * Environment * String -> ErrorMonad.Result Spec
+% op elaboratePosSpecMaybeFail   : List Spec * Spec                        -> Spec
+% op elaboratePosSpecReportError : List Spec * Spec * Environment * String -> ErrorMonad.Result Spec
 
-  op elaboratePosSpec           : Spec * Filename -> Result
+  op elaboratePosSpec         : Spec * Filename -> Result
 
-  op unlinkRec                  : MS.Sort -> MS.Sort
-  op undeterminedSort?          : MS.Sort -> Boolean
+  op unlinkRec                : MS.Sort -> MS.Sort
+  op undeterminedSort?        : MS.Sort -> Boolean
 
-  op checkSort                  : LocalEnv * MS.Sort                    -> MS.Sort
-  op checkSortScheme            : LocalEnv * (TyVars   * MS.Sort)       -> (TyVars * MS.Sort)
-  op elaborateSort              : LocalEnv * MS.Sort    * MS.Sort         -> MS.Sort
-  op elaborateCheckSortForTerm  : LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort 
-  op elaborateSortForTerm       : LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort
-  op elaborateTerm              : LocalEnv * MS.Term    * MS.Sort         -> MS.Term
-  op elaboratePattern           : LocalEnv * MS.Pattern * MS.Sort         -> MS.Pattern * LocalEnv
+  op checkSort                : LocalEnv * MS.Sort                    -> MS.Sort
+  op checkSortScheme          : LocalEnv * (TyVars   * MS.Sort)       -> (TyVars * MS.Sort)
+  op elaborateSort            : LocalEnv * MS.Sort    * MS.Sort         -> MS.Sort
+  op elaborateCheckSortForTerm: LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort 
+  op elaborateSortForTerm     : LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort
+  op elaborateTerm            : LocalEnv * MS.Term    * MS.Sort         -> MS.Term
+  op elaboratePattern         : LocalEnv * MS.Pattern * MS.Sort         -> MS.Pattern * LocalEnv
 
-  op mkEmbed0                   : LocalEnv * MS.Sort         * Id            -> Option Id
-  op mkEmbed1                   : LocalEnv * MS.Sort * MS.Term * Id * Position -> Option MS.Term
-  op lookupEmbedId              : LocalEnv * Id * MS.Sort                    -> Option (Option MS.Sort)
-  op isCoproduct                : LocalEnv * MS.Sort                         -> Option (List (Id * Option MS.Sort))
-  op mkProject                  : LocalEnv * Id * MS.Sort * Position         -> Option MS.Term
+  op mkEmbed0                 : LocalEnv * MS.Sort         * Id            -> Option Id
+  op mkEmbed1                 : LocalEnv * MS.Sort * MS.Term * Id * Position -> Option MS.Term
+  op lookupEmbedId            : LocalEnv * Id * MS.Sort                    -> Option (Option MS.Sort)
+  op isCoproduct              : LocalEnv * MS.Sort                         -> Option (List (Id * Option MS.Sort))
+  op mkProject                : LocalEnv * Id * MS.Sort * Position         -> Option MS.Term
 
-  op undeclared                 : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
-  op undeclaredResolving        : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
-  op undeclared2                : LocalEnv * MS.Term * Id * Id * MS.Sort * Position -> MS.Term
+  op undeclared               : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op undeclaredResolving      : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op undeclared2              : LocalEnv * MS.Term * Id * Id * MS.Sort * Position -> MS.Term
 
-  op pass2Error                 : LocalEnv * MS.Sort * Message * Position         -> ()
+  op pass2Error               : LocalEnv * MS.Sort * Message * Position         -> ()
 
   %% ========================================================================
 
@@ -236,7 +236,8 @@ spec {
                           case link of
                            | Some s -> record_type_vars_used s
                            | None   -> error (env_3, 
-                                              "Incomplete sort for op "^op_name^":"^newline
+                                              "Incomplete sort for op "^op_name
+					      ^":"^newline
                                               ^(printSort srt_3), 
                                               pos))
                        | TyVar     (tv,      _) -> insert tv
@@ -254,17 +255,18 @@ spec {
                  let _ = record_type_vars_used srt_3 in
                  ! tv_cell)
 	      in
-	      let type_vars_3_b = if null type_vars_3 then
-	                           type_vars_used % Function was polymorphic, but not declared so.
-	                          else if length type_vars_used = length type_vars_3
-					 then type_vars_3 (* Probably correct ;-*)
-				       else 
-					 let scheme =  (type_vars_3, srt_3)   in
-					 let scheme = printSortScheme (scheme) in
-					 (error (env_3, 
-						 "mismatch between bound and free variables "^scheme, 
-						 pos);
-				          type_vars_3)
+	      let type_vars_3_b =
+	          if null type_vars_3 then
+		    type_vars_used % Function was polymorphic, but not declared so.
+		   else if length type_vars_used = length type_vars_3
+			  then type_vars_3 (* Probably correct ;-*)
+			else 
+			  let scheme =  (type_vars_3, srt_3)   in
+			  let scheme = printSortScheme (scheme) in
+			  (error (env_3, 
+				  "mismatch between bound and free variables "^scheme, 
+				  pos);
+			   type_vars_3)
 	      in
 	      ((if all_different? then
 		  ()
@@ -358,22 +360,23 @@ spec {
 		             first_aliases)
 		    then
 		      (if ~(length first_ty_vars = length instance_sorts) then
-			 let found_sort_str = (printAliases first_aliases)
-					      ^ (case first_ty_vars of
-						   | Nil    -> ""    
-						   | hd::tl -> "("^ hd ^ (foldl (fn (ty_var, str) ->
-										 str^", "^ ty_var) 
-						                                ""
-										tl) 
-					                       ^ ")")
+			 let found_sort_str =
+			     (printAliases first_aliases)
+			     ^ (case first_ty_vars of
+				  | Nil    -> ""    
+				  | hd::tl -> "("^ hd ^ (foldl (fn (ty_var, str) ->
+								str^", "^ ty_var) 
+							  "" tl) 
+					      ^ ")")
 			 in                                
 			 error (env, 
-				"Sort reference "^(given_sort_str ())^" does not match declared sort "^found_sort_str, 
+				"Sort reference "^(given_sort_str ())
+				^" does not match declared sort "^found_sort_str, 
 				pos)
 		       else 
 			 %%  Normal case goes through here:
-			 %%  either there are no other infos or the first info has as unqualified alias,
-			 %%  and the number of type vars equals the number of instance sorts.
+			 %%  either there are no other infos or the first info has as unqualified
+			 %%   alias, and the number of type vars equals the number of instance sorts.
 			 ())
 		  else
 		    %% We know that there are multiple options 
@@ -385,22 +388,30 @@ spec {
 					       other_infos
 		    in
 		      error (env, 
-			     "Sort reference "^(given_sort_str ())^" is ambiguous among "^candidates_str,
+			     "Sort reference "^(given_sort_str ())
+			     ^" is ambiguous among "^candidates_str,
 			     pos))
              in
-	     Base (hd first_aliases,
-		   map (fn instance_sort -> checkSort (env, instance_sort)) instance_sorts, 
-		   pos))
+	     let new_sort_qid = hd first_aliases in
+	     let new_instance_sorts = map (fn instance_sort ->
+					   checkSort (env, instance_sort))
+	                             instance_sorts
+	     in
+	     if given_sort_qid = new_sort_qid & instance_sorts = new_instance_sorts then srt
+	      else Base (new_sort_qid, new_instance_sorts, pos))
 		
-      | CoProduct (fields, pos) ->  
-        CoProduct (map (fn (id, None)   -> (id, None) 
+      | CoProduct (fields, pos) ->
+	let nfields = map (fn (id, None)   -> (id, None) 
                          | (id, Some s) -> (id, Some (checkSort (env, s))))
-                       fields, 
-                   pos)
+                       fields
+	in
+	if nfields = fields then srt
+         else CoProduct (nfields, pos)
 
       | Product (fields, pos) ->
-        Product (map (fn (id, s)-> (id, checkSort (env, s))) fields,
-                 pos)
+	let nfields = map (fn (id, s)-> (id, checkSort (env, s))) fields in
+        if nfields = fields then srt
+         else Product (nfields, pos)
 
       | Quotient (given_base_sort, given_relation, pos) ->
         let new_base_sort = checkSort (env, given_base_sort) in
@@ -410,16 +421,21 @@ spec {
                                   type_bool, 
                                   pos) in
         let new_relation = elaborateTerm (env, given_relation, new_rel_sort) in
-        Quotient (new_base_sort, new_relation, pos)
+	if given_base_sort = new_base_sort & given_relation = new_relation then srt
+         else Quotient (new_base_sort, new_relation, pos)
 
       | Subsort (given_super_sort, given_predicate, pos) -> 
         let new_super_sort = checkSort (env, given_super_sort) in
         let new_pred_sort  = Arrow (new_super_sort, type_bool, pos) in
         let new_predicate  = elaborateTerm (env, given_predicate, new_pred_sort) in
-        Subsort (new_super_sort, new_predicate, pos)
+	if given_super_sort = new_super_sort & given_predicate = new_predicate then srt
+         else Subsort (new_super_sort, new_predicate, pos)
 
       | Arrow (t1, t2, pos) ->
-        Arrow (checkSort (env, t1), checkSort (env, t2), pos)
+	let nt1 = checkSort (env, t1) in
+	let nt2 = checkSort (env, t2) in
+	if t1 = nt1 & t2 = nt2 then srt
+         else Arrow (nt1, nt2, pos)
 
   % ========================================================================
   %% ---- called inside OPS : PASS 0  -----

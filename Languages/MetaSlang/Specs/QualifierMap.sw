@@ -12,9 +12,12 @@ spec
  op emptyAQualifierMap  : fa(a) AQualifierMap a
  op findAQualifierMap   : fa(a) AQualifierMap a * Qualifier * Id -> Option a 
  op insertAQualifierMap : fa(a) AQualifierMap a * Qualifier * Id * a
-                                 -> AQualifierMap a 
+                                  -> AQualifierMap a 
  op mapAQualifierMap    : fa(a,b) (a -> b)  -> AQualifierMap a -> AQualifierMap b
  op mapiAQualifierMap   : fa(a,b) (Qualifier * Id * a -> b)  -> AQualifierMap a
+                                  -> AQualifierMap b
+ op mapiPartialAQualifierMap : fa(a,b) (Qualifier * Id * a -> Option b)
+                                  -> AQualifierMap a
                                   -> AQualifierMap b
  op appAQualifierMap    : fa(a) (a -> ()) -> AQualifierMap a -> ()
  op qualifiers          : fa(a) AQualifierMap a -> List Qualifier

@@ -10,6 +10,7 @@ spec
  def insertAQualifierMap(qm, x, y, v) = Map.update (qm, (x,y), v)
  def mapAQualifierMap = map 
  def mapiAQualifierMap f m = mapi (fn ((q,id),v) -> f(q,id,v)) m
+ def mapiPartialAQualifierMap f m = mapiPartial (fn ((q,id),v) -> f(q,id,v)) m
  def appAQualifierMap = app
  def qualifiers m =
     foldi (fn((qname,_),_,quals) -> if member(qname,quals)

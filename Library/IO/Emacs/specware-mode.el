@@ -1125,7 +1125,9 @@ If anyone has a good algorithm for this..."
 (defun find-qualifier-info (name)
   (let ((colon-pos (position ?: name)))
       (if colon-pos			; has a package
-	  (list (normalize-qualifier (substring name 0 colon-pos))
+	  (list sw::UnQualified
+		;; Don't currently used qualifier as the case is wrong
+		;;(normalize-qualifier (substring name 0 colon-pos))
 		(substring name (if (and (< (+ colon-pos 1) (length name))
 					 (eq ?: (elt name (+ colon-pos 1))))
 				    (+ colon-pos 2)

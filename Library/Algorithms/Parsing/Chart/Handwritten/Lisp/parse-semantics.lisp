@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Package: Parser; Base: 10; Syntax: Common-Lisp -*-
+;;; -*- Mode: LISP; Package: Parser4; Base: 10; Syntax: Common-Lisp -*-
 
 (in-package "PARSER4")
 
@@ -143,23 +143,23 @@
 	       (last-column          (third  last-plc))
 	       (last-lc              (cons last-line last-column))
 	       (last-lcb             (vector last-line last-column last-byte-position))
-	       (full-alist           (append (list 
-					      ;;
-					      (cons :left-pos     first-byte-position)
-					      (cons :left-line    first-line)
-					      (cons :left-column  first-column)
-					      (cons :left-lc      first-lc)
-					      (cons :left-lcb     first-lcb)
-					      ;;
-					      (cons :right-pos    last-byte-position)
-					      (cons :right-line   last-line)
-					      (cons :right-column last-column)
-					      (cons :right-lc     last-lc)
-					      (cons :right-lcb    last-lcb)
-					      )
-					     (children-alist session rule children) 
-					     default-alist))
-	       (result                (sublis-result full-alist rule-semantics)))
+	       (full-alist           (list* 
+				       ;;
+				       (cons :left-pos     first-byte-position)
+				       (cons :left-line    first-line)
+				       (cons :left-column  first-column)
+				       (cons :left-lc      first-lc)
+				       (cons :left-lcb     first-lcb)
+				       ;;
+				       (cons :right-pos    last-byte-position)
+				       (cons :right-line   last-line)
+				       (cons :right-column last-column)
+				       (cons :right-lc     last-lc)
+				       (cons :right-lcb    last-lcb)
+				       (append 
+					(children-alist session rule children) 
+					default-alist)))
+		 (result             (sublis-result full-alist rule-semantics)))
 	  (when-debugging
 	   (let ((reconstructed-alist (compute-pprint-alist rule-semantics result)))
 	     (unless (sub-alist? reconstructed-alist full-alist)

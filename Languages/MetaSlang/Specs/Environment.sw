@@ -166,6 +166,12 @@ spec {
  def range (sp, srt) = 
   let (_, rng) = arrow (sp, srt) in rng
 
+ op  arrow?     : Spec * Sort -> Boolean
+ def arrow? (sp, srt) =
+   case stripSubsorts (sp, srt)
+    of Arrow _ -> true
+     | _ -> false
+
  op  arrowOpt     : Spec * Sort -> Option (Sort * Sort)
  op  rangeOpt     : Spec * Sort -> Option (Sort)
  op  productOpt   : Spec * Sort -> Option (List (Id * Sort))
@@ -383,15 +389,12 @@ spec {
   case usrt
     of Arrow _ -> usrt
      | _       -> srt
-(* *)
-
 
  %- --------------------------------------------------------------------------------
  (**
    determine the sort of a term including unfolding of base sorts.
   *)
 
-(* ### unused
  op termSortEnv : Spec * MS.Term -> Sort
  def termSortEnv(sp,term) = 
   let res =
@@ -419,5 +422,5 @@ spec {
   in
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
   res
-*)
+
 }

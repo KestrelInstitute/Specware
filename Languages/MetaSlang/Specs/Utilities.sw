@@ -215,6 +215,7 @@ Utilities qualifying spec {
 	deleteVars(freeVarsRec(M),vars)
       | IfThenElse(t1,t2,t3,_) -> 
 	freeVarsRec(t1) ++ freeVarsRec(t2) ++ freeVarsRec(t3)
+      | Seq(tms,_) -> foldr (fn (trm,vs) -> vs ++ freeVarsRec trm) [] tms
 
  op  freeVarsList : fa(a) List(a * MS.Term) -> Vars
  def freeVarsList list = 

@@ -80,7 +80,7 @@
 	   do (if (eq ran *undefined*)
 		  (remhash dom new-table)
 		(setf (gethash dom new-table) ran)))
-	;; Two nreverses leave thins unchanged
+	;; Two nreverses leave things unchanged
 	(nreverse undo-list)
 	(make-map-as-undo-harray new-table nil)))))
 
@@ -125,20 +125,25 @@
 
 (defun |!apply| (m x)
   ;(incf *map-as-undo-harray-ref-count*)
-  (if (map-as-undo-harray-current? m)
-      (gethash x (map-as-undo-harray--harray m) *undefined*)
-    (let ((alist (map-as-undo-harray--undo-list m)))
-      ;(incf *map-as-undo-harray-alist-ref-count*)
-      ;(incf *map-as-undo-harray-alist-elt-ref-count* (length alist))
-      (loop for l on alist
-          until (not (consp l))
-	  when (equal (caar l) x)
-	  return (cdar l)
-	  finally (return (gethash x (map-as-undo-harray--harray m) *undefined*))))))
+  (let ((val
+	 (if (map-as-undo-harray-current? m)
+	     (gethash x (map-as-undo-harray--harray m) *undefined*)
+	   (let ((alist (map-as-undo-harray--undo-list m)))
+	     ;;(incf *map-as-undo-harray-alist-ref-count*)
+	     ;;(incf *map-as-undo-harray-alist-elt-ref-count* (length alist))
+	     (loop for l on alist
+		 until (not (consp l))
+		 when (equal (caar l) x)
+		 return (mkSome (cdar l))
+		 finally (return (gethash x (map-as-undo-harray--harray m)
+					  *undefined*)))))))
+    (if (eq val *undefined*) *undefined*
+      (mkSome val))))
+	
 
 ;;; Some y is stored in array, as it is usually accessed more often than set
 (defun update (m x y)
-  (map-as-undo-harray--update m x (mkSome y)))
+  (map-as-undo-harray--update m x y))
 
 (defun |!remove| (m x)
   (map-as-undo-harray--update m x *undefined*))
@@ -149,8 +154,7 @@
 	 (table (map-as-undo-harray--harray curr-m))
 	 (result (make-hash-table-same-size table)))
     (maphash #'(lambda (key val)
-		 (setf (gethash key result)
-		       (mkSome (funcall f (cons key (cdr val))))))
+		 (setf (gethash key result) (funcall f (cons key val))))
 	     table)
     (make-map-as-undo-harray result nil)))
 
@@ -160,8 +164,33 @@
 	 (table (map-as-undo-harray--harray curr-m))
 	 (result (make-hash-table-same-size table)))
     (maphash #'(lambda (key val)
-		 (setf (gethash key result)
-		       (mkSome (funcall f (cdr val)))))
+		 (setf (gethash key result) (funcall f val)))
+	     table)
+    (make-map-as-undo-harray result nil)))
+
+(defun mapiPartial (f m)
+  (declare (dynamic-extent f))
+  (let* ((curr-m (map-as-undo-harray-assure-current m))
+	 (table (map-as-undo-harray--harray curr-m))
+	 (result (map-as-undo-harray--initial-harray)))
+    (maphash #'(lambda (key val)
+		 (let ((val (funcall f (cons key val))))
+		   (unless (equal val *undefined*)
+		     ;; (:|Some| . realval)
+		     (setf (gethash key result) (cdr val)))))
+	     table)
+    (make-map-as-undo-harray result nil)))
+
+(defun mapPartial (f m)
+  (declare (dynamic-extent f))
+  (let* ((curr-m (map-as-undo-harray-assure-current m))
+	 (table (map-as-undo-harray--harray curr-m))
+	 (result (map-as-undo-harray--initial-harray)))
+    (maphash #'(lambda (key val)
+		 (let ((val (funcall f val)))
+		   (unless (equal val *undefined*)
+		     ;; (:|Some| . realval)
+		     (setf (gethash key result) (cdr val)))))
 	     table)
     (make-map-as-undo-harray result nil)))
 
@@ -170,7 +199,7 @@
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
 		 (declare (ignore key))
-		 (funcall f (cdr val)))
+		 (funcall f val))
 	     (map-as-undo-harray--harray m)))
   nil)
 
@@ -178,19 +207,19 @@
   (declare (dynamic-extent f))
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
-		 (let ((args (cons key (cdr val))))
+		 (let ((args (cons key val)))
 		   (declare (dynamic-extent args))
 		   (funcall f args)))
 	     (map-as-undo-harray--harray m))
     nil))
 
-;;;(defvar *foldi-vector* (vector nil nil nil))
-;;;
-;;;(defun foldi-vector (x y z)
-;;;  (setf (svref *foldi-vector* 0) x)
-;;;  (setf (svref *foldi-vector* 1) y)
-;;;  (setf (svref *foldi-vector* 2) z)
-;;;  *foldi-vector*)
+(defvar *foldi-vector* (vector nil nil nil))
+
+(defun foldi-vector (x y z)
+  (setf (svref *foldi-vector* 0) x)
+  (setf (svref *foldi-vector* 1) y)
+  (setf (svref *foldi-vector* 2) z)
+  *foldi-vector*)
 
 #+allegro
 (progn (setf (get 'foldi 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
@@ -202,7 +231,7 @@
 (defun foldi (fn result m)
   (map-as-undo-harray--map-through-pairs
      #'(lambda (key val)
-	 (let ((args (vector key (cdr val) result)))
+	 (let ((args (foldi-vector key val result)))
 	   (declare (dynamic-extent args))
 	   (setq result (funcall fn args))))
      m)
@@ -213,7 +242,7 @@
     (let ((items nil))
       (maphash #'(lambda (key val) 
 		   (declare (ignore key))
-		   (push (cdr val) items))
+		   (push val items))
 	       (map-as-undo-harray--harray m))
       items)))
 
@@ -221,7 +250,7 @@
   (let ((m (map-as-undo-harray-assure-current m)))
     (let ((items nil))
       (maphash #'(lambda (key val) 
-		   (push (cons key (cdr val)) items))
+		   (push (cons key val) items))
 	       (map-as-undo-harray--harray m))
     items)))
 
