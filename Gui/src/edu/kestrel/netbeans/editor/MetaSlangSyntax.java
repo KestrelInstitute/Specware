@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/14 16:58:56  weilyn
+ * Added support for prove term.
+ *
  * Revision 1.2  2003/02/10 15:38:36  gilham
  * Allow non-word symbols only as op names, not as sort names or unit ids.
  *
@@ -540,8 +543,19 @@ public class MetaSlangSyntax extends Syntax {
                         return (len == 2)
                                 ? MetaSlangTokenContext.OF : null;
                     case 'p':
-                        return (len == 2)
-                                ? MetaSlangTokenContext.OP : null;
+                        if (len == 2)
+                            return MetaSlangTokenContext.OP;
+                        switch (buffer[offset++]) {
+                            case 't':
+                                return (len == 7
+                                    && buffer[offset++] == 'i'
+                                    && buffer[offset++] == 'o'
+                                    && buffer[offset++] == 'n'
+                                    && buffer[offset++] == 's')
+                                        ? MetaSlangTokenContext.OPTIONS : null;
+                            default:
+                                return null;
+                        }
                     default:
                         return null;
                 }
@@ -642,6 +656,13 @@ public class MetaSlangSyntax extends Syntax {
                     default:
                         return null;
                 }
+            case 'u':
+                return (len == 5
+                    && buffer[offset++] == 's'
+                    && buffer[offset++] == 'i'
+                    && buffer[offset++] == 'n'
+                    && buffer[offset++] == 'g')
+                        ? MetaSlangTokenContext.USING : null;
             case 'w':
                 return (len == 5
                     && buffer[offset++] == 'h'

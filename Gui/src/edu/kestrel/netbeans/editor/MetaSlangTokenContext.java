@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/14 16:58:56  weilyn
+ * Added support for prove term.
+ *
  * Revision 1.2  2003/02/10 15:38:36  gilham
  * Allow non-word symbols only as op names, not as sort names or unit ids.
  *
@@ -92,7 +95,8 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int LET_ID = IS_ID + 1;
     public static final int OF_ID = LET_ID + 1;
     public static final int OP_ID = OF_ID + 1;
-    public static final int PROJECT_ID = OP_ID + 1;
+    public static final int OPTIONS_ID = OP_ID + 1;
+    public static final int PROJECT_ID = OPTIONS_ID + 1;
     public static final int PROVE_ID = PROJECT_ID + 1;
     public static final int QUOTIENT_ID = PROVE_ID + 1;
     public static final int RELAX_ID = QUOTIENT_ID + 1;
@@ -102,7 +106,8 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int THEN_ID = SPEC_ID + 1;
     public static final int THEOREM_ID = THEN_ID + 1;
     public static final int TRUE_ID = THEOREM_ID + 1;
-    public static final int WHERE_ID = TRUE_ID + 1;
+    public static final int USING_ID = TRUE_ID + 1;
+    public static final int WHERE_ID = USING_ID + 1;
     // End of Keywords numeric-ids //GEN-END
 
 
@@ -182,6 +187,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID LET = new BaseImageTokenID("let", LET_ID, KEYWORDS);
     public static final BaseImageTokenID OF = new BaseImageTokenID("of", OF_ID, KEYWORDS);
     public static final BaseImageTokenID OP = new BaseImageTokenID("op", OP_ID, KEYWORDS);
+    public static final BaseImageTokenID OPTIONS = new BaseImageTokenID("options", OPTIONS_ID, KEYWORDS);
     public static final BaseImageTokenID PROJECT = new BaseImageTokenID("project", PROJECT_ID, KEYWORDS);
     public static final BaseImageTokenID PROVE = new BaseImageTokenID("prove", PROVE_ID, KEYWORDS);
     public static final BaseImageTokenID QUOTIENT = new BaseImageTokenID("quotient", QUOTIENT_ID, KEYWORDS);
@@ -192,6 +198,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID THEN = new BaseImageTokenID("then", THEN_ID, KEYWORDS);
     public static final BaseImageTokenID THEOREM = new BaseImageTokenID("theorem", THEOREM_ID, KEYWORDS);
     public static final BaseImageTokenID TRUE = new BaseImageTokenID("true", TRUE_ID, KEYWORDS);
+    public static final BaseImageTokenID USING = new BaseImageTokenID("using", USING_ID, KEYWORDS);
     public static final BaseImageTokenID WHERE = new BaseImageTokenID("where", WHERE_ID, KEYWORDS);
     // End of Keyword token-ids //GEN-END
 
@@ -213,8 +220,8 @@ public class MetaSlangTokenContext extends TokenContext {
         BaseImageTokenID[] kwds = new BaseImageTokenID[] {//GEN-BEGIN
             AS, AXIOM, CASE, CHOOSE, CONJECTURE, DEF, ELSE, EMBED, 
             EMBEDP, ENDSPEC, EX, FA, FALSE, FN, IF, IMPORT, IN, IS, LET, 
-            OF, OP, PROJECT, PROVE, QUOTIENT, RELAX, RESTRICT, SORT, 
-            SPEC, THEN, THEOREM, TRUE, WHERE
+            OF, OP, OPTIONS, PROJECT, PROVE, QUOTIENT, RELAX, RESTRICT, 
+            SORT, SPEC, THEN, THEOREM, TRUE, USING, WHERE
         };//GEN-END
 
         for (int i = kwds.length - 1; i >= 0; i--) {

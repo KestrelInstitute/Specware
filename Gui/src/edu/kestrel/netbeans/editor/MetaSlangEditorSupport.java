@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:47  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -549,6 +552,12 @@ public class MetaSlangEditorSupport extends DataEditorSupport implements EditorC
             }
             else if (element instanceof OpElement) {
                 n = factory.createOpNode((OpElement)element);
+            }
+            else if (element instanceof DefElement) {
+                n = factory.createDefNode((DefElement)element);
+            }
+            else if (element instanceof ClaimElement) {
+                n = factory.createClaimNode((ClaimElement)element);
             }
             else if (element instanceof SourceElement) {
                 n = support.getDataObject().getNodeDelegate();
