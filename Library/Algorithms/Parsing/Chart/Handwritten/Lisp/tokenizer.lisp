@@ -48,8 +48,8 @@
   (ctp-arg-test :word-symbol-start-chars         word-symbol-start-chars         "the alphabet")
   (ctp-arg-test :word-symbol-continue-chars      word-symbol-continue-chars      "the alphabet, digits, and underbar")
 
-  (ctp-arg-test :non-word-symbol-start-chars     non-word-symbol-start-chars     "some chars like !@#$^&*~+-=|<>?/.")
-  (ctp-arg-test :non-word-symbol-continue-chars  non-word-symbol-continue-chars  "some chars like !@#$^&*~+-=|<>?/.")
+  (ctp-arg-test :non-word-symbol-start-chars     non-word-symbol-start-chars     "some chars like !@$^&*~+-=|<>?/.")
+  (ctp-arg-test :non-word-symbol-continue-chars  non-word-symbol-continue-chars  "some chars like !@$^&*~+-=|<>?/.")
 
   (ctp-arg-test :number-start-chars              number-start-chars              "the digits, plus, minus, and maybe dot and/or slash")
   (ctp-arg-test :number-continue-chars           number-continue-chars           "the digits, and maybe dot and/or slash")
@@ -87,11 +87,11 @@
     ;;  word-symbol-table 
     ;;
     ;; codes that are illegal after a word symbol is started:
-    ;; (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes word-symbol-table word-symbol-start-chars        +word-symbol-start-code+) 
     (assign-tokenizer-codes word-symbol-table number-continue-chars          +number-continue-code+)
     (assign-tokenizer-codes word-symbol-table non-word-symbol-continue-chars +non-word-symbol-continue-code+)
     ;; codes that are legal after a word symbol is started:
+    (assign-tokenizer-code  whitespace-table #\#                             +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes word-symbol-table non-word-symbol-start-chars    +non-word-symbol-start-code+)
     (assign-tokenizer-codes word-symbol-table number-start-chars             +number-start-code+) ; probably overridden by +word-symbol-continue-code+
     (assign-tokenizer-code  word-symbol-table string-quote-char              +string-quote-code+)
@@ -107,6 +107,7 @@
     (assign-tokenizer-codes non-word-symbol-table number-continue-chars          +number-continue-code+)
     (assign-tokenizer-codes non-word-symbol-table word-symbol-continue-chars     +word-symbol-continue-code+)
     ;; codes that are legal after a non-word symbol is started:
+    (assign-tokenizer-code  non-word-symbol-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes non-word-symbol-table word-symbol-start-chars        +word-symbol-start-code+)
     (assign-tokenizer-codes non-word-symbol-table number-start-chars             +number-start-code+) ; proably survive as final code 
     (assign-tokenizer-code  non-word-symbol-table string-quote-char              +string-quote-code+)
@@ -683,7 +684,7 @@
 	  (#.+word-symbol-start-code+        (go terminate-word-symbol-with-start-word-symbol))
 	  (#.+number-start-code+             (go terminate-word-symbol-with-start-number))
 	  (#.+string-quote-code+             (go terminate-word-symbol-with-start-string))
-          (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal)) ; for now at least, can't happen
+          (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal)) 
 	  ;; weird
 	  (#.+non-word-symbol-continue-code+ (go terminate-word-symbol-with-continue-non-word-symbol))
 	  (#.+number-continue-code+          (go terminate-word-symbol-with-continue-number)) 
