@@ -1,0 +1,12 @@
+If we have
+  sort List.List a
+in the primitive types, then the typechecker complains.
+
+Right now String.sw imports List. Perhaps it shouldn't.
+
+
+There are many places in Nat and Integer where we must qualify
+things where we shouldn't have to
+
+In List.length we have to qualify + with "Nat." but the type of 
+length should remove any ambiguity
