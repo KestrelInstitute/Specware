@@ -14,7 +14,8 @@ import ToJavaHO
 %sort JSpec = CompUnit
 
 sort JcgInfo = {
-		clsDecls : List ClsDecl
+		clsDecls : List ClsDecl,
+		collected : Collected
 	       }
 
 sort ArrowType = List Sort * Sort
@@ -24,7 +25,8 @@ sort Type = JGen.Type
 op clsDeclsFromSorts: Spec -> JcgInfo
 def clsDeclsFromSorts(spc) =
   let initialJcgInfo = {
-			clsDecls = []
+			clsDecls = [],
+			collected = nothingCollected
 		       }
   in
    let primClsDecl = mkPrimOpsClsDecl in
@@ -34,7 +36,7 @@ def clsDeclsFromSorts(spc) =
 			 concatClsDecls(newjcginfo,jcginfo))
     initialJcgInfo spc.sorts)
    in
-     concatClsDecls({clsDecls=[primClsDecl]},jcginfo)
+     concatClsDecls({clsDecls=[primClsDecl],collected=nothingCollected},jcginfo)
 
 op sortToClsDecls: Qualifier * Id * SortInfo * JcgInfo -> JcgInfo
 def sortToClsDecls(qualifier, id, sort_info, jcginfo) =
@@ -104,29 +106,31 @@ def addStaticMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rn
   let clsDecls = jcginfo.clsDecls in
   let (vars, body) = srtTermDelta(srt, trm) in
   let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
-  let methodBody = mkPrimArgsMethodBody(body, spc) in
-  let assertStmt = mkAssertFromDom(dom, spc) in
+  let (methodBody,col1) = mkPrimArgsMethodBody(body, spc) in
+  let (assertStmt,col2) = mkAssertFromDom(dom, spc) in
   let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
+  let col = concatCollected(col1,col2) in
+  let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
   addMethDeclToClsDecls(classId, methodDecl, jcginfo)
 
 op addPrimMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
 def addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
   addStaticMethodToClsDecls(spc,opId,srt,dom,rng,trm,"Primitive",jcginfo)
 
-op mkAssertFromDom: List JGen.Type * Spec -> Block
+op mkAssertFromDom: List JGen.Type * Spec -> Block * Collected
 def mkAssertFromDom(dom, spc) =
   case dom of
     | [Subsort(_, subPred, _)] ->
-      let (stmt, jPred, newK, newL) = termToExpression(empty, subPred, 1, 1, spc) in
+      let ((stmt, jPred, newK, newL),col) = termToExpression(empty, subPred, 1, 1, spc) in
       (case (stmt, newK, newL) of
-	 | ([], 1, 1) -> [Stmt(Expr(mkMethInv("", "assert", [jPred])))]
+	 | ([], 1, 1) -> ([Stmt(Expr(mkMethInv("", "assert", [jPred])))],col)
 	 | _ -> fail ("Type pred generated statements: not supported"))
-    | _ -> []
+    | _ -> ([],nothingCollected)
 
-op mkPrimArgsMethodBody: Term * Spec -> Block
+op mkPrimArgsMethodBody: Term * Spec -> Block * Collected
 def mkPrimArgsMethodBody(body, spc) =
-  let (b, k, l) = termToExpressionRet(empty, body, 1, 1, spc) in
-  b
+  let ((b, k, l),col) = termToExpressionRet(empty, body, 1, 1, spc) in
+  (b,col)
 
 op addPrimArgsMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
 def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
@@ -135,8 +139,9 @@ def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
       let clsDecls = jcginfo.clsDecls in
       let (vars, body) = srtTermDelta(srt, trm) in
       let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
-      let methodBody = mkPrimArgsMethodBody(body, spc) in
+      let (methodBody,col1) = mkPrimArgsMethodBody(body, spc) in
       let methodDecl = setMethodBody(methodDecl, methodBody) in
+      let jcginfo = addCollectedToJcgInfo(jcginfo,col1) in
       addMethDeclToClsDecls(rngId, methodDecl, jcginfo)
     | _ -> %TODO:
       jcginfo
@@ -179,9 +184,10 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
   case splitList (fn(v as (id, srt)) -> userType?(srt)) vars of
     | Some (vars1, varh, vars2) ->
       (let (vh, _) = varh in
-       let methodBody = mkNonCaseMethodBody(vh, body, spc) in
-       let assertStmt = mkAssertFromDom(dom, spc) in
+       let (methodBody,col1) = mkNonCaseMethodBody(vh, body, spc) in
+       let (assertStmt,col2) = mkAssertFromDom(dom, spc) in
        let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), Some (assertStmt++methodBody)) in
+       let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col1,col2)) in
        case varh of
 	 | (_, Base (Qualified(q, srthId), _, _)) ->
 	   addMethDeclToClsDecls(srthId, methodDecl, jcginfo)
@@ -190,12 +196,12 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
 	  )
     | _ -> (warnNoCode(opId,Some("no user type found in the arg list of op "^opId));jcginfo)
 
-op mkNonCaseMethodBody: Id * Term * Spec -> Block
+op mkNonCaseMethodBody: Id * Term * Spec -> Block * Collected
 def mkNonCaseMethodBody(vId, body, spc) =
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
-  let (b, k, l) = termToExpressionRet(tcx, body, 1, 1, spc) in
-  b
+  let ((b, k, l),col) = termToExpressionRet(tcx, body, 1, 1, spc) in
+  (b,col)
 
 op addMethDeclToSummands: Spec * Id * MethDecl * Term * JcgInfo -> JcgInfo
 def addMethDeclToSummands(spc, srthId, methodDecl, body, jcginfo) =
@@ -218,9 +224,10 @@ def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, c
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
   let tcx = addArgsToTcx(tcx, args) in
-  let (b, k, l) = termToExpressionRet(tcx, body, 1, 1, spc) in
+  let ((b, k, l),col) = termToExpressionRet(tcx, body, 1, 1, spc) in
   let JBody = b in
   let newMethDecl = setMethodBody(methodDecl, JBody) in
+  let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
   addMethDeclToClsDecls(summandId, newMethDecl, jcginfo)
 
 op addArgsToTcx: TCx * List Id -> TCx
@@ -257,28 +264,42 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
     if notAUserType?(srt)
       then
 	let (vars, body) = srtTermDelta(srt, trm) in
-	let (_, jE, _, _) = termToExpression(empty, body, 1, 1, spc) in
+	let ((_, jE, _, _),col) = termToExpression(empty, body, 1, 1, spc) in
 	let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), Some (Expr (jE))), []) in
 	%%Fixed here
 	let newJcgInfo = addFldDeclToClsDecls("Primitive", fldDecl, jcginfo) in
-	newJcgInfo
+	addCollectedToJcgInfo(newJcgInfo,col)
     else
       let Base (Qualified (_, srtId), _, _) = srt in
       let (vars, body) = srtTermDelta(srt, trm) in
-      let (_, jE, _, _) = termToExpression(empty, body, 1, 1, spc) in
+      let ((_, jE, _, _),col) = termToExpression(empty, body, 1, 1, spc) in
       let fldDecl = ([Static], tt(srtId), ((id, 0), Some (Expr (jE))), []) in
       %%Fixed here
       let newJcgInfo = addFldDeclToClsDecls(srtId, fldDecl, jcginfo) in
-      newJcgInfo
+      addCollectedToJcgInfo(newJcgInfo,col)
+
+(**
+ * creates the interface collecting the arrow interfaces
+ *)
+op mkArrowInterface: List InterfDecl -> InterfDecl
+def mkArrowInterface(arrowifs) =
+  let mods = [(*Public*)] in
+  let body = {flds=[],meths=[],clss=[],interfs=arrowifs} in
+  (mods,(arrowInterfaceId,[]),body)
+
 
 
 op concatClsDecls: JcgInfo * JcgInfo -> JcgInfo
-def concatClsDecls({clsDecls=cd1},{clsDecls=cd2}) =
-  {clsDecls = cd1 ++ cd2}
+def concatClsDecls({clsDecls=cd1,collected=col1},{clsDecls=cd2,collected=col2}) =
+  {clsDecls = cd1 ++ cd2,collected=concatCollected(col1,col2)}
+
+op addCollectedToJcgInfo: JcgInfo * Collected -> JcgInfo
+def addCollectedToJcgInfo({clsDecls=cd,collected=col1},col2) =
+  {clsDecls=cd,collected=concatCollected(col1,col2)}
 
 op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
-def exchangeClsDecls({clsDecls=_},newClsDecls) =
-  {clsDecls=newClsDecls}
+def exchangeClsDecls({clsDecls=_,collected=col},newClsDecls) =
+  {clsDecls=newClsDecls,collected=col}
 
 % --------------------------------------------------------------------------------
 
@@ -296,7 +317,15 @@ def specToJava(spc) =
   let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
   let _ = writeLine(";;; Writing Java file") in
   let clsDecls = jcginfo.clsDecls in
-  let clsOrInterfDecls = map (fn (cd) -> ClsDecl(cd)) clsDecls in
-  (None, [], clsOrInterfDecls)
+  let arrowifs = jcginfo.collected.arrowifs in
+  let arrowifs = uniqueSort (fn(ifd1 as (_,(id1,_),_),ifd2 as (_,(id2,_),_)) -> compare(id1,id2)) arrowifs in
+  %let ifdecls = [mkArrowInterface(arrowifs)] in
+  let ifdecls = arrowifs in
+  let clsOrInterfDecls = List.concat(map (fn (cld) -> ClsDecl(cld)) clsDecls,
+				     map (fn (ifd) -> InterfDecl ifd) ifdecls)
+  in
+  %let imports = [(["Arrow"],"*")] in
+  let imports = [] in
+  (None, imports, clsOrInterfDecls)
 
 endspec

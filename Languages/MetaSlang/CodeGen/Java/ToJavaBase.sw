@@ -4,7 +4,11 @@ import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/Specs/StandardSpec
 
-sort ToExprSort = Block * Java.Expr * Nat *Nat
+sort ToExprSort = Block * Java.Expr * Nat * Nat
+
+sort Collected = {
+		  arrowifs:List Java.InterfDecl
+		 }
 
 op baseSrtToJavaType: Sort -> Java.Type
 def baseSrtToJavaType(srt) =
@@ -131,6 +135,15 @@ def mkTagEqExpr(clsId, consId) =
 op mkThrowError: () -> Java.Stmt
 def mkThrowError() =
   Throw (CondExp (Un (Prim (NewClsInst(ForCls(([],"Error"), [], None)))), None))
+
+op mkThrowException: String -> Java.Stmt
+def mkThrowException(msg) =
+  let msgstr = CondExp(Un(Prim(String msg)),None)in
+  Throw (CondExp (Un (Prim (NewClsInst(ForCls(([],"IllegalArgumentException"), [msgstr], None)))), None))
+
+def mkThrowFunEq() = mkThrowException("illegal function equality") 
+def mkThrowMalf() = mkThrowException("malformed sum value") 
+def mkThrowUnexp() = mkThrowException("unexpected sum value") 
 
 sort JSpec = CompUnit
 
@@ -386,9 +399,9 @@ def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt
              (ListPair.zip(parTypeNames,parNames))
   in
   let retType = Some (getJavaTypeFromTypeId(retTypeName)) in
-  let modifiers = [] in
+  let mods = [Public] in
   let throws = [] in
-  let header = (modifiers,retType,methodName,pars:FormPars,throws) in
+  let header = (mods,retType,methodName,pars:FormPars,throws) in
   (header,Some body)
 
 op mkMethDecl: Id * List Id * Id * Id * Java.Stmt -> MethDecl
@@ -420,11 +433,19 @@ def mkNewAnonymousClasInst(id, javaArgs,clsBody:ClsBody) =
 
 (**
  * creates a "new" expression for an anonymous class with the given method declaration as
- * only element of the "local" class body
+ * only element of the "local" class body; it also returns the corresponding interface declaration
+ * that is used for generating the arrow class interface
  *)
-def mkNewAnonymousClasInstOneMethod(id, javaArgs,methDecl) =
+def mkNewAnonymousClasInstOneMethod(id,javaArgs,methDecl) =
   let clsBody = {staticInits=[],flds=[],constrs=[],meths=[methDecl],clss=[],interfs=[]} in
-  CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None)
+  let exp = CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None) in
+  let (methHdr,_) = methDecl in
+  %let ifmods = [Public,Static] in
+  let ifmods = [] in
+  let ifheader = (id,[]) in
+  let ifbody = {flds=[],meths=[methHdr],clss=[],interfs=[]} in
+  let ifdecl = (ifmods,ifheader,ifbody) in
+  (exp,ifdecl:Java.InterfDecl)
 
 op mkVarDecl: Id * Id -> BlockStmt
 def mkVarDecl(v, srtId) =
@@ -479,5 +500,34 @@ def mkParamsFromPattern(pat) =
     | WildPat _ -> ["arg1"]
     | RecordPat(patl,_) -> patlist(map (fn(_,p)->p) patl,1)
     | _ -> fail(errmsg_unsupported(pat))
+
+(**
+ * looks in the spec for a user type matching the given sort; if a matching
+ * user type exists, the corresponding sort will be returned, otherwise the sort
+ * given as input itself will be returned
+ *)
+op findMatchingUserType: Spec * Sort -> Sort
+def findMatchingUserType(spc,recordSrt) =
+  let srts = sortsAsList(spc) in
+  let srtPos = sortAnn recordSrt in
+  let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(recordSrt, srt)) srts in
+  case foundSrt of
+     | Some (q, recordClassId, _) ->  Base(mkUnQualifiedId(recordClassId),[],srtPos)
+     | None -> recordSrt
+
+
+op concatCollected: Collected * Collected -> Collected
+def concatCollected(col1,col2) =
+  {
+   arrowifs=concat(col1.arrowifs,col2.arrowifs)
+  }
+
+op nothingCollected: Collected
+def nothingCollected = {
+			arrowifs = []
+		       }
+
+op arrowInterfaceId : Id
+def arrowInterfaceId = "Arrow"
 
 endspec

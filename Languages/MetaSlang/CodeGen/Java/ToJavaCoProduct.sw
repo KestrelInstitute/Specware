@@ -91,7 +91,7 @@ def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
 	   | (cons, _)::rest -> 
 	      let varDeclId = (mkTagCId(cons), 0):VarDeclId in
 	      let varInit = (Expr (CondExp (Un (Prim (IntL sumNum)), None))):VarInit in
-	      let fldDecl = ([Static], tt("Integer"), (varDeclId, (Some varInit)), []):FldDecl in
+	      let fldDecl = ([Static,Final], tt("Integer"), (varDeclId, (Some varInit)), []):FldDecl in
 	      List.cons(fldDecl, mkTagCFieldDeclsFromSummands(rest, sumNum+1))) in
   let tagCFieldDecls = mkTagCFieldDeclsFromSummands(summands, 1) in
   let sumConstructorMethDecls = map (fn(cons, Some (Product (args, _))) -> sumToConsMethodDecl(id, cons, args) |

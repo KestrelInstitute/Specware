@@ -12,7 +12,7 @@ spec
   (**
    * translates a lambda term into a java expression, called from translateToExpression in ToJavaStatements
    *)
-%  op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> ToExprSort
+%  op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
   def translateLambdaToExpr(tcx,term (*as Lambda((pat,cond,body)::_,_)*),k,l,spc) =
     case term of
       | Fun(Op(qid as Qualified(_,id),_),srt,_) -> translateStandAloneOpToExpr(tcx,(qid,srt),k,l,spc)
@@ -47,7 +47,7 @@ spec
    (**
     * this is called, when a lambda term is found in the input; it implements v3:p48:r4
     *)
-   op translateLambdaTerm: TCx * JGen.Term * Nat * Nat * Spec -> ToExprSort
+   op translateLambdaTerm: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
    def translateLambdaTerm(tcx,term as Lambda((pat,cond,body)::_,_),k,l,spc) =
      let termSrt = termSort(term) in
      let freeVars = freeVars(term) in
@@ -63,17 +63,18 @@ spec
 			       (concat(block0,[locvdecl]),tcx0)
 			       ) ([],tcx) freeVars
      in
-     let (s,_,_) = termToExpressionRet(tcx0,body,1,1,spc) in
+     let ((s,_,_),col1) = termToExpressionRet(tcx0,body,1,1,spc) in
      let parNames = mkParamsFromPattern(pat) in
-     let (_,e,_,_) = standAloneFromSortWithParNames(Block s,termSrt,parNames,k,l) in
-     (block,e,k,l)
+     let ((_,e,_,_),col2) = standAloneFromSortWithParNames(Block s,termSrt,parNames,k,l) in
+     let col = concatCollected(col1,col2) in
+     ((block,e,k,l),col)
   
     
 
    (**
     * this is active when a "stand-alone" operator appears as term, i.e. an operator symbol without any arguments
     *)
-   op translateStandAloneOpToExpr: TCx * (QualifiedId * Sort) * Nat * Nat * Spec -> Block * Java.Expr * Nat *Nat
+   op translateStandAloneOpToExpr: TCx * (QualifiedId * Sort) * Nat * Nat * Spec -> (Block * Java.Expr * Nat *Nat) * Collected
    def translateStandAloneOpToExpr(tcx,(qid,srt),k,l,spc) =
      let _ = case srt of
 	       | Arrow(_,_,_) -> true
@@ -145,7 +146,7 @@ spec
 
        %fail("not yet implemented: stand-alone op "^id)
 
-op standalone: Java.Stmt * (List String * String) * (List String * String) * Nat * Nat -> ToExprSort
+op standalone: Java.Stmt * (List String * String) * (List String * String) * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
 def standalone(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),k,l) =
   let argNameBase = "arg" in
   let (parNames,_) = foldl (fn(argType,(argnames,nmb)) -> 
@@ -155,14 +156,15 @@ def standalone(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),k,l) =
   in
   standaloneWithParNames(s,applySig,arrowTypeSig,parNames,k,l)
 
-op standaloneWithParNames: Java.Stmt * (List String * String) * (List String * String) * List String * Nat * Nat -> ToExprSort
+op standaloneWithParNames: Java.Stmt * (List String * String) * (List String * String) * List String * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
 def standaloneWithParNames(s,applySig as (apdom,apran),arrowTypeSig as (atdom,atran),parNames,k,l) =
   let meth = mkMethDeclWithParNames("apply",apdom,apran,parNames,s) in
   let clsname = mkArrowSrtId(atdom,atran) in
-  let exp = mkNewAnonymousClasInstOneMethod(clsname,[],meth) in
-  (mts,exp,k,l)
+  let (exp,ifdecl) = mkNewAnonymousClasInstOneMethod(clsname,[],meth) in
+  let col = {arrowifs=[ifdecl]} in
+  ((mts,exp,k,l),col)
 
-op standAloneFromSort: Java.Stmt * Sort * Nat * Nat -> ToExprSort
+op standAloneFromSort: Java.Stmt * Sort * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
 def standAloneFromSort(s,srt,k,l) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
@@ -172,7 +174,7 @@ def standAloneFromSort(s,srt,k,l) =
   let atran = srtId rng in
   standalone(s,(apdom,apran),(atdom,atran),k,l)
 
-op standAloneFromSortWithParNames: Java.Stmt * Sort * List Id * Nat * Nat -> ToExprSort
+op standAloneFromSortWithParNames: Java.Stmt * Sort * List Id * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
 def standAloneFromSortWithParNames(s,srt,parNames,k,l) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
