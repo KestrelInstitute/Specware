@@ -152,7 +152,9 @@ AnnSpecPrinter qualifying spec {
    case term of
     | Fun (termOp, srt, _) -> 
       (case termOp of
-        | Op (_, fixity) -> fixity
+        | Op (_, fixity) -> (case fixity of
+                               | Unspecified -> Nonfix
+                               | _ -> fixity)
         | Equals         -> Infix (Left, 20) % was 10 ??
         | _              -> Nonfix)
     | _ -> Nonfix
@@ -844,7 +846,8 @@ AnnSpecPrinter qualifying spec {
                      (0, string " "),
                      (0, ppOpNames()),
                      (0, case fixity 
-                           of Nonfix -> string ""
+                           of Nonfix         -> string ""
+			    | Unspecified    -> string ""
                             | Infix(Left,i)  -> string (" infixl "^Nat.toString i)
                             | Infix(Right,i) -> string (" infixr "^Nat.toString i)),
                      (0, string " :"),
