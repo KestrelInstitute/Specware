@@ -1385,8 +1385,12 @@ If we want the precedence to be optional:
   (make-unqualified-ambiguous-name 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :QUALIFIED-AMBIGUOUS-NAME ()
-  (:tuple (1 :QUALIFIER) "." (2 :NAME))
-  (make-qualified-ambiguous-name 1 2 ':left-lcb ':right-lcb))
+  (:anyof
+    ((:tuple (1 :QUALIFIER) "." (2 :NAME))
+      (make-qualified-ambiguous-name 1 2 ':left-lcb ':right-lcb))
+    ((:tuple (1 :QUALIFIER) "." "_")
+      (make-qualified-ambiguous-name 1 "_" ':left-lcb ':right-lcb))
+  ))
 
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
