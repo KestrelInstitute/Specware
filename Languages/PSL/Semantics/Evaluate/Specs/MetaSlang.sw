@@ -16,7 +16,7 @@ MSlang qualifying spec
   import Id
   import Env
 
-  sort MetaSlang.ATerm b
+  % sort MetaSlang.ATerm b
 
   sort Term = MetaSlang.ATerm Position
   sort Type
