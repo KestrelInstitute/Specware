@@ -40,6 +40,16 @@
     "package-defs1"
     "snark-pkg"))
 
+(defparameter *snark-lisp-files2*
+    '("definline"
+      "mvlet"
+      "progc"
+      "collectors"
+      "doubly-linked-list"
+      "queues"
+      "sparse-array"
+      "sparse-vector"))
+
 (defparameter *snark-files*
   '("useful"
     "counters"
@@ -127,6 +137,44 @@
 
 (defvar *compile-me* nil)
 
+(defvar *snark-fasl-type*
+  #+allegro "fasl"
+  #+mcl     "dfsl"
+  #+cmu     "x86f"
+  #+sbcl    sb-fasl:*fasl-file-type*)
+
+(defun need-to-recompile-snark-system ()
+  (or
+   (loop for name in *snark-lisp-files2*
+       thereis
+	 (let* ((dir (if (consp name)
+			 (append (pathname-directory *snark-system-pathname*) (butlast name))
+		       (pathname-directory *snark-system-pathname*)))
+		(name (if (consp name) (first (last name)) name))
+		(file (make-pathname :directory dir :name name :defaults *snark-system-pathname*)))
+	   (> (file-write-date file)
+	      (or (file-write-date (make-pathname :defaults file
+						  :type *snark-fasl-type*))
+		  0))))
+   (loop for name in *snark-files*
+       thereis
+	 (let* ((dir (if (consp name)
+			 (append (pathname-directory *snark-system-pathname*) (butlast name))
+		       (pathname-directory *snark-system-pathname*)))
+		(name (if (consp name) (first (last name)) name))
+		(file (make-pathname :directory dir :name name :defaults *snark-system-pathname*)))
+	   (> (file-write-date file)
+	      (or (file-write-date (make-pathname :defaults file
+						  :type *snark-fasl-type*))
+		  0))))))
+
+(defun make-or-load-snark-system ()
+  (cond
+   ((need-to-recompile-snark-system)
+    (make-snark-system t)
+    (make-snark-system t))
+   (t (make-snark-system nil))))
+
 (defun make-snark-system (&optional (*compile-me* *compile-me*))
   (pushnew :snark *features*)
   #+cmu (setf extensions::*gc-verbose* nil)
@@ -147,9 +195,9 @@
                     (pathname-directory *snark-system-pathname*)))
            (name (if (consp name) (first (last name)) name))
            (file (make-pathname :directory dir :name name :defaults *snark-system-pathname*)))
-      (if *compile-me*
-	  (SPECWARE::compile-and-load-lisp-file file)
-	(load (or (probe-file (compile-file-pathname file)) file)))))
+      (load (if *compile-me*
+                (compile-file file)
+                (or (probe-file (compile-file-pathname file)) file)))))
 ;;#-(or symbolics mcl) (load "/home/pacific1/stickel/spice/build.lisp")
 ;;  (setf *package* (find-package :snark-user))
   (setf *print-pretty* nil)

@@ -35,8 +35,8 @@
 (dolist (name '("doubly-linked-list"))
   (let ((file (make-pathname :name name :defaults *load-truename*)))
     (declare (special *compile-me*))
-    (if (and (boundp '*compile-me*) *compile-me*)
-	(SPECWARE::compile-and-load-lisp-file file)
-    (load (or (probe-file (compile-file-pathname file)) file)))))
+    (load (if (and (boundp '*compile-me*) *compile-me*)
+              (compile-file file)
+              (or (probe-file (compile-file-pathname file)) file)))))
 
 ;;; doubly-linked-list-system.lisp EOF
