@@ -10,8 +10,13 @@ System qualifying spec
   import Cat qualifying /Library/Structures/Math/Cat
   import EdgeMap qualifying
     (translate (translate ../Maps/AsAssocLists
-       by {KeyValue._ +-> EdgeCat._, Dom._ +-> TW_Edge._, Cod._ +-> Cat._})
-       by {TW_Edge.Dom +-> TW.Edge, Cat.Cod +-> Cat.Arrow})
+       by {KeyValue._ +-> EdgeCat._, Dom._ +-> TW_Edge._, Cod._ +-> CatArrow._})
+       by {TW_Edge.Dom +-> TW.Edge, CatArrow.Cod +-> Cat.Arrow})
+
+%   import EdgeMap qualifying
+%     (translate (translate ../Maps/AsAssocLists
+%        by {KeyValue._ +-> EdgeCat._, Dom._ +-> TW_Edge._, Cod._ +-> Cat._})
+%        by {TW_Edge.Dom +-> TW.Edge, Cat.Cod +-> Cat.Arrow})
 
   % op TW_Edge.eq? : TW.Edge * TW.Edge -> Boolean
   def TW_Edge.eq? (e1,e2) =
@@ -20,11 +25,15 @@ System qualifying spec
       | (Back e1,Back e2) -> Edge.eq? (e1,e2)
       | _ -> false
 
-
   import VertexMap qualifying
     (translate (translate ../Maps/AsAssocLists
-       by {KeyValue._ +-> VertexCat._, Dom._ +-> TW_Vertex._, Cod._ +-> Cat._})
-       by {TW_Vertex.Dom +-> TW.Vertex, Cat.Cod +-> Cat.Object})
+       by {KeyValue._ +-> VertexCat._, Dom._ +-> TW_Vertex._, Cod._ +-> CatObject._})
+       by {TW_Vertex.Dom +-> TW.Vertex, CatObject.Cod +-> Cat.Object})
+
+%   import VertexMap qualifying
+%     (translate (translate ../Maps/AsAssocLists
+%        by {KeyValue._ +-> VertexCat._, Dom._ +-> TW_Vertex._, Cod._ +-> Cat._})
+%        by {TW_Vertex.Dom +-> TW.Vertex, Cat.Cod +-> Cat.Object})
 
   % op TW_Vertex.eq? : TW.Vertex * TW.Vertex -> Boolean
   def TW_Vertex.eq? (v1,v2) =
