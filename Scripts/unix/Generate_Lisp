@@ -69,6 +69,7 @@ $BATCH_SPECWARE <<-XXXX
         ;; (describe-environment) ; pwd, swpath, etc.
 	(exiting-on-errors 
 	  (if (sw "/${APP_NAME}GenLisp.sw")
+            ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
 	    (exit-from-lisp 0)
 	    (exit-from-lisp 1)))
 XXXX
