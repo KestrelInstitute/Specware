@@ -57,8 +57,8 @@ if [ -f bin/linux/Specware4.dxl ]; then
 else
 	if [ -f lisp/Specware4.lisp ]; then
 		echo Bootstrapping from previously generated lisp
+		cd Handwritten/Lisp
 		$LISP <<-XXXX
-			cd Handwritten/Lisp
 			(load "Specware4.lisp")
 			(sw "/Applications/Specware/Specware4")
 		XXXX
