@@ -70,6 +70,7 @@ public class EspecNode extends XContainerNode {
         v.viewOptionsExpanded.setBorderWidth(1);
         v.viewOptionsExpanded.setUseSolidPaint(true);
         v.viewOptionsExpanded.setSolidPaintColor(graph.getBackground());
+        v.viewOptionsExpanded.setKeepBoundsWhenCollapsing(true);
         //v.viewOptionsCollapsed.setGradientPaintTopLeftColor(bgColor);
         return v;
         
