@@ -315,8 +315,8 @@
 
 (defparameter *char-data-chars*
     (let ((new-vector (copy-seq *chars*)))
-      (setf (svref new_vector (char-code #\<)) nil)
-      (setf (svref new_vector (char-code #\&)) nil)
+      (setf (svref new-vector (char-code #\<)) nil)
+      (setf (svref new-vector (char-code #\&)) nil)
       new-vector))
 
 (defun xml::char_data_char? (i)
