@@ -863,7 +863,7 @@ results in:
 <section><title>Substitutions</title>
 <para>
 <<
-||`spec-substitution ::= `spec-term `[ `morphism-term `]
+||`spec-substitution ::= `spec-term '[ `morphism-term ']
 >>
 Restriction.
 @@@ Domain of morphism must be the spec.
