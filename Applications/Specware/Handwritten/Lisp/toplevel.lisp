@@ -28,8 +28,8 @@
    (swl (string x) (if y (string y) nil)))
 
 (top-level:alias ("wiz" :case-sensitive) (&optional (b nil b?))
-   (if b? (setq SpecCalc::specwareWizard? b)
-           (princ SpecCalc::specwareWizard?)))
+   (if b? (princ (setq SpecCalc::specwareWizard? b))
+          (princ SpecCalc::specwareWizard?)))
 
 (top-level:alias ("swpath" :case-sensitive) (&optional str)
   (if (null str)
