@@ -51,7 +51,7 @@
   (if (pathnamep directory) directory
     (multiple-value-bind (dev dir)
 	(parse-device-directory directory)
-      (unless (member (elt dir 0) '(#\/ #\\))
+      (unless (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\)))
 	(setq dir (concatenate 'list
 			       (pathname-directory (current-directory))
 			       (split-dir-components directory))))

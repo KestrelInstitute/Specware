@@ -1137,7 +1137,12 @@
 
 (defun list-files (files)
   (when files
-    (let* ((names (loop for fil in files collect (cons (pathname-name fil) (pathname-type fil))))
+    (let* ((names (loop for fil in files
+		        for nm = (pathname-name fil)
+			for ty = (pathname-type fil)
+			collect (if (and (null nm) (null ty))
+				    (last (pathname-directory fil))
+				  (cons nm ty))))
 	   (num-files (length names))
 	   (max-width (1+ (loop for name in names maximize (+ (length (car name)) (length (cdr name))))))
 	   (across (floor *dir-width* max-width))
