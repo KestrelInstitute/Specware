@@ -535,7 +535,7 @@
 			     cbase cbase)
 		     ))
 		 (when *make-verbose* (format t ";; invoking make~%"))
-		 (run-cmd make-command (format nil " -f ~A"  make-file))
+		 (run-cmd make-command "-f" (format nil "~A" make-file))
 		 )
 	     ;; else: no make-args
 	     (progn
@@ -543,7 +543,7 @@
 	       (if (IO-SPEC::fileExistsAndReadable make-file)
 		   (progn
 		     (format t "; using existing make-file ~s...~%" make-file)
-		     (run-cmd make-command (format nil " -f ~A" make-command make-file))
+		     (run-cmd make-command "-f" (format nil "~A" make-command make-file))
 		     )
 		 (format t " and no previous make-file found; please supply a unit-id as argument.~%")
 		 )
