@@ -270,20 +270,6 @@ spec
    ppProofsToFile(proofDecls, file)
 *)
 
-  % Move this and the one from Prove to where subtractSpec is.
-  op subtractSpecProperties: Spec * Spec -> Spec
-  def subtractSpecProperties(spec1, spec2) =
-    let spec2PropNames = map (fn (pt, pn, tv, tm) -> pn) spec2.properties in
-    let newProperties =
-        filter (fn (pt, pn, tv, tm) -> ~(member(pn, spec2PropNames))) spec1.properties in
-    %let _ = debug("subspec") in
-    {
-     importInfo = spec1.importInfo,
-     properties = newProperties,
-     ops   = mapDiffOps spec1.ops spec2.ops,
-     sorts = mapDiffSorts spec1.sorts spec2.sorts
-   }
-
 
   op SpecCalc.evaluateProofGen : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean
                                 -> SpecCalc.Env ValueInfo

@@ -112,21 +112,6 @@ SpecCalc qualifying spec {
     %let _ = writeLine(printSpec spc) in
     spc
 
-  op subtractSpecProperties: Spec * Spec -> Spec
-  def subtractSpecProperties(spec1, spec2) =
-    let spec2PropNames = map (fn (pt, pn, tv, tm) -> pn) spec2.properties in
-    let newProperties =
-        filter (fn (pt, pn, tv, tm) -> ~(member(pn, spec2PropNames))) spec1.properties in
-    {
-     importInfo = spec1.importInfo,
-     properties = newProperties,
-     ops   = spec1.ops,
-     %ops   = mapDiffOps spec1.ops spec2.ops,
-     sorts = spec1.sorts
-     %sorts = mapDiffSorts spec1.sorts spec2.sorts
-   }
-  
-
   op getBaseProverSpec : Env Spec
   def getBaseProverSpec = 
     {
