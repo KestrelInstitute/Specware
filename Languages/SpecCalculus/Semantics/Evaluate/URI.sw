@@ -22,8 +22,6 @@ successive files and then check to see if the URI is then defined.
 If we get to the end of the list then we have failed.
 
 \begin{spec}
-  op existsAndReadable? : String -> Env Boolean
-
   def SpecCalc.evaluateURI position uri = {
       (value,_) <- evaluateReturnURI position uri;
       return value
@@ -34,7 +32,6 @@ evaluateReturnURI is the same as evaluateURI except it also returns
 the canonical URI found.
 
 \begin{spec}
-  op evaluateReturnURI : Position -> RelativeURI -> Env (ValueInfo * URI)
   def evaluateReturnURI position uri = {
     % let dscr = showRelativeURI uri in 
     % print ("evaluateURI: " ^ dscr ^ "\n");
@@ -51,18 +48,19 @@ the canonical URI found.
           optValue <- searchContextForURI uriList;
           (case optValue of      
              | Some value -> return value
-             | None -> {% trace "evaluateURI: not found in global context\n";
+             | None -> {
+               % trace "evaluateURI: not found in global context\n";
                uriPathPairs <-
                  foldM
                   (fn l -> fn uri -> {
                      pair <- generateFileList uri;
                      return (l ++ pair)})
                   [] uriList;
-%                 trace ("evaluateURI: uriPathPairs =\n  "
-%                        ^ (List.show "\n   "
-%                            (map (fn (uri,path) -> "\n   " ^ (showURI uri) ^ "\n   path: " ^ path)
-%                           uriPathPairs))
-%                        ^ "\n\n");
+                  % trace ("evaluateURI: uriPathPairs =\n  "
+                  %        ^ (List.show "\n   "
+                  %            (map (fn (uri,path) -> "\n   " ^ (showURI uri) ^ "\n   path: " ^ path)
+                  %           uriPathPairs))
+                  %        ^ "\n\n");
                 searchFileSystemForURI (position, uri, uriPathPairs, currentURI)
               })
         }

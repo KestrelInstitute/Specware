@@ -1,19 +1,13 @@
 \subsection{Evalution of a Spec term in the Spec Calculus}
 
-Synchronized with r1.13 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSpec.sl
-
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
   import URI/Utilities
-  % import ../../../MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Transformations/DefToAxiom
   import Spec/Utilities
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
-
-  sort Env a = SpecCalc.Env a
-
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -23,8 +17,9 @@ and then qualify the resulting spec if the spec was given a name.
 \begin{spec}
  def SpecCalc.evaluateSpec spec_elements position = {
     uri <- getCurrentURI;
-    print (";;; Processing spec at "^(uriToString uri)^"\n");
-    (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
+    print (";;; Processing spec at " ^ (uriToString uri) ^ "\n");
+    (optBaseUnitId,baseSpec) <- getBase;
+    (pos_spec,TS,depURIs) <- evaluateSpecElems baseSpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
 %    full_spec <- explicateHiddenAxiomsM compressed_spec;
@@ -32,20 +27,21 @@ and then qualify the resulting spec if the spec was given a name.
   }
 \end{spec}
 
+We first evaluate the imports and then the locally declared ops, sorts
+axioms, etc.
+
 \begin{spec}
   op evaluateSpecElems : ASpec Position -> List (SpecElem Position)
-                           -> Env (ASpec Position * TimeStamp * URI_Dependency)
-  def evaluateSpecElems initialSpec specElems =
-     %% Get import information first
-     {(spcWithImports0,TS,depURIs)
-        <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
-      spcWithImports <- maybeAddBaseImport(spcWithImports0,initialSpec);
+                           -> SpecCalc.Env (ASpec Position * TimeStamp * URI_Dependency)
+  def evaluateSpecElems initialSpec specElems = {
+      (spcWithImports,TS,depURIs) <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
       fullSpec <- foldM evaluateSpecElem spcWithImports specElems;
-      return (fullSpec,TS,depURIs)}
+      return (fullSpec,TS,depURIs)
+    }
 
   op evaluateSpecImport : (ASpec Position * TimeStamp * URI_Dependency)
                           -> SpecElem Position
-                          -> Env (ASpec Position * TimeStamp * URI_Dependency)
+                          -> SpecCalc.Env (ASpec Position * TimeStamp * URI_Dependency)
   def evaluateSpecImport (val as (spc,cTS,cDepURIs)) (elem, position) =
     case elem of
       | Import term -> {
@@ -61,7 +57,7 @@ and then qualify the resulting spec if the spec was given a name.
 
   op evaluateSpecElem : ASpec Position
                           -> SpecElem Position
-                          -> Env (ASpec Position)
+                          -> SpecCalc.Env (ASpec Position)
   def evaluateSpecElem spc (elem, position) =
     case elem of
       | Import term -> return spc
@@ -109,59 +105,19 @@ The following wraps the existing \verb+elaborateSpec+ in a monad until
 such time as the current one can made monadic.
 
 \begin{spec}
-
- op elaborateSpecM : Spec -> Env Spec
+ op elaborateSpecM : Spec -> SpecCalc.Env Spec
  def elaborateSpecM spc =
    { uri      <- getCurrentURI;
      filename <- return ((uriToFullPath uri) ^ ".sw");
-     %% No longer necessary
-     %% hackMemory ();
      case elaboratePosSpec (spc, filename) of
        | Spec spc    -> return spc
        | Errors msgs -> raise (TypeCheckErrors msgs)
    }
 \end{spec}
 
-A first attempt at adding implicit import of Base spec. Assumes
-/Library/Base/Base is in the spec path, and doesn't do implicit import
-of there are explicit imports or the spec is in a directory that ends in
-/Libary/Base/ .
-
 \begin{spec}
-  op maybeAddBaseImport : ASpec Position * ASpec Position -> Env (ASpec Position)
-  def maybeAddBaseImport (spc, initialSpec) =
-    if ~(spc = initialSpec) then return spc       % should already include Base
-     else
-       {uri <- getCurrentURI;
-        if baseSpecURI? uri then return spc       % used when defining base
-        else {(Spec baseSpec,_,_)
-                <- SpecCalc.evaluateURI (Internal "adding base import")
-                     (SpecPath_Relative {path = ["Library","Base"],
-                                         hashSuffix = None});
-              return (convertSpecToPosSpec baseSpec)}}
-
- % op aBaseSpec? : URI * ASpec Position -> Boolean
- op baseSpecURI? : URI -> Boolean
- def baseSpecURI? uri =
-   case uri of
-     | {path, hashSuffix = None} -> baseSpecPath? path
-     | _ -> false
-  
- def baseSpecPath? path =
-   case path of
-     | []                   -> false
-     | [_]                  -> false
-     | ["Library","Base"]   -> true
-     | [_,_]                -> false
-     | ["Library","Base",_] -> true
-     | _::r                 -> baseSpecPath? r
-
-\end{spec}
-
-\begin{spec}
-  op explicateHiddenAxiomsM: Spec -> Env Spec
+  op explicateHiddenAxiomsM: Spec -> SpecCalc.Env Spec
   def explicateHiddenAxiomsM spc =
     return spc % (explicateHiddenAxioms spc)
-
 }
 \end{spec}

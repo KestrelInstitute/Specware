@@ -1,6 +1,9 @@
 \section{Definition of the exception sort}
 
-These are the exceptions that one might raise.  These should be defined
+These are the exceptions that one might raise. This refines the abstract
+sort under \UnitId{/Library/Structures/Data/Monad/Exception}
+
+Ideally the exception sort should be defined
 compositionally ... specs that need an exception should be able to extend
 the sort.  We need exceptions for things like:
 
@@ -11,7 +14,7 @@ the sort.  We need exceptions for things like:
 \item parsing
 \end{itemize}
 
-The thought was that \verb+Fail+ would be an exception that cannot
+The thought was that \Op{Fail} would be an exception that cannot
 be caught.  As such it will take one to the lisp debugger. This needs
 thought.
 
@@ -19,17 +22,18 @@ Many of the exceptions have a field which gives the location (in the
 current file) where the error occurred. Putting the position here rather
 than directly in the error message means that all error messages display
 the position in a uniform way and can more easily be conveyed to the UI.
-On the other hand, it seems there are places where the exception is raised
-but where the position information is unavailable. Needs thought.
+On the other hand, it seems there are places where the exception is
+raised but where the position information is unavailable. Needs thought.
 
-A SyntaxError is one that is raised at the toplevel when the user
-enters something bad. A ParserError is raised when the file parser fails.
+A \Op{SyntaxError} is one that is raised at the toplevel when the user
+enters something bad. A \Op{ParserError} is raised when the file parser fails.
 
 \begin{spec}
-spec
+SpecCalc qualifying spec
+  import /Library/Structures/Data/Monad/Exception
   import /Languages/SpecCalculus/AbstractSyntax/Printer
 
-  sort Exception =
+  sort Monad.Exception =
     | Fail         String 
     | FileNotFound  Position * RelativeURI
     | URINotFound  Position * RelativeURI

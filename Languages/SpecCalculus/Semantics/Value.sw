@@ -1,4 +1,4 @@
-spec {
+SpecCalc qualifying spec {
   import /Languages/MetaSlang/Specs/Categories/AsRecord
   import ../AbstractSyntax/Printer
   import /Provers/Proof

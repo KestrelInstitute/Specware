@@ -14,6 +14,7 @@ SpecCalc qualifying spec {
 
   %% Specific kinds of terms:
 
+  op evaluateReturnURI   : Position -> RelativeURI -> Env (ValueInfo * URI)
   op evaluateURI         : Position -> RelativeURI                                                  -> SpecCalc.Env ValueInfo
   op evaluateSpec        : List (SpecElem Position)                                     -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
@@ -30,6 +31,9 @@ SpecCalc qualifying spec {
   op evaluateProve       : ClaimName * SCTerm * ProverName * Assertions * ProverOptions -> Position -> SpecCalc.Env ValueInfo
   op evaluateObligations : SCTerm                                                                   -> SpecCalc.Env ValueInfo
   op evaluateGenerate    : String * SCTerm * Option String -> Position -> SpecCalc.Env ValueInfo
+
+  op setBaseToPath : String -> Env ()
+  op reloadBase : Env ()
 
   %% Hook for extensions to specware
   op evaluateOther       : OtherTerm Position -> Position -> SpecCalc.Env ValueInfo
@@ -60,18 +64,6 @@ SpecCalc qualifying spec {
   op getURI : SCTerm -> SpecCalc.Env URI
   op coerceToSpec : Value -> Value
 
-  %% Hooks to create an environment in which monad can be run
-  op Specware.ignoredState    : State
   op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean
-  % SpecCalc.Monad = SpecCalc.Env, but type checker gets confused if we use Env
-
-  %% These are hooks to handwritten function that save and restore the
-  %% Specware state in a lisp environment Successive invocations of the
-  %% evaluate functions above retrieve the save state, do some work and then
-  %% save it. In this way, the work done to load, elaborate and store specs
-  %% in the Specware environment, is saved.
-
-  op Specware.saveSpecwareState         : SpecCalc.Env ()
-  op Specware.restoreSavedSpecwareState : SpecCalc.Env ()
 }
 \end{spec}

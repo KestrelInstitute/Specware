@@ -11,10 +11,9 @@ SpecCalc qualifying spec
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cURI <- SpecCalc.getURI cterm;
      javaFileName <- URItoJavaFile (cURI, optFileNm);
-     baseUnitId <- pathToRelativeURI "/Library/Base";
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseUnitId;
+     (optBaseUnitId,baseSpec) <- getBase;
      let _ = ensureDirectoriesExist javaFileName in
-     let _ = toJavaFile((subtractSpec spc baseSpec), javaFileName,[]) in
+     let _ = toJavaFile (subtractSpec spc baseSpec, javaFileName,[]) in
 %     let _ = System.fail ("evaluateJavaGen ") in
      {print("Translated to Java");
       return valueInfo}}

@@ -4,8 +4,9 @@ It seems clear now that some of specs that make up the calculus need
 some amount of refactoring.
 
 \begin{spec}
-Specware qualifying spec {
+Specware qualifying spec
   import Evaluate/Term 
+  import Evaluate/Base 
   import Environment 
   import SpecPath
   import ../../MetaSlang/Specs/Position     
@@ -23,13 +24,13 @@ changes and when the toplevel loop actually does something.
 
 This is not used at present.
 
-\begin{spec}
+begin{spec}
   op runSpecware : () -> Boolean
   def runSpecware () =
-    case catch toplevelLoop toplevelHandler initialSpecwareState of
+    case run (catch toplevelLoop toplevelHandler) of
       | (Ok val,_)      -> fail "Specware toplevel loop terminated unexpectedly"
       | (Exception _,_) -> fail "Specware toplevel handler failed"
-\end{spec}
+end{spec}
 
 For the near term, we have a variation of the above which evaluates
 a given URI without looping.
@@ -64,7 +65,8 @@ exists with a non-zero status and hence the bootstrap fails.
 \begin{spec}
   op runSpecwareURI : String -> Boolean
   def runSpecwareURI path = 
-    let run = {
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       path_body <- return (removeSWsuffix path);
@@ -73,36 +75,54 @@ exists with a non-zero status and hence the bootstrap fails.
       evaluateURI position uri;
       return true
     } in
-    case catch run toplevelHandler initialSpecwareState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler)
 \end{spec}
 
 evaluateUnitId is designed to be called from application programs to
 get a unit from a unit id string.
 
 \begin{spec}
-  op evaluateUnitId: String -> Option Value
-  def evaluateUnitId(path) =
-    let run = {
-      restoreSavedSpecwareState;
+  op evaluateUnitId : String -> Option SpecCalc.Value
+  def evaluateUnitId path =
+    let
+      def handler except =
+        case except of
+          | _ -> return (None : Option SpecCalc.Value)
+    in
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      %% removeSWsuffix could be generalized to extractURIpath
-      %% and then the code to create the position would use the
-      %% start and end positions of path_body within path
       path_body <- return (removeSWsuffix path);
       uri <- pathToRelativeURI path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       (val,_,_) <- evaluateURI position uri;
-      saveSpecwareState;
-      return val
+      return (Some val)
     } in
-    case run ignoredState of
-      | (Ok val,_) -> Some val
-      | (Exception _,_) -> (warn "evaluateUnitId failed"; None)
+    run (catch prog handler)
 \end{spec}
 
+\begin{spec}
+  op intializeSpecware : () -> Boolean
+  def initializeSpecware () =
+    let prog = {
+      emptyGlobalContext;
+      setBaseToPath "/Library/Base";
+      return true
+    } in
+    run (catch prog toplevelHandler)
+\end{spec}
+
+\begin{spec}
+  op reintializeSpecware : () -> Boolean
+  def reinitializeSpecware () =
+    let prog = {
+      emptyGlobalContext;
+      reloadBase;
+      return true
+    } in
+    run (catch prog toplevelHandler)
+\end{spec}
 
 We provide two functions (callable from the Lisp read-eval-print loop)
 that invoke the corresponding evaluation functions for the Spec Calculus.
@@ -112,13 +132,10 @@ compiles the resulting specification to lisp.
 \begin{spec}
   op evaluateURI_fromLisp : String -> Boolean
   def evaluateURI_fromLisp path = 
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      %% removeSWsuffix could be generalized to extractURIpath
-      %% and then the code to create the position would use the
-      %% start and end positions of path_body within path
       path_body <- return (removeSWsuffix path);
       uri <- pathToRelativeURI path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
@@ -126,12 +143,9 @@ compiles the resulting specification to lisp.
         evaluateURI position uri;
         return ()
       } (fileNameHandler uri);
-      saveSpecwareState;
       return true
     } in
-    case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler)
 \end{spec}
 
 \begin{spec}
@@ -146,23 +160,54 @@ compiles the resulting specification to lisp.
       | _ -> raise except
 \end{spec}
 
+There is a problem with the next function. We store as part of the base
+info, the relative UnitId of the spec. This is so that it can be reloaded.
+The problem is that if the user gives a UnitId relative path, then reloading
+will fail if the user changes directory from the time he/she sets the base to
+when it is reloaded. On the other hand, if the user sets a canonical UnitId,
+then unless they have "/" in there SWPATH, the canonical UnitId may not be found.
+
+\begin{spec}
+  op setBase_fromLisp : String -> Boolean
+  def setBase_fromLisp path =
+    let prog = {
+      resetGlobals;
+      unitId <- pathToCanonicalURI ".";
+      setCurrentUnitId unitId;
+      path_body <- return (removeSWsuffix path);
+      relativeUnitId <- pathToRelativeURI path_body;
+      setBaseToRelativeUnitId relativeUnitId;
+      return true
+    } in
+    run (catch prog toplevelHandler) 
+
+  op showBase_fromLisp : () -> Boolean
+  def showBase_fromLisp () =
+    let prog = {
+      (optBaseUnitId,baseSpec) <- getBase;
+      case optBaseUnitId of
+        | None -> print "There is no base specification."
+        | Some relativeUnitId ->
+            print ("Identifier of base spec: " ^ (showRelativeURI relativeUnitId));
+      return true
+    } in
+    run (catch prog toplevelHandler) 
+\end{spec}
+
 \begin{spec}
   op evaluatePrint_fromLisp : String -> Boolean
   def evaluatePrint_fromLisp path = 
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       path_body <- return (removeSWsuffix path);
       uri <- pathToRelativeURI path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       evaluatePrint (URI uri, position);
-      saveSpecwareState;
       return true
     } in
-    case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler) 
 \end{spec}
 
 The following corresponds to the :show command.
@@ -170,20 +215,16 @@ The following corresponds to the :show command.
 \begin{spec}
   op listLoadedUnits : () -> Boolean
   def listLoadedUnits () = 
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
       globalContext <- getGlobalContext;
       uriList <-
         return (foldMap (fn lst -> fn dom -> fn _ (* cod *) -> Cons (dom, lst)) 
 		        [] 
 			globalContext);
       print (ppFormat (ppSep ppNewline (map (fn uri -> ppString (uriToString uri)) uriList)));
-      saveSpecwareState;     % shouldn't change anything
       return true
     } in
-    case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler) 
 \end{spec}
 
 \begin{spec}
@@ -193,8 +234,8 @@ The following corresponds to the :show command.
       case targetFile of
         | None -> None
         | Some name -> Some (maybeAddSuffix name ".lisp") in
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       path_body <- return (removeSWsuffix path);
@@ -202,12 +243,9 @@ The following corresponds to the :show command.
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       spcInfo <- evaluateURI position uri;
       evaluateLispCompile (spcInfo, (URI uri, position), target);
-      saveSpecwareState;
       return true
     } in
-    case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler) 
 \end{spec}
 
 \begin{spec}
@@ -217,8 +255,8 @@ The following corresponds to the :show command.
       case targetFile of
         | None -> None
         | Some name -> Some (maybeAddSuffix name ".lisp") in
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       path_body <- return (removeSWsuffix path);
@@ -226,14 +264,10 @@ The following corresponds to the :show command.
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       spcInfo <- evaluateURI position uri;
       evaluateLispCompileLocal (spcInfo, (URI uri, position), target);
-      saveSpecwareState;
       return true
     } in
-    case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler)
 \end{spec}
-
 
 \begin{spec}
   op evaluateJavaGen_fromLisp : String * Option String -> Boolean
@@ -242,8 +276,8 @@ The following corresponds to the :show command.
       case targetFile of
         | None -> None
         | Some name -> Some (maybeAddSuffix name ".java") in
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       path_body <- return (removeSWsuffix path);
@@ -251,25 +285,18 @@ The following corresponds to the :show command.
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       spcInfo <- evaluateURI position uri;
       evaluateJavaGen (spcInfo, (URI uri, position), target);
-      saveSpecwareState;
       return true
     } in
-    case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler) 
 \end{spec}
-
 
 \begin{spec}
   op evaluateURI_fromJava : String -> Boolean
   def evaluateURI_fromJava path = 
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      %% removeSWsuffix could be generalized to extractURIpath
-      %% and then the code to create the position would use the
-      %% start and end positions of path_body within path
       path_body <- return (removeSWsuffix path);
       uri <- pathToRelativeURI path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
@@ -277,12 +304,9 @@ The following corresponds to the :show command.
         evaluateURI position uri;
         return ()
       } (fileNameHandler uri);
-      saveSpecwareState;
       return true
     } in
-    case catch run toplevelHandlerForJava ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandlerForJava)
 \end{spec}
 
 \begin{spec}
@@ -292,8 +316,8 @@ The following corresponds to the :show command.
       case targetFile of
         | None -> None
         | Some name -> Some (maybeAddSuffix name ".c") in
-    let run = {
-      restoreSavedSpecwareState;
+    let prog = {
+      resetGlobals;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       path_body <- return (removeSWsuffix path);
@@ -301,33 +325,14 @@ The following corresponds to the :show command.
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       cValue <- evaluateURI position uri;
       evaluateCGen(cValue,target);
-      saveSpecwareState;
       return true
     } in
-    case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> val
-      | (Exception _,_) -> fail "Specware toplevel handler failed"
+    run (catch prog toplevelHandler)
 \end{spec}
 
-
-
-
-When the lisp file for Specware is compiled and loaded, the following
-will initialize a lisp variable holding the initial state for the
-Specware environment. Subsequent invocations of the evaluate functions
-above, retrieve and restore the saved state, do some work, and save the
-state again in the lisp variable.
-
-\begin{spec}
-  op initializeSavedSpecwareState : ()
-  def initializeSavedSpecwareState = 
-    case saveSpecwareState initialSpecwareState of
-      | (Ok val,_) -> toScreen "Initializing Specware state ..."
-      | (Exception _,_) -> fail "initializeSavedSpecwareState failed"
-
-  % op ignoredState : State % see Signature.sw
-  def ignoredState = initialSpecwareState
-\end{spec}
+removeSWsuffix could be generalized to extractURIpath
+and then the code to create the position would use the
+start and end positions of path_body within path
 
 \begin{spec}
   op removeSWsuffix : String -> String
@@ -377,7 +382,6 @@ sense that no toplevel functions return anything.
   % op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean % See Signature.sw
   def toplevelHandler except =
     {cleanupGlobalContext;		% Remove InProcess entries
-     saveSpecwareState;			% So work done before error is not lost
      message <- return (printException except);
      return (gotoErrorLocation except);
      if specwareWizard? then
@@ -413,18 +417,18 @@ sense that no toplevel functions return anything.
       | [] -> None
       | (err,pos)::rest ->
         (case pos of
-	   | File (file, (left_line, left_column, left_byte), right) ->
-	     if left_line = 0 & left_column = 0
-	       then getFirstRealPosition rest
-	      else Some pos
-	   | _ -> getFirstRealPosition rest)
+           | File (file, (left_line, left_column, left_byte), right) ->
+             if left_line = 0 & left_column = 0
+               then getFirstRealPosition rest
+              else Some pos
+           | _ -> getFirstRealPosition rest)
 \end{spec}
 
 \begin{spec}
   op toplevelHandlerForJava: Exception -> SpecCalc.Env Boolean
   def toplevelHandlerForJava except =
     {cleanupGlobalContext;		% Remove InProcess entries
-     saveSpecwareState;			% So work done before error is not lost
+     % saveSpecwareState;			% So work done before error is not lost
      return (reportExceptionToJava except);
      return false}
 
@@ -434,19 +438,19 @@ sense that no toplevel functions return anything.
       | Unsupported  (position,msg) -> 
         reportErrorAtPosToJava(position,"Unsupported operation: " ^ msg)
       | URINotFound  (position,uri) ->
-	reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
+        reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
       | FileNotFound (position,uri) ->
-	reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
+        reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
       | SpecError    (position,msg) ->
-	reportErrorAtPosToJava(position,"Error in specification: " ^ msg)
+        reportErrorAtPosToJava(position,"Error in specification: " ^ msg)
       | MorphError   (position,msg) ->
-	reportErrorAtPosToJava(position,"Error in morphism: " ^ msg)
+        reportErrorAtPosToJava(position,"Error in morphism: " ^ msg)
       | DiagError    (position,msg) ->
-	reportErrorAtPosToJava(position,"Diagram error: " ^ msg)
+        reportErrorAtPosToJava(position,"Diagram error: " ^ msg)
       | TypeCheck    (position,msg) ->
-	reportErrorAtPosToJava(position,"Type error: " ^ msg)
+        reportErrorAtPosToJava(position,"Type error: " ^ msg)
       | Proof        (position,msg) ->
-	reportErrorAtPosToJava(position,"Proof error: " ^ msg)
+        reportErrorAtPosToJava(position,"Proof error: " ^ msg)
       | TypeCheckErrors errs      -> reportTypeErrorsToJava errs
       | _ -> reportErrorToJava("",0,0,printException except)
 
@@ -463,26 +467,8 @@ sense that no toplevel functions return anything.
 
   op reportErrorToJava: String * Nat * Nat * String -> ()
   %% defined in /Gui/src/Lisp/init-java-connection.lisp
-
 \end{spec}
 
-
-getBaseSpec is a bit of a hack used by colimit to avoid some bootstrapping 
-and typing issues.
-
 \begin{spec}
-  def SpecCalc.getBaseSpec () =
-    let run : SpecCalc.Env Spec = 
-	{restoreSavedSpecwareState;
-	 base_URI               <- pathToRelativeURI "/Library/Base";
-	 (Spec base_spec, _, _) <- SpecCalc.evaluateURI (Internal "base") base_URI;
-	 saveSpecwareState;
-	 return base_spec} 
-    in
-    let def myHandler except = {toplevelHandler except; return emptySpec} 
-    in
-    case catch run myHandler ignoredState of
-      | (Ok base_spec,_) -> base_spec
-      | (Exception _,_) -> fail "Can't find base spec!"
-}
+endspec
 \end{spec}

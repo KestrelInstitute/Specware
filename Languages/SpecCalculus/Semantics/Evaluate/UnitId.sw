@@ -1,0 +1,3 @@
+spec
+  import URI
+endspec

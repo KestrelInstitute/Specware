@@ -7,15 +7,10 @@ yet. In the meantime, the monad and the operations for dealing with it
 are described monolithically ... everything appears below. Ugh!
 
 \begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
-  import /Library/IO/Primitive/IO
-  import translate (translate /Library/Structures/Data/Monad/Base
-    by {Monad +-> Env})
-    by {Monad._ +-> Env._}
-  import Exception
-  import Value
+  import Monad
 \end{spec}
 
 The Monad/Base spec supplies declarations of
@@ -64,7 +59,7 @@ URI_Dependency.
   sort ValueInfo = Value * TimeStamp * URI_Dependency
   sort GlobalContext = PolyMap.Map (URI, ValueInfo)
   sort LocalContext  = PolyMap.Map (RelativeURI, ValueInfo)
-  sort State = GlobalContext * LocalContext * Option URI * ValidatedURIs
+  % sort State = GlobalContext * LocalContext * Option URI * ValidatedURIs
 
   op ppValueInfo : ValueInfo -> Doc
   def ppValueInfo (value,timeStamp,depURIs) =
@@ -73,84 +68,62 @@ URI_Dependency.
              ++ map ppURI depURIs)
 \end{spec}
 
-The first in this product is the global name context. The second is the
-local name context. As the state is extended it will be better to make
-the above a named record and it will become more very useful to have a
-syntax for updating selected fields in a record.
-
-The result of a statement is \verb+Ok+ or an exception.
-
 \begin{spec}
-  sort Result a =
-    | Ok a
-    | Exception Exception
-\end{spec}
-
-Now we define the type for an IO / exception monad.
-
-\begin{spec}
-  sort Env a = State -> (Result a) * State
-\end{spec}
-
-Abstract operations for getting and setting something in the name context.
-The lookup functions return optional values. It might be better if they
-raised exceptions. Or perhaps we need both forms. Wait and see how they
-are used.
-
-\begin{spec}
-  op bindInGlobalContext : URI -> ValueInfo -> Env ()
-  def bindInGlobalContext uri value =
-    fn (globalContext,localContext,currentURI,validatedURIs) ->
-      (Ok (), (update globalContext uri value, localContext,currentURI,validatedURIs))
-
-  op removeFromGlobalContext : URI -> Env ()
-  def removeFromGlobalContext uri =
-    fn (globalContext,localContext,currentURI,validatedURIs) ->
-      (Ok (), (remove globalContext uri, localContext,currentURI,validatedURIs))
-
-  op lookupInGlobalContext : URI -> Env (Option ValueInfo)
-  def lookupInGlobalContext uri =
-    fn state as (globalContext,localContext,currentURI,validatedURIs) ->
-      (Ok (evalPartial globalContext uri), state)
-
-  op getGlobalContext : Env GlobalContext
-  def getGlobalContext = fn (globalContext,localContext,uri,validatedURIs) ->
-    (Ok globalContext, (globalContext,localContext,uri,validatedURIs))
-
-  op setGlobalContext : GlobalContext -> Env ()
-  def setGlobalContext newGlobalContext =
-    fn (globalContext,localContext,uri,validatedURIs) ->
-    (Ok (), (newGlobalContext,localContext,uri,validatedURIs))
-
-  op bindInLocalContext : RelativeURI -> ValueInfo -> Env ()
-  def bindInLocalContext uri value =
-    fn (globalContext,localContext,currentURI,validatedURIs) ->
-      (Ok (), (globalContext, update localContext uri value,currentURI,validatedURIs))
-
-  op lookupInLocalContext : RelativeURI -> Env (Option ValueInfo)
-  def lookupInLocalContext uri =
-    fn state as (globalContext,localContext,currentURI,validatedURIs) ->
-      (Ok (evalPartial localContext uri), state)
-
-  op showLocalContext : Env String
-  def showLocalContext = fn state as (globalContext,localContext,uri,validatedURIs) ->
-    (Ok (ppFormat (ppMap ppRelativeURI ppValueInfo localContext)), state)
-
-  op printLocalContext : Env ()
-  def printLocalContext = {
-      str <- showLocalContext;
-      print ("local context: " ^ str ^ "\n")
+  op initGlobalVars : ()
+  def initGlobalVars =
+    run {
+      print "Declaring globals ...";
+      newGlobalVar ("BaseInfo", (None : Option RelativeUnitId, emptySpec));
+      newGlobalVar ("GlobalContext", PolyMap.emptyMap);
+      newGlobalVar ("LocalContext", PolyMap.emptyMap);
+      newGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
+      newGlobalVar ("ValidatedUnitIds",[]);
+      return ()
     }
 
+  op getBase : Env ((Option RelativeUnitId) * Spec)
+  def getBase = readGlobalVar "BaseInfo"
+
+  op setBase : ((Option RelativeUnitId) * Spec) -> Env ()
+  def setBase baseInfo = writeGlobalVar ("BaseInfo", baseInfo)
+
   op showGlobalContext : Env String
-  def showGlobalContext = fn state as (globalContext,localContext,uri,validatedURIs) ->
-    (Ok (ppFormat (ppMap (fn uri -> ppString (showURI uri))
-              ppValueInfo globalContext)), state)
+  def showGlobalContext = {
+      globalContext <- readGlobalVar "GlobalContext";
+      return (ppFormat (ppMap (fn uri -> ppString (showURI uri)) ppValueInfo globalContext))
+    }
 
   op printGlobalContext : Env ()
   def printGlobalContext = {
       str <- showGlobalContext;
       print ("global context: " ^ str ^ "\n")
+    }
+
+  op emptyGlobalContext : Env ()
+  def emptyGlobalContext = setGlobalContext PolyMap.emptyMap
+
+  op setGlobalContext : GlobalContext -> Env ()
+  def setGlobalContext globalContext = writeGlobalVar ("GlobalContext",globalContext)
+
+  op getGlobalContect : Env GlobalContext
+  def getGlobalContext = readGlobalVar "GlobalContext"
+
+  op bindInGlobalContext : URI -> ValueInfo -> Env ()
+  def bindInGlobalContext unitId value = {
+      globalContext <- getGlobalContext;
+      setGlobalContext (update globalContext unitId value)
+    }
+
+  op lookupInGlobalContext : URI -> Env (Option ValueInfo)
+  def lookupInGlobalContext unitId = {
+      globalContext <- getGlobalContext;
+      return (evalPartial globalContext unitId)
+    }
+
+  op removeFromGlobalContext : URI -> Env ()
+  def removeFromGlobalContext unitId = {
+      globalContext <- getGlobalContext;
+      setGlobalContext (remove globalContext unitId)
     }
 
   op cleanupGlobalContext : Env ()
@@ -164,217 +137,99 @@ are used.
      }
 \end{spec}
 
+The local context is where "let" bindings are deposied
+
+\begin{spec}
+  op bindInLocalContext : RelativeURI -> ValueInfo -> Env ()
+  def bindInLocalContext relativeUnitId value = {
+      localContext <- readGlobalVar "LocalContext";
+      writeGlobalVar ("LocalContext", update localContext relativeUnitId value)
+    }
+
+  op lookupInLocalContext : RelativeURI -> Env (Option ValueInfo)
+  def lookupInLocalContext relativeUnitId = {
+      localContext <- readGlobalVar "LocalContext";
+      return (evalPartial localContext relativeUnitId)
+    }
+
+  op showLocalContext : Env String
+  def showLocalContext = {
+      localContext <- readGlobalVar "LocalContext";
+      return (ppFormat (ppMap ppRelativeURI ppValueInfo localContext))
+    }
+
+  op printLocalContext : Env ()
+  def printLocalContext = {
+      str <- showLocalContext;
+      print ("local context: " ^ str ^ "\n")
+    }
+\end{spec}
+
 When evaluating new locally scoped bindings, we need to be able to
-retrieve the local context and restore it later. Also, we we evaluate
-a new URI, we must abandon the local context in the URI.
+retrieve the local context and restore it later. Also, when we evaluate
+a new UnitId, we must abandon the local context in the UnitId.
 
 \begin{spec}
   op getLocalContext : Env LocalContext
-  def getLocalContext = fn (globalContext,localContext,uri,validatedURIs) ->
-    (Ok localContext, (globalContext,localContext,uri,validatedURIs))
+  def getLocalContext = readGlobalVar "LocalContext"
 
   op setLocalContext : LocalContext -> Env ()
-  def setLocalContext newLocalContext =
-    fn (globalContext,localContext,uri,validatedURIs) ->
-    (Ok (), (globalContext,newLocalContext,uri,validatedURIs))
+  def setLocalContext newLocalContext = writeGlobalVar ("LocalContext",newLocalContext)
 
   op clearLocalContext : Env ()
   def clearLocalContext = setLocalContext emptyMap
 \end{spec}
 
-The corresponding operations for retrieving and setting the current URI.
+The corresponding retrieve and set the current UnitId. They are duplicated
+while there is a transition from names with "URI" to "UnitId".
 
 \begin{spec}
-  op getCurrentURI : Env URI
-  def getCurrentURI = fn state as (globalContext,localContext,optURI,validatedURIs) ->
-    (case optURI of
-      | None -> (Exception (Fail "No current URI"), state)
-      | Some uri -> (Ok uri, state))
+  op getCurrentURI : Env UnitId
+  def getCurrentURI = getCurrentUnitId
 
-  op setCurrentURI : URI -> Env ()
-  def setCurrentURI newURI =
-    fn (globalContext,localContext,oldURI,validatedURIs) ->
-    (Ok (), (globalContext,localContext, Some newURI,validatedURIs))
+  op setCurrentURI : UnitId -> Env ()
+  def setCurrentURI = setCurrentUnitId
+
+  op getCurrentUnitId : Env UnitId
+  def getCurrentUnitId = {
+      optUnitId <- readGlobalVar "CurrentUnitId";
+      case optUnitId of
+        | None -> raise (Fail "No current Unit Id")
+        | Some unitId -> return unitId
+    }
+
+  op setCurrentUnitId : UnitId -> Env ()
+  def setCurrentUnitId newUnitId = writeGlobalVar ("CurrentUnitId", Some newUnitId)
 \end{spec}
 
 \begin{spec}
-  op  validatedURI?: URI -> Env Boolean
-  def validatedURI? uri =
-    fn state as (globalContext,localContext,currentURI,validatedURIs) ->
-      (Ok (member(uri,validatedURIs)), state)
+  op  validatedURI? : UnitId -> Env Boolean
+  def validatedURI? = validatedUnitId?
 
-  op  setValidatedURI: URI -> Env ()
-  def setValidatedURI uri =
-    fn (globalContext,localContext,currentURI,validatedURIs) ->
-      (Ok (), (globalContext,localContext,currentURI,cons(uri,validatedURIs)))
+  op setValidatedURI : UnitId -> Env ()
+  def setValidatedURI = setValidatedUnitId
+
+  op validatedUnitId? : UnitId -> Env Boolean
+  def validatedUnitId? unitId = {
+      validatedUnitIds <- readGlobalVar "ValidatedUnitIds";
+      return (member(unitId,validatedUnitIds))
+    }
+
+  op setValidatedUnitId : UnitId -> Env ()
+  def setValidatedUnitId unitId = {
+      validatedUnitIds <- readGlobalVar "ValidatedUnitIds";
+      writeGlobalVar ("ValidatedUnitIds", cons(unitId,validatedUnitIds))
+    }
 \end{spec}
 
-The initial state within Specware has no URI's evaluated and a current
-URI that corresponds to "/". The latter needs thought.
+I'm not sure the following is necessary. It is called at the start of
+the toplevel functions. 
 
 \begin{spec}
-  op initialSpecwareState : State
-  def initialSpecwareState = (emptyMap, emptyMap, Some {path=["/"], hashSuffix=None},[])
-\end{spec}
-
-Next we define the monad sequencing operators.  The names of the operators
-are fixed. The names are generated by the MetaSlang parser.  The first
-operator binds the output of the first operation.
-
-\begin{spec}
-  % sort Monad a = Env a
-  % op monadBind : fa (a,b) (Env a) * (a -> Env b) -> Env b
-  def monadBind (f,g) =
-    fn state -> (case (f state) of
-      | (Ok y, newState) -> (g y newState)
-      | (Exception except, newState) -> (Exception except, newState))
-      %% Can't do obvious optimization of | x -> x because lhs is Env a and rhs is Env b
-\end{spec}
-
-The second simply sequences two operations without any extra binding.
-
-\begin{spec}
-  % op monadSeq : fa (a,b) (Env a) * (Env b) -> Env b
-  def monadSeq (f,g) = monadBind (f, (fn _ -> g))
-\end{spec}
-
-The unit of the monad.
-
-\begin{spec}
-  % op return : fa (a) a -> Env a
-  def return x = fn state -> (Ok x, state)
-\end{spec}
-
-Raise an exception. Should this be called throw?
-
-\begin{spec}
-  op specwareWizard? : Boolean
-
-  op raise : fa (a) Exception -> Env a
-  def raise except = fn state -> 
-    let _ =
-      if specwareWizard? then
-        fail (System.toString except)
-      else
-        ()
-    in
-      (Exception except, state)
-\end{spec}
-
-This is meant to be for unrecoverable errors. Perhaps it should just call
-\verb+fail+. Heaven help someone trying to debug monadic code within
-the lisp debugger.
-
-\begin{spec}
-  op error : fa (a) String -> Env a
-  def error str = raise (Fail str)
-\end{spec}
-
-This is for going into the Lisp Debugger when called during nomal madic execution.
-
-\begin{spec}
-  op mFail : fa(a) String -> Env a
-  def mFail str = fn state -> let _ = (fail str) in (Exception (Fail str), state)
-\end{spec}
-
-This is used for catching an exception. We execute the first operation
-If that raise an exception, then control is transferred to the second
-sequence with the value of the exception passed as an argument.
-Should catch save the state and restore it in the handler? No and it
-probably isn't tractable anyway.
-
-\begin{spec}
-  op catch : fa (a) Env a -> (Exception -> Env a) -> Env a
-  def catch f handler =
-    fn state ->
-      (case (f state) of
-        | (Ok x, newState) -> (Ok x, newState)
-        | (Exception except, newState) -> handler except newState)
-\end{spec}
-
-Some basic operations for debugging. There should be a proper IO monad.
-
-\begin{spec}
-  op trace : String -> Env ()
-  % def trace str = return ()  % change to print when needed.
-  def trace str = print str
-
-  op print : String -> Env ()
-  def print str =
-    fn state ->
-      let _ = toScreen str in
-      (Ok (), state)
-\end{spec}
-
-Some hacks for twiddling memory.  hackMemory essentially calls (room nil)
-in an attempt to appease Allegro CL into not causing mysterious storage 
-conditions during the bootstrap. (sigh)  
-
-\begin{spec}
-  op garbageCollect : Boolean -> Env ()
-  def garbageCollect full? =
-    fn state ->
-      let _ = System.garbageCollect full? in
-      (Ok (), state)
-
-  op hackMemory : () -> Env ()
-  def hackMemory _ =
-    fn state ->
-      let _ = System.hackMemory() in
-      (Ok (), state)
-\end{spec}
-
-The following is used when one wants to guard a command with a predicate.
-The predicate is not computed in the monad.
-
-\begin{spec}
-  op when : Boolean -> Env () -> Env ()
-  def when p command = if p then (fn s -> (command s)) else return ()
-\end{spec}
-
-The following is essentially a \verb+foldl+ over a list but within a
-monad. We may want to change the order this function takes its arguments
-and the structure of the argument (ie. curried or not) to be consistent
-with other fold operations. (But they are in the order that I like :-).
-
-This needs to go into a Monad library. The spec
-Library/Structures/Data/Monad now exists but not used.
-
-\begin{spec}
-  op foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
-  def foldM f a l =
-    case l of
-      | [] -> return a
-      | x::xs -> {
-            y <- f a x;
-            foldM f y xs
-          }
-\end{spec}
-
-Analogously, this is the monadic version of \verb+map+. Both of these
-need to have better names. Can we drop the 'M' suffix and
-rely on the overloading?
-
-\begin{spec}
-  op mapM : fa (a,b) (a -> Env b) -> (List a) -> Env (List b)
-  def mapM f l =
-    case l of
-      | [] -> return []
-      | x::xs -> {
-            xNew <- f x;
-            xsNew <- mapM f xs;
-            return (Cons (xNew,xsNew))
-          }
-\end{spec}
-
-\begin{spec}
-%   op getCurrentDirectory : Env String
-%   def getCurrentDirectory = return currentDirectory
-
-  op fileExistsAndReadable? : String -> Env Boolean
-  def fileExistsAndReadable? fileName = return (fileExistsAndReadable fileName)
-\end{spec}
-
-\begin{spec}
-}
+  op resetGlobals : Env ()
+  def resetGlobals =
+      % writeGlobalVar ("LocalContext", PolyMap.emptyMap);
+      % writeGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
+      writeGlobalVar ("ValidatedUnitIds",[])
+endspec
 \end{spec}

@@ -1,7 +1,5 @@
 \section{SPECPATH handling}
 
-Synchronized with r1.3 SW4/Languages/SpecCalculus/Semantics/SpecPath.sl
-
 This will be moved.
 
 \begin{spec}
@@ -47,12 +45,12 @@ variable, then it will appear twice is the list of URI's we generate.
     let strings =
       case getEnv "SWPATH" of
         | Some str ->
-	  let path = splitStringAtChar specPathSeparator str in
-	  path
-	    ++ [currDir]
-	    ++ (if specware4Dirs = [] or List.member(hd specware4Dirs,path)
-	 	 then [] else specware4Dirs)
-	| _ -> [currDir,"/"] ++ specware4Dirs
+          let paths = splitStringAtChar specPathSeparator str in
+          paths
+            ++ [currDir]
+            ++ (if specware4Dirs = [] or List.member(hd specware4Dirs,paths)
+                 then [] else specware4Dirs)
+        | _ -> [currDir,"/"] ++ specware4Dirs
     in
       mapM pathToCanonicalURI strings
 

@@ -142,19 +142,22 @@ WadlerLindig qualifying spec
   op ppConcat : List Doc -> Doc
   def ppConcat l =
     case l of
-        Nil ->  ppNil
+      | Nil ->  ppNil
       | (s::ss) -> ppCons s (ppConcat ss)
 
   op ppNewline : Doc
   def ppNewline = ppBreak
 
-  op ppSep : Doc ->  List Doc -> Doc
+  op ppSep : Doc -> List Doc -> Doc
   def ppSep sep l = 
     case l of
       | [] -> ppNil
-      | [s] -> s
-      | DocNil::ss -> ppSep sep ss
-      | s::ss -> ppCons s (ppCons sep (ppSep sep ss))
+      | s::ss -> 
+         let rest = ppSep sep ss in
+         if rest = DocNil then
+           s
+         else
+           ppCons s (ppCons sep rest)
 
 %  let pretty w doc =
 %    let sdoc = ppBest w 0 [0,Flat,DocGroup doc] in

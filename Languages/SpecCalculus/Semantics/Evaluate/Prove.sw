@@ -8,17 +8,15 @@ SpecCalc qualifying spec {
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
-     uri <- getCurrentURI;
-     print (";;; Processing prove at "^(uriToString uri)^"\n");
+     unitId <- getCurrentUnitId;
+     print (";;; Processing prove at " ^ (uriToString unitId) ^ "\n");
      (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
-     baseUnitId <- pathToRelativeURI "/Library/Base";
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseUnitId;
+     (optBaseUnitId,baseSpec) <- getBase;
      proverBaseUnitId <- pathToRelativeURI "/Library/Base/ProverBase";
      (Spec baseProverSpec,_,_) <- SpecCalc.evaluateURI (Internal "ProverBase") proverBaseUnitId;
-     URI <- getCurrentURI;
-     snarkLogFileName <- URItoSnarkLogFile (URI);
+     snarkLogFileName <- URItoSnarkLogFile unitId;
      _ <- return (ensureDirectoriesExist snarkLogFileName);
-     proof_name <- return (URItoProofName (URI));
+     proof_name <- return (URItoProofName unitId);
      spec_name <- return (SpecTermToSpecName(spec_term));
      uspc <- (
 	     case coerceToSpec value of
@@ -41,7 +39,7 @@ SpecCalc qualifying spec {
 				     snarkLogFileName,
 				     pos));
      result <- return (Proof {status = if proved then Proved else Unproved, 
-			      unit   = URI});
+			      unit   = unitId});
      return (result, timeStamp, depURIs)
    }
 

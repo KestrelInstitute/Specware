@@ -29,20 +29,19 @@ SpecCalc qualifying spec {
  %  uriToString          produces (unparseable) UnitId's that are relative to the root of the OS, using ~ for home,    e.g. "~/foo"
  %  relativeURI_ToString produces (parseable?)  UnitId's that are relativized to the currentURI, using ".." to ascend, e.g. "foo" or "../../foo"
        
- sort ReverseContext = PolyMap.Map (Value, RelativeURI)
+ sort ReverseContext = PolyMap.Map (Value, RelativeUnitId)
 
  def SpecCalc.evaluatePrint term = {
-   (value, time_stamp, dep_URIs) <- SpecCalc.evaluateTermInfo term;
-   base_URI                      <- pathToRelativeURI "/Library/Base";
-   (Spec base_spec, _, _)        <- SpecCalc.evaluateURI (Internal "base") base_URI;
+   (value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
+   (optBaseUnitId,base_spec)     <- getBase;
    global_context                <- getGlobalContext;   
-   current_URI                   <- getCurrentURI;
-   reverse_context <- return (foldr (fn (uri, value_to_uri_map) -> 
-				     update value_to_uri_map
-                                            ((eval global_context uri).1) 
-				            (relativizeURI current_URI uri))
+   currentUnitId                 <- getCurrentUnitId;
+   reverse_context <- return (foldr (fn (unitId, value_to_unit_id_map) -> 
+				     update value_to_unit_id_map
+                                            ((eval global_context unitId).1) 
+				            (relativizeURI currentUnitId unitId))
 			            emptyMap
-				    dep_URIs);
+				    depUnitIds);
    SpecCalc.print "\n";
    (case value of
       | Spec    spc -> SpecCalc.print (printSpec     base_spec reverse_context spc)
@@ -52,7 +51,7 @@ SpecCalc qualifying spec {
       | Other other -> evaluateOtherPrint other (positionOf term)
       | InProcess   -> SpecCalc.print "No value!");
    SpecCalc.print "\n";
-   return (value, time_stamp, dep_URIs)
+   return (value, time_stamp, depUnitIds)
    }
 
  op printSpec     : Spec -> ReverseContext -> Spec              -> String

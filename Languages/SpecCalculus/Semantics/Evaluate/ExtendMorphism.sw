@@ -20,19 +20,16 @@ def answerVarsFromSnark () =
     answerStrings
 
 def SpecCalc.evaluateExtendMorph term = {
-  uri <- getCurrentURI;
-  print (";;; Extending Morphisms for "^(uriToString uri)^"\n");
-  (value, time_stamp, dep_URIs) <- SpecCalc.evaluateTermInfo term;
-   base_URI                      <- pathToRelativeURI "/Library/Base";
-   (Spec base_spec, _, _)        <- SpecCalc.evaluateURI (Internal "base") base_URI;
-   (case value of
-      | Morph   sm  -> {newMorph <- return (extendMorphism(sm,base_spec));
-			return (Morph newMorph, time_stamp, dep_URIs)}
-      | _ -> raise (Unsupported (positionOf term,
-				 "Can only extend Morphisms")))
+  unitId <- getCurrentUnitId;
+  print (";;; Extending Morphisms for " ^ (uriToString unitId) ^ "\n");
+  (value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
+  (optBaseUnitId,baseSpec) <- getBase;
+  case value of
+      | Morph sm -> {
+          newMorph <- return (extendMorphism (sm,baseSpec));
+          return (Morph newMorph, time_stamp, depUnitIds)}
+      | _ -> raise (Unsupported (positionOf term, "Can only extend morphisms"))
    }
-
-
 
 op extendMorphism: Morphism * Spec -> Morphism
 
