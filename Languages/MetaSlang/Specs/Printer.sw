@@ -807,7 +807,7 @@ AnnSpecPrinter qualifying spec {
      % let def ppOpNm() = (if spName = qualifier then pp.ppOp id
      %                  else pp.ppOpId(Qualified(qualifier,id))) in
      let def ppOpName (qid as Qualified(qualifier, id)) =
-      (if qualifier = "" then
+      (if qualifier = UnQualified then
          pp.ppOp id
        else
          pp.ppOpId qid)
@@ -888,7 +888,7 @@ AnnSpecPrinter qualifying spec {
    else
      let pp : ATermPrinter = context.pp in
      let def ppSortName (qid as Qualified (qualifier, id)) =
-      (if qualifier = "" then
+      (if qualifier = UnQualified then
          pp.ppSort id
        else
          pp.ppSortId qid)
