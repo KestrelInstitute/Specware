@@ -2,7 +2,7 @@
 \begin{spec}
 PE qualifying spec
   import /Languages/PSL/Semantics/Evaluate/Specs/Oscar
-  import /Languages/PSL/Semantics/Evaluate/Specs/Subst
+  import /Languages/PSL/Semantics/Evaluate/Specs/Subst/AsOpInfo
   import /Languages/PSL/Semantics/Evaluate/Specs/Compiler
   import Simplify
 
@@ -632,7 +632,9 @@ PE qualifying spec
                           (newBSpec,newTrans) <- return (newTrans newBSpec src newDst (transSpec transition));
                           foldM (inlineTransition newDst) (newBSpec,visited,newFinals) successors
                         }
-                     def tryFinal oldOscSpec oldBSpec (newOscSpec,newBSpec) mode =
+                     def tryFinal oldOscSpec oldBSpec (newOscSpec,newBSpec) mode = {
+                       postcondition <- computePostcondition
+ 
                        let subst = filterReturn mode procInfo.returnInfo optCallReturnRef in
                        foldM (specialTrans oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
                        %% foldM (specializeTransition oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
@@ -650,6 +652,54 @@ PE qualifying spec
       else
         return None
     }
+\end{spec}
+
+We have a local substitution from inside the procedure.
+We have the changedVars in the transition
+and we know the name of the return variable if one extists.
+
+We go through the substitution that we get at the end and the substitution that started the
+call. 
+  For a substitution at the start:
+   if the variable is a changed var for the transition it is discarded.
+   if the variable is assigned to (by return) then it is discarded.
+    otherwise we keep it
+  for the return part
+   if the variable is the return name, then we we rename it and keep it
+    otherwise discard it.
+
+\begin{spec}
+  op computePostcondition : Subst.Subst -> TransSpec -> ReturnInfo -> Option Op.Ref -> Subst.Subst -> Env Subst.Subst
+  def computePostcondition precondition transSpec optReturnId optCallReturnId procFinal =
+   let
+     def propagatePrecondition newSubst varInfo =
+       if member? (changedVars (backMorph transSpec), idOf varInfo) then
+         return newSubst
+       else
+         return (Cons (varInfo,newSubst))
+         (* case optCallReturnId of
+           | Some callReturnId ->
+                if (Op.idOf varInfo) = callReturnId then
+                  newSubst
+                else
+                  Cons (varInfo,newSubst)
+           | _ -> newSubst *)
+     def fixPostcondition (newSubst:Subst.Subst) varInfo =
+       if member? (changedVars (backMorph transSpec), idOf varInfo) then
+         return (Cons (varInfo,newSubst))
+       else
+         case (optReturnId,optCallReturnId) of
+           | (Some returnId,Some callReturnId) ->
+                if (Op.idOf varInfo) = callReturnId then
+                  return (Cons (varInfo withId callReturnId, newSubst))
+                else
+                  return newSubst
+            | _ -> return newSubst
+     in {
+       newPre <- foldM propagatePrecondition [] precondition;
+       newPost <- foldM fixPostcondition newPre procFinal;
+       return (order newPost)
+     }
 \end{spec}
 
 Now we look at the transition in the procedure being inline. If it is a procedure call,
