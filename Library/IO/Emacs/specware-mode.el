@@ -144,7 +144,9 @@ accepted in lieu of prompting."
       ["Process Current File" sw:process-current-file t]
       ["Process Unit" sw:process-unit t] 
       [":cd this directory" cd-current-directory t] 
-      ["Find Definition " sw:meta-point t]
+      ["Find Definition" sw:meta-point t]
+      ["Find Next Definition" sw:continue-meta-point
+       *pending-specware-meta-point-results*]
       ["Switch to *common-lisp* " sw:switch-to-lisp t]
       ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark)]
       ["Uncomment Region"
