@@ -335,9 +335,9 @@ TypeChecker qualifying spec
 
       | Any _ -> srt
 
-      | _ -> 
-        let _ = toScreen ("\ncheckSort, Unrecognized sort: " ^ (anyToString srt) ^ "\n") in
-	srt
+      | mystery -> 
+        let _ = toScreen ("\ncheckSort, Unrecognized sort: " ^ (anyToString mystery) ^ "\n") in
+	mystery
 
   % ========================================================================
   %% ---- called inside OPS : PASS 0  -----

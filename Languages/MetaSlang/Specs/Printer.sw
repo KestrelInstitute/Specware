@@ -707,7 +707,7 @@ AnnSpecPrinter qualifying spec
 				    ++
 				    [string ">"])
 
-    | _ -> string ("ignoring bad case for sort: " ^ (anyToString srt))
+    | _ -> string ("ignoring mystery sort: " ^ (anyToString srt))
       
 
  def [a] TyVarString (mtv: AMetaTyVar a) : String =

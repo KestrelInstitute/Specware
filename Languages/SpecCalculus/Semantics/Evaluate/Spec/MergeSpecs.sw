@@ -124,8 +124,8 @@ SpecCalc qualifying spec
 			       ^ "\n " ^ (printSort old_srt)
 			       ^ "\n " ^ (printSort new_srt)
 			       ^ (if specwareWizard? then
-				    "\n\n " ^ (anyToString old_srt)
-				    ^ "\n " ^ (anyToString new_srt)
+				    "\n\n " ^ (anyToString old_srt) % under specwareWizard? 
+				    ^ "\n " ^ (anyToString new_srt) % under specwareWizard? 
 				    ^ "\n"
 				  else
 				    "\n")))

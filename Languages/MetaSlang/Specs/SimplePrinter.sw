@@ -234,9 +234,7 @@ SpecCalc qualifying spec
      | Axiom      -> ppString "axiom"
      | Theorem    -> ppString "theorem"
      | Conjecture -> ppString "conjecture"
-     | any ->
-       fail ("No match in ppPropertyType with: '"
-	     ^ (anyToString any)
-	     ^ "'")
+     | mystery ->
+       fail ("No match in ppPropertyType with mysterious property: '" ^ (anyToString mystery) ^ "'")
 }
 \end{spec}

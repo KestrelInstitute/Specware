@@ -87,7 +87,7 @@ SpecCalc qualifying spec
       | Proof               (pos, msg) -> (Some (pos, false), "Proof error: " ^ msg)
       | UndefinedGlobalVar  name       -> (None,              "Undefined global var: " ^ name)
       | CollectedExceptions exceptions -> (None,              printExceptions exceptions)
-      | _                              -> (None,              "Unknown exception: " ^ (anyToString except))
+      | mystery                        -> (None,              "Unknown exception: " ^ (anyToString mystery))
 
    op printException : Exception -> String
   def printException except =

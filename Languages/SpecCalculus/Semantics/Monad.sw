@@ -100,7 +100,7 @@ Raise an exception. Should this be called throw?
   def SpecCalc.raise except = fn state -> 
     let _ =
       if specwareWizard? then
-        fail (anyToString except)
+        fail (anyToString except) % under specwareWizard?
       else
         ()
     in
@@ -116,7 +116,7 @@ Raise an exception. Should this be called throw?
     fn state ->
       let _ =
           if specwareWizard? then
-	    fail (anyToString exception)
+	    fail (anyToString exception) % under specwareWizard?
 	  else
 	    ()
       in
