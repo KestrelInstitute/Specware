@@ -1,7 +1,8 @@
 \subsection{Name Qualifing in Specs}
 
 \begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec 
+{
   import Signature 
   import Spec/Utilities
 \end{spec}
@@ -16,18 +17,21 @@ is flattened,
 Change UnQualified to new_qualifier in all qualified names
 
 \begin{spec} 
-  def SpecCalc.evaluateQualify term new_qualifier = {
-       (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo term;
-        case coerceToSpec value of
-          | Spec spc -> {
-                qualified_spec <- qualifySpec spc new_qualifier (positionOf term);
-		compressed_spec <- complainIfAmbiguous (compressDefs qualified_spec) (positionOf term);
-                return (Spec compressed_spec,timeStamp,depUnitIds)
-              }
-	  | Other other -> evaluateOtherQualify other (positionOf term)
-          | _ -> raise (TypeCheck ((positionOf term),
-				   "qualifying a term that is not a specification"))
-    }
+  def SpecCalc.evaluateQualify sc_term new_qualifier = 
+   let pos = positionOf sc_term in
+   {
+    value_info as (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo sc_term;
+    case coerceToSpec value of
+      | Spec spc -> 
+        {
+	 qualified_spec <- qualifySpec spc new_qualifier pos;
+	 compressed_spec <- complainIfAmbiguous (compressDefs qualified_spec) pos;
+	 return (Spec compressed_spec,timeStamp,depUnitIds)
+	}
+      | Other other -> 
+	evaluateOtherQualify sc_term value_info new_qualifier pos
+      | _ -> raise (TypeCheck (pos, "qualifying a term that is not a specification"))
+   }
 
   op qualifySpec : Spec -> Qualifier -> Position -> SpecCalc.Env Spec
   def qualifySpec spc new_qualifier position =

@@ -61,7 +61,7 @@ SpecCalc qualifying spec {
     -> Position
     -> SpecCalc.Env ValueInfo
 
-  op evaluateOtherQualify : OtherValue -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherQualify : SCTerm -> ValueInfo -> Qualifier -> Position -> SpecCalc.Env ValueInfo
 
   %% Lower-level support routines:
 
