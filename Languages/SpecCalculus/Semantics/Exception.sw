@@ -61,7 +61,7 @@ SpecCalc qualifying spec
                 "Syntax error: " ^ msg
 
       | ParserError fileName -> 
-		"Syntax error for filename: " ^ fileName
+		"Syntax error in file " ^ fileName
 
       | Unsupported (position,str) ->
 		"Unsupported operation: " ^ str
@@ -117,7 +117,7 @@ SpecCalc qualifying spec
           in (result
 	      ^ (if filename = lastfilename then
 	         print pos else
-		 "Sort errors in " ^ (printAll pos))
+		 "Errors in " ^ (printAll pos))
 	      ^ " : " ^ msg ^ "\n",
 	      filename)
     in
