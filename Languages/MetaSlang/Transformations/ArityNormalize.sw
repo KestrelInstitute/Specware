@@ -159,7 +159,7 @@ ArityNormalize qualifying spec {
           if mArity = 1
              then None
           else Some(case match
-                      of (pat,_,_)::_ -> SpecEnvironment4.patternSort pat
+                      of (pat,_,_)::_ -> patternSort pat
                        | _ -> System.fail "Unexpected empty match",mArity)
         | IfThenElse _ -> None
         | Record _ -> None

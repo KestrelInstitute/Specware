@@ -8,12 +8,13 @@ returns a spec including the proof obligations as conjectures.
 SpecCalc qualifying spec 
 {
   import Signature
+  import /Languages/MetaSlang/Specs/TypeObligations
 
   def SpecCalc.evaluateObligations term =
     { (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
       case value of
 
-	| Spec  spc -> let ob_spec = specObligations spc in
+	| Spec  spc -> let ob_spec = specObligations (spc,term) in
 	               return (Spec ob_spec, time_stamp, dep_URIs)
 
 	| Morph sm  -> let ob_spec = morphismObligations sm in
@@ -64,10 +65,12 @@ SpecCalc qualifying spec
     in 
     mapTerm (translateTerm, translateSort, id) tm
 
-  op specObligations : Spec -> Spec % Result was Env Spec, but can there be errors, etc.?
-  def specObligations spc = 
-    %% TODO: Add obligations found by type checker, definitions, etc.
-    spc
+  op specObligations : Spec * SCTerm -> Spec % Result was Env Spec, but can there be errors, etc.?
+  def specObligations (spc,spcTerm) = 
+    %% So far only does type conditions (for subsorts
+    %% TODO: Add obligations found by definitions, etc.
+    %% Second argument should be specRef for spc (showTerm blows up)
+    makeTypeCheckObligationSpec (spc,showTerm spcTerm)
 
 }
 

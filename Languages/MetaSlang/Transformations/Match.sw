@@ -391,11 +391,11 @@ Match qualifying spec {
 	then [] 
       else
       if num = 1
-      	then [("",freshVar(context,SpecEnvironment4.patternSort(pat)))]
+      	then [("",freshVar(context,patternSort(pat)))]
       else
       case pat
 	of  RecordPat(fields,_) -> 
-	    map (fn(l,p) -> (l,freshVar(context,SpecEnvironment4.patternSort(p)))) fields
+	    map (fn(l,p) -> (l,freshVar(context,patternSort(p)))) fields
 	 | _ -> System.fail "Record pattern expected"
 
   (* 
@@ -407,9 +407,9 @@ Match qualifying spec {
       case pattern
         of EmbedPat(e,_,_,_) -> embedded(e)
 	 | NatPat(n,_)    ->    equalToConstant(natSort,mkNat(n))
-	 | CharPat(ch,_)  ->    equalToConstant(SpecEnvironment4.charSort,mkChar(ch))
+	 | CharPat(ch,_)  ->    equalToConstant(charSort,mkChar(ch))
 	 | BoolPat(b,_)   ->    equalToConstant(boolSort,mkBool(b))
-	 | StringPat(s,_) ->    equalToConstant(SpecEnvironment4.stringSort,mkString s)
+	 | StringPat(s,_) ->    equalToConstant(stringSort,mkString s)
 	 | RecordPat _ -> (fn _ -> mkTrue())
 	 | _ -> (fn _ -> mkTrue())
               
@@ -446,7 +446,7 @@ Match qualifying spec {
 		  let query         = queryPat(pat)(t)  in
 		  let decomposition = patDecompose(pat) in
 		  let newVars = 
-		      map (fn(p,_)-> freshVar(context,SpecEnvironment4.patternSort(p))) 
+		      map (fn(p,_)-> freshVar(context,patternSort(p))) 
 		      decomposition 
 		  in
 		  let lets  = 
@@ -611,7 +611,7 @@ def flattenLetDecl((pat:Pattern,term:Term),(context,decls)) =
        | (WildPat(srt,_),Record([],_)) -> (context,decls)
        | (WildPat(srt,_),term) -> 
 	  (context,
-           cons((mkVarPat(freshVar(context,SpecEnvironment4.patternSort(pat))),term),decls))
+           cons((mkVarPat(freshVar(context,patternSort(pat))),term),decls))
        | (RecordPat(fields,_),Record(terms,_)) ->
 	 foldr flattenLetDecl (context,decls) (zipFields(fields,terms)) 
        | (RecordPat(fields,_),term) -> 
@@ -778,7 +778,7 @@ def eliminateTerm context term =
 	in
 	let bdySrt = inferType(context.spc,body) in
 %%       let _  = writeLine "Let pattern elimination tabulating " in
-	let vs = map (fn pat -> freshVar(context,SpecEnvironment4.patternSort(pat)))
+	let vs = map (fn pat -> freshVar(context,patternSort(pat)))
 	           pats 
 	in
 	let (vars,_)  = 

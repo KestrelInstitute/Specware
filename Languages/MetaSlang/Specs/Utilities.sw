@@ -2,7 +2,7 @@
 
 Utilities qualifying spec { 
  import StandardSpec    % defines sorts Spec, Term, etc.
- import /Library/Legacy/DataStructures/IntegerSet
+ import /Library/Legacy/DataStructures/IntSetSplay
  import /Library/Legacy/DataStructures/ListPair 
  import /Library/Legacy/DataStructures/ListUtilities
  import /Library/Legacy/DataStructures/StringUtilities 
@@ -506,7 +506,6 @@ Utilities qualifying spec {
 
 
 
- op disableProperties: IntegerSet.Set * Spec -> Spec
  def disableProperties(indices,spc:Spec) = 
    if IntegerSet.isEmpty indices then
      spc

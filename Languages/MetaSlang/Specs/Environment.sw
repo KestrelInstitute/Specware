@@ -1,5 +1,5 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/Environment.sl v1.4
-% Some names have had to be introduced qualified with SpecEnvironment4
+% Some names have had to be introduced qualified with SpecEnvironment
 % to avoid clashes with others qualified with MetaSlang
 
 (*
@@ -7,7 +7,7 @@
  * to their definitional unfolding. 
  *) 
  
-SpecEnvironment4 qualifying
+SpecEnvironment qualifying
 spec {
  import Elaborate/TypeChecker
  %% Try to avoid importing Primitives0
@@ -290,15 +290,15 @@ spec {
                                                      ("Could not extract type for "^
                                                       printTermWithSorts tm))
      | Bind       _                         -> boolSort
-     | Record     (fields,               a) -> Product(List.map (fn (id, t) -> 
-                                                                 (id, inferType (sp, t)))
-                                                                fields,
+     | Record     (fields,               a) -> Product(map (fn (id, t) -> 
+							    (id, inferType (sp, t)))
+						         fields,
                                                        a)
      | Let        (_, term,              _) -> inferType (sp, term)
      | LetRec     (_, term,              _) -> inferType (sp, term)
      | Var        ((_,srt),              _) -> srt
      | Fun        (_, srt,               _) -> srt
-     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(SpecEnvironment4.patternSort pat,
+     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternSort pat,
                                                        inferType (sp, body))
      | Lambda     ([],                   _) -> System.fail 
                                                 "inferType: Ill formed lambda abstraction"
@@ -308,27 +308,28 @@ spec {
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
      | _ -> System.fail "inferType: Non-exhaustive match"
 
- def SpecEnvironment4.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
- def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], noPos)
- def SpecEnvironment4.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], noPos)
- def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], noPos)
+% def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
+% def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], noPos)
+% def SpecEnvironment.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], noPos)
+% def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], noPos)
 
- op SpecEnvironment4.patternSort : Pattern -> Sort
- def SpecEnvironment4.patternSort = fn
-   | AliasPat   (pat1, _,       _) -> SpecEnvironment4.patternSort pat1
-   | VarPat     ((_,srt),       _) -> srt
-   | EmbedPat   (_,_,srt,       _) -> srt
-   | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
-                                                             (id, SpecEnvironment4.patternSort pat)) 
-                                                            idpatternlist in
-                                      Product (fields, noPos)
-   | WildPat     (srt,          _) -> srt
-   | StringPat   _                 -> SpecEnvironment4.stringSort
-   | BoolPat     _                 -> booleanSort
-   | CharPat     _                 -> SpecEnvironment4.charSort
-   | NatPat      _                 -> integerSort
-   | RelaxPat    (pat, _,       _) -> SpecEnvironment4.patternSort pat
-   | QuotientPat (pat, _,       _) -> SpecEnvironment4.patternSort pat
+%% This is no different than MetaSlang.patternSort 
+% op SpecEnvironment.patternSort : Pattern -> Sort
+% def SpecEnvironment.patternSort = fn
+%   | AliasPat   (pat1, _,       _) -> SpecEnvironment.patternSort pat1
+%   | VarPat     ((_,srt),       _) -> srt
+%   | EmbedPat   (_,_,srt,       _) -> srt
+%   | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
+%                                                             (id, SpecEnvironment.patternSort pat)) 
+%                                                            idpatternlist in
+%                                      Product (fields, noPos)
+%   | WildPat     (srt,          _) -> srt
+%   | StringPat   _                 -> SpecEnvironment.stringSort
+%   | BoolPat     _                 -> booleanSort
+%   | CharPat     _                 -> SpecEnvironment.charSort
+%   | NatPat      _                 -> integerSort
+%   | RelaxPat    (pat, _,       _) -> SpecEnvironment.patternSort pat
+%   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternSort pat
 
 
  op mkRestrict    : Spec * {pred : Term, term : Term} -> Term
@@ -483,7 +484,7 @@ spec {
       | LetRec     (_, term,              _) -> termSortEnv   (sp, term)
       | Var        ((id, srt),            _) -> unfoldToArrow (sp, srt)
       | Fun        (fun, srt,             _) -> unfoldToArrow (sp, srt)
-      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (SpecEnvironment4.patternSort pat,
+      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (patternSort pat,
                                                          termSortEnv (sp, body))
       | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
       | IfThenElse (_, t2, t3,            _) -> termSortEnv   (sp, t2)

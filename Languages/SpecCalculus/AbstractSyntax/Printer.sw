@@ -258,63 +258,59 @@ SpecCalc qualifying spec {
             ppString "import ",
             ppTerm term
           ]
-(*
       | Sort (qid, sortInfo) -> 
           ppConcat [
             ppString "sort ",
             ppIdInfo qid,
-            ppASortInfo sortInfo
+            ppdASortInfo sortInfo
           ]
       | Op (qid, opInfo) ->
           ppConcat [
             ppString "op ",
             ppIdInfo qid,
-            ppAOpInfo opInfo
+            ppdAOpInfo opInfo
           ]
-*)
       | Claim property -> ppAProperty property
 
-  op ppIdInfo : List Id -> Doc
-(*
-  def ppIdInfo ids = ppSep (ppString ".") (map ppString ids)
-*)
+  op ppIdInfo : List QualifiedId -> Doc
+  def ppIdInfo qids = ppSep (ppString ",") (map ppString (map printQualifiedId qids))
    
-%   op ppASortInfo : fa (a) TyVars * Option (ASort a) -> Doc
-%   def ppASortInfo sortInfo =
-%     case sortInfo of
-%        | ([],None) -> ppNil
-%        | ([],Some srt) -> ppAppend (ppString " = ") (ppASort srt)
-%        | (tyVars,Some srt) -> 
-%            ppConcat [
-%              ppString " (",
-%              ppSep (ppString ",") (map ppString tyVars),
-%              ppString ") = ",
-%              ppASort srt
-%            ]
-% 
-%   op ppAOpInfo : fa (a)  Fixity * ASortScheme a * Option (ATerm a) -> Doc
-%   def ppAOpInfo (fixity,(tyVars,srt),optTerm) =
-%     ppConcat [
-%       ppFixity fixity,
-%       ppString " : ",
-%       (case tyVars of
-%         | [] -> ppNil
-%         | _ -> 
-%            ppConcat [
-%              ppString "fa (",
-%              ppSep (ppString ",") (map ppString tyVars),
-%              ppString ") "
-%            ]),
-%       ppASort srt,
-%       (case optTerm of
-%         | None -> ppNil
-%         | Some term ->
-%             ppConcat [
-%               ppString " = ",
-%               ppATerm term
-%             ])
-%     ]
-% 
+  op ppdASortInfo : fa (a) TyVars * Option (ASort a) -> Doc
+  def ppdASortInfo sortInfo =
+    case sortInfo of
+       | ([],None) -> ppNil
+       | ([],Some srt) -> ppAppend (ppString " = ") (ppASort srt)
+       | (tyVars,Some srt) -> 
+	   ppConcat [
+	     ppString " (",
+	     ppSep (ppString ",") (map ppString tyVars),
+	     ppString ") = ",
+	     ppASort srt
+	   ]
+
+  op ppdAOpInfo : fa (a)  Fixity * ASortScheme a * Option (ATerm a) -> Doc
+  def ppdAOpInfo (fixity,(tyVars,srt),optTerm) =
+    ppConcat [
+      ppFixity fixity,
+      ppString " : ",
+      (case tyVars of
+	| [] -> ppNil
+	| _ -> 
+	   ppConcat [
+	     ppString "fa (",
+	     ppSep (ppString ",") (map ppString tyVars),
+	     ppString ") "
+	   ]),
+      ppASort srt,
+      (case optTerm of
+	| None -> ppNil
+	| Some term ->
+	    ppConcat [
+	      ppString " = ",
+	      ppATerm term
+	    ])
+    ]
+
 %   op ppAProperty : fa (a) AProperty a -> Doc
 %   def ppAProperty (propType, name, tyVars, term) =
 %     ppConcat [
