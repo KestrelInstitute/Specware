@@ -23,9 +23,6 @@ let Specware4 = spec {
     /Library/Structures/Data/Maps/Monomorphic/AsLists
   import NatTrans qualifying
     /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
-
-  def Vertex.ppElem = WadlerLindig.ppString
-  def Edge.ppElem = WadlerLindig.ppString
 } in
   generate lisp Specware4
 \end{spec}
