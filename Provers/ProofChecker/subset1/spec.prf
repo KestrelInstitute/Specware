@@ -1,0 +1,89 @@
+(InfiniteType
+ (nonEmpty 0
+  (nonEmpty-1 nil 3316495476 3316496229
+   ("" (lemma "infinite")
+    (("" (skolem * ("f"))
+      (("" (instantiate * ("f(0)")) (("" (propax) nil nil)) nil)) nil))
+    nil)
+   unchecked
+   ((nat nonempty-type-eq-decl nil naturalnumbers nil)
+    (>= const-decl "bool" reals nil)
+    (bool nonempty-type-eq-decl nil booleans nil)
+    (int nonempty-type-eq-decl nil integers nil)
+    (integer_pred const-decl "[rational -> boolean]" integers nil)
+    (rational nonempty-type-from-decl nil rationals nil)
+    (rational_pred const-decl "[real -> boolean]" rationals nil)
+    (real nonempty-type-from-decl nil reals nil)
+    (real_pred const-decl "[number_field -> boolean]" reals nil)
+    (number_field nonempty-type-from-decl nil number_fields nil)
+    (number_field_pred const-decl "[number -> boolean]" number_fields nil)
+    (boolean nonempty-type-decl nil booleans nil)
+    (number nonempty-type-decl nil numbers nil)
+    (T formal-type-decl nil InfiniteType nil)
+    (infinite formula-decl nil InfiniteType nil))
+   752724 800 t shostak)))
+(Primitives)
+(Syntax)
+(Positions)
+(SyntaxWithCoreOps
+ (exprFreeVars_TCC1 0
+  (exprFreeVars_TCC1-1 nil 3317014895 3317016003
+   ("" (skolem * ("e1" "e2" "e"))
+    (("" (flatten)
+      (("" (replace -1)
+        (("" (delete -1) (("" (expand "<<") (("" (propax) nil nil)) nil))
+          nil))
+        nil))
+      nil))
+    nil)
+   proved ((<< adt-def-decl "(well_founded?[Expression])" Syntax nil)) 379942
+   1660 t nil))
+ (exprFreeVars_TCC2 0
+  (exprFreeVars_TCC2-1 nil 3317014895 3317016086
+   ("" (skolem * ("e1" "e2" "e"))
+    (("" (flatten)
+      (("" (replace -1)
+        (("" (delete -1) (("" (expand "<<") (("" (propax) nil nil)) nil))
+          nil))
+        nil))
+      nil))
+    nil)
+   proved ((<< adt-def-decl "(well_founded?[Expression])" Syntax nil)) 70982
+   1860 t nil))
+ (exprFreeVars_TCC3 0
+  (exprFreeVars_TCC3-1 nil 3317014895 3317016173
+   ("" (skolem!)
+    (("" (flatten)
+      (("" (replace -1)
+        (("" (delete -1) (("" (expand "<<") (("" (propax) nil nil)) nil))
+          nil))
+        nil))
+      nil))
+    nil)
+   proved ((<< adt-def-decl "(well_founded?[Expression])" Syntax nil)) 70519
+   1540 t nil))
+ (exprFreeVars_TCC4 0
+  (exprFreeVars_TCC4-1 nil 3317014895 3317016217
+   ("" (skolem!)
+    (("" (flatten)
+      (("" (replace -1)
+        (("" (delete -1) (("" (expand "<<") (("" (propax) nil nil)) nil))
+          nil))
+        nil))
+      nil))
+    nil)
+   proved ((<< adt-def-decl "(well_founded?[Expression])" Syntax nil)) 36461
+   1260 t nil))
+ (exprFreeVars_TCC5 0
+  (exprFreeVars_TCC5-1 nil 3317014895 3317016327
+   ("" (skolem!)
+    (("" (flatten)
+      (("" (replace -1)
+        (("" (delete -1) (("" (expand "<<") (("" (propax) nil nil)) nil))
+          nil))
+        nil))
+      nil))
+    nil)
+   proved ((<< adt-def-decl "(well_founded?[Expression])" Syntax nil)) 102832
+   790 t nil)))
+
