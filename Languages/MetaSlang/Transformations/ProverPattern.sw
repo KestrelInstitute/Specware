@@ -351,6 +351,7 @@ def removePatternCase(term) =
   def removePatternFun(term) = [([], mkTrue(), term)]
 
   op removePatternLambda: Term -> CondTerms
+  def removePatternLambda(term) = [([], mkTrue(), term)]
 
   op removePatternIfThenElse: Term -> CondTerms
   def removePatternIfThenElse(term as IfThenElse(condTerm, thenTerm, elseTerm, b)) =
@@ -377,5 +378,6 @@ def removePatternCase(term) =
      recurseDownCondCondTerms(condCondTerms, thenCondTerms, elseCondTerms)
 
   op removePatternSortedTerm: Term -> CondTerms
+  def removePatternSortedTerm(term) = [([], mkTrue(), term)]
 
 endspec
