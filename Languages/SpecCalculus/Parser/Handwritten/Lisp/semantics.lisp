@@ -35,12 +35,12 @@
 	   (column (cdr right))
 	   (byte   0))
       (setq right (vector line column byte))))
-  (case (car *parser-source*)
-    (:file   (cons :|File|     (vector (cdr *parser-source*) left right)))
-    (:string (cons :|String|   (vector (cdr *parser-source*) left right)))
+  (case (first *parser-source*)
+    (:file   (cons :|File|     (vector (second *parser-source*) left right)))
+    (:string (cons :|String|   (vector (second *parser-source*) left right)))
     (t       (when (< (incf *make-pos-warnings-seen*) 10)
 	       (warn "In MAKE-POS: What are we parsing? : ~S" *parser-source*))
-	     (cons :|Internal| (cdr *parser-source*)))))
+	     (cons :|Internal| (second *parser-source*)))))
 
 (defun freshMetaTypeVar (left right)
   (cons :|MetaTyVar|
