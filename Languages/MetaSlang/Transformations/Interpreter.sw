@@ -359,6 +359,7 @@ spec
        | ("show", Char c)     -> String (toString c)
        | ("succ",Int i)       -> Int (succ i)
 
+       | ("stringToInt",String s)  -> Int(stringToInt s)
        | ("length",String s)  -> Int(length s)
        | ("explode",String s) -> List.foldr (fn (c,r) -> Constructor("Cons",RecordVal[("1",Char c),("2",r)]))
                                    (Constant "Nil") (explode s)
@@ -440,7 +441,21 @@ spec
 	    | [(_,_),(_,Bool true)]   -> Bool true
 	    | [(_,ut),(_,Bool false)] -> ut
 	    | [(_,Bool false),(_,ut)] -> ut
-	    | _                       -> default())
+            | [(_,Unevaluated x),(_,Unevaluated y)] ->
+               (case (x,y) of
+                  | (Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), lhs, pos2), rhs) ->
+                      if equalTerm? (lhs,rhs) then
+                        Bool true
+                      else
+                        default ()
+                  | (lhs, Apply (Fun (Op (Qualified (_,"~"),fxty),srt,pos1), rhs, pos2)) ->
+                      if equalTerm? (lhs,rhs) then
+                        Bool true
+                      else
+                        default ()
+                  | _ -> default ())
+  	    | _                    -> default())
+
        | "=>"  ->
 	 (case fields of
 	    | [(_,Bool x),(_,Bool y)] -> Bool(x => y)
