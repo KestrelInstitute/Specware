@@ -69,17 +69,18 @@ SpecCalc qualifying spec {
  %% ======================================================================
 
   %The following loses too much information
-  def printSpec base_spec reverse_context spc =
+  def printSpec base_spec _(*reverse_context*) spc =
     %% this uses /Languages/MetaSlang/Specs/Printer
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
+    %% TODO: use reverse_context ?
     PrettyPrint.toString (format(80, 
  				ppSpecHidingImportedStuff
  				  (initialize(asciiPrinter,false))
 				  base_spec
 				  spc))
 
- def printSpecExpanded base_spec _ (* ignore reverse_context *) spc =
-   %% use reverse_context for imports ?
+ def printSpecExpanded base_spec _(*reverse_context*) spc =
+   %% TODO: use reverse_context for imports ?
    AnnSpecPrinter.printSpec (subtractSpec (spc << {importInfo = emptyImportInfo}) base_spec)
 
  %% ======================================================================

@@ -127,7 +127,7 @@ SpecUnion qualifying spec
 
  %% TODO:  These might refer incorrectly into old specs
  %% TODO:  listUnion assumes = test on elements, we might want something smarter such as equivTerm?
- def propertiesUnion context_spec specs =
+ def propertiesUnion _(*context_spec*) specs =
   return (foldl (fn (spc, props) -> listUnion (props, spc.properties))
 	        []
 	        specs)

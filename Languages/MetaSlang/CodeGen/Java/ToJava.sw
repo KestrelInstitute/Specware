@@ -483,7 +483,7 @@ def modifyClsDeclsFromOps(spc, jcginfo) =
   jcginfo spc.ops
 
 op modifyClsDeclsFromOp: Spec * Id * Id * OpInfo * JcgInfo -> JcgInfo
-def modifyClsDeclsFromOp (spc, qual, id, op_info, jcginfo) =
+def modifyClsDeclsFromOp (spc, _ (*qual*), id, op_info, jcginfo) =
   let (_, opsrt, trm) = unpackFirstOpDef op_info in
   let clsDecls = jcginfo.clsDecls in
   let dompreds = srtDomPreds opsrt in
