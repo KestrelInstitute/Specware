@@ -28,7 +28,7 @@ SpecCalc qualifying spec {
 					       listUnion (medDepUIDs, codDepUIDs)),
 				    listUnion (d2mDepUIDs,c2mDepUIDs))
 			);
-	 let _ = app (fn dep -> toScreen("\n Dep: " ^ (anyToString dep) ^ "\n")) deps in
+	 % let _ = app (fn dep -> toScreen("\n Dep: " ^ (anyToString dep) ^ "\n")) deps in
 	 return (SpecInterp conversion,
 		 max (max(domTimeStamp, max(medTimeStamp, codTimeStamp)),
 		      max(d2mTimeStamp,c2mTimeStamp)),
