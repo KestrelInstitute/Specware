@@ -737,7 +737,10 @@ SpecToLisp qualifying spec {
            mkLSeq (List.map (fn t -> mkLTerm (sp, dpn, vars, t)) terms)
 
 	 | _ -> 
-	   System.fail ("Unexpected term " ^ printTerm term)
+	   let pos = (termAnn term) in
+	   (System.warn ("Non-constructive term " ^ (printIfExternal pos) ^ ":\n"
+			 ^ printTerm term);
+	    mkLApply(mkLOp "CL:ERROR",[mkLString "Non-constructive Term"]))
     
 
  %% Poor man's optimizer. 
