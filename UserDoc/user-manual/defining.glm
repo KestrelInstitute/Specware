@@ -200,9 +200,9 @@ directly interacting with the file system of the underlying operating
 system.</para>
 
 <para>The content of the <".sw"> files can be edited with any desired
-text editor. A possibility is to use XEmacs, which is started when
-&Specware; is started and is used to interact with &Specware;. The
-XEmacs-&Specware; combo can be thought of as a (rather limited)
+text editor. A possibility is to use the XEmacs in which the &SShell;
+is running when &Specware; is fired up using <"Specware4 XEmacs">.
+The XEmacs-&Specware; combo can be thought of as a (rather limited)
 Integrated Development Environment (IDE).</para>
 
 <para>Note that unit definitions can be managed without running

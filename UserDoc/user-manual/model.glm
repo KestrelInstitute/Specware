@@ -43,7 +43,7 @@ through the &SShell;.
 </para>
 
 <para>When <".sw"> files are processed by &Specware;, progress and
-error messages are displayed in the XEmacs buffer containing
+error messages are displayed in the window containing
 the &SShell;.
 In addition, the results of processing are saved into an
 internal cache that &Specware; maintains. Lastly, processing of

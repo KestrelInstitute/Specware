@@ -18,19 +18,21 @@ processed, [[B]] and [[C]] are also processed. There must be no
 circularities in the chain of unit dependencies.</para>
 
 <para>Processing causes progress and/or error messages to be displayed
-in the XEmacs buffer containing the &SShell;. Progress messages inform
+in the window containing the &SShell;. Progress messages inform
 the user that units were processed without error. Error messages
 provide information on the cause of errors, so that the user can fix
-them by editing the unit definitions. When an error occurs in the
-definition of some unit, &Specware; displays the <".sw"> file
+them by editing the unit definitions. If the &SShell; is running in an
+XEmacs buffer, then, when an error occurs in the definition of some unit,
+&Specware; displays the <".sw"> file
 containing the unit term in a separate XEmacs buffer, with the cursor
 positioned at the point of the erroneous text.</para>
 
 <para>The processing of certain kinds of units also results in the
-creation of new files as an additional side effect. For instance, Lisp
-programs are a kind of unit, constructed by the [[generate]] operation
-of &Metaslang;. A side effect of processing one such unit is that the
-resulting code is written into a <".lisp"> file.</para>
+creation of new files as an additional side effect. For instance, Lisp,
+C or Java programs are constructed by units containing
+the [[generate]] operation
+of &Metaslang;. A side effect of processing such a unit is that the
+resulting code is written into a file.</para>
 
 <para>When &Specware; processes a unit, it saves the processing
 results into an internal cache, associating the results with the
@@ -426,7 +428,8 @@ single-unit file in the current directory.
 A command entered by the user should be typed all on one line.
 The Return/Enter at the end of the line signals to the &SShell;
 that the command must be executed.
-The Tab key can be used for filename completion.
+If the &SShell; is running in an XEmacs buffer,
+the TAB key can be used for filename completion.
 </para>
 
 </section>
@@ -563,7 +566,7 @@ The unit identifier must not contain ``<"#">'' and the file must
 not contain a unit of the same name as the file (without the directory
 and extension). &Specware; attempts to resolve the unit identifier. If
 it is a relative unit identifier, it is resolved as if it occurred
-inside a single-unit file in the Lisp current directory.  However, the
+inside a single-unit file in the current directory.  However, the
 file obtained at the third step must be a multi-unit file, and not a
 single-unit file.  If it is indeed a multi-unit file, &Specware;
 parses and elaborates all the unit definitions inside the file.</para>
@@ -715,7 +718,7 @@ possible to evaluate &Metaslang; expressions from the &SShell command
 line as translated into Lisp.
 Unless no user-defined types and ops are used (as in the expression
 [[2+2]]),
-this requires that Lisp has already been generated for the context spec
+this requires that Lisp code has already been generated for the context spec
 (see <xref linkend="genlisp">) and that the Lisp file has been loaded
 (see <xref linkend="auxlisp">).
 The command is:
