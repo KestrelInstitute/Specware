@@ -140,23 +140,21 @@
 
 (defun lt-2 (s1 s2)
   (declare (type cl:simple-base-string s1 s2))
-  ;; result is fixnum or nil
-  (string< s1 s2))
+  (if (string< s1 s2) t nil))
 
 (defun lt (s1s2)
-  ;; result is fixnum or nil
-  (string< (the cl:simple-base-string (car s1s2))
-           (the cl:simple-base-string (cdr s1s2))))
+  (if (string< (the cl:simple-base-string (car s1s2))
+               (the cl:simple-base-string (cdr s1s2)))
+   t nil))
 
 (defun leq-2 (s1 s2)
   (declare (type cl:simple-base-string s1 s2))
-  ;; result is fixnum or nil
-  (string<= s1 s2))
+  (if (string<= s1 s2) t nil))
 
 (defun leq (s1s2)
-  ;; result is fixnum or nil
-  (string<= (the cl:simple-base-string (car s1s2))
-            (the cl:simple-base-string (cdr s1s2))))
+  (if (string<= (the cl:simple-base-string (car s1s2))
+                (the cl:simple-base-string (cdr s1s2)))
+   t nil))
 
 (defconstant newline
   (format nil "~c" #\newline))
