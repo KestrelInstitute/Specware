@@ -39,8 +39,10 @@ MetaSlang qualifying spec {
    if q = "Boolean" or q = UnQualified then
      (case id of
 	| "~"   -> true
-	| "&"   -> true
-	| "or"  -> true
+	| "&"   -> true  % TODO: deprecate
+	| "&&"  -> true
+	| "or"  -> true  % TODO: deprecate
+	| "||"  -> true
 	| "=>"  -> true
 	| "<=>" -> true
 	| "="   -> true
@@ -60,7 +62,7 @@ MetaSlang qualifying spec {
  op printQualifierDotId : Qualifier * Id -> String
  def printQualifierDotId (qualifier, id) =
   if qualifier = "Nat"     or 
-     qualifier = "Boolean" or
+     qualifier = "Boolean" or   % TODO: deprecate?
      qualifier = "String"  or
      qualifier = "Char"    or
      qualifier = UnQualified
@@ -482,8 +484,8 @@ MetaSlang qualifying spec {
         Base      (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
      | (Boolean _, Boolean _) -> true
 
-     | (Boolean _, Base      (Qualified("Boolean", "Boolean"), [], _)) -> true % transition
-     | (Base      (Qualified("Boolean", "Boolean"), [], _), Boolean _) -> true % transition
+     | (Boolean _, Base      (Qualified("Boolean", "Boolean"), [], _)) -> true % TODO: remove after transition
+     | (Base      (Qualified("Boolean", "Boolean"), [], _), Boolean _) -> true % TODO: remove after transition
 
      | (TyVar     (v1,      _), 
         TyVar     (v2,      _)) -> v1 = v2
@@ -1474,7 +1476,7 @@ MetaSlang qualifying spec {
 
  def boolSort? s =
   case s of
-    | Base (Qualified ("Boolean", "Boolean"), [], _) -> true
+    | Base (Qualified ("Boolean", "Boolean"), [], _) -> true  % TODO: deprecate
     | Boolean _ -> true
     | _ -> false
 

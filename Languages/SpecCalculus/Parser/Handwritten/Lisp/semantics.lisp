@@ -462,19 +462,19 @@ If we want the precedence to be optional:
 
 (defun make-unqualified-op-ref (name l r)
   (make-fun (cond (ms::usingNewBooleans?
-		   (cond ((equal name "~") (cons :|Not| nil))
-			 ((equal name "&")  (cons :|And| nil))
-			 ((equal name "or") (cons :|Or| nil))
-			 ;;((equal name ("&&") (cons :|And| nil))
-			 ;;((equal name ("||") (cons :|Or| nil))
-			 ((equal name "=>") (cons :|Implies| nil))
-			 ((equal name "<=>")(cons :|Iff| nil))
-			 ((equal name "=")  (cons :|Equals| nil))
-			 ((equal name "~=") (cons :|NotEquals| nil))
+		   (cond ((equal name "~")   (cons :|Not|       (make-pos l r)))
+			 ((equal name "&")   (cons :|And|       (make-pos l r))) ; soon to be deprecated ...
+			 ((equal name "&&")  (cons :|And|       (make-pos l r)))
+			 ((equal name "or")  (cons :|Or|        (make-pos l r))) ; soon to be deprecated ...
+			 ((equal name "||")  (cons :|Or|        (make-pos l r)))
+			 ((equal name "=>")  (cons :|Implies|   (make-pos l r)))
+			 ((equal name "<=>") (cons :|Iff|       (make-pos l r)))
+			 ((equal name "=")   (cons :|Equals|    (make-pos l r)))
+			 ((equal name "~=")  (cons :|NotEquals| (make-pos l r)))
 			 (t
 			  (cons :|OneName| (cons name unspecified-fixity)))))
 		  ((equal name "=")
-		   (cons :|Equals| nil))
+		   (cons :|Equals| (make-pos l r)))
 		  (t
 		   (cons :|OneName| (cons name unspecified-fixity))))
             (freshMetaTypeVar l r)
@@ -487,13 +487,13 @@ If we want the precedence to be optional:
 (defun make-two-name-expression (name-1 name-2 l r)
   (make-fun (cond ((and ms::usingNewBooleans?
 			(equal name-1 "Boolean"))
-		   (cond ((equal name-2 "~") (cons :|Not| nil))
-			 ((equal name-2 "&")  (cons :|And| nil))
-			 ((equal name-2 "or") (cons :|Or| nil))
-			 ;;((equal name-2 ("&&") (cons :|And| nil))
-			 ;;((equal name-2 ("||") (cons :|Or| nil))
-			 ((equal name-2 "=>") (cons :|Implies| nil))
-			 ((equal name-2 "<=>")(cons :|Iff| nil))
+		   (cond ((equal name-2 "~")   (cons :|Not|     (make-pos l r)))
+			 ((equal name-2 "&")   (cons :|And|     (make-pos l r))) ; soon to be deprecated ...
+			 ((equal name-2 "&&")  (cons :|And|     (make-pos l r)))
+			 ((equal name-2 "or")  (cons :|Or|      (make-pos l r))) ; soon to be deprecated ...
+			 ((equal name-2 "||")  (cons :|Or|      (make-pos l r)))
+			 ((equal name-2 "=>")  (cons :|Implies| (make-pos l r)))
+			 ((equal name-2 "<=>") (cons :|Iff|     (make-pos l r)))
 			 (t 
 			  (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity)))))
 		   (t 
