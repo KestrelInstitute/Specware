@@ -971,7 +971,7 @@ If anyone has a good algorithm for this..."
 
 (defun sw:running-specware-shell-p ()
   (and (inferior-lisp-running-p)
-       (sw:eval-in-lisp "SWShell::*in-specware-shell?*")))
+       (member (sw:eval-in-lisp "(SWShell::in-specware-shell?)") '(t T))))
 
 (defun lisp-or-specware-command (lisp-comm spec-comm &rest argstrs)
   (simulate-input-expression
@@ -979,6 +979,11 @@ If anyone has a good algorithm for this..."
 	  (if (sw:running-specware-shell-p)
 	      spec-comm lisp-comm)
 	   argstrs)))
+
+(defun ensure-list (fm-str)
+  (if (equal (elt fm-str 0) (elt "(" 0))
+      fm-str
+    (format "(progn %s)" fm-str)))
 
 (defun sw:process-current-file ()
   (interactive)
@@ -1316,12 +1321,12 @@ If anyone has a good algorithm for this..."
 ;;;; Prompt regexp for specware shell
 (defvar *lisp-prompt-regexp*)		; make buffer local?
 
-(defun set-comint-prompt (sw-shell?)
+(defun set-comint-prompt ()
   (unless (boundp '*lisp-prompt-regexp*)
     (setq *lisp-prompt-regexp* comint-prompt-regexp))
-  (if sw-shell?
-      (setq comint-prompt-regexp "^* ")
-    (setq comint-prompt-regexp *lisp-prompt-regexp*))
+  (when (equal *lisp-prompt-regexp* comint-prompt-regexp)
+      (setq comint-prompt-regexp (concat "\\(" comint-prompt-regexp "\\|^\\* \\)")))
+  (setq bridge-prompt-regexp comint-prompt-regexp)
   (when (boundp 'fi::prompt-pattern)
     (setq fi::prompt-pattern comint-prompt-regexp)))
 
@@ -1344,6 +1349,16 @@ If anyone has a good algorithm for this..."
 	  (error
 	   ;; save file if user types "yes":
 	   (not (y-or-n-p "Parens are not balanced.  Save file anyway? ")))))))
+
+;;; Command for showing error point in specware shell
+(defun show-error-on-new-input (col)
+  (sit-for 0.1)                         ; Allow error message to be printed
+  (goto-char (point-max))
+  (previous-input-line)
+  (comint-bol nil)
+  (forward-sexp 1)
+  (forward-char col)
+  ())
 
 ;;; About Specware command implementation
 (defvar specware-logo

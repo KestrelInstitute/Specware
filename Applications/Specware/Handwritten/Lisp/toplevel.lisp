@@ -83,6 +83,7 @@
 (defvar *saved-swpath* nil)
 (defvar *temp-file-in-use?* nil)
 (defvar *current-temp-file* nil)
+(defvar *tmp-counter* 0)
 (defvar SpecCalc::noElaboratingMessageFiles)
 (defun sw-temp-file? (fil)
   (equal fil *current-temp-file*))
@@ -120,6 +121,8 @@
 	   str)))
 
 (defvar *running-test-harness?* nil)
+(defvar SWShell::*in-specware-shell?*)
+(defvar swshell::*emacs-eval-form-after-prompt*)
 
 (defun show-error-position (emacs-error-info position-delta)
   (when emacs-error-info
@@ -367,8 +370,6 @@
 (defvar *swe-return-value?* nil)
 (defvar *expr-begin-offset* 2)		; Difference between beginning of expr in input and in file
 
-(defvar *tmp-counter* 0)
-
 (defun ymd-hms ()
   (multiple-value-bind (second minute hour day month year)
       (DECODE-UNIVERSAL-TIME (get-universal-time))
@@ -493,6 +494,9 @@
 	      errstr)))
     (when (setq pos (search " At line" errstr))
       (setq errstr (concatenate 'string (subseq errstr 0 pos) (subseq errstr (+ pos 16)))))
+    (when (setq pos (search "op tmp" errstr))
+      (setq errstr (concatenate 'string (subseq errstr 0 pos) "top-level expression"
+				(subseq errstr (+ pos 6)))))
     errstr))
 
 (defun find-aux-fn (code)
@@ -959,25 +963,30 @@
   (if (equal dir "")
       (setq dir (specware::getenv "HOME"))
     (setq dir (subst-home dir)))
-  (specware::change-directory dir)
-  #+allegro 
-  (tpl:do-command "cd" dir)
+  (while (and (> (length dir) 1) (equal (subseq dir 0 2) ".."))
+    (setq dir (subseq dir (if (and (> (length dir) 2) (eq (elt dir 2) #\/))
+			      3 2)))
+    (let* ((curr (specware::current-directory))
+	   (olddirpath (pathname-directory curr))
+	   (pathlen (length olddirpath)))
+      (if (< pathlen 2)
+	  (warn "Already at top of directory tree")
+	(specware::change-directory (make-pathname :directory (subseq olddirpath 0 (- pathlen 1))
+						   :defaults curr)))))
+  (unless (equal dir "")
+     #+cmu (unix:unix-chdir dir)
+     #-cmu (specware::change-directory dir))
   (let* ((dirpath (specware::current-directory))
 	 (newdir (namestring dirpath)))
     (emacs::eval-in-emacs (format nil "(set-default-directory ~s)"
 				  (specware::ensure-final-slash newdir)))
-    #-allegro 
-    (progn 
-      #+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
-      #-cmu (specware::change-directory dir)
-    
-      #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
-      (when (under-ilisp?)
-	(emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
-                                                 (cons default-directory nil))"
-				      (specware::ensure-final-slash newdir))))
-      (princ newdir)
-      (values))))
+    #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
+    (when (under-ilisp?)
+      (emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
+                                               (cons default-directory nil))"
+				    (specware::ensure-final-slash newdir))))
+    (princ newdir)
+    (values)))
 
 (defun ld (file)
   (load (subst-home file)))
@@ -1052,9 +1061,7 @@
   )
 
 (defun ls (&optional (str ""))
-  (let* ((contents (directory (if (string= str "")
-				  (specware::current-directory)
-				(make-pathname :directory str))))
+  (let* ((contents (directory (specware::dir-to-path str)))
 	 (sw-files (loop for p in contents
 		     when (string= (pathname-type p) "sw")
 		     collect p)))
@@ -1064,8 +1071,8 @@
 (defun dir (&optional (str ""))
   (ls str))
 
-(defun dirr (&optional (str "*.sw"))
-  (list-directory-rec (specware::current-directory))
+(defun dirr (&optional (str ""))
+  (list-directory-rec (specware::dir-to-path str))
   (values))
 
 (defun list-directory-rec (dir)

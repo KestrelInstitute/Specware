@@ -26,7 +26,7 @@ Notes:
   (when *use-emacs-interface?*
     #+allegro
     (if (find-package :ilisp)
-	(format t "~a" string)
+	(progn (force-output *terminal-io*) (format *terminal-io* "~a" string) (force-output *terminal-io*))
       (when lep::*connection*
 	(lep::eval-in-emacs string)))
     #-allegro (format t "~a" string)))

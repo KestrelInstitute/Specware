@@ -202,6 +202,9 @@ spec
 	 else sub(s1,i1+i) = sub(s2,i2+i) && loop(i+1)
    in loop 0
 
+ %% These errors are more likely to be the primary cause of a type error than other errors
+ def priorityErrorStrings = ["could not be identified","No matches for "]
+
  op  checkErrors : LocalEnv -> List(String * Position)
  def checkErrors(env:LocalEnv) = 
    let errors = env.errors in
@@ -211,13 +214,13 @@ spec
 	      File (file_2, left_2, right_2)) ->
 	     (if file_1 = file_2 & left_1.1 = left_2.1
 	       then % If messages are on same line then prefer unidentified name error
-		 let unid1 = search("could not be identified",msg_1) in
-		 let unid2 = search("could not be identified",msg_2) in
+		 let unid1 = exists (fn str -> some?(search(str,msg_1))) priorityErrorStrings in
+		 let unid2 = exists (fn str -> some?(search(str,msg_2))) priorityErrorStrings in 
 		 case (unid1,unid2) of
-		   | (None,None) -> compare1 (em1,em2)
-		   | (Some _,None) -> Less
-		   | (None,Some _) -> Greater
-		   | (Some _,Some _) -> compare1 (em1,em2)
+		   | (false,false) -> compare1 (em1,em2)
+		   | (true,false) -> Less
+		   | (false,true) -> Greater
+		   | (true,true) -> compare1 (em1,em2)
 	       else compare1 (em1,em2))
 	   | _ -> compare1 (em1,em2)
        def compare1 ((msg_1, pos_1), (msg_2, pos_2)) =

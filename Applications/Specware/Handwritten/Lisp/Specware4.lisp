@@ -159,14 +159,14 @@
     ;; maybe interface would be a better name
     "Languages/XML/Handwritten/Lisp/Support.lisp"
 
-    ;; Toplevel aliases 
+    ;; Toplevel commands 
     "Applications/Specware/Handwritten/Lisp/toplevel"
-
-    ;; Specware Shell
-    "Applications/Specware/Handwritten/Lisp/sw-shell"
 
     ;; Debugging utilities
     "Applications/Specware/Handwritten/Lisp/debug"
+
+    ;; Specware Shell
+    "Applications/Specware/Handwritten/Lisp/sw-shell"
 
     ;; Test harness
     "Applications/Handwritten/Lisp/test-harness"

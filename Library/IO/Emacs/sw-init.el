@@ -228,7 +228,7 @@
 				      (sw::normalize-filename specware4-dir)))
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" build-dir))
-    (simulate-input-expression "(time (load \"Specware4.lisp\"))")
+    (simulate-input-expression "(cl:time (load \"Specware4.lisp\"))")
     (continue-form-when-ready
      (`(build-specware4-continue (, specware4-dir) (, build-dir) (, bin-dir)
 				 (, slash-dir) (, world-name) (, base-world-name))))))
@@ -352,7 +352,7 @@
 				      (sw::normalize-filename specware4-dir)))
     (sw:eval-in-lisp-no-value "#+allegro(sys::set-stack-cushion 10000000)
                                #-allegro()")
-    (simulate-input-expression "(time (cl-user::boot))")
+    (simulate-input-expression "(cl:time (cl-user::boot))")
     (continue-form-when-ready (`(build-specware4 (, specware4-dir))))))
 
 

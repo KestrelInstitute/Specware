@@ -29,6 +29,8 @@
 		    common-lisp-image-arguments
 		    common-lisp-host
 		    common-lisp-image-file))
+  (defun set-default-directory (dir)
+    (setq default-directory dir))
   (setq *lisp-prompt-regexp* *allegro-prompt-regexp*)
   (defvar *specware-lisp* 'allegro)
   (defvar *lisp-image-extension* "dxl")
@@ -64,18 +66,21 @@
     (load "ilisp/ilisp"))
   (setq lisp-program (getenv "LISP_EXECUTABLE"))
   (setq expand-symlinks-rfs-exists t)
-  (defvar *specware-lisp* (if (search "dpccl" lisp-program)
-			      'openmcl
-			    (if (search "sbcl" lisp-program)
-				'sbcl				'sbcl
-			      (if (search "gcl" lisp-program)
-				  'gcl
-				'cmulisp))))
+  (defvar *specware-lisp* (if (search "alisp" lisp-program)
+			      'allegro
+			    (if (search "dpccl" lisp-program)
+				'openmcl
+			      (if (search "sbcl" lisp-program)
+				  'sbcl				'sbcl
+				  (if (search "gcl" lisp-program)
+				      'gcl
+				    'cmulisp)))))
   (defvar *lisp-image-extension*
     (case *specware-lisp*
       (openmcl "openmcl-image")
       (cmulisp "cmuimage")
-      (sbcl "sbclimage")))
+      (sbcl "sbclimage")
+      (allegro "dxl")))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
 			 &optional
@@ -97,6 +102,9 @@
 				     " -core " " --core ")
 				 common-lisp-image-file)
 		       common-lisp-image-name))
+		   (allegro (concat common-lisp-image-name
+				    " -I "
+				    common-lisp-image-file))
 		   (otherwise
 		     (concat common-lisp-image-name " "
 			     common-lisp-image-file)))
@@ -108,7 +116,11 @@
 ;                         (concat " -I " common-lisp-image-file) ""))
 	     )
     (install-bridge-for-emacsEval)
-    (setq default-directory common-lisp-directory))
+    (set-default-directory common-lisp-directory))
+  (defun set-default-directory (dir)
+    (with-current-buffer (get-buffer *specware-buffer-name*)
+      (setq default-directory dir)
+      (setq lisp-prev-l/c-dir/file (cons default-directory nil))))
   ;; Handling emacs-eval emacsEval  (could be more robust!)
   (defun emacs-eval-handler (process output)
     (when output
@@ -139,12 +151,11 @@
       (backward-sexp)))
   
   (defun previous-input-line ()
-    (comint-previous-matching-input-from-input))
+    (comint-previous-matching-input-from-input 1))
 
   (defun sw:exit-lisp ()
     (interactive)
-    (simulate-input-expression ":quit")
-    )
+    (lisp-or-specware-command ":quit" "quit"))
 
   (defun sw:switch-to-lisp (&optional eob-p)
     (interactive "P")
@@ -158,16 +169,16 @@
 
   (defun sw:eval-in-lisp (str &rest args)
     (ensure-specware-running)
-    (car (read-from-string (ilisp-send (apply 'format str args)))))
+    (car (read-from-string (ilisp-send (ensure-list (apply 'format str args))))))
 
   (defun sw:eval-in-lisp-no-value (str &rest args)
     (ensure-specware-running)
-    (ilisp-send (apply 'format str args))
+    (ilisp-send (ensure-list (apply 'format str args)))
     t)
 
   (defun sw:eval-in-lisp-dispatch (str &rest args)
     (ensure-specware-running)
-    (ilisp-send (apply 'format str args) nil nil t)
+    (ilisp-send (ensure-list (apply 'format str args)) nil nil t)
     t)
 
   (define-function 'inferior-lisp-newline 'return-ilisp)
@@ -187,6 +198,7 @@
 	   (not (equal comint-status " :exit")))))
   
   (defun add-specware-listener-key-bindings (m)
+    (define-key m '(tab) 'comint-dynamic-complete)
     (define-key m "\e." 'sw:meta-point)
     (easy-menu-define specware-interaction-buffer-menu
 		      m
@@ -195,7 +207,9 @@
     (easy-menu-add specware-interaction-buffer-menu m))
 
   (defun specware-listener-mode-hook ()
-    (and ilisp-mode-map
-	 (add-specware-listener-key-bindings ilisp-mode-map)))
+    (and (boundp 'ilisp-mode-map)
+	 ilisp-mode-map
+	 (add-specware-listener-key-bindings ilisp-mode-map))
+    (push 'specware-listener-mode ilisp-modes))
   (add-hook 'ilisp-mode-hook 'specware-listener-mode-hook t)
 )

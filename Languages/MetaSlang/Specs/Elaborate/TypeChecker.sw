@@ -1,6 +1,6 @@
 (* This structure adds type checking and 
    inference to the abstract syntax tree.
-      - It infers sorts of each subterm.
+      - It infers types of each subterm.
       - Resolves record projection from structure accessing.
  *)
 
@@ -11,7 +11,7 @@
         - duplicate variables in patterns
         - distinguish recursive calls.
         - capture free variables.
-        - no free variables in quotient, subsorts.
+        - no free variables in quotient, subtypes.
         
 *)
 
@@ -29,7 +29,7 @@ spec
 
   %% ========================================================================
 
-  % sort Filename = String % see Position.sw
+  % type Filename = String % see Position.sw
   type Message  = String
   type Result = | Spec Spec | Errors (List(String * Position))
 
@@ -246,7 +246,7 @@ spec
 				   case link of
 				     | Some s -> record_type_vars_used s
 				     | None   -> error (env_3, 
-							"Incomplete sort for op "^op_name
+							"Incomplete type for op "^op_name
 							^":"^newline
 							^(printSort aSrt), 
 							pos))
@@ -283,7 +283,7 @@ spec
 		       else 
 			 let scheme = (type_vars_3_b, srt_3) in
 			 error(env_3, 
-			       "Repeated sort variables contained in "^(printSortScheme scheme),
+			       "Repeated type variables contained in "^(printSortScheme scheme),
 			       pos));
 		      (type_vars_3_b, term_3)))
 	          defs_2
@@ -383,7 +383,7 @@ spec
 
            | [] -> 
              (error (env, 
-                     "Sort identifier in "^(given_sort_str ())^" has not been declared", 
+                     "Type identifier in "^(given_sort_str ())^" has not been declared", 
                      pos);
               Base (given_sort_qid, instance_sorts, pos))
 
@@ -409,8 +409,8 @@ spec
 					      ^ ")")
 			 in                                
 			 error (env, 
-				"Sort reference "^(given_sort_str ())
-				^" does not match declared sort "^found_sort_str, 
+				"Type reference "^(given_sort_str ())
+				^" does not match declared type "^found_sort_str, 
 				pos)
 		       else 
 			 %%  Normal case goes through here:
@@ -427,7 +427,7 @@ spec
 					       other_infos
 		    in
 		      error (env, 
-			     "Sort reference "^(given_sort_str ())
+			     "Type reference "^(given_sort_str ())
 			     ^" is ambiguous among "^candidates_str,
 			     pos))
              in
@@ -647,9 +647,9 @@ spec
                               printSort dom, pos)
                  | None -> 
                      pass2Error
-                       (env, dom, newLines ["Sum sort with constructor "^id^" expected", 
+                       (env, dom, newLines ["Sum type with constructor "^id^" expected", 
                                           "found instead "^printSort dom], pos))
-           | _ -> pass2Error (env, srt, "Function sort expected ", pos));
+           | _ -> pass2Error (env, srt, "Function type expected ", pos));
        Fun (Embedded id, srt, pos)
       )
     | Fun (PChoose equiv, srt, pos) ->
@@ -795,7 +795,7 @@ spec
                   | sv -> 
                       (pass2Error (env, 
                                   sv, 
-                                  printTerm trm^" is constrained to be of an incompatible sort "^newline^ printSort term_sort, 
+                                  printTerm trm^" is constrained to be of an incompatible type "^newline^ printSort term_sort, 
                                   pos);
                        map (fn (id, _)-> (id, freshMetaTyVar ("Record_incompatible", pos))) row))
 	 in
@@ -994,7 +994,7 @@ spec
 	  elaborateSortForTerm(env, trm, fresh_merge_type, ty);
 	  let def notEnoughInfo() =
 		if env.firstPass? then t1
-		else (error(env,"Can't determine suitable sort for <<: "
+		else (error(env,"Can't determine suitable type for <<: "
 			    ^ printSort srt,pos);
 		      t1)
 	  in
@@ -1079,7 +1079,7 @@ spec
 	else  (error (env,
 		      "Several matches for overloaded op "
 		      ^ id
-		      ^ " of sort "
+		      ^ " of type "
 		      ^ printSort srt
 		      ^ (foldl (fn (tm, str) -> str ^
 				(case tm of
@@ -1093,7 +1093,7 @@ spec
 	let srtPos = sortAnn srt in
 	(case filter (consistentSortOp? (env, withAnnS (rsort, srtPos),true)) terms of
 	   | [] -> (error (env,
-		     "No matches for op "^id^" of sort "^ printSort srt,
+		     "No matches for op "^id^" of type "^ printSort srt,
 		      pos);
 			None)
 	   | [term] -> Some term
@@ -1128,7 +1128,7 @@ spec
 		     (error (env,
 			    "Several matches for overloaded op "
 			    ^ id
-			    ^ " of sort "
+			    ^ " of type "
 			    ^ printSort srt
 			    ^ (foldl (fn (tm, str) -> str ^
 				 (case tm of
@@ -1160,9 +1160,9 @@ spec
        let fillerA    = blankString (10 - tsLength) in  % ### why the qualifier? why the coercion?
        let fillerB    = blankString (tsLength - 10) in
        error (env, 
-             newLines [" Could not match sort constraint", 
-                       fillerA ^ termString ^ " of sort " ^ printSort givenSort, 
-                       fillerB ^ "with expected sort " ^ printSort expectedSort], 
+             newLines ["Could not match type constraint", 
+                       fillerA ^ termString ^ " of type " ^ printSort givenSort, 
+                       fillerB ^ "with expected type " ^ printSort expectedSort], 
              pos));
     givenSort)
 
@@ -1196,7 +1196,7 @@ spec
        ()
      else             
        error (env, 
-              newLines ["Could not match sort " ^ printSort s1, 
+              newLines ["Could not match type " ^ printSort s1, 
                         "                with " ^ printSort s2], 
               chooseNonZeroPos (sortAnn s1, sortAnn s2)));
     s1Checked)
@@ -1515,16 +1515,16 @@ spec
 
 		   | (Some None, None) -> (env, None, seenVars)
 		   | (None, None) -> 
-		     (error (env, "Sort for constructor "
+		     (error (env, "Type for constructor "
 			     ^ embedId
-			     ^ " not found. Resolving with sort "
+			     ^ " not found. Resolving with type "
 			     ^ printSort sort1, pos);
 		      (env, None, seenVars))
 		   | (None, Some pat) -> 
 		     let alpha = freshMetaTyVar ("EmbedPat_b", pos) in
 		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, alpha, seenVars)
 		     in
-		     (error (env, "Sort for constructor "
+		     (error (env, "Type for constructor "
 			     ^ embedId
 			     ^ " not found. Resolving with sort "
 			     ^ printSort sort1, pos);

@@ -38,23 +38,43 @@
 		(subseq str (1+ found-index)))
       (values nil str))))
 
+(defun split-dir-components (str)
+  (let (found-index result)
+    (loop while (setq found-index (or (position #\/ str)
+				 (position #\\ str)))
+      do (push (subseq str 0 found-index) result)
+         (setq str (subseq str (1+ found-index))))
+    (nreverse (if (string= str "")
+		  result (cons str result)))))
+
+(defun dir-to-path (directory)
+  (if (pathnamep directory) directory
+    (multiple-value-bind (dev dir)
+	(parse-device-directory directory)
+      (unless (member (elt directory 0) '(#\/ #\\))
+	(setq dir (concatenate 'list
+			       (pathname-directory (current-directory))
+			       (split-dir-components directory))))
+      (make-pathname :directory dir
+		     :device dev))))
+
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
-  (let ((dirpath (if (pathnamep directory) directory
-		   (multiple-value-bind (dev dir)
-		       (parse-device-directory directory)
-		     (make-pathname :directory dir
-				    :device dev)))))
-    #+allegro   (excl::chdir          directory)
-    #+Lispworks (hcl:change-directory directory)
-    #+mcl       (ccl::%chdir          directory)
-    #+cmu       (setf (extensions:default-directory) directory)
-    #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
-    ;#+gcl       
-    ;; in Allegro CL, at least,
-    ;; if (current-directory) is already a pathname, then
-    ;; (make-pathname (current-directory)) will fail
-    (setq common-lisp::*default-pathname-defaults* dirpath)))
+  (let ((dirpath (dir-to-path directory)))
+    (setq directory (namestring dirpath))
+    (if (probe-file dirpath)
+	(progn
+	  #+allegro   (excl::chdir          directory)
+	  #+Lispworks (hcl:change-directory directory)
+	  #+mcl       (ccl::%chdir          directory)
+	  #+cmu       (setf (extensions:default-directory) directory)
+	  #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
+					;#+gcl       
+	  ;; in Allegro CL, at least,
+	  ;; if (current-directory) is already a pathname, then
+	  ;; (make-pathname (current-directory)) will fail
+	  (setq common-lisp::*default-pathname-defaults* dirpath))
+      (warn "Directory ~a does not exist" directory))))
 
 #+mcl					; doesn't have setenv built=in
 (defvar *environment-shadow* nil)
