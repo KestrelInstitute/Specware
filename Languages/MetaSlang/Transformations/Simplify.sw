@@ -268,8 +268,8 @@ spec
   op  simplifyForall: Spec -> List Var * List MS.Term * MS.Term -> MS.Term
   def simplifyForall spc (vs,cjs,bod) =
     case normForallBody (bod,varNamesSet(vs,Cons(bod,cjs)),spc) of
-    %  | Some(new_vs,new_cjs,new_bod) ->
-%        simplifyForall spc (vs++new_vs,cjs++new_cjs,new_bod)
+      | Some(new_vs,new_cjs,new_bod) ->
+        simplifyForall spc (vs++new_vs,cjs++new_cjs,new_bod)
       | _ ->
     case find (fn cj ->
 	        case bindEquality cj of
