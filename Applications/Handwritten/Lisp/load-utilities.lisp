@@ -150,7 +150,9 @@
 #-mcl
 (defun copy-file (source target)
   #+allegro(sys:copy-file source target)
-  #-allegro
+  #+cmu(ext:run-program "cp" (list (namestring source)
+				   (namestring target)))
+  #-(or allegro cmu)
   (with-open-file (istream source :direction :input)
     (with-open-file (ostream target :direction :output :if-does-not-exist :create)
       (loop
