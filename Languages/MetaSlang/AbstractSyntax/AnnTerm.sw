@@ -930,10 +930,8 @@ MetaSlang qualifying spec {
 	%% Post-node traversal: leaves first
 	(appT (tsp_apps, term); term_app term)
   in 
-    %% TODO: use recursive call
-    term_app term   % not recursive
-    %% appRec term  % recursive
-
+    appRec term
+ 
  def appSort (tsp_apps as (_, srt_app, _)) srt = 
   let def appS (tsp_apps, srt) =
        case srt of
@@ -952,25 +950,21 @@ MetaSlang qualifying spec {
   in
     appRec srt
 
- def appPattern (tsp_apps as (_, _, pattern_app)) pattern =
-  let def appP (tsp_apps, pattern) =
-	case pattern of
-       | AliasPat    (p1, p2,            _) -> (appRec p1; appRec p2)
-       | EmbedPat    (id, Some pat, srt, _) -> (appRec pat; appSort tsp_apps srt)
-       | EmbedPat    (id, None, srt,     _) -> appSort tsp_apps srt
-       | RelaxPat    (pat, trm,          _) -> (appRec pat; appTerm tsp_apps trm)
-       | QuotientPat (pat, trm,          _) -> (appRec pat; appTerm tsp_apps trm)
-       | VarPat      ((v, srt),          _) -> appSort tsp_apps srt
-       | WildPat     (srt,               _) -> appSort tsp_apps srt
-       | RecordPat   (fields,            _) -> app (fn (id, p) -> appRec p) fields
-       | _                                  -> ()
-      def appRec pattern = 
-	%% Post-node traversal: leaves first
-	(appP (tsp_apps, pattern); pattern_app pattern)
+ def appPattern (tsp_apps as (_, _, pattern_app)) pat =
+  let def appP(tsp_apps,pat) =
+	case pat of
+	  | AliasPat    (p1, p2,            _) -> (appRec p1; appRec p2)
+	  | EmbedPat    (id, Some pat, srt, _) -> (appRec pat; appSort tsp_apps srt)
+	  | EmbedPat    (id, None, srt,     _) -> appSort tsp_apps srt
+	  | RelaxPat    (pat, trm,          _) -> (appRec pat; appTerm tsp_apps trm)
+	  | QuotientPat (pat, trm,          _) -> (appRec pat; appTerm tsp_apps trm)
+	  | VarPat      ((v, srt),          _) -> appSort tsp_apps srt
+	  | WildPat     (srt,               _) -> appSort tsp_apps srt
+	  | RecordPat   (fields,            _) -> app (fn (id, p) -> appRec p) fields
+	  | _                                  -> ()
+      def appRec pat = (appP(tsp_apps, pat); pattern_app pat)
   in
-    %% TODO: use recusive call
-    pattern_app pattern % not recursive
-    %% appRec pattern   % recursive
+    appRec pat
 
  def appSortOpt tsp_apps opt_sort =
    case opt_sort of

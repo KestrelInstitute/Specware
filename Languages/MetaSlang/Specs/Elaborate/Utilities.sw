@@ -190,12 +190,10 @@ spec {
 		of None     -> ()
 		 | Some srt -> addSort (tyvars, srt, constrMap)))
 	     sorts
-   in
+   %% in
    %% Look at at all sorts mentioned in spec
-   let _ = appSpec (fn _ -> (),
-		    fn s -> addSort ([], s, constrMap),
-		    fn _ -> ()) 
-                   spc 
+   %% Doesn't work unless we recognize which ones are instances of ones we already have
+   %% let _ = appSpec (fn x -> (), fn s -> addSort([],s,sorts, constrMap), fn p -> ()) spc
    in ! constrMap
 
  op  checkErrors : LocalEnv -> Option String
