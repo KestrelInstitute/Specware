@@ -64,3 +64,8 @@
 ;; the 'x' is for experimental.
 (top-level:alias ("swx" :case-sensitive) (x) (swx (string x)))
 (defun swx (x) (Specware::evaluateURIfromLisp (string x)))
+
+(top-level:alias ("swpath" :case-sensitive) (&optional str)
+  (if (null str)
+      (princ (sys:getenv "SWPATH"))
+    (princ (setf (sys:getenv "SWPATH") (string str)))))
