@@ -130,13 +130,14 @@ PatternMatch qualifying spec {
   sort Rules = List Rule
   
 
-  sort Context = {counter : Ref Nat,
-		  spc     : Spec,
-		  funName : String,
-		  term    : Option MS.Term}
+  sort Context = {counter    : Ref Nat,
+		  spc        : Spec,
+		  funName    : String,
+		  errorIndex : Ref Nat,
+		  term       : Option MS.Term}
 
-  def storeTerm(tm,{counter, spc, funName, term}) =
-    {counter=counter, spc=spc, funName=funName, term=Some tm}
+  def storeTerm(tm,{counter, spc, funName, errorIndex, term}) =
+    {counter=counter, spc=spc, funName=funName, errorIndex=errorIndex, term=Some tm}
 
 %  op mkProjectTerm : Spec * Id * MS.Term -> MS.Term
 %  def mkProjectTerm = SpecEnvironment.mkProjectTerm
@@ -664,19 +665,22 @@ def eliminateSort context srt =
  * given a set of rules 
  *)
 
-def makeFail(name,srt,_(* term *)) = 
-    let srt1 = mkArrow(srt,match_type srt) in
-    let msg  = "Nonexhaustive match failure in "^name
-    in    
-    mkApply(mkOp(Qualified("TranslationBuiltIn","mkFail"),srt1),
-	    mkString msg)
+def makeFail(context,srt,_(* term *)) = 
+  let index = ! context.errorIndex + 1 in
+  (context.errorIndex := index;
+   let srt1 = mkArrow(srt,match_type srt) in
+   let msg  = "Nonexhaustive match failure [#"^ (toString index) ^"] in " ^ 
+              context.funName
+   in    
+     mkApply(mkOp(Qualified("TranslationBuiltIn","mkFail"),srt1),
+	     mkString msg))
 
 def makeDefault(context:Context,srt,rules,vs,term) = 
     let 
 	def loop(rules:Match,firstRules) = 
 	    case rules
 	      of [] -> 
-    		 (rev firstRules,makeFail(context.funName,srt,term))
+    		 (rev firstRules,makeFail(context,srt,term))
 	       | [(WildPat _,Fun(Bool true,_,_),body)] ->
 		 (rev firstRules,mkSuccess(srt,body))
 	       | [(VarPat(v,_),Fun(Bool true,_,_),body)] ->
@@ -781,7 +785,7 @@ def eliminateTerm context term =
 	let t = match(context,
 		      map mkVar vs,
 		      [(pats,mkTrue(),mkSuccess(bdySrt,body))] :Rules,
-		      makeFail(context.funName,bdySrt,term),
+		      makeFail(context,bdySrt,term),
 		      mkBreak(bdySrt)) 
 	in
 	let t = abstract(vars,t,bdySrt) in
@@ -840,33 +844,32 @@ def eliminateTerm context term =
    % to be a function). This means that compiled functions will have the same generated variables
    % independent of the rest of the file.
    %let counter = (Ref 0) : Ref Nat in
-   let mkContext = fn funName -> 
-                    {counter = Ref 0,
-		     spc     = spc,
-		     funName = %spc.name ^"."^ % ???
-		     funName,
-		     term    = None} 
+   let 
+     def mkContext funName =
+       {counter    = Ref 0,
+	spc        = spc,
+	funName    = funName, % used when constructing error messages
+	errorIndex = Ref 0,   % used to distinguish error messages
+	term       = None} 
    in
      {importInfo    = spc.importInfo,
-      sorts         = mapiAQualifierMap
-                        (fn (qname, name, (sort_names, tyVars, defs)) ->
-			    (sort_names, 
-			     tyVars, 
-			     map (fn (type_vars, srt) -> 
-				  (type_vars, eliminateSort (mkContext name) srt))
-			         defs))
-			spc.sorts,
-      ops           = mapiAQualifierMap
-                        (fn (qname, name, (op_names, fixity, (tyVars, srt), defs)) ->
-			    (op_names, 
-			     fixity, 
-			     (tyVars, eliminateSort (mkContext name) srt),
-			     map (fn (type_vars, term) -> 
-				  (type_vars, eliminateTerm (mkContext name) term))
-			         defs))
-			spc.ops,
-      properties    = map (fn (pt, pname as Qualified(qname, name), tyvars, term) -> 
-    		  	      (pt, pname, tyvars, eliminateTerm (mkContext name) term)) 
+      sorts         = mapSortMap (fn (aliases as ((Qualified(_,id))::_), tyVars, defs) ->
+				  (aliases,
+				   tyVars, 
+				   map (fn (type_vars, srt) -> 
+					(type_vars, eliminateSort (mkContext id) srt))
+				       defs))
+                                 spc.sorts,
+      ops           = mapOpMap (fn (aliases as ((Qualified(_,id))::_), fixity, (tyVars, srt), defs)->
+				(aliases,
+				 fixity, 
+				 (tyVars, eliminateSort (mkContext id) srt),
+				 map (fn (type_vars, term) -> 
+				      (type_vars, eliminateTerm (mkContext id) term))
+				     defs))
+                               spc.ops,
+      properties    = map (fn (pt, pname as Qualified(_, id), tyvars, term) -> 
+    		  	      (pt, pname, tyvars, eliminateTerm (mkContext id) term)) 
                           spc.properties
      } : Spec
 
