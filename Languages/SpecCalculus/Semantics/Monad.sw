@@ -79,7 +79,7 @@ The unit of the monad.
 Raise an exception. Should this be called throw?
 
 \begin{spec}
-  op specwareWizard? : Boolean
+  def specwareWizard? : Boolean = false  
 
   % op raise : fa (a) Exception -> Env a
   def SpecCalc.raise except = fn state -> 
