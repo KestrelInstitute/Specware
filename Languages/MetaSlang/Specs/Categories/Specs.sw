@@ -20,7 +20,7 @@ spec {
 
   op specCat : Cat.Cat (Spec, Morphism)
 
-  axiom dom is fa (m : Morphism) Cats.dom specCat m = dom m
-  axiom cod is fa (m : Morphism) Cats.cod specCat m = cod m
+  axiom dom is fa (m : Morphism) Cat.dom specCat m = dom m
+  axiom cod is fa (m : Morphism) Cat.cod specCat m = cod m
 }
 \end{spec}
