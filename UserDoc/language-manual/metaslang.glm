@@ -115,7 +115,7 @@ For example, given this `spec:
 ||      op next : Even -> Even
 ||      axiom nextEffect is
 ||        fa(x : Even) ~(next x = x)
-||    end
+||    endspec
 ]]
 one possible model (out of many!) is the assignment of
 the even integers to [[Even]], and of the function that
@@ -131,7 +131,7 @@ to even numbers, and therefore can not -- in the same model
 -- be assigned to [[next]].
 Additionally, the axioms of the `spec have to be satisfied by
 the model.
-The axiom labeled [[nextEffect]] above states that
+The axiom qualifiable-claim-nameed [[nextEffect]] above states that
 the function assigned to `op-name [[next]]
 maps any value of the sort assigned to `sort-name [[Even]]
 to a different value.
@@ -218,7 +218,7 @@ models:
 ||    spec
 ||      sort Empty = | Just Empty
 ||      op IdoNotExist : Empty
-||    end
+||    endspec
 ]]
 The explanation is that the `sort-definition for [[Empty]]
 generates an <emphasis>implicit</emphasis> axiom that all
@@ -239,7 +239,7 @@ combinations of assignments:
 ||      sort Outcome = | Positive | Negative
 ||      sort Sign = | Positive | Zero | Negative
 ||      def whatAmI = Positive
-||    end
+||    endspec
 ]]
 Here there are two constructors [[Positive]]
 of different sorts, the sort [[Outcome]] and the sort
@@ -395,10 +395,10 @@ presentations of the same `spec are entirely equivalent:
 ||      op next : Even -> Even
 ||      axiom nextEffect is
 ||        fa(x : Even) ~(next x = x)
-||    end
+||    endspec
 ||
 ||    spec sort   Even op   next : Even -> Even axiom nextEffect
-||    is fa(x : Even)~(next     x            = x)end
+||    is fa(x : Even)~(next     x            = x)endspec
 ]]
 </para>
 <!-- ***************************************************************** -->
@@ -476,16 +476,17 @@ However, the following <emphasis>reserved words</emphasis> have a
 special meaning and must not be used for `names:
 \<!-- !! (echo COLUMNIZE; cat reservedWords; echo ZeEnd) | abc -w meta -->
 [[
-||    as            embed?        infixl        relax
-||    axiom         end           infixr        restrict
-||    case          end-spec      is            select
-||    choose        ex            let           sort
-||    colimit       fa            morphism      spec
-||    conjecture    false         of            then
-||    def           fn            op            theorem
-||    diagram       if            project       translate
-||    else          import        qualifying    true
+||    as            endspec       infixr        restrict
+||    axiom         ex            is            sort
+||    case          fa            let           spec
+||    choose        false         morphism      then
+||    colimit       fn            of            theorem
+||    conjecture    from          op            translate
+||    def           generate      project       true
+||    diagram       if            prove         where
+||    else          import        qualifying
 ||    embed         in            quotient
+||    embed?        infixl        relax
 ]]
 They each count as a single `symbol, and no whitespace is
 allowed inside any reserved word.
@@ -605,19 +606,20 @@ in `literals (which may not contain whitespace, including
 <section id="Units"><title>Units</title>
 <para>
 <<
-||  `project ::= `unit-definition*
+||`project ::= `unit-definition*
 ||
-||  `specware-file ::=
-||       `unit
-||     | `unit-definition { `unit-definition }*
+||`specware-file ::=
+||     `unit
+||   | `unit-definition { `unit-definition }*
 ||
-||  `unit-definition ::= `unit-identifier = `unit
+||`unit-definition ::= `unit-identifier = `unit
 ||
-||  `unit ::=
-||       `spec-term
-||     | `morphism-term
-||     | `diagram-term
-||     | `generate-term
+||`unit ::=
+||     `spec-term
+||   | `morphism-term
+||   | `diagram-term
+||   | `generate-term
+||   | `proof-term
 >>
 <!--
 ** ||     | `let-term
@@ -642,7 +644,7 @@ dealt with in the &Specware; User Guide.
 </para>
 <para>
 `Unit-definitions are collected in `specware-files, which in
-&SpecwareVVV; must have an [[.sw]] extension.
+&SpecwareV; must have an [[.sw]] extension.
 The `specware-files do not directly contain the
 `unit-definitions that form the `project.
 These are instead determined from the `specware-files using
@@ -686,17 +688,17 @@ contributes to the project is
 <section><title>Unit Identifiers</title>
 <para>
 <<
-||  `unit-identifier ::=
-||       `specpath-relative-path
-||     | `relative-path
+||`unit-identifier ::=
+||     `specpath-relative-path
+||   | `relative-path
 ||
-||  `specpath-relative-path ::= / relative-path
+||`specpath-relative-path ::= / `relative-path
 ||
-||  `relative-path ::=
-||      | `name [ # `name ]
-||      | `path-element  / `relative-path
+||`relative-path ::=
+||    | `name [ # `name ]
+||    | `path-element  / `relative-path
 ||
-||  `path-element ::= `name | .. | .
+||`path-element ::= `name | .. | .
 >>
 </para>
 <formalpara id="Warning0"><title>Warning</title> <para>
@@ -734,12 +736,13 @@ yielding a `spec, spec morphism, or diagram.
 <section><title>Specs</title>
 <para>
 <<
-||  `spec-term ::=
-||       `unit-identifier
-||       `spec-form
-||     | `spec-qualification
-||     | `spec-translation
-||     | `diagram-colimit
+||`spec-term ::=
+||     `unit-identifier
+||     `spec-form
+||   | `spec-qualification
+||   | `spec-translation
+||   | `spec-substitution
+||   | `diagram-colimit
 ||
 >>
 <!--
@@ -757,7 +760,7 @@ The elaboration of a `spec-term, if defined, yields a
 <section><title>Spec Forms</title>
 <para>
 <<
-||  `spec-form ::= spec `declaration-sequence end
+||`spec-form ::= spec `declaration-sequence endspec
 >>
 Restriction.
 `Spec-forms must be sort-correct.
@@ -779,13 +782,20 @@ Chapter.
 <section><title>Translations</title>
 <para>
 <<
-||  `spec-qualification ::=  `qualifier qualifying `spec-term
+||`spec-qualification ::=  `qualifier qualifying `spec-term
 ||
-||  `spec-translation ::= translate `spec-term by `name-map
+||`spec-translation ::= translate `spec-term by `name-map
 ||
-||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
+||`name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||
-||  `name-map-item :: `qualifiable-name +-> `qualifiable-name
+||`name-map-item ::= `sort-name-map-item | `op-name-map-item
+||
+||`sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
+||
+||`op-name-map-item ::=
+||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
+||
+||`annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
 >>
 Let <replaceable>R</replaceable> be the result of
 elaborating `spec-term <replaceable>S</replaceable>.
@@ -803,17 +813,17 @@ The same replacement applies to all uses of
 <para>
 For example, the elaboration of
 [[
-||  Buffer qualifying spec {
+||  Buffer qualifying spec
 ||    op size : Nat
 ||    axiom LargeSize is size >= 1024
-||  }
+||  endspec
 ]]
 results in:
 [[
-||  spec {
+||  spec
 ||    op Buffer.size : Nat
 ||    axiom LargeSize is Buffer.size >= 1024
-||  } by Buffer
+||  endspec
 ]]
 </para>
 <para>
@@ -832,28 +842,47 @@ replaced by
 <para>
 For example, the elaboration of
 [[
-||  translate spec {
+||  translate spec
 ||    sort E
 ||    op i : E
-||  } by {
+||  endspec by {
 ||    E +-> Counter
 ||    i +-> zero
 ||  }
 ]]
 results in:
 [[
-||  spec {
+||  spec
 ||    sort Counter
 ||    op zero : Counter
-||  } by {
+||  endspec
 ]]
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Substitutions</title>
+<para>
+<<
+||`spec-substitution ::= `spec-term `[ `morphism-term `]
+>>
+Restriction.
+@@@ Domain of morphism must be the spec.
+</para>
+<para>
+Let <replaceable>R</replaceable> be the result of
+elaborating `spec-term <replaceable>S</replaceable>,
+and
+<replaceable>N</replaceable> that of
+`morphism-term <replaceable>M</replaceable>,
+Then the elaboration of [[\<replaceable>S\</replaceable>[qualifying \<replaceable>M\</replaceable>]]] is TODO blabla.
+Colimit of this pushout diagram PICTURE but better.
 </para>
 </section>
 <!-- ***************************************************************** -->
 <section><title>Diagram Colimit</title>
 <para>
 <<
-||  `diagram-colimit ::= colimit `diagram-term
+||`diagram-colimit ::= colimit `diagram-term
 >>
 The result of elaborating a `diagram-colimit is the `spec
 which is the apex of the cocone forming the
@@ -866,11 +895,11 @@ See further the &Specware; User Guide.
 <section><title>Morphisms</title>
 <para>
 <<
-||  `morphism-term ::=
-||       `unit-identifier
-||     | `spec-morphism
+||`morphism-term ::=
+||     `unit-identifier
+||   | `spec-morphism
 ||
-||  `spec-morphism ::= morphism `spec-term -> `spec-term '{ `name-map '}
+||`spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
 A morphism is a formal mapping between two closed `specs
 that
@@ -907,11 +936,11 @@ from the `axioms of <replaceable>T'</replaceable>.
 <section><title>Spec sort and operator visibility</title>
 <para>
 <<
-||  `spec-visibility ::=
-||       hide `name-list in `spec-term
-||     | export `name-list from `spec-term
+||`spec-visibility ::=
+||     hide `name-list in `spec-term
+||   | export `name-list from `spec-term
 ||
-||  `name-list ::= '{ `name { , `name }* '}
+||`name-list ::= '{ `name { , `name }* '}
 >>
 </para>
 </section>
@@ -920,20 +949,20 @@ from the `axioms of <replaceable>T'</replaceable>.
 <section><title>Diagrams</title>
 <para>
 <<
-||  `diagram-term ::=
-||       `unit-identifier
-||     | `diagram-form
+||`diagram-term ::=
+||     `unit-identifier
+||   | `diagram-form
 ||
-||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
+||`diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||
-||  `diagram-elem ::
-||       `diagram-node
-||     | `diagram-edge
+||`diagram-elem ::
+||     `diagram-node
+||   | `diagram-edge
 ||
-||  `diagram-node ::= `name +-> `spec-term
+||`diagram-node ::= `name +-> `spec-term
 ||
-||  `diagram-edge ::= `name : `name -> `name +-> `morphism-term
-||       
+||`diagram-edge ::= `name : `name -> `name +-> `morphism-term
+||     
 >>
 Restriction.
 When used as a `diagram-term, the elaboration of a
@@ -941,8 +970,8 @@ When used as a `diagram-term, the elaboration of a
 </para>
 <para>
 The result of elaborating a `diagram-form is the categorical
-diagram whose nodes are labelled with `specs and
-whose edges are labelled with `spec-morphisms.
+diagram whose nodes are qualifiable-claim-nameled with `specs and
+whose edges are qualifiable-claim-nameled with `spec-morphisms.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -950,11 +979,11 @@ whose edges are labelled with `spec-morphisms.
 ** <section><title>Let and Where Expressions</title>
 ** <para>
 ** <<
-** ||  `let-term ::= let `local-bindings in `unit
+** ||`let-term ::= let `local-bindings in `unit
 ** ||
-** ||  `where-term ::= `unit where `local-bindings end
+** ||`where-term ::= `unit where `local-bindings end
 ** ||
-** ||  `local-bindings ::= `name = `unit { `name = `unit }*
+** ||`local-bindings ::= `name = `unit { `name = `unit }*
 ** >>
 ** </para>
 ** </section>
@@ -963,10 +992,37 @@ whose edges are labelled with `spec-morphisms.
 <section><title>Generate Terms</title>
 <para>
 <<
-||  `generate-term :: generate `string `spec-term [ in `string ]
+||`generate-term ::= generate `language-name `spec-term [ in `string ]
+||
+||`language-name ::= lisp
 >>
 The elaboration of a `generate-term for a correct `spec-term
-generates code; see further the &Specware; User Guide.
+generates code in the language suggested by the
+`language-name (currently only Common Lisp); see further the
+&Specware; User Guide.
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Proof Terms</title>
+<para>
+<<
+||`proof-term ::=
+||  prove `qualifiable-claim-name in `spec-term { `proof-particular }*
+||
+||`proof-particular ::=
+||      with `prover-name [ `prover-options ]
+||    | using `{ `claim-list `}
+||
+||`prover-name ::= snark
+||
+||`claim-list ::= `qualifiable-claim-name { , `qualifiable-claim-name }*
+>>
+The elaboration of a `proof-term BLABLA
+using the prover suggested by the
+`prover-name (currently only SNARK).
+The `prover-options are prover-specific and are not
+defined here; see further the
+&Specware; User Guide.
 </para>
 </section>
 </section>
@@ -1589,11 +1645,11 @@ Otherwise, the `spec is incorrect.
 <section id="Claim-definitions"><title>Claim-definitions</title>
 <para>
 <<
-||`claim-definition ::= `claim-kind `label `equals `claim
+||`claim-definition ::= `claim-kind `qualifiable-claim-name `equals `claim
 ||
 ||`claim-kind ::= axiom | theorem | conjecture
 ||
-||`label ::= `any-text-up-to-equals
+||`qualifiable-claim-name ::= `any-text-up-to-equals
 ||
 ||`claim ::= [ `sort-quantification ] `expression
 ||
@@ -1613,14 +1669,14 @@ Example `claim-definitions:
 ||        fa (n : {n : Nat | n < p}) ~(hold n = hold p)
 ]]
 Restriction.
-The `label must be a <emphasis>non-empty</emphasis>
+The `qualifiable-claim-name must be a <emphasis>non-empty</emphasis>
 sequence of `symbols, none of which is
 a presentation of `equals (i.e., [[is]] or [[=]]).
 The rule about whitespace being required to separate `symbols
-is relaxed <emphasis>inside</emphasis> `labels, but the the
-first and last `symbols of the `label must be properly
+is relaxed <emphasis>inside</emphasis> `qualifiable-claim-names, but the the
+first and last `symbols of the `qualifiable-claim-name must be properly
 separated from the `claim-kind preceding and `equals following
-the `label.
+the `qualifiable-claim-name.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -1651,7 +1707,7 @@ Like theorems, they can be used by provers.
 </para>
 <!-- ================================================================= -->
 <para>
-The &Specware; system passes on the `label of the
+The &Specware; system passes on the `qualifiable-claim-name of the
 `claim-definition with the `claim for purposes of
 identification.
 Both may be transformed to fit the requirements of the prover,
@@ -1663,7 +1719,7 @@ to dealing with them.
 <!-- ================================================================= -->
 <para>
 Remark.
-It is a common mistake to omit the part <quote>`label
+It is a common mistake to omit the part <quote>`qualifiable-claim-name
 `equals</quote> from a `claim-definition.
 A defensive style against this mistake is to have the `claim always
 start on a new text line.
@@ -2652,9 +2708,9 @@ The value of an `if-expression
 ||
 ||`quantifier ::= fa | ex
 ||
-||`local-variable-list ::= `annotatable-variable { , `annotatable-variable }*
+||`local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||
-||`annotatable-variable ::= `local-variable [ : `sort ]
+||`annotable-variable ::= `local-variable [ : `sort ]
 ||
 ||`local-variable ::= `name
 ||
@@ -3468,7 +3524,7 @@ any of the sort annotations is omitted:
 ||    spec
 ||      def fa(a) p2 = project 2 : String *  a  ->  a
 ||      def       q2 = project 2 : String * Nat -> Nat
-||    end
+||    endspec
 ]]
 </para>
 <!-- ***************************************************************** -->

@@ -73,16 +73,17 @@ easy reference.
 ||  `project ::= `unit-definition*
 ||  
 ||  `specware-file ::=
-||       `unit
-||     | `unit-definition { `unit-definition }*
+||     `unit
+||   | `unit-definition { `unit-definition }*
 ||  
 ||  `unit-definition ::= `unit-identifier = `unit
 ||  
 ||  `unit ::=
-||       `spec-term
-||     | `morphism-term
-||     | `diagram-term
-||     | `generate-term
+||     `spec-term
+||   | `morphism-term
+||   | `diagram-term
+||   | `generate-term
+||   | `proof-term
 >>
 </para>
 </formalpara>
@@ -91,14 +92,14 @@ easy reference.
 <para>
 <<
 ||  `unit-identifier ::=
-||       `specpath-relative-path
-||     | `relative-path
+||     `specpath-relative-path
+||   | `relative-path
 ||  
-||  `specpath-relative-path ::= / relative-path
+||  `specpath-relative-path ::= / `relative-path
 ||  
 ||  `relative-path ::=
-||      | `name [ # `name ]
-||      | `path-element  / `relative-path
+||    | `name [ # `name ]
+||    | `path-element  / `relative-path
 ||  
 ||  `path-element ::= `name | .. | .
 >>
@@ -109,11 +110,12 @@ easy reference.
 <para>
 <<
 ||  `spec-term ::=
-||       `unit-identifier
-||       `spec-form
-||     | `spec-qualification
-||     | `spec-translation
-||     | `diagram-colimit
+||     `unit-identifier
+||     `spec-form
+||   | `spec-qualification
+||   | `spec-translation
+||   | `spec-substitution
+||   | `diagram-colimit
 ||  
 >>
 </para>
@@ -122,7 +124,7 @@ easy reference.
 <formalpara><title>Spec Forms</title>
 <para>
 <<
-||  `spec-form ::= spec `declaration-sequence end
+||  `spec-form ::= spec `declaration-sequence endspec
 >>
 </para>
 </formalpara>
@@ -136,7 +138,22 @@ easy reference.
 ||  
 ||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||  
-||  `name-map-item :: `qualifiable-name +-> `qualifiable-name
+||  `name-map-item ::= `sort-name-map-item | `op-name-map-item
+||  
+||  `sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
+||  
+||  `op-name-map-item ::=
+||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
+||  
+||  `annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Substitutions</title>
+<para>
+<<
+||  `spec-substitution ::= `spec-term `[ `morphism-term `]
 >>
 </para>
 </formalpara>
@@ -153,10 +170,10 @@ easy reference.
 <para>
 <<
 ||  `morphism-term ::=
-||       `unit-identifier
-||     | `spec-morphism
+||     `unit-identifier
+||   | `spec-morphism
 ||  
-||  `spec-morphism ::= morphism `spec-term -> `spec-term '{ `name-map '}
+||  `spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
 </para>
 </formalpara>
@@ -165,8 +182,8 @@ easy reference.
 <para>
 <<
 ||  `spec-visibility ::=
-||       hide `name-list in `spec-term
-||     | export `name-list from `spec-term
+||     hide `name-list in `spec-term
+||   | export `name-list from `spec-term
 ||  
 ||  `name-list ::= '{ `name { , `name }* '}
 >>
@@ -177,19 +194,19 @@ easy reference.
 <para>
 <<
 ||  `diagram-term ::=
-||       `unit-identifier
-||     | `diagram-form
+||     `unit-identifier
+||   | `diagram-form
 ||  
 ||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||  
 ||  `diagram-elem ::
-||       `diagram-node
-||     | `diagram-edge
+||     `diagram-node
+||   | `diagram-edge
 ||  
 ||  `diagram-node ::= `name +-> `spec-term
 ||  
 ||  `diagram-edge ::= `name : `name -> `name +-> `morphism-term
-||       
+||     
 >>
 </para>
 </formalpara>
@@ -197,7 +214,26 @@ easy reference.
 <formalpara><title>Generate Terms</title>
 <para>
 <<
-||  `generate-term :: generate `string `spec-term [ in `string ]
+||  `generate-term ::= generate `language-name `spec-term [ in `string ]
+||  
+||  `language-name ::= lisp
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Proof Terms</title>
+<para>
+<<
+||  `proof-term ::=
+||  prove `qualifiable-claim-name in `spec-term { `proof-particular }*
+||  
+||  `proof-particular ::=
+||      with `prover-name [ `prover-options ]
+||    | using `{ `claim-list `}
+||  
+||  `prover-name ::= snark
+||  
+||  `claim-list ::= `qualifiable-claim-name { , `qualifiable-claim-name }*
 >>
 </para>
 </formalpara>
@@ -293,11 +329,11 @@ easy reference.
 <formalpara><title>Claim-definitions</title>
 <para>
 <<
-||  `claim-definition ::= `claim-kind `label `equals `claim
+||  `claim-definition ::= `claim-kind `qualifiable-claim-name `equals `claim
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
-||  `label ::= `any-text-up-to-equals
+||  `qualifiable-claim-name ::= `any-text-up-to-equals
 ||  
 ||  `claim ::= [ `sort-quantification ] `expression
 ||  
@@ -514,9 +550,9 @@ easy reference.
 ||  
 ||  `quantifier ::= fa | ex
 ||  
-||  `local-variable-list ::= `annotatable-variable { , `annotatable-variable }*
+||  `local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||  
-||  `annotatable-variable ::= `local-variable [ : `sort ]
+||  `annotable-variable ::= `local-variable [ : `sort ]
 ||  
 ||  `local-variable ::= `name
 ||  
