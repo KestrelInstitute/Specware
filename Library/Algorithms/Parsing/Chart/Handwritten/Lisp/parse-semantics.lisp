@@ -159,6 +159,50 @@
 	       (warn "Jim may care: Alists differ: ~S ~S ~S" reconstructed-alist full-alist result))))
 	  result)))))
 
+;;; ===== TEMP HERE ====
+
+#+DEBUG-PARSER
+(defvar *position-keys* 
+  ;; should match keys mentioned above in eval-node
+  '(:LEFT-POS  :LEFT-LINE  :LEFT-COLUMN  :LEFT-LC  :LEFT-LCB     
+    :RIGHT-POS :RIGHT-LINE :RIGHT-COLUMN :RIGHT-LC :RIGHT-LCB))
+
+#+DEBUG-PARSER
+(defun compute-pprint-alist (pattern value)
+  (catch 'mismatch
+    (let ((alist nil))
+      (labels ((collect (pattern value)
+		 (cond ((#+allegro excl:fixnump
+			 #+Lispworks cl-user::fixnump
+			 pattern)
+			;;(comment "New pair: ~S ~S" pattern value)
+			(push (cons pattern value) alist))
+		       ((eql pattern value)
+			;;(comment "Quiet match: ~S ~S" pattern value)
+			nil)
+		       ((atom pattern)
+			(cond ((member pattern *position-keys*)
+			       ;;(comment "New pair: ~S ~S" pattern value)
+			       (push (cons pattern value) alist))
+			      (t
+			       ;;(comment "Throw out on pattern ~S" pattern)
+			       (throw 'mismatch :no-match))))
+		       ((atom value)
+			;;(comment "Throw out on value ~S" value)
+			(throw 'mismatch  :no-match))
+		       (t
+			;;(comment "Recur on ~S ~S" pattern value)
+			(collect (car pattern) (car value))
+			(collect (cdr pattern) (cdr value))))))
+	(collect pattern value)
+	alist))))
+
+#+DEBUG-PARSER
+(defun sub-alist? (x y)
+  (dolist (pair x t)
+    (unless (eq (cdr (assoc (car pair) y)) (cdr pair))
+      (return nil))))
+
 (defun rightmost-descendent (session node)
   (let* ((post-index (parser-node-post-index node))
 	 (last-loc (svref (parse-session-locations session) (1- post-index))))

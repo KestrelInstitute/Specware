@@ -207,14 +207,19 @@
 	  ((keyword-triggered-rule? parser child-name)
 	   (when-debugging 
 	    (when *verbose?*
-	      (comment "~50S -- Keyword triggered rule." child-name)))
+	      (comment "~50S -- Keyword triggered rule, head for reductions: ~:{~S.~D ~}" 
+		       child-name
+		       (mapcar #'(lambda (reduction)
+				   (list (parser-rule-name (reduction-parent-rule reduction))
+					 (reduction-child-index reduction)))
+			       head-reductions))))
 	   (dolist (reduction head-reductions)
 	     (push reduction (parser-rule-reductions child-rule))))
 	  ((null (rest head-reductions))
 	   (let ((only-head-reduction (first head-reductions)))
 	     (when-debugging
 	      (when *verbose?*
-		(comment "~50S -- Just one head reduction: ~S)" 
+		(comment "~50S -- Head for just one reduction: ~S.~D)" 
 			 child-name 
 			 (parser-rule-name (reduction-parent-rule only-head-reduction))
 			 (reduction-child-index only-head-reduction))))
@@ -223,7 +228,11 @@
 	  (t 
 	   (when-debugging
 	    (when *verbose?*
-	      (comment "~50S -- Multiple reductions at 0." child-name)))
+	      (comment "~50S -- Head for multiple reductions: ~:{~S.~D ~}" child-name
+		       (mapcar #'(lambda (reduction)
+				   (list (parser-rule-name (reduction-parent-rule reduction))
+					 (reduction-child-index reduction)))
+			       head-reductions))))
 	   (dolist (reduction head-reductions)
 	     (push reduction (parser-rule-reductions child-rule)))
 	   ))))

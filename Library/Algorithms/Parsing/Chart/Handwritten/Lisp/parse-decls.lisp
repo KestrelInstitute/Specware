@@ -261,13 +261,19 @@
   (let ((rule-var (gensym)))
     `(let* ((,rule-var ,rule))
        ;; if both of these are nil, the rule will be bypassed...
-       (and (eq (structure-type-of ,rule-var) 'parser-anyof-rule)
-	    (null (parser-rule-precedence ,rule-var))
-	    (null (parser-rule-semantics  ,rule-var))
-	    (do-parser-rule-items (item ,rule-var t) 
-	      (when (not (null (parser-rule-item-semantic-index item)))
-		(return nil)))
-	    ))))
+       (let ((superfluous?
+	      (and (eq (structure-type-of ,rule-var) 'parser-anyof-rule)
+		   (null (parser-rule-precedence ,rule-var))
+		   (null (parser-rule-semantics  ,rule-var))
+		   (do-parser-rule-items (item ,rule-var t) 
+ 		     (when (not (null (parser-rule-item-semantic-index item)))
+		       (return nil)))
+		   )))
+	 (when-debugging
+	  (when *verbose?*
+	    (when superfluous?
+	      (format t "~&Superfluous ANYOF rule: ~S~%" ,rule-var))))
+	 superfluous?))))
     
 (defun find-parser-rule (parser name)
   (or (maybe-find-parser-rule parser name)
@@ -404,45 +410,6 @@
 		     (cons (local-sublis alist (car pattern))
 			   (local-sublis alist (cdr pattern)))))))
      (local-sublis ,alist ,pattern)))
-
-;;; ===== TEMP HERE ====
-
-(defvar *position-keys* '(:LEFT-POS  :LEFT-LINE  :LEFT-COLUMN  :LEFT-LC     
-			  :RIGHT-POS :RIGHT-LINE :RIGHT-COLUMN :RIGHT-LC))
-
-(defun compute-pprint-alist (pattern value)
-  (catch 'mismatch
-    (let ((alist nil))
-      (labels ((collect (pattern value)
-		 (cond ((#+allegro excl:fixnump
-			 #+Lispworks cl-user::fixnump
-			 pattern)
-			;;(comment "New pair: ~S ~S" pattern value)
-			(push (cons pattern value) alist))
-		       ((eql pattern value)
-			;;(comment "Quiet match: ~S ~S" pattern value)
-			nil)
-		       ((atom pattern)
-			(cond ((member pattern *position-keys*)
-			       ;;(comment "New pair: ~S ~S" pattern value)
-			       (push (cons pattern value) alist))
-			      (t
-			       ;;(comment "Throw out on pattern ~S" pattern)
-			       (throw 'mismatch :no-match))))
-		       ((atom value)
-			;;(comment "Throw out on value ~S" value)
-			(throw 'mismatch  :no-match))
-		       (t
-			;;(comment "Recur on ~S ~S" pattern value)
-			(collect (car pattern) (car value))
-			(collect (cdr pattern) (cdr value))))))
-	(collect pattern value)
-	alist))))
-
-(defun sub-alist? (x y)
-  (dolist (pair x t)
-    (unless (eq (cdr (assoc (car pair) y)) (cdr pair))
-      (return nil))))
 
 ;;; ===== performance hacks ===
 
