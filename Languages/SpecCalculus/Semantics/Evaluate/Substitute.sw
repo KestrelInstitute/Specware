@@ -7,6 +7,7 @@
 SpecCalc qualifying spec {
   import Signature
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+  import /Languages/MetaSlang/Specs/SpecUnion         % for specUnion
 \end{spec}
 
 \begin{spec}
@@ -14,25 +15,70 @@ SpecCalc qualifying spec {
     (spec_value, spec_timestamp, spec_dep_URIs) <- evaluateTermInfo spec_tm;
     (  sm_value,   sm_timestamp,   sm_dep_URIs) <- evaluateTermInfo   sm_tm;
     case (spec_value, sm_value) of
-      | (Spec spc, Morph sm) -> 
-        {
-	 new_spec <- applySubstitution spc sm;
-	 return (Spec new_spec, 
-		 max(spec_timestamp, sm_timestamp), 
-		 listUnion(spec_dep_URIs, sm_dep_URIs))
-	}
-
-      | (_, Morph _) -> raise (TypeCheck (positionOf spec_tm, 
-					  "substitution attempted on a non-spec"))
-      | (Spec _,  _) -> raise (TypeCheck (positionOf sm_tm,   
-					  "substitution is not a morphism"))
-      | (_,       _) -> raise (TypeCheck (term_pos, 
-					  "substitution is not a morphism, and is attempted on a non-spec"))
+      | (Spec spc, Morph sm) -> (let timestamp : TimeStamp = max (spec_timestamp, sm_timestamp) in
+				 let deps      : URI_Dependency = listUnion (spec_dep_URIs, sm_dep_URIs) in
+				 attemptSubstitution spc sm term_pos timestamp deps)
+      | (_,        Morph _)  -> raise (TypeCheck (positionOf spec_tm, "substitution attempted on a non-spec"))
+      | (Spec _,   _)        -> raise (TypeCheck (positionOf sm_tm,   "substitution is not a morphism"))
+      | (_,        _)        -> raise (TypeCheck (term_pos, 	      "substitution is not a morphism, and is attempted on a non-spec"))
     }
 
-  op applySubstitution : Spec -> Morphism -> Env Spec
-  % def applySubstitution spc morph =
-}
+  op attemptSubstitution : Spec -> Morphism -> Position -> TimeStamp -> URI_Dependency -> Env ValueInfo
+  def attemptSubstitution original_spec sm term_pos timestamp dep_URIs =
+    let sub_spec             = SpecCalc.dom sm in
+    let should_be_empty_spec = subtractSpec sub_spec original_spec in
+    {when (~ (should_be_empty_spec.sorts      = emptyASortMap))   (raise (TypeCheck (term_pos, warnAboutSorts should_be_empty_spec)));
+     when (~ (should_be_empty_spec.ops        = emptyAOpMap))     (raise (TypeCheck (term_pos, warnAboutOps   should_be_empty_spec)));
+     when (~ (should_be_empty_spec.properties = emptyProperties)) (raise (TypeCheck (term_pos, warnAboutProps should_be_empty_spec)));
+     new_spec <- applySubstitution sm original_spec;
+     return (Spec new_spec, timestamp, dep_URIs)
+     }
+
+  op applySubstitution : Morphism -> Spec -> Env Spec
+  def applySubstitution sm spc = 
+   %% Warning: this assumes that dom_spec is a subspec of spc
+   %%    S' = M(S - dom(M)) U cod(M)
+   let dom_spec           = SpecCalc.dom sm                          in  % dom(M)
+   let cod_spec           = SpecCalc.cod sm                          in  % cod(M)
+   let residue            = subtractSpec spc dom_spec                in  % S - dom(M)
+   let translated_residue = applyMorphism sm residue                 in  % M(S - dom(M))
+   let result             = specUnion [translated_residue, cod_spec] in  % M(S - dom(M)) U cod(M)
+   return result
+          
+  op applyMorphism : Morphism -> Spec -> Spec 
+  def applyMorphism sm spc =
+   let   op_map =   opMap sm in
+   let sort_map = sortMap sm in
+   let 
+      def translate_term tm =
+        case tm of
+          | Fun (Op (dom_qid, fixity), srt, xx) -> 
+            (case evalPartial op_map dom_qid of
+	      | Some cod_qid -> Fun (Op (cod_qid, fixity), srt, xx)
+              | _ -> tm)
+          | _ -> tm
+
+      def translate_sort srt =
+        case srt of
+          | Base (dom_qid, srts, xx) -> 
+            (case evalPartial sort_map dom_qid of
+	      | Some cod_qid -> Base (cod_qid, srts, xx)
+              | _ -> srt)
+          | _ -> srt
+
+      def translate_pattern p = p
+  in
+    mapSpec (translate_term, translate_sort, translate_pattern) spc
+    
+  def warnAboutSorts should_be_empty_spec = 
+    "Some sorts in the domain of the morphism are not in the spec"
+				  
+  def warnAboutOps   should_be_empty_spec = 
+    "Some ops in the domain of the morphism are not in the spec"
+				  
+  def warnAboutProps should_be_empty_spec = 
+    "Some axioms, etc. in the domain of the morphism are not in the spec"
+   }				  
 
 %%%  From  AC :
 %%%
