@@ -65,12 +65,28 @@ SpecCalc qualifying spec
  op  compressOpDefs : Spec -> OpInfo -> Option OpInfo
  def compressOpDefs spc info =
    let (old_decls, old_defs) = opInfoDeclsAndDefs info in
-   case old_defs of
-     | []  -> None
-     | [_] -> None
+   case (old_decls, old_defs) of
+     | ([], [])  -> None
+     | ([], [_]) -> None
+     | ([_],[])  -> None
+     | ([_],[_]) -> None
      | _ ->
        let pos = termAnn info.dfn in
-       let new_defs = 
+       let new_decls =
+           foldl (fn (old_decl, new_decls) ->
+		  if exists (fn new_decl -> 
+			     let old_sort = termSort old_decl in
+			     let new_sort = termSort new_decl in
+			     equivSort? spc false (old_sort, new_sort))
+		            new_decls 
+		    then
+		      new_decls
+		  else
+		    cons (old_decl, new_decls))
+	         []
+		 old_decls
+       in
+       let new_defs =
            foldl (fn (old_def, new_defs) ->
 		  if exists (fn new_def -> equivTerm? spc (old_def, new_def)) new_defs then
 		    new_defs
@@ -80,7 +96,7 @@ SpecCalc qualifying spec
 		 old_defs
        in
        let new_names = removeDuplicates info.names in
-       let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+       let new_dfn = maybeAndTerm (new_decls ++ new_defs, pos) in
        Some (info << {names = new_names,
 		      dfn   = new_dfn})
 	          
