@@ -15,7 +15,7 @@
 
 spec  
  type {A, B, C}
- type {A, B, C} = List(Nat * Nat)
+ type {A, B, C} = Foo(Nat)
 endspec
 
 ")
