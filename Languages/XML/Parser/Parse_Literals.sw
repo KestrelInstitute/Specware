@@ -11,19 +11,27 @@ XML qualifying spec
   %%
   %%  [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
   %%
-  %%  [11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %% *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%   ==>
-  %% [K23]  SystemuLiteral  ::=  QuotedText
+  %% [K30]  SystemuLiteral  ::=  QuotedText
   %%                
-  %%  [12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
+  %% *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
   %%   ==>
-  %% [K24]  PubidLiteral    ::=  QuotedText
+  %% [K31]  PubidLiteral    ::=  QuotedText
   %%                
   %%                                                             [KC: Proper Pubid Literal]   
   %%
   %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
+  %% [K32]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%   [9]  EntityValue     ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_EntityValue (start : UChars) : Required EntityValue =
     let 
@@ -75,6 +83,12 @@ XML qualifying spec
         | _ ->
           error ("Expected quoted text while scanning EntityValue", start, nthTail (start, 10))
 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_AttValue (start : UChars) : Possible AttValue =
     let 
        def probe (tail, rev_char_data, rev_items, qchar) =
@@ -116,6 +130,33 @@ XML qualifying spec
         | _ ->
 	  return (None, start)
 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [K30]  SystemuLiteral  ::=  QuotedText
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_SystemLiteral (start : UChars) : Required SystemLiteral =
+    parse_QuotedText start
+
+  %% -------------------------------------------------------------------------------------------------
+  %%                
+  %% [K31]  PubidLiteral    ::=  QuotedText
+  %%                
+  %%                                                             [KC: Proper Pubid Literal]   
+  %%
+  %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_PubidLiteral (start : UChars) : Required PubidLiteral =
+    parse_QuotedText start
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [K32]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_QuotedText (start : UChars) : Required QuotedText =
     let 
@@ -138,11 +179,5 @@ XML qualifying spec
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], 39)
         | _ ->
 	  error ("Expected quoted text", start, nthTail (start, 10))
-
-  def parse_SystemLiteral (start : UChars) : Required SystemLiteral =
-    parse_QuotedText start
-
-  def parse_PubidLiteral (start : UChars) : Required PubidLiteral =
-    parse_QuotedText start
 
 endspec

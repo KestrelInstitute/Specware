@@ -26,9 +26,14 @@ XML qualifying spec
   %%  [K7]  GenericAttributes  ::=  List GenericAttribute
   %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
   %%  [K9]  GenericPostfix     ::=  Chars - NmToken
-  %% [K10]  QuotedText         ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K4]  GenericTag         ::=  GenericPrefix GenericName GenericAttributes GenericPostfix 
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_Option_GenericTag (start : UChars) : Possible GenericTag =
     case start of
@@ -48,6 +53,12 @@ XML qualifying spec
 	  }
       | _ ->
 	 return (None, start)
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K5]  GenericPrefix      ::=  Chars - NmToken
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_GenericPrefix (start : UChars) : Required UString =
     %%
@@ -77,8 +88,20 @@ XML qualifying spec
     in
       probe (start, 5, [])
 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K6]  GenericName        ::=  NmToken        
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_GenericName (start : UChars) : Required UString =
     parse_NmToken start
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K7]  GenericAttributes  ::=  List GenericAttribute
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_GenericAttributes (start : UChars) : Required GenericAttributes =
     let 
@@ -95,6 +118,12 @@ XML qualifying spec
     in
       probe (start, [])
 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_GenericAttribute (start : UChars) : Possible GenericAttribute =
     {
      (w1,    tail) <- parse_WhiteSpace start;
@@ -110,7 +139,7 @@ XML qualifying spec
 	    return (Some {w1     = w1,
 			  name    = name,
 			  w2      = w2,
-			  %% =
+			  %%  '='
 			  w3      = w3,
 			  value   = value},
 		    tail)
@@ -120,6 +149,12 @@ XML qualifying spec
        | _ ->
 	   return (None, start)
 	  }	   
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K9]  GenericPostfix     ::=  Chars - NmToken
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_GenericPostfix (start : UChars) : Required UString =
     %%

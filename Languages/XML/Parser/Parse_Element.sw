@@ -8,25 +8,32 @@ XML qualifying spec
   %%%          Element                                                                             %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% 
-  %% [39]  element  ::=  EmptyElemTag | STag content ETag 
+  %%  [39]  element  ::=  EmptyElemTag | STag content ETag 
+  %%
   %%                                                             [WFC: Element Type Match] 
   %%                                                             [VC:  Element Valid]
   %%
   %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
+  %%
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K19]  STag          ::=  GenericTag                            
+  %% [K25]  STag          ::=  GenericTag                            
+  %%
   %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %% 
-  %%  [41]  Attribute     ::=  Name Eq AttValue 
+  %% *[41]  Attribute     ::=  Name Eq AttValue 
+  %%   ==>
+  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
   %%                                                             [WFC: No < in Attribute Values]
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
   %%   ==>
-  %% [K20]  ETag          ::=  GenericTag                   
+  %% [K26]  ETag          ::=  GenericTag                   
+  %%
   %%                                                             [KC:  Proper End Tag]
   %%
   %%  Since the chardata in [43] is typically used for indentation, 
@@ -34,16 +41,28 @@ XML qualifying spec
   %%
   %% *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
   %%   ==>
-  %% [K21]  content       ::=  (CharData? (element | Reference | CDSect | PI | Comment))* CharData?
+  %% [K27]  content       ::=  content_item* CharData?
+  %% [K28]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
   %% 
   %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
+  %%
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K22]  EmptyElemTag  ::=  GenericTag
+  %% [K29]  EmptyElemTag  ::=  GenericTag
+  %%
   %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [39]  element  ::=  EmptyElemTag | STag content ETag 
+  %%
+  %%                                                             [WFC: Element Type Match] 
+  %%                                                             [VC:  Element Valid]
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_Element (start : UChars) : Possible Element =
     {
@@ -70,6 +89,20 @@ XML qualifying spec
 	 return (None, start)
 	}
 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [K25]  STag          ::=  GenericTag                            
+  %%
+  %%                                                             [KC:  Proper Start Tag]
+  %%                                                             [WFC: Unique Att Spec]
+  %%
+  %% [K29]  EmptyElemTag  ::=  GenericTag
+  %%
+  %%                                                             [KC:  Proper Empty Tag]
+  %%                                                             [WFC: Unique Att Spec]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_OpenTag (start : UChars) : Possible GenericTag =
     { (possible_tag, tail) <- parse_Option_GenericTag start;
       case possible_tag of
@@ -81,7 +114,11 @@ XML qualifying spec
 	| _ -> return (None, start)
      }
 
-  %% ----------------------------------------------------------------------------------------------------
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [K27]  content       ::=  content_item* CharData?
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_Content (start : UChars) : Required Content =
     let 
@@ -102,6 +139,11 @@ XML qualifying spec
     in
       parse_items (start, [])
 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [K28]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_Content_Item (start : UChars) : Possible Content_Item =
     %% All the options are readily distinguishable:
@@ -161,9 +203,13 @@ XML qualifying spec
 	return (None, start)
 
 
-  %% ----------------------------------------------------------------------------------------------------
-  %% [42]  ETag  ::=  '</' Name S? '>'
-  %% ----------------------------------------------------------------------------------------------------
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [K26]  ETag          ::=  GenericTag                   
+  %%
+  %%                                                             [KC:  Proper End Tag]
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_ETag (start : UChars) : Required ETag =
     { (possible_tag, tail) <- parse_Option_GenericTag start;

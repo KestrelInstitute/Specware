@@ -4,6 +4,35 @@ XML qualifying spec
   import ../Utilities/XML_Unicode
   import ../XML_Sig
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%          Document                                                                            %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%
+  %%  *[1]  document  ::=  prolog element Misc*
+  %%
+  %% *[22]  prolog    ::=  XMLDecl? Misc* (doctypedecl  Misc*)?
+  %%
+  %% *[27]  Misc      ::=  Comment | PI | S
+  %%
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%   [1] transforms as follows:
+  %%
+  %%       document  ::=  XMLDecl? Misc* (doctypedecl  Misc*)? element Misc*
+  %%       document  ::=  XMLDecl? Misc*  doctypedecl? Misc*   element Misc*
+  %%
+  %%  so we can recast [1] [22] [27] as:
+  %%
+  %%  [K1]  document  ::=  DocItems
+  %%
+  %%                                                             [KC: Well-Formed Doc]
+  %%
+  %%  [K2]  DocItems  ::=  DocItem*
+  %%
+  %%  [K3]  DocItem   ::=  XMLDecl | Comment | PI | S | doctypedecl | element
+  %%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   def print_Document_to_UString (document : Document) : UString =
     (foldl (fn (item, result) ->  result ^ (print_DocItem item)) [] document.items)
 
@@ -18,10 +47,10 @@ XML qualifying spec
       | _                   -> ustring "unrecognized document entity"
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          Generic Tag (KI hack)                                                               %%%
+  %%%          GenericTag                                                                          %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  Rules [K4] -- [K8] simplify the parsing (and especially any associated error reporting) for
+  %%  Rules [K4] -- [K10] simplify the parsing (and especially any associated error reporting) for
   %%  several related constructs given by the W3 grammar as:
   %%
   %%  *[23]  XMLDecl       ::=  '<?xml'     VersionInfo  EncodingDecl? SDDecl?   S? '?>' 
@@ -32,7 +61,8 @@ XML qualifying spec
   %%
   %%  plus several supporting rules for the above
   %%
-  %% ----------------------------------------------------------------------------------------------------
+  %% -------------------------------------------------------------------------------------------------
+  %% They are all instances of [K4]:
   %%
   %%  [K4]  GenericTag         ::=  GenericPrefix GenericName GenericAttributes GenericPostfix 
   %%  [K5]  GenericPrefix      ::=  Chars - NmToken
@@ -40,9 +70,8 @@ XML qualifying spec
   %%  [K7]  GenericAttributes  ::=  List GenericAttribute
   %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
   %%  [K9]  GenericPostfix     ::=  Chars - NmToken
-  %% [K10]  QuotedText         ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
-  %% ----------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_GenericTag {prefix, name, attributes, whitespace, postfix} : UString =
    ((ustring "<") ^ prefix ^ name ^ (print_GenericAttributes attributes) ^ whitespace ^ postfix ^ (ustring ">"))
@@ -60,20 +89,40 @@ XML qualifying spec
   def print_QuotedText qtext = print_BoundedText qtext
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          External Subset                                                                     %%%
+  %%%          PI                                                                                  %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%
+  %% *[16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
+  %%   ==>
+  %% [K10]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
+  %% [K11]  PIValue   ::= Char* - (Char* '?>' Char*)
+  %%
+  %%  [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
+  %% 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  def print_PI {target, value} = 
+    (ustring "<?") ^ target ^ 
+    (case value of
+       | Some (whitespace, text) -> whitespace ^ text
+       | _ -> []) ^
+    (ustring "?>")
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%          External                                                                            %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% 
   %%  Well-formedness constraint: External Subset
   %%
   %%   The external subset, if any, must match the production for extSubset.
   %% 
-  %% =================================================================================================
+  %% -------------------------------------------------------------------------------------------------
   %% 
   %%  [30]  extSubset           ::=  TextDecl? extSubsetDecl
   %% 
   %% *[31]  extSubsetDecl       ::=  ( markupdecl | conditionalSect | DeclSep)* 
   %%   ==>
-  %% [K11]  extSubsetDecl       ::=  ( markupdecl | includeSect | ignoreSect | DeclSep)* 
+  %% [K12]  extSubsetDecl       ::=  ( markupdecl | includeSect | ignoreSect | DeclSep)* 
   %% 
   %%  [61]  conditionalSect     ::=  includeSect | ignoreSect
   %% 
@@ -91,17 +140,17 @@ XML qualifying spec
   %% 
   %% *[77]  TextDecl            ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %%   ==>
-  %% [K12]  TextDecl            ::=  GenericTag
+  %% [K13]  TextDecl            ::=  GenericTag
   %%
   %%                                                             [KC: Proper Text Decl]
   %%  
-  %% ====================================================================================================
+  %% -------------------------------------------------------------------------------------------------
   %%  
   %%  This is the rule for an external general parsed entity:
   %%  
   %%  [78]  extParsedEnt        ::=  TextDecl? content
   %%
-  %% ====================================================================================================
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_ExtSubSet {text, other} =
     (print_TextDecl text) ^ (print_ExtSubsetDecls other)
@@ -140,12 +189,12 @@ XML qualifying spec
     (print_TextDecl text) ^ (print_Content content)
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          XML_Decl                                                                            %%%
+  %%%          XMLDecl                                                                             %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% 
   %% *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%   ==>
-  %% [K13]  XMLDecl       ::=  GenericTag
+  %% [K14]  XMLDecl       ::=  GenericTag
   %%
   %%                                                             [KC: Proper XML Decl]
   %%
@@ -164,50 +213,181 @@ XML qualifying spec
   %% *[81]  EncName       ::=  [A-Za-z] ([A-Za-z0-9._] | '-')* 
   %%                           /* Encoding name contains only Latin characters */
   %% 
-  %% ====================================================================================================
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_XMLDecl xml = print_GenericTag xml
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          Data_Type_Document                                                                  %%%
+  %%%          DTD (Doc Type Decl)                                                                 %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %% [28]  doctypedecl     ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+  %% The doctypedecl (DTD) has the following form, 
+  %%  <!DOCTYPE     ..>
   %%
-  %%                                                             [VC:  Root Element Type] see [K1]
+  %% It may contain the following atomic markup decls:
+  %%
+  %%  <!ELEMENT    ...>
+  %%  <!ATTLIST    ...>
+  %%  <!ENTITY     ...>
+  %%  <!NOTATATION ...>
+  %%
+  %%  [28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+  %%   ==>
+  %% [K15]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? markups? '>' 
+  %% [K16]  markups      ::=  '[' (markupdecl | DeclSep)* ']' S?
+  %%
+  %%                                                             [VC:  Root Element Type] 
   %%                                                             [WFC: External Subset]
   %%
-  %% [28a]  DeclSep        ::=  PEReference | S    
+  %% [28a]  DeclSep      ::=  PEReference | S    
   %%                                                             [WFC: PE Between Declarations]
   %%
-  %% [29]  markupdecl      ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+  %%  [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
   %%
   %%                                                             [VC:  Proper Declaration/PE Nesting] 
   %%                                                             [WFC: PEs in Internal Subset]
-  %% -------------------------------------------------------------------------------------------------
-  %% [45]  elementdecl     ::=  '<!ELEMENT' S Name S contentspec S? '>' 
+  %% 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  def print_DocTypeDecl ({w1, name, external_id, w3, markups} : DocTypeDecl) : UString =
+    w1 ^ name ^ 
+    (case external_id of
+       | Some (w1, id) -> w1 ^ print_GenericID id
+       | _ -> [])
+    ^ w3 ^
+    (case markups of
+       | Some (markups, w4) -> 
+         ((foldl (fn (markup, result) -> 
+		  result ^ (case markup of
+			      | Decl mdecl -> print_MarkupDecl mdecl
+			      | Sep  dsep  -> print_DeclSep    dsep))
+	         []
+		 markups)
+	  ^ w4)
+       | _ -> [])
+
+  def print_DeclSep dsep = 
+    case dsep of
+      | PEReference peref -> print_PEReference peref
+      | WhiteSpace  white -> print_WhiteSpace  white
+
+  def print_MarkupDecl mdecl = 
+    case mdecl of
+      | Element    decl -> print_ElementDecl  decl
+      | Attributes decl -> print_AttlistDecl  decl
+      | Entity     decl -> print_EntityDecl   decl
+      | Notation   decl -> print_NotationDecl decl
+      | PI         decl -> print_PI           decl
+      | Comment    decl -> print_Comment      decl
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%          DTD ElementDecl                                                                     %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%
+  %%  [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>' 
   %%
   %%                                                             [VC: Unique Element Type Declaration]
   %%
-  %% [46]  contentspec     ::=  'EMPTY' | 'ANY' | Mixed | children 
+  %%  [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
   %%
-  %% [47]  children        ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%  [47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
   %%
-  %% [48]  cp              ::=  (Name | choice | seq) ('?' | '*' | '+')? 
   %%
-  %% [49]  choice          ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
+  %% *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
+  %%   ==>
+  %% [K17]  cp           ::=  cpbody ('?' | '*' | '+')? 
+  %% [K18]  cpbody       ::=  Name | choice | seq
+  %%
+  %% *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
+  %%   ==>
+  %% [K19]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%
-  %% [50]  seq             ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
+  %% *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
+  %%   ==>
+  %% [K20]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting]
   %%
-  %% [51]  Mixed           ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
+  %%  [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%                                                             [VC: No Duplicate Types]
-  %% ------------------------------------------------------------------------------------------------
+  %%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  def print_ElementDecl {w1, name, w2,contents, w3} : UString =
+    w1 ^ name ^ w2 ^ (print_ContentSpec contents) ^ w3
+
+  def print_ContentSpec x = 
+    case x of
+      | Empty              -> (ustring "EMPTY")
+      | Any                -> (ustring "ANY")
+      | Mixed    mixed     -> print_Mixed mixed
+      | Children children  -> print_Children children
+
+  def print_Mixed x = 
+    case x of
+      | Names   {w1, names, w2} -> 
+
+        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ 
+	(foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] names) ^
+	w2 ^ (ustring ")*")
+
+      | NoNames {w1, w2} ->
+        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ w2 ^ (ustring ")")
+
+  def print_Children {body, rule} = 
+   (case body of
+      | Choice choice -> print_Choice choice
+      | Seq    seq    -> print_Seq   seq)
+   ^
+   (ustring (case rule of      
+	       | Question -> "?"
+	       | Star     -> "*"
+	       | Plus     -> "+"))
+   
+  def print_Choice choice =
+    let alternatives = choice.alternatives in
+    (ustring "(") 
+    ^ 
+    (foldl (fn ((w1, cp, w2), result) -> 
+	    result ^ (case result of [] -> [] | _ -> ustring "|") ^ w1 ^ (print_CP cp) ^ w2)
+           [] 
+	   alternatives)
+    ^
+    (ustring ")")
+
+
+  def print_CP {body, rule} =
+   (case body of	  
+     | Name   name   -> print_Name   name
+     | Choice choice -> print_Choice choice
+     | Seq    seq    -> print_Seq    seq)
+   ^
+   (ustring (case rule of      
+	       | Question -> "?"
+	       | Star     -> "*"
+	       | Plus     -> "+"))
+
+   
+  def print_Seq seq =
+    let items = seq.items in
+    (ustring "(") 
+    ^ 
+    (foldl (fn ((w1, cp, w2), result) -> 
+	    result ^ (case result of [] -> [] | _ -> ustring ",") ^ w1 ^ (print_CP cp) ^ w2)
+           [] 
+	   items)
+    ^
+    (ustring ")")
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%          DTD AttListDecl                                                                     %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%
   %% [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
   %%
   %% [53]  AttDef          ::=  S Name S AttType S DefaultDecl
@@ -244,127 +424,8 @@ XML qualifying spec
   %%                                                             [VC:  Attribute Default Legal]
   %%                                                             [WFC: No < in Attribute Values]
   %%                                                             [VC:  Fixed Attribute Default]
-  %% ------------------------------------------------------------------------------------------------
-  %% [70]  EntityDecl      ::=  GEDecl | PEDecl
   %%
-  %% [71]  GEDecl          ::=  '<!ENTITY' S       Name S EntityDef S? '>'
-  %%
-  %% [72]  PEDecl          ::=  '<!ENTITY' S '%' S Name S PEDef     S? '>'
-  %%
-  %% [73]  EntityDef       ::=  EntityValue | (ExternalID NDataDecl?)
-  %%
-  %% [74]  PEDef           ::=  EntityValue | ExternalID
-  %%
-  %% [75]  ExternalID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
-  %%  ==>
-  %% [K14] ExternalID    ::=  GenericID
-  %%
-  %%                                                             [KC: At Least SYSTEM]
-  %%
-  %% [76]  NDataDecl       ::=  S 'NDATA' S Name 
-  %%
-  %%                                                             [VC: Notation Declared]
-  %%
-  %% [82]  NotationDecl    ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
-  %%
-  %%                                                             [VC: Unique Notation Name]
-  %%
-  %% [83]  PublicID        ::=  'PUBLIC' S PubidLiteral 
-  %%  ==>
-  %% [K15] PublicID      ::=  GenericID
-  %%
-  %%                                                             [KC: Just PUBLIC]
-  %% ----------------------------------------------------------------------------------------------------
-
-  def print_DocTypeDecl ({w1, name, external_id, w3, markups} : DocTypeDecl) : UString =
-    w1 ^ name ^ 
-    (case external_id of
-       | Some (w1, id) -> w1 ^ print_GenericID id
-       | _ -> [])
-    ^ w3 ^
-    (case markups of
-       | Some (markups, w4) -> 
-         ((foldl (fn (markup, result) -> 
-		  result ^ (case markup of
-			      | Decl mdecl -> print_MarkupDecl mdecl
-			      | Sep  dsep  -> print_DeclSep    dsep))
-	         []
-		 markups)
-	  ^ w4)
-       | _ -> [])
-
-  def print_DeclSep dsep = 
-    case dsep of
-      | PEReference peref -> print_PEReference peref
-      | WhiteSpace  white -> print_WhiteSpace  white
-
-  def print_MarkupDecl mdecl = 
-    case mdecl of
-      | Element    decl -> print_ElementDecl  decl
-      | Attributes decl -> print_AttlistDecl  decl
-      | Entity     decl -> print_EntityDecl   decl
-      | Notation   decl -> print_NotationDecl decl
-      | PI         decl -> print_PI           decl
-      | Comment    decl -> print_Comment      decl
-
-
-  def print_ElementDecl {w1, name, w2,contents, w3} : UString =
-    w1 ^ name ^ w2 ^ (print_ContentSpec contents) ^ w3
-
-  %% ----------------------------------------------------------------------------------------------------
-
-  def print_ContentSpec x = 
-    case x of
-      | Empty              -> (ustring "EMPTY")
-      | Any                -> (ustring "ANY")
-      | Mixed    mixed     -> print_Mixed mixed
-      | Children children  -> print_Children children
-
-  def print_Mixed x = 
-    case x of
-      | Names   {w1, names, w2} -> 
-
-        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ 
-	(foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] names) ^
-	w2 ^ (ustring ")*")
-
-      | NoNames {w1, w2} ->
-        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ w2 ^ (ustring ")")
-
-  def print_Children {body, rule} = 
-   (case body of
-      | Choice choice -> print_Choice choice
-      | Seq    seq    -> print_Seq   seq)
-   ^
-   (ustring (case rule of      
-	       | Question -> "?"
-	       | Star     -> "*"
-	       | Plus     -> "+"))
-   
-  def print_Choice {w1, first, others, w2} =
-    (ustring "(") ^ w1 ^ (print_CP first) ^ 
-    (foldl (fn ((w3, w4, cp), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ (print_CP cp)) [] others) ^
-    w2 ^ (ustring ")")
-
-
-  def print_CP {body, rule} =
-   (case body of	  
-     | Name   name   -> print_Name   name
-     | Choice choice -> print_Choice choice
-     | Seq    seq    -> print_Seq    seq)
-   ^
-   (ustring (case rule of      
-	       | Question -> "?"
-	       | Star     -> "*"
-	       | Plus     -> "+"))
-
-   
-  def print_Seq {w1, first, others, w2} =
-   (ustring "(") ^ w1 ^ (print_CP first) ^ 	  
-   (foldl (fn ((w3, w4, cp), result) -> result ^ w3 ^ (ustring ",") ^ w4 ^ (print_CP cp)) [] others) ^
-   w2 ^ (ustring ")")
-
-  %% ----------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_AttlistDecl {w1, name, defs, w2} =
     (ustring "<!ATTLIST") ^ w1 ^ name ^ 
@@ -408,7 +469,50 @@ XML qualifying spec
 	^ 
 	(print_AttValue att_value)
 
-  %% ----------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%          DTD EntityDecl                                                                      %%%
+  %%%          DTD NotationDecl                                                                    %%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%
+  %%  [70]  EntityDecl     ::=  GEDecl | PEDecl
+  %%
+  %%  [71]  GEDecl         ::=  '<!ENTITY' S       Name S EntityDef S? '>'
+  %%
+  %%  [72]  PEDecl         ::=  '<!ENTITY' S '%' S Name S PEDef     S? '>'
+  %%
+  %%  [73]  EntityDef      ::=  EntityValue | (ExternalID NDataDecl?)
+  %%
+  %%  [74]  PEDef          ::=  EntityValue | ExternalID
+  %%
+  %%  [76]  NDataDecl      ::=  S 'NDATA' S Name 
+  %%
+  %%                                                             [VC: Notation Declared]
+  %%
+  %% ------------------------------------------------------------------------------------------------
+  %%
+  %%  [82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
+  %%   ==>
+  %% [K21]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %%
+  %%                                                             [VC: Unique Notation Name]
+  %%
+  %% ------------------------------------------------------------------------------------------------
+  %%
+  %% *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
+  %%   ==>
+  %% [K22]  ExternalID     ::=  GenericID
+  %%
+  %%                                                             [KC: At Least SYSTEM]
+  %%
+  %% *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral 
+  %%   ==>
+  %% [K23]  PublicID       ::=  GenericID
+  %%
+  %%                                                             [KC: Just PUBLIC]
+  %%
+  %% [K24]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_EntityDecl x =
    case x of
@@ -473,18 +577,21 @@ XML qualifying spec
   %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K16]  STag          ::=  GenericTag                            
+  %% [K25]  STag          ::=  GenericTag                            
   %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %% 
-  %%  [41]  Attribute     ::=  Name Eq AttValue 
+  %% *[41]  Attribute     ::=  Name Eq AttValue 
+  %%   ==>
+  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %% 
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
   %%                                                             [WFC: No < in Attribute Values]
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
   %%   ==>
-  %% [K17]  ETag          ::=  GenericTag                   
+  %% [K26]  ETag          ::=  GenericTag                   
   %%                                                             [KC:  Proper End Tag]
   %%
   %%  Since the chardata in [43] is typically used for indentation, 
@@ -492,38 +599,17 @@ XML qualifying spec
   %%
   %% *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
   %%   ==>
-  %% [K18]  content       ::=  (CharData? (element | Reference | CDSect | PI | Comment))* CharData?
+  %% [K27]  content       ::=  content_item* CharData?
+  %% [K28]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
   %% 
   %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K19]  EmptyElemTag  ::=  GenericTag
+  %% [K29]  EmptyElemTag  ::=  GenericTag
   %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
-  %% ----------------------------------------------------------------------------------------------------
-  %% [WFC: Element Type Match]
-  %% 
-  %%   The Name in an element's end-tag must match the element type in the start-tag.
-  %% 
-  %% ----------------------------------------------------------------------------------------------------
-  %% [VC: Element Valid]
-  %% 
-  %%   An element is valid if there is a declaration matching elementdecl where the Name matches the 
-  %%   element type, and one of the following holds:
-  %%   
-  %%     1.  The declaration matches EMPTY and the element has no content.
-  %%     2.  The declaration matches children and the sequence of child elements belongs to the 
-  %%         language generated by the regular expression in the content model, with optional white 
-  %%         space (characters matching the nonterminal S) between the start-tag and the first child
-  %%         element, between child elements, or between the last child element and the end-tag.
-  %%         Note that a CDATA section containing only white space does not match the nonterminal S, 
-  %%         and hence cannot appear in these positions.
-  %%     3.  The declaration matches Mixed and the content consists of character data and child 
-  %%         elements whose types match names in the content model.
-  %%     4.  The declaration matches ANY, and the types of any child elements have been declared.
-  %%
-  %% ----------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_Element element = 
     case element of
@@ -568,38 +654,31 @@ XML qualifying spec
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          Character_Data                                                                      %%%
+  %%%          Character_Strings                                                                   %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %% [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*
+  %%  [3]  S         ::=  (#x20 | #x9 | #xD | #xA)+
+  %%
+  %% [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
   %%
   %% [15]  Comment   ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
   %%
-  %% [16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
-  %%
-  %% [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
-  %%
   %% [18]  CDSect    ::=  CDStart CData CDEnd 
-  %%
   %% [19]  CDStart   ::=  '<![CDATA[' 
-  %%
   %% [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
-  %%
   %% [21]  CDEnd     ::=  ']]>'
   %%
-  %% ----------------------------------------------------------------------------------------------------
+  %%  Note that the anonymous rule about characters (see section below on WFC's) implicitly 
+  %%  restricts the characters that may appear in CharData to be Char's.
+  %%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  def print_WhiteSpace x = x
 
   def print_CharData x = x
 
   def print_Comment x = 
     (ustring "<!--") ^ x ^ (ustring "-->")
-
-  def print_PI {target, value} = 
-    (ustring "<?") ^ target ^ 
-    (case value of
-       | Some (whitespace, text) -> whitespace ^ text
-       | _ -> []) ^
-    (ustring "?>")
 
   def print_CDSect cdsect = 
    (ustring "<![CDATA[")  ^ cdsect.cdata ^ (ustring "]]>")
@@ -609,17 +688,25 @@ XML qualifying spec
   %%%          Literals                                                                            %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [9]  EntityValue   ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
+  %%   [9]  EntityValue     ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
   %%
-  %% [10]  AttValue      ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
+  %%  [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
   %%
-  %% [11]  SystemLiteral ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %% *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%   ==>
+  %% [K30]  SystemuLiteral  ::=  QuotedText
+  %%                
+  %% *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
+  %%   ==>
+  %% [K31]  PubidLiteral    ::=  QuotedText
+  %%                
+  %%                                                             [KC: Proper Pubid Literal]   
   %%
-  %% [12]  PubidLiteral  ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
+  %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
-  %% [13]  PubidChar     ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
+  %% [K32]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
-  %% ----------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_EntityValue {qchar, items} =
     [qchar] ^ (foldl (fn (item, result) -> result ^ (print_EntityValue_Item item)) [] items) ^ [qchar]
@@ -661,43 +748,7 @@ XML qualifying spec
   %%                                                             [WFC: No Recursion]
   %%                                                             [WFC: In DTD]
   %%
-  %% -------------------------------------------------------------------------------------------------
-  %%
-  %% WFC: Legal Character
-  %%
-  %%  Characters referred to using character references must match the production for Char.
-  %%
-  %% WFC: No Recursion
-  %%
-  %%  A parsed entity must not contain a recursive reference to itself, either directly or indirectly.
-  %%
-  %% WFC: In DTD
-  %%
-  %%  Parameter-entity references may only appear in the DTD.  
-  %%
-  %% WFC: Entity Declared
-  %% 
-  %%  In a document without any DTD, a document with only an internal DTD subset which contains no 
-  %%  parameter entity references, or a document with "standalone='yes'", for an entity reference 
-  %%  that does not occur within the external subset or a parameter entity, the Name given in the 
-  %%  entity reference must match that in an entity declaration that does not occur within the 
-  %%  external subset or a parameter entity, except that well-formed documents need not declare any
-  %%  of the following entities: amp, lt, gt, apos, quot. The declaration of a general entity must
-  %%  precede any reference to it which appears in a default value in an attribute-list declaration.
-  %%
-  %% -------------------------------------------------------------------------------------------------
-  %%
-  %% VC: Entity Declared
-  %% 
-  %%  In a document with an external subset or external parameter entities with "standalone='no'", 
-  %%  the Name given in the entity reference must match that in an entity declaration. 
-  %% 
-  %%  For interoperability, valid documents should declare the entities amp, lt, gt, apos, quot, in the 
-  %%  form specified in 4.6 Predefined Entities. The declaration of a parameter entity must precede any 
-  %%  reference to it. Similarly, the declaration of a general entity must precede any attribute-list 
-  %%  declaration containing a default value with a direct or indirect reference to that general entity.
-  %%
-  %% -------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_PEReference ref =
     (ustring "%") ^ ref.name ^ (ustring ";")
@@ -725,7 +776,7 @@ XML qualifying spec
   %%  [7]  Nmtoken   ::=  (NameChar)+
   %%  [8]  Nmtokens  ::=  Nmtoken (S Nmtoken)*
   %%
-  %% -------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   def print_Names (first, others) = 
     first ^ (foldl (fn ((white, name), result) -> result ^ white ^ name)
@@ -748,12 +799,13 @@ XML qualifying spec
   %%  [2]  Char          ::=  #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF] 
   %%                          /* any Unicode character, excluding the surrogate blocks, FFFE, and FFFF. */
   %%
-  %%  [3]  S             ::=  (#x20 | #x9 | #xD | #xA)+
-  %%
   %% [84]  Letter        ::=  BaseChar | Ideographic
   %%
-  %% [85]  BaseChar      ::=  [#x0041-#x005A] | [#x0061-#x007A] | [#x00C0-#x00D6] | [#x00D8-#x00F6] | 
-  %%                          [#x00F8-#x00FF] | [#x0100-#x0131] | [#x0134-#x013E] | [#x0141-#x0148] | 
+  %% [85]  BaseChar      ::=  [#x0041-#x005A] | [#x0061-#x007A] |   /* ascii: [A-Z] [a-z] */
+  %%                            /* annotated vowels (umlaut, circumflex, ...) */
+  %%                          [#x00C0-#x00D6] | [#x00D8-#x00F6] | [#x00F8-#x00FF] |  
+  %%                            /* lots of odd characters */
+  %%                          [#x0100-#x0131] | [#x0134-#x013E] | [#x0141-#x0148] | 
   %%                          [#x014A-#x017E] | [#x0180-#x01C3] | [#x01CD-#x01F0] | [#x01F4-#x01F5] | 
   %%                          [#x01FA-#x0217] | [#x0250-#x02A8] | [#x02BB-#x02C1] | #x0386 | 
   %%                          [#x0388-#x038A] | #x038C | [#x038E-#x03A1] | [#x03A3-#x03CE] | 
@@ -825,7 +877,8 @@ XML qualifying spec
   %%                          [#x0FB1-#x0FB7] | #x0FB9 | [#x20D0-#x20DC] | #x20E1 | [#x302A-#x302F] | 
   %%                          #x3099 | #x309A
   %%
-  %% [88]  Digit         ::=  [#x0030-#x0039] | [#x0660-#x0669] | [#x06F0-#x06F9] | [#x0966-#x096F] | 
+  %% [88]  Digit         ::=  [#x0030-#x0039] |  /* ascii [0-9] */
+  %%                          [#x0660-#x0669] | [#x06F0-#x06F9] | [#x0966-#x096F] | 
   %%                          [#x09E6-#x09EF] | [#x0A66-#x0A6F] | [#x0AE6-#x0AEF] | [#x0B66-#x0B6F] | 
   %%                          [#x0BE7-#x0BEF] | [#x0C66-#x0C6F] | [#x0CE6-#x0CEF] | [#x0D66-#x0D6F] | 
   %%                          [#x0E50-#x0E59] | [#x0ED0-#x0ED9] | [#x0F20-#x0F29]
@@ -833,9 +886,7 @@ XML qualifying spec
   %% [89]  Extender      ::=  #x00B7 | #x02D0 | #x02D1 | #x0387 | #x0640 | #x0E46 | #x0EC6 | #x3005 |
   %%                          [#x3031-#x3035] | [#x309D-#x309E] | [#x30FC-#x30FE]
   %%
-  %% -------------------------------------------------------------------------------------------------
-
-  def print_WhiteSpace white = white
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Table of WFC, KC, and VC entries                                                    %%%
@@ -879,7 +930,7 @@ XML qualifying spec
   %% 
   %%    The Name in an element's end-tag must match the element type in the start-tag.
   %% 
-  %%  [WFC: Unique Att Spec]                       *[40] *[44] [K16] [K19] -- unique_attributes?
+  %%  [WFC: Unique Att Spec]                       *[40] *[44] [K25] [K28] -- unique_attributes?
   %%
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %%
@@ -911,7 +962,7 @@ XML qualifying spec
   %%    A parsed entity must not contain a recursive reference to itself, either directly or 
   %%    indirectly.
   %%
-  %%  [WFC: In DTD]                                 [69] (really [31] [K11]) -- no_pe_reference?
+  %%  [WFC: In DTD]                                 [69] (really [31] [K12]) -- no_pe_reference?
   %%
   %%    Parameter-entity references may only appear in the DTD.  
   %%    
@@ -929,47 +980,51 @@ XML qualifying spec
   %%    
   %%    exactly one doctypedecl
   %%
-  %%  [KC: Proper Text Decl]                       [K12]  -- text_decl?
+  %%  [KC: Proper Text Decl]                       [K13]  -- text_decl?
   %%
   %%    prefix      = '?'
   %%    name        = 'xml'
   %%    attributes  = version? encoding
   %%    postfix     = '?'
   %%
-  %%  [KC: Proper XML Decl]                        [K13] -- xml_decls?
+  %%  [KC: Proper XML Decl]                        [K14] -- xml_decls?
   %%
   %%    prefix     = '?'
   %%    name       = 'xml']
   %%    attributes = version encoding? standalone?
   %%    postfix    = '?'
   %%
-  %%  [KC: At Least SYSTEM]                        [K14] -- external_id?
+  %%  [KC: At Least SYSTEM]                        [K22] -- external_id?
   %%
   %%    some system literal
   %%    (optional public literal)
   %%
-  %%  [KC: Just PUBLIC]                            [K15] -- public_id?
+  %%  [KC: Just PUBLIC]                            [K23] -- public_id?
   %%
   %%    no sytem literal
   %%    public literal
   %%
-  %%  [KC: Proper Start Tag]                       [K16] -- start_tag?
+  %%  [KC: Proper Start Tag]                       [K25] -- start_tag?
   %%
   %%    prefix     = ''
   %%    name       not = 'xml'
   %%    postfix    = ''
   %%
-  %%  [KC: Proper End   Tag]                       [K17] -- end_tag?
+  %%  [KC: Proper End   Tag]                       [K26] -- end_tag?
   %%
   %%    prefix     = '/'
   %%    name       not = 'xml'
   %%    postfix    = ''
   %%
-  %%  [KC: Proper Empty Tag]                       [K19] -- empty_tag?
+  %%  [KC: Proper Empty Tag]                       [K29] -- empty_tag?
   %%
   %%    prefix     = ''
   %%    name       not = 'xml'
   %%    postfix    = '/'
+  %%
+  %%  [KC: Proper Pubid Literal]                   [K31] -- pubid_literal?
+  %%
+  %%    all chars are PubidChar's
   %%
   %%  ------------------------------------------------------------------------------------------------
   %%
@@ -1135,7 +1190,7 @@ XML qualifying spec
   %%    attribute-list declaration containing a default value with a direct or indirect reference to 
   %%    that general entity.
   %%
-  %% -------------------------------------------------------------------------------------------------
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 endspec
 

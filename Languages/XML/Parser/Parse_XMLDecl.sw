@@ -8,7 +8,7 @@ XML qualifying spec
   %% 
   %% *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%   ==>
-  %% [K15]  XMLDecl       ::=  GenericTag
+  %% [K14]  XMLDecl       ::=  GenericTag
   %%
   %%                                                             [KC: Proper XML Decl]
   %%
@@ -28,6 +28,14 @@ XML qualifying spec
   %%                           /* Encoding name contains only Latin characters */
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% -------------------------------------------------------------------------------------------------
+  %% 
+  %% [K14]  XMLDecl       ::=  GenericTag
+  %%                                                             [KC: Proper XML Decl]
+  %%                                                             [VC: Standalone Document Declaration]
+  %% 
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_XMLDecl (start : UChars) : Required XMLDecl =
     {

@@ -20,24 +20,34 @@ XML qualifying spec
   %%  <!ENTITY     ...>
   %%  <!NOTATATION ...>
   %%
-  %% [28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+  %%  [28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+  %%   ==>
+  %% [K15]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? markups? '>' 
+  %% [K16]  markups      ::=  '[' (markupdecl | DeclSep)* ']' S?
   %%
   %%                                                             [VC:  Root Element Type] 
   %%                                                             [WFC: External Subset]
   %%
-  %% [28a]  DeclSep     ::=  PEReference | S    
+  %% [28a]  DeclSep      ::=  PEReference | S    
+  %%
   %%                                                             [WFC: PE Between Declarations]
   %%
-  %% [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+  %%  [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
   %%
   %%                                                             [VC:  Proper Declaration/PE Nesting] 
   %%                                                             [WFC: PEs in Internal Subset]
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  %% -------------------------------------------------------------------------------------------------
   %% 
-  %% [28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+  %% [K15]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? markups? '>' 
   %% 
+  %%                                                             [VC:  Root Element Type] 
+  %%                                                             [WFC: External Subset]
+  %% 
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_DocTypeDecl (start : UChars) : Required DocTypeDecl =
    %%
    %% We begin here just past '<!DOCTYPE' in rule 28, looking for:
@@ -80,13 +90,24 @@ XML qualifying spec
 	     error ("DTD doesn't end with '>'", start, nthTail (tail, 10))
 	    }}
 
-  %% ------------------------------------------------------------------------------------------------
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [K16]  markups      ::=  '[' (markupdecl | DeclSep)* ']' S?
+  %%
+  %%                                                             [VC:  Root Element Type] 
+  %%                                                             [WFC: External Subset]
+  %%
+  %% [28a]  DeclSep      ::=  PEReference | S    
+  %%
+  %%                                                             [WFC: PE Between Declarations]
+  %%
+  %%  [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+  %%
+  %%                                                             [VC:  Proper Declaration/PE Nesting] 
+  %%                                                             [WFC: PEs in Internal Subset]
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
-  %%
-  %% [28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
-  %% [28a] DeclSep      ::=  PEReference | S    
-  %% [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
-  %%
   def parse_markups (start : UChars) : Possible (List (| Decl MarkupDecl | Sep DeclSep) * WhiteSpace) =
     %%
     %% We begin here with '[' pending in rule 28, looking for:
@@ -172,7 +193,7 @@ XML qualifying spec
 
   %% ------------------------------------------------------------------------------------------------
 
-  def parse_ExternalID (start : UChars) : Required ExternalID =
+  def parse_ExternalID (start : UChars) : Required ExternalID =  % TODO
     {
      (id, tail) <- parse_GenericID start;
      if external_id? id then

@@ -6,6 +6,7 @@ XML qualifying spec
   %%%          DTD EntityDecl                                                                      %%%
   %%%          DTD NotationDecl                                                                    %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%
   %%  [70]  EntityDecl     ::=  GEDecl | PEDecl
   %%
   %%  [71]  GEDecl         ::=  '<!ENTITY' S       Name S EntityDef S? '>'
@@ -23,6 +24,8 @@ XML qualifying spec
   %% ------------------------------------------------------------------------------------------------
   %%
   %%  [82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
+  %%   ==>
+  %% [K21]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %%
   %%                                                             [VC: Unique Notation Name]
   %%
@@ -30,24 +33,28 @@ XML qualifying spec
   %%
   %% *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %%   ==>
-  %% [K16]  ExternalID     ::=  GenericID
+  %% [K22]  ExternalID     ::=  GenericID
   %%
   %%                                                             [KC: At Least SYSTEM]
   %%
   %% *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral 
   %%   ==>
-  %% [K17]  PublicID       ::=  GenericID
+  %% [K23]  PublicID       ::=  GenericID
   %%
   %%                                                             [KC: Just PUBLIC]
   %%
-  %% [K18]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %% [K24]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  %% ------------------------------------------------------------------------------------------------
   %%
+  %%  [70]  EntityDecl     ::=  GEDecl | PEDecl
   %%  [71]  GEDecl         ::=  '<!ENTITY' S       Name S EntityDef S? '>'
   %%  [72]  PEDecl         ::=  '<!ENTITY' S '%' S Name S PEDef     S? '>'
   %%
+  %% ------------------------------------------------------------------------------------------------
+
   def parse_EntityDecl (start : UChars) : Required EntityDecl =
     %% We begin here just past the '<!ENTITY' in rules [71] and [72], looking for
     %% one of the following:
@@ -97,11 +104,15 @@ XML qualifying spec
 		     start, nthTail (tail, 10))
 	      }}
 
+  %% ------------------------------------------------------------------------------------------------
   %%
-  %%  [73]  EntityDef     ::=  EntityValue | (ExternalID NDataDecl?)
-  %%   [9]  EntityValue   ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
-  %% *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
+  %%  [73]  EntityDef      ::=  EntityValue | (ExternalID NDataDecl?)
+  %% [K22]  ExternalID     ::=  GenericID
   %%
+  %%                                                             [KC: At Least SYSTEM]
+  %%
+  %% ------------------------------------------------------------------------------------------------
+
   def parse_EntityDef (start : UChars) : Required EntityDef =
     case start of
       | 34 (* double-quote *) :: tail ->
@@ -122,9 +133,12 @@ XML qualifying spec
 		tail)
 	}
 
+  %% ------------------------------------------------------------------------------------------------
   %%
   %%  [74]  PEDef          ::=  EntityValue | ExternalID
   %%
+  %% ------------------------------------------------------------------------------------------------
+
   def parse_PEDef (start : UChars) : Required PEDef =
     case start of
       | 34 (* double-quote *) :: tail ->
@@ -143,9 +157,14 @@ XML qualifying spec
 	 return (External ext_id, tail)
 	 }
 
+  %% ------------------------------------------------------------------------------------------------
   %%
   %%  [76]  NDataDecl      ::=  S 'NDATA' S Name 
   %%
+  %%                                                             [VC: Notation Declared]
+  %%
+  %% ------------------------------------------------------------------------------------------------
+
   def parse_NDataDecl (start : UChars) : Possible NDataDecl =
     {
      (w1, tail) <- parse_WhiteSpace start;
@@ -162,9 +181,14 @@ XML qualifying spec
        | _ -> return (None, start)
 	}
 
+  %% ------------------------------------------------------------------------------------------------
   %%
-  %% [82]  NotationDecl  ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
+  %% [K21]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %%
+  %%                                                             [VC: Unique Notation Name]
+  %%
+  %% ------------------------------------------------------------------------------------------------
+
   def parse_NotationDecl (start : UChars) : Required NotationDecl =
     %% 
     %% We begin just past '<!NOTATION' in rule 82, looking for:
@@ -190,9 +214,12 @@ XML qualifying spec
 		start, tail)
 	}
 
+  %% ------------------------------------------------------------------------------------------------
   %%
-  %% [K16] GenericID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %% [K24] GenericID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
+  %% ------------------------------------------------------------------------------------------------
+
   def parse_GenericID (start : UChars) : Required GenericID =
     case start of 
       | 83 :: 89 :: 83 :: 84 :: 69 :: 77 (* 'SYSTEM' *) :: tail ->

@@ -45,9 +45,12 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
   %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_AttlistDecl (start : UChars) : Required AttlistDecl =
     %%
     %%  We begin here just past '<!ATTLIST' in rule 52, looking for:
@@ -82,9 +85,12 @@ XML qualifying spec
        probe (tail, [])
       }
 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [53]  AttDef          ::=  S Name S AttType S DefaultDecl
   %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_AttDef (start : UChars) : Possible AttDef =
     {
      (w1,       tail) <- parse_WhiteSpace start;
@@ -110,6 +116,7 @@ XML qualifying spec
 	    | _ -> return (None, start)
 	     }}
 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [54]  AttType         ::=  StringType | TokenizedType | EnumeratedType 
   %%
@@ -125,6 +132,8 @@ XML qualifying spec
   %%                            | 'NMTOKEN'                      [VC: Name Token]
   %%                            | 'NMTOKENS'                     [VC: Name Token]
   %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_AttType (start : UChars) : Required AttType =
     %%
     %% We collapse rules 54,55,56 into one procedure:
@@ -150,9 +159,12 @@ XML qualifying spec
       | _ ->
         parse_EnumeratedType start
 	
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [57]  EnumeratedType  ::=  NotationType | Enumeration 
   %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_EnumeratedType (start : UChars) : Required AttType =
     %% can anyone say "S-Expression" ?  Sheesh, this is a botch of a grammar...
     case start of
@@ -165,9 +177,16 @@ XML qualifying spec
 	error ("Expected NOTATION or opening '(' for enumeration in EnumeratedType in DTD",
 	       start, nthTail (start, 10))
 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
   %%
+  %%                                                             [VC: Notation Attributes] 
+  %%                                                             [VC: One Notation Per Element Type] 
+  %%                                                             [VC: No Notation on Empty Element]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_NotationType (start : UChars) : Required AttType =
     %%
     %% We begin here just past 'NOTATION' in rule 58, looking for:
@@ -213,9 +232,14 @@ XML qualifying spec
 		     start, tail)
 	}
 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
   %%
+  %%                                                             [VC: Enumeration]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_Enumeration (start : UChars) : Required AttType =
     %%
     %% We begin here just past '(' in rule 59, looking for:
@@ -251,9 +275,17 @@ XML qualifying spec
        probe (tail, [])
       }
 	 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue) 
   %%
+  %%                                                             [VC:  Required Attribute] 
+  %%                                                             [VC:  Attribute Default Legal]
+  %%                                                             [WFC: No < in Attribute Values]
+  %%                                                             [VC:  Fixed Attribute Default]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_DefaultDecl (start : UChars) : Possible DefaultDecl =
     case start of
       | 35 :: 82 :: 69 :: 81 :: 85 :: 73 :: 82 :: 69 :: 68 (* '#REQUIRED' *) :: tail ->

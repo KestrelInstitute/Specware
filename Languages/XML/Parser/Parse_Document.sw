@@ -25,7 +25,6 @@ XML qualifying spec
   %%  so we can recast [1] [22] [27] as:
   %%
   %%  [K1]  document  ::=  DocItems
-  %%
   %%                                                             [KC: Well-Formed Doc]
   %%
   %%  [K2]  DocItems  ::=  DocItem*
@@ -33,6 +32,13 @@ XML qualifying spec
   %%  [K3]  DocItem   ::=  XMLDecl | Comment | PI | S | doctypedecl | element
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K1]  document  ::=  DocItems
+  %%                                                             [KC: Well-Formed Doc]
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_Document (start  : UChars) : Required Document =
     {
@@ -86,6 +92,12 @@ XML qualifying spec
 	     tail)
      }
 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K2]  DocItems  ::=  DocItem*
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_DocItems (start : UChars) : Required DocItems =
     let 
        def probe (tail, rev_items) =
@@ -98,6 +110,12 @@ XML qualifying spec
 	      }
     in
       probe (start, [])
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [K3]  DocItem   ::=  XMLDecl | Comment | PI | S | doctypedecl | element
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_DocItem (start : UChars) : Required DocItem =
     %% Comment | PI | S | doctypedecl | element

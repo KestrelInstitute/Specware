@@ -11,8 +11,6 @@ XML qualifying spec
   %%  [2]  Char          ::=  #x9 | #xA | #xD | [#x20-#xD7FF] | [#xE000-#xFFFD] | [#x10000-#x10FFFF] 
   %%                          /* any Unicode character, excluding the surrogate blocks, FFFE, and FFFF. */
   %%
-  %%  [3]  S             ::=  (#x20 | #x9 | #xD | #xA)+
-  %%
   %% [84]  Letter        ::=  BaseChar | Ideographic
   %%
   %% [85]  BaseChar      ::=  [#x0041-#x005A] | [#x0061-#x007A] |   /* ascii: [A-Z] [a-z] */
@@ -102,66 +100,68 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def parse_BaseChar (start : UChars) : Required BaseChar =
-    case start of
-      | char :: tail ->
-        if base_char? char then
-	  return (char, tail)
-	else
-	  raise (Syntax ("Not a BaseChar", {start = start, stop = tail}))
-     | _ ->
-       raise (EOF ("looking for a BaseChar", {start = start, stop = []}))
-  
-  def parse_IdeographicChar  (start : UChars) : Required IdeographicChar  =
-    case start of
-      | char :: tail ->
-        if ideographic_char? char then
-	  return (char, tail)
-	else
-	  raise (Syntax ("Not a Ideographic ", {start = start, stop = tail}))
-     | _ ->
-       raise (EOF ("looking for Ideographic ", {start = start, stop = []}))
-  
-  def parse_Letter (start : UChars) : Required Letter =
-    case start of
-      | char :: tail ->
-        if letter? char then
-	  return (char, tail)
-	else
-	  raise (Syntax ("Not a Letter", {start = start, stop = tail}))
-      | _ ->
-       raise (EOF ("looking for a Letter", {start = start, stop = []}))
-
-  def parse_CombingingChar  (start : UChars) : Required CombingingChar  =
-    case start of
-      | char :: tail ->
-        if combining_char? char then
-	  return (char, tail)
-	else
-	  raise (Syntax ("Not a CombingingChar ", {start = start, stop = tail}))
-     | _ ->
-       raise (EOF ("looking for CombingingChar ", {start = start, stop = []}))
-
-  
-  def parse_Digit  (start : UChars) : Required Digit  =
-    case start of
-      | char :: tail ->
-        if digit? char then
-	  return (char, tail)
-	else
-	  raise (Syntax ("Not a Digit ", {start = start, stop = tail}))
-     | _ ->
-       raise (EOF ("looking for Digit ", {start = start, stop = []}))
-
-  def parse_ExtenderChar  (start : UChars) : Required ExtenderChar  =
-    case start of
-      | char :: tail ->
-        if  extender_char? char then
-	  return (char, tail)
-	else
-	  raise (Syntax ("Not a ExtenderChar ", {start = start, stop = tail}))
-     | _ ->
-       raise (EOF ("looking for ExtenderChar ", {start = start, stop = []}))
+  %% For now, these are not used:
+  %% 
+  %%   def parse_BaseChar (start : UChars) : Required BaseChar =
+  %%    case start of
+  %%      | char :: tail ->
+  %%        if base_char? char then
+  %%	  return (char, tail)
+  %%	else
+  %%	  raise (Syntax ("Not a BaseChar", {start = start, stop = tail}))
+  %%     | _ ->
+  %%       raise (EOF ("looking for a BaseChar", {start = start, stop = []}))
+  %%  
+  %%  def parse_IdeographicChar  (start : UChars) : Required IdeographicChar  =
+  %%    case start of
+  %%      | char :: tail ->
+  %%        if ideographic_char? char then
+  %%	  return (char, tail)
+  %%	else
+  %%	  raise (Syntax ("Not a Ideographic ", {start = start, stop = tail}))
+  %%     | _ ->
+  %%       raise (EOF ("looking for Ideographic ", {start = start, stop = []}))
+  %%  
+  %%  def parse_Letter (start : UChars) : Required Letter =
+  %%    case start of
+  %%      | char :: tail ->
+  %%        if letter? char then
+  %%	  return (char, tail)
+  %%	else
+  %%	  raise (Syntax ("Not a Letter", {start = start, stop = tail}))
+  %%      | _ ->
+  %%       raise (EOF ("looking for a Letter", {start = start, stop = []}))
+  %%
+  %%  def parse_CombingingChar  (start : UChars) : Required CombingingChar  =
+  %%    case start of
+  %%      | char :: tail ->
+  %%        if combining_char? char then
+  %%	  return (char, tail)
+  %%	else
+  %%	  raise (Syntax ("Not a CombingingChar ", {start = start, stop = tail}))
+  %%     | _ ->
+  %%       raise (EOF ("looking for CombingingChar ", {start = start, stop = []}))
+  %%
+  %%  
+  %%  def parse_Digit  (start : UChars) : Required Digit  =
+  %%    case start of
+  %%      | char :: tail ->
+  %%        if digit? char then
+  %%	  return (char, tail)
+  %%	else
+  %%	  raise (Syntax ("Not a Digit ", {start = start, stop = tail}))
+  %%     | _ ->
+  %%       raise (EOF ("looking for Digit ", {start = start, stop = []}))
+  %%
+  %%  def parse_ExtenderChar  (start : UChars) : Required ExtenderChar  =
+  %%    case start of
+  %%      | char :: tail ->
+  %%        if  extender_char? char then
+  %%	  return (char, tail)
+  %%	else
+  %%	  raise (Syntax ("Not a ExtenderChar ", {start = start, stop = tail}))
+  %%     | _ ->
+  %%       raise (EOF ("looking for ExtenderChar ", {start = start, stop = []}))
 
   def parse_EqualSign (start : UChars) : Required UChar =
     case start of

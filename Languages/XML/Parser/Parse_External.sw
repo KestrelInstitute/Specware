@@ -14,7 +14,7 @@ XML qualifying spec
   %% 
   %% *[31]  extSubsetDecl       ::=  ( markupdecl | conditionalSect | DeclSep)* 
   %%   ==>
-  %% [K13]  extSubsetDecl       ::=  ( markupdecl | includeSect | ignoreSect | DeclSep)* 
+  %% [K12]  extSubsetDecl       ::=  ( markupdecl | includeSect | ignoreSect | DeclSep)* 
   %% 
   %%  [61]  conditionalSect     ::=  includeSect | ignoreSect
   %% 
@@ -32,7 +32,7 @@ XML qualifying spec
   %% 
   %% *[77]  TextDecl            ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %%   ==>
-  %% [K14]  TextDecl            ::=  GenericTag
+  %% [K13]  TextDecl            ::=  GenericTag
   %%
   %%                                                             [KC: Proper Text Decl]
   %%  

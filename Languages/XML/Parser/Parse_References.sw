@@ -28,11 +28,22 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [67]  Reference    ::=  EntityRef | CharRef
   %% [68]  EntityRef    ::=  '&' Name ';' 
+  %%
+  %%                                                             [WFC: Entity Declared]
+  %%                                                             [VC:  Entity Declared]
+  %%                                                             [WFC: Parsed Entity] 
+  %%                                                             [WFC: No Recursion]
+  %%
   %% [66]  CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';' 
   %%
+  %%                                                             [WFC: Legal Character]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_Reference (start : UChars) : Required Reference =
     %%  We being just past the '&' in rules [66] and [68], looking for one of:
     %%
@@ -85,9 +96,16 @@ XML qualifying spec
 	   | _ -> error ("Expected entity reference to end with ';'", start, nthTail (tail, 10))
 	    }
 
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [69]  PEReference  ::=  '%' Name ';' 
   %%
+  %%                                                             [VC:  Entity Declared]
+  %%                                                             [WFC: No Recursion]
+  %%                                                             [WFC: In DTD]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
   def parse_PEReference (start : UChars) : Required PEReference =
     {
      %% We begin just past the '%", looking for:
@@ -102,6 +120,8 @@ XML qualifying spec
        | _ -> 
 	 error ("Expecting PEReference", start, tail)
     }
+
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_decimal (start : UChars) : Option (Nat * UChars) =
    let 
@@ -124,6 +144,8 @@ XML qualifying spec
 	      None
    in
      probe (start, 0)
+
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_hex (start : UChars) : Option (Nat * UChars) =
    let 
