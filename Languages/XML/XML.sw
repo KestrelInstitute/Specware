@@ -12,12 +12,29 @@ XML qualifying spec
   %%%                 INTERFACE
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  %% These are all very tricky -- actual handwritten function takes extra arg depicting X
-  op parseXML             : fa (X) String  -> X          % Tricky, TODO
-  op parseUnicodeXML      : fa (X) UString -> X          % Tricky, TODO
-  op printXML             : fa (X) X -> String           % Tricky, see Languages/XML/Handwritten/Lisp/Support.lisp
-  op printUnicodeXML      : fa (X) X -> UString          % Tricky, TODO
-  op internalize_Document : fa (X) Document -> Option X  % Tricky, see Languages/XML/Handwritten/Lisp/Support.lisp
+  %% WARNING: These are not normal metaslang functions.
+  %%
+  %%          The typechecker adds an extra argument when generating calls to 
+  %%           these specially recognized functions.  See sortCognizantOperator? 
+  %%           defined in /Languages/MetaSlang/Specs/Elaborate/TypeChecker.sw
+  %%
+  %%          The actual handwritten (Lisp/C/Java/...) definitions are written
+  %%           using that extra arg.  [For now, only Lisp version exists.]
+  %%
+  %%          See Languages/XML/Handwritten/Lisp/Support.lisp
+  %%
+  %%          An alternative scheme would be to add a reflection operation to
+  %%           metaslang, e.g. DescribeSort S, mapping a sort to a normal term
+  %%           describing that sort, to make the extra arg apparent.
+  %%
+  op readXMLFile          : fa (X) Filename -> X         % Tricky -- see Support.lisp
+  op parseXML             : fa (X) String  -> X          % Tricky -- see Support.lisp
+  op parseUnicodeXML      : fa (X) UString -> X          % Tricky -- see Support.lisp
+  op internalize_Document : fa (X) Document -> Option X  % Tricky -- see Support.lisp
+
+  op writeXMLFile         : fa (X) X * Filename -> ()    % Tricky -- see Support.lisp
+  op printXML             : fa (X) X -> String           % Tricky -- see Support.lisp
+  op printUnicodeXML      : fa (X) X -> UString          % Tricky -- see Support.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INPUT

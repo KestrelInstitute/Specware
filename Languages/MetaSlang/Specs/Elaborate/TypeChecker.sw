@@ -882,20 +882,30 @@ spec {
 
   %% express as table to simplify ad hoc additions via lisp code:
   def sortCognizantOperators : List (Id * Id) =
-    [ ("XML" ,          "parseXML"),
-      ("<unqualified>", "parseXML"),
+    [ %% input
 
-      ("XML" ,          "printXML"),
-      ("<unqualified>", "printXML"),
+      ("XML" ,          "readXMLFile"),
+      ("<unqualified>", "readXMLFile"),
+
+      ("XML" ,          "parseXML"),
+      ("<unqualified>", "parseXML"),
 
       ("XML" ,          "parseUnicodeXML"),
       ("<unqualified>", "parseUnicodeXML"),
 
-      ("XML" ,          "printUnicodeXML"),
-      ("<unqualified>", "printUnicodeXML"),
-
       ("XML",           "internalize_Document"), 
-      ("<unqualified>", "internalize_Document") 
+      ("<unqualified>", "internalize_Document"), 
+
+      %% output
+
+      ("XML" ,          "writeXMLFile"),
+      ("<unqualified>", "writeXMLFile"),
+
+      ("XML" ,          "printXML"),
+      ("<unqualified>", "printXML"),
+
+      ("XML" ,          "printUnicodeXML"),
+      ("<unqualified>", "printUnicodeXML")
 
      ]
 
