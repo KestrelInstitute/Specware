@@ -7,7 +7,7 @@
 SpecCalc qualifying spec {
   import Signature
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
-  import /Languages/MetaSlang/Specs/SpecUnion         % for specUnion
+  import Spec/SpecUnion                               % for specUnion
 \end{spec}
 
 \begin{spec}
@@ -43,7 +43,7 @@ SpecCalc qualifying spec {
    let residue            = subtractSpec spc dom_spec                in  % S - dom(M)
    let translated_residue = applyMorphism sm residue                 in  % M(S - dom(M))
    let result             = specUnion [translated_residue, cod_spec] in  % M(S - dom(M)) U cod(M)
-   return result
+   result
           
   op applyMorphism : Morphism -> Spec -> Spec 
   def applyMorphism sm spc =
