@@ -90,18 +90,42 @@ spec {
  %%  ========================================================================
 
  def merge mu_map mu_node_a mu_node_b =
+  % let _ = toScreen ("\n===============\n") in
+  % let _ = toScreen ("Merging\n") in
+  % let _ = toScreen ((anyToString mu_node_a) ^ "\n") in
+  % let _ = toScreen ((anyToString mu_node_b) ^ "\n") in
   let def find_root_node mu_map mu_node =
        %% "side effect" is to update map with new node whose parent is root,
        %% so we return new map as well as new node
        case mu_node.parent of
-        | Some parent -> let (mu_map, root_node) = find_root_node mu_map parent in
-                         let new_mu_node = {rank   = mu_node.rank,
-					    parent = Some root_node,
-					    value  = mu_node.value}
-			 in
-			 let new_map : MFSetMap = updateMFSetMap mu_map mu_node.value new_mu_node in
-		         (new_map, root_node)
-        | None        -> (mu_map, mu_node)
+        | Some parent -> 
+	  let (mu_map, root_node) = find_root_node mu_map parent in
+	  let new_mu_node = {rank   = mu_node.rank,
+			     parent = Some root_node,
+			     value  = mu_node.value}
+	  in
+	    let new_map : MFSetMap = updateMFSetMap mu_map mu_node.value new_mu_node in
+	    (new_map, root_node)
+
+        | None        -> 
+	  %% Careful -- we can't just use mu_node, since we might be looking at B1 in
+	  %% at a situtation such as this, where B was promoted to rank 2 when A0 was
+	  %% previously compared, but C0 still points at the old entry for B at rank 1,
+          %% even though this old entry is no longer directly accessible via the mu_map.
+	  %% A0 -------> B2
+          %% C0 -> B1
+	  %% D0 -------> E2
+	  let new_mu_node = eval mu_map mu_node.value in
+	  if new_mu_node = mu_node then
+	    %% ok -- for this key (e.g. for "B" from B1), 
+	    %%       the current map accesses the node we already had (B1),
+	    %%       which is therefore a root node since it has no parent
+	    (mu_map, mu_node)
+	  else
+	    %% oops -- for this key (e.g. for "B" from B1)
+	    %%         the current map accesses a revised node (B2), 
+	    %%         so continue from that revised node 
+	    find_root_node mu_map new_mu_node
   in
   let (mu_map, root_a) = find_root_node mu_map mu_node_a in
   let (mu_map, root_b) = find_root_node mu_map mu_node_b in
@@ -145,7 +169,19 @@ spec {
 
  def findRootValue mu_map mu_node =
   case mu_node.parent of
-   | None                 -> mu_node.value
+   | None ->
+     let new_mu_node = eval mu_map mu_node.value in
+     if new_mu_node = mu_node then
+       %% ok -- for this key (e.g. for "B" from B1), 
+       %%       the current map accesses the node we already had (B1),
+       %%       which is therefore a root node since it has no parent
+       mu_node.value
+     else
+       %% oops -- for this key (e.g. for "B" from B1)
+       %%         the current map accesses a revised node (B2), 
+       %%         so continue from that revised node 
+       findRootValue mu_map new_mu_node
+
    | Some old_parent_node -> 
      let current_parent_node = eval mu_map old_parent_node.value in
      findRootValue mu_map current_parent_node
