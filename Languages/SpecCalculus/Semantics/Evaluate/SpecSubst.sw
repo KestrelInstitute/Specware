@@ -75,6 +75,7 @@ SpecCalc qualifying spec {
    %%  so we first convert formats...
    let op_id_map   = convertIdMap (opMap sm)   in
    let sort_id_map = convertIdMap (sortMap sm) in
+   %% Note that auxTranslateSpec is not expected to raise any errors.
    auxTranslateSpec spc (op_id_map, sort_id_map) position
     
   %% ======================================================================  

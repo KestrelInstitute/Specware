@@ -587,6 +587,7 @@ AnnSpec qualifying spec
  %% Overloading is not particularly meaningful for sorts. 
  %% (Would we ever want both  FOO.FOO x and FOO.FOO x y  as distinct sorts?)
  %% but we might have two or more sorts X.S, Y.S, etc.
+
  %% If the qualifier is UnQualified then we return unqualified answer first so as to
  %% give preference to it because there is no other way to refer to this entry.
  %% Note that checkSort depends on this behavior.
@@ -597,6 +598,8 @@ AnnSpec qualifying spec
 		  | None           -> [])
    in
    if q = UnQualified then
+     %% various other routines assume that any
+     %% unqualified answer will be listed first 
      found ++ filter (fn info -> ~(member (info, found)))
                      (wildFindUnQualified (spc.sorts, id))
    else 
@@ -608,6 +611,8 @@ AnnSpec qualifying spec
 		  | None           -> [])
    in
    if q = UnQualified then
+     %% various other routines assume that any
+     %% unqualified answer will be listed first 
      found ++ filter (fn info -> ~(member (info, found)))
                      (wildFindUnQualified (spc.ops, id))
    else

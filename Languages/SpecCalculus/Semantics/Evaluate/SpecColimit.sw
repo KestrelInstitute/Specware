@@ -231,6 +231,17 @@ spec
            let cocone_translation_expr = eval vertex_to_sm_rules vertex in
 	   % let _ = toScreen ("\nTranslation expr "^ (anyToString cocone_translation_expr) ^ "\n") in
 	   % let _ = toScreen ("\nSpec: "^ (printSpec vertex_spec) ^ "\n") in
+
+           %% TODO:
+           %% It probably would be better to call auxTranslateSpec directly, 
+           %% and thus reduce the opportunities for raising exceptions,
+           %% but then we would need to get the maps into the right format:
+           %%
+           %%   auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
+           %% 
+           %% The first arg to translateSpec says we don't require the morphism to be monic.
+           %% Maybe the sense should really be that we don't want to raise any exceptions.
+           %%
            let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_translation_expr) in
 	   % let _ = toScreen ("\nTranslated Spec: "^ (printSpec translated_spec) ^ "\n") in
            let combined_spec   = run (specUnion [apex_spec, translated_spec]) in
