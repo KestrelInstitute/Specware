@@ -6,11 +6,11 @@ SpecCalc qualifying spec {
 
   % sort Spec.Spec = ASpec Position
 
-  op CUtils.addInclude : CSpec * String -> CSpec
-  def CUtils.addInclude (cSpec,str) = addInclude cSpec str
+  op CInterface.addInclude : CSpec * String -> CSpec
+  def CInterface.addInclude (cSpec,str) = addInclude cSpec str
 
-  CG.printToFile : CSpec * Option String -> ()
-  CG.printToFile (cSpec, optFileName) =
+  op CInterface.printToFile : CSpec * Option String -> ()
+  def CInterface.printToFile (cSpec, optFileName) =
     case optFileName of
       | None -> fail "printCToFile: missing filename"
       | Some fileName -> toFile (fileName, format (80, ppCSpec cSpec))
@@ -23,14 +23,13 @@ SpecCalc qualifying spec {
     let cSpec = generateCTypes cSpec envSpec in
     let cSpec = generateCVars cSpec envSpec in
     let cSpec = generateCFunctions cSpec envSpec in {
-      % cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
-      cSpec <- ProcMapEnv.fold generateCProcedure cSpec oscSpec.procedures;
+      cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
       print (PrettyPrint.toString (format (80, ppCSpec cSpec)));
       return cSpec
     }
 
-  op generateCProcedure : CSpec -> Id.Id -> Procedure -> Env CSpec
-  def generateCProcedure cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
+  op generateCProcedure : Spec.Spec -> CSpec -> Id.Id -> Procedure -> Env CSpec
+  def generateCProcedure spc cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
     let initSpec = Mode.modeSpec (initial bSpec) in
     let varDecls =
       List.map (fn argRef -> let (names,fxty,(tyVars,srt),_) = Op.deref (specOf initSpec, argRef) in

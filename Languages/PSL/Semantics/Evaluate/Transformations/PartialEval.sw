@@ -182,7 +182,7 @@ PE qualifying spec
              (case evalPartial (procedures newOscSpec, procId) of
                 | None -> raise (SpecError (noPos, "application is not a procedure call" ^ (printTerm callTerm)))
                 | Some procInfo -> return (procId,procSort,procInfo,callArg))
-        | _ -> raise (SpecError (noPos, "Term to be specialized: " ^ (printTerm callTerm) ^ " is not an application"));
+        | _ -> raise (SpecError (noPos, "Term to be specialized: " ^ (System.anyToString callTerm) ^ " is not an application"));
     if traceRewriting > 0 then
       print ("specializing " ^ (Id.show procId) ^ " with term " ^ (printTerm callTerm) ^ "\n") else return ();
     (argTerm,returnTerm,storeTerm) <-

@@ -31,8 +31,8 @@ SpecCalc qualifying spec {
                       | None -> raise (SpecError (noPos, "project: procedure " ^ (Id.show (makeId procName)) ^ " is not defined"))
                       | Some proc -> {
                            cSpec <- generateCProcedure emptySpec (emptyCSpec "") (makeId procName) proc;
-                           cSpec <- return (addInclude (cSpec,"matlab.h"));
-                           return (CG.printToFile(cSpec,Some(fileName)))
+                           cSpec <- return (CInterface.addInclude (cSpec,"matlab.h"));
+                           return (CInterface.printToFile(cSpec,Some(fileName)))
                          };
                   return (Other newOscarSpec,timeStamp,depUnitIds)
                 }
