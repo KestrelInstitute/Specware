@@ -42,3 +42,14 @@
 (defun magicCastToList    (x) x)
 (defun magicCastToChar    (x) x)
 (defun magicCastToBoolean (x) x)
+
+(defun magicCastFromString  (x) x)
+(defun magicCastFromInteger (x) x)
+(defun magicCastFromList    (x) x)
+(defun magicCastFromChar    (x) x)
+(defun magicCastFromBoolean (x) x)
+
+(defun magicMakeProduct (x)
+  (if (equal (length x) 2)
+      (cons (car x) (cdr x))
+    (coerce x 'vector)))
