@@ -545,6 +545,9 @@ def addOpToSpec((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term
    
 op addOpToSpec2: OpDef2 * Spec -> Spec
 def addOpToSpec2((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term, isConstantOp?: Boolean), spc:Spec) =
+  if basicQualifiedId? oper then
+    spc
+  else
   let srt = case dom of 
 	      | [] -> if isConstantOp? then rng else mkArrow(mkProduct([]),rng)
 	      | [dom] -> withAnnS(mkArrow(dom, rng),sortAnn(dom))
