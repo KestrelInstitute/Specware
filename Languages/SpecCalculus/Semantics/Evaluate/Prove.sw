@@ -91,16 +91,16 @@ SpecCalc qualifying spec {
    case findClaimInSpec of
      | None -> raise (Proof (pos, "Claim name is not in spec."))
      | Some (claim, validHypothesis) ->
-	 let actualHypothesis = actualHypothesis(validHypothesis, assertions, pos) in
+	 let actualHypothesis = actualHypothesis(validHypothesis, assertions) in
 	   if (case assertions of All -> true | Explicit possibilities -> length actualHypothesis = length possibilities)
 	     then return (proveWithHypothesis(proof_name, claim, actualHypothesis, spc, spec_name, baseHypothesis, base_spc,
 					      prover_name, prover_options, snarkLogFileName))
 	   else raise (Proof (pos, "assertion not in spec."));
    return result}
 
- op actualHypothesis: List Property * Assertions * Position -> List Property
+ op actualHypothesis: List Property * Assertions -> List Property
 
- def actualHypothesis(validHypothesis, assertions, pos) =
+ def actualHypothesis(validHypothesis, assertions) =
      case assertions of
       | All -> validHypothesis
       | Explicit possibilities -> 
@@ -149,6 +149,7 @@ SpecCalc qualifying spec {
 
  def proveWithHypothesis(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
 			 prover_name, prover_options, snarkLogFileName) =
+   let _ = if ~(prover_name = "Snark") then writeLine(prover_name ^ " is not supported; using Snark instead.") else () in
    let (claim_type,claim_name,_,_) = claim in
    let def claimType(ct) = 
          case ct of

@@ -82,18 +82,18 @@ spec {
 	    let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
        | Embedded id ->
-	      let def boolArgp(arg, srt) =
+	      let def boolArgp(srt) =
 	          case srt of
 		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
                     | _ -> false in
 	      let Arrow (dom,rng,_) = srt in
-	      let isfmla = boolArgp(arg, dom) in
+	      let isfmla = boolArgp(dom) in
 	      let snarkArg = if isfmla
 	                       then mkSnarkFmla(context,sp,dpn,vars,arg)
 			     else mkSnarkTerm(context,sp,dpn,vars,arg) in
 		 Lisp.cons(Lisp.symbol("SNARK","embed?"), Lisp.list[Lisp.symbol("SNARK",id),snarkArg])
        | Equals -> 
-	    let def boolArgp(arg, srt) =
+	    let def boolArgp(srt) =
 	          case srt of
 		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
                     | _ -> false in
@@ -101,7 +101,7 @@ spec {
 	    let Arrow (dom,rng,_) = srt in
 	    let Product(s:List(Id * Sort), _) = dom in
 	    let [(_,s1),(_,s2)] = s in
-	    let isfmla = boolArgp(arg1, s1) or boolArgp(arg2, s2) in
+	    let isfmla = boolArgp(s1) or boolArgp(s2) in
 	    let snarkArg1 =
 	        if isfmla
 		  then mkSnarkFmla(context, sp, dpn, vars, arg1)
@@ -137,9 +137,9 @@ spec {
       | Fun ((Bool false), Boolean, _) -> Lisp.symbol("SNARK","FALSE")
       | _ -> mkSnarkTerm(context, sp, dpn, vars, fmla)
 
-  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * Fun * Sort * Term -> LispCell
+  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * Fun * Term -> LispCell
 
-  def mkSnarkTermApp(context, sp, dpn, vars, f, srt, arg) =
+  def mkSnarkTermApp(context, sp, dpn, vars, f, arg) =
     let args = case arg
                 of Record(flds,_) -> map(fn (_, term) -> term) flds
 	         | _ -> [arg] in
@@ -153,7 +153,7 @@ spec {
   def mkSnarkTerm(context, sp, dpn, vars, term) =
 %    let _ = writeLine("Translating to snark: "^printTerm(term)) in
     case term
-      of Apply(Fun(f, srt, _), arg, _) -> mkSnarkTermApp(context, sp, dpn, vars, f, srt, arg)
+      of Apply(Fun(f, srt, _), arg, _) -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
       | IfThenElse(c, t, e, _) ->
 	   Lisp.list [Lisp.symbol("SNARK","IF"),
 		      mkSnarkTerm(context, sp, dpn, vars, c),

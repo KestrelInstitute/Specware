@@ -186,9 +186,9 @@ spec {
                  sorts in
          snarkBuiltInSorts(false) ++ snarkSorts
 
-  op snarkFunctionNoArityDecl: Spec * String * Sort -> LispCell
+  op snarkFunctionNoArityDecl: String * Sort -> LispCell
 
-  def snarkFunctionNoArityDecl(spc, name, srt) =
+  def snarkFunctionNoArityDecl(name, srt) =
     (case srt of
        Base (Qualified(qual, id), srts, _) ->
 	 Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
@@ -206,7 +206,7 @@ spec {
 		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
 		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
   
-  def snarkPredicateDecl(spc, name, srt, dom, arity) =
+  def snarkPredicateDecl(spc, name, dom, arity) =
     case productOpt(spc, dom) of
       Some fields -> 
 	let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(srt, false))
@@ -222,7 +222,7 @@ spec {
     case arrowOpt(spc, srt) of
       Some (dom, rng) ->
 	case rng of
-	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, srt, dom, arity)
+	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, dom, arity)
 	  | _ ->
 	case productOpt(spc, dom) of
 	  Some fields -> 
@@ -233,10 +233,10 @@ spec {
 			Lisp.symbol("KEYWORD","SORT"),
 			Lisp.quote(Lisp.cons(snarkBaseSort(rng, true), Lisp.list(domSortList)))]
 
-  def snarkFunctionCurryNoArityDecl(spc, name, srt) =
-    snarkFunctionNoArityDecl(spc, name, srt)
+  def snarkFunctionCurryNoArityDecl(name, srt) =
+    snarkFunctionNoArityDecl(name, srt)
 
-  def snarkFunctionCurryDecl(spc, name, srt, arity) =
+  def snarkFunctionCurryDecl() =
     Lisp.nil() %Lisp.symbol("","Curry")
 
   op snarkFunctionDecl: Spec * String * Sort -> LispCell
@@ -245,11 +245,11 @@ spec {
 %    let _ = toScreen("Generating snark decl for "^name^" with sort: ") in
 %    let _ = printSortToTerminal srt in
     (case (curryShapeNum(spc, srt), sortArity(spc, srt))
-       of (1,None) -> snarkFunctionNoArityDecl(spc, name, srt)
+       of (1,None) -> snarkFunctionNoArityDecl(name, srt)
 	| (1, Some(_,arity)) -> snarkFunctionNoCurryDecl(spc, name, srt, arity)
-	| (curryN, None) -> snarkFunctionCurryNoArityDecl(spc, name, srt)
-	| (curryN, Some (_, arity)) -> snarkFunctionCurryDecl(spc, name, srt, arity)
-	| _ -> snarkFunctionNoArityDecl(spc, name, srt))
+	| (curryN, None) -> snarkFunctionCurryNoArityDecl(name, srt)
+	| (curryN, Some (_, arity)) -> snarkFunctionCurryDecl()
+	| _ -> snarkFunctionNoArityDecl(name, srt))
 
   op snarkOpDeclPartial: Spec * String * Sort -> Option LispCell
 
