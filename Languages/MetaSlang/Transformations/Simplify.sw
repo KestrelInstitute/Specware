@@ -1,4 +1,3 @@
-
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 (*
@@ -268,6 +267,10 @@ spec
 
   op  simplifyForall: Spec -> List Var * List MS.Term * MS.Term -> MS.Term
   def simplifyForall spc (vs,cjs,bod) =
+    case normForallBody (bod,varNamesSet(vs,Cons(bod,cjs)),spc) of
+    %  | Some(new_vs,new_cjs,new_bod) ->
+%        simplifyForall spc (vs++new_vs,cjs++new_cjs,new_bod)
+      | _ ->
     case find (fn cj ->
 	        case bindEquality cj of
 		 | None -> false
@@ -286,7 +289,42 @@ spec
 				     else Some(simpSubstitute(spc,c,sbst)))
 		 cjs,
 		 simpSubstitute(spc,bod,sbst)))
-       | _ -> mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
+       | _ -> if exists (fn cj -> equalTerm?(cj,bod)) cjs
+	       then mkTrue()
+	       else mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
+
+  op  varNamesSet: List Var * List MS.Term -> StringSet.Set
+  def varNamesSet(vs,tms) =
+    foldl (fn ((nm,_),nm_set) -> StringSet.add(nm_set,nm))
+      StringSet.empty
+      (vs ++ foldl (fn (t,fvs) -> freeVars t ++ fvs) [] tms)
+    
+
+  op  normForallBody: MS.Term * StringSet.Set * Spec -> Option(List Var * List MS.Term * MS.Term)
+  %% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
+  def normForallBody(body,used_names,spc) =
+    case body of
+      | Let([(pat,val)],let_body,_) ->	% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
+        (case patternToTerm pat of
+	   | Some pat_tm ->
+	     let new_vs = freeVars pat_tm in
+	     let (unique_vs,sb) = getRenamingSubst(new_vs,used_names) in
+	     if sb = []
+	       then Some(unique_vs,[mkEquality(termSort pat_tm,pat_tm,val)],let_body)
+	       else Some(unique_vs,[mkEquality(termSort pat_tm,substitute(pat_tm,sb),val)],
+			 simpSubstitute(spc,let_body,sb))
+	   | _ -> None)
+      | _ -> None
+
+  op  getRenamingSubst: List Var * StringSet.Set -> List Var * List (Var * MS.Term)
+  def getRenamingSubst(vs,used_names) =
+    foldr (fn (v as (nm,ty),(vs,sb)) ->
+	   let new_nm = StringUtilities.freshName(nm,used_names) in
+	   if nm = new_nm
+	    then (Cons(v,vs),sb)
+	    else let new_v = (new_nm,ty) in
+	         (Cons(new_v,vs),Cons((v,mkVar new_v),sb)))
+      ([],[]) vs
 
   op  simpSubstitute: Spec * MS.Term *  List (Var * MS.Term) -> MS.Term
   def simpSubstitute(spc,t,sbst) =

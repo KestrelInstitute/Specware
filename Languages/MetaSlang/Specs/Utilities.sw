@@ -26,6 +26,44 @@ Utilities qualifying spec
 
  op patternToTerm : Pattern -> Option MS.Term
 
+ def patternToTerm(pat) = 
+     case pat
+       of EmbedPat(con,None,srt,a) -> 
+          Some(Fun(Embed(con,false),srt,a))
+        | EmbedPat(con,Some p,srt,a) -> 
+          (case patternToTerm(p)
+             of None -> None
+	      | Some (trm) -> 
+		let srt1 = patternSort p in
+		Some (Apply(Fun(Embed(con,true),Arrow(srt1,srt,a),a),trm,a)))
+        | RecordPat(fields,a) -> 
+	  let
+	     def loop(new,old) = 
+	         case new
+                   of [] -> Some(Record(rev old,a))
+	            | (l,p)::new -> 
+	         case patternToTerm(p)
+	           of None -> None
+	            | Some(trm) -> 
+	              loop(new,List.cons((l,trm),old))
+          in
+          loop(fields,[])
+        | NatPat(i, _) -> Some(mkNat i)
+        | BoolPat(b, _) -> Some(mkBool b)
+        | StringPat(s, _) -> Some(mkString s)
+        | CharPat(c, _) -> Some(mkChar c)
+        | VarPat((v,srt), a) -> Some(Var((v,srt), a))
+        | WildPat(srt,_) -> None
+        | RelaxPat(pat,cond,_)     -> None %% Not implemented
+        | QuotientPat(pat,cond,_)  -> None %% Not implemented
+%	| AliasPat(VarPat(v, _),p,_) -> 
+%	  (case patternToTerm(p) 
+%             of None -> None
+%	      | Some(trm) -> 
+%	        Some(trm,vars,cons((v,trm),S)))
+	| AliasPat _ -> None %% Not supported
+	 
+
  op isFree : Var * MS.Term -> Boolean
  def isFree (v,term) = 
    case term of
@@ -1012,7 +1050,7 @@ Utilities qualifying spec
 
  op mkSimpBind: Binder * List Var * MS.Term -> MS.Term
  def mkSimpBind(b, vars, term) =
-   if vars = [] then term
+   if vars = [] or freeVars term = [] then term
      else Bind(b,vars,term,noPos)
 
  op  mkSimpImplies: MS.Term * MS.Term -> MS.Term
