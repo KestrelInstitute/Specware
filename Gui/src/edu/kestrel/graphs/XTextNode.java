@@ -7,6 +7,7 @@
 package edu.kestrel.graphs;
 
 import edu.kestrel.graphs.io.*;
+import edu.kestrel.graphs.editor.*;
 import com.jgraph.graph.*;
 import javax.swing.*;
 import java.awt.*;
@@ -18,11 +19,15 @@ import java.util.*;
  * paint setting are made.
  * @author  ma
  */
-public class XTextNode extends XNode {
+public class XTextNode extends XNode implements XTextEditorEditable {
     
     protected Object expandedValue;
     protected Object collapsedValue;
     protected boolean isCollapsed = false;
+    
+    protected boolean hasBeenExpanded = false;
+    protected boolean hasBeenCollapsed = false;
+    protected boolean dontSetExpandedFlag = false;
     
     /** Creates a new instance of XTextNode */
     public XTextNode() {
@@ -52,17 +57,17 @@ public class XTextNode extends XNode {
         if (expandedValue != null)
             s = expandedValue.toString();
         return getCollapsedString(s);
-//        s.trim();
-//        char[] chars = s.toCharArray();
-//        String res = "";
-//        for(int i=0;i<chars.length;i++) {
-//            if (Character.isLetterOrDigit(chars[i])) {
-//                res += String.valueOf(chars[i]);
-//            } else {
-//                return res+"...";
-//            }
-//        }
-//        return res+"...";
+        //        s.trim();
+        //        char[] chars = s.toCharArray();
+        //        String res = "";
+        //        for(int i=0;i<chars.length;i++) {
+        //            if (Character.isLetterOrDigit(chars[i])) {
+        //                res += String.valueOf(chars[i]);
+        //            } else {
+        //                return res+"...";
+        //            }
+        //        }
+        //        return res+"...";
     }
     
     /** utility method, also used in XEdgeView.
@@ -113,6 +118,7 @@ public class XTextNode extends XNode {
                 GraphConstants.setEditable(cv.getAttributes(),false);
             }
         }
+        hasBeenCollapsed = true;
     }
     
     /** "expand" the text node, i.e. set its value back to the full text.
@@ -128,6 +134,34 @@ public class XTextNode extends XNode {
                 GraphConstants.setEditable(cv.getAttributes(),isEditable());
             }
         }
+        hasBeenExpanded = true;
+    }
+    
+    public boolean hasBeenExpanded() {
+        boolean b = hasBeenExpanded;
+        hasBeenExpanded = false;
+        return b;
+    }
+    
+    public void resetExpandedFlag() {
+        hasBeenExpanded = false;
+    }
+    
+    public boolean hasBeenCollapsed() {
+        boolean b = hasBeenCollapsed;
+        hasBeenCollapsed = false;
+        return b;
+    }
+    
+    public void setDontSetExpandedFlag() {
+        dontSetExpandedFlag = true;
+    }
+    public void resetDontSetExpandedFlag() {
+        dontSetExpandedFlag = false;
+    }
+    
+    public boolean getDontSetExpandedFlag() {
+        return dontSetExpandedFlag;
     }
     
     public Object getExpandedValue() {
@@ -138,6 +172,20 @@ public class XTextNode extends XNode {
         super.setUserObject(val);
         if (!isCollapsed) {
             collapsedValue = getCollapsedValue(val);
+        }
+        if (!getDontSetExpandedFlag()) {
+            hasBeenExpanded = true;
+            Dbg.pr("hasBeenExpanded flag set.");
+        }
+    }
+    
+    public void setFullUserObject(Object val) {
+        expandedValue = val;
+        if (isCollapsed()) {
+            collapsedValue = getCollapsedValue(val);
+            super.setUserObjectNoModelUpdate(collapsedValue);
+        } else {
+            setUserObject(val);
         }
     }
     
@@ -213,6 +261,31 @@ public class XTextNode extends XNode {
         } else {
             collapsedValue = props.getProperty(CollapsedValue);
         }
+    }
+    
+    // interface XTextEditorEditable methods:
+    
+    public String getText() {
+        if (getExpandedValue() == null) {
+            return getUserObject().toString();
+        } else {
+            return getExpandedValue().toString();
+        }
+    }
+    
+    public String getTitleText() {
+        return getCollapsedValue().toString();
+    }
+    
+    public void setText(String t) {
+        setFullUserObject(t.trim());
+        getModelNode().setValue(t.trim(),true);
+        repaintGraph();
+        //getModelNode().setValue(t.trim(),true);
+    }
+    
+    public XTextEditor createEditorPane() {
+        return new XTextEditor(this);
     }
     
 }

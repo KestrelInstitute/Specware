@@ -20,7 +20,7 @@ public interface XGraphElement extends Storable {
     public XGraphElementView createView(XGraphDisplay graph, CellMapper cm);
     
     /** called during a clone-operation on the graph element; used for performing customized cloning
-     * action on this node/edge. 
+     * action on this node/edge.
      * @param mgr the instance of XCLoneManager that represents the current clone operation
      * @param original the original object of which the current object is a clone
      */
@@ -30,9 +30,17 @@ public interface XGraphElement extends Storable {
      */
     public XGraphElement cloneGraphElement();
     
+    /** this is used for nodes that can be expanded and collapsed to make sure, that the expanded value is set and
+     * not the currently displayed one. This method is e.g. called by ModelElement.sync()
+     */
+    public void setFullUserObject(Object obj);
+    
     public void setUserObject(Object obj);
     
     public Object getUserObject();
+
+    /** returns a short representation of the node's name to be used in popup windows etc.*/
+    public String getShortName();
     
     /** removes the element and all its inner nodes and edges from the given model.
      */
@@ -46,5 +54,7 @@ public interface XGraphElement extends Storable {
     public void setGraph(XGraphDisplay graph);
     
     public XGraphDisplay getGraph();
+    
+    public void repaintGraph();
     
 }

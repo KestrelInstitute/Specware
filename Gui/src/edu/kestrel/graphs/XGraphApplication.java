@@ -604,6 +604,7 @@ public class XGraphApplication {
         protected String ShowModelTree = "ShowModelTree";
         protected String ModelTree = "ModelTree";
         protected String RegisteredGraph = "RegisteredGraph";
+        protected String FrameSize = "FrameSize";
         
         public ElementProperties getElementProperties(ReadWriteOperation rwop) {
             ElementProperties props = super.getElementProperties(rwop);
@@ -617,8 +618,13 @@ public class XGraphApplication {
                 XGraphDisplay graph = (XGraphDisplay)iter.nextElement();
                 props.addChildObjectAsReference(RegisteredGraph,graph);
             }
+            JFrame f = getDesktop().getFrame();
+            if (f != null) {
+                props.setDimensionProperty(FrameSize,f.getSize());
+            }
             return props;
         }
+        
         public void initFromElementProperties(ReadWriteOperation rwop, ElementProperties props) {
             super.initFromElementProperties(rwop,props);
             if (props.getBooleanProperty(ShowModelTree)) {
@@ -631,6 +637,12 @@ public class XGraphApplication {
                 Storable obj = rwop.getObjectForId(id);
                 if (obj instanceof XGraphDisplay) {
                     registerGraph((XGraphDisplay)obj);
+                }
+            }
+            Dimension d = props.getDimenstionProperty(FrameSize);
+            if (d != null) {
+                if (d.width > 100 && d.height > 100) {
+                    getDesktop().getFrame().setSize(d);
                 }
             }
             //reloadTreeModel();

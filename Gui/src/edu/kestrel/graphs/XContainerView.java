@@ -217,24 +217,27 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         }
         isAddingContainedNodes = false;
     }
-    /** returns the views of the inner edges returned by <code>getInnerEdge</code> from the corresponding model element.
+    /** returns the views of the inner edges returned by <code>XNode.getInnerEdge</code> from the corresponding model element.
      */
     public XEdgeView[] getInnerEdgeViews() {
         if (node == null) return new XEdgeView[]{};
         XEdge[] edges = node.getInnerEdges();
-        if (Dbg.isDebug() && edges.length>0) {
-            Dbg.pr("Inner Edges of container node "+node+":");
-            for(int i=0;i<edges.length;i++) {
-                Dbg.pr("  edge \""+edges[i]+"\"");
-            }
-        }
         return getEdgeViewArrayFromEdgeArray(edges);
     }
     
+    /** returns the views of the edges that are returned by <code>XNode.getInnerConnToOuterEdges()</code>.
+     */
     public XEdgeView[] getInnerConnToOuterEdgeViews() {
         if (node == null) return new XEdgeView[]{};
         XEdge[] edges = node.getInnerConnToOuterEdges();
         return getEdgeViewArrayFromEdgeArray(edges);
+    }
+    
+    /** brings all inner edge views to front.
+     */
+    public void innerEdgeViewsToFront() {
+        XEdgeView[] eviews = getInnerEdgeViews();
+        graph.getView().toFront(eviews);
     }
     
     /** deletes the container node and the entire contents of it. */
@@ -360,7 +363,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             int answ = JOptionPane.showConfirmDialog(graph, "Do you want to insert these "+childnodes.length+" node(s) into this node?", "Insert?", JOptionPane.OK_CANCEL_OPTION);
             if (answ != JOptionPane.YES_OPTION) return null;
         }
-        expand();
+        expand(false);
         XNode[] adopted = node.addChildNodes((XGraphDisplay)graph, childnodes);
         graph.setSelectionCell(node);
         ArrayList res = new ArrayList();
@@ -392,10 +395,15 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
     
     /** expands the node, that means that inner nodes and edges will be shown */
     public void expand() {
+        expand(true);
+    }
+    
+    public void expand(boolean doAdjustment) {
         if (!node.isExpandable()) return;
         if (isExpanded()) return;
         ((XGraphDisplay)graph).busy();
         Dbg.pr("expanding "+node+" in graph "+(((XGraphDisplay)graph).getValue())+"...");
+        prepareResizing();
         isSwitchingState = true;
         ((XGraphDisplay)graph).getXGraphView().updateAllPorts();
         collapsedBounds = new Rectangle(getBounds());
@@ -411,8 +419,12 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         Rectangle b0 = getBounds();
         exportBounds(b0);
         //alignToCenterOf(collapsedBounds);
-        //setBoundsToChildrenBounds();
+        setBoundsToChildrenBounds();
         ((XGraphDisplay)graph).getXGraphView().updateAllPorts();
+        if (doAdjustment) {
+            adjustGraphAfterResizing();
+        }
+        innerEdgeViewsToFront();
         ((XGraphDisplay)graph).done();
         node.setSavedIsExpanded(true);
     }
@@ -422,6 +434,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         if (!isExpanded()) return;
         ((XGraphDisplay)graph).busy();
         Dbg.pr("collapsing "+node+", bounds="+getBounds()+"...");
+        prepareResizing();
         Rectangle b = new Rectangle(getBounds());
         isSwitchingState = true;
         node.liftEdgesFromChildren((XGraphDisplay)graph);
@@ -443,6 +456,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         isSwitchingState = false;
         //alignToCenterOf(b);
         ((XGraphDisplay)graph).getXGraphView().updateAllPorts();
+        undoResizeChanges();
         ((XGraphDisplay)graph).done();
         node.setSavedIsExpanded(false);
     }

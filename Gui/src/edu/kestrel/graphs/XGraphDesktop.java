@@ -309,6 +309,13 @@ public class XGraphDesktop extends JPanel {
         XGraphDisplay graph = appl.newGraphAction();
         XGraphDisplayInternalFrame f = new XGraphDisplayInternalFrame(graph);
         //f.setSize(300,300);
+        newInternalFrame(f);
+        //f.setVisible(true);
+        //desktopPane.add(f);
+        //desktopPane.moveToFront(f);
+    }
+    
+    public void newInternalFrame(JInternalFrame f) {
         f.setVisible(true);
         desktopPane.add(f);
         desktopPane.moveToFront(f);
@@ -524,7 +531,7 @@ public class XGraphDesktop extends JPanel {
                 showClipboardAction();
             }
         });
-        //tb.add(btn);
+        if (Dbg.isDebug()) tb.add(btn);
         //grp.add(btn);
         return tb;
     }

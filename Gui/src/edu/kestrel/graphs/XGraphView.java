@@ -44,13 +44,13 @@ public class XGraphView extends GraphView {
      */
     
     public void startGroupTranslate() {
-        Dbg.pr("starting group translate...");
+        Dbg.pr2("starting group translate...");
         inGroupTranslate = true;
         edgesToBeUpdated = new ArrayList();
     }
+
     /** see {@link #translateViewsInGroup(CellView[],int,int)}
      */
-    
     public void endGroupTranslate() {
         Dbg.pr2("ending group translate...");
         inGroupTranslate = false;
@@ -63,7 +63,7 @@ public class XGraphView extends GraphView {
                 if (!processed.contains(obj)) {
                     processed.add(obj);
                     if (obj instanceof XEdgeView) {
-                        Dbg.pr2("*** updating edge "+((XEdgeView)obj).getCell()+"...");
+                        Dbg.pr("*** updating edge "+((XEdgeView)obj).getCell()+"...");
                         ((XEdgeView)obj).update();
                     }
                 }
@@ -90,9 +90,10 @@ public class XGraphView extends GraphView {
      */
     public void translateViewsInGroup(CellView[] views, int dx, int dy) {
         GraphView.translateViews(views,dx,dy);
-        if (Dbg.isDebug2()) {
+        if (Dbg.isDebug()) {
             for (int i=0;i<views.length;i++) {
                 Dbg.pr("translating view of "+views[i].getCell()+": ("+dx+","+dy+")");
+                Dbg.pr("  bounds after translation: "+views[i].getBounds());
             }
         }
         if (inGroupTranslate) {
@@ -147,6 +148,22 @@ public class XGraphView extends GraphView {
      */
     public XNodeView[] getRootNodeViews() {
         CellView[] views = getRoots();
+        ArrayList nv = new ArrayList();
+        for(int i=0;i<views.length;i++) {
+            if (views[i] instanceof XNodeView) {
+                nv.add(views[i]);
+            }
+        }
+        XNodeView[] res = new XNodeView[nv.size()];
+        nv.toArray(res);
+        return res;
+    }
+    
+    /** returns all selected XNodeView instances.
+     */
+    public XNodeView[] getSelectedNodeViews(XGraphDisplay graph) {
+        XNode[] snodes = graph.getSelectedNodes();
+        CellView[] views = getMapping(snodes);
         ArrayList nv = new ArrayList();
         for(int i=0;i<views.length;i++) {
             if (views[i] instanceof XNodeView) {

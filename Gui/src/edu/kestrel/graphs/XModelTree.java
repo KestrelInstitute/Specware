@@ -44,9 +44,9 @@ public class XModelTree extends JTree implements TreeModelListener, XGraphDispla
             XGraphElement elem = mnode.getReprExemplar();
             if (elem instanceof XTextNode) {
                 XTextNode tnode = (XTextNode)elem;
-                if (!tnode.isCollapsed()) {
+                //if (!tnode.isCollapsed()) {
                     return tnode.getCollapsedValue().toString();
-                }
+                //}
             }
         }
         return super.convertValueToText(value, selected, expanded, leaf, row, hasFocus);

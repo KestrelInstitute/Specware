@@ -85,6 +85,12 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     }
     
     
+    public void repaintGraph() {
+        if (graph != null) {
+            graph.repaint();
+        }
+    }
+    
     
     protected void init() {
         Dbg.pr("init node "+this+"...");
@@ -216,6 +222,30 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         if (modelNode != null)
             modelNode.setValue(obj);
     }
+    
+    /** this method may be called from sub-classes to prevent the propagation of the user object to the model node.
+     * This should be done only in exceptional cases to prevent undesired effect, when, for instance, setting collapsed values
+     * of text nodes as user objects.
+     */
+    protected void setUserObjectNoModelUpdate(Object obj) {
+        super.setUserObject(obj);
+    }
+    
+    public void setFullUserObject(Object val) {
+        setUserObject(val);
+    }
+    
+    /** returns a short representation of the node's name to be used in popup windows etc.
+     */
+    public String getShortName() {
+        if (getUserObject() == null) return "";
+        String name = getUserObject().toString();
+        if (name.length() > XGraphConstants.maxShortNameLength) {
+            name = name.substring(0,XGraphConstants.maxShortNameLength) + "...";
+        }
+        return name;
+    }
+    
     
     /** returns the y-values for the given x value; this method implements the equation of the node
      * shape. For example, for a rectangular shape the result of getYValues(x) would be y0 and y1,

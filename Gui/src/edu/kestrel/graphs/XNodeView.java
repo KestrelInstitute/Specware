@@ -30,6 +30,36 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
     
     protected Rectangle lastBounds;
     
+    protected Rectangle boundsBeforeResizing;
+    
+    /** inner class used as record type */
+    protected class SiblingInfo {
+        public XNodeView view;
+        public Rectangle bounds;
+        public int dx,dy;
+        public SiblingInfo(XNodeView view, Rectangle bounds, int dx, int dy) {
+            this.view = view;
+            this.bounds = new Rectangle(bounds);
+            this.dx = dx;
+            this.dy = dy;
+        }
+    }
+    
+    protected class ResizeInfo {
+        public Rectangle oldbounds;
+        public Rectangle newbounds;
+        public ResizeInfo(Rectangle oldbounds, Rectangle newbounds) {
+            this.oldbounds = new Rectangle(oldbounds);
+            this.newbounds = new Rectangle(newbounds);
+        }
+    }
+    
+    
+    /** keeps the list of sibling infos in order to undo translations done in the context of a resize operation.
+     */
+    protected ArrayList siblingInfoList = null;
+    protected ResizeInfo lastResize = null;
+    
     protected XNodeView(XNode node, XGraphDisplay graph, CellMapper cm) {
         super(node,graph,cm);
         viewOptions = new ViewOptions();
@@ -54,6 +84,13 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
             }
         });
         popupMenu.add(menuItem);
+        menuItem = new JMenuItem("adjust node env.");
+        menuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                adjustGraphAfterResizing();
+            }
+        });
+        popupMenu.add(menuItem);
         
         if (Dbg.isDebug()) {
             // debug entries:
@@ -65,11 +102,42 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
                 }
             });
             popupMenu.add(menuItem);
+            menuItem = new JMenuItem("select connected edges");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    XEdge[] edges = node.getConnectedEdges();
+                    graph.getSelectionModel().setSelectionCells(edges);
+                }
+            });
+            popupMenu.add(menuItem);
+            menuItem = new JMenuItem("select connected siblings");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    XNode[] nodes = node.getConnectedSiblings();
+                    graph.getSelectionModel().setSelectionCells(nodes);
+                }
+            });
+            popupMenu.add(menuItem);
+            menuItem = new JMenuItem("select connected siblings closure");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    XNode[] nodes = node.getConnectedSiblingsClosure();
+                    graph.getSelectionModel().setSelectionCells(nodes);
+                }
+            });
+            popupMenu.add(menuItem);
             menuItem = new JMenuItem("insert as root object");
             menuItem.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
                     node.insertAsRootObject((XGraphDisplay)graph);
                     graph.setSelectionCell(node);
+                }
+            });
+            popupMenu.add(menuItem);
+            menuItem = new JMenuItem("adjust graph after resize");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    adjustGraphAfterResizing();
                 }
             });
             popupMenu.add(menuItem);
@@ -155,7 +223,8 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
     
     public void delete(boolean interactive) {
         if (interactive) {
-            int anws = JOptionPane.showConfirmDialog(graph, "Do you want to delete node \""+node+"\" and all edges connected to it?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
+            String s = node.getShortName();
+            int anws = JOptionPane.showConfirmDialog(graph, "Do you want to delete node \""+s+"\" and all edges connected to it?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
             if (anws != JOptionPane.YES_OPTION) return;
         }
         node.remove(graph.getModel());
@@ -171,6 +240,38 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         ArrayList viewsAL = new ArrayList();
         for(int i=0;i<edges.length;i++) {
             CellView cv = graph.getView().getMapping(edges[i],false);
+            if (cv != null) {
+                viewsAL.add(cv);
+            }
+        }
+        CellView[] views = new CellView[viewsAL.size()];
+        viewsAL.toArray(views);
+        return views;
+    }
+    
+    /** returns the views of the connected siblings as returned by {@link edu.kestrel.graphs.XNode#getConnectedSiblings()}.
+     */
+    public CellView[] getConnectedSiblingViews() {
+        XNode[] snodes = node.getConnectedSiblings();
+        ArrayList viewsAL = new ArrayList();
+        for(int i=0;i<snodes.length;i++) {
+            CellView cv = graph.getView().getMapping(snodes[i],false);
+            if (cv != null) {
+                viewsAL.add(cv);
+            }
+        }
+        CellView[] views = new CellView[viewsAL.size()];
+        viewsAL.toArray(views);
+        return views;
+    }
+    
+    /** returns the views of the connected sibling closure as returned by {@link edu.kestrel.graphs.XNode#getConnectedSiblingsClosure()}.
+     */
+    public CellView[] getConnectedSiblingClosureViews() {
+        XNode[] snodes = node.getConnectedSiblingsClosure();
+        ArrayList viewsAL = new ArrayList();
+        for(int i=0;i<snodes.length;i++) {
+            CellView cv = graph.getView().getMapping(snodes[i],false);
             if (cv != null) {
                 viewsAL.add(cv);
             }
@@ -261,9 +362,18 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
     }
     
     public void update() {
+        //Dbg.pr("updating node "+node+"...");
         super.update();
-        if (node != null)
+        if (node != null) {
             node.updateViewData(this);
+            // the following breaks the edge update when nodes are moved around:
+            /*
+            CellView[] edges = getConnectedEdgeViews();
+            for(int i=0;i<edges.length;i++) {
+                //edges[i].refresh(false);
+            }
+             */
+        }
     }
     
     /** sets the text dimensions of the view. */
@@ -278,26 +388,26 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         if (viewOptions.getTextDisplayOption() != viewOptions.BOUNDS_ARE_ADJUSTED_TO_TEXT)
             return false;
         //Dbg.pr("adjustBoundstoTextDimension: scale="+scale);
-        if (!isTemporaryView())
-            if (textDimension != null) {
-                int bw = 1;
-                Rectangle b = getBounds();
-                Rectangle oldbounds = new Rectangle(b);
-                b = new Rectangle(b.x+bw,b.y+bw,(int)(textDimension.width*scale),(int)(textDimension.height*scale));
-                b.grow(bw,bw);
-                if (b.width < viewOptions.minimumWidth)
-                    b.width = viewOptions.minimumWidth;
-                if (b.height < viewOptions.minimumHeight)
-                    b.height = viewOptions.minimumHeight;
-                if (!viewOptions.getBoundsAreAdjustedExactlyToText()) {
-                    if (oldbounds.width > b.width)
-                        b.width = oldbounds.width;
-                    if (oldbounds.height > b.height)
-                        b.height = oldbounds.height;
-                }
-                setBounds(b);
-                return !oldbounds.equals(b);
+        //if (!isTemporaryView())
+        if (textDimension != null) {
+            int bw = 1;
+            Rectangle b = getBounds();
+            Rectangle oldbounds = new Rectangle(b);
+            b = new Rectangle(b.x+bw,b.y+bw,(int)(textDimension.width*scale),(int)(textDimension.height*scale));
+            b.grow(bw,bw);
+            if (b.width < viewOptions.minimumWidth)
+                b.width = viewOptions.minimumWidth;
+            if (b.height < viewOptions.minimumHeight)
+                b.height = viewOptions.minimumHeight;
+            if (!viewOptions.getBoundsAreAdjustedExactlyToText()) {
+                if (oldbounds.width > b.width)
+                    b.width = oldbounds.width;
+                if (oldbounds.height > b.height)
+                    b.height = oldbounds.height;
             }
+            setBounds(b);
+            return !oldbounds.equals(b);
+        }
         return false;
     }
     
@@ -312,6 +422,301 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
      */
     public double getTextScale() {
         return textScale;
+    }
+    
+    /** prepares a resizing action which is suppose to trigger changes in the environment of the node, for instance, if
+     * the node is expanded or collapsed.
+     */
+    protected void prepareResizing() {
+        //Dbg.pr("node \""+node.getShortName()+"\": preparing for resizing...");
+        boundsBeforeResizing = new Rectangle(getBounds());
+        XContainerView pv = getParentNodeView();
+        if (pv != null) {
+            pv.prepareResizing();
+        }
+    }
+    
+    public void adjustGraphAfterResizing() {
+        Rectangle b1 = new Rectangle(getBounds());
+        if (boundsBeforeResizing != null) {
+            lastResize = new ResizeInfo(boundsBeforeResizing,b1);
+            if (boundsBeforeResizing.width>=b1.width && boundsBeforeResizing.height>=b1.height) {
+                Dbg.pr("adjustGraphAfterResizing: nothing done, bounds have shrunk.");
+                return;
+            }
+        }
+        //Dbg.pr("adjustGraphAfterResizing: old: "+boundsBeforeResizing);
+        //Dbg.pr("adjustGraphAfterResizing: new: "+b1);
+        boundsBeforeResizing = null;
+        // add some extra space to avoid nodes being to close together
+        int bw = 10;
+        b1.grow(bw,bw);
+        //b1.width += bw;
+        //b1.height += bw;
+        Rectangle resizeArea = new Rectangle(b1);
+        XNodeView[] sviews = getSiblingViews();
+        int len = sviews.length;
+        // will signal whether sibling i needs to be translated
+        boolean[] needsTranslation = new boolean[len];
+        // will hold the individual translation values for sibling i
+        int[] dxarray = new int[len];
+        int[] dyarray = new int[len];
+        for(int i=0;i<len;i++) {needsTranslation[i] = false; dxarray[i] = 0; dyarray[i] = 0;}
+        boolean adjustmentDone;
+        int _cnt = 1;
+        do {
+            Dbg.pr("adjustment loop iteration "+(_cnt++)+ " {");
+            adjustmentDone = true;
+            for(int i=0;i<sviews.length;i++) {
+                Rectangle bsib = new Rectangle(sviews[i].getBounds());
+                // the first condition makes sure that we don't processes those nodes
+                // that are already marked; the second condition leaves the nodes that intersect
+                // with the old bounds untouched.
+                if (!needsTranslation[i] /*&& (!bsib.intersects(b0))*/) {
+                    if (bsib.intersects(resizeArea)) {
+                        needsTranslation[i] = true;
+                        // calculate the minimal translation
+                        // dright: amount of right translation to move out of resize area
+                        // ddown: amount of down translation to move out of resize area
+                        // dleft: amount of left translation to move out of resize area
+                        // dup: amount of up translation to move out of resize area
+                        int dright = Math.max(0,(resizeArea.x + resizeArea.width) - bsib.x);
+                        int ddown = Math.max(0,(resizeArea.y + resizeArea.height) - bsib.y);
+                        int dleft = Math.max(0,(bsib.x + bsib.width) - resizeArea.x);
+                        int dup = Math.max(0,(bsib.y + bsib.height) - resizeArea.y);
+                        // choose whether a translation in x-direction or in y-direction is less disruptive
+                        Dbg.pr("  node "+sviews[i].getCell()+" needs adjustment (r:"+dright+",d:"+ddown+",l:"+dleft+",u:"+dup+")");
+                        adjustmentDone = false;
+                        ArrayList collectedBounds = new ArrayList();
+                        ArrayList collectedIndices = new ArrayList();
+                        collectedBounds.add(bsib);
+                        collectedIndices.add(new Integer(i));
+                        // now, iterate through all connected siblings and determine their minimal translation values
+                        // the goal is to calculate the minimal (dx,dy) for the connected node cluster, so that they are
+                        // outside the new bounds.
+                        CellView[] sviews0 = sviews[i].getConnectedSiblingClosureViews();
+                        for(int j=0;j<sviews0.length;j++) {
+                            // look for sibling in sviews array
+                            int index = -1;
+                            for(int k=0;k<sviews.length && index<0;k++) {
+                                if (sviews[k].equals(sviews0[j])) {
+                                    index = k;
+                                }
+                            }
+                            if (index>=0) {
+                                needsTranslation[index] = true;
+                                Rectangle bsib0 = new Rectangle(sviews[index].getBounds());
+                                int dright0 = Math.max(0,(resizeArea.x + resizeArea.width) - bsib0.x);
+                                int ddown0 = Math.max(0,(resizeArea.y + resizeArea.height) - bsib0.y);
+                                int dleft0 = Math.max(0,(bsib0.x + bsib0.width) - resizeArea.x);
+                                int dup0 = Math.max(0,(bsib0.y + bsib0.height) - resizeArea.y);
+                                dright = Math.max(dright,dright0);
+                                ddown = Math.max(ddown,ddown0);
+                                dleft = Math.max(dleft,dleft0);
+                                dup = Math.max(dup,dup0);
+                                collectedBounds.add(bsib0);
+                                collectedIndices.add(new Integer(index));
+                                //boundsOfMovedNodes.add(bsib0);
+                                Dbg.pr("  connected node "+sviews[index].getCell()+" needs adjustment (r:"+dright0+",d:"+ddown0+",l:"+dleft0+",u:"+dup0+")");
+                            } else {
+                                // this should not happen:
+                                Dbg.pr("oops, connected sibling "+sviews0[j].getCell()+"not found???");
+                            }
+                        }
+                        boolean takeright = dright<dleft;
+                        boolean takedown = ddown<dup;
+                        int dx = (takeright?dright:-dleft);
+                        int dy = (takedown?ddown:-dup);
+                        boolean takex = Math.abs(dx) < Math.abs(dy);
+                        dx = (takex?dx:0);
+                        dy = (takex?0:dy);
+                        if (Dbg.isDebug()) {
+                            String s0 = (takex?(takeright?"right":"left"):(takedown?"down":"up"));
+                            Dbg.pr("---> combined translation of closure: "+s0+" shift, ("+dx+","+dy+")");
+                        }
+                        // add the bounds of the translated nodes to the resize area, so that nodes that intersect
+                        // with these new bounds will also be translated
+                        Iterator iter1 = collectedBounds.iterator();
+                        while(iter1.hasNext()) {
+                            Rectangle b = (Rectangle)iter1.next();
+                            b.x += dx;
+                            b.y += dy;
+                            b.grow(bw,bw);
+                            //b.width += bw;
+                            //b.height += bw;
+                            resizeArea.add(b);
+                        }
+                        Iterator iter2 = collectedIndices.iterator();
+                        while(iter2.hasNext()) {
+                            int i0 = ((Integer)iter2.next()).intValue();
+                            dxarray[i0] = dx;
+                            dyarray[i0] = dy;
+                        }
+                    }
+                }
+            }
+            Dbg.pr("}");
+        } while (!adjustmentDone);
+        XGraphView v = ((XGraphDisplay)graph).getXGraphView();
+        Dbg.pr("setting siblingInfoList...");
+        siblingInfoList = new ArrayList();
+        v.startGroupTranslate();
+        for(int i=0;i<len;i++) {
+            if (needsTranslation[i]) {
+                v.translateViewsInGroup(new CellView[]{sviews[i]},dxarray[i],dyarray[i]);
+                siblingInfoList.add(new SiblingInfo(sviews[i],sviews[i].getBounds(),dxarray[i],dyarray[i]));
+            }
+        }
+        v.endGroupTranslate();
+        XContainerView pv = getParentNodeView();
+        if (pv != null) {
+            pv.adjustGraphAfterResizing();
+        }
+    }
+    
+    private SiblingInfo getSiblingInfoForView(java.util.List sibinfolist, CellView view) {
+        if (sibinfolist == null) return null;
+        Iterator iter = sibinfolist.iterator();
+        while(iter.hasNext()) {
+            Object obj = iter.next();
+            if (obj instanceof SiblingInfo) {
+                SiblingInfo sinfo = (SiblingInfo)obj;
+                if (sinfo.view != null) {
+                    if (sinfo.view.equals(view)) {
+                        return sinfo;
+                    }
+                }
+            }
+        }
+        return null;
+    }
+    
+    /** this method tries to undo translations of sibling nodes that has been done in the context of a adjustment after resize.
+     * prepareResizing has to be called before the resize is made to check whether it's really an undo of the previous resize.
+     * This method is primarily used when nodes collapse to undo the translations that has been carried out after it has expanded.
+     * The method is very conservative; it only undoes the changes, if
+     * - the resize is inverse to the previous resize
+     * - non of the sibling nodes that have been translated have changed their bounds in the meantime
+     * @param checkBounds if set to true, the old and new bounds are checked whether they match the previous resize in the other direction
+     *
+     */
+    public void undoResizeChanges(boolean checkBounds) {
+        Dbg.pr("undoResizeChanges...");
+        if (boundsBeforeResizing == null) {
+            Dbg.pr("  nothing done: boundsBeforeResizing are null.");
+            return;
+        }
+        if (lastResize == null || siblingInfoList == null) {
+            Dbg.pr("  nothing done: lastResize or siblingInfoList is null.");
+            return;
+        }
+        // check, whether this undoes a previous resize:
+        Rectangle b0 = boundsBeforeResizing;
+        Rectangle b1 = new Rectangle(getBounds());
+        int dx = b1.x - lastResize.oldbounds.x;
+        int dy = b1.y - lastResize.oldbounds.y;
+        if (checkBounds) {
+            if (b1.width != lastResize.oldbounds.width || b1.height != lastResize.oldbounds.height) {
+                Dbg.pr("  nothing done: new bounds and old bounds of last resize aren't equal:");
+                Dbg.pr("  newbounds="+b1+", lastOldBounds="+lastResize.oldbounds);
+                return;
+            }
+            int dx0 = b0.x - lastResize.newbounds.x;
+            int dy0 = b0.y - lastResize.newbounds.y;
+            if (dx != dx0 || dy != dy0) {
+                Dbg.pr("  nothing done: oldbounds and lastNewBounds have moved different from newbounds and lastOldBounds.");
+                return;
+            }
+            if (b0.width != lastResize.newbounds.width || b0.height != lastResize.newbounds.height) {
+                Dbg.pr("  nothing done: old bounds and new bounds of last resize aren't equal.");
+                Dbg.pr("  oldbounds="+boundsBeforeResizing+", lastNewBounds="+lastResize.newbounds);
+                return;
+            }
+        }
+        boundsBeforeResizing = null;
+        Dbg.pr("  global offset: ("+dx+","+dy+")");
+        // get the siblings list and check, whether their bounds are still the same
+        XNodeView[] sviews = getSiblingViews();
+        ArrayList siblist = new ArrayList();
+        for(int i=0;i<sviews.length;i++) {
+            siblist.add(sviews[i]);
+            // check whether this is a new child created after the last resize
+            SiblingInfo sinfo = getSiblingInfoForView(siblingInfoList, sviews[i]);
+            if (sinfo == null) {
+                Dbg.pr("   new child found: "+sviews[i].getCell());
+                // check whether it's connected to some of the other siblings
+                CellView[] csviews = sviews[i].getConnectedSiblingClosureViews();
+                boolean connectedSiblingFound = false;
+                for(int j=0;j<csviews.length && !connectedSiblingFound;j++) {
+                    SiblingInfo csinfo = getSiblingInfoForView(siblingInfoList,csviews[j]);
+                    if (csinfo != null) {
+                        connectedSiblingFound = true;
+                        // fake an entry for the new child in the sibling info list:
+                        int dx_ = csinfo.dx;
+                        int dy_ = csinfo.dy;
+                        Rectangle b_ = new Rectangle(sviews[i].getBounds());
+                        b_.x -= dx;
+                        b_.y -= dy;
+                        siblingInfoList.add(new SiblingInfo(sviews[i],b_,dx_,dy_));
+                        Dbg.pr("  new child added to sibling info list, it's connected to "+csviews[j].getCell());
+                    }
+                }
+            }
+        }
+        ArrayList sinfoListNew = new ArrayList();
+        Iterator iter1 = siblingInfoList.iterator();
+        while(iter1.hasNext()) {
+            SiblingInfo sinfo = (SiblingInfo)iter1.next();
+            if (siblist.contains(sinfo.view)) {
+                Rectangle b00 = new Rectangle(sinfo.view.getBounds());
+                b00.x -= dx;
+                b00.y -= dy;
+                if (!b00.equals(sinfo.bounds)) {
+                    Dbg.pr("  nothing done: bounds of sibling node "+sinfo.view.getCell()+" have changed.");
+                    return;
+                } else {
+                    sinfoListNew.add(sinfo);
+                }
+            }
+        }
+        Dbg.pr("  ---> undoing translation of "+sinfoListNew.size()+" sibling node(s)...");
+        XGraphView v = ((XGraphDisplay)graph).getXGraphView();
+        v.startGroupTranslate();
+        Iterator iter =sinfoListNew.iterator();
+        while(iter.hasNext()) {
+            SiblingInfo sinfo = (SiblingInfo)iter.next();
+            v.translateViewsInGroup(new CellView[]{sinfo.view},-sinfo.dx,-sinfo.dy);
+        }
+        v.endGroupTranslate();
+        XContainerView pv = getParentNodeView();
+        if (pv != null) {
+            pv.undoResizeChanges(checkBounds);
+        }
+        update();
+    }
+    
+    /** this call undoResizeChanges(true).
+     */
+    
+    public void undoResizeChanges() {
+        undoResizeChanges(true);
+    }
+    
+    /** returns the views of the sibling nodes.
+     */
+    protected XNodeView[] getSiblingViews() {
+        if (node == null) return new XNodeView[] {};
+        XNode[] siblings = node.getSiblings(graph.getModel());
+        ArrayList l = new ArrayList();
+        for(int i=0;i<siblings.length;i++) {
+            CellView cv = graph.getView().getMapping(siblings[i],false);
+            if (cv instanceof XNodeView) {
+                l.add(cv);
+            }
+        }
+        XNodeView[] res = new XNodeView[l.size()];
+        l.toArray(res);
+        return res;
     }
     
     /** contains a list of options, which can be used to customize the view
@@ -365,6 +770,9 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         int textDisplayOption = TEXT_IS_CUT;
         int internalBorderWidth = 20;
         boolean keepBoundsWhenCollapsing = false;
+        boolean useIcon = false;
+        ImageIcon imageIcon = null;
+        String imageIconFileName = null;
         
         /** whether or not to use paint for the view, i.e. whether it's filled with paint; default: true.
          * either a border or a paint must be used; if b is false it calls setUseBorder(true).
@@ -524,6 +932,25 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
             keepBoundsWhenCollapsing = b;
         }
         
+        /** set the flag that controls whether a icon is used to display the node or not. If set to true, either
+         * imageIcon or imageIconFileName must be set.
+         */
+        public void setUseIcon(boolean b) {
+            useIcon = b;
+        }
+        
+        /** sets the image icon to be used, if useIcon is set to true.
+         */
+        public void setImageIcon(ImageIcon imageIcon) {
+            this.imageIcon = imageIcon;
+        }
+        
+        /** sets the file name for the image icon; it calls setImageIcon(new ImageIcon(imageIconFileName)).
+         */
+        public void setImageIconFileName(String imageIconFileName) {
+            this.imageIconFileName = imageIconFileName;
+            setImageIcon(new ImageIcon(imageIconFileName));
+        }
     }
     
     /** inner class implementing the default renderer for leaf nodes. it uses the options defined
@@ -711,44 +1138,48 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         public void paint(Graphics g) {
             //pushLocalScale(g);
             ViewOptions vopts = viewOptions;
-            if (hasTemporaryViewAncestor()) {
-                vopts = new XNodeView.ViewOptions();
-                vopts.setUseShadow(false);
-                vopts.setUsePaint(false);
-                vopts.setUseBorder(true);
-            }
-            Graphics2D g2d = (Graphics2D)g;
-            Rectangle b = this.getBounds();
-            int shadowDepth = getShadowOffset();
-            int w0 = Math.max(b.width,getMinimumWidth());
-            int h0 = Math.max(b.height,getMinimumHeight());
-            int w = w0-shadowDepth-1;
-            int h = h0-shadowDepth-1;
-            if (vopts.useShadow && shadowDepth>0) {
-                g2d.setColor(getShadowColor());
-                Shape sh = getShape(new Rectangle(shadowDepth,shadowDepth,w,h));
-                if (sh instanceof Rectangle) {
-                    g2d.fill(getShape(new Rectangle(w0-shadowDepth-1,shadowDepth,shadowDepth,h)));
-                    g2d.fill(getShape(new Rectangle(shadowDepth,h0-shadowDepth-1,w,shadowDepth)));
-                } else {
-                    g2d.fill(sh);
-                }
-            }
-            if (vopts.usePaint) {
-                g2d.setPaint(getPaint(new Rectangle(0,0,w,h)));
-                g2d.fill(getShape(new Rectangle(0,0,w,h)));
+            if (vopts.useIcon) {
+                paintAsIcon(g);
+                return;
             } else {
-                g2d.setPaint(graph.getBackground());
+                if (hasTemporaryViewAncestor()) {
+                    vopts = new XNodeView.ViewOptions();
+                    vopts.setUseShadow(false);
+                    vopts.setUsePaint(false);
+                    vopts.setUseBorder(true);
+                }
+                Graphics2D g2d = (Graphics2D)g;
+                Rectangle b = this.getBounds();
+                int shadowDepth = getShadowOffset();
+                int w0 = Math.max(b.width,getMinimumWidth());
+                int h0 = Math.max(b.height,getMinimumHeight());
+                int w = w0-shadowDepth-1;
+                int h = h0-shadowDepth-1;
+                if (vopts.useShadow && shadowDepth>0) {
+                    g2d.setColor(getShadowColor());
+                    Shape sh = getShape(new Rectangle(shadowDepth,shadowDepth,w,h));
+                    if (sh instanceof Rectangle) {
+                        g2d.fill(getShape(new Rectangle(w0-shadowDepth-1,shadowDepth,shadowDepth,h)));
+                        g2d.fill(getShape(new Rectangle(shadowDepth,h0-shadowDepth-1,w,shadowDepth)));
+                    } else {
+                        g2d.fill(sh);
+                    }
+                }
+                if (vopts.usePaint) {
+                    g2d.setPaint(getPaint(new Rectangle(0,0,w,h)));
+                    g2d.fill(getShape(new Rectangle(0,0,w,h)));
+                } else {
+                    g2d.setPaint(graph.getBackground());
+                }
+                if (vopts.useBorder) {
+                    g2d.setColor(vopts.borderColor);
+                    int bw = vopts.borderWidth;
+                    g2d.setStroke(new BasicStroke(bw));
+                    double wh = (bw/2);
+                    g2d.draw(getShape(new Rectangle2D.Double(wh,wh,w-wh,h-wh)));
+                }
+                setBounds(new Rectangle(b.x,b.y,w,h));
             }
-            if (vopts.useBorder) {
-                g2d.setColor(vopts.borderColor);
-                int bw = vopts.borderWidth;
-                g2d.setStroke(new BasicStroke(bw));
-                double wh = (bw/2);
-                g2d.draw(getShape(new Rectangle2D.Double(wh,wh,w-wh,h-wh)));
-            }
-            setBounds(new Rectangle(b.x,b.y,w,h));
-            
             // draw the node's label text
             String text = "";
             if (node.getUserObject() != null) {
@@ -789,6 +1220,27 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
             }
             
         }
+        
+        /** this method is call, when the useIcon flag is set to true.
+         */
+        protected void paintAsIcon(Graphics g) {
+            ViewOptions vopts = viewOptions;
+            Graphics2D g2d = (Graphics2D)g;
+            Rectangle b = this.getBounds();
+            if (vopts.imageIcon == null) {
+                return;
+            }
+            Image img = vopts.imageIcon.getImage();
+            java.awt.image.ImageObserver obs = graph;
+            int imgw = img.getWidth(obs);
+            int imgh = img.getHeight(obs);
+            Dbg.pr("drawing image, img-dimension: ("+imgw+","+imgh+")");
+            boolean b0 = g.drawImage(img,0,0,obs);
+            Dbg.pr("  ... "+b0);
+            bounds = new Rectangle(b.x,b.y,imgw,imgh);
+            Dbg.pr("bounds="+bounds);
+        }
+        
     }
     
 }

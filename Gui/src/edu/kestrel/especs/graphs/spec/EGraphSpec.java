@@ -25,7 +25,7 @@ public class EGraphSpec extends XGraphSpec {
         //addDrawingMode(new DrawingModeAddEllipse());
         //addDrawingMode(new DrawingModeAddStraightEdge());
         addDrawingMode(new DrawingModeAddStepEdge());
-        addDrawingMode(new DrawingModeAddText());
+        addDrawingMode(new DrawingModeAddSpecText());
         //addDrawingMode(new DrawingModeAddImportEdge());
         //addDrawingMode(new DrawingModeAddContainerBox());
         addDrawingMode(new DrawingModeAddEllipse());

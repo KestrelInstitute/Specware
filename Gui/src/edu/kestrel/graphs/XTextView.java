@@ -30,7 +30,7 @@ public class XTextView extends XNodeView {
         super(element,graph,cm);
         setRenderer(new XBoxRenderer(this));
         this.xcellEditor = new XGraphCellEditor(graph,element,this);
-        setFont(new Font("Courier",Font.PLAIN,14));
+        //setFont(new Font("Courier",Font.PLAIN,14));
     }
     
     public GraphCellEditor getEditor() {
@@ -87,6 +87,7 @@ public class XTextView extends XNodeView {
                     XTextNode tnode = (XTextNode) node;
                     if (tnode.isCollapsed()) {
                         tnode.expand();
+                        update();
                     } else {
                         tnode.collapse();
                     }
@@ -108,6 +109,7 @@ public class XTextView extends XNodeView {
                         if (node instanceof XTextNode) {
                             XTextNode tnode = (XTextNode)node;
                             if (tnode.isCollapsed()) {
+                                tnode.setDontSetExpandedFlag();
                                 tnode.expand();
                                 Dbg.pr("  user object="+tnode.getUserObject());
                                 graph.repaint();
@@ -117,6 +119,8 @@ public class XTextView extends XNodeView {
                                     XGraphCellEditor xed = (XGraphCellEditor)editor;
                                     xed.setCollapseAfterEdit(true);
                                     xed.fitEditorPaneToTextSize();
+                                } else {
+                                    tnode.resetDontSetExpandedFlag();
                                 }
                             }
                         }
@@ -124,6 +128,19 @@ public class XTextView extends XNodeView {
                     }
                 });
             }
+            menuItem = new JMenuItem("edit in new frame");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    XTextNode tnode = (XTextNode) node;
+                    XTextEditorInternalFrame tf = new XTextEditorInternalFrame(tnode);
+                    tf.setFont(getFont());
+                    XGraphApplication appl = ((XGraphDisplay)graph).getApplication();
+                    if (appl != null) {
+                        appl.getDesktop().newInternalFrame(tf);
+                    }
+                }
+            });
+            popupMenu.add(menuItem,2);
         }
     }
     
@@ -155,6 +172,23 @@ public class XTextView extends XNodeView {
             g.setColor(Color.black);
             Dimension tdim = ((XGraphDisplay)graph).getStringDimension(g,text,bw,new Dimension(0,0),true,0,0);
             setTextDimension(tdim);
+        }
+        
+        public void paint(Graphics g) {
+            if (view instanceof XNodeView) {
+                ((XNodeView)view).prepareResizing();
+            }
+            super.paint(g);
+            if (node instanceof XTextNode) {
+                XTextNode tnode = (XTextNode)node;
+                if (tnode.hasBeenExpanded()) {
+                    Dbg.pr("Text node has been expanded.");
+                    ((XNodeView)view).adjustGraphAfterResizing();
+                } else if (tnode.hasBeenCollapsed()) {
+                    Dbg.pr("Text node has been collapsed.");
+                    ((XNodeView)view).undoResizeChanges(false);
+                }
+            }
         }
         
     }

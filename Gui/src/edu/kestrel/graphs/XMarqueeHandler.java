@@ -35,7 +35,36 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
                     graph.setValue(val);
             }
         });
-        popupMenu.add(menuItem);menuItem = new JMenuItem("delete all");
+        popupMenu.add(menuItem);
+        popupMenu.addSeparator();
+        menuItem =        new JMenuItem("scale to fit [ s f ]");
+        menuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //Dbg.pr("invoking graph.writeToFile()...");
+                //graph.writeToFile();
+                graph.scaleToFit(20,XGraphDisplay.ALWAYS_SCALE);
+            }
+        });
+        popupMenu.add(menuItem);
+        popupMenu.add(new ScaleMenuItem("set scale to 1 [ s 1 ]",1));
+        JMenu zoomMenu = new JMenu("zoom out [ - ]");
+        zoomMenu.add(new ScaleMenuItem("1/2",1/2.0));
+        zoomMenu.add(new ScaleMenuItem("1/4",1/4.0));
+        zoomMenu.add(new ScaleMenuItem("1/8",1/8.0));
+        zoomMenu.add(new ScaleMenuItem("1/16",1/16.0));
+        zoomMenu.add(new ScaleMenuItem("1/32",1/32.0));
+        zoomMenu.add(new ScaleMenuItem("1/64",1/64.0));
+        popupMenu.add(zoomMenu);
+        zoomMenu = new JMenu("zoom in [ + ]");
+        zoomMenu.add(new ScaleMenuItem("2",2));
+        zoomMenu.add(new ScaleMenuItem("4",4));
+        zoomMenu.add(new ScaleMenuItem("8",8));
+        zoomMenu.add(new ScaleMenuItem("16",16));
+        zoomMenu.add(new ScaleMenuItem("32",32));
+        zoomMenu.add(new ScaleMenuItem("64",64));
+        popupMenu.add(zoomMenu);
+        popupMenu.addSeparator();
+        menuItem = new JMenuItem("delete all");
         menuItem.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
                 //Dbg.pr("invoking graph.writeToFile()...");
@@ -46,6 +75,17 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
         popupMenu.add(menuItem);
     }
     
+    protected class ScaleMenuItem extends JMenuItem {
+        public ScaleMenuItem(String label, final double scaleFactor) {
+            super(label);
+            addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    graph.setScale(scaleFactor);
+                }
+            });
+        }
+    }
+    
     public boolean isForceMarqueeEvent(MouseEvent e) {
         if (e.getClickCount() == graph.getEditClickCount())
             return true;
@@ -53,6 +93,7 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
             return true;
         if (e.isControlDown())
             return true;
+        //return true;
         return super.isForceMarqueeEvent(e);
     }
     
@@ -68,7 +109,7 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
     }
     
     public void mousePressed(MouseEvent e0) {
-        Dbg.pr("mouse pressed in XMarqueeHandler...");
+        //Dbg.pr("mouse pressed in XMarqueeHandler...");
         if (!e0.isConsumed()) {
             MouseEvent e = fromScreenSnap(e0);
             int x = e.getX(), y = e.getY();
@@ -90,11 +131,19 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
                     if (cv instanceof XGraphElementView) {
                         //System.out.println("showing popup menu...");
                         ((XGraphElementView)cv).showPopupMenu(e0.getComponent(),e0.getX(),e0.getY());
+                        e0.consume();
                     }
                 } else {
                     popupMenu.show(e0.getComponent(),e0.getX(),e0.getY());
                     e0.consume();
                     return;
+                }
+            }
+            else {
+                Object cell = graph.getFirstCellForLocation(x,y);
+                if (cell instanceof XGraphElement) {
+                    XGraphElement elem = (XGraphElement)cell;
+                    Dbg.pr("mouse pressed at graph element "+elem);
                 }
             }
         }

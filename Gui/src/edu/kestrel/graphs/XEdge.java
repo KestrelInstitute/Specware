@@ -8,7 +8,7 @@ import javax.swing.tree.*;
 import java.util.*;
 import java.awt.*;
 
-public abstract class XEdge extends DefaultEdge implements XGraphElement {
+public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextEditorEditable {
     
     //protected XNode source;
     //protected XNode target;
@@ -18,6 +18,8 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     protected boolean viewWasVisible;
     protected XContainerNode lastParent = null;
     //private Rectangle lastParentsBounds = null;
+    
+    private java.util.List savedViewPoints = null;
     
     protected Dimension offsetToLastParent = null;
     
@@ -37,7 +39,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     protected boolean collapseLabel = false;
     
     static int xedgeCnt = 0;
-
+    
     protected int ID;
     
     public XEdge() {
@@ -63,6 +65,12 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         return graph;
     }
     
+    public void repaintGraph() {
+        if (graph != null) {
+            graph.repaint();
+        }
+    }
+    
     
     protected void init() {
         detachedView = null;
@@ -83,6 +91,31 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         super.setUserObject(obj);
         getModelEdge().setValue(obj);
     }
+    
+    public void setFullUserObject(Object val) {
+        setUserObject(val);
+    }
+    
+    /** returns a short representation of the edge's name to be used in popup windows etc.
+     */
+    public String getShortName() {
+        if (getUserObject() == null) return "";
+        String name = getUserObject().toString();
+        if (name.length() > XGraphConstants.maxShortNameLength) {
+            name = name.substring(0,XGraphConstants.maxShortNameLength) + "...";
+        }
+        return name;
+    }
+    
+    
+    public void setSavedViewPoints(java.util.List points) {
+        savedViewPoints = points;
+    }
+    
+    public java.util.List getSavedViewPoints() {
+        return savedViewPoints;
+    }
+    
     
     public void setModelEdge(ModelEdge e) {
         modelEdge = e;
@@ -136,6 +169,11 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     
     
     public abstract void insertHook(XGraphDisplay graph, XGraphElementView viewObject);
+    
+    /** this method is call when the edge is initially connected to its source and target node
+     */
+    public void initialConnectHook(XEdgeView ev) {
+    }
     
     public void setBoundsHook(XGraphDisplay graph, XGraphElementView viewObject, Rectangle bounds) {
     }
@@ -267,7 +305,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         Dbg.pr("reattaching edge "+this+"...");
         Map viewMap = new Hashtable();
         Map map = GraphConstants.createMap();
-        GraphConstants.setVisible(map,viewWasVisible);
+        GraphConstants.setVisible(map,true);//viewWasVisible);
         viewMap.put(detachedView,map);
         graph.getView().edit(viewMap);
         //CellView cv = graph.getView().getMapping(lastParent,false);
@@ -397,7 +435,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         setGraph(mgr.getDestGraph());
         //graph.getXGraphUI().cloneCellViews(original,this);
     }
-
+    
     public void setCollapseLabel(boolean b) {
         collapseLabel = b;
     }
@@ -631,6 +669,26 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         }
         Dbg.pr("}");
     }
+
     
+    
+    // interface XTextEditorEditable methods:
+    
+    public String getText() {
+            return getUserObject().toString();
+    }
+    
+    public String getTitleText() {
+        return XTextNode.getCollapsedString(getText());
+    }
+    
+    public void setText(String t) {
+        setUserObject(t.trim());
+        getModelEdge().sync();
+    }
+    
+    public XTextEditor createEditorPane() {
+        return new XTextEditor(this);
+    }    
     
 }

@@ -157,6 +157,7 @@ public abstract class DrawingModeAddEdge extends DrawingModeWithMarqueeHandler {
                     //System.out.println("straightening edge...");
                     ((XEdgeView) ev).straightenEdge();
                     //System.out.println("straightening edge done.");
+                    edge.initialConnectHook((XEdgeView)ev);
                 }
             }
         }
