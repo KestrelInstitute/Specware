@@ -87,6 +87,32 @@ endspec
 ;;; Generating lisp file $TESTDIR/Bug_0018/lisp/BBcol.lisp
 ")
 
+ ("Bug 0021 : Ambiguous results from colimit operation"
+  :sw "Bug_0021/AmbiguousOp#E"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0021/AmbiguousOp#E
+;;; Elaborating diagram-colimit at $TESTDIR/Bug_0021/AmbiguousOp#D
+;;; Elaborating diagram-term at $TESTDIR/Bug_0021/AmbiguousOp#D
+;;; Elaborating spec-morphism at $TESTDIR/Bug_0021/AmbiguousOp#D
+;;; Elaborating spec at $TESTDIR/Bug_0021/AmbiguousOp#B
+;;; Elaborating spec at $TESTDIR/Bug_0021/AmbiguousOp#A
+;;; Elaborating spec-morphism at $TESTDIR/Bug_0021/AmbiguousOp#D
+;;; Elaborating spec at $TESTDIR/Bug_0021/AmbiguousOp#C
+Errors in $TESTDIR/Bug_0021/AmbiguousOp.sw
+24.7-24.7	: Type reference a is ambiguous among C.a, {e, A.a, C.b}
+24.12-24.12	: Type reference b is ambiguous among A.b, {e, A.a, C.b}
+")
+ 
+ ("Bug 0022 : Redefined ops processed without giving error message."
+  :sw "Bug_0022/RedefinedOp"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0022/RedefinedOp
+
+Warning: op should not follow def for f, but allowing this for now...
+Errors in $TESTDIR/Bug_0022/RedefinedOp.sw
+4.9-4.12	: Could not match type constraint
+                true of type Boolean
+          with expected type String
+")
+
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Bug_0043/Change#ShouldBeProvable" 
   :output ";;; Elaborating proof-term at $TESTDIR/Bug_0043/Change#ShouldBeProvable
