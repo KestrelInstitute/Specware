@@ -362,9 +362,9 @@
 				   :name name
 				   :type  *snark-binary-extension*))
            (snark:*hash-dollar-package* nil))
-      (when compile
-	(compile-file srcfile :output-file binfile))
-      (load binfile :verbose t :print compile)))
+      (if compile
+	  (SPECWARE::compile-and-load-lisp-file srcfile)
+	(load binfile :verbose t :print compile))))
   
   #+eclipse
   (dolist (file *snark-files*)
@@ -391,7 +391,7 @@
                       ))))
   
   ;;#-(or symbolics mcl) (load "/home/pacific1/stickel/spice/build.lisp")
-  (setf *package* (find-package :snark-user))
+  ;;(setf *package* (find-package :snark-user))
   (snark:initialize))
 
 (defun make-snark-system (&optional compile)
