@@ -6,9 +6,9 @@
 (defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
   (let* ((root-dir (if in-current-dir?
-		       (if (stringp in-current-dir?)
-			   in-current-dir?
-			 default-directory)
+		       (strip-final-slash (if (stringp in-current-dir?)
+					      in-current-dir?
+					    default-directory))
 		     (concat (getenv "SPECWARE4"))))
 	 (bin-dir (concat root-dir
 			  "/Applications/Specware/bin/"
@@ -143,10 +143,10 @@
 (defun build-specware4 (in-current-dir?)
   (interactive "P")
   (let* ((root-dir (if in-current-dir?
-		       (if (stringp in-current-dir?)
-			   in-current-dir?
-			 default-directory)
-		     (concat (getenv "SPECWARE4"))))
+		       (strip-final-slash (if (stringp in-current-dir?)
+					      in-current-dir?
+					    default-directory))
+		     (getenv "SPECWARE4")))
 	 (dir (concat root-dir "/Applications/Specware/Handwritten/Lisp"))
 	 (bin-dir (concat root-dir
 			     "/Applications/Specware/bin/"
@@ -184,7 +184,7 @@
 
 (defun bootstrap-specware4 (in-current-dir?)
   (interactive "P")
-  (let ((root-dir (if in-current-dir? default-directory
+  (let ((root-dir (if in-current-dir? (strip-final-slash default-directory)
 		    (concat (getenv "SPECWARE4")))))
     (run-specware4 root-dir)
     (sleep-for 2)
@@ -243,3 +243,9 @@
 		      sw:common-lisp-image-file
 		      ))
     ))
+
+(defun strip-final-slash (dirname)
+  (let ((len (length dirname)))
+    (if (equal ?/ (elt dirname (- len 1)))
+	(substring dirname 0 (- len 1))
+      dirname)))
