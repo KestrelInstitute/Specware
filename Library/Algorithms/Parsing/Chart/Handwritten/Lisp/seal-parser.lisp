@@ -21,7 +21,8 @@
     (load file)				; see parse-add-rules.lisp  
     (setf (parser-keywords-are-keywords-only? new-parser) t)
     (seal-parser new-parser)
-    (comment "New parser is also in PARSER4::*CURRENT-PARSER*")
+    (when-debugging
+     (comment "New parser is also in PARSER4::*CURRENT-PARSER*"))
     new-parser))
 
 (defun seal-parser (parser)

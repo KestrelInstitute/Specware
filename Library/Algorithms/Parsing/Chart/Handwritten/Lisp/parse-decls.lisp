@@ -67,15 +67,17 @@
 			     (case-sensitive? nil)
 			     (rule-package    (find-package "KEYWORD"))
 			     (symbol-package  lisp::*package*))
-  (terpri)
-  (comment "Note:  These values are determined by keyword args in the call to new-parser:")
-  (comment " ")
-  (comment "  Parser will ~Abe case sensitive." (if case-sensitive? "" "not "))
-  (comment "  Auxiliary parser rules will be interned in the ~A package." 
-	   (package-name rule-package))
-  (comment "  Symbols generated when parsing will be interned in the ~A package." 
-	   (package-name symbol-package))
-  (terpri)
+  #+DEBUG-PARSER 
+  (progn
+    (terpri)
+    (comment "Note:  These values are determined by keyword args in the call to new-parser:")
+    (comment " ")
+    (comment "  Parser will ~Abe case sensitive." (if case-sensitive? "" "not "))
+    (comment "  Auxiliary parser rules will be interned in the ~A package." 
+	     (package-name rule-package))
+    (comment "  Symbols generated when parsing will be interned in the ~A package." 
+	     (package-name symbol-package))
+    (terpri))
   (let ((parser
 	 (make-parser 
 	  :name                      name

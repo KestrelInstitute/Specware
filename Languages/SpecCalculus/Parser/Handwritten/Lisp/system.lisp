@@ -60,37 +60,14 @@
 (compile-and-load-lisp-file "semantics")
 (compile-and-load-lisp-file "parser-interface")
 
-(progn
-  ;; (comment-blank-lines 1)
-  ;; (comment "========================================================================")
-  ;; (comment "Load parser for specware 4")
-  ;; (comment " ")
-  ;; (comment "Before loading specware4 parser")
-  ;;  (comment "PARSER::*CURRENT-PARSER*    = ~S" PARSER::*CURRENT-PARSER*))
-  ;; (comment "PARSER4::*CURRENT-PARSER*   = ~S" PARSER4::*CURRENT-PARSER*)
-  ;; (comment "PARSER4::*SPECWARE4-PARSER* = ~S" PARSER4::*SPECWARE4-PARSER*)
-  
-  (setq *specware4-parser*
-    (load-parser
-     "rules" 
-     :name 'SPECWARE4-PARSER 
-     :case-sensitive? t))
-
-  ;; (comment-blank-lines 1)
-  ;; (comment "After loading specware4 parser")
-  ;;  (comment "PARSER::*CURRENT-PARSER*    = ~S" PARSER::*CURRENT-PARSER*))
-  ;; (comment "PARSER4::*CURRENT-PARSER*   = ~S" PARSER4::*CURRENT-PARSER*)
-  ;; (comment "PARSER4::*SPECWARE4-PARSER* = ~S" PARSER4::*SPECWARE4-PARSER*)
-  ;; (comment "========================================================================")
-  ;; (comment-blank-lines 1)
-  )
+(setq *specware4-parser* (load-parser "rules" :name 'SPECWARE4-PARSER :case-sensitive? t))
   
 (progn
   ;;(comment "=======================================================================================================================")
-  (comment " ")
+  ;; (comment " ")
   ;; (comment "Printing grammar as .ps file")
   (print-grammar-ps-file)
-  (comment " ")
+  ;; (comment " ")
   ;;(comment "=======================================================================================================================")
   )
 
@@ -106,5 +83,6 @@
     (print (mapcar #'eval (third res1)))))
 
 (progn
-  (comment "To test specware4 parser: (user::test-specware4-parser <file defaulting to test.spec>)")
+  (format t "~&; To test specware4 parser: (user::test-specware4-parser <file defaulting to test.spec>)~%")
+  (format t "~&; --------------------------------------------------------------------------------~%")
   )

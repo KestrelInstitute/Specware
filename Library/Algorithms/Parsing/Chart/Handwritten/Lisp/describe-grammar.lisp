@@ -335,8 +335,8 @@
 ;;; informative messages for person building parser....
 
 (eval-when (load)
-  (format t "~&--------------------------------------------------------------------------------~%")
-  (format t "~&Running (USER::SHOW-GRAMMAR) will create grammar.ps and display using ~A" 
+  (format t "~&; --------------------------------------------------------------------------------~%")
+  (format t "~&; Running (USER::SHOW-GRAMMAR) will create grammar.ps and display using ~A" 
 	  (get-ps-viewer))
-  (format t "~&--------------------------------------------------------------------------------~%"))
+  (format t "~&; --------------------------------------------------------------------------------~%"))
 
