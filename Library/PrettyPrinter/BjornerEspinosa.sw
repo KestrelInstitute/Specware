@@ -273,11 +273,18 @@ PrettyPrint qualifying spec {
 		      rest
 	   in cont ((0,blanks 0), base)
 
-   def toString (text : Text) : String = 
-       toStream (text, 
-                 fn ((_,s1),s2) -> s2 ^ s1, 
-                 "",
-                 fn (n,s) -> s ^ newlineAndBlanks n)
+   def toString (text : Text) : String =
+       IO.withOutputToString
+         (fn stream ->
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> streamWriter(stream,newlineAndBlanks n)))
+%% This is much less efficient
+%       toStream (text, 
+%                 fn ((_,s1),s2) -> s2 ^ s1, 
+%                 "",
+%                 fn (n,s) -> s ^ newlineAndBlanks n)
 
    def toLatexString (text : Text) : String = 
        toStream (text, 
@@ -286,10 +293,10 @@ PrettyPrint qualifying spec {
                  fn (n,s) -> s ^ latexNewlineAndBlanks n)
 
    def toTerminal (text : Text) : () = 
-       toStream (text, 
-                 fn ((_,s), ()) -> toScreen s, 
-                 (),
-                 fn (n,()) -> toScreen (newlineAndBlanks n))
+       toStreamT (text, 
+		  fn ((_,s), ()) -> toScreen s, 
+		  (),
+		  fn (n,()) -> toScreen (newlineAndBlanks n))
 
    def streamWriter (stream, string) =
      IO.format1 (stream, "~A", string)
@@ -516,10 +523,10 @@ PrettyPrint qualifying spec {
 
    def appendFileWithNewline (fileName : String, text : Text, newlineAndBlanks : Nat -> String) : () =
        let def writeFun stream =
-            toStream (text,
-                      fn ((_,string), ()) -> streamWriter(stream,string),
-                      (),
-                      fn (n,()) -> streamWriter(stream,newlineAndBlanks n)) in
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> streamWriter(stream,newlineAndBlanks n)) in
        let _ = IO.withOpenFileForAppend (fileName, writeFun) in
        ()
 

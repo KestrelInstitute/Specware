@@ -13,6 +13,10 @@
   (with-open-file (s name :direction :output :if-exists :append)
     (funcall p s)))
 
+(defun withOutputToString (p)
+  (with-output-to-string (s)
+    (funcall p s)))
+
 (defun deleteFile (name)
   (delete-file name))
 
@@ -134,6 +138,7 @@
 
 (defvar *blanks-array* (make-blanks-array *blanks-array-size*))
 
+;; op defined in /Library/PrettyPrinter/BjornerEspinosa
 (defun prettyprint::blanks (n)
   (if (= n 0) ""
     (if (<= n *blanks-array-size*) (svref *blanks-array* (- n 1))
