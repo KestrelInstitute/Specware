@@ -324,10 +324,10 @@
     (let ((tokens nil))
       (with-open-file (stream file) 
 	(let ((ps-stream (make-pseudo-stream :unread-chars nil :stream stream))
-	      ;; The upper-left corner of the file is considered 1:0 (line 1, column 0)
-	      ;; so the character one to the left of that is 1:-1 (line 1, column -1).
+	      ;; The upper-left corner of the file is considered 1:0:1 (line 1, column 0, byte 1)
+	      ;; so the character one to the left of that is 1:-1:0 (line 1, column -1, byte 0).
 	      ;; So we are at 1:-1 before we read the first character.
-	      (pre-byte 0) (pre-line 1) (pre-column -1))
+	      (pre-line 1) (pre-column -1) (pre-byte 0))
 	  (loop do
 	    (multiple-value-bind (type value 
 				       first-byte first-line first-column
@@ -432,6 +432,7 @@
 			(cond ((eq ,char-var #\newline)
 			       ;; we proceed to line+1 : -1, so that the next character read 
 			       ;;  (which will be the leftmost on the line) will be at line+1 : 0
+			       ;; current-byte was incremented above, so we don't need to touch that here
 			       (incf current-line)
 			       (setq current-column -1)
 			       ,newline-action)
@@ -451,6 +452,7 @@
 		 `(progn
 		    (ps-unread-char ,char-var ps-stream)
 		    ;; ??  If we do this repeatedly, unreading newlines, can we end up at a column left of -1 ??
+		    ;; If that happens, we could decrement the line, but then what should the column be??
 		    (decf current-byte)
 		    (decf current-column)
 		    ))
@@ -538,6 +540,7 @@
 				(cond ((eq temp-char #\newline)
 				       ;; we proceed to line+1 : -1, so that the next character read 
 				       ;;  (which will be the leftmost on the line) will be at line+1 : 0
+				       ;; current-byte was incremented above, so we don't need to touch that here
 				       (incf current-line)
 				       (setq current-column -1))
 				      (t
@@ -564,7 +567,6 @@
 			 (return-values :EOF nil) 
 			 () 
 			 (go start-extended-comment))
-	;;
 	(look-for-ad-hoc-tokens char char-code)
 	;; 
 	(case (svref whitespace-table char-code)
@@ -709,8 +711,8 @@
 	;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
 	;; Char is the first character past that position.  
 	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and the char we're pushing here
-	;; increments them when it is popped then.
+	;; Those become the initial values in the next call here, and they are 
+	;; incremented when the char we're pushing here is then popped.
 	(local-unread-char char)
 	;;
        terminate-word-symbol-with-eof
@@ -788,8 +790,8 @@
 	;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
 	;; Char is the first character past that position.  
 	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and the char we're pushing here
-	;; increments them when it is popped then.
+	;; Those become the initial values in the next call here, and they are 
+	;; incremented when the char we're pushing here is then popped.
 	(local-unread-char char)
 	;;
        terminate-non-word-symbol-with-eof
@@ -936,8 +938,8 @@
 	;; Last-byte, last-line, last-column all refer to the last character of the number we've been scanning.
 	;; Char is the first character past that position.  
 	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and the char we're pushing here
-	;; increments them when it is popped then.
+	;; Those become the initial values in the next call here, and they are 
+	;; incremented when the char we're pushing here is then popped.
 	(local-unread-char char)
 	;;
        terminate-number-with-eof
