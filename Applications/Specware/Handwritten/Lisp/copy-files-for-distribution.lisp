@@ -13,6 +13,10 @@
 (specware::delete-directory (in-distribution-dir "Library/Base/Handwritten/Lisp/CVS/"))
 (delete-file-if-present (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
 
+(specware::copy-directory (in-specware-dir "Library/ProverBase/")
+			  (in-distribution-dir "Library/ProverBase/"))
+(specware::delete-directory (in-distribution-dir "Library/ProverBase/CVS/"))
+
 (specware::copy-file (in-specware-dir "Library/Base.sw")
                      (in-distribution-dir "Library/Base.sw"))
 (specware::copy-file (in-specware-dir "Library/InterpreterBase.sw")
