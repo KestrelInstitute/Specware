@@ -74,7 +74,8 @@ SpecCalc qualifying spec {
  %				base_spec
  %				spc))
 
- def printSpec base_spec reverse_context spc =
+ def printSpec base_spec _ (* ignore reverse_context *) spc =
+   %% use reverse_context for imports ?
    AnnSpecPrinter.printSpec (subtractSpec spc base_spec)
 
  %% ======================================================================
