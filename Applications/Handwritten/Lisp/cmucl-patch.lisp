@@ -106,5 +106,7 @@
       (t
        exp))))
 
-(defun valid-function-name-p (name) (symbolp name))
+;; oops, test code got checked in...
+;; see cmucl/18e/src/code/fdefinition.lisp for real definition
+;; (defun valid-function-name-p (name) (symbolp name))
 
