@@ -41,19 +41,13 @@ import org.openide.windows.OutputWriter;
  * @author  weilyn
  */
 public class LispSocketManager {
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     private static final String END_OF_PARAMETER_MARKER = "ENDPARAMETER";
     
     private static Set machines = new HashSet() ;
     private static String lispFile     = "";
     private static String lispHost     = "localhost";
-    private static int    lispPort     = 4324;
-    private static int    pollInterval = 1000;
-    private static int    pollCount    = 300;
-    private static int    javaTimeout   = -1;
-    private static String javaFile      = "";
-    private static String javaHost      = "";
-    private static int    javaPort      = 0;
+    private static int    lispPort;     
     
     static private ExternalLispProcess lispServer = null;
     static private Process lispProcess = null;
@@ -63,7 +57,6 @@ public class LispSocketManager {
     static private BufferedReader fromLispStream = null;
     static private OutputStream toLispStream = null;
     static private Thread readThread = null;
-    static private Thread serverSocketThread = null;
     
     static private Class lispSocketManagerClass;
     static private Class stringClass;
@@ -87,62 +80,30 @@ public class LispSocketManager {
             }
         }
     }
-    
-    private static class SocketConnector implements Runnable {
-        SocketConnector() {
-        }
         
-        public void run() {
-            /*try {
-                
-                if (DEBUG) {
-                    Util.log("SocketConnector's serverSocket is "+serverSocket);
-                }
-            } catch (IOException ioe) {
-                Util.log("LispSocketManager.SocketConnector.run caught exception: "+ioe.getMessage());
-            }*/
-        }
-    }
-    
     public static boolean connectToLisp() {
         if (lispServer == null || lispProcess == null || lispSocket == null) {
             try {
-                //serverSocketThread = new Thread(new SocketConnector());
-                //serverSocketThread.start();
                 if (serverSocket == null) {
                     serverSocket = new ServerSocket(0);
                 }
                 
-                if (DEBUG) {
-                    Util.log("LispSocketManager.connectToLisp about to call serverSocket.accept; port is "+serverSocket.getLocalPort());
-                }
-                
-/*                lispSocket = serverSocket.accept();
-                
-                if (DEBUG) {
-                    Util.log("LispSocketManager.connectToLisp done with serverSocket.accept");
-                }
-*/                
+             
                 lispPort = serverSocket.getLocalPort();
                 if (DEBUG) {
                     Util.log("LispSocketManager.connectToLisp got lispPort = "+lispPort);
                 }
-                
-                /*System.setProperty("SpecBeansSocketPort", Integer.toString(lispPort));
-                if (DEBUG) {
-                    Util.log("All properties: "+System.getProperties());
-                }*/
 
                 lispServer = new ExternalLispProcess(lispPort);
 
                 lispProcess = lispServer.createProcess();
-                Thread.sleep(5000);
+                Thread.sleep(2000);
 
                 if (DEBUG) {
                     Util.log("lispServer = "+lispServer+"; lispProcess = "+lispProcess);
                 }
                 
-                lispSocket = serverSocket.accept();//new Socket(lispHost, lispPort);
+                lispSocket = serverSocket.accept();
                 if (DEBUG) {
                     Util.log("LispSocketManager.connectToLisp: lispSocket.isConnected() = "+lispSocket.isConnected());
                 }
@@ -379,6 +340,21 @@ public class LispSocketManager {
     
     public static void setGenerateJavaResults(String pathName, String fileName, String results) {
         writeToSpecwareStatus(results);
+    }
+    
+    public static String getSWPath() {
+        if (connectToLisp()) {
+            //TODO: return :swpath value
+        }
+        return "TODO";
+    }
+    
+    public static void updateSWPath(String pathToAdd) {
+        if (connectToLisp()) {
+            //TODO
+            
+            Util.log("LispSocketManager.updateSWPATH needs to call :swpath with "+pathToAdd);
+        }
     }
 
     public static void writeToSpecwareStatus(String s) {

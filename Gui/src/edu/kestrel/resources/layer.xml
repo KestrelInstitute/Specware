@@ -42,12 +42,74 @@
                 <file name="EditorKit.instance">
                     <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.editor.MetaSlangEditorKit"/>
                 </file>
+                
+                <folder name="Popup">
+                   <file name="Separator5.instance">
+                    <attr name="instanceClass" stringvalue="javax.swing.JSeparator" />
+                   </file>
+                   <file name="edu.kestrel.netbeans.actions.ProcessUnitAction.instance"/>
+                    <attr name="edu.kestrel.netbeans.actions.ProcessUnitAction.instance/
+                                edu.kestrel.netbeans.actions.GenerateCodeAction.instance" boolvalue="true"/>
+                    <file name="edu.kestrel.netbeans.actions.GenerateCodeAction.instance"/>
+                    <attr name="edu.kestrel.netbeans.actions.GenerateCodeAction.instance/
+                                edu.kestrel.netbeans.actions.StartLispAction.instance" boolvalue="true"/>
+                    <file name="edu.kestrel.netbeans.actions.StartLispAction.instance"/>
+                    <attr name="edu.kestrel.netbeans.actions.StartLispAction.instance/
+                                edu.kestrel.netbeans.actions.KillLispAction.instance" boolvalue="true"/>
+                    <file name="edu.kestrel.netbeans.actions.KillLispAction.instance"/>
+                    <attr name="edu.kestrel.netbeans.action.KillLispAction.instance/
+                                edu.kestrel.netbeans.actions.UpdateSWPathAction.instance" boolvalue="true" />
+                    <file name="edu.kestrel.netbeans.actions.UpdateSWPathAction.instance" />
+                </folder>
             </folder>
         </folder>
         <folder name="AnnotationTypes">
             <file name="edu-kestrel-netbeans-parser-error.xml" url="parser-error-annotation.xml"/>
         </folder>
    </folder>
+   
+   <folder name="Menu">
+        <attr name="Window/Specware" boolvalue="true" />
+        <folder name="Specware">
+            <attr name="Separator1.instance/edu.kestrel.netbeans.actions.ProcessUnitAction.instance" boolvalue="true" />
+            <file name="edu.kestrel.netbeans.actions.ProcessUnitAction.instance" />
+            <attr name="edu.kestrel.netbeans.actions.ProcessUnitAction.instance/
+                        edu.kestrel.netbeans.actions.GenerateCodeAction.instance" boolvalue="true" />
+            <file name="edu.kestrel.netbeans.actions.GenerateCodeAction.instance" />
+            <attr name="edu.kestrel.netbeans.actions.GenerateCodeAction.instance/
+                        edu.kestrel.netbeans.actions.Separator2.instance" boolvalue="true" />
+            <file name="Separator2.instance">
+                <attr name="instanceClass" stringvalue="javax.swing.JSeparator" />
+            </file>                        
+            <attr name="Separator2.instance/
+                        edu.kestrel.netbeans.actions.StartLispAction.instance" boolvalue="true" />
+            <file name="edu.kestrel.netbeans.actions.StartLispAction.instance" />
+            <attr name="edu.kestrel.netbeans.actions.StartLispAction.instance/
+                        edu.kestrel.netbeans.actions.KillLispAction.instance" boolvalue="true" />
+            <file name="edu.kestrel.netbeans.actions.KillLispAction.instance" />
+            <file name="edu.kestrel.netbeans.actions.UpdateSWPathAction.instance" />
+
+        </folder>
+        <attr name="Specware/Help" boolvalue="true" />
+   </folder>
+   
+   <folder name="Shortcuts">
+        <file name="A-P.instance">
+	    <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.actions.ProcessUnitAction" />
+	</file>
+        <file name="A-C.instance">
+            <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.actions.CompileSpecAction" />
+        </file>
+        <file name="A-L.instance">
+            <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.actions.StartLispAction" />
+        </file>
+        <file name="A-X.instance">
+            <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.actions.KillLispAction" />
+        </file>
+        <file name="A-U.instance">
+            <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.actions.UpdateSWPathAction" />
+        </file>
+    </folder>
 
 </filesystem>
 
