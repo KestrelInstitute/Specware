@@ -10,16 +10,15 @@ SpecCalc qualifying spec {
   % sort Env a = SpecCalc.Env a
   %sort Spec = MetaSlang.Spec
 
-  op SpecCalc.evaluateSnarkGen : ValueInfo * (SpecCalc.Term Position) * Option String -> Monad ValueInfo
+  op SpecCalc.evaluateSnarkGen : ValueInfo * (SpecCalc.Term Position) * Option String -> Env ValueInfo
 
   %% Need to add error detection code
   def SpecCalc.evaluateSnarkGen (valueInfo as (Spec spc,_,_), cterm, optFileNm) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cURI <- SpecCalc.getURI(cterm);
      snarkFileName <- URItoSnarkFile (cURI, optFileNm);
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
-                     (SpecPath_Relative {path = ["Library","Base"],
-                                         hashSuffix = None});
+     baseUnitId <- pathToRelativeURI "/Library/Base";
+     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseUnitId;
      let _ = ensureDirectoriesExist snarkFileName in
      let _ = toSnarkFile((subtractSpec spc baseSpec), snarkFileName,[]) in
 %     let _ = System.fail ("evaluateSnarkGen ") in

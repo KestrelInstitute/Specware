@@ -17,19 +17,33 @@ Sort qualifying spec
 
   sort SortInfo
 
-  op name : SortInfo -> Id
-  op names : SortInfo -> IdSet.Set
+  op idOf : SortInfo -> Id
+  op ids : SortInfo -> IdSet.Set
   op type : SortInfo -> Type
 
-  op withName infixl 18 : SortInfo * Id -> SortInfo
-  op withNames infixl 18 : SortInfo * IdSet.Set -> SortInfo
+  op withId infixl 18 : SortInfo * Id -> SortInfo
+  op withIds infixl 18 : SortInfo * IdSet.Set -> SortInfo
   op withType infixl 18 : SortInfo * Type -> SortInfo
 
-  op make : Id -> Type -> SortInfo
-  op SortEnv.make : Id -> Type -> Env SortInfo
+  % op makeSort : Id -> Type -> SortInfo
+  op SortEnv.makeSort : Id -> Type -> Env SortInfo
+  op SortNoTypeEnv.makeSort : Id -> Env SortInfo
+
+  op join : SortInfo -> SortInfo -> Env SortInfo
 
   op pp : SortInfo -> Doc
   op show : SortInfo -> String
+
+  sort Ref
+  sort Spec.Spec
+
+  op SortRef.pp : Ref -> Doc
+
+  op deref : Spec -> Ref -> SortInfo
+  op refOf : Spec -> SortInfo -> Ref
+
+  op SortEnv.deref : Spec -> Ref -> Env SortInfo
+  op SortEnv.refOf : Spec -> SortInfo -> Env Ref
 endspec
 \end{spec}
 

@@ -6,26 +6,19 @@ prefer the qualifier to be MetaSlang but this is taken.
 It is expected that \Sort{Term} refines to \Sort{ATerm Position}
 Similary, we expect that \Sort{Type} refines to \Sort{ASortScheme Position}
 
-### Should we just get rid of the "At" suffix of the make functions and have four of
-each: monadic / non-monadic. position / no position
-
-Something like:
-
-         mkNot : Term -> Term
-     Env.mkNot : Term -> Env Term
-     Pos.mkNot : Term -> Position -> Term
- Env.Pos.mkNot : Term -> Position -> Env Term
+The name of the qualifier is unfortunate. Would prefer \Qualifier{MetaSlang}
+or \Qualifier{MS} but both are taken.
 
 \begin{spec}
-MS qualifying spec
-  import Pretty
+MSlang qualifying spec
+  import /Library/Structures/Data/Pretty
   import Id
   import Env
 
-  sort Position
+  sort Position.Position
   sort Term
   sort Type
-  sort Fun  % Don't like this one.
+  sort Fun
   sort TypeVars
 
   op Term.pp : Term -> Doc
@@ -34,33 +27,44 @@ MS qualifying spec
   op Type.pp : Type -> Doc
   op Type.show : Type -> String
 
-  op mkApplyNAt : Term -> Term -> Position -> Term
-  op mkTupleAt : List Term -> Position -> Term
-  op mkRecordAt : List (Id * Term) -> Position -> Term
+  op noTypeVars : TypeVars
 
-  op mkProduct : List Type -> Type
-  op Env.mkProduct : List Type -> Env Type
-  def Env.mkProduct types = return (mkProduct types)
+  op boolType : Position -> Type
+
+  op mkApplyN : Term -> Term -> Position -> Term
+  op mkTuple : List Term -> Position -> Term
+  op mkRecord : List (Id.Id * Term) -> Position -> Term
+
+  % op mkProduct : List Type -> Type
+  % op Env.mkProduct : List Type -> Env Type
+  % def Env.mkProduct types = return (mkProduct types)
 
   op MSPos.mkProduct : List Type -> Position -> Type
-  op MSPosEnv.mkProduct : List Type -> Position -> Env Type
-  def MSPosEnv.mkProduct types position = return (mkProduct types position)
+  op MSlangEnv.mkProduct : List Type -> Position -> Env Type
+  def MSlangEnv.mkProduct types position = return (mkProduct types position)
 
   op mkBase : Id -> List Type -> Position -> Type
-  op MSPos.mkBase : Id -> List Type -> Position -> Type
-  op Env.mkBase : Id -> List Type -> Env Type
-  op MSPosEnv.mkBase : Id -> List Type -> Position -> Env Type
+  op MSlangEnv.mkBase : Id -> List Type -> Position -> Env Type
+  def MSlangEnv.mkBase id types position = return (mkBase id types position)
+
+  op mkEquals : Type -> Position -> Term
+
+  op mkEquality : Term -> Term -> Position -> Term
+  op MSlangEnv.mkEquality : Term -> Term -> Position -> Env Term
+  def MSlangEnv.mkEquality term1 term2 position =
+    return (mkEquality term1 term2 position)
+
+  op mkTrue : Position -> Term
+  op MSPosEnv.mkTrue : Position -> Env Term
   
-  op mkArrowAt : Type -> Type -> Position -> Type
-  op mkNotAt : Term -> Position -> Term
-  op mkTrueAt : Position -> Term
-  op mkFunAt : Fun -> Type -> Position -> Type
-  op mkEqualsAt : Type -> Position -> Term
-  op mkEqualityAt : Term -> Term -> Position -> Term
-  op mkOpAt : Id -> Type -> Position -> Term
-  op mkOrAt : Term -> Term -> Position -> Term
+  op mkNot : Term -> Position -> Term
+  op mkFun : Fun -> Type -> Position -> Term
+  op mkOp : Id -> Type -> Position -> Term
+  op mkOr : Term -> Term -> Position -> Term
   op disjList : List Term -> Position -> Term
 
   op mkNat : Nat -> Term
+
+  op freshMetaTyVar : Position -> Type
 endspec
 \end{spec}

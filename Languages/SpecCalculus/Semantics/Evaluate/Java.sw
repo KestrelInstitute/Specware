@@ -4,16 +4,15 @@ SpecCalc qualifying spec
   import /Languages/MetaSlang/CodeGen/Java/ToJava
   import /Languages/Java/JavaPrint
 
-  op SpecCalc.evaluateJavaGen : ValueInfo * (SpecCalc.Term Position) * Option String -> SpecCalc.Monad ValueInfo
+  op SpecCalc.evaluateJavaGen : ValueInfo * (SpecCalc.Term Position) * Option String -> SpecCalc.Env ValueInfo
 
   %% Need to add error detection code
   def SpecCalc.evaluateJavaGen (valueInfo as (Spec spc,_,_), cterm, optFileNm) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
-     cURI <- SpecCalc.getURI(cterm);
+     cURI <- SpecCalc.getURI cterm;
      javaFileName <- URItoJavaFile (cURI, optFileNm);
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
-                     (SpecPath_Relative {path = ["Library","Base"],
-                                         hashSuffix = None});
+     baseUnitId <- pathToRelativeURI "/Library/Base";
+     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseUnitId;
      let _ = ensureDirectoriesExist javaFileName in
      let _ = toJavaFile((subtractSpec spc baseSpec), javaFileName,[]) in
 %     let _ = System.fail ("evaluateJavaGen ") in

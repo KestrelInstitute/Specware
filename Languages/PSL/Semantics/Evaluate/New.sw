@@ -1,4 +1,4 @@
-withModeSpec \section{Compilation of Oscar/PSL Procedures into BSpecs}
+\section{Compilation of Oscar/PSL Procedures into BSpecs}
 
 ## There are name conflicts for the product accessors for Procedures, OscarSpecs and ProcContext
 ## There are name conflicts for BSpecs and ProcContexts
@@ -6,7 +6,7 @@ withModeSpec \section{Compilation of Oscar/PSL Procedures into BSpecs}
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
-  import ../OscarSpec
+  % import ../OscarSpec
   import /Languages/SpecCalculus/Semantics/Evaluate/Signature 
   import /Languages/MetaSlang/Specs/Elaborate/Utilities
   import /Languages/MetaSlang/AbstractSyntax/Fold
@@ -54,7 +54,7 @@ not a procedure. This includes vars and ops.
           procSort <- return (mkBaseAt (unQualified "Proc") [argProd,procInfo.returnSort,storeProd] position); 
           qualProcId <- return (unQualified procName);
           modeSpec <- addConstant (modeSpec oscarSpec) qualProcId Nonfix (tyVarsOf procSort,procSort) None position;
-          setModeSpec oscarSpec modeSpec
+          setModeSpec oscarSpec modeSpec;
 \end{spec}
 
 We want to construct a placeholder for the procedure. This includes an

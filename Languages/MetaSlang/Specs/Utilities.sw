@@ -546,6 +546,8 @@ Utilities qualifying spec {
                                 spc.properties)
 
 
+(*
+ * ### As far as I can tell, the modifyNames family of functions are not used
  %- --------------------------------------------------------------------------------
  %- modify op and sort names in a spec, term, sort, etc.
  %- - mSrt is a function for modifying sort QualifiedId's
@@ -690,6 +692,7 @@ Utilities qualifying spec {
     map (fn (type_vars, term) ->
 	 (type_vars, modifyNamesTerm(mSrt,mOp,term)))
         defs)
+*)
 
 (*
  %% TODO: ??? FIX THIS

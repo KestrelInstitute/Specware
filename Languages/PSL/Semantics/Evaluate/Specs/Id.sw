@@ -33,8 +33,8 @@ let
     op makeId : String -> String -> Id
     op UnQualifiedId.makeId : String -> Id
 
-    op IdEnv.makeId : String -> String -> Env Id
-    op UnQualifiedIdEnv.makeId : String -> Env Id
+    % op IdEnv.makeId : String -> String -> Env Id
+    % op UnQualifiedIdEnv.makeId : String -> Env Id
     
     op pp : Id -> Doc
     op show : Id -> String

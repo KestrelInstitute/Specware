@@ -35,30 +35,30 @@ operators in each spec constitute the variables that make up the store.
 \begin{spec}
 ModeSpec qualifying spec {
   import Spec
-
-  sort Morphism
+  import Morphism
 
   sort ModeSpec = {
       spc : Spec,
-      variables : IdSet.Set
+      variables : OpRefSet.Set
     }
 
   op specOf : ModeSpec -> Spec
   def specOf modeSpec = modeSpec.spc
 
-  op variables : ModeSpec -> IdSet.Set
+  op variables : ModeSpec -> OpRefSet.Set
   def variables modeSpec = modeSpec.variables
 
   op empty : ModeSpec
-  def empty = make Spec.empty IdSet.empty
+  def empty = make Spec.empty OpRefSet.empty
 
-  op make : Spec -> IdSet.Set -> ModeSpec
+  op make : Spec -> OpRefSet.Set -> ModeSpec
   def make spc variables = {
       spc = spc,
       variables = variables
     }
 
-  op withVariables infixl 18 : ModeSpec * IdSet.Set -> ModeSpec
+  % This is not used
+  op withVariables infixl 18 : ModeSpec * OpRefSet.Set -> ModeSpec
   def withVariables (modeSpec,variables) = {
       spc = specOf modeSpec,
       variables = variables
@@ -72,19 +72,57 @@ ModeSpec qualifying spec {
 
   op addConstant : ModeSpec -> OpInfo -> Position -> Env ModeSpec
   def addConstant modeSpec opInfo position = {
-      newSpec <- insert (specOf modeSpec) opInfo;
+      newSpec <- addOp (specOf modeSpec) opInfo position;
       return (modeSpec withSpec newSpec)
     }
 
   op addVariable : ModeSpec -> OpInfo -> Position -> Env ModeSpec
   def addVariable modeSpec opInfo position = {
-      newSpec <- insert (specOf modeSpec) opInfo;
-      return (make newSpec (IdSet.insert (variables modeSpec) (name opInfo)))
+      newSpec <- addOp (specOf modeSpec) opInfo position;
+      ref <- refOf (specOf modeSpec) opInfo;
+      return (make newSpec (OpRefSet.insert (variables modeSpec) ref))
     }
 
+  op findTheOp : ModeSpec -> Id.Id -> Env OpInfo
+  def findTheOp modeSpec id = findTheOp (specOf modeSpec) id
+
+  op findTheVariable : ModeSpec -> Id.Id -> Env OpInfo
+  def findTheVariable modeSpec id = {
+      opInfo <- findTheOp (specOf modeSpec) id;
+      ref <- refOf (specOf modeSpec) opInfo;
+      if (member? (variables modeSpec) ref) then
+        return opInfo
+      else
+        specError ("Id is an op but not a variable: " ^ (show id))
+    }
+
+  op ModeSpecEnv.foldOps : fa(a) (a -> OpInfo -> Env a) -> a -> ModeSpec -> Env a
+  def ModeSpecEnv.foldOps f unit modeSpec = SpecEnv.foldOps f unit (specOf modeSpec)
+
+  op ModeSpec.foldVariables : fa(a) (a -> OpInfo -> a) -> a -> ModeSpec -> a
+  def ModeSpec.foldVariables f unit modeSpec = Spec.foldOps
+    (fn x -> fn opInfo ->
+        if member? (variables modeSpec) (refOf (specOf modeSpec) opInfo) then
+          f x opInfo
+        else
+          x) unit (specOf modeSpec)
+ 
+  op ModeSpecEnv.foldVariables : fa(a) (a -> OpInfo -> Env a) -> a -> ModeSpec -> Env a
+  def ModeSpecEnv.foldVariables f unit modeSpec = SpecEnv.foldOps
+    (fn x -> fn opInfo -> {
+        ref <- refOf (specOf modeSpec) opInfo;
+        if member? (variables modeSpec) ref then
+          f x opInfo
+        else
+          return x
+      }) unit (specOf modeSpec)
+ 
+
   op addProperty : ModeSpec -> Property -> Position -> Env ModeSpec
-  def addProperty modeSpec property position =
-    return (modeSpec withSpec (insert (specOf modeSpec) property))
+  def addProperty modeSpec property position = {
+      newSpec <- addProperty (specOf modeSpec) property position;
+      return (modeSpec withSpec newSpec)
+    }
 
   op elaborate : ModeSpec -> Env ModeSpec
   def elaborate modeSpec = {
@@ -101,8 +139,5 @@ ModeSpec qualifying spec {
       pp "variables=",
       pp (variables modeSpec)
     ]
-
-  op foldOverVariables : fa (a) (a -> OpInfo -> a) -> a -> ModeSpec -> a
-  op foldOverOps : fa (a) (a -> OpInfo -> a) -> a -> ModeSpec -> a
 }
 \end{spec}

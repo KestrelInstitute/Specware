@@ -13,6 +13,7 @@ let
 in spec
   import KeyValue
   import ../Maps
+
   sort KeyValue = Dom * Cod
 
   def KeyValue.pp (dom,cod) =

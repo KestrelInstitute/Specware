@@ -8,18 +8,13 @@ SpecCalc qualifying spec {
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
-     %% -------------------------------------------
-     %% next two lines are optional:
      uri <- getCurrentURI;
      print (";;; Processing prove at "^(uriToString uri)^"\n");
-     %% -------------------------------------------
      (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
-                                                 (SpecPath_Relative {path = ["Library","Base"],
-								     hashSuffix = None});
-     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateURI (Internal "ProverBase")
-                                                       (SpecPath_Relative {path = ["Library","Base","ProverBase"],
-									   hashSuffix = None});
+     baseUnitId <- pathToRelativeURI "/Library/Base";
+     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseUnitId;
+     proverBaseUnitId <- pathToRelativeURI "/Library/Base/ProverBase";
+     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateURI (Internal "ProverBase") proverBaseUnitId;
      URI <- getCurrentURI;
      snarkLogFileName <- URItoSnarkLogFile (URI);
      _ <- return (ensureDirectoriesExist snarkLogFileName);
@@ -71,7 +66,7 @@ SpecCalc qualifying spec {
    return prover_options
   }
 
- op URItoSnarkLogFile: URI -> SpecCalc.Monad String
+ op URItoSnarkLogFile: URI -> SpecCalc.Env String
  def URItoSnarkLogFile (uri as {path,hashSuffix}) = {
    result <-
    case hashSuffix of
@@ -112,7 +107,7 @@ SpecCalc qualifying spec {
      | _ -> None
 
  op proveInSpec: Option String * ClaimName * Spec * Option String * Spec * String * 
-                 Assertions * List LispCell * String * Position -> SpecCalc.Monad Boolean
+                 Assertions * List LispCell * String * Position -> SpecCalc.Env Boolean
  def proveInSpec (proof_name, claim_name, spc, spec_name, base_spc, prover_name,
 		  assertions, prover_options, snarkLogFileName, pos) = {
    result <-

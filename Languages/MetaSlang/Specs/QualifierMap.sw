@@ -2,8 +2,8 @@ spec
  sort MetaSlang.Id = String
  sort MetaSlang.Qualifier = Id
  sort AQualifierMap b
- sort SpecCalc.Monad a
- %sort SpecCalc.Env a
+ %sort SpecCalc.Monad a
+ sort SpecCalc.Env a
  %% From /Languages/SpecCalculus/Semantics/Environment
  %sort Env a = State -> (Result a) * State
 
@@ -27,8 +27,8 @@ spec
  op subsetAQualifierMap? : fa(a) AQualifierMap a * AQualifierMap a -> Boolean
 
  op foldOverQualifierMap :
-    fa(a,b) (Qualifier * Id * a * b -> Monad b)
+    fa(a,b) (Qualifier * Id * a * b -> SpecCalc.Env b)
          -> b
          -> (AQualifierMap a)
-         -> Monad b
+         -> SpecCalc.Env b
 endspec

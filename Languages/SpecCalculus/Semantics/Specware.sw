@@ -385,76 +385,6 @@ sense that no toplevel functions return anything.
        print message;
      return false}
 
-  op printException : Exception -> String
-  def printException except =
-    case except of
-
-      | Fail str -> 
-		"Fail: " ^ str
-
-      | SyntaxError msg ->  
-                "Syntax error: " ^ msg
-
-      | ParserError fileName -> 
-		"Syntax error for filename: " ^ fileName
-
-      | Unsupported (position,str) ->
-		"Unsupported operation: " ^ str
-	      ^ "\n  found at " ^ (printAll position)
-
-      | URINotFound (position, uri) ->
-		"Unknown unit " ^ (showRelativeURI uri) 
-              ^ "\n  referenced from " ^ (printAll position)
-
-      | FileNotFound (position, uri) ->
-		"Unknown unit " ^ (showRelativeURI uri) 
-              ^ "\n  referenced from " ^ (printAll position)
-
-      | SpecError (position,msg) ->
-		"Error in specification: " ^ msg 
-              ^ "\n  found " ^ (printAll position)
-
-      | MorphError (position,msg) ->
-		"Error in morphism: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
-
-      | DiagError (position,msg) ->
-		"Diagram error: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
-
-      | TypeCheck (position, msg) ->
-		"Type error: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
-
-      | Proof (position, msg) ->
-		"Proof error: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
-
-      | CircularDefinition uri ->
-		"Circular definition: " ^ showURI uri
-
-      | TypeCheckErrors errs -> printTypeErrors errs
-        
-      %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
-      | OldTypeCheck str ->
-		"Type errors:\n" ^ str
-
-      | _ -> 
-		"Unknown exception: " 
-              ^ (System.toString except)
-
-  op printTypeErrors : List(String * Position) -> String
-  def printTypeErrors errs =
-    let def printErr((msg,pos),(result,lastfilename)) =
-          let filename = (case pos of
-			    | File (filename, left, right) -> filename
-			    | _ -> "")
-          in (result ^ (if filename = lastfilename then print pos else printAll pos)
-	       ^ " : " ^ msg ^ "\n",
-	      filename)
-    in
-    (foldl printErr ("","") errs).1
-	   
   op gotoErrorLocation: Exception -> ()
   def gotoErrorLocation except = 
    case getFirstErrorLocation except of
@@ -490,7 +420,7 @@ sense that no toplevel functions return anything.
 \end{spec}
 
 \begin{spec}
-  op toplevelHandlerForJava: Exception -> SpecCalc.Monad Boolean
+  op toplevelHandlerForJava: Exception -> SpecCalc.Env Boolean
   def toplevelHandlerForJava except =
     {cleanupGlobalContext;		% Remove InProcess entries
      saveSpecwareState;			% So work done before error is not lost

@@ -1,3 +1,8 @@
+Stephen has made a good point. Even if you want to assign each op an id,
+then you might want to ensure that the ids are unique across the
+whole session. That way if you import an op, you don't have to
+rename or reindex things.
+
 What about rules for qualifying?
 
 Should the writer of a spec or a user of a spec qualify a spec or both?
@@ -48,4 +53,5 @@ This doesn't make sense. Names must be something that gets carried around.
 
 Should I be able to create an OpInfo outside the scope of a spec?
 
+There is an inconsistency .. some things like refOf are monadic and specOf is not.
 

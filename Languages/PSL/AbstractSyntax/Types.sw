@@ -1,8 +1,8 @@
 \section{Spec Calculus Abstract Syntax}
 
 \begin{spec}
-SpecCalc qualifying spec {
-  import ../../MetaSlang/Specs/PosSpec % For Position
+OscarAbstractSyntax qualifying spec {
+  import ../../MetaSlang/Specs/StandardSpec % For Position
   import ../../MetaSlang/AbstractSyntax/AnnTerm % For PSL, but not Specware4
   import ../../SpecCalculus/AbstractSyntax/Types
 \end{spec}
@@ -37,10 +37,27 @@ defining term.
     | Proc   Ident * (ProcInfo a)
 
   sort ProcInfo a = {
-    args : List (AVar a),
+    formalArgs : List (AVar a),
     returnSort : ASort a,
     command : Command a
   }
+
+  op formalArgs : fa(a) ProcInfo a -> List (AVar a)
+  def formalArgs procInfo = procInfo.formalArgs
+
+  op returnSort : fa(a) ProcInfo a -> ASort a
+  def returnSort procInfo = procInfo.returnSort
+
+  op command : fa(a) ProcInfo a -> Command a
+  def command procInfo = procInfo.command
+\end{spec}
+
+\begin{spec}
+  op mkImport : SpecCalc.Term Position * Position -> OscarSpecElem Position
+  def mkImport (term,position) = (Import term, position)
+
+  op mkSort : List QualifiedId * TyVars * List (ASortScheme Position) * Position -> OscarSpecElem Position
+  def mkSort (ids,tyVars,sortSchemes,position) = (Sort (ids, (tyVars,sortSchemes)),position) 
 \end{spec}
 
 The abstract syntax for commands is modeled after Dijkstra's guarded

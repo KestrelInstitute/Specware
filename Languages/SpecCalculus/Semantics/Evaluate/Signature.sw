@@ -62,7 +62,7 @@ SpecCalc qualifying spec {
 
   %% Hooks to create an environment in which monad can be run
   op Specware.ignoredState    : State
-  op Specware.toplevelHandler : Exception -> SpecCalc.Monad Boolean
+  op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean
   % SpecCalc.Monad = SpecCalc.Env, but type checker gets confused if we use Env
 
   %% These are hooks to handwritten function that save and restore the

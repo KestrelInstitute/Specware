@@ -2,7 +2,7 @@ AnnSpec qualifying
 spec
  import QualifierMap
  import /Library/Legacy/DataStructures/StringMapSplay
- import SpecCalc qualifying /Library/Legacy/DataStructures/Monadic/SplayMap
+ import SpecCalc qualifying (translate /Library/Legacy/DataStructures/Monadic/SplayMap {Monad +-> Env})
  sort AQualifierMap b  = StringMap (StringMap b)    
  def foldriAQualifierMap = StringMap.foldriDouble  % f ini qm
  def emptyAQualifierMap  = StringMap.empty         % 

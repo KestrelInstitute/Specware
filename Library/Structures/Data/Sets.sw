@@ -19,6 +19,8 @@ spec
   op delete : Set -> Elem -> Set
 
   op singleton : Elem -> Set
+  op theSingleton : (Set | fn set -> ex (x) set = singleton x) -> Elem
+
   op insert : Set -> Elem -> Set
 endspec
 \end{spec}

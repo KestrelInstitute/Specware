@@ -23,10 +23,12 @@ states.
 \begin{spec}
 Proc qualifying spec {
   import ModeSpec
-  import translate /Languages/BSpecs/Predicative/Multipointed by {
+  import Env
+
+  import translate (translate /Languages/BSpecs/Predicative/Multipointed by {
       Cat.Object +-> ModeSpec.ModeSpec,
-      Cat.Arrow +-> ModeSpec.Morphism
-    }
+      Cat.Arrow +-> SpecMorph.Morphism
+    }) by {Cat._ +-> ModeSpec._}
 
   sort ReturnInfo = Option {returnId : Id, returnType : Type}
 
@@ -40,13 +42,17 @@ Proc qualifying spec {
     bSpec : BSpec
   }
 
-  op make : List String -> ReturnInfo -> ModeSpec -> BSpec -> Procedure
-  def make args returnInfo modeSpec bSpec = {
+  op makeProcedure : List String -> ReturnInfo -> ModeSpec -> BSpec -> Procedure
+  def makeProcedure args returnInfo modeSpec bSpec = {
     parameters = args,
     returnInfo = returnInfo,
     modeSpec = modeSpec,
     bSpec = bSpec
   }
+
+  op ProcEnv.makeProcedure : List String -> ReturnInfo -> ModeSpec -> BSpec -> Env Procedure
+  def ProcEnv.makeProcedure args returnInfo modeSpec bSpec =
+    return (makeProcedure args returnInfo modeSpec bSpec)
 
   op parameters : Procedure -> List String
   def parameters proc = proc.parameters

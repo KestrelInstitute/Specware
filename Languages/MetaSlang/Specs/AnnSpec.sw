@@ -1,6 +1,3 @@
-% derived from SW4/Languages/MetaSlang/ADT/Specs/ASpec.sl v1.5
-% derived from SW4/Languages/MetaSlang/ADT/Specs/ASpecSig.sl v1.2
-
 AnnSpec qualifying spec 
  import Position
 %  import ../AbstractSyntax/AnnTerm   
@@ -109,7 +106,7 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
-(* ### unused
+(* ### unused?
  op appSpec    : fa(a) appTSP a -> ASpec a    -> ()
 
  def appSpec tsp spc = 
@@ -217,7 +214,7 @@ AnnSpec qualifying spec
 
  % --------------------------------------------------------------------------------
  % get the sort/op names as list of strings
-(* ### unused
+(* ### Unused?
  op sortNames : fa(b) ASpec b -> List String
  op opNames   : fa(b) ASpec b -> List String
 
@@ -562,5 +559,4 @@ AnnSpec qualifying spec
    let spc = setOps (spc, newOps) in
    setProperties (spc,  spc.properties ++ imported_spec.properties)
 *)
-
 endspec

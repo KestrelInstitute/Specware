@@ -17,27 +17,54 @@ Op qualifying spec
   sort OpInfo
   sort Fixity
 
-  op name : OpInfo -> Id
-  op names : OpInfo -> IdSet.Set
+  op nonFix : Fixity
+
+  op idOf : OpInfo -> Id
+  op ids : OpInfo -> IdSet.Set
   op fixity : OpInfo -> Fixity
   op type : OpInfo -> Type
-  op term : OpInfo -> MS.Term
+  op term : OpInfo -> MSlang.Term
 
-  op withName infixl 18 : OpInfo * Id -> OpInfo
-  op withNames infixl 18 : OpInfo * IdSet.Set -> OpInfo
+  op withId infixl 18 : OpInfo * Id -> OpInfo
+  op withIds infixl 18 : OpInfo * IdSet.Set -> OpInfo
   op withFixity infixl 18 : OpInfo * Fixity -> OpInfo
   op withType infixl 18 : OpInfo * Type -> OpInfo
-  op withTerm infixl 18 : OpInfo * MS.Term -> OpInfo
+  op withTerm infixl 18 : OpInfo * MSlang.Term -> OpInfo
 
-  op OpWithFixity.makeOp : Id -> MS.Term -> Type -> Fixity -> OpInfo 
-  op makeOp : Id -> MS.Term -> Type -> OpInfo 
+  op makeOp : Id -> Fixity -> MSlang.Term -> Type -> OpInfo 
 
-  op OpWithFixityEnv.makeOp : Id -> MS.Term -> Type -> Fixity -> Env OpInfo 
-  op OpEnv.makeOp : Id -> MS.Term -> Type -> Env OpInfo 
-  op OpNoTermEnv.makeOp : Id -> Type -> Env OpInfo
+  op OpNoFixity.makeOp : Id -> MSlang.Term -> Type -> OpInfo 
+  def OpNoFixity.makeOp id term type = makeOp id nonFix term type
+
+  op OpEnv.makeOp : Id -> Fixity -> MSlang.Term -> Type -> Env OpInfo 
+  def OpEnv.makeOp id fxty term type = return (makeOp id fxty term type)
+  
+  op OpNoFixityEnv.makeOp : Id -> MSlang.Term -> Type -> Env OpInfo 
+  def OpNoFixityEnv.makeOp id term type = return (makeOp id nonFix term type)
+
+  op OpNoTerm.makeOp : Id -> Fixity -> Type -> OpInfo
+
+  op OpNoTermEnv.makeOp : Id -> Fixity -> Type -> Env OpInfo
+  def OpNoTermEnv.makeOp id fixity type = return (makeOp id fixity type)
+  
+  op OpNoFixityNoTermEnv.makeOp : Id -> Type -> Env OpInfo
+  def OpNoFixityNoTermEnv.makeOp id type = return (makeOp id nonFix type)
+
+  op join : OpInfo -> OpInfo -> Env OpInfo
 
   op pp : OpInfo -> Doc
   op show : OpInfo -> String
+
+  sort Ref
+  % sort Spec.Spec
+
+  op OpRef.pp : Ref -> Doc
+
+  op deref : Spec.Spec -> Ref -> OpInfo
+  op refOf : Spec.Spec -> OpInfo -> Ref
+
+  op OpEnv.deref : Spec.Spec -> Ref -> Env OpInfo
+  op OpEnv.refOf : Spec.Spec -> OpInfo -> Env Ref
 endspec
 \end{spec}
 
@@ -45,4 +72,4 @@ Perhaps the \Sort{Fixity} should be part of the name? Maybe not. Seems
 strange where it is. 
 
 The second make function appears because in many instances the fixity
-is Nonfix and it is convenient to omit it.
+is nonFix and it is convenient to omit it.

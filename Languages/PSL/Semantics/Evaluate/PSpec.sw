@@ -6,7 +6,7 @@ the P as parameterized spec.
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import New
+  import Spec/Compiler
   import ../PSpec
   import ../Utilities
   import /Languages/SpecCalculus/Semantics/Evaluate/Signature

@@ -9,7 +9,7 @@ Functions qualifying spec
   op o infixl 24 : fa (A,B,C) (B -> C) * (A -> B) -> A -> C
 
   def id x = x
-  def o (f1,f2) x = f1(f2 x)
+  def o (f2,f1) x = f2 (f1 x)
 
  % axiom ident is fa (x) id x = x
 %  axiom assoc is fa (f,g,h) (h o g) o f = h o (g o f)

@@ -5,7 +5,7 @@ spec
  sort AQualifierMap b  = Map(String * String,b)   
  def foldriAQualifierMap f ini qm =
    foldi (fn((q,id),v,r) -> f(q,id,v,r)) ini qm
- def emptyAQualifierMap  = Map.emptyMap         % 
+ def emptyAQualifierMap  = Map.emptyMap       % 
  def findAQualifierMap(m, x, y) = Map.apply (m, (x,y))
  def insertAQualifierMap(qm, x, y, v) = Map.update (qm, (x,y), v)
  def mapAQualifierMap = map 
@@ -23,11 +23,11 @@ spec
 				 else cons(id,ids))
       [] m
 
-  op SpecCalc.return : fa (a) a -> Monad a
-  op SpecCalc.monadBind : fa (a,b) (Monad a) * (a -> Monad b) -> Monad b
+  op SpecCalc.return : fa (a) a -> SpecCalc.Env a
+  op SpecCalc.monadBind : fa (a,b) (SpecCalc.Env a) * (a -> SpecCalc.Env b) -> SpecCalc.Env b
 
  %% Temporary to get stuff working
- op foldL: fa(a,b) (a * b -> Monad b) -> b -> List a -> Monad b
+ op foldL: fa(a,b) (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
  def foldL f e l =
    case l of
      | [] -> return e
