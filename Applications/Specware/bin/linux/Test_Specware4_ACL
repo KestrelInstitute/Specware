@@ -10,8 +10,6 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin:/usr/local/bin
 . $SPECWARE4/Scripts/unix/Verify_Specware4
 . $SPECWARE4/Scripts/unix/Verify_Lisp ACL
 
-echo "HI"
-
 cd $SPECWARE4
 
 export LISP_EXECUTABLE="$LISP"
@@ -23,6 +21,9 @@ xemacs=`which xemacs`
 
 LOG_FILE=/tmp/test-specware4-acl-`/bin/date +"%y%m%d-%H%M%S"`
 
+/bin/date
+echo "Waiting for $LOG_FILE ..."
+
 $xemacs -geometry 137x50-50-50 \
         -name "Specware4" \
         -title "Specware4" \
@@ -32,6 +33,7 @@ $xemacs -geometry 137x50-50-50 \
         -eval "(sw:eval-in-lisp \"(test-specware4 \\\"$LOG_FILE\\\")\")" \
         -eval "(progn (fi:eval-in-lisp-asynchronous \"(exit-from-lisp 0)\") (kill-emacs 0))"
 
+/bin/date
 echo "-------------"
 echo "Test results:"
 
