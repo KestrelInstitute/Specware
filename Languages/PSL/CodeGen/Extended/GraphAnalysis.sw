@@ -77,12 +77,13 @@ spec
   op setNodeContent: Index * NodeContent * Graph -> Graph
   def setNodeContent(i,newNodeContent,g) =
     case nth(g,i) of
-      | (index,_,preds) ->
-	replaceNth(i,g,(index,newNodeContent,preds))
+      | (dfsi,_,preds) ->
+	replaceNth(i,g,(dfsi,newNodeContent,preds))
 
   op  setPredecessors: Index * List Index * Graph -> Graph
   def setPredecessors(i,preds,g) =
-    replaceNth(i,g,(i,nodeContent(i,g),preds))
+    case nth(g,i) of
+      | (dfsi,content,_) -> replaceNth(i,g,(dfsi,content,preds))
 
   op  removePredecessor: Index * Index  * Graph -> Graph
   def removePredecessor(i,oldPred,g) =
@@ -97,7 +98,7 @@ spec
   op  replaceSuccessor: Index * Index * Index * Graph -> Graph
   def replaceSuccessor(i,oldSucc,newSucc,g) =
     case nth(g,i) of
-      | (ii,nc,preds) ->
+      | (dfsi,nc,preds) ->
         let def repl x = if x = oldSucc then newSucc else x in
         let newContent =
 	    (case nc of
@@ -115,7 +116,7 @@ spec
 		 Loop {condition = condition, preTest? = preTest?, body = repl body, cont = repl cont}
 	       | content -> content)
 	in
-	replaceNth(i,g,(i,newContent,preds))
+	replaceNth(i,g,(dfsi,newContent,preds))
 
   op  changeSuccessor: Index * Index * Index * Graph -> Graph
   def changeSuccessor(i,oldSucc,newSucc,g) =
@@ -131,7 +132,9 @@ spec
 	replaceNth(i,g,(newDFSI,content,preds))
 
   op depthFirstIndex: Index * Graph -> Nat
-  def depthFirstIndex(i,g) = (nth(g,i)).1
+  def depthFirstIndex(i,g) =
+    if i = noContinue then 0
+      else (nth(g,i)).1
 
   op insertDFSIndices: Graph * Index -> Graph
   def insertDFSIndices (g,topIndex) =
@@ -149,6 +152,13 @@ spec
 
   op descendantIndex?: Index * Index * Graph -> Boolean
   def descendantIndex?(i,j,g) = depthFirstIndex(i,g) < depthFirstIndex(j,g)
+
+  %% Returns node that is lowest in graph
+  op  latestNode?: List Index * Graph -> Index
+  def latestNode?(firstNd::restNds,g) =
+    foldl (fn (i,least) ->
+	    if descendantIndex?(least,i,g) then i else least)
+      firstNd restNds
 
   op loopPredecessors: Index * Graph -> List Index
   def loopPredecessors(i,g) =
@@ -223,8 +233,9 @@ spec
     let baseG = insertDFSIndices (baseG,topIndex) in
     %% DFS indices tell which nodes are higher in the graph and are used to
     %% to determine which links are looping links
+    %% let - = print(printGraph baseG) in
     let
-      def buildStructuredGraph(nd:Index,exits,g) =
+      def buildStructuredGraph(nd,exits,g) =
 	if member(nd,exits) or nd = noContinue then g
 	else
 	case loopPredecessors(nd,baseG) of
@@ -234,26 +245,31 @@ spec
 								       baseG)),
 				      baseG) in
 	    (case loopExit?(nd,loopExits,g) of
-	       | Some (cond,body,cont) -> buildLoop(true,nd,cond,body,cont,exits,loopExits,g)
+	       | Some (cond,body,cont) -> buildLoop(nd,true,nd,cond,body,cont,exits,loopExits,g)
 	       | None ->
-	     let tail = foldl min nd preds in    % final predecessor
-	     case loopExit?(tail, loopExits,g) of
+	     let tail = latestNode?(preds,g) in    % final predecessor
+	     case loopExit?(tail,loopExits,g) of
 	       | Some (cond,body,cont) ->
 	       %% Move tail to head of the loop
 	         let g = foldl (fn (pred,g) ->
 				if descendantIndex?(nd,pred,g)
 				  then changeSuccessor(pred,nd,tail,g)
 				 else g)
-	                   g preds
-	         in buildLoop(false,tail,cond,body,cont,exits,loopExits,g)
+	                   g (predecessors(nd,g))
+	         in buildLoop(nd,false,tail,cond,body,cont,exits,loopExits,g)
 	       %% Give up structuring. Rely on gotos.
 	       | None -> buildStraightLine(nd,exits,g))
 	  %% So far only one loop for node
 	  %| x::rs -> buildLoops(n,x,rs,g)
 
-      def buildLoop(pre?,head,cond,body,cont,exits,loopExits,g) =
-	let g = buildStructuredGraph(cont,exits,g) in
-	let g = buildStructuredGraph(body,Cons(head,loopExits),g) in
+      def buildStructuredGraphRec(nd,oldNd,exits,g) =
+	if descendantIndex?(nd,oldNd,g)     % Prevent reprocessing nodes
+	  then buildStructuredGraph(nd,exits,g)
+	  else g
+
+      def buildLoop(oldNd,pre?,head,cond,body,cont,exits,loopExits,g) =
+	let g = buildStructuredGraphRec(cont,oldNd,exits,g) in
+	let g = buildStructuredGraphRec(body,oldNd,Cons(head,loopExits),g) in
 	let g = setNodeContent(head,
 			       Loop {condition = cond,
 				     preTest?  = pre?,
@@ -262,7 +278,7 @@ spec
 			       g)
 	in foldl (fn (x,g) ->
 		  if x = cont then g
-		  else buildStructuredGraph(x,exits,g))
+		  else buildStructuredGraphRec(x,oldNd,exits,g))
 	     g loopExits
 
       def loopExit?(node,loopExits,g) =
@@ -280,15 +296,14 @@ spec
         if nd = noContinue then g else
 	case nodeContent(nd,baseG) of
 	  | Block {statements = _, next} ->
-	    buildStructuredGraph (next,exits,g)
+	    buildStructuredGraphRec(next,nd,exits,g)
 	  | Branch {condition, trueBranch, falseBranch} ->
 	    let cont = commonSuccessor(trueBranch,falseBranch,baseG) in
-	    let g = buildStructuredGraph(trueBranch, [cont],g) in
-	    let g = buildStructuredGraph(falseBranch,[cont],g) in
-        % LE added last disjunct below. There may be no common succesor (cont = noContinue)
+	    let g = buildStructuredGraphRec(trueBranch, nd,[cont],g) in
+	    let g = buildStructuredGraphRec(falseBranch,nd,[cont],g) in
 	    let g = if cont = trueBranch or cont = falseBranch or cont = noContinue
 	                then g
-			else buildStructuredGraph(cont,exits,g) in
+			else buildStructuredGraphRec(cont,nd,exits,g) in
 	    if falseBranch = cont
 	      then setNodeContent(nd,IfThen {condition   = condition,
 					     trueBranch  = trueBranch,
@@ -310,7 +325,9 @@ spec
       | [] -> []
       %% Assumes first node of baseG is the head of the graph
       | _::_ ->
-        buildStructuredGraph (topIndex, [], baseG)
+        let g = buildStructuredGraph (topIndex, [], baseG) in
+	%let _ = print(printGraph g) in
+	g
 
   op printGraph: Graph -> String
   op printNode : Node * Index -> String
