@@ -283,7 +283,7 @@ MSToFM qualifying spec
     let (resTerm, newContext) =
     case term of 
       | Bind(Forall, bndVars, term, _) ->
-	let fmBndList = fmBndVars(sp, bndVars) in
+	let fmBndList = fmBndVars bndVars in
 	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MS.Term in
 	let newTerm = Utilities.mkSimpImplies(bndVarsPred, term) in
 	let (fmFmla, newContext) = toFMTerm(context, sp, newTerm) in
@@ -310,7 +310,7 @@ MSToFM qualifying spec
     (resTerm, newContext)
 
   op toFMTermApp:  Context * Spec * MS.Term * Fun * Sort * MS.Term -> FMTerm * Context
-  def toFMTermApp(cntxt, spc, term, f, srt, arg) =
+  def toFMTermApp(cntxt, spc, term, f, _, arg) =
     let args = case arg of
                  | Record(flds,_) -> map(fn (_, term) -> term) flds
 	         | _ -> [arg] in
@@ -330,8 +330,8 @@ MSToFM qualifying spec
   def toFMVar (context, spc, var as (v, s)) =
     (Poly (mkPoly1(mkMonom(1, v))), context)
 
-  op fmBndVars: Spec * List MS.Var -> List FMTerm
-  def fmBndVars(sp, vars) =
+  op fmBndVars: List MS.Var -> List FMTerm
+  def fmBndVars vars =
     let fmVarList = map (fn (v, s) -> Poly (mkPoly1(mkMonom(1, v)))) vars in
       fmVarList
 
