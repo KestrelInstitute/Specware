@@ -74,13 +74,13 @@ def checkSubsortFormat srt =
 	 raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
     }
 
-op checkBaseTypeAlias: Sort -> JGenEnv ()
-def checkBaseTypeAlias srt =
+op checkBaseTypeAlias: SortInfo -> Sort -> JGenEnv ()
+def checkBaseTypeAlias srt_info srt =
   {
    spc <- getEnvSpec;
    if baseType?(spc,srt) then
      {
-      println (warn(sortAnn srt,"alias definition for base type \""^printSort(srt)^"\" ignored."));
+      println (warn(sortAnn srt,"Ignoring sort " ^ printAliases srt_info.names ^ " defined as alias for base type " ^printSort srt));
       return ()
      }
    else return ()
@@ -91,9 +91,9 @@ def sortToClsDecls (_(* qualifier *), id, sort_info) =
    if ~(definedSortInfo? sort_info) then return ()
    else
      {
-      srtDef <- return(firstSortDefInnerSort sort_info);
-      srtDef <- checkSubsortFormat srtDef;
-      checkBaseTypeAlias srtDef;
+      srtDef_a <- return(firstSortDefInnerSort sort_info);
+      srtDef <- checkSubsortFormat srtDef_a;
+      checkBaseTypeAlias sort_info srtDef;
       case srtDef of
 	| Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
 	| CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef)
