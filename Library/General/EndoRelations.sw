@@ -18,7 +18,7 @@ EndoRelation qualifying spec
   type ReflexiveRelation a = (EndoRelation a | reflexive?)
 
   op irreflexive? : [a] EndoRelation a -> Boolean
-  def irreflexive? r = (fa(x) ~(r(x,x)))
+  def irreflexive? r = (fa(x) ~~r(x,x))
 
   type IrreflexiveRelation a = (EndoRelation a | irreflexive?)
 
@@ -33,7 +33,7 @@ EndoRelation qualifying spec
   type AntisymmetricRelation a = (EndoRelation a | antisymmetric?)
 
   op asymmetric? : [a] EndoRelation a -> Boolean
-  def asymmetric? r = (fa(x,y) ~(r(x,y) && r(y,x)))
+  def asymmetric? r = (fa(x,y) ~ (r(x,y) && r(y,x)))
 
   type AsymmetricRelation a = (EndoRelation a | asymmetric?)
 
@@ -43,21 +43,21 @@ EndoRelation qualifying spec
   type TransitiveRelation a = (EndoRelation a | transitive?)
 
   op negativeTransitive? : [a] EndoRelation a -> Boolean
-  def negativeTransitive? r = (fa(x,y,z) ~(r(x,y)) && ~(r(y,z)) => ~(r(x,z)))
+  def negativeTransitive? r = (fa(x,y,z) ~~r(x,y) && ~~r(y,z) => ~~r(x,z))
 
   type NegativeTransitiveRelation a = (EndoRelation a | negativeTransitive?)
 
   op trichotomous? : [a] EndoRelation a -> Boolean
   def trichotomous? r =
     % exactly one of `r(x,y)', `r(y,x)', and `x = y' holds:
-    (fa(x,y) r(x,y)  && ~(r(y,x)) && x ~= y
-        || ~(r(x,y)) &&   r(y,x)  && x ~= y
-        || ~(r(x,y)) && ~(r(y,x)) && x  = y)
+    (fa(x,y) r(x,y) && ~~r(y,x) && x ~= y
+        || ~~r(x,y) &&   r(y,x) && x ~= y
+        || ~~r(x,y) && ~~r(y,x) && x  = y)
 
   type TrichotomousRelation a = (EndoRelation a | trichotomous?)
 
   op equivalence? : [a] EndoRelation a -> Boolean
-  def equivalence? = reflexive? AND symmetric? AND transitive?
+  def equivalence? = reflexive? /\ symmetric? /\ transitive?
 
   type Equivalence a = (EndoRelation a | equivalence?)
 

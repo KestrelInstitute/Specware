@@ -20,12 +20,12 @@ FMap qualifying spec
 
   (* Since `FiniteMap' is a subtype of `Map' which is a subtype of `Relation'
   which is a subtype of `Set', it "inherits" ops for maps, (endo)relations,
-  and sets. Since `FMap' is only isomorphic to `FiniteSet', the relevant
-  inherited ops (those that make sense for finite maps and that can be refined
-  to actual implementations) are introduced here for type `FMap', and defined
-  using the isomorphism. Some of the inherited ops for `Relation' and `Set'
-  are renamed here to use names that are more appropriate to maps
-  vs. relations and sets. *)
+  and sets. Since `FMap(a,b)' is only isomorphic to `FiniteSet(a*b)' (as
+  opposed to being a subtype), the relevant inherited ops (those that make
+  sense for finite maps and that can be refined to actual implementations) are
+  introduced here for type `FMap', and defined using the isomorphism. Some of
+  the inherited ops for `Relation' and `Set' are renamed here to use names
+  that are more appropriate to maps vs. relations and sets. *)
 
   % operations and subtypes:
 
@@ -44,23 +44,26 @@ FMap qualifying spec
   op undefinedAt infixl 20 : [a,b] FMap(a,b) * a -> Boolean
   def undefinedAt (m,x) = (fromFMap m) undefinedAt x
 
-  op @ infixl 23 : [a,b] ((FMap(a,b) * a) | definedAt) -> b
+  op @ infixl 30 : [a,b] ((FMap(a,b) * a) | definedAt) -> b
   def @ (m,x) = (fromFMap m) @ x
 
-  op @@ infixl 23 : [a,b] FMap(a,b) * a -> Option b
+  op @@ infixl 30 : [a,b] FMap(a,b) * a -> Option b
   def @@ (m,x) = (fromFMap m) @@ x
 
-  op apply_1 : [a,b] FMap(a,b) -> b -> FSet a
-  def apply_1 m y = toFSet (apply_1 (fromFMap m) y)
+  op applyi : [a,b] FMap(a,b) -> b -> FSet a
+  def applyi m y = toFSet (applyi (fromFMap m) y)
 
   op applys : [a,b] FMap(a,b) -> FSet a -> FSet b
   def applys m xS = toFSet (applys (fromFMap m) (fromFSet xS))
 
-  op applys_1 : [a,b] FMap(a,b) -> FSet b -> FSet a
-  def applys_1 m yS = toFSet (applys_1 (fromFMap m) (fromFSet yS))
+  op applyis : [a,b] FMap(a,b) -> FSet b -> FSet a
+  def applyis m yS = toFSet (applyis (fromFMap m) (fromFSet yS))
 
   op id : [a] FSet a -> FMap(a,a)
   def id dom = toFMap (idOver (fromFSet dom))
+
+  op :> infixl 24 : [a,b,c] FMap(a,b) * FMap(b,c) -> FMap(a,c)
+  def :> (m1,m2) = toFMap (fromFMap m1 :> fromFMap m2)
 
   op o infixl 24 : [a,b,c] FMap(b,c) * FMap(a,b) -> FMap(a,c)
   def o (m1,m2) = toFMap (fromFMap m1 o fromFMap m2)
@@ -103,31 +106,31 @@ FMap qualifying spec
   op agree? : [a,b] FMap(a,b) * FMap(a,b) -> Boolean
   def agree?(m1,m2) = agree? (fromFMap m1, fromFMap m2)
 
-  op /\ infixl 25 : [a,b] ((FMap(a,b) * FMap(a,b)) | agree?) -> FMap(a,b)
+  op /\ infixr 25 : [a,b] ((FMap(a,b) * FMap(a,b)) | agree?) -> FMap(a,b)
   def /\ (m1,m2) = toFMap (fromFMap m1 /\ fromFMap m2)
 
-  op \/ infixl 25 : [a,b] ((FMap(a,b) * FMap(a,b)) | agree?) -> FMap(a,b)
+  op \/ infixr 24 : [a,b] ((FMap(a,b) * FMap(a,b)) | agree?) -> FMap(a,b)
   def \/ (m1,m2) = toFMap (fromFMap m1 \/ fromFMap m2)
 
-  op forall? : [a,b] Predicate(a*b) -> Predicate (FMap(a,b))
-  def forall? p = (fn m -> forall? p (fromFMap m))
+  op forall? : [a,b] (a * b -> Boolean) -> FMap(a,b) -> Boolean
+  def forall? p m = fromFMap m <= p
 
-  op exists? : [a,b] Predicate(a*b) -> Predicate (FMap(a,b))
-  def exists? p = (fn m -> exists? p (fromFMap m))
+  op exists? : [a,b] (a * b -> Boolean) -> FMap(a,b) -> Boolean
+  def exists? p m = nonEmpty? (fromFMap m /\ p)
 
-  op exists1? : [a,b] Predicate(a*b) -> Predicate (FMap(a,b))
-  def exists1? p = (fn m -> exists1? p (fromFMap m))
+  op exists1? : [a,b] (a * b -> Boolean) -> FMap(a,b) -> Boolean
+  def exists1? p m = single? (fromFMap m /\ p)
 
-  op filter : [a,b] Predicate(a*b) -> FMap(a,b) -> FMap(a,b)
-  def filter p m = toFMap (filter p (fromFMap m))
+  op filter : [a,b] (a * b -> Boolean) -> FMap(a,b) -> FMap(a,b)
+  def filter p m = toFMap (fromFMap m /\ p)
 
-  op filterDomain : [a,b] Predicate a -> FMap(a,b) -> FMap(a,b)
-  def filterDomain p m = toFMap (filterDomain p (fromFMap m))
+  op restrictDomain infixl 25 : [a,b] FMap(a,b) * (a -> Boolean) -> FMap(a,b)
+  def restrictDomain (m,p) = toFMap (fromFMap m restrictDomain p)
 
-  op filterRange : [a,b] Predicate b -> FMap(a,b) -> FMap(a,b)
-  def filterRange p m = toFMap (filterRange p (fromFMap m))
+  op restrictRange infixl 25 : [a,b] FMap(a,b) * (b -> Boolean) -> FMap(a,b)
+  def restrictRange (m,p) = toFMap (fromFMap m restrictRange p)
 
-  op single(*ton*) : [a,b] a -> b -> FMap(a,b)
+  op single : [a,b] a -> b -> FMap(a,b)
   def single x y = toFMap (single (x,y))
 
   op single? : [a,b] FMap(a,b) -> Boolean

@@ -8,6 +8,13 @@ M e t a s l a n g   L i b r a r y   S k e l e t o n
 
 GENERAL NOTIONS
 
+  Logical operations
+  * exists unique
+  * epsilon
+  * iota
+
+  Assertions
+
   Functions
   * associative
   * commutative
@@ -15,62 +22,85 @@ GENERAL NOTIONS
   * fixpoint
   * function update
 
-  Predicates
-  * logical operations
-  * satisfiable
-  * uniquely satisfied
-  * epsilon
-  * iota
-  * comparisons
-  * min
-  * max
+  Naturals
+
+  Sets
+  * membership
+  * containment
+  * complement
+  * intersection
+  * union
+  * difference
+  * cartesian product
+  * empty
+  * full
+  * singleton
+  * map function
+  * finite
+  * fold
+  * enumerable
+  * min/max of set of sets
+  * cardinality
+  * closure
 
   Relations
   * domain
   * range
+  * application
   * composition
-  * identity
+  * inversion
+  * restriction
   * total
   * injective
   * surjective
   * functional
-  * transitive
+
+  Endo-relations
+  * identity
   * reflexive
   * symmetric
+  * transitivity
   * equivalence relation
   * congruence relation
-
-  Symmetries
-
-  Naturals
-
-  Assertions
-
-  Sets
-  * cardinality
-  * finite
-  * infinite
-  * enumerable
-  * closure
-  * relation with predicates
-
-  Bags
-  * relation with natural functions
+  * closures
 
   Maps
+  * application
+  * update
   * relation with functions
 
   Orders
   * preorder
   * partial order
-  * discrete order
+  * weak order
   * total (linear) order
+  * strict orders
+  * discrete order
   * monotonicity
   * Galois connection
   * order isomorphism
 
   Finite sequences
+  * relation with partial functions
+  * indexing
+  * empty
+  * singleton
   * concatenation
+  * update
+  * subsequences
+  * prefix/suffix
+  * fold
+  * zip/unzip
+  * map function
+  * reverse
+  * flatten
+  * injective
+  * permutation
+
+  Symmetries
+
+  Bags
+  * relation with natural functions
 
   Lattices
   * semi-lattice

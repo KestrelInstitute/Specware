@@ -21,9 +21,9 @@ FSeq qualifying spec
   be isomorphic to the subtype of functions defined on some initial segment of
   the naturals, leaving the possibility open to refinements as morphisms. *)
 
-  import /Library/General/Predicates
+  import Sets
 
-  op definedOnInitialSegmentOfLength infixl 25 : [a]
+  op definedOnInitialSegmentOfLength infixl 20 : [a]
      (Nat -> Option a) * Nat -> Boolean
   def definedOnInitialSegmentOfLength (f,n) =
     (fa (i:Nat) i <  n => embed? Some (f i)) &&
@@ -43,12 +43,12 @@ FSeq qualifying spec
   op length : [a] FSeq a -> Nat
   def length s = the (fn len -> (seq_1 s) definedOnInitialSegmentOfLength len)
 
-  % return `(i+1)'-th element (i.e. element "at" position `i'):
-  op @ infixl 23 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
+  % return `(i+1)'-th element (i.e. element at position `i'):
+  op @ infixl 30 : [a] {(s,i) : FSeq a * Nat | i < length s} -> a
   def @ (s,i) = the (fn x -> seq_1 s i = Some x)
 
   % "totalization" of `@':
-  op @@ infixl 23 : [a] FSeq a * Nat -> Option a
+  op @@ infixl 30 : [a] FSeq a * Nat -> Option a
   def @@ (s,i) = seq_1 s i
 
   op empty : [a] FSeq a
@@ -58,7 +58,7 @@ FSeq qualifying spec
   def empty? s = (s = empty)
 
   op nonEmpty? : [a] FSeq a -> Boolean
-  def nonEmpty? = NOT empty?
+  def nonEmpty? = ~~ empty?
 
   type NonEmptyFSeq a = (FSeq a | nonEmpty?)
 
@@ -83,12 +83,12 @@ FSeq qualifying spec
     % last `(length s2)' elements are from `s2':
     (fa(i:Nat) i < length s2 => s2 @ i = s @ (i + length s1)))
 
-  % prepend element (|> points into sequence):
-  op |> infixr 30 : [a] a * FSeq a -> FSeq a
+  % prepend element (`|>' points into sequence):
+  op |> infixr 25 : [a] a * FSeq a -> FSeq a
   def |> (x,s) = single x ++ s
 
-  % append element (<| points into sequence):
-  op <| infixl 30 : [a] FSeq a * a -> FSeq a
+  % append element (`<|' points into sequence):
+  op <| infixl 25 : [a] FSeq a * a -> FSeq a
   def <| (s,x) = s ++ single x
 
   % update `(i+1)'-th element:
@@ -99,28 +99,32 @@ FSeq qualifying spec
   op in? infixl 20 : [a] a * FSeq a -> Boolean
   def in? (x,s) = (ex(i:Nat) s @@ i = Some x)
 
+  % element not in sequence:
+  op nin? infixl 20 : [a] a * FSeq a -> Boolean
+  def nin? (x,s) = ~(x in? s)
+
   % every element satisfies predicate:
-  op forall? : [a] Predicate a -> Predicate (FSeq a)
-  def forall? p = fn s -> (fa (i:Nat) i < length s => p (s @ i))
+  op forall? : [a] (a -> Boolean) -> FSeq a -> Boolean
+  def forall? p s = (fa (i:Nat) i < length s => p (s @ i))
 
   % every `(i+1)'-th element satisfies predicate, which depends on `i':
-  op foralli? : [a] Predicate(Nat*a) -> Predicate (FSeq a)
-  def foralli? p = fn s -> (fa (i:Nat) i < length s => p (i, s @ i))
+  op foralli? : [a] (Nat * a -> Boolean) -> FSeq a -> Boolean
+  def foralli? p s = (fa (i:Nat) i < length s => p (i, s @ i))
 
   % some element satisfies predicate:
-  op exists? : [a] Predicate a -> Predicate (FSeq a)
-  def exists? p = fn s -> (ex(i:Nat) i < length s &&  p (s @ i))
+  op exists? : [a] (a -> Boolean) -> FSeq a -> Boolean
+  def exists? p s = (ex(i:Nat) i < length s &&  p (s @ i))
 
   % exactly one element satisfies predicate:
-  op exists1? : [a] Predicate a -> Predicate (FSeq a)
-  def exists1? p = fn s -> (ex1 (fn(i:Nat) -> i < length s && p (s @ i)))
+  op exists1? : [a] (a -> Boolean) -> FSeq a -> Boolean
+  def exists1? p s = (ex1 (fn(i:Nat) -> i < length s && p (s @ i)))
 
   % extract subsequence from `i' (inclusive) of length `n' (if `n = 0',
   % it may be `i = length s', even though it is not a valid position):
   op subFromLong : [a]
      {(s,i,n) : FSeq a * Nat * Nat | i + n <= length s} -> FSeq a
   def subFromLong(s,i,n) = seq (fn(j:Nat) ->
-    if j < n then Some (s @ i+j) else None)
+    if j < n then Some (s @ (i+j)) else None)
 
   % extract subsequence from `i' to `j' (both inclusive):
   op subFromTo : [a] {(s,i,j) : FSeq a * Nat * Nat |
@@ -188,7 +192,7 @@ FSeq qualifying spec
   op map2 : [a,b,c] (a * b -> c) -> ((FSeq a * FSeq b) | equiLong) -> FSeq c
   def map2 f (s1,s2) = map f (zip (s1, s2))
 
-  op filter : [a] Predicate a -> FSeq a -> FSeq a
+  op filter : [a] (a -> Boolean) -> FSeq a -> FSeq a
   def [a] filter = the (fn filter ->
     (fa(p)     filter p empty = empty) &&
     (fa(p,x,s) filter p (x |> s) =

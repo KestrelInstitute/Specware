@@ -34,6 +34,9 @@ FSet qualifying spec
   op in? infixl 20 : [a] a * FSet a -> Boolean
   def in? (x,s) = x in? fromFSet s
 
+  op nin? infixl 20 : [a] a * FSet a -> Boolean
+  def nin? (x,s) = x nin? fromFSet s
+
   op <= infixl 20 : [a] FSet a * FSet a -> Boolean
   def <= (s1,s2) = fromFSet s1 <= fromFSet s2
 
@@ -46,6 +49,24 @@ FSet qualifying spec
   op > infixl 20 : [a] FSet a * FSet a -> Boolean
   def > (s1,s2) = fromFSet s1 > fromFSet s2
 
+  op /\ infixr 25 : [a] FSet a * FSet a -> FSet a
+  def /\ (s1,s2) = toFSet (fromFSet s1 /\ fromFSet s2)
+
+  op //\\ : [a] FSet (FSet a) -> FSet a
+  def //\\ setOfSets = toFSet (//\\ (map fromFSet (fromFSet setOfSets)))
+
+  op \/ infixr 24 : [a] FSet a * FSet a -> FSet a
+  def \/ (s1,s2) = toFSet (fromFSet s1 \/ fromFSet s2)
+
+  op \\// : [a] FSet (FSet a) -> FSet a
+  def \\// setOfSets = toFSet (\\// (map fromFSet (fromFSet setOfSets)))
+
+  op -- infixl 25 : [a] FSet a * FSet a -> FSet a
+  def -- (s1,s2) = toFSet (fromFSet s1 -- fromFSet s2)
+
+  op * infixl 27 : [a,b] FSet a * FSet b -> FSet (a * b)
+  def * (s1,s2) = toFSet (fromFSet s1 * fromFSet s2)
+
   op empty : [a] FSet a
   def empty = toFSet empty
 
@@ -57,52 +78,28 @@ FSet qualifying spec
 
   type NonEmptyFSet a = (FSet a | nonEmpty?)
 
-  op /\ infixl 25 : [a] FSet a * FSet a -> FSet a
-  def /\ (s1,s2) = toFSet (fromFSet s1 /\ fromFSet s2)
-
-  op //\\ : [a] FSet (FSet a) -> FSet a
-  def //\\ setOfSets = toFSet (//\\ (map fromFSet (fromFSet setOfSets)))
-
-  op \/ infixl 25 : [a] FSet a * FSet a -> FSet a
-  def \/ (s1,s2) = toFSet (fromFSet s1 \/ fromFSet s2)
-
-  op \\// : [a] FSet (FSet a) -> FSet a
-  def \\// setOfSets = toFSet (\\// (map fromFSet (fromFSet setOfSets)))
-
-  op -- infixl 25 : [a] FSet a * FSet a -> FSet a
-  def -- (s1,s2) = toFSet (fromFSet s1 -- fromFSet s2)
-
-  op forall? : [a] Predicate a -> Predicate (FSet a)
-  def forall? p = (fn s -> forall? p (fromFSet s))
-
-  op exists? : [a] Predicate a -> Predicate (FSet a)
-  def exists? p = (fn s -> exists? p (fromFSet s))
-
-  op exists1? : [a] Predicate a -> Predicate (FSet a)
-  def exists1? p = (fn s -> exists1? p (fromFSet s))
-
-  op filter : [a] Predicate a -> FSet a -> FSet a
-  def filter p s = toFSet (filter p (fromFSet s))
-
-  op map : [a,b] (a -> b) -> FSet a -> FSet b
-  def map f s = toFSet (map f (fromFSet s))
-
-  op single(*ton*) : [a] a -> FSet a
+  op single : [a] a -> FSet a
   def single x = toFSet (single x)
 
   op single? : [a] FSet a -> Boolean
   def single? s = single? (fromFSet s)
+
+  op onlyMemberOf infixl 20 : [a] a * FSet a -> Boolean
+  def onlyMemberOf (x,s) = x onlyMemberOf (fromFSet s)
 
   type SingletonFSet a = (FSet a | single?)
 
   op theMember : [a] SingletonFSet a -> a
   def theMember s = theMember (fromFSet s)
 
-  op + infixl 25 : [a] FSet a * a -> FSet a
-  def + (s,x) = toFSet (fromFSet s + x)
+  op <| infixl 25 : [a] FSet a * a -> FSet a
+  def <| (s,x) = toFSet (fromFSet s <| x)
 
   op - infixl 25 : [a] FSet a * a -> FSet a
   def - (s,x) = toFSet (fromFSet s - x)
+
+  op map : [a,b] (a -> b) -> FSet a -> FSet b
+  def map f s = toFSet (map f (fromFSet s))
 
   op size : [a] FSet a -> Nat
   def size s = size (fromFSet s)
@@ -112,5 +109,17 @@ FSet qualifying spec
 
   op fold : [a,b] ((b * (b * a -> b) * FSet a) | foldable?) -> b
   def fold(c,f,s) = fold (c, f, fromFSet s)
+
+  op forall? : [a] (a -> Boolean) -> FSet a -> Boolean
+  def forall? p s = fromFSet s <= p
+
+  op exists? : [a] (a -> Boolean) -> FSet a -> Boolean
+  def exists? p s = nonEmpty? (fromFSet s /\ p)
+
+  op exists1? : [a] (a -> Boolean) -> FSet a -> Boolean
+  def exists1? p s = single? (fromFSet s /\ p)
+
+  op filter : [a] (a -> Boolean) -> FSet a -> FSet a
+  def filter p s = toFSet (fromFSet s /\ p)
 
 endspec

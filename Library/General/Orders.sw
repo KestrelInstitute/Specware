@@ -3,17 +3,17 @@ Order qualifying spec
   import EndoRelations
 
   op preOrder? : [a] EndoRelation a -> Boolean
-  def preOrder? = reflexive? AND transitive?
+  def preOrder? = reflexive? /\ transitive?
 
   type PreOrder a = (EndoRelation a | preOrder?)
 
   op partialOrder? : [a] EndoRelation a -> Boolean
-  def partialOrder? = preOrder? AND antisymmetric?
+  def partialOrder? = preOrder? /\ antisymmetric?
 
   type PartialOrder a = (EndoRelation a | partialOrder?)
 
   op weakOrder? : [a] EndoRelation a -> Boolean
-  def weakOrder? = reflexive? AND antisymmetric? AND negativeTransitive?
+  def weakOrder? = reflexive? /\ antisymmetric? /\ negativeTransitive?
 
   type WeakOrder a = (EndoRelation a | weakOrder?)
 
@@ -21,18 +21,21 @@ Order qualifying spec
   def linearOrder? r = partialOrder? r &&
                        % the following is sometimes called "totality" in the
                        % context of orders, but `total?' is already defined in
-                       % spec `Relations' with a more general meaning
+                       % spec `Relations' with a different meaning
                        (fa(x,y) r(x,y) || r(y,x))
 
   type LinearOrder a = (EndoRelation a | linearOrder?)
 
   conjecture orderSubsumption is
-    linearOrder? <= weakOrder?  &&
-    weakOrder? <= partialOrder? &&
+    linearOrder?  <= weakOrder?  &&
+    weakOrder?    <= partialOrder? &&
     partialOrder? <= preOrder?
 
-  op strict : [a] Predicate (EndoRelation a) -> Predicate (EndoRelation a)
-  def strict p r = irreflexive? r && p (reflexiveClosure r)
+  % make strict version of predicate over endorelations:
+  op strict : [a] (EndoRelation a -> Boolean) -> EndoRelation a -> Boolean
+  def strict p r =          % `r' satisfies strict version of `p' iff:
+    irreflexive? r &&       % `r' is irreflexive and
+    p (reflexiveClosure r)  % making `r' reflexive satisfies `p'
 
   op strictPreOrder? : [a] EndoRelation a -> Boolean
   def strictPreOrder? = strict preOrder?
@@ -54,9 +57,11 @@ Order qualifying spec
 
   type StrictLinearOrder a = (EndoRelation a | strictLinearOrder?)
 
+  % make reflexive relation irreflexive:
   op strictify : [a] ReflexiveRelation a -> IrreflexiveRelation a
   def strictify r = r -- id
 
+  % make irreflexive relation reflexive:
   op unstrictify : [a] IrreflexiveRelation a -> ReflexiveRelation a
   def unstrictify = inverse strictify
 

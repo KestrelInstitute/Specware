@@ -1,30 +1,79 @@
 Set qualifying spec
 
-  (* We define sets as predicates: the set consists of exactly those values
-  over which the predicate holds. *)
+  import LogicalOps
 
-  import /Library/General/Predicates
+  % sets as predicates:
+  type Set a = a -> Boolean
 
-  type Set a = Predicate a
-
-  % membership:
+  % member:
   op in? infixl 20 : [a] a * Set a -> Boolean
   def in? (x,s) = s x
 
-  % spec `Predicates' already defines:
-  %  `<=' for subset
-  %  `>=' for superset
-  %  `<'  for strict subset
-  %  `>'  for strict superset
+  % not member:
+  op nin? infixl 20 : [a] a * Set a -> Boolean
+  def nin? (x,s) = ~(x in? s)
 
+  % subset:
+  op <= infixl 20 : [a] Set a * Set a -> Boolean
+  def <= (s1,s2) = (fa(x) x in? s1 => x in? s2)
+
+  % strict subset:
+  op < infixl 20 : [a] Set a * Set a -> Boolean
+  def < (s1,s2) = (s1 <= s2 && s1 ~= s2)
+
+  % superset:
+  op >= infixl 20 : [a] Set a * Set a -> Boolean
+  def >= (s1,s2) = (s2 <= s1)
+
+  % strict superset:
+  op > infixl 20 : [a] Set a * Set a -> Boolean
+  def > (s1,s2) = (s2 < s1)
+
+  % complement (lifting of `~' to sets):
+  op ~~ : [a] Set a -> Set a
+  def ~~ s = fn x -> x nin? s
+
+  % intersection (lifting of `&&' to sets):
+  op /\ infixr 25 : [a] Set a * Set a -> Set a
+  def /\ (s1,s2) = fn x -> x in? s1 && x in? s2
+
+  % intersection of all sets in a set:
+  op //\\ : [a] Set (Set a) -> Set a
+  def //\\ setOfSets = fn x -> (fa(s) s in? setOfSets => x in? s)
+
+  % union (lifting of `||' to sets):
+  op \/ infixr 24 : [a] Set a * Set a -> Set a
+  def \/ (s1,s2) = fn x -> x in? s1 || x in? s2
+
+  % union of all sets in a set:
+  op \\// : [a] Set (Set a) -> Set a
+  def \\// setOfSets = fn x -> (ex(s) s in? setOfSets && x in? s)
+
+  % lifting of `=>' to sets:
+  op ==> infixr 23 : [a] Set a * Set a -> Set a
+  def ==> (s1,s2) = fn x -> x in? s1 => x in? s2
+
+  % lifting of `<=>' to sets:
+  op <==> infixr 22 : [a] Set a * Set a -> Set a
+  def <==> (s1,s2) = fn x -> x in? s1 <=> x in? s2
+
+  % difference:
+  op -- infixl 25 : [a] Set a * Set a -> Set a
+  def -- (s1,s2) = fn x -> x in? s1 && x nin? s2
+
+  % cartesian product:
+  op * infixl 27 : [a,b] Set a * Set b -> Set (a * b)
+  def * (s1,s2) = fn (x,y) -> x in? s1 && y in? s2
+
+  % set with no elements (lifting of `false' to sets):
   op empty : [a] Set a
-  def empty = FALSE
+  def empty = fn x -> false
 
   op empty? : [a] Set a -> Boolean
   def empty? s = (s = empty)
 
   op nonEmpty? : [a] Set a -> Boolean
-  def nonEmpty? = NOT empty?
+  def nonEmpty? = ~~ empty?
 
   type NonEmptySet a = (Set a | nonEmpty?)
 
@@ -32,57 +81,27 @@ Set qualifying spec
   op someMember : [a] NonEmptySet a -> a
   def someMember = some
 
+  % set with all elements (lifting of `true' to sets):
   op full : [a] Set a
-  def full = TRUE
+  def full = fn x -> true
 
   op full? : [a] Set a -> Boolean
   def full? s = (s = full)
 
   op nonFull? : [a] Set a -> Boolean
-  def nonFull? = NOT full?
+  def nonFull? = ~~ full?
 
   type NonFullSet a = (Set a | nonFull?)
 
-  % complement:
-  op \ : [a] Set a -> Set a
-  def \ = NOT
-
-  % intersection:
-  op /\ infixl 25 : [a] Set a * Set a -> Set a
-  def /\ = AND
-
-  % intersection of all sets in a set:
-  op //\\ : [a] Set (Set a) -> Set a
-  def //\\ setOfSets = fn x -> (fa(s) s in? setOfSets => x in? s)
-
-  % union:
-  op \/ infixl 25 : [a] Set a * Set a -> Set a
-  def \/ = OR
-
-  % union of all sets in a set:
-  op \\// : [a] Set (Set a) -> Set a
-  def \\// setOfSets = fn x -> (ex(s) s in? setOfSets && x in? s)
-
-  % difference:
-  op -- infixl 25 : [a] Set a * Set a -> Set a
-  def -- (s1,s2) = s1 /\ (\ s2)
-
-  % cartesian product:
-  op * infixl 27 : [a,b] Set a * Set b -> Set (a * b)
-  def * (s1,s2) = (fn (x,y) -> x in? s1 && y in? s2)
-
-  op filter : [a] Predicate a -> Set a -> Set a
-  def filter p s = (p /\ s)
-
-  % map function over set:
-  op map : [a,b] (a -> b) -> Set a -> Set b
-  def map f s = fn x -> (ex(y) x = f y)
-
+  % set with one element:
   op single(*ton*) : [a] a -> Set a
   def single x = fn y -> y = x
 
   op single? : [a] Set a -> Boolean
-  def single? = uniquelySatisfied?
+  def single? s = (ex(x) s = single x)
+
+  op onlyMemberOf infixl 20 : [a] a * Set a -> Boolean
+  def onlyMemberOf (x,s) = single? s && x in? s
 
   type SingletonSet a = (Set a | single?)
 
@@ -90,26 +109,23 @@ Set qualifying spec
   op theMember : [a] SingletonSet a -> a
   def theMember = the
 
-  % every member satisfies predicate:
-  op forall? : [a] Predicate a -> Predicate (Set a)
-  def forall? p = (fn s -> s <= p)
-
-  % some member satisfies predicate:
-  op exists? : [a] Predicate a -> Predicate (Set a)
-  def exists? p = (fn s -> nonEmpty? (p /\ s))
-
-  % exactly one member satisfies predicate:
-  op exists1? : [a] Predicate a -> Predicate (Set a)
-  def exists1? p = (fn s -> single? (p /\ s))
-
-  % add member to set:
-  op + infixl 25 : [a] Set a * a -> Set a
-  def + (s,x) = s \/ single x
+  % add member to set (triangle points towards set):
+  op <| infixl 25 : [a] Set a * a -> Set a
+  def <| (s,x) = s \/ single x
 
   % remove member from set:
   op - infixl 25 : [a] Set a * a -> Set a
   def - (s,x) = s -- single x
 
+  % map function over set:
+  op map : [a,b] (a -> b) -> Set a -> Set b
+  def map f s = fn y -> (ex(x) y = f x)
+
+  % inversely map function over set:
+  op imap : [a,b] (a -> b) -> Set b -> Set a
+  def imap f s = fn x -> f x in? s
+
+  % finite cardinality:
   op finite? : [a] Set a -> Boolean
   def [a] finite? s =
     % there is a surjective function from {i:Nat | i < n} to {x:a | x in? s}
@@ -119,33 +135,14 @@ Set qualifying spec
 
   type FiniteSet a = (Set a | finite?)
 
+  % number of elements:
   op size : [a] FiniteSet a -> Nat
   def size = the (fn size ->
     (size empty = 0) &&
-    (fa(s,x) size (s + x) = 1 + size (s - x)))
+    (fa(s,x) size (s <| x) = 1 + size (s - x)))
 
   op hasSize infixl 20 : [a] Set a * Nat -> Boolean
   def hasSize (s,n) = finite? s && size s = n
-
-  op infinite? : [a] Set a -> Boolean
-  def infinite? = NOT finite?
-
-  type InfiniteSet a = (Set a | infinite?)
-
-  op countable? : [a] Set a -> Boolean
-  def [a] countable? s =
-    infinite? s &&
-    % there is a surjective function from Nat to {x:a | x in? s}
-    % (the latter is a "pseudo-type" because of the free variable `s'):
-    (ex (f : Nat -> a)
-       (fa(x) x in? s => (ex(i:Nat) f i = x)))
-
-  type CountableSet a = (Set a | countable?)
-
-  op uncountable? : [a] Set a -> Boolean
-  def uncountable? = infinite? AND (NOT countable?)
-
-  type UncountableSet a = (Set a | uncountable?)
 
   (* In order to fold over a finite set, we need the folding function to be
   insensitive to order (a kind of commutativity property). It is not necessary
@@ -162,7 +159,58 @@ Set qualifying spec
   op fold : [a,b] ((b * (b * a -> b) * FiniteSet a) | foldable?) -> b
   def [a,b] fold = the (fn fold ->
     (fa(c,f) fold (c, f, empty) = c) &&
-    (fa(c,f,s,x) foldable? (c, f, s + x) =>
-                 fold (c, f, s + x) = f (fold (c, f, s - x), x)))
+    (fa(c,f,s,x) foldable? (c, f, s <| x) =>
+                 fold (c, f, s <| x) = f (fold (c, f, s - x), x)))
+
+  % infinite cardinality:
+  op infinite? : [a] Set a -> Boolean
+  def infinite? = ~~ finite?
+
+  type InfiniteSet a = (Set a | infinite?)
+
+  % countable cardinality:
+  op countable? : [a] Set a -> Boolean
+  def [a] countable? s =
+    infinite? s &&
+    % there is a surjective function from Nat to {x:a | x in? s}
+    % (the latter is a "pseudo-type" because of the free variable `s'):
+    (ex (f : Nat -> a)
+       (fa(x) x in? s => (ex(i:Nat) f i = x)))
+
+  type CountableSet a = (Set a | countable?)
+
+  % uncountable cardinality:
+  op uncountable? : [a] Set a -> Boolean
+  def uncountable? = infinite? /\  ~~ countable?
+
+  type UncountableSet a = (Set a | uncountable?)
+
+  % set is the smallest in set of sets:
+  op isMinIn infixl 20 : [a] Set a * Set (Set a) -> Boolean
+  def isMinIn (s, ss) = s in? ss && (fa(s1) s1 in? ss => s <= s1)
+
+  % set of sets has smallest set:
+  op hasMin? : [a] Set (Set a) -> Boolean
+  def hasMin? ss = (ex(s) s isMinIn ss)
+
+  type SetOfSetsWithMin a = (Set (Set a) | hasMin?)
+
+  % smallest set in set of sets:
+  op min : [a] SetOfSetsWithMin a -> Set a
+  def min ss = the (fn s -> s isMinIn ss)
+
+  % set is the largest in set of sets:
+  op isMaxIn infixl 20 : [a] Set a * Set (Set a) -> Boolean
+  def isMaxIn (s, ss) = s in? ss && (fa(s1) s1 in? ss => s >= s1)
+
+  % set of sets has largest set:
+  op hasMax? : [a] Set (Set a) -> Boolean
+  def hasMax? ss = (ex(s) s isMaxIn ss)
+
+  type SetOfSetsWithMax a = (Set (Set a) | hasMax?)
+
+  % smallest set in set of sets:
+  op max : [a] SetOfSetsWithMax a -> Set a
+  def max ss = the (fn s -> s isMaxIn ss)
 
 endspec

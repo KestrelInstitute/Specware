@@ -2,20 +2,20 @@ Map qualifying spec
 
   import Relations
 
-  type Map(a,b) = FunctionalRelation(a,b)
+  % spec `Relations' defines type `Map(a,b)'
 
   op definedAt infixl 20 : [a,b] Map(a,b) * a -> Boolean
   def definedAt (m,x) = x in? domain m
 
   op undefinedAt infixl 20 : [a,b] Map(a,b) * a -> Boolean
-  def undefinedAt (m,x) = ~(x in? domain m)
+  def undefinedAt (m,x) = x nin? domain m
 
-  % value of map at (`@') point, i.e. map application:
-  op @ infixl 23 : [a,b] ((Map(a,b) * a) | definedAt) -> b
+  % value of map at point, i.e. map application:
+  op @ infixl 30 : [a,b] ((Map(a,b) * a) | definedAt) -> b
   def @ (m,x) = the (fn y -> m(x,y))
 
   % "totalization" of `@' using `Option':
-  op @@ infixl 23 : [a,b] Map(a,b) * a -> Option b
+  op @@ infixl 30 : [a,b] Map(a,b) * a -> Option b
   def @@ (m,x) = if m definedAt x then Some (m @ x) else None
 
   % update map (analogous to record update):
@@ -31,11 +31,15 @@ Map qualifying spec
 
   % remove domain values from map:
   op -- infixl 25 : [a,b] Map(a,b) * Set a -> Map(a,b)
-  def -- (m,xS) = filterDomain (\ xS) m
+  def -- (m,xS) = m restrictDomain (~~ xS)
 
   % remove domain value from map:
   op - infixl 25 : [a,b] Map(a,b) * a -> Map(a,b)
   def - (m,x) = m -- single x
+
+  % maps agree on intersection of domains:
+  op agree? : [a,b] Map(a,b) * Map(a,b) -> Boolean
+  def agree?(m1,m2) = functional? (m1 \/ m2)
 
   type TotalMap(a,b) = (Map(a,b) | total?)
 
@@ -47,22 +51,14 @@ Map qualifying spec
   op toFunction : [a,b] TotalMap(a,b) -> (a -> b)
   def toFunction = inverse fromFunction
 
-  % maps agree on intersection of domains:
-  op agree? : [a,b] Map(a,b) * Map(a,b) -> Boolean
-  def agree?(m1,m2) = functional? (m1 \/ m2)
-
   type SurjectiveMap(a,b) = (Map(a,b) | Relation.surjective?)
 
   type InjectiveMap(a,b) = (Map(a,b) | Relation.injective?)
 
-  type BijectiveMap(a,b) = (Map(a,b) | Relation.bijective?)
-
+  % cardinalities:
   type FiniteMap(a,b) = (Map(a,b) | finite?)
-
   type InfiniteMap(a,b) = (Map(a,b) | infinite?)
-
   type CountableMap(a,b) = (Map(a,b) | countable?)
-
   type UncountableMap(a,b) = (Map(a,b) | uncountable?)
 
 endspec
