@@ -79,9 +79,9 @@ SpecCalc qualifying spec {
 
   op transformSpecForFirstOrderProverInt: AnnSpec.Spec -> AnnSpec.Spec
   def transformSpecForFirstOrderProverInt spc =
-    %let spc = removeCurrying spc in
     %let _ = writeLine("orig") in
     %let _ = writeLine(printSpec spc) in
+    let spc = removeCurrying spc in
     %let spc = instantiateHOFns spc in
     %let _ = writeLine("instHO") in
     %let _ = writeLine(printSpec spc) in
@@ -94,7 +94,9 @@ SpecCalc qualifying spec {
     let spc = lambdaLift spc in
     %let _ = writeLine("lambdaLift") in
     %let _ = writeLine(printSpec spc) in
+    %let spc = foldRecordSorts(spc) in
     let (spc,constrOps) = addSortConstructorsToSpecForSnark spc in
+    let (spc,constrOps) = addProductSortConstructorsToSpec spc in
     let (spc,constrOps) = addProductAccessorsToSpec spc in
     %let _ = writeLine("ConsAccAdds") in
     %let _ = writeLine(printSpec spc) in

@@ -1,6 +1,7 @@
 Prover qualifying spec
  import ../Specs/Environment
  import ../Specs/Utilities
+ import DefToAxiom
 
   op axiomFromSortDefTop: Spec * Qualifier * Id * SortInfo -> Properties
   def axiomFromSortDefTop(spc, qname, name, sortDecl) =
@@ -13,6 +14,7 @@ Prover qualifying spec
 	    let axioms = case srtDef of
 	                  | CoProduct _ -> axiomFromCoProductDefTop(spc, sortName, srtDef)
 	                  | Subsort _ -> axiomFromSubSortDefTop(spc, sortName, srtDef)
+	                  | Product _ -> axiomFromProductDefTop(spc, sortName, srtDef)
 	                  | _ -> [] in
                axioms
 	else %let _ = writeLine(name^": in axiomFromSortDef Def part is not local") in
@@ -25,6 +27,61 @@ Prover qualifying spec
   def axiomFromSubSortDefTop(spc, name, srt as Subsort (supSort, subSortTerm, b)) =
     []
 
+  op axiomFromProductDefTop: Spec * QualifiedId * Sort -> Properties
+  def axiomFromProductDefTop(spc, name, srt as Product (fields, b)) =
+    let projectAxioms = mkProjectAxioms(spc, name, srt, fields) in
+%    let constructAxiom = mkConstructAxiom(spc, name, fields) in
+%    Cons(constructAxiom, projectAxioms)
+    projectAxioms
+
+  op mkProjectAxioms: Spec * QualifiedId * Sort * Fields -> Properties
+  def mkProjectAxioms(spc, name, srt, fields) =
+    let recordArg as Record(resFields, _) =  mkRecordTerm(spc, name, srt) in
+    ListPair.map (fn (field, res) -> mkProjectAxiom(spc, name, srt, field, recordArg, res)) (fields, resFields)
+
+  op mkProjectAxiom: Spec * QualifiedId * Sort * Field * MS.Term * (Id * MS.Term) -> Property
+  def mkProjectAxiom(spc, name as Qualified(prodQ, prodSrtId), srt, field as (fId, fSrt), arg, (_, res)) =
+    let projQid as Qualified(projQ,projId) = getAccessorOpName(prodSrtId,name,fId) in
+    let lhs = mkProjectTerm(spc, name, srt, field, arg) in
+    let rhs = res in
+    let eql = mkEquality(fSrt, lhs, rhs) in
+    let bndVars = freeVars(eql) in
+    let fmla = mkBind(Forall, bndVars, eql) in
+    (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
+
+  op mkRecordTerm: Spec * QualifiedId * Sort -> MS.Term
+  def  mkRecordTerm(spc, srtName, srt as Product (fields, b)) =
+    let opqid as Qualified(opq,opid) = getRecordConstructorOpName(srtName) in
+    let codom:Sort  = Base(srtName,[],b) in
+    let opsrt = Arrow(srt,codom,b) in
+    let termsrt = Arrow(srt,codom,b) in
+    let pat = patternFromSort(Some srt,b) in
+    let cond = mkTrue() in
+    let funterm = Fun(Op(opqid, Nonfix),termsrt,b) in
+    recordTermFromSort(srt, b)
+
+  op mkProjectTerm: Spec * QualifiedId * Sort * Field * MS.Term -> MS.Term
+  def mkProjectTerm(spc, srtName, srt, field as (fId, fSrt), arg) =
+    let b = noPos in
+    let Qualified(_, srtId) = srtName in
+    let opqid as Qualified(opq,opid) = getAccessorOpName(srtId,srtName,fId) in
+    %let _ = writeLine("  op "^(printQualifiedId opqid)) in
+    let codom:Sort  = Base(srtName,[],b) in
+    let opsrt = Arrow(codom,fSrt,b) in
+    Apply(Fun(Op(opqid, Nonfix), opsrt, b), arg, b)
+
+(*
+    let termsrt = Arrow(codom,srt,b) in
+    let pat = patternFromSort(Some srt,b) in
+    let cond = mkTrue() in
+    let funterm = Fun(Project(fId),termsrt,b) in
+    argTermFromSort(Some srt,funterm,b)
+*)
+
+  op mkConstructAxiom: Spec * QualifiedId * Fields -> Property
+    
+    
+  
   op axiomFromCoProductDefTop: Spec * QualifiedId * Sort -> Properties
   def axiomFromCoProductDefTop(spc, name, srt as CoProduct (fields, b)) =
     let disEqAxioms = mkDisEqsForFields(spc, srt, name, fields) in

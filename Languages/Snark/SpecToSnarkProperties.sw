@@ -318,8 +318,32 @@ snark qualifying spec
       | Var (v, _) -> snarkVarFmla(v)
       | _ -> mkSnarkTerm(context, sp, dpn, vars, fmla)
 
-  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * Fun * MS.Term -> LispCell
+  op mkSnarkTermAppTop: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
+  def mkSnarkTermAppTop(context, sp, dpn, vars, f, srt, arg) =
+    case arrowOpt(sp, srt) of
+      | Some(dom, range) ->
+         (case dom of
+	    |Base _ ->
+	        (case productOpt(sp, dom) of
+		   | Some _ -> mkSnarkTermAppRecordArg(context, sp, dpn, vars, f, dom, arg)
+		   | _ -> mkSnarkTermApp(context, sp, dpn, vars, f, arg))
+	      | _ -> mkSnarkTermApp(context, sp, dpn, vars, f, arg))
+      | _ -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
 
+  op mkSnarkTermAppRecordArg: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
+  def mkSnarkTermAppRecordArg(context, sp, dpn, vars, f, dom as Base (qid, _ , _), arg) =
+    case f of
+      | Op(Qualified(qual,id),_) ->
+      (case arg of
+	 | Record (fields) ->
+	 let snarkArg = mkSnarkTermApp(context, sp, dpn, vars, Op(getRecordConstructorOpName(qid), Nonfix), arg) in
+	 Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list [snarkArg])
+	 | _ -> let snarkArg = mkSnarkTerm(context, sp, dpn, vars, arg) in
+	 Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list [snarkArg]))
+      | _ -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
+
+
+  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * Fun * MS.Term -> LispCell
   def mkSnarkTermApp(context, sp, dpn, vars, f, arg) =
     let args = case arg
                 of Record(flds,_) -> map(fn (_, term) -> term) flds
@@ -338,6 +362,7 @@ snark qualifying spec
 	  (case userProdSrt of
 	     | None -> Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^id)), Lisp.list snarkArgs)
 	     | Some (Base (Qualified(q, prodSrtId),_, _)) ->
+       %%IMPORTANT LOOK AT CODEGENTRANSFORMS FOR CONSISTENCY
 	     Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^prodSrtId^"_"^id)), Lisp.list snarkArgs))
       | Embed (id, b) -> %let _ = if id = "Cons" then debug("embed_Cons") else () in
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
@@ -358,7 +383,7 @@ snark qualifying spec
   def mkSnarkTerm(context, sp, dpn, vars, term) =
 %    let _ = writeLine("Translating to snark: "^printTerm(term)) in
     case term of 
-      | Apply(Fun(f, srt, _), arg, _) -> mkSnarkTermApp(context, sp, dpn, vars, f, arg)
+      | Apply(Fun(f, srt, _), arg, _) -> mkSnarkTermAppTop(context, sp, dpn, vars, f, srt, arg)
       | Apply(f, arg, _) -> mkSnarkHOTermApp(context, sp, dpn, vars, f, arg)
       | IfThenElse(c, t, e, _) ->
 	   Lisp.list [Lisp.symbol("SNARK","IF"),
@@ -369,7 +394,15 @@ snark qualifying spec
       | Fun ((Nat nat), Nat, _) -> Lisp.nat(nat)
       | Fun (Embed(id, _),_,__) -> Lisp.symbol("SNARK",mkSnarkName(UnQualified,"embed_"^id))
       | Var (v,_) -> snarkVarTerm(v)
+      | Record (fields, _) -> mkSnarkTermRecord(context, sp, dpn, vars, term)
       | _ -> mkNewSnarkTerm(context, term) %% Unsupported construct
+
+  op mkSnarkTermRecord: Context * Spec * String * StringSet.Set * MS.Term -> LispCell
+  def  mkSnarkTermRecord(context, spc, dpn, vars, term as Record (fields)) =
+    let srt = inferTypeFoldRecords(spc,term) in
+    case srt of
+      | Base (qid, _, _) -> mkSnarkTermApp(context, spc, dpn, vars, Op(getRecordConstructorOpName(qid), Nonfix), term)
+      | _ -> mkNewSnarkTerm(context, term)
 
   op mkNewSnarkTerm: Context * MS.Term -> LispCell
 

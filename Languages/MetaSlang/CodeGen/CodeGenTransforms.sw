@@ -178,6 +178,17 @@ def foldRecordSorts(spc) =
     foldRecordSorts0(spc,[])
 
 
+op inferTypeFoldRecords: Spec * MS.Term -> Sort
+def inferTypeFoldRecords(spc,term) =
+  let srt = inferType(spc,term) in
+  %let _ = writeLine("inferType("^printTerm(term)^") = "^printSort(srt)) in
+  case srt of
+    | Product _ -> 
+      let srt0 = findMatchingUserType(spc,srt) in
+      %let _ = writeLine("findMatchingUserType("^printSort(srt)^") = "^printSort(srt0)) in
+      srt0
+    | _ -> srt
+
 op sortId: MS.Sort -> Id
 
 % --------------------------------------------------------------------------------
@@ -936,6 +947,71 @@ def argTermFromSort(optsrt,funterm,b) =
       in
       Apply(funterm,term,b)
 
+op recordTermFromSort: Sort * Position -> MS.Term
+def recordTermFromSort(srt,b) =
+  let
+    def mkVarTerm(id,srt) =
+      Var((id,srt),b)
+  in
+      let term = 
+        case srt of
+	  | Product(fields,_) ->
+	    if productfieldsAreNumbered fields then
+	      Record(List.map (fn(id,srt) -> (id,mkVarTerm("x"^id,srt))) fields,b)
+	    else mkVarTerm("x",srt)
+	  | _ -> mkVarTerm("x",srt)
+      in term
+
+(**
+ * adds for each product sort the Constructor op.
+ * e.g. for sort P = {a: SortA, b: SortB}, the following op is added:
+ * op mk_Record_P: sortA * sortB -> P
+ * def mk_Record_P(a, b) = (a, b)
+ *)
+
+op addProductSortConstructorsToSpec: Spec -> Spec * List(QualifiedId)
+def addProductSortConstructorsToSpec(spc) =
+  let res = foldriAQualifierMap
+             (fn(qid,name,sortinfo,(spc,opnames)) ->
+	      let (spc,opnames0) = addProductSortConstructorsFromSort(spc,Qualified(qid,name),sortinfo) in
+	      (spc,concat(opnames,opnames0))
+	     ) (spc,[]) spc.sorts
+  in
+  res
+
+op getRecordConstructorOpName: QualifiedId  -> QualifiedId
+def getRecordConstructorOpName(qid as Qualified(q,id)) =
+  let sep = "_" in
+  Qualified(q,"mk_Record"^sep^id)
+
+
+op addProductSortConstructorsFromSort: Spec * QualifiedId * SortInfo -> Spec * List(QualifiedId)
+def addProductSortConstructorsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
+  case sortschemes of
+    | [] -> (spc,[])
+    | (tyvars,srt)::_ -> 
+    case srt of
+      | Product (fields,b) -> 
+      %let _ = writeLine("generating constructor ops for sort "^(printQualifiedId qid)^"...") in
+      %let _ = writeLine("  typevars: "^(List.show "," tyvars)) in
+	let opqid as Qualified(opq,opid) = getRecordConstructorOpName(qid) in
+	%let _ = writeLine("  op "^(printQualifiedId opqid)) in
+	let tyvarsrts = map (fn(tv) -> TyVar(tv,b)) tyvars0 in
+	let codom:Sort  = Base(qid,tyvarsrts,b) in
+	let opsrt = Arrow(srt,codom,b) in
+	let termsrt = Arrow(srt,codom,b) in
+	let pat = patternFromSort(Some srt,b) in
+	let cond = mkTrue() in
+	let funterm = Fun(Op(opqid, Nonfix),termsrt,b) in
+	let body = recordTermFromSort(srt, b) in
+	let term = Lambda([(pat,cond,body)],b) in
+	let sortscheme = (tyvars,opsrt) in
+	%let opinfo = ([opqid],Nonfix,sortscheme,[(tyvars,term)]) in
+	let opinfo = ([opqid],Nonfix,sortscheme,[]) in
+	let newops = insertAQualifierMap(spc.ops,opq,opid,opinfo) in
+	let opnames = [opqid] in
+	(addLocalOpName(setOps(spc,newops), opqid),opnames)
+      | _ -> (spc,[])
 (**
  * adds for each product sort the accessor ops for each element.
  * e.g. for sort P = {a: SortA, b: SortB}, the following ops are added:
@@ -981,7 +1057,7 @@ def addProductAccessorsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
 	let opinfo = ([opqid],Nonfix,sortscheme,[(tyvars,term)]) in
 	let newops = insertAQualifierMap(spc.ops,opq,opid,opinfo) in
 	let opnames = cons(opqid,opnames) in
-	(setOps(spc,newops),opnames)
+	(addLocalOpName(setOps(spc,newops), opqid),opnames)
        ) (spc,[]) fields
       | _ -> (spc,[])
 

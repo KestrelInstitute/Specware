@@ -401,13 +401,21 @@ snark qualifying spec {
 			    Lisp.symbol("KEYWORD","SORT"),
 			    Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
 	    else
+	      (case dom of
+		| Base(domQid, _, _) -> 
+		  let snarkDomSrt = snarkBaseSort(spc, dom, false) in
+		  Lisp.list[declare_function,
+			    Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
+			    Lisp.symbol("KEYWORD","SORT"),
+			    Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
+		| _ ->
 	    let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(spc, srt, false))
 	                          fields in
 	    %let _ = if true or name = "remove" then debug("found it 2") else () in
 	      Lisp.list[declare_function,
 			Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
 			Lisp.symbol("KEYWORD","SORT"),
-			Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list(domSortList)))]
+			Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list(domSortList)))])
 	  | _ ->
 	      let snarkDomSrt = snarkBaseSort(spc, dom, false) in
 	        Lisp.list[declare_function,

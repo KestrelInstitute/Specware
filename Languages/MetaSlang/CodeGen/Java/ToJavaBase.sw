@@ -871,17 +871,6 @@ def findMatchingRestritionType(spc,srt) =
       else None
     | _ -> None
 
-op inferTypeFoldRecords: Spec * Term -> Sort
-def inferTypeFoldRecords(spc,term) =
-  let srt = inferType(spc,term) in
-  %let _ = writeLine("inferType("^printTerm(term)^") = "^printSort(srt)) in
-  case srt of
-    | Product _ -> 
-      let srt0 = findMatchingUserType(spc,srt) in
-      %let _ = writeLine("findMatchingUserType("^printSort(srt)^") = "^printSort(srt0)) in
-      srt0
-    | _ -> srt
-
 op foldRecordsForOpSort : Spec * Sort -> Sort
 def foldRecordsForOpSort(spc,srt) =
   case srt of

@@ -193,7 +193,23 @@ Utilities qualifying spec
  %----------------------
  def freeVars (M) = 
    let vars = freeVarsRec(M) in
-   ListUtilities.removeDuplicates vars
+   removeDuplicateVars vars
+
+ op removeDuplicateVars: List Var -> List Var
+ def removeDuplicateVars(l) = 
+    case l of
+      | [] -> l 
+      | var::l -> insertVar (var,removeDuplicateVars(l))
+
+ def insertVar (e, l) = 
+    case l of
+      | [] -> [e]
+      | e1::l1 ->
+          if equalVar?(e, e1) then
+            l
+          else
+            Cons (e1, insertVar (e, l1))
+
 
  def freeVarsRec(M:MS.Term) =   
    case M

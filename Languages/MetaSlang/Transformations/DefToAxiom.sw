@@ -3,6 +3,7 @@ Prover qualifying spec
  import ProverPattern
  import OpToAxiom
  import Simplify
+ import ../CodeGen/CodeGenTransforms
 
   % sort Term = MS.Term
   op unCurry: MS.Term * Nat -> Option ((List Id) * MS.Term)
@@ -19,8 +20,10 @@ Prover qualifying spec
                            Sort * MS.Term * List MS.Term -> MS.Term
 
   def mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, trm, prevArgs) =
+%    case arrowOpt(sp, srt) of
+%      | Some(dom, rng) ->
     case srt of
-      | Arrow (dom, rng, _) ->
+      | Arrow(dom, rng, _) ->
         (case trm of
 	  | Lambda ([(pat, cond, body)],_) ->
 	    let argNames = patternNamesOpt(pat) in
@@ -35,13 +38,25 @@ Prover qualifying spec
 		then 
 		  let newArgs = map (fn(id, srt) -> mkVar (id,srt)) (argNames, argSorts) in
 		  mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, rng, body, prevArgs ++ newArgs)
-	      else
-		mkEquality(topSrt, topFunOp, topTrm)
-	      | _-> mkEquality(topSrt, topFunOp, topTrm))
-	  | _ -> mkEquality(topSrt, topFunOp, topTrm))
+	      else let argSorts = case dom of
+			       | Product(fields, _) -> map (fn (_,srt) -> srt) fields
+			       | None -> [dom] in
+		   let arity = length(argSorts) in
+		   if arity = numargs
+		     then 
+		       let newArgs = map (fn(id, srt) -> mkVar (id,srt)) (argNames, argSorts) in
+		       mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, rng, body, prevArgs ++ newArgs)
+		   else
+		     let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in 
+		     mkEquality(topSrt, topFunOp, topTrm)
+	      | _-> %let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in
+		    mkEquality(topSrt, topFunOp, topTrm))
+	  | _ -> %let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in
+	         mkEquality(topSrt, topFunOp, topTrm))
        | _ ->
 	   (case trm of
-	      | Lambda ([(pat, cond, body)],_) ->  mkEquality(topSrt, topFunOp, topTrm)
+	      | Lambda ([(pat, cond, body)],_) ->  %let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in
+	                                           mkEquality(topSrt, topFunOp, topTrm)
 	      | _ -> mkEquality(srt, mkAppl(topFunOp, prevArgs), trm))
       
 (*  op mkUncurryEqualityRec: Spec * Sort * MS.Term *
@@ -161,14 +176,17 @@ Prover qualifying spec
 	  let pos = termAnn(term) in
 	  let opName = mkQualifiedId(qname, name) in
 	  let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
-	  %let _ = if name = "queens_gs_aux_1" then writeLine("initialFmla: "^printTerm(initialFmla)) else () in
+	  %let unTupledFmlas = foldRecordFmla(spc, srt, initialFmla) in
+	  %let unTupleAxioms = map (fn(fmla:MS.Term) -> (Axiom, mkQualifiedId(qname, name^"_def"), [], withAnnT(fmla, pos))) unTupledFmlas in
+	  let unTupleAxioms = [] in
+	  %let _ = if true or name = "queens_gs_aux_1" then writeLine("initialFmla: "^printTerm(initialFmla)) else () in
 	  let liftedFmlas = proverPattern(initialFmla) in
 	  %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
 	  %let _ = if name = "queens_gs_aux_1" then map (fn (lf) -> writeLine("LiftedAxioms: " ^ printTerm(lf))) liftedFmlas else [] in
 	  let defAxioms = map (fn(fmla:MS.Term) -> (Axiom, mkQualifiedId(qname, name^"_def"), [], withAnnT(fmla, pos))) liftedFmlas in
 	  %%let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
 	  	%let _ = writeLine(name^": in axiomFromOpDef Def part") in
-            defAxioms
+            defAxioms++unTupleAxioms
 	else %let _ = writeLine(name^": in axiomFromOpDef Def part is not local") in
 	  %let _ = debug("not local op") in
 	     []
@@ -193,6 +211,51 @@ Prover qualifying spec
 	     []
       | _ -> %let _ = writeLine(name^": in axiomFromOpDef NOT def part") in
 	       []
+
+  op foldRecordFmla: Spec * Sort * MS.Term -> List MS.Term
+  def foldRecordFmla(spc, srt, fmla) =
+    case srt of
+      | Arrow(dom, range, _) ->
+      (case productOpt(spc, dom) of
+	 | Some fields ->
+	 (case findMatchingUserTypeOption(spc, dom) of
+	    |Some (usrt as Base (srtId, _, _)) ->
+	    (case fmla of
+	       | Bind (Forall, vars, body, b) ->
+	       let recVar = (mkRecVarId(srtId), usrt) in
+	       let subst = mkSubstProjForVar(vars, fields, usrt, recVar) in
+	       let newBody = substituteInRHSEqualityBody(body, subst) in
+	       [mkBind(Forall, [recVar], newBody)]
+	       | _ -> [])
+	    | _ -> [])
+	 | _ -> [])
+      | _ -> []
+
+  op substituteInRHSEquality: MS.Term * List (Var * MS.Term) -> MS.Term
+  def substituteInRHSEqualityBody(term, subst) =
+    case term of
+      | Apply (Fun(Equals,eSrt,_),Record([(_,LHS),(_,RHS)], _),_) -> 
+        let newRHS = substitute(RHS, subst) in
+	mkEquality(eSrt, LHS, newRHS)
+      | _ -> substitute(term, subst)
+  
+  op mkRecVarId: QualifiedId -> String
+  def mkRecVarId(qid as Qualified(_, id)) =
+    id^"RecVar"
+
+  op mkSubstProjForVar: List Var * List (FieldName * Sort) * Sort * Var -> List (Var * MS.Term)
+  def mkSubstProjForVar(vars, fields, recSrt as Base(srtId as Qualified(_, srtName), _,  _), recVar) =
+    let
+      def mkSubstProjForVarRec(vars, fields) =
+	case (vars, fields) of
+	  | ([], []) -> []
+          | (hdVar::restVars, (fieldId, fieldSrt)::restFields) ->
+	    let restSubst = mkSubstProjForVarRec(restVars, restFields) in
+            let projId = getAccessorOpName(srtName,srtId,fieldId) in
+	    let funTerm = Fun(Op(projId,Nonfix),Arrow(recSrt, fieldSrt,noPos), noPos) in
+	    let term = Apply(funTerm, Var(recVar, noPos), noPos) in
+	    Cons ((hdVar, term), restSubst) in
+     mkSubstProjForVarRec(vars, fields)
 
 
 endspec
