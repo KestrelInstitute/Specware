@@ -228,7 +228,7 @@
 (defparameter temporaryDirectory
   (ensure-final-slash
    (substitute #\/ #\\
-	       (namestring  #+(or win32 winnt)
+	       (namestring  #+(or win32 winnt mswindows)
 			    (or (getenv "TEMP") (getenv "TMP")
 				#+allegro
 				(SYSTEM:temporary-directory))
@@ -237,7 +237,7 @@
 			    ))))
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
-   (namestring #+(or win32 winnt)
+   (namestring #+(or win32 winnt mswindows)
 	       (or (getenv "TEMP") (getenv "TMP")
 		   #+allegro
 		   (SYSTEM:temporary-directory))
