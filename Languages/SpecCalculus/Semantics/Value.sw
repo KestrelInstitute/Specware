@@ -31,8 +31,11 @@ SpecCalc qualifying spec {
   (* tentative *)
   type SpecPrism = {dom         : Spec,  
 		    sms         : List Morphism,
-		    conversions : List SpecInterp,
+		    pmode       : PrismMode,
 		    tm          : SCTerm}
+
+  type PrismMode = | Uniform      PrismSelection
+                   | PerInstance  List SpecInterp
 
   op  showValue : Value -> String
   def showValue value = ppFormat (ppValue value)
@@ -54,7 +57,7 @@ SpecCalc qualifying spec {
   op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 
   (* tentative *)
-  def ppPrism {dom, sms, conversions, tm} =
+  def ppPrism {dom, sms, pmode, tm} =
     ppString "<some prism>"
 
   (* tentative *)

@@ -16,7 +16,7 @@ SpecCalc qualifying spec {
   op evaluateUID         : Position -> RelativeUnitId                                               -> SpecCalc.Env ValueInfo
   op evaluateSpec        : List (SpecElem Position)                                     -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
-  op evaluateSpecPrism   : SCTerm * List SCTerm * List SCTerm                           -> Position -> SpecCalc.Env ValueInfo  % tentative
+  op evaluateSpecPrism   : SCTerm * List SCTerm * PrismModeTerm Position                -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateSpecInterp  : SCTerm * SCTerm * (SpecInterpRules Position)                 -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateExtendMorph : SCTerm                                                                   -> SpecCalc.Env ValueInfo
   op evaluateLispCompile : ValueInfo * SCTerm * Option String                                       -> SpecCalc.Env ValueInfo
@@ -82,6 +82,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.37  2004/12/14 11:22:55  mcdonald
+%% hooks for tentative new prism code -- should be transparent to others
+%%
 %% Revision 1.36  2004/11/12 23:02:25  cyrluk
 %% Added other for ProofGen.
 %%

@@ -104,11 +104,10 @@ to the domain and codomain of the morphisms.
     | SpecMorph    (Term a) * (Term a) * (List (SpecMorphRule a))
     | SpecInterp   (Term a) * (Term a) * (SpecInterpRules a)
 
-    | SpecPrism    (Term a) * List (Term a) * List (Term a)
-      %% The first term is a shared domain spec.
-      %% The first list of terms is a list of morphisms, all with the same domain spec.
-      %% The second list of terms is a list of morphisms among the codomains of the 
-      %% first set of morphisms.
+    | SpecPrism    (Term a) * List (Term a) * PrismModeTerm a
+      %% The first  arg denotes a shared domain spec.
+      %% The second arg denotes a list of morphisms, all with the same domain spec.
+      %% The third  arg gives the rules for choosing among the morphism.
 
     | DiagMorph    (Term a) * (Term a) * (List (DiagMorphRule a))
     | ExtendMorph  (Term a)
@@ -173,6 +172,26 @@ The following are declarations that appear in a file or listed
 within a \verb+let+. As noted above, at present the identifiers
 bound by a let or listed in a file are unstructured.
 *)
+
+  type PrismModeTerm a = | Uniform      PrismSelection
+                         | PerInstance  List (Term a)     % sms or interps
+
+  op  mkPrismPerInstance : [a] List (Term a) -> PrismModeTerm a
+  def mkPrismPerInstance interps = PerInstance interps
+
+  op  mkPrismUniform : [a] PrismSelection -> PrismModeTerm a
+  def mkPrismUniform s = Uniform s
+
+  %% In Uniform mode, we may choose a fixed specific morphism (Nth i),
+  %% a fixed random morphism, or iterative though all different morphisms.
+
+  %% In per instance mode, we choose a morphism at random for each
+  %% occurence of each op, using the provided additional morphisms
+  %% or interpretations to translate as necessary when the resulting
+  %% types would otherwise not match.
+
+  type PrismSelection = | Nth Nat | Random | Generative
+
   type Decl a = Name * (Term a)
 (*
 A \verb+TranslateExpr+ denotes a mapping on the op and type names in a
@@ -338,7 +357,7 @@ The following are invoked from the parser:
   op mkColimit     : fa (a) (Term a)                                                        * a -> Term a
   op mkSpecMorph   : fa (a) (Term a) * (Term a) * (List (SpecMorphRule a))                  * a -> Term a
   op mkSpecInterp  : fa (a) (Term a) * (Term a) * (SpecInterpRules a)                       * a -> Term a
-  op mkSpecPrism   : fa (a) (Term a) * (List (Term a)) * (List (Term a))                    * a -> Term a
+  op mkSpecPrism   : fa (a) (Term a) * (List (Term a)) * PrismModeTerm a                    * a -> Term a
   op mkDiagMorph   : fa (a) (Term a) * (Term a) * (List (DiagMorphRule a))                  * a -> Term a
   op mkExtendMorph : fa (a) (Term a)                                                        * a -> Term a
   op mkQualify     : fa (a) (Term a) * Name                                                 * a -> Term a
@@ -369,10 +388,10 @@ The following are invoked from the parser:
   def mkDiag        (elements,                  pos) = (Diag        elements,                    pos)
   def mkColimit     (diag,                      pos) = (Colimit     diag,                        pos)
 
-  def mkSpecMorph   (dom_term, cod_term, rules,       pos) = (SpecMorph       (dom_term, cod_term, rules),       pos)
-  def mkSpecInterp  (dom_term, cod_term, rules,       pos) = (SpecInterp      (dom_term, cod_term, rules),       pos)
-  def mkDiagMorph   (dom_term, cod_term, rules,       pos) = (DiagMorph       (dom_term, cod_term, rules),       pos)
-  def mkSpecPrism   (dom_term, sm_terms, conversions, pos) = (SpecPrism       (dom_term, sm_terms, conversions), pos)
+  def mkSpecMorph   (dom_term, cod_term, rules, pos) = (SpecMorph   (dom_term, cod_term, rules), pos)
+  def mkSpecInterp  (dom_term, cod_term, rules, pos) = (SpecInterp  (dom_term, cod_term, rules), pos)
+  def mkDiagMorph   (dom_term, cod_term, rules, pos) = (DiagMorph   (dom_term, cod_term, rules), pos)
+  def mkSpecPrism   (dom_term, sm_terms, pmode, pos) = (SpecPrism   (dom_term, sm_terms, pmode), pos)
 
   def mkExtendMorph (term,                      pos) = (ExtendMorph term,                        pos)
   def mkQualify     (term, name,                pos) = (Qualify     (term, name),                pos)
