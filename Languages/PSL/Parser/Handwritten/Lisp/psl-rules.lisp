@@ -16,6 +16,7 @@
    ;; (1 :SC-APEX)
    ;; (1 :SC-SHAPE)
    ;; (1 :SC-DIAG-MORPH)
+   (1 :SC-SUBSTITUTE)
    (1 :SC-SPEC-MORPH)
    (1 :SC-HIDE)
    (1 :SC-EXPORT)
