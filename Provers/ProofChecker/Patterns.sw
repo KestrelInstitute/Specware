@@ -10,20 +10,17 @@ spec
   type Type
 
   (* Unlike LD, we do not require the fields of a record pattern to be
-  distinct. Such a requirement is imposed in the inference rules. This keeps
-  the syntax simpler.
+  distinct. Such a requirement is incorporated in the inference rules, thus
+  keeping the syntax simpler.
 
   Another difference with LD is that here embedding patterns are decorated by
   types, not necessarily sum types. The inference rules require the decorating
   type of an embedding pattern to be a sum type. *)
 
-  % useful notion (frequently used):
-  type TypedVar = Variable * Type
-
   type Pattern =
-    | variable  TypedVar
+    | variable  Variable * Type
     | embedding Type * Constructor * Pattern
-    | record    FSeq (Field * Pattern)
-    | alias     TypedVar * Pattern
+    | record    FSeq Field * FSeq Pattern
+    | alias     Variable * Type * Pattern
 
 endspec

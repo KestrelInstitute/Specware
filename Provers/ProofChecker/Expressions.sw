@@ -3,10 +3,10 @@ spec
   import Primitives
 
   (* Since expressions are defined in terms of types and patterns, we declare
-  a (meta) type for types and patterns, which are defined in specs `Types' and
+  (meta) types for types and patterns, which are defined in specs `Types' and
   `Patterns'. When this spec and specs `Types' and `Patterns' are imported
-  together, union semantics ensures that the (meta) types declared here are
-  the same defined there. *)
+  together, union semantics ensures that the types declared here are the same
+  defined there. *)
 
   type Type
   type Pattern
@@ -14,16 +14,19 @@ spec
   (* Unlike LD, we model all expression abbreviations (e.g. universal and
   existential quantification) explicitly.
 
-  Another difference with LD is that we do not capture certain requirements
-  (e.g. distinctness of record fields) in the syntax but we do that in the
-  inference rules. In this way, we keep the syntax simpler.
+  Another difference with LD is that we do not impose certain requirements
+  (e.g. that the fields of a record must be distinct) in the syntax. We
+  incorporate such requirements in the inference rules, thus keeping the
+  syntax simpler.
 
   A third difference is that here embedders are decorated by types, not
   necessarily sum types. The inference rules require the decorating type of
-  an embedder to be a sum type. *)
+  an embedder to be a sum type.
 
-  % useful notion (frequently used):
-  type TypedVar = Variable * Type
+  A fourth difference is that we allow lambda abstractions and unique
+  existentials to bind multiple variables. *)
+
+  type BoundVar = Variable * Type
 
   type NullaryExprOperator =
     | variable Variable
@@ -55,11 +58,9 @@ spec
 
   type BindingExprOperator =
     | abstraction
-    | existential1
-
-  type MultiBindingExprOperator =
     | universal
     | existential
+    | existential1
 
   type Expression =
     | nullary         NullaryExprOperator
@@ -67,12 +68,11 @@ spec
     | binary          BinaryExprOperator * Expression * Expression
     | ifThenElse      Expression * Expression * Expression
     | nary            NaryExprOperator * FSeq Expression
-    | binding         BindingExprOperator * TypedVar * Expression
-    | multiBinding    MultiBindingExprOperator * FSeqNE TypedVar * Expression
+    | binding         BindingExprOperator * FSeqNE BoundVar * Expression
     | opInstance      Operation * FSeq Type
     | embedder        Type * Constructor
     | cas(*e*)        Expression * FSeqNE (Pattern * Expression)
-    | recursiveLet    FSeqNE (TypedVar * Expression) * Expression
+    | recursiveLet    FSeqNE (BoundVar * Expression) * Expression
     | nonRecursiveLet Pattern * Expression * Expression
 
   op conjoinAll : FSeq Expression -> Expression

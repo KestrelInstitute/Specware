@@ -1,7 +1,7 @@
 spec
 
-  import OccurringNames,
-         PatternTransformations,
+  import OccurrenceCollectors,
+         PatternManipulations,
          Substitutions
 
 endspec

@@ -9,7 +9,7 @@ spec
     | opdefinition    FSeqNR TypeVariable * Operation * Expression
     | axio(*m*)       FSeqNR TypeVariable * Expression
     | tVarDeclaration TypeVariable
-    | varDeclaration  TypedVar
+    | varDeclaration  Variable * Type
 
   type Context = FSeq ContextElement
 
