@@ -1,5 +1,5 @@
 spec {
-  import /Languages/BSpecs/Predicative/Coalgebra
+  import SpecCalc qualifying /Languages/BSpecs/Predicative/Coalgebra
   import Struct qualifying GraphAnalysis
   import ../Semantics/PSpec
   % import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
