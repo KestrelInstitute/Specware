@@ -61,7 +61,8 @@ spec
  import ../Specs/Utilities
  sort Term = MS.Term
 
- def sideEffectFree(term:Term) = 
+ op  sideEffectFree: MS.Term -> Boolean
+ def sideEffectFree(term) = 
      case term
        of Var _ -> true
 	| Record(fields,_) -> List.all (fn(_,t)-> sideEffectFree t) fields
@@ -73,13 +74,14 @@ spec
 	      & (sideEffectFree t3)
 	| _ -> false 
 
- def deadCodeElimination(term:Term): Term =
+ op  deadCodeElimination: MS.Term -> MS.Term
+ def deadCodeElimination(term) =
      case term
        of Let([(VarPat (id,_),e)],body,_) ->
 	  let noSideEffects =  sideEffectFree(e) in
 	  let occ = Ref 0 : Ref Nat in
 	  let
-	      def occurs(term:Term) = 
+	      def occurs(term) = 
 		  case term
 		    of Var (id2,_) -> 
 			(occ := (! occ) + (if id = id2 then 1 else 0); term)
@@ -97,7 +99,7 @@ spec
 	      | _ -> term)
 	| _ -> term
 
-  op noInterveningSideEffectsBefore?: Term * (Term -> Boolean) -> Boolean 
+  op noInterveningSideEffectsBefore?: MS.Term * (MS.Term -> Boolean) -> Boolean 
   def noInterveningSideEffectsBefore?(tm,p) =
     %% examine terms in execution order until either p is true or a possibly side-effection
     %% term is encountered
@@ -125,9 +127,10 @@ spec
 % matching compilation such that all references to let (u,v) = z in .. are of the
 % form let u = project(1) z, v = project(2) z in ..
 %
- def tupleInstantiate spc (term:Term) = 
+ op  tupleInstantiate: Spec -> MS.Term -> MS.Term
+ def tupleInstantiate spc (term) = 
      let
-	def elimTuple(zId,srt,fields,body):Term =
+	def elimTuple(zId,srt,fields,body) =
 	  let
 	      def mkField(id,srt) = 
 		  let name = zId^"_field"^id in
@@ -148,7 +151,7 @@ spec
 		      if id = id2 then vTerm else findField(id,fields)
 	  in
 	  let
-	     def substField(term:Term) = 
+	     def substField(term) = 
 		 case term
 		   of Apply(Fun(Project id,_,_),Var((zzId,_),_),_) -> 
 		      if zId = zzId
@@ -173,7 +176,11 @@ spec
 	  elimTuple(zId,srt,fields,body)
 	| _ -> deadCodeElimination(term)
 
- def simplifyOne spc (term:Term):Term = 
+ op  simplifyOne: Spec -> MS.Term -> MS.Term
+ def simplifyOne spc (term) =
+     case tryEvalOne term of
+       | Some cterm -> cterm
+       | _ ->
      case term
        of Let(decl1::decl2::decls,body,_) -> 
 	  simplifyOne spc (mkLet([decl1],simplifyOne spc (mkLet(List.cons(decl2,decls),body))))
@@ -214,15 +221,61 @@ spec
 	    else term	%% let y = <exp> in f y  --> f <exp> where y occurs once in f and no side-effects
 %	| Let([(VarPat((id,_),_),tm)],body,_) -> 
 %	  let
-%	     def replace(term:Term) = 
+%	     def replace(term) = 
 %		 case term
 %		   of (Var((id2,_),_)) -> if id = id2 then wVar else term 
 %		    | _ -> term
 %	  in
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
+	%% Quantification simplification
+	%% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
+	| Bind(Forall,_,_,_) -> simplifyForall(forallComponents term)
+        | Bind(Exists,_,_,_) -> simplifyExists(existsComponents term)
 	| _ -> case simplifyCase term of
 	        | Some tm -> tm
 	        | None -> tupleInstantiate spc term
+
+  op  simplifyForall: List Var * List MS.Term * MS.Term -> MS.Term
+  def simplifyForall(vs,cjs,bod) =
+    case find (fn cj ->
+	        case bindEquality cj of
+		 | None -> false
+		 | Some(v,e) ->
+		   (simpleTerm? e)
+		   & (member(v,vs))
+		   & ~(isFree(v,e)))
+           cjs
+      of Some cj ->
+	 (case  bindEquality cj of
+	    | Some (pr as (sv,_)) ->
+	      let sbst = [pr] in
+	      simplifyForall(filter (fn v -> ~(v = sv)) vs,
+			     mapPartial (fn c -> if cj = c then None
+						  else Some(simpSubstitute(c,sbst)))
+			       cjs,
+			     simpSubstitute(bod,sbst)))
+       | _ -> mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
+
+  op  simpSubstitute: MS.Term *  List (Var * MS.Term) -> MS.Term
+  def simpSubstitute(t,sbst) =
+    let stm = substitute(t,sbst) in
+    attemptEval stm
+
+  op  bindEquality: MS.Term -> Option(Var * MS.Term)
+  def bindEquality t =
+    case t of
+      | Apply(Fun(Equals,_,_),Record([(_,e1),(_,e2)], _),_) ->
+        (case e1 of
+	  | Var(v,_) -> Some(v,e2)
+	  | _ ->
+	 case e2 of
+	  | Var(v,_) -> Some(v,e1)
+	  | _ -> None)
+      | _ -> None
+
+  op  simplifyExists: List Var * List MS.Term -> MS.Term
+  def simplifyExists(vs,cjs) =
+    mkSimpBind(Exists,vs,mkSimpConj cjs)    
 
   def simplifyCase term =
     case term of
@@ -258,7 +311,8 @@ spec
  def simplify spc term = mapSubTerms(simplifyOne spc) term
 
 
- def simplifySpec(spc:Spec) = 
+ op  simplifySpec: Spec -> Spec
+ def simplifySpec(spc) = 
      mapSpec (simplify spc,fn s -> s,fn p -> p) spc
     
 endspec

@@ -67,19 +67,8 @@ spec MetaSlangRewriter
 	    fromList
 	      (List.map (fn s -> (rule.rhs,(s,rule,demod))) substs)) 
         rules)
-     @@ (fn () -> standardSimplify(context,subst,boundVars,term,demod))
+     @@ (fn () -> standardSimplify(term,subst,demod))
 
- def evalSpecNames = ["Nat","Integer","String","Boolean"]
- def evalConstant?(term,(* subst *)_) =
-   case term
-     of Fun(f,_,_) ->
-        (case f
-	   of Nat _ -> true
-	    | Char _ -> true
-	    | String _ -> true
-	    | Bool _ -> true
-	    | _ -> false)
-      | _ -> false
 
  def evalRule : RewriteRule = 
      { 
@@ -91,129 +80,10 @@ spec MetaSlangRewriter
 	rhs   = mkVar(2,TyVar("''a",noPos))
      } 
 
- op natVal: MS.Term -> Nat
- def natVal = fn (Fun(Nat i,_,_)) -> i
- op natVals: List(Id * MS.Term) -> List Nat
- def natVals = map (fn (_,t) -> natVal t)
-
- op charVal: MS.Term -> Char
- def charVal = fn (Fun(Char c,_,_)) -> c
- op charVals: List(Id * MS.Term) -> List Char
- def charVals = map (fn (_,t) -> charVal t)
-
- op stringVal: MS.Term -> String
- def stringVal = fn (Fun(String s,_,_)) -> s
- op stringVals: List(Id * MS.Term) -> List String
- def stringVals = map (fn (_,t) -> stringVal t)
-
- def sortFromField(fields: List(Id * MS.Term),defaultS:Sort): Sort =
-   case fields
-     of (_,Fun(_,s,_))::_-> s
-      | _ -> defaultS
-
- def sortFromArg(arg: MS.Term,defaultS:Sort): Sort =
-   case arg
-     of Fun(_,s,_) -> s
-      | _ -> defaultS
-
- op evalBinary: fa(a) (a * a -> Fun) * (List(Id * MS.Term) -> List a)
-                      * List(Id * MS.Term) * Sort
-                     -> Option MS.Term
- def fa(a) evalBinary(f, fVals, fields, srt) =
-   case fVals fields
-     of [i,j] -> Some(Fun(f(i,j),srt,noPos))
-      | _ -> None
-
- op nat: fa(a) (a -> Nat) -> a -> Fun
- op char: fa(a) (a -> Char) -> a -> Fun
- op str: fa(a) (a -> String) -> a -> Fun
- op bool: fa(a) (a -> Boolean) -> a -> Fun
- def nat f x  = Nat(f x)
- def char f x = Char(f x)
- def str f x = String(f x)
- def bool f x = Bool(f x)
-
- def attemptEval1(opName,arg,(* subst *)_): MS.Term =
-   case (opName,arg) of
-      | ("~", Fun (Nat i,_,aa)) -> Fun (Nat (~i), natSort,aa)
-      | ("~", Fun (Bool b,_,aa)) -> Fun (Bool (~b), boolSort,aa)
-      | ("pred", Fun (Nat i,_,aa)) -> Fun (Nat (pred i), natSort,aa)
-      | ("succ",Fun (Nat i,_,aa)) -> Fun (Nat (succ i), natSort,aa)
-
-      | ("length",Fun (String s,_,aa)) -> Fun (Nat(length s),natSort,aa)
-
-      | ("isUpperCase",Fun (Char c,_,aa)) ->
-          Fun (Bool(isUpperCase c),boolSort,aa)
-      | ("isLowerCase",Fun (Char c,_,aa)) ->
-          Fun (Bool(isLowerCase c),boolSort,aa)
-      | ("isAlphaNum",Fun (Char c,_,aa)) ->
-          Fun(Bool(isAlphaNum c),boolSort,aa)
-      | ("isAlpha",Fun (Char c,_,aa)) -> Fun (Bool(isAlpha c),boolSort,aa)
-      | ("isNum",Fun (Char c,_,aa)) -> Fun (Bool(isNum c),boolSort,aa)
-      | ("isAscii",Fun (Char c,_,aa)) -> Fun (Bool(isAscii c),boolSort,aa)
-      | ("toUpperCase",Fun (Char c,_,aa)) ->
-          Fun (Char(toUpperCase c),charSort,aa)
-      | ("toLowerCase",Fun (Char c,_,aa)) ->
-          Fun (Char(toLowerCase c),charSort,aa)
-      | ("ord",Fun (Char c,_,aa)) -> Fun (Nat(ord c),natSort,aa)
-      | ("chr",Fun (Nat i,_,aa)) -> Fun (Char(chr i),charSort,aa)
-
- def attemptEvaln(opName,fields,(* subst *)_): Option MS.Term =
-   case opName
-     of "+" ->
-        Some(Fun(Nat((foldl +) 0 (natVals fields)),
-		 sortFromField(fields,natSort),noPos))
-      | "*" ->
-        Some(Fun(Nat((foldl *) 1 (natVals fields)),
-		 sortFromField(fields,natSort),noPos))
-      | "-" -> evalBinary(nat -,natVals,fields,
-			  sortFromField(fields,natSort))
-      | "<" -> evalBinary(bool <,natVals,fields,boolSort)
-      | "<=" -> evalBinary(bool <=,natVals,fields,boolSort)
-      | ">" -> evalBinary(bool >,natVals,fields,boolSort)
-      | ">=" -> evalBinary(bool >=,natVals,fields,boolSort)
-      | "min" -> evalBinary(nat min,natVals,fields,
-			    sortFromField(fields,natSort))
-      | "max" -> evalBinary(nat max,natVals,fields,
-			    sortFromField(fields,natSort))
-      | "rem" -> evalBinary(nat rem,natVals,fields,natSort)
-      | "div" -> evalBinary(nat div,natVals,fields,natSort)
-
-      | "concat" -> evalBinary(str concat,stringVals,fields,stringSort)
-      | "++" -> evalBinary(str ++,stringVals,fields,stringSort)
-      | "^" -> evalBinary(str ^,stringVals,fields,stringSort)
-      | "substring" ->
-	(case fields
-	   of [(_,s),(_,i),(_,j)] ->
-	      Some(Fun(String(substring(stringVal s,natVal i,natVal j)),
-		       stringSort,noPos))
-	    | _ -> None)
-      | "leq" -> evalBinary(bool leq,stringVals,fields,boolSort)
-      | "lt" -> evalBinary(bool lt,stringVals,fields,boolSort)
-
-      | _ -> None
-
- def standardSimplify((* context *)_,subst,(* boundVars *)_,term,demod) =
-   case term
-     of Apply(Fun(Op(Qualified(spName,opName),_),s,_),arg,_) ->
-        (if member(spName,evalSpecNames)
-	 then (case arg
-		 of Record(fields, _) ->
-		    (if all (fn (_,tm) -> evalConstant?(tm,subst)) fields
-		      then case attemptEvaln(opName,fields,subst)
-			     of Some eTerm -> unit (eTerm, (subst,evalRule,demod))
-			      | None -> Nil
-		      else Nil)
-		   | _ -> (if evalConstant?(arg,subst)
-			    then  unit (attemptEval1(opName,arg,subst), (subst,evalRule,demod))
-			   else Nil))
-	 else Nil)
-      | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
-	if evalConstant?(N1,subst) & evalConstant?(N2,subst)
-	  then unit(mkBool(N1 = N2),(subst,evalRule,demod))
-	  else Nil
-%      | Apply(,)
-      | _ -> Nil
+ def standardSimplify(term,subst,demod) =
+   case tryEvalOne term of
+     | Some eTerm -> unit (eTerm, (subst,evalRule,demod))
+     | None -> Nil
 
  op assertRules: Context * MS.Term * String -> List RewriteRule
  def assertRules (context,term,desc) =

@@ -21,7 +21,8 @@ Utilities qualifying spec
 
  op extractAssignment : MS.Term * MS.Term -> List (Pattern * MS.Term)
 
- op removeDefinitions : Spec -> Spec
+ op removeDefinitions  : Spec -> Spec
+ op removeUndefinedOps : Spec -> Spec
 
  op patternToTerm : Pattern -> Option MS.Term
 
@@ -232,6 +233,7 @@ Utilities qualifying spec
    let vars2 = freeVarsRec body in
    deleteVars(vars1 ++ vars2,vars)
 
+ op  patVars: Pattern -> List Var
  def patVars(pat:Pattern) = 
    case pat
      of AliasPat(p1,p2,_)      -> patVars(p1) ++ patVars(p2)
@@ -493,6 +495,14 @@ Utilities qualifying spec
    {importInfo       = spc.importInfo,
     ops              = mapAQualifierMap (fn (op_names, fixity, srt, _) -> 
 					 (op_names, fixity, srt, []))
+                         spc.ops,
+    sorts            = spc.sorts,
+    properties       = emptyProperties}
+
+ def removeUndefinedOps spc =
+   {importInfo       = spc.importInfo,
+    ops              = mapiPartialAQualifierMap (fn (_,_,opinfo as (op_names, fixity, srt, defs)) -> 
+					         if defs = [] then None else Some opinfo)
                          spc.ops,
     sorts            = spc.sorts,
     properties       = emptyProperties}
@@ -917,21 +927,50 @@ Utilities qualifying spec
      | _ ->
    IfThenElse(t1,t2,t3,noPos)
 
+ op  mkOr: MS.Term * MS.Term -> MS.Term 
  def mkOr(t1,t2) = 
-     case (t1:MS.Term,t2:MS.Term)
+     case (t1,t2)
        of (Fun(Bool true,_,_),_) -> t1
 	| (Fun(Bool false,_,_),_) -> t2
 	| (_,Fun(Bool true,_,_)) -> t2
 	| (_,Fun(Bool false,_,_)) -> t1
 	| _ -> MS.mkOr(t1,t2)
 
+ op  mkAnd: MS.Term * MS.Term -> MS.Term 
  def mkAnd(t1,t2) = 
-     case (t1:MS.Term,t2:MS.Term)
+     case (t1,t2)
        of (Fun(Bool true,_,_),_) -> t2
 	| (Fun(Bool false,_,_),_) -> t1
 	| (_,Fun(Bool true,_,_)) -> t1
 	| (_,Fun(Bool false,_,_)) -> t2
 	| _ -> MS.mkAnd(t1,t2)
+
+ op  mkSimpConj: List MS.Term -> MS.Term
+ def mkSimpConj(cjs) =
+  case cjs
+    of []     -> mkTrue()
+     | [x]    -> x
+     | x::rcs -> mkAnd (x, mkConj rcs)
+
+ op  mkSimpOrs: List MS.Term -> MS.Term
+ def mkSimpOrs(cjs) =
+  case cjs
+    of []     -> mkTrue()
+     | [x]    -> x
+     | x::rcs -> mkOr (x, mkOrs rcs)
+
+ op mkSimpBind: Binder * List Var * MS.Term -> MS.Term
+ def mkSimpBind(b, vars, term) =
+   if vars = [] then term
+     else Bind(b,vars,term,noPos)
+
+ op  mkSimpImplies: MS.Term * MS.Term -> MS.Term
+ def mkSimpImplies (t1, t2) =
+   case t1 of
+     | Fun(Bool true,_,_)  -> t2
+     | Fun(Bool false,_,_) -> mkFalse()
+     | _ -> mkApply (impliesOp, mkTuple [t1,t2])
+
 
  op  identityFn?: fa(a) ATerm a -> Boolean
  def identityFn? f =
@@ -939,4 +978,216 @@ Utilities qualifying spec
      | Lambda([(VarPat(x,_),_,Var(y,_))],_) -> x = y
      | _ -> false
 
-end-spec
+ 
+ op  getConjuncts: fa(a) ATerm a -> List (ATerm a)
+ def getConjuncts t =
+   case t of
+     | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),
+	     Record([("1",p),("2",q)],_),_)
+       -> getConjuncts p ++ getConjuncts q
+     | _ -> [t]
+
+  %% Given a universal quantification return list of quantified variables, conditions and rhs
+  op  forallComponents: fa(a) ATerm a -> List (AVar a) * List (ATerm a) * ATerm a
+  def forallComponents t =
+    case t of
+      | Bind(Forall,vs,bod,_) ->
+	let (rVs,rLhsCjs,rRhs) = forallComponents bod in
+	(vs ++ rVs,rLhsCjs,rRhs)
+      | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
+	     Record([("1",lhs),("2",rhs)],_),_) ->
+        let (rVs,rLhsCjs,rRhs) = forallComponents rhs in
+	(rVs,getConjuncts lhs ++ rLhsCjs,rRhs)
+      | _ -> ([],[],t)
+
+  %% Given an existential quantification return list of quantified variables and conjuncts
+  op  existsComponents: fa(a) ATerm a -> List (AVar a) * List (ATerm a)
+  def existsComponents t =
+    case t of
+      | Bind(Exists,vs,bod,_) ->
+	let (rVs,rLhsCjs) = existsComponents bod in
+	(vs ++ rVs,rLhsCjs)
+      | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),
+	      Record([("1",lhs),("2",rhs)],_),_) ->
+        let (lVs,lLhsCjs) = existsComponents lhs in
+        let (rVs,rLhsCjs) = existsComponents rhs in
+	(lVs ++ rVs,lLhsCjs ++ rLhsCjs)
+      | _ -> ([],[t])
+
+  op  constantTerm?: fa(a) ATerm a -> Boolean
+  def constantTerm? t =
+    case t of
+      | Lambda _ -> true
+      | Fun _    -> true
+      | Record(fields,_) -> exists (fn (_,stm) -> constantTerm? stm) fields
+      | _        -> false
+
+  op  lambda?: fa(a) ATerm a -> Boolean
+  def lambda? t =
+    case t of
+      | Lambda _ -> true
+      | _ -> false
+
+ %% Evaluation of constant terms
+ def evalSpecNames = ["Nat","Integer","String","Boolean"]
+ def evalConstant?(term) =
+   case term
+     of Fun(f,_,_) ->
+        (case f
+	   of Nat _ -> true
+	    | Char _ -> true
+	    | String _ -> true
+	    | Bool _ -> true
+	    | _ -> false)
+      | _ -> false
+
+ op  natVal: MS.Term -> Nat
+ def natVal = fn (Fun(Nat i,_,_)) -> i
+ op  natVals: List(Id * MS.Term) -> List Nat
+ def natVals = map (fn (_,t) -> natVal t)
+
+ op  charVal: MS.Term -> Char
+ def charVal = fn (Fun(Char c,_,_)) -> c
+ op  charVals: List(Id * MS.Term) -> List Char
+ def charVals = map (fn (_,t) -> charVal t)
+
+ op  stringVal: MS.Term -> String
+ def stringVal = fn (Fun(String s,_,_)) -> s
+ op  stringVals: List(Id * MS.Term) -> List String
+ def stringVals = map (fn (_,t) -> stringVal t)
+
+ op  booleanVal: MS.Term -> Boolean
+ def booleanVal = fn (Fun(Bool s,_,_)) -> s
+ op  booleanVals: List(Id * MS.Term) -> List Boolean
+ def booleanVals = map (fn (_,t) -> booleanVal t)
+
+
+ op  sortFromField: List(Id * MS.Term) * Sort -> Sort
+ def sortFromField(fields,defaultS) =
+   case fields
+     of (_,Fun(_,s,_))::_-> s
+      | _ -> defaultS
+
+ def sortFromArg(arg: MS.Term,defaultS:Sort): Sort =
+   case arg
+     of Fun(_,s,_) -> s
+      | _ -> defaultS
+
+ op  evalBinary: fa(a) (a * a -> Fun) * (List(Id * MS.Term) -> List a)
+                      * List(Id * MS.Term) * Sort
+                     -> Option MS.Term
+ def evalBinary(f, fVals, fields, srt) =
+   case fVals fields
+     of [i,j] -> Some(Fun(f(i,j),srt,noPos))
+      | _ -> None
+
+ op nat: fa(a) (a -> Nat) -> a -> Fun
+ op char: fa(a) (a -> Char) -> a -> Fun
+ op str: fa(a) (a -> String) -> a -> Fun
+ op bool: fa(a) (a -> Boolean) -> a -> Fun
+ def nat f x  = Nat(f x)
+ def char f x = Char(f x)
+ def str f x = String(f x)
+ def bool f x = Bool(f x)
+
+ op  attemptEval1: String * MS.Term -> Option MS.Term
+ def attemptEval1(opName,arg) =
+   case (opName,arg) of
+      | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (~i), natSort,aa))
+      | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolSort,aa))
+      | ("pred", Fun (Nat i,_,aa)) -> Some(Fun (Nat (pred i), natSort,aa))
+      | ("succ",Fun (Nat i,_,aa)) -> Some(Fun (Nat (succ i), natSort,aa))
+
+      | ("length",Fun (String s,_,aa)) -> Some(Fun (Nat(length s),natSort,aa))
+
+      | ("isUpperCase",Fun (Char c,_,aa)) ->
+          Some(Fun (Bool(isUpperCase c),boolSort,aa))
+      | ("isLowerCase",Fun (Char c,_,aa)) ->
+          Some(Fun (Bool(isLowerCase c),boolSort,aa))
+      | ("isAlphaNum",Fun (Char c,_,aa)) ->
+          Some(Fun(Bool(isAlphaNum c),boolSort,aa))
+      | ("isAlpha",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAlpha c),boolSort,aa))
+      | ("isNum",Fun (Char c,_,aa)) -> Some(Fun (Bool(isNum c),boolSort,aa))
+      | ("isAscii",Fun (Char c,_,aa)) -> Some(Fun (Bool(isAscii c),boolSort,aa))
+      | ("toUpperCase",Fun (Char c,_,aa)) ->
+          Some(Fun (Char(toUpperCase c),charSort,aa))
+      | ("toLowerCase",Fun (Char c,_,aa)) ->
+          Some(Fun (Char(toLowerCase c),charSort,aa))
+      | ("ord",Fun (Char c,_,aa)) -> Some(Fun (Nat(ord c),natSort,aa))
+      | ("chr",Fun (Nat i,_,aa)) -> Some(Fun (Char(chr i),charSort,aa))
+      | _ -> None
+
+ op  attemptEvaln: String * List(Id * MS.Term) ->  Option MS.Term
+ def attemptEvaln(opName,fields) =
+   case opName of
+      %% Nat operations
+      | "+" ->
+        Some(Fun(Nat((foldl +) 0 (natVals fields)),
+		 sortFromField(fields,natSort),noPos))
+      | "*" ->
+        Some(Fun(Nat((foldl *) 1 (natVals fields)),
+		 sortFromField(fields,natSort),noPos))
+      | "-"   -> evalBinary(nat -,natVals,fields,
+			  sortFromField(fields,natSort))
+      | "<"   -> evalBinary(bool <,natVals,fields,boolSort)
+      | "<="  -> evalBinary(bool <=,natVals,fields,boolSort)
+      | ">"   -> evalBinary(bool >,natVals,fields,boolSort)
+      | ">="  -> evalBinary(bool >=,natVals,fields,boolSort)
+      | "min" -> evalBinary(nat min,natVals,fields,
+			    sortFromField(fields,natSort))
+      | "max" -> evalBinary(nat max,natVals,fields,
+			    sortFromField(fields,natSort))
+      | "rem" -> evalBinary(nat rem,natVals,fields,natSort)
+      | "div" -> evalBinary(nat div,natVals,fields,natSort)
+
+      %% string operations
+      | "concat" -> evalBinary(str concat,stringVals,fields,stringSort)
+      | "++"  -> evalBinary(str ++,stringVals,fields,stringSort)
+      | "^"   -> evalBinary(str ^,stringVals,fields,stringSort)
+      | "substring" ->
+	(case fields
+	   of [(_,s),(_,i),(_,j)] ->
+	      Some(Fun(String(substring(stringVal s,natVal i,natVal j)),
+		       stringSort,noPos))
+	    | _ -> None)
+      | "leq" -> evalBinary(bool leq,stringVals,fields,boolSort)
+      | "lt"  -> evalBinary(bool lt,stringVals,fields,boolSort)
+
+      %% Boolean operations
+      | "&"   -> evalBinary(bool  &,booleanVals,fields,boolSort)
+      | "or"  -> evalBinary(bool or,booleanVals,fields,boolSort)
+      | "=>"  -> evalBinary(bool =>,booleanVals,fields,boolSort)
+
+      | _ -> None
+
+ op  attemptEval: MS.Term -> MS.Term
+ def attemptEval t = mapSubTerms attemptEvalOne t
+
+ op  attemptEvalOne: MS.Term -> MS.Term
+ def attemptEvalOne t =
+   case tryEvalOne t of
+     | Some t1 -> t1
+     | None    -> t
+
+ op  tryEvalOne: MS.Term -> Option MS.Term
+ def tryEvalOne term =
+   case term
+     of Apply(Fun(Op(Qualified(spName,opName),_),s,_),arg,_) ->
+        (if member(spName,evalSpecNames)
+	 then (case arg
+		 of Record(fields, _) ->
+		    (if all (fn (_,tm) -> evalConstant?(tm)) fields
+		      then attemptEvaln(opName,fields)
+		      else None)
+		   | _ -> (if evalConstant?(arg)
+			    then attemptEval1(opName,arg)
+			    else None))
+	  else None)
+      | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
+	if evalConstant?(N1) & evalConstant?(N2)
+	  then Some(mkBool(N1 = N2))
+	  else None
+%      | Apply(,)
+      | _ -> None
+
+endspec

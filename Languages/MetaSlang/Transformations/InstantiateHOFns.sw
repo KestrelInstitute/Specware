@@ -426,19 +426,6 @@ spec
       | Record(fields,_ ) -> foldr (fn ((_,st),r) -> cons(st,r)) [] fields
       | _ -> [t]
 
-  def constantTerm? t =
-    case t of
-      | Lambda _ -> true
-      | Fun _ -> true
-      | Record(fields,_) -> exists (fn (_,stm) -> constantTerm? stm) fields
-      | _ -> false
-
-  op  lambda?: Term -> Boolean
-  def lambda? t =
-    case t of
-      | Lambda _ -> true
-      | _ -> false
-
   op  makeLet: List Pattern * List Term * Term -> Term
   def makeLet(params,args,body) =
     if params = [] then body

@@ -45,7 +45,7 @@ spec
 		    id, id)
 	     bod
 	 | _ -> mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
-     | _ -> Apply(fntm,arg,noPos)
+     | _ -> mkApply(fntm,arg)
 
  def assertCond(cond,(ds,tvs,spc,name,names)) = 
      (cons(Cond cond,ds),tvs,spc,name,names)
@@ -122,7 +122,7 @@ spec
 
  def makeVerificationCondition((decls,tvs,spc,name,_),term) = 
      let
-	def insert(decl:Decl,formula) = 
+	def insert(decl,formula) = 
 	    case decl
 	      of Var v ->        
 		 if isFree(v,formula)
@@ -134,10 +134,14 @@ spec
 	       | LetRec decls -> LetRec(decls,formula,noPos)
      in
      let term = foldl insert term decls in
-     (name,tvs,simplify spc term)
+     case simplify spc term of
+       | Fun(Bool true,_,_) -> None
+       | claim -> Some(name,tvs,claim)
 
- def addCondition(tcc,gamma,term) = 
-     cons(makeVerificationCondition(gamma,term),tcc)
+ def addCondition(tcc,gamma,term) =
+   case makeVerificationCondition(gamma,term) of
+     | Some condn -> Cons(condn,tcc)
+     | None       -> tcc
 
 % Generate a fresh name with respect to all the
 % names previously used in spec (as ops) and
@@ -244,7 +248,7 @@ spec
               foldl (checkRule(gamma,dom,rng)) tcc rules        in
           let rules = 
 	      (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	in
-          let x  = freshName(gamma,"x")				in
+          let x  = freshName(gamma,"D")				in
           let vs = [mkVar(x,dom)] 	        	        in
 	  let (_,_,spc,name,_) = gamma				in
 	  let context = {counter = Ref 0,
@@ -343,7 +347,7 @@ spec
 	let trm = Record(terms,noPos) in
 	returnPattern(gamma, trm, patternSort pat,tau)
       | WildPat(sigma,_)	-> 
-	let v = freshName(gamma,"v") in
+	let v = freshName(gamma,"P") in
 	let v = (v,sigma)            in
 	let gamma1 = insert(v,gamma) in
 	(gamma1,Var(v,noPos))
@@ -428,7 +432,7 @@ spec
 	| _ ->
      case (tau1,sigma1)
        of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) -> 
-	  let x = freshName(gamma,"x") in
+	  let x = freshName(gamma,"F") in
           let xVar   = Var((x,sigma1),noPos) in
           let gamma1 = insert((x,sigma1),gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVar,sigma1,tau1) in
@@ -474,7 +478,7 @@ spec
 	      %%  let ps1 = ListPair.zip(srts1,srts2) in % unused
 	      let tcc = ListPair.foldl
 			   (fn (s1,s2,tcc) -> 
-			       let x = freshName(gamma,"x") in
+			       let x = freshName(gamma,"B") in
 			       let gamma1 = insert((x,s1),gamma) in
 			       let gamma2 = insert((x,s2),gamma) in
 			       let tcc = subtypeRec(pairs,tcc,gamma1,

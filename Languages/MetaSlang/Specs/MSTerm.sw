@@ -302,4 +302,5 @@ MS qualifying spec
 	  then map (fn (_,x) -> x) fields
 	 else [t]
       | _ -> [t]
+
 endspec

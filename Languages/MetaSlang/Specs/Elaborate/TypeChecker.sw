@@ -601,17 +601,25 @@ spec {
            | _ -> pass2Error (env, srt, "Function sort expected ", pos));
        Fun (Embedded id, srt, pos)
       )
-    | Fun (PChoose equiv, srt, pos)->(*Has sort (a->b)->Quotient (a, equiv)->b *)
+    | Fun (PChoose equiv, srt, pos) ->
+	 (* Has sort {f: a -> b | fa(m,n) q(m,n) => f m = f n} -> a \ equiv -> b *)
          let a = freshMetaTyVar pos in
          let b = freshMetaTyVar pos in
          let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          let equiv = elaborateTerm (env, equiv, ty1)                   in 
          let ty2 = Arrow (Quotient (a, equiv, pos), b, pos) in
          let ty3 = Arrow (a, b, pos) in
-         let ty4 = Arrow (ty3, ty2, pos) in
+	 let fv = ("F",ty3) in
+	 let mv = ("M",a) in
+	 let nv = ("N",a) in
+	 let lhs = mkAppl(equiv,[mkVar mv,mkVar nv]) in
+	 let rhs = mkEquality(a,mkApply(mkVar fv,mkVar mv),mkApply(mkVar fv,mkVar nv)) in
+	 let body = mkBind(Forall,[mv,nv],mkImplies(lhs,rhs)) in
+	 let tys = Subsort(ty3,mkLambda(mkVarPat fv,body),pos) in
+         let ty4 = Arrow (tys, ty2, pos) in
          (elaborateSortForTerm (env, trm, ty4, term_sort);
           elaborateSortForTerm (env, trm, srt, ty4);
-          Fun (PChoose equiv, srt, pos))
+          Fun (PChoose equiv, ty4, pos))
 
     | Fun (PQuotient equiv, srt, pos) ->  % Has sort a -> Quotient(a, equiv)
          let a = freshMetaTyVar pos in

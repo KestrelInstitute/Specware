@@ -5,7 +5,7 @@ Integer qualifying spec
   % sorts:
 
  %sort Integer
-  sort NonZeroInteger = {i : Integer | i ~= 0}
+  sort NonZeroInteger = {i : Integer | ~(i = 0)}
 
   % ops whose Lisp code is hand-written:
 

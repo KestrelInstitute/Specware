@@ -200,6 +200,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ]
           | Seq (terms,_) ->
               ppSep (ppString "; ") (map ppATerm terms)
+	  | SortedTerm (tm,srt,_) ->
+	      ppGrConcat [ppATerm tm, ppString": ",ppBreak,ppASort srt]
           | any ->
                fail ("No match in ppATerm with: '"
                   ^ (System.toString any)

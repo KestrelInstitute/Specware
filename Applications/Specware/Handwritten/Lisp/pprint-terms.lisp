@@ -22,7 +22,7 @@
 (deftype term_symbol ()
   `(and symbol (satisfies term_symbol?)))
 
-(set-pprint-dispatch '(cons term_symbol) 'print_term)
+(set-pprint-dispatch '(cons term_symbol) #'print_term)
 
 (defun print_sort (strm sort)
   (let ((*standard-output* strm))
@@ -38,7 +38,7 @@
 (deftype sort_symbol ()
   `(and symbol (satisfies sort_symbol?)))
 
-(set-pprint-dispatch '(cons sort_symbol) 'print_sort)
+(set-pprint-dispatch '(cons sort_symbol) #'print_sort)
 
 
 (defun print_dotted_pair (strm l)
@@ -47,4 +47,4 @@
 (set-pprint-dispatch '(cons T (and cons (satisfies
 					  (lambda (x) (or (term_symbol? (car x))
 							  (sort_symbol? (car x)))))))
-		     'print_dotted_pair)
+		     #'print_dotted_pair)
