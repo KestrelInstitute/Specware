@@ -18,20 +18,12 @@ Since the axioms in the specs are unqualified, axiom name overloading may take
 place. For instance, if two named types with finite cardinalities are
 introduced according to the usage shown above, the two finiteness axioms will
 both have name `finite'. This can be prevented by qualifying the axiom names
-in the translation, e.g.
+before translating, e.g.
 
-  import translate Type#Countable by {X         +-> MyTypeName,
-                                      infinite  +-> MyTypeName.infinite,
-                                      countable +-> MyTypeName.countable}
-
-An alternative is
-
-  import translate
-         (MyTypeName qualifying Type#Countable)
+  import translate (MyTypeName qualifying Type#Countable)
          by {MyTypeName.X +-> MyTypeName}
 
-which does not require the axioms to be individually qualified but is slightly
-less straightforward. *)
+*)
 
 
 Empty = spec
