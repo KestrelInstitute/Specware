@@ -85,11 +85,11 @@ def fieldToFldDecl(fieldProj, fieldType) =
 
 op mkEqualityMethDecl: Id -> MethDecl
 def mkEqualityMethDecl(id) =
-  (([], Some (tt("Boolean")), "equal", [(false, tt(id) ,(mkEqarg(id), 0))], []), None)
+  (([], Some (tt("Boolean")), "equals", [(false, tt(id) ,(mkEqarg(id), 0))], []), None)
 
 op mkAbstractEqualityMethDecl: Id -> MethDecl
 def mkAbstractEqualityMethDecl(id) =
-  (([Abstract], Some (tt("Boolean")), "equal", [(false, tt(id) ,(mkEqarg(id), 0))], []), None)
+  (([Abstract], Some (tt("Boolean")), "equals", [(false, tt(id) ,(mkEqarg(id), 0))], []), None)
 
 op mkProdConstrDecl: Id * List (Id * Sort) -> ConstrDecl
 def mkProdConstrDecl(id, fields) =
