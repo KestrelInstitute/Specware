@@ -669,6 +669,7 @@
 	  (#.+word-symbol-start-code+        (go terminate-word-symbol-with-start-word-symbol))
 	  (#.+number-start-code+             (go terminate-word-symbol-with-start-number))
 	  (#.+string-quote-code+             (go terminate-word-symbol-with-start-string))
+          (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal))
 	  ;; weird
 	  (#.+non-word-symbol-continue-code+ (go terminate-word-symbol-with-continue-non-word-symbol))
 	  (#.+number-continue-code+          (go terminate-word-symbol-with-continue-number)) 
@@ -699,6 +700,7 @@
        terminate-word-symbol-with-start-non-word-symbol
        terminate-word-symbol-with-start-separator
        terminate-word-symbol-with-start-string
+       terminate-word-symbol-with-start-char-literal
        terminate-word-symbol-with-start-comment-to-eol
        terminate-word-symbol-with-whitespace
        terminate-word-symbol-with-extended-comment
@@ -745,6 +747,7 @@
 	  (#.+non-word-symbol-start-code+    (go terminate-non-word-symbol-with-start-non-word-symbol))
 	  (#.+number-start-code+             (go terminate-non-word-symbol-with-start-number))
 	  (#.+string-quote-code+             (go terminate-non-word-symbol-with-start-string))
+          (#.+char-literal-start-code+       (go terminate-non-word-symbol-with-start-char-literal))
 	  ;; weird
 	  (#.+word-symbol-continue-code+     (go terminate-non-word-symbol-with-continue-word-symbol))
 	  (#.+number-continue-code+          (go terminate-non-word-symbol-with-continue-number)) 
@@ -776,6 +779,7 @@
        terminate-non-word-symbol-with-start-word-symbol
        terminate-non-word-symbol-with-start-separator
        terminate-non-word-symbol-with-start-string
+       terminate-non-word-symbol-with-start-char-literal
        terminate-non-word-symbol-with-start-comment-to-eol
        terminate-non-word-symbol-with-whitespace
        terminate-non-word-symbol-with-extended-comment
@@ -897,6 +901,8 @@
 	  ;; unlikely
 	  (#.+number-start-code+             (go terminate-number-with-start-number))
 	  (#.+string-quote-code+             (go terminate-number-with-start-string))
+          (#.+char-literal-start-code+       (go terminate-number-with-start-char-literal))
+	  ;;
 	  (otherwise                         (go unrecognized-char-while-scanning-number)))
 	;;
        unrecognized-char-while-scanning-number
@@ -922,6 +928,7 @@
        terminate-number-with-start-non-word-symbol ;; e.g. +, -, =, etc.
        terminate-number-with-start-separator
        terminate-number-with-start-string
+       terminate-number-with-start-char-literal
        terminate-number-with-start-comment-to-eol
        terminate-number-with-whitespace
        terminate-number-with-extended-comment
