@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:05  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -229,6 +232,71 @@ public final class SpecElement extends MemberElement {
         return getSpecImpl().getOp(name);
     }
 
+    //================== Claims ===============================
+
+    /** Add a new claim to the spec.
+     *  @param el the claim to add
+     * @throws SourceException if impossible
+     */
+    public void addClaim(ClaimElement el) throws SourceException {
+        if (getClaim(el.getName()) != null)
+            throwAddException("FMT_EXC_AddClaim", el); // NOI18N
+        getSpecImpl().changeClaims(new ClaimElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new claims to the spec.
+     *  @param els the claims to add
+     * @throws SourceException if impossible
+     */
+    public void addClaims(final ClaimElement[] els) throws SourceException {
+        for (int i = 0; i < els.length; i++)
+            if (getClaim(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddClaim", els[i]); // NOI18N
+        getSpecImpl().changeClaims(els, Impl.ADD);
+    }
+
+    /** Remove a claim from the spec.
+     *  @param el the claim to remove
+     * @throws SourceException if impossible
+     */
+    public void removeClaim(ClaimElement el) throws SourceException {
+        getSpecImpl().changeClaims(
+						 new ClaimElement[] { el }, Impl.REMOVE
+						 );
+    }
+
+    /** Remove some claims from the spec.
+     *  @param els the claims to remove
+     * @throws SourceException if impossible
+     */
+    public void removeClaims(final ClaimElement[] els) throws SourceException {
+        getSpecImpl().changeClaims(els, Impl.REMOVE);
+    }
+
+    /** Set the claims for this spec.
+     * Previous claims are removed.
+     * @param els the new claims
+     * @throws SourceException if impossible
+     */
+    public void setClaims(ClaimElement[] els) throws SourceException {
+        getSpecImpl().changeClaims(els, Impl.SET);
+    }
+
+    /** Get all claims in this spec.
+     * @return the claims
+     */
+    public ClaimElement[] getClaims() {
+        return getSpecImpl().getClaims();
+    }
+
+    /** Find a claim by name.
+     * @param name the name of the claim to look for
+     * @return the element or <code>null</code> if not found
+     */
+    public ClaimElement getClaim(String name) {
+        return getSpecImpl().getClaim(name);
+    }
+
     // ================ printing =========================================
 
     /* Print this element to an element printer.
@@ -259,6 +327,11 @@ public final class SpecElement extends MemberElement {
         if (print(getOps(), printer)) {
             printer.println(""); // NOI18N
             printer.println(""); // NOI18N
+        }
+        
+        if (print(getClaims(), printer)) {
+            printer.println(""); // NOI18N
+            printer.println(""); // NOI18N            
         }
 
         printer.println(""); // NOI18N
@@ -381,6 +454,25 @@ public final class SpecElement extends MemberElement {
 	 * @return the op, or <code>null</code> if it does not exist
 	 */
         public OpElement getOp(String name);
+        
+        /** Change the set of claims.
+	 * @param elems the new claims
+	 * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+	 * @exception SourceException if impossible
+	 */
+        public void changeClaims(ClaimElement[] elems, int action) throws SourceException;
+
+        /** Get all claims.
+	 * @return the claims
+	 */
+        public ClaimElement[] getClaims();
+
+        /** Find a claim by signature.
+	 * @param arguments the argument types to look for
+	 * @return the claim, or <code>null</code> if it does not exist
+	 */
+        public ClaimElement getClaim(String name);
+        
     }
 
     /** Memory based implementation of the element factory.
@@ -390,6 +482,8 @@ public final class SpecElement extends MemberElement {
         private MemoryCollection.Sort sorts;
         /** collection of ops */
         private MemoryCollection.Op ops;
+        /** collection of claims */
+        private MemoryCollection.Claim claims;
 
         public Memory() {
         }
@@ -406,6 +500,7 @@ public final class SpecElement extends MemberElement {
         public void copyFrom (SpecElement copyFrom) {
             changeSorts (copyFrom.getSorts (), SET);
             changeOps (copyFrom.getOps (), SET);
+            changeClaims(copyFrom.getClaims (), SET);
         }
 
         /** Changes set of elements.
@@ -465,6 +560,32 @@ public final class SpecElement extends MemberElement {
             }
         }
 
+        /** Changes set of elements.
+	 * @param elems elements to change
+	 * @param action the action to do(ADD, REMOVE, SET)
+	 * @exception SourceException if the action cannot be handled
+	 */
+        public synchronized void changeClaims(ClaimElement[] elems, int action) {
+            initClaims();
+            claims.change(elems, action);
+        }
+
+        public synchronized ClaimElement[] getClaims() {
+            initClaims();
+            return(ClaimElement[])claims.toArray();
+        }
+
+        public synchronized ClaimElement getClaim(String name) {
+            initClaims();
+            return(ClaimElement)claims.find(name);
+        }
+
+        void initClaims() {
+            if (claims == null) {
+                claims = new MemoryCollection.Claim(this);
+            }
+        }
+
         void markCurrent(Element marker, boolean after) {
             MemoryCollection col;
       
@@ -472,6 +593,8 @@ public final class SpecElement extends MemberElement {
                 col = sorts;
 	    } else if (marker instanceof OpElement) {
                 col = ops;
+            } else if (marker instanceof ClaimElement) {
+                col = claims;
             } else {
                 throw new IllegalArgumentException();
             }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:13  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -47,13 +50,15 @@ public final class SourceOptions extends SystemOption {
     private static final byte T_SPEC = 0;
     private static final byte T_SORT = 1;
     private static final byte T_OP = 2;
+    private static final byte T_CLAIM = 3;
 
 
     /** Names of all properties. */
     static final String[] PROP_NAMES = {
         "specElementFormat", // NOI18N
         "sortElementFormat", // NOI18N
-        "opElementFormat",
+        "opElementFormat",   //NOI18N
+        "claimElementFormat", // NOI18N
     };
     
     static Element[] TEST_ELEMENTS;
@@ -107,6 +112,9 @@ public final class SourceOptions extends SystemOption {
 
     /** Property name of the op display format. */
     public static final String PROP_OP_FORMAT = PROP_NAMES[T_OP];
+
+    /** Property name of the op display format. */
+    public static final String PROP_CLAIM_FORMAT = PROP_NAMES[T_CLAIM];
 
     /** Property name of the spec display format. */
     public static final String PROP_SPEC_FORMAT = PROP_NAMES[T_SPEC];
@@ -186,6 +194,20 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_OP);
     }
 
+    /** Set the claim format.
+    * @param format the new format
+    */
+    public void setClaimElementFormat(ElementFormat format) {
+        setElementFormat(T_CLAIM, format);
+    }
+
+    /** Get the claim format.
+    * @return the current format
+    */
+    public ElementFormat getClaimElementFormat() {
+        return getElementFormat(T_CLAIM);
+    }
+
     // ============= getters for long form of formats =================
 
     /** Get the spec format for longer hints.
@@ -210,6 +232,14 @@ public final class SourceOptions extends SystemOption {
     public ElementFormat getOpElementLongFormat() {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_OP];
+    }
+
+    /** Get the claim format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getClaimElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_CLAIM];
     }
 
     // ============= categories of elements usage ===================
@@ -254,6 +284,11 @@ public final class SourceOptions extends SystemOption {
                 m.setName(id);
                 m.setSort(id);
                 els[T_OP] = m;
+
+                ClaimElement c = new ClaimElement();
+                c.setName(id);
+                c.setClaimKind(id);
+                els[T_CLAIM] = c;
 
             } catch (SourceException ex) {
                 // cannot happen.

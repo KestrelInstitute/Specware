@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:12  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -46,7 +49,8 @@ class SourceEditSupport {
 
     static final String[] SPEC_MENU_NAMES = {
 	bundle.getString("MENU_CREATE_SORT"),
-	bundle.getString("MENU_CREATE_OP")
+	bundle.getString("MENU_CREATE_OP"),
+        bundle.getString("MENU_CREATE_CLAIM")
     };
 
     /* Get the new types that can be created in this node.
@@ -56,8 +60,9 @@ class SourceEditSupport {
     public static NewType[] createNewTypes(SpecElement element) {
 	return new NewType[] {
 	    new SpecElementNewType(element, (byte) 0),
-		new SpecElementNewType(element, (byte) 1),
-		};
+            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2)
+	};
     }
 
     /** New types for spec element */
@@ -117,7 +122,19 @@ class SourceEditSupport {
 			    newElement = e;
 			break;
 		    }
+		case 2:
+		    {
+			// Adding claim
+			ClaimElement e = new ClaimElement();
+			e.setName("newClaim()"); // NOI18N
+			// TODO
+                        /*ClaimCustomizer cust = new ClaimCustomizer(e);
+			if (openCustomizer(cust, "TIT_NewClaim") && cust.isOK()) // NOI18N*/
+			    newElement = e;
+			break;
+		    }
 		}
+                
 	    }
 	    catch (SourceException exc) {
 		// shouldn't happen - memory implementation
@@ -137,7 +154,11 @@ class SourceEditSupport {
 			case 1:
 			    ((SpecElement)element).addOp((OpElement)addingElement);
 			    return;
+			case 2:
+			    ((SpecElement)element).addClaim((ClaimElement)addingElement);
+			    return;
 			}
+                        
 		    }
 		});
 	}

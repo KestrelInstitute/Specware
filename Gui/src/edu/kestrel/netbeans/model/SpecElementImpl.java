@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:05  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -33,6 +36,8 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
     private SortCollection    sorts;
     
     private OpCollection    ops;
+    
+    private ClaimCollection     claims;
 
     private MemberCollection        members;
 
@@ -63,6 +68,7 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         // member elements need the Element already.
         changeSorts(element.getSorts(), SpecElement.Impl.ADD);
         changeOps(element.getOps(), SpecElement.Impl.ADD);
+        changeClaims(element.getClaims(), SpecElement.Impl.ADD);
     }
     
     public final void setParent(ElementImpl impl) {
@@ -129,6 +135,30 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         }
     }
 
+    public ClaimElement[] getClaims() {
+        if (claims == null)
+            return ClaimCollection.EMPTY;
+        return (ClaimElement[])claims.getElements().clone();
+    }
+    
+    public ClaimElement getClaim(String name) {
+        if (claims == null)
+            return null;
+        return claims.getClaim(name);
+    }
+    
+    public void changeClaims(ClaimElement[] elements, int operation) 
+        throws SourceException {
+        initializeClaims();
+        Object token = takeMasterLock();
+        try {
+            claims.changeMembers(elements, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+
     // Utility methods
     ///////////////////////////////////////////////////////////////////////////////////
     
@@ -151,6 +181,9 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         } else if (propName == ElementProperties.PROP_OPS) {
 	    initializeOps();
             ops.updateMembers(els, indices, optMap);
+        } else if (propName == ElementProperties.PROP_CLAIMS) {
+	    initializeClaims();
+            claims.updateMembers(els, indices, optMap);
         }
 	//Util.log("SpecElementimpl.updateMembers after PartialCollection.updateMembers members = "+members);
 	//Util.log("SpecElementimpl.updateMembers after PartialCollection.updateMembers indices = "+Util.print(indices)
@@ -178,6 +211,16 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         synchronized (this) {
             if (ops == null) {
                 ops = new OpCollection(this, getModelImpl(), members);
+            }
+        }
+    }
+
+    private void initializeClaims() {
+        if (claims != null)
+            return;
+        synchronized (this) {
+            if (claims == null) {
+                claims = new ClaimCollection(this, getModelImpl(), members);
             }
         }
     }
@@ -270,6 +313,8 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
             sorts.sanityCheck();
         if (ops != null)
             ops.sanityCheck();
+        if (claims != null)
+            claims.sanityCheck();
     }
     
     public Element[] getElements() {

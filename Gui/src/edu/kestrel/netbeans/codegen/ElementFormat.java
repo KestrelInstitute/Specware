@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:42  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -114,7 +117,7 @@ public final class ElementFormat extends Format {
     /** Magic characters for all kinds of the formating tags.
     * The position of the characters is used as index to the following array.
     */
-    private static final String PROPERTIES_NAMES_INDEX = "nsp"; // NOI18N
+    private static final String PROPERTIES_NAMES_INDEX = "nspc"; // NOI18N
 
     /** Array of names of all kinds properties which could be included
     * in the pattern string.
@@ -122,7 +125,8 @@ public final class ElementFormat extends Format {
     private static final String[] PROPERTIES_NAMES = {
         ElementProperties.PROP_NAME,          //n
         ElementProperties.PROP_SORT,          //s
-        ElementProperties.PROP_PARAMETERS     //p
+        ElementProperties.PROP_PARAMETERS,    //p
+        ElementProperties.PROP_CLAIM_KIND     //c
     };
 
     /** Status constants for the parser. */
@@ -395,7 +399,11 @@ public final class ElementFormat extends Format {
                 case 's':
                     buf.append(((OpElement)element).getSort());
                     break;
-		}
+                    
+                case 'c':
+                    buf.append(((ClaimElement)element).getClaimKind());
+                    break;
+                }
 
                 if (buf.length() > mark + prefix.length()) {
                     buf.append(suffix);

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:08  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -57,6 +60,15 @@ public class FilterFactory implements ElementNodeFactory {
         return delegate.createOpNode( element );
     }
 
+    /** Make a node representing a claim.
+     * @param element the claim
+     * @return a claim node instance
+     *
+     */
+    public Node createClaimNode(ClaimElement element) {
+        return delegate.createClaimNode( element );
+    }
+    
     /** Make a node indicating that the creation of children
     * is still under way.
     * It should be used when the process is slow.

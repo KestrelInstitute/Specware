@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:53  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -60,6 +63,15 @@ public interface Binding {
         public void changeSort(String sort) throws SourceException;
     }
     
+    /** Binds a claim to the source.
+     */
+    public interface Claim extends Member {
+        /**
+         * Changes the arguments of the claim.
+         */
+        public void changeClaimKind(String claimKind) throws SourceException;
+    }
+
     
     /** Container interface that manages contained bindings. Currently only reorder operation
      * is supported.

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:06  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -31,7 +34,7 @@ import edu.kestrel.netbeans.model.*;
 /** The default implementation of the hierarchy nodes factory.
  * Uses the standard node implementations in this package.
  */
-public class DefaultFactory extends Object implements ElementNodeFactory, IconStrings {
+public class DefaultFactory extends Object implements ElementNodeFactory, IconStrings { 
   public static final Node[] EMPTY = new Node[0];
   
   /** Default instance of the factory with read-write properties. */
@@ -45,8 +48,8 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   private static final int FILTER_CATEGORIES = 0x1000;
   
   static {
-    CATEGORIES = new Integer[2];
-    for (int i = 0; i < 2; i++) {
+    CATEGORIES = new Integer[3];
+    for (int i = 0; i < 3; i++) {
       CATEGORIES[i] = new Integer(i);
     }
   }
@@ -55,6 +58,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     switch (filter) {
     case 1: return CATEGORIES[0];
     case 2: return CATEGORIES[1];
+    case 4: return CATEGORIES[2];
     }
     return null;
   }
@@ -131,6 +135,14 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     return new OpElementNode(element, writeable);
   }
 
+  /** Make a node representing a claim.
+   * @param element the claim
+   * @return a claim node instance
+   *
+   */
+  public Node createClaimNode(ClaimElement element) {
+    return new ClaimElementNode(element, writeable);
+  }
 
   /* Creates and returns the instance of the node
    * representing the status 'WAIT' of the DataNode.
@@ -155,6 +167,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     return n;
   }
 
+  
   /** Array of the actions of the category nodes. */
   private static final SystemAction[] CATEGORY_ACTIONS = new SystemAction[] {
     /*
@@ -172,30 +185,35 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   static final int[][] FILTERS = new int[][] {
     { SpecElementFilter.SORT },
     { SpecElementFilter.OP },
+    { SpecElementFilter.CLAIM }
   };
 
   /** The names of the category nodes */
   static final String[] NAMES = new String[] {
     ElementNode.bundle.getString("Sorts"), // NO18N
     ElementNode.bundle.getString("Ops"), // NO18N
+    ElementNode.bundle.getString("Claims"), // NO18N
   };
 
   /** The short descriptions of the category nodes */
   static final String[] SHORTDESCRS = new String[] {
     ElementNode.bundle.getString("Sorts_HINT"), // NO18N
     ElementNode.bundle.getString("Ops_HINT"), // NO18N
+    ElementNode.bundle.getString("Claims_HINT"), // NO18N
   };
 
   /** Help IDs for the individual categories */
   static final String[] HELP_IDS = new String[] {
     "org.openide.src.nodes.ElementCategory.Sorts", // NO18N
-    "org.openide.src.nodes.ElementCategory.Ops" // NO18N
+    "org.openide.src.nodes.ElementCategory.Ops", // NO18N
+    "org.openide.src.nodes.ElementCategory.Claims" // NO18N
   };
 
   /** Array of the icons used for category nodes */
   static final String[] SPEC_CATEGORY_ICONS = new String[] {
     SORTS_CATEGORY,
-    OPS_CATEGORY
+    OPS_CATEGORY,
+    CLAIMS_CATEGORY
   };
 
   /*
@@ -220,6 +238,9 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       if (element.getOps().length > 0) {
 	activeCategories.add(CATEGORIES[1]);
       }
+      if (element.getClaims().length > 0) {
+	activeCategories.add(CATEGORIES[2]);
+      }      
     }
         
     protected Node[] createNodes(Object key) {
@@ -284,6 +305,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       switch (index) {
       case 0: setName("Sorts"); break; // NOI18N
       case 1: setName("Ops"); break; // NOI18N
+      case 2: setName("Claims"); break; // NOI18N
       }
     }
 
@@ -328,6 +350,10 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       case 1:
 	return new NewType[] {
 	  new SourceEditSupport.SpecElementNewType(element, (byte) 1),
+	    };
+      case 2:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 2),
 	    };
       default:
 	return super.getNewTypes();

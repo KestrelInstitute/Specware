@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:07  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -44,6 +47,12 @@ public interface ElementNodeFactory {
     * @return a op node instance
     */
     public Node createOpNode (OpElement element);
+
+    /** Make a node representing a claim.
+    * @param element the claim
+    * @return a claim node instance
+    */
+    public Node createClaimNode (ClaimElement element);
 
     /** Make a node indicating that the creation of children
     * is still under way.

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:45  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -288,6 +291,11 @@ public class SourceText implements DocumentBinding {
         return b;
     }
     
+    public Binding.Claim bindClaim(ClaimElement impl) {
+        ClaimB b = new ClaimB(impl, this);
+        return b;
+    }
+
     public void dumpDocument() {
         System.err.println("Document dump:"); // NOI18N
         final StyledDocument doc = getEditorSupport().getDocument();

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:14  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -46,11 +49,13 @@ public class SpecElementNode extends MemberElementNode {
     /** Menu labels */
     private static final String MENU_CREATE_SORT;
     private static final String MENU_CREATE_OP;
+    private static final String MENU_CREATE_CLAIM;
 
     static {
         ResourceBundle bundle = NbBundle.getBundle(SpecElementNode.class);
         MENU_CREATE_SORT = bundle.getString("MENU_CREATE_SORT");
         MENU_CREATE_OP = bundle.getString("MENU_CREATE_OP");
+        MENU_CREATE_CLAIM = bundle.getString("MENU_CREATE_CLAIM");
     }
 
     /** Create a new spec node.
@@ -270,6 +275,10 @@ public class SpecElementNode extends MemberElementNode {
 			OpElement me = (OpElement) addingElement;
 			me  = (OpElement) me.clone();
 			spec.addOp(me);
+		    } else if (addingElement instanceof ClaimElement) {
+			ClaimElement me = (ClaimElement) addingElement;
+			me  = (ClaimElement) me.clone();
+			spec.addClaim(me);
 		    }
 		}
 	    });
@@ -296,6 +305,8 @@ public class SpecElementNode extends MemberElementNode {
 				    origSpec.removeSort((SortElement)addingElement);
 				} else if (addingElement instanceof OpElement) {
 				    origSpec.removeOp((OpElement)addingElement);
+				} else if (addingElement instanceof ClaimElement) {
+				    origSpec.removeClaim((ClaimElement)addingElement);
 				}
 	                    } else if ((addingElement instanceof SpecElement) &&
 				       specSource != null) {
@@ -348,4 +359,4 @@ public class SpecElementNode extends MemberElementNode {
 	    super.propertyChange(evt);
 	}
     }
-    }
+}

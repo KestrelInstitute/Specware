@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:54  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -150,6 +153,13 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         impl.setParent(parent);
         return impl;
     }
+    
+    public ClaimElementImpl createClaim(SpecElement parent) {
+        ClaimElementImpl impl = new ClaimElementImpl(this);
+        getWrapper().wrapClaim(impl, parent);
+        impl.setParent(parent);
+        return impl;
+    }    
     
     public SourceElementImpl createSource() {
         return new SourceElementImpl(this);
@@ -667,4 +677,5 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
             }
         }
     }
+    
 }

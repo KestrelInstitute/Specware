@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:08  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -26,6 +29,9 @@ interface IconStrings {
      static final String OP =
         "edu/kestrel/resources/images/OpNodeIcon"; // NOI18N
 
+     static final String CLAIM =
+        "edu/kestrel/resources/images/ClaimNodeIcon"; // NOI18N
+     
      static final String WAIT =
         "edu/kestrel/resources/images/wait"; // NOI18N
 
@@ -37,5 +43,8 @@ interface IconStrings {
 
      static final String OPS_CATEGORY =
         "edu/kestrel/resources/images/OpNodeIcon"; // NOI18N
+
+     static final String CLAIMS_CATEGORY =
+        "edu/kestrel/resources/images/ClaimNodeIcon"; // NOI18N
 
 }

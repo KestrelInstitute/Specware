@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:16  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -74,6 +77,18 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	OpInfo info = new OpInfo(name, sort);
 	if (DEBUG) {
 	    Util.log("*** DocumentModelBuilder.createOp(): "+info);
+	}
+	return info;
+    }
+    
+    /** Creates an element for an op.
+	@param parameter Name of the parameter to be assigned value.
+	@param value Value to be assigned to the parameter.
+    */
+    public Item	createClaim(String name, String claimKind) {
+	ClaimInfo info = new ClaimInfo(name, claimKind);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createClaim(): "+info);
 	}
 	return info;
     }
@@ -239,6 +254,8 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 		parentInfo.addMember(SpecInfo.SORT, childInfo);
 	    } else if (child instanceof OpInfo) {
 		parentInfo.addMember(SpecInfo.OP, childInfo);
+	    } else if (child instanceof ClaimInfo) {
+		parentInfo.addMember(SpecInfo.CLAIM, childInfo);
 	    }
 	} 
     }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:16  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -38,5 +41,9 @@ public class DefaultWrapper implements WrapperFactory {
     public OpElement wrapOp(OpElement.Impl theImpl, Element parent) {
         return new OpElement(theImpl, (SpecElement)parent);
     }
+    
+    public ClaimElement wrapClaim(ClaimElement.Impl theImpl, Element parent) {
+        return new ClaimElement(theImpl, (SpecElement)parent);
+    }    
     
 }

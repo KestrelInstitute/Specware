@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:13  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -59,6 +62,7 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
         propToFilter = new HashMap ();
         propToFilter.put (ElementProperties.PROP_SORTS, new Integer (SpecElementFilter.SORT));
         propToFilter.put (ElementProperties.PROP_OPS, new Integer (SpecElementFilter.OP));
+        propToFilter.put (ElementProperties.PROP_CLAIMS, new Integer (SpecElementFilter.CLAIM));
     }
 
     /** The spec element whose subelements are represented. */
@@ -166,6 +170,9 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
         if (key instanceof OpElement) {
             return new Node[] { hookNodeName(factory.createOpNode((OpElement)key)) };
         }
+        if (key instanceof ClaimElement) {
+            return new Node[] { hookNodeName(factory.createClaimNode((ClaimElement)key)) };
+        }
         // ?? unknown type
         return new Node[0];
     }
@@ -211,6 +218,9 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
         if ((elementType & SpecElementFilter.OP) != 0) {
             keys.addAll(Arrays.asList(element.getOps()));
         }
+        if ((elementType & SpecElementFilter.CLAIM) != 0) {
+            keys.addAll(Arrays.asList(element.getClaims()));
+        }
         if ((filter == null) || filter.isSorted ())
             Collections.sort(keys, comparator);
         return keys;
@@ -244,6 +254,8 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
                         filter = SpecElementFilter.SORT;
                     else if (src instanceof OpElement) 
                         filter = SpecElementFilter.OP;
+                    else if (src instanceof ClaimElement) 
+                        filter = SpecElementFilter.CLAIM;
                 } else
                     return;
             } else {

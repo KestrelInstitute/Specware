@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:17  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -38,10 +41,16 @@ public interface ElementFactory {
     public Item createSort(String name, String[] params);
     
     /** Creates an element for an op.
-	@param op Name of the op
+	@param name Name of the op
 	@param sort Sort of the op
     */
     public Item createOp(String name, String sort);
+    
+    /** Creates an element for a claim.
+	@param name Name of the claim
+        @param claimKind Kind of the claim
+    */
+    public Item createClaim(String name, String claimKind);    
     
     public void setParent(Collection children, Item parent);
 

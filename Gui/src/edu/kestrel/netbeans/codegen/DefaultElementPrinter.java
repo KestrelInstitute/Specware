@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:40  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -80,4 +83,14 @@ public class DefaultElementPrinter implements ElementPrinter {
 	throws ElementPrinterInterruptException {
     }
 
+    /** Mark a notable point in a claim element.
+     * @param element the element
+     * @param what which point
+     * @exception ElementPrinterInterruptException - see class description
+     *
+     */
+    public void markClaim(ClaimElement element, int what) 
+        throws ElementPrinterInterruptException {
+    }    
+    
 }

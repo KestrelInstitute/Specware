@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:45  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -163,6 +166,9 @@ class SpecB extends Member implements Binding.Spec, TextBinding.Container {
                     break;
                 case 1:
                     models = orig.getOps();
+                    break;
+                case 2:
+                    models = orig.getClaims();
                     break;
             }
             if (empty && models.length > 0) {

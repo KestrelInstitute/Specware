@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:14  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -20,17 +23,18 @@ public class SpecElementFilter extends SourceElementFilter {
 
     /** Specifies a child representing a sort. */
     public static final int     SORT = 1;
-    /** Specifies a child representing a contraint . */
+    /** Specifies a child representing an op. */
     public static final int     OP = 2;
+    /** Specifies a child representing a claim . */
+    public static final int     CLAIM = 4;
     /** Does not specify a child type. */
-    public static final int     ALL = SORT | OP;
+    public static final int     ALL = SORT | OP | CLAIM;
                                       
 
     /** Default order and filtering.
-    * Places all constants, input variables, external variables, internal variables, modes, and sorts together
-    * in one block.
+    * Places all sorts, ops and claims together in one block.
     */
-    public static final int[]   DEFAULT_ORDER = {SORT | OP};
+    public static final int[]   DEFAULT_ORDER = {SORT | OP | CLAIM};
 
     /** stores property value */
     private boolean             sorted = true;

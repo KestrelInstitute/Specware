@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:41  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -532,7 +535,6 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
             PositionRef posEnd = editor.createPositionRef(end, Position.Bias.Forward);
             return new PositionBounds(posBegin, posEnd);
         }
-
     }
     
     public String toString() {
@@ -679,5 +681,10 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
         public void markOp(OpElement element, int what) throws ElementPrinterInterruptException {
             mark(element, what);
         }
+        
+        public void markClaim(ClaimElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+        
     }
 }

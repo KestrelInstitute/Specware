@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:28  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -30,6 +33,7 @@ import edu.kestrel.netbeans.codegen.TextBinding;
 public class SpecInfo extends BaseElementInfo {
     public static final int SORT = 0;
     public static final int OP = 1;
+    public static final int CLAIM = 2;
 
     Collection           allMembers;
     ChildCollection[]    memberLists;
@@ -43,19 +47,26 @@ public class SpecInfo extends BaseElementInfo {
         new TextPositionMatch(), new NameFinder()
     };
 
+    static final ElementMatch.Finder[] DEFAULT_CLAIM_FINDERS = {
+        new TextPositionMatch(), new NameFinder()
+    };
+
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         DEFAULT_SORT_FINDERS,
         DEFAULT_OP_FINDERS,
+        DEFAULT_CLAIM_FINDERS
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
         ElementProperties.PROP_SORTS,
-        ElementProperties.PROP_OPS
+        ElementProperties.PROP_OPS,
+        ElementProperties.PROP_CLAIMS
     };
     
     private static final Class[] CHILDREN_TYPES = {
 	SortElement.class,
-        OpElement.class
+        OpElement.class,
+        ClaimElement.class
     };
     
     public SpecInfo(String name) {
@@ -88,7 +99,7 @@ public class SpecInfo extends BaseElementInfo {
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
         
-        for (int kind = SORT; kind <= OP; kind++) {
+        for (int kind = SORT; kind <= CLAIM; kind++) {
             Element[] curMembers;
             switch (kind) {
 	    case SORT:
@@ -97,7 +108,10 @@ public class SpecInfo extends BaseElementInfo {
 	    case OP:
 		curMembers = spec.getOps();
 		break;
-	    default:
+            case CLAIM:
+                curMembers = spec.getClaims();
+                break;
+            default:
 		throw new InternalError("Illegal member type"); // NOI18N
             }
 

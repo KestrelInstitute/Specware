@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:59  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -306,6 +309,48 @@ abstract class MemoryCollection extends Object implements Serializable {
 
     }
 
+    /** Collection of claims.
+    */
+    static class Claim extends Member {
+        private static final ClaimElement[] EMPTY = new ClaimElement[0];
+
+        static final long serialVersionUID =5715072242254795093L;
+        
+        /** @param ce class element memory impl to work in
+        */
+        public Claim (SpecElement.Memory ce) {
+            super (ce,
+		   ElementProperties.PROP_CLAIMS,
+		   EMPTY);
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+            return new ClaimElement (new ClaimElement.Memory ((ClaimElement)obj),
+				  ((SpecElement.Memory)memory).getSpecElement ());
+        }
+
+        public ClaimElement find (String id, String claimKind) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                ClaimElement claim = (ClaimElement)it.next ();
+                if (id.equals(claim.getName()) && claimKind.equals(claim.getClaimKind())) {
+		    return claim;
+		}
+	    }
+            // nothing found
+            return null;
+        }
+
+
+    }
+    
     /** Collection of specs.
     */
     static class Spec extends Member {
