@@ -8,6 +8,7 @@
 		(format t "~&       was set to ~10D [#x~8X],~%" proposed proposed)
 		(format t "~&       and now is ~10D [#x~8X].~%" new new)
 		new))
+  #-Allegro (declare (ignore proposed))
   #-Allegro (format t "~&enlarge-stack is currently a no-op for non-Allegro lisp~%")
   )
 
