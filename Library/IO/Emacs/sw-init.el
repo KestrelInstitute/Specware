@@ -100,7 +100,7 @@
 ;; generate-application, then typically, there will not be an ACL image file.
 
   (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
-  (setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
+  (setq sw:common-lisp-image-file (or sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE")))
   (setq sw:common-lisp-image-arguments
     (if *windows-system-p* '("+cn") nil))
 
@@ -142,7 +142,8 @@
   (let ((log-warning-minimum-level 'error))
     (sw:common-lisp sw:common-lisp-buffer-name
 		    sw:common-lisp-directory
-		    sw:common-lisp-image-name)
+		    sw:common-lisp-image-name
+		    sw:common-lisp-image-arguments)
     (when sleep (sleep-for sleep))))
 
 (defvar *specware-auto-start* t
@@ -196,6 +197,10 @@
 	 (lisp-dir (concat specware4-dir "/Applications/Specware/lisp"))
 	 (slash-dir (sw::normalize-filename "/"))
 	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
+	 (base-world-name
+	   (if (eq *specware-lisp* 'allegro)
+	       (concat bin-dir "/big-alisp." *lisp-image-extension*)
+	     nil))
 	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
 	 (specware4-base-lisp (concat specware4-dir "/Applications/Specware/Specware4-base.lisp")))
     (run-plain-lisp 1)
@@ -223,10 +228,17 @@
     (simulate-input-expression "(time (load \"Specware4.lisp\"))")
     (continue-form-when-ready
      (`(build-specware4-continue (, specware4-dir) (, build-dir) (, bin-dir)
-				 (, slash-dir) (, world-name))))))
+				 (, slash-dir) (, world-name) (, base-world-name))))))
 
-(defun build-specware4-continue (specware4-dir build-dir bin-dir slash-dir world-name)
-  (run-plain-lisp 1)
+(defun build-specware4-continue (specware4-dir build-dir bin-dir slash-dir world-name base-world-name)
+  (when base-world-name
+    (run-plain-lisp 1)
+    ;; Currently
+    (sw:eval-in-lisp-no-value (format "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)"
+				      base-world-name))
+    (sleep-for 10))
+  (let ((sw:common-lisp-image-file base-world-name))
+    (run-lisp-application))
   (unless (inferior-lisp-running-p)
     (sleep-for 1))
   (sw:eval-in-lisp-no-value
