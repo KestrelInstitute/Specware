@@ -539,18 +539,21 @@ XML qualifying spec
 
   def print_ETag         tag = print_GenericTag tag
 
-  def print_Content {prelude, items} =
-    (case prelude of
+  def print_Content {items, trailer} =
+    (foldl (fn ((opt_char_data, item), result) ->
+	    result ^ 
+	    (case opt_char_data of
+	       | Some char_data -> print_CharData char_data
+	       | _ -> [])
+	    ^ 
+	    (print_Content_Item item))
+           []
+	   items)
+    ^
+    (case trailer of
        | Some char_data -> print_CharData char_data
        | _ -> []) 
-     ^
-     (foldl (fn ((item, opt_char_data), result) ->
-	     result ^ (print_Content_Item item) ^ 
-	     (case opt_char_data of
-		| Some char_data -> print_CharData char_data
-		| _ -> []))
-            []
-	    items)
+
 
   def print_Content_Item item = 
     case item of

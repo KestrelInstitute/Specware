@@ -20,7 +20,7 @@ XML qualifying spec
   %%%   typos and misspellings, or noticing that attrs were specified, but out of 
   %%%   order, etc.
   %%%
-  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K12]
+  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K17]
   %%%   which are implemented here to factor some original W3 ruls into a parsing 
   %%%   stage using KI rules followed by post-parsing well formedness checks based 
   %%%   perhaps on other W3 rules.  Such extra checks are labelled [KC: ...]
@@ -651,7 +651,12 @@ XML qualifying spec
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
   %%
-  %%  [43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+  %% *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+  %%
+  %%  Since the chardata in [43] is typically used for indentation, 
+  %%  it makes more sense to group it as in [K17]:
+  %%
+  %% [K17]  content       ::=  (CharData? (element | Reference | CDSect | PI | Comment))* CharData?
   %% 
   %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
   %%
@@ -764,8 +769,8 @@ XML qualifying spec
 
   %% ----------------------------------------------------------------------------------------------------
 
-  sort Content = {prelude : Option CharData,
-		  items   : List (Content_Item * Option CharData)}
+  sort Content = {items   : List (Option CharData * Content_Item),
+		  trailer : Option CharData}
 
   sort Content_Item = | Element   Element 
                       | Reference Reference 

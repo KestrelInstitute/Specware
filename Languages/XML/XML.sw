@@ -4,8 +4,8 @@ XML qualifying spec
   import /Library/IO/Unicode/UnicodeSig
   import XML_Sig
   import Parser/XML_Parser
+  import Printers/GenerateDocument
   import Printers/XML_Printer
-  import Printers/Metaslang_to_XML
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INTERFACE

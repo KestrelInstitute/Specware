@@ -71,27 +71,23 @@ XML qualifying spec
 
   def parse_Content (start : UChars) : Required Content =
     let 
-       def parse_items (tail, rev_result) =
-	  {
-	   (possible_item, scout) <- parse_Content_Item tail;
-	   case possible_item of
-	     | Some item ->
-	       let (char_data, scout) = parse_CharData scout in
-	       parse_items (scout,
-			    cons ((item, char_data),
-				  rev_result))
-	     | _ -> 
-	       return (rev rev_result, 
-		       tail)
-	       }
+       def parse_items (tail, rev_items) =
+	 let (char_data, tail) = parse_CharData tail in
+	 {
+	  (possible_item, scout) <- parse_Content_Item tail;
+	  case possible_item of
+	    | Some item ->
+	      parse_items (scout,
+			   cons ((char_data, item),
+				 rev_items))
+	    | _ -> 
+	      return ({items   = rev rev_items, 
+		       trailer = char_data},
+		      tail)
+	     }
     in
-      let (char_data, tail) = parse_CharData start in
-      {
-       (items, tail) <- parse_items (tail, []);
-       return ({prelude = char_data,
-		items   = items},
-	       tail)
-      }
+      parse_items (start, [])
+
 
   def parse_Content_Item (start : UChars) : Possible Content_Item =
     %% All the options are readily distinguishable:

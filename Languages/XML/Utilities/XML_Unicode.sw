@@ -34,9 +34,10 @@ XML qualifying spec
   def UChar.underbar     = uchar #_
 
   def UChar.tab          = uchar #\x09     (* = #\t *)
-  def UChar.linefeed     = uchar #\x10     (* = #\n *)
-  def UChar.return       = uchar #\x13     (* = #\r *)
+  def UChar.linefeed     = uchar #\x0A     (* = #\n *)
+  def UChar.return       = uchar #\x0D     (* = #\r *)
   def UChar.space        = uchar #\x20     (* = #\s *)
+  def UChar.newline      = UChar.linefeed  (* = #\n *)
 
   %% ------------------------------------------------------------------------
   %% Strings:

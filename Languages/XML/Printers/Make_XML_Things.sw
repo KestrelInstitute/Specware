@@ -8,7 +8,7 @@ XML qualifying spec
   def make_Document (items : DocItems) : Document =
     {items = items}
 
-  def standard_XMLDecl_DocItem : DocItem =
+  def standard_XMLDecl : XMLDecl =
     let version_attr = {w1    = UString.space,
 			name  = ustring "version",
 			w2    = [],
@@ -16,11 +16,11 @@ XML qualifying spec
 			value = {qchar = UChar.double_quote, 
 				 text  = ustring "1.0"}}
     in
-      XMLDecl {prefix     = UString.question_mark,
-	       name       = ustring "xml",
-	       attributes = [version_attr],
-	       whitespace = [],
-	       postfix    = UString.question_mark}
+      {prefix     = UString.question_mark,
+       name       = ustring "xml",
+       attributes = [version_attr],
+       whitespace = [],
+       postfix    = UString.question_mark}
 
   def make_Empty_Element (empty_tag : EmptyElemTag)
     : Element =
@@ -34,11 +34,11 @@ XML qualifying spec
 	  content = content,
 	  etag    = etag}
 
-  def make_Content (prelude : Option CharData,
-		    items   : List (Content_Item * Option CharData))
+  def make_Content (items   : List (Option CharData * Content_Item),
+		    trailer : Option CharData)
     : Content =
-    {prelude = prelude,
-     items   = items}
+    {items   = items,
+     trailer = trailer}
 
   def make_Content_Item_from_Element   (element : Element)   : Content_Item =  Element   element
   def make_Content_Item_from_Reference (ref     : Reference) : Content_Item =  Reference ref
@@ -65,9 +65,9 @@ XML qualifying spec
      whitespace = whitespace,
      postfix    = []}
 
-  def make_EmptyElemETag (name       : UChars,
-			  attributes : GenericAttributes,
-			  whitespace : WhiteSpace)
+  def make_EmptyElemTag (name       : UChars,
+			 attributes : GenericAttributes,
+			 whitespace : WhiteSpace)
     : STag =
     {prefix     = [],  
      name       = name,
