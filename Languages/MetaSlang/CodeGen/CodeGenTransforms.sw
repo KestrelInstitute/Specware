@@ -79,17 +79,18 @@ op unfoldSortAliases: Spec -> Spec
 def unfoldSortAliases spc =
   let srts = sortsAsList spc in
   case find (fn (_, _, info) -> 
-	     let (_, srt) = unpackSortDef info.dfn in
-	     case srt of
-	       | Base (_, _, _) -> true
+	     case sortDefs info.dfn of
+	       | srt :: _ -> 
+	         (let (_, srt) = unpackSort srt in
+		  case srt of
+		    | Base (_, _, _) -> true
+		    | _ -> false)
 	       | _ -> false)
             srts 
    of
     | None -> spc
     | Some (q0, id0, info) ->
-      let (decls, defs) = sortDeclsAndDefs info.dfn in
-      let first_def :: _ = defs in
-      let (tvs, srt) = unpackSort first_def in
+      let (tvs, srt) = unpackSortDef info.dfn in
       let Base (qid, psrts, _) = srt in
       let qid0 = mkQualifiedId (q0, id0) in
       %let _ = writeLine ("sort alias found: "^printQualifiedId qid0^" = "^printQualifiedId qid) in
@@ -125,8 +126,7 @@ def findMatchingUserTypeOption (spc, srtdef) =
       let srts = sortsAsList spc in
       let srtPos = sortAnn srtdef in
       let foundSrt = find (fn (q, id, info) ->
-			   let (decls, defs) = sortDeclsAndDefs info.dfn in
-			   case defs of
+			   case sortDefs info.dfn of
 			     | [srt] -> 
 			       let (_, srt) = unpackSort srt in
 			       equalSort? (srtdef, srt)
@@ -174,8 +174,7 @@ def foldRecordSorts spc =
     def foldRecordSorts0 (spc, visited) =
       let srts = sortsAsList spc in
       case find (fn (q, i, info) -> 
-		 let (decls, defs) = sortDeclsAndDefs info.dfn in
-		 case defs of
+		 case sortDefs info.dfn of
 		   | dfn :: _ -> 
 		     (let (_, srt) = unpackSort dfn in
 		      case srt of
@@ -275,7 +274,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	 let pos = termAnn info.dfn in
 	 let (tvs, srt, _) = unpackOpDef info.dfn in
 	 let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
-	 let (new_defs, minfo) =
+	 let (new_decls_and_defs, minfo) =
 	     foldl (fn (def0, (defs, minfo)) ->
 		    let (tvs, srt, trm) = unpackTerm def0 in
 		    let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
@@ -285,9 +284,9 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		    %let minfo = concat (minfo, minfo0) in
 		    (defs, minfo)) 
 	           ([], minfo) 
-		   old_defs
+		   (old_decls ++ old_defs)
 	 in
-	 let dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+	 let dfn = maybeAndTerm (new_decls_and_defs, pos) in
 	 (insertAQualifierMap (map, q, id, info << {dfn = dfn}), 
 	  minfo))
         (emptyAOpMap, minfo)
