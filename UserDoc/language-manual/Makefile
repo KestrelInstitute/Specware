@@ -22,11 +22,11 @@ BIN= ../bin/$(ARCH)
 GLM2DBKMS= $(BIN)/glm2dbk -metaslang
 GLM2DBKGR= $(BIN)/glm2dbk -grammar
 
-#DB2PDF= bin/db2pdf
-DB2PDF= bin/db2pdf -E9999
+#DB2PDF= ../bin/db2pdf
+DB2PDF= ../bin/db2pdf -E9999
 
-#DB2HTML= bin/db2html
-DB2HTML= bin/db2html -E9999
+#DB2HTML= ../bin/db2html
+DB2HTML= ../bin/db2html -E9999
 
 ADJUSTFONTHTML= bin/adjustFontHTML
 ANCHORHTML= bin/anchorHTML
