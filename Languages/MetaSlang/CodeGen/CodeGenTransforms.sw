@@ -811,18 +811,14 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
   let minfo =
       foldriAQualifierMap
        (fn (q, i, info, minfo) ->
-	 let minfo =
-	     foldl (fn (dfn, minfo) ->
-		    let (_, _, trm) = unpackTerm dfn in
-		    addMissingFromTerm (bspc, spc, ignore, trm, minfo))
-	           minfo
-		   (opDefs info.dfn)
-	 in
-	 let (_, srt, _) = unpackOpDef info.dfn in
-	 let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
-	 minfo)
-	minfo 
-	spc.ops
+	foldl (fn (dfn, minfo) ->
+	       let (_, srt, trm) = unpackTerm dfn in
+	       let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
+	       addMissingFromTerm (bspc, spc, ignore, trm, minfo))
+	      minfo
+	      (opDefs info.dfn))
+       minfo 
+       spc.ops
   in
   let minfo =
       foldr (fn (info, minfo) -> addMissingFromTerm (bspc, spc, ignore, info.4, minfo))
