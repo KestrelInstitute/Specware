@@ -26,7 +26,7 @@ spec
    let scTerm = if fromObligations?
                   then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
 		else(UnitId (SpecPath_Relative specUId), noPos) in
-   let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, None) in
+   let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options) in
    let proofName = printProofName(propName) in
    let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
@@ -105,7 +105,7 @@ spec
    let importPropNames =
    map (fn (proofDecl) ->
 	let (prfName, prfTerm) = proofDecl in
-	let (Prove (claimName, _, _, _, _, _), _) = prfTerm in
+	let (Prove (claimName, _, _, _, _), _) = prfTerm in
 	claimName)
        importProofDecls in
    let localProofDecls =
