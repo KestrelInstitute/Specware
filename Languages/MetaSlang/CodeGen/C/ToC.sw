@@ -164,7 +164,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       case (qual,id) of
         | ("Boolean","Boolean") -> Base "bool"
         | ("Integer","Integer") -> Int
-        | ("Nat","Nat") -> UnsignedInt
+        | ("Nat","Nat") -> Int
         | ("String","String") -> Ptr Char
         | ("Char","Char") -> Char
         | ("Double","Double") -> Double
