@@ -70,6 +70,7 @@
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
     "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
+    "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
     )
   )
 
@@ -106,6 +107,10 @@
   '(
     ;; Functions that are assumed by the MetaSlang to Lisp compiler
     "Applications/Handwritten/Lisp/meta-slang-runtime"
+
+    ;; XML support -- this provides hooks for reading/writing ad hoc structures
+    ;; that are not grounded in normal base specs such as Boolean, Integer, etc.
+    "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
 
     ;; The generated lisp code.  This also initializes the Specware
     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
