@@ -17,11 +17,11 @@ SpecCalc qualifying spec {
 
   op ppASpec : fa (a) ASpec a -> Pretty
   def ppASpec (spc as {importInfo,sorts,ops,properties}) = 
-    let ppImports =
-      let {imports,importedSpec,localOps,localSorts} = importInfo in
-      let ppNames =
-        map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) imports in
-      ppSep ppNewline ppNames in
+    let ppImports = ppNil in
+      % let {imports,importedSpec,localOps,localSorts} = importInfo in
+      % let ppNames =
+        % map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) imports in
+      % ppSep ppNewline ppNames in
 
     % this assume that a name used to index into the sort map also appears
     % in the list of names for that sort.
@@ -37,15 +37,11 @@ SpecCalc qualifying spec {
       ] in
     ppConcat [
       ppString "spec {",
-      ppIndent (ppConcat [
-        ppNewline,
-        ppSep ppNewline [
-          ppImports,    
-          ppSep ppNewline (map doSortInfo (sortInfosAsList spc)),
-          ppSep ppNewline (map doOpInfo   (opInfosAsList   spc)),
-          ppSep ppNewline (map ppAProperty properties)
-        ]
-      ]),
+      ppIndent (ppSep ppNewline (
+          [ppImports]
+          ++ (map doSortInfo (sortInfosAsList spc))
+          ++ (map doOpInfo (opInfosAsList spc))
+          ++ (map ppAProperty properties))),
       ppString "}"
     ]
 
