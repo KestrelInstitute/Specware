@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:34  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -163,6 +166,16 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
         return n;
     }
 
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createClaimNode(ClaimElement element) {
+        ClaimElementNode n = new ClaimElementNode(element, true);
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(DEFAULT_ACTIONS);
+        return n;
+    }
+    
     protected Children createSpecChildren( SpecElement element ) {
         return createSpecChildren(element, MetaSlangDataObject.getExplorerFactory() );
     }
