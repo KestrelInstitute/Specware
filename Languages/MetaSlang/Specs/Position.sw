@@ -47,7 +47,7 @@ Position qualifying spec {
        printPos left ^ "-" ^ printPos right ^ " in [" ^ string ^ "]"
     | File (filename, left, right) ->
        let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
-       printPos left ^ "-" ^ printPos right ^ " in " ^ filename 
+       "in " ^ filename ^ "\n" ^  printPos left ^ "-" ^ printPos right 
 
  % ------------------------------------------------------------------------
 

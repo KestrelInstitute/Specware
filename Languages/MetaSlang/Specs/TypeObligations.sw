@@ -2,7 +2,7 @@ TypeObligations qualifying
 spec 
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/Specs/Environment
-  import /Languages/MetaSlang/Transformations/Match
+  import /Languages/MetaSlang/Transformations/PatternMatch
 
  op makeTypeCheckObligationSpec: Spec * SpecRef -> Spec
  op checkSpec : Spec -> TypeCheckConditions
@@ -23,9 +23,8 @@ spec
  op  assertCond   : Term * Gamma -> Gamma
  op  insertLet    : List (Pattern * Term) * Gamma -> Gamma
  op  insertLetRec : List (Var * Term) * Gamma -> Gamma
- op  boundVars    : Gamma -> List Var
- op  boundTypeVars : Gamma -> TyVars
- op  patternVars  : Pattern -> List Var
+% op  boundVars    : Gamma -> List Var
+% op  boundTypeVars : Gamma -> TyVars
 
  def assertSubtypeCond(term,srt:Sort,gamma) = 
      case srt
@@ -59,39 +58,6 @@ spec
  def insertLetRec(decls,(ds,tvs,spc,name,names)) = 
      (cons(LetRec decls:Decl,ds),tvs,spc,name,
 	StringSet.addList(names,List.map (fn((x,_),_)-> x) decls))
-
-
- def patternVars(p) = 
-     let
-	def loopP(p:Pattern,vs) = 
-	    case p
-	      of VarPat(v,_) -> cons(v,vs)
-	       | RecordPat(fields,_) -> 
-		 List.foldr (fn ((_,p),vs) -> loopP(p,vs)) vs fields
-	       | EmbedPat(_,None,_,_) -> vs
-	       | EmbedPat(_,Some p,_,_) -> loopP(p,vs)
-	       | QuotientPat(p,_,_) -> loopP(p,vs)
-	       | RelaxPat(p,_,_) -> loopP(p,vs)
-	       | _ -> vs
-     in
-     loopP(p,[])
-
- def boundTypeVars(_,tyVars,_,_,_) = tyVars
-
- def boundVars(decls: List Decl,_,_,_,_) = 
-     let
-	def loopP(p,vs) = patternVars(p) @ vs
-	def loop(decls : List Decl,vars) = 
-	    case decls
-	      of [] -> vars
-	       | (Var v)::decls -> loop(decls,cons(v,vars))
-	       | (Cond _)::decls -> loop(decls,vars)
-	       | (LetRec(ds))::decls -> loop(decls,(List.map (fn (v,_)-> v) ds) @ vars)
-	       | (Let(ds))::decls ->
-		 loop(decls,List.foldr (fn ((p,_),vs) -> loopP(p,vs)) vars ds)
-     in
-	loop(decls,[])
-
 
  def printDecl(d:Decl) = 
      case d
@@ -368,34 +334,6 @@ spec
 	     (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos):Term)
 
 
-
- def mkIfThenElse(t1,t2:Term,t3:Term):Term =
-   case t2 of
-     | Fun(Bool true,_,_)  -> mkOr(t1,t3)
-     | Fun(Bool false,_,_) -> mkAnd(mkNot t1,t3)
-     | _ ->
-   case t2 of
-     | Fun(Bool true,_,_)  -> mkOr(mkNot t1,t2)
-     | Fun(Bool false,_,_) -> mkAnd(t1,t2)
-     | _ ->
-   IfThenElse(t1,t2,t3,noPos)
-
- def mkOr(t1,t2) = 
-     case (t1:Term,t2:Term)
-       of (Fun(Bool true,_,_),_) -> t1
-	| (Fun(Bool false,_,_),_) -> t2
-	| (_,Fun(Bool true,_,_)) -> t2
-	| (_,Fun(Bool false,_,_)) -> t1
-	| _ -> StandardSpec.mkOr(t1,t2)
-
- def mkAnd(t1,t2) = 
-     case (t1:Term,t2:Term)
-       of (Fun(Bool true,_,_),_) -> t2
-	| (Fun(Bool false,_,_),_) -> t1
-	| (_,Fun(Bool true,_,_)) -> t1
-	| (_,Fun(Bool false,_,_)) -> t2
-	| _ -> StandardSpec.mkAnd(t1,t2)
-
 %
 % Simplify term obtained from pattern matching compilation
 % by replacing TranslationBuiltIn.failWith by "or"
@@ -407,12 +345,12 @@ spec
        of IfThenElse(t1,t2,t3,_) -> 
 	  let t2 = simplifyMatch(t2) in
 	  let t3 = simplifyMatch(t3) in
-	  mkIfThenElse(t1,t2,t3)
+	  Utilities.mkIfThenElse(t1,t2,t3)
 	| Apply(Fun(Op(Qualified("TranslationBuiltIn","failWith"),_),_,_),
 		Record([(_,t1),(_,t2)],_),_) -> 
 	  let t1 = simplifyMatch(t1) in
 	  let t2 = simplifyMatch(t2) in
-	  mkOr(t1,t2)
+	  Utilities.mkOr(t1,t2)
 	| Let(decls,body,_) -> 
 	  let trm = simplifyMatch(body) in
 	  (case trm
@@ -544,5 +482,21 @@ spec
  def makeTypeCheckObligationSpec (spc,spcRef) =
    let tcSpec = addImport((spcRef,spc),emptySpec) in
    addConjectures(checkSpec(spc),tcSpec)
+
+% def boundTypeVars(_,tyVars,_,_,_) = tyVars
+
+% def boundVars(decls: List Decl,_,_,_,_) = 
+%     let
+%	def loopP(p,vs) = patternVars(p) @ vs
+%	def loop(decls : List Decl,vars) = 
+%	    case decls
+%	      of [] -> vars
+%	       | (Var v)::decls -> loop(decls,cons(v,vars))
+%	       | (Cond _)::decls -> loop(decls,vars)
+%	       | (LetRec(ds))::decls -> loop(decls,(List.map (fn (v,_)-> v) ds) @ vars)
+%	       | (Let(ds))::decls ->
+%		 loop(decls,List.foldr (fn ((p,_),vs) -> loopP(p,vs)) vars ds)
+%     in
+%	loop(decls,[])
 
 end

@@ -1,7 +1,7 @@
 % Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl
 
 SpecToLisp qualifying spec { 
-  import ../../Transformations/Match
+  import ../../Transformations/PatternMatch
   import Lisp
   import ../../Specs/StandardSpec
   

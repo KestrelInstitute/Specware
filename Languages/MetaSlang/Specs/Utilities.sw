@@ -892,4 +892,49 @@ Utilities qualifying spec {
     sorts            = StringMap.mapDouble letRecToLetTermSortInfo spc.sorts,
     ops              = StringMap.mapDouble letRecToLetTermOpInfo   spc.ops,
     properties       = spc.properties}
+
+ op  patternVars  : Pattern -> List Var
+ def patternVars(p) = 
+     let
+	def loopP(p:Pattern,vs) = 
+	    case p
+	      of VarPat(v,_) -> cons(v,vs)
+	       | RecordPat(fields,_) -> 
+		 List.foldr (fn ((_,p),vs) -> loopP(p,vs)) vs fields
+	       | EmbedPat(_,None,_,_) -> vs
+	       | EmbedPat(_,Some p,_,_) -> loopP(p,vs)
+	       | QuotientPat(p,_,_) -> loopP(p,vs)
+	       | RelaxPat(p,_,_) -> loopP(p,vs)
+	       | AliasPat(p1,p2,_) -> loopP(p1,loopP(p2,vs))
+	       | _ -> vs
+     in
+     loopP(p,[])
+
+
+ def mkIfThenElse(t1,t2:Term,t3:Term):Term =
+   case t2 of
+     | Fun(Bool true,_,_)  -> mkOr(t1,t3)
+     | Fun(Bool false,_,_) -> mkAnd(mkNot t1,t3)
+     | _ ->
+   case t2 of
+     | Fun(Bool true,_,_)  -> mkOr(mkNot t1,t2)
+     | Fun(Bool false,_,_) -> mkAnd(t1,t2)
+     | _ ->
+   IfThenElse(t1,t2,t3,noPos)
+
+ def mkOr(t1,t2) = 
+     case (t1:Term,t2:Term)
+       of (Fun(Bool true,_,_),_) -> t1
+	| (Fun(Bool false,_,_),_) -> t2
+	| (_,Fun(Bool true,_,_)) -> t2
+	| (_,Fun(Bool false,_,_)) -> t1
+	| _ -> StandardSpec.mkOr(t1,t2)
+
+ def mkAnd(t1,t2) = 
+     case (t1:Term,t2:Term)
+       of (Fun(Bool true,_,_),_) -> t2
+	| (Fun(Bool false,_,_),_) -> t1
+	| (_,Fun(Bool true,_,_)) -> t1
+	| (_,Fun(Bool false,_,_)) -> t2
+	| _ -> StandardSpec.mkAnd(t1,t2)
 }
