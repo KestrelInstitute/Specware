@@ -27,6 +27,7 @@ spec
 \subsection{Sort declarations}
 
 \begin{spec} 
+ sort Term = MS.Term
  sort Context = 
       { 
         spc         : Spec,

@@ -370,7 +370,7 @@ is rewritten to
  %% a list of the numbers paired with the sort
  %% A substitution mapping old Var to new flex var with that number
  %% The body of the binder (handles nested binders of the same type)
- def bound(qf,n,term,freeVars,S) = 
+ def bound(qf,n,term:MS.Term,freeVars,S) = 
      case term
        of Bind(binder,vars,body,_) -> 
 	  if qf = binder
@@ -398,7 +398,7 @@ is rewritten to
 	 | Bind(Forall,vars,N,_) -> 
 	   let S1 = 
 	       List.map 
-		(fn (v,s) -> ((v,s),Var((freshBoundVar(context,s)),noPos)))
+		(fn (v,s) -> ((v,s),Var((freshBoundVar(context,s)),noPos):MS.Term))
 		  vars 
 	  in
 	  let N = substitute(N,S1) in
@@ -432,7 +432,7 @@ is rewritten to
 	  case formula  
             of Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
 		Record([(_,M),(_,N)], _),_) -> 
-		(Some (substitute(M,S)),N)
+		(Some (substitute(M,S)): Option MS.Term,N)
 	     | _ -> (None,formula)
      in
      case equality context (S,fml)
