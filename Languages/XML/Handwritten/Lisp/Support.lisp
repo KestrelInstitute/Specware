@@ -64,7 +64,7 @@
 (defun make-element (name datum sort table indent)
   (let* ((pattern (chase sort table))
 	 (name (unicode::ustring name))
-	 (sort-attribute  (make_GenericAttribute '(32) (unicode::ustring "Type") '() '() 
+	 (sort-attribute  (make_GenericAttribute '(32) (unicode::ustring "type") '() '() 
 						 (make_QuotedText '34
 								  (pp-sort-for-xml sort))))
 	 (attributes 
