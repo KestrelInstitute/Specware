@@ -1090,7 +1090,7 @@ CUtils qualifying spec {
 
 
   op findBlockForDecl: VarDecl1 * Block -> Block
-  def findBlockForDecl(decl as (v,type,optexp),b as (decls,stmts)) =
+  def findBlockForDecl(decl as (v,typ,optexp),b as (decls,stmts)) =
     let
       def dontMoveDecl() =
 	let (decls,stmts) = findBlockForDecls(b) in

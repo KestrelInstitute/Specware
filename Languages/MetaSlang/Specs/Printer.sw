@@ -1005,12 +1005,12 @@ AnnSpecPrinter qualifying spec {
 				  | _ -> false)
 	           imported_ops
       in
-      let def imported_prop? (type, name, _, _) =
+      let def imported_prop? (typ, name, _, _) =
   	    exists (fn imp_props -> exists (fn (imp_type, imp_name, _, _) -> 
                                             %% can't quite do prop = imported_prop 
 					    %% because imported_prop has type  Property
 					    %%     but prop          has type  Aproperty a
-					    type = imp_type & name = imp_name)
+					    typ = imp_type & name = imp_name)
 		                           imp_props)
 	           imported_props % list of lists of properties
       in

@@ -263,8 +263,8 @@ SpecsToI2L qualifying spec {
 	        let types = List.map (fn(_,srt) -> 
 				      let srt = unfoldToSpecials(spc,srt) in
 				      sort2type(unsetToplevel ctxt,spc,tyvars,srt)) fields in
-		let type = sort2type(unsetToplevel ctxt,spc,tyvars,srt2) in
-		FunOrMap(types,type)
+		let typ = sort2type(unsetToplevel ctxt,spc,tyvars,srt2) in
+		FunOrMap(types,typ)
 	     | _ -> FunOrMap([sort2type(unsetToplevel ctxt,spc,tyvars,srt1)],
 			     sort2type(unsetToplevel ctxt,spc,tyvars,srt2))
 	  )
@@ -500,10 +500,10 @@ SpecsToI2L qualifying spec {
     %let _ = writeLine("translating op "^lid^"...") in
     let srt = unfoldToArrow(spc,srt) in
     %let _ = writeLine("srt: "^printSort(srt)) in
-    let type = sort2type(unsetToplevel ctxt,spc,tyvars,srt) in
+    let typ = sort2type(unsetToplevel ctxt,spc,tyvars,srt) in
     let ctxt = setCurrentOpSort(ctxt,qid) in
     let res = 
-      case type of 
+      case typ of 
         | FunOrMap(types,rtype) ->
 	  (case opterms of
              | [] -> let params = (case optParNames of
@@ -532,8 +532,8 @@ SpecsToI2L qualifying spec {
 				    }
 	    )
         | _ -> (case opterms of
-		| [] -> OpDecl(id,type,None)
-		| (tvs,term)::_ -> OpDecl(id,type,Some(term2expression(ctxt,spc,term)))
+		| [] -> OpDecl(id,typ,None)
+		| (tvs,term)::_ -> OpDecl(id,typ,Some(term2expression(ctxt,spc,term)))
 	       )
     in
 
@@ -569,8 +569,8 @@ SpecsToI2L qualifying spec {
     let srt = inferType(spc,term) in
     let srt = unfoldBaseKeepPrimitives(spc,srt) in
     let expr = term2expression_internal(ctxt,spc,term,srt) in
-    let type = sort2type(unsetToplevel ctxt,spc,[],srt) in
-    (expr,type)
+    let typ = sort2type(unsetToplevel ctxt,spc,[],srt) in
+    (expr,typ)
 
   op term2expression_internal: CgContext * Spec * Term * Sort -> Expr
   def term2expression_internal(ctxt,spc,term,termsrt) =
@@ -740,8 +740,8 @@ SpecsToI2L qualifying spec {
 	      | VarPat((id,srt),_)
                 -> let defexpr = term2expression(ctxt,spc,defterm) in
 		   let expr = term2expression(ctxt,spc,term) in
-		   let type = sort2type(unsetToplevel ctxt,spc,[],srt) in
-		   Let(id,type,defexpr,expr)
+		   let typ = sort2type(unsetToplevel ctxt,spc,[],srt) in
+		   Let(id,typ,defexpr,expr)
 	      | WildPat _
                 -> let defexpr = term2expression(ctxt,spc,defterm) in
 		   let expr = term2expression(ctxt,spc,term) in

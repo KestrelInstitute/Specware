@@ -369,8 +369,8 @@ I2LToC qualifying spec {
 	let (cspc,ctype) = c4Type(ctxt,cspc,rtype) in
 	(cspc,Ptr(ctype))
 
-%      | FunOrMap([RestrictedNat n],type) ->
-%	let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+%      | FunOrMap([RestrictedNat n],typ) ->
+%	let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 %	let nstr = Nat.toString(n) in
 %	(cspc,ArrayWithSize(nstr,ctype))
 
@@ -442,13 +442,13 @@ I2LToC qualifying spec {
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op c4Expression_: CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
-  def c4Expression_(ctxt,cspc,block as (decls,stmts),exp as (expr,type),islhs,forInitializer) =
+  def c4Expression_(ctxt,cspc,block as (decls,stmts),exp as (expr,typ),islhs,forInitializer) =
     let (cspc,block,cexpr) = c4Expression__(ctxt,cspc,block,exp,islhs,forInitializer) in
     let (cspc,block,cexpr) = mergeBlockIntoExpr(cspc,block,cexpr) in
     (cspc,block,cexpr)
 
   op c4Expression__: CgContext * CSpec * CBlock * I2L.Expression * Boolean * Boolean -> CSpec * CBlock * CExp
-  def c4Expression__(ctxt,cspc,block as (decls,stmts),exp as (expr,type),islhs,forInitializer) =
+  def c4Expression__(ctxt,cspc,block as (decls,stmts),exp as (expr,typ),islhs,forInitializer) =
     let
       def addProjections(cexpr,projections) =
 	case projections of
@@ -461,7 +461,7 @@ I2LToC qualifying spec {
       def processFunMap f (vname,projections,exprs) =
 	let id = qname2id vname in
 	let (cspc,block,cexprs) = c4Expressions(ctxt,cspc,block,exprs) in
-	let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+	let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	let cexpr1 = addProjections(f(Var(id,ctype)),projections) in
 	(cspc,block,Apply(cexpr1,cexprs))
     in
@@ -475,7 +475,7 @@ I2LToC qualifying spec {
 	     (case getRestrictedNatList(types) of
 		| Some ns ->
 		  let (cspc,block,cexprs) = c4Expressions(ctxt,cspc,block,exprs) in
-		  let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+		  let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 		  % if we have projections, the map name must be the prefix of the last field name
 		  % otherwise of the id itself
 		  let (id,projections) =
@@ -499,9 +499,9 @@ I2LToC qualifying spec {
 
       | Builtin bexp -> c4BuiltInExpr(ctxt,cspc,block,bexp)
 
-      | Let (id,type,idexpr,expr) ->
+      | Let (id,typ,idexpr,expr) ->
         let (id,expr) = substVarIfDeclared(ctxt,id,decls,expr) in
-        let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+        let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	let (cspc,(decls,stmts),idcexpr) = c4Expression(ctxt,cspc,block,idexpr) in
 	let letvardecl = (id,ctype) in
 	let optinit = None in %if ctxt.useRefTypes then getMallocApply(cspc,ctype) else None in
@@ -532,12 +532,12 @@ I2LToC qualifying spec {
 
       | TupleExpr exprs ->
 	let fieldnames = getFieldNamesForTuple(exprs) in
-	c4StructExpr(ctxt,cspc,block,type,exprs,fieldnames,forInitializer)
+	c4StructExpr(ctxt,cspc,block,typ,exprs,fieldnames,forInitializer)
 
       | StructExpr fields ->
 	let fieldnames = List.map (fn(n,_) -> n) fields in
 	let exprs = List.map (fn(_,e) -> e) fields in
-	c4StructExpr(ctxt,cspc,block,type,exprs,fieldnames,forInitializer)
+	c4StructExpr(ctxt,cspc,block,typ,exprs,fieldnames,forInitializer)
 
       | Project(expr,id) ->
 	let (cspc,block,cexpr) = c4Expression_(ctxt,cspc,block,expr,islhs,forInitializer) in
@@ -547,7 +547,7 @@ I2LToC qualifying spec {
 
       | ConstrCall(typename,consid,exprs) ->
 	let consfun = getConstructorOpNameFromQName(typename,consid) in
-	let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+	let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	%let varPrefix = getVarPrefix("_Vc",ctype) in
 	%let xname = varPrefix^(Nat.toString(length(decls))) in
 	%let decl = (xname,ctype) in
@@ -578,8 +578,8 @@ I2LToC qualifying spec {
 	                    (cspc,block,Some cexpr)
 	     | None -> (cspc,block,None))
 	in
-	%let _ = (System.print("type: ");System.print(type);String.writeLine("")) in
-	let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+	%let _ = (System.print("type: ");System.print(typ);String.writeLine("")) in
+	let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	let varPrefix = getVarPrefix("_Vc",ctype) in
 	let xname = varPrefix^(Nat.toString(length(decls))) in
 	let decl = (xname,ctype) in
@@ -620,7 +620,7 @@ I2LToC qualifying spec {
 	% insert a dummy variable of the same type as the expression to be
 	% used in the nonexhaustive match case in order to prevent typing 
 	% errors of the C compiler
-	let (cspc,xtype) = c4Type(ctxt,cspc,type) in
+	let (cspc,xtype) = c4Type(ctxt,cspc,typ) in
 	let xtype = if xtype = Void then Int else xtype in
 	let varPrefix = getVarPrefix("_Vd_",xtype) in
 	let xname = varPrefix^(Nat.toString(length(decls))) in
@@ -647,7 +647,7 @@ I2LToC qualifying spec {
 		let (cspc,block,cexpr) = c4Expression(ctxt,cspc,block,expr) in
 		(cspc,block,cexpr) % varlist contains only wildcards
 		| _ ->
-		let type = (case opttype of
+		let typ = (case opttype of
 			      | Some t -> t
 			      | None -> System.fail("internal error: type missing in union case"
 						    ^ " for constructor \""^selstr^"\"")
@@ -656,7 +656,7 @@ I2LToC qualifying spec {
 		  (case vlist of
 		     | [Some id] -> % contains exactly one var
 		     let (id,expr) = substVarIfDeclared(ctxt,id,decls,expr) in
-		     let (cspc,idtype) = c4Type(ctxt,cspc,type) in
+		     let (cspc,idtype) = c4Type(ctxt,cspc,typ) in
 		     let structref = if ctxt.useRefTypes then Unary(Contents,cexpr0) else cexpr0 in
 		     let valexp = StructRef(StructRef(structref,"alt"),selstr) in
 		     let decl = (id,idtype) in
@@ -676,7 +676,7 @@ I2LToC qualifying spec {
 		     % of the record that is the argument of the constructor. We will introduce
 		     % a fresh variable of that record type and substitute the variable in the vlist
 		     % by corresponding StructRefs into the record.
-		     let (cspc,idtype) = c4Type(ctxt,cspc,type) in
+		     let (cspc,idtype) = c4Type(ctxt,cspc,typ) in
 		     let varPrefix = getVarPrefix("_Va",idtype) in
 		     let id = varPrefix^(Nat.toString(length(decls))) in
 		     let structref = if ctxt.useRefTypes then Unary(Contents,cexpr0) else cexpr0 in
@@ -720,17 +720,17 @@ I2LToC qualifying spec {
 	(cspc,block,IfExp(ce1,ce2,ce3))
 
       | Var id ->
-        let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+        let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	let vname = qname2id id in
 	let varexp = Var(vname,ctype) in
 	(cspc,block,varexp)
 
       | VarDeref id ->
-	let (cspc,block,cexp) = c4Expression(ctxt,cspc,block,(Var id,type)) in
+	let (cspc,block,cexp) = c4Expression(ctxt,cspc,block,(Var id,typ)) in
 	(cspc,block,Unary(Contents,cexp))
 
       | VarRef id ->
-	let (cspc,block,cexp) = c4Expression(ctxt,cspc,block,(Var id,type)) in
+	let (cspc,block,cexp) = c4Expression(ctxt,cspc,block,(Var id,typ)) in
 	(cspc,block,Unary(Address,cexp))
 
       | Comma(exprs) ->
@@ -784,19 +784,19 @@ I2LToC qualifying spec {
   % --------------------------------------------------------------------------------
 
   op c4StructExpr: CgContext * CSpec * CBlock * I2L.Type * Expressions * List(String) * Boolean -> CSpec * CBlock * CExp
-  def c4StructExpr (ctxt,cspc,block,type,exprs,fieldnames,forInitializer) =
+  def c4StructExpr (ctxt,cspc,block,typ,exprs,fieldnames,forInitializer) =
     if forInitializer then
-      c4StructExprForInitializer(ctxt,cspc,block,type,exprs,fieldnames)
+      c4StructExprForInitializer(ctxt,cspc,block,typ,exprs,fieldnames)
     else
-      c4StructExpr_(ctxt,cspc,block,type,exprs,fieldnames)
+      c4StructExpr_(ctxt,cspc,block,typ,exprs,fieldnames)
       
 
   op c4StructExpr_: CgContext * CSpec * CBlock * I2L.Type * Expressions * List(String) -> CSpec * CBlock * CExp
-  def c4StructExpr_(ctxt,cspc,block,type,exprs,fieldnames) =
+  def c4StructExpr_(ctxt,cspc,block,typ,exprs,fieldnames) =
     %let types = List.map (fn(_,t) -> t) exprs in
     let (cspc,block as (decls,stmts),fexprs) = c4Expressions(ctxt,cspc,block,exprs) in
     %let (cspc,ftypes) = c4Types(ctxt,cspc,types) in
-    let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+    let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
     let varPrefix = getVarPrefix("_Vb",ctype) in
     let xname = varPrefix^(Nat.toString(length(decls))) in
     let ctype = if ctype = Void then Int else ctype in
@@ -997,8 +997,8 @@ I2LToC qualifying spec {
       | UpdateBlock(upddecls,updates) ->
 	let (cspc,block,declstmts) =
 	    List.foldl
-	    (fn(((_,id),type,optexpr),(cspc,block,updstmts)) ->
-	     let (cspc,ctype) = c4Type(ctxt,cspc,type) in
+	    (fn(((_,id),typ,optexpr),(cspc,block,updstmts)) ->
+	     let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
 	     let iddecl = (id,ctype) in
 	     let optinit = if ctxt.useRefTypes then getMallocApply(cspc,ctype) else None in
 	     let iddecl1 = (id,ctype,optinit) in
@@ -1280,8 +1280,8 @@ I2LToC qualifying spec {
   % used to generate the variable prefix, otherwise a generic
   % variable prefix is used.
   op getVarPrefix: String * CType -> String
-  def getVarPrefix(gen,type) =
-    case type of
+  def getVarPrefix(gen,typ) =
+    case typ of
       | Base s -> String.map Char.toLowerCase s
       | _ -> gen
   

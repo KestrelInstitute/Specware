@@ -230,10 +230,10 @@ def isFinalVar?(id) =
 
 op mkFinalVarDecl: Id * Sort * Java.Expr -> BlockStmt * Collected
 def mkFinalVarDecl(varid,srt,exp) =
-  let (type,col) = tt_v3 srt in
+  let (typ,col) = tt_v3 srt in
   let isfinal = true in
   let vdecl = ((varid,0),Some(Expr exp)) in
-  (LocVarDecl(isfinal,type,vdecl,[]),col)
+  (LocVarDecl(isfinal,typ,vdecl,[]),col)
 
 op isIdentityAssignment?: Java.BlockStmt -> Boolean
 def isIdentityAssignment?(stmt) =

@@ -411,9 +411,9 @@ spec
       srt)
    else
      let (new_type_vars, new_srt) = copySort (type_vars, srt) in
-     (ListPair.app (fn (type, new_type_var) -> 
+     (ListPair.app (fn (typ, new_type_var) -> 
                     let {uniqueId,name,link} = ! new_type_var in
-                    new_type_var := {link     = Some type,
+                    new_type_var := {link     = Some typ,
                                      uniqueId = uniqueId,
                                      name     = name})
                    (types, new_type_vars);
