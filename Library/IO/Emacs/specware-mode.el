@@ -1139,7 +1139,7 @@ If anyone has a good algorithm for this..."
 (defun goto-specware-meta-point-definition (sym results)
   (let* ((def-info (car results))
 	 (file (cdr def-info))
-	 (sort? (equal (car def-info) "Sort")))
+	 (sort? (member (car def-info) '("Type" "Sort"))))
     (setq *pending-specware-meta-point-results*
       (if (null (cdr results))
 	  nil
@@ -1162,7 +1162,7 @@ If anyone has a good algorithm for this..."
     (goto-char 0)
     (let ((qsym (regexp-quote sym)))
       (or (if sort?
-	      (re-search-forward (concat "\\bsort\\s-+" qsym "\\b") nil t)
+	      (re-search-forward (concat "\\b\\(type\\|sort\\)\\s-+" qsym "\\b") nil t)
 	    (if (null current-prefix-arg)
 		(or (re-search-forward (concat "\\bdef\\s-+" qsym "\\b") nil t)
 		    (re-search-forward	; def fa(a) foo
