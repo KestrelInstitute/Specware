@@ -38,8 +38,9 @@ Errors in $TESTDIR/t0103_1.sw
 		 (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Switch/p1.log")
 		 (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 		 (:optional ";; Directory $TESTDIR/Snark/Switch/ does not exist, will create.")
-		 "p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark."
+		 (:optional "    Expanded spec file: $TESTDIR/Snark/Switch/p1.sw")
 		 "    Snark Log file: $TESTDIR/Snark/Switch/p1.log"
+		 "p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark."
 		 "")
        )
 
@@ -51,9 +52,14 @@ Errors in $TESTDIR/t0103_1.sw
 		 ";;; Elaborating obligator at $TESTDIR/ThreeValue#ThreeObs"
 		 ";;; Elaborating proof-term at $TESTDIR/ThreeValue#ThreeP"
 		 (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/ThreeValue/ThreeP.log")
-		 (:optional ";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will create.")
-		 "ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark."
+		 (:optional ";; ensure-directories-exist: creating")
+		 (:optional ";;   $TESTDIR/Snark/ThreeValue/ThreeP.log")
+		 (:alternatives ";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will create."
+				(";; Directory $TESTDIR/Snark/ThreeValue/ does not exist, will"
+				 ";;   create."))
+		 (:optional "    Expanded spec file: $TESTDIR/Snark/ThreeValue/ThreeP.sw")
 		 "    Snark Log file: $TESTDIR/Snark/ThreeValue/ThreeP.log"
+		 "ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark."
 		 "")
        )
 
@@ -64,9 +70,12 @@ Errors in $TESTDIR/t0103_1.sw
 		 ";;; Elaborating obligator at $TESTDIR/MathFact#sum_spec_obs"
 		 ";;; Elaborating proof-term at $TESTDIR/MathFact#sum_spec_p1"
 		 (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/MathFact/sum_spec_p1.log")
+		 (:optional ";; ensure-directories-exist: creating")
+		 (:optional ";;   $TESTDIR/Snark/MathFact/sum_spec_p1.log")
 		 (:optional ";; Directory $TESTDIR/Snark/MathFact/ does not exist, will create.")
-		 "sum_spec_p1: Conjecture sum_zero in sum_spec_obs is NOT proved using Snark."
+		 "    Expanded spec file: $TESTDIR/Snark/MathFact/sum_spec_p1.sw"
 		 "    Snark Log file: $TESTDIR/Snark/MathFact/sum_spec_p1.log"
+		 "sum_spec_p1: Conjecture sum_zero in sum_spec_obs is NOT proved using Snark."
 		 "")
        )
       
@@ -77,11 +86,13 @@ Errors in $TESTDIR/t0103_1.sw
 		 ";;; Elaborating proof-term at $TESTDIR/Tuples#P1"
 		 (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Tuples/P1.log")
 		 (:optional ";; Directory $TESTDIR/Snark/Tuples/ does not exist, will create.")
-		 "P1: Conjecture twoMakesMakeAMatch1 in O1 is Proved! using Snark."
+		 "    Expanded spec file: $TESTDIR/Snark/Tuples/P1.sw"
 		 "    Snark Log file: $TESTDIR/Snark/Tuples/P1.log"
+		 "P1: Conjecture twoMakesMakeAMatch1 in O1 is Proved! using Snark."
 		 ";;; Elaborating proof-term at $TESTDIR/Tuples#P2"
-		 "P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved! using simple inequality reasoning."
+		 "    Expanded spec file: $TESTDIR/Snark/Tuples/P2.sw"
 		 "    Snark Log file: $TESTDIR/Snark/Tuples/P2.log"
+		 "P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved! using simple inequality reasoning."
 		 "")
        )
       )

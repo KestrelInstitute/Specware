@@ -8,6 +8,8 @@
 	    ";;; Elaborating spec at $TESTDIR/WasCausingSegFault#BinaryOp"
 	    ";;; Generating lisp file $TESTDIR/lisp/WasCausingSegFault.lisp"
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/lisp/WasCausingSegFault.lisp")
+	    (:optional ";; ensure-directories-exist: creating")
+	    (:optional ";;   $TESTDIR/lisp/WasCausingSegFault.lisp")
 	    (:optional ";; Directory $TESTDIR/lisp/ does not exist, will create.")
 	    ";;; Generating lisp file $TESTDIR/lisp/WasCausingSegFault.lisp"
 	    ""))

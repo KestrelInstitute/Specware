@@ -80,11 +80,16 @@
 (defun specware-shell0 ()
   (specware-shell t))
 
+(defvar *sw-shell-print-level* 8)
+(defvar *sw-shell-print-length* 16)
+
 (defun specware-shell (exiting-lisp?)
   (let  ((magic-eof-cookie (cons :eof nil))
 	 (number-of-eofs 0)
 	 (cl:*package* cl:*package*)
 	 (sw-shell-pkg (find-package :SWShell))
+	 (*print-level* *sw-shell-print-level*)
+	 (*print-length* *sw-shell-print-length*)
 	 * ** ***
 	 / // ///
 	 ch)
