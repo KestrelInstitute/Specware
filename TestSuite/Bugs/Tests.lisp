@@ -91,7 +91,7 @@ endspec
   :output ";;; Elaborating spec-morphism at $TESTDIR/Bug_0067/CheckSignature#M
 ;;; Elaborating spec at $TESTDIR/Bug_0067/CheckSignature#S1
 ;;; Elaborating spec at $TESTDIR/Bug_0067/CheckSignature#S2
-Error in morphism: Inconsistent signature mapping for f +-> f
+Error in morphism: Inconsistent signature mapping for f +-> g
 The domain sort A
   translates to B
    which is not C
