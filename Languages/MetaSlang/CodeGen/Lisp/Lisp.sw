@@ -72,13 +72,16 @@ ListADT qualifying spec {
     | Op      String
     | Var     String
     | Set     String   * LispTerm
-    | Lambda  Strings  * LispTerm
+    | Lambda  Strings  * LispDecls * LispTerm
     | Apply   LispTerm * LispTerms
     | If      LispTerm * LispTerm  * LispTerm
     | IfThen  LispTerm * LispTerm 
     | Let     Strings  * LispTerms * LispTerm
     | Letrec  Strings  * LispTerms * LispTerm
     | Seq     LispTerms
+
+  sort LispDecl =
+    | Ignore  String
 
   sort Val =
     | Boolean   Boolean
@@ -92,6 +95,7 @@ ListADT qualifying spec {
   sort LispSpecs   = List LispSpec
   sort Strings     = List String
   sort LispTerms   = List LispTerm
+  sort LispDecls   = List LispDecl
   sort Definitions = List Definition
 
   op emptySpec : LispSpec
@@ -110,7 +114,7 @@ ListADT qualifying spec {
          | Op      name -> StringSet.add(names,name)
          | Var     _ -> names
          | Set     (_,term) -> ops(term,names)
-         | Lambda  (_,term) -> ops(term,names)
+         | Lambda  (_,_,term) -> ops(term,names)
          | Apply   (term,terms) -> List.foldr ops (ops(term,names)) terms
          | If      (t1,t2,t3) -> ops(t1,ops(t2,ops(t3,names)))
          | IfThen  (t1,t2) -> ops(t1,ops(t2,names))
@@ -161,7 +165,7 @@ ListADT qualifying spec {
          (0, [(0, strings ["(setq ", s, " "]),
               (2, prettysNone [ppTerm t, string ")"])])
 
-       | Lambda (ss, t) ->
+       | Lambda (ss, decls, t) ->
          blockFill
          (0, [(0, prettysLinearDelim
                     ("#'(lambda (", " ", ") ")
@@ -210,7 +214,7 @@ ListADT qualifying spec {
               (2, prettysAllDelim
                   ("(", "", ") ")
                   (ListPair.map
-                    (fn (s, Lambda (args, body)) ->
+                    (fn (s, Lambda (args, decls, body)) ->
                       prettysFillDelim
                         ("(", " ", ")")
                         [string s,
@@ -228,7 +232,7 @@ ListADT qualifying spec {
 
   def ppOpDefn(s : String,term:LispTerm) : Pretty = 
       case term
-	of Lambda (args, body) -> 
+	of Lambda (args, decls, body) -> 
 	    blockFill
 	      (0, [(0, string "(defun "),
 	           (0, string s),
@@ -296,7 +300,7 @@ ListADT qualifying spec {
 
 op  mkLVar : String -> LispTerm
 op  mkLOp : String -> LispTerm
-op  mkLLambda : Strings * LispTerm -> LispTerm
+op  mkLLambda : Strings * LispDecls * LispTerm -> LispTerm
 op  mkLApply  : LispTerm * List(LispTerm) -> LispTerm
 op  mkLIf : LispTerm * LispTerm * LispTerm -> LispTerm
 op  mkLLet : Strings * List(LispTerm) * LispTerm -> LispTerm
@@ -311,8 +315,8 @@ op  mkLIntern : String -> LispTerm
 
 def mkLOp s = Op s
 def mkLVar s = Var s
-def mkLLambda(args,body):LispTerm = 
-    Lambda(args,body)
+def mkLLambda(args,decls,body):LispTerm = 
+    Lambda(args,decls,body)
 def mkLApply(f,terms) = Apply(f,terms)
 def mkLIf(t1,t2,t3) = If(t1,t2,t3)
 def mkLLet(vars,terms,term) = 

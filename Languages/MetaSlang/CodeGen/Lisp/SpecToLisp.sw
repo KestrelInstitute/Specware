@@ -234,7 +234,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
       of (Project id,srt,_) -> 
          (case (isPairProjection(sp,srt,id),optArgs)
             of (Some proj,None) -> 
-                mkLLambda(["!x"],mkLApply(mkLOp proj,[mkLVar "!x"]))
+                mkLLambda(["!x"],[],mkLApply(mkLOp proj,[mkLVar "!x"]))
              | (Some proj,Some trm) ->
                 mkLApply(mkLOp proj,[mkLTerm(sp,dpn,vars,trm)])
              | (None,Some trm) -> 
@@ -242,7 +242,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
                 mkLApply(mkLOp "svref",[mkLTerm(sp,dpn,vars,trm),mkLNat id])
              | (None,None) -> 
                let id = projectionIndex(sp,id,srt) in
-               mkLLambda(["!x"],mkLApply(mkLOp "svref",[mkLVar "!x",mkLNat id]))
+               mkLLambda(["!x"],[],mkLApply(mkLOp "svref",[mkLVar "!x",mkLNat id]))
           )
     | (Equals,srt,_) ->
       let oper = mkLOp(mkLEqualityOp(sp,srt)) in
@@ -251,7 +251,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
           | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Select id,srt,_) -> 
       (case (hasConsDomain(sp,id,srt),optArgs)
-        of (Some queryOp,None) -> mkLLambda(["!x"],mkLVar "!x")
+        of (Some queryOp,None) -> mkLLambda(["!x"],[],mkLVar "!x")
          | (Some queryOp,Some term) -> mkLTerm(sp,dpn,vars,term)
          | (None,None) -> mkLOp "cdr"
          | (None,Some term) -> 
@@ -260,13 +260,15 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
      let dom = domain(sp,srt) in
      (case (isConsIdentifier(sp,id,dom),optArgs)
         of (Some queryOp,None) -> 
-           mkLLambda(["!x"],mkLApply(mkLOp queryOp,[mkLVar "!x"]))
+           mkLLambda(["!x"],[],mkLApply(mkLOp queryOp,[mkLVar "!x"]))
          | (Some queryOp,Some term) -> 
            mkLApply(mkLOp queryOp,[mkLTerm(sp,dpn,vars,term)])
          | (None,None) -> 
-           mkLLambda(["!x"],mkLApply (compareSymbols,
-                                         [mkLApply (mkLOp "car",[mkLVar "!x"]),
-                                          mkLIntern(id)]))
+           mkLLambda(["!x"],
+		     [],
+		     mkLApply (compareSymbols,
+			       [mkLApply (mkLOp "car",[mkLVar "!x"]),
+				mkLIntern(id)]))
          | (None,Some term) -> 
            mkLApply (compareSymbols,
                   [mkLApply (mkLOp "car",[mkLTerm(sp,dpn,vars,term)]),
@@ -312,14 +314,15 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
      (case isConsDataType(sp,rng)
         of Some _ ->
            (case optArgs
-              of None -> mkLLambda(["!x"],mkLVar "!x")
+              of None -> mkLLambda(["!x"],[],mkLVar "!x")
                | Some term -> mkLTerm(sp,dpn,vars,term))
          | None -> 
           let id = mkLIntern id in
            (case optArgs
               of None -> mkLLambda(["!x"],
-                           mkLApply(mkLOp "cons",
-                             [id, mkLVar "!x"]))
+				   [],
+				   mkLApply(mkLOp "cons",
+					    [id, mkLVar "!x"]))
                | Some term -> 
                  mkLApply (mkLOp "cons",[id,mkLTerm(sp,dpn,vars,term)])))
   | (Embed(id,false),srt,_) -> 
@@ -349,11 +352,11 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
 
   | (Restrict,srt,_) -> 
     (case optArgs
-       of None -> mkLLambda(["!x"],mkLVar "!x")
+       of None -> mkLLambda(["!x"],[],mkLVar "!x")
         | Some term -> mkLTerm(sp,dpn,vars,term))
   | (Relax,srt,_) -> 
     (case optArgs
-       of None -> mkLLambda(["!x"],mkLVar "!x")
+       of None -> mkLLambda(["!x"],[],mkLVar "!x")
         | Some term -> mkLTerm(sp,dpn,vars,term))
   | _ -> (System.fail "Unexpected termOp")
 
@@ -522,7 +525,9 @@ def mkLTerm (sp,dpn,vars,term : Term) =
        | Lambda([(pat,cond,trm)],_) ->
             let names = patternNames pat in 
             let names = List.map specId names    in
-                mkLLambda(names,mkLTerm(sp,dpn,StringSet.addList(vars,names),trm))
+                mkLLambda(names,
+			  [],
+			  mkLTerm(sp,dpn,StringSet.addList(vars,names),trm))
             
        | Seq(terms,_) ->
             mkLSeq(List.map (fn t -> mkLTerm(sp,dpn,vars,t)) terms)
@@ -543,7 +548,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
               of Apply (term_,terms_) -> 
                  countOccurrence2(x,count,Cons(term_,terms_ @ terms))
 
-               | Lambda(vars,body) -> 
+               | Lambda(vars,_,body) -> 
 		 %% Was: 2 (* give up *) 
 		 %% Never do a real subsitution, but if there are no 
 		 %% occurences, return count of 0 to trigger vacuous
@@ -597,7 +602,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
       case term
         of Apply(t1,terms) -> 
            foldr (fn(t,names)-> getNames t @ names) (getNames t1) terms
-         | Lambda(vars,t) -> vars @ (getNames t)
+         | Lambda(vars,_,t) -> vars @ (getNames t)
          | Op r -> [r]
          | Var r -> [r] 
          | Const _ -> []
@@ -644,14 +649,16 @@ def mkLTerm (sp,dpn,vars,term : Term) =
         of Apply(term,terms) -> 
            Apply(substitute(x,arg) term,
                  List.map (substitute(x,arg)) terms)
-         | Lambda(vars,body) -> 
+         | Lambda(vars,decls,body) -> 
            if exists (fn v -> x = v) vars 
-               then mkLLambda(vars,body) 
+               then mkLLambda(vars,decls,body) 
            else
            let names = getNames(arg) in
            let (vars,names,body) = foldr rename ([],names,body) vars
            in
-               mkLLambda(vars,substitute(x,arg) body)
+               mkLLambda(vars,
+			 decls, % could a subsitution be needed?
+			 substitute(x,arg) body)
            
          | Var y -> if x = y then arg else mkLVar y
          | Let(vars,terms,body) -> 
@@ -711,7 +718,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   
   def reduceTerm(term:LispTerm) = 
       case term
-        of Apply(Lambda(xs,body),args) -> reduceTerm(Let(xs,args,body))
+        of Apply(Lambda(xs,_,body),args) -> reduceTerm(Let(xs,args,body))
          | Apply (term,terms) -> 
            let term  = reduceTerm term   in
            let terms = List.map reduceTerm terms in
@@ -719,7 +726,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
            let (* Ops need an argument *)
                def etaExpandOp(term:LispTerm) = 
                    case term
-                     of Op _ -> mkLLambda(["!x"],mkLApply(term,[mkLVar "!x"]))
+                     of Op _ -> mkLLambda(["!x"],[],mkLApply(term,[mkLVar "!x"]))
                       | _ -> term
            in *)
            
@@ -729,7 +736,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
 %           in
                mkLApply (term,terms)
            
-         | Lambda(vars,body) -> mkLLambda(vars,reduceTerm body)
+         | Lambda(vars,decls,body) -> mkLLambda(vars,decls,reduceTerm body)
 %
 % Optimized by deleting pure arguments that do not
 % occur in the body at all.
@@ -827,12 +834,13 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   def unCurryDef(term,n) =
     let def auxUnCurryDef(term,i,params,let_binds) =
           if i > n then (Some(mkLLambda(params,
-                                      foldl (fn((vars,vals),bod) ->
-                                             mkLLet(vars,vals,bod))
-                                        term let_binds))) : (Option LispTerm)
+					[],
+					foldl (fn((vars,vals),bod) ->
+					       mkLLet(vars,vals,bod))
+                                              term let_binds))) : (Option LispTerm)
           else
             case term
-              of Lambda (formals,body) ->
+              of Lambda (formals,_,body) ->
                  (case formals
                     of [_] -> auxUnCurryDef(body,i+1,params ++ formals,let_binds)
                      | _ -> let newParam = "!x"^(Nat.toString i) in
@@ -850,30 +858,37 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   % fn(x,y,z) -> f-1(tuple(x,y,z))
   def defNaryByUnary(name,n) =
     let vnames = genNNames n in
-    mkLLambda(vnames,mkLApply(mkLOp(name), [mkLispTuple(List.map mkLVar vnames)]))
+    mkLLambda(vnames,
+	      [],
+	      mkLApply(mkLOp(name), [mkLispTuple(List.map mkLVar vnames)]))
 
   % fn(x,y,z) -> f-1(tuple(x,y,z))
   def defAliasFn(name,n) =
     let vnames = genNNames n in
-    mkLLambda(vnames,mkLApply(mkLOp(name), List.map mkLVar vnames))
+    mkLLambda(vnames,
+	      [],
+	      mkLApply(mkLOp(name), List.map mkLVar vnames))
 
   % fn x -> f(x.1,x.2,x.3)
   def defUnaryByNary(name,n) =
     mkLLambda([if n = 0 then "ignore" else "x"],
-             mkLApply(mkLOp name, nTupleDerefs(n,mkLVar "x")))
+	      [],
+	      mkLApply(mkLOp name, nTupleDerefs(n,mkLVar "x")))
 
   % fn x1 -> fn ... -> fn xn -> name(x1,...,xn)
   def defCurryByUncurry(name,n) =
     let def auxRec(i,args) =
           if i > n then mkLApply(mkLOp(name), args)
             else let vn = "x"^(Nat.toString i) in
-                 mkLLambda([vn],auxRec(i+1,args++[mkLVar vn]))
+                 mkLLambda([vn],
+			   [],
+			   auxRec(i+1,args++[mkLVar vn]))
     in auxRec(1,[])
 
   % fn(x1,...,xn) -> f x1 ... xn
   def defUncurryByUnary(name,n) =
     let def auxRec(i,args,bod) =
-          if i > n then mkLLambda(args,bod)
+          if i > n then mkLLambda(args,[],bod)
             else let vn = "x"^(Nat.toString i) in
                  auxRec(i+1,args++[vn],mkLApply(bod,[mkLVar vn]))
     in auxRec(1,[],mkLOp name)
@@ -881,7 +896,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   op renameDef? : ListADT.LispTerm -> Option String
   def renameDef? term =
     case term
-      of Lambda([v],Apply(Op fnName,[Var vr])) ->
+      of Lambda([v], _, Apply(Op fnName,[Var vr])) ->
          if v = vr then Some fnName else None
        | _ -> None
 
@@ -905,12 +920,12 @@ def mkLTerm (sp,dpn,vars,term : Term) =
                 (case (curryShapeNum(spc,srt),sortArity(spc,srt))
                    of (1,None) ->
                       (case term:LispTerm
-                         of Lambda (formals,_) -> [(name,term)]
-                          | _ -> [(name,mkLLambda(["!x"], mkLApply(term,[mkLVar "!x"])))])
+                         of Lambda (formals,_,_) -> [(name,term)]
+                          | _ -> [(name,mkLLambda(["!x"], [], mkLApply(term,[mkLVar "!x"])))])
                     | (1,Some (_,arity)) ->
                       let uName = unaryName name in
                       (case term:LispTerm
-                         of Lambda (formals,_) ->
+                         of Lambda (formals,_,_) ->
                             let n = length formals in
                             [(name,
                               if n = arity then term
@@ -921,7 +936,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
                               else term)]
                            | _ ->  % Not sure that arity normalization hasn't precluded this case
                              [(name,defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
-                              (uName, mkLLambda(["!x"], mkLApply(term,[mkLVar "!x"])))])
+                              (uName, mkLLambda(["!x"], [], mkLApply(term,[mkLVar "!x"])))])
                     | (curryN,None) ->
                       let ucName = unCurryName(name,curryN) in
                       (case unCurryDef(term,curryN)
@@ -946,7 +961,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
                              (ucName,uCDef)]
                           | _ ->
                        (case term:LispTerm
-                         of Lambda (formals,_) ->
+                         of Lambda (formals,_,_) ->
                             let n = length formals in
                             [(name,
                               if n = arity then term
@@ -958,7 +973,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
                              (ucName,defUncurryByUnary(uName,curryN))]  % fn(x,y,z) -> f-1 x y z
                           | _ ->
                             [(name,defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
-                             (uName,mkLLambda(["!x"], mkLApply(term,[mkLVar "!x"]))),
+                             (uName,mkLLambda(["!x"], [], mkLApply(term,[mkLVar "!x"]))),
                              (ucName,defUncurryByUnary(uName,curryN))])))
                ++ defs
              else cons((name,term),defs)
