@@ -162,10 +162,10 @@ XML qualifying spec
 
   def print_ExtSubsetDecl decl = 
     case decl of
-     | Markup  markup       -> print_MarkupDecl  markup
+     % | Markup  markup       -> print_MarkupDecl  markup
      | Include include_sect -> print_IncludeSect include_sect
      | Ignore  ignore_sect  -> print_IgnoreSect  ignore_sect
-     | DeclSep dsep         -> print_DeclSep     dsep
+     % | DeclSep dsep         -> print_DeclSep     dsep
 		    
   def print_IncludeSect {w1, w2, decl} =
     (ustring "<![") ^ w1 ^ (ustring "INCLUDE") ^ w2 ^ (ustring "[") ^ (print_ExtSubsetDecl decl) ^ (ustring "]]>")  
@@ -249,36 +249,46 @@ XML qualifying spec
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def print_DocTypeDecl ({w1, name, external_id, w3, markups} : DocTypeDecl) : UString =
+  def print_DocTypeDecl ({w1, name, external_id, w2, decls} : DocTypeDecl) : UString =
     w1 ^ name ^ 
     (case external_id of
        | Some (w1, id) -> w1 ^ print_GenericID id
        | _ -> [])
-    ^ w3 ^
-    (case markups of
-       | Some (markups, w4) -> 
-         ((foldl (fn (markup, result) -> 
-		  result ^ (case markup of
-			      | Decl mdecl -> print_MarkupDecl mdecl
-			      | Sep  dsep  -> print_DeclSep    dsep))
+    ^ w2 ^
+    (case decls of
+       | Some {decls, w1} ->
+         ((foldl (fn (decl, result) -> 
+		  result ^ (case decl of
+			      % | Decl mdecl -> print_MarkupDecl mdecl
+			      | Element    decl -> print_ElementDecl  decl
+			      | Attributes decl -> print_AttlistDecl  decl
+			      | Entity     decl -> print_EntityDecl   decl
+			      | Notation   decl -> print_NotationDecl decl
+			      | PI         decl -> print_PI           decl
+			      | Comment    decl -> print_Comment      decl
+			      % | Sep  dsep  -> print_DeclSep    dsep
+			      | PEReference peref -> print_PEReference peref
+			      | WhiteSpace  white -> print_WhiteSpace  white
+			   ))
 	         []
-		 markups)
-	  ^ w4)
+		 decls)
+	  ^ w1)
        | _ -> [])
 
-  def print_DeclSep dsep = 
-    case dsep of
-      | PEReference peref -> print_PEReference peref
-      | WhiteSpace  white -> print_WhiteSpace  white
 
-  def print_MarkupDecl mdecl = 
-    case mdecl of
-      | Element    decl -> print_ElementDecl  decl
-      | Attributes decl -> print_AttlistDecl  decl
-      | Entity     decl -> print_EntityDecl   decl
-      | Notation   decl -> print_NotationDecl decl
-      | PI         decl -> print_PI           decl
-      | Comment    decl -> print_Comment      decl
+%%%  def print_DeclSep dsep = 
+%%%    case dsep of
+%%%      | PEReference peref -> print_PEReference peref
+%%%      | WhiteSpace  white -> print_WhiteSpace  white
+%%%
+%%%  def print_MarkupDecl mdecl = 
+%%%    case mdecl of
+%%%      | Element    decl -> print_ElementDecl  decl
+%%%      | Attributes decl -> print_AttlistDecl  decl
+%%%      | Entity     decl -> print_EntityDecl   decl
+%%%      | Notation   decl -> print_NotationDecl decl
+%%%      | PI         decl -> print_PI           decl
+%%%      | Comment    decl -> print_Comment      decl
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

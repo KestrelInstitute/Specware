@@ -60,6 +60,7 @@ XML qualifying spec
   %%  [K1]  document  ::=  DocItems
   %%
   %%                                                             [KC: Well-Formed Doc]
+  %%                                                             [KC: Valid Doc]  
   %%
   %%  [K2]  DocItems  ::=  DocItem*
   %%
@@ -78,34 +79,29 @@ XML qualifying spec
                  | DTD         DocTypeDecl
                  | Element     Element
   
-  %%  [KC: Well-Formed Doc]
-  def well_formed_doc_items? (items : DocItems) : Boolean =
-    let (proper_order?, saw_xml?, saw_dtd?, saw_element?) =
-        (foldl (fn (item, (proper_order?, saw_xml?, saw_dtd?, saw_element?)) ->
-	       case item of
-		 | Comment    _ -> (proper_order?, saw_xml?, saw_dtd?, saw_element?) 
-		 | PI         _ -> (proper_order?, saw_xml?, saw_dtd?, saw_element?) 
-		 | WhiteSpace _ -> (proper_order?, saw_xml?, saw_dtd?, saw_element?) 
-		 | XMLDecl    _ -> (~ (saw_xml? or saw_dtd? or saw_element?),
-				    true, saw_dtd?, saw_element?)
-		 | DTD        _ -> (~ (saw_dtd? or saw_element?),
-				    saw_xml?, true, saw_element?)
-		 | Element    _ -> (~ saw_element?, 
-				    saw_xml?, saw_dtd?, true)
-		 | _            -> (false, saw_xml?, saw_dtd?, saw_element?) % can't happen
-		 )
-	       (true, false, false, false)
-	       items)
-    in
-    let well_formed? = proper_order? & saw_element? in
-    let valid?       = well_formed?  & saw_dtd?     in
-    valid?
-
   %%  [KC: Valid Doc]
   def valid_doc_items? (items : DocItems) : Boolean =
     (well_formed_doc_items? items) 
     &
     (has_dtd? items)
+
+  %%  [KC: Well-Formed Doc]
+  def well_formed_doc_items? (items : DocItems) : Boolean =
+    let (proper_order?, saw_xml?, saw_dtd?, saw_element?) =
+        (foldl (fn (item, (proper_order?, saw_xml?, saw_dtd?, saw_element?)) ->
+		case item of
+		  | Comment    _ -> (proper_order?, saw_xml?, saw_dtd?, saw_element?) 
+		  | PI         _ -> (proper_order?, saw_xml?, saw_dtd?, saw_element?) 
+		  | WhiteSpace _ -> (proper_order?, saw_xml?, saw_dtd?, saw_element?) 
+		  | XMLDecl    _ -> (~ (saw_xml? or saw_dtd? or saw_element?),  true,     saw_dtd?, saw_element?)
+		  | DTD        _ -> (~ (saw_dtd? or saw_element?),		saw_xml?, true,     saw_element?)
+		  | Element    _ -> (~ saw_element?, 				saw_xml?, saw_dtd?, true)
+		  | _            -> (false, saw_xml?, saw_dtd?, saw_element?) % can't happen
+		 )
+	       (true, false, false, false)
+	       items)
+    in
+    proper_order? & saw_element? 
 
   %% 
   def has_dtd? (items : DocItems) : Boolean =
@@ -156,7 +152,7 @@ XML qualifying spec
   %% They are all instances of [K4]:
   %%
   %%  [K4]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
-  %%  [K5]  ElementTagPrefix    ::=  ( '?' | '/'  | '' )
+  %%  [K5]  ElementTagPrefix   ::=  ( '?' | '/'  | '' )
   %%  [K6]  ElementName        ::=  NmToken        
   %%  [K7]  ElementAttributes  ::=  List ElementAttribute
   %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
@@ -241,11 +237,14 @@ XML qualifying spec
   %% 
   %% -------------------------------------------------------------------------------------------------
   %% 
-  %%  [30]  extSubset           ::=  TextDecl? extSubsetDecl
+  %% *[30]  extSubset           ::=  TextDecl? extSubsetDecl
+  %%    =>
+  %% [K12]  extSubset           ::=  ( extSubsetDecl )*
+  %%                                                             [KC: Well-Formed External Subset]
   %% 
   %% *[31]  extSubsetDecl       ::=  ( markupdecl | conditionalSect | DeclSep)* 
   %%   ==>
-  %% [K12]  extSubsetDecl       ::=  ( markupdecl | includeSect | ignoreSect | DeclSep)* 
+  %% [K13]  extSubsetDecl       ::=  TextDecl | elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | includeSect | ignoreSect | S
   %% 
   %%  [61]  conditionalSect     ::=  includeSect | ignoreSect
   %% 
@@ -263,9 +262,9 @@ XML qualifying spec
   %% 
   %% *[77]  TextDecl            ::=  '<?xml' VersionInfo? EncodingDecl S? '?>'
   %%   ==>
-  %% [K13]  TextDecl            ::=  ElementTag
+  %% [K14]  TextDecl            ::=  ElementTag
   %%
-  %%                                                             [KC: Proper Text Decl]
+  %%                                                             [KC: Well-Formed Text Decl]
   %%  
   %% -------------------------------------------------------------------------------------------------
   %%  
@@ -275,15 +274,38 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort ExtSubSet = {text  : TextDecl,
-		    other : ExtSubsetDecls}
+  sort ExtSubset = {decls : (List ExtSubsetDecl | well_formed_external_subset?)}
   
+  %%  [KC: Well-Formed External Subset]
+  def well_formed_external_subset? (decls : List ExtSubsetDecl) : Boolean =
+    let (proper_order?, _, _) =
+        (foldl (fn (item, (proper_order?, saw_xml?, saw_other?)) ->
+		case item of
+		  | TextDecl    _ -> (~ (saw_xml? or saw_other?), true,     saw_other?)
+		  %% markupdecl :
+                  | Element     _ -> (proper_order?,              saw_xml?, true)
+                  | Attributes  _ -> (proper_order?,              saw_xml?, true)
+                  | Entity      _ -> (proper_order?,              saw_xml?, true)
+                  | Notation    _ -> (proper_order?,              saw_xml?, true)
+		  | PI          _ -> (proper_order?,              saw_xml?, saw_other?)
+		  | Comment     _ -> (proper_order?,              saw_xml?, saw_other?)
+		  %% conditionalsect :
+		  | Include     _ -> (proper_order?,              saw_xml?, true)
+		  | Ignore      _ -> (proper_order?,              saw_xml?, true)
+		  %% declsep :
+		  %% | PEReference _ -> (false,                     saw_xml?, saw_other?)
+		  | WhiteSpace  _ -> (proper_order?,             saw_xml?, saw_other?))
+	       (true, false, false)
+	       decls)
+    in
+    proper_order? 
+
   %% -------------------------------------------------------------------------------------------------
 
-  sort TextDecl = (ElementTag | text_decl?) % similar to XMLDecl
+  sort TextDecl = (ElementTag | well_formed_text_decl?) % similar to XMLDecl
 
   %%  [KC: Proper Text Decl]
-  def text_decl? tag = 
+  def well_formed_text_decl? tag = 
     (tag.prefix = ustring "?") & 
     (tag.name   = ustring "xml") & 
     (text_decl_attributes? tag.attributes) &
@@ -302,14 +324,17 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
 
-  sort ExtSubsetDecls = List ExtSubsetDecl
-
-  sort ExtSubsetDecl = | Markup  (MarkupDecl | no_pe_reference?)
-                       | Include IncludeSect
-                       | Ignore  IgnoreSect
-                       | DeclSep (DeclSep    | no_pe_reference?)
-		    
-  op no_pe_reference? : fa (a) a -> Boolean % TODO
+  sort ExtSubsetDecl = | TextDecl TextDecl
+                     % | Markup      (MarkupDecl | no_pe_reference?)
+                       | Element     ElementDecl
+                       | Attributes  AttlistDecl
+                       | Entity      EntityDecl
+                       | Notation    NotationDecl
+                       | PI          PI
+                       | Comment     Comment
+                       | Include     IncludeSect
+                       | Ignore      IgnoreSect
+                       | WhiteSpace  WhiteSpace
 
   %%  This predicate is a bit tedious, but implements the following constraint documented at
   %%
@@ -355,9 +380,9 @@ XML qualifying spec
   %% 
   %% *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%   ==>
-  %% [K14]  XMLDecl       ::=  ElementTag
+  %% [K15]  XMLDecl       ::=  ElementTag
   %%
-  %%                                                             [KC: Proper XML Decl]
+  %%                                                             [KC: Well-Formed XML Decl]
   %%
   %% *[24]  VersionInfo   ::=  S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
   %%
@@ -376,10 +401,10 @@ XML qualifying spec
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort XMLDecl = (ElementTag | xml_decl?)
+  sort XMLDecl = (ElementTag | well_formed_xml_decl?)
 
-  %% [KC: Proper XML Decl]
-  def xml_decl? tag = 
+  %% [KC: Well-Formed XML Decl]
+  def well_formed_xml_decl? tag = 
     (tag.prefix  = ustring "?") & 
     (tag.name    = ustring "xml") & 
     (xml_decl_attributes? tag.attributes) &
@@ -403,7 +428,8 @@ XML qualifying spec
   %% [24]
   def version_attribute? attribute = 
     (attribute.name = ustring "version") &
-    (version_num? attribute.value.text)
+    (let qtext : BoundedText = attribute.value in
+     version_num? qtext.text)
 
   %% [26]
   def version_num? ustr = 
@@ -441,40 +467,50 @@ XML qualifying spec
   %%  <!ENTITY     ...>
   %%  <!NOTATATION ...>
   %%
-  %%  [28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
-  %%   ==>
-  %% [K15]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? markups? '>' 
-  %% [K16]  markups      ::=  '[' (markupdecl | DeclSep)* ']' S?
+  %%  *[28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
   %%
   %%                                                             [VC:  Root Element Type] 
   %%                                                             [WFC: External Subset]
   %%
-  %% [28a]  DeclSep      ::=  PEReference | S    
+  %% *[28a]  DeclSep      ::=  PEReference | S    
   %%                                                             [WFC: PE Between Declarations]
   %%
-  %%  [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
+  %%  *[29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
   %%
   %%                                                             [VC:  Proper Declaration/PE Nesting] 
   %%                                                             [WFC: PEs in Internal Subset]
-  %% 
+  %%    ==>
+  %%  [K16]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls? '>' 
+  %%
+  %%                                                             [VC:  Root Element Type] 
+  %%                                                             [WFC: External Subset]
+  %%                                                             [WFC: PE Between Declarations]
+  %%                                                             [VC:  Proper Declaration/PE Nesting] 
+  %%
+  %%  [K17]  DTD_Decls    ::=  '[' (DTD_Decl)* ']' S?
+  %%  [K18]  DTD_Decl     ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S
+  %%
+  %%                                                             [WFC: PEs in Internal Subset]
+  %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   sort DocTypeDecl = {w1          : WhiteSpace,
 		      name        : Name,
 		      external_id : Option (WhiteSpace * ExternalID),
-		      w3          : WhiteSpace,
-		      markups     : Option (List (| Decl MarkupDecl | Sep DeclSep) * 
-					    WhiteSpace)}
+		      w2          : WhiteSpace,
+		      decls       : Option DTD_Decls}
 
-  sort DeclSep = | PEReference PEReference
-                 | WhiteSpace  WhiteSpace
+  sort DTD_Decls = {decls : List DTD_Decl,
+		    w1    : WhiteSpace}
 
-  sort MarkupDecl = | Element      ElementDecl
-                    | Attributes   AttlistDecl
-                    | Entity       EntityDecl
-                    | Notation     NotationDecl
-                    | PI           PI
-                    | Comment      Comment
+  sort DTD_Decl = | Element      ElementDecl
+                  | Attributes   AttlistDecl
+                  | Entity       EntityDecl
+                  | Notation     NotationDecl
+                  | PI           PI
+                  | Comment      Comment
+                  | PEReference  PEReference
+                  | WhiteSpace   WhiteSpace
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          DTD ElementDecl                                                                     %%%
@@ -491,18 +527,18 @@ XML qualifying spec
   %%
   %% *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
   %%   ==>
-  %% [K17]  cp           ::=  cpbody ('?' | '*' | '+')? 
-  %% [K18]  cpbody       ::=  Name | choice | seq
+  %% [K19]  cp           ::=  cpbody ('?' | '*' | '+')? 
+  %% [K20]  cpbody       ::=  Name | choice | seq
   %%
   %% *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
   %%   ==>
-  %% [K19]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
+  %% [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%
   %% *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
   %%   ==>
-  %% [K20]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
+  %% [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting]
   %%
@@ -562,11 +598,9 @@ XML qualifying spec
   %%
   %% [53]  AttDef          ::=  S Name S AttType S DefaultDecl
   %%
-  %% [54]  AttType         ::=  StringType | TokenizedType | EnumeratedType 
-  %%
-  %% [55]  StringType      ::=  'CDATA'
-  %%
-  %% [56]  TokenizedType   ::=    'ID'                           [VC: ID]
+  %% *[54]  AttType         ::=  StringType | TokenizedType | EnumeratedType 
+  %% *[55]  StringType      ::=  'CDATA'
+  %% *[56]  TokenizedType   ::=    'ID'                           [VC: ID]
   %%                                                             [VC: One ID per Element Type]
   %%                                                             [VC: ID Attribute Default]
   %%                            | 'IDREF'                        [VC: IDREF]
@@ -575,8 +609,20 @@ XML qualifying spec
   %%                            | 'ENTITIES'                     [VC: Entity Name]
   %%                            | 'NMTOKEN'                      [VC: Name Token]
   %%                            | 'NMTOKENS'                     [VC: Name Token]
-  %%
-  %% [57]  EnumeratedType  ::=  NotationType | Enumeration 
+  %% *[57]  EnumeratedType  ::=  NotationType | Enumeration 
+  %%  ==>
+  %% [K23]  AttType         ::=   'CDATA'
+  %%                            | 'ID'                           [VC: ID]
+  %%                                                             [VC: One ID per Element Type]
+  %%                                                             [VC: ID Attribute Default]
+  %%                            | 'IDREF'                        [VC: IDREF]
+  %%                            | 'IDREFS'                       [VC: IDREF]
+  %%                            | 'ENTITY'                       [VC: Entity Name]
+  %%                            | 'ENTITIES'                     [VC: Entity Name]
+  %%                            | 'NMTOKEN'                      [VC: Name Token]
+  %%                            | 'NMTOKENS'                     [VC: Name Token]
+  %%                            | NotationType 
+  %%                            | Enumeration 
   %%
   %% [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
   %%
@@ -662,7 +708,7 @@ XML qualifying spec
   %%
   %%  [82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
   %%   ==>
-  %% [K21]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %% [K24]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %%
   %%                                                             [VC: Unique Notation Name]
   %%
@@ -670,17 +716,17 @@ XML qualifying spec
   %%
   %% *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %%   ==>
-  %% [K22]  ExternalID     ::=  GenericID
+  %% [K25]  ExternalID     ::=  GenericID
   %%
   %%                                                             [KC: At Least SYSTEM]
   %%
   %% *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral 
   %%   ==>
-  %% [K23]  PublicID       ::=  GenericID
+  %% [K26]  PublicID       ::=  GenericID
   %%
   %%                                                             [KC: Just PUBLIC]
   %%
-  %% [K24]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %% [K27]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -747,27 +793,31 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %% 
   %%  [39]  element  ::=  EmptyElemTag | STag content ETag 
+  %%
   %%                                                             [WFC: Element Type Match] 
   %%                                                             [VC:  Element Valid]
   %%
   %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
+  %%
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K25]  STag          ::=  ElementTag                            
+  %% [K28]  STag          ::=  ElementTag                            
+  %%
   %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %% 
   %% *[41]  Attribute     ::=  Name Eq AttValue 
   %%   ==>
   %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
-  %% 
+  %%
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
   %%                                                             [WFC: No < in Attribute Values]
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
   %%   ==>
-  %% [K26]  ETag          ::=  ElementTag                   
+  %% [K29]  ETag          ::=  ElementTag                   
+  %%
   %%                                                             [KC:  Proper End Tag]
   %%
   %%  Since the chardata in [43] is typically used for indentation, 
@@ -775,13 +825,15 @@ XML qualifying spec
   %%
   %% *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
   %%   ==>
-  %% [K27]  content       ::=  content_item* CharData?
-  %% [K28]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
+  %% [K30]  content       ::=  content_item* CharData?
+  %% [K31]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
   %% 
   %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
+  %%
   %%                                                             [WFC: Unique Att Spec]
   %%   ==>
-  %% [K29]  EmptyElemTag  ::=  ElementTag
+  %% [K32]  EmptyElemTag  ::=  ElementTag
+  %%
   %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
@@ -934,17 +986,17 @@ XML qualifying spec
   %%
   %% *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%   ==>
-  %% [K30]  SystemuLiteral  ::=  QuotedText
+  %% [K33]  SystemuLiteral  ::=  QuotedText
   %%                
   %% *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
   %%   ==>
-  %% [K31]  PubidLiteral    ::=  QuotedText
+  %% [K34]  PubidLiteral    ::=  QuotedText
   %%                
   %%                                                             [KC: Proper Pubid Literal]   
   %%
   %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
-  %% [K32]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %% [K35]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1207,7 +1259,7 @@ XML qualifying spec
   %%    The replacement text of a parameter entity reference in a DeclSep must match the production
   %%    extSubsetDecl.
   %%
-  %%  [WFC: PEs in Internal Subset]                 [29]
+  %%  [WFC: PEs in Internal Subset]                 *[29] [K18] 
   %%
   %%    In the internal DTD subset, parameter-entity references can occur only where markup
   %%    declarations can occur, not within markup declarations. (This does not apply to references
@@ -1222,7 +1274,7 @@ XML qualifying spec
   %% 
   %%    The Name in an element's end-tag must match the element type in the start-tag.
   %% 
-  %%  [WFC: Unique Att Spec]                       *[40] *[44] [K25] [K28] -- unique_attributes?
+  %%  [WFC: Unique Att Spec]                       *[40] *[44] [K28] [K32] -- unique_attributes?
   %%
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %%
@@ -1272,49 +1324,53 @@ XML qualifying spec
   %%    
   %%    exactly one doctypedecl
   %%
-  %%  [KC: Proper Text Decl]                       [K13]  -- text_decl?
+  %%  [KC: Well-Formed External Subset]            [K12]  -- well_formed_external_subset?    
+  %%
+  %%    at most one TextDecl, appearing first
+  %%
+  %%  [KC: Well-Formed Text Decl]                  [K14]  -- well_formed_text_decl?
   %%
   %%    prefix      = '?'
   %%    name        = 'xml'
   %%    attributes  = version? encoding
   %%    postfix     = '?'
   %%
-  %%  [KC: Proper XML Decl]                        [K14] -- xml_decls?
+  %%  [KC: Well-Formed XML Decl]                   [K15] -- xml_decls?
   %%
   %%    prefix     = '?'
   %%    name       = 'xml']
   %%    attributes = version encoding? standalone?
   %%    postfix    = '?'
   %%
-  %%  [KC: At Least SYSTEM]                        [K22] -- external_id?
+  %%  [KC: At Least SYSTEM]                        [K25] -- external_id?
   %%
   %%    some system literal
   %%    (optional public literal)
   %%
-  %%  [KC: Just PUBLIC]                            [K23] -- public_id?
+  %%  [KC: Just PUBLIC]                            [K26] -- public_id?
   %%
   %%    no sytem literal
   %%    public literal
   %%
-  %%  [KC: Proper Start Tag]                       [K25] -- start_tag?
+  %%  [KC: Proper Start Tag]                       [K28] -- start_tag?
   %%
   %%    prefix     = ''
-  %%    name       not = 'xml'
+  %%    name       not 'xml'
   %%    postfix    = ''
   %%
-  %%  [KC: Proper End   Tag]                       [K26] -- end_tag?
+  %%  [KC: Proper End   Tag]                       [K29] -- end_tag?
   %%
   %%    prefix     = '/'
-  %%    name       not = 'xml'
+  %%    name       not 'xml'
   %%    postfix    = ''
   %%
-  %%  [KC: Proper Empty Tag]                       [K29] -- empty_tag?
+  %%  [KC: Proper Empty Tag]                       [K32] -- empty_tag?
   %%
   %%    prefix     = ''
-  %%    name       not = 'xml'
+  %%    name       not 'xml'
   %%    postfix    = '/'
   %%
-  %%  [KC: Proper Pubid Literal]                   [K31] -- pubid_literal?
+  %%  [KC: Proper Pubid Literal]                   [K34] -- pubid_literal?
   %%
   %%    all chars are PubidChar's
   %%
@@ -1443,7 +1499,7 @@ XML qualifying spec
   %%
   %%    The Name must match the declared name of a notation.
   %%
-  %%  [VC: Unique Notation Name]                    [82]
+  %%  [VC: Unique Notation Name]                   *[82] [K24]
   %%  
   %%    Only one notation declaration can declare a given Name.
   %%  

@@ -25,7 +25,7 @@ XML qualifying spec
   %%
   %%  [82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
   %%   ==>
-  %% [K21]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %% [K23]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %%
   %%                                                             [VC: Unique Notation Name]
   %%
@@ -33,17 +33,17 @@ XML qualifying spec
   %%
   %% *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %%   ==>
-  %% [K22]  ExternalID     ::=  GenericID
+  %% [K24]  ExternalID     ::=  GenericID
   %%
   %%                                                             [KC: At Least SYSTEM]
   %%
   %% *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral 
   %%   ==>
-  %% [K23]  PublicID       ::=  GenericID
+  %% [K25]  PublicID       ::=  GenericID
   %%
   %%                                                             [KC: Just PUBLIC]
   %%
-  %% [K24]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %% [K26]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -55,7 +55,7 @@ XML qualifying spec
   %%
   %% ------------------------------------------------------------------------------------------------
 
-  def parse_EntityDecl (start : UChars) : Required EntityDecl =
+  def parse_EntityDecl (start : UChars, allow_pe_refs? : Boolean) : Required EntityDecl =
     %% We begin here just past the '<!ENTITY' in rules [71] and [72], looking for
     %% one of the following:
     %%  S       Name S EntityDef S? '>'
@@ -155,9 +155,16 @@ XML qualifying spec
   %% ------------------------------------------------------------------------------------------------
   %%
   %%  [73]  EntityDef      ::=  EntityValue | (ExternalID NDataDecl?)
-  %% [K22]  ExternalID     ::=  GenericID
+  %% [K24]  ExternalID     ::=  GenericID
   %%
   %%                                                             [KC: At Least SYSTEM]
+  %%
+  %% ------------------------------------------------------------------------------------------------
+  %%
+  %%  [KC: At Least SYSTEM]                        [K24] -- external_id?
+  %%
+  %%    some system literal
+  %%    (optional public literal)
   %%
   %% ------------------------------------------------------------------------------------------------
 
@@ -210,6 +217,11 @@ XML qualifying spec
   %%  [76]  NDataDecl      ::=  S 'NDATA' S Name 
   %%
   %%                                                             [VC: Notation Declared]
+  %% ------------------------------------------------------------------------------------------------
+  %%
+  %%  [VC: Notation Declared]                       [76]
+  %%
+  %%    The Name must match the declared name of a notation.
   %%
   %% ------------------------------------------------------------------------------------------------
 
@@ -231,10 +243,14 @@ XML qualifying spec
 
   %% ------------------------------------------------------------------------------------------------
   %%
-  %% [K21]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %% [K23]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %%
   %%                                                             [VC: Unique Notation Name]
   %%
+  %%  [VC: Unique Notation Name]                   *[82] [K23]
+  %%  
+  %%    Only one notation declaration can declare a given Name.
+  %%  
   %% ------------------------------------------------------------------------------------------------
 
   def parse_NotationDecl (start : UChars) : Required NotationDecl =
@@ -287,7 +303,7 @@ XML qualifying spec
 
   %% ------------------------------------------------------------------------------------------------
   %%
-  %% [K24] GenericID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %% [K26] GenericID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
   %% ------------------------------------------------------------------------------------------------
 
@@ -335,5 +351,22 @@ XML qualifying spec
 				   ("'PUBLIC'", "public ID")],
 		    but         = "something else was seen",
 		    so_we       = "fail immediately"}
+
+  def parse_ExternalID (start : UChars) : Required ExternalID =  % TODO
+    {
+     (id, tail) <- parse_GenericID start;
+     (when (~ (external_id? id))
+      (error {kind        = Syntax,
+	      requirement = "An external ID (whether SYSTEM or PUBLIC) must contain a system literal.",
+	      start       = start,
+	      tail        = tail,
+	      peek        = 10,
+	      we_expected = [("'SYSTEM \"...\"'",         "id with system literal"),
+			     ("'PUBLIC \"...\" \"...\"'", "id with public literal and system literal")],
+	      but         = "the external ID does not contain a system literal",
+	      so_we       = "pretend this is ok"}));
+     return (id, tail)
+    }
+
 
 endspec

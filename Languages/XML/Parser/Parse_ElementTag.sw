@@ -21,11 +21,11 @@ XML qualifying spec
   %% They are all instances of [K4]:
   %%
   %%  [K4]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
-  %%  [K5]  ElementTagPrefix   ::=  Chars - NmToken
+  %%  [K5]  ElementTagPrefix   ::=  ( '?' | '/'  | '' )
   %%  [K6]  ElementName        ::=  NmToken        
   %%  [K7]  ElementAttributes  ::=  List ElementAttribute
   %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
-  %%  [K9]  ElementTagPostfix  ::=  Chars - NmToken
+  %%  [K9]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

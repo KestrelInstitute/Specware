@@ -13,17 +13,17 @@ XML qualifying spec
   %%
   %% *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%   ==>
-  %% [K30]  SystemuLiteral  ::=  QuotedText
+  %% [K32]  SystemuLiteral  ::=  QuotedText
   %%                
   %% *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
   %%   ==>
-  %% [K31]  PubidLiteral    ::=  QuotedText
+  %% [K33]  PubidLiteral    ::=  QuotedText
   %%                
   %%                                                             [KC: Proper Pubid Literal]   
   %%
   %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
-  %% [K32]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %% [K34]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -175,7 +175,7 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%
-  %% [K30]  SystemuLiteral  ::=  QuotedText
+  %% [K32]  SystemuLiteral  ::=  QuotedText
   %%
   %% -------------------------------------------------------------------------------------------------
 
@@ -184,20 +184,53 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%                
-  %% [K31]  PubidLiteral    ::=  QuotedText
+  %% [K33]  PubidLiteral    ::=  QuotedText
   %%                
   %%                                                             [KC: Proper Pubid Literal]   
   %%
   %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
   %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [KC: Proper Pubid Literal]                   [K33] -- pubid_literal?
+  %%
+  %%    all chars are PubidChar's
+  %%
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_PubidLiteral (start : UChars) : Required PubidLiteral =
-    parse_QuotedText start
+    let 
+       def find_bad_char tail =
+	 case tail of
+	   | [] -> None
+	   | char :: tail -> 
+	     if pubid_char? char then
+	       find_bad_char tail
+	     else
+	       Some char
+    in
+    {
+     (qtext, tail) <- parse_QuotedText start;
+     case find_bad_char qtext.text of
+       | None ->
+         return (qtext, tail)
+       | Some bad_char ->
+	 {
+	  (error {kind        = KC,
+		  requirement = "Only PubidChar's are allowed in a PubidLiteral.",
+		  start       = start,
+		  tail        = tail,
+		  peek        = 10,
+		  we_expected = [("([#x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%])*", "pubid chars")],
+		  but         = (describe_char bad_char) ^ " was seen",
+		  so_we       = "pretend that is a pubid character"});
+	  return (qtext, tail)
+	  }}
+     
 
   %% -------------------------------------------------------------------------------------------------
   %%
-  %% [K32]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %% [K34]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
   %% -------------------------------------------------------------------------------------------------
 

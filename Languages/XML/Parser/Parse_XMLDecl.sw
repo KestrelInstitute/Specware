@@ -8,9 +8,9 @@ XML qualifying spec
   %% 
   %% *[23]  XMLDecl       ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%   ==>
-  %% [K14]  XMLDecl       ::=  ElementTag
+  %% [K15]  XMLDecl       ::=  ElementTag
   %%
-  %%                                                             [KC: Proper XML Decl]
+  %%                                                             [KC: Well-Formed XML Decl]
   %%
   %% *[24]  VersionInfo   ::=  S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
   %%
@@ -31,8 +31,8 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %% 
-  %% [K14]  XMLDecl       ::=  ElementTag
-  %%                                                             [KC: Proper XML Decl]
+  %% [K15]  XMLDecl       ::=  ElementTag
+  %%                                                             [KC: Well-Formed XML Decl]
   %%                                                             [VC: Standalone Document Declaration]
   %% 
   %% -------------------------------------------------------------------------------------------------
@@ -51,20 +51,23 @@ XML qualifying spec
 		     but         = "we didn't even get a plausible declaration",
 		     so_we       = "fail immediately"}
        | Some tag ->
-         {
-	  (when (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml"))))
-	   (error {kind        = Syntax,
-		   requirement = "An xml header decl should begin with '<?xml'.",
-		   start       = start,
-		   tail        = tail,
-		   peek        = 50,
-		   we_expected = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
-		   but         = "the observed xml decl begins '<" ^ (string tag.prefix) ^ (string tag.name) ^ "'",
-		   so_we       = "proceed as if the xml decl was well-formed"}));
-	  (saw_version?, saw_encoding?, saw_standalone?) <-
-	  (foldM (fn (saw_version?, saw_encoding?, saw_standalone?) -> fn attribute -> 
+	 if well_formed_xml_decl? tag then
+	   return (tag, tail)
+	 else
+	   {
+	    (when (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml"))))
+	     (error {kind        = Syntax,
+		     requirement = "An xml header decl should begin with '<?xml'.",
+		     start       = start,
+		     tail        = tail,
+		     peek        = 50,
+		     we_expected = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
+		     but         = "the observed xml decl begins '<" ^ (string tag.prefix) ^ (string tag.name) ^ "'",
+		     so_we       = "proceed as if the xml decl was well-formed"}));
+	    (saw_version?, _, _) <-
+	    (foldM (fn (saw_version?, saw_encoding?, saw_standalone?) -> fn attribute -> 
 		    case attribute.name of
-	              | 118 :: 101 :: 114 :: 115 :: 105 :: 111 :: 110 (* 'version' *) :: [] ->
+	              | 118 :: 101 :: 114 :: 115 :: 105 :: 111 :: 110 :: [] (* 'version' *) ->
 		        {
 			 (when saw_version? 
 			  (error {kind        = WFC,
@@ -95,7 +98,7 @@ XML qualifying spec
 				  so_we       = "leave the mis-ordered attributes in the xml header decl"}));
 			 return (true, saw_encoding?, saw_standalone?)
 			 }
-		      | 101 :: 110 :: 99 :: 111 :: 100 :: 105 :: 110 :: 103 (* 'encoding' *) :: [] ->
+		      | 101 :: 110 :: 99 :: 111 :: 100 :: 105 :: 110 :: 103 :: [] (* 'encoding' *) ->
 		        {
 			 (when saw_encoding? 
 			  (error {kind        = WFC,
@@ -117,7 +120,7 @@ XML qualifying spec
 				  so_we       = "leave the mis-ordered attributes in the xml header decl"}));
 			 return (saw_version?, true, saw_standalone?)
 			 }
-		      | 115 :: 116 :: 97 :: 110 :: 100 :: 97 :: 108 :: 111 :: 110 :: 101 (* 'standalone' *) :: [] ->
+		      | 115 :: 116 :: 97 :: 110 :: 100 :: 97 :: 108 :: 111 :: 110 :: 101 :: [] (* 'standalone' *) ->
 			{
 			 (when saw_standalone? 
 			  (error {kind        = WFC,

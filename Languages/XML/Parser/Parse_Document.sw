@@ -25,7 +25,9 @@ XML qualifying spec
   %%  so we can recast [1] [22] [27] as:
   %%
   %%  [K1]  document  ::=  DocItems
+  %%
   %%                                                             [KC: Well-Formed Doc]
+  %%                                                             [KC: Valid Doc]  
   %%
   %%  [K2]  DocItems  ::=  DocItem*
   %%
@@ -192,6 +194,7 @@ XML qualifying spec
 		 tail)
 	}
 
+      %% XML/PI
       | 60 :: 63 (* '<?' *) :: tail -> 
         (case tail of
 

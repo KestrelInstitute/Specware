@@ -17,18 +17,18 @@ XML qualifying spec
   %%
   %% *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
   %%   ==>
-  %% [K17]  cp           ::=  cpbody ('?' | '*' | '+')? 
-  %% [K18]  cpbody       ::=  Name | choice | seq
+  %% [K19]  cp           ::=  cpbody ('?' | '*' | '+')? 
+  %% [K20]  cpbody       ::=  Name | choice | seq
   %%
   %% *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
   %%   ==>
-  %% [K19]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
+  %% [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%
   %% *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
   %%   ==>
-  %% [K20]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
+  %% [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting]
   %%

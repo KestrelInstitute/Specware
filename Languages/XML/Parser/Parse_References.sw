@@ -31,208 +31,108 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
   %%
   %% [67]  Reference    ::=  EntityRef | CharRef
-  %% [68]  EntityRef    ::=  '&' Name ';' 
   %%
-  %%                                                             [WFC: Entity Declared]
-  %%                                                             [VC:  Entity Declared]
-  %%                                                             [WFC: Parsed Entity] 
-  %%                                                             [WFC: No Recursion]
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_Reference (start : UChars) : Required Reference =
+    %%
+    %%  We begin just past the '&' in rules [66] and [68], looking for one of:
+    %%
+    %%    '#x' [0-9a-fA-F]+ ';' 
+    %%    '#'  [0-9]+       ';' 
+    %%    Name              ';' 
+    %%
+    case start of
+      | 35 (* '#' *) :: tail -> parse_CharRef   (start, tail)
+      | _ :: _               -> parse_EntityRef start
+      | _ -> 
+        hard_error {kind        = EOF,
+		    requirement = "Ampersand starts some kind of reference.",
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    we_expected = [("'&#x' [0-9a-fA-F]+ ';'", "Hex character reference"),
+				   ("'&#'  [0-9]+       ';'", "Decimal character reference"), 
+				   ("'&'   Name         ';'", "Entity reference")],
+		    but         = "EOF occurred first",
+		    so_we       = "fail immediately"}
+
+  %% -------------------------------------------------------------------------------------------------
   %%
   %% [66]  CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';' 
   %%
   %%                                                             [WFC: Legal Character]
   %%
   %% -------------------------------------------------------------------------------------------------
-
-  def parse_Reference (start : UChars) : Required Reference =
-    %%  We being just past the '&' in rules [66] and [68], looking for one of:
-    %%
-    %%     '#x' [0-9a-fA-F]+ ';' 
-    %%     '#'  [0-9]+       ';' 
-    %%     Name              ';' 
-    %%
-    case start of
-      | 35 (* '#' *) :: tail ->
-        %% parse CharRef
-        (case tail of
-	   | 120 (* 'x' *) :: tail ->
-             %% hex ...
-	     {
-	      (char, tail) <- parse_hex tail;
-	      (when (~ (char? char))
-	       (error {kind        = Syntax,
-		       requirement = "Not all numbers are legal Unicode characters.",
-		       start       = start,
-		       tail        = tail,
-		       peek        = 0,
-		       we_expected = [("<see doc>", "hex code for legal Unicode character")],
-		       but         = (describe_char char) ^ "is not a legal Unicode character",
-		       so_we       = "pass along the bogus character"}));
-	      case tail of
-		| 59  (* ';' *) :: tail ->
-		  return (Char {style = Hex,
-				char  = char},
-			  tail)
-		| char :: _ ->
-		  {
-		   error {kind        = Syntax,
-			  requirement = "Hex character references must terminate with ';'.",
-			  start       = start,
-			  tail        = tail,
-			  peek        = 10,
-			  we_expected = [("';'", "termination of hex character reference")],
-			  but         = (describe_char char) ^ " occurred first",
-			  so_we       = "pretend interpolated ';' was seen."};
-		   return (Char {style = Hex,
-				 char  = char},
-			   tail)
-		  }
-		    
-		| _ -> 
-		  {
-		   error {kind        = EOF,
-			  requirement = "Hex character references must terminate with ';'.",
-			  start       = start,
-			  tail        = tail,
-			  peek        = 10,
-			  we_expected = [("';'", "termination of hex character reference")],
-			  but         = "EOF occurred first",
-			  so_we       = "pretend interpolated ';' was seen"};
-		   return (Char {style = Hex,
-				 char  = char},
-			   tail)
-		  }}
-	   | _ ->
-	     {
-	      (char, tail) <- parse_decimal tail;
-	      (when (~ (char? char))
-	       (error {kind        = Syntax,
-		       requirement = "Not all numbers are legal Unicode characters.",
-		       start       = start,
-		       tail        = tail,
-		       peek        = 0,
-		       we_expected = [("<see doc>", "decimal code for legal Unicode character")],
-		       but         = (describe_char char) ^ " is not a legal Unicode character",
-		       so_we       = "pretend the bogus character is legal"}));
-	      case tail of
-		| 59  (* ';' *) :: tail ->
-		  return (Char {style = Decimal,
-				char  = char},
-			  tail)
-		| char :: _ -> 
-		  {
-		   error {kind        = Syntax,
-			  requirement = "Character references must terminate with ';'.",
-			  start       = start,
-			  tail        = tail,
-			  peek        = 10,
-			  we_expected = [("';'", "termination of decimal character reference")],
-			  but         = (describe_char char) ^ " occurred first",
-			  so_we       = "pretend interpolated ';' was seen"};
-		   return (Char {style = Hex,
-				 char  = char},
-			   tail)
-		  }
-		| _ ->
-		  {
-		   error {kind        = EOF,
-			  requirement = "Hex character references must terminate with ';'.",
-			  start       = start,
-			  tail        = tail,
-			  peek        = 10,
-			  we_expected = [("';'", "termination of decimal character reference")],
-			  but         = "EOF occurred first",
-			  so_we       = "pretend interpolated ';' was seen"};
-		   return (Char {style = Hex,
-				 char  = char},
-			   tail)
-		  }})
-      | _ ->
-	%% parse EntityRef
-	{
-	 (name, tail) <- parse_Name start;
-	 case tail of
-	   | 59  (* ';' *) :: tail ->
-	     return (Entity {name = name},
-		     tail)
-	   | char :: _ -> 
-	     {
-	      error {kind        = Syntax,
-		     requirement = "Entity references must terminate with ';'.",
-		     start       = start,
-		     tail        = tail,
-		     peek        = 10,
-		     we_expected = [("';'", "termination of entity reference")],
-		     but         = (describe_char char) ^ " occurred first",
-		     so_we       = "pretend interpolated ';' was seen"};
-	      return (Entity {name = name},
-		      tail)
-	     }
-	   | _ -> 
-	     {
-	      error {kind        = EOF,
-		     requirement = "Entity references must terminate with ';'.",
-		     start       = start,
-		     tail        = tail,
-		     peek        = 10,
-		     we_expected = [("';'", "termination of entity reference")],
-		     but         = "EOF occurred first",
-		     so_we       = "pretend interpolated ';' was seen"};
-	      return (Entity {name = name},
-		      tail)
-	     }}
-
-
-
-  %% -------------------------------------------------------------------------------------------------
   %%
-  %% [69]  PEReference  ::=  '%' Name ';' 
+  %%  [WFC: Legal Character]                        [66] -- char?
   %%
-  %%                                                             [VC:  Entity Declared]
-  %%                                                             [WFC: No Recursion]
-  %%                                                             [WFC: In DTD]
+  %%    Characters referred to using character references must match the production for Char.
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_PEReference (start : UChars) : Required PEReference =
+  def parse_CharRef (start : UChars, tail : UChars) : Required Reference =
+    %%
+    %%  We begin just past the '&#' in rule [66] looking for one of:
+    %%
+    %%     'x' [0-9a-fA-F]+ ';' 
+    %%         [0-9]+       ';' 
+    %%
+    case tail of
+      | 120 (* 'x' *) :: tail -> parse_char_ref (start, tail,  parse_hex,     Hex,     "Hex")
+      | _                     -> parse_char_ref (start, start, parse_decimal, Decimal, "Decimal")
+
+  def parse_char_ref (start  : UChars,
+		      tail   : UChars, 
+		      parser : UChars -> Required Nat, 
+		      style  : | Decimal | Hex,
+		      desc   : String)
+    : Required Reference =
     {
-     %% We begin just past the '%", looking for:
-     %%			 
-     %%   Name ';' 
-     %%			 
-     (name, tail) <- parse_Name start;
+     (char, tail) <- parser tail;
+     (when (~ (char? char))
+      (error {kind        = WFC,
+	      requirement = "Characters referred to using character references must match the production for Char.",
+	      start       = start,
+	      tail        = tail,
+	      peek        = 0,
+	      we_expected = [("<see doc>", desc ^ " code for legal XML Char")],
+	      but         = (describe_char char) ^ "is not an XML Char",
+	      so_we       = "pass along the bogus character"}));
      case tail of
        | 59  (* ';' *) :: tail ->
-         return ({name = name},
+         return (Char {style = style,
+		       char  = char},
 		 tail)
-       | char :: _ -> 
+       | char :: _ ->
 	 {
 	  error {kind        = Syntax,
-		 requirement = "PEReferences must with ';'.",
+		 requirement = desc ^ " character references must terminate with ';'.",
 		 start       = start,
 		 tail        = tail,
 		 peek        = 10,
-		 we_expected = [("';'", "termination of PEReference")],
+		 we_expected = [("';'", "termination of " ^ desc ^ "character reference")],
 		 but         = (describe_char char) ^ " occurred first",
-		 so_we       = "pretend interpolated ';' was seen"};
-	  return ({name = name},
+		 so_we       = "pretend interpolated ';' was seen."};
+	  return (Char {style = style,
+			char  = char},
 		  tail)
-	 }
+		  }
        | _ -> 
 	 {
-	  error {kind        = Syntax,
-		 requirement = "PEReferences must with ';'.",
+	  error {kind        = EOF,
+		 requirement = desc ^ " character references must terminate with ';'.",
 		 start       = start,
 		 tail        = tail,
 		 peek        = 10,
-		 we_expected = [("';'", "termination of PEReference")],
+		 we_expected = [("';'", "termination of " ^ desc ^ " character reference")],
 		 but         = "EOF occurred first",
 		 so_we       = "pretend interpolated ';' was seen"};
-	  return ({name = name},
+	  return (Char {style = style,
+			char  = char},
 		  tail)
 	 }}
 
-  %% -------------------------------------------------------------------------------------------------
 
   def parse_decimal (start : UChars) : Required UChar =
    let 
@@ -265,8 +165,6 @@ XML qualifying spec
 	       return (n, tail)
    in
      probe (start, 0)
-
-  %% -------------------------------------------------------------------------------------------------
 
   def parse_hex (start : UChars) : Required UChar =
    let 
@@ -313,6 +211,158 @@ XML qualifying spec
 	       return (n, tail)
    in
      probe (start, 0)
+
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [68]  EntityRef    ::=  '&' Name ';' 
+  %%
+  %%                                                             [WFC: Entity Declared]
+  %%                                                             [VC:  Entity Declared]
+  %%                                                             [WFC: Parsed Entity] 
+  %%                                                             [WFC: No Recursion]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [WFC: Entity Declared]                        [68]
+  %%
+  %%    In a document without any DTD, a document with only an internal DTD subset which contains no 
+  %%    parameter entity references, or a document with "standalone='yes'", for an entity reference 
+  %%    that does not occur within the external subset or a parameter entity, the Name given in the 
+  %%    entity reference must match that in an entity declaration that does not occur within the 
+  %%    external subset or a parameter entity, except that well-formed documents need not declare any
+  %%    of the following entities: amp, lt, gt, apos, quot. The declaration of a general entity must
+  %%    precede any reference to it which appears in a default value in an attribute-list declaration.
+  %%
+  %%  [WFC: Parsed Entity]                          [68]   
+  %%
+  %%    An entity reference must not contain the name of an unparsed entity. Unparsed entities may 
+  %%    be referred to only in attribute values declared to be of type ENTITY or ENTITIES.
+  %%
+  %%  [WFC: No Recursion]                           [68]  [69]
+  %%
+  %%    A parsed entity must not contain a recursive reference to itself, either directly or 
+  %%    indirectly.
+  %%
+  %% -------------------------------------------------------------------------------------------------
+  %%    
+  %%  [VC: Entity Declared]                         [68]  [69]     -- entity_declared?
+  %%  
+  %%    In a document with an external subset or external parameter entities with "standalone='no'", 
+  %%    the Name given in the entity reference must match that in an entity declaration. 
+  %% 
+  %%    For interoperability, valid documents should declare the entities amp, lt, gt, apos, quot, in 
+  %%    the form specified in 4.6 Predefined Entities. The declaration of a parameter entity must 
+  %%    precede any reference to it. Similarly, the declaration of a general entity must precede any 
+  %%    attribute-list declaration containing a default value with a direct or indirect reference to 
+  %%    that general entity.
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_EntityRef (start : UChars) : Required Reference =
+    {
+     (name, tail) <- parse_Name start;
+     case tail of
+       | 59  (* ';' *) :: tail ->
+         return (Entity {name = name},
+		 tail)
+       | char :: _ -> 
+	 {
+	  error {kind        = Syntax,
+		 requirement = "Entity references must terminate with ';'.",
+		 start       = start,
+		 tail        = tail,
+		 peek        = 10,
+		 we_expected = [("';'", "termination of entity reference")],
+		 but         = (describe_char char) ^ " occurred first",
+		 so_we       = "pretend interpolated ';' was seen"};
+	  return (Entity {name = name},
+		  tail)
+	 }
+       | _ -> 
+	 {
+	  error {kind        = EOF,
+		 requirement = "Entity references must terminate with ';'.",
+		 start       = start,
+		 tail        = tail,
+		 peek        = 10,
+		 we_expected = [("';'", "termination of entity reference")],
+		 but         = "EOF occurred first",
+		 so_we       = "pretend interpolated ';' was seen"};
+	  return (Entity {name = name},
+		  tail)
+	 }}
+	 
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %% [69]  PEReference  ::=  '%' Name ';' 
+  %%
+  %%                                                             [VC:  Entity Declared]
+  %%                                                             [WFC: No Recursion]
+  %%                                                             [WFC: In DTD]
+  %%
+  %% -------------------------------------------------------------------------------------------------
+  %%
+  %%  [WFC: No Recursion]                           [68]  [69]
+  %%
+  %%    A parsed entity must not contain a recursive reference to itself, either directly or 
+  %%    indirectly.
+  %%
+  %%  [WFC: In DTD]                                 [69] (really [31] [K12]) -- no_pe_reference?
+  %%
+  %%    Parameter-entity references may only appear in the DTD.  
+  %%    
+  %% -------------------------------------------------------------------------------------------------
+  %%    
+  %%  [VC: Entity Declared]                         [68]  [69]     -- entity_declared?
+  %%  
+  %%    In a document with an external subset or external parameter entities with "standalone='no'", 
+  %%    the Name given in the entity reference must match that in an entity declaration. 
+  %% 
+  %%    For interoperability, valid documents should declare the entities amp, lt, gt, apos, quot, in 
+  %%    the form specified in 4.6 Predefined Entities. The declaration of a parameter entity must 
+  %%    precede any reference to it. Similarly, the declaration of a general entity must precede any 
+  %%    attribute-list declaration containing a default value with a direct or indirect reference to 
+  %%    that general entity.
+  %%
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_PEReference (start : UChars) : Required PEReference =
+    {
+     %% We begin just past the '%", looking for:
+     %%			 
+     %%   Name ';' 
+     %%			 
+     (name, tail) <- parse_Name start;
+     case tail of
+       | 59  (* ';' *) :: tail ->
+         return ({name = name},
+		 tail)
+       | char :: _ -> 
+	 {
+	  error {kind        = Syntax,
+		 requirement = "PEReferences must with ';'.",
+		 start       = start,
+		 tail        = tail,
+		 peek        = 10,
+		 we_expected = [("';'", "termination of PEReference")],
+		 but         = (describe_char char) ^ " occurred first",
+		 so_we       = "pretend interpolated ';' was seen"};
+	  return ({name = name},
+		  tail)
+	 }
+       | _ -> 
+	 {
+	  error {kind        = Syntax,
+		 requirement = "PEReferences must with ';'.",
+		 start       = start,
+		 tail        = tail,
+		 peek        = 10,
+		 we_expected = [("';'", "termination of PEReference")],
+		 but         = "EOF occurred first",
+		 so_we       = "pretend interpolated ';' was seen"};
+	  return ({name = name},
+		  tail)
+	 }}
 
 
 endspec
