@@ -8,8 +8,8 @@ SpecCalc qualifying spec {
 
   % sort Spec.Spec = ASpec Position
 
-  op oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
-  def oscarToC oscSpec base =
+  op oscarToC : Oscar.Spec -> Spec.Spec -> Option String -> Env CSpec
+  def oscarToC oscSpec base opt_name =
     let oscSpec = mapOscarSpec (fn(spc) -> (identifyIntSorts (subtractSpec spc base))) oscSpec in
     %let _ = writeLine("initial envSpec="^(printSpec (specOf oscSpec.modeSpec))) in
     let missing = foldlSpecsOscarSpec (fn(spc,missing) ->
@@ -31,10 +31,24 @@ SpecCalc qualifying spec {
       envSpec <- return (specOf oscSpec.modeSpec);
       %print("envSpec="^(printSpec envSpec));
       cSpec <- generateCSpecFromTransformedSpecEnv envSpec;
+      cSpec <- return {
+		       name                  = case opt_name of 
+						 | Some name -> name
+						 | _ -> "oscar_cgenout",
+		       includes              = cSpec.includes,
+		       defines	             = cSpec.defines,
+		       constDefns            = cSpec.constDefns,
+		       vars                  = cSpec.vars,
+		       fns                   = cSpec.fns,
+		       axioms                = cSpec.axioms,
+		       structUnionTypeDefns  = cSpec.structUnionTypeDefns,
+		       varDefns              = cSpec.varDefns,
+		       fnDefns               = cSpec.fnDefns
+		      };
       cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
       cSpec <- ProcMapEnv.fold delFnDeclForProc cSpec oscSpec.procedures;
       cSpec <- return(CG.postProcessCSpec cSpec);
-      printToFileEnv(cSpec,None);
+      printToFileEnv(cSpec,Some cSpec.name);
       %(fail "success"; % useful during development; forces re-elaboration of any example spec
        return cSpec
       %)
