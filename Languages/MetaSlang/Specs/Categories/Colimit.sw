@@ -30,7 +30,7 @@ spec {
  %%  Note: The arrows in specCat are Morphisms, as opposed to Interpretations, etc.
  %%        Other categories over specs are possible, but this one lays claim to the name specCat.
  op specCat  : () -> Cat.Cat (Spec, Morphism)
- op baseSpec : () -> Spec
+ op getBaseSpec : () -> Spec
 
  %% Context: Diagrams
  sort SpecDiagram        = Cat.Diagram       (Spec, Morphism)
@@ -61,7 +61,7 @@ spec {
  %% ================================================================================
 
  def specColimit dg =
-  let base_spec = baseSpec() in
+  let base_spec = getBaseSpec() in
 
   %% TODO:  Make this smarter about choosing primary names.
   %%        (E.g. prefer names that are in cod spec of a morphism over those in dom spec.)        

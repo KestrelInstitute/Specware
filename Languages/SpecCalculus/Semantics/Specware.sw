@@ -320,11 +320,11 @@ in the Specware environment, is saved.
   op restoreSavedSpecwareState: SpecCalc.Env ()
 \end{spec}
 
-baseSpec is a bit of a hack used by colimit to avoid some bootstrapping 
+getBaseSpec is a bit of a hack used by colimit to avoid some bootstrapping 
 and typing issues.
 
 \begin{spec}
-  def SpecCalc.baseSpec () =
+  def SpecCalc.getBaseSpec () =
     let run : SpecCalc.Env Spec = 
         {restoreSavedSpecwareState;
 	 base_URI               <- pathToRelativeURI "/Library/Base";
