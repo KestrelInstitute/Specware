@@ -1,5 +1,4 @@
-all: pdf 
-xall: pdf htm zip
+all: pdf htm zip
 
 SLM= SpecwareLanguageManual
 SLMDIR= $(SLM).htm-dir
