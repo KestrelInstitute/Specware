@@ -189,7 +189,7 @@
    #+(or mcl cmu sbcl) "/tmp/"))
 
 (defun setTemporaryDirectory ()
-  (setq temporaryDirectory (temporaryDirectory-0)))
+  (setq temporaryDirectory (substitute #\/ #\\ (temporaryDirectory-0))))
 
 (defun run-program (command-str)
   #+(and allegro unix)
