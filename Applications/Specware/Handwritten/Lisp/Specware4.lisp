@@ -69,9 +69,9 @@
   )
 
 (map 'list #'(lambda (file)
-  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-  HandwrittenFiles
-)
+	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+     HandwrittenFiles
+     )
 
 ;; The following are specific to Specware and languages that
 ;; extend Specware. The order is significant: specware-state
@@ -81,31 +81,36 @@
 
 (defvar SpecwareRuntime
   '(
-     ;; Functions that are assumed by the MetaSlang to Lisp compiler
-     "Applications/Handwritten/Lisp/meta-slang-runtime"
+    ;; Functions that are assumed by the MetaSlang to Lisp compiler
+    "Applications/Handwritten/Lisp/meta-slang-runtime"
 
-     ;; Functions for saving/restoring the Specware state to/from the lisp environment
-     "Applications/Specware/Handwritten/Lisp/specware-state"
+    ;; Functions for saving/restoring the Specware state to/from the lisp environment
+    "Applications/Specware/Handwritten/Lisp/specware-state"
 
-     ;; The generated lisp code.  This also initializes the Specware
-     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
-     "Applications/Specware/lisp/Specware4.lisp"
+    ;; The generated lisp code.  This also initializes the Specware
+    ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
+    "Applications/Specware/lisp/Specware4.lisp"
 
-     ;; Toplevel aliases 
-     "Applications/Specware/Handwritten/Lisp/toplevel"
+    ;; Toplevel aliases 
+    "Applications/Specware/Handwritten/Lisp/toplevel"
 
-     ;; Debugging utilities
-     "Applications/Specware/Handwritten/Lisp/debug"
-   )
-)
+    ;; Debugging utilities
+    "Applications/Specware/Handwritten/Lisp/debug"
+    )
+  )
+
+(defpackage "SNARK")
 
 (map 'list #'(lambda (file)
-  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-  SpecwareRuntime
-)
+	       (list 33 file)
+	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+     SpecwareRuntime
+     )
+
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
 			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+
 (make-system (concatenate 'string
 			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
