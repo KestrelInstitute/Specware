@@ -120,11 +120,14 @@ axioms, etc.
         } in
     {
       spec_b <- return (addImport ((spec_term, imported_spec), spec_a)); 
-      (_, sorts_b) <- foldOverQualifierMap mergeSortStep (spec_b, spec_b.sorts) imported_spec.sorts;
+      (_, sorts_b) <- if spec_a = emptySpec then return (spec_b,imported_spec.sorts)
+                       else foldOverQualifierMap mergeSortStep (spec_b, spec_b.sorts) imported_spec.sorts;
       spec_c <- return (setSorts (spec_b, sorts_b));
-      (_, ops_c) <- foldOverQualifierMap mergeOpStep (spec_c, spec_c.ops) imported_spec.ops;
+      (_, ops_c) <- if spec_a = emptySpec then return (spec_c,imported_spec.ops)
+                     else foldOverQualifierMap mergeOpStep (spec_c, spec_c.ops) imported_spec.ops;
       spec_d <- return (setOps (spec_c, ops_c));
-      spec_e <- return (setProperties (spec_d, listUnion (imported_spec.properties,spec_d.properties)));
+      spec_e <- return (setProperties (spec_d, if spec_a = emptySpec then imported_spec.properties
+					        else listUnion (imported_spec.properties,spec_d.properties)));
       return spec_e
     }
 \end{spec}

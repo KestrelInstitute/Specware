@@ -42,21 +42,27 @@ PosSpecToSpec qualifying spec {
   let tsp = (convertPTerm, convertPSort, fn x -> x) in
   { importInfo       = importInfo,
 
-    ops              = mapOpInfos (fn info ->
+    ops              = if localOps = [] then ops
+                       else
+		       mapOpInfos (fn info ->
 				   if someAliasIsLocal? (info.names, localOps) then
 				     info << {dfn = mapTerm tsp info.dfn}
 				   else 
 				     info)
                                   ops,
 
-    sorts            = mapSortInfos (fn info ->
+    sorts            = if localSorts = [] then sorts
+                       else
+		       mapSortInfos (fn info ->
 				     if someAliasIsLocal? (info.names, localSorts) then
 				       info << {dfn = mapSort tsp info.dfn}
 				     else 
 				       info)
                                     sorts,
 
-    properties       = map (fn prop as (pt, qid, tvs, term) -> 
+    properties       = if localProperties = [] then properties
+                       else
+		       map (fn prop as (pt, qid, tvs, term) -> 
 			       (pt, qid, tvs, 
 				if member (qid, localProperties) then
 				  mapTerm tsp term

@@ -85,6 +85,8 @@ TypeChecker qualifying spec
     let 
 
       def elaborate_local_sorts (sorts, env) =
+	if localSorts = [] then sorts
+	else
 	mapSortInfos (fn info ->
 		      if someAliasIsLocal? (info.names, localSorts) then
 			let
@@ -101,7 +103,9 @@ TypeChecker qualifying spec
 			info)
 	             sorts 
 
-      def elaborate_local_ops (ops, env, poly?) = 
+      def elaborate_local_ops (ops, env, poly?) =
+	if localOps = [] then ops
+	else
 	mapOpInfos (fn info ->
 		    if someAliasIsLocal? (info.names, localOps) then
 		      let
@@ -126,6 +130,8 @@ TypeChecker qualifying spec
 	           ops
 
       def elaborate_local_props (props, env) =
+	if localProperties = [] then props
+	else
 	map (fn (prop as (prop_type, name, tvs, fm)) ->
 	     if member (name, localProperties) then 
 	       let elaborated_fm = elaborateTermTop (env, fm, type_bool) in
@@ -136,6 +142,8 @@ TypeChecker qualifying spec
 
 
       def reelaborate_local_ops (ops, env) =
+	if localOps = [] then ops
+	else
 	mapOpInfos (fn info ->
 		    if someAliasIsLocal? (info.names, localOps) then
 		      checkOp (info, env)
