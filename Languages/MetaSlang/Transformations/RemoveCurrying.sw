@@ -222,10 +222,10 @@ RemoveCurrying qualifying spec
 	      in (changed?,mkArrow(mkProduct nDomSrts, nRng)))
     in
     case srt of
-      | Subsort(srt, p, a) -> 
-        let (changed?, ns) = unCurryRec srt in
-	let np = unCurryTerm(p, spc) in
-	(changed?, Subsort(ns, np, a))
+      | Subsort(srt, p, a) ->  unCurryRec srt
+        %let (changed?, ns) = unCurryRec srt in
+	%let np = unCurryTerm(p, spc) in
+	%(changed?, Subsort(ns, p, a))
       | Arrow(dom, rng, _) ->
         unCurryArrowAux(rng,[dom])
       | Product(xs,a) ->
