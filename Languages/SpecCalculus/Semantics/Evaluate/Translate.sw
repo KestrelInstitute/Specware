@@ -105,6 +105,10 @@ Note: The code below does not yet match the documentation above, but should.
 		else 
 		  raise (SpecError (rule_pos, "translate: Ambiguous source sort "^   (printQualifiedId dom_qid)))) 
 	     | _ -> 
+	       if (dom_qid = Boolean_Boolean or dom_qid = unqualified_Boolean) & 
+		  (cod_qid = Boolean_Boolean or cod_qid = unqualified_Boolean) then
+		  return (translation_op_map, translation_sort_map)
+	       else
 		  raise (SpecError (rule_pos, "translate: Unrecognized source sort "^(printQualifiedId dom_qid))))
 
 	| Op ((dom_qid as Qualified(dom_qualifier, dom_id), dom_sort), (cod_qid, cod_sort), cod_aliases) -> 
@@ -261,28 +265,32 @@ Note: The code below does not yet match the documentation above, but should.
 	 case new_qid of
 	   | Qualified ("Boolean", x) ->
 	     (case x of
-		| "~"    -> Fun (Not       , srt, a)
-		| "&"    -> Fun (And       , srt, a)
-		| "or"   -> Fun (Or        , srt, a)
-		| "=>"   -> Fun (Implies   , srt, a)
-		| "<=>"  -> Fun (Iff       , srt, a)
-		| "="    -> Fun (Equals    , srt, a)
-		| "~="   -> Fun (NotEquals , srt, a)
+		| "~"    -> fail ("Problem in translateOp")
+		| "&"    -> fail ("Problem in translateOp")
+		| "&&"   -> fail ("Problem in translateOp")
+		| "or"   -> fail ("Problem in translateOp")
+		| "||"   -> fail ("Problem in translateOp")
+		| "=>"   -> fail ("Problem in translateOp")
+		| "<=>"  -> fail ("Problem in translateOp")
+		| "="    -> fail ("Problem in translateOp")
+		| "~="   -> fail ("Problem in translateOp")
 		| _ -> 
 		  if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a))
 	   | Qualified ("<unqualified>", x) ->
 	     (case x of
-		| "~"    -> Fun (Not       , srt, a)
-		| "&"    -> Fun (And       , srt, a)
-		| "or"   -> Fun (Or        , srt, a)
-		| "=>"   -> Fun (Implies   , srt, a)
-		| "<=>"  -> Fun (Iff       , srt, a)
-		| "="    -> Fun (Equals    , srt, a)
-		| "~="   -> Fun (NotEquals , srt, a)
+		| "~"    -> fail ("Problem in translateOp")
+		| "&"    -> fail ("Problem in translateOp")
+		| "&&"   -> fail ("Problem in translateOp")
+		| "or"   -> fail ("Problem in translateOp")
+		| "||"   -> fail ("Problem in translateOp")
+		| "=>"   -> fail ("Problem in translateOp")
+		| "<=>"  -> fail ("Problem in translateOp")
+		| "="    -> fail ("Problem in translateOp")
+		| "~="   -> fail ("Problem in translateOp")
 		| _ -> 
 		  if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a))
 	   | _ ->
-		if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a))
+	 if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a))
       | _ -> op_term
 
   def translateSort sort_id_map sort_term =
@@ -381,7 +389,7 @@ Note: The code below does not yet match the documentation above, but should.
 				           [] 
 					   old_aliases)
 	      in
-	      if new_aliases = [Qualified(UnQualified,"Boolean")] then
+	      if member (unqualified_Boolean,  new_aliases) or member (Boolean_Boolean,  new_aliases) then
 		return new_sort_map
 	      else
 		{ first_sortinfo  <- return (new_aliases, ty_vars, defs);
