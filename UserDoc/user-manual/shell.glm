@@ -573,7 +573,7 @@ It is also possible to process a multiple-unit file all at once:
 [[
 ||    proc $multi-unit-identifier$
 ]]
-The unit identifier must not contain ``<:#:>'' and the file must
+The unit identifier must not contain ``<"#">'' and the file must
 not contain a unit of the same name as the file (without the directory
 and extension). &Specware; attempts to resolve the unit identifier. If
 it is a relative unit identifier, it is resolved as if it occurred
@@ -647,7 +647,7 @@ the elaboration of a proof unit is only in the side effects.
 <para> Two &SShell; commands facilitate the creation of proof units.
 The first is:
 [[
-||    punits [$unit-identifier$ [$filename$]]
+||    punits [$unit-identifier$ [$filename$] ]
 ]]
 in which the unit identifier must be that of a single spec term.
 Executing the command then generates proof units
@@ -671,7 +671,7 @@ conjectures explicitly present in the spec, but also for all
 non-local conjectures for the spec.
 The user can use the command:
 [[
-||    lpunits [$unit-identifier$ [$filename$]]
+||    lpunits [$unit-identifier$ [$filename$] ]
 ]]
 to generate a proof-unit file with only the ``local'' conjectures.
 </para>
