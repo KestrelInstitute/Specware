@@ -80,7 +80,7 @@ public abstract class XContainerNode extends XNode {
     
     /** returns the child node which has the given ModelNode as its model element; if no such node is found,
      * a copy of the model node's representation exemplar is returned.
-     */
+     
     public XNode getChildNodeWithModelNode(ModelNode mnode) {
         XNode[] cnodes = getChildNodes();
         for(int i=0;i<cnodes.length;i++) {
@@ -91,7 +91,7 @@ public abstract class XContainerNode extends XNode {
         }
         Dbg.pr("XNode "+this+": no child node found with model node "+mnode+".");
         return (XNode) mnode.getReprExemplar().cloneGraphElement();
-    }
+    }*/
     
     /** creates the view of the container, see {@link edu.kestrel.graphs.XContainerBoxNode#createContainerView(edu.kestrel.graphs.XGraphDisplay, com.jgraph.graph.CellMapper)}
      * for an example implementation of this method.  */

@@ -38,6 +38,11 @@ public class XCloneManager {
     /** the cellMap that is computed in the process of cloning/copying */
     protected Map cellMap;
     
+    /** the modelElementMap is set during the copy operation and contains mappings
+     * from original model elements to their copies.
+     */
+    protected Map modelElementMap;
+    
     /** Creates a new instance of XCloneManager */
     public XCloneManager(XGraphDisplay graph, Object[] cells, XGraphDisplay destGraph, boolean readonly, boolean isCopy) {
         this.graph = graph;
@@ -45,6 +50,7 @@ public class XCloneManager {
         this.destGraph = destGraph;
         this.createReadOnlyClone = readonly;
         this.createNewModelElements = isCopy;
+        this.modelElementMap = new Hashtable();
     }
     
     public XCloneManager(XGraphDisplay graph, Object[] cells, XGraphDisplay destGraph) {
@@ -172,12 +178,14 @@ public class XCloneManager {
             Iterator iter = keyset.iterator();
             while (iter.hasNext()) {
                 Object obj = iter.next();
+                /*
                 if (obj instanceof XNode) {
                     Dbg.pr("xnode: "+obj+" -> "+cellMap.get(obj));
                 }
                 else if (obj instanceof XEdge) {
                     Dbg.pr("xedge: "+obj+" -> "+cellMap.get(obj));
                 }
+                 */
             }
         }
         //getXGraphView().updateAllPorts();
@@ -219,7 +227,9 @@ public class XCloneManager {
                     if (allcells[i] instanceof XNode) {
                         ModelNode mnode0 = ((XNode)allcells[i]).getModelNode();
                         //node.getModelNode(destGraph).copyHook(mnode0);
-                        copyModelNode(mnode0, node.getModelNode(destGraph));
+                        ModelNode mnode1 = node.getModelNode(destGraph);
+                        modelElementMap.put(mnode0, mnode1);
+                        copyModelNode(mnode0,mnode1);
                     }
                 }
                 node.getModelNode(destGraph).addRepr(node);
@@ -231,17 +241,32 @@ public class XCloneManager {
                     if (allcells[i] instanceof XEdge) {
                         ModelEdge medge0 = ((XEdge)allcells[i]).getModelEdge();
                         //edge.getModelEdge().copyHook(medge0);
-                        copyModelEdge(medge0,edge.getModelEdge());
+                        ModelEdge medge1 = edge.getModelEdge();
+                        modelElementMap.put(medge0,medge1);
+                        copyModelEdge(medge0,medge1);
                     }
                 }
                 edge.getModelEdge().addRepr(edge);
             }
         }
         XContainerView.enableAddingOfContainedNodes(true);
+        updateModelElements();
         Dbg.pr("cloning cells done.");
         graph.done();
         if (!destGraph.equals(graph)) destGraph.done();
         return cellMap;
+    }
+    
+    /** calls ModelElement.potCopyAction() for each copied model element
+     */
+    protected void updateModelElements() {
+        Iterator iter = modelElementMap.keySet().iterator();
+        while(iter.hasNext()) {
+            ModelElement elem0 = (ModelElement)iter.next();
+            ModelElement elem1 = (ModelElement)modelElementMap.get(elem0);
+            //elem1.postCopyAction(modelElementMap,elem0);
+            modelElementPostCopyAction(modelElementMap,elem0,elem1);
+        }
     }
     
     /** returns the cell map of this clone operation. */
@@ -261,10 +286,10 @@ public class XCloneManager {
         CellView oview = graph.getView().getMapping(original,false);
         CellView view = null;
         if (oview != null) {
-            if (Dbg.isDebug()) {
-                Dbg.pr("attributes of original view:");
-                XGraphDisplay.showAttributes(oview);
-            }
+            //if (Dbg.isDebug()) {
+            //    Dbg.pr("attributes of original view:");
+            //    XGraphDisplay.showAttributes(oview);
+            //}
             Map omap = oview.getAttributes();
             view = destGraph.getView().getMapping(clone,true);
             if (view != null && omap != null) {
@@ -272,12 +297,14 @@ public class XCloneManager {
                 viewMap.put(view,omap);
                 //getView().edit(viewMap);
                 destGraph.getView().edit(viewMap);
-                if (Dbg.isDebug()) {
-                    Dbg.pr("attributes of cloned view:");
-                    XGraphDisplay.showAttributes(view);
-                }
+                //if (Dbg.isDebug()) {
+                //    Dbg.pr("attributes of cloned view:");
+                //    XGraphDisplay.showAttributes(view);
+                //}
                 if ((oview instanceof XContainerView) && (view instanceof XContainerView)) {
                     ((XContainerView)view).setCollapsedBounds(((XContainerView)oview).getCollapsedBounds());
+                }
+                if ((oview instanceof XEdgeView) && (view instanceof XEdgeView)) {
                 }
             }
         }
@@ -332,6 +359,12 @@ public class XCloneManager {
      */
     protected void copyModelEdge(ModelEdge orig, ModelEdge copy) {
         copy.copyHook(orig);
+    }
+    
+    /** called after completion of a copy operation for all copied model elements.
+     */
+    protected void modelElementPostCopyAction(Map modeElementMap, ModelElement orig, ModelElement copy) {
+        copy.postCopyAction(modelElementMap, orig);
     }
     
 }

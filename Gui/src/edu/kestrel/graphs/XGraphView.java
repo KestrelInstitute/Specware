@@ -6,6 +6,7 @@
 
 package edu.kestrel.graphs;
 
+import com.jgraph.event.*;
 import com.jgraph.graph.*;
 import javax.swing.*;
 import java.util.*;
@@ -17,8 +18,9 @@ import java.util.*;
 public class XGraphView extends GraphView {
     
     /** Creates a new instance of XGraphView */
-    public XGraphView(XGraphModel m, CellViewFactory fac) {
-        super(m, fac);
+    public XGraphView(XGraphModel m, XGraphDisplay graph) {
+        super(m,graph);
+        addObserver(graph);
     }
     
     /** calls super.getPorts() and throws away all <code>null</code> port views
@@ -175,18 +177,14 @@ public class XGraphView extends GraphView {
         return res;
     }
     
-    /** deletes all elements in the graph.
-     */
-    
-    public void deleteAll(XGraphDisplay graph, boolean interactive) {
-        if (interactive) {
-            int anws = JOptionPane.showConfirmDialog(graph, "Do you really want to clear this graph display?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
-            if (anws != JOptionPane.YES_OPTION) return;
-        }
-        ((XGraphModel)getModel()).removeAll();
-    }
-    
     public void updateAllPorts() {
         super.updatePorts();
     }
+    
+    
+    public void graphChanged(GraphModelEvent.GraphModelChange event) {
+        super.graphChanged(event);
+        //Dbg.pr("in XGraphView: graphChanged.");
+    }
+    
 }

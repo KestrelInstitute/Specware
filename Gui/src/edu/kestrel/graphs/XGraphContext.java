@@ -29,10 +29,11 @@ public class XGraphContext extends GraphContext {
             cellViews[i] = getMapping(cells[i], true);
             if (cellViews[i] instanceof XGraphElementView) {
                 ((XGraphElementView)cellViews[i]).setTemporaryView(true);
+                Dbg.pr("creating temporary view for "+cells[i]);
             }
-            //if (XGraphDisplay.DEBUG_LEVEL > 0) {
-                //CellView[] cvs = graphView.getMapping(new Object[]{cellViews[i]});
-                //Dbg.pr("cell has "+cvs.length+" views after creating temporary view.");
+            //if (Dbg.isDebug()) {
+            //    CellView[] cvs = graphView.getMapping(new Object[]{cellViews[i]});
+            //    Dbg.pr("cell has "+cvs.length+" views after creating temporary view.");
             //}
         }
         return cellViews;

@@ -155,6 +155,44 @@ public class ModelContainerNode extends ModelNode {
         fireModelChange(new XTreeModelEvent(XTreeModelEvent.NODES_REMOVED,this));
     }
     
+    public ModelNode[] getChildNodes() {
+        ArrayList l = new ArrayList();
+        Enumeration iter0 = children();
+        while(iter0.hasMoreElements()) {
+            Object obj = iter0.nextElement();
+            if (obj instanceof ModelNode) {
+                l.add((ModelNode)obj);
+            }
+        }
+        ModelNode[] res = new ModelNode[l.size()];
+        l.toArray(res);
+        return res;
+    }
+    
+    /** checks whether the remove is ok also for all children.
+     */
+    public boolean removeOk(boolean throwVetoException) throws VetoException {
+        if (!super.removeOk(throwVetoException)) return false;
+        ModelNode[] nodes = getChildNodes();
+        ModelEdge[] edges = getInnerEdges();
+        try {
+            for(int i=0;i<nodes.length;i++) {
+                if (!nodes[i].removeOk(throwVetoException))
+                    return false;
+            }
+            for(int i=0;i<edges.length;i++) {
+                if (!edges[i].removeOk(throwVetoException))
+                    return false;
+            }
+        } catch (VetoException ve) {
+            String msg = "\""+getShortName()+"\" cannot be removed, because it has children that cannot be removed.";
+            throw new VetoException(msg);
+        }
+        return true;
+    }
+    
+    
+    
     /** removes the container node its children and inner edges.
      */
     
@@ -260,7 +298,7 @@ public class ModelContainerNode extends ModelNode {
     }
     /** inserts a freshly created representation element into the given graph.
      *
-     */
+     
     public XGraphElement insertIntoGraph(XGraphDisplay graph, XGraphElement elem, Map elemReprMap) {
         XContainerNode cnode = (XContainerNode) super.insertIntoGraph(graph,elem,elemReprMap);
         //XContainerNode cnode = (XContainerNode)elem;
@@ -285,7 +323,7 @@ public class ModelContainerNode extends ModelNode {
         //cnode.restoreIsExpanded(graph);
         cnode.setSaveViewData(true);
         return cnode;
-    }
+    }*/
     
     /** restores the expanded/collapsed state of the node as last step of an insert intoGraph operation.
      */

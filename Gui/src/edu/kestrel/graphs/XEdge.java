@@ -107,6 +107,15 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
         return name;
     }
     
+    /** returns true, if the edge may be removed, returns false or throws a VetoException otherwise
+     * depending on the throwVetoException parameter.
+     */
+    public boolean removeOk(boolean throwVetoException) throws VetoException {
+        if (getModelEdge().getAccessibleReprCnt(getGraph()) <= 1 && (!getModelEdge().existsWithoutRepresentation())) {
+            return getModelEdge().removeOk(throwVetoException);
+        }
+        return true;
+    }
     
     public void setSavedViewPoints(java.util.List points) {
         savedViewPoints = points;
@@ -191,7 +200,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
         removees.add(this);
         model.remove(removees.toArray());
         if (modelEdge != null)
-            modelEdge.removeRepr(this);
+            modelEdge.removeRepr(getGraph(),this);
         setGraph(null);
     }
     
@@ -309,6 +318,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
         GraphConstants.setVisible(map,true);//viewWasVisible);
         viewMap.put(detachedView,map);
         graph.getView().edit(viewMap);
+        //Dbg.pr3("*** offset to last parent: "+offsetToLastParent);
         //CellView cv = graph.getView().getMapping(lastParent,false);
         //Rectangle lastParentsNewBounds = null;
         //if (cv != null)
@@ -364,7 +374,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
      * @param tgraph the graph display that will contain the cloned element
      */
     public void cloneHook(XCloneManager mgr, Object original) {
-        Dbg.pr2("cloneHook: edge "+this);
+        Dbg.pr3("cloneHook: edge "+this);
         XGraphDisplay tgraph = mgr.getDestGraph();
         Map cellMap = mgr.getCellMap();
         if (detachedView != null) {
@@ -373,14 +383,12 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
                 if (cellMap.containsKey(lastParent)) {
                     Object obj = cellMap.get(lastParent);
                     if (obj instanceof XContainerNode) {
-                        Dbg.pr2("  exchanging lastParent to be "+obj);
+                        Dbg.pr3("  exchanging lastParent to be "+obj);
                         lastParent = (XContainerNode) obj;
                     } else
                         throw new IllegalArgumentException("cloned parent is not a container node?!");
                 }
             }
-            //detachedView = graph.getXGraphUI().cloneCellViews(original,this);
-            //detachedView = graph.getView().getMapping(this,true);
             // reconnect edges
             if (original instanceof Edge) {
                 Edge oedge = (Edge) original;
@@ -405,7 +413,6 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
                         ((Port)trgp).add(this);
                     }
                 }
-                //graph.getModel().edit(cs,null,null,null);
                 tgraph.getModel().edit(cs,null,null,null);
             }
             offsetToLastParent = new Dimension(offsetToLastParent);
@@ -413,13 +420,14 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
             if (detachedView instanceof XEdgeView) {
                 ((XEdgeView)detachedView).setSavedPoints();
             }
-            if (Dbg.isDebug2()) {
-                Dbg.pr2("new attributes of detachedView:");
+            if (Dbg.isDebug(3)) {
+                Dbg.pr3("new attributes of detachedView:");
                 XGraphDisplay.showAttributes(detachedView);
                 XNode srcnode = getSourceNode();
                 XNode trgnode = getTargetNode();
-                Dbg.pr2("*** source node: "+srcnode);
-                Dbg.pr2("*** target node: "+trgnode);
+                Dbg.pr3("*** source node: "+srcnode);
+                Dbg.pr3("*** target node: "+trgnode);
+                Dbg.pr3("*** offset to last parent: "+offsetToLastParent);
             }
         }
         setGraph(mgr.getDestGraph());
@@ -666,13 +674,13 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
         }
         Dbg.pr("}");
     }
-
+    
     
     
     // interface XTextEditorEditable methods:
     
     public String getText() {
-            return getUserObject().toString();
+        return getUserObject().toString();
     }
     
     public String getTitleText() {
@@ -686,6 +694,6 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
     
     public XElementEditor createEditorPane() {
         return new XTextEditor(this);
-    }    
+    }
     
 }

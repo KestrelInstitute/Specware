@@ -56,11 +56,13 @@ public class XGraphDisplayTreeNode extends DefaultMutableTreeNode implements Sto
         Dimension dim = null;
         boolean isIcon = false;
         boolean isClosed = false;
+        boolean isMaximum = false;
         if (f != null) {
             p = f.getLocation();
             dim = f.getSize();
             isIcon = f.isIcon();
             isClosed = false;
+            isMaximum = f.isMaximum();
         } else {
             Rectangle b = graph.getSavedBounds();
             if (b != null) {
@@ -75,8 +77,9 @@ public class XGraphDisplayTreeNode extends DefaultMutableTreeNode implements Sto
         if (dim != null) {
             props.setDimensionProperty("",dim);
         }
-        props.setProperty("IsIcon",String.valueOf(isIcon));
-        props.setProperty("IsClosed",String.valueOf(isClosed));
+        props.setBooleanProperty("IsIcon",isIcon);
+        props.setBooleanProperty("IsClosed",isClosed);
+        props.setBooleanProperty("IsMaximum",isMaximum);
         props.setValueProperty(getUserObject());
         return props;
     }
@@ -88,6 +91,7 @@ public class XGraphDisplayTreeNode extends DefaultMutableTreeNode implements Sto
         Rectangle b = props.getRectangleProperty("");
         boolean isClosed = props.getBooleanProperty("IsClosed");
         boolean isIcon = props.getBooleanProperty("IsIcon");
+        boolean isMaximum = props.getBooleanProperty("IsMaximum");
         Enumeration iter = props.getChildObjectEnumeration("GraphDisplay");
         while(iter.hasMoreElements()) {
             ElementProperties gprops = (ElementProperties)iter.nextElement();
@@ -104,6 +108,11 @@ public class XGraphDisplayTreeNode extends DefaultMutableTreeNode implements Sto
                 if (isIcon) {
                     try {
                         f.setIcon(true);
+                    } catch (Exception e) {}
+                }
+                if (isMaximum) {
+                    try {
+                        f.setMaximum(true);
                     } catch (Exception e) {}
                 }
             }

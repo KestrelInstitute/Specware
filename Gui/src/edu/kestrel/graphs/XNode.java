@@ -113,10 +113,20 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     }
     
     public boolean isEditable() {
-        return isEditable;
+        if (isEditable) {
+            try {
+                return getModelNode().renameOk(false);
+            } catch (VetoException ve) {}
+        }
+        return false;
     }
     
-    
+    /** returns true, if the node may be renamed, returns false or throws a VetoException otherwise
+     * depending on the throwVetoException parameter.
+     */
+    public boolean renameOk(boolean throwVetoException) throws VetoException {
+        return getModelNode().renameOk(throwVetoException);
+    }
     
     public void setID(int n) {
         ID = n;
@@ -191,9 +201,20 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         return mnode;
     }
     
+    /** returns true, if the node may be removed, returns false or throws a VetoException otherwise
+     * depending on the throwVetoException parameter.
+     */
+    public boolean removeOk(boolean throwVetoException) throws VetoException {
+        if (getModelNode().getAccessibleReprCnt(getGraph()) <= 1 && (!getModelNode().existsWithoutRepresentation())) {
+            return getModelNode().removeOk(throwVetoException);
+        }
+        return true;
+    }
+    
+    
     /** returns the XEdge object that is connected to this node and has the given ModelEdge as its model element;
      * if no such edge is found, a copy of the reprExemplar of the given ModelEdge is returned.
-     */
+     
     public XEdge getConnectedEdgeWithModelEdge(ModelEdge medge) {
         XEdge[] edges = getEdges(INCOMING_AND_OUTGOING);
         for(int i=0;i<edges.length;i++) {
@@ -205,7 +226,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         }
         Dbg.pr("XNode "+this+": no connected edge with ModelEdge "+medge+" found.");
         return (XEdge) medge.getReprExemplar().cloneGraphElement();
-    }
+    }*/
     
     /** only used in Debug mode. */
     public void setUserObject() {
@@ -381,7 +402,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         }
         model.remove(removees.toArray());
         if (modelNode != null)
-            modelNode.removeRepr(this);
+            modelNode.removeRepr(getGraph(),this);
         setGraph(null);
     }
     
@@ -585,6 +606,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
             int dx = newx - currentBounds.x;
             int dy = newy - currentBounds.y;
             if (dx != 0 || dy != 0) {
+                Dbg.pr3("translating node "+this+": ("+dx+","+dy+")");
                 graph.getXGraphView().translateViewsInGroup(new CellView[]{thisview},dx,dy);
             }
         }

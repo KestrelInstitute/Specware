@@ -1,5 +1,6 @@
 package edu.kestrel.graphs;
 
+import edu.kestrel.graphs.spec.*;
 import com.jgraph.graph.*;
 import com.jgraph.JGraph;
 import javax.swing.*;
@@ -211,6 +212,10 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
     }
     
     public void edit() {
+        if (node != null) {
+            if (!node.isEditable())
+                return;
+        }
         graph.startEditingAtCell(getCell());
     }
     
@@ -222,12 +227,19 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
     }
     
     public void delete(boolean interactive) {
-        if (interactive) {
-            String s = node.getShortName();
-            int anws = JOptionPane.showConfirmDialog(graph, "Do you want to delete node \""+s+"\" and all edges connected to it?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
-            if (anws != JOptionPane.YES_OPTION) return;
+        try {
+            boolean throwException = false;
+            node.removeOk(throwException);
+            if (interactive) {
+                String s = node.getShortName();
+                int anws = JOptionPane.showConfirmDialog(graph, "Do you want to delete node \""+s+"\" and all edges connected to it?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
+                if (anws != JOptionPane.YES_OPTION) return;
+            }
+            node.remove(graph.getModel());
+        } catch (VetoException ve) {
+            String msg = ve.getMessage();
+            JOptionPane.showMessageDialog(graph,msg);
         }
-        node.remove(graph.getModel());
     }
     
     public XGraphElement getGraphElement() {
@@ -719,6 +731,13 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         return res;
     }
     
+    /** this is called when a change is detected either in this view or in the context of this view.
+     */
+    public void viewChanged(java.util.List changedViews, java.util.List contextViews) {
+    }
+    
+    
+    
     /** contains a list of options, which can be used to customize the view
      **/
     public class ViewOptions implements java.io.Serializable {
@@ -1137,6 +1156,10 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         
         public void paint(Graphics g) {
             //pushLocalScale(g);
+            if (hasTemporaryViewAncestor()) {
+                Dbg.pr("Node "+node+" has temporary view ancestors, it's therefore not painted.");
+                return;
+            }
             ViewOptions vopts = viewOptions;
             if (vopts.useIcon) {
                 paintAsIcon(g);
@@ -1241,6 +1264,8 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
             Dbg.pr("bounds="+bounds);
         }
         
+ 
+        
     }
-    
+ 
 }

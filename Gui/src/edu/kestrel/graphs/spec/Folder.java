@@ -38,6 +38,11 @@ public class Folder extends ModelContainerNode {
         this("");
     }
     
+    public boolean existsWithoutRepresentation() {
+        return true;
+    }
+    
+    
     /** sets a unique value for this folder.
      */
     public void setUniqueValue() {

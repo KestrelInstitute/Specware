@@ -7,6 +7,7 @@
 package edu.kestrel.graphs;
 
 import edu.kestrel.graphs.editor.*;
+import edu.kestrel.graphs.spec.*;
 import com.jgraph.graph.*;
 import com.jgraph.*;
 import javax.swing.undo.*;
@@ -268,11 +269,18 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
     }
     
     public void delete(boolean interactive) {
-        if (interactive) {
-            int anws = JOptionPane.showConfirmDialog(graph, "Do you really want to delete this edge?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
-            if (anws != JOptionPane.YES_OPTION) return;
+        try {
+            boolean throwException = false;
+            edge.removeOk(throwException);
+            if (interactive) {
+                int anws = JOptionPane.showConfirmDialog(graph, "Do you really want to delete this edge?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
+                if (anws != JOptionPane.YES_OPTION) return;
+            }
+            edge.remove(graph.getModel());
+        } catch (VetoException ve) {
+            String msg = ve.getMessage();
+            JOptionPane.showMessageDialog(graph,msg);
         }
-        edge.remove(graph.getModel());
     }
     
     public void edit() {
@@ -420,7 +428,6 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
             //Dbg.pr2("updating edge "+edge+", isDetached()="+edge.isDetached()+"...");
             if (!edge.isDetached()) {
                 moveInnerPointsAfterUpdate();
-                //straightenEdge();
                 setSavedPoints();
             }
             //else System.out.println("skipping moving inner point, because edge is detached.");
@@ -429,6 +436,31 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
             edge.updateViewData(this);
     }
     
+    /** this is called when a change is detected either in this view or in the context of this view.
+     */
+    public void viewChanged(java.util.List changedViews, java.util.List contextViews) {
+        XNodeView srcv = getSourceNodeView();
+        if (srcv == null) {
+            return;
+        }
+        XNodeView trgv = getTargetNodeView();
+        if (trgv == null) {
+            return;
+        }
+        if (changedViews.contains(this)) {
+            //Dbg.pr3("in viewChanged of XEdgeView: nothing to do, this view has been changed itself.");
+            setSavedPoints();
+            return;
+        }
+        boolean b1,b2 = false;
+        if ((b1 = changedViews.contains(srcv)) && (b2 = changedViews.contains(trgv))) {
+            Dbg.pr("**** Edge needs to be updated!");
+            moveInnerPointsAfterUpdate();
+        }
+        if (b1 || b2) {
+            setSavedPoints();
+        }
+    }
     
     /** calls the super method and <code>setSavePoints()</code>.
      */

@@ -1,6 +1,7 @@
 package edu.kestrel.graphs;
 
 import edu.kestrel.graphs.io.*;
+import edu.kestrel.graphs.spec.*;
 import com.jgraph.graph.*;
 import java.util.*;
 import java.awt.*;
@@ -38,7 +39,7 @@ public interface XGraphElement extends Storable {
     public void setUserObject(Object obj);
     
     public Object getUserObject();
-
+    
     /** returns a short representation of the node's name to be used in popup windows etc.*/
     public String getShortName();
     
@@ -56,5 +57,11 @@ public interface XGraphElement extends Storable {
     public XGraphDisplay getGraph();
     
     public void repaintGraph();
+    
+    /** returns true, if the element may be removed, returns false or throws a VetoException otherwise
+     * depending on the throwVetoException parameter.
+     */
+    public boolean removeOk(boolean throwVetoException) throws VetoException;
+    
     
 }

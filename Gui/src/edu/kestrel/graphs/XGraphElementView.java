@@ -23,4 +23,9 @@ public interface XGraphElementView extends CellView {
     
     public Font getFont();
 
+    /** called, if the view has changed, i.e. if the view is either directly changed or affected as part
+     * of the context of a view change. The view object is either part of the changedView list or the contextViews list.
+     */
+    public void viewChanged(java.util.List changedViews, java.util.List contextViews);
+    
 }
