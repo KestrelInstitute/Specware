@@ -165,7 +165,7 @@ to one of many bindings in a file. For example \verb|/a/b#c|.
 \begin{spec}
   op generateFileList : URI -> Env (List (URI * String))
   def generateFileList uri =
-      return [(uri, (uriToPath uri) ^ ".sw")]
+      return [(uri, (uriToFullPath uri) ^ ".sw")]
 \end{spec}
       
 Given a term find a canonical URI for it.
@@ -270,7 +270,7 @@ are not are removed from the environment.
 
   op upToDate?: URI * TimeStamp -> Boolean
   def upToDate?(uri,timeStamp) =
-    let fileName = (uriToPath uri) ^ ".sw" in
+    let fileName = (uriToFullPath uri) ^ ".sw" in
     (fileWriteTime fileName) <= timeStamp
 }
 \end{spec}

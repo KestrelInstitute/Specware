@@ -281,18 +281,18 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
    | (Op(id as Qualified("Boolean","&"),_),srt,_) -> 
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "lisp::and",[mkLTerm(sp,dpn,vars,x),
+           mkLApply(mkLOp "cl::and",[mkLTerm(sp,dpn,vars,x),
                                        mkLTerm(sp,dpn,vars,y)])
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op(id as Qualified("Boolean","or"),_),srt,_) -> 
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "lisp::or",[mkLTerm(sp,dpn,vars,x),mkLTerm(sp,dpn,vars,y)])
+           mkLApply(mkLOp "cl::or",[mkLTerm(sp,dpn,vars,x),mkLTerm(sp,dpn,vars,y)])
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op(id as Qualified("Boolean"," =>"),_),srt,_) -> 
      (case optArgs
         of Some (Record([(_,x),(_,y)],_)) -> 
-           mkLApply(mkLOp "lisp::or",[mkLApply(mkLOp "lisp::not",
+           mkLApply(mkLOp "cl::or",[mkLApply(mkLOp "cl::not",
                                                [mkLTerm(sp,dpn,vars,x)]),
                                       mkLTerm(sp,dpn,vars,y)])
          | None -> mkLOp(printPackageId(id,dpn)))
