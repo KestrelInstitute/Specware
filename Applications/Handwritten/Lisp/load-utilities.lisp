@@ -1,7 +1,7 @@
 #+Lispworks
 (setq *default-package-use-list* '("CL"))
 
-(defpackage :Specware)
+(defpackage :Specware (:use :cl))
 (in-package :Specware)
 
 (terpri) ; purely cosmetic

@@ -67,6 +67,7 @@ exists with a non-zero status and hence the bootstrap fails.
   def runSpecwareUID path = 
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -96,6 +97,7 @@ get a unit from a unit id string.
     in
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -133,6 +135,7 @@ get a unit from a unit id string.
   op  unitIDCurrentInCache? : String -> Boolean
   def unitIDCurrentInCache? path =
     let prog = { resetGlobals;
+		 cleanupGlobalContext;
 		 currentUID <- pathToCanonicalUID ".";
 		 setCurrentUID currentUID;
 		 path_body <- return (removeSWsuffix path);
@@ -153,6 +156,7 @@ compiles the resulting specification to lisp.
   def evaluateUID_fromLisp path = 
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -191,6 +195,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
   def setBase_fromLisp path =
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       unitId <- pathToCanonicalUID ".";
       setCurrentUnitId unitId;
       path_body <- return (removeSWsuffix path);
@@ -218,6 +223,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
   def evaluatePrint_fromLisp path = 
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -255,6 +261,7 @@ The following corresponds to the :show command.
         | Some name -> Some (maybeAddSuffix name ".lisp") in
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -278,6 +285,7 @@ Second argument is interpreted as spec containing options for the code generatio
         | Some name -> Some (maybeAddSuffix name ".lisp") in
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -321,6 +329,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
     %let optspec = getOptSpec optopath in
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -338,6 +347,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
   def evaluateUID_fromJava path = 
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -361,6 +371,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
         | Some name -> Some (maybeAddSuffix name ".c") in
     let prog = {
       resetGlobals;
+      cleanupGlobalContext;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);

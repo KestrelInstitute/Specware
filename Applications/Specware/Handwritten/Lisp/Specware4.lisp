@@ -1,5 +1,5 @@
-(defpackage "SPECWARE")
-(in-package "SPECWARE")
+(defpackage :Specware (:use :cl))	; Most systems default to this but not sbcl until patch loaded below
+(in-package :Specware)
 
 (declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
 ;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
@@ -11,7 +11,7 @@
 #+cmu
 (setq ext:*gc-verbose* nil)
 #+cmu
-(setq extensions:*bytes-consed-between-gcs* 50331648)
+(setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
 #+sbcl
 (setf (sb-ext:bytes-consed-between-gcs) 50331648)
 #+(or cmu sbcl)
@@ -57,6 +57,9 @@
 #+cmu
 (compile-and-load-lisp-file (concatenate 'string
 					 Specware4 "/Applications/Handwritten/Lisp/cmucl-patch"))
+#+sbcl
+(compile-and-load-lisp-file (concatenate 'string
+					 Specware4 "/Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))
@@ -199,10 +202,15 @@
 #+sbcl
 (push  'cl-user::sw-re-init sb-int:*after-save-initializations*)
 
-;;; Set gc parameters
+;;; Set gc parameters at startup
 #+mcl
 (push  #'(lambda () (ccl::set-lisp-heap-gc-threshold (* 16777216 4)))
        ccl:*lisp-startup-functions*)
+
+#+sbcl
+(push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
+	            (setf (sb-ext:bytes-consed-between-gcs) 50331648))
+       sb-int:*after-save-initializations*)
 
 
 ;;; Set temporaryDirectory
