@@ -41,16 +41,7 @@ This is a monadic interpreter for the Spec Calculus.
 
     | DiagMorph fields -> SpecCalc.evaluateDiagMorph fields
 
-    | Qualify (sub_term, qualifier) -> {
-          (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
-          case value of
-            | Spec spc -> {
-                  qualified_spec <- qualifySpec spc qualifier;
-                          return (Spec qualified_spec,timeStamp,depURIs)
-                }
-            | _ -> raise (TypeCheck ((positionOf term),
-                            "qualifying a term that is not a specification"))
-        }
+    | Qualify (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier
 
     | Let (decls, sub_term) -> SpecCalc.evaluateLet decls sub_term
 

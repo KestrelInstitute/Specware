@@ -1,7 +1,5 @@
 \section{Evalution of a term in the Spec Calculus}
 
-Synchronized with r1.6 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSig.sl
-
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
@@ -43,7 +41,7 @@ SpecCalc qualifying spec {
     -> SpecCalc.Term Position
     -> Env ValueInfo
 
-  op qualifySpec : Spec -> Qualifier -> Env Spec
+  op evaluateQualify : SpecCalc.Term Position -> Qualifier -> Env ValueInfo
 
   op evaluateTranslate : SpecCalc.Term Position -> TranslateExpr Position
                         -> Env ValueInfo

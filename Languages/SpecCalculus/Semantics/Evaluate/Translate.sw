@@ -3,7 +3,6 @@
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
-  import ../../../MetaSlang/Specs/StandardSpec
   import Spec/Utilities
 \end{spec}
 
@@ -101,25 +100,25 @@ the same names.
       def translatePattern pat = pat
 
       def translateOpMap ops =
-        let def translateStep (qualifier, id, (aliases, x, y, optional_def),newMap) =
-          let qual as Qualified (new_qualifier,new_id)
-               = translateQualifiedId (opMap,Qualified (qualifier, id)) in
-          let newOpInfo = ([qual], x, y, optional_def) in
-          let oldOpInfo = findAQualifierMap (newMap, new_qualifier, new_id) in {
-              opInfo <- mergeOpInfo newOpInfo oldOpInfo new_qualifier new_id position;
-              return (insertAQualifierMap (newMap, new_qualifier, new_id, opInfo))
-            } in
+        let def translateStep (qualifier, id, (aliases, x, y, optional_def),newMap) = {
+            qual as Qualified (new_qualifier,new_id)
+              <- return (translateQualifiedId (opMap,Qualified (qualifier, id))); 
+            newOpInfo <- return ([qual], x, y, optional_def);
+            oldOpInfo <- return (findAQualifierMap (newMap, new_qualifier, new_id));
+            opInfo <- mergeOpInfo newOpInfo oldOpInfo new_qualifier new_id position;
+            return (insertAQualifierMap (newMap, new_qualifier, new_id, opInfo))
+          } in
         foldOverQualifierMap translateStep emptyAQualifierMap ops 
 
       def translateSortMap sorts =
-        let def translateStep (qualifier, id, (aliases, ty_vars, optional_def), newMap) =
-           let qual as Qualified(new_qualifier,new_id)
-              = translateQualifiedId(sortMap,Qualified (qualifier, id)) in
-           let newSortInfo = ([qual], ty_vars, optional_def) in
-           let oldSortInfo = findAQualifierMap(newMap, new_qualifier, new_id) in {
-               sortInfo <- mergeSortInfo newSortInfo oldSortInfo new_qualifier new_id position;
-               return (insertAQualifierMap (newMap, new_qualifier, new_id, sortInfo))
-             } in
+        let def translateStep (qualifier, id, (aliases, ty_vars, optional_def), newMap) = {
+            qual as Qualified (new_qualifier,new_id)
+              <- return (translateQualifiedId (sortMap,Qualified (qualifier, id)));
+            newSortInfo <- return ([qual], ty_vars, optional_def); 
+            oldSortInfo <- return (findAQualifierMap (newMap, new_qualifier, new_id));
+            sortInfo <- mergeSortInfo newSortInfo oldSortInfo new_qualifier new_id position;
+            return (insertAQualifierMap (newMap, new_qualifier, new_id, sortInfo))
+          } in
         foldOverQualifierMap translateStep emptyAQualifierMap sorts 
 
     in
