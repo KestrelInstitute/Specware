@@ -35,7 +35,7 @@ Unicode qualifying spec
   op non_null?    : UString -> Boolean
   op length       : UString -> Nat
 
-  op ^  infixl 11 : UString * UString -> UString
+  op ^  infixl 25 : UString * UString -> UString
 
   op substring?   : UString * UString -> Boolean
 

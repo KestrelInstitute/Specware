@@ -307,7 +307,7 @@ $\beta$ contraction.
        of Some n -> [term]
         | None -> 
      case term
-       of Apply(M,N,_) -> headForm M @ [N]
+       of Apply(M,N,_) -> headForm M ++ [N]
         | _ -> [term]
      
  def insertFields = 
@@ -600,7 +600,7 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
 		let stack1 = foldr (fn ((M,N),stack) -> insert(M,N,stack)) stack pairs in
 		matchPairs(context,updateSubst(subst,n,N2),stack1)
 	     else [])
-	    @
+	    ++
 % 2. Projection.
 	   (let projs  = projections (context,subst,terms,vars,srt2) 		in
 	   ((flatten
@@ -611,7 +611,7 @@ Handle also $\eta$ rules for $\Pi$, $\Sigma$, and the other sort constructors.
 		      %% of the flexible head.
 		      matchPairs(context,subst,insert(M,N,stack)))
 		 projs)) 
-	    @ 
+	    ++ 
 % 3. Imitation.
 	    (if closedTermV(N,context.boundVars)
 		then 
@@ -721,7 +721,7 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
 	      (case unifySorts(context,subst,srt1,srt)
 		 of None -> []
 		  | Some subst -> [(subst,N)])
-	      @
+	      ++
 	      (case dereferenceSort(subst,srt1)
 		 of Product(fields, _) -> 
 		    flatten 
@@ -799,7 +799,7 @@ N : \sigma_1 \rightarrow \sigma_2 \simeq  \tau
 	    else None
 	  | (RecordPat(fields1, _),RecordPat(fields2, _)) -> 
 	    let pairs1 = ListPair.map (fn ((_,p1),(_,p2))-> (p1,p2)) (fields1,fields2) in
-	    matchPatterns(context,pairs1 @ pairs,S1,S2)
+	    matchPatterns(context,pairs1 ++ pairs,S1,S2)
 	  | (WildPat(srt1, _),WildPat(srt2, _)) -> Some(S1,S2)
 	  | (StringPat(s1, _),StringPat(s2, _)) -> 
 	    if s1 = s2 then matchPatterns(context,pairs,S1,S2) else None
@@ -929,7 +929,7 @@ skolemization transforms a proper matching problem into an inproper one.
 	   all (fn (_,M) -> closedTermV(M,bound)) fields
 	 | Lambda(rules, _) -> 
 	   all (fn (pat,cond,body) -> 
-			let bound = patternVars(pat) @ bound in
+			let bound = patternVars(pat) ++ bound in
 			(closedTermV(cond,bound) & 
 			 closedTermV(body,bound))) rules
 	 | Seq(Ms, _) -> all (fn M -> closedTermV(M,bound)) Ms
@@ -937,17 +937,17 @@ skolemization transforms a proper matching problem into an inproper one.
 	   closedTermV(M1,bound) & 
 	   closedTermV(M2,bound) & 
 	   closedTermV(M3,bound)
-	 | Bind(_,vars,M,_) -> closedTermV(M,vars @ bound)
+	 | Bind(_,vars,M,_) -> closedTermV(M,vars ++ bound)
 	 | Let(decls,M,_) -> 
 	   all (fn (_,M) -> closedTermV(M,bound)) decls 
 	   & 
 	   (let bound = foldr 
-		(fn ((pat,_),bound) -> patternVars pat @ bound) 
+		(fn ((pat,_),bound) -> patternVars pat ++ bound) 
 		bound decls 
 	   in
 	   closedTermV(M,bound) )
 	 | LetRec(decls,M,_) ->
-	   let bound = (map (fn (v,_) -> v) decls) @ bound in
+	   let bound = (map (fn (v,_) -> v) decls) ++ bound in
 	   closedTermV(M,bound) & 
 	   (all (fn (_,M) -> closedTermV(M,bound)) decls) 
 \end{spec}	 

@@ -262,9 +262,10 @@
        ;; List [ 57]:  op ++ infixl 11    : fa(a)   List a * List a -> List a
        ("(++ ( [3] , [4] )) = [3,4]" :swe "(++ ( [3] , [4] )) = [3,4]" :value '(:|Bool| . T))
        ("let A = id ( [3] , [4] ) in (++ A) = [3,4]" :swe "let A = id ( [3] , [4] ) in (++ A) = [3,4]" :value '(:|Bool| . T))
-       ;; List [ 58]:  op @  infixl 11    : fa(a)   List a * List a -> List a
-       ("(@ ( [3] , [4] )) = [3,4]" :swe "(@ ( [3] , [4] )) = [3,4]" :value '(:|Bool| . T))
-       ("let A = id ( [3] , [4] ) in (@ A) = [3,4]" :swe "let A = id ( [3] , [4] ) in (@ A) = [3,4]" :value '(:|Bool| . T))
+;; @ for ++ is obsolete
+;;       ;; List [ 58]:  op @  infixl 11    : fa(a)   List a * List a -> List a
+;;       ("(@ ( [3] , [4] )) = [3,4]" :swe "(@ ( [3] , [4] )) = [3,4]" :value '(:|Bool| . T))
+;;       ("let A = id ( [3] , [4] ) in (@ A) = [3,4]" :swe "let A = id ( [3] , [4] ) in (@ A) = [3,4]" :value '(:|Bool| . T))
        ;; List [ 59]:  op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
        ("(nth ( [3,4,5] , 1 )) = 4" :swe "(nth ( [3,4,5] , 1 )) = 4" :value '(:|Bool| . T))
        ("let A = id ( [3,4,5] , 1 ) in (nth A) = 4" :swe "let A = id ( [3,4,5] , 1 ) in (nth A) = 4" :value '(:|Bool| . T))
@@ -510,4 +511,4 @@
        ("let A = id ( \"10\" , \"1\" ) in (compare A) = Greater" :swe "let A = id ( \"10\" , \"1\" ) in (compare A) = Greater" :value '(:|Bool| . T))
        ("(compare ( \"2\" , \"1\" )) = Greater" :swe "(compare ( \"2\" , \"1\" )) = Greater" :value '(:|Bool| . T))
        ("let A = id ( \"2\" , \"1\" ) in (compare A) = Greater" :swe "let A = id ( \"2\" , \"1\" ) in (compare A) = Greater" :value '(:|Bool| . T))
-       )
+       ("{a=1,b=2} << {a=3,c=4} = {a=3,b=2,c=4}" :swe "{a=1,b=2} << {a=3,c=4} = {a=3,b=2,c=4}" :value '(:|Bool| . T)))

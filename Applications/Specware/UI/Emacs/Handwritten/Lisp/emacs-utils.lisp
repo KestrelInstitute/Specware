@@ -25,8 +25,10 @@ Notes:
 (defun eval-in-emacs (string)
   (when *use-emacs-interface?*
     #+allegro
-    (when lep::*connection*
-      (lep::eval-in-emacs string))
+    (if (find-package :ilisp)
+	(format t "~a" string)
+      (when lep::*connection*
+	(lep::eval-in-emacs string)))
     #-allegro (format t "~a" string)))
 
 

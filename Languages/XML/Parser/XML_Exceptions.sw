@@ -47,7 +47,8 @@ XML qualifying spec
       | [] -> ""
       | exceptions ->
         "\nXML Errors:\n" ^
-	(foldl (fn (exception, result) -> result ^ (print_one_XML_Exception (exception, state.utext))) "" (rev exceptions)) ^
+	(foldl (fn (exception, result) -> result ^ (print_one_XML_Exception (exception, state.utext)))
+	  "" (rev exceptions)) ^
 	"\n\n"
 
   def print_one_XML_Exception (x : XML_Exception, utext : UChars) : String =

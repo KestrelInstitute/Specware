@@ -141,7 +141,7 @@ ListUtilities qualifying spec {
     let def loop l =
       case l of
         | [] -> []
-        | a::l -> (f a) @ loop l
+        | a::l -> (f a) ++ loop l
     in
       loop
 

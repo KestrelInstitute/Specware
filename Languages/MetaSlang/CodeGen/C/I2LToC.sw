@@ -223,7 +223,7 @@ I2LToC qualifying spec {
 	let (stmts1,cexpr1) = commaExprToStmts(ctxt,cexpr) in
 	let stmts2 = conditionalExprToStmts(ctxt,cexpr1,(fn(e)->Return(e))) in
 	%let stmts2 = [Return cexpr1] in
-	let block = (decls,stmts@stmts1@stmts2) in
+	let block = (decls,stmts++stmts1++stmts2) in
 	let block = findBlockForDecls(block) in
 	let stmt = Block block in
 	let fdefn = (fname,vardecls,rtype,stmt) in
@@ -597,7 +597,7 @@ I2LToC qualifying spec {
 	         [Exp(getSetExpr(ctxt,sref,cexpr))]
 	    )
 	in
-	let block = (concat(decls,[decl1]),concat(stmts,selassign @ altassign)) in
+	let block = (concat(decls,[decl1]),concat(stmts,selassign ++ altassign)) in
 	let res = Var decl in
 	(cspc,block,res)
 
@@ -614,7 +614,7 @@ I2LToC qualifying spec {
 		   let (cspc,distype) = c4Type(ctxt,cspc,type0) in
 		   let disdecl = (disname,distype) in
 		   let disdecl0 = (disname,distype,None) in
-		   let block0 = (decls@[disdecl0],stmts) in
+		   let block0 = (decls++[disdecl0],stmts) in
 		   (block0,disdecl,true)
 	in
 	% insert a dummy variable of the same type as the expression to be
@@ -628,7 +628,7 @@ I2LToC qualifying spec {
 	let funname4errmsg = case ctxt.currentFunName of Some id -> "(\"function '"^id^"'\")" | _ -> "(\"unknown function\")" in
 	let errorCaseExpr = Comma(Var("NONEXHAUSTIVEMATCH_ERROR"^funname4errmsg,Int),Var(xname,xtype)) in
 	%let errorCaseExpr = Var(xname,xtype) in
-	let block0 = (decls @ [xdecl], stmts) in
+	let block0 = (decls ++ [xdecl], stmts) in
 	%let def casecond(str) = getSelCompareExp(ctxt,cexpr0,str) in
 	let def casecond(str) = getSelCompareExp(ctxt,Var(disdecl),str) in
 	let (cspc,block,ifexpr) =
@@ -670,7 +670,7 @@ I2LToC qualifying spec {
 		     %let decl1 = (id,idtype,Some valexp) in
 		     let (cspc,block as (decls,stmts),cexpr) = c4Expression(ctxt,cspc,block,expr) in
 		     %let (cspc,block as (decls,stmts),cexpr) = mergeBlockIntoExpr(cspc,block,cexpr) in
-		     (cspc,(decls @ [decl1],stmts),Comma(assign,cexpr))
+		     (cspc,(decls ++ [decl1],stmts),Comma(assign,cexpr))
 		     | _ -> 
 		     % the vlist consists of a list of variable names representing the fields
 		     % of the record that is the argument of the constructor. We will introduce
@@ -691,7 +691,7 @@ I2LToC qualifying spec {
 		     let cexpr = substVarListByFieldRefs(ctxt,vlist,Var(decl),cexpr) in
 		     %let (cspc,block as (decls,stmts),cexpr) = mergeBlockIntoExpr(cspc,block,cexpr) in
 		     %let decls = substVarListByFieldRefsInDecls(vlist,Var(decl),decls) in
-		     (cspc,(decls @ [decl1],stmts),Comma(assign,cexpr))
+		     (cspc,(decls ++ [decl1],stmts),Comma(assign,cexpr))
 		    )
 	      in
 		(cspc,block,IfExp(condition,cexpr,ifexp))
@@ -958,7 +958,7 @@ I2LToC qualifying spec {
        ) (cspc,block,[]) stadcode.steps
     in
     let lblstmt = if stadcode.showLabel then [Label stadcode.label] else [] in
-    (cspc,block,lblstmt @ stepstmts @ [returnstmt])
+    (cspc,block,lblstmt ++ stepstmts ++ [returnstmt])
 
   op c4StepCode: CgContext * CSpec * CBlock * List(StadCode) * CStmt * StepCode -> CSpec * CBlock * CStmts
   def c4StepCode(ctxt,cspc,block,allstads,returnstmt,(rule,gotolbl)) =
@@ -986,11 +986,11 @@ I2LToC qualifying spec {
 	(case optexpr1 of
            | Some expr1 ->
 	     let (cspc,block0 as (decls0,stmts0),cexpr1) = c4LhsExpression(ctxt,cspc,block0,expr1) in
-	     let stmts = stmts0@[Exp(getSetExpr(ctxt,cexpr1,cexpr2))]@gotostmts in
+	     let stmts = stmts0++[Exp(getSetExpr(ctxt,cexpr1,cexpr2))]++gotostmts in
 	     let stmts = if decls0 = [] then stmts else [Block(decls0,stmts)] in
 	     (cspc,block,stmts)
 	   | None -> 
-	     let stmts = stmts0@[Exp cexpr2]@gotostmts in
+	     let stmts = stmts0++[Exp cexpr2]++gotostmts in
 	     let stmts = if decls0 = [] then stmts else [Block(decls0,stmts)] in
 	     (cspc,block,stmts)
 	 )
@@ -1009,8 +1009,8 @@ I2LToC qualifying spec {
 		     let (cspc,block,cexpr) = c4Expression(ctxt,cspc,block,expr) in
 		     (cspc,block,[Exp(getSetExpr(ctxt,Var(iddecl),cexpr))])
 	     in
-	     let block = (decls1 @ [iddecl1],stmts1) in
-	     (cspc,block,updstmts @ assignidstmts)
+	     let block = (decls1 ++ [iddecl1],stmts1) in
+	     (cspc,block,updstmts ++ assignidstmts)
 	    ) (cspc,block,[]) upddecls
 	in
 	let (cspc,block,updatestmts) =
@@ -1019,7 +1019,7 @@ I2LToC qualifying spec {
 			(cspc,block,concat(updatestmts,stmts))
 		       ) (cspc,block,[]) updates
 	in
-	(cspc,block,declstmts@updatestmts@gotostmts)
+	(cspc,block,declstmts++updatestmts++gotostmts)
       | _ -> (cspc,block,gotostmts)
 
   % --------------------------------------------------------------------------------

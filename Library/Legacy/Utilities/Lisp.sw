@@ -22,7 +22,7 @@ Lisp qualifying spec {
   op cdr          : LispCell                  -> LispCell
   op cons         : LispCell * LispCell       -> LispCell
   op list         : List LispCell             -> LispCell
-  op ++ infixl 11 : LispCell * LispCell       -> LispCell
+  op ++ infixl 25 : LispCell * LispCell       -> LispCell
 
   op quote        : LispCell                  -> LispCell
   op apply        : LispCell * List LispCell  -> LispCell

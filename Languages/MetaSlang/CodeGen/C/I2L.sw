@@ -227,7 +227,7 @@ I2L qualifying spec {
   def addInclude(iu,includedImpUnit) =
     {
      name = iu.name,
-     includes = iu.includes @ [includedImpUnit],
+     includes = iu.includes ++ [includedImpUnit],
      decls = iu.decls
     }
 

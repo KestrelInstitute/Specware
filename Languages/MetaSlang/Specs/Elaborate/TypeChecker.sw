@@ -936,7 +936,7 @@ spec
                   | Fun (Iff,       _, _) -> Infix (term, (Right, 12))
                   | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
                   | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
-                  | Fun (RecordMerge,_,_) -> Infix (term, (Left, 11))
+                  | Fun (RecordMerge,_,_) -> Infix (term, (Left, 25))
                   | _ -> Nonfix term
            in 
            let term = resolveInfixes (Some env, tagTermWithInfixInfo, pos, terms) in

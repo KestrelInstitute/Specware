@@ -57,24 +57,28 @@
 spec  
  import A
  import /Library/Base/WFO
- op f : {p : Integer * Integer | p.1 > ~(p.2)} -> Nat
- def f (x, y) = restrict(nonNeg?)(x + y)
- op + infixl 25 : Nat * Nat -> Nat
+ op nonNeg? : Integer.Integer -> Boolean
  op WFO.wfo : fa(a) (a * a -> Boolean) -> Boolean
  def WFO.wfo pred = 
-     fa(p : a -> Boolean) 
-      ex(y : a) p y => ex(y : a) (p y & fa(x : a) (p x => ~(pred(x, y))))
- op nonNeg? : Integer -> Boolean
+   fa(p : a -> Boolean) 
+    ex(y : a) p y => ex(y : a) p y && fa(x : a) (p x => ~(pred(x, y)))
+ op Nat.+ infixl 25 : Nat.Nat * Nat.Nat -> Nat.Nat
+ op f : 
+    {p : Integer.Integer * Integer.Integer | p.1 Integer.> Integer_.-(p.2)} -> 
+       Nat.Nat
+ def f (x, y) = restrict(nonNeg?)(x Integer.+ y)
  conjecture f_Obligation is 
-    fa(X : {p : Integer * Integer | p.1 > ~(p.2)}, n : Integer) 
-
-     ((X.1 > ~(X.2)) & 
-     (nonNeg?((case X
-                 of (x, y) -> restrict(nonNeg?)(x + y))) & 
-     (n = (case X
-             of (x, y) -> restrict(nonNeg?)(x + y))))) => (0 <= n)
+    fa(X : {p : Integer.Integer * Integer.Integer | 
+           p.1 Integer.> Integer_.-(p.2)}) 
+     X.1 Integer.> Integer_.-(X.2) 
+     && nonNeg?((case X
+                   of (x, y) -> restrict(nonNeg?)(x Integer.+ y))) 
+     => Integer.natural?
+          ((case X
+              of (x, y) -> restrict(nonNeg?)(x Integer.+ y)))
  conjecture f_Obligation0 is 
-    fa(y : Integer, x : Integer) (x > ~ y) => nonNeg?(x + y)
+    fa(y : Integer.Integer, x : Integer.Integer) 
+     x Integer.> Integer_.- y => nonNeg?(x Integer.+ y)
 endspec
 
 ")

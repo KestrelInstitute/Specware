@@ -340,9 +340,9 @@ PrettyPrint qualifying spec {
    op markLines : Nat * Lines -> Lines
    def markLines(uniqueId,p) = 
        [(0,lengthString(0,"%(")),
-        (0,lengthString(0,Nat.toString uniqueId))] List.@
+        (0,lengthString(0,Nat.toString uniqueId))] ++
         p
-        List.@
+        ++
         [(0,lengthString(0,"%)"))]
 
     def printInt(i:Integer) = toString i

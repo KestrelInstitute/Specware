@@ -85,7 +85,7 @@ SpecCalc qualifying spec
 	msg ^ (if ref? then "\n referenced from " else "\n found in ") ^ (printAll pos)
 
   op  numberOfTypeErrorsToPrint: Nat
-  def numberOfTypeErrorsToPrint = 20
+  def numberOfTypeErrorsToPrint = 10
 
   op  numberOfExceptionsToPrint: Nat
   def numberOfExceptionsToPrint = 20

@@ -23,8 +23,9 @@ List qualifying spec
   op hd              : fa(a)   {l : List a | ~(null l)} -> a
   op tl              : fa(a)   {l : List a | ~(null l)} -> List a
   op concat          : fa(a)   List a * List a -> List a
-  op ++ infixl 11    : fa(a)   List a * List a -> List a
-  op @  infixl 11    : fa(a)   List a * List a -> List a
+  op ++ infixl 25    : fa(a)   List a * List a -> List a
+%% Deprecated for some time so it should be safe to remove
+%  op @  infixl 11    : fa(a)   List a * List a -> List a
   op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
   op nthTail         : fa(a)   {(l,i) : List a * Nat | i < length l} ->
                                List a
@@ -82,7 +83,7 @@ List qualifying spec
 
   def ++ (s1,s2) = concat(s1,s2)
 
-  def @ (s1,s2) = concat(s1,s2)
+%  def @ (s1,s2) = concat(s1,s2)
 
   def nth(hd::tl,i) =  % list is non-empty because length > i >= 0
     if i = 0 then hd

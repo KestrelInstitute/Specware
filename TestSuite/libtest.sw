@@ -257,12 +257,12 @@ spec
 % List [ 56]:  op concat          : fa(a)   List a * List a -> List a
     tester ("(concat ( [3] , [4] )) = [3,4]", (concat ( [3] , [4] )) = [3,4]);
     tester ("let A = id ( [3] , [4] ) in (concat A) = [3,4]", let A = id ( [3] , [4] ) in (concat A) = [3,4]);
-% List [ 57]:  op ++ infixl 11    : fa(a)   List a * List a -> List a
+% List [ 57]:  op ++ infixl 25    : fa(a)   List a * List a -> List a
     tester ("(++ ( [3] , [4] )) = [3,4]", (++ ( [3] , [4] )) = [3,4]);
     tester ("let A = id ( [3] , [4] ) in (++ A) = [3,4]", let A = id ( [3] , [4] ) in (++ A) = [3,4]);
 % List [ 58]:  op @  infixl 11    : fa(a)   List a * List a -> List a
-    tester ("(@ ( [3] , [4] )) = [3,4]", (@ ( [3] , [4] )) = [3,4]);
-    tester ("let A = id ( [3] , [4] ) in (@ A) = [3,4]", let A = id ( [3] , [4] ) in (@ A) = [3,4]);
+%    tester ("(@ ( [3] , [4] )) = [3,4]", (@ ( [3] , [4] )) = [3,4]);
+%    tester ("let A = id ( [3] , [4] ) in (@ A) = [3,4]", let A = id ( [3] , [4] ) in (@ A) = [3,4]);
 % List [ 59]:  op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
     tester ("(nth ( [3,4,5] , 1 )) = 4", (nth ( [3,4,5] , 1 )) = 4);
     tester ("let A = id ( [3,4,5] , 1 ) in (nth A) = 4", let A = id ( [3,4,5] , 1 ) in (nth A) = 4);

@@ -96,6 +96,6 @@ of the diagram. In a concrete representation, the apparent redundancy
 can be eliminated.
 
 \begin{spec}
-  axiom diagram_domain is fa (dgm) (shape dgm) = dom (functor dgm)
+  axiom diagram_domain is sort fa (O,A) fa (dgm:Diagram(O,A)) (shape dgm) = dom (functor dgm)
 }
 \end{spec}

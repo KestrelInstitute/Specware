@@ -18,8 +18,8 @@ String qualifying spec
   op implode       : List Char -> String
   op length        : String -> Nat
   op concat        : String * String -> String
-  op ++ infixl 11  : String * String -> String
-  op ^  infixl 11  : String * String -> String
+  op ++ infixl 25  : String * String -> String
+  op ^  infixl 25  : String * String -> String
   op map           : (Char -> Char) -> String -> String
   op exists        : (Char -> Boolean) -> String -> Boolean
   op all           : (Char -> Boolean) -> String -> Boolean

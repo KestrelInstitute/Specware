@@ -37,7 +37,7 @@ CUtils qualifying spec {
   def addInclude(cspc,X) =
     {
      name = cspc.name,
-     includes = cspc.includes @ [X],
+     includes = cspc.includes ++ [X],
      defines = cspc.defines,
      constDefns = cspc.constDefns,
      vars = cspc.vars,
@@ -50,7 +50,7 @@ CUtils qualifying spec {
   op addDefine: CSpec * String -> CSpec
   def addDefine(cspc,X) =
     let defines = filter (fn(df) -> df ~= X) cspc.defines in
-    let defines = defines @ [X] in
+    let defines = defines ++ [X] in
     {
      name = cspc.name,
      includes = cspc.includes,
@@ -69,7 +69,7 @@ CUtils qualifying spec {
      name = cspc.name,
      includes = cspc.includes,
      defines = cspc.defines,
-     constDefns = cspc.constDefns @ [X],
+     constDefns = cspc.constDefns ++ [X],
      vars = cspc.vars,
      fns = cspc.fns,
      axioms = cspc.axioms,
@@ -84,7 +84,7 @@ CUtils qualifying spec {
      includes = cspc.includes,
      defines = cspc.defines,
      constDefns = cspc.constDefns,
-     vars = cspc.vars @ [X],
+     vars = cspc.vars ++ [X],
      fns = cspc.fns,
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
@@ -100,7 +100,7 @@ CUtils qualifying spec {
      defines = cspc.defines,
      constDefns = cspc.constDefns,
      vars = cspc.vars,
-     fns = (filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns) @ [X],
+     fns = (filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns) ++ [X],
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
      varDefns = cspc.varDefns,
@@ -133,7 +133,7 @@ CUtils qualifying spec {
      constDefns = cspc.constDefns,
      vars = cspc.vars,
      fns = cspc.fns,
-     axioms = cspc.axioms @ [X],
+     axioms = cspc.axioms ++ [X],
      structUnionTypeDefns = cspc.structUnionTypeDefns,
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
@@ -149,7 +149,7 @@ CUtils qualifying spec {
      vars = cspc.vars,
      fns = cspc.fns,
      axioms = cspc.axioms,
-     structUnionTypeDefns = (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) cspc.structUnionTypeDefns) @ [TypeDefn X],
+     structUnionTypeDefns = (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) cspc.structUnionTypeDefns) ++ [TypeDefn X],
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
     }
@@ -163,7 +163,7 @@ CUtils qualifying spec {
      vars = cspc.vars,
      fns = cspc.fns,
      axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns @ [Struct X],
+     structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Struct X],
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
     }
@@ -177,7 +177,7 @@ CUtils qualifying spec {
      vars = cspc.vars,
      fns = cspc.fns,
      axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns @ [Union X],
+     structUnionTypeDefns = cspc.structUnionTypeDefns ++ [Union X],
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
     }
@@ -192,7 +192,7 @@ CUtils qualifying spec {
      fns = cspc.fns,
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
-     varDefns = cspc.varDefns @ [X],
+     varDefns = cspc.varDefns ++ [X],
      fnDefns = cspc.fnDefns
     }
   op addFnDefnAux: CSpec * FnDefn * Boolean -> CSpec
@@ -212,7 +212,7 @@ CUtils qualifying spec {
      varDefns = cspc.varDefns,
      fnDefns = (if overwrite 
 		  then (filter (fn(fname0,_,_,_) -> fname ~= fname0) cspc.fnDefns)
-		else cspc.fnDefns) @ [fndefn]
+		else cspc.fnDefns) ++ [fndefn]
     }
 
   op addFnDefn: CSpec * FnDefn -> CSpec
@@ -286,7 +286,7 @@ CUtils qualifying spec {
     let structs = getStructDefns(cspc) in
     let xstructs = getStructDefns(xcspc) in
     let (cspc,struct) = 
-      case List.find (fn(sname0,sfields0) -> sfields = sfields0) (structs@xstructs) of
+      case List.find (fn(sname0,sfields0) -> sfields = sfields0) (structs++xstructs) of
         | Some (sname,_) -> (cspc,Struct sname)
         | None -> let cspc = addStructDefn(cspc,(sname,sfields)) in
                   let struct = Struct sname in
@@ -305,7 +305,7 @@ CUtils qualifying spec {
   def addNewUnionDefn(cspc,xcspc,(sname,sfields)) =
     let unions = getUnionDefns(cspc) in
     let xunions = getUnionDefns(xcspc) in
-    case List.find (fn(sname0,sfields0) -> sfields = sfields0) (unions@xunions) of
+    case List.find (fn(sname0,sfields0) -> sfields = sfields0) (unions++xunions) of
       | Some (sname,_) -> (cspc,Union sname)
       | None -> let cspc = addUnionDefn(cspc,(sname,sfields)) in
                 (cspc,Union sname)
@@ -317,7 +317,7 @@ CUtils qualifying spec {
   def addStmts(stmt1,stmts2) =
     case stmt1 of
       | Block(decls,stmts) -> Block(decls,List.concat(stmts,stmts2))
-      | _ -> Block([],[stmt1]@stmts2)
+      | _ -> Block([],[stmt1]++stmts2)
 
   % --------------------------------------------------------------------------------
 
@@ -371,8 +371,8 @@ CUtils qualifying spec {
 	  fns = concatnew (fn((fname1,_,_),(fname2,_,_)) -> fname1=fname2) (cspc1.fns,cspc2.fns),
 	  axioms = concatnewEq(cspc1.axioms,cspc2.axioms),
 	  structUnionTypeDefns = %concatnew(cspc1.structUnionTypeDefns,cspc2.structUnionTypeDefns),
-	  foldr (fn(x as TypeDefn(tname,_),res) -> (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) res) @ [x]
-		 | (x,res) -> res @ [x]) cspc2.structUnionTypeDefns cspc1.structUnionTypeDefns,
+	  foldr (fn(x as TypeDefn(tname,_),res) -> (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) res) ++ [x]
+		 | (x,res) -> res ++ [x]) cspc2.structUnionTypeDefns cspc1.structUnionTypeDefns,
 	  varDefns = concatnewEq(cspc1.varDefns,cspc2.varDefns),
 	  fnDefns = concatnew (fn((fname1,_,_,_),(fname2,_,_,_)) -> fname1=fname2) (cspc1.fnDefns,cspc2.fnDefns)
 	 }
@@ -752,7 +752,7 @@ CUtils qualifying spec {
   def structUnionTypeDefnDepends(cspc,sutdef) =
     case sutdef of
       %| TypeDefn (n,Ptr(_)) -> typeDepends(cspc,Base n,[])
-      | TypeDefn (n,Fn(tys,ty)) -> typeDepends(cspc,Base n,tys@[ty])
+      | TypeDefn (n,Fn(tys,ty)) -> typeDepends(cspc,Base n,tys++[ty])
       | TypeDefn (n,t) -> typeDepends(cspc,Base n,[t])
       | Struct (s,fields) -> typeDepends(cspc,Struct s,List.map (fn(_,t) -> t) fields)
       | Union (u,fields) -> typeDepends(cspc,Union u,List.map (fn(_,t) -> t) fields)
@@ -1170,10 +1170,10 @@ CUtils qualifying spec {
   op usedCTypes: CSpec -> List C.Type
   def usedCTypes(cspc) =
     let types = flatten (map usedCTypesFnDefn cspc.fnDefns) in
-    let types = (flatten (map usedCTypesVarDefn cspc.varDefns))@types in
-    let types = (flatten (map usedCTypesVarDefn cspc.constDefns))@types in
-    let types = (flatten (map usedCTypesVarDecl cspc.vars))@types in
-    let types = (flatten (map usedCTypesFnDecl cspc.fns))@types in
+    let types = (flatten (map usedCTypesVarDefn cspc.varDefns))++types in
+    let types = (flatten (map usedCTypesVarDefn cspc.constDefns))++types in
+    let types = (flatten (map usedCTypesVarDecl cspc.vars))++types in
+    let types = (flatten (map usedCTypesFnDecl cspc.fns))++types in
     let types = mkUnique types in
     %let _ = printCSpecToTerminal(cspc) in
     let types = flatten (map (usedCTypesType cspc []) types) in
@@ -1184,7 +1184,7 @@ CUtils qualifying spec {
   def usedCTypesFnDefn(_,vdecls,rtype,stmt) =
     let types = flatten (map usedCTypesVarDecl vdecls) in
     let types = cons(rtype,types) in
-    let types = (usedCTypeStmt stmt)@types in
+    let types = (usedCTypeStmt stmt)++types in
     types
 
   op usedCTypesFnDecl: FnDecl -> List C.Type
@@ -1205,7 +1205,7 @@ CUtils qualifying spec {
     case stmt of
       | Block(vdecls1,stmts) ->
         let types = flatten (map usedCTypesVarDecl1 vdecls1) in
-	let types = (flatten (map usedCTypeStmt stmts))@types in
+	let types = (flatten (map usedCTypeStmt stmts))++types in
 	types
       | If(_,s1,s2) -> concat(usedCTypeStmt(s1),usedCTypeStmt(s2))
       | While(_,s) -> usedCTypeStmt(s)
@@ -1235,7 +1235,7 @@ CUtils qualifying spec {
 	| _ -> []
     in
     let newtypes = filter (fn(t) -> ~(member(t,visited))) newtypes in
-    let visited = visited @ newtypes in
+    let visited = visited ++ newtypes in
     cons(t,flatten (map (usedCTypesType cspc visited) newtypes))
 
   % --------------------------------------------------------------------------------
@@ -1246,7 +1246,7 @@ CUtils qualifying spec {
       | ([],[]) -> stmt
       | (decls,stmts) ->
         case stmt of
-	  | Block(decls1,stmts1) -> Block(decls@decls1,stmts@stmts1)
-	  | _ -> Block(decls,stmts@[stmt])
+	  | Block(decls1,stmts1) -> Block(decls++decls1,stmts++stmts1)
+	  | _ -> Block(decls,stmts++[stmt])
 
 }

@@ -292,7 +292,7 @@ CPrint qualifying spec {
 %	emptyPretty()
 %    else
       prettysNone ((if asHeader then [string "extern "] else []) 
-		   @ [ppVarDecl (s, t)])
+		   ++ [ppVarDecl (s, t)])
 
   def ppFn (s : String, ts : Types, t : Type) : Pretty =
     (% String.writeLine ("Pretty printing "^s);
@@ -408,19 +408,19 @@ CPrint qualifying spec {
 %      if generateCodeForMotes then
 %	if s.vars = [] then [] else
 %	  [prettysNone [string "#define TOS_FRAME_TYPE KNAL_frame"]]
-%	  @
+%	  ++
 %	  [prettysNone [string "TOS_FRAME_BEGIN(KNAL_frame) {"]]
-%	  @
+%	  ++
 %	  (List.map (ppVar asHeader) s.vars)
-%	  @
+%	  ++
 %	  [prettysNone [string "#ifdef FRAMEVARS"]]
-%	  @
+%	  ++
 %	  [prettysNone [string "FRAMEVARS"]]
-%	  @
+%	  ++
 %	  [prettysNone [string "#endif"]]
-%	  @
+%	  ++
 %	  [prettysNone [string "}"]]
-%	  @
+%	  ++
 %	  [prettysNone [string "TOS_FRAME_END(KNAL_frame);"]]
 %      else
 	List.map (ppVar asHeader) s.vars
