@@ -3,7 +3,7 @@ SpecCalc qualifying spec {
   import Spec/SpecUnion
   import /Languages/Snark/SpecToSnark
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
-  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+%  import /Languages/MetaSlang/CodeGen/CodeGenTransforms
   import UnitId/Utilities                                    % for uidToString, if used...
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
@@ -28,14 +28,14 @@ SpecCalc qualifying spec {
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
      %subSpec <- return(subtractSpec uspc baseSpec);
-     subSpec <- return (subtractSpecProperties(uspc, baseSpec));
-     %noHOSpec <- return(subtractSpecProperties(instantiateHOFns(uspc), baseSpec));
-     %liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
+     %subSpec <- return (subtractSpecProperties(uspc, baseSpec));
+     noHOSpec <- return(subtractSpecProperties(instantiateHOFns(uspc), baseSpec));
+     liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
      %liftedNoHOSpec <- return(lambdaLift(noHOSpec));
      %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
-     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec subSpec);
-     _ <- return (if specwareDebug? then writeString(printSpec(expandedSpec)) else ());
-%    expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
+     %expandedSpec <- return (transformSpecForFirstOrderProver baseSpec subSpec);
+     _ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
+    expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
      %expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
      _ <- return (if specwareDebug? then writeString(printSpec(subtractSpecProperties(expandedSpec, baseSpec))) else ());
      %expandedSpec:Spec <- return(explicateHiddenAxioms(noHOSpec));
@@ -65,7 +65,7 @@ SpecCalc qualifying spec {
 
   op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
 
-  def transformSpecForFirstOrderProver basespc spc =
+(*  def transformSpecForFirstOrderProver basespc spc =
     let spc = addMissingFromBase(basespc,spc,builtinSortOp)
     in
     %let spc = removeCurrying spc in
@@ -86,7 +86,7 @@ SpecCalc qualifying spec {
     let spc = explicateHiddenAxioms(spc) in
     %let _ = writeLine(printSpec spc) in
     spc
-  
+*)  
   op subtractSpecProperties: Spec * Spec -> Spec
   def subtractSpecProperties(spec1, spec2) =
     let spec2PropNames = map (fn (pt, pn, tv, tm) -> pn) spec2.properties in
