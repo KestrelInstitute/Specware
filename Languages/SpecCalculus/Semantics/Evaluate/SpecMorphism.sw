@@ -94,15 +94,7 @@ coherence conditions of the morphism elements.
       def insert (op_map,sort_map) ((sm_rule,position) : (SpecMorphRule Position)) =
         case sm_rule of
           | Sort (dom_qid, cod_qid) ->
-	    let dom_types = findAllSorts (dom_spec, dom_qid) in
-	    {
-	     foldM (fn xxx -> fn dom_type -> 
-		    if forbidden_dom_type? dom_type then
-		      raise (MorphError (position, "Illegal to refine base type " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
-		    else
-		      return xxx)
-	           (return true)
-		   dom_types;
+	    (let dom_types = findAllSorts (dom_spec, dom_qid) in
 	     case dom_types of
                | ((Qualified (found_qualifier, found_id))::_,_,dom_defs)::rs  -> {
                      when (~(rs = []) & ~(found_qualifier = UnQualified))
@@ -116,21 +108,12 @@ coherence conditions of the morphism elements.
                        | _ -> raise (MorphError (position, "Multiple rules for source sort "
                                                            ^ (explicitPrintQualifiedId dom_qid)))
                    }
-               | _ -> raise (MorphError (position, "Unrecognized source sort " ^ (explicitPrintQualifiedId dom_qid)))
-	      }
+               | _ -> raise (MorphError (position, "Unrecognized source sort " ^ (explicitPrintQualifiedId dom_qid))))
 
           | Op ((dom_qid, opt_dom_sort), (cod_qid, opt_cod_sort)) ->
             %% TODO:  Currently ignores sort information.
 	    let dom_ops   = findAllOps   (dom_spec, dom_qid) in
-	    {
-	     foldM (fn xxx -> fn dom_op -> 
-		    if forbidden_dom_op? dom_op then
-		      raise (MorphError (position, "Illegal to refine base op " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
-		    else
-		      return xxx)
-	           (return true)
-		   dom_ops;
-	     case findAllOps (dom_spec, dom_qid) of
+	    (case findAllOps (dom_spec, dom_qid) of
                | ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs -> {
                      when (~(rs = []) & ~(found_qualifier = UnQualified))
                         (raise (MorphError (position, "Ambiguous source op " ^ (explicitPrintQualifiedId dom_qid))));
@@ -143,28 +126,12 @@ coherence conditions of the morphism elements.
                        | _ -> raise (MorphError (position, "Multiple rules for source op "
                                                           ^ (explicitPrintQualifiedId dom_qid)))
                    }
-               | _ -> raise (MorphError (position, "Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid)))
-	      }
+               | _ -> raise (MorphError (position, "Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid))))
 
           | Ambiguous (dom_qid, cod_qid) ->
               let dom_sorts = findAllSorts (dom_spec, dom_qid) in
               let dom_ops   = findAllOps   (dom_spec, dom_qid) in
-	      {
-	       foldM (fn xxx -> fn dom_type -> 
-		      if forbidden_dom_type? dom_type then
-			raise (MorphError (position, "Illegal to refine base type " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
-		      else
-			return xxx)
-	             (return true)
-		     dom_sorts;
-	       foldM (fn xxx -> fn dom_op -> 
-		      if forbidden_dom_op? dom_op then
-			raise (MorphError (position, "Illegal to refine base op " ^ (explicitPrintQualifiedId dom_qid) ^ " to something other than itself."))
-		      else
-			return xxx)
-	             (return true)
-		     dom_ops;
-	       case (dom_sorts, dom_ops) of
+	      (case (dom_sorts, dom_ops) of
                 | ([], []) ->
                     raise (MorphError (position, "Unrecognized source sort/op identifier "
                                                  ^ (explicitPrintQualifiedId dom_qid)))
@@ -196,8 +163,7 @@ coherence conditions of the morphism elements.
                     }
                 | (_, _) ->
                     raise (MorphError (position, "Ambiguous source sort/op identifier "
-                                                 ^ (explicitPrintQualifiedId dom_qid)))
-	      }
+                                                 ^ (explicitPrintQualifiedId dom_qid))))
     in
        foldM insert (emptyAQualifierMap,emptyAQualifierMap) sm_rules
 

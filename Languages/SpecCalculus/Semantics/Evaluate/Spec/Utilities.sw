@@ -393,12 +393,6 @@ SpecCalc qualifying spec
     if ambiguous_sorts = [] & ambiguous_ops = [] then
       return spc
     else
-      let def print_qid (Qualified (qualifier, id)) =
-            if qualifier = UnQualified then
-	      id
-	    else
-	      qualifier^"."^id
-      in
       let sort_msg = 
           case ambiguous_sorts of
 	    | [] -> ""
@@ -922,139 +916,25 @@ def getDeclaredQualifiedIds(spc) =
 
 % --------------------------------------------------------------------------------
 
-  def qualified_forbidden_dom_types = [
-				       mkQualifiedId ("Boolean", "Boolean"),
-				       mkQualifiedId ("Integer", "Integer"),
-				       mkQualifiedId ("Nat",     "Nat"),
-				       mkQualifiedId ("Char",    "Char"),
-				       mkQualifiedId ("String",  "String"),
-				       mkQualifiedId ("List",    "List")
-				      ]
+   op basicQualifier?   : Qualifier   -> Boolean
+   op basicQualifiedId? : QualifiedId -> Boolean
 
-  def qualified_forbidden_dom_ops = [
-				     mkQualifiedId ("Compare", "compare"),
-				     %%
-				     mkQualifiedId ("Boolean", "toString"),
-				     mkQualifiedId ("Boolean", "show"),
-				     mkQualifiedId ("Boolean", "compare"),
-				     %%
-				     mkQualifiedId ("Integer", "~"),
-				     mkQualifiedId ("Integer", "+"),
-				     mkQualifiedId ("Integer", "<="),
-				     mkQualifiedId ("Integer", "-"),
-				     mkQualifiedId ("Integer", "div"),
-				     mkQualifiedId ("Integer", "rem"),
-				     mkQualifiedId ("Integer", "<"),
-				     mkQualifiedId ("Integer", ">"),
-				     mkQualifiedId ("Integer", ">="),
-				     mkQualifiedId ("Integer", "abs"),
-				     mkQualifiedId ("Integer", "min"),
-				     mkQualifiedId ("Integer", "max"),
-				     mkQualifiedId ("Integer", "compare"),
-				     mkQualifiedId ("Integer", "intConvertable"),
-				     mkQualifiedId ("Integer", "toString"),
-				     mkQualifiedId ("Integer", "show"),
-				     mkQualifiedId ("Integer", "intToString"),
-				     mkQualifiedId ("Integer", "stringToInt"),
-				     %%
-				     mkQualifiedId ("Nat",     "succ"),
-				     mkQualifiedId ("Nat",     "pred"),
-				     mkQualifiedId ("Nat",     "zero"),
-				     mkQualifiedId ("Nat",     "one"),
-				     mkQualifiedId ("Nat",     "two"),
-				     mkQualifiedId ("Nat",     "posNat?"),
-				     mkQualifiedId ("Nat",     "toString"),
-				     mkQualifiedId ("Nat",     "show"),
-				     mkQualifiedId ("Nat",     "natToString"),
-				     mkQualifiedId ("Nat",     "stringToNat"),
-				     mkQualifiedId ("Nat",     "natConvertable"),
-				     %%
-				     mkQualifiedId ("Char",    "ord"),
-				     mkQualifiedId ("Char",    "chr"),
-				     mkQualifiedId ("Char",    "isUpperCase"),
-				     mkQualifiedId ("Char",    "isLowerCase"),
-				     mkQualifiedId ("Char",    "isAlpha"),
-				     mkQualifiedId ("Char",    "isNum"),
-				     mkQualifiedId ("Char",    "isAlphaNum"),
-				     mkQualifiedId ("Char",    "isAscii"),
-				     mkQualifiedId ("Char",    "toUpperCase"),
-				     mkQualifiedId ("Char",    "toLowercase"),
-				     mkQualifiedId ("Char",    "compare"),
-				     mkQualifiedId ("Char",    "toString"),
-				     mkQualifiedId ("Char",    "show"),
-				     %%
-				     mkQualifiedId ("String", "explode"),
-				     mkQualifiedId ("String", "implode"),
-				     mkQualifiedId ("String", "length"),
-				     mkQualifiedId ("String", "concat"),
-				     mkQualifiedId ("String", "++"),
-				     mkQualifiedId ("String", "^"),
-				     mkQualifiedId ("String", "map"),
-				     mkQualifiedId ("String", "exists"),
-				     mkQualifiedId ("String", "all"),
-				     mkQualifiedId ("String", "sub"),
-				     mkQualifiedId ("String", "substring"),
-				     mkQualifiedId ("String", "concatList"),
-				     mkQualifiedId ("String", "translate"),
-				     mkQualifiedId ("String", "lt"),
-				     mkQualifiedId ("String", "leq"),
-				     mkQualifiedId ("String", "newline"),
-				     mkQualifiedId ("String", "toScreen"),
-				     mkQualifiedId ("String", "writeLine"),
-				     mkQualifiedId ("String", "compare"),
-				     %%
-				     mkQualifiedId ("List",    "nil"),
-				     mkQualifiedId ("List",    "cons"),
-				     mkQualifiedId ("List",    "insert"),
-				     mkQualifiedId ("List",    "length"),
-				     mkQualifiedId ("List",    "null"),
-				     mkQualifiedId ("List",    "hd"),
-				     mkQualifiedId ("List",    "tl"),
-				     mkQualifiedId ("List",    "concat"),
-				     mkQualifiedId ("List",    "++"),
-				     mkQualifiedId ("List",    "@"),
-				     mkQualifiedId ("List",    "nth"),
-				     mkQualifiedId ("List",    "nthTail"),
-				     mkQualifiedId ("List",    "last"),
-				     mkQualifiedId ("List",    "butlast"),
-				     mkQualifiedId ("List",    "member"),
-				     mkQualifiedId ("List",    "sublist"),
-				     mkQualifiedId ("List",    "map"),
-				     mkQualifiedId ("List",    "mapPartial"),
-				     mkQualifiedId ("List",    "foldl"),
-				     mkQualifiedId ("List",    "foldr"),
-				     mkQualifiedId ("List",    "exists"),
-				     mkQualifiedId ("List",    "all"),
-				     mkQualifiedId ("List",    "filter"),
-				     mkQualifiedId ("List",    "diff"),
-				     mkQualifiedId ("List",    "rev"),
-				     mkQualifiedId ("List",    "rev2"),
-				     mkQualifiedId ("List",    "flatten"),
-				     mkQualifiedId ("List",    "find"),
-				     mkQualifiedId ("List",    "tabulate"),
-				     mkQualifiedId ("List",    "firstUpTo"),
-				     mkQualifiedId ("List",    "splitList"),
-				     mkQualifiedId ("List",    "locationOf"),
-				     mkQualifiedId ("List",    "compare"),
-				     mkQualifiedId ("List",    "app"),
-				     mkQualifiedId ("List",    "show")
-				    ]
+  def basicQualifiers = [
+			 "Boolean", 
+			 "Char", 
+			 "Compare",
+			 "Functions",  % TODO: add Relations ?
+			 "Integer", 
+			 "Integer_",   % special hack
+			 "List",
+			 "Nat",
+			 "Option",
+			 "String",
+			 "WFO"         % TODO: basic ??
+			]
 
-  def forbidden_dom_types = foldl (fn (Qualified(_,id), qids) -> [mkUnQualifiedId id] ++ qids)
-                                  qualified_forbidden_dom_types
-                                  qualified_forbidden_dom_types
-
-  def forbidden_dom_ops = foldl (fn (Qualified(_,id), qids) -> [mkUnQualifiedId id] ++ qids)
-                                qualified_forbidden_dom_ops
-                                qualified_forbidden_dom_ops
-
-   op forbidden_dom_type? : SortInfo -> Boolean
-  def forbidden_dom_type? (aliases,_,_) =
-    exists (fn nm -> member (nm, forbidden_dom_types)) aliases 
-
-   op forbidden_dom_op? : OpInfo -> Boolean
-  def forbidden_dom_op? (aliases,_,_,_) =
-    exists (fn nm -> member (nm, forbidden_dom_ops)) aliases 
+  def basicQualifier?              q     = member (q, basicQualifiers)
+  def basicQualifiedId? (Qualified(q,_)) = member (q, basicQualifiers)
 
 endspec
 
