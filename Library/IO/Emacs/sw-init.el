@@ -100,7 +100,8 @@
 ;; generate-application, then typically, there will not be an ACL image file.
 
   (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
-  (setq sw:common-lisp-image-file (or sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE")))
+  (setq sw:common-lisp-image-file (or (and (boundp 'sw:common-lisp-image-file) sw:common-lisp-image-file)
+				      (getenv "LISP_HEAP_IMAGE")))
   (setq sw:common-lisp-image-arguments
     (if *windows-system-p* '("+cn") nil))
 
