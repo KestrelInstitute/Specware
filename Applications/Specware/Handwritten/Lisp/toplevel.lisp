@@ -2,6 +2,7 @@
 (defpackage :SpecCalc)
 (defpackage :MSInterpreter)
 (defpackage :JGen)
+(defpackage :IO-SPEC)
 ;; Toplevel Lisp aliases for Specware
 
 (defparameter *sw-help-strings*
@@ -457,6 +458,94 @@
 			(if (not (null (second r-args)))
 			    (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
+
+(defvar *last-make-args* nil)
+(defvar *make-verbose* t)
+#+allegro
+(top-level:alias
+ ("make" :case-sensitive) (&optional &rest args)
+ (let* (
+	(make-args (if (not (null args)) args *last-make-args*))
+	(make-command (if (sys:getenv "SPECWARE4_MAKE") (sys:getenv "SPECWARE4_MAKE") "make"))
+	(user-make-file-suffix ".mk")
+	(sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
+	(make-file "swcmake.mk")
+	)
+   (if make-args
+       (progn
+	 (setq *last-make-args* make-args)
+	 (let* (
+		(unitid (first make-args))
+		(cbase (cl:substitute #\_  #\# (string unitid)))
+		(user-make-file (concatenate 'string cbase user-make-file-suffix))
+		)
+	   (progn
+	     (when *make-verbose* 
+	       (progn
+		 (format t ";; using make command:                     ~S~%" make-command)
+		 (format t ";; looking for user-defined make rules in: ~S~%" user-make-file)
+		 (format t ";; using system make rules in:             ~S~%" sw-make-file)
+		 (format t ";; generating local make rules in:         ~S~%" make-file)
+		 (format t ";; invoking :swc ~A ~A~%" unitid cbase))
+	       )
+	     (funcall 'swc-internal (string unitid) (string cbase))
+	     (when *make-verbose* (format t ";; generating makefile ~S~%" make-file))
+	     (with-open-file (mf make-file :direction :output :if-exists :new-version)
+	       (progn
+		 (format mf "# ----------------------------------------------~%")
+		 (format mf "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT~%")
+		 (format mf "# ----------------------------------------------~%")
+		 (format mf "~%~%")
+		 (format mf "# the toplevel target extracted from the :make command line:~%")
+		 (format mf "all : ~A~%" cbase)
+		 (format mf "~%")
+		 (format mf "# include the predefined make rules and variable:~%")
+		 (format mf "include ~A~%" sw-make-file)
+		 (when (IO-SPEC::fileExistsAndReadable user-make-file)
+		   (progn
+		     (format mf "~%")
+		     (format mf "# include the existing user make file:~%")
+		     (format mf "include ~A~%" user-make-file))
+		   )
+		 (format mf "~%")
+		 (format mf "# dependencies and rule for main target:~%")
+		 (format mf "~A: ~A.o $(USERFILES) $(GCLIB)~%" cbase cbase)
+		 (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(USERFILES) $(LOADLIBES) $(LDLIBS)~%" cbase cbase)
+		 ))
+	     (when *make-verbose* (format t ";; invoking make~%"))
+	     (run-cmd (format nil "~A -f ~A" make-command make-file))
+	     ))
+	 )
+     (progn
+       (format t "Usage:~%")
+       (format t "  :make <unit-id>~%")
+       (format t "Description:~%")
+       (format t "  invokes \":swc <unit-id> <cfile-basename>\", where <cfile-basename> ~%")
+       (format t "  is the <unit-id> with #'s replaced by underscores. For example~%")
+       (format t "     :make foo#bar~%")
+       (format t "  invokes :swc foo#bar foo_bar.~%")
+       (format t "  \":make\" also generates a Makefile and calls the shell command \"make foo_bar\",~%")
+       (format t "  which generates the executable \"foo_bar\" from the generated C-files~%")
+       (format t "  \"foo_bar.[ch]\". The make-program that is used can be changed by setting the~%")
+       (format t "  \"SPECWARE4_MAKE\" environment variable.~%")
+       ))))
+
+#-allegro
+(defun run-cmd (cmd)
+  #+cmu  (ext:run-program cmd :output t)
+  #+mcl  (ccl:run-program cmd :output t)
+  #+sbcl (sb-ext:run-program cmd :output t)
+  #-(or cmu mcl sbcl) (format t "Not yet implemented")
+  (values))
+
+#+allegro
+(defun run-cmd (cmd)
+  #+UNIX      (shell (format nil "~A" cmd))
+  #+MSWINDOWS (shell (format nil "~A" cmd))
+  #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
+  )
+  
+;; --------------------------------------------------------------------------------
 
 (defun swpf-internal (x &optional y &key (obligations t))
   (Specware::evaluateProofGen_fromLisp-3 (subst-home (string x))
