@@ -18,12 +18,12 @@ LISP_MODE=$1
 echo "========================================================================"
 echo "  Compile_Lisp:  Use $LISP_MODE to Compile ${APP_NAME}.lisp and related files."
 echo " "
-echo "  Compile_Lisp:  APP_NAME  = [$APP_NAME]"
-echo "  Compile_Lisp:  APP_DIR   = [$APP_DIR]"
-echo "  Compile_Lisp:  GEN_DIR   = [$GEN_DIR]"
-echo "  Compile_Lisp:  SWPATH    = [$SWPATH]"
+echo "  Compile_Lisp:  APP_NAME          = [$APP_NAME]"
+echo "  Compile_Lisp:  APP_DIR           = [$APP_DIR]"
+echo "  Compile_Lisp:  GEN_DIR           = [$GEN_DIR]"
+echo "  Compile_Lisp:  SWPATH            = [$SWPATH]"
 echo "  "
-echo "  Compile_Lisp:  LISP_MODE = [$LISP_MODE]"
+echo "  Compile_Lisp:  LISP_MODE         = [$LISP_MODE]"
 echo "  "
 echo "  Compile_Lisp:  MAIN_COMPILE_FILE = [$MAIN_COMPILE_FILE]"
 echo "  Compile_Lisp:  MAIN_BUILD_FILE   = [$MAIN_BUILD_FILE]"
@@ -35,6 +35,7 @@ HERE=`/usr/bin/dirname $0`
 # bash convention for . means the file is processed inline (as if copied here)
 . $HERE/Verify_Lisp ${LISP_MODE}
 
+echo " "
 if [ -f ${GEN_DIR}/${APP_NAME}.lisp ]; then
   ls -sltr ${GEN_DIR}/${APP_NAME}.lisp 2>&1
 else

@@ -16,16 +16,16 @@ fi
 LISP_MODE=$1
 
 echo "========================================================================"
-echo "  Build_Dev: Load various .fasl files to build ${APP_NAME} image,"
-echo "             a development version of ${APP_NAME} that needs a native $LISP_MODE to run."
+echo "  Build_Dev:  Load various .fasl files to build ${APP_NAME} image,"
+echo "              a development version of ${APP_NAME} that needs a native $LISP_MODE to run."
 echo " "
-echo "  Build_Dev:  APP_NAME  = [$APP_NAME]"
-echo "  Build_Dev:  APP_DIR   = [$APP_DIR]"
-echo "  Build_Dev:  GEN_DIR   = [$GEN_DIR]"
-echo "  Build_Dev:  BIN_DIR   = [$BIN_DIR]"
-echo "  Build_Dev:  SWPATH    = [$SWPATH]"
-echo "  "
-echo "  Build_Dev:  LISP_MODE = [$LISP_MODE]"
+echo "  Build_Dev:  APP_NAME          = [$APP_NAME]"
+echo "  Build_Dev:  APP_DIR           = [$APP_DIR]"
+echo "  Build_Dev:  GEN_DIR           = [$GEN_DIR]"
+echo "  Build_Dev:  BIN_DIR           = [$BIN_DIR]"
+echo "  Build_Dev:  SWPATH            = [$SWPATH]"
+echo "  "        
+echo "  Build_Dev:  LISP_MODE         = [$LISP_MODE]"
 echo "  "
 echo "  Build_Dev:  MAIN_COMPILE_FILE = [$MAIN_COMPILE_FILE]"
 echo "  Build_Dev:  MAIN_BUILD_FILE   = [$MAIN_BUILD_FILE]"
@@ -69,6 +69,7 @@ EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
 MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
 SAVE_IMAGE="$SPECWARE4"/Applications/Handwritten/Lisp/save-image
 
+echo " "
 cd $APP_DIR
 $BATCH_LISP <<-XXXX
 	#+Allegro (format t "Allegro version%") 

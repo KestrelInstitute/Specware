@@ -15,7 +15,7 @@ fi
 
 LISP_MODE=$1
 
-echo "================================================================================"
+echo "  ================================================================================"
 echo "  Generate_Lisp:  Use $LISP_MODE version of Specware to generate ${APP_NAME}.lisp from ${APP_NAME}GenLisp.sw"
 echo " "
 echo "  Generate_Lisp:  APP_NAME  = [$APP_NAME]"
@@ -32,14 +32,14 @@ HERE=`/usr/bin/dirname $0`
 # bash convention for . means the file is processed inline (as if copied here)
 . $HERE/Verify_Lisp ${LISP_MODE}
 
-echo "========================================================================"
-echo "Save Backups: "
+echo "  ========================================================================"
+echo "  Save Backups: "
+
+echo " "
+ls -sltr ${GEN_DIR}/${APP_NAME}*.lisp 
 echo " "
 
-ls -sltr ${GEN_DIR}/${APP_NAME}*.lisp 
-
 if [ -f ${GEN_DIR}/${APP_NAME}.lisp ]; then
-  echo " "
   echo "  Generate_Lisp:  Saving previous ${APP_NAME}.lisp file ..."
   echo "  Generate_Lisp:  cp -p -f ${GEN_DIR}/${APP_NAME}.lisp ${GEN_DIR}/${APP_NAME}-save.lisp"
   cp -p -f ${GEN_DIR}/${APP_NAME}.lisp ${GEN_DIR}/${APP_NAME}-save.lisp
@@ -47,7 +47,8 @@ else
   echo "  Generate_Lisp:  No previous ${APP_NAME}.lisp to save."
 fi
 
-echo "  Generate_Lisp: compiling ${APP_NAME} using $BATCH_SPECWARE"
+echo "  Generate_Lisp:  compiling ${APP_NAME} using $BATCH_SPECWARE"
+echo " "
 
 # If the redirection operator is <<-, then all leading tab characters are
 # stripped from input lines and  the  line  containing  delimiter.   This
@@ -73,7 +74,7 @@ $BATCH_SPECWARE <<-XXXX
 XXXX
 RC=$?
 
-echo "  ------------------------------------------------------------------------"
+echo "------------------------------------------------------------------------"
 echo "  Generate_Lisp:  New Status: "
 echo " "
 /bin/ls -sltr ${GEN_DIR}/${APP_NAME}*.lisp
