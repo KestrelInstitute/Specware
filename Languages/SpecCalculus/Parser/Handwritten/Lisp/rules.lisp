@@ -531,8 +531,8 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :SORT-PRODUCT ()
-  (:tuple (1 :TIGHT-SORT) "*" (2 (:repeat+ :TIGHT-SORT "*")))
-  (make-sort-product (cons 1 2) ':left-lcb ':right-lcb))
+  (:tuple (1 (:repeat++ :TIGHT-SORT "*")))
+  (make-sort-product 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-INSTANTIATION
@@ -552,8 +552,8 @@ If we want the precedence to be optional:
    ))
 
 (define-sw-parser-rule :PROPER-SORT-LIST ()
-  (:tuple "(" (1 :SORT) "," (2 (:repeat+ :SORT ",")) ")")
-  (cons 1 2))
+  (:tuple "(" (1 (:repeat++ :SORT ",")) ")")
+  1)
 
 ;;; ------------------------------------------------------------------------
 
@@ -777,7 +777,7 @@ If we want the precedence to be optional:
   (make-rec-let-binding 1 2 3 4 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETER-SEQUENCE ()
-  (:repeat+ :FORMAL-PARAMETER ""))
+  (:repeat* :FORMAL-PARAMETER ""))
 
 ;;; ------------------------------------------------------------------------
 ;;;   IF-EXPRESSION
@@ -954,8 +954,7 @@ If we want the precedence to be optional:
   :documentation "Tuple")
 
 (define-sw-parser-rule :TUPLE-DISPLAY-BODY ()
-  (:tuple (1 :EXPRESSION) "," (2 (:repeat+ :EXPRESSION ",")))
-  (cons 1 2))
+  (:repeat++ :EXPRESSION ","))
 
 ;;; ------------------------------------------------------------------------
 ;;;  RECORD-DISPLAY
@@ -1188,19 +1187,18 @@ If we want the precedence to be optional:
    ))
 
 (define-sw-parser-rule :LIST-PATTERN ()
-  (:anyof
-   ((:tuple "[" "]")                                             (make-list-pattern       ()             ':left-lcb ':right-lcb) :documentation "The empty list")
-   ((:tuple "[" (1 (:repeat+ :PATTERN ",")) "]")                 (make-list-pattern       1              ':left-lcb ':right-lcb) :documentation "List enumeration")
-   ))
+  (:tuple "[" (1 (:repeat* :PATTERN ",")) "]")                   (make-list-pattern       1              ':left-lcb ':right-lcb) :documentation "List enumeration")
 
 (define-sw-parser-rule :TUPLE-PATTERN ()
   (:anyof
-   ((:tuple "(" ")")                                              (make-tuple-pattern     ()          ':left-lcb ':right-lcb) :documentation "Empty tuple pattern")
-   ((:tuple "(" (1 :PATTERN) "," (2 (:repeat+ :PATTERN ",")) ")") (make-tuple-pattern     (cons 1 2)  ':left-lcb ':right-lcb) :documentation "Tuple pattern")
+   ((:tuple "(" ")")                                              (make-tuple-pattern     ()             ':left-lcb ':right-lcb) :documentation "Empty tuple pattern")
+   ;; "(X)" not allowed, just "()" "(X,Y)" "(X,Y,Z)" ...
+   ((:tuple "(" (1 (:repeat++ :PATTERN ",")) ")")                 (make-tuple-pattern     1              ':left-lcb ':right-lcb) :documentation "Tuple pattern")
    ))
 
 (define-sw-parser-rule :RECORD-PATTERN ()
-  (:tuple "{" (1 (:repeat+ :FIELD-PATTERN ",")) "}")              (make-record-pattern    1           ':left-lcb ':right-lcb) :documentation "Record pattern")
+  ;; allow "( }" ??
+  (:tuple "{" (1 (:repeat+ :FIELD-PATTERN ",")) "}")              (make-record-pattern    1              ':left-lcb ':right-lcb) :documentation "Record pattern")
 
 (define-sw-parser-rule :FIELD-PATTERN ()
   (:tuple (1 :FIELD-NAME) (:optional (:tuple "=" (2 :PATTERN))))
