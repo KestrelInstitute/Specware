@@ -49,8 +49,7 @@ SpecCalc qualifying spec
               | ([],   []) -> 
                 %%  Old: Sort S    [or S(A,B), etc.]
                 %%  New: Sort S    [or S(X,Y), etc.]
-                let _ = toScreen ("\nSort "^(printAliases new_sort_names)^" has been redeclared.\n") in
-                return (old_spec.sorts)
+                raise (SpecError (position, "Sort "^(printAliases new_sort_names)^" has been redeclared."))
               | ([],   _::_) ->
                 %%  Old: Sort S (A,B)
                 %%  New: Sort S (X,Y) = T(X,Y)
@@ -71,12 +70,10 @@ SpecCalc qualifying spec
               | (old_def::_,  new_def::_) ->
                 %%  Old: Sort S (X,Y) = T(X,Y)
                 %%  New: Sort S (A,B) = W(A,B)
-		let _ = toScreen ("\nSort "^(printAliases new_sort_names)^" has been redefined"
+                raise (SpecError (position, 
+                                  "Sort "^(printAliases new_sort_names)^" has been redefined"
                                   ^ "\n from "^ (printSortScheme old_def)
-                                  ^ "\n   to "^ (printSortScheme new_def)
-				  ^ "\n")
-		in
-		  return (old_spec.sorts))
+                                  ^ "\n   to "^ (printSortScheme new_def))))
          else
            %%  Old: Sort S (a)
            %%  New: Sort S (x,y)
@@ -149,12 +146,10 @@ SpecCalc qualifying spec
           | ([],   []) -> 
             %%  Old: op foo : ...
             %%  New: op foo : ...
-	    let _ = toScreen ("Operator "^(printAliases new_op_names)^" has been redeclared"
+            raise (SpecError (position, 
+                              "Operator "^(printAliases new_op_names)^" has been redeclared"
                               ^ "\n from " ^ (printSortScheme old_sort_scheme)
-                              ^ "\n   to " ^ (printSortScheme new_sort_scheme)) 
-	    in
-	    return (old_spec.ops)
-
+                              ^ "\n   to " ^ (printSortScheme new_sort_scheme)))
           | ([],   _::_) -> 
             %%  Old: op foo 
             %%  New: def foo 
@@ -206,21 +201,17 @@ SpecCalc qualifying spec
               %%  Old: op foo : S
               %%  Old: def foo ...
               %%  New: op foo : T
-	      let _ = toScreen ("\nOperator "^(printAliases new_op_names)^" has been redeclared"
+              raise (SpecError (position, 
+                                "Operator "^(printAliases new_op_names)^" has been redeclared"
                                 ^ "\n from type " ^ (printSortScheme old_sort_scheme)
-                                ^ "\n   to type " ^ (printSortScheme new_sort_scheme)
-			      ^ "\n") 
-	      in
-		return (old_spec.ops)
-	  | (old_def::_, new_def::_) -> 
+                                ^ "\n   to type " ^ (printSortScheme new_sort_scheme)))
+          | (old_def::_, new_def::_) -> 
             %%  def foo ...
             %%  def foo ...
-            let _ = toScreen ("\nOperator "^(printAliases new_op_names)^" has been redefined"
+            raise (SpecError (position, 
+                              "Operator "^(printAliases new_op_names)^" has been redefined"
                               ^ "\n from " ^ (printTermScheme old_def)
-                              ^ "\n   to " ^ (printTermScheme new_def)
-			      ^ "\n") 
-	    in
-	    return (old_spec.ops))
+                              ^ "\n   to " ^ (printTermScheme new_def))))
      | _ ->
        %%  We're trying to merge information with two or more previously declared sorts.
        raise (SpecError (position, 
