@@ -91,10 +91,24 @@ op mkAbstractEqualityMethDecl: Id -> MethDecl
 def mkAbstractEqualityMethDecl(id) =
   (([Abstract], Some (tt("Boolean")), "equal", [(false, tt(id) ,(mkEqarg(id), 0))], []), None)
 
-op mkProdConstrDecl: List (Id * Sort) -> ConstrDecl
-def mkProdConstrDecl(fields) =
+op mkProdConstrDecl: Id * List (Id * Sort) -> ConstrDecl
+def mkProdConstrDecl(id, fields) =
   let formParams = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFormalParam(fieldProj, fieldType)) fields in
-  ([], "", formParams, [], [])
+  let fieldProjs = map (fn(fieldProj, _) -> fieldProj) fields in
+  let prodConstrBody = mkProdConstBody(fieldProjs) in
+  ([], id, formParams, [], prodConstrBody)
+
+op mkProdConstBody: List Id -> Block
+def mkProdConstBody(fieldProjs) =
+  case fieldProjs of
+    | [] -> []
+    | fldProj::fieldProjs ->
+    let thisName = (["this"], fldProj) in
+    let argName = ([], fldProj) in
+    let assn = mkNameAssn(thisName, argName) in
+    let restAssns = mkProdConstBody(fieldProjs) in
+    cons(assn, restAssns)
+
 
 op mkProductTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl -> ClsDecl
 def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
@@ -103,26 +117,41 @@ def mkProductTypeClsDecl(id, prodFieldsDecl, prodMethodDecls, constrDecls) =
 op productToClsDecl: Id * Sort -> ClsDecl
 def productToClsDecl(id, srtDef as Product (fields, _)) =
   let prodFieldsDecls = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFldDecl(fieldProj, fieldType)) fields in
-  let equalityConjunction = mkEqualityBodyForFields(fields) in
+  let equalityConjunction = mkEqualityBodyForProduct(fields) in
   let prodMethodDecl =  mkEqualityMethDecl(id) in
   let prodMethodBody = [Stmt (Return (Some (equalityConjunction)))] in
   let prodMethodDecl = setMethodBody(prodMethodDecl, prodMethodBody) in
-  let prodConstrDecls = [mkProdConstrDecl(fields)] in
+  let prodConstrDecls = [mkProdConstrDecl(id, fields)] in
   mkProductTypeClsDecl(id, prodFieldsDecls, [prodMethodDecl], prodConstrDecls)
 
-op mkEqualityBodyForFields: List Field -> Java.Expr
-def mkEqualityBodyForFields(fields) =
+op mkEqualityBodyForProduct: List Field -> Java.Expr
+def mkEqualityBodyForProduct(fields) =
   case fields of
     | [] -> CondExp (Un (Prim (Bool true)), None)
     | [(id, srt)] -> 
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg"], id))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg2"],id))), None) in
        mkJavaEq(e1, e2, srtId(srt))
     | (id, srt)::fields ->
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg"], id))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg2"], id))), None) in
        let eq = mkJavaEq(e1, e2, srtId(srt)) in
-       let restEq = mkEqualityBodyForFields(fields) in
+       let restEq = mkEqualityBodyForProduct(fields) in
+       CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None)
+
+op mkEqualityBodyForSum: List Field -> Java.Expr
+def mkEqualityBodyForSum(fields) =
+  case fields of
+    | [] -> CondExp (Un (Prim (Bool true)), None)
+    | [(id, srt)] -> 
+       let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg"], mkArgProj(id)))), None) in
+       mkJavaEq(e1, e2, srtId(srt))
+    | (id, srt)::fields ->
+       let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg"], mkArgProj(id)))), None) in
+       let eq = mkJavaEq(e1, e2, srtId(srt)) in
+       let restEq = mkEqualityBodyForSum(fields) in
        CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None)
 
 op sumTypeToClsDecl: Id * List MethDecl -> ClsDecl
@@ -132,7 +161,7 @@ def sumTypeToClsDecl(id, sumConstructorMethDecls) =
 
 op mkSummandId: Id * Id -> Id
 def mkSummandId(ty, c) =
-  "summand_" ^ ty ^ "_" ^ c
+  ty ^ "_" ^ c
 
 op mkArgProj: Id -> Id
 def mkArgProj(fieldProj) =
@@ -150,8 +179,8 @@ def sumArgToClsDecl(ty, c) =
 op sumToConsMethodDecl: Id * Id * List (Id * Sort) -> MethDecl
 def sumToConsMethodDecl(id, c, args) =
   let formalParams = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFormalParam(mkArgProj(fieldProj), fieldType)) args in
-  let constBody = mkSumConstructBody(id, length args) in
-  (([Static], Some (tt(id)), c, formalParams, []), None)
+  let constBody = mkSumConstructBody(mkSummandId(id, c), length args) in
+  (([Static], Some (tt(id)), c, formalParams, []), Some (constBody))
 
 op mkSumConstructBody: Id * Nat -> Block
 def mkSumConstructBody(id, n) =
@@ -161,10 +190,21 @@ def mkSumConstructBody(id, n) =
   let args = if n = 0 then [] else mkArgs(1) in
   [Stmt (Return (Some (CondExp(Un (Prim (NewClsInst (ForCls (([], id), args, None)))), None))))]
 
-op mkSumConstrDecl: List (Id * Sort) -> ConstrDecl
-def mkSumConstrDecl(fields) =
+op mkSumConstrDecl: Id * List (Id * Sort) -> ConstrDecl
+def mkSumConstrDecl(id, fields) =
   let formParams = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFormalParam(mkArgProj(fieldProj), fieldType)) fields in
-  ([], "", formParams, [], [])
+  let sumConstrBody = mkSumConstBody(length(formParams)) in
+  ([], id, formParams, [], sumConstrBody)
+
+op mkSumConstBody: Nat -> Block
+def mkSumConstBody(n) =
+  if n = 0 then []
+  else
+    let thisName = (["this"], mkArgProj(natToString(n))) in
+    let argName = ([], mkArgProj(natToString(n))) in
+    let assn = mkNameAssn(thisName, argName) in
+    let restAssns = mkSumConstBody(n-1) in
+    restAssns++[assn]
 
 op sumToClsDecl: Id * Id * List (Id * Sort) -> ClsDecl
 def sumToClsDecl(id, c, args) =
@@ -173,17 +213,17 @@ def sumToClsDecl(id, c, args) =
   let eqMethDecl = mkAbstractEqualityMethDecl(id) in
   let eqMethBody = mkSumEqMethBody(summandId, args) in
   let eqMethDecl = setMethodBody(eqMethDecl, eqMethBody) in
-  let constrDecl = mkSumConstrDecl(args) in
+  let constrDecl = mkSumConstrDecl(mkSummandId(id, c), args) in
   ([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl]))
 %  map (fn (a, _) -> sumArgToClsDecl(id, c)) args
 
 op mkSumEqMethBody: Id * List Field -> Block
 def mkSumEqMethBody(summandId, flds) =
-  let eqExpr = mkEqualityBodyForFields(flds) in
+  let eqExpr = mkEqualityBodyForSum(flds) in
   let s = mkVarInit("eqarg2", summandId, CondExp (Un (Cast ((Name ([], summandId), 0), Prim (Name ([], "eqarg")))), None)) in
   let instanceExpr = CondExp (InstOf (Un (Prim (Name ([], "eqarg"))), (Name ([], summandId), 0)) , None) in
   let negateInstanceExpr = CondExp (Un (Un (LogNot, Prim (Paren (instanceExpr)))) , None) in
-  [mkIfStmt(negateInstanceExpr, [s, Stmt (Return (Some (CondExp (Un (Prim (Bool false)), None))))], [Stmt (Return (Some (eqExpr)))])]
+  [mkIfStmt(negateInstanceExpr, [Stmt (Return (Some (CondExp (Un (Prim (Bool false)), None))))], [s, Stmt (Return (Some (eqExpr)))])]
 
 op coProductToClsDecls: Id * Sort -> List ClsDecl
 def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
@@ -288,9 +328,9 @@ def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls) =
 op addNonCaseMethodsToClsDecls: Id * List Type * Type * Id * List Var * Term * List ClsDecl -> List ClsDecl
 def addNonCaseMethodsToClsDecls(opId, dom, rng, rngId, vars, body, clsDecls) =
   let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
-  let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), None) in
   let (vh, _) = varh in
   let methodBody = mkNonCaseMethodBody(vh, body) in
+  let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), Some (methodBody)) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
   addMethDeclToClsDecls(srthId, methodDecl, clsDecls)
 
@@ -316,7 +356,7 @@ op addSumMethDeclToClsDecls: Id * Term * Pattern * Term * MethDecl * List ClsDec
 def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, coSrt, _), body, methodDecl, clsDecls) =
   let Var ((vId, vSrt), _) = caseTerm in
   let args = case argsPat of
-               | Some (RecordPat (args, _)) -> map (fn (id, srt) -> id) args
+               | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId,_), _))) -> vId) args
                | None -> [] in
   let summandId = mkSummandId(srthId, cons) in
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
@@ -360,11 +400,13 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
     if baseType?(srt)
       then
 	let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), None), []) in
+	%%Fix here
 	let newClsDecls = addFldDeclToClsDecls("primops", fldDecl, clsDecls) in
 	newClsDecls
     else
       let Base (Qualified (_, srtId), _, _) = srt in
       let fldDecl = ([Static], tt(srtId), ((id, 0), None), []) in
+      %%Fix here
       let newClsDecls = addFldDeclToClsDecls(srtId, fldDecl, clsDecls) in
       newClsDecls
       

@@ -100,6 +100,10 @@ op mkVarDecl: Id * Id -> BlockStmt
 def mkVarDecl(v, srtId) =
   LocVarDecl (false, tt(srtId), ((v, 0), None), [])
   
+op mkNameAssn: Java.Name * Java.Name -> BlockStmt
+def mkNameAssn(n1, n2) =
+  Stmt (Expr (Ass (Name n1, Assgn, CondExp (Un (Prim (Name n2)) , None))))
+
 op mkVarAssn: Id * Java.Expr -> BlockStmt
 def mkVarAssn(v, jT1) =
   Stmt (Expr (Ass (Name ([], v), Assgn, jT1)))
@@ -126,6 +130,7 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k) =
     | Fun (Embed (id, _) , srt, _) -> translateConstructToExpr(tcx, srtId(termSort(term)), id, argsTerm, k)
     | Fun (Op (Qualified (q, id), _), _, _) ->
     let srt = termSort(term) in
+    %%Fix here
     let dom = srtDom(srt) in
     let rng = srtRange(srt) in
     if all (fn (srt) -> baseType?(srt)) dom
@@ -181,7 +186,8 @@ def translateUserApplToExpr(tcx, opId, dom, argsTerm, k) =
 def translateRecordToExpr(tcx, term as Record (fields, _), k) =
   let recordTerms = recordFieldsToTerms(fields) in
   let (newBlock, javaArgs, newK) = translateTermsToExpressions(tcx, recordTerms, k) in
-  (newBlock, mkNewClasInst("unsuprecord", javaArgs), newK)
+  %%Fix here HACK!!!
+  (newBlock, mkNewClasInst("Point", javaArgs), newK)
 
 def translateIfThenElseToExpr(tcx, term as IfThenElse(t0, t1, t2, _), k) =
   let (b0, jT0, k0) = termToExpression(tcx, t0, k+1) in
@@ -225,6 +231,7 @@ def termToExpression(tcx, term, k) =
 	 let Base (Qualified (q, srtId), _, _) = srt in
 	 (mts, mkQualJavaExpr(srtId, id), k)
     | Fun (Nat (n),_,__) -> (mts, mkJavaNumber(n), k)
+    | Fun (Embed (c, _), srt, _) -> (mts, mkQualJavaExpr(srtId(srt), c), k)
     | Apply (opTerm, argsTerm, _) -> translateApplyToExpr(tcx, term, k)
     | Record _ -> translateRecordToExpr(tcx, term, k)
     | IfThenElse _ -> translateIfThenElseToExpr(tcx, term, k)
