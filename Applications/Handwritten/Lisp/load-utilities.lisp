@@ -267,7 +267,7 @@
       (make-pathname :directory (butlast dir)))))
 
 
-(unless (fboundp 'user::without-redefinition-warnings)
-  (defmacro user::without-redefinition-warnings (&body body)
-    `(let ((user::*redefinition-warnings* nil))
+(unless (fboundp 'cl-user::without-redefinition-warnings)
+  (defmacro cl-user::without-redefinition-warnings (&body body)
+    `(let ((cl-user::*redefinition-warnings* nil))
        ,@body)))

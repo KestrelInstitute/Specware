@@ -36,6 +36,7 @@
 ;;;
 ;;;
 
+(format t "Loading cl-ilisp...~%")
 
 #+(or allegro-v4.0 allegro-v4.1)
 (eval-when (compile load eval)

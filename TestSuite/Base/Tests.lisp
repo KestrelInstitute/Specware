@@ -1,6 +1,6 @@
 (test  ("(~ ( true )) = false" :swe "(~ ( true )) = false" :value '(:|Bool| . T))
        ("(~ ( false )) = true" :swe "(~ ( false )) = true" :value '(:|Bool| . T))
-       ("[true, false, (true), (false)] = [(true), (false), true, false]" :swe "[true, false, (true), (false)] = [(true), (false), true, false]" : value '(:|Bool| . T))
+       ("[true, false, (true), (false)] = [(true), (false), true, false]" :swe "[true, false, (true), (false)] = [(true), (false), true, false]" :value '(:|Bool| . T))
        ;; Boolean [  2]:  op ~   : Boolean -> Boolean 
        ("~ true = false"    :swe "~ true = false"    :value '(:|Bool| . T))
        ("~ false = true"    :swe "~ false = true"    :value '(:|Bool| . T))

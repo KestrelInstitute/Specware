@@ -245,8 +245,10 @@
     (sleep-for 4)
     (simulate-input-expression "(exit)")
     (sleep-for 2))
-  (let ((sw:common-lisp-image-file base-world-name))
-    (run-lisp-application))
+  (if (null base-world-name)
+      (run-plain-lisp 1)
+    (let ((sw:common-lisp-image-file base-world-name))
+      (run-lisp-application)))
   (unless (inferior-lisp-running-p)
     (sleep-for 1))
   (sw:eval-in-lisp-no-value
@@ -267,14 +269,14 @@
   (sw:eval-in-lisp-no-value
    (format "(namestring (specware::change-directory %S))" build-dir))
   (sw:eval-in-lisp-no-value "(set-gc-parameters-for-build nil)")
-  (sw:eval-in-lisp-no-value "(load \"Specware4.lisp\")")
-  (sw:eval-in-lisp-no-value "(compact-memory t)")
-  (sw:eval-in-lisp-no-value "(set-gc-parameters-for-use nil)")
+  (simulate-input-expression "(load \"Specware4.lisp\")")
+  (simulate-input-expression "(compact-memory t)")
+  (simulate-input-expression "(set-gc-parameters-for-use nil)")
   (when (file-exists-p world-name)
     (rename-file world-name (concat bin-dir "/Specware4-saved."
 				    *lisp-image-extension*)
 		 t))
-  (sleep-for 1)
+  (sleep-for 5)
   (simulate-input-expression (format (case *specware-lisp*
 				       (cmulisp "(ext:save-lisp %S)")
 				       (allegro "(excl::dumplisp :name %S)")

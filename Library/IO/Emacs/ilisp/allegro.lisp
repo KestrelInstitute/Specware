@@ -14,13 +14,15 @@
 ;;; Allegro initializations
 ;;; Author: Chris McConnell, ccm@cs.cmu.edu
 
+(format t "Loading cl-ilisp...~%")
+
 (in-package :ilisp)
 
 ;;; 20001203 Patch suggested by Larry Hunter <Larry.Hunter@uchsc.edu>
 ;;; EXCL::FN_SYMDEF is no longer available by default.
 
-#+(or allegro-v5.0 allegro-v6.0 allegro-v6.1) (eval-when (compile load) (require
-                                                            :llstructs))
+#+(or allegro-v5.0 allegro-v6.0 allegro-v6.1 allegro-v6.2)
+(eval-when (compile load) (require :llstructs))
 
 ;;;
 (defun ilisp-callers (symbol package)
