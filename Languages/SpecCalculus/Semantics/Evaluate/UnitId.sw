@@ -1,7 +1,7 @@
 \subsection{Evalution of a UnitId term in the Spec Calculus}
 
 \begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import Signature 
   import ../SpecPath 
   import ../../Parser/Parse
@@ -253,6 +253,17 @@ handled correctly.
        | _ -> return ()
 \end{spec}
 
+Used so toplevel UI functions can find out whether a unitId has up-to-date version in cache. 
+
+\begin{spec}
+  op  checkInCache? : RelativeUnitId -> Env Boolean
+  def checkInCache? unitId =
+    { uidList <- generateUIDList unitId;
+      optValue <- searchContextForUID uidList;
+      return(some? optValue)}
+\end{spec}
+
+
 validateCache takes a UnitId (absolute) and checks that it and all its
 dependents are up-to-date, returning false if they are not. Those that
 are not are removed from the environment.
@@ -283,5 +294,5 @@ are not are removed from the environment.
   def upToDate?(unitId,timeStamp) =
     let fileName = (uidToFullPath unitId) ^ ".sw" in
     (fileWriteTime fileName) <= timeStamp
-}
+endspec
 \end{spec}

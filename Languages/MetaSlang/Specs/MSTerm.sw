@@ -284,7 +284,10 @@ MS qualifying spec
  def mkVarPat    v    = VarPat    (v,              noPos)
  def mkWildPat   s    = WildPat   (s,              noPos)
  def mkRecordPat pats = RecordPat (pats, noPos)
- def mkTuplePat  pats = RecordPat (tagTuple(pats), noPos)
+ def mkTuplePat  pats =
+   case pats of
+     | [p] -> p
+     | _ -> RecordPat (tagTuple(pats), noPos)
  def patternToList t =
     case t of
       | RecordPat (fields,_) ->

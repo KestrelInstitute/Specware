@@ -144,7 +144,7 @@ LambdaLift qualifying spec
 	  let vars = removeDuplicates(vars ++ diffVars) in
 	  (LetRec(decls,body),vars)
 	| Lambda(match,a) -> 
-	  let (pat,_,_)::_ = match in
+	  % let (pat,_,_)::_ = match in
 	  %let _ = String.writeLine("  lambda-term, pattern: "^MetaSlangPrint.printPattern(pat)) in
 	  let match = map (fn(pat,cond,term)-> (pat,cond,makeVarTerm term)) match in
 	  let vars  = flatten(map(fn(_,_,(_,vars))-> vars) match) in
@@ -511,10 +511,10 @@ in
 	   | _ -> term
 	    )
      | Lambda [(pat,cond,body)] -> 
-		%let _ = String.writeLine("lambdaLiftTerm: pattern: " ^ MetaSlangPrint.printPattern(pat)^", vars: "^varsToString(vars)) in
+       %let _ = String.writeLine("lambdaLiftTerm: pattern: " ^ MetaSlangPrint.printPattern(pat)^", vars: "^varsToString(vars)) in
        let (opers,body) = lambdaLiftTerm(env,body) in
-       let num = State.!(env.counter) in
-       let _ = env.counter State.:= num + 1 in
+       let num = !(env.counter) in
+       let _ = env.counter := num + 1 in
        let name = env.opName ^ "_internal_" ^ (Nat.toString num) in
 
        %let _ = String.writeLine("  new oper: "^name) in
@@ -531,7 +531,15 @@ in
        (cons(liftInfo,opers),liftInfoClosure)
        %(cons(liftInfo,opers),mkApply(makeUnitClosureOp(),liftInfo.closure))
 
-     | Lambda match -> System.fail "Irregular lambda abstraction"
+     | Lambda (match as ((pat,cond,body)::_)) ->
+       let argSorts = productSorts(getSpecEnv env,patternSort pat) in
+       let newVs = makeNewVars argSorts in
+       lambdaLiftTerm(env,(Lambda [(mkTuplePat(map mkVarPat newVs),mkTrue(),
+				   (Apply((Lambda match,vars),
+					  mkVarTermTuple(map (fn x -> (Var x,[])) newVs)),
+				    vars))],
+			   vars))
+       
 
      | IfThenElse(t1,t2,t3) -> 
        let (opers1,t1) = lambdaLiftTerm(env,t1) in
@@ -603,6 +611,18 @@ in
      | Bind(binder,bound,body) -> 
        System.fail "Unexpected binder"
      | _ -> System.fail "Unexpected term"
+
+ op  makeNewVars: List Sort -> List Var
+ def makeNewVars srts =
+   foldl (fn (s,result) ->
+	  cons(("llp-"^Nat.toString(length result),s),result))
+     [] srts
+
+ op  mkVarTermTuple: List VarTerm -> VarTerm
+ def mkVarTermTuple vts =
+   case vts of
+     | [vt] -> vt
+     | _ -> (Record(tagTuple(vts)),[])
 
 (*
  spec TranslationBuiltIn = 

@@ -129,6 +129,20 @@ get a unit from a unit id string.
     run (catch prog toplevelHandler)
 \end{spec}
 
+\begin{spec}
+  op  unitIDCurrentInCache? : String -> Boolean
+  def unitIDCurrentInCache? path =
+    let prog = { resetGlobals;
+		 currentUID <- pathToCanonicalUID ".";
+		 setCurrentUID currentUID;
+		 path_body <- return (removeSWsuffix path);
+		 unitId <- pathToRelativeUID path_body;
+		 checkInCache? unitId }
+    in run (catch prog toplevelHandler)
+\end{spec}
+
+
+
 We provide two functions (callable from the Lisp read-eval-print loop)
 that invoke the corresponding evaluation functions for the Spec Calculus.
 The first just evaluates a UnitId. The second evaluates a UnitId and then

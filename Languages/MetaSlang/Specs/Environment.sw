@@ -409,7 +409,7 @@ spec {
   let res =
    case term 
      of Apply      (t1, t2,               _) -> 
-        (case termSortEnv (sp, t1)
+        (case stripSubsorts(sp,termSortEnv (sp, t1))
            of Arrow (dom, rng, _)            -> rng
             | _ -> System.fail ("Cannot extract sort of application "^
                                 System.toString term))

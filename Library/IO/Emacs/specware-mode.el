@@ -1045,7 +1045,9 @@ If anyone has a good algorithm for this..."
   (interactive "r")
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
 	(text (buffer-substring beg end)))
-    (when (buffer-modified-p)
+    (when (or (buffer-modified-p)
+	      (not (sw:eval-in-lisp "(Specware::unitIDCurrentInCache? %S)"
+				    buffer-file-name)))
       (sw:gcl-current-file)
       (sleep-for 1))			; Give :swll a chance to finish
     (unless (string-equal filename
