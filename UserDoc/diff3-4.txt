@@ -28,7 +28,7 @@ Name spaces
 -----------
 
 In Specware 3, the top level construct of MetaSlang is "module". A
-file contains one or more module. A module contains definitions of
+file contains one or more modules. A module contains definitions of
 specs, morphisms, and other entities. Each module defines a separate
 name space. Since the name space of modules is flat, the names of
 specs, morphisms, etc. only consist of two levels (module name and
