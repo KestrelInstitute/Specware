@@ -29,9 +29,9 @@ spec
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
 		    | Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
-                      let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
-                      let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
-		      let _ = if specwareDebug? then  writeLine("") else () in
+                      %let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
+                      %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
+		      %let _ = if specwareDebug? then  writeLine("") else () in
 		      res   %findPBuiltInSort(spc, Qualified(qual,id), rng?)
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
                                                        else Lisp.symbol("SNARK",id)
@@ -212,6 +212,9 @@ spec
       | Project (id) ->
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName("","project_"^id)), Lisp.list snarkArgs)
+      | Embed (id, b) ->
+	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
+	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName("","embed_"^id)), Lisp.list snarkArgs)
 
   op mkSnarkTerm: Context * Spec * String * StringSet.Set * MS.Term -> LispCell
 

@@ -234,9 +234,9 @@ spec {
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
 		    | Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
-                      let _ = if specwareDebug? then toScreen("findBuiltInSort: "^printSort(s)^" returns ") else () in
-                      let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
-		      let _ = if specwareDebug? then  writeLine("") else () in
+                      %let _ = if specwareDebug? then toScreen("findBuiltInSort: "^printSort(s)^" returns ") else () in
+                      %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
+		      %let _ = if specwareDebug? then  writeLine("") else () in
 		      res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
                                                        else Lisp.symbol("SNARK",id)
@@ -325,11 +325,16 @@ spec {
     %let _ = toScreen("Generating snark decl for "^name^" with sort: ") in
     %let _ = printSortToTerminal srt in
     (case (curryShapeNum(spc, srt), sortArity(spc, srt))
-       of (1,None) ->     let _ = debug("noArity") in snarkFunctionNoArityDecl(spc, name, srt)
-	| (1, Some(_,arity)) -> let _ = debug("noCurry") in snarkFunctionNoCurryDecl(spc, name, srt, arity)
-	| (curryN, None) -> let _ = debug("CurryNoArity") in snarkFunctionCurryNoArityDecl(spc, name, srt)
-	| (curryN, Some (_, arity)) -> let _ = debug("Curry") in snarkFunctionCurryDecl()
-	| _ -> let _ = debug("Last") in snarkFunctionNoArityDecl(spc, name, srt))
+       of (1,None) ->     %let _ = debug("noArity") in 
+	 snarkFunctionNoArityDecl(spc, name, srt)
+	| (1, Some(_,arity)) -> %let _ = debug("noCurry") in 
+	 snarkFunctionNoCurryDecl(spc, name, srt, arity)
+	| (curryN, None) -> %let _ = debug("CurryNoArity") in 
+	 snarkFunctionCurryNoArityDecl(spc, name, srt)
+	| (curryN, Some (_, arity)) -> %let _ = debug("Curry") in 
+	 snarkFunctionCurryDecl()
+	| _ -> %let _ = debug("Last") in
+	 snarkFunctionNoArityDecl(spc, name, srt))
 
   op snarkOpDeclPartial: Spec * String * Sort -> Option LispCell
 
