@@ -522,7 +522,7 @@ op exchangeSortInfoInSortOpInfos: QualifiedId * SortInfo * SortOpInfos -> SortOp
 def exchangeSortInfoInSortOpInfos(nqid,sinfo,minfo) =
   let sorts = minfo.sorts in
   let sorts = filter (fn(names,_,_) -> ~(member(nqid,names))) sorts in
-  {ops = minfo.ops, sorts = cons(sinfo,minfo.sorts)}
+  {ops = minfo.ops, sorts = cons(sinfo,sorts)}
 
 op applyTyVarSubst2Term: MS.Term * TyVarSubst -> MS.Term
 def applyTyVarSubst2Term(trm,subst) =
