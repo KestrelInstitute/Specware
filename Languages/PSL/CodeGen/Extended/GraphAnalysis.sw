@@ -9,7 +9,7 @@ Top-level function is nodeListToStructuredGraph
 Struct qualifying 
 spec 
   import /Languages/MetaSlang/Specs/StandardSpec
-  import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex
+  import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex delete
   import /Languages/MetaSlang/Specs/Printer
 
   sort Index = Integer			% Acually Nat + -1
@@ -79,6 +79,50 @@ spec
     case nth(g,i) of
       | (index,_,preds) ->
 	replaceNth(i,g,(index,newNodeContent,preds))
+
+  op  setPredecessors: Index * List Index * Graph -> Graph
+  def setPredecessors(i,preds,g) =
+    replaceNth(i,g,(i,nodeContent(i,g),preds))
+
+  op  removePredecessor: Index * Index  * Graph -> Graph
+  def removePredecessor(i,oldPred,g) =
+    setPredecessors(i,delete(oldPred,predecessors(i,g)),g)
+
+  op  addPredecessor: Index * Index  * Graph -> Graph
+  def addPredecessor(i,newPred,g) =
+    let oldPreds = predecessors(i,g) in
+    if member(newPred,oldPreds) then g
+      else setPredecessors(i,Cons(newPred,oldPreds),g)
+
+  op  replaceSuccessor: Index * Index * Index * Graph -> Graph
+  def replaceSuccessor(i,oldSucc,newSucc,g) =
+    case nth(g,i) of
+      | (ii,nc,preds) ->
+        let def repl x = if x = oldSucc then newSucc else x in
+        let newContent =
+	    (case nc of
+	       | Block {statements = stats, next} ->
+	         Block {statements = stats, next = repl next}
+	       | Branch {condition = condn, trueBranch, falseBranch} ->
+		 Branch {condition = condn, trueBranch = repl trueBranch,
+			 falseBranch = repl falseBranch}
+	       | IfThen {condition, trueBranch, cont} ->
+		 IfThen {condition = condition, trueBranch = repl trueBranch, cont = repl cont}
+	       | IfThenElse {condition, trueBranch, falseBranch, cont} ->
+	         IfThenElse {condition = condition, trueBranch = repl trueBranch,
+			     falseBranch = repl falseBranch, cont = repl cont}
+	       | Loop {condition, preTest?, body, cont} ->
+		 Loop {condition = condition, preTest? = preTest?, body = repl body, cont = repl cont}
+	       | content -> content)
+	in
+	replaceNth(i,g,(i,newContent,preds))
+
+  op  changeSuccessor: Index * Index * Index * Graph -> Graph
+  def changeSuccessor(i,oldSucc,newSucc,g) =
+    let g = replaceSuccessor(i,oldSucc,newSucc,g) in
+    let g = removePredecessor(oldSucc,i,g) in
+    addPredecessor(newSucc,i,g)
+
 	    
   op setDFSIndex: Index * Nat * Graph -> Graph
   def setDFSIndex(i,newDFSI,g) =
@@ -180,74 +224,87 @@ spec
     %% DFS indices tell which nodes are higher in the graph and are used to
     %% to determine which links are looping links
     let
-      def buildStructuredGraph(nd:Index,exits,newG) =
-	if member(nd,exits) or nd = noContinue then newG
+      def buildStructuredGraph(nd:Index,exits,g) =
+	if member(nd,exits) or nd = noContinue then g
 	else
 	case loopPredecessors(nd,baseG) of
-	  | []  -> buildStraightLine(nd,exits,newG)
+	  | []  -> buildStraightLine(nd,exits,g)
 	  | preds ->
 	    let loopExits = exitNodes(Cons(nd,getAllPredecessorsBackTo(preds,[nd],
 								       baseG)),
 				      baseG) in
-	    buildLoop(nd,loopExits,exits,newG)
+	    (case loopExit?(nd,loopExits,g) of
+	       | Some (cond,body,cont) -> buildLoop(true,nd,cond,body,cont,exits,loopExits,g)
+	       | None ->
+	     let tail = foldl min nd preds in    % final predecessor
+	     case loopExit?(tail, loopExits,g) of
+	       | Some (cond,body,cont) ->
+	       %% Move tail to head of the loop
+	         let g = foldl (fn (pred,g) ->
+				if descendantIndex?(nd,pred,g)
+				  then changeSuccessor(pred,nd,tail,g)
+				 else g)
+	                   g preds
+	         in buildLoop(false,tail,cond,body,cont,exits,loopExits,g)
+	       %% Give up structuring. Rely on gotos.
+	       | None -> buildStraightLine(nd,exits,g))
 	  %% So far only one loop for node
-	  %| x::rs -> buildLoops(n,x,rs,newG)
+	  %| x::rs -> buildLoops(n,x,rs,g)
 
-      def buildLoop(head,loopExits,exits,newG) =
-        let (cond,body,cont,newG) = loopHead(head,loopExits,newG) in
-	let newG = buildStructuredGraph(cont,exits,newG) in
-	let newG = buildStructuredGraph(body,Cons(head,loopExits),newG) in
-	let newG = setNodeContent(head,
-				  Loop {condition = cond,
-					preTest?  = true,
-					body      = body,
-					cont  = cont},
-				  newG)
-	in foldl (fn (x,newG) ->
-		  if x = cont then newG
-		    else buildStructuredGraph(x,exits,newG))
-	     newG loopExits
+      def buildLoop(pre?,head,cond,body,cont,exits,loopExits,g) =
+	let g = buildStructuredGraph(cont,exits,g) in
+	let g = buildStructuredGraph(body,Cons(head,loopExits),g) in
+	let g = setNodeContent(head,
+			       Loop {condition = cond,
+				     preTest?  = pre?,
+				     body      = body,
+				     cont      = cont},
+			       g)
+	in foldl (fn (x,g) ->
+		  if x = cont then g
+		  else buildStructuredGraph(x,exits,g))
+	     g loopExits
 
-      def loopHead(head,loopExits,newG) =
-	case nodeContent(head,baseG) of
+      def loopExit?(node,loopExits,g) =
+	case nodeContent(node,g) of
 	  | Branch {condition, trueBranch, falseBranch} ->
 	    if member(falseBranch,loopExits) % outside loop
-	      then (condition, trueBranch, falseBranch,newG)
+	      then Some(condition,trueBranch,falseBranch)
 	      else % trueBranch should be outside loop
 	    if member(trueBranch,loopExits)
-	      then (negateEnvTerm condition,falseBranch,trueBranch, newG)
-	      else fail ("GraphAnalysis: only simple while loops recognized")
-	  %% |   Currently only have loops that start with a loop test
+	      then Some(negateEnvTerm condition,falseBranch,trueBranch)
+	      else None
+	  | _ -> None
 	    
-      def buildStraightLine(nd,exits,newG) =
-        if nd = noContinue then newG else
+      def buildStraightLine(nd,exits,g) =
+        if nd = noContinue then g else
 	case nodeContent(nd,baseG) of
 	  | Block {statements = _, next} ->
-	    buildStructuredGraph (next,exits,newG)
+	    buildStructuredGraph (next,exits,g)
 	  | Branch {condition, trueBranch, falseBranch} ->
 	    let cont = commonSuccessor(trueBranch,falseBranch,baseG) in
-	    let newG = buildStructuredGraph(trueBranch, [cont],newG) in
-	    let newG = buildStructuredGraph(falseBranch,[cont],newG) in
+	    let g = buildStructuredGraph(trueBranch, [cont],g) in
+	    let g = buildStructuredGraph(falseBranch,[cont],g) in
         % LE added last disjunct below. There may be no common succesor (cont = noContinue)
-	    let newG = if cont = trueBranch or cont = falseBranch or cont = noContinue
-	                then newG
-			else buildStructuredGraph(cont,exits,newG) in
+	    let g = if cont = trueBranch or cont = falseBranch or cont = noContinue
+	                then g
+			else buildStructuredGraph(cont,exits,g) in
 	    if falseBranch = cont
 	      then setNodeContent(nd,IfThen {condition   = condition,
 					     trueBranch  = trueBranch,
 					     cont        = falseBranch},
-				  newG)
+				  g)
 	    else if trueBranch = cont
 	      then setNodeContent(nd,IfThen {condition   = negateEnvTerm condition,
 					     trueBranch  = falseBranch,
 					     cont        = trueBranch},
-				  newG)
+				  g)
 	      else setNodeContent(nd,IfThenElse {condition   = condition,
 						 trueBranch  = trueBranch,
 						 falseBranch = falseBranch,
 						 cont        = cont},
-				  newG)
-	   | Return _ -> newG
+				  g)
+	   | Return _ -> g
     in
     case baseG of
       | [] -> []
