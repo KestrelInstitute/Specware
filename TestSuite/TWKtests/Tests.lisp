@@ -51,6 +51,7 @@
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Switch/p1.log")
 	    (:optional ";; Directory $TESTDIR/Snark/ does not exist, will create.")
 	    (:optional ";; Directory $TESTDIR/Snark/Switch/ does not exist, will create.")
+	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/Switch/p1.sw")
 	    "    Snark Log file: $TESTDIR/Snark/Switch/p1.log"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
