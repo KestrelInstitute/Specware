@@ -140,8 +140,9 @@ accepted in lieu of prompting."
 (require 'easymenu) 
 
 (defconst specware-menu 
-    '("Specware" 
-      ["Process Unit" sw:process-file t] 
+    '("Specware"
+      ["Process Current File" sw:process-current-file t]
+      ["Process Unit" sw:process-unit t] 
       [":cd this directory" cd-current-directory t] 
       ["Find Definition " sw:meta-point t]
       ["Switch to *common-lisp* " sw:switch-to-lisp t]
@@ -173,7 +174,8 @@ accepted in lieu of prompting."
 
   (define-key map "\M-."     'sw:meta-point)
   (define-key map "\M-,"     'sw:continue-meta-point)
-  (define-key map "\C-c\C-p" 'sw:process-file)
+  (define-key map "\C-cp"    'sw:process-current-file)
+  (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
@@ -938,11 +940,42 @@ If anyone has a good algorithm for this..."
     (end-of-line)
     (insert "\n") (indent-to (+ sw:indent-level indent))
     (insert "\n") (indent-to indent)
-    (insert "in\n") (indent-to (+ sw:indent-level indent)) (previous-line 1) (end-of-line)))
+    (insert "in\n") (indent-to (+ sw:indent-level indent))
+    (previous-line 1) (end-of-line)))
 
-(defun sw:process-file (filename)
-  (interactive "fProcess Specware Unit: ")
-  (simulate-input-expression (concat ":sw " (expand-file-name filename))))
+(defun sw:process-current-file ()
+  (interactive)
+  (setq filename (sw::windows-file-to-specware-unit-id buffer-file-name))
+  (simulate-input-expression (concat ":sw " filename)))
+
+(defun sw::windows-file-to-specware-unit-id (filename)
+  (when (eq (elt filename 1) ?:)
+    (setq filename (substring filename 2)))
+  (let ((len (length filename)))
+    (when (equal ".sw" (substring filename (- len 3)))
+      (setq filename (substring filename 0 (- len 3))))
+    (setq filename (replace-in-string filename "\\\\" "/"))
+    (setq filename (replace-in-string filename "Program Files" "Progra~1"))))
+  
+(defun sw:process-unit (filename)
+  (interactive (list (read-from-minibuffer "Process Unit: "
+					   (sw::windows-file-to-specware-unit-id
+					    buffer-file-name))))
+  (simulate-input-expression (concat ":sw " filename)))
+
+(defun read-unit-id-for-interactive (prompt &optional default)
+   (let* ((guess (or default buffer-file-name default-directory-name))
+	 (raw-file-name
+	  (read-file-name (format "%s file: " type-string)
+			  guess guess 'confirm))
+	 (expanded-file-name (expand-file-name raw-file-name)))
+    (if (file-directory-p expanded-file-name)
+	(progn
+	  (ding)
+	  (message (format "File: %s [a directory]" raw-file-name))
+	  (sit-for 1)
+	  (read-file-name-for-lisp-command type-string raw-file-name))
+      expanded-file-name)))
 
 (defun cd-current-directory ()
   (interactive)
