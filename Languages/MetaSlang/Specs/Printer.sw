@@ -618,10 +618,10 @@ AnnSpecPrinter qualifying spec {
                  (0,ppTerm context ([1]++ path,Top:ParentTerm) t),
                  (0,pp.RP)])
 
-  % | Base (Qualified ("Boolean", "Boolean")) -> string "Boolean"
   % | Base (Qualified ("String",  "String"))  -> string "String"
   % | Base (Qualified ("Nat",     "Nat"))     -> string "Nat"
 
+    | Boolean _ -> string "Boolean"
     | Base(idInfo,[],_) -> pp.ppSortId(idInfo)
     | Base(idInfo,ts,_) -> 
             blockFill(0,
