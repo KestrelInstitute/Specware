@@ -39,8 +39,11 @@
 (defmacro f-break (&rest fns)
   `(break-functions ',fns))
 
-(defmacro f-b (&rest fns)
-  `(break-functions ',fns))
+(defun f-b (&optional (str ""))
+  (let (arg)
+    (with-input-from-string (s str)
+      (break-functions (loop while (setq arg (read s nil nil))
+			     collect arg)))))
 
 #+allegro
 (top-level:alias ("f-break" 2) (&rest fns) (break-functions fns))
@@ -48,8 +51,11 @@
 (defmacro f-unbreak (&rest fns)
   `(unbreak-functions ',fns))
 
-(defmacro f-unb (&rest fns)
-  `(unbreak-functions ',fns))
+(defun f-unb (&optional (str ""))
+  (let (arg)
+    (with-input-from-string (s str)
+      (unbreak-functions (loop while (setq arg (read s nil nil))
+		 	       collect arg)))))
 
 #+allegro
 (top-level:alias ("f-unbreak" 2) (&rest fns) (unbreak-functions fns))

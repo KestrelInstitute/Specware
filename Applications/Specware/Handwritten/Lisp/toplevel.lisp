@@ -324,6 +324,7 @@
 	 (emacs::*goto-file-position-store?* t)
 	 (emacs::*goto-file-position-stored* nil)
 	 (parser-type-check-output)
+	 parsed-ok?
 	 value)
     (declare (special SpecCalc::printElaborateSpecMessage?))
     ;; clear any old values or function definitions:
@@ -338,65 +339,66 @@
 	(format s "  import ~A~%" *current-swe-spec*))
       (format s "  def swe.tmp = ~A~%endspec~%" x))
     ;; Process unit id:
-    (if (unwind-protect
+    (unwind-protect
 	    (progn
 	      (specware::setenv "SWPATH" new-swpath)
 	      (setq parser-type-check-output
 		(with-output-to-string (*standard-output*)
 		  (let ((*error-output* *standard-output*)
 			(SpecCalc::numberOfTypeErrorsToPrint 2))
-		    (if *swe-use-interpreter?*
-			(setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
-		      (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))))))
+		    (setq parsed-ok? (Specware::evaluateUID_fromLisp tmp-uid)))))
+	      (when parsed-ok?
+		(if *swe-use-interpreter?*
+		    (setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
+		  (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))))
 	  (specware::setenv "SWPATH" old-swpath))
-	(if emacs::*goto-file-position-stored*; Parse or type-check error
-	    (let ((linepos (second emacs::*goto-file-position-stored*))
-		  (charpos (third emacs::*goto-file-position-stored*)))
-	      (if (eq linepos 3)
-		  (format t "~vt^~%" (+ charpos *expr-begin-offset*))
-		(if (> linepos 3)
-		    (format t "Error: expression ends prematurely~%" emacs::*goto-file-position-stored*)
-		  (format t "Error in context: ~a~%" emacs::*goto-file-position-stored*)))
-	      (princ (trim-error-output parser-type-check-output)))
-	  (progn
-	    (princ parser-type-check-output)
-	    (if *swe-use-interpreter?*
-		(if (eq (car value) :|None|)
-		    (warn "No value for expression?")
-		  (if *swe-return-value?* (cdr value)
-		    (MSInterpreter::printValue (cdr value))))
-	      (let (#+allegro *redefinition-warnings*)
-		;; Load resulting lisp code:
-		(load (make-pathname :type "lisp" :defaults tmp-cl))
-		(if *swe-return-value?* swe::tmp
-		  ;; Print result:
-		  (let ((*package* (find-package "SW-USER")))
-		    (cond ((boundp 'swe::tmp)
-			   (if *swe-print-as-slang?*
-			       (format t "~%Value is ~%~/specware::pprint-dt/~%"
-				       swe::tmp)
-			     (format t "~%Value is ~S~2%" swe::tmp)))
-			  ((fboundp 'swe::tmp)
-			   (let* ((code #+allegro (excl::func_code #'swe::tmp)
-					#-allegro (symbol-function 'swe::tmp))
-				  (auxfn (find-aux-fn code)))
-			     (format t "~%Function is ")
-			     (pprint code)
-			     (format t "~%")
-			     (when (fboundp auxfn)
-			       (format t "~%where ~A is " auxfn)
-			       (let ((fn (symbol-function auxfn)))
-				 (let ((code #+allegro (excl::func_code fn)
-					     #+cmu     (eval:interpreted-function-lambda-expression fn)
-					     #-(or allegro cmu) fn))
-				   (if (consp code)
-				       (pprint code)
-				     (format t "the compiled function ~A" fn))))
-			       (format t "~&~%"))))
-			  (t
-			   (warn "No value for expression?")))
-		    (values)))))))
-      "Specware Processing Failed!")))
+    (if emacs::*goto-file-position-stored*; Parse or type-check error
+	(let ((linepos (second emacs::*goto-file-position-stored*))
+	      (charpos (third emacs::*goto-file-position-stored*)))
+	  (if (eq linepos 3)
+	      (format t "~vt^~%" (+ charpos *expr-begin-offset*))
+	    (if (> linepos 3)
+		(format t "Error: expression ends prematurely~%" emacs::*goto-file-position-stored*)
+	      (format t "Error in context: ~a~%" emacs::*goto-file-position-stored*)))
+	  (princ (trim-error-output parser-type-check-output)))
+      (progn
+	(princ parser-type-check-output)
+	(if *swe-use-interpreter?*
+	    (if (eq (car value) :|None|)
+		(warn "No value for expression?")
+	      (if *swe-return-value?* (cdr value)
+		(MSInterpreter::printValue (cdr value))))
+	  (let (#+allegro *redefinition-warnings*)
+	    ;; Load resulting lisp code:
+	    (load (make-pathname :type "lisp" :defaults tmp-cl))
+	    (if *swe-return-value?* swe::tmp
+	      ;; Print result:
+	      (let ((*package* (find-package "SW-USER")))
+		(cond ((boundp 'swe::tmp)
+		       (if *swe-print-as-slang?*
+			   (format t "~%Value is ~%~/specware::pprint-dt/~%"
+				   swe::tmp)
+			 (format t "~%Value is ~S~2%" swe::tmp)))
+		      ((fboundp 'swe::tmp)
+		       (let* ((code #+allegro (excl::func_code #'swe::tmp)
+				    #-allegro (symbol-function 'swe::tmp))
+			      (auxfn (find-aux-fn code)))
+			 (format t "~%Function is ")
+			 (pprint code)
+			 (format t "~%")
+			 (when (fboundp auxfn)
+			   (format t "~%where ~A is " auxfn)
+			   (let ((fn (symbol-function auxfn)))
+			     (let ((code #+allegro (excl::func_code fn)
+					 #+cmu     (eval:interpreted-function-lambda-expression fn)
+					 #-(or allegro cmu) fn))
+			       (if (consp code)
+				   (pprint code)
+				 (format t "the compiled function ~A" fn))))
+			   (format t "~&~%"))))
+		      (t
+		       (warn "No value for expression?")))
+		(values)))))))))
 
 #+allegro
 (top-level:alias ("swe" :case-sensitive :string) (x) (swe x))
@@ -902,8 +904,7 @@
 (defun cl::commandp (form)
   (keywordp form))
 
-#+(or cmu mcl sbcl)
-(defun cl::invoke-command-interactive (command)
+(defun invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
 	(ch (read-char-no-hang)))
     ;; Warning: the READ used to get the command will typically eat
@@ -925,6 +926,10 @@
 	(progn (read-line)
 	       (warn "Unknown command ~s" command)
 	       (values))))))
+
+#+(or cmu mcl sbcl)
+(defun cl::invoke-command-interactive (command)
+  (invoke-command-interactive command))
 
 #+mcl
 (let ((ccl::*warn-if-redefine-kernel* nil))
