@@ -6,7 +6,7 @@
 
 (terpri) ; purely cosmetic
 
-#+allegro(setq excl:*global-gc-behavior* '(10 10.0))
+#+allegro(setq excl:*global-gc-behavior* '(10 2.0))
 
 ;;; ---------------
 ;; The following collection have been adapted from the 2000 load.lisp
