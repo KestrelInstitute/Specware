@@ -35,6 +35,24 @@ public class EGraphDisplay extends XGraphDisplay {
         this(null,new EGraphSpec());
     }
     
+    public XGraphElementPopupMenu getPopupMenu() {
+        if (popupMenu != null) return popupMenu;
+        super.getPopupMenu();
+        JMenuItem menuItem = new JMenuItem("show import edges");
+        menuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                XNode[] nodes = getRootNodes();
+                for(int i=0;i<nodes.length;i++) {
+                    if (nodes[i] instanceof EspecNode) {
+                        ((EspecNode)nodes[i]).createImportEdgeInGraph(EGraphDisplay.this);
+                    }
+                }
+            }
+        });
+        popupMenu.add(menuItem);
+        return popupMenu;
+    }
+    
     /*
     public EGraphDisplay(XGraphSpec spec, GraphView view) {
         super(spec,view);

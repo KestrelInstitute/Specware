@@ -6,6 +6,7 @@
 
 package edu.kestrel.especs.graphs;
 
+import edu.kestrel.especs.graphs.spec.*;
 import edu.kestrel.graphs.*;
 import com.jgraph.graph.*;
 import javax.swing.*;
@@ -32,10 +33,50 @@ public class EspecView extends XContainerBoxView {
             }
         });
         popupMenu.add(menuItem);
+        if (Dbg.isDebug()) {
+            menuItem = new JMenuItem("show imported especs");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if (node instanceof EspecNode) {
+                        String msg = node+" imports ", sep = "";
+                        boolean nothing = true;
+                        EspecModelNode mnode = (EspecModelNode)node.getModelNode();
+                        if (mnode.getImportedEspecs() != null) {
+                            Iterator iter = mnode.getImportedEspecs().iterator();
+                            while(iter.hasNext()) {
+                                EspecModelNode imp = (EspecModelNode)iter.next();
+                                msg += sep + imp.getShortName();
+                                sep = ", ";
+                                nothing = false;
+                            }
+                        }
+                        if (nothing) msg += "nothing.";
+                        JOptionPane.showMessageDialog(graph,msg);
+                    }
+                }
+            });
+            popupMenu.add(menuItem);
+            menuItem = new JMenuItem("create import edge");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if (node instanceof EspecNode) {
+                        ((EspecNode)node).createImportEdgeInGraph((XGraphDisplay)graph);
+                    }
+                }
+            });
+            popupMenu.add(menuItem);
+        }
     }
     
-        /** clones the view and the associated node and translates the new view for (dx,dy). */
+    /** clones the view and the associated node and translates the new view for (dx,dy). */
     public void createImport(int dx, int dy) {
+        if (!(node instanceof EspecNode)) return;
+        Object val = JOptionPane.showInternalInputDialog(graph,"enter name for new espec:","edit",JOptionPane.PLAIN_MESSAGE,null,null,node.getUserObject());
+        EspecNode espec = ((EspecNode)node).createImport(val);
+        String msg =  (espec == null?"There have been problems creating an import for this espec.":
+            "Espec \""+espec+"\" importing espec \""+node+"\" has been created and put into the clipboard.");
+            JOptionPane.showMessageDialog(graph,msg);
+        /*
         Map cellMap = ((XGraphDisplay)graph).copyCells(new Object[]{node});
         if (cellMap != null)
             if (cellMap.containsKey(node)) {
@@ -68,7 +109,7 @@ public class EspecView extends XContainerBoxView {
                     graph.getModel().edit(cs,null,null,null);
                 }
             }
+         */
     }
-
     
 }

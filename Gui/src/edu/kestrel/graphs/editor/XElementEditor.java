@@ -35,5 +35,6 @@ public interface XElementEditor {
      * changed size of this editor.
      */
     public boolean autoUpdateFrameSize();
-    
+ 
+    public void setFrame(XElementEditorFrame f);
 }

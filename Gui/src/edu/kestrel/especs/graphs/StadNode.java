@@ -20,16 +20,38 @@ public class StadNode extends XContainerNode {
     /** Creates a new instance of XStadNode */
     public StadNode() {
         super((String)null);
+        initStadNode();
     }
     
     public StadNode(String name) {
         super(name);
+        initStadNode();
+    }
+    
+    private void initStadNode() {
+        boolean isDerived = isDerived();
+        setIsExpandable(isDerived);
+        setIsEditable(!isDerived);
     }
     
     public ModelNode createModelNode() {
         return new StadModelNode();
     }
     
+    /** returns whether this node is derived from some other stad node. This information is stored
+     * in the StadModelNode associated with this node.
+     */
+    public boolean isDerived() {
+        return ((StadModelNode)getModelNode()).isDerived();
+    }
+    
+    public boolean isExpandable() {
+        return isDerived();
+    }
+    
+    public boolean isEditable() {
+        return !isDerived();
+    }
     
     /*
     public StadNode(ModelNode mnode) {

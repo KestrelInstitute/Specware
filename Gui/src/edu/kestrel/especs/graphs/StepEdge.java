@@ -8,11 +8,13 @@ package edu.kestrel.especs.graphs;
 
 import edu.kestrel.especs.graphs.spec.*;
 import edu.kestrel.especs.graphs.editor.*;
+import edu.kestrel.especs.lang.*;
 import edu.kestrel.graphs.spec.*;
 import edu.kestrel.graphs.editor.*;
 import edu.kestrel.graphs.io.*;
 import edu.kestrel.graphs.*;
 import com.jgraph.graph.*;
+import javax.swing.*;
 import java.util.*;
 import java.awt.*;
 
@@ -22,35 +24,15 @@ import java.awt.*;
  */
 public class StepEdge extends XStraightEdge {
     
-    protected String stepName;
-    protected String stepParams;
-    /** holds the condition given as list of conjuntive terms, element type: Term (see below) */
-    protected java.util.List conditionTerms;
-    
-    /** holds the list of updates; element type: Term (see below) */
-    protected java.util.List updates;
-    
-    /** inner class used to represent the constituents of the step's condition. */
-    public static class Term {
-        public String term;
-        public boolean isReadonly = false;
-        public Term(String term) {
-            this.term = term;
-        }
-        public String toString() {
-            return term;
-        }
-    }
-    
-    protected boolean isGeneratedFromImportedStep = false;
-    
     /** Creates a new instance of StepEdge */
     public StepEdge() {
         super();
+        setCollapseLabel(true);
     }
     
     public StepEdge(String name) {
         super(name);
+        setCollapseLabel(true);
     }
     
     public ModelEdge createModelEdge() {
@@ -71,11 +53,20 @@ public class StepEdge extends XStraightEdge {
     }
     
     public void initialConnectHook(XEdgeView ev) {
-        ev.edit();
+        ev.editInNewFrame();
     }
     
     public XGraphElementView createView(XGraphDisplay graph, CellMapper cm) {
-        XEdgeView ev = new XEdgeView(this,graph,cm);
+        XEdgeView ev = new XEdgeView(this,graph,cm) {
+            protected void initPopupMenu() {
+                super.initPopupMenu();
+                popupMenu.removeMenuItem("edit");
+                JMenuItem item = popupMenu.getMenuItem("edit in new frame");
+                if (item != null) {
+                    item.setText("edit");
+                }
+            }
+        };
         ev.setUseMultiLineEditor(true);
         ev.setShowMultiLineLabel(true);
         ev.setFillLabelBackground(false);
@@ -86,70 +77,50 @@ public class StepEdge extends XStraightEdge {
         return new StepEditor(this);
     }
     
+    protected StepModelEdge getStepModelEdge() {
+        return (StepModelEdge)getModelEdge();
+    }
+    
     public String getCollapsedLabel(String fullLabel) {
-        if (stepName == null) return "";
-        return stepName;
+        if (getStepModelEdge().getStepName() == null) return "";
+        return getStepModelEdge().getStepName();
     }
     
     
     public String getStepName() {
-        return stepName;
+        return getStepModelEdge().getStepName();
     }
     
     public void setStepName(String stepName) {
-        this.stepName = stepName;
-        refreshUserObject();
+        getStepModelEdge().setStepName(stepName);
     }
     
     public String getStepParams() {
-        return stepParams;
+        return getStepModelEdge().getStepParams();
     }
     
     public void setStepParams(String params) {
-        this.stepParams = stepParams;
-        refreshUserObject();
+        getStepModelEdge().setStepParams(params);
     }
     
     public void setConditionTerms(java.util.List conditionTerms) {
-        this.conditionTerms = conditionTerms;
-        refreshUserObject();
+        getStepModelEdge().setConditionTerms(conditionTerms);
     }
     
     public java.util.List getConditionTerms() {
-        return conditionTerms;
+        return getStepModelEdge().getConditionTerms();
     }
     
     public void setUpdates(java.util.List updates) {
-        this.updates = updates;
-        refreshUserObject();
+        getStepModelEdge().setUpdates(updates);
     }
     
     public java.util.List getUpdates() {
-        return updates;
+        return getStepModelEdge().getUpdates();
     }
     
-    protected void refreshUserObject() {
-        StringBuffer buf = new StringBuffer();
-        buf.append(getStepName()+":"+"\n");
-        String sep = "";
-        if (conditionTerms != null) {
-            Iterator iter = conditionTerms.iterator();
-            while(iter.hasNext()) {
-                Term t = (Term) iter.next();
-                buf.append(sep+" "+t.term+"\n");
-                sep = "&";
-            }
-        }
-        sep = "";
-        if (updates != null) {
-            Iterator iter = updates.iterator();
-            while(iter.hasNext()) {
-                Term t = (Term) iter.next();
-                buf.append(sep+" "+t.term+"\n");
-                sep = ",";
-            }
-        }
-        setFullUserObject(buf.toString());
+    public boolean isDerived() {
+        return getStepModelEdge().isDerived();
     }
     
 }
