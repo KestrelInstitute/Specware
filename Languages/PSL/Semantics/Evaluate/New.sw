@@ -1,25 +1,22 @@
-\section{Compilation of Oscar/PSL Procedures into BSpecs}
+withModeSpec \section{Compilation of Oscar/PSL Procedures into BSpecs}
 
-## There are name conflicts for the product accessors for Procedures, PSpecs and ProcContext
+## There are name conflicts for the product accessors for Procedures, OscarSpecs and ProcContext
 ## There are name conflicts for BSpecs and ProcContexts
 
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
-  import ../PSpec
+  import ../OscarSpec
   import /Languages/SpecCalculus/Semantics/Evaluate/Signature 
   import /Languages/MetaSlang/Specs/Elaborate/Utilities
   import /Languages/MetaSlang/AbstractSyntax/Fold
   import /Library/Legacy/DataStructures/ListPair
-  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/Utilities
   import ../Utilities
-  import /Languages/SpecCalculus/Semantics/Evaluate/Spec
-  import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
   import Utils
 \end{spec}
 
 An Oscar spec consists of a collection of "elements". Until object support
-is added, these are called "PSpec elements" where the P refers to "procedure".
+is added, these are called "OscarSpec elements" where the P refers to "procedure".
 
 A procedure definition gives rise to two additions to the context.
 The code for the procedure generates a Procedure object that holds,
@@ -31,19 +28,19 @@ be as a predicate relating the input (the values of the arguments and
 the value of the variables in scope) and the output (the return value
 and the new values of global variables).
 
-As it stands, there is a dynamic spec as part of the pSpec and a dynamic
+As it stands, there is a dynamic spec as part of the oscarSpec and a dynamic
 spec as part of each procedure. Both give the names in scope inside
 the procedure.
 
-a PSpecContextElem refers to anything in an Oscar specification that is
+a OscarSpecContextElem refers to anything in an Oscar specification that is
 not a procedure. This includes vars and ops.
 
 \begin{spec}
-  op evaluatePSpecElems  : PSpec -> List (PSpecElem Position) -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
-  op evaluatePSpecContextElems : PSpec -> List (PSpecElem Position) -> SpecCalc.Env PSpec
+  op evaluateOscarSpecElems  : OscarSpec -> List (OscarSpecElem Position) -> SpecCalc.Env (OscarSpec * TimeStamp * URI_Dependency)
+  op evaluateOscarSpecContextElems : OscarSpec -> List (OscarSpecElem Position) -> SpecCalc.Env OscarSpec
 
-  op evaluatePSpecProcElemPassOne : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
-  def evaluatePSpecProcElemPassOne pSpec (elem,position) =
+  op evaluateOscarSpecProcElemPassOne : OscarSpec -> OscarSpecElem Position -> SpecCalc.Env OscarSpec
+  def evaluateOscarSpecProcElemPassOne oscarSpec (elem,position) =
     case elem of
       | Proc (procName,procInfo) -> {
 
@@ -51,23 +48,13 @@ not a procedure. This includes vars and ops.
 % op has Proc sort and is used to label those transitions that call the procedure.
 
           argProd <- return (mkProductAt (map (fn (name,srt) -> srt) procInfo.args) position); 
-          tmpSpec <- return (subtractSpec pSpec.dynamicSpec pSpec.staticSpec);
           storeProd <- return (mkProductAt
-            (foldriAQualifierMap
-               (fn (qual,id,opInfo,recSorts) -> Cons (sortOf (sortScheme opInfo),recSorts)) [] tmpSpec.ops) position);
+            (foldOverVariables
+               (fn recSorts -> fn opInfo -> Cons (sortOf (sortScheme opInfo),recSorts)) [] (modeSpec oscarSpec)) position);
           procSort <- return (mkBaseAt (unQualified "Proc") [argProd,procInfo.returnSort,storeProd] position); 
           qualProcId <- return (unQualified procName);
-          static <- staticSpec pSpec;
-          static <- addOp [qualProcId] Nonfix (tyVarsOf procSort,procSort) [] static position;
-          pSpec <- setStaticSpec pSpec static;
-          pSpec <-
-            case findTheOp (static, qualProcId) of
-              | None -> return pSpec
-              | Some info -> {
-                    dynamic <- dynamicSpec pSpec;
-                    dynamic <- addNonLocalOpInfo dynamic qualProcId info;
-                    setDynamicSpec pSpec dynamic
-                 };
+          modeSpec <- addConstant (modeSpec oscarSpec) qualProcId Nonfix (tyVarsOf procSort,procSort) None position;
+          setModeSpec oscarSpec modeSpec
 \end{spec}
 
 We want to construct a placeholder for the procedure. This includes an
@@ -93,47 +80,50 @@ in the construction of both.
 always be recovered from the dynamic spec? Intuitively
 we are carrying around the slice.
 
-          dyCtxt <- return (setLocalOps (pSpec.dynamic, []));
-          dyCtxt <- return (setImportedSpec (dyCtxt,pSpec.dynamic));
+          dyCtxt <- return (setLocalOps (oscarSpec.dynamic, []));
+          dyCtxt <- return (setImportedSpec (dyCtxt,oscarSpec.dynamic));
 
 \begin{spec}
-          initialDyCtxt <-
-             foldM (fn dCtxt -> fn (argName,argSort) ->
-                       addOp [unQualified argName]
+          initialSpec <-
+             foldM (fn spc -> fn (argName,argSort) ->
+                       addVariable spc
+                             (unQualified argName)
                              Nonfix
                              (tyVarsOf argSort,argSort)
-                             []
-                             dCtxt position)
-                         pSpec.dynamicSpec procInfo.args;
+                             None
+                             position)
+                         (modeSpec oscarSpec) procInfo.args;
 
  
-          (finalDyCtxt,returnInfo : ReturnInfo) <- 
+          (finalSpec,returnInfo : ReturnInfo) <- 
              case procInfo.returnSort of
-               | Product ([],_) -> return (initialDyCtxt, None)
+               | Product ([],_) -> return (initialSpec, None)
                | _ -> {
-                     dyCtxt <- addOp [unQualified ("return#" ^ procName)]
-                                     Nonfix
-                                     (tyVarsOf procInfo.returnSort,procInfo.returnSort)
-                                     [] initialDyCtxt position;
-                     return (dyCtxt, Some {returnSort=procInfo.returnSort,returnName= ("return#" ^ procName)})
+                     spc <- addVariable
+                                 initialSpec
+                                 (unQualified ("return#" ^ procName))
+                                 Nonfix
+                                 (tyVarsOf procInfo.returnSort,procInfo.returnSort)
+                                 None
+                                 position;
+                     return (spc, Some {returnSort=procInfo.returnSort,returnName= ("return#" ^ procName)})
                    };
 
-          initialDyCtxtElab <- elaborateSpec initialDyCtxt; 
-          finalDyCtxtElab <- elaborateSpec finalDyCtxt; 
+          initialSpecElab <- elaborate initialSpec; 
+          finalSpecElab <- elaborate finalSpec; 
 
           bSpec <- return (
              let (initialV,finalV) = (mkNatVertexEdge 0, mkNatVertexEdge 1) in
-             % let bSpec = addMode (newSystem initialV initialDyCtxtElab) finalV finalDyCtxtElab in
-             let bSpec = addMode (newSystem initialV finalDyCtxtElab) finalV finalDyCtxtElab in
+             % let bSpec = addMode (newSystem initialV initialSpecElab) finalV finalSpecElab in
+             let bSpec = addMode (newSystem initialV finalSpecElab) finalV finalSpecElab in
              setFinalModes bSpec (V.singleton finalV));
           proc <- return (makeProcedure (map (fn (x,y) -> x) procInfo.args)
                                  returnInfo
-                                 pSpec.staticSpec  
-                                 pSpec.dynamicSpec
+                                 (modeSpec oscarSpec)
                                  bSpec);
-          setProcedures pSpec (PolyMap.update pSpec.procedures qualProcId proc)
+          setProcedures oscarSpec (PolyMap.update oscarSpec.procedures qualProcId proc)
         }
-      | _ -> return pSpec
+      | _ -> return oscarSpec
 \end{spec}
 
 ### In the above, the dynamic context always includes the return operator.
@@ -164,21 +154,20 @@ hard coded.
 ### one needs to keep is the return name.
 
 After compiling the procedure, we replace the procedure entry in the
-pSpec computed in the first pass in the pSpec with a new one containing
+oscarSpec computed in the first pass in the oscarSpec with a new one containing
 the full bSpec.
 
 \begin{spec}
-  op evaluatePSpecProcElemPassTwo : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
-  def evaluatePSpecProcElemPassTwo pSpec (elem,position) =
+  op evaluateOscarSpecProcElemPassTwo : OscarSpec -> OscarSpecElem Position -> SpecCalc.Env OscarSpec
+  def evaluateOscarSpecProcElemPassTwo oscarSpec (elem,position) =
     case elem of
       | Proc (procName,procInfo) -> {
-           procValue <- return (PolyMap.eval pSpec.procedures (unQualified procName));
+           procValue <- return (PolyMap.eval oscarSpec.procedures (unQualified procName));
            (initialV,finalV) <- return (mkNatVertexEdge 0, mkNatVertexEdge 1);
            ctxt : ProcContext <-
                 return {
-                  procedures = pSpec.procedures,
-                  dynamic = modeSpec procValue.bSpec initialV,
-                  static = procValue.staticSpec, % ## This is wrong .. should be from the start state as well
+                  procedures = oscarSpec.procedures,
+                  modeSpec = modeSpec procValue.bSpec initialV,
                   graphCounter = 2,  % = finalV + 1
                   varCounter = 0,
                   initialV = initialV,
@@ -193,13 +182,12 @@ the full bSpec.
            ctxt <- compileCommand ctxt procInfo.command;
            proc <- return (makeProcedure procValue.parameters
                                          procValue.returnInfo
-                                         procValue.staticSpec
-                                         procValue.dynamicSpec
+                                         procValue.modeSpec
                                          ctxt.bSpec);
-           pSpec <- addProcedure pSpec (unQualified procName) proc;
-           return pSpec
+           oscarSpec <- addProcedure oscarSpec (unQualified procName) proc;
+           return oscarSpec
          }
-      | _ -> return pSpec
+      | _ -> return oscarSpec
 \end{spec}
 
 The following function compiles a procedure declaration (sort
@@ -311,17 +299,17 @@ make much of the following unnecessary.
            emptyMap domMap
 
   op mkMorph :
-       Spec
-    -> Spec
+       BSpec.Object
+    -> BSpec.Object
     -> List (QualifiedId * QualifiedId)
     -> List (QualifiedId * QualifiedId)
     -> SpecCalc.Env Morphism
   def mkMorph dom cod sortModifiers opModifiers = {
-     sortMap <- makeMap dom.sorts cod.sorts sortModifiers;
-     opMap <- makeMap dom.ops cod.ops opModifiers;
+     sortMap <- makeMap dom.spc.sorts cod.spc.sorts sortModifiers;
+     opMap <- makeMap dom.spc.ops cod.spc.ops opModifiers;
      return {
-        dom = dom,
-        cod = cod,
+        dom = dom.spc,
+        cod = cod.spc,
         opMap = opMap,
         sortMap = sortMap
      }
@@ -364,16 +352,14 @@ under the assumption that they are never used. Needs thought.
           saveFinal <- return (finalV ctxt);
           saveBreak <- return (break ctxt);
           saveContinue <- return (continue ctxt);
-          ctxt <- return (setBreak ctxt (Some (finalV ctxt)));
-          ctxt <- return (setContinue ctxt (Some (initialV ctxt)));
-          ctxt <- return (setFinal ctxt (initialV ctxt));
+          ctxt <- return (ctxt withBreak (Some (finalV ctxt)));
+          ctxt <- return (ctxt withContinue (Some (initialV ctxt)));
+          ctxt <- return (ctxt withFinal (initialV ctxt));
           ctxt <- compileAlternatives ctxt alts; 
-          ctxt <- return (setFinal ctxt saveFinal);
-          ctxt <- return (setContinue ctxt saveContinue);
-          ctxt <- return (setBreak ctxt saveBreak);
+          ctxt <- return (((ctxt withFinal saveFinal) withContinue saveContinue) withBreak saveBreak);
           axm <- return (mkNotAt (disjList (map (fn ((guard,term),_) -> guard) alts) position) position);
-          apexSpec <- return (addAxiom (("guard", [], axm), dynamic ctxt));
-          apexElab <- elaborateSpec apexSpec;
+          apexSpec <- addProp (modeSpec ctxt) "guard" [] axm;
+          apexElab <- elaborate apexSpec;
           connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
         }
 \end{spec}
@@ -474,8 +460,8 @@ axiom but we might be better off without an axiom at all.
       | Return optTerm ->
           (case (optTerm,returnInfo ctxt) of
             | (None,None) -> {
-                  apexSpec <- return (addAxiom (("assign", [], mkTrueAt position),dynamic ctxt)); 
-                  apexElab <- elaborateSpec apexSpec; 
+                  apexSpec <- addProp (modeSpec ctxt) "assign" [] (mkTrueAt position);
+                  apexElab <- elaborate apexSpec; 
                   connectVertices ctxt (initialV ctxt) (exit ctxt) apexElab
                 }
             | (None,Some {returnSort,returnName}) ->
@@ -507,7 +493,7 @@ axiom but we might be better off without an axiom at all.
       | Continue -> 
           (case (continue ctxt) of
              | Some continueVertex -> {
-                   apexElab <- elaborateSpec (dynamic ctxt); 
+                   apexElab <- elaborate (modeSpec ctxt); 
                    connectVertices ctxt (initialV ctxt) continueVertex apexElab
                  }
              | None ->
@@ -516,7 +502,7 @@ axiom but we might be better off without an axiom at all.
       | Break ->
           (case (break ctxt) of
              | Some breakVertex -> {
-                   apexElab <- elaborateSpec (dynamic ctxt); 
+                   apexElab <- elaborate (modeSpec ctxt); 
                    connectVertices ctxt (initialV ctxt) breakVertex apexElab
                  }
              | None ->
@@ -558,13 +544,12 @@ The following is wrong as the variables should come in and then out of scope.
 
 \begin{spec}
       | Let (decls,cmd) -> {
-            pSpec <- return {staticSpec = static ctxt, dynamicSpec = dynamic ctxt, procedures = procedures ctxt};
-            newPSpec <- evaluatePSpecContextElems pSpec decls;
-            saveStatic <- return (static ctxt);
-            saveDynamic <- return (dynamic ctxt);
-            ctxt <- return (setStatic (setDynamic ctxt newPSpec.dynamicSpec) newPSpec.staticSpec);
+            oscarSpec <- return (Oscar.make (modeSpec ctxt) (procedures ctxt));
+            newOscarSpec <- evaluateOscarSpecContextElems oscarSpec decls;
+            saveModeSpec <- return (modeSpec ctxt);
+            ctxt <- return (ctxt withModeSpec (modeSpec newOscarSpec));
             ctxt <- compileCommand ctxt cmd;
-            return (setStatic (setDynamic ctxt saveDynamic) saveStatic)
+            return (ctxt withModeSpec saveModeSpec)
           }
 \end{spec}
 
@@ -576,8 +561,8 @@ This should be an invariant. Must check.
 
 \begin{spec}
       | Skip -> {
-          apexSpec <- return (addAxiom (("assign", [], mkTrueAt position),dynamic ctxt));  % why bother?
-          apexElab <- elaborateSpec apexSpec; 
+          apexSpec <- insert (modeSpec ctxt) (Property.make "skip" (mkTrueAt position));  % why bother?
+          apexElab <- elaborate apexSpec; 
           connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
         }
 \end{spec}
@@ -587,12 +572,11 @@ This should be an invariant. Must check.
   def compileAssign ctxt trm1 trm2 position = {
     (leftId, leftPrimedTerm) <- return (processLHS trm1); 
     apexSpec <- 
-       (case findTheOp (dynamic ctxt, leftId) of
-          | None ->
-             raise (SpecError (position, "compileCommand: Assign: id '"
-                          ^ (printQualifiedId leftId) ^ "' is undefined"))
-          | Some (names,fixity,sortScheme,optTerm) ->
-             addOp [makePrimedId leftId] fixity sortScheme optTerm (dynamic ctxt) position); 
+       case (Op.find ctxt leftId) of
+         | None ->
+            raise (SpecError (position, "compileCommand: Assign: id '" ^ (show leftId) ^ "' is undefined"))
+         | Some opInfo ->
+             addVariable ctxt (opInfo withName (makePrimedId leftId)) position; 
 \end{spec}
  
 The next clause may seem puzzling. The point is that, from the time
@@ -632,7 +616,7 @@ type variables.
 
 \begin{spec}
     apexSpec <- return (addAxiom (("assign",[],axm),apexSpec)); 
-    apexElab <- elaborateSpec apexSpec; 
+    apexElab <- elaborate apexSpec; 
     connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
   }
 \end{spec}
@@ -655,9 +639,6 @@ assignment.  As things are now, we are processing left-side applications
 \emph{before} infixes are resolved.  That is, we assume that the left-most
 in the application operator is the operator being applied to the remaining
 elements in the list.
-
-### A possible bug here is that the names we return are qualified rather
-than OneName TwoNames ... this means that the typechecker will ignore them
 
 \begin{spec}
   op processLHS : ATerm Position -> QualifiedId * (ATerm Position)
@@ -917,227 +898,6 @@ and compile the rest between the new and final vertex.
 \end{spec}
 
 sort ReturnInfo = Option {returnName : String, returnSort : PSort}
-
-During compilation we carry around some contex information. This requires some
-more thought as not all the compilation functions need all the information.
-Perhaps this should be added to the local monadic state. Perhaps the operations
-should be monadic.
-
-Some of the state is changed and must be restored as one enters and leaves a context.
-The rest changes monotonically.  Perhaps the product should be partitioned
-to reflect this and thereby simplify the task of restoring the context.
-
-\begin{spec}
-
-sort ProcContext = {
-    procedures : PolyMap.Map (QualifiedId,Procedure),
-    dynamic : Spec,
-    static : Spec,
-    graphCounter : Nat,
-    varCounter : Nat,
-    initialV : V.Elem,
-    finalV : V.Elem,
-    exit : V.Elem,
-    break : Option V.Elem,
-    continue : Option V.Elem,
-    bSpec : BSpec,
-    returnInfo : ReturnInfo
-  }
-
-op procedures : ProcContext -> PolyMap.Map (QualifiedId, Procedure)
-def procedures ctxt = ctxt.procedures
-
-op dynamic : ProcContext -> Spec
-def dynamic procContext = procContext.dynamic
-
-op static : ProcContext -> Spec
-def static procContext = procContext.static
-
-op graphCounter : ProcContext -> Nat
-def graphCounter procContext = procContext.graphCounter
-
-% Should really identify V.Elem with E.Elem since in the
-% twist they have the same.
-% The implementation of this function is naive in the sense that
-% it creates and destroys things on the heap more than it should.
-op newGraphElement : ProcContext -> (V.Elem * ProcContext)
-def newGraphElement procContext =
-  (mkNatVertexEdge (graphCounter procContext),
-   setGraphCounter procContext ((graphCounter procContext) + 1))
-
-% perhaps we should have just new var and new graph element functions?
-op varCounter : ProcContext -> Nat
-def varCounter procContext = procContext.varCounter
-
-op initialV : ProcContext -> V.Elem
-def initialV procContext = procContext.initialV
-
-op setInitial : ProcContext -> V.Elem -> ProcContext 
-op setGraphCounter : ProcContext -> Nat -> ProcContext 
-op setFinal : ProcContext -> V.Elem -> ProcContext 
-op setExit : ProcContext -> V.Elem -> ProcContext 
-op setBreak : ProcContext -> Option V.Elem -> ProcContext 
-op setContinue : ProcContext -> Option V.Elem -> ProcContext 
-op setBSpec : ProcContext -> BSpec -> ProcContext 
-op setReturnInfo : ProcContext -> ReturnInfo -> ProcContext 
-
-op finalV : ProcContext -> V.Elem
-def finalV procContext = procContext.finalV
-
-op exit : ProcContext -> V.Elem
-def exit procContext = procContext.exit
-
-op break : ProcContext -> Option V.Elem
-def break procContext = procContext.break
-
-op continue : ProcContext -> Option V.Elem
-def continue procContext = procContext.continue
-
-op bSpec : ProcContext -> BSpec
-def bSpec procContext = procContext.bSpec
-
-op returnInfo : ProcContext -> ReturnInfo
-def returnInfo procContext = procContext.returnInfo
-
-op setStatic : ProcContext -> Spec -> ProcContext 
-op setDynamic : ProcContext -> Spec -> ProcContext 
-
-% op setProcedures : ProcContext -> PolyMap.Map (QualifiedId,Procedure) -> ProcContext 
-% def setProcedures procContext procs = {
-%     procedures = procs,
-%     dynamic = procContext.dynamic,
-%     static = procContext.static,
-%     graphCounter = procContext.graphCounter,
-%     varCounter = procContext.varCounter,
-%     initialV = procContext.initialV,
-%     finalV = procContext.finalV,
-%     exit = procContext.exit,
-%     break = procContext.break,
-%     continue = procContext.continue,
-%     bSpec = procContext.bSpec,
-%     returnInfo = procContext.returnInfo
-%   }
-
-def setDynamic procContext spc = {
-    procedures = procContext.procedures,
-    dynamic = spc,
-    static = procContext.static,
-    graphCounter = procContext.graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = procContext.initialV,
-    finalV = procContext.finalV,
-    exit = procContext.exit,
-    break = procContext.break,
-    continue = procContext.continue,
-    bSpec = procContext.bSpec,
-    returnInfo = procContext.returnInfo
-  }
-
-def setStatic procContext spc = {
-    procedures = procContext.procedures,
-    dynamic = procContext.dynamic,
-    static = spc,
-    graphCounter = procContext.graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = procContext.initialV,
-    finalV = procContext.finalV,
-    exit = procContext.exit,
-    break = procContext.break,
-    continue = procContext.continue,
-    bSpec = procContext.bSpec,
-    returnInfo = procContext.returnInfo
-  }
-
-def setFinal procContext vertex = {
-    procedures = procContext.procedures,
-    dynamic = procContext.dynamic,
-    static = procContext.static,
-    graphCounter = procContext.graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = procContext.initialV,
-    finalV = vertex,
-    exit = procContext.exit,
-    break = procContext.break,
-    continue = procContext.continue,
-    bSpec = procContext.bSpec,
-    returnInfo = procContext.returnInfo
-  }
-
-def setBreak procContext optVertex = {
-    procedures = procContext.procedures,
-    dynamic = procContext.dynamic,
-    static = procContext.static,
-    graphCounter = procContext.graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = procContext.initialV,
-    finalV = procContext.finalV,
-    exit = procContext.exit,
-    break = optVertex,
-    continue = procContext.continue,
-    bSpec = procContext.bSpec,
-    returnInfo = procContext.returnInfo
-  }
-
-def setContinue procContext optVertex = {
-    procedures = procContext.procedures,
-    dynamic = procContext.dynamic,
-    static = procContext.static,
-    graphCounter = procContext.graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = procContext.initialV,
-    finalV = procContext.finalV,
-    exit = procContext.exit,
-    break = procContext.break,
-    continue = optVertex,
-    bSpec = procContext.bSpec,
-    returnInfo = procContext.returnInfo
-  }
-
-def setInitial procContext vertex = {
-    procedures = procContext.procedures,
-    dynamic = procContext.dynamic,
-    static = procContext.static,
-    graphCounter = procContext.graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = vertex,
-    finalV = procContext.finalV,
-    exit = procContext.exit,
-    break = procContext.break,
-    continue = procContext.continue,
-    bSpec = procContext.bSpec,
-    returnInfo = procContext.returnInfo
-  }
-
-def setBSpec procContext bSpec = {
-    procedures = procContext.procedures,
-    dynamic = procContext.dynamic,
-    static = procContext.static,
-    graphCounter = procContext.graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = procContext.initialV,
-    finalV = procContext.finalV,
-    exit = procContext.exit,
-    break = procContext.break,
-    continue = procContext.continue,
-    bSpec = bSpec,
-    returnInfo = procContext.returnInfo
-  }
-
-def setGraphCounter procContext graphCounter = {
-    procedures = procContext.procedures,
-    dynamic = procContext.dynamic,
-    static = procContext.static,
-    graphCounter = graphCounter,
-    varCounter = procContext.varCounter,
-    initialV = procContext.initialV,
-    finalV = procContext.finalV,
-    exit = procContext.exit,
-    break = procContext.break,
-    continue = procContext.continue,
-    bSpec = procContext.bSpec,
-    returnInfo = procContext.returnInfo
-  }
-\end{spec}
 
 To compile a collection of alternatives, we compile each alternative
 separately but in such a way that they all connect the same
