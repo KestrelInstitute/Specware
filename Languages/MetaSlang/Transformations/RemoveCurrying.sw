@@ -78,6 +78,15 @@ RemoveCurrying qualifying spec
 
 %  op  unCurryDef: MS.Term * Nat -> MS.Term
 %  def unCurryDef(tm,curryshape) =
+  op  getCurryFnArgs: MS.Term -> Option(MS.Term * List MS.Term)
+  def getCurryFnArgs t =
+    let def aux(term,i,args) =
+        case term
+          of Fun _ -> Some(term,args)
+	   | Var _ -> Some(term,args)
+           | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
+           | _ -> None
+  in aux(t,0,[])
 
   op  unCurryTerm: MS.Term * Spec -> MS.Term
   def unCurryTerm(tm,spc) =
@@ -89,7 +98,7 @@ RemoveCurrying qualifying spec
 			 mkTuple(map unCurryTermRec args))
 	  else
 	    let newVars = mkNewVars(nthTail(curryArgSorts(spc,termSort f),
-					    curryShape - length args),
+					    curryShape - length args - 1),
 				    map (fn (id,_) -> id) (freeVars f),
 				    spc)
 	    in
@@ -100,7 +109,7 @@ RemoveCurrying qualifying spec
     in
     case tm of
       | Apply(t1,t2,a) ->
-        (case getCurryArgs tm  of
+        (case getCurryFnArgs tm  of
 	   | None -> unCurryApply(unCurryTermRec t1,[unCurryTermRec t2],spc)
 	   | Some(f,args) -> unCurryApply(f,map unCurryTermRec args,spc))
       | Record(row,a) ->
@@ -121,7 +130,7 @@ RemoveCurrying qualifying spec
       | Lambda([(pat,_,body)],_)  ->
 	let bodySort = termSort body in
 	if arrow? (spc,bodySort)
-	  then flattenLambda(patVars pat,body,bodySort,spc)
+	  then flattenLambda(getParams pat,body,bodySort,spc)
 	else
 	let newBody = unCurryTermRec body in
 	if newBody = body
@@ -159,22 +168,22 @@ RemoveCurrying qualifying spec
 %      | Bind(b,vars,M,_)  -> 
       | _ -> tm
 
-  op  flattenLambda: List Var * MS.Term * Sort * Spec -> MS.Term
+  op  flattenLambda: List Pattern * MS.Term * Sort * Spec -> MS.Term
   def flattenLambda(vs,body,bodySort,spc) =
     case body of
       | Lambda([(sPat,_,sBody)],_) ->
-        flattenLambda(vs ++ patVars sPat,sBody,termSort sBody,spc)
+        flattenLambda(vs ++ [sPat],sBody,termSort sBody,spc)
       | _ ->
 	case arrowOpt(spc,bodySort) of
 	  | Some (dom,_) ->
-	    %% !!? If dom is a product should we flatten it?
+	    %% !!? If dom is a product should we flatten it? No, for the moment.
 	    let newVars = mkNewVars([dom],
-				    map (fn (id,_)-> id) (freeVars body ++ vs),
+				    map (fn (id,_)-> id) (freeVars body),
 				    spc)
 	    in
-	      mkLambda(mkTuplePat(map mkVarPat (vs ++ newVars)),
+	      mkLambda(mkTuplePat(vs ++ map mkVarPat newVars),
 		       unCurryTerm(mkApply(body,mkTuple(map mkVar newVars)),spc))
-	  | None -> mkLambda(mkTuplePat(map mkVarPat vs),unCurryTerm(body,spc))
+	  | None -> mkLambda(mkTuplePat vs,unCurryTerm(body,spc))
 
   def varNamePool = ["x","y","z","w","l","m","n","o","p","q","r","s"]
 
