@@ -5,6 +5,7 @@ Synchronized with r1.13 /Languages/SpecCalculus/AbstractSyntax/Types.sl
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../MetaSlang/Specs/PosSpec % For Position
+  import /Library/Legacy/Utilities/Lisp % for LispCell
   import ../../MetaSlang/AbstractSyntax/AnnTerm % For PSL, but not Specware4
 \end{spec}
 
@@ -73,6 +74,8 @@ one to override an existing definition.
 
 \begin{spec}
   sort Name = String
+  sort ProverName = Name
+  sort ClaimName = Name
 \end{spec}
 
 The following is the sort given to us by the parser.
@@ -158,16 +161,18 @@ A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
 and sorts or for requalifying things. For now, a translation is just a
-mapping from names to names.
+mapping from names to names, annotated with the full list of aliases
+to be used in the target info.
 
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
 \begin{spec}
   sort TranslateExpr  a = List (TranslateRule a) * a
   sort TranslateRule  a = (TranslateRule_ a) * a
-  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId
-                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
-                          | Ambiguous  QualifiedId                 * QualifiedId                 
+  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId                  * SortNames % last arg is all aliases
+                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort)  * OpNames   % last arg is all aliases
+                          | Ambiguous  QualifiedId                 * QualifiedId                  * Aliases   % last arg is all aliases
+  sort Aliases = List QualifiedId
 \end{spec}
 
 A \verb+NamesExpr+ denotes list of names and operators. They are used in
@@ -247,6 +252,12 @@ them to be presented in any order.
   sort DiagMorphRule_ a =
     | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
+
+  sort Assertions = | All
+                    | Explicit List ClaimName
+
+  sort ProverOptions = | Options (List LispCell)
+                       | Error   (String * String)  % error msg, problematic string
 \end{spec}
 
 A \verb+NatTranComp+ element is a component in a natural transformation
