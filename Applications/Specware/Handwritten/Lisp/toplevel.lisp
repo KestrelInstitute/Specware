@@ -2,28 +2,29 @@
 (defpackage :SpecCalc)
 (defpackage :JGen)
 ;; Toplevel Lisp aliases for Specware
+
 (defparameter *sw-help-strings*
-    '(("dir" . "List files in current directory")
-      ("list" . "List loaded units")
-      ("ls" . "List files in current directory")
-      ("set-base" . "Set base library unit id")
-      ("show" . "Show unit")
-      ("show-base-unit-id" . "Show base library unit id")
-      ("sw" . "Process unit")
-      ("sw-help" . "Help for specware commands")
-      ("sw-init" . "Clear Spec cache")
-      ("swc" . "Generate C code for unit")
-      ("swe" . "Evaluate specware term")
-      ("swe-spec" . "Set spec context for :swe command")
-      ("swj" . "Generate Java code for unit")
-      ("swj-config" . "Show configuration parameters for Java generation")
-      ("swj-config-dir" . "Set base directory to be used by :swj")
-      ("swj-config-make-public" . "Set public names to be used by :swj")
-      ("swj-config-pkg" . "Set package name to be used by :swj")
-      ("swj-config-reset" . "Restore default configuration parameters for Java generation")
-      ("swl" . "Generate Lisp code for unit")
-      ("swll" . "Generate Lisp code for local definition of unit, and compile and load")
-      ("swpath" . "Query (no arg) or set SWPATH"))
+  '(("dir" . "List files in current directory")
+    ("list" . "List loaded units")
+    ("ls" . "List files in current directory")
+    ("set-base" . "Set base library unit id")
+    ("show" . "Show unit")
+    ("show-base-unit-id" . "Show base library unit id")
+    ("sw" . "Process unit")
+    ("sw-help" . "Help for specware commands")
+    ("sw-init" . "Clear Spec cache")
+    ("swc" . "Generate C code for unit")
+    ("swe" . "Evaluate specware term")
+    ("swe-spec" . "Set spec context for :swe command")
+    ("swj" . "Generate Java code for unit")
+    ("swj-config" . "Show configuration parameters for Java generation")
+    ("swj-config-dir" . "Set base directory to be used by :swj")
+    ("swj-config-make-public" . "Set public names to be used by :swj")
+    ("swj-config-pkg" . "Set package name to be used by :swj")
+    ("swj-config-reset" . "Restore default configuration parameters for Java generation")
+    ("swl" . "Generate Lisp code for unit")
+    ("swll" . "Generate Lisp code for local definition of unit, and compile and load")
+    ("swpath" . "Query (no arg) or set SWPATH"))
   )
 
 (defun sw-help (command)
@@ -32,19 +33,17 @@
 	(when pr
 	  (format t "~a~%" (cdr pr))))
     (loop for (com . helpstr) in *sw-help-strings*
-	  do (format t "~14a  ~a~%" com helpstr ))))
+      do (format t "~14a  ~a~%" com helpstr ))))
 
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
     
 
 (defvar *last-unit-Id-_loaded* nil)
-(defvar *last-swl-args* nil)
-(defvar *last-swj-args* nil)
 
 (defun sw0 (x)
-   (Specware::runSpecwareUID x)
-   (values))
+  (Specware::runSpecwareUID x)
+  (values))
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defun set-base (x)
@@ -78,64 +77,68 @@
 #+allegro
 (top-level:alias ("sw" :case-sensitive) (&optional x)
   (if x
-    (sw (setq *last-unit-Id-_loaded* (string x)))
+      (sw (setq *last-unit-Id-_loaded* (string x)))
     (if *last-unit-Id-_loaded*
-      (sw *last-unit-Id-_loaded*)
+	(sw *last-unit-Id-_loaded*)
       (format t "No previous unit evaluated~%"))))
 
 (defun show (x)
-   (Specware::evaluatePrint_fromLisp x)
-   (values))
+  (Specware::evaluatePrint_fromLisp x)
+  (values))
 #+allegro
 (top-level:alias ("show" :case-sensitive) (&optional x)
   (if x
-    (show (setq *last-unit-Id-_loaded* (string x)))
+      (show (setq *last-unit-Id-_loaded* (string x)))
     (if *last-unit-Id-_loaded*
-      (show *last-unit-Id-_loaded*)
+	(show *last-unit-Id-_loaded*)
       (format t "No previous unit evaluated~%"))))
 
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl (x &optional y)
-   (Specware::evaluateLispCompile_fromLisp-2 x (if y (cons :|Some| y)
-						 '(:|None|)))
-   (values))
+  (Specware::evaluateLispCompile_fromLisp-2 x (if y (cons :|Some| y)
+						'(:|None|)))
+  (values))
+
+(defvar *last-swl-args* nil)
+
 #+allegro
 (top-level:alias ("swl" :case-sensitive) (&optional &rest args)
-   (let ((r-args (if (not (null args))
-		     args
-		   *last-swl-args*)))
-   (if r-args
-       (progn (setq *last-swl-args* args)
-	      (funcall 'swl (string (first r-args))
-		       (if (not (null (second r-args)))
-			   (string (second r-args)) nil)))
-     (format t "No previous unit evaluated~%"))))
+  (let ((r-args (if (not (null args))
+		    args
+		  *last-swl-args*)))
+    (if r-args
+	(progn (setq *last-swl-args* args)
+	       (funcall 'swl (string (first r-args))
+			(if (not (null (second r-args)))
+			    (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
 
 (defun swll (x &optional y)
-   (let ((lisp-file-name (or y (concatenate 'string
-				 specware::temporaryDirectory "cl-current-file"))))
-     (if (Specware::evaluateLispCompileLocal_fromLisp-2
-	    x (cons :|Some| lisp-file-name))
-	 (let (*redefinition-warnings*)
-	   (specware::compile-and-load-lisp-file lisp-file-name))
-       "Specware Processing Failed!")))
+  (let ((lisp-file-name (or y (concatenate 'string
+					   specware::temporaryDirectory "cl-current-file"))))
+    (if (Specware::evaluateLispCompileLocal_fromLisp-2
+	 x (cons :|Some| lisp-file-name))
+	(let (*redefinition-warnings*)
+	  (specware::compile-and-load-lisp-file lisp-file-name))
+      "Specware Processing Failed!")))
+
 #+allegro
 (top-level:alias ("swll" :case-sensitive) (&optional &rest args)
-   (let ((r-args (if (not (null args))
-		     args
-		   *last-swl-args*)))
-   (if r-args
-       (progn (setq *last-swl-args* args)
-	      (funcall 'swll (string (first r-args))
-		       (if (not (null (second r-args)))
-			   (string (second r-args)) nil)))
-     (format t "No previous unit evaluated~%"))))
+  (let ((r-args (if (not (null args))
+		    args
+		  *last-swl-args*)))
+    (if r-args
+	(progn (setq *last-swl-args* args)
+	       (funcall 'swll (string (first r-args))
+			(if (not (null (second r-args)))
+			    (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
 
 
 (defpackage "SWE") ; for access to results
 
-(defvar *current-swe-spec* nil ) ; "/Library/Base"
-
+(defvar *current-swe-spec*     nil) ; nil means no import
+(defvar *current-swe-spec-dir* nil)
 (defvar swe::tmp)
 
 #+allegro
@@ -259,31 +262,34 @@
 ;;; --------------------------------------------------------------------------------
 
 (defun swj (x &optional y)
-      (Specware::evaluateJavaGen_fromLisp-2 x (if y (cons :|Some| y)
-						'(:|None|)))
-      (values))
+  (Specware::evaluateJavaGen_fromLisp-2 x 
+					(if y 
+					    (cons :|Some| y)
+					  '(:|None|)))
+  (values))
+
+(defvar *last-swj-args* nil)
 
 #+allegro
 (top-level:alias ("swj" :case-sensitive) (&optional &rest args)
-   (let ((r-args (if (not (null args))
-		     args
-		   *last-swj-args*)))
-   (if r-args
-       (progn (setq *last-swj-args* args)
-	      (funcall 'swj (string (first r-args))
-		       (if (not (null (second r-args)))
-			   (string (second r-args)) nil)))
-     (format t "No previous unit evaluated~%"))))
+  (let ((r-args (if (not (null args))
+		    args
+		  *last-swj-args*)))
+    (if r-args
+	(progn (setq *last-swj-args* args)
+	       (funcall 'swj (string (first r-args))
+			(if (not (null (second r-args)))
+			    (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
 
 (defun swj-config-pkg (&optional pkg)
   (defparameter #+allegro excl::*redefinition-warnings*
-      #+Lispworks lispworks::*redefinition-action*
-      nil)
+    #+Lispworks lispworks::*redefinition-action*
+    nil)
   (if (not (null pkg))
       (defparameter JGEN::packageName (string pkg))
     ())
-  (format t "~A~%" JGEN::packageName)
-  )
+  (format t "~A~%" JGEN::packageName))
 
 (defun swj-config-dir (&optional dir)
   (defparameter #+allegro excl::*redefinition-warnings*
@@ -292,8 +298,7 @@
   (if (not (null dir))
       (defparameter JGEN::baseDir (string dir))
     ())
-  (format t "~A~%" JGEN::baseDir)
-  )
+  (format t "~A~%" JGEN::baseDir))
 
 (defun swj-config-make-public (&optional ops)
   (defparameter #+allegro excl::*redefinition-warnings*
@@ -302,9 +307,7 @@
   (if (not (null ops))
       (defparameter JGEN::publicOps ops)
     ())
-  (format t "~A~%" JGEN::publicOps)
-  )
-  
+  (format t "~A~%" JGEN::publicOps))
 
 (defun swj-config-reset ()
   (defparameter #+allegro excl::*redefinition-warnings*
@@ -325,53 +328,52 @@
 
 #+allegro
 (top-level:alias
- ("swj-config") ()
- (let* (
-       (pkgname (format nil "~A" JGEN::packageName))
-       (bdir (format nil "~A" JGEN::baseDir))
-       (ops (format nil "~A" JGEN::publicOps))
-       (pops (if (string= ops "")
-		(concatenate 'string "\"" ops "\"")
-	      "none")
-	    )
-       )
-   (progn
-    (format t ";;; package name   [change with :swj-config-pkg]:         \"~A\"~%" pkgname)
-    (format t ";;; base directory [change with :swj-config-dir]:         \"~A\"~%" bdir)
-    (format t ";;; public ops     [change with :swj-config-make-public]: ~A~%" ops)
-    (if (not (string= pkgname "default"))
-	(let* (
-	       (ppath (map 'string #'(lambda(c) (if (eq c #\.) #\/ c)) pkgname))
-	       (dir (concatenate 'string bdir "/" ppath "/"))
-	       )
-	  (format t ";;; Java file(s) will be written into directory \"~A\"~%" dir)
-	  ) ()))))
+  ("swj-config") ()
+  (let* ((pkgname (format nil "~A" JGEN::packageName))
+	 (bdir (format nil "~A" JGEN::baseDir))
+	 (ops (format nil "~A" JGEN::publicOps))
+	 ;; (pops (if (string= ops "") ; is this test backwards?
+	 ;; 	   (concatenate 'string "\"" ops "\"")
+	 ;; 	   "none"))
+	 )
+    (progn
+      (format t ";;; package name   [change with :swj-config-pkg]:         \"~A\"~%" pkgname)
+      (format t ";;; base directory [change with :swj-config-dir]:         \"~A\"~%" bdir)
+      (format t ";;; public ops     [change with :swj-config-make-public]: ~A~%" ops)
+      (if (not (string= pkgname "default"))
+	  (let* ((ppath (map 'string #'(lambda(c) (if (eq c #\.) #\/ c)) pkgname))
+		 (dir (concatenate 'string bdir "/" ppath "/")))
+	    (format t ";;; Java file(s) will be written into directory \"~A\"~%" dir))
+	()))))
 
 ;;; --------------------------------------------------------------------------------
+
+(defvar *last-swc-args* nil)
 
 (defun swc (x &optional y)
    (Specware::evaluateCGen_fromLisp-2 x (if y (cons :|Some| y)
 					  '(:|None|))))
 #+allegro
 (top-level:alias ("swc" :case-sensitive) (&optional &rest args)
-   (let ((r-args (if (not (null args))
-		     args
-		   *last-swc-args*)))
-   (if r-args
-       (progn (setq *last-swc-args* args)
-	      (funcall 'swc (string (first r-args))
-		       (if (not (null (second r-args)))
-			   (string (second r-args)) nil)))
-     (format t "No previous unit evaluated~%"))))
+  (let ((r-args (if (not (null args))
+		    args
+		  *last-swc-args*)))
+    (if r-args
+	(progn (setq *last-swc-args* args)
+	       (funcall 'swc (string (first r-args))
+			(if (not (null (second r-args)))
+			    (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
 
 #+allegro
 (top-level:alias ("wiz" :case-sensitive) (&optional (b nil b?))
-   (if b? (princ (setq SpecCalc::specwareWizard? b))
-          (princ SpecCalc::specwareWizard?)))
+  (if b? (princ (setq SpecCalc::specwareWizard? b))
+    (princ SpecCalc::specwareWizard?)))
 
 ;; When the following boolean is true, then the System.debug function will
 ;; take the user into the Lisp debugger.
-(defvar System-spec::specwareDebug? nil)
+;; already declared in ~/Work/Generic/Specware4/Library/Base/Handwritten/Lisp/System.lisp :
+;; (defvar System-spec::specwareDebug? nil)
 (defun swdbg (&optional (b nil b?))
   (if b? (princ (setq System-spec::specwareDebug?
 		      (and b (not (equal b "nil")))))
@@ -380,8 +382,8 @@
 
 #+allegro
 (top-level:alias ("swdbg" :case-sensitive) (&optional (b nil b?))
-   (if b? (princ (setq System-spec::specwareDebug? b))
-          (princ System-spec::specwareDebug?)))
+  (if b? (princ (setq System-spec::specwareDebug? b))
+    (princ System-spec::specwareDebug?)))
 
 (defun swpath  (&optional str)
   (if (or (null str) (equal str ""))
@@ -439,19 +441,18 @@
 
 #+mcl
 (let ((ccl::*warn-if-redefine-kernel* nil))
-(defun ccl::check-toplevel-command (form)
-  (let* ((cmd (if (consp form) (car form) form))
-         (args (if (consp form) (cdr form))))
-    (if (keywordp cmd)
-      (dolist (g ccl::*active-toplevel-commands*
-		 (cl::invoke-command-interactive cmd))
-	(when
-	    (let* ((pair (assoc cmd (cdr g))))
-	      (if pair 
-		(progn (apply (cadr pair) args)
-		       t)))
-	  (return t))))))
-)
+  (defun ccl::check-toplevel-command (form)
+    (let* ((cmd (if (consp form) (car form) form))
+	   (args (if (consp form) (cdr form))))
+      (if (keywordp cmd)
+	  (dolist (g ccl::*active-toplevel-commands*
+		     (cl::invoke-command-interactive cmd))
+	    (when (let* ((pair (assoc cmd (cdr g))))
+		    (if pair 
+			(progn (apply (cadr pair) args)
+			       t)))
+	      (return t))))))
+  )
 
 #+allegro
 (top-level:alias ("ls" :string) (&optional (str ""))
