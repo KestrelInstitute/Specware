@@ -2992,7 +2992,7 @@ The meaning of a parenthesized `expression
 [[($E$)]] is the same
 as that of the enclosed `expression
 $E$.
-The meaning of a parenthesized `inbuilt-prefix-op [[($P$)]] is the same
+The meaning of the parenthesized `inbuilt-prefix-op [[($P$)]] is the same
 as that of the `lambda-form [[fn x -> $P$ x]].
 The meaning of a parenthesized `inbuilt-infix-op [[($I$)]] is the same
 as that of the `lambda-form [[fn (x,y) -> x $I$ y]].
@@ -3406,16 +3406,24 @@ pseudo-`op-declarations:
 Restriction.
 In an `application $H$ $P$, in which
 $H$ is an `application-head and $P$ an `actual-parameter,
-the type of $P$ must be some function type
+the type of $(H)$ must be some function type
 [[$S$ -> $T$]], and then
-$H$ must have the domain type
+$P$ must have the domain type
 $S$.
 The type of the whole `application is then
 $T$.
+In particular, in an `application [[~$P$]]
+the type of both $P$ and the `application is [[Boolean]].
 </para>
 <!-- ================================================================= -->
 <para>
-The value of `prefix-application $H P$ is the value returned by
+The meaning of `prefix-application [[~$P$]] is the
+same as that of the `if-expression [[if $P$ then false else true]].
+</para>
+<para>
+The value of `prefix-application $H P$, in which
+`application-head $H$ is a `closed-expression or
+another `prefix-application, is the value returned by
 function $(H)$ for the argument value $P$.
 </para>
 <para>
