@@ -40,6 +40,10 @@ For Specware Release 4.1 we have added the following capabilities:
      2) Constructor axiom:
          fa(s: S) s = mkr_Rec_S(proj_S_1(s), proj_S_2(s))
 
+     3) Equality decomposition axiom:
+         fa(a1: A, b1:B, a2: A, b2: B)
+          (a1, b1) = (a2, b2) = a1 = a2 && b1 = b2
+
   C. Record types:
      Record types are treated as product types except the fields are
      named instead of numbered.
@@ -109,3 +113,32 @@ For Specware Release 4.1 we have added the following capabilities:
    Additionally, for Snark to make effective use of the constructor
    axiom for Product types, then the Snark options
    (assert-supported t) and (use-paramodulation t) should be used.
+
+4. Integration of a decision procedure for deciding integer linear
+   inequalities.
+
+   The default prover behavior is now to send the property being
+   proved to a simple linear arithmetic reasoner based on
+   Fourier-Motzkin procedure.  The formula being proven is abstracted
+   to a pure linear arithmetic form.  This is then sent to the linear
+   arithmetic decision procedure.  If it is proven then that result is
+   reported, otherwise the Snark prover is called as before.
+   Currently no supporting lemmas are sent to the decision procedure.
+
+   The hope is that this will enhance the robustness of Specware's
+   linear arithmetic reasoning capabilities.  In the future we will
+   enhance this aithmetic decision procedure with further theories,
+   and eventually into a more robust theorem prover than what Snark
+   currently provides.
+
+5. A more structured prover base library.
+
+   We have included a prover library that shadows the old base
+   library. Each base library in Library/Base/ has a corresponding
+   prover base library in Library/ProverBase/ that imports the
+   declarations from original base library, but includes axioms more
+   appropriate for sending to the Snark prover.
+
+   Note this library work is still preliminary and will evolve as we
+   work on concrete proofs.  Any feedback and experimentation is
+   welcome.
