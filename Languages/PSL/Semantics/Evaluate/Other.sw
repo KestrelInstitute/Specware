@@ -6,14 +6,16 @@ SpecCalc qualifying spec {
   import PSpec
   import /Languages/SpecCalculus/Semantics/Evaluate/SpecMorphism
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
+  import /Languages/PSL/CodeGen/ToC
+  import /Languages/PSL/CodeGen/Convert
 
   sort SpecCalc.OtherTerm a = List (PSpecElem a)
   % sort SpecCalc.OtherValue = SpecCalc.PSpec
 
   def SpecCalc.evaluateOther pSpec pos = evaluatePSpec pSpec
 
-  op SpecCalc.formatPSpec : PSpec -> SpecCalc.Env Doc
-  def SpecCalc.formatPSpec pSpec = {
+  op formatOtherValue : PSpec -> SpecCalc.Env Doc
+  def formatOtherValue pSpec = {
       pslBaseURI <- pathToRelativeURI "/Library/PSL/Base";
       (Spec pslBase,_,_) <- SpecCalc.evaluateURI (Internal "PSpec base") pslBaseURI;
       fixPSpec <- return {
@@ -22,6 +24,11 @@ SpecCalc qualifying spec {
            procedures = pSpec.procedures
          };
       return (ppPSpecLess fixPSpec pslBase)
+    }
+
+  def SpecCalc.evaluateOtherPrint pSpec pos = {
+       doc <- formatOtherValue pSpec;
+       print (ppFormat doc)
     }
 
   def SpecCalc.evaluateOtherSpecMorph
@@ -69,11 +76,22 @@ SpecCalc qualifying spec {
       | (_,        _) ->
            raise (TypeCheck (pos, "(Other) substitution is not a morphism, and is attempted on a non-spec"))
 
+  def SpecCalc.evaluateOtherGenerate (lang,term,optFile) (pSpec,timeStamp,depUnitIds) pos = {
+      pslBaseURI <- pathToRelativeURI "/Library/PSL/Base";
+      (Spec pslBase,_,_) <- SpecCalc.evaluateURI (Internal "PSpec base") pslBaseURI;
+      case lang of
+        | "c" ->
+             let _ = pSpecToC pSpec pslBase in
+             return (Other pSpec,timeStamp,depUnitIds)
+        | lang -> raise (Unsupported (pos, "no generation for language "
+                                         ^ lang
+                                         ^ " yet"))
+    }
+
   op unEnv : fa (a,b) (a -> SpecCalc.Env b) -> (a -> b)
   def unEnv f x =
     case (f x initialSpecwareState) of
       | (Ok y, newState) -> y
       | (Exception except, newState) -> fail (System.toString except)
-
 }
 \end{spec}

@@ -193,7 +193,7 @@ compilation of a command also returns the procedures nested inside the
 command.
 
 The partial evaluator requires the nodes and edges of the generated
-\BSpecs\ to be MetaSlang terms (of sort \verb+Term_ast+). It does not
+\BSpecs\ to be MetaSlang terms (of sort \verb+ATerm+). It does not
 matter which exact terms, as long as they are terms. So, we use MetaSlang
 natural number constants. Since we need to combine \BSpecs\ for
 sub-commands into \BSpecs\ for super-commands, we generate
@@ -239,6 +239,20 @@ things where the map differs from the canonical injection.
 The next function should be defined inside the scope of the second
 however, Specware does not have let-polymorphism.
 
+This constructs a new Map to be used n a spec morphism. It does so by
+converting an association list (which is easy to give as an argument)
+into a map (which is also implemented as an association list (duh!)). The
+indirection is silly at this point but may help us later when the maps
+are not implemented by association lists.
+
+Note that the generated map gives only where the morphism differ from
+the identity.  However it checks that everything in the domain is mapped
+to something that exists in the codomain, or if it is not mapped, then
+the name in the domain appears unchanged in the codomain.
+
+Would prefer if we had a syntax for map comprehensions. It would
+make much of the following unnecessary.
+
 \begin{spec}
   op makeMap :
     fa (a) AQualifierMap a
@@ -247,16 +261,21 @@ however, Specware does not have let-polymorphism.
         -> SpecCalc.Env (PolyMap.Map (QualifiedId,QualifiedId))
     
   def makeMap domMap codMap modifiers =
-    foldOverQualifierMap (fn (qual,id,info,newMap) -> 
-       case lookup modifiers (Qualified (qual,id)) of
+    foldOverQualifierMap (fn (domQual,domId,info,newMap) -> 
+       case lookup modifiers (Qualified (domQual,domId)) of
          | None ->
-             (case findAQualifierMap (codMap,qual,id) of
+             (case findAQualifierMap (codMap,domQual,domId) of
                 | None -> raise (SpecError (internalPosition,
                             "no target for " 
-                            ^ (printQualifiedId (Qualified (qual,id)))))
+                          ^ (printQualifiedId (Qualified (domQual,domId)))))
                 | Some _ -> return newMap)
-          | Some newQId ->
-              return (PolyMap.update newMap (Qualified (qual,id)) newQId)) emptyMap domMap
+         | Some (codQualId as (Qualified (codQual,codId))) ->
+             (case findAQualifierMap (codMap,codQual,codId) of
+                | None -> raise (SpecError (internalPosition,
+                            "specified target qualified id does not exit: " 
+                          ^ (printQualifiedId (Qualified (codQual,codId)))))
+                | Some _ -> return (PolyMap.update newMap (Qualified (domQual,domId)) codQualId)))
+           emptyMap domMap
 
   op mkMorph :
        Spec
@@ -872,24 +891,26 @@ front of the axiom term.
     -> SpecCalc.Env (BSpec * Nat * PSpec)
 \end{spec}
 
+\begin{spec}
   def compileProcCall pSpec first last bSpec cnt trm? procId args = {
       statCtxt <- staticSpec pSpec;
       procOpInfo <-
-        case findTheOp (dyCtxt,procId) of
+        (case findTheOp (statCtxt,procId) of
           | None ->
              raise (SpecError (internalPosition, "compileProcCall: call to undefined procedure: " ^ (printQualifiedId procId)))
-          | Some info -> info;
+          | Some info -> return info);
 
       (leftId, leftPrimedTerm) <-
          return (case trm? of
            | Some trm -> processLHS trm
-           | None -> ("dummy", mkRecord []);
+           % | None -> ("dummy", mkRecord []);
 %                  (case procOpInfo of
 %                      (_,(_,(Base(_,srts),_)),_) -> 
 %                          (mkVar_ast("x___x",hd(tl srts)),hd(tl srts))
 %                    | _ -> fail
 %                        ("compileProcCall: bad procedure opInfo: " ^ pr))
            | _ -> fail "compileProcCall: result term not a variable"); 
+\end{spec}
 
 So a procedure can write to anything in scope when it was declared.
 What about local variables that are introduced after the procedure is declared
@@ -898,80 +919,66 @@ If a variable name appears here and in the dynamic context of the procedure,
 then they are the same variable. Moreover we can be certain that the new primed
 version of the variable doesn't exist.
 
-      primedId <- return (leftId ^ "'");
-      procInfo <- return (eval procs procId); 
+\begin{spec}
+      procInfo <- return (eval pSpec.procedures procId); 
       declDynCtxt <- return procInfo.dynamicSpec;
-      newOps <- foldOverOps (fn (qual,id,opInfo,map) ->
+      newOps <- foldOverQualifierMap (fn (qual,id,opInfo,map) ->
                   return (insertAQualifierMap (map, qual, id ^ "'", opInfo)))
                              pSpec.dynamicSpec.ops
-                             procInfo.dynamicSpec
-      apexSpec <- return (setOps pSpec.dynamicSpec, newOps);
+                             procInfo.dynamicSpec.ops;
+      apexSpec <- return (setOps (pSpec.dynamicSpec, newOps));
       argTuple <- return (mkTuple args); 
-      oldRec <- return (mkRecord_local (foldOverOps (fn (qual,id,opInfo,terms) ->
-                              Cons (mkOp(mkQualifiedId (qual,id), sortOf (sortScheme opInfo)),terms))
+      oldRec <- return (mkTuple (foldriAQualifierMap (fn (qual,id,opInfo,terms) ->
+                             Cons (mkOp (mkQualifiedId (qual,id), sortOf (sortScheme opInfo)),terms))
                              []
                              declDynCtxt.ops));
-      newRec <- return (mkRecord_local (foldOverOps (fn (qual,id,opInfo,terms) ->
-                              Cons (mkOp(mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo)),terms))
+      newRec <- return (mkTuple (foldriAQualifierMap (fn (qual,id,opInfo,terms) ->
+                             Cons (mkOp (mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo)),terms))
                              []
                              declDynCtxt.ops));
+      nameMap <- return (foldriAQualifierMap (fn (qual,id,opInfo,nameMap) ->
+                             Cons ((mkQualifiedId (qual,id), mkQualifiedId (qual,id ^ "'")), nameMap))
+                             []
+                             declDynCtxt.ops);
+      nameMap <-
+        return (case trm? of
+                  | None -> nameMap
+                  | Some _ -> Cons ((leftId, makePrimedId leftId), nameMap));
+
       recPair <- return (mkTuple [oldRec,newRec]); 
       totalTuple <- return (mkTuple [argTuple,leftPrimedTerm,recPair]); 
-      procOp <- return (mkOp (pr, sortOf (sortScheme procOpInfo)));
+      procOp <- return (mkOp (procId, sortOf (sortScheme procOpInfo)));
       axm <- return (mkApply (procOp,totalTuple));
-      apexSpec <- return (
+      apexSpec <-
         case trm? of
           | Some trm -> 
-              (case findTheOp (pSpec.dynamicSpec.ops,leftId) of
+              (case findTheOp (pSpec.dynamicSpec,leftId) of
                  | None ->
                      raise (SpecError (internalPosition,
-                                      "compileProcCall: id '" ^ (printQualifiedId leftId) ^ "' is undefined")
-                 | Some (fixity,sortScheme,optTerm) ->
-end{spec}
+                                      "compileProcCall: id '" ^ (printQualifiedId leftId) ^ "' is undefined"))
+                 | Some (names,fixity,sortScheme,optTerm) ->
+\end{spec}
 
 The point here is that, if the variable was defined in an scope outside
 the procedure, then, thanks to the addOp above, it will already exist
 in the apexSpec. Hence, before adding we must make sure its not already
 there.
 
-begin{spec}
-                       (case findTheOp(apexSpec.ops,primedId) of
-                          | None -> addOp ((primedId,fixity,sortScheme,optTerm),apexSpec)
-                          | Some _ -> apexSpec))
-            | None -> apexSpec in
+\begin{spec}
 
-      let apexSpec = addAxiom_ast(("call",[],axm),apexSpec) in
-      let apexSpec_ms = elaborateInContext ctxt.static apexSpec in
-      let morph1 = identityMorphism (modeSpec_ms bspec first) in
-      let morph1 = {
-          dom = morph1.dom,
-          cod = apexSpec_ms,
-          sortMap = morph1.sortMap,
-          opMap = morph1.opMap
-        } in
-      let morph2 = identityMorphism (modeSpec_ms bspec last) in
-      let morph2 = {
-          dom = morph2.dom,
-          cod = apexSpec_ms,
-          sortMap = morph2.sortMap,
-          opMap =
-            let om = StringMap_foldri
-              (fn (opr,opinfo,map) -> update_p map opr (opr ^ "'")) morph2.opMap
-                                        declDynCtxt.ops in
-            case trm? of
-                None -> om
-              | Some _ -> update_p om leftId primedId
-        } in
-      let newEdge = mkNatVertexEdge cnt in
-      let system = addEdge bspec.system newEdge first last in
-      let system = labelEdge system newEdge apexSpec_ms morph1 morph2 in
-      let bspec = {
-          initial2=bspec.initial2,
-          final2=bspec.final2,
-          system=system
-        } in
-      (bspec,cnt+1,procs)
-end{spec}
+                       (case findTheOp (apexSpec, makePrimedId leftId) of
+                          | None -> addOp [makePrimedId leftId] fixity sortScheme optTerm apexSpec (Internal "compileProcCall")
+                          | Some _ -> return apexSpec))
+          | None -> return apexSpec; 
+      apexSpec <- return (addAxiom (("call", [], axm), apexSpec));
+      apexElab <- elaborateInContext apexSpec statCtxt;
+      morph1 <- mkMorph (modeSpec bSpec first) apexElab [] [];
+      morph2 <- mkMorph (modeSpec bSpec last) apexElab [] nameMap;
+      newEdge <- return (mkNatVertexEdge cnt);
+      bSpec <- return (addTrans bSpec first last newEdge apexElab morph1 morph2);
+      return (bSpec,cnt+1,pSpec)
+   }
+\end{spec}
 
 \begin{spec}
   op compileSeq :
