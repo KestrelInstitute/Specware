@@ -3,7 +3,7 @@
 This constructs Specware and refines various abstract sorts.
 
 \begin{spec}
-let Specware4 = spec {
+spec {
   import /Languages/SpecCalculus/Semantics/Specware
   import /Languages/SpecCalculus/Semantics/Evaluate/NoOther
 
@@ -33,6 +33,5 @@ let Specware4 = spec {
     /Library/Structures/Data/Maps/Monomorphic/AsLists
   import NatTrans qualifying
     /Library/Structures/Data/Categories/NatTrans/FreeFunctorDomain/Polymorphic/AsRecord
-} in
-  generate lisp Specware4
+} 
 \end{spec}

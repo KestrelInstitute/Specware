@@ -235,5 +235,5 @@
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
 (defun cl-user::boot ()
-  (cl-user::sw "/Applications/Specware/Specware4")
+  (cl-user::swl "/Applications/Specware/Specware4")
   )

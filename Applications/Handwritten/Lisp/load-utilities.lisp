@@ -134,6 +134,7 @@
      ;(compile-file filep)
      ;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
      (compile-file-if-needed filep)
+     ;; scripts depend upon the following returning true iff successful
      (load (make-pathname :defaults filep :type nil)))
    )
 

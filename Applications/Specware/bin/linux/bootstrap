@@ -131,7 +131,7 @@ if [   -f bin/linux/Specware4.dxl \
 		(load "$MEMORY_MANAGEMENT") 
 		(enlarge-stack)
 		(exiting-on-errors 
-		  (if (sw "/Applications/Specware/Specware4")
+		  (if (swl "/Applications/Specware/Specware4")
                     ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
 		    (exit 0)
 		    (exit 11)))
@@ -158,7 +158,7 @@ else
 			;; Specware package before the reader sees a reference to it.
 			(exiting-on-errors 
 			  (Specware::initializeSpecware-0) 
-			  (if (sw "/Applications/Specware/Specware4")
+			  (if (swl "/Applications/Specware/Specware4")
                             ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
 			    (exit 0)
 			    (exit 22)))
@@ -193,7 +193,7 @@ else
 			    ;; Specware package before the reader sees a reference to it.
 			    (exiting-on-errors 
 			      (Specware::initializeSpecware-0) 
-			      (if (sw "/Applications/Specware/Specware4")
+			      (if (swl "/Applications/Specware/Specware4")
                                 ;; sw returns T if happy, NIL if there was an error (which might not be signalled to lisp as an error!)
 				(exit 0)
 			        (exit 33)))

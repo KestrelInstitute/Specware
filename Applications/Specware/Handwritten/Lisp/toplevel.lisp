@@ -212,6 +212,7 @@
 
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl-internal (x &optional y)
+  ;; scripts depend upon this returning true iff successful
   (setq x (norm-unitid-str x))
   (flet ((swl1 (x y)
 	   (let ((val (Specware::evaluateLispCompile_fromLisp-2 x
@@ -257,6 +258,7 @@
 (defvar *last-swl-args* nil)
 
 (defun swl (&optional args)
+  ;; scripts depend upon this returning true iff successful
   (let ((r-args (if (not (null args))
 		    (extract-final-file-name args)
 		  *last-swl-args*)))
@@ -281,6 +283,7 @@
       (format t "No previous unit evaluated~%"))))
 
 (defun swll-internal (x &optional y)
+  ;; scripts depend upon this returning true iff successful
   (let ((lisp-file-name (subst-home (or y (concatenate 'string
 					    specware::temporaryDirectory
 					    "cl-current-file"))))
@@ -289,6 +292,7 @@
 	     (let ((val (if (Specware::evaluateLispCompileLocal_fromLisp-2
 			     x (cons :|Some| lisp-file-name))
 			    (let (#+allegro *redefinition-warnings*)
+			      ;; scripts depend upon the following returning true iff successful
 			      (specware::compile-and-load-lisp-file lisp-file-name))
 			  "Specware Processing Failed!")))
 	       (show-error-position emacs::*goto-file-position-stored*)
@@ -300,6 +304,7 @@
 	  (swll1 x lisp-file-name))))))
 
 (defun swll (&optional args)
+  ;; scripts depend upon this returning true iff successful
   (let ((r-args (if (not (null args))
 		    (extract-final-file-name args)
 		  *last-swl-args*)))
