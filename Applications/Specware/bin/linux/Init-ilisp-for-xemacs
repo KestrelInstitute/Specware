@@ -1,0 +1,47 @@
+#!/bin/sh
+
+## Once per installation xemacs/cmucl ilisp interface
+
+## This script establishes Emacs/ilisp as a directory and runs ilisp-compile-inits
+## This eliminates some startup complaints from cmucl that would require 
+## (once per user per installation) manual intervention to eliminate.
+
+## Running this multiple times should be harmless.
+
+cd ${SPECWARE4}/Library/IO/Emacs/
+if [ ! -e ilisp ]; then
+  ln -s ilisp-20020831 ilisp
+fi
+
+echo ""
+echo "ilisp/ should be a directory (or a link to one) containing many files, including ilisp.el"
+echo ""
+ls -sltd ilisp
+ls -sltd ilisp/ilisp.el
+echo ""
+
+cd ilisp
+
+DOIT=NO
+if [ ! -e cl-ilisp.x86f ]; then
+  DOIT=YES
+fi
+if [ ! -e cmulisp.x86f ]; then
+  DOIT=YES
+fi
+if [ ! -e ilisp-pkg.x86f ]; then
+  DOIT=YES
+fi
+
+if [ "$DOIT" == "YES" ]; then
+  echo "About to run ilisp-compile-inits within xemacs, to compile ilisp-pkg.lisp, cmulisp.lisp, cl-ilisp.lisp"
+  # This is magic mumbo-jumbo -- more straightforward attempts to compile the files seem to fail in obscure ways.
+  xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+         -eval "(progn (setq lisp-emacs-interface-type 'ilisp) (run-plain-lisp) (ilisp-compile-inits) (kill-emacs t))"
+  echo "Should see three or more x86f files:"
+else
+  echo "No need to run ilisp-compile-inits within xemacs, since the following already exist:"
+fi
+echo ""
+ls -sltr *.x86f
+echo ""
