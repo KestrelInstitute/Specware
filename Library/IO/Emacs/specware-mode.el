@@ -183,7 +183,7 @@ accepted in lieu of prompting."
   (define-key map "\;"       'sw:electric-semi)
   (define-key map "\M-\t"    'sw:back-to-outer-indent)
   (define-key map "\C-j"     'newline-and-indent)
-  (define-key map "\177"     'backward-delete-char-untabify)
+  ;(define-key map "\177"     'backward-delete-char-untabify)
   (define-key map [backspace] 'backward-delete-char-untabify)
   (define-key map "\C-\M-\q" 'sw:indent-sexp)
   (define-key map "\C-\M-\\" 'sw:indent-region)
@@ -201,7 +201,7 @@ accepted in lieu of prompting."
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
-  (define-key map "\C-?"     'backward-delete-char-untabify)
+  ;(define-key map "\C-?"     'backward-delete-char-untabify)
   (define-key map "\C-c%"    'extract-sexp)
   (define-key map "\C-c;"    'comment-region)
 
