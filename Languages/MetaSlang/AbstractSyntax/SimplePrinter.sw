@@ -7,11 +7,12 @@ spec {
   import AnnTerm
   import /Library/PrettyPrinter/WadlerLindig
 
+  def ppGrConcat x = ppGroup (ppConcat x)
   op ppATerm : fa (a) ATerm a -> Pretty
   def ppATerm term =
     case (isFiniteList term) of
         Some terms ->
-          ppConcat [
+          ppGrConcat [
             ppString "[",
             ppSep (ppString ",") (map ppATerm terms),
             ppString "]"
@@ -26,44 +27,45 @@ infix with brackets. And similarly when we see an \verb+Equals+.
         (case term of
           | Apply (Fun (Op (qid,Infix (assoc,prec)),srt,_),
                  Record ([("1",left),("2",right)],_), _) ->
-              ppConcat [
+              ppGrConcat [
                 ppString "(",
                 ppATerm left,
                 ppString " ",
-                ppQualifiedId qid,
-                ppString " ",
-                ppATerm right,
-                ppString ")"
+                ppGroup(ppIndent (ppConcat [
+                  ppQualifiedId qid,
+                  ppBreak,
+                  ppIndent (ppAppend (ppATerm right) (ppString ")"))
+                ]))
               ]
           | Apply (Fun(Equals,srt,_), Record ([("1",left),("2",right)],_),_) ->
-              ppConcat [
+              ppGrConcat [
                 ppString "(",
                 ppATerm left,
-                ppString " = ",
-                ppATerm right,
-                ppString ")"
+                ppGroup (ppIndent (ppConcat [
+                  ppString " =",
+                  ppBreak,
+                  ppAppend (ppATerm right) (ppString ")")
+                ]))
               ]
-          | Apply (Lambda (match,_), term,_) ->
-              ppConcat [
+          | Apply (Lambda (match as (_::_::_),_), term,_) ->
+              ppIndent (ppGrConcat [
                 ppString "case ",
                 ppATerm term,
                 ppString " of",
-                ppNewline,
-                ppString "  ",
+                ppBreak,
                 ppIndent (ppAMatch match)
-              ]
+              ])
           | Apply (term1,term2,_) ->
-              ppConcat [
+              ppGrConcat [
                 ppString "(",
                 ppATerm term1,
-                ppString " ",
-                ppATerm term2,
-                ppString ")"
+                ppBreak,
+                ppIndent (ppAppend (ppATerm term2) (ppString ")"))
               ]
           | ApplyN (terms,_) ->
-              ppConcat [
+              ppGrConcat [
                 ppString "(",
-                ppSep (ppString " ") (map ppATerm terms),
+                ppSep ppBreak (map ppATerm terms),
                 ppString ")"
               ]
           | Record (fields,_) ->      
@@ -89,7 +91,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                       ppString "}"
                     ])
           | Bind (binder,vars,term,_) ->
-              ppConcat [
+              ppGrConcat [
                 ppBinder binder,
                 ppString " (",
                 ppSep (ppString ",") (map ppAVar vars),
@@ -103,26 +105,22 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                   ppString "=",
                   ppATerm term
                 ] in
-              ppConcat [
-                ppString "(Let",
-                ppNewline,
-                ppString "  ",
+              ppGrConcat [
+                ppString "let ",
                 ppIndent (ppSep ppNewline (map ppDecl decls)),
-                ppNewline,
                 ppString "in",
                 ppNewline,
-                ppATerm term,
-                ppString ")"
+                ppIndent (ppATerm term)
              ]
           | LetRec (decls,term,_) ->
               let def ppDecl (var,term) =
-                ppConcat [
+                ppGrConcat [
                   ppAVar var,
                   ppString " = ",
                   ppATerm term
                 ] in
-              ppConcat [
-                ppString "(Letrec",
+              ppGrConcat [
+                ppString "letrec",
                 ppNewline,
                 ppString "  ",
                 ppIndent (ppSep ppNewline (map ppDecl decls)),
@@ -132,18 +130,28 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ppATerm term,
                 ppString ")"
              ]
-          | Var (var,_) -> ppAVar var
+          | Var (var,_) -> ppAVarWithoutSort var
           | Fun (fun,srt,_) -> ppAFun fun
+          | Lambda ([(pattern,_,term)],_) ->
+              ppGrConcat [
+                ppString "(fn ",
+                ppAPattern pattern,
+                ppString " ->",
+                ppBreak,
+                ppIndent (ppAppend (ppATerm term) (ppString ")"))
+              ]
+ 
           | Lambda (match,_) -> ppAMatch match
           | IfThenElse (pred,term1,term2,_) -> 
-              ppConcat [
-                ppString "(if ",
+              ppGrConcat [
+                ppString "if ",
                 ppATerm pred,
-                ppString " then ",
-                ppATerm term1,
-                ppString " else ",
-                ppATerm term2,
-                ppString ")"
+                ppString "then",
+                ppNewline,
+                ppIndent (ppATerm term1),
+                ppNewline,
+                ppString "else ",
+                ppIndent (ppATerm term2)
               ]
           | Seq (terms,_) ->
               ppSep (ppString "; ") (map ppATerm terms)
@@ -158,6 +166,9 @@ infix with brackets. And similarly when we see an \verb+Equals+.
         Forall -> ppString "fa"
       | Exists -> ppString "ex"
 
+  op ppAVarWithoutSort : fa (a) AVar a -> Pretty
+  def ppAVarWithoutSort (id,srt) = ppString id
+
   op ppAVar : fa (a) AVar a -> Pretty
   def ppAVar (id,srt) =
     ppConcat [
@@ -168,28 +179,28 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 
   op ppAMatch : fa (a) AMatch a -> Pretty
   def ppAMatch cases =
-    let ppCaseSep = ppConcat [ppNewline, ppString " "] in
     let def ppCase (pattern,_,term) =
-       ppConcat [
+       ppGrConcat [
+         ppString "| ",
          ppAPattern pattern,
          ppString " -> ",
          ppATerm term
        ]
     in
-      ppSep ppCaseSep (map ppCase cases)
+      ppGroup (ppSep ppNewline (map ppCase cases))
 
   op ppAPattern : fa (a) APattern a -> Pretty
   def ppAPattern pattern = 
     case pattern of
       | AliasPat (pat1,pat2,_) -> 
-          ppConcat [
+          ppGrConcat [
             ppAPattern pat1,
             ppString " as ",
             ppAPattern pat2
           ]
       | VarPat (var,_) -> ppAVar var
       | EmbedPat (constr,pat,srt,_) ->
-          ppConcat [
+          ppGrConcat [
             ppString constr,
             case pat of
               | None -> ppNil
@@ -223,7 +234,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | CharPat (chr,_) -> ppString (Char.toString chr)
       | NatPat (int,_) -> ppString (Nat.toString int)      
       | RelaxPat (pat,term,_) ->   
-          ppConcat [
+          ppGrConcat [
             ppString "(relax ",
             ppAPattern pat,
             ppString " ",
@@ -231,7 +242,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString ")"
           ]
       | QuotientPat (pat,term,_) -> 
-          ppConcat [
+          ppGrConcat [
             ppString "(quotient ",
             ppAPattern pat,
             ppString " ",
@@ -260,7 +271,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Relax -> ppString "relax"
       | Op (qid,Nonfix) -> ppQualifiedId qid
       | Op (qid,fix) -> 
-          ppConcat [
+          ppGrConcat [
             ppString "(",
             ppQualifiedId qid,
             ppString ",",
@@ -301,11 +312,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ^ (System.toString any)
               ^ "'")
 
+  def omittedQualifiers = ["Boolean","Int","Nat","Double","List","String","Char"]
+
   op ppQualifiedId : QualifiedId -> Pretty
   def ppQualifiedId qid =
     case qid of
       | Qualified (qualifier,id) ->
-          if qualifier = UnQualified then
+          if (qualifier = UnQualified) or (member (qualifier,omittedQualifiers)) then
             ppString id
           else
             ppString (qualifier ^ "." ^ id)
@@ -333,19 +346,22 @@ infix with brackets. And similarly when we see an \verb+Equals+.
   def ppASort srt =
     case srt of
         Arrow (srt1,srt2,_) ->
-          ppConcat [
+          ppGrConcat [
             ppString "(",
             ppASort srt1,
-            ppString "->",
-            ppASort srt2,
-            ppString ")"
+            ppIndent (ppGrConcat [
+              ppString " ->",
+              ppBreak,             
+              ppASort srt2,
+              ppString ")"
+            ])
           ]
       | Product (fields,_) ->
           (case fields of
               [] -> ppString "()"
             | ("1",_)::_ ->
                 let def ppField (x,y) = ppASort y in
-                ppConcat [
+                ppGrConcat [
                   ppString "(",
                   ppSep (ppString "*") (map ppField fields),
                   ppString ")"
@@ -357,7 +373,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                     ppString ":",
                     ppASort y
                   ] in
-                ppConcat [
+                ppGrConcat [
                   ppString "{",
                   ppSep (ppString ",") (map ppField fields),
                   ppString "}"
@@ -369,17 +385,18 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ppString id,
               ppString " ",
               case optSrt of
-                  None -> ppNil
+                | None -> ppNil
                 | Some srt -> ppASort srt,
               ppString ")"           
             ]
-          in ppConcat [
+          in ppGrConcat [
             ppString "(",
-            ppSep (ppString "|") (map ppTaggedSort taggedSorts),
+            ppBreak,
+            ppSep (ppAppend ppBreak (ppString "|")) (map ppTaggedSort taggedSorts),
             ppString ")"
           ]
       | Quotient (srt,term,_) ->
-          ppConcat [
+          ppGrConcat [
             ppString "(",
             ppASort srt,
             ppString " \\ ",
@@ -387,7 +404,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString ")"
           ]
       | Subsort (srt,term,_) ->
-          ppConcat [
+          ppGrConcat [
             ppString "(",
             ppASort srt,
             ppString " | ",
@@ -396,13 +413,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           ]
       | Base (qid,[],_) -> ppQualifiedId qid
       | Base (qid,[srt],_) ->
-           ppConcat [
+           ppGrConcat [
              ppQualifiedId qid,
              ppString " ",
              ppASort srt
            ]
       | Base (qid,srts,_) ->
-           ppConcat [
+           ppGrConcat [
              ppQualifiedId qid,
              ppString " (",
              ppSep (ppString ",") (map ppASort srts),
