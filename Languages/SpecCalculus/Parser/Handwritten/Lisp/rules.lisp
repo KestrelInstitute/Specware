@@ -186,7 +186,9 @@
   (:anyof "Snark" "PVS"))
 
 (define-sw-parser-rule :PROVER-ASSERTIONS ()
-  (:repeat+ :CLAIM-NAME ","))
+  (:anyof 
+   "ALL"
+   (:repeat+ :CLAIM-NAME ",")))
 
 (define-sw-parser-rule :PROVER-OPTIONS ()
   (:anyof
