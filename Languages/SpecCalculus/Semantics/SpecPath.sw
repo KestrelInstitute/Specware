@@ -41,10 +41,10 @@ variable, then it will appear twice is the list of URI's we generate.
   def getSpecPath =
     let strings =
       case getEnv "SWPATH" of
-        | Some str -> (splitAtChar #: str) ++ [getCurrentDirectory ()]
+        | Some str -> (splitStringAtChar #: str) ++ [getCurrentDirectory ()]
         | _ ->
       case getEnv "SPECPATH" of
-        | Some str -> (splitAtChar #: str) ++ [getCurrentDirectory ()]
+        | Some str -> (splitStringAtChar #: str) ++ [getCurrentDirectory ()]
         | _ ->
       case getEnv "SPECWARE4" of
 	| Some str -> ([str,getCurrentDirectory (),"/"])

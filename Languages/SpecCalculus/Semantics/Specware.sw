@@ -25,7 +25,7 @@ changes and when the toplevel loop actually does something.
 \begin{spec}
   op runSpecware : () -> ()
   def runSpecware () =
-    case (catch toplevelLoop toplevelHandler) initialSpecwareState of
+    case catch toplevelLoop toplevelHandler initialSpecwareState of
       | (Ok val,_)      -> fail "Specware toplevel loop terminated unexpectedly"
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
@@ -57,11 +57,11 @@ in place of ".".
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       uri <- pathToRelativeURI path; 
-      catch (evaluateTerm (URI uri,pos0)) toplevelHandler
+      evaluateTerm (URI uri,pos0)
       % printLocalContext;
       % printGlobalContext
     } in
-    case run initialSpecwareState of
+    case catch run toplevelHandler initialSpecwareState of
       | (Ok val,_) -> ()
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
@@ -75,9 +75,9 @@ The following is designed to allow for use by a lisp read-eval-print loop.
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       uri <- pathToRelativeURI path; 
-      catch (evaluateTerm (URI uri,pos0)) toplevelHandler
+      evaluateTerm (URI uri,pos0)
     } in
-    run specwareState
+    catch run toplevelHandler specwareState
 \end{spec}
 
 Allow the user to compile a URI from the lisp interface.
@@ -90,9 +90,9 @@ Allow the user to compile a URI from the lisp interface.
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       uri <- pathToRelativeURI path; 
-      catch (evaluateAndLispCompile (uri, targetfile)) toplevelHandler
+      evaluateAndLispCompile (uri, targetfile)
     } in
-    run specwareState
+    catch run toplevelHandler specwareState
 
   op evaluateAndLispCompile: RelativeURI * Option String -> SpecCalc.Env Value
   def evaluateAndLispCompile (uri, targetfile) =
@@ -121,9 +121,12 @@ be aborted. This doesn't return.
      let message = % "Uncaught exception: " ++
        (case except of
 	 | Fail str -> "Fail: " ^ str
-	 | SyntaxError fileName ->
+	 | ParserError fileName ->
 	       "Syntax error in file "
 	     ^ fileName
+	 | SyntaxError msg ->
+	       "Syntax error: "
+	     ^ msg
 	 | URINotFound (position,uri) ->
 	       "No such URI: "
 	     ^ (showRelativeURI uri)

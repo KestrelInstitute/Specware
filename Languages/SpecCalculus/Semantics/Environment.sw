@@ -111,6 +111,9 @@ the position in a uniform way and can more easily be conveyed to the UI.
 On the other hand, it seems there are places where the exception is raised
 but where the position information is unavailable. Needs thought.
 
+A SyntaxError is one that is raised at the toplevel when the user
+enters something bad. A ParserError is raised when the file parser fails.
+
 \begin{spec}
   sort Exception =
     | Fail         String 
@@ -120,6 +123,7 @@ but where the position information is unavailable. Needs thought.
     | OldTypeCheck String              
     | Unsupported  Position * String
     | SyntaxError  String
+    | ParserError  String   % Here the string is the filename.
 \end{spec}
 
 The result of a statement is \verb+Ok+ or an exception.
