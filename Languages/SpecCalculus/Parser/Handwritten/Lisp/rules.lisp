@@ -133,6 +133,8 @@
 
 (define-sw-parser-rule :SC-TERM ()
   (:anyof
+   (:tuple "(" (1 :SC-TERM) ")")
+   (1 :SC-PRINT)
    (1 :SC-PRINT)
    (1 :SC-URI)
    (1 :SPEC-DEFINITION)
@@ -148,6 +150,7 @@
    ;; (1 :SC-APEX)
    ;; (1 :SC-SHAPE)
    ;; (1 :SC-DIAG-MORPH)
+   (1 :SC-SUBSTITUTE)
    (1 :SC-SPEC-MORPH)
    (1 :SC-HIDE)
    (1 :SC-EXPORT)
@@ -1389,9 +1392,14 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
-  (:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM)
-	  "{" (3 (:optional :SC-SPEC-MORPH-RULES)) "}")
-  (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb))
+  (:anyof
+    ((:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM)
+	    "{" (3 (:optional :SC-SPEC-MORPH-RULES)) "}")
+        (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb))
+    ((:tuple (1 :SC-TERM) "to" (2 :SC-TERM)
+	    "{" (3 (:optional :SC-SPEC-MORPH-RULES)) "}")
+        (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb)))
+)
 
 (define-sw-parser-rule :SC-SPEC-MORPH-RULES ()
   (:repeat+ :SC-SPEC-MORPH-RULE ","))
@@ -1446,6 +1454,13 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SC-COLIMIT ()
   (:tuple "colimit" (1 :SC-TERM))
   (make-sc-colimit 1 ':left-lcb ':right-lcb))
+
+;;; ========================================================================
+;;;  SC-SUBSTITUTE
+;;; ========================================================================
+(define-sw-parser-rule :SC-SUBSTITUTE ()
+  (:tuple (1 :SC-TERM) "[" (2 :SC-TERM) "]")
+  (make-sc-substitute 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH

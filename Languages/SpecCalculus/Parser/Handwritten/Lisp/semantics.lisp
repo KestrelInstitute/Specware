@@ -888,7 +888,6 @@ If we want the precedence to be optional:
 	(vector left-ref right-ref
 		(make-pos l r))))
 
-
 ;;; ========================================================================
 ;;;  SC-SHAPE
 ;;; ========================================================================
@@ -916,6 +915,14 @@ If we want the precedence to be optional:
 
 (defun make-sc-colimit (diag l r)
   (cons (cons :|Colimit| diag)
+        (make-pos l r)))
+
+;;; ========================================================================
+;;;  SC-SUBSTITUTE
+;;; ========================================================================
+
+(defun make-sc-substitute (spec-term morph-term l r)
+  (cons (cons :|Subst| (cons spec-term morph-term))
         (make-pos l r)))
 
 ;;; ========================================================================
