@@ -1,3 +1,5 @@
+% synchronized with version 1.1.1.1 of SW4/Languages/MetaSlang/TypeChecker/Infix.sl
+
 (* Resolve infixe operators     *)
 
 spec {

@@ -1,3 +1,5 @@
+% Synchronized with version 1.3 of SW4/Languages/MetaSlang/TypeChecker/SpecToPosSpec.sl
+
 spec {
  %%  convert standard terms to pos terms
 

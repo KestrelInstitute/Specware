@@ -1,3 +1,6 @@
+% Synchronized with version 1.8 of  SW4/Languages/MetaSlang/TypeChecker/TypeCheckUtilities.sl
+
+
 % Utilities qualifying
 spec { 
  import /Library/Base

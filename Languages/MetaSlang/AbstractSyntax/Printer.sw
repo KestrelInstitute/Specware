@@ -1,3 +1,5 @@
+% Synchronized with version 1.1.1.1 of SW4/Languages/MetaSlang/Printer/ATermPrinter.sl
+
 (*
  * MetaSlang pretty printer.
  * This module contains utilities for printing terms, sorts, and patterns to 

@@ -1,4 +1,7 @@
 HashTable qualifying spec {
+
+  import /Library/Base
+
   sort HashTable(A,B)
 
   % In Common Lisp, these are the only hash table tests allowed.

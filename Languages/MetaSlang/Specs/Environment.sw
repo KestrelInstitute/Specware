@@ -1,12 +1,15 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/Environment.sl v1.4
+% Some names have had to be introduced qualified with SpecEnvironment4
+% to avoid clashes with others qualified with MetaSlang
 
 (*
  * SpecEnvironment builds an association map of sort identifiers 
  * to their definitional unfolding. 
  *) 
  
+SpecEnvironment4 qualifying
 spec {
- import TypeChecker
+ import Elaborate/TypeChecker
  %% Try to avoid importing Primitives0
  %import Primitives0   % ../built-in/primitives0.sl
 
@@ -129,22 +132,22 @@ spec {
   let def find (name, S, a) =  
        case S 
          of []            -> TyVar(name,a)
-          | (id, srt) ::S -> if name = id then srt else find (name, S, a) 
+          | (idXXX, srt) ::S -> if name = idXXX then srt else find (name, S, a) 
   in 
   let def substRec srt =  
-       case srt 
-         of Base (id,             srts,                   a) ->  
-            Base (id,             List.map substRec srts, a) 
+       case srt of
+          | Base (idXXX,             srts,                   a) ->  
+            Base (idXXX,             List.map substRec srts, a) 
 
           | Arrow (s1,          s2,           a) ->  
             Arrow (substRec s1, substRec s2,  a) 
 
           | Product (fields,                                       a) ->  
-            Product (List.map (fn(id,s)-> (id,substRec s)) fields, a) 
+            Product (List.map (fn(idXXX,s)-> (idXXX,substRec s)) fields, a) 
 
           | CoProduct (fields, a) ->  
-            CoProduct (List.map (fn (id, sopt)->
-                                 (id,
+            CoProduct (List.map (fn (idXXX, sopt)->
+                                 (idXXX,
                                   case sopt
                                     of None   -> None
                                      | Some s -> Some(substRec s))) 
@@ -295,7 +298,7 @@ spec {
      | LetRec     (_, term,              _) -> inferType (sp, term)
      | Var        ((_,srt),              _) -> srt
      | Fun        (_, srt,               _) -> srt
-     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(patternSort pat,
+     | Lambda     (Cons((pat,_,body),_), _) -> mkArrow(SpecEnvironment4.patternSort pat,
                                                        inferType (sp, body))
      | Lambda     ([],                   _) -> System.fail 
                                                 "inferType: Ill formed lambda abstraction"
@@ -305,27 +308,27 @@ spec {
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, ()))
      | _ -> System.fail "inferType: Non-exhaustive match"
 
- def stringSort  : Sort = Base (Qualified ("String",  "String"),  [], ())
+ def SpecEnvironment4.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], ())
  def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], ())
- def charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], ())
+ def SpecEnvironment4.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], ())
  def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], ())
 
- op patternSort : Pattern -> Sort
- def patternSort = fn
-   | AliasPat   (pat1, _,       _) -> patternSort pat1
+ op SpecEnvironment4.patternSort : Pattern -> Sort
+ def SpecEnvironment4.patternSort = fn
+   | AliasPat   (pat1, _,       _) -> SpecEnvironment4.patternSort pat1
    | VarPat     ((_,srt),       _) -> srt
    | EmbedPat   (_,_,srt,       _) -> srt
    | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
-                                                             (id, patternSort pat)) 
+                                                             (id, SpecEnvironment4.patternSort pat)) 
                                                             idpatternlist in
                                       Product (fields, ())
    | WildPat     (srt,          _) -> srt
-   | StringPat   _                 -> stringSort
+   | StringPat   _                 -> SpecEnvironment4.stringSort
    | BoolPat     _                 -> booleanSort
-   | CharPat     _                 -> charSort
+   | CharPat     _                 -> SpecEnvironment4.charSort
    | NatPat      _                 -> integerSort
-   | RelaxPat    (pat, _,       _) -> patternSort pat
-   | QuotientPat (pat, _,       _) -> patternSort pat
+   | RelaxPat    (pat, _,       _) -> SpecEnvironment4.patternSort pat
+   | QuotientPat (pat, _,       _) -> SpecEnvironment4.patternSort pat
 
 
  op mkRestrict    : Spec * {pred : Term, term : Term} -> Term
@@ -480,7 +483,7 @@ spec {
       | LetRec     (_, term,              _) -> termSortEnv   (sp, term)
       | Var        ((id, srt),            _) -> unfoldToArrow (sp, srt)
       | Fun        (fun, srt,             _) -> unfoldToArrow (sp, srt)
-      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (patternSort pat,
+      | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (SpecEnvironment4.patternSort pat,
                                                          termSortEnv (sp, body))
       | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
       | IfThenElse (_, t2, t3,            _) -> termSortEnv   (sp, t2)

@@ -1,3 +1,5 @@
+% Synchronized with version 1.6 of SW4/Languages/MetaSlang/Printer/ASpecPrinter.sl
+
 (*
  * This works but it's a mess. This will be refactored and perhaps
  * rewritten.

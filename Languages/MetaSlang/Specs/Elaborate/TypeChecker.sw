@@ -1,3 +1,4 @@
+% Synchronized with version 1.11 of /SW4/Languages/MetaSlang/TypeChecker/TypeChecker.sl
 
 (* This structure adds type checking and 
    inference to the abstract syntax tree.
@@ -82,7 +83,7 @@ spec {
   %%
 
   def elaboratePosSpec (given_spec, filename, verbose) = 
-   let _ = if verbose then writeLine (";;; Elaborating spec ") else () in
+   let _ = if verbose then writeLine (";;; Elaborating spec (" ^ filename ^ ")") else () in
    let _ = initializeMetaTyVar () in
  
    %% ======================================================================
@@ -911,8 +912,8 @@ spec {
 
   def mkEmbed0 (env, srt, id) =
    case lookupEmbedId (env, id, srt) of
-    | Some _ -> Some id
-    | None   -> None
+    | Some None -> Some id
+    | _   -> None
         
   def lookupEmbedId (env, id, srt) = 
    case unfoldPSort (env, srt) of
