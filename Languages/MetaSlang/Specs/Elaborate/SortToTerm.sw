@@ -119,14 +119,23 @@ XML qualifying spec
 
   op sort_expansion_table : LocalEnv * MS.Sort -> List (MS.Sort * MS.Sort)
 
+  op show_sort : String * MS.Sort -> ()
+
   def sort_expansion_table (env, srt) =
    let 
       def add_to_table (srt, table) =
 	let expansion = unfoldSort (env, srt) in
+	let _ = toScreen ("\n-----------------------------\n") in
+        let _ = show_sort ("     Sort", srt) in
+        let _ = show_sort ("Expansion", expansion) in
 	if expansion = srt then
+	  let _ = toScreen ("\n <not added> \n") in
+	  let _ = toScreen ("\n-----------------------------\n") in
 	  table
 	else
 	  let new_table = cons ((srt, expansion), table) in
+	  let _ = toScreen ("\n *** ADDED *** \n") in
+	  let _ = toScreen ("\n-----------------------------\n") in
 	  scan (expansion, new_table)
 
       def scan (srt, table) =
@@ -151,10 +160,12 @@ XML qualifying spec
 					             false
 						     table)
 					  in
-					    if already_seen? then
-					      table
-					    else
-					      add_to_table (srt, table))
+					  let table = (if already_seen? then
+							 table
+						       else
+							 add_to_table (srt, table))
+					  in
+					    foldl scan table srts)
           | TyVar     _               -> table
 	  | MetaTyVar _               -> scan (unlinkSort srt, table)
    in
