@@ -334,82 +334,85 @@ spec MetaSlangRewriter
      in rewriteRecursivePre(context,boundVars,rules,term)
 
  def rewriteRecursivePre(context,boundVars,rules,term) = 
-     let	
-        def rewritesToTrue(rules,term,subst,history): Option Subst = 
-	    case rewriteRec(rules,subst,term,history,false) : LazyList History
-              of Nil -> if term = mkTrue() then Some subst else None
-	       | Cons((_,t,subst)::history,b) -> 
-	         if t = mkTrue() then Some subst else None
-	       | Cons([],_) -> None
+   let	
+      def rewritesToTrue(rules,term,subst,history): Option Subst = 
+	  case rewriteRec(rules,subst,term,history,false) : LazyList History
+	    of Nil -> if term = mkTrue() then Some subst else None
+	     | Cons((_,t,subst)::history,b) -> 
+	       if t = mkTrue() then Some subst else None
+	     | Cons([],_) -> None
 
-        def solveCondition(rules,rule:RewriteRule,subst,history,solveCond) : Option Subst = 
-            (case rule.condition of
-               | None -> 
-                 (traceRule(context,rule);
-                  Some subst)
-               | Some cond ->
-            if solveCond & completeMatch(rule.lhs,subst) then 
-                let traceIndent = ! context.traceIndent in
-                let res = if traceRewriting > 0 then
-                  (context.traceIndent := traceIndent + 3;
-                  String.toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
-                  String.writeLine (Nat.toString(! context.traceDepth)^" : "^rule.name);
-  %%              printSubst subst;
-                  context.traceDepth := 0;
-                  rewritesToTrue(rules,cond,subst,history))
-                else 
-                  rewritesToTrue(rules,cond,subst,history) in
-                if traceRewriting > 0 then
-                  (context.traceIndent := traceIndent;
-                   String.writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
-                   res)
-                else
-                   res
-            else None)
-
-	def rewriteRec({unconditional,conditional},subst,term,history,solveCond) =
-            let _ = traceTerm(context,term,subst)                      in
-	    let traceDepth = ! context.traceDepth + 1            in
-	    let 
-                def rewrite(strategy,rules) =
-                    rewriteTerm 
-                      ({strategy = strategy,
-			rewriter = applyDemodRewrites(context,subst),
-			context = context},
-		       boundVars,term,rules)     
-            in
-	    if historyRepetition(history)
-		then unit (tl history)
+      def solveCondition(rules,rule,subst,history,solveCond) : Option Subst = 
+	case rule.condition of
+	   | None -> 
+	     (traceRule(context,rule);
+	      Some subst)
+	   | Some cond ->
+	if solveCond & completeMatch(rule.lhs,subst) then 
+	    let traceIndent = ! context.traceIndent in
+	    let res = if traceRewriting > 0 then
+	      (context.traceIndent := traceIndent + 3;
+	      String.toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
+	      String.writeLine (Nat.toString(! context.traceDepth)^" : "^rule.name);
+%%              printSubst subst;
+	      context.traceDepth := 0;
+	      rewritesToTrue(rules,cond,subst,history))
+	    else 
+	      rewritesToTrue(rules,cond,subst,history) in
+	    if traceRewriting > 0 then
+	      (context.traceIndent := traceIndent;
+	       String.writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
+	       res)
 	    else
-	    % let rews = (rewrite(Innermost:Strategy,unconditional) >>= 
-	    let rews = (rewrite(Outermost:Strategy,unconditional) >>= 
-			(fn (term,(subst,rule,rules)) ->  
-			    unit (term,(subst,rule,
-					{unconditional = unconditional,conditional = conditional}))) 
-			@@
-			(fn () -> 
-			 rewrite(Outermost:Strategy,conditional) >>= 
-			(fn (term,(subst,rule,rules)) ->  
-			    unit (term,(subst,rule,
-					{conditional = conditional,unconditional = unconditional})))))
-	    in
-	    case rews
-	      of Nil -> unit history
-	       | _ -> 
-	    rews >>=
-	    (fn (term,(subst,rule,rules)) -> 
-	        (context.traceDepth := traceDepth;
-	         case solveCondition(rules,rule,subst,history,solveCond)
-	           of Some subst -> 
-		     (context.traceDepth := traceDepth;
-		      let term = dereferenceAll subst term in
-		      let term = renameBound term in
-		      (rewriteRec(rules,emptySubstitution,term,cons((rule,term,subst),history),
-				  solveCond)))
-	           | None -> unit history))
-     in
-        let term = dereferenceAll emptySubstitution term in
-	rewriteRec(rules,emptySubstitution,term,[],true)
+	       res
+	else None
+
+      def rewriteRec({unconditional,conditional},subst,term,history,solveCond) =
+	let _ = traceTerm(context,term,subst)     in
+	let traceDepth = ! context.traceDepth + 1 in
+	let 
+	    def rewrite(strategy,rules) =
+		rewriteTerm 
+		  ({strategy = strategy,
+		    rewriter = applyDemodRewrites(context,subst),
+		    context = context},
+		   boundVars,term,rules)     
+	in
+	if historyRepetition(history)
+	    then unit (tl history)
+	else
+	% let rews = (rewrite(Innermost:Strategy,unconditional) >>= 
+	let rews = (rewrite(Outermost:Strategy,unconditional) >>= 
+		    (fn (term,(subst,rule,rules)) ->  
+			unit (term,(subst,rule,
+				    {unconditional = unconditional,
+				     conditional = conditional}))) 
+		    @@
+		    (fn () -> 
+		     rewrite(Outermost:Strategy,conditional) >>= 
+		     (fn (term,(subst,rule,rules)) ->  
+			unit (term,(subst,rule,
+				    {conditional = conditional,
+				     unconditional = unconditional})))))
+	in
+	case rews
+	  of Nil -> unit history
+	   | _ -> 
+	rews >>=
+	(fn (term,(subst,rule,rules)) -> 
+	    (context.traceDepth := traceDepth;
+	     case solveCondition(rules,rule,subst,history,solveCond)
+	       of Some subst -> 
+		 (context.traceDepth := traceDepth;
+		  let term = dereferenceAll subst term in
+		  let term = renameBound term in
+		  (rewriteRec(rules,emptySubstitution,term,
+			      cons((rule,term,subst),history),
+			      solveCond)))
+	       | None -> unit history))
+   in
+      let term = dereferenceAll emptySubstitution term in
+      rewriteRec(rules,emptySubstitution,term,[],true)
 
  op rewriteOnce : 
     Context * List Var * RewriteRules * MS.Term -> List MS.Term

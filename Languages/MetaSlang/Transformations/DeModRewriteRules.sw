@@ -15,22 +15,22 @@ spec
  op  addUnconditionalRule:  RewriteRule * DemodRewriteRules -> DemodRewriteRules
  def addUnconditionalRule(rl,{unconditional,conditional}) =
    {unconditional = addRule(rl.lhs,rl,unconditional),
-    conditional = conditional}
+    conditional   = conditional}
 
  op  addConditionalRule:  RewriteRule * DemodRewriteRules -> DemodRewriteRules
  def addConditionalRule(rl,{unconditional,conditional}) =
    {unconditional = unconditional,
-    conditional = addRule(rl.lhs,rl,conditional)}
+    conditional   = addRule(rl.lhs,rl,conditional)}
 
  op  addUnconditionalRules:  List RewriteRule * DemodRewriteRules -> DemodRewriteRules
  def addUnconditionalRules(rls,{unconditional,conditional}) =
    {unconditional = addDemodRules(rls,unconditional),
-    conditional = conditional}
+    conditional   = conditional}
 
  op  addConditionalRules:  List RewriteRule * DemodRewriteRules -> DemodRewriteRules
  def addConditionalRules(rls,{unconditional,conditional}) =
    {unconditional = unconditional,
-    conditional = addDemodRules(rls,conditional)}
+    conditional   = addDemodRules(rls,conditional)}
 
  op  demodRules: RewriteRules -> DemodRewriteRules
  def demodRules rules =
@@ -44,7 +44,7 @@ spec
 %      | rules1::rules2::rules ->
 %        let rules1 = {unconditional = mergeRules(rules1.unconditional,
 %						 rules2.unconditional),
-%		        conditional = mergeRules(rules1.conditional,
+%		       conditional   = mergeRules(rules1.conditional,
 %						 rules2.conditional)}
 %	in
 %	mergeDemodRules(List.cons(rules1,rules))
