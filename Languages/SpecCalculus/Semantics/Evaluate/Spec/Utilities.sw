@@ -18,6 +18,7 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
+  let new_sort_names = rev (removeDuplicates new_sort_names) in % don't let duplicate names get into a sortinfo!
   let old_infos = foldl (fn (new_name, old_infos) ->
                          case findTheSort (old_spec, new_name) of
                            | Some info -> 
@@ -110,6 +111,7 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
+  let new_op_names = rev (removeDuplicates new_op_names) in % don't let duplicate names get into an opinfo!
   let old_infos = foldl (fn (new_name, old_infos) ->
                          case findTheOp (old_spec, new_name) of
                            | Some info -> 
