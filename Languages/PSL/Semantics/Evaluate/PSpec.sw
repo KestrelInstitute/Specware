@@ -91,7 +91,7 @@ They are procedures in context.
                     newStatic <- mergeImport term impSpec pSpec.staticSpec position;
                     newDynamic <- mergeImport term impSpec pSpec.dynamicSpec position;
                     newPSpec <- setStaticSpec pSpec newStatic;
-                    newPSpec <- setDynamicSpec pSpec newDynamic;
+                    newPSpec <- setDynamicSpec newPSpec newDynamic;
                     return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depURIs))
                   }
               | _ -> raise (Fail ("Import not a spec")))

@@ -1454,22 +1454,22 @@ Second argument is context .. another spec.
       | Errors errors -> raise (TypeCheckErrors errors)
 
   op addNonLocalSortInfo : Spec -> Qualifier -> Id -> SortInfo -> SpecCalc.Env Spec
-  def addNonLocalSortInfo spc qual id info =
-    case (findAQualifierMap (spc.sorts,qual,id)) of
-      | None -> return (setSorts (spc, insertAQualifierMap (spc.sorts,qual,id,info)))
-      | Some _ -> raise (SpecError (internalPosition, "addNonLocalSortInfo: redefined " ^ (printQualifiedId (Qualified (qual,id)))))
+  def addNonLocalSortInfo spc qual id newInfo = {
+      mergedInfo <- mergeSortInfo newInfo (findAQualifierMap (spc.sorts,qual,id)) internalPosition;
+      return (setSorts (spc, insertAQualifierMap (spc.sorts,qual,id,mergedInfo)))
+    }
 
   op addNonLocalOpInfo : Spec -> Qualifier -> Id -> OpInfo -> SpecCalc.Env Spec
-  def addNonLocalOpInfo spc qual id info =
-    case (findAQualifierMap (spc.ops,qual,id)) of
-      | None -> return (setOps (spc, insertAQualifierMap (spc.ops,qual,id,info)))
-      | Some _ -> raise (SpecError (internalPosition, "addNonLocalOpInfo: redefined " ^ (printQualifiedId (Qualified (qual,id)))))
+  def addNonLocalOpInfo spc qual id newInfo = {
+      mergedInfo <- mergeOpInfo newInfo (findAQualifierMap (spc.ops,qual,id)) internalPosition;
+      return (setOps (spc, insertAQualifierMap (spc.ops,qual,id,mergedInfo)))
+    }
 
   op addLocalOpInfo : Spec -> Qualifier -> Id -> OpInfo -> SpecCalc.Env Spec
-  def addLocalOpInfo spc qual id info =
-    case (findAQualifierMap (spc.ops,qual,id)) of
-      | None -> return (addLocalOpName (setOps (spc, insertAQualifierMap (spc.ops,qual,id,info)),Qualified (qual,id)))
-      | Some _ -> raise (SpecError (internalPosition, "addNonLocalOpInfo: redefined " ^ (printQualifiedId (Qualified (qual,id)))))
+  def addLocalOpInfo spc qual id newInfo = {
+      mergedInfo <- mergeOpInfo newInfo (findAQualifierMap (spc.ops,qual,id)) internalPosition;
+      return (addLocalOpName (setOps (spc, insertAQualifierMap (spc.ops,qual,id,mergedInfo)),Qualified (qual,id)))
+    }
 
   op connectVertices : ProcContext -> V.Elem -> V.Elem -> Spec -> List QualifiedId -> SpecCalc.Env ProcContext
   def connectVertices ctxt first last spc changedNames = {
