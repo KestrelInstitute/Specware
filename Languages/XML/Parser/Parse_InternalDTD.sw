@@ -106,7 +106,7 @@ XML qualifying spec
      | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 :: tail ->
        %% '<!DOCTYPE'
        {
-	(w1,   tail) <- parse_WhiteSpace start;
+	(w1,   tail) <- parse_WhiteSpace tail;
 	(name, tail) <- parse_Name       tail;
 	(wx,   tail) <- parse_WhiteSpace tail;
 	case tail of
@@ -158,9 +158,9 @@ XML qualifying spec
 		}
 	  | _ ->
 	    {
-	     (external_id, tail) <- parse_ExternalID tail;
-	     (w3,          tail) <- parse_WhiteSpace tail;
-	     (decls,       tail) <- parse_InternalDecls  tail;
+	     (external_id, tail) <- parse_ExternalID    tail;
+	     (w3,          tail) <- parse_WhiteSpace    tail;
+	     (decls,       tail) <- parse_InternalDecls tail;
 	     case tail of
 
 	       | 62 :: tail ->

@@ -408,10 +408,10 @@ XML qualifying spec
       | 80 :: 85 :: 66 :: 76 :: 73 :: 67 :: tail ->
         %% 'PUBLIC'
 	{
-	 (w1,     tail) <- parse_WhiteSpace    tail;
-	 (publit, tail) <- parse_PubidLiteral  tail;
-	 (w2,     scout) <- parse_WhiteSpace    tail;
-	 case scout of
+	 (w1,     tail) <- parse_WhiteSpace   tail;
+	 (publit, tail) <- parse_PubidLiteral tail;
+	 (w2,     tail) <- parse_WhiteSpace   tail;
+	 case tail of
 
 	   | 62 :: tail ->
              %% '>'
@@ -419,7 +419,7 @@ XML qualifying spec
 		      public = Some publit,
 		      w2     = null_whitespace,
 		      system = None},
-		     scout)
+		     tail)
 	   | _ ->
 	     {
 	      (syslit, tail) <- parse_SystemLiteral tail;

@@ -147,7 +147,7 @@ XML qualifying spec
     case start of
       %% test for open-paren to rule out Name option in cp production
 
-      | 40 :: tail ->
+      | 40 :: _ ->
         %% '('
         parse_CP start
 
@@ -216,8 +216,19 @@ XML qualifying spec
 		      return (Choice {alternatives = rev rev_alternatives},
 			      tail)
 
-		    | _ ->
+		    | 124 :: tail ->
+		      %% '|'
 		      probe (tail, rev_alternatives)
+		    | _ ->
+		      hard_error {kind        = Syntax,
+				  requirement = "A choice in an elementdecl in DTD should continue with '!', or end with ')'.",
+				  start       = start,
+				  tail        = tail,
+				  peek        = 10,
+				  we_expected = [("'!'", "indication of choice"),
+						 ("')'", "termination of choise")],
+				  but         = "Something else occurred first",
+				  so_we       = "fail immediately"}
 		     }
 	     in
 	       probe (tail, [(w1, cp, w2)])
@@ -237,9 +248,19 @@ XML qualifying spec
                       %% ')'
 		      return (Seq {items = rev rev_items},
 			      tail)
-
-		    | _ ->
+		    | 44 :: tail ->
+		      %% ','
 		      probe (tail, rev_items)
+		    | _ ->
+		      hard_error {kind        = Syntax,
+				  requirement = "A sequence in an elementdecl in DTD should continue with ',', or end with ')'.",
+				  start       = start,
+				  tail        = tail,
+				  peek        = 10,
+				  we_expected = [("','", "indication of sequence"),
+						 ("')'", "termination of sequence")],
+				  but         = "Something else occurred first",
+				  so_we       = "fail immediately"}
 		     }
 	     in
 	       probe (tail, [(w1, cp, w2)])

@@ -39,20 +39,23 @@ XML qualifying spec
   def parse_Option_ElementTag (start : UChars) : Possible ElementTag =
     case start of
       | 60 :: tail ->
-         %% '<'
-         {
-	  (prefix,     tail) <- parse_ElementTagPrefix   tail;
-	  (name,       tail) <- parse_ElementName        tail;
-	  (attributes, tail) <- parse_ElementAttributes  tail;
-	  (whitespace, tail) <- parse_WhiteSpace         tail;
-	  (postfix,    tail) <- parse_ElementTagPostfix  tail;
-	  return (Some {prefix     = prefix,
-			name       = name,
-			attributes = attributes,
-			whitespace = whitespace,
-			postfix    = postfix},
-		  tail)
-	  }
+        %% '<'
+        (case tail of 
+	   | 33 (* ! *) :: _ -> return (None, start)
+	   | _ ->
+	     {
+	      (prefix,     tail) <- parse_ElementTagPrefix   tail;
+	      (name,       tail) <- parse_ElementName        tail;
+	      (attributes, tail) <- parse_ElementAttributes  tail;
+	      (whitespace, tail) <- parse_WhiteSpace         tail;
+	      (postfix,    tail) <- parse_ElementTagPostfix  tail;
+	      return (Some {prefix     = prefix,
+			    name       = name,
+			    attributes = attributes,
+			    whitespace = whitespace,
+			    postfix    = postfix},
+		      tail)
+	     })
       | _ ->
 	 return (None, start)
 

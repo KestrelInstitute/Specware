@@ -106,6 +106,8 @@ XML qualifying spec
         def probe (tail, rev_markups) =
 	  case tail of
 
+            | [] -> return (rev rev_markups, [])
+
 	    %%  [K14]  Decl           ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect
 
 	    | 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 :: tail ->
@@ -143,8 +145,8 @@ XML qualifying spec
 	       probe (tail, cons (PI decl, rev_markups))
 	      }
 
-	    | 60 :: 45 :: 45 :: tail ->
-	      %% '<--'
+	    | 60 :: 33 :: 45 :: 45 :: tail ->
+	      %% '<!--'
 	      {
 	       (comment, tail) <- parse_Comment tail;
 	       probe (tail, cons (Comment comment, rev_markups))
@@ -189,7 +191,7 @@ XML qualifying spec
 	    | char :: _ ->
 	      if white_char? char then
 		{
-		 (w1, scout) <- parse_WhiteSpace tail;
+		 (w1, tail) <- parse_WhiteSpace tail;
 		 probe (tail, cons (WhiteSpace w1, rev_markups))
 		}
 	      else
@@ -202,7 +204,7 @@ XML qualifying spec
 					   ("'<!ATTLIST'",            "attribute list decl"),
 					   ("'<!ENTITY'",             "entity decl"),
 					   ("'<!NOTATION'",           "notation decl"),
-					   ("'<--'",                  "comment"),
+					   ("'<!--'",                 "comment"),
 					   ("'%'",                    "PE Reference"),
 					   ("'<![' S 'INCLUDE'",      "include decl"),
 					   ("'<![' S 'IGNORE'",       "ignore  decl"),
@@ -211,6 +213,7 @@ XML qualifying spec
 			    but         = (describe_char char) ^ " was seen instead",
 			    so_we       = "fail immediately"}
 
+(*
 	    | _ ->
 		hard_error {kind        = EOF,
 			    requirement = "Each markup or declsep in the DTD must be one of those indicated below.",
@@ -229,6 +232,7 @@ XML qualifying spec
 					   ("']'",                    "end of markups in DTD")],
 			    but         = "EOF occurred first",
 			    so_we       = "fail immediately"}
+*)
     in
       probe (start, [])
 
