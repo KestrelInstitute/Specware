@@ -210,7 +210,7 @@ Utilities qualifying spec {
       | LetRec(decls,M,_) -> 
 	let vars1 = freeVarsRec M in
 	let vars2 = freeVarsList(decls) in
-	deleteVars(List.map (fn(v,_) -> v) decls,vars1 ++ vars2)
+	deleteVars(vars1 ++ vars2,List.map (fn(v,_) -> v) decls)
       | Bind(b,vars,M,_)  -> 
 	deleteVars(freeVarsRec(M),vars)
       | IfThenElse(t1,t2,t3,_) -> 
