@@ -478,7 +478,7 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, opsrt), [(_, trm)]
       in
       let domSrts = srtDomKeepSubsorts(srt) in
       let domSrts = map (fn(srt) -> unfoldBase(spc,srt)) domSrts in
-      let trm_ = case trm of
+      let trm = case trm of
                   | Lambda((p,cond,body)::match,b) ->
                     let vars:List(Option Term) =
 		               case p of
@@ -726,6 +726,7 @@ def specToJava(basespc,spc,optspec,filename) =
   %let imports = [(["Arrow"],"*")] in
   let imports = [] in
   let jspc = (None, imports, clsOrInterfDecls) in
+  let jspc = mapJName mapJavaIdent jspc in
   let jfiles = processOptions(jspc,optspec,filename) in
   let _ = app printJavaFile jfiles in
   jspc

@@ -13,7 +13,7 @@ SpecCalc qualifying spec
      cUID <- SpecCalc.getUID cterm;
      javaFileName <- UIDtoJavaFile (cUID, optFileNm);
      (optBaseUnitId,baseSpec) <- getBase;
-     let _ = ensureDirectoriesExist javaFileName in
+     %let _ = ensureDirectoriesExist javaFileName in
      let spc0 = subtractSpec spc baseSpec in
      %let _ = specToJava(spc,javaFileName) in
      let _ = specToJava(baseSpec,spc0,optspec,javaFileName) in

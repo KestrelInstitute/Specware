@@ -1005,6 +1005,22 @@ def packageNameToJavaName(s) =
     | [] -> ([],"")
     | l::path -> (rev(path),l)
 
+
+
+
+% --------------------------------------------------------------------------------
+
+op mapJavaIdent: Ident -> Ident
+def mapJavaIdent(id) =
+  let idarray = explode(id) in
+  let id = foldr (fn(#?,id) -> "$Q"^id
+		  | (c,id) -> Char.toString(c)^id) "" idarray
+  in
+    id
+  %if javaKeyword? id then id^"$" else id
+
+
+
 % --------------------------------------------------------------------------------
 %
 % exceptions
