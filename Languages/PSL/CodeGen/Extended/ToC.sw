@@ -113,6 +113,16 @@ SpecCalc qualifying spec {
 		(OpRef.show (mkUnQualifiedId id), ctype))
                 parameters
     in
+    let local_varDecls =
+      List.map (fn argRef as Qualified (q,id) ->
+		let spc = specOf initSpec in
+		let argRef = mkUnQualifiedId id in
+		let (names,fxty,(tyVars,srt),_) = Op.deref (spc, argRef) in
+		let (cspc,ctype) = sortToCType cspc spc srt in
+		let Qualified (_,id) = argRef in
+		(OpRef.show (mkUnQualifiedId id), ctype, None))
+               varsInScope 
+    in
     let (cspc,returnType) =
       case returnInfo of
         | None -> (cspc,Void)
@@ -140,8 +150,17 @@ SpecCalc qualifying spec {
       graph <- catch (convertBSpec bSpec) (handler procId procedure);
       graph <- catch (structGraph graph) (handler procId procedure);
       %print(printGraph(graph));
-      (cspc,procStmt) <- return (graphToC cspc envSpec graph);
-      return (addFnDefnOverwrite(cspc,(showQualifiedId procId,varDecls,returnType,procStmt)))
+      (cspc,procBody) <- return (graphToC cspc envSpec graph);
+      procStmt    <- return (case procBody of
+			       | Block (vars,stmts) ->
+			         Block (vars ++ local_varDecls, stmts)
+			       | _ ->
+				 Block (local_varDecls, [procBody]));
+      return (addFnDefnOverwrite(cspc,
+				 (showQualifiedId procId,
+				  varDecls,
+				  returnType,
+				  procStmt)))
     }
 
   op nodeContent : Node -> NodeContent
