@@ -15,7 +15,7 @@ we use emptyMap and foldMap but would prefer to use empty and fold. Needs
 thought.
 
 \begin{spec}
-spec
+spec {
   import /Library/PrettyPrinter/WadlerLindig
   import Cod 
   import Dom
@@ -122,17 +122,17 @@ copies of the Maps spec and derive a third.
 \end{spec}
 
 \begin{spec}
-%  op mapPartial : fa(key,a,b) (a -> General.Option b)
+%  op mapPartial : fa(key,a,b) (a -> Option b)
 %       -> Map (key,a) -> Map (key,b)
-%  op compare : fa(a,key) (a * a -> General.Comparison)
-%       -> Map (key,a) -> Map (key,a) -> General.Comparison
+%  op compare : fa(a,key) (a * a -> Comparison)
+%       -> Map (key,a) -> Map (key,a) -> Comparison
 \end{spec}
 
 Form a map from an association list. This should be generalized to
 form a map from an association set.
 
 \begin{spec}
-%  op fromList : fa (a,b) (a * a -> General.Comparison)
+%  op fromList : fa (a,b) (a * a -> Comparison)
 %            -> List (a * b) -> Map (a, b)
 \end{spec}
 
@@ -157,5 +157,5 @@ in the reverse order to the way it it traversed by foldMap.
                           ppDom dom,
                           ppString "|->",
                           ppCod cod], l)) [] map)
-end
+}
 \end{spec}

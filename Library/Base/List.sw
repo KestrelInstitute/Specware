@@ -2,7 +2,7 @@
 
 \begin{spec}
 List qualifying spec
-  import Lift
+  import Option
   import PrimitiveSorts
   import Nat
   import Compare

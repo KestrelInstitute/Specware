@@ -23,5 +23,5 @@
 (format t "~2%To test, run (test)~2%")
 
 (defun test ()
-  (sw "/Library/Structures/Data/Categories/Sketches/Monomorphic")
+  (sw "/Library/Structures/Data/Categories/Diagrams/Polymorphic/AsRecord")
 )

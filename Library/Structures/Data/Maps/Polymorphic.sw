@@ -12,7 +12,7 @@ foldMap and mapMap. The latter is a lousy name. The whole policy needs
 thought.
 
 \begin{spec}
-spec
+spec {
   import /Library/Structures/Data/Sets/Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
 
@@ -131,15 +131,15 @@ spec or in specific refinements of it. Note that the map is printed
 in the reverse order to the way it it traversed by foldMap.
 
 \begin{spec}
-%   op ppMap : fa (a,b) (a -> Pretty) -> (b -> Pretty) -> Map (a,b) -> Pretty
-%   def ppMap ppKey ppValue map =
-%      ppSep ppNewline (foldMap (fn l -> fn dom -> fn cod
-%                -> Cons (ppConcat [
-%                           ppKey dom,
-%                           ppString " |-> ",
-%                           ppValue cod], l)) [] map)
+  op ppMap : fa (a,b) (a -> Pretty) -> (b -> Pretty) -> Map (a,b) -> Pretty
+  def ppMap ppKey ppValue map =
+     ppSep ppNewline (foldMap (fn l -> fn dom -> fn cod
+               -> Cons (ppConcat [
+                          ppKey dom,
+                          ppString " |-> ",
+                          ppValue cod], l)) [] map)
 \end{spec}
 
 \begin{spec}
-end
+}
 \end{spec}

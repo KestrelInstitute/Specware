@@ -7,34 +7,29 @@ Note that the functors appearing here are those whose domain is freely
 generated from the shape.
 
 \begin{spec}
-let Sketches =
- /Library/Structures/Data/Categories/Sketches/Monomorphic/Sketches in
 let Functors =
-  /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic
-in
-spec
+  /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic in
+spec {
   import Functors
-  import Sketches
   import /Library/PrettyPrinter/WadlerLindig
-
-%   sort Diagram (O,A) = {
-%     shape : Sketch,
-%     functor : Functor (O,A)
-%   }
 
   sort Diagram (O,A)
   op shape : fa (O,A) Diagram (O,A) -> Sketch
   op functor : fa (O,A) Diagram (O,A) -> Functor (O,A)
 
-%   op ppDiagram : fa (O,A) Diagram (O,A) -> Pretty
-%   def ppDiagram diag =
-%     ppBlockAll [
-%       ppString "Shape=",
-%       ppIndent 2 (ppSketch (shape diag)),
-%       ppString "Functor=",
-%       ppIndent 2 (ppFunctor (functor diag))
-%     ]
-end
+  op ppDiagram : fa (O,A) Diagram (O,A) -> Pretty
+  def ppDiagram dgm =
+    ppConcat [
+      ppString "Shape=",
+      ppNewline,
+      ppString "  ",
+      ppIndent (ppSketch (shape dgm)),
+      ppNewline,
+      ppString "  ",
+      ppString "Functor=",
+      ppIndent (ppFunctor (functor dgm))
+    ]
+}
 \end{spec}
 
 The pretty printing functions need a rethink.  Perhaps the pretty printer

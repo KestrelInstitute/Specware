@@ -4,8 +4,8 @@ Basic spec for polymorphic sets. Again, there are no axioms at this point.
 
 \begin{spec}
 spec
+  import /Library/Base
   import /Library/PrettyPrinter/WadlerLindig
-  import /Library/Base/Base
 
   sort Set a
 

@@ -1,7 +1,7 @@
 \section{Polymorphic Categories}
 
 The spec below defines a sort for representing categories.  See also the
-spec CatsWithMaps for a different, and in some ways better, representation.
+spec WithMaps for a different, and in some ways better, representation.
 
 The sort is polymorphic in the sense that the same sort can be used at
 runtime to represent different categories. For instance, categories of
@@ -58,7 +58,7 @@ categories and cocomplete categories. In this case the extra
 level of abstraction helps none.
 
 \begin{spec}
-spec
+spec {
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Cat (O,A)
@@ -71,7 +71,7 @@ spec
 
   op ppObj : fa (O,A) Cat (O,A) -> O -> Pretty
   op ppArr : fa (O,A) Cat (O,A) -> A -> Pretty
-end
+}
 \end{spec}
 
 We have omitted the operator composable?. It seems of little use.

@@ -2,7 +2,7 @@
 This spec should be given a better name.
 
 \begin{spec}
-Functions qualifying spec
+Functions qualifying spec {
   import PrimitiveSorts
 
   op id : fa (A) A -> A
@@ -11,5 +11,5 @@ Functions qualifying spec
   axiom ident is fa (x) id x = x
   axiom assoc is fa (f,g,h) (h o g) o f = h o (g o f)
   axiom comp  is fa (f,g,x) (g o f) x = g (f x)
-end
+}
 \end{spec}

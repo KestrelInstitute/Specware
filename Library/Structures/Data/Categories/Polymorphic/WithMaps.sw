@@ -1,5 +1,10 @@
 This spec is not used at present.
 
+It differs from the base polymorphic spec in that the association of
+objects to arrows in the dom, cod and ident operations is via maps rather
+then function spaces.  Arguably this spec is more abstract and the base
+polymorphic version should be presented as a refinement of this.
+
 The spec below defines a sort for representing categories.  The sort is
 polymorphic in the sense that the same sort can be used at runtime to
 represent different categories. For instance, categories of finite sets,
@@ -9,7 +14,7 @@ In most cases, the polymorphism appearing here is not needed and one
 is better to use a monomorphic sort. Also, often, one does not need a
 sort for category at all but rather just a spec.  Note that the spec
 below is roughly what you get from a naive internalization of the spec
-MathStructures/Categories/Cat. There is another such internalization
+Structures/Math/Categories/Cat. There is another such internalization
 without the polymorphism.
 
 This sort of internalization is yields definitions closest to Burstall
@@ -27,10 +32,10 @@ to define subcategories easily.
 This first spec is not used (note the verbatim environment). This is
 an abstract spec of which the second should be a refinment
 
-\begin{verbatim}
-spec
-  import USI(/Library/DataStructures/Sets/Polymorphic/Sets)
-  import USI(/Library/DataStructures/Maps/Polymorphic/Maps)
+\begin{spec}
+spec {
+  import /Library/Structures/Data/Sets/Polymorphic
+  import /Library/Structures/Data/Maps/Polymorphic
 
   sort Cat (O,A) 
 
@@ -41,8 +46,8 @@ spec
   op cod : fa (O,A) Cat (O,A) -> Map (A,O)
   op composable? : fa (O,A) Cat (O,A) -> Set (A * A)
   op compose : fa (O,A) Cat (O,A) -> A -> A -> A
-end
-\end{verbatim}
+}
+\end{spec}
 
 This still needs some thought. How do we say that ident only applies to
 what is in the set `objects'. Do we need dependent types? I don't think it is
@@ -64,40 +69,3 @@ prefer curried.
 I have used A * A but to internalize things correctly, we should have
 an 'internal' product type, Prod (a,b) which might refine to a * b but
 might not.
-
-The following defines both a concrete and abstract sort for categories.
-These should be separated and the concrete sort presented as a refinement
-of the abstract definition.
-
-\begin{spec}
-spec
-  import USI(/Library/DataStructures/Sets/Polymorphic/Sets)
-  import USI(/Library/DataStructures/Maps/Polymorphic/Maps)
-
-  sort Cat (O,A) = {
-    objects : Set O,
-    arrows : Set A,
-    ident : Map(O,A),
-    dom : Map(A,O),
-    cod : Map(A,O),
-    composable? : Set (A * A),
-    compose : Map(A * A, A)
-  }
-
-  op objects : fa (O,A) Cat (O,A) -> Set O
-  op arrows : fa (O,A) Cat (O,A) -> Set A
-  op ident : fa (O,A) Cat (O,A) -> Map (O,A)
-  op dom : fa (O,A) Cat (O,A) -> Map (A,O)
-  op cod : fa (O,A) Cat (O,A) -> Map (A,O)
-  op composable? : fa (O,A) Cat (O,A) -> Set (A * A)
-  op compose : fa (O,A) Cat (O,A) -> Map (A * A, A)
-
-  def objects cat = cat.objects
-  def arrows cat = cat.arrows
-  def ident cat = cat.ident
-  def dom cat = cat.dom
-  def cod cat = cat.cod
-  def composable? cat = cat.composable?
-  def compose cat = cat.compose
-end
-\end{spec}

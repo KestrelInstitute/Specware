@@ -29,40 +29,52 @@ The names of some of these operators clash with Cats and Graphs.
 
 \begin{spec}
 let Sketches =
-  Sketch qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic in
-let Cats = Cats qualifying /Library/Structures/Data/Categories/Polymorphic in
+  /Library/Structures/Data/Categories/Sketches/Monomorphic in
+let Cats = /Library/Structures/Data/Categories/Polymorphic in
 let Maps = Poly qualifying /Library/Structures/Data/Maps/Polymorphic in
-spec {
+spec
+  import /Library/PrettyPrinter/WadlerLindig
   import Sketches
   import Cats
   import Maps
 
-  sort Functor (O,A)
+%   sort Functor (O,A) = {
+% 	  dom : Sketch,
+%     cod : Cat (O,A),
+%     vertexMap : Poly.Map (Elem_v,O),
+%     edgeMap : Poly.Map (Elem_e,A)
+%   }
+\end{spec}
 
+\begin{spec}
+  sort Functor (O,A)
   op dom : fa(O,A) Functor (O,A) -> Sketch
   op cod : fa(O,A) Functor (O,A) -> Cat (O,A)
   op vertexMap : fa(O,A) Functor (O,A) -> Poly.Map (Vertex.Elem,O)
   op edgeMap : fa(O,A) Functor (O,A) -> Poly.Map (Edge.Elem,A)
+
+  % def vertexMap functor = functor.vertexMap
+  % def edgeMap functor = functor.edgeMap
 \end{spec}
 
 When pretty printing a functor, we don't print the domain or codomain. 
 Printing the domain (generator) is not unreasonable.
 
 \begin{spec}
-  op ppFunctor : fa (O,A) Functor (O,A) -> Pretty
-  def ppFunctor functor = 
-    ppConcat [
-      ppString "Vertex Map =",
-      ppNewline,
-      ppString "  ",
-      ppIndent (Poly.ppMap Vertex.ppElem (ppObj (cod functor)) (vertexMap functor)),
-      ppNewline,
-      ppString "Edge Map =",
-      ppNewline,
-      ppString "  ",
-      ppIndent (Poly.ppMap Edge.ppElem (ppArr (cod functor)) (edgeMap functor))
-   ]
-}
+%   op ppFunctor : fa (O,A) Functor (O,A) -> Pretty
+%   def ppFunctor functor = 
+%     ppConcat [
+%       ppString "Vertex Map =",
+%       ppNewline,
+%       ppString "  ",
+%       ppIndent (ppMap_p ppElem_v (ppObj functor.cod) functor.vertexMap),
+%       ppNewline,
+%       ppString "Edge Map =",
+%       ppNewline,
+%       ppString "  ",
+%       ppIndent (ppMap_p ppElem_e (ppArr functor.cod) functor.edgeMap)
+%    ]
+end
 \end{spec}
 
 The above should import and refine the general polymorphic Functors spec

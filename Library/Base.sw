@@ -3,7 +3,6 @@
 The Base spec is implicitly imported by every user-defined spec.
 
 \begin{spec}
-
 spec {
   % Note:
   % The following definition is in ast-pp.sl :
@@ -11,7 +10,7 @@ spec {
   % That predicate is used to prevent some imports from printing 
 
   import Base/Boolean
-  % import Base/Functions 
+  import Base/Functions 
   import Base/Integer 
   import Base/Nat
   import Base/Char
@@ -20,7 +19,6 @@ spec {
   import Base/Option 
   import Base/System
   import Base/Compare
-  % import Base/Show
-  % import Base/PrettyPrinter % in base??
+  import Base/Show
 }
 \end{spec}
