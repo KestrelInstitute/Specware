@@ -552,7 +552,8 @@ TypeChecker qualifying spec
 	 )
       | Fun (Embed (id, _), srt, pos) -> 
 	let _  (* srt *) = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
-	resolveNameFromSort (env, trm, id, term_sort, pos)
+	%% using term_sort instead of srt in the following was cause of bug 110 : "[] read as bogus Nil"
+	resolveNameFromSort (env, trm, id, srt, pos) 
 
       | Fun (Project id,srt,pos) -> 
 	let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
