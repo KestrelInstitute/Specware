@@ -1,4 +1,4 @@
-set SPECWARE4=\Progra~1\Specware4
+set SPECWARE4=C:\Progra~1\Specware4
 rem SWPATH needs /s rather than \s so URI parsing works
 set SWPATH=/Progra~1/Specware4;/
 set XEMACS=C:\Progra~1\XEmacs\XEmacs-21.4.10
