@@ -1,16 +1,37 @@
-(defpackage "SPECWARE")
+(defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 2) (safety 1)))
+(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
+
+(setq *load-verbose* nil)		; Don't print loaded file messages
+(setq *compile-verbose* nil)		; or lisp compilation
 
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
 #+cmu
 (setq ext:*gc-verbose* nil)
 #+cmu
-(setq extensions:*bytes-consed-between-gcs* 10000000)
+(setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
+#+sbcl
+(setf (sb-ext:bytes-consed-between-gcs) 50331648)
+#+cmu
+(setq extensions:*efficiency-note-cost-threshold* 30)
+#+sbcl
+(setq sb-ext:*efficiency-note-cost-threshold* 30)
+#+cmu
+(setq c::*compile-print* nil)
+#+sbcl
+(setq sb-ext::*compile-print* nil)
+#+sbcl
+(declaim (optimize (sb-ext:inhibit-warnings 3)))
+;#+mcl
+;(egc t)					; Turn on ephemeral gc
 #+mcl
-(egc t)                 ; Turn on ephemeral gc
+(ccl::set-lisp-heap-gc-threshold (* 16777216 4))
+#+sbcl
+(setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
+#+sbcl
+(setq sb-debug:*debug-beginner-help-p* nil)
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.0")
@@ -32,12 +53,25 @@
 
 (defvar Specware4 (specware::getenv "SPECWARE4"))
 
-(load (make-pathname
-       :defaults (concatenate 'string Specware4
-                              "/Provers/Snark/Handwritten/Lisp/snark-system")
-       :type     "lisp"))
+#+cmu
+(compile-and-load-lisp-file (concatenate 'string
+					 Specware4 "/Applications/Handwritten/Lisp/cmucl-patch"))
+#+sbcl
+(compile-and-load-lisp-file (concatenate 'string
+					 Specware4 "/Applications/Handwritten/Lisp/sbcl-patch"))
 
-(snark:make-snark-system t)
+(defun ignore-warning (condition)
+   (declare (ignore condition))
+   (muffle-warning))
+
+(handler-bind ((warning #'ignore-warning))
+  (load (make-pathname
+	 :defaults (concatenate 'string Specware4
+				"/Provers/Snark/Handwritten/Lisp/snark-system")
+	 :type     "lisp")))
+
+(handler-bind ((warning #'ignore-warning))
+  (cl-user::make-snark-system t))
 
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
 
@@ -75,7 +109,7 @@
   )
 
 (map 'list #'(lambda (file)
-           (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+               (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
      HandwrittenFiles
      )
 
@@ -86,14 +120,14 @@
 
 #||
 #+allegro
-(progn (setf (get 'LIST-SPEC::|!exists|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+(progn (setf (get 'LIST-SPEC::exists-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        ;(setf (get 'UTILITIES::occursT 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil t))
-       (setf (get 'LIST-SPEC::|!map|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'LIST-SPEC::map-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        (setf (get 'LIST-SPEC::filter-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        (setf (get 'MAP-SPEC::foldi-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
        ;(setf (get 'LIST-SPEC::foldl-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
        (setf (get 'ANNSPEC::foldriAQualifierMap-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE)
-     '(t nil nil))
+	     '(t nil nil))
        (setf (get 'METASLANG::equallist? 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil nil t)))
 ||#
 
@@ -131,23 +165,63 @@
     )
   )
 
-(defpackage "SNARK")
-
-(map 'list #'(lambda (file)
-           (list 33 file)
-           (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-     SpecwareRuntime
-     )
+;(handler-bind ((warning #'ignore-warning))
+  (map 'list #'(lambda (file)
+		 (list 33 file)
+		 (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+       SpecwareRuntime
+       );)
 
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
-              Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 
 (make-system (concatenate 'string
-              Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
+			  Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
 ;;; Initialization includes preloading the base spec.
-(Specware::initializeSpecware-0)
+;;; (Specware::initializeSpecware-0) ; Now happens in startup actions (see bootstrap script)
+
+#+allegro
+(defun start-java-connection? ()
+  (format t "Checking  command-line arguments: ~a~%" (system:command-line-arguments))
+  (when (member "socket" (system:command-line-arguments)
+		:test 'equal)
+    (load (concatenate 'string
+	    Specware4 "/Gui/src/Lisp/specware-socket-init"))))
+
+#+allegro
+(push 'start-java-connection? excl:*restart-actions*)
+
+;;; Load base in correct location
+#+allegro
+(push  'Specware::initializeSpecware-0 cl-user::*restart-actions*)
+#+cmu
+(push  'Specware::initializeSpecware-0 ext:*after-save-initializations*)
+#+mcl
+(push  'Specware::initializeSpecware-0 ccl:*lisp-startup-functions*)
+#+sbcl
+(push  'Specware::initializeSpecware-0 sb-int:*after-save-initializations*)
+
+;;; Set gc parameters at startup
+#+mcl
+(push  #'(lambda () (ccl::set-lisp-heap-gc-threshold (* 16777216 4)))
+       ccl:*lisp-startup-functions*)
+
+#+sbcl
+(push  #'(lambda () (setq sb-debug:*debug-beginner-help-p* nil)
+	            (setf (sb-ext:bytes-consed-between-gcs) 50331648))
+       sb-int:*after-save-initializations*)
+
+;;; Clear load environment vars
+#+cmu
+(progn (setq ext:*environment-list* ())
+       (setq lisp::lisp-environment-list ()))
+
+
+;;; Set temporaryDirectory
+#+allegro
+(push  'setTemporaryDirectory cl-user::*restart-actions*)
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/PSL/PSL~2%")

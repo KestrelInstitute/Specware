@@ -1,8 +1,7 @@
-(defpackage :Specware (:use :cl))	; Most systems default to this but not sbcl until patch loaded below
-(in-package :Specware)
+(defpackage "SPECWARE" (:use "CL"))   ; Most systems default to this but not sbcl until patch loaded below
+(in-package "SPECWARE")
 
 (declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
-;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
 (setq *compile-verbose* nil)		; or lisp compilation
@@ -48,8 +47,9 @@
 ;;    make-system
 ;;    change-directory
 ;;    current-directory
-(load (make-pathname :defaults "../../../Handwritten/Lisp/load-utilities"
-		     :type     "lisp"))
+(load (make-pathname
+       :defaults "../../../Handwritten/Lisp/load-utilities"
+       :type     "lisp"))
 
 (defvar Specware4 (specware::getenv "SPECWARE4"))
 
@@ -64,8 +64,6 @@
    (declare (ignore condition))
    (muffle-warning))
 
-(defpackage "SNARK")
-
 (handler-bind ((warning #'ignore-warning))
   (load (make-pathname
 	 :defaults (concatenate 'string Specware4
@@ -76,7 +74,6 @@
   (cl-user::make-snark-system t))
 
 (declaim (optimize (speed 3) (debug 2) (safety 1)))
-;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
@@ -112,9 +109,10 @@
   )
 
 (map 'list #'(lambda (file)
-	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+               (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
      HandwrittenFiles
      )
+
 (defpackage "UTILITIES")
 (defpackage "MAP-SPEC")
 (defpackage "ANNSPEC")
@@ -129,12 +127,13 @@
        (setf (get 'MAP-SPEC::foldi-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
        ;(setf (get 'LIST-SPEC::foldl-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
        (setf (get 'ANNSPEC::foldriAQualifierMap-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE)
-	 '(t nil nil))
+	     '(t nil nil))
        (setf (get 'METASLANG::equallist? 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil nil t)))
 ||#
 
 ;; The following are specific to Specware and languages that
-;; extend Specware. 
+;; extend Specware. The order is significant: specware-state
+;; must be loaded before the generated lisp file.
 ;;
 ;; The list below is used only in this file.
 
@@ -166,13 +165,12 @@
     )
   )
 
-
 ;(handler-bind ((warning #'ignore-warning))
   (map 'list #'(lambda (file)
-	       (list 33 file)
-	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-     SpecwareRuntime
-     );)
+		 (list 33 file)
+		 (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+       SpecwareRuntime
+       );)
 
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
