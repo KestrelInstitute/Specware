@@ -14,6 +14,8 @@
 	    ";;; Elaborating spec at $TESTDIR/EquivalentSorts#CC"
 	    ""
 	    "spec  "
+	    " type {A, B, C}"
+	    " import Foo"
 	    (:alternatives 
 	     " type {A, B, C} = List(Nat * Nat)"
 	     " type {A, B, C} = Foo(Nat)")
