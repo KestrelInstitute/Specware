@@ -43,35 +43,38 @@ GENERAL NOTIONS
 
   Symmetries
 
-  Assertions
-
   Naturals
 
-  Basics
-    Sets
-    * cardinality
-    * finite
-    * infinite
-    * enumerable
-    * closure
-    * relation with predicates
-    Bags
-    * relation with natural functions
-    Maps
-    * relation with functions
-    Orders
-    * preorder
-    * partial order
-    * discrete order
-    * total (linear) order
-    * monotonicity
-    * Galois connection
-    * order isomorphism
-    Lattices
-    * semi-lattice
-    * lattice
-    * lub, glb
-    * complete
+  Assertions
+
+  Sets
+  * cardinality
+  * finite
+  * infinite
+  * enumerable
+  * closure
+  * relation with predicates
+
+  Bags
+  * relation with natural functions
+
+  Maps
+  * relation with functions
+
+  Orders
+  * preorder
+  * partial order
+  * discrete order
+  * total (linear) order
+  * monotonicity
+  * Galois connection
+  * order isomorphism
+
+  Lattices
+  * semi-lattice
+  * lattice
+  * lub, glb
+  * complete
 
   General Algebra
     Signatures
