@@ -27,13 +27,6 @@ Utilities qualifying spec {
 
  op unfoldImports  : List(Spec) * Spec -> Spec 
 
- %% merge in imports without renaming sorts and ops.
- %% mergeImports is used when ops or sorts are not redefined
- %% in the spec, and the other specs do not import things themselves (besides
- %% Nat, String, List, Integer, Boolean, Char).
-
- op mergeImports : List(Spec) * Spec -> Spec
-
  op removeDefinitions : Spec -> Spec
 
  op disableProperties : IntegerSet.Set * Spec -> Spec
@@ -900,89 +893,4 @@ Utilities qualifying spec {
     sorts            = StringMap.mapDouble letRecToLetTermSortInfo spc.sorts,
     ops              = StringMap.mapDouble letRecToLetTermOpInfo   spc.ops,
     properties       = spc.properties}
-
- %- --------------------------------------------------------------------------------
-
- def cString (id : String) : String = 
-   let id = String.map cChar id in
-   if isCKeyword id then
-     cString("slang_" ^ id)
-   else 
-     substGlyphInIdent(id)
-
- %-% TODO: transform glyph identifier, e.g. "+++", "%^&*" to C idents
-
- %[MA
- def substGlyphInIdent(id:String) : String =
-   let def substGlyphChar(c:Char) : List Char =
-        let ord = Char.ord(c) in
-	if ord < 32 
-	  then [#_]
-	else if ord > 126 
-	  then [#_]
-        else if ((ord >= 48) & (ord <=  57)) 
-	     or ((ord >= 65) & (ord <=  90))
-	     or ((ord >= 97) & (ord <= 122))
-	     or (ord = 95) 
-	 then [c]
-        else
-	 case ord
-	   of  32 -> String.explode("Space")
-	    |  33 -> String.explode("Exclam")
-	    |  34 -> String.explode("Quotedbl")
-	    |  35 -> String.explode("Numbersign")
-	    |  36 -> String.explode("Dollar")
-	    |  37 -> String.explode("Percent")
-	    |  38 -> String.explode("Ampersand")
-	    |  39 -> String.explode("Quotesingle")
-	    |  40 -> String.explode("Parenleft")
-	    |  41 -> String.explode("Parenright")
-	    |  42 -> String.explode("Asterisk")
-	    |  43 -> String.explode("Plus")
-	    |  44 -> String.explode("Comma")
-	    |  45 -> String.explode("Hyphen")
-	    |  46 -> String.explode("Period")
-	    |  47 -> String.explode("Slash")
-	    |  58 -> String.explode("Colon")
-	    |  59 -> String.explode("Semicolon")
-	    |  60 -> String.explode("Less")
-	    |  61 -> String.explode("Equal")
-	    |  62 -> String.explode("Greater")
-	    |  63 -> String.explode("Q")
-	    |  64 -> String.explode("At")
-	    |  91 -> String.explode("Bracketleft")
-	    |  92 -> String.explode("Backslash")
-	    |  93 -> String.explode("Bracketright")
-	    |  94 -> String.explode("Caret")
-	    |  96 -> String.explode("Grave")
-	    | 123 -> String.explode("Braceleft")
-	    | 124 -> String.explode("Bar")
-	    | 125 -> String.explode("Braceright")
-	    | 126 -> String.explode("Tilde")
-	    | _ -> [#_]
-    in
-    let def substGlyph(carray) =
-       case carray
-	 of c::carray0  -> concat(substGlyphChar(c),substGlyph(carray0))
-	  | []         -> []
-    in
-      String.implode(substGlyph(String.explode(id)))
- % MA]
-
- def cChar (c : Char) : Char =
-   case c
-     %-      of #- -> #_
-     of #? -> #Q
-      | _  -> c
-
- def isCKeyword s =
-   member (s, cKeywords)
-
- def cKeywords =
-   ["auto",     "break",  "case",     "char",    "const",    "continue",
-    "default",  "do",     "double",   "else",    "enum",     "extern",
-    "float",    "for",    "goto",     "if",      "int",      "long",
-    "register", "return", "short",    "signed",  "sizeof",   "static",
-    "struct",   "switch", "typedef",  "union",   "unsigned", "void",
-    "volatile", "while"]
 }
