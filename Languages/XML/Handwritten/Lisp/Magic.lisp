@@ -46,7 +46,7 @@
 
 (defun magicMakeProduct (x)
   (cond ((null x)
-	 (coerce nil 'vector))
+	 nil) ; (coerce nil 'vector))
 	((null (cdr x))
 	 (car x))
 	((null (cddr x))
