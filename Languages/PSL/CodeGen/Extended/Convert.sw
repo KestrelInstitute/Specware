@@ -444,6 +444,7 @@ are no longer needed. *)
 	      | Nat (_, qid) -> "\n------\nStep: " ^ (printQualifiedId qid) ^ "\n"
 	      | _ -> print ("\n ?? \n"));
      print ("\nInvariants: " ^ (anyToString (invariants ms)) ^ "\n");
+     print ("\nVariables:  " ^ (anyToString (variables ms)) ^ "\n");
      (guard_terms, aux_action_terms)  <- foldVariants (fn (guards, actions) -> fn claim -> 
 						       if claim.2 = "Guard" then
 							 return (cons (term claim,guards),
