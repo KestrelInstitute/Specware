@@ -476,8 +476,8 @@ SpecsToI2L qualifying spec {
 	    | Lambda ([(pat,_,bodyterm)],_) ->
 	      let plist =
 	      (case pat of
-		 | VarPat((id,_),_) -> [id]
-		 | RecordPat(plist,_) -> List.map (fn | (_,VarPat((id,_),_)) -> id
+		 | VarPat((id,_),_) -> [substGlyphInIdent id]
+		 | RecordPat(plist,_) -> List.map (fn | (_,VarPat((id,_),_)) -> substGlyphInIdent id
 						      | _ -> System.fail(errmsg ctxt)) plist
 		 | _ -> System.fail (errmsg ctxt)
 		)
