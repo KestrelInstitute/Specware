@@ -30,6 +30,7 @@
 (defpackage "NATMAP")
 (defpackage "NATTRANS")
 (defpackage "OPTION")
+(defpackage "PARSER4")
 (defpackage "PATTERNMATCH")
 (defpackage "POLYMAP")
 (defpackage "POLYSET")
@@ -16934,28 +16935,30 @@
 (defun METASLANG::termAnn (|!t|) 
   (block 
    nil 
-   (if (eq (car |!t|) :|ApplyN|) 
-       (return (cdr (cdr |!t|))) 
-       (if (eq (car |!t|) :|Record|) 
+   (if (eq (car |!t|) :|Apply|) 
+       (return (svref (cdr |!t|) 2)) 
+       (if (eq (car |!t|) :|ApplyN|) 
            (return (cdr (cdr |!t|))) 
-           (if (eq (car |!t|) :|Bind|) 
-               (return (svref (cdr |!t|) 3)) 
-               (if (eq (car |!t|) :|Let|) 
-                   (return (svref (cdr |!t|) 2)) 
-                   (if (eq (car |!t|) :|LetRec|) 
+           (if (eq (car |!t|) :|Record|) 
+               (return (cdr (cdr |!t|))) 
+               (if (eq (car |!t|) :|Bind|) 
+                   (return (svref (cdr |!t|) 3)) 
+                   (if (eq (car |!t|) :|Let|) 
                        (return (svref (cdr |!t|) 2)) 
-                       (if (eq (car |!t|) :|Var|) 
-                           (return (cdr (cdr |!t|))) 
-                           (if (eq (car |!t|) :|SortedTerm|) 
-                               (return (svref (cdr |!t|) 2)) 
-                               (if (eq (car |!t|) :|Fun|) 
+                       (if (eq (car |!t|) :|LetRec|) 
+                           (return (svref (cdr |!t|) 2)) 
+                           (if (eq (car |!t|) :|Var|) 
+                               (return (cdr (cdr |!t|))) 
+                               (if (eq (car |!t|) :|SortedTerm|) 
                                    (return (svref (cdr |!t|) 2)) 
-                                   (if (eq (car |!t|) :|Lambda|) 
-                                       (return (cdr (cdr |!t|))) 
-                                       (if (eq (car |!t|) :|IfThenElse|) 
-                                           (return (svref (cdr |!t|) 3)) 
-                                           (if (eq (car |!t|) :|Seq|) 
-                                               (return (cdr (cdr |!t|)))))))))))))) 
+                                   (if (eq (car |!t|) :|Fun|) 
+                                       (return (svref (cdr |!t|) 2)) 
+                                       (if (eq (car |!t|) :|Lambda|) 
+                                           (return (cdr (cdr |!t|))) 
+                                           (if (eq (car |!t|) :|IfThenElse|) 
+                                               (return (svref (cdr |!t|) 3)) 
+                                               (if (eq (car |!t|) :|Seq|) 
+                                                   (return (cdr (cdr |!t|))))))))))))))) 
    (error "Nonexhaustive match failure in termAnn")))
 
 (defun METASLANG::withAnnS (s a) 
@@ -24635,30 +24638,67 @@
        (SPECCALC::equivSort?-1-1 spc (cons (cdr pV1) (cdr pV2))))) 
      (error "Nonexhaustive match failure in equivSortScheme?"))))
 
+(defun STANDARDSPEC::mkTyVar (name) 
+  (cons :|TyVar| (cons name POSITION-SPEC::noPos)))
+
 (defun SPECCALC::compressSortDefs-1-1 (spc info) 
-  (let ((old_defs (svref info 2))) 
+  (let ((names (svref info 0))
+        (|!tyVars| (svref info 1))
+        (old_defs (svref info 2))) 
     (block 
      nil 
      (if (null old_defs) 
          (return info) 
          (if (consp old_defs) (if (null (cdr old_defs)) (return info)))) 
      (return 
-      (let ((distinct_defs 
+      (let ((tyVarsSorts 
              (LIST-SPEC::foldl-1-1-1 
-              #'(lambda (x1) 
-                 (let ((old_def (car x1))
-                       (distinct_defs (cdr x1))) 
-                   (if (LIST-SPEC::|!exists|-1-1 
-                        #'(lambda (distinct_def) 
-                           (SPECCALC::equivSortScheme?-1-1 
-                            spc 
-                            (cons old_def distinct_def))) 
-                        distinct_defs) 
-                       distinct_defs 
-                       (LIST-SPEC::|!cons| old_def distinct_defs)))) 
+              #'(lambda (x) 
+                 (LIST-SPEC::|!cons| (STANDARDSPEC::mkTyVar (car x)) (cdr x))) 
               nil 
-              old_defs))) (vector (svref info 0) (svref info 1) distinct_defs))))))
-
+              |!tyVars|))) 
+        (let ((new_sorts 
+               (LIST-SPEC::foldl-1-1-1 
+                #'(lambda (x) 
+                   (let ((name (car x))) 
+                     (progn (if (string=  
+                                 "SpecCalc.Env" 
+                                 (METASLANG::printQualifiedId name)) 
+                                "" 
+                                "") 
+                            (LIST-SPEC::|!cons| 
+                             (STANDARDSPEC::mkBase name tyVarsSorts) 
+                             (cdr x))))) 
+                nil 
+                names))) 
+          (let ((new_sort_schemas 
+                 (LIST-SPEC::foldl-1-1-1 
+                  #'(lambda (x) 
+                     (LIST-SPEC::|!cons| (cons |!tyVars| (car x)) (cdr x))) 
+                  nil 
+                  new_sorts))) 
+            (let ((distinct_defs 
+                   (LIST-SPEC::foldl-1-1-1 
+                    #'(lambda (x) 
+                       (let ((old_def (car x))
+                             (distinct_defs (cdr x))) 
+                         (if (lisp::or 
+                              (LIST-SPEC::|!exists|-1-1 
+                               #'(lambda (new_sort_scheme) 
+                                  (SPECCALC::equivSortScheme?-1-1 
+                                   spc 
+                                   (cons old_def new_sort_scheme))) 
+                               new_sort_schemas) 
+                              (LIST-SPEC::|!exists|-1-1 
+                               #'(lambda (distinct_def) 
+                                  (SPECCALC::equivSortScheme?-1-1 
+                                   spc 
+                                   (cons old_def distinct_def))) 
+                               distinct_defs)) 
+                             distinct_defs 
+                             (LIST-SPEC::|!cons| old_def distinct_defs)))) 
+                    nil 
+                    old_defs))) (vector names |!tyVars| distinct_defs)))))))))
 
 (defun SPECCALC::compressDefs-1 (spc) 
   (let ((new_sorts 
@@ -25069,6 +25109,12 @@
 
 (defun SPECCALC::auxTranslateSpec-1-1-1-1 (x1 x2 x3 x4) 
   (funcall (funcall (funcall (SPECCALC::auxTranslateSpec-1 x1) x2) x3) x4))
+
+(defun SPECCALC::axiomFromDef (term_def sort_scheme sp) 
+  (vector '(:|Axiom|) "foo" nil (METASLANG::mkTrueA POSITION-SPEC::noPos)))
+
+(defun SPECCALC::axiomFromDef-1 (x) 
+  (SPECCALC::axiomFromDef (svref x 0) (svref x 1) (svref x 2)))
 
 (defparameter SPECCALC::snark_assert (LISP-SPEC::|!symbol| "SNARK" "ASSERT"))
 
@@ -39491,6 +39537,73 @@
       (error "Nonexhaustive match failure in proveInSpec"))) 
    #'(lambda (result) (SPECCALC::|!return| result))))
 
+(defun SPECCALC::proverOptionsFromSpec (name spc spec_name) 
+  (SPECCALC::monadBind 
+   (SPECCALC::|!return| (STANDARDSPEC::findTheOp spc name)) 
+   #'(lambda (options) 
+      (SPECCALC::monadBind 
+       (block 
+        nil 
+        (if (eq (car options) :|Some|) 
+            (let ((pV14 (svref (cdr options) 3))) 
+              (if (consp pV14) 
+                  (if (null (cdr pV14)) 
+                      (return (SPECCALC::|!return| (cdr (car pV14)))))))) 
+        (return 
+         (SPECCALC::raise 
+          (cons 
+           :|SyntaxError| 
+           (STRING-SPEC::^ 
+            (STRING-SPEC::^ 
+             "Cannot find prover option definition, " 
+             (METASLANG::printQualifiedId name)) 
+            (block 
+             nil 
+             (if (eq (car spec_name) :|Some|) 
+                 (return 
+                  (STRING-SPEC::^ 
+                   (STRING-SPEC::^ ", in Spec, " (cdr spec_name)) 
+                   "."))) 
+             (return "."))))))) 
+       #'(lambda (options_def) 
+          (SPECCALC::monadBind 
+           (block 
+            nil 
+            (if (eq (car options_def) :|Fun|) 
+                (let ((pV25 (svref (cdr options_def) 0))) 
+                  (if (eq (car pV25) :|String|) 
+                      (return (SPECCALC::|!return| (cdr pV25)))))) 
+            (return 
+             (SPECCALC::raise 
+              (cons 
+               :|SyntaxError| 
+               (STRING-SPEC::^ 
+                (STRING-SPEC::^ 
+                 "Prover option definition, " 
+                 (METASLANG::printQualifiedId name)) 
+                ", is not a string."))))) 
+           #'(lambda (options_string) 
+              (SPECCALC::monadBind 
+               (SPECCALC::|!return| 
+                (PARSER4::READ_LIST_OF_S_EXPRESSIONS_FROM_STRING options_string)) 
+               #'(lambda (possible_options) 
+                  (SPECCALC::monadBind 
+                   (block 
+                    nil 
+                    (if (eq (car possible_options) :|OptionString|) 
+                        (return (SPECCALC::|!return| (cdr possible_options))) 
+                        (if (eq (car possible_options) :|Error|) 
+                            (let ((pV30 (cdr possible_options))) 
+                              (return 
+                               (SPECCALC::raise 
+                                (cons 
+                                 :|SyntaxError| 
+                                 (STRING-SPEC::^ (car pV30) (cdr pV30)))))))) 
+                    (error 
+                     "Nonexhaustive match failure in proverOptionsFromSpec")) 
+                   #'(lambda (prover_options) 
+                      (SPECCALC::|!return| prover_options))))))))))))
+
 (defun SPECCALC::evaluateProve
  (claim_name spec_term prover_name assertions possible_options) 
   #'(lambda (pos) 
@@ -39517,11 +39630,11 @@
                            :|SpecPath_Relative| 
                            (cons '(:|None|) (cons "Library" (cons "Base" nil))))) 
                  #'(lambda (x1) 
-                    (let ((pV18 (svref x1 0))) 
+                    (let ((pV19 (svref x1 0))) 
                       (block 
                        nil 
-                       (if (eq (car pV18) :|Spec|) 
-                           (let ((pV21 (cdr pV18))) 
+                       (if (eq (car pV19) :|Spec|) 
+                           (let ((pV22 (cdr pV19))) 
                              (return 
                               (SPECCALC::monadBind 
                                (funcall (SPECCALC::evaluateURI 
@@ -39534,11 +39647,11 @@
                                            "Library" 
                                            (cons "Base" (cons "ProverBase" nil)))))) 
                                #'(lambda (x11) 
-                                  (let ((pV14 (svref x11 0))) 
+                                  (let ((pV15 (svref x11 0))) 
                                     (block 
                                      nil 
-                                     (if (eq (car pV14) :|Spec|) 
-                                         (let ((pV17 (cdr pV14))) 
+                                     (if (eq (car pV15) :|Spec|) 
+                                         (let ((pV18 (cdr pV15))) 
                                            (return 
                                             (SPECCALC::monadBind 
                                              #'SPECCALC::getCurrentURI-1 
@@ -39591,7 +39704,7 @@
                                                                       (if (eq 
                                                                            (car 
                                                                             possible_options) 
-                                                                           :|Options|) 
+                                                                           :|OptionString|) 
                                                                           (return 
                                                                            (SPECCALC::|!return| 
                                                                             (cdr 
@@ -39599,19 +39712,29 @@
                                                                           (if (eq 
                                                                                (car 
                                                                                 possible_options) 
-                                                                               :|Error|) 
-                                                                              (let ((pV10 
-                                                                                     (cdr 
-                                                                                      possible_options))) 
-                                                                                (return 
-                                                                                 (SPECCALC::raise 
-                                                                                  (cons 
-                                                                                   :|SyntaxError| 
-                                                                                   (STRING-SPEC::^ 
-                                                                                    (car 
-                                                                                     pV10) 
-                                                                                    (cdr 
-                                                                                     pV10)))))))) 
+                                                                               :|OptionName|) 
+                                                                              (return 
+                                                                               (SPECCALC::proverOptionsFromSpec 
+                                                                                (cdr 
+                                                                                 possible_options) 
+                                                                                uspc 
+                                                                                spec_name)) 
+                                                                              (if (eq 
+                                                                                   (car 
+                                                                                    possible_options) 
+                                                                                   :|Error|) 
+                                                                                  (let ((pV10 
+                                                                                         (cdr 
+                                                                                          possible_options))) 
+                                                                                    (return 
+                                                                                     (SPECCALC::raise 
+                                                                                      (cons 
+                                                                                       :|SyntaxError| 
+                                                                                       (STRING-SPEC::^ 
+                                                                                        (car 
+                                                                                         pV10) 
+                                                                                        (cdr 
+                                                                                         pV10))))))))) 
                                                                       (error 
                                                                        "Nonexhaustive match failure in evaluateProve")) 
                                                                      #'(lambda (prover_options) 
@@ -39621,9 +39744,9 @@
                                                                           claim_name 
                                                                           (subtractSpec-1-1 
                                                                            uspc 
-                                                                           pV21) 
+                                                                           pV22) 
                                                                           spec_name 
-                                                                          pV17 
+                                                                          pV18 
                                                                           prover_name 
                                                                           assertions 
                                                                           prover_options 
@@ -42009,6 +42132,12 @@
    (svref x 7) 
    (svref x 8) 
    (svref x 9)))
+
+(defun SPECCALC::proverOptionsFromSpec-1 (x) 
+  (SPECCALC::proverOptionsFromSpec (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::proverOptionsFromSpec-1-1 (x1 x2) 
+  (funcall (SPECCALC::proverOptionsFromSpec-1 x1) x2))
 
 (defun SPECCALC::qualifySpec (x0 x1 x2 x3) 
   (SPECCALC::qualifySpec-1 (vector x0 x1 x2 x3)))
@@ -44549,9 +44678,6 @@ VQid => QualifiedId * Aliases:
 
 (defun STANDARDSPEC::mkTuplePat (pats) 
   (cons :|RecordPat| (cons (STANDARDSPEC::tagTuple pats) POSITION-SPEC::noPos)))
-
-(defun STANDARDSPEC::mkTyVar (name) 
-  (cons :|TyVar| (cons name POSITION-SPEC::noPos)))
 
 (defun STANDARDSPEC::mkWildPat (s) 
   (cons :|WildPat| (cons s POSITION-SPEC::noPos)))

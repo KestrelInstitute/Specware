@@ -435,16 +435,23 @@ SpecCalc qualifying spec
 
 
   op compressSortDefs : Spec -> SortInfo -> SortInfo
-  def compressSortDefs spc (info as (names, sort_scheme, old_defs)) =
+  def compressSortDefs spc (info as (names, tyVars:TyVars, old_defs)) =
     case old_defs of
       | []  -> info
       | [_] -> info
       | _ ->
+        let tyVarsSorts = foldl (fn (tyVar, srts) -> cons (mkTyVar(tyVar), srts)) [] tyVars in
+	let new_sorts = foldl (fn (name, srts) -> cons (mkBase(name, tyVarsSorts), srts))
+	                      [] names in
+	let new_sort_schemas = foldl (fn (srt, srtSchemas) -> cons ((tyVars, srt), srtSchemas)) [] new_sorts in
         let distinct_defs = 
-	    foldl (fn (old_def, distinct_defs) ->
-		   if exists (fn distinct_def -> 
+	    foldl (fn (old_def:SortScheme, distinct_defs) ->
+		   if (exists (fn new_sort_scheme -> 
+			      equivSortScheme? spc (old_def, new_sort_scheme)) 
+		             new_sort_schemas) or
+		      exists (fn distinct_def -> 
 			      equivSortScheme? spc (old_def, distinct_def)) 
-		             distinct_defs 
+		             distinct_defs
 		     then
 		       distinct_defs
 		   else
@@ -452,7 +459,7 @@ SpecCalc qualifying spec
                   []
 		  old_defs
 	in
-	(names, sort_scheme, distinct_defs)
+	(names, tyVars, distinct_defs)
 
   op compressOpDefs : Spec -> OpInfo -> OpInfo
   def compressOpDefs spc (info as (names, fixity, sort_scheme, old_defs)) =
