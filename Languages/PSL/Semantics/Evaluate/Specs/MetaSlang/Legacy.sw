@@ -103,7 +103,12 @@ MSlang qualifying spec
   % op MSPosEnv.mkTrue : Position -> Env Term
   
   % op mkNot : Term -> Position -> Term
-  def MSlang.mkNot (trm, position) = mkApplyN (notOp, trm, position)
+  def MSlang.mkNot (trm, position) = mkApplyN (if usingNewBooleans? then
+						 Fun (Not, unaryBoolSort, noPos)
+					       else
+						 mkOp(Qualified("Boolean", "~" ), unaryBoolSort),
+					       trm, 
+					       position)
   
   op MSlang.charType : Position -> Type
   def MSlang.charType position = mkBase (makeId "Char" "Char", [], position)
