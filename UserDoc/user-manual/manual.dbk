@@ -14,6 +14,7 @@
  <!ENTITY lt "&#60;">
  <!ENTITY gt "&#62;">
  <!ENTITY emdash "--">
+ <!ENTITY swpath "[[SWPATH]]">
 ]>
 
 <book><title>&SpecwareV; User Manual</title>

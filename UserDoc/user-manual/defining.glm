@@ -1,6 +1,122 @@
 <chapter id="defining">
 <title>Defining Units</title>
 
+<section>
+<title>Conceptual Model</title>
 
+<para>A unit definition consists of a name and some defining text.
+The name identifies the unit and the text describes how the unit is
+constructed.</para>
+
+<para>An application developed with &Specware; consists of a set of
+unit definitions, some of which may come from libraries. Units have
+unique names within the application.</para>
+
+<section>
+<title>Names</title>
+
+<para>A unit name is a finite, non-empty sequence of identifiers
+(identifiers are defined in the &Metaslang; grammar). The sequence of
+identifiers is essentially a ``path'' in a tree: the units comprising
+an application are organized in a tree.</para>
+
+<para>This provides a convenient and mundane way to organize the name
+space of the units comprising an application. Libraries are subtrees
+of the whole tree. Parallel development of different parts of an
+application can be carried out in different subtrees that can be later
+put together without any risk of name clashes.</para>
+
+</section>
+
+<section>
+<title>Defining Text</title>
+
+<para>The defining text of a unit is written in the &Metaslang;
+language. &Metaslang; features various operations to construct specs,
+morphisms, and all the other kinds of units. For instance, it is
+possible to construct a spec by explicitly listing its sorts, ops, and
+axioms.  It is also possible to construct a spec by applying the colimit
+operation to a diagram of specs and morphisms.</para>
+
+<para>The defining text of a unit may contain references to other
+units. For instance, a spec constructed by extending another one
+contains a references to the spec being extended. References can be
+absolute or relative, and they are resolved to units in the tree. The
+former consist in complete paths in the tree; the latter consist in
+partial paths that are combined with the path of the referencing unit
+(according to simple rules explained later) to form a complete path in
+the tree.</para>
+
+</section>
+
+</section>  <!-- conceptual -->
+
+<section>
+<title>Realization via the File System</title>
+
+<para>The conceptual model just described is realized by means of the
+file system of the underlying operating system. The file system has
+essentially a tree structure. The tree of units comprising a
+&Specware; application is mapped to subtrees of the file system; the
+identifiers comprising a path are mapped to file and directory
+names.</para>
+
+<para>Future versions of &Specware; will have a more sophisticated UI
+that will realize the conceptual model directly. Users will
+graphically see the units organized in a tree and they will be able to
+add, remove, move, and edit them. The mapping to the file system may
+even be made totally transparent to the user.</para>
+
+<section>
+<title>The &swpath; Environment Variable</title>
+
+<para>The mapping of the conceptual unit tree to the file system is
+defined by the environment variable &swpath;. Similarly to the
+``path'' environment variable in operating systems, &swpath; is a
+string consisting of a colon-separated list of absolute directory
+paths in the file system.</para>
+
+<para>The value of &swpath; can be inspected by means of the following
+command (at the Lisp shell):</para>
+
+[[L:
+||    :swpath
+]]
+
+<para>The value of &swpath; can be changed by means of the following
+command:</para>
+
+[[L:
+||    :swpath <string>
+]]
+
+<para>The [[L:<string>]] must be a colon-separated list of absolute
+directory paths, surrounded by double quotes.</para>
+
+<para>Changes to &swpath; only apply to the currently running
+&Specware; session. If &Specware; is quit and then restarted, &swpath;
+loses the value assigned to it during the previous session, reverting
+to its default value.</para>
+
+<para>Let &swpath; consists of directories <"dir1">, ..., <"dirN">.
+Roughly speaking, the unit tree consist of all the units defined in
+<".sw"> files under <"dir1">, ..., <"dirN">; the name of each unit is
+its path inside <"dirI">, , i.e., its absolute path in the file system
+``minus'' the <"dirI"> prefix. This rough statement is made precise in
+the rest of this chapter.</para>
+
+</section>
+
+<section>
+<title>...</title>
+
+</section>
+
+</section>  <!-- realization -->
+
+<section>
+<title>...</title>
+
+</section>
 
 </chapter>
