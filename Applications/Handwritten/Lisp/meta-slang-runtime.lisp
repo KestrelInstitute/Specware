@@ -18,7 +18,9 @@
   (svref x 1))
 
 (defun quotient-element (x)
-  (svref x 2))
+  (if (quotient? x)
+      (svref x 2)
+    (error "choose expected an equivalence class, but got (presumably) a representative: ~S" x)))
 
 (defun choose (relation)
   (declare (ignore relation))
