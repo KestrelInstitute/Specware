@@ -4,6 +4,7 @@ import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/Specs/StandardSpec
 
+sort ToExprSort = Block * Java.Expr * Nat *Nat
 
 op baseSrtToJavaType: Sort -> Java.Type
 def baseSrtToJavaType(srt) =
@@ -157,6 +158,17 @@ def mkSumd(cons, caseType) =
 op mkTag: Id -> Id
 def mkTag(cons) =
   "TAG_"^cons
+
+op mkFinalVar: Id -> Id
+def mkFinalVar(id) =
+  "fin_"^id
+
+op mkFinalVarDecl: Id * Sort * Java.Expr -> BlockStmt
+def mkFinalVarDecl(varid,srt,exp) =
+  let type = tt_v3 srt in
+  let isfinal = true in
+  let vdecl = ((varid,0),Some(Expr exp)) in
+  LocVarDecl(isfinal,type,vdecl,[])
 
 sort TCx = StringMap.Map Java.Expr
 
@@ -361,20 +373,32 @@ def getJavaTypeFromTypeId(id) =
  * @param argNameBase the basename of the arguments; actual arguments are created by appending 1,2,3, etc to this name
  * @param the statement representing the body of the method; usually a return statement
  *)
-op mkMethDecl: Id * List Id * Id * Id * Java.Stmt -> MethDecl
-def mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,bodyStmt) =
+op mkMethDeclWithParNames: Id * List Id * Id * List Id * Java.Stmt -> MethDecl
+def mkMethDeclWithParNames(methodName,parTypeNames,retTypeName,parNames,bodyStmt) =
   let body = [Stmt bodyStmt] in
-  let (pars,_) = foldl (fn(argType,(types,nmb)) -> 
-		    let type = getJavaTypeFromTypeId(argType) in
-		    let argname = argNameBase^Integer.toString(nmb) in
-		    (concat(types,[(false,type,(argname,0))]),nmb+1))
-                   ([],1) argTypeNames
+%  let (pars,_) = foldl (fn(argType,(types,nmb)) -> 
+%		    let type = getJavaTypeFromTypeId(argType) in
+%		    let argname = argNameBase^Integer.toString(nmb) in
+%		    (concat(types,[(false,type,(argname,0))]),nmb+1))
+%                   ([],1) argTypeNames
+%  in
+  let pars = map (fn(parType,parName) -> (false,getJavaTypeFromTypeId(parType),(parName,0))) 
+             (ListPair.zip(parTypeNames,parNames))
   in
   let retType = Some (getJavaTypeFromTypeId(retTypeName)) in
   let modifiers = [] in
   let throws = [] in
   let header = (modifiers,retType,methodName,pars:FormPars,throws) in
   (header,Some body)
+
+op mkMethDecl: Id * List Id * Id * Id * Java.Stmt -> MethDecl
+def mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,bodyStmt) =
+  let (parNames,_) = foldl (fn(argType,(argnames,nmb)) -> 
+		    let argname = argNameBase^Integer.toString(nmb) in
+		    (concat(argnames,[argname]),nmb+1))
+                   ([],1) argTypeNames
+  in
+  mkMethDeclWithParNames(methodName,argTypeNames,retTypeName,parNames,bodyStmt)
 
 (**
   * creates a method decl with just one return statement as body,
@@ -426,5 +450,34 @@ op mkReturnStmt: Java.Expr -> Stmt
 def mkReturnStmt(expr) =
   Return(Some expr)
 
+(**
+ * creates from the given pattern a list of formal parameters to be used in the definition of a method;
+ * if a pattern is a wildcard pattern, the id "argi" is used, where i is the position of the parameter.
+ *)
+op mkParamsFromPattern: Pattern -> List Id
+def mkParamsFromPattern(pat) =
+  let
+    def errmsg_unsupported(pat) =
+      ("unsupported pattern in lambda term: '"^printPattern(pat)^"', only variable pattern and '_' are supported.")
+  in
+  let
+    def patlist(patl,n) =
+      case patl of
+	| [] -> []
+	| pat0::patl ->
+	  (let id = case pat0 of
+	              | VarPat((id,_),_) -> id
+	              | WildPat _ -> "arg"^Integer.toString(n)
+		      | _ -> fail(errmsg_unsupported(pat))
+	   in
+	   let ids = patlist(patl,n+1) in
+	   cons(id,ids)
+	  )
+  in
+  case pat of
+    | VarPat((id,_),_) -> [id]
+    | WildPat _ -> ["arg1"]
+    | RecordPat(patl,_) -> patlist(map (fn(_,p)->p) patl,1)
+    | _ -> fail(errmsg_unsupported(pat))
 
 endspec

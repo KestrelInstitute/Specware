@@ -10,13 +10,15 @@ def mkQuotientTypeClsDecl(id, fieldDecls, methodDecls, constrDecls) =
 op quotientToClsDecl: Id * Sort * Term -> ClsDecl
 def quotientToClsDecl(id, superSort, quotientPred) =
   let Base (Qualified (q, superSortId), _, _) = superSort in
-  let Fun (Op (Qualified (q, quotientPredId), fix) , _, _) = quotientPred in
-  let quotFieldDecl = fieldToFldDecl("choose", superSortId) in
-  let quotMethodDecl =  mkEqualityMethDecl(id) in
-  let quotMethodBody = mkQuotEqBody(superSortId, quotientPredId) in
-  let quotMethodDecl = setMethodBody(quotMethodDecl, quotMethodBody) in
-  let quotConstrDecls = [mkQuotConstrDecl(id, superSortId, quotientPredId)] in
-  mkQuotientTypeClsDecl(id, [quotFieldDecl], [quotMethodDecl], quotConstrDecls)
+  case quotientPred of
+   | Fun (Op (Qualified (q, quotientPredId), fix) , _, _) ->
+     let quotFieldDecl = fieldToFldDecl("choose", superSortId) in
+     let quotMethodDecl =  mkEqualityMethDecl(id) in
+     let quotMethodBody = mkQuotEqBody(superSortId, quotientPredId) in
+     let quotMethodDecl = setMethodBody(quotMethodDecl, quotMethodBody) in
+     let quotConstrDecls = [mkQuotConstrDecl(id, superSortId, quotientPredId)] in
+     mkQuotientTypeClsDecl(id, [quotFieldDecl], [quotMethodDecl], quotConstrDecls)
+   | _ -> fail("unsupported term for quotient sort: '"^printTerm(quotientPred)^"'; only operator names are supported.")
 
 op mkQuotEqBody: Id * Id -> Block
 def mkQuotEqBody(superSrtId, quotPredId) =

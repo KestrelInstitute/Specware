@@ -82,6 +82,16 @@ def utlist(srts) =
 	 | None -> utlist(srts)
 	)
 
+(** 
+ * returns whether or not the given sort is "flat" meaning that it
+is a simple identifier, not an arrow sort, for instance.
+*)
+op flatType?: Sort -> Boolean
+def flatType?(srt) =
+  case srt of
+    | Base(qid,_,_) -> true
+    | _ -> false
+
 op baseVar?: Var -> Boolean
 op userVar?: Var -> Boolean
 

@@ -1,10 +1,8 @@
 spec
 
 import ToJavaBase
-import ToJavaHO
 
 sort Term = JGen.Term
-
 
 op termToExpression: TCx * JGen.Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 op termToExpressionRet: TCx * Term * Nat * Nat * Spec -> Block * Nat * Nat
@@ -17,6 +15,7 @@ op translateRecordToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * N
 op translateIfThenElseToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 op translateLetToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 op translateCaseToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
+op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> ToExprSort
 
 def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
   let
@@ -267,7 +266,11 @@ def termToExpression(tcx, term, k, l, spc) =
 	    | _ -> fail("unsupported term in termToExpression: "^printTerm(term)))
     | Fun (Nat (n),_,__) -> (mts, mkJavaNumber(n), k, l)
     | Fun (Bool (b),_,_) -> (mts, mkJavaBool(b), k, l)
-    | Fun (Embed (c, _), srt, _) -> (mts, mkMethInv(srtId(srt), c, []), k, l)
+    | Fun (Embed (c, _), srt, _) -> 
+      if flatType? srt then
+	(mts, mkMethInv(srtId(srt), c, []), k, l)
+      else
+	translateLambdaToExpr(tcx,term,k,l,spc)
     | Apply (opTerm, argsTerm, _) -> translateApplyToExpr(tcx, term, k, l, spc)
     | Record _ -> translateRecordToExpr(tcx, term, k, l, spc)
     | IfThenElse _ -> translateIfThenElseToExpr(tcx, term, k, l, spc)

@@ -94,8 +94,9 @@ def distinctVar(term, ids) =
     | Let _ -> distinctVarLet(term, ids)
     | Lambda _ -> distinctVarLambda(term, ids)
 		  %TODO: catch lambda terms
+    | LetRec _ -> fail("inner function definitions not yet supported.")
     %(term,ids)
-    %| _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
+    | _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
 
 def distinctVars(terms, ids) =
   case terms of

@@ -5,6 +5,7 @@ import ToJavaProduct
 import ToJavaCoProduct
 import ToJavaSubSort
 import ToJavaQuotient
+import ToJavaHO
 
 %import Java qualifying /Languages/Java/Java
 %import /Languages/Java/DistinctVariable
