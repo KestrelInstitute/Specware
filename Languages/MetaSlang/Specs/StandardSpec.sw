@@ -42,6 +42,7 @@ StandardSpec qualifying spec {
 
  sort OpSignature  = AOpSignature    StandardAnnotation
  sort SortScheme   = ASortScheme     StandardAnnotation
+ sort TermScheme   = ATermScheme     StandardAnnotation
 
  % sort QualifierMap = AQualifierMap   StandardAnnotation
 
@@ -321,6 +322,7 @@ StandardSpec qualifying spec {
  %% but we might have two or more sorts X.S, Y.S, etc.
  %% If the qualifier is UnQualified then we return unqualified answer first so as to
  %% give preference to it because there is no other way to refer to this entry.
+ %% Note that checkSort depends on this behavior.
  def findAllSorts (spc, Qualified (qualifier,id)) =
   let found = (case findAQualifierMap (spc.sorts, qualifier, id) of
                 | Some sort_info -> [sort_info]

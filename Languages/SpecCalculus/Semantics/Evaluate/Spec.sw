@@ -18,7 +18,7 @@ To evaluate a spec we deposit the declarations in a new spec
 and then qualify the resulting spec if the spec was given a name.
 
 \begin{spec}
- def SpecCalc.evaluateSpec spec_elements = 
+ def SpecCalc.evaluateSpec spec_elements position = 
   %% TODO:  Figure out rules for adding import of Base.
   %%        For example, it should not be imported by specs that it imports.
   %%        And the user might want to suppress auto-import of it.
@@ -32,10 +32,15 @@ and then qualify the resulting spec if the spec was given a name.
   %%      let _ = toScreen ("\nAdding import of Base\n") in
   %%      cons(base_import, spec_elements)
   %% in
-  {
+  { %% -------------------------------------------
+    %% next two lines are optional:
+    uri <- getCurrentURI;
+    print (";;; Processing spec at "^(uriToString uri)^"\n");
+    %% -------------------------------------------
     (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
-    return (Spec elaborated_spec,TS,depURIs)
+    compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
+    return (Spec compressed_spec,TS,depURIs)
   }
 \end{spec}
 
@@ -72,10 +77,10 @@ and then qualify the resulting spec if the spec was given a name.
   def evaluateSpecElem spc (elem, position) =
     case elem of
       | Import term -> return spc
-      | Sort (names,(tyVars,optSort)) ->
-          addSort names tyVars optSort spc position
-      | Op (names,(fxty,srtScheme,optTerm)) ->
-          addOp names fxty srtScheme optTerm spc position
+      | Sort (names,(tyVars,defs)) ->
+          addSort names tyVars defs spc position
+      | Op (names,(fxty,srtScheme,defs)) ->
+          addOp names fxty srtScheme defs spc position
       | Claim (Axiom, name, tyVars, term) ->
           return (addAxiom ((name,tyVars,term), spc)) 
       | Claim (Theorem, name, tyVars, term) ->
@@ -124,13 +129,6 @@ such time as the current one can made monadic.
    { uri      <- getCurrentURI;
      filename <- return ((uriToPath uri) ^ ".sw");
      hackMemory ();
-     print (";;; Processing spec "
-			^ (case uri.hashSuffix of
-			     | Some nm -> nm ^ " "
-			     | _ -> "")
-			^ "in "
-            ^ filename
-            ^ "\n");
      case elaboratePosSpec (spc, filename) of
        | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
        | Error msg   -> raise  (OldTypeCheck msg)

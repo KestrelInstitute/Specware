@@ -4,6 +4,7 @@
 SpecCalc qualifying spec {
   import Signature 
   import Spec/Utilities
+  import URI/Utilities                                % for uriToString, if used...
 \end{spec}
 
 Perhaps evaluating a translation should yield a morphism rather than just 
@@ -12,14 +13,19 @@ Perhaps the calculus is getting too complicated.
 
 \begin{spec}
   def SpecCalc.evaluateTranslate term translation = {
-      (value,timeStamp,depURIs) <- evaluateTermInfo term;
-      case coerceToSpec value of
-        | Spec spc -> {
-              spcTrans <- translateSpec spc translation;
-              return (Spec spcTrans,timeStamp,depURIs)
-            }
-        | _ -> raise (TypeCheck (positionOf term,
-                         "translating a term that is not a specification"))
+    %% -------------------------------------------
+    %% next two lines are optional:
+    uri <- getCurrentURI;
+    print (";;; Processing translation at "^(uriToString uri)^"\n");
+    %% -------------------------------------------
+    (value,timeStamp,depURIs) <- evaluateTermInfo term;
+    case coerceToSpec value of
+      | Spec spc -> {
+            spcTrans <- translateSpec spc translation;
+            return (Spec spcTrans,timeStamp,depURIs)
+		    }
+      | _ -> raise (TypeCheck (positionOf term,
+			       "translating a term that is not a specification"))
     }
 \end{spec}
 
@@ -64,7 +70,8 @@ Note: The code below does not yet match the documentation above, but should.
   op translateSpec : Spec -> TranslateExpr Position -> Env Spec
   def translateSpec spc expr = {
       translation_maps <- makeTranslationMaps spc expr;
-      auxTranslateSpec spc translation_maps (positionOf expr)
+      new_spec <- auxTranslateSpec spc translation_maps (positionOf expr);
+      complainIfAmbiguous (compressDefs new_spec) (positionOf expr)
     } 
     
   op makeTranslationMaps :
@@ -143,10 +150,10 @@ Note: The code below does not yet match the documentation above, but should.
     in
       foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules
 
-  op auxTranslateSpec : 
+  op auxTranslateSpec :
         Spec
      -> AQualifierMap (QualifiedId * Aliases) * AQualifierMap (QualifiedId * Aliases)
-     -> Position 
+     -> Position
      -> SpecCalc.Env Spec
 
   def auxTranslateSpec spc (op_id_map, sort_id_map) position =
@@ -195,7 +202,7 @@ Note: The code below does not yet match the documentation above, but should.
 			       (old_aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_, 
 				fixity, 
 				sort_scheme, 
-				optional_def),
+				defs),
 			       new_op_map)
 	    =
 	    if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
@@ -212,7 +219,7 @@ Note: The code below does not yet match the documentation above, but should.
 				           [] 
 					   old_aliases)
 	      in
-	      { first_opinfo  <- return (new_aliases, fixity, sort_scheme, optional_def);
+	      { first_opinfo  <- return (new_aliases, fixity, sort_scheme, defs);
 	        merged_opinfo <- foldM (fn merged_opinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
 					  mergeOpInfo merged_opinfo 
 					              (findAQualifierMap (new_op_map, new_qualifier, new_id))
@@ -231,7 +238,7 @@ Note: The code below does not yet match the documentation above, but should.
 			       ref_id, 
 			       (old_aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_, 
 				ty_vars, 
-				optional_def), 
+				defs),
 			       new_sort_map) = 
 	    if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
 	      (return new_sort_map)
@@ -247,11 +254,11 @@ Note: The code below does not yet match the documentation above, but should.
 				           [] 
 					   old_aliases)
 	      in
-	      { first_sortinfo  <- return (new_aliases, ty_vars, optional_def);
+	      { first_sortinfo  <- return (new_aliases, ty_vars, defs);
 	        merged_sortinfo <- foldM (fn merged_sortinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
 					  mergeSortInfo merged_sortinfo 
 					                (findAQualifierMap (new_sort_map, new_qualifier, new_id))
-							position)
+						        position)
 		                         first_sortinfo
 				         new_aliases;
 	        foldM (fn new_sort_map -> fn (Qualified (new_qualifier, new_id)) ->

@@ -172,9 +172,9 @@ spec {
     of Base (qid, srts, a) ->
        (case findTheSort(sp,qid)
           of None -> srt
-           | Some(_, _,      None)      -> srt
-           | Some(_, tyVars, Some srt2) ->
-             let ssrt = substSort(zip(tyVars,srts), srt2) in
+           | Some(_, _, [])      -> srt
+           | Some(_, _, (type_vars, srt2)::_) ->
+             let ssrt = substSort(zip(type_vars,srts), srt2) in
              unfoldBaseV (sp, ssrt, verbose))
      | _ -> srt
 

@@ -265,58 +265,84 @@ SpecCalc qualifying spec {
             ppString "import ",
             ppTerm term
           ]
-      | Sort (qid, sortInfo) -> 
-          ppConcat [
-            ppString "sort ",
-            ppIdInfo qid,
-            ppdASortInfo sortInfo
-          ]
-      | Op (qid, opInfo) ->
-          ppConcat [
-            ppString "op ",
-            ppIdInfo qid,
-            ppdAOpInfo opInfo
-          ]
-      | Claim property -> ppAProperty property
+      | Sort (aliases, sortInfo) -> myppASortInfo (aliases, sortInfo)
+      | Op   (aliases, opInfo)   -> myppAOpInfo   (aliases, opInfo)
+      | Claim property           -> ppAProperty property
 
   op ppIdInfo : List QualifiedId -> Doc
   def ppIdInfo qids = ppSep (ppString ",") (map ppString (map printQualifiedId qids))
    
-  op ppdASortInfo : fa (a) TyVars * Option (ASort a) -> Doc
-  def ppdASortInfo sortInfo =
+  op myppASortInfo : fa (a) List QualifiedId * (TyVars * List (ASortScheme a)) -> Doc
+  def myppASortInfo (aliases, sortInfo) =
+    let prefix = ppConcat [ppString "sort ", ppIdInfo aliases] in
     case sortInfo of
-       | ([],None) -> ppNil
-       | ([],Some srt) -> ppAppend (ppString " = ") (ppASort srt)
-       | (tyVars,Some srt) -> 
-	   ppConcat [
-	     ppString " (",
-	     ppSep (ppString ",") (map ppString tyVars),
-	     ppString ") = ",
-	     ppASort srt
-	   ]
+      | ([],[]) ->  prefix
+      | (_,[(type_vars, srt)]) ->
+        ppConcat [prefix,
+		  ppTyVars type_vars,
+		  ppAppend (ppString " = ") (ppASort srt)]
+      | (tyVars,defs) -> 
+	ppConcat [ppNewline,
+		  ppString " (* Warning: Multiple definitions for following sort: *) ",
+		  ppNewline,
+		  ppSep ppNewline (map (fn (type_vars,srt) ->
+					ppConcat [prefix,
+						  ppTyVars type_vars,
+						  ppAppend (ppString " = ") (ppASort srt)])
+				       defs)]
 
-  op ppdAOpInfo : fa (a)  Fixity * ASortScheme a * Option (ATerm a) -> Doc
-  def ppdAOpInfo (fixity,(tyVars,srt),optTerm) =
-    ppConcat [
-      ppFixity fixity,
-      ppString " : ",
-      (case tyVars of
-	| [] -> ppNil
-	| _ -> 
-	   ppConcat [
-	     ppString "fa (",
-	     ppSep (ppString ",") (map ppString tyVars),
-	     ppString ") "
-	   ]),
-      ppASort srt,
-      (case optTerm of
-	| None -> ppNil
-	| Some term ->
-	    ppConcat [
-	      ppString " = ",
-	      ppATerm term
-	    ])
-    ]
+  op ppTyVars : TyVars -> Doc
+  def ppTyVars type_vars =
+    case type_vars of
+      | [] -> ppNil
+      | _  -> ppConcat [ppString " (",
+			ppSep (ppString ",") (map ppString type_vars),
+			ppString ") "]
+
+
+  op myppAOpInfo : fa (a)  (List QualifiedId) * (Fixity * ASortScheme a * List (List String * ATerm a)) -> Doc
+  def myppAOpInfo (aliases, (fixity, sort_scheme, defs)) =
+    case defs of
+     | [] -> ppAOpDecl (aliases, fixity, sort_scheme)
+     | _  -> ppAOpDefs (aliases, defs)
+
+  op ppAOpDecl : fa (a)  (List QualifiedId) * Fixity * ASortScheme a -> Doc
+  def ppAOpDecl (aliases, fixity, (type_vars, srt)) =
+    ppConcat [ppString "op ",
+	      ppIdInfo aliases,
+	      ppString " : ",
+	      (case type_vars of
+		 | [] -> ppNil
+		 | _ -> 
+		   ppConcat [ppString "fa (",
+			     ppSep (ppString ",") (map ppString type_vars),
+			     ppString ") "
+			    ]),
+	      ppASort srt]
+
+  op ppAOpDefs : fa (a)  (List QualifiedId) * List (List String * ATerm a) -> Doc
+  def ppAOpDefs (aliases, defs) =
+    let prefix = ppConcat [ppString "def ", ppIdInfo aliases] in
+    let def pp_def (type_vars, term) =
+        ppConcat [prefix,
+		  (case type_vars of
+		     | [] -> ppNil
+		     | _ -> 
+		       ppConcat [ppString "fa (",
+				 ppSep (ppString ",") (map ppString type_vars),
+				 ppString ")"
+				]),
+		  ppString " = ",
+		  ppATerm term]
+    in
+    case defs of
+      | [scheme] -> pp_def scheme
+      | _ ->
+	ppConcat [ppNewline,
+		  ppString " (* Warning: Multiple definitions for following sort: *) ",
+		  ppNewline,
+		  ppSep ppNewline (map pp_def defs)]
+
 
 %   op ppAProperty : fa (a) AProperty a -> Doc
 %   def ppAProperty (propType, name, tyVars, term) =

@@ -404,14 +404,14 @@ ArityNormalize qualifying spec {
   def arityNormalize (spc) = 
     let usedNames = StringSet.fromList(StringMap.listDomain(spc.ops)) in
     setOps (spc, 
-            mapAQualifierMap (fn (op_names, fixity, (tyVars, srt), old_opt_def)->
-                              let new_opt_def =
-                                  mapOption (fn term -> 
-                                             normalizeArityTopLevel
-                                             (spc, [], usedNames,
-                                              etaExpand(spc, usedNames, srt, term)))
-                                            old_opt_def
-                              in (op_names, fixity, (tyVars, srt), new_opt_def))
+            mapAQualifierMap (fn (op_names, fixity, (tyVars, srt), old_defs)->
+                              let new_defs =
+                                  map (fn (type_vars, term) ->
+				       (type_vars,
+					normalizeArityTopLevel (spc, [], usedNames,
+								etaExpand(spc, usedNames, srt, term))))
+				      old_defs
+                              in (op_names, fixity, (tyVars, srt), new_defs))
                              spc.ops)
 
 }

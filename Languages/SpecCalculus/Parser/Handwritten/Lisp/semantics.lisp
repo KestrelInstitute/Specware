@@ -1,7 +1,9 @@
 ;;; -*- Mode: LISP;  Base: 10; Syntax: Common-Lisp -*-
 
-(in-package :PARSER4)
+(in-package "PARSER4")
 
+(defpackage "METASLANG")
+(defpackage "STANDARDSPEC")
 (defpackage "POSITION")
 (defpackage "POSSPEC")
 
@@ -142,7 +144,7 @@
 		  (handler-bind ((error #'(lambda (signal) 
 					    (throw 'problem (list signal index)))))
 		    (let ((sexp nil)
-			  (s-expressions '())
+			  (s-expressions ())
 			  (n (length trimmed-string)))
 		      (loop
 			(multiple-value-setq (sexp index)
@@ -272,7 +274,7 @@
     ;;  (cdr tyVarsSrt) will be ignored.
     ;; TODO: skip the code above and use typeVars1 for typeVars2 below
     (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
-			      (cons typeVars2 (cons :|None| nil))))
+			      (cons typeVars2 ())))
           (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
@@ -289,7 +291,7 @@
     ;;  (cdr tyVarsSrt) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for this conversion into the linker.
     (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
-			      (cons typeVars2 (cons :|Some| sort2))))
+			      (cons typeVars2 (list (cons typeVars2 sort2)))))
           (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
@@ -299,7 +301,7 @@
 (defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
   (let ((fixity (if (equal :unspecified optional-fixity) nil optional-fixity)))
     (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector fixity sort-scheme (cons :|None| nil))))
+                            (vector fixity sort-scheme ())))
           (make-pos l r))))
 
 (defun make-fixity (associativity priority l r)
@@ -317,7 +319,7 @@ If we want the precedence to be optional:
 (defun make-sort-scheme (optional-sort-variable-binder sort l r)
   (declare (ignore l r))
   (let ((vars (if (equal :unspecified optional-sort-variable-binder)
-                  '()
+                  ()
                 optional-sort-variable-binder)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car <result>) will just be a copy of vars
@@ -330,7 +332,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
-  (let* ((tyVars     (if (equal :unspecified tyVars) '() tyVars))
+  (let* ((tyVars     (if (equal :unspecified tyVars) () tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
          (term       (bind-parameters params term l r))
          (tyVarsTerm (PosSpec::abstractTerm #'namedTypeVar tyVars term))
@@ -343,7 +345,7 @@ If we want the precedence to be optional:
     ;;  (cdr tyVarsTerm) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
     (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector nil srtScheme (cons :|Some| term))))
+                            (vector nil srtScheme (list (cons tyVars term))))) 
 	  (make-pos l r))))
 
 (defun bind-parameters (params term l r)
@@ -655,7 +657,7 @@ If we want the precedence to be optional:
   ;; :unspecified for 0, otherwise length of optional-tuple-display-body will be at least 2
   ;;  I.e., length of terms will be 0 or 2-or-more, but will never be 1.
   (let ((terms (if (equal optional-tuple-display-body :unspecified)
-                   '()
+                   ()
                  optional-tuple-display-body)))
     (cons ':|Record|
           (cons (StandardSpec::tagTuple terms)
@@ -888,7 +890,7 @@ If we want the precedence to be optional:
 
 ;;; (defun make-sc-translate-rules (rules)
 ;;;   (if (equal rules :unspecified)
-;;;      '()
+;;;      ()
 ;;;    rules))
 
 ;;; (defun make-sc-translate-rule (left-qualifiable-name right-qualifiable-name l r)

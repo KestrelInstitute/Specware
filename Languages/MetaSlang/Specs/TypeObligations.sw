@@ -468,13 +468,14 @@ spec
      let tcc = [] in
      let tcc = 
 	 StringMap.foldriDouble
-	   (fn (qname, name, (names, fixity, (tvs,tau), optTerm), tcc) ->
-	     if member(Qualified(qname, name),localOps)
-	       then
-		 case optTerm
-		   of Some term -> (tcc,gamma0 tvs name) |- term ?? tau
-		    | None      -> tcc
-	       else tcc)
+	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
+	     if member(Qualified(qname, name),localOps) then
+		 foldl (fn ((type_vars, term), tcc) ->
+			(tcc,gamma0 tvs name) |- term ?? tau)
+		       tcc
+		       defs
+	       else 
+		 tcc)
 	   tcc spc.ops
      in
      tcc

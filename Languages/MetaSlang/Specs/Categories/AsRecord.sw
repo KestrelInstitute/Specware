@@ -50,7 +50,7 @@ SpecCalc qualifying spec {
   % When printing the maps, we print only where they differ
   % from the canonical injection (where they differ from
   % the identity)
-  op ppMorphMap : PolyMap.Map (QualifiedId,QualifiedId) -> Pretty
+  op ppMorphMap : PolyMap.Map (QualifiedId,QualifiedId) -> WadlerLindig.Pretty
   def ppMorphMap map =
     let abbrevMap =
       foldMap (fn newMap -> fn d -> fn c ->

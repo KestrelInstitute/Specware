@@ -86,7 +86,7 @@ spec {
     %% we expect the qualifier to be the same as id, e.g. Boolean.Boolean
     {importInfo       = emptyImportInfo,
      sorts            = insertAQualifierMap (emptyAQualifierMap, qualifier, id,
-					     ([Qualified (qualifier, id)], tyvars, None)),
+					     ([Qualified (qualifier, id)], tyvars, [])),
      ops              = emptyAQualifierMap,
      properties       = emptyProperties
     } 
@@ -184,10 +184,10 @@ spec {
 	 | _ -> ()
    in
    let _ = appAQualifierMap 
-	     (fn (sort_names, tyvars, opt_def) -> 
-	      (case opt_def : Option PSort
-		of None     -> ()
-		 | Some srt -> addSort (tyvars, srt, constrMap)))
+	     (fn (sort_names, tyvars, defs) -> 
+	      app (fn (type_vars, srt) ->
+		   addSort (type_vars, srt, constrMap))
+	          defs)
 	     sorts
    %% in
    %% Look at at all sorts mentioned in spec
@@ -300,7 +300,7 @@ spec {
         (case findAllSorts (env.internal, qid) of
           | sort_info::r ->
             (case sort_info of
-              | (main_qid::_, tvs, None) ->        % sjw: primitive sort
+              | (main_qid::_, tvs, []) ->        % sjw: primitive sort
                 let l1 = length tvs in
                 let l2 = length ts  in
                 ((if ~(l1 = l2) then
@@ -311,17 +311,26 @@ spec {
                  %% Use the primary name, even if the reference was via some alias.
                  %% This normalizes all references to be via the same name.
                  Base (main_qid, ts, pos))
-              | (aliases, tvs, Some (srt as Base(_,_,pos))) -> 
-                %% A base sort can be defined in terms of another base sort.
-                %% So we unfold recursively here.
-                unfoldPSortRec(env,
-                               instantiateScheme (env, pos, ts, tvs, srt),
-                               %% Watch for self-references, even via aliases: 
-                               foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
-                                     qids
-                                     aliases)
-              | (aliases, tvs, Some srt) ->
-                instantiateScheme(env, pos, ts, tvs, srt))
+              | (aliases, tvs, defs) ->
+		let possible_base_def = find (fn srt_def ->
+					      case srt_def of
+						| (_, Base _) -> true
+						| _           -> false)
+		                             defs
+		in
+		case possible_base_def of
+		  | Some (type_vars, srt as (Base (_,_,pos))) ->
+		    %% A base sort can be defined in terms of another base sort.
+   		    %% So we unfold recursively here.
+		    unfoldPSortRec(env,
+				   instantiateScheme (env, pos, ts, type_vars, srt),
+				   %% Watch for self-references, even via aliases: 
+				   foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
+				         qids
+					 aliases)
+		  | _ ->
+		    let (some_type_vars, some_def) = hd defs in % if multiple defs, pick first def arbitrarily
+		    instantiateScheme(env, pos, ts, some_type_vars, some_def))
           | [] -> 
                (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
                 unlinked_sort))

@@ -23,7 +23,8 @@ Change UnQualified to new_qualifier in all qualified names
         case coerceToSpec value of
           | Spec spc -> {
                 qualified_spec <- qualifySpec spc new_qualifier (positionOf term);
-                return (Spec qualified_spec,timeStamp,depURIs)
+		compressed_spec <- complainIfAmbiguous (compressDefs qualified_spec) (positionOf term);
+                return (Spec compressed_spec,timeStamp,depURIs)
               }
           | _ -> raise (TypeCheck ((positionOf term),
                             "qualifying a term that is not a specification"))

@@ -3,8 +3,14 @@ SpecCalc qualifying spec {
   import Spec/SpecUnion
   import ../SpecPath
   import /Languages/Snark/SpecToSnark
+  import URI/Utilities                                    % for uriToString, if used...
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
+     %% -------------------------------------------
+     %% next two lines are optional:
+     uri <- getCurrentURI;
+     print (";;; Processing prove at "^(uriToString uri)^"\n");
+     %% -------------------------------------------
      (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
                                                  (SpecPath_Relative {path = ["Library","Base"],
@@ -91,16 +97,16 @@ SpecCalc qualifying spec {
    case findClaimInSpec of
      | None -> raise (Proof (pos, "Claim name is not in spec."))
      | Some (claim, validHypothesis) ->
-	 let actualHypothesis = actualHypothesis(validHypothesis, assertions) in
+	 let actualHypothesis = actualHypothesis(validHypothesis, assertions, pos) in
 	   if (case assertions of All -> true | Explicit possibilities -> length actualHypothesis = length possibilities)
 	     then return (proveWithHypothesis(proof_name, claim, actualHypothesis, spc, spec_name, baseHypothesis, base_spc,
 					      prover_name, prover_options, snarkLogFileName))
 	   else raise (Proof (pos, "assertion not in spec."));
    return result}
 
- op actualHypothesis: List Property * Assertions -> List Property
+ op actualHypothesis: List Property * Assertions * Position -> List Property
 
- def actualHypothesis(validHypothesis, assertions) =
+ def actualHypothesis(validHypothesis, assertions, pos) =
      case assertions of
       | All -> validHypothesis
       | Explicit possibilities -> 

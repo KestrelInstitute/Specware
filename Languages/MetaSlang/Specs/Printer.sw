@@ -60,6 +60,7 @@ AnnSpecPrinter qualifying spec {
   op printSort                    : fa(a) ASort       a -> String 
   op printPattern                 : fa(a) APattern    a -> String
   op printSortScheme              : fa(a) ASortScheme a -> String 
+  op printTermScheme              : fa(a) ATermScheme a -> String 
   op printTermWithSorts           : fa(a) ATerm       a -> String
   op printSpec                    : fa(a) ASpec       a -> String
   op latexSpec                    : fa(a) ASpec       a -> String
@@ -239,6 +240,11 @@ AnnSpecPrinter qualifying spec {
                   (ListUtilities.mapWithIndex (fn(i,rule) -> prRule pp.Bar (i + 1,rule)) 
                                               rules))
  
+  def ppTermScheme context parent (type_vars, term) = 
+     let pp1 = ppForallTyVars context.pp type_vars in
+     let pp2 = ppTerm context parent term in
+     prettysNone [pp1,pp2]     
+
   def ppTerm context (path, parentTerm) term =
    let pretty = ppTerm1 context (path,parentTerm) term in
    if markSubterm? context then
@@ -739,7 +745,11 @@ AnnSpecPrinter qualifying spec {
  
   def printSortScheme scheme = 
     PrettyPrint.toString (format (80, ppSortScheme (initialize(asciiPrinter,false))
-                     ([],Top:ParentSort) scheme))
+				  ([],Top:ParentSort) scheme))
+
+  def printTermScheme scheme = 
+    PrettyPrint.toString (format (80, ppTermScheme (initialize(asciiPrinter,false))
+				  ([],Top:ParentTerm) scheme))
 
   def printPattern pat = 
     PrettyPrint.toString(format(80,ppPattern (initialize(asciiPrinter,false))
@@ -797,7 +807,7 @@ AnnSpecPrinter qualifying spec {
 		      (aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_,
 		       fixity, 
 		       (tyVars, srt), 
-		       optDefn) : AOpInfo a, 
+		       defs) : AOpInfo a, 
                       (index, lines)) = 
    if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
      (index, lines)
@@ -818,12 +828,12 @@ AnnSpecPrinter qualifying spec {
          | _      -> ppList ppOpName ("{", ",", "}") aliases
      in
      let index1 = Integer.~(index + 1) in
-     let button1 = if markSubterm?(context) & some? optDefn
+     let button1 = if markSubterm?(context) & ~ (null defs)
                     then PrettyPrint.buttonPretty
                            (~(IntegerSet.member(context.indicesToDisable,index1)),
                             index1,string " ",false)
                   else string "" in
-     let button2 = if markSubterm?(context) & some? optDefn
+     let button2 = if markSubterm?(context) & ~ (null defs)
                     then PrettyPrint.buttonPretty
                            (IntegerSet.member(context.sosIndicesToEnable,index1),
                             index1,string " ",true)
@@ -841,47 +851,50 @@ AnnSpecPrinter qualifying spec {
                      (0, ppForallTyVars pp tyVars),
                      (0, string " "),
                      (3, ppSort context ([index,opIndex],Top:ParentSort) srt)])),
-           (case optDefn of
-               | None -> lines
-               | Some term ->
-                 let def ppDefn (path,term) = 
-                     case term
-                       of Lambda ([(pat,Fun(Bool true,_,_),body)],_) ->
-                          let pat = ppPattern context ([0,0] ++ path,false) pat in 
-                          let body = ppDefn([2,0] ++ path,body) in
-                          let prettys = [(0,pat),(0,string " ")] ++ body in
-                          if markSubterm? (context) then
-                            let num = State.! context.markNumber in
-                            let table = State.! context.markTable in
-                            (context.markTable State.:= NatMap.insert(table,num,path);
-                             context.markNumber State.:= num + 1;
-                             PrettyPrint.markLines(num,prettys))
-                          else prettys
-                        | _ -> 
+           (foldl (fn ((defining_type_vars, defining_term), lines) ->
+		   let def ppDefn (path,term) = 
+		        case term of
+			  | Lambda ([(pat,Fun(Bool true,_,_),body)],_) ->
+                            let pat = ppPattern context ([0,0] ++ path,false) pat in 
+			    let body = ppDefn([2,0] ++ path,body) in
+			    let prettys = [(0,pat),(0,string " ")] ++ body in
+			    if markSubterm? (context) then
+			      let num = State.! context.markNumber in
+			      let table = State.! context.markTable in
+			      (context.markTable State.:= NatMap.insert(table,num,path);
+			       context.markNumber State.:= num + 1;
+			       PrettyPrint.markLines(num,prettys))
+			    else 
+			      prettys
+			  | _ -> 
                             let pretty = ppTerm context (path,Top:ParentTerm) term in
                             let prettys = [(0,pp.DefEquals),(0,string " "),(4,pretty)] in
                             prettys
-                 in
-                 let prettys = ppDefn([index,defIndex],term) in
-                 cons((1, blockFill (0,
-                                     [(0, blockFill (0,
-                                                     [(0, button1),
-                                                      (0, button2),
-                                                      (0, pp.Def),
-                                                      (if printSort?(context) 
-                                                         then (0,ppForallTyVars pp tyVars) 
-                                                       else (0,string "")),
-                                                      (0, ppOpName primary_name),
-                                                      (0, string " ")]
-                                                    ))]
-                                     ++ prettys)),
-                      lines))))
+		   in
+		   let prettys = ppDefn([index,defIndex],defining_term) in
+		   cons((1, blockFill (0,
+				       [(0, blockFill (0,
+						       [(0, button1),
+							(0, button2),
+							(0, pp.Def),
+							(if printSort? context then
+							   (0,ppForallTyVars pp defining_type_vars) 
+							 else 
+							   (0,string "")),
+							(0, ppOpName primary_name),
+							(0, string " ")]
+						      ))]
+				       ++ prettys)),
+			lines))
+	          lines
+		  defs)))
+
 
   def fa(a) ppSortDecl (context : context)
                        (ref_qualifier, ref_id,
 			(aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_,
 			 tyVars, 
-			 optSort) : ASortInfo a, 
+			 defs) : ASortInfo a, 
 			(index, lines)) = 
    if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
      (index, lines)
@@ -899,22 +912,26 @@ AnnSpecPrinter qualifying spec {
          | _     -> ppList ppSortName ("{", ",", "}") aliases
      in
      (index + 1,
-      cons (case optSort of
-	      | None -> 
-	        (1,blockFill(0,[(0, pp.Sort),
+      case defs of
+	| [] -> 
+	  cons ((1,blockFill(0,[(0, pp.Sort),
 				(0, string " "),
 				(0, ppSortNames ()),
-				(0, ppTyVars pp tyVars)]))
-	      | Some srt -> 
-		(1,blockFill(0,[(0, pp.Sort),
-				(0, string " "),
-				(0, ppSortNames()),
-				(0, ppTyVars pp tyVars),
-				(0, string " "),
-				(0, pp.DefEquals),
-				(0, string " "),
-				(3, ppSort context ([index,sortIndex],Top:ParentSort) srt)])),
-	    lines))
+				(0, ppTyVars pp tyVars)])),
+		lines)
+	| _ ->
+	  foldl (fn ((defining_type_vars, defining_sort), lines) ->
+		 cons ((1,blockFill(0,[(0, pp.Sort),
+				       (0, string " "),
+				       (0, ppSortNames()),
+				       (0, ppTyVars pp defining_type_vars),
+				       (0, string " "),
+				       (0, pp.DefEquals),
+				       (0, string " "),
+				       (3, ppSort context ([index,sortIndex],Top:ParentSort) defining_sort)])),
+		       lines))
+	        lines
+		defs)
 
   op isBuiltIn? : Import -> Boolean
   def isBuiltIn? (spec_ref, _ (* spc *)) =

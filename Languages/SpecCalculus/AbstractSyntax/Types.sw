@@ -88,6 +88,7 @@ The following is the sort given to us by the parser.
     | Spec List (SpecElem a)
     | Diag List (DiagElem a)
     | Colimit (Term a)
+
 \end{spec}
 
 The calculus supports two types of morphisms: morphisms between specs and
@@ -160,18 +161,16 @@ A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
 and sorts or for requalifying things. For now, a translation is just a
-mapping from names to names, annotated with the full list of aliases
-to be used in the target info.
+mapping from names to names.
 
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
 \begin{spec}
   sort TranslateExpr  a = List (TranslateRule a) * a
   sort TranslateRule  a = (TranslateRule_ a) * a
-  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId                  * SortNames % last arg is all aliases
-                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort)  * OpNames   % last arg is all aliases
-                          | Ambiguous  QualifiedId                 * QualifiedId                  * Aliases   % last arg is all aliases
-  % sort Aliases = List QualifiedId
+  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases
+                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
+                          | Ambiguous  QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
 \end{spec}
 
 A \verb+NamesExpr+ denotes list of names and operators. They are used in
@@ -199,8 +198,8 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
 
   sort SpecElem_ a =
     | Import Term a
-    | Sort   List QualifiedId * (TyVars * Option (ASort a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
+    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (AProperty a)
 \end{spec}
 
@@ -252,13 +251,14 @@ them to be presented in any order.
     | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
 
+
+
   sort Assertions = | All
                     | Explicit List ClaimName
 
   sort ProverOptions = | Options (List LispCell)
                        | Error   (String * String)  % error msg, problematic string
 \end{spec}
-
 A \verb+NatTranComp+ element is a component in a natural transformation
 between diagrams. The components are indexed by vertices in the shape.
 The term in the component must evaluate to a morphism.

@@ -46,20 +46,20 @@ spec {
   { importInfo       = importInfo,
 
     ops              = mapAQualifierMap 
-			(fn opinfo as (aliases, fixity, (tvs, srt), opt_def) ->
+			(fn opinfo as (aliases, fixity, (tvs, srt), defs) ->
 			 let nm = hd aliases in
 			 if member(nm,localOps)
 			   then
 			    (aliases, fixity, (tvs, mapSort tsp_maps srt), 
-			     mapTermOpt tsp_maps opt_def)
+			     mapTermSchemes tsp_maps defs)
 			   else opinfo)
 			ops,
 
     sorts            = mapAQualifierMap 
-			 (fn sortinfo as (aliases, tvs, opt_def) ->
+			 (fn sortinfo as (aliases, tvs, defs) ->
 			  let nm = hd aliases in
-			 if member(nm,localSorts)
-			   then (aliases, tvs, mapSortOpt tsp_maps opt_def)
+			  if member(nm,localSorts)
+			   then (aliases, tvs, mapSortSchemes tsp_maps defs)
 			   else sortinfo)
 			 sorts,
 
