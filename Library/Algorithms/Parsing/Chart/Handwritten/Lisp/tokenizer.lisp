@@ -517,17 +517,25 @@
 					      (ps-unread-char (schar ad-hoc-string (- current-string-index 1 j))
 							      ps-stream))
 					    (return nil))))))))
+			  (debugging-comment "Found? ~S" found-ad-hoc-string?)
 			  (when found-ad-hoc-string?
-			    ;; If an as-hoc-token is found, make sure it is not the start of a longer token
-			    (let ((following-char (ps-read-char ps-stream)))
-                              (unless (eq following-char +tokenizer-eof+) 
-				(let* ((following-char-code (char-code following-char))
-				       (dispatch-code (svref word-symbol-table following-char-code)))
-				  ;; in all cases (except eof, of course) , put back the following char 
-				  (ps-unread-char following-char ps-stream)
+			    ;; If an ad-hoc-token is found, make sure it is not the start of a longer token
+			    (let ((next-char (ps-read-char ps-stream)))
+                              (unless (eq next-char +tokenizer-eof+) 
+				(let* ((this-char-dispatch-code (svref word-symbol-table ,char-code-var))
+				       (next-char-code (char-code next-char))
+				       (next-char-dispatch-code (svref word-symbol-table next-char-code)))
+				  ;; in all cases (except eof, of course) , put back the next char 
+				  (ps-unread-char next-char ps-stream)
 				  ;; then see if ad-hoc string should go back...
-				  (when (or (eq dispatch-code #.+word-symbol-start-code+)
-					    (eq dispatch-code #.+word-symbol-continue-code+))
+				  (when (or (and (or (eq this-char-dispatch-code #.+word-symbol-start-code+)
+						     (eq this-char-dispatch-code #.+word-symbol-continue-code+))
+						 (or (eq next-char-dispatch-code #.+word-symbol-start-code+)
+						     (eq next-char-dispatch-code #.+word-symbol-continue-code+)))
+					    (and (or (eq this-char-dispatch-code #.+non-word-symbol-start-code+)
+						     (eq this-char-dispatch-code #.+non-word-symbol-continue-code+))
+						 (or (eq next-char-dispatch-code #.+non-word-symbol-start-code+)
+						     (eq next-char-dispatch-code #.+non-word-symbol-continue-code+))))
 				    ;; put back all but the first char of the ad-hoc-string
 				    (let ((n (1- (length ad-hoc-string))))
 				      (dotimes (i n)
