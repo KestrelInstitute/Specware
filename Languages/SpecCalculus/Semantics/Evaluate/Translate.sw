@@ -103,10 +103,12 @@ Note: The code below does not yet match the documentation above, but should.
       %% we assume the user knows what they are doing and allow it.
       %%
       translation_maps <- avoidTranslationCaptures spc translation_maps;
+      raise_any_pending_exceptions();
       %%
       %% Now we produce a new spec using the unambiguous maps.
       %%
       new_spec <- auxTranslateSpec spc translation_maps (positionOf expr);
+      raise_any_pending_exceptions();
       %%
       %% One final pass to see if we've managed to collapse necessarily 
       %% distinct types (e.g. A = X * Y and B = Z | p), or necessarily
@@ -134,28 +136,39 @@ Note: The code below does not yet match the documentation above, but should.
 
 	let 
           def add_type_rule translation_op_map translation_sort_map (dom_qid as Qualified (dom_q, dom_id)) dom_types cod_qid cod_aliases =
-	    (case dom_types of
-	       | ((Qualified (found_q, _))::_,_,_)::other_aliases  ->
-	          (if other_aliases = [] or found_q = UnQualified then
-		   %% dom_qid has a unique referent, either because it refers to 
-		   %% exactly one type, or becauses it is unqualified and refers 
-		   %% to an unqualified type (perhaps among others), in which 
-		   %% case that unqualified type is (by language definition) 
-		   %% the unique unique referent.  
-		   %% (Note that a qualified dom_qid can't refer to an unqualified 
-		   %% type, so we can suppress the test for unqualified dom_qid.)						     
-		   case findAQualifierMap (translation_sort_map, dom_q, dom_id) of
-		     | None -> 
-		       return (translation_op_map, 
-			       insertAQualifierMap (translation_sort_map, dom_q, dom_id, (cod_qid, cod_aliases)))
-		     | _  -> 
-		       raise (MorphError (rule_pos, 
-					  "(1) Translate: multiple rules for source type "^
-					  (explicitPrintQualifiedId dom_qid)))
-		   else 
-		     raise (MorphError (rule_pos, "(2) Translate: ambiguous source type " ^ (explicitPrintQualifiedId dom_qid))))
-	       | _ -> 
-		 raise (MorphError (rule_pos, "(3) Translate: unrecognized source type " ^ (explicitPrintQualifiedId dom_qid))))
+	    case dom_types of
+	      | ((Qualified (found_q, _))::_,_,_)::other_aliases  ->
+	        (if other_aliases = [] or found_q = UnQualified then
+		  %% dom_qid has a unique referent, either because it refers to 
+		  %% exactly one type, or becauses it is unqualified and refers 
+		  %% to an unqualified type (perhaps among others), in which 
+		  %% case that unqualified type is (by language definition) 
+		  %% the unique unique referent.  
+		  %% (Note that a qualified dom_qid can't refer to an unqualified 
+		  %% type, so we can suppress the test for unqualified dom_qid.)						     
+		  case findAQualifierMap (translation_sort_map, dom_q, dom_id) of
+		    | None -> 
+		      return (translation_op_map, 
+			      insertAQualifierMap (translation_sort_map, dom_q, dom_id, (cod_qid, cod_aliases)))
+		    | _  -> 
+		      {
+		       raise_later (TranslationError ("Multiple rules for source type " ^ (explicitPrintQualifiedId dom_qid),
+						      rule_pos));
+		       return (translation_op_map, translation_sort_map)
+		      }
+		else 
+		  {
+		   raise_later (TranslationError ("Ambiguous source type " ^ (explicitPrintQualifiedId dom_qid), 
+						  rule_pos));
+		   return (translation_op_map, translation_sort_map)
+		  })
+	      | _ -> 
+		{
+		 raise_later (TranslationError ("Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid),
+						rule_pos));
+		 return (translation_op_map, translation_sort_map)
+		}
+		  
 	      
 	  def add_op_rule translation_op_map translation_sort_map (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
 	    case dom_ops of
@@ -169,21 +182,40 @@ Note: The code below does not yet match the documentation above, but should.
 			       translation_sort_map)
 		     | _ -> 
 		       %% Already had a rule for dom_qid...
-		       raise (MorphError (rule_pos, 
-					  "(4) Translate: multiple rules for source op "^
-					  (explicitPrintQualifiedId dom_qid)))
+		       {
+			raise_later (TranslationError ("Multiple rules for source op "^
+						       (explicitPrintQualifiedId dom_qid),
+						       rule_pos));
+			return (translation_op_map, translation_sort_map)
+			}
 		 else 
-		   raise (MorphError (rule_pos, "(5) Translate: ambiguous source op "^   (explicitPrintQualifiedId dom_qid))))
+		   {
+		    raise_later (TranslationError ("Ambiguous source op "^   (explicitPrintQualifiedId dom_qid), 
+						   rule_pos));
+		    return (translation_op_map, translation_sort_map)
+		    })
 	      | _ -> 
-		raise (MorphError (rule_pos, "(6) Translate: unrecognized source op "^(explicitPrintQualifiedId dom_qid)))
+		{
+		 raise_later (TranslationError ("Unrecognized source op "^(explicitPrintQualifiedId dom_qid),
+						rule_pos));
+		 return (translation_op_map, translation_sort_map)
+		 }
 		  
 	  def add_wildcard_rules translation_op_map translation_sort_map dom_q cod_q cod_aliases =
 	    %% Special hack for aggregate renamings: X._ +-> Y._
 	    %% Find all dom sorts/ops qualified by X, and requalify them with Y
 	    (if basicQualifier? dom_q then
-	       raise (MorphError (position, "(7) Illegal to translate from base : " ^ dom_q))
+	       {
+		raise_later (TranslationError ("Illegal to translate from base : " ^ dom_q, 
+					       position));
+		return (translation_op_map, translation_sort_map)
+		}
 	     else if basicQualifier? cod_q then
-	       raise (MorphError (position, "(8) Illegal to translate into base: " ^ cod_q))
+	       {
+		raise_later (TranslationError ("Illegal to translate into base: " ^ cod_q,
+					       position));
+		return (translation_op_map, translation_sort_map)
+		}
 	     else
 	       let
 
@@ -196,8 +228,12 @@ Note: The code below does not yet match the documentation above, but should.
 		         let new_cod_qid = mkQualifiedId (cod_q, sort_id) in
 			 return (insertAQualifierMap (translation_sort_map, sort_q, sort_id, (new_cod_qid, [new_cod_qid])))
 		       | _ -> 
-			 raise (MorphError (rule_pos, "(9) translate: Multiple (wild) rules for source sort "^
-					    (explicitPrintQualifiedId (mkQualifiedId (sort_q, sort_id)))))
+			 {
+			  raise_later (TranslationError ("Multiple (wild) rules for source sort "^
+							 (explicitPrintQualifiedId (mkQualifiedId (sort_q, sort_id))),
+							 rule_pos));
+			  return translation_sort_map
+			  }
 		   else
 		     return translation_sort_map
 
@@ -210,15 +246,21 @@ Note: The code below does not yet match the documentation above, but should.
 		         let new_cod_qid = mkQualifiedId (cod_q, op_id) in
 			 {
 			  new_cod_qid <- (if syntactic_qid? new_cod_qid then
-					    raise (MorphError (rule_pos,
-							       "(10) `" ^ (explicitPrintQualifiedId new_cod_qid) ^ 
-							       "' is syntax, not an op, hence cannot be the target of a translation. (B)"))
+					    {
+					     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId new_cod_qid) ^ 
+									    "' is syntax, not an op, hence cannot be the target of a translation.",
+									    rule_pos));
+					     return new_cod_qid
+					     }
 					  else
 					    foldM (fn cod_qid -> fn alias ->
 						   if syntactic_qid? alias then 
-						     raise (MorphError (rule_pos,
-									"(11) Alias `" ^ (explicitPrintQualifiedId alias) ^ 
-									"' is syntax, not an op, hence cannot be the target of a translation. (B)"))
+						     {
+						      raise_later (TranslationError ("Alias `" ^ (explicitPrintQualifiedId alias) ^ 
+										     "' is syntax, not an op, hence cannot be the target of a translation.",
+										     rule_pos));
+						      return cod_qid
+						      }
 						   else
 						     return cod_qid)
 					          new_cod_qid
@@ -227,8 +269,13 @@ Note: The code below does not yet match the documentation above, but should.
 			 }
 		       | _ -> 
 			 %% Candidate already has a rule (e.g. via some explicit mapping)...
-			 raise (MorphError (rule_pos, "(12) translate: Multiple (wild) rules for source op "^
-					    (explicitPrintQualifiedId (mkQualifiedId (op_q, op_id)))))
+			 {
+			  raise_later (TranslationError ("Multiple (wild) rules for source op "^
+							 (explicitPrintQualifiedId (mkQualifiedId (op_q, op_id))),
+							 rule_pos));
+			  return translation_op_map
+			  }
+						  
 		   else
 		     return translation_op_map 
 	       in 
@@ -248,21 +295,40 @@ Note: The code below does not yet match the documentation above, but should.
 
         | Sort (dom_qid, cod_qid, cod_aliases) -> 
 	  if basicQualifiedId? dom_qid then
-	    raise (MorphError (position, "(13) Illegal to translate from base type : " ^ (explicitPrintQualifiedId dom_qid)))
+	    {
+	     raise_later (TranslationError ("Illegal to translate from base type : " ^ (explicitPrintQualifiedId dom_qid),
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	    }
 	  else if basicQualifiedId? cod_qid then
-	    raise (MorphError (position, "(14) Illegal to translate into base type: " ^ (explicitPrintQualifiedId cod_qid)))
+	    {
+	     raise_later (TranslationError ("Illegal to translate into base type: " ^ (explicitPrintQualifiedId cod_qid),
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	    }
 	  else
 	    let dom_types = findAllSorts (dom_spec, dom_qid) in
 	    add_type_rule translation_op_map translation_sort_map dom_qid dom_types cod_qid cod_aliases
 
 	| Op   ((dom_qid, dom_type), (cod_qid, cod_type), cod_aliases) ->  
 	  if syntactic_qid? dom_qid then 
-	    raise (MorphError (rule_pos,
-			       "(15) `" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated. (C)"))
+	    {
+	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated.",
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	    }
 	  else if basicQualifiedId? dom_qid then
-	    raise (MorphError (position, "(16) Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid)))
+	    {
+	     raise_later (TranslationError ("Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid),
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	    }
 	  else if basicQualifiedId? cod_qid then
-	    raise (MorphError (position, "(17) Illegal to translate into base op: " ^ (explicitPrintQualifiedId cod_qid)))
+	    {
+	     raise_later (TranslationError ("Illegal to translate into base op: " ^ (explicitPrintQualifiedId cod_qid),
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	    }
 	  else
 	    let dom_ops = findAllOps (dom_spec, dom_qid) in
 	    add_op_rule translation_op_map translation_sort_map dom_qid dom_ops cod_qid cod_aliases
@@ -272,20 +338,40 @@ Note: The code below does not yet match the documentation above, but should.
 
 	| Ambiguous (dom_qid, cod_qid, cod_aliases) -> 
 	  if syntactic_qid? dom_qid then 
-	    raise (MorphError (rule_pos, "(18) `" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated. (D)"))
+	    {
+	     raise_later (TranslationError ("`" ^ (explicitPrintQualifiedId dom_qid) ^ "' is syntax, not an op, hence cannot be translated.",
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	     }
 	  else if basicQualifiedId? dom_qid then
-	    raise (MorphError (position, "(19) Illegal to translate from base type or op: " ^ (explicitPrintQualifiedId dom_qid)))
+	    {
+	     raise_later (TranslationError ("Illegal to translate from base type or op: " ^ (explicitPrintQualifiedId dom_qid),
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	     }
 	  else if basicQualifiedId? cod_qid then
-	    raise (MorphError (position, "(20) Illegal to translate into base type or op: " ^ (explicitPrintQualifiedId cod_qid)))
+	    {
+	     raise_later (TranslationError ("Illegal to translate into base type or op: " ^ (explicitPrintQualifiedId cod_qid),
+					    rule_pos));
+	     return (translation_op_map, translation_sort_map)
+	     }
 	  else
 	    %% Find a sort or an op, and proceed as above
 	    let dom_types = findAllSorts (dom_spec, dom_qid) in
 	    let dom_ops   = findAllOps   (dom_spec, dom_qid) in
 	    case (dom_types, dom_ops) of
-	      | ([], []) -> raise (MorphError (rule_pos, "(21) translate: Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid)))
+	      | ([], []) -> {
+			     raise_later (TranslationError ("Unrecognized source type or op "^(explicitPrintQualifiedId dom_qid), 
+							    rule_pos));
+			     return (translation_op_map, translation_sort_map)
+			     }
 	      | (_,  []) -> add_type_rule translation_op_map translation_sort_map dom_qid dom_types cod_qid cod_aliases
 	      | ([], _)  -> add_op_rule   translation_op_map translation_sort_map dom_qid dom_ops   cod_qid cod_aliases
-	      | (_,  _)  -> raise (MorphError (rule_pos, "(22) translate: Ambiguous source type or op: "^(explicitPrintQualifiedId dom_qid)))
+	      | (_,  _)  -> {
+			     raise_later (TranslationError ("Ambiguous source type or op: "^(explicitPrintQualifiedId dom_qid),
+							    rule_pos));
+			     return (translation_op_map, translation_sort_map)
+			     }
     in
       foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules
 
@@ -401,7 +487,11 @@ Note: The code below does not yet match the documentation above, but should.
 	       new_aliases <- return (rev new_aliases);
 	       mapM (fn old_alias ->
 		     if basicQualifiedId? old_alias then
-		       raise (MorphError (position, "(23) Illegal to translate base op " ^ (explicitPrintQualifiedId old_alias)))
+		       {
+			raise_later (TranslationError ("Illegal to translate base op " ^ (explicitPrintQualifiedId old_alias),
+						       position));
+			return old_alias
+			}
 		     else
 		       return old_alias)
 	            old_aliases;
@@ -448,10 +538,14 @@ Note: The code below does not yet match the documentation above, but should.
 	       new_aliases <- return (rev new_aliases);
 	       mapM (fn old_alias ->
 		     if basicQualifiedId? old_alias & ~ (member (old_alias, new_aliases)) then
-		       raise (MorphError (position, "(24) Illegal to translate base type " ^ (explicitPrintQualifiedId old_alias)))
+		       {
+			raise_later (TranslationError ("Illegal to translate base type " ^ (explicitPrintQualifiedId old_alias),
+						       position));
+			return old_alias
+		       }
 		     else
 		       return old_alias)
-	            old_aliases;
+	       old_aliases;
 	       if member (unqualified_Boolean,  new_aliases) or member (Boolean_Boolean,  new_aliases) then
 		 return new_sort_map
 	       else
