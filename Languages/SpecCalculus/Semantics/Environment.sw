@@ -129,6 +129,7 @@ enters something bad. A ParserError is raised when the file parser fails.
     | Unsupported  Position * String
     | SyntaxError  String
     | ParserError  String   % Here the string is the filename.
+    | DiagError    Position * String
     | CircularDefinition URI
 \end{spec}
 

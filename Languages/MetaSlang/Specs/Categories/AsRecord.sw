@@ -32,6 +32,16 @@ spec {
     opMap : PolyMap.Map (QualifiedId, QualifiedId)
   }
 
+  op dom : Morphism -> Spec
+  op cod : Morphism -> Spec
+  op sortMap : Morphism -> PolyMap.Map (QualifiedId, QualifiedId)
+  op opMap : Morphism -> PolyMap.Map (QualifiedId, QualifiedId)
+
+  def dom morph = morph.dom
+  def cod morph = morph.cod
+  def opMap morph = morph.opMap
+  def sortMap morph = morph.sortMap
+
   op compose : Morphism -> Morphism -> Morphism
   def compose mor1 mor2 = {
      dom = mor1.dom,

@@ -121,35 +121,40 @@ be aborted. This doesn't return.
      saveSpecwareState;			% So work done before error is not lost
      let message = % "Uncaught exception: " ++
        (case except of
-	 | Fail str -> "Fail: " ^ str
-	 | ParserError fileName ->
-	       "Syntax error in file "
-	     ^ fileName
-	 | CircularDefinition uri ->
-	       "Circular definition: " ^ showURI uri
-	 | SyntaxError msg ->
-	       "Syntax error: "
-	     ^ msg
-	 | URINotFound (position,uri) ->
-	       "No such URI: "
-	     ^ (showRelativeURI uri)
-	     ^ " referenced from "
-	     ^ (showPosition position)
-	 | TypeCheck (position,str) ->
-	       "Type error: "
-	     ^ str
-	     ^ " at "
-	     ^ (showPosition position)
-	 %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
-	 | OldTypeCheck str ->
-	       "Type errors:\n"
-	     ^ str
-	 | Unsupported (position,str) ->
-	       "Unsupported operation: "
-	     ^ str
-	     ^ " at "
-	     ^ (showPosition position)
-	 | _ -> "Unknown exception")
+         | Fail str -> "Fail: " ^ str
+         | DiagError (position,msg) ->
+               "Diagram error: "
+             ^ msg
+             ^ " at "
+             ^ (showPosition position)
+         | ParserError fileName ->
+               "Syntax error in file "
+             ^ fileName
+         | CircularDefinition uri ->
+               "Circular definition: " ^ showURI uri
+         | SyntaxError msg ->
+               "Syntax error: "
+             ^ msg
+         | URINotFound (position,uri) ->
+               "No such URI: "
+             ^ (showRelativeURI uri)
+             ^ " referenced from "
+             ^ (showPosition position)
+         | TypeCheck (position,str) ->
+               "Type error: "
+             ^ str
+             ^ " at "
+             ^ (showPosition position)
+         %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
+         | OldTypeCheck str ->
+               "Type errors:\n"
+             ^ str
+         | Unsupported (position,str) ->
+               "Unsupported operation: "
+             ^ str
+             ^ " at "
+             ^ (showPosition position)
+         | _ -> "Unknown exception")
      in
        mFail message}
 \end{spec}
@@ -159,7 +164,6 @@ that the successful work you have done before the error is kept.
 \begin{spec}
   op saveSpecwareState: SpecCalc.Env ()
 \end{spec}
-
 
 This doesn't belong here. Perhaps it belongs in the instance
 of the MetaSlang terms used for parsing.
