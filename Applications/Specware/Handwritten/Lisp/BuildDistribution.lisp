@@ -72,6 +72,7 @@
 
 (specware::concatenate-files
    (loop for fil in '("Base/Handwritten/Lisp/Integer"
+		      "Base/Handwritten/Lisp/Nat"
 		      "Base/Handwritten/Lisp/Char"
 		      "Base/Handwritten/Lisp/String"
 		      "Base/Handwritten/Lisp/System"
