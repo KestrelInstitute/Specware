@@ -82,9 +82,9 @@ op addMethodFromOpToClsDecls: Spec * Id * Sort * Term * JcgInfo -> JcgInfo
 def addMethodFromOpToClsDecls(spc, opId, srt, trm, jcginfo) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
-  if all (fn (srt) -> baseType?(srt)) dom
+  if all (fn (srt) -> notAUserType?(srt)) dom
     then
-      if baseType?(rng)
+      if notAUserType?(rng)
 	then addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
       else addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
   else
@@ -133,7 +133,7 @@ def addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
   case rng of
     | Base (Qualified (q, rngId), _, _) ->
       (let clsDecls = jcginfo.clsDecls in
-       let (vars, body) = srtTermDelta(srt, trm) in
+       let (vars, body) = srtTermDelta_internal(srt, trm,true) in
        let split = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
        case split of
 	 | Some(vars1,varh,vars2) ->
@@ -145,10 +145,10 @@ def addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
 				 else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
 	  else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
 	   )
-	| _ -> %TODO
+	| _ -> let _ = warnNoCode(opId,Some("cannot find user type in arguments of op "^opId)) in
             jcginfo
       )
-    | _ -> %TODO
+    | _ -> let _ = warnNoCode(opId,Some("opId doesn't have a flat type")) in
 	jcginfo
 
 op addCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
@@ -163,13 +163,19 @@ def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
 
 op addNonCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
 def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
-  let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
-  let (vh, _) = varh in
-  let methodBody = mkNonCaseMethodBody(vh, body, spc) in
-  let assertStmt = mkAssertFromDom(dom, spc) in
-  let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), Some (assertStmt++methodBody)) in
-  let (_, Base (Qualified(q, srthId), _, _)) = varh in
-  addMethDeclToClsDecls(srthId, methodDecl, jcginfo)
+  case splitList (fn(v as (id, srt)) -> userType?(srt)) vars of
+    | Some (vars1, varh, vars2) ->
+      (let (vh, _) = varh in
+       let methodBody = mkNonCaseMethodBody(vh, body, spc) in
+       let assertStmt = mkAssertFromDom(dom, spc) in
+       let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), Some (assertStmt++methodBody)) in
+       case varh of
+	 | (_, Base (Qualified(q, srthId), _, _)) ->
+	   addMethDeclToClsDecls(srthId, methodDecl, jcginfo)
+	 | _ ->
+	   (warnNoCode(opId,Some("can't happen: user type is not flat"));jcginfo)
+	  )
+    | _ -> (warnNoCode(opId,Some("no user type found in the arg list of op "^opId));jcginfo)
 
 op mkNonCaseMethodBody: Id * Term * Spec -> Block
 def mkNonCaseMethodBody(vId, body, spc) =
@@ -235,7 +241,7 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
   case srt of
     | Arrow _ -> addMethodFromOpToClsDecls(spc, id, srt, trm, jcginfo)
     | _ ->
-    if baseType?(srt)
+    if notAUserType?(srt)
       then
 	let (vars, body) = srtTermDelta(srt, trm) in
 	let (_, jE, _, _) = termToExpression(empty, body, 1, 1, spc) in
@@ -260,6 +266,9 @@ def concatClsDecls({clsDecls=cd1},{clsDecls=cd2}) =
 op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
 def exchangeClsDecls({clsDecls=_},newClsDecls) =
   {clsDecls=newClsDecls}
+
+% --------------------------------------------------------------------------------
+
 
 op specToJava : Spec -> JSpec
 

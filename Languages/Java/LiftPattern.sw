@@ -11,13 +11,13 @@ sort Env a = SpecCalc.Env a
 sort Op = QualifiedId
 
 sort Type = Sort
-sort BaseType = (Type | baseType?)
+sort BaseType = (Sort | baseType?)
 
-sort OpDef = Op * List Type * Type * List Var * Term
+sort OpDef = Op * List Sort * Sort * List Var * Term
 
 op unSupported: Op -> String
 
-op baseType?: Type -> Boolean
+op baseType?: Sort -> Boolean
 
 def baseType?(type) =
   boolSort?(type) or integerSort?(type) or natSort?(type)
@@ -28,10 +28,21 @@ def baseTypeId?(id) =
   id = "Boolean" or id = "Integer" or id = "Nat"
 
 
-op userType?: Type -> Boolean
+op userType?: Sort -> Boolean
 
-def userType?(type) =
-  ~ (baseType?(type))
+(**
+ * extended the definition of userType? to not only check whether it's not a base type, because it's also not a user
+ * type, if it's something different then a name of a type identifier, e.g., an arrow type
+ *)
+def userType?(srt) =
+  if baseType?(srt) then false
+  else
+    (case srt of
+       | Base(qid,_,_) -> true
+       | _ -> false
+      )
+
+def notAUserType?(srt) = ~(userType?(srt))
 
 op baseVar?: Var -> Boolean
 op userVar?: Var -> Boolean
@@ -55,7 +66,7 @@ def mkNewOp(oper, k) =
   let Qualified (qual, id) = oper in
   mkQualifiedId(qual, id ^ natToString(k))
 
-op mkNewVar: Op * Nat * Type -> Var
+op mkNewVar: Op * Nat * Sort -> Var
 
 def mkNewVar(oper, k, t) =
   let Qualified (qual, id) = oper in
@@ -93,8 +104,8 @@ def applyArgsToTerms(args) =
     | Record (fields,_) -> recordFieldsToTerms(fields)
     | term -> [term]
 
-op opDom: Spec * Op -> List Type
-op opRange: Spec * Op -> Type
+op opDom: Spec * Op -> List Sort
+op opRange: Spec * Op -> Sort
 
 def opDom(spc, oper) =
   let opinfo = findTheOp(spc, oper) in
@@ -108,8 +119,8 @@ def opRange(spc, oper) =
     | Some (_,_,(_,srt),_) -> srtRange(srt)
     | _ -> let _ = unSupported(oper) in boolSort
 
-op srtDom: Type -> List Type
-op srtRange: Type -> Type
+op srtDom: Sort -> List Sort
+op srtRange: Sort -> Sort
 
 def srtDom(srt) =
   let def domSrtDom(dom) =
@@ -342,7 +353,7 @@ def liftPattern(spc) =
 
 op addOpToSpec: OpDef * Spec -> Spec
 
-def addOpToSpec((oper:Op, dom:(List Type), rng:Type, formals:List Var, body:Term), spc:Spec) =
+def addOpToSpec((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term), spc:Spec) =
   let srt = case dom of | [] -> rng | [dom] -> mkArrow(dom, rng) | _ -> mkArrow(mkProduct(dom), rng) in
   let varPatterns = map mkVarPat formals in
   let term = mkLambda(mkTuplePat(varPatterns), body) in

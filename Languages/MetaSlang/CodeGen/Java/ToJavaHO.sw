@@ -12,9 +12,9 @@ spec
    * translates a lambda term into a java expression, called from translateToExpression in ToJavaStatements
    *)
   op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
-  def translateLambdaToExpr(tcx,term as Lambda((pat,cond,body)::_,_),k,l,spc) =
+  def translateLambdaToExpr(tcx,term (*as Lambda((pat,cond,body)::_,_)*),k,l,spc) =
     let termSrt = termSort(term) in
-    case body of
+    case term of
       | Fun(Op(qid as Qualified(_,id),_),srt,_) -> translateStandAloneOpToExpr(tcx,(qid,srt),k,l,spc)
       | _ -> fail("not yet supported: stand-alone lambda terms: \""^printTerm(term)^"\"")
 

@@ -19,6 +19,21 @@ op translateLetToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat 
 op translateCaseToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 
 def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
+  let
+    def opvarcase(id) =
+      let srt = termSort(term) in
+      %%Fixed here
+      let args = applyArgsToTerms(argsTerm) in
+      let dom = map termSort args in
+      let rng = srt in
+      if all (fn (srt) -> ~ (userType?(srt))) dom
+	then
+	  if notAUserType?(rng)
+	    then translateBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
+	  else translateBaseArgsApplToExpr(tcx, id, argsTerm, rng, k, l, spc)
+      else
+	translateUserApplToExpr(tcx, id, dom, argsTerm, k, l, spc)
+  in
   case opTerm of
     | Fun (Restrict, srt, _) -> translateRestrictToExpr(tcx, srt, argsTerm, k, l, spc)
     | Fun (Relax, srt, _) -> translateRelaxToExpr(tcx, argsTerm, k, l, spc)
@@ -28,20 +43,9 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
     | Fun (Project (id) , srt, _) -> translateProjectToExpr(tcx, id, argsTerm, k, l, spc)
     | Fun (Embed (id, _) , srt, _) -> translateConstructToExpr(tcx, srtId(termSort(term)), id, argsTerm, k, l, spc)
     | Fun (Op (Qualified (q, id), _), _, _) ->
-    (let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
-     let srt = termSort(term) in
-     %%Fixed here
-     let args = applyArgsToTerms(argsTerm) in
-     let dom = map termSort args in
-     let rng = srt in
-     if all (fn (srt) -> baseType?(srt)) dom
-       then
-	 if baseType?(rng)
-	   then translateBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
-	 else translateBaseArgsApplToExpr(tcx, id, argsTerm, rng, k, l, spc)
-     else
-       translateUserApplToExpr(tcx, id, dom, argsTerm, k, l, spc))
-    | Var((id,srt),_) -> fail("variables on lhs of application not yet supported....")
+      let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
+      opvarcase(id)
+    | Var((id,srt),_) -> (writeLine("translateApplyToExpr: not yet supported term: "^printTerm(term));errorResultExp(k,l))
     | _ -> fail("unsupported lhs of application: "^printTerm(opTerm))
 
 op translateRestrictToExpr: TCx * Sort * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
@@ -111,11 +115,13 @@ def translateBaseArgsApplToExpr(tcx, opId, argsTerm, rng, k, l, spc) =
 
 def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
-  let Some(h, _) = findIndex (fn(srt) -> userType?(srt)) dom in
-  let (newBlock, javaArgs, newK, newL) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let topJArg = nth(javaArgs, h) in
-  let resJArgs = deleteNth(h, javaArgs) in
-  (newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL)
+  case findIndex (fn(srt) -> userType?(srt)) dom of
+    | Some(h, _) -> 
+      let (newBlock, javaArgs, newK, newL) = translateTermsToExpressions(tcx, args, k, l, spc) in
+      let topJArg = nth(javaArgs, h) in
+      let resJArgs = deleteNth(h, javaArgs) in
+      (newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL)
+    | _ -> (warnNoCode(opId,None);errorResultExp(k,l))
 
 def translateRecordToExpr(tcx, term as Record (fields, _), k, l, spc) =
   let recordTerms = recordFieldsToTerms(fields) in
@@ -243,11 +249,13 @@ def termToExpression(tcx, term, k, l, spc) =
        | Some (newV) -> (mts, newV, k, l)
        | _ -> (mts, mkVarJavaExpr(id), k, l))
     | Fun (Op (Qualified (q, id), _), srt, _) -> 
-       if baseType?(srt) 
+       if notAUserType?(srt) 
 	 then (mts, mkQualJavaExpr("Primitive", id), k, l)
        else
-	 let Base (Qualified (q, srtId), _, _) = srt in
-	 (mts, mkQualJavaExpr(srtId, id), k, l)
+	 (case srt of
+	    | Base (Qualified (q, srtId), _, _) -> (mts, mkQualJavaExpr(srtId, id), k, l)
+	    | Arrow(dom,rng,_) -> translateLambdaToExpr(tcx,term,k,l,spc)
+	    | _ -> fail("unsupported term in termToExpression: "^printTerm(term)))
     | Fun (Nat (n),_,__) -> (mts, mkJavaNumber(n), k, l)
     | Fun (Bool (b),_,_) -> (mts, mkJavaBool(b), k, l)
     | Fun (Embed (c, _), srt, _) -> (mts, mkMethInv(srtId(srt), c, []), k, l)
@@ -569,5 +577,14 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseType, caseExpr, cases, k
     translateCasesToSwitchesRec(cases, k0, l0)
 
 
+op errorResultExp: Nat * Nat -> Block * Java.Expr * Nat * Nat
+def errorResultExp(k,l) =
+  (mts,mkJavaNumber(0),k,l)
+
+def warnNoCode(opId,optreason) =
+  writeLine("warning: no code has been generated for op \""^opId^"\""
+	    ^ (case optreason of
+		 | Some str -> ", reason: "^str
+		 | _ -> "."))
 
 endspec

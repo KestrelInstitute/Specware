@@ -75,8 +75,11 @@ def varsToFormalParams(vars) =
 
 op varToFormalParam: Var -> FormPar
 
-def varToFormalParam(var as (id, srt as Base (Qualified (q, srtId), _, _))) =
-  (false, tt(srtId), (id, 0))
+%def varToFormalParam_v2(var as (id, srt as Base (Qualified (q, srtId), _, _))) =
+%  (false, tt(srtId), (id, 0))
+
+def varToFormalParam(var as (id, srt)) =
+  (false, tt_v3(srt), (id, 0))
 
 op fieldToFormalParam: Id * Id -> FormPar
 def fieldToFormalParam(fieldProj, fieldType) =
