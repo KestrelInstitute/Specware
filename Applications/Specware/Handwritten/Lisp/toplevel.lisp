@@ -9,6 +9,7 @@
 ;; Specware.
 
 (defvar *last-uri-loaded* nil)
+(defvar *last-swl-args* nil)
 
 (defun sw0 (x)
    (Specware::runSpecwareURI x))
@@ -46,8 +47,16 @@
    (Specware::evaluateLispCompile_fromLisp x
                          (if y (cons :|Some| y)
                                '(:|None|))))
-(top-level:alias ("swl" :case-sensitive) (x &optional y)
-   (swl (string x) (if y (string y) nil)))
+(top-level:alias ("swl" :case-sensitive) (&optional &rest args)
+   (let ((r-args (if (not (null args))
+		     args
+		   *last-swl-args*)))
+   (if r-args
+       (progn (setq *last-swl-args* args)
+	      (funcall 'swl (string (first r-args))
+		       (if (not (null (second r-args)))
+			   (string (second r-args)) nil)))
+     (format t "No previous unit evaluated~%"))))
 
 (top-level:alias ("wiz" :case-sensitive) (&optional (b nil b?))
    (if b? (princ (setq SpecCalc::specwareWizard? b))
