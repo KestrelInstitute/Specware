@@ -7,7 +7,7 @@ Prover qualifying spec
   def explicateHiddenAxioms spc =
     let def axiomFromSortDef(qname,name,sortDecl,sortAxioms) = sortAxioms ++ axiomFromSortDefTop(spc,qname,name,sortDecl) in
     let def axiomFromOp(qname,name,decl,defAxioms) = defAxioms ++ axiomFromOpTop(spc,qname,name,decl) in
-    let def axiomFromProp(prop,props) = props ++ axiomFromPropTop(spc,prop) in
+    %let def axiomFromProp(prop,props) = props ++ axiomFromPropTop(spc,prop) in
     let def mergeAxiomsByPos(oas, nas) =
       let def cmpGt(oax as (_, _, _, oat), nax as (_, _, _, nat)) =
         let old_pos:Position = termAnn(oat) in
