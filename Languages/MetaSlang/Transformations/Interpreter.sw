@@ -415,7 +415,7 @@ spec
   def attemptEval1(opName,arg,f) =
     let def default() = Unevaluated(mkApply(f,valueToTerm arg)) in
     case (opName,arg) of
-       | ("-", Int i)          -> Int(-i)
+       | ("-", Int i)         -> Int (Integer.~ i) % use Integer.~ until unary - works
        | ("~", Int i)         -> Int (Integer.~ i) % for backward compatibility
        | ("~", Bool b)        -> Bool (~b)
        | ("pred", Int i)      -> Int (pred i)
