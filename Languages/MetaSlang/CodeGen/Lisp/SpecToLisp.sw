@@ -315,17 +315,17 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
 	   mkLLambda(["!x"],[],mkLApply(mkLOp "svref",[mkLVar "!x",mkLNat id]))
 	  )
     | (Not, srt, _ ) ->
-      let oper = mkLOp("cl.not") in
+      let oper = mkLOp("cl:not") in
       (case optArgs of
          | None -> oper  %% TODO: reasonable ?
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (And, srt, _ ) ->
-      let oper = mkLOp("cl.and") in % non-strict, hence non-commutative
+      let oper = mkLOp("cl:and") in % non-strict, hence non-commutative
       (case optArgs of
          | None -> oper  %% TODO: reasonable ?
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Or, srt, _ ) ->
-      let oper = mkLOp("cl.or") in % non-strict, hence non-commutative
+      let oper = mkLOp("cl:or") in % non-strict, hence non-commutative
       (case optArgs of
          | None -> oper  %% TODO: reasonable ?
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
@@ -334,18 +334,18 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
          | None -> mkLOp ("boolean-spec.=>") %% TODO: reasonable ? [ defined in /Library/Handwritten/Lisp/Boolean.lisp ]
 	 | Some (Record([(_,x),(_,y)],_)) ->
 	   % if x then y else true == or (not x, y)
-	   mkLApply (mkLOp("cl.or"),         % non-strict, hence non-commutative 
-		     [mkLApply(mkLOp "cl.not", 
+	   mkLApply (mkLOp("cl:or"),         % non-strict, hence non-commutative 
+		     [mkLApply(mkLOp "cl:not", 
 			       [mkLTerm(sp,dpn,vars,x)]),
 		      mkLTerm(sp,dpn,vars,y)]))
     | (Iff, srt, _ ) ->
       (case optArgs of
-         | None -> mkLOp("cl.eq") % TODO: reaonsable?
+         | None -> mkLOp("cl:eq") % TODO: reaonsable?
 	 | Some (Record([(_, x), (_, y)],_)) ->
 	   % if x then y else not y
 	   mkLIf (mkLTerm(sp,dpn,vars,x),
 		  mkLTerm(sp,dpn,vars,y),		   
-		  mkLApply (mkLOp "cl.not",
+		  mkLApply (mkLOp "cl:not",
 			    [mkLTerm(sp,dpn,vars,y)])))
     | (Equals,srt,_) ->
       let oper = mkLOp(mkLEqualityOp(sp,srt)) in
@@ -357,7 +357,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
       (case optArgs of
          | None -> oper  %% TODO: need inequalities ops: neq, not-=, not-string=, ...
 	 | Some arg -> 
-	   mkLApply(mkLOp "cl.not",
+	   mkLApply(mkLOp "cl:not",
 		    [mkLApply (oper,mkLTermList(sp,dpn,vars,arg))]))
     | (Select id,srt,_) -> 
       (case (hasConsDomain(sp,id,srt),optArgs) of
