@@ -63,7 +63,7 @@
     ))
 
 (defun build-psl ()
-  (interactive "P")
+  (interactive)
   (let* ((root-dir (getenv "SPECWARE4"))
 	 (dir (concat root-dir "/Applications/PSL/Handwritten/Lisp"))
 	 (bin-dir (concat root-dir
