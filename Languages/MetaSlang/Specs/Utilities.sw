@@ -1002,7 +1002,7 @@ Utilities qualifying spec
    case t1 of
      | Fun(Bool true,_,_)  -> t2
      | Fun(Bool false,_,_) -> mkFalse()
-     | _ -> mkApply (impliesOp, mkTuple [t1,t2])
+     | _ -> mkImplies (t1,t2)
 
 
  op  identityFn?: fa(a) ATerm a -> Boolean
