@@ -202,6 +202,14 @@ def emptyMonoInfo = {ops = [], sorts = []}
  *)
 op poly2mono: Spec * Boolean -> Spec
 def poly2mono(spc,keepPolyMorphic?) =
+  poly2monoInternal(spc,keepPolyMorphic?,false) 
+
+op poly2monoForSnark: Spec * Boolean -> Spec
+def poly2monoForSnark(spc,keepPolyMorphic?) =
+  poly2monoInternal(spc,keepPolyMorphic?,true) 
+
+op poly2monoInternal: Spec * Boolean * Boolean -> Spec
+def poly2monoInternal(spc,keepPolyMorphic?,modifyConstructors?) =
   let srts = spc.sorts in
   let ops = spc.ops in
   let (srts,minfo) =
@@ -209,7 +217,7 @@ def poly2mono(spc,keepPolyMorphic?) =
     (fn(qu,i,(names,tyvars,defs),(map,minfo)) ->
      let (defs,minfo) =
        foldl (fn(def0 as (tv,srt),(defs,minfo)) ->
-	      let (srt,minfo) = p2mSort(spc,srt,minfo) in
+	      let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
 	      let ndef = (tv,srt) in
 	      let defs = concat(defs,[ndef]) in
 	      %let minfo = concat(minfo,minfo0) in
@@ -223,20 +231,20 @@ def poly2mono(spc,keepPolyMorphic?) =
     (fn(qu,i,(names,fix,(mtv,srt),defs),(map,minfo)) ->
      let (defs,minfo) =
        foldl (fn(def0 as (tv,trm),(defs,minfo)) ->
-	      let (trm,minfo) = p2mTerm(spc,trm,minfo) in
+	      let (trm,minfo) = p2mTerm(spc,modifyConstructors?,trm,minfo) in
 	      let ndef = (tv,trm) in
 	      let defs = concat(defs,[ndef]) in
 	      %let minfo = concat(minfo,minfo0) in
 	      (defs,minfo)) ([],minfo) defs
      in
-     let (srt,minfo) = p2mSort(spc,srt,minfo) in
+     let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
      let nsortscheme = (mtv,srt) in
      (insertAQualifierMap(map,qu,i,(names,fix,nsortscheme,defs)),minfo)
      ) (emptyAOpMap,minfo) ops
   in
   let (props,minfo) =
     foldr (fn((ptype,pname,tv,t),(props,minfo)) ->
-	   let (t,minfo) = p2mTerm(spc,t,minfo) in
+	   let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
 	   let nprop = (ptype,pname,tv,t) in
 	   (cons(nprop,props),minfo)
 	   ) ([],minfo) spc.properties
@@ -267,8 +275,8 @@ def poly2mono(spc,keepPolyMorphic?) =
   let spc = setProperties(spc,props) in
   spc
 
-op p2mSort: Spec * MS.Sort * SortOpInfos -> MS.Sort * SortOpInfos
-def p2mSort(spc,srt,minfo) =
+op p2mSort: Spec * Boolean * MS.Sort * SortOpInfos -> MS.Sort * SortOpInfos
+def p2mSort(spc,modifyConstructors?,srt,minfo) =
   case srt of
     | Base(qid0 as Qualified(q,id),insttv as _::_,b) ->
       if exists (fn(TyVar _) -> true | s -> false) insttv then (srt,minfo) else
@@ -283,12 +291,14 @@ def p2mSort(spc,srt,minfo) =
 			%let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
 			let names = cons(qid,(filter (fn(qid_) -> ~(qid_=qid0)) names)) in 
 			let srtdef = applyTyVarSubst2Sort(srtdef,tvsubst) in
-			%let srtdef = addSortSuffixToConstructors(srtdef,suffix) in
+			let srtdef = if modifyConstructors?
+				       then addSortSuffixToConstructors(srtdef,suffix)
+				     else srtdef in
 			%let _ = writeLine("after applyTyVarSubst2Sort: "^printSort(srtdef)) in
 			% add it first to prevent infinite loop:
 			let tmp_sinfo = (names,[],[([],srtdef)]) in
 			let minfo = addSortInfo2SortOpInfos(qid,tmp_sinfo,minfo) in
-			let (srtdef,minfo) = p2mSort(spc,srtdef,minfo) in
+			let (srtdef,minfo) = p2mSort(spc,modifyConstructors?,srtdef,minfo) in
 			%let _ = writeLine("after p2mSort: "^printSort(srtdef)) in
 			let sinfo = (names,[],[([],srtdef)]) in
 			let minfo = exchangeSortInfoInSortOpInfos(qid,sinfo,minfo) in
@@ -310,12 +320,12 @@ def p2mSort(spc,srt,minfo) =
       in
       (Base(qid,[],b),minfo)
     | Arrow(srt1,srt2,b) ->
-      let (srt1,minfo) = p2mSort(spc,srt1,minfo) in
-      let (srt2,minfo) = p2mSort(spc,srt2,minfo) in
+      let (srt1,minfo) = p2mSort(spc,modifyConstructors?,srt1,minfo) in
+      let (srt2,minfo) = p2mSort(spc,modifyConstructors?,srt2,minfo) in
       (Arrow(srt1,srt2,b),minfo)
     | Product(fields,b) ->
       let (fields,minfo) = foldl (fn((id,srt),(fields,minfo)) ->
-				  let (srt,minfo) = p2mSort(spc,srt,minfo) in
+				  let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
 				  (concat(fields,[(id,srt)]),minfo))
                                   ([],minfo) fields
       in
@@ -325,7 +335,7 @@ def p2mSort(spc,srt,minfo) =
 				  let (optsrt,minfo) = (case optsrt of
 							  | None -> (None,minfo)
 							  | Some srt ->
-							    let (srt,minfo) = p2mSort(spc,srt,minfo) in
+							    let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
 							    (Some(srt),minfo))
 				  in
 				  (concat(fields,[(id,optsrt)]),minfo))
@@ -333,137 +343,138 @@ def p2mSort(spc,srt,minfo) =
       in
       (CoProduct(fields,b),minfo)
     | Quotient(srt,t,b) ->
-      let (srt,minfo) = p2mSort(spc,srt,minfo) in
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
+      let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
       (Quotient(srt,t,b),minfo)
     | Subsort(srt,t,b) ->
-      let (srt,minfo) = p2mSort(spc,srt,minfo) in
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
+      let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
       (Subsort(srt,t,b),minfo)
     | _ -> (srt,minfo)
 
-op p2mTerm: Spec * MS.Term * SortOpInfos -> MS.Term * SortOpInfos
-def p2mTerm(spc,term,minfo) =
+op p2mTerm: Spec * Boolean * MS.Term * SortOpInfos -> MS.Term * SortOpInfos
+def p2mTerm(spc,modifyConstructors?,term,minfo) =
   case term of
     | Apply(t1,t2,b) ->
-      let (t1,minfo) = p2mTerm(spc,t1,minfo) in
-      let (t2,minfo) = p2mTerm(spc,t2,minfo) in
+      let (t1,minfo) = p2mTerm(spc,modifyConstructors?,t1,minfo) in
+      let (t2,minfo) = p2mTerm(spc,modifyConstructors?,t2,minfo) in
       (Apply(t1,t2,b),minfo)
     | Bind(binder,varlist,t,b) ->
       let (varlist,minfo) = foldl (fn((id,srt),(varlist,minfo)) ->
-				   let (srt,minfo) = p2mSort(spc,srt,minfo) in
+				   let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
 				   (concat(varlist,[(id,srt)]),minfo))
                                   ([],minfo) varlist
       in
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
       (Bind(binder,varlist,t,b),minfo)
     | Record(fields,b) ->
       let (fields,minfo) = foldl (fn((id,t),(fields,minfo)) ->
-				   let (t,minfo) = p2mTerm(spc,t,minfo) in
+				   let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
 				   (concat(fields,[(id,t)]),minfo))
                             ([],minfo) fields
       in
       (Record(fields,b),minfo)
     | Let(patTerms,t,b) ->
       let (patTerms,minfo) = foldl (fn((pat,t),(patTerms,minfo)) ->
-				    let (pat,minfo) = p2mPattern(spc,pat,minfo) in
-				    let (t,minfo) = p2mTerm(spc,t,minfo) in
+				    let (pat,minfo) = p2mPattern(spc,modifyConstructors?,pat,minfo) in
+				    let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
 				    (concat(patTerms,[(pat,t)]),minfo))
                              ([],minfo) patTerms
       in
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
       (Let(patTerms,t,b),minfo)
     | LetRec(varTerms,t,b) ->
       let (varTerms,minfo) = foldl (fn(((id,srt),t),(varTerms,minfo)) ->
-				    let (srt,minfo) = p2mSort(spc,srt,minfo) in
-				    let (t,minfo) = p2mTerm(spc,t,minfo) in
+				    let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
+				    let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
 				    (concat(varTerms,[((id,srt),t)]),minfo))
                              ([],minfo) varTerms
       in
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
       (LetRec(varTerms,t,b),minfo)
     | Var((id,srt),b) ->
-      let (srt,minfo) = p2mSort(spc,srt,minfo) in
+      let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
       (Var((id,srt),b),minfo)
     | Fun(fun,srt,b) -> 
-      let (fun,srt,minfo) = p2mFun(spc,fun,srt,minfo) in
+      let (fun,srt,minfo) = p2mFun(spc,modifyConstructors?,fun,srt,minfo) in
       (Fun(fun,srt,b),minfo)
     | Lambda(match,b) ->
       let (match,minfo) = foldl (fn((pat,t1,t2),(match,minfo)) ->
-				    let (pat,minfo) = p2mPattern(spc,pat,minfo) in
-				    let (t1,minfo) = p2mTerm(spc,t1,minfo) in
-				    let (t2,minfo) = p2mTerm(spc,t2,minfo) in
+				    let (pat,minfo) = p2mPattern(spc,modifyConstructors?,pat,minfo) in
+				    let (t1,minfo) = p2mTerm(spc,modifyConstructors?,t1,minfo) in
+				    let (t2,minfo) = p2mTerm(spc,modifyConstructors?,t2,minfo) in
 				    (concat(match,[(pat,t1,t2)]),minfo))
                              ([],minfo) match
       in
       (Lambda(match,b),minfo)
     | IfThenElse(t1,t2,t3,b) ->
-      let (t1,minfo) = p2mTerm(spc,t1,minfo) in
-      let (t2,minfo) = p2mTerm(spc,t2,minfo) in
-      let (t3,minfo) = p2mTerm(spc,t3,minfo) in
+      let (t1,minfo) = p2mTerm(spc,modifyConstructors?,t1,minfo) in
+      let (t2,minfo) = p2mTerm(spc,modifyConstructors?,t2,minfo) in
+      let (t3,minfo) = p2mTerm(spc,modifyConstructors?,t3,minfo) in
       (IfThenElse(t1,t2,t3,b),minfo)
     | Seq(terms,b) ->
       let (terms,minfo) = foldl (fn(t,(terms,minfo)) ->
-				  let (t,minfo) = p2mTerm(spc,t,minfo) in
+				  let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
 				  (concat(terms,[t]),minfo))
                              ([],minfo) terms
       in
       (Seq(terms,b),minfo)
     | SortedTerm(t,srt,b) ->
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
-      let (srt,minfo) = p2mSort(spc,srt,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
+      let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
       (SortedTerm(t,srt,b),minfo)
     | _ -> (term,minfo)
 
-op p2mPattern: Spec * Pattern * SortOpInfos -> Pattern * SortOpInfos
-def p2mPattern(spc,pat,minfo) =
+op p2mPattern: Spec * Boolean * Pattern * SortOpInfos -> Pattern * SortOpInfos
+def p2mPattern(spc,modifyConstructors?,pat,minfo) =
   case pat of
     | EmbedPat(id,optPat,srt,b) ->
       let id = (case srt of
 		  | Base(qid,insttv as _::_,_) ->
 		    if exists (fn(TyVar _) -> true | s -> false) insttv then id else
-		    id(*^(getSortNameSuffix insttv)*)
+		      if modifyConstructors? then id^(getSortNameSuffix insttv)
+		      else id
 		  | _ -> id)
       in
       let (optPat,minfo) = (case optPat of
 			      | None -> (None,minfo)
 			      | Some pat ->
-			        let (pat,minfo) = p2mPattern(spc,pat,minfo) in
+			        let (pat,minfo) = p2mPattern(spc,modifyConstructors?,pat,minfo) in
 				(Some pat,minfo))
       in
-      let (srt,minfo) = p2mSort(spc,srt,minfo) in
+      let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
       (EmbedPat(id,optPat,srt,b),minfo)
     | AliasPat(pat1,pat2,b) ->
-      let (pat1,minfo) = p2mPattern(spc,pat1,minfo) in
-      let (pat2,minfo) = p2mPattern(spc,pat2,minfo) in
+      let (pat1,minfo) = p2mPattern(spc,modifyConstructors?,pat1,minfo) in
+      let (pat2,minfo) = p2mPattern(spc,modifyConstructors?,pat2,minfo) in
       (AliasPat(pat1,pat2,b),minfo)
     | VarPat((id,srt),b) ->
-      let (srt,minfo) = p2mSort(spc,srt,minfo) in
+      let (srt,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
       (VarPat((id,srt),b),minfo)
     | RecordPat(fields,b) ->
       let (fields,minfo) = foldl (fn((id,pat),(fields,minfo)) ->
-				  let (pat,minfo) = p2mPattern(spc,pat,minfo) in
+				  let (pat,minfo) = p2mPattern(spc,modifyConstructors?,pat,minfo) in
 				  (concat(fields,[(id,pat)]),minfo))
                                   ([],minfo) fields
       in
       (RecordPat(fields,b),minfo)
     | RelaxPat(pat,t,b) ->
-      let (pat,minfo) = p2mPattern(spc,pat,minfo) in
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
+      let (pat,minfo) = p2mPattern(spc,modifyConstructors?,pat,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
       (RelaxPat(pat,t,b),minfo)
     | QuotientPat(pat,t,b) ->
-      let (pat,minfo) = p2mPattern(spc,pat,minfo) in
-      let (t,minfo) = p2mTerm(spc,t,minfo) in
+      let (pat,minfo) = p2mPattern(spc,modifyConstructors?,pat,minfo) in
+      let (t,minfo) = p2mTerm(spc,modifyConstructors?,t,minfo) in
       (QuotientPat(pat,t,b),minfo)
     | SortedPat(pat,s,b) ->
-      let (pat,minfo) = p2mPattern(spc,pat,minfo) in
-      let (s,minfo) = p2mSort(spc,s,minfo) in
+      let (pat,minfo) = p2mPattern(spc,modifyConstructors?,pat,minfo) in
+      let (s,minfo) = p2mSort(spc,modifyConstructors?,s,minfo) in
       (SortedPat(pat,s,b),minfo)
     | _ -> (pat,minfo)
 
-op p2mFun: Spec * Fun * MS.Sort * SortOpInfos -> Fun * MS.Sort * SortOpInfos
-def p2mFun(spc,fun,srt,minfo) =
-  let (srt1,minfo) = p2mSort(spc,srt,minfo) in
+op p2mFun: Spec * Boolean * Fun * MS.Sort * SortOpInfos -> Fun * MS.Sort * SortOpInfos
+def p2mFun(spc,modifyConstructors?,fun,srt,minfo) =
+  let (srt1,minfo) = p2mSort(spc,modifyConstructors?,srt,minfo) in
   case fun of
     | Embed(id,b?) ->
       %let _ = writeLine("constructor "^id^" found.") in
@@ -476,7 +487,7 @@ def p2mFun(spc,fun,srt,minfo) =
 	| Base(sqid,insttv as _::_,_) ->
 	  if exists (fn(TyVar _) -> true | s -> false) insttv then (fun,srt1,minfo) else
 	  let id_ = id^(getSortNameSuffix insttv) in
-	  let fun = Embed(id,b?) in
+	  let fun = Embed(if modifyConstructors? then id_ else id,b?) in
 	  (fun,srt1,minfo)
 	| _ -> (fun,srt1,minfo)
 	)
@@ -501,12 +512,34 @@ def p2mFun(spc,fun,srt,minfo) =
 			%let _ = writeLine("substituted op term[1]: "^printTerm(term)) in
 			let tmp_opinfo = (names,fixi,(mtv,srt1),x) in
 			let tmp_minfo = addOpInfo2SortOpInfos(nqid,tmp_opinfo,minfo) in
-			let (term,minfo) = p2mTerm(spc,term,tmp_minfo) in
+			let (term,minfo) = p2mTerm(spc,modifyConstructors?,term,tmp_minfo) in
 			%let _ = writeLine("substituted op term[2]: "^printTerm(term)) in
 			let nopinfo = (names,fixi,(ntv,srt1),[(ntv,term)]) in
 			%let _ = writeLine("adding new opinfo for "^id^" with "^natToString(length(ntv))^" tyvars...") in
 			let minfo = exchangeOpInfoInSortOpInfos(nqid,nopinfo,minfo) in
 			%let _ = writeLine(printSortOpInfos minfo) in
+			minfo
+	  in
+	  (nfun,srt1,minfo)
+	| Some (names,fixi,(mtv as (_::_),asrt),x) -> 
+	  %let _ = writeLine("polymorphic op found: "^printQualifiedId(qid)) in
+	  let tvsubst0 = sortMatch(asrt,srt,spc) in
+	  let tvsubst = filter (fn(id,TyVar _) -> false | _ -> true) tvsubst0 in
+	  let ntv = map (fn(id,_) -> id) (filter (fn(id,TyVar _) -> true | _ -> false) tvsubst0) in
+	  if tvsubst = [] then (fun,srt1,minfo) else
+	  let nqid = Qualified(q,id^getSortNameFromTyVarSubst(tvsubst)) in
+	  let names = cons(nqid,(filter (fn(qid0) -> ~(qid0 = qid)) names)) in
+	  %let _ = writeLine("  New op name:"^(printQualifiedId nqid)) in
+	  %let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
+	  let nfun = Op(nqid,fix) in
+	  let minfo = if monoInfosContainOp?(nqid,minfo) then minfo
+		      else
+			% construct the new opinfo
+			let tmp_opinfo = (names,fixi,(mtv,srt1),x) in
+			let minfo = addOpInfo2SortOpInfos(nqid,tmp_opinfo,minfo) in
+			let nopinfo = (names,fixi,(ntv,srt1),x) in
+			%let _ = if id = "empty_seq" then writeLine("adding new opinfo for "^id^" with "^natToString(length(ntv))^" tyvars...") else () in
+			%let _ = if id = "empty_seq" then writeLine(printSortOpInfos minfo) else () in
 			minfo
 	  in
 	  (nfun,srt1,minfo)
@@ -776,16 +809,24 @@ def addMissingFromPattern(bspc,spc,ignore,pat,minfo) =
 
 op addSortConstructorsToSpec : Spec -> Spec * List(QualifiedId)
 def addSortConstructorsToSpec(spc) =
+  addSortConstructorsToSpecInternal(spc, false)
+
+op addSortConstructorsToSpecForSnark : Spec -> Spec * List(QualifiedId)
+def addSortConstructorsToSpecForSnark(spc) =
+  addSortConstructorsToSpecInternal(spc, true)
+
+op addSortConstructorsToSpecInternal : Spec * Boolean -> Spec * List(QualifiedId)
+def addSortConstructorsToSpecInternal(spc, forSnark?) =
   let res = foldriAQualifierMap
              (fn(qid,name,sortinfo,(spc,opnames)) ->
-	      let (spc,opnames0) = addSortConstructorsFromSort(spc,Qualified(qid,name),sortinfo) in
+	      let (spc,opnames0) = addSortConstructorsFromSort(spc,forSnark?,Qualified(qid,name),sortinfo) in
 	      (spc,concat(opnames,opnames0))
 	     ) (spc,[]) spc.sorts
   in
   res
 
-op addSortConstructorsFromSort: Spec * QualifiedId * SortInfo -> Spec * List(QualifiedId)
-def addSortConstructorsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
+op addSortConstructorsFromSort: Spec * Boolean * QualifiedId * SortInfo -> Spec * List(QualifiedId)
+def addSortConstructorsFromSort(spc,forSnark?,qid,(sortnames,tyvars0,sortschemes)) =
   case sortschemes of
     | [] -> (spc,[])
     | (tyvars,srt)::_ -> 
@@ -795,7 +836,7 @@ def addSortConstructorsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
       %let _ = writeLine("  typevars: "^(List.show "," tyvars)) in
       List.foldr 
        (fn((id,optsrt),(spc,opnames)) ->
-	let opqid as Qualified(opq,opid) = getConstructorOpName(qid,id) in
+	let opqid as Qualified(opq,opid) = if forSnark? then getConstructorOpNameForSnark(qid,id) else getConstructorOpName(qid,id) in
 	%let _ = writeLine("  op "^(printQualifiedId opqid)) in
 	let tyvarsrts = map (fn(tv) -> TyVar(tv,b)) tyvars0 in
 	let codom:Sort  = Base(qid,tyvarsrts,b) in
@@ -827,6 +868,13 @@ def getConstructorOpName(qid as Qualified(q,id),consid) =
   % distinguished from other opnames (hack)
   let sep = "$$" in
   Qualified(q,id^sep^consid)
+
+op getConstructorOpNameForSnark: QualifiedId * String -> QualifiedId
+def getConstructorOpNameForSnark(qid as Qualified(q,id),consid) =
+  % the two $'s are important: that how the constructor op names are
+  % distinguished from other opnames (hack)
+  let sep = "_" in
+  Qualified(q,"embed"^sep^consid)
 
 % this is used to distinguish "real" product from "record-products"
 op productfieldsAreNumbered: fa(a) List(String * a) -> Boolean
@@ -876,6 +924,60 @@ def argTermFromSort(optsrt,funterm,b) =
       in
       Apply(funterm,term,b)
 
+(**
+ * adds for each product sort the accessor ops for each element.
+ * e.g. for sort P = {a: SortA, b: SortB}, the following ops are added:
+ * op project_P_a: P -> sortA, and op project_P_b: P -> sortB
+ * def project_P_a(p) = project(a) p, ...
+ *)
+
+op addProductAccessorsToSpec : Spec -> Spec * List(QualifiedId)
+def addProductAccessorsToSpec(spc) =
+  let res = foldriAQualifierMap
+             (fn(qid,name,sortinfo,(spc,opnames)) ->
+	      let (spc,opnames0) = addProductAccessorsFromSort(spc,Qualified(qid,name),sortinfo) in
+	      (spc,concat(opnames,opnames0))
+	     ) (spc,[]) spc.sorts
+  in
+  res
+
+op addProductAccessorsFromSort: Spec * QualifiedId * SortInfo -> Spec * List(QualifiedId)
+def addProductAccessorsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
+  case sortschemes of
+    | [] -> (spc,[])
+    | (tyvars,srt)::_ ->  let srt = stripSubsorts(spc, srt) in
+    case srt of
+      | Product (fields,b) -> 
+      %let _ = writeLine("generating accessor ops for sort "^(printQualifiedId qid)^"...") in
+      %let _ = writeLine("  typevars: "^(List.show "," tyvars)) in
+      List.foldr 
+       (fn((id,srt),(spc,opnames)) ->
+	let srtName = hd sortnames in
+	let Qualified(_, srtId) = srtName in
+	let opqid as Qualified(opq,opid) = getAccessorOpName(srtId,qid,id) in
+	%let _ = writeLine("  op "^(printQualifiedId opqid)) in
+	let tyvarsrts = map (fn(tv) -> TyVar(tv,b)) tyvars0 in
+	let codom:Sort  = Base(qid,tyvarsrts,b) in
+	let opsrt = Arrow(codom,srt,b) in
+	let termsrt = Arrow(codom,srt,b) in
+	let pat = patternFromSort(Some srt,b) in
+	let cond = mkTrue() in
+	let funterm = Fun(Project(id),termsrt,b) in
+	let body = argTermFromSort(Some srt,funterm,b) in
+	let term = Lambda([(pat,cond,body)],b) in
+	let sortscheme = (tyvars,opsrt) in
+	let opinfo = ([opqid],Nonfix,sortscheme,[(tyvars,term)]) in
+	let newops = insertAQualifierMap(spc.ops,opq,opid,opinfo) in
+	let opnames = cons(opqid,opnames) in
+	(setOps(spc,newops),opnames)
+       ) (spc,[]) fields
+      | _ -> (spc,[])
+
+
+op getAccessorOpName: String * QualifiedId * String -> QualifiedId
+def getAccessorOpName(srtName, qid as Qualified(q,id),accid) =
+  let sep = "_" in
+  Qualified(q,"project"^sep^srtName^sep^accid)
 % --------------------------------------------------------------------------------
 
 (**
