@@ -638,7 +638,9 @@ Java qualifying spec
       | ViaCls (nm,id)
             -> prettysNone 
                  [ppName nm,
-                  toPretty (String.concat (".super.",id))]
+		  % seems to be a cut/paste error:
+                  % toPretty (String.concat (".super.",id))] 
+                  toPretty (String.concat (".",id))] 
 
 %%%% array access
 
