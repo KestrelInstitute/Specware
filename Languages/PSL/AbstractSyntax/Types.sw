@@ -81,7 +81,7 @@ The following is the sort given to us by the parser.
     | Print (Term a)
     | URI RelativeURI
     | Spec List (SpecElem a)
-    | PSL  List (PSL_Elem a)
+    | PSL  List (PSpecElem a)
     | Diag List (DiagElem a)
     | Colimit (Term a)
 \end{spec}
@@ -243,10 +243,10 @@ syntax appear as \verb+op+s in the abstract syntax with an associated
 defining term.
 
 \begin{spec}
-  sort PSL_Elem a = (PSL_Elem_ a) * a
+  sort PSpecElem a = (PSpecElem_ a) * a
 
   sort Ident = String
-  sort PSL_Elem_ a =
+  sort PSpecElem_ a =
     | Import (Term a)
     | Sort   List QualifiedId * (TyVars * Option (ASort a))
     | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
@@ -282,9 +282,7 @@ needs some thought.
     | Case       (ATerm a) * (List (Case a))
     | Do         List (Alternative a)
     | Assign     (ATerm a) * (ATerm a)
-    | Let        List (PSL_Elem a) * (Command a)
-    | Call       Ident * List (ATerm a)
-    | AssignCall (ATerm a) * Ident * List (ATerm a)
+    | Let        List (PSpecElem a) * (Command a)
     | Seq        List (Command a)
     | Relation   (ATerm a)
     | Return     ATerm a

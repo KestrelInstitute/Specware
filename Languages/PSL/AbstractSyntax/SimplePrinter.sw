@@ -1,7 +1,7 @@
 \section{Wadler Lindig based Printer for PSL Calculus}
 
 \begin{spec}
-spec {
+SpecCalc qualifying spec {
   import /Library/PrettyPrinter/WadlerLindig
   import ../../MetaSlang/AbstractSyntax/AnnTerm
   import ../../MetaSlang/AbstractSyntax/SimplePrinter
@@ -52,12 +52,12 @@ spec {
             ppTerm t
           ]
       | URI uri -> ppRelativeURI uri
-      | PSL pslElems -> 
+      | PSL pSpecElems -> 
           ppConcat [
             ppString "psl {",
             ppNewline,
             ppString "  ",
-            ppIndent (ppSep ppNewline (map ppPSL_Elem pslElems)),
+            ppIndent (ppSep ppNewline (map ppPSpecElem pSpecElems)),
             ppNewline,
             ppString "}"
           ]
@@ -269,7 +269,7 @@ spec {
             ppString "let",
             ppNewline,
             ppString "  ",
-            ppIndent (ppSep ppNewline (map ppPSL_Elem decls)),
+            ppIndent (ppSep ppNewline (map ppPSpecElem decls)),
             ppNewline,
             ppString "in {",
             ppNewline,
@@ -278,6 +278,7 @@ spec {
             ppNewline,
             ppString "}"
           ]
+(*
       | Call (id,terms) ->
           ppConcat [
             ppString "call ",
@@ -296,6 +297,7 @@ spec {
             ppSep (ppString ",") (map ppATerm terms),
             ppString ")"
           ]
+*)
       | Seq commands -> ppCommands commands
       | Relation term ->
          ppConcat [
@@ -336,8 +338,8 @@ spec {
       ppSep (ppAppend ppNewline (ppString "| ")) (map ppAlt alts)
     ]
 
-  op ppPSL_Elem : fa(a) PSL_Elem a -> Pretty
-  def ppPSL_Elem (decl,_) = 
+  op ppPSpecElem : fa(a) PSpecElem a -> Pretty
+  def ppPSpecElem (decl,_) = 
     case decl of
       | Sort (names,(tyVars,optSort)) -> 
           ppConcat [
@@ -363,8 +365,8 @@ spec {
             ppProcInfo procInfo
           ]
 
-  op ppPSL_Elems : fa(a) List (PSL_Elem a) -> Pretty
-  def ppPSL_Elems decls = ppSep ppNewline (map ppPSL_Elem decls)
+  op ppPSpecElems : fa(a) List (PSpecElem a) -> Pretty
+  def ppPSpecElems decls = ppSep ppNewline (map ppPSpecElem decls)
 
   op ppProcInfo : fa (a) ProcInfo a -> Pretty
   def ppProcInfo procInfo =
