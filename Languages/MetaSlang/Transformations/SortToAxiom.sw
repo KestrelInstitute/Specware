@@ -115,8 +115,10 @@ Prover qualifying spec
       | (id, optSrt):: restFields ->
         let constrTerm = mkConstructorTerm(srt, id, optSrt) in
 	let eql = mkEquality(srt, mkVar(var), constrTerm) in
+	let existVars = freeVars(constrTerm) in
+	let eqlFmla = mkBind(Exists, existVars, eql) in
 	let restEqls = mkEqFmlasForFields(srt, var, restFields) in
-	Cons(eql, restEqls)
+	Cons(eqlFmla, restEqls)
 
   op mkDisEqsForFields: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Properties
   def mkDisEqsForFields(spc, srt, name, fields) =
@@ -152,7 +154,7 @@ Prover qualifying spec
     case optSrt of
       | None -> Fun (Embed (id, false), srt, noPos)
       | Some (Product (args, _)) ->
-      let recordFields = map (fn (aid, asrt) -> (aid, mkVar((aid^"_var", asrt)))) args in
+      let recordFields = map (fn (aid, asrt) -> (aid, mkVar(("var_"^aid, asrt)))) args in
       let args = mkRecord(recordFields) in
       Apply (Fun (Embed (id, true), srt, noPos), args, noPos)
       | Some aSrt ->

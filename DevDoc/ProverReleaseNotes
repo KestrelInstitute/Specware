@@ -1,0 +1,111 @@
+For Specware Release 4.1 we have added the following capabilities:
+
+1. Enhanced translation of Metaslang datatypes to Specware:
+
+  A. Coproduct types:
+
+     For each coproduct type we generate operators for the
+     constructors and accessors for the type.  We also generate the
+     appropriate axioms for the type as described below.
+
+     Given a coproduct of the form:
+        S = | C1 | C2 A2 | C3 (A3 * B3)
+     We generate the following axioms:
+      
+     1) Exhaustiveness:
+          fa (s: S) s = C1 ||
+                    exists (a2: A2) s = C2 a2 ||
+                    exists(a3:A3, b3:B3) s = C3(a3, b3)
+     2) Disjointness:
+          fa(a2: A2, a3: A3, b3:B3) ~(C1 = C2 a2) &&
+                                    ~(C1 = C3(a3, b3) &&
+                                    ~(C2 a2 = C3 (a3, b3)
+    At present we do not generate the axiom that every constructor is
+    injective. 
+
+  B. Product types:
+
+     As with the coproduct we also generate the constructors and
+     accessors for the product type. The following axioms describing
+     their behavior is sent to Snark.
+
+     Given a product of the form:
+        S = A * B
+     We generate the following axioms:
+
+     1) Projection axioms:
+         fa(a: A, b: B) proj_S_1(mk_Rec_S(a, b)) = a
+         fa(a: A, b: B) proj_S_2(mk_Rec_S(a, b)) = b
+
+     2) Constructor axiom:
+         fa(s: S) s = mkr_Rec_S(proj_S_1(s), proj_S_2(s))
+
+  C. Record types:
+     Record types are treated as product types except the fields are
+     named instead of numbered.
+
+2  Enhanced translation of tuples and records.
+
+   When tuples and records are encountered in Metaslang terms they are
+   translated to an application of the Snark contructor described
+   above.
+
+   Some care must be taken when dealing with tuples that appear as an
+   argument in the rhs of a definition.  This is because we want to as
+   much as possible present a first-order transformation to Snark.
+
+   Thus, for example we want to translate x + y as (snark_+ x y), and
+   not as (snark_+ (tuple x y)).  Although a reasonable translation
+   can be done this way, we are concerned that the larger number of
+   axioms needed might too adversely affect Snark's performance.
+
+   The compromize we are currently using is that when an op, f, is
+   specifically declared as a function of a USER DEFINED product type
+   then its definition will be translated using tuples, otherwise it
+   will use the standard first-order translation.
+
+   Thus, for example, given
+     type S = A * A &&
+     op f: S -> A * A (or S)
+     def f(a, b) = (b, a)
+
+   the axiom, f_def, that is sent to Snark will be translated to
+     f(mk_S_Record(a, b)) = mk_S_Record(b, a)
+
+   and all the axioms involving records will be applicable,
+
+   However, if f were declared as:
+     op f: A * A -> A * A (or S)
+  
+   the axiom, f_def, that is sent to Snark is the more common:
+     f(a, b) = mk_S_Record(b, a)
+
+   and the axioms involving records will not be useful for the left
+   hand side of this axiom.
+
+  Current LIMITIATION to this translation:
+    Currently we do not handle the case when f might take multiple
+    arguments, one or more of which are tuples.
+
+    For example, the declarations
+      op f: S * Integer -> A * A 
+      def f((a, b), i) = (b, a)
+
+   would not be translated in a very useful manner to Snark.
+   This will be changed in an upcoming minor release.
+
+3. How to use the generated axioms described above.
+
+   For every type definition, type S = ..., the axioms generated for that
+   type are named S_def.  Similarly for every op defintion
+   def f = ..., the axioms generated for the definition are named
+   f_def.
+
+   In a proof term that does not have an explicit "using" part, these
+   axioms are automatically sent to Snark.  However if there is an
+   explicit "using" list then the type and op axioms that you want to
+   use need to be explicity included in the using section.
+
+   Additionally, for Snark to make effective use of the constructor
+   axiom for Product types, then the Snark options
+   (assert-supported t) and (use-paramodulation t) should be used.

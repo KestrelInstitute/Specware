@@ -86,11 +86,38 @@ could include more than one proof as follows: </para>
 
 <para> In this case Snark will be invoked three separate times,
 writing three different log files.  In this case an additional
-subdirectory will be created under <"snark">, called <"proof">.  The
-three log files will then be: <"snark/proof/p1.log">,
-<"snark/proof/p1a.log">, and <"snark/proof/p2.log">.  </para>
+subdirectory will be created under <"Snark">, called <"proof">.  The
+three log files will then be: <"Snark/proof/p1.log">,
+<"Snark/proof/p1a.log">, and <"Snark/proof/p2.log">.  </para>
 
 </section>
+
+<section>
+<title>Generating Proof Units</title>
+
+<para> To facilitate the creation of proof units we provide the :swpu
+command. The :swpu commands takes a SpecCalculus term and generates
+proof units for all the conjectures and theorems in the spec denoted
+by the SpecCalculus term.</para>
+
+<para>These proof units are written to a file that can then be elaborated to
+attempt proving all the conjectures in the spec.  The proof file can
+also be edited to add options and usings to the proofs.  By default
+the proofs are written in a file obtained from the unit id given to
+the :swpu command.  For example, if the unit id is <"/dir1/dir2/foo">,
+then the proof units are written to <"/dir1/dir2/foo_Proofs.sw">.
+Optionally the file for the proof units to be written to can be given
+as the second argument to the :spwu command.</para>
+
+<para> By default proof units are generated not just for the
+conjectures explicitly in the spec, but also for all the proof
+obligations generated for the spcec.  The user can use the
+:obligations keyword to control the generation of proof
+obligations. For example, :swpu spec :obligations nil, will only
+generate proof units for the conjectures explicitly in spec.</para>
+
+</section>
+
 
 <section>
 <title>Interrupting Snark</title>
