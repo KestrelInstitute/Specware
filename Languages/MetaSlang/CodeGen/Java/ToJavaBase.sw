@@ -208,7 +208,7 @@ def mkSub(id, l) =
 op mkSumd: Id * Id -> Id
 def mkSumd(cons, caseType) =
   %"sumd_"^cons^"_"^caseType
-  caseType^"$$"^cons % v3 page 67
+  caseType^"__"^cons % v3 page 67
 
 op mkTag: Id -> Id
 def mkTag(cons) =
@@ -333,7 +333,7 @@ def srtId_internal(srt,addIds?) =
                if length(tvs)>0 & (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
 		 foldl (fn(srt,(s,col)) ->
 			let (id0,col0) = srtId(srt) in
-			(s^"$"^id0,concatCollected(col,col0))
+			(s^"_"^id0,concatCollected(col,col0))
 		       ) (id,nothingCollected) tvs
 	       else (id,nothingCollected)
       in
@@ -343,8 +343,8 @@ def srtId_internal(srt,addIds?) =
     | Product(fields,_) -> 
       let (l,str,col) = foldl (fn((id,fsrt),(types,str,col)) ->
 			       let (str0,col0) = srtId(fsrt) in
-			       let str = str ^ (if str = "" then "" else "$_$") ^ str0 in
-			       let str = if addIds? then str^"$"^id else str in
+			       let str = str ^ (if str = "" then "" else "___") ^ str0 in
+			       let str = if addIds? then str^"_"^id else str in
 			       let col = concatCollected(col,col0) in
 			       let types = concat(types,[tt_v2(str0)]) in
 			       (types,str,col)) ([],"",nothingCollected) fields
@@ -356,8 +356,8 @@ def srtId_internal(srt,addIds?) =
 			       let (str0,col0) = case optfsrt of
 			                           | Some fsrt -> srtId(fsrt)
 			                           | None -> ("",nothingCollected) in
-			       let str = str ^ (if str = "" then "" else "$_$") ^ str0 in
-			       let str = if addIds? then str^"$"^id else str in
+			       let str = str ^ (if str = "" then "" else "___") ^ str0 in
+			       let str = if addIds? then str^"_"^id else str in
 			       let col = concatCollected(col,col0) in
 			       let types = concat(types,[tt_v2(str0)]) in
 			       (types,str,col)) ([],"",nothingCollected) fields
@@ -372,7 +372,7 @@ def srtId_internal(srt,addIds?) =
 			    (concat(pars,[fpar]),nmb+1)
 			   ) ([],1) dtypes in
       let methHdr = ([],Some(tt_v2(rsrtid)),"apply",pars,[]) in
-      let id = dsrtid^"$To$"^rsrtid in
+      let id = dsrtid^"_To_"^rsrtid in
       let clsDecl = mkArrowClassDecl(id,(methHdr,None)) in
       %let col3 = {arrowclasses=[clsDecl],productSorts=[]} in
       let col = addArrowClassToCollected(clsDecl,concatCollected(col1,col2)) in
@@ -1077,11 +1077,11 @@ def packageNameToJavaName(s) =
 op mapJavaIdent: Ident -> Ident
 def mapJavaIdent(id) =
   let idarray = explode(id) in
-  let id = foldr (fn(#?,id) -> "$Q"^id
+  let id = foldr (fn(#?,id) -> "_Q"^id
 		  | (c,id) -> Char.toString(c)^id) "" idarray
   in
     id
-  %if javaKeyword? id then id^"$" else id
+  %if javaKeyword? id then id^"_" else id
 
 
 
