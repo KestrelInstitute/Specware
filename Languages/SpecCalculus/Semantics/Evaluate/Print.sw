@@ -53,6 +53,8 @@ SpecCalc qualifying spec {
       | Diag       dg    -> SpecCalc.print (printDiagram  base_spec reverse_context dg)
       | Colimit    col   -> SpecCalc.print (printColimit  base_spec reverse_context col)
       | Proof _          -> SpecCalc.print ""
+      | SpecPrism  sp    -> SpecCalc.print (printPrism  base_spec reverse_context sp)  % tentative
+      | SpecInterp si    -> SpecCalc.print (printInterp base_spec reverse_context si)  % tentative
       | Other      other -> evaluateOtherPrint other (positionOf term)
       | InProcess        -> SpecCalc.print "No value!");
    SpecCalc.print "\n";
@@ -63,6 +65,8 @@ SpecCalc qualifying spec {
  op printMorphism : Spec -> ReverseContext -> Morphism          -> String
  op printDiagram  : Spec -> ReverseContext -> SpecDiagram       -> String
  op printColimit  : Spec -> ReverseContext -> SpecInitialCocone -> String
+ op printPrism    : Spec -> ReverseContext -> SpecPrism         -> String  % tentative
+ op printInterp   : Spec -> ReverseContext -> SpecInterp        -> String  % tentative
 
  %% ======================================================================
  %% Spec
@@ -295,4 +299,82 @@ SpecCalc qualifying spec {
    %%%  %%       so whether or not it makes sense, we must work around this fact.
    %%%  let trimmed_apex_spec = subtractSpec apex_spec base_spec in
    %%%  AnnSpecPrinter.printSpec trimmed_apex_spec
+
+ %% ======================================================================
+ %% Tentative Prism-related stuff
+ %% ======================================================================
+
+ (* Tentative *)
+ def printPrism base_spec reverse_context sp = 
+   let prefix =
+       let sm = hd sp.sms in
+       case sm.sm_tm of
+	| Some (SpecMorph (dom_tm, cod_tm, _), _) ->
+	  (ppGroup 
+	    (ppConcat 
+	      [ppString "prism ",
+	       ppString (showTerm dom_tm),
+	       ppString " -> "
+	      ]))
+	| _ ->
+	  let dom_spec = dom sm in
+	  (ppGroup 
+	    (ppConcat 
+	      [ppString "prism",
+	       ppNest 4 (ppGroup
+			  (ppConcat 
+			    [ppBreak, 
+			     ppString (case evalPartial reverse_context (Spec dom_spec) of
+					 | Some rel_uid -> relativeUID_ToString rel_uid  
+					 | None         -> printSpec base_spec reverse_context dom_spec),
+			     % ppBreak, % too many newlines!
+			     ppString " -> "
+			    ]))
+	      ]))
+   in
+   let sms =
+       foldl (fn (sm, cod_strs) ->
+	      let doc = ppConcat [ppBreak,
+				  ppMorphismX base_spec reverse_context sm]
+	      in
+	      case cod_strs of
+		| [_] -> cod_strs ++ [doc]
+		| _ -> cod_strs ++ [ppString ", ", doc])
+             [ppString "{"]
+	     sp.sms
+   in
+   let sms = ppConcat (sms ++ [ppBreak, ppString "}"]) in
+   ppFormat (ppGroup 
+	     (ppConcat 
+	      [prefix,
+	       sms
+	       % ppNest 1 (ppConcat [ppBreak (* (ppMorphismMap sm) *) ])
+	      ]))
+
+
+ (* Tentative *)
+ def printInterp base_spec reverse_context si = 
+   let 
+     def pp_spec sp =
+       case evalPartial reverse_context (Spec sp) of
+	 | Some rel_uid -> relativeUID_ToString rel_uid  
+	 | None         -> printSpec base_spec reverse_context sp
+   in
+   let dom_str = pp_spec si.dom in
+   let med_str = pp_spec si.med in
+   let cod_str = pp_spec si.cod in
+   ppFormat (ppGroup
+	     (ppConcat
+	      [ppString "interp ",
+	       ppString dom_str,
+	       ppString " -> ",
+	       ppString cod_str,
+	       ppString " {",
+	       ppMorphismX base_spec reverse_context si.d2m,
+	       ppString " -> ",
+	       ppString med_str,
+	       ppString " <- ",
+	       ppMorphismX base_spec reverse_context si.c2m,
+	       ppString "}"]))
+
 }
