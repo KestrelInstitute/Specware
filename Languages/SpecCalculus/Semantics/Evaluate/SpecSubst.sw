@@ -21,8 +21,8 @@ SpecCalc qualifying spec {
      auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos}
 
   def auxApplySpecMorphismSubstitution sm spc sm_tm position = 
-
     let 
+
       def translate_op_names op_names =
 	let op_map = opMap sm in
 	List.map (fn qid -> 
@@ -39,7 +39,6 @@ SpecCalc qualifying spec {
 		    | _ -> qid)
 	         sort_names
     in
-
     %% Warning: this assumes that dom_spec is a subspec of spc
     %%    S' = M(S - dom(M)) U cod(M)
     let dom_spec           = SpecCalc.dom sm            in     % dom(M)
@@ -48,8 +47,14 @@ SpecCalc qualifying spec {
     {translated_residue <- applySpecMorphism sm residue position;  % M(S - dom(M))
      new_spec <- specUnion [translated_residue, cod_spec];     % M(S - dom(M)) U cod(M)
      cod_spec_term <- return (case sm_tm of
-				| (SpecMorph (_,cod_spec_tm,_),_) -> cod_spec_tm
-				| _ -> sm_tm);
+				| (SpecMorph (_,cod_spec_tm,_),_) -> 
+				   cod_spec_tm
+				| _ -> 
+				  %% sm_tm could be a UnitId, which isn't very helpful
+				  %% in which case, see if sm cached a term used to construct it
+				  case sm.sm_tm of
+				    | Some (SpecMorph (_, cod_spec_tm, _), _) -> cod_spec_tm
+				    | _ -> sm_tm);
      return (setImportInfo (new_spec,
 			    {imports         = [(cod_spec_term, cod_spec)],
 			     localOps        = translate_op_names   spc.importInfo.localOps,  

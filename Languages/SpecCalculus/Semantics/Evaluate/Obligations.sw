@@ -34,7 +34,7 @@ SpecCalc qualifying spec
 		      }
  
   op morphismObligations: Morphism * GlobalContext * Position -> Spec
-  def morphismObligations ({dom, cod, sortMap, opMap},globalContext,pos) =
+  def morphismObligations ({dom, cod, sortMap, opMap, sm_tm=_},globalContext,pos) =
     % let tcc = MetaSlangTypeCheck.checkSpec(domain2) in
     let translated_dom_axioms = mapPartial (fn prop ->
 					    case prop of

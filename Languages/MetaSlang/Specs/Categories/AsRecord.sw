@@ -24,6 +24,7 @@ SpecCalc qualifying spec {
  import /Languages/MetaSlang/Specs/AnnSpec
  import /Languages/MetaSlang/Specs/SimplePrinter
  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
+ import /Languages/SpecCalculus/AbstractSyntax/Types
 
  sort QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
  sort MorphismSortMap = QualifiedIdMap
@@ -33,15 +34,17 @@ SpecCalc qualifying spec {
     dom     : Spec,
     cod     : Spec,
     sortMap : MorphismSortMap,
-    opMap   : MorphismOpMap
+    opMap   : MorphismOpMap,
+    sm_tm   : Option SCTerm
   }
 
-  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap -> Morphism
-  def makeMorphism (dom_spec, cod_spec, sort_map, op_map) =
+  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap * Option SCTerm -> Morphism
+  def makeMorphism (dom_spec, cod_spec, sort_map, op_map, sm_tm) =
    {dom     = dom_spec,
     cod     = cod_spec,
     sortMap = sort_map,
-    opMap   = op_map}
+    opMap   = op_map,
+    sm_tm   = sm_tm}
 
   % when omit printing the concrete domain and codomain specs.
   % When printing the maps, we print only where they differ
@@ -71,7 +74,7 @@ SpecCalc qualifying spec {
       ]))
 
   op ppMorphism : Morphism -> Doc
-  def ppMorphism {dom=_, cod=_, sortMap, opMap} = 
+  def ppMorphism {dom=_, cod=_, sortMap, opMap, sm_tm =_} = 
     ppGroup (ppConcat [
       ppString "sort map = ",
       ppMorphMap sortMap,
@@ -95,7 +98,8 @@ SpecCalc qualifying spec {
      dom     = mor1.dom,
      cod     = mor2.cod,
      sortMap = PolyMap.compose mor1.sortMap mor2.sortMap,
-     opMap   = PolyMap.compose mor1.opMap mor2.opMap
+     opMap   = PolyMap.compose mor1.opMap mor2.opMap,
+     sm_tm   = mor1.sm_tm
    }
 
   %% We could have named InitialCocone (and SpecInitialCocone, etc.) 
@@ -105,15 +109,18 @@ SpecCalc qualifying spec {
   sort SpecInitialCocone  = Cat.InitialCocone (Spec, Morphism) 
   op specColimit : SpecDiagram -> Option SpecInitialCocone * Option String
 
+
   op specCat : () -> Cat.Cat (Spec, Morphism)
-  def specCat () = {
-    dom = fn {dom = dom, cod = _,   sortMap = _, opMap = _} -> dom,
-    cod = fn {dom = _,   cod = cod, sortMap = _, opMap = _} -> cod,
+  def specCat () = 
+    {
+    dom = fn {dom = dom, cod = _,   sortMap = _, opMap = _, sm_tm = _} -> dom,
+    cod = fn {dom = _,   cod = cod, sortMap = _, opMap = _, sm_tm = _} -> cod,
     ident = fn spc -> {
        dom     = spc,
        cod     = spc,
        sortMap = emptyMap,
-       opMap   = emptyMap
+       opMap   = emptyMap,
+       sm_tm   = None
     },
     colimit       = specColimit,
     initialObject = initialSpecInCat,

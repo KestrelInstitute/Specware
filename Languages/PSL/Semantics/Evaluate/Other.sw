@@ -100,12 +100,12 @@ SpecCalc qualifying spec {
          morphRules pos =
     case (domValue,codValue) of
       | (Other oscarSpec, Spec spc) -> {
-            morph <- makeSpecMorphism (specOf (modeSpec oscarSpec)) spc morphRules pos;
+            morph <- makeSpecMorphism (specOf (modeSpec oscarSpec)) spc morphRules pos None;
             return (Morph morph,max (domTimeStamp,codTimeStamp),
               listUnion (domDepUnitIds,codDepUnitIds))
           }
       | (Other oscarSpec1, Other oscarSpec2) -> {
-            morph <- makeSpecMorphism (specOf (modeSpec oscarSpec1)) (specOf (modeSpec oscarSpec2)) morphRules pos;
+            morph <- makeSpecMorphism (specOf (modeSpec oscarSpec1)) (specOf (modeSpec oscarSpec2)) morphRules pos None;
             return (Morph morph,max (domTimeStamp,codTimeStamp),
               listUnion (domDepUnitIds,codDepUnitIds))
           }

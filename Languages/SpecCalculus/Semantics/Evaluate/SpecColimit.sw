@@ -250,7 +250,8 @@ spec
 					     | _ -> [],
 					   case evalPartial vertex_to_sm_op_rules vertex of
 					     | Some rules -> convertOpRules rules
-					     | _ -> []))
+					     | _ -> [],
+					   None))
 			    in
 			      update cc_map vertex sm)
 	                   emptyMap

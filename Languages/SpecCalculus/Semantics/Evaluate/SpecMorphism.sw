@@ -19,9 +19,10 @@ coherence conditions of the morphism elements.
     (codValue,codTimeStamp,codDepUIDs) <- evaluateTermInfo codTerm;
     coercedDomValue <- return (coerceToSpec domValue);
     coercedCodValue <- return (coerceToSpec codValue);
+    sm_tm <- return ((SpecMorph (domTerm, codTerm, []), Internal "nowhere"));
     case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
-            morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm);
+            morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm) (Some sm_tm);
             return (Morph morph,max(domTimeStamp,codTimeStamp),
                     listUnion (domDepUIDs,codDepUIDs))
           }
@@ -43,10 +44,10 @@ coherence conditions of the morphism elements.
                       "domain and codomain of spec morphism are not specs"))
     }
 
-  op makeSpecMorphism : Spec -> Spec -> List (SpecMorphRule Position) -> Position -> Env Morphism
-  def makeSpecMorphism domSpec codSpec rawMapping position = {
+  op makeSpecMorphism : Spec -> Spec -> List (SpecMorphRule Position) -> Position -> Option SCTerm -> Env Morphism
+  def makeSpecMorphism domSpec codSpec rawMapping position opt_sm_tm = {
       morph <- makeResolvedMapping domSpec codSpec rawMapping;
-      buildSpecMorphism domSpec codSpec morph position
+      buildSpecMorphism domSpec codSpec morph position opt_sm_tm 
     }
 
   op makeResolvedMapping :
@@ -180,15 +181,17 @@ coherence conditions of the morphism elements.
       -> Spec 
       -> (AQualifierMap QualifiedId) * (AQualifierMap QualifiedId)
       -> Position
+      -> Option SCTerm
       -> Env Morphism
-  def buildSpecMorphism domSpec codSpec (opMap,sortMap) position = {
+  def buildSpecMorphism domSpec codSpec (opMap,sortMap) position opt_sm_tm = {
       newOpMap <- completeMorphismMap opMap domSpec.ops codSpec.ops position;
       newSortMap <- completeMorphismMap sortMap domSpec.sorts codSpec.sorts position;
       return {
           dom     = domSpec,
           cod     = codSpec,
           opMap   = newOpMap,
-          sortMap = newSortMap
+          sortMap = newSortMap,
+	  sm_tm   = opt_sm_tm
         }
     }
 \end{spec}

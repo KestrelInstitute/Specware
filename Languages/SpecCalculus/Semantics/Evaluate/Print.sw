@@ -144,7 +144,7 @@ SpecCalc qualifying spec {
   %% inspired by ppMorphMap from /Languages/MetaSlang/Specs/Categories/AsRecord.sw,
   %%  but substantially different
   op ppMorphismMap : Morphism -> Doc
-  def ppMorphismMap {dom=_, cod=_, sortMap, opMap} =
+  def ppMorphismMap {dom=_, cod=_, sortMap, opMap, sm_tm=_} =
     let 
       def abbrevMap map =
 	foldMap (fn newMap -> fn d -> fn c ->
