@@ -6,6 +6,10 @@
  *
  *
  * $Log$
+ * Revision 1.21  2003/03/19 19:25:43  weilyn
+ * Added patterns.
+ * Made "\end{spec}" a starting latex comment token in lexer.
+ *
  * Revision 1.20  2003/03/19 18:36:46  gilham
  * Fixed a bug in the Lexer that caused the token for "\end{spec}" not being skipped.
  *
@@ -1148,7 +1152,7 @@ LATEX_COMMENT
       | "\\section{"
       | "\\subsection{"
       | "\\document{"
-      )                         
+      )
       (// '\r' '\n' can be matched in one alternative or by matching
        // '\r' in one iteration and '\n' in another.  The language
        // that allows both "\r\n" and "\r" and "\n" to be valid
@@ -1161,7 +1165,8 @@ LATEX_COMMENT
 	 | '\n'			{newline();}
 	 | ~('\\'|'\n'|'\r')    
          )*
-      "\\begin{spec}"           {_ttype = Token.SKIP;}
+       (("\\begin{spec}") => "\\begin{spec}"
+       |)                       {_ttype = Token.SKIP;}
     ;
 
 //-----------------------------
