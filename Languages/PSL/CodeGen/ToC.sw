@@ -44,8 +44,9 @@ SpecCalc qualifying spec {
         | _ -> raise except
     in {
       print ("\n\nGenerating code for procedure: " ^ (Id.show procId) ^ "\n");
-      conv <- catch (convertBSpec bSpec) (handler procId proc);
-      procStmt <- return (graphToC conv);
+      graph <- catch (convertBSpec bSpec) (handler procId proc);
+      graph <- catch (structGraph graph) (handler procId proc);
+      procStmt <- return (graphToC graph);
       return (addFuncDefn cSpec (CGen.showQualifiedId procId) varDecls returnType procStmt)
     }
 
