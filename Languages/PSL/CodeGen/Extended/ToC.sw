@@ -116,12 +116,12 @@ SpecCalc qualifying spec {
       case returnInfo of
         | None -> (cspc,Void)
         | Some retRef ->
-	    let spc = specOf initSpec in
+	    let spc = specOf modeSpec in
 	    case AnnSpec.findAllOps (spc,retRef) of
 	      | [(names,fixity,(tyVars,srt),_)] ->
 	        sortToCType cspc spc srt
 	      | _ ->
-		let _ = toScreen ("\nDang.\n") in 
+		let _ = fail ("Could not find return var: " ^ (anyToString retRef) ^ "\n") in 
 		(cspc,Void)		
     in
     let def handler id procedure except =
@@ -235,8 +235,12 @@ with a loop or out of a conditional.
 	      let (cspc,block,cexp) = termToCExp cspc spc rhs in
 	      (cspc,block,Exp cexp)
             | (Fun (Op (Qualified ("#return#",variable),fxty),srt,pos), true) ->
- 	      let (cspc,block,cexp) = termToCExp cspc spc rhs in
-	      (cspc,block,Return cexp)
+	      (case rhs : MS.Term of 
+		 | Record ([],_) -> 
+		   (cspc,([],[]),ReturnVoid)
+		 | _ -> 
+		   let (cspc,block,cexp) = termToCExp cspc spc rhs in
+		   (cspc,block,Return cexp))
             | _ ->
               (case rhs of
                 | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),fxty),_,pos), Fun (Op (Qualified (_,"active"),fxty),srt,_),  _), idx,_),expr,_) ->
