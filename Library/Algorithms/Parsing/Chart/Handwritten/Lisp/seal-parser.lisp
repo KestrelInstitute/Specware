@@ -861,14 +861,18 @@
   (when-debugging
    (when *verbose?*
      (comment "========================================")
-     (comment "First round: look for optional rules."))
-   (loop 
-     ;; iterate to fixpoint   
-     (unless (propagate-optional-one-round parser)
-       (return nil))
-     (comment "========================================")
-     (comment "New round: look for more optional rules."))
-   (comment "========================================")))
+     (comment "First round: look for optional rules.")))
+  (loop 
+    ;; iterate to fixpoint   
+    (unless (propagate-optional-one-round parser)
+      (return nil))
+    (when-debugging
+     (when *verbose?*
+       (comment "========================================")
+       (comment "New round: look for more optional rules."))))
+  (when-debugging
+   (when *verbose?*
+     (comment "========================================"))))
 
 (defun propagate-optional-one-round (parser)
   (let ((ht-name-to-rule (parser-ht-name-to-rule parser))
