@@ -5,6 +5,7 @@ SpecToLisp qualifying spec {
  import ../../Transformations/InstantiateHOFns
  import ../../Transformations/LambdaLift
  import ../../Transformations/RemoveCurrying
+ import ../../Transformations/RecordMerge
  import Lisp
  import ../../Specs/StandardSpec
 
@@ -1159,14 +1160,6 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
   def toLisp spc =
       toLispEnv(spc)
 
-(*
-  def toLispEnv (spc) =
-      let _   = writeLine "toLisp"                             in
-      let spc = System.time(translateMatch(spc))          in
-      let spc = System.time(arityNormalize(spc)) in
-      let spc = System.time(lisp(spc))                             in
-      spc 
-*)
   op  instantiateHOFns?: Boolean
   def instantiateHOFns? = true
   op  lambdaLift?: Boolean
@@ -1190,6 +1183,7 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
 		 else spc 
       in
       let spc = translateMatch(spc) in
+      let spc = translateRecordMergeInSpec(spc) in
       let spc = arityNormalize(spc) in
       let spc = lisp(spc) in
       spc 

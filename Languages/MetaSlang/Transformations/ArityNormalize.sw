@@ -151,6 +151,7 @@ ArityNormalize qualifying spec {
         | Fun(Iff,      srt,_) -> sortArity(sp,srt)
         | Fun(Equals,   srt,_) -> sortArity(sp,srt)
         | Fun(NotEquals,srt,_) -> sortArity(sp,srt)
+        | Fun(RecordMerge,srt,_) -> sortArity(sp,srt)
         %% sjw: 1/14/02 Have multiple entry points for functions
 %        | Fun(Op (Local id,_),_,_) -> opArity(sp,specName,id)
 %        | Fun(Op (Qualified(specName,id),_),_,_) -> 

@@ -331,17 +331,12 @@ spec
   def simplifiedApply(t1,t2,spc) =
     simplifyOne spc (mkApply(t1,t2))
 
+  op  simpleTerm?: MS.Term -> Boolean
   def simpleTerm?(term) = 
     case term of 
       | Record(fields,_) ->
         all (fn (_,t) -> simpleTerm t) fields
       | _ -> simpleTerm term
-
-  def simpleTerm(term) = 
-    case term
-      of Var _ -> true
-       | Fun _ -> true
-       | _ -> false
 
  def simplify spc term = mapSubTerms(simplifyOne spc) term
 

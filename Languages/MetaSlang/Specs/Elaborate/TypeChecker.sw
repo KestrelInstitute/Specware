@@ -16,7 +16,7 @@
 *)
 
 TypeChecker qualifying
-spec { 
+spec 
   %% The TypeChecker function is elaboratePosSpec 
 
 %  import /Library/Base
@@ -30,8 +30,8 @@ spec {
   %% ========================================================================
 
   % sort Filename = String % see Position.sw
-  sort Message  = String
-  sort Result = | Spec Spec | Errors (List(String * Position))
+  type Message  = String
+  type Result = | Spec Spec | Errors (List(String * Position))
 
   %% ========================================================================
 
@@ -87,11 +87,11 @@ spec {
 
   def elaboratePosSpec (given_spec, filename) = 
     let _ = initializeMetaTyVar () in
- 
+
     %% ======================================================================
     %%                           PASS ZERO  [ 0 => 1 ]
     %% ======================================================================
- 
+
     %% ---------- INITIALIZE SPEC (see ast-environment.sl) ----------
     %%   AstEnvironment.init adds default imports, etc.
     %%
@@ -102,7 +102,7 @@ spec {
 	 properties = props_0 
 	} = given_spec
     in
- 
+
     %% ---------- SORTS : PASS 0 ----------
     % let def elaborate_sort_0 (qualifier,
     %			     sortName,
@@ -116,30 +116,30 @@ spec {
     %   in
     %% sorts is a map to a map to sort_info
     let sorts_1 = sorts_0 in %mapiAQualifierMap elaborate_sort_0 sorts_0 in
- 
+
     %% ---------- OPS : PASS 0 ----------         
     let ops_1 = ops_0 in
-    
+
     %% ---------- PROPERTIES : PASS 0 ----------
     let props_1 = props_0 in
-    
+
     %% ---------- SPEC AFTER PASS 0  ----------
     let spec_1 = {importInfo   = importInfo,   
 		  sorts        = sorts_1, 
 		  ops          = ops_1, 
 		  properties   = props_1} 
     in
-      
+
     %% ======================================================================
     %%                           PASS ONE  [ 1 => 2 ]
     %% ======================================================================
- 
+
     %% ---------- ADD MAP FOR CONSTRUCTORS ----------
     let env_2 = addConstrsEnv (env_1, spec_1) in
- 
+
     %% ---------- SORTS : PASS 1 ----------
     %let sorts_2 = sorts_1 in
-    let 
+    let
       def elaborate_sort_1 (qualifier, 
 			    sortName,
 			    sortInfo as (sort_names, type_vars_1, defs_1)) 
@@ -184,28 +184,28 @@ spec {
     let ops_2_b = mapiAQualifierMap (elaborate_op_1 false) ops_2_a in
     let ops_2_c = mapiAQualifierMap (elaborate_op_1 true)  ops_2_b in
     let ops_2   = mapiAQualifierMap (elaborate_op_1 false) ops_2_c in
-    
+
     %% ---------- PROPERTIES : PASS 1. ---------- 
-    let 
+    let
       def elaborate_fm_1 (prop_type, name, type_vars_1, fm_1) = 
 	let type_vars_2 = type_vars_1 in
 	let fm_2 = elaborateTermTop (env_2a, fm_1, type_bool) in
 	(prop_type, name, type_vars_2, fm_2)
     in
     let props_2 = map elaborate_fm_1 props_1 in
- 
+
     %% ---------- SPEC AFTER PASS 1  ----------
     %%  (don't need spec_2)
-    
+
     %% ======================================================================
     %%                           PASS TWO  [ 2 => 3 ]
     %% ======================================================================
-    
+
     %% sjw: 7/17/01 Added a second pass so that order is not so important
     let env_3 = secondPass env_2a in
-    
+
     %% ---------- SORTS : PASS 2 ---------- 
-    let 
+    let
       def elaborate_sort_2 (qualifier, 
 			    sortName,
 			    sortInfo as (sort_names, type_vars_2, defs_2)) 
@@ -218,9 +218,9 @@ spec {
 	   map (fn def_2 -> checkSortScheme (env_3, def_2)) defs_2)
     in
     let sorts_3 = mapiAQualifierMap elaborate_sort_2 sorts_2 in
- 
+
     %% ---------- OPS : PASS 2 ---------- 
-    let 
+    let
       def elaborate_op_2 (qualifier, 
 			  op_name,
 			  opinfo as (op_names, fixity, sort_scheme_2, defs_2)) 
@@ -299,7 +299,7 @@ spec {
 	    (op_names, fixity, (type_vars_4, srt_3), defs_3)
     in
     let ops_3 = mapiAQualifierMap elaborate_op_2 ops_2 in
- 
+
     %% ---------- AXIOMS : PASS 2 ----------
     let 
       def elaborate_fm_2 (prop_type, name, type_vars_2, fm_2) = 
@@ -319,17 +319,34 @@ spec {
 	  (prop_type, name, type_vars_3, fm_3)))
     in
     let props_3 = map elaborate_fm_2 props_2 in
- 
+
     %% ---------- SPEC AFTER PASS 2 ----------
     let spec_3 = {importInfo   = importInfo,   
 		  sorts        = sorts_3, 
 		  ops          = ops_3, 
 		  properties   = props_3}
     in
-      case checkErrors (env_3) of
-	| []   -> Spec (convertPosSpecToSpec spec_3)
-	| msgs -> Errors msgs
- 
+    %% Check that all metaTyVars have been resolved
+    %% This is too demanding because of _ where we don't need to know the type
+%    let _ = appSpec (fn _ -> (),
+%		     fn s ->
+%		     case s of
+%		       | MetaTyVar(tv,pos) ->
+%		         let {name=_,uniqueId=_,link} = ! tv in
+%			 (case link
+%			    of None -> (error(env_3, 
+%					      "Unresolved type variable "^printSort s,
+%					      pos);
+%					())
+%			     | _ -> ())
+%		       | _ -> (),
+%		     fn _ -> ())
+%              spec_3
+%    in
+    case checkErrors (env_3) of
+      | []   -> Spec (convertPosSpecToSpec spec_3)
+      | msgs -> Errors msgs
+
  
   % ========================================================================
   %% ---- called inside SORTS : PASS 0  -----
@@ -419,7 +436,7 @@ spec {
 					   checkSort (env, instance_sort))
 	                             instance_sorts
 	     in
-	     if given_sort_qid = new_sort_qid & instance_sorts = new_instance_sorts then srt
+	     if given_sort_qid = new_sort_qid && instance_sorts = new_instance_sorts then srt
 	      else Base (new_sort_qid, new_instance_sorts, pos))
 		
       | CoProduct (fields, pos) ->
@@ -443,20 +460,20 @@ spec {
                                   type_bool, 
                                   pos) in
         let new_relation = elaborateTerm (env, given_relation, new_rel_sort) in
-	if given_base_sort = new_base_sort & given_relation = new_relation then srt
+	if given_base_sort = new_base_sort && given_relation = new_relation then srt
          else Quotient (new_base_sort, new_relation, pos)
 
       | Subsort (given_super_sort, given_predicate, pos) -> 
         let new_super_sort = checkSort (env, given_super_sort) in
         let new_pred_sort  = Arrow (new_super_sort, type_bool, pos) in
         let new_predicate  = elaborateTerm (env, given_predicate, new_pred_sort) in
-	if given_super_sort = new_super_sort & given_predicate = new_predicate then srt
+	if given_super_sort = new_super_sort && given_predicate = new_predicate then srt
          else Subsort (new_super_sort, new_predicate, pos)
 
       | Arrow (t1, t2, pos) ->
 	let nt1 = checkSort (env, t1) in
 	let nt2 = checkSort (env, t2) in
-	if t1 = nt1 & t2 = nt2 then srt
+	if t1 = nt1 && t2 = nt2 then srt
          else Arrow (nt1, nt2, pos)
 
   % ========================================================================
@@ -531,9 +548,8 @@ spec {
 
   op my_break : () -> ()
 
-  %% TODO: convert elaborateTerm args to work on term scheme and sort scheme?
   def elaborateTerm (env, trm, term_sort) =
-   case trm of 
+   case trm of
 
     | Fun (OneName (id, fixity), srt, pos) ->
       let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
@@ -754,7 +770,7 @@ spec {
           let test = elaborateTerm (env, test, type_bool) in
           let thenTrm = elaborateTerm (env, thenTrm, term_sort) in 
           let elseTrm = elaborateTerm (env, elseTrm, term_sort) in
-          IfThenElse (test, thenTrm, elseTrm, pos)         
+          IfThenElse (test, thenTrm, elseTrm, pos)
 
     | Record (row, pos) -> 
          let def unfoldConstraint (srt) = 
@@ -858,37 +874,7 @@ spec {
     | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
       (let alpha = freshMetaTyVar pos in
        let ty    = Arrow (alpha, term_sort, pos) in
-       let t1    = (case t1 of
-		      | Fun (Not, srt, pos) -> 
-		        (elaborateSortForTerm (env, trm, srt, ty);
-			 Fun (Not, srt, pos))
-			
-		      | Fun (And, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, srt, ty);
-			 Fun (And, srt, pos))
-			
-		      | Fun (Or, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, srt, ty);
-			 Fun (Or, srt, pos))
-			
-		      | Fun (Implies, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, srt, ty);
-			 Fun (Implies, srt, pos))
-			
-		      | Fun (Iff, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, srt, ty);
-			 Fun (Iff, srt, pos))
-			
-		      | Fun (Equals, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, srt, ty);
-			 Fun (Equals, srt, pos))
-			
-		      | Fun (NotEquals, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, srt, ty);
-			 Fun (NotEquals, srt, pos))
-		      | _ ->
-			elaborateTerm (env, t1, ty))
-       in
+       let t1    = elaborateTermHead(env,t1,ty,trm) in
        let t2    = elaborateTerm (env, t2, alpha) in
        %% Repeated for help in overload resolution once argument type is known
        let t1    = (if env.firstPass? then
@@ -950,6 +936,7 @@ spec {
                   | Fun (Iff,       _, _) -> Infix (term, (Right, 12))
                   | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
                   | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
+                  | Fun (RecordMerge,_,_) -> Infix (term, (Left, 11))
                   | _ -> Nonfix term
            in 
            let term = resolveInfixes (Some env, tagTermWithInfixInfo, pos, terms) in
@@ -967,6 +954,65 @@ spec {
   
     | term -> (%System.print term;
                term)
+
+  def elaborateTermHead(env,t1,ty,trm) =
+    case t1 of
+      | Fun (Not, srt, pos) -> 
+	(elaborateSortForTerm (env, trm, srt, ty);
+	 Fun (Not, srt, pos))
+
+      | Fun (And, srt, pos) -> 
+	(elaborateSortForTerm (env, trm, srt, ty);
+	 Fun (And, srt, pos))
+
+      | Fun (Or, srt, pos) -> 
+	(elaborateSortForTerm (env, trm, srt, ty);
+	 Fun (Or, srt, pos))
+
+      | Fun (Implies, srt, pos) -> 
+	(elaborateSortForTerm (env, trm, srt, ty);
+	 Fun (Implies, srt, pos))
+
+      | Fun (Iff, srt, pos) -> 
+	(elaborateSortForTerm (env, trm, srt, ty);
+	 Fun (Iff, srt, pos))
+
+      | Fun (Equals, srt, pos) -> 
+	(elaborateSortForTerm (env, trm, srt, ty);
+	 Fun (Equals, srt, pos))
+
+      | Fun (NotEquals, srt, pos) -> 
+	(elaborateSortForTerm (env, trm, srt, ty);
+	 Fun (NotEquals, srt, pos))
+
+      | Fun (RecordMerge, srt, pos) ->
+	(let a = freshMetaTyVar pos in
+	 let b = freshMetaTyVar pos in
+	 let c = freshMetaTyVar pos in
+	 let fresh_merge_type = Arrow(Product ([("1", a), ("2", b)], pos), c, pos) in
+	 (elaborateSortForTerm(env, trm, srt, fresh_merge_type);
+	  elaborateSortForTerm(env, trm, fresh_merge_type, ty);
+	  let def notEnoughInfo() =
+		if env.firstPass? then t1
+		else (error(env,"Can't determine suitable sort for <<: "
+			    ^ printSort srt,pos);
+		      t1)
+	  in
+	  case isArrow(env,srt) of
+	    | Some (dom,rng) ->
+	      (case isProduct (env,dom) of
+		 | Some [("1",s1),("2",s2)] ->
+		   (case (isProduct(env,s1),isProduct(env,s2)) of
+		      | (Some row1,Some row2) ->
+			let merged_sort = Product(mergeFields(env,row1,row2,pos),pos) in
+			(elaborateSortForTerm(env,trm,rng,merged_sort);
+			 Fun(RecordMerge, srt, pos))
+		      | _ -> notEnoughInfo())
+		 | _ -> notEnoughInfo())
+	    | None -> notEnoughInfo()))
+
+      | _ ->
+	elaborateTerm (env, t1, ty)
 
    op makeEqualityType : Sort * Position -> Sort
   def makeEqualityType (ty_var, pos) =
@@ -1021,6 +1067,7 @@ spec {
 
   % ========================================================================
 
+  op  selectTermWithConsistentSort: LocalEnv * Id * Position * List MS.Term * Sort -> Option MS.Term
   def selectTermWithConsistentSort (env, id, pos, terms, srt) =
    %% calls consistentSortOp?, which calls unifySorts 
    case terms of
@@ -1218,6 +1265,33 @@ spec {
     | Subsort   (srt, _, _) -> isCoproduct (env, srt)
     | _ -> None
 
+  op  isProduct: LocalEnv * Sort -> Option(List (Id * Sort))
+  def isProduct (env, srt)  = 
+   case unfoldSort (env, srt) of
+    | Product (fields, _) -> Some fields
+    | Subsort (srt, _, _) -> isProduct (env, srt)
+    | _ -> None
+
+  def isArrow (env, srt): Option (Sort * Sort)  = 
+   case unfoldSort (env, srt) of
+    | Arrow (dom, rng, _) -> Some (dom, rng)
+    | Subsort(ssrt, _, _) -> isArrow (env, ssrt)
+    | _ -> None
+
+  def mergeFields(env,row1,row2,pos) =
+    let def loop(row1,row2,merged) =
+          if row1 = [] then merged++row2
+	  else if row2 = [] then merged++row1
+	  else
+	  let (e1::r1,e2::r2) = (row1,row2) in
+	  case compare(e1.1,e2.1) of
+	    | Less    -> loop(r1,row2,merged++[e1])
+	    | Greater -> loop(row1,r2,merged++[e2])
+	    | Equal ->
+	      (elaborateSort(env,Product([e1],pos),Product([e2],pos));
+	       loop(r1,r2,merged++[e2]))
+    in loop(row1,row2,[])
+
   %% If id is the unique name of a constructor, use that constructor
   def uniqueConstr (env, trm, id, pos) =
    case StringMap.find (env.constrs, id) of
@@ -1315,7 +1389,7 @@ spec {
          % in
          %       let (s1_, s2_) = (unfold (env, termSort e1), unfold (env, termSort e2)) in
          %       let expElSrt_ = unfold (env, elSrt1) in
-         %       let elSrt = if subsort? (s1_, expElSrt_) & subsort? (s2_, expElSrt_)
+         %       let elSrt = if subsort? (s1_, expElSrt_) && subsort? (s2_, expElSrt_)
          %                    then elSrt1 else (commonAnc (s1_, s2_), pos) in
          %       (Fun (Equals, (Arrow ((Product [("1", elSrt), ("2", elSrt)], pos), type_bool), pos)), pos)
     | _ -> (error (env, 
@@ -1325,7 +1399,7 @@ spec {
 
 
   def undeclaredName (env, trm, id, srt, pos) =
-  if env.firstPass? then %& undeterminedSort? s 
+  if env.firstPass? then %&& undeterminedSort? s 
     trm
   else
     (error (env, "Name "^id^" could not be identified", pos);
@@ -1333,14 +1407,14 @@ spec {
      Fun (OneName (id, Nonfix), srt, pos))
 
   def ambiguousCons (env, trm, id, srt, pos) =
-  if env.firstPass? then %& undeterminedSort? s 
+  if env.firstPass? then %&& undeterminedSort? s 
     trm
   else
     (error (env, "Constructor "^id^" could not be disambiguated", pos);
      Fun (OneName (id, Nonfix), srt, pos))
 
   def undeclared2 (env, trm, id1, id2, srt, pos) =
-  if env.firstPass? then %& undeterminedSort? s 
+  if env.firstPass? then %&& undeterminedSort? s 
     trm
   else
     (error (env, id1^"."^id2^" has not been declared as a qualified name or as a field selection", pos);
@@ -1348,7 +1422,7 @@ spec {
      Fun (TwoNames (id1, id2, Nonfix), srt, pos))
 
   def undeclaredResolving (env, trm, id, srt, pos) = 
-  if env.firstPass? then %& undeterminedSort? s
+  if env.firstPass? then %&& undeterminedSort? s
     trm
   else
     (error (env, "Name "^id^" could not be identified; resolving with "^printSort srt, pos);
@@ -1421,7 +1495,7 @@ spec {
 	     else
 	       sort0
 	in
-	  if env.firstPass? & undeterminedSort? sort0 then
+	  if env.firstPass? && undeterminedSort? sort0 then
 	    let (env, epat, seenVars)
 	       = case pattern of
 		   | None -> (env,None, seenVars)
@@ -1500,7 +1574,7 @@ spec {
   % ========================================================================
 
   def pass2Error (env, _(* s *), msg, pos) =
-  if env.firstPass? %& undeterminedSort? s
+  if env.firstPass? %&& undeterminedSort? s
     then ()
     else error (env, msg, pos)
 
@@ -1531,4 +1605,4 @@ spec {
           false
         else 
           checkDifferent (tvs, StringSet.add (setOfUniqueIds, id))
-}
+endspec

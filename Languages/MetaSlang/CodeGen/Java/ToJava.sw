@@ -9,6 +9,7 @@ import ToJavaHO
 import ToJavaSpecial
 import /Languages/Java/JavaPrint
 import /Languages/MetaSlang/Transformations/LambdaLift
+import /Languages/MetaSlang/Transformations/RecordMerge
 
 sort JcgInfo = {
 		clsDecls : List ClsDecl,
@@ -716,6 +717,7 @@ def specToJava(basespc,spc,optspec,filename) =
   %let spc = distinctVariable(spc) in
   %let spc = translateMatch spc in
   %let spc = lambdaLift spc in
+  let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
   %let _ = writeLine(printSpec spc) in

@@ -160,7 +160,8 @@ AnnSpecPrinter qualifying spec {
         | Implies        -> Infix (Right, 13) 
         | Iff            -> Infix (Right, 12) 
         | Equals         -> Infix (Left, 20) % was 10 ??
-        | NotEquals      -> Infix (Left, 20) 
+        | NotEquals      -> Infix (Left, 20)
+	| RecordMerge    -> Infix (Left, 25)
         | _              -> Nonfix)
     | _ -> Nonfix
  
@@ -178,6 +179,7 @@ AnnSpecPrinter qualifying spec {
     | Char      c           -> pp.fromString ("#" ^ (Char.toString c))  % #A
     | Embed     (s,_)       -> pp.fromString (s)  %"embed("^s^")"
     | Project   s           -> pp.fromString ("project("^s^")")
+    | RecordMerge           -> pp.fromString "<<"
     | Embedded  s           -> pp.fromString ("embed?("^s^")")
     | Quotient              -> pp.fromString ("quotient")
     | Choose                -> pp.fromString ("choose")

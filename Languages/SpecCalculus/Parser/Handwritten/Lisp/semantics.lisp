@@ -713,15 +713,22 @@ If we want the precedence to be optional:
 					      '(:|Nonfix|))))
 			 (new-v (vector new-f (svref v 1) (svref v 2))))
 		    (cons :|Fun| new-v)))
-		 ((member (car f) '(:|And| :|Or| :|Implies| :|Iff|))
-		  (ms::mkBinaryBooleanFn f))
-		 ((eq (car f) :|Not|)
-		  (ms::mkUnaryBooleanFn f))
-		 ((member (car f) '(:|Equals| :|NotEquals|))
-		  (ms::mkBinaryPolyBooleanFn f))
-
-		 (t
-		  x))))
+		 (t (let* ((pos0 (svref v 2))
+			   (pos (cdr pos0))
+			   (l (svref pos 1))
+			   (r (svref pos 2)))
+		      (cond ((member (car f) '(:|And| :|Or| :|Implies| :|Iff|))
+			     (ms::mkBinaryFn-5 f MS::boolSort MS::boolSort MS::boolSort pos0))
+			    ((eq (car f) :|Not|)
+			     (ms::mkUnaryBooleanFn-2 f pos0))
+			    ((member (car f) '(:|Equals| :|NotEquals|))
+			     (let ((a1 (freshMetaTypeVar l r)))
+			       (ms::mkBinaryFn-5 f a1 a1 MS::boolSort pos0)))
+			    ((eq (car f) :|RecordMerge|)
+			     (ms::mkBinaryFn-5 f (freshMetaTypeVar l r) (freshMetaTypeVar l r)
+					       (freshMetaTypeVar l r) pos0))
+			    (t
+			     x)))))))
 	(t
 	 x)))
 

@@ -290,44 +290,28 @@ MS qualifying spec
 	 else [t]
       | _ -> [t]
 
-
-  op mkUnaryBooleanFn : Fun -> Term
- def mkUnaryBooleanFn f =
-   let pos = Internal "mkUnaryBooleanFn" in
+  op mkUnaryBooleanFn : Fun * Position -> Term
+ def mkUnaryBooleanFn (f,pos) =
+   %let pos = Internal "mkUnaryBooleanFn" in
    let pattern = VarPat (("x", Boolean pos), pos) in
    let f       = Fun (f, unaryBoolSort, pos) in
    let arg     = Var (("x", Boolean pos), pos) in
    let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
    Lambda ([branch], pos)
 
-  op mkBinaryBooleanFn : Fun -> Term
- def mkBinaryBooleanFn f =
-   let pos = Internal "mkBinaryBooleanFn" in
-   let pattern = RecordPat ([("1", VarPat(("x", Boolean pos), pos)),
-			     ("2", VarPat(("y", Boolean pos), pos))],
+ op  mkBinaryFn : Fun * Sort * Sort * Sort * Position -> Term
+ def mkBinaryFn (f,t1,t2,t3,pos) =
+   %let pos = Internal "mkBinaryFn" in
+   let pattern = RecordPat ([("1", VarPat(("x", t1), pos)),
+			     ("2", VarPat(("y", t2), pos))],
 			    pos)
    in
-   let f       = Fun (f, binaryBoolSort, pos) in
-   let arg     = Record ([("1", Var(("x", Boolean pos), pos)),
-			  ("2", Var(("y", Boolean pos), pos))],
+   let f       = Fun (f, Arrow(mkProduct[t1,t2],t3,pos), pos) in
+   let arg     = Record ([("1", Var(("x", t1), pos)),
+			  ("2", Var(("y", t2), pos))],
 			 pos)
    in
-   let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
-   Lambda ([branch], pos)
-
-  op mkBinaryPolyBooleanFn : Fun -> Term
- def mkBinaryPolyBooleanFn f =
-   let pos = Internal "mkBinaryPolyBooleanFn" in
-   let pattern = RecordPat ([("1", VarPat(("x", TyVar ("a", pos)), pos)),
-			     ("2", VarPat(("y", TyVar ("a", pos)), pos))],
-			    pos)
-   in
-   let f       = Fun (f, binaryBoolSort, pos) in
-   let arg     = Record ([("1", Var(("x", TyVar ("a", pos)), pos)),
-			  ("2", Var(("y", TyVar ("a", pos)), pos))],
-			 pos)
-   in
-   let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
+   let branch  = (pattern, mkTrue(), ApplyN([f,arg],pos)) in
    Lambda ([branch], pos)
 
 

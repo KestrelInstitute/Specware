@@ -378,6 +378,8 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString "project ",
             ppString id
           ]
+      | RecordMerge ->
+	  ppString "<<"
       | Embed (id,b) ->
           % ppConcat [
             % ppString "(embed ",

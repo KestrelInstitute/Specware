@@ -697,7 +697,7 @@ If we want the precedence to be optional:
 ;;;  "X . SELECTOR" will be parsed as TWO-NAME-EXPRESSION and be disambiguated in post-processing
 (define-sw-parser-rule :CLOSED-EXPRESSION ()
   (:anyof
-   (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=")
+   (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=, <<")
    (1 :UNQUALIFIED-OP-REF     :documentation "Op reference or Variable reference")
    (1 :SELECTABLE-EXPRESSION  :documentation "Closed expression -- unambiguous termination")
    (1 :RESTRICTION            :documentation "restrict p e -or- (restrict p) e") ; new, per task 22
@@ -752,6 +752,8 @@ If we want the precedence to be optional:
    ;; "=" refers to the built-in Equals, but can also appear as a keyword in other rules
    ;; ((:tuple "=")   (make-equality-fun '(:|Equals|)    ':left-lcb ':right-lcb))
    ((:tuple "~=")  (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
+   ((:tuple "<<")  (make-fun '(:|RecordMerge|) (freshMetaTypeVar ':left-lcb ':right-lcb)
+			     ':left-lcb ':right-lcb))
    ))
 
 ;;; ------------------------------------------------------------------------

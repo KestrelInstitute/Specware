@@ -10,6 +10,7 @@ spec
   import /Languages/MetaSlang/Transformations/RemoveCurrying
   import /Languages/MetaSlang/Transformations/LambdaLift
   import /Languages/MetaSlang/Transformations/InstantiateHOFns
+  import /Languages/MetaSlang/Transformations/RecordMerge
 
 % --------------------------------------------------------------------------------
 % interface
@@ -110,6 +111,7 @@ spec
     %let _ = writeLine("transforming spec for C code generation...") in
     %let _ = writeLine("\n\n\n-----------------------------------------------------------") in
     %let _ = writeLine(printSpec spc) in
+    let spc = translateRecordMergeInSpec spc in
     let spc = identifyIntSorts spc in
     let spc = if addmissingfrombase?
 		then addMissingFromBase(basespc,spc,builtinSortOp)

@@ -9,7 +9,7 @@
  
 SpecEnvironment qualifying
 spec
- import StandardSpec
+ import Utilities
  import Printer
  import /Library/Legacy/DataStructures/ListPair
  %% importing TypecChecker is overkill
@@ -433,5 +433,43 @@ spec
   in
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
   res
+
+  op  maybeIntroduceVarsForTerms: MS.Term * List MS.Term * Spec -> MS.Term
+  def maybeIntroduceVarsForTerms(mainTerm,vterms,spc) =
+  %% Introduces variables for vterms if they occur in mainTerm and they are non-trivial
+    case filter(fn t -> ~(simpleTerm t) && (existsSubTerm (fn st -> st = t) mainTerm)) vterms of
+      | [] -> mainTerm
+      | rvterms ->
+	let (_,vbinds) =
+	      foldl (fn (t,(i,result)) -> (i+1,result ++ [(t,"tv--"^toString i,inferType(spc,t))]))
+	        (0,[]) rvterms
+	in
+	mkLet(map (fn (tm,v,s) -> (mkVarPat (v,s),tm)) vbinds,
+	      mapTerm ((fn t -> case find (fn (tm,_,_) -> t = tm) vbinds of
+				| Some(_,v,s) -> mkVar(v,s)
+				| None -> t),
+			id,id)
+		 mainTerm)
+
+  op  fieldAcessTerm: MS.Term * String * Spec -> MS.Term
+  def fieldAcessTerm(t,field,spc) =
+    case t of
+      | Record(fields,_) ->
+	(case getField(fields,field) of
+	  | Some fld -> fld
+	  | _ -> mkProjection(field,t,spc))	% Shouldn't happen
+      | _ -> mkProjection(field,t,spc)
+
+  op  mkProjection  : Id * MS.Term * Spec -> MS.Term
+  def mkProjection (id, term, spc) = 
+    let super_sort = termSort(term) in
+    case productOpt(spc,super_sort) of
+     | Some (fields) -> 
+       (case find (fn (id2, _) -> id = id2) fields of
+	 | Some (_,sub_sort) -> 
+	   mkApply (mkProject (id, super_sort, sub_sort),term)
+	 | _ -> System.fail "Projection index not found in product")
+     | _ -> System.fail "Product sort expected for mkProjectTerm"    
+
 
 endspec

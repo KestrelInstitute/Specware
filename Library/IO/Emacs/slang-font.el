@@ -30,7 +30,7 @@
 (defconst symbol-sep "[^-_?a-z0-9A-Z]")
 
 (defconst slang-definition-introducing-words
-  (regexp-opt '("spec" "module" "op" "sort" "espec" "espec-refinement" "stad" "mode"
+  (regexp-opt '("spec" "module" "op" "sort" "type" "espec" "espec-refinement" "stad" "mode"
 		"morphism" "diagram" "ip-scheme-morphism"
 		"ip-scheme" "conjecture" "axiom" "theorem"
 		"interpretation" "def"

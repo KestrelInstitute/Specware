@@ -238,6 +238,11 @@ spec
 	(case checkEquality(a,sb,spc,depth) of
 	  | Some b -> Bool (~ b)
 	  | None   -> Unevaluated(mkApply(ft,valueToTerm a)))
+      | Fun(RecordMerge,_,_) ->
+	(case a of
+	  | RecordVal[(_,RecordVal r1),(_,RecordVal r2)] ->
+	    RecordVal(mergeFields(r1,r2))
+	  | _ -> default()) 
       | Fun(Quotient,srt,_) ->
 	(case stripSubsorts(spc,range(spc,srt)) of
 	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,emptySubst,spc,depth+1),a)
@@ -266,6 +271,18 @@ spec
 	  else None)
       | _ -> None
         
+  def mergeFields(row1,row2) =
+    let def loop(row1,row2,merged) =
+          if row1 = [] then merged++row2
+	  else if row2 = [] then merged++row1
+	  else
+	  let (e1::r1,e2::r2) = (row1,row2) in
+	  case compare(e1.1,e2.1) of
+	    | Less    -> loop(r1,row2,merged++[e1])
+	    | Greater -> loop(row1,r2,merged++[e2])
+	    | Equal   -> loop(r1,r2,merged++[e2])
+    in loop(row1,row2,[])
+
   op  extendLetRecSubst: Subst * Subst * List Id -> Subst
   %% storedSb has all the environment except for the letrec vars which we get from dynSb
   def extendLetRecSubst(dynSb,storedSb,letrecIds) =

@@ -646,4 +646,12 @@ spec
    let {link,uniqueId,name} = ! v in
    (%%String.writeLine ("Linking "^name^Nat.toString uniqueId^" with "^printSort t);
    v := {link = Some t, uniqueId = uniqueId, name = name})
+
+ op  simpleTerm: MS.Term -> Boolean
+ def simpleTerm(term) = 
+   case term
+     of Var _ -> true
+      | Fun _ -> true
+      | _ -> false
+
 endspec

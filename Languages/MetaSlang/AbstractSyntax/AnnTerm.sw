@@ -171,6 +171,7 @@ MetaSlang qualifying spec {
   | PRelax         ATerm b
   | Op             QualifiedId * Fixity
   | Project        Id
+  | RecordMerge             % <<
   | Embed          Id * Boolean
   | Embedded       Id
   | Select         Id
@@ -582,6 +583,7 @@ MetaSlang qualifying spec {
 
      | (Op        x1,       Op        x2)       -> x1 = x2
      | (Project   x1,       Project   x2)       -> x1 = x2
+     | (RecordMerge,        RecordMerge )       -> true
      | (Embed     x1,       Embed     x2)       -> x1 = x2
      | (Embedded  x1,       Embedded  x2)       -> x1 = x2
      % | (Select    x1,       Select    x2)       -> x1 = x2
@@ -688,6 +690,7 @@ MetaSlang qualifying spec {
 
      | (Op        x1,       Op        x2)       -> x1 = x2
      | (Project   x1,       Project   x2)       -> x1 = x2
+     | (RecordMerge,        RecordMerge)        -> true
      | (Embed     x1,       Embed     x2)       -> x1 = x2
      | (Embedded  x1,       Embedded  x2)       -> x1 = x2
      % | (Select    x1,       Select    x2)       -> x1 = x2

@@ -485,17 +485,12 @@ PatternMatch qualifying spec {
       in
       Lambda([(pat,mkTrue(),t)],noPos)
 
-  def mkOptimizedIfThenElse(cond,thenBranch,elseBranch) = 
-      if isTrue(cond)
-	 then thenBranch
-      else mkIfThenElse(cond,thenBranch,elseBranch)
- 
   def match(context,vars,rules:Rules,default,break) = 
       (case vars
         of [] -> foldr 
                  (fn((_,cond,body),default) -> 
 		    failWith context 
-		    (mkOptimizedIfThenElse(cond,body,break))
+		    (Utilities.mkIfThenElse(cond,body,break))
 		    default) default rules
          | Cons _ -> 
 	   let rules = (partition ruleType rules) in
@@ -528,7 +523,7 @@ PatternMatch qualifying spec {
       let rulePartition = partitionConstructors(context,t,rules) in
       let rule = foldr 
 	           (fn ((query,newVars,lets,_,rules),default) ->   
-	            mkOptimizedIfThenElse
+	            Utilities.mkIfThenElse
 		      (query, mkLet(lets,
 				    match(context,newVars ++ terms,rules,break,break)),
 		       default))
@@ -549,9 +544,10 @@ PatternMatch qualifying spec {
                      rules
       in
       failWith context 
-	(mkIfThenElse(mkApply(pred,t),
-	           match(context,cons(t1,terms),rules,break,break),
-		   break))  default 
+	(Utilities.mkIfThenElse(mkApply(pred,t),
+				match(context,cons(t1,terms),rules,break,break),
+				break))
+	default 
   def matchQuotient(context:Context,t::terms,rules,default,break) = 
       let Quotient(srt,pred,_)  = unfoldBase(context.spc, inferType(context.spc,t))  in
 %%
