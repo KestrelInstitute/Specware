@@ -116,16 +116,18 @@
   (declare (cons xy))
   (< (the-rat (car xy)) (the-rat (cdr xy))))
 
-(defun <=-2 (x y)
-  (declare (rational x y))
-  (the boolean (<= x y)))
+; <= is defined in Rational.sw
+;(defun <=-2 (x y)
+;  (declare (rational x y))
+;  (the boolean (<= x y)))
 
 (define-compiler-macro <=-2 (x y)
   `(<= (the-rat ,x) (the-rat ,y)))
 
-(defun |!<=| (xy)
-  (declare (cons xy))
-  (<= (the-rat (car xy)) (the-rat (cdr xy))))
+; <= is defined in Rational.sw
+;(defun |!<=| (xy)
+;  (declare (cons xy))
+;  (<= (the-rat (car xy)) (the-rat (cdr xy))))
 
 (define-compiler-macro >-2 (x y)
   `(> (the-rat ,x) (the-rat ,y)))
