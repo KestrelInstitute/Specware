@@ -477,18 +477,22 @@
        (find-symbol "ILISP-COMPILE" "ILISP")))
 
 #-allegro
-(defun cd (&optional dir)
-  (let ((dir (if (equal dir "..")
-		 (namestring (specware::parent-directory (specware::current-directory)))
-	       (or dir (specware::getenv "HOME")))))
-    (specware::change-directory dir)
-    #+cmu (unix:unix-chdir dir)
-    (let ((newdir (namestring (specware::current-directory))))
-      (when (under-ilisp?)
-	(emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
-				      (specware::ensure-final-slash newdir))))
-      (princ newdir)
-      (values))))
+(defun cd (&optional (dir ""))
+  (if (equal dir "")
+      (setq dir (specware::getenv "HOME"))
+    (if (and (>= (length dir) 2) (equal (subseq dir 0 2) "~/"))
+	(setq dir (concatenate 'string (specware::getenv "HOME") (subseq dir 1)))))
+  #+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
+  #-cmu (specware::change-directory dir)
+  (let* ((dirpath (specware::current-directory))
+	 (newdir (namestring dirpath)))
+    #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
+    (when (under-ilisp?)
+      (emacs::eval-in-emacs (format nil "(setq default-directory ~s
+                                               lisp-prev-l/c-dir/file (cons default-directory nil))"
+				    (specware::ensure-final-slash newdir))))
+    (princ newdir)
+    (values)))
 
 #-allegro
 (defun ld (file)
@@ -565,9 +569,9 @@
 
 #-allegro
 (defun ls (&optional (str ""))
-  #+cmu  (ext:run-program "ls" (if (equal str "") () (list str)) :output t)
-  #+mcl  (ccl:run-program "ls" (if (equal str "") () (list str)) :output t)
-  #+sbcl (sb-ext:run-program "/bin/ls" (if (equal str "") () (list str)) :output t)
+  #+cmu  (ext:run-program "ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
+  #+mcl  (ccl:run-program "ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
+  #+sbcl (sb-ext:run-program "/bin/ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
   #-(or cmu mcl sbcl) (format t "Not yet implemented")
   (values))
 
