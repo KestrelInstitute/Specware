@@ -170,8 +170,8 @@ spec
  def freshVar(name0,sigma1,gamma) =
    let x = freshName(gamma,name0) in
    let xVar   = Var((x,sigma1),noPos) in
-   %let gamma1 = insert((x,sigma1),gamma) in
-   (xVar,gamma)
+   let gamma1 = insert((x,sigma1),gamma) in
+   (xVar,gamma1)
 
  %%% If sigma1 is a product produce a product of new vars
  op  freshVars: Id * Sort * Gamma -> MS.Term * Gamma

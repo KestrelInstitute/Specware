@@ -378,15 +378,15 @@ PatternMatch qualifying spec {
   sort DestructedRule = MS.Term * List(MS.Term) * List(Pattern * MS.Term) * Pattern * Rules
   op partitionConstructors : Context * MS.Term * Rules -> List(DestructedRule)
 
-  op freshVar : Context * Sort -> Var
-
+  op  freshVar : Context * Sort -> Var
   def freshVar(context,srt) = 
       let num = ! context.counter + 1 in
       (context.counter := num;
        ("pV" ++ (Nat.toString num),srt)
       )
 
-  def freshVars(num,context,pat:Pattern) = 
+  op  freshVars: Nat * Context * Pattern -> List (String * Var)
+  def freshVars(num,context,pat) = 
       if num = 0 
 	then [] 
       else
