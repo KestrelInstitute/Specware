@@ -499,8 +499,17 @@ op mkJavaOr: Java.Expr * Java.Expr -> Java.Expr
 def mkJavaOr (e1, e2) =
   CondExp (Bin (CdOr, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
 
-op mkJavaImplies : Java.Expr * Java.Expr -> Java.Expr % TODO: def?
-op mkJavaIff     : Java.Expr * Java.Expr -> Java.Expr % TODO: def?
+op mkJavaImplies : Java.Expr * Java.Expr -> Java.Expr
+def mkJavaImplies(e1,e2) =
+  let binExp = Un(Prim(Paren(e1))) in
+  let condExp = (Un(Prim(Bool true)),None) in
+  CondExp(binExp,Some(e2,condExp))
+
+op mkJavaIff     : Java.Expr * Java.Expr -> Java.Expr
+def mkJavaIff(e1,e2) =
+  let binExp = Un(Prim(Paren(e1))) in
+  let condExp = (Un(Un(LogNot,Prim(Paren(e2)))),None) in
+  CondExp(binExp,Some(e2,condExp))
 
 op mkJavaEq: Java.Expr * Java.Expr * Id -> Java.Expr
 def mkJavaEq(e1, e2, t1) =
