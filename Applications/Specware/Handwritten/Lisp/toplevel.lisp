@@ -472,87 +472,75 @@
 (defvar *make-verbose* t)
 
 (defun make (&rest args)
- (let* (
-	(make-args (if (not (null args)) 
-		       (cons (subst-home (first args)) (rest args))
-		     *last-make-args*))
-	(make-command (if (specware::getenv "SPECWARE4_MAKE") (specware::getenv "SPECWARE4_MAKE") "make"))
-	(user-make-file-suffix ".mk")
-	(sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
-	(make-file "swcmake.mk")
-	)
-       (progn
-	 (setq *last-make-args* make-args)
-	 (let* (
-		(unitid (first make-args))
-		(cbase (getCFileNameFromUnitid unitid))
-		(user-make-file (concatenate 'string cbase user-make-file-suffix))
-		(hw-src-1 (concatenate 'string cbase "_main.c"))
-		(hw-src-2 (concatenate 'string cbase "_test.c"))
-		(hw-src (if (IO-SPEC::fileExistsAndReadable hw-src-1) hw-src-1
-			  (if (IO-SPEC::fileExistsAndReadable hw-src-2) hw-src-2 nil)))
-		)
-	   (if make-args
-	       (progn
-		 (when *make-verbose* 
-		   (progn
-		     (format t ";; using make command:                     ~S~%" make-command)
-		     (format t ";; looking for user-defined make rules in: ~S~%" user-make-file)
-		     (format t ";; using system make rules in:             ~S~%" sw-make-file)
-		     (format t ";; generating local make rules in:         ~S~%" make-file)
-		     (when hw-src
-		       (format t ";; linking with handwritten source:        ~S~%" hw-src))
-		     (format t ";; invoking :swc ~A ~A~%" unitid cbase))
-		   )
-		 (funcall 'swc-internal (string unitid) (string cbase))
-		 (when *make-verbose* (format t ";; generating makefile ~S~%" make-file))
-		 (with-open-file (mf make-file :direction :output :if-exists :new-version)
-		   (progn
-		     (format mf "# ----------------------------------------------~%")
-		     (format mf "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT~%")
-		     (format mf "# ----------------------------------------------~%")
-		     (format mf "~%~%")
-		     (format mf "# the toplevel target extracted from the :make command line:~%")
-		     (format mf "all : ~A~%" cbase)
-		     (format mf "~%")
-		     (format mf "# include the predefined make rules and variable:~%")
-		     (format mf "include ~A~%" sw-make-file)
-		     (when (IO-SPEC::fileExistsAndReadable user-make-file)
-		       (progn
-			 (format mf "~%")
-			 (format mf "# include the existing user make file:~%")
-			 (format mf "include ~A~%" user-make-file))
-		       )
-		     (when hw-src
-		       (format mf "~%")
-		       (format mf "# handwritten source code; derived from unit-id by appending either \"_main.c\" or \"_test.c\":~%")
-		       (format mf "HWSRC = ~A~%" hw-src)
-		       )
-		     (format mf "~%")
-		     (format mf "# dependencies and rule for main target:~%")
-		     (format mf "~A: ~A.o $(HWSRC) $(USERFILES) $(GCLIB)~%" cbase cbase)
-		     (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)~%"
-			     cbase cbase)
-		     ))
-		 (when *make-verbose* (format t ";; invoking make~%"))
-		 (run-cmd make-command "-f" (format nil "~A" make-file))
-		 )
-	     ;; else: no make-args
-	     (progn
-	       (format t "No previous unit evaluated")
-	       (if (IO-SPEC::fileExistsAndReadable make-file)
-		   (progn
-		     (format t "; using existing make-file ~s...~%" make-file)
-		     (run-cmd make-command "-f" (format nil "~A" make-command make-file))
-		     )
-		 (format t " and no previous make-file found; please supply a unit-id as argument.~%")
-		 )
+  (let* ((make-args (if (not (null args)) 
+			(cons (subst-home (first args)) (rest args))
+		      *last-make-args*))
+	 (make-command (if (specware::getenv "SPECWARE4_MAKE") (specware::getenv "SPECWARE4_MAKE") "make"))
+	 (user-make-file-suffix ".mk")
+	 (sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
+	 (make-file "swcmake.mk"))
+    (setq *last-make-args* make-args)
+    (if  make-args
+	(let* ((unitid (first make-args))
+	       (cbase (getCFileNameFromUnitid unitid))
+	       (user-make-file (concatenate 'string cbase user-make-file-suffix))
+	       (hw-src-1 (concatenate 'string cbase "_main.c"))
+	       (hw-src-2 (concatenate 'string cbase "_test.c"))
+	       (hw-src (if (IO-SPEC::fileExistsAndReadable hw-src-1) hw-src-1
+			 (if (IO-SPEC::fileExistsAndReadable hw-src-2) hw-src-2 nil)))
 	       )
-	     )
-	   )
-	 )
-       )
- )
+	  (when *make-verbose* 
+	    (progn
+	      (format t ";; using make command:                     ~S~%" make-command)
+	      (format t ";; looking for user-defined make rules in: ~S~%" user-make-file)
+	      (format t ";; using system make rules in:             ~S~%" sw-make-file)
+	      (format t ";; generating local make rules in:         ~S~%" make-file)
+	      (when hw-src
+		(format t ";; linking with handwritten source:        ~S~%" hw-src))
+	      (format t ";; invoking :swc ~A ~A~%" unitid cbase))
+	    )
+	  (funcall 'swc-internal (string unitid) (string cbase))
+	  (when *make-verbose* (format t ";; generating makefile ~S~%" make-file))
+	  (with-open-file (mf make-file :direction :output :if-exists :new-version)
+	    (progn
+	      (format mf "# ----------------------------------------------~%")
+	      (format mf "# THIS MAKEFILE IS GENERATED, PLEASE DO NOT EDIT~%")
+	      (format mf "# ----------------------------------------------~%")
+	      (format mf "~%~%")
+	      (format mf "# the toplevel target extracted from the :make command line:~%")
+	      (format mf "all : ~A~%" cbase)
+	      (format mf "~%")
+	      (format mf "# include the predefined make rules and variable:~%")
+	      (format mf "include ~A~%" sw-make-file)
+	      (when (IO-SPEC::fileExistsAndReadable user-make-file)
+		(progn
+		  (format mf "~%")
+		  (format mf "# include the existing user make file:~%")
+		  (format mf "include ~A~%" user-make-file))
+		)
+	      (when hw-src
+		(format mf "~%")
+		(format mf "# handwritten source code; derived from unit-id by appending either \"_main.c\" or \"_test.c\":~%")
+		(format mf "HWSRC = ~A~%" hw-src)
+		)
+	      (format mf "~%")
+	      (format mf "# dependencies and rule for main target:~%")
+	      (format mf "~A: ~A.o $(HWSRC) $(USERFILES) $(GCLIB)~%" cbase cbase)
+	      (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)~%"
+		      cbase cbase)
+	      ))
+	  (when *make-verbose* (format t ";; invoking make~%"))
+	  (run-cmd make-command "-f" (format nil "~A" make-file)))
+      ;; else: no make-args
+      (progn
+	(format t "No previous unit evaluated")
+	(if (IO-SPEC::fileExistsAndReadable make-file)
+	    (progn
+	      (format t "; using existing make-file ~s...~%" make-file)
+	      (run-cmd make-command "-f" (format nil "~A" make-command make-file))
+	      )
+	  (format t " and no previous make-file found; please supply a unit-id as argument.~%")
+	  )))))
  
 
 #+allegro
@@ -567,18 +555,28 @@
 
 #-allegro
 (defun run-cmd (cmd &rest args)
-  #+cmu  (ext:run-program cmd args :output t)
-  #+mcl  (ccl:run-program cmd args :output t)
+  ;; cmu defaults for keywords args to run-program:
+  ;;   (env *environment-list*)
+  ;;   (wait t) 
+  ;;   pty 
+  ;;   input            if-input-does-not-exist 
+  ;;   output           (if-output-exists :error) 
+  ;;   (error :output)  (if-error-exists :error) 
+  ;;   status-hook
+  #+cmu  (ext:run-program cmd args :output t :error :output :wait t)
+  #+mcl  (ccl:run-program cmd args :output t :error :output :wait t)
   #+sbcl (sb-ext:run-program cmd args :output t)
-  #-(or cmu mcl sbcl) (format t "Not yet implemented")
+  #-(or cmu mcl sbcl) (warn "ignoring non-[ALLEGRO/CMU/MCL/SBCL] RUN-CMD : ~A~{ ~A~}" cmd args)
   (values))
 
 #+allegro
 (defun run-cmd (cmd &rest args)
-  #+UNIX      (shell (format nil "~A~{ ~A~}" cmd args))
-  #+MSWINDOWS (shell (format nil "~A~{ ~A~}" cmd args))
-  #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
-  )
+  (let ((cmd (format nil "~A~{ ~A~}" cmd args)))
+    ;; default for error-output seems to be some kind of problem
+    #+UNIX      (run-shell-command cmd :output t :error-output t :wait t) 
+    #+MSWINDOWS (run-shell-command cmd :output t :error-output t :wait t)
+    #-(OR UNIX MSWINDOWS) (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd))
+  (values))
   
 ;; --------------------------------------------------------------------------------
 
