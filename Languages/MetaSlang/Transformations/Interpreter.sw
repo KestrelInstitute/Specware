@@ -309,6 +309,9 @@ spec
 	  Unevaluated(mkLetWithSubst(substitute(t,substSb),letSb))
       | _ -> val
 
+
+  op mkLetWithSubst : MS.Term * List (MS.Var * MS.Term) -> MS.Term
+
   %% First list should contain second list as a tail
   op  ldiff: fa(a) List a * List a -> List a
   def ldiff(l1,l2) =
@@ -585,6 +588,17 @@ spec
     let def loop(i,result) =
           if i = n then result else loop(i+1,f(i,result))
     in loop(0,init)
+
+  op termToValue : MS.Term -> Value
+  def termToValue term =
+    case term of
+      | Fun (Nat n,srt,pos) -> Int n
+      | Fun (Char c,srt,pos) -> Char c
+      | Fun (String s,srt,pos) -> String s
+      | Record (flds,pos) -> RecordVal (map (fn (id,x) -> (id,termToValue x)) flds)
+      | Apply (Fun (Embed (id,b),srt,pos),t2,srt2) -> Constructor (id, termToValue t2)
+      | Fun (Embed (id,b),srt,pos) -> Constant id
+      | _ -> Unevaluated term
 
  endspec
 %%% 
