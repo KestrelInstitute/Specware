@@ -5,10 +5,10 @@ Prover qualifying spec
 
  op  axiomFromSortDefTop: Spec * Qualifier * Id * SortInfo -> Properties
  def axiomFromSortDefTop (spc, q, id, info) =
-   let _ = writeLine("axiomFromSortDefTop: "^id) in
+   %let _ = writeLine("axiomFromSortDefTop: "^id) in
    case info.dfn of
      | [(_, srt_def)] ->
-       let _ = writeLine(printSort(srt_def)) in
+       %let _ = writeLine(printSort(srt_def)) in
        let localSorts = spc.importInfo.localSorts in
 %       if memberQualifiedId (q, id, localSorts) then
 	 let sort_name = Qualified (q, id) in

@@ -585,7 +585,7 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 	  if exists (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
 	  let id_ = id ^ (getSortNameSuffix insttv) in
 	  let fun = Embedded (if modifyConstructors? then id_ else id) in
-	  let _ = writeLine("Generated: "^ printTerm(mkEmbedded(id_, srt1))) in
+	  %let _ = writeLine("Generated: "^ printTerm(mkEmbedded(id_, srt1))) in
 	  (fun, srt1, minfo)
        %| Boolean is same as default case
 	| _ -> (fun, srt1, minfo))
