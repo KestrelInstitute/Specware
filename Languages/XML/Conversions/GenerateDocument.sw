@@ -10,7 +10,14 @@ XML qualifying spec
   def convert_ms_name_to_xml_name (ms_name : String) : UString =
     %% coordinate with convert_xml_name_to_ms_name in InternalizeAux.sw
     %% they should be converses
-    ustring ms_name
+    let xml_name = ustring ms_name in
+    let reversed_xml_name = rev xml_name in
+    case reversed_xml_name of
+      | 112 :: 95 (* p _ *) :: tail ->
+        %%  "foo_p" => "foo?"
+        rev (cons (63 (* ? *), tail))
+      | _ -> 
+	xml_name
 
   def quote_special_chars (uchars : UChars) : UChars =
     case uchars of

@@ -11,7 +11,16 @@ XML qualifying spec
   def convert_xml_name_to_ms_name (xml_name : UString) : String =
     %% coordinate with convert_ms_name_to_xml_name in GenerateDocument.sw
     %% they should be converses
-    string xml_name
+    let reversed_xml_name = rev xml_name in
+    let adjusted_xml_name =
+        case reversed_xml_name of
+	  | 63 :: tail (* '?' *) -> 
+	    %%  "foo?" => "foo_p"
+	    rev (cons (112 (* p *), cons(95 (* _ *), tail)))
+	  | _ -> 
+	    xml_name
+    in
+      string adjusted_xml_name
 
   %% need to sanitize string before calling stringToInt
   def trim_whitespace (s : String) : String =
