@@ -39,9 +39,29 @@
 
 (defvar msWindowsSystem? #+mswindows t #-mswindows nil)
 
+;; The same function with the same name, but in a different package is
+;; defined in Specware4/Applications/Handwritten/Lisp/load-utilities.lisp
+(defun temporaryDirectory-0 ()
+  (ensure-final-slash
+   (namestring #+(or win32 winnt mswindows)
+	       (or (getenv "TEMP") (getenv "TMP")
+		   #+allegro
+		   (SYSTEM:temporary-directory))
+	       #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
+	       #+unix "/tmp/"
+	       )))
+
+;; The same function with the same name, but in a different package is
+;; defined in Specware4/Applications/Handwritten/Lisp/load-utilities.lisp
+(defun ensure-final-slash (dirname)
+  (if (member (elt dirname (- (length dirname) 1))
+	      '(#\/ #\\))
+      dirname
+    (concatenate 'string dirname "/")))
+
 ;;;  op temporaryDirectory : String
 (defparameter temporaryDirectory
-    (substitute #\/ #\\ (specware::temporaryDirectory-0)))
+    (substitute #\/ #\\ (temporaryDirectory-0)))
 
 ;;; op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a
 (defun withRestartHandler-3 (restart-msg restart-action body-action)
