@@ -250,7 +250,7 @@ TypeChecker qualifying spec
 	  (case findAllSorts (env.internal, given_sort_qid) of
 	     | [] -> 
                (error (env, 
-		       "Type identifier in "^(given_sort_str ())^" has not been declared", 
+		       "Type name "^(given_sort_str ())^" has not been declared", 
 		       pos);
 		Base (given_sort_qid, instance_sorts, pos))
 
