@@ -229,7 +229,7 @@ easy reference.
 ||  `target-code-term ::=
 ||      generate `target-language-name `spec-term [ in `string-literal ]
 ||  
-||  `target-language-name ::= lisp
+||  `target-language-name ::= c | java | lisp
 >>
 </para>
 </formalpara>

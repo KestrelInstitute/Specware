@@ -1326,7 +1326,7 @@ from elaborating the corresponding `spec-terms and
 ||`target-code-term ::=
 ||      generate `target-language-name `spec-term [ in `string-literal ]
 ||
-||`target-language-name ::= lisp
+||`target-language-name ::= c | java | lisp
 >>
 Sample `target-code-term:
 [[
@@ -1335,7 +1335,8 @@ Sample `target-code-term:
 ]]
 The elaboration of a `target-code-term for a correct `spec-term
 generates code in the language suggested by the
-`target-language-name (currently only Common Lisp); see further the
+`target-language-name (currently only C, Java, and Common Lisp);
+see further the
 &Specware; User Manual.
 </para>
 </section>
