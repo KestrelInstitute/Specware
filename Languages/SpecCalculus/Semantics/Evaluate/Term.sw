@@ -10,6 +10,7 @@ SpecCalc qualifying spec {
  import Let         
  import Qualify         
  import Diagram      
+ % import Colimit doesn't typecheck
  import SpecMorphism 
  import DiagMorphism 
  import Generate      
@@ -38,6 +39,8 @@ This is a monadic interpreter for the Spec Calculus.
     | SpecMorph fields -> SpecCalc.evaluateSpecMorph fields
 
     | Diag elems -> SpecCalc.evaluateDiag elems
+
+    % | Colimit sub_term -> SpecCalc.evaluateColimit sub_term
 
     | DiagMorph fields -> SpecCalc.evaluateDiagMorph fields
 

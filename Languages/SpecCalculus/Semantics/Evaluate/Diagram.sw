@@ -27,6 +27,11 @@ Lots of proof obligations. Needs thought.
 %%   sort NodeId = Name
 %%   sort EdgeId = Name
 
+\begin{spec}
+  sort Vertex.Elem = NodeId
+  sort Edge.Elem = EdgeId
+\end{spec}
+
 The conditions for a diagram expression to be valid include:
 \begin{itemize}
 \item A node must be labeled by a spec. Later this will
@@ -50,14 +55,61 @@ the typechecker complains. I don't understand it.
 
   def evaluateDiagElem dgm elem =
     case (valueOf elem) of
-      | Node (nodeId,term) -> return (emptyDiagram specCat)
-%%%          {
-%%%            value <- evaluateTerm term;
-%%%            case value of
-%%%              | Spec spc -> return (emptyDiagram specCat)
-%%%              | _ -> raise (TypeCheck (positionOf term, "diagram node not labeled with a spec"))
-%%%            % if member (vertices (shape dgm)) elem then
-%%%          }
-      | Edge (edgeId,domNode,codNode,term) -> return (emptyDiagram specCat)
+      | Node (nodeId,term) -> {
+           value <- evaluateTerm term;
+           case value of
+             | Spec spc -> addLabelledVertex dgm nodeId spc (positionOf term)
+             | _ -> raise (TypeCheck (positionOf term, "diagram node not labeled with a specification"))
+          }
+      | Edge (edgeId,domNode,codNode,term) -> {
+           value <- evaluateTerm term;
+           case value of
+             | Morph morph ->
+                if edgeInDiagram? dgm edgeId then
+                  if (domNode = eval (src (shape dgm)) edgeId)
+                   & (codNode = eval (target (shape dgm)) edgeId) then
+                    if (morph = edgeLabel dgm edgeId) then
+                      return dgm
+                    else
+                      raise (DiagError (positionOf term,
+                                        "edge "
+                                       ^ edgeId
+                                       ^ " inconsistently labeled in diagram"))
+                  else
+                    raise (DiagError (positionOf term,
+                                        "edge "
+                                       ^ edgeId
+                                       ^ " has inconsisent source and/or target"))
+                else {
+                    dgm <- addLabelledVertex dgm domNode (dom morph) (positionOf term);
+                    dgm <- addLabelledVertex dgm codNode (cod morph) (positionOf term);
+                    return (labelEdge (addEdge dgm edgeId domNode codNode) edgeId morph)
+                  }
+             | _ -> raise (TypeCheck (positionOf term, "diagram edge not labeled by a morphism"))
+           }
+\end{spec}
+
+edge is in diagram then the dom and cod must be the same as what we have
+and the edge must be labeled with the same morphism 
+if edge is not in the diagram then addLa
+
+\begin{spec}
+  op addLabelledVertex :
+       SpecCalc.Diagram (Spec,Morphism) 
+    -> Vertex.Elem
+    -> Spec
+    -> Position
+    -> Env (SpecCalc.Diagram (Spec,Morphism))
+  def addLabelledVertex dgm nodeId spc position =
+    if vertexInDiagram? dgm nodeId then
+      if (spc = vertexLabel dgm nodeId) then
+        return dgm
+      else
+        raise (DiagError (position,
+                            "node "
+                           ^ nodeId
+                           ^ " inconsistently labeled in diagram"))
+    else
+      return (labelVertex (addVertex dgm nodeId) nodeId spc)
 }
 \end{spec}
