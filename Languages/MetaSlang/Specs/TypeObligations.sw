@@ -355,7 +355,7 @@ spec
        let (gamma,trm) = bindPattern(gamma,p,tau1) in
        (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos))
      | QuotientPat(p,pred,_) 	-> 
-       let Quotient(tau1,_,_) = tau in
+       let Quotient(tau1,_,_) = unfoldBase(gamma,tau) in
        let (gamma,trm) = bindPattern(gamma,p,tau1)
        in
        (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos))

@@ -553,7 +553,7 @@ PatternMatch qualifying spec {
 	           match(context,cons(t1,terms),rules,break,break),
 		   break))  default 
   def matchQuotient(context:Context,t::terms,rules,default,break) = 
-      let Quotient(srt,pred,_)  = inferType(context.spc,t)  in
+      let Quotient(srt,pred,_)  = unfoldBase(context.spc, inferType(context.spc,t))  in
 %%
 %%    Given current implementation of choose, we compile
 %%     t1 = choose(fn x -> x) t 
