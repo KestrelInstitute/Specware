@@ -57,14 +57,14 @@
 spec  
  import A
  import /Library/Base/WFO
- op nonNeg? : Integer -> Boolean
+ op f : {p : Integer * Integer | p.1 > ~(p.2)} -> Nat
+ def f (x, y) = restrict(nonNeg?)(x + y)
+ op + infixl 25 : Nat * Nat -> Nat
  op WFO.wfo : fa(a) (a * a -> Boolean) -> Boolean
  def WFO.wfo pred = 
      fa(p : a -> Boolean) 
       ex(y : a) p y => ex(y : a) (p y & fa(x : a) (p x => ~(pred(x, y))))
- op + infixl 25 : Nat * Nat -> Nat
- op f : {p : Integer * Integer | p.1 > ~(p.2)} -> Nat
- def f (x, y) = restrict(nonNeg?)(x + y)
+ op nonNeg? : Integer -> Boolean
  conjecture f_Obligation is 
     fa(X : {p : Integer * Integer | p.1 > ~(p.2)}, n : Integer) 
 
