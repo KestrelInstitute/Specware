@@ -1,0 +1,7 @@
+Suppose you import Finite sets but map Elem.pp -> Id.pp
+finite sets also has a pp  but it applies to sets. 
+import or translate doesn't detect the conflict.
+
+Suppose you import something that defines an op f.  now you define A.f
+inside the spec.  Then you qualify the entire spec with A. You lose
+the original f.
