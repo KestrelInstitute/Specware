@@ -4,7 +4,7 @@
 
 
 ;;; The functions commented out acquire definitions from the compilation of Specware4.sw
-;;;  before they are used.
+;;;  before they are used.  [This wasn't true for concat-1 at least, so I restored its definition here.]
 
 (defun |!length| (x)
   (array-dimension x 0))
@@ -12,8 +12,8 @@
 (defun concat (x y)
   (concatenate 'string x y))
 
-;;; (defun concat-1 (x)
-;;;    (concatenate 'string (car x) (cdr x)))
+(defun concat-1 (x)
+  (concatenate 'string (car x) (cdr x)))
 
 (defun |!++| (x y)
   (concatenate 'string x y))

@@ -6,25 +6,25 @@
 
 
 ;;; The functions commented out acquire definitions from the compilation of Specware4.sw
-;;;  before they are used.
+;;;  before they are used.  [This wasn't true, so I restored several definitions here.]
 
 (defun toString (x)
   (string x))
 
-;;;  (defun isUpperCase (ch)
-;;;    (upper-case-p ch))
-;;;  
-;;;  (defun isLowerCase (ch)
-;;;    (lower-case-p ch))
+(defun isUpperCase (ch)
+  (upper-case-p ch))
+
+(defun isLowerCase (ch)
+  (lower-case-p ch))
 
 (defun isAlphaNum (ch)
   (alphanumericp ch))
 
-;;;  (defun isAlpha (ch)
-;;;    (alpha-char-p ch))
-;;;  
-;;;  (defun isAscii (ch)
-;;;    (standard-char-p ch))
+(defun isAlpha (ch)
+  (alpha-char-p ch))
+
+(defun isAscii (ch)
+  (standard-char-p ch))
 
 (defun isNum (ch)
   (and (<= 48 (char-code ch)) (<= (char-code ch) 57)))
@@ -32,11 +32,11 @@
 (defun toUpperCase (ch)
   (char-upcase ch))
 
-;;;  (defun toLowerCase (ch)
-;;;    (char-downcase ch))
-;;;  
-;;;  (defun ord (ch)
-;;;    (char-code ch))
+(defun toLowerCase (ch)
+  (char-downcase ch))
+
+(defun ord (ch)
+  (char-code ch))
 
 (defun chr (n)
   (code-char n))
