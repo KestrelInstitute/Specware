@@ -1,6 +1,0 @@
-Systems are closely related to functors over a free domain. Does it make
-sense fo use to have such systems where the functor is not freely generated.
-
-See the README file under Categories/Functors/FreeDomain for
-a discussion of how the maps in the these structures should be changed
-from Poly to maps that are Mono in their domain.

@@ -1,7 +1,0 @@
-There is an issue of how to handle imports. The point about imports
-is that they have been typechecked. Hence, when they are imported,
-they need not be checked again.
-
-One option might be to associate a flag with the opInfo to reflect whether
-the op has been typeChecked. This could be a mutable variable. Might be
-better to associate the flag with a term.
