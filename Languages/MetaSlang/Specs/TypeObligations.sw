@@ -712,7 +712,7 @@ spec
  def wfoSpecTerm = (UnitId(SpecPath_Relative{path = ["Library","Base","WFO"], hashSuffix = None}),noPos)
 
  def makeTypeCheckObligationSpec (spc,specCalcTerm) =
-   let spc = lambdaLift(instantiateHOFns(spc)) in
+   %let spc = lambdaLift(instantiateHOFns(spc)) in
    case getOptSpec (Some "/Library/Base/WFO") of
      | None -> fail "Error in processing /Library/Base/WFO"
      | Some wfoSpec ->
