@@ -345,7 +345,7 @@ If we want the precedence to be optional:
     ;;  (cdr tyVarsTerm) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
     (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector nil srtScheme (list (cons srtScheme term)))))
+                            (vector nil srtScheme (list (cons tyVars term))))) 
 	  (make-pos l r))))
 
 (defun bind-parameters (params term l r)
