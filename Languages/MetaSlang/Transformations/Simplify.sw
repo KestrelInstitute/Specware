@@ -291,7 +291,19 @@ spec
 		 simpSubstitute(spc,bod,sbst)))
        | _ -> if exists (fn cj -> equalTerm?(cj,bod)) cjs
 	       then mkTrue()
-	       else mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
+	       else
+		 let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
+		 if simplCJs = cjs
+		   then mkSimpBind(Forall,vs,mkSimpImplies(mkSimpConj cjs,bod))
+		   else simplifyForall spc (vs,simplCJs,bod)
+
+  op  simplifyConjunct: MS.Term * Spec -> List MS.Term 
+  def simplifyConjunct (cj,spc) =
+    case cj of
+      | Apply(Fun(Equals,_,_),Record([("1",Record(lhs_flds,_)),("2",Record(rhs_flds,_))],_),_) ->
+        map (fn ((_,lhs_e),(_,rhs_e)) -> mkEquality(inferType(spc,lhs_e),lhs_e,rhs_e))
+	  (zip(lhs_flds,rhs_flds))
+      | _ -> [cj]
 
   op  varNamesSet: List Var * List MS.Term -> StringSet.Set
   def varNamesSet(vs,tms) =
@@ -310,8 +322,8 @@ spec
 	     let new_vs = freeVars pat_tm in
 	     let (unique_vs,sb) = getRenamingSubst(new_vs,used_names) in
 	     if sb = []
-	       then Some(unique_vs,[mkEquality(termSort pat_tm,pat_tm,val)],let_body)
-	       else Some(unique_vs,[mkEquality(termSort pat_tm,substitute(pat_tm,sb),val)],
+	       then Some(unique_vs,[mkEquality(inferType(spc,pat_tm),pat_tm,val)],let_body)
+	       else Some(unique_vs,[mkEquality(inferType(spc,pat_tm),substitute(pat_tm,sb),val)],
 			 simpSubstitute(spc,let_body,sb))
 	   | _ -> None)
       | _ -> None
