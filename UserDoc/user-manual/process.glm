@@ -7,15 +7,15 @@
 <para>Unit definitions are processed by &Specware;. The user instructs
 &Specware; to process units by supplying certain commands. &Specware;
 has access, via the Lisp runtime environment, to the underlying file
-system, so it can access the unit definitions contained in <".sw">
-files. The environment variable &swpath; determines which <".sw">
-files are accessed by &Specware; to find unit definitions.</para>
+system, so it can access the <".sw"> files that define units. The
+environment variable &swpath; determines which <".sw"> files are
+accessed by &Specware; to find unit definitions.</para>
 
 <para>Processing a unit causes the recursive processing of the units
-referenced in the defining text of that unit. For instance, if a spec
-[[A]] extends a spec [[B]] which in turns extends a spec [[C]], then
-when [[A]] is processed, [[B]] and [[C]] are also processed. There
-must be no circularities in the chain of unit dependencies.</para>
+referenced in that unit's term. For instance, if a spec [[A]] extends
+a spec [[B]] which in turns extends a spec [[C]], then when [[A]] is
+processed, [[B]] and [[C]] are also processed. There must be no
+circularities in the chain of unit dependencies.</para>
 
 <para>Processing causes progress and/or error messages to be displayed
 in the XEmacs buffer containing the Lisp shell (which is also where
@@ -558,7 +558,7 @@ command:</para>
 
 </section>
 
-<section>
+<section id="swpath">
 <title>Inspecting and Setting &swpath;</title>
 
 <para>The value of the &swpath; environment variable is displayed on
@@ -575,9 +575,14 @@ via the following command:</para>
 ||    :swpath <string>
 ]]
 
-<para>As already explained, the string must be a colon-separated list
-of absolute directory paths of the underlying operating system,
-surrounded by double quotes.</para>
+<para>The [[L:<string>]] must be a colon-separated list of absolute
+directory paths of the underlying operating system, surrounded by
+double quotes.</para>
+
+<para>Changes to &swpath; only apply to the currently running
+&Specware; session. If &Specware; is quit and then restarted, &swpath;
+loses the value assigned to it during the previous session, reverting
+to its default value.</para>
 
 </section>
 

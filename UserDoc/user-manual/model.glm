@@ -48,7 +48,7 @@ deposited into a <".lisp"> file.</para>
 <para>&Specware; also features auxiliary commands to display
 information about units, inspect and clear the internal cache, and
 inspect and change an environment variable that determines how unit
-names are resolved to <".sw"> files.</para>
+identifiers are resolved to <".sw"> files.</para>
 
 </section>
 

@@ -4,48 +4,55 @@
 <section>
 <title>Conceptual Model</title>
 
-<para>A unit definition consists of a name and some defining text.
-The name identifies the unit and the text describes how the unit is
-constructed.</para>
+<para>A unit definition consists of a unit identifier and a unit term.
+The identifier identifies the unit and the term defines how the unit
+is constructed.</para>
 
 <para>An application developed with &Specware; consists of a set of
 unit definitions, some of which may come from libraries. Units have
-unique names within the application.</para>
+unique identifiers within the application.</para>
 
 <section>
-<title>Names</title>
+<title>Unit Identifiers</title>
 
-<para>A unit name is a finite, non-empty sequence of identifiers
-(identifiers are defined in the &Metaslang; grammar). The sequence of
-identifiers is essentially a ``path'' in a tree: the units comprising
-an application are organized in a tree.</para>
+<para>A unit identifier is a finite, non-empty sequence of word
+symbols (word symbols are defined in the &Metaslang; grammar).  The
+sequence of word symbols is essentially a ``path'' in a tree: the
+units comprising an application are organized in a tree.</para>
 
-<para>This provides a convenient and mundane way to organize the name
-space of the units comprising an application. Libraries are subtrees
-of the whole tree. Parallel development of different parts of an
-application can be carried out in different subtrees that can be later
-put together without any risk of name clashes.</para>
+<para>This provides a convenient and mundane way to organize the units
+comprising an application. Libraries are subtrees of the whole
+tree. Parallel development of different parts of an application can be
+carried out in different subtrees that can be later put together
+without risk of naming clashes.</para>
 
 </section>
 
 <section>
-<title>Defining Text</title>
+<title>Unit Terms</title>
 
-<para>The defining text of a unit is written in the &Metaslang;
-language. &Metaslang; features various operations to construct specs,
+<para>A unit term is text written in the &Metaslang;
+language. &Metaslang; features various ways to construct specs,
 morphisms, and all the other kinds of units. For instance, it is
 possible to construct a spec by explicitly listing its sorts, ops, and
-axioms.  It is also possible to construct a spec by applying the colimit
-operation to a diagram of specs and morphisms.</para>
+axioms.  It is also possible to construct a spec by applying the
+colimit operation to a diagram of specs and morphisms.</para>
 
-<para>The defining text of a unit may contain references to other
-units. For instance, a spec constructed by extending another one
-contains a references to the spec being extended. References can be
-absolute or relative, and they are resolved to units in the tree. The
-former consist in complete paths in the tree; the latter consist in
-partial paths that are combined with the path of the referencing unit
-(according to simple rules explained later) to form a complete path in
-the tree.</para>
+<para>A unit term may reference other units. For instance, a spec
+constructed by extending another one references the spec being
+extended.</para>
+
+<!-- LEFT OUT FOR NOW BECAUSE "ABSOLUTE" REFERENCES ARE REALLY
+RELATIVE TO SWPATH IN THE CURRENT IMPLEMENTATION, SO IT WOULD
+BE CONFUSING TO CALL THEM "ABSOLUTE":
+
+References can be absolute or relative, and they are
+resolved to units in the tree. The former are complete paths in the
+tree; the latter are partial paths that are combined with the path of
+the referencing unit (according to simple rules explained later) to
+form a complete path in the tree.
+
+-->
 
 </section>
 
@@ -58,7 +65,7 @@ the tree.</para>
 file system of the underlying operating system. The file system has
 essentially a tree structure. The tree of units comprising a
 &Specware; application is mapped to subtrees of the file system; the
-identifiers comprising a path are mapped to file and directory
+word symbols comprising a path are mapped to file and directory
 names.</para>
 
 <para>Future versions of &Specware; will have a more sophisticated UI
@@ -74,54 +81,34 @@ even be made totally transparent to the user.</para>
 defined by the environment variable &swpath;. Similarly to the
 ``path'' environment variable in operating systems, &swpath; is a
 string consisting of a colon-separated list of absolute directory
-paths in the file system.</para>
-
-<para>The value of &swpath; can be inspected by means of the following
-command (at the Lisp shell):</para>
-
-[[L:
-||    :swpath
-]]
-
-<para>The value of &swpath; can be changed by means of the following
-command:</para>
-
-[[L:
-||    :swpath <string>
-]]
-
-<para>The [[L:<string>]] must be a colon-separated list of absolute
-directory paths, surrounded by double quotes.</para>
-
-<para>Changes to &swpath; only apply to the currently running
-&Specware; session. If &Specware; is quit and then restarted, &swpath;
-loses the value assigned to it during the previous session, reverting
-to its default value.</para>
+paths in the file system. See <xref linkend="swpath"> for information
+on how to inspect and set &swpath;.</para>
 
 <para>Roughly speaking, the unit tree consist of all the units defined
-in <".sw"> files under the directories listed in &swpath;. The name of
-each unit is its path from the directory in &swpath; under which the
-file defining the unit is: i.e., if the unit is under directory
-<"dir">, its name is its absolute path in the file system ``minus''
-the <"dir"> prefix.  This approximate statement is made precise below
-and illustrated by examples.</para>
+in <".sw"> files under the directories listed in &swpath;. The
+identifier of each unit is its path from the directory in &swpath;
+under which the file defining the unit is: if the unit is under
+directory <"dir">, its identifier is its absolute path in the file
+system ``minus'' the <"dir"> prefix.  This approximate statement is
+made precise and illustrated by examples below.</para>
 
 </section>
 
 <section>
 <title>Single Unit in a File</title>
 
-<para>The simplest way to define a unit is to write its defining text
-into a <".sw"> file under one of the directories in &swpath;. The name
-of the unit is the name of the file, without <".sw">, prefixed by the
-path from the directory in &swpath; to the file.</para>
+<para>The simplest way to define a unit is to write its term into a
+<".sw"> file in the subtree of one of the directories in &swpath;. The
+identifier of the unit is the name of the file, without <".sw">,
+prefixed by the path from the directory in &swpath; to the
+file.</para>
 
 <para>For example, suppose that &swpath; includes the directory
 <"\users\me\specware"> (assuming the Windows operating system;
 currently, since &swpath; is colon-separated, it is not possible to
-use drive identifiers in directories; &Specware; automatically
-prefixes directories with <"c:">; this restriction will be removed in
-future versions of &Specware;). The user creates a file named <"A.sw">
+use drive letters in directories; &Specware; automatically prefixes
+directories with <"c:">; this restriction will be removed in future
+versions of &Specware;). The user creates a file named <"A.sw">
 immediately under the directory <"c:\users\me\specware\one\two">,
 containing the following text:</para>
 
@@ -133,10 +120,10 @@ containing the following text:</para>
 
 <para>The absolute path of the file in the file system is
 <"c:\users\me\specware\one\two\A.sw">. The unit is a spec containing
-just a sort [[X]]. The name of the unit is [[one/two/A]]. Note that
-the path components are separated by forward slashes ``/'', even
-though the underlying file system uses backward slashes ``\''. Unit
-names are sequences of identifiers separated by forward slashes,
+just a sort [[X]]. The identifier of the unit is [[/one/two/A]]. Note
+that the path components are separated by ``/'' (forward slash), even
+though the underlying file system uses ``\'' (backward slash). Unit
+identifier are sequences of word symbols separated by ``/'',
 regardless of the underlying operating system.</para>
 
 </section>
@@ -145,23 +132,23 @@ regardless of the underlying operating system.</para>
 <title>Multiple Units in a File</title>
 
 <para>It is also possible to put multiple units inside a <".sw">
-file. The file must be under one of the directories in
-&swpath;. Instead of just containing the defining text of a unit, the
-file contains one or more unit definitions. A unit definition consists
-of an identifier, an equal sign ``='', and defining text.</para>
+file. The file must be in the subtree of one of the directories in
+&swpath;. Instead of just containing a unit term, the file contains
+one or more unit definitions. A unit definition consists of a word
+symbol, ``='' (equal), and a unit term.</para>
 
 <para>This case works almost exactly as if the file were replaced by a
 directory with the same name (without <".sw">) containing one <".sw">
-file for every unit defined therein. Each such file has the identifier
-of the unit as name (plus <".sw">) and its defining text as
+file for every unit defined therein. Each such file has the word
+symbol of the unit as name (plus <".sw">) and the term of the unit as
 content.</para>
 
 <para>The only difference between the case of multiple units per file
 and the almost equivalent case where the file is replaced by a
 directory containing single-unit files, is that in the former case the
-last separator is not forward slash but the sharp sign ``#''. (This is
-reminiscent of the URI syntax, where subparts of a document are
-identified using the sharp sign.)</para>
+last separator is not ``/'' but ``#'' (sharp). (This is reminiscent of
+the URI syntax, where subparts of a document are referred to using
+``#''.)</para>
 
 <para>Suppose, as in the previous example, that &swpath; includes the
 directory <"\users\me\specware">. The user creates a file named
@@ -180,25 +167,25 @@ text:</para>
 ]]
 
 <para>This file defines two specs, one containing just a sort [[Y]],
-the other containing just a sort [[Z]]. The name of the first spec is
-[[one/two/three#B]], the name of the second spec is
+the other containing just a sort [[Z]]. The identifier of the first
+spec is [[/one/two/three#B]], the identifier of the second spec is
 [[one/two/three#C]].</para>
 
 <para>As a particular instance of the case of multiple units per file,
 it is possible to have just one unit definition in the file. This is
-different from just having defining text of a unit in a file. If the
-file contains a unit definition, then the identifier at the left of
-the equal sign is part of the unit's name, together with the sharp
-sign and the file path (relative to the directory in &swpath;).  If
-instead the file contains defining text for a unit, then the name of
-the unit is the file path (relative to the directory in &swpath;),
-without any sharp sign and additional identifier.</para>
+different from just having a unit term in a file. If the file contains
+a unit definition, then the word symbol at the left of ``='' is part
+of the unit's identifier, together with ``#'' and the file path
+(relative to the directory in &swpath;).  If instead the file contains
+a unit term, then the identifier of the unit is the file path
+(relative to the directory in &swpath;), without any ``#'' and
+additional word symbol.</para>
 
 <para>Despite the possibility of having one unit definition in a file,
 in this manual we use the term ``multiple-unit file'' to denote a file
 that contains one or more unit definitions. The term ``single-unit
-file'' is instead used to denote a file that only contains the
-defining text of a unit.</para>
+file'' is instead used to denote a file that only contains a unit
+term.</para>
 
 </section>
 
@@ -217,7 +204,7 @@ text editor. A possibility is to use XEmacs, which is started when
 XEmacs-&Specware; combo can be thought as a (rather limited)
 Integrated Development Environment (IDE).</para>
 
-<para>Note that unit definitions can be managed without starting
+<para>Note that unit definitions can be managed without running
 &Specware; at all. As described in the next chapter, &Specware; is
 used to process unit definitions. Future versions of &Specware; will
 provide true IDE functionality: unit definitions will be also managed
