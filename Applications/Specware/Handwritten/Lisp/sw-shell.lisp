@@ -18,12 +18,12 @@
     ("proc" . "[unit-term] Processes the unit. 
                   With no argument, processes the last processed unit.")
     ("p" . "[unit-term] Abbreviation for proc.")
+    ("cinit" . "Clears Spec unit cache.")    
     ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
     ("showx" . "[unit-term] Like `show' but shows all types and ops including imports.")
-    ("cinit" . "Clears Spec unit cache.")    
-    ("punits" . "[unit-term [filename]] Generates proof unit definitions for all conjectures in the unit and puts
+    ("punits" . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
-    ("lpunits" . "[unit-term [filename]] Like `punits' but only for local conjectures.")
+    ("lpunits" . "[unit-identifier [filename]] Like `punits' but only for local conjectures.")
     ("ctext" . "[spec-term] Sets the current context for eval commands.
                   With no arguments displays context.")
     ("eval" . "[expression] Evaluates expression with respect to current context.")
@@ -31,11 +31,11 @@
     ("eval-lisp" . "[expression] Like `eval' except the expression is translated to Lisp and evaluated in Lisp.")
     ("gen-lisp" . "[spec-term [filename]] Generates Lisp code for unit in filename.
                   With no argument uses last processed unit.")
-    ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates lisp for local definitions of spec.")
+    ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates Lisp for local definitions of spec.")
     ("gen-c" . "[spec-term [filename]] Generates C code for unit in filename.
                   With no argument uses last processed unit.")
     ("make" . "[spec-term] Generate C code with makefile and call make on it.")
-    ("gen-java" . "[spec-term [filename]] Generates Java code for unit in filename.
+    ("gen-java" . "[spec-term [option-spec]] Generates Java code for unit in filename.
                   With no argument uses last processed unit.")
 ; obsolete
 ;    ("j-config" . "Show configuration parameters for Java generation.")
@@ -43,12 +43,11 @@
 ;    ("j-config-make-public" . "[names] Set public names to be used by gen-java.")
 ;    ("j-config-pkg" . "[pkg] Set package name to be used by gen-java.")
 ;    ("j-config-reset" . "Restore default configuration parameters for Java generation.")
-    ("cf" . "[filename] Compile lisp file filename.")
-    ("ld" . "[filename] Load lisp file filename.")
-    ("cl" . "[filename] Compile and load lisp file filename.")
+    ("ld" . "[filename] Load Lisp file filename.")
+    ("cf" . "[filename] Compile Lisp file filename.")
+    ("cl" . "[filename] Compile and load Lisp file filename.")
     ("exit" . "Exits shell and Lisp.")
     ("quit" . "Alias for exit.")
-    ("ok"   . "Exits shell.")
     ))
 
 (defparameter *sw-shell-dev-help-strings*
