@@ -4133,7 +4133,7 @@ Sample `quotienter:
 ||     quotient (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 Restriction.
-Tconsihe `closed-expression of a `quotienter must have some sort
+The `closed-expression of a `quotienter must have some sort
 <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
