@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:35  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:54  weilyn
  * Added support for morphism nodes.
  *
@@ -89,6 +92,7 @@ public interface ElementPrinter {
     */
     public void markSort(SortElement element, int what)
     throws ElementPrinterInterruptException;
+
     /** Mark a notable point in a op element.
     * @param element the element
     * @param what which point
@@ -134,6 +138,13 @@ public interface ElementPrinter {
     public void markMorphism(MorphismElement element, int what)
     throws ElementPrinterInterruptException;        
 
+    /** Mark a notable point in a diagElem element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markDiagElem(DiagElemElement element, int what)
+    throws ElementPrinterInterruptException;
     /** Mark a notable point in a class element.
     * @param element the element
     * @param what which point
@@ -149,5 +160,12 @@ public interface ElementPrinter {
     */
     public void markColimit(ColimitElement element, int what)
     throws ElementPrinterInterruptException;    
-    
+
+    /** Mark a notable point in a uri element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    //public void markURI(URIElement element, int what)
+    //throws ElementPrinterInterruptException;    
 }
