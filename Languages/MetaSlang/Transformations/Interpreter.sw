@@ -69,7 +69,7 @@ spec
 	      | Some e -> e
 	      | None -> Unevaluated t)
 	  | Fun(fun,_,_) -> evalFun(fun,t,spc,depth)
-	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> time(evalRec(y,sb,spc,depth+1))
+	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> timeEvalRec(y,sb,spc,depth+1)
 	  | Apply(x,y,_) ->
 	    if nonStrict? x
 	      then evalApplyNonStrict(x,y,sb,spc,depth)
@@ -601,6 +601,11 @@ spec
 
        | _     -> default()
 
+  %% Separate function rather than in-line because in Allegro time compile with a closure
+  %% which gets created on each call even if not needed
+  op  timeEvalRec:  MS.Term * Subst * Spec * Nat -> Value
+  def timeEvalRec(t,sb,spc,depth) =
+    time(evalRec(t,sb,spc,depth))
 
   op  metaListToList: (Value | metaList?) -> List Value
   def metaListToList v =
