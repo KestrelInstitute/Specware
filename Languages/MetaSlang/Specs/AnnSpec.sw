@@ -3,7 +3,7 @@
 
 spec {
  import ../AbstractSyntax/AnnTerm   
- import /Legacy/Legacy/DataStructures/StringMap      % for qualifier maps
+ import /Library/Legacy/DataStructures/StringMapSplay % for qualifier maps
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                SpecRef

@@ -1,6 +1,6 @@
 % derived from SW4/Languages/MetaSlang/ADT/Terms/ATerm.sl, v1.2
 
-spec { 
+MetaSlang qualifying spec { 
  import /Library/Base
  import /Library/Legacy/State  % for MetaTyVar's
 
