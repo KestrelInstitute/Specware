@@ -31,7 +31,7 @@
 ;;;  NOTE: :LOCAL-VARIABLE      as :CLOSED-EXPRESSION would introduce ambiguities, so we parse as :ATOMIC-EXPRESSION and post-process
 ;;;
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 ;;;
 ;;;  NOTE: "{}" is parsed directly as :UNIT-PRODUCT-SORT,
 ;;;        but in the documentation, it's viewed as 0 entries in :SORT-RECORD
@@ -47,7 +47,7 @@
 
 ;;; These simplify life...
 
-;;; The rationale for :NON_KEYWORD_NAME --
+;;; The rationale for :NON-KEYWORD-NAME --
 ;;;
 ;;; If we were to use :SYMBOL everywhere in a rule, e.g.
 ;;;
@@ -59,10 +59,10 @@
 ;;;  (foo x y z)
 ;;; where the names x y z would be viewed as lisp variables.
 ;;;
-;;; But if we use :NON_KEYWORD_NAME instead, e.g.:
+;;; But if we use :NON-KEYWORD-NAME instead, e.g.:
 ;;;
 ;;; (define-sw-parser-rule :FOO ()
-;;;   (:tuple "foo" (1 :NON_KEYWORD_NAME) (2 :NON_KEYWORD_NAME) (3 :NON_KEYWORD_NAME))
+;;;   (:tuple "foo" (1 :NON-KEYWORD-NAME) (2 :NON-KEYWORD-NAME) (3 :NON-KEYWORD-NAME))
 ;;;   (foo 1 2 3)
 ;;;
 ;;; then after substitutions we'd get lisp forms such as
@@ -71,7 +71,7 @@
 ;;;
 ;;; There might be simpler schemes, but this works well enough...
 
-(define-sw-parser-rule :NON_KEYWORD_NAME ()
+(define-sw-parser-rule :NON-KEYWORD-NAME ()
   (1 :SYMBOL)
   (common-lisp::symbol-name (quote 1)))
 
@@ -79,7 +79,7 @@
   (:anyof "=" "is"))
 
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :NAME ()
   (:anyof
    ((:tuple "=")           "=")		; so we can use = (and "is" ?) as an op-name
@@ -91,7 +91,7 @@
    ((:tuple "print")       "print")	; so we can use print as a op-name
    ((:tuple "with")        "with")	; so we can use with as a op-name
    ((:tuple "Snark")       "Snark")	; so we can use Snark as a unit-identifier
-   ((:tuple (1 :NON_KEYWORD_NAME)) 1)
+   ((:tuple (1 :NON-KEYWORD-NAME)) 1)
    ))
 
 ;;; ========================================================================
@@ -211,7 +211,7 @@
 (define-sw-parser-rule :SC-UNIT-ID-ELEMENT ()
   (:anyof
    ((:tuple (1 :NAME))             1)
-   ((:tuple (1 :NUMBER_AS_STRING)) 1)	; e.g. ../foo/00/abc/..
+   ((:tuple (1 :NUMBER-AS-STRING)) 1)	; e.g. ../foo/00/abc/..
    ((:tuple "..")                  "..")
    ))
 
@@ -283,9 +283,9 @@
   1)
 
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :SORT-NAME ()
-  :NON_KEYWORD_NAME)
+  :NON-KEYWORD-NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;  QUALIFIABLE-OP-NAME 
@@ -347,7 +347,7 @@
   1)					; e.g. ("x" "y" "z") => (list "x" "y" "z")
 
 (define-sw-parser-rule :LOCAL-SORT-VARIABLE ()
-  (1 :NON_KEYWORD_NAME)			; don't allow "="
+  (1 :NON-KEYWORD-NAME)			; don't allow "="
   1)
 
 ;;; ------------------------------------------------------------------------
@@ -445,8 +445,8 @@ If we want the precedence to be optional:
 ;;;  TODO: In doc and code: The syntax for naming axioms is pretty ugly
 (define-sw-parser-rule :DESCRIPTION-ELEMENT ()
   (:anyof
-   :NON_KEYWORD_NAME
-   :NUMBER_AS_STRING
+   :NON-KEYWORD-NAME
+   :NUMBER-AS-STRING
    :STRING
    :CHARACTER
    "true" "false" "fa" "ex"
@@ -458,7 +458,7 @@ If we want the precedence to be optional:
    "_" "::" ":" "->" "|" "(" ")" "[" "]" "{" "}" "*" "." "/" ","
    ))
 
-(define-sw-parser-rule :NUMBER_AS_STRING ()
+(define-sw-parser-rule :NUMBER-AS-STRING ()
   (:tuple (1 :NUMBER))
   (format nil "~D" 1))
 
@@ -657,6 +657,7 @@ If we want the precedence to be optional:
 ;;;   http://www.specware.org/manual/html/expressions.html
 ;;; ========================================================================
 
+
 (define-sw-parser-rule :EXPRESSION ()
   (:anyof
    (1 :LAMBDA-FORM          :documentation "Function definition")
@@ -831,9 +832,9 @@ If we want the precedence to be optional:
   (make-annotated-variable 1 2 ':left-lcb ':right-lcb))
 
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
-;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
+;;;        but use :NON-KEYWORD-NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :LOCAL-VARIABLE ()
-  :NON_KEYWORD_NAME)
+  :NON-KEYWORD-NAME)
 
 ;;; ------------------------------------------------------------------------
 ;;;   ANNOTATED-EXPRESSION
