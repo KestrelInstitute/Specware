@@ -111,6 +111,7 @@ enters something bad. A ParserError is raised when the file parser fails.
     | FileNotFound  Position * RelativeURI
     | URINotFound  Position * RelativeURI
     | TypeCheck    Position * String
+    | TypeCheckErrors List(String * Position)
     %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
     | OldTypeCheck String              
     | Unsupported  Position * String

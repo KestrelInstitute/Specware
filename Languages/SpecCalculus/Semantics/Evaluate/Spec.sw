@@ -43,8 +43,8 @@ and then qualify the resulting spec if the spec was given a name.
     (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
-    full_spec <- explicateHiddenAxiomsM compressed_spec;
-    return (Spec full_spec,TS,depURIs)
+%    full_spec <- explicateHiddenAxiomsM compressed_spec;
+    return (Spec compressed_spec,TS,depURIs)
   }
 \end{spec}
 
@@ -132,10 +132,11 @@ such time as the current one can made monadic.
  def elaborateSpecM spc =
    { uri      <- getCurrentURI;
      filename <- return ((uriToPath uri) ^ ".sw");
-     hackMemory ();
+     %% No longer necessary
+     %% hackMemory ();
      case elaboratePosSpec (spc, filename) of
-       | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
-       | Error msg   -> raise  (OldTypeCheck msg)
+       | Spec spc    -> return spc
+       | Errors msgs -> raise (TypeCheckErrors msgs)
    }
 \end{spec}
 

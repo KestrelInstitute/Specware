@@ -195,7 +195,7 @@ spec {
    %% let _ = appSpec (fn x -> (), fn s -> addSort([],s,sorts, constrMap), fn p -> ()) spc
    in ! constrMap
 
- op  checkErrors : LocalEnv -> Option String
+ op  checkErrors : LocalEnv -> List(String * Position)
 
  def checkErrors(env:LocalEnv) = 
    let errors = env.errors in
@@ -205,42 +205,44 @@ spec {
            | c -> c     
    in
    let errors = MergeSort.uniqueSort compare (! errors) in
-   %% TODO:  UGH -- this could all be functional...
-   let errMsg    = (Ref "") : Ref String in
-   let last_file = (Ref "") : Ref Filename in
-   let def printError(msg,pos) = 
-       let same_file? = (case pos of
-                           | File (filename, left, right) ->
-                             let same? = (filename = (! last_file)) in
-                             (last_file := filename;                       
-			      same?)
-                           | _ -> false)
-       in
-         errMsg := (! errMsg) ^
-	           ((if same_file? then print else printAll) pos)
-                   ^" : "^msg^PrettyPrint.newlineString()
+   errors
+% Pass error handling upward
+%   %% TODO:  UGH -- this could all be functional...
+%   let errMsg    = (Ref "") : Ref String in
+%   let last_file = (Ref "") : Ref Filename in
+%   let def printError(msg,pos) = 
+%       let same_file? = (case pos of
+%                           | File (filename, left, right) ->
+%                             let same? = (filename = (! last_file)) in
+%                             (last_file := filename;                       
+%			      same?)
+%                           | _ -> false)
+%       in
+%         errMsg := (! errMsg) ^
+%	           ((if same_file? then print else printAll) pos)
+%                   ^" : "^msg^PrettyPrint.newlineString()
               
-   in
-   if null(errors) then 
-     None
-   else
-     (gotoErrorLocation errors;
-      app printError errors;
-      %               StringMap.app
-      %                (fn spc -> MetaSlangPrint.printSpecToTerminal 
-      %                                (convertPosSpecToSpec spc)) env.importMap;
-      Some(! errMsg)
-     )
+%   in
+%   if null(errors) then 
+%     None
+%   else
+%     (gotoErrorLocation errors;
+%      app printError errors;
+%      %               StringMap.app
+%      %                (fn spc -> MetaSlangPrint.printSpecToTerminal 
+%      %                                (convertPosSpecToSpec spc)) env.importMap;
+%      Some(! errMsg)
+%     )
 
-  def gotoErrorLocation errors = 
-   case errors of
-     | (first_msg, first_position)::other_errors ->
-        (case first_position of
-          | File (file, (left_line, left_column, left_byte), right) ->   
-            IO.gotoFilePosition (file, left_line, left_column)
-          | _ -> 
-            gotoErrorLocation other_errors)
-     | _ -> ()
+%  def gotoErrorLocation errors = 
+%   case errors of
+%     | (first_msg, first_position)::other_errors ->
+%        (case first_position of
+%          | File (file, (left_line, left_column, left_byte), right) ->   
+%            IO.gotoFilePosition (file, left_line, left_column)
+%          | _ -> 
+%            gotoErrorLocation other_errors)
+%     | _ -> ()
 
       
   def error(env as {errors,importMap,internal, (* specName, *) vars,

@@ -21,23 +21,25 @@ TypeChecker qualifying
 spec { 
   %% The TypeChecker function is elaboratePosSpec 
 
-  import /Library/Base
-  import /Library/Legacy/DataStructures/ErrorMonad
+%  import /Library/Base
+%  import /Library/Legacy/DataStructures/ErrorMonad
+%  import /Languages/SpecCalculus/Semantics/Environment
   import Infix
   import Utilities
-  import PosSpecToSpec       % for convertPSortSchemeToSortScheme
+  import PosSpecToSpec
 
   %% ========================================================================
 
   % sort Filename = String % see Position.sw
   sort Message  = String
+  sort Result = | Spec PosSpec | Errors (List(String * Position))
 
   %% ========================================================================
 
   % op elaboratePosSpecMaybeFail   : List Spec     * PosSpec                        -> PosSpec
   % op elaboratePosSpecReportError : List Spec     * PosSpec * Environment * String -> ErrorMonad.Result PosSpec
 
-  op elaboratePosSpec           : PosSpec * Filename (* * Option String * Boolean *) -> ErrorMonad.Result PosSpec
+  op elaboratePosSpec           : PosSpec * Filename -> Result
 
   op unlinkRec                  : PSort -> PSort
   op undeterminedSort?          : PSort -> Boolean
@@ -305,8 +307,8 @@ spec {
                  properties   = props_3}
    in
    case checkErrors (env_3) of
-    | None     -> Ok spec_3 : ErrorMonad.Result PosSpec
-    | Some msg -> Error msg
+    | []   -> Spec (convertPosSpecToSpec spec_3)
+    | msgs -> Errors msgs
  
  
   % ========================================================================

@@ -9,9 +9,11 @@
  
 SpecEnvironment qualifying
 spec {
- import Elaborate/TypeChecker
- %% Try to avoid importing Primitives0
- %import Primitives0   % ../built-in/primitives0.sl
+ import PosSpec
+ import Printer
+ import /Library/Legacy/DataStructures/ListPair
+ %% importing TypecChecker is overkill
+ %import Elaborate/TypeChecker
 
  sort SpecEnvironment = StringMap Spec
  sort Env             = SpecName * SpecEnvironment
@@ -25,8 +27,8 @@ spec {
  op inferType   : Spec * Term -> Sort
 
  op makeSpec            : Specs * PosSpec -> Spec
- op makeSpecReportError : Specs * PosSpec * Environment * String
-                          -> ErrorMonad.Result Spec
+% op makeSpecReportError : Specs * PosSpec * Environment * String
+%                          -> ErrorMonad.Result Spec
 
  op primitiveSpecNames : List String
  def primitiveSpecNames = ["Nat",
@@ -37,75 +39,6 @@ spec {
                            "General",
                            "List",
                            "TranslationBuiltIn"]
-
-% op primitiveSpecs : List Spec
-% def primitiveSpecs = []
-% def primitiveSpecs = [Primitives0.primNat,
-%                       Primitives0.primInteger,
-%                       Primitives0.primString,
-%                       Primitives0.primChar,
-%                       Primitives0.primBoolean,
-%                       Primitives0.primGeneral,
-%                       Primitives0.primList,
-%                       Primitives0.primTranslationBuiltIn]
-
-% op emptyEnv : Ref SpecEnvironment
-
-% def emptyEnv = Ref (makeEnv primitiveSpecs)
-
-% def empty () =
-%  ! emptyEnv
-
-
-% def empty4C () =
-%  ! emptyEnv
-
-% def makeEnv =
-%  foldr add_ StringMap.empty  
-
-% %% updateEmpty is used when building the primitive specs, to
-% %% control what environment "spec ... end-spec" constants import.
-% %% We should replace empty by a ref cell instead.
-
-% op updateEmpty : List Spec -> ()
-
-% def updateEmpty specs = 
-%  emptyEnv := makeEnv specs
-
- (*
-    let _ =
-      Lisp.apply(Lisp.symbol("LISP","SET"),
-         [Lisp.symbol("SPECENVIRONMENT","EMPTY"),
-          Lisp.cell(SpecEnvironment.mkEmpty specs)]) in
-    ()
-  *)
-
-% def add (specEnv, spc : Spec) =  
-%  StringMap.insert (specEnv, spc.name, spc)
-
-% def add_ (spc, env) = add (env, spc)
-
- %% makeSpec is called only from meta-slang-parser-semantics.lisp
- %% makeSpecV is called from some espec code
-% def makeSpec (specs, spc) = makeSpecV (specs, spc, true)
-% def makeSpecV (specs, spc, verbose) =
-%  let specs2 = StringMap.listItems (empty ()) in
-%  let spc = elaboratePosSpec (spc,"",verbose) in
-%  let spc = convertPosSpecToSpec spc in
-%  let primitive_specs = (mapPartial (fn nm -> StringMap.find (!emptyEnv, nm))
-%                                    primitiveSpecNames) in
-%  let visible_specs = specs ++ primitive_specs in
-%  %% The following just installs a mapping from spec names to specs.
-%  %% It does not affect the fields for sorts, ops, axioms, etc.
-%  %% It works by recursively finding specs among the visible_specs 
-%  %% whose names are given in the import list of the original or some
-%  %% imported spec.  
-%  %% Note: If visible_specs were null, this would create a null map, 
-%  %%       no matter how many spec names were in spc.imports.
-%  let spc = addImportedSpecs (spc, visible_specs) in
-%  % let spcimports = StringMap.toList(spc.importedSpecs) in
-%  % let spc = mergeImports(specs,spc) in
-%  spc
 
 % %% makeSpecReportError is called only from ui::loadFile
 % %%  (and from some mysterious GlueFront routines)

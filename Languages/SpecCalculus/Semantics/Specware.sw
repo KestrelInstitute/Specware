@@ -210,6 +210,32 @@ The following corresponds to the :show command.
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
+
+\begin{spec}
+  op evaluateURI_fromJava : String -> Boolean
+  def evaluateURI_fromJava path = 
+    let run = {
+      restoreSavedSpecwareState;
+      currentURI <- pathToCanonicalURI ".";
+      setCurrentURI currentURI;
+      %% removeSWsuffix could be generalized to extractURIpath
+      %% and then the code to create the position would use the
+      %% start and end positions of path_body within path
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      catch {
+        evaluateURI position uri;
+        return ()
+      } (fileNameHandler uri);
+      saveSpecwareState;
+      return true
+    } in
+    case catch run toplevelHandlerForJava ignoredState of
+      | (Ok val,_) -> val
+      | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
 When the lisp file for Specware is compiled and loaded, the following
 will initialize a lisp variable holding the initial state for the
 Specware environment. Subsequent invocations of the evaluate functions
@@ -277,6 +303,7 @@ sense that no toplevel functions return anything.
     {cleanupGlobalContext;		% Remove InProcess entries
      saveSpecwareState;			% So work done before error is not lost
      message <- return (printException except);
+     return (gotoErrorLocation except);
      if specwareWizard? then
        fail message
      else
@@ -331,6 +358,8 @@ sense that no toplevel functions return anything.
       | CircularDefinition uri ->
 		"Circular definition: " ^ showURI uri
 
+      | TypeCheckErrors errs -> printTypeErrors errs
+        
       %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
       | OldTypeCheck str ->
 		"Type errors:\n" ^ str
@@ -338,7 +367,99 @@ sense that no toplevel functions return anything.
       | _ -> 
 		"Unknown exception: " 
               ^ (System.toString except)
+
+  op printTypeErrors : List(String * Position) -> String
+  def printTypeErrors errs =
+    let def printErr((msg,pos),(result,lastfilename)) =
+          let filename = (case pos of
+			    | File (filename, left, right) -> filename
+			    | _ -> "")
+          in (result ^ (if filename = lastfilename then print pos else printAll pos)
+	       ^ " : " ^ msg ^ "\n",
+	      filename)
+    in
+    (foldl printErr ("","") errs).1
+	   
+  op gotoErrorLocation: Exception -> ()
+  def gotoErrorLocation except = 
+   case getFirstErrorLocation except of
+     | Some (File (file, (left_line, left_column, left_byte), right)) ->   
+       IO.gotoFilePosition (file, left_line, left_column)
+     | _ -> ()
+
+  op getFirstErrorLocation : Exception -> Option Position
+  def getFirstErrorLocation except =
+    case except of
+      | Unsupported  (position,_) -> Some position
+      | URINotFound  (position,_) -> Some position
+      | FileNotFound (position,_) -> Some position
+      | SpecError    (position,_) -> Some position
+      | MorphError   (position,_) -> Some position
+      | DiagError    (position,_) -> Some position
+      | TypeCheck    (position,_) -> Some position
+      | Proof        (position,_) -> Some position
+      | TypeCheckErrors errs      -> getFirstRealPosition errs
+      | _ -> None
+
+  op getFirstRealPosition : List (String * Position) -> Option Position
+  def getFirstRealPosition errs =
+    case errs of
+      | [] -> None
+      | (err,pos)::rest ->
+        (case pos of
+	   | File (file, (left_line, left_column, left_byte), right) ->
+	     if left_line = 0 & left_column = 0
+	       then getFirstRealPosition rest
+	      else Some pos
+	   | _ -> getFirstRealPosition rest)
 \end{spec}
+
+\begin{spec}
+  op toplevelHandlerForJava: Exception -> SpecCalc.Monad Boolean
+  def toplevelHandlerForJava except =
+    {cleanupGlobalContext;		% Remove InProcess entries
+     saveSpecwareState;			% So work done before error is not lost
+     return (reportExceptionToJava except);
+     return false}
+
+  op reportExceptionToJava: Exception -> ()
+  def reportExceptionToJava except =
+    case except of
+      | Unsupported  (position,msg) -> 
+        reportErrorAtPosToJava(position,"Unsupported operation: " ^ msg)
+      | URINotFound  (position,uri) ->
+	reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
+      | FileNotFound (position,uri) ->
+	reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
+      | SpecError    (position,msg) ->
+	reportErrorAtPosToJava(position,"Error in specification: " ^ msg)
+      | MorphError   (position,msg) ->
+	reportErrorAtPosToJava(position,"Error in morphism: " ^ msg)
+      | DiagError    (position,msg) ->
+	reportErrorAtPosToJava(position,"Diagram error: " ^ msg)
+      | TypeCheck    (position,msg) ->
+	reportErrorAtPosToJava(position,"Type error: " ^ msg)
+      | Proof        (position,msg) ->
+	reportErrorAtPosToJava(position,"Proof error: " ^ msg)
+      | TypeCheckErrors errs      -> reportTypeErrorsToJava errs
+      | _ -> reportErrorToJava("",0,0,printException except)
+
+  op reportTypeErrorsToJava : List(String * Position) -> ()
+  def reportTypeErrorsToJava errs =
+    app (fn (msg,pos) -> reportErrorAtPosToJava(pos,msg)) errs
+
+  op reportErrorAtPosToJava: Position * String -> ()
+  def reportErrorAtPosToJava(pos,msg) =
+    case pos of
+      | File (file, (left_line, left_column, left_byte), right) ->
+        reportErrorToJava(file,left_line,left_column,msg)
+      | _ -> reportErrorToJava("",0,0,msg)
+
+  op reportErrorToJava: String * Nat * Nat * String -> ()
+  %% defined in /Gui/src/Lisp/init-java-connection.lisp
+
+\end{spec}
+
 
 getBaseSpec is a bit of a hack used by colimit to avoid some bootstrapping 
 and typing issues.
