@@ -11,12 +11,13 @@ SpecCalc qualifying spec {
     case coerceToSpec value of
       | Spec spc ->
         {cURI <- SpecCalc.getURI cterm;
-	 lispFileName <- URItoLispFile (cURI, optFileName);
-	 let _ = ensureDirectoriesExist lispFileName in
-	 let _ = toLispFile (spc, lispFileName,[]) in
-	 return valueInfo}
+         lispFileName <- URItoLispFile (cURI, optFileName);
+         print (";;; Generating lisp file " ^ lispFileName ^ "\n");
+         let _ = ensureDirectoriesExist lispFileName in
+         let _ = toLispFile (spc, lispFileName,[]) in
+         return valueInfo}
       | _ -> raise (TypeCheck ((positionOf cterm),
-			       "attempting to generate code from an object that is not a specification"))
+                               "attempting to generate code from an object that is not a specification"))
        
 \end{spec}
 
@@ -32,7 +33,6 @@ Make a lisp file name for a URI.
          mainName <- lastElem path;
          fileName <- return ((uriToPath {path=prefix,hashSuffix=None})
                              ^ "/lisp/" ^ mainName ^ ".lisp");
-         print (";;; Generating lisp file " ^ fileName ^ "\n");
          return fileName}
 \end{spec}
 
