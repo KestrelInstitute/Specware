@@ -20,6 +20,7 @@
 	  (save-excursion
 	    (if (search-forward "(in-package " nil t nil new-buffer)
 		(with-current-buffer patch-file-buffer
+		  (font-lock-mode 0)	; Font lock have problems with large defs
 		  (goto-char (match-beginning 0) new-buffer)
 		  (insert-buffer-substring new-buffer (point new-buffer)
 					   (with-current-buffer new-buffer
