@@ -28,4 +28,22 @@ def identifyIntSorts(spc) =
 
 % --------------------------------------------------------------------------------
 
+(**
+ * transforms "let _ = t1 in t2" into "(t1;t2)"
+ *)
+op letWildPatToSeq: Spec -> Spec
+def letWildPatToSeq(spc) =
+  let
+    def lettoseq(t) =
+      case t of
+	| Let([(WildPat _,t1)],t2,b) -> 
+	  lettoseq(Seq([t1,t2],b))
+	| Seq((Seq(terms0,_))::terms,b) ->
+	  lettoseq(Seq(concat(terms0,terms),b))
+	| _ -> t
+  in
+  let sortid = (fn(s) -> s) in
+  let pattid = (fn(p) -> p) in
+  mapSpec (lettoseq,sortid,pattid) spc
+
 endspec

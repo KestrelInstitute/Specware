@@ -17,6 +17,18 @@ spec
 	let expr = CondExp(Bin(Plus,Un(Prim(Paren(argexpr1))),Un(Prim(Paren(argexpr2)))),None) in
 	Some ((s1++s2,expr,k,l),concatCollected(col1,col2))
     in
+    let
+      def intToString(t) =
+        let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
+	let expr = mkMethInvName((["String"],"valueOf"),[argexpr]) in
+	Some ((s,expr,k,l),col)
+    in
+    let
+      def stringToInt(t) =
+        let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
+	let expr = mkMethInvName((["Integer"],"parseInt"),[argexpr]) in
+	Some ((s,expr,k,l),col)
+    in
     case term of
       | Apply(Fun(Op(Qualified("String","writeLine"),_),_,_),t,_) -> 
         let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
@@ -45,6 +57,14 @@ spec
 	let opid = "substring" in
 	let expr = mkMethExprInv(argexpr1,opid,[argexpr2,argexpr3]) in
 	Some ((s1++s2++s3,expr,k,l),concatCollected(col1,concatCollected(col2,col3)))
+      | Apply(Fun(Op(Qualified("Nat","toString"),_),_,_),t,_) -> intToString(t)
+      | Apply(Fun(Op(Qualified("Nat","natToString"),_),_,_),t,_) -> intToString(t)
+      | Apply(Fun(Op(Qualified("Nat","show"),_),_,_),t,_) -> intToString(t)
+      | Apply(Fun(Op(Qualified("Integer","toString"),_),_,_),t,_) -> intToString(t)
+      | Apply(Fun(Op(Qualified("Integer","intToString"),_),_,_),t,_) -> intToString(t)
+      | Apply(Fun(Op(Qualified("Integer","show"),_),_,_),t,_) -> intToString(t)
+      | Apply(Fun(Op(Qualified("Integer","stringToInt"),_),_,_),t,_) -> stringToInt(t)
+      | Apply(Fun(Op(Qualified("Nat","stringToNat"),_),_,_),t,_) -> stringToInt(t)
       | _ -> None
 
 endspec

@@ -437,6 +437,7 @@ op specToJava : Spec -> JSpec
 
 def specToJava(spc) =
   let spc = identifyIntSorts spc in
+  let spc = letWildPatToSeq spc in
   %let _ = writeLine(printSpec spc) in
   %let _ = writeLine("Lifting Patterns") in
   %let spc = liftPattern(spc) in
