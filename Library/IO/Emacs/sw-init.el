@@ -1,7 +1,7 @@
 
 ;; This is called to start Specware. It is invoked by a command-line
 ;; argument to Xemacs. This spawns a Lisp process.
-(defun run-specware4 (in-current-dir?)
+(defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
   (let* ((root-dir (if in-current-dir?
 		       (if (stringp in-current-dir?)
@@ -222,3 +222,31 @@
 	     (run-lisp-application)
 	     (simulate-input-expression "(load \"load.lisp\")")
 	     (simulate-input-expression "(Bootstrap-Spec::compileAll)")))))
+
+(defun run-PSL ()
+  (interactive)
+  (let* ((root-dir (concat (getenv "SPECWARE4") "/"))
+	 (bin-dir (concat root-dir
+			  "Applications/PSL/bin/"
+			  (if (memq system-type '(ms-dos windows-nt windows-95
+						  ms-windows))
+			      "windows"
+			    (symbol-name system-type))))
+	 (world-name (concat bin-dir "/PSL.dxl")))
+
+    (setq fi:common-lisp-host "localhost")
+    (setq-default fi::lisp-host fi:common-lisp-host)
+    (setq fi:common-lisp-directory root-dir)
+    (setq fi:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
+    (setq fi:common-lisp-image-file world-name)
+    (setq fi:common-lisp-image-arguments nil ;'("+c")
+	  )
+
+    (fi:common-lisp fi:common-lisp-buffer-name
+		    fi:common-lisp-directory
+		    fi:common-lisp-image-name
+		    fi:common-lisp-image-arguments
+		    fi:common-lisp-host
+		    fi:common-lisp-image-file
+		    )
+    ))
