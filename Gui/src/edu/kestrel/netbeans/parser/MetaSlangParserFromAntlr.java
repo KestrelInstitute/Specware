@@ -630,16 +630,21 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	
 	private final void colon() throws RecognitionException, TokenStreamException {
 		
+		Token  t = null;
 		
 		try {      // for error handling
-			if (!(LT(1).getText().equals(":")))
-			  throw new SemanticException("LT(1).getText().equals(\":\")");
+			t = LT(1);
 			match(IDENTIFIER);
+			if (!(t.getText().equals(":")))
+			  throw new SemanticException("t.getText().equals(\":\")");
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_10);
+			
+			int line = t.getLine();
+			int column = t.getColumn();
+			String msg = "expecting \":\", found \"" + t.getText() + "\"";
+			throw new RecognitionException(msg, null, line);
+			
 		}
 	}
 	
@@ -1204,76 +1209,101 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	
 	private final void eq() throws RecognitionException, TokenStreamException {
 		
+		Token  t = null;
 		
 		try {      // for error handling
-			if (!(LT(1).getText().equals("=")))
-			  throw new SemanticException("LT(1).getText().equals(\"=\")");
+			t = LT(1);
 			match(IDENTIFIER);
+			if (!(t.getText().equals("=")))
+			  throw new SemanticException("t.getText().equals(\"=\")");
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_4);
+			
+			int line = t.getLine();
+			int column = t.getColumn();
+			String msg = "expecting \"=\", found \"" + t.getText() + "\"";
+			throw new RecognitionException(msg, null, line);
+			
 		}
 	}
 	
 	private final void rarrow() throws RecognitionException, TokenStreamException {
 		
+		Token  t = null;
 		
 		try {      // for error handling
-			if (!(LT(1).getText().equals("->")))
-			  throw new SemanticException("LT(1).getText().equals(\"->\")");
+			t = LT(1);
 			match(IDENTIFIER);
+			if (!(t.getText().equals("->")))
+			  throw new SemanticException("t.getText().equals(\"->\")");
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
+			
+			int line = t.getLine();
+			int column = t.getColumn();
+			String msg = "expecting \"->\", found \"" + t.getText() + "\"";
+			throw new RecognitionException(msg, null, line);
+			
 		}
 	}
 	
 	private final void star() throws RecognitionException, TokenStreamException {
 		
+		Token  t = null;
 		
 		try {      // for error handling
-			if (!(LT(1).getText().equals("*")))
-			  throw new SemanticException("LT(1).getText().equals(\"*\")");
+			t = LT(1);
 			match(IDENTIFIER);
+			if (!(t.getText().equals("*")))
+			  throw new SemanticException("t.getText().equals(\"*\")");
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
+			
+			int line = t.getLine();
+			int column = t.getColumn();
+			String msg = "expecting \"*\", found \"" + t.getText() + "\"";
+			throw new RecognitionException(msg, null, line);
+			
 		}
 	}
 	
 	private final void vbar() throws RecognitionException, TokenStreamException {
 		
+		Token  t = null;
 		
 		try {      // for error handling
-			if (!(LT(1).getText().equals("|")))
-			  throw new SemanticException("LT(1).getText().equals(\"|\")");
+			t = LT(1);
 			match(IDENTIFIER);
+			if (!(t.getText().equals("|")))
+			  throw new SemanticException("t.getText().equals(\"|\")");
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
+			
+			int line = t.getLine();
+			int column = t.getColumn();
+			String msg = "expecting \"|\", found \"" + t.getText() + "\"";
+			throw new RecognitionException(msg, null, line);
+			
 		}
 	}
 	
 	private final void slash() throws RecognitionException, TokenStreamException {
 		
+		Token  t = null;
 		
 		try {      // for error handling
-			if (!(LT(1).getText().equals("/")))
-			  throw new SemanticException("LT(1).getText().equals(\"/\")");
+			t = LT(1);
 			match(IDENTIFIER);
+			if (!(t.getText().equals("/")))
+			  throw new SemanticException("t.getText().equals(\"/\")");
 		}
 		catch (RecognitionException ex) {
-			reportError(ex);
-			consume();
-			consumeUntil(_tokenSet_0);
+			
+			int line = t.getLine();
+			int column = t.getColumn();
+			String msg = "expecting \"/\", found \"" + t.getText() + "\"";
+			throw new RecognitionException(msg, null, line);
+			
 		}
 	}
 	
@@ -1359,7 +1389,5 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	public static final BitSet _tokenSet_8 = new BitSet(_tokenSet_8_data_);
 	private static final long _tokenSet_9_data_[] = { 17523466565600L, 0L };
 	public static final BitSet _tokenSet_9 = new BitSet(_tokenSet_9_data_);
-	private static final long _tokenSet_10_data_[] = { 17523466532608L, 0L };
-	public static final BitSet _tokenSet_10 = new BitSet(_tokenSet_10_data_);
 	
 	}

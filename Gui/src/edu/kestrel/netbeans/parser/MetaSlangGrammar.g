@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:18  gilham
+ * Initial version.
+ *
  *
  */
 
@@ -358,28 +361,70 @@ private equals
 // caused (between the token and IDENTIFIER) if defined in the lexer.
 
 private colon
-    : {LT(1).getText().equals(":")}? IDENTIFIER
+    : t:IDENTIFIER          {t.getText().equals(":")}? 
     ;
+    exception
+    catch [RecognitionException ex] {
+       int line = t.getLine();
+       int column = t.getColumn();
+       String msg = "expecting \":\", found \"" + t.getText() + "\"";
+       throw new RecognitionException(msg, null, line);
+    }
 
 private eq
-    : {LT(1).getText().equals("=")}? IDENTIFIER
+    : t:IDENTIFIER          {t.getText().equals("=")}? 
     ;
+    exception
+    catch [RecognitionException ex] {
+       int line = t.getLine();
+       int column = t.getColumn();
+       String msg = "expecting \"=\", found \"" + t.getText() + "\"";
+       throw new RecognitionException(msg, null, line);
+    }
 
 private rarrow
-    : {LT(1).getText().equals("->")}? IDENTIFIER
+    : t:IDENTIFIER          {t.getText().equals("->")}? 
     ;
+    exception
+    catch [RecognitionException ex] {
+       int line = t.getLine();
+       int column = t.getColumn();
+       String msg = "expecting \"->\", found \"" + t.getText() + "\"";
+       throw new RecognitionException(msg, null, line);
+    }
 
 private star
-    : {LT(1).getText().equals("*")}? IDENTIFIER
+    : t:IDENTIFIER          {t.getText().equals("*")}? 
     ;
+    exception
+    catch [RecognitionException ex] {
+       int line = t.getLine();
+       int column = t.getColumn();
+       String msg = "expecting \"*\", found \"" + t.getText() + "\"";
+       throw new RecognitionException(msg, null, line);
+    }
 
 private vbar
-    : {LT(1).getText().equals("|")}? IDENTIFIER
+    : t:IDENTIFIER          {t.getText().equals("|")}? 
     ;
+    exception
+    catch [RecognitionException ex] {
+       int line = t.getLine();
+       int column = t.getColumn();
+       String msg = "expecting \"|\", found \"" + t.getText() + "\"";
+       throw new RecognitionException(msg, null, line);
+    }
 
 private slash
-    : {LT(1).getText().equals("/")}? IDENTIFIER
+    : t:IDENTIFIER          {t.getText().equals("/")}? 
     ;
+    exception
+    catch [RecognitionException ex] {
+       int line = t.getLine();
+       int column = t.getColumn();
+       String msg = "expecting \"/\", found \"" + t.getText() + "\"";
+       throw new RecognitionException(msg, null, line);
+    }
 
 //---------------------------------------------------------------------------
 //=============================   MetaSlangLexerFromAntlr   =============================
