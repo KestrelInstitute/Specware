@@ -371,7 +371,7 @@ spec {
   unfold to an arrow sort; if it doesn't unfold to an arrow, leave it unchanged.
   *)
 
-(* ### unused
+(* ### unused #NO! **)
  op unfoldToArrow: Spec * Sort -> Sort
  def unfoldToArrow (sp, srt) =
   let 
@@ -383,7 +383,7 @@ spec {
   case usrt
     of Arrow _ -> usrt
      | _       -> srt
-*)
+(* *)
 
 
  %- --------------------------------------------------------------------------------
