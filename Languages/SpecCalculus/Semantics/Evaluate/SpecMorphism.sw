@@ -6,6 +6,7 @@ SpecCalc qualifying spec {
   import Spec/CoerceToSpec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                                % for uidToString, if used...
+  import Spec/AccessSpec
 \end{spec}
 
 For morphisms, evaluate the domain and codomain terms, and check
@@ -23,15 +24,20 @@ coherence conditions of the morphism elements.
     case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
             morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm) (Some sm_tm);
+            verify_signature_mappings morph;
             return (Morph morph,max(domTimeStamp,codTimeStamp),
                     listUnion (domDepUIDs,codDepUIDs))
           }
       | (Other _, _) ->
-          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
-                             (coercedCodValue,codTimeStamp,codDepUIDs) morphRules (positionOf domTerm)
+        evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
+                               (coercedCodValue,codTimeStamp,codDepUIDs)
+                               morphRules 
+                               (positionOf domTerm)
       | (_, Other _) -> 
-          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
-                             (coercedCodValue,codTimeStamp,codDepUIDs) morphRules (positionOf codTerm)
+        evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
+                               (coercedCodValue,codTimeStamp,codDepUIDs)
+			       morphRules
+			       (positionOf codTerm)
       | (Spec _, _) -> raise
           (TypeCheck (positionOf domTerm,
                       "domain of spec morphism is not a spec"))
@@ -45,10 +51,14 @@ coherence conditions of the morphism elements.
     }
 
   op makeSpecMorphism : Spec -> Spec -> List (SpecMorphRule Position) -> Position -> Option SCTerm -> Env Morphism
-  def makeSpecMorphism domSpec codSpec rawMapping position opt_sm_tm = {
+  def makeSpecMorphism domSpec codSpec rawMapping position opt_sm_tm = 
+    {
       morph <- makeResolvedMapping domSpec codSpec rawMapping;
-      buildSpecMorphism domSpec codSpec morph position opt_sm_tm 
-    }
+      raise_any_pending_exceptions;
+      result <- buildSpecMorphism domSpec codSpec morph position opt_sm_tm;
+      raise_any_pending_exceptions;
+      return result
+     }
 
   op makeResolvedMapping :
         Spec
@@ -80,7 +90,7 @@ coherence conditions of the morphism elements.
 	    let found_qid as Qualified (found_q,_) = primarySortName info in
 	    {
 	     when (other_infos ~= [] && found_q ~= UnQualified)
-	       (raise (MorphError (position, "Ambiguous target sort " ^ (explicitPrintQualifiedId qid))));
+	       (raise (MorphError (position, "Ambiguous target type " ^ (explicitPrintQualifiedId qid))));
 	     return found_qid
 	    }
           | _ -> 
@@ -90,50 +100,62 @@ coherence conditions of the morphism elements.
 	      | (Qualified ("<unqualified>", "Boolean"), false) -> return Boolean_Boolean  % TODO: Deprecate "Boolean" as qualifier?
 	      | (Qualified ("Boolean",       "Boolean"), false) -> return qid              % TODO: Deprecate "Boolean" as qualifier?
 	      | (Qualified ("<unqualified>", "Boolean"), _) -> 
-	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean"))
+	        raise (MorphError (position, "Cannot map defined type " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean"))
 	      | (Qualified (q,               "Boolean"), _) -> 
-	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to " ^ q ^ ".Boolean"))
+	        raise (MorphError (position, "Cannot map defined type " ^ (explicitPrintQualifiedId dom_qid) ^ " to " ^ q ^ ".Boolean"))
 	      | _ ->
-	        raise (MorphError (position, "Unrecognized target sort " ^ (explicitPrintQualifiedId qid)))
+	        raise (MorphError (position, "Unrecognized target type " ^ (explicitPrintQualifiedId qid)))
 
       def insert (op_map,sort_map) ((sm_rule,position) : (SpecMorphRule Position)) =
-        case sm_rule of
+	case sm_rule of
           | Sort (dom_qid, cod_qid) ->
 	    (let dom_types = findAllSorts (dom_spec, dom_qid) in
 	     case dom_types of
 	       | info :: other_infos ->
-	         let Qualified (found_q, found_id) = primarySortName info in
+	         let primary_dom_qid as Qualified (found_q, found_id) = primarySortName info in
 		 {
 		  when (other_infos ~= [] && found_q ~= UnQualified)
-		    (raise (MorphError (position, "Ambiguous source sort " ^ (explicitPrintQualifiedId dom_qid))));
-		  case findAQualifierMap (sort_map, found_q, found_id) of
-		    | None -> 
-		      {
-		       cod_sort <- findCodSort position cod_qid dom_qid info.dfn;
-		       return (op_map, 
-			       insertAQualifierMap (sort_map, found_q, found_id, cod_sort))
-		      }
-		    | _ -> raise (MorphError (position, "Multiple rules for source sort " ^ (explicitPrintQualifiedId dom_qid)))
-		 }
-               | _ -> raise (MorphError (position, "Unrecognized source sort " ^ (explicitPrintQualifiedId dom_qid))))
+		    (raise (MorphError (position, "Ambiguous source type " ^ (explicitPrintQualifiedId dom_qid))));
+		  if basicSortName? primary_dom_qid then
+		    {
+		     raise_later (MorphError (position, "Illegal to translate from base type: " ^ (explicitPrintQualifiedId dom_qid)));
+		     return (op_map, sort_map)
+		    }
+		  else
+		    case findAQualifierMap (sort_map, found_q, found_id) of
+		      | None -> 
+		        {
+			 cod_sort <- findCodSort position cod_qid dom_qid info.dfn;
+			 return (op_map, 
+				 insertAQualifierMap (sort_map, found_q, found_id, cod_sort))
+			}
+		      | _ -> raise (MorphError (position, "Multiple rules for source type " ^ (explicitPrintQualifiedId dom_qid)))
+		  }
+               | _ -> raise (MorphError (position, "Unrecognized source type " ^ (explicitPrintQualifiedId dom_qid))))
 
           | Op ((dom_qid, opt_dom_sort), (cod_qid, opt_cod_sort)) ->
             %% TODO:  Currently ignores sort information.
 	    (let dom_ops   = findAllOps   (dom_spec, dom_qid) in
 	     case findAllOps (dom_spec, dom_qid) of
 	       | info :: other_infos ->
-	         let Qualified (found_q, found_id) = primaryOpName info in
+	         let primary_dom_qid as Qualified (found_q, found_id) = primaryOpName info in
 		 {
 		  when (other_infos ~= [] && found_q ~= UnQualified)
 		    (raise (MorphError (position, "Ambiguous source op " ^ (explicitPrintQualifiedId dom_qid))));
-		  case findAQualifierMap (op_map, found_q, found_id) of
-		    | None -> 
-		      {
-		       cod_op <- findCodOp position cod_qid;
-		       return (insertAQualifierMap (op_map, found_q, found_id, cod_op),
-			       sort_map)
-		      }
-		    | _ -> raise (MorphError (position, "Multiple rules for source op " ^ (explicitPrintQualifiedId dom_qid)))
+	          if basicOpName? primary_dom_qid then
+		     {
+		      raise_later (MorphError (position, "Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid)));
+		      return (op_map, sort_map)
+		     }
+		  else
+		    case findAQualifierMap (op_map, found_q, found_id) of
+		      | None -> 
+		        {
+			 cod_op <- findCodOp position cod_qid;
+			 return (insertAQualifierMap (op_map, found_q, found_id, cod_op),
+				 sort_map)
+			}
+		      | _ -> raise (MorphError (position, "Multiple rules for source op " ^ (explicitPrintQualifiedId dom_qid)))
 		 }
                | _ -> raise (MorphError (position, "Unrecognized source op " ^ (explicitPrintQualifiedId dom_qid))))
 
@@ -142,37 +164,49 @@ coherence conditions of the morphism elements.
 	     let dom_ops   = findAllOps   (dom_spec, dom_qid) in
 	     case (dom_sorts, dom_ops) of
 	       | ([], []) ->
-	         raise (MorphError (position, "Unrecognized source sort/op identifier " ^ (explicitPrintQualifiedId dom_qid)))
+	         raise (MorphError (position, "Unrecognized source type/op identifier " ^ (explicitPrintQualifiedId dom_qid)))
 	       | (info :: other_infos, [])  -> 
-		 let Qualified (found_q, found_id) = primarySortName info in
+		 let primary_dom_qid as Qualified (found_q, found_id) = primarySortName info in
 		 {
 		  when (other_infos ~= [] && found_q ~= UnQualified)
-		    (raise (MorphError (position, "Ambiguous source sort " ^ (explicitPrintQualifiedId dom_qid))));
-		  case findAQualifierMap (sort_map, found_q, found_id) of
-		    | None -> 
-		      {
-		       cod_sort <- findCodSort position cod_qid dom_qid info.dfn;
-		       return (op_map, 
-			       insertAQualifierMap (sort_map, found_q, found_id, cod_sort))
-		      }
-		    | _ -> raise (MorphError (position, "Multiple rules for source sort " ^ (explicitPrintQualifiedId dom_qid)))
-		   }
+		    (raise (MorphError (position, "Ambiguous source type " ^ (explicitPrintQualifiedId dom_qid))));
+		  if basicSortName? primary_dom_qid then
+		    {
+		     raise_later (MorphError (position, "Illegal to translate from base type: " ^ (explicitPrintQualifiedId dom_qid)));
+		     return (op_map, sort_map)
+		    }
+		  else
+		    case findAQualifierMap (sort_map, found_q, found_id) of
+		      | None -> 
+		        {
+			 cod_sort <- findCodSort position cod_qid dom_qid info.dfn;
+			 return (op_map, 
+				 insertAQualifierMap (sort_map, found_q, found_id, cod_sort))
+			}
+		      | _ -> raise (MorphError (position, "Multiple rules for source type " ^ (explicitPrintQualifiedId dom_qid)))
+		  }
 	       | ([], info :: other_infos) ->
-		 let Qualified (found_q, found_id) = primaryOpName info in
+		 let primary_dom_qid as Qualified (found_q, found_id) = primaryOpName info in
 		 {
 		  when (other_infos ~= [] && found_q ~= UnQualified)
 		    (raise (MorphError (position, "Ambiguous source op " ^ (explicitPrintQualifiedId dom_qid))));
-		  case findAQualifierMap (op_map, found_q, found_id) of
-		    | None -> 
-		      {
-		       cod_op <- findCodOp position cod_qid;
-		       return (insertAQualifierMap (op_map, found_q, found_id, cod_op),
-			       sort_map)
-		      }
-		    | _ -> raise (MorphError (position, "Multiple rules for source op " ^ (explicitPrintQualifiedId dom_qid)))
-		  }
+		  if basicOpName? primary_dom_qid then
+		    {
+		     raise_later (MorphError (position, "Illegal to translate from base op: " ^ (explicitPrintQualifiedId dom_qid)));
+		     return (op_map, sort_map)
+		    }
+		  else
+		    case findAQualifierMap (op_map, found_q, found_id) of
+		      | None -> 
+		        {
+			 cod_op <- findCodOp position cod_qid;
+			 return (insertAQualifierMap (op_map, found_q, found_id, cod_op),
+				 sort_map)
+			}
+		      | _ -> raise (MorphError (position, "Multiple rules for source op " ^ (explicitPrintQualifiedId dom_qid)))
+		   }
 	       | (_, _) ->
-		 raise (MorphError (position, "Ambiguous source sort/op identifier " ^ (explicitPrintQualifiedId dom_qid))))
+		 raise (MorphError (position, "Ambiguous source type/op identifier " ^ (explicitPrintQualifiedId dom_qid))))
     in
        foldM insert (emptyAQualifierMap,emptyAQualifierMap) sm_rules
 
@@ -226,5 +260,11 @@ Should we check to see if qid is in cod_map??
              | _ -> raise (MorphError (position, "No mapping for " ^ q ^ "." ^ id)) %return new_map
     in
       foldOverQualifierMap compl emptyMap dom_map
+
+  op verify_signature_mappings : Morphism -> Env ()
+  def verify_signature_mappings morp =
+    %% TODO:  bug 67 !!
+    return ()
+
 }
 \end{spec}
