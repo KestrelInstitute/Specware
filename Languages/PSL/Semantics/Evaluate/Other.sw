@@ -20,6 +20,23 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateOther other pos = 
     case other of
       | OscarDecls oscarSpecElems -> evaluateOscar oscarSpecElems
+      | Project (procName,unit,fileName) -> {
+          (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo unit;
+          case value of
+            | Other oscarSpec -> {
+                  newOscarSpec <- inlineProc oscarSpec (makeId procName);
+                  junk <-
+                    case ProcMap.evalPartial (procedures newOscarSpec, makeId procName) of
+                      | None -> raise (SpecError (noPos, "project: procedure " ^ (Id.show (makeId procName)) ^ " is not defined"))
+                      | Some proc -> {
+                           cSpec <- generateCProcedure emptyCSpec (makeId procName) proc;
+                           cSpec <- return (addInclude cSpec "matlab.h");
+                           return (toFile (fileName, format (80, ppCSpec cSpec)))
+                         };
+                  return (Other newOscarSpec,timeStamp,depUnitIds)
+                }
+            | _ -> raise (SpecError (positionOf unit, "Unit for inline is not an Oscar spec"))
+          }
       | Inline (procName,unit) -> {
           (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo unit;
           case value of

@@ -25,6 +25,7 @@
    (1 :SC-PSL-DEFINITION)
    (1 :SC-PSL-SPECIALIZE)
    (1 :SC-PSL-INLINE)
+   (1 :SC-PSL-PROJECT)
    (1 :SC-GENERATE))
   1)
 
@@ -49,6 +50,9 @@
   (:tuple "inline" (1 :STRING) "in" (2 :SC-TERM))
   (OscarAbsSyn::mkInline-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
+(define-sw-parser-rule :SC-PSL-PROJECT ()
+  (:tuple "project" (1 :STRING) "in" (2 :SC-TERM) "to" (3 :STRING))
+  (OscarAbsSyn::mkProject-4 1 2 3 (make-pos ':left-lcb ':right-lcb)))
 
 ;;; The following is almost the same a SPEC-ELEM. The difference is the
 ;;; introduction of PROCDEF.

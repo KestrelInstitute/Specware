@@ -168,8 +168,8 @@ Convert qualifying spec
       return []
     else {
         (graph,n,visited) <- convertBSpecAux bSpec (final bSpec) FinitePolyMap.empty 0 (initial bSpec) FinitePolyMap.empty;
-        print "convertBSpec VList =\n";
-        print (printVList (mapToList visited));
+        % print "convertBSpec VList =\n";
+        % print (printVList (mapToList visited));
         g <- return (sortGraph (fn ((n,_),(m,_)) -> n < m) (mapToList graph));
         g <- return (addPredecessors (map (fn (x,y) -> y) g));
         % print "\nconvertBSpec NCList after sort\n";
@@ -302,10 +302,10 @@ are no longer needed. *)
       invars <- foldVariants (fn l -> fn claim -> return (cons (term claim,l))) [] (modeSpec (transSpec transition));
       invars <- foldVariables infoToBindings invars (modeSpec (transSpec transition));
       term <- case invars of
-        | [] -> {
-             print ("convertBSpecAux: no axiom for edge" ^ (Edg.show (edge transition)) ^ "\n");
+        | [] -> %{
+             % print ("convertBSpecAux: no axiom for edge" ^ (Edg.show (edge transition)) ^ "\n");
              MSlangEnv.mkTuple ([],noPos)
-           }
+           %}
         | [term] -> return term
         | _ -> raise (SpecError (noPos, ppFormat (ppConcat [
                         ppString ("Something wrong with spec properties for edge " ^ (Edg.show (edge transition)) ^ "\n"),

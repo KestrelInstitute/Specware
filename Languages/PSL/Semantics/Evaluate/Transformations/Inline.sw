@@ -63,6 +63,8 @@ Inline qualifying spec
 
   op BSpec.reindex : BSpec -> BSpec
 
+  op MetaSlangRewriter.traceRewriting : Nat
+
   op remove : ProcMap.Map * Id.Id -> ProcMap.Map
 
   op inlineProc : Oscar.Spec -> Id.Id -> Env Oscar.Spec 
@@ -185,7 +187,8 @@ copies fills in the calling arguments.
                 case evalPartial (procs, procInfo.procId) of
                   | None -> raise (SpecError (noPos, "inlineTransition: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
-              print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
+              when (traceRewriting > 0)
+                (print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n"));
               (newBSpec,procVisited) <- foldM (inlineTransition procs src newDst (bSpec proc) (returnInfo proc) newLHSRef)
                 (newBSpec,[]) (outTrans (bSpec proc) (initial (bSpec proc)));
               return (newBSpec,visited)
@@ -199,6 +202,8 @@ copies fills in the calling arguments.
                 case evalPartial (procs, procInfo.procId) of
                   | None -> raise (SpecError (noPos, "inlineTransition: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
+              when (traceRewriting > 0)
+                (print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n"));
               print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
               (newBSpec,procVisited) <- foldM (inlineTransition procs src newDst (bSpec proc) (returnInfo proc) newLHSRef)
                   (newBSpec,[]) (outTrans (bSpec proc) (initial (bSpec proc)));

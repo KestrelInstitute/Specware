@@ -198,6 +198,22 @@ the base types in C. For instance \verb+typedef int Integer+.
          let _ = writeLine ("sortToCType: unsupported type: " ^ (printSort srt)) in
          Void
    
+  op addInclude : CSpec -> String -> CSpec
+  def addInclude cSpec inc = {
+      includes    = cons (inc, cSpec.includes),
+      defines     = cSpec.defines,
+      constDefns  = cSpec.constDefns,
+      vars        = cSpec.vars,
+      extVars     = cSpec.extVars,
+      fns         = cSpec.fns,
+      axioms      = cSpec.axioms,
+      typeDefns   = cSpec.typeDefns,
+      structDefns = cSpec.structDefns,
+      unionDefns  = cSpec.unionDefns,
+      varDefns    = cSpec.varDefns,
+      fnDefns     = cSpec.fnDefns
+    }
+
   op addVarDecl : CSpec -> String -> Type -> CSpec
   def addVarDecl cSpec name type = {
       includes    = cSpec.includes,
@@ -290,12 +306,19 @@ later to unfold sort definitions.
           let cStruct = termToCExp term in
           StructRef (cStruct,id)
           % StructRef (Apply (Unary Contents, [cStruct]),id)
+      | Apply (Fun (Op (Qualified (_,"eval"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),fxty),srt,pos)),("2",Fun (Nat n,_,_))],_),_) ->
+          if n = 0 then
+            Apply (Unary Contents, [Var ("sp",sortToCType srt)])
+          else
+            Apply (Unary Contents, [Apply (Binary Add, [Var ("sp",sortToCType srt), Const (Int (true,n))])])
       | Apply (Apply (Fun (Op (Qualified ("Array","index"),fxty),srt,pos), arrayTerm,_), indexTerm,_) ->
           let cArray = termToCExp arrayTerm in
           let cIndex = termToCExp indexTerm in
           ArrayRef (cArray,cIndex)
       | Apply (Fun (Op (Qualified ("Store","deref"),fxty),srt,pos), arg,_) ->
           Apply (Unary Contents, [termToCExp arg])
+      | Apply (Fun (Embed ("Number",_),srt,_),arg,_) -> termToCExp arg
+      | Apply (Fun (Embed ("Int",_),srt,_),arg,_) -> termToCExp arg
       | Apply (Fun (Op (Qualified ("Double","fromNat"),fxty),srt,pos), arg,_) -> termToCExp arg
       | Apply (Fun (Op (Qualified ("Double","sqrt"),fxty),srt,pos), arg,_) ->
           Apply (Var ("sqrt",Fn ([Double],Double)), [termToCExp arg])
