@@ -44,7 +44,7 @@
 	       (setq max-index post-index))
 	      ((= post-index max-index)
 	       (push node max-nodes)))))
-    (when (> max-index (+ pre-index min-size))
+    (when (>= max-index (+ pre-index min-size))
       ;;
       (unless (= prior-post-index pre-index) 
 	;; (when 
