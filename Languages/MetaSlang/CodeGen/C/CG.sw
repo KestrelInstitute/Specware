@@ -105,6 +105,7 @@ spec
   op transformSpecForCodeGenAux: AnnSpec.Spec -> AnnSpec.Spec -> Boolean -> AnnSpec.Spec
   def transformSpecForCodeGenAux basespc spc addmissingfrombase? =
     %let _ = showSorts spc in
+    %let _ = writeLine(";;; generating C code...") in
     %let _ = writeLine("-----------------------------------------------------------\n\n\n") in
     %let _ = writeLine("transforming spec for C code generation...") in
     %let _ = writeLine("\n\n\n-----------------------------------------------------------") in
@@ -115,7 +116,6 @@ spec
 	      else spc
     in
     let spc = removeCurrying spc in
-    %let _ = writeLine(printSpec spc) in
     let spc = instantiateHOFns spc in
     %let _ = writeLine(printSpec spc) in
     %let spc = lambdaToInner spc in
@@ -128,6 +128,8 @@ spec
     let (spc,constrOps) = addSortConstructorsToSpec spc in
     let spc = conformOpDecls spc in
     let spc = adjustAppl spc in
+    let spc = instantiateHOFns spc in
+    %let _ = writeLine(printSpec spc) in
     spc
 
   def generateCSpec basespc spc =
@@ -177,9 +179,9 @@ spec
     return (printToFile(cspec,optFile))
 
   def generateCCode(basespc, spc, _ (*fullspec*), optFile) =
-    let _ = writeLine(";; bit-string special translation is turned "^
-		      (if bitStringSpecial then "on" else "off"))
-    in
+    %let _ = writeLine(";; bit-string special translation is turned "^
+%		      (if bitStringSpecial then "on" else "off"))
+%    in
     let cspec = generateCSpec basespc spc in
     printToFile(cspec,optFile)
 

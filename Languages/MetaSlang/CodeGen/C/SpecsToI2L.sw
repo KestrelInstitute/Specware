@@ -474,9 +474,12 @@ SpecsToI2L qualifying spec {
     let def qid2declid(qid) =
           case qid of
             | Qualified(spcname,name) -> (spcname,name)
-        def getParamNames(t) =
+        def qid2str(Qualified(q,id)) =
+	  if q = UnQualified then id else q^"."^id
+        def getParamNames(ctxt,t) =
 	  %let _ = System.print(t) in
-	  let errmsg = "this form of operator definition is not yet supported:\n"^
+	  let def errmsg ctxt = (case ctxt.currentOpSort of Some qid -> "in op "^(qid2str qid)^":\n" | _ -> "")^
+	               "unsupported operator definition format:\n"^
 	               "       "^printTerm(t)
 	  in
 	  case t of
@@ -485,12 +488,12 @@ SpecsToI2L qualifying spec {
 	      (case pat of
 		 | VarPat((id,_),_) -> [id]
 		 | RecordPat(plist,_) -> List.map (fn | (_,VarPat((id,_),_)) -> id
-						      | _ -> System.fail(errmsg)) plist
-		 | _ -> System.fail errmsg
+						      | _ -> System.fail(errmsg ctxt)) plist
+		 | _ -> System.fail (errmsg ctxt)
 		)
 	      in
 	      (plist,bodyterm)
-	    | _ -> System.fail(errmsg)
+	    | _ -> System.fail(errmsg ctxt)
     in
     let id as (spcname,lid) = qid2declid(qid) in
     let id0 = (spcname,"__"^lid^"__") in
@@ -513,7 +516,9 @@ SpecsToI2L qualifying spec {
 				params = params,
 				returntype = rtype
 			       }
-	     | (tvs,term)::_ -> let (pnames,bodyterm) = getParamNames(term) in
+	     | (tvs,term)::_ ->
+		            let term = liftUnsupportedPattern(spc,term) in
+		            let (pnames,bodyterm) = getParamNames(ctxt,term) in
 	                    let decl = {
 					name = id,
 					params = zip(pnames,types),
@@ -534,6 +539,27 @@ SpecsToI2L qualifying spec {
 
     res
 
+  op liftUnsupportedPattern: Spec * Term -> Term
+  def liftUnsupportedPattern(spc,t) =
+    let b = termAnn(t) in
+    case t of
+      | Lambda([(pat,_,bodyterm)],_) ->
+        (case pat of
+	   | VarPat _ -> t
+	   | RecordPat(plist,_) -> 
+	     if all (fn | (_,VarPat _) -> true | _ -> false) plist then t
+	     else
+	       %let _ = writeLine("unsupported pattern in operator definition: "^(printPattern pat)) in
+	       let ty = inferType(spc,t) in
+	       let varx:Term = Var(("x",ty),b) in
+	       let appl = Apply(t,varx,b) in
+	       let varpatx = VarPat(("x",ty),b) in
+	       let newt = Lambda([(varpatx,mkTrue(),appl)],b) in
+	       let _ = writeLine("new term: "^(printTerm newt)) in
+	       newt
+	   | _ -> t
+	       )
+      | _ -> t
 
   % --------------------------------------------------------------------------------
 
@@ -949,6 +975,10 @@ SpecsToI2L qualifying spec {
       | (Fun(Op(Qualified("Boolean","<=>"),_),_,_),[t1,t2])
         -> let (e1,e2) = (t2e t1,t2e t2) in
 	   Some(Builtin(BoolEquiv(e1,e2)))
+      | (Fun(Op(Qualified("Boolean","~="),_),_,_),[t1,t2])
+        -> let (e1,e2) = (t2e t1,t2e t2) in
+	   let eqterm = (Builtin(Equals(e1,e2)),Primitive "Boolean") in
+	   Some(Builtin(BoolNot(eqterm)))
       | (Fun(Op(Qualified("Boolean","~"),_),_,_),[t1])
         -> let e1 = t2e t1 in
 	   Some(Builtin(BoolNot(e1)))
@@ -994,6 +1024,13 @@ SpecsToI2L qualifying spec {
   def simpleCoProductCase(ctxt,spc,term) =
     case term of
       | Apply(embedfun as Lambda(rules,_),term,_) ->
+        (case rules of
+	   | [(p as VarPat((v,ty),b),_,bodyterm)] ->
+	     % that's a very simple case: "case term of v -> bodyterm" (no other case)
+	     % we transform it to "let v = term in bodyterm"
+	     let (t,_) = term2expression(ctxt,spc,Let([(p,term)],bodyterm,b)) in
+	     Some t
+	   | _ -> 
 	%let _ = String.writeLine(MetaSlangPrint.printSort(srt))	in
 	let
           def getTypeForConstructorArgs(srt,id) =
@@ -1067,7 +1104,7 @@ SpecsToI2L qualifying spec {
 	let unioncases = List.map getUnionCase rules in
 	let expr = term2expression(ctxt,spc,term) in
 	Some(UnionCaseExpr(expr,unioncases))
-
+        )
       | _ -> (String.writeLine(mkInOpStr(ctxt)^"fail in simpleCoProductCase (wrong term format)");
 	      None)
 

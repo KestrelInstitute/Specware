@@ -100,7 +100,7 @@ CUtils qualifying spec {
      defines = cspc.defines,
      constDefns = cspc.constDefns,
      vars = cspc.vars,
-     fns = cspc.fns @ [X],
+     fns = (filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns) @ [X],
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
      varDefns = cspc.varDefns,
@@ -197,6 +197,7 @@ CUtils qualifying spec {
     }
   op addFnDefnAux: CSpec * FnDefn * Boolean -> CSpec
   def addFnDefnAux(cspc,fndefn as (fname,params,rtype,body),overwrite) =
+    %let _ = writeLine("adding function definition \""^fname^"\" overwrite="^(Boolean.toString(overwrite))) in
     {
      name = cspc.name,
      includes = cspc.includes,
@@ -216,7 +217,7 @@ CUtils qualifying spec {
 
   op addFnDefn: CSpec * FnDefn -> CSpec
   def addFnDefn(cspc,fndefn) =
-    addFnDefnAux(cspc,fndefn,false)
+    addFnDefnAux(cspc,fndefn,true)
 
   op addFnDefnOverwrite: CSpec * FnDefn -> CSpec
   def addFnDefnOverwrite(cspc,fndefn) =
@@ -336,16 +337,26 @@ CUtils qualifying spec {
 
   % --------------------------------------------------------------------------------
 
-  op concatnew: fa(X) List(X) * List(X) -> List(X)
-  def concatnew(l1,l2) =
-    List.foldl (fn(elem,res) -> if List.member(elem,res) then
+  op memberEq: fa(a) (a * a -> Boolean) -> a * List a -> Boolean
+  def memberEq eq (elem,l) =
+    case l of 
+      | [] -> false
+      | x::l -> if eq(x,elem) then true else memberEq eq (elem,l)
+
+  op concatnew: fa(X) (X * X -> Boolean) -> List(X) * List(X) -> List(X)
+  def concatnew eq (l1,l2) =
+    List.foldl (fn(elem,res) -> if memberEq eq (elem,res) then
 				  res
 				else 
 				  concat(res,[elem]))
     l1 l2
 
+  op concatnewEq: fa(X) List X * List X -> List X
+  def concatnewEq = concatnew (fn(x,y) -> x=y)
+
   op mergeCSpecs: List CSpec -> CSpec
   def mergeCSpecs(cspcs) =
+    let _ = writeLine("merging cspecs...") in
     case cspcs of
       | [] -> emptyCSpec ""
       | [cspc] -> cspc
@@ -353,17 +364,17 @@ CUtils qualifying spec {
       let cspc =
          {
 	  name = cspc1.name,
-	  includes = concatnew(cspc1.includes,cspc2.includes),
-	  defines = concatnew(cspc1.defines,cspc2.defines),
-	  constDefns = concatnew(cspc1.constDefns,cspc2.constDefns),
-	  vars = concatnew(cspc1.vars,cspc2.vars),
-	  fns = concatnew(cspc1.fns,cspc2.fns),
-	  axioms = concatnew(cspc1.axioms,cspc2.axioms),
+	  includes = concatnewEq(cspc1.includes,cspc2.includes),
+	  defines = concatnewEq(cspc1.defines,cspc2.defines),
+	  constDefns = concatnewEq(cspc1.constDefns,cspc2.constDefns),
+	  vars = concatnew (fn((var1,_),(var2,_)) -> var1=var2) (cspc1.vars,cspc2.vars),
+	  fns = concatnew (fn((fname1,_,_),(fname2,_,_)) -> fname1=fname2) (cspc1.fns,cspc2.fns),
+	  axioms = concatnewEq(cspc1.axioms,cspc2.axioms),
 	  structUnionTypeDefns = %concatnew(cspc1.structUnionTypeDefns,cspc2.structUnionTypeDefns),
 	  foldr (fn(x as TypeDefn(tname,_),res) -> (filter (fn(TypeDefn(tname0,_)) -> ~(tname0=tname)| _ -> true) res) @ [x]
 		 | (x,res) -> res @ [x]) cspc2.structUnionTypeDefns cspc1.structUnionTypeDefns,
-	  varDefns = concatnew(cspc1.varDefns,cspc2.varDefns),
-	  fnDefns = concatnew(cspc1.fnDefns,cspc2.fnDefns)
+	  varDefns = concatnewEq(cspc1.varDefns,cspc2.varDefns),
+	  fnDefns = concatnew (fn((fname1,_,_,_),(fname2,_,_,_)) -> fname1=fname2) (cspc1.fnDefns,cspc2.fnDefns)
 	 }
       in
       mergeCSpecs(cons(cspc,cspcs))
