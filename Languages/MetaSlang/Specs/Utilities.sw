@@ -21,8 +21,8 @@ Utilities qualifying spec
 
  op extractAssignment : MS.Term * MS.Term -> List (Pattern * MS.Term)
 
- op removeDefinitions  : Spec -> Spec
- op removeUndefinedOps : Spec -> Spec
+ op removeDefinitions  : fa(a) ASpec a -> ASpec a
+ op removeUndefinedOps : fa(a) ASpec a -> ASpec a
 
  op patternToTerm : Pattern -> Option MS.Term
 
@@ -497,7 +497,7 @@ Utilities qualifying spec
 					 (op_names, fixity, srt, []))
                          spc.ops,
     sorts            = spc.sorts,
-    properties       = emptyProperties}
+    properties       = emptyAProperties}
 
  def removeUndefinedOps spc =
    {importInfo       = spc.importInfo,
@@ -505,7 +505,7 @@ Utilities qualifying spec
 					         if defs = [] then None else Some opinfo)
                          spc.ops,
     sorts            = spc.sorts,
-    properties       = emptyProperties}
+    properties       = emptyAProperties}
 
  op disableProperties : IntegerSet.Set * Spec -> Spec
  def disableProperties (indices,spc) = 
@@ -1185,9 +1185,15 @@ Utilities qualifying spec
 	  else None)
       | Apply(Fun(Equals,_,_),Record([(_,N1),(_,N2)], _),_) ->
 	if evalConstant?(N1) & evalConstant?(N2)
-	  then Some(mkBool(N1 = N2))
+	  then Some(mkBool(equalTerm?(N1,N2)))
 	  else None
-%      | Apply(,)
       | _ -> None
+
+  op  printDefinedOps: fa(a) ASpec a -> String
+  def printDefinedOps spc =
+      let spc = removeUndefinedOps spc       in
+      let spc = setSorts(spc,emptyASortMap)  in
+      let spc = setImports(spc,emptyImports) in
+      printSpec spc
 
 endspec

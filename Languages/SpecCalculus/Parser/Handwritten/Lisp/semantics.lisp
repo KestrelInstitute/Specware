@@ -753,7 +753,10 @@ If we want the precedence to be optional:
 ;;;  http://www.specware.org/manual/html/matchesandpatterns.html
 ;;; ========================================================================
 
-(defun make-annotated-pattern        (pattern sort     l r) (cons :|SortedPat|   (vector pattern sort                                       (make-pos l r))))
+(defun make-annotated-pattern        (pattern sort     l r)
+  (when (eq (car pattern) ':|VarPat|)	; Optimize common case, and ensure that variable gets correct type
+    (setf (cdadr pattern) sort))
+  (cons :|SortedPat| (vector pattern sort (make-pos l r))))
 (defun make-aliased-pattern          (pat1 pat2        l r) (cons :|AliasPat|    (vector pat1 pat2                                          (make-pos l r))))
 (defun make-embed-pattern            (id pattern       l r) (cons :|EmbedPat|    (vector id (cons :|Some| pattern) (freshMetaTypeVar l r)   (make-pos l r))))
 (defun make-quotient-pattern         (term pattern     l r) (cons :|QuotientPat| (vector pattern term                                       (make-pos l r))))

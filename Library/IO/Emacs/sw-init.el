@@ -5,12 +5,12 @@
 ;; argument to Xemacs. This spawns a Lisp process.
 (defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
-  (let* ((root-dir (if in-current-dir?
-		       (strip-final-slash (if (stringp in-current-dir?)
-					      in-current-dir?
-					    default-directory))
-		     (concat (getenv "SPECWARE4"))))
-	 (bin-dir (concat root-dir
+  (let* ((specware4-dir (if in-current-dir?
+			    (strip-final-slash (if (stringp in-current-dir?)
+						   in-current-dir?
+						 default-directory))
+			  (concat (getenv "SPECWARE4"))))
+	 (bin-dir (concat specware4-dir
 			  "/Applications/Specware/bin/"
 			  (if *windows-system-p*
 			      "windows"
@@ -25,7 +25,7 @@
     ;; This seems to work fine under Unix/Linux but under Windows there is 
     ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
     ;;
-    (setq sw:common-lisp-directory (concat root-dir "/"))
+    (setq sw:common-lisp-directory (concat specware4-dir "/"))
     ;;
     ;; Specware can be started in two ways. The familiar way is to start the
     ;; Lisp environment augmented with a Specware image. The term "image" comes
@@ -172,55 +172,64 @@
 
 (defun build-specware4 (in-current-dir?)
   (interactive "P")
-  (let* ((root-dir (if in-current-dir?
-		       (strip-final-slash (if (stringp in-current-dir?)
-					      in-current-dir?
-					    default-directory))
-		     (getenv "SPECWARE4")))
-	 (dir (concat root-dir "/Applications/Specware/Handwritten/Lisp"))
-	 (bin-dir (concat root-dir
+  (let* ((specware4-dir (if in-current-dir?
+			    (strip-final-slash (if (stringp in-current-dir?)
+						   in-current-dir?
+						 default-directory))
+			  (getenv "SPECWARE4")))
+	 (build-dir (concat specware4-dir "/Applications/Specware/Handwritten/Lisp"))
+	 (bin-dir (concat specware4-dir
 			     "/Applications/Specware/bin/"
 			     (if *windows-system-p*
 				 "windows"
 			       (symbol-name system-type))))
+	 (lisp-dir (concat specware4-dir "/Applications/Specware/lisp"))
 	 (slash-dir (sw::normalize-filename "/"))
-	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*)))
+	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
+	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
+	 (specware4-base-lisp (concat specware4-dir "/Applications/Specware/Specware4-base.lisp")))
     (run-plain-lisp)
+    (when (and (file-exists-p specware4-base-lisp)
+	       (or (not (file-exists-p specware4-lisp))
+		   (file-newer-than-file-p specware4-base-lisp specware4-lisp)))
+      (when (file-exists-p specware4-lisp)
+	(copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
+      (copy-file specware4-base-lisp specware4-lisp t))
     (sw:eval-in-lisp-no-value
      (format "(load %S)"
-	     (concat root-dir "/Applications/Handwritten/Lisp/load-utilities")))
+	     (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
     (sw:eval-in-lisp-no-value
      (format "(specware::setenv \"SWPATH\" %S)"
-	     (concat (sw::normalize-filename root-dir)
+	     (concat (sw::normalize-filename specware4-dir)
 		     (if *windows-system-p* ";" ":")
 		     slash-dir)))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
-				      (sw::normalize-filename root-dir)))
+				      (sw::normalize-filename specware4-dir)))
     (sw:eval-in-lisp-no-value
-     (format "(namestring (specware::change-directory %S))" dir))
+     (format "(namestring (specware::change-directory %S))" build-dir))
     (simulate-input-expression "(time (load \"Specware4.lisp\"))")
     (continue-form-when-ready
-     (`(build-specware4-continue (, root-dir) (, dir) (, bin-dir)
+     (`(build-specware4-continue (, specware4-dir) (, build-dir) (, bin-dir)
 				 (, slash-dir) (, world-name))))))
 
-(defun build-specware4-continue (root-dir dir bin-dir slash-dir world-name)
+(defun build-specware4-continue (specware4-dir build-dir bin-dir slash-dir world-name)
   (run-plain-lisp)
   (unless (inferior-lisp-running-p)
     (sleep-for 1))
   (sw:eval-in-lisp-no-value
    (format "(load %S)"
-	   (concat root-dir "/Applications/Handwritten/Lisp/load-utilities")))
+	   (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
   (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
-			   (concat (sw::normalize-filename root-dir)
-				   (if *windows-system-p* ";" ":")
-				   slash-dir)))
+				    (concat (sw::normalize-filename specware4-dir)
+					    (if *windows-system-p* ";" ":")
+					    slash-dir)))
   (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
-			   (sw::normalize-filename root-dir)))
+				    (sw::normalize-filename specware4-dir)))
   (sw:eval-in-lisp-no-value
    (format "(load %S)"
-	   (concat root-dir "/Applications/Specware/bin/linux/exit-on-errors")))
+	   (concat specware4-dir "/Applications/Specware/bin/linux/exit-on-errors")))
   (sw:eval-in-lisp-no-value
-   (format "(namestring (specware::change-directory %S))" dir))
+   (format "(namestring (specware::change-directory %S))" build-dir))
   (sw:eval-in-lisp-no-value "(set-gc-parameters-for-build t)")
   (sw:eval-in-lisp-no-value "(load \"Specware4.lisp\")")
   (sw:eval-in-lisp-no-value "(compact-memory t)")
@@ -247,33 +256,33 @@
 
 (defun build-specware4-from-base (in-current-dir?)
   (interactive "P")
-  (let* ((root-dir (if in-current-dir?
-		       (strip-final-slash (if (stringp in-current-dir?)
-					      in-current-dir?
-					    default-directory))
-		     (getenv "SPECWARE4")))
-	 (dir (concat root-dir "/Applications/Specware/Handwritten/Lisp"))
-	 (bin-dir (concat root-dir
+  (let* ((specware4-dir (if in-current-dir?
+			    (strip-final-slash (if (stringp in-current-dir?)
+						   in-current-dir?
+						 default-directory))
+			  (getenv "SPECWARE4")))
+	 (dir (concat specware4-dir "/Applications/Specware/Handwritten/Lisp"))
+	 (bin-dir (concat specware4-dir
 			     "/Applications/Specware/bin/"
 			     (if *windows-system-p*
 				 "windows"
 			       (symbol-name system-type))))
-	 (lisp-dir (concat root-dir
+	 (lisp-dir (concat specware4-dir
 			     "/Applications/Specware/lisp"))
 	 (slash-dir (sw::normalize-filename "/"))
 	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
 	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
-	 (specware4-base-lisp (concat root-dir "/Applications/Specware/Specware4-base.lisp")))
+	 (specware4-base-lisp (concat specware4-dir "/Applications/Specware/Specware4-base.lisp")))
     (run-plain-lisp)
     (sw:eval-in-lisp-no-value
      (format "(load %S)"
-	     (concat root-dir "/Applications/Handwritten/Lisp/load-utilities")))
+	     (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
-				      (concat (sw::normalize-filename root-dir)
+				      (concat (sw::normalize-filename specware4-dir)
 					      (if *windows-system-p* ";" ":")
 					      slash-dir)))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
-				      (sw::normalize-filename root-dir)))
+				      (sw::normalize-filename specware4-dir)))
         
     (when (file-exists-p specware4-lisp)
       (copy-file specware4-lisp (concat lisp-dir "/Specware4-saved.lisp") t))
@@ -282,64 +291,28 @@
     (sw:eval-in-lisp-no-value (format "(namestring (specware::change-directory %S))" dir))
     (simulate-input-expression "(load \"Specware4.lisp\")")
     (continue-form-when-ready
-     (`(build-specware4-from-base-continue (, root-dir) (, dir) (, bin-dir)
-					   (, slash-dir) (, world-name))))))
-
-(defun build-specware4-from-base-continue (root-dir dir bin-dir slash-dir world-name)
-  (run-plain-lisp)
-  (unless (inferior-lisp-running-p)
-    (sleep-for 1))
-  (sw:eval-in-lisp-no-value
-   (format "(load %S)"
-	   (concat root-dir "/Applications/Handwritten/Lisp/load-utilities")))
-  (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
-				    (concat (sw::normalize-filename root-dir)
-					    (if *windows-system-p* ";" ":")
-					    slash-dir)))
-  (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
-				    (sw::normalize-filename root-dir)))
-  (sw:eval-in-lisp-no-value (format "(namestring (specware::change-directory %S))"
-				    dir))
-  (sw:eval-in-lisp-no-value "(load \"Specware4.lisp\")")
-  (when (file-exists-p world-name)
-    (rename-file world-name (concat bin-dir "/Specware4-saved."
-				    *lisp-image-extension*)
-		 t))
-  (sleep-for 1)
-  (simulate-input-expression (format (case *specware-lisp*
-				       (cmulisp "(ext:save-lisp %S)")
-				       (allegro "(excl::dumplisp :name %S)")
-				       (openmcl "(ccl:save-application %S)")
-				       (sbcl "(sb-ext:save-lisp-and-die %S)"))
-				     world-name))
-;;;    (simulate-input-expression
-;;;     "(if (probe-file \"bin/specware2000-new.world\")
-;;;	  (progn (when (probe-file \"bin/specware2000.world\")
-;;;                   (rename-file  \"bin/specware2000.world\" \"bin/specware2000-old.world\"))
-;;;		 (rename-file  \"bin/specware2000-new.world\" \"bin/specware2000.world\")
-;;;		 \"Wrote a new bin/specware2000.world\")
-;;;	\"Failed to build a new world!\")")
-  )
+     (`(build-specware4-continue (, specware4-dir) (, dir) (, bin-dir)
+				 (, slash-dir) (, world-name))))))
 
 (defun bootstrap-specware4 (in-current-dir?)
   (interactive "P")
-  (let ((root-dir (if in-current-dir? (strip-final-slash default-directory)
-		    (concat (getenv "SPECWARE4"))))
+  (let ((specware4-dir (if in-current-dir? (strip-final-slash default-directory)
+			 (concat (getenv "SPECWARE4"))))
 	(slash-dir "/"))
-    (run-specware4 root-dir)
+    (run-specware4 specware4-dir)
     (sleep-for 2)
     (sw:eval-in-lisp-no-value
-     (format "(namestring (specware::change-directory %S))" root-dir))
+     (format "(namestring (specware::change-directory %S))" specware4-dir))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
-				      (concat (sw::normalize-filename root-dir)
+				      (concat (sw::normalize-filename specware4-dir)
 					      (if *windows-system-p* ";" ":")
 					      slash-dir)))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SPECWARE4\" %S)"
-				      (sw::normalize-filename root-dir)))
+				      (sw::normalize-filename specware4-dir)))
     (sw:eval-in-lisp-no-value "#+allegro(sys::set-stack-cushion 10000000)
                                #-allegro()")
     (simulate-input-expression "(time (cl-user::boot))")
-    (continue-form-when-ready (`(build-specware4 (, root-dir))))))
+    (continue-form-when-ready (`(build-specware4 (, specware4-dir))))))
 
 
 (defun test-specware-bootstrap (in-current-dir?)
@@ -361,34 +334,6 @@
 	     (simulate-input-expression "(load \"load.lisp\")")
 	     (simulate-input-expression "(Bootstrap-Spec::compileAll)")))))
 
-(defun run-PSL ()
-  (interactive)
-  (let* ((root-dir (concat (getenv "SPECWARE4") "/"))
-	 (bin-dir (concat root-dir
-			  "Applications/PSL/bin/"
-			  (if *windows-system-p*
-			      "windows"
-			    (symbol-name system-type))))
-	 (world-name (concat bin-dir "/PSL.dxl")))
-
-    (setq sw:common-lisp-host "localhost")
-    (setq-default sw::lisp-host sw:common-lisp-host)
-    (setq sw:common-lisp-directory root-dir)
-    (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
-    (setq sw:common-lisp-image-file world-name)
-    (setq sw:common-lisp-image-arguments
-      (if *windows-system-p* '("+cn") nil))
-
-    (let ((log-warning-minimum-level 'error))
-      (sw:common-lisp sw:common-lisp-buffer-name
-		      sw:common-lisp-directory
-		      sw:common-lisp-image-name
-		      sw:common-lisp-image-arguments
-		      sw:common-lisp-host
-		      sw:common-lisp-image-file
-		      ))
-    ))
-
 (defun strip-final-slash (dirname)
   (let ((len (length dirname)))
     (if (equal ?/ (elt dirname (- len 1)))
@@ -397,12 +342,12 @@
 
 (defun run-PSL (&optional in-current-dir?)
   (interactive "P")
-  (let* ((root-dir (if in-current-dir?
-		       (strip-final-slash (if (stringp in-current-dir?)
-					      in-current-dir?
-					    default-directory))
-		     (concat (getenv "SPECWARE4"))))
-	 (bin-dir (concat root-dir
+  (let* ((specware4-dir (if in-current-dir?
+			    (strip-final-slash (if (stringp in-current-dir?)
+						   in-current-dir?
+						 default-directory))
+			  (concat (getenv "SPECWARE4"))))
+	 (bin-dir (concat specware4-dir
 			  "/Applications/PSL/bin/"
 			  (if *windows-system-p*
 			      "windows"
@@ -417,7 +362,7 @@
     ;; This seems to work fine under Unix/Linux but under Windows there is 
     ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
     ;;
-    (setq sw:common-lisp-directory (concat root-dir "/"))
+    (setq sw:common-lisp-directory (concat specware4-dir "/"))
     ;;
     ;; Specware can be started in two ways. The familiar way is to start the
     ;; Lisp environment augmented with a Specware image. The term "image" comes

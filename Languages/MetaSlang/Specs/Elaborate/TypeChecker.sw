@@ -104,19 +104,18 @@ spec {
    in
  
    %% ---------- SORTS : PASS 0 ----------
-   %let _ = String.writeLine "Elaborating sorts" in
-   let def elaborate_sort_0 (qualifier,
-			     sortName,
-			     sortInfo as (sort_names, type_vars_0, defs_0)) = 
-        %% Sanity check on sort
-        if ~(memberQualifiedId(qualifier,sortName,localSorts))
-          then sortInfo
-          else (sort_names, 
-                type_vars_0,          
-                map (fn def_0 -> checkSortScheme (env_1, def_0)) defs_0)
-   in
+  % let def elaborate_sort_0 (qualifier,
+%			     sortName,
+%			     sortInfo as (sort_names, type_vars_0, defs_0)) = 
+%        %% Sanity check on sort
+%        if ~(memberQualifiedId(qualifier,sortName,localSorts))
+%          then sortInfo
+%          else (sort_names, 
+%                type_vars_0,          
+%                map (fn def_0 -> checkSortScheme (env_1, def_0)) defs_0)
+%   in
    %% sorts is a map to a map to sort_info
-   let sorts_1 = mapiAQualifierMap elaborate_sort_0 sorts_0 in
+   let sorts_1 = sorts_0 in %mapiAQualifierMap elaborate_sort_0 sorts_0 in
  
    %% ---------- OPS : PASS 0 ----------         
    let ops_1 = ops_0 in
@@ -139,8 +138,18 @@ spec {
    let env_2 = addConstrsEnv (env_1, spec_1) in
  
    %% ---------- SORTS : PASS 1 ----------
-   let sorts_2 = sorts_1 in
- 
+   %let sorts_2 = sorts_1 in
+   let def elaborate_sort_1 (qualifier, sortName,
+                             sortInfo as (sort_names, type_vars_1, defs_1)) = 
+        if ~(memberQualifiedId(qualifier,sortName,localSorts))
+          then sortInfo
+          else (sort_names, 
+		type_vars_1, 
+		map (fn def_1 -> checkSortScheme (env_2, def_1)) defs_1)
+   in
+   let sorts_2 = mapiAQualifierMap elaborate_sort_1 sorts_1 
+   in
+
    %% ---------- OPS   : PASS 1 ----------
    let def elaborate_op_1 poly?
              (qualifier, op_name,
@@ -189,12 +198,13 @@ spec {
    let env_3 = secondPass env_2 in
  
    %% ---------- SORTS : PASS 2 ---------- 
-   % let _ = String.writeLine "Elaborating sorts" in
    let def elaborate_sort_2 (qualifier, sortName,
                              sortInfo as (sort_names, type_vars_2, defs_2)) = 
-        (sort_names, 
-         type_vars_2, 
-	 map (fn def_2 -> checkSortScheme (env_3, def_2)) defs_2)
+        if ~(memberQualifiedId(qualifier,sortName,localSorts))
+          then sortInfo
+          else (sort_names, 
+		type_vars_2, 
+		map (fn def_2 -> checkSortScheme (env_3, def_2)) defs_2)
    in
    let sorts_3 = mapiAQualifierMap elaborate_sort_2 sorts_2 
    in

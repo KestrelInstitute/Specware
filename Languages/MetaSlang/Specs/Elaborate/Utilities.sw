@@ -453,108 +453,108 @@ spec {
        of Unify _ -> (true,"")
         | NotUnify(s1,s2) -> (false,printSort s1^" ! = "^printSort s2)
 
-       def unifyCP (env,srt1,srt2,r1,r2,pairs):Unification = 
-           unifyL (env,srt1, srt2, r1, r2, pairs,
-		   fn (env,(id1,s1),(id2,s2),pairs) -> 
-		   if id1 = id2 then
-		     (case (s1,s2) of
-			 | (None,None) -> Unify pairs 
-			 | ((Some s1): (Option MS.Sort),(Some s2) : (Option MS.Sort)) ->
-			      unify (env,s1,s2,pairs) % ### (le) Why is the sort necessary? won't typecheck with it.
-			 | _ -> NotUnify (srt1,srt2))
-		   else
-		     NotUnify(srt1,srt2))
+ def unifyCP (env,srt1,srt2,r1,r2,pairs):Unification = 
+     unifyL (env,srt1, srt2, r1, r2, pairs,
+	     fn (env,(id1,s1),(id2,s2),pairs) -> 
+	     if id1 = id2 then
+	       (case (s1,s2) of
+		   | (None,None) -> Unify pairs 
+		   | ((Some s1): (Option MS.Sort),(Some s2) : (Option MS.Sort)) ->
+			unify (env,s1,s2,pairs) % ### (le) Why is the sort necessary? won't typecheck with it.
+		   | _ -> NotUnify (srt1,srt2))
+	     else
+	       NotUnify(srt1,srt2))
 
-       def unifyP (env,srt1,srt2,r1,r2,pairs):Unification = 
-           unifyL (env,srt1,srt2,r1,r2,pairs,
-		   fn(env,(id1,s1),(id2,s2),pairs) -> 
-		   if id1 = id2 
-		   then unify(env,s1,s2,pairs)
-		   else NotUnify(srt1,srt2))
-           
-       def unify (env,s1,s2,pairs):Unification = 
-         let pos1 = sortAnn s1  in
-         let pos2 = sortAnn s2  in
-         let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
-         let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
-         if equalSort?(srt1,srt2) then 
-           Unify pairs 
-         else
-           case (srt1,srt2) of
-              | (CoProduct(r1,_),CoProduct(r2,_)) -> 
-                unifyCP(env,srt1,srt2,r1,r2,pairs)
-              | (Product(r1,_),Product(r2,_)) -> 
-                unifyP(env,srt1,srt2,r1,r2,pairs)
-              | (Arrow(t1,t2,_),Arrow(s1,s2,_)) -> 
-                (case unify(env,t1,s1,pairs)
-                   of Unify pairs -> unify(env,t2,s2,pairs)
-                    | notUnify -> notUnify)
-              | (Quotient(ty,trm,_),Quotient(ty_,trm_,_)) -> 
-                   unify(env,ty,ty_,pairs)
-                   %                 if trm = trm_ 
-                   %                     then unify(ty,ty_,pairs) 
-                   %                    else NotUnify(srt1,srt2)
-                   %               | (Subsort(ty,trm,_),Subsort(ty_,trm_,_)) -> 
-                   %                  if trm = trm_ 
-                   %                      then unify(ty,ty_,pairs) 
-                   %                  else NotUnify(srt1,srt2)
-              | (Base(id,ts,pos1),Base(id_,ts_,pos2)) -> 
-                   if exists (fn (p1,p2) -> 
-                              %% p = (srt1,srt2) 
-                              %% need predicate that chases metavar links
-                              equalSort?(p1, srt1) &
-                              equalSort?(p2, srt2))
-                              pairs 
-                   then
-                     Unify pairs
-                   else 
-                     if id = id_ then
-                       unifyL(env,srt1,srt2,ts,ts_,pairs,unify)
-                     else 
-                       let s1_ = unfoldSort(env,srt1) in
-                       let s2_ = unfoldSort(env,srt2) in
-                       if equalSort?(s1,s1_) & equalSort?(s2_,s2) then
-                         NotUnify (srt1,srt2)
-                       else 
-                         unify(env,withAnnS(s1_,pos1),
-                               withAnnS(s2_,pos2),
-                               cons((s1,s2), pairs))
-              | (TyVar(id1,_), TyVar(id2,_)) -> 
-                if id1 = id2 
-                then Unify pairs
-                else NotUnify (srt1,srt2)
-              | (MetaTyVar(mtv,_), _) -> 
-                 let s2_ = unfoldSort(env,srt2) in
-                 let t = unlinkSort s2_ in
-                 if equalSort?(t,s1)
-                     then Unify pairs
-                 else
-                     if occurs(mtv,t) 
-                         then NotUnify (srt1,srt2)
-                     else (linkMetaTyVar mtv (withAnnS(s2,pos2)); Unify pairs)
-              | (t, MetaTyVar (mtv, _)) -> 
-                let t = unfoldSort (env, t) in
-                let t = unlinkSort t in
-                if equalSort? (t, s2) then
-                  Unify pairs
-                else
-                  if occurs (mtv, t) then
-                    NotUnify (srt1,srt2)
-                  else
-                    (linkMetaTyVar mtv (withAnnS(s1,pos1)); Unify pairs)
-              | (Subsort(ty,_,_),ty2) -> unify(env,ty,ty2,pairs)
-              | (ty,Subsort(ty2,_,_)) -> unify(env,ty,ty2,pairs)
-              | (Base _,_) -> 
-                 let  s1_ = unfoldSort(env,srt1) in
-                if equalSort?(s1,s1_)
-                then NotUnify (srt1,srt2)
-                else unify(env,s1_,s2,pairs)
-              | (_,Base _) ->
-                let s2_ = unfoldSort(env,srt2) in
-                if equalSort?(s2,s2_)
-                then NotUnify (srt1,srt2)
-                else unify(env,s1,s2_,pairs)
-              | _ -> NotUnify(srt1,srt2)
+ def unifyP (env,srt1,srt2,r1,r2,pairs):Unification = 
+     unifyL (env,srt1,srt2,r1,r2,pairs,
+	     fn(env,(id1,s1),(id2,s2),pairs) -> 
+	     if id1 = id2 
+	     then unify(env,s1,s2,pairs)
+	     else NotUnify(srt1,srt2))
+
+ def unify (env,s1,s2,pairs):Unification = 
+   let pos1 = sortAnn s1  in
+   let pos2 = sortAnn s2  in
+   let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
+   let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
+   if equalSort?(srt1,srt2) then 
+     Unify pairs 
+   else
+     case (srt1,srt2) of
+	| (CoProduct(r1,_),CoProduct(r2,_)) -> 
+	  unifyCP(env,srt1,srt2,r1,r2,pairs)
+	| (Product(r1,_),Product(r2,_)) -> 
+	  unifyP(env,srt1,srt2,r1,r2,pairs)
+	| (Arrow(t1,t2,_),Arrow(s1,s2,_)) -> 
+	  (case unify(env,t1,s1,pairs)
+	     of Unify pairs -> unify(env,t2,s2,pairs)
+	      | notUnify -> notUnify)
+	| (Quotient(ty,trm,_),Quotient(ty_,trm_,_)) -> 
+	     unify(env,ty,ty_,pairs)
+	     %                 if trm = trm_ 
+	     %                     then unify(ty,ty_,pairs) 
+	     %                    else NotUnify(srt1,srt2)
+	     %               | (Subsort(ty,trm,_),Subsort(ty_,trm_,_)) -> 
+	     %                  if trm = trm_ 
+	     %                      then unify(ty,ty_,pairs) 
+	     %                  else NotUnify(srt1,srt2)
+	| (Base(id,ts,pos1),Base(id_,ts_,pos2)) -> 
+	     if exists (fn (p1,p2) -> 
+			%% p = (srt1,srt2) 
+			%% need predicate that chases metavar links
+			equalSort?(p1, srt1) &
+			equalSort?(p2, srt2))
+			pairs 
+	     then
+	       Unify pairs
+	     else 
+	       if id = id_ then
+		 unifyL(env,srt1,srt2,ts,ts_,pairs,unify)
+	       else 
+		 let s1_ = unfoldSort(env,srt1) in
+		 let s2_ = unfoldSort(env,srt2) in
+		 if equalSort?(s1,s1_) & equalSort?(s2_,s2) then
+		   NotUnify (srt1,srt2)
+		 else 
+		   unify(env,withAnnS(s1_,pos1),
+			 withAnnS(s2_,pos2),
+			 cons((s1,s2), pairs))
+	| (TyVar(id1,_), TyVar(id2,_)) -> 
+	  if id1 = id2 
+	  then Unify pairs
+	  else NotUnify (srt1,srt2)
+	| (MetaTyVar(mtv,_), _) -> 
+	   let s2_ = unfoldSort(env,srt2) in
+	   let t = unlinkSort s2_ in
+	   if equalSort?(t,s1)
+	       then Unify pairs
+	   else
+	       if occurs(mtv,t) 
+		   then NotUnify (srt1,srt2)
+	       else (linkMetaTyVar mtv (withAnnS(s2,pos2)); Unify pairs)
+	| (t, MetaTyVar (mtv, _)) -> 
+	  let t = unfoldSort (env, t) in
+	  let t = unlinkSort t in
+	  if equalSort? (t, s2) then
+	    Unify pairs
+	  else
+	    if occurs (mtv, t) then
+	      NotUnify (srt1,srt2)
+	    else
+	      (linkMetaTyVar mtv (withAnnS(s1,pos1)); Unify pairs)
+	| (Subsort(ty,_,_),ty2) -> unify(env,ty,ty2,pairs)
+	| (ty,Subsort(ty2,_,_)) -> unify(env,ty,ty2,pairs)
+	| (Base _,_) -> 
+	   let  s1_ = unfoldSort(env,srt1) in
+	  if equalSort?(s1,s1_)
+	  then NotUnify (srt1,srt2)
+	  else unify(env,s1_,s2,pairs)
+	| (_,Base _) ->
+	  let s2_ = unfoldSort(env,srt2) in
+	  if equalSort?(s2,s2_)
+	  then NotUnify (srt1,srt2)
+	  else unify(env,s1,s2_,pairs)
+	| _ -> NotUnify(srt1,srt2)
 
  op consistentSorts?: LocalEnv * MS.Sort * MS.Sort -> Boolean
  def consistentSorts?(env,srt1,srt2) =
