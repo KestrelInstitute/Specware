@@ -192,6 +192,10 @@ into a Term when needed.
     | Quote Value
 \end{spec}
 
+The following is a hook for creating applications that are 
+extensions to Specware.  If more than one new term is needed,
+you can make OtherTerm a coproduct of the desired terms.
+
 \begin{spec}
     | Other (OtherTerm a)
 \end{spec}
