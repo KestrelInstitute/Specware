@@ -77,8 +77,8 @@ example-htm.dbk: Makefile $(GLM2DBK) example.glm
 	$(GLM2DBK) -htm example.glm > example-htm.dbk
 
 clean:
-	rm -rf $(ST).tex $(ST).aux $(ST).log \
-	$(PDFDBK) $(HTMDBK) *.old db2html-dir \
-	$(ST).dbk $(ST)-htm.dbk
+	rm -rf $(ST).tex $(ST).aux $(ST).log $(ST).out \
+	$(PDFDBK) $(HTMDBK) *.old $(ST).htm-dir \
+	$(ST).dbk $(ST)-htm.dbk jade.log
 
 pristine: clean
