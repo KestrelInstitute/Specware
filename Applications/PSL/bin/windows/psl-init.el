@@ -62,13 +62,9 @@
     (goto-char (point-max))
     ))
 
-(defun build-psl (in-current-dir?)
+(defun build-psl ()
   (interactive "P")
-  (let* ((root-dir (if in-current-dir?
-		       (strip-final-slash (if (stringp in-current-dir?)
-					      in-current-dir?
-					    default-directory))
-		     (getenv "SPECWARE4")))
+  (let* ((root-dir (getenv "SPECWARE4"))
 	 (dir (concat root-dir "/Applications/PSL/Handwritten/Lisp"))
 	 (bin-dir (concat root-dir
 			     "/Applications/PSL/bin/"
@@ -123,7 +119,7 @@
     (build-psl root-dir)))
 
 
-(defun run-PSL ()
+(defun run-psl ()
   (interactive)
   (let* ((root-dir (concat (getenv "SPECWARE4") "/"))
 	 (bin-dir (concat root-dir

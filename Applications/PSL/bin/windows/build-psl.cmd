@@ -7,11 +7,11 @@ rem Set allegro to the version you have
 rem set ALLEGRO=C:\Progra~1\acl62
 set ALLEGRO=C:\Progra~1\acl61
 
-set PSL_BIN=%SPECWARE4%\Applications\PSL\bin\windows
+set SPECWARE_BIN=%SPECWARE4%\Applications\Specware\bin\windows
 
 set LISP_EXECUTABLE=%ALLEGRO%\alisp.exe
-set LISP_HEAP_IMAGE=%PSL_BIN%\PSL.dxl
+set LISP_HEAP_IMAGE=%SPECWARE_BIN%\Specware4.dxl
 set LISP_DIRECTORY=%Specware4%/
 cd "%Specware4%"
 
-%XEMACS%\i586-pc-win32\xemacs.exe -debug-init -l "%ALLEGRO%/xeli/fi-site-init" -l "%SPECWARE4%/Library/IO/Emacs/load" -l "%SPECWARE4%/Applications/PSL/bin/windows/psl-init" -f "run-psl" &
+%XEMACS%\i586-pc-win32\xemacs.exe -debug-init -l "%ALLEGRO%/xeli/fi-site-init" -l "%SPECWARE4%/Library/IO/Emacs/load"  -l "%SPECWARE4%/Applications/PSL/bin/windows/psl-init" -f "build-psl" &
