@@ -155,7 +155,7 @@
   (setq *specware-continue-form* form)
   (set-process-sentinel (get-buffer-process *specware-buffer-name*)
 			'continue-emacs-computation)
-  (sw:exit-lisp))
+  (simulate-input-expression ":exit"))
 
 (defun build-specware4 (in-current-dir?)
   (interactive "P")

@@ -127,6 +127,10 @@
 (defun cd (&optional dir)
   (specware::change-directory (or dir (specware::getenv "HOME"))))
 
+#+(or cmu openmcl)
+(defun exit ()
+  (quit))
+
 (defun strip-extraneous (str)
   (let ((len (length str)))
     (if (> len 0)
@@ -170,3 +174,4 @@
 		       t)))
 	  (return t))))))
 )
+

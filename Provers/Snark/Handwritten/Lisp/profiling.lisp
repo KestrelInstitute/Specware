@@ -19,7 +19,7 @@
 
 (in-package :mes)
 
-#+(or (and mcl (not openmcl)) CMU)
+#+(or (and mcl (not openmcl)))
 (defmacro monitor-form (form 
                         &optional (nested :exclusive) (threshold mon:*default-threshold*)
                         (key :percent-time))
