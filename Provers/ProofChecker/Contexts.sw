@@ -13,7 +13,7 @@ spec
     | typeDeclaration TypeName * Nat
     | opDeclaration   Operation * TypeVariables * Type
     | typeDefinition  TypeName * TypeVariables * Type
-    | opdefinition    TypeVariables * Operation * Expression
+    | opDefinition    TypeVariables * Operation * Expression
     | axio(*m*)       TypeVariables * Expression
     | tVarDeclaration TypeVariable
     | varDeclaration  Variable * Type

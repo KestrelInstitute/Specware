@@ -38,6 +38,8 @@ spec
                                   patt2expr p)
     | record(fS,pS)    -> let eS = map (patt2expr, pS) in
                           nary (record fS, eS)
+    | tuple pS         -> let eS = map (patt2expr, pS) in
+                          nary (tuple, eS)
     | alias(_,p)       -> patt2expr p
 
 
@@ -50,6 +52,7 @@ spec
     | variable _       -> nullary tru
     | embedding(_,_,p) -> pattAliasAssumptions p
     | record(_,pS)     -> conjoinAll (map (pattAliasAssumptions, pS))
+    | tuple pS         -> conjoinAll (map (pattAliasAssumptions, pS))
     | alias((v,_),p)   -> binary (conjunction,
                                   binary (equation,
                                           nullary (variable v),
@@ -72,6 +75,7 @@ spec
     | variable bv      -> singleton bv
     | embedding(t,c,p) -> pattBoundVars p
     | record(_,pS)     -> flatten (map (pattBoundVars, pS))
+    | tuple pS         -> flatten (map (pattBoundVars, pS))
     | alias(bv,p)      -> bv |> pattBoundVars p
 
   op pattVars : Pattern -> FSet Variable
@@ -223,6 +227,8 @@ spec
                                      typeSubstInPatt sbs p)
     | record(fS,pS)    -> let newPS = map (typeSubstInPatt sbs, pS) in
                           record (fS, newPS)
+    | tuple pS         -> let newPS = map (typeSubstInPatt sbs, pS) in
+                          tuple newPS
     | alias((v,t),p)   -> alias ((v, typeSubstInType sbs t),
                                  typeSubstInPatt sbs p)
 
@@ -348,6 +354,8 @@ spec
     | embedding(t,c,p) -> embedding (t, c, pattSubst (old,new) p)
     | record(fS,pS)    -> let newPS = map (pattSubst (old,new), pS) in
                           record (fS, newPS)
+    | tuple pS         -> let newPS = map (pattSubst (old,new), pS) in
+                          tuple newPS
     | alias((v,t),p)   -> if v = old
                           then alias ((new, t), pattSubst (old,new) p)
                           else alias ((v,   t), pattSubst (old,new) p)
@@ -571,10 +579,17 @@ spec
     &&
     (fa (old:Type, new:Type, pos:Position,
          i:Nat, fS:Fields, pS:Patterns, newPi:Pattern)
-       i < length fS &&
+       i < length pS &&
        typeSubstInPattAt (pS elem i, old, new, pos, newPi) =>
        typeSubstInPattAt (record (fS, pS), old, new, i |> pos,
                           record (fS, update(pS,i,newPi))))
+    &&
+    (fa (old:Type, new:Type, pos:Position,
+         i:Nat, pS:Patterns, newPi:Pattern)
+       i < length pS &&
+       typeSubstInPattAt (pS elem i, old, new, pos, newPi) =>
+       typeSubstInPattAt (tuple pS, old, new, i |> pos,
+                          tuple (update(pS,i,newPi))))
     &&
     (fa (old:Type, new:Type, pos:Position,
          v:Variable, t:Type, p:Pattern, newT:Type)

@@ -144,6 +144,7 @@ spec
     | variable  BoundVar
     | embedding Type * Constructor * Pattern
     | record    Fields * Patterns
+    | tuple     Patterns
     | alias     BoundVar * Pattern
 
 
@@ -227,6 +228,9 @@ spec
    && (fa (fS:Fields, pS:Patterns)
          (fa(p) p in? pS => predP p)
       => predP (record (fS, pS)))
+   && (fa (pS:Patterns)
+         (fa(p) p in? pS => predP p)
+      => predP (tuple pS))
    && (fa (v:Variable, t:Type, p:Pattern)
          predT t
       && predP p
