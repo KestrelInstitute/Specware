@@ -129,5 +129,80 @@ $LISP <<-XXXX
 	  (load "BuildPreamble.lisp")
 	  (load "Specware4.lisp")
 	  (load "license.lisp"))
+#+cmu
+	  (progn (setq ext:*environment-list* ())
+		 (setq lisp::lisp-environment-list ()))
+
 	(ext:save-lisp "$SPECWARE4/Applications/Specware/bin/linux/Specware4.cmuimage")
 XXXX
+
+
+# Now, build the rest of the directory tree.
+
+if [ -d "$SPECWARE4"/distribution-cmulisp ]; then
+    if [ ! -d "$SPECWARE4"/distribution-cmulisp-backup ]; then
+	mkdir "$SPECWARE4"/distribution-cmulisp-backup
+    fi
+    mv "$SPECWARE4"/distribution-cmulisp/* "$SPECWARE4"/distribution-cmulisp-backup/ -f
+else
+    mkdir "$SPECWARE4"/distribution-cmulisp
+fi
+
+mkdir "$SPECWARE4"/distribution-cmulisp/Library
+mkdir "$SPECWARE4"/distribution-cmulisp/Library/IO
+
+cp "$SPECWARE4"/Library/Base "$SPECWARE4"/distribution-cmulisp/Library -r
+cp "$SPECWARE4"/Library/Base.sw "$SPECWARE4"/distribution-cmulisp/Library
+cp "$SPECWARE4"/Library/IO/Emacs "$SPECWARE4"/distribution-cmulisp/Library/IO -r
+
+# TODO: move all ilisp-20020831 files to the ilisp directory in CVS
+mv "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/ilisp-20020831/ "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/ilisp/
+
+rm "$SPECWARE4"/distribution-cmulisp/Library/Base/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Library/Base/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Library/Base/Handwritten/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Library/Base/Handwritten/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Library/Base/Handwritten/Lisp/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Library/Base/Handwritten/Lisp/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/ilisp/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/ilisp/CVS
+
+mkdir "$SPECWARE4"/distribution-cmulisp/Examples
+mkdir "$SPECWARE4"/distribution-cmulisp/Examples/Matching
+
+cp "$SPECWARE4"/UserDoc/tutorial/example/* "$SPECWARE4"/distribution-cmulisp/Examples/Matching
+cp "$SPECWARE4"/UserDoc/examples/* "$SPECWARE4"/distribution-cmulisp/Examples -r
+
+rm "$SPECWARE4"/distribution-cmulisp/Examples/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Examples/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple1/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Examples/simple1/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple1/test.lisp
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple2/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Examples/simple2/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple2/Refs/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Examples/simple2/Refs/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple2/Specs/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Examples/simple2/Specs/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple2/test.lisp
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple3/CVS/* -rf
+rmdir "$SPECWARE4"/distribution-cmulisp/Examples/simple3/CVS
+rm "$SPECWARE4"/distribution-cmulisp/Examples/simple3/test.lisp
+
+mkdir "$SPECWARE4"/distribution-cmulisp/Documentation
+
+cp "$SPECWARE4"/UserDoc/language-manual/SpecwareLanguageManual.pdf "$SPECWARE4"/distribution-cmulisp/Documentation
+cp "$SPECWARE4"/UserDoc/tutorial/SpecwareTutorial.pdf "$SPECWARE4"/distribution-cmulisp/Documentation
+cp "$SPECWARE4"/UserDoc/user-manual/SpecwareUserManual.pdf "$SPECWARE4"/distribution-cmulisp/Documentation
+cp "$SPECWARE4"/UserDoc/cheat-sheet/Specware-405-QuickReference.pdf "$SPECWARE4"/distribution-cmulisp/Documentation
+
+mkdir "$SPECWARE4"/distribution-cmulisp/Patches
+
+##  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Linux/CMU/Patches
+cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f "$SPECWARE4"/distribution-cmulisp/Patches
+
+cp "$SPECWARE4"/Release/Linux/CMU/Specware-cmulisp "$SPECWARE4"/distribution-cmulisp
+
+cp "$SPECWARE4"/Applications/Specware/bin/linux/Specware4.cmuimage "$SPECWARE4"/distribution-cmulisp
