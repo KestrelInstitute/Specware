@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.30  2003/07/05 07:46:39  lambert
+ * *** empty log message ***
+ *
  * Revision 1.29  2003/06/24 23:43:11  weilyn
  * added CompileSpecAction
  *
@@ -165,15 +168,13 @@ private scDecl
 private scTerm[boolean isTopLevel, Token unitIdToken] returns[Object term]
 {
     term = null;
-//    ElementFactory.Item item = null;
-//    String unitID = null;
 }
     : ( term=scTermPrefix[isTopLevel, unitIdToken]
         scTermPostfix
       )                     
     ;
 
-private scTermPrefix[boolean isTopLevel, Token unitIdToken] returns[Object term]//[ElementFactory.Item item]
+private scTermPrefix[boolean isTopLevel, Token unitIdToken] returns[Object term]
 {
     term = null;
     ElementFactory.Item item = null;
@@ -181,7 +182,6 @@ private scTermPrefix[boolean isTopLevel, Token unitIdToken] returns[Object term]
 }
     : ( unitID=scUnitID[unitIdToken]
       | item=scBasicTerm[unitIdToken]
-//      | item=scSubstitute[unitIdToken]
       )                     
                                     {if (unitID != null) {
                                             term = unitID;
@@ -192,7 +192,7 @@ private scTermPrefix[boolean isTopLevel, Token unitIdToken] returns[Object term]
                                     }
     ;
 
-private scTermPostfix //[boolean isTopLevel, Token unitIdToken] returns[Object term]//[ElementFactory.Item item]
+private scTermPostfix
     : ( scSubstituteTermList
        |
       )
@@ -654,17 +654,17 @@ private name returns[String name]
 {
     name = null;
 }
-    : star:STAR                     {name=star.getText();}
-    | colon:COLON                   {name=colon.getText();}
-    | equals:EQUALS                 {name=equals.getText();}
-    | sym:NON_WORD_SYMBOL           {name=sym.getText();}
-    | name=idName
-    | translate:"translate"         {name="translate";}
-    | colimit:"colimit"             {name="colimit";}
-    | diagram:"diagram"             {name="diagram";}
-    | print:"print"                 {name="print";}
-    | snark:"Snark"                 {name="Snark";}
-    ;
+  : star:STAR                     {name=star.getText();}
+  | slash:SLASH                   {name=slash.getText();}
+  | equals:EQUALS                 {name=equals.getText();}
+  | sym:NON_WORD_SYMBOL           {name=sym.getText();}
+  | name=idName
+  | translate:"translate"         {name="translate";}
+  | colimit:"colimit"             {name="colimit";}
+  | diagram:"diagram"             {name="diagram";}
+  | print:"print"                 {name="print";}
+  | snark:"Snark"                 {name="Snark";}
+  ;
 
 private nonKeywordName returns[String name]
 {
@@ -748,8 +748,8 @@ private qualifiableSortName returns[String sortName]
     sortName = null;
     String qlf = null;
 }
-    : (qlf=qualifier DOT)?
-      ( sortName=name
+    : (qlf=nonKeywordName DOT)?
+      ( sortName=nonKeywordName
       | sortName=wildcardPattern
       )
                             {if (qlf != null) sortName = qlf + "." + sortName;}
@@ -773,9 +773,9 @@ private qualifiedSortName returns[String sortName]
 }
     : text=qualifier             {sortName = text;}
       dot:DOT                    {sortName = sortName + ".";}
-      text=name                  {sortName = sortName + text;}
-    ;*/
-
+      text=nonKeywordName        {sortName = sortName + text;}
+    ;
+*/
 private idName returns[String name]
 {
     name = null;
@@ -903,16 +903,105 @@ private sort returns[String sort]
     String text = null;
     sort = "";
 }
-    : (text=qualifiableRef
-                           {sort = sort + text;}
-       | text=literal
-                           {sort = sort + text;}
-       | text=specialSymbol
-                           {sort = sort + text;}
-       | text=expressionKeyword
-                           {sort = sort + text;}
+    : text=elementarySort       {sort = sort + text;}
+      (text=sortContinuation    {sort = sort + text;}
+      )?
+    | text=sortSum              {sort = sort + text;}
+    ;
+
+private elementarySort returns[String sortPart]
+{
+    String text = null;
+    sortPart = "";
+}
+    : (LPAREN                       {sortPart = "(";}
+       (text=sort                   {sortPart = sortPart + text;}
+         ( (VERTICALBAR             {sortPart = "|";}
+            text=expression         {sortPart = sortPart + text;}
+           )
+         | (COMMA                   {sortPart = sortPart + ", ";}
+            text=sort               {sortPart = sortPart + text;}
+           )*
+         )?
+       )?
+       RPAREN                       {sortPart = sortPart + ")";}     
+      )
+    | (LBRACE                      {sortPart = "{";}
+       ( ( text=nonKeywordName      {sortPart = sortPart + text;}
+         | (LPAREN                   {sortPart = sortPart + "(";}
+            text=sort                {sortPart = sortPart + text;}
+            (COMMA                   {sortPart = sortPart + ", ";}
+             text=sort               {sortPart = sortPart + text;}
+            )*
+            RPAREN                   {sortPart = sortPart + ")";}
+           )
+         )
+         COLON                    {sortPart = sortPart + ":";}
+         text=sort                {sortPart = sortPart + text;}
+         text=sortComprehensionOrRecord      {sortPart = sortPart + text;}
+       )?
+       RBRACE                   {sortPart = sortPart + "}";}
+      )
+    | (text=qualifiableSortName    {sortPart = text;}
+       ( ( text=elementarySort      {sortPart = sortPart + text;}
+           
+         )
+       | (LPAREN                   {sortPart = sortPart + "(";}
+          text=sort                {sortPart = sortPart + text;}
+          (COMMA                   {sortPart = sortPart + ", ";}
+           text=sort               {sortPart = sortPart + text;}
+          )*
+          RPAREN                   {sortPart = sortPart + ")";}
+         )
+       )?
+      )
+    ;
+
+private sortSum returns[String sortPart]
+{
+    String text = null;
+    sortPart = "";
+}
+    : ( VERTICALBAR       {sortPart = "| ";}
+        text=name         {sortPart = sortPart + text;}
+        ( text=elementarySort      {sortPart = sortPart + text;}
+           ( text=sortContinuation  {sortPart = sortPart + text;}
+           )?
+        )?
       )+
     ;
+
+private sortContinuation returns[String sortPart]
+{
+    String text = null;
+    sortPart = "";
+}
+    : (STAR            {sortPart = " * ";}
+       text=sort       {sortPart = text;}
+      )
+    | (ARROW           {sortPart = " -> ";}
+       text=sort       {sortPart = text;}
+      )
+    | (SLASH                {sortPart = "/";}
+       text=expression      {sortPart = sortPart + text;}
+      )
+    ;
+
+private sortComprehensionOrRecord returns[String sortPart]
+{
+    String text = null;
+    sortPart = "";
+}
+    : (COMMA                    {sortPart = ", ";}
+       text=nonKeywordName      {sortPart = sortPart + text;}
+       COLON                    {sortPart = sortPart + ":";}
+       text=sort                {sortPart = sortPart + text;}
+       )*
+    | (VERTICALBAR              {sortPart = " | ";}
+       text=expression          {sortPart = sortPart + text;}
+      )
+    ;
+
 
 //---------------------------------------------------------------------------
 private definition returns[ElementFactory.Item item]
@@ -1011,6 +1100,8 @@ private pattern returns[String pattern]
       )?
     ;
 
+/* replaced by the option in the pattern rule
+
 private annotatedPattern returns[String pattern]
 {
     pattern = "";
@@ -1020,6 +1111,7 @@ private annotatedPattern returns[String pattern]
       colon:COLON                           {pattern = pattern + colon.getText();}
       sortStr=sort                          {pattern = pattern + sortStr;}
     ;
+*/
 
 private basicPattern returns[String pattern]
 {
@@ -1035,7 +1127,7 @@ private tightPattern returns[String pattern]
 }
     : pattern=aliasedPattern
     | pattern=quotientPattern
-//the rule for relaxPattern wasn't in the official grammar...    | relaxPattern
+                                    //the rule for relaxPattern wasn't in the official grammar...    | relaxPattern
     | (text=name                            {pattern = text;}
       )? 
       text=closedPattern                    {pattern = pattern + text;}
@@ -1156,17 +1248,285 @@ private quotientPattern returns[String pattern]
 private expression returns[String expr]
 {
     expr = "";
-    String item = null;
+    String text = null;
 }
-    : (    item=qualifiableRef    {expr = expr + item + " ";}
-         | item=literal           {expr = expr + item + " ";}
-         | item=specialSymbol     {expr = expr + item + " ";}
-         | item=expressionKeyword {expr = expr + item + " ";}
+  : text=lambdaExpression           {expr = text;}
+  | text=quantification             {expr = text;}
+  | text=letExpression              {expr = text;}
+  | text=ifExpression               {expr = text;}
+  | text=caseExpression             {expr = text;}
+  | text=tightExpression            {expr = text;}
+  ;
+
+private lambdaExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : "fn"                            {expr = "fn ";}
+      ( (VERTICALBAR                  {expr = expr + " | ";}
+        )?
+        text=pattern                  {expr = expr + text;}
+        ARROW                         {expr = expr + " -> ";}
+        text=expression               {expr = expr + text;}
+      )
+      ( VERTICALBAR                   {expr = expr + " | ";}
+        text=pattern                  {expr = expr + text;}
+        ARROW                         {expr = expr + " -> ";}
+        text=expression               {expr = expr + text;}
+      )*
+    ;
+
+private quantification returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : ("fa"                         {expr = "fa ";}
+      | "ex"                        {expr = "ex ";}
+      )
+      (LPAREN                       {expr = expr + "(";}
+       ( text=nonKeywordName          {expr = expr + text;}
+         ( COLON                      {expr = expr + " : ";}
+           text=sort                  {expr = expr + text;}
+         )?
+         ( COMMA                      {expr = expr + ", ";}
+           text=nonKeywordName        {expr = expr + text;}
+           ( COLON                    {expr = expr + " : ";}
+             text=sort                {expr = expr + text;}
+           )?
+         )*
+       |
+       )
+       RPAREN                       {expr = expr + ")";}
+      )
+      text=expression               {expr = expr + text;}
+    ;
+
+private caseExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : "case"                        {expr = "case ";}
+       text=expression              {expr = expr + text;}
+       "of"                         {expr = expr + " of ";}
+       ( (VERTICALBAR               {expr = expr + " | ";}
+         )?
+         text=pattern               {expr = expr + text;}
+         ARROW                      {expr = expr + " -> ";}
+         text=expression            {expr = expr + text;}
+       )
+       ( VERTICALBAR                {expr = expr + " | ";}
+         text=pattern               {expr = expr + text;}
+         ARROW                      {expr = expr + " -> ";}
+         text=expression            {expr = expr + text;}
+       )*
+     ;
+
+private ifExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : ("if"                         {expr = "if ";}
+       text=expression              {expr = expr + text;}
+       "then"                       {expr = expr + " then ";}
+       text=expression              {expr = expr + text;}
+       "else"                       {expr = expr + " else ";}
+       text=expression              {expr = expr + text;}
+      )
+    ;
+
+private letExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : ("let"                        {expr = "let ";}
+        ( ("def"                     {expr = expr + " def ";}
+            text=name                 {expr = expr + text;}
+            (  (text=closedPattern     {expr = expr + text;}
+             )*
+            )?
+            ( COLON                   {expr = expr + ":";}
+             text=sort               {expr = expr + text;}
+            )?
+            equals                    {expr = expr + " = ";}
+            text=expression           {expr = expr + text;}
+           )+
+         | (text=pattern              {expr = expr + text;}
+            equals                    {expr = expr + " = ";}
+            text=expression           {expr = expr + text;}
+           )
+        )
+       "in"                         {expr = expr + text;}
+       text=expression              {expr = expr + text;}
+      )
+    ;
+
+private tightExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : text=application              {expr=text;}
+    | text=annotatedExpression      {expr=text;}
+    ;
+
+private application returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : (text=closedExpression          {expr = expr + text;}
       )+
     ;
 
+private annotatedExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : text=application                 {expr = text;}
+      (COLON                           {expr = expr + ":";}
+       text=sort                       {expr = expr + text;}
+      )+
+    ;
+
+private selectableExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : expr=baseSelectableExpression
+      ( DOT                         {expr = expr + ".";}
+        ( text=name                 {expr = expr + text;}
+        | nat:NAT_LITERAL           {expr = expr + nat.getText();}
+        )
+      )*
+    ;
+
+private baseSelectableExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+    
+}
+    : LPAREN                        {expr = "(";}
+      ( text=expression               {expr = expr + text;}
+        ( ( COMMA                     {expr = expr + ", ";}
+            text=expression           {expr = expr + text;}
+          )+
+        | ( SEMICOLON                 {expr = expr + "; ";}
+            text=expression           {expr = expr + text;}
+          )+
+        )?
+      |
+      )
+      RPAREN                        {expr = expr + ")";}
+    | LBRACE                        {expr = "{";}
+      ( text=name                   {expr = expr + text;}
+        equals                      {expr = expr + " = ";}
+        text=expression             {expr = expr + text;}
+        ( COMMA                     {expr = expr + ", ";}
+          text=name                 {expr = expr + text;}
+          equals                    {expr = expr + " = ";}
+          text=expression           {expr = expr + text;}
+        )*
+      | text=expression             {expr = expr + text;}
+        SEMICOLON                   {expr = expr + "; ";}
+        text=monadStmtList          {expr = expr + text;}
+      | text=pattern                {expr = expr + text;}
+        BACKWARDSARROW              {expr = expr + " <- ";}
+        text=expression             {expr = expr + text;}
+        ( SEMICOLON                   {expr = expr + "; ";}
+          text=monadStmtList          {expr = expr + text;}
+        )?
+      |
+      )
+      RBRACE                        {expr = expr + "}";}
+    | LBRACKET                      {expr = "[";}
+      ( text=expression               {expr = expr + text;}
+        ( COMMA                       {expr = expr + ", ";}
+          text=expression             {expr = expr + text;}
+        )*
+      |
+      )
+      RBRACKET                      {expr = expr + "]";}
+    | text=name                     {expr = text;}
+    | text=literal                  {expr = text;}
+    | text=structor                 {expr = text;}
+    ;
+
+private structor returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : "project"                     {expr = "project ";}
+      ( nat:NAT_LITERAL             {expr = expr + nat.getText();}
+      | text=name                   {expr = expr + text;}
+      )
+    | ( "relax"                     {expr = "relax ";}
+      | "restrict"                  {expr = "restrict ";}
+      | "quotient"                  {expr = "quotient ";}
+      | "choose"                    {expr = "choose ";}
+      )
+      text=closedExpression         {expr = expr + text;}
+    | ( "embed"                     {expr = "embed ";}
+      | "embed?"                    {expr = "embed? ";}
+      )
+      text=name                     {expr = expr + text;}
+    ;
+
+private closedExpression returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : text=selectableExpression   {expr = expr + text;}
+    ;
+
+private monadStmtList returns[String expr]
+{
+    expr = "";
+    String text = null;
+}
+    : text=expression               {expr = text;}
+      ( SEMICOLON                   {expr = expr + "; ";}
+        text=monadStmtList          {expr = expr + text;}
+      )?
+    | text=pattern                  {expr = text;}
+      BACKWARDSARROW                {expr = expr + " <- ";}
+      text=expression               {expr = expr + text;}
+      SEMICOLON                     {expr = expr + "; ";}
+      text=monadStmtList            {expr = expr + text;}
+    ;
+
 //---------------------------------------------------------------------------
-private specialSymbol returns[String text]
+private sortSpecialSymbol returns[String text]
+{
+    text = null;
+}
+    : UBAR                  {text = "_";}
+    | LBRACKET              {text = "[";}
+    | RBRACKET              {text = "]";}
+    | LBRACE                {text = "{";}
+    | RBRACE                {text = "}";}
+    | COMMA                 {text = ", ";}
+
+    | STAR                  {text = "*";}
+    | ARROW                 {text = "->";}
+    | BACKWARDSARROW        {text = "<-";}
+    | COLON                 {text = ":";}
+    | VERTICALBAR           {text = "|";}
+    | COLONCOLON            {text = "::";}
+    | SEMICOLON             {text = ";";}
+    | DOT                   {text = ".";}
+    ;
+
+private exprSpecialSymbol returns[String text]
 {
     text = null;
 }
@@ -1239,12 +1599,12 @@ private qualifiableRef returns[String name]
 {
     name = null;
 }
-    : name=qualifiableOpName
+    : name=nonKeywordName
     ;
 
 //---------------------------------------------------------------------------
 private equals
-    : EQUALS //nonWordSymbol["="]
+    : EQUALS
     | "is"
     ;
 
@@ -1322,6 +1682,7 @@ BLOCK_COMMENT
 	 | '\r'			{newline();}
 	 | '\n'			{newline();}
 	 | ~('*'|'\n'|'\r')
+         | BLOCK_COMMENT
       )*
       "*)"                      {_ttype = Token.SKIP;}
     ;
@@ -1358,7 +1719,7 @@ UBAR
 options {
   paraphrase = "'_'";
 }
-    :  "_"
+    :  '_'
     ;
 
 LPAREN
@@ -1425,7 +1786,7 @@ COLON
 options {
   paraphrase = "':'";
 }
-    :  ":"
+    :  ':'
     ;
 COLONCOLON
 options {
@@ -1437,13 +1798,13 @@ VERTICALBAR
 options {
   paraphrase = "'|'";
 }
-    :  "|"
+    :  '|'
     ;
 STAR
 options {
   paraphrase = "'*'";
 }
-    :  "*"
+    :  '*'
     ;
 ARROW
 options {
@@ -1467,13 +1828,13 @@ SLASH
 options {
   paraphrase = "'/'";
 }
-    :  "/"
+    :  '/'
     ;
 EQUALS
 options {
   paraphrase = "'='";
 }
-    : "="
+    : '='
     ;
 
 //-----------------------------
@@ -1569,6 +1930,9 @@ protected STRING_LITERAL_GLYPH
     | DIGIT
     | OTHER_CHAR_GLYPH
     | ' '
+    | '\r' '\n'
+    | '\r'
+    | '\n'
     ;
 
 
