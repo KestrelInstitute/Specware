@@ -68,7 +68,7 @@ SpecCalc qualifying spec {
                            returnInfo = proc.returnInfo,
                            staticSpec = proc.staticSpec,
                            dynamicSpec = appSub proc.dynamicSpec,
-                           code = mapBSpec proc.code (fn spc -> appSub spc) (fn x -> x)
+                           bSpec = mapBSpec proc.bSpec (fn spc -> appSub spc) (fn x -> x)
                            }) procs);
              pSpec <- setProcedures pSpec procs;
              return (Other pSpec, timeStamp, dep_URIs)

@@ -1,4 +1,4 @@
-\section{Compilation of PSL Procedures into BSpecs}
+\section{Compilation of Oscar/PSL Procedures into BSpecs}
 
 ## There are name conflicts for the product accessors for Procedures, PSpecs and ProcContext
 ## There are name conflicts for BSpecs and ProcContexts
@@ -15,18 +15,17 @@ SpecCalc qualifying spec {
   import ../Utilities
   import /Languages/SpecCalculus/Semantics/Evaluate/Spec
   import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
-
-  op sortScheme : fa (a) AOpInfo a -> ASortScheme a
-  def sortScheme (names,fxty,sortScheme,optTerm) = sortScheme
-
-  op sortOf : fa (a) ASortScheme a -> ASort a
-  def sortOf (tyVars,srt) = srt
+  import Utils
 \end{spec}
 
-It is called to process the "procedure elements" found in an
-Oscar specification. It compiles the procedure defined in the element.
+An Oscar spec consists of a collection of "elements". Until object support
+is added, these are called "PSpec elements" where the P refers to "procedure".
 
-Note that it incorrectly gives the type of a procedure as a function
+A procedure definition gives rise to two additions to the context.
+The code for the procedure generates a Procedure object that holds,
+amongst other things,
+
+The type of a procedure 
 from the type of its arguments to its result type. The real type should
 be as a predicate relating the input (the values of the arguments and
 the value of the variables in scope) and the output (the return value
@@ -51,21 +50,24 @@ not a procedure. This includes vars and ops.
 % We begin by defining the operator to represent the procedure in the static context. This
 % op has Proc sort and is used to label those transitions that call the procedure.
 
-          argProd <- return (mkProduct (map (fn (name,srt) -> srt) procInfo.args)); 
+          argProd <- return (mkProductAt (map (fn (name,srt) -> srt) procInfo.args) position); 
           tmpSpec <- return (subtractSpec pSpec.dynamicSpec pSpec.staticSpec);
-          storeRec <- return (mkProduct_local
+          storeProd <- return (mkProductAt
             (foldriAQualifierMap
-               (fn (qual,id,opInfo,recSorts) ->
-                   if qual = UnQualified then
-                     Cons ((id,sortOf (sortScheme opInfo)),recSorts)
-                   else
-                     Cons ((qual ^ "_" ^ id,sortOf (sortScheme opInfo)),recSorts))
-                        [] tmpSpec.ops));
-          % let procSort = mkBase(unQualified "Proc",[argProd,procInfo.returnSort,storeRec]) in 
-          procSort <- return (mkArrow (argProd,procInfo.returnSort));
-          % static <- staticSpec pSpec;
-          % static <- addOp [unQualified procName] Nonfix (tyVarsOf procSort,procSort) None static (Internal "evaluatePSpecProcElem");
-          % pSpec <- setStaticSpec pSpec static;
+               (fn (qual,id,opInfo,recSorts) -> Cons (sortOf (sortScheme opInfo),recSorts)) [] tmpSpec.ops) position);
+          procSort <- return (mkBaseAt (unQualified "Proc") [argProd,procInfo.returnSort,storeProd] position); 
+          qualProcId as Qualified (procQual,procName) <- return (unQualified procName);
+          static <- staticSpec pSpec;
+          static <- addOp [qualProcId] Nonfix (tyVarsOf procSort,procSort) [] static position;
+          pSpec <- setStaticSpec pSpec static;
+          pSpec <-
+            case findAQualifierMap (static.ops, procQual, procName) of
+              | None -> return pSpec
+              | Some info -> {
+                    dynamic <- dynamicSpec pSpec;
+                    dynamic <- addNonLocalOpInfo dynamic procQual procName info;
+                    setDynamicSpec pSpec dynamic
+                 };
 \end{spec}
 
 We want to construct a placeholder for the procedure. This includes an
@@ -95,42 +97,49 @@ we are carrying around the slice.
           dyCtxt <- return (setImportedSpec (dyCtxt,pSpec.dynamic));
 
 \begin{spec}
-          dyCtxt <-
+          initialDyCtxt <-
              foldM (fn dCtxt -> fn (argName,argSort) ->
                        addOp [unQualified argName]
                              Nonfix
                              (tyVarsOf argSort,argSort)
                              []
-                             dCtxt (Internal "evaluatePSpecProcElem"))
+                             dCtxt position)
                          pSpec.dynamicSpec procInfo.args;
 
  
-          (dyCtxt,returnInfo : ReturnInfo) <- 
+          (finalDyCtxt,returnInfo : ReturnInfo) <- 
              case procInfo.returnSort of
-               | Product ([],_) -> return (dyCtxt, None)
+               | Product ([],_) -> return (initialDyCtxt, None)
                | _ -> {
-                     dyCtxt <- addOp [unQualified ("return_" ^ procName)]
+                     dyCtxt <- addOp [unQualified ("return#" ^ procName)]
                                      Nonfix
                                      (tyVarsOf procInfo.returnSort,procInfo.returnSort)
-                                     [] dyCtxt internalPosition;
-                     return (dyCtxt, Some {returnSort=procInfo.returnSort,returnName= ("return_" ^ procName)})
+                                     [] initialDyCtxt position;
+                     return (dyCtxt, Some {returnSort=procInfo.returnSort,returnName= ("return#" ^ procName)})
                    };
 
-          dyCtxtElab <- elaborateSpec dyCtxt; 
+          initialDyCtxtElab <- elaborateSpec initialDyCtxt; 
+          finalDyCtxtElab <- elaborateSpec finalDyCtxt; 
 
           bSpec <- return (
              let (initialV,finalV) = (mkNatVertexEdge 0, mkNatVertexEdge 1) in
-             let bSpec = addMode (newSystem initialV dyCtxtElab) finalV dyCtxtElab in
+             % let bSpec = addMode (newSystem initialV initialDyCtxtElab) finalV finalDyCtxtElab in
+             let bSpec = addMode (newSystem initialV finalDyCtxtElab) finalV finalDyCtxtElab in
              setFinalModes bSpec (V.singleton finalV));
           proc <- return (makeProcedure (map (fn (x,y) -> x) procInfo.args)
                                  returnInfo
-                                 pSpec.staticSpec
-                                 dyCtxtElab
+                                 pSpec.staticSpec  
+                                 pSpec.dynamicSpec
                                  bSpec);
           setProcedures pSpec (PolyMap.update pSpec.procedures (unQualified procName) proc)
         }
       | _ -> return pSpec
 \end{spec}
+
+### In the above, the dynamic context always includes the return operator.
+In fact it need only appear in the final spec and in the apex of any
+transition that ends in the final spec. The point is that
+the assign operation isn't quite smart enough.
 
 In the second pass of compiling a procedure we actually compile the command
 in the body of the procedure.
@@ -163,20 +172,21 @@ the full bSpec.
   def evaluatePSpecProcElemPassTwo pSpec (elem,position) =
     case elem of
       | Proc (procName,procInfo) -> {
-            procValue <- return (PolyMap.eval pSpec.procedures (unQualified procName));
-            ctxt : ProcContext <-
+           procValue <- return (PolyMap.eval pSpec.procedures (unQualified procName));
+           (initialV,finalV) <- return (mkNatVertexEdge 0, mkNatVertexEdge 1);
+           ctxt : ProcContext <-
                 return {
                   procedures = pSpec.procedures,
-                  dynamic = procValue.dynamicSpec,
-                  static = procValue.staticSpec,
+                  dynamic = modeSpec procValue.bSpec initialV,
+                  static = procValue.staticSpec, % ## This is wrong .. should be from the start state as well
                   graphCounter = 2,  % = finalV + 1
                   varCounter = 0,
-                  initialV = mkNatVertexEdge 0,
-                  finalV = mkNatVertexEdge 1,
-                  exit = mkNatVertexEdge 1,
+                  initialV = initialV,
+                  finalV = finalV,
+                  exit = finalV,
                   break = None,
                   continue = None,
-                  bSpec = procValue.code,
+                  bSpec = procValue.bSpec,
                   returnInfo = procValue.returnInfo
                 };
       
@@ -190,35 +200,6 @@ the full bSpec.
            return pSpec
          }
       | _ -> return pSpec
-\end{spec}
-
-The following function is used to extract a list of type variables from
-a sort. The list is free of repetitions, \emph{i.e.} all its elements are
-distinct. This function does not belong here: it should be part of the
-spec for the MetaSlang abstract syntax, but it is ok for now.
-
-\begin{spec}
-  op tyVarsOf : PSort -> List TyVar
-  def tyVarsOf srt =
-    let def tyVarsOfAux (srt:PSort, tvs:TyVars) : TyVars =
-      case srt of
-        | Arrow (srt1,srt2,_) -> tyVarsOfAux (srt1, tyVarsOfAux (srt2,tvs))
-        | Product (idSrts,_) -> foldl tyVarsOfAux tvs (map (fn (x,y) -> y) idSrts)
-        | CoProduct (idSrts,_)
-                 -> foldl (fn ((id,srt),tvs1) ->
-                              case srt of
-                                | Some srt -> tyVarsOfAux (srt,tvs1)
-                                | None -> tvs1)
-                          tvs
-                          idSrts
-        | Quotient (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
-        | Subsort (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
-        | Base (_,srts,_) -> foldl tyVarsOfAux tvs srts
-%        | PBase (_,srts,_) -> foldl tyVarsOfAux tvs srts
-        | TyVar (tv,_) -> if member (tv,tvs) then tvs else List.insert (tv,tvs)
-        | MetaTyVar _ -> tvs
-    in
-      tyVarsOfAux (srt,[])
 \end{spec}
 
 The following function compiles a procedure declaration (sort
@@ -285,23 +266,6 @@ compilation always produces singleton sets of ending nodes. The partial
 evaluator may generate sets with more than one node, though: that is the
 reason for having a set of ending nodes.
 
-The next is a local hack. The point is that the user wants a convenient
-way to have an association list without defining all the maps and whatnot.
-
-Perhaps we should have a simple spec for association lists.
-
-\begin{spec}
-  op lookup : List (QualifiedId * QualifiedId) -> QualifiedId -> Option QualifiedId
-  def lookup l id =
-    case l of
-      | [] -> None
-      | (key,val)::rest ->
-          if key = id then
-            Some val
-          else
-            lookup rest id
-\end{spec}
-
 The current version includes in the morphism, only those
 things where the map differs from the canonical injection.
 
@@ -362,72 +326,60 @@ make much of the following unnecessary.
         sortMap = sortMap
      }
    }
+\end{spec}
 
-  % sort BSpecs.Morphism = SpecCat.Morphism  %% Why do we need this?
+We compile a command with respect to a procedure context. The context records, amongst
+other things, the current static and dynamic specs. These give, respectively, the
+constants and variables currently in scope. Also in the context is a so-called BSpec.
+This is the flow-graph currently being constructed.
 
-  op compileCommand : 
-        ProcContext
-     -> Command Position
-     -> SpecCalc.Env ProcContext
+The context also includes the identities of the vertices in the BSpec
+to be connected by the command. That is, the endpoints of a command are already
+part of the BSpec by the time we compile the command. 
 
-  def compileCommand ctxt (cmd,pos) =
+\begin{spec}
+  op compileCommand : ProcContext -> Command Position -> SpecCalc.Env ProcContext
+  def compileCommand ctxt (cmd,position) =
     case cmd of
 \end{spec}
 
-Compiling a sequence of commands means compiling the individual commands
-and gluing the end of one onto the start of next. We assume that the list of
-commands is not empty.
-
-problem here... how does the static context get updated with the new
-procedures? And how do we accumulate the procedures? Probably ok ..
-the other procedures are not in scope?
-
 \begin{spec}
       | Seq cmds -> compileSeq ctxt cmds
-\end{spec}
-
-The compilation of an \verb+if+ consist of first compiling the
-list of alternatives, then adding identity transitions out of the end of
-each alternative into a common (new) vertex. Note that the compilation of
-the list of alternatives results in the compilation of the commands for all
-the alternatives, with transitions out of a common starting node into each
-alternative: these transitions are labeled by the respective guards.
-
-\begin{spec}
-      | If [] -> raise (SpecError (pos, "compileCommand: If: empty list of alternatives"))
+      | If [] -> raise (SpecError (position, "compileCommand: If: empty list of alternatives"))
       | If alts -> compileAlternatives ctxt alts
 \end{spec}
 
-To compile a loop, we first compile the alternatives. Then we add identity
-transitions from the ending vertices of the \BSpecs\ for the alternatives
-to the starting node of the returned system (from which there are
-transitions to all the commands of the alternatives, guarded by the guards
-of the alternatives). In addition, we create a transition from the starting
-vertex out to a newly created vertex, which becomes the ending vertex of
-the \BSpec\ for the \verb+if+ command. This transition is the exit
-transition for the loop, so it is labeled by the conjunction of the
-negations of all the guards of the alternatives.
+To compile a loop, we compile the alternatives in the body in such a
+way that all the branches connect the initial point in the current BSpec
+with itself. We also connect the initial vertex with the final vertex
+labelled with an axiom representing the negation of the disjunction
+of the guards in the alternatives. This is the exit branch of the loop.
 
-When we create the axiom, we give it an empty list of type variables
+### When we create the axiom, we give it an empty list of type variables
 under the assumption that they are never used. Needs thought.
 
 \begin{spec}
       | Do [] -> fail "compileCommand: Do: empty list of alternatives"
       | Do alts -> {
-          saveLast <- return (finalV ctxt);
-          ctxt <- compileAlternatives (setFinal ctxt (initialV ctxt)) alts; 
-          ctxt <- return (setFinal ctxt saveLast);
-          axm <- return (mkNot (disjList (map (fn ((guard,term),_) -> guard) alts)));
+          saveFinal <- return (finalV ctxt);
+          saveBreak <- return (break ctxt);
+          saveContinue <- return (continue ctxt);
+          ctxt <- return (setBreak ctxt (Some (finalV ctxt)));
+          ctxt <- return (setContinue ctxt (Some (initialV ctxt)));
+          ctxt <- return (setFinal ctxt (initialV ctxt));
+          ctxt <- compileAlternatives ctxt alts; 
+          ctxt <- return (setFinal ctxt saveFinal);
+          ctxt <- return (setContinue ctxt saveContinue);
+          ctxt <- return (setBreak ctxt saveBreak);
+          axm <- return (mkNotAt (disjList (map (fn ((guard,term),_) -> guard) alts) position) position);
           apexSpec <- return (addAxiom (("guard", [], axm), dynamic ctxt));
           apexElab <- elaborateSpec apexSpec;
           connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab []
         }
 \end{spec}
 
-An assignment command maps to a \BSpec\ with a single transition. The
-start and end states of the transition are labeled with a copy of the
-dynamic context; as mentioned above, each should import a copy of the
-static context.
+An assignment command connects the initial and final points of the
+current \BSpec\ with a single transition. 
 
 The tricky bit is to construct the spec for the assignment and the
 morphism in the opspan. The point is that the variables not appearing
@@ -437,8 +389,8 @@ assignment may be a functional term where, essentially, one is updating
 a map.
 
 There are a few ways to do this.  
-Assume we have an assignment \verb+f(x) := t+ in a dynamic context
-consisting of \verb+f : X -> T +,
+Assume we have an assignment \verb+f x := t+ in a dynamic context
+consisting of \verb+f : X -> T+,
 \verb+x : X +, \verb+g : Y -> Z+, and \verb+z : Z+.
 
 \begin{itemize}
@@ -448,7 +400,7 @@ transition. To avoid name clashes, all the ops from the destination are
 ``primed''. The opspan morphisms to the apex are the obvious imports. Then
 we add the following formula at the apex:
 \begin{verbatim}
-  axiom f'(x) = t
+  axiom f' x = t
     & x' = x
     & g' = g
     & z' = z
@@ -457,169 +409,122 @@ we add the following formula at the apex:
 
 \item The second approach is like the above. In this case the signature
 of the spec for the transition (at the apex) is the spec at the start
-of the transiton plus primed versions of those operators that change. In
+of the transiton plus primed versions of only those operators that change. In
 this case only \verb+f'+ is added. The axiom at the apex deals only with
 those variables that change. Thus it would contain only the first and
-last conjuncts from the above. 
+last conjuncts from the above.
+
+The opspan morphisms are as follows.  The morphism from the start state
+is the canonical injection (identity on names). The morphism from the
+final spec to the apex is the identity everywhere except for identifiers
+changed by the transition. In that case the identifier is mapped to its
+primed version. For the above, this would be \verb+f+ $\mapsto$ \verb+f'+.
+
+An alternative axiomitization of the above in the case
+where one is updating a function space, would have an update function
+in the global static spec
+\[
+\mathit{update}\ f\ x\ t =
+\lambda \ y . \mathbf{if} \ x = y\ \mathbf{then}\ t\ \mathbf{else}\ (f\ x)
+\]
+and then label the transition with:
+\begin{verbatim}
+  axiom f' = update f x t
+\end{verbatim}
 
 \item The final approach would be to use either of the above
 but rather than \verb+fa+, to fold a conjunction over the clause to right
 of the \verb+fa+ operation over the domain of the map \verb+f+ 
 \end{itemize}
 
-We choose the second approach.
+We choose the second approach. The code is complicated somewhat by
+the possibility that the right hand side may be an expression (without
+side-effects) of a procedure call. The latter appears as an application
+where the function symbol is the name of a previously declared procedure.
+It is further complicated by the possibility that the procedure name
+may appear qualified or unqualified.
 
 \begin{spec}
       | Assign (trm1,trm2) ->
           (case trm2 of
-            | ApplyN ([Fun(OneName(id,fixity),srt,_),Record (args,_)],_) ->
-                % print "Assign: OneName found (with record args)";
+            | ApplyN ([Fun(OneName(id,fixity),srt,position),argTerm],_) ->
                 if ~((PolyMap.evalPartial (procedures ctxt) (unQualified id)) = None) then
-                  compileProcCall ctxt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
+                  compileProcCall ctxt (Some trm1) (unQualified id) argTerm position
                 else
-                  compileAssign ctxt trm1 trm2
-            | ApplyN ([Fun(OneName(id,fixity),srt,pos),arg],_) ->
-                % print "Assign: OneName found (unary arg)";
-                if ~((PolyMap.evalPartial (procedures ctxt) (unQualified id)) = None) then
-                  compileProcCall ctxt (Some trm1) (unQualified id) [arg]
-                else
-                  compileAssign ctxt trm1 trm2
-            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,_),Record (args,_)],_) ->
-                % print "Assign: TwoNames found (with record args)";
+                  compileAssign ctxt trm1 trm2 position
+            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,position),argTerm],_) ->
                 if ~((PolyMap.evalPartial (procedures ctxt) (Qualified (id1,id2))) = None) then
-                  compileProcCall ctxt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
+                  compileProcCall ctxt (Some trm1) (Qualified (id1,id2)) argTerm position
                 else
-                  compileAssign ctxt trm1 trm2
-            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,pos),arg],_) ->
-                % print "Assign: TwoNames found (unary arg)";
-                if ~((PolyMap.evalPartial (procedures ctxt) (Qualified (id1,id2))) = None) then
-                  compileProcCall ctxt (Some trm1) (Qualified (id1,id2)) [arg]
-                else
-                  compileAssign ctxt trm1 trm2
+                  compileAssign ctxt trm1 trm2 position
             | _ ->
-                compileAssign ctxt trm1 trm2)
+                compileAssign ctxt trm1 trm2 position)
 \end{spec}
 
-What would be an abstract operation for constructing a transition
-should hide the creation of the edge and labelling of the edge
-connect ctxt start end formula frame
+To handle a Return command, we must first check that function returns
+something when it has been declared to do so, and doesn't return anything
+if it has been given a return sort of \verb|()|.
 
-or maybe a collection of functions
-
-one for guards
-one for assignments
+If it returns nothing, then we connect the current start vertex with
+the exit vertex with a transition that is taken unconditionally and has
+no effect. Right now we include a transition with a single \verb|true|
+axiom but we might be better off without an axiom at all.
 
 \begin{spec}
       | Return optTerm ->
           (case (optTerm,returnInfo ctxt) of
             | (None,None) -> {
-                  apexSpec <- return (addAxiom (("assign", [], mkTrue ()),dynamic ctxt));  % why bother?
+                  apexSpec <- return (addAxiom (("assign", [], mkTrueAt position),dynamic ctxt)); 
                   apexElab <- elaborateSpec apexSpec; 
                   connectVertices ctxt (initialV ctxt) (exit ctxt) apexElab []
                 }
             | (None,Some {returnSort,returnName}) ->
-                raise (SpecError (pos, "Procedure has return sort " ^ (printSort returnSort) ^ " but no return value"))
+                raise (SpecError (position, "Procedure has return sort " ^ (printSort returnSort) ^ " but no return value"))
             | (Some term, None) ->
-                raise (SpecError (pos, "Procedure with unit sort returns a value"))
+                raise (SpecError (position, "Procedure with unit sort returns a value"))
             | (Some term, Some {returnSort,returnName}) -> {
-                  lhs <- return (Fun (OneName(returnName,Nonfix),returnSort,internalPosition));
+                  lhs <- return (mkFunAt (OneName (returnName,Nonfix)) returnSort position);
                   saveLast <- return (finalV ctxt);
                   ctxt <- return (setFinal ctxt (exit ctxt));
                   ctxt <-
                     case term of
-                      | ApplyN ([Fun(OneName(id,fixity),srt,_),Record (args,_)],_) ->
-                          % print "Assign: OneName found (with record args)";
+                      | ApplyN ([Fun(OneName(id,fixity),srt,position),argTerm],_) ->
                           if ~((PolyMap.evalPartial (procedures ctxt) (unQualified id)) = None) then
-                            compileProcCall ctxt (Some lhs) (unQualified id) (map (fn (x,y) -> y) args)
+                            compileProcCall ctxt (Some lhs) (unQualified id) argTerm position
                           else
-                            compileAssign ctxt lhs term
-                      | ApplyN ([Fun(OneName(id,fixity),srt,pos),arg],_) ->
-                          % print "Assign: OneName found (unary arg)";
-                          if ~((PolyMap.evalPartial (procedures ctxt) (unQualified id)) = None) then
-                            compileProcCall ctxt (Some lhs) (unQualified id) [arg]
-                          else
-                            compileAssign ctxt lhs term
-                      | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,_),Record (args,_)],_) ->
-                          % print "Assign: TwoNames found (with record args)";
+                            compileAssign ctxt lhs term position
+                      | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,position),argTerm],_) ->
                           if ~((PolyMap.evalPartial (procedures ctxt) (Qualified (id1,id2))) = None) then
-                            compileProcCall ctxt (Some lhs) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
+                            compileProcCall ctxt (Some lhs) (Qualified (id1,id2)) argTerm position
                           else
-                            compileAssign ctxt lhs term
-                      | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,pos),arg],_) ->
-                          % print "Assign: TwoNames found (unary arg)";
-                          if ~((PolyMap.evalPartial (procedures ctxt) (Qualified (id1,id2))) = None) then
-                            compileProcCall ctxt (Some lhs) (Qualified (id1,id2)) [arg]
-                          else
-                              compileAssign ctxt lhs term
-                      | _ -> compileAssign ctxt lhs term;
+                              compileAssign ctxt lhs term position
+                      | _ -> compileAssign ctxt lhs term position;
                   return (setFinal ctxt saveLast)
                 })
 \end{spec}
 
-      | Relation trm -> compileAxiomStmt ctxt trm
 \begin{spec}
-      | Continue -> return ctxt 
-      | Break -> return ctxt
+      | Continue -> 
+          (case (continue ctxt) of
+             | Some continueVertex -> {
+                   apexElab <- elaborateSpec (dynamic ctxt); 
+                   connectVertices ctxt (initialV ctxt) continueVertex apexElab []
+                 }
+             | None ->
+                 raise (SpecError (position, "continue appears outside of a loop")))
+
+      | Break ->
+          (case (break ctxt) of
+             | Some breakVertex -> {
+                   apexElab <- elaborateSpec (dynamic ctxt); 
+                   connectVertices ctxt (initialV ctxt) breakVertex apexElab []
+                 }
+             | None ->
+                 raise (SpecError (position, "break appears outside of a loop")))
 \end{spec}
 
-Temporary while we do not need procedure calls.
-
 	  | Exec trm -> compileAxiomStmt pSpec initialV finalV exit bSpec cnt trm
-
-      | Exec trm ->
-           (case trm of
-             | Apply ((Fun(Op(id::[],fixity),srt),pos)::(Record args,_)::[]) ->
-                 if ~((evalPartial_p procs id) = None) then
-                   compileProcCall ctxt initialV finalV bspec cnt procs None id
-                     (map (fn (x,y) -> y) args)
-                 else
-                   fail ("compileCommand: procedure "
-                       ^ id
-                       ^ " has not been declared at position "
-                       ^ (printPosition_ast pos))
-             | Apply ((Fun(Op(id::[],fixity),srt),pos)::arg::[]) ->
-                 if ~((evalPartial_p procs id) = None) then
-                   compileProcCall ctxt initialV finalV bspec cnt procs None id [arg]
-                 else
-                   fail ("compileCommand: procedure "
-                       ^ id
-                       ^ " has not been declared at position "
-                       ^ (printPosition_ast pos))
-             | _ ->
-                fail ("compileCommand: invalid procedure call at position "
-                      ^ (printPosition_ast pos)))
-end{spec}
-
-To compile a procedure call whose result gets assigned to a variable,
-we use the operator that encapsulates the procedure. We have to create,
-in the apex spec, primed versions of all the variables. Then, we have
-to create two records one with the non-primed variables, and one with the
-primed ones. The two records form the third argument to the operator
-for the procedure in the axiom.
-
-We assume that the left hand side term of the assignment is a variable.
-Its primed version becomes the second argument to the operator for the
-procedure in the axiom. The first argument is the tuple of terms given
-as arguments to the procedure, and they are all non-primed.
-
-begin{spec}
-      | AssignCall (trm,pr,args) ->
-          compileProcCall ctxt initialV finalV bspec cnt procs (Some trm) pr args
-end{spec}
-
-To compile a procedure call whose result is discarded, we create a
-one-transition \BSpec\ similar to the one above. The difference is that the
-second argument to the operator representing the procedure is an
-existentially quantified variable. So, the ``effect'' of the axiom is
-simply to relate the new state's variables' values to their old values and
-to the arguments passed to the procedure. The name of the existentially
-quantified variable is \verb+x+ followed by three underscores followed by
-\verb+x+; so, we (reasonably) assume that no other variable has that name.
-
-begin{spec}
-      | Call (pr,args) ->
-          compileProcCall ctxt initialV finalV bspec cnt procs None pr args
-end{spec}
+      | Relation trm -> compileAxiomStmt ctxt trm
 
 To compile a \verb+let+, we first compile its declarations, thus enlarging
 the context. Then, we compile the command in the enlarged context.
@@ -652,23 +557,23 @@ This should be an invariant. Must check.
 
 \begin{spec}
       | Skip -> {
-          apexSpec <- return (addAxiom (("assign", [], mkTrue ()),dynamic ctxt));  % why bother?
+          apexSpec <- return (addAxiom (("assign", [], mkTrueAt position),dynamic ctxt));  % why bother?
           apexElab <- elaborateSpec apexSpec; 
           connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab []
         }
 \end{spec}
 
 \begin{spec}
-  op compileAssign : ProcContext -> ATerm Position -> ATerm Position -> SpecCalc.Env ProcContext
-  def compileAssign ctxt trm1 trm2 = {
+  op compileAssign : ProcContext -> ATerm Position -> ATerm Position -> Position -> SpecCalc.Env ProcContext
+  def compileAssign ctxt trm1 trm2 position = {
     (leftId, leftPrimedTerm) <- return (processLHS trm1); 
     apexSpec <- 
        (case findTheOp (dynamic ctxt, leftId) of
           | None ->
-             raise (SpecError (internalPosition, "compileCommand: Assign: id '"
+             raise (SpecError (position, "compileCommand: Assign: id '"
                           ^ (printQualifiedId leftId) ^ "' is undefined"))
           | Some (names,fixity,sortScheme,optTerm) ->
-             addOp [makePrimedId leftId] fixity sortScheme optTerm (dynamic ctxt) (Internal "compileAssign")); 
+             addOp [makePrimedId leftId] fixity sortScheme optTerm (dynamic ctxt) position); 
 \end{spec}
  
 The next clause may seem puzzling. The point is that, from the time
@@ -697,7 +602,7 @@ time being, I've chosen to remove it.
 \begin{spec}
           % let apexSpec =
               % addOp_ast((primedId,fixity,(tyVarsOf srt,srt),None),apexSpec) in
-    axm <- return (mkEquality leftPrimedTerm trm2);
+    axm <- return (mkEqualityAt leftPrimedTerm trm2 position);
 \end{spec}
 
 Here we add the axioms encoding the assignment to the apex spec. Right
@@ -731,6 +636,9 @@ assignment.  As things are now, we are processing left-side applications
 \emph{before} infixes are resolved.  That is, we assume that the left-most
 in the application operator is the operator being applied to the remaining
 elements in the list.
+
+### A possible bug here is that the names we return are qualified rather
+than OneName TwoNames ... this means that the typechecker will ignore them
 
 \begin{spec}
   op processLHS : ATerm Position -> QualifiedId * (ATerm Position)
@@ -809,18 +717,19 @@ So the following doesn't handle the situation where the name are captured by lam
     in
       foldTerm (foldT,foldS,foldP) [] term
 
-  op compileAxiomStmt : ProcContext -> ATerm Position -> SpecCalc.Env ProcContext
+  op compileAxiomStmt : ProcContext -> ATerm Position -> Position -> SpecCalc.Env ProcContext
 
-  def compileAxiomStmt ctxt trm = {
+  def compileAxiomStmt ctxt trm position = {
     primedNames <- return (filter isPrimedName? (freeNames trm));
     apexSpec <- foldM (fn spc -> fn qualId ->
       (case findTheOp (dynamic ctxt,removePrime qualId) of
          | None ->
-             raise (SpecError (internalPosition, "compileAxiomStmt: unprimed id '"
+             raise (SpecError (position, "compileAxiomStmt: unprimed id '"
                           ^ (printQualifiedId (removePrime qualId)) ^ "' is undefined"))
          | Some (names,fixity,sortScheme,optTerm) -> {
                   print ("compileAxiomStmt: " ^ (printQualifiedId qualId) ^ "\n");
-                  addOp [qualId] fixity sortScheme optTerm spc (Internal "compileAxiomStmt")})) (dynamic ctxt) primedNames; 
+                  addOp [qualId] fixity sortScheme optTerm spc position}
+       )) (dynamic ctxt) primedNames; 
      apexSpec <- return (addAxiom (("axiom stmt",[],trm),apexSpec));
      apexElab <- elaborateSpec apexSpec; 
      connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab (map (fn name -> removePrime name) primedNames)
@@ -828,23 +737,15 @@ So the following doesn't handle the situation where the name are captured by lam
 \end{spec}
 
 The following function is used to compile a procedure call, whose result
-is either assigned or discarded. This function is called by the code of
-the two procedure call cases of \verb+compileCommand+. The arguments to
-this function are a procedure (name), a list of arguments (which are terms),
-and an optional term. If present, the term indicates that the result of the
-procedure call must be assigned (to the term itself, which we assume to be
-a variable); if not present, that indicates that the returned value is
-discarded.
+is either assigned or discarded.  The arguments to this function are
+a procedure (name), a term representing the argument (or arguments)
+to the procedure and an optional term. If present, the term represents
+the left hand side of the assignment where the procedure is called.
+If absent, then there is no return value.
 
 The sort of this function is a nightmare.
 
-The code isn't quite right. It passes a store formed from the names
-in the current dynamic context. But it should be the dynamic context
-from where the procedure was declared. Some care must be taken
-if local variables have shadowed the names when the procedure was
-declared. The scheme for handling the store needs thought!
-
-So for the time being, we will assume that the names of the arguments
+For the time being, we will assume that the names of the arguments
 differ from anything in the dynamic context. This bad.
 
 What follows is has become a bit of a dog's breakfast. The complication
@@ -868,21 +769,39 @@ something but it is not used, we create a meta-slang variable and use
 it in the return location. Then, we add an existential quantifier in
 front of the axiom term.
 
+To compile a procedure call whose result gets assigned to a variable,
+we use the operator that encapsulates the procedure. We have to create,
+in the apex spec, primed versions of all the variables. Then, we have
+to create two records one with the non-primed variables, and one with the
+primed ones. The two records form the third argument to the operator
+for the procedure in the axiom.
+
+We assume that the left hand side term of the assignment is a variable.
+Its primed version becomes the second argument to the operator for the
+procedure in the axiom. The first argument is the tuple of terms given
+as arguments to the procedure, and they are all non-primed.
+
+To compile a procedure call with no return value, we create a
+one-transition \BSpec\ similar to the one above. The difference is that
+the second argument to the operator representing the return value of
+the procedure is the unit \verb+()+.
+
 \begin{spec}
   op compileProcCall :
        ProcContext
     -> Option (ATerm Position)
     -> QualifiedId
-    -> List (ATerm Position)
+    -> ATerm Position
+    -> Position
     -> SpecCalc.Env ProcContext
 \end{spec}
 
 \begin{spec}
-  def compileProcCall ctxt trm? procId args = {
+  def compileProcCall ctxt trm? procId argTerm position = {
       procOpInfo <-
         (case findTheOp (static ctxt, procId) of
           | None ->
-             raise (SpecError (internalPosition, "compileProcCall: call to undefined procedure: " ^ (printQualifiedId procId)))
+             raise (SpecError (position, "compileProcCall: call to undefined procedure: " ^ (printQualifiedId procId)))
           | Some info -> return info);
 
       (leftQualId as Qualified(leftQual,leftId), leftPrimedTerm) <-
@@ -929,11 +848,10 @@ This is all the local names in the procInfo.dynamicSpec.
       apexSpec <- foldM (fn spc -> fn (qual,id,opInfo) -> addLocalOpInfo spc qual (id ^ "'") opInfo)
                              ctxt.dynamic
                              changedOps;
-      argTuple <- return (mkTuple args); 
-      oldRec <- return (mkTuple 
-           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id), sortOf (sortScheme opInfo))) changedOps));
-      newRec <- return (mkTuple 
-           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo))) changedOps));
+      oldRec <- return (mkTupleAt 
+           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id), sortOf (sortScheme opInfo))) changedOps) position);
+      newRec <- return (mkTupleAt
+           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo))) changedOps) position);
       changedNames <- return (map (fn (qual,id,opInfo) -> mkQualifiedId (qual,id)) changedOps);
       changedNames <-
         return (case trm? of
@@ -941,16 +859,24 @@ This is all the local names in the procInfo.dynamicSpec.
                   | Some _ -> Cons (leftQualId,changedNames));
       print ("changedNames = " ^ (show " " (map printQualifiedId changedNames)) ^ "\n");
 
-      recPair <- return (mkTuple [oldRec,newRec]); 
-      totalTuple <- return (mkTuple [argTuple,leftPrimedTerm,recPair]); 
-      procOp <- return (mkOp (procId, sortOf (sortScheme procOpInfo)));
-      axm <- return (mkApply (procOp,totalTuple));
+      recPair <- return (mkTupleAt [oldRec,newRec] position); 
+      totalTuple <- return (mkTupleAt [argTerm,leftPrimedTerm,recPair] position); 
+      % procOp <- return (mkOpAt procId sortOf (sortScheme procOpInfo) position);
+      procOp <- let procName =
+        case procId of
+          | Qualified (qual,id) ->
+             if qual = UnQualified then
+               OneName (id,Nonfix)
+             else
+               TwoNames (qual,id,Nonfix) in
+             return (mkFunAt procName (sortOf (sortScheme procOpInfo)) position);
+      axm <- return (mkApplyNAt procOp totalTuple position);
       apexSpec <-
         case trm? of
           | Some trm -> 
               (case findTheOp (dynamic ctxt, leftQualId) of
                  | None ->
-                     raise (SpecError (internalPosition,
+                     raise (SpecError (position,
                                       "compileProcCall: id '" ^ (printQualifiedId leftQualId) ^ "' is undefined"))
                  | Some (names,fixity,sortScheme,optTerm) ->
 \end{spec}
@@ -971,6 +897,11 @@ there.
       connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab changedNames
    }
 \end{spec}
+
+The following compiles a sequence of commands. For each command
+we introduce a new vertex ``between'' the current initial and final
+vertices, compile the first command between the initial and new vertices
+and compile the rest between the new and final vertex.
 
 \begin{spec}
   op compileSeq : ProcContext -> List (Command Position) -> SpecCalc.Env ProcContext
@@ -1048,8 +979,8 @@ op setInitial : ProcContext -> V.Elem -> ProcContext
 op setGraphCounter : ProcContext -> Nat -> ProcContext 
 op setFinal : ProcContext -> V.Elem -> ProcContext 
 op setExit : ProcContext -> V.Elem -> ProcContext 
-op setBreak : ProcContext -> V.Elem -> ProcContext 
-op setContinue : ProcContext -> V.Elem -> ProcContext 
+op setBreak : ProcContext -> Option V.Elem -> ProcContext 
+op setContinue : ProcContext -> Option V.Elem -> ProcContext 
 op setBSpec : ProcContext -> BSpec -> ProcContext 
 op setReturnInfo : ProcContext -> ReturnInfo -> ProcContext 
 
@@ -1135,6 +1066,36 @@ def setFinal procContext vertex = {
     returnInfo = procContext.returnInfo
   }
 
+def setBreak procContext optVertex = {
+    procedures = procContext.procedures,
+    dynamic = procContext.dynamic,
+    static = procContext.static,
+    graphCounter = procContext.graphCounter,
+    varCounter = procContext.varCounter,
+    initialV = procContext.initialV,
+    finalV = procContext.finalV,
+    exit = procContext.exit,
+    break = optVertex,
+    continue = procContext.continue,
+    bSpec = procContext.bSpec,
+    returnInfo = procContext.returnInfo
+  }
+
+def setContinue procContext optVertex = {
+    procedures = procContext.procedures,
+    dynamic = procContext.dynamic,
+    static = procContext.static,
+    graphCounter = procContext.graphCounter,
+    varCounter = procContext.varCounter,
+    initialV = procContext.initialV,
+    finalV = procContext.finalV,
+    exit = procContext.exit,
+    break = procContext.break,
+    continue = optVertex,
+    bSpec = procContext.bSpec,
+    returnInfo = procContext.returnInfo
+  }
+
 def setInitial procContext vertex = {
     procedures = procContext.procedures,
     dynamic = procContext.dynamic,
@@ -1182,20 +1143,14 @@ def setGraphCounter procContext graphCounter = {
 \end{spec}
 
 To compile a collection of alternatives, we compile each alternative
-separately. Each has a start state and an end state. We construct a the
-system for the collection of alternatives by combining all the separate
-alternatives into a single diagram and transitions to the starting nodes
-of the alternatives out of a newly introduced starting node. This new starting
-node is returned by \verb+compileAlternatives+ (together with the other
-results), and it is used by \verb+compileCommand+ (which calls
-\verb+compileAlternatives+).
+separately but in such a way that they all connect the same
+initial and final states. 
 
-There is something funny about having to save the first point. Perhaps this is the
-reponsibility of the caller .. and maybe this argues for separate contexts; one scoped and one monotonic
+To compile an individual alternative, we create a new transition for
+the guard (from the initial vertex to a new vertex) and the compile the
+command in the alternative (between the new and final vertices).
 
-perhaps addMode and friends shoul act on and return a context rather than a bSpec.
-
-### bSpec badly overloaded here.
+Perhaps addMode and friends shoul act on and return a context rather than a bSpec.
 
 \begin{spec}
   op compileAlternatives : ProcContext -> List (Alternative Position) -> SpecCalc.Env ProcContext
@@ -1221,229 +1176,20 @@ perhaps addMode and friends shoul act on and return a context rather than a bSpe
           }
 \end{spec}
 
-The following function compiles a list of commands, returning the list of
-the corresponding \BSpecs, along with a system consisting of all the
-\Bspecs's systems merged together. This function is used to compile all
-compound commands: every compound command contains, directly or indirectly,
-a list of sub-commands. The \BSpec\ for the super-command is obtained from
-the ones for the sub-commands, suitably connected together (differently
-for each kind of compound command). Note that the counter for unique node
-and edge names is threaded through the following function, and that the
-function also returns the procedures declared within the compiled commands.
-
-The following function creates a vertex/edge (of sort \verb+Vertex.Elem+, which
-is the same as \verb+Elem_e+) from
-a natural number. More precisely, it creates a vertex/edge consisting of
-the MetaSlang term for that natural number.
+The following function creates a vertex/edge (of sort \verb+Vertex.Elem+
+from a natural number. More precisely, it creates a vertex/edge consisting
+of the MetaSlang term for that natural number.
 
 \begin{spec}
   op mkNatVertexEdge : Nat -> V.Elem
   def mkNatVertexEdge n = Just (mkNat n)
 \end{spec}
 
-As mentioned before, the partial evaluator may create \BSpecs\ with
-multiple final nodes. This is why the \verb+final+ component of a
-\BSpec\ is a set of nodes. However, during compilation only \BSpecs\ with
-singleton sets of final nodes are generated and manipulated. So, it is
-useful to have a function to retrieve the (unique) final nodes of a
-\BSpec\ during compilation. Strictly speaking, the function is not
-well-defined: its type should be restricted by subsorting. In addition,
-the \verb+find+ operation on sets is itself problematic: while it is
-well-defined, it is hard to refine it correctly. In any case,
-the final code will do the right thing, so for now it is ok.
-
-  op finalVertex : BSpec -> Vertex.Elem
-  def finalVertex bspec =
-      let Some v = find_p (fn x -> true) bspec.final2 in v
-
-From the point of view of the caller, a procedure is a predicate. 
-The predicate symbol is created when the procedure is declared. This
-predicate must have a sort and this sort is an instance of the 
-\verb+Proc+ sort defined in the base context. Given a collection
-of sorts for the arguments, the return value and the store, this
-constructs a sort representing an instance of the \verb+Proc+ sort.
-
-begin{spec}
-  op procSortInstance : List Sort_ast * Sort_ast * Sort_ast -> Sort_ast
-  def procSortInstance (args,rtn,store) =
-    mkBase_ast (["Proc"],[mkProduct_ast args,rtn,store])
-end{spec}
-
-The next is the companion to the above. This adds an operator
-representing a procedure to a given spec. It might be better if the
-above function was folded into this one.
-
-begin{spec}
-  op addProcOpDecl :
-        String            % the name of the procedure
-      * PSort        % the type of the proc (from procSortInstance)
-      * Spec        % the spec to update
-     -> SpecCalc.Env Spec
-  def addProcOpDecl (name,srt,spc) =
-      addOp (([unQualified name], Nonfix, (tyVarsOf srt, srt), None),spc)
-end{spec}
-
-The next function is used by the caller to construct a term
-representing a procedure call. We are given a collection of terms
-and return a term.
-
-begin{spec}
-  op mkProcCallTerm : String % procedure name
-        * List Term_ast      % terms representing arguments
-        * Term_ast           % identifier to receive return value
-        * Term_ast           % old store   - must be a record
-        * Term_ast           % indentifiers to receive new store
-        -> Term_ast
-  def mkProcCallTerm (name,args,rtn,oldStore,newStore) =
-    let srt = procSortInstance
-      ((map termSort_ast args), termSort_ast rtn, termSort_ast oldStore) in
-    mkApply_ast (mkOp_ast ([name],srt),
-       mkTuple_ast [mkTuple_ast args, rtn, mkTuple_ast [oldStore,newStore]])
-end{spec}
-
-Some convenience functions are omitted from the \verb+ast+ and
-\verb+ast_util+ specs which exist in \verb+meta_slang+. The first
-defined below has a suffix \verb+local+ to avoid a name clash with
-\verb+mkEmbed0+ defined in \verb+ast_types+. Name spaces are a problem
-requiring a rethink of the current practice.
-
-\begin{spec}
-  % op mkEmbed0_local : Id_ast * Sort_ast -> Term_ast
-  % def mkEmbed0_local (id,srt) = (Fun (Embed(id,false),srt), pos0_ast)
-
-  op mkNot : PTerm -> PTerm
-  def mkNot trm = mkApplyN (notOp, trm)
-
-  op mkAnd : PTerm * PTerm -> PTerm
-  def mkAnd (t1,t2) = mkApplyN (andOp, mkTuple ([t1,t2]))
-
-  op mkOr : PTerm * PTerm -> PTerm
-  def mkOr (t1,t2) = mkApplyN (orOp, mkTuple ([t1,t2]))
-  
-  op disjList : List PTerm -> PTerm
-  def disjList l =
-    case l of
-      | []     -> mkTrue ()
-      | [x]    -> x
-      | x::rest -> mkOr (x, disjList rest)
-
-  op mkFun : PFun * PSort -> PTerm
-  def mkFun (constant, srt) = Fun (constant, srt, internalPosition) 
-
-  op mkInfixOp : QualifiedId * Fixity * PSort -> PTerm
-  def mkInfixOp (qid, fixity, srt) = mkFun (Op (qid, fixity), srt)
-
-  op binaryBoolSort : PSort
-  def binaryBoolSort = mkArrow (mkProduct([boolPSort, boolPSort]), boolPSort)
-
-  op unaryBoolSort : PSort
-  def unaryBoolSort  = mkArrow (boolPSort, boolPSort)
-
-  op notOp : PTerm 
-  def notOp = mkOp (Qualified("Boolean", "~" ), unaryBoolSort)
-
-  op andOp : PTerm 
-  def andOp = mkInfixOp (Qualified("Boolean", "&" ), Infix(Right,15), binaryBoolSort)
-
-  op orOp : PTerm 
-  def orOp = mkInfixOp (Qualified("Boolean", "or"), Infix(Right,14), binaryBoolSort)
-
-  op impliesOp : PTerm 
-  def impliesOp = mkInfixOp (Qualified("Boolean", "=>"), Infix(Right,13), binaryBoolSort)
-
-  op iffOp : PTerm 
-  def iffOp = mkInfixOp (Qualified("Boolean","<=>"), Infix(Right,12), binaryBoolSort)
-\end{spec}
-
-Local functions for constucting product types a record terms. All products
-have named fields. These are integers in the case of tuples. MetaSlang
-assumes that all the fields are sorted in alphabetical order. A sorting
-function follows.
-
-\begin{spec}
-  op mkProduct_local : List (String * PSort) -> PSort
-  def mkProduct_local l =
-   Product (sortList (fn ((x,_),(y,_)) -> x leq y) l, internalPosition)
-
-  op mkRecord_local : List (String * PTerm) -> PTerm
-  def mkRecord_local l =
-   Record (sortList (fn ((x,_),(y,_)) -> x leq y) l, internalPosition)
-\end{spec}
-
-Quicksort a list .. for records .. this is overkill as there are only going
-to be a few fields in a record.
-
-\begin{spec}
-  op sortList : fa (a) (a * a -> Boolean) -> List a -> List a
-  def sortList cmp l =
-    let def partitionList x l =
-      case l of
-         Nil -> (Nil,Nil)
-       | hd::tl ->
-           let (l1,l2) = partitionList x tl in
-            if (cmp (hd,x)) then
-              (Cons(hd,l1),l2)
-            else
-              (l1,Cons(hd,l2)) in
-    case l of
-        Nil -> Nil
-      | hd::tl ->
-          let (l1,l2) = partitionList hd tl in
-             (sortList cmp l1) ++ [hd] ++ (sortList cmp l2)
-\end{spec}
-
-The version of \verb+mkEquals+ in \verb{ast-util} creates an operator from
-the string ``='' but this is wrong since the parser converts the symbol
-into the constuctor \verb+Equals+ and the typechecker doesn't know about
-``=''. I have no idea why it is necessary to have a special constructor
-for what is really an infix operator.  When we know the following is
-right, it should replace \verb+mkEquals+ in \verb+ast-util+.
-
-\begin{spec}
-  op mkEquality : ATerm Position -> ATerm Position -> ATerm Position
-  def mkEquality t1 t2 = 
-    let srt = freshMetaTyVar internalPosition in
-    mkApplyN (Fun(Equals,srt,internalPosition), mkTuple [t1,t2])
-\end{spec}
-
 Elaborating a spec means, amongst other things, typechecking, resolving
 infix operators, detecting constructor in patterns, resolving 
 unqualified operators appearing in terms, and other things.
 
-Elaboration is performed relative to an environment. An environment is a
-mapping from spec names to specs.  Unfortunately there are two varieties
-of specs arising from two different abstract syntax trees: \verb+ast+
-\emp{vs} \verb+meta-slang+. Hence, there are two types of environment. The
-top level function, elaborateSpec, takes a \verb+meta-slang+ environment
-and an \verb+ast+ spec and yields an \verb+ast+ spec. One then converts
-the \verb+ast+ spec into a \verb+meta-slang+ spec and adds it to the
-environment. If this sounds slightly odd, it gets worse. The first thing
-\verb+elaborateSpec+ does with the \verb+meta-slang+ environment is to
-convert it to a list and then into an \verb+ast+ environment.
-
-The following is specific to our purposes. In the compiler we maintain
-static and dynamic contexts. These are carried around in the compiler
-as \verb+ast+ specs. The rewrite engine operates on \verb+meta-slang+
-specs so we must label the bspecs with the same and hence we must elaborate
-and convert the \verb+ast+ spec into \verb+meta-slang+ spec. 
-The system is labelled only with the dynamic spec but the latter must
-be elaborated in a context including the static spec.
-
-The call to \verb+emptyEnv_ms+ retrieves a base environment consisting
-of the specs for \verb+Nat+, \verb+Integer+, \emph{etc}.
-
-Second argument is context .. another spec.
-
 \begin{spec}
-  op elaborateInContext : Spec -> Spec -> SpecCalc.Env Spec
-  def elaborateInContext spc static = {
-      staticElab <- elaborateSpec static;
-      uri <- pathToRelativeURI "Static";
-      spc <- mergeImport (URI uri,internalPosition) staticElab spc internalPosition;
-      spcElab <- elaborateSpec spc;
-      return spcElab
-    }
-
   op unQualified : String -> QualifiedId
   def unQualified name = Qualified (UnQualified,name)
 
@@ -1487,5 +1233,57 @@ Second argument is context .. another spec.
   op getLocalSorts : fa (a) ASpec a -> SortNames
   def getLocalSorts {importInfo,sorts,ops,properties} =
     let {imports,importedSpec,localOps,localSorts} = importInfo in localSorts
+
+  op sortScheme : fa (a) AOpInfo a -> ASortScheme a
+  def sortScheme (names,fxty,sortScheme,optTerm) = sortScheme
+
+  op sortOf : fa (a) ASortScheme a -> ASort a
+  def sortOf (tyVars,srt) = srt
+\end{spec}
+
+The following function is used to extract a list of type variables from
+a sort. The list is free of repetitions, \emph{i.e.} all its elements are
+distinct. This function does not belong here: it should be part of the
+spec for the MetaSlang abstract syntax, but it is ok for now.
+
+\begin{spec}
+  op tyVarsOf : PSort -> List TyVar
+  def tyVarsOf srt =
+    let def tyVarsOfAux (srt:PSort, tvs:TyVars) : TyVars =
+      case srt of
+        | Arrow (srt1,srt2,_) -> tyVarsOfAux (srt1, tyVarsOfAux (srt2,tvs))
+        | Product (idSrts,_) -> foldl tyVarsOfAux tvs (map (fn (x,y) -> y) idSrts)
+        | CoProduct (idSrts,_)
+                 -> foldl (fn ((id,srt),tvs1) ->
+                              case srt of
+                                | Some srt -> tyVarsOfAux (srt,tvs1)
+                                | None -> tvs1)
+                          tvs
+                          idSrts
+        | Quotient (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
+        | Subsort (srt1,_,_) -> tyVarsOfAux (srt1,tvs)
+        | Base (_,srts,_) -> foldl tyVarsOfAux tvs srts
+%        | PBase (_,srts,_) -> foldl tyVarsOfAux tvs srts
+        | TyVar (tv,_) -> if member (tv,tvs) then tvs else List.insert (tv,tvs)
+        | MetaTyVar _ -> tvs
+    in
+      tyVarsOfAux (srt,[])
+\end{spec}
+
+The next is a local hack. The point is that the user wants a convenient
+way to have an association list without defining all the maps and whatnot.
+
+Perhaps we should have a simple spec for association lists.
+
+\begin{spec}
+  op lookup : List (QualifiedId * QualifiedId) -> QualifiedId -> Option QualifiedId
+  def lookup l id =
+    case l of
+      | [] -> None
+      | (key,val)::rest ->
+          if key = id then
+            Some val
+          else
+            lookup rest id
 }
 \end{spec}

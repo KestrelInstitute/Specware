@@ -34,7 +34,7 @@ spec {
         | Some {returnName,returnSort} -> Some returnName,
     staticSpec = proc.staticSpec,
     dynamicSpec = proc.dynamicSpec,
-    code = convertBSpec proc.code proc.dynamicSpec
+    code = convertBSpec proc.bSpec proc.dynamicSpec
   }
 
   op sortGraph : fa (a) (a * a -> Boolean) -> List a -> List a
@@ -92,6 +92,9 @@ spec {
          (case (toList (coAlg vertex)) of
             | [] -> fail "reached empty set of successors"
 
+            (*
+              A single edge leaving the node means that the edge is labelled with a statement.
+             *)
             | [(edge,node)] ->
                let visited = update visited vertex n in
                let (graph,next,visited) =
@@ -115,6 +118,15 @@ spec {
                             ppBreak,
                             ppSep ppBreak (map ppAProperty trans.properties)
                           ])))
+
+            (*
+              If there are two edges leaving the node, then we we are dealing with a conditional.
+              At present we do not handle the case where there are more than two branches. Nor
+              do we make any effort to prove that the guard on one branch is equivalent to the
+              negation of the other branch. This should be done. More generally, we need to
+              prove, or have the user provide a proof, that the branches are disjoint or adopt
+              a different semantics where the order of the guards is significant.
+             *)
 
             | [(leftEdge,leftNode),(rightEdge,rightNode)] ->
                let visited = update visited vertex n in

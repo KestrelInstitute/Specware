@@ -1,53 +1,59 @@
-\section{Abstract sort For Procedures}
+\section{Abstract sort for procedures}
 
-This is a prototype implementation for \PSL\. This spec defines
-the sort corresponding to the semantic representation of a PSL procedure.
+This spec defines the sort corresponding to the semantic value
+of a PSL procedure.
 
-Bipointed predicative \BSpecs\ are those where the morphisms in
-a diagram are all imports and where each \BSpec\ has two \emph{points};
-corresponding to initial and final states.
+The list of strings, \verb+parameters+, gives the formal parameters to
+the procedure.  These are strings but an alternative might be to uses
+sort \verb+var+ from the MetaSlang abstract syntax as this includes
+the identifier name together with its sort. Strings may be sufficient,
+however, since once we have a semantic representation, we don't need
+the types anymore. Parameters are call by value.
 
-The dynamicSpec records the variables in scope when the procedure is
-declared. Same for the static context.
+The field \verb+dynamicSpec+ records the variables in scope at the
+point where the procedure is declared. It does not include the formal
+parameters of the procedure. This might later be renamed "variables".
+
+Similarly the fields \verb+staticSpec+ is a static context containing
+the constants in scope where the procedure is declared. This includes
+a static operator defining a predicate that encapsulates the effect
+of the procedure. This operator has the same name as the procedure.
+This spec might later be renamed "constants".
+
+The field \verb+bSpec+ holds the ``flow graph'' for the procedure
+represented as a \emph{predicative multipointed bspec}.  Multipointed
+means that the graph has a single start state but possibly many final
+states.
 
 \begin{spec}
 SpecCalc qualifying spec {
-  % import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
   import SpecCalc qualifying /Languages/BSpecs/Predicative/BetterPrinter
-  % import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
 
   sort ReturnInfo = Option {returnName : String, returnSort : ASort Position}
 
   sort Procedure = {
     parameters : List String,
     returnInfo : ReturnInfo,
-    staticSpec : Spec,
     dynamicSpec : Spec,
-    code : BSpec
+    staticSpec : Spec,
+    bSpec : BSpec
   }
 
   op makeProcedure : List String -> ReturnInfo -> Spec -> Spec -> BSpec -> Procedure
   def makeProcedure args returnInfo static dynamic bSpec = {
     parameters = args,
     returnInfo = returnInfo,
-    staticSpec = static,
     dynamicSpec = dynamic,
-    code = bSpec
+    staticSpec = static,
+    bSpec = bSpec
   }
 \end{spec}
 
-The field \verb+paramaters+ lists the names of the formal parameters
-of the procedure. Rather than strings, it might be better if this were
-sort \verb+var+ from the MetaSlang abstract syntax as this includes
-the identifier name together with its sort. String may be sufficient,
-however, since once we have a semantic representation, we don't need
-the types anymore. Parameters are call by value.
-
 The field \verb+returnName+ holds the name of the identifier within the
-procedure to be passed back to the caller.  There might be a better
-way. We return different terms from different places in the procedure. The
-assumption here is that before returning, the procedure will make
-a transition to the final state of the \BSpec\ and that along that
+procedure to be assigned the return value. Right now, this is the name of
+the procedure prefixed by the string "return#".  There might be a better
+way. The assumption here is that before returning, the procedure will
+make a transition to the final state of the \BSpec\ and that along that
 transition, it will assign a return value to the given identifier. This
 final state has no successor transitions.
 
@@ -69,9 +75,6 @@ sufficient in the short term, but proper scoping of variables remains
 a problem requiring thought. The current scheme, for example, will not
 handle name clashes properly.
 
-This isn't the final answer since it doesn't allow us to introduce new
-ops and axioms along a transition \ldots only when we introduce procedures.
-
 \begin{spec}
   op ppProcedureLess : Procedure -> Spec -> WadlerLindig.Pretty
   def ppProcedureLess proc spc =
@@ -91,7 +94,7 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppString "bspec=",
       ppNewline,
       ppString "  ",
-      ppIndent (ppBSpecShort proc.code proc.dynamicSpec)
+      ppIndent (ppBSpecShort proc.bSpec proc.dynamicSpec)
     ]
 
   op ppProcedure : Procedure -> WadlerLindig.Pretty
@@ -112,7 +115,7 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppString "bspec=",
       ppNewline,
       ppString "  ",
-      ppIndent (ppBSpec proc.code)
+      ppIndent (ppBSpec proc.bSpec)
     ]
 
   op showProcedure : Procedure -> String
@@ -124,6 +127,6 @@ ops and axioms along a transition \ldots only when we introduce procedures.
           | None -> ""
           | Some {returnName,returnSort} -> returnName)
       ^ "\nbspec=\n"
-      ^ (ppFormat (ppBSpec proc.code))
+      ^ (ppFormat (ppBSpec proc.bSpec))
 }
 \end{spec}

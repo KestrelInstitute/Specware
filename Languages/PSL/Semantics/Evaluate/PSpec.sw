@@ -34,7 +34,7 @@ They are procedures in context.
      dyCtxt <- dynamicSpec pSpec;
      statCtxt <- staticSpec pSpec;
      statCtxtElab <- elaborateSpec statCtxt; 
-     dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
+     dyCtxtElab <- elaborateSpec dyCtxt; 
      newPSpec <- setDynamicSpec pSpec dyCtxtElab;
      newPSpec <- setStaticSpec newPSpec statCtxtElab;
      return (Other newPSpec,timeStamp,depURIs)
