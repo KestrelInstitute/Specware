@@ -22,7 +22,7 @@ spec {
  op convertMetaTyVarsToTyVars                : MetaTyVarsContext -> PMetaTyVars     -> TyVars 
  op convertPSortSchemeToSortScheme           :                      PSortScheme     -> SortScheme
 
- def convertPosSpecToSpec {imports, importedSpec, sorts, ops, properties} =
+ def convertPosSpecToSpec {importInfo, sorts, ops, properties} =
     let new_ops  = 
         StringMap.map
 	  (fn m ->
@@ -69,8 +69,7 @@ spec {
 		  (pt, name, tyVars, convertPTermToTerm context term)) 
 	         properties 
     in
-    {imports          = imports,
-     importedSpec     = importedSpec,
+    {importInfo       = importInfo,
      sorts            = new_sorts,
      ops              = new_ops,
      properties       = new_properties}

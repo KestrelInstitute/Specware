@@ -887,7 +887,8 @@ AnnSpecPrinter qualifying spec {
    spec_ref = "General"
 
   %% Top-level print module; lower-level print spec
-  def ppSpec context  {imports, importedSpec=_, sorts, ops, properties} = 
+  def ppSpec context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
+                       sorts, ops, properties} = 
       let pp : ATermPrinter = context.pp in
       let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       blockAll(0,
@@ -907,7 +908,8 @@ AnnSpecPrinter qualifying spec {
                [(0, pp.EndModule),
                 (0, string "")])
 
-  def ppSpecR context  {imports, importedSpec=_, sorts, ops, properties} = 
+  def ppSpecR context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
+                        sorts, ops, properties} = 
       let pp : ATermPrinter = context.pp in
       let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       blockAll(0,
@@ -927,7 +929,8 @@ AnnSpecPrinter qualifying spec {
                [(0, pp.EndSpec),
                 (0, string "")])
 
-  def ppSpecAll context  {imports, importedSpec=_,sorts, ops, properties} = 
+  def ppSpecAll context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
+                          sorts, ops, properties} = 
       let pp : ATermPrinter = context.pp in
       let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       let ppImports = map (fn (spec_ref, spc) ->

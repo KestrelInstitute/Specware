@@ -40,43 +40,44 @@ and then qualify the resulting spec if the spec was given a name.
   op evaluateSpecElems : ASpec Position -> List (SpecElem Position)
                            -> Env (ASpec Position * TimeStamp * URI_Dependency)
   def evaluateSpecElems initialSpec specElems =
-     foldM evaluateSpecElem (initialSpec,0,[]) specElems
+     %% Get import information first
+     {(spcWithImports,TS,depURIs)
+        <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
+      fullSpec <- foldM evaluateSpecElem spcWithImports specElems;
+      return (fullSpec,TS,depURIs)}
 
-  op evaluateSpecElem : (ASpec Position * TimeStamp * URI_Dependency)
+  op evaluateSpecImport : (ASpec Position * TimeStamp * URI_Dependency)
                           -> SpecElem Position
                           -> Env (ASpec Position * TimeStamp * URI_Dependency)
-  def evaluateSpecElem (spc,cTS,cDepURIs) (elem, _(* position *)) =
+  def evaluateSpecImport (val as (spc,cTS,cDepURIs)) (elem, _(* position *)) =
     case elem of
       | Import term -> {
             (value,iTS,depURIs) <- evaluateTermInfo term;
             (case value of
               | Spec impSpec ->
                  return (mergeImport ((term, impSpec), spc),
-                         max(cTS,iTS), cDepURIs ++ depURIs)
+			 max(cTS,iTS), cDepURIs ++ depURIs)
                   %% return (extendImports spc impSpec) 
               | _ -> raise(Fail("Import not a spec")))
           }
+      | _ -> return val
+
+  op evaluateSpecElem : ASpec Position
+                          -> SpecElem Position
+                          -> Env (ASpec Position)
+  def evaluateSpecElem spc (elem, _(* position *)) =
+    case elem of
+      | Import term -> return spc
       | Sort (name,(tyVars,optSort)) ->
-          (case name of
-            | Qualified (qualifier, id) ->
-              return (addPSort ((qualifier, id, tyVars, optSort), 
-                                spc),
-                      cTS,cDepURIs))
+          return (addPSort ((name, tyVars, optSort), spc))
       | Op (name,(fxty,srtScheme,optTerm)) ->
-          (case name of
-            | Qualified (qualifier, id) ->
-              return (addPOp ((qualifier, id, fxty, srtScheme, optTerm), 
-                              spc),
-                      cTS,cDepURIs))
+          return (addPOp ((name, fxty, srtScheme, optTerm), spc))
       | Claim (Axiom, name, tyVars, term) ->
-          return (addAxiom ((name,tyVars,term), spc),
-                  cTS,cDepURIs)
+          return (addAxiom ((name,tyVars,term), spc)) 
       | Claim (Theorem, name, tyVars, term) ->
-          return (addTheorem ((name,tyVars,term), spc),
-		  cTS,cDepURIs)
+          return (addTheorem ((name,tyVars,term), spc))
       | Claim (Conjecture, name, tyVars, term) ->
-          return (addConjecture ((name,tyVars,term), spc),
-		  cTS,cDepURIs)
+          return (addConjecture ((name,tyVars,term), spc))
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
 
  def mergeImport ((spec_term, imported_spec), spec_a) =

@@ -4,9 +4,9 @@ MetaSlang qualifying spec {
  import /Library/Base
  import /Library/Legacy/State  % for MetaTyVar's
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                QualifiedId 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  Basic structure for naming things
 
  sort Id = String
@@ -44,16 +44,16 @@ MetaSlang qualifying spec {
   then id
   else qualifier^"."^id
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Type Variables
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  sort TyVar   = Id
  sort TyVars  = List TyVar
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Terms
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% ATerm, ASort, APattern, AFun, AVar, AMatch, and MetaTyVar
  %%%  are all mutually recursive types.
 
@@ -144,9 +144,9 @@ MetaSlang qualifying spec {
  sort AMetaTyVars     b = List (AMetaTyVar b)
  sort AMetaSortScheme b = AMetaTyVars b * ASort b 
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  %% A fundamental assumption for
  %%
@@ -166,9 +166,9 @@ MetaSlang qualifying spec {
  sort AField  b = FieldName * ASort b  % used by products and co-products
  sort FieldName = String
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Annotations
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op termAnn: fa(a) ATerm a -> a 
  def termAnn(t) = 
@@ -211,9 +211,9 @@ MetaSlang qualifying spec {
      | TyVar     (tv,       _) -> TyVar     (tv,       a)
      | MetaTyVar (tv,       _) -> MetaTyVar (tv,       a)
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Sorts
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op termSort    : fa(b) ATerm    b -> ASort b
  op patternSort : fa(b) APattern b -> ASort b
@@ -260,9 +260,9 @@ MetaSlang qualifying spec {
      | SortedPat   (_, srt,  _) -> srt
 
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Equalities
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op equalTerm?    : fa(a,b) ATerm    a * ATerm    b -> Boolean
  op equalSort?    : fa(a,b) ASort    a * ASort    b -> Boolean
@@ -478,9 +478,9 @@ MetaSlang qualifying spec {
 
  def equalVar? ((id1,s1), (id2,s2)) = id1 = id2 & equalSort? (s1, s2)
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
  sort TSP_Maps b = (ATerm    b -> ATerm    b) *
@@ -501,176 +501,194 @@ MetaSlang qualifying spec {
   %% then term_map will be applied to the revised term.
   %%
   let 
-   def map term = 
+   def mapT (tsp_maps,term) = 
     case term of
-       | Fun        (top,                  srt,  a) -> 
-         Fun        (top, mapSort tsp_maps srt,  a)
+       | Fun        (top,                  srt,  a) ->
+         let newSrt = mapSort tsp_maps srt in
+	 if srt = newSrt then term
+	  else Fun(top, newSrt,  a)
 
        | Var        ((id,                  srt), a) ->
-         Var        ((id, mapSort tsp_maps srt), a)
+         let newSrt = mapSort tsp_maps srt in
+	 if srt = newSrt then term
+          else Var((id, newSrt), a)
 
        | Let        (decls, bdy, a) -> 
-         Let        (List.map (fn (pat, trm) -> 
-                                (mapPattern tsp_maps pat, mapRec trm)) 
-                              decls,
-                     mapRec bdy,
-                     a)
+	 let newDecls = map (fn (pat, trm) -> (mapPattern tsp_maps pat, mapRec trm)) decls in
+	 let newBdy = mapRec bdy in
+	 if decls = newDecls & bdy = newBdy then term
+	   else Let (newDecls, newBdy, a)
 
        | LetRec     (decls, bdy, a) -> 
-         LetRec     (List.map (fn ((id, srt), trm) -> 
-                                ((id, mapSort tsp_maps srt), mapRec trm)) 
-                              decls,
-                     mapRec bdy,
-                     a)
+	 let newDecls = map (fn ((id, srt), trm) -> ((id, mapSort tsp_maps srt), mapRec trm))
+	                  decls in
+	 let newBdy = mapRec bdy in
+	 if decls = newDecls & bdy = newBdy then term
+	   else LetRec(newDecls, newBdy, a)
 
-       | Record     (row,                                            a) -> 
-         Record     (List.map (fn (id,trm) -> (id, mapRec trm)) row, a)
+       | Record     (row, a) -> 
+	 let newRow = map (fn (id,trm) -> (id, mapRec trm)) row in
+	 if row = newRow then term
+	   else Record(newRow,a)
 
        | IfThenElse (       t1,        t2,        t3, a) -> 
-         IfThenElse (mapRec t1, mapRec t2, mapRec t3, a)
+	 let newT1 = mapRec t1 in
+	 let newT2 = mapRec t2 in
+	 let newT3 = mapRec t3 in
+	 if newT1 = t1 & newT2 = t2 & newT3 = t3 then term
+	   else IfThenElse (newT1, newT2, newT3, a)
 
        | Lambda     (match, a) -> 
-         Lambda     (List.map (fn (pat, cond, trm)->
-                                 (mapPattern tsp_maps pat,
-                                  mapRec cond, 
-                                  mapRec trm))
-                              match,                         
-                     a)
+         let newMatch = map (fn (pat, cond, trm)->
+			      (mapPattern tsp_maps pat, mapRec cond, mapRec trm))
+                          match in
+	 if match = newMatch then term
+	   else Lambda (newMatch, a)
 
        | Bind       (bnd, vars, trm, a) -> 
-         Bind       (bnd, 
-                     List.map (fn (id,srt)-> (id, mapSort tsp_maps srt)) vars,
-                     mapRec trm,
-                     a)
+	 let newVars = map (fn (id,srt)-> (id, mapSort tsp_maps srt)) vars in
+	 let newTrm = mapRec trm in
+	 if vars = newVars & trm = newTrm then term
+	   else Bind (bnd, newVars, newTrm, a)
 
-       | Apply      (       t1,        t2,  a) -> 
-         Apply      (mapRec t1, mapRec t2,  a)
+       | Apply      (       t1,        t2,  a) ->
+	 let newT1 = mapRec t1 in
+	 let newT2 = mapRec t2 in
+	 if newT1 = t1 & newT2 = t2 then term
+	  else Apply(mapRec newT1, mapRec newT2,  a)
 
        | Seq        (                terms, a) -> 
-         Seq        (List.map mapRec terms, a)
+	 let newTerms = map mapRec terms in
+	 if newTerms = terms then term
+	   else Seq(newTerms, a)
 
        | ApplyN     (                terms, a) -> 
-         ApplyN     (List.map mapRec terms, a)
+	 let newTerms = map mapRec terms in
+	 if newTerms = terms then term
+	   else ApplyN (newTerms, a)
 
        | SortedTerm (       trm,                  srt, a) -> 
-         SortedTerm (mapRec trm, mapSort tsp_maps srt, a)
+	 let newTrm = mapRec trm in
+         let newSrt = mapSort tsp_maps srt in
+	 if newTrm = trm & srt = newSrt then term
+	   else SortedTerm (newTrm, newSrt, a)
    def mapRec term = 
-    term_map (map term)
+    term_map (mapT (tsp_maps,term))
   in
     mapRec term
 
- (***
- ZQ's suggestion: 
-
- def mapTerm (t,s,p) term = 
-    let def mapt = mapTerm(t,s,p)
-        def maps = mapTerm(t,s,p)
-        def mapp = mapPattern(t,s,p)
-    in t 
-       (case term
-              of Fun(top,srt) -> Fun(top,maps srt)
-               | Var(id,srt)  -> Var(id,maps srt)
-               | Let(decls,bdy) -> 
-                 Let(map
-                       (fn(pat,trm)-> (mapp pat,mapt trm)) 
-                        decls,
-                      mapt bdy)
-               | LetRec(decls,bdy) -> 
-                     LetRec(map(fn(id,trm)-> (id,mapt trm)) decls,
-                 mapRec bdy)
-               | Record row -> 
-                 Record(map 
-                          (fn(id,trm) -> (id,mapt trm)) row)
-               | IfThenElse(t1,t2,t3) -> 
-                 IfThenElse(mapRec t1,mapRec t2,mapt t3)
-               | Lambda(match) -> 
-                     Lambda (map 
-                           (fn(pat,cond,trm)->
-                                   (mapp pat,mapt cond,mapt trm)) 
-                            match)
-               | (Bind(bnd,vars,trm)) -> 
-                 Bind(bnd,
-                      map 
-                         (fn(id,srt)-> (id,maps srt))
-                         vars,
-                      mapt trm)
-               | Apply(t1,t2) -> 
-                 Apply (mapt t1,mapt t2)
-               | Seq(terms) -> 
-                 Seq (map mapt terms)
-        )
- 
- ***)
-
  def mapSort (tsp_maps as (_,sort_map,_)) srt = 
   let
-   def map srt = 
+   def mapS (tsp_maps,srt) = 
     case srt of
-       | CoProduct (row,       a) -> CoProduct (List.map (fn (id,opt) -> 
-                                                           (id, mapRecOpt opt)) row, 
-                                                a)
-       | Product   (row,       a) -> Product   (List.map (fn (id,srt) -> 
-                                                           (id, mapRec srt)) row, 
-                                                a)
-       | Arrow     (s1,  s2,   a) -> Arrow     (mapRec s1,  mapRec s2,            a)
-       | Quotient  (srt, trm,  a) -> Quotient  (mapRec srt, mapTerm tsp_maps trm, a)
-       | Subsort   (srt, trm,  a) -> Subsort   (mapRec srt, mapTerm tsp_maps trm, a)
+       | CoProduct (row,       a) ->
+         let newRow = map (fn (id,opt) -> (id, mapRecOpt opt)) row in
+	 if newRow = row then srt
+	   else CoProduct (newRow, a)
+       | Product   (row,       a) -> 
+         let newRow = map (fn (id,s) -> (id, mapRec s)) row in
+	 if newRow = row then srt
+	   else Product (newRow, a)
+       | Arrow     (s1,  s2,   a) ->
+	 let newS1 = mapRec s1 in
+	 let newS2 = mapRec s2 in
+	 if newS1 = s1 & newS2 = s2 then srt
+	   else Arrow (newS1,  newS2, a)
+       | Quotient  (srt, trm,  a) ->
+	 let newSrt = mapRec srt in
+	 let newTrm =  mapTerm tsp_maps trm in
+	 if newSrt = srt & newTrm = trm then srt
+	   else Quotient (newSrt, newTrm,  a)
+       | Subsort   (srt, trm,  a) ->
+	 let newSrt = mapRec srt in
+	 let newTrm =  mapTerm tsp_maps trm in
+	 if newSrt = srt & newTrm = trm then srt
+	   else Subsort (newSrt, newTrm,  a)
      % | Subset    (srt, trm,  a) -> Subset    (mapRec srt, mapTerm tsp_maps trm, a)
-       | Base      (qid, srts, a) -> Base      (qid,        List.map mapRec srts, a)
-       | PBase     (qid, srts, a) -> PBase     (qid,        List.map mapRec srts, a)
+       | Base      (qid, srts, a) ->
+	 let newSrts = map mapRec srts in
+	 if newSrts = srts then srt
+	   else Base (qid, newSrts, a)
+       | PBase     (qid, srts, a) -> 
+	 let newSrts = map mapRec srts in
+	 if newSrts = srts then srt
+	   else PBase (qid, newSrts, a)
        | _ -> srt
 
    def mapRecOpt opt_sort = 
     case opt_sort of
       | None     -> None
       | Some srt -> Some (mapRec srt)
-   def mapRec srt = sort_map (map srt)
+   def mapRec srt = sort_map (mapS (tsp_maps,srt))
   in
     mapRec srt
 
  def mapPattern (tsp_maps as (_,_,pattern_map)) pattern = 
   let
-   def map pattern = 
+   def mapP (tsp_maps,pattern) = 
     case pattern of
 
        | AliasPat    (p1,        p2,        a)     -> 
-         AliasPat    (mapRec p1, mapRec p2, a)
+         let newP1 = mapRec p1 in
+         let newP2 = mapRec p2 in
+	 if newP1 = p1 & newP2 = p2 then pattern
+	   else AliasPat (newP1, newP2, a)
 
        | EmbedPat    (id, Some pat,         srt,                  a) -> 
-         EmbedPat    (id, Some(mapRec pat), mapSort tsp_maps srt, a)
+	 let newPat = mapRec pat in
+	 let newSrt = mapSort tsp_maps srt in
+	 if newPat = pat & newSrt = srt then pattern
+	   else EmbedPat (id, Some newPat, newSrt, a)
 
        | EmbedPat    (id, None, srt,                  a) -> 
-         EmbedPat    (id, None, mapSort tsp_maps srt, a)
+	 let newSrt = mapSort tsp_maps srt in
+	 if newSrt = srt then pattern
+	   else EmbedPat    (id, None, newSrt, a)
 
        | RelaxPat    (pat,        trm,                  a) -> 
-         RelaxPat    (mapRec pat, mapTerm tsp_maps trm, a)
+	 let newPat = mapRec pat in
+	 let newTrm = mapTerm tsp_maps trm in
+	 if newPat = pat & newTrm = trm then pattern
+	   else RelaxPat (newPat, newTrm, a)
 
-       | QuotientPat (pat,        trm,                  a) -> 
-         QuotientPat (mapRec pat, mapTerm tsp_maps trm, a)
+       | QuotientPat (pat, trm, a) -> 
+	 let newPat = mapRec pat in
+	 let newTrm = mapTerm tsp_maps trm in
+	 if newPat = pat & newTrm = trm then pattern
+	   else QuotientPat (newPat, newTrm, a)
 
        | VarPat      ((v, srt),                  a) -> 
-         VarPat      ((v, mapSort tsp_maps srt), a)
+	 let newSrt = mapSort tsp_maps srt in
+	 if newSrt = srt then pattern
+	   else VarPat ((v, newSrt), a)
 
        | WildPat     (srt,                  a) -> 
-         WildPat     (mapSort tsp_maps srt, a)
+	 let newSrt = mapSort tsp_maps srt in
+	 if newSrt = srt then pattern
+	   else WildPat (newSrt, a)
 
-       | RecordPat   (fields,                                         a) -> 
-         RecordPat   (List.map (fn (id, p) -> (id, mapRec p)) fields, a)
+       | RecordPat   (fields, a) -> 
+	 let newFields = map (fn (id, p) -> (id, mapRec p)) fields in
+	 if newFields = fields then pattern
+	   else RecordPat (newFields, a)
 
        | SortedPat   (pat,        srt,                  a) -> 
-         SortedPat   (mapRec pat, mapSort tsp_maps srt, a)
+	 let newPat = mapRec pat in
+	 let newSrt = mapSort tsp_maps srt in
+	 if newPat = pat & newSrt = srt then pattern
+	   else SortedPat   (newPat, newSrt, a)
 
        | _ -> pattern
 
-   def mapRec pattern = 
-    pattern_map (map pattern)
+   def mapRec (pattern) = 
+    pattern_map (mapP (tsp_maps,pattern))
 
   in
     mapRec pattern
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive Term Search
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op existsSubTerm : fa(b) (ATerm b -> Boolean) -> ATerm b -> Boolean
 
@@ -707,9 +725,9 @@ MetaSlang qualifying spec {
       | SortedTerm  (M, srt,   _) -> existsSubTerm pred? M)
 
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Replacement
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
  sort ReplaceSort a = (ATerm    a -> Option (ATerm    a)) * 
@@ -857,9 +875,9 @@ MetaSlang qualifying spec {
   in
     replaceRec pattern
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Application (for side-effects)
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
  sort appTSP a = (ATerm a    -> ()) *
@@ -877,38 +895,37 @@ MetaSlang qualifying spec {
 
 
  def appTerm (tsp_apps as (term_app,_,_)) term =
-  let def appRec tm = appTerm tsp_apps tm in
-  let _ = 
-   (case term of
-     | Fun        (top, srt,     _) -> appSort tsp_apps srt
-     | Var        ((id, srt),    _) -> appSort tsp_apps srt
-     | Let        (decls, bdy,   _) -> (app (fn (pat, trm) -> 
-                                              (appPattern tsp_apps pat; 
-                                               appRec trm)) 
-                                            decls;
-                                        appRec bdy)
-     | LetRec     (decls, bdy,   _) -> (app (fn (id, trm) -> appRec trm) decls;
-                                        appRec bdy)
-     | Record     (row,          _) -> app (fn (id, trm) -> appRec trm) row
-     | IfThenElse (t1, t2, t3,   _) -> (appRec t1; appRec t2; appRec t3)
-     | Lambda     (match,        _) -> app (fn (pat, cond, trm) -> 
-                                             (appPattern tsp_apps pat; 
-                                              appRec cond;
-                                              appRec trm))
-                                           match
-     | Bind       (_, vars, trm, _) -> (app (fn (id, srt) -> appSort tsp_apps srt) vars;
-                                        appRec trm)
-     | Apply      (t1, t2,       _) -> (appRec t1; appRec t2)
-     | Seq        (terms,        _) -> app appRec terms
-     | ApplyN     (terms,        _) -> app appRec terms
-     | SortedTerm (trm, srt,     _) -> (appRec trm; appSort tsp_apps srt))
+  let def appT(tsp_apps,term) =
+       (case term of
+	  | Fun        (top, srt,     _) -> appSort tsp_apps srt
+	  | Var        ((id, srt),    _) -> appSort tsp_apps srt
+	  | Let        (decls, bdy,   _) -> (app (fn (pat, trm) -> 
+						  (appPattern tsp_apps pat; 
+						   appRec trm)) 
+					     decls;
+					     appRec bdy)
+	  | LetRec     (decls, bdy,   _) -> (app (fn (id, trm) -> appRec trm) decls;
+					     appRec bdy)
+	  | Record     (row,          _) -> app (fn (id, trm) -> appRec trm) row
+	  | IfThenElse (t1, t2, t3,   _) -> (appRec t1; appRec t2; appRec t3)
+	  | Lambda     (match,        _) -> app (fn (pat, cond, trm) -> 
+						 (appPattern tsp_apps pat; 
+						  appRec cond;
+						  appRec trm))
+	                                      match
+	  | Bind       (_, vars, trm, _) -> (app (fn (id, srt) -> appSort tsp_apps srt) vars;
+					     appRec trm)
+	  | Apply      (t1, t2,       _) -> (appRec t1; appRec t2)
+	  | Seq        (terms,        _) -> app appRec terms
+	  | ApplyN     (terms,        _) -> app appRec terms
+	  | SortedTerm (trm, srt,     _) -> (appRec trm; appSort tsp_apps srt))
+      def appRec tm = (appT(tsp_apps, term); term_app term)
   in 
     term_app term
  
  def appSort (tsp_apps as (_, srt_app, _)) srt = 
-  let def appRec srt = appSort tsp_apps srt in
-  let _ =
-      (case srt of
+  let def appS(tsp_apps,srt) =
+       case srt of
           | CoProduct (row,       _) -> app (fn (id, opt) -> appSortOpt tsp_apps opt) row
           | Product   (row,       _) -> app (fn (id, srt) -> appRec srt) row
           | Arrow     (s1,  s2,   _) -> (appRec s1;  appRec s2)
@@ -916,14 +933,14 @@ MetaSlang qualifying spec {
           | Subsort   (srt, trm,  _) -> (appRec srt; appTerm tsp_apps trm)
           | Base      (qid, srts, _) -> app appRec srts
           | PBase     (qid, srts, _) -> app appRec srts
-          | _                        -> ()) 
+          | _                        -> ()
+      def appRec srt = (appS(tsp_apps, srt); srt_app srt)
   in
-    srt_app srt
+    appRec srt
 
  def appPattern (tsp_apps as (_, _, pattern_app)) pat =
-  let def appRec pattern = appPattern tsp_apps pattern in
-  let _ =
-     case pat of
+  let def appP(tsp_apps,pat) =
+	case pat of
        | AliasPat    (p1, p2,            _) -> (appRec p1; appRec p2)
        | EmbedPat    (id, Some pat, srt, _) -> (appRec pat; appSort tsp_apps srt)
        | EmbedPat    (id, None, srt,     _) -> appSort tsp_apps srt
@@ -933,6 +950,7 @@ MetaSlang qualifying spec {
        | WildPat     (srt,               _) -> appSort tsp_apps srt
        | RecordPat   (fields,            _) -> app (fn (id, p) -> appRec p) fields
        | _                                  -> ()
+      def appRec pattern = (appP(tsp_apps, pat); pattern_app pat)
   in
     pattern_app pat
 
@@ -946,9 +964,9 @@ MetaSlang qualifying spec {
     | None     -> ()
     | Some trm -> appTerm tsp_apps trm
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Misc Base Terms
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op boolSort?   : fa(b) ASort b -> Boolean
  op stringSort? : fa(b) ASort b -> Boolean

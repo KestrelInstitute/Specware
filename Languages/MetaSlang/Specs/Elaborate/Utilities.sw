@@ -18,7 +18,7 @@ spec {
        vars       : StringMap PSort,
        firstPass? : Boolean,
        constrs    : StringMap (List PSortScheme),
-       file       : String}                        
+       file       : String}
  
  op initialEnv     : SpecRef * PosSpec * String -> LocalEnv
  op addConstrsEnv  : LocalEnv * PosSpec -> LocalEnv
@@ -86,10 +86,9 @@ spec {
   op initPrimitiveSpec : Qualifier -> Id -> List String -> Spec
   def initPrimitiveSpec qualifier id tyvars =
     %% we expect the qualifier to be the same as id, e.g. Boolean.Boolean
-    {imports          = emptyImports,
-     importedSpec     = None,
+    {importInfo       = emptyImportInfo,
      sorts            = insertAQualifierMap (emptyAQualifierMap, qualifier, id,
-                                             ([Qualified (qualifier, id)], tyvars, None)),
+					     ([Qualified (qualifier, id)], tyvars, None)),
      ops              = emptyAQualifierMap,
      properties       = emptyProperties
     } 
@@ -123,9 +122,8 @@ spec {
 %%%le              "General", 
 %%%le              "TranslationBuiltIn"]
 %%%le   in
-%%%le     {ops           = base_op_map,
-     {imports          = emptyImports,
-      importedSpec     = None,
+%%%le     ops           = base_op_map,
+     {importInfo       = emptyImportInfo,
       sorts            = emptyAQualifierMap,
       ops              = emptyAQualifierMap,
       properties       = emptyProperties
@@ -133,7 +131,7 @@ spec {
 
  def initialEnv (spec_name, spc, file) = 
    let errs : List (String * Position) = [] in
-   let {imports, importedSpec, sorts, ops, properties} = spc in
+   let {importInfo, sorts, ops, properties} = spc in
    let MetaTyVar(tv,_)  = freshMetaTyVar(pos0) in % ?
 %%%le    let external = merge(external, "String",    stringEnv)  in
 %%%le    let external = merge(external, "Nat",       natEnv)     in
@@ -151,12 +149,11 @@ spec {
 %%%le    let importedSpecs = importedSpecsEnv(imports,external) in
    %% importedSpecs is the subset of external used
    %% let importMap = importedSpecs in
-   let spc = {imports      = imports,
-              importedSpec = importedSpec,
-              sorts        = sorts,
-              ops          = ops,
-              properties   = properties
-             } : PosSpec
+   let spc = {importInfo   = importInfo,
+	      sorts        = sorts,
+	      ops          = ops,
+	      properties   = properties
+	     } : PosSpec
    in
    let env = {importMap  = StringMap.empty, % importMap,
               specName   = spec_name,
@@ -200,42 +197,42 @@ spec {
 
  %% Computes a map from constructor names to set of sorts for them
  def computeConstrMap (spc) : StringMap (List PSortScheme) =
-   let sorts = spc.sorts in
+  let sorts = spc.sorts in
    let constrMap : Ref (StringMap (List PSortScheme)) = Ref StringMap.empty 
    in
-   let def addConstr (id, tvs, cp_srt) =
+   let def addConstr (id, tvs, cp_srt, constrMap) =
          let cMap = ! constrMap in
-         case StringMap.find (cMap, id)
-           of None -> constrMap := StringMap.insert(cMap, id, [(tvs,cp_srt)])
-            | Some srt_prs ->
-              if exists (fn(_,o_srt) -> sameCPSort?(o_srt, cp_srt)) srt_prs
-               then ()
-               else constrMap := StringMap.insert(cMap, id,
-                                                  cons((tvs,cp_srt),srt_prs))
+	 case StringMap.find (cMap, id)
+	   of None -> constrMap := StringMap.insert(cMap, id, [(tvs,cp_srt)])
+	    | Some srt_prs ->
+	      if exists (fn(_,o_srt) -> sameCPSort?(o_srt, cp_srt)) srt_prs
+	       then ()
+	       else constrMap := StringMap.insert(cMap, id,
+						  cons((tvs,cp_srt),srt_prs))
    in
-   let def addSort (tvs, srt) =
+   let def addSort (tvs, srt, sorts, constrMap) =
         case srt : PSort of
-         | CoProduct (row, _) ->
-           app (fn (id,_) -> addConstr (id, tvs, srt)) row
-         %% | PBase (Qualified (qid, id), _, _) ->
-         %%   (let matching_entries : List(String * QualifiedId * SortInfo) = 
+	 | CoProduct (row, _) ->
+	   app (fn (id,_) -> addConstr (id, tvs, srt, constrMap)) row
+	 %% | PBase (Qualified (qid, id), _, _) ->
+	 %%   (let matching_entries : List(String * QualifiedId * SortInfo) = 
          %%           lookupSortInImports(importMap, qid, id)
          %%       in
-         %%       case matching_entries
+	 %%       case matching_entries
          %%  of [(_, _, (_, e_tvs, Some e_srt))] ->
          %%     addSort(e_tvs, convertSortToPSort e_srt)
          %%   | _ -> ())
-         | _ -> ()
+	 | _ -> ()
    in
    let _ = appAQualifierMap 
-             (fn ((sort_names, tyvars, opt_def)) -> 
-              (case opt_def : Option(PSort)
-                of None     -> ()
-                 | Some srt -> addSort (tyvars, srt)))
-             sorts
+	     (fn (sort_names, tyvars, opt_def) -> 
+	      (case opt_def : Option(PSort)
+		of None     -> ()
+		 | Some srt -> addSort (tyvars, srt, sorts, constrMap)))
+	     sorts
    in
    %% Look at at all sorts mentioned in spec
-   let _ = mapSpec (fn x -> x, fn s -> (addSort([],s);s), fn p -> p) spc 
+   let _ = appSpec (fn x -> (), fn s -> addSort([],s,sorts, constrMap), fn p -> ()) spc 
    in ! constrMap
 
  op  checkErrors : LocalEnv -> Option String

@@ -172,7 +172,7 @@ PosSpec qualifying spec {
  op abstractSort : (String -> TyVar) * List String * PSort -> TyVars * PSort
  op abstractTerm : (String -> TyVar) * List String * PTerm -> TyVars * PTerm
 
- op PosSpec.removeDefinitions : PosSpec -> PosSpec
+ op removeDefinitions : PosSpec -> PosSpec
  op exportSpec        : PosSpec -> PosSpec
 
  % ------------------------------------------------------------------------
@@ -226,96 +226,81 @@ PosSpec qualifying spec {
  % sort PropertyName = String
  sort SpecName     = String
 
- op addPSort : (Qualifier * Id * TyVars * Option PSort) * PosSpec -> PosSpec
- op addPOp : (Qualifier * Id * Fixity * PSortScheme * Option PTerm) * PosSpec -> PosSpec
+ op addPSort : (QualifiedId * TyVars * Option PSort)               * PosSpec -> PosSpec
+ op addPOp   : (QualifiedId * Fixity * PSortScheme * Option PTerm) * PosSpec -> PosSpec
 
- %op addAxiom          : (PropertyName * TyVars * PTerm) * PosSpec -> PosSpec
- %op addTheorem        : (PropertyName * TyVars * PTerm) * PosSpec -> PosSpec
- %op addConjecture     : (PropertyName * TyVars * PTerm) * PosSpec -> PosSpec
- %op addProperty       : PProperty * PosSpec -> PosSpec
- %op addImport         : Import * PosSpec -> PosSpec
-
- % op PosSpec.removeDefinitions :  PosSpec -> PosSpec 
- % ------------------------------------------------------------------------
-
- def addPSort ((qualifier, id, new_type_vars, new_opt_def), old_spec) : PosSpec =
+ def addPSort ((name as Qualified(qualifier, id), new_type_vars, new_opt_def), old_spec) =
   %% qualifier could be "<unqualified>" !
   let old_sorts = old_spec.sorts in
-  let old_qmap =
-    case StringMap.find (old_sorts, qualifier) of
-      | None          -> StringMap.empty
-      | Some old_qmap -> old_qmap
+  let old_qmap = case StringMap.find (old_sorts, qualifier) of
+                  | None          -> StringMap.empty
+                  | Some old_qmap -> old_qmap
   in
   let new_qmap =  
-    case StringMap.find (old_qmap, id) of
-      | None -> StringMap.insert (old_qmap, id, ([Qualified(qualifier, id)], new_type_vars, new_opt_def))
-      | Some (old_sort_names, old_type_vars, old_opt_def) -> 
-          (case (new_opt_def, old_opt_def) of
-            | (None, None)  -> System.fail ("Sort "^id^" has been redeclared")
-            | (Some _, None)  ->
-                if length new_type_vars = length old_type_vars then
-                  %%  Sort S (A,B)
-                  %%  Sort S (X,Y) = T(X,Y)
-                  StringMap.insert(old_qmap, id, (old_sort_names, new_type_vars, new_opt_def))
-                else
-                  fail ("Sort "^id^" redefined using different type variable lists")
-            | (None, Some _) ->
-                if length new_type_vars = length old_type_vars then
-                  %%  Sort S (X,Y) = T(X,Y)
-                  %%  Sort S (A,B)
-                  old_qmap % StringMap.insert(old_qmap, id, (old_sort_names, old_type_vars, old_opt_def))
-                else
-                  fail ("Sort "^id^" redefined using different type variable lists")
-            | (Some _, Some _) -> fail ("Sort "^id^" has been redefined"))
+      case StringMap.find (old_qmap, id) of
+       | None -> StringMap.insert (old_qmap, id, ([name], new_type_vars, new_opt_def))
+       | Some (old_sort_names, old_type_vars, old_opt_def) -> 
+      (case (new_opt_def, old_opt_def) of
+       | (None,   None)   -> System.fail ("Sort "^id^" has been redeclared")
+       | (Some _, None)   -> if length new_type_vars = length old_type_vars
+	                     %%  Sort S (A,B)
+                             %%  Sort S (X,Y) = T(X,Y)
+			     then StringMap.insert(old_qmap, id,
+						   (old_sort_names, new_type_vars, new_opt_def))
+			     else fail ("Sort "^id^" redefined using different type variable lists")
+       | (None,   Some _) -> if length new_type_vars = length old_type_vars
+			     %%  Sort S (X,Y) = T(X,Y)
+			     %%  Sort S (A,B)
+			     then old_qmap % StringMap.insert(old_qmap, id, (old_sort_names, old_type_vars, old_opt_def))
+			     else fail ("Sort "^id^" redefined using different type variable lists")
+       | (Some _, Some _) -> fail ("Sort "^id^" has been redefined"))
   in
   let new_sorts = StringMap.insert (old_sorts, qualifier, new_qmap)
   in 
-    setSorts (old_spec, new_sorts)
+  let sp = setSorts (old_spec, new_sorts) in
+  addLocalSortName (sp, name)
 
- def addPOp ((qualifier, id, new_fixity, new_sort_scheme, new_opt_def), old_spec) : PosSpec =
+ def addPOp ((name as Qualified(qualifier, id), new_fixity, new_sort_scheme, new_opt_def),
+	     old_spec) : PosSpec =
   %% qualifier could be "<unqualified>" !
   let old_ops = old_spec.ops in
-  let old_qmap =
-    case StringMap.find (old_ops, qualifier) of
-      | None -> StringMap.empty
-      | Some old_qmap -> old_qmap
+  let old_qmap = case StringMap.find (old_ops, qualifier) of
+                  | None          -> StringMap.empty
+		  | Some old_qmap -> old_qmap
   in
   let new_qmap =
-    case StringMap.find (old_qmap, id) of
-      | None -> StringMap.insert(old_qmap, id, ([Qualified(qualifier,id)], new_fixity, new_sort_scheme, new_opt_def))
-      | Some (old_op_names, old_fixity, old_sort_scheme, old_opt_def) -> 
-          (case (new_opt_def, old_opt_def) of
-            | (None,   Some _) ->
-                %%  def foo (x, y) = baz (x, y)
-                %%  op foo : A * B -> C
-                StringMap.insert(old_qmap, id, (old_op_names, new_fixity, new_sort_scheme, old_opt_def))
-            | (Some _, None) ->
-                %%  op foo : A * B -> C
-                %%  def foo (x, y) = baz (x, y)
-                StringMap.insert(old_qmap, id, (old_op_names, old_fixity, old_sort_scheme, new_opt_def))
-            | (None, None) ->
-                %%  op foo : ...
-                %%  op foo : ...
-                fail ("Operator "^id^" has been redeclared")
-            | (Some _, Some _) ->
-                %%  def foo ...
-                %%  def foo ...
-                fail ("Operator "^id^" has been redefined"))
+      case StringMap.find (old_qmap, id) of
+       | None -> StringMap.insert(old_qmap, id,
+				  ([name], new_fixity, new_sort_scheme, new_opt_def))
+       | Some (old_op_names, old_fixity, old_sort_scheme, old_opt_def) -> 
+      (case (new_opt_def, old_opt_def) of
+       | (None,   Some _) -> %%  def foo (x, y) = baz (x, y)
+	                     %%  op foo : A * B -> C
+	 StringMap.insert(old_qmap, id, (old_op_names, new_fixity, new_sort_scheme, old_opt_def))
+       | (Some _, None)   -> %%  op foo : A * B -> C
+			     %%  def foo (x, y) = baz (x, y)
+	 StringMap.insert(old_qmap, id, (old_op_names, old_fixity, old_sort_scheme, new_opt_def))
+       | (None,   None)   -> %%  op foo : ...
+			     %%  op foo : ...
+	 fail ("Operator "^id^" has been redeclared")
+       | (Some _, Some _) -> %%  def foo ...
+			     %%  def foo ...
+	 fail ("Operator "^id^" has been redefined"))
   in
   let new_ops = StringMap.insert (old_ops, qualifier, new_qmap)
   in
-    setOps (old_spec, new_ops)
+  let sp = setOps (old_spec, new_ops) in
+  addLocalOpName (sp, name)
 
  % ------------------------------------------------------------------------
 
- def PosSpec.removeDefinitions old_spec : PosSpec =
+ def removeDefinitions old_spec : PosSpec =
   let new_ops =
       StringMap.mapDouble (fn (op_names, fixity, (tyVars, srt), optTerm) -> 
-                              (op_names, fixity, (tyVars, srt), None : Option PTerm))
-                            old_spec.ops
+			   (op_names, fixity, (tyVars, srt), None : Option PTerm))
+                          old_spec.ops
   in
-    {imports          = old_spec.imports,
-     importedSpec     = old_spec.importedSpec,
+    {importInfo       = old_spec.importInfo,
      ops              = new_ops,
      sorts            = old_spec.sorts,
      properties       = emptyAProperties}

@@ -271,14 +271,14 @@ ListADT qualifying spec {
   op ppSpecToFile : LispSpec * String * Text -> ()
 
   def ppSpecToFile (spc, file, preamble) =
-    let p = System.time (ppSpec spc) in
+    let p = ppSpec spc in
     let t = format (80, p) in
     toFile (file, t ++ preamble)
 
   op ppSpecToTerminal : LispSpec -> ()
 
   def ppSpecToTerminal spc =
-    let p = System.time (ppSpec spc) in
+    let p = ppSpec spc in
     let t = format (80, p) in
     toTerminal t
 

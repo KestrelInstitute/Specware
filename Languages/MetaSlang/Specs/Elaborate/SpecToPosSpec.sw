@@ -19,9 +19,8 @@ spec {
 
 
  %% Half-baked conversion from StandardSpec to PosSpec
- def convertSpecToPosSpec {imports, importedSpec, sorts, ops, properties = _} =
-  {imports      = imports,
-   importedSpec = importedSpec,
+ def convertSpecToPosSpec {importInfo, sorts, ops, properties = _} =
+  {importInfo   = importInfo,
    sorts        = mapAQualifierMap convertSortInfoToPSortInfo sorts,
    ops          = mapAQualifierMap convertOpInfoToPOpInfo     ops,
    properties   = emptyAProperties

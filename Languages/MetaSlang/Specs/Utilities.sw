@@ -486,14 +486,15 @@ spec {
   %% Spec equality
 
  def specEqual? (s1, s2) =
-   (s1.imports                = s2.imports)                &
+   %% don't test importInfo as it just gives info about how the spec was constructed
+   %(s1.imports                = s2.imports)                &
    % (s1.importedSpec           = s2.importedSpec)           & % ??
    (s1.properties             = s2.properties)             &
    (StringMap.toList s1.sorts = StringMap.toList s2.sorts) &
    (StringMap.toList s1.ops   = StringMap.toList s2.ops)
 
  def subspec? (s1, s2) =
-   ListUtilities.subset? (s1.imports,    s2.imports)    &
+   %ListUtilities.subset? (s1.imports,    s2.imports)    &
    ListUtilities.subset? (s1.properties, s2.properties) &
    StringMap.subset?     (s1.sorts,      s2.sorts)      &
    StringMap.subset?     (s1.ops,        s2.ops)
@@ -502,8 +503,7 @@ spec {
  %% Remove op definitions, axioms, and theorems from a spec.
 
  def removeDefinitions spc =
-   {imports          = spc.imports,
-    importedSpec     = spc.importedSpec,
+   {importInfo       = spc.importInfo,
     ops              = StringMap.map (fn m -> StringMap.map (fn (op_names, fixity, srt, optTerm) -> 
 							        (op_names, fixity, srt, None : Option Term))
 				                            m)
@@ -537,8 +537,7 @@ spec {
      %		    else (idx - 1,StringMap.insert(ops,nm,(fxty,srt,defn)))) 
      %	           (Integer.~ 1,StringMap.empty) spc.ops)) 
      in
-     {imports          = spc.imports,
-      importedSpec     = spc.importedSpec,
+     {importInfo       = spc.importInfo,
       sorts            = spc.sorts,
       ops              = revised_ops,
       properties       = filterWithIndex (fn (i,n) -> ~(IntegerSet.member(indices,i))) 
@@ -897,8 +896,7 @@ spec {
 
  op letRecToLetTermSpec: Spec -> Spec
  def letRecToLetTermSpec(spc) =
-   {imports          = spc.imports,
-    importedSpec     = spc.importedSpec,
+   {importInfo       = spc.importInfo,
     sorts            = StringMap.mapDouble letRecToLetTermSortInfo spc.sorts,
     ops              = StringMap.mapDouble letRecToLetTermOpInfo   spc.ops,
     properties       = spc.properties}

@@ -56,7 +56,7 @@ is flattened,
                                 then new_qualifier
                                 else qualifier,
                               id,
-                              (map translateQualifiedId aliases, x, y, optional_def)))
+                              (List.map translateQualifiedId aliases, x, y, optional_def)))
         emptyAQualifierMap opMap
 
     def convertSortMap sortMap =
@@ -70,16 +70,15 @@ is flattened,
                                 then new_qualifier
                                 else qualifier,
                               id,
-                              (map translateQualifiedId aliases, ty_vars, optional_def)))
+                              (List.map translateQualifiedId aliases, ty_vars, optional_def)))
         emptyAQualifierMap sortMap
 
     def convertSpec sp =
-     let {imports, importedSpec, sorts, ops, properties}
+     let {importInfo, sorts, ops, properties}
          = mapSpec (translateOp, translateSort, translatePattern) sp
      %%         importedSpecs    = mapImports convertSpec importedSpecs
      in
-       {imports      = imports,
-        importedSpec = importedSpec,  
+       {importInfo   = importInfo,
         sorts        = convertSortMap sorts,
         ops          = convertOpMap   ops,
         properties   = properties}

@@ -114,7 +114,7 @@ Match4 qualifying spec {
       (if isBreak(t2) then t1 else
       if isSuccess(t1) then (warnUnreachable context; t1) else
       let srt  = inferType(context.spc,t1) in
-      let srt  = (mkArrow(mkProduct [srt,srt],srt)):Sort in
+      let srt  = mkArrow(mkProduct [srt,srt],srt) in
       let trm  = mkApply(mkOp(Qualified("TranslationBuiltIn","failWith"),srt), mkRecord [("1",t1),("2",t2)]) in
        trm
      )
@@ -270,7 +270,7 @@ Match4 qualifying spec {
       if isTrue(e) then e else 
       case pat
 	of WildPat _ -> e
-         | VarPat _ -> Match4.mkLet([(pat,t)],e)
+         | VarPat _ -> mkLet([(pat,t)],e)
 	 | _ -> e (* Should not happen *)
       
 
@@ -282,16 +282,16 @@ Match4 qualifying spec {
       mkApply(mkEmbedded(constructorName,termSort term),term)
 
 
-  def relaxed(predicate) term = (mkApply(predicate,term)):Term
+  def relaxed(predicate) term = mkApply(predicate,term)
  
   def equalToConstant(srt,constantTerm:Term) term =
       mkEquality(srt,constantTerm,term)
 
 
-  def Match4.mkLet(lets:List(Pattern*Term),term) = 
+  def mkLet(lets:List(Pattern*Term),term) = 
       case lets
         of [] -> term : Term
-         | _  -> (StandardSpec.mkLet(lets,term)):Term
+         | _  -> StandardSpec.mkLet(lets,term)
         	
   op partition : fa(A,B) (A -> B) -> List(A) -> List(List(A))
   op tack : fa(A) A -> List(List(A)) -> List(List(A))
@@ -383,7 +383,7 @@ Match4 qualifying spec {
   def freshVar(context,srt) = 
       let num = State.! context.counter + 1 in
       (context.counter State.:= num;
-       ("pV" String.++ (Nat.toString num),srt)
+       ("pV" ++ (Nat.toString num),srt)
       )
 
   def freshVars(num,context,pat:Pattern) = 
@@ -506,7 +506,7 @@ Match4 qualifying spec {
   
   def matchRules (context,break,vars) (rules,default) = 
       (%%%writeLine "matchRules ";
-      case (ruleType (hd rules)) : RuleType
+      case ruleType (hd rules)
         of Var -> matchVar(context,vars,rules,default,break)
          | Con -> matchCon(context,vars,rules,default,break)
 	 | Alias(p1,p2) -> matchAlias(context,p1,p2,vars,rules,default,break)
@@ -535,7 +535,7 @@ Match4 qualifying spec {
       let rule = foldr 
 	        (fn ((query,newVars,lets,_,rules),default) ->   
 	            mkOptimizedIfThenElse(query,
-		      Match4.mkLet(lets,
+		      mkLet(lets,
 			    match(context,newVars @ terms,rules,break,break)),
 		      default)) break rulePartition
       in
@@ -686,7 +686,7 @@ def makeDefault(context:Context,srt,rules,vs,term) =
 		      of [(_,v)] -> Var(v,())
 		       | _ -> Record(map (fn(l,v)-> (l,mkVar v)) vs,()) 
 		in
-		let body = Match4.mkLet([(VarPat(v,()),term)],body) in
+		let body = mkLet([(VarPat(v,()),term)],body) in
 		 (rev firstRules,mkSuccess(srt,body))
 	       | rule::rules ->
 		 loop(rules,cons(rule,firstRules))
@@ -754,7 +754,7 @@ def eliminateTerm context term =
 	     foldr flattenLetDecl (context,decls) [] 
 	 in
 	 if all (fn(pat,e)-> simplePattern pat) decls
- 		then Match4.mkLet(decls,body)
+ 		then mkLet(decls,body)
 	 else 
 
 	 let (pats,terms) = ListPair.unzip decls in
@@ -810,14 +810,14 @@ def eliminateTerm context term =
 %- --------------------------------------------------------------------------------
 %- checks whether Record is a Product or a user-level Record
 
- op Match4.isShortTuple : fa(A) Nat * List(Id * A) -> Boolean
- def Match4.isShortTuple(i,row) = 
+ op isShortTuple : fa(A) Nat * List(Id * A) -> Boolean
+ def isShortTuple(i,row) = 
      case row
        of [] -> true
-	| (lbl,r)::row -> lbl = Nat.toString i & Match4.isShortTuple(i + 1,row)
+	| (lbl,r)::row -> lbl = Nat.toString i & isShortTuple(i + 1,row)
 
  op recordfields? : fa(A) List (Id * A) -> Boolean
- def recordfields?(fields) = Boolean.~(Match4.isShortTuple(1,fields))
+ def recordfields?(fields) = Boolean.~(isShortTuple(1,fields))
 
 (*****
 %%%%%%
@@ -843,16 +843,15 @@ def eliminateTerm context term =
 		     funName,
 		     term    = None} 
    in
-     {imports       = spc.imports,
-      importedSpec  = spc.importedSpec,
+     {importInfo    = spc.importInfo,
       sorts         = mapiAQualifierMap
-                        (fn (qname, name, (sort_names, tyVars, (Some srt) : Option Sort)) -> 
+                        (fn (qname, name, (sort_names, tyVars, Some srt : Option Sort)) -> 
 			    (sort_names, tyVars, Some (eliminateSort (mkContext name) srt))
 		          | (qname, name, (sort_names, tyVars, None)) -> 
 			    (sort_names, tyVars, None))
 			spc.sorts,
       ops           = mapiAQualifierMap
-                        (fn (qname, name, (op_names, fixity, (tyVars, srt), (Some term) : Option Term)) ->
+                        (fn (qname, name, (op_names, fixity, (tyVars, srt), Some term : Option Term)) ->
 			    (op_names, 
 			     fixity, 
 			     (tyVars, eliminateSort (mkContext name) srt),
@@ -1341,7 +1340,7 @@ def checkExhaustive(dag as Ref {tree,refs}:decision):Term =
 	 let d = checkExhaustive(d) in
 	     (case d
 	       of (Fun(Bool _,_),_) -> d
-		| _ -> Match4.mkLet(map mkDecl decls,d)
+		| _ -> mkLet(map mkDecl decls,d)
 	     ))
 
 sort MatchResult = | Redundant | NonExhaustive :: Term | Ok  
