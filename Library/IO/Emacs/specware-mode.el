@@ -1460,6 +1460,9 @@ uniquely and concretely describes their application.")
 (defun sw:run-test-harness (non-rec)
   ;; Prefix arg means don't recur on sub-directories
   (interactive "P")
+  (unless (inferior-lisp-running-p)
+    (run-specware4)
+    (sit-for 1))
   (simulate-input-expression
    (if non-rec
        (format "(specware-test::run-test-directories %S)"

@@ -188,7 +188,7 @@ be the option to run each (test ...) form in a fresh image.
 				(if (not (null swe))
 				  (swe-test swe swe-spec)
 				  (if (not (null swl))
-				  (cl-user::swl swl))))))))))
+				      (cl-user::swl swl))))))))))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
 	(setf (car emacs::*goto-file-position-stored*)
@@ -199,14 +199,14 @@ be the option to run each (test ...) form in a fresh image.
 	(push "Expected Error did not occur"  error-messages))
       (when (and (not (eq value "--NotAValue--")) (not error-type)
 		 (not (funcall value-predicate val value)))
-	(push (format nil "Expected:~%~a~%;; Got: ~%~a" value val) error-messages))
+	(push (format nil "Expected:~%~S~%;; Got: ~%~S" value val) error-messages))
       (when (and output (not error-type)
 		 (not (funcall output-predicate test-output output)))
-	(push (format nil "Expected output: ~%~a~%;; Got:~%~a" output test-output)
+	(push (format nil "Expected output: ~%~S~%;; Got:~%~S" output test-output)
 	      error-messages))
       (when (and file-goto-error
 		 (not (equal file-goto-error emacs::*goto-file-position-stored*)))
-	(push (format nil "Expected error location: ~%~a~%;; Got:~%~a" file-goto-error
+	(push (format nil "Expected error location: ~%~s~%;; Got:~%~s" file-goto-error
 		      emacs::*goto-file-position-stored*)
 	      error-messages))
       (when files
