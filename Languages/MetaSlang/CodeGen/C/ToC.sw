@@ -14,7 +14,14 @@ CGen qualifying spec {
     let cSpec = generateCTypes cSpec spc in
     let cSpec = generateCVars cSpec spc in
     let cSpec = generateCFunctions cSpec spc in
-    let stmt = Block ([],map (fn (typ,name,tyVars,term) -> termToCStmt term) spc.properties) in
+    let stmt = Block ([], 
+		      foldl (fn (el, statements) ->
+			     case el of
+			       | Property (typ,name,tyVars,term) -> statements ++ [termToCStmt term] 
+			       | _ -> statements)
+		            []
+		            spc.elements)
+    in
     let cSpec = addFuncDefn cSpec "main" [] Int stmt in
     let _ = writeLine (PrettyPrint.toString (format (80, ppCSpec cSpec))) in
     cSpec
