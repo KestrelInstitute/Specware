@@ -237,11 +237,6 @@ PE qualifying spec
        newBSpec <- removeNilTransitions newBSpec;
        newProcId <- makeNewProcId procId subst;
        print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n");
-       when ((size (final newBSpec)) = 0)
-         (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
-                     ^ " by " ^ (show subst) ^ " has no final states.")));
-       when ((size (final newBSpec)) > 1)
-         (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))));
        (newReturnInfo : ReturnInfo, newReturnTerm, newReturnSort,postcondition,bindingTerm) <-
          let
            def andOp () = MSlang.mkFun (Op (Qualified ("Boolean","&"),Infix (Right,15)), binaryBoolType noPos, noPos)
@@ -273,11 +268,19 @@ PE qualifying spec
           in {
             print ("number of final states = " ^ (Nat.show (size (final newBSpec))) ^ "\n");
             print ("final states = " ^ (ppFormat (pp (final newBSpec))) ^ "\n");
-            if (size (final newBSpec)) = 0 then
-              raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states."))
+%             when ((size (final newBSpec)) = 0) 
+%               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states.")));
+%             when ((size (final newBSpec)) > 1) 
+%               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
+%                                       ^ " by " ^ (show subst)
+%                                       ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))));
+            if ((size (final newBSpec)) = 0) then
+              (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states.")))
             else
-              if (size (final newBSpec)) > 1 then
-                raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec)))))
+              if ((size (final newBSpec)) > 1)  then
+                (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
+                                      ^ " by " ^ (show subst)
+                                      ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))))
               else {
             newFinal <- return (theSingleton (final newBSpec));
             postcondition <-
@@ -315,11 +318,12 @@ PE qualifying spec
                                }
                              else
                                projectReturn subst subOut termOut varRef
-                    def handler except =
-                      return (None, mkTuple ([], noPos), mkProduct ([],noPos),postSubst,bindingTerm)
+                    def handler except = {
+                        (postSubst,bindingTerm) <- projectReturn postcondition postSubst bindingTerm returnRef;
+                        return (None, mkTuple ([], noPos), mkProduct ([],noPos),postSubst,bindingTerm)
+                      }
                     def prog () = {
                         returnVar <- OpEnv.deref (specOf (modeSpec newBSpec newFinal), returnRef);
-                        (postSubst,bindingTerm) <- projectReturn postcondition postSubst bindingTerm returnRef;
                         return (Some returnRef, returnTerm, type returnVar,postSubst,bindingTerm)   % Shameful shit!
                       } in
                       catch (prog ()) handler

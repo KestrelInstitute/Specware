@@ -34,8 +34,8 @@ Convert qualifying spec
         | SpecError (pos, msg) -> {
              print ("convertOscarSpec exception: procId=" ^ (Id.show id) ^ "\n");
              print (msg ^ "\n");
-             print (ppFormat (pp proc));
-             print "\n";
+             % print (ppFormat (pp proc));
+             % print "\n";
              raise (SpecError (pos, "except : " ^ msg))
            }
         | _ -> raise except
@@ -59,8 +59,8 @@ Convert qualifying spec
         | SpecError (pos, msg) -> {
              print ("structOscarSpec exception: procId=" ^ (Id.show id) ^ "\n");
              print (msg ^ "\n");
-             print (ppFormat (pp proc));
-             print "\n";
+             % print (ppFormat (pp proc));
+             % print "\n";
              raise (SpecError (pos, "except : " ^ msg))
            }
         | _ -> raise except
@@ -164,19 +164,22 @@ Convert qualifying spec
       return (graphToStructuredGraph graph)
 
   op convertBSpec : BSpec -> Env Graph
-  def convertBSpec bSpec = {
-      coAlg <- return (succCoalgebra bSpec);
-      (graph,n,visited) <- convertBSpecAux bSpec coAlg (final bSpec) FinitePolyMap.empty 0 (initial bSpec) FinitePolyMap.empty;
-      print "convertBSpec VList =\n";
-      print (printVList (mapToList visited));
-      g <- return (sortGraph (fn ((n,_),(m,_)) -> n < m) (mapToList graph));
-      g <- return (addPredecessors (map (fn (x,y) -> y) g));
-      % print "\nconvertBSpec NCList after sort\n";
-      % print (printNCList g);
-      % print "\n\n";
-      % g <- return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)));
-      % print (printGraph g);
-      return g
+  def convertBSpec bSpec =
+    if EdgSet.empty? (edges (shape (system bSpec))) then
+      return []
+    else {
+        coAlg <- return (succCoalgebra bSpec);
+        (graph,n,visited) <- convertBSpecAux bSpec coAlg (final bSpec) FinitePolyMap.empty 0 (initial bSpec) FinitePolyMap.empty;
+        print "convertBSpec VList =\n";
+        print (printVList (mapToList visited));
+        g <- return (sortGraph (fn ((n,_),(m,_)) -> n < m) (mapToList graph));
+        g <- return (addPredecessors (map (fn (x,y) -> y) g));
+        % print "\nconvertBSpec NCList after sort\n";
+        % print (printNCList g);
+        % print "\n\n";
+        % g <- return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)));
+        % print (printGraph g);
+        return g
     }
 
   op convertBSpecAux :

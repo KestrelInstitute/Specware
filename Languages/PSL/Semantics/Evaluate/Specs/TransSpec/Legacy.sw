@@ -28,10 +28,11 @@ TransSpec qualifying spec
       return (transSpec withModeSpec modeSpec)
     }
     
+  (* We normalize because simplifying against the rules for procedures may introduce conjuncts *)
   % op simplifyVariants : ModeSpec -> TransSpec -> Env TransSpec
   def TransSpec.simplifyVariants ms transSpec = {
       modeSpc <- simplifyInvariants ms (modeSpec transSpec);
-      return (transSpec withModeSpec modeSpc)
+      normalize (transSpec withModeSpec modeSpc)
     }
 
   % op TransSpec.elaborate : TransSpec -> Env TranSpec
@@ -170,14 +171,16 @@ for lists.
                 case claimType claim of
                   | Conjecture -> return (newModeSpec,Cons(claim,newClaims), insert(newInvars,ref))
                   | _ -> {
+                       print ("normalize: claim = " ^ (show (term claim)) ^ "\n");
                        (newModeSpec,newFormula) <- visitConjunct newModeSpec (term claim);
+                       print ("normalize: after = " ^ (show newFormula) ^ "\n");
                        case newFormula of
                          | Fun (Bool b,_,_) ->
                             if b then
                               return (newModeSpec,newClaims,newInvars)
                             else
                               return (newModeSpec, Cons (claim withTerm newFormula,newClaims),insert(newInvars,ref))
-                         | _ -> return (newModeSpec, Cons (claim,newClaims),insert(newInvars,ref))
+                         | _ -> return (newModeSpec, Cons (claim withTerm newFormula,newClaims),insert(newInvars,ref))
                      }
               else
                 return (newModeSpec, Cons (claim,newClaims),newInvars)
@@ -186,6 +189,7 @@ for lists.
         (case formula of
           | Apply (Fun (Op (Qualified ("Boolean","&"),fxty),srt,funPos),
                    Record([(M_fld,M),(N_fld,N)], recPos),applPos) -> {
+                     print ("normalize: conjunction = " ^ (show formula) ^ "\n"); % " (" ^ (System.toString formula) ^ ")\n");
                      (newModeSpec,newM) <- visitConjunct modeSpec M;
                      (newModeSpec,newN) <- visitConjunct newModeSpec N;
                      newTerm <-
@@ -195,7 +199,7 @@ for lists.
                          | (_, Fun (Bool b,_,_)) -> if b then newM else newN
                          | _ ->
                              Apply (Fun (Op (Qualified("Boolean","&"),fxty),srt,funPos),
-                                    Record([(M_fld,M),(M_fld,N)],
+                                    Record([(M_fld,newM),(M_fld,newN)],
                                     recPos),applPos));
                      return (newModeSpec,newTerm)
                    }
@@ -219,12 +223,12 @@ for lists.
           | _ -> return (modeSpec,formula))
     in {
       (newModeSpec,newClaims,newInvars) <-
-         normalizeClaims (modeSpec transSpec) (specOf (modeSpec
-         transSpec)).properties ClaimRefSet.empty;
+         normalizeClaims (modeSpec transSpec) (specOf (modeSpec transSpec)).properties ClaimRefSet.empty;
       let newSpec:Spec.Spec = {
           sorts = (specOf newModeSpec).sorts,
           ops = (specOf newModeSpec).ops,
-          properties = newClaims, importInfo = (specOf newModeSpec).importInfo
+          properties = newClaims,
+          importInfo = (specOf newModeSpec).importInfo
         }
       in
         return (transSpec withModeSpec ((((newModeSpec : ModeSpec)

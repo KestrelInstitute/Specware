@@ -886,13 +886,15 @@ from a natural number.
     | Pair (Vrtx.Vertex * Subst)
 
   op Vrtx.eq? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
-  def Vrtx.eq? = Vrtx.equalVertex?
+  % def Vrtx.eq? = Vrtx.equalVertex?
+  def Vrtx.eq? (v1,v2) = (show v1) = (show v2)
 
   op Vrtx.equalVertex? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
   def Vrtx.equalVertex? (v1,v2) =
     case (v1,v2) of
       | (Nat n1, Nat n2) -> n1 = n2
       | (Pair (v1,s1), Pair (v2,s2)) -> equalVertex? (v1,v2) & equalSubst? (s1,s2)
+      | _ -> false
 
   def Vrtx.pp vertex =
     case vertex of
@@ -943,6 +945,7 @@ from a natural number.
     case (e1,e2) of
       | (Nat n1, Nat n2) -> n1 = n2
       | (Triple (e1,s1,t1), Triple (e2,s2,t2)) -> equalEdge? (e1,e2) & equalSubst? (s1,s2) & equalSubst? (t1,t2)
+      | _ -> false
 
   def Edg.show edge = ppFormat (pp edge)
 

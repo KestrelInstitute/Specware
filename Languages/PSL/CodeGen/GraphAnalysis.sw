@@ -167,6 +167,7 @@ spec
   
   op graphToStructuredGraph: Graph -> Graph
   def graphToStructuredGraph (baseG) =
+    if baseG = [] then baseG else
     %% The new graph has the same number of nodes as the old one,
     %% with structured nodes replacing simple nodes.
     %% This makes it easier to use indices as references before the whole

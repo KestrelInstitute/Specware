@@ -109,7 +109,10 @@ with a loop or out of a conditional.
           | Proc term -> termToCStmtNew term
           | Return term -> termToCStmtNew term
     in
-      consume 0 (length graph)
+      if graph = [] then
+        Nop
+      else
+        consume 0 (length graph)
 
   op termToCStmtNew : MSlang.Term -> CStmt
   def termToCStmtNew term =
