@@ -723,7 +723,8 @@
 (defvar *make-verbose* t)
 
 (defun make (&rest args)
-  (let* ((make-args (if (not (null args)) 
+  ;;(format t "args=~A ~A~%" args (length args))
+  (let* ((make-args (if (and (first args) (not (null args)))
 			(cons (norm-unitid-str (first args)) (rest args))
 		      *last-make-args*))
 	 (make-command (if (specware::getenv "SPECWARE4_MAKE") (specware::getenv "SPECWARE4_MAKE") "make"))
@@ -731,6 +732,7 @@
 	 (sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
 	 (make-file "swcmake.mk"))
     (setq *last-make-args* make-args)
+    ;;(format t "make-args=~A~%" make-args)
     (if  make-args
 	(let* ((unitid (first make-args))
 	       (cbase (getCFileNameFromUnitid unitid))
