@@ -883,6 +883,13 @@ spec {
           let ty    = Arrow (alpha, term_sort, pos) in
           let t1    = elaborateTerm (env, t1, ty) in
           let t2    = elaborateTerm (env, t2, alpha) in
+	  %% Repeated for help in overload resolution once argument type is known
+          let t1    = if env.firstPass?
+			then case t1 of
+			       | Fun(OneName _,_,_) -> elaborateTerm (env, t1, ty)
+			       | _ -> t1
+		        else t1
+	  in
 	  %% This is same effect as old code, but restructured
 	  %% so it's easier to intercept the XML references
           if env.firstPass? then
@@ -915,7 +922,7 @@ spec {
                   | Fun (OneName (_,  Infix p), _, pos) -> Infix (term, p)
                   | Fun (OneName (id, _),       _, pos) ->
                       (case consistentTag (findVarOrOps (env, id, pos)) of
-                        | (true, (Some p) : (Option (Associativity * Nat))) -> Infix (term, p) % ### Why the Type?
+                        | (true, (Some p)) -> Infix (term, p)
                         | (true, _)      -> Nonfix term
                         | _ ->
                        (error (env, "Inconsistent infix information for overloaded op: " ^ id,
@@ -1028,34 +1035,34 @@ spec {
 	       %% If there is a valid unqualified term then prefer that because you
 	       %% cannot explicitly qualify with unqualified!
 	       let def findUnqualified tms =
-		  case tms of
-		    | [] -> None
-		    | tm::rtms ->
-			(case tm of
-			   |Fun (OneName  (     _,_), _, _) -> Some tm
-			   | Fun (TwoNames (id1, _,_), _, _) ->
-			      if id1 = UnQualified then
-				Some tm
-			      else
-				findUnqualified rtms
-			   | _ -> findUnqualified rtms)
+		     case tms of
+		       | [] -> None
+		       | tm::rtms ->
+			   (case tm of
+			      | Fun (OneName  (     _,_), _, _) -> Some tm
+			      | Fun (TwoNames (id1, _,_), _, _) ->
+				 if id1 = UnQualified then
+				   Some tm
+				 else
+				   findUnqualified rtms
+			      | _ -> findUnqualified rtms)
 	       in
-		 (case findUnqualified remTerms of
-		   | Some term -> Some term
-		   | None ->
-		       (error (env,
-			      "Several matches for overloaded op "
-			      ^ id
-			      ^ " of sort "
-			      ^ printSort srt
-			      ^ (foldl (fn (tm, str) -> str ^
-				   (case tm of
-				      | Fun (OneName  (     id2, _), _, _) -> " "^id2
-				      | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
-				    " : "
-				    tms),
-			       pos);
-			None))))
+	       case findUnqualified remTerms of
+		 | Some term -> Some term
+		 | None ->
+		     (error (env,
+			    "Several matches for overloaded op "
+			    ^ id
+			    ^ " of sort "
+			    ^ printSort srt
+			    ^ (foldl (fn (tm, str) -> str ^
+				 (case tm of
+				    | Fun (OneName  (     id2, _), _, _) -> " "^id2
+				    | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+				  " : "
+				  tms),
+			     pos);
+		      None)))
 
   def consistentSortOp? (env, srt1, ignoreSubsorts?) (Fun (_, srt2, _)) =
    %% calls unifySorts, but then resets metatyvar links to None...
