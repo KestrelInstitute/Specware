@@ -166,6 +166,6 @@ $LISP <<-XXXX
 XXXX
 
 ##  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Linux/CMU/Patches
-/bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f          "$SPECWARE4"/distribution-cmulisp/Patches
+##/bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f          "$SPECWARE4"/distribution-cmulisp/Patches
 /bin/cp "$SPECWARE4"/Release/Linux/CMU/Specware-cmulisp                  "$SPECWARE4"/distribution-cmulisp
 /bin/cp "$SPECWARE4"/Applications/Specware/bin/linux/Specware4.cmuimage  "$SPECWARE4"/distribution-cmulisp

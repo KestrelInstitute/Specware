@@ -51,6 +51,10 @@
        :defaults "../../../Handwritten/Lisp/load-utilities"
        :type     "lisp"))
 
+(compile-and-load-lisp-file (make-pathname
+			     :defaults "../../../Handwritten/Lisp/load-utilities"
+			     :type     "lisp"))
+
 (defvar Specware4 (specware::getenv "SPECWARE4"))
 
 #+cmu

@@ -1,26 +1,33 @@
 (in-package :cl-user)
 
+(defun delete-file-if-present (fil)
+  (when (probe-file fil)
+    (delete-file fil)))
+
 ;;; Copy needed directories to distribution
+(specware::make-directory (in-distribution-dir "Library/"))
 (specware::copy-directory (in-specware-dir "Library/Base/")
 			  (in-distribution-dir "Library/Base/"))
 (specware::delete-directory (in-distribution-dir "Library/Base/CVS/"))
 (specware::delete-directory (in-distribution-dir "Library/Base/Handwritten/CVS/"))
 (specware::delete-directory (in-distribution-dir "Library/Base/Handwritten/Lisp/CVS/"))
-(delete-file (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
+(delete-file-if-present (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
 
 (specware::copy-file (in-specware-dir "Library/Base.sw")
                      (in-distribution-dir "Library/Base.sw"))
 (specware::copy-file (in-specware-dir "Library/InterpreterBase.sw")
                      (in-distribution-dir "Library/InterpreterBase.sw"))
 
+(specware::make-directory (in-distribution-dir "Library/IO/"))
 (specware::copy-directory (in-specware-dir "Library/IO/Emacs/")
 			  (in-distribution-dir "Library/IO/Emacs/"))
 (specware::delete-directory (in-distribution-dir "Library/IO/Emacs/CVS/"))
 (specware::delete-directory (in-distribution-dir "Library/IO/Emacs/ilisp/CVS/"))
 
+(specware::make-directory (in-distribution-dir "Examples/"))
 (specware::copy-directory (in-specware-dir "UserDoc/tutorial/example/")
 			  (in-distribution-dir "Examples/Matching/"))
-(delete-file (in-distribution-dir "Examples/Matching/.cvsignore"))
+(delete-file-if-present (in-distribution-dir "Examples/Matching/.cvsignore"))
 (specware::delete-directory (in-distribution-dir "Examples/Matching/CVS"))
 (specware::delete-directory (in-distribution-dir "Examples/Matching/Snark"))
 (specware::delete-directory (in-distribution-dir "Examples/Matching/lisp"))
@@ -29,13 +36,13 @@
 			  (in-distribution-dir "Examples/"))
 (specware::delete-directory (in-distribution-dir "Examples/CVS"))
 (specware::delete-directory (in-distribution-dir "Examples/simple1/CVS"))
-(delete-file (in-distribution-dir "Examples/simple1/test.lisp"))
+(delete-file-if-present (in-distribution-dir "Examples/simple1/test.lisp"))
 (specware::delete-directory (in-distribution-dir "Examples/simple2/CVS"))
-(delete-file (in-distribution-dir "Examples/simple2/test.lisp"))
+(delete-file-if-present (in-distribution-dir "Examples/simple2/test.lisp"))
 (specware::delete-directory (in-distribution-dir "Examples/simple2/Refs/CVS"))
 (specware::delete-directory (in-distribution-dir "Examples/simple2/Specs/CVS"))
 (specware::delete-directory (in-distribution-dir "Examples/simple3/CVS"))
-(delete-file (in-distribution-dir "Examples/simple3/test.lisp"))
+(delete-file-if-present (in-distribution-dir "Examples/simple3/test.lisp"))
 
 
 (specware::concatenate-files
@@ -51,7 +58,7 @@
 		      "Structures/Data/Monad/Handwritten/Lisp/State"
 		      "../Applications/Handwritten/Lisp/meta-slang-runtime"
 		      "../Applications/Specware/Handwritten/Lisp/ProvideSpecwareRuntime")
-      collect (format nil "~a/Library/~a.lisp" Specware4-dir fil))
+      collect (in-specware-dir (format nil "Library/~a.lisp" fil)))
    (in-distribution-dir "Library/SpecwareRuntime.lisp"))
 
 (specware::make-directory (in-distribution-dir "Documentation/"))

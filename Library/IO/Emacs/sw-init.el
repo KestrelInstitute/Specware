@@ -67,13 +67,19 @@
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
-    (sit-for 0.5 t)
+    (wait-for-prompt)
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
     (goto-char (point-max))
     (unless already-running? 
       (simulate-input-expression ":sw-shell"))
     ))
+
+(defun wait-for-prompt ()
+  ;(sit-for 0.1 t)
+  (let ((proc (get-buffer-process *specware-buffer-name*)))
+    (while (not (equal comint-status " :ready"))
+      (accept-process-output proc))))
 
 (defun set-socket-init-for-specware ()
   (message "set-socket-init-for-specware")
@@ -119,10 +125,10 @@
 
 (defun run-plain-lisp (&optional sleep)
   (interactive)
-  (sleep-for 1)
+  (sit-for 1)
   (when (inferior-lisp-running-p)
     (sw:exit-lisp)
-    (sleep-for 2))
+    (sit-for 2))
   (setq sw:common-lisp-host "localhost")
 ;;
 ;; sw:common-lisp-directory is the directory in which the lisp subprocess will
@@ -148,7 +154,7 @@
 		    sw:common-lisp-directory
 		    sw:common-lisp-image-name
 		    sw:common-lisp-image-arguments)
-    (when sleep (sleep-for sleep))))
+    (when sleep (sit-for sleep))))
 
 (defvar *specware-auto-start* t
   "If T start Specware when needed if it not already running")
@@ -159,7 +165,7 @@
     (unless (inferior-lisp-running-p)
       (if *specware-auto-start*
 	  (progn (run-specware4)
-		 (sit-for 0.5 t))
+		 (sit-for 0.1 t))
 	(error "Specware not running. Do M-x run-specware4")))))
 
 ;; (simulate-input-expression "t")
@@ -170,8 +176,7 @@
       (sw:switch-to-lisp)))
   (goto-char (point-max))
   (insert str)
-  (inferior-lisp-newline)
-  (sit-for 0.1 t))
+  (inferior-lisp-newline))
 
 (defvar *specware-continue-form* nil)
 (defvar *last-specware-continue-form* nil)
@@ -249,15 +254,15 @@
 		 "(build-lisp-image %S :c-heap-start  #x7c623000 :oldspace #x100)"
 	       "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)")
 	     base-world-name))
-    (sleep-for 4)
+    (sit-for 4)
     (simulate-input-expression "(exit)")
-    (sleep-for 2))
+    (sit-for 2))
   (if (null base-world-name)
       (run-plain-lisp 1)
     (let ((sw:common-lisp-image-file base-world-name))
       (run-lisp-application)))
   (unless (inferior-lisp-running-p)
-    (sleep-for 1))
+    (sit-for 1))
   (sw:eval-in-lisp-no-value
    (format "(load %S)"
 	   (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
@@ -283,7 +288,7 @@
     (rename-file world-name (concat bin-dir "/Specware4-saved."
 				    *lisp-image-extension*)
 		 t))
-  (sleep-for 5)
+  (sit-for 5)
   (simulate-input-expression (format (case *specware-lisp*
 				       (cmulisp "(ext:save-lisp %S)")
 				       (allegro "(excl::dumplisp :name %S)")
@@ -350,7 +355,7 @@
 			 (concat (getenv "SPECWARE4"))))
 	(slash-dir "/"))
     (run-specware4 specware4-dir)
-    (sleep-for 2)
+    (sit-for .1)
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" specware4-dir))
     (sw:eval-in-lisp-no-value (format "(specware::setenv \"SWPATH\" %S)"
@@ -362,7 +367,7 @@
     (sw:eval-in-lisp-no-value "#+allegro(sys::set-stack-cushion 10000000)
                                #-allegro()")
     (simulate-input-expression "(cl:time (cl-user::boot))")
-    (sleep-for 5)
+    (sit-for 5)
     (continue-form-when-ready (`(build-specware4 (, specware4-dir))))))
 
 
@@ -375,12 +380,12 @@
 					 (if in-current-dir? current-dir
 					   *specware-home-directory*)
 					 "; /bin/rm */sig/*.sig"))
-	     (sleep-for 4)		; Necessary? Enough?
+	     (sit-for 4)		; Necessary? Enough?
 	     (simulate-input-expression "(Bootstrap-Spec::compileBootstrap)")
 	     (simulate-input-expression ":exit")
-	     (sleep-for 5)
+	     (sit-for 5)
 	     (while (inferior-lisp-running-p)
-	       (sleep-for 2))
+	       (sit-for 2))
 	     (run-plain-lisp 1)
 	     (simulate-input-expression "(load \"load.lisp\")")
 	     (simulate-input-expression "(Bootstrap-Spec::compileAll)")))))

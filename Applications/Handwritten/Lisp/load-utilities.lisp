@@ -268,6 +268,7 @@
 
 (defun copy-directory (source target &optional (recursive? t))
   #+allegro(sys::copy-directory source target)
+  ;#+cmu (unix::copy-directory source target)
   #-allegro
   (let ((source-dirpath (if (stringp source)
 			    (parse-namestring (ensure-final-slash source))

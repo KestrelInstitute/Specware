@@ -9,6 +9,8 @@
 ;;; license statement that follows is displayed last on the screen *after*
 ;;; loading the patches and immediately before prompting the user.
 
+#+cmu (defvar *restart-init-function*)
+
 (setf *restart-init-function*
    #'(lambda ()
        (format t "~%                              Accord ~A
