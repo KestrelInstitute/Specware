@@ -225,3 +225,9 @@
     (if (< (length dir) 2)
 	pathname
       (make-pathname :directory (butlast dir)))))
+
+(unless (or (fboundp 'excl::without-redefinition-warnings)
+	    (fboundp 'user::without-redefinition-warnings))
+  (defmacro user::without-redefinition-warnings (&body body)
+    `(let ((user::*redefinition-warnings* nil))
+       ,@body)))
