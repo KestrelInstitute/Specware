@@ -1019,9 +1019,17 @@ If anyone has a good algorithm for this..."
 	      (re-search-forward (concat "\\bsort\\s-+" qsym "\\b") nil t)
 	    (if (null current-prefix-arg)
 		(or (re-search-forward (concat "\\bdef\\s-+" qsym "\\b") nil t)
-		    (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t))
-	      (re-search-forward (concat "\\bop\\s-+" qsym "\\W") nil t)))
-	  (error "Can't find definition of %s in %s" name file)))
+		    (re-search-forward	; def fa(a) foo
+		     (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym "\\b") nil t)
+		    (re-search-forward	; def fie.foo
+		     (concat "\\bdef\\s-\\w+\\." qsym "\\b") nil t)
+		    (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t)
+		    (re-search-forward	; op fie.foo
+		     (concat "\\bop\\s-+\\w+\\." qsym "\\b") nil t))
+	      (or (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t)
+		  (re-search-forward	; op fie.foo
+		   (concat "\\bop\\s-+\\w+\\." qsym "\\b") nil t))))
+	  (error "Can't find definition of %s in %s" qsym file)))
     (beginning-of-line)
     (recenter 4)
     (when (not (null (cdr *pending-specware-meta-point-results*)))

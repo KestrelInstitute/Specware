@@ -53,7 +53,7 @@
       "end-spec" "end-module" "is"
       "prog" "end-prog" "step" "end-step" "with" "end-with"
       "end-mode" "end-stad" "end-espec" "end-espec-refinement" "end-if"
-      "initial" "final" "when" "cond" "guard" "do"
+      "initial" "final" "when" "guard" "do"
       "specmap" "end-specmap" "progmap" "end"
       ))
 

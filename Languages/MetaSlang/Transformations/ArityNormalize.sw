@@ -35,7 +35,7 @@
 
  *)
 
-ArityNormalize4 qualifying spec { 
+ArityNormalize qualifying spec { 
  import ../Specs/Environment
  % import StringUtilities          % imported by SpecEnvironment
  % import MetaSlang               % imported by SpecEnvironment
@@ -61,6 +61,7 @@ ArityNormalize4 qualifying spec {
                  if num = length(pats)
                     then mA(match,num)
                  else 1
+               | Cons((WildPat(_,_),_,_),match) -> mA(match,num)
                | _ -> 1
             
      in

@@ -61,7 +61,7 @@
    SUCCESS    ::= TranslationBuiltIn.mkSuccess TERM
  *)
 
-Match4 qualifying spec { 
+Match qualifying spec { 
   import ArityNormalize
    
   % import MetaSlangPrint	% imported by ArityNormalize
@@ -584,6 +584,14 @@ Match4 qualifying spec {
         | [(pat,cond,_)] -> simplePattern pat & isTrue cond
 	| _ -> false
 
+ %% fn (x as pat) -> bod  -->  fn x -> let pat = x in bod
+ %% Without this other normalizations such as arity normalization break
+ def normalizeSimpleAlias(rules:Match): Match =
+     case rules
+       of [(AliasPat(VarPat(v,a1),p2,a2),cond,body)] ->
+	  [(VarPat(v,a1),mkTrue(),Apply(Lambda([(p2,cond,body)],a2),Var(v,a1),a2))]
+	| _ -> rules
+
  def splitPattern(arity,pat:Pattern):List Pattern =
      if arity = 1 then [pat] else
      case pat
@@ -715,6 +723,8 @@ def checkUnreachableCase(context,term,rules) =
 def eliminateTerm context term = 
     case term
       of Lambda(rules,_) ->
+	 let rules = normalizeSimpleAlias rules in
+	 let arity = matchArity(rules) in
 	 let rules = map (fn(p,c,b)-> (eliminatePattern context p,
 				       eliminateTerm context c,
 				       eliminateTerm context b)) rules 
@@ -727,7 +737,6 @@ def eliminateTerm context term =
 	 let _ = checkUnreachableCase(context,term,rules) in
 	 let (pat,cond,bdy) = hd rules in
 	 let bdySort = inferType(context.spc,bdy) in
-	 let arity = matchArity(rules) in
 	 let vs = freshVars(arity,context,pat) in
 	 %%%	 let  _ = writeLine "Elimination from lambda: rules " in
 	 let (rules,default) = makeDefault(context,bdySort,rules,vs,term) in
@@ -745,7 +754,8 @@ def eliminateTerm context term =
  *)
        | Let(decls,body,_) -> 
 	 let decls = map (fn(p,e) -> (eliminatePattern context p,
-					   eliminateTerm context e)) decls
+				      eliminateTerm context e))
+	               decls
 	 in
 	 let body  = eliminateTerm context body in
       	(* Translate non-recursive non-simple let patterns into application *)
@@ -768,14 +778,13 @@ def eliminateTerm context term =
 	in
 	let bdySrt = inferType(context.spc,body) in
 %%       let _  = writeLine "Let pattern elimination tabulating " in
-	let vs = map(fn pat -> 
-		           freshVar(context,SpecEnvironment4.patternSort(pat))) pats 
+	let vs = map (fn pat -> freshVar(context,SpecEnvironment4.patternSort(pat)))
+	           pats 
 	in
 	let (vars,_)  = 
-	    foldl 
-		(fn (v,(vars,num)) -> 
+	    foldl (fn (v,(vars,num)) -> 
 		   (cons((Nat.toString num,v),vars),num + 1))
-			([],1) vs
+	      ([],1) vs
 	in
 %%%	let _ = writeLine "Let pattern elimination: match" in
 	let t = match(context,
@@ -884,7 +893,7 @@ def eliminateTerm context term =
 	     all (fn(_,(VarPat v3,_))-> ~(v1 = v3) | _ -> false) fields
 	  then 
 	  let letTerm:Term = mkRecord(map (fn(id,(VarPat v,p))-> (id,(Var v,p))) fields) in
-	  (Lambda [(pat,mkTrue(),Match4.mkLet([(mkVarPat v1,letTerm)],body))],pos0)
+	  (Lambda [(pat,mkTrue(),Match.mkLet([(mkVarPat v1,letTerm)],body))],pos0)
 	  else term
 	| _ -> term
 

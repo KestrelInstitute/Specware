@@ -198,6 +198,8 @@ AnnSpecPrinter qualifying spec {
                                             string "(",
                                             ppTerm context ([], Top : ParentTerm) t,
                                             string ")"]
+    %% Only used internally at present
+    | Select s              -> pp.fromString ("select("^s^")")
 
 
   def fa(a) singletonPattern (pat : APattern a) = 
@@ -324,23 +326,28 @@ AnnSpecPrinter qualifying spec {
                                pp.Equals,
                                string " "]),
                             (separatorLength,
-                              prettysNone [ppTerm context ([2,1,index]++ path,Top:ParentTerm) body,string " "])])) 
+                              prettysNone [ppTerm context
+					     ([2,1,index]++ path,Top:ParentTerm)
+					     body,string " "])])) 
                  | _ -> 
-                       (0,blockLinear(0,
-                          [(0,prettysNone 
-                               [separator,
-                                ppPattern context ([0,index]++ path,true) pat,
-                                string " ",
-                                      pp.Equals,
-                                string " "]),
-                           (separatorLength,
-                               prettysNone
-                                  [ppTerm context ([1,index]++ path,Top:ParentTerm) trm,string " "])]))
+                   (0,blockLinear
+		       (0,
+		        [(0,prettysNone 
+			     [separator,
+			      ppPattern context ([0,index]++ path,true) pat,
+			      string " ",
+				    pp.Equals,
+			      string " "]),
+			 (separatorLength,
+			     prettysNone
+				[ppTerm context ([1,index]++ path,Top:ParentTerm) trm,
+				 string " "])]))
            in
            let def ppDs(index,l,separator,decls) = 
                 (case decls of
                  | [] -> []
-                 | (pat,trm)::decls -> cons(ppD(index,l,separator,pat,trm),ppDs(index + 1,5,pp.And,decls)))
+                 | (pat,trm)::decls -> cons(ppD(index,l,separator,pat,trm),
+					    ppDs(index + 1,5,pp.And,decls)))
            in
      
                 blockAll (0,
@@ -353,17 +360,18 @@ AnnSpecPrinter qualifying spec {
               def ppD(path,((id,_),trm)) =
                 (case trm of
                   | Lambda([(pat,Fun(Bool true,_,_),body)],_) -> 
-                              blockLinear(0,
+		    blockLinear(0,
                                 [(0,prettysNone
                                      [pp.Def,
                                       pp.fromString id,
                                       string " ",
                                       ppPattern context ([1,0] ++ path,false) pat,
                                       pp.Equals]),
-                                  (4,ppTerm context ([2,0] ++ path,Top:ParentTerm) body)])
+                                  (4,ppTerm context ([2,0] ++ path,Top:ParentTerm)
+				       body)])
                   | _ -> 
-                        blockLinear(0,
-                               [(0,prettysNone
+		    blockLinear(0,
+                                [(0,prettysNone
                                   [pp.Def,
                                    pp.fromString id,
                                    pp.Equals]),
@@ -372,12 +380,16 @@ AnnSpecPrinter qualifying spec {
               blockAll(0,
                          [(0,blockNone(0,
                                 [(0,pp.Let),
-                                 (0,AnnTermPrinter.ppListPath path ppD (pp.Empty,pp.Def,pp.In) decls)])),
+                                 (0,AnnTermPrinter.ppListPath path ppD
+				      (pp.Empty,pp.Empty,pp.In) decls)])),
                          (0,ppTerm context ([length decls]++ path,parentTerm) body)])
          | Record(row,_) ->
                    if isShortTuple(1,row)
                       then 
-                      AnnTermPrinter.ppListPath path (fn (path,(_,t)) -> ppTerm context (path,Top:ParentTerm) t) (pp.LP,pp.Comma,pp.RP) row
+                      AnnTermPrinter.ppListPath path (fn (path,(_,t)) ->
+						      ppTerm context
+						        (path,Top:ParentTerm) t)
+		        (pp.LP,pp.Comma,pp.RP) row
                    else
                    let
                        def ppEntry  (path,(id,t)) = 

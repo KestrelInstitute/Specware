@@ -37,9 +37,6 @@ SpecToLisp qualifying spec {
                                                  Lisp.string("COMMON-LISP")]))
   
   
-%  op  @ infixl 5 : fa(A) List(A) * List(A) -> List(A)
-%  def @(l1,l2) = l1 @ l2
-
   op  ith : fa(a) Nat * String * List(String * a) -> Nat
   def ith(n,id,ids) = 
       case ids
@@ -366,7 +363,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
      case term
        of Apply (Fun (Op (Qualified ("TranslationBuiltIn", "failWith"), _), _,_),
                 Record([(_, t1), (_, t2)],_),_) -> 
-          flattenFailWith t1 @ flattenFailWith t2
+          flattenFailWith t1 ++ flattenFailWith t2
         | _ -> [term]
 
 
@@ -546,34 +543,30 @@ def mkLTerm (sp,dpn,vars,term : Term) =
          | Cons(term,terms) -> 
            (case term
               of Apply (term_,terms_) -> 
-                 countOccurrence2(x,count,Cons(term_,terms_ @ terms))
+                 countOccurrence2(x,count,Cons(term_,terms_ ++ terms))
 
                | Lambda(vars,_,body) -> 
 		 %% Was: 2 (* give up *) 
-		 %% Never do a real subsitution, but if there are no 
+		 %% Never do a real subsitution within a lambda body, but if there are no 
 		 %% occurences, return count of 0 to trigger vacuous
 		 %% subsitution that allows us to drop unused arg.
-		 %% This hack has the desired effect, since even one
-		 %% occurrence will return a count of 2, inhibiting 
-		 %% substitution:
-                 2 * countOccurrence2(x,count,cons(body,terms))
-
-               | Let(vars,terms1,body) -> 
-                 countOccurrence2(x,count,cons(body,terms1 @ terms))
+                 if member(x,vars) or countOccurrence2(x,0,[body]) = 0
+		   then countOccurrence2(x,count,terms)		% Captured
+		   else 2 (* give up because may be called more than once *)
 
                | Letrec(vars,terms1,body) -> 
 		 %% Was: 2 (* give up *)
-		 %% Never do a real subsitution, but if there are no 
-		 %% occurences, return count of 0 to trigger vacuous
-		 %% subsitution that allows us to drop unused arg.
-		 %% This hack has the desired effect, since even one
-		 %% occurrence will return a count of 2, inhibiting 
-		 %% substitution:
-                 2 * countOccurrence2(x,count,cons(body,terms1 @ terms))
+		 %% Similar to Lambda case
+		 if member(x,vars) or countOccurrence2(x,0,[body]) = 0
+		   then countOccurrence2(x,count,cons(body,terms1 ++ terms))
+		   else 2
 
-               | If(t1,t2,t3) -> countOccurrence2(x,count,[t1,t2,t3] @ terms)
-               | IfThen(t1,t2) -> countOccurrence2(x,count,[t1,t2] @ terms)
-               | Seq terms1 ->  countOccurrence2(x,count,terms1 @ terms)
+               | Let(vars,terms1,body) -> 
+                 countOccurrence2(x,count,cons(body,terms1 ++ terms))
+
+               | If(t1,t2,t3) -> countOccurrence2(x,count,[t1,t2,t3] ++ terms)
+               | IfThen(t1,t2) -> countOccurrence2(x,count,[t1,t2] ++ terms)
+               | Seq terms1 ->  countOccurrence2(x,count,terms1 ++ terms)
                | Var y -> 
                  if x = y then 
                  if count > 0 then 2 else
@@ -582,7 +575,6 @@ def mkLTerm (sp,dpn,vars,term : Term) =
                | _ -> countOccurrence2(x,count,terms)
             )
       
-
 
   def newName(name,names):String = 
       let
@@ -601,19 +593,19 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   def getNames(term:LispTerm) =
       case term
         of Apply(t1,terms) -> 
-           foldr (fn(t,names)-> getNames t @ names) (getNames t1) terms
-         | Lambda(vars,_,t) -> vars @ (getNames t)
+           foldr (fn(t,names)-> getNames t ++ names) (getNames t1) terms
+         | Lambda(vars,_,t) -> vars ++ (getNames t)
          | Op r -> [r]
          | Var r -> [r] 
          | Const _ -> []
          | If(t1,t2,t3) -> 
-           (getNames t1)@(getNames t2)@(getNames t3)
+           (getNames t1)++(getNames t2)++(getNames t3)
          | IfThen(t1,t2) -> 
-           (getNames t1)@(getNames t2)
+           (getNames t1)++(getNames t2)
          | (Let(vars,terms,body)) -> 
-            vars @(flatten (List.map getNames terms))@(getNames body)
+            vars ++(flatten (List.map getNames terms))++(getNames body)
          | (Letrec(vars,terms,body)) -> 
-            vars @(flatten (List.map getNames terms))@(getNames body)
+            vars ++(flatten (List.map getNames terms))++(getNames body)
          | (Seq terms) -> flatten (List.map getNames terms)
          | _ -> System.fail "Unexpected term in getNames"
       
