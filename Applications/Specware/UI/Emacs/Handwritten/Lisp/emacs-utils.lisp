@@ -44,9 +44,13 @@ Notes:
   ;;  (setq ri::*selected-msp-object*
   ;;    (object-for-mspe-number n))
   
+(defvar *goto-file-position-store?* nil)
+(defvar *goto-file-position-stored* nil)
 (defun goto-file-position (file line col)
   (unless (equal file "")
-    (eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)" file line col))))
+    (if *goto-file-position-store?*
+	(setq *goto-file-position-stored* (list file line col))
+      (eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)" file line col)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;

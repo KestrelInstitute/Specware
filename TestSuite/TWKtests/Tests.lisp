@@ -9,7 +9,7 @@
 			:output ";;; Processing spec at $TESTDIR/tw-0103-1#player
 ;;; Processing spec at $TESTDIR/tw-0103-1#position
 ;;; Processing spec at $TESTDIR/tw-0103-1#move
-in $TESTDIR/tw-0103-1.sw
+Errors in $TESTDIR/tw-0103-1.sw
 40.33-40.38 :  Could not match sort constraint
               legal? of sort move -> Boolean
           with expected sort Boolean

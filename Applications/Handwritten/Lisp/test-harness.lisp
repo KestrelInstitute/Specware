@@ -151,26 +151,49 @@ be the option to run each (test ...) form in a fresh image.
       ()
     (apply 'test-1 args)))
 
-(defun test-1 (name &key sw swe
+(defun swe-test (swe-str cl-user::*current-swe-spec*)
+  (let ((cl-user::*swe-return-value?* t))
+    (cl-user::swe swe-str)))
+
+(defun test-1 (name &key sw swe swe-spec swl swll
 			 output (output-predicate 'equal)
-			 value (value-predicate 'equal)
+			 (value "--NotAValue--")
+			 (value-predicate 'equal)
+			 file-goto-error
 			 error files)
-  (declare (ignore swe))		; NYI
-  (let (val error-type (error-messages ()))
+  (let (val error-type (error-messages ())
+	(emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
     (let ((test-output (with-output-to-string (*standard-output*)
 			 (multiple-value-setq (val error-type)
-			   (ignore-errors (cl-user::sw sw))))))
+			   (ignore-errors
+			    (if (not (null sw))
+				(cl-user::sw sw)
+			      (if (not (null swll))
+				  (cl-user::swll swll)
+				(if (not (null swe))
+				  (swe-test swe swe-spec)
+				  (if (not (null swl))
+				  (cl-user::swl swe-spec))))))))))
       (setq test-output (normalize-output test-output))
+      (when emacs::*goto-file-position-stored*
+	(setf (car emacs::*goto-file-position-stored*)
+	  (normalize-output (car emacs::*goto-file-position-stored*))))
       (when (and error-type (not error))
 	(push (format nil "~a" error-type) error-messages))
       (when (and (not error-type) error)
 	(push "Expected Error did not occur"  error-messages))
-      (when (and value (not error-type)
+      (when (and (not (eq value "--NotAValue--")) (not error-type)
 		 (not (funcall value-predicate val value)))
-	(push (format nil "Expected:~%~a~%;; Got: ~%a" value val) error-messages))
+	(push (format nil "Expected:~%~a~%;; Got: ~%~a" value val) error-messages))
       (when (and output (not error-type)
 		 (not (funcall output-predicate test-output output)))
 	(push (format nil "Expected output: ~%~a~%;; Got:~%~a" output test-output)
+	      error-messages))
+      (when (and file-goto-error
+		 (not (equal file-goto-error emacs::*goto-file-position-stored*)))
+	(push (format nil "Expected error location: ~%~a~%;; Got:~%~a" file-goto-error
+		      emacs::*goto-file-position-stored*)
 	      error-messages))
       (when files
 	(loop for file in files

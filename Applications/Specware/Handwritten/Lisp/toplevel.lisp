@@ -1,8 +1,42 @@
 (in-package :cl-user)
 (defpackage :SpecCalc)
 (defpackage :JGen)
-
 ;; Toplevel Lisp aliases for Specware
+(defparameter *sw-help-strings*
+    '(("dir" . "List files in current directory")
+      ("list" . "List loaded units")
+      ("ls" . "List files in current directory")
+      ("set-base" . "Set base library unit id")
+      ("show" . "Show unit")
+      ("show-base-unit-id" . "Show base library unit id")
+      ("sw" . "Process unit")
+      ("sw-help" . "Help for specware commands")
+      ("sw-init" . "Clear Spec cache")
+      ("swc" . "Generate C code for unit")
+      ("swe" . "Evaluate specware term")
+      ("swe-spec" . "Set spec context for :swe command")
+      ("swj" . "Generate Java code for unit")
+      ("swj-config" . "Show configuration parameters for Java generation")
+      ("swj-config-dir" . "Set base directory to be used by :swj")
+      ("swj-config-make-public" . "Set public names to be used by :swj")
+      ("swj-config-pkg" . "Set package name to be used by :swj")
+      ("swj-config-reset" . "Restore default configuration parameters for Java generation")
+      ("swl" . "Generate Lisp code for unit")
+      ("swll" . "Generate Lisp code for local definition of unit, and compile and load")
+      ("swpath" . "Query (no arg) or set SWPATH"))
+  )
+
+(defun sw-help (command)
+  (if command
+      (let ((pr (assoc command *sw-help-strings* :test 'equal)))
+	(when pr
+	  (format t "~a~%" (cdr pr))))
+    (loop for (com . helpstr) in *sw-help-strings*
+	  do (format t "~14a  ~a~%" com helpstr ))))
+
+#+allegro
+(top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
+    
 
 (defvar *last-unit-Id-_loaded* nil)
 (defvar *last-swl-args* nil)
@@ -14,32 +48,32 @@
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defun set-base (x)
-   (Specware::setBase_fromLisp x)
-   (values))
+  (Specware::setBase_fromLisp x)
+  (values))
 #+allegro
 (top-level:alias ("set-base" :case-sensitive) (x) (set-base x))
 
 (defun show-base-unit-id ()
-   (Specware::showBase_fromLisp-0)
-   (values))
+  (Specware::showBase_fromLisp-0)
+  (values))
 #+allegro
 (top-level:alias ("show-base-unit-id" :case-sensitive) () (show-base-unit-id))
 
 (defun sw-re-init ()
-   (Specware::reinitializeSpecware-0)
-   (values))
+  (Specware::reinitializeSpecware-0)
+  (values))
 (defun sw-init ()
-   (sw-re-init))
+  (sw-re-init))
 #+allegro(top-level:alias "sw-init" () (sw-re-init))
 
 (defun list-loaded-units ()
-   (Specware::listLoadedUnits-0))
+  (Specware::listLoadedUnits-0))
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
 (defun sw (x)
-   (Specware::evaluateUID_fromLisp x)
-   ;; (values) ; breaks bootstrap!  why suppress result?
-   )
+  (Specware::evaluateUID_fromLisp x)
+  ;; (values) ; breaks bootstrap!  why suppress result?
+  )
 
 #+allegro
 (top-level:alias ("sw" :case-sensitive) (&optional x)
@@ -110,6 +144,7 @@
   (format t "~&Subsequent :swe commands will now import ~A~%" x))
 
 (defvar *swe-print-as-slang?* nil)
+(defvar *swe-return-value?* nil)
 
 (defun swe (x)
   (let* ((tmp-uid "swe_tmp")
@@ -129,29 +164,30 @@
 	(let (*redefinition-warnings*)
 	  ;; Load resulting lisp code:
 	  (load (make-pathname :type "lisp" :defaults tmp-cl))
-	  ;; Print result:
-	  (let ((*package* (find-package "SW-USER")))
-	    (cond ((boundp 'swe::tmp)
-		   (if *swe-print-as-slang?*
-		       (format t "~%Value is ~%~/specware::pprint-dt/~%"
-			       swe::tmp)
-		     (format t "~%Value is ~S~2%" swe::tmp)))
-		  ((fboundp 'swe::tmp)
-		   (let* ((code (excl::func_code #'swe::tmp))
-			  (auxfn (find-aux-fn code)))
-		     (format t "~%Function is ")
-		     (pprint code)
-		     (format t "~%")
-		     (when (fboundp auxfn)
-		       (format t "~%where ~A is " auxfn)
-		       (let ((fn (symbol-function auxfn)))
-			 (let ((code (excl::func_code fn)))
-			   (if (consp code)
-			       (pprint code)
-			     (format t "the compiled function ~A" fn))))
-		       (format t "~&~%"))))
-		  (t
-		   (warn "No value for expression?")))))
+	  (if *swe-return-value?* swe::tmp
+	    ;; Print result:
+	    (let ((*package* (find-package "SW-USER")))
+	      (cond ((boundp 'swe::tmp)
+		     (if *swe-print-as-slang?*
+			 (format t "~%Value is ~%~/specware::pprint-dt/~%"
+				 swe::tmp)
+		       (format t "~%Value is ~S~2%" swe::tmp)))
+		    ((fboundp 'swe::tmp)
+		     (let* ((code (excl::func_code #'swe::tmp))
+			    (auxfn (find-aux-fn code)))
+		       (format t "~%Function is ")
+		       (pprint code)
+		       (format t "~%")
+		       (when (fboundp auxfn)
+			 (format t "~%where ~A is " auxfn)
+			 (let ((fn (symbol-function auxfn)))
+			   (let ((code (excl::func_code fn)))
+			     (if (consp code)
+				 (pprint code)
+			       (format t "the compiled function ~A" fn))))
+			 (format t "~&~%"))))
+		    (t
+		     (warn "No value for expression?"))))))
       "Specware Processing Failed!")))
 #+allegro
 (top-level:alias ("swe" :case-sensitive :string) (x) (swe x))
