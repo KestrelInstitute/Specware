@@ -61,6 +61,16 @@ SpecCalc qualifying spec {
 
   op evaluateOtherQualify : SCTerm -> ValueInfo -> Qualifier -> Position -> SpecCalc.Env ValueInfo
 
+
+
+  %% Dispatch functions to call proof gen for other terms not defines in specware
+  %% Called from Languages\SpecCalculus\Semantics\Evaluate\Proofs.evaluateProofGen() to dispatch to 
+  %% the function in the application that generates the proof obligations for the application term 
+  %% representation. 
+  op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
+  op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
+
+
   %% Lower-level support routines:
 
   op getUnitId : SCTerm -> SpecCalc.Env UnitId
@@ -70,3 +80,12 @@ SpecCalc qualifying spec {
   op Specware.getOptSpec: Option String -> Option Spec
 }
 \end{spec}
+
+
+
+%%
+%% $Id$
+%%
+%% $Log$
+%%
+%%

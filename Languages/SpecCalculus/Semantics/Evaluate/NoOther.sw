@@ -43,6 +43,27 @@ SpecCalc qualifying spec
 
   def SpecCalc.ppOtherTerm  _ (* term *)  = ppString "<some OtherTerm>"
 
+
+  %% op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
+  def SpecCalc.evaluateProofGenOther (valueInfo, cterm, optFileNm, fromObligations?) = 
+    %{
+    % unitId <- getCurrentUID; 
+     raise (Unsupported ((positionOf cterm), "SpecCalc.evaluateProofGenOther: Can generate proofs only for Specs and Morphisms."))
+    %  }
+
+    %% op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
+  def SpecCalc.evaluateProofGenLocalOther (valueInfo, cterm, optFileName, fromObligations?) =
+    %{unitId <- getCurrentUID; 
+     raise (Unsupported ((positionOf cterm), "SpecCalc.evaluateProofGenLocalOther: Can generate proofs only for Specs and Morphisms."))
+    %  }
+
+
 endspec
 \end{spec}
  
+%%
+%% $Id$
+%%
+%% $Log$
+%%
+%%

@@ -267,8 +267,10 @@ spec
 
 
   %% Dispatch functions to call proof gen for other terms not defines in specware
-  op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
-  op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
+  %% The signatures are in Languages\SpecCalculus\Semantics\Evaluate\Signature.sw
+  %% The default implementation is in file Languages\SpecCalculus\Semantics\Evaluate\NoOther.sw
+  %% op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
+  %% op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
 
 
   op SpecCalc.evaluateProofGen : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ValueInfo
@@ -370,3 +372,11 @@ spec
 
 
 endspec
+
+
+%%
+%% $Id$
+%%
+%% $Log$
+%%
+%%
