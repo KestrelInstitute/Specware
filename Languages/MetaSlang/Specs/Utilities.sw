@@ -1,4 +1,4 @@
-Utilities qualifying spec { 
+Utilities qualifying spec  
  import StandardSpec    % defines sorts Spec, Term, etc.
  import /Library/Legacy/DataStructures/IntSetSplay
  import /Library/Legacy/DataStructures/ListPair 
@@ -932,4 +932,11 @@ Utilities qualifying spec {
 	| (_,Fun(Bool true,_,_)) -> t1
 	| (_,Fun(Bool false,_,_)) -> t2
 	| _ -> MS.mkAnd(t1,t2)
-}
+
+ op  identityFn?: fa(a) ATerm a -> Boolean
+ def identityFn? f =
+   case f of
+     | Lambda([(VarPat(x,_),_,Var(y,_))],_) -> x = y
+     | _ -> false
+
+end-spec

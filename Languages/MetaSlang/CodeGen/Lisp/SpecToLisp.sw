@@ -352,17 +352,19 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
     let equiv = mkLTerm(sp,dpn,vars,equiv) in
     (case optArgs
        of None -> mkLApply(mkLOp  "slang-built-in::quotient",[equiv])
-        | Some term -> mkLApply(mkLApply(mkLOp  "slang-built-in::quotient",[equiv]),
-                                [mkLTerm(sp,dpn,vars,term)]))
+        | Some term -> mkLApply(mkLOp "slang-built-in::quotient-1-1",
+				[equiv,mkLTerm(sp,dpn,vars,term)]))
   | (Choose,srt,_) ->  
-    let srt1 = range(sp,srt) in
-    let dom = domain(sp,srt1) in
-    let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
-    let equiv = mkLTerm(sp,dpn,vars,equiv) in
+    %% let srt1 = range(sp,srt) in
+    %% let dom = domain(sp,srt1) in
+    %% Don't need the equivalence relation when doing a choose
+    %% let Quotient(_,equiv,_) = stripSubsorts(sp,dom) in
+    %% let equiv = mkLTerm(sp,dpn,vars,equiv) in
     (case optArgs
-       of None -> mkLApply(mkLOp "slang-built-in::choose",[equiv])
-        | Some term -> mkLApply(mkLApply(mkLOp "slang-built-in::choose",[equiv]),
-                                [mkLTerm(sp,dpn,vars,term)]))
+       of None -> mkLApply(mkLOp "slang-built-in::choose",[])
+        | Some term ->
+	  mkLApply(mkLOp "slang-built-in::choose-1",
+		   [mkLTerm(sp,dpn,vars,term)]))
 (*
  *  Restrict and relax are implemented as identities
  *)
@@ -437,6 +439,19 @@ def fullCurriedApplication(sp,dpn,vars,term) =
                then Some(mkLApply(mkLOp(unCurryName(id,i,dpn)),
                                  List.map (fn t -> mkLTerm(sp,dpn,vars,t)) args))
               else None
+	   | Fun(Choose,_,_) ->
+	     if i = 2
+	       then
+		 case args of
+		   | [f,val] ->
+		     if identityFn? f
+		       then Some (mkLApply(mkLOp "slang-built-in::quotient-element",
+					   [mkLTerm(sp,dpn,vars,val)]))
+		       else Some(mkLApply(mkLOp "slang-built-in::choose-1-1",
+				 [mkLTerm(sp,dpn,vars,f),
+				  mkLTerm(sp,dpn,vars,val)]))
+		   | _ -> None		% Shouldn't happen
+	       else None
            | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
            | _ -> None
   in aux(term,0,[])

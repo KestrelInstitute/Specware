@@ -10,6 +10,9 @@
 (defun quotient (r)
   #'(lambda(x)  (vector quotient-tag r x)))
 
+(defun quotient-1-1 (r x)
+  (vector quotient-tag r x))
+
 (defun quotient? (x)
   (and (vectorp x)
        (eq (svref x 0) quotient-tag)))
@@ -22,12 +25,16 @@
       (svref x 2)
     (error "Expected an equivalence class, but got (presumably) a representative: ~S" x)))
 
-(defun choose (relation)
-  (declare (ignore relation))
+(define-compiler-macro quotient-element (x)
+  `(svref ,x 2))
+
+(defun choose ()
   #'(lambda (f) #'(lambda(x) (funcall f (quotient-element x)))))
 
-(defun choose-1-1 (relation f x) 
-  (declare (ignore relation))
+(defun choose-1 (f)
+  #'(lambda(x) (funcall f (quotient-element x))))
+
+(defun choose-1-1 (f x) 
   (funcall f (quotient-element x)))
 
 #|

@@ -491,22 +491,19 @@ PatternMatch qualifying spec {
       else mkIfThenElse(cond,thenBranch,elseBranch)
  
   def match(context,vars,rules:Rules,default,break) = 
-      (%%%writeLine "Match ";
-      case vars
+      (case vars
         of [] -> foldr 
                  (fn((_,cond,body),default) -> 
 		    failWith context 
 		    (mkOptimizedIfThenElse(cond,body,break))
 		    default) default rules
          | Cons _ -> 
-%%	   let _ = writeLine "Matching list " in
 	   let rules = (partition ruleType rules) in
            foldr (matchRules (context,break,vars)) default rules
       )
   
   def matchRules (context,break,vars) (rules,default) = 
-      (%%%writeLine "matchRules ";
-      case ruleType (hd rules)
+      (case ruleType (hd rules)
         of Var -> matchVar(context,vars,rules,default,break)
          | Con -> matchCon(context,vars,rules,default,break)
 	 | Alias(p1,p2) -> matchAlias(context,p1,p2,vars,rules,default,break)
@@ -515,17 +512,14 @@ PatternMatch qualifying spec {
          | Quotient _ -> matchQuotient(context,vars,rules,default,break)
       )
   def matchVar(context,terms,rules,default,break) = 
-%%      let _ = writeLine "Matching var " in
       let t = hd terms in
       let terms = tl terms in
-%%      let _ = writeLine "Matching var " in
       let rules = 
 	  map
 		 (fn ((Cons(pat,pats),cond,body):Rule) ->
 		     (pats,substPat(cond,pat,t),substPat(body,pat,t))
 		   | _ -> System.fail "Empty list of patterns ") rules
       in
-%%      let _ = writeLine "Matching var " in
       match(context,terms,rules,default,break)
 
   def matchCon(context,terms,rules,default,break) = 
@@ -533,11 +527,12 @@ PatternMatch qualifying spec {
       let terms = tl terms in
       let rulePartition = partitionConstructors(context,t,rules) in
       let rule = foldr 
-	        (fn ((query,newVars,lets,_,rules),default) ->   
-	            mkOptimizedIfThenElse(query,
-		      mkLet(lets,
-			    match(context,newVars @ terms,rules,break,break)),
-		      default)) break rulePartition
+	           (fn ((query,newVars,lets,_,rules),default) ->   
+	            mkOptimizedIfThenElse
+		      (query, mkLet(lets,
+				    match(context,newVars ++ terms,rules,break,break)),
+		       default))
+		   break rulePartition
       in
 	 failWith context rule default
   def matchAlias(context,pat1,pat2,terms,rules,default,break) = 
@@ -547,11 +542,12 @@ PatternMatch qualifying spec {
 		  rules in
       match(context,cons(t,terms),rules,default,break)
   def matchSubsort(context,pred,t::terms,rules,default,break) =
-%%    let _ = writeLine "match Subsort " in
-      let _(* srt *) = inferType(context.spc,t)                   in
+      let _(* srt *) = inferType(context.spc,t) in
       let t1     = mkRestrict(context.spc,{pred = pred,term = t}) in
-      let rules  = map (fn(((RelaxPat(p,_,_))::pats,cond,e):Rule) ->
-			      (cons(p,pats),cond,e):Rule) rules in
+      let rules  = map (fn((RelaxPat(p,_,_))::pats,cond,e) ->
+			      (cons(p,pats),cond,e))
+                     rules
+      in
       failWith context 
 	(mkIfThenElse(mkApply(pred,t),
 	           match(context,cons(t1,terms),rules,break,break),
@@ -619,14 +615,12 @@ def flattenLetDecl((pat:Pattern,term:MS.Term),(context,decls)) =
 	  let vTerm = mkVar v 				    in
 	  let decls1 = map (fn(id,pat) -> (pat,mkProjectTerm(context.spc,id,vTerm))) fields in
 	  let (context,decls2) = foldr flattenLetDecl (context,decls) decls1                in
-	  (context,cons((mkVarPat v,term),decls2 @ decls))
+	  (context,cons((mkVarPat v,term),decls2 ++ decls))
        | _ -> (context,cons((pat,term),decls))
 
 op  eliminatePattern: Context -> Pattern -> Pattern 
 op  eliminateTerm   : Context -> MS.Term -> MS.Term
 op  eliminateSort   : Context -> Sort -> Sort
-
-%def elimPattern x = x % dummy implementation
 
 def eliminatePattern context pat = 
     case pat
