@@ -4,53 +4,65 @@ spec
  import UnitId
  import Obligations
 
-(* op SCTermTo
-      snarkLogFileName <- UIDtoSnarkLogFile unitId;
-     _ <- return (ensureDirectoriesExist snarkLogFileName);
-*)
-
  sort SCDecl = SpecCalc.Decl Position
  
  op generateProof: Spec * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
- def generateProof (spc, _(*scTerm*), prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
+ def generateProof (spc, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let def printProofName(qid as Qualified (qual, id)) =
         if qual = UnQualified then
 	  id^"_proof"
 	else qual^"_"^id^"_proof" in
    let assertions = All in
    let (_, propName, _, _) = prop in
-   let specFullUId = case findUnitIdforUnit(Spec spc, globalContext) of
-                   | Some uid -> uid
-                   | _ -> fail("can't find uid") in
-   let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
-   let scTerm = if fromObligations?
-                  then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
-		else(UnitId (SpecPath_Relative specUId), noPos) in
+   let scTerm = scTermFromScTerm(Spec spc, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, ProverBase, None) in
    let proofName = printProofName(propName) in
    let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
  op generateProofMorphism: Morphism * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
- def generateProofMorphism (morph, _(*scTerm*), prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
+ def generateProofMorphism (morph, scTerm, prop, _(*multipleFiles*), fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let def printProofName(qid as Qualified (qual, id)) =
         if qual = UnQualified then
 	  id^"_proof"
 	else qual^"_"^id^"_proof" in
    let assertions = All in
    let (_, propName, _, _) = prop in
-   let specFullUId = case findUnitIdforUnit(Morph morph, globalContext) of
-                   | Some uid -> uid
-                   | _ -> fail("can't find uid") in
-   let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
-   let scTerm = if fromObligations?
-                  then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
-		else(UnitId (SpecPath_Relative specUId), noPos) in
+   let scTerm = scTermFromScTerm(Morph morph, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, ProverBase, None) in
    let proofName = printProofName(propName) in
    let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
+ op scTermFromScTerm: Value * SCTerm * GlobalContext * Option UnitId * List UnitId * Boolean -> SCTerm
+ def scTermFromScTerm(v, scTerm, globalContext, fileUID, swpath, fromObligations?) =
+   case findUnitIdforUnit(v, globalContext) of
+     | Some specFullUId ->
+     let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
+     if fromObligations?
+       then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
+     else(UnitId (SpecPath_Relative specUId), noPos)
+     | _ ->
+       let (_, pos) = scTerm in
+       if fromObligations?
+	 then (Obligations scTerm, pos)
+       else scTerm
+
+  op valueToSCTerm: Value -> SCTerm
+  def valueToSCTerm(v) = (Other v, noPos)
+
+
+ (* 
+  uid is an absolute path of the spec or morphism for which the proof units are generated.
+  baseUid is an absolute path of the spec for the file for where the proof units are to be written.
+  (This maybe left unspecified.)
+  If baeUid is given then relativeUidToUidAndSWPATH returns a relativeUid that is equivalent to the
+  absoulte UiD, but is relative to baseUid.
+  e.g. if baseUid = /sub1/base.sw, and uid = /sub1/sub2/file.sw, then
+  relativeUidToUidAndSWPATH = sub2/file.sw.
+  If baseUid is None, then relativeUidToUidAndSWPATH returns a Uid that is equivalent to uid, but with respect to SWPATH.
+  *)
+ 
  op relativeUidToUidAndSWPATH: UnitId * Option UnitId * List UnitId -> UnitId
  def relativeUidToUidAndSWPATH(uid as {path,hashSuffix}, baseUid, swpath) =
    case baseUid of
@@ -82,11 +94,11 @@ spec
 
  op tailListList: fa (a) List a * List a -> Option (List a)
  def tailListList(l1, l2) =
+   if null(l2) then None else
    let l1Head = sublist(l1, 0, length(l2)) in
    if l1Head = l2 
      then Some (nthTail(l1, length(l2)-1))
    else None
-
 
  op baseUnitIdSCTerm?: SCTerm -> Boolean
  def baseUnitIdSCTerm?(scTerm) =
