@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/04/01 02:29:44  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.3  2003/03/29 03:14:03  weilyn
  * Added support for morphism nodes.
  *
@@ -37,6 +40,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
     public static final int MORPHISM = 2;
     public static final int DIAGRAM = 3;
     public static final int COLIMIT = 4;
+//    public static final int URI = 5;
 
     SourceElement.Impl  sourceImpl;
     LangModel.Updater   updater;
@@ -73,12 +77,18 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         new ColimitFinder()
     };
     
+    /*private static final ElementMatch.Finder[] URI_FINDERS = {
+        //new TextPositionMatch(),
+        new URIFinder()
+    };*/
+    
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         SPEC_FINDERS,
         PROOF_FINDERS,
         MORPHISM_FINDERS,
         DIAGRAM_FINDERS,
         COLIMIT_FINDERS,
+        //URI_FINDERS,
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
@@ -87,6 +97,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         ElementProperties.PROP_MORPHISMS,
         ElementProperties.PROP_DIAGRAMS,
         ElementProperties.PROP_COLIMITS,
+        //ElementProperties.PROP_URIS,
     };
     
     private static final Class[] CHILDREN_TYPES = {
@@ -95,6 +106,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         MorphismElement.class,
         DiagramElement.class,
         ColimitElement.class,
+        //URIElement.class,
     };
     
     SourceInfo() {
@@ -158,7 +170,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         SourceElement source = (SourceElement)target;
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
-	for (int kind = SPEC; kind <= DIAGRAM; kind++) {
+	for (int kind = SPEC; kind <= COLIMIT; kind++) {
             Element[] curMembers;
             switch (kind) {
 	    case SPEC:
@@ -176,6 +188,9 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
             case COLIMIT:
                 curMembers = source.getColimits();
                 break;
+            /*case URI:
+                curMembers = source.getURIs();
+                break;*/
             default:
 		throw new InternalError("Illegal member type"); // NOI18N
             }
@@ -230,6 +245,12 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         }
     }
 
+    /*private static final class URIFinder extends ElementMatch.AbstractFinder {
+        protected boolean matches(BaseElementInfo info, Element el) {
+            return ((URIInfo)info).path.equals(((URIElement)el).getPath());
+        }
+    }*/
+    
     public void addMember(int kind, BaseElementInfo member) {
         member.parent = this;
         int index = allMembers.size();

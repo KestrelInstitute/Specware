@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/01 02:29:41  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.7  2003/03/29 03:14:00  weilyn
  * Added support for morphism nodes.
  *
@@ -125,8 +128,11 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
     /** Creates an element for an import.
 	@param str The import string.
     */
-    public Item	createImport(String name) {
+    public Item	createImport(String name, ElementFactory.Item item) {
 	ImportInfo info = new ImportInfo(name);
+        if (item != null) {
+            //TODO: do something
+        }
 	if (DEBUG) {
 	    Util.log("*** DocumentModelBuilder.createImport(): "+info);
 	}
@@ -147,14 +153,25 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
     /** Creates an element for a morphism.
 	@param name Name of the morphism.
     */
-    public Item createMorphism(String name) {
-	MorphismInfo info = new MorphismInfo(name);
+    public Item createMorphism(String name, String sourceUnitID, String targetUnitID) {
+	MorphismInfo info = new MorphismInfo(name, sourceUnitID, targetUnitID);
 	if (DEBUG) {
 	    Util.log("*** DocumentModelBuilder.createMorphism(): "+info);
 	}
 	return info;
     }
 
+    /** Creates an element for a diagElem.
+	@param str The diagElem string.
+    */
+    public Item	createDiagElem(String name) {
+	DiagElemInfo info = new DiagElemInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createDiagElem(): "+info);
+	}
+	return info;
+    }
+    
     /** Creates an element for a diagram.
 	@param name Name of the diagram.
     */
@@ -176,6 +193,17 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	}
 	return info;
     }
+    
+    /** Creates an element for a uri.
+	@param str The uri string.
+    */
+    /*public Item	createURI(String name, String path) {
+	URIInfo info = new URIInfo(name, path);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createURI(): "+info);
+	}
+	return info;
+    }*/
     
     /** Sets bounds for the whole element. Begin is offset of first character of the element,
 	end is the offset of the last one.
@@ -323,13 +351,10 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 
 	BaseElementInfo childInfo = (BaseElementInfo) child;
 	childInfo.parent = parent;
-        
-	//Util.log("DocumentModelBuilder.setParent Parent = "+parent);
+	Util.log("DocumentModelBuilder.setParent Parent = "+parent);
 	if (parent == null) {
 	    // must be a top-level class:
-	    //addSpec((SpecInfo)child);
 	    if (child instanceof SpecInfo) {
-	      //Util.log("DocumentModelBuilder.setParent child is an instance of specInfo = "+child);
 	       addMember(SourceInfo.SPEC, childInfo);
 	    } else if (child instanceof ProofInfo) {
                addMember(SourceInfo.PROOF, childInfo); 
@@ -339,7 +364,9 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
                addMember(SourceInfo.DIAGRAM, childInfo); 
             } else if (child instanceof ColimitInfo) {
                addMember(SourceInfo.COLIMIT, childInfo); 
-            } 
+            } /*else if (child instanceof URIInfo) {
+               addMember(SourceInfo.URI, childInfo);
+            }*/
 	} else if (parent instanceof SpecInfo) {
 	    SpecInfo parentInfo = (SpecInfo)parent;
 	    if (child instanceof SortInfo) {
@@ -359,9 +386,15 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
             MorphismInfo parentInfo = (MorphismInfo)parent;
         } else if (parent instanceof DiagramInfo) {
             DiagramInfo parentInfo = (DiagramInfo)parent;
+            if (child instanceof DiagElemInfo) {
+                parentInfo.addMember(DiagramInfo.DIAG_ELEM, childInfo);
+            }
         } else if (parent instanceof ColimitInfo) {
             ColimitInfo parentInfo = (ColimitInfo)parent;
-        } 
+            if (child instanceof DiagramInfo) {
+                parentInfo.addMember(ColimitInfo.DIAGRAM, childInfo);
+            }
+        } //TODO: import info
     }
     
     public void markError(Item item) {

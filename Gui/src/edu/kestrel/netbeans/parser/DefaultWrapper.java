@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:41  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:14:00  weilyn
  * Added support for morphism nodes.
  *
@@ -45,7 +48,7 @@ public class DefaultWrapper implements WrapperFactory {
     }
     
     /* ----------------- wrapper factory methods --------------------- */
-    public SpecElement wrapSpec(MemberElement.Impl theImpl, Element parent) {
+    public SpecElement wrapSpec(SpecElement.Impl theImpl, Element parent) {
         return new SpecElement(theImpl, parent);
     }
     
@@ -69,19 +72,28 @@ public class DefaultWrapper implements WrapperFactory {
         return new ImportElement(theImpl, (SpecElement)parent);
     }    
     
-    public ProofElement wrapProof(MemberElement.Impl theImpl, Element parent) {
+    public DiagElemElement wrapDiagElem(DiagElemElement.Impl theImpl, Element parent) {
+        return new DiagElemElement(theImpl, (DiagramElement)parent);
+    }
+    
+    public ProofElement wrapProof(ProofElement.Impl theImpl, Element parent) {
         return new ProofElement(theImpl, parent);
     }    
     
-    public MorphismElement wrapMorphism(MemberElement.Impl theImpl, Element parent) {
+    public MorphismElement wrapMorphism(MorphismElement.Impl theImpl, Element parent) {
         return new MorphismElement(theImpl, parent);
     }    
     
-    public DiagramElement wrapDiagram(MemberElement.Impl theImpl, Element parent) {
+    public DiagramElement wrapDiagram(DiagramElement.Impl theImpl, Element parent) {
         return new DiagramElement(theImpl, parent);
     }       
 
-    public ColimitElement wrapColimit(MemberElement.Impl theImpl, Element parent) {
+    public ColimitElement wrapColimit(ColimitElement.Impl theImpl, Element parent) {
         return new ColimitElement(theImpl, parent);
     }       
+
+/*    public URIElement wrapURI(URIElement.Impl theImpl, Element parent) {
+        return new URIElement(theImpl, parent);
+    }    */
+    
 }

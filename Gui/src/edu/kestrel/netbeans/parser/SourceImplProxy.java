@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/04/01 02:29:44  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.3  2003/03/29 03:14:03  weilyn
  * Added support for morphism nodes.
  *
@@ -53,6 +56,7 @@ PropertyChangeListener {
     private static final MorphismElement[] NO_MORPHISMS = new MorphismElement[0];
     private static final DiagramElement[] NO_DIAGRAMS = new DiagramElement[0];
     private static final ColimitElement[] NO_COLIMITS = new ColimitElement[0];
+    //private static final URIElement[] NO_URIS = new URIElement[0];
     
     /**
      * PropertyChangeListeners attached to the SourceElement.
@@ -235,6 +239,27 @@ PropertyChangeListener {
         return null;
     }
 
+   /* public void changeURIs(URIElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeURIs(elems, action);
+    }
+    
+    public URIElement[] getURIs() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getURIs(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getURIs(): specs="+impl.getURIs());
+            return impl.getURIs();
+        }
+        return NO_URIS;
+    }
+    
+    public URIElement getURI(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getURI(name);
+        return null;
+    }*/
+    
     public Collection getPropertyChangeListeners() {
         SourceElement.Impl impl = safeFindModelDelegate();
         if (impl != null)

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/01 02:29:41  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.7  2003/03/29 03:14:00  weilyn
  * Added support for morphism nodes.
  *
@@ -80,7 +83,7 @@ public interface ElementFactory {
     /** Creates an element for an import.
 	@param name Name of the import
     */
-    public Item createImport(String name);
+    public Item createImport(String name, ElementFactory.Item item);
     
     /** Creates an element for a proof.
 	@param name Name of the proof.
@@ -88,10 +91,17 @@ public interface ElementFactory {
     public Item createProof(String name);
     
     /** Creates an element for a morphism.
-	@param name Name of the morphism.
+     *	@param name Name of the morphism.
+     *  @param sourceUnit source unit of the morphism.
+     *  @param targetUnit target unit of the morphism.
     */
-    public Item createMorphism(String name);
+    public Item createMorphism(String name, String sourceUnit, String targetUnit);
 
+    /** Creates an element for a diagElem.
+	@param name Name of the diagElem
+    */
+    public Item createDiagElem(String name);
+    
     /** Creates an element for a diagram.
 	@param name Name of the diagram.
     */
@@ -101,6 +111,12 @@ public interface ElementFactory {
 	@param name Name of the colimit.
     */
     public Item createColimit(String name);
+    
+    /** Creates an element for a uri.
+	@param name Name of the uri
+	@param path string path of the uri
+    */
+    //public Item createURI(String name, String path);    
 
     public void setParent(Collection children, Item parent);
 

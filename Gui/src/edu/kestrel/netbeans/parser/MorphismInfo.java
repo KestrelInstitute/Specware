@@ -17,61 +17,38 @@ import edu.kestrel.netbeans.codegen.TextBinding;
  */
 public class MorphismInfo extends BaseElementInfo {
 /*    public static final int SORT = 0;
-    public static final int OP = 1;
-    public static final int DEF = 2;
-    public static final int CLAIM = 3;
-    public static final int IMPORT = 4;
 */
     Collection           allMembers;
     ChildCollection[]    memberLists;
     Element[]            allElements;
     
+    String sourceString;
+    String targetString;
+    
 /*    static final ElementMatch.Finder[] DEFAULT_SORT_FINDERS = {
         new TextPositionMatch(), new NameFinder()
     };
     
-    static final ElementMatch.Finder[] DEFAULT_OP_FINDERS = {
-        new TextPositionMatch(), new NameFinder()
-    };
-
-    static final ElementMatch.Finder[] DEFAULT_DEF_FINDERS = {
-        new TextPositionMatch(), new NameFinder()
-    };
-
-    static final ElementMatch.Finder[] DEFAULT_CLAIM_FINDERS = {
-        new TextPositionMatch(), new NameFinder()
-    };
-
-    static final ElementMatch.Finder[] DEFAULT_IMPORT_FINDERS = {
-        new TextPositionMatch(), new NameFinder()
-    };
 */
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
 /*        DEFAULT_SORT_FINDERS,
-        DEFAULT_OP_FINDERS,
-        DEFAULT_DEF_FINDERS,
-        DEFAULT_CLAIM_FINDERS,
-        DEFAULT_IMPORT_FINDERS,*/
+*/
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
 /*        ElementProperties.PROP_SORTS,
-        ElementProperties.PROP_OPS,
-        ElementProperties.PROP_DEFS,
-        ElementProperties.PROP_CLAIMS,
-        ElementProperties.PROP_IMPORTS,*/
+*/
     };
     
     private static final Class[] CHILDREN_TYPES = {
 /*	SortElement.class,
-        OpElement.class,
-        DefElement.class,
-        ClaimElement.class,
-        ImportElement.class,*/
+*/
     };
     
-    public MorphismInfo(String name) {
+    public MorphismInfo(String name, String sourceString, String targetString) {
         super(name);
+        this.sourceString = sourceString;
+        this.targetString = targetString;
         allMembers = new LinkedList();
         memberLists = new ChildCollection[CHILDREN_PROPERTIES.length];
     }
@@ -89,11 +66,17 @@ public class MorphismInfo extends BaseElementInfo {
     }
     
     public void updateElement(LangModel.Updater model, Element target) throws SourceException {
-        Util.log("MorphismInfo.updateElement this = "+this+" target "+target);
         super.updateElement(model, target);
         super.updateBase(target);
         
         MorphismElement morphism = (MorphismElement)target;
+//        SourceElement src = morphism.findSource();
+        UnitID sourceElem = UnitID.get(sourceString);
+        System.out.println("MorphismInfo.updateElement has sourceElem = "+sourceElem);
+        UnitID targetElem = UnitID.get(targetString);
+        System.out.println("MorphismInfo.updateElement has targetElem = "+targetElem);
+        morphism.setSourceUnitID(sourceElem);
+        morphism.setTargetUnitID(targetElem);
 
         //Util.log("Updating morphism properties of " + name); // NOI18N
         
@@ -161,7 +144,7 @@ public class MorphismInfo extends BaseElementInfo {
     }
 
     public String toString() {
-	return "morphism "+name;
+	return "morphism " + sourceString + " -> " + targetString;
     }
 
 }
