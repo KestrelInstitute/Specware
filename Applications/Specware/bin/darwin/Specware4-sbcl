@@ -60,7 +60,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/darwin
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /usr/local/bin/sbcl /sw/bin/sbcl; do
+   for L in /usr/local/bin/sbcl /usr/bin/sbcl /sw/bin/sbcl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -87,5 +87,5 @@ export LISP_DIRECTORY
 
 
 $xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
-       -geometry 180x70+180+2 \
-       -f run-specware4 &
+       -geometry 180x70+180+2 
+#       -f run-specware4 &

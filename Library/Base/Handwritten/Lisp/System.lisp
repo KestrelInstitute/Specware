@@ -40,7 +40,7 @@
 ;;;  op temporaryDirectory : String
 (defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-					     #+(or mcl cmu) "/tmp/"
+					     #+(or mcl cmu sbcl) "/tmp/"
 					     ))
 
 

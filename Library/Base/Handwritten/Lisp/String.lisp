@@ -165,7 +165,7 @@
                 (the cl:simple-base-string (cdr s1s2)))
    t nil))
 
-(defconstant newline
+(defparameter newline
   (format nil "~c" #\newline))
 
 (defun toScreen (x)

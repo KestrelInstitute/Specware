@@ -47,7 +47,7 @@
     #+Lispworks (hcl:change-directory directory)
     #+mcl       (ccl::%chdir          directory)
     #+cmu       (setf (extensions:default-directory) directory)
-    #+sbcl      (sb-unix::int-syscall ("chdir" c-string) directory)
+    #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
     ;; in Allegro CL, at least,
     ;; if (current-directory) is already a pathname, then
     ;; (make-pathname (current-directory)) will fail
@@ -62,7 +62,7 @@
 		  (ccl::getenv varname))
   #+lispworks (hcl::getenv varname) 	;?
   #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
-  #+sbcl      (posix-getenv  varname)
+  #+sbcl      (sb-ext:posix-getenv  varname)
   )
 
 (defun setenv (varname newvalue)
@@ -76,7 +76,7 @@
 		(if pr (setf (cdr pr) newvalue)
 		  (push (cons (intern varname "KEYWORD") newvalue)
 			ext:*environment-list*)))
-  #+sbcl      (sb-unix::int-syscall ("setenv" c-string c-string int) varname newvalue 1)
+  #+sbcl      (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int) varname newvalue 1)
   )
 
 #+(or mcl Lispworks)
@@ -99,6 +99,8 @@
     (unwind-protect (load "system.lisp")
       (change-directory old-directory))))
 
+#+sbcl
+(setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
 
 (defvar *fasl-type*
   #+allegro "fasl"

@@ -4,7 +4,9 @@
 
 (pushnew ".fasl" completion-ignored-extensions)
 (pushnew ".x86f" completion-ignored-extensions)	; cmulisp
-(pushnew ".dfsl" completion-ignored-extensions)	; mcl
+(pushnew ".dfsl" completion-ignored-extensions)	; openmcl
+(pushnew ".sfsl" completion-ignored-extensions)	; sbcl
+
 
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
@@ -54,11 +56,11 @@
   (unless (fboundp 'run-ilisp)
     (load "ilisp/ilisp"))
   (setq lisp-program (getenv "LISP_EXECUTABLE"))
-  (setq expand-symlinks-rfs-exists t)	; ?
+  (setq expand-symlinks-rfs-exists t)
   (defvar *specware-lisp* (if (search "dpccl" lisp-program)
 			      'openmcl
 			    (if (search "sbcl" lisp-program)
-				'sbcl
+				'sbcl				'sbcl
 			      'cmulisp)))
   (defvar *lisp-image-extension*
     (case *specware-lisp*
@@ -82,7 +84,9 @@
 		   ((cmulisp sbcl)
 		     (if common-lisp-image-file
 			 (concat common-lisp-image-name
-				 " -core " common-lisp-image-file)
+				 (if (eq *specware-lisp* 'cmulisp)
+				     " -core " " --core ")
+				 common-lisp-image-file)
 		       common-lisp-image-name))
 		   (otherwise
 		     (concat common-lisp-image-name " "

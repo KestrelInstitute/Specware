@@ -13,7 +13,7 @@
 #+cmu
 (setq extensions:*bytes-consed-between-gcs* 40000000)
 #+sbcl
-(setf (bytes-consed-between-gcs) 40000000)
+(setf (sb-ext:bytes-consed-between-gcs) 40000000)
 #+(or cmu sbcl)
 (setq *compile-verbose* nil)
 #+cmu
@@ -23,6 +23,8 @@
 #+cmu
 (setq c::*compile-print* nil)
 #+sbcl
+(setq sb-ext::*compile-print* nil)
+#+sbcl
 (declaim (optimize (sb-ext:inhibit-warnings 3)))
 ;#+mcl
 ;(egc t)					; Turn on ephemeral gc
@@ -31,7 +33,7 @@
 #+sbcl
 (setq sb-fasl:*fasl-file-type* "sfsl")	; Default is "fasl" which conflicts with allegro
 #+sbcl
-(setq *debug-beginner-help-p* nil)
+(setq sb-debug:*debug-beginner-help-p* nil)
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.0")
@@ -191,6 +193,8 @@
 (push  'cl-user::sw-re-init ext:*after-save-initializations*)
 #+mcl
 (push  'cl-user::sw-re-init ccl:*lisp-startup-functions*)
+#+sbcl
+(push  'cl-user::sw-re-init sb-int:*after-save-initializations*)
 
 ;;; Set gc parameters
 #+mcl

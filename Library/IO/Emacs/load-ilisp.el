@@ -12,10 +12,16 @@
       load-path)
 
 (defvar ilisp-*use-fsf-compliant-keybindings* t)
+;(defvar ilisp-*use-frame-for-output* nil)
 (require 'ilisp)
 
 (defun sw:load-specware-emacs-file (name)
-  (load (concatenate 'string *specware-emacs* name)))
+  (let ((el-file   (concatenate 'string *specware-emacs* name ".el"))
+	(elc-file  (concatenate 'string *specware-emacs* name ".elc")))
+    (unless (and (file-exists-p elc-file)
+		 (file-newer-than-file-p elc-file el-file))
+      (byte-compile-file el-file))
+    (load elc-file)))
 
 ;; This defvar just eliminates a compilation warning message.
 (defvar sw:specware-emacs-files) ; see defconst in files.el
