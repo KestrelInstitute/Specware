@@ -1,6 +1,9 @@
 spec
 
- op loser : Nat -> Nat
- def loser = loser o loser
+ %% notFalse should evaluate to true (or perhaps to itself),
+ %% but should not evaluate to false!
 
-endspec
+ op notFalse : Boolean
+ def notFalse = (id:Nat->Nat) = id o id
+
+endspec 
