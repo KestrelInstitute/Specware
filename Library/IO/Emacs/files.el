@@ -12,5 +12,6 @@
       "sw-init"
       "specware-mode"
       "sw-font"
+      "make-patch-file"
       ))
 
