@@ -225,9 +225,9 @@
 
 (define-sw-parser-rule :SPEC-DEFINITION ()
   (:anyof
-   (:tuple "spec" (1 (:optional :QUALIFIER)) "{" (2 :DECLARATION-SEQUENCE) "}")
-   (:tuple "spec" (1 (:optional :QUALIFIER))     (2 :DECLARATION-SEQUENCE) :END-SPEC))
-  (make-spec-definition 1 2 ':left-lcb ':right-lcb))
+   (:tuple "spec" "{" (1 :DECLARATION-SEQUENCE) "}")
+   (:tuple "spec"     (1 :DECLARATION-SEQUENCE) :END-SPEC))
+  (make-spec-definition 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :END-SPEC ()
   (:anyof "end" "end-spec" "endspec"))

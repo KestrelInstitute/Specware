@@ -173,12 +173,9 @@
 
 (defparameter unspecified-fixity '(:|Unspecified|))
 
-(defun make-spec-definition (optional-qualifier declaration-sequence l r)
+(defun make-spec-definition (declaration-sequence l r)
   :comment "A specification"
-  (let* ((spec_def (speccalc::mkSpec-2 declaration-sequence (make-pos l r))))
-    (if (eq :unspecified optional-qualifier)
-        spec_def
-      (make-sc-qualify optional-qualifier spec_def l r))))
+  (speccalc::mkSpec-2 declaration-sequence (make-pos l r)))
 
 ;;; ========================================================================
 ;;;  DECLARATION
