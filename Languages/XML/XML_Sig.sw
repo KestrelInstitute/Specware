@@ -1096,7 +1096,23 @@ XML qualifying spec
   %%
   %%   If the NDataDecl is present, this is a general unparsed entity; otherwise it is a parsed entity.
   %%
+  %%   4.3.2 Well-Formed Parsed Entities:
+  %%
+  %%  "An external general parsed entity is well-formed if it matches the production labeled 
+  %%   'extParsedEnt'."
+  %%
+  %%  "An internal general parsed entity is well-formed if its replacement text matches the 
+  %%   production labeled content."
+  %%
+  %%  "A consequence of well-formedness in [general] entities is that the logical and physical 
+  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element 
+  %%   tag, element, comment, processing instruction, character reference, or entity reference 
+  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added, 
+  %%   since sentence would be false for parameter entities, as one can have a start tag in
+  %%   in one parameter entity and the matching end tag in antoher.
+  %%
   %%   [74]  PEDef          ::=  EntityValue | ExternalID
+  %%                                                             [VC:  Proper Declaration/PE Nesting] 
   %%
   %%   [76]  NDataDecl      ::=  S 'NDATA' S Name 
   %%                                                             [VC: Notation Declared]
@@ -1183,22 +1199,47 @@ XML qualifying spec
   sort GEDecl = {w1   : WhiteSpace,
 		 name : Name,
 		 w2   : WhiteSpace,
-		 edef : EntityDef,
+		 edef : EntityDef,  
+		 %% To be well-formed, the EntityDef here must parse internally as: Content, 
+		 %%  or externally as: text_decl? Content.
+		 %% Either way, see the associated general-entity symbol table in the parser monad,
+		 %%  mapping Name to Content.
 		 w3   : WhiteSpace}
 
   %% -------------------------------------------------------------------------------------------------
   %%   [72]  PEDecl         ::=  '<!ENTITY' S '%' S Name S PEDef     S? '>'
   %% -------------------------------------------------------------------------------------------------
 
+  %%  See associated parameter-entity symbol table in monad.
   sort PEDecl = {w1    : WhiteSpace,
 		 w2    : WhiteSpace,
 		 name  : Name,
 		 w3    : WhiteSpace,
 		 pedef : PEDef,
+		 %% To be valid, the PEDef here must obey some mild restrictions on not breaking
+		 %%  up tags, comments, etc.
+		 %% See the associated parameter-entity symbol table in the parser monad, 
+		 %%  mapping Name to UChars, for UChars obeying the appropriate restictions.
 		 w4    : WhiteSpace}
 
   %% -------------------------------------------------------------------------------------------------
   %%   [73]  EntityDef      ::=  EntityValue | (ExternalID NDataDecl?)
+  %%
+  %%  4.3.2 Well-Formed Parsed Entities:
+  %%
+  %%  "An external general parsed entity is well-formed if it matches the production labeled 
+  %%   'extParsedEnt'."
+  %%
+  %%  "An internal general parsed entity is well-formed if its replacement text matches the 
+  %%   production labeled content."
+  %%
+  %%  "A consequence of well-formedness in [general] entities is that the logical and physical 
+  %%   structures in an XML document are properly nested; no start-tag, end-tag, empty-element 
+  %%   tag, element, comment, processing instruction, character reference, or entity reference 
+  %%   can begin in one [general] entity and end in another."  Kestrel note: [general] added, 
+  %%   since sentence would be false for parameter entities, as one can have a start tag in
+  %%   in one parameter entity and the matching end tag in antoher.
+  %%
   %% -------------------------------------------------------------------------------------------------
 
   sort EntityDef = | Value    EntityValue
@@ -1206,6 +1247,22 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
   %%   [74]  PEDef          ::=  EntityValue | ExternalID
+  %%
+  %%  4.3.2 Well-Formed Parsed Entities:
+  %%
+  %%  "All external parameter entities are well-formed by definition."
+  %%  "All internal parameter entities are well-formed by definition."
+  %%
+  %%  but note validity constraint:
+  %%
+  %%  [VC: Proper Declaration/PE Nesting]           [74] [K11] *[29] 
+  %%
+  %%    Parameter-entity replacement text must be properly nested with markup declarations. 
+  %%
+  %%    That is to say, if either the first character or the last character of a markup declaration 
+  %%    (markupdecl above) is contained in the replacement text for a parameter-entity reference, 
+  %%    both must be contained in the same replacement text.
+  %%
   %% -------------------------------------------------------------------------------------------------
 
   sort PEDef = | Value    EntityValue
@@ -1521,6 +1578,9 @@ XML qualifying spec
   %%   'extParsedEnt'."
   %%  
   %%   [78]  extParsedEnt        ::=  TextDecl? content
+  %%
+  %%  "An internal general parsed entity is well-formed if its replacement text matches the 
+  %%   production labeled content."
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -2244,7 +2304,7 @@ XML qualifying spec
   %%     *  element types with element content, if white space occurs directly within any instance 
   %%        of those types.
   %%
-  %%  [VC: Proper Declaration/PE Nesting]           [K11] *[29] 
+  %%  [VC: Proper Declaration/PE Nesting]           [74] [K11] *[29] 
   %%
   %%    Parameter-entity replacement text must be properly nested with markup declarations. 
   %%
