@@ -50,9 +50,27 @@
 (defun make-pos (x y) (make-region x y))
 
 (defun freshMetaTypeVar (left right)
+  ;; distinct from freshMetaTyVar in ~/Work/Generic/Specware4/Languages/MetaSlang/Specs/Elaborate/Utilities.sw
+  ;; that uses "#fresh", this uses "#intern" ...
   (cons :|MetaTyVar|
-        (cons (cons :|Ref| (vector (cons :|None| nil) "#intern" (incf *varcounter*)))
+        (cons (cons :|Ref| (vector (cons :|None| nil) "#parser" (incf *varcounter*)))
               (make-pos left right))))
+
+(defun make-equality-fun (op l r)
+  (let ((tyvar (freshMetaTypeVar l r))
+	(pos (make-pos l r)))
+    (cons :|Fun|
+	  (vector op 
+		  ;; (TypeChecker::makeEqualityType-2 tyvar pos)
+		  (temp-makeEqualityType-2 tyvar pos)
+		  pos))))
+
+(defun temp-makeEqualityType-2 (tyvar pos)
+  (cons :|Arrow|
+	(vector (cons :|Product| (cons (cons (cons "1" tyvar) (cons (cons "2" tyvar) nil))
+				       *internal-parser-position*))
+		(cons :|Boolean| nil)
+		pos)))
 
 (defun namedTypeVar (name)
   name
@@ -458,39 +476,25 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-unqualified-op-ref (name l r)
-  (make-fun (cond ((equal name "~")   '(:|Not|))
-		  ((equal name "&")   '(:|And|))      ; deprecated
-		  ((equal name "&&")  '(:|And|))
-		  ((equal name "or")  '(:|Or|))       ; deprecated
-		  ((equal name "||")  '(:|Or|))
-		  ((equal name "=>")  '(:|Implies|))
-		  ((equal name "<=>") '(:|Iff|))
-		  ((equal name "=")   '(:|Equals|))
-		  ((equal name "~=")  '(:|NotEquals|))
-		  (t
-		   (cons :|OneName| (cons name unspecified-fixity))))
-            (freshMetaTypeVar l r)
-            l r))
+  (cond ((equal name "~")   
+	 ;; "~" is treated specially:
+	 ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator...
+	 (make-fun '(:|Not|)
+		   ms::unaryBoolSort
+		   l r))
+	((equal name "=")
+	 ;; "=" is treated specially:
+	 ;; "=" can refer to the built-in Equals, but can also be syntax for defs, etc.
+	 (make-equality-fun '(:|Equals|) 
+			    l r))
+	(t
+	 (make-fun (cons :|OneName| (cons name unspecified-fixity))
+		   (freshMetaTypeVar l r)
+		   l r))))
 
 ;;; ------------------------------------------------------------------------
 ;;;   TWO-NAME-EXPRESSION
 ;;; ------------------------------------------------------------------------
-
-;;; (defun make-two-name-expression (name-1 name-2 l r)
-;;;   (make-fun (cond ((equal name-1 "Boolean")  ; Deprecate "Boolean" as qualifier?
-;;; 		   (cond ((equal name-2 "~")   '(:|Not|))
-;;; 			 ((equal name-2 "&")   '(:|And|)) ; deprecated
-;;; 			 ((equal name-2 "&&")  '(:|And|))
-;;; 			 ((equal name-2 "or")  '(:|Or|))  ; deprecated
-;;; 			 ((equal name-2 "||")  '(:|Or|))
-;;; 			 ((equal name-2 "=>")  '(:|Implies|))
-;;; 			 ((equal name-2 "<=>") '(:|Iff|))
-;;; 			 (t 
-;;; 			  (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity)))))
-;;; 		  (t 
-;;; 		   (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity))))
-;;;             (freshMetaTypeVar l r)
-;;;             l r))
 
 (defun make-two-name-expression (name-1 name-2 l r)
   (make-fun (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity))

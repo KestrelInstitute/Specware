@@ -860,48 +860,31 @@ spec {
        let ty    = Arrow (alpha, term_sort, pos) in
        let t1    = (case t1 of
 		      | Fun (Not, srt, pos) -> 
-		        (elaborateSortForTerm (env, trm, unaryBoolSort, ty);
-			 elaborateSortForTerm (env, trm, srt, unaryBoolSort);
+		        (elaborateSortForTerm (env, trm, srt, ty);
 			 Fun (Not, srt, pos))
 			
 		      | Fun (And, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, binaryBoolSort, ty);
-			 elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+			(elaborateSortForTerm (env, trm, srt, ty);
 			 Fun (And, srt, pos))
 			
 		      | Fun (Or, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, binaryBoolSort, ty);
-			 elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+			(elaborateSortForTerm (env, trm, srt, ty);
 			 Fun (Or, srt, pos))
 			
 		      | Fun (Implies, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, binaryBoolSort, ty);
-			 elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+			(elaborateSortForTerm (env, trm, srt, ty);
 			 Fun (Implies, srt, pos))
 			
 		      | Fun (Iff, srt, pos) -> 
-			(elaborateSortForTerm (env, trm, binaryBoolSort, ty);
-			 elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+			(elaborateSortForTerm (env, trm, srt, ty);
 			 Fun (Iff, srt, pos))
 			
 		      | Fun (Equals, srt, pos) -> 
-			let a = freshMetaTyVar pos in
-			let fresh_eq_type = Arrow (Product ([("1", a), ("2", a)], pos), 
-						   type_bool, 
-						   pos) 
-			in
-			(elaborateSortForTerm (env, trm, fresh_eq_type, ty);
-			 elaborateSortForTerm (env, trm, srt, fresh_eq_type);
+			(elaborateSortForTerm (env, trm, srt, ty);
 			 Fun (Equals, srt, pos))
 			
 		      | Fun (NotEquals, srt, pos) -> 
-			let a = freshMetaTyVar pos in
-			let fresh_eq_type = Arrow (Product ([("1", a), ("2", a)], pos), 
-						   type_bool, 
-						   pos) 
-			in
-			(elaborateSortForTerm (env, trm, fresh_eq_type, ty);
-			 elaborateSortForTerm (env, trm, srt, fresh_eq_type);
+			(elaborateSortForTerm (env, trm, srt, ty);
 			 Fun (NotEquals, srt, pos))
 		      | _ ->
 			elaborateTerm (env, t1, ty))
@@ -984,6 +967,16 @@ spec {
   
     | term -> (%System.print term;
                term)
+
+   op makeEqualityType : Sort * Position -> Sort
+  def makeEqualityType (ty_var, pos) =
+    %% let a = freshMetaTyVar noPos in 
+    %% parser has it's own sequence of metaTyVar's, which are distinguished
+    %% from those produced by freshMetaTyVar:
+    %% they will be named "#parser-xxx" instead of "#fresh-xxx"
+    Arrow (Product ([("1", ty_var), ("2", ty_var)], noPos), 
+	   type_bool,
+	   pos)
 
   % ========================================================================
 

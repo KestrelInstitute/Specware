@@ -697,6 +697,7 @@ If we want the precedence to be optional:
 ;;;  "X . SELECTOR" will be parsed as TWO-NAME-EXPRESSION and be disambiguated in post-processing
 (define-sw-parser-rule :CLOSED-EXPRESSION ()
   (:anyof
+   (1 :BUILT-IN-OPERATOR      :documentation "&&, ||, =>, <=>, =, ~=")
    (1 :UNQUALIFIED-OP-REF     :documentation "Op reference or Variable reference")
    (1 :SELECTABLE-EXPRESSION  :documentation "Closed expression -- unambiguous termination")
    (1 :RESTRICTION            :documentation "restrict p e -or- (restrict p) e") ; new, per task 22
@@ -726,6 +727,32 @@ If we want the precedence to be optional:
    (1 :MONAD-EXPRESSION           :documentation "Monadic expression")
    )
   1)
+
+;;; ------------------------------------------------------------------------
+;;;   BUILT-IN-OPERATOR 
+;;; ------------------------------------------------------------------------
+
+;;; Note: If a dot follows, this production will become a dead-end,
+;;;       since dot is not legal after a TIGHT-EXPRESSION,
+;;;       but the competing TWO-NAME-EXPRESSION may succeed.
+
+(define-sw-parser-rule :BUILT-IN-OPERATOR ()
+  (:anyof 
+   ;; "~" is treated specially: see semantics.lisp
+   ;; "~" refers to the built-in Not, but "foo.~" is just an ordinary operator,
+   ;; so we don't make "~" a keyword (which would exclude the latter)
+   ((:tuple "&")   (make-fun '(:|And|)       ms::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
+   ((:tuple "&&")  (make-fun '(:|And|)       ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "or")  (make-fun '(:|Or|)        ms::binaryBoolSort ':left-lcb ':right-lcb)) ; deprecated
+   ((:tuple "||")  (make-fun '(:|Or|)        ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "=>")  (make-fun '(:|Implies|)   ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ((:tuple "<=>") (make-fun '(:|Iff|)       ms::binaryBoolSort ':left-lcb ':right-lcb))
+   ;;
+   ;; "=" is treated specially: see semantics.lisp
+   ;; "=" refers to the built-in Equals, but can also appear as a keyword in other rules
+   ;; ((:tuple "=")   (make-equality-fun '(:|Equals|)    ':left-lcb ':right-lcb))
+   ((:tuple "~=")  (make-equality-fun '(:|NotEquals|) ':left-lcb ':right-lcb))
+   ))
 
 ;;; ------------------------------------------------------------------------
 ;;;   UNQUALIFIED-OP-REF
