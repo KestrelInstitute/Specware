@@ -549,13 +549,13 @@ with the &Specware; distribution, for details (e.g. axioms).
        </row>
        <row>
         <entry colname="name">&nbsp; [[++]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 11]]</entry>
+        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
         <entry colname="sort">&nbsp; [[String * String -> String]]</entry>
         <entry colname="desc">&nbsp; string concatenation</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[^]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 11]]</entry>
+        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
         <entry colname="sort">&nbsp; [[String * String -> String]]</entry>
         <entry colname="desc">&nbsp; same as [[++]]</entry>
        </row>
@@ -725,15 +725,9 @@ with the &Specware; distribution, for details (e.g. axioms).
        </row>
        <row>
         <entry colname="name">&nbsp; [[++]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 11]]</entry>
+        <entry colname="fxty">&nbsp; [[infixl 25]]</entry>
         <entry colname="sort">&nbsp; [[fa(a) List a * List a -> List a]]</entry>
         <entry colname="desc">&nbsp; list concatenation</entry>
-       </row>
-       <row>
-        <entry colname="name">&nbsp; [[@]]</entry>
-        <entry colname="fxty">&nbsp; [[infixl 11]]</entry>
-        <entry colname="sort">&nbsp; [[fa(a) List a * List a -> List a]]</entry>
-        <entry colname="desc">&nbsp; same as [[++]]</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[concat]]</entry>
