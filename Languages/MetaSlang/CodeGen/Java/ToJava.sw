@@ -284,30 +284,30 @@ def addMethodFromOpToClsDecls(spc, opId, srt, trm, clsDecls) =
   if all (fn (srt) -> baseType?(srt)) dom
     then
       if baseType?(rng)
-	then addPrimMethodToClsDecls(opId, srt, dom, rng, trm, clsDecls)
-      else addPrimArgsMethodToClsDecls(opId, srt, dom, rng, trm, clsDecls)
+	then addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, clsDecls)
+      else addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, clsDecls)
   else
     addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, clsDecls)
 
-op addPrimMethodToClsDecls: Id * Type * List Type * Type * Term * List ClsDecl -> List ClsDecl
-def addPrimMethodToClsDecls(opId, srt, dom, rng as Base (Qualified (q, rngId), _,  _), trm, clsDecls) =
+op addPrimMethodToClsDecls: Spec * Id * Type * List Type * Type * Term * List ClsDecl -> List ClsDecl
+def addPrimMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _,  _), trm, clsDecls) =
   let (vars, body) = srtTermDelta(srt, trm) in
   let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
-  let methodBody = mkPrimArgsMethodBody(body) in
+  let methodBody = mkPrimArgsMethodBody(body, spc) in
   let methodDecl = setMethodBody(methodDecl, methodBody) in
   addMethDeclToClsDecls("Primitive", methodDecl, clsDecls)
 
-op mkPrimArgsMethodBody: Term -> Block
-def mkPrimArgsMethodBody(body) =
-  let (b, jExp, k) = termToExpression(empty, body, 1) in
+op mkPrimArgsMethodBody: Term * Spec -> Block
+def mkPrimArgsMethodBody(body, spc) =
+  let (b, jExp, k) = termToExpression(empty, body, 1, spc) in
   let retStmt = Stmt (Return (Some (jExp))) in
   b++[retStmt]
 
-op addPrimArgsMethodToClsDecls: Id * Type * List Type * Type * Term * List ClsDecl -> List ClsDecl
-def addPrimArgsMethodToClsDecls(opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, clsDecls) =
+op addPrimArgsMethodToClsDecls: Spec * Id * Type * List Type * Type * Term * List ClsDecl -> List ClsDecl
+def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, clsDecls) =
   let (vars, body) = srtTermDelta(srt, trm) in
   let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
-  let methodBody = mkPrimArgsMethodBody(body) in
+  let methodBody = mkPrimArgsMethodBody(body, spc) in
   let methodDecl = setMethodBody(methodDecl, methodBody) in
   addMethDeclToClsDecls(rngId, methodDecl, clsDecls)
 
@@ -316,7 +316,7 @@ def addUserMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngI
   let (vars, body) = srtTermDelta(srt, trm) in
   if caseTerm?(body)
     then addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls)
-  else addNonCaseMethodsToClsDecls(opId, dom, rng, rngId, vars, body, clsDecls)
+  else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls)
 
 op addCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * List ClsDecl -> List ClsDecl
 def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls) =
@@ -327,20 +327,20 @@ def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls) =
   let newClsDecls = addMethDeclToClsDecls(srthId, methodDeclA, clsDecls) in
   addMethDeclToSummands(spc, srthId, methodDecl, body, newClsDecls)
 
-op addNonCaseMethodsToClsDecls: Id * List Type * Type * Id * List Var * Term * List ClsDecl -> List ClsDecl
-def addNonCaseMethodsToClsDecls(opId, dom, rng, rngId, vars, body, clsDecls) =
+op addNonCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * List ClsDecl -> List ClsDecl
+def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls) =
   let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
   let (vh, _) = varh in
-  let methodBody = mkNonCaseMethodBody(vh, body) in
+  let methodBody = mkNonCaseMethodBody(vh, body, spc) in
   let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), Some (methodBody)) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
   addMethDeclToClsDecls(srthId, methodDecl, clsDecls)
 
-op mkNonCaseMethodBody: Id * Term -> Block
-def mkNonCaseMethodBody(vId, body) =
+op mkNonCaseMethodBody: Id * Term * Spec -> Block
+def mkNonCaseMethodBody(vId, body, spc) =
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
-  let (b, jE, k) = termToExpression(tcx, body, 1) in
+  let (b, jE, k) = termToExpression(tcx, body, 1, spc) in
   let retStmt = Stmt (Return (Some (jE))) in
   b++[retStmt]
 
@@ -352,10 +352,10 @@ def addMethDeclToSummands(spc, srthId, methodDecl, body, clsDecls) =
   let caseTerm = caseTerm(body) in
   let cases = caseCases(body) in
   %% cases = List (pat, cond, body)
-  foldr (fn((pat, _, cb), newClsDecls) -> addSumMethDeclToClsDecls(srthId, caseTerm, pat, cb, methodDecl, newClsDecls)) clsDecls cases
+  foldr (fn((pat, _, cb), newClsDecls) -> addSumMethDeclToClsDecls(srthId, caseTerm, pat, cb, methodDecl, newClsDecls, spc)) clsDecls cases
 
-op addSumMethDeclToClsDecls: Id * Term * Pattern * Term * MethDecl * List ClsDecl -> List ClsDecl
-def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, coSrt, _), body, methodDecl, clsDecls) =
+op addSumMethDeclToClsDecls: Id * Term * Pattern * Term * MethDecl * List ClsDecl * Spec -> List ClsDecl
+def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, coSrt, _), body, methodDecl, clsDecls, spc) =
   let Var ((vId, vSrt), _) = caseTerm in
   let args = case argsPat of
                | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId,_), _))) -> vId) args
@@ -365,7 +365,7 @@ def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, c
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
   let tcx = addArgsToTcx(tcx, args) in
-  let (b, jE, k) = termToExpression(tcx, body, 1) in
+  let (b, jE, k) = termToExpression(tcx, body, 1, spc) in
   let returnStmt = Stmt (Return (Some (jE))) in
   let JBody = b++[returnStmt] in
   let newMethDecl = setMethodBody(methodDecl, JBody) in
@@ -403,7 +403,7 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
     if baseType?(srt)
       then
 	let (vars, body) = srtTermDelta(srt, trm) in
-	let (_, jE, _) = termToExpression(empty, body, 1) in
+	let (_, jE, _) = termToExpression(empty, body, 1, spc) in
 	let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), Some (Expr (jE))), []) in
 	%%Fixed here
 	let newClsDecls = addFldDeclToClsDecls("Primitive", fldDecl, clsDecls) in
@@ -411,7 +411,7 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
     else
       let Base (Qualified (_, srtId), _, _) = srt in
       let (vars, body) = srtTermDelta(srt, trm) in
-      let (_, jE, _) = termToExpression(empty, body, 1) in
+      let (_, jE, _) = termToExpression(empty, body, 1, spc) in
       let fldDecl = ([Static], tt(srtId), ((id, 0), Some (Expr (jE))), []) in
       %%Fixed here
       let newClsDecls = addFldDeclToClsDecls(srtId, fldDecl, clsDecls) in
