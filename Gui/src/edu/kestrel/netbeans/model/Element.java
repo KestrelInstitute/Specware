@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/04/23 01:14:38  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.1  2003/01/30 02:01:54  gilham
  * Initial version.
  *
@@ -219,7 +222,7 @@ public abstract class Element extends Object
     /** Pluggable implementation of the storage of element properties.
      * @see Element#Element
      */
-    interface Impl extends Serializable {
+    public interface Impl extends Serializable {
         /** Add some items. */
         public static final int ADD = 1;
         /** Remove some items. */
