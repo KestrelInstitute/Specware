@@ -231,15 +231,20 @@ spec
 
   % abbreviations:
 
-  op V : Variable  % distinguished variable
-
-  type VariableNotV = {v : Variable | v ~= V}
+  % return some variable not in set of used ones:
+  op pickUnusedVar : FSet Variable -> Variable
+  axiom pickUnusedVar is
+    fa(vS:FSet Variable) (pickUnusedVar vS) nin? vS
 
   op TRUE : Expression
-  def TRUE = FN V boolean (var V) == FN V boolean (var V)
+  def TRUE =
+    let v:Variable = pickUnusedVar empty in
+    FN v boolean (var v) == FN v boolean (var v)
 
   op FALSE : Expression
-  def FALSE = FN V boolean (var V) == FN V boolean TRUE
+  def FALSE =
+    let v:Variable = pickUnusedVar empty in
+    FN v boolean (var v) == FN v boolean TRUE
 
   op ~~ : Expression -> Expression
   def ~~ e = (e == FALSE)
@@ -252,8 +257,9 @@ spec
 
   op &&& infixr 25 : Expression * Expression -> Expression
   def &&& (e1,e2) =
-    (FA V (boolean --> boolean --> boolean)
-       (var V @ TRUE @ TRUE == var V @ e1 @ e2))
+    let v:Variable = pickUnusedVar (exprFreeVars e1 \/ exprFreeVars e2) in
+    (FA v (boolean --> boolean --> boolean)
+       (var v @ TRUE @ TRUE == var v @ e1 @ e2))
     ==
     TRUE
 
@@ -266,9 +272,10 @@ spec
   op <==> infixr 22 : Expression * Expression -> Expression
   def <==> (e1,e2) = (e1 == e2)
 
-  op EX1 : VariableNotV -> Type -> Expression -> Expression
+  op EX1 : Variable -> Type -> Expression -> Expression
   def EX1 v t e =
-    let e1 = exprSubst1 v (var V) e in
-    EX v t (e &&& FA V t (e1 ==> var V == var v))
+    let v1:Variable = pickUnusedVar (exprFreeVars e <| v) in
+    let e1 = exprSubst1 v (var v1) e in
+    EX v t (e &&& FA v1 t (e1 ==> var v1 == var v))
 
 endspec

@@ -69,7 +69,7 @@ spec
       => pj (wellFormedContext (cx <| typeDefinition (tn, t))))
     | cxOpDef ->
       (fa (cx:Context, o:Operation, t:Type,
-           v:VariableNotV, e:Expression, e1:Expression)
+           v:Variable, e:Expression, e1:Expression)
          pj (wellFormedContext cx)
       && opDeclaration (o, t) in? cx
       && ~(contextDefinesOp? (cx, o))
@@ -235,5 +235,24 @@ spec
     (fa(ir:InferenceRule) satisfiesRule? provable? ir))
 
   type ProvableJudgement = (Judgement | provable?)
+
+
+  op wfCx : Context -> Boolean
+  def wfCx cx = provable? (wellFormedContext cx)
+
+  op wfSp : Spec -> Boolean
+  def wfSp sp = provable? (wellFormedSpec sp)
+
+  op wfTy : Context -> Type -> Boolean
+  def wfTy cx t = provable? (wellFormedType (cx, t))
+
+  op tyEq : Context -> Type -> Type -> Boolean
+  def tyEq cx t1 t2 = provable? (typeEquivalence (cx, t1, t2))
+
+  op wtEx : Context -> Expression -> Type -> Boolean
+  def wtEx cx e t = provable? (wellTypedExpr (cx, e, t))
+
+  op theo : Context -> Expression -> Boolean
+  def theo cx e = provable? (theoreM (cx, e))
 
 endspec
