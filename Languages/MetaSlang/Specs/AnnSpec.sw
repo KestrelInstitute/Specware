@@ -137,6 +137,36 @@ AnnSpec qualifying spec
      emptyAQualifierMap
      ops
 
+  op filterSortMap : fa(b) (ASortInfo b -> Boolean) -> ASortMap b -> ASortMap b 
+ def filterSortMap keep? sorts =
+   foldriAQualifierMap 
+     (fn (index_q, index_id, info as (aliases,_,_), new_map) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id && keep? info then
+	foldl (fn (Qualified(q, id), new_map) ->
+	       insertAQualifierMap (new_map, q, id, info))				   
+	      new_map
+	      aliases
+      else
+	new_map)
+     emptyAQualifierMap
+     sorts
+
+  op filterOpMap : fa(b) (AOpInfo b -> Boolean) -> AOpMap b -> AOpMap b 
+ def filterOpMap keep? ops =
+   foldriAQualifierMap 
+     (fn (index_q, index_id, info as (aliases,_,_,_), new_map) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id && keep? info then
+	foldl (fn (Qualified(q, id), new_map) ->
+	       insertAQualifierMap (new_map, q, id, info))				   
+	      new_map
+	      aliases
+      else
+	new_map)
+     emptyAQualifierMap
+     ops
+
   op mapSpecProperties : fa(b) TSP_Maps b -> AProperties b ->  AProperties b 
  def mapSpecProperties tsp_maps properties =
    map (fn (pt, nm, tvs, term) -> 
