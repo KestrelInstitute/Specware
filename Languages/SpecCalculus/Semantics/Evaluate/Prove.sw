@@ -14,8 +14,9 @@ SpecCalc qualifying spec {
      print (";;; Elaborating proof-term at " ^ (uidToString unitId) ^ "\n");
      (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo spec_term;
      (optBaseUnitId,baseSpec) <- getBase;
-     proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
-     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
+     baseProverSpec <- getBaseProverSpec;
+     %proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
+     %(Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
      snarkLogFileName <- UIDtoSnarkLogFile unitId;
      _ <- return (ensureDirectoriesExist snarkLogFileName);
      proof_name <- return (UIDtoProofName unitId);
@@ -25,7 +26,8 @@ SpecCalc qualifying spec {
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
      expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
-     %_ <- return(writeString(printSpec(subtractSpec expandedSpec baseSpec)));
+     %expandedSpec:Spec <- return(uspc);
+     _ <- return (if specwareDebug? then writeString(printSpec(subtractSpec expandedSpec baseSpec)) else ());
      prover_options <- 
        (case possible_options of
 	  | OptionString prover_options -> return (prover_options)
@@ -46,6 +48,16 @@ SpecCalc qualifying spec {
 			      unit   = unitId});
      return (result, timeStamp, depUIDs)
    }
+
+  op getBaseProverSpec : Env Spec
+  def getBaseProverSpec = 
+    {
+     (optBaseUnitId,baseSpec) <- getBase;
+     proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
+     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
+     return (subtractSpec baseProverSpec baseSpec)
+    }
+
 
  def proverOptionsFromSpec(name, spc, spec_name) = {
    possible_options_op <- return(findTheOp(spc, name));
@@ -191,8 +203,9 @@ SpecCalc qualifying spec {
    let context = newContext in
    let snarkBaseHypothesis = map (fn (prop) -> snarkProperty(context, base_spc, prop))
                                  base_hypothesis in
-   let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
-   let snarkConjecture = snarkConjecture(context, spc, claim) in
+   %let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
+   let snarkHypothesis = foldr (fn (prop, list) -> snarkPropertiesFromProperty(context, spc, prop)++list) [] hypothesis in
+   let snarkConjecture = snarkConjectureRemovePattern(context, spc, claim) in
    let snarkEvalForm = makeSnarkProveEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
@@ -229,6 +242,8 @@ SpecCalc qualifying spec {
 	   Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(60)]),
            Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
            Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
+           Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
+           Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
 	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)])
 	  ]
 	  Lisp.++ (Lisp.list snarkSortDecl)

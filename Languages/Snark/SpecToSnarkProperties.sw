@@ -2,6 +2,7 @@ snark qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
+  import /Languages/MetaSlang/Transformations/ProverPattern
 %  import /Languages/MetaSlang/Transformations/Match
 %  import /Languages/MetaSlang/CodeGen/Lisp/Lisp
 %  import /Languages/MetaSlang/Specs/StandardSpec
@@ -231,6 +232,7 @@ snark qualifying spec
 		      mkSnarkTerm(context, sp, dpn, vars, e)]
       | Fun (Op(Qualified(qual,id),_),_, _) -> Lisp.symbol("SNARK",mkSnarkName(qual, id))
       | Fun ((Nat nat), Nat, _) -> Lisp.nat(nat)
+      | Fun (Embed(id, _),_,__) -> Lisp.symbol("SNARK",mkSnarkName("","embed_"^id))
       | Var (v,_) -> snarkVar(v)
       | _ -> mkNewSnarkTerm(context, term) %% Unsupported construct
 
@@ -257,6 +259,15 @@ snark qualifying spec
 %  def lispFmla(spc, dpn, fmla) =
 %    reduceTerm(mkLFmla(spc, dpn, StringSet.empty, fmla))
 
+  op snarkPropertiesFromProperty: Context * Spec * Property -> List LispCell
+
+  def snarkPropertiesFromProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
+    let liftedFmlas = proverPattern(fmla) in
+    map (fn (liftedFmla) -> let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], liftedFmla) in
+                             Lisp.list [snark_assert, Lisp.quote(snarkFmla),
+					Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)])
+        liftedFmlas
+  
   op snarkProperty: Context * Spec * Property -> LispCell
 
   def snarkProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
@@ -264,6 +275,15 @@ snark qualifying spec
       Lisp.list [snark_assert, Lisp.quote(snarkFmla),
 		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
 
+  op snarkConjectureRemovePattern: Context * Spec * Property -> LispCell
+
+  def snarkConjectureRemovePattern(context, spc, prop as (ptype, name, tyvars, fmla)) =
+    let liftedFmlas = proverPattern(fmla) in
+    let liftedConjecture = mkConj(liftedFmlas) in
+    let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], liftedConjecture) in
+      Lisp.list [snark_prove, Lisp.quote(snarkFmla),
+		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
+  
   op snarkConjecture: Context * Spec * Property -> LispCell
 
   def snarkConjecture(context, spc, prop as (ptype, name, tyvars, fmla)) =

@@ -86,10 +86,13 @@ snark qualifying spec {
   def snarkBaseDecls =
     [
 	Lisp.list[declare_predicate,
-		  Lisp.quote(Lisp.symbol("SNARK", "embed?")), Lisp.nat(2)]
+		  Lisp.quote(Lisp.symbol("SNARK", "embed?")), Lisp.nat(2)],
+	Lisp.list[declare_constant,
+		  Lisp.quote(Lisp.symbol("SNARK", "embed_Nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))]
+
        ]
 						    
-
+%(SNARK:DECLARE-CONSTANT-SYMBOL 'SNARK::|switchLamAux| :SORT 'SNARK::|Arrow_Nat_Nat|)
   op baseAxioms: List LispCell
   def baseAxioms =
     [
@@ -376,7 +379,7 @@ snark qualifying spec {
     string (toString(t))
   
 
-  def ppSpec (s : SnarkSpec) : Pretty =
+  def ppSpec (s : SnarkSpec) : PrettyPrint.Pretty =
       let sortDecls = s.sortDecls 	in
       let opDecls = s.opDecls 	in
       let name = s.name 		in
