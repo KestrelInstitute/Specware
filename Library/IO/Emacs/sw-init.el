@@ -182,7 +182,7 @@
 			'continue-emacs-computation)
   (simulate-input-expression "(cl-user::exit)"))
 
-(defun build-specware4 (in-current-dir?)
+(defun build-specware4 (&optional in-current-dir?)
   (interactive "P")
   (let* ((specware4-dir (if in-current-dir?
 			    (strip-final-slash (if (stringp in-current-dir?)
