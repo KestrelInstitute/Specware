@@ -14,7 +14,8 @@
 
 (setq lisp-emacs-interface-type 'ilisp) 
 
-(when (eq *specware-lisp* cmulisp)
+(when (eq *specware-lisp* 'cmulisp)
+  (setq *fasl-extension* "x86f")
   (unless (and (file-executable-p cmulisp-program)
 	       (not (file-directory-p cmulisp-program)))
     (setq cmulisp-program "/usr/share/cmulisp/bin/lisp"))
@@ -36,7 +37,7 @@
       (sleep-for 1))))
 
 (wait-for-file-to-compile "ilisp-pkg")
-(when (eq *specware-lisp* cmulisp)
+(when (eq *specware-lisp* 'cmulisp)
   (wait-for-file-to-compile "cmulisp"))
 (wait-for-file-to-compile "cl-ilisp")
 
