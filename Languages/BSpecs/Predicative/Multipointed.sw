@@ -229,7 +229,7 @@ for now that the program does not define any new sorts.
 Naive pretty printing of \BSpecs
 
 \begin{spec}
-  op ppBSpecLess : BSpec -> Spec -> Pretty
+  op ppBSpecLess : BSpec -> Spec -> WadlerLindig.Pretty
   def ppBSpecLess {initial,final,system} spc =
     ppConcat [
       ppString "{",
@@ -246,7 +246,7 @@ Naive pretty printing of \BSpecs
       ppString "}"
     ]
 
-  op ppBSpec : BSpec -> Pretty
+  op ppBSpec : BSpec -> WadlerLindig.Pretty
   def ppBSpec {initial,final,system} =
     ppConcat [
       ppString "{",
