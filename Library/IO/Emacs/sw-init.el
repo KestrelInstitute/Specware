@@ -276,13 +276,14 @@
 				       (openmcl "(ccl:save-application %S)")
 				       (sbcl "(sb-ext:save-lisp-and-die %S)"))
 				     world-name))
-;;;    (simulate-input-expression
-;;;     "(if (probe-file \"bin/specware2000-new.world\")
-;;;	  (progn (when (probe-file \"bin/specware2000.world\")
-;;;                   (rename-file  \"bin/specware2000.world\" \"bin/specware2000-old.world\"))
-;;;		 (rename-file  \"bin/specware2000-new.world\" \"bin/specware2000.world\")
-;;;		 \"Wrote a new bin/specware2000.world\")
-;;;	\"Failed to build a new world!\")")
+  (simulate-input-expression
+   (format "(let ((filename %S))
+	      (cond ((probe-file filename)
+		     (Format t \"~2&Wrote new ~A~2%%\" filename)
+		     (Format t \"~&It is safe to exit now..~%%\"))
+                    (t
+	             (warn \"Failed to write new ~A\" filename))))"
+	    world-name))
   )
 
 (defun build-specware4-from-base (in-current-dir?)
