@@ -189,6 +189,7 @@ accepted in lieu of prompting."
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c\C-l" 'sw:cl-current-file)
+  (define-key map "\C-c\C-u" 'sw:cl-unit)
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
@@ -966,17 +967,6 @@ If anyone has a good algorithm for this..."
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
     (simulate-input-expression (concat ":sw " filename))))
 
-(defun sw:cl-current-file ()
-  (interactive)
-  (save-buffer)
-  (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
-	(temp-file-name (concat (temp-directory) "-cl-current-file")))
-    (sw:eval-in-lisp (format "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
-		     filename temp-file-name))
-    (sw:eval-in-lisp (format "(let (*redefinition-warnings*)
-                                (specware::compile-and-load-lisp-file %S))"
-			     temp-file-name))))
-
 (defun sw::file-to-specware-unit-id (filename)
   (when (eq (elt filename 1) ?:)
     (setq filename (substring filename 2)))
@@ -989,11 +979,36 @@ If anyone has a good algorithm for this..."
   (setq filename (replace-in-string filename "\\\\" "/"))
   (replace-in-string filename "Program Files" "Progra~1"))
   
-(defun sw:process-unit (filename)
+(defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "
 					   (sw::file-to-specware-unit-id
 					    buffer-file-name))))
-  (simulate-input-expression (concat ":sw " filename)))
+  (simulate-input-expression (concat ":sw " unitid)))
+
+(defun sw:cl-current-file ()
+  (interactive)
+  (save-buffer)
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
+	(temp-file-name (concat (temp-directory) "-cl-current-file")))
+    (if (sw:eval-in-lisp "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
+		     filename temp-file-name)
+	(sw:eval-in-lisp "(let (*redefinition-warnings*)
+                            (specware::compile-and-load-lisp-file %S))"
+			 temp-file-name)
+      (message "Specware Processing Failed!"))))
+
+(defun sw:cl-unit (unitid)
+  (interactive (list (read-from-minibuffer "Compile and Load Unit: "
+					   (sw::file-to-specware-unit-id
+					    buffer-file-name))))
+  (save-buffer)
+  (let ((temp-file-name (concat (temp-directory) "-cl-current-file")))
+    (if (sw:eval-in-lisp "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
+			 unitid temp-file-name)
+	(sw:eval-in-lisp "(let (*redefinition-warnings*)
+                            (specware::compile-and-load-lisp-file %S))"
+			 temp-file-name)
+      (message "Specware Processing Failed!"))))
 
 (defun sw:dired-process-current-file ()
   (interactive)
