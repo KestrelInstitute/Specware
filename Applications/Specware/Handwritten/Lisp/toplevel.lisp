@@ -5,7 +5,7 @@
 
 (defun fix_URI (uri)
   (let ((end? (- (length uri) 3)))
-    (if (string-equal uri ".sw" :start1 end?)
+    (if (and (>= end? 0) (string-equal uri ".sw" :start1 end?))
 	(subseq uri 0 end?)
       uri)))
 
