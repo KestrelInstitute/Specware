@@ -1,6 +1,6 @@
 Compare qualifying spec
 
-  sort Comparison =
+  type Comparison =
     | Less
     | Equal
     | Greater
@@ -8,9 +8,9 @@ Compare qualifying spec
   op compare : Comparison * Comparison -> Comparison
 
   def compare(cmp1,cmp2) = if  cmp1 = cmp2     then Equal
-                      else if (cmp1 = Less or
+                      else if (cmp1 = Less ||
                                cmp2 = Greater) then Less
-                      else (*  cmp1 = Greater or
+                      else (*  cmp1 = Greater ||
                                cmp2 = Less *)       Greater
 
   op Boolean.compare : Boolean * Boolean -> Comparison

@@ -2,20 +2,20 @@ Integer qualifying spec
 
   import Nat, Compare, Functions
 
-  sort Integer.Integer  % qualifier required for internal parsing reasons
+  type Integer.Integer  % qualifier required for internal parsing reasons
 
   % true for non-negative integers:
   op natural? : Integer -> Boolean
 
-  (* The following sort definition defines the naturals to be a subset of the
+  (* The following type definition defines the naturals to be a subtype of the
   integers. However, since the naturals have been axiomatized in spec Nat,
-  this definition really constrains the integers to be a superset of the
+  this definition really constrains the integers to be a supertype of the
   naturals. In addition, it allows us to take advantage of the automatic
   insertions of relax and restrict to map between naturals and integers. Note
   that the qualifier Nat in Nat.Nat is needed because otherwise the following
-  sort definition would introduce a new unqualified sort Nat. *)
+  type definition would introduce a new unqualified type Nat. *)
 
-  sort Nat.Nat = (Integer | natural?)
+  type Nat.Nat = (Integer | natural?)
 
   % unary minus:
   op Integer_.- : Integer -> Integer
@@ -50,7 +50,7 @@ Integer qualifying spec
   theorem unary_minus_bijective is
     bijective? -
 
-  sort NonZeroInteger = {i : Integer | i ~= 0}
+  type NonZeroInteger = {i : Integer | i ~= 0}
 
   % other ops on integers:
 
@@ -70,13 +70,13 @@ Integer qualifying spec
   op pred          : Nat -> Integer
 
   axiom addition_def1 is
-    fa(i:Integer) i+0 = i & 0+i = i
+    fa(i:Integer) i+0 = i && 0+i = i
   axiom addition_def2 is
     fa(n1,n2:PosNat)   n1  +   n2  = plus(n1,n2)
-                   & (-n1) + (-n2) = -(plus(n1,n2))
-                   &   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
+                   && (-n1) + (-n2) = -(plus(n1,n2))
+                   &&   n1  + (-n2) = (if lte(n1,n2) then -(minus(n2,n1))
                                                     else minus(n1,n2))
-                   & (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
+                   && (-n1) +   n2  = (if lte(n1,n2) then minus(n2,n1)
                                                     else -(minus(n1,n2)))
 
   axiom subtraction_def is
@@ -84,8 +84,8 @@ Integer qualifying spec
 
   axiom multiplication_def is
     fa (x,y : Integer) 0 * y = 0
-                     & (x+1) * y = x * y + y
-                     & (x-1) * y = x * y - y
+                     && (x+1) * y = x * y + y
+                     && (x-1) * y = x * y - y
     % since every integer is reachable from 0 by adding or subtracting 1
     % zero or more times, this axiom completely defines multiplication
 
@@ -93,8 +93,8 @@ Integer qualifying spec
     fa (x : Integer, y : NonZeroInteger, z : Integer)
        % truncate result of exact division towards 0:
        x div y = z <=> abs z = abs x div abs y  % abs of result
-                     & (x * y >= 0 => z >= 0)  % sign of
-                     & (x * y <= 0 => z <= 0)  % result
+                     && (x * y >= 0 => z >= 0)  % sign of
+                     && (x * y <= 0 => z <= 0)  % result
 
   axiom remainder_def is
     fa (x : Integer, y : NonZeroInteger)
@@ -107,7 +107,7 @@ Integer qualifying spec
     fa(i:Integer) natural? i <=> 0 <= i
 
   axiom less_than_def is
-    fa (x,y : Integer) x < y <=> (x <= y & x ~= y)
+    fa (x,y : Integer) x < y <=> (x <= y && x ~= y)
 
   def >= (x,y) = y <= x
 

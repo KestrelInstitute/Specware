@@ -2,10 +2,10 @@ String qualifying spec
 
   import Char, List
 
-  (* A string is a finite sequence of characters (of sort Char). Thus, we
-  define sort String by isomorphism with lists of characters. *)
+  (* A string is a finite sequence of characters (of type Char). Thus, we
+  define type String by isomorphism with lists of characters. *)
 
-  sort String.String  % qualifier required for internal parsing reasons
+  type String.String  % qualifier required for internal parsing reasons
 
   % maps string to list of component characters:
   op explode : String -> List Char
@@ -24,7 +24,7 @@ String qualifying spec
   op exists        : (Char -> Boolean) -> String -> Boolean
   op all           : (Char -> Boolean) -> String -> Boolean
   op sub           : {(s,n) : String * Nat | n < length s} -> Char
-  op substring     : {(s,i,j) : String * Nat * Nat | i <= j & j <= length s} ->
+  op substring     : {(s,i,j) : String * Nat * Nat | i <= j && j <= length s} ->
                      String
   op concatList    : List String -> String
   op translate     : (Char -> String) -> String -> String
@@ -68,8 +68,10 @@ String qualifying spec
        sub(s,n) = nth(explode s,n)
 
   axiom substring_def is
-    fa (s : String, i : Nat, j : Nat) i <= j & j <= length s =>
-       substring(s,i,j) = implode(sublist(explode s,i,j))
+    fa (s : String, i : Nat, j : Nat) 
+      i <= j && j <= length s 
+      =>
+      substring(s,i,j) = implode(sublist(explode s,i,j))
 
   axiom concatList_def is
     fa (ss : List String)
@@ -85,7 +87,7 @@ String qualifying spec
     fa (s1,s2 : String) s1 lt s2 <=> compare(s1,s2) = Less
 
   axiom leq_def is
-    fa (s1,s2 : String)  s1 leq s2  <=>  s1 lt s2  or  s1 = s2
+    fa (s1,s2 : String)  s1 leq s2  <=>  s1 lt s2  || s1 = s2
 
   axiom newline_def is
     newline = "\n"
@@ -206,14 +208,14 @@ String qualifying spec
 
   def Integer.intConvertible s =
     let cs = explode s in
-      (exists isNum cs) &
-      ((all isNum cs) or (hd cs = #- & all isNum (tl cs)))
+      (exists isNum cs) &&
+      ((all isNum cs) || (hd cs = #- && all isNum (tl cs)))
 
   def Integer.show i = Integer.toString i
 
   def Nat.natConvertible s =
     let cs = explode s in
-      (exists isNum cs) & (all isNum cs)
+      (exists isNum cs) && (all isNum cs)
 
   def Nat.show n = Nat.toString n
 

@@ -2,7 +2,7 @@ Nat qualifying spec
 
   % usual Peano axiomatization:
 
-  sort Nat.Nat  % qualifier required for internal parsing reasons
+  type Nat.Nat  % qualifier required for internal parsing reasons
 
   op zero : Nat
   op succ : Nat -> Nat
@@ -15,7 +15,7 @@ Nat qualifying spec
 
   axiom induction is
     fa (p : Nat -> Boolean)
-      p zero &
+      p zero &&
       (fa (n:Nat) p n => p (succ n)) =>
       (fa (n:Nat) p n)
 
@@ -24,7 +24,7 @@ Nat qualifying spec
   op posNat? : Nat -> Boolean
   def posNat? n = (n ~= zero)
 
-  sort PosNat = {n : Nat | posNat? n}
+  type PosNat = {n : Nat | posNat? n}
 
   % other ops:
 

@@ -2,14 +2,14 @@ List qualifying spec
 
   import Option, Integer
 
-  % sorts:
+  % types:
 
-  sort List.List a = | Nil | Cons a * List.List a
+  type List.List a = | Nil | Cons a * List.List a
        % qualifier required for internal parsing reasons
 
-  axiom induction is sort fa(a)
+  axiom induction is type fa(a)
     fa (p : List a -> Boolean)
-      p Nil &  % base
+      p Nil &&  % base
       (fa (x:a, l:List a) p l => p(Cons(x,l))) =>  % step
       (fa (l:List a) p l)
 
@@ -32,7 +32,7 @@ List qualifying spec
   op butLast         : fa(a)   {l: List a | length(l) > 0} -> List a
   op member          : fa(a)   a * List a -> Boolean
   op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat |
-                                i <= j & j <= length l} -> List a
+                                i <= j && j <= length l} -> List a
   op map             : fa(a,b) (a -> b) -> List a -> List b
   op mapPartial      : fa(a,b) (a -> Option b) -> List a -> List b
   op foldl           : fa(a,b) (a * b -> b) -> b -> List a -> b

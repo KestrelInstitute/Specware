@@ -4,10 +4,10 @@ Char qualifying spec
 
   (* We consider the 8-bit characters occupying decimal positions 0 to 255 in
   the ISO-8859-1 code table (the first 128 characters of that code table are
-  the ASCII characters). Thus, we define sort Char by isomorphism with natural
+  the ASCII characters). Thus, we define type Char by isomorphism with natural
   numbers less than 256. *)
 
-  sort Char.Char  % qualifier required for internal parsing reasons
+  type Char.Char  % qualifier required for internal parsing reasons
 
   % maps character to its position in the code table:
   op ord : Char -> {n : Nat | n < 256}
@@ -32,19 +32,19 @@ Char qualifying spec
     chr = inverse ord
 
   axiom isUpperCase_def is
-    fa (c : Char) isUpperCase c <=> (ord #A <= ord c & ord c <= ord #Z)
+    fa (c : Char) isUpperCase c <=> (ord #A <= ord c && ord c <= ord #Z)
 
   axiom isLowerCase_def is
-    fa (c : Char) isLowerCase c <=> (ord #a <= ord c & ord c <= ord #z)
+    fa (c : Char) isLowerCase c <=> (ord #a <= ord c && ord c <= ord #z)
 
   axiom isAlpha_def is
-    fa (c : Char) isAlpha c <=> isUpperCase c or isLowerCase c
+    fa (c : Char) isAlpha c <=> isUpperCase c || isLowerCase c
 
   axiom isNum_def is
-    fa (c : Char) isNum c <=> (ord #0 <= ord c & ord c <= ord #9)
+    fa (c : Char) isNum c <=> (ord #0 <= ord c && ord c <= ord #9)
 
   axiom isAlphaNum_def is
-    fa (c : Char) isAlphaNum c <=> isAlpha c or isNum c
+    fa (c : Char) isAlphaNum c <=> isAlpha c || isNum c
 
   axiom isAscii_def is
     fa (c : Char) isAscii c <=> ord c < 128

@@ -2,7 +2,7 @@ Option qualifying spec
 
   import Compare
 
-  sort Option a = | None | Some a
+  type Option a = | None | Some a
 
   op some      : fa(a) a -> Option a
   op none      : fa(a) Option a
