@@ -39,7 +39,8 @@ Cat qualifying spec {
       cod : A -> O,
       % composable? : A -> A -> Boolean,
       compose : A -> A -> A,
-      colimit : Diagram (O,A) -> InitialCocone (O,A),
+      % For now, use option to indicate errors. A monad would be nicer.
+      colimit : Diagram (O,A) -> Option (InitialCocone (O,A)) * Option String,
       initialObject : O,
       ppObj : O -> Pretty,
       ppArr : A -> Pretty

@@ -29,7 +29,8 @@ spec {
   % The argument is the target category for the diagram
   op emptyInitialCocone : fa (O,A) Cat (O,A) -> InitialCocone (O,A)
 
-  op colimit : fa(O,A) Cat (O,A) -> Diagram (O,A) -> InitialCocone (O,A)
+  % For now, use option to indicate errors. A monad would be nicer.
+  op colimit : fa(O,A) Cat (O,A) -> Diagram (O,A) -> Option (InitialCocone (O,A)) * Option String
   op initialObject : fa (O,A) Cat (O,A) -> O
 }
 \end{spec}

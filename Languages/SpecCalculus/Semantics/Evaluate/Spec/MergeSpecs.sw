@@ -36,7 +36,7 @@ SpecCalc qualifying spec
 
  % ------------------------------------------------------------------------
 
-  op mergeSortInfo : [a] ASpec a -> ASortInfo a -> Option (ASortInfo a) -> Position -> SpecCalc.Env (ASortInfo a)
+  op mergeSortInfo : Spec -> SortInfo -> Option SortInfo -> Position -> SpecCalc.Env SortInfo
  def mergeSortInfo spc new_info opt_old_info pos =
    case opt_old_info of
      | None -> return new_info
@@ -86,18 +86,18 @@ SpecCalc qualifying spec
              %%%                               combined_defs))
              %%% else
 	     let combined_dfn = maybeAndSort (combined_decls ++ combined_defs, sortAnn new_info.dfn) in
-	     return {names = names, dfn = combined_dfn}	       
+	     return {names = names, dfn = combined_dfn}
 
-  op mergeOpInfo : [a] ASpec a -> AOpInfo a -> Option (AOpInfo a) -> Position -> SpecCalc.Env (AOpInfo a)
+  op mergeOpInfo : Spec -> OpInfo -> Option OpInfo -> Position -> SpecCalc.Env OpInfo 
  def mergeOpInfo spc new_info opt_old_info pos =
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
        let names = listUnion (old_info.names, new_info.names) in % this order of args is more efficient
-       let names = removeDuplicates names in % redundant?
+       let combined_names = removeDuplicates names in % redundant?
 
        if new_info.fixity ~= old_info.fixity then
-         raise (SpecError (pos, "Merged versions of Op " ^ (printAliases names) ^ " have different fixity"))
+         raise (SpecError (pos, "Merged versions of Op " ^ (printAliases combined_names) ^ " have different fixity"))
        else
 	 let (old_tvs, old_srt, _) = unpackFirstOpDef old_info in
 	 let (new_tvs, new_srt, _) = unpackFirstOpDef new_info in
@@ -118,7 +118,7 @@ SpecCalc qualifying spec
 		     if old_tvs ~= new_tvs || ~(equivSort? spc (old_srt, new_srt)) then
 		       let old_srt = maybePiSort (old_tvs, old_srt) in
 		       let new_srt = maybePiSort (new_tvs, new_srt) in
-		       toScreen ("Merged versions of op " ^ (printAliases names) ^ " have possibly different sorts:"
+		       toScreen ("Merged versions of op " ^ (printAliases combined_names) ^ " have possibly different sorts:"
 				 ^ "\n " ^ (printSort old_srt)
 				 ^ "\n " ^ (printSort new_srt)
 				 ^ (if specwareWizard? then
@@ -137,7 +137,7 @@ SpecCalc qualifying spec
 	     let old_srt = maybePiSort (old_tvs, old_srt) in
 	     let new_srt = maybePiSort (new_tvs, new_srt) in
              raise (SpecError (pos,
-			       "Merged versions of Op "^(printAliases names)^" have different sorts:"
+			       "Merged versions of Op "^(printAliases combined_names)^" have different sorts:"
 			       ^ "\n " ^ (printSort old_srt)
 			       ^ "\n " ^ (printSort new_srt)
 			       ^ (if specwareWizard? then
@@ -148,8 +148,8 @@ SpecCalc qualifying spec
 				    "\n")))
            else
             % case (definedTerm? old_dfn, definedTerm? new_dfn) of
-            %   | (false, _    ) -> return (new_info << {names = names})
-            %   | (_,     false) -> return (old_info << {names = names})
+            %   | (false, _    ) -> return (new_info << {names = combined_names})
+            %   | (_,     false) -> return (old_info << {names = combined_names})
             %   | _            -> 
 	         let (old_decls, old_defs) = opInfoDeclsAndDefs old_info in
 	         let (new_decls, new_defs) = opInfoDeclsAndDefs new_info in
@@ -176,10 +176,10 @@ SpecCalc qualifying spec
                   %%% if length combined_defs > 1 then
                   %%%  raise (SpecError (pos, 
                   %%%                    foldl (fn (scheme, msg) -> msg ^ "\n" ^ (printTermScheme scheme)) 
-                  %%%                          ("Merged versions of op "^(printAliases names)^" have different definitions:\n")
+                  %%%                          ("Merged versions of op "^(printAliases combined_names)^" have different definitions:\n")
                   %%%                          combined_defs))
                   %%% else
 		  let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_info.dfn) in
-		  return (new_info << {names = names, 
-				       dfn = combined_dfn})
+		  return (new_info << {names = combined_names, 
+				       dfn   = combined_dfn})
 endspec

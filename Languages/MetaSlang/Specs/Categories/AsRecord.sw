@@ -103,7 +103,7 @@ SpecCalc qualifying spec {
   sort SpecDiagram        = Cat.Diagram       (Spec, Morphism)
   sort SpecCocone         = Cat.Cocone        (Spec, Morphism) 
   sort SpecInitialCocone  = Cat.InitialCocone (Spec, Morphism) 
-  op specColimit : SpecDiagram -> SpecInitialCocone
+  op specColimit : SpecDiagram -> Option SpecInitialCocone * Option String
 
   op specCat : () -> Cat.Cat (Spec, Morphism)
   def specCat () = {

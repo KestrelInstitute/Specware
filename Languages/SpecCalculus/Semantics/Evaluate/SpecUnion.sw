@@ -1,6 +1,7 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUnion.sl, v1.3
 
-SpecUnion qualifying spec {
+SpecUnion qualifying spec 
+{
  import ../Environment  % foldM    
  import /Languages/MetaSlang/Specs/StandardSpec
  import /Library/Legacy/DataStructures/ListUtilities
@@ -8,9 +9,9 @@ SpecUnion qualifying spec {
  import Spec/CompressSpec
 
  op specUnion       : List Spec -> Env Spec
- op sortsUnion      : List Spec -> Env SortMap
- op opsUnion        : List Spec -> Env OpMap
- op propertiesUnion : List Spec -> Env Properties
+ op sortsUnion      : Spec -> List Spec -> Env SortMap
+ op opsUnion        : Spec -> List Spec -> Env OpMap
+ op propertiesUnion : Spec -> List Spec -> Env Properties
 
  %% specUnion is called by specColimit to create apex spec, 
  %% and also by applySpecMorphismSubstitution to stich together 
@@ -20,21 +21,26 @@ SpecUnion qualifying spec {
   let merged_imports     = importsUnion    specs in
   %% let merged_local_ops   = localOpsUnion   specs in
   %% let merged_local_sorts = localSortsUnion specs in
+  let merged_local_sorts = foldl (fn (spc, names) -> names ++ spc.importInfo.localSorts)      [] specs in
+  let merged_local_ops   = foldl (fn (spc, names) -> names ++ spc.importInfo.localOps)        [] specs in
+  let merged_local_props = foldl (fn (spc, names) -> names ++ spc.importInfo.localProperties) [] specs in
+  let merged_import_info = {imports         = merged_imports,
+			    localOps        = merged_local_ops,
+			    localSorts      = merged_local_sorts,
+			    localProperties = merged_local_props} 
+  in
+  let spec_with_merged_imports = (hd specs) << {importInfo = merged_import_info} in
   {
-   merged_sorts  <- sortsUnion      specs;
-   merged_ops    <- opsUnion        specs;
-   merged_props  <- propertiesUnion specs;
-   merged_local_sorts <- return (foldl (fn (spc, names) -> names ++ spc.importInfo.localSorts)      [] specs);
-   merged_local_ops   <- return (foldl (fn (spc, names) -> names ++ spc.importInfo.localOps)        [] specs);
-   merged_local_props <- return (foldl (fn (spc, names) -> names ++ spc.importInfo.localProperties) [] specs);
-   merged_spec   <- return {importInfo = {imports         = merged_imports,
-					  localOps        = merged_local_ops,
-					  localSorts      = merged_local_sorts,
-					  localProperties = merged_local_props},
-			    sorts      = merged_sorts,
-			    ops        = merged_ops,
-			    properties = merged_props};
-   return (compressDefs merged_spec)
+   merged_sorts           <- sortsUnion spec_with_merged_imports specs;
+   spec_with_merged_sorts <- return (spec_with_merged_imports << {sorts      = merged_sorts});
+
+   merged_ops             <- opsUnion spec_with_merged_sorts specs;
+   spec_with_merged_ops   <- return (spec_with_merged_sorts   << {ops        = merged_ops});
+
+   merged_props           <- propertiesUnion spec_with_merged_ops specs;
+   final_merged_spec      <- return (spec_with_merged_ops     << {properties = merged_props});
+
+   return (compressDefs final_merged_spec)
   }
 
  %% TODO: The terms for the imports might not remain in a meaningful URI context -- relativize to new context
@@ -53,21 +59,23 @@ SpecUnion qualifying spec {
 %%%        []
 %%%        specs
 
- def sortsUnion specs =
-  foldM unionSortMaps 
+ def sortsUnion context_spec specs =
+  foldM (fn combined_sorts -> fn next_sorts -> 
+	 unionSortMaps context_spec combined_sorts next_sorts)
         emptySortMap 
         (List.foldl (fn (spc, sorts_list) -> cons (spc.sorts, sorts_list))
 	            []
 		    specs)
 
- def opsUnion specs = 
-  foldM unionOpMaps 
+ def opsUnion context_spec specs = 
+  foldM (fn combined_ops -> fn next_ops ->
+	 unionOpMaps  context_spec combined_ops next_ops)
         emptyOpMap
         (List.foldl (fn (spc, ops_list) -> cons (spc.ops, ops_list))
 	            []
 		    specs)
 
- def unionSortMaps old_sort_map new_sort_map =
+ def unionSortMaps context_spec old_sort_map new_sort_map =
    %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_sort_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
@@ -81,7 +89,7 @@ SpecUnion qualifying spec {
 	  %% a more informative spec for resolving equivalent sorts,
 	  %% but its not obvious what spec(s) to pass in here.
 	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeSortInfo initialSpecInCat new_info optional_old_info noPos;
+	  {merged_info <- mergeSortInfo context_spec new_info optional_old_info noPos;
 	   all_names <- return (merged_info.names);    % new and old names
 	   foldM (fn merged_sort_map -> fn  Qualified(q, id) ->
 		  return (insertAQualifierMap (merged_sort_map, q, id, merged_info)))
@@ -92,7 +100,7 @@ SpecUnion qualifying spec {
    in
     foldOverQualifierMap augmentSortMap old_sort_map new_sort_map 
 
- def unionOpMaps old_op_map new_op_map =
+ def unionOpMaps context_spec old_op_map new_op_map =
    %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_op_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
@@ -106,7 +114,7 @@ SpecUnion qualifying spec {
 	  %% a more informative spec for resolving equivalent ops,
 	  %% but its not obvious what spec(s) to pass in here.
 	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeOpInfo initialSpecInCat new_info optional_old_info noPos;
+	  {merged_info <- mergeOpInfo context_spec new_info optional_old_info noPos;
 	   all_names <- return (merged_info.names);    % new and old
 	   foldM (fn merged_op_map -> fn Qualified(q, id) ->
 		  return (insertAQualifierMap (merged_op_map, q, id, merged_info)))
@@ -119,7 +127,7 @@ SpecUnion qualifying spec {
 
  %% TODO:  These might refer incorrectly into old specs
  %% TODO:  listUnion assumes = test on elements, we might want something smarter such as equivTerm?
- def propertiesUnion specs =
+ def propertiesUnion context_spec specs =
   return (foldl (fn (spc, props) -> listUnion (props, spc.properties))
 	        []
 	        specs)

@@ -225,12 +225,23 @@ spec
   in
 
   %% -------------------------------------------------------------------------------------------------------------
+  %% (4a) Test for ambiguity in result
+  %% -------------------------------------------------------------------------------------------------------------
+
+  let apex_spec = compressDefs apex_spec in
+  let (opt_apex_spec, opt_msg) = auxComplainIfAmbiguous apex_spec in
+
+  case (opt_apex_spec, opt_msg) of
+    | (_,       Some msg) -> (None, opt_msg)
+    | (Some apex_spec, _) ->
+
+  %% -------------------------------------------------------------------------------------------------------------
   %% (5) Use the rules plus the new apex spec to build the cocone morphisms
   %% -------------------------------------------------------------------------------------------------------------
 
-  let vertex_to_sm_map = 
-      foldOverVertices (fn cc_map -> fn vertex -> 
-			let sm : Morphism = 
+      let vertex_to_sm_map = 
+          foldOverVertices (fn cc_map -> fn vertex -> 
+			    let sm : Morphism = 
 			    (let dom_spec : Spec = vertexLabel dg vertex in
 			     makeMorphism (dom_spec,
 					   apex_spec,
@@ -240,16 +251,18 @@ spec
 					   case evalPartial vertex_to_sm_op_rules vertex of
 					     | Some rules -> convertOpRules rules
 					     | _ -> []))
-			in
-			  update cc_map vertex sm)
-                       emptyMap
-                       dg
-  in
+			    in
+			      update cc_map vertex sm)
+	                   emptyMap
+			   dg
+      in
 
   %% -------------------------------------------------------------------------------------------------------------
   %% (6) Put it all together into the final structure...
+  %% -------------------------------------------------------------------------------------------------------------
 
-  makeSpecInitialCocone dg apex_spec vertex_to_sm_map
+      (Some (makeSpecInitialCocone dg apex_spec vertex_to_sm_map),
+       None)
 
  %% ====================================================================================================
 
