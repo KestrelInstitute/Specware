@@ -531,6 +531,10 @@ def getSortNameSuffix(instlist) =
 op addOpInfo2SortOpInfos: QualifiedId * OpInfo * SortOpInfos -> SortOpInfos
 def addOpInfo2SortOpInfos(nqid,opinfo,minfo) =
   let ops = minfo.ops in
+%  let _ = case opinfo of
+%          | (_,_,_,[]) -> writeLine("no definition term!")
+%          | _ -> ()
+%  in
   case find (fn(names,_,_,_) -> member(nqid,names)) ops of
     | Some _ -> minfo
     | None -> {ops = cons(opinfo,ops), sorts = minfo.sorts}
@@ -608,6 +612,9 @@ def getMissingFromBase(bspc,spc,ignore) = addMissingFromBaseTo(bspc,spc,ignore,e
 
 op addMissingFromBaseTo: Spec * Spec * (QualifiedId -> Boolean) * Spec -> Spec
 def addMissingFromBaseTo(bspc,spc,ignore,initSpec) =
+  %let _ = writeLine("---------------------- basespc: ------------------") in
+  %let _ = writeLine(printSpec bspc) in
+  %let _ = writeLine("---------------------- end basespc ---------------") in
   %let _ = writeLine("addMissingFromBaseTo, spc="^(printSpec spc)) in
   let minfo =
     foldriAQualifierMap
@@ -712,6 +719,11 @@ def addMissingFromTerm(bspc,spc,ignore,term,minfo) =
 				     %^"\n"^(printSpec bspc)
 				     %^"\n"^(printSpec spc)
 			             %)
+			   %| Some (opinfo as ((Qualified(_,id))::_,_,_,[])) ->
+			   %  let _ = writeLine("addMissing: no definition term found for "^
+			   %			 printQualifiedId(qid)^".")
+			   %  in
+			   %  minfo
 			   | Some opinfo ->
 			     %let _ = writeLine("adding op "^printQualifiedId(qid)^" from base spec.") in
 			     addOpInfo2SortOpInfos(qid,opinfo,minfo)
