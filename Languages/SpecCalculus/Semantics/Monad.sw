@@ -35,7 +35,9 @@ Now we define the type for an state / exception monad.
 
 \begin{spec}
   sort SpecCalc.Env a = State -> (Result a) * State
-  sort State = ()
+  sort State = {exceptions : List Exception} % for deferred processing
+    op initialState : State
+   def initialState = {exceptions = []}
 \end{spec}
 
 This runs a monadic program and lifts the result out of the monad.
@@ -43,8 +45,14 @@ This runs a monadic program and lifts the result out of the monad.
 \begin{spec}
   op run : fa (a) Env a -> a
   def run f = 
-    case f () of
-      | (Ok x, _) -> x
+    case f initialState of
+      | (Ok x, state) ->
+        (case state.exceptions of
+	   | [] -> x
+	   | exceptions ->
+	     fail (foldl (fn (exception, s) -> s ^ "\n" ^ (printException exception))
+		         "run: uncaught exceptions:\n  "
+			 (rev exceptions)))
       | (Exception exception, _) -> 
         fail ("run: uncaught exception:\n  " ^ (printException exception))
 \end{spec}
@@ -91,6 +99,33 @@ Raise an exception. Should this be called throw?
         ()
     in
       (Exception except, state)
+
+
+  %% --------------------------------------------------------------------------------
+  %%  Error reporting -- normal control flow, up to a point, but record message for
+  %%  delayed processing
+
+   op raise_later : Exception -> Env ()
+  def raise_later exception =
+    fn state ->
+      let _ =
+          if specwareWizard? then
+	    fail (anyToString exception)
+	  else
+	    ()
+      in
+       (Ok (),
+	{exceptions = cons (exception, state.exceptions)})
+
+   op raise_any_pending_exceptions : () -> Env ()
+  def raise_any_pending_exceptions exception =
+    fn state ->
+      case state.exceptions of
+	| [] ->  (Ok (), state)
+	| exceptions ->
+	  (Exception (CollectedExceptions exceptions),
+	   initialState)
+
 \end{spec}
 
 This is meant to be for unrecoverable errors. Perhaps it should just call

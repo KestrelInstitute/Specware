@@ -34,81 +34,61 @@ SpecCalc qualifying spec
   import /Languages/SpecCalculus/AbstractSyntax/Printer
 
   sort Monad.Exception =
-    | Fail         String 
-    | FileNotFound  Position * RelativeUID
-    | UIDNotFound  Position * RelativeUID
-    | TypeCheck    Position * String
-    | TypeCheckErrors List(String * Position)
+    | Fail                String 
+    | FileNotFound        Position * RelativeUID
+    | UIDNotFound         Position * RelativeUID
+    | TypeCheck           Position * String
+    | TypeCheckErrors     List(String * Position)
     %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
-    | OldTypeCheck String              
-    | Unsupported  Position * String
-    | SyntaxError  String
-    | ParserError  String   % Here the string is the filename.
-    | DiagError    Position * String
-    | SpecError    Position * String
-    | MorphError   Position * String
-    | CircularDefinition UnitId
-    | Proof       Position * String
+    | OldTypeCheck        String              
+    | Unsupported         Position * String
+    | SyntaxError         String
+    | ParserError         String   % Here the string is the filename.
+    | DiagError           Position * String
+    | SpecError           Position * String
+    | MorphError          Position * String
+    | TranslationError    String * Position
+    | CircularDefinition  UnitId
+    | Proof               Position * String
     | UndefinedGlobalVar  String
+    | CollectedExceptions List Monad.Exception
 
-  op printException : Exception -> String
-  def printException except =
+  op uidToString : UnitId -> String
+  op relativeUID_ToString : RelativeUID -> String
+
+  op decodeException : Exception -> (Option (Position * Boolean)) * String 
+  def decodeException except =
     case except of
+      | Fail str                       -> (None,              "Fail: " ^ str)
+      | FileNotFound        (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
+      | UIDNotFound         (pos, uid) -> (Some (pos, true),  "Unknown unit " ^ (showRelativeUID uid))
+      | TypeCheck           (pos, msg) -> (Some (pos, false), "Type error: " ^ msg)
+      | TypeCheckErrors     pairs      -> (None,              printTypeErrors pairs)
+      | Unsupported         (pos, msg) -> (Some (pos, false), "Unsupported operation: " ^ msg)
+      | SyntaxError         msg        -> (None,              "Syntax error: " ^ msg)
+      | ParserError         fileName   -> (None,              "Syntax error in file " ^ fileName)
+      | DiagError           (pos, msg) -> (Some (pos, false), "Diagram error: " ^ msg)
+      | SpecError           (pos, msg) -> (Some (pos, false), "Error in specification: " ^ msg)
+      | MorphError          (pos, msg) -> (Some (pos, false), "Error in morphism: " ^ msg)
+      | TranslationError    (msg, pos) -> (Some (pos, false), "Error in translation: " ^ msg)
+      | CircularDefinition  uid        -> (None,              "Circular definition: " ^ showUID uid)
+      | Proof               (pos, msg) -> (Some (pos, false), "Proof error: " ^ msg)
+      | UndefinedGlobalVar  name       -> (None,              "Undefined global var: " ^ name)
+      | CollectedExceptions exceptions -> (None,              printExceptions exceptions)
+      | _                              -> (None,              "Unknown exception: " ^ (anyToString except))
 
-      | Fail str -> 
-		"Fail: " ^ str
-
-      | SyntaxError msg ->  
-                "Syntax error: " ^ msg
-
-      | ParserError fileName -> 
-		"Syntax error in file " ^ fileName
-
-      | Unsupported (position,str) ->
-		"Unsupported operation: " ^ str
-	      ^ "\n  found in " ^ (printAll position)
-
-      | UIDNotFound (position, unitId) ->
-		"Unknown unit " ^ (showRelativeUID unitId) 
-              ^ "\n  referenced from " ^ (printAll position)
-
-      | FileNotFound (position, unitId) ->
-		"Unknown unit " ^ (showRelativeUID unitId) 
-              ^ "\n  referenced from " ^ (printAll position)
-
-      | SpecError (position,msg) ->
-		"Error in specification: " ^ msg 
-              ^ "\n  found in " ^ (printAll position)
-
-      | MorphError (position,msg) ->
-		"Error in morphism: " ^ msg 
-              ^ "\n  found in " ^ (printAll position)
-
-      | DiagError (position,msg) ->
-		"Diagram error: " ^ msg 
-              ^ "\n  found in " ^ (printAll position)
-
-      | TypeCheck (position, msg) ->
-		"Type error: " ^ msg 
-              ^ "\n  found in " ^ (printAll position)
-
-      | Proof (position, msg) ->
-		"Proof error: " ^ msg 
-              ^ "\n  found in " ^ (printAll position)
-
-      | CircularDefinition unitId ->
-		"Circular definition: " ^ showUID unitId
-
-      | TypeCheckErrors errs -> printTypeErrors errs
-        
-      | UndefinedGlobalVar name -> "Undefined global var: " ^ name
-        
-      | _ -> 
-		"Unknown exception: " 
-              ^ (anyToString except)
+   op printException : Exception -> String
+  def printException except =
+    case decodeException except of
+      | (None,             msg) -> msg
+      | (Some (pos, ref?), msg) -> 
+	msg ^ (if ref? then "\n referenced from " else "\n found in ") ^ (printAll pos)
 
   op  numberOfTypeErrorsToPrint: Nat
   def numberOfTypeErrorsToPrint = 20
+
+  op  numberOfExceptionsToPrint: Nat
+  def numberOfExceptionsToPrint = 20
 
   op printTypeErrors : List(String * Position) -> String
   def printTypeErrors errs =
@@ -119,16 +99,54 @@ SpecCalc qualifying spec
 			    | _ -> "")
           in (result
 	      ^ (if filename = lastfilename then
-	         print pos else
-		 "Errors in " ^ (printAll pos))
-	      ^ " : " ^ msg ^ "\n",
+		   "  " ^ print pos 
+		 else
+		   "Errors in " ^ (printAll pos))
+	      ^ "\t: " ^ msg ^ "\n",
 	      filename)
     in
     (foldl printErr ("","") (firstN(errs,numberOfTypeErrorsToPrint))).1
-     ++ (if (length errs) <= numberOfTypeErrorsToPrint
-	  then ""
-	 else "...  ("^Nat.toString(length errs - numberOfTypeErrorsToPrint)
-             ^" additional type errors)")
+     ++ (if (length errs) <= numberOfTypeErrorsToPrint then
+	   ""
+	 else 
+	   "...  (" ^ Nat.toString(length errs - numberOfTypeErrorsToPrint) ^ " additional type errors)")
+
+  op printExceptions : List Monad.Exception -> String
+  def printExceptions exceptions =
+    case exceptions of 
+      | [] -> ""
+      | _ ->
+        let def print_exception (exception, (result, opt_lastfilename)) =
+	     (case decodeException exception of
+		| (None, msg) ->
+		  (printException exception,
+		   None)
+                | (Some (pos, ref?), msg) ->
+		  let filename = (case pos of
+				    | File (filename, left, right) -> filename
+				    | _ -> "")
+		  in 
+		  let same_file? = case opt_lastfilename of
+				     | None -> false
+				     | Some lastfilename -> filename = lastfilename
+		  in
+		  let msg = (result ^ 
+			     (if same_file? then
+				"  " ^ print pos 
+			      else
+				"Errors in " ^ (printAll pos))
+				^ "\t: " ^ msg ^ "\n")
+		  in
+		    (msg, Some filename))
+      in
+	(foldl print_exception ("",None) (firstN (rev exceptions, numberOfExceptionsToPrint))).1
+	++ 
+	(if (length exceptions) <= numberOfExceptionsToPrint then
+	   ""
+	 else 
+	   "...  (" ^ Nat.toString(length exceptions - numberOfExceptionsToPrint) ^ " additional exceptions)")
+
+
 
   op  firstN: fa(a) List a * Nat -> List a
   def firstN(l,n) =
