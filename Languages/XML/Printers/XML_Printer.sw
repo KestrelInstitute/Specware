@@ -102,75 +102,43 @@ XML qualifying spec
   %%  [78]  extParsedEnt        ::=  TextDecl? content
   %%
   %% ====================================================================================================
-(*
-  sort ExtSubSet = {text  : TextDecl,
-		    other : ExtSubsetDecls}
+
+  def print_ExtSubSet {text, other} =
+    (print_TextDecl text) ^ (print_ExtSubsetDecls other)
   
-  %% -------------------------------------------------------------------------------------------------
+  def print_TextDecl tdecl = print_GenericTag tdecl
 
-  sort TextDecl = (GenericTag | text_decl?) % similar to XMLDecl
+  def print_ExtSubsetDecls decls = 
+    foldl (fn (decl, result) -> result ^ print_ExtSubsetDecl decl) [] decls
 
-
-  %%  [KC: proper text decl]
-  def text_decl? tag = 
-    (tag.prefix = ustring "?") & 
-    (tag.name   = ustring "xml") & 
-    (text_decl_attributes? tag.attributes) &
-    (tag.postfix = ustring "?")
-
-  def text_decl_attributes? attrs =
-    case attrs of
-      | [] -> false
-      | xx :: tail -> 
-        if version_attribute? xx then
-	  (case tail of
-	     | yy :: [] -> encoding_attribute? yy 
-	     | _ -> false)
-	else 
-	  (encoding_attribute? xx) & (null tail)
-
-  %% -------------------------------------------------------------------------------------------------
-
-  sort ExtSubsetDecls = List ExtSubsetDecl
-
-  sort ExtSubsetDecl = | Markup  (MarkupDecl | no_pe_reference?)
-                       | Include IncludeSect
-                       | Ignore  IgnoreSect
-                       | DeclSep (DeclSep    | no_pe_reference?)
+  def print_ExtSubsetDecl decl = 
+    case decl of
+     | Markup  markup       -> print_MarkupDecl  markup
+     | Include include_sect -> print_IncludeSect include_sect
+     | Ignore  ignore_sect  -> print_IgnoreSect  ignore_sect
+     | DeclSep dsep         -> print_DeclSep     dsep
 		    
-  op no_pe_reference? : fa (a) a -> Boolean
+  def print_IncludeSect {w1, w2, decl} =
+    (ustring "<![") ^ w1 ^ (ustring "INCLUDE") ^ w2 ^ (ustring "[") ^ (print_ExtSubsetDecl decl) ^ (ustring "]]>")  
 
-  %%  This predicate is a bit tedious, but implements the following constraint documented at
-  %%
-  %%  [69]  PEReference  ::=  '%' Name ';' 
-  %%
-  %%  [WFC: In DTD] -- Parameter-entity references may only appear in the DTD.  
-  %%
-  %%  I.e., a PEReference may not appear within a ExtSubsetDecl, so we'll need to recursively search.
-  %%  Tedious but straightforward.
 
-  %% -------------------------------------------------------------------------------------------------
+  def print_IgnoreSect {w1, w2, contents} =
+    (ustring "<![") ^ w1 ^ (ustring "IGNORE")  ^ w2 ^ (ustring "[") ^ (print_IgnoreSectContents contents) ^ (ustring "]]>")  
 
-  sort IncludeSect = {decl : ExtSubsetDecl}
+  def print_IgnoreSectContents {prefix, contents} =
+    (print_Ignore prefix) ^ 
+    (foldl (fn ((contents, ignore), result) -> 
+	    result ^ 
+	    (ustring "<![") ^ (print_IgnoreSectContents contents) ^ (ustring "]]>") ^ 
+	    (print_Ignore ignore))
+           []
+	   contents)
 
-  %% -------------------------------------------------------------------------------------------------
+  def print_Ignore ustr = ustr
 
-  sort IgnoreSect = {prefix : Ignore,
-		     body   : List (IgnoreSect * Ignore)}
+  def print_extParsedEnt {text, content} =
+    (print_TextDecl text) ^ (print_Content content)
 
-  sort Ignore = (UString | ignorable?)
-
-  %% TODO
-  def ignorable? ustr =
-    (~ (sublist? (ustring "<![", ustr)))
-    &
-    (~ (sublist? (ustring "]]>", ustr)))
-
-  %% -------------------------------------------------------------------------------------------------
-
-  sort extParsedEnt = {text    : TextDecl,
-		       content : Content}
-*)
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          XML_Decl                                                                            %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -303,7 +271,7 @@ XML qualifying spec
   def print_DocTypeDecl ({w1, name, external_id, w3, markups} : DocTypeDecl) : UString =
     w1 ^ name ^ 
     (case external_id of
-       | Some (w1, id) -> w1 ^ (ustring "<nyi: External id>")
+       | Some (w1, id) -> w1 ^ print_ExternalID id
        | _ -> [])
     ^ w3 ^
     (case markups of
@@ -319,16 +287,16 @@ XML qualifying spec
 
   def print_DeclSep dsep = 
     case dsep of
-      | PEReference peref -> [] % print_PEReference peref
+      | PEReference peref -> print_PEReference peref
       | WhiteSpace  white -> print_WhiteSpace  white
 
   def print_MarkupDecl mdecl = 
     case mdecl of
       | Element      decl -> print_ElementDecl  decl
-      | Attributes   decl -> [] % print_AttlistDecl  decl
-      | Entity       decl -> [] % print_EntityDecl   decl
-      | Notation     decl -> [] % print_NotationDecl decl
-      | Instructions decl -> [] % print_PI           decl
+      | Attributes   decl -> print_AttlistDecl  decl
+      | Entity       decl -> print_EntityDecl   decl
+      | Notation     decl -> print_NotationDecl decl
+      | Instructions decl -> print_PI           decl
       | Comment      decl -> print_Comment      decl
 
 
@@ -337,121 +305,159 @@ XML qualifying spec
 
   %% ----------------------------------------------------------------------------------------------------
 
-  def print_ContentSpec context = ustring "<NYI: contexts spec>"
+  def print_ContentSpec x = 
+    case x of
+      | Empty              -> (ustring "EMPTY")
+      | Any                -> (ustring "ANY")
+      | Mixed    mixed     -> print_Mixed mixed
+      | Children children  -> print_Children children
 
-(*
-  sort ContentSpec = | Empty
-                     | Any
-                     | Mixed    Mixed
-                     | Children Children
+  def print_Mixed x = 
+    case x of
+      | Names   {w1, names, w2} -> 
 
-  sort Mixed = | Names   Mixed_With_Names
-               | NoNames Mixed_Without_Names
+        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ 
+	(foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] names) ^
+	w2 ^ (ustring ")*")
 
-  sort Mixed_With_Names = {w1    : WhiteSpace,
-			   names : List (WhiteSpace * WhiteSpace * Name),
-			   w2    : WhiteSpace}
-		
-  sort Mixed_Without_Names = {w1 : WhiteSpace,
-			      w2 : WhiteSpace}
-		
-  sort Children = {body : | Choice Choice | Seq Seq,
-		   rule : | Question | Star | Plus}
+      | NoNames {w1, w2} ->
+        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ w2 ^ (ustring ")")
+
+  def print_Children {body, rule} = 
+   (case body of
+      | Choice choice -> print_Choice choice
+      | Seq    seq    -> print_Seq   seq)
+   ^
+   (ustring (case rule of      
+	       | Question -> "?"
+	       | Star     -> "*"
+	       | Plus     -> "+"))
    
-  sort Choice = {w1     : WhiteSpace,
-		 first  : CP,
-		 others : NE_List (WhiteSpace * WhiteSpace * CP),
-                 w2     : WhiteSpace}                 
+  def print_Choice {w1, first, others, w2} =
+    (ustring "(") ^ w1 ^ (print_CP first) ^ 
+    (foldl (fn ((w3, w4, cp), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ (print_CP cp)) [] others) ^
+    w2 ^ (ustring ")")
 
-  sort CP = {body : | Name Name | Choice Choice | Seq Seq,
-	     rule : | Question | Star | Plus}
+
+  def print_CP {body, rule} =
+   (case body of	  
+     | Name   name   -> print_Name   name
+     | Choice choice -> print_Choice choice
+     | Seq    seq    -> print_Seq    seq)
+   ^
+   (ustring (case rule of      
+	       | Question -> "?"
+	       | Star     -> "*"
+	       | Plus     -> "+"))
+
    
-  sort Seq = {w1     : WhiteSpace,
-	      first  : CP,
-	      others : List (WhiteSpace * WhiteSpace * CP),
-	      w2     : WhiteSpace}
+  def print_Seq {w1, first, others, w2} =
+   (ustring "(") ^ w1 ^ (print_CP first) ^ 	  
+   (foldl (fn ((w3, w4, cp), result) -> result ^ w3 ^ (ustring ",") ^ w4 ^ (print_CP cp)) [] others) ^
+   w2 ^ (ustring ")")
 
   %% ----------------------------------------------------------------------------------------------------
 
-  sort AttlistDecl = {w1   : WhiteSpace,
-		      name : Name,
-		      defs : List AttDef,
-		      w2   : WhiteSpace}
+  def print_AttlistDecl {w1, name, defs, w2} =
+    (ustring "<!ATTLIST") ^ w1 ^ name ^ 
+    (foldl (fn (att_def, result) -> result ^ (print_AttDef att_def)) [] defs) ^
+    w2 ^ (ustring ">")
 
-  sort AttDef = {w1      : WhiteSpace,
-		 name    : Name,
-		 w2      : WhiteSpace,
-		 type    : AttType,
-		 w3      : WhiteSpace,
-		 default : DefaultDecl}
+  def print_AttDef {w1, name, w2, type, w3, default} =
+    w1 ^ name ^ w2 ^ (print_AttType type) ^ w3 ^ (print_DefaultDecl default)	  
 
+  def print_AttType x = 
+    case x of
+      | String           -> (ustring "CDATA")
+      | Tokenized  ttype -> print_TokenizedType  ttype
+      | Enumerated etype -> print_EnumeratedType etype
 
-  sort AttType = | String     
-                 | Tokenized  TokenizedType
-                 | Enumerated EnumeratedType
+  def print_TokenizedType x =
+    case x of
+      | ID        -> (ustring "ID")
+      | IDRef     -> (ustring "IDREF")
+      | IDRefs    -> (ustring "IDREFS")
+      | Entity    -> (ustring "ENTITY")
+      | Entities  -> (ustring "ENTITIES")
+      | NmToken   -> (ustring "NMTOKEN")
+      | NmTokens  -> (ustring "NMTOKENS")
 
-  sort TokenizedType = | ID | IDRef | IDRefs | Entity | Entities | NmToken | NmTokens
-
-  sort EnumeratedType = | Notation    NotationType
-                        | Enumeration Enumeration
+  def print_EnumeratedType x =
+    case x of
+      | Notation    ntype -> print_NotationType ntype
+      | Enumeration enum  -> print_Enumeration  enum
   
-  sort NotationType = {w1     : WhiteSpace,
-		       w2     : WhiteSpace,
-		       first  : Name,
-		       others : List (WhiteSpace * WhiteSpace * Name),
-		       w3     : WhiteSpace}
+  def print_NotationType {w1, w2, first, others, w3} =
+    (ustring "NOTATION") ^ w1 ^ (ustring "(") ^ w2 ^ first ^ 
+    (foldl (fn ((w4, w5, name), result) -> result ^ w4 ^ (ustring "|") ^ w5 ^ name) [] others) ^
+    w3 ^ (ustring ")") 
 
-  sort Enumeration = {w1     : WhiteSpace,
-		      first  : NmToken,
-		      others : List (WhiteSpace * WhiteSpace * NmToken),
-		      w2     : WhiteSpace}
+  def print_Enumeration {w1, first, others, w2} =
+    (ustring "(") ^ w1 ^ (print_NmToken first) ^ 
+    (foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] others) ^
+    w2 ^ (ustring ")") 
 
-  sort DefaultDecl = | Required
-                     | Implied 
-                     | Fixed    WhiteSpace * AttValue
-
-  %% ----------------------------------------------------------------------------------------------------
-
-  sort EntityDecl = | GE GEDecl
-                    | PE PEDecl
-
-  sort GEDecl = {w1   : WhiteSpace,
-		 name : Name,
-		 w2   : WhiteSpace,
-		 edef : EntityDef,
-		 w3   : WhiteSpace}
-
-  sort EntityDef = | Value    EntityValue
-                   | External (ExternalID * Option NDataDecl)
-
-  sort NDataDecl = {w1   : WhiteSpace,
-		    w2   : WhiteSpace,
-		    name : Name}
-
-  sort PEDecl = {w1   : WhiteSpace,
-		 w2   : WhiteSpace,
-		 name : Name,
-		 w3   : WhiteSpace,
-		 edef : PEDef,
-		 w4   : WhiteSpace}
-
-  sort PEDef = | Local  EntityValue
-               | Remote ExternalID
+  def print_DefaultDecl x =
+    case x of
+      | Required -> (ustring "#REQUIRED")
+      | Implied  -> (ustring "#IMPLIED")
+      | Fixed    (opt_w1, att_value) ->  
+        (case opt_w1 of
+	   | Some w1 -> (ustring "#FIXED") ^ w1 
+	   | _ -> [])
+	^ 
+	(print_AttValue att_value)
 
   %% ----------------------------------------------------------------------------------------------------
 
-  sort ExternalID = | System (WhiteSpace * SystemLiteral)
-                    | Public (WhiteSpace * PubidLiteral * WhiteSpace * SystemLiteral)
-  sort NotationDecl = {w1   : WhiteSpace,
-		       name : Name,
-		       w2   : WhiteSpace,
-		       id   : | External ExternalID | Public PublicID,
-		       w3   : WhiteSpace}
+  def print_EntityDecl x =
+   case x of
+    | GE decl -> print_GEDecl decl
+    | PE decl -> print_PEDecl decl
 
-  sort PublicID = {w1  : WhiteSpace,
-		   lit : PubidLiteral}
+  def print_GEDecl {w1, name, w2, edef, w3} =
+    (ustring "<!ENTITY") ^ w1 ^ name ^ w2 ^ (print_EntityDef edef) ^ w3 ^ (ustring ">")
 
-*)
+  def print_EntityDef x = 
+   case x of
+     | Value    value  -> print_EntityValue value
+     | External (id, opt_decl) -> 
+       (print_ExternalID id) ^ 
+       (case opt_decl of
+	  | Some ndata_decl -> print_NDataDecl ndata_decl
+	  | _ -> [])
+
+  def print_NDataDecl {w1, w2, name} =
+    w1 ^ (ustring "NDATA") ^ w2 ^ name
+
+  def print_PEDecl {w1, w2, name, w3, edef, w4} =
+    (ustring "<!ENTITY") ^ w1 ^ (ustring "%") ^ w2 ^ name ^ w3 ^ (print_PEDef edef) ^ w4 ^ (ustring ">")
+
+  def print_PEDef x = 
+    case x of
+     | Local  value -> print_EntityValue value
+     | Remote id    -> print_ExternalID id
+
+  %% ----------------------------------------------------------------------------------------------------
+
+  def print_ExternalID x = 
+    case x of
+     | System (w1, sys_lit) -> 
+       (ustring "SYSTEM") ^ w1 ^ (print_SystemLiteral sys_lit)
+
+     | Public (w1, pub_lit, w2, sys_lit) -> 
+       (ustring "PUBLIC") ^ w1 ^ (print_PubidLiteral pub_lit) ^ w2 ^ (print_SystemLiteral sys_lit)
+
+  def print_NotationDecl {w1, name, w2, id, w3} =
+    (ustring "<!NOTATION") ^ w1 ^ name ^ w2 ^ 
+    (case id : (| External ExternalID | Public PublicID) of
+       | External id -> print_ExternalID id
+       | Public   id -> print_PublicID   id)
+    ^ w3 ^ (ustring ">")
+
+  def print_PublicID  {w1, lit} =
+    (ustring "PUBLIC") ^ w1 ^ (print_PubidLiteral lit)
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Element                                                                             %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -518,16 +524,20 @@ XML qualifying spec
 
   def print_Element element = 
     case element of
+
       | Empty tag -> 
         print_EmptyElemTag tag
+
       | Full  {stag, content, etag} -> 
         (print_STag    stag) ^
         (print_Content content) ^
         (print_ETag    etag)
 
-  def print_STag tag = print_GenericTag tag
+  def print_EmptyElemTag tag = print_GenericTag tag
 
-  def print_ETag tag = print_GenericTag tag
+  def print_STag         tag = print_GenericTag tag
+
+  def print_ETag         tag = print_GenericTag tag
 
   def print_Content {prelude, items} =
     (case prelude of
@@ -545,12 +555,11 @@ XML qualifying spec
   def print_Content_Item item = 
     case item of
       | Element   element -> print_Element   element
-      | Reference ref     -> [] % print_Reference ref
+      | Reference ref     -> print_Reference ref
       | CDSect    cd_sect -> print_CDSect    cd_sect
       | PI        pi      -> print_PI        pi
       | Comment   comment -> print_Comment   comment
 
-  def print_EmptyElemTag tag = print_GenericTag tag
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Character_Data                                                                      %%%
@@ -580,6 +589,7 @@ XML qualifying spec
     (ustring "<!--") ^ x ^ (ustring "-->")
 
   def print_PI {target, text} = 
+   %% note: at least first char of text is whitespace 
    (ustring "<?") ^ target ^ text ^ (ustring "?>")
 
   def print_CDSect {cdata} = 
@@ -602,25 +612,27 @@ XML qualifying spec
   %%
   %% ----------------------------------------------------------------------------------------------------
 
-(*
-  sort EntityValue = {qchar : QuoteChar,
-		      items : List EntityValue_Item}
+  def print_EntityValue {qchar, items} =
+    [qchar] ^ (foldl (fn (item, result) -> result ^ (print_EntityValue_Item item)) [] items) ^ [qchar]
 
-  sort EntityValue_Item = | NonRef UString
-                          | PERef  PEReference
-                          | Ref    Reference
+  def print_EntityValue_Item x = 
+   case x of			       
+     | NonRef ustr   -> ustr
+     | PERef  pe_ref -> print_PEReference pe_ref
+     | Ref    ref    -> print_Reference ref
 
-  sort AttValue = {qchar : QuoteChar,
-		   items : List AttValue_Item}
+  def print_AttValue {qchar, items} =
+    [qchar] ^ (foldl (fn (item, result) -> result ^ (print_AttValue_Item item)) [] items) ^ [qchar]
 
-  sort AttValue_Item = | NonRef UString 
-                       | Ref    Reference
+  def print_AttValue_Item x =
+    case x of
+      | NonRef ustr -> ustr
+      | Ref    ref  -> print_Reference ref
 
-  sort SystemLiteral = QuotedText
+  def print_SystemLiteral x = print_QuotedText x
 
-  sort PubidLiteral = (QuotedText | legal_PubidLiteral?)
+  def print_PubidLiteral  x = print_QuotedText x
 
-*)
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          References                                                                          %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -681,19 +693,22 @@ XML qualifying spec
   %%  declaration containing a default value with a direct or indirect reference to that general entity.
   %%
   %% -------------------------------------------------------------------------------------------------
-(*
-  sort PEReference = {name : (Name | entity_declared?)}
 
-  sort Reference = | Entity EntityRef
-                   | Char   CharRef
+  def print_PEReference {name} =
+    (ustring "%") ^ name ^ (ustring ";")
 
-  sort EntityRef = {name : (Name | entity_declared?)}
+  def print_Reference x =
+    case x of
+      | Entity eref -> print_EntityRef eref
+      | Char   cref -> print_CharRef   cref
 
-  
-  sort CharRef = {style : | Decimal | Hex,
-		  char  : (UChar | char?)}
+  def print_EntityRef {name} = 
+    (ustring "&") ^ name ^ (ustring ";")
 
-*)
+  def print_CharRef  {style, char} =
+    case style of
+      | Decimal -> (ustring "&#")  ^ (ustring (Nat.toString char)) ^ (ustring ";")
+      | Hex     -> (ustring "&#x") ^ (ustring (toHex        char)) ^ (ustring ";")
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Names                                                                               %%%
@@ -706,13 +721,21 @@ XML qualifying spec
   %%  [8]  Nmtokens  ::=  Nmtoken (S Nmtoken)*
   %%
   %% -------------------------------------------------------------------------------------------------
-(*
-  sort Names = Name * List (WhiteSpace * Name)
-  sort Name  = (UString | name?)
 
-  sort NmTokens = NmToken * List (WhiteSpace * NmToken)
-  sort NmToken  = (UString | nm_token?)
-*)
+  def print_Names (first, others) = 
+    first ^ (foldl (fn ((white, name), result) -> result ^ white ^ name)
+	           []
+		   others)
+
+  def print_Name (name : Name) : UString = name
+
+  def print_NmTokens (first, others) = 
+    first ^ (foldl (fn ((white, token), result) -> result ^ white ^ token)
+		       []
+		       others)
+
+  def print_NmToken (token : NmToken) : UString = token
+
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Chars                                                                               %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

@@ -288,12 +288,19 @@ XML qualifying spec
 
   %% -------------------------------------------------------------------------------------------------
 
-  sort IncludeSect = {decl : ExtSubsetDecl}
+  sort IncludeSect = {w1 : WhiteSpace,
+		      w2 : WhiteSpace,
+		      decl : ExtSubsetDecl}
 
   %% -------------------------------------------------------------------------------------------------
 
-  sort IgnoreSect = {prefix : Ignore,
-		     body   : List (IgnoreSect * Ignore)}
+  sort IgnoreSect = {w1       : WhiteSpace,
+		     w2       : WhiteSpace,
+		     contents : IgnoreSectContents}
+
+
+  sort IgnoreSectContents = {prefix   : Ignore,
+			     contents : List (IgnoreSectContents * Ignore)}
 
   sort Ignore = (UString | ignorable?)
 
@@ -594,7 +601,7 @@ XML qualifying spec
 
   sort DefaultDecl = | Required
                      | Implied 
-                     | Fixed    WhiteSpace * AttValue
+                     | Fixed    (Option WhiteSpace) * AttValue
 
   %% ----------------------------------------------------------------------------------------------------
 
@@ -628,10 +635,11 @@ XML qualifying spec
 
   sort ExternalID = | System (WhiteSpace * SystemLiteral)
                     | Public (WhiteSpace * PubidLiteral * WhiteSpace * SystemLiteral)
+
   sort NotationDecl = {w1   : WhiteSpace,
 		       name : Name,
 		       w2   : WhiteSpace,
-		       id   : | External ExternalID | Public PublicID,
+		       id   : (| External ExternalID | Public PublicID),
 		       w3   : WhiteSpace}
 
   sort PublicID = {w1  : WhiteSpace,
