@@ -867,7 +867,9 @@ If we want the precedence to be optional:
 
 (defun make-sc-spec-morph (dom-sc-term cod-sc-term sc-spec-morph-rules l r)
   (cons (cons :|SpecMorph|
-	      (vector dom-sc-term cod-sc-term sc-spec-morph-rules))
+	      (vector dom-sc-term cod-sc-term (if (eq sc-spec-morph-rules :unspecified)
+						  nil
+						sc-spec-morph-rules)))
 	(make-pos l r)))
 
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
