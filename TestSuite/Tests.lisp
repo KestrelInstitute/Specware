@@ -12,7 +12,7 @@
 		   :output ";;; Elaborating spec at $TESTDIR/fib
 ")
       ("CompileFib" :swll "fib"
-		    :output ";;; Generating lisp file /tmp/cl-current-file.lisp
+		    :output ";;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
 ")
       ("RunFib" :swe "computeFib 10"
 		:swe-spec "fib"
@@ -46,7 +46,7 @@
       ("Quotient Pattern"
        :swll "QuotientPattern"
        :output ";;; Elaborating spec at $TESTDIR/QuotientPattern
-;;; Generating lisp file /tmp/cl-current-file.lisp
+;;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
 ")
       ("Restrict Obligations"
        :show "RestrictObligation#O"
@@ -68,6 +68,25 @@ endspec
 )
       ("libtest" :swll "libtest"
 		 :output ";;; Elaborating spec at $TESTDIR/libtest
-;;; Generating lisp file /tmp/cl-current-file.lisp
+;;; Generating lisp file /tmp/lgen_lisp_tmp.lisp
+")
+      ("Prettyprint Parens"
+       :show "PP"
+       :output ";;; Elaborating spec at $TESTDIR/PP
+
+spec  
+ type T = (( | Foo | Fum) | truep)
+ type Injection1(a, b) = ((a -> b) | Functions.injective?)
+ type T1 = {x : ( | Foo | Fum) | true}
+ type T2 = ((T * T1) | truep)
+ 
+ op  truep : [a] a -> Boolean
+ axiom List.induction1 is [a] 
+    fa(p : List(a) -> Boolean) 
+     p([]) 
+     && (fa(x : a, l : List(a)) 
+          (p l => p(Cons(x, l)) => (fa(l : List(a)) p l)))
+endspec
+
 ")
       )
