@@ -49,6 +49,7 @@ SpecCalc qualifying spec
     | MorphError   Position * String
     | CircularDefinition UnitId
     | Proof       Position * String
+    | UndefinedGlobalVar  String
 
   op printException : Exception -> String
   def printException except =
@@ -100,6 +101,8 @@ SpecCalc qualifying spec
 
       | TypeCheckErrors errs -> printTypeErrors errs
         
+      | UndefinedGlobalVar name -> "Undefined global var: " ^ name
+        
       | _ -> 
 		"Unknown exception: " 
               ^ (System.toString except)
@@ -134,6 +137,9 @@ SpecCalc qualifying spec
     case l of
       | [] -> []
       | x::r -> cons(x,firstN(r,n-1))
+
+  def undefinedGlobalVariable (name : String) : Exception =
+    UndefinedGlobalVar name
 
 endspec
 \end{spec}
