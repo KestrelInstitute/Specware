@@ -8,6 +8,7 @@ import ToJavaQuotient
 import ToJavaHO
 import ToJavaSpecial
 import /Languages/Java/JavaPrint
+import /Languages/MetaSlang/Transformations/LambdaLift
 
 sort JcgInfo = {
 		clsDecls : List ClsDecl,
@@ -688,7 +689,13 @@ def builtinSortOp(qid) =
 op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
 def specToJava(basespc,spc,optspec,filename) =
-  %let _ = writeLine(printSpec spc) in
+  let _ = writeLine(printSpec spc) in
+  let _ = writeLine(";;; Renaming Variables") in
+  let spc = distinctVariable(spc) in
+  let _ = writeLine(printSpec spc) in
+  let _ = writeLine(";;; Lifting Lambdas") in
+  let spc = lambdaLift(spc) in
+  let _ = writeLine(printSpec spc) in
   %let spc = translateMatch spc in
   %let spc = lambdaLift spc in
   %let _ = writeLine(printSpec spc) in
@@ -708,8 +715,10 @@ def specToJava(basespc,spc,optspec,filename) =
   %let _ = writeLine("Lifting Patterns") in
   %let spc = liftPattern(spc) in
   %let _ = writeLine(";;; Renaming Variables") in
+  %let spc = distinctVariable(spc) in
   %let _ = writeLine(printSpec spc) in
-  let spc = distinctVariable(spc) in
+  %let _ = writeLine(";;; Lifting Lambdas") in
+  %let spc = lambdaLift(spc) in
   %let _ = writeLine(printSpec spc) in
   %let _ = writeLine(";;; Generating Classes") in
   let jcginfo = clsDeclsFromSorts(spc) in
