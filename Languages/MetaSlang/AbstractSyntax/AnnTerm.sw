@@ -1,4 +1,4 @@
-MetaSlang qualifying spec {
+MetaSlang qualifying spec
  import /Library/Base
  import /Library/Legacy/Utilities/State  % for MetaTyVar's
  import /Library/Legacy/DataStructures/ListPair
@@ -10,8 +10,8 @@ MetaSlang qualifying spec {
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  Basic structure for naming things
 
- sort Id = String
- sort Qualifier = Id
+ type Id = String
+ type Qualifier = Id
 
  %% This is the key used in the qualifier maps for UnQualified Id
  op UnQualified : Qualifier
@@ -22,11 +22,11 @@ MetaSlang qualifying spec {
  %% name of the spec as their qualifier, and the same qualifier can
  %% be used in multiple specs.
 
- sort QualifiedId = | Qualified Qualifier * Id
+ type QualifiedId = | Qualified Qualifier * Id
 
  %% An annotated qualified id can record extra information,
  %% e.g. the precise position of the name.
- sort AQualifiedId a = QualifiedId * a
+ type AQualifiedId a = QualifiedId * a
 
  %% the following are invoked by the parser to make qualified names
  def mkUnQualifiedId  id      =  Qualified (UnQualified, id)
@@ -93,8 +93,8 @@ MetaSlang qualifying spec {
  %%%                Type Variables
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- sort TyVar   = Id
- sort TyVars  = List TyVar
+ type TyVar   = Id
+ type TyVars  = List TyVar
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Terms
@@ -106,7 +106,7 @@ MetaSlang qualifying spec {
  %% location information and free variables for use in
  %% various transformation steps.
 
- sort ATerm b =
+ type ATerm b =
   | Apply        ATerm b * ATerm b                       * b
   | ApplyN       List (ATerm b)                          * b % Before elaborateSpec
   | Record       List (Id * ATerm b)                     * b
@@ -125,15 +125,15 @@ MetaSlang qualifying spec {
                                                               % but then the various mapping functions become much trickier.
   | Any                                                    b  % e.g. "op f : Nat -> Nat"  has defn:  SortedTerm (Any noPos, Arrow (Nat, Nat, p1), noPos)
  
- sort Binder =
+ type Binder =
   | Forall
   | Exists
 
- sort AVar b = Id * ASort b
+ type AVar b = Id * ASort b
 
- sort AMatch b = List (APattern b * ATerm b * ATerm b)
+ type AMatch b = List (APattern b * ATerm b * ATerm b)
 
- sort ASort b =
+ type ASort b =
   | Arrow        ASort b * ASort b                   * b
   | Product      List (Id * ASort b)                 * b
   | CoProduct    List (Id * Option (ASort b))        * b
@@ -149,7 +149,7 @@ MetaSlang qualifying spec {
                                                           % but then the various mapping functions become much trickier.
   | Any                                                b  % e.g. "sort S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
 
- sort APattern b =
+ type APattern b =
   | AliasPat     APattern b * APattern b             * b
   | VarPat       AVar b                              * b
   | EmbedPat     Id * Option (APattern b) * ASort b  * b
@@ -163,7 +163,7 @@ MetaSlang qualifying spec {
   | QuotientPat  APattern b * ATerm b                * b
   | SortedPat    APattern b * ASort b                * b  % Before elaborateSpec
 
- sort AFun b =
+ type AFun b =
 
   | Not
   | And
@@ -197,16 +197,16 @@ MetaSlang qualifying spec {
   | OneName        Id * Fixity         % Before elaborateSpec
   | TwoNames       Id * Id * Fixity    % Before elaborateSpec
 
- sort Fixity        = | Nonfix | Infix Associativity * Precedence | Unspecified
- sort Associativity = | Left | Right
- sort Precedence    = Nat
+ type Fixity        = | Nonfix | Infix Associativity * Precedence | Unspecified
+ type Associativity = | Left | Right
+ type Precedence    = Nat
 
- sort AMetaTyVar      b = Ref ({link     : Option (ASort b),
+ type AMetaTyVar      b = Ref ({link     : Option (ASort b),
                                 uniqueId : Nat,
                                 name     : String })
 
- sort AMetaTyVars     b = List (AMetaTyVar b)
- sort AMetaSortScheme b = AMetaTyVars b * ASort b
+ type AMetaTyVars     b = List (AMetaTyVar b)
+ type AMetaSortScheme b = AMetaTyVars b * ASort b
 
  %%% Predicates
  op product?: [a] ASort a -> Boolean
@@ -283,9 +283,9 @@ MetaSlang qualifying spec {
  %% This invariant is established by the parser and must be
  %% maintained by all transformations.
 
- sort AFields b = List (AField b)
- sort AField  b = FieldName * ASort b  % used by products and co-products
- sort FieldName = String
+ type AFields b = List (AField b)
+ type AField  b = FieldName * ASort b  % used by products and co-products
+ type FieldName = String
 
   op getField: [a] List (Id * ATerm a) * Id -> Option(ATerm a)
  def getField (m, id) =
@@ -851,7 +851,7 @@ MetaSlang qualifying spec {
 					      true
 					      (tms1, tms2)
 
-     | (Any  _,    Any  _)           -> false  % TODO: Tricky -- should this be some kind of lisp EQ test?
+     | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
 
@@ -1160,9 +1160,9 @@ MetaSlang qualifying spec {
 				 link     = Some newssrt},
 			    pos))
 
-         | Pi  (tvs, srt, a) -> Pi (tvs, mapS (tsp, sort_map, srt), a)  % TODO: what if map alters vars?
+         | Pi  (tvs, srt, a) -> Pi (tvs, mapRec (tsp, sort_map, srt), a)  % TODO: what if map alters vars?
 
-         | And (srts,     a) -> maybeAndSort (map (fn srt -> mapS (tsp, sort_map, srt)) srts, a)
+         | And (srts,     a) -> maybeAndSort (map (fn srt -> mapRec (tsp, sort_map, srt)) srts, a)
 
          | Any  _            -> srt
 
@@ -1951,4 +1951,4 @@ MetaSlang qualifying spec {
 
  def mkTrueA  a = Fun (Bool true,  Boolean a, a)
  def mkFalseA a = Fun (Bool false, Boolean a, a)
-}
+endspec

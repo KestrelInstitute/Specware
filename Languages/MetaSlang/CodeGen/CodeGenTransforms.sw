@@ -210,6 +210,10 @@ def inferTypeFoldRecords (spc, term) =
       let srt0 = findMatchingUserType (spc, srt) in
       %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
       srt0
+    | CoProduct _ -> 
+      let srt0 = findMatchingUserType (spc, srt) in
+      %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
+      srt0
     | _ -> srt
 
 op sortId: MS.Sort -> Id

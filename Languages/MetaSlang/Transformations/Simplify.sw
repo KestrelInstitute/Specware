@@ -90,7 +90,7 @@ spec
  def removeUnnecessaryVariable spc term =
      case term
        of Let([(VarPat (id,_),e)],body,_) ->
-	  let noSideEffects =  sideEffectFree(e) in
+	  let noSideEffects = sideEffectFree(e) in
 	  (case countVarRefs(body,id)
 	     of 0 -> if noSideEffects then body else term
 	      | 1 -> if noSideEffects
@@ -119,6 +119,7 @@ spec
 	       %% We don't know in general when an application can cause a side-effect 
 	       | Apply(Fun (f,_,_),_,_) ->
 	         if knownSideEffectFreeFn? f then result else (false,true)
+	       | Apply _ -> (false,true)
 	       %% We don't know when the body of a lambda will be evaluated
 	       | Lambda _ -> (false,true)
 	       | _ -> result)

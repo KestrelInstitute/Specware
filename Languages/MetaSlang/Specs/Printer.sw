@@ -3,7 +3,7 @@
  * rewritten.
  *
  * MetaSlang pretty printer.
- * This module contains utilities for printing terms, sorts, and patterns to 
+ * This module contains utilities for printing terms, types, and patterns to 
  * strings, files, or standard out.
  *
  * Formats supported are:
@@ -27,7 +27,6 @@
 %% 
 
 AnnSpecPrinter qualifying spec 
-{ 
  import ../AbstractSyntax/Printer
  import AnnSpec
  % import /Library/IO/Primitive/IO                    % for getEnv
@@ -36,13 +35,13 @@ AnnSpecPrinter qualifying spec
 
  %% ========================================================================
 
- sort Path = List Nat
+ type Path = List Nat
 
- sort ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort 
+ type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort 
 
- sort ParentTerm = | Top | Nonfix | Infix Associativity * Nat
+ type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
 
- sort context = {
+ type context = {
 		 pp                 : ATermPrinter,
 		 printSort          : Boolean,
 		 markSubterm        : Boolean,
@@ -115,14 +114,29 @@ AnnSpecPrinter qualifying spec
 
  def [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =  
    case term of
-     | Fun (Embed ("Nil", false), _, _) -> Some []
-     | Apply (Fun (Embed("Cons", true), _, _), Record ([(_, t1), (_, t2)], _), _) -> 
+     | Fun (Embed ("Nil", false), Base (Qualified("List", "List"), _, _), _) -> Some []
+     | Apply (Fun (Embed("Cons", true), 
+		   Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
+				   _),
+			  Base (Qualified("List", "List"), _, _),
+			  _),
+		   _),
+	      Record ([(_, t1), (_, t2)], _),
+	      _)
+       -> 
        (case isFiniteList t2 of
 	  | Some terms -> Some (cons (t1, terms))
 	  | _ ->  None)
-     | ApplyN ([Fun (Embed ("Cons", true), _, _), _,
+     | ApplyN ([Fun (Embed ("Cons", true), 
+		     Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
+				     _),
+			    Base (Qualified("List", "List"), _, _),
+			    _),
+		     _),
 		Record ([(_, t1), (_, t2)], _),
-		_], _) -> 
+		_],
+	       _) 
+       -> 
        (case isFiniteList t2 of
 	  | Some terms -> Some (cons (t1, terms))
 	  | _  ->  None)
@@ -182,15 +196,23 @@ AnnSpecPrinter qualifying spec
      | String      s           -> pp.fromString ("\""^s^"\"")              % "abc"
      | Char        c           -> pp.fromString ("#" ^ (Char.toString c))  % #A
      | Embed       (s, _)      -> pp.fromString (s)  %"embed("^s^")"
-     | Project     s           -> pp.fromString ("project("^s^")")
+     | Project     s           -> pp.fromString ("project "^s^" ")
      | RecordMerge             -> pp.fromString "<<"
      | Embedded    s           -> pp.fromString ("embed?("^s^")")
-     | Quotient                -> let p = case srt of Arrow(_, Quotient(_,p,_),_) -> p | _ -> mkAEquals (srt,a) in
+     | Quotient                -> let p = case srt
+					   of Arrow(_, Quotient(_,p,_),_) -> p
+					    %% Need spec to get correct value
+                                            | _ -> mkAEquals (srt,a)
+				  in
                                   prettysFill [pp.fromString "quotient", 
 					       string " ",
 					       ppTerm context ([], Top : ParentTerm) p, 
 					       string " "]
-     | Choose                  -> let p = case srt of Arrow(_, Quotient(_,p,_),_) -> p | _ -> mkAEquals (srt,a) in
+     | Choose                  -> let p = case srt
+					   of Arrow(_, Quotient(_,p,_),_) -> p
+					    %% Need spec to get correct value
+					    | _ -> mkAEquals (srt,a)
+				  in
                                   prettysFill [pp.fromString "choose",
 					       string " ",
 					       ppTerm context ([], Top : ParentTerm) p, 
@@ -263,7 +285,7 @@ AnnSpecPrinter qualifying spec
 					string " ",
 					pp.Where,
 					string " ",
-					ppTerm context ([1, i] ++ path, Top:ParentTerm) cond,
+					ppTerm context ([1, i] ++ path, Top) cond,
 					pp.Arrow]),
 		       (3, ppTerm context ([3, i] ++ path, Top : ParentTerm) trm)])
    in
@@ -299,7 +321,7 @@ AnnSpecPrinter qualifying spec
 	   % Print lambda abstraction as
 	   % case pattern matching
            blockAll (0, 
-		     [(0, prettysNone [pp.LP, pp.Case, ppTerm context ([1] ++ path, Top:ParentTerm) t2]), 
+		     [(0, prettysNone [pp.LP, pp.Case, ppTerm context ([1] ++ path, Top) t2]), 
 		      (3, prettysNone 
 		       [printLambda (context, [0] ++ path, pp.Of, rules), 
 			pp.RP])])
@@ -309,16 +331,16 @@ AnnSpecPrinter qualifying spec
 	   if printSort? context then
 	     prettysNone [pp.fromString id, 
 			  string ":", 
-			  ppSort context ([0, 1] ++ path, Top:ParentSort) srt2, 
+			  ppSort context ([0, 1] ++ path, Top) srt2, 
 			  string ".", 
 			  string p, 
 			  string ":", 
-			  ppSort context ([0, 0] ++ path, Top:ParentSort) srt1]
+			  ppSort context ([0, 0] ++ path, Top) srt1]
 	   else
 	     prettysNone [pp.fromString id, string ".", pp.fromString p]
 	 | _ -> 
 	   blockFill (0, 
-		      [(0, ppTerm context ([0] ++ path, Top:ParentTerm) t1), 
+		      [(0, ppTerm context ([0] ++ path, Top) t1), 
 		       (2, blockNone (0, 
 				      (case t2 of
 					 | Record (row, _) ->
@@ -326,23 +348,23 @@ AnnSpecPrinter qualifying spec
 					     %% We want the application to be mouse-sensitive not
 					     %% just the argument list--otherwise there is no way to
 					     %% select the application which is what you normally want
-					     [(0, ppTerm1 context ([1] ++ path, Top:ParentTerm) t2)]
+					     [(0, ppTerm1 context ([1] ++ path, Top) t2)]
 					   else 
-					     [(0, ppTerm context ([1] ++ path, Top:ParentTerm) t2)]
+					     [(0, ppTerm context ([1] ++ path, Top) t2)]
 					 | Var _ -> 
 					   [(0, string " "), 
-					    (0, ppTerm context ([1] ++ path, Top:ParentTerm) t2)
+					    (0, ppTerm context ([1] ++ path, Top) t2)
 					    (*, (0, string " ")*)
 					    ]
 					 | _ -> 
 					   [(0, pp.LP), 
-					    (0, ppTerm context ([1] ++ path, Top:ParentTerm) t2), 
+					    (0, ppTerm context ([1] ++ path, Top) t2), 
 					    (0, pp.RP)])))])
    in
    case isFiniteList term of
      | Some terms -> 
        AnnTermPrinter.ppListPath path
-                                 (fn (path, term) -> ppTerm context (path, Top:ParentTerm) term)
+                                 (fn (path, term) -> ppTerm context (path, Top) term)
 				 (pp.LBrack, pp.Comma, pp.RBrack)  terms
      | None -> 
        (case term of
@@ -351,7 +373,7 @@ AnnSpecPrinter qualifying spec
 	      blockFill (0, 
 			 [(0, printOp (context, pp, top, srt, a)), 
 			  (0, string " : "), 
-			  (0, ppSort context ([0] ++ path, Top:ParentSort) srt)])
+			  (0, ppSort context ([0] ++ path, Top) srt)])
 	    else 
 	      printOp (context, pp, top, srt, a)
 	  | Var ((id, srt), _) -> 
@@ -359,7 +381,7 @@ AnnSpecPrinter qualifying spec
 	      blockFill (0, 
 			 [(0, pp.fromString id), 
 			  (0, string " : "), 
-			  (0, ppSort context ([0] ++ path, Top:ParentSort) srt)])
+			  (0, ppSort context ([0] ++ path, Top) srt)])
 	    else 
 	      pp.fromString id
 	  | Let (decls, body, _) -> 
@@ -377,7 +399,7 @@ AnnSpecPrinter qualifying spec
 						       string " "]), 
 				      (separatorLength, 
 				       prettysNone [ppTerm context
-						           ([2, 1, index]++ path, Top:ParentTerm)
+						           ([2, 1, index]++ path, Top)
 							   body, 
 						    string " "])])) 
 		  | _ -> 
@@ -389,7 +411,7 @@ AnnSpecPrinter qualifying spec
 						       string " "]), 
 				      (separatorLength, 
 				       prettysNone [ppTerm context 
-						           ([1, index]++ path, Top:ParentTerm) 
+						           ([1, index]++ path, Top) 
 						           trm, 
 						    string " "])]))
 	    in
@@ -400,11 +422,14 @@ AnnSpecPrinter qualifying spec
 		  | (pat, trm) :: decls -> cons (ppD (index, l, separator, pat, trm), 
 						 ppDs (index + 1, 5, pp.LetDeclsAnd, decls))
 	    in
-	      blockAll (0, 
-			[(0, blockLinear (0, 
-					  [(0, blockLinear (0, ppDs (0, 4, pp.Let, decls))), 
-					   (0, pp.In)])), 
-			 (0, ppTerm context ([length decls] ++ path, parentTerm) body)])
+	      enclose(case parentTerm of
+			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| _ -> true,
+		      blockAll (0, 
+				[(0, blockLinear (0, 
+						  [(0, blockLinear (0, ppDs (0, 4, pp.Let, decls))), 
+						   (0, pp.In)])), 
+				 (0, ppTerm context ([length decls] ++ path, parentTerm) body)]))
 	  | LetRec (decls, body, _) -> 
             let
               def ppD (path, ((id, _), trm)) =
@@ -418,7 +443,7 @@ AnnSpecPrinter qualifying spec
 						    string " ", 
 						    pp.Equals, 
 						    string " "]), 
-				   (2, ppTerm context ([2, 0] ++ path, Top:ParentTerm)
+				   (2, ppTerm context ([2, 0] ++ path, Top)
 				    body)])
 		   | _ -> 
 		     blockLinear (0, 
@@ -426,20 +451,23 @@ AnnSpecPrinter qualifying spec
 				   [pp.Def, 
 				    pp.fromString id, 
 				    pp.Equals]), 
-				  (4, ppTerm context (path, Top:ParentTerm) trm)]))
+				  (4, ppTerm context (path, Top) trm)]))
             in
-              blockAll (0, 
+              enclose(case parentTerm of
+			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| _ -> true,
+		      blockAll (0, 
 			[(0, blockNone (0, 
 				      [(0, pp.Let), 
 				       (0, AnnTermPrinter.ppListPath path ppD
 					(pp.Empty, pp.Empty, pp.Empty) decls)])), 
 			 (0, pp.In), 
-			 (0, ppTerm context ([length decls]++ path, parentTerm) body)])
+			 (0, ppTerm context ([length decls]++ path, parentTerm) body)]))
 	  | Record (row, _) ->
 	    if isShortTuple (1, row) then
 	      AnnTermPrinter.ppListPath path (fn (path, (_, t)) ->
 					      ppTerm context
-					      (path, Top:ParentTerm) t)
+					      (path, Top) t)
 	                                     (pp.LP, pp.Comma, pp.RP) row
 	    else
 	      let
@@ -447,19 +475,22 @@ AnnSpecPrinter qualifying spec
 		  blockFill (0, 
 			     [(0, prettysNone [pp.fromString  id, 
 					      string  " = "]), 
-                              (2, ppTerm context (path, Top:ParentTerm) t)])
+                              (2, ppTerm context (path, Top) t)])
 	      in
 		AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, string ", ", pp.RCurly) row
 	  | IfThenElse (t1, t2, t3, _) -> 
-	    blockLinear (0, 
-			 [(0, prettys [pp.If, ppTerm context ([0]++ path, Top:ParentTerm) t1]), 
-			  (0, blockFill (0, 
-					 [(0, pp.Then), 
-					  (3, ppTerm context ([1]++ path, Top:ParentTerm) t2), 
-					  (0, string " ")])), 
-			  (0, blockFill (0, 
-					 [(0, pp.Else), 
-					  (0, ppTerm context ([2]++ path, Top:ParentTerm) t3)]))])
+	    enclose(case parentTerm of
+			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| _ -> true,
+		    blockLinear (0, 
+		       [(0, prettys [pp.If, ppTerm context ([0]++ path, Top) t1]), 
+			(0, blockFill (0, 
+				       [(0, pp.Then), 
+					(3, ppTerm context ([1]++ path, Top) t2), 
+					(0, string " ")])), 
+			(0, blockFill (0, 
+				       [(0, pp.Else), 
+					(0, ppTerm context ([2]++ path, Top) t3)]))]))
 	  | Lambda (match, _) -> 
 	    prettysNone [pp.LP, 
 			 printLambda (context, path, pp.Lambda, match), 
@@ -473,19 +504,22 @@ AnnSpecPrinter qualifying spec
 	      def ppBound (index, (id, srt)) =
 		(prettys [pp.fromString id, 
 			  string " : ", 
-			  ppSort context ([index]++ path, Top:ParentSort) srt])
+			  ppSort context ([index]++ path, Top) srt])
 	    in
-	      blockFill (0, [
+	      enclose(case parentTerm of
+			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| _ -> true,
+		      blockFill (0, [
 			    (0, prettysNone 
 			     [b, pp.LP, 
 			      prettysFill (addSeparator (string ", ") 
 					  (ListUtilities.mapWithIndex ppBound bound)), 
 			      pp.RP, 
 			      string " "]), 
-			    (1, ppTerm context ([length bound]++ path, parentTerm) body)])
+			    (1, ppTerm context ([length bound]++ path, parentTerm) body)]))
               
 	  | Seq (ts, _) -> AnnTermPrinter.ppListPath path
-	                                           (fn (path, trm) -> ppTerm context (path, Top:ParentTerm) trm) 
+	                                           (fn (path, trm) -> ppTerm context (path, Top) trm) 
 						   (pp.LP, string ";", pp.RP)  ts
 	  | Apply (trm1, trm2 as Record ([(_, t1), (_, t2)], _), _) ->
             let
@@ -493,7 +527,7 @@ AnnSpecPrinter qualifying spec
 		prettysFill [prettysNone [l, 
 					  ppTerm context ([0, 1]++ path, f1) t1, 
 					  string " "], 
-			     prettysNone [ppTerm context ([0]++ path, Top:ParentTerm) oper, 
+			     prettysNone [ppTerm context ([0]++ path, Top) oper, 
 					  string " ", 
 					  ppTerm context ([1, 1]++ path, f2) t2, 
 					  r]]
@@ -526,7 +560,7 @@ AnnSpecPrinter qualifying spec
 		prettysLinear [l, 
 			       ppTerm context ([0, 1]++ path, f1) t1, 
 			       string " ", 
-			       ppTerm context ([0]++ path, Top:ParentTerm) oper, 
+			       ppTerm context ([0]++ path, Top) oper, 
 			       string " ", 
 			       ppTerm context ([1, 1]++ path, f2) t2, 
 			       r]
@@ -547,11 +581,11 @@ AnnSpecPrinter qualifying spec
 	  | SortedTerm (t, s, _) -> 
 	    (case s of
 	      | MetaTyVar _ ->  
-	        ppTerm context ([0] ++ path, Top:ParentTerm) t
+	        ppTerm context ([0] ++ path, Top) t
 	      | _ ->
-	        prettysNone [ppTerm context ([0]++ path, Top:ParentTerm) t, 
+	        prettysNone [ppTerm context ([0]++ path, Top) t, 
 			     string ":", string " ", 
-			     ppSort context ([1]++ path, Top:ParentSort) s])
+			     ppSort context ([1]++ path, Top) s])
 	  | Pi (tvs, tm, _) ->
 	    let pp1 = ppForallTyVars context.pp tvs in
 	    let pp2 = ppTerm context (path, parentTerm) tm in
@@ -588,7 +622,7 @@ AnnSpecPrinter qualifying spec
 	       prettysNone [pp.Bar, 
 			    pp.fromString  id, 
 			    string  " ", 
-			    ppSort context (path, CoProduct:ParentSort) s]
+			    ppSort context (path, CoProduct) s]
 	     | None -> 
 	       prettysNone [pp.Bar, 
 			    pp.fromString  id]
@@ -611,7 +645,7 @@ AnnSpecPrinter qualifying spec
 	      | _ -> (pp.Empty, pp.Empty)
 	in
 	  AnnTermPrinter.ppListPath path 
-	                            (fn (path, (lbl, t)) -> ppSort context (path, Product:ParentSort) t) 
+	                            (fn (path, (lbl, t)) -> ppSort context (path, Product) t) 
 				    (left, pp.Product, right) 
 	                            row
       else
@@ -620,7 +654,7 @@ AnnSpecPrinter qualifying spec
 	    blockFill (0, 
 		       [(0, pp.fromString  id), 
 			(0, string  " : "), 
-			(0, ppSort context (path, Top:ParentSort) s)])
+			(0, ppSort context (path, Top) s)])
 	in
 	  AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, string ", ", pp.RCurly)  row
               
@@ -643,23 +677,23 @@ AnnSpecPrinter qualifying spec
 		 [(0, pp.LCurly), 
 		  (0, ppPattern context ([0, 0, 1] ++ path, true) pat), 
 		  (0, string " : "), 
-		  (0, ppSort    context ([0]       ++ path, Top:ParentSort) s), 
+		  (0, ppSort    context ([0]       ++ path, Top) s), 
 		  (0, pp.Bar), 
-		  (0, ppTerm    context ([2, 0, 1] ++ path, Top:ParentTerm) t), 
+		  (0, ppTerm    context ([2, 0, 1] ++ path, Top) t), 
 		  (0, pp.RCurly)])
     | Subsort (s, t, _) -> 
       blockFill (0, 
 		 [(0, pp.LP), 
-		  (0, ppSort context ([0] ++ path, Top:ParentSort) s), 
+		  (0, ppSort context ([0] ++ path, Top) s), 
 		  (0, pp.Bar), 
-		  (0, ppTerm context ([1] ++ path, Top:ParentTerm) t), 
+		  (0, ppTerm context ([1] ++ path, Top) t), 
 		  (0, pp.RP)])
     | Quotient (s, t, _) -> 
       blockFill (0, 
 		 [(0, pp.LP), 
-		  (0, ppSort context ([0] ++ path, Top:ParentSort) s), 
+		  (0, ppSort context ([0] ++ path, Top) s), 
 		  (0, string  " / "), 
-		  (0, ppTerm context ([1] ++ path, Top:ParentTerm) t), 
+		  (0, ppTerm context ([1] ++ path, Top) t), 
 		  (0, pp.RP)])
 
   % | Base (Qualified ("String", "String"))  -> string "String"
@@ -804,7 +838,7 @@ AnnSpecPrinter qualifying spec
        enclose (enclosed, 
 		blockFill (0, 
 			  [(0, string "relax ("), 
-			   (0, ppTerm context ([1]++ path, Top:ParentTerm) trm), 
+			   (0, ppTerm context ([1]++ path, Top) trm), 
 			   (0, pp.RP), 
 			   (0, ppPattern context ([0]++ path, false) pat)
 			  ]))
@@ -812,7 +846,7 @@ AnnSpecPrinter qualifying spec
        enclose (enclosed, 
 		blockFill (0, 
 			   [(0, string "quotient("), 
-			    (0, ppTerm context ([1]++ path, Top:ParentTerm) term), 
+			    (0, ppTerm context ([1]++ path, Top) term), 
 			    (0, string " ?)" ), 
 			    (0, ppPattern context ([0]++ path, false) pat)]))
 
@@ -826,15 +860,15 @@ AnnSpecPrinter qualifying spec
 
 def AnnSpecPrinter.printTerm term = 
    PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, false))
-				            ([], Top:ParentTerm) 
+				            ([], Top) 
 					    term))
 
  def termToPretty term =
-   ppTerm (initialize (asciiPrinter, false)) ([], Top:ParentTerm) term
+   ppTerm (initialize (asciiPrinter, false)) ([], Top) term
 
  def printTermToTerminal term =
    toTerminal (format (80, ppTerm (initialize (asciiPrinter, false)) 
-		                  ([], Top:ParentTerm) 
+		                  ([], Top) 
 				  term))
  
  def printSort srt = 
@@ -849,12 +883,12 @@ def AnnSpecPrinter.printTerm term =
  
  def printSortScheme scheme = 
    PrettyPrint.toString (format (80, ppSortScheme (initialize (asciiPrinter, false))
-				                  ([], Top:ParentSort)
+				                  ([], Top)
 						  scheme))
 
  def printTermScheme scheme = 
    PrettyPrint.toString (format (80, ppTermScheme (initialize (asciiPrinter, false))
-				                  ([], Top:ParentTerm) 
+				                  ([], Top) 
 						  scheme))
 
  def printPattern pat = 
@@ -864,7 +898,7 @@ def AnnSpecPrinter.printTerm term =
 
  def printTermWithSorts term = 
    PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, true))
-			                    ([], Top:ParentTerm)
+			                    ([], Top)
 					    term))
 
  def ppForallTyVars (pp : ATermPrinter) tyVars = 
@@ -912,7 +946,7 @@ def AnnSpecPrinter.printTerm term =
 		    % (0, if null tyVars then string "" else string " sort"), 
 		    (0, ppForallTyVars pp tyVars), 
 		    (0, string " "), 
-		    (3, ppTerm context ([index, propertyIndex], Top:ParentTerm) term)]))
+		    (3, ppTerm context ([index, propertyIndex], Top) term)]))
 
  def [a] ppOpDecl (context : context) (info, (index, lines)) =
    let pp : ATermPrinter = context.pp in
@@ -956,7 +990,7 @@ def AnnSpecPrinter.printTerm term =
 			  (0, string " :"), 
 			  (0, blockNone (0, [(0, ppForallTyVars pp tvs), 
 					     (0, string " "), 
-					     (3, ppSort context ([index, opIndex], Top:ParentSort) srt)]))
+					     (3, ppSort context ([index, opIndex], Top) srt)]))
 			  ]))
        
      def ppDefAux (path, term) = 
@@ -976,7 +1010,7 @@ def AnnSpecPrinter.printTerm term =
 	 | _ -> 
 	     [(0, pp.DefEquals), 
 	      (0, string " "), 
-	      (2, ppTerm context (path, Top:ParentTerm) term)]
+	      (2, ppTerm context (path, Top) term)]
 	     
      def ppDef tm =
        let (tvs, opt_srt, tm) = unpackTerm tm in
@@ -1053,7 +1087,7 @@ def AnnSpecPrinter.printTerm term =
 		      [(0, string " "), 
 		       (0, pp.DefEquals), 
 		       (0, string " "), 
-		       (3, ppSort context ([index, sortIndex], Top:ParentSort) srt)]))
+		       (3, ppSort context ([index, sortIndex], Top) srt)]))
    in
    let (decls, defs) = sortInfoDeclsAndDefs info in
    let warnings = 
@@ -1425,4 +1459,4 @@ def AnnSpecPrinter.printTerm term =
          ++ menues
          ++ [string "\\pdfcatalog{ /PageMode /UseOutlines }", 
              string "\\end{document}"])))
-}
+endspec

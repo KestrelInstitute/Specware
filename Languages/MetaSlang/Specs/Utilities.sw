@@ -266,6 +266,7 @@ Utilities qualifying spec
 	freeVarsRec(t1) ++ freeVarsRec(t2) ++ freeVarsRec(t3)
       | Seq(tms,_) -> foldr (fn (trm,vs) -> vs ++ freeVarsRec trm) [] tms
       | SortedTerm(t,_,_) -> freeVarsRec t
+      | Pi(_,t,_) -> freeVarsRec t
 
  op  freeVarsList : [a] List(a * MS.Term) -> Vars
  def freeVarsList list = 

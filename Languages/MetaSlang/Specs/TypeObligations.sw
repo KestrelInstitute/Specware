@@ -55,6 +55,25 @@ spec
 	     bod
          else
 	   mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod))
+     | Lambda ([(RecordPat([("1",VarPat(v1 as (vn1,srt1),_)),("2",VarPat(v2 as (vn2,srt2),_))],_),
+		 Fun(Bool true, _,_),bod)],_)
+       ->
+       if (embed? Record arg) && countVarRefs(bod,v1) <= 1 && countVarRefs(bod,v2) <= 1 
+	 then
+	   let Record([("1",arg1),("2",arg2)],_) = arg in
+	   mapTerm (fn (tm) -> case tm of
+				| Var(vr,_) -> if vr = v1 then arg1
+					       else if vr = v2 then arg2
+					       else tm
+				| _ -> tm,
+		    id, id)
+	     bod
+         else
+	   mkBind(Forall,[v1,v2],mkImplies(mkEquality(mkProduct[srt1,srt2],
+						      mkTuple[mkVar v1,mkVar v2],
+						      arg),
+					   bod))
+       
      | _ -> mkApply(fntm,arg)
 
  def assertCond(cond,gamma as (ds,tvs,spc,qid,name,ty,names)) = 
@@ -92,8 +111,8 @@ spec
      ()
  
 
- sort TypeCheckCondition  = QualifiedId * TyVars * MS.Term 
- sort TypeCheckConditions = List(TypeCheckCondition) * StringSet.Set
+ type TypeCheckCondition  = QualifiedId * TyVars * MS.Term 
+ type TypeCheckConditions = List(TypeCheckCondition) * StringSet.Set
 
  op addCondition : TypeCheckConditions * Gamma * MS.Term -> 
 		   TypeCheckConditions
@@ -308,10 +327,9 @@ spec
 %% This checks that pattern matching is exhaustive.
 %%
         | Lambda(rules,_) ->
-%	  let spc = getSpec gamma	       in
-%	  let tau2 = inferType(spc,M)  	       in
-%% This is redundant because infertype gets type from components and checkLambda passes tau down to components
-%	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
+	  let spc = getSpec gamma	       in
+	  let tau2 = inferType(spc,M)  	       in
+	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
 	  checkLambda(tcc,gamma,rules,tau,None)
 	
         | IfThenElse(t1,t2,t3,_) -> 
@@ -620,17 +638,20 @@ spec
 	  let sigma1 = unfoldBase(gamma,sigma1) in
           let (xVarTm,gamma1) = freshVars("X",sigma1,gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVarTm,sigma1,tau1) in
-          let tcc    = subtypeRec(pairs,tcc,gamma1,
-				  mkLetOrApply(M,xVarTm,gamma1),tau2,sigma2) in
+          let tcc    = case M of
+	                 | Lambda _ -> tcc % In this case the extra test would be redundant
+	                 | _ -> subtypeRec(pairs,tcc,gamma1,
+					   mkApply(M,xVarTm),tau2,sigma2)
+	  in
 	  tcc
         | (Product(fields1,_),Product(fields2,_)) -> 
 	  let tcc = ListPair.foldl 
-		(fn((_,t1),(id,t2),tcc) -> 
-		     subtypeRec(pairs,tcc,gamma,
-				mkApply(mkFun(Project id,mkArrow(sigma1,t1)),
-					M),
-				t1,t2))
-		 tcc (fields1,fields2)
+		      (fn((_,t1),(id,t2),tcc) -> 
+		       subtypeRec(pairs,tcc,gamma,
+				  mkApply(mkFun(Project id,mkArrow(sigma1,t1)),
+					  M),
+				  t1,t2))
+		      tcc (fields1,fields2)
           in
           tcc
         | (CoProduct(fields1,_),CoProduct(fields2,_)) ->
@@ -652,7 +673,6 @@ spec
         | (Quotient(tau1,pred1,_),Quotient(sigma2,pred2,_)) -> tcc 
 	  %%%%%%%%%%%%% FIXME
         | (TyVar(tv1,_),TyVar(tv2,_)) -> tcc
-	  %%% FIXME?
         | (Base(id1,srts1,_),Base(id2,srts2,_)) ->
 	  if id1 = id2
 	      then
@@ -744,7 +764,7 @@ spec
 	    foldl (fn (dfn, tcc) ->
 		   let (tvs, tau, term) = unpackTerm dfn in
 		   let usedNames = addLocalVars (term, StringSet.empty) in
-		   let term = etaExpand (spc, usedNames, tau, term) in
+		   %let term = etaExpand (spc, usedNames, tau, term) in
 		   let term = renameTerm (emptyContext ()) term in 
 		   let taus = case tau of
 		                | And (srts, _) -> srts

@@ -1,12 +1,10 @@
-\section{UnitId Parsing}
-
+(*
 Derived from r1.5 SW4/Languages/SpecCalculus/Semantics/UnitId.sl
+*)
 
-\begin{spec}
 SpecCalc qualifying spec
   import ../../Environment
-\end{spec}
-
+(*
 Given a string (assumed to be a filesystem path), this parses
 the string and attempts to form a canonical unitId for that object.
 If the string does not begin with `/', then it is assumed to be
@@ -16,13 +14,13 @@ absolute and canonical.
 
 The following two functions do not handle '#' in a path. However,
 in the places they are used at present, no such paths are expected.
+*)
 
-\begin{spec}
-  op pathToCanonicalUID : String -> Env UnitId
+  op  pathToCanonicalUID : String -> Env UnitId
   def pathToCanonicalUID str =
     return (pathStringToCanonicalUID str)
 
-  op pathStringToCanonicalUID : String -> UnitId
+  op  pathStringToCanonicalUID : String -> UnitId
   def pathStringToCanonicalUID str =
     %% Windows SWPATHs can have \'s                       
     let str = map (fn #\\ -> #/ | c -> c) str in
@@ -32,10 +30,9 @@ in the places they are used at present, no such paths are expected.
         | c :: #: :: r -> (Char.toString(toUpperCase c)) ^ ":" ^ (implode r)
         | _ -> (getCurrentDirectory ()) ++ "/" ++ str
     in
-      {path = splitStringAtChar #/ absoluteString, hashSuffix = None}
+      {path = addDevice?(splitStringAtChar #/ absoluteString), hashSuffix = None}
 
-\end{spec}
-
+(*
 This is like the above except that in this case the path is relative.
 That is, if it starts with `/' then it assumed relative to something
 in the \verb+SWPATH+. It if doesn't start with `/', then it is assumed
@@ -50,9 +47,9 @@ strings typed into the lisp interface.
 There are a number of well-formedness conditions. The character
 '#' cannot appear in a path element. A path like with \ldots /# \ldots
 is not valid. A path without an element preceeding the '#' is invalid.
+*)
 
-\begin{spec}
-  op pathToRelativeUID : String -> Env RelativeUID
+  op  pathToRelativeUID : String -> Env RelativeUID
   def pathToRelativeUID str =
     let charList : List Char = explode str in
     let pathElems : List (List Char) = splitAtChar #/ charList in
@@ -98,7 +95,7 @@ occurrences of ``.'' and ``..''. The function needs to be iterated until
 a fixpoint is reached since there may be sequences of "..".
 
 \begin{spec}
-  op normalizeUID : UnitId -> UnitId
+  op  normalizeUID : UnitId -> UnitId
   def normalizeUID {path,hashSuffix} =
     let
       def onePass elems =
@@ -120,10 +117,10 @@ a fixpoint is reached since there may be sequences of "..".
   %%   {path       = trueFilePath (path, false), % false means absolute, true means relative 
   %%   hashSuffix = hashSuffix}
 
-  op addDevice?: List String -> List String
+  op  addDevice?: List String -> List String
   def addDevice? path =
     if msWindowsSystem?
-      then (if deviceString? (hd path)
+      then (if ~(path = []) && deviceString? (hd path)
 	     then path
 	     else Cons("C:",path))
       else path
@@ -134,7 +131,7 @@ always be prefixed with a "/". When converting to a path, any
 hash suffix is ignored.
 
 \begin{spec}
-  op uidToFullPath : UnitId -> String
+  op  uidToFullPath : UnitId -> String
   def uidToFullPath {path,hashSuffix=_} =
    let device? = deviceString? (hd path) in
    let mainPath = concatList (foldr (fn (elem,result) -> cons("/",cons(elem,result)))
@@ -144,7 +141,7 @@ hash suffix is ignored.
 	else mainPath
 
 
-  op uidToPath : UnitId -> String
+  op  uidToPath : UnitId -> String
   def uidToPath {path,hashSuffix=_} =
     %foldr (fn (elem,path) -> "/" ^ elem ^ path) "" path
    let path = abbreviatedPath path in
@@ -159,7 +156,7 @@ hash suffix is ignored.
 	then (hd path) ^ mainPath
 	else mainPath
 
-  op abbreviatedPath: List String -> List String
+  op  abbreviatedPath: List String -> List String
   def abbreviatedPath path =
     let home = case getEnv "HOME" of
                 | Some str -> splitStringAtChar #/ str
@@ -186,7 +183,7 @@ hash suffix is ignored.
 This is like the above but accommodates the suffix as well.
 
 \begin{spec}
-  op uidToString : UnitId -> String
+  op  uidToString : UnitId -> String
   def uidToString {path,hashSuffix} =
    let path = abbreviatedPath path in
    let device? = deviceString? (hd path) in
@@ -210,7 +207,7 @@ This is like the above but accommodates the suffix as well.
 	 fileName ^"#"^ suffix
 
 
-  op relativeUID_ToString : RelativeUID -> String
+  op  relativeUID_ToString : RelativeUID -> String
   def relativeUID_ToString rel_uid =
    case rel_uid of
      | UnitId_Relative {path, hashSuffix} -> 
@@ -238,12 +235,12 @@ Used by print commands defined in /Languages/SpecCalculus/Semantics/Evaluate/Pri
 
 \begin{spec}
 
-  op relativizeUID : UnitId -> UnitId -> RelativeUID
+  op  relativizeUID : UnitId -> UnitId -> RelativeUID
   def relativizeUID base target =
     UnitId_Relative {path       = relativizePath base.path target.path,
 		  hashSuffix = target.hashSuffix}
 
-  op relativizePath : List String -> List String -> List String 
+  op  relativizePath : List String -> List String -> List String 
   def relativizePath base target =
     let 
       def addUpLinks (base,target) =
@@ -271,7 +268,7 @@ yields \verb+["a", "b", "c"].
 The next function will go away.
 
 \begin{spec}
-  op splitStringAtChar : Char -> String -> List String
+  op  splitStringAtChar : Char -> String -> List String
   def splitStringAtChar char str =
     let def parseCharList chars =
       case chars of
@@ -287,7 +284,7 @@ The next function will go away.
 \end{spec}
 
 \begin{spec}
-  op splitAtChar : Char -> List Char -> List (List Char)
+  op  splitAtChar : Char -> List Char -> List (List Char)
   def splitAtChar char charList =
     let def parseCharList chars =
       case chars of
@@ -306,7 +303,7 @@ This takes a prefix from the list while the given predicate holds. It
 doesn't belong here.
 
 \begin{spec}
-  op takeWhile : fa (a) (a -> Boolean) -> List a -> (List a) * (List a)
+  op  takeWhile : fa (a) (a -> Boolean) -> List a -> (List a) * (List a)
   def takeWhile pred l =
     case l of
       | [] -> ([],[])
@@ -321,7 +318,7 @@ doesn't belong here.
 The next two functions will disappear.
 
 \begin{spec}
-  op removeLastElem : (List String) -> Env (List String)
+  op  removeLastElem : (List String) -> Env (List String)
   def removeLastElem elems =
     case elems of
       | [] -> error "removeLastElem: encountered empty string list"
@@ -331,7 +328,7 @@ The next two functions will disappear.
           return (Cons (x,suffix))
         }
 
-  op lastElem : (List String) -> Env String
+  op  lastElem : (List String) -> Env String
   def lastElem elems =
     case elems of
       | [] -> error "lastElem: encountered empty string list"
@@ -340,7 +337,7 @@ The next two functions will disappear.
 \end{spec}
 
 \begin{spec}
-  op removeLast: fa (a) List a -> Env (List a)
+  op  removeLast: fa (a) List a -> Env (List a)
   def removeLast elems =
     case elems of
       | [] -> error "removeLast: encountered empty list"
@@ -350,13 +347,13 @@ The next two functions will disappear.
           return (Cons (x,suffix))
         }
 
-  op first : fa (a) List a -> Env a
+  op  first : fa (a) List a -> Env a
   def first elems =
     case elems of
       | [] -> error "first: encountered empty list"
       | x::_ -> return x
 
-  op last : fa (a) List a -> Env a
+  op  last : fa (a) List a -> Env a
   def last elems =
     case elems of
       | [] -> error "last: encountered empty list"
@@ -369,7 +366,7 @@ emacs interface functions.
 
 \begin{spec}
   %% Top-level functions
-  op findDefiningUID : QualifiedId * String * (Option GlobalContext) -> List (String * String)
+  op  findDefiningUID : QualifiedId * String * (Option GlobalContext) -> List (String * String)
   def findDefiningUID(qId,uidStr,optGlobalContext) =
     case optGlobalContext of
       | None -> []
@@ -380,7 +377,7 @@ emacs interface functions.
               | []     -> removeDuplicates(searchForDefiningUID(qId,optGlobalContext))
               | result -> removeDuplicates result
 
-  op searchForDefiningUID : QualifiedId * (Option GlobalContext) -> List (String * String)
+  op  searchForDefiningUID : QualifiedId * (Option GlobalContext) -> List (String * String)
   def searchForDefiningUID(qId,optGlobalContext) =
     case optGlobalContext of
       | None -> []
@@ -389,7 +386,7 @@ emacs interface functions.
           (searchForDefiningUIDforOp(qId,globalContext,false)
            ++ searchForDefiningUIDforSort(qId,globalContext,false))
 
-  op findDefiningUIDforOp
+  op  findDefiningUIDforOp
        : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * Boolean
            -> List (String * String)
   def findDefiningUIDforOp(opId,spc,unitId,depUIDs,globalContext,rec?) =
@@ -430,14 +427,14 @@ emacs interface functions.
 	        []
 		infos
 
-  op findDefiningUIDforOpInContext: QualifiedId * UnitId * GlobalContext * Boolean -> List (String * String)
+  op  findDefiningUIDforOpInContext: QualifiedId * UnitId * GlobalContext * Boolean -> List (String * String)
   def findDefiningUIDforOpInContext (opId, unitId, globalContext, rec?) =
     case evalPartial globalContext unitId of
       | None -> []
       | Some(Spec spc,_,depUIDs) ->
         findDefiningUIDforOp (opId, spc, unitId, depUIDs, globalContext, rec?)
 
-  op findUnitIdforUnit: Value * GlobalContext -> Option UnitId
+  op  findUnitIdforUnit: Value * GlobalContext -> Option UnitId
   def findUnitIdforUnit (val, globalContext) =
     foldMap (fn result -> fn unitId -> fn (vali,_,_) ->
 	     case result of
@@ -445,7 +442,7 @@ emacs interface functions.
 	       | None -> if val = vali then Some unitId else None)
       None globalContext
 
-  op searchForDefiningUIDforOp: QualifiedId * GlobalContext * Boolean -> List (String * String)
+  op  searchForDefiningUIDforOp: QualifiedId * GlobalContext * Boolean -> List (String * String)
   def searchForDefiningUIDforOp (opId, globalContext, rec?) =
     foldMap (fn result -> fn unitId -> fn (val,_,depUIDs) ->
 	     case result of
@@ -463,7 +460,7 @@ emacs interface functions.
       []
       globalContext
 
-  op findDefiningUIDforSort : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * Boolean -> List (String * String)
+  op  findDefiningUIDforSort : QualifiedId * Spec * UnitId * List UnitId * GlobalContext * Boolean -> List (String * String)
   def findDefiningUIDforSort (sortId, spc, unitId, depUIDs, globalContext, rec?) =
     let def findLocalUID sortId =
           if localSort? (sortId, spc) then
@@ -505,14 +502,14 @@ emacs interface functions.
 	        []
 		infos
 
-  op findDefiningUIDforSortInContext : QualifiedId * UnitId * GlobalContext * Boolean -> List (String * String)
+  op  findDefiningUIDforSortInContext : QualifiedId * UnitId * GlobalContext * Boolean -> List (String * String)
   def findDefiningUIDforSortInContext (sortId, unitId, globalContext, rec?) =
     case evalPartial globalContext unitId of
       | None -> []
       | Some (Spec spc, _, depUIDs) ->
         findDefiningUIDforSort (sortId, spc, unitId, depUIDs, globalContext, rec?)
 
-  op searchForDefiningUIDforSort : QualifiedId * GlobalContext * Boolean -> List (String * String)
+  op  searchForDefiningUIDforSort : QualifiedId * GlobalContext * Boolean -> List (String * String)
   def searchForDefiningUIDforSort (sortId, globalContext, rec?) =
     foldMap (fn result -> fn unitId -> fn (val, _, depUIDs) ->
 	     case result of
@@ -526,4 +523,3 @@ emacs interface functions.
       globalContext
 
 endspec
-\end{spec}

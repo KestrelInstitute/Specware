@@ -440,8 +440,8 @@ spec
                                                              (id, termSortEnv (sp, t)))
                                                             fields,
                                                         noPos)
-      | Let        (_, term,              _) -> termSortEnv   (sp, term)
-      | LetRec     (_, term,              _) -> termSortEnv   (sp, term)
+      | Let        (_, t,                 _) -> termSortEnv   (sp, t)
+      | LetRec     (_, t,                 _) -> termSortEnv   (sp, t)
       | Var        ((id, srt),            _) -> unfoldToArrow (sp, srt)
       | Fun        (fun, srt,             _) -> unfoldToArrow (sp, srt)
       | Lambda     (Cons((pat,_,body),_), _) -> mkArrow (patternSort pat,
@@ -449,8 +449,10 @@ spec
       | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
       | IfThenElse (_, t2, t3,            _) -> termSortEnv   (sp, t2)
       | Seq        _                         -> mkProduct     []
-      | SortedTerm (_,s,                  _) -> s
-      | mystery                              -> System.fail ("In termSortEnv, unrecognized term: " ^ printTerm mystery)
+      | SortedTerm (_, s,                 _) -> s
+      | Pi         (_, t,                 _) -> termSortEnv   (sp, t)
+      | mystery                              ->
+	System.fail ("In termSortEnv, unrecognized term: " ^ printTerm mystery)
   in
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
   res

@@ -180,18 +180,24 @@ spec
     case f of
       | Closure(match,csb) ->
         (case patternMatchRules(match,a,csb,spc,depth) of
-	  | Some v -> v
-	  | None -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
+	  | Some v -> maybeMkLetOrSubst(v,csb,sb)
+	  | None -> Unevaluated(mkSimpApply(valueToTerm f,valueToTerm a)))
       | RecClosure(match,csb,ids) ->
         (case patternMatchRules(match,a,extendLetRecSubst(sb,csb,ids),spc,depth) of
-	  | Some v -> v
-	  | None -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
+	  | Some v -> maybeMkLetOrSubst(v,csb,sb)
+	  | None -> Unevaluated(mkSimpApply(valueToTerm f,valueToTerm a)))
       | ChooseClosure(cl,_) ->
 	(case a of
 	  | QuotientVal(_,v) -> evalApply(cl,v,sb,spc,depth)
 	  | _ -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
       | Unevaluated ft -> evalApplySpecial(ft,a,sb,spc,depth)
       | _ -> Unevaluated (mkApply(valueToTerm f,valueToTerm a))
+
+  op  mkSimpApply: MS.Term * MS.Term -> MS.Term
+  def mkSimpApply(f,x) =
+    case f of
+      | Lambda([(p,_,bod)],_) -> mkLet([(p,x)],bod)
+      | _ -> mkApply(f,x)
 
   op  evalApplySpecial: MS.Term * Value * Subst * Spec * Nat -> Value
   def evalApplySpecial(ft,a,sb,spc,depth) =
@@ -308,7 +314,14 @@ spec
 	   | _ -> None)
       | RecordVal [("1",a1),("2",a2)] ->
         (if evalConstant? a1 & evalConstant? a2
-	  then Some(a1 = a2)
+	  then (case (a1,a2) of
+		  | (Unevaluated t1,Unevaluated t2) ->
+		    if equalTerm?(t1, t2)
+		      then Some true
+		      else None
+		  | (Unevaluated _, _) -> None
+		  | (_, Unevaluated _) -> None
+		  | _ -> Some(a1 = a2))
 	  else None)
       | _ -> None
         
@@ -417,6 +430,12 @@ spec
   %% either substitutees them (if their values are simple) or let-binds them.
   op  maybeMkLetOrSubst: Value * Subst * Subst -> Value
   def maybeMkLetOrSubst(val,newSb,oldSb) =
+    case val of
+      | Unevaluated t -> Unevaluated(mkLetOrsubst(t,newSb,oldSb))
+      | _ -> val
+
+  op  mkLetOrsubst: MS.Term * Subst * Subst -> MS.Term
+  def mkLetOrsubst(t,newSb,oldSb) =
     let def splitSubst sb =
           List.foldl (fn ((vr,val),(letSb,substSb)) ->
 		 if evalConstant? val	% Could be more discriminating
@@ -424,21 +443,18 @@ spec
 		  else (Cons((vr,valueToTerm val),letSb),substSb))
 	    ([],[]) sb
     in
-    case val of
-      | Unevaluated t ->
-        let localSb = ldiff(newSb,oldSb) in
-	if localSb = emptySubst then val
-	  else
-	  let fvs = freeVars t in
-	  let usedSb = foldl (fn ((id1,v),rsb) ->
-			      case find (fn (id2,_) -> id1 = id2) fvs of
-				| Some vr -> Cons((vr,v),rsb)
-				| None -> rsb)
-	                 [] localSb
-	  in
-	  let (letSb,substSb) = splitSubst usedSb in
-	  Unevaluated(mkLetWithSubst(substitute(t,substSb),letSb))
-      | _ -> val
+    let localSb = ldiff(newSb,oldSb) in
+    if localSb = emptySubst then t
+      else
+      let fvs = freeVars t in
+      let usedSb = foldl (fn ((id1,v),rsb) ->
+			  case find (fn (id2,_) -> id1 = id2) fvs of
+			    | Some vr -> Cons((vr,v),rsb)
+			    | None -> rsb)
+		     [] localSb
+      in
+      let (letSb,substSb) = splitSubst usedSb in
+      mkLetWithSubst(substitute(t,substSb),letSb)
 
   %% First list should contain second list as a tail
   op  ldiff: fa(a) List a * List a -> List a
@@ -452,7 +468,7 @@ spec
   def evalQualifiers = ["Nat","Integer","Integer_","String","Char","System","Boolean"] 
   def evalConstant?(v) =
     case v
-      of Unevaluated _ -> false
+      of Unevaluated t -> embed? Fun t
        | _ -> true
 
   op  intVal: Value -> Integer
@@ -734,7 +750,9 @@ spec
 		    string "{",
 		    prettysFill(addSeparator (string ", ") (map (fn id -> string id) ids)),
 		    string "}>"]
-      | Unevaluated t  -> ppTerm context ([],Top:ParentTerm) t
+      | Unevaluated t  -> prettysNone[string "<Unev: ",
+				      ppTerm context ([],Top:ParentTerm) t,
+				      string ">"]
 
   op  valueToList: Value -> Option(List Value)
   def valueToList v =
@@ -761,7 +779,7 @@ spec
         let argtm = valueToTerm arg in
 	mkQuotient(valueToTerm f,argtm,termSort argtm)
       | ChooseClosure(a,srt) -> mkApply(mkFun(Choose,srt),valueToTerm a)
-      | Closure(f,_)   -> Lambda(f,noPos)
+      | Closure(f,sb)   -> mkLetOrsubst(Lambda(f,noPos),sb,emptySubst)
       | RecClosure(f,_,_) -> Lambda(f,noPos)
       | Unevaluated t  -> t
 

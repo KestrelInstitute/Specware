@@ -75,6 +75,8 @@
 (defun in-specware-shell? ()
   *in-specware-shell?*)
 
+(setq *debugger-hook* #'(lambda (ignore1 ignore2) (set-specware-shell nil)))
+
 (defun specware-shell0 ()
   (specware-shell t))
 
@@ -84,6 +86,7 @@
 	 (cl:*package* cl:*package*)
 	 (sw-shell-pkg (find-package :SWShell))
 	 * ** ***
+	 / // ///
 	 ch)
     (emacs::eval-in-emacs "(set-comint-prompt)")
     (setq *emacs-eval-form-after-prompt* nil)
@@ -155,7 +158,10 @@
   (when val
     (setq *** **
 	  ** *
-	  * (car val)))
+	  * (car val)
+	  /// //
+	  // /
+	  / val))
   (values-list val))
 
 (defun process-sw-shell-command (command argstr)
@@ -225,7 +231,9 @@
       ;; Non-user commands
       (set-base (cl-user::set-base argstr))
       (show-base-unit-id (cl-user::show-base-unit-id))
-      ((lisp l) (with-break-possibility (lisp-value (eval (read-from-string argstr)))))
+      ((lisp l) (with-break-possibility
+		 (lisp-value (multiple-value-list
+			      (eval (read-from-string argstr))))))
       (cl (with-break-possibility (cl-user::cl argstr)))
       (ld (with-break-possibility (cl-user::ld argstr)))
       (cf (cl-user::cf argstr))
@@ -260,6 +268,7 @@
 (defun cl-user::sw-shell ()
   (specware-shell nil))
 
+#|| Didn't pan out
 (defvar original-error #'error)
 
 (defun just-print-error-message
@@ -294,6 +303,7 @@
   (excl:without-package-locks #-allegro progn
    (setf (symbol-function 'error) original-error))
   t)
+||#
 
 #+allegro
 (top-level:alias ("sw-shell") () (specware-shell nil))

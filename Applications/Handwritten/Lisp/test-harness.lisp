@@ -304,20 +304,24 @@ be the option to run each (test ...) form in a fresh image.
       (format s "~&;;;~%")
       (when partial-match-at-start?
 	(format s "~&;;; <  ...~%"))
-      (dolist (line expected)
-	(cond ((consp line)
-	       (case (car line) 
+      (dolist (item expected)
+	(cond ((consp item)
+	       (case (car item) 
 		 (:optional  
-		  (format s "~&;;; ?  ~A   [optional]~%" (cdr line)))
+		  (dolist (line (cdr item))
+		    (format s "~&;;; ?  ~A   [optional]~%" line)))
 		 (:alternatives
 		  (let ((n 0))
-		    (dolist (alt (cdr line))
-		      (format s "~&;;; ?  ~A   [alt ~D]~%" 
-			      alt (incf n)))))
+		    (dolist (alt (cdr item))
+		      (incf n)
+		      (let ((lines (if (consp alt) alt (list alt))))
+			(dolist (line lines)
+			  (format s "~&;;; ?  ~A   [alt ~D]~%" 
+				  line n))))))
 		 (t 
-		  (format s "~&;;; ?  ~A   [???]~%" (cdr line)))))
+		  (format s "~&;;; ?  ~A   [???]~%" (cdr item)))))
 	      (t
-	       (format s "~&;;; <  ~A~%" line))))
+	       (format s "~&;;; <  ~A~%" item))))
       (when partial-match-at-end?
 	(format s "~&;;; <  ...~%"))
       (format s "~&;;;")
@@ -367,21 +371,25 @@ be the option to run each (test ...) form in a fresh image.
 		   ((null saw)
 		    (values wanted saw))
 		   ((optional? (car wanted))
-		    (if (lines-match? (cadr (car wanted)) (car saw))
-			(extend-match (append (cddr (car wanted)) (cdr wanted)) 
-				      (cdr saw))
-		      (extend-match (cdr wanted) saw)))
+		    (let ((optional-lines (cdr (car wanted))))
+		      (if (lines-match? (car optional-lines) (car saw))
+			  (extend-match (append (cdr optional-lines) (cdr wanted)) 
+					(cdr saw))
+			(extend-match (cdr wanted) saw))))
 		   ((alternatives? (car wanted))
 		    (dolist (alternative (cdr (car wanted))
 			      ;; all the alternatives fail
 			      (values wanted saw))
-		      (when (lines-match? (car alternative)
-					  (car saw))
-			;; if the first line of an alternative matches, 
-			;; commit to using the rest of that alternative
-			(return
-			  (extend-match (append (cdr alternative) (cdr wanted))
-					(cdr saw))))))
+		      (let ((alternative-lines (if (consp alternative) 
+						   alternative
+						 (list alternative))))
+			(when (lines-match? (car alternative-lines)
+					    (car saw))
+			  ;; if the first line of an alternative matches, 
+			  ;; commit to using the rest of that alternative
+			  (return
+			    (extend-match (append (cdr alternative-lines) (cdr wanted))
+					  (cdr saw)))))))
 		   ((lines-match? (car wanted) (car saw))
 		    (extend-match (cdr wanted) (cdr saw)))
 		   (t
