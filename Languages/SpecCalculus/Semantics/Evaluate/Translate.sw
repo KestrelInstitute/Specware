@@ -409,7 +409,11 @@ Note: The code below does not yet match the documentation above, but should.
 				    old_aliases;
 	       new_aliases <- return (rev new_aliases);
 	       mapM (fn old_alias ->
-		     if ~ (List.member (old_alias, new_aliases)) & (List.member (old_alias, forbidden_dom_ops)) then
+		     %% Grumble -- see ~/Specware4/Languages/PSL/Semantics/Evaluate/Specs/Id.sw
+		     %% for a case that causes problems.   It is trying to implicitly map 
+		     %% unqualified show to IdSet.show, so if we use forbidden_dom_ops here
+		     %% instead of just qualified_forbidden_dom_ops, we will signal an unwanted error.
+		     if ~ (List.member (old_alias, new_aliases)) & (member (old_alias, qualified_forbidden_dom_ops)) then
 		       raise (MorphError (position, "Illegal to translate base op " ^ (explicitPrintQualifiedId old_alias) ^ " to something other than itself."))
 		     else
 		       return old_alias)
