@@ -6,7 +6,6 @@
 
 (defconst *specware-emacs* (concatenate 'string *specware* "/Library/IO/Emacs/"))
 
-
 ;; Can't seem to find this in Emacs Lisp!
 
 (defun sw:foreach (f l)

@@ -26,7 +26,14 @@
       9999999999))
 
 (defun getCurrentDirectory ()
-  (namestring (sys::current-directory)))
+  (convert-windows-filename (namestring (sys::current-directory))))
+
+(defun convert-windows-filename (filestr)
+  (let ((strip-c-colon-nm
+	 (if (equal "c:" (subseq filestr 0 2))
+	     (subseq filestr 2 (length filestr))
+	   filestr)))
+    (substitute #\/ #\\ strip-c-colon-nm)))
 
 ;;;  (defun fileExists (x)
 ;;;    (probe-file x))

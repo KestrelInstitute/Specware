@@ -2,7 +2,7 @@
 ;; This is called to start Specware. It is invoked by a command-line
 ;; argument to Xemacs. This spawns a Lisp process.
 
-(defun run-specware (&optional dontOpenSpecWindow)
+(defun run-specware (&optional opendSpecWindow)
   (interactive "P")
   (setq fi:common-lisp-host "localhost")
 ;;
@@ -44,14 +44,14 @@
 		  ) 
  
 ;; Works only in an image where specware2000 resides.
-  (unless dontOpenSpecWindow
+  (when opendSpecWindow
     (sw:eval-in-lisp "(progn (SpecwareUI::openSpecWindow) \"Done\")")))
 
 ;; The following is almost the same as the above. The difference is that
 ;; in the following we execute a Specware application (rather than run Lisp
 ;; with a Specware world);
 
-(defun run-specware-application (dontOpenSpecWindow)
+(defun run-specware-application (&optional opendSpecWindow)
   (interactive "P")
   (setq fi:common-lisp-host "localhost")
 ;;
@@ -76,7 +76,7 @@
 		  fi:common-lisp-image-name)
  
 ;; Don't break if specware not loaded
-  (unless dontOpenSpecWindow
+  (when opendSpecWindow
     (fi:eval-in-lisp "(progn (when (find-package \"SPECWAREUI\")
 		        (funcall (intern \"OPENSPECWINDOW\" \"SPECWAREUI\")))
 		        \"Done\")")))
