@@ -329,7 +329,6 @@ spec
         | Lambda(rules,_) ->
 	  let spc = getSpec gamma	       in
 	  let tau2 = inferType(spc,M)  	       in
-%% This is redundant because infertype gets type from components and checkLambda passes tau down to components
 	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
 	  checkLambda(tcc,gamma,rules,tau,None)
 	
@@ -642,17 +641,17 @@ spec
           let tcc    = case M of
 	                 | Lambda _ -> tcc % In this case the extra test would be redundant
 	                 | _ -> subtypeRec(pairs,tcc,gamma1,
-					   mkApply(M,xVarTm),tau2,sigma2) in
+					   mkApply(M,xVarTm),tau2,sigma2)
+	  in
 	  tcc
         | (Product(fields1,_),Product(fields2,_)) -> 
-	  let tcc =
-	  ListPair.foldl 
-		(fn((_,t1),(id,t2),tcc) -> 
-		     subtypeRec(pairs,tcc,gamma,
-				mkApply(mkFun(Project id,mkArrow(sigma1,t1)),
-					M),
-				t1,t2))
-		 tcc (fields1,fields2)
+	  let tcc = ListPair.foldl 
+		      (fn((_,t1),(id,t2),tcc) -> 
+		       subtypeRec(pairs,tcc,gamma,
+				  mkApply(mkFun(Project id,mkArrow(sigma1,t1)),
+					  M),
+				  t1,t2))
+		      tcc (fields1,fields2)
           in
           tcc
         | (CoProduct(fields1,_),CoProduct(fields2,_)) ->
