@@ -1,5 +1,6 @@
 (in-package :cl-user)
 (defpackage :SpecCalc)
+(defpackage :MSInterpreter)
 (defpackage :JGen)
 ;; Toplevel Lisp aliases for Specware
 
