@@ -695,11 +695,13 @@ If we want the precedence to be optional:
 ;;;        So we parse as TWO-NAME-EXPRESSION and resolve in post-processing.
 (define-sw-parser-rule :SELECTABLE-EXPRESSION ()
   (:anyof
-   (1 :TWO-NAME-EXPRESSION        :documentation "Reference to op or var, or selection")  ; resolve in post-processing
+   ;; 
+   (1 :TWO-NAME-EXPRESSION        :documentation "Reference to op or var, or selection")  ; resolve in post-processing  (name     . name)
    ;; (1 :QUALIFIED-OP-REF        :documentation "Qualified reference to op")             ; see TWO-NAME-EXPRESSION
-   ;; (1 :FIELD-SELECTION         :documentation "Field Selection")                       ; see TWO-NAME-EXPRESSION
+   (1 :NAT-FIELD-SELECTION        :documentation "Selection from name using Nat")         ; see TWO-NAME-EXPRESSION     (name     . nat)
+   (1 :FIELD-SELECTION            :documentation "Selection from non-name")               ; see TWO-NAME-EXPRESSION     (non-name . name)
+   ;;
    (1 :LITERAL                    :documentation "Literal: Boolean, Nat, Character, String")
-   (1 :FIELD-SELECTION            :documentation "Selection")
    (1 :TUPLE-DISPLAY              :documentation "Tuple")
    (1 :RECORD-DISPLAY             :documentation "Record")
    (1 :SEQUENTIAL-EXPRESSION      :documentation "Sequence of expressions")
@@ -937,6 +939,14 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :FIELD-SELECTION ()
   (:tuple (1 :SELECTABLE-EXPRESSION) "." (2 :FIELD-SELECTOR))
   (make-field-selection 2 1 ':left-lcb ':right-lcb))  ;; fix
+
+(define-sw-parser-rule :NAT-FIELD-SELECTION ()
+  (:tuple (1 :UNQUALIFIED-OP-REF) "." (2 :NAT-SELECTOR))
+  (make-field-selection 2 1 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :NAT-SELECTOR ()
+  (1 :NAT)
+  (make-nat-selector 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIELD-SELECTOR ()
   (:anyof

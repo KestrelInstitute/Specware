@@ -77,8 +77,8 @@ SpecCalc qualifying spec {
             ppTerm term
           ]
       | Translate (term, (translation,_)) ->
-          let def ppTranslateRule (rule,pos) =
-	       case rule of
+          let def ppTranslateRule rule =
+	       case rule.1 of
 		 | Sort (left_qid, right_qid) ->
   		   ppConcat [
 			     ppQualifier left_qid,

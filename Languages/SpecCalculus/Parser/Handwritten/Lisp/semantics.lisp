@@ -587,8 +587,8 @@ If we want the precedence to be optional:
 			     (freshMetaTypeVar l r) 
 			     l r))
 
-(defun make-nat-selector        (number     l r) (make-projector (format t "~D" number) l r))
-(defun make-field-name-selector (field-name l r) (make-projector field-name             l r))
+(defun make-nat-selector        (number     l r) (make-projector (format nil "~D" number) l r))
+(defun make-field-name-selector (field-name l r) (make-projector field-name               l r))
 
 ;;; ------------------------------------------------------------------------
 ;;;  TUPLE-DISPLAY
