@@ -50,18 +50,20 @@
 ;;;		    (beginning-of-defun -1))) ; beginning of next definition
 		    ;; Copy new until definition exists in old
 		    (with-current-buffer old-buffer
-		      (while (and (looking-at "(" new-buffer)
+		      (while (and (not (eq (point new-buffer) (point-max new-buffer)))
+				  (looking-at "(" new-buffer)
 				  (not (save-excursion
 					 (goto-char (point-min) old-buffer)
 					 (search-forward (sw:get-definition-ident-str new-buffer) nil t))))
 			(with-current-buffer new-buffer
 			  (sw:copy-to-patch-buffer new-buffer patch-file-buffer
-						(point) (progn (beginning-of-defun -1) (point))
-						new-window old-window (point old-buffer) dont-ask)))
+						   (point) (progn (beginning-of-defun -1) (point))
+						   new-window old-window (point old-buffer) dont-ask)))
 		      ;; Start again at matching definition in old buffer
-		      (goto-char (point-min) old-buffer)
-		      (search-forward (sw:get-definition-ident-str new-buffer) nil t)
-		      (beginning-of-defun)))))))))
+		      (unless (eq (point new-buffer) (point-max new-buffer))
+			(goto-char (point-min) old-buffer)
+			(search-forward (sw:get-definition-ident-str new-buffer) nil t)
+			(beginning-of-defun))))))))))
       (switch-to-buffer patch-file-buffer))))
 
 (defun sw:forward-def-header ()
