@@ -88,7 +88,6 @@ The following is the sort given to us by the parser.
     | Spec List (SpecElem a)
     | Diag List (DiagElem a)
     | Colimit (Term a)
-
 \end{spec}
 
 The calculus supports two types of morphisms: morphisms between specs and
@@ -160,8 +159,8 @@ bound by a let or listed in a file are unstructured.
 A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
-and sorts or for requalifying things. For now, a translation is a
-mapping from names to names, annotated with the full list of names
+and sorts or for requalifying things. For now, a translation is just a
+mapping from names to names, annotated with the full list of aliases
 to be used in the target info.
 
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
@@ -253,14 +252,13 @@ them to be presented in any order.
     | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
 
-
-
   sort Assertions = | All
                     | Explicit List ClaimName
 
   sort ProverOptions = | Options (List LispCell)
                        | Error   (String * String)  % error msg, problematic string
 \end{spec}
+
 A \verb+NatTranComp+ element is a component in a natural transformation
 between diagrams. The components are indexed by vertices in the shape.
 The term in the component must evaluate to a morphism.
