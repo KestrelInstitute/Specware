@@ -242,7 +242,7 @@ FSeq qualifying spec
       len <= length s2 &&
       prefix (s1, len) = prefix (s2, len) &&
       (length s1 = len || length s2 = len || s1 @ len ~= s2 @ len)) in
-    prefix (s1, len)  % = firstN (s2, len)
+    prefix (s1, len)
 
   op longestCommonSuffix : [a] FSeq a * FSeq a -> FSeq a
   def longestCommonSuffix(s1,s2) =
