@@ -1101,7 +1101,8 @@ If anyone has a good algorithm for this..."
      "(SpecCalc::searchForDefiningURI '(:|Qualified| %S . %S) %s)"
      qualifier sym *specware-context-str*)))
 
-(defvar *specware-context-str* "cl-user::*specware-global-context*")
+;; (defvar *specware-context-str* "cl-user::*specware-global-context*")
+(defvar *specware-context-str* "(MonadicStateInternal::readGlobalVar \"GlobalContext\")")
 
 (defun specware-file-name-p (str)
   (let ((len (length str)))
