@@ -179,9 +179,7 @@
   (catch 'mismatch
     (let ((alist nil))
       (labels ((collect (pattern value)
-		 (cond ((#+allegro excl:fixnump
-			 #+(or mcl Lispworks) cl-user::fixnump
-			 pattern)
+		 (cond ((fixnump pattern)
 			;;(comment "New pair: ~S ~S" pattern value)
 			(push (cons pattern value) alist))
 		       ((eql pattern value)
@@ -218,9 +216,10 @@
 	(return node)))))
 
 (defun eval-children-nodes (session rule children node-semantics)
-  (declare (simple-vector children))
+  ;(declare (simple-vector children))
+  ;(format t "eval-children-nodes: 1 ~A~%" children)
   (ecase (structure-type-of rule) ; faster than etypecase, since matches are exact here
-    (parser-atomic-rule
+    (parser-atomic-rule ;(format t "eval-children-nodes: 2~%")
      (eval-node session (svref children 0)))
     (parser-keyword-rule
      (parser-keyword-rule-keyword rule)

@@ -29,7 +29,8 @@
 
 
 ;; All library paths are relative to the Specware4 root directory.
-(setq baseDir (specware::getenv "SPECWARE4"))
+;; sjw: doesn't seem to be used
+;;(setq baseDir (specware::getenv "SPECWARE4"))
 
 ;; ========
 

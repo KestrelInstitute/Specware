@@ -311,7 +311,7 @@
 	   (pattern (parser-rule-items rule))
 	   (pattern-size (length pattern))
 	   (next-child-index (1+ child-index))
-	   (children (make-array pattern-size)))
+	   (children (make-array pattern-size :initial-element nil)))
       (declare (simple-vector children))
       (let ((new-node
 	     (create-parser-node  :rule       rule
@@ -623,7 +623,7 @@
 	  (let ((new-children (make-array (* child-index 2))))
 	    (dotimes (i children-size)
 	      (setf (svref new-children i) (svref children i)))
-	    (setf (parser-node-children node) new-children)
+      	    (setf (parser-node-children node) new-children)
 	    (setf children new-children)))
 	;;
 	(adopt-child node children child-index candidate-child)
