@@ -75,7 +75,7 @@ echo " "
 # when Lisp loads?
 
 export SWPATH=$SPECWARE4:.
-EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
+EXIT_ON_ERRORS=$SPECWARE4/Applications/Handwritten/Lisp/exit-on-errors
 
 echo "\$SWPATH=$SWPATH"
 
