@@ -91,14 +91,18 @@ Note: The code below does not yet match the documentation above, but should.
 
 	| Sort (dom_qid as Qualified (dom_qualifier, dom_id), cod_qid, cod_aliases) -> 
 	  (case findAllSorts (dom_spec, dom_qid) of
-	     | ((Qualified (found_qualifier, _))::_,_,_)::rs  ->
+	     | ((Qualified (found_qualifier, _))::_,_,dom_defs)::rs  ->
 	       (if rs = [] or found_qualifier = UnQualified then
                   case findAQualifierMap (translation_sort_map, dom_qualifier, dom_id) of
-		    | None -> return (translation_op_map, 
-				      %% We allow Qualified("Boolean", "Boolean") as a cod_qid,
-				      %% but rely on translateSort to notice it and replace any 
-				      %% resulting sort term with built-in Boolean.
-				      insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)))
+		    | None -> 
+		      if dom_defs ~= [] & (member (Boolean_Boolean, cod_aliases) or member (unqualified_Boolean, cod_aliases)) then
+			raise (MorphError (rule_pos, "Cannot map pre-defined sort " ^ (printQualifiedId dom_qid) ^ " to Boolean.Boolean"))
+		      else
+			return (translation_op_map, 
+				%% We allow Qualified("Boolean", "Boolean") as a cod_qid,
+				%% but rely on translateSort to notice it and replace any 
+				%% resulting sort term with built-in Boolean.
+				insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)))
 		    | _    -> raise (SpecError (rule_pos, 
 						"translate: Duplicate rules for source sort "^
 						(printQualifiedId dom_qid)))
@@ -172,14 +176,22 @@ Note: The code below does not yet match the documentation above, but should.
                 if sort_qualifier = dom_qualifier then
                   case findAQualifierMap (translation_sort_map, sort_qualifier, sort_id) of
                     | None -> 
-                        let new_cod_qid = case (cod_qualifier, sort_id) of
-					    %% We allow Qualified("Boolean", "Boolean") as a cod_qid,
-					    %% but rely on translateSort to notice it and replace any 
-					    %% resulting sort term with built-in Boolean.
-		                            | ("<unqualified>", "Boolean") -> Boolean_Boolean
-					    | _ -> mkQualifiedId (cod_qualifier, sort_id)
-                        in
-                        return (insertAQualifierMap (translation_sort_map, sort_qualifier, sort_id, (new_cod_qid, [new_cod_qid])))
+                      let cod_qid = mkQualifiedId (cod_qualifier, sort_id) in
+		      {
+		       new_cod_qid <- (if cod_qid = unqualified_Boolean or cod_qid = Boolean_Boolean then
+					 %% We allow Qualified("Boolean", "Boolean") as a cod_qid,
+					 %% but rely on translateSort to notice it and replace any 
+					 %% resulting sort term with built-in Boolean.
+					 %% Also, the dom sort must be undefined.
+					 let dom_qid = mkQualifiedId (dom_qualifier, sort_id) in
+					 case findAllSorts (dom_spec, dom_qid) of
+					   | (_,_,[])::_  -> return Boolean_Boolean
+					   | (_,_,_)::_  -> 
+					     raise (MorphError (rule_pos, "Cannot map pre-defined sort " ^ (printQualifiedId dom_qid) ^ " to Boolean.Boolean"))
+				       else
+					 return cod_qid);
+		       return (insertAQualifierMap (translation_sort_map, sort_qualifier, sort_id, (new_cod_qid, [new_cod_qid])))
+		      }
                     | _ -> raise (SpecError (rule_pos, "translate: Duplicate rules for source sort "^
     						       (printQualifiedId (mkQualifiedId (sort_qualifier,sort_id)))))
                 else
@@ -199,11 +211,15 @@ Note: The code below does not yet match the documentation above, but should.
 	       raise (SpecError (rule_pos, "translate: Unrecognized source sort/op "^(printQualifiedId dom_qid)))
 
 	     %% Sort(s) only:
-	     | (((Qualified (found_qualifier, _))::_,_,_)::rs, [])  ->
+	     | (((Qualified (found_qualifier, _))::_,_,dom_defs)::rs, [])  ->
 	       if rs = [] or found_qualifier = UnQualified then
 		 case findAQualifierMap (translation_sort_map, dom_qualifier, dom_id) of
-		   | None -> return (translation_op_map, 
-				     insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)))
+		   | None -> 
+		      if dom_defs ~= [] & (member (Boolean_Boolean, cod_aliases) or member (unqualified_Boolean, cod_aliases)) then
+			raise (MorphError (rule_pos, "Cannot map pre-defined sort " ^ (printQualifiedId dom_qid) ^ " to Boolean.Boolean"))
+		      else
+			return (translation_op_map, 
+				insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)))
 		   | _ -> raise (SpecError (rule_pos, 
 						"translate: Duplicate rules for source sort "^
 						(printQualifiedId dom_qid)))
