@@ -75,7 +75,8 @@
   (loop for i from 0 to (- (length str) 1)
         always (let ((ch (elt str i)))
 		 (or (alphanumericp ch)
-		     (member ch '(#\/ #\:))))))
+		     (member ch '(#\/ #\: #\# #\_ #\-))
+		     (princ ch)))))
 
 (defvar *saved-swpath* nil)
 (defvar *temp-file-in-use?* nil)
