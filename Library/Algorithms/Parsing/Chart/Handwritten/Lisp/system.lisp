@@ -58,7 +58,7 @@
 '(progn
   (setf (sys::gsgc-parameter :print)   t) ; default is nil
   (setf (sys::gsgc-parameter :stats)   t) ; default is nil
-  (setf (sys::gsgc-parameter :verbose) t) ; default is nil
+  (setf (sys::gsgc-parameter :verbose) nil) ; default is nil
   )
 
 ;(sys::resize-areas :new #x6000000) ; big! (hmm... too big...)

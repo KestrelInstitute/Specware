@@ -1,0 +1,89 @@
+\documentclass[10pt]{article}
+
+\textheight=21.5cm   % 22.5cm  
+\textwidth=19cm
+\oddsidemargin=-2.0cm    % default margin is 1 inch in, so this moves back close to edge
+\evensidemargin=-2.0cm   % default margin is 1 inch in, so this moves back close to edge
+%\topmargin=1cm          % space above header
+%\headsep=20pt           % soace between header and body
+%\footskip=36pt          % space between body and footnotes
+%\voffset=0cm            % space added to nonprintable area above
+%\hoffset=0cm            % space added to nonprintable area left
+\raggedbottom
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% text layout
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\baselineskip=12pt
+\parskip=6pt
+\parindent=0cm
+
+
+\newcommand{\relaxOp}{{\tt relax}}
+\newcommand{\restrictOp}{{\tt restrict}}
+\newcommand{\quotient}{{\tt quotient}}
+\newcommand{\chooseOp}{{\tt choose}}
+\newcommand{\projectOp}{{\tt project}}
+\newcommand{\embedOp}{{\tt embed}}
+\newcommand{\queryOp}{{\tt embed?}}
+\newcommand{\selectOp}{{\tt select}}
+\newcommand{\quotientOp}{{\tt quotient}}
+
+\newcommand{\Boolean}{{\sf Boolean}}
+\newcommand{\Natural}{{\sf Nat}}
+\newcommand{\Character}{{\sf Char}}
+\newcommand{\String}{{\sf String}}
+\newcommand{\DownBoolean}{\mbox{$\downarrow${\sf Boolean}}}
+\newcommand{\isTrue}[1]{{\sf Tr}(#1)}
+\newcommand{\applyOp}{{\sf @}}
+\newcommand{\caseOp}{{\sf case}}
+\newcommand\enclose[1]{\lceil #1 \rceil}
+\newcommand{\Env}{{\cal E}}
+\newcommand{\semEnv}[1]{\sem{#1}\Env}
+\newcommand\ffalse{f\!\!f}
+\newcommand{\ttrue}{t\!t}
+
+\newcommand{\inferCoercion}[2]{#1 \ \ \rightharpoonup \ \ #2}
+\newcommand{\checkCoercion}[2]{#1 \ \ \stackrel{\prec}{\approx} \ \ #2}
+\newcommand{\checkType}[1]{#1}
+\newcommand{\checkPattern}[1]{#1}
+\newcommand{\inferTheType}[2]{#2 = {\tt inferType}(#1)}
+\newcommand{\makeProject}[3]{#1.{#2}}
+\newcommand{\vdashcoerce}{\vdash_{{\cal C}}}
+\newcommand{\comment}[1]{}
+
+
+\newcommand{\kind}{\kappa}
+\newcommand{\curlyopen}{{\tt\char123}}
+\newcommand{\curlyclose}{{\tt\char125}}
+\newcommand\meertens[1]{}
+\newcommand\dusko[1]{}
+\newcommand\nikolaj[1]{}
+\newcommand{\subsect}[1]{\noindent{\bf #1:}}
+
+\newcommand{\Discussion}[1]{}
+
+
+\usepackage{psfig}
+
+% \input{macros}
+
+\title{The Meta Slang Language}
+\author{Specware 4.0 development team:\\
+        Alessandro Coglio,
+        Lindsay Errington,
+        James McDonald,
+        Lambert Merteens,
+        Stephen Westfold}
+
+\begin{document}
+
+\maketitle
+
+\tableofcontents
+
+\newpage
+
+\input{metaslang}
+
+\end{document}
+

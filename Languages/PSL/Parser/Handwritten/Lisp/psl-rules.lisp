@@ -18,7 +18,7 @@
    (1 :SC-SPEC-MORPH)
    (1 :SC-HIDE)
    (1 :SC-EXPORT)
-   (1 :PROCSPEC-DEF)
+   (1 :SC-PSL-DEFINITION)
    (1 :SC-GENERATE))
   1)
 
@@ -31,7 +31,7 @@
 ;;; a procedure. We may define a collection of procedure as well as
 ;;; other things. The keyword "psl" is a poor choice.
 
-(define-sw-parser-rule :PROCSPEC-DEF ()
+(define-sw-parser-rule :SC-PSL-DEFINITION ()
   (:tuple "psl" "{" (1 (:optional :PROCSPEC-ELEMS)) "}")
   (make-procspec 1 ':left-lc ':right-lc))
 
@@ -73,7 +73,7 @@
   (:anyof
     (1 :PSL-IF)
     (1 :PSL-DO)
-    (1 :PSL-CASE)
+    ;; (1 :PSL-CASE)
     (1 :PSL-LET)
     (1 :PSL-RETURN)
     (1 :PSL-SKIP)
@@ -89,7 +89,7 @@
   (make-psl-relation 1 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :VARDECL ()
-  (:tuple "var" (1 :NAME) ":" (2 :SORT-SCHEME))
+  (:tuple "op" (1 :QUALIFIABLE-OP-NAMES) ":" (2 :SORT-SCHEME))
   (make-psl-var-decl 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :PSL-IF ()

@@ -55,49 +55,48 @@
 ;; is complete.
 ;(compile-and-load-lisp-file "re-legacy")
 
-;;; (sw) ;; The following list should be generated automatically!
-;;; (sw) ;; The list is used only in this file.
-;;; (sw) ;;; ---------------
-;;; (sw) (defvar HandwrittenFiles
-;;; (sw)   '(
-;;; (sw)     "Library/Base/Handwritten/Lisp/Boolean.lisp"
-;;; (sw)     "Library/Base/Handwritten/Lisp/Integer.lisp"
-;;; (sw)     "Library/Base/Handwritten/Lisp/Nat.lisp"
-;;; (sw)     "Library/Base/Handwritten/Lisp/Char.lisp"
-;;; (sw)     "Library/Base/Handwritten/Lisp/List.lisp"
-;;; (sw)     "Library/Base/Handwritten/Lisp/String.lisp"
-;;; (sw)     "Library/Base/Handwritten/Lisp/Option.lisp"
-;;; (sw)     "Library/Base/Handwritten/Lisp/System.lisp"
-;;; (sw)     "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
-;;; (sw)     "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
-;;; (sw)     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
-;;; (sw)     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
-;;; (sw)     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
-;;; (sw)   )
-;;; (sw) )
+;; The following list should be generated automatically!
+;; The list is used only in this file.
+;;; ---------------
+(defvar HandwrittenFiles
+  '(
+    "Library/Base/Handwritten/Lisp/Boolean.lisp"
+    "Library/Base/Handwritten/Lisp/Integer.lisp"
+    "Library/Base/Handwritten/Lisp/Nat.lisp"
+    "Library/Base/Handwritten/Lisp/Char.lisp"
+    "Library/Base/Handwritten/Lisp/List.lisp"
+    "Library/Base/Handwritten/Lisp/String.lisp"
+    "Library/Base/Handwritten/Lisp/Option.lisp"
+    "Library/Base/Handwritten/Lisp/System.lisp"
+    "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
+    "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
+    "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
+    "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
+    "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
+  )
+)
 
 (defvar Specware4 (sys:getenv "SPECWARE4"))
 
-;;; (sw) (compile-and-load-lisp-file "runtime")
-;;; (sw) 
-;;; (sw) (map 'list #'(lambda (file)
-;;; (sw)   (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-;;; (sw)   HandwrittenFiles
-;;; (sw) )
-;;; (sw) 
-;;; (sw) ;; Define functions for saving/restoring the
-;;; (sw) ;; Specware state to/from the lisp environment
-;;; (sw) (compile-and-load-lisp-file "specware-state")
-;;; (sw) 
-;;; (sw) ;; Now load the generated lisp code.  This also initializes the Specware
-;;; (sw) ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
-;;; (sw) (compile-and-load-lisp-file "../../lisp/Specware4.lisp")
-;;; (sw) 
-;;; (sw) ;; Stephen's toplevel aliases 
-;;; (sw) (compile-and-load-lisp-file "toplevel")
-;;; (sw) 
-;;; (sw) ;; Debugging utilities
-;;; (sw) (compile-and-load-lisp-file "debug")
+(compile-and-load-lisp-file "runtime")
+
+(map 'list #'(lambda (file)
+  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+  HandwrittenFiles
+)
+
+;; Define functions for saving/restoring the
+;; Specware state to/from the lisp environment
+(compile-and-load-lisp-file "specware-state")
+
+;; Now load the generated lisp code.  
+(compile-and-load-lisp-file "../../lisp/PSL.lisp")
+
+;; Stephen's toplevel aliases 
+(compile-and-load-lisp-file "toplevel")
+
+;; Debugging utilities
+(compile-and-load-lisp-file "debug")
 
 (defun METASLANG::mkQualifiedId (qualifier id) 
   (cons :|Qualified| (cons qualifier id)))
@@ -112,8 +111,8 @@
 (make-system (concatenate 'string
     Specware4 "/../Specware4/Languages/PSL/Parser/Handwritten/Lisp"))
 
-;;; (sw) (make-system "../../UI/Emacs/Handwritten/Lisp")
-;;; (sw) 
+(make-system "../../../Specware/UI/Emacs/Handwritten/Lisp")
+
 ;;; (sw) (format t "~2%To bootstrap, run (boot)~%")
 ;;; (sw) (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 ;;; (sw) 
