@@ -19,6 +19,7 @@ spec RewriteRules
  import HigherOrderMatching
 
  sort Context = HigherOrderMatching.Context
+ sort Gamma = TypeObligations.Gamma
 
  sort RewriteRule = 
    { 
@@ -127,10 +128,10 @@ Extract rewrite rules from function definition.
 
 \begin{spec}
 
- def defRule (context, q, id, (op_names, fixity, (tyVars, srt), optTerm) : OpInfo) = 
-     case optTerm
-       of None -> []
-	| Some term -> 
+ def defRule (context, q, id, (op_names, fixity, (tyVars, srt), terms) : OpInfo) = 
+     case terms
+       of [] -> []
+	| (_,term) :: _ -> 
      let rule:RewriteRule = 
 	 { name      = id,
 	   lhs       = Fun(Op(Qualified (q,id),fixity), srt, noPos),
