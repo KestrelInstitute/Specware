@@ -152,7 +152,7 @@
 			 (assoc "None" body :test 'equal))
 		    (make-content-items (cdr datum)
 					sort
-					(cdr pair)
+					(chase (cdr pair) table)
 					table 
 					indent))
 		   ((and (equal constructor "None") 
@@ -194,7 +194,7 @@
 
 		 ((equal qid '("Option" . "Option"))
 		  (if (eq (car datum) :|None|)
-		      (values '() 
+		      (values '()
 			      :|None|)
 		    (progn 
 		      ;; (format t "~%----------OPTION-------------~%")
