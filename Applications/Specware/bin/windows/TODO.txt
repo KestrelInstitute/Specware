@@ -1,0 +1,4 @@
+- remove build.cmd, new-build.cmd, Specware4.cmd
+- rename better-build.cmd to build.cmd
+- rename better-Specware4.cmd to Specware4.cmd
+- fix bootstrap.cmd
