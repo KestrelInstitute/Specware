@@ -57,97 +57,99 @@ XML qualifying spec
   %% 
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_DocTypeDecl (start : UChars) : Required DocTypeDecl =
+  def parse_InternalDTD (start : UChars) : Possible InternalDTD =
    %%
-   %% We begin here just past '<!DOCTYPE' in [K15] :
    %%
    %%  [K15]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls '>' 
    %%
-   {
-    (w1,          tail) <- parse_WhiteSpace start;
-    (name,        tail) <- parse_Name       tail;
-    (wx,          tail) <- parse_WhiteSpace tail;
-    case tail of
-      | 91 (* open-square-bracket *) :: _ ->
-        {
-	 (decls,     tail) <- parse_DTD_Decls tail;
-	 case tail of
-	   | 62 (* '>' *) :: tail ->
-	     return ({w1          = w1,
-		      name        = name,
-		      external_id = None,
-		      w2          = wx,
-		      decls       = decls},
-		     tail)
-	   | char :: _ ->
-	     {
-	      error {kind        = Syntax,
-		     requirement = "DTD must terminate with '>'.",
-		     start       = start,
-		     tail        = tail,
-		     peek        = 10,
-		     we_expected = [("'>'", "to terminate DTD")],
-		     but         = (describe_char char) ^ " was seen instead",
-		     so_we       = "pretend interpolated '>' was seen"};
-	      return ({w1          = w1,
-		       name        = name,
-		       external_id = None,
-		       w2          = wx,
-		       decls       = decls},
-		      tail)
-	      }
-	   | _ ->
-	     hard_error {kind         = Syntax,
-			 requirement  = "DTD must terminate with '>'.",
-			 start        = start,
-			 tail         = tail,
-			 peek         = 10,
-			 we_expected  = [("'>'", "to terminate DTD")],
-			 but          = "EOF occurred first",
-			 so_we        = "fail immediately"}
-
-	    }
-      | _ ->
-	{
-	 (external_id, tail) <- parse_ExternalID tail;
-	 (w2,          tail) <- parse_WhiteSpace tail;
-	 (decls,       tail) <- parse_DTD_Decls  tail;
-	 case tail of
-	   | 62 (* '>' *) :: tail ->
-	     return ({w1          = w1,
-		      name        = name,
-		      external_id = Some (wx, external_id),
-		      w2          = w2,
-		      decls       = decls},
-		     tail)
-	   | char :: _ ->
-	     {
-	      error {kind        = Syntax,
-		     requirement = "DTD must terminate with '>'.",
-		     start       = start,
-		     tail        = tail,
-		     peek        = 10,
-		     we_expected = [("'>'", "to terminate DTD")],
-		     but         = (describe_char char) ^ " was seen instead",
-		     so_we       = "pretend interpolated '>' was seen"};
-	      return ({w1          = w1,
-		       name        = name,
-		       external_id = Some (wx, external_id),
-		       w2          = w2,
-		       decls       = decls},
-		      tail)
-	      }
-	   | _ ->
-	      hard_error {kind        = Syntax,
-			  requirement = "DTD must terminate with '>'.",
-			  start       = start,
-			  tail        = [],
-			  peek        = 0,
-			  we_expected = [("'>'", "to terminate DTD")],
-			  but         = "EOF occurred first",
-			  so_we       = "fail immediately"}
-	      }}
-
+   case start of
+     | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 (* '<!DOCTYPE' *) :: tail ->
+       {
+	(w1,          tail) <- parse_WhiteSpace start;
+	(name,        tail) <- parse_Name       tail;
+	(wx,          tail) <- parse_WhiteSpace tail;
+	case tail of
+	  | 91 (* open-square-bracket *) :: _ ->
+	    {
+	     (decls,     tail) <- parse_InternalDecls tail;
+	     case tail of
+	       | 62 (* '>' *) :: tail ->
+	         return (Some {w1          = w1,
+			       name        = name,
+			       external_id = None,
+			       w2          = wx,
+			       decls       = decls},
+			 tail)
+	       | char :: _ ->
+		 {
+		  error {kind        = Syntax,
+			 requirement = "DTD must terminate with '>'.",
+			 start       = start,
+			 tail        = tail,
+			 peek        = 10,
+			 we_expected = [("'>'", "to terminate DTD")],
+			 but         = (describe_char char) ^ " was seen instead",
+			 so_we       = "pretend interpolated '>' was seen"};
+		  return (Some {w1          = w1,
+				name        = name,
+				external_id = None,
+				w2          = wx,
+				decls       = decls},
+			  tail)
+		 }
+	       | _ ->
+		 hard_error {kind         = Syntax,
+			     requirement  = "DTD must terminate with '>'.",
+			     start        = start,
+			     tail         = tail,
+			     peek         = 10,
+			     we_expected  = [("'>'", "to terminate DTD")],
+			     but          = "EOF occurred first",
+			     so_we        = "fail immediately"}
+		 
+		}
+	  | _ ->
+	    {
+	     (external_id, tail) <- parse_ExternalID tail;
+	     (w2,          tail) <- parse_WhiteSpace tail;
+	     (decls,       tail) <- parse_InternalDecls  tail;
+	     case tail of
+	       | 62 (* '>' *) :: tail ->
+	         return (Some {w1          = w1,
+			       name        = name,
+			       external_id = Some (wx, external_id),
+			       w2          = w2,
+			       decls       = decls},
+			 tail)
+	       | char :: _ ->
+		 {
+		  error {kind        = Syntax,
+			 requirement = "DTD must terminate with '>'.",
+			 start       = start,
+			 tail        = tail,
+			 peek        = 10,
+			 we_expected = [("'>'", "to terminate DTD")],
+			 but         = (describe_char char) ^ " was seen instead",
+			 so_we       = "pretend interpolated '>' was seen"};
+		  return (Some {w1          = w1,
+				name        = name,
+				external_id = Some (wx, external_id),
+				w2          = w2,
+				decls       = decls},
+			  tail)
+		 }
+	       | _ ->
+		 hard_error {kind        = Syntax,
+			     requirement = "DTD must terminate with '>'.",
+			     start       = start,
+			     tail        = [],
+			     peek        = 0,
+			     we_expected = [("'>'", "to terminate DTD")],
+			     but         = "EOF occurred first",
+			     so_we       = "fail immediately"}
+		}}
+     | _ -> return (None, start)
+       
   %% -------------------------------------------------------------------------------------------------
   %%
   %%  [K17]  DTD_Decls    ::=  '[' (DTD_Decl)* ']' S?
@@ -163,7 +165,7 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_DTD_Decls (start : UChars) : Possible DTD_Decls =
+  def parse_InternalDecls (start : UChars) : Possible InternalDecls =
     %%
     %% We begin here with '[' pending in [K17], looking for:
     %%

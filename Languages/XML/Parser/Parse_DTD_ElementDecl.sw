@@ -153,20 +153,20 @@ XML qualifying spec
      %% Note: no whitespace allowed between name or right-paren and '?', '*', or '+'
      case tail of
        | 63 (* '?' *) :: tail ->
-         return ({body = body,
-		  rule = ZeroOrOne},
+         return ({body     = body,
+		  repeater = ZeroOrOne},
 		 tail)
        | 42 (* '*' *) :: tail ->
-         return ({body = body,
-		  rule = ZeroOrMore},
+         return ({body     = body,
+		  repeater = ZeroOrMore},
 		 tail)
        | 43 (* '+' *) :: tail ->
-         return ({body = body,
-		  rule = OneOrMore},
+         return ({body     = body,
+		  repeater = OneOrMore},
 		 tail)
        | _ ->
-         return ({body = body,
-		  rule = One},
+         return ({body     = body,
+		  repeater = One},
 		 tail)
 	}
      
@@ -279,8 +279,9 @@ XML qualifying spec
 	      (w2, tail) <- parse_WhiteSpace tail_0;
 	      (case w2 of
 		 | 41 (* close-paren *) :: tail ->
-		   return (Some (NoNames {w1 = w1,
-					  w2 = w2}),
+		   return (Some {w1    = w1,
+				 names = [],
+				 w2    = w2},
 			   tail)
 		 | _ ->
 		   let
@@ -295,9 +296,9 @@ XML qualifying spec
 			     probe (tail, cons ((w3, w4, name), rev_names))
 			    }
 			  | 41 :: 42 (* close-paren star *) :: tail ->
-			    return (Some (Names {w1    = w1,
-						 names = rev rev_names,
-						 w2    = w2}),
+			    return (Some {w1    = w1,
+					  names = rev rev_names,
+					  w2    = w2},
 				    tail)
 			  | char :: _ ->
 			    {
@@ -310,9 +311,9 @@ XML qualifying spec
 						   ("')*'", "to terminate declaration")],
 				    but         = (describe_char char) ^ "was seen instead",
 				    so_we       = "pretend interpolated ')*' was seen"};
-			     return (Some (Names {w1    = w1,
-						  names = rev rev_names,
-						  w2    = w2}),
+			     return (Some {w1    = w1,
+					   names = rev rev_names,
+					   w2    = w2},
 				     (case tail of
 					| 41 :: tail -> tail  % skip past close paren
 					| _ -> tail))

@@ -33,18 +33,27 @@ XML qualifying spec
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def print_Document_to_UString (document : Document) : UString =
-    (foldl (fn (item, result) ->  result ^ (print_DocItem item)) [] document.items)
+%%  def print_XML_Document_to_UString (document : Document) : UString =
 
-  def print_DocItem (item) : UString =
-    case item of
-      | XMLDecl     xml     -> print_XMLDecl     xml
-      | Comment     comment -> print_Comment     comment
-      | PI          pi      -> print_PI          pi
-      | WhiteSpace  white   -> print_WhiteSpace  white
-      | DTD         dtd     -> print_DocTypeDecl dtd
-      | Element     element -> print_Element     element
-      | _                   -> ustring "unrecognized document entity"
+  def print_Document_to_UString (document : Document) : UString =
+    (case document.xmldecl of
+       | Some decl -> print_XMLDecl decl
+       | _ -> [])
+    ^ (print_MiscList    document.misc1)   
+    ^ (print_InternalDTD document.dtd)     
+    ^ (print_MiscList    document.misc2)   
+    ^ (print_Element     document.element) 
+    ^ (print_MiscList    document.misc3) 
+
+  def print_MiscList (items) : UString =
+    foldl (fn (item, result) ->
+	   result ^
+	   (case item of
+	      | Comment     comment -> print_Comment     comment
+	      | PI          pi      -> print_PI          pi
+	      | WhiteSpace  white   -> print_WhiteSpace  white))
+          []
+	  items
   
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          ElementTag                                                                          %%%
@@ -81,7 +90,9 @@ XML qualifying spec
     (foldl (fn (attr, result) -> result ^ print_ElementAttribute attr) [] attributes)
 
   def print_ElementAttribute {w1, name, w2, w3, value} : UString =
-    (w1 ^ name ^ w2 ^ (ustring "=") ^ w3 ^ (print_QuotedText value))
+    (w1 ^ name ^ w2 ^ (ustring "=") ^ w3 ^ (print_AttValue value))
+
+  op print_AttValue : AttValue -> UString
 
   def print_BoundedText {qchar, text} =
     cons (qchar, (text ^ (cons (qchar, []))))
@@ -249,32 +260,35 @@ XML qualifying spec
   %% 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  def print_DocTypeDecl ({w1, name, external_id, w2, decls} : DocTypeDecl) : UString =
-    w1 ^ name ^ 
-    (case external_id of
-       | Some (w1, id) -> w1 ^ print_GenericID id
-       | _ -> [])
-    ^ w2 ^
-    (case decls of
-       | Some {decls, w1} ->
-         ((foldl (fn (decl, result) -> 
-		  result ^ (case decl of
-			      % | Decl mdecl -> print_MarkupDecl mdecl
-			      | Element    decl -> print_ElementDecl  decl
-			      | Attributes decl -> print_AttlistDecl  decl
-			      | Entity     decl -> print_EntityDecl   decl
-			      | Notation   decl -> print_NotationDecl decl
-			      | PI         decl -> print_PI           decl
-			      | Comment    decl -> print_Comment      decl
-			      % | Sep  dsep  -> print_DeclSep    dsep
-			      | PEReference peref -> print_PEReference peref
-			      | WhiteSpace  white -> print_WhiteSpace  white
-			   ))
-	         []
-		 decls)
-	  ^ w1)
-       | _ -> [])
-
+  def print_InternalDTD (possible_dtd : Option InternalDTD) : UString =
+    case possible_dtd of
+      | Some {w1, name, external_id, w2, decls} ->
+        (w1 
+	 ^ name 
+	 ^ (case external_id of
+	      | Some (w1, id) -> w1 ^ print_GenericID id
+	      | _ -> [])
+	 ^ w2 
+	 ^ (case decls of
+	      | Some {decls, w1} ->
+	        ((foldl (fn (decl, result) -> 
+			 result ^ (case decl of
+				     % | Decl mdecl -> print_MarkupDecl mdecl
+				   | Element    decl -> print_ElementDecl  decl
+				   | Attributes decl -> print_AttlistDecl  decl
+				   | Entity     decl -> print_EntityDecl   decl
+				   | Notation   decl -> print_NotationDecl decl
+				   | PI         decl -> print_PI           decl
+				   | Comment    decl -> print_Comment      decl
+				     % | Sep  dsep  -> print_DeclSep    dsep
+				   | PEReference peref -> print_PEReference peref
+				   | WhiteSpace  white -> print_WhiteSpace  white
+				  ))
+		  []
+		  decls)
+		 ^ w1)
+	      | _ -> []))
+      | _ -> []
 
 %%%  def print_DeclSep dsep = 
 %%%    case dsep of
@@ -338,31 +352,30 @@ XML qualifying spec
       | Mixed    mixed     -> print_Mixed mixed
       | Children children  -> print_Children children
 
-  def print_Mixed x = 
-    case x of
-      | Names   {w1, names, w2} -> 
+  def print_Mixed {w1, names, w2} = 
+    (ustring "(") 
+    ^ w1 
+    ^ (ustring "#PCDATA") 
+    ^ (foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] names) 
+    ^ w2 
+    ^ (case names of
+	 | [] -> (ustring ")")
+	 | _  -> (ustring ")*"))
 
-        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ 
-	(foldl (fn ((w3, w4, name), result) -> result ^ w3 ^ (ustring "|") ^ w4 ^ name) [] names) ^
-	w2 ^ (ustring ")*")
-
-      | NoNames {w1, w2} ->
-        (ustring "(") ^ w1 ^ (ustring "#PCDATA") ^ w2 ^ (ustring ")")
-
-  def print_Children {body, rule} = 
+  def print_Children {body, repeater} = 
    (case body of
       | Choice choice -> print_Choice choice
       | Seq    seq    -> print_Seq   seq)
    ^
-   (print_BNF_Directive rule)
+   (print_Repeater repeater)
 
-  def print_CP {body, rule} =
+  def print_CP {body, repeater} =
    (case body of	  
      | Name   name   -> print_Name   name
      | Choice choice -> print_Choice choice
      | Seq    seq    -> print_Seq    seq)
    ^
-   (print_BNF_Directive rule)
+   (print_Repeater repeater)
 
   def print_Choice choice =
     let alternatives = choice.alternatives in
@@ -386,8 +399,8 @@ XML qualifying spec
     ^
     (ustring ")")
 
-  def print_BNF_Directive rule =
-    ustring (case rule of      
+  def print_Repeater repeater =
+    ustring (case repeater of      
 	       | ZeroOrOne  -> "?"
 	       | ZeroOrMore -> "*"
 	       | OneOrMore  -> "+"

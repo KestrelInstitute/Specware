@@ -115,7 +115,7 @@ XML qualifying spec
 	    (w2,     tail) <- parse_WhiteSpace tail;
 	    (eqchar, tail) <- parse_EqualSign  tail;
 	    (w3,     tail) <- parse_WhiteSpace tail;
-	    (value,  tail) <- parse_QuotedText tail;
+	    (value,  tail) <- parse_AttValue   tail;
 	    return (Some {w1     = w1,
 			  name    = name,
 			  w2      = w2,

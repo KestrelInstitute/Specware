@@ -22,9 +22,12 @@ XML qualifying spec
 				table as (main_entry as (main_sort, _) :: _) : SortExpansionTable) 
     : Document =
     let Base ((qualifier, main_id), _) = main_sort in
-    make_Document [XMLDecl    standard_XMLDecl,                     % first <?xml version="1.0"?>
-		   WhiteSpace [UChar.newline, UChar.newline],   
-		   Element    (generate_Element (main_id, datum, main_sort, table, 2, 0, true))]
+    make_Document (Some standard_XMLDecl,                     % first <?xml version="1.0"?>
+		   [],
+		   None,
+		   [WhiteSpace [UChar.newline, UChar.newline]],   
+		   generate_Element (main_id, datum, main_sort, table, 2, 0, true),
+		   [])
 
  def expand_SortDescriptor (sd : SortDescriptor, table : SortExpansionTable) =
    let
@@ -86,8 +89,8 @@ XML qualifying spec
     let pattern   = expand_SortDescriptor (sd, table) in
     let uname     = ustring name in
     let attributes = (if show_type? then
-			let value : QuotedText = {qchar = UChar.apostrophe,
-						  text  = pp_sort_descriptor_for_xml_attribute sd}
+			let value = {qchar = UChar.apostrophe,
+				     items = [NonRef (pp_sort_descriptor_for_xml_attribute sd)]}
 			in
 			let type_attr : ElementAttribute = {w1    = [UChar.space],
 							    name  = ustring "type",

@@ -5,7 +5,7 @@
   (let* ((datum (car datum-and-table))
 	 (table (cdr datum-and-table)))
     (let ((doc (generate_Document datum table)))
-      (print_Document_to_String doc))))
+      (print_Document_to_String-1 doc))))
 
 ;;;; ;;; ------------------------------------------------------------------------
 ;;;; 

@@ -50,6 +50,6 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
-  op parse_ExtSubset : UChars -> Required ExtSubset 
+  op parse_ExtSubset : UChars -> Required ExternalDTD
 
 endspec

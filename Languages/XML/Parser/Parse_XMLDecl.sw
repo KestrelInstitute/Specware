@@ -37,33 +37,19 @@ XML qualifying spec
   %% 
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_XMLDecl (start : UChars) : Required XMLDecl =
+  def parse_XMLDecl (start : UChars) : Possible XMLDecl =
     {
      (possible_tag, tail) <- parse_Option_ElementTag start;
      case possible_tag of
        | None -> 
-         hard_error {kind        = Syntax,
-		     requirement = "Expected an xml header decl.",
-		     start       = start,
-		     tail        = tail,
-		     peek        = 50,
-		     we_expected = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
-		     but         = "we didn't even get a plausible declaration",
-		     so_we       = "fail immediately"}
+         return (None, start)
        | Some tag ->
 	 if well_formed_xml_decl? tag then
-	   return (tag, tail)
-	 else
+	   return (Some tag, tail)
+	 else if (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml")))) then
+	   return (None, start)
+         else
 	   {
-	    (when (~ ((tag.prefix = (ustring "?")) & (tag.name = (ustring "xml"))))
-	     (error {kind        = Syntax,
-		     requirement = "An xml header decl should begin with '<?xml'.",
-		     start       = start,
-		     tail        = tail,
-		     peek        = 50,
-		     we_expected = [("'<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'", "A legal xml header decl")],
-		     but         = "the observed xml decl begins '<" ^ (string tag.prefix) ^ (string tag.name) ^ "'",
-		     so_we       = "proceed as if the xml decl was well-formed"}));
 	    (saw_version?, _, _) <-
 	    (foldM (fn (saw_version?, saw_encoding?, saw_standalone?) -> fn attribute -> 
 		    case attribute.name of
@@ -170,7 +156,7 @@ XML qualifying spec
 		   we_expected = [("'?>'",  "to end '<?xml ...>' decl")],
 		   but         = "an xml header decl ends with " ^ (string tag.postfix) ^ ">'",
 		   so_we       = "proceed as if that xml header decl terminated correctly"}));
-	  return (tag, tail)
+	  return (Some tag, tail)
 	 }}
 
 endspec

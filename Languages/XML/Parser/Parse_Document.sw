@@ -9,169 +9,113 @@ XML qualifying spec
   %%%          Document                                                                            %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  *[1]  document  ::=  prolog element Misc*
+  %%  4.3.2 Well-Formed Parsed Entities:
   %%
+  %%  The document entity is well-formed if it matches the production labeled 'document'.
+  %%
+  %%  [Definition: The document entity serves as the root of the entity tree and a starting-point 
+  %%   for an XML processor.] 
+  %%
+  %%  This [W3] specification does not specify how the document entity is to be located by an XML 
+  %%  processor; unlike other entities, the document entity has no name and might well appear on 
+  %%  a processor input stream without any identification at all.
+  %%
+  %%  [Definition: XML documents should begin with an XML declaration which specifies the version 
+  %%   of XML being used.] 
+  %%   
+  %%  [Definition: There is exactly one element, called the root, or document element, no part of 
+  %%   which appears in the content of any other element.] 
+  %%
+  %%  For all other elements, if the start-tag is in the content of another element, the end-tag 
+  %%  is in the content of the same element. More simply stated, the elements, delimited by start- 
+  %%  and end-tags, nest properly within each other.
+  %%
+  %%  [Definition: As a consequence of this, for each non-root element C in the document, there is
+  %%   one other element P in the document such that C is in the content of P, but is not in the 
+  %%   content of any other element that is in the content of P. P is referred to as the parent of C, 
+  %%   and C as a child of P.]
+  %%
+  %%  *[1]  document  ::=  prolog element Misc*
   %% *[22]  prolog    ::=  XMLDecl? Misc* (doctypedecl  Misc*)?
   %%
-  %% *[27]  Misc      ::=  Comment | PI | S
+  %%   ==>
   %%
-  %% -------------------------------------------------------------------------------------------------
+  %%  [K1]  document  ::=  XMLDecl? MiscList InternalDTD? MiscList element MiscList
   %%
-  %%   [1] transforms as follows:
+  %%                                                             [KVC:  Valid DTD]  
+  %%                                                             [VC:   Root Element Type]  
+  %%                                                             [KVC:  Valid Root Element]  
+  %%                                                             [KVC:  Element Valid]
   %%
-  %%       document  ::=  XMLDecl? Misc* (doctypedecl  Misc*)? element Misc*
-  %%       document  ::=  XMLDecl? Misc*  doctypedecl? Misc*   element Misc*
+  %%  [K2]  MiscList  ::=  Misc*
   %%
-  %%  so we can recast [1] [22] [27] as:
+  %%  [27]  Misc      ::=  Comment | PI | S
   %%
-  %%  [K1]  document  ::=  DocItems
+  %%  [Definition: Markup takes the form of start-tags, end-tags, empty-element tags, entity 
+  %%   references, character references, comments, CDATA section delimiters, document type 
+  %%   declarations, processing instructions, XML declarations, text declarations, and any white 
+  %%   space that is at the top level of the document entity (that is, outside the document 
+  %%   element and not inside any other markup).]
   %%
-  %%                                                             [KC: Well-Formed Doc]
-  %%                                                             [KC: Valid Doc]  
-  %%
-  %%  [K2]  DocItems  ::=  DocItem*
-  %%
-  %%  [K3]  DocItem   ::=  XMLDecl | Comment | PI | S | doctypedecl | element
+  %%  [Definition: All text that is not markup constitutes the character data of the document.]
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
   %%
-  %%  [K1]  document  ::=  DocItems
-  %%                                                             [KC: Well-Formed Doc]
+  %%  [K1]  document  ::=  XMLDecl? MiscList InternalDTD? MiscList element MiscList
   %%
   %% -------------------------------------------------------------------------------------------------
 
+  def parse_XML_Document (start  : UChars) : Required XML_Document =
+    { 
+     (doc, tail) <- parse_Document start;
+      return ({document = doc,
+	       dtd      = {internal = doc.dtd,
+			   external = None},
+	       entities = []}, 
+	      tail)
+      }
+
   def parse_Document (start  : UChars) : Required Document =
     {
-     (items, tail) <- parse_DocItems start;
-     (total, xmls, docs, elts) <-
-     (foldM (fn (total, xmls, docs, elts) -> fn item ->
-	     case item of
-	       | Comment    _ -> return (total + 1, xmls, docs, elts)
-	       | PI         _ -> return (total + 1, xmls, docs, elts)
-	       | WhiteSpace _ -> return (total + 1, xmls, docs, elts)
-	       | XMLDecl    _ -> 
-		 {
-		  (when (total > 0)
-		   (error {kind        = WFC,
-			   requirement = "Any xml header decl should be right at the start of the document.",
-			   start       = start,
-			   tail        = tail,
-			   peek        = 0,
-			   we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-			   but         = "an xml header decl is not the first form in the XML document",
-			   so_we       = "proceed anyway"}));
-		  (when (docs > 0)
-		   (error {kind        = WFC,
-			   requirement = "Any xml header decl should be right at the start of the document.",
-			   start       = start,
-			   tail        = tail,
-			   peek        = 0,
-			   we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-			   but         = "an xml header decl follows the DTD",
-			   so_we       = "proceed anyway"}));
-		  (when (elts > 0)
-		   (error {kind        = WFC,
-			   requirement = "Any xml header decl should be right at the start of the document.",
-			   start       = start,
-			   tail        = tail,
-			   peek        = 0,
-			   we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-			   but         = "an xml header decl follows the top-level element",
-			   so_we       = "proceed anyway"}));
-		  return (total + 1, xmls + 1, docs, elts)
-		 }
-
-	       | DTD        _ -> 
-		 {
-		  (when (elts > 0)
-		   (error {kind        = WFC,
-			   requirement = "Any DTD decl must be second (after the xml header decl).",
-			   start       = start,
-			   tail        = tail,
-			   peek        = 0,
-			   we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-			   but         = "the DTD decl follows the top-level element",
-			   so_we       = "proceed anyway"}));
-		  return (total + 1, xmls, docs + 1, elts)
-		 }
-	       | Element    _ -> 
-		 return (total + 1, xmls, docs, elts + 1)
-		 )
-            (0, 0, 0, 0)
-	    items);
-
-     (when (xmls = 0)
-      (error {kind        = VC,
-	      requirement = "Each XML document should begin with an xml header decl.",
-	      start       = start,
-	      tail        = tail,
-	      peek        = 0,
-	      we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-	      but         = "there is no xml header decl",
-	      so_we       = "proceed anyway"}));
-
-     (when (xmls > 1)
-      (error {kind        = VC,
-	      requirement = "Each XML document should begin with an xml header decl.",
-	      start       = start,
-	      tail        = tail,
-	      peek        = 0,
-	      we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-	      but         = "there are multiple xml header decls",
-	      so_we       = "proceed anyway"}));
-
-     (when (docs > 1)
-      (error {kind        = WFC,
-	      requirement = "Each XML document may have at most one DTD.",
-	      start       = start,
-	      tail        = tail,
-	      peek        = 0,
-	      we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-	      but         = "there are multiple DTD's (doctypedecl's)",
-	      so_we       = "proceed anyway"}));
-
-     (when (elts = 0)
-      (error {kind        = WFC,
-	      requirement = "Each XML document must have exactly one top-level element.",
-	      start       = start,
-	      tail        = tail,
-	      peek        = 0,
-	      we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-	      but         = "there is no top-level element in the document",
-	      so_we       = "proceed anyway"}));
-
-     (when (elts > 1)
-      (error {kind        = WFC,
-	      requirement = "Each XML document must have exactly one top-level element.",
-	      start       = start,
-	      tail        = tail,
-	      peek        = 0,
-	      we_expected = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
-	      but         = "there are multiple top-level elements",
-	      so_we       = "proceed anyway"}));
-
-     let doc : Document = {items = items} in
-     return (doc,
+     (xmldecl,               tail) <- parse_XMLDecl     start;
+     (misc1,                 tail) <- parse_MiscList    tail;
+     (possible_internal_dtd, tail) <- parse_InternalDTD tail;
+     (misc2,                 tail) <- parse_MiscList    tail;
+     (root_element,          tail) <- parse_Element     (tail, []);
+     (misc3,                 tail) <- parse_MiscList    tail;
+     return ({xmldecl = xmldecl,
+	      misc1   = misc1,
+	      dtd     = possible_internal_dtd,
+	      misc2   = misc2,
+	      element = root_element,
+	      misc3   = misc3},
 	     tail)
      }
 
   %% -------------------------------------------------------------------------------------------------
   %%
-  %%  [K2]  DocItems  ::=  DocItem*
+  %%
+  %%  [K2]  MiscList  ::=  Misc*
+  %%
+  %%  [27]  Misc      ::=  Comment | PI | S
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_DocItems (start : UChars) : Required DocItems =
+  def parse_MiscList (start : UChars) : Required MiscList =
     let 
-       def probe (tail, rev_items) =
+       def probe (tail, rev_miscs) =
 	 case tail of
-	   | [] -> return (rev rev_items, [])
+	   | [] -> return (rev rev_miscs, [])
 	   | _ ->
 	     {
-	      (item, tail) <- parse_DocItem tail;
-	      (probe (tail, cons (item, rev_items)))
+	      (possible_misc, scout) <- parse_Misc tail;
+	      case possible_misc of
+		| Some misc ->
+		  probe (scout, cons (misc, rev_miscs))
+		| _ -> 
+		  return (rev rev_miscs, tail)
 	      }
     in
       probe (start, [])
@@ -182,7 +126,7 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_DocItem (start : UChars) : Required DocItem =
+  def parse_Misc (start : UChars) : Possible Misc =
     %% Comment | PI | S | doctypedecl | element
     case start of
 
@@ -190,7 +134,7 @@ XML qualifying spec
       | 60 :: 33 :: 45 :: 45 (* '<!--' *) :: tail ->
         {
 	 (comment, tail) <- parse_Comment tail;
-	 return (Comment comment,
+	 return (Some (Comment comment),
 		 tail)
 	}
 
@@ -201,8 +145,20 @@ XML qualifying spec
 	  %% XML
 	  | 120 :: 109 :: 108 (* 'xml' *) :: _ ->
 	    {
-	     (xml, tail) <- parse_XMLDecl start;
-	     return (XMLDecl xml,
+	     error {kind        = EOF,
+		    requirement = "After the initial xmldecl, there should be no other xml decls in an XML Document",
+		    start       = start,
+		    tail        = tail,
+		    peek        = 10,
+		    we_expected = [("'<?'",              "PI"),
+				   ("'<!--'",            "Comment"),
+				   ("#x9 #xA #xD #x20",  "WhiteSpace"),
+				   ("'<!DOCTYPE'",       "DTD"), 
+				   ("'<'",               "Element")],
+		    but         = "we saw '<?xml'",
+		    so_we       = "pretend its a PI"};
+	     (pi, tail) <- parse_PI start;
+	     return (Some (PI pi), 
 		     tail)
 	    }
 
@@ -210,10 +166,36 @@ XML qualifying spec
 	  | _ ->
 	    {
 	     (pi, tail) <- parse_PI start;
-	     return (PI pi, 
+	     return (Some (PI pi), 
 		     tail)
 	    })
 
+      %% Whitespace
+      | char :: tail ->
+	if white_char? char then
+	  {
+	   (whitespace, tail) <- parse_WhiteSpace start;
+	   return (Some (WhiteSpace whitespace),
+		   tail)
+	   }
+	else
+	  return (None, start)
+      | _ ->
+	  hard_error {kind        = EOF,
+		      requirement = "Each top-level item in an XML Document should be one of the options below.",
+		      start       = start,
+		      tail        = [],
+		      peek        = 0,
+		      we_expected = [("'<?xml'",           "initial xml decl"),
+				     ("'<?'",              "PI"),
+				     ("'<!--'",            "Comment"),
+				     ("#x9 #xA #xD #x20",  "WhiteSpace"),
+				     ("'<!DOCTYPE'",       "DTD"), 
+				     ("'<'",               "Element")],
+		      but         = "EOF occurred first",
+		      so_we       = "fail immediately"}
+
+(*
       %% DTD
       | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 (* '<!DOCTYPE' *) :: tail ->
 	{
@@ -244,42 +226,5 @@ XML qualifying spec
 			 but         = "there are no top-level elements",
 			 so_we       = "fail immediately"}
 	    }
-
-      %% Whitespace
-      | char :: tail ->
-	if white_char? char then
-	  {
-	   (whitespace, tail) <- parse_WhiteSpace start;
-	   return (WhiteSpace whitespace,
-		   tail)
-	   }
-	else
-	  hard_error {kind        = Syntax,
-		      requirement = "Each top-level item in an XML Document should be one of the options below.",
-		      start       = start, 
-		      tail        = tail,
-		      peek        = 10,
-		      we_expected = [("'<?xml'",           "initial xml decl"),
-				     ("'<?'",              "PI"),
-				     ("'<!--'",            "Comment"),
-				     ("#x9 #xA #xD #x20",  "WhiteSpace"),
-				     ("'<!DOCTYPE'",       "DTD"), 
-				     ("'<'",               "Element")],
-		      but         = (describe_char char) ^ " was seen instead",
-		      so_we       = "fail immediately"}
-      | _ ->
-	  hard_error {kind        = EOF,
-		      requirement = "Each top-level item in an XML Document should be one of the options below.",
-		      start       = start,
-		      tail        = [],
-		      peek        = 0,
-		      we_expected = [("'<?xml'",           "initial xml decl"),
-				     ("'<?'",              "PI"),
-				     ("'<!--'",            "Comment"),
-				     ("#x9 #xA #xD #x20",  "WhiteSpace"),
-				     ("'<!DOCTYPE'",       "DTD"), 
-				     ("'<'",               "Element")],
-		      but         = "EOF occurred first",
-		      so_we       = "fail immediately"}
-
+*)
 endspec

@@ -110,7 +110,7 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_AttValue (start : UChars) : Possible AttValue =
+  def parse_AttValue (start : UChars) : Required AttValue =
     let 
        def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
@@ -144,7 +144,7 @@ XML qualifying spec
 	     }
 	   | char :: tail -> 
 	     if char = qchar then
-	       return (Some {qchar = qchar,
+	       return ({qchar = qchar,
 			     items = (case rev_char_data of
 					| [] -> rev rev_items
 					| _ -> 
@@ -171,7 +171,14 @@ XML qualifying spec
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], [], 39)
         | _ ->
-	  return (None, start)
+	  hard_error {kind        = Syntax,
+		 requirement = "An attribute value was expected.", 
+		 start       = start,
+		 tail        = start,
+		 peek        = 10,
+		 we_expected = [("...", "quoted text")],
+		 but         = "...??...",
+		 so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
   %%

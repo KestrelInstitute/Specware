@@ -93,26 +93,34 @@ XML qualifying spec
   %% 
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_Element (start : UChars, pending_open_tags : List (ElementTag)) : Possible Element =
+  def parse_Element (start : UChars, pending_open_tags : List (ElementTag)) : Required Element =
     {
      (possible_open_tag, tail) <- parse_OpenTag start;
      case possible_open_tag of
        | Some open_tag ->
          %% open_tag will be one of EmptyElemTag or STag
          (if well_formed_empty_tag? open_tag then
-	    return (Some (Empty open_tag), 
+	    return ((Empty open_tag), 
 		    tail)
 	  else
 	    {
 	     (content, tail) <- parse_Content (tail, cons (open_tag, pending_open_tags));
 	     (etag,    tail) <- parse_ETag    (tail, cons (open_tag, pending_open_tags));
-	     return (Some (Full {stag    = open_tag, 
-				 content = content, 
-				 etag    = etag}),
+	     return ((Full {stag    = open_tag, 
+			    content = content, 
+			    etag    = etag}),
 		     tail)
 	    })
        | _ ->
-	 return (None, start)
+	 hard_error {kind        = WFC,
+		requirement = "A document must have a root element.",
+		start       = start,
+		tail        = tail,
+		peek        = 10,
+		we_expected = [("<foo ..>",    "Start Tag"),
+			       ("<foo .../> ", "Empty Element Tag")],
+		but         = "we saw something else instead",
+		so_we       = "fail immediately"}
 	}
 
   %% -------------------------------------------------------------------------------------------------
@@ -246,14 +254,10 @@ XML qualifying spec
 	   | _ ->
 	     {
 	      %% parse_Element assumes we're back at the original "<"
-	      (possible_element, tail) <- parse_Element (start, pending_open_tags); 
-	      case possible_element of
-		| Some element ->
-		  return (Some (Element element),
-			  tail)
-		| _ ->
-		  return (None, start)
-	      })
+	      (element, tail) <- parse_Element (start, pending_open_tags); 
+	      return (Some (Element element),
+		      tail)
+	     })
       | [] ->
 	hard_error {kind        = EOF,
 		    requirement = "Each item in the element contents must be one of the options below.",

@@ -5,8 +5,25 @@ XML qualifying spec
 
   %% TODO: many tests for legality ...
 
-  def make_Document (items : DocItems) : Document =
-    {items = items}
+%%  def make_XML_Document (items : DocItems) : XML_Document =
+%%    {document = items,
+%%     external = None,
+%%     entities = []}
+
+  def make_Document (xmldecl : Option XMLDecl,
+		     misc1   : MiscList,
+		     dtd     : Option InternalDTD,
+		     misc2   : MiscList,
+		     element : Element,
+		     misc3   : MiscList)
+    : Document =
+    {xmldecl = xmldecl,
+     misc1   = misc1,
+     dtd     = dtd,
+     misc2   = misc2,
+     element = element,
+     misc3   = misc3}
+		     
 
   def standard_XMLDecl : XMLDecl =
     let version_attr = {w1    = UString.space,
@@ -14,7 +31,7 @@ XML qualifying spec
 			w2    = [],
 			w3    = [],
 			value = {qchar = UChar.double_quote, 
-				 text  = ustring "1.0"}}
+				 items = [NonRef (ustring "1.0")]}}
     in
       {prefix     = UString.question_mark,
        name       = ustring "xml",
@@ -79,7 +96,7 @@ XML qualifying spec
 			     name  : NmToken,
 			     w2    : WhiteSpace,
 			     w3    : WhiteSpace,
-			     value : QuotedText)
+			     value : AttValue)
     : ElementAttribute =
     {w1    = w1,
      name  = name,

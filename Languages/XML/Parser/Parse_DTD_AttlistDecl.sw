@@ -386,24 +386,16 @@ XML qualifying spec
 
       | 35 :: 70 :: 73 :: 88 :: 69 :: 68                   (* '#FIXED'    *) :: tail ->
 	{
-	 (w1, tail)             <- parse_WhiteSpace tail;
-	 (possible_value, tail) <- parse_AttValue tail;
-	 case possible_value of
-	   | Some value ->
-	     return (Some (Fixed (Some w1, value)),
-		     tail)
-	   | _ ->
-	     return (None, start)
-	    }
+	 (w1,    tail) <- parse_WhiteSpace tail;
+	 (value, tail) <- parse_AttValue tail;
+	 return (Some (Fixed (Some w1, value)),
+		 tail)
+	}
       | _ ->
 	{
-	 (possible_value, tail) <- parse_AttValue start;
-	 case possible_value of
-	   | Some value ->
-	     return (Some (Fixed (None, value)),
-		     tail)
-	   | _ ->
-	     return (None, start)
-	    }
+	 (value, tail) <- parse_AttValue start;
+	 return (Some (Fixed (None, value)),
+		 tail)
+	}
 
 endspec
