@@ -37,8 +37,8 @@
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-(define-compiler-macro concat-2 (x y)
-  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+;(define-compiler-macro concat-2 (x y)
+;  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
 
 (defun concat (xy)
   (declare (cons xy))
@@ -52,8 +52,8 @@
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-(define-compiler-macro ++-2 (x y)
-  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+;(define-compiler-macro ++-2 (x y)
+;  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
 
 (defun |!++| (xy)
   (declare (cons xy))
@@ -67,8 +67,8 @@
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-(define-compiler-macro ^-2 (x y)
-  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+;(define-compiler-macro ^-2 (x y)
+;  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
 
 (defun ^ (xy)
   (declare (cons xy))
