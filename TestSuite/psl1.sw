@@ -16,7 +16,7 @@ psl {
             y := y - 1;
             z := z * x
      };
-     return_expon := z
+     return z
   }}
 }
 
