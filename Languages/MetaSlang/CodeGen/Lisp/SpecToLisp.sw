@@ -2,6 +2,7 @@
 
 SpecToLisp qualifying spec { 
   import ../../Transformations/PatternMatch
+  import ../../Transformations/InstantiateHOFns
   import Lisp
   import ../../Specs/StandardSpec
   
@@ -398,7 +399,8 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
             List.map (fn t -> mkLTerm(sp,dpn,vars,t)) terms,
             blockAtom(sp,dpn,StringSet.addList(vars,names),body))   
 
-        | Apply (Fun(Op (Qualified ("TranslationBuiltIn","mkSuccess"),_),_,_),term,_) -> 
+        | Apply (Fun(Op (Qualified ("TranslationBuiltIn","mkSuccess"),_),_,_),
+		 term,_) -> 
           mkLApply(mkLOp "return",[mkLTerm(sp,dpn,vars,term)])
 
         | Apply (Fun(Op (Qualified ("TranslationBuiltIn","mkFail"),_),_,_),
@@ -412,7 +414,8 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
 
 % DIE HARD if the above cases are not exhaustive
 
-op fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term -> Option LispTerm
+op fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term
+                        -> Option LispTerm
 def fullCurriedApplication(sp,dpn,vars,term) =
   let def aux(term,i,args) =
         case term
@@ -835,11 +838,6 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
                                           mkLApply(mkLOp "cdr",[vr])]
                             else tabulate(n,fn i -> mkLApply(mkLOp "svref",[vr,mkLNat i]) )
 
-  %op curryShapeNum: Spec * Sort -> Nat
-  def curryShapeNum(sp,srt) =
-    case arrowOpt(sp,srt)
-      of Some (dom,rng) -> 1 + curryShapeNum(sp,rng)
-       | _ -> 0
 
   def duplicateString(n,s) =
     case n
@@ -1009,8 +1007,8 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
 
   op toLisp        : Spec -> LispSpec
   op toLispEnv     : Spec -> LispSpec
-  op toLispFile    : Spec * String * Text -> ()
-  op toLispFileEnv : Spec * String * Text -> ()
+  op toLispFile    : Spec * String * String -> ()
+  op toLispFileEnv : Spec * String * String -> ()
 
   def toLisp spc =
       toLispEnv(spc)
@@ -1023,12 +1021,18 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       let spc = System.time(lisp(spc))                             in
       spc 
 *)
+  op instantiateHOFns?: Boolean
+  def instantiateHOFns? = true
 
   def toLispEnv (spc) =
       % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
-      let spc = translateMatch(spc)          in
+      let spc = if instantiateHOFns?
+                 then instantiateHOFns spc
+		 else spc 
+      in
+      let spc = translateMatch(spc) in
       let spc = arityNormalize(spc) in
-      let spc = lisp(spc)                          in
+      let spc = lisp(spc) in
       spc 
              
   def toLispFile (spc, file, preamble) =  

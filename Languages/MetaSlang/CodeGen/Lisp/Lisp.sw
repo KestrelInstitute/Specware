@@ -262,6 +262,36 @@ ListADT qualifying spec {
       Cons (string title,
         Cons (emptyPretty (), ps)))) : Prettys
 
+  op ppDefToStream: Definition * Stream -> ()
+  def ppDefToStream(ldef,stream) =
+    let p = ppOpDefn ldef in
+    let t = format (80, p) in
+    (toStreamT (t,
+	       fn ((_,string), ()) -> streamWriter(stream,string),
+	       (),
+	       fn (n,()) -> streamWriter(stream,newlineAndBlanks n));
+     streamWriter(stream,"\n"))
+
+  op ppSpecToFile : LispSpec * String * String -> ()
+
+  def ppSpecToFile (spc, file, preamble) =
+    %% Rewritten to not use ppSpec which requires a lot of space for large specs
+    let defs = sortDefs(spc.opDefns) 	in
+    let name = spc.name 		in
+    IO.withOpenFileForWrite
+      (file,
+       fn stream ->
+	(%streamWriter(stream,preamble);
+	 streamWriter(stream,";;; Lisp spec\n\n");
+	 app (fn pkgName -> streamWriter (stream,
+					  "(defpackage \"" ^ pkgName ^ "\")\n"))
+	  spc.extraPackages;
+	streamWriter(stream,"\n(defpackage \"" ^ name ^ "\")");
+	streamWriter(stream,"\n(in-package \"" ^ name ^ "\")\n\n");
+
+	streamWriter(stream,";;; Definitions\n\n");
+	app (fn ldef -> ppDefToStream(ldef,stream)) defs))
+
   def ppSpec (s : LispSpec) : Pretty =
       let defs = sortDefs(s.opDefns) 	in
       let name = s.name 		in
@@ -279,13 +309,6 @@ ListADT qualifying spec {
 %     List.++ section (";;; Axioms",             List.map ppTerm       s.axioms)
 %     List.++ [string "||#", emptyPretty ()]
     )
-
-  op ppSpecToFile : LispSpec * String * Text -> ()
-
-  def ppSpecToFile (spc, file, preamble) =
-    let p = ppSpec spc in
-    let t = format (80, p) in
-    toFile (file, t ++ preamble)
 
   op ppSpecToTerminal : LispSpec -> ()
 
