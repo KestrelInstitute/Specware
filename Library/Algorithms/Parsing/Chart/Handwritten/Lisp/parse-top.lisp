@@ -18,7 +18,10 @@
   (when-debugging
    (setq *current-parser-session* nil)
    (reset-parser-debug-vars))
-  (specware::gc) 
+  ;; call garbageCollect if it looks plausible
+  (let ((gc (find-symbol "GARBAGECOLLECT" "SYSTEM-SPEC")))
+    (when (fboundp gc)
+      (funcall gc nil)))
   ;;
   (incf-timing-data 'initial-gc)
   (let* ((package (or package 
