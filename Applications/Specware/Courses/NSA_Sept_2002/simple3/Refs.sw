@@ -1,7 +1,7 @@
 A = spec
   op f : Nat -> Nat
   def f(n) = 3*n
-end
+endspec
 
 M = morphism /Specs#A -> A {}
 
