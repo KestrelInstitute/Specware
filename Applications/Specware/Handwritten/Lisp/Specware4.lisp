@@ -71,7 +71,6 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
     "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
-    "Languages/XML/Handwritten/Lisp/Support.lisp"
     )
   )
 
@@ -114,6 +113,10 @@
     ;; The generated lisp code.  This also initializes the Specware
     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
     "Applications/Specware/lisp/Specware4.lisp"
+
+    ;; XML support -- this calls code generated in Specware4.lisp for various XML definitions
+    ;; maybe interface would be a better name
+    "Languages/XML/Handwritten/Lisp/Support.lisp"
 
     ;; Toplevel aliases 
     "Applications/Specware/Handwritten/Lisp/toplevel"

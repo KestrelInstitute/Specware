@@ -127,7 +127,7 @@ XML qualifying spec
 
   def print_IgnoreSectContents {prefix, contents} =
     (print_Ignore prefix) ^ 
-    (foldl (fn ((contents, ignore), result) -> 
+    (foldl (fn ((contents :IgnoreSectContents, ignore : Ignore), result) -> 
 	    result ^ 
 	    (ustring "<![") ^ (print_IgnoreSectContents contents) ^ (ustring "]]>") ^ 
 	    (print_Ignore ignore))

@@ -8,11 +8,17 @@ separate from the pure (monadic) operations.
 IO qualifying spec {
   import /Library/Base
 
-  sort Time = Nat          % Not a fixnum
+  sort Filename = String
+  sort Time     = Nat          % Not a fixnum
+  sort Byte     = {x : Nat | 0 <= x &  x < 256} 
 
-  op getCurrentDirectory : () -> String
-  op fileExistsAndReadable : String -> Boolean
-  op fileWriteTime : String -> Time
+  op getCurrentDirectory   : () -> Filename
+  op fileExistsAndReadable : Filename -> Boolean
+  op fileWriteTime         : Filename -> Time
+
+  op fileWritable          : Filename -> Boolean
+  op readBytesFromFile     : Filename -> List Byte
+  op writeBytesToFile      : List Byte * Filename -> ()
 }
 \end{spec}
 

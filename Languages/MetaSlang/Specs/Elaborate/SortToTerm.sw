@@ -16,21 +16,21 @@ XML qualifying spec
     let ApplyN ([Fun (f1, srt, p1), t2], pos) = post_trm in
     ApplyN ([Fun (f1, srt, p1), 
 	     Record ([("1", t2), 
-		      ("2", convert_sort_to_term_constructor (env, srt))],
+		      ("2", convert_sort_to_descriptor_constructor (env, srt))],
 		     Internal "jlm")],
 	    pos)
       		 
-  op convert_sort_to_term_constructor : LocalEnv * MS.Sort -> MS.Term
+  op convert_sort_to_descriptor_constructor : LocalEnv * MS.Sort -> MS.Term
 
   %% Convert a sort S into an expression which will compile to code
-  %% that will build an XSort term (see below) that is similar to S.
-  def convert_sort_to_term_constructor (env, srt) =
-    let table = sort_expansion_table (env, checkSort (env, srt)) in
-    let pos = Internal "jlm" in
-    let junk  = Base (Qualified("JUNK",   "junk"),   [], pos) in 
-    let xsort = Base (Qualified("XML",    "XSort"),  [], pos) in 
-    let ssort = Base (Qualified("STRING", "STRING"), [], pos) in 
-    let mynil = Fun (TwoNames ("List", "nil", Nonfix),  junk, pos) in % list of xsort
+  %% that will build a SortDescriptor (see below) that is similar to S.
+  def convert_sort_to_descriptor_constructor (env, srt) =
+    let table           = sort_expansion_table (env, checkSort (env, srt)) in
+    let pos             = Internal "sort_descriptor" in
+    let sort_descriptor = Base (Qualified("XML",    "SortDescriptor"), [],         pos) in 
+    let ssort           = Base (Qualified("STRING", "STRING"),         [],         pos) in 
+    let list_of_sd      = Base (Qualified("XML",    "junk"),           [],         pos) in  % TODO: make real:  list sort_descriptor
+    let mynil           = Fun  (TwoNames ("List", "nil", Nonfix),      list_of_sd, pos) in 
     let 
        def mkrecord args =
 	 let (_, reversed_args : List (Id * MS.Term)) =
@@ -45,8 +45,8 @@ XML qualifying spec
 	   
        def mkapp (qualifier, id, arg : MS.Term) =
 	 ApplyN ([Fun (TwoNames (qualifier, id, Nonfix), 
-		       Arrow (junk, 
-			      xsort,
+		       Arrow (list_of_sd, % TODO : put something correct here, even though no one looks at it
+			      sort_descriptor,
 			      pos),
 		       pos),
 		  arg],
@@ -58,11 +58,11 @@ XML qualifying spec
        def convert srt =
 	 case resolveMetaTyVar srt of
 	   
-	   | Arrow      (x, y,              _) -> mkapp ("XML", "MakeArrowSortTerm",
+	   | Arrow      (x, y,              _) -> mkapp ("XML", "MakeArrowSortDescriptor",
 							 mkrecord [convert x, 
 								   convert y])
 	   
-	   | Product    (fields,            _) -> mkapp ("XML", "MakeProductSortTerm",
+	   | Product    (fields,            _) -> mkapp ("XML", "MakeProductSortDescriptor",
 							 (foldl (fn ((id, srt), result) ->
 								 mkapp ("List", "cons",
 									mkrecord [mkapp ("List", "cons", 
@@ -72,7 +72,7 @@ XML qualifying spec
 							        mynil
 								(rev fields)))
 	   
-	   | CoProduct  (fields,            _) -> mkapp ("XML", "MakeCoProductSortTerm",
+	   | CoProduct  (fields,            _) -> mkapp ("XML", "MakeCoProductSortDescriptor",
 							 (foldl (fn ((id, opt_srt), result) ->
 								 mkapp ("List", "cons",
 									mkrecord [mkapp ("List", "cons",
@@ -84,16 +84,16 @@ XML qualifying spec
 							        mynil
 								(rev fields)))
 	   
-	   | Quotient   (srt, rel,          _) -> mkapp ("XML", "MakeQuotientSortTerm",
+	   | Quotient   (srt, rel,          _) -> mkapp ("XML", "MakeQuotientSortDescriptor",
 							 mkrecord [convert srt, 
 								   tag "QQQ"])
 	   
 	   
-	   | Subsort    (srt, pred,         _) -> mkapp ("XML", "MakeSubsortSortTerm",
+	   | Subsort    (srt, pred,         _) -> mkapp ("XML", "MakeSubsortSortDescriptor",
 							 mkrecord [convert srt, 
 								   tag "PPP"])
 	   
-	   | Base (Qualified (q, id), srts, _) -> mkapp ("XML", "MakeBaseSortTerm",
+	   | Base (Qualified (q, id), srts, _) -> mkapp ("XML", "MakeBaseSortDescriptor",
 							 mkrecord [tag q,
 								   tag id, 
 								   (foldl (fn (srt, result) ->
@@ -119,23 +119,23 @@ XML qualifying spec
 
   op sort_expansion_table : LocalEnv * MS.Sort -> List (MS.Sort * MS.Sort)
 
-  op show_sort : String * MS.Sort -> ()
+  %%  op show_sort : String * MS.Sort -> ()
 
   def sort_expansion_table (env, srt) =
    let 
       def add_to_table (srt, table) =
-	let expansion = unfoldSort (env, srt) in
-	let _ = toScreen ("\n-----------------------------\n") in
-	let _ = show_sort ("     Sort", srt) in
-	let _ = show_sort ("Expansion", expansion) in
+	let expansion = unfoldSort_once (env, srt) in
+	%%  let _ = toScreen ("\n-----------------------------\n") in
+	%%  let _ = show_sort ("     Sort", srt) in
+	%%  let _ = show_sort ("Expansion", expansion) in
 	if expansion = srt then
-	  let _ = toScreen ("\n <not added> \n") in
-	  let _ = toScreen ("\n-----------------------------\n") in
+	  %%  let _ = toScreen ("\n <not added> \n") in
+	  %%  let _ = toScreen ("\n-----------------------------\n") in
 	  table
 	else 
 	  let new_table = cons ((srt, expansion), table) in
-	  let _ = toScreen ("\n *** ADDED *** \n") in
-	  let _ = toScreen ("\n-----------------------------\n") in
+	  %%  let _ = toScreen ("\n *** ADDED *** \n") in
+	  %%  let _ = toScreen ("\n-----------------------------\n") in
 	  scan (expansion, new_table)
 
       def scan (srt, table) =
@@ -180,30 +180,72 @@ XML qualifying spec
    in
      scan (srt, [])
 
+ %% ================================================================================
+
+ %% This is similar to unfoldSortRec in Utilities.sw, but doesn't recur
+
+ def unfoldSort_once (env, srt) = 
+   let unlinked_sort = unlinkSort srt in
+   case unlinked_sort of
+    | Base (qid, ts, pos) -> 
+      %% unfoldSortRec would look for circularities here.
+      %% We do that above in scan and add_to_table in sort_expansion_table
+      (case findAllSorts (env.internal, qid) of
+	 | sort_info::r ->
+	   (case sort_info of
+	      | (main_qid::_, tvs, []) ->        % sjw: primitive sort
+	        let l1 = length tvs in
+		let l2 = length ts  in
+		((if ~(l1 = l2) then
+		    error(env,"\n  Instantiation list does not match argument list",
+			  pos)
+		  else 
+		    ());
+		    %% Use the primary name, even if the reference was via some alias.
+		    %% This normalizes all references to be via the same name.
+		    Base (main_qid, ts, pos))
+	      | (aliases, tvs, defs) ->
+   	        let possible_base_def = find (fn srt_def ->
+					      case srt_def of
+						| (_, Base _) -> true
+						| _           -> false)
+	                                     defs
+		in
+		  case possible_base_def of
+		    | Some (type_vars, srt as (Base (_,_,pos))) ->
+		      %% unfoldSortRec would recur here.  We don't.
+		      instantiateScheme (env, pos, ts, type_vars, srt)
+		    | _ ->
+		      let (some_type_vars, some_def) = hd defs in % if multiple defs, pick first def arbitrarily
+		      instantiateScheme(env, pos, ts, some_type_vars, some_def))
+	 | [] -> 
+	   (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
+	    unlinked_sort))
+    | s -> s 
   %% ================================================================================
 
 
-  sort XId   = String
-  sort XQId  = String * String
-  sort XTerm = String
+  sort IdDescriptor   = String
+  sort QIdDescriptor  = String * String
+  sort TermDescriptor = String
 
-  %% A term of type XSort will be accessible at runtime as the reflection of a sort
+  %% A term of type SortDescriptor will be accessible at runtime as the reflection of a sort
   %% that was otherwise only present at compile-time.
-  sort XSort = | Arrow        XSort * XSort
-               | Product      List (XId * XSort)
-               | CoProduct    List (XId * Option XSort)
-               | Quotient     XSort * XTerm              
-               | Subsort      XSort * XTerm              
-               | Base         XQId * List XSort
-               | TyVar        
-               | MetaTyVar    
-               | Bottom
+  sort SortDescriptor = | Arrow        SortDescriptor * SortDescriptor
+                        | Product      List (IdDescriptor * SortDescriptor)
+                        | CoProduct    List (IdDescriptor * Option SortDescriptor)
+                        | Quotient     SortDescriptor * TermDescriptor              
+                        | Subsort      SortDescriptor * TermDescriptor              
+                        | Base         QIdDescriptor * List SortDescriptor
+                        | TyVar        
+                        | MetaTyVar    
+                        | Bottom
 
-  def MakeArrowSortTerm     (x, y)      : XSort = Arrow      (x, y)
-  def MakeProductSortTerm   fields      : XSort = Product    fields
-  def MakeCoProductSortTerm fields      : XSort = CoProduct  fields
-  def MakeQuotientSortTerm  (base, qq)  : XSort = Quotient   (base, qq)
-  def MakeSubsortSortTerm   (base, pp)  : XSort = Subsort    (base, pp)
-  def MakeBaseSortTerm      (q,id,args) : XSort = Base       ((q,id), args)
+  def MakeArrowSortDescriptor     (x, y)      : SortDescriptor = Arrow      (x, y)
+  def MakeProductSortDescriptor   fields      : SortDescriptor = Product    fields
+  def MakeCoProductSortDescriptor fields      : SortDescriptor = CoProduct  fields
+  def MakeQuotientSortDescriptor  (base, qq)  : SortDescriptor = Quotient   (base, qq)
+  def MakeSubsortSortDescriptor   (base, pp)  : SortDescriptor = Subsort    (base, pp)
+  def MakeBaseSortDescriptor      (q,id,args) : SortDescriptor = Base       ((q,id), args)
 
 endspec

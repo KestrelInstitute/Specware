@@ -4,6 +4,7 @@ XML qualifying spec
   import XML_Sig
   import Parser/XML_Parser
   import Printers/XML_Printer
+  import Printers/Metaslang_to_XML
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INTERFACE

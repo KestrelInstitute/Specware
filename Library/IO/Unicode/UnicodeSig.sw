@@ -1,6 +1,8 @@
 
 Unicode qualifying spec
 
+  import /Library/IO/Primitive/IO
+
   sort UChar = (Nat | legal_uchar?)  % not much choice here
   sort UChars  = List UChar          % name emphasises list implementation, which facilitates pattern matching
   sort UString                       % probably just UChars, but might want a more compact representation
@@ -43,5 +45,20 @@ Unicode qualifying spec
   op in?  : UChar * UString -> Boolean
 
   %% ------------------------------------------------------------------------
+
+  sort Bytes = List Byte
+  sort Byte  = (Nat | byte?)
+
+  def byte? n = (n < 256)
+
+  sort Encoding = UChars -> Bytes   % UTF-8, UTF-16, JIS, etc.
+  sort Decoding = Bytes  -> UChars  % UTF-8, UTF-16, JIS, etc.
+
+  def null_encoding (chars : UChars) : Bytes  = chars
+  def null_decoding (bytes : Bytes)  : UChars = bytes
+
+  op read_unicode_chars_from_file : Filename * Decoding -> UChars
+
+  op write_unicode_chars_to_file  : UChars * Filename * Encoding -> ()
 
 endspec
