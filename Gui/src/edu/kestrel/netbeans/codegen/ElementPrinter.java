@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:12:14  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:37:44  weilyn
  * Added support for claims.
  *
@@ -98,5 +101,12 @@ public interface ElementPrinter {
     */
     public void markClaim(ClaimElement element, int what)
     throws ElementPrinterInterruptException;
-
+    /** Mark a notable point in an import element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markImport(ImportElement element, int what)
+    throws ElementPrinterInterruptException;
+ 
 }

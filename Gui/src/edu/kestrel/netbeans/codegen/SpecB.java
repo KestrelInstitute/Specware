@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:12:14  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:37:44  weilyn
  * Added support for claims.
  *
@@ -175,6 +178,9 @@ class SpecB extends Member implements Binding.Spec, TextBinding.Container {
                     break;                    
                 case 3:
                     models = orig.getClaims();
+                    break;
+                case 4:
+                    models = orig.getImports();
                     break;
             }
             if (empty && models.length > 0) {

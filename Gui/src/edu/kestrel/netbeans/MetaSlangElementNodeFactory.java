@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:28:16  weilyn
+ * Cleaned up active context menu actions.
+ *
  * Revision 1.3  2003/02/16 02:11:15  weilyn
  * Added support for defs.
  *
@@ -142,6 +145,7 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
             n.setElementFormat(new ElementFormat(NbBundle.getBundle (MetaSlangElementNodeFactory.class).getString("CTL_Spec_name_format")));
 
             filter.setOrder (new int[] {
+                SpecElementFilter.IMPORT,
 		SpecElementFilter.SORT,
 		SpecElementFilter.OP,
                 SpecElementFilter.DEF,
@@ -197,6 +201,16 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
         return n;
     }
     
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createImportNode(ImportElement element) {
+        ImportElementNode n = new ImportElementNode(element, true);
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(DEFAULT_ACTIONS);
+        return n;
+    }
+
     protected Children createSpecChildren( SpecElement element ) {
         return createSpecChildren(element, MetaSlangDataObject.getExplorerFactory() );
     }

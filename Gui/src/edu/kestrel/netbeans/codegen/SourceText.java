@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:12:14  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:37:44  weilyn
  * Added support for claims.
  *
@@ -304,6 +307,11 @@ public class SourceText implements DocumentBinding {
         return b;
     }
 
+    public Binding.Import bindImport(ImportElement impl) {
+        ImportB b = new ImportB(impl, this);
+        return b;
+    }
+    
     public void dumpDocument() {
         System.err.println("Document dump:"); // NOI18N
         final StyledDocument doc = getEditorSupport().getDocument();
