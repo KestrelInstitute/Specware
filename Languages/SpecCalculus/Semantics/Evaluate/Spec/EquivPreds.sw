@@ -18,9 +18,11 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def equivSort? spc (s1, s2) =
-   let env = initialEnv (spc, "internal") in
-   let (result, msg) = unifySorts env false s1 s2 in
-   result
+   (equalSort? (s1, s2))
+   ||
+   (let env = initialEnv (spc, "internal") in
+    let (result, msg) = unifySorts env false s1 s2 in
+    result)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Term Equivalences, expanding definitions
@@ -43,7 +45,9 @@ SpecCalc qualifying spec
      | _ -> false
 
  def equivTerm? spc (t1, t2) =
-   case (t1, t2) of
+   (equalTerm? (t1, t2))
+   ||
+   (case (t1, t2) of
 
      | (Apply      (x1, y1,      _), 
         Apply      (x2, y2,      _)) -> equivTerm? spc (x1, x2) && equivTerm? spc (y1, y2)
@@ -101,7 +105,7 @@ SpecCalc qualifying spec
      | (SortedTerm (x1, s1,      _),
         SortedTerm (x2, s2,      _)) -> equivTerm? spc (x1, x2) && equalSort? (s1, s2)
 
-     | _ -> false
+     | _ -> false)
 
  def equivFun? spc (f1, f2) =
   case (f1, f2) of
@@ -143,7 +147,9 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def equivPattern? spc (p1,p2) =
-  case (p1, p2) of
+   (equalPattern? (p1, p2))
+   ||
+   (case (p1, p2) of
      | (AliasPat    (x1, y1,      _),
         AliasPat    (x2, y2,      _)) -> equivPattern? spc (x1,x2) && equivPattern? spc (y1,y2)
 
@@ -185,7 +191,7 @@ SpecCalc qualifying spec
      | (SortedPat   (x1, t1,      _),
         SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equalSort? (t1, t2)
 
-     | _ -> false
+     | _ -> false)
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -193,8 +199,9 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def equivVar? spc ((id1,s1), (id2,s2)) = 
-   id1 = id2 && 
-   equalSort? (s1, s2)
+   (id1 = id2)
+   &&
+   (equivSort? spc (s1, s2))
 
 
 endspec
