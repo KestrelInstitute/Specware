@@ -603,9 +603,10 @@ PE qualifying spec
      -> Oscar.Spec
      -> Mode
      -> (Oscar.Spec * BSpec)
-     -> Transition
+     -> TransSpec
+     -> Mode
      -> Env (Option (Oscar.Spec * BSpec))
-  def specialProcCall oldBSpec oldOscSpec newSourceMode (newOscSpec,newBSpec) transition =
+  def specialProcCall oldBSpec oldOscSpec newSourceMode (newOscSpec,newBSpec) transSpec dst =
     let
       def procInv (newOscSpec,newBSpec,found) claim =
        case (claimType claim, idOf claim) of
@@ -629,15 +630,15 @@ PE qualifying spec
                                    in
                                      return (newDst, outTrans oldBSpec dst, newBSpec, Cons ((dst,newDst),visited),newFinals)
                               | Some newDst -> return (newDst,[],newBSpec,visited,finals);
-                          (newBSpec,newTrans) <- return (newTrans newBSpec src newDst (transSpec transition));
+                          (newBSpec,newTrans) <- return (newTrans newBSpec src newDst transSpec);
                           foldM (inlineTransition newDst) (newBSpec,visited,newFinals) successors
                         }
                      def tryFinal oldOscSpec oldBSpec (newOscSpec,newBSpec) mode = {
-                       postcondition <- computePostcondition
- 
-                       let subst = filterReturn mode procInfo.returnInfo optCallReturnRef in
-                       foldM (specialTrans oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
-                       %% foldM (specializeTransition oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
+                       postcondition <- computePostcondition (Mode.substOf newSourceMode) transSpec (returnInfo procInfo) optCallReturnRef (Mode.substOf mode);
+  
+                       foldM (specialTrans oldBSpec oldOscSpec mode postcondition) (newOscSpec,newBSpec) (outTrans oldBSpec dst)
+                       %% foldM (specializeTransition oldBSpec oldOscSpec mode subst) (newOscSpec,newBSpec) (outTrans oldBSpec dst)
+                     }
                    in {
                      (newBSpec,visited,finals) <- foldM (inlineTransition newSourceMode) (newBSpec,[],[]) (outTrans procBSpec (initial procBSpec));
                      (newOscSpec,newBSpec) <- foldM (tryFinal oldOscSpec oldBSpec) (newOscSpec,newBSpec) finals;
@@ -646,7 +647,7 @@ PE qualifying spec
             }
          | _ -> return (newOscSpec,newBSpec,found)
     in {
-      (newOscSpec,newBSpec,found) <- foldVariants procInv (newOscSpec,newBSpec,false) (modeSpec (Transition.transSpec transition));
+      (newOscSpec,newBSpec,found) <- foldVariants procInv (newOscSpec,newBSpec,false) (modeSpec transSpec);
       if found then
         return (Some (newOscSpec,newBSpec))
       else
@@ -808,7 +809,7 @@ associated with the edge.
       if provablyInconsistent? transSpec then
         return (newOscSpec,newBSpec)
       else {
-        result <- specialProcCall oldBSpec oldOscSpec newSourceMode (newOscSpec,newBSpec) transition;
+        result <- specialProcCall oldBSpec oldOscSpec newSourceMode (newOscSpec,newBSpec) transSpec (target transition);
         case result of
           | Some (newOscSpec,newBSpec) -> return (newOscSpec,newBSpec)
           | None -> {
