@@ -79,7 +79,26 @@
 	   (:ANYOF    (build-parser-anyof-rule  parser name (rest pattern)))
 	   (:TUPLE    (build-parser-tuple-rule  parser name (rest pattern)))
 	   (:PIECES   (build-parser-pieces-rule parser name (rest pattern)))
-	   (:REPEAT   (build-parser-repeat-rule parser name (rest pattern))))
+	   (:REPEAT   (build-parser-repeat-rule parser name (rest pattern)))
+	   (:REPEAT*  (build-parser-rule parser name 
+					 `(:anyof
+					   ((:tuple (1 (:optional (:REPEAT ,@(rest pattern)))))
+					    (if (eq '1 :unspecified) '() (list . 1))))))
+	   (:REPEAT+  (build-parser-rule parser name 
+					 `(:anyof
+					   ((:tuple (1 (:REPEAT ,@(rest pattern))))
+					    (list . 1)))))
+	   (:REPEAT++ (build-parser-rule parser name 
+					 (let ((elt (second pattern))
+					       (sep (third  pattern)))
+					   (if (null sep)
+					       `(:anyof
+						 ((:tuple (1 ,elt) (2 (:REPEAT ,@(rest pattern))))
+						  (list 1 . 2)))
+					     `(:anyof
+					       ((:tuple (1 ,elt) ,sep (2 (:REPEAT ,@(rest pattern))))
+						(list 1 . 2)))))))
+	   )
        (let* ((new-rule (build-parser-rule-aux parser name (first pattern)))
 	      (semantics     (second pattern))
 	      (keyword-args  (rest (rest pattern)))
