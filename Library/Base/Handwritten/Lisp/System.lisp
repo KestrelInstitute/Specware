@@ -30,6 +30,8 @@
 	(cons :|None| nil)
       (cons :|Some| val))))
 
+(defvar msWindowsSystem? #+mswindows t #-mswindows nil)
+
 ;;;  op temporaryDirectory : String
 (defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*))

@@ -24,8 +24,9 @@ System qualifying spec
   but on the other hand somewhat fortunate. It means that to access the
   Lisp SYSTEM:getenv we need only extend this signature.
 *)
-%  op getenv   : String -> String
   op getEnv : String -> Option String
+
+  op msWindowsSystem?: Boolean
 
 (*
  The following holds the name of the temporary directory on the
