@@ -69,11 +69,17 @@
 
 ;;; redefines a refine utility
 (defun break-fn (fn-name)
-  (eval `(common-lisp:trace (,fn-name	;:condition (not *dont-break-next-call*)
-			     :break-before
-			     (if *dont-break-next-call*
-				 (setq *dont-break-next-call* nil)
-			       t)))))
+  (eval #+allegro `(cl:trace (,fn-name	;:condition (not *dont-break-next-call*)
+			      :break-before
+			      (if *dont-break-next-call*
+				  (setq *dont-break-next-call* nil)
+				t)))
+	#+cmu `(cl:trace ,fn-name
+			 :break
+			 (if *dont-break-next-call*
+			     (setq *dont-break-next-call* nil)
+			   t))
+	#-(or allegro cmu) `(cl:trace ,fn-name)))
 
 
 (defun unbreak-functions (fns)
