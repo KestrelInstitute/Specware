@@ -155,7 +155,12 @@ AnnSpecPrinter qualifying spec {
         | Op (_, fixity) -> (case fixity of
                                | Unspecified -> Nonfix
                                | _ -> fixity)
+        | And            -> Infix (Right, 15) 
+        | Or             -> Infix (Right, 14) 
+        | Cond           -> Infix (Right, 13) 
+        | Iff            -> Infix (Right, 12) 
         | Equals         -> Infix (Left, 20) % was 10 ??
+        | NotEquals      -> Infix (Left, 20) 
         | _              -> Nonfix)
     | _ -> Nonfix
  
@@ -178,7 +183,13 @@ AnnSpecPrinter qualifying spec {
     | Choose                -> pp.fromString ("choose")
     | PQuotient _           -> pp.fromString ("quotient")
     | PChoose   _           -> pp.fromString ("choose")
+    | Not                   -> pp.Not
+    | And                   -> pp.And
+    | Or                    -> pp.Or
+    | Cond                  -> pp.Cond
+    | Iff                   -> pp.Iff
     | Equals                -> pp.Equals
+    | NotEquals             -> pp.NotEquals
     | OneName   (x, _)      -> pp.fromString x
     | TwoNames  (x, y, _)   -> pp.fromString (if x = UnQualified then y else x^"."^ y)
  
@@ -356,7 +367,7 @@ AnnSpecPrinter qualifying spec {
                 (case decls of
                  | [] -> []
                  | (pat,trm)::decls -> cons(ppD(index,l,separator,pat,trm),
-					    ppDs(index + 1,5,pp.And,decls)))
+					    ppDs(index + 1,5,pp.LetDeclsAnd,decls)))
            in
      
                 blockAll (0,

@@ -34,7 +34,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
 \begin{spec}
         (case term of
           | Apply (Fun (Op (qid,Infix (assoc,prec)),srt,_),
-                 Record ([("1",left),("2",right)],_), _) ->
+		   Record ([("1",left),("2",right)],_), _) ->
               if (isSimpleTerm? left) or (isSimpleTerm? right) then
                 ppGroup (ppConcat [
                   ppString "(",
@@ -56,25 +56,61 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                     ppAppend (ppATerm right) (ppString ")")
                   ]))
                 ]
-          | Apply (Fun(Equals,srt,_), Record ([("1",left),("2",right)],_),_) ->
-              if (isSimpleTerm? left) or (isSimpleTerm? right) then
-                ppGroup (ppConcat [
-                  ppString "(",
-                  ppATerm left,
-                  ppString " = ",
-                  ppATerm right,
-                  ppString ")"
-                ])
-              else
-                ppGrConcat [
-                  ppString "(",
-                  ppATerm left,
-                  ppGroup (ppIndent (ppConcat [
-                    ppString " =",
-                    ppBreak,
-                    ppAppend (ppATerm right) (ppString ")")
-                  ]))
-                ]
+          | Apply (term1 as Fun(fun, srt, _), 
+		   term2 as Record ([("1",left),("2",right)],_),
+		   _)
+	     ->
+	     %% Having all these cases seems awful -- is there a simpler dispatch?
+	     (let opt_infix_string =
+	          case fun of
+		    | And       -> Some " &&"
+		    | Or        -> Some " ||"
+		    | Cond      -> Some " =>"
+		    | Iff       -> Some " <=>"
+		    | Equals    -> Some " ="
+		    | NotEquals -> Some " ~="
+		    | _ -> None
+	      in
+		case opt_infix_string of
+		  | Some infix_string ->
+		    if (isSimpleTerm? left) or (isSimpleTerm? right) then
+		      ppGroup (ppConcat [
+			ppString "(",
+			ppATerm left,
+			ppString infix_string,
+			ppString " ",
+			ppATerm right,
+                        ppString ")"
+					])
+		    else
+		      ppGrConcat [
+		        ppString "(",
+			ppATerm left,
+			ppGroup (ppIndent (ppConcat [
+			  ppString infix_string,
+                          ppBreak,
+                          ppAppend (ppATerm right) (ppString ")")
+                        ]))
+                      ]
+		  | _ ->
+		    %% same as Apply (term1, term2, _) below
+		    if (isSimpleTerm? term1) or (isSimpleTerm? term2) then
+		      ppGroup (ppConcat [
+			ppString "(",
+			ppATerm term1,
+                        ppString " ",
+                        ppATerm term2,
+                        ppString ")"
+                      ])
+                    else
+                      ppGrConcat [
+                        ppString "(",
+                        ppGroup (ppIndent (ppConcat [
+                          ppATerm term1,
+                          ppBreak,
+                          (ppAppend (ppATerm term2) (ppString ")"))
+                        ]))
+                      ])
           | Apply (Lambda (match as (_::_::_),_), term,_) ->
               ppIndent (ppGrConcat [
                 ppString "case ",
@@ -312,7 +348,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
   op ppAFun : fa (a) AFun a -> Pretty
   def ppAFun fun =
     case fun of
-      | Equals -> ppString "="
+      | Not       -> ppString "~"
+      | And       -> ppString "&&"
+      | Or        -> ppString "||"
+      | Cond      -> ppString "=>"
+      | Iff       -> ppString "<=>"
+      | Equals    -> ppString "="
+      | NotEquals -> ppString "~="
       | Quotient -> ppString "quotient"
       | PQuotient _ -> ppString "quotient"
       | Choose -> ppString "choose"

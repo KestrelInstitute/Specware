@@ -65,16 +65,26 @@ spec
 
 
  def getFunIndex = 
-     fn (Fun(Op(qid,fixity),_,_)) -> 
-	Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
-      | (Fun(Embed(id,_),_,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell id]))
-      | (Fun(Equals,_,_)) -> 1
-      | (IfThenElse(_,_,_,_)) -> 2
-      | (Bind(Forall,_,_,_)) -> 3
-      | (Bind(Exists,_,_,_)) -> 4
-      | (Lambda _) -> 5
-      | (Let(_,_,_)) -> 6
-      | (LetRec(_,_,_)) -> 7
+     %% The only rule here is that different indices imply different terms.
+     %% The precise values don't matter.
+     %% And it's even ok if different terms have the same index (e.g., if
+     %% sxhash should return 3) -- that just makes things slightly less
+     %% efficient.
+     fn (Fun(Op(qid,fixity),_,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
+      | (Fun(Embed(id,_),   _,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell id]))
+      | (Fun(Not,           _,_)) ->  1
+      | (Fun(And,           _,_)) ->  2
+      | (Fun(Or,            _,_)) ->  3
+      | (Fun(Cond,          _,_)) ->  4
+      | (Fun(Iff,           _,_)) ->  5
+      | (Fun(Equals,        _,_)) ->  6 % was 1
+      | (Fun(NotEquals,     _,_)) ->  7
+      | (IfThenElse    (_,_,_,_)) ->  8 % was 2
+      | (Bind (Forall,    _,_,_)) ->  9 % was 3
+      | (Bind (Exists,    _,_,_)) -> 10 % was 4
+      | (Lambda                _) -> 11 % was 5
+      | (Let             (_,_,_)) -> 12 % was 6
+      | (LetRec          (_,_,_)) -> 13 % was 7
       | _ -> 0
 
  def subterms = 
