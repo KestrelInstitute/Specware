@@ -23,9 +23,7 @@
 
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.0">
- <!ENTITY VVV "4.0 beta">
  <!ENTITY SpecwareV "&Specware; &V;">
- <!ENTITY SpecwareVVV "&Specware; &VVV;">
  <!ENTITY Metaslang "Metaslang">
  <!ENTITY xemacs "<productname>XEmacs</productname>">
  <!ENTITY lt "&#60;">
@@ -48,12 +46,6 @@
 &disclaimer;
 &intro;
 &metaslang;
-<!--
-&usage;
-&install;
-&trouble;
-&differences;
--->
 &grammar;
 &libraries;
 

@@ -631,7 +631,7 @@ must be a `name that is a `word-symbol.
 A `project consists of a collection of `unit-definitions.
 `Unit-definitions of a `project may use other
 `unit-definitions in the `project, including standard
-libraries which in &SpecwareVVV; are supposed to be part of
+libraries which in &SpecwareV; are supposed to be part of
 each `project.
 However, the dependencies between `units must not form a
 cycle; it must always be possible to arrange the
