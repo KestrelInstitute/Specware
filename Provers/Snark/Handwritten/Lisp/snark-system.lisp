@@ -141,7 +141,8 @@
   #+allegro "fasl"
   #+mcl     "dfsl"
   #+cmu     "x86f"
-  #+sbcl    sb-fasl:*fasl-file-type*)
+  #+sbcl    sb-fasl:*fasl-file-type*
+  #+clisp   "fas")
 
 (defun need-to-recompile-snark-system ()
   (or
@@ -153,9 +154,11 @@
 		(name (if (consp name) (first (last name)) name))
 		(file (make-pathname :directory dir :name name :defaults *snark-system-pathname*)))
 	   (> (file-write-date file)
-	      (or (file-write-date (make-pathname :defaults file
-						  :type *snark-fasl-type*))
-		  0))))
+	      (let ((fasl-file (probe-file (make-pathname :defaults file
+							  :type *snark-fasl-type*))))
+		(if fasl-file (or (file-write-date fasl-file)
+				  0)
+		  0)))))
    (loop for name in *snark-files*
        thereis
 	 (let* ((dir (if (consp name)
@@ -164,9 +167,11 @@
 		(name (if (consp name) (first (last name)) name))
 		(file (make-pathname :directory dir :name name :defaults *snark-system-pathname*)))
 	   (> (file-write-date file)
-	      (or (file-write-date (make-pathname :defaults file
-						  :type *snark-fasl-type*))
-		  0))))))
+	      (let ((fasl-file (probe-file (make-pathname :defaults file
+							  :type *snark-fasl-type*))))
+		(if fasl-file (or (file-write-date fasl-file)
+				  0)
+		  0)))))))
 
 (defun make-or-load-snark-system ()
   (cond
