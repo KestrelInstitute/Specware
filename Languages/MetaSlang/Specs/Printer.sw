@@ -31,7 +31,7 @@
 AnnSpecPrinter qualifying spec { 
   import ../AbstractSyntax/Printer
   import AnnSpec
-  import /Library/IO/Primitive/IO                    % for getEnv
+  % import /Library/IO/Primitive/IO                    % for getEnv
   import /Library/Legacy/DataStructures/IntSetSplay  % for indicesToDisable
   import /Library/Legacy/DataStructures/NatMapSplay  % for markTable's
 
