@@ -315,6 +315,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Restrict -> ppString "restrict"
       | Relax -> ppString "relax"
       | Op (qid,Nonfix) -> ppQualifiedId qid
+      | Op (qid,Unspecified) -> ppQualifiedId qid
       | Op (qid,fix) -> 
           ppGrConcat [
             ppString "(",
@@ -380,6 +381,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString (Nat.toString n)
           ]
       | Nonfix -> ppNil % ppString "Nonfix"
+      | Unspecified -> ppNil % ppString "Unspecified"
       | any ->
            fail ("No match in ppFixity with: '"
               ^ (System.toString any)
