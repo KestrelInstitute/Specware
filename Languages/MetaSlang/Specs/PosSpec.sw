@@ -376,7 +376,7 @@ PosSpec qualifying spec {
 
  def mkFail (position, srt) =
   let srt1 = Arrow (stringPSort, srt, internalPosition) in
-  let msg  = "Non-exhaustive match failure near " ^ print position in
+  let msg  = "Non-exhaustive match failure near " ^ printAll position in
   ApplyN ([mkOp (Qualified ("BuiltIn", "Fail"), srt1),
            mkString msg],
           internalPosition)

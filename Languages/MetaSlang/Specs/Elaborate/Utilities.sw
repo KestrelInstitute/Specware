@@ -208,7 +208,7 @@ spec {
    let errMsg = (Ref "") : Ref String in
    let def printError(msg,pos) = 
          errMsg := (! errMsg) ^
-                   print pos^":"^msg^PrettyPrint.newlineString()
+                   printAll pos^" : "^msg^PrettyPrint.newlineString()
               
    in
    if null(errors) then 

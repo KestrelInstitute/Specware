@@ -44,10 +44,10 @@ Position qualifying spec {
     | Internal msg -> msg
     | String (string, left, right) ->
        let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
-       printPos left ^ "-" ^ printPos right ^ " in " ^ string
+       printPos left ^ "-" ^ printPos right ^ " in [" ^ string ^ "]"
     | File (filename, left, right) ->
        let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
-       filename ^ ": " ^ printPos left ^ "-" ^ printPos right
+       "In " ^ filename ^ "\n " ^ printPos left ^ "-" ^ printPos right
 
  % ------------------------------------------------------------------------
 
