@@ -35,8 +35,10 @@ MetaSlang grammar):
  path [dirseq]
  proc [unit-term]
  show [unit-term]
- gen-lisp [spec-term]
- lgen-lisp [spec-term]
+ gen-lisp [spec-term [string-literal]]
+ lgen-lisp [spec-term [string-literal]]
+ punits [spec-term [string-literal]]
+ lpunits [spec-term [string-literal]]
  clist
  cinit
  ctext [spec-term]
@@ -90,24 +92,56 @@ Like command `proc' but in addition displays the value of the processed
 unit-term (whether it is given explicitly with the command or implicitly as
 the last processed unit).
 
-* gen-lisp [spec-term]
+* gen-lisp [spec-term [string-literal]]
 
-Without an argument, generates Lisp code from the last processed unit,
-provided the last processed unit is a spec-term. If the last processed unit is
-absent or is not a spec-term, an error occurs. It is essentially equivalent to
-`proc generate lisp spec-term', where spec-term is the last processed unit,
-except that the last processed unit is not set to `generate lisp spec-term'.
+Without arguments, generates Lisp code from the last processed unit, provided
+the last processed unit is a spec-term. If the last processed unit is absent
+or is not a spec-term, an error occurs. It is essentially equivalent to `proc
+generate lisp spec-term', where spec-term is the last processed unit, except
+that the last processed unit is not set to `generate lisp spec-term'.
 
-With an argument, sets the last processed unit to the argument and generates
-Lisp code from it. It is essentially equivalent to `proc generate lisp
-spec-term', except that the last processed unit is set to spec-term and not to
-`generate lisp spec-term'.
+With one argument (spec-term), sets the last processed unit to spec-term and
+generates Lisp code from it. It is essentially equivalent to `proc generate
+lisp spec-term', except that the last processed unit is set to spec-term and
+not to `generate lisp spec-term'.
 
-* lgen-lisp [spec-term]
+With two arguments (spec-term and string-literal), sets the last processed
+unit to spec-term and generates Lisp code from it, depositing the generated
+Lisp code into the file whose path is the string-literal. It is essentially
+equivalent to `proc generate lisp spec-term in string-literal', except that
+the last processed unit is set to spec-term and not to `generate lisp
+spec-term in string-literal'.
+
+* lgen-lisp [spec-term [string-literal]]
 
 Like command `gen-lisp' except that it only generates Lisp code for sorts and
-ops locally declared in the argument spec-term. (Typically used for
-incremental development.)
+ops locally declared in the spec-term. (Typically used for incremental
+development.)
+
+* punits [spec-term [string-literal]]
+
+Without arguments, generates proof unit definitions for all conjectures in the
+last processed unit, provided the last processed unit is a spec-term that is a
+unit-identifier. The generated proof unit definitions are deposited into a
+file <name>.sw in the current directory, where <name> is generated from the
+unit-identifier.
+
+With one argument (spec-term), generates proof unit definitions for all
+conjectures in the last processed unit, provided the last processed unit is a
+spec-term that is a unit-identifier. The generated proof unit definitions are
+deposited into a file <name>.sw in the current directory, where <name> is
+generated from the unit-identifier.
+
+With two arguments (spec-term and string-literal), generates proof unit
+definitions for all conjectures in spec-term and deposits the generated proof
+unit definitions into the file whose path is the string-literal. Thus, the
+string-literal should end in ".sw".
+
+* lpunits [spec-term [string-literal]]
+
+Like command `punits' except that it only generates proof unit definitions for
+the conjectures locally present in the spec-term (e.g. not from imported
+specs).
 
 * clist
 
