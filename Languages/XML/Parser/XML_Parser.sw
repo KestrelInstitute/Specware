@@ -2,7 +2,7 @@
 XML qualifying spec
 
   import Parse_Document
-  import Parse_ExternalDTD
+  import TemporaryHack
 
   %%% ================================================================================
   %%%
