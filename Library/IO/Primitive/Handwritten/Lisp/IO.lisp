@@ -125,7 +125,7 @@
 
 (defun unicode::write_unicode_chars_to_file-3 (uchars filename encoding)
   (let ((bytes (funcall encoding uchars)))
-    (writeBytesToFile bytes filename)))
+    (writeBytesToFile-2 bytes filename)))
 
 ;; Used by prover interface:
 ;; Hopefully not Allegro specific.
