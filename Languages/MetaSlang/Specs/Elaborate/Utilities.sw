@@ -13,13 +13,13 @@ spec {
       {importMap  : Environment,
        internal   : PosSpec,
        errors     : Ref(List (String * Position)),
-       specName   : String,
+      %specName   : String,
        vars       : StringMap PSort,
        firstPass? : Boolean,
        constrs    : StringMap (List PSortScheme),
        file       : String}
  
- op initialEnv     : SpecRef * PosSpec * String -> LocalEnv
+ op initialEnv     : (* SpecRef * *) PosSpec * String -> LocalEnv
  op addConstrsEnv  : LocalEnv * PosSpec -> LocalEnv
 
  op addVariable    : LocalEnv * String * PSort -> LocalEnv
@@ -110,7 +110,7 @@ spec {
       properties       = emptyProperties
      }
 
- def initialEnv (spec_name, spc, file) = 
+ def initialEnv ((* spec_name, *) spc, file) = 
    let errs : List (String * Position) = [] in
    let {importInfo, sorts, ops, properties} = spc in
    let MetaTyVar(tv,_)  = freshMetaTyVar(pos0) in % ?
@@ -123,7 +123,7 @@ spec {
 	     } : PosSpec
    in
    let env = {importMap  = StringMap.empty, % importMap,
-              specName   = spec_name,
+             %specName   = spec_name,
               internal   = spc,
               errors     = Ref errs,
               vars       = StringMap.empty,
@@ -143,13 +143,13 @@ spec {
             row1
    | _ -> false
 
- def addConstrsEnv({importMap, internal, vars, specName, errors, firstPass?,
+ def addConstrsEnv({importMap, internal, vars, (* specName, *) errors, firstPass?,
                     constrs, file},
                    sp) =
    {importMap  = importMap,
     internal   = sp,
     vars       = vars,
-    specName   = specName,
+   %specName   = specName,
     errors     = errors,
     firstPass? = firstPass?,
     constrs    = computeConstrMap(sp), % importMap
@@ -231,7 +231,7 @@ spec {
       Some(! errMsg)
      )
       
-  def error(env as {errors,importMap,internal,specName,vars,
+  def error(env as {errors,importMap,internal, (* specName, *) vars,
                     firstPass?,constrs,file},
             msg,
             pos) 
@@ -239,26 +239,26 @@ spec {
     errors := cons((msg,pos),! errors)
 
 
-  def addVariable({importMap,internal,vars,specName,errors,
+  def addVariable({importMap,internal,vars, (* specName, *) errors,
                    firstPass?,constrs,file},
                   id,
                   srt) = 
     {importMap  = importMap,
      internal   = internal,
      vars       = StringMap.insert(vars,id,srt),
-     specName   = specName,
+    %specName   = specName,
      errors     = errors,
      firstPass? = firstPass?,
      constrs    = constrs,
      file       = file
     }
         
-  def secondPass({importMap,internal,vars,specName,errors,
+  def secondPass({importMap,internal,vars, (* specName, *) errors,
                   firstPass?=_,constrs,file}) = 
     {importMap  = importMap,
      internal   = internal,
      vars       = vars,
-     specName   = specName,
+    %specName   = specName,
      errors     = errors,
      firstPass? = false,
      constrs    = constrs,
@@ -339,7 +339,7 @@ spec {
   %% (I.e., unqualified is not a wildcard here.)
   findAQualifierMap (env.internal.ops, qualifier, id)
 
- def findVarOrOps ({errors, importMap, internal, vars, specName, firstPass?, constrs, file}: LocalEnv,
+ def findVarOrOps ({errors, importMap, internal, vars, (* specName, *) firstPass?, constrs, file}: LocalEnv,
                    id,
                    a)
   =

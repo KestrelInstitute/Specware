@@ -117,9 +117,15 @@ such time as the current one can made monadic.
 \begin{spec}
  op elaborateSpecM : PosSpec -> Env Spec
  def elaborateSpecM spc =
-   {
-     uri <- getCurrentURI;
-     case elaboratePosSpec (spc, (uriToPath uri) ^ ".sw", uri.hashSuffix, true) of
+   { uri      <- getCurrentURI;
+     filename <- return ((uriToPath uri) ^ ".sw");
+     let _ = writeLine (";;; Processing spec "
+			^ (case uri.hashSuffix of
+			     | Some nm -> nm ^ " "
+			     | _ -> "")
+			^ "in " ^ filename)
+     in
+     case elaboratePosSpec (spc, filename) of
        | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
        | Error msg   -> raise  (OldTypeCheck msg)
    }
