@@ -137,6 +137,13 @@ endspec
 
 ")
 
+ ("Bug 0030 : system crashes with seg. fault when compiling the following specs"
+  :sw "Bug_0030/WasCausingSegFault"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0030/WasCausingSegFault#BinaryRel
+;;; Elaborating spec at $TESTDIR/Bug_0030/WasCausingSegFault#BinaryOp
+;;; Generating lisp file $TESTDIR/Bug_0030/lisp/WasCausingSegFault.lisp
+;;; Generating lisp file $TESTDIR/Bug_0030/lisp/WasCausingSegFault.lisp
+")
 
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Bug_0043/Change#ShouldBeProvable" 
