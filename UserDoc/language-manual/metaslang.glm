@@ -2762,7 +2762,7 @@ So the meaning of the example `sort-comprehension above is
 <section id="Sort-quotients"><title>Sort-quotients</title>
 <para>
 <<
-||`sort-quotient ::= `closed-sort / `expression
+||`sort-quotient ::= `closed-sort / `closed-expression
 >>
 Sample `sort-quotient:
 [[

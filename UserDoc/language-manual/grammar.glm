@@ -483,7 +483,7 @@ easy reference.
 <formalpara><title>Sort-quotients</title>
 <para>
 <<
-||  `sort-quotient ::= `closed-sort / `expression
+||  `sort-quotient ::= `closed-sort / `closed-expression
 >>
 </para>
 </formalpara>
