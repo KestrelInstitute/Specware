@@ -69,11 +69,16 @@ caveats:
 Note: The code below does not yet match the documentation above, but should.
 
 \begin{spec}
+
+  %% translateSpec is used by Translate and Colimt
+  %% When called from Colimit, require_monic? is false, and we should avoid
+  %% raising exceptions...
   op  translateSpec : Boolean -> Spec -> TranslateExpr Position -> Env Spec
   def translateSpec require_monic? spc expr = 
     let pos = positionOf expr in
     {
      translation_maps <- makeTranslationMaps require_monic? spc expr;
+     raise_any_pending_exceptions;
      %%
      %% translation_maps is now an explicit map for which each name in its 
      %% domain refers to a particular type or op in the domain spec.  
@@ -94,9 +99,10 @@ Note: The code below does not yet match the documentation above, but should.
      %%  safely to B.Y]
      %%
      %% Now we produce a new spec using these unmbiguous maps.
+     %% Note that auxTranslateSpec is not expected to raise any errors.
      %%
      spc <- auxTranslateSpec spc translation_maps pos;
-     raise_any_pending_exceptions;
+     raise_any_pending_exceptions; % should never happen here
      %%
      %% Next we worry about traditional captures in which a (global) op Y,
      %% used under a binding of var X, is renamed to X.   Internally, this 
@@ -122,6 +128,9 @@ Note: The code below does not yet match the documentation above, but should.
 
   op  makeTranslationMaps : Boolean -> Spec -> TranslateExpr Position -> SpecCalc.Env TranslationMaps
   def makeTranslationMaps require_monic? dom_spec (translation_rules, position) =
+    %% translateSpec is used by Translate and Colimt
+    %% When called from Colimit, require_monic? is false, and we should avoid
+    %% raising exceptions...
     let sorts = dom_spec.sorts in
     let ops   = dom_spec.ops   in
     let 
@@ -519,8 +528,9 @@ Note: The code below does not yet match the documentation above, but should.
     in
       {
        (op_map, sort_map) <- foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules;
-       complain_if_type_collisions_with_priors (sorts, sort_map);
-       complain_if_op_collisions_with_priors   (ops, op_map);
+       when require_monic?
+        {complain_if_type_collisions_with_priors (sorts, sort_map);
+	 complain_if_op_collisions_with_priors   (ops, op_map)};
        return (op_map, sort_map)
        }
        
@@ -578,6 +588,11 @@ Note: The code below does not yet match the documentation above, but should.
       | _ -> sort_term
 
 
+  %% auxTranslateSpec is used by Translate, Substitute, and (indirectly) Colimt
+  %% It should avoid raising any errors.
+  %% In particular, if an operation such as translate wishes to signal errors in 
+  %% some situations, those errors should be raised while TranslationMaps is being 
+  %% created, not here.
   op  auxTranslateSpec : Spec -> TranslationMaps -> Position -> SpecCalc.Env Spec
   def auxTranslateSpec spc (op_id_map, sort_id_map) position =
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
