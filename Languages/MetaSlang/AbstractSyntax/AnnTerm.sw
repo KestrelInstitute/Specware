@@ -232,7 +232,7 @@ MetaSlang qualifying spec {
    let compressed_sorts =
        foldl (fn (srt, new_srts) ->
 	      case sortInnerSort srt of
-	       %| Any _ -> new_srts
+	       %| Any _ -> new_srts % causes evil
 		| _ -> 
 		  if exists (fn new_srt -> equalSort? (srt, new_srt)) new_srts then
 		    new_srts
@@ -251,7 +251,7 @@ MetaSlang qualifying spec {
    let compressed_terms =
        foldl (fn (tm, new_tms) ->
 	      case termInnerTerm tm of
-	       %| Any _ -> new_tms   
+	       %| Any _ -> new_tms   % causes evil
 		| _ -> 
 		  if exists (fn new_tm -> equalTerm? (tm, new_tm)) new_tms then
 		    new_tms
@@ -475,7 +475,7 @@ MetaSlang qualifying spec {
      | Seq        (_,       a)              -> Product([],a)
      | SortedTerm (_,   s,  _)              -> s
      | Pi         (tvs, t,  a)              -> Pi (tvs, termSort t, a) 
-     | And        (tms,     a)              -> And (map termSort tms,  a)
+     | And        (tms,     a)              -> maybeAndSort (map termSort tms,  a)
      | Any                  a               -> Any a
      | mystery -> fail ("\n No match in termSort with: " ^ (anyToString mystery) ^ "\n")
 
@@ -1079,7 +1079,7 @@ MetaSlang qualifying spec {
 
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t,   a) % TODO: what if map alters vars??
 
-         | And (tms, a)    -> And (map mapRec tms, a)
+         | And (tms, a)    -> maybeAndTerm (map mapRec tms, a)
 
          | Any _           -> term
 
@@ -1162,7 +1162,7 @@ MetaSlang qualifying spec {
 
          | Pi  (tvs, srt, a) -> Pi (tvs, mapS (tsp, sort_map, srt), a)  % TODO: what if map alters vars?
 
-         | And (srts,     a) -> And (map (fn srt -> mapS (tsp, sort_map, srt)) srts, a)
+         | And (srts,     a) -> maybeAndSort (map (fn srt -> mapS (tsp, sort_map, srt)) srts, a)
 
          | Any  _            -> srt
 
@@ -1379,7 +1379,7 @@ MetaSlang qualifying spec {
 			     
          | Pi  (tvs, t, a) -> Pi (tvs, mapRec t, a)  % TODO: what if map alters vars?
 
-         | And (tms, a)    -> And (map mapT tms, a)
+         | And (tms, a)    -> maybeAndTerm (map mapT tms, a)
 
          | Any  _ -> term
 			     
@@ -1630,7 +1630,7 @@ MetaSlang qualifying spec {
 	  Pi          (tvs, replaceRec tm, a)
 
         | And         (               tms, a) ->
-	  And         (map replaceRec tms, a)
+	  maybeAndTerm (map replaceRec tms, a)
 
         | Any _ -> term
 
@@ -1677,7 +1677,7 @@ MetaSlang qualifying spec {
 	   Pi        (tvs, replaceRec srt, a) 
 
          | And       (               srts, a) ->
-	   And       (map replaceRec srts, a)
+	   maybeAndSort (map replaceRec srts, a)
 
 	 | Any _ -> srt
 
