@@ -64,11 +64,11 @@
 
 ;; When the following boolean is true, then the System.debug function will
 ;; take the user into the Lisp debugger.
-(defvar System::specwareDebug? nil)
+(defvar System-spec::specwareDebug? nil)
 
 (top-level:alias ("swdbg" :case-sensitive) (&optional (b nil b?))
-   (if b? (princ (setq System::specwareDebug? b))
-          (princ System::specwareDebug?)))
+   (if b? (princ (setq System-spec::specwareDebug? b))
+          (princ System-spec::specwareDebug?)))
 
 (top-level:alias ("swpath" :case-sensitive) (&optional str)
   (if (null str)
