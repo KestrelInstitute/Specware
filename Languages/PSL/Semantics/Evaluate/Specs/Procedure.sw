@@ -67,6 +67,15 @@ Proc qualifying spec
   op bSpec : Procedure -> BSpec
   def bSpec proc = proc.bSpec
 
+  op withBSpec infixl 17 : Procedure * BSpec -> Procedure
+  def withBSpec (proc,newBSpec) = {
+    parameters = proc.parameters,
+    varsInScope = proc.varsInScope,
+    returnInfo = proc.returnInfo,
+    modeSpec = proc.modeSpec,
+    bSpec = newBSpec
+  }
+
   op returnInfo : Procedure -> ReturnInfo
   def returnInfo proc = proc.returnInfo
 

@@ -756,14 +756,6 @@ the second argument to the operator representing the return value of
 the procedure is the unit \verb+()+.
 
 \begin{spec}
-  op compileProcCall :
-       CompCtxt
-    -> Option MSlang.Term
-    -> Id.Id
-    -> MSlang.Term
-    -> Position
-    -> Env CompCtxt
-
   def compileProcCall ctxt trm? procId argTerm position = {
       procOpInfo <- catch
         (findTheOp (modeSpec ctxt) procId) 
@@ -814,7 +806,7 @@ Assume things have been named apart. So local variables cannot clash
 with global variables with the same name.
 
 \begin{spec}
-      changedVarsOpInfo <- return (map (fn varRef -> Op.deref (specOf (modeSpec procInfo),varRef)) changedVars);
+      changedVarsOpInfo <- return (map (fn varRef -> Op.deref (specOf (modeSpec ctxt),varRef)) changedVars);
       apexSpec <- foldM (fn modeSpec -> fn varInfo ->
         ModeSpec.addVariable modeSpec (varInfo Op.withId (makePrimedId (idOf varInfo))) position) (modeSpec ctxt) changedVarsOpInfo;
       varOps <- return (map (fn varRef -> deref (specOf (modeSpec procInfo),varRef)) (varsInScope procInfo));
@@ -833,6 +825,8 @@ with global variables with the same name.
 
  op opRefListToSet : List Op.Ref -> OpRefSet.Set
 \end{spec}
+
+
 
 The following compiles a sequence of commands. For each command
 we introduce a new vertex ``between'' the current initial and final
