@@ -48,7 +48,7 @@ else
 	  (build-lisp-image "${BIG_ALISP}" :lisp-heap-start #x48000000 :oldspace #x100)
 	XXXX
 	RC=$?
-	if [ $RC? -ne 0 ]; then        
+	if [ $RC -ne 0 ]; then        
 	  echo "  "                
 	  echo "  Verify_ACL:  Problem building big alisp image.  RC = $RC"
 	  exit 1

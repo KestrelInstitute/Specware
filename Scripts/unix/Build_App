@@ -22,6 +22,7 @@ echo " "
 echo "  Build_App:  APP_NAME  = [$APP_NAME]"
 echo "  Build_App:  APP_DIR   = [$APP_DIR]"
 echo "  Build_App:  GEN_DIR   = [$GEN_DIR]"
+echo "  Build_App:  BIN_DIR   = [$BIN_DIR]"
 echo "  Build_App:  SWPATH    = [$SWPATH]"
 echo "  "
 echo "  Build_App:  LISP_MODE = [$LISP_MODE]"
@@ -52,13 +53,13 @@ echo "========================================================================"
 echo "  Build_App:  Save Backups: "
 echo " "
 
-if [ -f ${IMAGE_DIR}/$EXECUTABLE ]; then
-  ls -sltr ${IMAGE_DIR}/*${EXECUTABLE}* 2>&1
+if [ -f ${BIN_DIR}/$EXECUTABLE ]; then
+  ls -sltr ${BIN_DIR}/*${EXECUTABLE}* 2>&1
   echo "  Build_App:  Saving previous $EXECUTABLE executable..."
-  echo "  Build_App:  cp -p -f ${IMAGE_DIR}/$EXECUTABLE ${IMAGE_DIR}/old-$EXECUTABLE"
-  cp -p -f ${IMAGE_DIR}/$EXECUTABLE ${IMAGE_DIR}/old-$EXECUTABLE
+  echo "  Build_App:  cp -p -f ${BIN_DIR}/$EXECUTABLE ${BIN_DIR}/old-$EXECUTABLE"
+  cp -p -f ${BIN_DIR}/$EXECUTABLE ${BIN_DIR}/old-$EXECUTABLE
 else
-  echo "  Build_App:  No previous ${IMAGE_DIR}/$EXECUTABLE"
+  echo "  Build_App:  No previous ${BIN_DIR}/$EXECUTABLE"
 fi
 
 echo "========================================================================"
@@ -105,7 +106,7 @@ echo "------------------------------------------------------------------------"
 echo "  Build_App:  New Status: "
 echo " "
 
-ls -sltr ${GEN_DIR}/*${EXECUTABLE}*  2>&1
+ls -sltr ${BIN_DIR}/*${EXECUTABLE}*  2>&1
 
 echo " "
 
