@@ -212,27 +212,6 @@ FSeq qualifying spec
                  (fa(i:Nat) i < length r =>
                     Some (r!i) = s!i))
 
-  type Permutation = Bijection(Nat,Nat)
-
-  % valid permutation for a sequence of given length:
-  op permutationForLength? : Permutation * Nat -> Boolean
-  def permutationForLength?(p,n) =
-    (fa(i:Nat) i < n => p i < n)
-
-  % i-th element of input sequence becomes (p i)-th element of output sequence:
-  op permute : [a] {(s,p) : FSeq a * Permutation |
-                     permutationForLength? (p, length s)} -> FSeq a
-  def [a] permute(s,p) =
-    the (fn (r : FSeq a) ->
-      length r = length s &&
-      (fa(i:Nat) i < length s => s!i = r!(p i)))
-
-  op permuted? : [a] FSeq a * FSeq a -> Boolean
-  def permuted?(s1,s2) =
-    length s1 = length s2 &&
-    (ex(p:Permutation) permutationForLength? (p, length s1) &&
-                       permute(s1,p) = s2)
-
   % non-empty sequences:
   type FSeqNE a = {s : FSeq a | ~(empty? s)}
 
@@ -262,5 +241,22 @@ FSeq qualifying spec
   op indexOf : [a] {(s,x) : FSeqNR a * a | x in? s} -> Nat
   def indexOf(s,x) =
     the (fn(i:Nat) -> s!i = x)
+
+  % a permutation of a sequence of length N can be represented by
+  % a permutation of the sequence of natural numbers 0,...,N-1:
+  type Permutation = {prm : FSeqNR Nat | fa(i:Nat) i in? prm => i < length prm}
+
+  % i-th element of input sequence becomes (prm!i)-th element of output sequence:
+  op permute : [a]
+     {(s,prm) : FSeq a * Permutation | length prm = length s} -> FSeq a
+  def [a] permute(s,prm) =
+    the (fn (r : FSeq a) ->
+      length r = length s &&
+      (fa(i:Nat) i < length s => s!i = r!(prm!i)))
+
+  op permuted? : [a] FSeq a * FSeq a -> Boolean
+  def permuted?(s1,s2) =
+    length s1 = length s2 &&
+    (ex(prm:Permutation) length prm = length s1 && permute(s1,prm) = s2)
 
 endspec
