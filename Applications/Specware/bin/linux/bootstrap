@@ -47,13 +47,12 @@ case "$SPECWARE4" in
 esac
 
 if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
-   echo "Failed to $act: could not find directory
-   $SPECWARE4/Applications/Specware" 2>&1
+   echo "Failed to $act: could not find directory $SPECWARE4/Applications/Specware" 2>&1
    exit 1
 fi
 
-echo cd $SPECWARE4/Applications/Specware
-cd $SPECWARE4/Applications/Specware
+echo cd "$SPECWARE4"/Applications/Specware
+cd "$SPECWARE4"/Applications/Specware
 
 # Try to find lisp executable:
 
@@ -101,8 +100,8 @@ echo " "
 # Is there a way to inhibit all the warnings (eg unused variable)
 # when Lisp loads?
 
-export SWPATH=$SPECWARE4:.
-EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
+export SWPATH="$SPECWARE4":.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Specware/bin/linux/exit-on-errors
 
 echo "\$SWPATH=$SWPATH"
 
@@ -202,8 +201,8 @@ if [ $RC -ne 0 ]; then
 fi
 
 echo " "
-echo cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
-cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
+echo cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
+cd "$SPECWARE4"/Applications/Specware/Handwritten/Lisp
 
 # We load the new Specware4.lisp twice, each in a fresh lisp session. The
 # first time compiles everything.  As we have just generated a new
@@ -253,4 +252,10 @@ if [ $RC -ne 0 ]; then
   echo ""
   echo "Second load failed with code $RC, exiting ..."
   exit $RC
+fi
+
+cd "$SPECWARE4"/Applications/Specware/lisp
+if cmp -s Specware4.lisp Specware4-save.lisp; then
+  echo " "
+  echo "The bootstrap reached a fixed point"
 fi
