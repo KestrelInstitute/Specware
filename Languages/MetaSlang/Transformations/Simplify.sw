@@ -294,6 +294,7 @@ spec
 		 cjs,
 		 simpSubstitute(spc,bod,sbst)))
        | _ -> if exists (fn cj -> equalTerm?(cj,bod)) cjs
+	         || (case bod of Fun(Bool true,_,_) -> true | _ -> false)
 	       then mkTrue()
 	       else
 		 let simplCJs = foldr (fn (cj,new_cjs) -> simplifyConjunct(cj,spc) ++ new_cjs) [] cjs in
