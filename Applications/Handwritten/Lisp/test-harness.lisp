@@ -210,7 +210,7 @@ be the option to run each (test ...) form in a fresh image.
     "/"
     file))
 
-(defun test-1 (name &key sw swe swe-spec swl swll lisp show path
+(defun test-1 (name &key sw swe swe-spec swl swll lisp show path (swprb nil swprb?)
 			 output 
 			 (output-predicate 'diff-output)
 			 (value "--NotAValue--")
@@ -227,13 +227,14 @@ be the option to run each (test ...) form in a fresh image.
 			 (let ((*error-output* *standard-output*)) ; so we also collect warnings and error messages
 			   (multiple-value-setq (val error-type)
 			     (ignore-errors
-			      (cond ((not (null sw))   (cl-user::sw (normalize-input sw)))
-				    ((not (null swll)) (cl-user::swll (normalize-input swll)))
-				    ((not (null swe))  (swe-test swe (normalize-input swe-spec)))
-				    ((not (null swl))  (cl-user::swl (normalize-input swl)))
-				    ((not (null show)) (cl-user::show (normalize-input show)))
-				    ((not (null lisp)) (eval (read-from-string (normalize-input lisp))))
-				    ((not (null path)) (cl-user::swpath (normalize-input path)))
+			      (cond ((not (null sw))     (cl-user::sw   (normalize-input sw)))
+				    ((not (null swll))   (cl-user::swll (normalize-input swll)))
+				    ((not (null swe))    (swe-test swe  (normalize-input swe-spec)))
+				    ((not (null swl))    (cl-user::swl  (normalize-input swl)))
+				    ((not (null show))   (cl-user::show (normalize-input show)))
+				    ((not (null lisp))   (eval (read-from-string (normalize-input lisp))))
+				    ((not (null path))   (cl-user::swpath (normalize-input path)))
+				    ((not (null swprb?)) (cl-user::swprb swprb))
 				    )))))))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
