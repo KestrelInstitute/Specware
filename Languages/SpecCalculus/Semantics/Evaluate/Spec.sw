@@ -9,6 +9,7 @@ SpecCalc qualifying spec {
   % import ../../../MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
   import Spec/Utilities
+  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -58,7 +59,7 @@ and then qualify the resulting spec if the spec was given a name.
             (case value of
               | Spec impSpec -> {
                     newSpc <- mergeImport term impSpec spc position;
-                    return (newSpc, max(cTS,iTS), cDepURIs ++ depURIs)
+                    return (newSpc, max(cTS,iTS), listUnion(cDepURIs,depURIs))
                   }
               | _ -> raise (Fail ("Import not a spec")))
           }
@@ -106,8 +107,9 @@ and then qualify the resulting spec if the spec was given a name.
       sorts_b <- foldOverQualifierMap mergeSortStep spec_b.sorts imported_spec.sorts;
       spec_c <- return (setSorts (spec_b, sorts_b));
       ops_c <- foldOverQualifierMap mergeOpStep spec_c.ops imported_spec.ops;
-      spec_d <- return (setOps(spec_c, ops_c));
-      return spec_d
+      spec_d <- return (setOps (spec_c, ops_c));
+      spec_e <- return (setProperties (spec_d, listUnion (spec_d.properties,imported_spec.properties)));
+      return spec_e
     }
 \end{spec}
 

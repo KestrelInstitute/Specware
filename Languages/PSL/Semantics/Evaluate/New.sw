@@ -30,7 +30,11 @@ spec {
           let tmpSpec = subtractSpec pSpec.dynamicSpec pSpec.staticSpec in
           let storeRec = mkProduct_local
             (foldriAQualifierMap
-               (fn (qual,id,opInfo,recSorts) -> Cons ((qual ^ "-" ^ id,sortOfScheme (sortScheme opInfo)),recSorts))
+               (fn (qual,id,opInfo,recSorts) ->
+                   if qual = UnQualified then
+                     Cons ((id,sortOfScheme (sortScheme opInfo)),recSorts)
+                   else
+                     Cons ((qual ^ "_" ^ id,sortOfScheme (sortScheme opInfo)),recSorts))
                         [] tmpSpec.ops) in
           let procSort = mkBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
              static <- staticSpec pSpec;

@@ -26,6 +26,12 @@ They are procedures in context.
   def SpecCalc.evaluatePSpec pSpecElements = {
      base <- basePSpec;
      (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
+     dyCtxt <- dynamicSpec pSpec;
+     statCtxt <- staticSpec pSpec;
+     statCtxtElab <- elaborateSpec statCtxt; 
+     dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
+     newPSpec <- setDynamicSpec pSpec dyCtxtElab;
+     newPSpec <- setStaticSpec newPSpec statCtxtElab;
      return (PSpec pSpec,timeStamp,depURIs)
    }
 \end{spec}
@@ -41,13 +47,7 @@ They are procedures in context.
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
       pSpec <- foldM evaluatePSpecContextElem pSpecWithImports pSpecElems;
       pSpec <- foldM evaluatePSpecProcElem pSpec pSpecElems;
-      dyCtxt <- dynamicSpec pSpec;
-      statCtxt <- staticSpec pSpec;
-      statCtxtElab <- elaborateSpec statCtxt; 
-      dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
-      newPSpec <- setDynamicSpec pSpec dyCtxtElab;
-      newPSpec <- setStaticSpec newPSpec statCtxtElab;
-      return (newPSpec,timeStamp,depURIs)
+      return (pSpec,timeStamp,depURIs)
     }
   
   op baseSpec : SpecCalc.Env Spec

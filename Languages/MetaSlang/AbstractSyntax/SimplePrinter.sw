@@ -424,16 +424,16 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 ]
             | _ ->
                 let def ppField (x,y) =
-                  ppConcat [
+                  ppGroup (ppConcat [
                     ppString x,
-                    ppString ":",
+                    ppString " : ",
                     ppASort y
-                  ] in
-                ppGrConcat [
+                  ]) in
+                ppIndent (ppGrConcat [
                   ppString "{",
-                  ppSep (ppString ",") (map ppField fields),
+                  ppSep (ppAppend (ppString ",") ppBreak) (map ppField fields),
                   ppString "}"
-                ])
+                ]))
       | CoProduct (taggedSorts,_) -> 
           let def ppTaggedSort (id,optSrt) =
             ppConcat [

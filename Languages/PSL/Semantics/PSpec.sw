@@ -64,7 +64,7 @@ Context = spec {
       ppNewline,
       ppString "dynamic=",
       ppNewline,
-      ppIndent (ppASpec (subtractSpec pSpec.dynamicSpec spc)),
+      ppIndent (ppASpec (subtractSpec pSpec.dynamicSpec pSpec.staticSpec)),
       ppNewline,
       ppString "procedures=",
       ppNewline,
