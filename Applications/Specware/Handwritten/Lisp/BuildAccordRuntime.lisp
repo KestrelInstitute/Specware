@@ -96,6 +96,8 @@
 (copy-directory (in-lisp-dir "xeli/")
 		(in-distribution-dir "Library/IO/Emacs/xeli/"))
 
+(specware::make-directory (in-distribution-dir "Patches/"))
+
 (specware::make-directory (in-distribution-dir "Languages/"))
 (specware::make-directory (in-distribution-dir "Languages/MetaSlang/"))
 (specware::make-directory (in-distribution-dir "Languages/MetaSlang/CodeGen/"))
