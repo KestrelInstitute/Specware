@@ -51,5 +51,17 @@ variable, then it will appear twice is the list of URI's we generate.
  op specPathSeparator: Char
  def specPathSeparator = (if msWindowsSystem? then #; else #:)
 
+ op checkSpecPathsExistence?: Boolean
+ def checkSpecPathsExistence? = true
+
+ op checkSpecPathsExistence: String -> ()
+ def checkSpecPathsExistence str =
+   if checkSpecPathsExistence?
+     then app (fn dir -> if fileExists? dir
+	                  then ()
+			  else warn("Directory does not exist: " ^ dir))
+            (splitStringAtChar specPathSeparator str)
+     else ()
+
 }
 \end{spec}
