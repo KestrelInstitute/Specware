@@ -572,6 +572,24 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
        %| Boolean is same as default case
 	| _ -> (fun, srt1, minfo))
 
+    | Embedded (id) ->
+      %let _ = writeLine ("constructor pred "^id^" found.") in
+      let cpsrt = (case srt of
+		     | Arrow (srt, _, _) -> srt
+		     | _ -> srt)
+      in
+      %let _ = writeLine("Constuctor pred sort: "^printSort(cpsrt)) in
+      (case cpsrt of
+	| Base (sqid, insttv as _::_, _) ->
+          %% constructor Cons could become Cons_Nat for List (Nat), etc.
+	  if exists (fn (TyVar _) -> true | s -> false) insttv then (fun, srt1, minfo) else
+	  let id_ = id ^ (getSortNameSuffix insttv) in
+	  let fun = Embedded (if modifyConstructors? then id_ else id) in
+	  let _ = writeLine("Generated: "^ printTerm(mkEmbedded(id_, srt1))) in
+	  (fun, srt1, minfo)
+       %| Boolean is same as default case
+	| _ -> (fun, srt1, minfo))
+
     | Op (qid as Qualified (q, id), fix) ->
       (case AnnSpec.findTheOp (spc, qid) of
 	 | None -> (fun, srt1, minfo)
