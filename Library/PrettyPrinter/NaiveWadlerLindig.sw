@@ -1,6 +1,6 @@
 \section{The Wadler / Lindig pretty printer combinators}
 
-This one just does no indentation with not attempt to fit to some width. Most
+This one just does indentation with not attempt to fit to some width. Most
 of the code here is not used but we want it to be a substitute
 for the usual Wadler Lindig version.
 
@@ -10,35 +10,37 @@ WadlerLindig qualifying spec
 
   sort Pretty = Doc
 
-  op simpleLayout : Doc -> List String -> Nat -> Nat -> Nat * List String
-  def simpleLayout doc rest column indent =
+  op layout : Doc -> Doc -> Nat -> Nat -> List String
+  def layout doc rest column indent =
     let def replicate (cnt:Integer) str suffix =
-      if cnt = 0 then
+      if cnt <= 0 then
         suffix
       else
         Cons (str, replicate (cnt - 1) str suffix) in
     case doc of
-      | DocNil -> (column,rest)
-      | DocCons (l,r) ->
-          let (newColumn,right) = simpleLayout r rest column indent
-          in simpleLayout l right newColumn indent
-      | DocText s -> (column + (length s), cons (s, rest))
-      | DocNest (n,otherDoc) ->
-          let (newColumn,x) = simpleLayout otherDoc rest column (column + n) in
-            (newColumn, x)
-      | DocBreak s -> (indent, Cons ("\n", replicate indent " " rest))
-      | DocGroup d -> simpleLayout d rest column indent
+      | DocGroup d -> layout d rest column indent
+      | DocText s -> Cons (s, layout rest DocNil (column + (length s)) indent)
+      | DocBreak s -> Cons ("\n", replicate indent " " (layout rest DocNil indent indent))
+      | DocIndent (newIndent,doc) -> layout doc rest column newIndent
+      | DocNest (n,innerDoc) ->
+          replicate (indent + n - column) " " (layout innerDoc (DocIndent (indent, rest)) column (indent + n))
+      | DocCons (l,r) -> layout l (ppCons r rest) column indent
+      | DocNil ->
+         if rest = DocNil then
+           []
+         else
+           layout rest DocNil column indent
 
   sort Doc =
     | DocNil
     | DocCons (Doc * Doc)
     | DocText String
-    | DocNest (Integer * Doc)
+    | DocNest (Integer * Doc)   % Offset relative to current column
+    | DocIndent (Integer * Doc) % Offset absolute (from left)
     | DocBreak String
     | DocGroup Doc
   
   op ppCons : Doc -> Doc -> Doc
-  % def ppCons x y = DocCons (x,y)  % original
   def ppCons x y = 
     case (x,y) of
       | (DocNil,DocNil) -> DocNil
@@ -69,98 +71,14 @@ WadlerLindig qualifying spec
     | SText (String * SDoc)
     | SLine (Integer * SDoc)   (* newline + spaces *)
   
-  op ppLayout : SDoc -> String
-  def ppLayout doc =
-    let def replicate (cnt:Integer) str =
-      if cnt = 0 then
-        [""]
-      else
-        Cons (str, replicate (cnt - 1) str) in
-    let def makeStringList doc =
-      case doc of
-        | SNil -> [""]
-        | SText (s,d) -> Cons (s,makeStringList d)
-        | SLine (indent,d) ->
-               Cons (concatList (Cons ("\n", replicate indent " ")), makeStringList d) in
-    concatList (makeStringList doc)
-  
-%     case doc of
-%         SNil -> ""
-%       | SText (s,d) -> s ^ (ppLayout d)
-%       | SLine (indent,d) ->
-%          let def replicate cnt str =
-%            if cnt = 0 then
-%              ""
-%            else
-%              str ++ (replicate (cnt - 1) str)
-%            in
-%              "\n" ++ (replicate indent " ") ++ (ppLayout d)
-  
-  op ppFits : Integer -> List (Integer * BreakMode * Doc) -> Boolean
-  def ppFits w x =
-    (w >= 0) &
-    (case x of
-       | [] -> true
-       | (i,m,DocNil) :: z -> ppFits w z
-       | (i,m,DocCons(x,y)) :: z -> ppFits w (Cons((i,m,x),Cons((i,m,y),z)))
-       | (i,m,DocNest(j,x)) :: z -> ppFits w (Cons ((i+j,m,x),z))
-       | (i,m,DocText(s)) :: z -> ppFits (w - (length s)) z
-       | (i,Flat,DocBreak s) :: z -> ppFits (w - (length s)) z
-       % | (i,Flat,DocBreak s) :: z -> false % ppFits (w - (length s)) z
-       | (i,Break,DocBreak _) :: z -> true % impossible 
-       | (i,m,DocGroup(x)) :: z -> ppFits w (Cons((i,Flat,x),z)))
-  
-  sort BreakMode =
-    | Flat
-    | Break
-  
-  op ppBest : Integer -> Integer -> List (Integer * BreakMode * Doc) -> SDoc
-  def ppBest w k x = 
-    case x of
-      | [] -> SNil
-      | (i,m,DocNil) :: z -> ppBest w k z
-      | (i,m,DocCons(x,y)) :: z -> ppBest w k (Cons((i,m,x),Cons((i,m,y),z)))
-      | (i,m,DocNest(j,x)) :: z -> ppBest w k (Cons((i+j,m,x),z))
-      | (i,m,DocText s) :: z -> SText(s,ppBest w (k + (length s)) z)
-      | (i,Flat,DocBreak s) :: z ->
-          SText(s,ppBest w (k + (length s)) z)
-      | (i,Break,DocBreak s) :: z -> SLine(i,ppBest w i z)
-      | (i,m,DocGroup(x)) :: z ->
-          if ppFits (w-k) (Cons((i,Flat,x),z)) then
-            (ppBest w k (Cons((i,Flat,x),z)))
-          else
-            (ppBest w k (Cons((i,Break,x),z)))
-  
-  % let (^|) x y = match x,y with
-  %   | DocNil, _ -> y
-  %   | _, DocNil -> x
-  %   | _, _ -> x ^^ break ^^ y
-  % 
-  % let binop left op right =
-  %    group (nest 2 ( group (text left ^| text op) ^| text right ) )
-  % 
-  % let cond = binop "a" "==" "b"
-  % let expr1 = binop "a" "<<" "2"
-  % let expr2 = binop "a" "+" "b"
-  % let ifthen c e1 e2 =
-  %   group ( group (nest 2 (text "if" ^| c ))
-  %   ^| group (nest 2 (text "then" ^| e1))
-  %   ^| group (nest 2 (text "else" ^| e2)) )
-  % 
-  % let doc = ifthen cond expr1 expr2
-  
-
   % def ppFormat doc = ppFormatWidth 80 doc
   def ppFormat doc = ppFormatWidth doc
 
   % op ppFormatWidth : Integer -> Doc -> String
   op ppFormatWidth : Doc -> String
 
-  % def ppFormatWidth w  doc =
-  %  ppLayout (ppBest w 0 [(0,Flat,DocGroup doc)])
-
   def ppFormatWidth doc =
-    let (indent, strings) = simpleLayout doc [] 0 0 in
+    let strings = layout doc DocNil 0 0 in
     concatList strings
 
   op ppAppend : Doc -> Doc -> Doc
