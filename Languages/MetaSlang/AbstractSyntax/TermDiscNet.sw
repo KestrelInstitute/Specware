@@ -67,6 +67,7 @@ spec
  (* This extend now returns the full extended net, not just the
   * last node: *)
 
+   op extend : disc_net * Key -> List Nat -> disc_net % ?? guessing
   def extend ((set,next),element) = 
       fn [] ->  (IntegerSet.add(set,element),next)
        | (a::rest) -> 
