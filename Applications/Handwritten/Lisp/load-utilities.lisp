@@ -97,6 +97,9 @@
 	  (setq cl:*default-pathname-defaults* dirpath))
       (warn "Directory ~a does not exist" directory))))
 
+(defun full-file-name (file-or-dir)
+  (namestring (make-pathname :name file-or-dir :defaults cl:*default-pathname-defaults*)))
+
 #+mcl					; doesn't have setenv built=in
 (defvar *environment-shadow* nil)
 
