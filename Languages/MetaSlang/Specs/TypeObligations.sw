@@ -111,8 +111,8 @@ spec
      ()
  
 
- sort TypeCheckCondition  = QualifiedId * TyVars * MS.Term 
- sort TypeCheckConditions = List(TypeCheckCondition) * StringSet.Set
+ type TypeCheckCondition  = QualifiedId * TyVars * MS.Term 
+ type TypeCheckConditions = List(TypeCheckCondition) * StringSet.Set
 
  op addCondition : TypeCheckConditions * Gamma * MS.Term -> 
 		   TypeCheckConditions
@@ -327,10 +327,10 @@ spec
 %% This checks that pattern matching is exhaustive.
 %%
         | Lambda(rules,_) ->
-%	  let spc = getSpec gamma	       in
-%	  let tau2 = inferType(spc,M)  	       in
+	  let spc = getSpec gamma	       in
+	  let tau2 = inferType(spc,M)  	       in
 %% This is redundant because infertype gets type from components and checkLambda passes tau down to components
-%	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
+	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
 	  checkLambda(tcc,gamma,rules,tau,None)
 	
         | IfThenElse(t1,t2,t3,_) -> 
@@ -640,7 +640,7 @@ spec
           let (xVarTm,gamma1) = freshVars("X",sigma1,gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVarTm,sigma1,tau1) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,
-				  mkLetOrApply(M,xVarTm,gamma1),tau2,sigma2) in
+				  mkApply(M,xVarTm),tau2,sigma2) in
 	  tcc
         | (Product(fields1,_),Product(fields2,_)) -> 
 	  let tcc = ListPair.foldl 
@@ -763,7 +763,7 @@ spec
 	    foldl (fn (dfn, tcc) ->
 		   let (tvs, tau, term) = unpackTerm dfn in
 		   let usedNames = addLocalVars (term, StringSet.empty) in
-		   let term = etaExpand (spc, usedNames, tau, term) in
+		   %let term = etaExpand (spc, usedNames, tau, term) in
 		   let term = renameTerm (emptyContext ()) term in 
 		   let taus = case tau of
 		                | And (srts, _) -> srts
