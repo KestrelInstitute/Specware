@@ -226,6 +226,7 @@ FM qualifying spec
   op gcd: Integer * Integer -> Integer
   def gcd(i, j) =
     let def gcdAux(i,j) =
+    if i = 1 then j else if j = 1 then i else
     if i > j
       then gcd(i - j, j)
     else
