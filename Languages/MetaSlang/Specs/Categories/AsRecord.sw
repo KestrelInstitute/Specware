@@ -200,16 +200,31 @@ SpecCat qualifying spec {
  def computeColimitSortInfo qlist =
   let first_mu_node::other_mu_nodes = qlist in
   let first_sort_info = first_mu_node.value in
-  let ((Qualified (qualifier, id))::_, _, _) = first_sort_info in
   let apex_sort_info = foldl (fn (mu_node, apex_sort_info) ->
 			      let base_sort_info = mu_node.value in
-			      mergeSortInfo (base_sort_info, Some apex_sort_info, qualifier, id))
+			      mergeColimitSortInfo (base_sort_info, apex_sort_info))
                              first_sort_info
 			     other_mu_nodes
   in
   let (aliases,tyvars,opt_defn) = apex_sort_info in
   %% might want to reorder aliases
   (aliases,tyvars,opt_defn)
+
+ op mergeColimitSortInfo: SortInfo * SortInfo -> SortInfo
+ def mergeColimitSortInfo ((new_sort_names, new_type_vars, new_opt_def),
+			   (old_sort_names, old_type_vars, old_opt_def))
+   =
+   let sort_names = listUnion (new_sort_names, old_sort_names) in
+   case (new_opt_def, old_opt_def) of
+       | (None,   None)   -> (sort_names, new_type_vars, None)
+       | (Some _, None)   -> (sort_names, new_type_vars, new_opt_def)
+       | (None,   Some _) -> (sort_names, new_type_vars, old_opt_def)
+       | (Some new_def, Some old_def) ->
+         if new_def = old_def % Could use a smarter equivalence test
+	   then (sort_names, new_type_vars, new_opt_def)
+	   else let (Qualified (qualifier, id))::_ = sort_names in
+	        (toScreen ("Merged versions of Sort "^qualifier^"."^id^" have different definitions -- picking one at random");
+		 (sort_names, new_type_vars, new_opt_def))
 
  %% --------------------------------------------------------------------------------
 
@@ -273,10 +288,9 @@ SpecCat qualifying spec {
  def computeColimitOpInfo qlist =
   let first_mu_node::other_mu_nodes = qlist in
   let first_op_info = first_mu_node.value in
-  let ((Qualified (qualifier, id))::_, _, _, _) = first_op_info in
   let apex_op_info = foldl (fn (mu_node, apex_op_info) ->
 			    let base_op_info = mu_node.value in
-			    mergeOpInfo (base_op_info, Some apex_op_info, qualifier, id))
+			    mergeColimitOpInfo (base_op_info, apex_op_info))
                            first_op_info
 			   other_mu_nodes
   in
@@ -284,7 +298,21 @@ SpecCat qualifying spec {
   %% Might want to re-order names...
   (aliases,fixity,sort_scheme,opt_defn)
 
-
+ op mergeColimitOpInfo: OpInfo * OpInfo -> OpInfo
+ def mergeColimitOpInfo ((new_op_names, new_fixity, new_sort_scheme, new_opt_def),
+			 (old_op_names, old_fixity, old_sort_scheme, old_opt_def))
+   =
+   let op_names = listUnion(new_op_names,old_op_names) in
+   case (new_opt_def, old_opt_def) of
+       | (None,   None)   -> (op_names, new_fixity, new_sort_scheme, None)
+       | (Some _, None)   -> (op_names, new_fixity, new_sort_scheme, new_opt_def)
+       | (None,   Some _) -> (op_names, new_fixity, new_sort_scheme, old_opt_def)
+       | (Some new_def, Some old_def) ->
+         if new_def = old_def  % Could use a smarter equivalence test
+	   then (op_names, new_fixity, new_sort_scheme, new_opt_def)
+	   else let (Qualified (qualifier, id))::_ = op_names in
+	        (toScreen ("Merged versions of Op "^qualifier^"."^id^" have different definitions -- picking one at random");
+		 (op_names, new_fixity, new_sort_scheme, new_opt_def))
 
  %% --------------------------------------------------------------------------------
 
