@@ -183,6 +183,13 @@ hash suffix is ignored.
 (*
 This is like the above but accommodates the suffix as well.
 *)
+  op  uidsToString : List UnitId -> String
+  def uidsToString uids =
+    case uids of
+      | [] -> "[]"
+      | uid :: uids ->
+        "[" ^ (uidToString uid) ^ (foldl (fn (uid, s) -> s ^ ", " ^ uidToString uid) "" uids) ^ "]"
+
   op  uidToString : UnitId -> String
   def uidToString {path,hashSuffix} =
    let path = abbreviatedPath path in
