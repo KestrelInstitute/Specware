@@ -1,21 +1,22 @@
 \section{Naive Predicative BSpecs}
 
-This defines trivial \BSpecs\ labelled in the category of specs 
+This defines trivial \BSpecs\ labelled in the category of specs.
 
-This file is misnamed. These systems are now multi-pointed rather than
-bi-pointed. This means they may have many exit points. This file will
-be abstracted and renamed.
+This needs refactoring!!. The explicit products should be removed.
 
-These functions are for examining and constructing \emph{bipointed
+Systems are now multi-pointed rather than bi-pointed. This means they
+may have many exit points. This file will be abstracted and renamed.
+
+These functions are for examining and constructing \emph{multipointed
 predicative} \BSpecs.  Recall that a \BSpec\ is a twisted system labeled
 in the category \cat{Spec}. These are essentially diagrams interpreted
 as state machines, transition systems, Kripke frames or other such
 behavioural models of computation.
 
 In \BSpecs, each transition is labelled with an opspan. There is a spec
-and a pair of spec morphisms (or interpretations) to it
-from the start and end specs of the transition. More precisely, an
-edge $a \To[e] b$ in a graph is labelled
+and a pair of spec morphisms (or interpretations) to it from the start
+and end specs of the transition. More precisely, an edge $a \To[e] b$
+in a graph is labelled
 
 \[
 S \To[f] X \From[g] T
@@ -36,20 +37,18 @@ between the new and old values of the dynamic variables (operators).
 This means that the effect of the transition is captured in the axiom
 alone.
 
-Bipointed means that each diagram has two \emph{points} representing
-initial (start) and final (end) states.
+Multipointed means that each system has \emph{points}: these are
+desginated vertices representing the initial (start) and possible many
+final (end) states.
 
-The requirement that $f$ and $g$ be injective extends to the components
-of the natural transformations between \BSpecs. Without this constraint
-on the components, the category of \BSpecs\ would not be complete.
+The requirement that $f$ and $g$ be jointly epimorphic extends to the
+components of the natural transformations between \BSpecs. Without
+this constraint on the components, the category of \BSpecs\ would not
+be complete.
 
-This structure is likely to change. The proper way to do bipointed systems
-is to construct slices in the category of shapes. This is likely to happen
-later.
-
-If you import this you also import: ast spec cat, of ast, ast_util and
-so on. Applying a prefix to this spec also yields a prefix of all the
-ast stuff. Check the export chain.
+This structure is likely to change. The proper way to do pointed systems
+is to construct slices in the category of shapes. This is likely to
+happen later.
 
 This needs some work. For starters, it is not enough to label modes
 and transitions in the category \cat{Spec}. We need to distinguish between
@@ -64,62 +63,7 @@ Importing the category of specs includes also the sorts for the abstract
 syntax of MetaSlang and spec morphisms.
 
 \begin{spec}
-% translate
-BSpecs
-% by {
-%   Sketch.Path +-> Shape.Path,
-%   Sketch.Dom +-> Shape.Dom,
-%   Sketch.Cod +-> Shape.Cod,
-%   Sketch.update +-> Shape.update,
-%   Sketch.unionWith +-> Shape.unionWith,
-%   Sketch.remove +-> Shape.remove,
-%   Sketch.ppSketch +-> Shape.ppShape,
-%   Sketch.ppMap +-> Shape.ppMap,
-%   Sketch.ppDom +-> Shape.ppDom,
-%   Sketch.ppCod +-> Shape.ppCod,
-%   Sketch.mapToList +-> Shape.mapToList,
-%   Sketch.insertVertex +-> Shape.insertVertex,
-%   Sketch.insertEdge +-> Shape.insertEdge,
-%   Sketch.inDomain? +-> Shape.inDomain?,
-%   Sketch.imageToList +-> Shape.imageToList,
-%   Sketch.foldMap +-> Shape.foldMap,
-%   Sketch.exists +-> Shape.exists,
-%   Sketch.eval +-> Shape.eval,
-%   Sketch.domainToList +-> Shape.domainToList,
-%   Sketch.all +-> Shape.all,
-%   Vertex.delete +-> Mode.delete,
-%   Vertex.difference +-> Mode.difference,
-%   Vertex.Elem +-> Mode.Elem,
-%   Vertex.empty +-> Mode.empty,
-%   Vertex.empty? +-> Mode.empty?,
-%   Vertex.fold +-> Mode.fold,
-%   Vertex.insert +-> Mode.insert,
-%   Vertex.intersection +-> Mode.intersection,
-%   Vertex.map +-> Mode.map,
-%   Vertex.member? +-> Mode.member?,
-%   Vertex.ppElem +-> Mode.ppElem,
-%   Vertex.ppSet +-> Mode.ppSet,
-%   Vertex.singleton +-> Mode.singleton,
-%   Vertex.toList +-> Mode.toList,
-%   Vertex.union +-> Mode.union,
-%   Edge.delete +-> Trans.delete,
-%   Edge.difference +-> Trans.difference,
-%   Edge.Elem +-> Trans.Elem,
-%   Edge.empty +-> Trans.empty,
-%   Edge.empty? +-> Trans.empty?,
-%   Edge.fold +-> Trans.fold,
-%   Edge.insert +-> Trans.insert,
-%   Edge.intersection +-> Trans.intersection,
-%   Edge.map +-> Trans.map,
-%   Edge.member? +-> Trans.member?,
-%   Edge.ppElem +-> Trans.ppElem,
-%   Edge.ppSet +-> Trans.ppSet,
-%   Edge.singleton +-> Trans.singleton,
-%   % Edge.toList +-> Trans.toList, this breaks! Why??? where is the op????
-%   Edge.union +-> Trans.union
-% } 
-where {
-  BSpecs = spec {
+spec {
   import Systems qualifying /Library/Structures/Data/Categories/Systems/Polymorphic
   import /Languages/MetaSlang/Specs/Categories/Specs
 
@@ -130,11 +74,28 @@ where {
   }
 
   op initial : BSpec -> V.Elem
+  def initial bSpec = bSpec.initial
+
   op final : BSpec -> V.Set
+  def final bSpec = bSpec.final
+
   op system : BSpec -> System (Spec, Morphism)
+  def system bSpec = bSpec.system
 
   op newSystem : V.Elem -> Spec -> BSpec
+  def newSystem first spc = {
+    initial = first,
+    final = V.empty,
+    system = labelVertex (addVertex (emptySystem (specCat ())) first) first spc 
+  }
+
   op addMode : BSpec -> V.Elem -> Spec -> BSpec
+  def addMode bSpec vertex spc = {
+    initial = bSpec.initial,
+    final = bSpec.final,
+    system = labelVertex (addVertex (system bSpec) vertex) vertex spc
+  }
+    
   op addTrans :
        BSpec 
     -> V.Elem
@@ -144,7 +105,18 @@ where {
     -> Morphism
     -> Morphism
     -> BSpec
+  def addTrans bSpec src target edge spc morph1 morph2 = {
+    initial = initial bSpec,
+    final = final bSpec,
+    system = labelEdge (addEdge (system bSpec) edge src target) edge spc morph1 morph2
+  }
+
   op setFinalModes : BSpec -> V.Set -> BSpec
+  def setFinalModes bSpec modes = {
+    initial = initial bSpec,
+    final = modes,
+    system = system bSpec
+  }
 \end{spec}
 
 The first function retrieves the spec associated with a transition. Bear in
@@ -250,6 +222,23 @@ for now that the program does not define any new sorts.
 Naive pretty printing of \BSpecs
 
 \begin{spec}
+  op ppBSpecLess : BSpec -> Spec -> Pretty
+  def ppBSpecLess {initial,final,system} spc =
+    ppConcat [
+      ppString "{",
+      ppString "initial = ",
+      V.ppElem initial,
+      ppString ", final = ",
+      V.ppSet final,
+      ppNewline,
+      ppString "system = ",
+      ppNewline,
+      ppString "  ",
+      ppIndent (ppSystem (mapSystem system (fn o -> subtractSpec o spc) (fn a -> a))),
+      ppNewline,
+      ppString "}"
+    ]
+
   op ppBSpec : BSpec -> Pretty
   def ppBSpec {initial,final,system} =
     ppConcat [
@@ -268,3 +257,13 @@ Naive pretty printing of \BSpecs
     ]
 }}
 \end{spec}
+
+ppBSpecLessShort bSpec spc
+  vertices = {
+    let edges = edges (shape (system bSpec))
+    let srcMap = src (shape (system bSpec))
+    let taretMap = target (shape (system bSpec))
+
+    print e : (eval srcMap e) -> (eval targetMap e)
+  map (fn e -> Tag (1,n)) 
+   eval  e

@@ -68,6 +68,12 @@ can be folded over a diagram dgm with:
 
   op foldOverEdges : fa (x,O,A) (x -> Edge.Elem -> x) -> x -> Diagram (O,A) -> x
   op foldOverVertices : fa (x,O,A) (x -> Vertex.Elem -> x) -> x -> Diagram (O,A) -> x
+
+  % Would like to have more polymorphism .... but unfortunately we have
+  % a problem since the Diagram includes an explicit category for the
+  % codomain. The maps provided on the objects and arrows can't change
+  % that category. Thus, one would need to provide a cat as an argument.
+  op mapDiagram : fa (O,A) Diagram (O,A) -> (O -> O) -> (A -> A) -> Diagram (O,A)
 \end{spec}
 
 \begin{spec}

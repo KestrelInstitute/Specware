@@ -15,8 +15,8 @@ Lots of proof obligations. Needs thought.
 
 \begin{spec}
   def SpecCalc.evaluateDiag elems = {
-      (dgm,timeStamp,depURIs) <- foldM evaluateDiagElem ((emptyDiagram specCat),0,[]) elems;
-      % print (ppFormat (ppDiagram dgm));
+      (dgm,timeStamp,depURIs) <-
+         foldM evaluateDiagElem ((emptyDiagram (specCat ())),0,[]) elems;
       return (Diag dgm,timeStamp,depURIs)
     }
 \end{spec}
@@ -28,9 +28,14 @@ Lots of proof obligations. Needs thought.
 %%   sort NodeId = Name
 %%   sort EdgeId = Name
 
+This fixes the types for representing the vertices and edges in the
+shape of diagrams. We use ppString, but really should be ppNodeId.
+
 \begin{spec}
   sort Vertex.Elem = NodeId
   sort Edge.Elem = EdgeId
+  def Vertex.ppElem = ppString
+  def Edge.ppElem = ppString
 \end{spec}
 
 The conditions for a diagram expression to be valid include:
@@ -44,9 +49,6 @@ The conditions for a diagram expression to be valid include:
   dom and cod nodes must be consistent in the sense above, and
   likewise for the edge.
 \end{itemize}
-
-Unfortunately the SpecCalc and SpecCat qualifiers are needed here otherwise
-the typechecker complains. I don't understand it.
 
 \begin{spec}
   op evaluateDiagElem :

@@ -28,7 +28,7 @@ spec {
  %% Context: Category
  %%  Note: The arrows in specCat are Morphisms, as opposed to Interpretations, etc.
  %%        Other categories over specs are possible, but this one lays claim to the name specCat.
- op specCat : Cat.Cat (Spec, Morphism)
+ op specCat : () -> Cat.Cat (Spec, Morphism)
 
  %% Context: Diagrams
  sort SpecDiagram        = Cat.Diagram       (Spec, Morphism)

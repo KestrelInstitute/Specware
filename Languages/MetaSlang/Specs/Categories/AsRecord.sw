@@ -1,6 +1,6 @@
 \section{Category of Specs}
 
-This will likely move to a new home.
+This will likely move to a new home. This needs to be abstracted factored!
 
 This is a naive representation of the category of specs. Note that in
 this case we are using a concrete record sort for categories. Categories
@@ -20,7 +20,8 @@ completed such that the maps only give the points where the morphism
 differs from the identity.
 
 \begin{spec}
-SpecCat qualifying spec {
+SpecCalc qualifying spec {
+  import /Languages/MetaSlang/Specs/SimplePrinter
   import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
   import Colimit
   import ../Printer
@@ -38,20 +39,33 @@ SpecCat qualifying spec {
     sortMap = sort_map,
     opMap   = op_map}
 
-  op ppQualifiedId : QualifiedId -> Doc
-  def ppQualifiedId id = ppString (printQualifiedId id)
+  % op ppQualifiedId : QualifiedId -> Doc
+  % def ppQualifiedId id = ppString (printQualifiedId id)
   
+  % when omit printing the concrete domain and codomain specs.
+  % When printing the maps, we print only where they differ
+  % from the canonical injection (where they differ from
+  % the identity)
   op ppMorphism : Morphism -> Doc
   def ppMorphism {dom=_, cod=_, sortMap, opMap} = 
     ppConcat [
       ppString "Sort map=",
       ppNewline,
-      ppNest 2 (ppMap ppQualifiedId ppQualifiedId sortMap),
+      ppNest 2 (ppMap ppQualifiedId ppQualifiedId
+        (foldMap (fn newMap -> fn d -> fn c ->
+          if d = c then
+            newMap
+          else
+            update newMap d c) emptyMap sortMap)),
       ppString "Op map=",
       ppNewline,
-      ppNest 2 (ppMap ppQualifiedId ppQualifiedId opMap)
+      ppNest 2 (ppMap ppQualifiedId ppQualifiedId
+        (foldMap (fn newMap -> fn d -> fn c ->
+          if d = c then
+            newMap
+          else
+            update newMap d c) emptyMap opMap))
     ]
-
 
   def dom     morph = morph.dom
   def cod     morph = morph.cod
@@ -66,7 +80,7 @@ SpecCat qualifying spec {
      opMap   = PolyMap.compose mor1.opMap mor2.opMap
    }
 
-  def specCat = {
+  def specCat () = {
     dom = fn {dom = dom, cod = _,   sortMap = _, opMap = _} -> dom,
     cod = fn {dom = _,   cod = cod, sortMap = _, opMap = _} -> cod,
     ident = fn spc -> {
@@ -78,7 +92,8 @@ SpecCat qualifying spec {
     colimit       = colimit,
     initialObject = emptySpec,
     compose       = compose,
-    ppObj         = fn spc -> ppString (printSpec spc),
+    % ppObj         = fn spc -> ppString (printSpec spc),
+    ppObj         = ppASpec,
     % ppObj       = fn obj -> ppString "spec object ... later",
     ppArr         = ppMorphism
     % ppArr       = fn {dom = dom, cod = cod, sortMap = sm, opMap = om} ->
@@ -87,8 +102,10 @@ SpecCat qualifying spec {
 
  %% Used by colimit to actually build the initialCocone
  def makeSpecInitialCocone dg apex_spec cc_map =
-  {cocone    = makeSpecCocone dg apex_spec cc_map,
-   universal = fn cocone -> ident specCat (initialObject specCat)} % TODO: Fix
+  let cat = cod (functor dg) in {
+   cocone    = makeSpecCocone dg apex_spec cc_map,
+   universal = fn cocone -> ident cat (initialObject cat) % TODO: Fix
+  }
 
  def makeSpecCocone dg apex_spec cc_map =
   let apex_functor = functor dg in  % TODO: FIX

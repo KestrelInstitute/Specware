@@ -85,7 +85,7 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppString "bspec=",
       ppNewline,
       ppString "  ",
-      ppIndent (ppBSpecLess proc.code spc)
+      ppIndent (ppBSpecLess proc.code proc.staticSpec)
     ]
 
   op ppProcedure : Procedure -> Pretty
