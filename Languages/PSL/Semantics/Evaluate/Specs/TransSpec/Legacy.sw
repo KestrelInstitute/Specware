@@ -41,6 +41,12 @@ TransSpec qualifying spec
       normalize newTransSpec
     }
 
+  % op TransSpec.addVariable : TransSpec -> Op.OpInfo -> Position -> Env TransSpec
+  def TransSpec.addVariable transSpec varInfo position = {
+      newModeSpec <- addVariable (modeSpec transSpec) varInfo position;
+      return (transSpec withModeSpec newModeSpec)
+    }
+
   % This is completely out to lunch if a ref is anything other than an id.
   % op projectPostSubst : TransSpec -> ModeSpec -> Env Subst
   def TransSpec.projectPostSubst transSpec ms =
@@ -151,14 +157,15 @@ for lists.
   of the form x' = t into a definition for x', It is from definitions
   that later we extract the post condition of the transition. *)
 
-  op normalize : TransSpec -> Env TransSpec def normalize transSpec =
+  op normalize : TransSpec -> Env TransSpec
+  def normalize transSpec =
     let
       def normalizeClaims modeSpec claims invars =
         case claims of
           | [] -> return (modeSpec,claims,invars)
           | claim::claims -> {
-              (newModeSpec,newClaims,newInvars) <- normalizeClaims
-              modeSpec claims invars; ref <- refOf claim;
+              (newModeSpec,newClaims,newInvars) <- normalizeClaims modeSpec claims invars;
+              ref <- refOf claim;
               if member? (invariants modeSpec, ref) then
                 case claimType claim of
                   | Conjecture -> return (newModeSpec,Cons(claim,newClaims), insert(newInvars,ref))

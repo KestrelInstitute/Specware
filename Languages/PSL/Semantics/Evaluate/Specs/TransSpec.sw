@@ -21,6 +21,7 @@ TransSpec qualifying spec
   op forwMorph : TransSpec -> SpecMorph.Morphism
   op backMorph : TransSpec -> SpecMorph.Morphism
   op modeSpec : TransSpec -> ModeSpec.ModeSpec
+  op addVariable : TransSpec -> Op.OpInfo -> Position -> Env TransSpec
 
   op make : ModeSpec -> OpRefSet.Set -> TransSpec
 

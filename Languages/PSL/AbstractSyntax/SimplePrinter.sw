@@ -12,6 +12,13 @@ SpecCalc qualifying spec {
   % op SpecCalc.ppOtherTerm : fa (a) SpecCalc.OtherTerm a -> Doc
   def SpecCalc.ppOtherTerm scTerm =
     case scTerm of
+      | Inline (name,scTerm) ->
+           ppConcat [
+             ppString "inline ",
+             ppString name,
+             ppString " ",
+             ppTerm scTerm
+           ]
       | Specialize (msTerm,scTerm) ->
            ppConcat [
              ppString "specialize ",

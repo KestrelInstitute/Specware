@@ -24,6 +24,7 @@
    (1 :SC-EXPORT)
    (1 :SC-PSL-DEFINITION)
    (1 :SC-PSL-SPECIALIZE)
+   (1 :SC-PSL-INLINE)
    (1 :SC-GENERATE))
   1)
 
@@ -43,6 +44,11 @@
 (define-sw-parser-rule :SC-PSL-SPECIALIZE ()
   (:tuple "specialize" (1 :TIGHT-EXPRESSION) "in" (2 :SC-TERM))
   (OscarAbsSyn::mkSpecialize-3 1 2 (make-pos ':left-lcb ':right-lcb)))
+
+(define-sw-parser-rule :SC-PSL-INLINE ()
+  (:tuple "inline" (1 :NAME) "in" (2 :SC-TERM))
+  (OscarAbsSyn::mkInline-3 1 2 (make-pos ':left-lcb ':right-lcb)))
+
 
 ;;; The following is almost the same a SPEC-ELEM. The difference is the
 ;;; introduction of PROCDEF.
@@ -89,7 +95,7 @@
     (1 :PSL-CONTINUE)
     (1 :PSL-BREAK)
     (1 :PSL-EXEC)
-    (1 :PSL-ASSIGN)
+    ;; (1 :PSL-ASSIGN)
     (1 :PSL-RELATION))
   1)
 
@@ -144,9 +150,9 @@
          (optTerm (if (equal :unspecified opt) Option::None (cons :|Some| opt))))
     (OscarAbsSyn::mkReturn-2 optTerm (make-pos ':left-lcb ':right-lcb))))
 
-(define-sw-parser-rule :PSL-ASSIGN ()
-  (:tuple (1 :EXPRESSION) ":=" (2 :EXPRESSION))
-  (OscarAbsSyn::mkAssign-3 1 2 (make-pos ':left-lcb ':right-lcb)))
+;; (define-sw-parser-rule :PSL-ASSIGN ()
+;;   (:tuple (1 :EXPRESSION) ":=" (2 :EXPRESSION))
+;;   (OscarAbsSyn::mkAssign-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-EXEC ()
   (:tuple (1 :EXPRESSION))

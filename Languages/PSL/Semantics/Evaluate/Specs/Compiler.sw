@@ -467,6 +467,10 @@ axiom but we might be better off without an axiom at all.
 \begin{spec}
 	  | Exec trm ->
           (case trm of
+            | ApplyN ([lhs,Fun(OneName(":=",fixity),srt,position),rhs],_) ->
+                compileCommand ctxt (Assign (lhs,rhs),position)
+            | ApplyN (lhs :: (Fun(OneName(":=",fixity),srt,position)) :: rhs,_) ->
+                compileCommand ctxt (Assign (lhs,ApplyN (rhs,position)),position)
             | ApplyN ([Fun(OneName(id,fixity),srt,position),argTerm],_) ->
                 if ~((evalPartial (procedures ctxt, (makeId id):Id.Id)) = None) then
                   compileProcCall ctxt None (makeId id) argTerm position

@@ -8,6 +8,7 @@ SpecCalc qualifying spec {
   import /Languages/SpecCalculus/Semantics/Evaluate/SpecMorphism
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
   import Transformations/PartialEval
+  import Transformations/Inline
   import ../../CodeGen/ToC
 
   % op Convert.mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
@@ -19,6 +20,15 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateOther other pos = 
     case other of
       | OscarDecls oscarSpecElems -> evaluateOscar oscarSpecElems
+      | Inline (procName,unit) -> {
+          (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo unit;
+          case value of
+            | Other oscarSpec -> {
+                  newOscarSpec <- inlineProc oscarSpec (makeId procName);
+                  return (Other newOscarSpec,timeStamp,depUnitIds)
+                }
+            | _ -> raise (SpecError (positionOf unit, "Unit for inline is not an Oscar spec"))
+          }
       | Specialize (metaSlangTerm,unit) -> {
           (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo unit;
           case value of
