@@ -227,8 +227,8 @@
   (values))
 
 #+allegro
-(top-level:alias ("swpath" :case-sensitive) (&optional str)
-  (if (null str)
+(top-level:alias ("swpath" :case-sensitive :string) (&optional str)
+  (if (or (null str) (equal str ""))
       (princ (sys:getenv "SWPATH"))
     (let ((str (string str)))
       (speccalc::checkSpecPathsExistence str)
