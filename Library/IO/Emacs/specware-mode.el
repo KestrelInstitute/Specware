@@ -1005,7 +1005,7 @@ If anyone has a good algorithm for this..."
   (setq filename (replace-in-string filename "\\\\" "/"))
   (replace-in-string filename "Program Files" "Progra~1")
   (when (and (> (length filename) 2)
-	     (= (position ?: filename) 1)
+	     (equal (position ?: filename) 1)
 	     (not (equal (elt filename 0) (upcase (elt filename 0)))))
     (setq filename (concat (upcase (subseq filename 0 1))
 			   (subseq filename 1))))
