@@ -753,7 +753,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-spec-morph (dom-sc-term cod-sc-term sc-spec-morph-elems l r)
-  (cons (cons :|SpecMorph| (vector dom-sc-term cod-sc-term sc-spec-morph-elems))
+  (cons (cons :|Morph| (vector dom-sc-term cod-sc-term sc-spec-morph-elems))
         (make-pos l r)))
 
 (defun make-sc-spec-morph-elem (qualifiable-name-dom qualifiable-name-cod l r)

@@ -124,9 +124,9 @@
 ;; We assume for the time being that the SW4 tree is a sibling of
 ;; the Specware4 tree.
 (make-system (concatenate 'string
-    Specware4 "/../SW4/Languages/MetaSlang/Parser/Handwritten"))
+    Specware4 "/../Specware4/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 (make-system (concatenate 'string
-    Specware4 "/../SW4/Languages/SpecCalculus/Parser/Handwritten"))
+    Specware4 "/../Specware4/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
 (make-system "../../UI/Emacs/Handwritten/Lisp")
 

@@ -1,4 +1,4 @@
-(in-package :PARSER)
+(in-package :PARSER4)
 
 (defparameter *specware4-tokenizer-parameters*
   (create-tokenizer-parameters 
@@ -27,7 +27,7 @@
 				  ;; #\'                   ; apostrophe
 				  )
    :ad-hoc-keywords             '("end-spec" "end-module" "_" "..")
-   :ad-hoc-names                '("__")
+   :ad-hoc-symbols              '("__")
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"

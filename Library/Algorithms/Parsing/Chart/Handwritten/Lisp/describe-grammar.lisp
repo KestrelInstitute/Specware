@@ -11,7 +11,7 @@
     (format t "~&Type QUIT to exit from gs ~2%")
     (let* ((ps-viewer (get-ps-viewer))
 	   (cmd (format nil "~A ~A" ps-viewer parser-ps-file)))
-      (re::run-shell-command cmd :wait t)
+      (excl::run-shell-command cmd :wait t)
       (format t "~&~%You might want to run ~A manually from a shell...~%" ps-viewer)
       (format t "~&~A~%" cmd)
       (values))))
@@ -46,7 +46,7 @@
     (format t "~&~%--------------------------------------------------------------------------------~%")
     (let ((cmd (format nil "cd ~A ; latex parser-main.tex ; dvips -f parser-main.dvi > grammar.ps"
 		       parser-tex-dir)))
-      (re::run-shell-command cmd :wait t))
+      (excl::run-shell-command cmd :wait t))
     (format t "~&See ~Agrammar.ps~%" parser-tex-dir)
     (make-pathname :name "grammar" :type "ps" :defaults parser-tex-dir)))
 
