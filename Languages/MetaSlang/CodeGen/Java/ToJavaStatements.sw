@@ -68,7 +68,7 @@ def translateRestrictToExpr(tcx, srt, argsTerm, k, l, spc) =
 op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateRelaxToExpr(tcx, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
-  let ((newBlock, newArg, newK, newL),col) = termToExpression(tcx, arg, k, l, spc) in
+  let ((newBlock, newArg, newK, newL),col) = termToExpression_internal(tcx, arg, k, l, spc,false) in
   ((newBlock, mkFldAcc(newArg, "relax"), newK, newL),col)
 
 op translateQuotientToExpr: TCx * Sort * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
@@ -81,7 +81,7 @@ def translateQuotientToExpr(tcx, srt, argsTerm, k, l, spc) =
 op translateChooseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateChooseToExpr(tcx, argsTerm, k, l, spc) =
   let [arg] = applyArgsToTerms(argsTerm) in
-  let ((newBlock, newArg, newK, newL),col) = termToExpression(tcx, arg, k, l, spc) in
+  let ((newBlock, newArg, newK, newL),col) = termToExpression_internal(tcx, arg, k, l, spc, false) in
   ((newBlock, mkFldAcc(newArg, "choose"), newK, newL),col)
 
 op translateEqualsToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
@@ -140,6 +140,11 @@ def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
   case findIndex (fn(srt) -> userType?(srt)) dom of
     | Some(h, _) -> 
       let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
+      if javaBaseOp?(opId) then % this might occur if the term is a relax/choose
+	if (length args) = 2
+	  then ((newBlock, mkBinExp(opId,javaArgs), newK, newL),col)
+	else ((newBlock,mkUnExp(opId,javaArgs), newK, newL),col)
+      else
       let topJArg = nth(javaArgs, h) in
       let resJArgs = deleteNth(h, javaArgs) in
       ((newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK, newL),col)
@@ -284,6 +289,20 @@ def addSubsToTcx(tcx, args, subId) =
 	     addSubRec(StringMap.insert(tcx, arg, argExpr), args, n+1) in
    addSubRec(tcx, args, 1)
 
+op relaxChooseTerm: Spec * Term -> Term
+def relaxChooseTerm(spc,t) =
+  let srt0 = termSort(t) in
+  let srt = unfoldBase(spc,srt0) in
+  case srt of
+    | Subsort(ssrt,_,b) ->
+      let rsrt = Arrow(srt0,ssrt,b) in
+      let t = Apply(Fun(Relax,rsrt,b),t,b) in
+      relaxChooseTerm(spc,t)
+    | Quotient(ssrt,_,b) ->
+      let rsrt = Arrow(srt0,ssrt,b) in
+      let t = Apply(Fun(Choose,rsrt,b),t,b) in
+      relaxChooseTerm(spc,t)
+    | _ -> t
 
 def translateTermsToExpressions(tcx, terms, k, l, spc) =
     case terms of
@@ -294,8 +313,16 @@ def translateTermsToExpressions(tcx, terms, k, l, spc) =
     let col = concatCollected(col1,col2) in
     ((newBody++restBody, cons(jTerm, restJTerms), restK, restL),col)
 
-  
+(**
+ * toplevel entry point for translating a meta-slang term to a java expression 
+ * (in general preceded by statements)
+ *) 
 def termToExpression(tcx, term, k, l, spc) =
+  termToExpression_internal(tcx,term,k,l,spc,true)
+
+def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
+  %let _ = writeLine("termToExpression: "^printTerm(term)) in
+  let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
   case term of
     | Var ((id, srt), _) ->
     (case StringMap.find(tcx, id) of

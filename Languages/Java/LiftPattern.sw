@@ -22,6 +22,19 @@ op baseType?: Sort -> Boolean
 def baseType?(type) =
   boolSort?(type) or integerSort?(type) or natSort?(type)
 
+
+op baseTypeAlias?: Spec * Sort -> Boolean
+def baseTypeAlias?(spc,srt) =
+  if baseType? srt then true
+  else
+    let usrt = unfoldBase(spc,srt) in
+    case usrt of
+      | Subsort(srt,_,_) -> baseTypeAlias?(spc,srt)
+      | Quotient(srt,_,_) -> baseTypeAlias?(spc,srt)
+      | _ -> baseType? usrt
+
+
+
 op baseTypeId?: Id -> Boolean
 
 def baseTypeId?(id) =
@@ -39,6 +52,8 @@ def userType?(srt) =
   else
     (case srt of
        | Base(qid,_,_) -> true
+       %| Subsort(srt,_,_) -> userType?(srt)
+       %| Quotient(srt,_,_) -> userType?(srt)
        | _ -> false
       )
 

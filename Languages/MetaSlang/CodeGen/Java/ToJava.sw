@@ -89,12 +89,16 @@ op addMethodFromOpToClsDecls: Spec * Id * Sort * Term * JcgInfo -> JcgInfo
 def addMethodFromOpToClsDecls(spc, opId, srt, trm, jcginfo) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
+  %let _ = writeLine(";;; op "^opId^": "^printSort(srt)) in
   if all (fn (srt) -> notAUserType?(srt)) dom
     then
+      %let _ = writeLine("  no user type in domain") in
       if notAUserType?(rng)
 	then
+	  %let _ = writeLine("  range is no user type") in
 	  case ut(srt) of
 	    | Some usrt ->
+	      %let _ = writeLine("  ut found user type "^printSort(usrt)) in
 	      % v3:p45:r8
 	      let (classId,col) = srtId(usrt) in
 	      let jcginfo = addStaticMethodToClsDecls(spc,opId,srt,dom,rng,trm,classId,jcginfo) in
@@ -102,7 +106,8 @@ def addMethodFromOpToClsDecls(spc, opId, srt, trm, jcginfo) =
 	    | None ->
 	      % v3:p46:r1
 	      addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
-      else addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
+      else
+	addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
   else
     addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
 
@@ -115,14 +120,33 @@ def addStaticMethodToClsDecls(spc, opId, srt, dom, rng (*as Base (Qualified (q, 
   let methodDecl = (([Static], Some (rngid), opId, fpars, []), None) in
   let (methodBody,col2) = mkPrimArgsMethodBody(body, spc) in
   let (assertStmt,col3) = mkAssertFromDom(dom, spc) in
-  let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
   let col = concatCollected(col0,concatCollected(col1,concatCollected(col2,col3))) in
   let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
+  %% add the assertion method
+  let asrtOpId = mkAssertOp(opId) in
+  let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
+  let (jcginfo,assertStmt) =
+      case mkAsrtExpr(spc,vars) of
+	| None -> (jcginfo,[])
+	| Some t -> 
+	let ((s,asrtExpr,_,_),col4) = termToExpression(empty,t,0,0,spc) in
+	let asrtBodyStmt = mkReturnStmt(asrtExpr) in
+	let asrtMethodDecl = (([Static], Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])):MethDecl in
+	let jcginfo = addMethDeclToClsDecls(asrtOpId,classId,asrtMethodDecl,jcginfo) in
+	(addCollectedToJcgInfo(jcginfo,col4),s++assertStmt)
+  in
+  %%
+  let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
   addMethDeclToClsDecls(opId, classId, methodDecl, jcginfo)
 
 op addPrimMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
 def addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
   addStaticMethodToClsDecls(spc,opId,srt,dom,rng,trm,"Primitive",jcginfo)
+
+op mkAsrtStmt: Id * List FormPar -> Block
+def mkAsrtStmt(asrtOpId,fpars) =
+  let expr = mkMethodInvFromFormPars(asrtOpId,fpars) in
+  [Stmt(Expr(mkMethInvName(([],"assert"),[expr])))]
 
 op mkAssertFromDom: List JGen.Type * Spec -> Block * Collected
 def mkAssertFromDom(dom, spc) =
@@ -130,7 +154,7 @@ def mkAssertFromDom(dom, spc) =
     | [Subsort(_, subPred, _)] ->
       let ((stmt, jPred, newK, newL),col) = termToExpression(empty, subPred, 1, 1, spc) in
       (case (stmt, newK, newL) of
-	 | ([], 1, 1) -> ([Stmt(Expr(mkMethInv("", "assert", [jPred])))],col)
+	 | ([], 1, 1) -> ([Stmt(Expr(mkMethInvName(([],"assert"), [jPred])))],col)
 	 | _ -> fail ("Type pred generated statements: not supported"))
     | _ -> ([],nothingCollected)
 
@@ -148,10 +172,17 @@ def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
       let (fpars,col0) = varsToFormalParams(vars) in
       let methodDecl = (([Static], Some (tt(rngId)), opId, fpars, []), None) in
       let (methodBody,col1) = mkPrimArgsMethodBody(body, spc) in
-      let methodDecl = setMethodBody(methodDecl, methodBody) in
       let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,col1)) in
+      %%% add the assertion method
+      let asrtOpId = mkAssertOp(opId) in
+      let asrtStmt = mkReturnStmt(mkJavaBool(true)) in
+      let asrtMethodDecl = (([Static], Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtStmt])):MethDecl in
+      let jcginfo = addMethDeclToClsDecls(asrtOpId,rngId,asrtMethodDecl,jcginfo) in
+      %%
+      let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
+      let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
       addMethDeclToClsDecls(opId, rngId, methodDecl, jcginfo)
-    | _ -> %TODO:
+    | _ -> let _ = warnNoCode(opId,None) in
       jcginfo
 
 op addUserMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
@@ -159,7 +190,7 @@ def addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
   case rng of
     | Base (Qualified (q, rngId), _, _) ->
       (let clsDecls = jcginfo.clsDecls in
-       let (vars, body) = srtTermDelta_internal(srt, trm,true) in
+       let (vars, body) = srtTermDelta_internal(srt,trm,true) in
        let split = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
        case split of
 	 | Some(vars1,varh,vars2) ->
@@ -187,9 +218,17 @@ def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
   let methodDecl = (([], Some (tt(rngId)), opId, fpars , []), None) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
   let newJcgInfo = addMethDeclToClsDecls(opId, srthId, defaultMethodDecl, jcginfo) in
-  let newJcgInfo = addMethDeclToSummands(spc, opId, srthId, methodDecl, body, newJcgInfo) in
-  addCollectedToJcgInfo(newJcgInfo,concatCollected(col1,col2))
-
+  let jcginfo = addCollectedToJcgInfo(newJcgInfo,concatCollected(col1,col2)) in
+  %% add the assertion method
+  let asrtOpId = mkAssertOp(opId) in
+  let asrtBodyStmt = mkReturnStmt(mkJavaBool(true)) in
+  let asrtMethodDecl = (([],Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])) in
+  let jcginfo = addMethDeclToClsDecls(asrtOpId,srthId,asrtMethodDecl,jcginfo) in
+  %%
+  let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
+  let methodDecl = setMethodBody(methodDecl,assertStmt) in
+  addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo)
+  
 op addNonCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
 def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
   case splitList (fn(v as (id, srt)) -> userType?(srt)) vars of
@@ -198,11 +237,18 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
        let (methodBody,col1) = mkNonCaseMethodBody(vh, body, spc) in
        let (assertStmt,col2) = mkAssertFromDom(dom, spc) in
        let (fpars,col3) = varsToFormalParams(vars1++vars2) in
-       let methodDecl = (([], Some (tt(rngId)), opId, fpars, []), Some (assertStmt++methodBody)) in
        let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col1,concatCollected(col2,col3))) in
        case varh of
 	 | (_, Base (Qualified(q, srthId), _, _)) ->
-	   addMethDeclToClsDecls(opId, srthId, methodDecl, jcginfo)
+	 %% add the assertion method
+	 let asrtOpId = mkAssertOp(opId) in
+	 let asrtBodyStmt = mkReturnStmt(mkJavaBool(true)) in
+	 let asrtMethodDecl = (([],Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])) in
+	 let jcginfo = addMethDeclToClsDecls(asrtOpId,srthId,asrtMethodDecl,jcginfo) in
+	 %% 
+	 let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
+	 let methodDecl = (([], Some (tt(rngId)), opId, fpars, []), Some (assertStmt++methodBody)) in
+	 addMethDeclToClsDecls(opId, srthId, methodDecl, jcginfo)
 	 | _ ->
 	   (warnNoCode(opId,Some("can't happen: user type is not flat"));jcginfo)
 	  )
@@ -244,9 +290,9 @@ def addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo) =
   let cases = filter (fn(WildPat _,_,_) -> false | _ -> true) (caseCases(body)) in
   % find the missing constructors:
   let missingsummands = getMissingConstructorIds(srt,cases) in
-  let _ = (writeLine("missing cases in "^opId^" for sort "^srthId^":");
-	   app (fn(id) -> writeLine("  "^id)) missingsummands)
-  in
+  %let _ = (writeLine("missing cases in "^opId^" for sort "^srthId^":");
+  %	   app (fn(id) -> writeLine("  "^id)) missingsummands)
+  %in
   let jcginfo = foldr (fn(consId,jcginfo) -> addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo))
                       jcginfo missingsummands
   in
@@ -257,7 +303,7 @@ op addMissingSummandMethDeclToClsDecls: Id * Id * Id * MethDecl * JcgInfo -> Jcg
 def addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo) =
   let summandId = mkSummandId(srthId,consId) in
   let body = [Stmt(mkThrowUnexp())] in
-  let newMethDecl = setMethodBody(methodDecl,body) in
+  let newMethDecl = appendMethodBody(methodDecl,body) in
   addMethDeclToClsDecls(opId,summandId,newMethDecl,jcginfo)
 
 op addSumMethDeclToClsDecls: Id * Id * Term * Pattern * Term * MethDecl * JcgInfo * Spec -> JcgInfo
@@ -277,7 +323,7 @@ def addSumMethDeclToClsDecls(opId, srthId, caseTerm, pat (*as EmbedPat (cons, ar
 	 let tcx = addArgsToTcx(tcx, args) in
 	 let ((b, k, l),col) = termToExpressionRet(tcx, body, 1, 1, spc) in
 	 let JBody = b in
-	 let newMethDecl = setMethodBody(methodDecl, JBody) in
+	 let newMethDecl = appendMethodBody(methodDecl, JBody) in
 	 let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
 	 addMethDeclToClsDecls(opId, summandId, newMethDecl, jcginfo)
 	 | _ -> (warnNoCode(opId,Some("case term format not supported: '"^printTerm(caseTerm)^"'"));jcginfo))

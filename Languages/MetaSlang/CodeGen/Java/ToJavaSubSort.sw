@@ -10,17 +10,20 @@ def mkSubSortTypeClsDecl(id, subSortFieldDecls, subSortMethodDecls, subSortConst
 
 op subSortToClsDecls: Id * Sort * Term -> List ClsDecl * Collected
 def subSortToClsDecls(id, superSort, pred) =
-  let Base (Qualified (q, superSortId), _, _) = superSort in
-  case pred of
-    | Fun (Op (Qualified (q, predId), fix) , superSort, _) ->
-      let relaxFieldDecl = fieldToFldDecl("relax", superSortId) in
-      let subSortMethodDecl = mkEqualityMethDecl(id) in
-      let thisRelax = mkQualJavaExpr("this", "relax") in
-      let eqargRelax = mkQualJavaExpr("eqarg", "relax") in
-      let subSortMethodBody = [Stmt (Return (Some (mkJavaEq(thisRelax, eqargRelax, superSortId))))] in
-      let subSortMethodDecl = setMethodBody(subSortMethodDecl, subSortMethodBody) in
-      let (subSortConstrDecl,col) = mkSubSortConstrDecl(id, superSortId, superSort, predId) in
-      ([mkSubSortTypeClsDecl(id, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
+  case superSort of
+    | Base (Qualified (q, superSortId), _, _) ->
+    (case pred of
+       | Fun (Op (Qualified (q, predId), fix) , superSort, _) ->
+       let relaxFieldDecl = fieldToFldDecl("relax", superSortId) in
+       let subSortMethodDecl = mkEqualityMethDecl(id) in
+       let thisRelax = mkQualJavaExpr("this", "relax") in
+       let eqargRelax = mkQualJavaExpr("eqarg", "relax") in
+       let subSortMethodBody = [Stmt (Return (Some (mkJavaEq(thisRelax, eqargRelax, superSortId))))] in
+       let subSortMethodDecl = setMethodBody(subSortMethodDecl, subSortMethodBody) in
+       let (subSortConstrDecl,col) = mkSubSortConstrDecl(id, superSortId, superSort, predId) in
+       ([mkSubSortTypeClsDecl(id, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
+       | _ -> fail("unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.")
+      )
     | _ -> fail("unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.")
 
 op mkSubSortConstrDecl: Id  * Id * Sort * Id -> ConstrDecl * Collected

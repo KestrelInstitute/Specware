@@ -60,6 +60,12 @@ def setMethodBody(m, b) =
   let (methHeader, _) = m in
   (methHeader, Some (b))
 
+op appendMethodBody: MethDecl * Block -> MethDecl
+def appendMethodBody(m as (methHdr,methBody),b) =
+  case methBody of
+    | Some b0 -> (methHdr,Some(b0++b))
+    | None -> (methHdr, Some(b))
+
 op mkPrimOpsClsDecl: ClsDecl
 def mkPrimOpsClsDecl =
   ([], ("Primitive", None, []), emptyClsBody)
@@ -129,6 +135,10 @@ def mkEqarg(id) =
 op mkTagCId: Id -> Id
 def mkTagCId(cons) = 
   "TAG_C_"^cons
+
+op mkAssertOp: Id -> Id
+def mkAssertOp(opId) =
+  "asrt_"^opId
  
 op mkTagEqExpr: Id * Id -> Java.Expr
 def mkTagEqExpr(clsId, consId) =
@@ -388,6 +398,75 @@ def mkMethInv(srtId, opId, javaArgs) =
 op mkMethExprInv: Java.Expr * Id * List Java.Expr -> Java.Expr
 def mkMethExprInv(topJArg, opId, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaPrim (Paren (topJArg), opId, javaArgs)))), None)
+
+(**
+ * takes the ids from the formal pars and constructs a method invocation to the given opId
+ *)
+op mkMethodInvFromFormPars: Id * List FormPar -> Java.Expr
+def mkMethodInvFromFormPars(opId,fpars) =
+  let parIds = map (fn(_,_,(id,_)) -> id) fpars in
+  let vars = mkVars parIds in
+  let opname = ([],opId) in
+  mkMethInvName(opname,vars)
+
+op mkVars: List Id -> List Java.Expr
+def mkVars(ids) =
+  map mkVarJavaExpr ids
+
+(**
+ * returns the application that constitutes the assertion for the given var.
+ * E.g., (id,(Nat|even)  -> Some(Apply(even,id))
+ * This only works, because the super sort of a restriction sort must be a flat sort, no records etc. 
+*)
+op mkAsrtTestAppl: Spec * Var -> Option Term
+def mkAsrtTestAppl(spc,var as (id,srt)) =
+  case getRestrictionTerm(spc,srt) of
+    | Some t -> 
+      let b = sortAnn(srt) in
+      Some(Apply(t,Var(var,b),b))
+    | None -> None
+
+
+(**
+ * generates the conjunction of assertions for the given variable list
+ *)
+op mkAsrtExpr: Spec * List Var -> Option Term
+def mkAsrtExpr(spc,vars) =
+  let
+    def mkAsrtExpr0(vars,optterm) =
+      case vars of
+	| [] -> optterm
+	| var::vars -> 
+	  let appl = mkAsrtTestAppl(spc,var) in
+	  let next = 
+	  (case appl of
+	     | Some t0 -> (case optterm of
+			     | None -> appl
+			     | Some t -> 
+			       let b = termAnn(t) in
+			       let boolSort:Sort = Base(Qualified("Boolean","Boolean"),[],b) in
+			       let andsrt = Arrow(Product([("1",boolSort),("2",boolSort)],b),boolSort,b) in
+			       let opterm = Fun(Op(Qualified("Boolean","&"),Nonfix),andsrt,b) in
+			       let argsterm:Term = Record([("1",t),("2",t0)],b) in
+			       Some (Apply(opterm,argsterm,b))
+			      )
+	     | None -> optterm
+	    )
+	  in
+	  mkAsrtExpr0(vars,next)
+  in
+  mkAsrtExpr0(vars,None)
+
+(**
+ * returns the restriction term for the given sort, if it has one.
+ *)
+op getRestrictionTerm: Spec * Sort -> Option Term
+def getRestrictionTerm(spc,srt) =
+  let srt = unfoldBase(spc,srt) in
+  case srt of
+    | Subsort(_,pred,_) -> Some pred
+    | _ -> None
+
 
 (**
   * returns the Java type for the given id, checks for basic names like "int" "boolean" etc.
