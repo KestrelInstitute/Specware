@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:23  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -292,6 +295,20 @@ public class ParseSourceRequest implements ParsableObjectRequest, ErrConsumer {
 	    });
     }
     
+    // This method displays Specware's error messages in the parser output window.
+    // TODO: Create a separate class to do this because the Netbeans parser shouldn't be displaying Specware errors.
+    public static void pushProcessUnitError(final FileObject errorFile, final int line, final int column, final String message, String referenceText) {
+
+        if (line<=0) 
+            return;             // no line number available    
+
+	invokeLater(new Runnable() {
+		public void run() {
+		    parserDisplayer.reportError(errorFile, line, column, message);
+		}
+	    });
+    }   
+   
     /** Getter for property annotations.
      * @return Value of property annotations.
      */
