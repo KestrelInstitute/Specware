@@ -179,51 +179,62 @@ The inner case in the function below is temporary. It is there to make
 it easy to experiment with different UnitId path resolution strategies..
 
 \begin{spec}
-  op shadow_uids? : Boolean
-  def shadow_uids? = false
 
   op generateUIDList : RelativeUID -> Env (List UnitId)
-  def generateUIDList unitId =
-    case unitId of
-      | SpecPath_Relative {path,hashSuffix} -> {
-            specPath <- getSpecPath;
-            return (map (fn {path=root,hashSuffix=_} ->
-			   normalizeUID {path = root ++ path,
-					 hashSuffix = hashSuffix})
-		      specPath)
-        }
-      | UnitId_Relative {path=newPath,hashSuffix=newSuffix} -> 
+  def generateUIDList uid =
+    case uid of
+      | SpecPath_Relative {path, hashSuffix} ->
         {
-	 {path=currentPath,hashSuffix=currentSuffix} <- getCurrentUID;
-	 currentPathAlias <- return(pathAlias currentPath);
-	 root       <- removeLast currentPath;
-	 root_alias <- removeLast currentPathAlias;
-	 if currentPathAlias ~= currentPath then
-	   case (currentPathAlias, currentSuffix, newPath, newSuffix) of
-	     | (_, Some _, [elem], None) ->
-	       return [normalizeUID {path = currentPathAlias,      hashSuffix = Some elem},
-		       normalizeUID {path = root_alias ++ newPath, hashSuffix = None},
-		       normalizeUID {path = currentPath,           hashSuffix = Some elem},
-		       normalizeUID {path = root       ++ newPath, hashSuffix = None}]
-	     | (_,_,_,_) -> 
-	       return [normalizeUID {path = root_alias ++ newPath, hashSuffix = newSuffix},
-		       normalizeUID {path = root       ++ newPath, hashSuffix = newSuffix}]
-	 else
-	   case (currentPathAlias, currentSuffix, newPath, newSuffix) of
-	     | (_, Some _, [elem], None) ->
-	       return [normalizeUID {path = currentPathAlias,      hashSuffix = Some elem},
-		       normalizeUID {path = root_alias ++ newPath, hashSuffix = None}]
-	     | (_,_,_,_) -> 
-	       return [normalizeUID {path = root_alias ++ newPath, hashSuffix = newSuffix}]
+	 roots <- getSpecPath;
+	 return (map (fn root ->
+		      normalizeUID {path       = root.path ++ path,
+				    hashSuffix = hashSuffix})
+		     roots)
+        }
+      | UnitId_Relative {path, hashSuffix} ->
+        {
+	 current_uid   <- getCurrentUID;                       % could be /tmp/...
+	 adjusted_path <- return (pathAlias current_uid.path); % :swe etc. adjust back to connected dir
+	 shadow_paths  <- return (pathShadows adjusted_path);  % shadowing works from there
+	 %% each path in shadow_paths is a UIDPath shadowing those following it
+	 foldM (fn uids -> fn shadow_path ->
+		{shadow_root <- removeLast shadow_path;
+		 % for example, shadow_path could be ["A" "B" "C]
+		 %          and shadow_root would be ["A" "B"]
+		 return (uids 
+			 ++ 
+			 (case (current_uid.hashSuffix, path, hashSuffix) of
+			    | (Some _, [elem], None) ->
+			    % "A/B/C#D referencing E" => ["A/B/C#E"] and see below
+			    [normalizeUID {path = shadow_path, hashSuffix = Some elem}]
+			    | (_,_,_) -> 
+			    [])
+			 ++
+			 % "A/B/C   referencing #G"    #G is rejected by parser
+			 % "A/B/C#D referencing #G"    #G is rejected by parser
+			 % "A/B/C   referencing E"     => ["A/B/E"]
+			 % "A/B/C#D referencing E"     => ["A/B/E"] and see above
+			 % "A/B/C   referencing E/F"   => ["A/B/E/F"]
+			 % "A/B/C#D referencing E/F"   => ["A/B/E/F"]
+			 % "A/B/C   referencing E/F#G" => ["A/B/E/F#G"]
+			 % "A/B/C#D referencing E/F#G" => ["A/B/E/F#G"]
+			 [normalizeUID {path       = shadow_root ++ path, 
+					hashSuffix = hashSuffix}])
+	         })
+	       []
+	       shadow_paths
          }
+
+  sort UIDPath  = List String
+  sort UIDPaths = List UIDPath
 
   %% this is set by norm-unitid-str in toplevel.lisp
   %% It allows a command-line spec to be put into a temporary file but have
   %% any ids be relative to the shell environment and not the local file's unitid
-  op  aliasPaths: List (List String * List String)
+  op  aliasPaths: List (UIDPath * UIDPath)
   def aliasPaths = []
 
-  op  pathAlias: List String -> List String
+  op  pathAlias: UIDPath -> UIDPath
   def pathAlias path =
     let
       def applyAliases aliasPaths =
@@ -244,6 +255,44 @@ it easy to experiment with different UnitId path resolution strategies..
     in
     applyAliases aliasPaths
      
+  %% this is set by user when creating a shadow version 
+  %% It allows files on other directory trees to shadow 
+  %% corresponding files in a base tree.
+  op  shadowingPaths : List UIDPaths
+  def shadowingPaths = []
+
+  op  pathShadows : UIDPath -> UIDPaths
+  def pathShadows uid_path =
+    let
+      def expand shadow =
+	%% shadow is a list of UID paths
+	case find_suffix_wrt shadow of
+	  | Some suffix ->
+            %% we arrive here if some path in shadow is a prefix of uid_path,
+	    %% so we know that some path++suffix will reconstitute uid_path
+	    map (fn path -> path ++ suffix) shadow
+	  | _ ->
+	    []
+      def find_suffix_wrt shadow =
+	foldl (fn (shadow_path, opt_suffix) -> 
+	       case opt_suffix of
+		 | Some _ -> opt_suffix
+		 | _ -> 
+		   case locationOf (shadow_path, uid_path) of
+		     | Some (_, suffix) -> Some suffix
+		     | _ -> None)
+	      None
+	      shadow
+    in
+      case (foldl (fn (shadow, paths) ->
+		   paths ++ expand shadow)
+	          []
+		  shadowingPaths) 
+	of
+	| [] -> [uid_path]
+	% if there are any paths at all, we know that some 
+	%  path++suffix in the map up above reconstituted uid_path
+	| paths -> paths  
 
 \end{spec}
    
