@@ -8,7 +8,7 @@ cases, an additional parameter can be supplied specifying the base
 name of the C source and header files into which the C code will be
 generated.
 
-Lisp Prompt: (works only for MetaSlang sources, not for Accord sources)
+Lisp Prompt:
 - - - - - -
 
     :swc <UnitId> [<c-file-base-name>]
@@ -32,10 +32,68 @@ This would have the same result as the above command line variant. The
 suffix ".c" can be omitted or not.
 
 
-Compiling and Running the generated C code
-------------------------------------------
-(Additional information is contained in the annotated Makefile in the
-"Examples" directory)
+Generating, Compiling and Running the generated C code using ":make"
+--------------------------------------------------------------------
+
+The easiest and recommended way of generating C code and compiling it
+is by using thee buillt-in top-level-alias
+
+  :make <unit-id>
+
+at the Lisp prompt. This command does the following things:
+- it invokes the "swc" command on the given unit-id and uses the name
+  of the unit-id as file name for the generated C code ("#"'s are
+  replaced by "_"'s). For example,
+
+     :make foo#bar
+
+  would invoke ":swc foo#bar foo_bar.c"
+- if the C code generation has been successful, a customized Makefile
+  is generated into "swcmake.mk". This file will include references to
+  the built-in Makerules and define the targets and dependencies in a
+  way that it compiles and executable with the same name as the
+  generated C-files with removed suffix, i.e. for the above example
+  the name of the executable would be "foo_bar".
+  In addition to the built-in Makerules file, the generated make-file
+  "swcmake.mk" will also include a unit-specific make-file in the
+  current directory called <executable>.mk, i.e. in the above example
+  "foo_bar.mk". This file can be used to set the make variables CFLAGS
+  and USERFILES, which are used as follows:
+
+  CFLAGS:    the value of the CFLAGS variable is used in calls to the C
+             compiler (gcc) and usually contains example-specific flags,
+             e.g., optimizer flags. Example:
+
+                   CFLAGS = -O3
+
+  USERFILES: the value of the USERFILES make variable is used in calls
+             for the final compilation and linking of the
+             executable. It usually lists additional C-files (.o
+             and/or .c files) that the example needs to be a fully
+             stand-alone application. The most common usage of this
+             is the specification of a handwritten main file that
+             calls the generated C code. Example:
+
+                   USERFILES = main.c
+
+             For help how to provide a MetaSlang-written main
+             function, see below.
+
+  Other make variables that are used in the generated/predefined rules
+  are LDFLAGS (can be used to add addtional libraries, etc.), CPPFLAGS
+  (see below), and USEGC (see below).
+
+- finally, the actual "make" shell-command is called with the
+  generated make-file "swcmake.mk" top-level make-file. By default,
+  the actual command called is "make" assuming a program with this
+  name is available in the current shell settings. The system
+  environment variable SPECWARE4_MAKE can be used to overwrite this
+  default behaviour: if SPECWARE4_MAKE is set, the value of it is used
+  as make command.
+
+
+Compiling and Running the generated C code without using :make
+--------------------------------------------------------------
 
 The generated C code is designed to contain as minimal as possible
 references outside the generated code, but there are still some
