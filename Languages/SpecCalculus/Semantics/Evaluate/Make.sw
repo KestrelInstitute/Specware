@@ -132,8 +132,9 @@ spec
      print (";;; Compiling java files: " ^ compile_cmd ^ "\n");
      return (run_cmd compile_cmd);
 
+
      %% Create script to invoke java interpreter on given class files
-     script      <- return ("#!/bin/sh\n\njava -cp ../.. " ^ version ^ "/java/Primitive $*");
+     script      <- return ("#!/bin/sh\n\ncd `/usr/bin/dirname $0`\n\njava -cp ../.. " ^ version ^ "/java/Primitive $*");
      script_file <- return (version ^ "/java/" ^ (last uid.path));
      print (";;; Writing script to invoke java program: " ^ script_file ^ "\n");
      return (writeStringToFile (script, script_file));
