@@ -3,6 +3,11 @@
 
 ;; These are Stephen's toplevel Lisp aliases for Specware
 
+;; The lisp code supporting the saving/restoring of the Specware state
+;; to/from the lisp environment can be found in specware-state.lisp.
+;; The latter must be loaded before this and the generated lisp code for
+;; Specware.
+
 (defun fix_URI (uri)
   (let ((end? (- (length uri) 3)))
     (if (and (>= end? 0) (string-equal uri ".sw" :start1 end?))
@@ -17,12 +22,6 @@
 (defun sw0 (x) (Specware::runSpecwareURI (fix_URI x)))
 
 (top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
-
-(defvar *specware-global-context* nil)
-(defun specware-state ()
-  (vector *specware-global-context*
-	  (svref SpecCalc::initialSpecwareState 1)
-	  (svref SpecCalc::initialSpecwareState 2)))
 
 (defun sw-re-init ()
   (setq *specware-global-context* nil))
@@ -62,11 +61,6 @@
 (top-level:alias ("swl" :case-sensitive) (x &optional y)
   (swl (string x) (and y (maybe-add-extension (string y) ".lisp"))))
 
-(defpackage "SPECWARE")
-
-(defun SPECWARE::saveSpecwareState (glob loc optUri)
-  (SPECWARE::saveSpecwareState-1 (vector glob loc optUri)))
-
-(defun SPECWARE::saveSpecwareState-1 (State)
-  (setq user::*specware-global-context* (svref State 0))
-  (cons '(:|Ok|) State))
+;; the 'x' is for experimental.
+(top-level:alias ("swx" :case-sensitive) (x) (swx (string x)))
+(defun swx (x) (Specware::evaluateURIfromLisp (string x)))

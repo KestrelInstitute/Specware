@@ -82,12 +82,18 @@
   HandwrittenFiles
 )
 
-;; Now load the generated lisp code.
+;; Define functions for saving/restoring the
+;; Specware state to/from the lisp environment
+(compile-and-load-lisp-file "specware-state")
+
+;; Now load the generated lisp code.  This also initializes the Specware
+;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
 (compile-and-load-lisp-file "../../lisp/Specware4.lisp")
 
 ;; Stephen's toplevel aliases 
 (compile-and-load-lisp-file "toplevel")
-;; Debugging utiities
+
+;; Debugging utilities
 (compile-and-load-lisp-file "debug")
 
 ;; Might need this?
@@ -129,9 +135,9 @@
 
 (make-system "../../UI/Emacs/Handwritten/Lisp")
 
-(format t "~2%To test, run (test)~%")
-(format t "~%That will run (sw \"/Applications/Specware/Specware4\")~2%")
+(format t "~2%To bootstrap, run (boot)~%")
+(format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
-(defun user::test ()
+(defun user::boot ()
   (user::sw "/Applications/Specware/Specware4")
 )

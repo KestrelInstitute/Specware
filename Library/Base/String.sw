@@ -40,7 +40,7 @@ String qualifying spec {
   def compare (n,m) =
     if n lt m then Less else if n = m then Equal else Greater        
 
- op concatList : List String -> String
+  op concatList : List String -> String
 }
 \end{spec}
 

@@ -14,9 +14,6 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Printer
   import /Library/IO/Primitive/IO
   import /Languages/MetaSlang/Specs/Categories/AsRecord	
-  % import Cat qualifying /Library/Structures/Data/Categories/Diagrams/Polymorphic
-  % import Map
-			  
 \end{spec}
 
 All terms in the calculus have a value.  A value is a specification, a
@@ -217,8 +214,6 @@ are used.
 				      | _ -> Some x)
 		          gCtxt)
      }
-      
-    
 \end{spec}
 
 When evaluating new locally scoped bindings, we need to be able to
@@ -297,8 +292,7 @@ Raise an exception. Should this be called throw?
 
 \begin{spec}
   op raise : fa (a) Exception -> Env a
-  def raise except =
-    fn state -> (Exception except, state)
+  def raise except = fn state -> (Exception except, state)
 \end{spec}
 
 This is meant to be for unrecoverable errors. Perhaps it should just call
@@ -316,7 +310,6 @@ This is for going into the Lisp Debugger when called during nomal madic executio
   op mFail : fa(a) String -> Env a
   def mFail str = fn state -> let _ = (fail str) in (Exception (Fail str), state)
 \end{spec}
-
 
 This is used for catching an exception. We execute the first operation
 If that raise an exception, then control is transferred to the second
@@ -348,6 +341,7 @@ Some basic operations for debugging. There should be a proper IO monad.
 \end{spec}
 
 The following is used when one wants to guard a command with a predicate.
+The predicate is not computed in the monad.
 
 \begin{spec}
   op when : Boolean -> Env () -> Env ()

@@ -58,8 +58,6 @@ in place of ".".
       setCurrentURI currentURI;
       uri <- pathToRelativeURI path; 
       evaluateTerm (URI uri,pos0)
-      % printLocalContext;
-      % printGlobalContext
     } in
     case catch run toplevelHandler initialSpecwareState of
       | (Ok val,_) -> ()
@@ -78,6 +76,43 @@ The following is designed to allow for use by a lisp read-eval-print loop.
       evaluateTerm (URI uri,pos0)
     } in
     catch run toplevelHandler specwareState
+\end{spec}
+
+An experimental alternative to the above.
+
+\begin{spec}
+  op removeSWsuffix : String -> String
+  def removeSWsuffix path =
+    case (rev (explode path)) of
+      | #w :: #s :: #. ::rest -> implode (rev rest)
+      | _ -> path
+\end{spec}
+
+\begin{spec}
+  op evaluateURIfromLisp : String -> ()
+  def evaluateURIfromLisp path = 
+    let run = {
+      restoreSavedSpecwareState;
+      currentURI <- pathToCanonicalURI ".";
+      setCurrentURI currentURI;
+      uri <- pathToRelativeURI (removeSWsuffix path); 
+      evaluateURI pos0 uri;
+      saveSpecwareState
+    } in
+    case catch run toplevelHandler ignoredState of
+      | (Ok val,_) -> ()
+      | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
+\begin{spec}
+  op initializeSavedSpecwareState : ()
+  def initializeSavedSpecwareState = 
+    case saveSpecwareState initialSpecwareState of
+      | (Ok val,_) -> toScreen "Initializing Specware state ..."
+      | (Exception _,_) -> fail "initializeSavedSpecwareState failed"
+
+  op ignoredState : State
+  def ignoredState = initialSpecwareState
 \end{spec}
 
 Allow the user to compile a URI from the lisp interface.
@@ -101,18 +136,19 @@ Allow the user to compile a URI from the lisp interface.
      return value}
 \end{spec}
 
-
-This is the read/eval/print loop. It should never come back.
+Eventually, this will be a read/eval/print loop for Specware.
+At present we are using the Lisp interface.
 
 \begin{spec}
   op toplevelLoop : SpecCalc.Env ()
   def toplevelLoop = return ()
 \end{spec}
 
-This the the toplevel exception handler. This is activated for all
-uncaught exceptions. The assumption is that we should never activate this
-handler. If we do, then something has gone very wrong and Specware should
-be aborted. This doesn't return.
+This is the toplevel exception handler. Eventually, when we have our own
+read-eval-print loop, this will be used only for uncaught exceptions. For
+now, this handles all exceptions, For all exceptions except Fail, it
+constructs and prints a message.  For Fail exceptions, it calls fail to
+enter the Lisp debugger as this indicates an internal (Specware) error.
 
 \begin{spec}
   op toplevelHandler : fa (a) Exception -> SpecCalc.Env a
@@ -158,11 +194,13 @@ be aborted. This doesn't return.
      in
        mFail message}
 \end{spec}
-This handwritten function saves the state in the lisp environment so
-that the successful work you have done before the error is kept.
+
+This handwritten functions save and set the state in the lisp environment
+so that the successful work you have done before the error is kept.
 
 \begin{spec}
   op saveSpecwareState: SpecCalc.Env ()
+  op restoreSavedSpecwareState: SpecCalc.Env ()
 \end{spec}
 
 This doesn't belong here. Perhaps it belongs in the instance

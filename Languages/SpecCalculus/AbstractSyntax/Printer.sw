@@ -44,7 +44,8 @@ SpecCalc qualifying spec {
           ppSep (ppString " ") (map ppElem path),
           (case hashSuffix of
             | None -> ppNil
-            | Some suffix -> ppString (" # " ^ suffix))
+            | Some suffix -> ppString (" # " ^ suffix)),
+          ppString "]"
         ]
 
   op showRelativeURI : RelativeURI -> String
