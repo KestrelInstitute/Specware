@@ -94,8 +94,8 @@ endspec
   :output ";;; Elaborating spec-morphism at $TESTDIR/Bug_0067/CheckSignature#M
 ;;; Elaborating spec at $TESTDIR/Bug_0067/CheckSignature#S1
 ;;; Elaborating spec at $TESTDIR/Bug_0067/CheckSignature#S2
-Error in morphism: Inconsistent signature mapping for f +-> g
-The domain sort A
+Error in morphism: Inconsistent op type mapping for f +-> g
+The domain type A
   translates to B
    which is not C
  found in $TESTDIR/Bug_0067/CheckSignature.sw
@@ -103,7 +103,16 @@ The domain sort A
 
  ("Bug 0068 : Even numbers can be refined to odd numbers"
   :show   "Bug_0068/EvenToOdd#O" 
-  :output "<some kind of error message>")
+  :output ";;; Elaborating obligator at $TESTDIR/Bug_0068/EvenToOdd#O
+;;; Elaborating spec-morphism at $TESTDIR/Bug_0068/EvenToOdd#M
+;;; Elaborating spec at $TESTDIR/Bug_0068/EvenToOdd#S1
+;;; Elaborating spec at $TESTDIR/Bug_0068/EvenToOdd#S2
+Error in morphism: Inconsistent type def mapping for Even +-> Odd
+The domain type {n : Nat | ex(m : Integer) n = 2 * m}
+  translates to {n : Nat | ex(m : Integer) n = 2 * m}
+   which is not {n : Nat | ex(m : Integer) n = 2 * m + 1}
+ found in $TESTDIR/Bug_0068/EvenToOdd.sw
+9.13-9.14")
 
  ("Bug 0069 : Translate from base"
   :show   "Bug_0069/TranslateFromBase#M" 
