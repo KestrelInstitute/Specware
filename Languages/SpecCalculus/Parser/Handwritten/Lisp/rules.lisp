@@ -605,6 +605,15 @@ If we want the precedence to be optional:
    )
   1)
 
+(define-sw-parser-rule :NON-MATCH-EXPRESSION ()
+  (:anyof
+   (1 :NON-MATCH-LET-EXPRESSION   :documentation "Let not ending in case or lambda")
+   (1 :NON-MATCH-IF-EXPRESSION    :documentation "If-then-else not ending in case or lambda")
+   (1 :NON-MATCH-QUANTIFICATION   :documentation "Quantification (fa/ex) not ending in case or lambda")
+   (1 :TIGHT-EXPRESSION           :documentation "Tight expression -- suitable for annotation")
+   )
+  1)
+
 (define-sw-parser-rule :TIGHT-EXPRESSION ()
   (:anyof
    (1 :APPLICATION          :documentation "Application")
@@ -695,6 +704,12 @@ If we want the precedence to be optional:
    ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lc ':right-lc) :documentation "RecLet Binding")
    ))
 
+(define-sw-parser-rule :NON-MATCH-LET-EXPRESSION ()
+  (:anyof
+   ((:tuple "let" (1 :RECLESS-LET-BINDING)      "in" (2 :NON-MATCH-EXPRESSION)) (make-let-binding-term     1 2 ':left-lc ':right-lc) :documentation "Let Binding")
+   ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :NON-MATCH-EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lc ':right-lc) :documentation "RecLet Binding")
+   ))
+
 (define-sw-parser-rule :RECLESS-LET-BINDING ()
  (:tuple (1 :PATTERN) :EQUALS (2 :EXPRESSION))
  (make-recless-let-binding 1 2 ':left-lc ':right-lc))
@@ -719,12 +734,21 @@ If we want the precedence to be optional:
   (:tuple "if" (1 :EXPRESSION) "then" (2 :EXPRESSION) "else" (3 :EXPRESSION))
   (make-if-expression 1 2 3 ':left-lc ':right-lc)  :documentation "If-Then-Else")
 
+(define-sw-parser-rule :NON-MATCH-IF-EXPRESSION ()
+  (:tuple "if" (1 :EXPRESSION) "then" (2 :EXPRESSION) "else" (3 :NON-MATCH-EXPRESSION))
+  (make-if-expression 1 2 3 ':left-lc ':right-lc)  :documentation "If-Then-Else")
+
 ;;; ------------------------------------------------------------------------
 ;;;   QUANTIFICATION
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :QUANTIFICATION ()
   (:tuple (1 :QUANTIFIER) (2 :LOCAL-VARIABLE-LIST) (3 :EXPRESSION))
+  (make-quantification 1 2 3 ':left-lc ':right-lc)
+  :documentation "Quantification")
+
+(define-sw-parser-rule :NON-MATCH-QUANTIFICATION ()
+  (:tuple (1 :QUANTIFIER) (2 :LOCAL-VARIABLE-LIST) (3 :NON-MATCH-EXPRESSION))
   (make-quantification 1 2 3 ':left-lc ':right-lc)
   :documentation "Quantification")
 
@@ -1028,9 +1052,23 @@ If we want the precedence to be optional:
 ;;;  http://www.specware.org/manual/html/matchesandpatterns.html
 ;;; ========================================================================
 
+;;(define-sw-parser-rule :MATCH ()
+;;  (:tuple (:optional "|") (1 (:repeat :BRANCH "|")))
+;;  (list . 1))
+
 (define-sw-parser-rule :MATCH ()
-  (:tuple (:optional "|") (1 (:repeat :BRANCH "|")))
-  (list . 1))
+  (:tuple (:optional "|") (1 :AUX-MATCH))
+  1)
+
+(define-sw-parser-rule :AUX-MATCH ()
+  (:anyof
+   ((:tuple (1 :NON-MATCH-BRANCH) "|" (2 :AUX-MATCH)) (cons 1 2))
+   ((:tuple (1 :BRANCH))                              (cons 1 nil))
+   ))
+
+(define-sw-parser-rule :NON-MATCH-BRANCH ()
+  (:tuple (1 :PATTERN) "->" (2 :NON-MATCH-EXPRESSION))
+  (make-branch 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :BRANCH ()
   (:tuple (1 :PATTERN) "->" (2 :EXPRESSION))
