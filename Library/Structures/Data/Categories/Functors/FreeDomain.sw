@@ -57,14 +57,14 @@ Printing the domain (generator) is not unreasonable.
   op ppFunctor : Functor -> Pretty
   def ppFunctor functor = 
     ppConcat [
-      ppString "Vertex Map =",
+      pp "Vertex Map =",
       ppNewline,
-      ppString "  ",
+      pp "  ",
       ppIndent (PolyMap.ppMap Vertex.ppElem ppObject (vertexMap functor)),
       ppNewline,
-      ppString "Edge Map =",
+      pp "Edge Map =",
       ppNewline,
-      ppString "  ",
+      pp "  ",
       ppIndent (PolyMap.ppMap Edge.ppElem ppArrow (edgeMap functor))
    ]
 }

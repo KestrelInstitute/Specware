@@ -63,9 +63,8 @@ Importing the category of specs includes also the sorts for the abstract
 syntax of MetaSlang and spec morphisms.
 
 \begin{spec}
-spec {
-  import Systems qualifying /Library/Structures/Data/Categories/Systems/Polymorphic
-  import /Languages/MetaSlang/Specs/Categories/AsRecord
+BSpec qualifying spec {
+  import /Library/Structures/Data/Categories/Systems/Polymorphic
 
   sort BSpec = {
     initial : V.Elem,
@@ -135,16 +134,14 @@ rather than the edge map.
 
 \begin{spec}
   op transitionSpec : BSpec -> E.Elem -> Spec
-  def transitionSpec bspec edge = 
-      PolyMap.eval (vertexMap (functor (system bspec))) (Tag (1,edge))
+  def transitionSpec bspec edge = eval (vertexMap (functor (system bspec))) (Tag (1,edge))
 \end{spec}
 
 The next function retrieves the spec associated with a state or mode.
 
 \begin{spec}
   op modeSpec : BSpec -> V.Elem -> Spec
-  def modeSpec bspec vertex =
-    PolyMap.eval (vertexMap (functor (system bspec))) (Tag (0,vertex))
+  def modeSpec bspec vertex = eval (vertexMap (functor (system bspec))) (Tag (0,vertex))
 \end{spec}
 
 Given a transition, this returns the static operators for the transition. The
@@ -226,51 +223,21 @@ for now that the program does not define any new sorts.
 %       (newSpc, sm1, sm2)
 \end{spec}
 
-Naive pretty printing of \BSpecs
-
 \begin{spec}
-  op ppBSpecLess : BSpec -> Spec -> WadlerLindig.Pretty
-  def ppBSpecLess {initial,final,system} spc =
+  op pp : BSpec -> WadlerLindig.Pretty
+  def pp bSpec =
     ppConcat [
-      ppString "{",
-      ppString "initial = ",
-      V.ppElem initial,
-      ppString ", final = ",
-      V.ppSet final,
+      pp "{initial = ",
+      V.pp (initial bSpec),
+      pp ", final = ",
+      V.pp (final bSpec),
       ppNewline,
-      ppString "system = ",
+      pp "system = ",
       ppNewline,
-      ppString "  ",
-      ppIndent (ppSystem (mapSystem system (fn o -> subtractSpec o spc) (fn a -> a))),
+      pp "  ",
+      ppIndent (pp (system bSpec)),
       ppNewline,
-      ppString "}"
-    ]
-
-  op ppBSpec : BSpec -> WadlerLindig.Pretty
-  def ppBSpec {initial,final,system} =
-    ppConcat [
-      ppString "{",
-      ppString "initial = ",
-      V.ppElem initial,
-      ppString ", final = ",
-      V.ppSet final,
-      ppNewline,
-      ppString "system = ",
-      ppNewline,
-      ppString "  ",
-      ppIndent (ppSystem system),
-      ppNewline,
-      ppString "}"
+      pp "}"
     ]
 }
 \end{spec}
-
-ppBSpecLessShort bSpec spc
-  vertices = {
-    let edges = edges (shape (system bSpec))
-    let srcMap = src (shape (system bSpec))
-    let taretMap = target (shape (system bSpec))
-
-    print e : (eval srcMap e) -> (eval targetMap e)
-  map (fn e -> Tag (1,n)) 
-   eval  e

@@ -76,10 +76,6 @@ that mean to be implemented in terms of the api?
 
 fold over the sorts in one
 
-
-:w
-
-
 What about updating the ops en-masse?
 
 \begin{spec}
@@ -149,6 +145,12 @@ Typechecking.
 
 \begin{spec}
   op elaborate : Spec -> Env Spec
+\end{spec}
+
+The empty specification.
+
+\begin{spec}
+  op empty : Spec
 \end{spec}
 
 The following add a sort or op to a spec.  Adding an op or sort is

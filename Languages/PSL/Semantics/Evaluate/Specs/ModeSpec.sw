@@ -28,16 +28,14 @@ BSpecs labelled with conventional specs and information describing what
 operators in each spec constitute the variables that make up the store.
 
 \begin{spec}
-spec {
-  import translate Spec by {
-      Monad.Monad +-> SpecCalc.Env
-    }
+ModeSpec qualifying spec {
+  import Spec
 
   sort Morphism
 
   sort ModeSpec = {
       spc : Spec,
-      variables : Id.Set
+      variables : IdSet.Set
     }
 
   sort BSpec.Object = ModeSpec
@@ -45,16 +43,19 @@ spec {
   op specOf : ModeSpec -> Spec
   def specOf modeSpec = modeSpec.spc
 
-  op variables : ModeSpec -> Id.Set
+  op variables : ModeSpec -> IdSet.Set
   def variables modeSpec = modeSpec.variables
 
-  op make : Spec -> Id.Set -> ModeSpec
+  op empty : ModeSpec
+  def empty = make Spec.empty IdSet.empty
+
+  op make : Spec -> IdSet.Set -> ModeSpec
   def make spc variables = {
       spc = spc,
       variables = variables
     }
 
-  op withVariables infixl 18 : ModeSpec * Id.Set -> ModeSpec
+  op withVariables infixl 18 : ModeSpec * IdSet.Set -> ModeSpec
   def withVariables (modeSpec,variables) = {
       spc = specOf modeSpec,
       variables = variables
@@ -68,23 +69,23 @@ spec {
 
   sort BSpec.Arrow = Morphism
 
-  op addConstant : ModeSpec -> OpInfo -> SpecCalc.Env ModeSpec
+  op addConstant : ModeSpec -> OpInfo -> Env ModeSpec
   def addConstant modeSpec opInfo = {
       newSpec <- insert (specOf modeSpec) opInfo;
       return (modeSpec withSpec newSpec)
     }
 
-  op addVariable : ModeSpec -> OpInfo -> SpecCalc.Env ModeSpec
+  op addVariable : ModeSpec -> OpInfo -> Env ModeSpec
   def addVariable modeSpec opInfo = {
       newSpec <- insert (specOf modeSpec) opInfo;
-      return (make newSpec (Id.insert (variables modeSpec) (name opInfo)))
+      return (make newSpec (IdSet.insert (variables modeSpec) (name opInfo)))
     }
 
-  op addProperty : ModeSpec -> Property -> SpecCalc.Env ModeSpec
+  op addProperty : ModeSpec -> Property -> Env ModeSpec
   def addProperty modeSpec property =
     return (modeSpec withSpec (insert (specOf modeSpec) property))
 
-  op elaborate : ModeSpec -> SpecCalc.Env ModeSpec
+  op elaborate : ModeSpec -> Env ModeSpec
   def elaborate modeSpec = {
       elabSpec <- Spec.elaborate (specOf modeSpec);
       return (modeSpec withSpec elabSpec)
