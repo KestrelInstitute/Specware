@@ -91,7 +91,7 @@ spec
 				 | _ -> None)
 			    | None -> None)
 		   (Some sb) decls
-	       of Some newsb -> maybeMkLetOrSubst(evalRec(body,sb,spc,depth+1),newsb,sb)
+	       of Some newsb -> maybeMkLetOrSubst(evalRec(body,newsb,spc,depth+1),newsb,sb)
 		| None -> Unevaluated t)
 	  | LetRec(decls, body, _) ->
 	    let ids = rev(map (fn ((v,_),_) -> v) decls) in
