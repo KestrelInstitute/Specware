@@ -160,7 +160,8 @@ with a loop or out of a conditional.
       else if member? (seen, first) then
         (cspc,Nop)
       else
-        % let _ = writeLine ("first = " ^ (Nat.toString first) ^ " seen = " ^ (Nat.toString seen)) in
+          % let _ = writeLine ("first = " ^ (Nat.toString first) ^ " seen = " ^ (Nat.toString seen)) in
+	  % let _ = toScreen ("\nNode " ^ (toString first) ^ " : " ^ (anyToString (nth (graph, first)))  ^ "\n") in
           case nodeContent (nth (graph, first)) of
 
             | Block {statements, next} -> 
@@ -226,6 +227,7 @@ with a loop or out of a conditional.
   op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> Boolean -> CSpec * CStmt
   def termToCStmtNew cspc spc term final? =
     let (cspc,block,stmt) =
+    %let _ = toScreen ("\nTerm: " ^ (ppFormat (ppATerm term)) ^ "\n") in
     case term of
       | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
           (case (lhs, final?) of
