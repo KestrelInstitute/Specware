@@ -85,8 +85,8 @@ $BATCH_LISP <<-XXXX
 	(load "$EXIT_ON_ERRORS") 
 	(load "$MEMORY_MANAGEMENT") 
 	(load "$SAVE_IMAGE") 
-	#+Allegro (compact-memory t 0 32000000) 
-	#+Allegro (set-gc-parameters-for-build nil) 
+	#+Allegro (compact-memory nil 0 32000000)   ; not verbose
+	#+Allegro (set-gc-parameters-for-build nil) ; not verbose
 	(let ((master-file "${MAIN_BUILD_FILE}"))
 	  (exiting-on-errors 
 	    (load master-file))
