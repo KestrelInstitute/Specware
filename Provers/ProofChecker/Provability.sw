@@ -304,7 +304,7 @@ spec
       (fa (cx:Context, t:Type, t1:Type, t2:Type, pos:Position, newT:Type)
          pj (wellFormedType (cx, t))
       && pj (typeEquivalence (cx, t1, t2))
-      && typeSubstInTypeAt (t, t1, t2, pos, newT)
+      && isTypeSubstInTypeAt (t, t1, t2, pos, newT)
       => pj (typeEquivalence (cx, t, newT)))
     | tyEqSumOrder ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, prm:Permutation)
@@ -677,7 +677,7 @@ spec
            newE:Expression, pos:Position)
          pj (theoreM (cx, oldE))
       && pj (theoreM (cx, e1 == e2))
-      && exprSubstAt (oldE, e1, e2, pos, newE)
+      && isExprSubstAt (oldE, e1, e2, pos, newE)
       && exprSubstAtOK? (oldE, e1, e2, pos)
       => pj (theoreM (cx, newE)))
     | thTypeSubstitution ->
@@ -685,7 +685,7 @@ spec
            newE:Expression)
          pj (theoreM (cx, oldE))
       && pj (typeEquivalence (cx, t1, t2))
-      && typeSubstInExprAt (oldE, t1, t2, pos, newE)
+      && isTypeSubstInExprAt (oldE, t1, t2, pos, newE)
       => pj (theoreM (cx, newE)))
     | thBoolean ->
       (fa (cx:Context, e:Expression, v:Variable)

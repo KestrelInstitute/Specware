@@ -64,9 +64,9 @@ spec
     | tyEqSymmetric         Proof
     | tyEqTransitive        Proof * Proof
     | tyEqSubstitution      Proof * Proof * Position
-    | tyEqSumOrder          Proof * FMap(Nat,Nat)
-    | tyEqRecordOrder       Proof * FMap(Nat,Nat)
-    | tyEqProductOrder      Proof * FMap(Nat,Nat)
+    | tyEqSumOrder          Proof * FSeq Nat
+    | tyEqRecordOrder       Proof * FSeq Nat
+    | tyEqProductOrder      Proof * FSeq Nat
     | tyEqSubPredicate      Proof * Proof * Proof
     | tyEqQuotientPredicate Proof * Proof * Proof
     % well-typed expressions:

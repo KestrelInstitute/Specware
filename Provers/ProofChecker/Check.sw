@@ -56,6 +56,13 @@ spec
     in
     aux (s, empty)
 
+  op checkPermutation : Nat -> FMap(Nat,Nat) -> MayFail Permutation
+  def checkPermutation len natMap =
+    FMap.foldDom
+      (natMap,
+      id : Nat -> Nat,
+      fn (perm : Nat -> Nat
+
   op checkExtraTypeVars : Context -> Context -> MayFail TypeVariables
   def checkExtraTypeVars cx1 cx2 =
     if length cx1 <= length cx2
@@ -87,6 +94,15 @@ spec
              if o1 = o then OK (tvS, t)
              else checkOpDecl (rtail cx) o
            | _ -> checkOpDecl (rtail cx) o
+
+  op checkTypeDef : Context -> TypeName -> MayFail (TypeVariables * Type)
+  def checkTypeDef cx tn =
+    if cx = empty then FAIL
+    else case first cx of
+           | typeDefinition(tn1,tvS,t) ->
+             if tn1 = tn then OK (tvS, t)
+             else checkTypeDef (rtail cx) tn
+           | _ -> checkTypeDef (rtail cx) tn
 
   op checkTypeSubstitution : TypeVariables -> Types -> MayFail TypeSubstitution
   def checkTypeSubstitution tvS tS =
@@ -124,6 +140,13 @@ spec
   op checkType?sWithContext : Context -> Proof?s -> MayFail Type?s
   def checkType?sWithContext cx prf?S =
     checkOptionSequence (map (mapOption (checkTypeWithContext cx), prf?S))
+
+  op checkSumType : Proof -> MayFail (Context * Constructors * Type?s)
+  def checkSumType prf =
+    case check prf of
+      | OK (wellFormedType (cx, sum (cS, t?S))) ->
+        if length cS = length t?S then OK (cx, cS, t?S) else FAIL
+      | _ -> FAIL
 
   op checkExpr : Proof -> MayFail (Context * Expression * Type)
   def checkExpr prf =
@@ -207,6 +230,238 @@ spec
         else FAIL
         else FAIL
       | _ -> FAIL
+
+
+  op checkTypeEquivalence : Proof -> MayFail (Context * Type * Type)
+  def checkTypeEquivalence prf =
+    case check prf of
+      | OK (typeEquivalence (cx, t1, t2)) -> OK (cx, t1, t2)
+      | _ -> FAIL
+
+  op checkTypeEquivalenceWithContext : Context -> Proof -> MayFail (Type * Type)
+  def checkTypeEquivalenceWithContext cx prf =
+    case check prf of
+      | OK (typeEquivalence (cx1, t1, t2)) ->
+        if cx1 = cx then OK (t1, t2) else FAIL
+      | _ -> FAIL
+
+  op typeSubstInTypeAt : Type       * Type * Type * Position -> MayFail Type
+  op typeSubstInExprAt : Expression * Type * Type * Position -> MayFail Expression
+  op typeSubstInPattAt : Pattern    * Type * Type * Position -> MayFail Pattern
+
+  def typeSubstInTypeAt(t,old,new,pos) =
+    if pos = empty then
+      if old = t then OK new
+      else FAIL
+    else
+      let i   = first pos in
+      let pos = rtail pos in
+      case t of
+        | arrow(t1,t2) ->
+          if i = 1 then
+            case typeSubstInTypeAt (t1, old, new, pos) of
+              | OK newT1 -> OK (arrow (newT1, t2))
+              | FAIL     -> FAIL
+          else if i = 2 then
+            case typeSubstInTypeAt (t2, old, new, pos) of
+              | OK newT2 -> OK (arrow (t1, newT2))
+              | FAIL     -> FAIL
+          else FAIL
+        | sum(cS,t?S) ->
+          if i < length t?S then
+            case t?S ! i of
+              | Some ti ->
+                (case typeSubstInTypeAt (ti, old, new, pos) of
+                   | OK newTi -> OK (sum (cS, update (t?S, i, Some newTi)))
+                   | FAIL     -> FAIL)
+              | None -> FAIL
+          else FAIL
+        | nary(tc,tS) ->
+          if i < length tS then
+            case typeSubstInTypeAt (tS!i, old, new, pos) of
+              | OK newTi -> OK (nary (tc, update (tS, i, newTi)))
+              | FAIL     -> FAIL
+          else FAIL
+        | subQuot(tc,t,e) ->
+          if i = 0 then
+            case typeSubstInTypeAt (t, old, new, pos) of
+              | OK newT -> OK (subQuot (tc, newT, e))
+              | FAIL    -> FAIL
+          else if i = 1 then
+            case typeSubstInExprAt (e, old, new, pos) of
+              | OK newE -> OK (subQuot (tc, t, newE))
+              | FAIL    -> FAIL
+          else FAIL
+        | _ -> FAIL
+
+  def typeSubstInExprAt(e,old,new,pos) =
+    if pos = empty then FAIL
+    else
+      let i   = first pos in
+      let pos = rtail pos in
+      case e of
+        | unary(eo,e) ->
+          if i = 0 then
+            case typeSubstInExprAt (e, old, new, pos) of
+              | OK newE -> OK (unary (eo, newE))
+              | FAIL    -> FAIL
+          else FAIL
+        | binary(eo,e1,e2) ->
+          if i = 1 then
+            case typeSubstInExprAt (e1, old, new, pos) of
+              | OK newE1 -> OK (binary (eo, newE1, e2))
+              | FAIL     -> FAIL
+          else if i = 2 then
+            case typeSubstInExprAt (e2, old, new, pos) of
+              | OK newE2 -> OK (binary (eo, e1, newE2))
+              | FAIL     -> FAIL
+          else FAIL
+        | ifThenElse(e0,e1,e2) ->
+          if i = 0 then
+            case typeSubstInExprAt (e0, old, new, pos) of
+              | OK newE0 -> OK (ifThenElse (newE0, e1, e2))
+              | FAIL     -> FAIL
+          else if i = 1 then
+            case typeSubstInExprAt (e1, old, new, pos) of
+              | OK newE1 -> OK (ifThenElse (e0, newE1, e2))
+              | FAIL     -> FAIL
+          else if i = 2 then
+            case typeSubstInExprAt (e2, old, new, pos) of
+              | OK newE2 -> OK (ifThenElse (e0, e1, newE2))
+              | FAIL     -> FAIL
+          else FAIL
+        | nary(eo,eS) ->
+          if i < length eS then
+            case typeSubstInExprAt (eS!i, old, new, pos) of
+              | OK newEi -> OK (nary (eo, update (eS, i, newEi)))
+              | FAIL     -> FAIL
+          else FAIL
+        | binding(eo,vS,tS,e) ->
+          if i = 0 then
+            case typeSubstInExprAt (e, old, new, pos) of
+              | OK newE -> OK (binding (eo, vS, tS, newE))
+              | FAIL    -> FAIL
+          else if i <= length tS then
+            case typeSubstInTypeAt (tS!(i-1), old, new, pos) of
+              | OK newTi -> OK (binding (eo, vS, update (tS, i-1, newTi), e))
+              | FAIL     -> FAIL
+          else FAIL
+        | opInstance(o,tS) ->
+          if i < length tS then
+            case typeSubstInTypeAt (tS!i, old, new, pos) of
+              | OK newTi -> OK (opInstance (o, update (tS, i, newTi)))
+              | FAIL     -> FAIL
+          else FAIL
+        | embedder(t,c) ->
+          if i = 0 then
+            case typeSubstInTypeAt (t, old, new, pos) of
+              | OK newT -> OK (embedder (newT, c))
+              | FAIl    -> FAIL
+          else FAIL
+        | casE(e,pS,eS) ->
+          if i = 0 then
+            case typeSubstInExprAt (e, old, new, pos) of
+              | OK newE -> OK (casE (newE, pS, eS))
+              | FAIL    -> FAIL
+          else if i rem 2 = 1 then  % i.e. i is odd
+            let j:Nat = i div 2 in
+            if j < length pS then
+              case typeSubstInPattAt (pS!j, old, new, pos) of
+                | OK newPj -> OK (casE (e, update (pS, j, newPj), eS))
+                | FAIL     -> FAIL
+            else FAIL
+          else if i rem 2 = 0 then  % i.e. i is even
+            let j:Nat = i div 2 in
+            if j < length eS then
+              case typeSubstInExprAt (eS!j, old, new, pos) of
+                | OK newEj -> OK (casE (e, pS, update (eS, j, newEj)))
+                | FAIL     -> FAIL
+            else FAIL
+          else FAIL
+        | recursiveLet(vS,tS,eS,e) ->
+          if i = 0 then
+            case typeSubstInExprAt (e, old, new, pos) of
+              | OK newE -> OK (recursiveLet (vS, tS, eS, newE))
+              | FAIL    -> FAIL
+          else if i rem 2 = 0 then  % i.e. i is odd
+            let j:Nat = i div 2 in
+            if j < length tS then
+              case typeSubstInTypeAt (tS!j, old, new, pos) of
+                | OK newTj -> OK (recursiveLet (vS, update (tS, j, newTj), eS, e))
+                | FAIL     -> FAIL
+            else FAIL
+          else if i rem 2 = 0 then  % i.e. i is even
+            let j:Nat = i div 2 in
+            if j < length eS then
+              case typeSubstInExprAt (eS!j, old, new, pos) of
+                | OK newEj -> OK (recursiveLet (vS, tS, update (eS, j, newEj), e))
+                | FAIL     -> FAIL
+            else FAIL
+          else FAIL
+        | nonRecursiveLet(p,e,e1) ->
+          if i = 0 then
+            case typeSubstInPattAt (p, old, new, pos) of
+              | OK newP -> OK (nonRecursiveLet (newP, e, e1))
+              | FAIL    -> FAIL
+          else if i = 1 then
+            case typeSubstInExprAt (e, old, new, pos) of
+              | OK newE -> OK (nonRecursiveLet (p, newE, e1))
+              | FAIL    -> FAIL
+          else if i = 2 then
+            case typeSubstInExprAt (e1, old, new, pos) of
+              | OK newE1 -> OK (nonRecursiveLet (p, e, newE1))
+              | FAIL     -> FAIL
+          else FAIL
+        | _ -> FAIL
+
+  def typeSubstInPattAt(p,old,new,pos) =
+    if pos = empty then FAIL
+    else
+      let i   = first pos in
+      let pos = rtail pos in
+      case p of
+        | variable(v,t) ->
+          if i = 0 then
+            case typeSubstInTypeAt (t, old, new, pos) of
+              | OK newT -> OK (variable (v, newT))
+              | FAIL    -> FAIL
+          else FAIL
+        | embedding(t,c,p?) ->
+          if i = 0 then
+            case typeSubstInTypeAt (t, old, new, pos) of
+              | OK newT -> OK (embedding (newT, c, p?))
+              | FAIL    -> FAIL
+          else
+            (case p? of
+               | Some p ->
+                 if i = 1 then
+                   case typeSubstInPattAt (p, old, new, pos) of
+                     | OK newP -> OK (embedding (t, c, Some newP))
+                     | FAIL    -> FAIL
+                 else FAIL
+               | None -> FAIL)
+        | record(fS,pS) ->
+          if i < length pS then
+            case typeSubstInPattAt (pS!i, old, new, pos) of
+              | OK newPi -> OK (record (fS, update (pS, i, newPi)))
+              | FAIL     -> FAIL
+          else FAIL
+        | tuple pS ->
+          if i < length pS then
+            case typeSubstInPattAt (pS!i, old, new, pos) of
+              | OK newPi -> OK (tuple (update (pS, i, newPi)))
+              | FAIL     -> FAIL
+          else FAIL
+        | alias(v,t,p) ->
+          if i = 0 then
+            case typeSubstInTypeAt (t, old, new, pos) of
+              | OK newT -> OK (alias (v, newT, p))
+              | FAIL    -> FAIL
+          else if i = 1 then
+            case typeSubstInPattAt (p, old, new, pos) of
+              | OK newP -> OK (alias (v, t, newP))
+              | FAIL    -> FAIL
+          else FAIL
 
 
   def check = fn
@@ -363,5 +618,141 @@ spec
       | _ -> FAIL)
       | _ -> FAIL)
 
+    %%%%%%%%%% type equivalence:
+    | tyEqDef (prfCx, prfTyS, tn) ->
+      (case checkContext prfCx of OK cx ->
+      (case checkTypeDef cx tn of OK (tvS, t) ->
+      (case checkTypesWithContext cx prfTyS of OK tS ->
+      (case checkTypeSubstitution tvS tS of OK tsbs ->
+      OK (typeEquivalence (cx, TYPE tn tS, typeSubstInType tsbs t))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | tyEqReflexive prf ->
+      (case checkType prf of OK (cx, t) ->
+      OK (typeEquivalence (cx, t, t))
+      | _ -> FAIL)
+    | tyEqSymmetric prf ->
+      (case checkTypeEquivalence prf of OK (cx, t1, t2) ->
+      OK (typeEquivalence (cx, t2, t1))
+      | _ -> FAIL)
+    | tyEqTransitive (prf1, prf2) ->
+      (case checkTypeEquivalence prf1 of OK (cx, t1, t2) ->
+      (case checkTypeEquivalenceWithContext cx prf2 of OK (t, t3) ->
+      if t = t2 then
+      OK (typeEquivalence (cx, t1, t3))
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | tyEqSubstitution (prfTy, prfTyEq, pos) ->
+      (case checkType prfTy of OK (cx, t) ->
+      (case checkTypeEquivalenceWithContext cx prfTyEq of OK (t1, t2) ->
+      (case typeSubstInTypeAt (t, t1, t2, pos) of OK newT ->
+      OK (typeEquivalence (cx, t, newT))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+(*
+    | tyEqSumOrder (prf, iS) ->
+      (case checkSumType prf of OK (cx, cS, t?S) ->
+
+
+         pj (wellFormedType (cx, SUM cS t?S))
+      && length cS = length t?S
+      && permutationForLength? (prm, length cS)
+      => pj (typeEquivalence
+               (cx, SUM cS t?S, SUM (permute(cS,prm)) (permute(t?S,prm)))))
+
+    | tyEqRecordOrder       Proof * FMap(Nat,Nat)
+    | tyEqProductOrder      Proof * FMap(Nat,Nat)
+    | tyEqSubPredicate      Proof * Proof * Proof
+    | tyEqQuotientPredicate Proof * Proof * Proof
+    % well-typed expressions:
+    | exVariable             Proof * Variable
+    | exTrue                 Proof
+    | exFalse                Proof
+    | exRecordProjection     Proof * Field
+    | exTupleProjection      Proof * PosNat
+    | exRelaxator            Proof
+    | exQuotienter           Proof
+    | exNegation             Proof
+    | exApplication          Proof * Proof
+    | exEquation             Proof * Proof
+    | exInequation           Proof * Proof
+    | exRecordUpdate         Proof * Proof
+    | exRestriction          Proof * Proof * Proof
+    | exChoice               Proof * Proof * Proof
+    | exConjunction          Proof * Proof
+    | exDisjunction          Proof * Proof
+    | exImplication          Proof * Proof
+    | exEquivalence          Proof * Proof
+    | exRecord               Proof * Proofs
+    | exTuple                Proof * Proofs
+    | exAbstraction          Proof * Nat
+    | exUniversal            Proof
+    | exExistential          Proof
+    | exExistential1         Proof
+    | exIfThenElse           Proof * Proof * Proof
+    | exOpInstance           Proof * Proofs * Operation
+    | exEmbedder0            Proof * Constructor
+    | exEmbedder1            Proof * Constructor
+    | exCase                 Proof * Proofs * Proof * Proofs
+    | exRecursiveLet         Proof * Proof
+    | exNonRecursiveLet      Proof
+    | exEquivalentTypes      Proof * Proof
+    | exAlphaAbstraction     Proof * Variable * Variable
+    | exAlphaCase            Proof * Nat * Variable * Variable
+    | exAlphaRecursiveLet    Proof * Variable * Variable
+    % well-typed patterns:
+    | paVariable        Proof * Variable
+    | paEmbedding0      Proof * Constructor
+    | paEmbedding1      Proof * Proof * Constructor
+    | paRecord          Proof * Proofs
+    | paTuple           Proof * Proofs
+    | paAlias           Proof * Variable
+    | paEquivalentTypes Proof * Proof
+    % theorems:
+    | thAxiom                       Proof * Proofs * TypeVariables * AxiomName
+    | thOpDef                       Proof * Proofs * Operation
+    | thSubstitution                Proof * Proof * Position
+    | thTypeSubstitution            Proof * Proof * Position
+    | thBoolean                     Proof * Variable
+    | thCongruence                  Proof * Proof * Proof
+    | thExtensionality              Proof * Proof * Variable
+    | thAbstraction                 Proof
+    | thIfThenElse                  Proof * Proof * Proof
+    | thRecord                      Proof * Variable * Variables
+    | thTuple                       Proof * Variable * Variables
+    | thRecordProjection            Proof * Field
+    | thTupleProjection             Proof * PosNat
+    | thRecordUpdate1               Proof * Proof * Field
+    | thRecordUpdate2               Proof * Proof * Field
+    | thEmbedderSurjective          Proof * Constructor * Variable * Variable
+    | thEmbeddersDistinct           Proof * Constructor * Constructor
+                                          * Variable? * Variable?
+    | thEmbedderInjective           Proof * Constructor * Variable * Variable
+    | thRelaxatorSatisfiesPredicate Proof * Variable
+    | thRelaxatorInjective          Proof * Variable * Variable
+    | thRelexatorSurjective         Proof * Variable * Variable
+    | thRestriction                 Proof * Variable
+    | thQuotienterSurjective        Proof * Variable * Variable
+    | thQuotienterEquivClass        Proof * Variable * Variable
+    | thChoice                      Proof * Variable
+    | thCase                        Proof * Proofs
+    | thRecursiveLet                Proof * Proof
+    | thAbbrevTrue                  Proof * Variable
+    | thAbbrevFalse                 Proof * Variable
+    | thAbbrevNegation              Proof
+    | thAbbrevInequation            Proof
+    | thAbbrevConjunction           Proof
+    | thAbbrevDisjunction           Proof
+    | thAbbrevImplication           Proof
+    | thAbbrevEquivalence           Proof
+    | thAbbrevUniversal             Proof
+    | thAbbrevExistential           Proof
+    | thAbbrevExistential1          Proof * Variables
+    | thAbbrevNonRecursiveLet       Proof
+*)
 
 endspec
