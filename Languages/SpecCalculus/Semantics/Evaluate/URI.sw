@@ -196,24 +196,31 @@ handled correctly.
 \begin{spec}
   op loadFile : URI -> String -> Env ()
   def loadFile uri fileName = %{
-      % print ("Loading: " ^ fileName ^ "\n");
-      case (parseFile fileName) of
-        | None -> raise (ParserError fileName)
-        | Some specFile -> 
-           (case (valueOf specFile) of
-             | Term term ->
-                 { saveURI <- getCurrentURI;
-                   saveLocalContext <- getLocalContext;
-                   setCurrentURI uri;
-                   clearLocalContext;
-                   bindInGlobalContext uri (InProcess,0,[]);
-                   (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
-                   setCurrentURI saveURI;
-                   setLocalContext saveLocalContext;
-                   bindInGlobalContext uri
-                     (value,max(timeStamp,fileWriteTime fileName),depURIs)
-                 }
-             | Decls decls -> evaluateGlobalDecls uri fileName decls)
+    % print ("Loading: " ^ fileName ^ "\n");
+    case (parseFile fileName) of
+      | None -> raise (ParserError fileName)
+      | Some specFile -> 
+	(case (valueOf specFile) of
+	   | Term term ->
+	     %% This test fixes Bug 002: "Processing a non-existent spec in existent file does not produce any errors"
+  	     (case uri.hashSuffix of
+		| Some name -> 
+		  %%  Loading Foo#Bogus is an error if Foo contains just a term (as opposed to decls).
+                  %%  We assume the caller of loadFile (e.g. searchFileSystemForURI) will raise an
+		  %%   exception when it cannot find the uri.
+		  return ()
+		| _ -> 
+		  { saveURI <- getCurrentURI;
+		    saveLocalContext <- getLocalContext;
+		    setCurrentURI uri;
+		    clearLocalContext;
+		    bindInGlobalContext uri (InProcess,0,[]);
+		    (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
+		    setCurrentURI saveURI;
+		    setLocalContext saveLocalContext;
+		    bindInGlobalContext uri (value, max(timeStamp,fileWriteTime fileName), depURIs)
+		   })
+	   | Decls decls -> evaluateGlobalDecls uri fileName decls)
   %  }
 
   op evaluateGlobalDecls : URI -> String -> List (Decl Position) -> Env ()
