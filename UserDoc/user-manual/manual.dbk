@@ -10,10 +10,8 @@
  <!ENTITY emacs SYSTEM "emacs.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
- <!ENTITY V "4.0">
- <!ENTITY VVV "4.0.1">
+ <!ENTITY V "4.1">
  <!ENTITY SpecwareV "&Specware; &V;">
- <!ENTITY SpecwareVVV "&Specware; &VVV;">
  <!ENTITY Metaslang "Metaslang">
  <!ENTITY lt "&#60;">
  <!ENTITY gt "&#62;">
@@ -25,11 +23,11 @@
 
 <bookinfo>
   <copyright>
-     <year>2001, 2002</year>
+     <year>2001-2004</year>
      <holder>Kestrel Development Corporation</holder>
   </copyright>
   <copyright>
-     <year>2001, 2002</year>
+     <year>2001-2004</year>
      <holder>Kestrel Technology LLC</holder>
   </copyright>
 
