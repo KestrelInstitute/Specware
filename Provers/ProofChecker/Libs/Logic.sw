@@ -92,7 +92,6 @@ Logic qualifying spec
   % assertions:
   %%%%%%%%%%%%%
 
-  op assert : [a] {b : Boolean | b = true} -> a -> a
-  def assert a x = x
+  op assert : {b : Boolean | b = true} -> ()
 
 endspec 

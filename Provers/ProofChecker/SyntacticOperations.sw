@@ -701,35 +701,35 @@ spec
     else let i = first pos in
          let pos = rtail pos in
          case e of
-           | unary(_,e)              -> assert (i = 0)
-                                        (captVarsAt(pos,e))
+           | unary(_,e)              -> (assert (i = 0);
+                                         captVarsAt(pos,e))
            | binary(_,e1,e2)         -> if i = 1 then captVarsAt(pos,e1)
-                                   else assert (i = 2) (captVarsAt(pos,e2))
+                                   else (assert (i = 2); captVarsAt(pos,e2))
            | ifThenElse(e0,e1,e2)    -> if i = 0 then captVarsAt(pos,e0)
                                    else if i = 1 then captVarsAt(pos,e1)
-                                   else assert (i = 2) (captVarsAt(pos,e2))
-           | nary(_,eS)              -> assert (1 <= i && i <= length eS)
-                                        (captVarsAt (pos, eS elem (i-1)))
-           | binding(_,bvS,e)        -> assert (i = 0)
-                                        (let (vS, _) = unzip bvS in
+                                   else (assert (i = 2); captVarsAt(pos,e2))
+           | nary(_,eS)              -> (assert (1 <= i && i <= length eS);
+                                         captVarsAt (pos, eS elem (i-1)))
+           | binding(_,bvS,e)        -> (assert (i = 0);
+                                         let (vS, _) = unzip bvS in
                                          captVarsAt(pos,e) \/ toSet vS)
            | cas(e,branches)         -> if i = 0 then captVarsAt(pos,e)
                                         else
-                                          assert (1 <= i && i <= length branches)
-                                          (let (pS, eS) = unzip branches in
+                                          (assert (1 <= i && i <= length branches);
+                                           let (pS, eS) = unzip branches in
                                            pattVars (pS elem (i-1)) \/
                                            captVarsAt (pos, eS elem (i-1)))
            | recursiveLet(bvS,eS,e)  -> let (vS, _) = unzip bvS in
                                         if i = 0
                                         then toSet vS \/ captVarsAt(pos,e)
                                         else
-                                          assert (1 <= i && i <= length bvS)
-                                          (toSet vS \/
+                                          (assert (1 <= i && i <= length bvS);
+                                           toSet vS \/
                                            captVarsAt (pos, eS elem (i-1)))
            | nonRecursiveLet(p,e,e1) -> if i = 0 then captVarsAt(pos,e)
                                         else
-                                          assert (i = 1)
-                                          (pattVars p \/ captVarsAt(pos,e1))
+                                          (assert (i = 1);
+                                           pattVars p \/ captVarsAt(pos,e1))
 
   op exprSubstAtOK? : Expression * Expression * Expression * Position -> Boolean
   def exprSubstAtOK?(e,old,new,pos) =
