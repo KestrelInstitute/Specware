@@ -38,13 +38,24 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      * the "lost" parent.
      */
     protected XContainerNode lostParentAfterCloning = null;
-
+    
     protected Dimension offsetToLastParent = null;
-
+    
     protected boolean isEditable = true;
     
     protected Rectangle savedBounds;
     protected boolean saveViewData = true;
+    
+    /** inner class used as return type
+     */
+    protected class XNodeEdgePair {
+        public XNode node;
+        public XEdge edge;
+        public XNodeEdgePair(XNode node, XEdge edge) {
+            this.node = node;
+            this.edge = edge;
+        }
+    }
     
     public XNode() {
         this(null);
@@ -169,7 +180,9 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      * to return instances of sub-classes of ModelNode.
      */
     public ModelNode createModelNode() {
-        return new ModelNode();
+        ModelNode mnode = new ModelNode();
+        mnode.setValue(getUserObject());
+        return mnode;
     }
     
     /** returns the XEdge object that is connected to this node and has the given ModelEdge as its model element;
@@ -270,7 +283,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         add(new DefaultPort());
         addPorts(m);
     }
-
+    
     public void setBoundsHook(XGraphDisplay graph, XGraphElementView viewObject, Rectangle bounds) {
     }
     
@@ -342,6 +355,10 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         setGraph(null);
     }
     
+    /** returns the sibling nodes of this node, i.e. the nodes that are on the same level as this one. This are either
+     * other root node of the graph, if this node is a root node, or the other direct child nodes of the node's parent container
+     * node.
+     */
     public XNode[] getSiblings(GraphModel model) {
         ArrayList siblAL = new ArrayList();
         TreeNode parent = getParent();
@@ -619,6 +636,89 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         return edges;
     }
     
+    /** returns the array of incoming and outgoing edges. This method is overwritten in XContainerNode and can be used as a way to
+     * retrieve all edges leaving the node, either from inside the node or from the node itself.
+     */
+    public XEdge[] getConnectedEdges() {
+        return getEdges(INCOMING_AND_OUTGOING);
+    }
+    
+    protected XNodeEdgePair[] getConnectedEdges_internal() {
+        XEdge[] edges = getConnectedEdges();
+        XNodeEdgePair[] res = new XNodeEdgePair[edges.length];
+        for(int i=0;i<edges.length;i++) {
+            res[i] = new XNodeEdgePair(this,edges[i]);
+        }
+        return res;
+    }
+    
+    /** returns the siblings of this node with have an edge connecting to either this node itself or one of the inner nodes, if this is a container node.
+     */
+    public XNode[] getConnectedSiblings() {
+        XNodeEdgePair[] nodeEdgePairs = getConnectedEdges_internal();
+        ArrayList list = new ArrayList();
+        for(int i=0;i<nodeEdgePairs.length;i++) {
+            XNode node = nodeEdgePairs[i].node;
+            XEdge edge = nodeEdgePairs[i].edge;
+            XNode connectedNode = edge.getConnectedNode(node);
+            while (connectedNode != null && !isSiblingOf(connectedNode)) {
+                connectedNode = connectedNode.getParentNode();
+            }
+            if (connectedNode != null) {
+                if (!list.contains(connectedNode)) {
+                    list.add(connectedNode);
+                }
+            }
+        }
+        XNode[] res = new XNode[list.size()];
+        list.toArray(res);
+        return res;
+    }
+    
+    /** returns all siblings that are connected directly or indirectly to this node.
+     */
+    public XNode[] getConnectedSiblingsClosure() {
+        ArrayList processed = new ArrayList();
+        ArrayList sibnodes = getConnectedSiblingsClosure_internal(processed);
+        sibnodes.remove(this);
+        XNode[] res = new XNode[sibnodes.size()];
+        sibnodes.toArray(res);
+        return res;
+    }
+    
+    private ArrayList getConnectedSiblingsClosure_internal(ArrayList processed) {
+        processed.add(this);
+        ArrayList res = new ArrayList();
+        XNode[] dnodes = getConnectedSiblings();
+        for(int i=0;i<dnodes.length;i++) {
+            if (!res.contains(dnodes[i])) {
+                res.add(dnodes[i]);
+            }
+            if (!processed.contains(dnodes[i])) {
+                ArrayList subres = dnodes[i].getConnectedSiblingsClosure_internal(processed);
+                Iterator iter = subres.iterator();
+                while(iter.hasNext()) {
+                    XNode n = (XNode)iter.next();
+                    if (!res.contains(n)) {
+                        res.add(n);
+                    }
+                }
+            }
+        }
+        return res;
+    }
+    
+    /** return whether or not this node is a sibling of anotherNode.
+     */
+    public boolean isSiblingOf(XNode anotherNode) {
+        if (anotherNode == null) return false;
+        XContainerNode parent = getParentNode();
+        XContainerNode parentOfAnotherNode = anotherNode.getParentNode();
+        if (parent == null) {
+            return parentOfAnotherNode == null;
+        }
+        return parent.equals(parentOfAnotherNode);
+    }
     
     /** returns the Least Common Ancestor of this node and the node given as argument; if they don't share a common ancestor,
      * null is returned. */
