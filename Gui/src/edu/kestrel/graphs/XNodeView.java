@@ -285,6 +285,16 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
                 Rectangle oldbounds = new Rectangle(b);
                 b = new Rectangle(b.x+bw,b.y+bw,(int)(textDimension.width*scale),(int)(textDimension.height*scale));
                 b.grow(bw,bw);
+                if (b.width < viewOptions.minimumWidth)
+                    b.width = viewOptions.minimumWidth;
+                if (b.height < viewOptions.minimumHeight)
+                    b.height = viewOptions.minimumHeight;
+                if (!viewOptions.getBoundsAreAdjustedExactlyToText()) {
+                    if (oldbounds.width > b.width)
+                        b.width = oldbounds.width;
+                    if (oldbounds.height > b.height)
+                        b.height = oldbounds.height;
+                }
                 setBounds(b);
                 return !oldbounds.equals(b);
             }
@@ -322,6 +332,13 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         final public int TEXT_SCALES_TO_BOUNDS = 0;
         final public int BOUNDS_ARE_ADJUSTED_TO_TEXT = 1;
         final public int TEXT_IS_CUT = 2;
+        
+        /**
+         * this flag is used, if the text display option is set to <code>BOUNDS_ARE_ADJUSTED_TO_TEXT</code>. If this flag is
+         * true, it means that the bounds of the box are exactly the bounds of the text. If it is false, the bounds of the box
+         * are at least the bounds of the text, meaning that the box may be bigger than the text.
+         */
+        boolean BOUNDS_ARE_EXACTLY_ADJUSTED_TO_TEXT = true;
         
         boolean useGradientPaint = false;
         Color gradientPaintTopLeftColor;
@@ -481,6 +498,16 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         
         public int getTextDisplayOption() {
             return textDisplayOption;
+        }
+        
+        /** set the flag controlling the behaviour, if the text display option is set to BOUNDS_ARE_ADJUSTED_TO_TEXT.
+         */
+        public void setBoundsAreAdjustedExactlyToText(boolean b) {
+            BOUNDS_ARE_EXACTLY_ADJUSTED_TO_TEXT = b;
+        }
+        
+        public boolean getBoundsAreAdjustedExactlyToText() {
+            return BOUNDS_ARE_EXACTLY_ADJUSTED_TO_TEXT;
         }
         
         /** sets the internal border width that is used for container nodes when they are expanded; default 20.
