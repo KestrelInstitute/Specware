@@ -65,22 +65,23 @@
     (format t "~&;;; (room) after setting parameters for normal use:~%")
     (room)))
 
-(defun compact-memory (&optional verbose? (fence -1) (old 16000000))
+(defun compact-memory (&optional verbose? (fence -1) (old 0))
   (format t "~3%;;; Restructure memory to compact old spaces, etc.~2%")
   (when verbose?
     (format t "~&;;; (room) before compacting.~%")
     (room))
-  (gc)
-  (gc t)
   #+Allegro (progn
-	      (sys::resize-areas :verbose        verbose?
-				 :global-gc      t   ; first, trigger global gc to compact oldspace
-				 :tenure         t   ; second, move data from newspace into oldspace
-				 :sift-old-areas t   ; third, combine adjacent oldspaces
-				 :pack-heap      nil ; do not make topmost oldspace as small as possible
-				 :expand         t   ; expand oldspace if necessary, as follows:
-				 :old            old ; last, make oldspace at least this large
-				 )
+	      (dotimes (i 4)
+		(dotimes (j 30) (gc :tenure))
+		(dotimes (j  4) (gc t))
+		(sys::resize-areas :verbose        verbose?
+				   :global-gc      t ; first, trigger global gc to compact oldspace
+				   :tenure         t ; second, move data from newspace into oldspace
+				   :sift-old-areas t ; third, combine adjacent oldspaces
+				   :pack-heap      t ; make topmost oldspace as small as possible
+				   :expand         t ; expand oldspace if necessary, as follows:
+				   :old            old ; last, make oldspace at least this large
+				   ))
 	      (when verbose?
 		(format t "~&;;; (room) after resize-areas:~%")
 		(room))
