@@ -202,6 +202,26 @@ FSeq qualifying spec
   op repeat : [a] a -> Nat -> FSeq a
   def repeat x n = seq (fn(i:Nat) -> if i < n then Some x else None)
 
+  % extend sequence leftward to length `n', filling with `x':
+  op extendLeft : [a] {(s,x,n) : FSeq a * a * Nat | n >= length s} -> FSeq a
+  def extendLeft(s,x,n) = repeat x (n - length s) ++ s
+
+  % extend sequence rightward to length `n', filling with `x':
+  op extendRight : [a] {(s,x,n) : FSeq a * a * Nat | n >= length s} -> FSeq a
+  def extendRight(s,x,n) = s ++ repeat x (n - length s)
+
+  % extend shorter sequence to length of longer sequence, leftward:
+  op equiExtendLeft : [a] FSeq a * FSeq a * a -> FSeq a * FSeq a
+  def equiExtendLeft(s1,s2,x) =
+    if length s1 < length s2 then (extendLeft (s1, x, length s2), s2)
+    else (* length s1 >= length s2 *) (s1, extendLeft (s2, x, length s1))
+
+  % extend shorter sequence to length of longer sequence, rightward:
+  op equiExtendRight : [a] FSeq a * FSeq a * a -> FSeq a * FSeq a
+  def equiExtendRight(s1,s2,x) =
+    if length s1 < length s2 then (extendRight (s1, x, length s2), s2)
+    else (* length s1 >= length s2 *) (s1, extendRight (s2, x, length s1))
+
   op reverse : [a] FSeq a -> FSeq a
   def reverse s = seq (fn(i:Nat) ->
     if i < length s then Some (s @ (length s - i - 1)) else None)

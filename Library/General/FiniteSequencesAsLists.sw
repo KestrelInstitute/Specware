@@ -183,6 +183,22 @@ FSeq qualifying spec
   op repeat : [a] a -> Nat -> FSeq a
   def repeat x n = tabulate (n, fn(i:Nat) -> x)
 
+  op extendLeft : [a] {(s,x,n) : FSeq a * a * Nat | n >= length s} -> FSeq a
+  def extendLeft(s,x,n) = repeat x (n - length s) ++ s
+
+  op extendRight : [a] {(s,x,n) : FSeq a * a * Nat | n >= length s} -> FSeq a
+  def extendRight(s,x,n) = s ++ repeat x (n - length s)
+
+  op equiExtendLeft : [a] FSeq a * FSeq a * a -> FSeq a * FSeq a
+  def equiExtendLeft(s1,s2,x) =
+    if length s1 < length s2 then (extendLeft (s1, x, length s2), s2)
+    else (s1, extendLeft (s2, x, length s1))
+
+  op equiExtendRight : [a] FSeq a * FSeq a * a -> FSeq a * FSeq a
+  def equiExtendRight(s1,s2,x) =
+    if length s1 < length s2 then (extendRight (s1, x, length s2), s2)
+    else (s1, extendRight (s2, x, length s1))
+
   op reverse : [a] FSeq a -> FSeq a
   def reverse = List.rev
 
