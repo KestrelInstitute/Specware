@@ -198,23 +198,23 @@ it easy to experiment with different UnitId path resolution strategies..
 	 currentPathAlias <- return(pathAlias currentPath);
 	 root       <- removeLast currentPath;
 	 root_alias <- removeLast currentPathAlias;
-	 if shadow_uids? && currentPathAlias ~= currentPath then
-	   case (currentPathAlias,currentSuffix,newPath,newSuffix) of
-	     | (_,Some _,[elem],None) ->
-	       return [normalizeUID {path=currentPathAlias,hashSuffix=Some elem},
-		       normalizeUID {path=root++newPath,hashSuffix=None},
-		       normalizeUID {path=currentPath,hashSuffix=Some elem},
-		       normalizeUID {path=root++newPath,hashSuffix=None}]
+	 if currentPathAlias ~= currentPath then
+	   case (currentPathAlias, currentSuffix, newPath, newSuffix) of
+	     | (_, Some _, [elem], None) ->
+	       return [normalizeUID {path = currentPathAlias,      hashSuffix = Some elem},
+		       normalizeUID {path = root_alias ++ newPath, hashSuffix = None},
+		       normalizeUID {path = currentPath,           hashSuffix = Some elem},
+		       normalizeUID {path = root       ++ newPath, hashSuffix = None}]
 	     | (_,_,_,_) -> 
-	       return [normalizeUID {path=root_alias++newPath,hashSuffix=newSuffix},
-		       normalizeUID {path=root++newPath,hashSuffix=newSuffix}]
+	       return [normalizeUID {path = root_alias ++ newPath, hashSuffix = newSuffix},
+		       normalizeUID {path = root       ++ newPath, hashSuffix = newSuffix}]
 	 else
-	   case (currentPathAlias,currentSuffix,newPath,newSuffix) of
-	     | (_,Some _,[elem],None) ->
-	       return [normalizeUID {path=currentPathAlias,hashSuffix=Some elem},
-		       normalizeUID {path=root++newPath,hashSuffix=None}]
+	   case (currentPathAlias, currentSuffix, newPath, newSuffix) of
+	     | (_, Some _, [elem], None) ->
+	       return [normalizeUID {path = currentPathAlias,      hashSuffix = Some elem},
+		       normalizeUID {path = root_alias ++ newPath, hashSuffix = None}]
 	     | (_,_,_,_) -> 
-	       return [normalizeUID {path=root++newPath,hashSuffix=newSuffix}]
+	       return [normalizeUID {path = root_alias ++ newPath, hashSuffix = newSuffix}]
          }
 
   %% this is set by norm-unitid-str in toplevel.lisp
