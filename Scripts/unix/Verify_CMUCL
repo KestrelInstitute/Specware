@@ -3,7 +3,7 @@
 
 SCRIPTDIR=`/usr/bin/dirname $0`
 
-export LISP_MODE="CMU"
+export LISP_MODE="CMUCL"
 export FASL_EXTENSION="x86f"
 export IMAGE_EXTENSION="cmuimage"
 export EXECUTABLE_EXTENSION="cmuimage"
@@ -23,7 +23,7 @@ if [ -z "$LISP" ]; then
   exit 1
 fi
 
-export LISP_VERSION="CMU"
+export LISP_VERSION="CMUCL"
 export BATCH_LISP="$LISP -batch"
 export BATCH_SPECWARE="$LISP -core $SPECWARE4/Applications/Specware/bin/linux/Specware4.${IMAGE_EXTENSION} -batch"
 
