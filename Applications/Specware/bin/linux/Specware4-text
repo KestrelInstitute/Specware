@@ -1,4 +1,0 @@
-#!/bin/sh
-
-LISP=${LISP:-/usr/local/acl/acl61/alisp}
-$LISP -I $SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl
