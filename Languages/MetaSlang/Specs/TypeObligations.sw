@@ -52,7 +52,7 @@ spec
      | _ -> (cons(Cond cond,ds),tvs,spc,qid,name,names)
  def insert((x,srt),(ds,tvs,spc,qid,name,names))  = 
      let ds = cons(Var(x,srt),ds) in
-     let gamma = (ds,tvs,spc,qid,name,names) in
+     let gamma = (ds,tvs,spc,qid,name,StringSet.add(names,x)) in
      let gamma = assertSubtypeCond(mkVar(x,srt),srt,gamma) in
      gamma
 % Subsort conditions:
@@ -152,6 +152,27 @@ spec
  def freshName((decls,_,_,_,opName,names),name) = 
      let name = StringUtilities.freshName(name,names) in
      name
+
+ op  freshVar: Id * Sort * Gamma -> MS.Term * Gamma
+ def freshVar(name0,sigma1,gamma) =
+   let x = freshName(gamma,name0) in
+   let xVar   = Var((x,sigma1),noPos) in
+   let gamma1 = insert((x,sigma1),gamma) in
+   (xVar,gamma1)
+
+ %%% If sigma1 is a product produce a product of new vars
+ op  freshVars: Id * Sort * Gamma -> MS.Term * Gamma
+ def freshVars(name0,sigma1,gamma) =
+   case sigma1 of
+     | Product(prs,_) ->
+       let (vsprs,rgamma)
+          = foldl (fn ((id,s),(vs,gamma)) ->
+		   let (nv,ngamma) = freshVar(name0,s,gamma) in
+		   (cons((id,nv),vs),ngamma))
+              ([],gamma) prs
+       in
+       (mkRecord(rev vsprs),rgamma)
+     | _ -> freshVar(name0,sigma1,gamma)
 
 % check type well formedness as well...
 
@@ -547,12 +568,10 @@ spec
 	| _ ->
      case (tau1,sigma1)
        of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) -> 
-	  let x = freshName(gamma,"F") in
-          let xVar   = Var((x,sigma1),noPos) in
-          let gamma1 = insert((x,sigma1),gamma) in
-          let tcc    = subtypeRec(pairs,tcc,gamma1,xVar,sigma1,tau1) in
+          let (xVarTm,gamma1) = freshVars("X",sigma1,gamma) in
+          let tcc    = subtypeRec(pairs,tcc,gamma1,xVarTm,sigma1,tau1) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,
-				  mkLetOrApply(M,xVar),tau2,sigma2) in
+				  mkLetOrApply(M,xVarTm),tau2,sigma2) in
 	  tcc
         | (Product(fields1,_),Product(fields2,_)) -> 
 	  let tcc = ListPair.foldl 
