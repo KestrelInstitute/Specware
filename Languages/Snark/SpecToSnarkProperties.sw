@@ -29,6 +29,12 @@ snark qualifying spec
   op snark_prove: LispCell
   def snark_prove = Lisp.symbol("SNARK","PROVE")
 
+  op snarkSortId: Id -> Id
+  def snarkSortId(id) =
+    case id of
+      | "X" -> "snark_X"
+      | _ -> id
+  
   def snarkPBaseSort(spc, s:Sort, rng?):LispCell = 
 	          case s of
 		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
@@ -39,8 +45,8 @@ snark qualifying spec
                       %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
 		      %let _ = if specwareDebug? then  writeLine("") else () in
 		      res   %findPBuiltInSort(spc, Qualified(qual,id), rng?)
-		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
-                                                       else Lisp.symbol("SNARK",id)
+		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
+                                                       else Lisp.symbol("SNARK",snarkSortId(id))
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
 		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
 		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
@@ -69,18 +75,18 @@ snark qualifying spec
 	  | _ -> case schemes of
 	           | [(_, srt)] -> 
 	              (case srt of
-			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",id)
+			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))
 			| _ -> snarkPBaseSort(spc, srt, rng?))
-	           | _ -> Lisp.symbol("SNARK",id)))
-      | _ -> Lisp.symbol("SNARK",id)
+	           | _ -> Lisp.symbol("SNARK",snarkSortId(id))))
+      | _ -> Lisp.symbol("SNARK",snarkSortId(id))
     
   def snarkPPBaseSort(_(* sp *):Spec, s:Sort, rng?):LispCell = 
     let res =
     case s of
       | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
       | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-      | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
-				      else Lisp.symbol("SNARK",id)
+      | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
+				      else Lisp.symbol("SNARK",snarkSortId(id))
       | Product _ -> Lisp.symbol("SNARK","TRUE")
       | Arrow _ -> Lisp.symbol("SNARK","TRUE")
       | TyVar _ -> Lisp.symbol("SNARK","TRUE") in
@@ -95,7 +101,11 @@ snark qualifying spec
 
   op snarkVar: Var -> LispCell
 
-  def snarkVar(v as (id, _)) = Lisp.symbol("SNARK", "?" ^ id)
+  def snarkVar(v as (id, _)) = snarkVarFromId(id)
+
+  op snarkVarFromId: Id -> LispCell
+
+  def snarkVarFromId(id) =  Lisp.symbol("SNARK", "?" ^ id)
   
   op snarkBndVar: Spec * Var * Vars -> LispCell
 
@@ -316,6 +326,32 @@ snark qualifying spec
 %  def lispFmla(spc, dpn, fmla) =
 %    reduceTerm(mkLFmla(spc, dpn, StringSet.empty, fmla))
 
+  op snarkSubsortProperties: Context * Spec -> List LispCell
+
+  def snarkSubsortProperties(context, spc) =
+    let sorts = sortsAsList(spc) in
+    let snarkSubsortProps = mapPartial(fn (qual, id, info) ->
+				       sortInfoToSnarkSubsortProp(context, spc, id, info))
+                                       sorts in
+      snarkSubsortProps
+
+  op sortInfoToSnarkSubsortProp: Context * Spec * Id * SortInfo -> Option LispCell
+  def sortInfoToSnarkSubsortProp(context, spc, id, info) =
+    let (_, _, srtScheme) = info in
+    case srtScheme of
+      | Nil -> None
+      | [(_, srt)] ->
+        case srt of
+	  | Subsort (supSrt, pred, _) ->
+	     let snarkSubSrtId = snarkSortId(id) in
+	     let subSrtVar = (snarkSubSrtId, srt) in
+	     let snarkBndVar = snarkBndVar(spc, subSrtVar, []) in
+	     let subSrtPred = srtPred(spc, srt, subSrtVar) in
+	     let snarkSubSrtPred = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], subSrtPred) in
+	       Some (Lisp.list [snark_assert, Lisp.quote(snarkSubSrtPred),
+				Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD","subSort" ^ snarkSubSrtId)])
+	  | _ -> None
+
   op snarkPropertiesFromProperty: Context * Spec * Property -> List LispCell
 
   def snarkPropertiesFromProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
@@ -375,6 +411,98 @@ snark qualifying spec
     let snarkProperties =
           map(fn (prop) -> snarkProperty(context, spc, prop))
 	      properties in
-     snarkProperties
+    let snarkSubsortProperties = snarkSubsortProperties(context, spc) in
+     snarkSubsortProperties ++ snarkProperties
+
+
+(*
+  op snarkOpProperties: Spec -> List LispCell
+
+  def snarkOpProperties(spc) =
+    let opsigs = specOps(spc) in
+    let snarkOpProperties =
+          mapPartial(fn (qname, name, _, srt) -> 
+		           snarkOpPropertyPartial(spc, mkSnarkName(qname,name), srt))
+                    opsigs in
+       snarkOpProperties
+
+  op snarkOpPropertyPartial: Spec * String * Sort -> Option LispCell
+
+  def snarkOpPropertyPartial(spc, name, srt) =
+    let prop = snarkOpProperty(spc, name, srt) in
+       if null(prop) then None else Some prop
+
+  op snarkOpProperty: Spec * String * Sort -> LispCell
+
+  def snarkOpProperty(spc, name, srt) = snarkFunctionProp(spc, name, srt)
+
+  op snarkFunctionProp: Spec * String * Sort -> LispCell
+
+  def snarkFunctionProp(spc, name, srt) =
+    %let _ = toScreen("Generating snark prop for "^name^" with sort: ") in
+    %let _ = printSortToTerminal srt in
+    (case (curryShapeNum(spc, srt), sortArity(spc, srt))
+       of (1,None) ->     %let _ = debug("noArity") in 
+	 snarkFunctionNoArityProp(spc, name, srt)
+	| (1, Some(_,arity)) -> %let _ = debug("noCurry") in 
+	 snarkFunctionNoCurryProp(spc, name, srt, arity)
+	| (curryN, None) -> %let _ = debug("CurryNoArity") in 
+	 snarkFunctionCurryNoArityProp(spc, name, srt)
+	| (curryN, Some (_, arity)) -> %let _ = debug("Curry") in 
+	 snarkFunctionCurryProp()
+	| _ -> %let _ = debug("Last") in
+	 snarkFunctionNoArityProp(spc, name, srt))
+
+
+  op snarkFunctionNoArityProp: Spec * String * Sort -> LispCell
+
+  def snarkFunctionNoArityProp(spc, name, srt) =
+    (case srt of
+       | Base(Qualified( _,"Boolean"),_,_) -> Lisp.nil()
+       | Base (Qualified(qual, id), srts, _) ->
+          Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
+		     Lisp.symbol("KEYWORD","SORT"),
+		     Lisp.quote(snarkBaseSort(spc, srt, true))]
+       | Arrow(dom, rng, _) ->
+	  case rng of
+	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateProp(spc, name, dom, 1)
+	  | _ -> 
+	    let snarkDomSrt = snarkBaseSort(spc, dom, false) in
+	        Lisp.list[declare_function,
+			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
+			  Lisp.symbol("KEYWORD","SORT"),
+			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
+       )
+
+  op snarkFunctionNoCurryProp: Spec * String * Sort * Nat -> LispCell
+
+  def snarkFunctionNoCurryProp(spc, name, srt, arity) =
+    case arrowOpt(spc, srt) of
+      Some (dom, rng) ->
+	case rng of
+	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateProp(spc, name, dom, arity)
+	  | _ ->
+	case productOpt(spc, dom) of
+	  | Some fields -> 
+	    let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(spc, srt, false))
+	                          fields in
+	      Lisp.list[declare_function,
+			Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
+			Lisp.symbol("KEYWORD","SORT"),
+			Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list(domSortList)))]
+	  | _ ->
+	      let snarkDomSrt = snarkBaseSort(spc, dom, false) in
+	        Lisp.list[declare_function,
+			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
+			  Lisp.symbol("KEYWORD","SORT"),
+			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
+
+  def snarkFunctionCurryNoArityProp(spc, name, srt) =
+    snarkFunctionNoArityProp(spc, name, srt)
+
+  def snarkFunctionCurryDecl() =
+    Lisp.nil() %Lisp.symbol("","Curry")
+
+*)
 
 endspec

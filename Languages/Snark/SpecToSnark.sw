@@ -197,7 +197,7 @@ snark qualifying spec {
       let sorts = sortsAsList(spc) in
       let snarkSorts =
              map(fn (qual, id, info) ->
-	            Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", id))])	%
+	            Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", snarkSortId(id)))])	%
                  sorts in
       let snarkSubSorts = mapPartial(fn (qual, id, info) ->
 			      sortInfoToSnarkSubsort(spc, id, info))
@@ -212,7 +212,7 @@ snark qualifying spec {
       | [(_, srt)] ->
         case srt of
 	  | Subsort (supSrt, pred, _) ->
-	     Some (Lisp.list [declare_subsorts, Lisp.quote(snarkBaseSort(spc, supSrt, false)), Lisp.quote(Lisp.symbol("SNARK", id))])
+	     Some (Lisp.list [declare_subsorts, Lisp.quote(snarkBaseSort(spc, supSrt, false)), Lisp.quote(Lisp.symbol("SNARK", snarkSortId(id)))])
 	  | _ -> None
 
   op snarkFunctionNoArityDecl: Spec * String * Sort -> LispCell
@@ -249,8 +249,8 @@ snark qualifying spec {
                       %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
 		      %let _ = if specwareDebug? then  writeLine("") else () in
 		      res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
-		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
-                                                       else Lisp.symbol("SNARK",id)
+		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
+                                                       else Lisp.symbol("SNARK",snarkSortId(id))
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
 		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
 		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
@@ -279,10 +279,10 @@ snark qualifying spec {
 	  | _ -> case schemes of
 	           | [(_, srt)] -> 
 	              (case srt of
-			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",id)
+			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))
 			| _ -> snarkBaseSort(spc, srt, rng?))
-	           | _ -> Lisp.symbol("SNARK",id)))
-      | _ -> Lisp.symbol("SNARK",id)
+	           | _ -> Lisp.symbol("SNARK",snarkSortId(id))))
+      | _ -> Lisp.symbol("SNARK",snarkSortId(id))
     
   
   def snarkPredicateDecl(spc, name, dom, arity) =
