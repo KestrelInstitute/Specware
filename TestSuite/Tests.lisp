@@ -6,7 +6,7 @@
 (test-directories ".")
 
 (test ("NormalFib" :sw "fib"
-		   :output ";;; Elaborating spec-form at $TESTDIR/fib
+		   :output ";;; Elaborating spec at $TESTDIR/fib
 ")
       ("CompileFib" :swll "fib"
 		    :output ";;; Generating lisp file /tmp/cl-current-file.lisp
@@ -25,13 +25,13 @@
 43.13-44.52")
       ("Colimit with no sharing"
        :sw "colimit"
-       :output ";;; Elaborating spec-form at $TESTDIR/colimit#A
+       :output ";;; Elaborating spec at $TESTDIR/colimit#A
 ;;; Elaborating diagram-term at $TESTDIR/colimit#D
 ;;; Elaborating diagram-colimit at $TESTDIR/colimit#C
-;;; Elaborating spec-form at $TESTDIR/colimit#E
+;;; Elaborating spec at $TESTDIR/colimit#E
 ")
       ("libtest" :swll "libtest"
-		 :output ";;; Elaborating spec-form at $TESTDIR/libtest
+		 :output ";;; Elaborating spec at $TESTDIR/libtest
 ;;; Generating lisp file /tmp/cl-current-file.lisp
 ;;; Compiling file /tmp/cl-current-file.lisp
 ;;; Writing fasl file /tmp/cl-current-file.fasl

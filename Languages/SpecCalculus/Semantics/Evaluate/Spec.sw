@@ -17,7 +17,7 @@ and then qualify the resulting spec if the spec was given a name.
 \begin{spec}
  def SpecCalc.evaluateSpec spec_elements position = {
     unitId <- getCurrentUID;
-    print (";;; Elaborating spec-form at " ^ (uidToString unitId) ^ "\n");
+    print (";;; Elaborating spec at " ^ (uidToString unitId) ^ "\n");
     (optBaseUnitId,baseSpec) <- getBase;
     (pos_spec,TS,depUIDs) <- evaluateSpecElems (if anyImports? spec_elements
 						  then emptySpec

@@ -285,9 +285,9 @@ SpecCalc qualifying spec
                  %%  New:  op ... : fa (...) ...  OR  def fa (...) ...  
                  let _ =
                     if ~(equivSortScheme? emptySpec (old_sort_scheme,new_sort_scheme)) then
-                      toScreen ("Merged versions of op are not equiv " ^ (printAliases op_names)^":"
+                      toScreen ("Merged versions of op " ^ (printAliases op_names) ^ "have different sorts:"
                              ^ "\n " ^ (printSortScheme new_sort_scheme)
-                             ^ "\n " ^ (printSortScheme old_sort_scheme))
+                             ^ "\n " ^ (printSortScheme old_sort_scheme) ^ "\n")
                     else () in
                  new_type_vars = old_type_vars
               | _ -> 
