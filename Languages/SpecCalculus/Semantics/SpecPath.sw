@@ -39,12 +39,20 @@ variable, then it will appear twice is the list of URI's we generate.
 \begin{spec}
   op getSpecPath : Env (List URI)
   def getSpecPath =
+    let specware4Dirs = case getEnv "SPECWARE4" of
+                         | Some d -> [d]
+                         | None -> []
+    in
+    let currDir = getCurrentDirectory () in
     let strings =
       case getEnv "SWPATH" of
         | Some str ->
-	  (splitStringAtChar specPathSeparator str)
-	  ++ [getCurrentDirectory ()]
-	| _ -> [getCurrentDirectory (),"/"]
+	  let path = splitStringAtChar specPathSeparator str in
+	  path
+	    ++ [currDir]
+	    ++ (if specware4Dirs = [] or List.member(hd specware4Dirs,path)
+	 	 then [] else specware4Dirs)
+	| _ -> [currDir,"/"] ++ specware4Dirs
     in
       mapM pathToCanonicalURI strings
 
