@@ -251,42 +251,58 @@ SpecCalc qualifying spec {
  def printMissingHypothesis(cns) =
    foldl (fn (cn, s) -> printQualifiedId(cn)^s) "" cns
 
- op displayProofResult: (Option String) * String * ClaimName * (Option String) * Boolean * String -> Boolean
- def displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, proverLogFileName) =
+ op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Boolean * String -> Boolean
+ def displayProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved, proverLogFileName) =
    let _ =
    case proof_name of
      | None -> 
          (case spec_name of
-	   | None -> displaySingleAnonymousProofResult(claim_type, claim_name, proved)
-	   | Some spec_name -> displaySingleProofResult(claim_type, claim_name, spec_name, proved))
+	   | None -> displaySingleAnonymousProofResult(prover_name, claim_type, claim_name, proved)
+	   | Some spec_name -> displaySingleProofResult(prover_name, claim_type, claim_name, spec_name, proved))
      | Some proof_name ->
 	 case spec_name of
-	   | None -> displayMultipleAnonymousProofResult(proof_name, claim_type, claim_name, proved)
+	   | None -> displayMultipleAnonymousProofResult(prover_name, proof_name, claim_type, claim_name, proved)
 	   | Some spec_name -> 
-	       displayMultipleProofResult(proof_name, claim_type, claim_name, spec_name, proved) in
+	       displayMultipleProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved) in
    let _ = writeLine("    Snark Log file: " ^ proverLogFileName) in
      proved
 
 
-  def displaySingleAnonymousProofResult(claim_type, claim_name, proved) =
-    let provedString = if proved then "is Proved!" else "is NOT proved." in
-    let _ = writeLine(claim_type^" "^printQualifiedId(claim_name)^" "^provedString) in
+  def displaySingleAnonymousProofResult(prover_name, claim_type, claim_name, proved) =
+    let provedString = provedString(proved) in
+    let proverString = proverString(prover_name) in
+    let _ = writeLine(claim_type^" "^printQualifiedId(claim_name)^" "^provedString^" "^proverString) in
       proved
 
-  def displaySingleProofResult(claim_type, claim_name, spec_name, proved) =
-    let provedString = if proved then "is Proved!" else "is NOT proved." in
-    let _ = writeLine(claim_type^" "^printQualifiedId(claim_name)^" in "^spec_name^" "^provedString) in
+  def displaySingleProofResult(prover_name, claim_type, claim_name, spec_name, proved) =
+    let provedString = provedString(proved) in
+    let proverString = proverString(prover_name) in
+    let _ = writeLine(claim_type^" "^printQualifiedId(claim_name)^" in "^spec_name^" "^provedString^" "^proverString) in
       proved
 
-  def displayMultipleAnonymousProofResult(proof_name, claim_type, claim_name, proved) =
-    let provedString = if proved then "is Proved!" else "is NOT proved." in
-    let _ = writeLine(proof_name^": "^claim_type^" "^printQualifiedId(claim_name)^" "^provedString) in
+  def displayMultipleAnonymousProofResult(prover_name, proof_name, claim_type, claim_name, proved) =
+    let provedString = provedString(proved) in
+    let proverString = proverString(prover_name) in
+    let _ = writeLine(proof_name^": "^claim_type^" "^printQualifiedId(claim_name)^" "^provedString^" "^proverString) in
       proved
 
-  def displayMultipleProofResult(proof_name, claim_type, claim_name, spec_name, proved) =
-    let provedString = if proved then "is Proved!" else "is NOT proved." in
-    let _ = writeLine(proof_name^": "^claim_type^" "^printQualifiedId(claim_name)^" in "^spec_name^" "^provedString) in
+  def displayMultipleProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved) =
+    let provedString = if proved then "is Proved!" else "is NOT proved" in
+    let proverString = proverString(prover_name) in
+    let _ = writeLine(proof_name^": "^claim_type^" "^printQualifiedId(claim_name)^" in "^spec_name^" "^provedString^" "^proverString) in
       proved
+
+ op provedString: Boolean -> String
+ def provedString(proved) =
+   if proved
+     then "is Proved!"
+   else "is NOT proved."
+
+ op proverString: String -> String
+ def proverString(prover_name) =
+   case prover_name of
+     | "FourierM" -> "using simple inequality reasoning."
+     | "Snark" -> "using Snark."
 
  op proveWithHypothesis: Option String * Property * List Property * Spec * Option String * List Property * Spec *
                          List Property * Spec *
@@ -301,13 +317,18 @@ SpecCalc qualifying spec {
 			     rewrite_hypothesis, rewrite_spc,
 			     prover_name, prover_options, snarkLogFileName, false)
    else
-     let fmRes = proveWithHypothesisFM(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-			     rewrite_hypothesis, rewrite_spc,
-			     prover_name, prover_options, snarkLogFileName, true) in
-     fmRes ||
-     proveWithHypothesisSnark(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-			      rewrite_hypothesis, rewrite_spc,
-			      prover_name, prover_options, answer_var, snarkLogFileName)
+     if prover_name = "Snark"
+       then proveWithHypothesisSnark(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
+				     rewrite_hypothesis, rewrite_spc,
+				     prover_name, prover_options, answer_var, snarkLogFileName)
+     else
+       let fmRes = proveWithHypothesisFM(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
+					 rewrite_hypothesis, rewrite_spc,
+					 "FourierM", prover_options, snarkLogFileName, true) in
+       fmRes ||
+       proveWithHypothesisSnark(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
+				rewrite_hypothesis, rewrite_spc,
+				"Snark", prover_options, answer_var, snarkLogFileName)
 
 
  op proveWithHypothesisSnark: Option String * Property * List Property * Spec * Option String * List Property * Spec *
@@ -350,7 +371,7 @@ SpecCalc qualifying spec {
 						   Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
 							      Lisp.nil(),snarkEvalForm]])]) in
      let proved = ":PROOF-FOUND" = anyToString(result) in
-     let _ = displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
+     let _ = displayProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
        proved
 
  op proveWithHypothesisFM: Option String * Property * List Property * Spec * Option String * List Property * Spec *
@@ -376,7 +397,7 @@ SpecCalc qualifying spec {
    %let fmConjecture = toFMProperty(context, spc, claim) in
    let proved = proveMSProb(spc, [], claim) in
    let _ = if proved || ~preProof?
-	     then displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, logFileName)
+	     then displayProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved, logFileName)
 	   else proved in
    proved
 

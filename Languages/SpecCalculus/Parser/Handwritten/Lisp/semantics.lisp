@@ -1019,7 +1019,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (defun make-sc-prover (claim-name spec-term prover-name assertions options  answerVar l r)
-  (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
+  (let ((prover-name (if (eq prover-name :unspecified) "Both" prover-name))
 	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
 	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options))
 	(answerVar   (if (eq answerVar   :unspecified) (cons :|None| nil) answerVar)))
