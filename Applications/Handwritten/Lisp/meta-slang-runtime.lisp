@@ -1,5 +1,7 @@
 ;; This file defines general utilities that are necessary to 
 ;; connect EXTENDED-SLANG specs with lisp code.
+;; The functions here are referenced in code produced by 
+;;  Specware4/Languages/MetaSlang/CodeGen/Lisp/SpecToLisp.sw
 
 (defpackage "SPECCALC")
 (defpackage :SLANG-BUILT-IN)
@@ -177,6 +179,30 @@
 
 (defun slang-term-equals (x) (slang-term-equals-2 (car x) (cdr x)))
 
+(defun slang-term-not-equals-2 (x y) 
+  (not (slang-term-equals-2 x y)))
+
+;;; optimizations of not-equals for Booleans and Strings:
+
+;; The boolean version of slang-term-equals-2 is just cl:eq, 
+;; and we wouldn't need boolean-not-equals-2 if neq was also defined in ANSI Common Lisp.
+;; We avoid calling this neq, to mimimize confusion in implementations that define neq.
+(defun boolean-not-equals-2 (x y) 
+  (not (eq x y)))
+
+(defun string-not-equals-2 (x y)
+  ;; Note: this     returns NIL or T  
+  ;;       string/= returns NIL or integer, which could confuse subsequent boolean 
+  ;;       comparisons implemented with cl::eq.
+  (not (string= x y)))
+
+;; CL 'and' and 'or' correspond to (non-strict) "&&" and "||"
+
+;; Nothing in CL corresponds to boolean 'implies':
+;; TODO: This probably isn't (or shouldn't be) possible, 
+;;       since syntax ("&&", "||", "=>", etc.) can't (shouldn't) be passed as an arg
+(defun implies-2 (x y) 
+  (or (not x) y))
 
 #|
 

@@ -251,19 +251,38 @@ def mkLEqualityOp(sp,srt) =
             (case stripSubsorts(sp,dom)
                of Product([(_,s),_],_) -> 
                   if natSort?(s)  % intSort?(s)
-                    then " = "
+                    then "="
                   else
                   (case stripSubsorts(sp,s) of
 		      | Boolean _ -> "eq"
-                      | (Base (Qualified("Nat","Nat"),_,_)) -> " = "
-                     %| (Base (Local "Nat",_,_)) -> " = "
-                      | (Base (Qualified("Integer","Integer"),_,_)) -> " = "
-                     %| (Base (Local "Integer",_,_)) -> " = "
-                      | (Base (Qualified("String","String"),_,_)) -> "string= "
-                      | (Base (Qualified("Char","Char"),_,_)) -> "eq"
+                      | (Base (Qualified("Nat",     "Nat"),     _,_)) -> "="
+                      | (Base (Qualified("Integer", "Integer"), _,_)) -> "="
+                      | (Base (Qualified("String",  "String"),  _,_)) -> "string="
+                      | (Base (Qualified("Char",    "Char"),    _,_)) -> "eq"
                       | _ -> "slang-built-in::slang-term-equals-2")
              | _ -> "slang-built-in::slang-term-equals-2")
-        | _ -> "slang-built-in::slang-term-equals-2" 
+        | _ -> "slang-built-in::slang-term-equals-2"
+
+%
+% Ad hoc optimization of the inequality operation.
+%
+def mkLInEqualityOp(sp,srt) = 
+        case stripSubsorts(sp,srt) 
+          of Arrow(dom,_,_) -> 
+            (case stripSubsorts(sp,dom)
+               of Product([(_,s),_],_) -> 
+                  if natSort?(s)  % intSort?(s)
+                    then "/="
+                  else
+                  (case stripSubsorts(sp,s) of
+		     | Boolean _ -> "slang-built-in:boolean-term-not-equals-2"
+		     | (Base (Qualified("Nat",     "Nat"),     _,_)) -> "/="
+		     | (Base (Qualified("Integer", "Integer"), _,_)) -> "/="
+		     | (Base (Qualified("String",  "String"),  _,_)) -> "slang-built-in:string-term-not-equals-2"  % careful! string/= won't work
+		     | (Base (Qualified("Char",    "Char"),    _,_)) -> "char/="
+		     | _ -> "slang-built-in::slang-term-not-equals-2")
+             | _ -> "slang-built-in::slang-term-not-equals-2")
+        | _ -> "slang-built-in::slang-term-not-equals-2"
 
 op  mkLTermOp : fa(a) Spec * String * StringSet.Set * (Fun * Sort * a)
                        * Option(MS.Term) -> LispTerm
@@ -288,32 +307,41 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
     | (Not, srt, _ ) ->
       let oper = mkLOp("cl:not") in
       (case optArgs of
-         | None -> oper  %% TODO: reasonable ?
+         | None -> oper  
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (And, srt, _ ) ->
-      let oper = mkLOp("cl:and") in % non-strict, hence non-commutative
+      % Note: And ("&&") is non-strict -- it might not evalute the second arg.
+      %       This means it is not commutative wrt termination.
+      let oper = mkLOp("cl:and") in  % lisp AND is also non-strict
       (case optArgs of
-         | None -> oper  %% TODO: reasonable ?
+         | None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Or, srt, _ ) ->
-      let oper = mkLOp("cl:or") in % non-strict, hence non-commutative
+      % Note: Or ("||") is non-strict -- it might not evalute the second arg
+      %       This means it is not commutative wrt termination.
+      let oper = mkLOp("cl:or") in  % lisp OR is also non-strict
       (case optArgs of
-         | None -> oper  %% TODO: reasonable ?
+         | None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Implies, srt, _ ) ->
+      % Note: Implies ("=>") is non-strict -- it might not evalute the second arg.
+      %       This means it is not commutative (to the contrapositive) wrt termination.
       (case optArgs of
-         | None -> mkLOp ("boolean-spec.=>") %% TODO: reasonable ? [ defined in /Library/Handwritten/Lisp/Boolean.lisp ]
+         | None -> 
+	   mkLOp ("slang-built-in:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
 	 | Some (Record([(_,x),(_,y)],_)) ->
-	   % if x then y else true == or (not x, y)
-	   mkLApply (mkLOp("cl:or"),         % non-strict, hence non-commutative 
+	   % "x => y" = "if x then y else true" = "or (~ x, y)"
+	   mkLApply (mkLOp("cl:or"),         
 		     [mkLApply(mkLOp "cl:not", 
 			       [mkLTerm(sp,dpn,vars,x)]),
 		      mkLTerm(sp,dpn,vars,y)]))
     | (Iff, srt, _ ) ->
+      % Note: Iff ("<=>") is strict, becasue the second arg must be evaluated, no matter what the value of the first arg is.
+      %       This means it is commmuative wrt termination.
       (case optArgs of
-         | None -> mkLOp("cl:eq") % TODO: reaonsable?
+         | None -> mkLOp("cl:eq") % presumably boolean-valued args each evaluate to T or NIL, so this should be ok.
 	 | Some (Record([(_, x), (_, y)],_)) ->
-	   % if x then y else not y
+	   % "x => y" = "if x then y else ~ y"
 	   mkLIf (mkLTerm(sp,dpn,vars,x),
 		  mkLTerm(sp,dpn,vars,y),		   
 		  mkLApply (mkLOp "cl:not",
@@ -324,12 +352,16 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
          | None -> oper
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (NotEquals,srt,_) ->
-      let oper = mkLOp(mkLEqualityOp(sp,srt)) in
       (case optArgs of
-         | None -> oper  %% TODO: need inequalities ops: neq, not-=, not-string=, ...
+         | None -> 
+           mkLOp(mkLInEqualityOp(sp,srt))
 	 | Some arg -> 
+	   %% for efficiency, open-code the call to not
+           %% let ineq_op = mkLOp(mkLInEqualityOp(sp,srt)) in
+           %% mkLApply (ineq_op,mkLTermList(sp,dpn,vars,arg)))
+	   let eq_oper = mkLOp(mkLEqualityOp(sp,srt)) in
 	   mkLApply(mkLOp "cl:not",
-		    [mkLApply (oper,mkLTermList(sp,dpn,vars,arg))]))
+		    [mkLApply (eq_oper,mkLTermList(sp,dpn,vars,arg))]))
     | (Select id,srt,_) -> 
       (case (hasConsDomain(sp,id,srt),optArgs) of
 	 | (Some queryOp,None) -> mkLLambda(["!x"],[],mkLVar "!x")
