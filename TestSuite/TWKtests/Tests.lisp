@@ -1,3 +1,5 @@
+(cl-user::sw-init)
+
 ;;;(test-files "proveOblig.sw" "simple.sw" "fib.sw"
 ;;;	    "colimit.sw"
 ;;;	    "t0103_1.sw" "t0103_2.sw" "t0103_3.sw"
@@ -7,6 +9,7 @@
 (test-directories ".")
 
 (test 
+
  ("twk message 1/8/03" 
   :sw "t0103_1"
   :output '(";;; Elaborating spec at $TESTDIR/t0103_1#player"
@@ -17,18 +20,21 @@
 	    "              legal? of type move -> Boolean"
 	    "          with expected type Boolean"
 	    ""))
+
  ("twk message 1/8/03 fix 1"
   :sw "t0103_2"
   :output '(";;; Elaborating spec at $TESTDIR/t0103_2#player"
 	    ";;; Elaborating spec at $TESTDIR/t0103_2#position"
 	    ";;; Elaborating spec at $TESTDIR/t0103_2#move"
 	    ""))
+
  ("twk message 1/8/03 fix 2"
   :sw "t0103_3"
   :output '(";;; Elaborating spec at $TESTDIR/t0103_3#player"
 	    ";;; Elaborating spec at $TESTDIR/t0103_3#position"
 	    ";;; Elaborating spec at $TESTDIR/t0103_3#move"
 	    ""))
+
  ("twk_message 6/2/04"
   :sw "Switch"
   :output '(
@@ -56,8 +62,7 @@
 	    "    Snark Log file: $TESTDIR/Snark/Switch/p1.log"
 	    (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverBase")
 	    "p1: Conjecture doubleswitchidentity in aspec is Proved! using Snark."
-	    "")
-  )
+	    ""))
 
  ("twk_message 6/18/04"
   :sw "ThreeValue"
@@ -75,8 +80,7 @@
 	    (:optional "    Expanded spec file: $TESTDIR/Snark/ThreeValue/ThreeP.sw")
 	    "    Snark Log file: $TESTDIR/Snark/ThreeValue/ThreeP.log"
 	    "ThreeP: Theorem threedifferent in ThreeValuesDef is Proved! using Snark."
-	    "")
-  )
+	    ""))
 
  ("twk_message 8/2/04"
   :sw "MathFact"
@@ -90,9 +94,8 @@
 	    (:optional ";; Directory $TESTDIR/Snark/MathFact/ does not exist, will create.")
 	    "    Expanded spec file: $TESTDIR/Snark/MathFact/sum_spec_p1.sw"
 	    "    Snark Log file: $TESTDIR/Snark/MathFact/sum_spec_p1.log"
-	    "sum_spec_p1: Conjecture sum_zero in sum_spec_obs is NOT proved using Snark."
-	    "")
-  )
+	    "sum_spec_p1: Conjecture sum_zero in sum_spec_obs is Proved! using Snark."
+	    ""))
       
  ("twk_message 8/13/04"
   :sw "Tuples"
@@ -108,6 +111,6 @@
 	    "    Expanded spec file: $TESTDIR/Snark/Tuples/P2.sw"
 	    "    Snark Log file: $TESTDIR/Snark/Tuples/P2.log"
 	    "P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved! using simple inequality reasoning."
-	    "")
-  )
+	    ""))
+
  )
