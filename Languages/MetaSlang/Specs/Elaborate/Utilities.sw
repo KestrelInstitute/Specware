@@ -549,6 +549,7 @@ spec
 			 withAnnS(s2_,pos2),
 			 cons((s1,s2), pairs),
 			 ignoreSubsorts?)
+	| (Boolean _, Boolean _) -> Unify pairs
 	| (TyVar(id1,_), TyVar(id2,_)) -> 
 	  if id1 = id2 
 	  then Unify pairs
