@@ -220,7 +220,25 @@ spec
 %		    | _ -> term
 %	  in
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
-	| _ -> tupleInstantiate spc (term)
+	| _ -> case simplifyCase spc term of
+	        | Some tm -> tm
+	        | None -> tupleInstantiate spc term
+
+  def simplifyCase spc term =
+    case term of
+      %% case (a,b,c) of (x,y,z) -> g(x,y,z) -> g(a,b,c)
+      | Apply(Lambda([(RecordPat(pats,_),_,body)],_),Record(acts,_),_) ->
+        if all (fn(_,VarPat _) -> true |_ -> false) pats
+	    & all (fn(_,Var _) -> true |_ -> false) acts
+	  then Some(substitute(body,makeSubstFromRecord(pats,acts)))
+	  else None
+      | _ -> None
+
+  op  makeSubstFromRecord: List(Id * Pattern) * List(Id * MS.Term) -> List(Var * MS.Term)
+  def makeSubstFromRecord(pats,acts) =
+    foldl (fn ((id,VarPat(v,_)),result) -> Cons((v,findField(id,acts)),result))
+      []
+      pats
 
   def simplifiedApply(t1,t2,spc) =
     simplifyOne spc (mkApply(t1,t2))
