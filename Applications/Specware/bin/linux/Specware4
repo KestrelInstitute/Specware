@@ -90,4 +90,5 @@ xemacs -l "$LISP_DIR"/xeli/fi-site-init \
        -l "$SPECWARE4"/Library/IO/Emacs/load \
        -name "Specware" \
        -title "Specware" \
+       -geometry =120x60+20+20 \
        -eval "(run-specware4)" &
