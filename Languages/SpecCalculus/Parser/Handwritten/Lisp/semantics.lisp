@@ -856,13 +856,13 @@ If we want the precedence to be optional:
 ;;;  SC-SPEC-MORPH
 ;;; ========================================================================
 
-(defun make-sc-spec-morphism (dom-sc-term cod-sc-term sc-spec-morphism-rules l r)
+(defun make-sc-spec-morph (dom-sc-term cod-sc-term sc-spec-morph-rules l r)
   (cons (cons :|SpecMorph|
-	      (vector dom-sc-term cod-sc-term sc-spec-morphism-rules))
+	      (vector dom-sc-term cod-sc-term sc-spec-morph-rules))
 	(make-pos l r)))
 
-(defun make-sc-spec-morphism-rule (qualifiable-name-dom qualifiable-name-cod l r)
-  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
+;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
+;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
 
 (defun make-sm-sort-rule (left-sort-ref right-sort-ref l r)
   (cons :|Sort|
