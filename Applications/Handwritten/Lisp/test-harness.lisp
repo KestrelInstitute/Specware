@@ -194,7 +194,7 @@ be the option to run each (test ...) form in a fresh image.
     "/"
     file))
 
-(defun test-1 (name &key sw swe swe-spec swl swll lisp show
+(defun test-1 (name &key sw swe swe-spec swl swll lisp show path
 			 output (output-predicate 'equal)
 			 (value "--NotAValue--")
 			 (value-predicate 'equal)
@@ -205,20 +205,17 @@ be the option to run each (test ...) form in a fresh image.
 	(emacs::*goto-file-position-stored* nil)
 	(cl-user::*running-test-harness?* t))
     (let ((test-output (with-output-to-string (*standard-output*)
-			 (multiple-value-setq (val error-type)
-			   (ignore-errors
-			    (if (not (null sw))
-				(cl-user::sw (normalize-input sw))
-			      (if (not (null swll))
-				  (cl-user::swll (normalize-input swll))
-				(if (not (null swe))
-				  (swe-test swe (normalize-input swe-spec))
-				  (if (not (null swl))
-				      (cl-user::swl (normalize-input swl))
-				    (if (not (null show))
-					(cl-user::show (normalize-input show))
-				      (if (not (null lisp))
-					  (eval (read-from-string (normalize-input lisp))))))))))))))
+			 (let ((*error-output* *standard-output*)) ; so we also collect warnings and error messages
+			   (multiple-value-setq (val error-type)
+			     (ignore-errors
+			      (cond ((not (null sw))   (cl-user::sw (normalize-input sw)))
+				    ((not (null swll)) (cl-user::swll (normalize-input swll)))
+				    ((not (null swe))  (swe-test swe (normalize-input swe-spec)))
+				    ((not (null swl))  (cl-user::swl (normalize-input swl)))
+				    ((not (null show)) (cl-user::show (normalize-input show)))
+				    ((not (null lisp)) (eval (read-from-string (normalize-input lisp))))
+				    ((not (null path)) (cl-user::swpath (normalize-input path)))
+				    )))))))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
 	(setf (car emacs::*goto-file-position-stored*)
