@@ -78,7 +78,7 @@ spec
  
  op relativeUidToSWPATH: UnitId * List UnitId -> UnitId
  def relativeUidToSWPATH(uid, swpath) =
-   let _ = String.writeLine("\n relativeUidToSWPATH UID = "^showUID(uid)^"\n swPath = "^(foldr concat "," (map (fn (path) -> (showUID(path)^" ; ")) swpath))) in 
+   %let _ = String.writeLine("\n relativeUidToSWPATH UID = "^showUID(uid)^"\n swPath = "^(foldr concat "," (map (fn (path) -> (showUID(path)^" ; ")) swpath))) in 
    let foundSwUid = findOption (fn (swUid) -> relativeUidToUid(uid, swUid)) swpath in
    case foundSwUid of
      | Some res -> res
