@@ -1,3 +1,6 @@
+;;; openmcl stuff
+(defvar *specware-lisp* 'openmcl)
+(defvar *lisp-image-extension* "openmcl-image")
 
 ;; Load everything and use ilisp interface to lisp instead of Franz's
 
@@ -29,3 +32,4 @@
 	 '("\\.spec$" . specware-mode)
 	 '("\\.sw$" . specware-mode)
 	 auto-mode-alist))
+

@@ -101,7 +101,8 @@
 	  (not (#-(or lucid mcl) special-operator-p
 ;;		#-(or allegro lucid) special-form-p
 ;;		#+allegro cltl1:special-form-p
-		#+mcl special-form-p
+		#+(and mcl (not openmcl)) special-form-p
+		#+openmcl cl-user::special-form-p
 		#+lucid lisp:special-form-p
 		(caar forms)))
 	  (not (macro-function (caar forms)))

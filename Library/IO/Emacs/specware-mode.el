@@ -992,9 +992,10 @@ If anyone has a good algorithm for this..."
 	(temp-file-name (concat (temp-directory) "-cl-current-file")))
     (if (sw:eval-in-lisp "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
 		     filename temp-file-name)
-	(sw:eval-in-lisp "(let (*redefinition-warnings*)
-                            (specware::compile-and-load-lisp-file %S))"
-			 temp-file-name)
+	(sw:eval-in-lisp-no-value
+	   "(let (*redefinition-warnings*)
+              (specware::compile-and-load-lisp-file %S))"
+	   temp-file-name)
       (message "Specware Processing Failed!"))))
 
 (defun sw:cl-unit (unitid)
@@ -1005,9 +1006,10 @@ If anyone has a good algorithm for this..."
   (let ((temp-file-name (concat (temp-directory) "-cl-current-file")))
     (if (sw:eval-in-lisp "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
 			 unitid temp-file-name)
-	(sw:eval-in-lisp "(let (*redefinition-warnings*)
-                            (specware::compile-and-load-lisp-file %S))"
-			 temp-file-name)
+	(sw:eval-in-lisp-no-value
+	   "(let (*redefinition-warnings*)
+              (specware::compile-and-load-lisp-file %S))"
+	   temp-file-name)
       (message "Specware Processing Failed!"))))
 
 (defun sw:dired-process-current-file ()
@@ -1035,7 +1037,6 @@ If anyone has a good algorithm for this..."
      (cdr *pending-specware-meta-point-results*))))
 
 ;;;; Meta-point facility (adapted from refine-meta-point fi:lisp-find-definition)
-;;;; Uses Franz interface functions to communicate with Lisp
 (defun sw:meta-point (name)
   (interactive (list (car (sw::get-default-symbol "Specware locate source" t t))))
   (let* ((pr (find-qualifier-info name))
@@ -1107,7 +1108,7 @@ If anyone has a good algorithm for this..."
      "(SpecCalc::searchForDefiningURI '(:|Qualified| %S . %S) %s)"
      qualifier sym *specware-context-str*)))
 
-(defvar *specware-context-str* "user::*specware-global-context*")
+(defvar *specware-context-str* "cl-user::*specware-global-context*")
 
 (defun specware-file-name-p (str)
   (let ((len (length str)))
@@ -1263,7 +1264,7 @@ If anyone has a good algorithm for this..."
    (if (inferior-lisp-running-p)
        (format "http://specware.org/release-notes-%s-%s.html"
 	       (sw:eval-in-lisp "specware::Major-Version-String")
-	       (sw:eval-in-lisp "user::Specware-patch-level"))
+	       (sw:eval-in-lisp "cl-user::Specware-patch-level"))
      "http://specware.org/news.html")))
 
 (defface about-specware-link-face
@@ -1355,8 +1356,9 @@ If anyone has a good algorithm for this..."
 		   :tag-glyph specware-logo)
     (widget-insert "\n\n")
     (when (inferior-lisp-running-p)
-      (let* ((specware-version (sw:eval-in-lisp "user::Specware-version"))
-	     (specware-patch-number (sw:eval-in-lisp "user::Specware-patch-level"))
+      (let* ((specware-version (sw:eval-in-lisp "cl-user::Specware-version"))
+	     (specware-patch-number (sw:eval-in-lisp
+				     "cl-user::Specware-patch-level"))
 	     (specware-version (format "Version %s.%s"
 				       specware-version
 				       specware-patch-number)))

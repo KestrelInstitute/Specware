@@ -251,7 +251,7 @@
     (print (macroexpand-1 (print form)))
     nil))
 
-#+mcl (progn (pushnew '(mvlet  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
-#+mcl (progn (pushnew '(mvlet* . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
+#+(and mcl (not openmcl)) (progn (pushnew '(mvlet  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
+#+(and mcl (not openmcl)) (progn (pushnew '(mvlet* . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
 
 ;;; mvlet.lisp EOF

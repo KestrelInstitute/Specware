@@ -342,7 +342,7 @@
     options)
    forms))
 
-#+mcl (progn (pushnew '(let-options  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
+#+(and mcl (not openmcl)) (progn (pushnew '(let-options  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
 
 (defun print-options (&optional all)
   (terpri-comment)

@@ -19,7 +19,7 @@
 
 (in-package :mes)
 
-#+(or MCL CMU)
+#+(or (and mcl (not openmcl)) CMU)
 (defmacro monitor-form (form 
                         &optional (nested :exclusive) (threshold mon:*default-threshold*)
                         (key :percent-time))
@@ -35,7 +35,7 @@
            (mon:report-monitoring :all ,nested ,threshold ,key :ignore-no-calls))))
      (mon:unmonitor)))
 
-#+(or MCL CMU)
+#+(or (and mcl (not openmcl)) CMU)
 (defmacro profile (form)
   `(monitor-form ,form))
 

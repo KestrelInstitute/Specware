@@ -45,7 +45,8 @@
 	      #+lispworks                    "wfasl"
 	      #+gcl                          "o"
 	      #+eclipse                      "c"
-	      #+(and mcl powerpc)            "pfsl"
+	      #+openmcl            	     "dfsl"
+	      #+(and mcl (not openmcl) powerpc) "pfsl"
 	      #+(and mcl (not powerpc))      "fasl"
 	      #+(and (or cmu sbcl) sparc)    "sparcf"
 	      #+(and (or cmu sbcl) x86)      "x86f"
@@ -64,6 +65,7 @@
   (:import-from :common-lisp-user #+(or lucid cmu sbcl) quit)
   (:shadowing-import-from :mes "TERPRI")
   #-gcl (:shadow "ASSERT" "SUBSTITUTE" "VARIABLE" "ROW" "ROWS")
+  #+openmcl (:shadow "FUNCTION-NAME" "TRUE" "FALSE" "QUIT" "CANCEL" "RATIOP")
   (:export
    "*HASH-DOLLAR-PACKAGE*" "*HASH-DOLLAR-READTABLE*" "HASH-DOLLAR-PRIN1" "HASH-DOLLAR-PRINT"
    "BOOLEAN"

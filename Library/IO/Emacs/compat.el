@@ -140,7 +140,7 @@
 
   (defvar *specware-buffer-name* "*specware*")
 
-  (push 'specware-mode ilisp-modes)
+  ;(push 'specware-mode ilisp-modes)
 
   (defun inferior-lisp-running-p ()
     (and (get-buffer-process *specware-buffer-name*)
