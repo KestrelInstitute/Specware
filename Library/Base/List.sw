@@ -25,7 +25,7 @@ List qualifying spec
   op concat          : fa(a)   List a * List a -> List a
   op ++ infixl 25    : fa(a)   List a * List a -> List a
 %% Deprecated for some time so it should be safe to remove
-%  op @  infixl 11    : fa(a)   List a * List a -> List a
+%  op @  infixl 25    : fa(a)   List a * List a -> List a
   op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
   op nthTail         : fa(a)   {(l,i) : List a * Nat | i < length l} ->
                                List a
