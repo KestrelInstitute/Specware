@@ -295,8 +295,14 @@ SpecCalc qualifying spec
                  let _ =
                     if ~(equivSortScheme? spc (old_sort_scheme,new_sort_scheme)) then
                       toScreen ("Merged versions of op " ^ (printAliases op_names) ^ " have possibly different sorts:"
-                             ^ "\n " ^ (printSortScheme new_sort_scheme)
-                             ^ "\n " ^ (printSortScheme old_sort_scheme) ^ "\n")
+				^ "\n " ^ (printSortScheme new_sort_scheme) 
+				^ "\n " ^ (printSortScheme old_sort_scheme) 
+				^ (if specwareWizard? then
+				     "\n\n " ^ (anyToString new_sort_scheme)
+				     ^ "\n " ^ (anyToString old_sort_scheme)
+				     ^ "\n"
+				   else
+				     "\n"))
                     else () in
                  new_type_vars = old_type_vars
               | _ -> 
@@ -305,9 +311,15 @@ SpecCalc qualifying spec
          in
            if (~ happy?) then
              raise (SpecError (position,
-                             "Merged versions of Op "^(printAliases op_names)^" have different sorts:"
-                             ^ "\n " ^ (printSortScheme new_sort_scheme)
-                             ^ "\n " ^ (printSortScheme old_sort_scheme)))
+			       "Merged versions of Op "^(printAliases op_names)^" have different sorts:"
+			       ^ "\n " ^ (printSortScheme new_sort_scheme)
+			       ^ "\n " ^ (printSortScheme old_sort_scheme)
+			       ^ (if specwareWizard? then
+				    "\n\n " ^ (anyToString new_sort_scheme)
+				    ^ "\n " ^ (anyToString old_sort_scheme)
+				    ^ "\n"
+				  else
+				    "\n")))
            else
              case (old_defs, new_defs) of
                | ([],   [])   -> return (op_names, new_fixity, new_sort_scheme, [])
@@ -643,6 +655,7 @@ SpecCalc qualifying spec
                | _ -> false)
 
 
+     | (Boolean _ , Boolean _) -> true
      | (Base _,  _     ) -> (let s3 = myUnfoldSort (spc, s1) in
 			     if s1 = s3 then
 			       false
