@@ -10,7 +10,7 @@ SpecCalc qualifying spec {
 \begin{spec}
   def SpecCalc.evaluateColimit term = {
     unitId <- getCurrentUID;
-    print (";;; Processing colimit at " ^ (uidToString unitId) ^ "\n");
+    print (";;; Elaborating diagram-colimit at " ^ (uidToString unitId) ^ "\n");
     (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
     case value of
       | Diag dgm -> 

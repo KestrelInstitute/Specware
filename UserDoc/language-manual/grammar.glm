@@ -824,7 +824,7 @@ easy reference.
 ||  
 ||  `cons-pattern ::= `closed-pattern :: `tight-pattern
 ||  
-||  `embed-pattern ::= `constructor `closed-pattern
+||  `embed-pattern ::= `constructor [ `closed-pattern ]
 ||  
 ||  `quotient-pattern ::= quotient `closed-expression `tight-pattern
 ||  

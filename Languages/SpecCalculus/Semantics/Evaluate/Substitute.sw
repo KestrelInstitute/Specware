@@ -12,7 +12,7 @@ SpecCalc qualifying spec {
 
   def SpecCalc.evaluateSubstitute (spec_tm, morph_tm) term_pos = {
     unitId <- getCurrentUID;
-    print (";;; Processing substitution at " ^ (uidToString unitId) ^ "\n");
+    print (";;; Elaborating spec-substitution at " ^ (uidToString unitId) ^ "\n");
     (spec_value, spec_timestamp, spec_dep_UIDs) <- evaluateTermInfo spec_tm;
     (morph_value, morph_timestamp, morph_dep_UIDs) <- evaluateTermInfo morph_tm;
     coercedSpecValue <- return (coerceToSpec spec_value);

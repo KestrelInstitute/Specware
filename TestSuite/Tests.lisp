@@ -6,14 +6,13 @@
 (test-directories ".")
 
 (test ("NormalFib" :sw "fib"
-		  :output ";;; Processing spec at $TESTDIR/fib
+		   :output ";;; Elaborating spec-form at $TESTDIR/fib
 ")
       ("CompileFib" :swll "fib"
-		  :output ";;; Generating lisp file /tmp/cl-current-file.lisp
+		    :output ";;; Generating lisp file /tmp/cl-current-file.lisp
 ;;; Compiling file /tmp/cl-current-file.lisp
 ;;; Writing fasl file /tmp/cl-current-file.fasl
 ;;; Fasl write complete
-; Fast loading /tmp/cl-current-file.fasl
 ")
       ("RunFib" :swe "computeFib 10"
 		:swe-spec "fib"
@@ -26,17 +25,16 @@
 43.13-44.52")
       ("Colimit with no sharing"
        :sw "colimit"
-       :output ";;; Processing spec at $TESTDIR/colimit#A
-;;; Processing spec diagram at $TESTDIR/colimit#D
-;;; Processing colimit at $TESTDIR/colimit#C
-;;; Processing spec at $TESTDIR/colimit#E
+       :output ";;; Elaborating spec-form at $TESTDIR/colimit#A
+;;; Elaborating diagram-term at $TESTDIR/colimit#D
+;;; Elaborating diagram-colimit at $TESTDIR/colimit#C
+;;; Elaborating spec-form at $TESTDIR/colimit#E
 ")
-      ("libtest":swll "libtest"
-		:output ";;; Processing spec at $TESTDIR/libtest
+      ("libtest" :swll "libtest"
+		 :output ";;; Elaborating spec-form at $TESTDIR/libtest
 ;;; Generating lisp file /tmp/cl-current-file.lisp
 ;;; Compiling file /tmp/cl-current-file.lisp
 ;;; Writing fasl file /tmp/cl-current-file.fasl
 ;;; Fasl write complete
-; Fast loading /tmp/cl-current-file.fasl
 ")
       )

@@ -1,4 +1,4 @@
-\subsection{Evalution of a Spec term in the Spec Calculus}
+\subsection{Evalution of a Spec form in the Spec Calculus}
 
 \begin{spec}
 SpecCalc qualifying spec {
@@ -17,7 +17,7 @@ and then qualify the resulting spec if the spec was given a name.
 \begin{spec}
  def SpecCalc.evaluateSpec spec_elements position = {
     unitId <- getCurrentUID;
-    print (";;; Processing spec at " ^ (uidToString unitId) ^ "\n");
+    print (";;; Elaborating spec-form at " ^ (uidToString unitId) ^ "\n");
     (optBaseUnitId,baseSpec) <- getBase;
     (pos_spec,TS,depUIDs) <- evaluateSpecElems (if anyImports? spec_elements
 						  then emptySpec

@@ -11,7 +11,7 @@ SpecCalc qualifying spec {
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
      unitId <- getCurrentUnitId;
-     print (";;; Processing prove at " ^ (uidToString unitId) ^ "\n");
+     print (";;; Elaborating proof-term at " ^ (uidToString unitId) ^ "\n");
      (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo spec_term;
      (optBaseUnitId,baseSpec) <- getBase;
      proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";

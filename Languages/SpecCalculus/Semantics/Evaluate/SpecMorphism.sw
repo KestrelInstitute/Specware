@@ -14,7 +14,7 @@ coherence conditions of the morphism elements.
 \begin{spec}
   def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules) = {
     unitId <- getCurrentUID;
-    print (";;; Processing spec morphism at " ^ (uidToString unitId) ^ "\n");
+    print (";;; Elaborating spec morphism-term at " ^ (uidToString unitId) ^ "\n");
     (domValue,domTimeStamp,domDepUIDs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepUIDs) <- evaluateTermInfo codTerm;
     coercedDomValue <- return (coerceToSpec domValue);

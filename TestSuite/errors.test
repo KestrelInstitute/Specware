@@ -1,6 +1,0 @@
-(test ("Colimit with no sharing"
-       :sw "colimit"
-       :output ";;; Processing spec A in ~/specware/tests/colimit.sw
-;;; Processing spec E in ~/specware/tests/colimit.sw
-")
-      ("Load Import" :sw "c"))

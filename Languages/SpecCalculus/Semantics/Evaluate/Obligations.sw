@@ -15,7 +15,7 @@ SpecCalc qualifying spec
 
   def SpecCalc.evaluateObligations term = {
      unitId <- getCurrentUID;
-     print (";;; Processing obligations at " ^ (uidToString unitId) ^ "\n");
+     print (";;; Elaborating obligator at " ^ (uidToString unitId) ^ "\n");
      (value, time_stamp, dep_UIDs) <- evaluateTermInfo term;
       case value of
 

@@ -4488,7 +4488,7 @@ avoid grammatical ambiguities.)
 ||
 ||`cons-pattern ::= `closed-pattern :: `tight-pattern
 ||
-||`embed-pattern ::= `constructor `closed-pattern
+||`embed-pattern ::= `constructor [ `closed-pattern ]
 ||
 ||`quotient-pattern ::= quotient `closed-expression `tight-pattern
 ||
@@ -4534,6 +4534,13 @@ Restriction.
 Like all polymorphic or sort-ambiguous constructs, a `pattern
 may only be used in a context where its sort can be uniquely
 inferred.
+</para>
+<!--====================================================================-->
+<para>
+Disambiguation.
+A single `name used as a `pattern is an `embed-pattern
+if it is a `constructor of the sort of the `pattern.
+Otherwise, the `name is a `variable-pattern.
 </para>
 <!--====================================================================-->
 <para>

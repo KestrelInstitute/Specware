@@ -15,7 +15,7 @@ Lots of proof obligations. Needs thought.
 \begin{spec}
   def SpecCalc.evaluateDiag elems = {
     unitId <- getCurrentUID;
-    print (";;; Processing spec diagram at "^(uidToString unitId)^"\n");
+    print (";;; Elaborating diagram-term at " ^ (uidToString unitId)^"\n");
     (dgm : SpecDiagram, timeStamp, depUIDs) <-
          foldM evaluateDiagElem ((emptyDiagram (specCat ())),0,[]) elems;
     return (Diag dgm,timeStamp,depUIDs)

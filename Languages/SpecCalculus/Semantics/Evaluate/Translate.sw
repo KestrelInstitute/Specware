@@ -4,7 +4,8 @@ TODO: This has file suffers greatly from having to accommodate the representatio
 of specs, ops, sorts and ids. 
 
 Also the parser seems to set up a cod_aliases field. I would argue that
-this should be removed from the parser.
+this should be removed from the parser. I disagree. I, on the other hand,
+agree with myself. I couldn't agree more.
 
 \begin{spec}
 SpecCalc qualifying spec {
@@ -20,7 +21,7 @@ Perhaps the calculus is getting too complicated.
 \begin{spec}
   def SpecCalc.evaluateTranslate term translation = {
     unitId <- getCurrentUID;
-    print (";;; Processing translation at "^(uidToString unitId)^"\n");
+    print (";;; Elaborating spec-translation at " ^ (uidToString unitId)^"\n");
     (value,timeStamp,depUIDs) <- evaluateTermInfo term;
     case coerceToSpec value of
       | Spec spc -> {
