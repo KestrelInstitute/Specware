@@ -358,15 +358,28 @@ spec
   op  normalizeCurriedDefn: Term * List Sort -> Term
   def normalizeCurriedDefn(defn,curryArgSorts) =
     let def aux(defn,curryArgSorts,argNum) = 
-	  if curryArgSorts = [] then defn
-	  else
-	  case defn of
-	    | Lambda([(pat,pred,body)],a) ->
-	      Lambda([(pat,pred,aux(body,tl curryArgSorts,argNum+1))],a)
-	    | Lambda _ -> defn
-	    | _ ->
-	      let nv = ("x-"^Nat.toString argNum,hd curryArgSorts) in
-	      mkLambda(mkVarPat(nv),aux(mkApply(defn,mkVar(nv)),tl curryArgSorts,argNum+1))
+	  case curryArgSorts of
+	    | [] -> defn
+	    | argSort::rSorts ->
+	      case defn of
+		| Lambda([(pat,pred,body)],a) ->
+		  Lambda([(pat,pred,aux(body,rSorts,argNum+1))],a)
+		| Lambda _ -> defn
+		| _ ->
+		  if argNum = 0 & rSorts = [] & product? argSort
+		    then			% Uncurried
+		    (case argSort of
+		      | Product(fields,_) ->
+		        let vars = (foldl (fn ((label,srt),(result,i)) ->
+					    (result ++ [(label,("x-"^Nat.toString i,srt))],
+					     i+1))
+				      ([],0) fields).1
+			in mkLambda(mkRecordPat(map (fn(l,v) -> (l,mkVarPat(v))) vars),
+				    mkApply(defn,
+					    mkRecord(map (fn (l,v) -> (l,mkVar(v))) vars))))
+		  else 
+		  let nv = ("x-"^Nat.toString argNum,argSort) in
+		  mkLambda(mkVarPat(nv),aux(mkApply(defn,mkVar(nv)),rSorts,argNum+1))
     in aux(defn,curryArgSorts,0)
 
   op  transparentRenaming: Qualifier * Id * Term * Spec -> Qualifier * Id * Term
@@ -473,7 +486,7 @@ spec
   op  curryArgSorts: Spec * Sort -> List Sort
   def curryArgSorts(sp,srt) =
     case arrowOpt(sp,srt)
-      of Some (dom,rng) -> cons(dom,curryArgSorts(sp,rng))
+      of Some (dom,rng) -> cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
        | _ -> []
 
   op  curriedParams: Term -> List Pattern * Term

@@ -32,7 +32,7 @@ spec
   def emptyMap = MapSTHashtable.emptyMap
   def numItems = MapSTHashtable.numItems
 
-  def apply(m, x) = MapSTHashtable.apply(m, x)
+  def apply = MapSTHashtable.apply
   def eval (m, x) =
     case MapSTHashtable.apply(m,x) of
       | Some v -> v

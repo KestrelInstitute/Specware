@@ -242,6 +242,7 @@ MS qualifying spec {
  op mkCharPat   : Char          -> Pattern
  op mkBoolPat   : Boolean       -> Pattern
  op mkStringPat : String        -> Pattern
+ op mkRecordPat : List(Id * Pattern) -> Pattern
  op mkTuplePat  : List Pattern  -> Pattern
  op mkWildPat   : Sort          -> Pattern
 
@@ -251,6 +252,7 @@ MS qualifying spec {
  def mkStringPat s    = StringPat (s,              noPos)
  def mkVarPat    v    = VarPat    (v,              noPos)
  def mkWildPat   s    = WildPat   (s,              noPos)
+ def mkRecordPat pats = RecordPat (pats, noPos)
  def mkTuplePat  pats = RecordPat (tagTuple(pats), noPos)
 
  op negateTerm: Term -> Term

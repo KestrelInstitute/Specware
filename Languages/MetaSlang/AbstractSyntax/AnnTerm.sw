@@ -161,6 +161,13 @@ MetaSlang qualifying spec {
  sort AMetaTyVars     b = List (AMetaTyVar b)
  sort AMetaSortScheme b = AMetaTyVars b * ASort b 
 
+ %%% Predicates
+ op product?: fa(a) ASort a -> Boolean
+ def product? s =
+   case s of
+     | Product _ -> true
+     | _ -> false
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
