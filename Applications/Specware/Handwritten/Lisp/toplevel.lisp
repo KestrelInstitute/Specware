@@ -255,6 +255,7 @@
 	 (new-swpath (format nil #-mswindows "~Aswe/:~A:~A" #+mswindows "~A/swe/;~A;~A"
 			     Specware::temporaryDirectory *current-swe-spec-dir* old-swpath))
 	 value)
+    (declare (special SpecCalc::printElaborateSpecMessage?))
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
@@ -741,7 +742,6 @@
 	  (princ newdir)
 	  (values)))))
 
-#-allegro
 (defun ld (file)
   (load (subst-home file)))
 
