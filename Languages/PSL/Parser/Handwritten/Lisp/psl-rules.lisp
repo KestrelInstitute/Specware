@@ -47,7 +47,7 @@
     (1 :SORT-DECLARATION)
     (1 :SORT-DEFINITION)
     (1 :OP-DECLARATION)
-    (1 :OP-DEFINITION)
+    (1 :PSL-OP-DEFINITION)
     (1 :VARDECL)
     (1 :CLAIM-DEFINITION)
     (1 :PROCDEF))
@@ -91,6 +91,16 @@
 (define-sw-parser-rule :VARDECL ()
   (:tuple "var" (1 :QUALIFIABLE-OP-NAMES) ":" (2 :SORT-SCHEME))
   (make-psl-var-decl 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :PSL-OP-DEFINITION ()
+  (:tuple "def"
+          (:optional (1 :SORT-VARIABLE-BINDER))
+          (2 :QUALIFIABLE-OP-NAMES)
+          (:optional (3 :FORMAL-PARAMETERS))
+          (:optional (:tuple ":" (4 :SORT)))
+          :EQUALS
+          (5 :EXPRESSION))
+  (make-psl-op-definition 1 2 3 4 5 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-IF ()
   (:tuple "if" "{" (1 (:repeat :PSL-ALTERNATIVE "|")) "}")

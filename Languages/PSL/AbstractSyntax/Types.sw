@@ -259,6 +259,7 @@ defining term.
     | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
     | Claim  (AProperty a)
     | Var    List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+    | Def    List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
     | Proc   Ident * (ProcInfo a)
 
   sort ProcInfo a = {

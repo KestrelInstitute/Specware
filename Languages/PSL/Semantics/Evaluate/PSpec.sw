@@ -50,22 +50,8 @@ They are procedures in context.
   def evaluatePSpecElems initialPSpec pSpecElems = {
       (pSpecWithImports,timeStamp,depURIs)
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
-      pSpec <- foldM evaluatePSpecStaticContextElem pSpecWithImports pSpecElems;
-      % base <- baseSpec;
-      % print "evaluatePSpecElems: .. after static and import\n";
-      % print (ppFormat (ppPSpecLess (fixPSpec pSpec) base));
-      % static <- staticSpec pSpec;
-      % dynamic <- dynamicSpec pSpec;
-      % staticElab <- elaborateSpec static;
-      % uri <- pathToRelativeURI "Static";
-      % dynamic <- mergeImport (URI uri,internalPosition) staticElab dynamic internalPosition;
-      % pSpec <- setDynamicSpec pSpec dynamic;
-      pSpec <- foldM evaluatePSpecDynamicContextElem pSpec pSpecElems;
-      % print "evaluatePSpecElems: .. after dynamic before proc elements\n";
-      % print (ppFormat (ppPSpecLess (fixPSpec pSpec) base));
+      pSpec <- foldM evaluatePSpecContextElem pSpecWithImports pSpecElems;
       pSpec <- foldM evaluatePSpecProcElem pSpec pSpecElems;
-      % print "evaluatePSpecElems: .. after proc elements\n";
-      % print (ppFormat (ppPSpecLess (fixPSpec pSpec) base));
       return (pSpec,timeStamp,depURIs)
     }
   
@@ -100,21 +86,46 @@ They are procedures in context.
         -> PSpecElem Position
         -> Env (PSpec Position)
 
-  op evaluatePSpecStaticContextElem :
+  op evaluatePSpecContextElem :
            PSpec Position
         -> PSpecElem Position
         -> Env (PSpec Position)
-  def evaluatePSpecStaticContextElem pSpec (elem, position) =
+  def evaluatePSpecContextElem pSpec (elem, position) =
     case elem of
       | Sort (names,(tyVars,optSort)) -> {
             static <- staticSpec pSpec;
             static <- addSort names tyVars optSort static position;
             setStaticSpec pSpec static
           }
+      | Def ([qid as Qualified(qual,id)],(fxty,srtScheme,optTerm)) -> {
+            static <- staticSpec pSpec;
+            case findAQualifierMap (static.ops, qual, id) of
+              | None -> {
+                  dynamic <- dynamicSpec pSpec;
+                  (case findAQualifierMap (dynamic.ops, qual, id) of
+                     | None -> raise (SpecError (position,
+                                "Identifier "
+                               ^ (printQualifiedId qid)
+                               ^ " has not be declared as an operator nor as a variable"))
+                     | Some _ -> {
+                          dynamic <- addOp [qid] fxty srtScheme optTerm dynamic position;
+                          setDynamicSpec pSpec dynamic
+                        })
+                 }
+              | Some _ -> {
+                   static <- addOp [qid] fxty srtScheme optTerm static position;
+                   setStaticSpec pSpec static
+                 }
+          }
+      | Var (names,(fxty,srtScheme,optTerm)) -> {
+            dynamic <- dynamicSpec pSpec;
+            dynamic <- addOp names fxty srtScheme optTerm dynamic position;
+            setDynamicSpec pSpec dynamic
+          }
       | Op (names,(fxty,srtScheme,optTerm)) -> {
             static <- staticSpec pSpec;
-            x <- addOp names fxty srtScheme optTerm static position;
-            setStaticSpec pSpec x
+            static <- addOp names fxty srtScheme optTerm static position;
+            setStaticSpec pSpec static
           }
       | Claim (Axiom, name, tyVars, term) -> {
             static <- staticSpec pSpec;
@@ -140,11 +151,6 @@ They are procedures in context.
         -> Env (PSpec Position)
   def evaluatePSpecDynamicContextElem pSpec (elem, position) =
     case elem of
-      | Var (names,(fxty,srtScheme,optTerm)) -> {
-            dynamic <- dynamicSpec pSpec;
-            dynamic <- addOp names fxty srtScheme optTerm dynamic position;
-            setDynamicSpec pSpec dynamic
-          }
       | _ -> return pSpec
 \end{spec}
 

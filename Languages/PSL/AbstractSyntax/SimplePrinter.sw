@@ -346,6 +346,11 @@ SpecCalc qualifying spec {
             ppString "sort ",
             ppASortInfo (names,tyVars,optSort)
           ]
+      | Def (names,(fxty,srtScheme,optTerm)) ->
+          ppConcat [
+            ppString "def ",
+            ppAOpInfo (names,fxty,srtScheme,optTerm)
+          ]
       | Op (names,(fxty,srtScheme,optTerm)) ->
           ppConcat [
             ppString "op ",
