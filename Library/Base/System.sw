@@ -3,19 +3,19 @@ System qualifying spec
   import List
   import Option
 
-  op fail     : fa(a) String -> a
+  op fail     : [a] String -> a
 
   %% The specwareDebug? flag is set using the lisp ":swdbg" top-level command.
-  op debug    : fa(a) String -> a % calls lisp's break if the specwareDebug? flag is set.
+  op debug    : [a] String -> a % calls lisp's break if the specwareDebug? flag is set.
   op proverUseBase?   : Boolean % Tests whether the proverUseBase? flag is set.
   op specwareDebug?   : Boolean % Tests whether the specwareDebug? flag is set.
 
   %% Renamed from toString to avoid ambiguity with monomorphic toStrings
-  op anyToString : fa(a) a -> String
-  op print    : fa(a) a -> a
+  op anyToString : [a] a -> String
+  op print    : [a] a -> a
 
-  op warn     : fa(a) String -> a
-  op time     : fa(a) a -> a
+  op warn     : [a] String -> a
+  op time     : [a] a -> a
 
 (*
   The following retrieves a UNIX / Windows environment variable. Other
@@ -60,7 +60,7 @@ System qualifying spec
  arguments executed purely for side effects) will be evaluated and 
  then control will return to the beginning of this call.
 *)
-  op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a
+  op withRestartHandler : [a] String * (() -> ()) * (() -> a) -> a
 
   op garbageCollect : Boolean -> ()
   op hackMemory     : ()      -> ()

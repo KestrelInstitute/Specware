@@ -105,7 +105,7 @@ String qualifying spec
 
   op Boolean.show           : Boolean -> String
   op Compare.show           : Comparison -> String
-  op Option.show            : fa(a) (a -> String) -> Option a -> String
+  op Option.show            : [a] (a -> String) -> Option a -> String
   op Integer.intConvertible : String -> Boolean
   op Integer.show           : Integer -> String
   op Nat.natConvertible     : String -> Boolean

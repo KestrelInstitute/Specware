@@ -7,7 +7,7 @@ PrList qualifying spec
   %type List.List a = | Nil | Cons a * List.List a
        % qualifier required for internal parsing reasons
 
-  axiom induction is type fa(a)
+  axiom induction is [a]
     fa (p : List a -> Boolean)
       p Nil &&  % base
       (fa (x:a, l:List a) p l => p(Cons(x,l))) =>  % step
@@ -15,46 +15,46 @@ PrList qualifying spec
 
   % ops on lists:
 (*
-  op nil             : fa(a)   List a
-  op cons            : fa(a)   a * List a -> List a
-  op insert          : fa(a)   a * List a -> List a
-  op length          : fa(a)   List a -> Nat
-  op null            : fa(a)   List a -> Boolean
-  op hd              : fa(a)   {l : List a | ~(null l)} -> a
-  op tl              : fa(a)   {l : List a | ~(null l)} -> List a
-  op concat          : fa(a)   List a * List a -> List a
-  op ++ infixl 25    : fa(a)   List a * List a -> List a
+  op nil             : [a]   List a
+  op cons            : [a]   a * List a -> List a
+  op insert          : [a]   a * List a -> List a
+  op length          : [a]   List a -> Nat
+  op null            : [a]   List a -> Boolean
+  op hd              : [a]   {l : List a | ~(null l)} -> a
+  op tl              : [a]   {l : List a | ~(null l)} -> List a
+  op concat          : [a]   List a * List a -> List a
+  op ++ infixl 25    : [a]   List a * List a -> List a
 %% Deprecated for some time so it should be safe to remove
-%  op @  infixl 25    : fa(a)   List a * List a -> List a
-  op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
-  op nthTail         : fa(a)   {(l,i) : List a * Nat | i < length l} ->
+%  op @  infixl 25    : [a]   List a * List a -> List a
+  op nth             : [a]   {(l,i) : List a * Nat | i < length l} -> a
+  op nthTail         : [a]   {(l,i) : List a * Nat | i < length l} ->
                                List a
-  op last            : fa(a)   {l: List a | length(l) > 0} -> a
-  op butLast         : fa(a)   {l: List a | length(l) > 0} -> List a
-  op member          : fa(a)   a * List a -> Boolean
-%  op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat |
+  op last            : [a]   {l: List a | length(l) > 0} -> a
+  op butLast         : [a]   {l: List a | length(l) > 0} -> List a
+  op member          : [a]   a * List a -> Boolean
+%  op sublist         : [a]   {(l,i,j) : List a * Nat * Nat |
 %                                i <= j && j <= length l} -> List a
-  op map             : fa(a,b) (a -> b) -> List a -> List b
-  op mapPartial      : fa(a,b) (a -> Option b) -> List a -> List b
-  op foldl           : fa(a,b) (a * b -> b) -> b -> List a -> b
-  op foldr           : fa(a,b) (a * b -> b) -> b -> List a -> b
-  op exists          : fa(a)   (a -> Boolean) -> List a -> Boolean
-  op all             : fa(a)   (a -> Boolean) -> List a -> Boolean
-  op filter          : fa(a)   (a -> Boolean) -> List a -> List a
-  op diff            : fa(a)   List a * List a -> List a
-  op rev             : fa(a)   List a -> List a
-  op rev2            : fa(a)   List a * List a -> List a
-  op flatten         : fa(a)   List(List a) -> List a
-  op find            : fa(a)   (a -> Boolean) -> List a -> Option(a)
-  op tabulate        : fa(a)   Nat * (Nat -> a) -> List a
-  op firstUpTo       : fa(a)   (a -> Boolean) -> List a ->
+  op map             : [a,b] (a -> b) -> List a -> List b
+  op mapPartial      : [a,b] (a -> Option b) -> List a -> List b
+  op foldl           : [a,b] (a * b -> b) -> b -> List a -> b
+  op foldr           : [a,b] (a * b -> b) -> b -> List a -> b
+  op exists          : [a]   (a -> Boolean) -> List a -> Boolean
+  op all             : [a]   (a -> Boolean) -> List a -> Boolean
+  op filter          : [a]   (a -> Boolean) -> List a -> List a
+  op diff            : [a]   List a * List a -> List a
+  op rev             : [a]   List a -> List a
+  op rev2            : [a]   List a * List a -> List a
+  op flatten         : [a]   List(List a) -> List a
+  op find            : [a]   (a -> Boolean) -> List a -> Option(a)
+  op tabulate        : [a]   Nat * (Nat -> a) -> List a
+  op firstUpTo       : [a]   (a -> Boolean) -> List a ->
                                Option (a * List a)
-  op splitList       : fa(a)   (a -> Boolean) -> List a ->
+  op splitList       : [a]   (a -> Boolean) -> List a ->
                                Option(List a * a * List a)
-  op locationOf      : fa(a)   List a * List a -> Option(Nat * List a)
-  op compare         : fa(a)   (a * a -> Comparison) -> List a * List a ->
+  op locationOf      : [a]   List a * List a -> Option(Nat * List a)
+  op compare         : [a]   (a * a -> Comparison) -> List a * List a ->
                                Comparison
-  op app             : fa(a)   (a -> ()) -> List a -> ()  % deprecated
+  op app             : [a]   (a -> ()) -> List a -> ()  % deprecated
 *)
 
   axiom nilIsNil is nil = Nil

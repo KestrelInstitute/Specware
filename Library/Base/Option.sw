@@ -4,13 +4,13 @@ Option qualifying spec
 
   type Option a = | None | Some a
 
-  op some      : fa(a) a -> Option a
-  op none      : fa(a) Option a
-  op some?     : fa(a) Option a -> Boolean
-  op none?     : fa(a) Option a -> Boolean
-  op compare   : fa(a) (a * a -> Comparison) ->
+  op some      : [a] a -> Option a
+  op none      : [a] Option a
+  op some?     : [a] Option a -> Boolean
+  op none?     : [a] Option a -> Boolean
+  op compare   : [a] (a * a -> Comparison) ->
                        Option a * Option a -> Comparison
-  op mapOption : fa(a,b) (a -> b) -> Option a -> Option b
+  op mapOption : [a,b] (a -> b) -> Option a -> Option b
 
   def some x = Some x
 

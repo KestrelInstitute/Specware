@@ -29,7 +29,7 @@ spec
 
   axiom geq is fa(i: Integer, j: Integer) i <= j <=> j >= i
 *)
-%  axiom listComp is type fa (a) fa(l: List a) ex (hd, tl) l = Cons(hd, tl) || l = Nil
+%  axiom listComp is[a] fa(l: List a) ex (hd, tl) l = Cons(hd, tl) || l = Nil
 
 %  axiom arith1 is fa (i, j: Integer) i >= 0 && j = i + 1 => -1 < j
 %  axiom arith2 is fa (i, j, k: Integer) i >= 0 && j >= 0 && k = i + j => -1 < k
