@@ -17,19 +17,30 @@
 ;;;  Misc utilities
 ;;; ========================================================================
 
+(defvar *make-pos-warnings-seen* 0)
+
 (defun make-pos (left right) 
-  (declare (special *parse-file-name*))
+  (declare (special *parser-source*)) ; bound in parser-interface.lisp
   (when (consp left)
+    (when (< (incf *make-pos-warnings-seen*) 10)
+      (warn "In MAKE-POS: Bogus left position: ~S" left))
     (let* ((line   (car left))
 	   (column (cdr left))
-	   (byte   (+ (* 10 line) column))) ; evil
+	   (byte   0))
       (setq left (vector line column byte))))
   (when (consp right)
+    (when (< (incf *make-pos-warnings-seen*) 10)
+      (warn "In MAKE-POS: Bogus right position: ~S" right))
     (let* ((line   (car right))
 	   (column (cdr right))
-	   (byte   (+ (* 10 line) column))) ; evil
+	   (byte   0))
       (setq right (vector line column byte))))
-  (cons :|File| (vector *parse-file-name* left right)))
+  (case (car *parser-source*)
+    (:file   (cons :|File|     (vector (cdr *parser-source*) left right)))
+    (:string (cons :|String|   (vector (cdr *parser-source*) left right)))
+    (t       (when (< (incf *make-pos-warnings-seen*) 10)
+	       (warn "In MAKE-POS: What are we parsing? : ~S" *parser-source*))
+	     (cons :|Internal| (cdr *parser-source*)))))
 
 (defun freshMetaTypeVar (left right)
   (cons :|MetaTyVar|

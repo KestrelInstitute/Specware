@@ -6,10 +6,17 @@
 ;;;  Parser interface
 ;;; ======================================================================
 
-(defvar *parse-file-name*)
+;; parseFile                    => parse-file => <parser>
+;; parseFileMsg                 => parse-file => <parser>
+;; parseString  => parse-string => parse-file => <parser>
+;;
+;; parse-file is defined in /Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-top.lisp
 
-(defun parseFile (*parse-file-name*)
-  (let* ((session (parse-file *parse-file-name* *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
+(defvar *parser-source* nil) ; used by make-pos in semantics.lisp
+
+(defun parseFile (fileName)
+  (let* ((*parser-source* (list :file fileName))
+	 (session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
 	 (pres (parse-session-results session))
 	 (error? (or (parse-session-error-reported? session) (parse-session-gaps session) (null pres))))
     (if error?  '(:|None|)
@@ -22,11 +29,12 @@
 	(let ((res2 (mapcar #'eval res1)))
 					; (when (null res2)
 					; (format t "~%---~%")
-					; (format t "~&;;; Note: ~A was legal, but vacuous.~%" *parse-file-name*))
+					; (format t "~&;;; Note: ~A was legal, but vacuous.~%" fileName))
 	  (cons :|Some| (car res2)))))))
 
 (defun parseFileMsg (fileName) 
-  (let* ((session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
+  (let* ((*parser-source* (list :file fileName))
+	 (session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
 	 (pres (parse-session-results session))
 	 (error? (or (parse-session-error-reported? session) (parse-session-gaps session) (null pres))))
     (if error? (cons :|Error| 
@@ -52,13 +60,6 @@
 	    (format t "~&;;; Note: ~A was legal, but vacuous.~%" fileName))
 	  (cons :|Ok| (cadr res2)))))))
 
-;; Mock string parser based on printing to /tmp, and then parsing.
-
-(defun parse-string (string parser tokenizer) 
-  (with-open-file (s "/tmp/string-spec" :direction :output :if-exists :new-version)
-    (format s string))
-  (parse-file "/tmp/string-spec" parser tokenizer))
-
 (defun parseString (string) 
   (let* ((session (parse-string string *specware4-parser* *specware4-tokenizer*))
 	 (pres	  (parse-session-results session))
@@ -80,6 +81,12 @@
 	(let ((res2 res1))		; no eval here
 	  (cons :|Ok| res2))))))
 
+;; Mock string parser based on printing to /tmp, and then parsing.
 
-    
+(defun parse-string (string parser tokenizer) 
+  (with-open-file (s "/tmp/string-spec" :direction :output :if-exists :new-version)
+    (format s string))
+  ;; parse-file is defined in /Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-top.lisp
+  (let ((*parser-source* (list :string string)))
+    (parse-file "/tmp/string-spec" parser tokenizer)))
 
