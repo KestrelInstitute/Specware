@@ -2,7 +2,8 @@ StringUtilities qualifying spec {
   import StringSetSplay
 
   op freshName  : String * StringSet.Set -> String
-  op concatList : List String -> String
+  %% Already in String
+  %op concatList : List String -> String
   op tokens     : (Char -> Boolean) -> String -> List String
 
   % freshName (x,names)
@@ -18,7 +19,7 @@ StringUtilities qualifying spec {
      in
         loop(0,name0)
 
-  def concatList l = List.foldr String.concat "" l
+  %% def concatList l = List.foldr String.concat "" l
 
   def tokens p string = 
       let chars = String.explode string in
