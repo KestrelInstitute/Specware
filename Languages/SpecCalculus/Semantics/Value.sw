@@ -1,12 +1,14 @@
 spec {
   import /Languages/MetaSlang/Specs/Categories/AsRecord
   import ../AbstractSyntax/Printer
+  import /Provers/Proof
 
   sort Value =
     | Spec     Spec
     | Morph    Morphism
     | Diag     SpecDiagram       
     | Colimit  SpecInitialCocone 
+    | Proof    Proof
     | InProcess			  % Used for catching circular definitions
     % | DiagMorph
 

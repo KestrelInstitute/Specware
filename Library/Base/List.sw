@@ -36,6 +36,8 @@ List qualifying spec {
   op cons             : fa(a)   a * List a -> List a
   op tabulate         : fa(a)   Nat * (Nat -> a) -> List a
   op compare          : fa(a)   (a * a -> Comparison) -> List a * List a -> Comparison
+  op firstUpTo        : fa(a)   (a -> Boolean) -> List a -> Option (a * List a)
+  op firstUpToHelper  : fa(a)   ((a -> Boolean) * List a * List a) -> Option(a * List a)
 
   def nil       = Nil
   def cons(a,l) = Cons(a,l)
@@ -171,5 +173,13 @@ List qualifying spec {
        | ([],   []   ) -> Equal
        | ([],   _::_ ) -> Less
        | (_::_, []   ) -> Greater
+
+   def firstUpTo p l =
+     firstUpToHelper(p, l, [])
+
+   def firstUpToHelper(p, l, res) =
+     case l of
+       | [] -> None
+       | hd::tl -> if p hd then Some (hd, res) else firstUpToHelper(p, tl, Cons(hd,res))
 }
 \end{spec}

@@ -120,6 +120,17 @@
     (make-pos l r)))
 
 ;;; ========================================================================
+;;;  SC-PROVER
+;;; ========================================================================
+
+(defun make-sc-prover (claim-name spec-term prover-name assertions options l r)
+  (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
+	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
+	(options     (if (eq options     :unspecified) '() options)))
+    (cons (cons :|Prove| (vector claim-name spec-term prover-name assertions options))
+	  (make-pos l r))))
+
+;;; ========================================================================
 ;;;  SC-URI
 ;;; ========================================================================
 

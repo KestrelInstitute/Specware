@@ -5,6 +5,7 @@ Synchronized with r1.7 SW4/Languages/SpecCalculus/AbstractSyntax/Types.sl
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../MetaSlang/Specs/PosSpec % For Position
+  import /Library/Legacy/Utilities/Lisp % for LispCell
 \end{spec}
 
 All the objects in the abstract syntax are polymorphic and defined at
@@ -72,6 +73,8 @@ one to override an existing definition.
 
 \begin{spec}
   sort Name = String
+  sort ProverName = Name
+  sort ClaimName = Name
 \end{spec}
 
 The following is the sort given to us by the parser.
@@ -80,10 +83,12 @@ The following is the sort given to us by the parser.
   sort Term a = (Term_ a) * a
   sort Term_ a = 
     | Print (Term a)
+    | Prove ClaimName * Term Position * ProverName * Assertions * ProverOptions
     | URI RelativeURI
     | Spec List (SpecElem a)
     | Diag List (DiagElem a)
     | Colimit (Term a)
+
 \end{spec}
 
 The calculus supports two types of morphisms: morphisms between specs and
@@ -245,6 +250,14 @@ them to be presented in any order.
   sort DiagMorphRule_ a =
     | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
+
+
+
+  sort Assertions = | All
+                    | Explicit List ClaimName
+
+  sort ProverOptions = List LispCell
+
 \end{spec}
 
 A \verb+NatTranComp+ element is a component in a natural transformation

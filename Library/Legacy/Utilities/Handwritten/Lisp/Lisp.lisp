@@ -28,6 +28,9 @@
 (defun uncell (l) l)
 (defun fail (s) (error s))
 
+;;(defun |!PPRINT| (term) (write-to-string term :pretty t))
+(defun |!PPRINT| (term) (pprint term))
+
 ;;; This should be in a separate I/O spec.
 
 ;;; With Open File

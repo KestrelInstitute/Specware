@@ -17,8 +17,12 @@ SpecCalc qualifying spec {
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cURI <- SpecCalc.getURI(cterm);
      snarkFileName <- URItoSnarkFile (cURI, optFileNm);
+     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
+                     (SpecPath_Relative {path = ["Library","Base"],
+                                         hashSuffix = None});
      let _ = ensureDirectoriesExist snarkFileName in
-     let _ = toSnarkFile(spc, snarkFileName,[]) in
+     let _ = toSnarkFile((subtractSpec spc baseSpec), snarkFileName,[]) in
+%     let _ = System.fail ("evaluateSnarkGen ") in
      {print("Translated to Snark");
       return valueInfo}}
 

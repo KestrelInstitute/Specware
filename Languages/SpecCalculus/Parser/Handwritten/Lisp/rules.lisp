@@ -88,6 +88,7 @@
    ((:tuple "colimit")        "colimit") ; so we can use colimit as a function
    ((:tuple "diagram")        "diagram") ; so we can use diagram as a function
    ((:tuple "print")          "print") ; so we can use print as a function
+   ((:tuple "Snark")          "Snark") ; so we can use Snark as a Spec
    ((:tuple (1 :NON_KEYWORD_NAME)) 1)
    ))
 
@@ -154,7 +155,8 @@
    (1 :SC-HIDE)
    (1 :SC-EXPORT)
    (1 :SC-GENERATE)
-   (1 :SC-OBLIGATIONS))
+   (1 :SC-OBLIGATIONS)
+   (1 :SC-PROVE))
   1)
 
 ;;; ========================================================================
@@ -164,6 +166,29 @@
 (define-sw-parser-rule :SC-PRINT ()
   (:tuple "print" (1 :SC-TERM))
   (make-sc-print 1 ':left-lcb ':right-lcb))
+
+;;; ========================================================================
+;;;  SC-PROVE
+;;; ========================================================================
+
+(define-sw-parser-rule :SC-PROVE ()
+  (:tuple "prove" (1 :CLAIM-NAME) "in" (2 :SC-TERM) 
+	  (:optional (:tuple "with"    (3 :PROVER-NAME)))
+	  (:optional (:tuple "using"   (4 :PROVER-ASSERTIONS)))
+	  (:optional (:tuple "options" (5 :PROVER-OPTIONS))))
+  (make-sc-prover 1 2 3 4 5 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :PROVER-NAME ()
+  (:anyof "Snark" "PVS"))
+
+(define-sw-parser-rule :PROVER-ASSERTIONS ()
+  (:anyof
+   "ALL"
+   (:repeat* :CLAIM-NAME)))
+
+(define-sw-parser-rule :PROVER-OPTIONS ()
+  (:anyof "Snark" "PVS"))
+
 
 ;;; ========================================================================
 ;;;  SC-URI

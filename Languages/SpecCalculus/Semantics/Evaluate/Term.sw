@@ -19,6 +19,7 @@ SpecCalc qualifying spec {
  import Obligations
  import Substitute      
  import Print      
+ import Prove
  import /Languages/MetaSlang/CodeGen/C/ToC
 \end{spec}
 
@@ -68,6 +69,8 @@ This is a monadic interpreter for the Spec Calculus.
         SpecCalc.evaluateTranslate sub_term translation
 
     | Obligations(sub_term) -> SpecCalc.evaluateObligations sub_term
+
+    | Prove args -> SpecCalc.evaluateProve args pos
 
     | Generate (language, sub_term as (term,position), optFile) -> {
           (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
