@@ -16,6 +16,7 @@ if [ ! -e ilisp ]; then
 fi
 
 echo ""
+echo "At `pwd`"
 echo "ilisp/ should be a directory (or a link to one) containing many files, including ilisp.el"
 echo ""
 ls -sltd ilisp
@@ -34,27 +35,66 @@ fi
 if [ ! -e ilisp-pkg.x86f ]; then
   DOIT=YES
 fi
-if [ ! -f /usr/local/bin/cmucl ]; then
-  echo "Oops.  Do not have /usr/local/bin/cmucl"
-  DOIT=CANNOT
+
+if [ "$DOIT" == "NO" ]; then
+
+  echo "No need to run ilisp-compile-inits within xemacs, since the following files already exist:"
+
+else 
+
+  CMULISP=""
+  for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl; do
+    if [ -x "$L" ]; then
+      CMULISP="$L"; break
+    fi
+  done
+
+  if [ -z "$CMULISP" ]; then
+    echo "Oops.  Do not have cmucl among the following:"
+    echo " "
+    echo "  $HOME/cmucl/bin/lisp"
+    echo "  /usr/share/cmulisp/bin/lisp"
+    echo "  /usr/local/bin/cmucl"
+    echo " "
+    echo "Hence, cannot run ilisp-compile-inits within xemacs"
+  else
+    echo "About to run ilisp-compile-inits within xemacs, to compile ilisp-pkg.lisp, cmulisp.lisp, cl-ilisp.lisp"
+    # This is magic mumbo-jumbo -- more straightforward attempts to compile the files seem to fail in obscure ways.
+    # See the note in compile-misc-ilisp-files.el
+    export LISP_DIRECTORY=`pwd`
+    export LISP_EXECUTABLE=$CMULISP
+    xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+           -l "$SPECWARE4"/Library/IO/Emacs/compile-misc-ilisp-files \
+           -geometry =150x60+20+20 
+    echo "With luck, xemacs is now done compiling."
+    echo " "
+    echo "Should now see three or more x86f files, including:"
+    echo " "
+    echo "  cl-ilisp.x86f"
+    echo "  cmulisp.x86f" 
+    echo "  ilisp-pkg.x86f"
+  fi
 fi
 
-if [ "$DOIT" == "YES" ]; then
-  echo "About to run ilisp-compile-inits within xemacs, to compile ilisp-pkg.lisp, cmulisp.lisp, cl-ilisp.lisp"
-  # This is magic mumbo-jumbo -- more straightforward attempts to compile the files seem to fail in obscure ways.
-  # See the note in compile-misc-ilisp-files.el
-  xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
-         -l "$SPECWARE4"/Library/IO/Emacs/compile-misc-ilisp-files \
-         -geometry =150x60+20+20 
-  echo "With luck, xemacs is now done compiling."
-  echo "Should now see three or more x86f files:"
-else if [ "$DOIT" == "NO" ]; then
-  echo "No need to run ilisp-compile-inits within xemacs, since the following files already exist:"
-else
-  echo " "
-fi
-fi
 echo ""
+echo "At `pwd`"
 ls -sltr *.x86f
 echo ""
+
+RC=0
+if [ ! -e cl-ilisp.x86f ]; then
+  echo "Oops...  Missing cl-ilisp.x86f"
+  RC=1
+fi
+if [ ! -e cmulisp.x86f ]; then
+  echo "Oops...  Missing cmulisp.x86f"
+  RC=1
+fi
+if [ ! -e ilisp-pkg.x86f ]; then
+  echo "Oops...  Missing ilisp-pkg.x86f"
+  RC=1
+fi
+
 echo ""
+
+exit $RC
