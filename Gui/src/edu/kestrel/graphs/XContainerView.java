@@ -493,7 +493,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             //int bw = 10;
             //cbounds = AbstractCellView.getBounds(getChildViews());
             //cbounds = new Rectangle(cbounds.x-bw,cbounds.y-bw,cbounds.width+2*bw,cbounds.height+2*bw);
-            cbounds = getChildrenBounds(getChildElementViewsAsArray(false),null);
+            cbounds = getChildrenBounds();//(getChildElementViewsAsArray(false),null);
         }
         if (isExpanded()) {
             bounds.add(cbounds);

@@ -34,7 +34,7 @@ public abstract class XContainerNode extends XNode {
     /** this flag controls, whether the bounds of an expanded container node is automatically adjusted
      * to its children's bounds or not.
      */
-    static public boolean autoUpdateBounds = true;
+    static public boolean autoUpdateBounds = false;
     
     /** Creates a new instance of XContainerNode */
     public XContainerNode() {
