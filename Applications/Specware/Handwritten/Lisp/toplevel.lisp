@@ -30,7 +30,8 @@
 
 (defun sw (x)
    (Specware::evaluateURI_fromLisp x)
-   (values))
+   ;; (values) ; breaks bootstrap!  why suppress result?
+   )
 
 #+allegro
 (top-level:alias ("sw" :case-sensitive) (&optional x)
