@@ -10,6 +10,5 @@
 (defun internalize_Document-2 (document table)
   (let* ((optional-sd (caar table))
 	 (sd (caddr optional-sd)))
-    (print sd)
     (aux_internalize_Document-3 document sd table)))
 
