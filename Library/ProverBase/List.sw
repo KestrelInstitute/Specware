@@ -84,62 +84,67 @@ PrList qualifying spec
 
 %  def @ (s1,s2) = concat(s1,s2)
 
-  axiom 
+  axiom nth_def is  fa(hd, tl)
+     nth(Cons(hd,tl),0) = hd
 
-def nth(hd::tl,i) =  % list is non-empty because length > i >= 0
-    if i = 0 then hd
-             else nth(tl,i-1)
+  axiom nth_def is  fa(hd, tl, i)
+     nth(Cons(hd,tl),i) = nth(tl, i-1)
 
-  def nthTail(hd::tl,i) =  % list is non-empty because length > i >= 0
-    if i = 0 then tl
-             else nthTail(tl,i-1)
+  axiom nthTail_def is fa (hd, tl)
+     nthTail(tl,0) = tl
 
-  def last(hd::tl) =
-    case tl of
-      | [] -> hd
-      | _ -> last(tl)
+  axiom nthTail_def is fa (hd, tl, i)
+     nthTail(tl,i) = nthTail(tl, i-1)
 
-  def butLast(hd::tl) =
-    case tl of
-      | [] -> []
-      | _ -> Cons(hd, butLast(tl))
+  axiom last_def is fa (hd)
+    last(Cons(hd, [])) = hd
 
-  def member(x,l) =
-    case l of
-       | []     -> false
-       | hd::tl -> if x = hd then true else member(x,tl)
+  axiom last_def is fa (hd, tl)
+    last(Cons(hd, tl)) = last(tl)
 
-(*  def sublist(l,i,j) =
-    let def removeFirstElems(l,i) =
-          if i = 0 then l
-          else removeFirstElems(tl l,i-1) in
-    let def collectFirstElems(l,i) =
-          if i = 0 then Nil
-          else Cons (hd l, collectFirstElems(tl l,i-1)) in
-    collectFirstElems(removeFirstElems(l,i),j-i)
-*)
-  def map f l =
-    case l of
-       | []     -> [] 
-       | hd::tl -> Cons(f hd,map f tl)
+  axiom butLast_def is fa (hd)
+    butLast(Cons(hd, [])) = []
 
-  def mapPartial f l =
-    case l of
-       | []     -> []
-       | hd::tl -> (case f hd of
-                       | Some x -> Cons(x,mapPartial f tl)
-                       | None   -> mapPartial f tl)
+  axiom butLast_def is fa (hd, tl)
+    butLast(Cons(hd, tl)) = Cons(hd, butLast(tl))
 
-  def foldl f base l =
-    case l of
-       | []     -> base
-       | hd::tl -> foldl f (f(hd,base)) tl
+  axiom member_def is fa (x)
+    ~(member(x, []))
 
-  def foldr f base l =
-    case l of
-       | []     -> base
-       | hd::tl -> f(hd,foldr f base tl)
+  axiom member_def is fa (hd, tl)
+     member(hd, Cons(hd, tl))
 
+  axiom member_def is fa (x, hd, tl)
+     (x~= hd => (member(x, Cons(hd, tl)) <=> member(x, tl)))
+
+  axiom map_def is fa (f)
+     map f [] = []
+
+  axiom map_def is fa (f, hd, tl)
+     map f (Cons(hd, tl)) = Cons(f hd, map f tl)
+
+  axiom mapPartial_def is fa (f)
+     mapPartial f [] = []
+
+  axiom mapPartial_def is fa (f, hd, tl, x)
+     f hd = Some x => mapPartial f (Cons(hd, tl)) = Cons(x, mapPartial f tl)
+
+  axiom mapPartial_def is fa (f, hd, tl)
+     f hd = None => mapPartial f (Cons(hd, tl)) = mapPartial f tl
+
+  axiom foldl_def is fa (f, base)
+     foldl f base [] = base
+
+  axiom foldl_def is fa (f, base, hd, tl)
+     foldl f base (Cons(hd, tl)) = foldl f (f(hd, base)) tl
+
+  axiom foldr_def is fa (f, base)
+     foldr f base [] = base
+
+  axiom foldr_def is fa (f, base, hd, tl)
+     foldr f base (Cons(hd, tl)) = f(hd, foldr f base tl)
+
+(*
   def exists p l =
     case l of
        | []     -> false
@@ -240,5 +245,6 @@ def nth(hd::tl,i) =  % list is non-empty because length > i >= 0
     case l of
        | []     -> ()
        | hd::tl -> (f hd; app f tl)
+*)
 
 endspec
