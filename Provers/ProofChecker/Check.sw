@@ -56,12 +56,12 @@ spec
     in
     aux (s, empty)
 
-  op checkPermutation : Nat -> FMap(Nat,Nat) -> MayFail Permutation
-  def checkPermutation len natMap =
-    FMap.foldDom
-      (natMap,
-      id : Nat -> Nat,
-      fn (perm : Nat -> Nat
+  op checkPermutation : FSeq Nat -> MayFail Permutation
+  def checkPermutation natS =
+    if noRepetitions? natS
+    && forall? (natS, fn i:Nat -> i < length natS)
+    then OK natS
+    else FAIL
 
   op checkExtraTypeVars : Context -> Context -> MayFail TypeVariables
   def checkExtraTypeVars cx1 cx2 =
@@ -95,6 +95,15 @@ spec
              else checkOpDecl (rtail cx) o
            | _ -> checkOpDecl (rtail cx) o
 
+  op checkVarDecl : Context -> Variable -> MayFail Type
+  def checkVarDecl cx v =
+    if cx = empty then FAIL
+    else case first cx of
+           | varDeclaration(v1,t) ->
+             if v1 = v then OK t
+             else checkVarDecl (rtail cx) v
+           | _ -> checkVarDecl (rtail cx) v
+
   op checkTypeDef : Context -> TypeName -> MayFail (TypeVariables * Type)
   def checkTypeDef cx tn =
     if cx = empty then FAIL
@@ -109,6 +118,33 @@ spec
     if noRepetitions? tvS && length tvS = length tS
     then OK (FMap.fromSequences (tvS, tS))
     else FAIL
+
+  op checkFieldType : Type -> Field -> MayFail Type
+  def checkFieldType t f =
+    case t of
+      | (nary (record fS, tS)) ->
+        if noRepetitions? fS then
+        let i:Nat = indexOf (fS, f) in
+        if i < length tS then
+        OK (tS!i)
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkRecordTypeUnion : Type -> Type -> MayFail Type
+  def checkRecordTypeUnion t1 t2 =
+    case (t1, t2) of (nary (record fS1, tS1), nary (record fS2, tS2)) ->
+    if length fS1 = length tS1
+    && length fS2 = length tS2 then
+    let fS = maxCommonPrefix (fS1, fS2) in
+    let tS = maxCommonPrefix (tS1, tS2) in
+    if toSet (lastN (fS1, length fS1 - length fS)) /\
+       toSet (lastN (fS2, length fS2 - length fS)) = empty then
+    OK (TRECORD (fS1 ++ lastN (fS2, length fS2 - length fS))
+                (tS1 ++ lastN (tS2, length tS2 - length tS)))
+    else   FAIL
+    else   FAIL
+    | _ -> FAIL
 
 
   op check : Proof -> MayFail Judgement   % defined below
@@ -148,10 +184,64 @@ spec
         if length cS = length t?S then OK (cx, cS, t?S) else FAIL
       | _ -> FAIL
 
+  op checkRecordType : Proof -> MayFail (Context * Fields * Types)
+  def checkRecordType prf =
+    case check prf of
+      | OK (wellFormedType (cx, nary (record fS, tS))) ->
+        if length fS = length tS then OK (cx, fS, tS) else FAIL
+      | _ -> FAIL
+
+  op checkProductType : Proof -> MayFail (Context * Types)
+  def checkProductType prf =
+    case check prf of
+      | OK (wellFormedType (cx, nary (product, tS))) -> OK (cx, tS)
+      | _ -> FAIL
+
+  op checkSubType : Proof -> MayFail (Context * Type * Expression)
+  def checkSubType prf =
+    case check prf of
+      | OK (wellFormedType (cx, subQuot (sub, t, r))) -> OK (cx, t, r)
+      | _ -> FAIL
+
+  op checkSubType2 : Context -> Type -> Proof -> MayFail (Expression)
+  def checkSubType2 cx t prf =
+    case check prf of
+      | OK (wellFormedType (cx1, subQuot (sub, t1, r))) ->
+        if cx1 = cx && t1 = t then OK r else FAIL
+      | _ -> FAIL
+
+  op checkQuotientType : Proof -> MayFail (Context * Type * Expression)
+  def checkQuotientType prf =
+    case check prf of
+      | OK (wellFormedType (cx, subQuot (quotienT, t, q))) -> OK (cx, t, q)
+      | _ -> FAIL
+
+  op checkQuotientType2 : Context -> Type -> Proof -> MayFail (Expression)
+  def checkQuotientType2 cx t prf =
+    case check prf of
+      | OK (wellFormedType (cx1, subQuot (quotienT, t1, q))) ->
+        if cx1 = cx && t1 = t then OK q else FAIL
+      | _ -> FAIL
+
   op checkExpr : Proof -> MayFail (Context * Expression * Type)
   def checkExpr prf =
     case check prf of
       | OK (wellTypedExpr (cx, e, t)) -> OK (cx, e, t)
+      | _ -> FAIL
+
+  op checkExprWithContext : Context -> Proof -> MayFail (Expression * Type)
+  def checkExprWithContext cx prf =
+    case check prf of
+      | OK (wellTypedExpr (cx1, e, t)) ->
+        if cx1 = cx then OK (e, t) else FAIL
+      | _ -> FAIL
+
+  op checkExprWithContextAndType :
+     Context -> Type -> Proof -> MayFail (Expression)
+  def checkExprWithContextAndType cx t prf =
+    case check prf of
+      | OK (wellTypedExpr (cx1, e, t1)) ->
+        if cx1 = cx && t1 = t then OK e else FAIL
       | _ -> FAIL
 
   op checkTheorem : Proof -> MayFail (Context * Expression)
@@ -164,7 +254,7 @@ spec
   def checkTheoremOpDef prf =
     case checkTheorem prf of
       | OK (cx, binding (existential1, vS, tS,
-                         binary (equality, nullary (variable v), e))) ->
+                         binary (equation, nullary (variable v), e))) ->
         if vS = singleton v
         && length tS = 1 then
         let t:Type = first tS in
@@ -231,6 +321,19 @@ spec
         else FAIL
       | _ -> FAIL
 
+  op checkTheoremEquation : Proof -> MayFail (Context * Expression * Expression)
+  def checkTheoremEquation prf =
+    case checkTheorem prf of
+      | OK (cx, binary (equation, e1, e2)) -> OK (cx, e1, e2)
+      | _ -> FAIL
+
+  op checkTheoremEquationGiven :
+     Context -> Expression -> Expression -> Proof -> MayFail ()
+  def checkTheoremEquationGiven cx e1 e2 prf =
+    case checkTheorem prf of
+      | OK (cx1, e) ->
+        if cx1 = cx && e = (e1 == e2) then OK () else FAIL
+      | _ -> FAIL
 
   op checkTypeEquivalence : Proof -> MayFail (Context * Type * Type)
   def checkTypeEquivalence prf =
@@ -653,34 +756,112 @@ spec
       | _ -> FAIL)
       | _ -> FAIL)
       | _ -> FAIL)
-(*
-    | tyEqSumOrder (prf, iS) ->
+    | tyEqSumOrder (prf, natS) ->
       (case checkSumType prf of OK (cx, cS, t?S) ->
+      (case checkPermutation natS of OK prm ->
+      OK (typeEquivalence
+            (cx, SUM cS t?S, SUM (permute(cS,prm)) (permute(t?S,prm))))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | tyEqRecordOrder (prf, natS) ->
+      (case checkRecordType prf of OK (cx, fS, tS) ->
+      (case checkPermutation natS of OK prm ->
+      OK (typeEquivalence
+            (cx, TRECORD fS tS, TRECORD (permute(fS,prm)) (permute(tS,prm))))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | tyEqProductOrder (prf, natS) ->
+      (case checkProductType prf of OK (cx, tS) ->
+      (case checkPermutation natS of OK prm ->
+      OK (typeEquivalence (cx, PRODUCT tS, PRODUCT (permute(tS,prm))))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | tyEqSubPredicate (prfTy1, prfTy2, prfEq) ->
+      (case checkSubType prfTy1 of OK (cx, t, r1) ->
+      (case checkSubType2 cx t prfTy2 of OK r2 ->
+      (case checkTheoremEquationGiven cx r1 r2 prfEq of OK () ->
+      OK (typeEquivalence (cx, t \ r1, t \ r2))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | tyEqQuotientPredicate (prfTy1, prfTy2, prfEq) ->
+      (case checkQuotientType prfTy1 of OK (cx, t, q1) ->
+      (case checkQuotientType2 cx t prfTy2 of OK q2 ->
+      (case checkTheoremEquationGiven cx q1 q2 prfEq of OK () ->
+      OK (typeEquivalence (cx, t / q1, t / q2))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
 
-
-         pj (wellFormedType (cx, SUM cS t?S))
-      && length cS = length t?S
-      && permutationForLength? (prm, length cS)
-      => pj (typeEquivalence
-               (cx, SUM cS t?S, SUM (permute(cS,prm)) (permute(t?S,prm)))))
-
-    | tyEqRecordOrder       Proof * FMap(Nat,Nat)
-    | tyEqProductOrder      Proof * FMap(Nat,Nat)
-    | tyEqSubPredicate      Proof * Proof * Proof
-    | tyEqQuotientPredicate Proof * Proof * Proof
     % well-typed expressions:
-    | exVariable             Proof * Variable
-    | exTrue                 Proof
-    | exFalse                Proof
-    | exRecordProjection     Proof * Field
-    | exTupleProjection      Proof * PosNat
-    | exRelaxator            Proof
-    | exQuotienter           Proof
-    | exNegation             Proof
-    | exApplication          Proof * Proof
-    | exEquation             Proof * Proof
-    | exInequation           Proof * Proof
-    | exRecordUpdate         Proof * Proof
+    | exVariable (prf, v) ->
+      (case checkContext prf of OK cx ->
+      (case checkVarDecl cx v of OK t ->
+      OK (wellTypedExpr (cx, VAR v, t))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exTrue prf ->
+      (case checkContext prf of OK cx ->
+      OK (wellTypedExpr (cx, TRUE, BOOL))
+      | _ -> FAIL)
+    | exFalse prf ->
+      (case checkContext prf of OK cx ->
+      OK (wellTypedExpr (cx, FALSE, BOOL))
+      | _ -> FAIL)
+    | exRecordProjection (prf, f) ->
+      (case checkExpr prf of OK (cx, e, t) ->
+      (case checkFieldType t f of OK ti ->
+      OK (wellTypedExpr (cx, e DOTr f, ti))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exTupleProjection (prf, i) ->
+      (case checkExpr prf of OK (cx, e, nary (product, tS)) ->
+      if i <= length tS then
+      OK (wellTypedExpr (cx, e DOTt i, tS!(i-1)))
+      else   FAIL
+      | _ -> FAIL)
+    | exRelaxator prf ->
+      (case checkSubType prf of OK (cx, t, r) ->
+      OK (wellTypedExpr (cx, RELAX r, t\r --> t))
+      | _ -> FAIL)
+    | exQuotienter prf ->
+      (case checkQuotientType prf of OK (cx, t, q) ->
+      OK (wellTypedExpr (cx, QUOTIENT q, t --> t/q))
+      | _ -> FAIL)
+    | exNegation prf ->
+      (case checkExpr prf of OK (cx, e, boolean) ->
+      OK (wellTypedExpr (cx, ~~ e, BOOL))
+      | _ -> FAIL)
+    | exApplication (prf1, prf2) ->
+      (case checkExpr prf1 of OK (cx, e1, arrow (t1, t2)) ->
+      (case checkExprWithContext cx prf2 of OK (e2, t3) ->
+      if t3 = t1 then
+      OK (wellTypedExpr (cx, e1 @ e2, t2))
+      else FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exEquation (prf1, prf2) ->
+      (case checkExpr prf1 of OK (cx, e1, t) ->
+      (case checkExprWithContextAndType cx t prf2 of OK e2 ->
+      OK (wellTypedExpr (cx, e1 == e2, BOOL))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exInequation (prf1, prf2) ->
+      (case checkTheoremEquation prf1 of OK (cx, e1, e2) ->
+      OK (wellTypedExpr (cx, e1 ~== e2, BOOL))
+      | _ -> FAIL)
+
+(*@@@
+    | exRecordUpdate (prf1, prf2) ->
+
+         pj (wellTypedExpr (cx, e1, TRECORD (fS ++ fS1) (tS ++ tS1)))
+      && pj (wellTypedExpr (cx, e2, TRECORD (fS ++ fS2) (tS ++ tS2)))
+      && length fS = length tS
+      && toSet fS1 /\ toSet fS2 = empty
+      => pj (wellTypedExpr (cx,
+                            e1 <<< e2,
+                            TRECORD (fS ++ fS1 ++ fS2) (tS ++ tS1 ++ tS2))))
+
     | exRestriction          Proof * Proof * Proof
     | exChoice               Proof * Proof * Proof
     | exConjunction          Proof * Proof
