@@ -23,7 +23,7 @@ XML qualifying spec
   %% Convert a sort S into an expression which will compile to code
   %% that will build an XSort term (see below) that is similar to S.
   def convert_sort_to_term_constructor (env, srt) =
-    let srt = my_unfold_sort (env, checkSort (env, srt)) in
+    let table = sort_expansion_table (env, checkSort (env, srt)) in
     let pos = Internal "jlm" in
     let junk  = Base (Qualified("JUNK",   "junk"),   [], pos) in 
     let xsort = Base (Qualified("XML",    "XSort"),  [], pos) in 
@@ -32,15 +32,15 @@ XML qualifying spec
     let 
        def mkrecord args =
 	 let (_, reversed_args : List (Id * MS.Term)) =
-	     (foldl (fn (arg : MS.Term, (n : Nat, args : List (Id * MS.Term))) ->
-		     (n + 1,
-		      cons ((Nat.toString n, arg),
-			    args)))
-	            (1, [])
-		    args)
+	 (foldl (fn (arg : MS.Term, (n : Nat, args : List (Id * MS.Term))) ->
+		 (n + 1,
+		  cons ((Nat.toString n, arg),
+			args)))
+	        (1, [])
+		args)
 	 in
 	   Record (rev reversed_args, pos)
-
+	   
        def mkapp (qualifier, id, arg : MS.Term) =
 	 ApplyN ([Fun (TwoNames (qualifier, id, Nonfix), 
 		       Arrow (junk, 
@@ -49,13 +49,13 @@ XML qualifying spec
 		       pos),
 		  arg],
 		 pos)
-
+	 
        def tag str = 
 	 Fun (String str, ssort, pos)
-
+	 
        def convert srt =
 	 case resolveMetaTyVar srt of
-
+	   
 	   | Arrow      (x, y,              _) -> mkapp ("XML", "MakeArrowSortTerm",
 							 mkrecord [convert x, 
 								   convert y])
@@ -67,9 +67,9 @@ XML qualifying spec
 											 mkrecord [tag id, 
 												   convert srt]),
 										  result]))
-							  mynil
-							  (rev fields)))
-
+							        mynil
+								(rev fields)))
+	   
 	   | CoProduct  (fields,            _) -> mkapp ("XML", "MakeCoProductSortTerm",
 							 (foldl (fn ((id, opt_srt), result) ->
 								 mkapp ("List", "cons",
@@ -79,8 +79,8 @@ XML qualifying spec
 												     | None     -> mynil
 												     | Some srt -> convert srt]),
 										  result]))
-							  mynil
-							  (rev fields)))
+							        mynil
+								(rev fields)))
 	   
 	   | Quotient   (srt, rel,          _) -> mkapp ("XML", "MakeQuotientSortTerm",
 							 mkrecord [convert srt, 
@@ -97,42 +97,69 @@ XML qualifying spec
 								   (foldl (fn (srt, result) ->
 									   mkapp ("List", "cons", 
 										  mkrecord [convert srt, result]))
-								    mynil
-								    (rev srts))])
+								          mynil
+									  (rev srts))])
 	   
 	   | TyVar      (tv,                _) -> tag "<Some TyVar>"
 	   
 	   | MetaTyVar  (mtv,               _) -> tag "<Some MetaTyVar??>"
     in
-      convert srt
+      foldl (fn ((srt, expansion), trm) -> 
+	     mkapp ("List", "cons",
+		    mkrecord [mkapp ("List", "cons",
+				     mkrecord [convert srt, 
+					       convert expansion]),
+			      trm]))
+            mynil
+	    table
 
   %% ================================================================================
 
-  op my_unfold_sort    : LocalEnv * MS.Sort          -> MS.Sort
+  op sort_expansion_table : LocalEnv * MS.Sort -> List (MS.Sort * MS.Sort)
 
-  def my_unfold_sort (env, srt) =
+  def sort_expansion_table (env, srt) =
    let 
-      def unfold srt =
+      def add_to_table (srt, table) =
+	let expansion = unfoldSort (env, srt) in
+	if expansion = srt then
+	  table
+	else
+	  let new_table = cons ((srt, expansion), table) in
+	  scan (expansion, new_table)
+
+      def scan (srt, table) =
 	case srt of
-	  | CoProduct (row,    pos)   -> CoProduct (map (fn (id, opt_srt) -> (id, (case opt_srt of None -> None | Some srt -> Some (unfold srt)))) 
-						        row, 
-						    pos)
-	  | Product   (row,    pos)   -> Product   (map (fn (id, srt)     -> (id, unfold srt)) 
-						        row, 
-						    pos)
-	  | Arrow     (t1, t2, pos)   -> Arrow (unfold t1, unfold t2, pos)
-	  | Quotient  (t, pred, pos)  -> Quotient (unfold t, pred, pos)
-	  | Subsort   (t, pred, pos)  -> Subsort  (unfold t, pred, pos)
-	  | Base      (nm, srts, pos) -> (let expansion = unfoldSort (env, srt) in
-	                                  case expansion  of
-	                                    | Base _ -> expansion
-					    | _ -> unfold expansion)
-	  | TyVar     _               -> srt
-	  | MetaTyVar _               -> unlinkSort srt 
+	  | CoProduct (row,    pos)   -> (foldl (fn ((id, opt_srt), table) -> 
+						 case opt_srt of 
+						   | Some srt -> scan (srt, table)
+						   | None -> table)
+					        table
+						row)
+	  | Product   (row,    pos)   -> (foldl (fn ((id, srt), table) -> scan (srt, table))
+					        table
+						row)
+	  | Arrow     (t1, t2, pos)   -> scan (t1, scan (t2, table))
+	  | Quotient  (t, pred, pos)  -> scan (t, table)
+	  | Subsort   (t, pred, pos)  -> scan (t, table)
+	  | Base      (nm, srts, pos) -> (let already_seen? = 
+					      (foldl (fn ((old_srt, _), seen?) -> 
+						      seen? or (case old_srt of
+								  | Base (old_nm, _, _) -> nm = old_nm
+								  | _ -> seen?))
+					             false
+						     table)
+					  in
+					    if already_seen? then
+					      table
+					    else
+					      add_to_table (srt, table))
+          | TyVar     _               -> table
+	  | MetaTyVar _               -> scan (unlinkSort srt, table)
    in
-     unfold srt
+     scan (srt, [])
 
   %% ================================================================================
+
 
   sort XId   = String
   sort XQId  = String * String
