@@ -31,7 +31,7 @@
        nil))
 )
 
-(defun |!newVar| (value)
+(defun newVar (value)
    (cons :|VarRef| value)
 )
 
