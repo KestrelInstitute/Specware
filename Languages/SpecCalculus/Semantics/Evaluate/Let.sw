@@ -1,5 +1,7 @@
 \section{Evaluation of Let and Where}
 
+Derived from r1.7 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
+
 When evaluating a let, the let bindings (declarations) are in scope only
 within the body of the let. So we retrieve and save the current binding
 context, add the local bindings, evaluate the term and then restore

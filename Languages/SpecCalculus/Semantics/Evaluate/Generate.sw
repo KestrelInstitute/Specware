@@ -1,5 +1,6 @@
 \subsection{Generation from Specs}
 
+Derived from r1.4  SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalCompile.sl
 
 \begin{spec}
 SpecCalc qualifying spec {

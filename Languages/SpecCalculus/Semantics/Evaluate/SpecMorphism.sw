@@ -1,5 +1,7 @@
 \subsection{Evalution of Spec Morphisms}
 
+Derived from r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSpecMorphism.sl
+
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 

@@ -1,5 +1,7 @@
 \section{SPECPATH handling}
 
+Derived from r1.2 SW4/Languages/SpecCalculus/Semantics/SpecPath.sl
+
 This will be moved.
 
 \begin{spec}

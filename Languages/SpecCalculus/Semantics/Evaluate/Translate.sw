@@ -1,5 +1,9 @@
 \subsection{Evalution of Spec Translations}
 
+Derived from 
+  r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSpecMorphism.sl
+  r1.7 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
+
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 

@@ -1,5 +1,7 @@
 \section{Specware toplevel read/eval/print loop}
 
+Derived from r1.7 SW4/Languages/SpecCalculus/Semantics/Specware.sl
+
 It seems clear now that some of specs that make up the calculus need
 some amount of refactoring.
 

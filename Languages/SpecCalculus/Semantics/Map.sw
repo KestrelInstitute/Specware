@@ -1,5 +1,7 @@
 \section{Naive maps for the environment}
 
+Derived from r1.2 SW4/Languages/SpecCalculus/Semantics/Map.sl
+
 This will be removed from here. 
 
 This will eventually go in

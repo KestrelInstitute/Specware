@@ -1,5 +1,7 @@
 \section{Evalution of a term in the Spec Calculus}
 
+Derived from r1.5 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSig.sl
+
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types

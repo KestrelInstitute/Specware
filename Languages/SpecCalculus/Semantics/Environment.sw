@@ -1,5 +1,7 @@
 \section{The Specware Environment}
 
+Derived from r1.3 SW4/Languages/SpecCalculus/Semantics/Environment.sl
+
 The environment is the monadic context for the spec calculus interpreter. 
 The monad handles, state, (very primitive) IO, and exceptions. In principle,
 the datatype should be defined compositionally but this isn't supported as

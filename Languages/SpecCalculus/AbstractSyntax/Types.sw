@@ -1,5 +1,7 @@
 \section{Spec Calculus Abstract Syntax}
 
+Derived om r1.5 SW4/Languages/SpecCalculus/AbstractSyntax/Types.sl
+
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../MetaSlang/Specs/PosSpec % For Position

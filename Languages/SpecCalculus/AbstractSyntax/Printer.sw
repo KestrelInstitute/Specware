@@ -1,5 +1,7 @@
 \section{SpecCalc pretty printer}
 
+Derived from r1.6 SW4/Languages/SpecCalculus/AbstractSyntax/PrettyPrinter.sl
+
 This is a pretty printer for the spec calculus. This is almost but
 not quite throw away code. In my opinion, it should be separate from
 the MetaSlang pretty printer. The problem is that the MetaSlang pretty

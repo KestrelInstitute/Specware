@@ -1,5 +1,7 @@
 \subsection{Evalution of a Spec term in the Spec Calculus}
 
+Derived from r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSpec.sl
+
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
