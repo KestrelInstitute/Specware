@@ -152,10 +152,12 @@
 
 (defun ensure-specware-running ()
   (unless (inferior-lisp-running-p)
-    (if *specware-auto-start*
-	(progn (run-specware4)
-	       (sit-for 0.5))
-      (error "Specware not running. Do M-x run-specware4"))))
+    (sit-for 0.5)
+    (unless (inferior-lisp-running-p)
+      (if *specware-auto-start*
+	  (progn (run-specware4)
+		 (sit-for 0.5))
+	(error "Specware not running. Do M-x run-specware4")))))
 
 ;; (simulate-input-expression "t")
 (defun simulate-input-expression (str)
@@ -312,7 +314,7 @@
 	     nil))
 	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
 	 (specware4-base-lisp (concat specware4-dir "/Applications/Specware/Specware4-base.lisp")))
-    (run-plain-lisp)
+    (run-plain-lisp 1)
     (sw:eval-in-lisp-no-value
      (format "(load %S)"
 	     (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
@@ -369,7 +371,7 @@
 	     (sleep-for 5)
 	     (while (inferior-lisp-running-p)
 	       (sleep-for 2))
-	     (run-plain-lisp)
+	     (run-plain-lisp 1)
 	     (simulate-input-expression "(load \"load.lisp\")")
 	     (simulate-input-expression "(Bootstrap-Spec::compileAll)")))))
 
