@@ -164,6 +164,22 @@ FSeq qualifying spec
                               then seqFunction s (length s - i -1)
                               else None)
 
+  op zip : [a,b] {(s1,s2) : FSeq a * FSeq b | length s1 = length s2}
+                 -> FSeq (a * b)
+  def zip(s1,s2) =
+    seqSuchThat (fn(i:Nat) -> if i < length s1 % = length s2
+                              then Some (s1 elem i, s2 elem i)
+                              else None)
+
+  op unzip : [a,b] FSeq (a * b) -> FSeq a * FSeq b
+  def unzip s =
+    (seqSuchThat (fn(i:Nat) -> if i < length s
+                               then Some (s elem i).1
+                               else None),
+     seqSuchThat (fn(i:Nat) -> if i < length s
+                               then Some (s elem i).2
+                               else None))
+
   % non-empty sequences:
   type FSeqNE a = {s : FSeq a | ~(empty? s)}
 

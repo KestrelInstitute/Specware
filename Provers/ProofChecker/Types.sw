@@ -14,47 +14,26 @@ spec
   (* Unlike LD, me model product types directly, instead of viewing them as
   abbreviations of record types with particular names set aside for the
   fields. In fact, unlike LD, names are not required to include projection
-  names. *)
+  names.
 
-  type VariableType = Name
+  Another difference with LD is that we do not require fields of record types
+  and constructors of sum types to be distinct in the syntax. We
+  incorporate such a requirement into the inference rules for well-typedness,
+  thus keeping the syntax simpler.
 
-  type InstanceType = {typ  : Name,
-                       args : FSeq Type}
-
-  type ArrowType = {dom : Type,
-                    cod : Type}
-
-  type RecordTypeComponent = {field : Name,
-                              typ   : Type}
-
-  type RecordType = {comps : FSeq RecordTypeComponent |
-                     (let fields = map (project field, comps) in
-                      noRepetitions? fields)}
-
-  type SumTypeComponent = {constr : Name, % constr(uctor)
-                           typ    : Type}
-
-  type ProductType = {comps : FSeq Type | length comps >= 2}
-
-  type SumType = {comps : FSeqNE SumTypeComponent |
-                  (let constrs = map (project constr, comps) in
-                  noRepetitions? constrs)}
-
-  type SubType = {base : Type,
-                  pred : Expression}
-
-  type QuotientType = {base : Type,
-                       pred : Expression}
+  A third difference is that here we model explicitly components of sum types
+  that have no type (using `Option'), as opposed to implicitly assuming the
+  empty record type as in LD. *)
 
   type Type =
-    | booleanType
-    | var  VariableType
-    | inst InstanceType
-    | arr  ArrowType
-    | rec  RecordType
-    | prod ProductType
-    | sum  SumType
-    | sub  SubType
-    | quot QuotientType
+    | boolean
+    | variable     Name
+    | instance     Name * FSeq Type
+    | arrow        Type * Type
+    | record       FSeq (Name * Type)
+    | product      FSeq Type
+    | sum          FSeqNE (Name * Option Type)
+    | sub          Type * Expression
+    | quotien(*t*) Type * Expression
 
 endspec
