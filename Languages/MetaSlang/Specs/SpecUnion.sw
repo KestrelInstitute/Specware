@@ -20,7 +20,8 @@ SpecUnion qualifying spec {
 		 %% We're building an imported spec, so we don't  need this information
 		 importedSpec  = None,
 		 localOps      = emptyOpNames,
-		 localSorts    = emptySortNames},
+		 localSorts    = emptySortNames,
+		 localProperties = emptyPropertyNames},
    sorts         = sortsUnion      (List.foldl (fn (spc, sorts_list) ->
 					   cons (spc.sorts, sorts_list))
 				          []
@@ -44,12 +45,15 @@ SpecUnion qualifying spec {
  def sortsUnion sort_maps = List.foldl unionSortMaps emptySortMap sort_maps
  def opsUnion   op_maps   = List.foldl unionOpMaps   emptyOpMap   op_maps
 
+ op  unionSortMaps: SortMap * SortMap -> SortMap
  def unionSortMaps (new_sort_map, old_sort_map) =
-  StringMap.foldri augmentSortMap old_sort_map new_sort_map
+  foldri augmentSortMap old_sort_map new_sort_map
 
+ op  unionOpMaps: OpMap * OpMap -> OpMap
  def unionOpMaps (new_op_map, old_op_map) =
   StringMap.foldri augmentOpMap old_op_map new_op_map
 
+ op  augmentSortMap: QualifiedId * SortInfo * SortMap -> SortMap
  def augmentSortMap (qualifier, new_qmap, old_sort_map) =
    StringMap.insert (old_sort_map,
                      qualifier,
@@ -57,6 +61,7 @@ SpecUnion qualifying spec {
                       | None          -> new_qmap
                       | Some old_qmap -> unionSortQMaps (new_qmap, old_qmap))
 
+ op  augmentOpMap: QualifiedId * OpInfo * OpMap -> OpMap
  def augmentOpMap (qualifier, new_qmap, old_op_map) =
    StringMap.insert (old_op_map,
                      qualifier,

@@ -1203,17 +1203,15 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       format(80, p)
       
  %% Just generates code for the local defs
- def localDefsToLispFile
-       (spc as {importInfo = {imports, importedSpec, localOps, localSorts},
-		sorts, ops, properties},
-	file, preamble)
-    = let spc = setOps(spc, mapiAQualifierMap
+ def localDefsToLispFile (spc, file, preamble)
+    =  let localOps = spc.importInfo.localOps in
+       let spc = setOps(spc, mapiAQualifierMap
 		              (fn(qualifier,op_name,
 				  opinfo as (op_names, fixity, sort_scheme_1, defs_1))
 			        -> if memberQualifiedId(qualifier,op_name,localOps)
 				     then opinfo
 				   else (op_names, fixity, sort_scheme_1, []))
-			      ops)
+			      spc.ops)
       in toLispFile (spc, file, preamble)
      
 

@@ -47,10 +47,10 @@ SpecCalc qualifying spec {
 
   op ppASpecLocal : fa (a) ASpec a -> Pretty
   def ppASpecLocal (spc as {importInfo,sorts,ops,properties}) = 
-    let {imports,importedSpec,localOps,localSorts} = importInfo in
+    let {imports,importedSpec,localOps,localSorts,localProperties=_} = importInfo in
     let ppImports =
       let ppNames =
-        map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) imports in
+        map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) spc.importInfo.imports in
       ppSep ppNewline ppNames in
 
     % this assume that a name used to index into the sort map also appears
@@ -71,9 +71,12 @@ SpecCalc qualifying spec {
         ppNewline,
         ppSep ppNewline [
           ppImports,    
-          ppSep ppNewline (map doSortInfo (filter (fn (qid::_,tyVars,defs) -> member(qid,localSorts)) (sortInfosAsList spc))),
-          ppSep ppNewline (map doOpInfo (filter (fn (qid::_,fxty,srtScheme,defs) -> member(qid,localOps)) (opInfosAsList spc))),
-          ppSep ppNewline (map ppAProperty properties)
+          ppSep ppNewline (map doSortInfo (filter (fn (qid::_,tyVars,defs) ->
+						   member(qid,localSorts))
+					     (sortInfosAsList spc))),
+          ppSep ppNewline (map doOpInfo (filter (fn (qid::_,fxty,srtScheme,defs) -> member(qid,localOps))
+					   (opInfosAsList spc))),
+          ppSep ppNewline (map ppAProperty (localProperties spc))
         ]
       ]),
       ppString "}"

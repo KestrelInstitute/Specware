@@ -730,13 +730,11 @@ spec
 	   tcc spc.ops
      in
      %% Properties (Axioms etc.)
-     let baseProperties = (getBaseSpec()).properties in
-     let tcc = foldr (fn (pr as (_,pname as Qualified(qname, name),tvs,fm),tcc) ->
-		       if member(pr,baseProperties) then tcc
-			 else let fm = renameTerm (emptyContext()) fm in
-			      (tcc,gamma0 tvs None None (mkQualifiedId(qname, (name^"_Obligation"))))
-		               |- fm ?? boolSort)
-                 tcc spc.properties
+     let tcc = foldl (fn (pr as (_,pname as Qualified(qname, name),tvs,fm),tcc) ->
+		       let fm = renameTerm (emptyContext()) fm in
+		       (tcc,gamma0 tvs None None (mkQualifiedId(qname, (name^"_Obligation"))))
+		         |- fm ?? boolSort)
+                 tcc (localProperties spc)
      in
      %% Quotient relations are equivalence relations
      let quotientRelations: Ref(List MS.Term) = Ref [] in
@@ -769,7 +767,8 @@ spec
    let tcSpec = spc << {importInfo = {imports      = [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)],
 				      importedSpec = Some (addDisjointImport(spc,wfoSpec)),
 				      localOps     = emptyOpNames,
-				      localSorts   = emptySortNames}}
+				      localSorts   = emptySortNames,
+				      localProperties = emptyPropertyNames}}
    in
    let tcSpec = addDisjointImport(tcSpec,wfoSpec) in
    addConjectures (rev (checkSpec spc).1,tcSpec)

@@ -80,7 +80,8 @@ SpecCalc qualifying spec {
 			   {imports      = [(cod_spec_term, cod_spec)],
 			    importedSpec = Some cod_spec,
 			    localOps     = translate_op_names   spc.importInfo.localOps,  
-			    localSorts   = translate_sort_names spc.importInfo.localSorts 
+			    localSorts   = translate_sort_names spc.importInfo.localSorts,
+			    localProperties = spc.importInfo.localProperties
 			   }))}
 
   op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)

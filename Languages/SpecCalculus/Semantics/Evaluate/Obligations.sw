@@ -62,17 +62,19 @@ SpecCalc qualifying spec
 		   defsToConjectures(diff(dom_defs,cod_defs)) ++ rdefs)
 	   [] dom.ops
     in
+    let obligation_props = translated_dom_axioms ++ dom_definitions_not_in_cod in
     let import_of_cod = {imports = case findUnitIdforUnit(Spec cod,globalContext) of
 			                  | Some unitId -> [((UnitId (UnitId_Relative unitId),pos), cod)]
 			                  | _ -> [],
 			 importedSpec = Some cod,
 			 localOps     = emptyOpNames,
-			 localSorts   = emptySortNames}
+			 localSorts   = emptySortNames,
+			 localProperties = map propertyName obligation_props}
     in
     let ob_spc = {importInfo = import_of_cod,
 		  ops        = cod.ops,
 		  sorts      = cod.sorts,
-		  properties = cod.properties ++ translated_dom_axioms ++ dom_definitions_not_in_cod}
+		  properties = cod.properties ++ obligation_props}
     in
       ob_spc
 

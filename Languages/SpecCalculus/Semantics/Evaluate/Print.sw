@@ -73,9 +73,9 @@ SpecCalc qualifying spec {
     %% which uses /Library/PrettyPrinter/BjornerEspinosa
     PrettyPrint.toString (format(80, 
  				ppSpecHidingImportedStuff
- 				(initialize(asciiPrinter,false))
- 				base_spec
- 				spc))
+ 				  (initialize(asciiPrinter,false))
+				  base_spec
+				  spc))
 
  def printSpecExpanded base_spec _ (* ignore reverse_context *) spc =
    %% use reverse_context for imports ?

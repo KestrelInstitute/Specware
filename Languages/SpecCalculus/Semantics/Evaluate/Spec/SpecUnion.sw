@@ -22,7 +22,8 @@ SpecUnion qualifying spec {
    merged_spec   <- return {importInfo = {imports       = merged_imports,
 					  importedSpec  = None,               % TODO: is this correct?
 					  localOps      = emptyOpNames,    % merged_local_ops
-					  localSorts    = emptySortNames}, % merged_local_sorts
+					  localSorts    = emptySortNames,
+					  localProperties = emptyPropertyNames}, % merged_local_sorts
 			    sorts      = merged_sorts,
 			    ops        = merged_ops,
 			    properties = merged_props};

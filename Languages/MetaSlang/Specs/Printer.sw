@@ -967,8 +967,7 @@ AnnSpecPrinter qualifying spec {
    % spec_ref = "General"
 
   %% Top-level print module; lower-level print spec
-  def ppSpec context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
-                       sorts, ops, properties} = 
+  def ppSpec context spc = 
       let pp : ATermPrinter = context.pp in
       % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       blockAll(0,
@@ -976,19 +975,19 @@ AnnSpecPrinter qualifying spec {
                              [(0, pp.Spec),
                               (0, string " ")]))]
                ++
-               (map (fn (specCalcTerm, spc) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)])) imports) 
+               (map (fn (specCalcTerm, spc) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)]))
+		  spc.importInfo.imports) 
                ++
-               (ppSortDecls context sorts)
+               (ppSortDecls context spc.sorts)
                ++
-               (ppOpDecls   context ops)
+               (ppOpDecls   context spc.ops)
                ++
-               (ListUtilities.mapWithIndex (ppProperty context) properties)
+               (ListUtilities.mapWithIndex (ppProperty context) spc.properties)
                ++
                [(0, pp.EndSpec),
                 (0, string "")])
 
-  def ppSpecR context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
-                        sorts, ops, properties} = 
+  def ppSpecR context spc = 
       let pp : ATermPrinter = context.pp in
       % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       blockAll(0,
@@ -996,55 +995,31 @@ AnnSpecPrinter qualifying spec {
                               [(0, pp.Spec),
                                (0, string " ")]))]
                ++
-               (map (fn (specCalcTerm, spc) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)])) imports) 
+               (map (fn (specCalcTerm, spc) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)]))
+	         spc.importInfo.imports) 
                ++
-               (ppSortDecls context sorts)
+               (ppSortDecls context spc.sorts)
                ++
-               (ppOpDecls context ops)
+               (ppOpDecls context spc.ops)
                ++
-               (ListUtilities.mapWithIndex (ppProperty context) properties)
+               (ListUtilities.mapWithIndex (ppProperty context) spc.properties)
                ++
                [(0, pp.EndSpec),
                 (0, string "")])
 
 
-  def ppSpecHidingImportedStuff context base_spec
-                                {importInfo = {imports, importedSpec,localOps,localSorts},
-				 sorts, ops, properties} =
+  def ppSpecHidingImportedStuff context base_spec spc =
       %% Also suppress printing import of base specs
       let pp : ATermPrinter = context.pp in
-      let imported_sorts  = Cons (base_spec.sorts,      map (fn (_,spc) -> spc.sorts)        imports) in
-      let imported_ops    = Cons (base_spec.ops,        map (fn (_,spc) -> spc.ops)          imports) in
-      let imported_props  = Cons (base_spec.properties, map (fn (_,spc) -> spc.properties)   imports) in
-      let def imported_sort? (qualifier, id) =
-  	    exists (fn sorts -> case findAQualifierMap (sorts, qualifier, id) of 
-				  | Some _ -> true 
-				  | _ -> false)
-	           imported_sorts
-      in
-      let def imported_op? (qualifier, id) =
-  	    exists (fn ops -> case findAQualifierMap (ops, qualifier, id) of
-				  | Some _ -> true 
-				  | _ -> false)
-	           imported_ops
-      in
-      let def imported_prop? (typ, name, _, _) =
-  	    exists (fn imp_props -> exists (fn (imp_type, imp_name, _, _) -> 
-                                            %% can't quite do prop = imported_prop 
-					    %% because imported_prop has type  Property
-					    %%     but prop          has type  Aproperty a
-					    typ = imp_type & name = imp_name)
-		                           imp_props)
-	           imported_props % list of lists of properties
+      let def imported_sort? (qualifier, id) = ~(localSort?(Qualified(qualifier, id),spc))
+          def imported_op?   (qualifier, id) = ~(localOp?(Qualified(qualifier, id),spc))
       in
       blockAll(0,
                [(0, blockFill(0,
                               [(0, pp.Spec),
                                (0, string " ")]))]
                ++
-               (let {importInfo = {imports=base_imports, importedSpec=_, localOps=_, localSorts=_},
-		     sorts=_, ops=_, properties=_} = base_spec
-		in
+               (let base_imports = base_spec.importInfo.imports in
 		let non_base_imports = filter (fn (_,imp_spec) -> 
 					       if imp_spec = base_spec then
 						 false % not not imported, i.e. imported
@@ -1056,7 +1031,7 @@ AnnSpecPrinter qualifying spec {
 							       not_imported?)
 					                   true % begin assuming not imported
 							   base_imports)
-		                              imports
+		                            spc.importInfo.imports
 		in
 		let pps : Lines =
 		  List.map (fn (specCalcTerm, _) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)])) 
@@ -1070,7 +1045,7 @@ AnnSpecPrinter qualifying spec {
 							  else
 							    ppSortDecl context (qualifier, id, sort_info, index_and_pps))
 		                                         (0,[])   
-                                                         sorts
+                                                         spc.sorts
 		in
 		  pps)
    	       ++
@@ -1080,26 +1055,25 @@ AnnSpecPrinter qualifying spec {
 							  else
 							    ppOpDecl context (qualifier, id, op_info, index_and_pps))
                                                          (0,[])   
-                                                         ops
+                                                         spc.ops
 		in
 		  pps)
                ++
 	       (let pps : Lines =
-		List.foldl (fn (prop, pps) ->
-			    if imported_prop? prop then
+		List.foldr (fn (prop, pps) ->
+			    if ~(localProperty? (prop.2,spc)) then
 			      pps
 			    else
 			      Cons (ppProperty context (0, prop), pps)) % Ok to keep index at 0?
 		           []   
-			   properties
+			   spc.properties
 		in
 		  pps)
                ++
                [(0, pp.EndSpec),
                 (0, string "")])
 
-  def ppSpecAll context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
-                          sorts, ops, properties} = 
+  def ppSpecAll context spc = 
       let pp : ATermPrinter = context.pp in
       % let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       let ppImports = map (fn (specCalcTerm, spc) ->
@@ -1108,7 +1082,7 @@ AnnSpecPrinter qualifying spec {
                                            (0,string (showTerm specCalcTerm)),
                                            (0,string " |-> "),
                                            (0,ppSpecAll context spc)])))
-                          imports in
+                          spc.importInfo.imports in
       blockAll(0,
                [(0, blockFill(0,
                               [(0, pp.Spec),
@@ -1117,11 +1091,11 @@ AnnSpecPrinter qualifying spec {
                ++
                ppImports 
                ++
-               (ppSortDecls context sorts)
+               (ppSortDecls context spc.sorts)
                ++
-               (ppOpDecls context ops)
+               (ppOpDecls context spc.ops)
                ++
-               (ListUtilities.mapWithIndex (ppProperty context) properties)
+               (ListUtilities.mapWithIndex (ppProperty context) spc.properties)
                ++
                [(0, pp.EndSpec),
                 (0, string "")])

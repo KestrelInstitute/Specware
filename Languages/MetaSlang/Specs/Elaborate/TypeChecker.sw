@@ -96,7 +96,7 @@ spec
     %%   AstEnvironment.init adds default imports, etc.
     %%
     let env_1 = initialEnv (given_spec, filename) in
-    let {importInfo = importInfo as {imports = _, importedSpec = _, localOps, localSorts},
+    let {importInfo = importInfo as {imports = _, importedSpec = _, localOps, localSorts, localProperties},
 	 sorts      = sorts_0, 
 	 ops        = ops_0, 
 	 properties = props_0 
@@ -187,7 +187,9 @@ spec
 
     %% ---------- PROPERTIES : PASS 1. ---------- 
     let
-      def elaborate_fm_1 (prop_type, name, type_vars_1, fm_1) = 
+      def elaborate_fm_1 (prop as (prop_type, name, type_vars_1, fm_1)) =
+	if ~(member(name,localProperties)) then prop
+	else
 	let type_vars_2 = type_vars_1 in
 	let fm_2 = elaborateTermTop (env_2a, fm_1, type_bool) in
 	(prop_type, name, type_vars_2, fm_2)
@@ -302,7 +304,9 @@ spec
 
     %% ---------- AXIOMS : PASS 2 ----------
     let 
-      def elaborate_fm_2 (prop_type, name, type_vars_2, fm_2) = 
+      def elaborate_fm_2 (prop as (prop_type, name, type_vars_2, fm_2)) =
+	if ~(member(name,localProperties)) then prop
+	else
 	(let type_vars_3 = type_vars_2 in
 	 let fm_3 = elaborateTermTop (env_3, fm_2, type_bool) in
 	 %String.writeLine "Elaborating formula";

@@ -20,13 +20,13 @@ AnnSpec qualifying spec
 
  % sort StandardAnnotation = Position	% was ()
 
- sort Spec = ASpec StandardAnnotation
+ type Spec = ASpec StandardAnnotation
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                ASpec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- sort ASpec b = 
+ type ASpec b = 
   {
    importInfo   : ImportInfo,		%  not used in equality test on specs
    sorts        : ASortMap    b,
@@ -34,37 +34,41 @@ AnnSpec qualifying spec
    properties   : AProperties b
   }
 
- sort ImportInfo = {imports      : Imports,
+ type ImportInfo = {imports      : Imports,
 		    importedSpec : Option Spec, % Not currently used?
 		    localOps     : OpNames,
-		    localSorts   : SortNames}
+		    localSorts   : SortNames,
+		    localProperties : PropertyNames}
 
- sort Aliases = List QualifiedId 
+ type Aliases = List QualifiedId 
 
- sort Imports = List Import
- sort Import  = (SpecCalc.Term Position) * Spec
+ type Imports = List Import
+ type Import  = (SpecCalc.Term Position) * Spec
 
- sort ASortMap  b = AQualifierMap (ASortInfo b) % Qualifier -> Id -> info
- sort AOpMap    b = AQualifierMap (AOpInfo   b) % Qualifier -> Id -> info
+ type ASortMap  b = AQualifierMap (ASortInfo b) % Qualifier -> Id -> info
+ type AOpMap    b = AQualifierMap (AOpInfo   b) % Qualifier -> Id -> info
 
- sort ASortInfo b = SortNames * TyVars * ASortSchemes b 
- sort SortNames   = Aliases
+ type ASortInfo b = SortNames * TyVars * ASortSchemes b 
+ type SortNames   = Aliases
 
- sort AOpInfo   b = OpNames * Fixity * ASortScheme b * ATermSchemes b 
- sort OpNames     = Aliases
+ type AOpInfo   b = OpNames * Fixity * ASortScheme b * ATermSchemes b 
+ type OpNames     = Aliases
 
- sort AProperties   b  = List (AProperty b) 
- sort AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
- sort PropertyType     = | Axiom | Theorem | Conjecture
- sort PropertyName     = QualifiedId
- sort PropertyNames    = List PropertyName  
+ type AProperties   b  = List (AProperty b) 
+ type AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
+ type PropertyType     = | Axiom | Theorem | Conjecture
+ type PropertyName     = QualifiedId
+ type PropertyNames    = List PropertyName  
+
+ op  propertyName: fa(b) AProperty b -> PropertyName
+ def propertyName p = p.2
  
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- sort ASpecs b = List (ASpec b)
+ type ASpecs b = List (ASpec b)
 
- sort AOpSignature  b = String * String * TyVars * ASort b
- sort SortSignature   = String * String * TyVars 
+ type AOpSignature  b = String * String * TyVars * ASort b
+ type SortSignature   = String * String * TyVars 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
@@ -239,6 +243,9 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
  op emptySortNames: SortNames
  def emptySortNames = []
 
+ op emptyPropertyNames: PropertyNames
+ def emptyPropertyNames = []
+
  op memberNames: QualifiedId * List QualifiedId -> Boolean
  def memberNames(n,nms) = member(n,nms)
 
@@ -268,6 +275,7 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
  op setImportedSpec     : fa(a) ASpec a * Spec             -> ASpec a
  op setLocalOps         : fa(a) ASpec a * OpNames          -> ASpec a
  op setLocalSorts       : fa(a) ASpec a * SortNames        -> ASpec a
+ op setLocalProperties  : fa(a) ASpec a * PropertyNames    -> ASpec a
  op setSorts            : fa(a) ASpec a * ASortMap    a    -> ASpec a
  op setOps              : fa(a) ASpec a * AOpMap      a    -> ASpec a
  op setProperties       : fa(a) ASpec a * AProperties a    -> ASpec a
@@ -314,10 +322,13 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
 
  op addLocalSortName    : fa(a) ASpec a * QualifiedId -> ASpec a
  op addLocalOpName      : fa(a) ASpec a * QualifiedId -> ASpec a
+ op addLocalPropertyName: fa(a) ASpec a * QualifiedId -> ASpec a
 
  op localOp?            : fa(a) QualifiedId * ASpec a -> Boolean
  op localSort?          : fa(a) QualifiedId * ASpec a -> Boolean
+ op localProperty?      : fa(a) QualifiedId * ASpec a -> Boolean
 
+ op localProperties     : fa(a) ASpec a -> AProperties a
 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -331,7 +342,8 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
  def emptyImportInfo         = {imports      = emptyImports,
                                 importedSpec = None,
                                 localOps     = emptyOpNames,
-                                localSorts   = emptySortNames}
+                                localSorts   = emptySortNames,
+			        localProperties = emptyPropertyNames}
 
  def emptySpec = 
   {importInfo       = emptyImportInfo,
@@ -345,74 +357,33 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
    ops              = emptyAOpMap,     % TODO: add ~ && !! => <=>  [?? =, ~=  ??]
    properties       = emptyAProperties}
 
- def setImportInfo ({importInfo=_, sorts, ops, properties}, 
+ def setImportInfo (spc, 
 		    new_import_info) =
-  {importInfo       = new_import_info,
-   sorts            = sorts,
-   ops              = ops,
-   properties       = properties}
+  spc << {importInfo = new_import_info}
 
- def setImports ({importInfo = {imports=_, importedSpec, localOps, localSorts},
-                  sorts, ops, properties},
-                 new_imports) =
-  {importInfo       = {imports      = new_imports,
-                       importedSpec = importedSpec,
-                       localOps     = localOps,
-                       localSorts   = localSorts},
-   sorts            = sorts,
-   ops              = ops,
-   properties       = properties}
+ def setImports (spc, new_imports) =
+   spc << {importInfo = spc.importInfo << {imports = new_imports}}
 
- def setImportedSpec ({importInfo = {imports, importedSpec=_, localOps, localSorts},
-                       sorts, ops, properties},
-                      new_imported_spec) =
-  {importInfo       = {imports      = imports,
-                       importedSpec = Some new_imported_spec,
-                       localOps     = localOps,
-                       localSorts   = localSorts},
-   sorts            = sorts,
-   ops              = ops,
-   properties       = properties}
+ def setImportedSpec (spc, new_imported_spec) =
+   spc << {importInfo = spc.importInfo << {importedSpec = Some new_imported_spec}}
 
- def setLocalOps ({importInfo = {imports, importedSpec, localOps=_, localSorts},
-		   sorts, ops, properties},
-		  new_local_ops) =
-  {importInfo       = {imports      = imports,
-                       importedSpec = importedSpec,
-                       localOps     = new_local_ops,
-                       localSorts   = localSorts},
-   sorts            = sorts,
-   ops              = ops,
-   properties       = properties}
+ def setLocalOps (spc, new_local_ops) =
+   spc << {importInfo = spc.importInfo << {localOps = new_local_ops}}
 
- def setLocalSorts ({importInfo = {imports, importedSpec, localOps, localSorts=_},
-		     sorts, ops, properties},
-		    new_local_sorts) =
-  {importInfo       = {imports      = imports,
-                       importedSpec = importedSpec,
-                       localOps     = localOps,
-                       localSorts   = new_local_sorts},
-   sorts            = sorts,
-   ops              = ops,
-   properties       = properties}
+ def setLocalSorts (spc, new_local_sorts) =
+   spc << {importInfo = spc.importInfo << {localSorts   = new_local_sorts}}
+
+ def setLocalProperties (spc, new_local_props) =
+   spc << {importInfo = spc.importInfo << {localProperties   = new_local_props}}
 
  def setSorts (spc, new_sorts) =
-  {importInfo       = spc.importInfo,
-   sorts            = new_sorts,
-   ops              = spc.ops,
-   properties       = spc.properties}
+   spc << {sorts = new_sorts}
 
  def setOps (spc, new_ops) =
-  {importInfo       = spc.importInfo,
-   sorts            = spc.sorts,
-   ops              = new_ops,
-   properties       = spc.properties}
+   spc << {ops = new_ops}
 
  def setProperties (spc, new_properties) =
-  {importInfo       = spc.importInfo,
-   sorts            = spc.sorts,
-   ops              = spc.ops,
-   properties       = new_properties}
+   spc << {properties = new_properties}
 
  % ------------------------------------------------------------------------
 
@@ -420,7 +391,8 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
   setImports    (spc, cons ((specCalcTerm, imported_spec), spc.importInfo.imports))
 
  def addProperty (new_property, spc) =
-  setProperties (spc, spc.properties ++ [new_property])
+  let spc = setProperties (spc, spc.properties ++ [new_property]) in
+  addLocalPropertyName(spc,propertyName new_property)
 
  def addAxiom       ((name, type_vars, formula), spc) =
   addProperty ((Axiom      : PropertyType, name, type_vars, formula), spc) 
@@ -437,41 +409,35 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
 
  def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
  def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
- def addLocalSortName (spc as {importInfo = {imports, importedSpec, localOps, localSorts},
-                               sorts, ops, properties},
-                       new_local_sort) =
+ def addLocalSortName (spc, new_local_sort) =
+   let localSorts = spc.importInfo.localSorts in
    if memberNames(new_local_sort,localSorts)
      then spc
-     else {importInfo = {imports      = imports,
-                         importedSpec = importedSpec,
-                         localOps     = localOps,
-                         localSorts   = addToNames(new_local_sort,localSorts)},
-           sorts      = sorts,
-           ops        = ops,
-           properties = properties}
+     else setLocalSorts(spc,addToNames(new_local_sort,localSorts))
 
- def addLocalOpName (spc as {importInfo = {imports, importedSpec, localOps, localSorts},
-                             sorts, ops, properties},
-                     new_local_op) =
+ def addLocalOpName (spc, new_local_op) =
+   let localOps = spc.importInfo.localOps in
    if memberNames(new_local_op,localOps)
      then spc
-     else {importInfo = {imports      = imports,
-                         importedSpec = importedSpec,
-                         localOps     = addToNames(new_local_op,localOps),
-                         localSorts   = localSorts},
-           sorts      = sorts,
-           ops        = ops,
-           properties = properties}
+     else setLocalOps(spc,addToNames(new_local_op,localOps))
 
- def localOp?(Qualified(qualifier,op_name),
-	      spc as {importInfo = {imports, importedSpec, localOps, localSorts},
-		      sorts, ops, properties})
-   = memberQualifiedId(qualifier,op_name,localOps)
+ def addLocalPropertyName (spc, new_local_op) =
+   let localProperties = spc.importInfo.localProperties in
+   if memberNames(new_local_op,localProperties)
+     then spc
+     else setLocalProperties(spc,addToNames(new_local_op,localProperties))
 
- def localSort?(Qualified(qualifier,sort_name),
-	      spc as {importInfo = {imports, importedSpec, localOps, localSorts},
-		      sorts, ops, properties})
-   = memberQualifiedId(qualifier,sort_name,localSorts)
+ def localOp?(Qualified(qualifier,op_name), spc)
+   = memberQualifiedId(qualifier,op_name,spc.importInfo.localOps)
+
+ def localSort?(Qualified(qualifier,sort_name), spc)
+   = memberQualifiedId(qualifier,sort_name,spc.importInfo.localSorts)
+
+ def localProperty?(Qualified(qualifier,op_name), spc)
+   = memberQualifiedId(qualifier,op_name,spc.importInfo.localProperties)
+
+ def localProperties spc =
+   filter (fn p -> localProperty?(propertyName p,spc)) spc.properties
 
  op findTheSort  : fa(a) ASpec a * QualifiedId -> Option (ASortInfo a)  
  op findTheOp    : fa(a) ASpec a * QualifiedId -> Option (AOpInfo   a)

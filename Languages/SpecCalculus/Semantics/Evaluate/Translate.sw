@@ -8,7 +8,7 @@ this should be removed from the parser. I disagree. I, on the other hand,
 agree with myself. I couldn't agree more.
 
 \begin{spec}
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import Signature 
   import Spec/Utilities
   import UnitId/Utilities                                % for uidToString, if used...
@@ -567,7 +567,7 @@ Note: The code below does not yet match the documentation above, but should.
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
 
     in
-    let {importInfo = {imports,importedSpec,localOps,localSorts}, sorts, ops, properties}
+    let {importInfo = {imports,importedSpec,localOps,localSorts,localProperties}, sorts, ops, properties}
          = mapSpec (translateOp op_id_map, translateSort sort_id_map, translatePattern) spc
     in {
       newSorts <- translateSortMap sorts;
@@ -586,12 +586,13 @@ Note: The code below does not yet match the documentation above, but should.
 						  else
 						    local_types ++ [new_type])
 			                         []
-						 localSorts
+						 localSorts,
+			    localProperties = localProperties
 			   },  
 	      sorts      = newSorts,
 	      ops        = newOps,
 	      properties = properties
 	     }
        }
-  }
+endspec
 \end{spec}

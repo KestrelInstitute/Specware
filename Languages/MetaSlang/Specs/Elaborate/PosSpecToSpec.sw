@@ -38,7 +38,7 @@ PosSpecToSpec qualifying spec {
 %   mapSpec (convertPTerm, convertPSort, fn x -> x)
 %     spc
   let {importInfo, sorts, ops, properties} = spc in
-  let {imports = _, importedSpec = _, localOps, localSorts} = importInfo in
+  let {imports = _, importedSpec = _, localOps, localSorts, localProperties} = importInfo in
   let tsp_maps = (convertPTerm, convertPSort, fn x -> x) in
   { importInfo       = importInfo,
 
@@ -60,8 +60,10 @@ PosSpecToSpec qualifying spec {
 			   else sortinfo)
 			 sorts,
 
-    properties       = map (fn (pt, nm, tvs, term) -> 
-			       (pt, nm, tvs, mapTerm tsp_maps term))
+    properties       = map (fn prop as (pt, nm, tvs, term) -> 
+			       (pt, nm, tvs, if member(nm,localProperties)
+				               then mapTerm tsp_maps term
+					       else term))
 			   properties
    }
 }
