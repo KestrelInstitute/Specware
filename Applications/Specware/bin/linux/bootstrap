@@ -49,10 +49,18 @@ cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 
 SWPATH=$SPECWARE4:.
 
+# All the toplevel routines that activate Specware return a boolean value.
+# They return true if the call to Specware succeeded without activating
+# Specware's toplevel handler. They return false (lisp nil) when the
+# handler is invoked. If, when bootrapping, we the toplevel handler is
+# called, then we abort the bootstrap.
+
 if [ -f bin/linux/Specware4.dxl ]; then
 	echo Bootstrapping from existing Specware image 
 	bin/linux/Specware4-text <<-XXXX
-		(sw "/Applications/Specware/Specware4")
+		(if (sw "/Applications/Specware/Specware4")
+		  (exit 0)
+		  (exit 1))
 	XXXX
 else
 	if [ -f lisp/Specware4.lisp ]; then
@@ -61,7 +69,9 @@ else
 		$LISP <<-XXXX
 			(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 			  (load "Specware4.lisp"))
-			(sw "/Applications/Specware/Specware4")
+			(if (sw "/Applications/Specware/Specware4")
+			  (exit 0)
+			  (exit 1))
 		XXXX
 	else
 		# This is where you end up if you do cvs checkout and then

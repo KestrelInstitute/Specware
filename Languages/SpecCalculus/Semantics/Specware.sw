@@ -25,7 +25,7 @@ changes and when the toplevel loop actually does something.
 This is not used at present.
 
 \begin{spec}
-  op runSpecware : () -> ()
+  op runSpecware : () -> Boolean
   def runSpecware () =
     case catch toplevelLoop toplevelHandler initialSpecwareState of
       | (Ok val,_)      -> fail "Specware toplevel loop terminated unexpectedly"
@@ -52,18 +52,28 @@ path is obtained by discarding the "." in the current URI and appending
 the relative path. See URI.sl. In fact any non-empty string would do
 in place of ".".
 
+The toplevel functions that follow are all meant to be called from
+Lisp. They return a boolean. Returning true means the that unit has been
+evaluated without raising an exception. They return false only when the
+toplevel handler is called.
+
+Returning a boolean is useful in order to convey whether the request
+to evaluate something was successful. At present, the failure of the
+toplevel is used within the bootstrap. If the toplevel fails, then lisp
+exists with a non-zero status and hence the bootstrap fails.
+
 \begin{spec}
-  op runSpecwareURI : String -> ()
+  op runSpecwareURI : String -> Boolean
   def runSpecwareURI path = 
     let run = {
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
       uri <- pathToRelativeURI (removeSWsuffix path); 
       evaluateURI pos0 uri;
-      return ()
+      return true
     } in
     case catch run toplevelHandler initialSpecwareState of
-      | (Ok val,_) -> ()
+      | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
@@ -73,7 +83,7 @@ The first just evaluates a URI. The second evaluates a URI and then
 compiles the resulting specification to lisp.
 
 \begin{spec}
-  op evaluateURI_fromLisp : String -> ()
+  op evaluateURI_fromLisp : String -> Boolean
   def evaluateURI_fromLisp path = 
     let run = {
       restoreSavedSpecwareState;
@@ -81,15 +91,16 @@ compiles the resulting specification to lisp.
       setCurrentURI currentURI;
       uri <- pathToRelativeURI (removeSWsuffix path); 
       evaluateURI pos0 uri;
-      saveSpecwareState
+      saveSpecwareState;
+      return true
     } in
     case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> ()
+      | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
 \begin{spec}
-  op evaluatePrint_fromLisp : String -> ()
+  op evaluatePrint_fromLisp : String -> Boolean
   def evaluatePrint_fromLisp path = 
     let run = {
       restoreSavedSpecwareState;
@@ -97,17 +108,18 @@ compiles the resulting specification to lisp.
       setCurrentURI currentURI;
       uri <- pathToRelativeURI (removeSWsuffix path); 
       evaluatePrint (URI uri, pos0);
-      saveSpecwareState
+      saveSpecwareState;
+      return true
     } in
     case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> ()
+      | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
 The following corresponds to the :show command.
 
 \begin{spec}
-  op listLoadedUnits : () -> ()
+  op listLoadedUnits : () -> Boolean
   def listLoadedUnits () = 
     let run = {
       restoreSavedSpecwareState;
@@ -117,15 +129,16 @@ The following corresponds to the :show command.
 		        [] 
 			globalContext);
       print (ppFormat (ppSep ppNewline (map ppURI uriList)));
-      saveSpecwareState     % shouldn't change anything
+      saveSpecwareState;     % shouldn't change anything
+      return true
     } in
     case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> ()
+      | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
 \begin{spec}
-  op evaluateLispCompile_fromLisp : String * Option String -> ()
+  op evaluateLispCompile_fromLisp : String * Option String -> Boolean
   def evaluateLispCompile_fromLisp (path,targetFile) = 
     let target =
       case targetFile of
@@ -138,10 +151,11 @@ The following corresponds to the :show command.
       uri <- pathToRelativeURI (removeSWsuffix path); 
       spcInfo <- evaluateURI pos0 uri;
       evaluateLispCompile (spcInfo,(URI uri,pos0), target);
-      saveSpecwareState
+      saveSpecwareState;
+      return true
     } in
     case catch run toplevelHandler ignoredState of
-      | (Ok val,_) -> ()
+      | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
@@ -187,9 +201,13 @@ Eventually, this will be a read/eval/print loop for Specware.
 At present we are using the Lisp interface and the following is
 not used.
 
+Right now this returns a boolean to be consistent with the hander.
+When written, this should never return. All the Boolean's should
+become unit types.
+
 \begin{spec}
-  op toplevelLoop : SpecCalc.Env ()
-  def toplevelLoop = return ()
+  op toplevelLoop : SpecCalc.Env Boolean
+  def toplevelLoop = return true
 \end{spec}
 
 This is the toplevel exception handler. Eventually, when we have our own
@@ -203,12 +221,12 @@ functions have unit type (within the monad). It seems to make
 sense that no toplevel functions return anything.
 
 \begin{spec}
-  op toplevelHandler : Exception -> SpecCalc.Env ()
+  op toplevelHandler : Exception -> SpecCalc.Env Boolean
   def toplevelHandler except =
     {cleanupGlobalContext;		% Remove InProcess entries
      saveSpecwareState;			% So work done before error is not lost
-     let message = % "Uncaught exception: " ++
-       (case except of
+     message <- % "Uncaught exception: " ++
+       return (case except of
          | Fail str -> "Fail: " ^ str
          | SpecError (position,msg) ->
                "Error in specification: "
@@ -253,12 +271,12 @@ sense that no toplevel functions return anything.
              ^ (showPosition position)
          | _ -> 
                "Unknown exception" 
-             ^ (System.toString except))
-     in
-       if specwareWizard? then
-         fail message
-       else
-         print message}
+             ^ (System.toString except));
+     if specwareWizard? then
+       fail message
+     else
+       print message;
+     return false}
 \end{spec}
 
 These are hooks to handwritten function that save and restore the

@@ -16,20 +16,20 @@ spec {
 \end{spec}
 
 Render a list as a string. The first argument is the separator between
-elements. The second is the show function for the elements of the list.
-For example, \verb|show ":" Integer.show [1,2,3]| yields
-\verb|1:2:3|.
+elements. The second is a list of strings.  For example,
+\verb|show ":" (map Integer.show [1,2,3])|
+yields \verb|1:2:3|.
 
 \begin{spec}
-  op List.show : fa(a) String -> (a -> String) -> List a -> String
-  def List.show sep showElem l =
+  op List.show : String -> List String -> String
+  def List.show sep l =
     case l of
       | [] -> ""
-      | x::[] -> (showElem x) 
+      | x::[] -> x 
       | x::rest ->
-           (showElem x)
+           x
          ^ sep
-         ^ (List.show sep showElem rest)
+         ^ (List.show sep rest)
 
   op Option.show : fa (a) (a -> String) -> Option a -> String
   def Option.show showX opt =

@@ -46,25 +46,25 @@ the canonical URI found.
           % trace "evaluateURI: not found in local context\n";
           uriList <- generateURIList uri;
           % trace ("evaluateURI: resolved to \n\n   "
-          %     ^ (showList "\n   " showURI uriList)
+          %     ^ (List.show "\n   " (map showURI uriList))
           %     ^ "\n\n");
           optValue <- searchContextForURI uriList;
           (case optValue of      
-	     | Some value -> return value
-	     | None -> {% trace "evaluateURI: not found in global context\n";
-	       uriPathPairs <-
-	         foldM
-		  (fn l -> fn uri -> {
-		     pair <- generateFileList uri;
-		     return (l ++ pair)})
-		  [] uriList;
-%		 trace ("evaluateURI: uriPathPairs =\n  "
-%			^ (showList "\n   "
-%			    (fn (uri,path) -> "\n   " ^ (showURI uri) ^ "\n   path: " ^ path)
-%			   uriPathPairs)
-%			^ "\n\n");
-		searchFileSystemForURI (position, uri, uriPathPairs, currentURI)
-	      })
+             | Some value -> return value
+             | None -> {% trace "evaluateURI: not found in global context\n";
+               uriPathPairs <-
+                 foldM
+                  (fn l -> fn uri -> {
+                     pair <- generateFileList uri;
+                     return (l ++ pair)})
+                  [] uriList;
+%                 trace ("evaluateURI: uriPathPairs =\n  "
+%                        ^ (List.show "\n   "
+%                            (map (fn (uri,path) -> "\n   " ^ (showURI uri) ^ "\n   path: " ^ path)
+%                           uriPathPairs))
+%                        ^ "\n\n");
+                searchFileSystemForURI (position, uri, uriPathPairs, currentURI)
+              })
         }
     }
 \end{spec}
@@ -80,11 +80,11 @@ These are called only from evaluateURI.
           optValue <- lookupInGlobalContext uri;
           (case optValue of      
             | Some (value,timeStamp,_) ->
-	      (case value of
-		 | InProcess -> raise (CircularDefinition uri)
-		 | _ -> {valid? <- validateCache uri;
-			 return (if valid? then Some ((value,timeStamp,[uri]), uri)
-				 else None)})
+              (case value of
+                 | InProcess -> raise (CircularDefinition uri)
+                 | _ -> {valid? <- validateCache uri;
+                         return (if valid? then Some ((value,timeStamp,[uri]), uri)
+                                 else None)})
             | None -> searchContextForURI rest)
         }
 
@@ -103,7 +103,7 @@ These are called only from evaluateURI.
               % Either return found value or keep looking:
               case optValue of
                 | Some (value,timeStamp,_)
-		   -> return ((value, timeStamp, [uri]), uri)
+                   -> return ((value, timeStamp, [uri]), uri)
                 | None -> searchFileSystemForURI (position, relURI, rest, currentURI)
             } else
               searchFileSystemForURI (position, relURI, rest, currentURI)
@@ -114,7 +114,7 @@ These are called only from evaluateURI.
   def inSameFile?(uri,currentURI) =
     case (uri,currentURI) of
       | ({path = path1, hashSuffix = Some _},
-	 {path = path2, hashSuffix = _}) ->
+         {path = path2, hashSuffix = _}) ->
         path1 = path2
       | _ -> false
       
@@ -139,11 +139,11 @@ it easy to experiment with different URI path resolution strategies..
           }
       | URI_Relative {path=newPath,hashSuffix=newSuffix} -> {
             {path=currentPath,hashSuffix=currentSuffix} <- getCurrentURI;
-	    root <- removeLast currentPath;
+            root <- removeLast currentPath;
             (case (currentPath,currentSuffix,newPath,newSuffix) of
               | (_,Some _,[elem],None) ->
                     return [normalizeURI {path=currentPath,hashSuffix=Some elem},
-			    normalizeURI {path=root++newPath,hashSuffix=None}]
+                            normalizeURI {path=root++newPath,hashSuffix=None}]
               | (_,_,_,_) -> 
                     return [normalizeURI {path=root++newPath,hashSuffix=newSuffix}]
                  )
@@ -172,8 +172,8 @@ Given a term find a canonical URI for it.
   def SpecCalc.getURI term =
     case (valueOf term) of
       | URI uri -> {(_,r_uri) <- evaluateReturnURI (positionOf term) uri;
-		    return r_uri}
-      | _ -> getCurrentURI		% Not sure what to do here
+                    return r_uri}
+      | _ -> getCurrentURI                % Not sure what to do here
 \end{spec}
 
 Having resolved a URI to a file in the file system, this loads and
@@ -201,11 +201,11 @@ handled correctly.
         | Some specFile -> 
            (case (valueOf specFile) of
              | Term term ->
-	         { saveURI <- getCurrentURI;
+                 { saveURI <- getCurrentURI;
                    saveLocalContext <- getLocalContext;
                    setCurrentURI uri;
                    clearLocalContext;
-		   bindInGlobalContext uri (InProcess,0,[]);
+                   bindInGlobalContext uri (InProcess,0,[]);
                    (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
                    setCurrentURI saveURI;
                    setLocalContext saveLocalContext;
@@ -224,11 +224,11 @@ handled correctly.
         bindInGlobalContext newURI (value,max(timeStamp,fileWriteTime fileName),depURIs)
     }
     in {
-      saveURI          <- getCurrentURI;
+      saveURI <- getCurrentURI;
       saveLocalContext <- getLocalContext;
       clearLocalContext;
       mapM evaluateGlobalDecl decls;
-      setCurrentURI   saveURI;
+      setCurrentURI saveURI;
       setLocalContext saveLocalContext
     }
 \end{spec}
@@ -246,12 +246,12 @@ are not are removed from the environment.
        | Some (_,timeStamp,depURIs) ->
          %% the foldM does a forall, but no early stop
          {rVal <- foldM (fn val -> (fn depURI -> {dVal <- validateCache depURI;
-						  return (val & dVal)}))
-	            true depURIs;
-	  let val = rVal & upToDate?(uri,timeStamp) in
-	  if val then return true
-	   else {removeFromGlobalContext uri;
-		 return false}}}
+                                                  return (val & dVal)}))
+                    true depURIs;
+          let val = rVal & upToDate?(uri,timeStamp) in
+          if val then return true
+           else {removeFromGlobalContext uri;
+                 return false}}}
          
   op upToDate?: URI * TimeStamp -> Boolean
   def upToDate?(uri,timeStamp) =
