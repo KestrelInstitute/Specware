@@ -121,9 +121,9 @@ never mixed in the specs labeling \BSpecs.
     -> SpecCalc.Env PSpec
 
   def compileProcedure pSpec cnt name {args,returnSort,command} = {
-    saveDyCtxt <- dynamicSpec pSpec;
-    statCtxt <- staticSpec pSpec;
-    dyCtxt <-
+   saveDyCtxt <- dynamicSpec pSpec;
+   statCtxt <- staticSpec pSpec;
+   dyCtxt <-
       foldM (fn dCtxt -> fn arg ->
         let (argName,argSort) = arg in
           addOp [unQualified argName]
@@ -132,7 +132,7 @@ never mixed in the specs labeling \BSpecs.
                 None
                 dCtxt internalPosition)
                   saveDyCtxt args;
-    dyCtxt <- 
+   dyCtxt <- 
       case returnSort of
         | Product ([],_) -> return dyCtxt 
         | _ -> addOp [unQualified ("return_" ^ name)]
@@ -168,6 +168,10 @@ never mixed in the specs labeling \BSpecs.
                     bSpec
                     (cnt + 2)
                     command;
+   saveDyCtxt <- dynamicSpec pSpec;
+   statCtxt <- staticSpec pSpec;
+   dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
+   statCtxtElab <- elaborateSpec statCtxt; 
    proc <- return (makeProcedure (map (fn (x,y) -> x) args)
                                  ret
                                  statCtxtElab
