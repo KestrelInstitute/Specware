@@ -513,11 +513,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-SORT-NAME ()
   (1 :SORT-NAME)
-  (mkUnQualifiedId 1))
+  (make-unqualified-sort-name 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :QUALIFIED-SORT-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :SORT-NAME))
-  (mkQualifiedId 1 2))
+  (make-qualified-sort-name 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :QUALIFIER ()
   (1 :NAME)
@@ -852,11 +852,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-OP-NAME ()
   (1 :OP-NAME)
-  (mkUnQualifiedId 1))
+  (make-unqualified-op-name 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :QUALIFIED-OP-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :OP-NAME))
-  (mkQualifiedId 1 2))
+  (make-qualified-op-name 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :OP-NAME ()
   (1 :NAME)
@@ -1247,15 +1247,19 @@ If we want the precedence to be optional:
   (:tuple "translate" (1 :SC-TERM) "by" (2 :SC-TRANSLATE-EXPR))
   (make-sc-translate 1 2 ':left-lcb ':right-lcb))
 
-;; Right now a translation is just a name mapping. Later we may
-;; provide support for matching patterns
 (define-sw-parser-rule :SC-TRANSLATE-EXPR ()
-  (:tuple "{" (1 (:repeat :SC-TRANSLATE-MAP ",")) "}")
-  (make-sc-translate-expr (list . 1) ':left-lcb ':right-lcb))
+  ;; Right now a translation is just a name mapping. Later we may
+  ;; provide support for matching patterns
+  (:tuple "{" (1 :SC-TRANSLATE-RULES) "}")
+  (make-sc-translate-expr 1 ':left-lcb ':right-lcb))
 
-(define-sw-parser-rule :SC-TRANSLATE-MAP ()
+(define-sw-parser-rule :SC-TRANSLATE-RULES ()
+  (1 (:optional (:repeat :SC-TRANSLATE-RULE ",")))
+  (make-sc-translate-rules 1))
+
+(define-sw-parser-rule :SC-TRANSLATE-RULE ()
   (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
-  (make-sc-translate-map 1 2 ':left-lcb ':right-lcb))
+  (make-sc-translate-rule 1 2 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;  QUALIFIABLE-NAME (might refer to sort or op)

@@ -53,11 +53,28 @@
   ;;(cons :|ref| (vector (cons :|None| nil) name (incf *varcounter*)))
   )
 
-(defun mkQualifiedId (qualifier id) 
+;;; (defun mkQualifiedId (qualifier id) 
+;;;   (MetaSlang::mkQualifiedId qualifier id))
+;;;
+;;; (defun mkUnQualifiedId (id) 
+;;;   (MetaSlang::mkUnQualifiedId id))
+
+(defun make-unqualified-sort-name (id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-sort-name (qualifier id left right)
+  (declare (ignore left right))
   (MetaSlang::mkQualifiedId qualifier id))
 
-(defun mkUnQualifiedId (id) 
+(defun make-unqualified-op-name (id left right)
+  (declare (ignore left right))
   (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-op-name (qualifier id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkQualifiedId qualifier id))
+
 
 ;;; ========================================================================
 ;;;  Primitives
@@ -124,11 +141,17 @@
 ;;; ========================================================================
 
 (defparameter internal-parser-position (cons :|Internal| "built-in from parser"))
-(defparameter char-sort   (cons :|Base| (vector (mkQualifiedId "Char"    "Char")    nil internal-parser-position)))
-(defparameter bool-sort   (cons :|Base| (vector (mkQualifiedId "Boolean" "Boolean") nil internal-parser-position)))
-(defparameter string-sort (cons :|Base| (vector (mkQualifiedId "String"  "String")  nil internal-parser-position)))
-(defparameter int-sort    (cons :|Base| (vector (mkQualifiedId "Integer" "Integer") nil internal-parser-position)))
-(defparameter nat-sort    (cons :|Base| (vector (mkQualifiedId "Nat"     "Nat")     nil internal-parser-position)))
+(defun make-internal-sort (name)
+  (cons :|Base| 
+	(vector (make-qualified-sort-name name name internal-parser-position internal-parser-position)
+		nil 
+		internal-parser-position)))
+
+(defparameter char-sort   (make-internal-sort "Char"    ))
+(defparameter bool-sort   (make-internal-sort "Boolean" ))
+(defparameter string-sort (make-internal-sort "String"  ))
+(defparameter int-sort    (make-internal-sort "Integer" ))
+(defparameter nat-sort    (make-internal-sort "Nat"     ))
 
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
@@ -415,9 +438,6 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 ;;;   UNQUALIFIED-OP-REF
 ;;; ------------------------------------------------------------------------
-
-(defparameter *unqualified-equal*
-    (mkUnQualifiedId "="))
 
 (defun make-unqualified-op-ref (name l r)
   (make-fun (if (equal name "=")
@@ -774,11 +794,16 @@ If we want the precedence to be optional:
   (cons (cons :|Translate| (cons sc-term sc-translate-expr))
         (make-pos l r)))
 
-(defun make-sc-translate-expr (sc-renaming-maps l r)
-  (cons sc-renaming-maps
+(defun make-sc-translate-expr (rules l r)
+  (cons rules
         (make-pos l r)))
 
-(defun make-sc-translate-map (left-qualifiable-name right-qualifiable-name l r)
+(defun make-sc-translate-rules (rules)
+  (if (equal rules :unspecified)
+      '()
+    rules))
+
+(defun make-sc-translate-rule (left-qualifiable-name right-qualifiable-name l r)
   (cons (cons left-qualifiable-name right-qualifiable-name)
         (make-pos l r)))
 
