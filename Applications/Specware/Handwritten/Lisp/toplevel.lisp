@@ -529,7 +529,8 @@
 	      (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)~%"
 		      cbase cbase)
 	      ))
-	  (when *make-verbose* (format t ";; invoking make~%"))
+	  (when *make-verbose* 
+	    (format t ";; invoking make command:  ~A -f ~A~%" make-command make-file))
 	  (run-cmd make-command "-f" (format nil "~A" make-file)))
       ;; else: no make-args
       (progn
@@ -553,29 +554,39 @@
   (cl:substitute #\_  #\# (string unitid))
   )
 
-#-allegro
+#-(or allegro cmu mcl sbcl) 
 (defun run-cmd (cmd &rest args)
-  ;; cmu defaults for keywords args to run-program:
-  ;;   (env *environment-list*)
-  ;;   (wait t) 
-  ;;   pty 
-  ;;   input            if-input-does-not-exist 
-  ;;   output           (if-output-exists :error) 
-  ;;   (error :output)  (if-error-exists :error) 
-  ;;   status-hook
-  #+cmu  (ext:run-program cmd args :output t :error :output :wait t)
-  #+mcl  (ccl:run-program cmd args :output t :error :output :wait t)
-  #+sbcl (sb-ext:run-program cmd args :output t)
-  #-(or cmu mcl sbcl) (warn "ignoring non-[ALLEGRO/CMU/MCL/SBCL] RUN-CMD : ~A~{ ~A~}" cmd args)
+  (warn "ignoring non-[ALLEGRO/CMU/MCL/SBCL] RUN-CMD : ~A~{ ~A~}" cmd args))
+
+
+#+(or cmu mcl sbcl) 
+(defun run-cmd (cmd &rest args)
+  (let ((process
+	 ;; cmu defaults for keywords args to run-program:
+	 ;;   (env *environment-list*)
+	 ;;   (wait t) 
+	 ;;   pty 
+	 ;;   input            if-input-does-not-exist 
+	 ;;   output           (if-output-exists :error) 
+	 ;;   (error :output)  (if-error-exists :error) 
+	 ;;   status-hook
+	 #+cmu  (ext:run-program    cmd args :output *standard-output* :error :output :wait t)
+	 #+mcl  (ccl:run-program    cmd args :output *standard-output* :error :output :wait t)
+	 #+sbcl (sb-ext:run-program cmd args :output *standard-output* :error :output :wait t)))
+    (let ((rc (process-exit-code process)))
+      (unless (equal rc 0)
+	(warn "Return code from run-shell-command was non-zero: ~S" rc))))
   (values))
 
 #+allegro
 (defun run-cmd (cmd &rest args)
   (let ((cmd (format nil "~A~{ ~A~}" cmd args)))
-    ;; default for error-output seems to be some kind of problem
-    #+UNIX      (run-shell-command cmd :output t :error-output t :wait t) 
-    #+MSWINDOWS (run-shell-command cmd :output t :error-output t :wait t)
-    #-(OR UNIX MSWINDOWS) (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd))
+    (let ((rc
+	   #+UNIX      (run-shell-command cmd :output *standard-output* :error-output :output :wait t) 
+	   #+MSWINDOWS (run-shell-command cmd :output *standard-output* :error-output :output :wait t)
+	   #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
+      (unless (equal rc 0)
+	(warn "Return code from run-shell-command was non-zero: ~S" rc))))
   (values))
   
 ;; --------------------------------------------------------------------------------
