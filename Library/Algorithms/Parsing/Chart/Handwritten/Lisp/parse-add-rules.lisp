@@ -33,10 +33,16 @@
 		(let ((newrule (make-parser-atomic-rule :name name)))
 		  (install-parser-rule parser newrule)
 		  name))
-	       ((and (consp pattern) (numberp (first pattern)))
+	       ((and (consp pattern) (or (numberp (first pattern))
+					 (eq (first pattern) :optional)))
 		(build-parser-rule parser name `(:TUPLE ,pattern)))
 	       (t
 		(build-parser-rule parser name pattern)))))
+    (when (null rule-name)
+      (warn "Ignoring rule ~S, because pattern begins with :optional: ~S"
+	    name 
+	    pattern)
+      (return-from add-parser-main-rule nil))
     (let ((rule (maybe-find-parser-rule parser rule-name)))
       (unless (null rule)
 	(setf (parser-rule-main-rule? rule) t)
@@ -73,8 +79,7 @@
 	   (:ANYOF    (build-parser-anyof-rule  parser name (rest pattern)))
 	   (:TUPLE    (build-parser-tuple-rule  parser name (rest pattern)))
 	   (:PIECES   (build-parser-pieces-rule parser name (rest pattern)))
-	   (:REPEAT   (build-parser-repeat-rule parser name (rest pattern)))
-	   )
+	   (:REPEAT   (build-parser-repeat-rule parser name (rest pattern))))
        (let* ((new-rule (build-parser-rule-aux parser name (first pattern)))
 	      (semantics     (second pattern))
 	      (keyword-args  (rest (rest pattern)))
@@ -214,7 +219,7 @@
 		(precedence     nil))
 	    (loop while (consp element-pattern) do
 	      (cond ((eq (first element-pattern) :OPTIONAL)
-		     (warn "In repeat rule ~S, element may not be :optionalt: ~S"
+		     (warn "In repeat rule ~S, element may not be :optional: ~S"
 			   name 
 			   pattern)
 		     (setq element-pattern (second element-pattern)))
@@ -239,7 +244,7 @@
 		  (precedence     nil))
 	      (loop while (consp separator-pattern) do
 		(cond ((eq (first separator-pattern) :OPTIONAL)
-		       (warn "In repeat rule ~S, separator may not be :optionalt: ~S"
+		       (warn "In repeat rule ~S, separator may not be :optional: ~S"
 			     name 
 			     pattern)
 		       (setq separator-pattern (second separator-pattern)))
