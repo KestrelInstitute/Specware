@@ -169,5 +169,40 @@ spec
     fa(x : Integer, y : NonZeroInteger) natural?(abs x div abs y)
 endspec
 
-") ;; end of tests
+")
+
+ ("Bug 0105 A: The new-style type quantifications in claim definitions are ambiguous"
+  :show   "Bug_0105/QuantifiedAxiom#A"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0105/QuantifiedAxiom#A
+
+spec  
+ op f infixl 22 : [a] List(a) * a -> Integer
+ def i = 123
+ axiom A is [i] f 3 = 0
+endspec
+
+")
+
+ ("Bug 0105 B: The new-style type quantifications in claim definitions are ambiguous"
+  :show   "Bug_0105/QuantifiedAxiom#B"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0105/QuantifiedAxiom#B
+Errors in $TESTDIR/Bug_0105/QuantifiedAxiom.sw
+13.18-13.18	: Could not match type constraint
+                   3 of type Nat
+          with expected type List(mtv%metafy%5) * mtv%metafy%5
+")
+
+ ("Bug 0105 C: The new-style type quantifications in claim definitions are ambiguous"
+  :show   "Bug_0105/QuantifiedAxiom#C"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0105/QuantifiedAxiom#C
+
+spec  
+ op f infixl 22 : [a] a -> Integer
+ def i = 123
+ axiom A is [i] f(3) = 0
+endspec
+
+")
+
+ ;; end of tests
  )
