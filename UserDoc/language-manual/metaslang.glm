@@ -3294,8 +3294,7 @@ equivalently as
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section
-id="Restricted-expressions"><title>Restricted-expressions</title>
+<section id="Restricted-expressions"><title>Restricted-expressions</title>
 <para>
 <<
 ||`restricted-expression ::= restrict `closed-expression `closed-expression

@@ -193,7 +193,7 @@ libraries-htm.dbk: Makefile libraries.glm
 	$(GLM2DBKMS) -htm libraries.glm > libraries-htm.dbk
 
 grammar.glm: Makefile metaslang.glm grammar.preamble \
-             bin/mkgrammar ~lambert/abc/meta/glmgramm.cmd
+             bin/mkgrammar
 	@if test -r grammar.glm; \
 	 then /bin/mv -f grammar.glm grammar.glm.old; \
 	 fi
