@@ -151,10 +151,6 @@ AnnSpec qualifying spec
 
   op sortInfoDeclsAndDefs : [b] ASortInfo b -> List (ASort b) * List (ASort b)
  def sortInfoDeclsAndDefs info =
-   sortDeclsAndDefs info.dfn 
-
-  op sortDeclsAndDefs : [b] ASort b -> List (ASort b) * List (ASort b)
- def sortDeclsAndDefs srt =
    let 
      def segregate srts =
        foldl (fn (srt, (decls, defs)) -> 
@@ -165,7 +161,7 @@ AnnSpec qualifying spec
              ([],[])
              srts
    in
-     case srt of
+     case info.dfn of
        | And (srts, _) -> segregate srts
        | srt           -> segregate [srt]
 

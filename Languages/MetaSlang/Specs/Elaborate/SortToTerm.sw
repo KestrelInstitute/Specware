@@ -232,7 +232,7 @@ XML qualifying spec
       %% We do that above in scan and add_to_table in sort_expansion_table
       (case findAllSorts (env.internal, qid) of
 	 | info::r ->
-	   (let (decls, defs) = sortDeclsAndDefs info.dfn in
+	   (let (decls, defs) = sortInfoDeclsAndDefs info in
 	    case defs of
 	      | [] ->
 	        let main_qid = primarySortName info in

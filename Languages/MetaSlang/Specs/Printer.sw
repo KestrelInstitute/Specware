@@ -1005,7 +1005,7 @@ AnnSpecPrinter qualifying spec
 			 (0, string " "), 
 			 (3, ppSort context ([index, sortIndex], Top:ParentSort) srt)]))
      in
-     let (decls, defs) = sortDeclsAndDefs info.dfn in
+     let (decls, defs) = sortInfoDeclsAndDefs info in
      let warnings = 
          (let m = length decls in
 	  let n = length defs  in

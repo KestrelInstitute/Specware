@@ -37,13 +37,13 @@ SpecCalc qualifying spec
                        new_names)
        | [old_info] ->
          %%  We're merging new information with a previously declared sort.
-	 let old_dfn = old_info.dfn in
          let combined_names = listUnion (old_info.names, new_names) in
 	 let combined_names = removeDuplicates combined_names in % redundant?
 	 let (old_tvs, old_srt) = unpackFirstSortDef old_info in
 	 let (new_tvs, new_srt) = unpackFirstSortDef new_info in
          if new_tvs = old_tvs then % TODO: for now at least, this is very literal -- should test for alpha-equivalence.
-           (case (definedSort? old_dfn, definedSort? new_dfn) of
+           (let old_dfn = old_info.dfn in
+	    case (definedSort? old_dfn, definedSort? new_dfn) of
               | (false, false) ->
                 %%  Old: Sort S    [or S(A,B), etc.]
                 %%  New: Sort S    [or S(X,Y), etc.]
@@ -89,8 +89,8 @@ SpecCalc qualifying spec
      foldM (fn sp -> fn name -> return (addLocalSortName (sp, name))) sp new_names
     }
 
- def printTyVars vars =
-   case vars of
+ def printTyVars tvs =
+   case tvs of
      | []     -> "()"
      | v1::vs -> "(" ^ v1 ^ (foldl (fn (v, str) -> str ^","^ v) "" vs) ^ ")"
 
@@ -231,8 +231,6 @@ SpecCalc qualifying spec
        let names = listUnion (old_info.names, new_info.names) in % this order of args is more efficient
        let names = removeDuplicates names in % redundant?
 
-       % let old_dfn = old_info.dfn in
-       % let new_dfn = new_info.dfn in
        let old_tvs = firstSortDefTyVars old_info in
        let new_tvs = firstSortDefTyVars new_info in
 
@@ -288,8 +286,6 @@ SpecCalc qualifying spec
        if new_info.fixity ~= old_info.fixity then
          raise (SpecError (pos, "Merged versions of Op " ^ (printAliases names) ^ " have different fixity"))
        else
-	 let old_dfn = old_info.dfn in
-	 let new_dfn = new_info.dfn in
 	 let (old_tvs, old_srt, _) = unpackFirstOpDef old_info in
 	 let (new_tvs, new_srt, _) = unpackFirstOpDef new_info in
 
@@ -370,7 +366,7 @@ SpecCalc qualifying spec
                   %%%                          ("Merged versions of op "^(printAliases names)^" have different definitions:\n")
                   %%%                          combined_defs))
                   %%% else
-		  let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_dfn) in
+		  let combined_dfn = maybeAndTerm (combined_decls ++ combined_defs, termAnn new_info.dfn) in
 		  return (new_info << {names = names, 
 				       dfn = combined_dfn})
 
@@ -403,7 +399,7 @@ SpecCalc qualifying spec
   def complainIfAmbiguous spc pos =
     let ambiguous_sorts = 
         foldriAQualifierMap (fn (_, _, info, ambiguous_sorts) ->
-			     let (decls, defs) = sortDeclsAndDefs info.dfn in
+			     let (decls, defs) = sortInfoDeclsAndDefs info in
 			     if length decls <= 1 && length defs <= 1 then
 			       ambiguous_sorts
 			     else
@@ -476,7 +472,7 @@ SpecCalc qualifying spec
 
   op compressSortDefs : Spec -> SortInfo -> SortInfo
   def compressSortDefs spc info =
-    let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+    let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
     case old_defs of
       | []  -> info
       | [_] -> info
@@ -687,12 +683,12 @@ SpecCalc qualifying spec
    case findAllSorts (spc, qid) of
      | [] -> s1
      | info::_ ->
-       (let (decls, defs) = sortDeclsAndDefs info.dfn in
+       (let defs = sortInfoDefs info in
 	case defs of
 	  | [] -> 
 	    Base (primarySortName info, ts, pos)
 	  | _ ->
-	    let first_def :: _ = defs ++ decls in
+	    let first_def :: _ = defs in
 	    let (tvs, srt) = unpackSort first_def in
 	    myInstantiateScheme (ts, tvs, srt))
 
@@ -815,7 +811,7 @@ op getStringAttributesFromSpec: Spec -> StringMap.Map String
 def getStringAttributesFromSpec spc =
   let ops = opsAsList spc in
   foldl (fn ((_ , id, info), map) ->
-	 let (decls, defs) = opInfoDeclsAndDefs info in
+	 let defs = opInfoDefs info in
 	 case defs of
 	   | term :: _ ->
 	     (let (_, _, tm) = unpackTerm term in
@@ -848,7 +844,7 @@ def getStringAttributesFromSpec spc =
 	 | [] -> Null
 	 | (_, id, info)::ops ->
            if (id = aname) then
-	     let (decls, defs) = opInfoDeclsAndDefs info in
+	     let defs = opInfoDefs info in
 	     case defs of
 	       | term :: _ ->
 	         (let (_, _, tm) = unpackTerm term in

@@ -702,7 +702,7 @@ Utilities qualifying spec
    let 
      def letRecToLetTermSortInfo info =
        let pos = sortAnn info.dfn in
-       let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+       let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
        let new_defs = 
            map (fn srt ->
 		let pos = sortAnn srt in

@@ -165,7 +165,7 @@ spec
 	 | _ -> constrMap
    in
      foldSortInfos (fn (info, constrMap) -> 
-		    foldl addSort constrMap (sortDefs info.dfn))
+		    foldl addSort constrMap (sortInfoDefs info))
                    StringMap.empty 
 		   sorts
 
@@ -323,7 +323,7 @@ spec
                 %% This normalizes all references to be via the same name.
 		Base (primarySortName info, ts, pos))
 	     else
-	       let defs = sortDefs info.dfn in
+	       let defs = sortInfoDefs info in
 	       let possible_base_def = find (fn srt ->
 					     let (tvs, srt) = unpackSort srt in
 					     case srt of
@@ -623,7 +623,7 @@ spec
 
   op consistentSorts? : LocalEnv * MS.Sort * MS.Sort * Boolean -> Boolean
  def consistentSorts? (env, srt1, srt2, ignoreSubsorts?) =
-   let free_mtvs = freeMetaTypeVars (srt1) ++ freeMetaTypeVars (srt2) in
+   let free_mtvs = freeMetaTyVars (srt1) ++ freeMetaTyVars (srt2) in
    let (val, _) = (unifySorts env ignoreSubsorts? srt1 srt2) in
    (clearMetaTyVarLinks free_mtvs;
     val)
@@ -634,7 +634,7 @@ spec
        mtv := cell << {link = None})
       mtvs
 
- def freeMetaTypeVars srt = 
+ def freeMetaTyVars srt = 
    let vars = (Ref []) : Ref MS.MetaTyVars in
    let 
      def vr srt = 

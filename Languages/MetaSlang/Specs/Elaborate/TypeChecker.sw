@@ -93,7 +93,7 @@ TypeChecker qualifying spec
 			    let _ = checkTyVars (env, tvs, sortAnn dfn) in
 			    maybePiSort (tvs, checkSort (env, srt))
 			in
-			let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+			let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
 			let new_defs = map elaborate_dfn old_defs in
 			let new_dfn = maybeAndSort (old_decls ++ new_defs, sortAnn info.dfn) in
 			info << {dfn = new_dfn}
@@ -229,27 +229,24 @@ TypeChecker qualifying spec
 		    %%       candidate will be first in the list (see comments for findAllSorts),
 		    %%       in which case choose it.
 		    if ((null other_infos) or exists (fn alias -> alias = given_sort_qid) info.names) then
-		      (let (decls, defs) = sortDeclsAndDefs info.dfn in
-		       let some_def_or_decl :: _ = defs ++ decls in
-		       let (tvs, srt) = unpackSort some_def_or_decl in
-		       if length tvs ~= length instance_sorts then
-			 let found_sort_str =
-			     (printAliases info.names)
-			     ^ (case tvs of
-				  | [] -> ""    
-				  | hd::tl -> 
-				    "("^ hd ^ (foldl (fn (tv, str) -> str^", "^ tv) "" tl) ^ ")")
-			 in                                
-			   let msg = 
-				  "Type reference " ^ (given_sort_str ())
-				  ^" does not match declared type " ^ found_sort_str
-			   in
-			     error (env, msg, pos)
-		       else 
-			 %%  Normal case goes through here:
-			 %%  either there are no other infos or the first info has as unqualified
-			 %%   alias, and the number of type vars equals the number of instance sorts.
-			 ())
+		      let (tvs, srt) = unpackFirstSortDef info in
+		      if length tvs ~= length instance_sorts then
+			let found_sort_str =
+			    (printAliases info.names)
+			    ^ (case tvs of
+				 | [] -> ""    
+				 | hd::tl -> 
+				   "("^ hd ^ (foldl (fn (tv, str) -> str^", "^ tv) "" tl) ^ ")")
+			in                                
+			let msg = "Type reference " ^ (given_sort_str ())
+			          ^" does not match declared type " ^ found_sort_str
+			in
+			  error (env, msg, pos)
+		      else 
+			%%  Normal case goes through here:
+			%%  either there are no other infos or the first info has as unqualified
+			%%   alias, and the number of type vars equals the number of instance sorts.
+			()
 		    else
 		      %% We know that there are multiple options 
 		      %% (which implies that the given_sort_qid is unqualified), 

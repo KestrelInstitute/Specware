@@ -79,10 +79,9 @@ op unfoldSortAliases: Spec -> Spec
 def unfoldSortAliases spc =
   let srts = sortsAsList spc in
   case find (fn (_, _, info) -> 
-	     case sortDefs info.dfn of
+	     case sortInfoDefs info of
 	       | srt :: _ -> 
-	         (let (_, srt) = unpackSort srt in
-		  case srt of
+	         (case sortInnerSort srt of
 		    | Base (_, _, _) -> true
 		    | _ -> false)
 	       | _ -> false)
@@ -126,10 +125,9 @@ def findMatchingUserTypeOption (spc, srtdef) =
       let srts = sortsAsList spc in
       let srtPos = sortAnn srtdef in
       let foundSrt = find (fn (q, id, info) ->
-			   case sortDefs info.dfn of
+			   case sortInfoDefs info of
 			     | [srt] -> 
-			       let (_, srt) = unpackSort srt in
-			       equalSort? (srtdef, srt)
+			       equalSort? (srtdef, sortInnerSort srt)
 			     |_ -> false)
                           srts 
       in
@@ -174,10 +172,9 @@ def foldRecordSorts spc =
     def foldRecordSorts0 (spc, visited) =
       let srts = sortsAsList spc in
       case find (fn (q, i, info) -> 
-		 case sortDefs info.dfn of
+		 case sortInfoDefs info of
 		   | dfn :: _ -> 
-		     (let (_, srt) = unpackSort dfn in
-		      case srt of
+		     (case sortInnerSort dfn of
 			| Product _ -> ~(member (Qualified (q, i), visited))
 			| _ -> false)
 		   | _ -> false)
@@ -250,7 +247,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
       foldriAQualifierMap
         (fn (q, id, info, (map, minfo)) ->
 	 let pos = sortAnn info.dfn in
-	 let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+	 let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
          let (new_defs, minfo) =
 	     foldl (fn (def0, (defs, minfo)) ->
 		    let (tvs, srt) = unpackSort def0 in
@@ -318,8 +315,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	      else 
 		foldriAQualifierMap
 		  (fn (q, id, info, map) ->
-		   let tvs = firstSortDefTyVars info in
-		   case tvs of
+		   case firstSortDefTyVars info of
 		     | [] -> insertAQualifierMap (map, q, id, info)
 		     | _ -> map)
 		  emptyASortMap 
@@ -330,8 +326,7 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	     else
 	       foldriAQualifierMap
 	         (fn (q, id, info, map) ->
-		  let tvs = firstOpDefTyVars info in
-		  case tvs of
+		  case firstOpDefTyVars info of
 		    | [] -> insertAQualifierMap (map, q, id, info)
 		    | _ -> map)
 		 emptyAOpMap 
@@ -800,11 +795,11 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
       foldriAQualifierMap
        (fn (q, i, info, minfo) ->
 	foldl (fn (def0, minfo) ->
-	       let (_, srt) = unpackSort def0 in
+	       let srt = sortInnerSort def0 in
 	       let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
 	       minfo) 
 	      minfo 
-	      (sortDefs info.dfn))
+	      (sortInfoDefs info))
        emptyMonoInfo 
        spc.sorts
   in
@@ -1422,7 +1417,7 @@ def conformOpDeclsTerm (spc, srt, term, _) =
    case findTheOp (spc, qid) of
      | None -> None
      | Some info ->
-       let srt = firstOpDefInnerSort info in
+       let srt = firstOpDefInnerSort info in 
        let srt = unfoldToArrow (spc, srt) in
        case srt of
 	 | Arrow (domsrt as (Base _), ransrt, _) ->

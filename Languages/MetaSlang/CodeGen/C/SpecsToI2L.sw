@@ -327,8 +327,7 @@ SpecsToI2L qualifying spec {
       | None -> None
       | Some info ->
         if definedOpInfo? info then
-	  let term = firstOpDefInnerTerm info in
-	  Some term
+	  Some (firstOpDefInnerTerm info)
 	else
 	  None
 
@@ -497,7 +496,7 @@ SpecsToI2L qualifying spec {
     case typ of 
       | FunOrMap(types,rtype) ->
         (if definedOpInfo? info then
-	   let (tvs, _, term) = unpackTerm info.dfn in
+	   let term = firstOpDefInnerTerm info in
 	   let term = liftUnsupportedPattern(spc,term) in
 	   let (pnames,bodyterm) = getParamNames(ctxt,term) in
 	   let decl = {name       = id,

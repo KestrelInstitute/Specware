@@ -22,7 +22,7 @@ Sort qualifying spec
 
   % op Sort.sortinfo_type : SortInfo -> Type
   def Sort.sortinfo_type info =
-    case sortDefs info.dfn of
+    case sortInfoDefs info of
       | [] -> fail "Sort.sortinfo_type: sort with empty list of sort schemes"
       | [srt] -> unpackSort srt
       | _::_ -> fail "Sort.sortinfo_type: sort with more than one sort scheme"

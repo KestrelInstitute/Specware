@@ -26,30 +26,30 @@ RemoveCurrying qualifying spec
   op  removeCurrying: Spec -> Spec
   def removeCurrying spc =
     let spc = addUnCurriedOps spc in
-    let newOps = mapOpInfos (fn info ->
-			     if definedOpInfo? info then
+    let newOps = mapOpInfos (fn old_info ->
+			     if definedOpInfo? old_info then
 			       %% TODO: Handle multiple defs??
-			       let (old_tvs, old_srt, old_tm) = unpackFirstOpDef info in
+			       let (old_tvs, old_srt, old_tm) = unpackFirstOpDef old_info in
 			       let new_tm = unCurryTerm (old_tm, spc) in
 			       let new_dfn = maybePiTerm (old_tvs, 
 							  SortedTerm (new_tm, 
 								      old_srt,
-								      termAnn info.dfn))
+								      termAnn old_info.dfn))
 			       in
-				 info << {dfn = new_dfn}
+				 old_info << {dfn = new_dfn}
 			     else
-			       info)
+			       old_info)
                             spc.ops
     in
-    let newSorts = mapSortInfos (fn info ->
-				 if definedSortInfo? info then
+    let newSorts = mapSortInfos (fn old_info ->
+				 if definedSortInfo? old_info then
 				   %% TODO: Handle multiple defs??
-				   let (old_tvs, old_srt) = unpackFirstSortDef info in
+				   let (old_tvs, old_srt) = unpackFirstSortDef old_info in
 				   let new_srt = (unCurrySort(old_srt,spc)).2 in
 				   let new_dfn = maybePiSort (old_tvs, new_srt) in
-				   info << {dfn = new_dfn}
+				   old_info << {dfn = new_dfn}
 				 else
-				   info)
+				   old_info)
                                 spc.sorts
     in
     setOps (setSorts (spc, newSorts), newOps)

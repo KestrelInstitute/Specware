@@ -839,7 +839,7 @@ def eliminateTerm context term =
      {importInfo    = spc.importInfo,
       sorts         = mapSortInfos (fn info ->
 				    let Qualified (_,id) = primarySortName info in
-				    let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+				    let (old_decls, old_defs) = sortInfoDeclsAndDefs info in
 				    let new_defs =
 				        map (fn dfn ->
 					     let (tvs, srt) = unpackSort dfn in

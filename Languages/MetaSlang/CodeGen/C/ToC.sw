@@ -78,7 +78,7 @@ CGen qualifying spec {
         (case findTheSort (spc, qid) of
 	   | None -> srt % fail ("derefSort: failed to find sort: " ^ (showQualifiedId qid))
 	   | Some info ->
-	     case sortDefs info.dfn of
+	     case sortInfoDefs info of
 	       | [] -> srt
 	       | srt::_ -> derefSort spc srt)
       | _ -> srt
@@ -136,7 +136,7 @@ CGen qualifying spec {
              cSpec
 
       def doSort (q, id, info, cSpec) =
-        case sortDefs info.dfn of
+        case sortInfoDefs info of
           | []     -> cSpec
           | srt::_ -> makeCType cSpec (showQualifiedId (Qualified (q, id))) srt
     in

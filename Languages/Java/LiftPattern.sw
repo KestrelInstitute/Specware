@@ -239,7 +239,7 @@ def opRange (spc, oper) =
   let infos = findAllOps (spc, oper) in
   case infos of
     | info ::_ -> 
-      let srt = firstOpDefInnerSort info in % unpackOpDef info.dfn 
+      let srt = firstOpDefInnerSort info in
       srtRange srt
     | _ -> 
       let _ = unSupported oper in 
@@ -273,6 +273,7 @@ def srtDomKeepSubsorts srt =
     | Arrow (dom, rng, _) ->
       (let argSorts = domSrtDom(dom) in
        argSorts)
+    | Pi (_, s, _) -> srtDomKeepSubsorts s
     | _ -> []
 
 def srtRange srt =
@@ -294,6 +295,7 @@ def srtDomPreds srt =
     case srt of
       | Arrow (Product (fields,_),_,_) -> map (fn(_,srt) -> srtPred(srt)) fields
       | Arrow (srt, _, _) -> [srtPred(srt)]
+      | Pi (_, s, _) -> srtDomPreds s
       | _ -> []
 
 op patternNameOpt : Pattern       -> Option Id

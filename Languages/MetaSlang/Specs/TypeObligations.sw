@@ -805,9 +805,9 @@ spec
    let tcSpec = addDisjointImport (tcSpec, wfoSpec) in
    addConjectures (rev (checkSpec spc).1, tcSpec)
 
-% op  boundVars    : Gamma -> List Var
-% op  boundTypeVars : Gamma -> TyVars
-% def boundTypeVars(_,tyVars,_,_,_) = tyVars
+% op  boundVars   : Gamma -> List Var
+% op  boundTyVars : Gamma -> TyVars
+% def boundTyVars(_,tyVars,_,_,_) = tyVars
 
 % def boundVars(decls: List Decl,_,_,_,_) = 
 %     let

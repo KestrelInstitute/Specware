@@ -273,8 +273,7 @@ snark qualifying spec {
    if ~ (definedSortInfo? info) then
      None
    else
-     let srt = firstSortDefInnerSort info in
-     case srt of
+     case firstSortDefInnerSort info of
        | Subsort (supSrt, pred, _) ->
          Some (Lisp.list [declare_subsorts, 
 			  Lisp.quote (snarkBaseSort (spc, supSrt, false)), 
@@ -345,7 +344,7 @@ snark qualifying spec {
 	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
-      let defs = sortDefs info.dfn in
+      let defs = sortInfoDefs info in
       let builtinSort = find builtinSort? defs in
         (case builtinSort of
 	  | Some srt -> builtinSnarkSort srt

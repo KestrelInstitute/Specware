@@ -7,12 +7,14 @@ CurryUtils qualifying spec
 
   op  curryShapeNum: Spec * Sort -> Nat
   def curryShapeNum(sp,srt) =
+    let srt = sortInnerSort srt in % might not be needed, but ...
     case arrowOpt(sp,srt)
       of Some (_,rng) -> 1 + curryShapeNum(sp,rng)
        | _ -> 0
 
   op  curryArgSorts: Spec * Sort -> List Sort
   def curryArgSorts(sp,srt) =
+    let srt = sortInnerSort srt in % might not be needed, but ...
     case arrowOpt(sp,srt)
       of Some (dom,rng) -> cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
        | _ -> []

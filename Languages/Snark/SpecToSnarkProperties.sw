@@ -100,7 +100,7 @@ snark qualifying spec
 		 else 
 		   Lisp.symbol ("SNARK", "LOGICAL")
          in
-	 let defs = sortDefs info.dfn in
+	 let defs = sortInfoDefs info in
 	 let builtinSort = find builtinSort? defs in
 	 case builtinSort of
 	   | Some srt -> builtinSnarkSort srt
