@@ -1,28 +1,28 @@
-SpecCalc qualifying spec
+%%% Spec Calculus Abstract Syntax
 
+SpecCalc qualifying spec
 (*
 We import PosSpec for Position, QualifiedId, ASortScheme etc.  This is a
 bit of a shame as AnnSpec would like to import this spec so as to insert
 a spec calculus term in the import of a spec. This would create a cyclic
 dependency between specs. At present, this is addressed in AnnSpec by
-defining an abstract sort SpecCalc.Term a, which is refined below.
+defining an abstract type SpecCalc.Term a, which is refined below.
 *)
-
   import ../../MetaSlang/Specs/StandardSpec 
   import /Library/Legacy/Utilities/Lisp % for LispCell
 (*
 All the objects in the abstract syntax are polymorphic and defined at
-two levels.  The first level pairs the sort the type paramerter. The
+two levels.  The first level pairs the type the type paramerter. The
 second level defines the constructors for the sort. In this way, every
 sort is annotated. The annotation is typically information about the
 position of the term in the file. It is not clear that there is any
 benefit in making this polymorphic. Might might be enough to pair it
-with the \verb+Position+ sort and then refine that sort.  Using two
+with the \verb+Position+ type and then refine that sort.  Using two
 levels ensures that for all objects in the abstract syntax tree, the
 position information is always the second component.
 *)
-  sort Value  % Defined in ../Semantics/Value
-  sort SCTerm = SpecCalc.Term Position
+  type Value  % Defined in ../Semantics/Value
+  type SCTerm = SpecCalc.Term Position
 
   op valueOf    : fa (a) a * Position -> a
   op positionOf : fa (a) a * Position -> Position
@@ -36,8 +36,8 @@ A file may contain a list of $\mathit{name} =
 \mathit{term}$ or contain a single term. This should not be polymorphic.
 The type parameter should be instantiated with the type \verb+Position+.
 *)
-  sort SpecTerm a = (SpecTerm_ a) * a
-  sort SpecTerm_ a =
+  type SpecTerm a = (SpecTerm_ a) * a
+  type SpecTerm_ a =
     | Term  (Term a)
     | Decls (List (Decl a))
 (*
@@ -53,18 +53,18 @@ path in the file system. Recall that file may contain a single anonymous
 term or a list of bindings. Thus a canonical UnitId may resolve to two
 possible path names. Later we may want to have UIDs with network addresses.
 *)
-  sort UnitId = {
+  type UnitId = {
       path : List String,
       hashSuffix : Option String
    }
 
-  sort RelativeUID =
+  type RelativeUID =
     | UnitId_Relative UnitId
     | SpecPath_Relative UnitId
 
-  sort RelativeUnitId = RelativeUID
+  type RelativeUnitId = RelativeUID
 (*
-The sort \verb+Name+ is used everywhere that one can expect a
+The type \verb+Name+ is used everywhere that one can expect a
 non-structured identifier.  This includes for instance, the names of
 vertices and edges in the shape of a diagram. It also includes the
 qualifiers on op and sort names.
@@ -74,20 +74,20 @@ These are either \verb+let+ bound or bound by specs listed in a
 file. Later, we might allow bound identifiers to be UIDs thus enabling
 one to override an existing definition.
 *)
-  sort Name = String
-  sort ProverName = Name
-  sort ClaimName = QualifiedId
+  type Name = String
+  type ProverName = Name
+  type ClaimName = QualifiedId
 (*
 In a basic Specware image, OtherTerm is unspecified, but in an extension
 such as PSL or Planware, it might be refined to an application-specific 
 term, or a coproduct of such terms.
 *)
-  sort OtherTerm a  % hook for extensions
+  type OtherTerm a  % hook for extensions
 (*
-The following is the sort given to us by the parser.
+The following is the type given to us by the parser.
 *)
-  sort Term a = (Term_ a) * a
-  sort Term_ a = 
+  type Term a = (Term_ a) * a
+  type Term_ a = 
     | Print   (Term a)
     | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar
     | UnitId     RelativeUID
@@ -165,7 +165,7 @@ The following are declarations that appear in a file or listed
 within a \verb+let+. As noted above, at present the identifiers
 bound by a let or listed in a file are unstructured.
 *)
-  sort Decl a = Name * (Term a)
+  type Decl a = Name * (Term a)
 (*
 A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
@@ -174,11 +174,11 @@ and sorts or for requalifying things. For now, a translation is just a
 mapping from names to names, annotated with the full list of aliases
 to be used in the target info.
 
-Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
+Recall the type \verb+IdInfo+ is just a list of identifiers (names).
 *)
-  sort TranslateExpr  a = List (TranslateRule a) * a
-  sort TranslateRule  a = (TranslateRule_ a) * a
-  sort TranslateRule_ a =
+  type TranslateExpr  a = List (TranslateRule a) * a
+  type TranslateRule  a = (TranslateRule_ a) * a
+  type TranslateRule_ a =
     | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases
     | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
     | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
@@ -194,7 +194,7 @@ one must explicitly list them.
 There is some inconsistency here as NameExpr is not annotated with 
 a position as in TranslateExpr above.
 *)
-  sort NameExpr a = | Sort       QualifiedId
+  type NameExpr a = | Sort       QualifiedId
                     | Op         QualifiedId * Option Sort
                     | Axiom      QualifiedId
                     | Theorem    QualifiedId
@@ -203,9 +203,9 @@ a position as in TranslateExpr above.
 (*
 A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
 *)
-  sort SpecElem a = (SpecElem_ a) * a
+  type SpecElem a = (SpecElem_ a) * a
 
-  sort SpecElem_ a =
+  type SpecElem_ a =
     | Import List (Term a)
     | Sort   List QualifiedId          * ASort a
     | Op     List QualifiedId * Fixity * ATerm a
@@ -250,12 +250,12 @@ construct limits and colimits of diagram in which case, vertices and
 edges in the resulting shape may be tuples and equivalence classes. It
 remains to be seen whether we need a concrete syntax for this.
 *)
-  sort DiagElem a = (DiagElem_ a) * a
-  sort DiagElem_ a =
+  type DiagElem a = (DiagElem_ a) * a
+  type DiagElem_ a =
     | Node NodeId * (Term a)
     | Edge EdgeId * NodeId * NodeId * (Term a)
-  sort NodeId = Name
-  sort EdgeId = Name
+  type NodeId = Name
+  type EdgeId = Name
 (*
 Note that the term associated with a node must evaluate to a spec
 or diagram. The term for an edge must evaluate to a spec morphism or
@@ -267,8 +267,8 @@ the interpreter handles only name to name maps for now.
 The tagging in the sorts below may be excessive given the \verb+ATerm+
 is already tagged.
 *)
-  sort SpecMorphRule a = (SpecMorphRule_ a) * a
-  sort SpecMorphRule_ a = 
+  type SpecMorphRule a = (SpecMorphRule_ a) * a
+  type SpecMorphRule_ a = 
     | Sort      QualifiedId * QualifiedId
     | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort)
     | Ambiguous QualifiedId * QualifiedId 
@@ -285,21 +285,21 @@ A \verb+NatTranComp+ element is a component in a natural transformation
 between diagrams. The components are indexed by vertices in the shape.
 The term in the component must evaluate to a morphism.
 *)
-  sort DiagMorphRule a = (DiagMorphRule_ a) * a
-  sort DiagMorphRule_ a =
+  type DiagMorphRule a = (DiagMorphRule_ a) * a
+  type DiagMorphRule_ a =
     | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
-(**)
-  sort Assertions = | All
+
+  type Assertions = | All
                     | Explicit List ClaimName
 
-  sort ProverOptions = | OptionString (List LispCell)
+  type ProverOptions = | OptionString (List LispCell)
                        | OptionName QualifiedId
                        | Error   (String * String)  % error msg, problematic string
 
-  sort ProverBaseOptions = | ProverBase | Base | AllBase | NoBase
+  type ProverBaseOptions = | ProverBase | Base | AllBase | NoBase
   
-  sort AnswerVar = Option Var
+  type AnswerVar = Option Var
 (*
 The following are invoked from the parser:
 *)

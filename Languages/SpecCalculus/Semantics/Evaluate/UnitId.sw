@@ -1,3 +1,5 @@
+%%% Evalution of a UnitId term in the Spec Calculus
+
 SpecCalc qualifying spec
   import Signature 
   import ../SpecPath 
