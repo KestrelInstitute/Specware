@@ -30,7 +30,7 @@
 
 ;;; op getEnv : String -> Option String
 (defun getEnv (name)
-  (let ((val (system:getenv name)))
+  (let ((val (specware::getenv name)))
     (if (or (eq val nil) (equal val ""))    ; I think it returns "" if not set
 	(cons :|None| nil)
       (cons :|Some| val))))
@@ -39,7 +39,8 @@
 
 ;;;  op temporaryDirectory : String
 (defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
-                                             #+Lispworks SYSTEM::*TEMP-DIRECTORY*))
+                                             #+Lispworks SYSTEM::*TEMP-DIRECTORY*
+					     #+cmu "/tmp/"))
 
 
 ;;; op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a
@@ -54,7 +55,8 @@
 
 ;;; op garbageCollect : Boolean -> ()
 (defun garbageCollect (full?)
-  (sys::gc full?))
+  #+allegro (sys::gc full?)
+  #+cmu (ext:gc :full full?))
 
 ;; hackMemory essentially calls (room nil) in an attempt to appease 
 ;; Allegro CL into not causing mysterious storage conditions during 

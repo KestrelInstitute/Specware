@@ -1,9 +1,10 @@
 (defpackage "SPECWARE")
 (in-package "SPECWARE")
 
+#+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
 
-(defvar Specware4 (sys:getenv "SPECWARE4"))
+(defvar Specware4 (specware::getenv "SPECWARE4"))
 
 ;; Used in printing out the license and about-specware command
 (defvar user::Specware-version "4.0")

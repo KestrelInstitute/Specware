@@ -29,7 +29,7 @@
 
 
 ;; All library paths are relative to the Specware4 root directory.
-(setq baseDir (sys:getenv "SPECWARE4"))
+(setq baseDir (specware::getenv "SPECWARE4"))
 
 ;; ========
 

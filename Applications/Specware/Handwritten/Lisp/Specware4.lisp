@@ -29,7 +29,7 @@
        :defaults (concatenate 'string Specware4 "/Provers/Snark/Handwritten/Lisp/snark-system")
        :type     "lisp"))
 
-(snark:make-snark-system t)
+;(snark:make-snark-system t)
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")

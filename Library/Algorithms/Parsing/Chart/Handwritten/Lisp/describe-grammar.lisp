@@ -5,6 +5,7 @@
 
 (defparameter *MAX-BNF-WIDTH* 40)
 
+#+allegro				; Fix for other dialects later
 (defun user::show-grammar (&optional just-rerun-latex?)
   (let ((parser-ps-file (print-grammar-ps-file just-rerun-latex?)))
     (format t "~&~%--------------------------------------------------------------------------------~%")
@@ -16,6 +17,7 @@
       (format t "~&~A~%" cmd)
       (values))))
 
+#+allegro				; Fix for other dialects later
 (defun get-ps-viewer ()
   (dolist (program '("ghostview" "gs")
 	    (progn
@@ -26,6 +28,7 @@
 
 ;; The following is called from Languages/SpecCalculus/Parser/Handwritten/Lisp/system.lisp
 ;; to print a postscript version of the bnf for the grammar each time the system is built.
+#+allegro				; Fix for other dialects later
 (defun print-grammar-ps-file (&optional just-rerun-latex?)
   (let* ((parser-lisp-dir (specware::current-directory))
 	 (parser-tex-dir  (make-pathname :directory (append (reverse (cdr (reverse (pathname-directory parser-lisp-dir))))
@@ -333,6 +336,7 @@
 
 ;;; informative messages for person building parser....
 
+#+allegro				; Fix for other dialects later
 (eval-when (load)
   (format t "~&;     To create grammar.ps and display using ~A: (user::show-grammar)~%" 
 	  (get-ps-viewer)))

@@ -33,6 +33,10 @@
   #+cmu (setf (extensions:default-directory) directory)
   (setq lisp::*default-pathname-defaults* (current-directory)))
 
+(defun getenv (varname)
+  #+allegro (sys:getenv varname)
+  #+cmucl (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*)))
+
 #+Lispworks
 (defun make-system (new-directory)
   (let ((*default-pathname-defaults*
@@ -61,9 +65,11 @@
 
 (defun compile-and-load-lisp-file (file)
    (let ((filep (make-pathname :defaults file :type "lisp")))
-     #-cmu (compile-file-if-needed filep)
-     (load (make-pathname :defaults filep :type nil)
-	   #+cmu :if-source-newer #+cmu :compile))
+     ;(format t "C: ~a~%" filep)
+     ;(compile-file filep)
+     ;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
+     (compile-file-if-needed filep)
+     (load (make-pathname :defaults filep :type nil)))
    )
 
 (defun load-lisp-file (file &rest ignore)

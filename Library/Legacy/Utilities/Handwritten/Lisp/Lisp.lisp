@@ -11,7 +11,7 @@
 (defun |!symbol-1|  (x) (intern (car x) (find-package (cdr x))))
 (defun |!string|   (s) s)
 (defun lispstring (s) (string s))
-%(defun toString (s) (format nil "~A" s))
+;(defun toString (s) (format nil "~A" s))
 (defun |!nat|   (n) n)
 (defun |!char|  (c) c)
 (defun bool    (b) b)
