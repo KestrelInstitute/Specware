@@ -1,15 +1,15 @@
-MetaSlang qualifying spec { 
+MetaSlang qualifying spec {
  import /Library/Base
  import /Library/Legacy/Utilities/State  % for MetaTyVar's
  import /Library/Legacy/DataStructures/ListPair
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                QualifiedId 
+ %%%                QualifiedId
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%  Basic structure for naming things
 
  sort Id = String
- sort Qualifier = Id    
+ sort Qualifier = Id
 
  %% This is the key used in the qualifier maps for UnQualified Id
  op UnQualified : Qualifier
@@ -22,14 +22,14 @@ MetaSlang qualifying spec {
 
  sort QualifiedId = | Qualified Qualifier * Id
 
- %% An annotated qualified id can record extra information, 
+ %% An annotated qualified id can record extra information,
  %% e.g. the precise position of the name.
  sort AQualifiedId a = QualifiedId * a
 
  %% the following are invoked by the parser to make qualified names
  def mkUnQualifiedId  id                 =  Qualified (UnQualified, id)
  def mkQualifiedId    (qualifier, id)    =  Qualified (qualifier,   id)
- def fa (a) mkAUnQualifiedId (id,            x : a) = (Qualified (UnQualified, id), x) 
+ def fa (a) mkAUnQualifiedId (id,            x : a) = (Qualified (UnQualified, id), x)
  def fa (a) mkAQualifiedId   (qualifier, id, x : a) = (Qualified (qualifier,   id), x)
 
  %% These are used by translation, morphism code
@@ -56,7 +56,7 @@ MetaSlang qualifying spec {
  def explicitPrintQualifiedId (Qualified (qualifier, id)) =
   if qualifier = UnQualified then
     id
-  else 
+  else
     qualifier^"."^id
 
  %% This is useful for most normal messages, where you want to be terse:
@@ -64,23 +64,23 @@ MetaSlang qualifying spec {
  def printQualifiedId (Qualified (qualifier, id)) =
   if qualifier = UnQualified then
     id
-  else 
+  else
     printQualifierDotId (qualifier, id)
 
  op printQualifierDotId : Qualifier * Id -> String
  def printQualifierDotId (qualifier, id) =
-  if qualifier = "Nat"     or 
+  if qualifier = "Nat"     or
      qualifier = "String"  or
      qualifier = "Char"    or
      qualifier = UnQualified
   then id
   else qualifier^"."^id
 
- def printAliases aliases = 
+ def printAliases aliases =
   case aliases of
     | [] -> fail "printAliases: empty name list"
     | [name] -> printQualifiedId name
-    | first::rest -> 
+    | first::rest ->
       "{" ^ (printQualifiedId first) ^
       (foldl (fn (qid, str) -> str ^ ", " ^ printQualifiedId qid)
              ""
@@ -101,10 +101,10 @@ MetaSlang qualifying spec {
  %%%  are all mutually recursive types.
 
  %% Terms are tagged with auxiliary information such as
- %% location information and free variables for use in 
+ %% location information and free variables for use in
  %% various transformation steps.
 
- sort ATerm b = 
+ sort ATerm b =
   | Apply        ATerm b * ATerm b                       * b
   | ApplyN       List (ATerm b)                          * b % Before elaborateSpec
   | Record       List (Id * ATerm b)                     * b
@@ -118,26 +118,26 @@ MetaSlang qualifying spec {
   | Seq          List (ATerm b)                          * b
   | SortedTerm   ATerm b * ASort b                       * b
 
- sort Binder = 
-  | Forall 
-  | Exists 
+ sort Binder =
+  | Forall
+  | Exists
 
  sort AVar b = Id * ASort b
 
- sort AMatch b = List (APattern b * ATerm b * ATerm b) 
+ sort AMatch b = List (APattern b * ATerm b * ATerm b)
 
- sort ASort b =  
+ sort ASort b =
   | Arrow        ASort b * ASort b                   * b
   | Product      List (Id * ASort b)                 * b
   | CoProduct    List (Id * Option (ASort b))        * b
   | Quotient     ASort b * ATerm b                   * b
   | Subsort      ASort b * ATerm b                   * b
-  | Base         QualifiedId * List (ASort b)        * b  % Typechecker verifies that QualifiedId refers to some sortInfo 
+  | Base         QualifiedId * List (ASort b)        * b  % Typechecker verifies that QualifiedId refers to some sortInfo
   | Boolean                                            b
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
-       
- sort APattern b = 
+
+ sort APattern b =
   | AliasPat     APattern b * APattern b             * b
   | VarPat       AVar b                              * b
   | EmbedPat     Id * Option (APattern b) * ASort b  * b
@@ -151,15 +151,15 @@ MetaSlang qualifying spec {
   | QuotientPat  APattern b * ATerm b                * b
   | SortedPat    APattern b * ASort b                * b  % Before elaborateSpec
 
- sort AFun b = 
+ sort AFun b =
 
   | Not
   | And
   | Or
   | Implies
   | Iff
-  | Equals 
-  | NotEquals 
+  | Equals
+  | NotEquals
 
   | Quotient
   | Choose
@@ -187,13 +187,12 @@ MetaSlang qualifying spec {
  sort Associativity = | Left | Right
  sort Precedence    = Nat
 
-
  sort AMetaTyVar      b = Ref ({link     : Option (ASort b),
                                 uniqueId : Nat,
-                                name     : String }) 
+                                name     : String })
 
  sort AMetaTyVars     b = List (AMetaTyVar b)
- sort AMetaSortScheme b = AMetaTyVars b * ASort b 
+ sort AMetaSortScheme b = AMetaTyVars b * ASort b
 
  %%% Predicates
  op product?: fa(a) ASort a -> Boolean
@@ -217,7 +216,7 @@ MetaSlang qualifying spec {
  %% For example, a tuple with 10 fields is sorted internally:
  %% {1,10,2,3,4,5,6,7,8,9}
  %%
- %% This invariant is established by the parser and must be 
+ %% This invariant is established by the parser and must be
  %% maintained by all transformations.
 
  sort AFields b = List (AField b)
@@ -234,14 +233,14 @@ MetaSlang qualifying spec {
  %%%                Term Annotations
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op termAnn: fa(a) ATerm a -> a 
- def termAnn(t) = 
+ op termAnn: fa(a) ATerm a -> a
+ def termAnn(t) =
   case t of
      | Apply      (_,_,   a) -> a
      | ApplyN     (_,     a) -> a
      | Record     (_,     a) -> a
      | Bind       (_,_,_, a) -> a
-     | Let        (_,_,   a) -> a  
+     | Let        (_,_,   a) -> a
      | LetRec     (_,_,   a) -> a
      | Var        (_,     a) -> a
      | SortedTerm (_,_,   a) -> a
@@ -250,8 +249,8 @@ MetaSlang qualifying spec {
      | IfThenElse (_,_,_, a) -> a
      | Seq        (_,     a) -> a
 
- op withAnnT: fa(a) ATerm a * a -> ATerm a 
- def withAnnT(t, a) = 
+ op withAnnT: fa(a) ATerm a * a -> ATerm a
+ def withAnnT(t, a) =
   case t of
      | Apply      (t1, t2,_) -> Apply(t1, t2, a)
      | ApplyN     (l,     _) -> ApplyN(l, a)
@@ -308,7 +307,7 @@ MetaSlang qualifying spec {
      | Base      (qid,srts, b) -> if a = b then s else Base      (qid,srts, a)
      | Boolean              b  -> if a = b then s else Boolean              a
      | TyVar     (tv,       b) -> if a = b then s else TyVar     (tv,       a)
-     | MetaTyVar (tv,       b) -> if a = b then s else MetaTyVar (tv,       a)
+     | MetaTyVar (mtv,      b) -> if a = b then s else MetaTyVar (mtv,      a)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Sorts
@@ -317,12 +316,12 @@ MetaSlang qualifying spec {
  op termSort    : fa(b) ATerm    b -> ASort b
  op patternSort : fa(b) APattern b -> ASort b
 
- def termSort (term) = 
+ def termSort (term) =
   case term of
      | Apply      (t1,t2,   _) ->
         (case termSort t1 of
            | Arrow(dom,rng,_) -> rng
-           | _ -> System.fail ("Cannot extract sort of application " 
+           | _ -> System.fail ("Cannot extract sort of application "
                                                   ^ anyToString term))
      | ApplyN     ([t1,t2], _) ->
         (case termSort t1 of
@@ -330,7 +329,7 @@ MetaSlang qualifying spec {
            | _ -> System.fail ("Cannot extract sort of application "
                                                   ^ anyToString term))
      | Bind       (_,_,_,   a) -> Boolean a
-     | Record     (fields,  a) -> Product(List.map (fn (id,t) -> (id,termSort t)) fields, 
+     | Record     (fields,  a) -> Product(List.map (fn (id,t) -> (id,termSort t)) fields,
                                           a)
      | Let        (_,term,  _) -> termSort term
      | LetRec     (_,term,  _) -> termSort term
@@ -342,8 +341,8 @@ MetaSlang qualifying spec {
      | Lambda     (Cons((pat,_,body),_), a) -> Arrow(patternSort pat, termSort body, a)
      | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
      | _ -> System.fail "Non-exhaustive match in termSort"
-    
- def patternSort (pat) = 
+
+ def patternSort (pat) =
   case pat of
      | WildPat     (srt,     _) -> srt
      | AliasPat    (p1,_,    _) -> patternSort p1
@@ -363,7 +362,7 @@ MetaSlang qualifying spec {
    let bool_sort = Boolean a in
    let binary_bool_sort = Arrow(Product([("1",bool_sort),("2",bool_sort)],a),
 				bool_sort,
-				a) 
+				a)
    in
      Fun (And, binary_bool_sort, a)
 
@@ -384,10 +383,10 @@ MetaSlang qualifying spec {
 
  op equalList? : fa(a,b) List a * List b * (a * b -> Boolean) -> Boolean
  def equalList? (x, y, eqFn) =
-  (length x) = (length y) &
+  (length x) = (length y) &&
   (case (x, y) of
       | ([],              [])             -> true
-      | (head_x::tail_x,  head_y::tail_y) -> eqFn (head_x, head_y) & 
+      | (head_x::tail_x,  head_y::tail_y) -> eqFn (head_x, head_y) &&
                                              equalList? (tail_x, tail_y, eqFn)
       | _ -> false)
 
@@ -401,94 +400,94 @@ MetaSlang qualifying spec {
  def equalTerm? (t1, t2) =
   case (t1, t2) of
 
-     | (Apply      (x1, y1,      _), 
-        Apply      (x2, y2,      _)) -> equalTerm? (x1, x2) & equalTerm? (y1, y2)
+     | (Apply      (x1, y1,      _),
+        Apply      (x2, y2,      _)) -> equalTerm? (x1, x2) && equalTerm? (y1, y2)
 
-     | (ApplyN     (xs1,         _),   
+     | (ApplyN     (xs1,         _),
         ApplyN     (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
 
-     | (Record     (xs1,         _), 
-        Record     (xs2,         _)) -> equalList? (xs1, xs2, 
-                                                    fn ((label1,x1),(label2,x2)) -> 
-                                                       label1 = label2 & 
+     | (Record     (xs1,         _),
+        Record     (xs2,         _)) -> equalList? (xs1, xs2,
+                                                    fn ((label1,x1),(label2,x2)) ->
+                                                       label1 = label2 &&
                                                        equalTerm? (x1, x2))
 
      | (Bind       (b1, vs1, x1, _),
-        Bind       (b2, vs2, x2, _)) -> b1 = b2 & 
+        Bind       (b2, vs2, x2, _)) -> b1 = b2 &&
                                         %% Could check modulo alpha conversion...
-                                        equalList? (vs1, vs2, equalVar?) &
+                                        equalList? (vs1, vs2, equalVar?) &&
                                         equalTerm? (x1,  x2)
 
      | (Let        (pts1, b1,    _),
-        Let        (pts2, b2,    _)) -> equalTerm? (b1, b2) &
+        Let        (pts2, b2,    _)) -> equalTerm? (b1, b2) &&
                                         equalList? (pts1, pts2,
-                                                    fn ((p1,t1),(p2,t2)) -> 
-                                                      equalPattern? (p1, p2) & 
+                                                    fn ((p1,t1),(p2,t2)) ->
+                                                      equalPattern? (p1, p2) &&
                                                       equalTerm?    (t1, t2))
 
      | (LetRec     (vts1, b1,    _),
-        LetRec     (vts2, b2,    _)) -> equalTerm? (b1, b2) &
+        LetRec     (vts2, b2,    _)) -> equalTerm? (b1, b2) &&
                                         equalList? (vts1, vts2,
-                                                    fn ((v1,t1),(v2,t2)) -> 
-                                                     equalVar?  (v1, v2) & 
+                                                    fn ((v1,t1),(v2,t2)) ->
+                                                     equalVar?  (v1, v2) &&
                                                      equalTerm? (t1, t2))
 
      | (Var        (v1,          _),
         Var        (v2,          _)) -> equalVar?(v1,v2)
 
      | (Fun        (f1, s1,      _),
-        Fun        (f2, s2,      _)) -> equalFun?(f1,f2) & equalSort?(s1,s2)
+        Fun        (f2, s2,      _)) -> equalFun?(f1,f2) && equalSort?(s1,s2)
 
      | (Lambda     (xs1,         _),
         Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
                                                     fn ((p1,c1,b1),(p2,c2,b2)) ->
-                                                      equalPattern?  (p1, p2) & 
-                                                      equalTerm?     (c1, c2) & 
+                                                      equalPattern?  (p1, p2) &&
+                                                      equalTerm?     (c1, c2) &&
                                                       equalTerm?     (b1, b2))
 
      | (IfThenElse (c1, x1, y1,  _),
-        IfThenElse (c2, x2, y2,  _)) -> equalTerm? (c1, c2) & 
-                                        equalTerm? (x1, x2) & 
+        IfThenElse (c2, x2, y2,  _)) -> equalTerm? (c1, c2) &&
+                                        equalTerm? (x1, x2) &&
                                         equalTerm? (y1, y2)
 
      | (Seq        (xs1,         _),
         Seq        (xs2,         _)) -> equalList? (xs1, xs2, equalTerm?)
 
      | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> equalTerm? (x1, x2) & equalSort? (s1, s2)
+        SortedTerm (x2, s2,      _)) -> equalTerm? (x1, x2) && equalSort? (s1, s2)
 
      | _ -> false
 
  def equalSort? (s1, s2) =
   case (s1,s2) of
-     | (Arrow     (x1, y1,  _), 
-        Arrow     (x2, y2,  _)) -> equalSort? (x1, x2) & equalSort? (y1, y2)
-     | (Product   (xs1,     _), 
+     | (Arrow     (x1, y1,  _),
+        Arrow     (x2, y2,  _)) -> equalSort? (x1, x2) && equalSort? (y1, y2)
+     | (Product   (xs1,     _),
         Product   (xs2,     _)) -> equalList? (xs1, xs2,
-                                               fn ((l1,x1),(l2,x2)) -> 
-                                                  l1 = l2 & 
+                                               fn ((l1,x1),(l2,x2)) ->
+                                                  l1 = l2 &&
                                                   equalSort? (x1, x2))
-     | (CoProduct (xs1,     _), 
-        CoProduct (xs2,     _)) -> equalList? (xs1, xs2, 
-                                               fn ((l1,x1),(l2,x2)) -> 
-                                                  l1 = l2 & 
+     | (CoProduct (xs1,     _),
+        CoProduct (xs2,     _)) -> equalList? (xs1, xs2,
+                                               fn ((l1,x1),(l2,x2)) ->
+                                                  l1 = l2 &&
                                                   equalOpt? (x1, x2, equalSort?))
-     | (Quotient  (x1, t1,  _), 
-        Quotient  (x2, t2,  _)) -> equalSort? (x1, x2) & equalTerm? (t1, t2)
-     | (Subsort   (x1, t1,  _), 
-        Subsort   (x2, t2,  _)) -> equalSort? (x1, x2) & equalTerm? (t1, t2)
-     | (Base      (q1, xs1, _), 
-        Base      (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
+     | (Quotient  (x1, t1,  _),
+        Quotient  (x2, t2,  _)) -> equalSort? (x1, x2) && equalTerm? (t1, t2)
+     | (Subsort   (x1, t1,  _),
+        Subsort   (x2, t2,  _)) -> equalSort? (x1, x2) && equalTerm? (t1, t2)
+     | (Base      (q1, xs1, _),
+        Base      (q2, xs2, _)) -> q1 = q2 && equalList? (xs1, xs2, equalSort?)
      | (Boolean _, Boolean _) -> true
 
-     | (TyVar     (v1,      _), 
+     | (TyVar     (v1,      _),
         TyVar     (v2,      _)) -> v1 = v2
 
-     | (MetaTyVar (v1,      _), 
-        MetaTyVar (v2,      _)) ->
-          let ({link=link1, uniqueId=id1, name}) = ! v1 in
-          let ({link=link2, uniqueId=id2, name}) = ! v2 in
-            id1 = id2 or 
+     | (MetaTyVar (mtv1,      _),
+        MetaTyVar (mtv2,      _)) ->
+          let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
+          let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
+            id1 = id2 or
             (case (link1,link2) of
                %% This case handles the situation where an
                %%  unlinked MetaTyVar is compared against itself.
@@ -500,39 +499,39 @@ MetaSlang qualifying spec {
                | (_,        Some ls2) -> equalSort? (s1,  ls2)
                | _ -> false)
 
-     | (MetaTyVar (v1,      _),
+     | (MetaTyVar (mtv1,      _),
         _                     ) ->
-          let ({link=link1, uniqueId=id1, name}) = ! v1 in
+          let ({link=link1, uniqueId=id1, name}) = ! mtv1 in
             (case link1 of
                | Some ls1 -> equalSort? (ls1, s2)
                | _ -> false)
 
      | (_,
-        MetaTyVar (v2,      _)) ->
-          let ({link=link2, uniqueId=id2, name}) = ! v2 in
+        MetaTyVar (mtv2,      _)) ->
+          let ({link=link2, uniqueId=id2, name}) = ! mtv2 in
             (case link2 of
                | Some ls2 -> equalSort? (s1, ls2)
                | _ -> false)
 
      | _ -> false
 
- def equalPattern?(p1,p2) =
+ def equalPattern? (p1, p2) =
   case (p1, p2) of
      | (AliasPat    (x1, y1,      _),
-        AliasPat    (x2, y2,      _)) -> equalPattern?(x1,x2) & equalPattern?(y1,y2)
+        AliasPat    (x2, y2,      _)) -> equalPattern?(x1,x2) && equalPattern?(y1,y2)
 
      | (VarPat      (v1,          _),
         VarPat      (v2,          _)) -> equalVar?(v1,v2)
 
      | (EmbedPat    (i1, op1, s1, _),
-        EmbedPat    (i2, op2, s2, _)) -> i1 = i2 & 
-                                         equalSort? (s1,  s2) & 
+        EmbedPat    (i2, op2, s2, _)) -> i1 = i2 &&
+                                         equalSort? (s1,  s2) &&
                                          equalOpt?  (op1, op2, equalPattern?)
 
      | (RecordPat   (xs1,         _),
-        RecordPat   (xs2,         _)) -> equalList? (xs1, xs2, 
-                                                     fn ((label1,x1), (label2,x2)) -> 
-                                                        label1 = label2 & 
+        RecordPat   (xs2,         _)) -> equalList? (xs1, xs2,
+                                                     fn ((label1,x1), (label2,x2)) ->
+                                                        label1 = label2 &&
                                                         equalPattern? (x1, x2))
 
      | (WildPat     (s1,          _),
@@ -551,13 +550,13 @@ MetaSlang qualifying spec {
         NatPat      (x2,          _)) -> x1 = x2
 
      | (RelaxPat    (x1, t1,      _),
-        RelaxPat    (x2, t2,      _)) -> equalPattern?(x1,x2) & equalTerm?(t1,t2)
+        RelaxPat    (x2, t2,      _)) -> equalPattern?(x1,x2) && equalTerm?(t1,t2)
 
      | (QuotientPat (x1, t1,      _),
-        QuotientPat (x2, t2,      _)) -> equalPattern?(x1,x2) & equalTerm?(t1,t2)
+        QuotientPat (x2, t2,      _)) -> equalPattern?(x1,x2) && equalTerm?(t1,t2)
 
      | (SortedPat   (x1, t1,      _),
-        SortedPat   (x2, t2,      _)) -> equalPattern?(x1,x2) & equalSort?(t1,t2)
+        SortedPat   (x2, t2,      _)) -> equalPattern?(x1,x2) && equalSort?(t1,t2)
 
      | _ -> false
 
@@ -593,11 +592,11 @@ MetaSlang qualifying spec {
      | (Bool      x1,       Bool      x2)       -> x1 = x2
 
      | (OneName   x1,       OneName   x2)       -> x1.1 = x2.1
-     | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2)
-    
+     | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) && (x1.2 = x2.2)
+
      | _ -> false
 
- def equalVar? ((id1,s1), (id2,s2)) = id1 = id2 & equalSort? (s1, s2)
+ def equalVar? ((id1,s1), (id2,s2)) = id1 = id2 && equalSort? (s1, s2)
 
  op equalTyVar?: TyVar * TyVar -> Boolean
  def equalTyVar?(tyVar1, tyVar2) = tyVar1 = tyVar2
@@ -609,36 +608,36 @@ MetaSlang qualifying spec {
  def equalTermStruct? (t1, t2) =
   case (t1, t2) of
 
-     | (Apply      (x1, y1,      _), 
-        Apply      (x2, y2,      _)) -> equalTermStruct? (x1, x2) & equalTermStruct? (y1, y2)
+     | (Apply      (x1, y1,      _),
+        Apply      (x2, y2,      _)) -> equalTermStruct? (x1, x2) && equalTermStruct? (y1, y2)
 
-     | (ApplyN     (xs1,         _),   
+     | (ApplyN     (xs1,         _),
         ApplyN     (xs2,         _)) -> equalList? (xs1, xs2, equalTermStruct?)
 
-     | (Record     (xs1,         _), 
-        Record     (xs2,         _)) -> equalList? (xs1, xs2, 
-                                                    fn ((label1,x1),(label2,x2)) -> 
-                                                       label1 = label2 & 
+     | (Record     (xs1,         _),
+        Record     (xs2,         _)) -> equalList? (xs1, xs2,
+                                                    fn ((label1,x1),(label2,x2)) ->
+                                                       label1 = label2 &&
                                                        equalTermStruct? (x1, x2))
 
      | (Bind       (b1, vs1, x1, _),
-        Bind       (b2, vs2, x2, _)) -> b1 = b2 & 
+        Bind       (b2, vs2, x2, _)) -> b1 = b2 &&
                                         %% Could check modulo alpha conversion...
-                                        equalList? (vs1, vs2, equalVarStruct?) &
+                                        equalList? (vs1, vs2, equalVarStruct?) &&
                                         equalTermStruct? (x1,  x2)
 
      | (Let        (pts1, b1,    _),
-        Let        (pts2, b2,    _)) -> equalTermStruct? (b1, b2) &
+        Let        (pts2, b2,    _)) -> equalTermStruct? (b1, b2) &&
                                         equalList? (pts1, pts2,
-                                                    fn ((p1,t1),(p2,t2)) -> 
-                                                      equalPatternStruct? (p1, p2) & 
+                                                    fn ((p1,t1),(p2,t2)) ->
+                                                      equalPatternStruct? (p1, p2) &&
                                                       equalTermStruct?    (t1, t2))
 
      | (LetRec     (vts1, b1,    _),
-        LetRec     (vts2, b2,    _)) -> equalTermStruct? (b1, b2) &
+        LetRec     (vts2, b2,    _)) -> equalTermStruct? (b1, b2) &&
                                         equalList? (vts1, vts2,
-                                                    fn ((v1,t1),(v2,t2)) -> 
-                                                     equalVarStruct?  (v1, v2) & 
+                                                    fn ((v1,t1),(v2,t2)) ->
+                                                     equalVarStruct?  (v1, v2) &&
                                                      equalTermStruct? (t1, t2))
 
      | (Var        (v1,          _),
@@ -650,13 +649,13 @@ MetaSlang qualifying spec {
      | (Lambda     (xs1,         _),
         Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
                                                     fn ((p1,c1,b1),(p2,c2,b2)) ->
-                                                      equalPatternStruct?  (p1, p2) & 
-                                                      equalTermStruct?     (c1, c2) & 
+                                                      equalPatternStruct?  (p1, p2) &&
+                                                      equalTermStruct?     (c1, c2) &&
                                                       equalTermStruct?     (b1, b2))
 
      | (IfThenElse (c1, x1, y1,  _),
-        IfThenElse (c2, x2, y2,  _)) -> equalTermStruct? (c1, c2) & 
-                                        equalTermStruct? (x1, x2) & 
+        IfThenElse (c2, x2, y2,  _)) -> equalTermStruct? (c1, c2) &&
+                                        equalTermStruct? (x1, x2) &&
                                         equalTermStruct? (y1, y2)
 
      | (Seq        (xs1,         _),
@@ -700,32 +699,32 @@ MetaSlang qualifying spec {
      | (Bool      x1,       Bool      x2)       -> x1 = x2
 
      | (OneName   x1,       OneName   x2)       -> x1.1 = x2.1
-     | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2)
+     | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) && (x1.2 = x2.2)
      | (OneName   x1,       TwoNames  x2)       -> x1.1 = x2.2
      | (TwoNames  x1,       OneName   x2)       -> x1.2 = x2.1
-     | (Op(Qualified x1,_), TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2)
-     | (TwoNames  x1, Op(Qualified x2,_))       -> (x1.1 = x2.1) & (x1.2 = x2.2)
+     | (Op(Qualified x1,_), TwoNames  x2)       -> (x1.1 = x2.1) && (x1.2 = x2.2)
+     | (TwoNames  x1, Op(Qualified x2,_))       -> (x1.1 = x2.1) && (x1.2 = x2.2)
      | (OneName   x1, Op(Qualified x2,_))       -> x1.1 = x2.2
      | (Op(Qualified x1,_), OneName   x2)       -> x1.2 = x2.1
-    
+
      | _ -> false
 
  def equalPatternStruct?(p1,p2) =
   case (p1, p2) of
      | (AliasPat    (x1, y1,      _),
-        AliasPat    (x2, y2,      _)) -> equalPatternStruct?(x1,x2) & equalPatternStruct?(y1,y2)
+        AliasPat    (x2, y2,      _)) -> equalPatternStruct?(x1,x2) && equalPatternStruct?(y1,y2)
 
      | (VarPat      (v1,          _),
         VarPat      (v2,          _)) -> equalVarStruct?(v1,v2)
 
      | (EmbedPat    (i1, op1, _,  _),
-        EmbedPat    (i2, op2, _,  _)) -> i1 = i2 & 
+        EmbedPat    (i2, op2, _,  _)) -> i1 = i2 &&
                                          equalOpt?  (op1, op2, equalPatternStruct?)
 
      | (RecordPat   (xs1,         _),
-        RecordPat   (xs2,         _)) -> equalList? (xs1, xs2, 
-                                                     fn ((label1,x1), (label2,x2)) -> 
-                                                        label1 = label2 & 
+        RecordPat   (xs2,         _)) -> equalList? (xs1, xs2,
+                                                     fn ((label1,x1), (label2,x2)) ->
+                                                        label1 = label2 &&
                                                         equalPatternStruct? (x1, x2))
 
      | (WildPat     (s1,          _),
@@ -744,10 +743,10 @@ MetaSlang qualifying spec {
         NatPat      (x2,          _)) -> x1 = x2
 
      | (RelaxPat    (x1, t1,      _),
-        RelaxPat    (x2, t2,      _)) -> equalPatternStruct?(x1,x2) & equalTermStruct?(t1,t2)
+        RelaxPat    (x2, t2,      _)) -> equalPatternStruct?(x1,x2) && equalTermStruct?(t1,t2)
 
      | (QuotientPat (x1, t1,      _),
-        QuotientPat (x2, t2,      _)) -> equalPatternStruct?(x1,x2) & equalTermStruct?(t1,t2)
+        QuotientPat (x2, t2,      _)) -> equalPatternStruct?(x1,x2) && equalTermStruct?(t1,t2)
 
      | (SortedPat   (x1, _,       _),
         SortedPat   (x2, _,       _)) -> equalPatternStruct?(x1,x2)
@@ -762,14 +761,14 @@ MetaSlang qualifying spec {
  %%% "TSP" means "Term, Sort, Pattern"
 
  sort TSP_Maps b = (ATerm    b -> ATerm    b) *
-                   (ASort    b -> ASort    b) * 
+                   (ASort    b -> ASort    b) *
                    (APattern b -> APattern b)
 
  op mapTerm    : fa(b) TSP_Maps b -> ATerm    b -> ATerm    b
  op mapSort    : fa(b) TSP_Maps b -> ASort    b -> ASort    b
  op mapPattern : fa(b) TSP_Maps b -> APattern b -> APattern b
 
- def mapTerm (tsp_maps as (term_map,_,_)) term = 
+ def mapTerm (tsp_maps as (term_map,_,_)) term =
   %%
   %% traversal of term with post-order applications of term_map
   %%
@@ -778,128 +777,186 @@ MetaSlang qualifying spec {
   %% i.e. term will be revised using term_map on its components,
   %% then term_map will be applied to the revised term.
   %%
-  let 
-   def mapT (tsp_maps,term) = 
+  let
+   def mapT (tsp_maps,term) =
     case term of
-       | Fun        (top,                  srt,  a) ->
+       | Fun (f, srt, a) ->
          let newSrt = mapSort tsp_maps srt in
-	 if srt = newSrt then term
-	  else Fun(top, newSrt,  a)
+	 if srt = newSrt then
+	   term
+	 else
+	   Fun (f, newSrt, a)
 
-       | Var        ((id,                  srt), a) ->
+       | Var ((id, srt), a) ->
          let newSrt = mapSort tsp_maps srt in
-	 if srt = newSrt then term
-          else Var((id, newSrt), a)
+	 if srt = newSrt then
+	   term
+	 else
+	   Var ((id, newSrt), a)
 
-       | Let        (decls, bdy, a) -> 
-	 let newDecls = map (fn (pat, trm) -> (mapPattern tsp_maps pat, mapRec trm)) decls in
+       | Let (decls, bdy, a) ->
+	 let newDecls = map (fn (pat, trm) ->
+			     (mapPattern tsp_maps pat,
+			      mapRec trm))
+	                    decls
+	 in
 	 let newBdy = mapRec bdy in
-	 if decls = newDecls & bdy = newBdy then term
-	   else Let (newDecls, newBdy, a)
+	 if decls = newDecls && bdy = newBdy then
+	   term
+	 else
+	   Let (newDecls, newBdy, a)
 
-       | LetRec     (decls, bdy, a) -> 
-	 let newDecls = map (fn ((id, srt), trm) -> ((id, mapSort tsp_maps srt),
-						     mapRec trm))
-	                  decls in
+       | LetRec (decls, bdy, a) ->
+	 let newDecls = map (fn ((id, srt), trm) ->
+			     ((id, mapSort tsp_maps srt),
+			      mapRec trm))
+	                    decls
+	 in
 	 let newBdy = mapRec bdy in
-	 if decls = newDecls & bdy = newBdy then term
-	   else LetRec(newDecls, newBdy, a)
+	 if decls = newDecls && bdy = newBdy then
+	   term
+	 else
+	   LetRec (newDecls, newBdy, a)
 
-       | Record     (row, a) -> 
+       | Record (row, a) ->
 	 let newRow = map (fn (id,trm) -> (id, mapRec trm)) row in
-	 if row = newRow then term
-	   else Record(newRow,a)
+	 if row = newRow then
+	   term
+	 else
+	   Record (newRow, a)
 
-       | IfThenElse (       t1,        t2,        t3, a) -> 
+       | IfThenElse (t1, t2, t3, a) ->
 	 let newT1 = mapRec t1 in
 	 let newT2 = mapRec t2 in
 	 let newT3 = mapRec t3 in
-	 if newT1 = t1 & newT2 = t2 & newT3 = t3 then term
-	   else IfThenElse (newT1, newT2, newT3, a)
+	 if newT1 = t1 && newT2 = t2 && newT3 = t3 then
+	   term
+	 else
+	   IfThenElse (newT1, newT2, newT3, a)
 
-       | Lambda     (match, a) -> 
+       | Lambda (match, a) ->
          let newMatch = map (fn (pat, cond, trm)->
-			      (mapPattern tsp_maps pat, mapRec cond, mapRec trm))
-                          match in
-	 if match = newMatch then term
-	   else Lambda (newMatch, a)
+			     (mapPattern tsp_maps pat,
+			      mapRec cond,
+			      mapRec trm))
+                            match
+	 in
+	 if match = newMatch then
+	   term
+	 else
+	   Lambda (newMatch, a)
 
-       | Apply      (       t1,        t2,  a) ->
+       | Apply (t1, t2, a) ->
 	 let newT1 = mapRec t1 in
 	 let newT2 = mapRec t2 in
-	 if newT1 = t1 & newT2 = t2 then term
-	  else Apply(newT1, newT2,  a)
+	 if newT1 = t1 && newT2 = t2 then
+	   term
+	 else
+	   Apply (newT1, newT2, a)
 
-       | Seq        (                terms, a) -> 
+       | Seq (terms, a) ->
 	 let newTerms = map mapRec terms in
-	 if newTerms = terms then term
-	   else Seq(newTerms, a)
+	 if newTerms = terms then
+	   term
+	 else
+	   Seq (newTerms, a)
 
-       | Bind       (bnd, vars, trm, a) -> 
-	 let newVars = map (fn (id,srt)-> (id, mapSort tsp_maps srt)) vars in
+       | Bind (bnd, vars, trm, a) ->
+	 let newVars = map (fn (id, srt)-> (id, mapSort tsp_maps srt)) vars in
 	 let newTrm = mapRec trm in
-	 if vars = newVars & trm = newTrm then term
-	   else Bind (bnd, newVars, newTrm, a)
+	 if vars = newVars && trm = newTrm then
+	   term
+	 else
+	   Bind (bnd, newVars, newTrm, a)
 
-       | ApplyN     (                terms, a) -> 
+       | ApplyN (terms, a) ->
 	 let newTerms = map mapRec terms in
-	 if newTerms = terms then term
-	   else ApplyN (newTerms, a)
+	 if newTerms = terms then
+	   term
+	 else
+	   ApplyN (newTerms, a)
 
-       | SortedTerm (       trm,                  srt, a) -> 
+       | SortedTerm (trm, srt, a) ->
 	 let newTrm = mapRec trm in
          let newSrt = mapSort tsp_maps srt in
-	 if newTrm = trm & srt = newSrt then term
-	   else SortedTerm (newTrm, newSrt, a)
-   def mapRec term = 
+	 if newTrm = trm && srt = newSrt then
+	   term
+	 else
+	   SortedTerm (newTrm, newSrt, a)
+
+   def mapRec term =
      %% apply map to leaves, then apply map to result
      term_map (mapT (tsp_maps,term))
   in
     mapRec term
 
- def mapSort (tsp_maps as (_,sort_map,_)) srt =
+ def mapSort (tsp_maps as (_, sort_map, _)) srt =
   let
    %% Written with explicit parameter passing to avoid closure creation
-   def mapS (tsp_maps,sort_map,srt) = 
+   def mapS (tsp_maps, sort_map, srt) =
     case srt of
-       | CoProduct (row,       a) ->
-         let newRow = mapSRowOpt (tsp_maps,sort_map,row) in
-	 if newRow = row then srt
-	   else CoProduct (newRow, a)
-       | Product   (row,       a) -> 
-         let newRow = mapSRow (tsp_maps,sort_map,row) in
-	 if newRow = row then srt
-	   else Product (newRow, a)
-       | Arrow     (s1,  s2,   a) ->
-	 let newS1 = mapRec (tsp_maps,sort_map,s1) in
-	 let newS2 = mapRec (tsp_maps,sort_map,s2) in
-	 if newS1 = s1 & newS2 = s2 then srt
-	   else Arrow (newS1,  newS2, a)
-       | Quotient  (ssrt, trm,  a) ->
-	 let newSsrt = mapRec (tsp_maps,sort_map,ssrt) in
+
+       | CoProduct (row, a) ->
+         let newRow = mapSRowOpt (tsp_maps, sort_map, row) in
+	 if newRow = row then
+	   srt
+	 else
+	   CoProduct (newRow, a)
+
+       | Product (row, a) ->
+         let newRow = mapSRow (tsp_maps, sort_map, row) in
+	 if newRow = row then
+	   srt
+	 else
+	   Product (newRow, a)
+
+       | Arrow (s1, s2, a) ->
+	 let newS1 = mapRec (tsp_maps, sort_map, s1) in
+	 let newS2 = mapRec (tsp_maps, sort_map, s2) in
+	 if newS1 = s1 && newS2 = s2 then
+	   srt
+	 else
+	   Arrow (newS1, newS2, a)
+
+       | Quotient (super_sort, trm, a) ->
+	 let newSsrt = mapRec (tsp_maps, sort_map, super_sort) in
 	 let newTrm =  mapTerm tsp_maps trm in
-	 if newSsrt = ssrt & newTrm = trm then srt
-	   else Quotient (newSsrt, newTrm,  a)
-       | Subsort   (ssrt, trm,  a) ->
-	 let newSsrt = mapRec (tsp_maps,sort_map,ssrt) in
+	 if newSsrt = super_sort && newTrm = trm then
+	   srt
+	 else
+	   Quotient (newSsrt, newTrm, a)
+
+       | Subsort (sub_sort, trm, a) ->
+	 let newSsrt = mapRec (tsp_maps, sort_map, sub_sort) in
 	 let newTrm =  mapTerm tsp_maps trm in
-	 if newSsrt = ssrt & newTrm = trm then srt
-	   else Subsort (newSsrt, newTrm,  a)
-     % | Subset    (ssrt, trm,  a) -> Subset    (mapRec ssrt, mapTerm tsp_maps trm, a)
-       | Base      (qid, srts, a) ->
-	 let newSrts = mapSLst(tsp_maps,sort_map,srts) in
-	 if newSrts = srts then srt
-	   else Base (qid, newSrts, a)
+	 if newSsrt = sub_sort && newTrm = trm then
+	   srt
+	 else
+	   Subsort (newSsrt, newTrm, a)
+
+       | Base (qid, srts, a) ->
+	 let newSrts = mapSLst (tsp_maps, sort_map, srts) in
+	 if newSrts = srts then
+	   srt
+	 else
+	   Base (qid, newSrts, a)
+
        | Boolean a -> srt
-       | MetaTyVar(tv,pos) -> 
-	   let {name,uniqueId,link} = ! tv in
-	   (case link
-	      of None -> srt
-	       | Some ssrt ->
-	         let newssrt = mapRec (tsp_maps,sort_map,ssrt) in
-		 if newssrt = ssrt then srt
-		  else MetaTyVar(Ref {name = name,uniqueId = uniqueId,
-				      link = Some newssrt},pos))
+
+       | MetaTyVar (mtv, pos) ->
+         let {name,uniqueId,link} = ! mtv in
+	 (case link of
+	    | None -> srt
+	    | Some ssrt ->
+	      let newssrt = mapRec (tsp_maps, sort_map, ssrt) in
+	      if newssrt = ssrt then
+		srt
+	      else
+		MetaTyVar(Ref {name     = name,
+			       uniqueId = uniqueId,
+			       link     = Some newssrt},
+			  pos))
+
        | _ -> srt
 
    def mapSLst (tsp_maps,sort_map,srts) =
@@ -920,74 +977,92 @@ MetaSlang qualifying spec {
        | (id,ssrt)::rrow -> cons((id,mapRec(tsp_maps,sort_map,ssrt)),
 				 mapSRow(tsp_maps,sort_map,rrow))
 
-   def mapRecOpt (tsp_maps,sort_map,opt_sort) = 
+   def mapRecOpt (tsp_maps,sort_map,opt_sort) =
      case opt_sort of
        | None     -> None
        | Some ssrt -> Some (mapRec (tsp_maps,sort_map,ssrt))
-   def mapRec (tsp_maps,sort_map,srt) = 
+   def mapRec (tsp_maps,sort_map,srt) =
      %% apply map to leaves, then apply map to result
      sort_map (mapS (tsp_maps,sort_map,srt))
   in
     mapRec (tsp_maps,sort_map,srt)
 
- def mapPattern (tsp_maps as (_,_,pattern_map)) pattern = 
+ def mapPattern (tsp_maps as (_,_,pattern_map)) pattern =
   let
-   def mapP (tsp_maps,pattern) = 
+   def mapP (tsp_maps,pattern) =
     case pattern of
 
-       | AliasPat    (p1,        p2,        a)     -> 
+       | AliasPat    (p1,        p2,        a)     ->
          let newP1 = mapRec p1 in
          let newP2 = mapRec p2 in
-	 if newP1 = p1 & newP2 = p2 then pattern
-	   else AliasPat (newP1, newP2, a)
+	 if newP1 = p1 && newP2 = p2 then
+	   pattern
+	 else
+	   AliasPat (newP1, newP2, a)
 
-       | EmbedPat    (id, Some pat,         srt,                  a) -> 
+       | EmbedPat    (id, Some pat,         srt,                  a) ->
 	 let newPat = mapRec pat in
 	 let newSrt = mapSort tsp_maps srt in
-	 if newPat = pat & newSrt = srt then pattern
-	   else EmbedPat (id, Some newPat, newSrt, a)
+	 if newPat = pat && newSrt = srt then
+	   pattern
+	 else
+	   EmbedPat (id, Some newPat, newSrt, a)
 
-       | EmbedPat    (id, None, srt,                  a) -> 
+       | EmbedPat    (id, None, srt,                  a) ->
 	 let newSrt = mapSort tsp_maps srt in
-	 if newSrt = srt then pattern
-	   else EmbedPat    (id, None, newSrt, a)
+	 if newSrt = srt then
+	   pattern
+	 else
+	   EmbedPat    (id, None, newSrt, a)
 
-       | RelaxPat    (pat,        trm,                  a) -> 
+       | RelaxPat    (pat,        trm,                  a) ->
 	 let newPat = mapRec pat in
 	 let newTrm = mapTerm tsp_maps trm in
-	 if newPat = pat & newTrm = trm then pattern
-	   else RelaxPat (newPat, newTrm, a)
+	 if newPat = pat && newTrm = trm then
+	   pattern
+	 else
+	   RelaxPat (newPat, newTrm, a)
 
-       | QuotientPat (pat, trm, a) -> 
+       | QuotientPat (pat, trm, a) ->
 	 let newPat = mapRec pat in
 	 let newTrm = mapTerm tsp_maps trm in
-	 if newPat = pat & newTrm = trm then pattern
-	   else QuotientPat (newPat, newTrm, a)
+	 if newPat = pat && newTrm = trm then
+	   pattern
+	 else
+	   QuotientPat (newPat, newTrm, a)
 
-       | VarPat      ((v, srt),                  a) -> 
+       | VarPat      ((v, srt),                  a) ->
 	 let newSrt = mapSort tsp_maps srt in
-	 if newSrt = srt then pattern
-	   else VarPat ((v, newSrt), a)
+	 if newSrt = srt then
+	   pattern
+	 else
+	   VarPat ((v, newSrt), a)
 
-       | WildPat     (srt,                  a) -> 
+       | WildPat     (srt,                  a) ->
 	 let newSrt = mapSort tsp_maps srt in
-	 if newSrt = srt then pattern
-	   else WildPat (newSrt, a)
+	 if newSrt = srt then
+	   pattern
+	 else
+	   WildPat (newSrt, a)
 
-       | RecordPat   (fields, a) -> 
+       | RecordPat   (fields, a) ->
 	 let newFields = map (fn (id, p) -> (id, mapRec p)) fields in
-	 if newFields = fields then pattern
-	   else RecordPat (newFields, a)
+	 if newFields = fields then
+	   pattern
+	 else
+	   RecordPat (newFields, a)
 
-       | SortedPat   (pat,        srt,                  a) -> 
+       | SortedPat   (pat,        srt,                  a) ->
 	 let newPat = mapRec pat in
 	 let newSrt = mapSort tsp_maps srt in
-	 if newPat = pat & newSrt = srt then pattern
-	   else SortedPat   (newPat, newSrt, a)
+	 if newPat = pat && newSrt = srt then
+	   pattern
+	 else
+	   SortedPat   (newPat, newSrt, a)
 
        | _ -> pattern
 
-   def mapRec (pattern) = 
+   def mapRec (pattern) =
      %% apply map to leaves, then apply map to result
      pattern_map (mapP (tsp_maps, pattern))
 
@@ -996,71 +1071,91 @@ MetaSlang qualifying spec {
 
  %% Like mapTerm but ignores sorts
  op  mapSubTerms: fa(a) (ATerm a -> ATerm a) -> ATerm a -> ATerm a
- def mapSubTerms f term = 
-  let 
-   def mapT term = 
+ def mapSubTerms f term =
+  let
+   def mapT term =
     case term of
-       | Fun _ -> term 
-       | Var  _ -> term 
-       | Let        (decls, bdy, a) -> 
+       | Fun _ -> term
+       | Var  _ -> term
+       | Let (decls, bdy, a) ->
 	 let newDecls = map (fn (pat, trm) -> (pat, mapRec trm)) decls in
 	 let newBdy = mapRec bdy in
-	 if decls = newDecls & bdy = newBdy then term
-	   else Let (newDecls, newBdy, a)
+	 if decls = newDecls && bdy = newBdy then
+	   term
+	 else
+	   Let (newDecls, newBdy, a)
 
-       | LetRec(decls, bdy, a) -> 
-	 let newDecls = map (fn ((id, srt), trm) -> ((id,srt), mapRec trm))
-	                  decls in
+       | LetRec (decls, bdy, a) ->
+	 let newDecls = map (fn ((id, srt), trm) -> ((id,srt), mapRec trm)) decls in
 	 let newBdy = mapRec bdy in
-	 if decls = newDecls & bdy = newBdy then term
-	   else LetRec(newDecls, newBdy, a)
+	 if decls = newDecls && bdy = newBdy then
+	   term
+	 else
+	   LetRec(newDecls, newBdy, a)
 
-       | Record(row, a) -> 
+       | Record (row, a) ->
 	 let newRow = map (fn (id,trm) -> (id, mapRec trm)) row in
-	 if row = newRow then term
-	   else Record(newRow,a)
+	 if row = newRow then
+	   term
+	 else
+	   Record(newRow,a)
 
-       | IfThenElse (t1,t2,t3,a) -> 
+       | IfThenElse (t1,t2,t3,a) ->
 	 let newT1 = mapRec t1 in
 	 let newT2 = mapRec t2 in
 	 let newT3 = mapRec t3 in
-	 if newT1 = t1 & newT2 = t2 & newT3 = t3 then term
-	   else IfThenElse (newT1, newT2, newT3, a)
+	 if newT1 = t1 && newT2 = t2 && newT3 = t3 then
+	   term
+	 else
+	   IfThenElse (newT1, newT2, newT3, a)
 
-       | Lambda(match, a) -> 
+       | Lambda(match, a) ->
          let newMatch = map (fn (pat, cond, trm)->
 			      (pat, mapRec cond, mapRec trm))
                           match in
-	 if match = newMatch then term
-	   else Lambda (newMatch, a)
+	 if match = newMatch then
+	   term
+	 else
+	   Lambda (newMatch, a)
 
-       | Bind(bnd, vars, trm, a) -> 
+       | Bind(bnd, vars, trm, a) ->
 	 let newVars = map (fn (id,srt)-> (id, srt)) vars in
 	 let newTrm = mapRec trm in
-	 if vars = newVars & trm = newTrm then term
-	   else Bind (bnd, newVars, newTrm, a)
+	 if vars = newVars && trm = newTrm then
+	   term
+	 else
+	   Bind (bnd, newVars, newTrm, a)
 
        | Apply(t1,t2,a) ->
 	 let newT1 = mapRec t1 in
 	 let newT2 = mapRec t2 in
-	 if newT1 = t1 & newT2 = t2 then term
-	  else Apply(newT1, newT2,  a)
+	 if newT1 = t1 && newT2 = t2 then
+	   term
+	 else
+	   Apply (newT1, newT2, a)
 
-       | Seq(terms, a) -> 
+       | Seq(terms, a) ->
 	 let newTerms = map mapRec terms in
-	 if newTerms = terms then term
-	   else Seq(newTerms, a)
+	 if newTerms = terms then
+	   term
+	 else
+	   Seq (newTerms, a)
 
-       | ApplyN(terms, a) -> 
+       | ApplyN(terms, a) ->
 	 let newTerms = map mapRec terms in
-	 if newTerms = terms then term
-	   else ApplyN (newTerms, a)
+	 if newTerms = terms then
+	   term
+	 else
+	   ApplyN (newTerms, a)
 
-       | SortedTerm (trm, srt, a) -> 
+       | SortedTerm (trm, srt, a) ->
 	 let newTrm = mapRec trm in
-	 if newTrm = trm then term
-	   else SortedTerm (newTrm, srt, a)
-   def mapRec term = 
+	 if newTrm = trm then
+	   term
+	 else
+	   SortedTerm (newTrm, srt, a)
+
+   def mapRec term =
      %% apply map to leaves, then apply map to result
      f (mapT term)
   in
@@ -1074,7 +1169,7 @@ MetaSlang qualifying spec {
 
  op existsSubTerm : fa(b) (ATerm b -> Boolean) -> ATerm b -> Boolean
 
- def existsSubTerm pred? term = 
+ def existsSubTerm pred? term =
   pred? term or
   (case term of
       | Var         _             -> false
@@ -1084,15 +1179,15 @@ MetaSlang qualifying spec {
 
       | Record      (fields,   _) -> exists (fn (_,M) -> existsSubTerm pred? M) fields
 
-      | Let         (decls, M, _) -> existsSubTerm pred? M or 
+      | Let         (decls, M, _) -> existsSubTerm pred? M or
                                      exists (fn (_,M) -> existsSubTerm pred? M) decls
 
-      | LetRec      (decls, M, _) -> existsSubTerm pred? M or 
+      | LetRec      (decls, M, _) -> existsSubTerm pred? M or
                                      exists (fn (_,M) -> existsSubTerm pred? M) decls
 
       | Seq         (Ms,       _) -> exists (existsSubTerm pred?) Ms
 
-      | IfThenElse  (M, N, P,  _) -> existsSubTerm pred? M or 
+      | IfThenElse  (M, N, P,  _) -> existsSubTerm pred? M or
                                      existsSubTerm pred? N or
                                      existsSubTerm pred? P
 
@@ -1100,7 +1195,7 @@ MetaSlang qualifying spec {
 
       | Lambda      (rules,    _) -> exists (fn (_, c, M) -> existsSubTerm pred? c or
                                                              existsSubTerm pred? M)
-                                            rules     
+                                            rules
 
       | ApplyN      (Ms,       _) -> exists (existsSubTerm pred?) Ms
 
@@ -1110,7 +1205,7 @@ MetaSlang qualifying spec {
  %% Other orders such as evaluation order would be useful
  op foldSubTerms : fa(b,r) (ATerm b * r -> r) -> r -> ATerm b -> r
 
- def foldSubTerms f val term = 
+ def foldSubTerms f val term =
   let newVal = f(term,val) in
   case term of
     | Var _                   -> newVal
@@ -1137,14 +1232,14 @@ MetaSlang qualifying spec {
 
     | Lambda    (rules,    _) -> foldl (fn ((_, c, M),val) ->
 					    foldSubTerms f (foldSubTerms f val c) M)
-				     newVal rules     
+				     newVal rules
 
     | ApplyN    (Ms,       _) -> foldl (fn (M,val) -> foldSubTerms f val M) newVal Ms
 
     | SortedTerm(M,   _,   _) -> foldSubTerms f newVal M
- 
+
  op  foldSubTermsEvalOrder : fa(b,r) (ATerm b * r -> r) -> r -> ATerm b -> r
- def foldSubTermsEvalOrder f val term = 
+ def foldSubTermsEvalOrder f val term =
   let recVal =
       case term of
 	| Var _                 -> val
@@ -1154,7 +1249,7 @@ MetaSlang qualifying spec {
 	  let val = (foldSubTermsEvalOrder f val N) in
 	  foldl (fn ((_,c,M),val) ->
 		   foldSubTermsEvalOrder f (foldSubTermsEvalOrder f val c) M)
-	    val rules 
+	    val rules
 
 	| Apply     (M,N,    _) -> foldSubTermsEvalOrder f
 				     (foldSubTermsEvalOrder f val M) N
@@ -1188,7 +1283,7 @@ MetaSlang qualifying spec {
 				   foldl (fn ((_,c,M),val) ->
 					   foldSubTermsEvalOrder f
 					     (foldSubTermsEvalOrder f val c) M)
-				     val rules     
+				     val rules
 
 	| ApplyN    (Ms,     _) -> foldl (fn (M,val) -> foldSubTermsEvalOrder f val M)
 				     val Ms
@@ -1205,8 +1300,8 @@ MetaSlang qualifying spec {
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- sort ReplaceSort a = (ATerm    a -> Option (ATerm    a)) * 
-                      (ASort    a -> Option (ASort    a)) * 
+ sort ReplaceSort a = (ATerm    a -> Option (ATerm    a)) *
+                      (ASort    a -> Option (ASort    a)) *
                       (APattern a -> Option (APattern a))
 
  op replaceTerm    : fa(b) ReplaceSort b -> ATerm    b -> ATerm    b
@@ -1214,60 +1309,60 @@ MetaSlang qualifying spec {
  op replacePattern : fa(b) ReplaceSort b -> APattern b -> APattern b
 
 
- def replaceTerm (tsp_maps as (term_map, _, _)) term = 
+ def replaceTerm (tsp_maps as (term_map, _, _)) term =
   let
-   def replace term = 
+   def replace term =
     case term of
-       | Fun         (top, srt,                      a) -> 
+       | Fun         (top, srt,                      a) ->
          Fun         (top, replaceSort tsp_maps srt, a)
 
-       | Var         ((id, srt),                      a) -> 
+       | Var         ((id, srt),                      a) ->
          Var         ((id, replaceSort tsp_maps srt), a)
 
-       | Let         (decls, bdy, a) -> 
+       | Let         (decls, bdy, a) ->
          Let         (map (fn (pat, trm)-> (replacePattern tsp_maps pat, replaceRec trm))
                           decls,
                       replaceRec bdy,
                       a)
 
-       | LetRec      (decls, bdy, a) -> 
+       | LetRec      (decls, bdy, a) ->
          LetRec      (map (fn (id, trm) -> (id, replaceRec trm)) decls,
                       replaceRec bdy,
                       a)
 
-       | Record      (row,                                             a) -> 
+       | Record      (row,                                             a) ->
          Record      (map (fn (id, trm) -> (id, replaceRec trm)) row,  a)
 
 
-       | IfThenElse  (t1,            t2,            t3,            a) -> 
+       | IfThenElse  (t1,            t2,            t3,            a) ->
          IfThenElse  (replaceRec t1, replaceRec t2, replaceRec t3, a)
 
-       | Lambda      (match, a) -> 
+       | Lambda      (match, a) ->
          Lambda      (map (fn (pat, cond, trm)->
-                            (replacePattern tsp_maps pat, 
-                             replaceRec     cond, 
+                            (replacePattern tsp_maps pat,
+                             replaceRec     cond,
                              replaceRec     trm))
                            match,
                       a)
 
-       | Bind        (bnd, vars, trm, a) -> 
-         Bind        (bnd, 
+       | Bind        (bnd, vars, trm, a) ->
+         Bind        (bnd,
                       map (fn (id, srt)-> (id, replaceSort tsp_maps srt)) vars,
                       replaceRec trm,
                       a)
 
-       | Apply       (t1,            t2,            a) -> 
+       | Apply       (t1,            t2,            a) ->
          Apply       (replaceRec t1, replaceRec t2, a)
 
-       | Seq         (terms,                 a) -> 
+       | Seq         (terms,                 a) ->
          Seq         (map replaceRec terms,  a)
 
-       | ApplyN      (terms,                 a) -> 
+       | ApplyN      (terms,                 a) ->
          ApplyN      (map replaceRec terms,  a)
 
-       | SortedTerm  (trm,            srt,                      a) -> 
+       | SortedTerm  (trm,            srt,                      a) ->
          SortedTerm  (replaceRec trm, replaceSort tsp_maps srt, a)
-   def replaceRec term = 
+   def replaceRec term =
      %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
      case term_map term of
        | None         -> replace term
@@ -1275,17 +1370,17 @@ MetaSlang qualifying spec {
   in
     replaceRec term
 
- def replaceSort (tsp_maps as (_, sort_map, _)) srt = 
+ def replaceSort (tsp_maps as (_, sort_map, _)) srt =
   let
-   def replace srt = 
+   def replace srt =
     case srt of
-       | CoProduct (row,                                                a) -> 
+       | CoProduct (row,                                                a) ->
          CoProduct (map (fn (id, opt) -> (id, replaceRecOpt opt)) row,  a)
 
-       | Product   (row,                                               a) -> 
+       | Product   (row,                                               a) ->
          Product   (map (fn (id, srt) -> (id, replaceRec srt)) row,    a)
 
-       | Arrow     (s1,            s2,            a) -> 
+       | Arrow     (s1,            s2,            a) ->
          Arrow     (replaceRec s1, replaceRec s2, a)
 
        | Quotient  (srt,            trm,                      a) ->
@@ -1301,12 +1396,12 @@ MetaSlang qualifying spec {
 
        | _ -> srt
 
-   def replaceRecOpt opt_srt = 
+   def replaceRecOpt opt_srt =
     case opt_srt of
        | None     -> None
        | Some srt -> Some (replaceRec srt)
- 
-   def replaceRec srt = 
+
+   def replaceRec srt =
      %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
      case sort_map srt of
        | None        -> replace srt
@@ -1314,11 +1409,11 @@ MetaSlang qualifying spec {
   in
     replaceRec srt
 
- def replacePattern (tsp_maps as (_,_,pattern_map)) pattern = 
+ def replacePattern (tsp_maps as (_,_,pattern_map)) pattern =
   let
-   def replace pattern = 
+   def replace pattern =
     case pattern of
-       | AliasPat    (p1,            p2,            a) -> 
+       | AliasPat    (p1,            p2,            a) ->
          AliasPat    (replaceRec p1, replaceRec p2, a)
 
        | EmbedPat    (id, Some pat,              srt,                      a) ->
@@ -1333,10 +1428,10 @@ MetaSlang qualifying spec {
        | QuotientPat (pat,            trm,                      a) ->
          QuotientPat (replaceRec pat, replaceTerm tsp_maps trm, a)
 
-       | VarPat      ((v, srt),                      a) -> 
+       | VarPat      ((v, srt),                      a) ->
          VarPat      ((v, replaceSort tsp_maps srt), a)
 
-       | WildPat     (srt,                           a) -> 
+       | WildPat     (srt,                           a) ->
          WildPat     (replaceSort tsp_maps srt,      a)
 
        | RecordPat   (fields,                                      a) ->
@@ -1344,7 +1439,7 @@ MetaSlang qualifying spec {
 
        | _ -> pattern
 
-   def replaceRec pattern = 
+   def replaceRec pattern =
      %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
      case pattern_map pattern of
        | None        -> replace pattern
@@ -1377,23 +1472,22 @@ MetaSlang qualifying spec {
  op appSortSchemes : fa(a) appTSP a -> ASortSchemes a -> ()
  op appTermSchemes : fa(a) appTSP a -> ATermSchemes a -> ()
 
-
  def appTerm (tsp_apps as (term_app,_,_)) term =
   let def appT (tsp_apps, term) =
        (case term of
 	  | Fun        (top, srt,     _) -> appSort tsp_apps srt
 	  | Var        ((id, srt),    _) -> appSort tsp_apps srt
-	  | Let        (decls, bdy,   _) -> (app (fn (pat, trm) -> 
-						  (appPattern tsp_apps pat; 
-						   appRec trm)) 
+	  | Let        (decls, bdy,   _) -> (app (fn (pat, trm) ->
+						  (appPattern tsp_apps pat;
+						   appRec trm))
 					     decls;
 					     appRec bdy)
 	  | LetRec     (decls, bdy,   _) -> (app (fn (id, trm) -> appRec trm) decls;
 					     appRec bdy)
 	  | Record     (row,          _) -> app (fn (id, trm) -> appRec trm) row
 	  | IfThenElse (t1, t2, t3,   _) -> (appRec t1; appRec t2; appRec t3)
-	  | Lambda     (match,        _) -> app (fn (pat, cond, trm) -> 
-						 (appPattern tsp_apps pat; 
+	  | Lambda     (match,        _) -> app (fn (pat, cond, trm) ->
+						 (appPattern tsp_apps pat;
 						  appRec cond;
 						  appRec trm))
 	                                      match
@@ -1406,10 +1500,10 @@ MetaSlang qualifying spec {
       def appRec term = % term was tm ??
 	%% Post-node traversal: leaves first
 	(appT (tsp_apps, term); term_app term)
-  in 
+  in
     appRec term
- 
- def appSort (tsp_apps as (_, srt_app, _)) srt = 
+
+ def appSort (tsp_apps as (_, srt_app, _)) srt =
   let def appS (tsp_apps, srt) =
        case srt of
           | CoProduct (row,       _) -> app (fn (id, opt) -> appSortOpt tsp_apps opt) row
@@ -1421,7 +1515,7 @@ MetaSlang qualifying spec {
 	  | Boolean               _  -> ()
           | _                        -> ()
 
-      def appRec srt = 
+      def appRec srt =
 	%% Post-node traversal: leaves first
 	(appS (tsp_apps, srt); srt_app srt)
   in
@@ -1459,7 +1553,6 @@ MetaSlang qualifying spec {
  def appTermSchemes tsp_apps term_schemes =
    app (fn (_,term) -> appTerm tsp_apps term) term_schemes
 
-
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Misc Base Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1475,22 +1568,22 @@ MetaSlang qualifying spec {
     | Boolean _ -> true
     | _ -> false
 
- def stringSort?(s) = 
+ def stringSort?(s) =
   case s of
     | Base (Qualified ("String",  "String"),  [], _) -> true
     | _ -> false
 
- def charSort?(s) = 
+ def charSort?(s) =
   case s of
     | Base (Qualified ("Char",  "Char"),  [], _) -> true
     | _ -> false
 
- def natSort?(s) = 
+ def natSort?(s) =
   case s of
     | Base (Qualified ("Nat",     "Nat"),     [], _) -> true
     | _ -> false
 
- def integerSort?(s) = 
+ def integerSort?(s) =
   case s of
     | Base (Qualified ("Integer",     "Integer"),     [], _) -> true
     | _ -> false
