@@ -234,6 +234,28 @@
 (top-level:alias ("sw" :case-sensitive :string) (&optional x)
   (sw x))
 
+;;; Uncomment this for top-level hook to experimental versions of sw
+;;; (defun xsw (&optional x)
+;;;   (setq x (norm-unitid-str x))
+;;;   (flet ((sw-int (x)
+;;; 	   (let ((val (if x
+;;; 			  (Specware::evaluateUIDX_fromLisp (setq *last-unit-Id-_loaded* x))
+;;; 			(if *last-unit-Id-_loaded*
+;;; 			    (Specware::evaluateUIDX_fromLisp *last-unit-Id-_loaded*)
+;;; 			  (format t "No previous unit evaluated~%")))))
+;;; 	     (show-error-position emacs::*goto-file-position-stored* 1)
+;;; 	     (maybe-restore-swpath)
+;;; 	     val)))
+;;;     (if *running-test-harness?*
+;;; 	(sw-int x)
+;;;       (let ((emacs::*goto-file-position-store?* t)
+;;; 	    (emacs::*goto-file-position-stored* nil))
+;;; 	(sw-int x)))))
+;;; 
+;;; #+allegro
+;;; (top-level:alias ("xsw" :case-sensitive :string) (&optional x)
+;;;   (xsw x))
+
 (defun show (&optional x)
   (setq x (norm-unitid-str x))
   (flet ((show-int (x)

@@ -188,6 +188,7 @@
       (dirr (cl-user::dirr (or argstr "")))
       (path (cl-user::swpath argstr))
       ((proc p) (cl-user::sw argstr) (values))
+    ; (xsw   (cl-user::xsw argstr) (values))   ; hook to experimental sw
       (show (cl-user::show argstr) (values))
       (showx (cl-user::showx argstr) (values))
       (cinit (cl-user::sw-init))
