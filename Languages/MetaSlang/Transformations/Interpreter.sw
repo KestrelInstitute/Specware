@@ -68,7 +68,7 @@ spec
 	    (case lookup(sb,v) of
 	      | Some e -> e
 	      | None -> Unevaluated t)
-	  | Fun(fun,_,_) -> evalFun(fun,t,spc,depth)
+	  | Fun(fun,_,_) -> evalFun(fun,t,sb,spc,depth)
 	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> timeEvalRec(y,sb,spc,depth+1)
 	  | Apply(x,y,_) ->
 	    if nonStrict? x
@@ -124,14 +124,14 @@ spec
     let _ = postTrace(val,depth) in
     val
   
-  op  evalFun: Fun * MS.Term * Spec * Nat -> Value
-  def evalFun(fun,t,spc,depth) =
+  op  evalFun: Fun * MS.Term * Subst * Spec * Nat -> Value
+  def evalFun(fun,t,sb,spc,depth) =
     case fun of
       | Op (qid, _) ->
         (case findTheOp (spc, qid) of
 	   | Some info ->
 	     (case info.dfn of
-		| (_,defn)::_ -> evalRec (defn, emptySubst, spc, depth+1)
+		| (_,defn)::_ -> evalRec (defn, sb, spc, depth+1)
 		| _ ->
 	          case qid of 
 		    | Qualified ("Nat", "zero") -> Int 0
@@ -279,7 +279,7 @@ spec
 	  | _ -> default()) 
       | Fun(Quotient,srt,_) ->
 	(case stripSubsorts(spc,range(spc,srt)) of
-	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,emptySubst,spc,depth+1),a)
+	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1),a)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
       %| Fun(Choose,srt,_) ->
       | Fun(Restrict,_,_) -> a		% Should optionally check restriction predicate
@@ -320,16 +320,15 @@ spec
   op  extendLetRecSubst: Subst * Subst * List Id -> Subst
   %% storedSb has all the environment except for the letrec vars which we get from dynSb
   def extendLetRecSubst(dynSb,storedSb,letrecIds) =
-    let def letrecEnv?(dynSb,storedSb,letrecIds) =
-          case (dynSb,letrecIds) of
-	    | ((idS,_)::rDynSb,id1::rids) ->
-	      (idS = id1 & letrecEnv?(rDynSb,storedSb,rids))
-	    | _ -> letrecIds = [] & dynSb = storedSb
-    in
     if letrecEnv?(dynSb,storedSb,letrecIds)
       then dynSb
       else extendLetRecSubst(tl dynSb,storedSb,letrecIds)
 
+  def letrecEnv?(dynSb,storedSb,letrecIds) =
+          case (dynSb,letrecIds) of
+	    | ((idS,_)::rDynSb,id1::rids) ->
+	      (idS = id1 & letrecEnv?(rDynSb,storedSb,rids))
+	    | _ -> letrecIds = [] & dynSb = storedSb
     
  %% Adapted from HigherOrderMatching 
  sort MatchResult = | Match Subst | NoMatch | DontKnow
