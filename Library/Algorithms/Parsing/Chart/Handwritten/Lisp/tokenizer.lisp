@@ -467,11 +467,11 @@
                     (return-values-using-prior-last ,type ,value)))
 	       (termination-warning (char-var char-code-var kind-of-token misc-chars kind-of-char)
 		 `(local-warn "After"
-			      last-line last-column last-byte 
+			      last-line (1+ last-column) (1+ last-byte)
 			      "Terminating ~A \"~A~A\" with ~S (hex code ~2,'0X)~A."
 			      ,kind-of-token
 			      ,misc-chars
-			      (coerce (nreverse token-chars) 'string)
+			      (coerce (reverse token-chars) 'string)
 			      ,char-var ,char-code-var
 			      ,kind-of-char))
 	       (look-for-ad-hoc-tokens (char-var char-code-var)
@@ -905,24 +905,26 @@
 	;;
        unrecognized-char-while-scanning-number
 	(termination-warning char char-code "number" "" ", which is unrecognized")
-	(go terminate-number)
+	(go terminate-number-unexpectedly)
 	;;
        terminate-number-with-start-word-symbol
-       (termination-warning char char-code "number" "" ", which starts a word symbol")
-       (go terminate-number)
+	(termination-warning char char-code "number" "" ", which starts a word symbol")
+	(go terminate-number-unexpectedly)
 	;;
        terminate-number-with-continue-word-symbol 
-       ;;(termination-warning char char-code "number" "" ", which continues but does not start a word symbol")
-       (go terminate-number)
+	;;(termination-warning char char-code "number" "" ", which continues but does not start a word symbol")
+	(go terminate-number-unexpectedly)
 	;;
        terminate-number-with-continue-non-word-symbol 
-       ;;(termination-warning char char-code "number" "" ", which continues but does not start a non-word symbol")
-       (go terminate-number)
+	;;(termination-warning char char-code "number" "" ", which continues but does not start a non-word symbol")
+	(go terminate-number-unexpectedly)
 	;;
        terminate-number-with-start-number
 	(termination-warning char char-code "number" "" ", which starts a new number")
-	(go terminate-number)
- 
+	(go terminate-number-unexpectedly)
+
+
+       terminate-number-unexpectedly
        terminate-number-with-start-non-word-symbol ;; e.g. +, -, =, etc.
        terminate-number-with-start-separator
        terminate-number-with-start-string
@@ -939,8 +941,6 @@
 	(local-unread-char char)
 	;;
        terminate-number-with-eof
-
-       terminate-number
 	;; 
 	(return-values-using-prior-last :NUMBER (parse-integer (coerce (nreverse token-chars) 'string)))
 	;;
