@@ -3,7 +3,7 @@
 A simple pretty printer for MetaSlang.
 
 \begin{spec}
-spec {
+MetaSlang qualifying spec {
   import ../AbstractSyntax/SimplePrinter
   import AnnSpec
 
@@ -16,7 +16,7 @@ spec {
 %   }
 
   op ppASpec : fa (a) ASpec a -> Pretty
-  def ppASpec {importInfo,sorts,ops,properties} = 
+  def ppASpec (spc as {importInfo,sorts,ops,properties}) = 
     let ppImports =
       let {imports,importedSpec,localOps,localSorts} = importInfo in
       let ppNames =
@@ -25,16 +25,14 @@ spec {
 
     % this assume that a name used to index into the sort map also appears
     % in the list of names for that sort.
-    let def doSort (qualifier,id,sortInfo,pp) =
+    let def doSort (qualifier,id,sortInfo) =
       ppConcat [
-        pp,
         ppString "sort ",
         ppASortInfo sortInfo
       ] in
 
-    let def doOp (qualifier,id,opInfo,pp) =
+    let def doOp (qualifier,id,opInfo) =
       ppConcat [
-         pp,
          ppString "op ",
          ppAOpInfo opInfo
       ] in
@@ -42,16 +40,17 @@ spec {
       ppString "spec {",
       ppNewline,
       ppImports,    
+      ppNewline,
         ppNest 2 (ppConcat [
-          foldriAQualifierMap doSort ppNil sorts,
+          ppSep ppNewline (map doSort (sortsAsList spc)),
           ppNewline,
-          foldriAQualifierMap doOp ppNil ops,
+          ppSep ppNewline (map doOp (opsAsList spc)),
           ppNewline,
           ppSep ppNewline (map ppAProperty properties)
         ]),
       ppString "}"
     ]
-         
+
   op ppASortInfo : fa (a) ASortInfo a -> Pretty
   def ppASortInfo (sortInfo as (names,tyVars,optSort)) =
     let ppNames =

@@ -257,6 +257,10 @@ AnnSpec qualifying spec {
  op setOps              : fa(a) ASpec a * AOpMap      a    -> ASpec a
  op setProperties       : fa(a) ASpec a * AProperties a    -> ASpec a
 
+ % substract the ops and sorts in the second argument from those
+ % appearing in the first.
+ op subtractSpec : fa (a) ASpec a -> ASpec a -> ASpec a
+
  %% Create new spec with added sort, op, property, import, etc.
 
  op addImport           : fa(a) Import * ASpec a -> ASpec a
@@ -419,4 +423,19 @@ AnnSpec qualifying spec {
 		      sorts, ops, properties})
    = memberQualifiedId(qualifier,sort_name,localSorts)
 
+ % this next one is use only in substract spec. it cannot be defined inside
+ % the scope of subtractSpec as there is no let-polymorphism in Specware
+ op mapDiff : fa (a) AQualifierMap a -> AQualifierMap a -> AQualifierMap a
+ def mapDiff xMap yMap =
+     foldriAQualifierMap (fn (qual,id,info,newMap) ->
+       case findAQualifierMap (yMap,qual,id) of
+         | None -> insertAQualifierMap (newMap,qual,id,info)
+         | Some _ -> newMap) emptyAQualifierMap xMap
+
+ def subtractSpec x y = {
+     importInfo = x.importInfo,
+     properties = x.properties,    % should take the difference here as well
+     ops = mapDiff x.ops y.ops,
+     sorts = mapDiff x.sorts y.sorts
+   }
 }
