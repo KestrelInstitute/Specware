@@ -178,11 +178,7 @@
       (sw:switch-to-lisp)))
   (goto-char (point-max))
   (insert str)
-  (inferior-lisp-newline)
-  ;; Aug 31 2004
-  ;; The following delay seems necessary to avoid hanging
-  ;; xemacs in some wedged state during specware startup.
-  (sit-for 0.1 t))
+  (inferior-lisp-newline))
 
 (defvar *specware-continue-form* nil)
 (defvar *last-specware-continue-form* nil)
