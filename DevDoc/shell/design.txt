@@ -37,13 +37,24 @@ Metaslang grammar):
  show [unit-term]
  gen-lisp [spec-term [string-literal]]
  lgen-lisp [spec-term [string-literal]]
+ gen-c [spec-term [filename]]
+ make [spec-term]
+ gen-java [spec-term [filename]]
+ swj-config
+ swj-config-dir [dir]
+ swj-config-make-public [names]
+ swj-config-pkg [pkg]
+ swj-config-reset
  punits [spec-term [string-literal]]
  lpunits [spec-term [string-literal]]
- clist
+ clist  (currently omitted because of dubious usefulness)
  cinit
  ctext [spec-term]
  eval [expression]
  eval-lisp [expression]
+ cf [filename]
+ ld [filename]
+ cl [filename]
  exit
 
 The commands have the following semantics:
@@ -79,11 +90,12 @@ e.g. `c:\programs\specware\libs;d:\home\sw' for Windows and
 `/usr/local/specware/libs:/home/sw' for Unix/Linux.
 
 * proc [unit-term]
+(can be abbreviated to p)
 
-Without an argument, processes the last processed unit. If the last processed
+Without an argument, processes the last processed unit term. If the last processed
 unit is absent, an error occurs.
 
-With an argument, sets the last processed unit to the argument and processes
+With an argument, sets the last processed unit term to the argument and processes
 it.
 
 * show [unit-term]
@@ -144,7 +156,7 @@ the conjectures locally present in the spec-term (e.g. not from imported
 specs).
 
 * clist
-
+(currently omitted)
 Displays the current Specware unit cache.
 
 * cinit
@@ -158,6 +170,7 @@ Without an argument, displays the current context.
 With an argument, sets the current context to the argument.
 
 * eval [expression]
+(can be abbreviated to e)
 
 Without an argument, evaluates the last evaluated expression within the
 current context and displays the result. If the last evaluated expression is
@@ -173,9 +186,62 @@ Evaluation takes place via the Metaslang interpreter that is part of Specware.
 Like command `eval', except that the expression is compiled to Lisp and then
 evaluated in Lisp.
 
-* exit
+* gen-lisp [spec-term [filename]]
+                  
+Generates Lisp code for unit in filename. With no argument uses last processed unit.
 
-Terminates the shell.
+* lgen-lisp [spec-term [filename]]
+
+Like `gen-lisp' but only generates lisp for local definitions of spec.
+
+* gen-c [spec-term [filename]]
+                  
+Generates C code for unit in filename. With no argument uses last processed unit.
+
+* make [spec-term]  
+
+Generate C code with makefile and call make on it.
+
+* gen-java [spec-term [filename]]
+                  
+Generates Java code for unit in filename. With no argument uses last processed unit.
+
+* swj-config        
+
+Show configuration parameters for Java generation.
+
+* swj-config-dir [dir]
+                  
+Set base directory to be used by gen-java.
+
+* swj-config-make-public [names]
+                  
+Set public names to be used by gen-java.
+
+* swj-config-pkg [pkg]
+
+Set package name to be used by gen-java.
+
+* swj-config-reset  
+
+Restore default configuration parameters for Java generation.
+
+* cf [filename]     
+
+Compile lisp file filename.
+
+* ld [filename]     
+
+Load lisp file filename.
+
+* cl [filename]     
+
+Compile and load lisp file filename.
+
+* exit
+(Aliases quit and ok)
+
+Terminates the shell. With the argument "l" also exits lisp.
 
 
 User interface
