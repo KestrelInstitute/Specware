@@ -76,7 +76,7 @@
     ))
 
 (defun wait-for-prompt (&optional timeout)
-  (sit-for 0.1)
+  (sit-for 0.1 t)
   (let ((proc (get-buffer-process *specware-buffer-name*)))
     (while (not (if (eq lisp-emacs-interface-type 'franz)
 		    (equal fi:allegro-run-status-string "Idle")
