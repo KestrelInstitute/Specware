@@ -805,7 +805,7 @@ def argTermFromSort(optsrt,funterm,b) =
 
 op lambdaToInner: Spec -> Spec
 def lambdaToInner(spc) =
-  let _ = writeLine("lambdaToInner...") in
+  %let _ = writeLine("lambdaToInner...") in
   let ops = foldriAQualifierMap
             (fn(q,id,opinfo as (opnames,fixity,(tyvars,srt),opterms),newops) ->
 	     let newopterms = List.map (fn(tyvars,term) -> (tyvars,lambdaToInnerToplevelTerm(spc,term))) opterms in
@@ -844,7 +844,7 @@ def lambdaToInnerTerm spc t =
       let term = lambdaToInnerTerm spc term in
       let t = Lambda([(pat,cond,term)],b) in
       let newt = LetRec([(var,t)],Var(var,b),b) in
-      let _ = writeLine("lambdaToInner("^(printTerm t)^") = "^(printTerm newt)) in
+      %let _ = writeLine("lambdaToInner("^(printTerm t)^") = "^(printTerm newt)) in
       newt
     | Apply(t1,t2,b) -> Apply(lambdaToInnerTerm spc t1,lambdaToInnerTerm spc t2,b)
     | Record(fields,b) ->
