@@ -143,7 +143,7 @@ accepted in lieu of prompting."
     '("Specware"
       ["Process Current File" sw:process-current-file t]
       ["Process Unit" sw:process-unit t] 
-      [":cd this directory" cd-current-directory t] 
+      [":cd to this directory" cd-current-directory t] 
       ["Find Definition" sw:meta-point t]
       ["Find Next Definition" sw:continue-meta-point
        *pending-specware-meta-point-results*]
@@ -946,27 +946,30 @@ If anyone has a good algorithm for this..."
 
 (defun sw:process-current-file ()
   (interactive)
-  (setq filename (sw::windows-file-to-specware-unit-id buffer-file-name))
+  (setq filename (sw::file-to-specware-unit-id buffer-file-name))
   (simulate-input-expression (concat ":sw " filename)))
 
-(defun sw::windows-file-to-specware-unit-id (filename)
+(defun sw::file-to-specware-unit-id (filename)
   (when (eq (elt filename 1) ?:)
     (setq filename (substring filename 2)))
   (let ((len (length filename)))
     (when (equal ".sw" (substring filename (- len 3)))
       (setq filename (substring filename 0 (- len 3))))
-    (setq filename (replace-in-string filename "\\\\" "/"))
-    (setq filename (replace-in-string filename "Program Files" "Progra~1"))))
+    (sw::normalize-filename filename)))
+
+(defun sw::normalize-filename (filename)
+  (setq filename (replace-in-string filename "\\\\" "/"))
+  (replace-in-string filename "Program Files" "Progra~1"))
   
 (defun sw:process-unit (filename)
   (interactive (list (read-from-minibuffer "Process Unit: "
-					   (sw::windows-file-to-specware-unit-id
+					   (sw::file-to-specware-unit-id
 					    buffer-file-name))))
   (simulate-input-expression (concat ":sw " filename)))
 
 (defun sw:dired-process-current-file ()
   (interactive)
-  (setq filename (sw::windows-file-to-specware-unit-id (dired-get-filename)))
+  (setq filename (sw::file-to-specware-unit-id (dired-get-filename)))
   (simulate-input-expression (concat ":sw " filename)))
 
 (when (boundp 'dired-mode-map)
