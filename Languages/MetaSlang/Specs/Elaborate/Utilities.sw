@@ -141,43 +141,34 @@ spec
  %% Computes a map from constructor names to set of sorts for them
  def computeConstrMap (spc) : StringMap (List SortScheme) =
   let sorts = spc.sorts in
-   let constrMap : Ref (StringMap (List SortScheme)) = Ref StringMap.empty 
-   in
    let def addConstr (id, tvs, cp_srt, constrMap) =
-         let cMap = ! constrMap in
-	 case StringMap.find (cMap, id)
-	   of None -> constrMap := StringMap.insert(cMap, id, [(tvs,cp_srt)])
-	    | Some srt_prs ->
-	      if exists (fn(_,o_srt) -> sameCPSort?(o_srt, cp_srt)) srt_prs
-	       then ()
-	       else constrMap := StringMap.insert(cMap, id,
-						  cons((tvs,cp_srt),srt_prs))
+	 case StringMap.find (constrMap, id) of
+	   | None -> StringMap.insert(constrMap, id, [(tvs,cp_srt)])
+	   | Some srt_prs ->
+	     if exists (fn(_,o_srt) -> sameCPSort?(o_srt, cp_srt)) srt_prs then
+	       constrMap
+	     else 
+	       StringMap.insert(constrMap, id, cons((tvs,cp_srt),srt_prs))
    in
-   let def addSort (tvs, srt, constrMap) =
+   let def addSort ((tvs, srt), constrMap) =
         case srt : MS.Sort of
-	 | CoProduct (row, _) ->
-	   app (fn (id,_) -> addConstr (id, tvs, srt, constrMap)) row
-	 %% | Base (Qualified (qid, id), _, _) ->
-	 %%   (let matching_entries : List(String * QualifiedId * SortInfo) = 
-         %%           lookupSortInImports(importMap, qid, id)
-         %%       in
-	 %%       case matching_entries
-         %%  of [(_, _, (_, e_tvs, Some e_srt))] ->
-         %%     addSort(e_tvs, convertSortToPSort e_srt)
-         %%   | _ -> ())
-	 | _ -> ()
+	  | CoProduct (row, _) ->
+	    foldl (fn ((id,_), constrMap) -> addConstr (id, tvs, srt, constrMap)) 
+	          constrMap
+		  row
+	    %% | Base (Qualified (qid, id), _, _) ->
+	    %%   (let matching_entries : List(String * QualifiedId * SortInfo) = 
+	    %%           lookupSortInImports(importMap, qid, id)
+	    %%       in
+	    %%       case matching_entries
+	    %%  of [(_, _, (_, e_tvs, Some e_srt))] ->
+	    %%     addSort(e_tvs, convertSortToPSort e_srt)
+	    %%   | _ -> ())
+          | _ -> constrMap
    in
-   let _ = appAQualifierMap 
-	     (fn (sort_names, tyvars, defs) -> 
-	      app (fn (type_vars, srt) ->
-		   addSort (type_vars, srt, constrMap))
-	          defs)
-	     sorts
-   %% in
-   %% Look at at all sorts mentioned in spec
-   %% Doesn't work unless we recognize which ones are instances of ones we already have
-   %% let _ = appSpec (fn x -> (), fn s -> addSort([],s,sorts, constrMap), fn p -> ()) spc
-   in ! constrMap
+     foldSortInfos (fn ((_, _, defs), constrMap) -> foldl addSort constrMap defs)
+                   StringMap.empty 
+		   sorts
 
  op  String.search: String * String -> Option Nat
  %% Find position of first occurrence of s1 in s2 or None
