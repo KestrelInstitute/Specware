@@ -258,6 +258,8 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
  op emptyASortMap       : fa(a) AQualifierMap a
  op emptyAOpMap         : fa(a) AQualifierMap a
 
+ op initialSpecInCat    : fa(a) ASpec         a
+
  %% Create new spec with altered name, imports, sorts, ops, properties, etc.
 
  op setImportInfo       : fa(a) ASpec a * ImportInfo       -> ASpec a
@@ -334,6 +336,12 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
   {importInfo       = emptyImportInfo,
    sorts            = emptyASortMap,
    ops              = emptyAOpMap,
+   properties       = emptyAProperties}
+
+ def initialSpecInCat = 
+  {importInfo       = emptyImportInfo,  
+   sorts            = emptyASortMap,   % TODO: add Boolean
+   ops              = emptyAOpMap,     % TODO: add ~ && !! => <=>  [?? =, ~=  ??]
    properties       = emptyAProperties}
 
  def setImportInfo ({importInfo=_, sorts, ops, properties}, 

@@ -128,7 +128,7 @@ CGenUtils qualifying spec {
 
   op mergeModeSpecs: Procedure -> MSSpec
   def mergeModeSpecs(procedure) =
-    foldlSpecsProcedure (fn(spc,mergedspc) -> mergeSpecs(spc,mergedspc)) emptySpec procedure
+    foldlSpecsProcedure (fn(spc,mergedspc) -> mergeSpecs(spc,mergedspc)) initialSpecInCat procedure
 
 
 }

@@ -23,7 +23,7 @@ and then qualify the resulting spec if the spec was given a name.
        (print (";;; Elaborating spec at " ^ (uidToString unitId) ^ "\n"));
     (optBaseUnitId,baseSpec) <- getBase;
     (pos_spec,TS,depUIDs) <- evaluateSpecElems (if anyImports? spec_elements
-						  then emptySpec
+						  then emptySpec % some import will include baseSpec
 						  else baseSpec)
 		               spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
@@ -39,8 +39,10 @@ axioms, etc.
 \begin{spec}
   op evaluateSpecElems : ASpec Position -> List (SpecElem Position)
                            -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
-  def evaluateSpecElems initialSpec specElems = {
-      (spcWithImports,TS,depUIDs) <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
+  def evaluateSpecElems starting_spec specElems = {
+      %% Use the name starting_spec to avoid any possible confusion with the
+      %% op initialSpecInCat, which refers to the initial spec in the category of specs.
+      (spcWithImports,TS,depUIDs) <- foldM evaluateSpecImport (starting_spec,0,[]) specElems;
       fullSpec <- foldM evaluateSpecElem spcWithImports specElems;
       return (fullSpec,TS,depUIDs)
     }

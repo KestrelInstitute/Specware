@@ -127,7 +127,9 @@ to the initial and final states.
                     }
              in
                paramsToOps (formalArgs procInfo);
-          initialSpec <-
+          %% Don't confuse this local var initial_spec with the op initialSpecInCat,
+          %% which refers to the initial spec in the category of specs.				     
+          initial_spec <-
              fold (fn spc -> fn varInfo -> {
                     spc <- addVariable spc varInfo position;
                     return spc
@@ -135,15 +137,15 @@ to the initial and final states.
  
           (finalSpec,returnInfo) <- 
              case procInfo.returnSort of
-               | Product ([],_) -> return (initialSpec, None)
+               | Product ([],_) -> return (initial_spec, None)
                | _ -> {
                      varInfo <- makeOp (makeId "#return#" procName, toType (returnSort procInfo));
-                     spc <- addVariable initialSpec varInfo position;
+                     spc <- addVariable initial_spec varInfo position;
                      returnRef <- refOf varInfo;
                      return (spc, Some returnRef)
                    };
 
-          initialSpecElab <- elaborate initialSpec; 
+          initialSpecElab <- elaborate initial_spec; 
 
           finalSpecElab <- elaborate finalSpec; 
 

@@ -69,11 +69,11 @@ SpecUnion qualifying spec {
         if new_qualifier = primary_qualifier & new_id = primary_id then
           %% Assertion: We take this branch exactly once per new info.
           let optional_old_info = findAQualifierMap (merged_sort_map, new_qualifier, new_id) in
-	  %% It would be better if emptySpec were somehow replaced with
+	  %% It would be better if initialSpecInCat were somehow replaced with
 	  %% a more informative spec for resolving equivalent sorts,
 	  %% but its not obvious what spec(s) to pass in here.
 	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeSortInfo emptySpec new_info optional_old_info noPos;
+	  {merged_info <- mergeSortInfo initialSpecInCat new_info optional_old_info noPos;
 	   all_names <- return (merged_info.1);    % new and old names
 	   foldM (fn merged_sort_map -> fn  Qualified(qualifier, id) ->
 		  return (insertAQualifierMap (merged_sort_map, qualifier, id, merged_info)))
@@ -94,11 +94,11 @@ SpecUnion qualifying spec {
         if new_qualifier = primary_qualifier & new_id = primary_id then
           %% Assertion: We take this branch exactly once per new info.
           let optional_old_info = findAQualifierMap (merged_op_map, new_qualifier, new_id) in
-	  %% It would be better if emptySpec were somehow replaced with
+	  %% It would be better if initialSpecInCat were somehow replaced with
 	  %% a more informative spec for resolving equivalent ops,
 	  %% but its not obvious what spec(s) to pass in here.
 	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeOpInfo emptySpec new_info optional_old_info noPos;
+	  {merged_info <- mergeOpInfo initialSpecInCat new_info optional_old_info noPos;
 	   all_names <- return (merged_info.1);    % new and old
 	   foldM (fn merged_op_map -> fn Qualified(qualifier, id) ->
 		  return (insertAQualifierMap (merged_op_map, qualifier, id, merged_info)))

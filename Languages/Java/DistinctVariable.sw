@@ -216,7 +216,7 @@ def distinctVariable(spc) =
   )
   []
   spc.ops in
-  let result = emptySpec in
+  let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
   let result = setSorts(result, spc.sorts) in
   let result = foldr addOpToSpec2 result newOpDefs in
    result

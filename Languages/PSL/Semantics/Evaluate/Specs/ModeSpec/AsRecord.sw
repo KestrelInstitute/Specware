@@ -58,7 +58,7 @@ ModeSpec qualifying spec
       variables = variables,
       hidden = empty,
       invariants = invariants,
-      context = makeContext emptySpec,
+      context = makeContext initialSpecInCat,
       rewriteRules = {unconditional=empty,conditional=empty},
       localSorts = empty,
       localOps = empty,

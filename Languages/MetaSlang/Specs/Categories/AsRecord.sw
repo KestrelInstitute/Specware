@@ -116,7 +116,7 @@ SpecCalc qualifying spec {
        opMap   = emptyMap
     },
     colimit       = specColimit,
-    initialObject = emptySpec,
+    initialObject = initialSpecInCat,
     compose       = compose,
     ppObj         = ppASpec,
     ppArr         = ppMorphism

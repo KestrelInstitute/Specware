@@ -654,7 +654,7 @@ def addMissingFromBase(bspc,spc,ignore) = addMissingFromBaseTo(bspc,spc,ignore,s
  * is returned.
  *)
 op getMissingFromBase: Spec * Spec * (QualifiedId -> Boolean) -> Spec
-def getMissingFromBase(bspc,spc,ignore) = addMissingFromBaseTo(bspc,spc,ignore,emptySpec)
+def getMissingFromBase(bspc,spc,ignore) = addMissingFromBaseTo(bspc,spc,ignore,initialSpecInCat)
 
 op addMissingFromBaseTo: Spec * Spec * (QualifiedId -> Boolean) * Spec -> Spec
 def addMissingFromBaseTo(bspc,spc,ignore,initSpec) =

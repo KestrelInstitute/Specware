@@ -875,7 +875,7 @@ def mergeSpecs(spc1,spc2) =
 		     else cons(prop,props)
 		      ) spc1.properties spc2.properties
   in
-  let spc = emptySpec in
+  let spc = initialSpecInCat in  % maybe emptySpec would be ok, but this is safer
   let spc = setSorts(spc,srts) in
   let spc = setOps(spc,ops) in
   let spc = setProperties(spc,props) in

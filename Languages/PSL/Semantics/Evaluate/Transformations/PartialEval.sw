@@ -520,8 +520,11 @@ PE qualifying spec
      -> Oscar.Spec
      -> Env (Oscar.Spec * BSpec)
   def specializeBSpec oldOscSpec oldBSpec precondition newOscSpec = {
-      initialSpec <- hideVariables (modeSpec (initial oldBSpec)) precondition;
-      (newBSpec,newMode) <- return (deriveBSpec oldBSpec precondition initialSpec);
+      %% The local var initial_mode_spec here refers to the initial spec in a state machine,
+      %% not to be confused with the op initialSpecInCat, which refers to the initial spec 
+      %% in the category of specs.
+      initial_mode_spec <- hideVariables (modeSpec (initial oldBSpec)) precondition;
+      (newBSpec,newMode) <- return (deriveBSpec oldBSpec precondition initial_mode_spec);
       fold (specialTrans oldBSpec oldOscSpec newMode precondition) (newOscSpec,newBSpec) (outTrans oldBSpec (initial oldBSpec))
     }
 \end{spec}

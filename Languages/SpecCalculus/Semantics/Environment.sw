@@ -73,7 +73,7 @@ UnitId_Dependency.
   def initGlobalVars =
     run {
       print "\nDeclaring globals ...";
-      newGlobalVar ("BaseInfo", (None : Option RelativeUnitId, emptySpec));
+      newGlobalVar ("BaseInfo", (None : Option RelativeUnitId, initialSpecInCat)); % as opposed to emptySpec, which doesn't contain Boolean, etc.
       newGlobalVar ("GlobalContext", PolyMap.emptyMap);
       newGlobalVar ("LocalContext", PolyMap.emptyMap);
       newGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);

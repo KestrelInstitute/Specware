@@ -488,7 +488,7 @@ def liftPattern(spc) =
    cons(origOpNewDef, newOds++result))
   []
   spc.ops in
-  let result = emptySpec in
+  let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
   let result = setSorts(result, spc.sorts) in
   let result = foldr addOpToSpec result newOpDefs in
    result

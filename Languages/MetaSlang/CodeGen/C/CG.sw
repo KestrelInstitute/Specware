@@ -100,7 +100,7 @@ spec
     transformSpecForCodeGenAux basespc spc true
 
   def transformSpecForCodeGenNoAdd spc =
-    transformSpecForCodeGenAux emptySpec spc false
+    transformSpecForCodeGenAux emptySpec spc false  % initialSpecInCat ??
 
   op transformSpecForCodeGenAux: AnnSpec.Spec -> AnnSpec.Spec -> Boolean -> AnnSpec.Spec
   def transformSpecForCodeGenAux basespc spc addmissingfrombase? =

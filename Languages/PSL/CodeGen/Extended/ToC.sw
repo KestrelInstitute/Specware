@@ -44,7 +44,7 @@ SpecCalc qualifying spec {
 			       let transformed_spec = transformSpecForCodeGen base spc in
 			       (mergeSpecs(transformed_spec, missing), 
 				[(spc,transformed_spec)] ++ cached_transforms))
-	                    (emptySpec, [])
+	                    (initialSpecInCat, [])
 			    oscSpec 
     in
     %let _ = writeLine("missing from base: "^(printSpec missing)) in
