@@ -460,6 +460,14 @@ def termToExpressionRet(tcx, term, k, l, spc) =
 	let s2 = [Stmt(Expr(expr))] in
 	let ((s3,k,l),col2) = termToExpressionRet(tcx,Seq(terms,b),k,l,spc) in
 	((s1++s2++s3,k,l),concatCollected(col1,col2))
+      | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) -> 
+        let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
+	%let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
+	let def mkPrim p = CondExp(Un(Prim p),None) in
+	let newException = mkPrim(NewClsInst(ForCls(([],"IllegalArgumentException"),[argexpr],None))) in
+	let throwStmt = Throw(newException) in
+	let block = [Stmt throwStmt] in
+	((block,k,l),col)
       | _ ->
         let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
 	let stmts = if isVoid?(spc,inferTypeFoldRecords(spc,term))
