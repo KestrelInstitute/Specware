@@ -240,7 +240,7 @@ easy reference.
 ||  `proof-term ::=
 ||      prove `claim-name in `spec-term
 ||                      [ with `prover-name ]
-||                      [ using '{ `claim-list '} ]
+||                      [ using `claim-list ]
 ||                      [ options `prover-options ]
 ||  
 ||  `prover-name ::= snark
