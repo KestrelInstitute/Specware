@@ -9,6 +9,6 @@ The notion of provability in the Metaslang logic is defined in spec
 `Provability'. The top-level proof checker spec is `Check'. The statement of
 the correctness of the proof checker w.r.t. the notion of provability is
 stated in spec `CheckCorrectness'. The executable version of the proof checker
-is spec `CheckExecutable'. Spec `Test' is used to test the proof checked from
+is spec `CheckExecutable'. Spec `Test' is used to test the proof checker from
 the Specware Shell. All other specs and morphisms in this directory are
 auxiliary to the main specs just described.
