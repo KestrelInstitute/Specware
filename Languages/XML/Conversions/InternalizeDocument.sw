@@ -76,6 +76,18 @@ XML qualifying spec
       | _ -> fail "unrecognized type"
 
 
+  def making_attributes_and_elements_explicit? (field_sds  : List (IdDescriptor * SortDescriptor)) 
+    : Boolean =
+    case field_sds of
+      | [("attributes", _), ("elements", _)] -> true
+      | _ -> false
+
+  def explicit_attributes_and_elements? (element : PossibleElement)
+    : Boolean =
+    (case find_matching_sub_element (element, "attributes", 0) of | Some _ -> true | _ -> false)
+    &
+    (case find_matching_sub_element (element, "elements", 0)   of | Some _ -> true | _ -> false)
+
   def fa (X) internalize_PossibleElement_as_product (element    : PossibleElement,
 						     product_sd : SortDescriptor,
 						     field_sds  : List (IdDescriptor * SortDescriptor),
@@ -86,44 +98,44 @@ XML qualifying spec
     %%  hence cannot be properly typed in metaslang,
     %%  hence there is "magic" here.
     %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as product for " ^ (print_SortDescriptor product_sd) ^ "\n") in
-    case field_sds of
-      | [("attributes", _), ("elements", _)] -> 
-        internalize_Attributes_and_Elements (Full element, product_sd, table, level + 1)
-      | _ ->
-        let possible_magic_values =
-            foldl (fn ((field_name, field_sd), possible_magic_values) ->
-		   case possible_magic_values of
-		     | None -> None
-		     | Some magic_values ->
-		       %%% let _ = toScreen ((level_str level) ^ "First, seeking field named " ^ field_name ^ " to construct " ^ (print_SortDescriptor field_sd) ^ "\n") in
-		       case (case find_matching_sub_element (element, field_name, level + 1) of
-			       | Some matching_elt ->
-			         (%%% let _ = toScreen ((level_str level) ^ "Second, internalizing matching xml element named " ^ (string matching_elt.stag.name) ^ " as " ^ (print_SortDescriptor field_sd) ^ "\n") in
-				  internalize_PossibleElement (matching_elt, field_sd, field_sd, table, level + 1))
-			       | None -> 
-				 case default_field_value (element, field_sd, table, level + 1) of
-				  | Some field_value  -> Some field_value
-				  | None -> 
-				    let expanded_field_sd = expand_SortDescriptor (field_sd, table) in
-				    default_field_value (element, field_sd, table, level + 1))
-			 of 
-                          %% magic_values is a list over some unknown generic type
-			  %% In practice, each field_value has its own independent type, 
-			  %% but we have cast all of them to that generic type.
-			  %% Thus we must be very careful what we do with magic_value:
-			  %% operations such as cons/hd/tl/rev are ok.
-			  | Some field_value  -> Some (cons (field_value, magic_values))
-			  | None -> None)
-	          (Some [])
-		  field_sds
-	in
-	  case possible_magic_values of
-	    | Some magic_values ->
-	      %%% let _ = toScreen ((level_str level) ^ "Found product\n") in
-	      %% magicMakeProduct restructures the implementation of magic_values from a list to a product 
-	      %% See casting note at start of file.
-	      Some (Magic.magicMakeProduct (rev magic_values))
-	    | _ -> None
+    if (making_attributes_and_elements_explicit? field_sds) & ~(explicit_attributes_and_elements? element) then
+      internalize_Attributes_and_Elements (Full element, product_sd, table, level + 1)
+    else
+      let possible_magic_values =
+          foldl (fn ((field_name, field_sd), possible_magic_values) ->
+		 case possible_magic_values of
+		   | None -> None
+		   | Some magic_values ->
+		     %%% let _ = toScreen ((level_str level) ^ "First, seeking field named " ^ field_name ^ " to construct " ^ (print_SortDescriptor field_sd) ^ "\n") in
+		     case (case find_matching_sub_element (element, field_name, level + 1) of
+			     | Some matching_elt ->
+			       (%%% let _ = toScreen ((level_str level) ^ "Second, internalizing matching xml element named " ^ (string matching_elt.stag.name) ^ " as " ^ (print_SortDescriptor field_sd) ^ "\n") in
+				let expanded_field_sd = expand_SortDescriptor (field_sd, table) in
+				internalize_PossibleElement (matching_elt, field_sd, expanded_field_sd, table, level + 1))
+			     | None -> 
+			       case default_field_value (element, field_sd, table, level + 1) of
+				 | Some field_value  -> Some field_value
+				 | None -> 
+				   % let expanded_field_sd = expand_SortDescriptor (field_sd, table) in
+				 default_field_value (element, field_sd, table, level + 1))
+		       of 
+                         %% magic_values is a list over some unknown generic type
+			 %% In practice, each field_value has its own independent type, 
+			 %% but we have cast all of them to that generic type.
+			 %% Thus we must be very careful what we do with magic_value:
+			 %% operations such as cons/hd/tl/rev are ok.
+			 | Some field_value  -> Some (cons (field_value, magic_values))
+			 | None -> None)
+	        (Some [])
+		field_sds
+      in
+	case possible_magic_values of
+	  | Some magic_values ->
+	    %%% let _ = toScreen ((level_str level) ^ "Found product\n") in
+	    %% magicMakeProduct restructures the implementation of magic_values from a list to a product 
+	    %% See casting note at start of file.
+	    Some (Magic.magicMakeProduct (rev magic_values))
+	  | _ -> None
 
 
   def find_matching_sub_element (element    : PossibleElement,
@@ -207,7 +219,10 @@ XML qualifying spec
                  %% looking at "<n> <baz> ,,, </baz>  </n>" while expecting a coproduct with possible constructor baz
    	         %% which can happen while looking at "<foo> <1> ... </1> .... <n> <baz> ,,, </baz> </n> ... </foo>"
 	         %% ? also check for name to be "1" "2" etc.? (or would that make explicitly named products fail?)
-	         internalize_PossibleElement (elt, coproduct_sd, coproduct_sd, table, level + 1)
+	         (case internalize_PossibleElement (elt, coproduct_sd, coproduct_sd, table, level + 1) of
+		   | Some datum -> Some (magicMakeConstructor (string elt.stag.name, datum))
+		   | _ ->
+		     fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
 	       | _ -> 
 	         fail ("decoding CoProduct: XML datum named " ^ element_name ^ " doesn't match any of " ^ 
 		       (foldl (fn ((name, _), result) ->
@@ -385,12 +400,11 @@ XML qualifying spec
     %%  hence cannot be properly typed in metaslang,
     %%  hence the "magic" here.
     %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as product for " ^ (print_SortDescriptor product_sd) ^ "\n") in
-    case field_sds of
-      | [("attributes", _), ("elements", _)] -> 
-        internalize_Attributes_and_Elements (Empty etag, product_sd, table, level + 1)
-      | _ ->
-        %%% let _ = toScreen ((level_str level) ^ "No product\n") in
-        magicCastFromOption (Some ())
+    if making_attributes_and_elements_explicit? field_sds then
+      internalize_Attributes_and_Elements (Empty etag, product_sd, table, level + 1)
+    else
+      %%% let _ = toScreen ((level_str level) ^ "No product\n") in
+      magicCastFromOption (Some ())
 
   def fa (X) internalize_EmptyElemTag_as_coproduct (etag         : EmptyElemTag,
 						    coproduct_sd : SortDescriptor,
