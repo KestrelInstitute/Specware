@@ -4,6 +4,7 @@ import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/Specs/StandardSpec
 
+
 op baseSrtToJavaType: Sort -> Java.Type
 def baseSrtToJavaType(srt) =
   if boolSort?(srt)
@@ -79,11 +80,23 @@ def varToFormalParam(var as (id, srt as Base (Qualified (q, srtId), _, _))) =
 
 op fieldToFormalParam: Id * Id -> FormPar
 def fieldToFormalParam(fieldProj, fieldType) =
-  (false, tt(fieldType), (fieldProj, 0))
+  let fieldName = getFieldName fieldProj in
+  (false, tt(fieldType), (fieldName, 0))
 
 op fieldToFldDecl: Id * Id -> FldDecl
 def fieldToFldDecl(fieldProj, fieldType) =
-  ([], tt(fieldType), ((fieldProj, 0), None), [])
+  let fieldName = getFieldName fieldProj in
+  ([], tt(fieldType), ((fieldName, 0), None), [])
+
+(**
+ * ensures the generation of legal Java identifiers as field names
+ *)
+op getFieldName: Id -> Id
+def getFieldName(id) =
+  let firstchar = sub(id,0) in
+  let fieldName = if isNum firstchar then "field_"^id else id in
+  fieldName
+  
 
 op mkEqualityMethDecl: Id -> MethDecl
 def mkEqualityMethDecl(id) =
@@ -135,7 +148,8 @@ def mkSub(id, l) =
 
 op mkSumd: Id * Id -> Id
 def mkSumd(cons, caseType) =
-  "sumd_"^cons^"_"^caseType
+  %"sumd_"^cons^"_"^caseType
+  caseType^"$$"^cons % v3 page 67
 
 op mkTag: Id -> Id
 def mkTag(cons) =
@@ -153,6 +167,7 @@ def tt_v2(id) =
   case id of
     | "Boolean" -> (Basic (JBool), 0)
     | "Integer" -> (Basic (JInt), 0)
+    | "Nat" -> (Basic (JInt), 0)
     | _ -> (Name ([], id), 0)
 
 (**
@@ -162,14 +177,29 @@ op tt_v3: Sort -> Java.Type
 def tt_v3(srt) =
   case srt of
     | Base(Qualified(_,id),_,_) -> tt_v2(id)
-    | Arrow(srt0,srt1,_) -> mkArrowInterfaceDef(srt0,srt1)
+    | Arrow(srt0,srt1,_) -> mkArrowClassDef(srt0,srt1)
 
 (**
  * this op generates the java type definition for the arrow type srt0 -> srt1
  *)
-op mkArrowInterfaceDef: Sort * Sort -> Java.Type
-def mkArrowInterfaceDef(srt0,srt1) = 
+op mkArrowClassDef: Sort * Sort -> Java.Type
+def mkArrowClassDef(srt0,srt1) = 
   mkJavaObjectType("Object")
+
+(**
+ * srtId returns for a given type the string representation accorinding the rules
+ * in v3 page 67 for class names. It replaces the old version in LiftPattern.sw
+ *)
+op srtId: Sort -> String
+def srtId(srt) =
+  case srt of
+    | Base (Qualified (q, id), _, _) -> id
+    | Product(fields,_) -> foldl (fn((_,fsrt),str) -> str ^ (if str = "" then "" else "$$") ^ (srtId fsrt)) "" fields
+    | Arrow(dsrt,rsrt,_) ->
+    let rsrtid = srtId rsrt in
+    let dsrtid = srtId dsrt in
+    dsrtid^"$To$"^rsrtid
+    | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
 
 op mkJavaObjectType: Id -> Java.Type
 def mkJavaObjectType(id) =
@@ -242,7 +272,7 @@ def mkUnExp(opId, javaArgs) =
 
 op mkJavaEq: Java.Expr * Java.Expr * Id -> Java.Expr
 def mkJavaEq(e1, e2, t1) =
-  if (t1 = "Boolean" or t1 = "Integer")
+  if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat")
     then CondExp (Bin (Eq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
   else
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
@@ -295,5 +325,6 @@ def mkVarInit(vId, srtId, jInit) =
 op mkIfStmt: Java.Expr * Block * Block -> BlockStmt
 def mkIfStmt(jT0, b1, b2) =
   Stmt (If (jT0, Block (b1), Some (Block (b2))))
+
 
 endspec

@@ -91,7 +91,9 @@ def distinctVar(term, ids) =
     | Record _ -> distinctVarRecord(term, ids)
     | IfThenElse _ -> distinctVarIfThenElse(term, ids)
     | Let _ -> distinctVarLet(term, ids)
-    | _ -> fail "unsupported in distinctVar"
+    | _ -> %TODO: catch lambda terms
+           (term,ids)
+    %| _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
 
 def distinctVars(terms, ids) =
   case terms of
@@ -183,7 +185,7 @@ def distinctVariable(spc) =
   spc.ops in
   let result = emptySpec in
   let result = setSorts(result, spc.sorts) in
-  let result = foldr addOdToSpec result newOpDefs in
+  let result = foldr addOpToSpec result newOpDefs in
    result
 
 

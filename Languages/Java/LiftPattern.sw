@@ -43,8 +43,11 @@ def baseVar?(var) =
 def userVar?(var) =
   ~ (baseVar?(var))
 
-op srtId: Sort -> Id 
-def srtId(srt as Base (Qualified (q, id), _, _)) = id
+(**
+  * disabled this op def, the new srtId op is in ToJavaBase; it also handles other kinds of types.
+  *)
+op srtId_v2: Sort -> Id 
+def srtId_v2(srt as Base (Qualified (q, id), _, _)) = id
 
 op mkNewOp: Op * Nat -> Op
 
@@ -172,25 +175,40 @@ def opDelta(spc, oper) =
        | _ -> ([], trm))
      | _ -> let _ = unSupported(oper) in ([], mkFalse())
 
-op srtTermDelta: Type * Term -> List Var * Term
 
-def srtTermDelta(srt, term) =
+op srtTermDelta : Sort * Term -> List Var * Term
+def srtTermDelta(srt,term) = srtTermDelta_internal(srt,term,true)
+
+op srtTermDelta_internal: Sort * Term * Boolean-> List Var * Term
+def srtTermDelta_internal(srt, term, fail?) =
   let opDom = srtDom(srt) in
   let opRng = srtRange(srt) in
+  let
+    def arityMismatchError(pat,args1,term,args2) = 
+      "unsupported: pattern "^printPattern(pat)^" has "^Integer.toString(args1)^" args, but "
+      ^printTerm(term)^" has "^Integer.toString(args2)^" args."
+  in
   case term of
     | Lambda ([(pat, cond, body)],_) ->
     let argNames = patternNamesOpt(pat) in
+    let arity = length(opDom) in
     (case argNames of
        | Some argNames ->
-       let numArgs = length argNames in
-       let arity = length(opDom) in
-       if arity = numArgs
-	 then 
-	   let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
-	   (newArgs, body)
-       else
-	 fail("type Mismatch in delta")
-	 | _ -> fail("type Mismatch in delta"))
+         (let numArgs = length argNames in
+	  if arity = numArgs
+	    then 
+	      let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
+	      (newArgs, body)
+	  else
+	    if fail? then
+	      fail(arityMismatchError(pat,numArgs,term,arity))
+	    else ([],term)
+	 )
+       | _ -> 
+	 if fail? then
+	   fail(arityMismatchError(pat,0,term,arity))
+	 else ([],term)
+     )
     | _ -> ([], term)
 
 op liftCaseTopCase: Op * (Term | caseTerm?) * Nat -> Term * Nat * List OpDef
@@ -319,12 +337,12 @@ def liftPattern(spc) =
   spc.ops in
   let result = emptySpec in
   let result = setSorts(result, spc.sorts) in
-  let result = foldr addOdToSpec result newOpDefs in
+  let result = foldr addOpToSpec result newOpDefs in
    result
 
-op addOdToSpec: OpDef * Spec -> Spec
+op addOpToSpec: OpDef * Spec -> Spec
 
-def addOdToSpec((oper:Op, dom:(List Type), rng:Type, formals:List Var, body:Term), spc:Spec) =
+def addOpToSpec((oper:Op, dom:(List Type), rng:Type, formals:List Var, body:Term), spc:Spec) =
   let srt = case dom of | [] -> rng | [dom] -> mkArrow(dom, rng) | _ -> mkArrow(mkProduct(dom), rng) in
   let varPatterns = map mkVarPat formals in
   let term = mkLambda(mkTuplePat(varPatterns), body) in

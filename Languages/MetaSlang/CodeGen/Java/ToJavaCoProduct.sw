@@ -9,11 +9,11 @@ def mkEqualityBodyForSum(fields) =
     | [] -> CondExp (Un (Prim (Bool true)), None)
     | [(id, srt)] -> 
        let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg"], mkArgProj(id)))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqargsub"], mkArgProj(id)))), None) in
        mkJavaEq(e1, e2, srtId(srt))
     | (id, srt)::fields ->
        let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg"], mkArgProj(id)))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqargsub"], mkArgProj(id)))), None) in
        let eq = mkJavaEq(e1, e2, srtId(srt)) in
        let restEq = mkEqualityBodyForSum(fields) in
        CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None)
@@ -25,7 +25,7 @@ def sumTypeToClsDecl(id, fldDecls, sumConstructorMethDecls) =
 
 op mkSummandId: Id * Id -> Id
 def mkSummandId(ty, c) =
-  ty ^ "_" ^ c
+  ty ^ "$$" ^ c
 
 op sumArgToClsDecl: Id * Id -> ClsDecl
 def sumArgToClsDecl(ty, c) =
@@ -76,7 +76,7 @@ def sumToClsDecl(id, c, args) =
 op mkSumEqMethBody: Id * Id * Id * List Field -> Block
 def mkSumEqMethBody(clsId, consId, summandId, flds) =
   let eqExpr = mkEqualityBodyForSum(flds) in
-  let s = mkVarInit("eqarg", summandId, CondExp (Un (Cast ((Name ([], summandId), 0), Prim (Name ([], "eqarg")))), None)) in
+  let s = mkVarInit("eqargsub", summandId, CondExp (Un (Cast ((Name ([], summandId), 0), Prim (Name ([], "eqarg")))), None)) in
   let tagEqExpr = mkTagEqExpr(clsId, consId) in
   %let instanceExpr = CondExp (InstOf (Un (Prim (Name ([], "eqarg"))), (Name ([], summandId), 0)) , None) in
   %let negateInstanceExpr = CondExp (Un (Un (LogNot, Prim (Paren (instanceExpr)))) , None) in

@@ -13,7 +13,7 @@ import ToJavaQuotient
 %sort JSpec = CompUnit
 
 sort JcgInfo = {
-		clsDecls   : List ClsDecl
+		clsDecls : List ClsDecl
 	       }
 
 sort ArrowType = List Sort * Sort
@@ -23,17 +23,17 @@ sort Type = JGen.Type
 op clsDeclsFromSorts: Spec -> JcgInfo
 def clsDeclsFromSorts(spc) =
   let initialJcgInfo = {
-		 clsDecls = []
-		}
+			clsDecls = []
+		       }
   in
    let primClsDecl = mkPrimOpsClsDecl in
    let jcginfo =
    (foldriAQualifierMap (fn (qualifier, id, sort_info, jcginfo) -> 
 			 let newjcginfo = sortToClsDecls(qualifier, id, sort_info, jcginfo) in
-			 concatJcgInfo(newjcginfo,jcginfo))
+			 concatClsDecls(newjcginfo,jcginfo))
     initialJcgInfo spc.sorts)
    in
-     concatJcgInfo({clsDecls=[primClsDecl]},jcginfo)
+     concatClsDecls({clsDecls=[primClsDecl]},jcginfo)
 
 op sortToClsDecls: Qualifier * Id * SortInfo * JcgInfo -> JcgInfo
 def sortToClsDecls(qualifier, id, sort_info, jcginfo) =
@@ -68,12 +68,12 @@ def addFldDeclToClsDecls(srtId, fldDecl, jcginfo) =
 op addMethDeclToClsDecls: Id * MethDecl * JcgInfo -> JcgInfo
 def addMethDeclToClsDecls(srtId, methDecl, jcginfo) =
   let clsDecls =
-  map (fn (cd as (lm, (cId, sc, si), cb)) -> 
-       if cId = srtId
+  map (fn (clsDecl as (lm, (clsId, sc, si), cb)) -> 
+       if clsId = srtId
 	 then
 	   let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
-	   (lm, (cId, sc, si), newCb)
-	   else cd)
+	   (lm, (clsId, sc, si), newCb)
+	   else clsDecl)
   jcginfo.clsDecls
   in
     exchangeClsDecls(jcginfo,clsDecls)
@@ -106,7 +106,7 @@ def mkAssertFromDom(dom, spc) =
     | [Subsort(_, subPred, _)] ->
       let (stmt, jPred, newK, newL) = termToExpression(empty, subPred, 1, 1, spc) in
       (case (stmt, newK, newL) of
-	 | ([], 1, 1) -> [Stmt(Expr(mkMethInv("JAVALANG", "assert", [jPred])))]
+	 | ([], 1, 1) -> [Stmt(Expr(mkMethInv("", "assert", [jPred])))]
 	 | _ -> fail ("Type pred generated statements: not supported"))
     | _ -> []
 
@@ -116,26 +116,40 @@ def mkPrimArgsMethodBody(body, spc) =
   b
 
 op addPrimArgsMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
-def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, jcginfo) =
-  let clsDecls = jcginfo.clsDecls in
-  let (vars, body) = srtTermDelta(srt, trm) in
-  let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
-  let methodBody = mkPrimArgsMethodBody(body, spc) in
-  let methodDecl = setMethodBody(methodDecl, methodBody) in
-  addMethDeclToClsDecls(rngId, methodDecl, jcginfo)
+def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
+  case rng of
+    | Base (Qualified (q, rngId), _, _) -> 
+      let clsDecls = jcginfo.clsDecls in
+      let (vars, body) = srtTermDelta(srt, trm) in
+      let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
+      let methodBody = mkPrimArgsMethodBody(body, spc) in
+      let methodDecl = setMethodBody(methodDecl, methodBody) in
+      addMethDeclToClsDecls(rngId, methodDecl, jcginfo)
+    | _ -> %TODO:
+      jcginfo
 
 op addUserMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
-def addUserMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, jcginfo) =
-  let clsDecls = jcginfo.clsDecls in
-  let (vars, body) = srtTermDelta(srt, trm) in
-  let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
-  if caseTerm?(body)
-    then 
-      case caseTerm(body) of
-	| Var (var,_) -> if equalVar?(varh, var) 
-		       then addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
-		     else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
-  else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
+def addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
+  case rng of
+    | Base (Qualified (q, rngId), _, _) ->
+      (let clsDecls = jcginfo.clsDecls in
+       let (vars, body) = srtTermDelta(srt, trm) in
+       let split = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
+       case split of
+	 | Some(vars1,varh,vars2) ->
+	 (if caseTerm?(body)
+	    then 
+	      case caseTerm(body) of
+		| Var (var,_) -> if equalVar?(varh, var) 
+				   then addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
+				 else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
+	  else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
+	   )
+	| _ -> %TODO
+            jcginfo
+      )
+    | _ -> %TODO
+	jcginfo
 
 op addCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
 def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
@@ -239,8 +253,8 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
       newJcgInfo
 
 
-op concatJcgInfo: JcgInfo * JcgInfo -> JcgInfo
-def concatJcgInfo({clsDecls=cd1},{clsDecls=cd2}) =
+op concatClsDecls: JcgInfo * JcgInfo -> JcgInfo
+def concatClsDecls({clsDecls=cd1},{clsDecls=cd2}) =
   {clsDecls = cd1 ++ cd2}
 
 op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
@@ -252,13 +266,13 @@ op specToJava : Spec -> JSpec
 def specToJava(spc) =
   %let _ = writeLine("Lifting Patterns") in
   %let spc = liftPattern(spc) in
-  let _ = writeLine("Renaming Variables") in
+  let _ = writeLine(";;; Renaming Variables") in
   let spc = distinctVariable(spc) in
-  let _ = writeLine("Generating Classes") in
+  let _ = writeLine(";;; Generating Classes") in
   let jcginfo = clsDeclsFromSorts(spc) in
-  let _ = writeLine("Adding Bodies") in
+  let _ = writeLine(";;; Adding Bodies") in
   let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
-  let _ = writeLine("Ready to Write") in
+  let _ = writeLine(";;; Writing Java file") in
   let clsDecls = jcginfo.clsDecls in
   let clsOrInterfDecls = map (fn (cd) -> ClsDecl(cd)) clsDecls in
   (None, [], clsOrInterfDecls)
