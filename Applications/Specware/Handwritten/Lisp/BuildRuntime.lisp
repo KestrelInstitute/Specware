@@ -33,9 +33,7 @@
 
   ;; a list of files to copy to the distribution directory
   :application-files
-  (list ;;; (in-specware-dir "/Library/")
-	;;; (in-specware-dir "/Applications/Specware/Courses/")
-   "Specware4.cmd")
+  (list (in-specware-dir "Release/Specware4.cmd"))
 
   ;; Possible option instead of excl::delete-directory-and-files call
   ;;  :allow-existing-directory t
@@ -49,11 +47,28 @@
   )
 
 ;;; Copy needed directories to distribution
-(copy-directory (in-specware-dir "Library/")
-		(in-distribution-dir "Library/"))
+(copy-directory (in-specware-dir "Library/Base/")
+		(in-distribution-dir "Library/Base/"))
+(sys:copy-file (in-specware-dir "Library/Base.sw")
+	   (in-distribution-dir "Library/Base.sw"))
+(delete-directory-and-files (in-distribution-dir "Library/Base/CVS/"))
+(delete-file (in-distribution-dir "Library/Base/System.sw"))
 
-(copy-directory (in-specware-dir "Applications/Specware/Courses/")
-		(in-distribution-dir "Courses/"))
+(copy-directory (in-specware-dir "Applications/Specware/Courses/NSA_Sept_2002/")
+		(in-distribution-dir "Examples/"))
+(delete-directory-and-files (in-distribution-dir "Examples/CVS/"))
+(delete-directory-and-files (in-distribution-dir "Examples/Matching/CVS/"))
+(delete-directory-and-files (in-distribution-dir "Examples/simple1/CVS/"))
+(delete-directory-and-files (in-distribution-dir "Examples/simple2/CVS/"))
+(delete-directory-and-files (in-distribution-dir "Examples/simple3/CVS/"))
 
 (copy-directory (in-lisp-dir "xeli/")
 		(in-distribution-dir "Library/IO/Emacs/xeli/"))
+
+(make-directory (in-distribution-dir "Documentation/"))
+(sys:copy-file (in-specware-dir "UserDoc/language-manual/SpecwareLanguageManual.pdf")
+	   (in-distribution-dir "Documentation/SpecwareLanguageManual.pdf"))
+(sys:copy-file (in-specware-dir "UserDoc/tutorial/SpecwareTutorial.pdf")
+	   (in-distribution-dir "Documentation/SpecwareTutorial.pdf"))
+(sys:copy-file (in-specware-dir "UserDoc/user-manual/SpecwareUserManual.pdf")
+	   (in-distribution-dir "Documentation/SpecwareUserManual.pdf"))
