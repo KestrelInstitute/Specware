@@ -61,11 +61,12 @@
 ;;; Normalization utilities
 (defun subst-home (path)
   (when (stringp path)
+    (setq path (substitute #\/ #\\ path))
     (when (and (>= (length path) 2) (equal (subseq path 0 2) "~/"))
       (setq path (concatenate 'string (home-dir) (subseq path 1))))
     (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/")))
     (when #+mswindows t #-mswindows nil
-	  (string-subst path "/Program Files/" "/Progra~1/")))
+	  (setq path (string-subst path "/Program Files/" "/Progra~1/"))))
     path)
 
 (defun strip-extraneous (str)
@@ -116,7 +117,6 @@
 	     (when (and (> len 3)
 			(string= (subseq str (- len 3)) ".sw"))
 	       (setq str (subseq str 0 (- len 3)))))
-	   (setq str (substitute #\/ #\\ str))
 	   (setq str (subst-home str))
 	   (setq *temp-file-in-use?* nil)
 	   (unless (unitIdString? str)
