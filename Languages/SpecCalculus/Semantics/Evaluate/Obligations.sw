@@ -12,6 +12,7 @@ SpecCalc qualifying spec
   % import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
   import Spec/Utilities % for compressDefs and complainIfAmbiguous
   import UnitId/Utilities  % should work for both Specware and PSL
+  import /Languages/MetaSlang/Transformations/DefToAxiom
 
   def SpecCalc.evaluateObligations term = {
      unitId <- getCurrentUID;
@@ -46,19 +47,43 @@ SpecCalc qualifying spec
 					      | _ -> None) 
 					   dom.properties
     in
+    let dom_definitions_not_in_cod
+       = foldriAQualifierMap
+           (fn (qname, name, (names, fixity, (tvs,tau), dom_defs), rdefs) ->
+	     if dom_defs = [] then rdefs
+	       else
+		let
+                  def defsToConjectures defs =
+		    flatten(List.map (fn (_,t) -> defToConjecture(dom,qname,name,t)) defs)
+		in
+		case findAQualifierMap(cod.ops,qname,name) of
+		 | None -> defsToConjectures dom_defs ++ rdefs
+		 | Some(_,_,_, cod_defs) ->
+		   defsToConjectures(diff(dom_defs,cod_defs)) ++ rdefs)
+	   [] dom.ops
+    in
     let import_of_cod = {imports = case findUnitIdforUnit(Spec cod,globalContext) of
 			                  | Some unitId -> [((UnitId (UnitId_Relative unitId),pos), cod)]
 			                  | _ -> [],
 			 importedSpec = Some cod,
-			 localOps     = cod.importInfo.localOps,
-			 localSorts   = cod.importInfo.localSorts}
+			 localOps     = emptyOpNames,
+			 localSorts   = emptySortNames}
     in
     let ob_spc = {importInfo = import_of_cod,
 		  ops        = cod.ops,
 		  sorts      = cod.sorts,
-		  properties = cod.properties ++ translated_dom_axioms}
+		  properties = cod.properties ++ translated_dom_axioms ++ dom_definitions_not_in_cod}
     in
       ob_spc
+
+  op  defToConjecture: Spec * Qualifier * Id * MS.Term -> Properties
+  def defToConjecture(spc,qname,name,term) =
+    let opName = mkQualifiedId(qname, name) in
+    let srt = termSortEnv(spc,term) in
+    let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
+    let liftedFmlas = proverPattern(initialFmla) in
+    %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
+    map (fn(fmla) -> (Conjecture, mkQualifiedId(qname, name^"_def"), [], fmla)) liftedFmlas
 
   op translateTerm: MS.Term * MorphismSortMap * MorphismOpMap -> MS.Term
   def translateTerm (tm, sortMap, opMap) =
