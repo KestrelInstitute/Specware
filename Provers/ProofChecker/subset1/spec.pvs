@@ -1,0 +1,75 @@
+% library:
+
+InfiniteType [T : TYPE] : THEORY
+BEGIN
+  infinite : AXIOM EXISTS (f : [nat -> T]) : injective?(f)
+  nonEmpty : THEOREM EXISTS (x : T) : TRUE
+END InfiniteType
+
+
+% actual spec:
+
+Primitives : THEORY
+BEGIN
+
+  TypeName, Operation, Variable, AxiomName : TYPE+
+  % (without "+", it cannot figure that types are inhabited and issues
+  % a warning that datatype Expression may be empty)
+
+  IMPORTING InfiniteType[TypeName],
+            InfiniteType[Operation],
+            InfiniteType[Variable],
+            InfiniteType[AxiomName]
+
+END Primitives
+
+
+Syntax : THEORY
+BEGIN
+
+  IMPORTING Primitives
+
+  Typee : DATATYPE
+  BEGIN
+    boolean : boolean?
+    named (name : TypeName) : named?
+    arrow (domain, range : Typee) : arrow?
+  END Typee
+
+  Expression : DATATYPE
+  BEGIN
+    varr (varr : Variable) : var?
+    option (op : Operation) : op?
+    app (func, arg : Expression) : app?
+    abs (varr : Variable, typ : Typee, body : Expression) : abs?
+    eq (lhs, rhs : Expression) : eq?
+  END Expression
+
+  ContextElement : DATATYPE
+  BEGIN
+    typeDeclaration (typ : TypeName) : typeDeclaration?
+    opDeclaration (op : Operation, typ : Typee) : opDeclaration?
+    typeDefinition (typ : TypeName, def : Typee) : typeDefinition?
+    opDefinition (op : Operation, def : Expression) : opDefinition?
+    axiomm (name : AxiomName, formul : Expression) : axiomm?
+    varDeclaration (varr : Variable, typ : Typee) : varDeclaration?
+  END ContextElement
+
+  Context : TYPE = finseq [ContextElement]
+
+  contextWithoutVarDeclarations? (cx : Context) : bool =
+    NOT (some (varDeclaration?, cx))
+
+  Spec : TYPE = (contextWithoutVarDeclarations?)
+
+  Judgment : DATATYPE
+  BEGIN
+    wellFormedContext (context : Context) : wellFormedContext?
+    wellFormedSpec (spec : Spec) : wellFormedSpec?
+    wellFormedType (cx : Context, typ : Typee) : wellFormedType?
+    typeEquivalence (cx : Context, lhs : Typee, rhs : Typee) : typeEquivalence?
+    wellTypedExpr (cx : Context, expr : Expression, typ : Typee) : wellTypedExpr?
+    theoremm (cx : Context, form : Expression) : theoremm?
+  END Judgment
+
+END Syntax
