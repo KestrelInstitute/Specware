@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:20  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -185,8 +188,6 @@ public class MetaSlangParserCodeGen {
 		    String newCode = (code.substring(0, pos + 1) +
 			    "\n    ParseObjectRequest request;" + 
 			    "\n    ElementFactory builder;" + 
-			    "\n    Token firstToken;" + 
-			    "\n    Token lastToken;" + 
 			    "\n    Set processedUnitNames = new HashSet();\n" + 
 			    "\n    public void reportError(RecognitionException ex) {" + 
 			    "\n        request.setSyntaxErrors(request.getSyntaxErrors() + 1);" + 

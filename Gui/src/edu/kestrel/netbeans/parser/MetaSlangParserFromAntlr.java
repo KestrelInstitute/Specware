@@ -33,8 +33,6 @@ public class MetaSlangParserFromAntlr extends antlr.LLkParser
 
     ParseObjectRequest request;
     ElementFactory builder;
-    Token firstToken;
-    Token lastToken;
     Set processedUnitNames = new HashSet();
 
     public void reportError(RecognitionException ex) {
@@ -77,8 +75,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	public final void starts() throws RecognitionException, TokenStreamException {
 		
 		
-		firstToken = null;
-		lastToken = null;
+		Token firstToken = LT(1);
 		
 		
 		try {      // for error handling
@@ -100,8 +97,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			}
 			}
-			if (firstToken != null && lastToken != null) {
-			ParserUtil.setBodyBounds(builder, (ElementFactory.Item)builder, firstToken, lastToken);}
+			Token lastToken = LT(0);
+			if (lastToken != null && lastToken.getText() != null) {
+			ParserUtil.setBodyBounds(builder, (ElementFactory.Item)builder, firstToken, lastToken);
+			}
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -117,7 +116,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			ignore=scTerm(null, true);
+			ignore=scTerm(null);
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -130,12 +129,12 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			scDecl(true);
+			scDecl();
 			{
 			_loop6:
 			do {
 				if ((LA(1)==IDENTIFIER)) {
-					scDecl(false);
+					scDecl();
 				}
 				else {
 					break _loop6;
@@ -152,7 +151,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	}
 	
 	private final ElementFactory.Item  scTerm(
-		Token unitIdToken, boolean recordFirstToken
+		Token unitIdToken
 	) throws RecognitionException, TokenStreamException {
 		ElementFactory.Item item;
 		
@@ -164,7 +163,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			item=specDefinition(unitIdToken, recordFirstToken);
+			item=specDefinition(unitIdToken);
 			}
 			if (item != null) builder.setParent(item, null);
 		}
@@ -176,9 +175,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return item;
 	}
 	
-	private final void scDecl(
-		boolean first
-	) throws RecognitionException, TokenStreamException {
+	private final void scDecl() throws RecognitionException, TokenStreamException {
 		
 		
 		String ignore;
@@ -187,11 +184,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			ignore=name(true);
-			unitIdToken = lastToken;
-			if (first) firstToken = unitIdToken;
+			ignore=name();
+			unitIdToken = LT(0);
 			equals();
-			ignore2=scTerm(unitIdToken, false);
+			ignore2=scTerm(unitIdToken);
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -200,9 +196,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		}
 	}
 	
-	private final String  name(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  name() throws RecognitionException, TokenStreamException {
 		String name;
 		
 		
@@ -210,7 +204,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			name=idName(recordToken);
+			name=idName();
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -249,7 +243,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 	}
 	
 	private final ElementFactory.Item  specDefinition(
-		Token unitIdToken, boolean recordFirstToken
+		Token unitIdToken
 	) throws RecognitionException, TokenStreamException {
 		ElementFactory.Item spec;
 		
@@ -267,7 +261,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			begin = LT(1);
 			match(LITERAL_spec);
 			headerEnd = begin;
-			if (recordFirstToken) firstToken = begin;
 			{
 			_loop12:
 			do {
@@ -288,7 +281,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			begin = unitIdToken;
 			}
 			builder.setParent(children, spec);
-			lastToken = end;
 			ParserUtil.setAllBounds(builder, spec, begin, headerEnd, end);
 			
 		}
@@ -338,9 +330,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return item;
 	}
 	
-	private final String  qualifier(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  qualifier() throws RecognitionException, TokenStreamException {
 		String qlf;
 		
 		
@@ -348,7 +338,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			qlf=name(recordToken);
+			qlf=name();
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -358,9 +348,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return qlf;
 	}
 	
-	private final String  idName(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  idName() throws RecognitionException, TokenStreamException {
 		String name;
 		
 		Token  id = null;
@@ -372,7 +360,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			id = LT(1);
 			match(IDENTIFIER);
 			name = id.getText();
-			if (recordToken) lastToken = id;
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -390,7 +377,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			match(LITERAL_import);
-			ignore=scTerm(null, false);
+			ignore=scTerm(null);
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -412,13 +399,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			begin = LT(1);
 			match(LITERAL_sort);
-			name=qualifiableNames(true);
+			name=qualifiableNames();
 			{
 			switch ( LA(1)) {
 			case IDENTIFIER:
 			case LPAREN:
 			{
-				params=formalSortParameters(true);
+				params=formalSortParameters();
 				break;
 			}
 			case LITERAL_endspec:
@@ -435,7 +422,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			}
 			sort = builder.createSort(name, params);
-			ParserUtil.setBounds(builder, sort, begin, lastToken);
+			ParserUtil.setBounds(builder, sort, begin, LT(0));
 			
 		}
 		catch (RecognitionException ex) {
@@ -459,11 +446,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			begin = LT(1);
 			match(LITERAL_op);
-			name=qualifiableNames(false);
+			name=qualifiableNames();
 			nonWordSymbol(":");
-			sort=sort(true);
+			sort=sort();
 			op = builder.createOp(name, sort);
-			ParserUtil.setBounds(builder, op, begin, lastToken);
+			ParserUtil.setBounds(builder, op, begin, LT(0));
 			
 		}
 		catch (RecognitionException ex) {
@@ -474,12 +461,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return op;
 	}
 	
-	private final String  qualifiableNames(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  qualifiableNames() throws RecognitionException, TokenStreamException {
 		String name;
 		
-		Token  end = null;
 		
 		name = null;
 		String member = null;
@@ -490,34 +474,30 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case IDENTIFIER:
 			{
-				name=qualifiableName(recordToken);
+				name=qualifiableName();
 				break;
 			}
 			case LBRACE:
 			{
-				{
 				match(LBRACE);
-				member=qualifiableName(false);
+				member=qualifiableName();
 				name = "{" + member;
 				{
-				_loop22:
+				_loop21:
 				do {
 					if ((LA(1)==COMMA)) {
 						match(COMMA);
-						member=qualifiableName(false);
+						member=qualifiableName();
 						name = name + ", " + member;
 					}
 					else {
-						break _loop22;
+						break _loop21;
 					}
 					
 				} while (true);
 				}
-				end = LT(1);
 				match(RBRACE);
 				name = name + "}";
-				if (recordToken) lastToken = end;
-				}
 				break;
 			}
 			default:
@@ -534,12 +514,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return name;
 	}
 	
-	private final String[]  formalSortParameters(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String[]  formalSortParameters() throws RecognitionException, TokenStreamException {
 		String[] params;
 		
-		Token  end = null;
 		
 		params = null;
 		String param = null;
@@ -550,7 +527,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case IDENTIFIER:
 			{
-				param=idName(recordToken);
+				param=idName();
 				params = new String[]{param};
 				break;
 			}
@@ -558,26 +535,24 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			{
 				match(LPAREN);
 				paramList = new LinkedList();
-				param=idName(false);
+				param=idName();
 				paramList.add(param);
 				{
-				_loop28:
+				_loop27:
 				do {
 					if ((LA(1)==COMMA)) {
 						match(COMMA);
-						param=idName(false);
+						param=idName();
 						paramList.add(param);
 					}
 					else {
-						break _loop28;
+						break _loop27;
 					}
 					
 				} while (true);
 				}
-				end = LT(1);
 				match(RPAREN);
 				params = (String[]) paramList.toArray(new String[]{});
-				if (recordToken) lastToken = end;
 				break;
 			}
 			default:
@@ -594,9 +569,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return params;
 	}
 	
-	private final String  qualifiableName(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  qualifiableName() throws RecognitionException, TokenStreamException {
 		String name;
 		
 		
@@ -607,7 +580,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		try {      // for error handling
 			{
 			if ((LA(1)==IDENTIFIER) && (LA(2)==DOT)) {
-				qlf=qualifier(false);
+				qlf=qualifier();
 				match(DOT);
 			}
 			else if ((LA(1)==IDENTIFIER) && (_tokenSet_9.member(LA(2)))) {
@@ -617,7 +590,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			
 			}
-			name=idName(recordToken);
+			name=idName();
 			if (qlf != null) name = qlf + "." + name;
 		}
 		catch (RecognitionException ex) {
@@ -649,9 +622,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		}
 	}
 	
-	private final String  sort(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  sort() throws RecognitionException, TokenStreamException {
 		String sort;
 		
 		
@@ -661,13 +632,13 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		try {      // for error handling
 			{
-			int _cnt32=0;
-			_loop32:
+			int _cnt31=0;
+			_loop31:
 			do {
 				switch ( LA(1)) {
 				case IDENTIFIER:
 				{
-					text=qualifiableRef(recordToken);
+					text=qualifiableRef();
 					sort = sort + text;
 					break;
 				}
@@ -677,7 +648,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_true:
 				case LITERAL_false:
 				{
-					text=literal(recordToken);
+					text=literal();
 					sort = sort + text;
 					break;
 				}
@@ -690,7 +661,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LBRACKET:
 				case RBRACKET:
 				{
-					text=specialSymbol(recordToken);
+					text=specialSymbol();
 					sort = sort + text;
 					break;
 				}
@@ -714,16 +685,16 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_then:
 				case LITERAL_where:
 				{
-					text=expressionKeyword(recordToken);
+					text=expressionKeyword();
 					sort = sort + text;
 					break;
 				}
 				default:
 				{
-					if ( _cnt32>=1 ) { break _loop32; } else {throw new NoViableAltException(LT(1), getFilename());}
+					if ( _cnt31>=1 ) { break _loop31; } else {throw new NoViableAltException(LT(1), getFilename());}
 				}
 				}
-				_cnt32++;
+				_cnt31++;
 			} while (true);
 			}
 		}
@@ -735,9 +706,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return sort;
 	}
 	
-	private final String  qualifiableRef(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  qualifiableRef() throws RecognitionException, TokenStreamException {
 		String name;
 		
 		
@@ -745,7 +714,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			name=qualifiableName(recordToken);
+			name=qualifiableName();
 		}
 		catch (RecognitionException ex) {
 			reportError(ex);
@@ -755,9 +724,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return name;
 	}
 	
-	private final String  literal(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  literal() throws RecognitionException, TokenStreamException {
 		String text;
 		
 		Token  t1 = null;
@@ -772,7 +739,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_true:
 			case LITERAL_false:
 			{
-				text=booleanLiteral(recordToken);
+				text=booleanLiteral();
 				break;
 			}
 			case NAT_LITERAL:
@@ -780,7 +747,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				t1 = LT(1);
 				match(NAT_LITERAL);
 				text = t1.getText();
-				if (recordToken) lastToken = t1;
 				break;
 			}
 			case CHAR_LITERAL:
@@ -788,7 +754,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				t2 = LT(1);
 				match(CHAR_LITERAL);
 				text = t2.getText();
-				if (recordToken) lastToken = t2;
 				break;
 			}
 			case STRING_LITERAL:
@@ -796,7 +761,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				t3 = LT(1);
 				match(STRING_LITERAL);
 				text = t3.getText();
-				if (recordToken) lastToken = t3;
 				break;
 			}
 			default:
@@ -813,19 +777,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return text;
 	}
 	
-	private final String  specialSymbol(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  specialSymbol() throws RecognitionException, TokenStreamException {
 		String text;
 		
-		Token  t1 = null;
-		Token  t2 = null;
-		Token  t3 = null;
-		Token  t4 = null;
-		Token  t5 = null;
-		Token  t6 = null;
-		Token  t7 = null;
-		Token  t8 = null;
 		
 		text = null;
 		
@@ -834,66 +788,50 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case UBAR:
 			{
-				t1 = LT(1);
 				match(UBAR);
 				text = "_";
-				if (recordToken) lastToken = t1;
 				break;
 			}
 			case LPAREN:
 			{
-				t2 = LT(1);
 				match(LPAREN);
 				text = "(";
-				if (recordToken) lastToken = t2;
 				break;
 			}
 			case RPAREN:
 			{
-				t3 = LT(1);
 				match(RPAREN);
 				text = "}";
-				if (recordToken) lastToken = t3;
 				break;
 			}
 			case LBRACKET:
 			{
-				t4 = LT(1);
 				match(LBRACKET);
 				text = "[";
-				if (recordToken) lastToken = t4;
 				break;
 			}
 			case RBRACKET:
 			{
-				t5 = LT(1);
 				match(RBRACKET);
 				text = "]";
-				if (recordToken) lastToken = t5;
 				break;
 			}
 			case LBRACE:
 			{
-				t6 = LT(1);
 				match(LBRACE);
 				text = "{";
-				if (recordToken) lastToken = t6;
 				break;
 			}
 			case RBRACE:
 			{
-				t7 = LT(1);
 				match(RBRACE);
 				text = "}";
-				if (recordToken) lastToken = t7;
 				break;
 			}
 			case COMMA:
 			{
-				t8 = LT(1);
 				match(COMMA);
 				text = ", ";
-				if (recordToken) lastToken = t8;
 				break;
 			}
 			default:
@@ -910,31 +848,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return text;
 	}
 	
-	private final String  expressionKeyword(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  expressionKeyword() throws RecognitionException, TokenStreamException {
 		String text;
 		
-		Token  t1 = null;
-		Token  t2 = null;
-		Token  t3 = null;
-		Token  t4 = null;
-		Token  t5 = null;
-		Token  t6 = null;
-		Token  t7 = null;
-		Token  t8 = null;
-		Token  t9 = null;
-		Token  t10 = null;
-		Token  t11 = null;
-		Token  t12 = null;
-		Token  t13 = null;
-		Token  t14 = null;
-		Token  t15 = null;
-		Token  t16 = null;
-		Token  t17 = null;
-		Token  t18 = null;
-		Token  t19 = null;
-		Token  t20 = null;
 		
 		text = null;
 		
@@ -943,107 +859,81 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case LITERAL_as:
 			{
-				t1 = LT(1);
 				match(LITERAL_as);
 				text = "as ";
-				if (recordToken) lastToken = t1;
 				break;
 			}
 			case LITERAL_case:
 			{
-				t2 = LT(1);
 				match(LITERAL_case);
 				text = "case ";
-				if (recordToken) lastToken = t2;
 				break;
 			}
 			case LITERAL_choose:
 			{
-				t3 = LT(1);
 				match(LITERAL_choose);
 				text = "choose ";
-				if (recordToken) lastToken = t3;
 				break;
 			}
 			case LITERAL_else:
 			{
-				t4 = LT(1);
 				match(LITERAL_else);
 				text = "else ";
-				if (recordToken) lastToken = t4;
 				break;
 			}
 			case LITERAL_embed:
 			{
-				t5 = LT(1);
 				match(LITERAL_embed);
 				text = "embed ";
-				if (recordToken) lastToken = t5;
 				break;
 			}
 			case 29:
 			{
-				t6 = LT(1);
 				match(29);
 				text = "embed? ";
-				if (recordToken) lastToken = t6;
 				break;
 			}
 			case LITERAL_ex:
 			{
-				t7 = LT(1);
 				match(LITERAL_ex);
 				text = "ex ";
-				if (recordToken) lastToken = t7;
 				break;
 			}
 			case LITERAL_fa:
 			{
-				t8 = LT(1);
 				match(LITERAL_fa);
 				text = "fa ";
-				if (recordToken) lastToken = t8;
 				break;
 			}
 			case LITERAL_fn:
 			{
-				t9 = LT(1);
 				match(LITERAL_fn);
 				text = "fn ";
-				if (recordToken) lastToken = t9;
 				break;
 			}
 			case LITERAL_if:
 			{
-				t10 = LT(1);
 				match(LITERAL_if);
 				text = "if ";
-				if (recordToken) lastToken = t10;
 				break;
 			}
 			case LITERAL_in:
 			{
-				t11 = LT(1);
 				match(LITERAL_in);
 				text = "in ";
-				if (recordToken) lastToken = t11;
 				break;
 			}
 			case LITERAL_let:
 			{
 				{
-				t12 = LT(1);
 				match(LITERAL_let);
 				text = "let ";
-				if (recordToken) lastToken = t12;
 				{
 				switch ( LA(1)) {
 				case LITERAL_def:
 				{
-					t13 = LT(1);
 					match(LITERAL_def);
 					text = "let def ";
-					if (recordToken) lastToken = t13;
 					break;
 				}
 				case LITERAL_endspec:
@@ -1097,58 +987,44 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			case LITERAL_of:
 			{
-				t14 = LT(1);
 				match(LITERAL_of);
 				text = "of ";
-				if (recordToken) lastToken = t14;
 				break;
 			}
 			case LITERAL_project:
 			{
-				t15 = LT(1);
 				match(LITERAL_project);
 				text = "project ";
-				if (recordToken) lastToken = t15;
 				break;
 			}
 			case LITERAL_quotient:
 			{
-				t16 = LT(1);
 				match(LITERAL_quotient);
 				text = "quotient ";
-				if (recordToken) lastToken = t16;
 				break;
 			}
 			case LITERAL_relax:
 			{
-				t17 = LT(1);
 				match(LITERAL_relax);
 				text = "relax ";
-				if (recordToken) lastToken = t17;
 				break;
 			}
 			case LITERAL_restrict:
 			{
-				t18 = LT(1);
 				match(LITERAL_restrict);
 				text = "restrict ";
-				if (recordToken) lastToken = t18;
 				break;
 			}
 			case LITERAL_then:
 			{
-				t19 = LT(1);
 				match(LITERAL_then);
 				text = "then ";
-				if (recordToken) lastToken = t19;
 				break;
 			}
 			case LITERAL_where:
 			{
-				t20 = LT(1);
 				match(LITERAL_where);
 				text = "where ";
-				if (recordToken) lastToken = t20;
 				break;
 			}
 			default:
@@ -1165,9 +1041,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return text;
 	}
 	
-	private final String  booleanLiteral(
-		boolean recordToken
-	) throws RecognitionException, TokenStreamException {
+	private final String  booleanLiteral() throws RecognitionException, TokenStreamException {
 		String text;
 		
 		Token  t1 = null;
@@ -1183,7 +1057,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				t1 = LT(1);
 				match(LITERAL_true);
 				text = "true ";
-				if (recordToken) lastToken = t1;
 				break;
 			}
 			case LITERAL_false:
@@ -1191,7 +1064,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				t2 = LT(1);
 				match(LITERAL_false);
 				text = "false ";
-				if (recordToken) lastToken = t2;
 				break;
 			}
 			default:

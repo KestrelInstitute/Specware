@@ -6,6 +6,10 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/01/31 15:34:08  gilham
+ * Defined nonWordSymbol[String expected] parser rule to handle ":", "=", "*", etc.
+ * used in the language syntax.
+ *
  * Revision 1.3  2003/01/31 00:47:15  gilham
  * Fixed a bug in the lexer rule for block comments.
  *
@@ -46,52 +50,52 @@ options {
 //---------------------------------------------------------------------------
 starts
 {
-    firstToken = null;
-    lastToken = null;
+    Token firstToken = LT(1);
 }
     : (  scToplevelTerm
        | scToplevelDecls
-      )                     {if (firstToken != null && lastToken != null) {
-                                 ParserUtil.setBodyBounds(builder, (ElementFactory.Item)builder, firstToken, lastToken);}}
+      )                     {Token lastToken = LT(0);
+                             if (lastToken != null && lastToken.getText() != null) {
+                                 ParserUtil.setBodyBounds(builder, (ElementFactory.Item)builder, firstToken, lastToken);
+                             }}
     ;
 
 private scToplevelTerm 
 {
     ElementFactory.Item ignore;
 }
-    : ignore=scTerm[null, true]
+    : ignore=scTerm[null]
     ;
 
 private scToplevelDecls
-    : scDecl[true] (scDecl[false])*
+    : scDecl (scDecl)*
     ;
 
-private scDecl[boolean first]
+private scDecl
 {
     String ignore;
     ElementFactory.Item ignore2;
     Token unitIdToken = null;
 }
-    : ignore=name[true]     {unitIdToken = lastToken;
-                             if (first) firstToken = unitIdToken;}
+    : ignore=name           {unitIdToken = LT(0);}
       equals
-      ignore2=scTerm[unitIdToken, false]
+      ignore2=scTerm[unitIdToken]
     ;
 
-private scTerm[Token unitIdToken, boolean recordFirstToken] returns[ElementFactory.Item item]
+private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
 {
     Object[] objEnd = null;
     item = null;
     Object beginEnd = null;
 }
-    : (  item=specDefinition[unitIdToken, recordFirstToken]
-//       | item=scQualify[unitIdToken, recordFirstToken]
+    : (  item=specDefinition[unitIdToken]
+//       | item=scQualify[unitIdToken]
 //       | item=scURI
       )                     {if (item != null) builder.setParent(item, null);}
     ;
 
 //---------------------------------------------------------------------------
-private specDefinition[Token unitIdToken, boolean recordFirstToken] returns[ElementFactory.Item spec]
+private specDefinition[Token unitIdToken] returns[ElementFactory.Item spec]
 {
     spec = null;
     ElementFactory.Item childItem = null;
@@ -99,8 +103,7 @@ private specDefinition[Token unitIdToken, boolean recordFirstToken] returns[Elem
     List children = new LinkedList();
     String name = (unitIdToken == null) ? "" : unitIdToken.getText();
 }
-    : begin:"spec"          {headerEnd = begin;
-                             if (recordFirstToken) firstToken = begin;}
+    : begin:"spec"          {headerEnd = begin;}
       (childItem=declaration
                             {if (childItem != null) children.add(childItem);}
       )*
@@ -110,24 +113,23 @@ private specDefinition[Token unitIdToken, boolean recordFirstToken] returns[Elem
                                  begin = unitIdToken;
                              }
                              builder.setParent(children, spec);
-                             lastToken = end;
                              ParserUtil.setAllBounds(builder, spec, begin, headerEnd, end);
                              }
     ;
 
-private qualifier[boolean recordToken] returns[String qlf]
+private qualifier returns[String qlf]
 {
     qlf = null;
 }
-    : qlf=name[recordToken]
+    : qlf=name
     ;
 
 //!!! TO BE EXTENDED !!!
-private name[boolean recordToken] returns[String name]
+private name returns[String name]
 {
     name = null;
 }
-    : name=idName[recordToken]
+    : name=idName
     ;
 
 private declaration returns[ElementFactory.Item item]
@@ -145,7 +147,7 @@ private importDeclaration
 {
     ElementFactory.Item ignore;
 }
-    : "import" ignore=scTerm[null, false]
+    : "import" ignore=scTerm[null]
     ;
 
 //---------------------------------------------------------------------------
@@ -156,68 +158,65 @@ private sortDeclaration returns[ElementFactory.Item sort]
     String name = null;
 }
     : begin:"sort" 
-      name=qualifiableNames[true] 
-      (params=formalSortParameters[true]
+      name=qualifiableNames
+      (params=formalSortParameters
       )?
                             {sort = builder.createSort(name, params);
-                             ParserUtil.setBounds(builder, sort, begin, lastToken);
+                             ParserUtil.setBounds(builder, sort, begin, LT(0));
                             }
     ;
 
-private qualifiableNames[boolean recordToken] returns[String name]
+private qualifiableNames returns[String name]
 {
     name = null;
     String member = null;
     String qlf = null;
 }
-    : name=qualifiableName[recordToken]
-    | (LBRACE 
-       member=qualifiableName[false]
+    : name=qualifiableName
+    | LBRACE 
+      member=qualifiableName
                             {name = "{" + member;}
-       (COMMA member=qualifiableName[false]
+      (COMMA member=qualifiableName
                             {name = name + ", " + member;}
-       )*
-       end:RBRACE           {name = name + "}";
-                             if (recordToken) lastToken = end;}
-      )
+      )*
+      RBRACE                {name = name + "}";}
+      
                             
     ;
 
-private qualifiableName[boolean recordToken] returns[String name]
+private qualifiableName returns[String name]
 {
     name = null;
     String qlf = null;
 }
-    : (qlf=qualifier[false] DOT)?
-      name=idName[recordToken]
+    : (qlf=qualifier DOT)?
+      name=idName
                             {if (qlf != null) name = qlf + "." + name;}
     ;
 
-private idName[boolean recordToken] returns[String name]
+private idName returns[String name]
 {
     name = null;
 }
-    : id:IDENTIFIER         {name = id.getText();
-                             if (recordToken) lastToken = id;}
+    : id:IDENTIFIER         {name = id.getText();}
     ;
 
-private formalSortParameters[boolean recordToken] returns[String[] params]
+private formalSortParameters returns[String[] params]
 {
     params = null;
     String param = null;
     List paramList = null;
 }
-    : param=idName[recordToken]
+    : param=idName
                             {params = new String[]{param};}
     | LPAREN                {paramList = new LinkedList();}
-      param=idName[false]
+      param=idName
                             {paramList.add(param);}
       (COMMA 
-       param=idName[false]
+       param=idName
                             {paramList.add(param);}
       )* 
-      end:RPAREN            {params = (String[]) paramList.toArray(new String[]{});
-                             if (recordToken) lastToken = end;}
+      RPAREN                {params = (String[]) paramList.toArray(new String[]{});}
     ;
 
 //---------------------------------------------------------------------------
@@ -229,131 +228,96 @@ private opDeclaration returns[ElementFactory.Item op]
     String sort = null;
 }
     : begin:"op" 
-      name=qualifiableNames[false] nonWordSymbol[":"] sort=sort[true]
+      name=qualifiableNames
+      nonWordSymbol[":"] 
+      sort=sort
                             {op = builder.createOp(name, sort);
-                             ParserUtil.setBounds(builder, op, begin, lastToken);
+                             ParserUtil.setBounds(builder, op, begin, LT(0));
                             }
     ;
 
-private sort[boolean recordToken] returns[String sort]
+private sort returns[String sort]
 {
     String text = null;
     sort = "";
 }
-    : (text=qualifiableRef[recordToken]
+    : (text=qualifiableRef
                             {sort = sort + text;}
-       | text=literal[recordToken]
+       | text=literal
                             {sort = sort + text;}
-       | text=specialSymbol[recordToken]
+       | text=specialSymbol
                             {sort = sort + text;}
-       | text=expressionKeyword[recordToken]
+       | text=expressionKeyword
                             {sort = sort + text;}
       )+
     ;
 
-private specialSymbol[boolean recordToken] returns[String text]
+private specialSymbol returns[String text]
 {
     text = null;
 }
-    : t1:UBAR               {text = "_";
-                             if (recordToken) lastToken = t1;}
-    | t2:LPAREN             {text = "(";
-                             if (recordToken) lastToken = t2;}
-    | t3:RPAREN             {text = "}";
-                             if (recordToken) lastToken = t3;}
-    | t4:LBRACKET           {text = "[";
-                             if (recordToken) lastToken = t4;}
-    | t5:RBRACKET           {text = "]";
-                             if (recordToken) lastToken = t5;}
-    | t6:LBRACE             {text = "{";
-                             if (recordToken) lastToken = t6;}
-    | t7:RBRACE             {text = "}";
-                             if (recordToken) lastToken = t7;}
-    | t8:COMMA              {text = ", ";
-                             if (recordToken) lastToken = t8;}
-/*
-    | t9:SEMICOLON          {text = "; ";
-                             if (recordToken) lastToken = t9;}
-    | t10:DOT               {text = ".";
-                             if (recordToken) lastToken = t10;}
-*/
+    : UBAR                  {text = "_";}
+    | LPAREN                {text = "(";}
+    | RPAREN                {text = "}";}
+    | LBRACKET              {text = "[";}
+    | RBRACKET              {text = "]";}
+    | LBRACE                {text = "{";}
+    | RBRACE                {text = "}";}
+    | COMMA                 {text = ", ";}
+//    | SEMICOLON             {text = ";";}
+//    | DOT                   {text = ".";}
     ;
 
-private literal[boolean recordToken] returns[String text]
+private literal returns[String text]
 {
     text = null;
 }
-    : text=booleanLiteral[recordToken]
-    | t1:NAT_LITERAL        {text = t1.getText();
-                             if (recordToken) lastToken = t1;}
-    | t2:CHAR_LITERAL       {text = t2.getText();
-                             if (recordToken) lastToken = t2;}
-    | t3:STRING_LITERAL     {text = t3.getText();
-                             if (recordToken) lastToken = t3;}
+    : text=booleanLiteral
+    | t1:NAT_LITERAL        {text = t1.getText();}
+    | t2:CHAR_LITERAL       {text = t2.getText();}
+    | t3:STRING_LITERAL     {text = t3.getText();}
     ;
 
-private booleanLiteral[boolean recordToken] returns[String text]
+private booleanLiteral returns[String text]
 {
     text = null;
 }
-    : t1:"true"             {text = "true ";
-                             if (recordToken) lastToken = t1;}
-    | t2:"false"            {text = "false ";
-                             if (recordToken) lastToken = t2;}
+    : t1:"true"             {text = "true ";}
+    | t2:"false"            {text = "false ";}
     ;
 
-private expressionKeyword[boolean recordToken] returns[String text]
+private expressionKeyword returns[String text]
 {
     text = null;
 }
-    : t1:"as"               {text = "as ";
-                             if (recordToken) lastToken = t1;}
-    | t2:"case"             {text = "case ";
-                             if (recordToken) lastToken = t2;}
-    | t3:"choose"           {text = "choose ";
-                             if (recordToken) lastToken = t3;}
-    | t4:"else"             {text = "else ";
-                             if (recordToken) lastToken = t4;}
-    | t5:"embed"            {text = "embed ";
-                             if (recordToken) lastToken = t5;}
-    | t6:"embed?"           {text = "embed? ";
-                             if (recordToken) lastToken = t6;}
-    | t7:"ex"               {text = "ex ";
-                             if (recordToken) lastToken = t7;}
-    | t8:"fa"               {text = "fa ";
-                             if (recordToken) lastToken = t8;}
-    | t9:"fn"               {text = "fn ";
-                             if (recordToken) lastToken = t9;}
-    | t10:"if"              {text = "if ";
-                             if (recordToken) lastToken = t10;}
-    | t11:"in"              {text = "in ";
-                             if (recordToken) lastToken = t11;}
-    | (t12:"let"            {text = "let ";
-                             if (recordToken) lastToken = t12;}
-       (t13:"def"           {text = "let def ";
-                             if (recordToken) lastToken = t13;}
+    : "as"                  {text = "as ";}
+    | "case"                {text = "case ";}
+    | "choose"              {text = "choose ";}
+    | "else"                {text = "else ";}
+    | "embed"               {text = "embed ";}
+    | "embed?"              {text = "embed? ";}
+    | "ex"                  {text = "ex ";}
+    | "fa"                  {text = "fa ";}
+    | "fn"                  {text = "fn ";}
+    | "if"                  {text = "if ";}
+    | "in"                  {text = "in ";}
+    | ("let"                {text = "let ";}
+       ("def"               {text = "let def ";}
        )?)
-    | t14:"of"              {text = "of ";
-                             if (recordToken) lastToken = t14;}
-    | t15:"project"         {text = "project ";
-                             if (recordToken) lastToken = t15;}
-    | t16:"quotient"        {text = "quotient ";
-                             if (recordToken) lastToken = t16;}
-    | t17:"relax"           {text = "relax ";
-                             if (recordToken) lastToken = t17;}
-    | t18:"restrict"        {text = "restrict ";
-                             if (recordToken) lastToken = t18;}
-    | t19:"then"            {text = "then ";
-                             if (recordToken) lastToken = t19;}
-    | t20:"where"           {text = "where ";
-                             if (recordToken) lastToken = t20;}
+    | "of"                  {text = "of ";}
+    | "project"             {text = "project ";}
+    | "quotient"            {text = "quotient ";}
+    | "relax"               {text = "relax ";}
+    | "restrict"            {text = "restrict ";}
+    | "then"                {text = "then ";}
+    | "where"               {text = "where ";}
     ; 
 
-private qualifiableRef[boolean recordToken] returns[String name]
+private qualifiableRef returns[String name]
 {
     name = null;
 }
-    : name=qualifiableName[recordToken]
+    : name=qualifiableName
     ;
 
 //---------------------------------------------------------------------------
