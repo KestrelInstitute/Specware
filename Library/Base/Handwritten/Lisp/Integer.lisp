@@ -17,98 +17,105 @@
 
 ;;; The define-compiler-macro definitions are necessary to get efficient arithmetic
 
+;;; Provide a mechanism for allowing the user to declare global restrictions on integers
+(eval-when (compile load)
+  (defvar specware::*integer-impl* 'integer))
+
+(defmacro the-int (x)
+  `(the ,specware::*integer-impl* ,x))
+
 (defun ~ (x) 
   (declare (integer x))
-  (the integer (- 0 x)))
+  (the-int (- 0 x)))
 
 (defun +-2 (x y)
   (declare (integer x y))
-  (the integer (+ x y)))
+  (the-int (+ x y)))
 
 (define-compiler-macro +-2 (x y)
-  `(+ (the integer ,x) (the integer ,y)))
+  `(the-int (+ (the-int ,x) (the-int ,y))))
 
 (defun |!+| (xy)
   (declare (cons xy))
-  (the integer (+ (the integer (car xy)) (the integer (cdr xy)))))
+  (the-int (+ (the-int (car xy)) (the-int (cdr xy)))))
 
 (defun --2 (x y)
   (declare (integer x y))
-  (the integer (- x y)))
+  (the-int (- x y)))
 
 (define-compiler-macro --2 (x y)
-  `(- (the integer ,x) (the integer ,y)))
+  `(the-int (- (the-int ,x) (the-int ,y))))
 
 (defun |!-| (xy)
   (declare (cons xy))
-  (the integer (- (the integer (car xy)) (the integer (cdr xy)))))
+  (the-int (- (the-int (car xy)) (the-int (cdr xy)))))
 
 (defun *-2 (x y)
   (declare (integer x y))
-  (the integer (* x y)))
+  (the-int (* x y)))
 
 (define-compiler-macro *-2 (x y)
-  `(* (the integer ,x) (the integer ,y)))
+  `(the-int (* (the-int ,x) (the-int ,y))))
 
 (defun |!*| (xy)
   (declare (cons xy))
-  (the integer (* (the integer (car xy)) (the integer (cdr xy)))))
+  (the-int (* (the-int (car xy)) (the-int (cdr xy)))))
 
 (defun div-2 (x y)
   (declare (integer x y))
-  (the integer (cl::truncate x y)))
+  (the-int (cl::truncate x y)))
 
 (define-compiler-macro div-2 (x y)
-  `(cl:truncate (the integer ,x) (the integer ,y)))
+  `(the-int (cl:truncate (the-int ,x) (the-int ,y))))
 
 (defun div (xy)
   (declare (cons xy))
-  (the integer (cl:truncate (the integer (car xy)) (the integer (cdr xy)))))
+  (the-int (cl:truncate (the-int (car xy)) (the-int (cdr xy)))))
 
 (defun rem-2 (x y)
   (declare (integer x y))
-  (the integer (cl:rem x y)))
+  (the-int (cl:rem x y)))
 
 (define-compiler-macro rem-2 (x y)
-  `(cl:rem (the integer ,x) (the integer ,y)))
+  `(the-int (cl:rem (the-int ,x) (the-int ,y))))
 
 (defun |!rem| (xy)
   (declare (cons xy))
-  (the integer (cl::rem (the integer (car xy)) (the integer (cdr xy)))))
+  (the-int (cl::rem (the-int (car xy)) (the-int (cdr xy)))))
 
 (defun <-2 (x y)
   (declare (integer x y))
   (the boolean (< x y)))
 
 (define-compiler-macro <-2 (x y)
-  `(< (the integer ,x) (the integer ,y)))
+  `(< (the-int ,x) (the-int ,y)))
 
 (defun |!<| (xy)
   (declare (cons xy))
-  (< (the integer (car xy)) (the integer (cdr xy))))
+  (< (the-int (car xy)) (the-int (cdr xy))))
 
 (defun <=-2 (x y)
   (declare (integer x y))
   (the boolean (<= x y)))
 
 (define-compiler-macro <=-2 (x y)
-  `(<= (the integer ,x) (the integer ,y)))
+  `(<= (the-int ,x) (the-int ,y)))
 
 (defun |!<=| (xy)
   (declare (cons xy))
-  (<= (the integer (car xy)) (the integer (cdr xy))))
+  (<= (the-int (car xy)) (the-int (cdr xy))))
 
 (define-compiler-macro >-2 (x y)
-  `(> (the integer ,x) (the integer ,y)))
+  `(> (the-int ,x) (the-int ,y)))
 
 (define-compiler-macro >=-2 (x y)
-  `(>= (the integer ,x) (the integer ,y)))
+  `(>= (the-int ,x) (the-int ,y)))
 
 (define-compiler-macro max-2 (x y)
-  `(max (the integer ,x) (the integer ,y)))
+  `(max (the-int ,x) (the-int ,y)))
 
 (define-compiler-macro min-2 (x y)
-  `(min (the integer ,x) (the integer ,y)))
+  `(min (the-int ,x) (the-int ,y)))
 
 (define-compiler-macro |!abs| (x)
-  `(abs (the integer ,x)))
+  `(abs (the-int ,x)))
