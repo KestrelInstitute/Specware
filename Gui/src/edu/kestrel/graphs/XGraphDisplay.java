@@ -1291,11 +1291,11 @@ public class XGraphDisplay extends JGraph implements Storable {
         while (iter.hasMoreElements()) {
             DrawingMode dm = (DrawingMode) iter.nextElement();
             if (dm.getImageIcon() == null)
-                btn = new JToggleButton(dm.getMenuString(),true);
+                btn = new JToggleButton(dm.getMenuString(),(dm.equals(graphSpec.getInitialDrawingMode()) ? true : false));
             else
-                btn = new JToggleButton(dm.getImageIcon(),true);
+                btn = new JToggleButton(dm.getImageIcon(),(dm.equals(graphSpec.getInitialDrawingMode()) ? true : false));
             btn.setMargin(new Insets(0,0,0,0));
-            btn.setToolTipText("drawing mode: "+dm.getMenuString());
+            btn.setToolTipText(dm.getMenuString());
             btn.addActionListener(new ActionListenerForDrawingModeToolBar(dm));
             tb.add(btn);
             grp.add(btn);
