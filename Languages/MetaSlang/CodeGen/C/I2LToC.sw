@@ -711,7 +711,19 @@ I2LToC qualifying spec {
 	      
 	   ) (cspc0,block0,errorCaseExpr) unioncases 
 	in
-	(cspc,block,if newdecl? then Comma(Binary(Set,Var(disdecl),cexpr0),ifexpr) else ifexpr)
+	(cspc,block,
+	 if newdecl? then 
+	   %% In general, cexpr0 may be too complex to appear in a C struct accessor form
+	   %% such as (cexpr0 -> attr), so we need to replace such forms by (var -> attr).
+	   %% As long as we're at it, we might just as well replace all the cexpr0 
+	   %% occurrances by var, not just those appearing in struct accessors.
+	   %% Yell at jlm if this latter assumption is faulty.
+	   let var = Var disdecl in
+	   let xx = Binary(Set,var,cexpr0) in
+	   let newif = mapExp (fn expr -> if expr = cexpr0 then var else expr) ifexpr in
+	   Comma(xx,newif)
+	 else 
+	   ifexpr)
 
       | IfExpr(e1,e2,e3) ->
 	let (cspc,block,ce1) = c4Expression(ctxt,cspc,block,e1) in
