@@ -1,16 +1,26 @@
 spec
 
-  (* Types depend on expressions, which depend on types and patterns, which
-  depend on types. So, we define (meta) types for these syntactic entities all
-  together in this spec, along with auxiliary types and ops. *)
-
+  %%%%%%%%%%%%%
+  % primitives:
+  %%%%%%%%%%%%%
 
   import Primitives
 
-  type Variables    = FSeq Variable
-  type Fields       = FSeq Field
-  type Constructors = FSeq Constructor
+  type TypeVariables = FSeq TypeVariable
+  type Variables     = FSeq Variable
+  type Fields        = FSeq Field
+  type Constructors  = FSeq Constructor
 
+  % no need for `TypeNames' or `Operations'
+
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % types, expressions, patterns, and sequences of them:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  (* Types depend on expressions, which depend on types and patterns, which
+  depend on types. So, we first declare the meta types for these syntactic
+  entities, and then define each of them below. *)
 
   type Type        % defined below
   type Expression  % defined below
@@ -144,8 +154,9 @@ spec
   as abbreviations of record types with predefined fields, we must model tuple
   patterns, accordingly.
 
-  Since we explictly model components of sum types that have no type, we also
-  model embedding patterns with no argument pattern, using `Option'. *)
+  A fourth difference is that since we explictly model components of sum types
+  that have no type, we also have to model embedding patterns with no argument
+  pattern. We use `Option' for that. *)
 
   type Pattern? = Option Pattern
 
@@ -157,18 +168,19 @@ spec
     | alias     BoundVar * Pattern
 
 
-  %%%%%%%%%%%%
-  % induction:
-  %%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % induction on types, expressions, and patterns:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  (* The (meta) type definitions above only express fixpoints, not necessarily
-  least ones. We enforce least ones by means of a (quite verbose) induction
-  axiom on types, expressions, and patterns. *)
+  (* The recursive meta type definitions above only express fixpoints, not
+  necessarily least ones. We enforce least ones by means of a (quite verbose)
+  induction axiom on types, expressions, and patterns. *)
 
   axiom inductionTypesExpressionsPatterns is
     fa (predT : Predicate Type,
         predE : Predicate Expression,
         predP : Predicate Pattern)
+
   %%%%% induction base and step for types:
       predT boolean
    && (fa (tv:TypeVariable) predT (variable tv))
@@ -184,6 +196,7 @@ spec
    && (fa (tc:SubOrQuotientTypeConstruct, t:Type, e:Expression)
          predT t && predE e
       => predT (subQuot (tc, t, e)))
+
   %%%%% induction base and step for expressions:
    && (fa (eo:NullaryExprOperator)
          predE (nullary eo))
@@ -226,6 +239,7 @@ spec
       && predE e
       && predE e1
       => predE (nonRecursiveLet (p, e, e1)))
+
   %%%%% induction base and step for patterns:
    && (fa (v:Variable, t:Type)
          predT t
@@ -247,15 +261,32 @@ spec
          predT t
       && predP p
       => predP (alias ((v, t), p)))
+
   %%%%% induction conclusion:
    => (fa(t) predT t)
    && (fa(e) predE e)
    && (fa(p) predP p)
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % ops to construct types/expressions/patterns, resembling Metaslang syntax:
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % more readable meta ops to construct types, expressions, and patterns:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+  (* The meta syntax to represent object syntax, as defined above, is not very
+  readable. For instance, an equation is represented as `binary (equation, e1,
+  e2)'. This readability problem is due to (1) the factoring of types and
+  expressions (which is, on the other hand, convenient to process them; see
+  spec `SyntacticOperations') and (2) prefix notation (vs. infix).
+
+  So, we define some meta ops to construct types, expressions, and patterns in
+  a more readable way. The names and fixities of these ops are meant to
+  resemble object Metaslang syntax as much as possible, e.g. prefix `RELAX'
+  for `relax' and infix `==' for `='. The relative priorities of the infix
+  meta ops are the same as the relative priorities of their object
+  counterparts (with an offset of 10). We also use currying as much as
+  possible, to reduce the number of extra parentheses and commas and thus
+  improve readability. *)
 
   % types:
 
@@ -420,5 +451,59 @@ spec
 
   op AS infixl 30 : BoundVar * Pattern -> Pattern
   def AS (bv,p) = alias (bv, p)
+
+
+  %%%%%%%%%%%
+  % contexts:
+  %%%%%%%%%%%
+
+  (* Unlike LD, we do not require the type variables appearing in an op
+  declaration, type definition, op definition, or axiom to be distinct. This
+  requirement is captured in the inference rules for well-formed contexts, thus
+  keeping the syntax simpler. *)
+
+  type ContextElement =
+    | typeDeclaration TypeName * Nat
+    | opDeclaration   Operation * TypeVariables * Type
+    | typeDefinition  TypeName * TypeVariables * Type
+    | opDefinition    TypeVariables * Operation * Expression
+    | axio(*m*)       TypeVariables * Expression
+    | tVarDeclaration TypeVariable
+    | varDeclaration  Variable * Type
+
+  type Context = FSeq ContextElement
+
+
+  %%%%%%%%
+  % specs:
+  %%%%%%%%
+
+  % no top-level (type) variable declarations:
+  op noVariables? : Context -> Boolean
+  def noVariables? cx =
+    ~(exists? (cx, embed? tVarDeclaration)) &&
+    ~(exists? (cx, embed? varDeclaration))
+
+  type Spec = (Context | noVariables?)
+
+
+  %%%%%%%%%%%%%
+  % judgements:
+  %%%%%%%%%%%%%
+
+  (* In LD, judgements are not syntactic entities, but just meta-statements
+  that certain syntactic entities (contexts, types, etc.) belong to a certain
+  relation (e.g. the binary relation (_ |- _ : TYPE) for well-formed types in
+  context. Here, instead, we model judgements explicitly as syntactic
+  entities. *)
+
+  type Judgement =
+    | wellFormedContext Context
+    | wellFormedSpec    Spec
+    | wellFormedType    Context * Type
+    | typeEquivalence   Context * Type * Type
+    | wellTypedExpr     Context * Expression * Type
+    | wellTypedPatt     Context * Pattern    * Type
+    | theore(*m*)       Context * Expression
 
 endspec

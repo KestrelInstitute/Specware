@@ -2,6 +2,7 @@ spec
 
   import SyntacticOperations
 
+
   (* It is convenient to define a type for rules as syntactic entities, so
   that we can more easily refer to them. The names of the rules are similar to
   those used in LD but they are a bit more explicit.
@@ -116,7 +117,7 @@ spec
     | thRelexatorSurjective
     | thRestriction
     | thQuotienterSurjective
-    | thQuotienterConstancy
+    | thQuotienterEquivClass
     | thChoice
     | thCase
     | thRecursiveLet
@@ -132,6 +133,7 @@ spec
     | thAbbrevExistential
     | thAbbrevExistential1
     | thAbbrevNonRecursiveLet
+
 
   (* The goal is to define a predicate `provable?' on judgements. This
   predicate is the minimum one satisfying all the inference rules. So, we
@@ -858,7 +860,7 @@ spec
       && v ~= v1
       => pj (theore (cx, FA (v, t // q)
                             (EX (v1, t) (QUOTIENT q __ (VAR v1) == VAR v)))))
-    | thQuotienterConstancy ->
+    | thQuotienterEquivClass ->
       (fa (cx:Context, t:Type, q:Expression, v1:Variable, v2:Variable)
          pj (wellFormedType (cx, t // q))
       && v1 ~= v2

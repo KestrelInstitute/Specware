@@ -1,6 +1,6 @@
 spec
 
-  import Judgements
+  import Syntax
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
