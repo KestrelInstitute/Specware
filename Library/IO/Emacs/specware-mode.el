@@ -1205,6 +1205,8 @@ If anyone has a good algorithm for this..."
 		(or (re-search-forward (concat "\\bdef\\s-+" qsym "\\b") nil t)
 		    (re-search-forward	; def fa(a) foo
 		     (concat "\\bdef\\s-+fa\\s-*(.+)\\s-+" qsym "\\b") nil t)
+		    (re-search-forward	; def fa(a) foo
+		     (concat "\\bdef\\s-+\\[.+\\]\\s-+" qsym "\\b") nil t)
 		    (re-search-forward	; def fie.foo
 		     (concat "\\bdef\\s-\\w+\\." qsym "\\b") nil t)
 		    (re-search-forward (concat "\\bop\\s-+" qsym "\\b") nil t)
