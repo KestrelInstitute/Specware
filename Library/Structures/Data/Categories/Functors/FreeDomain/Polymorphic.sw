@@ -21,7 +21,7 @@ in the generating graph, since as a rule, whereas the number of edges
 in the generating graph may be finite, there may not be a finite number
 of paths in the free category.
 
-Note that import Maps are qualified with "Poly". This is to distinguish
+Note that import Maps are qualified with "PolyMap". This is to distinguish
 it from the monomorphic maps used elsewhere. See the file NameSpaces
 for more on this.
 

@@ -1,16 +1,16 @@
 \section{Diagrams in a Polymorphic Category}
 
-Polymorphic diagrams. Shapes are sketches though at present sketches
-are just graphs.
+Polymorphic diagrams. Shapes are sketches.
 
 Note that the functors appearing here are those whose domain is freely
 generated from the shape.
 
+Formally, a diagram is a pair consisting of a shape and
+a functor from the shape into the target category.
+
 \begin{spec}
-let Functors =
-  /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic in
 spec {
-  import Functors
+  import /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Diagram (O,A)
@@ -31,14 +31,13 @@ spec {
       ppString "Functor=",
       ppIndent (ppFunctor (functor dgm))
     ]
-}
 \end{spec}
 
-The pretty printing functions need a rethink.  Perhaps the pretty printer
-should be made part of the sort above.
+A functor has a domain and this must be the same as the shape
+of the diagram. In a concrete representation, the apparent redundancy
+can be eliminated.
 
-What is omitted from this is the requirement that the domain of the functor
-is same as the shape of the diagram.
-
-So the sort above should be subsorted by the following:
-(shape diag) = dom (functor diag).
+\begin{spec}
+  axiom diagram_domain is fa (dgm) (shape dgm) = dom (functor dgm)
+}
+\end{spec}
