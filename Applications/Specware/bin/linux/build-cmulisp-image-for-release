@@ -135,7 +135,12 @@ $LISP <<-XXXX
 
 	(ext:save-lisp "$SPECWARE4/Applications/Specware/bin/linux/Specware4.cmuimage")
 XXXX
-
+# If the load failed (non-zero exit status) then we abort.
+if [ $RC -ne 0 ]; then
+  echo ""
+  echo "Building specware release using cmulisp failed with code $RC, exiting ..."
+  exit $RC
+fi
 
 # Now, build the rest of the directory tree.
 
