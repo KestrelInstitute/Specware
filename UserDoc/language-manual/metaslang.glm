@@ -889,7 +889,7 @@ Given `spec-morphism [[morphism \<replaceable>S\</replaceable> ->
 \<replaceable>M\</replaceable> }]],
 let <replaceable>S'</replaceable> be the result of
 elaborating [[translate \<replaceable>S\</replaceable> by {
-<replaceable>M</replaceable> }]], and let
+\<replaceable>M\</replaceable> }]], and let
 <replaceable>T'</replaceable> be the result of elaborating
 <replaceable>T</replaceable>.
 Then, first, each `sort-name or `op-name introduced in
