@@ -21,7 +21,7 @@
 	    (progn
 	      (warn "Could not find a viewer for postscript! -- Defaulting to (non-existant?) ghostview.")
 	      "ghostview"))
-    (when (equal (excl::shell (format nil "which ~A" program)) 0)
+    (when (equal (excl::shell (format nil "which ~A > /dev/null" program)) 0)
       (return program))))
 
 ;; The following is called from Languages/SpecCalculus/Parser/Handwritten/Lisp/system.lisp
