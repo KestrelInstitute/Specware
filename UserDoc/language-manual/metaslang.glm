@@ -1076,7 +1076,11 @@ is to <replaceable>R</replaceable> as
 <replaceable>D</replaceable>.
 </para>
 <para>
-<replaceable>T</replaceable>
+Except when <replaceable>R</replaceable> introduces, next
+to the `sort-names and `op-names it has in common with
+<replaceable>D</replaceable>, new `sort-names or `op-names
+that also occur in <replaceable>C</replaceable>,
+the result `spec <replaceable>T</replaceable>
 is a categorical colimit of this pushout diagram:
 [[
 ||              \<replaceable>D\</replaceable> ---------> \<replaceable>R\</replaceable>

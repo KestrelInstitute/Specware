@@ -234,7 +234,8 @@ easy reference.
 <formalpara><title>Generate Terms</title>
 <para>
 <<
-||  `target-code-term ::= generate `target-language-name `spec-term [ in `string-literal ]
+||  `target-code-term ::=
+||      generate `target-language-name `spec-term [ in `string-literal ]
 ||  
 ||  `target-language-name ::= lisp
 >>
@@ -245,10 +246,10 @@ easy reference.
 <para>
 <<
 ||  `proof-term ::=
-||  prove `claim-name in `spec-term
-||                  [ with `prover-name ]
-||                  [ using '{ `claim-sequence '} ]
-||                  [ options `prover-options ]
+||      prove `claim-name in `spec-term
+||                      [ with `prover-name ]
+||                      [ using '{ `claim-sequence '} ]
+||                      [ options `prover-options ]
 ||  
 ||  `prover-name ::= snark
 ||  
