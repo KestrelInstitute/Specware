@@ -1,6 +1,6 @@
 This directory contains the following top-level scripts:
 
-Specware4.cmd      -- start Specware in XEmacs mode
+Specware4.cmd      -- start XEmacs and Specware within XEmacs
 Specware-shell.cmd -- start Specware (without XEmacs)
 bootstrap.cmd      -- start XEmacs and bootstrap Specware within XEmacs
 build.cmd          -- start XEmacs and build Specware within XEmacs
