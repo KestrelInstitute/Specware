@@ -72,6 +72,7 @@ be the option to run each (test ...) form in a fresh image.
 			    (make-pathname :directory dir)
 			  dir)))
 	  (loop for dir-item in (directory dirpath)
+		unless (equal (pathname-name dir-item) "CVS")
 		do (let ((subdir (make-pathname :directory (namestring dir-item))))
 		     (when (probe-file subdir)
 		       (run-test-directories-rec-fn (list subdir))))))))
