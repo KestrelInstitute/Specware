@@ -1,9 +1,13 @@
 ;; This file builds a distribution directory for Specware.
 
+(defpackage :Specware)
 
 (defvar Specware-name "Specware4")	; Name of directory and startup files
 (defvar Specware4-dir (specware::getenv "SPECWARE4"))
 (defun in-specware-dir (file) (concatenate 'string Specware4-dir "/" file))
+
+;; Used in patch detection and about-specware command
+(defvar Major-Version-String "4-0")
 
 ;; dist-dir-name is the sub-directory to receive this particular distribution.
 ;; In particular, this is where generate-application puts all its stuff.
@@ -84,14 +88,14 @@
 (specware::delete-directory-and-files (in-distribution-dir "Library/Base/Handwritten/CVS/"))
 (specware::delete-directory-and-files (in-distribution-dir "Library/Base/Handwritten/Lisp/CVS/"))
 
-;;(delete-file (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
+;(delete-file (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
 
 ;;; Emacs stuff from Library/IO (& acl directory, if using acl)
 
 (specware::copy-directory (in-specware-dir "Library/IO/Emacs/")
 		(in-distribution-dir "Library/IO/Emacs/"))
 (specware::delete-directory-and-files (in-distribution-dir "Library/IO/Emacs/CVS/"))
-(delete-file (in-distribution-dir "Library/IO/Emacs/.cvsignore"))
+;(delete-file (in-distribution-dir "Library/IO/Emacs/.cvsignore"))
 (specware::delete-directory-and-files (in-distribution-dir "Library/IO/Emacs/ilisp/CVS/"))
 
 #+allegro
@@ -138,7 +142,7 @@
   (or (ignore-errors
        (let* ((file-name (pathname-name path))
 	      (major-version-len (length Major-Version-String)))
-	 (if (and (string-equal (pathname-type path) specware::*fasl-default-type*)
+	 (if (and (string-equal (pathname-type path) specware::*fasl-type*)
 		  (string-equal file-name "patch-" :end1 6)
 		  (string-equal file-name Major-Version-String
 				:start1 6 :end1 (+ major-version-len 6))
@@ -178,9 +182,9 @@
 
 
 ;;; Copy appropriate Specware image & startup script
-#+cmu
-(specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.cmuimage")
-	       (in-distribution-dir "Specware4.cmuimage"))
+;;;#+cmu
+;;;(specware::copy-file (in-specware-dir "Applications/Specware/bin/linux/Specware4.cmuimage")
+;;;	       (in-distribution-dir "Specware4.cmuimage"))
 #+cmu
 (specware::copy-file (in-specware-dir "Release/Linux/CMU/Specware-cmulisp")
 	       (in-distribution-dir "Specware-cmulisp"))
@@ -191,3 +195,6 @@
 #+(and allegro linux)
   (specware::copy-file (in-specware-dir "Release/Linux/Allegro/Specware4")
 	        (in-distribution-dir "Specware4"))
+
+#+cmu
+(ext:save-lisp (in-distribution-dir "Specware4.cmuimage"))
