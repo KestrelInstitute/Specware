@@ -49,7 +49,7 @@ CUtils qualifying spec {
     }
   op addDefine: CSpec * String -> CSpec
   def addDefine(cspc,X) =
-    let defines = filter (fn(df) -> ~(df = X)) cspc.defines in
+    let defines = filter (fn(df) -> df ~= X) cspc.defines in
     let defines = defines @ [X] in
     {
      name = cspc.name,
@@ -116,7 +116,7 @@ CUtils qualifying spec {
      defines = cspc.defines,
      constDefns = cspc.constDefns,
      vars = cspc.vars,
-     fns = filter (fn(fname0,_,_) -> ~(fname0=fname)) cspc.fns,
+     fns = filter (fn(fname0,_,_) -> fname0 ~= fname) cspc.fns,
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
      varDefns = cspc.varDefns,
@@ -149,7 +149,7 @@ CUtils qualifying spec {
      vars = cspc.vars,
      fns = cspc.fns,
      axioms = cspc.axioms,
-     structUnionTypeDefns = (filter (fn(TypeDefn(tname0,_)) -> ~(tname0=tname)| _ -> true) cspc.structUnionTypeDefns) @ [TypeDefn X],
+     structUnionTypeDefns = (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) cspc.structUnionTypeDefns) @ [TypeDefn X],
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
     }
@@ -205,13 +205,13 @@ CUtils qualifying spec {
      constDefns = cspc.constDefns,
      vars = cspc.vars,
      fns = if overwrite 
-	     then filter (fn(fname0,_,_) -> ~(fname=fname0)) cspc.fns
+	     then filter (fn(fname0,_,_) -> fname ~= fname0) cspc.fns
 	   else cspc.fns,
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
      varDefns = cspc.varDefns,
      fnDefns = (if overwrite 
-		  then (filter (fn(fname0,_,_,_) -> ~(fname=fname0)) cspc.fnDefns)
+		  then (filter (fn(fname0,_,_,_) -> fname ~= fname0) cspc.fnDefns)
 		else cspc.fnDefns) @ [fndefn]
     }
 
@@ -371,7 +371,7 @@ CUtils qualifying spec {
 	  fns = concatnew (fn((fname1,_,_),(fname2,_,_)) -> fname1=fname2) (cspc1.fns,cspc2.fns),
 	  axioms = concatnewEq(cspc1.axioms,cspc2.axioms),
 	  structUnionTypeDefns = %concatnew(cspc1.structUnionTypeDefns,cspc2.structUnionTypeDefns),
-	  foldr (fn(x as TypeDefn(tname,_),res) -> (filter (fn(TypeDefn(tname0,_)) -> ~(tname0=tname)| _ -> true) res) @ [x]
+	  foldr (fn(x as TypeDefn(tname,_),res) -> (filter (fn(TypeDefn(tname0,_)) -> tname0 ~= tname | _ -> true) res) @ [x]
 		 | (x,res) -> res @ [x]) cspc2.structUnionTypeDefns cspc1.structUnionTypeDefns,
 	  varDefns = concatnewEq(cspc1.varDefns,cspc2.varDefns),
 	  fnDefns = concatnew (fn((fname1,_,_,_),(fname2,_,_,_)) -> fname1=fname2) (cspc1.fnDefns,cspc2.fnDefns)
@@ -794,7 +794,7 @@ CUtils qualifying spec {
       let
         def processStructUnion(cspc:CSpec,sut:StructUnionTypeDefn) is
 	  let suts = cspc.structUnionTypeDefns in
-	  if Boolean.~(List.member(sut,suts)) then cspc else
+	  if ~(List.member(sut,suts)) then cspc else
 	  case sut of
 	    | TypeDefn _ -> cspc
 	    | Struct (id,fields) ->
@@ -802,11 +802,11 @@ CUtils qualifying spec {
 	      (case List.find (fn(sut) ->
 			       case sut of
 				 | Struct (id0,fields0) ->
-				   (Boolean.~(id0 = id)) & (equalVarDecls cspc (fields0,fields))
+				   (id0 ~= id) & (equalVarDecls cspc (fields0,fields))
 				 | _ -> false) suts of
 		 | Some (Struct (id0,_)) ->
-		   let suts = List.filter (fn|Struct(id1,_) -> Boolean.~(id1=id0)
-					     | _ -> true) suts
+		   let suts = List.filter (fn |Struct(id1,_) -> (id1 ~= id0)
+					      | _ -> true) suts
 		   in
 		   %let _ = String.writeLine("identifying structs \""^id^"\" and \""^id0^"\"") in
 		   let cspc = setStructUnionTypeDefns(cspc,suts) in
@@ -826,11 +826,11 @@ CUtils qualifying spec {
 	      (case List.find (fn(sut) ->
 			       case sut of
 				 | Union (id0,fields0) ->
-				   (Boolean.~(id0 = id)) & (equalVarDecls cspc (fields0,fields))
+				   (id0 ~= id) & (equalVarDecls cspc (fields0,fields))
 				 | _ -> false) suts of
 		 | Some (Union (id0,_)) ->
-		   let suts = List.filter (fn|Union(id1,_) -> Boolean.~(id1=id0)
-					     | _ -> true) suts
+		   let suts = List.filter (fn | Union(id1,_) -> id1 ~= id0
+					      | _ -> true) suts
 		   in
 		   %let _ = String.writeLine("identifying unions \""^id^"\" and \""^id0^"\"") in
 		   let cspc = setStructUnionTypeDefns(cspc,suts) in
@@ -995,7 +995,7 @@ CUtils qualifying spec {
 	            | None -> fvs
 	in
 	let fvs1 = freeVarsBlock(fvs,(decls,stmts),rec?) in
-	let fvs1 = List.filter (fn(v0) -> ~(v0 = v) & ~(member(v0,fvs0))) fvs1 in
+	let fvs1 = List.filter (fn(v0) -> v0 ~= v & ~(member(v0,fvs0))) fvs1 in
 	concat(fvs0,fvs1)
 
   op freeVars: Block -> List String

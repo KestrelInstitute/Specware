@@ -197,7 +197,7 @@ I2L qualifying spec {
     fpdef.decl.returntype = Void
 
   op isFun: FunDefinition -> Boolean
-  def isFun(fpdef) = Boolean.~(isProc(fpdef))
+  def isFun(fpdef) = ~(isProc(fpdef))
 
 
   op mergeImpUnit: String * List ImpUnit -> ImpUnit
