@@ -59,7 +59,8 @@
 (defun user::test-specware4-parser (&optional (file "Languages/SpecCalculus/Parser/test.spec"))
   ;; (parse-file file *meta-slang-parser* *meta-slang-tokenizer*)
   (format t "~&~%;;; SPECWARE4 Parsing ~A~%" file)
-  (let* ((res1
+  (let* ((*parser-source* (list :file file))
+	 (res1
 	  (car 
 	   (parse-session-results 
 	    (parse-file file
