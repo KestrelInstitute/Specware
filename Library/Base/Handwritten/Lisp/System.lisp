@@ -44,7 +44,7 @@
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
    (namestring #+(or win32 winnt mswindows)
-	       (or (getenv "TEMP") (getenv "TMP")
+	       (or (cdr (getenv "TEMP")) (cdr (getenv "TMP"))
 		   #+allegro
 		   (SYSTEM:temporary-directory))
 	       #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
