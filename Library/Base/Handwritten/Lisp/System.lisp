@@ -95,6 +95,3 @@
 	  ))
     (append (rest (pathname-directory resolved-pathname))
 	    (list (pathname-name resolved-pathname)))))
-
-
-     
