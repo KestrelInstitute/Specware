@@ -520,12 +520,45 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
 
  % this next one is use only in substract spec. it cannot be defined inside
  % the scope of subtractSpec as there is no let-polymorphism in Specware
- op mapDiff : fa (a) AQualifierMap a -> AQualifierMap a -> AQualifierMap a
- def mapDiff xMap yMap =
-     foldriAQualifierMap (fn (qual,id,info,newMap) ->
-       case findAQualifierMap (yMap,qual,id) of
-         | None -> insertAQualifierMap (newMap,qual,id,info)
-         | Some _ -> newMap) emptyAQualifierMap xMap
+ op mapDiffOps : fa (a) AOpMap a -> AOpMap a -> AOpMap a
+ def mapDiffOps xMap yMap =
+     foldriAQualifierMap (fn (qual, id, x_op_info, newMap) ->
+			  case findAQualifierMap (yMap, qual, id) of
+			    %% if there is no y_op_info corresponding to the x_op_info,
+			    %% include the x_op_info, whether it is defined or not
+			    | None              -> insertAQualifierMap (newMap, qual, id, x_op_info)
+			    | Some (_, _, _, []) -> 
+			      (case x_op_info of
+				 %% if there is an undefined y_op_info corresponding to an undefined x_op_info, 
+				 %% omit the x_op_info
+				 | (_, _, _, []) -> newMap
+				 %% if there is an undefined y_op_info corresponding to an defined x_op_info, 
+				 %% include the x_op_info
+			         | _            -> insertAQualifierMap (newMap, qual, id, x_op_info))
+			    %% if there is a defined y_op_info, omit the x_op_info, whether it is defined or not
+			    | _ -> newMap)
+                         emptyAQualifierMap 
+                         xMap
+
+ op mapDiffSorts : fa (a) ASortMap a -> ASortMap a -> ASortMap a
+ def mapDiffSorts xMap yMap =
+     foldriAQualifierMap (fn (qual, id, x_sort_info, newMap) ->
+			  case findAQualifierMap (yMap, qual, id) of
+			    %% if there is no y_sort_info corresponding to the x_sort_info,
+			    %% include the x_sort_info, whether it is defined or not
+			    | None              -> insertAQualifierMap (newMap, qual, id, x_sort_info)
+			    | Some (_, _, []) -> 
+			      (case x_sort_info of
+				 %% if there is an undefined y_sort_info corresponding to an undefined x_sort_info, 
+				 %% omit the x_sort_info
+				 | (_, _, []) -> newMap
+				 %% if there is an undefined y_sort_info corresponding to an defined x_sort_info, 
+				 %% include the x_sort_info
+			         | _            -> insertAQualifierMap (newMap, qual,id, x_sort_info))
+			    %% if there is a defined y_sort_info, omit the x_sort_info, whether it is defined or not
+			    | _ -> newMap)
+                         emptyAQualifierMap 
+                         xMap
 
  def subtractSpec x y = {
      importInfo = x.importInfo,
@@ -534,8 +567,8 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
              l
            else
              Cons (x,l)) [] x.properties,
-     ops = mapDiff x.ops y.ops,
-     sorts = mapDiff x.sorts y.sorts
+     ops   = mapDiffOps   x.ops   y.ops,
+     sorts = mapDiffSorts x.sorts y.sorts
    }
 
  op addDisjointImport: Spec * Spec -> Spec
