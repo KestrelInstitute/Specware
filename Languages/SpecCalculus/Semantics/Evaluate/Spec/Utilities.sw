@@ -392,7 +392,7 @@ SpecCalc qualifying spec
 	    | [] -> ""
 	    | _ ->
 	      (foldl (fn (sort_info, msg) ->
-		      msg ^ "\n" ^ (ppFormat (ppASortInfo sort_info)))
+		      msg ^ "\nsort " ^ (ppFormat (ppASortInfo sort_info)))
 	             "\nAmbiguous sorts:"
 		     ambiguous_sorts)
 	      ^ "\n"
@@ -402,20 +402,12 @@ SpecCalc qualifying spec
 	    | [] -> ""
 	    | _ ->
 	      (foldl (fn (opinfo, msg) ->
-		      msg ^ "\n\n" ^ (ppFormat (ppAOpInfo opinfo)))
+		      msg ^ "\n\nop " ^ (ppFormat (ppAOpInfo opinfo)))
 	             "\nAmbiguous ops: "
 		     ambiguous_ops)
       in
-      %% Print short version first, in case printing of (possibly enormous) spec fails
-      %% while preparing full message.
-      let terse_msg = "\n" ^ sort_msg ^ op_msg ^ "\n" in
-      %% let _ = toScreen terse_msg in
-      %% let error_filename = "ErrorMsg_" ^ (toString (currentTime())) in
-      %% let _ = toScreen ("\nThe full error message will be printed to file: " ^ error_filename ^ "\n") in
-      %% let _ = toScreen ("but this may take several minutes if the spec is large.\n\n") in
-      %% let error_msg = terse_msg ^ " in the following spec:\n\n" ^ (printSpec spc) in
-      %% let _ = writeStringToFile (error_msg, error_filename) in
-      raise (SpecError (position, terse_msg))
+      let msg = "\n" ^ sort_msg ^ op_msg ^ "\n" in
+      raise (SpecError (position, msg))
 
   op compressDefs : Spec -> Spec
   def compressDefs spc =
