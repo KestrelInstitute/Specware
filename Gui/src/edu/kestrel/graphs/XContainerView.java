@@ -497,10 +497,12 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         }
         if (isExpanded()) {
             bounds.add(cbounds);
-            bounds.width = cbounds.width;
-            bounds.height = cbounds.height;
-            bounds.x = cbounds.x;
-            bounds.y = cbounds.y;
+            if (XContainerNode.autoUpdateBounds) {
+                bounds.width = cbounds.width;
+                bounds.height = cbounds.height;
+                bounds.x = cbounds.x;
+                bounds.y = cbounds.y;
+            }
             //bounds = cbounds;
         }
         if (collapsedBounds == null) {

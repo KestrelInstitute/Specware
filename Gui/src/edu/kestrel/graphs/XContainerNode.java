@@ -31,6 +31,11 @@ public abstract class XContainerNode extends XNode {
     
     protected boolean savedIsExpanded;
     
+    /** this flag controls, whether the bounds of an expanded container node is automatically adjusted
+     * to its children's bounds or not.
+     */
+    static public boolean autoUpdateBounds = true;
+    
     /** Creates a new instance of XContainerNode */
     public XContainerNode() {
         super((String)null);
