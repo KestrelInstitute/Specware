@@ -14,7 +14,7 @@
 
 ;; (setq specware-mode-hook
 ;;       '(lambda() "Specware mode hacks"
-;;          (setq sl-indent-level 2         ; conserve on horiz. space
+;;          (setq sw:indent-level 2         ; conserve on horiz. space
 ;;                indent-tabs-mode nil)))    ; whatever
 
 ;; specware-mode-hook is run whenever a new specware-mode buffer is created.
@@ -22,7 +22,7 @@
 ;; loaded. One use for this hook is to select your preferred
 ;; highlighting scheme, like this:
 
-;; Alternatively, you can (require 'sl-font) which uses the font-lock
+;; Alternatively, you can (require 'sw-font) which uses the font-lock
 ;; package instead. 
 
 ;; Finally, there is also an inferior-specware-mode-hook -- see
@@ -37,13 +37,13 @@
 
 ;;; VARIABLES CONTROLLING THE MODE
 
-(defvar sl-indent-level 2
+(defvar sw:indent-level 2
   "*Indentation of blocks in Specware.")
 
-(defvar sl-pipe-indent -2
+(defvar sw:pipe-indent -2
   "*Extra (usually negative) indentation for lines beginning with |.")
 
-(defvar sl-case-indent t
+(defvar sw:case-indent t
   "*How to indent case-of expressions.
     If t:   case expr                     If nil:   case expr of
               of exp1 -> ...                            exp1 -> ...
@@ -52,14 +52,14 @@
 The first seems to be the standard in SL/NJ, but the second
 seems nicer...")
 
-(defvar sl-nested-if-indent t
+(defvar sw:nested-if-indent t
   "*Determine how nested if-then-else will be formatted:
     If t: if exp1 then exp2               If nil:   if exp1 then exp2
           else if exp3 then exp4                    else if exp3 then exp4
           else if exp5 then exp6                         else if exp5 then exp6
                else exp7                                      else exp7")
 
-(defvar sl-type-of-indent t
+(defvar sw:type-of-indent t
   "*How to indent `let' `struct' etc.
     If t:  fun foo bar = let              If nil:  fun foo bar = let
                              val p = 4                 val p = 4
@@ -69,11 +69,11 @@ seems nicer...")
 
 Will not have any effect if the starting keyword is first on the line.")
 
-(defvar sl-electric-semi-mode nil
+(defvar sw:electric-semi-mode nil
   "*If t, `\;' will self insert, reindent the line, and do a newline.
 If nil, just insert a `\;'. (To insert while t, do: C-q \;).")
 
-(defvar sl-paren-lookback 1000
+(defvar sw:paren-lookback 1000
   "*How far back (in chars) the indentation algorithm should look
 for open parenthesis. High value means slow indentation algorithm. A
 value of 1000 (being the equivalent of 20-30 lines) should suffice
@@ -88,42 +88,42 @@ This is a good place to put your preferred key bindings.")
 
 ;;; CODE FOR SPECWARE-MODE 
 
-(defun sl-indent-level (&optional indent)
+(defun sw:indent-level (&optional indent)
    "Allow the user to change the block indentation level. Numeric prefix 
 accepted in lieu of prompting."
    (interactive "NIndentation level: ")
-   (setq sl-indent-level indent))
+   (setq sw:indent-level indent))
 
-(defun sl-pipe-indent (&optional indent)
+(defun sw:pipe-indent (&optional indent)
   "Allow to change pipe indentation level (usually negative). Numeric prefix
 accepted in lieu of prompting."
    (interactive "NPipe Indentation level: ")
-   (setq sl-pipe-indent indent))
+   (setq sw:pipe-indent indent))
 
-(defun sl-case-indent (&optional of)
-  "Toggle sl-case-indent. Prefix means set it to nil."
+(defun sw:case-indent (&optional of)
+  "Toggle sw:case-indent. Prefix means set it to nil."
   (interactive "P")
-  (setq sl-case-indent (and (not of) (not sl-case-indent)))
-  (if sl-case-indent (message "%s" "true") (message "%s" nil)))
+  (setq sw:case-indent (and (not of) (not sw:case-indent)))
+  (if sw:case-indent (message "%s" "true") (message "%s" nil)))
 
-(defun sl-nested-if-indent (&optional of)
-  "Toggle sl-nested-if-indent. Prefix means set it to nil."
+(defun sw:nested-if-indent (&optional of)
+  "Toggle sw:nested-if-indent. Prefix means set it to nil."
   (interactive "P")
-  (setq sl-nested-if-indent (and (not of) (not sl-nested-if-indent)))
-  (if sl-nested-if-indent (message "%s" "true") (message "%s" nil)))
+  (setq sw:nested-if-indent (and (not of) (not sw:nested-if-indent)))
+  (if sw:nested-if-indent (message "%s" "true") (message "%s" nil)))
 
-(defun sl-type-of-indent (&optional of)
-  "Toggle sl-type-of-indent. Prefix means set it to nil."
+(defun sw:type-of-indent (&optional of)
+  "Toggle sw:type-of-indent. Prefix means set it to nil."
   (interactive "P")
-  (setq sl-type-of-indent (and (not of) (not sl-type-of-indent)))
-  (if sl-type-of-indent (message "%s" "true") (message "%s" nil)))
+  (setq sw:type-of-indent (and (not of) (not sw:type-of-indent)))
+  (if sw:type-of-indent (message "%s" "true") (message "%s" nil)))
 
-(defun sl-electric-semi-mode (&optional of)
-  "Toggle sl-electric-semi-mode. Prefix means set it to nil."
+(defun sw:electric-semi-mode (&optional of)
+  "Toggle sw:electric-semi-mode. Prefix means set it to nil."
   (interactive "P")
-  (setq sl-electric-semi-mode (and (not of) (not sl-electric-semi-mode)))
+  (setq sw:electric-semi-mode (and (not of) (not sw:electric-semi-mode)))
   (message "%s" (concat "Electric semi mode is " 
-                   (if sl-electric-semi-mode "on" "off"))))
+                   (if sw:electric-semi-mode "on" "off"))))
 
 (defun insert-circle-s () (interactive) (insert "§"))
 (defun insert-open-quote () (interactive) (insert "«"))
@@ -140,21 +140,22 @@ accepted in lieu of prompting."
 
 ;;; BINDINGS: should be common to the source and process modes...
 
-(defun install-sl-keybindings (map)
+(defun install-sw-keybindings (map)
   ;; Text-formatting commands:
-  (define-key map "\C-c\C-m" 'sl-insert-form)
-  (define-key map "\M-|"     'sl-electric-pipe)
-  (define-key map "\;"       'sl-electric-semi)
-  (define-key map "\M-\t"    'sl-back-to-outer-indent)
+  (define-key map "\C-c\C-m" 'sw:insert-form)
+  (define-key map "\M-|"     'sw:electric-pipe)
+  (define-key map "\;"       'sw:electric-semi)
+  (define-key map "\M-\t"    'sw:back-to-outer-indent)
   (define-key map "\C-j"     'newline-and-indent)
   (define-key map "\177"     'backward-delete-char-untabify)
   (define-key map [backspace] 'backward-delete-char-untabify)
-  (define-key map "\C-\M-\q" 'sl-indent-sexp)
-  (define-key map "\C-\M-\\" 'sl-indent-region)
-  (define-key map "\t"       'sl-indent-line) ; ...except this one
+  (define-key map "\C-\M-\q" 'sw:indent-sexp)
+  (define-key map "\C-\M-\\" 'sw:indent-region)
+  (define-key map "\t"       'sw:indent-line) ; ...except this one
 
   (define-key map "\M-."     'specware-meta-point)
   (define-key map "\M-,"     'continue-specware-meta-point)
+  (define-key map "\C-c\C-p"    'process-specware-file)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
   (define-key map "\C-?"     'backward-delete-char-untabify)
@@ -177,28 +178,21 @@ accepted in lieu of prompting."
 
   ;; Process commands added to specware-mode-map -- these should autoload
 ;;;  (define-key map "\C-c\C-s" 'switch-to-sl)
-;;;  (define-key map "\C-c\C-l" 'sl-load-file)
-;;;  (define-key map "\C-c\C-r" 'sl-send-region)
-;;;  (define-key map "\C-c\C-b" 'sl-send-buffer)
-;;;  (define-key map "\C-c`"    'sl-next-error)
+;;;  (define-key map "\C-c\C-l" 'sw:load-file)
+;;;  (define-key map "\C-c\C-r" 'sw:send-region)
+;;;  (define-key map "\C-c\C-b" 'sw:send-buffer)
+;;;  (define-key map "\C-c`"    'sw:next-error)
   )
 
-(defvar sl-no-doc
-  "This function is part of sl-proc, and has not yet been loaded.
+(defvar sw:no-doc
+  "This function is part of sw:proc, and has not yet been loaded.
 Full documentation will be available after autoloading the function."
   "Documentation for autoload functions.")
-
-;;;(autoload 'switch-to-sl   "sl-proc"   sl-no-doc t)
-;;;(autoload 'sl             "sl-proc"   sl-no-doc t)
-;;;(autoload 'sl-load-file   "sl-proc"   sl-no-doc t)
-;;;(autoload 'sl-send-region "sl-proc"   sl-no-doc t)
-;;;(autoload 'sl-send-buffer "sl-proc"   sl-no-doc t)
-;;;(autoload 'sl-next-error  "sl-proc"   sl-no-doc t)
 
 (defvar specware-mode-map nil "The mode map used in specware-mode.")
 (cond ((not specware-mode-map)
        (setq specware-mode-map (make-sparse-keymap))
-       (install-sl-keybindings specware-mode-map)))
+       (install-sw-keybindings specware-mode-map)))
 
 ;;;(and fi:lisp-listener-mode-map
 ;;;     (install-sl-keybindings fi:lisp-listener-mode-map))
@@ -269,26 +263,26 @@ Variables controlling the indentation
 
 Seek help (\\[describe-variable]) on individual variables to get current settings.
 
-sl-indent-level (default 4)
+sw:indent-level (default 4)
     The indentation of a block of code.
 
-sl-pipe-indent (default -2)
+sw:pipe-indent (default -2)
     Extra indentation of a line starting with \"|\".
 
-sl-case-indent (default nil)
+sw:case-indent (default nil)
     Determine the way to indent case-of expression.
 
-sl-nested-if-indent (default nil)
+sw:nested-if-indent (default nil)
     Determine how nested if-then-else expressions are formatted.
 
-sl-type-of-indent (default t)
+sw:type-of-indent (default t)
     How to indent let, etc.
     Will not have any effect if the starting keyword is first on the line.
 
-sl-electric-semi-mode (default nil)
+sw:electric-semi-mode (default nil)
     If t, a `\;' will reindent line, and perform a newline.
 
-sl-paren-lookback (default 1000)
+sw:paren-lookback (default 1000)
     Determines how far back (in chars) the indentation algorithm should 
     look to match parenthesis. A value of nil, means do not look at all.
 
@@ -317,7 +311,7 @@ Mode map
   (make-local-variable 'paragraph-separate)
   (setq paragraph-separate paragraph-start)
   (make-local-variable 'indent-line-function)
-  (setq indent-line-function 'sl-indent-line)
+  (setq indent-line-function 'sw:indent-line)
   (make-local-variable 'comment-start)
   (setq comment-start "%")
   (make-local-variable 'block-comment-start)
@@ -329,7 +323,7 @@ Mode map
   (make-local-variable 'comment-start-skip)
   (setq comment-start-skip "\\((\\*\\|\`\end{spec}\\)+[ \t]?")
   (make-local-variable 'comment-indent-function)
-  (setq comment-indent-function 'sl-comment-indent)
+  (setq comment-indent-function 'sw:comment-indent)
   (make-local-variable 'font-lock-fontify-region-function)
   (setq font-lock-fontify-region-function
         'specware-font-lock-fontify-region-function)
@@ -373,19 +367,19 @@ Mode map
   (setq lazy-shot-step-size 4096))
 
 ;;; ??
-(defconst sl-pipe-matchers-reg
+(defconst sw:pipe-matchers-reg
   "\\bcase\\b\\|\\bfn\\b\\|\\bfun\\b\
 \\|\\bdatatype\\b"
   "The keywords a `|' can follow.")
 
-(defun sl-electric-pipe ()
+(defun sw:electric-pipe ()
   "Insert a \"|\". 
 Depending on the context insert the name of function, a \"->\" etc."
   (interactive)
   (let ((case-fold-search nil)          ; Case sensitive
         ;(here (point))
         (match (save-excursion
-                 (sl-find-matching-starter sl-pipe-matchers-reg)
+                 (sw:find-matching-starter sw:pipe-matchers-reg)
                  (point)))
         (tmp "  -> ")
         (case-or-handle-exp t))
@@ -425,36 +419,36 @@ Depending on the context insert the name of function, a \"->\" etc."
                 (setq case-or-handle-exp nil))
             (setq tmp " ") (setq case-or-handle-exp nil))))))
     (insert tmp)
-    (sl-indent-line)
+    (sw:indent-line)
     (beginning-of-line)
     (skip-chars-forward "\t ")
     (forward-char (1+ (length tmp)))
     (if case-or-handle-exp
         (forward-char -4))))
 
-(defun sl-electric-semi ()
+(defun sw:electric-semi ()
   "Inserts a \;.
-If variable sl-electric-semi-mode is t, indent the current line, insert 
+If variable sw:electric-semi-mode is t, indent the current line, insert 
 a newline, and indent."
   (interactive)
   (insert "\;")
-  (if sl-electric-semi-mode
+  (if sw:electric-semi-mode
       (reindent-then-newline-and-indent)))
 
 ;;; INDENTATION !!!
 
-(defun sl-mark-function ()
+(defun sw:mark-function ()
   "Synonym for mark-paragraph -- sorry.
 If anyone has a good algorithm for this..."
   (interactive)
   (mark-paragraph))
 
-(defun sl-indent-sexp (n)
+(defun sw:indent-sexp (n)
   (interactive "p")
-  (sl-indent-region (save-excursion (forward-line 1) (point))
+  (sw:indent-region (save-excursion (forward-line 1) (point))
 		    (save-excursion (forward-sexp (or n 1)) (point))))
 
-(defun sl-indent-region (begin end)
+(defun sw:indent-region (begin end)
   "Indent region of Specware code."
   (interactive "r")
   (message "Indenting region...")
@@ -462,15 +456,15 @@ If anyone has a good algorithm for this..."
     (goto-char end) (setq end (point-marker)) (goto-char begin)
     (while (< (point) end)
       (skip-chars-forward "\t\n ")
-      (sl-indent-line)
+      (sw:indent-line)
       (end-of-line))
     (move-marker end nil))
   (message "Indenting region... done"))
 
-(defun sl-indent-line ()
+(defun sw:indent-line ()
   "Indent current line of Specware code."
   (interactive)
-  (let ((indent (sl-calculate-indentation)))
+  (let ((indent (sw:calculate-indentation)))
     (if (/= (current-indentation) indent)
         (save-excursion                 ;; Added 890601 (point now stays)
           (let ((beg (progn (beginning-of-line) (point))))
@@ -481,7 +475,7 @@ If anyone has a good algorithm for this..."
     (if (< (current-column) (current-indentation))
         (skip-chars-forward "\t "))))
 
-(defun sl-back-to-outer-indent ()
+(defun sw:back-to-outer-indent ()
   "Unindents to the next outer level of indentation."
   (interactive)
   (save-excursion
@@ -498,7 +492,7 @@ If anyone has a good algorithm for this..."
                   (setq indent 0))))
             (backward-delete-char-untabify (- start-column indent)))))))
 
-(defconst sl-indent-starters-reg  ; ??
+(defconst sw:indent-starters-reg  ; ??
   "case\\b\\|datatype\\b\
 \\|else\\b\\|fun\\b\\|def\\b\\|if\\b\
 \\|in\\b\\|infix\\b\\|infixr\\b\
@@ -509,7 +503,7 @@ If anyone has a good algorithm for this..."
 \\|\\(initial[ \\t]*\\|final[ \\t]*\\|\\b\\)\\(mode\\|stad\\)\\b\\|prog\\b\\|step\\b"
   "The indentation starters. The next line will be indented.")
 
-(defconst sl-starters-reg  ; ??
+(defconst sw:starters-reg  ; ??
   "\\babstraction\\b\\|\\babstype\\b\\|\\bdatatype\\b\
 \\|\\bdef\\b\\|\\bfun\\b\\|\\bfunctor\\b\\|\\blocal\\b\
 \\|\\binfix\\b\\|\\binfixr\\b\\|\\bsharing\\b\
@@ -517,15 +511,15 @@ If anyone has a good algorithm for this..."
 \\|\\btype\\b\\|\\bval\\b\\|\\bwithtype\\b"
   "The starters of new expressions.")
 
-(defconst sl-end-starters-reg  ; ??
+(defconst sw:end-starters-reg  ; ??
   "\\blet\\b\\|\\blocal\\b\\|\\bsig\\b\\|\\bstruct\\b\\|\\bwith\\b"
   "Matching reg-expression for the \"end\" keyword.")
 
-(defconst sl-starters-indent-after
+(defconst sw:starters-indent-after
   "struct\\b"
   "Indent after these.")
 
-(defun sl-calculate-indentation ()
+(defun sw:calculate-indentation ()
   (save-excursion
     (let ((case-fold-search nil))
       (beginning-of-line)
@@ -542,7 +536,7 @@ If anyone has a good algorithm for this..."
           (end-of-line)
           (skip-chars-forward "\n\t ")
           ;; If we are at eob, just indent 0
-          (if (eobp) 0 (sl-calculate-indentation)))
+          (if (eobp) 0 (sw:calculate-indentation)))
          ;; Continued string ? (Added 890113 lbn)
          ((looking-at "\\\\")
           (save-excursion
@@ -555,12 +549,12 @@ If anyone has a good algorithm for this..."
               0))))
          ;; Are we looking at a case expression ?
          ((looking-at "|.*->")
-          (sl-skip-block)
+          (sw:skip-block)
           (if (looking-at "of\\b")
 	      ;; "case of | ..."  treat like "of"
-	      (progn (sl-re-search-backward "\\bcase\\b")
+	      (progn (sw:re-search-backward "\\bcase\\b")
 		     (+ (current-column) 2))
-	    (sl-re-search-backward "->")
+	    (sw:re-search-backward "->")
 	    ;; Dont get fooled by fn _ -> in case statements (890726)
 	    ;; Changed the regexp a bit, so fn has to be first on line,
 	    ;; in order to let the loop continue (Used to be ".*\bfn....")
@@ -569,146 +563,146 @@ If anyone has a good algorithm for this..."
 	      (while (and loop (save-excursion
 				 (beginning-of-line)
 				 (looking-at "[^ \t]+\\bfn\\b.*->")))
-		(setq loop (sl-re-search-backward "->"))))
+		(setq loop (sw:re-search-backward "->"))))
 	    (beginning-of-line)
 	    (skip-chars-forward "\t ")
 	    (cond
 	     ((looking-at "|") (current-indentation))
-	     ((and sl-case-indent (looking-at "of\\b"))
+	     ((and sw:case-indent (looking-at "of\\b"))
 	      (1+ (current-indentation)))
 	     ((looking-at "fn\\b") (1+ (current-indentation)))
 	     ((looking-at "handle\\b") (+ (current-indentation) 5))
-	     (t (+ (current-indentation) sl-pipe-indent)))))
+	     (t (+ (current-indentation) sw:pipe-indent)))))
          ((looking-at "and\\b")
-          (if (sl-find-matching-starter sl-starters-reg)
+          (if (sw:find-matching-starter sw:starters-reg)
               (current-column)
             0))
          ((looking-at "in\\b")          ; Match the beginning let/local
-          (sl-find-match-indent "in" "\\bin\\b" "\\blocal\\b\\|\\blet\\b"))
+          (sw:find-match-indent "in" "\\bin\\b" "\\blocal\\b\\|\\blet\\b"))
 	 ((looking-at "end-spec\\b")
-	  (sl-find-match-indent "end-spec" "\\bend-spec\\b" "\\bspec\\b"))
+	  (sw:find-match-indent "end-spec" "\\bend-spec\\b" "\\bspec\\b"))
 	 ((looking-at "end-espec\\b")
-	  (sl-find-match-indent "end-espec" "\\bend-espec\\b" "\\bespec\\b"))
+	  (sw:find-match-indent "end-espec" "\\bend-espec\\b" "\\bespec\\b"))
 	 ((looking-at "end-espec-refinement\\b")
-	  (sl-find-match-indent "end-espec-refinement" "\\bend-espec-refinement\\b"
+	  (sw:find-match-indent "end-espec-refinement" "\\bend-espec-refinement\\b"
 				"\\bespec-refinement\\b"))
 	 ((looking-at "end-specmap\\b")
-	  (sl-find-match-indent "end-specmap" "\\bend-specmap\\b" "\\bspecmap\\b"))
+	  (sw:find-match-indent "end-specmap" "\\bend-specmap\\b" "\\bspecmap\\b"))
 	 ((looking-at "end-with\\b")
-	  (sl-find-match-indent "end-with" "\\bend-with\\b" "\\bwith\\b"))
+	  (sw:find-match-indent "end-with" "\\bend-with\\b" "\\bwith\\b"))
 	 ((looking-at "end-progmap\\b")
-	  (sl-find-match-indent "end-progmap" "\\bend-progmap\\b" "\\bprogmap\\b"))
+	  (sw:find-match-indent "end-progmap" "\\bend-progmap\\b" "\\bprogmap\\b"))
 	 ((looking-at "end-module\\b")
-	  (sl-find-match-indent "end-module" "\\bend-module\\b" "\\bmodule\\b"))
+	  (sw:find-match-indent "end-module" "\\bend-module\\b" "\\bmodule\\b"))
 	 ((looking-at "end-while\\b")
-	  (sl-find-match-indent "end-while" "\\bend-while\\b" "\\bwhile\\b"))
+	  (sw:find-match-indent "end-while" "\\bend-while\\b" "\\bwhile\\b"))
 	 ((looking-at "end-mode\\b")
-	  (sl-find-match-indent-for-stad "end-mode" "\\bend-mode\\b" "\\bmode\\b"))
+	  (sw:find-match-indent-for-stad "end-mode" "\\bend-mode\\b" "\\bmode\\b"))
 	 ((looking-at "end-stad\\b")
-	  (sl-find-match-indent-for-stad "end-stad" "\\bend-stad\\b" "\\bstad\\b"))
+	  (sw:find-match-indent-for-stad "end-stad" "\\bend-stad\\b" "\\bstad\\b"))
 	 ((looking-at "end-step\\b")
-	  (sl-find-match-indent "end-step" "\\bend-step\\b" "\\bstep\\b"))
+	  (sw:find-match-indent "end-step" "\\bend-step\\b" "\\bstep\\b"))
 	 ((looking-at "end-if\\b")
-	  (sl-find-match-indent "end-if" "\\bend-if\\b" "\\bif\\b"))
+	  (sw:find-match-indent "end-if" "\\bend-if\\b" "\\bif\\b"))
 	 ((looking-at "end-prog\\b")
-	  (sl-find-match-indent "end-prog" "\\bend-prog\\b" "\\bprog\\b"))
+	  (sw:find-match-indent "end-prog" "\\bend-prog\\b" "\\bprog\\b"))
          ((looking-at "end\\b")         ; Match the beginning
-          (sl-find-match-indent "end" "\\bend\\b" sl-end-starters-reg))
-         ((and sl-nested-if-indent (looking-at "else[\t ]*if\\b"))
-          (sl-re-search-backward "\\bif\\b\\|\\belse\\b")
+          (sw:find-match-indent "end" "\\bend\\b" sw:end-starters-reg))
+         ((and sw:nested-if-indent (looking-at "else[\t ]*if\\b"))
+          (sw:re-search-backward "\\bif\\b\\|\\belse\\b")
           (current-indentation))
          ((looking-at "else\\b")        ; Match the if
-          (sl-find-match-indent "else" "\\belse\\b" "\\bif\\b" t))
+          (sw:find-match-indent "else" "\\belse\\b" "\\bif\\b" t))
          ((looking-at "then\\b")        ; Match the if + extra indentation
-          (+ (sl-find-match-indent "then" "\\bthen\\b" "\\bif\\b" t)
-             sl-indent-level))
-         ((and sl-case-indent (looking-at "of\\b"))
-          (sl-re-search-backward "\\bcase\\b")
+          (+ (sw:find-match-indent "then" "\\bthen\\b" "\\bif\\b" t)
+             sw:indent-level))
+         ((and sw:case-indent (looking-at "of\\b"))
+          (sw:re-search-backward "\\bcase\\b")
           (+ (current-column) 2))
-         ((looking-at sl-starters-reg)
+         ((looking-at sw:starters-reg)
           (let ((start (point)))
-            (sl-backward-sexp)
-            (if (and (looking-at sl-starters-indent-after)
+            (sw:backward-sexp)
+            (if (and (looking-at sw:starters-indent-after)
                      (/= start (point)))
-                (+ (if sl-type-of-indent
+                (+ (if sw:type-of-indent
                        (current-column)
                      (if (progn (beginning-of-line)
                                 (skip-chars-forward "\t ")
                                 (looking-at "|"))
-                         (- (current-indentation) sl-pipe-indent)
+                         (- (current-indentation) sw:pipe-indent)
                        (current-indentation)))
-                   sl-indent-level)
+                   sw:indent-level)
               (beginning-of-line)
               (skip-chars-forward "\t ")
-              (if (and (looking-at sl-starters-indent-after)
+              (if (and (looking-at sw:starters-indent-after)
                        (/= start (point)))
-                  (+ (if sl-type-of-indent
+                  (+ (if sw:type-of-indent
                          (current-column)
                        (current-indentation))
-                     sl-indent-level)
+                     sw:indent-level)
                 (goto-char start)
-                (if (sl-find-matching-starter sl-starters-reg)
+                (if (sw:find-matching-starter sw:starters-reg)
                     (current-column)
                   0)))))
          (t
-          (let ((indent (sl-get-indent)))
+          (let ((indent (sw:get-indent)))
             (cond
              ((looking-at "|")
               ;; Lets see if it is the follower of a function definition
-              (if (sl-find-matching-starter
+              (if (sw:find-matching-starter
                    "\\bfun\\b\\|\\bfn\\b\\|\\band\\b\\|\\bhandle\\b")
                   (cond
-                   ((looking-at "fun\\b") (- (current-column) sl-pipe-indent))
+                   ((looking-at "fun\\b") (- (current-column) sw:pipe-indent))
                    ((looking-at "fn\\b") (1+ (current-column)))
                    ((looking-at "and\\b") (1+ (1+ (current-column))))
                    ((looking-at "handle\\b") (+ (current-column) 5)))
-                (+ indent sl-pipe-indent)))
+                (+ indent sw:pipe-indent)))
              (t
-              (if sl-paren-lookback    ; Look for open parenthesis ?
+              (if sw:paren-lookback    ; Look for open parenthesis ?
                   (max 
 		   (if (looking-at "[])}]") (1- indent) indent)
-		   (sl-get-paren-indent))
+		   (sw:get-paren-indent))
                 indent))))))))))
 
-(defun sl-get-indent ()
+(defun sw:get-indent ()
   (save-excursion
     (let ((case-fold-search nil))
       (beginning-of-line)
       (skip-chars-backward "\t\n; ")
-      (if (looking-at ";") (sl-backward-sexp))
+      (if (looking-at ";") (sw:backward-sexp))
       (cond
-       ((save-excursion (sl-backward-sexp) (looking-at "end\\b"))
-        (- (current-indentation) sl-indent-level))
+       ((save-excursion (sw:backward-sexp) (looking-at "end\\b"))
+        (- (current-indentation) sw:indent-level))
        (t
         (while (/= (current-column) (current-indentation))
-          (sl-backward-sexp))
+          (sw:backward-sexp))
         (skip-chars-forward "\t |")
         (let ((indent (current-column)))
           (skip-chars-forward "\t (")
           (cond
            ;; Started val/fun/structure...
-           ((looking-at sl-indent-starters-reg)
-            (+ (current-column) sl-indent-level))
+           ((looking-at sw:indent-starters-reg)
+            (+ (current-column) sw:indent-level))
            ;; Indent after "->" pattern, but only if its not an fn _ ->
            ;; (890726)
            ((looking-at ".*->")
             (if (looking-at ".*\\bfn\\b.*->")
                 indent
-              (+ indent sl-indent-level)))
+              (+ indent sw:indent-level)))
            ;; else keep the same indentation as previous line
            (t indent))))))))
 
-(defun sl-get-paren-indent ()
+(defun sw:get-paren-indent ()
   (save-excursion
     (let ((levelpar 0)                  ; Level of "()"
           (levelcurl 0)                 ; Level of "{}"
           (levelsqr 0)			; Level of "[]"
 	  (origpoint (save-excursion (point)))
-          (backpoint (max (- (point) sl-paren-lookback) (point-min))))
+          (backpoint (max (- (point) sw:paren-lookback) (point-min))))
       (catch 'loop
         (while (and (/= levelpar 1) (/= levelsqr 1) (/= levelcurl 1))
           (if (re-search-backward "[][{}()]" backpoint t)
-              (if (not (sl-inside-comment-or-string-p))
+              (if (not (sw:inside-comment-or-string-p))
                   (cond
                    ((looking-at "(") (setq levelpar (1+ levelpar)))
                    ((looking-at ")") (setq levelpar (1- levelpar)))
@@ -723,11 +717,11 @@ If anyone has a good algorithm for this..."
 	    (current-column)
 	  (if (save-excursion
 		(forward-char 1)
-		(looking-at sl-indent-starters-reg))
-	      (1+ (+ (current-column) sl-indent-level))
+		(looking-at sw:indent-starters-reg))
+	      (1+ (+ (current-column) sw:indent-level))
 	    (1+ (current-column))))))))
 
-(defun sl-inside-comment-or-string-p ()
+(defun sw:inside-comment-or-string-p ()
   (let ((start (point)))
     (if (or (save-excursion
 	      (condition-case ()
@@ -758,26 +752,26 @@ If anyone has a good algorithm for this..."
                               (not (zerop (% numb 2))))
                          t nil)))))))))
 
-(defun sl-skip-block ()
+(defun sw:skip-block ()
   (let ((case-fold-search nil))
-    (sl-backward-sexp)
+    (sw:backward-sexp)
     (if (looking-at "end\\b")
         (progn
-          (goto-char (sl-find-match-backward "end" "\\bend\\b"
-                                              sl-end-starters-reg))
+          (goto-char (sw:find-match-backward "end" "\\bend\\b"
+                                              sw:end-starters-reg))
           (skip-chars-backward "\n\t "))
       ;; Here we will need to skip backward past if-then-else
       ;; and case-of expression. Please - tell me how !!
       )))
 
-(defun sl-find-match-backward (unquoted-this this match &optional start)
+(defun sw:find-match-backward (unquoted-this this match &optional start)
   (save-excursion
     (let ((case-fold-search nil)
           (level 1)
           (pattern (concat this "\\|" match)))
       (if start (goto-char start))
       (while (not (zerop level))
-        (if (sl-re-search-backward pattern)
+        (if (sw:re-search-backward pattern)
             (setq level (cond
                          ((looking-at this) (1+ level))
                          ((looking-at match) (1- level))))
@@ -785,50 +779,50 @@ If anyone has a good algorithm for this..."
           (error (concat "Unbalanced: " unquoted-this))))
       (point))))
 
-(defun sl-find-match-indent (unquoted-this this match &optional indented)
+(defun sw:find-match-indent (unquoted-this this match &optional indented)
   (save-excursion
-    (goto-char (sl-find-match-backward unquoted-this this match))
-    (if (or sl-type-of-indent indented)
+    (goto-char (sw:find-match-backward unquoted-this this match))
+    (if (or sw:type-of-indent indented)
         (current-column)
       (if (progn
             (beginning-of-line)
             (skip-chars-forward "\t ")
             (looking-at "|"))
-          (- (current-indentation) sl-pipe-indent)
+          (- (current-indentation) sw:pipe-indent)
         (current-indentation)))))
 
-(defun sl-find-match-indent-for-stad (unquoted-this this match &optional indented)
+(defun sw:find-match-indent-for-stad (unquoted-this this match &optional indented)
   (save-excursion
-    (goto-char (sl-find-match-backward unquoted-this this match))
+    (goto-char (sw:find-match-backward unquoted-this this match))
     (current-indentation)))
 
-(defun sl-find-matching-starter (regexp)
+(defun sw:find-matching-starter (regexp)
   (let ((case-fold-search nil)
-        (start-let-point (sl-point-inside-let-etc))
-        (start-up-list (sl-up-list))
+        (start-let-point (sw:point-inside-let-etc))
+        (start-up-list (sw:up-list))
         (found t))
-    (if (sl-re-search-backward regexp)
+    (if (sw:re-search-backward regexp)
         (progn
           (condition-case ()
-              (while (or (/= start-up-list (sl-up-list))
-                         (/= start-let-point (sl-point-inside-let-etc)))
+              (while (or (/= start-up-list (sw:up-list))
+                         (/= start-let-point (sw:point-inside-let-etc)))
                 (re-search-backward regexp))
             (error (setq found nil)))
           found)
       nil)))
 
-(defun sl-point-inside-let-etc ()
+(defun sw:point-inside-let-etc ()
   (let ((case-fold-search nil) (last nil) (loop t) (found t) (start (point)))
     (save-excursion
       (while loop
         (condition-case ()
             (progn
               (re-search-forward "\\bend\\b")
-              (while (sl-inside-comment-or-string-p)
+              (while (sw:inside-comment-or-string-p)
                 (re-search-forward "\\bend\\b"))
               (forward-char -3)
-              (setq last (sl-find-match-backward "end" "\\bend\\b"
-                                                  sl-end-starters-reg last))
+              (setq last (sw:find-match-backward "end" "\\bend\\b"
+                                                  sw:end-starters-reg last))
               (if (< last start)
                   (setq loop nil)
                 (forward-char 3)))
@@ -837,18 +831,18 @@ If anyone has a good algorithm for this..."
           last
         0))))
 
-(defun sl-re-search-backward (regexpr)
+(defun sw:re-search-backward (regexpr)
   (let ((case-fold-search nil) (found t))
     (if (re-search-backward regexpr nil t)
         (progn
           (condition-case ()
-              (while (sl-inside-comment-or-string-p)
+              (while (sw:inside-comment-or-string-p)
                 (re-search-backward regexpr))
             (error (setq found nil)))
           found)
       nil)))
 
-(defun sl-up-list ()
+(defun sw:up-list ()
   (save-excursion
     (condition-case ()
         (progn
@@ -856,7 +850,7 @@ If anyone has a good algorithm for this..."
           (point))
       (error 0))))
 
-(defun sl-backward-sexp ()
+(defun sw:backward-sexp ()
   (condition-case ()
       (progn
         (let ((start (point)))
@@ -866,7 +860,7 @@ If anyone has a good algorithm for this..."
             (backward-sexp 1))))
     (error (forward-char -1))))
 
-(defun sl-comment-indent ()
+(defun sw:comment-indent ()
   (if (looking-at "^(\\*")              ; Existing comment at beginning
       0                                 ; of line stays there.
     (save-excursion
@@ -874,85 +868,85 @@ If anyone has a good algorithm for this..."
       (max (1+ (current-column))        ; Else indent at comment column
            comment-column))))           ; except leave at least one space.
 
-;;; INSERTING PROFORMAS (COMMON SL-FORMS) 
+;;; INSERTING PROFORMAS (COMMON SW FORMS) 
 
-(defconst sl-form-alist
+(defconst sw:form-alist
   '(("let") ("datatype")
     ("case"))
   "The list of regions to auto-insert.")
 
-(defun sl-insert-form ()
+(defun sw:insert-form ()
   "Interactive short-cut to insert a common Specware form."
   (interactive)
   (let ((newline nil)                   ; Did we insert a newline
         (name (completing-read "Form to insert: (default let) "
-                               sl-form-alist nil t nil)))
+                               sw:form-alist nil t nil)))
     ;; default is "let"
     (if (string= name "") (setq name "let"))
     ;; Insert a newline if point is not at empty line
-    (sl-indent-line)                   ; Indent the current line
+    (sw:indent-line)                   ; Indent the current line
     (if (save-excursion (beginning-of-line) (skip-chars-forward "\t ") (eolp))
         ()
       (setq newline t)
       (insert "\n"))
     (condition-case ()
         (cond
-         ((string= name "let") (sl-let))
-         ((string= name "functor") (sl-functor))
-         ((string= name "case") (sl-case))
-         ((string= name "datatype") (sl-datatype)))
+         ((string= name "let") (sw:let))
+         ((string= name "functor") (sw:functor))
+         ((string= name "case") (sw:case))
+         ((string= name "datatype") (sw:datatype)))
       (quit (if newline 
                 (progn
                   (delete-char -1)
                   (beep)))))))
 
-(defun sl-let () 
+(defun sw:let () 
   "Insert a `let in end'."
-  (sl-let-local "let"))
+  (sw:let-local "let"))
 
-(defun sl-case ()
+(defun sw:case ()
   "Insert a case, prompting for case-expresion."
   (let (indent (expr (read-string "Case expr: ")))
     (insert (concat "case " expr))
-    (sl-indent-line)
+    (sw:indent-line)
     (setq indent (current-indentation))
     (end-of-line)
-    (if sl-case-indent
+    (if sw:case-indent
         (progn
           (insert "\n")
           (indent-to (+ 2 indent))
           (insert "of "))
       (insert " of\n")
-      (indent-to (+ indent sl-indent-level)))
+      (indent-to (+ indent sw:indent-level)))
     (save-excursion (insert " -> "))))
 
 
-(defun sl-let-local (starter)
+(defun sw:let-local (starter)
   (let (indent)
     (insert starter)
-    (sl-indent-line)
+    (sw:indent-line)
     (setq indent (current-indentation))
     (end-of-line)
-    (insert "\n") (indent-to (+ sl-indent-level indent))
+    (insert "\n") (indent-to (+ sw:indent-level indent))
     (insert "\n") (indent-to indent)
-    (insert "in\n") (indent-to (+ sl-indent-level indent)) (previous-line 1) (end-of-line)))
+    (insert "in\n") (indent-to (+ sw:indent-level indent)) (previous-line 1) (end-of-line)))
 
-(defun sl-functor ()
+(defun sw:functor ()
   "Insert `functor ? () : ? = struct end', prompting for name/type."
   (let (indent
         (name (read-string "Name of functor: "))
         (signame (read-string "Signature type of functor: ")))
     (insert (concat "functor " name " () : " signame " ="))
-    (sl-indent-line)
+    (sw:indent-line)
     (setq indent (current-indentation))
     (end-of-line)
-    (insert "\n") (indent-to (+ sl-indent-level indent))
+    (insert "\n") (indent-to (+ sw:indent-level indent))
     (insert "struct\n")
-    (indent-to (+ (* 2 sl-indent-level) indent))
-    (insert "\n") (indent-to (+ sl-indent-level indent))
+    (indent-to (+ (* 2 sw:indent-level) indent))
+    (insert "\n") (indent-to (+ sw:indent-level indent))
     (insert "end") (previous-line 1) (end-of-line)))
 
-(defun sl-datatype ()
+(defun sw:datatype ()
   "Insert a `datatype ??? =', prompting for name."
   (let (indent 
         (type (read-string (concat "Type of datatype (default none): ")))
@@ -960,9 +954,13 @@ If anyone has a good algorithm for this..."
     (insert (concat "datatype "
                     (if (string= type "") "" (concat type " "))
                     name " ="))
-    (sl-indent-line)
+    (sw:indent-line)
     (setq indent (current-indentation))
-    (end-of-line) (insert "\n") (indent-to (+ sl-indent-level indent))))
+    (end-of-line) (insert "\n") (indent-to (+ sw:indent-level indent))))
+
+(defun process-specware-file (filename)
+  (interactive "fProcess Specware File: ")
+  (simulate-input-expression (concat ":sw " (expand-file-name filename))))
 
 (defvar *pending-specware-meta-point-results* nil)
 
@@ -1190,13 +1188,6 @@ If anyone has a good algorithm for this..."
 	  (error
 	   ;; save file if user types "yes":
 	   (not (y-or-n-p "Parens are not balanced.  Save file anyway? ")))))))
-
-
-;;; Load the menus, if they can be found on the load-path,
-
-;;;(condition-case nil
-;;;    (require 'sl-menus)
-;;;  (error (message "Sorry, not able to load SL mode menus.")))
 
 ;;; & do the user's customisation
 
