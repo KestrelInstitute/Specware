@@ -460,32 +460,6 @@ If we want the precedence to be optional:
           ((:tuple "theorem")     :|Theorem|)
           ((:tuple "conjecture")  :|Conjecture|)))
 
-;;;  TODO: In doc and code: The syntax for naming axioms is pretty ugly
-(define-sw-parser-rule :LABEL ()
-  :ANY-TEXT-UP-TO-EQUALS)
-
-;;;  TODO: In doc and code: The syntax for naming axioms is pretty ugly
-(define-sw-parser-rule :ANY-TEXT-UP-TO-EQUALS ()
-  (1 (:repeat+ :DESCRIPTION-ELEMENT nil))
-  (make-claim-name 1))
-
-;;;  TODO: In doc and code: The syntax for naming axioms is pretty ugly
-(define-sw-parser-rule :DESCRIPTION-ELEMENT ()
-  (:anyof
-   :NON-KEYWORD-NAME
-   :NUMBER-AS-STRING
-   :STRING
-   :CHARACTER
-   "true" "false" "fa" "ex"
-   "module" "spec" "import" "sort" "def" "op" "end"
-   "fn" "case" "of" "let" "if" "then" "else"
-   "in" "with" "using" "options" "answerVar"
-   "project" "relax" "restrict" "quotient" "choose" "embed" "embed?"
-   "as" "infixl" "infixr"
-   "axiom" "theorem" "conjecture"
-   "_" "::" ":" "->" "|" "(" ")" "[" "]" "{" "}" "*" "." "/" ","
-   ))
-
 (define-sw-parser-rule :NUMBER-AS-STRING ()
   (:tuple (1 :NUMBER))
   (format nil "~D" 1))
