@@ -81,6 +81,10 @@ def addMethDeclToClsDecls(opId, srtId, methDecl, jcginfo) =
   in
     exchangeClsDecls(jcginfo,clsDecls)
 
+(**
+ * this op is responsible for adding the method that correspond to a given op to the right
+ * classes.
+ *)
 op addMethodFromOpToClsDecls: Spec * Id * Sort * Term * JcgInfo -> JcgInfo
 def addMethodFromOpToClsDecls(spc, opId, srt, trm, jcginfo) =
   let dom = srtDom(srt) in
@@ -339,6 +343,8 @@ def addCollectedToJcgInfo({clsDecls=cd,collected=col1},col2) =
 op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
 def exchangeClsDecls({clsDecls=_,collected=col},newClsDecls) =
   {clsDecls=newClsDecls,collected=col}
+
+% --------------------------------------------------------------------------------
 
 % --------------------------------------------------------------------------------
 

@@ -583,7 +583,6 @@ def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
   in
   map (fn(id,_) -> id) missingsummands
 
-
 (**
  * search for the wild pattern in the match and returns the corresponding body, if it
  * has been found.
