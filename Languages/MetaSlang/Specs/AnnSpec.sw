@@ -50,6 +50,8 @@ AnnSpec qualifying spec
 		    localOps     : OpNames,
 		    localSorts   : SortNames}
 
+ sort Aliases = List QualifiedId 
+
  sort Imports = List Import
  sort Import  = SpecRef * Spec
 
@@ -57,10 +59,10 @@ AnnSpec qualifying spec
  sort AOpMap    b = AQualifierMap (AOpInfo   b) % Qualifier -> Id -> info
 
  sort ASortInfo b = SortNames * TyVars * Option (ASort b) 
- sort SortNames   = List QualifiedId 
+ sort SortNames   = Aliases
 
  sort AOpInfo   b = OpNames * Fixity * ASortScheme b * Option (ATerm b) 
- sort OpNames     = List QualifiedId 
+ sort OpNames     = Aliases
 
  sort AProperties   b  = List (AProperty b) 
  sort AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b

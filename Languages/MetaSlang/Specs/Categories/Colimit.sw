@@ -44,11 +44,16 @@ spec
  %%  vqid's provide unique labels of items (of a given type such as sort or op) 
  %%   within specs across entire diagram
 
- sort VQid         = Vertex.Elem * QualifiedId
+ sort VQid          = Vertex.Elem * QualifiedId
 
- sort VQidSortMap  = PolyMap.Map (VQid, SortInfo)
- sort VQidOpMap    = PolyMap.Map (VQid, OpInfo)
- sort VQidPropMap  = PolyMap.Map (VQid, Property) 
+ sort VQidSortMap   = PolyMap.Map (VQid, SortInfo)
+ sort VQidOpMap     = PolyMap.Map (VQid, OpInfo)
+ sort VQidPropMap   = PolyMap.Map (VQid, Property) 
+ sort VQidQidMap    = PolyMap.Map (VQid, QualifiedId)
+
+ % sort Aliases       = List QualifiedId
+ sort QidAliasesMap = AQualifierMap Aliases
+
 
  %% ----
 
@@ -62,11 +67,11 @@ spec
 
  %% ----
 
- op makeVertexToTranslateExprMap : fa (info) SpecDiagram                                                    -> 
-                                             PolyMap.Map (VQid, QualifiedId)                                -> 
-					     AQualifierMap (List QualifiedId)                               -> 
-                			     (Spec -> List (Qualifier * Id * info))                         -> 
-                			     (QualifiedId * QualifiedId * List QualifiedId -> SpecCalc.TranslateRule Position) ->
+ op makeVertexToTranslateExprMap : fa (info) SpecDiagram                                                              -> 
+                                             VQidQidMap                                                             -> 
+                                             QidAliasesMap                                                               -> 
+                			     (Spec -> List (Qualifier * Id * info))                                   -> 
+                			     (QualifiedId * QualifiedId * Aliases -> SpecCalc.TranslateRule Position) ->
                                              PolyMap.Map (Vertex.Elem, SpecCalc.TranslateExpr Position)
 
  %% ----
@@ -113,9 +118,9 @@ spec
   %%     The O(log N) factor is from using tree-based functional maps, so in
   %%     principle that could be optimized to O(1) with clever refinement.
 
-  let sort_qset = computeQuotientSet dg non_base_sorts sortMap in 
-  let op_qset   = computeQuotientSet dg non_base_ops   opMap in 
-  %% let prop_qset = computeQuotientSet dg non_base_props vqid_prop_map in 
+  let sort_qset : QuotientSet = computeQuotientSet dg non_base_sorts sortMap in 
+  let op_qset   : QuotientSet = computeQuotientSet dg non_base_ops   opMap in 
+  %% let prop_qset : QuotientSet = computeQuotientSet dg non_base_props vqid_prop_map in 
 
   %% (2) Disambiguate names appearing in those quotient sets, by (only if necessary) 
   %%     prepending the name of the node that introduced them.
@@ -305,7 +310,7 @@ spec
  %%     This should be O(N log N) as above.
  %% ================================================================================
 
- op computeDisambiguatingVQidRules : QuotientSet -> PolyMap.Map (VQid, QualifiedId) * AQualifierMap (List QualifiedId) 
+ op computeDisambiguatingVQidRules : QuotientSet -> VQidQidMap * QidAliasesMap
 
  def computeDisambiguatingVQidRules qset =
    let qid_to_classes = 
@@ -368,7 +373,8 @@ spec
    in
    %% O(N log N) 
    List.foldl (fn (qclass, result) ->
-	       List.foldl (fn (vqid as (vertex, vertex_qid as Qualified (qualifier, id)), (disambiguating_rules, cod_alias_map)) ->
+	       List.foldl (fn (vqid as (vertex, vertex_qid as Qualified (qualifier, id)), 
+			       (disambiguating_rules, cod_alias_map)) ->
 			   case eval id_to_qualifiers id of
 			     | [_] -> (disambiguating_rules, % unambiguous
 				       insertAQualifierMap (cod_alias_map, qualifier, id, [vertex_qid]))
@@ -377,7 +383,8 @@ spec
                                      insertAQualifierMap (cod_alias_map, qualifier, id, [fresh_qid])))
 	                  result
 			  qclass)
-              ([], emptyAQualifierMap)
+              (emptyMap           : VQidQidMap, 
+	       emptyAQualifierMap : QidAliasesMap)
 	      qset
 
  %% --------------------------------------------------------------------------------
