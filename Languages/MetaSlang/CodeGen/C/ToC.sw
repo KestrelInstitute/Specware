@@ -146,9 +146,15 @@ CGen qualifying spec {
   op showQualifiedId : QualifiedId -> String
   def showQualifiedId (Qualified (qual,id)) =
     if qual = UnQualified then
-      id
+      (fixName id)
     else
-      qual ^ "_" ^ id
+      qual ^ "_" ^ (fixName id)
+
+  op fixName : String -> String
+  def fixName oldName =
+    let def validChar c = (isAlphaNum c) or (c = #_) in
+    let newStr = implode (filter validChar (explode oldName)) in
+    newStr
 \end{spec}
 
 It is reasonable that the next function should disappear. One could argue,

@@ -7,6 +7,7 @@ spec
    foldi (fn((q,id),v,r) -> f(q,id,v,r)) ini qm
  def emptyAQualifierMap  = Map.emptyMap       % 
  def findAQualifierMap(m, x, y) = Map.apply (m, (x,y))
+ def removeAQualifierMap (m, x, y) = Map.remove (m,(x,y))
  def insertAQualifierMap(qm, x, y, v) = Map.update (qm, (x,y), v)
  def mapAQualifierMap = map 
  def mapiAQualifierMap f m = mapi (fn ((q,id),v) -> f(q,id,v)) m

@@ -11,6 +11,7 @@ spec
                                    -> (AQualifierMap a) -> b
  op emptyAQualifierMap  : fa(a) AQualifierMap a
  op findAQualifierMap   : fa(a) AQualifierMap a * Qualifier * Id -> Option a 
+ op removeAQualifierMap   : fa(a) AQualifierMap a * Qualifier * Id -> AQualifierMap a
  op insertAQualifierMap : fa(a) AQualifierMap a * Qualifier * Id * a
                                   -> AQualifierMap a 
  op mapAQualifierMap    : fa(a,b) (a -> b)  -> AQualifierMap a -> AQualifierMap b
