@@ -73,7 +73,11 @@ SpecCalc qualifying spec
 	   dom.ops
     in
     let obligation_props = translated_dom_axioms ++ dom_definitions_not_in_cod in
-    let ob_spc = cod << {elements = cod.elements ++ obligation_props} in
+    let cod_tm = case findUnitIdforUnit(Spec cod,globalContext) of
+		   | Some unitId -> (UnitId (SpecPath_Relative unitId),pos)
+		   | _ -> (Quote (Spec cod),pos)
+    in
+    let ob_spc = cod << {elements =  [Import(cod_tm,cod,cod.elements)] ++ obligation_props} in
     ob_spc
 
   op  defToConjecture: Spec * Qualifier * Id * MS.Term -> SpecElements
