@@ -41,11 +41,7 @@ the canonical URI found.
     optValue <- lookupInLocalContext uri;
     currentURI <- getCurrentURI;
     case optValue of
-      | Some valueInfo -> % {
-            % trace "evaluateURI: found in local context\n";
-	    % No dependency information needed
-            return (valueInfo,currentURI)
-          % }
+      | Some valueInfo -> return (valueInfo,currentURI)
       | None -> {
           % trace "evaluateURI: not found in local context\n";
           uriList <- generateURIList uri;
@@ -54,26 +50,21 @@ the canonical URI found.
           %     ^ "\n\n");
           optValue <- searchContextForURI uriList;
           (case optValue of      
-              | Some value -> % {
-                    % trace "evaluateURI: found in global context\n";
-                    return value
-                  % } 
-              | None -> {
-                    % trace "evaluateURI: not found in global context\n";
-                    uriPathPairs <- foldM
-                      (fn l -> fn uri -> {
-                         pair <- generateFileList uri;
-                         return (l ++ pair)}) [] uriList;
-                    % trace ("evaluateURI: uriPathPairs =\n  "
-                    %        ^ (showList "\n   "
-                    %            (fn (uri,path) -> "\n   "
-                    %               ^ (showURI uri)
-                    %               ^ "\n   path: "
-                    %               ^ path)
-                    %           uriPathPairs)
-                    %        ^ "\n\n");
-                    searchFileSystemForURI position uri uriPathPairs
-                  })
+	     | Some value -> return value
+	     | None -> {% trace "evaluateURI: not found in global context\n";
+	       uriPathPairs <-
+	         foldM
+		  (fn l -> fn uri -> {
+		     pair <- generateFileList uri;
+		     return (l ++ pair)})
+		  [] uriList;
+%		 trace ("evaluateURI: uriPathPairs =\n  "
+%			^ (showList "\n   "
+%			    (fn (uri,path) -> "\n   " ^ (showURI uri) ^ "\n   path: " ^ path)
+%			   uriPathPairs)
+%			^ "\n\n");
+		searchFileSystemForURI (position, uri, uriPathPairs, currentURI)
+	      })
         }
     }
 \end{spec}
@@ -89,20 +80,22 @@ These are called only from evaluateURI.
           optValue <- lookupInGlobalContext uri;
           (case optValue of      
             | Some (value,timeStamp,_) ->
-	      {valid? <- validateCache uri;
-	       return (if valid? then Some ((value,timeStamp,[uri]), uri)
-		        else None)}
+	      (case value of
+		 | InProcess -> raise (CircularDefinition uri)
+		 | _ -> {valid? <- validateCache uri;
+			 return (if valid? then Some ((value,timeStamp,[uri]), uri)
+				 else None)})
             | None -> searchContextForURI rest)
         }
 
-  op searchFileSystemForURI : Position -> RelativeURI -> List (URI * String)
+  op searchFileSystemForURI : Position * RelativeURI * List (URI * String) * URI
                                 -> Env (ValueInfo * URI)
-  def searchFileSystemForURI position relURI pairs =
+  def searchFileSystemForURI (position, relURI, pairs, currentURI) =
     case pairs of
       | [] -> raise (URINotFound (position,relURI))
       | ((uri,fileName)::rest) -> {
             test <- fileExistsAndReadable? fileName;
-            if test then {
+            if test & ~(inSameFile?(uri,currentURI)) then {
               loadFile uri fileName;
               % The desired side effect of loadFile is that
               % the URI is now bound in the global context.
@@ -110,12 +103,21 @@ These are called only from evaluateURI.
               % Either return found value or keep looking:
               case optValue of
                 | Some (value,timeStamp,_)
-		   -> return ((value, timeStamp, [uri]),
-			      uri)
-                | None -> searchFileSystemForURI position relURI rest
+		   -> return ((value, timeStamp, [uri]), uri)
+                | None -> searchFileSystemForURI (position, relURI, rest, currentURI)
             } else
-              searchFileSystemForURI position relURI rest
+              searchFileSystemForURI (position, relURI, rest, currentURI)
           }
+
+  %% Don't want to try loading from file you are currently processing
+  op inSameFile?: URI * URI -> Boolean
+  def inSameFile?(uri,currentURI) =
+    case (uri,currentURI) of
+      | ({path = path1, hashSuffix = Some _},
+	 {path = path2, hashSuffix = _}) ->
+        path1 = path2
+      | _ -> false
+      
 \end{spec}
 
 The following converts a relative URI into a list of candidate canonical
@@ -137,13 +139,14 @@ it easy to experiment with different URI path resolution strategies..
           }
       | URI_Relative {path=newPath,hashSuffix=newSuffix} -> {
             {path=currentPath,hashSuffix=currentSuffix} <- getCurrentURI;
+	    root <- removeLast currentPath;
             (case (currentPath,currentSuffix,newPath,newSuffix) of
               | (_,Some _,[elem],None) ->
-                    return [normalizeURI {path=currentPath,hashSuffix=Some elem}]
-              | (_,_,_,_) -> {
-                    root <- removeLast currentPath;
+                    return [normalizeURI {path=currentPath,hashSuffix=Some elem},
+			    normalizeURI {path=root++newPath,hashSuffix=None}]
+              | (_,_,_,_) -> 
                     return [normalizeURI {path=root++newPath,hashSuffix=newSuffix}]
-                 })
+                 )
           }
 \end{spec}
    
@@ -197,11 +200,12 @@ handled correctly.
         | None -> raise (ParserError fileName)
         | Some specFile -> 
            (case (valueOf specFile) of
-             | Term term -> {
-                   saveURI <- getCurrentURI;
+             | Term term ->
+	         { saveURI <- getCurrentURI;
                    saveLocalContext <- getLocalContext;
                    setCurrentURI uri;
                    clearLocalContext;
+		   bindInGlobalContext uri (InProcess,0,[]);
                    (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
                    setCurrentURI saveURI;
                    setLocalContext saveLocalContext;

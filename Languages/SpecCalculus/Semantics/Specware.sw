@@ -117,13 +117,16 @@ be aborted. This doesn't return.
 \begin{spec}
   op toplevelHandler : fa (a) Exception -> SpecCalc.Env a
   def toplevelHandler except =
-    {saveSpecwareState;			% So work done before error is not lost
+    {cleanupGlobalContext;		% Remove InProcess entries
+     saveSpecwareState;			% So work done before error is not lost
      let message = % "Uncaught exception: " ++
        (case except of
 	 | Fail str -> "Fail: " ^ str
 	 | ParserError fileName ->
 	       "Syntax error in file "
 	     ^ fileName
+	 | CircularDefinition uri ->
+	       "Circular definition: " ^ showURI uri
 	 | SyntaxError msg ->
 	       "Syntax error: "
 	     ^ msg

@@ -95,5 +95,16 @@ List the key/range pairs in order of appearance.
              y
            else
              Cons((u,v),remove y x)
+
+  % op mapPartial : fa(key,a,b) (a -> Option b) -> Map (key,a) -> Map (key,b)
+  def mapPartial f m = 
+    let
+      def g m key item = 
+        case f item of
+          | None -> m
+          | (Some item_) -> update m key item_
+    in
+      foldMap g emptyMap m
+
 }
 \end{spec}

@@ -31,6 +31,7 @@ diagram, morphism etc.  We combine them with a coproduct.
     | Spec  Spec
     | Morph Morphism
     | Diag  (Diagram (Spec,Morphism))
+    | InProcess			  % Used for catching circular definitions
     % | DiagMorph
 
   op showValue : Value -> String
@@ -42,6 +43,7 @@ diagram, morphism etc.  We combine them with a coproduct.
       | Spec  spc -> ppString (printSpec spc)
       | Morph m -> ppString "morphism"
       | Diag  d -> ppString "diagram"
+      | InProcess -> ppString "InProcess"
 \end{spec}
 
 The interpreter maintains state.  The state of the interpreter includes
@@ -127,6 +129,7 @@ enters something bad. A ParserError is raised when the file parser fails.
     | Unsupported  Position * String
     | SyntaxError  String
     | ParserError  String   % Here the string is the filename.
+    | CircularDefinition URI
 \end{spec}
 
 The result of a statement is \verb+Ok+ or an exception.
@@ -164,6 +167,15 @@ are used.
     fn state as (globalContext,localContext,currentURI) ->
       (Ok (evalPartial globalContext uri), state)
 
+  op getGlobalContext : Env GlobalContext
+  def getGlobalContext = fn (globalContext,localContext,uri) ->
+    (Ok globalContext, (globalContext,localContext,uri))
+
+  op setGlobalContext : GlobalContext -> Env ()
+  def setGlobalContext newGlobalContext =
+    fn (globalContext,localContext,uri) ->
+    (Ok (), (newGlobalContext,localContext,uri))
+
   op bindInLocalContext : RelativeURI -> ValueInfo -> Env ()
   def bindInLocalContext uri value =
     fn (globalContext,localContext,currentURI) ->
@@ -194,6 +206,18 @@ are used.
       str <- showGlobalContext;
       print ("global context: " ^ str ^ "\n")
     }
+
+  op cleanupGlobalContext : Env ()
+  def cleanupGlobalContext =
+    { gCtxt <- getGlobalContext;
+      setGlobalContext (mapPartial (fn x as (val,_,_) ->
+				     case val of
+				      | InProcess -> None
+				      | _ -> Some x)
+		          gCtxt)
+     }
+      
+    
 \end{spec}
 
 When evaluating new locally scoped bindings, we need to be able to
