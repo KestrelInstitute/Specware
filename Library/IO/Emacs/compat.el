@@ -34,11 +34,15 @@
   (define-function 'sw:exit-lisp 'fi:exit-lisp)
   (define-function 'sw:switch-to-lisp 'fi:toggle-to-lisp)
   (define-function 'extract-sexp 'fi:extract-list)
-  (define-function 'sw:eval-in-lisp 'fi:eval-in-lisp)
+  (defun sw:eval-in-lisp (str &rest args)
+    (ensure-specware-running)
+    (apply 'fi:eval-in-lisp str args))
   (defun sw:eval-in-lisp-no-value (str &rest args)
+    (ensure-specware-running)
     (apply 'fi:eval-in-lisp str args)
     t)
   (defun sw:eval-in-lisp-dispatch (str &rest args)
+    (ensure-specware-running)
     (apply 'fi:eval-in-lisp-asynchronous str args)
     t)
   (define-function 'inferior-lisp-newline 'fi:inferior-lisp-newline)
@@ -145,13 +149,16 @@
       (goto-char (point-max))))
 
   (defun sw:eval-in-lisp (str &rest args)
+    (ensure-specware-running)
     (car (read-from-string (ilisp-send (apply 'format str args)))))
 
   (defun sw:eval-in-lisp-no-value (str &rest args)
+    (ensure-specware-running)
     (ilisp-send (apply 'format str args))
     t)
 
   (defun sw:eval-in-lisp-dispatch (str &rest args)
+    (ensure-specware-running)
     (ilisp-send (apply 'format str args) nil nil t)
     t)
 

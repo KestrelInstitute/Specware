@@ -113,7 +113,7 @@
 		    sw:common-lisp-image-file)))
 
 
-(defun run-plain-lisp ()
+(defun run-plain-lisp (&optional sleep)
   (interactive)
   (sleep-for 1)
   (when (inferior-lisp-running-p)
@@ -142,12 +142,22 @@
   (let ((log-warning-minimum-level 'error))
     (sw:common-lisp sw:common-lisp-buffer-name
 		    sw:common-lisp-directory
-		    sw:common-lisp-image-name)))
+		    sw:common-lisp-image-name)
+    (when sleep (sleep-for sleep))))
+
+(defvar *specware-auto-start* t
+  "If T start Specware when needed if it not already running")
+
+(defun ensure-specware-running ()
+  (unless (inferior-lisp-running-p)
+    (if *specware-auto-start*
+	(progn (run-specware4)
+	       (sit-for 0.5))
+      (error "Specware not running. Do M-x run-specware4"))))
 
 ;; (simulate-input-expression "t")
 (defun simulate-input-expression (str)
-  (unless (inferior-lisp-running-p)
-    (error "Specware not running. Do M-x run-specware4"))
+  (ensure-specware-running)
   (let ((win (get-buffer-window *specware-buffer-name*)))
     (if win (select-window win)
       (sw:switch-to-lisp)))
@@ -188,7 +198,7 @@
 	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
 	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
 	 (specware4-base-lisp (concat specware4-dir "/Applications/Specware/Specware4-base.lisp")))
-    (run-plain-lisp)
+    (run-plain-lisp 1)
     (when (and (file-exists-p specware4-base-lisp)
 	       (or (not (file-exists-p specware4-lisp))
 		   (file-newer-than-file-p specware4-base-lisp specware4-lisp)))
@@ -213,7 +223,7 @@
 				 (, slash-dir) (, world-name))))))
 
 (defun build-specware4-continue (specware4-dir build-dir bin-dir slash-dir world-name)
-  (run-plain-lisp)
+  (run-plain-lisp 1)
   (unless (inferior-lisp-running-p)
     (sleep-for 1))
   (sw:eval-in-lisp-no-value
