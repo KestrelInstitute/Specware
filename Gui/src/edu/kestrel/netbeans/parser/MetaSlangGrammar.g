@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.16  2003/03/07 23:44:24  weilyn
+ * Added most top level terms
+ *
  * Revision 1.15  2003/02/20 23:17:41  weilyn
  * Fixed parsing of assertions and options in prove term
  *
@@ -740,15 +743,10 @@ private expression returns[String expr]
       )+
     ;
 
+
+//NOn-pattern-ed formalOpParameters code:
 private formalOpParameters returns[String[] params]
 {
-    params = null;
-    List paramList = new LinkedList();
-}
-    : (closedPattern[paramList]
-      )*                    {params = (String[]) paramList.toArray(new String[]{});}
-    ;
-/*{
     params = null;
     String param = null;
     List paramList = null;
@@ -764,54 +762,80 @@ private formalOpParameters returns[String[] params]
        )*)?
       RPAREN                {params = (String[]) paramList.toArray(new String[]{});}
     ;
-*/
 
-private closedPattern[List patternList]
-    : variablePattern[patternList]
-    | wildcardPattern[patternList]
-    | literalPattern[patternList]
-//TODO    | listPattern[patternList]
-//    | tuplePattern[patternList]
-//    | recordPattern[patternList]
-//    | parenthesizedPattern[patternList]
-    ;
-
-private variablePattern[List patternList]
+/*
+private formalOpParameters returns[String[] params]
 {
-    String pattern = null;
+    params = null;
+    List paramList = new LinkedList();
 }
-    : pattern=idName          {patternList.add(pattern);}
+    : (pattern[paramList]
+      )*                    {params = (String[]) paramList.toArray(new String[]{});}
     ;
-
-private wildcardPattern[List patternList]
-    : nonWordSymbol["_"]    {patternList.add("_");}
-    ;
-
-private literalPattern[List patternList]
-{
-    String pattern = null;
-}
-    : pattern=literal         {patternList.add(pattern);}
-    ;
-
-/*TODO private listPattern[List patternList]
-{
-    
-}*/
-
 
 private pattern[List patternList]
-    : annotatedPattern[patternList]
-    | tightPattern[patternList]
+    : basePattern[patternList]
+    | annotatedPattern[patternList]
+    ;
+
+private basePattern[List patternList]
+    : parenPattern[patternList]
+    | bracePattern[patternList]
+    | bracketPattern[patternList]
+    | plainPattern[patternList]
     ;
 
 private annotatedPattern[List patternList]
-    : pattern[patternList]
+{
+    String ignore = null;
+}
+    : basePattern[patternList]
       nonWordSymbol[":"]
       //TODO - fix sort to match grammar: sort
+      ignore=sort
     ;
       
+private parenPattern[List patternList]
+    : LPAREN 
+      (pattern[patternList]
+      )*
+      RPAREN
+    ;
 
+private bracePattern[List patternList]
+    : LBRACE
+      (pattern[patternList]
+      )*
+      RBRACE
+    ;
+
+private bracketPattern[List patternList]
+    : LBRACKET
+      (pattern[patternList]
+      )*
+      RBRACKET
+    ;
+
+private plainPattern[List patternList]
+    : (patternJunk[patternList]
+      )*
+    ;
+
+private patternJunk[List patternList]
+    : literal
+    | expressionKeyword
+    | idName
+    | qualifiableRef
+    | equals
+    | COMMA
+    | nonWordSymbol["::"]
+    | nonWordSymbol["|"]
+    | nonWordSymbol[":"]
+    | nonWordSymbol["->"]
+    | "quotient"
+    | nonWordSymbol["."]
+    ;
+*/
 //---------------------------------------------------------------------------
 private specialSymbol returns[String text]
 {
@@ -965,6 +989,27 @@ BLOCK_COMMENT
 	 | ~('*'|'\n'|'\r')
       )*
       "*)"                  {_ttype = Token.SKIP;}
+    ;
+
+LATEX_COMMENT
+    : ("\\section{"
+       | "\\subsection{"
+       | "\\document{"
+       | "\\end{spec}"
+      )
+      (// '\r' '\n' can be matched in one alternative or by matching
+       // '\r' in one iteration and '\n' in another.  The language
+       // that allows both "\r\n" and "\r" and "\n" to be valid
+       // newlines is ambiguous.  Consequently, the resulting grammar
+       // must be ambiguous.  This warning is shut off.
+       options {generateAmbigWarnings=false;}
+       : { LA(2)!=')' }? '*'
+	 | '\r' '\n'		{newline();}
+	 | '\r'			{newline();}
+	 | '\n'			{newline();}
+	 | ~('\n'|'\r')
+      )*
+      "\\begin{spec}"                  {_ttype = Token.SKIP;}
     ;
 
 //-----------------------------
