@@ -941,6 +941,10 @@ Utilities qualifying spec
      in
      loopP(p,[])
 
+ op  mkLetWithSubst: MS.Term * List (Var * MS.Term) -> MS.Term
+ def mkLetWithSubst(tm,sb) =
+   if sb = [] then tm
+     else mkLet(map (fn (v,val) -> (mkVarPat v,val)) sb, tm)
 
  def mkIfThenElse(t1,t2:MS.Term,t3:MS.Term):MS.Term =
    case t2 of
