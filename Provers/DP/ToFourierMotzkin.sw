@@ -14,6 +14,7 @@ MSToFM qualifying spec
   sort BoolBinOp =
     | And
     | Or
+    | Xor
     | Implies
     | Equiv
 
@@ -23,8 +24,10 @@ MSToFM qualifying spec
   sort FMTerm =
     | Poly FM.Poly
     | Ineq FM.Ineq
+    | IfThenElse FMTerm * FMTerm * FMTerm
     | BoolBinOp BoolBinOp * FMTerm * FMTerm
     | BoolUnOp BoolUnOp * FMTerm
+    | LitBool Boolean
     | UnSupported
 
   op zero: FMTerm
@@ -37,10 +40,17 @@ MSToFM qualifying spec
       | Ineq (i) -> printIneq(i)
       | BoolBinOp (And, t1, t2) -> printFMTerm(t1)^" && "^printFMTerm(t2)
       | BoolBinOp (Implies, t1, t2) -> printFMTerm(t1)^" => "^printFMTerm(t2)
+      | BoolBinOp (XOr, t1, t2) -> printFMTerm(t1)^" ^^ "^printFMTerm(t2)
       | BoolBinOp (Or, t1, t2) -> printFMTerm(t1)^" || "^printFMTerm(t2)
-      | BoolBinOp (Equiv, t1, t2) -> printFMTerm(t1)^" iff "^printFMTerm(t2)
+      | BoolBinOp (Equiv, t1, t2) -> printFMTerm(t1)^" <=> "^printFMTerm(t2)
       | _ -> (fail "UnSupported")
 
+  op fmTrue: FMTerm
+  def fmTrue = LitBool (true)
+
+  op fmFalse: FMTerm
+  def fmFalse = LitBool (false)
+  
   sort TransMap = FMMap.Map(MS.Term, FMTerm)
 
   sort RevTransMap = FMMap.Map(FMTerm, MS.Term)
@@ -60,6 +70,7 @@ MSToFM qualifying spec
     let (fmConc, context) = toFMProperty(context, spc, conc) in
     proveFMProb(fmHyps, fmConc)
 
+(*
   op proveFMProb: List FMTerm * FMTerm -> Boolean
   def proveFMProb(hyps, conc) =
     case conc of
@@ -76,8 +87,79 @@ MSToFM qualifying spec
 			 | Ineq conc -> [negateIneq(conc)]
                          | _ -> [] in
 	FMRefute?(negConcs++hyps)
+*)
 
-  op flattenHyps: List FMTerm -> List FM.Ineq
+  op proveFMProb: List FMTerm * FMTerm -> Boolean
+  def proveFMProb(hyps, conc) =
+    case conc of
+      | BoolBinOp (Implies, fmTerm1, fmTerm2) ->
+      let hyps = cons(fmTerm1, hyps) in
+      let conc = fmTerm2 in
+      proveFMProb(hyps, conc)
+
+      | BoolBinOp (Or, fmTerm1, fmTerm2) ->
+      let hyps = [fmNot(fmTerm1), fmNot(fmTerm2)]++hyps in
+      let conc = LitBool false in
+      proveFMProb(hyps, conc)
+
+      | BoolBinOp(And, fmTerm1, fmTerm2) -> 
+      let res1 = proveFMProb(hyps, fmTerm1) in
+      if res1 then proveFMProb(hyps, fmTerm2) else false
+
+      | BoolBinOp(Xor, fmTerm1, fmTerm2) ->
+      let res1 = proveFMProb(hyps++[fmTerm1], fmNot(fmTerm2)) in
+      if res1 then proveFMProb(hyps++[fmNot(fmTerm1)], fmTerm2) else false
+
+      | BoolBinOp(Equiv, fmTerm1, fmTerm2) ->
+      let res1 = proveFMProb(hyps++[fmTerm1], fmTerm2) in
+      if res1 then proveFMProb(hyps++[fmTerm2], fmTerm1) else false
+
+      | IfThenElse(cond, fmTerm1, fmTerm2) ->
+      let res1 = proveFMProb(hyps++[cond], fmTerm1) in
+      if res1 then proveFMProb(hyps++[fmNot(cond)], fmTerm2) else false
+
+      | Ineq (Neq, poly) -> proveFMProb(hyps++[fmNot(conc)], LitBool false)
+
+      | _ ->
+	let hypsDisjunct = flattenAndSplitHyps(hyps) in
+	let negConcs = case conc of
+	                 | LitBool true -> [falseIneq]
+			 | Ineq conc -> [negateIneq(conc)]
+                         | _ -> [] in
+	all (fn (hyps) -> FMRefute?(negConcs++hyps)) hypsDisjunct
+
+  op flattenAndSplitHyps: List FMTerm -> List (List FM.Ineq)
+  def flattenAndSplitHyps(hyps) =
+    case hyps of
+      | [] -> [[]]
+      | (LitBool true)::rest -> flattenAndSplitHyps(rest)
+      | (LitBool false)::rest -> [[falseIneq]]
+      | (BoolBinOp (Or, t1, t2))::rest -> flattenAndSplitHyps(cons(t1, rest)) ++ flattenAndSplitHyps(cons(t2, rest))
+      | (BoolBinOp (Implies, t1, t2))::rest -> flattenAndSplitHyps(cons(BoolBinOp(Or, fmNot(t1), t2), rest))
+      | (BoolBinOp (And, t1, t2))::rest -> flattenAndSplitHyps([t1, t2]++rest)
+      | (BoolUnOp (Not, (BoolBinOp (Or, t1, t2))))::rest ->
+        flattenAndSplitHyps(Cons(BoolBinOp (And, fmNot(t1), fmNot(t2)), rest))
+      | (BoolUnOp (Not, Ineq (ineq)))::rest -> map (fn (hyps) -> cons(negateIneq(ineq), hyps)) (flattenAndSplitHyps(rest))
+      | (BoolBinOp(Xor, fmTerm1, fmTerm2))::rest ->
+	let imp1 = BoolBinOp (Implies, fmTerm1, fmNot(fmTerm2)) in
+	let imp2 = BoolBinOp (Implies, fmNot(fmTerm1), fmTerm2) in
+	flattenAndSplitHyps(Cons(BoolBinOp (And, imp1, imp2), rest))
+      | (BoolBinOp(Equiv, fmTerm1, fmTerm2))::rest ->
+	let imp1 = BoolBinOp (Implies, fmTerm1, fmTerm2) in
+	let imp2 = BoolBinOp (Implies, fmTerm2, fmTerm1) in
+	flattenAndSplitHyps(Cons(BoolBinOp (And, imp1, imp2), rest))
+      | (IfThenElse(cond, fmTerm1, fmTerm2))::rest ->
+	let imp1 = BoolBinOp (Implies, cond, fmTerm1) in
+	let imp2 = BoolBinOp (Implies, fmNot(cond), fmTerm2) in
+	flattenAndSplitHyps(Cons(BoolBinOp (And, imp1, imp2), rest))
+      | (Ineq (Eq, poly))::rest -> flattenAndSplitHyps([Ineq (mkNormIneq(GtEq, poly)), Ineq (mkNormIneq(LtEq, poly))]++rest)
+      | (Ineq (ineq))::rest -> 
+	if trueIneq? (ineq)
+	  then flattenAndSplitHyps(rest)
+	else map (fn (hyps) -> cons(ineq, hyps)) (flattenAndSplitHyps(rest))
+      | _::rest -> flattenAndSplitHyps(rest)
+
+(*  op flattenHyps: List FMTerm -> List FM.Ineq
   def flattenHyps(hyps) =
     case hyps of
       | [] -> []
@@ -87,6 +169,7 @@ MSToFM qualifying spec
       | (BoolUnOp (Not, Ineq (ineq)))::rest -> cons(negateIneq(ineq), flattenHyps(rest))
       | (Ineq (ineq))::rest -> cons(ineq, flattenHyps(rest))
       | _::rest -> flattenHyps(rest)
+*)
 
   def fmBoolOps = ["&", "or", "~", "=>", "<=>"]
 
@@ -189,6 +272,10 @@ MSToFM qualifying spec
       | (Poly p1, Poly p2) ->
       let p = polyMinusPoly(p1, p2) in
       Ineq (mkNormIneq(Eq, p))
+      | (LitBool true, t2) -> fmEquals(t2, Poly zeroPoly)
+      | (t1, LitBool true) -> fmEquals(t1, Poly zeroPoly)
+      | (LitBool false, t2) -> fmNot(fmEquals(t2, Poly zeroPoly))
+      | (t1, LitBool false) -> fmNot(fmEquals(t1, Poly zeroPoly))
 
   op fmLtEq: FMTerm * FMTerm -> FMTerm
   def fmLtEq(t1, t2) =
@@ -291,8 +378,8 @@ MSToFM qualifying spec
       | Apply(Fun(f, srt, _), arg, _) ->
 	let (resTerm, newContext) = toFMTermApp(context, sp, term, f, srt, arg) in
 	(resTerm, newContext)
-%      | Fun ((Bool true), Boolean, _) -> fmTrue
-%      | Fun ((Bool false), Boolean, _) -> fmFalse
+      | Fun ((Bool true), Boolean(_), _) -> (fmTrue, context)
+      | Fun ((Bool false), Boolean(_), _) -> (fmFalse, context)
       | Fun (Nat (n) ,_,_) -> (Poly (mkConstantPoly(n)), context)
       | Fun(f, srt, _) -> toFMTermConstant(context, sp, term, f)
       | Var (v, _) -> toFMVar(context, sp, v)
@@ -322,9 +409,14 @@ MSToFM qualifying spec
 	  | UnSupported -> toNewFMVar(term, cntxt)
 	  | _ -> (reducedTerm, cntxt)
     else 
-      case args of 
-	| [] -> toFMTermConstant(cntxt, spc, term, f)
-	| _ -> let (newVar, newContext) = toNewFMVar(term, cntxt) in (newVar, newContext)
+      let (resPoly, context) =
+        case args of 
+	  | [] -> toFMTermConstant(cntxt, spc, term, f)
+	  | _ -> let (newVar, newContext) = toNewFMVar(term, cntxt) in (newVar, newContext) in
+      if termSort(term) = boolSort
+	then (fmEquals(resPoly, fmTrue), context)
+      else (resPoly, context)
+
 
   op toFMVar:  Context * Spec * MS.Var -> FMTerm * Context
   def toFMVar (context, spc, var as (v, s)) =

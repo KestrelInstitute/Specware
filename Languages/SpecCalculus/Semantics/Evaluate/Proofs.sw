@@ -188,7 +188,7 @@ spec
  def generateProofsInSpecLocal (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = usedSpc.properties in
-   let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
+   %let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
    let localPropNames = if fromObligations?
 			  then ((usedSpc.importInfo).localProperties)++(spc.importInfo).localProperties
 			else (usedSpc.importInfo).localProperties in
@@ -201,7 +201,7 @@ spec
  def generateProofsInMorphLocal (morph, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
    let usedSpc = morphismObligations(morph, globalContext, noPos) in 
    let props = usedSpc.properties in
-   let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
+   %let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
    let localPropNames = if fromObligations?
 			  then ((usedSpc.importInfo).localProperties)
 			else (usedSpc.importInfo).localProperties in

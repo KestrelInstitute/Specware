@@ -54,6 +54,12 @@ FM qualifying spec
       then zeroPoly
     else mkPoly1(Constant(c))
 
+  op onePoly: Poly
+  def onePoly = mkConstantPoly(1)
+
+  op minusOnePoly: Poly
+  def minusOnePoly = mkConstantPoly(-1)
+
   sort Ineq = CompPred * Poly
 
   op mkIneq: CompPred * Poly -> Ineq
@@ -61,8 +67,6 @@ FM qualifying spec
   
   op contradictIneqGt: Ineq
   def contradictIneqGt =
-    let minusOne = mkConstant(-1) in
-    let minusOnePoly = mkPoly1(minusOne) in
     mkIneq(Gt, minusOnePoly)
 
   op contradictIneqGtZero: Ineq
@@ -71,14 +75,10 @@ FM qualifying spec
 
   op contradictIneqGtEq: Ineq
   def contradictIneqGtEq =
-    let minusOne = mkConstant(-1) in
-    let minusOnePoly = mkPoly1(minusOne) in
     mkIneq(GtEq, minusOnePoly)
 
   op trueIneqGtEq: Ineq
   def trueIneqGtEq =
-    let one = mkConstant(1) in
-    let onePoly = mkPoly1(one) in
     mkIneq(GtEq, onePoly)
 
   op falseIneq: Ineq
