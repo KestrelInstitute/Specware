@@ -115,7 +115,7 @@ fi
 if [ $RC -ne 0 ]; then
   echo ""
   echo "Bootstrap failed with code $RC, exiting ..."
-  exit 1
+  exit $RC
 fi
 
 echo " "
@@ -142,7 +142,7 @@ RC=$?
 if [ $RC -ne 0 ]; then
   echo ""
   echo "First load failed with code $RC, exiting ..."
-  exit 1
+  exit $RC
 fi
 
 # The second time is just to do the dumplisp. If we do it in one
@@ -169,5 +169,5 @@ RC=$?
 if [ $RC -ne 0 ]; then
   echo ""
   echo "Second load failed with code $RC, exiting ..."
-  exit 1
+  exit $RC
 fi
