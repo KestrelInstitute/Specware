@@ -2,7 +2,7 @@ JGen qualifying spec
 
 import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
-import /Languages/MetaSlang/Specs/StandardSpec
+import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 

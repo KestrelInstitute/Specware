@@ -431,21 +431,6 @@ def exchangeClsDecls({clsDecls=_,collected=col},newClsDecls) =
 
 % --------------------------------------------------------------------------------
 
-op identifyIntSorts: Spec -> Spec
-def identifyIntSorts(spc) =
-  let
-    def identifyIntSort(srt) =
-      case srt of
-	| Base(Qualified("Nat","Nat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
-	| Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
-	| _ -> srt
-  in
-  let termid = (fn(t) -> t) in
-  let pattid = (fn(p) -> p) in
-  mapSpec (termid,identifyIntSort,pattid) spc
-
-% --------------------------------------------------------------------------------
-
 
 op specToJava : Spec -> JSpec
 
