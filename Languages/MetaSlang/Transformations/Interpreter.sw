@@ -15,6 +15,7 @@ spec
     | Constructor Id * Value
     | Constant    Id
     | QuotientVal Value * Value		% closure * element
+    | ChooseClosure Value * MS.Sort
     | Closure     Match * Subst
     | RecClosure  Match * Subst * List Id
     | Unevaluated MS.Term
@@ -185,6 +186,10 @@ spec
         (case patternMatchRules(match,a,extendLetRecSubst(sb,csb,ids),spc,depth) of
 	  | Some v -> v
 	  | None -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
+      | ChooseClosure(cl,_) ->
+	(case a of
+	  | QuotientVal(_,v) -> evalApply(cl,v,sb,spc,depth)
+	  | _ -> Unevaluated(mkApply(valueToTerm f,valueToTerm a)))
       | Unevaluated ft -> evalApplySpecial(ft,a,sb,spc,depth)
       | _ -> Unevaluated (mkApply(valueToTerm f,valueToTerm a))
 
@@ -282,7 +287,8 @@ spec
 	(case stripSubsorts(spc,range(spc,srt)) of
 	  | Quotient(_,equiv,_) -> QuotientVal(evalRec(equiv,sb,spc,depth+1),a)
 	  | _ -> Unevaluated(mkApply(ft,valueToTerm a)))
-      %| Fun(Choose,srt,_) ->
+      %% Handled at n
+      | Fun(Choose,srt,_) -> ChooseClosure(a,srt)
       | Fun(Restrict,_,_) -> a		% Should optionally check restriction predicate
       | Fun(Relax,_,_) -> a
       | Fun(Project id,_,_) ->
@@ -378,6 +384,11 @@ spec
 	       if lbl = lbl2 
 		  then patternMatch(p,N2,S)
 	       else NoMatch
+	     | Unevaluated _ -> DontKnow
+	     | _ -> NoMatch)
+        | QuotientPat(pat,_,_) ->
+	  (case N of
+	     | QuotientVal(_,v) -> patternMatch(pat,v,S)
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
 	| StringPat(n,_) ->
@@ -690,8 +701,15 @@ spec
       | Constructor (id,arg) -> prettysFill [string id,string " ",ppValue context arg]
       | Constant          id -> string id
       | QuotientVal (f,arg)  -> prettysFill [string "quotient",string " ",
-					     ppValue context f,string " ",
+					     case f of
+					       | Closure _ -> string "<Closure>"
+					       | _ -> ppValue context f,string " ",
 					     ppValue context arg]
+      | ChooseClosure(cl,_)  ->
+	prettysFill [string "choose",string " <Closure> ",
+		     case cl of
+		       | Closure _ -> string "<Closure>"
+		       | _ -> ppValue context cl]
       | Closure(_,sb)  -> prettysNone[string "<Closure {",
 				      prettysFill(addSeparator (string ", ")
 					(map (fn (id,x) ->
@@ -742,6 +760,7 @@ spec
       | QuotientVal (f,arg)  ->
         let argtm = valueToTerm arg in
 	mkQuotient(valueToTerm f,argtm,termSort argtm)
+      | ChooseClosure(a,srt) -> mkApply(mkFun(Choose,srt),valueToTerm a)
       | Closure(f,_)   -> Lambda(f,noPos)
       | RecClosure(f,_,_) -> Lambda(f,noPos)
       | Unevaluated t  -> t
