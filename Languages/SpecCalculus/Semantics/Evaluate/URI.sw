@@ -82,8 +82,9 @@ These are called only from evaluateURI.
             | Some (value,timeStamp,_) ->
               (case value of
                  | InProcess -> raise (CircularDefinition uri)
-                 | _ -> {valid? <- validateCache uri;
-                         return (if valid? then Some ((value,timeStamp,[uri]), uri)
+                 | _ -> {cacheTS <- validateCache uri;
+                         return (if cacheTS <= timeStamp
+				   then Some ((value,timeStamp,[uri]), uri)
                                  else None)})
             | None -> searchContextForURI rest)
         }
@@ -238,26 +239,26 @@ dependents are up-to-date, returning false if they are not. Those that
 are not are removed from the environment.
 
 \begin{spec}
-  op validateCache : URI -> Env Boolean
+  op validateCache : URI -> Env TimeStamp
   def validateCache uri =
     {validated? <- validatedURI? uri;
      if validated?
-       then return true
+       then return 0
      else
        {optValue <- lookupInGlobalContext uri;
 	case optValue of
-	  | None -> return false
+	  | None -> return futureTimeStamp
 	  | Some (_,timeStamp,depURIs) ->
-	    %% the foldM does a forall, but no early stop
+	    %% the foldM finds the max of the timeStamps of the dependents and its own
+	    %% "infinity" if invalid
 	    {rVal <- foldM (fn val -> (fn depURI -> {dVal <- validateCache depURI;
-						     return (val & dVal)}))
-		       true depURIs;
-	     let val = rVal & upToDate?(uri,timeStamp) in
-	     if val then {setValidatedURI uri;
-			  return true}
+						     return (max(val, dVal))}))
+		       timeStamp depURIs;
+	     if upToDate?(uri,rVal) then {setValidatedURI uri;
+					  return rVal}
 	      else {removeFromGlobalContext uri;
-		    return false}}}}
-         
+		    return futureTimeStamp}}}}
+
   op upToDate?: URI * TimeStamp -> Boolean
   def upToDate?(uri,timeStamp) =
     let fileName = (uriToPath uri) ^ ".sw" in

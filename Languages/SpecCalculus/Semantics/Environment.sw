@@ -58,6 +58,8 @@ URI_Dependency.
 
 \begin{spec}
   sort TimeStamp = Time          % Not a fixnum
+  op futureTimeStamp: TimeStamp		% > than any TimeStamp in foreseeable future
+  def futureTimeStamp = 9999999999
   sort URI_Dependency = List URI
   sort ValidatedURIs = List URI
   sort ValueInfo = Value * TimeStamp * URI_Dependency
