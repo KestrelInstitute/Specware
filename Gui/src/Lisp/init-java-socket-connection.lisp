@@ -5,6 +5,7 @@
 
 (in-package :cl-user)
 
+(defvar *socket-number* (or (specware::getenv "SpecBeansSocketPort") 4324))
 
 (defun print-result (arg)
   (format t "~% Connection to Java ~A" arg)
@@ -17,7 +18,6 @@
   (values))
 
 (defvar *java-listener-name* "Java Listener")
-(defvar *end-method-string* "--end--arguments--")
 
 (defun java-listener-running-p ()
   (loop for process in sys::*all-processes* 
@@ -33,7 +33,7 @@
   (mp:process-run-function *java-listener-name* 'java-listener))
 
 (defun java-listener ()
-  (setq *java-socket* (socket:make-socket :connect :passive :local-port 4323))
+  (setq *java-socket* (socket:make-socket :connect :passive :local-port *socket-number*))
   (setq *java-socket-stream* (socket:accept-connection *java-socket*))
   (loop while (open-stream-p *java-socket-stream*)
 	   do ;;(socket::wait-for-input *java-socket-stream*)
@@ -46,6 +46,7 @@
   (close *java-socket-stream*)
   ;; close socket
   (close *java-socket*)
+  (exit)
   )
 
 #| for testing purposes make a lisp server
@@ -75,8 +76,9 @@
 (defun process-unit (path-name file-name)
   (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
   (setq *current-path-name* path-name)
-  (let* ((full-file-name (namestring (pathname (concatenate 'string path-name file-name))))
-	 (file-name-uri file-name)
+  (let* ((full-pathname (pathname (concatenate 'string path-name file-name)))
+         (full-file-name (namestring full-pathname))
+	 (file-name-uri (pathname-name full-pathname))
 	 (full-path-name (cl-user::path-namestring full-file-name)))
     (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S "
 	    full-file-name file-name-uri full-path-name)
