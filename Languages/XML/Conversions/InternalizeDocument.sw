@@ -70,6 +70,7 @@ XML qualifying spec
       | Product   field_sds    -> internalize_PossibleElement_as_product   (element, sd, field_sds,    table)
       | CoProduct optional_sds -> internalize_PossibleElement_as_coproduct (element, sd, optional_sds, table)
       | Base      (qid, args)  -> internalize_PossibleElement_as_base_sort (element, sd, qid, args,    table)
+      | Boolean -> internalize_PossibleElement_as_Boolean element
       | _ -> fail "unrecognized type"
 
 
@@ -161,6 +162,9 @@ XML qualifying spec
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Could not find field " ^ field_name ^ "\n") in
     case field_sd of % don't chase expansion, as that would expand list and option
+      | Boolean -> 
+        %%% let _ = toScreen ((level_str level) ^ "Using default value of false for Boolean.Boolean\n") in
+	Some (magicCastFromBoolean false)
       | Base (("Boolean", "Boolean"),       []) -> 
         %%% let _ = toScreen ((level_str level) ^ "Using default value of false for " ^ (print_SortDescriptor field_sd) ^ "\n") in
 	Some (magicCastFromBoolean false)
@@ -369,6 +373,7 @@ XML qualifying spec
       | Product   field_sds    -> internalize_EmptyElemTag_as_product   (etag, sd, field_sds,    table) 
       | CoProduct optional_sds -> internalize_EmptyElemTag_as_coproduct (etag, sd, optional_sds, table)
       | Base      (qid, args)  -> internalize_EmptyElemTag_as_base_sort (etag, sd, qid, args,    table)
+      | Boolean -> Some (magicCastFromBoolean false)
       | _ -> fail "unrecognized type"
 
 

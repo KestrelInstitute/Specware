@@ -197,6 +197,9 @@ XML qualifying spec
 							       false)))],
 			  trailer = Some (indentation_chardata (1 (* vspacing *), indent - 2))})
 
+      | Boolean -> 	   
+	let bool = Magic.magicCastToBoolean datum in
+	indent_ustring (ustring (if bool then "true" else "false"))
       | Base (qid, args) ->
 	(case qid of
 	  | ("String",  "String") ->
@@ -313,6 +316,10 @@ XML qualifying spec
 						1, % vspacing,
 						indent,
 						false))))
+
+      | Boolean -> 	   
+	let bool = Magic.magicCastToBoolean datum in
+	indent_text_item (vspacing, indent, ustring (if bool then "true" else "false"))
 
       | Base (qid, args) ->
 	(case qid of

@@ -284,6 +284,7 @@ snark qualifying spec {
   def snarkFunctionNoArityDecl(spc, name, srt) =
     (case srt of
        | Base(Qualified( _,"Boolean"),_,_) -> snarkPropositionSymbolDecl(name)
+       | Boolean _ -> snarkPropositionSymbolDecl(name)
        | Base (Qualified(qual, id), srts, _) ->
           Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
 		     Lisp.symbol("KEYWORD","SORT"),
@@ -291,6 +292,7 @@ snark qualifying spec {
        | Arrow(dom, rng, _) ->
 	  (case rng of
 	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, dom, 1)
+	  | Boolean _ -> snarkPredicateDecl(spc, name, dom, 1)
 	  | _ -> 
 	    let snarkDomSrt = snarkBaseSort(spc, dom, false) in
 	        Lisp.list[declare_function,
@@ -313,6 +315,7 @@ snark qualifying spec {
 		    | Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
+		    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
 		    %| Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
                       %let _ = if specwareDebug? then toScreen("findBuiltInSort: "^printSort(s)^" returns ") else () in
                       %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
@@ -336,13 +339,15 @@ snark qualifying spec {
 	    | Base(Qualified("Nat","Nat"),_,_) -> true
 	    | Base(Qualified("Integer","Integer"),_,_) -> true
 	    | Base(Qualified("Boolean","Boolean"),_,_) -> true 
+	    | Boolean _ -> true
             | _ -> false in
       let
 	def builtinSnarkSort(s) =
 	  case s of 
 	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-	    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
+	    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") 
+	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
       let builtinScheme = find (fn (_, srt) -> builtinSort?(srt)) schemes in
         (case builtinScheme of
 	  | Some (_, srt) -> builtinSnarkSort(srt)
@@ -379,6 +384,7 @@ snark qualifying spec {
 	%let _ = if name = "list2map_def__filter--local-0" then debug("found it") else () in
 	case rng of
 	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, dom, arity)
+	  | Boolean _ -> snarkPredicateDecl(spc, name, dom, arity)
 	  | _ ->
 	case productOpt(spc, dom) of
 	  | Some fields -> 
