@@ -48,6 +48,22 @@
 (specware::delete-directory (in-distribution-dir "Examples/simple3/CVS"))
 (delete-file-if-present (in-distribution-dir "Examples/simple3/test.lisp"))
 
+(specware::make-directory (in-distribution-dir "Accord/"))
+(specware::copy-directory (in-specware-dir "../Accord/Tests/Cipher/")
+			  (in-distribution-dir "Accord/Cipher/"))
+(delete-file-if-present (in-distribution-dir "Accord/Cipher/.cvsignore"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/F91/")
+			  (in-distribution-dir "Accord/F91/"))
+(delete-file-if-present (in-distribution-dir "Accord/F91/.cvsignore"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/GCD/")
+			  (in-distribution-dir "Accord/GCD/"))
+(delete-file-if-present (in-distribution-dir "Accord/GCD/.cvsignore"))
+
+(specware::copy-directory (in-specware-dir "../Accord/Tests/Queens/")
+			  (in-distribution-dir "Accord/Queens/"))
+(delete-file-if-present (in-distribution-dir "Accord/Queens/.cvsignore"))
 
 (specware::concatenate-files
    (loop for fil in '("Base/Handwritten/Lisp/Integer"
