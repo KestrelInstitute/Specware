@@ -104,7 +104,12 @@ spec {
  def findRoot (mu_map, mu_node) =
   case mu_node.parent of
    | None        -> mu_node
-   | Some parent -> findRoot (mu_map, eval mu_map parent.key)
+   | Some parent -> 
+     let parent_node = eval mu_map parent.key in
+     if parent_node = mu_node then
+       mu_node
+     else
+       findRoot (mu_map, parent_node)
 
 } 
 
