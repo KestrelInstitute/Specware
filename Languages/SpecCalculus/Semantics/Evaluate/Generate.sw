@@ -50,8 +50,9 @@ SpecCalc qualifying spec {
     case coerceToSpec value of
       | Spec spc ->
         {cUID <- SpecCalc.getUID cterm;
+         print (";;; Generating lisp file ");
          lispFileName <- UIDtoLispFile (cUID, optFileName);
-         print (";;; Generating lisp file " ^ lispFileName ^ "\n");
+         print (                          lispFileName ^ "\n");
          let _ = ensureDirectoriesExist lispFileName in
          let _ = toLispFile (spc, lispFileName,"") in
          return valueInfo}
