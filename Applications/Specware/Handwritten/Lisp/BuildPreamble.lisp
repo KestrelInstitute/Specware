@@ -71,7 +71,7 @@
       (ignore-errors (load highest-patch-file)))))
 
 #+allegro
-(setq cl-user::*restart-init-function* 'load-specware-patch-if-present)
+(push 'load-specware-patch-if-present cl-user::*restart-actions*)
 
 #+cmu
 (push 'load-specware-patch-if-present ext:*after-save-initializations*)
