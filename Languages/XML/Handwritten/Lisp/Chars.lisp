@@ -320,7 +320,7 @@
       new-vector))
 
 (defun xml::char_data_char? (i)
-  %% char? but not '<' or '&'
+  ;; char? but not '<' or '&'
   (if (< i #.(expt 2 16))
       (svref *char-data-chars* i)
     (< i #x10ffff)))
