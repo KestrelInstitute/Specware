@@ -67,6 +67,14 @@ spec
  def getFunIndex = 
      fn (Fun(Op(qid,fixity),_,_)) -> 
 	Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
+      | (Fun(Embed(id,_),_,_)) -> Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell id]))
+      | (Fun(Equals,_,_)) -> 1
+      | (IfThenElse(_,_,_,_)) -> 2
+      | (Bind(Forall,_,_,_)) -> 3
+      | (Bind(Exists,_,_,_)) -> 4
+      | (Lambda _) -> 5
+      | (Let(_,_,_)) -> 6
+      | (LetRec(_,_,_)) -> 7
       | _ -> 0
 
  def subterms = 
