@@ -2,13 +2,22 @@
 
 (in-package "USER")
 
-(specware::load-lisp-file "parser-package" :compiled? nil)
+(defun local-file (filename) 
+  (make-pathname :name filename :defaults *LOAD-PATHNAME*))
 
-(setq *features* (remove :DEBUG-PARSER    *features*))
-(setq *features* (remove :OPTIMIZE-PARSER *features*))
+(defun load-local-file (filename) 
+  (specware::load-lisp-file (local-file filename) :compiled? nil))
+
+(defun compile-and-load-local-file (filename) 
+  (specware::compile-and-load-lisp-file (local-file filename)))
+
+(load-local-file "parser-package") 
+
+(setq *features* (remove :DEBUG-PARSER    *features* :count 1))
+(setq *features* (remove :OPTIMIZE-PARSER *features* :count 1))
 
 ;; Choose either or neither (both is ok, but would be peculiar)
-;(pushnew :DEBUG-PARSER *features*)
+(pushnew :DEBUG-PARSER *features*)
 ;(pushnew :OPTIMIZE-PARSER *features*)
 
 #+DEBUG-PARSER    (format t "~%DEBUG-PARSER    feature is on.~2%")
@@ -63,27 +72,27 @@
 
 ;(sys::resize-areas :new #x6000000) ; big! (hmm... too big...)
 
-(specware::compile-and-load-lisp-file "comment-hack")
-(specware::compile-and-load-lisp-file "parse-decls")
+(compile-and-load-local-file "comment-hack")
+(compile-and-load-local-file "parse-decls")
 
-#+DEBUG-PARSER (specware::compile-and-load-lisp-file "parse-debug-1")
+#+DEBUG-PARSER (compile-and-load-local-file "parse-debug-1")
 
-(specware::compile-and-load-lisp-file "parse-add-rules")
-(specware::compile-and-load-lisp-file "seal-parser")
+(compile-and-load-local-file "parse-add-rules")
+(compile-and-load-local-file "seal-parser")
 
-(specware::compile-and-load-lisp-file "parse-node-utilities")
+(compile-and-load-local-file "parse-node-utilities")
 
-(specware::compile-and-load-lisp-file "tokenizer-decls")
-(specware::compile-and-load-lisp-file "tokenizer")
+(compile-and-load-local-file "tokenizer-decls")
+(compile-and-load-local-file "tokenizer")
 
-(specware::compile-and-load-lisp-file "parse-semantics")
-;;   (specware::compile-and-load-lisp-file  "pprint") ; will be here soon 
+(compile-and-load-local-file "parse-semantics")
+;;   (compile-and-load-local-file  "pprint") ; will be here soon 
 
-(specware::compile-and-load-lisp-file "parse-top")
+(compile-and-load-local-file "parse-top")
 
-#+DEBUG-PARSER (specware::compile-and-load-lisp-file "parse-debug-2")
+#+DEBUG-PARSER (compile-and-load-local-file "parse-debug-2")
 
-(specware::compile-and-load-lisp-file "describe-grammar")
+(compile-and-load-local-file "describe-grammar")
 
 ;(parser4::load-slang-parser "/usr/local/specware/parser/sw-ops") ; object, arrow, span, pullback, etc.
 

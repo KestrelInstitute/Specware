@@ -33,7 +33,7 @@
 
 ;; ========
 
-(specware::compile-and-load-lisp-file "tokenizer")
+(user::compile-and-load-local-file "tokenizer")
 
 (defparameter *specware4-tokenizer*
   #'extract-specware4-tokens-from-file)
@@ -41,10 +41,10 @@
 ;; *specware4-parser* is referenced in semantics.lisp, so declare it first...
 (defparameter *specware4-parser* nil)
 
-(specware::compile-and-load-lisp-file "semantics")
-(specware::compile-and-load-lisp-file "parser-interface")
+(user::compile-and-load-local-file "semantics")
+(user::compile-and-load-local-file "parser-interface")
 
-(setq *specware4-parser* (load-parser "rules" :name 'SPECWARE4-PARSER :case-sensitive? t))
+(setq *specware4-parser* (load-parser (user::local-file "rules") :name 'SPECWARE4-PARSER :case-sensitive? t))
   
 (progn
   ;;(comment "===================================================================================")
