@@ -31,13 +31,13 @@ Context = spec {
   import /Languages/MetaSlang/Specs/SimplePrinter
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
-  sort PSpec a = {
-    staticSpec : ASpec a,
-    dynamicSpec : ASpec a,
+  sort PSpec = {
+    staticSpec : Spec,
+    dynamicSpec : Spec,
     procedures : PolyMap.Map (QualifiedId,Procedure)
   }
 
-  op ppPSpec : fa (a) PSpec a -> Doc
+  op ppPSpec : PSpec -> Doc
   def ppPSpec pSpec =
     ppConcat [
       ppString "static=",
@@ -55,7 +55,7 @@ Context = spec {
 
   % the "Less" means pretty print all the specs but removed
   % the spec given in the second argument. Usually the Base.
-  op ppPSpecLess : PSpec () -> ASpec () -> Doc
+  op ppPSpecLess : PSpec -> Spec -> Doc
   def ppPSpecLess pSpec spc =
     ppConcat [
       ppString "static=",

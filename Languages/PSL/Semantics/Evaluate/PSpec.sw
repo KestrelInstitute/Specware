@@ -31,16 +31,9 @@ They are procedures in context.
 
 \begin{spec}
 %   op evaluatePSpecElems :
-%            PSpec Position
+%            PSpec
 %         -> List (PSpecElem Position)
-%         -> Env (PSpec Position * TimeStamp * URI_Dependency)
-
-  op fixPSpec : PSpec Position -> PSpec ()
-  def fixPSpec pSpec = {
-       staticSpec = convertPosSpecToSpec pSpec.staticSpec,
-       dynamicSpec = convertPosSpecToSpec pSpec.dynamicSpec,
-       procedures = pSpec.procedures
-     } 
+%         -> Env (PSpec * TimeStamp * URI_Dependency)
 
   def evaluatePSpecElems initialPSpec pSpecElems = {
       (pSpecWithImports,timeStamp,depURIs)
@@ -50,7 +43,7 @@ They are procedures in context.
       return (pSpec,timeStamp,depURIs)
     }
   
-  op baseSpec : SpecCalc.Env (ASpec ())
+  op baseSpec : SpecCalc.Env Spec
   def baseSpec = {
       (Spec base,_,_) <- SpecCalc.evaluateURI (Internal "base spec")
            (SpecPath_Relative {path = ["Library","Base"], hashSuffix = None});
@@ -58,17 +51,17 @@ They are procedures in context.
     }
 
   op evaluatePSpecImportElem :
-           (PSpec Position * TimeStamp * URI_Dependency)
+           (PSpec * TimeStamp * URI_Dependency)
         -> PSpecElem Position
-        -> Env (PSpec Position * TimeStamp * URI_Dependency)
+        -> Env (PSpec * TimeStamp * URI_Dependency)
   def evaluatePSpecImportElem (val as (pSpec,currentTimeStamp,currentDeps)) (elem,position) =
     case elem of
       | Import term -> {
             (value,importTimeStamp,depURIs) <- evaluateTermInfo term;
             (case value of
               | PSpec impPSpec -> {
-                    newStatic <- mergeImport term (convertPosSpecToSpec impPSpec.staticSpec) pSpec.staticSpec position;
-                    newDynamic <- mergeImport term (convertPosSpecToSpec impPSpec.dynamicSpec) pSpec.dynamicSpec position;
+                    newStatic <- mergeImport term impPSpec.staticSpec pSpec.staticSpec position;
+                    newDynamic <- mergeImport term impPSpec.dynamicSpec pSpec.dynamicSpec position;
                     newPSpec <- setStaticSpec pSpec newStatic;
                     newPSpec <- setDynamicSpec newPSpec newDynamic;
                     newPSpec <- setProcedures newPSpec (foldMap
@@ -86,14 +79,14 @@ They are procedures in context.
       | _ -> return val
 
   op evaluatePSpecProcElem :
-           PSpec Position
+           PSpec
         -> PSpecElem Position
-        -> Env (PSpec Position)
+        -> Env PSpec
 
   op evaluatePSpecContextElem :
-           PSpec Position
+           PSpec
         -> PSpecElem Position
-        -> Env (PSpec Position)
+        -> Env PSpec
   def evaluatePSpecContextElem pSpec (elem, position) =
     case elem of
       | Sort (names,(tyVars,optSort)) -> {
@@ -155,9 +148,9 @@ They are procedures in context.
       | _ -> return pSpec
 
   op evaluatePSpecDynamicContextElem :
-           PSpec Position
+           PSpec
         -> PSpecElem Position
-        -> Env (PSpec Position)
+        -> Env PSpec
   def evaluatePSpecDynamicContextElem pSpec (elem, position) =
     case elem of
       | _ -> return pSpec
@@ -171,17 +164,16 @@ body of some procedure. Don't we want to elaborate as we go along?
   op PosSpec.mkTyVar : String -> ASort Position
   def PosSpec.mkTyVar name = TyVar (name, internalPosition)
 
-  op staticBase : SpecCalc.Env (ASpec ())
+  op staticBase : SpecCalc.Env Spec
   def staticBase = {
       (Spec base,_,_) <- SpecCalc.evaluateURI (Internal "static base spec")
            (SpecPath_Relative {path = ["Library","PSL","Base"], hashSuffix = None});
       return base
     }
 
-  op basePSpec : SpecCalc.Env (PSpec Position)
+  op basePSpec : SpecCalc.Env PSpec
   def basePSpec = {
     base <- staticBase;
-    base <- return (convertSpecToPosSpec base);
     dynamicSpec <- return emptySpec;
     return {
         staticSpec = base,

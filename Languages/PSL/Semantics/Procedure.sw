@@ -16,12 +16,12 @@ spec {
   sort Procedure = {
     parameters : List String,
     return : Option String,
-    staticSpec : ASpec (),   % why are these here?
-    dynamicSpec : ASpec (),
+    staticSpec : Spec, % why are these here?
+    dynamicSpec : Spec,
     code : BSpec
   }
 
-  op makeProcedure : List String -> Option String -> ASpec () -> ASpec () -> BSpec -> Procedure
+  op makeProcedure : List String -> Option String -> Spec -> Spec -> BSpec -> Procedure
   def makeProcedure args ret static dynamic bSpec = {
     parameters = args,
     return = ret,

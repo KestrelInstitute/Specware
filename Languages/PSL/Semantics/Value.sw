@@ -7,7 +7,7 @@ spec {
     | Spec  Spec
     | Morph Morphism
     | Diag  (Diagram (Spec,Morphism))
-    | PSpec (PSpec Position)
+    | PSpec PSpec
     | InProcess			  % Used for catching circular definitions
     % | DiagMorph
 

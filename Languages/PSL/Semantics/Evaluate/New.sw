@@ -4,7 +4,6 @@
 spec {
   % import Signature 
   import /Languages/MetaSlang/Specs/Elaborate/Utilities
-  import /Languages/MetaSlang/Specs/PosSpec
   import /Languages/MetaSlang/AbstractSyntax/Fold
   import /Library/Legacy/DataStructures/ListPair
   import Spec/Utilities
@@ -19,14 +18,14 @@ spec {
   def sortOfScheme (tyVars,srt) = srt
 
   op evaluatePSpecProcElem :
-           PSpec Position
+           PSpec
         -> PSpecElem Position
-        -> Env (PSpec Position)
+        -> Env PSpec
   def evaluatePSpecProcElem pSpec (elem,position) =
     case elem of
       | Proc (name,procInfo) ->
           let argSorts = map (fn (name,srt) -> srt) procInfo.args in
-          let argProd = PosSpec.mkProduct argSorts in
+          let argProd = mkProduct argSorts in
           let resSort = procInfo.returnSort in
           let tmpSpec = subtractSpec pSpec.dynamicSpec pSpec.staticSpec in
           let storeRec = mkProduct_local
@@ -110,11 +109,11 @@ never mixed in the specs labeling \BSpecs.
 
 \begin{spec}
   op compileProcedure :
-       PSpec Position 
+       PSpec
     -> Nat
     -> String
     -> ProcInfo Position
-    -> SpecCalc.Env (PSpec Position)
+    -> SpecCalc.Env PSpec
 
   def compileProcedure pSpec cnt name {args,returnSort,command} = {
     dyCtxt <- dynamicSpec pSpec;
@@ -195,7 +194,7 @@ functions to compile commands. The counter is used generate unique
 ``names'' for nodes and edges.
 
 \begin{spec}
-sort Systems.Elem = ATerm ()
+  sort Systems.Elem = ATerm Position
 \end{spec}
 
 The argument context is used to generate the specs labeling nodes and
@@ -270,13 +269,13 @@ however, Specware does not have let-polymorphism.
   % sort BSpecs.Morphism = SpecCat.Morphism  %% Why do we need this?
 
   op compileCommand : 
-        PSpec Position
+        PSpec
      -> V.Elem
      -> V.Elem
      -> BSpec
      -> Nat
      -> Command Position
-     -> SpecCalc.Env (BSpec * Nat * PSpec Position)
+     -> SpecCalc.Env (BSpec * Nat * PSpec)
 
   def compileCommand pSpec first last bSpec cnt (cmd,_) =
     case cmd of
@@ -550,14 +549,14 @@ This should be an invariant. Must check.
 
 \begin{spec}
   op compileAssign :
-       PSpec Position 
+       PSpec
     -> V.Elem
     -> V.Elem
     -> BSpec
     -> Nat
     -> ATerm Position
     -> ATerm Position
-    -> SpecCalc.Env (BSpec * Nat * PSpec Position)
+    -> SpecCalc.Env (BSpec * Nat * PSpec)
   def compileAssign pSpec first last bSpec cnt trm1 trm2 = {
     (leftId, leftPrimedTerm) <- return (processLHS trm1); 
     dyCtxt <- dynamicSpec pSpec;
@@ -705,13 +704,13 @@ So the following doesn't handle the situation where the name are captured by lam
       foldTerm (foldT,foldS,foldP) [] term
 
   op compileAxiomStmt :
-       PSpec Position
+       PSpec
     -> V.Elem
     -> V.Elem
     -> BSpec
     -> Nat
     -> ATerm Position
-    -> SpecCalc.Env (BSpec * Nat * PSpec Position)
+    -> SpecCalc.Env (BSpec * Nat * PSpec)
 
   def compileAxiomStmt pSpec first last bSpec cnt trm = {
     dyCtxt <- dynamicSpec pSpec;
@@ -778,7 +777,7 @@ front of the axiom term.
 
 \begin{spec}
   op compileProcCall :
-       PSpec Position
+       PSpec
     -> V.Elem
     -> V.Elem
     -> BSpec
@@ -786,7 +785,7 @@ front of the axiom term.
     -> Option (ATerm Position)
     -> QualifiedId
     -> List (ATerm Position)
-    -> SpecCalc.Env (BSpec * Nat * PSpec Position)
+    -> SpecCalc.Env (BSpec * Nat * PSpec)
 \end{spec}
 
   def compileProcCall ctxt first last bspec cnt procs trm? pr args =
@@ -896,13 +895,13 @@ end{spec}
 
 \begin{spec}
   op compileSeq :
-        PSpec Position
+        PSpec
      -> V.Elem
      -> V.Elem
      -> BSpec
      -> Nat
      -> List (Command Position)
-     -> SpecCalc.Env (BSpec * Nat * PSpec Position)
+     -> SpecCalc.Env (BSpec * Nat * PSpec)
 
   def compileSeq pSpec first last bSpec cnt cmds =
     case cmds of
@@ -931,13 +930,13 @@ results), and it is used by \verb+compileCommand+ (which calls
 
 \begin{spec}
   op compileAlternatives :
-       PSpec Position
+       PSpec
     -> V.Elem
     -> V.Elem
     -> BSpec
     -> Nat
     -> List (Alternative Position)
-    -> SpecCalc.Env (BSpec * Nat * PSpec Position)
+    -> SpecCalc.Env (BSpec * Nat * PSpec)
 
   def compileAlternative pSpec first last bSpec cnt ((trm,cmd),pos) = {
       dyCtxt <- dynamicSpec pSpec;
@@ -1033,8 +1032,8 @@ begin{spec}
   op addProcOpDecl :
         String            % the name of the procedure
       * PSort        % the type of the proc (from procSortInstance)
-      * PosSpec        % the spec to update
-     -> SpecCalc.Env PosSpec
+      * Spec        % the spec to update
+     -> SpecCalc.Env Spec
   def addProcOpDecl (name,srt,spc) =
       addOp (([unQualified name], Nonfix, (tyVarsOf srt, srt), None),spc)
 end{spec}
@@ -1100,10 +1099,10 @@ requiring a rethink of the current practice.
   def mkNot trm = mkApplyN (notOp, trm)
 
   op mkAnd : PTerm * PTerm -> PTerm
-  def mkAnd (t1,t2) = mkApplyN (andOp, PosSpec.mkTuple ([t1,t2]))
+  def mkAnd (t1,t2) = mkApplyN (andOp, mkTuple ([t1,t2]))
 
   op mkOr : PTerm * PTerm -> PTerm
-  def mkOr (t1,t2) = mkApplyN (orOp, PosSpec.mkTuple ([t1,t2]))
+  def mkOr (t1,t2) = mkApplyN (orOp, mkTuple ([t1,t2]))
   
   op disjList : List PTerm -> PTerm
   def disjList l =
@@ -1119,7 +1118,7 @@ requiring a rethink of the current practice.
   def mkInfixOp (qid, fixity, srt) = mkFun (Op (qid, fixity), srt)
 
   op binaryBoolSort : PSort
-  def binaryBoolSort = mkArrow (PosSpec.mkProduct([boolPSort, boolPSort]), boolPSort)
+  def binaryBoolSort = mkArrow (mkProduct([boolPSort, boolPSort]), boolPSort)
 
   op unaryBoolSort : PSort
   def unaryBoolSort  = mkArrow (boolPSort, boolPSort)
@@ -1220,7 +1219,7 @@ of the specs for \verb+Nat+, \verb+Integer+, \emph{etc}.
 Second argument is context .. another spec.
 
 \begin{spec}
-  op elaborateInContext : ASpec Position -> ASpec Position -> SpecCalc.Env (ASpec ())
+  op elaborateInContext : Spec -> Spec-> SpecCalc.Env Spec
   def elaborateInContext spc static = {
       staticElab <- elaborateSpec static;
       uri <- pathToRelativeURI "Static";
@@ -1232,10 +1231,10 @@ Second argument is context .. another spec.
   op unQualified : String -> QualifiedId
   def unQualified name = Qualified (UnQualified,name)
 
-  op elaborateSpec : PosSpec -> SpecCalc.Env Spec
+  op elaborateSpec : Spec -> SpecCalc.Env Spec
   def elaborateSpec spc =
     case elaboratePosSpec (spc, "internal") of
-      | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
+      | Ok elabSpc -> return (convertPosSpecToSpec elabSpc)
       | Error msg   -> raise  (OldTypeCheck msg)
 \end{spec}
 
