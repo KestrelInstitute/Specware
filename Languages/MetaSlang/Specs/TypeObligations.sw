@@ -23,8 +23,6 @@ spec
  op  assertCond   : MS.Term * Gamma -> Gamma
  op  insertLet    : List (Pattern * MS.Term) * Gamma -> Gamma
  op  insertLetRec : List (Var * MS.Term) * Gamma -> Gamma
-% op  boundVars    : Gamma -> List Var
-% op  boundTypeVars : Gamma -> TyVars
 
  def assertSubtypeCond(term,srt:Sort,gamma) = 
      case srt
@@ -37,7 +35,7 @@ spec
  def mkLetOrApply(fntm,arg) =
    case fntm of
      | Lambda ([(VarPat(v,_),Fun(Bool true, _,_),bod)],_) ->
-       % StandardSpec.mkLet([(VarPat(v,a),arg)],bod)
+       % mkLet([(VarPat(v,a),arg)],bod)
        mapTerm (fn (tm) -> case tm of
 	                    | Var(v1,_) -> if v1 = v then arg else tm
 			    | _ -> tm,
@@ -46,7 +44,7 @@ spec
      | _ -> Apply(fntm,arg,noPos)
 
  def assertCond(cond,(ds,tvs,spc,name,names)) = 
-     (cons(Cond cond:Decl,ds),tvs,spc,name,names)
+     (cons(Cond cond,ds),tvs,spc,name,names)
  def insert((x,srt),(ds,tvs,spc,name,names))  = 
      let ds = cons(Var(x,srt):Decl,ds) in
      let gamma = (ds,tvs,spc,name,names) in
@@ -54,10 +52,10 @@ spec
      gamma
 % Subsort conditions:
  def insertLet(decls,(ds,tvs,spc,name,names)) = 
-     (cons(Let decls:Decl,ds),tvs,spc,name,names) %% Add let-bound names here. FIXME!
+     (cons(Let decls,ds),tvs,spc,name,names)
  def insertLetRec(decls,(ds,tvs,spc,name,names)) = 
-     (cons(LetRec decls:Decl,ds),tvs,spc,name,
-	StringSet.addList(names,List.map (fn((x,_),_)-> x) decls))
+     (cons(LetRec decls,ds),tvs,spc,name,
+      StringSet.addList(names,List.map (fn((x,_),_)-> x) decls))
 
  def printDecl(d:Decl) = 
      case d
@@ -73,7 +71,7 @@ spec
  		 String.toScreen "; "))
 		(rev decls)
      in
-     let _ = String.writeLine "" in
+     let _ = writeLine "" in
      ()
  
 
@@ -158,7 +156,6 @@ spec
 	  let tcc  = <= (tcc,gamma,M,tau2,tau) 		       in
 	  tcc
         | Record(fields,_) -> 
-%% Not part of build 6-25-00.
 	  let spc = getSpec gamma in
  	  let types = product(spc,tau) in
           let
@@ -166,23 +163,53 @@ spec
  		  (tcc,gamma) |- term ?? tau
  	  in
  	  % Check recursively that every element is well typed 
-          let tcc = ListPair.foldr checkField tcc (fields,types) in
+          let tcc = ListPair.foldl checkField tcc (fields,types) in
  	  % Check possible subsort constraints in tau 
           let tcc = <= (tcc,gamma,M,Product(types,noPos),tau) in
           tcc
 
         | Bind(binder,vars,body,_) -> 
-	  let gamma = foldr insert gamma vars      in
-          let tcc = (tcc,gamma) |- body ?? boolSort     in
-          let tcc = <= (tcc,gamma,M,boolSort,tau)        in
+	  let gamma = foldl insert gamma vars        in
+          let tcc = (tcc,gamma) |- body ?? boolSort  in
+          let tcc = <= (tcc,gamma,M,boolSort,tau)    in
 	  tcc
-        | Let(decls,body,_)    -> tcc 	%%%%%%%%% FIXME
-        | LetRec(decls,body,_) -> tcc 	%%%%%%%%% FIXME
+        | Let(decls,body,_)    ->
+	  let (tcc,gamma) =
+	       foldl (fn ((pat,t),(tcc,ngamma)) ->
+		      let sigma1 = patternSort pat                         in
+		      let (ngamma,tp) = bindPattern(ngamma,pat,sigma1)     in
+		      %% This is alternative to insertLet below
+		      let ngamma = assertCond(mkEquality(tau,t,tp),ngamma) in
+		      let spc = getSpec gamma 				   in
+		      let tcc = (tcc,gamma) |- t ?? sigma1                 in
+		      (tcc,ngamma))
+	          (tcc,gamma)
+		  decls
+	  in
+	  %let gamma = insertLet(decls,gamma)         in
+	  let tcc = (tcc,gamma) |- body ?? tau       in
+	  tcc
+	  
+        | LetRec(decls,body,_) ->
+	  let gamma = foldl (fn ((v,_),gamma) -> insert(v,gamma))
+	                gamma decls
+	  in
+	  let tcc =
+	      foldl (fn (((_,srt),t),tcc) ->
+		     let spc = getSpec gamma in
+		     let tcc = (tcc,gamma) |- t ?? srt in
+		     tcc)
+	        tcc
+		decls
+	  in
+	  let gamma = insertLetRec(decls,gamma)      in
+	  let tcc = (tcc,gamma) |- body ?? tau       in
+	  tcc
         | Var((id,srt),_) -> 
-          let tcc = <= (tcc,gamma,M,srt,tau)             in
+          let tcc = <= (tcc,gamma,M,srt,tau)         in
           tcc
         | Fun(f,s,_) -> 
-	  let tcc = <= (tcc,gamma,M,s,tau)	        in
+	  let tcc = <= (tcc,gamma,M,s,tau)	     in
 %
 % List subcases explicitly to leave place for 
 % special treatment.
@@ -210,11 +237,11 @@ spec
           let dom = domain(getSpec gamma,tau) 			in
           let rng = range(getSpec gamma,tau)  			in
 	  let tcc = 
-              foldr (checkRule(gamma,dom,rng)) tcc rules   in
+              foldl (checkRule(gamma,dom,rng)) tcc rules        in
           let rules = 
 	      (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	in
           let x  = freshName(gamma,"x")				in
-          let vs = [Var((x,dom),noPos):MS.Term]	        	in
+          let vs = [mkVar(x,dom)] 	        	        in
 	  let (_,_,spc,name,_) = gamma				in
 	  let context = {counter = Ref 0,
 		         spc = spc,
@@ -229,7 +256,7 @@ spec
 	  let tcc1   = (tcc,gamma)   |- t1 ?? boolSort 		in
 	  let gamma1 = assertCond(t1,gamma) 			in
           let tcc2   = (tcc1,gamma1) |- t2 ?? tau 		in
-	  let gamma2 = assertCond(mkNot t1,gamma) 		in
+	  let gamma2 = assertCond(negateTerm t1,gamma) 		in
           let tcc3   = (tcc2,gamma2) |- t3 ?? tau 		in
 	  tcc3
         | Seq([],_)    -> tcc
@@ -255,7 +282,7 @@ spec
  op bindPattern : Gamma * Pattern * Sort  -> Gamma * MS.Term
 
  def returnPatternRec(pairs,gamma,M,tau,sigma) =
-     if tau = sigma or 
+     if equalSort?(tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then (gamma,M)
      else
@@ -280,58 +307,58 @@ spec
      returnPatternRec([],gamma,t,tau1,tau2)
 
      
- def bindPattern(gamma:Gamma,pat:Pattern,tau) = 
-         case pat
-           of AliasPat(p1,p2,_) -> 
-	      let (gamma,t1) = bindPattern(gamma,p1,tau) 	  in
-	      let (gamma,t2) = bindPattern(gamma,p2,tau) 	  in
-	      let gamma = assertCond(mkEquality(tau,t1,t2),gamma) in
-	      (gamma,t1)
-            | VarPat(v as (_,srt),_) -> 
-	      let gamma1 = insert(v,gamma) 		        in
-	      returnPattern(gamma1,Var(v,noPos),srt,tau)
-            | EmbedPat(constr,Some p,tau_,_) -> 
-	      let tau1 = patternSort p 			        in
-	      let (gamma1,t1) = bindPattern(gamma,p,tau1)       in
-	      let t2:MS.Term     = Apply(Fun(Embed(constr,true),
-					  Arrow(tau1,tau_,noPos),noPos),t1,noPos) in
-	      returnPattern(gamma1,t2,tau_,tau)
-	    | EmbedPat(constr,None,tau_,_) -> 
-	      returnPattern(gamma,Fun(Embed(constr,false),tau_,noPos),tau_,tau)
-	    | RecordPat(fields,_) -> 
-	      let fs     = product(getSpec gamma,tau) in
-	      let fields = ListPair.zip(fs,fields) 		 in
-	      let (gamma,terms) = 
-		  List.foldr 
-	      	  (fn (((_,tau),(id,p)),(g,terms))-> 
-		   let (gamma,trm) = bindPattern(g,p,tau) in 
-		   (gamma,cons((id,trm),terms)))
-			(gamma,[]) fields
-              in
-	      let trm: MS.Term = Record(terms,noPos) 		 in
-	      returnPattern(gamma, trm, patternSort pat,tau)
-	    | WildPat(sigma,_)	-> 
-	      let v = freshName(gamma,"v")		 in
-              let v = (v,sigma)			 	 in
-	      let gamma1 = insert(v,gamma) 		 in
-	      (gamma1,Var(v,noPos))
-	   | StringPat(s,_) 	->      
-	     returnPattern(gamma,Fun(String s,stringSort,noPos),stringSort,tau)
-           | BoolPat(b,_) 		->      
-	     returnPattern(gamma,Fun(Bool b,boolSort,noPos),boolSort,tau)
-           | CharPat(ch,_) 	->      
-	     returnPattern(gamma,Fun(Char ch,charSort,noPos),charSort,tau)
-           | NatPat(i,_) 		->      
-	     returnPattern(gamma,Fun(Nat i,natSort,noPos),natSort,tau)
-           | RelaxPat(p,pred,_) 	-> 
-	     let tau1:Sort = Subsort(tau,pred,noPos) in
-             let (gamma,trm) = bindPattern(gamma,p,tau1)  in
-	     (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
-           | QuotientPat(p,pred,_) 	-> 
-	     let Quotient(tau1,_,_):Sort = tau in
-	     let (gamma,trm) = bindPattern(gamma,p,tau1)
-	     in
-	     (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
+ def bindPattern(gamma,pat,tau) = 
+   case pat
+     of AliasPat(p1,p2,_) -> 
+	let (gamma,t1) = bindPattern(gamma,p1,tau) in
+	let (gamma,t2) = bindPattern(gamma,p2,tau) in
+	let gamma = assertCond(mkEquality(tau,t1,t2),gamma) in
+	(gamma,t1)
+      | VarPat(v as (_,srt),_) -> 
+	let gamma1 = insert(v,gamma) in
+	returnPattern(gamma1,Var(v,noPos),srt,tau)
+      | EmbedPat(constr,Some p,tau_,_) -> 
+	let tau1 = patternSort p in
+	let (gamma1,t1) = bindPattern(gamma,p,tau1) in
+	let t2 = Apply(Fun(Embed(constr,true),
+			   Arrow(tau1,tau_,noPos),noPos),t1,noPos) in
+	returnPattern(gamma1,t2,tau_,tau)
+      | EmbedPat(constr,None,tau_,_) -> 
+	returnPattern(gamma,Fun(Embed(constr,false),tau_,noPos),tau_,tau)
+      | RecordPat(fields,_) -> 
+	let fs     = product(getSpec gamma,tau) in
+	let fields = ListPair.zip(fs,fields)    in
+	let (gamma,terms) = 
+	    List.foldl 
+	    (fn (((_,tau),(id,p)),(g,terms))-> 
+	     let (gamma,trm) = bindPattern(g,p,tau) in 
+	     (gamma,cons((id,trm),terms)))
+		  (gamma,[]) fields
+	in
+	let trm: MS.Term = Record(terms,noPos) in
+	returnPattern(gamma, trm, patternSort pat,tau)
+      | WildPat(sigma,_)	-> 
+	let v = freshName(gamma,"v") in
+	let v = (v,sigma)            in
+	let gamma1 = insert(v,gamma) in
+	(gamma1,Var(v,noPos))
+     | StringPat(s,_) 	->      
+       returnPattern(gamma,Fun(String s,stringSort,noPos),stringSort,tau)
+     | BoolPat(b,_) 		->      
+       returnPattern(gamma,Fun(Bool b,boolSort,noPos),boolSort,tau)
+     | CharPat(ch,_) 	->      
+       returnPattern(gamma,Fun(Char ch,charSort,noPos),charSort,tau)
+     | NatPat(i,_) 		->      
+       returnPattern(gamma,Fun(Nat i,natSort,noPos),natSort,tau)
+     | RelaxPat(p,pred,_) 	-> 
+       let tau1:Sort = Subsort(tau,pred,noPos) in
+       let (gamma,trm) = bindPattern(gamma,p,tau1) in
+       (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
+     | QuotientPat(p,pred,_) 	-> 
+       let Quotient(tau1,_,_):Sort = tau in
+       let (gamma,trm) = bindPattern(gamma,p,tau1)
+       in
+       (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
 
 
 %
@@ -366,7 +393,7 @@ spec
      subtypeRec([],tcc,gamma,M,tau,sigma))
 
  def subtypeRec(pairs,tcc,gamma,M,tau,sigma) =
-     if tau = sigma or 
+     if equalSort?(tau,sigma) or 
 	exists (fn p -> p = (tau,sigma)) pairs
 	then tcc
      else
@@ -396,15 +423,15 @@ spec
 	| _ ->
      case (tau1,sigma1)
        of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) -> 
-	  let x = freshName(gamma,"x") 				in
-          let xVar   = Var((x,sigma1),noPos):MS.Term			in
-          let gamma1 = insert((x,sigma1),gamma) 		in
+	  let x = freshName(gamma,"x") in
+          let xVar   = Var((x,sigma1),noPos):MS.Term in
+          let gamma1 = insert((x,sigma1),gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVar,sigma1,tau1) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,
-				  mkLetOrApply(M,xVar),tau2,sigma2)   in
+				  mkLetOrApply(M,xVar),tau2,sigma2) in
 	  tcc
         | (Product(fields1,_),Product(fields2,_)) -> 
-	  let tcc = ListPair.foldr 
+	  let tcc = ListPair.foldl 
 		(fn((_,t1),(id,t2),tcc) -> 
 		     subtypeRec(pairs,tcc,gamma,
 				Apply(Fun(Project id,Arrow(sigma1,t1,noPos),noPos),
@@ -413,7 +440,7 @@ spec
           in
           tcc
         | (CoProduct(fields1,_),CoProduct(fields2,_)) ->
-	  let tcc = ListPair.foldr 
+	  let tcc = ListPair.foldl 
 		(fn((_,t1),(id,t2),tcc) -> 
 		   (case (t1,t2)
 	              of (Some t1,Some t2) -> 
@@ -440,7 +467,7 @@ spec
 	  if id1 = id2
 	      then
 	      %%  let ps1 = ListPair.zip(srts1,srts2) in % unused
-	      let tcc = ListPair.foldr
+	      let tcc = ListPair.foldl
 			   (fn (s1,s2,tcc) -> 
 			       let x = freshName(gamma,"x") in
 			       let gamma1 = insert((x,s1),gamma) in
@@ -461,7 +488,7 @@ spec
 		    printSort sigma)
 
 
- def checkSpec(spc:Spec) = 
+ def checkSpec(spc) = 
      let localOps = spc.importInfo.localOps in
      let names = StringSet.fromList (map (fn Qualified(q,id) -> id) localOps) in
      let gamma0 = fn tvs -> fn nm -> ([], tvs, spc, nm, names) in
@@ -484,6 +511,8 @@ spec
    let tcSpec = addImport ((specCalcTerm,spc),emptySpec) in
    addConjectures (checkSpec spc,tcSpec)
 
+% op  boundVars    : Gamma -> List Var
+% op  boundTypeVars : Gamma -> TyVars
 % def boundTypeVars(_,tyVars,_,_,_) = tyVars
 
 % def boundVars(decls: List Decl,_,_,_,_) = 

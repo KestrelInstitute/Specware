@@ -17,7 +17,7 @@
 	. Generate the If-Then-Else expressions as described above
 	  With minimal branching.
 	  References
-		Phil's chapter in Preyton Jones' book
+		Phil's chapter in Peyton Jones' book
 	  	The pattern matching compilers in HOL
 		The matching compiler in Moscow ML 
                 (does use sharing, but branches).
@@ -1374,11 +1374,3 @@ def checkMatch (spc,rules: Match): MatchResult =
 	 else Ok)   
 
 *********)
-
-
-
-
-
-
-
-

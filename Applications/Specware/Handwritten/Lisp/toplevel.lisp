@@ -104,9 +104,11 @@
 (defvar swe::tmp)
 
 #+allegro
-(top-level:alias ("in-spec" :case-sensitive :string) (x) 
+(top-level:alias ("swe-spec" :case-sensitive :string) (x) 
   (setq *current-swe-spec* x)
   (format t "~&Subsequent :swe commands will now import ~A~%" x))
+
+(defvar *swe-print-as-slang?* t)
 
 (defun swe (x)
   (let* ((tmp-uid "swe_tmp")
@@ -129,7 +131,10 @@
 	  ;; Print result:
 	  (let ((*package* (find-package "SW-USER")))
 	    (cond ((boundp 'swe::tmp)
-		   (format t "~%Value is ~S~2%" swe::tmp))
+		   (if *swe-print-as-slang?*
+		       (format t "~%Value is ~%~/specware::pprint-dt/~%"
+			       swe::tmp)
+		     (format t "~%Value is ~S~2%" swe::tmp)))
 		  ((fboundp 'swe::tmp)
 		   (let* ((code (excl::func_code #'swe::tmp))
 			  (auxfn (find-aux-fn code)))
@@ -230,7 +235,9 @@
 (top-level:alias ("swpath" :case-sensitive :string) (&optional str)
   (if (or (null str) (equal str ""))
       (princ (sys:getenv "SWPATH"))
-    (let ((str (string str)))
+    (let ((str (if (eq (aref str 0) #\")
+		   (read-from-string str)
+		 str)))
       (speccalc::checkSpecPathsExistence str)
       (princ (setf (sys:getenv "SWPATH") (string str))))))
 
