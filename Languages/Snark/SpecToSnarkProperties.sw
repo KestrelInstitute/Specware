@@ -125,6 +125,8 @@ snark qualifying spec
       | ("Boolean", "<=>") -> "IFF"
       | ("Nat",     "<=") -> "=<"
       | ("Integer",     "<=") -> "=<"
+      | ("Nat",     "~") -> "-"
+      | ("Integer",     "~") -> "-"
       | _ -> id
 
   def snarkBoolOp(id) = 
