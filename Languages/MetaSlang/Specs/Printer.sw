@@ -3,7 +3,7 @@
  * rewritten.
  *
  * MetaSlang pretty printer.
- * This module contains utilities for printing terms, sorts, and patterns to 
+ * This module contains utilities for printing terms, types, and patterns to 
  * strings, files, or standard out.
  *
  * Formats supported are:
@@ -35,13 +35,13 @@ AnnSpecPrinter qualifying spec
 
  %% ========================================================================
 
- sort Path = List Nat
+ type Path = List Nat
 
- sort ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort 
+ type ParentSort = | Top | ArrowLeft | ArrowRight | Product | CoProduct | Quotient | Subsort 
 
- sort ParentTerm = | Top | Nonfix | Infix Associativity * Nat
+ type ParentTerm = | Top | Nonfix | Infix Associativity * Nat
 
- sort context = {
+ type context = {
 		 pp                 : ATermPrinter,
 		 printSort          : Boolean,
 		 markSubterm        : Boolean,
@@ -423,7 +423,7 @@ AnnSpecPrinter qualifying spec
 						 ppDs (index + 1, 5, pp.LetDeclsAnd, decls))
 	    in
 	      enclose(case parentTerm of
-			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| Infix _ -> false   % Add parens if inside infix expression
 			| _ -> true,
 		      blockAll (0, 
 				[(0, blockLinear (0, 
@@ -454,7 +454,7 @@ AnnSpecPrinter qualifying spec
 				  (4, ppTerm context (path, Top) trm)]))
             in
               enclose(case parentTerm of
-			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| Infix _ -> false % Add parens if inside an infix expr
 			| _ -> true,
 		      blockAll (0, 
 			[(0, blockNone (0, 
@@ -480,7 +480,7 @@ AnnSpecPrinter qualifying spec
 		AnnTermPrinter.ppListPath path ppEntry (pp.LCurly, string ", ", pp.RCurly) row
 	  | IfThenElse (t1, t2, t3, _) -> 
 	    enclose(case parentTerm of
-			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| Infix _ -> false % Add parens if inside an infix expr
 			| _ -> true,
 		    blockLinear (0, 
 		       [(0, prettys [pp.If, ppTerm context ([0]++ path, Top) t1]), 
@@ -507,7 +507,7 @@ AnnSpecPrinter qualifying spec
 			  ppSort context ([index]++ path, Top) srt])
 	    in
 	      enclose(case parentTerm of
-			| Infix(Left,_) -> false % Add parens if to the left of an infix op
+			| Infix _ -> false % Add parens if inside an infix expr
 			| _ -> true,
 		      blockFill (0, [
 			    (0, prettysNone 
@@ -631,9 +631,10 @@ AnnSpecPrinter qualifying spec
            case parent of
 	     | Product -> (pp.LP, pp.RP)
 	     | CoProduct -> (pp.LP, pp.RP)
+	     | Subsort -> (pp.LP, pp.RP)
 	     | _ -> (pp.Empty, pp.Empty)
        in
-	 AnnTermPrinter.ppListPath path ppEntry (pp.Empty, pp.Empty, pp.Empty) row
+	 AnnTermPrinter.ppListPath path ppEntry (left, pp.Empty, right) row
 
     | Product ([], _) -> string  "()"
 
@@ -642,6 +643,7 @@ AnnSpecPrinter qualifying spec
 	let (left, right) = 
 	    case parent of
 	      | Product -> (pp.LP, pp.RP)
+	      | Subsort -> (pp.LP, pp.RP)
 	      | _ -> (pp.Empty, pp.Empty)
 	in
 	  AnnTermPrinter.ppListPath path 
@@ -663,6 +665,7 @@ AnnSpecPrinter qualifying spec
           case parent of
 	    | Product   -> (pp.LP, pp.RP)
 	    | ArrowLeft -> (pp.LP, pp.RP)
+	    | Subsort -> (pp.LP, pp.RP)
 	    | _ -> (pp.Empty, pp.Empty)
       in
 	blockFill (0, 
@@ -677,14 +680,14 @@ AnnSpecPrinter qualifying spec
 		 [(0, pp.LCurly), 
 		  (0, ppPattern context ([0, 0, 1] ++ path, true) pat), 
 		  (0, string " : "), 
-		  (0, ppSort    context ([0]       ++ path, Top) s), 
+		  (0, ppSort    context ([0]       ++ path, Subsort) s), 
 		  (0, pp.Bar), 
 		  (0, ppTerm    context ([2, 0, 1] ++ path, Top) t), 
 		  (0, pp.RCurly)])
     | Subsort (s, t, _) -> 
       blockFill (0, 
 		 [(0, pp.LP), 
-		  (0, ppSort context ([0] ++ path, Top) s), 
+		  (0, ppSort context ([0] ++ path, Subsort) s), 
 		  (0, pp.Bar), 
 		  (0, ppTerm context ([1] ++ path, Top) t), 
 		  (0, pp.RP)])
@@ -761,7 +764,7 @@ AnnSpecPrinter qualifying spec
    if enclosed then
      pretty 
    else
-     prettysFill [string "(", pretty, string ")"]
+     prettysNone [string "(", pretty, string ")"]
         
  def ppPattern context (path, enclosed) pattern = 
    let pp : ATermPrinter = context.pp in
