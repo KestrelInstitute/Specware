@@ -412,6 +412,13 @@ def mkJavaBool(b) =
   CondExp (Un (Prim (Bool (b))), None)
 
 def mkJavaString(s) =
+  let chars = explode s in
+  let s = foldl (fn
+		 | (#\",s) -> s^"\\\""
+		 | (#\n,s) -> s^"\\n"
+                 | (c,s) -> s^(toString c)
+		) "" chars
+  in
   CondExp (Un (Prim (String (s))), None)
 
 def mkJavaChar(c) =
