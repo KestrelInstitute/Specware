@@ -1187,7 +1187,10 @@
   )
 
 (defun ls (&optional (str ""))
-  (let* ((contents (directory (specware::dir-to-path str)))
+  (let* ((dirpath  (specware::dir-to-path str))
+	 (contents #-mcl (directory dirpath)
+		   #+mcl (directory (merge-pathnames (make-pathname :name :wild) dirpath)
+				    :directories t :all nil))
 	 (sw-files (loop for p in contents
 		     when (or (string= (pathname-type p) "sw")
 			      (specware::directory?
@@ -1209,7 +1212,9 @@
   (values))
 
 (defun list-directory-rec (dir)
-  (let* ((contents (directory dir))
+  (let* ((contents #-mcl(directory dir)
+		   #+mcl(directory (merge-pathnames (make-pathname :name :wild) dir)
+				   :directories t :all nil))
 	 (sw-files (loop for p in contents
 		     when (string= (pathname-type p) "sw")
 		     collect p)))

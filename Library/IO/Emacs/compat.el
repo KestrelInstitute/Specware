@@ -6,6 +6,7 @@
 (pushnew ".x86f" completion-ignored-extensions)	; cmulisp
 (pushnew ".dfsl" completion-ignored-extensions)	; openmcl
 (pushnew ".sfsl" completion-ignored-extensions)	; sbcl
+(pushnew ".fas"  completion-ignored-extensions)	; clisp
 
 
 (when (or (eq lisp-emacs-interface-type 'franz))

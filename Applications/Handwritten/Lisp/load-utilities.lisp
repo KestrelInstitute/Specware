@@ -26,7 +26,7 @@
   ;; we need consistency:  all pathnames, or all strings, or all lists of strings, ...
   #+allegro   (excl::current-directory)      ; pathname
   #+Lispworks (hcl:get-working-directory)    ; ??       (current-pathname)
-  #+mcl       (ccl::current-directory-name)  ; ??
+  #+mcl       (ensure-final-slash (ccl::current-directory-name))  ; ??
   #+cmu       (extensions:default-directory) ; pathname
   #+sbcl      (sb-unix:posix-getcwd)
   #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
@@ -319,7 +319,9 @@
 (defun directory? (pathname)
   (and (null (pathname-name pathname))
        (null (pathname-type pathname))
-       (not (null (directory pathname)))))
+       (not (null #-mcl (directory pathname)
+		  #+mcl (directory (merge-pathnames (make-pathname :name :wild) pathname)
+				   :directories t)))))
 
 (defun extend-directory (dir ext-dir)
   (make-pathname :directory

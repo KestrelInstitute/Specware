@@ -90,6 +90,7 @@
 	 (sw-shell-pkg (find-package :SWShell))
 	 (*print-level* *sw-shell-print-level*)
 	 (*print-length* *sw-shell-print-length*)
+	 (start-up t)
 	 * ** ***
 	 / // ///
 	 ch)
@@ -108,12 +109,15 @@
 	    (with-simple-restart (abort "Return to Specware Shell top level.")
 					;(set-specware-shell t)
 	      (loop while (member (setq ch (read-char *standard-input* nil nil)) '(#\Newline #\Space #\Tab))
-		    do (when (eq ch #\Newline)  ; If user types a newline give a new prompt
+		    do ;; If user types a newline give a new prompt
+		       (when (and (eq ch #\Newline) (not start-up))
 			 (print-shell-prompt)))
+	      (setq start-up nil)
 	      (when ch
 		(unread-char ch))
 	      (catch #+allegro 'tpl::top-level-break-loop
-		     #-allegro nil
+		     #+mcl :toplevel 
+		     #-(or allegro mcl) nil
 		(let ((form (read *standard-input* nil magic-eof-cookie)))
 		  (when (symbolp form)
 		    (setq form (intern (symbol-name form) sw-shell-pkg)))
@@ -148,7 +152,7 @@
 
 (defun sw-shell-command (command)
   (let ((ch (read-char-no-hang *standard-input* nil nil)))
-    (when ch
+    (when (and ch (not (eq ch #\Newline)))
       (unread-char ch))
     (if (or (null ch)          ; interactive, end of command
 	    (eq ch #\Newline)) ; batch, first char after whitespace is newline      
