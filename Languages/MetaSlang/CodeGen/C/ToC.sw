@@ -10,7 +10,7 @@ CGen qualifying spec {
 
   op specToC : Spec -> CSpec
   def specToC spc =
-    let cSpec = emptyCSpec in
+    let cSpec = emptyCSpec "" in
     let cSpec = generateCTypes cSpec spc in
     let cSpec = generateCVars cSpec spc in
     let cSpec = generateCFunctions cSpec spc in
