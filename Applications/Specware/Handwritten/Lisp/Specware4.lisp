@@ -211,6 +211,11 @@
 	            (setf (sb-ext:bytes-consed-between-gcs) 50331648))
        sb-int:*after-save-initializations*)
 
+;;; Clear load environment vars
+#+cmu
+(progn (setq ext:*environment-list* ())
+       (setq lisp::lisp-environment-list ()))
+
 
 ;;; Set temporaryDirectory
 #+allegro
