@@ -3,6 +3,10 @@
 %% Moved body into AuxPSL.sw so other apps such as Accord could
 %% access it without generating PSL.lisp 
 
-let PSL = AuxPSL in
-generate lisp PSL
+let PSL =
+  spec 
+    import AuxPSL
+    import /Languages/PSL/CodeGen/ToC
+  endspec
+in generate lisp PSL
 
