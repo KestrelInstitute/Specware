@@ -122,22 +122,6 @@
     (make-pos l r)))
 
 ;;; ========================================================================
-;;;  SC-PROVER
-;;; ========================================================================
-
-(defun make-sc-prover (claim-name spec-term prover-name assertions options l r)
-  (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
-	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
-	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options)))
-    (cons (cons :|Prove| (vector claim-name spec-term prover-name assertions options))
-	  (make-pos l r))))
-
-(defun make-sc-prover-options (name_or_string)
-  (cond ((stringp name_or_string) 
-	 (read_list_of_s_expressions_from_string name_or_string))
-	(t (cons :|OptionName| name_or_string))))
-
-;;; ========================================================================
 ;;;  SC-UNIT-ID
 ;;; ========================================================================
 
@@ -168,7 +152,7 @@
 
 
 ;;; ========================================================================
-;;;  SPEC-DEFINITION
+;;;  SC-SPEC-DEFINITION
 ;;;  http://www.specware.org/manual/html/modules.html
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
@@ -923,14 +907,6 @@ If we want the precedence to be optional:
 		(make-pos l r)))
 
 ;;; ========================================================================
-;;;  SC-EXTEND
-;;; ========================================================================
-
-(defun make-sc-extend (term l r)
-  (cons (cons :|ExtendMorph| term)
-    (make-pos l r)))
-
-;;; ========================================================================
 ;;;  SC-SHAPE
 ;;; ========================================================================
 
@@ -1009,6 +985,35 @@ If we want the precedence to be optional:
   (cons (cons :|Obligations| term)
     (make-pos l r)))
 
+;;; ========================================================================
+;;;  SC-PROVE
+;;; ========================================================================
+
+(defun make-sc-prover (claim-name spec-term prover-name assertions options l r)
+  (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
+	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
+	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options)))
+    (cons (cons :|Prove| (vector claim-name spec-term prover-name assertions options))
+	  (make-pos l r))))
+
+(defun make-sc-prover-options (name_or_string)
+  (cond ((stringp name_or_string) 
+	 (read_list_of_s_expressions_from_string name_or_string))
+	(t (cons :|OptionName| name_or_string))))
+
+;;; ========================================================================
+;;;  SC-REDUCE
+;;; ========================================================================
+
 (defun make-sc-reduce (ms-term sc-term l r)
   (cons (cons :|Reduce| (cons ms-term sc-term))
     (make-pos l r)))
+
+;;; ========================================================================
+;;;  SC-EXTEND
+;;; ========================================================================
+
+(defun make-sc-extend (term l r)
+  (cons (cons :|ExtendMorph| term)
+    (make-pos l r)))
+

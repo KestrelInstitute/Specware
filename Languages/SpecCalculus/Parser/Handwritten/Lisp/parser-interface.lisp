@@ -85,7 +85,8 @@
 
 ;; parseString is not called by anything, but is handy for debugging...
 (defun parseString (string) 
-  (let* ((session     (parse-string string *specware4-parser* *specware4-tokenizer*))
+  (let* ((*parser-source* (list :string string))
+	 (session     (parse-string string *specware4-parser* *specware4-tokenizer*))
 	 (raw-results (parse-session-results session))
 	 (error?      (or (parse-session-error-reported? session) 
 			  (parse-session-gaps            session) 
@@ -112,7 +113,7 @@
 		(format t "~%---parseFile pre-evaluation result---~%")
 		(pprint raw-form)
 		(format t "~%---~%")))
-	     (let ((result (eval raw-form)))
+	     (let ((result (eval raw-form))) ; may refer to *parser-source*
 	       (cons :|Some| result))))
 	  (t
 	   (cons :|Error|

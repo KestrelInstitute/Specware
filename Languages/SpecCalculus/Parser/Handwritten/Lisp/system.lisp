@@ -3,43 +3,15 @@
 
 (in-package "PARSER4")
 
-;;;; #||
-;;;; (defun current-directory2 ()
-;;;;   (excl::current-directory))
-;;;; 
-;;;; (defun change-directory2 (directory)
-;;;;   ;; (lisp::format t "Changing to: ~A~%" directory)
-;;;;   (excl::chdir directory)
-;;;;   (setq lisp::*default-pathname-defaults* (excl::current-directory)))
-;;;; 
-;;;; (defun make-system2 (new-directory)
-;;;;   (let ((old-directory (current-directory2)))
-;;;;     (change-directory2 new-directory)
-;;;;     (unwind-protect (load "system.lisp")
-;;;;       (change-directory2 old-directory))))
-;;;; 
-;;;; (format t "~&;;; Loading /specware/parser ~%")
-;;;; (make-system2 "/specware/parser/")
-;;;; (format t "~&;;; Loaded ~%")
-;;;; #||
-
-;; === temporary
-;; This is a common load file for all the build files in this direcrtor. 
-;; This loads and compiles all he files pertaing to the specializer.
-
-
-;; All library paths are relative to the Specware4 root directory.
-;; sjw: doesn't seem to be used
-;;(setq baseDir (specware::getenv "SPECWARE4"))
-
-;; ========
+;; This is a common load file for all the build files in this direcrtory. 
+;; This loads and compiles all the files pertaining to the specializer.
 
 (cl-user::compile-and-load-local-file "tokenizer")
 
 (defparameter *specware4-tokenizer*
   #'extract-specware4-tokens-from-file)
 
-;; *specware4-parser* is referenced in semantics.lisp, so declare it first...
+;; *specware4-parser* is referenced in parser-interface.lisp, so declare it first...
 (defparameter *specware4-parser* nil)
 
 (cl-user::compile-and-load-local-file "semantics")
@@ -51,9 +23,9 @@
   ;;(comment "===================================================================================")
   ;; (comment " ")
   ;; (comment "Printing grammar as .ps file")
-;; sjw: This dies on windows build, and why is this done at build time
-;;  (print-grammar-ps-file)
-  ;; (comment " ")
+  ;; sjw: This dies on windows build, and why is this done at build time
+  ;;  (print-grammar-ps-file)
+  ;;(comment " ")
   ;;(comment "===================================================================================")
   )
 
@@ -70,5 +42,6 @@
     (print (mapcar #'eval (third res1)))))
 
 (progn
+  (format t "~&;     To print specware4 grammar as pdf file: (parser4::print-grammar-ps-file)~&")
   (format t "~&;     To test specware4 parser: (cl-user::test-specware4-parser <file defaulting to test.spec>)~%")
   )
