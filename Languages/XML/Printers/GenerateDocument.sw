@@ -11,8 +11,6 @@ XML qualifying spec
 
   sort SortExpansionTable = List (SortDescriptor * SortDescriptor)
 
-  def null_whitespace : WhiteSpace = []
-
   def indentation_chardata (vspacing, indent) : UChars =
     (repeat_char (UChar.newline, vspacing)) ^  (repeat_char (UChar.space, indent))
 

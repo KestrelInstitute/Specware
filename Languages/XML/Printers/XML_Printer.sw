@@ -93,7 +93,7 @@ XML qualifying spec
   %%   ==>
   %% [K12]  TextDecl            ::=  GenericTag
   %%
-  %%                                                             [KC: proper text decl]
+  %%                                                             [KC: Proper Text Decl]
   %%  
   %% ====================================================================================================
   %%  
@@ -147,7 +147,7 @@ XML qualifying spec
   %%   ==>
   %% [K13]  XMLDecl       ::=  GenericTag
   %%
-  %%                                                             [KC: proper XML Decl]
+  %%                                                             [KC: Proper XML Decl]
   %%
   %% *[24]  VersionInfo   ::=  S 'version' Eq ("'" VersionNum "'" | '"' VersionNum '"')
   %%
@@ -256,6 +256,10 @@ XML qualifying spec
   %% [74]  PEDef           ::=  EntityValue | ExternalID
   %%
   %% [75]  ExternalID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
+  %%  ==>
+  %% [K14] ExternalID    ::=  GenericID
+  %%
+  %%                                                             [KC: At Least SYSTEM]
   %%
   %% [76]  NDataDecl       ::=  S 'NDATA' S Name 
   %%
@@ -266,12 +270,16 @@ XML qualifying spec
   %%                                                             [VC: Unique Notation Name]
   %%
   %% [83]  PublicID        ::=  'PUBLIC' S PubidLiteral 
+  %%  ==>
+  %% [K15] PublicID      ::=  GenericID
+  %%
+  %%                                                             [KC: Just PUBLIC]
   %% ----------------------------------------------------------------------------------------------------
 
   def print_DocTypeDecl ({w1, name, external_id, w3, markups} : DocTypeDecl) : UString =
     w1 ^ name ^ 
     (case external_id of
-       | Some (w1, id) -> w1 ^ print_ExternalID id
+       | Some (w1, id) -> w1 ^ print_GenericID id
        | _ -> [])
     ^ w3 ^
     (case markups of
@@ -368,22 +376,14 @@ XML qualifying spec
 
   def print_AttType x = 
     case x of
-      | String           -> (ustring "CDATA")
-      | Tokenized  ttype -> print_TokenizedType  ttype
-      | Enumerated etype -> print_EnumeratedType etype
-
-  def print_TokenizedType x =
-    case x of
-      | ID        -> (ustring "ID")
-      | IDRef     -> (ustring "IDREF")
-      | IDRefs    -> (ustring "IDREFS")
-      | Entity    -> (ustring "ENTITY")
-      | Entities  -> (ustring "ENTITIES")
-      | NmToken   -> (ustring "NMTOKEN")
-      | NmTokens  -> (ustring "NMTOKENS")
-
-  def print_EnumeratedType x =
-    case x of
+      | String            -> (ustring "CDATA")
+      | ID                -> (ustring "ID")
+      | IDRef             -> (ustring "IDREF")
+      | IDRefs            -> (ustring "IDREFS")
+      | Entity            -> (ustring "ENTITY")
+      | Entities          -> (ustring "ENTITIES")
+      | NmToken           -> (ustring "NMTOKEN")
+      | NmTokens          -> (ustring "NMTOKENS")
       | Notation    ntype -> print_NotationType ntype
       | Enumeration enum  -> print_Enumeration  enum
   
@@ -422,7 +422,7 @@ XML qualifying spec
    case x of
      | Value    value  -> print_EntityValue value
      | External (id, opt_decl) -> 
-       (print_ExternalID id) ^ 
+       (print_GenericID id) ^ 
        (case opt_decl of
 	  | Some ndata_decl -> print_NDataDecl ndata_decl
 	  | _ -> [])
@@ -436,27 +436,31 @@ XML qualifying spec
   def print_PEDef x = 
     case x of
      | Local  value -> print_EntityValue value
-     | Remote id    -> print_ExternalID id
+     | Remote id    -> print_GenericID id
 
   %% ----------------------------------------------------------------------------------------------------
 
-  def print_ExternalID x = 
-    case x of
-     | System (w1, sys_lit) -> 
-       (ustring "SYSTEM") ^ w1 ^ (print_SystemLiteral sys_lit)
+  def print_GenericID id = 
+   case id.public of
+     | Some pub_lit ->
+       (ustring "PUBLIC") ^ id.w1 ^ (print_PubidLiteral pub_lit) ^
+       (case id.system of
+	  | Some sys_lit -> (id.w2 ^ (print_SystemLiteral sys_lit))
+	  | None         -> [])
+     | _ ->
+       (ustring "SYSTEM") ^ 
+       (case id.system of
+	  | Some sys_lit -> (id.w2 ^ (print_SystemLiteral sys_lit))
+	  | None         -> [])
 
-     | Public (w1, pub_lit, w2, sys_lit) -> 
-       (ustring "PUBLIC") ^ w1 ^ (print_PubidLiteral pub_lit) ^ w2 ^ (print_SystemLiteral sys_lit)
+  def print_PubidLiteral  x = print_QuotedText x
+
+  def print_SystemLiteral x = print_QuotedText x
+
+  %% ----------------------------------------------------------------------------------------------------
 
   def print_NotationDecl {w1, name, w2, id, w3} =
-    (ustring "<!NOTATION") ^ w1 ^ name ^ w2 ^ 
-    (case id : (| External ExternalID | Public PublicID) of
-       | External id -> print_ExternalID id
-       | Public   id -> print_PublicID   id)
-    ^ w3 ^ (ustring ">")
-
-  def print_PublicID  {w1, lit} =
-    (ustring "PUBLIC") ^ w1 ^ (print_PubidLiteral lit)
+    (ustring "<!NOTATION") ^ w1 ^ name ^ w2 ^ (print_GenericID id) ^ w3 ^ (ustring ">")
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Element                                                                             %%%
@@ -467,35 +471,34 @@ XML qualifying spec
   %%                                                             [VC:  Element Valid]
   %%
   %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
-  %% 
+  %%                                                             [WFC: Unique Att Spec]
+  %%   ==>
+  %% [K16]  STag          ::=  GenericTag                            
+  %%                                                             [KC:  Proper Start Tag]
   %%                                                             [WFC: Unique Att Spec]
   %% 
   %%  [41]  Attribute     ::=  Name Eq AttValue 
-  %%
   %%                                                             [VC:  Attribute Value Type]
   %%                                                             [WFC: No External Entity References]
   %%                                                             [WFC: No < in Attribute Values]
   %%
   %% *[42]  ETag          ::=  '</' Name S? '>'
+  %%   ==>
+  %% [K17]  ETag          ::=  GenericTag                   
+  %%                                                             [KC:  Proper End Tag]
   %%
-  %%  [43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+  %%  Since the chardata in [43] is typically used for indentation, 
+  %%  it makes more sense to group it as in [K18]:
+  %%
+  %% *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+  %%   ==>
+  %% [K18]  content       ::=  (CharData? (element | Reference | CDSect | PI | Comment))* CharData?
   %% 
   %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
-  %%
   %%                                                             [WFC: Unique Att Spec]
-  %%
-  %% [K14]  STag          ::=  GenericTag                            
-  %%
-  %%                                                             [KC:  proper start tag]
-  %%                                                             [WFC: Unique Att Spec]
-  %%
-  %% [K15]  ETag          ::=  GenericTag                   
-  %%
-  %%                                                             [KC:  proper end tag]
-  %%
-  %% [K16]  EmptyElemTag  ::=  GenericTag
-  %%
-  %%                                                             [KC:  proper empty tag]
+  %%   ==>
+  %% [K19]  EmptyElemTag  ::=  GenericTag
+  %%                                                             [KC:  Proper Empty Tag]
   %%                                                             [WFC: Unique Att Spec]
   %%
   %% ----------------------------------------------------------------------------------------------------
@@ -634,10 +637,6 @@ XML qualifying spec
     case x of
       | NonRef ustr -> ustr
       | Ref    ref  -> print_Reference ref
-
-  def print_SystemLiteral x = print_QuotedText x
-
-  def print_PubidLiteral  x = print_QuotedText x
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          References                                                                          %%%
@@ -839,10 +838,22 @@ XML qualifying spec
   def print_WhiteSpace white = white
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          Table of WFC and VC entries                                                         %%%
+  %%%          Table of WFC, KC, and VC entries                                                    %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  Well-Formedness Conditions
+  %%  Well-Formedness Conditions:
+  %%
+  %%  anonymous rule given at http://www.w3.org/TR/REC-xml#dt-character
+  %%
+  %%  [Definition: A parsed entity contains text, a sequence of characters, which may represent 
+  %%  markup or character data.] [Definition: A character is an atomic unit of text as specified 
+  %%  by ISO/IEC 10646 [ISO/IEC 10646] (see also [ISO/IEC 10646-2000]). Legal characters are tab,
+  %%  carriage return, line feed, and the legal characters of Unicode and ISO/IEC 10646. 
+  %%  The versions of these standards cited in A.1 Normative References were current at the time 
+  %%  this document was prepared. New characters may be added to these standards by amendments 
+  %%  or new editions. Consequently, XML processors must accept any character in the range specified 
+  %%  for Char. The use of "compatibility characters", as defined in section 6.8 of [Unicode] 
+  %%  (see also D21 in section 3.6 of [Unicode3]), is discouraged.]
   %%
   %%  [WFC: External Subset]                        [28]
   %%
@@ -868,7 +879,7 @@ XML qualifying spec
   %% 
   %%    The Name in an element's end-tag must match the element type in the start-tag.
   %% 
-  %%  [WFC: Unique Att Spec]                       *[40] *[44] [K14] [K16] -- unique_attributes?
+  %%  [WFC: Unique Att Spec]                       *[40] *[44] [K16] [K19] -- unique_attributes?
   %%
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %%
@@ -906,7 +917,7 @@ XML qualifying spec
   %%    
   %% -------------------------------------------------------------------------------------------------
   %%
-  %%  [KC: well-formed doc]                         [K1]  -- well_formed_doc?
+  %%  [KC: Well-Formed Doc]                         [K1]  -- well_formed_doc?
   %%
   %%    at most one XMLDecl
   %%    at most one doctypedecl
@@ -914,38 +925,47 @@ XML qualifying spec
   %%    XMLDecl appears first (if at all)
   %%    doctypedecl precees element
   %%
-  %%  [KC: valid doc]                               [K1]  -- valid_doc?
+  %%  [KC: Valid Doc]                               [K1]  -- valid_doc?
   %%    
   %%    exactly one doctypedecl
   %%
-  %%  [KC: proper text decl]                       [K12]  -- text_decl?
+  %%  [KC: Proper Text Decl]                       [K12]  -- text_decl?
   %%
   %%    prefix      = '?'
   %%    name        = 'xml'
   %%    attributes  = version? encoding
   %%    postfix     = '?'
   %%
-  %%  [KC: proper XML Decl]                        [K13] -- xml_decls?
+  %%  [KC: Proper XML Decl]                        [K13] -- xml_decls?
   %%
   %%    prefix     = '?'
   %%    name       = 'xml']
   %%    attributes = version encoding? standalone?
   %%    postfix    = '?'
   %%
+  %%  [KC: At Least SYSTEM]                        [K14] -- external_id?
   %%
-  %%  [KC: proper start tag]                       [K14] -- start_tag?
+  %%    some system literal
+  %%    (optional public literal)
+  %%
+  %%  [KC: Just PUBLIC]                            [K15] -- public_id?
+  %%
+  %%    no sytem literal
+  %%    public literal
+  %%
+  %%  [KC: Proper Start Tag]                       [K16] -- start_tag?
   %%
   %%    prefix     = ''
   %%    name       not = 'xml'
   %%    postfix    = ''
   %%
-  %%  [KC: proper end   tag]                       [K15] -- end_tag?
+  %%  [KC: Proper End   Tag]                       [K17] -- end_tag?
   %%
   %%    prefix     = '/'
   %%    name       not = 'xml'
   %%    postfix    = ''
   %%
-  %%  [KC: proper empty tag]                       [K16] -- empty_tag?
+  %%  [KC: Proper Empty Tag]                       [K19] -- empty_tag?
   %%
   %%    prefix     = ''
   %%    name       not = 'xml'

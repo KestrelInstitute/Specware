@@ -8,26 +8,31 @@ XML qualifying spec
   %%%
   %%% Grammar conventions:
   %%%
-  %%%   This parser is based on the grammar specified by the rules [1] through [85], 
-  %%%   found at http://www.w3.org/TR/REC-xml#sec-documents
+  %%%   The grammar used here is based on the grammar specified by the rules [1]-[85], 
+  %%%   (but note there are no rules 33-38 or 79), found at 
+  %%%   http://www.w3.org/TR/REC-xml#sec-documents
   %%%   and carefully quoted here (including their associated conditions tagged as 
   %%%   one of:
   %%%
   %%%     WFC : Well-formedness constraint
   %%%     VC  : Validity constraint
   %%%
+  %%%   An explanation of each WFC/VC is included at the end of this file.
+  %%%
   %%%   A straightforward implementation of the W3 grammar is possible, but would 
   %%%   be less than ideal.  In particular, it would be poor at identifying simple 
   %%%   typos and misspellings, or noticing that attrs were specified, but out of 
   %%%   order, etc.
   %%%
-  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [Kn]
+  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K21]
   %%%   which are implemented here to factor some original W3 ruls into a parsing 
   %%%   stage using KI rules followed by post-parsing well formedness checks based 
   %%%   perhaps on other W3 rules.  
   %%% 
   %%%   All such substitutions are clearly indicated, and the required well formedness
-  %%%   checks are on lines marked by ==.
+  %%%   checks are indicated by KC annotations, analogous to WFC and VC annotations.
+  %%%
+  %%%   Original W3 rules that are replaced by KI rules are flagged with an asterisk.
   %%%
   %%% ================================================================================
   %%%
@@ -49,9 +54,14 @@ XML qualifying spec
   %%%
   %%%      [* I.e., without side effects or non-local control jumps.]
   %%%
+  %%%  Note that some monadic grammars are used to facilitate back-tracking via
+  %%%  continuations.  That is explicitly NOT the case here, since this can be
+  %%%  extremely (exponentially!) inefficient and can lead to very confusing 
+  %%%  error messags.
+  %%%
   %%% ================================================================================
   %%%
-  %%% Naming Convention: 
+  %%% Naming Convention:
   %%%
   %%%  start refers to the list of original chars at the start of a routine.
   %%%  tail  refers to the list just beyond the last successfully parsed character.
@@ -64,9 +74,9 @@ XML qualifying spec
   %%%                
   %%%  Local routines named probe are eagerly looking for a sequence of as many
   %%%  things as they can find, but are prepared to return happily at the current
-  %%%  tail as soon as they cannot find any more.
+  %%%  tail as soon as they cannot find any more.  Often they terminate by looking
+  %%%  for some kind of closing bracket: >)]
   %%%                
   %%% ================================================================================
-
 
 endspec

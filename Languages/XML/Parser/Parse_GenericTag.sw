@@ -1,22 +1,24 @@
 XML qualifying spec
 
-  import Parse_Literals
   import Parse_Character_Strings
 
   %% ====================================================================================================
   %%
-  %% [23] [40] [44] are instances of [K3]:
+  %% [23] [40] [44] are instances of [K4]:
   %% 
-  %% [K3]  GenericTag         ::= '<' GenericName GenericAttributes WhiteSpace? EndChars? '>'
-  %% [K4]  GenericName        ::= ...
-  %% [K5]  GenericAttributes  ::= GenericAttribute*
-  %% [K6]  GenericAttribute   ::= GenericName Eq GenericValue 
+  %%  [K4]  GenericTag         ::=  GenericPrefix GenericName GenericAttributes GenericPostfix 
+  %%  [K5]  GenericPrefix      ::=  Chars - NmToken
+  %%  [K6]  GenericName        ::=  NmToken        
+  %%  [K7]  GenericAttributes  ::=  List GenericAttribute
+  %%  [K8]  GenericAttribute   ::=  S NmToken S? '=' S? QuotedText
+  %%  [K9]  GenericPostfix     ::=  Chars - NmToken
+  %% [K10]  QuotedText         ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %% 
   %% [16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
   %% [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
   %%
-  %% [K7]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
-  %% [K8]  PIValue   ::= Char* - (Char* '?>' Char*)
+  %% [K20] PI        ::= '<?' PITarget (S PIValue)? '?>'           
+  %% [K21] PIValue   ::= Char* - (Char* '?>' Char*)
   %% 
   %% ====================================================================================================
 

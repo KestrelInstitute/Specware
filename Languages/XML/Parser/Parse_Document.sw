@@ -9,25 +9,29 @@ XML qualifying spec
   %%%          XML Document                                                                        %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [1]  document  ::=  prolog element Misc*
+  %%  *[1]  document  ::=  prolog element Misc*
   %%
-  %% [22]  prolog    ::=  XMLDecl? Misc* (doctypedecl  Misc*)?
+  %% *[22]  prolog    ::=  XMLDecl? Misc* (doctypedecl  Misc*)?
   %%
-  %% [27]  Misc      ::=  Comment | PI | S
+  %% *[27]  Misc      ::=  Comment | PI | S
   %%
-  %%  [1] transforms as follows:
+  %% ----------------------------------------------------------------------------------------------------
+  %%
+  %%   [1] transforms as follows:
   %%
   %%       document  ::=  XMLDecl? Misc* (doctypedecl  Misc*)? element Misc*
   %%       document  ::=  XMLDecl? Misc*  doctypedecl? Misc*   element Misc*
   %%
-  %%  so we can recast it as:
+  %%  so we can recast [1] [22] [27] as:
   %%
-  %% [K1]  document  ::=  Misc*
-  %%                                                             [WFC: at most one doctypedecl]
-  %%                                                             [WFC: exactly one element]
-  %%                                                             [WFC: doctypedecl preceeds eleement]
+  %%  [K1]  document  ::=  DocItems
   %%
-  %% [K2]  Misc      ::=  XMLDecl | Comment | PI | S | doctypedecl | element
+  %%                                                             [KC: Well-Formed Doc]
+  %%
+  %%  [K2]  DocItems  ::=  DocItem*
+  %%
+  %%  [K3]  DocItem   ::=  XMLDecl | Comment | PI | S | doctypedecl | element
+  %%
   %% ----------------------------------------------------------------------------------------------------
 
   def parse_Document (start  : UChars) : Required Document =

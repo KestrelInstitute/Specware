@@ -19,10 +19,9 @@ XML qualifying spec
   %%
   %% ----------------------------------------------------------------------------------------------------
 
-
-  def parse_AttValue (start : UChars) : Required AttValue =
+  def parse_AttValue (start : UChars) : Possible AttValue =
     let 
-       def probe (tail, rev_char_data, rev_items, qchar) : Required AttValue =
+       def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
 	   | 60  (* < *)   :: _ -> 
 	     error ("'<' is not allowed in an attribute value", start, nthTail (tail, 20))
@@ -51,7 +50,7 @@ XML qualifying spec
 			         let item : AttValue_Item = NonRef (rev rev_char_data) in
 				 rev (cons (item, rev_items)))}
 	       in
-		 return (av, tail)
+		 return (Some av, tail)
 	     else
 	       probe (tail,
 		      cons (char, rev_char_data), 
@@ -64,7 +63,7 @@ XML qualifying spec
 	| 34 (* double quote *) :: tail -> probe (tail, [], [], 34)
 	| 39 (* apostrophe" *)  :: tail -> probe (tail, [], [], 39)
         | _ ->
-	  error ("Expected an attribute value", start, nthTail (start, 10))
+	  return (None, start)
 
   def parse_QuotedText (start : UChars) : Required QuotedText =
     let 
