@@ -18,13 +18,20 @@
 (setq *features* (remove :DEBUG-PARSER    *features* :count 1))
 (setq *features* (remove :OPTIMIZE-PARSER *features* :count 1))
 
-;; Choose either or neither (both is ok, but would be peculiar)
+;; Or you can just edit the following to choose either or neither (both is ok, but would be peculiar)
 ;(pushnew :DEBUG-PARSER *features*)
 ;(pushnew :OPTIMIZE-PARSER *features*)
 
-#+DEBUG-PARSER    (format t "~%DEBUG-PARSER    feature is on.~2%")
-#+OPTIMIZE-PARSER (format t "~%OPTIMIZE-PARSER feature is on.~2%")
+#+DEBUG-PARSER    (format t "~&;;; DEBUG-PARSER    feature is on.~%")
+#-DEBUG-PARSER    (format t "~&;;; DEBUG-PARSER    feature is off.~%")
+#+OPTIMIZE-PARSER (format t "~&;;; OPTIMIZE-PARSER feature is on.~%")
+#-OPTIMIZE-PARSER (format t "~&;;; OPTIMIZE-PARSER feature is off.~%")
 
+(dolist (f (directory (format nil "~A/Library/Algorithms/Parsing/Chart/Handwritten/Lisp/*.~A" 
+			      specware::specware4
+			      specware::*fasl-type*)))
+  (delete-file f))
+    
 #+DEBUG-PARSER 
 (proclaim '(optimize (speed 0) (safety 3) (compilation-speed 0) (space 0) (debug 3)))
 
@@ -69,4 +76,20 @@
 
 (compile-and-load-local-file "describe-grammar")
 
-
+(with-open-file (s (format nil "~A/Library/Algorithms/Parsing/Chart/Handwritten/Lisp/log.~A.status"
+			   specware::specware4
+			   specware::*fasl-type*)
+		   :direction :output :if-exists :supersede)
+  (format s "~%;;; When lisp files were last compiled to ~A files ~A,~%"
+	  specware::*fasl-type*
+	  (multiple-value-bind (sec min hour day month year)
+	      (decode-universal-time (get-universal-time))
+	    (format nil "at ~2,'0D:~2,'0D:~2,'0D on ~4,'0D-~2,'0D-~2,'0D" 
+		    hour min sec year month day)))
+  (format s "~&;;;~%")
+  (format s "~&;;;  DEBUG-PARSER    was ~A,~%"
+	  #+DEBUG-PARSER "on"
+	  #-DEBUG-PARSER "off")
+  (format s "~&;;;  OPTIMIZE-PARSER was ~A.~%"
+	  #+OPTIMIZE-PARSER "on"
+	  #-OPTIMIZE-PARSER "off"))
