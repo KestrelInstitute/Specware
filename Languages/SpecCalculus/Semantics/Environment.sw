@@ -278,6 +278,14 @@ the lisp debugger.
   def error str = raise (Fail str)
 \end{spec}
 
+This is for going into the Lisp Debugger when called during nomal madic execution.
+
+\begin{spec}
+  op mFail : fa(a) String -> Env a
+  def mFail str = fn state -> let _ = (fail str) in (Exception (Fail str), state)
+\end{spec}
+
+
 This is used for catching an exception. We execute the first operation
 If that raise an exception, then control is transferred to the second
 sequence with the value of the exception passed as an argument.

@@ -5,6 +5,7 @@ Synchronized with r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
+  import /Languages/MetaSlang/Specs/StandardSpec
 \end{spec}
 
 To qualify a spec means to change all unqualified names to qualified
@@ -46,39 +47,44 @@ is flattened,
     def translatePattern pat = pat
 
     def convertOpMap opMap =
-      foldriAQualifierMap (fn (qualifier, id, (aliases, x, y, optional_def),newMap) ->
-                           %% TODO:
-                           %% If qualifier = UnQualified and new_qualifier.id
-                           %% already in map then should check for consistency
-                           insertAQualifierMap
-                             (newMap,
-                              if qualifier = UnQualified
-                                then new_qualifier
-                                else qualifier,
-                              id,
-                              (List.map translateQualifiedId aliases, x, y, optional_def)))
+      foldriAQualifierMap
+        (fn (qualifier, id, (aliases, x, y, optional_def),newMap) ->
+	   let newOpInfo = (map translateQualifiedId aliases, x, y, optional_def) in
+	   let newQualifier = if qualifier = UnQualified
+				then new_qualifier
+			      else qualifier
+           in
+	   let oldOpInfo = findAQualifierMap(newMap, newQualifier, id) in
+	   insertAQualifierMap
+	     (newMap, newQualifier, id,
+	      %% Possibly the new name already is used
+	      mergeOpInfo(newOpInfo, oldOpInfo, newQualifier, id)))
         emptyAQualifierMap opMap
 
     def convertSortMap sortMap =
-      foldriAQualifierMap (fn (qualifier, id, (aliases, ty_vars, optional_def), newMap) ->
-                           %% TODO:
-                           %% If qualifier = UnQualified and new_qualifier.id
-                           %% already in map then should check for consistency
-                           insertAQualifierMap
-                             (newMap, 
-                              if qualifier = UnQualified
-                                then new_qualifier
-                                else qualifier,
-                              id,
-                              (List.map translateQualifiedId aliases, ty_vars, optional_def)))
+      foldriAQualifierMap
+        (fn (qualifier, id, (aliases, ty_vars, optional_def), newMap) ->
+	   let newSortInfo = (map translateQualifiedId aliases, ty_vars, optional_def) in
+	   let newQualifier = if qualifier = UnQualified
+				then new_qualifier
+			      else qualifier
+           in
+	   let oldSortInfo = findAQualifierMap(newMap, newQualifier, id) in
+	   insertAQualifierMap
+	     (newMap, newQualifier, id,
+	      %% Possibly the new name already is used
+	      mergeSortInfo(newSortInfo, oldSortInfo, newQualifier, id)))
         emptyAQualifierMap sortMap
 
     def convertSpec sp =
-     let {importInfo, sorts, ops, properties}
+     let {importInfo = {imports,importedSpec,localOps,localSorts}, sorts, ops, properties}
          = mapSpec (translateOp, translateSort, translatePattern) sp
      %%         importedSpecs    = mapImports convertSpec importedSpecs
      in
-       {importInfo   = importInfo,
+       {importInfo   = {imports = imports,
+			importedSpec = importedSpec,
+			localOps = map translateQualifiedId localOps,
+			localSorts = map translateQualifiedId localSorts},  
         sorts        = convertSortMap sorts,
         ops          = convertOpMap   ops,
         properties   = properties}

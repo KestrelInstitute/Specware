@@ -304,7 +304,7 @@ PosSpec qualifying spec {
      | ((new_sort_names, new_type_vars, new_opt_def),
 	Some (old_sort_names, old_type_vars, old_opt_def)) ->
    (if ~(length new_type_vars = length old_type_vars)
-     then fail ("Merged Sorts "^qualifier^"."^id^" have different type variable lists")
+     then fail ("Merged versions of Sort "^qualifier^"."^id^" have different type variable lists")
    else
    let sort_names = listUnion(new_sort_names,old_sort_names) in
    case (new_opt_def, old_opt_def) of
@@ -314,7 +314,7 @@ PosSpec qualifying spec {
        | (Some sNew, Some sOld) ->
          if sNew = sOld % Could use a smarter equivalence test
 	   then (sort_names, new_type_vars, new_opt_def)
-	   else fail ("Merged Sorts "^qualifier^"."^id^" have different definitions"))
+	   else fail ("Merged versions of Sort "^qualifier^"."^id^" have different definitions"))
 
  op mergePOpInfo: POpInfo * Option POpInfo * Qualifier * Id -> POpInfo
  def mergePOpInfo(newPOpInfo,optOldPOpInfo,qualifier,id) =
@@ -323,10 +323,10 @@ PosSpec qualifying spec {
      | ((new_op_names, new_fixity, new_sort_scheme, new_opt_def),
 	Some (old_op_names, old_fixity, old_sort_scheme, old_opt_def)) ->
    (if ~(new_fixity = old_fixity)
-     then fail ("Merged Ops "^qualifier^"."^id^" have different fixity")
+     then fail ("Merged versions of Op "^qualifier^"."^id^" have different fixity")
    else
    if ~(new_sort_scheme = old_sort_scheme) % Could use a smarter equivalence test
-     then fail ("Merged Ops "^qualifier^"."^id^" have different sorts")
+     then fail ("Merged versions of Op "^qualifier^"."^id^" have different sorts")
    else
    let op_names = listUnion(new_op_names,old_op_names) in
    case (new_opt_def, old_opt_def) of
@@ -336,7 +336,7 @@ PosSpec qualifying spec {
        | (Some sNew, Some sOld) ->
          if sNew = sOld   % Could use a smarter equivalence test
 	   then (op_names, new_fixity, new_sort_scheme, new_opt_def)
-	   else fail ("Merged Ops "^qualifier^"."^id^" have different definitions"))
+	   else fail ("Merged versions of Op "^qualifier^"."^id^" have different definitions"))
 
  % ------------------------------------------------------------------------
 

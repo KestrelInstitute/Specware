@@ -117,35 +117,43 @@ be aborted. This doesn't return.
 \begin{spec}
   op toplevelHandler : fa (a) Exception -> SpecCalc.Env a
   def toplevelHandler except =
-    let message = % "Uncaught exception: " ++
-      (case except of
-        | Fail str -> "Fail: " ^ str
-        | SyntaxError fileName ->
-              "Syntax error in file "
-            ^ fileName
-        | URINotFound (position,uri) ->
-              "No such URI: "
-            ^ (showRelativeURI uri)
-            ^ " referenced from "
-            ^ (showPosition position)
-        | TypeCheck (position,str) ->
-              "Type error: "
-            ^ str
-            ^ " at "
-            ^ (showPosition position)
-        %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
-        | OldTypeCheck str ->
-              "Type errors:\n"
-            ^ str
-        | Unsupported (position,str) ->
-              "Unsupported operation: "
-            ^ str
-            ^ " at "
-            ^ (showPosition position)
-        | _ -> "Unknown exception")
-    in
-      fail message
+    {saveSpecwareState;			% So work done before error is not lost
+     let message = % "Uncaught exception: " ++
+       (case except of
+	 | Fail str -> "Fail: " ^ str
+	 | SyntaxError fileName ->
+	       "Syntax error in file "
+	     ^ fileName
+	 | URINotFound (position,uri) ->
+	       "No such URI: "
+	     ^ (showRelativeURI uri)
+	     ^ " referenced from "
+	     ^ (showPosition position)
+	 | TypeCheck (position,str) ->
+	       "Type error: "
+	     ^ str
+	     ^ " at "
+	     ^ (showPosition position)
+	 %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
+	 | OldTypeCheck str ->
+	       "Type errors:\n"
+	     ^ str
+	 | Unsupported (position,str) ->
+	       "Unsupported operation: "
+	     ^ str
+	     ^ " at "
+	     ^ (showPosition position)
+	 | _ -> "Unknown exception")
+     in
+       mFail message}
 \end{spec}
+This handwritten function saves the state in the lisp environment so
+that the successful work you have done before the error is kept.
+
+\begin{spec}
+  op saveSpecwareState: SpecCalc.Env ()
+\end{spec}
+
 
 This doesn't belong here. Perhaps it belongs in the instance
 of the MetaSlang terms used for parsing.

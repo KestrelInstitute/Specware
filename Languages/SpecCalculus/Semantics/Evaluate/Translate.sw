@@ -39,29 +39,34 @@ the same names.
       return (auxTranslateSpec(spc,makeTranslationMaps(spc,expr)))
     
   op makeTranslationMaps :
-      Spec
-    * (TranslateExpr Position)
-    -> AQualifierMap(QualifiedId) * AQualifierMap(QualifiedId)
+    Spec * (TranslateExpr Position)
+      -> AQualifierMap(QualifiedId) * AQualifierMap(QualifiedId)
   %% Need to change fail to raise
-  def makeTranslationMaps(spc,(transPairs,_)) =
-    let def insert(((n as Qualified(qualifier,id),m),pos),(opMap,sortMap)) =
-          case findAllOps(spc,n) of
-             | ((Qualified(qualifiern,idn))::_,_,_,_)::rs ->
-                 (if rs = [] then
-                    ()
-                  else
-                    fail ("translate: Ambiguous source op name "^qualifier^"."^id);
-                 (insertAQualifierMap(opMap,qualifiern,idn,m),sortMap))
-             | _ ->
-                (case findAllSorts(spc,n) of
-                   | ((Qualified(qualifiern,idn))::_,_,_)::rs  ->
-                       (if rs = [] then
-                          ()
-                        else
-                          fail("translate: Ambiguous source op name "^qualifier^"."^id);
-                       (opMap,insertAQualifierMap(sortMap,qualifiern,idn,m)))
-                   | _ -> System.fail ("Translate: Identifier \""^qualifier^"."^id^
-                                 "\" has not been defined."))
+ def makeTranslationMaps(spc,(transPairs,_)) =
+    let def insert(((n as Qualified(qualifier_n,id_n),Qualified(qualifier_m,id_m)),pos),
+		   (opMap,sortMap)) =
+	  case findAllOps(spc,n)
+	    of ((Qualified(qualifierN,idN))::_,_,_,_)::rs ->
+	       (if rs = [] then ()
+		 else fail("translate: Ambiguous source op name "^qualifier_n^"."^id_m);
+	        (insertAQualifierMap(opMap,qualifierN,idN,
+				     Qualified(if qualifier_m = UnQualified
+					        then qualifierN
+						else qualifier_m,
+					       id_m)),
+		 sortMap))
+	     | _ ->
+	  (case findAllSorts(spc,n)
+	    of ((Qualified(qualifierN,idN))::_,_,_)::rs  ->
+	       (if rs = [] then ()
+		 else fail("translate: Ambiguous source op name "^qualifier_n^"."^id_m);
+		(opMap,insertAQualifierMap(sortMap,qualifierN,idN,
+					   Qualified(if qualifier_m = UnQualified
+						        then qualifierN
+						       else qualifier_m,
+						     id_m))))
+	     | _ -> System.fail ("Translate: Identifier \""^qualifier_n^"."^id_m^
+				 "\" has not been defined."))
     in
        List.foldr insert (emptyAQualifierMap,emptyAQualifierMap) transPairs
 
@@ -93,30 +98,30 @@ the same names.
     def translatePattern pat = pat
 
     def translateOpMap ops =
-      foldriAQualifierMap (fn (qualifier, id, (aliases, x, y, optional_def),newMap) ->
-                           %% TODO:
-                           %% If qualifier = UnQualified and new_qualifier.id
-                           %% already in map then should check for consistency
-                           let qual as Qualified(r_qualifier,r_id)
-                              = translateQualifiedId(opMap,Qualified (qualifier, id))
-                           in
-                           insertAQualifierMap
-                             (newMap, r_qualifier, r_id,
-                              ([qual], x, y, optional_def)))
+      foldriAQualifierMap
+        (fn (qualifier, id, (aliases, x, y, optional_def),newMap) ->
+	   let qual as Qualified(new_qualifier,new_id)
+	      = translateQualifiedId(opMap,Qualified (qualifier, id))
+	   in
+	   let newOpInfo = ([qual], x, y, optional_def) in
+	   let oldOpInfo = findAQualifierMap(newMap, new_qualifier, new_id) in
+	   insertAQualifierMap
+	     (newMap, new_qualifier, new_id,
+	      mergeOpInfo(newOpInfo, oldOpInfo, new_qualifier, new_id)))
         emptyAQualifierMap ops
 
     def translateSortMap sorts =
-      foldriAQualifierMap (fn (qualifier, id, (aliases, ty_vars, optional_def),
-                               newMap) ->
-                           %% TODO:
-                           %% If qualifier = UnQualified and new_qualifier.id
-                           %% already in map then should check for consistency
-                            let qual as Qualified(r_qualifier,r_id)
-                              = translateQualifiedId(sortMap,Qualified (qualifier, id))
-                           in
-                           insertAQualifierMap
-                             (newMap, r_qualifier, r_id,
-                              ([qual], ty_vars, optional_def)))
+      foldriAQualifierMap
+        (fn (qualifier, id, (aliases, ty_vars, optional_def),
+	     newMap) ->
+	 let qual as Qualified(new_qualifier,new_id)
+	    = translateQualifiedId(sortMap,Qualified (qualifier, id))
+	 in
+	 let newSortInfo = ([qual], ty_vars, optional_def) in
+	   let oldSortInfo = findAQualifierMap(newMap, new_qualifier, new_id) in
+	   insertAQualifierMap
+	   (newMap, new_qualifier, new_id,
+	    mergeSortInfo(newSortInfo, oldSortInfo, new_qualifier, new_id)))
         emptyAQualifierMap sorts
 
     def translateSpec sp =
@@ -124,7 +129,7 @@ the same names.
          = mapSpec (translateOp, translateSort, translatePattern) sp
      %%         importedSpecs    = mapImports translateSpec importedSpecs
      in
-       {importInfo   = emptyImportInfo,        % Could change if we get smarter
+       {importInfo   = emptyImportInfo,	% Could change if we get smarter
         sorts        = translateSortMap sorts,
         ops          = translateOpMap   ops,
         properties   = properties}

@@ -54,7 +54,7 @@
 ;; Perhaps setq is the wrong thing to use. defvar?
 ;; The list is used only in this file.
 ;;; ---------------
-(setq HandwrittenFiles
+(defvar HandwrittenFiles
   '(
     "Library/Base/Handwritten/Lisp/Boolean.lisp"
     "Library/Base/Handwritten/Lisp/Integer.lisp"
