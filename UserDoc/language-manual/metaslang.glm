@@ -490,7 +490,7 @@ Likewise, the following <emphasis>reserved non-words</emphasis>
 must not be used for `names:
 [[
 ||    :       ::      |       =>      ||     &&
-||    <-      ->      +->     =       ~=
+||    <-      ->      +->     =       ~=     <<
 ]]
 In addition, several `names -- for example [[=]] -- are
 pre-defined in built-in libraries.
@@ -2743,8 +2743,7 @@ have type [[Boolean]].
 `Type-comprehensions provide an alternative notation for
 `type-restrictions that is akin
 to the common mathematical notation for set comprehensions.
-The meaning of
-`type-comprehension
+The meaning of `type-comprehension
 [[{]]$P$[[ : ]]$T$[[ | ]]$E$[[}]]
 is the same as that of the `type-restriction
 [[(]]$T$[[ |
@@ -2865,7 +2864,7 @@ has three inhabitants.
 ||    | ( `expression )
 ||    | ( `inbuilt-infix )
 ||
-||`inbuilt-infix ::= => | '|'| | && | = | ~=
+||`inbuilt-infix ::= => | '|'| | && | = | ~= | <<
 >>
 (The distinctions `tight- and `closed- for `expressions lack
 semantic significance, and merely serve the purpose of avoiding
@@ -3307,6 +3306,8 @@ pseudo-`op-declarations:
 ||op &&  infixr 15 : Boolean * Boolean -> Boolean 
 ||op =   infixr 20 : fa(a) a * a       -> Boolean 
 ||op ~=  infixr 20 : fa(a) a * a       -> Boolean 
+||op <<  infix? ?? : {$a$:$X$, $b$:$Y$} * {$a$:$X$, $c$:$Z$} ->
+                                           {$a$:$X$, $b$:$Y$, $c$:$Z$}
 ]]
 </para>
 <!-- ================================================================= -->
@@ -3332,22 +3333,22 @@ The meaning of `infix-application $P N Q$, in which $P$ and $Q$ are
 `prefix-application [[$N(P, Q)$]].
 </para>
 <para>
-The meaning of `infix-application $P => Q$, in which $P$ and $Q$ are
+The meaning of `infix-application $P$[[ => ]]$Q$, in which $P$ and $Q$ are
 `operands, is the same as that of the
 `if-expression [[if $P$ then $Q$ else true]].
 </para>
 <para>
-The meaning of `infix-application $P || Q$, in which $P$ and $Q$ are
+The meaning of `infix-application $P$[[ || ]]$Q$, in which $P$ and $Q$ are
 `operands, is the same as that of the
 `if-expression [[if $P$ then true else $Q$]].
 </para>
 <para>
-The meaning of `infix-application $P && Q$, in which $P$ and $Q$ are
+The meaning of `infix-application $P$[[ && ]]$Q$, in which $P$ and $Q$ are
 `operands, is the same as that of the
 `if-expression [[if $P$ then $Q$ else false]].
 </para>
 <para>
-The value of `infix-application $P = Q$, in which $P$ and $Q$ are
+The value of `infix-application $P$[[ = ]]$Q$, in which $P$ and $Q$ are
 `operands, is [[true]] if $P$ and $Q$ have the same value, and [[false]]
 otherwise.
 $P$ and $Q$ must have the same type, or else have
@@ -3357,9 +3358,33 @@ of the `operands relaxed to the supertype,
 so, for example, the value of [[(1:Nat)=(1:PosNat)]] is [[true]].
 </para>
 <para>
-The meaning of `infix-application $P ~= Q$, in which $P$ and $Q$ are
+The meaning of `infix-application $P$[[ ~= ]]$Q$, in which $P$ and $Q$ are
 `operands, is the same as that of the
 `prefix-application [[~($P$ = $Q$)]].
+</para>
+<para>
+An `infix-application $P$[[ << ]]$Q$ is also called a ``record update''.
+In a record update $P$[[ << ]]$Q$, in which $P$ and $Q$ are
+`operands, $P$ and $Q$ must have record types, referred to as $S$ and $T$,
+respectively.
+Moreover, for each `field-name $F$ these types $S$ and $T$ have in common,
+the field types for $F$ in $S$ and $T$ must be the same, or be
+subtypes of the same supertype.
+The type of $P$[[ << ]]$Q$ is then the record type $R$ whose `field-names are formed
+by the union of the `field-names of $S$ and $T$, where for each `field-name
+$F$ in that union, the type of field $F$ in $R$ is that of field $F$ in
+$T$ if $F$ is a field of $T$, and otherwise the type of field $F$ in
+$S$.
+Likewise,
+the value of $P$[[ << ]]$Q$ is the record value of type $R$ whose field value
+of each field $F$ is that of field $F$ in 
+$Q$ if $F$ is a field of $T$, and otherwise the field value of field $F$ in 
+$P$.
+So, for example, the value of
+[[{a=1, b=#z} << {a=2, c=true}]]
+is
+[[{a=2, b=#z, c=true}]]: fields of the right-hand side `operand
+take precedence over the left-hand side when present in both.
 </para>
 </section>
 <!-- ***************************************************************** -->

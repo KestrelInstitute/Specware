@@ -510,7 +510,7 @@ easy reference.
 ||    | ( `expression )
 ||    | ( `inbuilt-infix )
 ||  
-||  `inbuilt-infix ::= => | '|'| | && | = | ~=
+||  `inbuilt-infix ::= => | '|'| | && | = | ~= | <<
 >>
 </para>
 </formalpara>
