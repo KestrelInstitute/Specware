@@ -123,6 +123,7 @@ MS qualifying spec
  def mkRelax (srt, pred) = mkFun (Relax, mkArrow (mkSubsort (srt, pred), srt))
  def mkRestrict (srt, pred) = mkFun (Restrict, mkArrow (srt, mkSubsort (srt, pred)))
  def mkChoose (srt, equiv) = mkFun (Choose, mkArrow (mkQuotientSort (srt, equiv), srt))
+ def mkQuotient(a,equiv,srt) = mkApply(mkFun (Quotient,mkArrow(srt, mkQuotientSort(srt, equiv))),a)
 
  def mkEmbed0 (id, srt) = mkFun (Embed (id, false), srt) % no arg
  def mkEmbed1 (id, srt) = mkFun (Embed (id, true), srt) % arg
@@ -184,7 +185,7 @@ MS qualifying spec
       1 fields)
    > 0
 
- op findField: Id * List(Id * Term)-> Term
+ op  findField: fa(a) Id * List(Id * a) -> a
  def findField(id,fields) = 
    case fields
      of [] -> System.fail ("Field identifier "^id^" was not found")

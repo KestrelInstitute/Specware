@@ -9,7 +9,8 @@ Specware qualifying spec
   import Evaluate/Base 
   import Environment 
   import SpecPath
-  import ../../MetaSlang/Specs/Position     
+  import ../../MetaSlang/Specs/Position
+  import ../../MetaSlang/Transformations/Interpreter % for MSInterpreter.eval
   import ../AbstractSyntax/Printer % for showUI
   import /Languages/XML/XML        % for XML I/O
 \end{spec}
@@ -317,6 +318,30 @@ getOptSpec returns Some spc if the given string evaluates to a spec
       in
       run (catch prg toplevelHandlerOption)
 \end{spec}
+
+\begin{spec}
+  op  evalDefInSpec: String * QualifiedId -> Option MSInterpreter.Value
+  def evalDefInSpec(path,qid) =
+    let prg = {
+	       cleanEnv;
+	       currentUID <- pathToCanonicalUID ".";
+	       setCurrentUID currentUID;
+	       path_body <- return (removeSWsuffix path);
+	       unitId <- pathToRelativeUID path_body;
+	       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+	       spcInfo:ValueInfo <- evaluateUID position unitId;
+	       return (let (value,_,_) = spcInfo in
+		       case coerceToSpec value of
+			 | Spec spc ->
+			   (case AnnSpec.findTheOp(spc,qid) of
+			      | Some(_,_,_,(_,defn)::_) -> Some(MSInterpreter.eval(defn,spc))
+			      | _ -> None) % Dummy
+			 | _ -> None)
+	      }
+      in
+      runSpecCommand (catch prg toplevelHandlerOption)
+\end{spec}
+
 
 \begin{spec}
   op evaluateJavaGen_fromLisp : String * Option String -> Boolean

@@ -8,7 +8,7 @@
  *) 
  
 SpecEnvironment qualifying
-spec {
+spec
  import StandardSpec
  import Printer
  import /Library/Legacy/DataStructures/ListPair
@@ -431,4 +431,4 @@ spec {
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
   res
 
-}
+endspec

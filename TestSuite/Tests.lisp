@@ -16,7 +16,7 @@
 ")
       ("RunFib" :swe "computeFib 10"
 		:swe-spec "fib"
-		:value 89)
+		:value '(:|Int| . 89))
       ("twk message 1/10/03 Reused name leading to circularity."
        :sw "players#twoPlayersLisp"
        :file-goto-error '("$TESTDIR/players.sw" 43 13)
@@ -57,22 +57,22 @@
 spec  
  import A
  import /Library/Base/WFO
- op f : {p : Integer * Integer | p.1 > ~(p.2)} -> Nat
- def f (x, y) = restrict(nonNeg?)(x + y)
- op + infixl 25 : Nat * Nat -> Nat
+ op nonNeg? : Integer -> Boolean
  op WFO.wfo : fa(a) (a * a -> Boolean) -> Boolean
  def WFO.wfo pred = 
      fa(p : a -> Boolean) 
       ex(y : a) p y => ex(y : a) (p y & fa(x : a) (p x => ~(pred(x, y))))
- op nonNeg? : Integer -> Boolean
+ op + infixl 25 : Nat * Nat -> Nat
+ op f : {p : Integer * Integer | p.1 > ~(p.2)} -> Nat
+ def f (x, y) = restrict(nonNeg?)(x + y)
  conjecture f_Obligation is 
-    fa(F : {p : Integer * Integer | p.1 > ~(p.2)}, n : Integer) 
+    fa(X : {p : Integer * Integer | p.1 > ~(p.2)}, n : Integer) 
 
-     ((F.1 > ~(F.2)) & 
-     (nonNeg?((case F
+     ((X.1 > ~(X.2)) & 
+     (nonNeg?((case X
                  of (x, y) -> restrict(nonNeg?)(x + y))) & 
-     (n = (case F
-             of (x, y) -> restrict(nonNeg?)(x + y))))) => (-1 < n)
+     (n = (case X
+             of (x, y) -> restrict(nonNeg?)(x + y))))) => (0 <= n)
  conjecture f_Obligation0 is 
     fa(y : Integer, x : Integer) (x > ~ y) => nonNeg?(x + y)
 endspec

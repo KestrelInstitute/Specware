@@ -1,24 +1,23 @@
 Unifier qualifying
 spec
  import /Languages/MetaSlang/Specs/StandardSpec
- sort Term = MS.Term
- sort Subst = List (Var * Term)
+ sort Subst = List (Var * MS.Term)
  sort Vars = List Var
 
  op empty: Subst
  def empty = []
 
- op lookup: Subst * Var -> Option Term
+ op lookup: Subst * Var -> Option MS.Term
  def lookup(sbst,v) =
    case sbst of
      | [] -> None
      | (vi,vali)::rsbst ->
        if vi = v then Some vali else lookup(rsbst,v)
 
- op addToSubst: Subst * Var * Term -> Subst
+ op addToSubst: Subst * Var * MS.Term -> Subst
  def addToSubst(sb,v,t) = Cons((v,t),sb)
 
- op unify: Term * Term * Vars -> Option Subst
+ op unify: MS.Term * MS.Term * Vars -> Option Subst
  def unify (t1, t2, vs) =
    unifyRec(t1, t2, empty, vs)
 
@@ -36,7 +35,7 @@ spec
 	  | None -> None
 	  | Some sb -> unifyList(rt1s,rt2s,sb,vs,subFn)
 
- op unifyRec: Term * Term * Subst * Vars -> Option Subst
+ op unifyRec: MS.Term * MS.Term * Subst * Vars -> Option Subst
  def unifyRec(t1, t2, sb, vs) =
   case (t1, t2) of
      | (Var(v1,_), t2) ->

@@ -187,6 +187,7 @@
 
 (defpackage "SWE") ; for access to results
 
+(defvar *swe-use-interpreter?* t)   ; nil means used compiled lisp code
 (defvar *current-swe-spec*     nil) ; nil means no import
 (defvar *current-swe-spec-dir* nil)
 (defvar swe::tmp)
@@ -202,8 +203,9 @@
 	 (setq *current-swe-spec* x)
 	 (setq *current-swe-spec-dir* (specware::current-directory))
 	 (format t "~&Subsequent :swe commands will now import ~A.~%" x)
-	 (format t "~&The following will produce, compile and load code for this spec:~%")
-	 (format t "~&:swll ~A~%" x))
+	 (unless *swe-use-interpreter?*
+	   (format t "~&The following will produce, compile and load code for this spec:~%")
+	   (format t "~&:swll ~A~%" x)))
 	(t
 	 (format t "~&:swe-spec had no effect.~%" x)
 	 (if *current-swe-spec*
@@ -247,55 +249,64 @@
 	 (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
 	 (old-swpath (specware::getEnv "SWPATH"))
-	 (new-swpath (format nil #-mswindows "~A/swe/:~A:~A" #+mswindows "~A/swe/;~A;~A"
-			     Specware::temporaryDirectory *current-swe-spec-dir* old-swpath)))
+	 (new-swpath (format nil #-mswindows "~Aswe/:~A:~A" #+mswindows "~A/swe/;~A;~A"
+			     Specware::temporaryDirectory *current-swe-spec-dir* old-swpath))
+	 value)
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
     (ensure-directories-exist tmp-dir)
     (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
-      (if (null *current-swe-spec*)
-	  (format s "spec~%  def swe.tmp = ~A~%endspec~%" x)
-	(format s "spec~%  import ~A~%  def swe.tmp = ~A~%endspec~%" 
-		*current-swe-spec*
-		x)))
+      (format s "spec~%")
+      (when *swe-use-interpreter?*
+	(format s "  import ~A~%" "/Library/InterpreterBase"))
+      (when (not (null *current-swe-spec*))
+	(format s "  import ~A~%" *current-swe-spec*))
+      (format s "  def swe.tmp = ~A~%endspec~%" x))
     ;; Process unit id:
     (if (unwind-protect
 	    (progn
 	      (specware::setenv "SWPATH" new-swpath)
-	      (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl)))
+	      (if *swe-use-interpreter?*
+		  (setq value (Specware::evalDefInSpec-2 tmp-uid `(:|Qualified| . ("swe" . "tmp"))))
+		(Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl))))
 	  (specware::setenv "SWPATH" old-swpath))
-	(let (#+allegro *redefinition-warnings*)
-	  ;; Load resulting lisp code:
-	  (load (make-pathname :type "lisp" :defaults tmp-cl))
-	  (if *swe-return-value?* swe::tmp
-	    ;; Print result:
-	    (let ((*package* (find-package "SW-USER")))
-	      (cond ((boundp 'swe::tmp)
-		     (if *swe-print-as-slang?*
-			 (format t "~%Value is ~%~/specware::pprint-dt/~%"
-				 swe::tmp)
-		       (format t "~%Value is ~S~2%" swe::tmp)))
-		    ((fboundp 'swe::tmp)
-		     (let* ((code #+allegro (excl::func_code #'swe::tmp)
-				  #-allegro (symbol-function 'swe::tmp))
-			    (auxfn (find-aux-fn code)))
-		       (format t "~%Function is ")
-		       (pprint code)
-		       (format t "~%")
-		       (when (fboundp auxfn)
-			 (format t "~%where ~A is " auxfn)
-			 (let ((fn (symbol-function auxfn)))
-			   (let ((code #+allegro (excl::func_code fn)
-				       #+cmu     (eval:interpreted-function-lambda-expression fn)
-				       #-(or allegro cmu) fn))
-			     (if (consp code)
-				 (pprint code)
-			       (format t "the compiled function ~A" fn))))
-			 (format t "~&~%"))))
-		    (t
-		     (warn "No value for expression?")))
-	      (values))))
+	(if *swe-use-interpreter?*
+	    (if (eq (car value) :|None|)
+		(warn "No value for expression?")
+	      (if *swe-return-value?* (cdr value)
+		(MSInterpreter::printValue (cdr value))))
+	  (let (#+allegro *redefinition-warnings*)
+	    ;; Load resulting lisp code:
+	    (load (make-pathname :type "lisp" :defaults tmp-cl))
+	    (if *swe-return-value?* swe::tmp
+	      ;; Print result:
+	      (let ((*package* (find-package "SW-USER")))
+		(cond ((boundp 'swe::tmp)
+		       (if *swe-print-as-slang?*
+			   (format t "~%Value is ~%~/specware::pprint-dt/~%"
+				   swe::tmp)
+			 (format t "~%Value is ~S~2%" swe::tmp)))
+		      ((fboundp 'swe::tmp)
+		       (let* ((code #+allegro (excl::func_code #'swe::tmp)
+				    #-allegro (symbol-function 'swe::tmp))
+			      (auxfn (find-aux-fn code)))
+			 (format t "~%Function is ")
+			 (pprint code)
+			 (format t "~%")
+			 (when (fboundp auxfn)
+			   (format t "~%where ~A is " auxfn)
+			   (let ((fn (symbol-function auxfn)))
+			     (let ((code #+allegro (excl::func_code fn)
+					 #+cmu     (eval:interpreted-function-lambda-expression fn)
+					 #-(or allegro cmu) fn))
+			       (if (consp code)
+				   (pprint code)
+				 (format t "the compiled function ~A" fn))))
+			   (format t "~&~%"))))
+		      (t
+		       (warn "No value for expression?")))
+		(values)))))
       "Specware Processing Failed!")))
 #+allegro
 (top-level:alias ("swe" :case-sensitive :string) (x) (swe x))

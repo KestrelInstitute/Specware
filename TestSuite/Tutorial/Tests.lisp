@@ -25,6 +25,7 @@
 ;;; Elaborating obligator at $SPECWARE/UserDoc/tutorial/example/MatchingObligations#SymbolMatching_Oblig
 ;;; Elaborating spec at $SPECWARE/Library/Base/WFO
 ;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
+;;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite
 p1: Conjecture symb_matches?_Obligation in MatchingObligations#SymbolMatching_Oblig is Proved!
     Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p1.log
 ;;; Elaborating proof-term at $SPECWARE/UserDoc/tutorial/example/MatchingProofs#p3
@@ -57,6 +58,31 @@ p6: Conjecture word_matching_Obligation1 in MatchingObligations#FindMatches0_Obl
                                                     \"RESIDE\", \"REVEAL\", \"SECRET\", \"SODIUM\",
                                                     \"SPECIES\", \"VESTIGE\", \"WALNUT\", \"YOGURT\"])"
 			   :swe-spec "$SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
-			   :value '((3 . "WALNUT") (7 . "SPECIES") (8 . "SECRET")
-				    (0 . "REVEAL") (8 . "DECREE") (10 . "CHESS")))
+			   :value '(:|Constructor| "Cons" :|RecordVal|
+				    ("1" :|RecordVal| ("position" :|Int| . 3) ("word" :|String| . "WALNUT"))
+				    ("2" :|Constructor| "Cons" :|RecordVal|
+				     ("1" :|RecordVal| ("position" :|Int| . 7) ("word" :|String| . "SPECIES"))
+				     ("2" :|Constructor| "Cons" :|RecordVal|
+				      ("1" :|RecordVal| ("position" :|Int| . 8) ("word" :|String| . "SECRET"))
+				      ("2" :|Constructor| "Cons" :|RecordVal|
+				       ("1" :|RecordVal| ("position" :|Int| . 0) ("word" :|String| . "REVEAL"))
+				       ("2" :|Constructor| "Cons" :|RecordVal|
+					    ("1" :|RecordVal| ("position" :|Int| . 8) ("word" :|String| . "DECREE"))
+					    ("2" :|Constructor| "Cons" :|RecordVal|
+						 ("1" :|RecordVal| ("position" :|Int| . 10) ("word" :|String| . "CHESS"))
+						 ("2" :|Constant| . "Nil"))))))))
+      ("test_find_matches="
+       :swe "test_find_matches(\"**V*ALN**EC*E*S\",
+                               [\"CERAMIC\", \"CHESS\", \"DECREE\", \"FOOTMAN\",
+				\"INLET\", \"MOLOCH\", \"OCELOT\", \"PROFUSE\",
+				\"RESIDE\", \"REVEAL\", \"SECRET\", \"SODIUM\",
+				\"SPECIES\", \"VESTIGE\", \"WALNUT\", \"YOGURT\"])
+	       = [{position=3,word=\"WALNUT\"},
+		  {position=7,word=\"SPECIES\"},
+		  {position=8,word=\"SECRET\"},
+		  {position=0,word=\"REVEAL\"},
+		  {position=8,word=\"DECREE\"},
+		  {position=10,word=\"CHESS\"}]"
+       :swe-spec "$SPECWARE/UserDoc/tutorial/example/MatchingTest#Test"
+       :value '(:|Bool| . T))
 )
