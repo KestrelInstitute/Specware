@@ -1,6 +1,6 @@
 <chapter id="emacs">
 
-<title>Emacs Usage in Specware</title>
+<title>Emacs Usage in &Specware</title>
 
 <para>
 There are a number of emacs commands for &Specware usage. We also list
@@ -9,19 +9,21 @@ editing specware files.
 </para>
 
 <section>
-<title>&Specware Mode commands</title>
+<title>&Specware Mode Commands</title>
 
-These are commands available when editing [[.sw]] files. Some of
-them are available in the Specware menu in the menubar.
+<para>
+These are the commands available when editing [[.sw]] files. Some of
+them are available in the &Specware menu in the menubar.
+</para>
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
-    <colspec colname="key"      colnum="2" colwidth="40"  rowsep="1"/>
-    <colspec colname="name"     colnum="1" colwidth="85"  rowsep="1"/>
-    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
+    <colspec colname="name"     colnum="2" colwidth="135"  rowsep="1"/>
+    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
     <thead>
       <row>
-	<entry colname="key">&nbsp; Sort</entry>
+	<entry colname="key">&nbsp; Key</entry>
 	<entry colname="name">&nbsp; Name</entry>
 	<entry colname="descr">&nbsp; Description</entry>
       </row>
@@ -35,7 +37,7 @@ them are available in the Specware menu in the menubar.
       <row>
 	<entry colname="key">&nbsp; [[linefeed]]</entry>
         <entry colname="name">&nbsp; [[newline-and-indent]]</entry>
-	<entry colname="descr">&nbsp; Same as [[return]] followed by [[tab]]</entry>
+	<entry colname="descr">&nbsp; Same as return followed by tab</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[M-tab]]</entry>
@@ -87,9 +89,8 @@ them are available in the Specware menu in the menubar.
       <row>
 	<entry colname="key">&nbsp; [[C-c ;]]</entry>
         <entry colname="name">&nbsp; [[sw:comment-region]]</entry>
-	<entry colname="descr">&nbsp; Comment out the region using
-	  [[%]] characters. With a negative argument uncomments 
-	  the region.
+	<entry colname="descr">&nbsp; Comment out the region. With 
+	  a negative argument uncomments the region.
 	</entry>
       </row>
       <row>
@@ -129,12 +130,12 @@ These are the commands available in the *common-lisp* buffer.
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
-    <colspec colname="key"      colnum="2" colwidth="40"  rowsep="1"/>
-    <colspec colname="name"     colnum="1" colwidth="85"  rowsep="1"/>
-    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
+    <colspec colname="name"     colnum="2" colwidth="135"  rowsep="1"/>
+    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
     <thead>
       <row>
-	<entry colname="key">&nbsp; Sort</entry>
+	<entry colname="key">&nbsp; Key</entry>
 	<entry colname="name">&nbsp; Name</entry>
 	<entry colname="descr">&nbsp; Description</entry>
       </row>
@@ -144,7 +145,7 @@ These are the commands available in the *common-lisp* buffer.
 	<entry colname="key">&nbsp; [[M-*]]</entry>
         <entry colname="name">&nbsp; [[sw:switch-to-lisp]]</entry>
 	<entry colname="descr">&nbsp; When already in the
-	   [[*common-lisp*]] buffer, goes to the previous
+	   *common-lisp* buffer, goes to the previous
 	   source file buffer. </entry>
       </row>
       <row>
@@ -163,7 +164,7 @@ These are the commands available in the *common-lisp* buffer.
       </row>
       <row>
 	<entry colname="key">&nbsp; [[M-r]]</entry>
-        <entry colname="name">&nbsp; [[fi:pop-input]]</entry>
+        <entry colname="name">&nbsp; [[fi:re-search-backward-input]]</entry>
 	<entry colname="descr">&nbsp; Gets previous input matching
           regular expression (prompted for). Typically you can get
           a previous input by typing in a small substring. Repeating
@@ -187,12 +188,12 @@ These are a few general Emacs commands which are useful when using
 
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
-    <colspec colname="key"      colnum="2" colwidth="40"  rowsep="1"/>
-    <colspec colname="name"     colnum="1" colwidth="85"  rowsep="1"/>
-    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+    <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
+    <colspec colname="name"     colnum="2" colwidth="135"  rowsep="1"/>
+    <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
     <thead>
       <row>
-	<entry colname="key">&nbsp; Sort</entry>
+	<entry colname="key">&nbsp; Key</entry>
 	<entry colname="name">&nbsp; Name</entry>
 	<entry colname="descr">&nbsp; Description</entry>
       </row>
@@ -201,7 +202,7 @@ These are a few general Emacs commands which are useful when using
       <row>
 	<entry colname="key">&nbsp; [[C-h]]</entry>
         <entry colname="name">&nbsp; [[help]]</entry>
-	<entry colname="descr">&nbsp; Help options. [[C-h m]] gives
+	<entry colname="descr">&nbsp; Help options. C-h m gives
 	  help about the current mode. Also see Help menu in menubar.
         </entry>
       </row>
@@ -225,7 +226,7 @@ These are a few general Emacs commands which are useful when using
         <entry colname="name">&nbsp; [[igrep]]</entry>
 	<entry colname="descr">&nbsp; Greps for string in files. 
 	  Brings up buffer with matching lines. Mouse middle on
-	  a line to go to it. (Requires installation of Cygwin in Windows)
+	  a line to go to it. (In Windows requires installation of Cygwin.)
 	</entry>
       </row>
       <row>
@@ -252,15 +253,15 @@ These are a few general Emacs commands which are useful when using
 	<entry colname="key">&nbsp; [[C-x C-f]]</entry>
         <entry colname="name">&nbsp; [[find-file]]</entry>
 	<entry colname="descr">&nbsp; Prompts for file to
-	  edit. [[tab]] does filename completion.
+	  edit. tab does filename completion.
         </entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[C-x d]]</entry>
         <entry colname="name">&nbsp; [[dired]]</entry>
 	<entry colname="descr">&nbsp; Prompts for directory to edit.
-	  Note that commands [[sw:process-current-file]] and
-	  [[cd-current-directory]] described in the previous section
+	  Note that commands sw:process-current-file and
+	 cd-current-directory described in the previous section
 	  are available in dired mode.
 	</entry>
       </row>
