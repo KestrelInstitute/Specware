@@ -51,13 +51,11 @@ Prover qualifying spec
 
   op mkRecordTerm: Spec * QualifiedId * Sort -> MS.Term
   def  mkRecordTerm(spc, srtName, srt as Product (fields, b)) =
-    let opqid as Qualified(opq,opid) = getRecordConstructorOpName(srtName) in
-    let codom:Sort  = Base(srtName,[],b) in
-    let opsrt = Arrow(srt,codom,b) in
-    let termsrt = Arrow(srt,codom,b) in
-    let pat = patternFromSort(Some srt,b) in
-    let cond = mkTrue() in
-    let funterm = Fun(Op(opqid, Nonfix),termsrt,b) in
+(*    let opqid as Qualified(opq,opid) = getRecordConstructorOpName(srtName) in
+    let dom  = Base(srtName,[],b) in
+    let opsrt = Arrow(srt,dom,b) in
+    let termsrt = Arrow(srt,dom,b) in
+    let funterm = Fun(Op(opqid, Nonfix),termsrt,b) in *)
     recordTermFromSort(srt, b)
 
   op mkProjectTerm: Spec * QualifiedId * Sort * Field * MS.Term -> MS.Term
@@ -78,8 +76,22 @@ Prover qualifying spec
     argTermFromSort(Some srt,funterm,b)
 *)
 
-  op mkConstructAxiom: Spec * QualifiedId * Fields -> Property
-    
+  op mkConstructAxiom: Spec * QualifiedId * Sort * Fields -> Property
+  def mkConstructAxiom(spc, name as Qualified(srtQ, srtId), srt, fields) =
+    let b = noPos in
+    let varId = srtId^"_Rec_Var" in
+    let varTerm = mkVar(varId, srt) in
+    let projArgs = map (fn (field) -> mkProjectTerm(spc,  name, srt, field, varTerm)) fields in
+    let argsSrt = mapWithIndex (fn (i, (_,fSrt)) -> (toString(i), fSrt)) fields in
+    let opqid as Qualified(opq,opid) = getRecordConstructorOpName(name) in
+    let dom = Product(argsSrt, b) in
+    let opsrt = Arrow(dom,srt,b) in
+    let opFun = mkOp(opqid, opsrt) in
+    let lhs = mkAppl(opFun, projArgs) in
+    let rhs = varTerm in
+    let eql = mkEquality(srt, lhs, rhs) in
+    let fmla = mkBind(Forall, [(varId, srt)], eql) in
+    (Axiom, mkQualifiedId(srtQ, srtId^"_def"), [], fmla)
     
   
   op axiomFromCoProductDefTop: Spec * QualifiedId * Sort -> Properties
