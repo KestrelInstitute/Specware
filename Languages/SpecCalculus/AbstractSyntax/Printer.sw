@@ -23,8 +23,7 @@ as done here.
 SpecCalc qualifying spec 
 {
  import Types
- import ../../MetaSlang/Specs/SimplePrinter 
- import /Library/PrettyPrinter/WadlerLindig
+ import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
 
   op showSpecTerm : [a] SpecTerm a -> String
  def showSpecTerm spec_term = ppFormat (ppSpecTerm spec_term)
