@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:32:11  weilyn
+ * Added support for expressions.
+ *
  * Revision 1.3  2003/02/16 02:15:05  weilyn
  * Added support for defs.
  *
@@ -54,15 +57,17 @@ public final class SourceOptions extends SystemOption {
 
     /** Kinds of the format. */
     private static final byte T_SPEC = 0;
-    private static final byte T_SORT = 1;
-    private static final byte T_OP = 2;
-    private static final byte T_DEF = 3;
-    private static final byte T_CLAIM = 4;
+    private static final byte T_IMPORT = 1;
+    private static final byte T_SORT = 2;
+    private static final byte T_OP = 3;
+    private static final byte T_DEF = 4;
+    private static final byte T_CLAIM = 5;
 
 
     /** Names of all properties. */
     static final String[] PROP_NAMES = {
         "specElementFormat", // NOI18N
+        "importElementFormat", //NOI18N
         "sortElementFormat", // NOI18N
         "opElementFormat",   //NOI18N
         "defElementFormat",   //NOI18N
@@ -114,6 +119,9 @@ public final class SourceOptions extends SystemOption {
     private void clearElementFormats() {
         formats = new ElementFormat[PROP_NAMES.length];
     }
+
+    /** Property name of the import display format. */
+    public static final String PROP_IMPORT_FORMAT = PROP_NAMES[T_IMPORT];
 
     /** Property name of the sort display format. */
     public static final String PROP_SORT_FORMAT = PROP_NAMES[T_SORT];
@@ -176,6 +184,21 @@ public final class SourceOptions extends SystemOption {
         loadDefaultFormats();
         return DEFAULT_FORMATS_SHORT[type];
     }
+
+    /** Set the import format.
+    * @param format the new format
+    */
+    public void setImportElementFormat(ElementFormat format) {
+        setElementFormat(T_IMPORT, format);
+    }
+    
+    /** Get the import format.
+    * @return the current format
+    */
+    public ElementFormat getImportElementFormat() {
+        return getElementFormat(T_IMPORT);
+    }
+
 
     /** Set the sort format.
     * @param format the new format
@@ -243,6 +266,14 @@ public final class SourceOptions extends SystemOption {
         return DEFAULT_FORMATS_LONG[T_SPEC];
     }
 
+    /** Get the import format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getImportElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_IMPORT];
+    }
+
     /** Get the sort format for longer hints.
     * @return the current format
     */
@@ -308,6 +339,10 @@ public final class SourceOptions extends SystemOption {
                 mm.setName(id);
                 els[T_SPEC] = mm;
                 TEST_ELEMENTS = els;
+
+                ImportElement i = new ImportElement();
+                i.setName(id); // NOI18N
+                els[T_IMPORT] = i;
 
                 SortElement f = new SortElement();
                 f.setName(id); // NOI18N

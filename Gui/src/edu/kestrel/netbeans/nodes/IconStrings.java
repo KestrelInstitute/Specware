@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:15:04  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:42:09  weilyn
  * Added support for claims.
  *
@@ -38,6 +41,9 @@ interface IconStrings {
      static final String CLAIM =
         "edu/kestrel/resources/images/ClaimNodeIcon"; // NOI18N
      
+     static final String IMPORT =
+        "edu/kestrel/resources/images/ImportNodeIcon"; // NOI18N
+
      static final String WAIT =
         "edu/kestrel/resources/images/wait"; // NOI18N
 
@@ -55,5 +61,8 @@ interface IconStrings {
 
      static final String CLAIMS_CATEGORY =
         "edu/kestrel/resources/images/ClaimNodeIcon"; // NOI18N
+
+     static final String IMPORTS_CATEGORY =
+        "edu/kestrel/resources/images/ImportNodeIcon"; // NOI18N
 
 }

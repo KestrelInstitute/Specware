@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:16:04  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:45:53  weilyn
  * Added support for claims.
  *
@@ -38,6 +41,7 @@ public class SpecInfo extends BaseElementInfo {
     public static final int OP = 1;
     public static final int DEF = 2;
     public static final int CLAIM = 3;
+    public static final int IMPORT = 4;
 
     Collection           allMembers;
     ChildCollection[]    memberLists;
@@ -59,25 +63,32 @@ public class SpecInfo extends BaseElementInfo {
         new TextPositionMatch(), new NameFinder()
     };
 
+    static final ElementMatch.Finder[] DEFAULT_IMPORT_FINDERS = {
+        new TextPositionMatch(), new NameFinder()
+    };
+
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         DEFAULT_SORT_FINDERS,
         DEFAULT_OP_FINDERS,
         DEFAULT_DEF_FINDERS,
-        DEFAULT_CLAIM_FINDERS
+        DEFAULT_CLAIM_FINDERS,
+        DEFAULT_IMPORT_FINDERS,
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
         ElementProperties.PROP_SORTS,
         ElementProperties.PROP_OPS,
         ElementProperties.PROP_DEFS,
-        ElementProperties.PROP_CLAIMS
+        ElementProperties.PROP_CLAIMS,
+        ElementProperties.PROP_IMPORTS,
     };
     
     private static final Class[] CHILDREN_TYPES = {
 	SortElement.class,
         OpElement.class,
         DefElement.class,
-        ClaimElement.class
+        ClaimElement.class,
+        ImportElement.class,
     };
     
     public SpecInfo(String name) {
@@ -110,7 +121,7 @@ public class SpecInfo extends BaseElementInfo {
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
         
-        for (int kind = SORT; kind <= CLAIM; kind++) {
+        for (int kind = SORT; kind <= IMPORT; kind++) {
             Element[] curMembers;
             switch (kind) {
 	    case SORT:
@@ -124,6 +135,9 @@ public class SpecInfo extends BaseElementInfo {
 		break;
             case CLAIM:
                 curMembers = spec.getClaims();
+                break;
+            case IMPORT:
+                curMembers = spec.getImports();
                 break;
             default:
 		throw new InternalError("Illegal member type"); // NOI18N

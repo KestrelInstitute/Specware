@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:14:03  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:39:29  weilyn
  * Added support for claims.
  *
@@ -248,7 +251,29 @@ abstract class MemoryCollection extends Object implements Serializable {
         }
 
     }
+   
+    static final class Import extends Member {
+        private static final ImportElement[] EMPTY = new ImportElement[0];
 
+        static final long serialVersionUID =5715072242254795093L;
+        /**
+        * @param memory memory element to fire changes to
+        * @param propertyName name of property to fire when array changes
+        * @param emptyArray emptyArray instance that provides the type of arrays
+        *   that should be returned by toArray method
+        */
+        public Import (SpecElement.Memory memory) {
+            super (memory,
+		   ElementProperties.PROP_IMPORTS,
+		   EMPTY);
+        }
+
+        protected Object clone(Object el) {
+            return new ImportElement(new ImportElement.Memory((ImportElement)el), 
+					((SpecElement.Memory)memory).getSpecElement());
+        }
+    }
+    
     static final class Sort extends Member {
         private static final SortElement[] EMPTY = new SortElement[0];
 
@@ -375,7 +400,8 @@ abstract class MemoryCollection extends Object implements Serializable {
 
 
     }
-    
+
+
     /** Collection of specs.
     */
     static class Spec extends Member {

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:35:23  weilyn
+ * Added support for expressions.
+ *
  * Revision 1.3  2003/02/16 02:16:03  weilyn
  * Added support for defs.
  *
@@ -64,6 +67,11 @@ public interface ElementFactory {
         @param expression Expression of the claim
     */
     public Item createClaim(String name, String claimKind, String expression);    
+    
+    /** Creates an element for an import.
+	@param name Name of the import
+    */
+    public Item createImport(String name);
     
     public void setParent(Collection children, Item parent);
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 07:03:03  weilyn
+ * Removed the {n} tag in the ElementFormat because it gave parsing errors.
+ *
  * Revision 1.3  2003/02/16 02:14:04  weilyn
  * Added support for defs.
  *
@@ -108,6 +111,71 @@ public final class SpecElement extends MemberElement {
         this.source = source;
     }
     
+    //================== Imports ===============================
+
+    /** Add a new import to the spec.
+     *  @param el the import to add
+     * @throws SourceException if impossible
+     */
+    public void addImport(ImportElement el) throws SourceException {
+        if (getImport(el.getName()) != null)
+            throwAddException("FMT_EXC_AddImport", el); // NOI18N
+        getSpecImpl().changeImports(new ImportElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new imports to the spec.
+     *  @param els the imports to add
+     * @throws SourceException if impossible
+     */
+    public void addImports(final ImportElement[] els) throws SourceException {
+        for (int i = 0; i < els.length; i++)
+            if (getImport(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddImport", els[i]); // NOI18N
+        getSpecImpl().changeImports(els, Impl.ADD);
+    }
+
+    /** Remove a import from the spec.
+     *  @param el the import to remove
+     * @throws SourceException if impossible
+     */
+    public void removeImport(ImportElement el) throws SourceException {
+        getSpecImpl().changeImports(
+						 new ImportElement[] { el }, Impl.REMOVE
+						 );
+    }
+
+    /** Remove some imports from the spec.
+     *  @param els the imports to remove
+     * @throws SourceException if impossible
+     */
+    public void removeImports(final ImportElement[] els) throws SourceException {
+        getSpecImpl().changeImports(els, Impl.REMOVE);
+    }
+
+    /** Set the imports for this spec.
+     * Previous imports are removed.
+     * @param els the new imports
+     * @throws SourceException if impossible
+     */
+    public void setImports(ImportElement[] els) throws SourceException {
+        getSpecImpl().changeImports(els, Impl.SET);
+    }
+
+    /** Get all imports in this spec.
+     * @return the imports
+     */
+    public ImportElement[] getImports() {
+        return getSpecImpl().getImports();
+    }
+
+    /** Find a import by name.
+     * @param name the name of the import to look for
+     * @return the element or <code>null</code> if not found
+     */
+    public ImportElement getImport(String name) {
+        return getSpecImpl().getImport(name);
+    }
+
     //================== Sorts ===============================
 
     /** Add a new sort to the spec.
@@ -366,6 +434,7 @@ public final class SpecElement extends MemberElement {
         return getSpecImpl().getClaim(name);
     }
 
+
     // ================ printing =========================================
 
     /* Print this element to an element printer.
@@ -387,6 +456,11 @@ public final class SpecElement extends MemberElement {
 
         printer.markSpec(this, printer.BODY_BEGIN); // BODY begin
         printer.println(""); // NOI18N
+
+        if (print(getImports(), printer)) {
+            printer.println(""); // NOI18N
+            printer.println(""); // NOI18N
+        }
 
         if (print(getSorts(), printer)) {
             printer.println(""); // NOI18N
@@ -493,6 +567,24 @@ public final class SpecElement extends MemberElement {
         /** Set some items, replacing the old ones. */
         public static final int SET = 0;
 
+        /** Change the set of imports.
+         * @param elems the new imports
+         * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+         * @exception SourceException if impossible
+         */
+        public void changeImports(ImportElement[] elems, int action) throws SourceException;
+
+        /** Get all imports.
+         * @return the imports
+         */
+        public ImportElement[] getImports();
+
+        /** Find a import by signature.
+         * @param arguments the argument types to look for
+         * @return the import, or <code>null</code> if it does not exist
+         */
+        public ImportElement getImport(String name);
+
         /** Change the set of sorts.
 	 * @param elems the new sorts
 	 * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
@@ -564,12 +656,14 @@ public final class SpecElement extends MemberElement {
 	 * @return the claim, or <code>null</code> if it does not exist
 	 */
         public ClaimElement getClaim(String name);
-        
     }
+        
 
     /** Memory based implementation of the element factory.
      */
     static final class Memory extends MemberElement.Memory implements Impl {
+        /** collection of imports */
+        private MemoryCollection.Import imports;       
         /** collection of sorts */
         private MemoryCollection.Sort sorts;
         /** collection of ops */
@@ -592,10 +686,42 @@ public final class SpecElement extends MemberElement {
         /** Late initialization of initialization of copy elements.
         */
         public void copyFrom (SpecElement copyFrom) {
+            changeImports (copyFrom.getImports (), SET);
             changeSorts (copyFrom.getSorts (), SET);
             changeOps (copyFrom.getOps (), SET);
             changeDefs (copyFrom.getDefs (), SET);
             changeClaims(copyFrom.getClaims (), SET);
+        }
+
+        /** Changes set of elements.
+	 * @param elems elements to change
+	 * @param action the action to do(ADD, REMOVE, SET)
+	 * @exception SourceException if the action cannot be handled
+	 */
+        public synchronized void changeImports(ImportElement[] elems, int action) {
+            initImports();
+            imports.change(elems, action);
+        }
+
+        public synchronized ImportElement[] getImports() {
+            initImports();
+            return(ImportElement[])imports.toArray();
+        }
+
+        /** Finds a import with given name and argument types.
+	 * @param source the name of source mode
+	 * @param target the name of target mode
+	 * @return the element or null if such import does not exist
+	 */
+        public synchronized ImportElement getImport(String name) {
+            initImports();
+            return(ImportElement)imports.find(name);
+        }
+
+        void initImports() {
+            if (imports == null) {
+                imports = new MemoryCollection.Import(this);
+            }
         }
 
         /** Changes set of elements.
@@ -715,7 +841,9 @@ public final class SpecElement extends MemberElement {
         void markCurrent(Element marker, boolean after) {
             MemoryCollection col;
       
-            if (marker instanceof SortElement) {
+            if (marker instanceof ImportElement) {
+                col = imports;
+            } else if (marker instanceof SortElement) {
                 col = sorts;
 	    } else if (marker instanceof OpElement) {
                 col = ops;

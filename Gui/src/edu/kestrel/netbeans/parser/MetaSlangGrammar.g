@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2003/02/17 07:04:09  weilyn
+ * Made scURI return an Item, and added more rules for scProve.
+ *
  * Revision 1.12  2003/02/17 04:35:26  weilyn
  * Added support for expressions.
  *
@@ -116,27 +119,35 @@ private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
     ;
 
 //---------------------------------------------------------------------------
+// TODO: scURI should really be an object that has parameters (bool relOrAbs, string path, scTermItem optionalRef)
 private scURI returns[ElementFactory.Item uri]
 {
     uri = null;
+    String strURI = null;
+}
+    : strURI=fullURIPath
+    ;
+
+private fullURIPath returns[String path]
+{
+    path = null;
     String item = null;
-    String strURI = "";
 }
     : (   (nonWordSymbol["/"]) => nonWordSymbol["/"] 
-                                  item=scURIPath        {strURI = strURI + "/" + item;}
-        | item=scURIPath                                {strURI = strURI + item;}
+                                  item=partialURIPath        {path = "/" + item;}
+        | item=partialURIPath                                {path = item;}
       )
       (ref:INNER_UNIT_REF)?
     ;
 
-private scURIPath returns[String path]
+private partialURIPath returns[String path]
 {
     path = "";
     String item = null;
 }
     : id:IDENTIFIER                                     {path = path + id.getText();} 
       ( (nonWordSymbol["/"]) => nonWordSymbol["/"] 
-                                item=scURIPath          {path = path + "/" + item;}
+                                item=partialURIPath     {path = path + "/" + item;}
       |
       )
     ;
@@ -168,6 +179,7 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item prove]
 {
     prove = null;
     ElementFactory.Item childItem = null;
+    String ignore = null;
     Token headerEnd = null;
     List children = new LinkedList();
     String name = (unitIdToken == null) ? "" : unitIdToken.getText();
@@ -175,7 +187,8 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item prove]
     : begin:"prove"                     {headerEnd = begin;}
       childItem=claimName               {if (childItem != null) children.add(childItem);}
       "in"
-      childItem=scURI                   {if (childItem != null) children.add(childItem);}
+      //childItem=scURI                   {if (childItem != null) children.add(childItem);}
+      ignore=fullURIPath
       (childItem=proverAssertions)?     {if (childItem != null) children.add(childItem);}
       (childItem=proverOptions)?        {if (childItem != null) children.add(childItem);}
                                         /*{prove = builder.createProve(name);
@@ -234,19 +247,22 @@ private declaration returns[ElementFactory.Item item]
 {
     item = null;
 }
-    : importDeclaration
+    : item=importDeclaration
     | item=sortDeclarationOrDefinition
     | item=opDeclaration
     | item=definition
     ;
 
 //---------------------------------------------------------------------------
-private importDeclaration
+private importDeclaration returns[ElementFactory.Item importItem]
 {
-    ElementFactory.Item ignore = null;
+    importItem = null;
+    String strURI = null;
 }
-    : "import" 
-      ignore=scURI
+    : begin:"import"
+      strURI=fullURIPath    {importItem = builder.createImport(strURI);
+                             ParserUtil.setBounds(builder, importItem, begin, LT(0));
+                            }
     ;
 
 //---------------------------------------------------------------------------

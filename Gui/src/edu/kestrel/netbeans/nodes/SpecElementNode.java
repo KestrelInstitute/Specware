@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:15:05  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:42:09  weilyn
  * Added support for claims.
  *
@@ -50,6 +53,7 @@ public class SpecElementNode extends MemberElementNode {
     };
 
     /** Menu labels */
+    private static final String MENU_CREATE_IMPORT;
     private static final String MENU_CREATE_SORT;
     private static final String MENU_CREATE_OP;
     private static final String MENU_CREATE_DEF;
@@ -57,6 +61,7 @@ public class SpecElementNode extends MemberElementNode {
 
     static {
         ResourceBundle bundle = NbBundle.getBundle(SpecElementNode.class);
+        MENU_CREATE_IMPORT = bundle.getString("MENU_CREATE_IMPORT");
         MENU_CREATE_SORT = bundle.getString("MENU_CREATE_SORT");
         MENU_CREATE_OP = bundle.getString("MENU_CREATE_OP");
         MENU_CREATE_DEF = bundle.getString("MENU_CREATE_DEF");
@@ -274,7 +279,9 @@ public class SpecElementNode extends MemberElementNode {
         SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
 		public void run() throws SourceException {
 		    SpecElement spec = (SpecElement) element;
-		    if (addingElement instanceof SortElement) {
+		    if (addingElement instanceof ImportElement) {
+			spec.addImport((ImportElement)addingElement);
+                    } else if (addingElement instanceof SortElement) {
 			spec.addSort((SortElement)addingElement);
 		    } else if (addingElement instanceof OpElement) {
 			OpElement me = (OpElement) addingElement;
@@ -308,7 +315,9 @@ public class SpecElementNode extends MemberElementNode {
 		    public void run() throws SourceException {
 			if (addingElement instanceof MemberElement) {
 			    if (origSpec != null) {
-				if (addingElement instanceof SortElement) {
+                                if (addingElement instanceof ImportElement) {
+				    origSpec.removeImport((ImportElement)addingElement);
+				} else if (addingElement instanceof SortElement) {
 				    origSpec.removeSort((SortElement)addingElement);
 				} else if (addingElement instanceof OpElement) {
 				    origSpec.removeOp((OpElement)addingElement);

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:33:56  weilyn
+ * Created claim customizer.
+ *
  * Revision 1.3  2003/02/16 02:15:04  weilyn
  * Added support for defs.
  *
@@ -54,6 +57,7 @@ class SourceEditSupport {
     static final ResourceBundle bundle = NbBundle.getBundle(SourceEditSupport.class);
 
     static final String[] SPEC_MENU_NAMES = {
+        bundle.getString("MENU_CREATE_IMPORT"),
 	bundle.getString("MENU_CREATE_SORT"),
 	bundle.getString("MENU_CREATE_OP"),
 	bundle.getString("MENU_CREATE_DEF"),
@@ -69,8 +73,9 @@ class SourceEditSupport {
 	    new SpecElementNewType(element, (byte) 0),
             new SpecElementNewType(element, (byte) 1),
             new SpecElementNewType(element, (byte) 2),
-            new SpecElementNewType(element, (byte) 3)
-	};
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),
+        };
     }
 
     /** New types for spec element */
@@ -112,6 +117,16 @@ class SourceEditSupport {
 		switch (kind) {
 		case 0:
 		    {
+			// Adding import
+			ImportElement e = new ImportElement();
+			e.setName("<name of unit to import>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Import");
+			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		case 1:
+		    {
 			// Adding sort
 			SortElement e = new SortElement();
 			e.setName("newSort");
@@ -120,7 +135,7 @@ class SourceEditSupport {
 			    newElement = e;
 			break;
 		    }
-		case 1:
+		case 2:
 		    {
 			// Adding op
 			OpElement e = new OpElement();
@@ -130,7 +145,7 @@ class SourceEditSupport {
 			    newElement = e;
 			break;
 		    }
-		case 2:
+		case 3:
 		    {
 			// Adding def
 			DefElement e = new DefElement();
@@ -140,7 +155,7 @@ class SourceEditSupport {
 			    newElement = e;
 			break;
 		    }
-		case 3:
+		case 4:
 		    {
 			// Adding claim
 			ClaimElement e = new ClaimElement();
@@ -166,15 +181,18 @@ class SourceEditSupport {
 		    public void run() throws SourceException {
 			switch (kind) {
 			case 0:
-			    ((SpecElement)element).addSort((SortElement)addingElement);
+			    ((SpecElement)element).addImport((ImportElement)addingElement);
 			    return;
 			case 1:
-			    ((SpecElement)element).addOp((OpElement)addingElement);
+			    ((SpecElement)element).addSort((SortElement)addingElement);
 			    return;
 			case 2:
-			    ((SpecElement)element).addDef((DefElement)addingElement);
+			    ((SpecElement)element).addOp((OpElement)addingElement);
 			    return;
 			case 3:
+			    ((SpecElement)element).addDef((DefElement)addingElement);
+			    return;
+			case 4:
 			    ((SpecElement)element).addClaim((ClaimElement)addingElement);
 			    return;
 			}

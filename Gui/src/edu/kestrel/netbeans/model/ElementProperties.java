@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:30:23  weilyn
+ * Added support for expressions.
+ *
  * Revision 1.3  2003/02/16 02:14:03  weilyn
  * Added support for defs.
  *
@@ -29,6 +32,8 @@ public interface ElementProperties {
     
     public static final String PROP_SPECS = "specs"; // NOI18N
     
+    public static final String PROP_IMPORTS = "imports"; //NOI18N
+
     public static final String PROP_SORTS = "sorts"; // NOI18N
     
     public static final String PROP_OPS = "ops"; // NOI18N
@@ -36,7 +41,7 @@ public interface ElementProperties {
     public static final String PROP_DEFS = "defs"; // NOI18N
     
     public static final String PROP_CLAIMS = "claims"; // NOI18N
-
+    
     public static final String PROP_NAME = "name"; // NOI18N
     
     public static final String PROP_PARAMETERS = "parameters"; // NOI18N

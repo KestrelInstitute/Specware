@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:14:04  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:39:30  weilyn
  * Added support for claims.
  *
@@ -26,5 +29,6 @@ public interface WrapperFactory {
     public OpElement      wrapOp(OpElement.Impl theImpl, Element parent);
     public DefElement     wrapDef(DefElement.Impl theImpl, Element parent);
     public ClaimElement   wrapClaim(ClaimElement.Impl theImpl, Element parent);
+    public ImportElement  wrapImport(ImportElement.Impl theImpl, Element parent);
 }
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:30:12  weilyn
+ * Added support for expressions.
+ *
  * Revision 1.3  2003/02/16 02:14:02  weilyn
  * Added support for defs.
  *
@@ -89,6 +92,11 @@ public interface Binding {
         public void changeExpression(String expression) throws SourceException;
     }
 
+    /** Binds an import to the source.
+     */
+    public interface Import extends Member {
+    }
+    
     
     /** Container interface that manages contained bindings. Currently only reorder operation
      * is supported.

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:16:02  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:45:52  weilyn
  * Added support for claims.
  *
@@ -51,6 +54,10 @@ public class DefaultWrapper implements WrapperFactory {
     
     public ClaimElement wrapClaim(ClaimElement.Impl theImpl, Element parent) {
         return new ClaimElement(theImpl, (SpecElement)parent);
+    }    
+
+    public ImportElement wrapImport(ImportElement.Impl theImpl, Element parent) {
+        return new ImportElement(theImpl, (SpecElement)parent);
     }    
     
 }

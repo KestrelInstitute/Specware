@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:14:04  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:39:30  weilyn
  * Added support for claims.
  *
@@ -36,6 +39,8 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
      */
     private SourceElementImpl       sourceImpl;
     
+    private ImportCollection     imports;
+
     private SortCollection    sorts;
     
     private OpCollection    ops;
@@ -71,6 +76,7 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         super.createFromModel(model);
 
         // member elements need the Element already.
+        changeImports(element.getImports(), SpecElement.Impl.ADD);
         changeSorts(element.getSorts(), SpecElement.Impl.ADD);
         changeOps(element.getOps(), SpecElement.Impl.ADD);
         changeDefs(element.getDefs(), SpecElement.Impl.ADD);
@@ -93,6 +99,30 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
     // Member management methods
     // - will delegate to collection helpers.
     ///////////////////////////////////////////////////////////////////////////////////
+    public ImportElement[] getImports() {
+        if (imports == null)
+            return ImportCollection.EMPTY;
+        return (ImportElement[])imports.getElements().clone();
+    }
+    
+    public ImportElement getImport(String name) {
+        if (imports == null)
+            return null;
+        return imports.getImport(name);
+    }
+    
+    public void changeImports(ImportElement[] elements, int operation) 
+        throws SourceException {
+        initializeImports();
+        Object token = takeMasterLock();
+        try {
+            imports.changeMembers(elements, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+    
     public SortElement[] getSorts() {
         if (sorts == null)
             return SortCollection.EMPTY;
@@ -205,7 +235,10 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
     
     public void updateMembers(String propName, Element[] els, int[] indices,
         int[] optMap) {
-        if (propName == ElementProperties.PROP_SORTS) {
+        if (propName == ElementProperties.PROP_IMPORTS) {
+	    initializeImports();
+            imports.updateMembers(els, indices, optMap);
+        } else if (propName == ElementProperties.PROP_SORTS) {
             initializeSorts();
             sorts.updateMembers(els, indices, optMap);
         } else if (propName == ElementProperties.PROP_OPS) {
@@ -217,7 +250,7 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         } else if (propName == ElementProperties.PROP_CLAIMS) {
 	    initializeClaims();
             claims.updateMembers(els, indices, optMap);
-        }
+        } 
 	//Util.log("SpecElementimpl.updateMembers after PartialCollection.updateMembers members = "+members);
 	//Util.log("SpecElementimpl.updateMembers after PartialCollection.updateMembers indices = "+Util.print(indices)
 	//				 +" optMap = "+Util.print(optMap));
@@ -228,6 +261,16 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         members.updateOrder(ordered);
     }
     
+    private void initializeImports() {
+        if (imports != null)
+            return;
+        synchronized (this) {
+            if (imports == null) {
+                imports = new ImportCollection(this, getModelImpl(), members);
+            }
+        }
+    }
+
     private void initializeSorts() {
         if (sorts != null)
             return;
@@ -352,6 +395,8 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         }
         super.notifyCreate();
         members.sanityCheck();
+        if (imports != null)
+            imports.sanityCheck();
         if (sorts != null)
             sorts.sanityCheck();
         if (ops != null)

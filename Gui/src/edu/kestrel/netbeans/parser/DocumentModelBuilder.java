@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:35:21  weilyn
+ * Added support for expressions.
+ *
  * Revision 1.3  2003/02/16 02:16:02  weilyn
  * Added support for defs.
  *
@@ -110,6 +113,17 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	return info;
     }
     
+    /** Creates an element for an import.
+	@param str The import string.
+    */
+    public Item	createImport(String name) {
+	ImportInfo info = new ImportInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createImport(): "+info);
+	}
+	return info;
+    }
+ 
     /** Sets bounds for the whole element. Begin is offset of first character of the element,
 	end is the offset of the last one.
     */
@@ -275,7 +289,9 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 		parentInfo.addMember(SpecInfo.DEF, childInfo);
 	    } else if (child instanceof ClaimInfo) {
 		parentInfo.addMember(SpecInfo.CLAIM, childInfo);
-	    }
+	    } else if (child instanceof ImportInfo) {
+                parentInfo.addMember(SpecInfo.IMPORT, childInfo);
+            }
 	} 
     }
     

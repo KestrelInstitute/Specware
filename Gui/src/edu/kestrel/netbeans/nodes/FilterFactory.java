@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:15:04  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:42:09  weilyn
  * Added support for claims.
  *
@@ -80,6 +83,14 @@ public class FilterFactory implements ElementNodeFactory {
         return delegate.createClaimNode( element );
     }
     
+    /** Make a node representing an import
+    * @param element the import
+    * @return a import node instance
+    */
+    public Node createImportNode (ImportElement element) {
+        return delegate.createImportNode( element );
+    }
+
     /** Make a node indicating that the creation of children
     * is still under way.
     * It should be used when the process is slow.

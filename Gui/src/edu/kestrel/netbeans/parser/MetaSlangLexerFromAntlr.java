@@ -317,7 +317,7 @@ tryAgain:
 		
 		match('%');
 		{
-		_loop95:
+		_loop96:
 		do {
 			if ((_tokenSet_3.member(LA(1)))) {
 				{
@@ -325,7 +325,7 @@ tryAgain:
 				}
 			}
 			else {
-				break _loop95;
+				break _loop96;
 			}
 			
 		} while (true);
@@ -372,7 +372,7 @@ tryAgain:
 		
 		match("(*");
 		{
-		_loop101:
+		_loop102:
 		do {
 			if ((LA(1)=='\r') && (LA(2)=='\n') && ((LA(3) >= '\u0003' && LA(3) <= '\u00ff')) && ((LA(4) >= '\u0003' && LA(4) <= '\u00ff'))) {
 				match('\r');
@@ -396,7 +396,7 @@ tryAgain:
 				}
 			}
 			else {
-				break _loop101;
+				break _loop102;
 			}
 			
 		} while (true);
@@ -620,17 +620,17 @@ tryAgain:
 		match('#');
 		mWORD_START_MARK(false);
 		{
-		int _cnt120=0;
-		_loop120:
+		int _cnt121=0;
+		_loop121:
 		do {
 			if ((_tokenSet_1.member(LA(1)))) {
 				mWORD_CONTINUE_MARK(false);
 			}
 			else {
-				if ( _cnt120>=1 ) { break _loop120; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
+				if ( _cnt121>=1 ) { break _loop121; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
 			}
 			
-			_cnt120++;
+			_cnt121++;
 		} while (true);
 		}
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {
@@ -724,13 +724,13 @@ tryAgain:
 			matchRange('1','9');
 			}
 			{
-			_loop124:
+			_loop125:
 			do {
 				if (((LA(1) >= '0' && LA(1) <= '9'))) {
 					matchRange('0','9');
 				}
 				else {
-					break _loop124;
+					break _loop125;
 				}
 				
 			} while (true);
@@ -1113,13 +1113,13 @@ tryAgain:
 		
 		match('"');
 		{
-		_loop135:
+		_loop136:
 		do {
 			if ((_tokenSet_6.member(LA(1)))) {
 				mSTRING_LITERAL_GLYPH(false);
 			}
 			else {
-				break _loop135;
+				break _loop136;
 			}
 			
 		} while (true);
@@ -1198,13 +1198,13 @@ tryAgain:
 		
 		mWORD_START_MARK(false);
 		{
-		_loop139:
+		_loop140:
 		do {
 			if ((_tokenSet_1.member(LA(1)))) {
 				mWORD_CONTINUE_MARK(false);
 			}
 			else {
-				break _loop139;
+				break _loop140;
 			}
 			
 		} while (true);
@@ -1223,17 +1223,17 @@ tryAgain:
 		int _saveIndex;
 		
 		{
-		int _cnt144=0;
-		_loop144:
+		int _cnt145=0;
+		_loop145:
 		do {
 			if ((_tokenSet_7.member(LA(1)))) {
 				mNON_WORD_MARK(false);
 			}
 			else {
-				if ( _cnt144>=1 ) { break _loop144; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
+				if ( _cnt145>=1 ) { break _loop145; } else {throw new NoViableAltForCharException((char)LA(1), getFilename(), getLine());}
 			}
 			
-			_cnt144++;
+			_cnt145++;
 		} while (true);
 		}
 		if ( _createToken && _token==null && _ttype!=Token.SKIP ) {

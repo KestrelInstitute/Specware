@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:33:05  weilyn
+ * Fixed an out-of-bounds array exception bug and cleaned up context menu actions.
+ *
  * Revision 1.3  2003/02/16 02:15:03  weilyn
  * Added support for defs.
  *
@@ -54,8 +57,8 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   private static final int FILTER_CATEGORIES = 0x1000;
   
   static {
-    CATEGORIES = new Integer[4];
-    for (int i = 0; i < 4; i++) {
+    CATEGORIES = new Integer[5];
+    for (int i = 0; i < 5; i++) {
       CATEGORIES[i] = new Integer(i);
     }
   }
@@ -66,6 +69,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     case 2: return CATEGORIES[1];
     case 4: return CATEGORIES[2];
     case 8: return CATEGORIES[3];
+    case 16: return CATEGORIES[4];
     }
     return null;
   }
@@ -158,6 +162,15 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     return new ClaimElementNode(element, writeable);
   }
 
+  /** Make a node representing an import.
+   * @param element the import
+   * @return an import node instance
+   *
+   */
+  public Node createImportNode(ImportElement element) {
+    return new ImportElementNode(element, writeable);
+  }
+
   /* Creates and returns the instance of the node
    * representing the status 'WAIT' of the DataNode.
    * It is used when it spent more time to create elements hierarchy.
@@ -197,6 +210,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
   /** Filters under each category node */
   static final int[][] FILTERS = new int[][] {
+    { SpecElementFilter.IMPORT },
     { SpecElementFilter.SORT },
     { SpecElementFilter.OP },
     { SpecElementFilter.DEF },
@@ -205,6 +219,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
   /** The names of the category nodes */
   static final String[] NAMES = new String[] {
+    ElementNode.bundle.getString("Imports"), //NO18N
     ElementNode.bundle.getString("Sorts"), // NO18N
     ElementNode.bundle.getString("Ops"), // NO18N
     ElementNode.bundle.getString("Defs"), // NO18N
@@ -213,6 +228,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
   /** The short descriptions of the category nodes */
   static final String[] SHORTDESCRS = new String[] {
+    ElementNode.bundle.getString("Imports_HINT"), //NO18N
     ElementNode.bundle.getString("Sorts_HINT"), // NO18N
     ElementNode.bundle.getString("Ops_HINT"), // NO18N
     ElementNode.bundle.getString("Defs_HINT"), // NO18N
@@ -221,6 +237,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
   /** Help IDs for the individual categories */
   static final String[] HELP_IDS = new String[] {
+    "org.openide.src.nodes.ElementCategory.Imports", // NO18N
     "org.openide.src.nodes.ElementCategory.Sorts", // NO18N
     "org.openide.src.nodes.ElementCategory.Ops", // NO18N
     "org.openide.src.nodes.ElementCategory.Defs", // NO18N
@@ -229,6 +246,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
   /** Array of the icons used for category nodes */
   static final String[] SPEC_CATEGORY_ICONS = new String[] {
+    IMPORTS_CATEGORY,
     SORTS_CATEGORY,
     OPS_CATEGORY,
     DEFS_CATEGORY,
@@ -251,17 +269,20 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 
     private void initializeCategories() {
       activeCategories = new TreeSet();
-      if (element.getSorts().length > 0) {
-	activeCategories.add(CATEGORIES[0]);
+      if (element.getImports().length > 0) {
+        activeCategories.add(CATEGORIES[0]);
       }
-      if (element.getOps().length > 0) {
+      if (element.getSorts().length > 0) {
 	activeCategories.add(CATEGORIES[1]);
       }
-      if (element.getDefs().length > 0) {
+      if (element.getOps().length > 0) {
 	activeCategories.add(CATEGORIES[2]);
       }
-      if (element.getClaims().length > 0) {
+      if (element.getDefs().length > 0) {
 	activeCategories.add(CATEGORIES[3]);
+      }
+      if (element.getClaims().length > 0) {
+	activeCategories.add(CATEGORIES[4]);
       }      
     }
         
@@ -301,7 +322,7 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     
 
   /**
-   * Category node - represents one section under spec element node - sorts, 
+   * Category node - represents one section under spec element node - imports, sorts, 
    * ops, defs, claims.
    */
   static class SpecElementCategoryNode extends AbstractNode {
@@ -325,15 +346,16 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
       this.element = element;
       newTypeIndex = writeable ? index : -1;
       switch (index) {
-      case 0: setName("Sorts"); break; // NOI18N
-      case 1: setName("Ops"); break; // NOI18N
-      case 2: setName("Defs"); break; // NOI18N
-      case 3: setName("Claims"); break; // NOI18N
+      case 0: setName("Imports"); break; //NOI18N
+      case 1: setName("Sorts"); break; // NOI18N
+      case 2: setName("Ops"); break; // NOI18N
+      case 3: setName("Defs"); break; // NOI18N
+      case 4: setName("Claims"); break; // NOI18N
       }
     }
 
     /** Create new element node.
-     * @param index The index of type (0=sorts, 1=ops, 2=defs, 3=claims)
+     * @param index The index of type (0=imports, 1=sorts, 2=ops, 3=defs, 4=claims)
      * @param children the spec children of this node
      */
     private SpecElementCategoryNode(int index, SpecChildren children) {
@@ -382,6 +404,10 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 	return new NewType[] {
 	  new SourceEditSupport.SpecElementNewType(element, (byte) 3),
 	    };
+      case 4:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 4),
+	    };            
       default:
 	return super.getNewTypes();
       }
