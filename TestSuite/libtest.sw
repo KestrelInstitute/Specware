@@ -374,7 +374,13 @@ spec
     tester ("(Nat.show ( 123 )) = \"123\"", (Nat.show ( 123 )) = "123");
 % Nat [126]:  op natToString  : Nat -> String
     tester ("(natToString ( 123 )) = \"123\"", (natToString ( 123 )) = "123");
-% Nat [127]:  op stringToNat  : {s : String | length s > 0 & all isNum (explode s)} -> Nat
+% Nat [126.5]:  op natConvertible : String -> Boolean
+    tester ("(natConvertible ( \"123\" )) = true", (natConvertible ( "123" )) = true);
+    tester ("(natConvertible ( \"-123\" )) = false", (natConvertible ( "-123" )) = false);
+    tester ("(natConvertible ( \"000\" )) = true", (natConvertible ( "000" )) = true);
+    tester ("(natConvertible ( \"\" )) = false", (natConvertible ( "" )) = false);
+    tester ("(natConvertible ( \"123.00\" )) = false", (natConvertible ( "123.00" )) = false);
+% Nat [127]:  op stringToNat  : (String | natConvertible) -> Nat
 
 % Option [ 94]:  op some      : fa(a) a -> Option a
     tester ("(some ( 1 )) = Some(1)", (some ( 1 )) = Some(1));
