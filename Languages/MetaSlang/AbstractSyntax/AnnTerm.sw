@@ -1160,9 +1160,9 @@ MetaSlang qualifying spec {
 				 link     = Some newssrt},
 			    pos))
 
-         | Pi  (tvs, srt, a) -> Pi (tvs, mapS (tsp, sort_map, srt), a)  % TODO: what if map alters vars?
+         | Pi  (tvs, srt, a) -> Pi (tvs, mapRec (tsp, sort_map, srt), a)  % TODO: what if map alters vars?
 
-         | And (srts,     a) -> maybeAndSort (map (fn srt -> mapS (tsp, sort_map, srt)) srts, a)
+         | And (srts,     a) -> maybeAndSort (map (fn srt -> mapRec (tsp, sort_map, srt)) srts, a)
 
          | Any  _            -> srt
 
