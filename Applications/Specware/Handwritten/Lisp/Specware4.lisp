@@ -132,6 +132,7 @@
 ||#
 
 
+(defpackage "PROVER")
 (defvar prover::wildCounter 0) ; to suppress annoying compiler warning
 
 ;; The following are specific to Specware and languages that
