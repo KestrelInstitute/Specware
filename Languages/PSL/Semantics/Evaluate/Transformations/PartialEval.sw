@@ -478,10 +478,10 @@ PE qualifying spec
      else {
        newProcId <- makeProcId procId extendedSubst;
        case evalPartial (procedures newOscSpec, newProcId) of
-         | Some procInfo -> {
-             print ("specialProc: already seen:" ++ (Id.show newProcId) ++ "\n");
+         | Some procInfo -> %{
+             %print ("specialProc: already seen:" ++ (Id.show newProcId) ++ "\n");
              return (Some (newOscSpec, bSpec procInfo, callReturnOpRef, procInfo))
-            }
+            %}
          | None -> {
              if traceRewriting > 0 then
                print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
@@ -642,11 +642,11 @@ PE qualifying spec
                          (newDst,successors,newBSpec,visited,newFinals) <-
                             case findVertex visited t of
                               | None ->
-                                  let _ = toScreen ("specialProcCall subst of t =" ++ (Subst.show (Mode.substOf t)) ++ "\n") in
-                                  let _ = toScreen ("returnInfo =" ++ (showOptRef (returnInfo procInfo)) ++ "\n") in
-                                  let _ = toScreen ("optCallReturnRef =" ++ (showOptRef optCallReturnRef) ++ "\n") in
+                                  %let _ = toScreen ("specialProcCall subst of t =" ++ (Subst.show (Mode.substOf t)) ++ "\n") in
+                                  %let _ = toScreen ("returnInfo =" ++ (showOptRef (returnInfo procInfo)) ++ "\n") in
+                                  %let _ = toScreen ("optCallReturnRef =" ++ (showOptRef optCallReturnRef) ++ "\n") in
                                   let postcondition = filterPostcondition transSpec (returnInfo procInfo) optCallReturnRef (Mode.substOf t) in
-                                  let _ = toScreen ("specialProcCall postcondition=" ++ (Subst.show postcondition) ++ "\n") in
+                                  %let _ = toScreen ("specialProcCall postcondition=" ++ (Subst.show postcondition) ++ "\n") in
                                   let (newBSpec,newDst) = copyMode newBSpec t (order (precondition ++ postcondition)) in
                                   let newFinals =
                                     if Mode.member? (final procBSpec) t then
