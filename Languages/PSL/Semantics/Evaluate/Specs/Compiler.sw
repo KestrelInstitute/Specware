@@ -10,12 +10,18 @@ SpecCalc qualifying spec
   import Context
   import MetaSlang
   import MetaSlang/Legacy
+  % import /Languages/SpecCalculus/Semantics/Monad
   import SortList
   import Subst
   import Claim/Legacy    % shameful
 
   sort TimeStamp
   sort UnitId_Dependency
+
+  % This is defined /Languages/SpecCalculus/Semantics/Monad but that imports a whole bunch of
+  % other stuff. Later the above gets imported but requalified and if we import it
+  % here we break the build
+  op SpecCalc.foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
 \end{spec}
 
 An Oscar spec consists of a collection of "elements" called "OscarSpec
@@ -766,15 +772,17 @@ the procedure is the unit \verb+()+.
              | SpecError (pos,str) ->
                  specError ("Call to undefined procedure: " ^ (show procId)) position
              | _ -> raise except);
+      procInfo <- return (eval (procedures ctxt, procId)); 
+      changedVars <- return (varsInScope procInfo);
 
       (*
        * If the procedure we are calling returns something, then we need to add a primed
        * version of the receiving variable to the mode spec. If it doesn't return something
        * then we assume the return value is ().
        *)
-      (apexSpec,leftPrimedTerm,changedVars) <-
+      (leftPrimedTerm,changedVars) <-
         case trm? of
-          | None -> return (modeSpec ctxt, mkRecord ([],position), OpRefSet.empty)
+          | None -> return (mkRecord ([],position), changedVars)
           | Some trm -> {
                (leftId, leftPrimedTerm) <- processLHS trm position;
                varInfo <-
@@ -784,17 +792,16 @@ the procedure is the unit \verb+()+.
                       case except of
                         | SpecError _ -> specError ("Variable '" ^ (show leftId) ^ "' is undefined") position
                         | _ -> raise except);
-               apexSpec <- addVariable (modeSpec ctxt) (varInfo withId (makePrimedId leftId)) position; 
-               return (apexSpec,leftPrimedTerm, singleton (refOf varInfo))
+               return (leftPrimedTerm, ListUtilities.insert (refOf varInfo, changedVars))
             };
 \end{spec}
 
 So a procedure can write to anything in scope when it was declared.
-What about local variables that are introduced after the procedure is declared
-but before the procedure is called. They must be renamed when they are introduced.
-If a variable name appears here and in the dynamic context of the procedure,
-then they are the same variable. Moreover we can be certain that the new primed
-version of the variable doesn't exist.
+What about local variables that are introduced after the procedure is
+declared but before the procedure is called. They must be renamed when
+they are introduced.  If a variable name appears here and in the dynamic
+context of the procedure, then they are the same variable. Moreover we
+can be certain that the new primed version of the variable doesn't exist.
 
 So what is the rule for names. When we call the procedure, we need to
 pass the entire state that is in scope when the procedure is declared.
@@ -803,10 +810,13 @@ This is all the local names in the procInfo.dynamicSpec.
 # The order in which the list if changed ops is obtained is significant. It
 must agree with the definition of the Proc op for this procedure.
 
+Assume things have been named apart. So local variables cannot clash
+with global variables with the same name.
+
 \begin{spec}
-      procInfo <- return (eval (procedures ctxt, procId)); 
-      apexSpec <- foldVariables (fn modeSpec -> fn varInfo ->
-        addVariable modeSpec (varInfo withId (makePrimedId (idOf varInfo))) position) apexSpec (modeSpec procInfo);
+      changedVarsOpInfo <- return (map (fn varRef -> Op.deref (specOf (modeSpec procInfo),varRef)) changedVars);
+      apexSpec <- foldM (fn modeSpec -> fn varInfo ->
+        ModeSpec.addVariable modeSpec (varInfo Op.withId (makePrimedId (idOf varInfo))) position) (modeSpec ctxt) changedVarsOpInfo;
       varOps <- return (map (fn varRef -> deref (specOf (modeSpec procInfo),varRef)) (varsInScope procInfo));
       varList <- return (map (fn (varInfo:Op.OpInfo) -> mkFun (idToNameRef (idOf varInfo), type varInfo, position)) varOps);
       oldStore <- mkTuple (varList, position);
@@ -818,8 +828,10 @@ must agree with the definition of the Proc op for this procedure.
       axm <- mkApplyN (procOp, totalTuple, position);
       trm <- makeAxiom (makeId "call") axm; 
       apexSpec <- addInvariant apexSpec trm position;
-      connectVertices ctxt (initial ctxt) (final ctxt) apexSpec (union (changedVars, variables (modeSpec procInfo)))
+      connectVertices ctxt (initial ctxt) (final ctxt) apexSpec (opRefListToSet changedVars)
    }
+
+ op opRefListToSet : List Op.Ref -> OpRefSet.Set
 \end{spec}
 
 The following compiles a sequence of commands. For each command

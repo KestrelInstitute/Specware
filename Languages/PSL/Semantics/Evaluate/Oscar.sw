@@ -141,12 +141,12 @@ They are procedures in context.
           }
       | Claim (Axiom, name, tyVars, term) -> {
             axm <- makeAxiom (makeId name) tyVars term;
-            print ("adding axiom: " ^ name ^ "\n");
+            % print ("adding axiom: " ^ name ^ "\n");
             addClaim oscarSpec axm position
           }
       | Claim (Invariant, name, tyVars, term) -> {
             axm <- makeAxiom (makeId name) tyVars term;
-            print ("adding invariant: " ^ name ^ "\n");
+            % print ("adding invariant: " ^ name ^ "\n");
             addInvariant oscarSpec axm position
           }
       | Claim (Theorem, name, tyVars, term) -> {
