@@ -76,7 +76,8 @@ spec {
   op baseSorts: List LispCell
   def baseSorts = 
       [ 
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Option"))]
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Option"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "List"))]
       ]
 
   op snarkBaseDecls: List LispCell
@@ -198,7 +199,16 @@ spec {
           Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
 		     Lisp.symbol("KEYWORD","SORT"),
 		     Lisp.quote(snarkBaseSort(spc, srt, true))]
-       | _ -> Lisp.nil()) %Lisp.symbol("","FD1")
+       | Arrow(dom, rng, _) ->
+	  case rng of
+	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, dom, 1)
+	  | _ -> 
+	    let snarkDomSrt = snarkBaseSort(spc, dom, false) in
+	        Lisp.list[declare_function,
+			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
+			  Lisp.symbol("KEYWORD","SORT"),
+			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
+       )
 
   def snarkPropositionSymbolDecl(name) =
     Lisp.list[declare_proposition_symbol,
@@ -262,13 +272,19 @@ spec {
 	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateDecl(spc, name, dom, arity)
 	  | _ ->
 	case productOpt(spc, dom) of
-	  Some fields -> 
+	  | Some fields -> 
 	    let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(spc, srt, false))
 	                          fields in
 	      Lisp.list[declare_function,
 			Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
 			Lisp.symbol("KEYWORD","SORT"),
 			Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list(domSortList)))]
+	  | _ ->
+	      let snarkDomSrt = snarkBaseSort(spc, dom, false) in
+	        Lisp.list[declare_function,
+			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
+			  Lisp.symbol("KEYWORD","SORT"),
+			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
 
   def snarkFunctionCurryNoArityDecl(spc, name, srt) =
     snarkFunctionNoArityDecl(spc, name, srt)
@@ -279,14 +295,14 @@ spec {
   op snarkFunctionDecl: Spec * String * Sort -> LispCell
 
   def snarkFunctionDecl(spc, name, srt) =
-%    let _ = toScreen("Generating snark decl for "^name^" with sort: ") in
-%    let _ = printSortToTerminal srt in
+    %let _ = toScreen("Generating snark decl for "^name^" with sort: ") in
+    %let _ = printSortToTerminal srt in
     (case (curryShapeNum(spc, srt), sortArity(spc, srt))
-       of (1,None) -> snarkFunctionNoArityDecl(spc, name, srt)
-	| (1, Some(_,arity)) -> snarkFunctionNoCurryDecl(spc, name, srt, arity)
-	| (curryN, None) -> snarkFunctionCurryNoArityDecl(spc, name, srt)
-	| (curryN, Some (_, arity)) -> snarkFunctionCurryDecl()
-	| _ -> snarkFunctionNoArityDecl(spc, name, srt))
+       of (1,None) ->     let _ = debug("noArity") in snarkFunctionNoArityDecl(spc, name, srt)
+	| (1, Some(_,arity)) -> let _ = debug("noCurry") in snarkFunctionNoCurryDecl(spc, name, srt, arity)
+	| (curryN, None) -> let _ = debug("CurryNoArity") in snarkFunctionCurryNoArityDecl(spc, name, srt)
+	| (curryN, Some (_, arity)) -> let _ = debug("Curry") in snarkFunctionCurryDecl()
+	| _ -> let _ = debug("Last") in snarkFunctionNoArityDecl(spc, name, srt))
 
   op snarkOpDeclPartial: Spec * String * Sort -> Option LispCell
 

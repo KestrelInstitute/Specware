@@ -198,10 +198,13 @@ spec
     let args = case arg
                 of Record(flds,_) -> map(fn (_, term) -> term) flds
 	         | _ -> [arg] in
-    case f
-      of Op(Qualified(qual,id),_) ->
-	   let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
+    case f of
+      | Op(Qualified(qual,id),_) ->
+          let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
+      | Project (id) ->
+	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
+	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName("","project_"^id)), Lisp.list snarkArgs)
 
   op mkSnarkTerm: Context * Spec * String * StringSet.Set * MS.Term -> LispCell
 

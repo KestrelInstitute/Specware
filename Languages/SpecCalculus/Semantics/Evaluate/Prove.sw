@@ -199,10 +199,10 @@ SpecCalc qualifying spec {
  op makeSnarkProveEvalForm: List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * Lisp.LispCell * String -> Lisp.LispCell
 
  def makeSnarkProveEvalForm(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
-   %%let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
-   %%let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
-   %%let _ = if specwareDebug? then writeLine(" using: ") else () in
-   %%let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
+   let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
+   let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
+   let _ = if specwareDebug? then writeLine(" using: ") else () in
+   let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
 
    	 Lisp.list 
 	 [Lisp.symbol("CL-USER","WITH-OPEN-FILE"),
