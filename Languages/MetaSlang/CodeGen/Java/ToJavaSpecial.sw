@@ -66,6 +66,31 @@ spec
 	Some ((s,expr,k,l),col)
     in
     case term of
+      | Apply(Fun(Op(Qualified("System","fail"),_),_,_),t,_) -> 
+        let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
+	%let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
+	let def mkPrim p = CondExp(Un(Prim p),None) in
+	% this (painfully) constructs the following Java expression that throws an exception:
+	% (new Object() { public void throwException(String s) {
+        %                     throw new IllegalArgumentException(s);
+        %                 }
+        %               }).throwException(argexpr)
+	let mname = "throwException" in
+	let varname = "msg" in
+	let stringtype:Java.Type = (Name ([],"String"),0) in
+	let methheader:MethHeader = ([Public],None,mname,[(false,stringtype,(varname,0))],[]) in
+	let newException = mkPrim(NewClsInst(ForCls(([],"IllegalArgumentException"),[mkPrim(Name ([],varname))],None))) in
+	let throwStmt = Throw(newException) in
+	let block = [Stmt throwStmt] in
+	let meth = (methheader,Some block) in
+        let clsbody = {
+		       handwritten = [], staticInits = [], flds = [], constrs = [],
+		       meths = [meth], clss = [], interfs = []
+		      }
+	in
+	let newexpr = mkPrim(NewClsInst(ForCls(([],"Object"),[],Some clsbody))) in
+	let expr = mkMethExprInv(newexpr,mname,[argexpr]) in
+	Some ((s,expr,k,l),col)
       | Apply(Fun(Op(Qualified("String","writeLine"),_),_,_),t,_) -> 
         let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
 	let expr = mkMethInvName((["System","out"],"println"),[argexpr]) in
