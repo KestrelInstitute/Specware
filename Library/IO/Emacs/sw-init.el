@@ -264,7 +264,7 @@
 	       "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)")
 	     base-world-name))
     (sit-for 4)
-    (simulate-input-expression "(specware::exit)")
+    (simulate-input-expression "(exit)")
     (sit-for 2))
   (if (null base-world-name)
       (run-plain-lisp 1)
