@@ -305,8 +305,9 @@ Note: The code below does not yet match the documentation above, but should.
 		        {
 			 complain_if_sort_collision (sorts, sort_translation_map, dom_q, dom_id, cod_qid, rule_pos);
 			 new_sort_map <- return (insertAQualifierMap (sort_translation_map, dom_q, dom_id, (cod_qid, cod_aliases)));
-			 new_sort_map <- return (if primary_q = UnQualified && dom_id = primary_id then
-						   %% special case for unqualified refs...
+			 new_sort_map <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
+						   %% in rule X +-> Y, X refers to A.X
+						   %% so both X and A.X should translate to Y
 						   insertAQualifierMap (new_sort_map, primary_q, primary_id, (cod_qid, cod_aliases))
 						 else 
 						   new_sort_map);
@@ -352,8 +353,9 @@ Note: The code below does not yet match the documentation above, but should.
 		         {
 			  complain_if_op_collision (ops, op_translation_map, dom_q, dom_id, cod_qid, rule_pos);
 			  new_op_map <- return (insertAQualifierMap (op_translation_map, dom_q, dom_id, (cod_qid, cod_aliases)));
-			  new_op_map <- return (if primary_q = UnQualified && dom_id = primary_id then
-						  %% special case for unqualified refs...
+			  new_op_map <- return (if dom_q = UnQualified && primary_q ~= UnQualified && dom_id = primary_id then
+						  %% in rule X +-> Y, X refers to A.X
+						  %% so both X and A.X should translate to Y
 						  insertAQualifierMap (new_op_map, primary_q, primary_id, (cod_qid, cod_aliases))
 						else 
 						  new_op_map);
