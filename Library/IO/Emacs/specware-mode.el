@@ -151,7 +151,7 @@ accepted in lieu of prompting."
       ["Find Definition" sw:meta-point t]
       ["Find Next Definition" sw:continue-meta-point
        *pending-specware-meta-point-results*]
-      ["Switch to *specware* buffer" sw:switch-to-lisp t]
+      ["Switch to Specware Shell" sw:switch-to-lisp t]
       ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark)]
       ["Uncomment Region"
        (comment-region (region-beginning) (region-end) '(4))

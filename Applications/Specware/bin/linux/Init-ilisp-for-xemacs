@@ -43,7 +43,7 @@ if [ "$DOIT" == "NO" ]; then
 else 
 
   CMULISP=""
-  for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl; do
+  for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
     if [ -x "$L" ]; then
       CMULISP="$L"; break
     fi

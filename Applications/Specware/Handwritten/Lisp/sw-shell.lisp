@@ -274,6 +274,12 @@
   (#+allegro excl:without-package-locks #-allegro progn
    (setf (symbol-function 'error) #'just-print-error-message))
   (specware::change-directory (specware::getenv "SPECWARE4"))
+  #+allegro
+  (setq cl-user::*restart-actions* nil)
+  #+allegro
+  (when (functionp excl:*restart-init-function*)
+    (funcall excl:*restart-init-function*)
+    (setq excl:*restart-init-function* nil))
   (SWShell::specware-shell nil)
   #+allegro
   (excl:without-package-locks #-allegro progn

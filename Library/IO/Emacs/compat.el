@@ -1,5 +1,5 @@
 (defvar lisp-emacs-interface-type 'franz)
-(defvar sw:common-lisp-buffer-name "*specware*")
+(defvar sw:common-lisp-buffer-name "*Specware Shell*")
 (defvar sw:common-lisp-image-arguments nil)
 
 (pushnew ".fasl" completion-ignored-extensions)

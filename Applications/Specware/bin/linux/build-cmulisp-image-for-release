@@ -37,7 +37,7 @@ esac
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl; do
+   for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi
@@ -155,47 +155,15 @@ else
     /bin/mkdir "$SPECWARE4"/distribution-cmulisp
 fi
 
-/bin/mkdir "$SPECWARE4"/distribution-cmulisp/Library
-/bin/mkdir "$SPECWARE4"/distribution-cmulisp/Library/IO
-
-/bin/cp -r "$SPECWARE4"/Library/Base     "$SPECWARE4"/distribution-cmulisp/Library 
-/bin/cp    "$SPECWARE4"/Library/Base.sw  "$SPECWARE4"/distribution-cmulisp/Library
-/bin/cp -r "$SPECWARE4"/Library/IO/Emacs "$SPECWARE4"/distribution-cmulisp/Library/IO 
-
-# TODO: move all ilisp-20020831 files to the ilisp directory in CVS
-# oops -- ilisp is a link to ilisp-20020831, so the two dirs are the same!
-# /bin/mv -f "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/ilisp-20020831/* "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/ilisp/
-
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Library/Base/CVS
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Library/Base/Handwritten/CVS
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Library/Base/Handwritten/Lisp/CVS
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/CVS
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Library/IO/Emacs/ilisp/CVS
-
-/bin/mkdir "$SPECWARE4"/distribution-cmulisp/Examples
-/bin/mkdir "$SPECWARE4"/distribution-cmulisp/Examples/Matching
-
-/bin/cp "$SPECWARE4"/UserDoc/tutorial/example/* "$SPECWARE4"/distribution-cmulisp/Examples/Matching
-/bin/cp -r "$SPECWARE4"/UserDoc/examples/* "$SPECWARE4"/distribution-cmulisp/Examples 
-
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Examples/CVS
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Examples/simple1/CVS
-/bin/rm  -f "$SPECWARE4"/distribution-cmulisp/Examples/simple1/test.lisp
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Examples/simple2/CVS
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Examples/simple2/Refs/CVS
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Examples/simple2/Specs/CVS
-/bin/rm  -f "$SPECWARE4"/distribution-cmulisp/Examples/simple2/test.lisp
-/bin/rm -rf "$SPECWARE4"/distribution-cmulisp/Examples/simple3/CVS
-/bin/rm  -f "$SPECWARE4"/distribution-cmulisp/Examples/simple3/test.lisp
-
-/bin/mkdir "$SPECWARE4"/distribution-cmulisp/Documentation
-
-/bin/cp "$SPECWARE4"/UserDoc/language-manual/SpecwareLanguageManual.pdf  "$SPECWARE4"/distribution-cmulisp/Documentation
-/bin/cp "$SPECWARE4"/UserDoc/tutorial/SpecwareTutorial.pdf               "$SPECWARE4"/distribution-cmulisp/Documentation
-/bin/cp "$SPECWARE4"/UserDoc/user-manual/SpecwareUserManual.pdf          "$SPECWARE4"/distribution-cmulisp/Documentation
-/bin/cp "$SPECWARE4"/UserDoc/cheat-sheet/Specware-405-QuickReference.pdf "$SPECWARE4"/distribution-cmulisp/Documentation
-
-/bin/mkdir "$SPECWARE4"/distribution-cmulisp/Patches
+$LISP <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors
+	  (load "$SPECWARE4/Applications/Handwritten/Lisp/load-utilities")
+	  (defun in-specware-dir (file) (concatenate 'string "$SPECWARE4/" file))
+	  (defun in-distribution-dir (file) (concatenate 'string "$SPECWARE4/distribution-cmulisp/" file))
+	  (load "copy-files-for-distribution.lisp"))
+	(quit)
+XXXX
 
 ##  TODO: copy highest-numbered patch from "$SPECWARE4"/Release/Linux/CMU/Patches
 /bin/cp "$SPECWARE4"/Release/Linux/CMU/Patches/patch-4-0-6.x86f          "$SPECWARE4"/distribution-cmulisp/Patches

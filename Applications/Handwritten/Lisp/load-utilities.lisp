@@ -282,6 +282,22 @@
 	     (copy-directory dir-item (extend-directory target-dirpath dir-item))
 	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
 
+(defun specware::delete-directory (dir &optional (contents? t))
+  #+allegro
+  (if contents?
+      (excl:delete-directory-and-files dir)
+    (excl:delete-directory dir))
+  #-allegro
+  (if contents?
+      (loop for dir-item in (directory (if (stringp dir)
+					   (parse-namestring dir)
+					 dir))
+	do (if (directory? dir-item)
+	       (specware::delete-directory dir-item contents?)
+	     (delete-file dir-item)))
+    #+cmu (unix:unix-rmdir dir)
+    #-cmu nil))				; No general way
+
 (defun parent-directory (pathname)
   (let ((dir (pathname-directory pathname)))
     (if (< (length dir) 2)

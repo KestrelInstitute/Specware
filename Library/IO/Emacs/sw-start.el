@@ -1,4 +1,4 @@
-(defvar sw:buffer-name "*specware*"
+(defvar sw:buffer-name "*Specware Shell*"
   "*Default buffer name used by specware.  This variable is set by
 start-specware when a new buffer name is used.")
 
