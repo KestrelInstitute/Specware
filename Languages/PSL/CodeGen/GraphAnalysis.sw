@@ -15,27 +15,27 @@ spec
   sort Index = Integer			% Acually Nat + -1
 
   sort Stat =
-    | Assign Term
-    | Proc Term
-    | Return Term
+    | Assign MS.Term
+    | Proc MS.Term
+    | Return MS.Term
 
   sort NodeContent =
     %% First three for pure control flow graphs
-    | Branch { condition   : Term,
+    | Branch { condition   : MS.Term,
 	       trueBranch  : Index,
 	       falseBranch : Index }
     | Block { statements : List Stat,
 	      next       : Index }
-    | Return Term
+    | Return MS.Term
     %% Next three are for representing discovered structure in the graph
-    | IfThen { condition  : Term,
+    | IfThen { condition  : MS.Term,
 	       trueBranch : Index,
 	       continue   : Index }
-    | IfThenElse { condition   : Term,
+    | IfThenElse { condition   : MS.Term,
 		   trueBranch  : Index,
 		   falseBranch : Index,
 		   continue    : Index }
-    | Loop { condition : Term,
+    | Loop { condition : MS.Term,
 	     preTest?  : Boolean,
 	     body      : Index,
 	     endLoop   : Index,
@@ -89,7 +89,7 @@ spec
   def insertDFSIndices (g,topIndex) =
     let
       def DFS(i,st as (count,seen,g)) =
-	if member(i,seen)
+	if member(i,seen) or i = noContinue  % ~1 test by LE
 	  then st
 	  else
 	    let (count,seen,g) = DFSlist(successors(i,g),count,Cons(i,seen),g) in
@@ -111,7 +111,7 @@ spec
     let def breadthFirst(iS,jS,seen,g) =
           case iS of
 	    | x::riS ->
-	      if member(x,seen) then x
+	      if member(x,seen) or x = noContinue then x   % LE added ~1 test
 		else
 		let newIS = filter (fn x -> ~(member(x,seen) or member(x,riS)))
 		              (successors(x,g))
@@ -121,19 +121,19 @@ spec
 	    | [] ->
 	  case jS of
 	    | x::riS ->
-	      if member(x,seen) then x
+	      if member(x,seen) or x = noContinue then x   % LE added ~1 test
 		else breadthFirst(riS ++ successors(x,g),iS,Cons(x,seen),g)
 	    | _ -> noContinue
     in
       breadthFirst([i],[j],[],g)
 
   op findTopIndex: Graph -> Index
-  def findTopIndex(g) =
-    % Index of node with no predecessors
-    case findOptionIndex
-           (fn (nd,i) -> if nd.3 = [] then Some i else None)
-	   g
-      of Some (topIndex,_) -> topIndex
+  def findTopIndex(g) = 0
+%     % Index of node with no predecessors
+%     case findOptionIndex
+%            (fn (nd,i) -> if nd.3 = [] then Some i else None)
+% 	   g
+%       of Some (topIndex,_) -> topIndex
 
   op exitNodes: List Index * Graph -> List Index
   def exitNodes(nds,g) =
@@ -217,7 +217,8 @@ spec
 	    let continue = commonSuccessor(trueBranch,falseBranch,baseG) in
 	    let newG = buildStraightLine(trueBranch, [continue],newG) in
 	    let newG = buildStraightLine(falseBranch,[continue],newG) in
-	    let newG = if continue = trueBranch or continue = falseBranch
+        % LE added last disjunct below. There may be no common succesor (continue = noContinue)
+	    let newG = if continue = trueBranch or continue = falseBranch or continue = noContinue
 	                then newG
 			else buildStraightLine(continue,exits,newG) in
 	    if falseBranch = continue

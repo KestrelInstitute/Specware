@@ -1,33 +1,53 @@
 SpecCalc qualifying spec {
   import Convert
   import ../../MetaSlang/CodeGen/C/ToC
+  import /Languages/PSL/Semantics/Evaluate/Specs/Op/Legacy
 
-  op pSpecToC : PSpec -> Spec -> CSpec
-  def pSpecToC pSpec base =
+  sort Spec.Spec = ASpec Position
+
+  op oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
+  def oscarToC oscSpec base =
     let cSpec = emptyCSpec in
-    let cSpec = generateCTypes cSpec (subtractSpec pSpec.dynamicSpec base) in
-    let cSpec = generateCVars cSpec (subtractSpec pSpec.dynamicSpec base) in
-    let cSpec = generateCFunctions cSpec (subtractSpec pSpec.dynamicSpec base) in
-    let cSpec = foldMap generateCProcedure cSpec pSpec.procedures in
-    let _ = writeLine (PrettyPrint.toString (format (80, ppCSpec cSpec))) in
-    cSpec
+    let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
+    let cSpec = generateCTypes cSpec envSpec in
+    let cSpec = generateCVars cSpec envSpec in
+    let cSpec = generateCFunctions cSpec envSpec in {
+      cSpec <- ProcMapEnv.fold generateCProcedure cSpec oscSpec.procedures;
+      print (PrettyPrint.toString (format (80, ppCSpec cSpec)));
+      return cSpec
+    }
 
-  op generateCProcedure : CSpec -> QualifiedId -> Procedure -> CSpec
-  def generateCProcedure cSpec name {parameters,returnInfo,staticSpec,dynamicSpec,bSpec} =
+  op generateCProcedure : CSpec -> Id.Id -> Procedure -> Env CSpec
+  def generateCProcedure cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
+    let initSpec = BSpec.modeSpec bSpec (initial bSpec) in
     let varDecls =
-      map (fn argName ->
-         (case findTheOp (dynamicSpec, Qualified (UnQualified, argName)) of
-            | None -> fail ("arg " ^ argName ^ " not in dynamic spec")
-            | Some (names,fixity,(tyVars,srt),optTerm) -> (argName, sortToCType srt))) parameters in
+      List.map (fn argRef -> let (names,fxty,(tyVars,srt),_) = Op.deref (specOf initSpec, argRef) in
+            (OpRef.show argRef, sortToCType srt)) parameters in
     let returnType =
       case returnInfo of
         | None -> Void 
-        | Some {returnName,returnSort} ->
-            (case findTheOp (dynamicSpec, Qualified (UnQualified,returnName)) of
-              | None -> fail ("return " ^ returnName ^ " not in dynamic spec")
-              | Some (names,fixity,(tyVars,srt),optTerm) -> sortToCType srt) in
-    let procStmt = graphToC (convertBSpec bSpec dynamicSpec) in
-    addFuncDefn cSpec (showQualifiedId name) varDecls returnType procStmt
+        | Some retRef ->
+            let (names,fixity,(tyVars,srt),_) = Op.deref (specOf initSpec, retRef) in
+              sortToCType srt in
+    let def handler id proc except =
+      case except of
+        | SpecError (pos, msg) -> {
+             print ("convertOscarSpec exception:" ^ msg ^ "\n");
+             print "shape=";
+             print (ppFormat (pp (shape (system (Proc.bSpec proc)))));
+             print "\n";
+             procDoc <- ProcEnv.pp id proc;
+             print (ppFormat procDoc);
+             print "\n";
+             raise (SpecError (pos, "except : " ^ msg))
+           }
+        | _ -> raise except
+    in {
+      print ("\n\nGenerating code for procedure: " ^ (Id.show procId) ^ "\n");
+      conv <- catch (convertBSpec bSpec) (handler procId proc);
+      procStmt <- return (graphToC conv);
+      return (addFuncDefn cSpec (CGen.showQualifiedId procId) varDecls returnType procStmt)
+    }
 
   op nodeContent : Node -> NodeContent
   def nodeContent (index,content,predecessors) = content
@@ -41,7 +61,9 @@ with a loop or out of a conditional.
   op graphToC : Struct.Graph -> Stmt
   def graphToC graph =
     let def consume first last =
-      if first = last then
+      if first = ~1 then
+        VoidReturn
+      else if first = last then
         Nop
       else
         let _ = writeLine ("first = " ^ (Nat.toString first) ^ " last = " ^ (Nat.toString last)) in
@@ -50,7 +72,7 @@ with a loop or out of a conditional.
                 let stmts = map statementToC statements in
                 reduceStmt stmts (consume next last) 
 
-            | Return term -> Return (termToCExp term)
+            | Return term -> termToCStmtNew term % Return (termToCExp term)
 
             | IfThen {condition, trueBranch, continue} ->
                 let stmt = IfThen (termToCExp condition, consume trueBranch continue) in
@@ -70,6 +92,10 @@ with a loop or out of a conditional.
                 let rest = consume continue last in
                 reduceStmt [whileStmt] rest
 
+            | Branch {condition, trueBranch, falseBranch} ->
+                let _ = writeLine ("ignoring branch") in
+                Nop
+
       def reduceStmt stmts s2 =
         case s2 of
           | Block ([],moreStmts) -> Block ([],stmts ++ moreStmts)
@@ -78,11 +104,28 @@ with a loop or out of a conditional.
 
       def statementToC stat =
         case stat of
-          | Assign term -> termToCStmt term
-          | Proc term -> termToCStmt term
-          | Return term -> termToCStmt term
+          | Assign term -> termToCStmtNew term
+          | Proc term -> termToCStmtNew term
+          | Return term -> termToCStmtNew term
     in
       consume 0 (length graph)
+
+  op termToCStmtNew : MSlang.Term -> CStmt
+  def termToCStmtNew term =
+    case term of
+      | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
+          (case lhs of
+            | Fun (Op (Qualified ("#return#",var),fxty),srt,pos) -> (Return (termToCExp rhs))
+            | _ -> (Exp (Apply (Binary Set, [termToCExp lhs, termToCExp rhs]))))
+      | Apply (Fun (Op (procId,fxty),procSort,pos),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
+          % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
+          (case returnTerm of
+            | Record ([],_) ->
+                (Exp (termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
+            | Fun (Op (Qualified ("#return#",var),fxty),srt,pos) ->
+                (Return (termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
+            | _ -> (Exp (Apply (Binary Set, [termToCExp returnTerm, termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))]))))
+      | _ -> let _ = writeLine ("termToCStmt: ignoring term: " ^ (printTerm term)) in Nop
 }
 \end{spec}
 

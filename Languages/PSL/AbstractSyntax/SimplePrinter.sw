@@ -6,7 +6,20 @@ SpecCalc qualifying spec {
   import ../../MetaSlang/AbstractSyntax/AnnTerm
   import ../../MetaSlang/AbstractSyntax/SimplePrinter
   import ../../MetaSlang/Specs/SimplePrinter
+  import ../../SpecCalculus/AbstractSyntax/Printer
   import Types
+
+  % op SpecCalc.ppOtherTerm : fa (a) SpecCalc.OtherTerm a -> Doc
+  def SpecCalc.ppOtherTerm scTerm =
+    case scTerm of
+      | Specialize (msTerm,scTerm) ->
+           ppConcat [
+             ppString "specialize ",
+             ppATerm msTerm,
+             ppString " ",
+             ppTerm scTerm
+           ]
+    | OscarDecls decls -> ppOscarSpecTerm decls
 
   op ppOscarSpecTerm : fa (a) List (OscarSpecElem a) -> Doc
   def ppOscarSpecTerm pSpecElems =
@@ -132,7 +145,7 @@ SpecCalc qualifying spec {
             ppString "op ",
             ppAOpInfo (names,fxty,srtScheme,defs)
           ]
-      | Claim property -> ppAProperty property
+      | Claim claim -> pp claim
       | Var (names,(fxty,srtScheme,defs)) ->
           ppConcat [
             ppString "var ",
@@ -145,6 +158,44 @@ SpecCalc qualifying spec {
             ppString " ",
             ppProcInfo procInfo
           ]
+
+  op AbsSynClaim.pp : fa (a) Claim a -> Pretty
+  def AbsSynClaim.pp (claimType,name,tyVars,term) =
+    ppConcat [
+      pp claimType,
+      ppString " ",
+      ppString name,
+      ppGroup (ppIndent (ppConcat [
+        ppString " is",
+        ppBreak,
+        ppGroup (ppConcat [
+          (case tyVars of
+             | [] -> ppNil
+             | _ -> 
+                ppConcat [
+                  ppString "fa (",
+                  ppSep (ppString ",") (map ppString tyVars),
+                  ppString ") "
+                ]),
+          ppString " ",
+          ppATerm term
+        ])
+      ]))
+    ]
+
+  op AbsSynClaimType.pp : ClaimType -> Pretty
+  def AbsSynClaimType.pp claimType =
+    case claimType of
+      | Axiom -> ppString "axiom"
+      | Theorem -> ppString "theorem"
+      | Conjecture -> ppString "conjecture"
+      | Invariant -> ppString "invariant"
+      | any ->
+           fail ("No match in ppPropertyType with: '"
+              ^ (System.toString any)
+              ^ "'")
+
+
 
   op ppOscarSpecElems : fa(a) List (OscarSpecElem a) -> Pretty
   def ppOscarSpecElems decls = ppSep ppNewline (map ppOscarSpecElem decls)

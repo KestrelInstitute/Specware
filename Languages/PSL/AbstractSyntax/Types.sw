@@ -23,6 +23,8 @@ Declarations are MetaSlang \verb+sort+, \verb+op+, \verb+def+, and
 syntax appear as \verb+op+s in the abstract syntax with an associated
 defining term.
 
+### The name of the procedure should be a qualified id.
+
 \begin{spec}
   sort OscarSpecElem a = (OscarSpecElem_ a) * a
 
@@ -31,10 +33,13 @@ defining term.
     | Import (SpecCalc.Term a)
     | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
     | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
-    | Claim  (AProperty a)
+    | Claim  (Claim a)
     | Var    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Def    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Proc   Ident * (ProcInfo a)
+
+  sort Claim a = ClaimType * PropertyName * TyVars * ATerm a
+  sort ClaimType = | Axiom | Theorem | Invariant | Conjecture
 
   sort ProcInfo a = {
     formalArgs : List (AVar a),
@@ -65,6 +70,21 @@ defining term.
   op mkProcInfo : List (AVar Position) * (ASort Position) * Command Position -> ProcInfo Position
   def mkProcInfo (formalArgs,returnSort,command) =
     {formalArgs = formalArgs, returnSort = returnSort, command = command}
+
+  op mkVar : (List QualifiedId) * (ASortScheme Position) * Position -> OscarSpecElem Position
+  def mkVar (ids,sortScheme,position) = (Var (ids, (Nonfix,sortScheme,[])),position)
+
+  op mkDef : (List QualifiedId) * (Option Fixity) * (ASortScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
+  def mkDef (ids,optFixity,sortScheme,termSchemes,position) = 
+    case optFixity of
+      | None -> (Def (ids, (Nonfix,sortScheme,termSchemes)),position)
+      | Some fixity -> (Def (ids, (fixity,sortScheme,termSchemes)),position)
+
+  op mkOp : (List QualifiedId) * (Option Fixity) * (ASortScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
+  def mkOp (ids,optFixity,sortScheme,termSchemes,position) = 
+    case optFixity of
+      | None -> (Op (ids, (Nonfix,sortScheme,termSchemes)),position)
+      | Some fixity -> (Op (ids, (fixity,sortScheme,termSchemes)),position)
 \end{spec}
 
 The abstract syntax for commands is modeled after Dijkstra's guarded
@@ -104,6 +124,33 @@ needs some thought.
 
   op mkSeq : List (Command Position) * Position -> Command Position
   def mkSeq (commands,position) = (Seq commands, position)
+
+  op mkDo : List (Alternative Position) * Position -> Command Position
+  def mkDo (alts,position) = (Do alts,position)
+
+  op mkAssign : ATerm Position * ATerm Position * Position -> Command Position
+  def mkAssign (lhs,rhs,position) = (Assign (lhs,rhs),position)
+
+  op mkLet : List (OscarSpecElem Position) * (Command Position) * Position -> Command Position
+  def mkLet (decls,body,position) = (Let (decls,body),position)
+
+  op mkReturn : Option (ATerm Position) * Position -> Command Position
+  def mkReturn (optTerm,position) = (Return optTerm,position)
+
+  op mkRelation : (ATerm Position) * Position -> Command Position
+  def mkRelation (term,position) = (Relation term,position)
+
+  op mkExec : (ATerm Position) * Position -> Command Position
+  def mkExec (term,position) = (Exec term,position)
+
+  op mkSkip : Position -> Command Position
+  def mkSkip position = (Skip, position)
+
+  op mkBreak : Position -> Command Position
+  def mkBreak position = (Break, position)
+
+  op mkContinue : Position -> Command Position
+  def mkContinue position = (Continue, position)
 \end{spec}
 
 An \emph{alternative} is a guarded command in the sense of Dijkstra.
@@ -149,6 +196,19 @@ precludes, for example, defining an operator for \emph{sqrt} which is
 later implemented by a procedure with the same name. The distinction
 between procedures and functions is also resolved in a nice way in both
 Idealized Algol and Forsythe.
+
+\begin{spec}
+  sort SpecCalc.OtherTerm a =
+    | Specialize MS.Term * SpecCalc.Term a
+    | OscarDecls List (OscarSpecElem a)
+
+  op mkSpecialize : MS.Term * (SpecCalc.Term Position) * Position -> SpecCalc.Term Position
+  def mkSpecialize (metaSlangTerm,unit,position) =
+    mkOther (Specialize (metaSlangTerm,unit),position)
+
+  op mkDecls : List (OscarSpecElem Position) * Position -> SpecCalc.Term Position
+  def mkDecls (specElems,position) = mkOther (OscarDecls specElems, position)
+\end{spec}
 
 \begin{spec}
 endspec

@@ -2,81 +2,6 @@
 ;;; specification language (PSL).
 (defpackage "OscarAbsSyn")
 
-(defun make-procspec (decls l r) 
-  :comment "A specification" 
-  (setq *varcounter* 0)
-  (let ((decls (if (eq :unspecified decls) nil decls)))
-    (cons (cons :|Other| decls) (make-pos l r))))
-
-(defun make-psl-var-decl (varName sortScheme l r)
-  (cons
-    (cons :|Var| (cons varName (vector nil sortScheme '())))
-    (make-pos l r)))
-
-(defun make-psl-proc-def (procName args returnSort commands l r)
-  (let* ((args1 (if (eq :unspecified args) nil args))
-         (commands1 (if (eq :unspecified commands) nil commands))
-         (position (make-pos l r))
-         (commandSeq (OscarAbsSyn::mkSeq commands1 position))
-         (procInfo (OscarAbsSyn::mkProcInfo args returnSort commandSeq)))
-         (OscarAbsSyn::mkProc procName procInfo position)))
-
-(defun make-psl-relation (term l r)
-  (cons (cons :|Relation| term) (make-pos l r)))
-
-(defun make-psl-seq (commands l r)
-  (OscarAbsSyn::mkSeq commands (make-pos l r)))
-
-(defun make-psl-if (alternatives l r)
-  (OscarAbsSyn::mkIf alternatives (make-pos l r)))
-
-(defun make-psl-do (alternatives l r)
-  (cons (cons :|Do| alternatives) (make-pos l r)))
-
-(defun make-psl-case (term cases l r)
-  (cons (cons :|Case| (cons term cases)) (make-pos l r)))
-
-(defun make-psl-let (decls commands l r)
-  (cons
-    (cons :|Let| (cons decls (make-psl-seq commands l r))) 
-    (make-pos l r)))
-
-(defun make-psl-call (id params l r)
-  (let ((params1 (if (eq :unspecified params) nil params)))
-  (cons
-    (cons :|Call| (cons id params1)) 
-    (make-pos l r))))
-
-(defun make-psl-assign-call (term id params l r)
-  (let ((params1 (if (eq :unspecified params) nil params)))
-  (cons
-    (cons :|AssignCall| (vector term id params1)) 
-    (make-pos l r))))
-
-(defun make-psl-assign (left right l r)
-  (cons (cons :|Assign| (cons left right)) (make-pos l r)))
-
-(defun make-psl-exec (term l r)
-  (cons (cons :|Exec| term) (make-pos l r)))
-
-(defun make-psl-skip (l r)
-  (cons (cons :|Skip| nil) (make-pos l r)))
-
-(defun make-psl-continue (l r)
-  (cons (cons :|Continue| nil) (make-pos l r)))
-
-(defun make-psl-break (l r)
-  (cons (cons :|Break| nil) (make-pos l r)))
-
-(defun make-psl-return (opt-term l r)
-  (cons (cons :|Return|
-     (if (eq :unspecified opt-term)
-         (cons :|None| nil)
-         (cons :|Some| opt-term))) (make-pos l r)))
-
-(defun make-psl-alternative (guard commands l r)
-  (cons (cons guard (make-psl-seq commands l r)) (make-pos l r)))
-
 ;; Identical to the Specware make-op-definition .. only the constructor has changed from Op to Def
 (defun make-psl-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
   (let* ((params     (if (equal :unspecified params) nil params))
@@ -86,13 +11,11 @@
          (tyVarsTerm (StandardSpec::abstractTerm #'namedTypeVar tyVars term))
          (term       (cdr tyVarsTerm))
          (tyVars     (car tyVarsTerm))
-         (srtScheme  (cons tyVars (freshMetaTypeVar l r))))
+         (srtScheme  (cons tyVars (freshMetaTypeVar l r)))
+         (qids       (remove-duplicates qualifiable-op-names :test 'equal :from-end t)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car tyVarsTerm) will just be a copy of tyVars
     ;;    so srtScheme will be tyVars * Mtv -- i.e. Mtv parameterized by tyVars
     ;;  (cdr tyVarsTerm) will be a copy of term with (PBase qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
-    (cons (cons :|Def| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector nil srtScheme (list (cons tyVars term)))))
-      (make-pos l r))))
-
+    (OscarAbsSyn::mkDef qids Option::mkNone srtScheme (list (cons tyVars term)) (make-pos l r))))
