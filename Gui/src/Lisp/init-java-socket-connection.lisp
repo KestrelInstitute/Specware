@@ -184,6 +184,16 @@
 
     (format t "~%~% FINISHED")))
 
+(defun evaluate-lisp-expr-return-result (expr)
+  (format t "~%Evaluating ~S" expr)
+  (let ((result (ignore-errors (eval expr))))
+    (jstatic "setResult" "edu.kestrel.netbeans.lisp.LispProcessManager" result)))
+
+(defun get-swpath ()
+  (format t "~%Getting swpath")
+  (jstatic "setSWPath" "edu.kestrel.netbeans.lisp.LispProcessManager"
+	   (specware::getenv "SWPATH")))
+
 (defpackage "SPECWARE")
 (defun Specware::reportErrorToJava (file line col msg)
   (let* ((filepath (parse-namestring file))
