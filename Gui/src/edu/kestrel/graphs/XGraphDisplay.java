@@ -1146,6 +1146,7 @@ public class XGraphDisplay extends JGraph implements Storable {
                 clones.add(iter.next());
             }
             setSelectionCells(clones.toArray());
+            clipboard.deleteAction();
         } catch (IllegalArgumentException e) {
             JOptionPane.showMessageDialog(this,e.getMessage());
         } finally {
