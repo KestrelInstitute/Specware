@@ -212,6 +212,19 @@ FSeq qualifying spec
                  (fa(i:Nat) i < length r =>
                     Some (r!i) = s!i))
 
+  op maxCommonPrefix : [a] FSeq a * FSeq a -> FSeq a
+  def maxCommonPrefix(s1,s2) =
+    let n:Nat = the (fn n:Nat ->
+      n <= length s1 &&
+      n <= length s2 &&
+      firstN (s1, n) = firstN (s2, n) &&
+      (length s1 = n || length s2 = n || s1!n ~= s2!n)) in
+    firstN (s1, n)  % = firstN (s2, n)
+
+  op maxCommonSuffix : [a] FSeq a * FSeq a -> FSeq a
+  def maxCommonSuffix(s1,s2) =
+    reverse (maxCommonPrefix (reverse s1, reverse s2))
+
   % non-empty sequences:
   type FSeqNE a = {s : FSeq a | ~(empty? s)}
 
