@@ -32,27 +32,34 @@
 	    (sw:compare-buffers-1 new-buffer old-buffer)
 	    (unless (eq (point new-buffer) (point-max new-buffer))
 	      (with-current-buffer new-buffer
-		(beginning-of-defun))
+		(forward-char)
+		(beginning-of-defun)
+		(forward-char -1))
 	      (with-current-buffer old-buffer
-		(beginning-of-defun))
+		(beginning-of-defun)
+		(forward-char -1))
 	      (if (equal 0 (compare-buffer-substrings new-buffer (point new-buffer)
 						      (sw:forward-def-header)
 						      old-buffer (point old-buffer)
 						      (with-current-buffer old-buffer
 							(sw:forward-def-header))))
 		  ;; Definition changed. Copy new one and continue after definition
-		  (progn (sw:copy-to-patch-buffer new-buffer patch-file-buffer
+		  (progn (with-current-buffer new-buffer
+			   (forward-char))
+			 (sw:copy-to-patch-buffer new-buffer patch-file-buffer
 						  (point new-buffer) (progn (beginning-of-defun -1) (point))
 						  new-window old-window (point old-buffer) dont-ask)
 			 (with-current-buffer old-buffer
 			   (beginning-of-defun -1)))
 		(progn
+		  (with-current-buffer new-buffer
+		    (forward-char))
 		  (with-current-buffer old-buffer
 		    (while (and (not (eq (point new-buffer) (point-max new-buffer)))
 				(looking-at "(" new-buffer)
 				(not (save-excursion
 				       (goto-char (point-min) old-buffer)
-				       (search-forward (sw:get-definition-ident-str new-buffer) nil t))))
+				       (and (search-forward (sw:get-definition-ident-str new-buffer) nil t)))))
 		      (with-current-buffer new-buffer
 			(sw:copy-to-patch-buffer new-buffer patch-file-buffer
 						 (point) (progn (beginning-of-defun -1) (point))
@@ -66,7 +73,7 @@
 	  (switch-to-buffer patch-file-buffer))))))
 
 (defun sw:forward-def-header ()
-  (save-excursion (forward-char)
+  (save-excursion (forward-char 2)
 		  (forward-sexp 2)
 		  (forward-char)
 		  (point)))
@@ -82,8 +89,9 @@
 (defun sw:get-definition-ident-str (buffer)
   (with-current-buffer buffer
     (save-excursion
-      (when (not (looking-at "("))
-	(error "Looking at" (point) ))
+      (forward-char -1)
+      (when (not (looking-at "\n("))
+	(error "Looking at" (point)))
       (buffer-substring (point)
 			(sw:forward-def-header)))))
 
