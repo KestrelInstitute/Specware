@@ -18,7 +18,8 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
-  let new_sort_names = rev (removeDuplicates new_sort_names) in % don't let duplicate names get into a sortinfo!
+  %% let new_sort_names = rev (removeDuplicates new_sort_names) in % don't let duplicate names get into a sortinfo!
+  let new_sort_names = removeDuplicates new_sort_names in
   let old_infos = foldl (fn (new_name, old_infos) ->
                          case findTheSort (old_spec, new_name) of
                            | Some info -> 
@@ -42,6 +43,7 @@ SpecCalc qualifying spec
        | [old_info as (old_sort_names, old_type_vars, old_defs)] ->
          %%  We're merging new information with a previously declared sort.
          let combined_sort_names = listUnion (old_sort_names, new_sort_names) in
+	 let combined_sort_names = removeDuplicates combined_sort_names in % redundant?
          if new_type_vars = old_type_vars then % TODO: for now at least, this is very literal -- should test for alpha-equivalence.
            (case (old_defs, new_defs) of
               | ([],   []) -> 
@@ -111,7 +113,8 @@ SpecCalc qualifying spec
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
-  let new_op_names = rev (removeDuplicates new_op_names) in % don't let duplicate names get into an opinfo!
+  %% let new_op_names = rev (removeDuplicates new_op_names) in % don't let duplicate names get into an opinfo!
+  let new_op_names = removeDuplicates new_op_names in % rev?
   let old_infos = foldl (fn (new_name, old_infos) ->
                          case findTheOp (old_spec, new_name) of
                            | Some info -> 
@@ -139,6 +142,7 @@ SpecCalc qualifying spec
        ->
        %%  We're merging new information with a previously declared op.
        (let combined_op_names = listUnion (old_op_names, new_op_names) in
+	let combined_op_names = removeDuplicates combined_op_names in % redundant?
         case (old_defs, new_defs) of
           | ([],   []) -> 
             %%  Old: op foo : ...
@@ -230,6 +234,7 @@ SpecCalc qualifying spec
      | (_,None) -> return newPSortInfo
      | ((new_sort_names, new_type_vars, new_defs), Some (old_sort_names, old_type_vars, old_defs)) ->
        let sort_names = listUnion(old_sort_names,new_sort_names) in % this order of args is more efficient
+       let sort_names = removeDuplicates sort_names in % redundant?
        if ~(new_type_vars = old_type_vars) then % TODO: for now at least, this is very literal.
          raise (SpecError (position, 
                            "Merged versions of Sort "^(printAliases sort_names)^" have differing type variables:"
@@ -270,6 +275,7 @@ SpecCalc qualifying spec
      | (_,None) -> return newPOpInfo
      | ((new_op_names, new_fixity, new_sort_scheme, new_defs), Some (old_op_names, old_fixity, old_sort_scheme, old_defs)) ->
        let op_names = listUnion(old_op_names,new_op_names) in % this order of args is more efficient
+       let op_names = removeDuplicates op_names in % redundant?
        if ~(new_fixity = old_fixity) then
          raise (SpecError (position, "Merged versions of Op " ^ (printAliases op_names) ^ " have different fixity"))
        else
@@ -462,7 +468,7 @@ SpecCalc qualifying spec
                   []
 		  old_defs
 	in
-	(names, tyVars, distinct_defs)
+	(removeDuplicates names, tyVars, distinct_defs) % rev names?
 
   op compressOpDefs : Spec -> OpInfo -> OpInfo
   def compressOpDefs spc (info as (names, fixity, sort_scheme, old_defs)) =
@@ -482,7 +488,7 @@ SpecCalc qualifying spec
                   []
 		  old_defs
 	in
-        (names, fixity, sort_scheme, distinct_defs)
+        (removeDuplicates names, fixity, sort_scheme, distinct_defs) % rev names?
 	          
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Term Equivalences wrt aliases
