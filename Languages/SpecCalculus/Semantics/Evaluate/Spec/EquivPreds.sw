@@ -63,7 +63,7 @@ SpecCalc qualifying spec
 
      | (Bind       (b1, vs1, x1, _),
         Bind       (b2, vs2, x2, _)) -> b1 = b2 && 
-                                        %% Could check modulo alpha conversion...
+                                        %% TODO: Could check modulo alpha conversion...
                                         equivList? spc (vs1, vs2, equivVar?) &&
                                         equivTerm? spc (x1,  x2)
 
@@ -85,7 +85,7 @@ SpecCalc qualifying spec
         Var        (v2,          _)) -> equivVar? spc (v1, v2)
 
      | (Fun        (f1, s1,      _),
-        Fun        (f2, s2,      _)) -> equivFun? spc (f1,f2) && equalSort? (s1,s2)
+        Fun        (f2, s2,      _)) -> equivFun? spc (f1,f2) && equivSort? spc false (s1,s2)
 
      | (Lambda     (xs1,         _),
         Lambda     (xs2,         _)) -> equivList? spc  (xs1, xs2,
@@ -103,7 +103,11 @@ SpecCalc qualifying spec
         Seq        (xs2,         _)) -> equivList? spc (xs1, xs2, equivTerm?)
 
      | (SortedTerm (x1, s1,      _),
-        SortedTerm (x2, s2,      _)) -> equivTerm? spc (x1, x2) && equalSort? (s1, s2)
+        SortedTerm (x2, s2,      _)) -> equivTerm? spc (x1, x2) && equivSort? spc false (s1, s2)
+
+     %% TODO: Could check modulo alpha conversion for Pi terms...
+     | (Pi (_,x1,_),  _          ) -> equivTerm? spc (x1, t2) 
+     | (_,            Pi (_,x2,_)) -> equivTerm? spc (t1, x2) 
 
      | _ -> false)
 
@@ -158,7 +162,7 @@ SpecCalc qualifying spec
 
      | (EmbedPat    (i1, op1, s1, _),
         EmbedPat    (i2, op2, s2, _)) -> i1 = i2 && 
-                                         equalSort? (s1,  s2) && 
+                                         equivSort? spc false (s1, s2) && 
                                          equivOpt?  spc (op1, op2, equivPattern?)
 
      | (RecordPat   (xs1,         _),
@@ -168,7 +172,7 @@ SpecCalc qualifying spec
 							  equivPattern? spc (x1, x2))
 
      | (WildPat     (s1,          _),
-        WildPat     (s2,          _)) -> equalSort? (s1,s2)
+        WildPat     (s2,          _)) -> equivSort? spc false (s1,s2)
 
      | (StringPat   (x1,          _),
         StringPat   (x2,          _)) -> x1 = x2
@@ -189,7 +193,7 @@ SpecCalc qualifying spec
         QuotientPat (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivTerm? spc (t1, t2)
 
      | (SortedPat   (x1, t1,      _),
-        SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equalSort? (t1, t2)
+        SortedPat   (x2, t2,      _)) -> equivPattern? spc (x1, x2) && equivSort? spc false (t1, t2)
 
      | _ -> false)
 
