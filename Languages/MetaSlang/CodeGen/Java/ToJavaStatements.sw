@@ -33,8 +33,8 @@ def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)
 op mkQualJavaExpr: Id * Id -> Java.Expr
 def mkQualJavaExpr(id1, id2) = CondExp (Un (Prim (Name ([id1], id2))), None)
 
-op mkBaseJavaOp: Id -> Java.BinOp
-def mkBaseJavaOp(id) =
+op mkBaseJavaBinOp: Id -> Java.BinOp
+def mkBaseJavaBinOp(id) =
   case id of
     | "and" -> CdAnd
     | "or" -> CdOr
@@ -49,6 +49,12 @@ def mkBaseJavaOp(id) =
     | "div" -> Div
     | "rem" -> Rem
     
+op mkBaseJavaUnOp: Id -> Java.UnOp
+def mkBaseJavaUnOp(id) =
+  case id of
+    | "-" -> Minus
+    | "~" -> LogNot
+
 op javaBaseOp?: Id -> Boolean
 def javaBaseOp?(id) =
   case id of
@@ -64,14 +70,20 @@ def javaBaseOp?(id) =
     | "*" -> true
     | "div" -> true
     | "rem" -> true
+    %%| "-" -> true
+    | "~" -> true
     | _ -> false
     
 
 op mkBinExp: Id * List Java.Expr -> Java.Expr
-
 def mkBinExp(opId, javaArgs) =
   let [ja1, ja2] = javaArgs in
-  CondExp (Bin (mkBaseJavaOp(opId), Un (Prim (Paren (ja1))), Un (Prim (Paren (ja2)))), None)
+  CondExp (Bin (mkBaseJavaBinOp(opId), Un (Prim (Paren (ja1))), Un (Prim (Paren (ja2)))), None)
+
+op mkUnExp: Id * List Java.Expr -> Java.Expr
+def mkUnExp(opId, javaArgs) =
+  let [ja] = javaArgs in
+  CondExp (Un (Un (mkBaseJavaUnOp(opId), Prim (Paren (ja)))), None)
 
 op mkJavaEq: Java.Expr * Java.Expr * Id -> Java.Expr
 def mkJavaEq(e1, e2, t1) =
@@ -129,6 +141,7 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k) =
     | Fun (Project (id) , srt, _) -> translateProjectToExpr(tcx, id, argsTerm, k)
     | Fun (Embed (id, _) , srt, _) -> translateConstructToExpr(tcx, srtId(termSort(term)), id, argsTerm, k)
     | Fun (Op (Qualified (q, id), _), _, _) ->
+    let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
     let srt = termSort(term) in
     %%Fixed here
     let args = applyArgsToTerms(argsTerm) in
@@ -168,13 +181,18 @@ def translateBaseApplToExpr(tcx, opId, argsTerm, k) =
   let args = applyArgsToTerms(argsTerm) in
   let (newBlock, javaArgs, newK) = translateTermsToExpressions(tcx, args, k) in
   if javaBaseOp?(opId)
-    then (newBlock, mkBinExp(opId, javaArgs), newK)
-  else (newBlock, mkMethInv("primops", opId, javaArgs), newK)
+    then 
+      if (length args) = 2
+	then (newBlock, mkBinExp(opId, javaArgs), newK)
+      else (newBlock, mkUnExp(opId, javaArgs), newK)
+  else (newBlock, mkMethInv("Primitive", opId, javaArgs), newK)
 
 def translateBaseArgsApplToExpr(tcx, opId, argsTerm, rng, k) =
   let args = applyArgsToTerms(argsTerm) in
   let (newBlock, javaArgs, newK) = translateTermsToExpressions(tcx, args, k) in
-  (newBlock, mkMethInv(srtId(rng), opId, javaArgs), newK)
+  if javaBaseOp?(opId)
+    then (newBlock, mkBinExp(opId, javaArgs), newK)
+  else (newBlock, mkMethInv(srtId(rng), opId, javaArgs), newK)
 
 def translateUserApplToExpr(tcx, opId, dom, argsTerm, k) =
   let args = applyArgsToTerms(argsTerm) in
@@ -182,7 +200,7 @@ def translateUserApplToExpr(tcx, opId, dom, argsTerm, k) =
   let (newBlock, javaArgs, newK) = translateTermsToExpressions(tcx, args, k) in
   let topJArg = nth(javaArgs, h) in
   let resJArgs = deleteNth(h, javaArgs) in
-  (newBlock, mkMethExprInv(topJArg, opId, javaArgs), newK)
+  (newBlock, mkMethExprInv(topJArg, opId, resJArgs), newK)
 
 def translateRecordToExpr(tcx, term as Record (fields, _), k) =
   let recordTerms = recordFieldsToTerms(fields) in
@@ -194,13 +212,18 @@ def translateIfThenElseToExpr(tcx, term as IfThenElse(t0, t1, t2, _), k) =
   let (b0, jT0, k0) = termToExpression(tcx, t0, k+1) in
   let (b1, jT1, k1) = termToExpression(tcx, t1, k0) in  
   let (b2, jT2, k2) = termToExpression(tcx, t2, k1) in  
-  let v = mkIfRes(k) in
-  let vDecl = mkVarDecl(v, srtId(termSort(t2))) in
-  let vAss1 = mkVarAssn(v, jT1) in
-  let vAss2 = mkVarAssn(v, jT2) in
-  let ifStmt = mkIfStmt(jT0, b1++[vAss1], b2++[vAss2]) in
-  let vExpr = mkVarJavaExpr(v) in
-  (b0++[vDecl, ifStmt], vExpr, k2)
+  case b1++b2 of
+    | [] ->
+    let vExpr = CondExp (Un (Prim (Paren (jT0))), Some (jT1, (Un (Prim (Paren (jT2))), None))) in
+     (b0, vExpr, k2)
+    | _ ->
+    let v = mkIfRes(k) in
+    let vDecl = mkVarDecl(v, srtId(termSort(t2))) in
+    let vAss1 = mkVarAssn(v, jT1) in
+    let vAss2 = mkVarAssn(v, jT2) in
+    let ifStmt = mkIfStmt(jT0, b1++[vAss1], b2++[vAss2]) in
+    let vExpr = mkVarJavaExpr(v) in
+    (b0++[vDecl, ifStmt], vExpr, k2)
 
 def translateLetToExpr(tcx, term as Let (letBindings, letBody, _), k) =
   let [(VarPat (v, _), letTerm)] = letBindings in
@@ -227,12 +250,12 @@ def termToExpression(tcx, term, k) =
        | _ -> (mts, mkVarJavaExpr(id), k))
     | Fun (Op (Qualified (q, id), _), srt, _) -> 
        if baseType?(srt) 
-	 then (mts, mkQualJavaExpr("primops", id), k)
+	 then (mts, mkQualJavaExpr("Primitive", id), k)
        else
 	 let Base (Qualified (q, srtId), _, _) = srt in
 	 (mts, mkQualJavaExpr(srtId, id), k)
     | Fun (Nat (n),_,__) -> (mts, mkJavaNumber(n), k)
-    | Fun (Embed (c, _), srt, _) -> (mts, mkQualJavaExpr(srtId(srt), c), k)
+    | Fun (Embed (c, _), srt, _) -> (mts, mkMethInv(srtId(srt), c, []), k)
     | Apply (opTerm, argsTerm, _) -> translateApplyToExpr(tcx, term, k)
     | Record _ -> translateRecordToExpr(tcx, term, k)
     | IfThenElse _ -> translateIfThenElseToExpr(tcx, term, k)

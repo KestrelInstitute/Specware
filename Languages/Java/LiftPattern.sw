@@ -20,7 +20,7 @@ op unSupported: Op -> String
 op baseType?: Type -> Boolean
 
 def baseType?(type) =
-  boolSort?(type) or integerSort?(type)
+  boolSort?(type) or integerSort?(type) or natSort?(type)
 
 op userType?: Type -> Boolean
 

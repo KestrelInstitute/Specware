@@ -194,7 +194,7 @@ def binOpToString (o : BinOp) : String =
          | InclOr -> "|"
          | ExclOr -> "^"
          | And    -> "&"
-         | Eq     -> " = = "
+         | Eq     -> " == "
          | NotEq  -> "! = "
          | Gt     -> ">"
          | Lt     -> "<"

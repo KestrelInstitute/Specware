@@ -59,7 +59,7 @@ def setMethodBody(m, b) =
 
 op mkPrimOpsClsDecl: ClsDecl
 def mkPrimOpsClsDecl =
-  ([], ("primops", None, []), emptyClsBody)
+  ([], ("Primitive", None, []), emptyClsBody)
 
 op userTypeToClsDecl: Id -> ClsDecl
 def userTypeToClsDecl(id) =
@@ -130,11 +130,11 @@ def mkEqualityBodyForProduct(fields) =
     | [] -> CondExp (Un (Prim (Bool true)), None)
     | [(id, srt)] -> 
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg2"],id))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg"],id))), None) in
        mkJavaEq(e1, e2, srtId(srt))
     | (id, srt)::fields ->
        let e1 = CondExp (Un (Prim (Name (["this"], id))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg2"], id))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg"], id))), None) in
        let eq = mkJavaEq(e1, e2, srtId(srt)) in
        let restEq = mkEqualityBodyForProduct(fields) in
        CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None)
@@ -145,18 +145,18 @@ def mkEqualityBodyForSum(fields) =
     | [] -> CondExp (Un (Prim (Bool true)), None)
     | [(id, srt)] -> 
        let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg"], mkArgProj(id)))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg2"], mkArgProj(id)))), None) in
        mkJavaEq(e1, e2, srtId(srt))
     | (id, srt)::fields ->
        let e1 = CondExp (Un (Prim (Name (["this"], mkArgProj(id)))), None) in
-       let e2 = CondExp (Un (Prim (Name (["eqarg"], mkArgProj(id)))), None) in
+       let e2 = CondExp (Un (Prim (Name (["eqarg2"], mkArgProj(id)))), None) in
        let eq = mkJavaEq(e1, e2, srtId(srt)) in
        let restEq = mkEqualityBodyForSum(fields) in
        CondExp (Bin (CdAnd, Un (Prim (Paren (eq))), Un (Prim (Paren (restEq)))), None)
 
 op sumTypeToClsDecl: Id * List MethDecl -> ClsDecl
 def sumTypeToClsDecl(id, sumConstructorMethDecls) =
-  let sumEqMethod = mkEqualityMethDecl(id) in
+  let sumEqMethod = mkAbstractEqualityMethDecl(id) in
   ([Abstract], (id, None, []), setMethods(emptyClsBody, cons(sumEqMethod, sumConstructorMethDecls)))
 
 op mkSummandId: Id * Id -> Id
@@ -210,7 +210,7 @@ op sumToClsDecl: Id * Id * List (Id * Sort) -> ClsDecl
 def sumToClsDecl(id, c, args) =
   let summandId = mkSummandId(id, c) in
   let fldDecls = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFldDecl(mkArgProj(fieldProj), fieldType)) args in
-  let eqMethDecl = mkAbstractEqualityMethDecl(id) in
+  let eqMethDecl = mkEqualityMethDecl(id) in
   let eqMethBody = mkSumEqMethBody(summandId, args) in
   let eqMethDecl = setMethodBody(eqMethDecl, eqMethBody) in
   let constrDecl = mkSumConstrDecl(mkSummandId(id, c), args) in
@@ -228,9 +228,11 @@ def mkSumEqMethBody(summandId, flds) =
 op coProductToClsDecls: Id * Sort -> List ClsDecl
 def coProductToClsDecls(id, srtDef as CoProduct (summands, _)) =
   let sumConstructorMethDecls = map (fn(cons, Some (Product (args, _))) -> sumToConsMethodDecl(id, cons, args) |
+				     (cons, Some (srt)) -> sumToConsMethodDecl(id, cons, [("1", srt)]) |
 				     (cons, None) -> sumToConsMethodDecl(id, cons, [])) summands in
   let sumTypeClsDecl = sumTypeToClsDecl(id, sumConstructorMethDecls) in
   let sumClsDecls = map (fn(cons, Some (Product (args, _))) -> sumToClsDecl(id, cons, args) |
+			   (cons, Some (srt)) -> sumToClsDecl(id, cons, [("1", srt)]) |
 			   (cons, None) -> sumToClsDecl(id, cons, [])) summands in
   cons(sumTypeClsDecl, sumClsDecls)
 
@@ -293,7 +295,7 @@ def addPrimMethodToClsDecls(opId, srt, dom, rng as Base (Qualified (q, rngId), _
   let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
   let methodBody = mkPrimArgsMethodBody(body) in
   let methodDecl = setMethodBody(methodDecl, methodBody) in
-  addMethDeclToClsDecls("primops", methodDecl, clsDecls)
+  addMethDeclToClsDecls("Primitive", methodDecl, clsDecls)
 
 op mkPrimArgsMethodBody: Term -> Block
 def mkPrimArgsMethodBody(body) =
@@ -357,6 +359,7 @@ def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, c
   let Var ((vId, vSrt), _) = caseTerm in
   let args = case argsPat of
                | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId,_), _))) -> vId) args
+               | Some (VarPat ((vId, _), _)) -> [vId]
                | None -> [] in
   let summandId = mkSummandId(srthId, cons) in
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
@@ -403,7 +406,7 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
 	let (_, jE, _) = termToExpression(empty, body, 1) in
 	let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), Some (Expr (jE))), []) in
 	%%Fixed here
-	let newClsDecls = addFldDeclToClsDecls("primops", fldDecl, clsDecls) in
+	let newClsDecls = addFldDeclToClsDecls("Primitive", fldDecl, clsDecls) in
 	newClsDecls
     else
       let Base (Qualified (_, srtId), _, _) = srt in

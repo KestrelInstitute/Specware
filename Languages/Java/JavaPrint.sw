@@ -516,7 +516,7 @@ Java qualifying spec
              case ope of
                None -> emptyPretty ()
              | Some e -> 
-                  prettysNone [toPretty " ", ppExpr e],
+                  prettysNone [toPretty " ( ", ppExpr e, toPretty " ) "],
              toPretty ";"]
       | Throw e  -> 
           prettysNone
