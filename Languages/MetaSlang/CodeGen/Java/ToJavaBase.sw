@@ -313,7 +313,16 @@ def srtId(srt) =
 op srtId_internal: Sort * Boolean -> List Java.Type * String * Collected
 def srtId_internal(srt,addIds?) =
   case srt of
-    | Base (Qualified (q, id), _, _) -> ([tt_v2 id],id,nothingCollected)
+    | Base (Qualified (q, id), tvs, _) -> 
+      let (id,col) = 
+               if length(tvs)>0 & (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
+		 foldl (fn(srt,(s,col)) ->
+			let (id0,col0) = srtId(srt) in
+			(s^"$"^id0,concatCollected(col,col0))
+		       ) (id,nothingCollected) tvs
+	       else (id,nothingCollected)
+      in
+      ([tt_v2 id],id,col)
     | Product([],_) -> ([JVoid],"void",nothingCollected)
     | Product(fields,_) -> 
       let (l,str,col) = foldl (fn((id,fsrt),(types,str,col)) ->
@@ -343,7 +352,9 @@ def srtId_internal(srt,addIds?) =
     | TyVar(id,_) ->
       let id = "Object" in
       ([tt_v2 id],id,nothingCollected)
-    | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
+    %| _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
+    | _ -> (issueUnsupportedError(sortAnn(srt),"sort format not supported: "^printSort(srt));
+	    ([tt_v2 "ERRORSORT"],"ERRORSORT",nothingCollected))
 
 op getJavaTypeId: Java.Type -> Id
 def getJavaTypeId(jt) =
@@ -459,7 +470,7 @@ def mkUnExp(opId, javaArgs) =
 
 op mkJavaEq: Java.Expr * Java.Expr * Id -> Java.Expr
 def mkJavaEq(e1, e2, t1) =
-  if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat")
+  if (t1 = "Boolean" or t1 = "Integer" or t1 = "Nat" or t1 = "Char")
     then CondExp (Bin (Eq, Un (Prim (Paren (e1))), Un (Prim (Paren (e2)))), None)
   else
     CondExp (Un (Prim (MethInv (ViaPrim (Paren (e1), "equals", [e2])))), None)
@@ -719,7 +730,7 @@ def mkParamsFromPattern(pat) =
     | VarPat((id,_),_) -> [id]
     | WildPat _ -> ["arg1"]
     | RecordPat(patl,_) -> patlist(map (fn(_,p)->p) patl,1)
-    | _ -> fail(errmsg_unsupported(pat))
+    | _ -> (issueUnsupportedError(patAnn(pat),errmsg_unsupported(pat));[])
 
 
 (**
@@ -912,14 +923,15 @@ def getMissingConstructorIds(srt as CoProduct(summands,_), cases) =
  * search for the wild pattern in the match and returns the corresponding body, if it
  * has been found.
  *)
-op findWildPat: Match -> Option Term
-def findWildPat(cases) =
+op findVarOrWildPat: Match -> Option Term
+def findVarOrWildPat(cases) =
   case cases of
     | [] -> None
     | (pat,cond,term)::cases -> 
       (case pat of
 	 | WildPat _ -> Some term
-	 | _ -> findWildPat(cases)
+	 | VarPat _ -> Some term
+	 | _ -> findVarOrWildPat(cases)
 	)
 
 op concatCollected: Collected * Collected -> Collected

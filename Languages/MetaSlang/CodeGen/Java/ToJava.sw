@@ -39,6 +39,15 @@ def sortToClsDecls (_(* qualifier *), id, sort_info, spc, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
   case sort_info of
     | (_, _, [(_, srtDef)]) -> 
+      let ok? = case srtDef of
+		  | Subsort(_,Fun(Op _,_,_),_) -> true
+		  | Subsort _ -> false
+		  | Quotient(_,Fun(Op _,_,_),_) -> true
+		  | Quotient _ -> false
+		  | _ -> true
+      in
+      if ~ok? then (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported: "^printSort(srtDef));jcginfo)
+      else
       if baseType?(spc,srtDef)
 	then (issueUnsupportedError(sortAnn(srtDef),"sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");jcginfo)
       else
@@ -220,6 +229,9 @@ def addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
 	    | Var (var,_) -> if equalVar?(varh, var) 
 			       then addCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
 			     else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
+	    %| t -> (issueUnsupportedError(termAnn(t),"unsupported case term \""^printTerm(t)^
+	    %				  "\", only variables are allowed here.");jcginfo)
+	    | _ -> addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
       else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
        )
      | _ -> let _ = warnNoCode(termAnn(trm),opId,Some("cannot find user type in arguments of op "^opId)) in
@@ -239,7 +251,10 @@ def addCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo) =
   let (fpars,col2) = varsToFormalParams(vars1++vars2) in
   let methodDecl = (([], Some (tt(rngId)), opId, fpars , []), None) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
-  let newJcgInfo = addMethDeclToClsDecls(opId, srthId, defaultMethodDecl, jcginfo) in
+  let newJcgInfo = case defaultMethodDecl of
+		     | Some mdecl -> addMethDeclToClsDecls(opId, srthId, mdecl, jcginfo)
+                     | _ -> jcginfo
+  in
   let jcginfo = addCollectedToJcgInfo(newJcgInfo,concatCollected(col0,concatCollected(col1,col2))) in
   %% add the assertion method
   let asrtOpId = mkAssertOp(opId) in
@@ -298,22 +313,26 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo) =
  * this op generates the "default" method in the summand super class. If the list of cases contains a wild pattern the corresponding
  * case will be the body of the default method; otherwise the method is abstract.
  *)
-op mkDefaultMethodForCase: Spec * Id * List Type * Type * List Var * Term -> MethDecl * Collected
-def mkDefaultMethodForCase (spc, opId, _(* dom *), rng, vars, body) =
+
+op mkDefaultMethodForCase: Spec * Id * List Type * Type * List Var * Term -> Option MethDecl * Collected
+def mkDefaultMethodForCase(spc,opId,dom,rng,vars,body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
   let (rngId,col0) = srtId(rng) in
-  let (mods,opt_mbody,col1) =
+  let opt = %(mods,opt_mbody,col1) =
     let caseTerm = caseTerm(body) in
     let cases = caseCases(body) in
-    case findWildPat(cases) of
-      | Some t ->
-        let ((b,_,_),col) = termToExpressionRet(empty,t,1,1,spc) in
-	([],Some(b),col)
-      | _ -> ([Abstract],None,nothingCollected)
+    case findVarOrWildPat(cases) of
+      | Some t -> None
+        %let ((b,_,_),col) = termToExpressionRet(empty,t,1,1,spc) in
+	%Some([],Some(b),col)
+      | _ -> Some ([Abstract],None,nothingCollected)
   in
-  let (fpars,col2) = varsToFormalParams(vars) in
-  let col = concatCollected(col0,concatCollected(col1,col2)) in
-  (((mods, Some (tt(rngId)), opId, fpars, []), opt_mbody),col)
+  case opt of
+    | None -> (None,nothingCollected)
+    | Some (mods,opt_mbody,col1) ->
+      let (fpars,col2) = varsToFormalParams(vars) in
+      let col = concatCollected(col0,concatCollected(col1,col2)) in
+      (Some((mods, Some (tt(rngId)), opId, fpars, []), opt_mbody),col)
 
 op mkNonCaseMethodBody: Id * Term * Spec -> Block * Collected
 def mkNonCaseMethodBody(vId, body, spc) =
@@ -329,7 +348,8 @@ def addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo) =
     | (_, _, (_,srt)::_)::_  ->  
     let CoProduct (summands, _) = srt in
     let caseTerm = caseTerm(body) in
-    let cases = filter (fn(WildPat _,_,_) -> false | _ -> true) (caseCases(body)) in
+    %let cases = filter (fn(WildPat _,_,_) -> false | _ -> true) (caseCases(body)) in
+    let cases = caseCases(body) in
     % find the missing constructors:
     let missingsummands = getMissingConstructorIds(srt,cases) in
     %let _ = (writeLine("missing cases in "^opId^" for sort "^srthId^":");
@@ -351,31 +371,34 @@ def addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo) =
 
 op addSumMethDeclToClsDecls: Id * Id * Term * Pattern * Term * MethDecl * JcgInfo * Spec -> JcgInfo
 def addSumMethDeclToClsDecls(opId, srthId, caseTerm, pat (*as EmbedPat (cons, argsPat, coSrt, _)*), body, methodDecl, jcginfo, spc) =
-  case pat of
-    | EmbedPat (cons, argsPat, coSrt, _) ->
-      (case caseTerm of
-	 | Var ((vId, vSrt), b) ->
-	 let (args,ok?) = case argsPat of
-		      | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId,_), _))) -> vId
-							      | (id,pat) -> (issueUnsupportedError(b,"pattern not supported: "^
-												   printPattern(pat));"$X$")
-							    ) args,true)
-		      | Some (VarPat ((vId, _), _)) -> ([vId],true)
-		      | Some (pat) -> (issueUnsupportedError(b,"pattern not supported");([],false))
-		      | None -> ([],true) in
-	 if ~ ok? then jcginfo else
-	 let summandId = mkSummandId(srthId, cons) in
-	 let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
-	 let tcx = StringMap.insert(empty, vId, thisExpr) in
-	 let tcx = addArgsToTcx(tcx, args) in
-	 let ((b, k, l),col) = termToExpressionRet(tcx, body, 1, 1, spc) in
-	 let JBody = b in
-	 let newMethDecl = appendMethodBody(methodDecl, JBody) in
-	 let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
-	 addMethDeclToClsDecls(opId, summandId, newMethDecl, jcginfo)
-	 | _ -> (issueUnsupportedError(termAnn(caseTerm),"case term format not supported");jcginfo))
-     %| WildPat _ -> jcginfo
-     | _ -> (warnNoCode(termAnn(caseTerm),opId,Some("pattern format not supported: '"^printPattern(pat)^"'"));jcginfo)
+  let
+    def addMethod(classid,vids,args) =
+      %let _ = writeLine("adding method "^opId^" in class "^classid^"...") in
+      let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
+      let tcx = foldr (fn(vid,tcx) -> StringMap.insert(tcx,vid,thisExpr)) empty vids in
+      %let tcx = StringMap.insert(empty, vId, thisExpr) in
+      let tcx = addArgsToTcx(tcx, args) in
+      let ((b, k, l),col) = termToExpressionRet(tcx, body, 1, 1, spc) in
+      let JBody = b in
+      let newMethDecl = appendMethodBody(methodDecl, JBody) in
+      let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
+      addMethDeclToClsDecls(opId, classid, newMethDecl, jcginfo)
+  in
+    case caseTerm of
+      | Var ((vId, vSrt), b) ->
+        (case pat of
+	   | EmbedPat (cons, argsPat, coSrt, _) ->
+	     let (args,ok?) = getVarsPattern(argsPat) in
+	     if ~ ok? then jcginfo else
+	       let summandId = mkSummandId(srthId, cons) in
+	       addMethod(summandId,[vId],args)
+	   | VarPat((vid,_),_) -> addMethod(srthId,[vid,vId],[])
+	   | WildPat _ -> addMethod(srthId,[vId],[])
+	   | _ -> (warnNoCode(termAnn(caseTerm),opId,Some("pattern format not supported: '"^printPattern(pat)^"'"));jcginfo)
+	      )
+      | _ -> (issueUnsupportedError(termAnn(caseTerm),"term format not supported for toplevel case term: "^printTerm(caseTerm));
+	      jcginfo)
+
 
 op addArgsToTcx: TCx * List Id -> TCx
 def addArgsToTcx(tcx, args) =
@@ -562,7 +585,7 @@ def builtinSortOp(qid) =
   let Qualified(q,i) = qid in
   (q="Nat" & (i="Nat" or i="PosNat" or i="toString" or i="natToString" or i="show" or i="stringToNat"))
   or
-  (q="Integer" & (i="Integer" or i="NZInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or
+  (q="Integer" & (i="Integer" or i="NonZeroInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or
 		  i=">" or i=">=" or i="toString" or i="intToString" or i="show" or i="stringToInt"))
   or
   (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or
@@ -583,7 +606,6 @@ def specToJava(basespc,spc,optspec,filename) =
   %let spc = lambdaLift spc in
   let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
-  %let _ = writeLine(printSpecWithSort spc) in
   let spc = poly2mono(spc,false) in
   let spc = letWildPatToSeq spc in
   let spc = unfoldSortAliases spc in
@@ -591,6 +613,7 @@ def specToJava(basespc,spc,optspec,filename) =
   %let _ = writeLine("Lifting Patterns") in
   %let spc = liftPattern(spc) in
   %let _ = writeLine(";;; Renaming Variables") in
+  %let _ = writeLine(printSpec spc) in
   let spc = distinctVariable(spc) in
   %let _ = writeLine(printSpec spc) in
   %let _ = writeLine(";;; Generating Classes") in

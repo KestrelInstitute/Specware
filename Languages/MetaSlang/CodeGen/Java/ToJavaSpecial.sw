@@ -52,6 +52,18 @@ spec
 	  in
 	  Some ((s,expr,k,l),col)
     in
+    let
+      def charFun(fun,t) =
+	let jfun = case fun of
+	             | "isNum" -> "isDigit"
+	             | "isAlpha" -> "isLetter"
+	             | "isAlphaNum" -> "isLetterOrDigit"
+	             | _ -> fun
+	in
+        let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
+	let expr = mkMethInvName((["Character"],jfun),[argexpr]) in
+	Some ((s,expr,k,l),col)
+    in
     case term of
       | Apply(Fun(Op(Qualified("String","writeLine"),_),_,_),t,_) -> 
         let ((s,argexpr,k,l),col) = termToExpression(tcx,t,k,l,spc) in
@@ -100,6 +112,15 @@ spec
 	let t = IfThenElse(t1,t2,nott2,b) in
 	let res = termToExpression(tcx,t,k,l,spc) in
 	Some res
+      | Apply(Fun(Op(Qualified("Char",fun as "isNum"),_),_,_),t,_) -> 
+	let _ = writeLine("isNum used.") in
+	charFun(fun,t)
+      | Apply(Fun(Op(Qualified("Char",fun as "isAlpha"),_),_,_),t,_) -> charFun(fun,t)
+      | Apply(Fun(Op(Qualified("Char",fun as "isAlphaNum"),_),_,_),t,_) -> charFun(fun,t)
+      | Apply(Fun(Op(Qualified("Char",fun as "isLowerCase"),_),_,_),t,_) -> charFun(fun,t)
+      | Apply(Fun(Op(Qualified("Char",fun as "isUpperCase"),_),_,_),t,_) -> charFun(fun,t)
+      | Apply(Fun(Op(Qualified("Char",fun as "toLowerCase"),_),_,_),t,_) -> charFun(fun,t)
+      | Apply(Fun(Op(Qualified("Char",fun as "toUpperCase"),_),_,_),t,_) -> charFun(fun,t)
       | Apply(Fun(Op(qid as Qualified(qual,id),_),opsrt,_),argterm,b) ->
 	if builtinBaseTypeId?(qual) then None else
 	let argterms = applyArgsToTerms(argterm) in
