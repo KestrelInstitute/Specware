@@ -124,7 +124,7 @@
 
 (defun parse-string (string parser tokenizer) 
   (with-open-file (s "/tmp/string-spec" :direction :output :if-exists :new-version)
-    (format s string))
+    (format s "~A" string))
   ;; parse-file is defined in /Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-top.lisp
   (let ((*parser-source* (list :string string)))
     (parse-file "/tmp/string-spec" parser tokenizer)))
