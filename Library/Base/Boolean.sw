@@ -14,20 +14,20 @@ Boolean qualifying spec
   op =>  infixr 13 : Boolean * Boolean -> Boolean 
   op <=> infixr 12 : Boolean * Boolean -> Boolean 
 
-%   axiom not_def is
-%     fa (x : Boolean) ~x = (if x then false else true)
-% 
-%   axiom and_def is
-%     fa (x,y : Boolean) (x & y)   = (if x then y    else false)
-% 
-%   axiom or_def is
-%     fa (x,y : Boolean) (x or y)  = (if x then true else y)
-% 
-%   axiom implies_def is
-%     fa (x,y : Boolean) (x => y)  = (if x then y    else true)
-% 
-%   axiom iff_def is
-%     fa (x,y : Boolean) (x <=> y) = (if x then y    else ~y)
+  axiom not_def is
+    fa (x : Boolean) ~x = (if x then false else true)
+
+  axiom and_def is
+    fa (x,y : Boolean) (x & y)   = (if x then y    else false)
+
+  axiom or_def is
+    fa (x,y : Boolean) (x or y)  = (if x then true else y)
+
+  axiom implies_def is
+    fa (x,y : Boolean) (x => y)  = (if x then y    else true)
+
+  axiom iff_def is
+    fa (x,y : Boolean) (x <=> y) = (if x then y    else ~y)
 
   % ops whose Lisp code is generated:
 

@@ -8,7 +8,7 @@ spec
   - Integer.Integer denotes the set of (all) integer numbers;
   - Integer.~ denotes unary minus on integers;
   - Integer.+ denotes addition on integers;
-  - Integer.< denotes the less-than relation on integers;
+  - Integer.<= denotes the less-than-or-equal-to relation on integers;
   - Nat.Nat denotes the set of (all) natural numbers;
   - Char.Char denotes the set of 8-bit characters occupying decimal
     positions 0 to 255 in the ISO-8859-1 code table (the first 128
@@ -38,13 +38,6 @@ spec
   op Integer.<= infixl 20 : Integer.Integer * Integer.Integer -> Boolean.Boolean
 
   sort Nat.Nat = {n : Integer.Integer | 0 Integer.<= n}
-                                        % DAC: I've changed it back to <=, but
-                                        % leaving the comment below for a while.
-                                        % the reason for this rather involved
-                                        % way to say that n is non-negative is
-                                        % that the op >= is not available yet
-                                        % (i.e. it is not primitive); it is
-                                        % defined in spec Integer
                  % the definition of Nat.Nat as a subsort of Integer.Integer
                  % is needed because the type checker has no hardwired
                  % knowledge of this relationship between those two sorts
