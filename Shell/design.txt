@@ -26,7 +26,7 @@ These state components are initialized as follows:
 - the last evaluated expression is absent.
 
 The following commands are featured (whose form is an extension of the
-MetaSlang grammar):
+Metaslang grammar):
 
  help
  cd [dir]
@@ -166,7 +166,7 @@ absent, an error occurs.
 With an argument, sets the last evaluated expression to the argument,
 evaluates it within the current context, and displays the result.
 
-Evaluation takes place via the MetaSlang interpreter that is part of Specware.
+Evaluation takes place via the Metaslang interpreter that is part of Specware.
 
 * eval-lisp [expression]
 
