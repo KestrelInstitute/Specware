@@ -200,8 +200,7 @@ grammar.glm: Makefile metaslang.glm grammar.preamble \
 	bin/mkgrammar
 
 clean:
-	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log \
-	       $(SLM)-htm.dbk $(HTMDBK) *.old db2html-dir \
-	       $(HTMDIR)
+	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log $(SLM).out \
+	       $(SLM)-htm.dbk $(HTMDBK) $(HTMDIR) *.old
 
 pristine: clean

@@ -304,21 +304,19 @@ A sort is called discrete if the equality predicate [[=]]
 for that sort is constructive.
 The built-in sorts [[Integer]], [[Nat]], [[Boolean]],
 [[Char]] and [[String]] are all discrete.
-Sort [[List]] <replaceable>S</replaceable> is discrete when
+Sort [[List ]]<replaceable>S</replaceable> is discrete when
 <replaceable>S</replaceable> is.
 All function sorts are non-discrete (even when the domain
 sort is the unit sort).
 Sum sorts, product sorts and record sorts are discrete
 whenever all component sorts are.
 Subsort
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] is discrete when
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] is discrete when
 supersort <replaceable>S</replaceable> is.
 (Predicate <replaceable>P</replaceable> need not be
 constructive: the equality test is that of the supersort.)
 Quotient sort
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable> is discrete when
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable> is discrete when
 predicate <replaceable>Q</replaceable> is
 constructive.
 (Sort <replaceable>S</replaceable> need not be discrete:
@@ -512,7 +510,7 @@ to be single lower-case `letters: [[x]], [[y]], [[z]],
 [[a]], [[b]], [[c]], with the start of the alphabet
 preferred for `local-sort-variables.
 `Op-names of predicates (that is, having some sort
-<replaceable>S</replaceable> [[-> Boolean]]) often end with
+<replaceable>S</replaceable>[[ -> Boolean]]) often end with
 the mark [[?]].
 These are just conventions that users are free to follow or
 ignore, but in particular some convention distinguishing 
@@ -1749,10 +1747,8 @@ Given a sort <replaceable>S</replaceable>, the sort
 super(<replaceable>S</replaceable>) is defined to be
 <replaceable>S</replaceable> if <replaceable>S</replaceable>
 is not a subsort.
-For a subsort [[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]],
-super([[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]]) is the sort
+For a subsort [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]],
+super([[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]]) is the sort
 super(<replaceable>S</replaceable>).
 For example, super([[(Nat | even)]]) is [[Integer]].
 </para>
@@ -1761,17 +1757,14 @@ For example, super([[(Nat | even)]]) is [[Integer]].
 The source sorts of an `op are the set of sorts determined
 as follows.
 If the sort of the `op is some monomorphic function sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>, the source sorts are the
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source sorts are the
 singleton set {super(<replaceable>S</replaceable>)}.
 If the sort of the `op is a polymorphic function sort
 corresponding to some `sort-scheme
-[[fa(]]<replaceable>V</replaceable>[[)]] <replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>, the source sorts are the
+[[fa(]]<replaceable>V</replaceable>[[) ]]<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source sorts are the
 set of all sorts super(<replaceable>S'</replaceable>)
 for the sorts
-<replaceable>S'</replaceable> [[->]]
-<replaceable>T'</replaceable> of the indexed family of
+<replaceable>S'</replaceable>[[ -> ]]<replaceable>T'</replaceable> of the indexed family of
 values,
 obtainable by the substitution of sorts for
 the `local-sort-variables in
@@ -1794,9 +1787,7 @@ the singleton set {[[()]]}, containing just the unit sort.
 <!-- ================================================================= -->
 <para>
 Only binary `ops (those having some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>T</replaceable> [[->]]
-<replaceable>U</replaceable>)
+<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[ -> ]]<replaceable>U</replaceable>)
 may be declared with a `fixity.
 When declared with a `fixity, the `op-name may be used in infix
 notation, and then it is called an <emphasis>infix operator</emphasis>.
@@ -1806,7 +1797,7 @@ If the `associativity is [[infixl]], the infix operator is
 called <emphasis>left-associative</emphasis>; otherwise,
 if the `associativity is [[infixr]], it is
 called <emphasis>right-associative</emphasis>.
-If the `priority is [[priority]] <replaceable>N</replaceable>,
+If the `priority is [[priority ]]<replaceable>N</replaceable>,
 the operator is said to have
 <emphasis>priority</emphasis> <replaceable>N</replaceable>.
 The `nat-literal <replaceable>N</replaceable> stands for a
@@ -1891,9 +1882,7 @@ The ambiguity is resolved in favor of the reading
 as a `formal-infix-application, and then the
 `formal-infix-application <replaceable>M N P</replaceable>
 is equivalent to the `formal-prefix-application
-<replaceable>N</replaceable>
-[[(]]<replaceable>M</replaceable>[[,]]
-<replaceable>P</replaceable>[[)]].
+<replaceable>N</replaceable>[[ (]]<replaceable>M</replaceable>[[, ]]<replaceable>P</replaceable>[[)]].
 For example, for infix operator [[o]],
 [[
 ||    def f o g = fn x -> f(g x)
@@ -2430,12 +2419,12 @@ In this example, the `arrow-source is [[(a -> b) * b]], and the (target)
 </para>
 <!-- ================================================================= -->
 <para>
-The <emphasis>function sort</emphasis> <replaceable>S</replaceable> [[->]] <replaceable>T</replaceable> is inhabited by
+The <emphasis>function sort</emphasis> <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> is inhabited by
 precisely all <emphasis>partial or total</emphasis> functions from
 <replaceable>S</replaceable>
 to <replaceable>T</replaceable>.
 That is, function <replaceable>f</replaceable> has sort
-<replaceable>S</replaceable> [[->]] <replaceable>T</replaceable> if, and only if,
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> if, and only if,
 for each value <replaceable>x</replaceable> of sort
 <replaceable>S</replaceable> such that the value of
 <replaceable>f</replaceable> <replaceable>x</replaceable> is
@@ -2476,23 +2465,16 @@ The ordering of the component sorts is significant: unless
 <replaceable>S</replaceable>
 and <replaceable>T</replaceable> are the same sort,
 the product sort
-<replaceable>S</replaceable> [[*]] <replaceable>T</replaceable> is different from the sort
-<replaceable>T</replaceable> [[*]] <replaceable>S</replaceable>.
+<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable> is different from the sort
+<replaceable>T</replaceable>[[ * ]]<replaceable>S</replaceable>.
 Further, the three sorts
-[[(]]<replaceable>S</replaceable> [[*]]
-<replaceable>T</replaceable>[[)]] [[*]]
-<replaceable>U</replaceable>,
-<replaceable>S</replaceable>
-[[*]] [[(]]<replaceable>T</replaceable> [[*]]
-<replaceable>U</replaceable>[[)]] and
-<replaceable>S</replaceable> [[*]]
-<replaceable>T</replaceable> [[*]]
-<replaceable>U</replaceable> are all different; the first
+[[(]]<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[)]] [[* ]]<replaceable>U</replaceable>,
+<replaceable>S</replaceable>[[ *]] [[(]]<replaceable>T</replaceable>[[ * ]]<replaceable>U</replaceable>[[)]] and
+<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[ * ]]<replaceable>U</replaceable> are all different; the first
 two have two component sorts, while the last one has three.
 The inhabitants of the product sort
-<replaceable>S</replaceable><subscript>1</subscript> [[*]]
-<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
-[[*]] <replaceable>S<subscript>n</subscript></replaceable>
+<replaceable>S</replaceable><subscript>1</subscript> [[* ]]<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
+[[* ]]<replaceable>S<subscript>n</subscript></replaceable>
 are precisely all <replaceable>n</replaceable>-tuples
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
@@ -2609,16 +2591,10 @@ Then each field of a record sort with
 <replaceable>n</replaceable>.
 The inhabitants of the record sort
 [[{]]<replaceable>F</replaceable><subscript>1</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>1</subscript>[[,]]
-<replaceable>F</replaceable><subscript>2</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>2</subscript>[[,]]
+[[: ]]<replaceable>S</replaceable><subscript>1</subscript>[[, ]]<replaceable>F</replaceable><subscript>2</subscript>
+[[: ]]<replaceable>S</replaceable><subscript>2</subscript>[[,]]
 ...
-[[,]]
-<replaceable>F<subscript>n</subscript></replaceable>
-[[:]]
-<replaceable>S<subscript>n</subscript></replaceable>[[}]]
+[[, ]]<replaceable>F<subscript>n</subscript></replaceable>[[ : ]]<replaceable>S<subscript>n</subscript></replaceable>[[}]]
 are precisely all <replaceable>n</replaceable>-tuples
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
@@ -2670,26 +2646,23 @@ Sample `sort-restriction:
 ]]
 Restriction.
 In a `sort-restriction
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]], the `expression
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]], the `expression
 <replaceable>P</replaceable> must be a predicate on
 the sort
 <replaceable>S</replaceable>, that is,
 <replaceable>P</replaceable> must be a function of sort
-<replaceable>S</replaceable> [[-> Boolean]].
+<replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!-- ================================================================= -->
 <para>
 Note that the parentheses in
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] are mandatory.
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] are mandatory.
 </para>
 <!-- ================================================================= -->
 <para>
 The inhabitants of
 `sort-restriction
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] are precisely the
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] are precisely the
 inhabitants of
 sort
 <replaceable>S</replaceable> that satisfy the
@@ -2706,34 +2679,45 @@ If
 <replaceable>P1</replaceable> and
 <replaceable>P2</replaceable> are the same 
 function, then
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P1</replaceable>[[)]] and
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P2</replaceable>[[)]] are equivalent, that is,
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P1</replaceable>[[)]] and
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P2</replaceable>[[)]] are equivalent, that is,
 they denote the same sort.
 </para>
 <!-- ================================================================= -->
 <para>
 The sort 
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] is called a
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] is called a
 <emphasis>subsort</emphasis> of
 <emphasis>supersort</emphasis> <replaceable>S</replaceable>.
 Values can be shuttled between a subsort and its supersort
 and vice versa with
-`relaxators and `restrictors; see also <link
-linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
+`relaxators and `restrictors; see also
+<link linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
 Metaslang does not require the explicit use of a `relaxator to relax
 an `expression from a subsort to its supersort if the
 context requires the latter.
-Implicit relaxation will take place when needed,
+Implicit relaxation will take place when needed.
 For example, in the `expression [[~1]] the `nat-literal [[1]]
 of sort [[Nat]] is implicitly relaxed to sort [[Integer]] to
 accommodate the unary negation operator [[~]], which has sort
 [[Integer -> Integer]].
+</para>
+<!--====================================================================-->
+<para>
+Likewise, Metaslang does not require the explicit use of a `restrictor
+to restrict
+an `expression from a sort to a subsort if the
+context requires the latter.
+Implicit restriction will take place when needed.
+For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
+of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
+a subsort of [[Nat]], to accommodate the division operator
+[[~]], whose second argument has sort [[PosNat]].
+But note that implicit restriction engenders the same proof
+obligation as results when using an explicit `restrictor.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -2749,9 +2733,7 @@ Sample `sort-comprehension:
 ]]
 Restriction.
 In a `sort-comprehension
-[[{]]<replaceable>P</replaceable> [[:]]
-<replaceable>S</replaceable> [[|]]
-<replaceable>E</replaceable>[[}]],
+[[{]]<replaceable>P</replaceable>[[ : ]]<replaceable>S</replaceable>[[ | ]]<replaceable>E</replaceable>[[}]],
 the `expression
 <replaceable>E</replaceable> must
 have sort [[Boolean]].
@@ -2763,13 +2745,10 @@ have sort [[Boolean]].
 to the common mathematical notation for set comprehensions.
 The meaning of
 `sort-comprehension
-[[{]]<replaceable>P</replaceable> [[:]]
-<replaceable>S</replaceable> [[|]]
-<replaceable>E</replaceable>[[}]]
+[[{]]<replaceable>P</replaceable>[[ : ]]<replaceable>S</replaceable>[[ | ]]<replaceable>E</replaceable>[[}]]
 is the same as that of the `sort-restriction
-[[(]]<replaceable>S</replaceable> [[|
-fn]] <replaceable>P</replaceable> [[->]]
-<replaceable>E</replaceable>[[)]].
+[[(]]<replaceable>S</replaceable>[[ |
+fn ]]<replaceable>P</replaceable>[[ -> ]]<replaceable>E</replaceable>[[)]].
 So the meaning of the example `sort-comprehension above is
 [[(Nat | fn n -> even n)]].
 </para>
@@ -2786,11 +2765,9 @@ Sample `sort-quotient:
 ]]
 Restriction.
 In a `sort-quotient
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable>, the `expression
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>, the `expression
 <replaceable>Q</replaceable> must be a (binary) predicate on
-the sort <replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> that is an equivalence relation,
+the sort <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable> that is an equivalence relation,
 as explained below.
 </para>
 <!-- ================================================================= -->
@@ -2841,7 +2818,7 @@ These equivalence classes will be called
 <para>
 The inhabitants of the <emphasis>quotient
 sort</emphasis>
-<replaceable>S</replaceable> [[/]] <replaceable>Q</replaceable>
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>
 are precisely the <replaceable>Q</replaceable>-equivalence classes
 into which the inhabitants of
 <replaceable>S</replaceable> are partitioned by
@@ -2981,8 +2958,7 @@ The &Specware; system does not attempt to detect this condition.
 <para>
 The sort of a `lambda-form is that of its `match.
 The meaning of a given `lambda-form of sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable> is
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> is
 the function <replaceable>f</replaceable> mapping each
 inhabitant <replaceable>x</replaceable> of
 <replaceable>S</replaceable> to a value
@@ -3021,10 +2997,9 @@ Sample `case-expressions:
 ||       | Push {top = _, pop = rest} -> hasBottom? rest
 ]]
 The value of a `case-expression
-[[case]] <replaceable>E</replaceable> [[of]]
-<replaceable>M</replaceable> is the same as that of
+[[case ]]<replaceable>E</replaceable>[[ of ]]<replaceable>M</replaceable> is the same as that of
 the `application
-[[(fn]] <replaceable>M</replaceable>[[)
+[[(fn ]]<replaceable>M</replaceable>[[)
 (]]<replaceable>E</replaceable>[[)]].
 </para>
 </section>
@@ -3052,12 +3027,9 @@ Sample `let-expressions:
 ]]
 In the case of a `recless-let-binding (recless =
 recursion-less), the value of the `let-expression
-[[let]] <replaceable>P</replaceable> [[=]]
-<replaceable>A</replaceable> [[in]]
-<replaceable>E</replaceable> is the same as that of the
+[[let ]]<replaceable>P</replaceable>[[ = ]]<replaceable>A</replaceable>[[ in ]]<replaceable>E</replaceable> is the same as that of the
 `application
-[[(fn]] <replaceable>P</replaceable> [[->]]
-<replaceable>E</replaceable>[[)]]
+[[(fn ]]<replaceable>P</replaceable>[[ -> ]]<replaceable>E</replaceable>[[)]]
 [[(]]<replaceable>A</replaceable>[[)]].
 For the first example above, this amounts to [[f(x + e, x + e)]].
 Note that [[x = x + e]] is not interpreted as a recursive
@@ -3115,11 +3087,9 @@ Sample `if-expression:
 ||    if x <= y then x else y
 ]]
 The value of an `if-expression
-[[if]] <replaceable>B</replaceable> [[then]]
-<replaceable>T</replaceable> [[else]]
-<replaceable>F</replaceable> is the same as that of the
+[[if ]]<replaceable>B</replaceable>[[ then ]]<replaceable>T</replaceable>[[ else ]]<replaceable>F</replaceable> is the same as that of the
 `case-expression
-[[case]] <replaceable>B</replaceable> [[of true ->
+[[case ]]<replaceable>B</replaceable>[[ of true ->
 (]]<replaceable>T</replaceable>[[) | false ->
 (]]<replaceable>F</replaceable>[[)]].
 </para>
@@ -3166,14 +3136,14 @@ quantifications</quote>; ex = there exists).
 <!-- ================================================================= -->
 <para>
 The value of a [[fa]]-`quantification
-[[fa]] <replaceable>V</replaceable>
+[[fa ]]<replaceable>V</replaceable>
 <replaceable>E</replaceable>, in which
 <replaceable>V</replaceable> is a `local-variable-list and
 <replaceable>E</replaceable> is an `expression,
 is determined as
 follows.
 Let <replaceable>M</replaceable> be the `match
-<replaceable>V</replaceable> [[->]] <replaceable>E</replaceable>.
+<replaceable>V</replaceable>[[ -> ]]<replaceable>E</replaceable>.
 If <replaceable>M</replaceable> has return value [[true]] for each
 value <replaceable>x</replaceable> in its domain (note that
 rejection cannot happen here), the value of the
@@ -3182,11 +3152,10 @@ rejection cannot happen here), the value of the
 <!-- ================================================================= -->
 <para>
 The value of an [[ex]]-`quantification
-[[ex]] <replaceable>V</replaceable>
+[[ex ]]<replaceable>V</replaceable>
 <replaceable>E</replaceable> is the same as that of the
 [[fa]]-`quantification
-[[~(fa]] <replaceable>V</replaceable>
-[[~(]]<replaceable>E</replaceable>[[))]].
+[[~(fa ]]<replaceable>V</replaceable>[[ ~(]]<replaceable>E</replaceable>[[))]].
 </para>
 <!-- ================================================================= -->
 <para>
@@ -3226,9 +3195,7 @@ The ambiguity is resolved in favor of the reading
 as an `infix-application, and then the
 `infix-application <replaceable>P N Q</replaceable>
 is equivalent to the `prefix-application
-<replaceable>N</replaceable>
-[[(]]<replaceable>P</replaceable>[[,]]
-<replaceable>Q</replaceable>[[)]].
+<replaceable>N</replaceable>[[ (]]<replaceable>P</replaceable>[[, ]]<replaceable>Q</replaceable>[[)]].
 For example, in the second example `application
 [[f x (g y)]] given above,
 if [[x]] is an infix operator,
@@ -3256,20 +3223,20 @@ An `infix-application
 <replaceable>M</replaceable> and
 <replaceable>N</replaceable> are infix operators,
 is interpreted as either
-[[(]]<replaceable>P M Q</replaceable>[[)]] <replaceable>N
+[[(]]<replaceable>P M Q</replaceable>[[) ]]<replaceable>N
 R</replaceable> or
-<replaceable>P M</replaceable> [[(]]<replaceable>Q N
+<replaceable>P M</replaceable>[[ (]]<replaceable>Q N
 R</replaceable>[[)]].
 The choice is made as follows.
 If <replaceable>M</replaceable> has higher priority than
 <replaceable>N</replaceable>, or the priorities are the same
 but <replaceable>M</replaceable> is left-associative,
 the interpretation is
-[[(]]<replaceable>P M Q</replaceable>[[)]] <replaceable>N
+[[(]]<replaceable>P M Q</replaceable>[[) ]]<replaceable>N
 R</replaceable>.
 In all other cases
 the interpretation is
-<replaceable>P M</replaceable> [[(]]<replaceable>Q N
+<replaceable>P M</replaceable>[[ (]]<replaceable>Q N
 R</replaceable>[[)]].
 For example, given
 [[
@@ -3297,7 +3264,7 @@ In an `application <replaceable>H</replaceable>
 and <replaceable>P</replaceable> an `actual-parameter,
 the sort of <replaceable>P</replaceable>
 must be some function sort
-<replaceable>S</replaceable> [[->]] <replaceable>T</replaceable>, and then
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, and then
 <replaceable>H</replaceable> must have the domain sort
 <replaceable>S</replaceable>.
 The sort of the whole `application is then
@@ -3324,8 +3291,7 @@ equivalently as
 >>
 Restriction.
 In an `annotated-expression
-<replaceable>E</replaceable> [[:]]
-<replaceable>S</replaceable>, the `expression
+<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable>, the `expression
 <replaceable>E</replaceable> must have sort
 <replaceable>S</replaceable>.
 </para>
@@ -3337,16 +3303,14 @@ Sample `annotated-expression:
 ||    Positive : Sign
 ]]
 The value of an `annotated-expression
-<replaceable>E</replaceable> [[:]]
-<replaceable>S</replaceable> is the value of
+<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable> is the value of
 <replaceable>E</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
 The sort of some `expressions is polymorphic.  For example,
 for any sort <replaceable>T</replaceable>,
-[[[]]] denotes the empty list of sort [[List]]
-<replaceable>T</replaceable>.
+[[[]]] denotes the empty list of sort [[List ]]<replaceable>T</replaceable>.
 Likewise, `constructors of parameterized sum sorts can be
 polymorphic, as the constructor [[None]] of
 [[
@@ -3374,17 +3338,15 @@ Sample `op-names:
 ||    DB_LOOKUP.Lookup
 ]]
 Restriction.
-An `op-name may only be used if
-there is an `op-declaration and/or
-`op-definition for it in the current `spec or in some `spec
-that is imported (directly or indirectly) in the current `spec.
-If there is a unique `qualified-name for a given
-unqualified ending that is sort-correct in the context,
-the qualification may be omitted for an
-`op-name used as an `expression.
-So overloaded `ops
-may only be used as such when their sort can be
-disambiguated in the context.
+An `op-name may only be used if there is an `op-declaration
+and/or `op-definition for it in the current `spec or in some
+`spec that is imported (directly or indirectly) in the current
+`spec.
+If there is a unique `qualified-name for a given unqualified
+ending that is sort-correct in the context, the qualification
+may be omitted for an `op-name used as an `expression.
+So overloaded `ops may only be used as such when their sort can
+be disambiguated in the context.
 </para>
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
@@ -3741,7 +3703,7 @@ Sample `field-selections:
 A `field-selection
 <replaceable>E</replaceable>[[.]]<replaceable>F</replaceable>
 is a convenient notation for the equivalent `expression
-[[(project]] <replaceable>F</replaceable>
+[[(project ]]<replaceable>F</replaceable>
 <replaceable>E</replaceable>[[)]].
 (See under <link linkend="Projectors"><emphasis>Projectors</emphasis></link>.)
 </para>
@@ -3827,15 +3789,11 @@ Sample `sequential-expression:
 ||    (writeLine "key not found"; embed Missing)
 ]]
 A `sequential-expression
-[[(]]<replaceable>V</replaceable>[[;]]
-<replaceable>T</replaceable>[[)]] is equivalent to the
-`let-expression [[let _ =]] <replaceable>V</replaceable>
-[[in]] [[(]]<replaceable>T</replaceable>[[)]].
+[[(]]<replaceable>V</replaceable>[[; ]]<replaceable>T</replaceable>[[)]] is equivalent to the
+`let-expression [[let _ = ]]<replaceable>V</replaceable>[[ in]] [[(]]<replaceable>T</replaceable>[[)]].
 So the value of a `sequential-expression
 [[(]]<replaceable>V</replaceable><subscript>1</subscript>[[;]]
-... [[;]]
-<replaceable>V</replaceable><subscript>n</subscript>[[;]]
-<replaceable>E</replaceable>[[)]]
+... [[; ]]<replaceable>V</replaceable><subscript>n</subscript>[[; ]]<replaceable>E</replaceable>[[)]]
 is the value of its
 last constituent `expression <replaceable>E</replaceable>.
 </para>
@@ -3968,11 +3926,8 @@ When the `field-selector is some `nat-literal with value
 The sort of the
 `projector is a function sort (whose domain sort is a product
 sort) of the form
-<replaceable>S</replaceable><subscript>1</subscript> [[*]]
-<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
-[[*]] <replaceable>S<subscript>n</subscript></replaceable>
-[[->]]
-<replaceable>S<subscript>i</subscript></replaceable>,
+<replaceable>S</replaceable><subscript>1</subscript> [[* ]]<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
+[[* ]]<replaceable>S<subscript>n</subscript></replaceable>[[ -> ]]<replaceable>S<subscript>i</subscript></replaceable>,
 where <replaceable>n</replaceable> is at least
 <replaceable>i</replaceable>,
 and the value of the `projector is the function that maps
@@ -3993,18 +3948,11 @@ the sort of the
 `projector is a function sort (whose domain sort is a record
 sort) of the form
 [[{]]<replaceable>F</replaceable><subscript>1</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>1</subscript>[[,]]
-<replaceable>F</replaceable><subscript>2</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>2</subscript>[[,]]
+[[: ]]<replaceable>S</replaceable><subscript>1</subscript>[[, ]]<replaceable>F</replaceable><subscript>2</subscript>
+[[: ]]<replaceable>S</replaceable><subscript>2</subscript>[[,]]
 ...
-[[,]]
-<replaceable>F<subscript>n</subscript></replaceable>
-[[:]]
-<replaceable>S<subscript>n</subscript></replaceable>[[}]]
-[[->]]
-<replaceable>S<subscript>i</subscript></replaceable>,
+[[, ]]<replaceable>F<subscript>n</subscript></replaceable>[[ : ]]<replaceable>S<subscript>n</subscript></replaceable>[[}]]
+[[-> ]]<replaceable>S<subscript>i</subscript></replaceable>,
 where <replaceable>F</replaceable> is the same `field-name
 as
 <replaceable>F<subscript>i</subscript></replaceable>
@@ -4036,20 +3984,17 @@ Sample `relaxator:
 ]]
 Restriction.
 The `closed-expression of a `relaxator must have some function
-sort <replaceable>S</replaceable> [[-> Boolean]].
+sort <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--====================================================================-->
 <para>
-The sort of `relaxator [[relax]] <replaceable>P</replaceable>,
+The sort of `relaxator [[relax ]]<replaceable>P</replaceable>,
 where <replaceable>P</replaceable> has sort
-<replaceable>S</replaceable> [[-> Boolean]], is the function
-sort (whose domain is a subsort) [[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] [[->]]
-<replaceable>S</replaceable>.
+<replaceable>S</replaceable>[[ -> Boolean]], is the function
+sort (whose domain is a subsort) [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] [[-> ]]<replaceable>S</replaceable>.
 The value of the `relaxator is the function that maps each
 inhabitant of subsort
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] to the same value --
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] to the same value --
 apart from the sort information -- inhabiting supersort
 <replaceable>S</replaceable>.
 </para>
@@ -4065,6 +4010,17 @@ we have the sorting
 ]]
 for the function that injects the even natural numbers back
 into the supersort of [[Even]].
+</para>
+<!--====================================================================-->
+<para>
+Metaslang does not require the explicit use of a `relaxator to relax
+an `expression from a subsort to its supersort if the
+context requires the latter.
+Implicit relaxation will take place when needed.
+For example, in the `expression [[~1]] the `nat-literal [[1]]
+of sort [[Nat]] is implicitly relaxed to sort [[Integer]] to
+accommodate the unary negation operator [[~]], which has sort
+[[Integer -> Integer]].
 </para>
 <!--====================================================================-->
 <para>
@@ -4084,17 +4040,15 @@ Sample `restrictor:
 ]]
 Restriction.
 The `closed-expression of a `restrictor must have some function
-sort <replaceable>S</replaceable> [[-> Boolean]].
+sort <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--====================================================================-->
 <para>
 A `restrictor
-[[restrict]] <replaceable>P</replaceable> is a convenient
+[[restrict ]]<replaceable>P</replaceable> is a convenient
 notation for the `lambda-form
-[[fn]] <replaceable>X</replaceable> [[->
-let relax]] <replaceable>P</replaceable> <replaceable>V</replaceable> [[=]]
-<replaceable>X</replaceable> [[in]]
-<replaceable>V</replaceable>, where
+[[fn ]]<replaceable>X</replaceable>[[ ->
+let relax ]]<replaceable>P</replaceable> <replaceable>V</replaceable>[[ = ]]<replaceable>X</replaceable>[[ in ]]<replaceable>V</replaceable>, where
 <replaceable>V</replaceable> is some unique fresh `name, that
 is, it is any `name that does not already occur in the
 `spec, directly or indirectly through an import.
@@ -4102,13 +4056,11 @@ is, it is any `name that does not already occur in the
 <!--====================================================================-->
 <para>
 The sort of a `restrictor is of the form
-<replaceable>S</replaceable> [[->
-(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]], that is, it goes from a
+<replaceable>S</replaceable>[[ ->
+(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]], that is, it goes from a
 supersort to a subsort.
 In general its value is a partial function, defined only on
-the range of the function [[relax]]
-<replaceable>P</replaceable>.
+the range of the function [[relax ]]<replaceable>P</replaceable>.
 The use of this partial function engenders a proof obligation
 that the arguments to which it is applied satisfy predicate
 <replaceable>P</replaceable>.
@@ -4134,6 +4086,20 @@ Formally, the proof obligation here is [[((i < 0) =
 false) => ((i >= 0) = true)]].
 This is a theorem from the Theory of Integers.
 </para>
+<!--====================================================================-->
+<para>
+Metaslang does not require the explicit use of a `restrictor
+to restrict
+an `expression from a sort to a subsort if the
+context requires the latter.
+Implicit restriction will take place when needed.
+For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
+of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
+a subsort of [[Nat]], to accommodate the division operator
+[[~]], whose second argument has sort [[PosNat]].
+But note that implicit restriction engenders the same proof
+obligation as results when using an explicit `restrictor.
+</para>
 </section>
 <!-- ***************************************************************** -->
 <section id="Quotienters"><title>Quotienters</title>
@@ -4147,26 +4113,21 @@ Sample `quotienter:
 ]]
 Restriction.
 The `closed-expression of a `quotienter must have some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> [[-> Boolean]];
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
 linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
-The sort of `quotienter [[quotient]] <replaceable>Q</replaceable>,
+The sort of `quotienter [[quotient ]]<replaceable>Q</replaceable>,
 where <replaceable>Q</replaceable> has sort
-<replaceable>S</replaceable> [[*]] <replaceable>S</replaceable>
-[[-> Boolean]], is the function sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable>, that is, it goes from some
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is the function sort
+<replaceable>S</replaceable>[[ -> ]]<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>, that is, it goes from some
 sort to one of its quotient sorts.
 The value of the `quotienter is the function that maps each
 inhabitant of sort <replaceable>S</replaceable> to the
-<replaceable>Q</replaceable>-equivalence class inhabiting <replaceable>S</replaceable>
-[[/]] 
+<replaceable>Q</replaceable>-equivalence class inhabiting <replaceable>S</replaceable>[[ /]] 
 <replaceable>Q</replaceable> of which it is a member.
 </para>
 <!--====================================================================-->
@@ -4199,30 +4160,23 @@ Sample `chooser:
 ]]
 Restriction.
 The `closed-expression of a `chooser must have some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> [[-> Boolean]], and
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], and
 must be an equivalence relation (see under
 <link linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>).
 </para>
 <!--====================================================================-->
 <para>
-The sort of a `chooser [[choose]] <replaceable>Q</replaceable>,
+The sort of a `chooser [[choose ]]<replaceable>Q</replaceable>,
 where <replaceable>Q</replaceable> has sort
-<replaceable>S</replaceable> [[*]] <replaceable>S</replaceable>
-[[-> Boolean]], is a function sort of the form
-[[(]]<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>[[)]] [[->]]
-[[(]]<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable> [[->]]
-<replaceable>T</replaceable>[[)]].
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is a function sort of the form
+[[(]]<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>[[)]] [[->]]
+[[(]]<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>[[ -> ]]<replaceable>T</replaceable>[[)]].
 The value of the `chooser is the (in general partial)
 function mapping each <replaceable>Q</replaceable>-constant
 (explained below) function <replaceable>f</replaceable> inhabiting sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable> to the function that maps 
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> to the function that maps 
 each inhabitant <replaceable>C</replaceable> of
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable> to <replaceable>f</replaceable>
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable> to <replaceable>f</replaceable>
 <replaceable>x</replaceable>, where
 <replaceable>x</replaceable> is any member of
 <replaceable>C</replaceable>.
@@ -4242,8 +4196,7 @@ Function <replaceable>f</replaceable> is
 <replaceable>Q</replaceable>-constant if,
 for each <replaceable>Q</replaceable>-equivalence class
 <replaceable>C</replaceable> inhabiting
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable>,
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>,
 <replaceable>f</replaceable> <replaceable>x</replaceable>
 equals <replaceable>f</replaceable>
 <replaceable>y</replaceable> for any two values
@@ -4266,10 +4219,19 @@ So [[choose congMod3 (fn n -> n*n rem 3)]] maps the inhabitant
 <para>
 The most discriminating
 <replaceable>Q</replaceable>-constant function is
-[[quotient]] <replaceable>Q</replaceable>, and
-[[choose]] <replaceable>Q</replaceable> [[quotient]]
-<replaceable>Q</replaceable> is the identity function on the
+[[quotient ]]<replaceable>Q</replaceable>, and
+[[choose ]]<replaceable>Q</replaceable>[[ quotient ]]<replaceable>Q</replaceable> is the identity function on the
 quotient sort for <replaceable>Q</replaceable>.
+</para>
+<!--====================================================================-->
+<para>
+The meaning of [[choose ]]<replaceable>Q</replaceable>[[ (fn x -> ]]<replaceable>E</replaceable>[[) ]]<replaceable>A</replaceable>
+is the same as that of the `let-expression
+[[let quotient ]]<replaceable>Q</replaceable>[[ x = ]]<replaceable>A</replaceable>[[ in ]]<replaceable>E</replaceable>.
+Indeed, often a `quotient-pattern offers a more convenient 
+way of expressing the intention of a `chooser.
+Note, however, the remarks on the proof obligations for
+`quotient-patterns.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -4333,16 +4295,14 @@ Sample `embedding-test:
 ||    embed? Cons
 ]]
 Restriction.
-The sort of an `embedding-test [[embed?]]
-<replaceable>C</replaceable> must be of the form
-<replaceable>SS</replaceable> [[-> Boolean]], where
+The sort of an `embedding-test [[embed? ]]<replaceable>C</replaceable> must be of the form
+<replaceable>SS</replaceable>[[ -> Boolean]], where
 <replaceable>SS</replaceable> is a sum sort that has a
 `constructor <replaceable>C</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
-The value of `embedding-test [[embed?]]
-<replaceable>C</replaceable> is the predicate that returns
+The value of `embedding-test [[embed? ]]<replaceable>C</replaceable> is the predicate that returns
 [[true]] if the argument value -- which, as inhabitant of a
 sum sort, is tagged -- has tag <replaceable>C</replaceable>,
 and otherwise [[false]].
@@ -4357,7 +4317,7 @@ where the wildcard [[_]] in the first `branch is omitted when
 </para>
 <!-- ================================================================= -->
 <para>
-In plain words, [[embed?]] <replaceable>C</replaceable>
+In plain words, [[embed? ]]<replaceable>C</replaceable>
 tests whether its sum-sorted argument has been constructed with the
 `constructor <replaceable>C</replaceable>.
 It is an error when <replaceable>C</replaceable> is not a
@@ -4402,8 +4362,7 @@ unique sort <replaceable>S</replaceable> to which the `pattern
 of each `branch conforms, and a unique sort
 <replaceable>T</replaceable> to which the `expression of each
 `branch conforms, and then the `match has sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>.
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>.
 The `pattern of each `branch then has
 sort <replaceable>S</replaceable>.
 </para>
@@ -4457,8 +4416,7 @@ Then <replaceable>y</replaceable> is the return value of
 <para>
 Acceptance and return value <replaceable>y</replaceable>, if
 any, of a value <replaceable>x</replaceable> for a `branch
-<replaceable>P</replaceable> [[->]]
-<replaceable>E</replaceable> in an environment
+<replaceable>P</replaceable>[[ -> ]]<replaceable>E</replaceable> in an environment
 <replaceable>C</replaceable> are determined as follows.
 If `pattern <replaceable>P</replaceable> rejects
 <replaceable>x</replaceable>, the `branch rejects
@@ -4587,8 +4545,7 @@ the `sort-comprehension in which it occurs.)
 <para>
 Restriction.
 The `closed-expression of a `quotient-pattern must have some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> [[-> Boolean]];
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
 linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
@@ -4596,8 +4553,17 @@ linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
 <!--  ================================================================= -->
 <para>
 Restriction.
+`Quotient-patterns may only be used in a `definition or
+`claim if the result is insensitive to the choice of representative
+from the equivalence class.
+&SpecwareV; does not attempt to generate proof obligations for
+establishing this.
+</para>
+<!--  ================================================================= -->
+<para>
+Restriction.
 The `closed-expression of a `relax-pattern must have some function
-sort <replaceable>S</replaceable> [[-> Boolean]].
+sort <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--  ================================================================= -->
 <para>
@@ -4634,7 +4600,7 @@ Step 1.  From `pattern <replaceable>P</replaceable>, form some
 <replaceable>P<subscript>t</subscript></replaceable> by
 replacing each `field-patterner consisting of a single
 `field-name <replaceable>F</replaceable> by the
-`field-patterner <replaceable>F</replaceable> [[=]] <replaceable>F</replaceable>
+`field-patterner <replaceable>F</replaceable>[[ = ]]<replaceable>F</replaceable>
 and replacing each `wildcard-pattern [[_]] in
 <replaceable>P</replaceable> by a unique fresh `name, that is,
 any `name that does not already occur in the `spec, directly or
@@ -4656,10 +4622,9 @@ Step 2.  Next, from
 (tamed) <emphasis>construed version</emphasis>
 <replaceable>P<subscript>tc</subscript></replaceable> by
 replacing each constituent `cons-pattern
-<replaceable>H</replaceable> [[::]] <replaceable>T</replaceable>
+<replaceable>H</replaceable>[[ :: ]]<replaceable>T</replaceable>
 by the `embed-pattern [[Cons
-(]]<replaceable>H</replaceable>[[,]]
-<replaceable>T</replaceable>[[)]], where [[Cons]] denotes the
+(]]<replaceable>H</replaceable>[[, ]]<replaceable>T</replaceable>[[)]], where [[Cons]] denotes the
 `constructor of the parameterized sort [[List]].
 For the example, the construed version is:
 [[
@@ -4678,8 +4643,7 @@ the set <replaceable>ED<subscript>P</subscript></replaceable> of
 expressive descendant
 if <replaceable>E</replaceable>
 can be obtained by repeatedly replacing some constituent
-`aliased-pattern <replaceable>L</replaceable> [[as]]
-<replaceable>R</replaceable>
+`aliased-pattern <replaceable>L</replaceable>[[ as ]]<replaceable>R</replaceable>
 of <replaceable>P<subscript>tc</subscript></replaceable>
 by one of the two `patterns
 <replaceable>L</replaceable> and
