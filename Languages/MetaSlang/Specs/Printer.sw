@@ -115,14 +115,29 @@ AnnSpecPrinter qualifying spec
 
  def [a] isFiniteList (term : ATerm a) : Option (List (ATerm a)) =  
    case term of
-     | Fun (Embed ("Nil", false), _, _) -> Some []
-     | Apply (Fun (Embed("Cons", true), _, _), Record ([(_, t1), (_, t2)], _), _) -> 
+     | Fun (Embed ("Nil", false), Base (Qualified("List", "List"), _, _), _) -> Some []
+     | Apply (Fun (Embed("Cons", true), 
+		   Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
+				   _),
+			  Base (Qualified("List", "List"), _, _),
+			  _),
+		   _),
+	      Record ([(_, t1), (_, t2)], _),
+	      _)
+       -> 
        (case isFiniteList t2 of
 	  | Some terms -> Some (cons (t1, terms))
 	  | _ ->  None)
-     | ApplyN ([Fun (Embed ("Cons", true), _, _), _,
+     | ApplyN ([Fun (Embed ("Cons", true), 
+		     Arrow (Product ([("1", _), ("2", Base (Qualified("List", "List"), _, _))], 
+				     _),
+			    Base (Qualified("List", "List"), _, _),
+			    _),
+		     _),
 		Record ([(_, t1), (_, t2)], _),
-		_], _) -> 
+		_],
+	       _) 
+       -> 
        (case isFiniteList t2 of
 	  | Some terms -> Some (cons (t1, terms))
 	  | _  ->  None)
