@@ -4,7 +4,7 @@
 ;;;	    "players.sw")
 
 (cl-user::sw-init)
-(cl-user::swpath (concatenate 'string (specware::getenv "SPECWARE4") ":/"))
+(cl-user::swpath (concatenate 'string (specware::getenv "SPECWARE4") #+mswindows";/" #-mswindows":/"))
 
 (test-directories ".")
 
