@@ -22,6 +22,7 @@ import org.openide.loaders.DataObject;
 import org.openide.filesystems.FileObject;
 import edu.kestrel.netbeans.MetaSlangDataObject;
 import edu.kestrel.netbeans.actions.ProcessUnitAction;
+import edu.kestrel.netbeans.actions.UpdateSWPathAction;
 import edu.kestrel.netbeans.parser.ParseSourceRequest;
 
 import edu.kestrel.netbeans.Util;
@@ -41,7 +42,7 @@ import org.openide.windows.OutputWriter;
  * @author  weilyn
  */
 public class LispSocketManager {
-    private static final boolean DEBUG = false;
+    private static final boolean DEBUG = true;
     private static final String END_OF_PARAMETER_MARKER = "ENDPARAMETER";
     
     private static Set machines = new HashSet() ;
@@ -342,18 +343,40 @@ public class LispSocketManager {
         writeToSpecwareStatus(results);
     }
     
-    public static String getSWPath() {
+    public static void getSWPath() {
         if (connectToLisp()) {
-            //TODO: return :swpath value
+            String message = "(USER::GET-SWPATH)";
+            try {
+                toLispStream.write(message.getBytes());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.updateSWPATH caught exception: "+ioe.getMessage());
+            }
         }
-        return "TODO";
+    }
+
+    public static void setSWPath(String currPath) {
+        if (DEBUG) {
+            Util.log("setSWPath called with "+currPath+", which has length="+currPath.length());
+        }
+        UpdateSWPathAction.finishPerformAction(currPath);
     }
     
-    public static void updateSWPath(String pathToAdd) {
+    public static void updateSWPath(String paths) {
         if (connectToLisp()) {
-            //TODO
+            String message = "";
+            message = message + "(USER::SWPATH ";
+            message = message + "\"" + paths + "\"";
+            message = message + ")";
             
-            Util.log("LispSocketManager.updateSWPATH needs to call :swpath with "+pathToAdd);
+            if (DEBUG) {
+                Util.log ("LispSocketManager.updateSWPath sending message: "+message);
+            }
+
+            try {
+                toLispStream.write(message.getBytes());
+            } catch (IOException ioe) {
+                Util.log("LispSocketManager.updateSWPATH caught exception: "+ioe.getMessage());
+            }
         }
     }
 
