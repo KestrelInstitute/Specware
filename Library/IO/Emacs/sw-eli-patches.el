@@ -213,6 +213,7 @@ it to the Lisp subprocess."
   (define-key m "\es" 'fi:re-search-forward-input)
   (define-key m "\e." 'sw:meta-point)
   (define-key m "\e*" 'sw:switch-to-lisp)
+  (define-key m '(tab) 'comint-dynamic-complete)
   (setq comint-prompt-regexp *allegro-prompt-regexp*)
   (define-key m "\C-a" 'comint-bol)
   (autoload 'comint-bol "comint" "\
