@@ -899,6 +899,12 @@
 ;			    (string (second r-args)) nil)))
 ;      (format t "No previous unit evaluated~%"))))
 
+(defun wiz (&optional (b nil b?))
+  (if b? (princ (setq SpecCalc::specwareWizard? (and b (if (member b '("nil" "NIL" "off") :test 'string=)
+							   nil t))))
+    (princ SpecCalc::specwareWizard?))
+  (values))
+
 #+allegro
 (top-level:alias ("wiz" :case-sensitive) (&optional (b nil b?))
   (if b? (princ (setq SpecCalc::specwareWizard? b))
@@ -911,7 +917,8 @@
 (defun swdbg (&optional (b nil b?))
   (if b? 
       (princ (setq System-spec::specwareDebug?
-	       (and b (not (equal b "nil")))))
+	       (and b (if (member b '("nil" "NIL" "off") :test 'string=)
+			  nil t))))
     (princ System-spec::specwareDebug?))
   (values))
 
