@@ -640,13 +640,17 @@ def mkParamsFromPattern(pat) =
  * given as input itself will be returned
  *)
 op findMatchingUserType: Spec * Sort -> Sort
-def findMatchingUserType(spc,recordSrt) =
+def findMatchingUserType(spc,srtdef) =
   let srts = sortsAsList(spc) in
-  let srtPos = sortAnn recordSrt in
-  let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(recordSrt, srt)) srts in
+  let srtPos = sortAnn srtdef in
+  let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(srtdef, srt)) srts in
   case foundSrt of
-     | Some (q, recordClassId, _) ->  Base(mkUnQualifiedId(recordClassId),[],srtPos)
-     | None -> recordSrt
+    | Some (q, classId, _) -> 
+      let _ = writeLine("matching user type found: sort "^classId^" = "^printSort(srtdef)) in
+      Base(mkUnQualifiedId(classId),[],srtPos)
+    | None ->
+      let _ = writeLine("no matching user type found for "^printSort(srtdef)) in
+      srtdef
 
 (**
  * looks in the spec for a user type that is a restriction type, where the given sort is the sort of the
