@@ -949,6 +949,7 @@ If anyone has a good algorithm for this..."
 
 (defun sw:process-current-file ()
   (interactive)
+  (save-buffer)
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
     (simulate-input-expression (concat ":sw " filename))))
 
