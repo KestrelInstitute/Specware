@@ -236,7 +236,9 @@
     ;; Currently
     (sw:eval-in-lisp-no-value (format "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)"
 				      base-world-name))
-    (sleep-for 10))
+    (sleep-for 3)
+    (simulate-input-expression "(exit)")
+    (sleep-for 2))
   (let ((sw:common-lisp-image-file base-world-name))
     (run-lisp-application))
   (unless (inferior-lisp-running-p)
