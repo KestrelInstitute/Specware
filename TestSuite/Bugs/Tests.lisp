@@ -131,6 +131,26 @@ Errors in $TESTDIR/Bug_0069/MorphismFromBase.sw
 5.21-5.36	: Error in morphism: Illegal to translate from base type: Integer
 ")
 
+ ("Bug 0069 : Morphism to base"
+  :show   "Bug_0069/MorphismToBase#M" 
+  :output ";;; Elaborating spec-morphism at $TESTDIR/Bug_0069/MorphismToBase#M
+;;; Elaborating spec at $TESTDIR/Bug_0069/MorphismToBase#S
+;;; Elaborating spec at $TESTDIR/Bug_0069/MorphismToBase#T
+
+morphism
+    spec  
+ type SS
+endspec
+
+    ->
+    spec  
+endspec
+
+    {type SS
+     +->
+     Char}
+")
+
  ("Bug 0074 : Similarity of definitions often missed."
   :show   "Bug_0074/EquivalentSorts#XX" 
   :output ";;; Elaborating diagram-colimit at $TESTDIR/Bug_0074/EquivalentSorts#XX
