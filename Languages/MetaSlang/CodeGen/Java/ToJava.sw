@@ -379,52 +379,59 @@ def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
    addMethDeclToSummandsM(opId, srthId, methodDecl, body)
   }
   
+%op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
+%def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
+%  {
+%   spc <- getEnvSpec;
+%   jcginfo <- getJcgInfo;
+%   jcginfo <- return(addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo));
+%   putJcgInfo jcginfo
+%  }
+
 op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
 def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
   {
+   rngId <- srtIdM rng;
    spc <- getEnvSpec;
-   jcginfo <- getJcgInfo;
-   jcginfo <- return(addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo));
-   putJcgInfo jcginfo
+   case splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars of
+     | Some (vars1, varh, vars2) ->
+       let (vh, _) = varh in
+       {
+	methodBody <- mkNonCaseMethodBodyM(vh, body);
+	%assertStmt <- mkAssertFromDomM dom;
+	fpars <- varsToFormalParamsM (vars1++vars2);
+	case varh of
+	  | (_, Base (Qualified(q, srthId), _, _)) ->
+	    %% add the assertion method
+	    let asrtOpId = mkAssertOp(opId) in
+	    let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
+	    {
+	     assertStmt0 <-
+	       case mkAsrtExpr(spc,vars,dompreds) of
+		 | None -> return []
+		 | Some t ->
+		   {
+		    tcx <- return(StringMap.insert(empty,varh.1,mkThisExpr()));
+		    (s,asrtExpr,_,_) <- termToExpressionM(tcx,t,0,0);
+		    if s = [] then 
+		      return [Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]
+		    else
+		     let asrtBodyStmt = mkReturnStmt(asrtExpr) in
+		     let asrtMethodDecl = (([],Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])) in
+		     {
+		      addMethDeclToClsDeclsM(asrtOpId,srthId,asrtMethodDecl);
+		      return (s++assertStmt)
+		     }
+		   };
+		   %% 
+	     let methodDecl = (([], Some (tt(rngId)), opId, fpars, []), Some (assertStmt0++methodBody)) in
+	     addMethDeclToClsDeclsM(opId, srthId, methodDecl)
+	    }
+	 | _ -> % the type of varh is not a base type:
+	    raise(Fail("can't happen: user type is not flat"),termAnn(body))
+	}
+    | _ -> raise(Fail("no user type found in the arg list of op "^opId),termAnn(body))
   }
-
-op addNonCaseMethodsToClsDecls: Spec * Id * List Type * List(Option Term) * Type * List Var * Term * JcgInfo -> JcgInfo
-def addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo) =
-  %let _ = writeLine(opId^": NonCaseMethods") in
-  let (rngId,col0) = srtId(rng) in
-  case splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars of
-    | Some (vars1, varh, vars2) ->
-      (let (vh, _) = varh in
-       let (methodBody,col1) = mkNonCaseMethodBody(vh, body, spc) in
-       let (assertStmt,col2) = mkAssertFromDom(dom, spc) in
-       let (fpars,col3) = varsToFormalParams spc (vars1++vars2) in
-       let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,concatCollected(col1,concatCollected(col2,col3)))) in
-       case varh of
-	 | (_, Base (Qualified(q, srthId), _, _)) ->
-	 %% add the assertion method
-	 let asrtOpId = mkAssertOp(opId) in
-	 let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
-	 let (jcginfo,assertStmt) =
-	     case mkAsrtExpr(spc,vars,dompreds) of
-	       | None -> (jcginfo,[])
-	       | Some t ->
-	       let tcx = StringMap.insert(empty,varh.1,mkThisExpr()) in
-	       let ((s,asrtExpr,_,_),col4) = termToExpression(tcx,t,0,0,spc) in
-	       let jcginfo = addCollectedToJcgInfo(jcginfo,col4) in
-	       if s = [] then (jcginfo,[Stmt(Expr(mkMethInvName(([],"assert"),[asrtExpr])))]) else
-	       let asrtBodyStmt = mkReturnStmt(asrtExpr) in
-	       let asrtMethodDecl = (([],Some(Basic JBool,0),asrtOpId,fpars,[]),Some([Stmt asrtBodyStmt])) in
-	       let jcginfo = addMethDeclToClsDecls(asrtOpId,srthId,asrtMethodDecl,jcginfo) in
-	       (jcginfo,s++assertStmt)
-	 in
-	 %% 
-	 let methodDecl = (([], Some (tt(rngId)), opId, fpars, []), Some (assertStmt++methodBody)) in
-	 %let _ = writeLine(";;; -> method in class(1) "^srthId) in
-	 addMethDeclToClsDecls(opId, srthId, methodDecl, jcginfo)
-	 | _ ->
-	   (warnNoCode(termAnn(body),opId,Some("can't happen: user type is not flat"));jcginfo)
-	  )
-    | _ -> (warnNoCode(termAnn(body),opId,Some("no user type found in the arg list of op "^opId));jcginfo)
 
 (**
  * this op generates the "default" method in the summand super class. If the list of cases contains a wild pattern the corresponding
@@ -460,12 +467,14 @@ def mkDefaultMethodForCase(spc ,opId,_(* dom *),_(* dompreds *),rng,vars,body) =
       let col = concatCollected(col0,concatCollected(col1,col2)) in
       (Some((mods, Some (tt(rngId)), opId, fpars, []), opt_mbody),col)
 
-op mkNonCaseMethodBody: Id * Term * Spec -> Block * Collected
-def mkNonCaseMethodBody(vId, body, spc) =
+op mkNonCaseMethodBodyM: Id * Term -> JGenEnv Block
+def mkNonCaseMethodBodyM(vId, body) =
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
-  let ((b, k, l),col) = termToExpressionRet(tcx, body, 1, 1, spc) in
-  (b,col)
+  {
+   (b, k, l) <- termToExpressionRetM(tcx, body, 1, 1);
+   return b
+  }
 
 op unfoldToCoProduct: Spec * Sort -> Sort
 def unfoldToCoProduct(spc,srt) =
