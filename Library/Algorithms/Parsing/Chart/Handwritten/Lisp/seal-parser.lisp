@@ -49,6 +49,7 @@
     (install-default-semantic-alist parser) ; sets parser-default-semantic-alist
     (install-special-rules          parser) ; finds toplevel, symbol, number, string, etc.
     ;;
+    (propagate-optionals            parser) ; items referencing optional rules become optional themselves
     (install-pprinters              parser) ; sets parser-ht-expr-to-pprint, 
                                             ;   parser-ht-type-to-pprint,
                                             ;   parser-ht-car-to-pprint
@@ -856,3 +857,84 @@
 ;;; ============================================================================
 
     
+(defun propagate-optionals (&optional (parser *current-parser*))
+  (when-debugging
+   (when *verbose?*
+     (comment "========================================")
+     (comment "First round: look for optional rules."))
+   (loop 
+     ;; iterate to fixpoint   
+     (unless (propagate-optional-one-round parser)
+       (return nil))
+     (comment "========================================")
+     (comment "New round: look for more optional rules."))
+   (comment "========================================")))
+
+(defun propagate-optional-one-round (parser)
+  (let ((ht-name-to-rule (parser-ht-name-to-rule parser))
+	(changed? nil)) 
+    ;;
+    ;; make rules optional if all their items are optional
+    ;;
+    (maphash #'(lambda (name rule)
+		 (let* ((items (parser-rule-items rule))
+			(n (length items))
+			(all-optional? 
+			 (and (> n 0)
+			      (dotimes (i n t)
+				(let ((item (svref items i)))
+				  (unless (null item)
+				    (when (not (parser-rule-item-optional? item))
+				      (return nil))))))))
+		   (when all-optional?
+		     (unless (parser-rule-optional? rule)
+		       (setq changed? t)
+		       (setf (parser-rule-optional? rule) t)
+		       (let ((semantic-pattern (parser-rule-semantics rule)))
+			 (when (not (null semantic-pattern))
+			   (let ((semantic-alist nil)
+				 (items (parser-rule-items rule)))
+			     (dotimes (i n)
+			       (let ((item (svref items i)))
+				 (unless (null item)
+				   (let ((index (parser-rule-item-semantic-index item)))
+				     (push (cons index (parser-rule-item-default-semantics item))
+					   semantic-alist)))))
+			     (setf (parser-rule-default-semantics rule)
+			       (eval (sublis-result semantic-alist semantic-pattern))))))
+		       ;; (when (parser-repeat-rule-p rule) (setf (parser-rule-default-semantics rule) '()))
+		       (when-debugging
+			(when *verbose?*
+			  (comment "Rule ~S is now optional with semantics ~S." 
+				   rule
+				   (parser-rule-default-semantics rule))))
+		       ))))
+	     ht-name-to-rule)
+    ;;
+    ;; make items optional if they invoke an optional rule 
+    ;;
+    (maphash #'(lambda (rule-name rule)
+		 (let* ((items (parser-rule-items rule))
+			(n (length items)))
+		   (dotimes (i n t)
+		     (let ((item (svref items i)))
+		       (unless (null item)
+			 (let* ((item-rule-name (parser-rule-item-rule item))
+				(item-rule (gethash item-rule-name ht-name-to-rule)))
+			   (when (parser-rule-optional? item-rule)
+			     (unless (parser-rule-item-optional? item)
+			       (setq changed? t)
+			       (setf (parser-rule-item-optional? item) t)
+			       (setf (parser-rule-item-default-semantics item) (parser-rule-default-semantics item-rule))
+			       (when-debugging
+				(when *verbose?*
+				  (comment "In rule ~30S, item ~D (~S) is now optional with semantics ~S."
+					   rule-name i item-rule-name
+					   (parser-rule-item-default-semantics item))))))))))))
+	     ht-name-to-rule)
+    ;; changed? will be NIL once we reach a fixpoint (probably about 2 rounds)
+    changed?))
+
+  
+
+

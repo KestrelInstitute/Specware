@@ -1366,7 +1366,7 @@ If we want the precedence to be optional:
   (make-sc-translate-expr 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-TRANSLATE-RULES ()
-  (1 (:optional (:repeat+ :SC-TRANSLATE-RULE ",")))
+  (1 (:repeat* :SC-TRANSLATE-RULE ","))
   (make-sc-translate-rules 1))
 
 (define-sw-parser-rule :SC-TRANSLATE-RULE ()

@@ -80,11 +80,20 @@
 	   (:TUPLE    (build-parser-tuple-rule  parser name (rest pattern)))
 	   (:PIECES   (build-parser-pieces-rule parser name (rest pattern)))
 	   (:REPEAT   (build-parser-repeat-rule parser name (rest pattern)))
-	   (:REPEAT*  (build-parser-rule parser name 
-					 `(:anyof
-					   ((:tuple (1 (:optional (:REPEAT ,@(rest pattern)))))
-					    (if (eq '1 :unspecified) '() (list . 1))))))
-	   (:REPEAT+  (build-parser-rule parser name 
+	   (:REPEAT*  (let* ((rulename 
+			      (build-parser-rule parser name 
+						 `(:anyof 
+						   ((:tuple (1 (:optional (:REPEAT ,@(rest pattern))))) 
+						    (if (eq '1 :unspecified) '() (list . 1)))
+						   )))
+			     (rule (gethash rulename (parser-ht-name-to-rule parser))))
+			(when-debugging
+			 (when *verbose?*
+			   (comment "Rule ~S is now optional: ~S." rulename rule)))
+			(setf (parser-rule-optional? rule) t)
+			(setf (parser-rule-default-semantics rule) '())
+			rulename))
+           (:REPEAT+  (build-parser-rule parser name 
 					 `(:anyof
 					   ((:tuple (1 (:REPEAT ,@(rest pattern))))
 					    (list . 1)))))
