@@ -155,7 +155,8 @@ accepted in lieu of prompting."
 
   (define-key map "\M-."     'specware-meta-point)
   (define-key map "\M-,"     'continue-specware-meta-point)
-  (define-key map "\C-c\C-p"    'process-specware-file)
+  (define-key map "\C-c\C-p" 'process-specware-file)
+  (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
   (define-key map "\C-?"     'backward-delete-char-untabify)
@@ -959,8 +960,12 @@ If anyone has a good algorithm for this..."
     (end-of-line) (insert "\n") (indent-to (+ sw:indent-level indent))))
 
 (defun process-specware-file (filename)
-  (interactive "fProcess Specware File: ")
+  (interactive "fProcess Specware Unit: ")
   (simulate-input-expression (concat ":sw " (expand-file-name filename))))
+
+(defun cd-current-directory ()
+  (interactive)
+  (simulate-input-expression (concat ":cd " default-directory)))
 
 (defvar *pending-specware-meta-point-results* nil)
 
