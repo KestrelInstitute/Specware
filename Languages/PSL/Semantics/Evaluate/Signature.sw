@@ -46,6 +46,8 @@ SpecCalc qualifying spec {
   op evaluateTranslate : SpecCalc.Term Position -> TranslateExpr Position
                         -> Env ValueInfo
 
+  op evaluateObligations : SpecCalc.Term Position -> Env ValueInfo
+
   op evaluatePSpec : List (PSpecElem Position) -> SpecCalc.Env ValueInfo
 }
 \end{spec}

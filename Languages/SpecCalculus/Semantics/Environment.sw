@@ -14,7 +14,7 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Printer
   import /Library/IO/Primitive/IO
   import /Library/Structures/Data/Monad/Base
-  import /Languages/MetaSlang/Specs/Categories/AsRecord	
+  import Value
 \end{spec}
 
 The Monad/Base spec supplies declarations of
@@ -27,24 +27,6 @@ diagram, morphism etc.  We combine them with a coproduct.
   sort Info
   % sort Spec    = ASpec StandardAnnotation
   % sort PosSpec = ASpec Position
-
-  sort Value =
-    | Spec  Spec
-    | Morph Morphism
-    | Diag  (Diagram (Spec,Morphism))
-    | InProcess			  % Used for catching circular definitions
-    % | DiagMorph
-
-  op showValue : Value -> String
-  def showValue value = ppFormat (ppValue value)
-
-  op ppValue : Value -> Doc
-  def ppValue value =
-    case value of
-      | Spec spc -> ppString (printSpec spc)
-      | Morph morph -> ppMorphism morph
-      | Diag dgm -> ppDiagram dgm
-      | InProcess -> ppString "InProcess"
 \end{spec}
 
 The interpreter maintains state.  The state of the interpreter includes

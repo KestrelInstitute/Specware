@@ -6,7 +6,7 @@ Much extended from r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagra
 SpecCalc qualifying spec {
   import Signature
   import /Languages/MetaSlang/Specs/Categories/AsRecord
-   import /Library/Legacy/DataStructures/ListUtilities     % for listUnion
+  import /Library/Legacy/DataStructures/ListUtilities     % for listUnion
 \end{spec}
 
 When constructing the semantic representation of a diagram, what are
@@ -70,8 +70,8 @@ the typechecker complains. I don't understand it.
            case termValue of
              | Morph morph ->
                 if edgeInDiagram? dgm edgeId then
-                  if (domNode = eval (src (shape dgm)) edgeId)
-                   & (codNode = eval (target (shape dgm)) edgeId) then
+                  if (domNode = Sketch.eval (src (shape dgm)) edgeId)
+                   & (codNode = Sketch.eval (target (shape dgm)) edgeId) then
                     if (morph = edgeLabel dgm edgeId) then
                       return (dgm, max (timeStamp, termTime), listUnion (depURIs, termDeps))
                     else
