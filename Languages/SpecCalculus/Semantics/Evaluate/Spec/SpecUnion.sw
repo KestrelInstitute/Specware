@@ -60,6 +60,7 @@ SpecUnion qualifying spec {
 		    specs)
 
  def unionSortMaps old_sort_map new_sort_map =
+   %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_sort_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
    let 
@@ -80,6 +81,7 @@ SpecUnion qualifying spec {
     foldOverQualifierMap augmentSortMap old_sort_map new_sort_map 
 
  def unionOpMaps old_op_map new_op_map =
+   %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_op_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
    let 
