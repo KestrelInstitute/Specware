@@ -1,7 +1,6 @@
 JGen qualifying spec
 
 import IJavaCodeGen
-%import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
@@ -45,15 +44,15 @@ def baseSrtToJavaTypeM(srt) =
 op emptyJSpec: JSpec
 def emptyJSpec = (None, [], [])
 
-%op emptyClsBody: ClsBody
-%def emptyClsBody =
-%  { handwritten = [],
-%    staticInits = [],
-%    flds        = [],
-%    constrs     = [], 
-%    meths       = [],
-%    clss        = [],
-%    interfs     = [] }
+op JGen.emptyClsBody: ClsBody
+def JGen.emptyClsBody =
+  { handwritten = [],
+    staticInits = [],
+    flds        = [],
+    constrs     = [], 
+    meths       = [],
+    clss        = [],
+    interfs     = [] }
 
 op setFlds: ClsBody * List FldDecl -> ClsBody
 def setFlds(clsBody, fldDecls) =
@@ -98,7 +97,7 @@ def appendMethodBody(m as (methHdr,methBody),b) =
 
 op mkPrimOpsClsDecl: String -> ClsDecl
 def mkPrimOpsClsDecl primitiveClassName =
-  ([], (primitiveClassName, None, []), emptyClsBody)
+  ([], (primitiveClassName, None, []), Java.emptyClsBody)
 
 op varsToFormalParamsM: Vars -> JGenEnv (List FormPar)
 def varsToFormalParamsM vars =
