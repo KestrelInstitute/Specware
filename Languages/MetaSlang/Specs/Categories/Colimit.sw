@@ -9,7 +9,7 @@ spec {
  %% --------------------------------------------------------------------------------
  %% Primary routine defined in this spec
 
- op colimit                : SpecDiagram -> SpecInitialCocone
+ op specColimit                : SpecDiagram -> SpecInitialCocone
 
  %% --------------------------------------------------------------------------------
  %% These sorts and ops provide a context for colimits in the category of specs,
@@ -59,7 +59,7 @@ spec {
 
  %% --------------------------------------------------------------------------------
 
- def colimit dg =
+ def specColimit dg =
   %% TODO:  Make this smarter about choosing primary names.
   %%        (E.g. prefer names that are in cod spec of a morphism over those in dom spec.)        
   %%        Also, restrict printing of sorts and ops to primary name, 

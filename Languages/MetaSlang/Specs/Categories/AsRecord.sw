@@ -89,7 +89,7 @@ SpecCalc qualifying spec {
        sortMap = emptyMap,
        opMap   = emptyMap
     },
-    colimit       = colimit,
+    colimit       = specColimit,
     initialObject = emptySpec,
     compose       = compose,
     % ppObj         = fn spc -> ppString (printSpec spc),
