@@ -300,16 +300,16 @@ spec
  % Assuming that op names are unambiguous in a spec
  % one can obtain the sort of ops given the name and spec only.
 
-(* ### unused
- op  getSortOfOp : Spec * String * String -> TyVars * Sort
- def getSortOfOp (spc, qid, opName) =
-  % sjw: (4/02) Not sure if should check imports
-  case findAQualifierMap (spc.ops, qid, opName)
-    of None -> (printSpecToTerminal spc;
-                System.fail ("Operator "^qid^"."^opName^" has not been declared"
-                             ))
-     | Some (op_names, fixity, (tyVars, srt), opt_def) -> (tyVars, srt)
-*)
+%%  ### unused
+%%  op  getSortOfOp : Spec * String * String -> TyVars * Sort
+%%  def getSortOfOp (spc, qid, opName) =
+%%   % sjw: (4/02) Not sure if should check imports
+%%   case findAQualifierMap (spc.ops, qid, opName)
+%%     of None -> (printSpecToTerminal spc;
+%%                 System.fail ("Operator "^qid^"."^opName^" has not been declared"
+%%                              ))
+%%      | Some (op_names, fixity, (tyVars, srt), opt_def) -> (tyVars, srt)
+%% 
 
  %- ----------------------------------------------------------------
  %- get dependencies transitively
