@@ -684,7 +684,7 @@ expressing such obligations.</para>
 command:</para>
 
 [[
-||    :show Symbols_Ref_Oblig
+||    :show MatchingObligations#Symbols_Ref_Oblig
 ]]
 
 <para>The absence of conjectures indicates that no proof obligations
