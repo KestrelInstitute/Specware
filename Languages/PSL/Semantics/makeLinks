@@ -20,3 +20,4 @@ ln -s ../../../SpecCalculus/Semantics/Evaluate/URI.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Spec .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/URI .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Substitute .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Snark .
