@@ -193,7 +193,9 @@ spec
 					endLoop   = endloop,
 					continue  = continue},
 				  newG)
-	in foldl (fn (x,newG) -> buildStructuredGraph(x,exits,newG))
+	in foldl (fn (x,newG) ->
+		  if x = continue then newG
+		    else buildStructuredGraph(x,exits,newG))
 	     newG loopExits
 
       def loopHead(head,loopExits,newG) =
@@ -215,7 +217,9 @@ spec
 	    let continue = commonSuccessor(trueBranch,falseBranch,baseG) in
 	    let newG = buildStraightLine(trueBranch, [continue],newG) in
 	    let newG = buildStraightLine(falseBranch,[continue],newG) in
-	    let newG = buildStraightLine(continue,   exits,     newG) in
+	    let newG = if continue = trueBranch or continue = falseBranch
+	                then newG
+			else buildStraightLine(continue,exits,newG) in
 	    if falseBranch = continue
 	      then setNodeContent(nd,IfThen {condition   = condition,
 					     trueBranch  = trueBranch,
