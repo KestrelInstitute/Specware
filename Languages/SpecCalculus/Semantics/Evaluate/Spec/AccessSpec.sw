@@ -115,6 +115,8 @@ def getStringAttributesFromSpec spc =
 
    op basicQualifier?   : Qualifier   -> Boolean
    op basicQualifiedId? : QualifiedId -> Boolean
+   op basicSortName?    : QualifiedId -> Boolean
+   op basicOpName?      : QualifiedId -> Boolean
 
   def basicQualifiers = [
 			 "Boolean",    % can appear in raw translation rules
@@ -127,10 +129,24 @@ def getStringAttributesFromSpec spc =
 			 "Nat",
 			 "Option",
 			 "String",
-			 "WFO"         % TODO: basic ??
+			 "WFO",        % TODO: basic ??
+			 "System"      % TODO: basic ??
 			]
 
-  def basicQualifier?              q     = member (q, basicQualifiers)
-  def basicQualifiedId? (Qualified(q,_)) = member (q, basicQualifiers)
+  def basicQualifier? q = member (q, basicQualifiers)
+  (* def basicQualifiedId? (Qualified(q,_)) = member (q, basicQualifiers) *)
+
+  def basicQualifiedId? qid =
+    let (basic_sort_names, basic_op_names) = getBaseNames() in
+    member (qid, basic_sort_names) || 
+    member (qid, basic_op_names)
+
+  def basicSortName? qid =
+    let (basic_sort_names, _) = getBaseNames () in
+    member (qid, basic_sort_names)
+
+  def basicOpName? qid =
+    let (_, basic_op_names) = getBaseNames () in
+    member (qid, basic_op_names)
 
 endspec
