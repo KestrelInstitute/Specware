@@ -10,7 +10,7 @@ spec {
  %   . deletes position information
  %   . TODO: inserts default branches in patterns
 
- op convertPosSpecToSpec                     :                      PosSpec         -> Spec
+ op convertPosSpecToSpec: PosSpec -> Spec
 % op convertPTermToTerm                       : MetaTyVarsContext -> PTerm           -> Term
 % op convertPVarToVar                         : MetaTyVarsContext -> PVar            -> Var
 % op convertPSortToSort                       : MetaTyVarsContext -> PSort           -> Sort 

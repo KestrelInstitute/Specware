@@ -449,7 +449,7 @@ AnnSpec qualifying spec {
  def addLocalOpName (spc as {importInfo = {imports, importedSpec, localOps, localSorts},
                              sorts, ops, properties},
                      new_local_op) =
-   if memberNames(new_local_op,localSorts)
+   if memberNames(new_local_op,localOps)
      then spc
      else {importInfo = {imports      = imports,
                          importedSpec = importedSpec,
