@@ -45,11 +45,11 @@
  *lisp-message-interrupt-signal-number* to the lisp process, whose
  handler should make sure Lisp is ready to deal with an incoming message."
 ;  (send-signal-to-lisp *lisp-message-interrupt-signal-number*)
-  (sw:eval-in-lisp (format "(emacs::make-process '%s)" string)))
+  (sw:eval-in-lisp (format "(io-spec::makeProcess '%s)" string)))
 
 (defun sw:eval-interruptable-in-lisp (string)
   (setq sw:*current-specware-process* 
-	(sw:eval-in-lisp (format "(emacs::make-process '%s)" string))))
+	(sw:eval-in-lisp (format "(IO-spec::makeProcess '%s)" string))))
 
 
 (defun send-preemptive-message-to-lisp (string)

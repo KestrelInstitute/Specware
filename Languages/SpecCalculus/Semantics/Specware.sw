@@ -78,6 +78,32 @@ exists with a non-zero status and hence the bootstrap fails.
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
+evaluateUnitId is designed to be called from application programs to
+get a unit from a unit id string.
+
+\begin{spec}
+  op evaluateUnitId: String -> Option Value
+  def evaluateUnitId(path) =
+    let run = {
+      restoreSavedSpecwareState;
+      currentURI <- pathToCanonicalURI ".";
+      setCurrentURI currentURI;
+      %% removeSWsuffix could be generalized to extractURIpath
+      %% and then the code to create the position would use the
+      %% start and end positions of path_body within path
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      (val,_,_) <- evaluateURI position uri;
+      saveSpecwareState;
+      return val
+    } in
+    case run ignoredState of
+      | (Ok val,_) -> Some val
+      | (Exception _,_) -> (warn "evaluateUnitId failed"; None)
+\end{spec}
+
+
 We provide two functions (callable from the Lisp read-eval-print loop)
 that invoke the corresponding evaluation functions for the Spec Calculus.
 The first just evaluates a URI. The second evaluates a URI and then

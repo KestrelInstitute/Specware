@@ -67,7 +67,9 @@ IO qualifying spec {
   op FileNameInSpecwareHome: FileString -> FileString
 
   op gotoFilePosition: FileString * Nat * Nat -> ()
+  op emacsEval: String -> {}
 
+  op chooseMenu: List String -> Integer
   %% No defs here -- see ...
 }
 \end{spec}

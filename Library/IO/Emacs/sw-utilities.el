@@ -554,7 +554,9 @@
   (select-frame (make-frame (`((left (,@ 400)) 
                                (top (,@ 400)) 
                                (width (,@ 80)) 
-                               (height (,@ 8)))))) 
+                               (height (,@ 8))
+			       (has-modeline-p nil)
+			       (minibuffer . none))))) 
   (switch-to-buffer (get-buffer-create "*Choose an alternative*")) 
   (setq buffer-read-only nil) 
   (erase-buffer)
@@ -565,15 +567,15 @@
   (add-choices choices)
 ) 
  
-(defun return-choice-from-buffer (choice) 
+(defun return-choice-from-buffer (choice event) 
   (interactive) 
   (send-preemptive-message-to-lisp (format "(emacs::choiceItem %S)" choice)) 
-  (delete-frame)) 
+  (delete-frame (event-frame event))) 
  
-(defun cancel-choice-from-buffer () 
-  (interactive) 
+(defun cancel-choice-from-buffer (event) 
+  (interactive "e") 
   (send-preemptive-message-to-lisp "(emacs::choiceItem -1)") 
-  (delete-frame)) 
+  (delete-frame (event-frame event))) 
 
 (defvar *numbered-choices*)
 
@@ -581,7 +583,9 @@
   (interactive) 
   (let* (
 	 (counter 0)
-	 (numbered-choices (mapcar (lambda (ch) (progn (setq counter (1+ counter)) (cons ch counter))) choices))
+	 (numbered-choices (mapcar (lambda (ch) (progn (setq counter (1+ counter))
+						       (cons ch counter)))
+				   choices))
 	 (item-choices (mapcar (lambda(ch) (list 'item ch)) choices))
 	 )
     (make-local-variable '*numbered-choices*)
@@ -589,16 +593,19 @@
     (apply 'widget-create
 	   (list*
 	    'radio-button-choice  
-	    :value (car choices) 
-	    :notify (lambda (widget &rest ignore) 
-		      (let* ((value (widget-value widget))
-			     (numbered-choices *numbered-choices*)
-			     (int-value (cdr (find-if (lambda(ch) (string= (car ch) value)) numbered-choices))))
-			(return-choice-from-buffer int-value)))
-		      
+	    :value nil 
+	    :notify 'choice-notify		      
 	    item-choices))
     (message "Choose an entry")))
- 
+
+(defun choice-notify (widget ignore event)
+  (let* ((value (widget-value widget))
+	 (numbered-choices *numbered-choices*)
+	 (int-value (cdr (find-if (lambda(ch)
+				    (string= (car ch) value))
+				  numbered-choices))))
+    (return-choice-from-buffer int-value event)))
+
 
 (defun testchoices() 
    (open-choice-window '("Choice 1" "Choice 2" "Choice 3")))

@@ -57,7 +57,9 @@
 (defparameter |!string| nil)
 
 (defun format1 (s control data1)
-  (format s control data1))
+  (if (equal control "~A")
+      (princ data1 s)
+    (format s control data1)))
 
 (defun format2 (s control data1 data2)
   (declare (ignore data2))
@@ -148,3 +150,38 @@
 (defun gotoFilePosition (file line col)
   (emacs::goto-file-position file line col))
 
+(defun emacsEval (str)
+  (emacs::eval-in-emacs str))
+
+(defun chooseMenu (strs)
+  (emacs::open-multiple-choice-window strs))
+
+;;; The following used by send-message-to-lisp
+(defvar emacs::*procs* 0)
+
+(defun makeProcess (sym)
+  (let* 
+      ((procNum emacs::*procs*)
+       (procName (format nil "Specware process : ~S" procNum)) 
+       (proc #+allegro
+	     (mp:process-run-function procName 
+				      #'tpl:start-interactive-top-level
+				      excl::*initial-terminal-io*
+				      #'my-eval
+				      (list sym))
+	     #+Lispworks
+	     (mp:process-run-function procName nil
+				      #'my-eval
+				      (list sym)))
+       )
+    (declare (ignore proc))
+    (setq emacs::*procs* (1+ procNum))
+    procName))
+
+(defun my-eval (x)
+  (let ((*standard-input* *terminal-io*)
+	(*standard-output* *terminal-io*))
+    (eval x)))
+
+(defun emacs::kill-process (procName)
+  (mp::process-kill (mp::process-name-to-process procName)))
