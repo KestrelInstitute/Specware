@@ -4540,13 +4540,12 @@ Sample `matches:
 ]]
 Restriction.
 In a `match, given the environment, there must be a
-unique type $T$ to which the `pattern
+unique type $S$ to which the `pattern
 of each `branch conforms, and a unique type
 $T$ to which the `expression of each
 `branch conforms, and then the `match has type
 [[$S$ -> $T$]].
-The `pattern of each `branch then has
-type $S$.
+The `pattern of each `branch then has type $S$.
 </para>
 <!-- ================================================================= -->
 <para>
