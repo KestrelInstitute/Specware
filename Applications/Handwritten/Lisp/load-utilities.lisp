@@ -170,7 +170,8 @@
     (concatenate 'string dirname "/")))
 
 (defun directory? (pathname)
-  (null (pathname-name pathname)))
+  (and (null (pathname-name pathname))
+       (probe-file pathname)))
 
 (defun extend-directory (dir ext-dir)
   (make-pathname :directory
