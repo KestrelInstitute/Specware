@@ -21,7 +21,7 @@ SpecCalc qualifying spec
   % This is defined /Languages/SpecCalculus/Semantics/Monad but that imports a whole bunch of
   % other stuff. Later the above gets imported but requalified and if we import it
   % here we break the build
-  op SpecCalc.foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
+  % op SpecCalc.foldM : fa (a,b) (a -> b -> SpecCalc.Env a) -> a -> List b -> SpecCalc.Env a
 \end{spec}
 
 An Oscar spec consists of a collection of "elements" called "OscarSpec
@@ -72,7 +72,7 @@ axiom call is exp ((u,5),z',((u,v),(u',v')))
   def sortOpInfoList infoList =
     let
       def cmpOpInfo (o1:Op.OpInfo,o2:Op.OpInfo) =
-        (show (idOf o1)) leq (show (idOf o2))
+        (Id.show (idOf o1)) leq (Id.show (idOf o2))
     in
       sortList cmpOpInfo infoList
 
@@ -147,10 +147,7 @@ to the initial and final states.
 
           finalSpecElab <- elaborate finalSpec; 
 
-          bSpec <- return (
-             let (initial,final) = (mkNatVertex 0 procId, mkNatVertex 1 procId) in
-             let bSpec = addMode (BSpec.make initial finalSpecElab) final finalSpecElab in
-             bSpec withFinal (VrtxSet.singleton final));
+          (bSpec,initialMode) <- return (BSpec.make procId finalSpecElab);
           proc <- return (makeProcedure (map refOf argVars) varsInScope
                                  returnInfo
                                  (Oscar.modeSpec oscarSpec)
@@ -190,20 +187,18 @@ the full bSpec.
       | Proc (procName,procInfo) -> {
            procId <- return (makeId procName);
            procValue <- return (eval (procedures oscarSpec, procId));
-           (initial,final) <- return (mkNatVertex 0 procId, mkNatVertex 1 procId);
-           newModeSpec <- union (modeSpec (bSpec procValue) initial) (modeSpec oscarSpec);
+           (newBSpec,finalMode) <- return (newFinalMode (bSpec procValue) (Mode.modeSpec (initial (bSpec procValue))));
            ctxt : CompCtxt <-
                 return {
                   procedures = procedures oscarSpec,
-                  modeSpec = newModeSpec,
-                  graphCounter = 2,  % = final + 1
+                  modeSpec = Mode.modeSpec (initial (bSpec procValue)),
                   varCounter = 0,
-                  initial = initial,
-                  final = final,
-                  exit = final,
+                  initial = initial (bSpec procValue),
+                  final = finalMode,
+                  exit = finalMode,
                   break = None,
                   continue = None,
-                  bSpec = bSpec procValue,
+                  bSpec = newBSpec,
                   procId = procId,
                   returnInfo = returnInfo procValue
                 };
@@ -430,13 +425,13 @@ axiom but we might be better off without an axiom at all.
                   connectVertices ctxt (initial ctxt) (exit ctxt) apexSpec OpRefSet.empty
                 }
             | (None,Some returnRef) -> {
-                  returnVar <- deref (specOf (modeSpec (bSpec ctxt) (exit ctxt)), returnRef);
+                  returnVar <- deref (specOf (Mode.modeSpec (exit ctxt)), returnRef);
                   specError ("Procedure has return sort " ^ (show (type returnVar)) ^ " but no return value") position
                 }
             | (Some term, None) ->
                 specError "Procedure with unit sort returns a value" position
             | (Some term, Some returnRef) -> {
-                  returnVar <- deref (specOf (modeSpec (bSpec ctxt) (exit ctxt)), returnRef);
+                  returnVar <- deref (specOf (Mode.modeSpec (exit ctxt)), returnRef);
                   lhs <- mkFun (idToNameRef (idOf returnVar), type returnVar, position);
                   saveLast <- return (final ctxt);
                   ctxt <- return (ctxt withFinal (exit ctxt));
@@ -549,7 +544,7 @@ This should be an invariant. Must check.
      (findTheVariable (modeSpec ctxt) leftId)
      (fn except ->
         case except of
-          | SpecError (pos,str) -> specError ("Variable '" ^ (show leftId) ^ "' is undefined") position
+          | SpecError (pos,str) -> specError ("Variable '" ^ (Id.show leftId) ^ "' is undefined") position
           | _ -> raise except);
     apexSpec <- addVariable (modeSpec ctxt) (varInfo withId (makePrimedId leftId)) position; 
     axm <- mkEquality (leftPrimedTerm,rhs,position);
@@ -762,7 +757,7 @@ the procedure is the unit \verb+()+.
         (fn except ->
            case except of
              | SpecError (pos,str) ->
-                 specError ("Call to undefined procedure: " ^ (show procId)) position
+                 specError ("Call to undefined procedure: " ^ (Id.show procId)) position
              | _ -> raise except);
       procInfo <- return (eval (procedures ctxt, procId)); 
       changedVars <- return (varsInScope procInfo);
@@ -782,7 +777,7 @@ the procedure is the unit \verb+()+.
                    (findTheVariable (modeSpec ctxt) leftId)
                    (fn except ->
                       case except of
-                        | SpecError _ -> specError ("Variable '" ^ (show leftId) ^ "' is undefined") position
+                        | SpecError _ -> specError ("Variable '" ^ (Id.show leftId) ^ "' is undefined") position
                         | _ -> raise except);
                return (leftPrimedTerm, ListUtilities.insert (refOf varInfo, changedVars))
             };
@@ -841,11 +836,12 @@ and compile the rest between the new and final vertex.
       | [] -> return ctxt
       | [cmd] -> compileCommand ctxt cmd
       | cmd::rest -> {
-            (newVertex,ctxt) <- newVertex ctxt; 
-            ctxt <- ctxt withBSpec (addMode (bSpec ctxt) newVertex (modeSpec ctxt));
+            (bSpec,newMode) <- return (newMode (bSpec ctxt) (modeSpec ctxt));
+            % (newVertex,ctxt) <- newVertex ctxt; 
+            % ctxt <- ctxt withBSpec (addMode (bSpec ctxt) newVertex (modeSpec ctxt));
             saveLast <- return (final ctxt);
-            ctxt <- compileCommand (ctxt withFinal newVertex) cmd;
-            compileSeq ((ctxt withFinal saveLast) withInitial newVertex) rest
+            ctxt <- compileCommand ((ctxt withFinal newMode) withBSpec bSpec) cmd;
+            compileSeq ((ctxt withFinal saveLast) withInitial newMode) rest
           }
 \end{spec}
 
@@ -862,14 +858,15 @@ Perhaps addMode and friends shoul act on and return a context rather than a bSpe
 \begin{spec}
   op compileAlternative : CompCtxt -> Alternative Position -> Env CompCtxt
   def compileAlternative ctxt ((trm,cmd),pos) = {
-      (newVertex,ctxt) <- newVertex ctxt; 
-      bSpec <- return (addMode (bSpec ctxt) newVertex (modeSpec ctxt)); 
+      (bSpec,newMode) <- return (newMode (bSpec ctxt) (modeSpec ctxt));
+      % (newVertex,ctxt) <- newVertex ctxt; 
+      % bSpec <- return (addMode (bSpec ctxt) newVertex (modeSpec ctxt)); 
       ctxt <- ctxt withBSpec bSpec;
       prop <- makeAxiom ((makeId "guard"):Id.Id) trm;
       apexSpec <- addInvariant (modeSpec ctxt) prop pos; 
       saveFirst <- return (initial ctxt);
-      ctxt <- connectVertices ctxt (initial ctxt) newVertex apexSpec OpRefSet.empty;
-      ctxt <- compileCommand (ctxt withInitial newVertex) cmd;
+      ctxt <- connectVertices ctxt (initial ctxt) newMode apexSpec OpRefSet.empty;
+      ctxt <- compileCommand (ctxt withInitial newMode) cmd;
       return (ctxt withInitial saveFirst)
     }
  
@@ -886,7 +883,7 @@ Perhaps addMode and friends shoul act on and return a context rather than a bSpe
 The following function creates a vertex/edge (of sort \verb+Vrtx.Vertex+
 from a natural number. 
 
-\begin{spec}
+begin{spec}
   sort Vrtx.Vertex =
     | Nat (Nat * Id.Id)
     | Pair (Vrtx.Vertex * Subst)
@@ -922,9 +919,9 @@ from a natural number.
   def newVertex ctxt =
     return (mkNatVertex (graphCounter ctxt) (procId ctxt),
      ctxt withGraphCounter ((graphCounter ctxt) + 1))
-\end{spec}
+end{spec}
 
-\begin{spec}
+begin{spec}
   sort Edg.Edge =
     | Nat (Nat * Id.Id)
     | Triple (Edg.Edge * Subst * Subst)
@@ -962,18 +959,19 @@ from a natural number.
   def newEdge ctxt =
     return (mkNatEdge (graphCounter ctxt) (procId ctxt),
       ctxt withGraphCounter ((graphCounter ctxt) + 1))
-\end{spec}
+end{spec}
 
 \begin{spec}
-  op connectVertices : CompCtxt -> Vrtx.Vertex -> Vrtx.Vertex -> ModeSpec -> OpRefSet.Set -> Env CompCtxt
+  op connectVertices : CompCtxt -> Mode -> Mode -> ModeSpec -> OpRefSet.Set -> Env CompCtxt
   def connectVertices ctxt first last spc changedVars = {
-    (newEdge,ctxt) <- newEdge ctxt; 
+    % (newEdge,ctxt) <- newEdge ctxt; 
     transSpec <- return (TransSpec.make spc changedVars);
     elabTransSpec <- elaborate transSpec;
-    bSpec <- return (addTrans (bSpec ctxt) first last newEdge
-       (modeSpec elabTransSpec)
-       (forwMorph elabTransSpec)
-       (backMorph elabTransSpec));
+    (bSpec,newTransition) <- return (newTrans (bSpec ctxt) first last elabTransSpec);
+    % bSpec <- return (addTrans (bSpec ctxt) first last newEdge
+    %    (modeSpec elabTransSpec)
+       % (forwMorph elabTransSpec)
+       % (backMorph elabTransSpec));
     return (ctxt withBSpec bSpec)
   }
 \end{spec}

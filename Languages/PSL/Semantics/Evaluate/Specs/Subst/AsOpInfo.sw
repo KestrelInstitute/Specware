@@ -23,6 +23,7 @@ Subst qualifying spec
   def Subst.show subst = ppFormat (pp subst)
 
   def Subst.equalSubst? (s1,s2) = equalList? (s1,s2,equalStuff?)
+  def Subst.eq? (s1,s2) = equalSubst? (s1,s2)
 
   op equalStuff? : Op.OpInfo * Op.OpInfo -> Boolean
   def equalStuff? (op1,op2) =

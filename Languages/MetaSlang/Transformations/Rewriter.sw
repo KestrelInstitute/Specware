@@ -387,6 +387,7 @@ spec MetaSlangRewriter
      let termPP   = PrettyPrint.prettysNone [PrettyPrint.string indent,termPP]   in
      PrettyPrint.toString(PrettyPrint.format(60,termPP))
 
+ op traceTerm : Context * MS.Term * Subst -> ()
  def traceTerm(context:Context,term,(* subst *)_) = 
      if traceRewriting > 1 then 
      % if context.trace then 

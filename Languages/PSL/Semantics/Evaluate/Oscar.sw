@@ -2,24 +2,22 @@
 
 \begin{spec}
 let S = spec
-  import translate (translate Specs/BSpecs/AsLists
-    % by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
-    % by {Cat._ +-> ModeSpec._}
-    by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
-    by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._,
-        Vertex._ +-> Vrtx._, Edge._ +-> Edg._,
-        VertexSet._ +-> VrtxSet._, EdgeSet._ +-> EdgSet._}
+%%   import translate (translate Specs/BSpecs/AsLists
+%%     % by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
+%%     % by {Cat._ +-> ModeSpec._}
+%%     by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
+%%     by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._,
+%%         Vertex._ +-> Vrtx._, Edge._ +-> Edg._,
+%%         VertexSet._ +-> VrtxSet._, EdgeSet._ +-> EdgSet._}
 
   import Specs/Compiler
   import Specs/Oscar
 endspec in
 SpecCalc qualifying spec {
   import translate S by
-    {Monad._ +-> Env._,
-     Vertex._ +-> V._,
-     Edge._ +-> E._,
-     VertexSet._ +-> VSet._,
-     EdgeSet._ +-> ESet._}
+    {Monad._ +-> Env._}
+     % Vertex._ +-> V._,
+     % Edge._ +-> E._}
   import translate Refinement by {Monad._ +-> Env._}
   import Specs/Spec/Legacy
   import /Languages/SpecCalculus/Semantics/Evaluate/Signature
@@ -31,17 +29,6 @@ SpecCalc qualifying spec {
 
 \begin{spec}
   sort SpecCalc.OtherValue = Oscar.Spec
-
-  def BSpec.insertEq (l,a) =
-    let def member? (l,x) =
-      case l of
-        | [] -> false
-        | h::t -> equalVertex? (h,x) or (member? (t,x))
-    in
-      if (member? (l,a)) then
-        l
-      else
-        Cons (a,l)
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec

@@ -11,9 +11,9 @@ PE qualifying spec
 
   (* The next import is so we have a monadic fold over edge sets. Could be that
      that graphs should import a monadic fold. *)
-  import /Languages/PSL/Semantics/Evaluate/Specs/EdgeSets
+  % import /Languages/PSL/Semantics/Evaluate/Specs/EdgeSets
 
-  def EdgSetEnv.fold = EdgSetEnv.foldl
+  % def EdgSetEnv.fold = EdgSetEnv.foldl
 
   op MetaSlangRewriter.traceRewriting : Nat
 
@@ -210,7 +210,7 @@ PE qualifying spec
              | (param::params,arg::args,srt::sorts) -> {
                     (subst,residParams,residArgs,residSorts) <- partitionArgs (params,args,sorts);
                     if (groundTerm? arg) then {
-                      varInfo <- deref (specOf (modeSpec (bSpec procInfo) (initial (bSpec procInfo))), param);
+                      varInfo <- deref (specOf (Mode.modeSpec (initial (bSpec procInfo))), param);
                       return (cons (varInfo withTerm arg,subst), residParams,residArgs,residSorts)
                     } else 
                       return (subst, cons (param,residParams), cons (arg, residArgs), cons (srt,residSorts))
@@ -286,28 +286,26 @@ PE qualifying spec
                       projectSub subst subOut termOut varRef
           in {
             if traceRewriting > 0 then {
-              print ("number of final states = " ^ (Nat.show (size (final newBSpec))) ^ "\n");
-              print ("final states = " ^ (ppFormat (pp (final newBSpec))) ^ "\n") } else return ();
+              print ("number of final states = " ^ (Nat.show (length (final newBSpec))) ^ "\n");
+              print ("final states = " ^ (ppFormat (ModeList.pp (final newBSpec))) ^ "\n") } else return ();
 %             when ((size (final newBSpec)) = 0) 
 %               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states.")));
-%             when ((size (final newBSpec)) > 1) 
+%             when ((length (final newBSpec)) > 1) 
 %               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
 %                                       ^ " by " ^ (show subst)
 %                                       ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))));
-            if ((size (final newBSpec)) = 0) then
+            if ((length (final newBSpec)) = 0) then
               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states.")))
             else
-              if ((size (final newBSpec)) > 1)  then
+              if ((length (final newBSpec)) > 1)  then
                 (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
                                       ^ " by " ^ (show subst)
                                       % ^ " has multiple final states: " ^ (System.toString (final newBSpec)))))
-                                      ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))))
+                                      ^ " has multiple final states: " ^ (ppFormat (ModeList.pp (final newBSpec))))))
               else {
-            newFinal <- return (theSingleton (final newBSpec));
-            postcondition <-
-              case newFinal of
-                | Nat _ -> return []
-                | Pair (vrtx,subst) -> return subst;
+
+            [newFinal] <- return (final newBSpec);
+            postcondition <- return (substOf newFinal);
 
             (* It may be that one of the global variables in scope is also the variable receiving the return value. We do
              not want to propagte the global variable value .. and we assume no name clashes .. with local variables and those
@@ -349,7 +347,7 @@ PE qualifying spec
                         return (None, mkTuple ([], noPos), mkProduct ([],noPos),postSubst,bindingTerm)
                       }
                     def prog () = {
-                        returnVar <- OpEnv.deref (specOf (modeSpec newBSpec newFinal), returnRef);
+                        returnVar <- OpEnv.deref (specOf (modeSpec newFinal), returnRef);
                         return (Some returnRef, returnTerm, type returnVar,postSubst,bindingTerm)   % Shameful shit!
                       } in
                       catch (prog ()) handler
@@ -383,15 +381,15 @@ PE qualifying spec
 \end{spec}
 
 \begin{spec}
-  op makeNewVertex : Vrtx.Vertex -> Subst.Subst -> Env Vrtx.Vertex
-  def makeNewVertex vertex sub = return (Pair (vertex,sub))
+  % op makeNewVertex : Vrtx.Vertex -> Subst.Subst -> Env Vrtx.Vertex
+  % def makeNewVertex vertex sub = return (Pair (vertex,sub))
 
-  op makeNewEdge : Edg.Edge -> Subst.Subst -> Subst.Subst -> Env Edg.Edge
-  def makeNewEdge edge pre post = return (Triple (edge,pre,post))
+  % op makeNewEdge : Edg.Edge -> Subst.Subst -> Subst.Subst -> Env Edg.Edge
+  % def makeNewEdge edge pre post = return (Triple (edge,pre,post))
 
-  op connect : BSpec -> Vrtx.Vertex -> Vrtx.Vertex -> Edg.Edge -> TransSpec -> Env BSpec
-  def connect bSpec first last edge transSpec =
-    return (addTrans bSpec first last edge (modeSpec transSpec) (forwMorph transSpec) (backMorph transSpec))
+  % op connect : BSpec -> Vrtx.Vertex -> Vrtx.Vertex -> Edg.Edge -> TransSpec -> Env BSpec
+  % def connect bSpec first last edge transSpec =
+    % return (addTrans bSpec first last edge (modeSpec transSpec) (forwMorph transSpec) (backMorph transSpec))
 
   op specializeBSpec :
         Oscar.Spec
@@ -400,11 +398,12 @@ PE qualifying spec
      -> Oscar.Spec
      -> Env (Oscar.Spec * BSpec)
   def specializeBSpec oldOscSpec oldBSpec precondition newOscSpec = {
-      coAlg <- return (succCoalgebra oldBSpec);
-      first <- makeNewVertex (initial oldBSpec) precondition;
-      initialSpec <- hideVariables (modeSpec oldBSpec (initial oldBSpec)) precondition;
-      newBSpec <- return (BSpec.make first initialSpec);
-      fold (specializeEdge coAlg oldBSpec oldOscSpec first precondition) (newOscSpec,newBSpec) (coAlg (initial oldBSpec))
+      %% coAlg <- return (succCoalgebra oldBSpec);
+      %% first <- makeNewVertex (initial oldBSpec) precondition;
+      initialSpec <- hideVariables (modeSpec (initial oldBSpec)) precondition;
+      (newBSpec,newMode) <- return (deriveBSpec oldBSpec precondition initialSpec);
+      %% newBSpec <- return (BSpec.make first initialSpec);
+      fold (specializeTransition oldBSpec oldOscSpec newMode precondition) (newOscSpec,newBSpec) (outTrans oldBSpec (initial oldBSpec))
     }
 \end{spec}
 
@@ -452,22 +451,21 @@ We apply the precondition (as a "substitution") to the transtion spec
 associated with the edge.
 
 \begin{spec}
-  op specializeEdge :
-        Coalgebra
-     -> BSpec
+  op specializeTransition :
+        BSpec
      -> Oscar.Spec
-     -> Vrtx.Vertex
+     -> Mode
      -> Subst.Subst
      -> (Oscar.Spec * BSpec)
-     -> Edg.Edge
+     -> Transition
      -> Env (Oscar.Spec * BSpec)
-  def specializeEdge coAlg oldBSpec oldOscSpec newSrcVertex precondition (newOscSpec,newBSpec) edge = {
+  def specializeTransition oldBSpec oldOscSpec newSourceMode precondition (newOscSpec,newBSpec) transition = {
       if traceRewriting > 1 then
-        print ("specializing edge " ^ (Edg.show edge) ^ " precondition " ^ (show precondition) ^ "\n") else return ();
-      oldTargetVertex <- return (GraphMap.eval (target (shape (system oldBSpec)), edge));
-      oldTargetSpec <- return (modeSpec oldBSpec oldTargetVertex);
-      transSpec <- return (edgeLabel (system oldBSpec) edge);
-      transSpec <- applySubst (transSpec, precondition);
+        print ("specializing transition " ^ (Edg.show (edge transition)) ^ " precondition " ^ (show precondition) ^ "\n") else return ();
+      %% oldTargetVertex <- return (GraphMap.eval (target (shape (system oldBSpec)), edge));
+      oldTargetSpec <- return (modeSpec (target transition));
+      transSpec <- return (Transition.transSpec transition);
+      transSpec <- applySubst (Transition.transSpec transition, precondition);
       if traceRewriting > 1 then
         print "about to simplify\n" else return ();
       transSpec <- simplifyVariants (modeSpec newOscSpec) transSpec;
@@ -475,29 +473,39 @@ associated with the edge.
       if provablyInconsistent? transSpec then
         return (newOscSpec,newBSpec)
       else {
-        postcondition <- projectPostSubst transSpec oldTargetSpec;
+        postcondition <- projectPostSubst transSpec (modeSpec (target transition));
         if traceRewriting > 1 then
-          print ("specializing edge " ^ (Edg.show edge) ^ " postcondition " ^ (show postcondition) ^ "\n") else return ();
-        newTargetVertex <- makeNewVertex oldTargetVertex postcondition;
-        newEdge <- makeNewEdge edge precondition postcondition;
-        if traceRewriting > 1 then
-          print ("newEdge: " ^ (Edg.show newEdge) ^ "\n") else return ();
-        newTargetSpec <- hideVariables oldTargetSpec postcondition;
-        targetIsNew? <- return (~(VrtxSet.member? (vertices (shape (system newBSpec)), newTargetVertex)));
-        if traceRewriting > 1 then
-          print ("target: " ^ (Vrtx.show newTargetVertex) ^ " is new? " ^ (show targetIsNew?) ^ "\n") else return ();
-        newBSpec <-
-          if targetIsNew? then
-            if VrtxSet.member? (final oldBSpec, oldTargetVertex) then
-              return (addFinalMode newBSpec newTargetVertex newTargetSpec)
-            else
-              return (addMode newBSpec newTargetVertex newTargetSpec)
-          else
-            return newBSpec;
+          print ("specializing edge " ^ (Edg.show (edge transition)) ^ " postcondition " ^ (show postcondition) ^ "\n") else return ();
+
+        %% newTargetVertex <- makeNewVertex oldTargetVertex postcondition;
+        newTargetSpec <- hideVariables (modeSpec (Transition.target transition)) postcondition;
+        (newBSpec,newTargetMode,targetIsNew?) <- return (deriveMode oldBSpec (Transition.target transition) newBSpec postcondition newTargetSpec);
+
         newTransSpec <- hideVariables transSpec precondition postcondition;
-        newBSpec <- connect newBSpec newSrcVertex newTargetVertex newEdge newTransSpec;       
+        % newEdge <- makeNewEdge edge precondition postcondition;
+
+        (newBSpec,newTransition) <- return (deriveTransition transition newBSpec newSourceMode newTargetMode precondition postcondition newTransSpec);
+
+        % if traceRewriting > 1 then
+          % print ("newEdge: " ^ (Edg.show (edge newTransition)) ^ "\n") else return ();
+
+        %% newTargetSpec <- hideVariables oldTargetSpec postcondition;
+        %% targetIsNew? <- return (~(VrtxSet.member? (vertices (shape (system newBSpec)), newTargetVertex)));
+
+%%        if traceRewriting > 1 then
+%%          print ("target: " ^ (Vrtx.show newTargetVertex) ^ " is new? " ^ (show targetIsNew?) ^ "\n") else return ();
+%%
+%%        newBSpec <-
+%%          if targetIsNew? then
+%%            if Mode.member? (final oldBSpec) (target transition) then
+%%              return (addFinalMode newBSpec newTargetVertex newTargetSpec)
+%%            else
+%%              return (addMode newBSpec newTargetVertex newTargetSpec)
+%%          else
+%%            return newBSpec;
+        %% newBSpec <- connect newBSpec newSrcVertex newTargetVertex newEdge newTransSpec;       
         if targetIsNew? then
-          fold (specializeEdge coAlg oldBSpec oldOscSpec newTargetVertex postcondition) (newOscSpec,newBSpec) (coAlg oldTargetVertex)
+          foldM (specializeTransition oldBSpec oldOscSpec newTargetMode postcondition) (newOscSpec,newBSpec) (outTrans oldBSpec (target transition))
         else
           return (newOscSpec,newBSpec)
       }

@@ -156,7 +156,6 @@ Convert qualifying spec
                       ^ ")") l) 
 
   op mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
-  op toList : EdgSet.Set -> List Edg.Edge
 
   op structGraph : Graph -> Env Graph
   def structGraph graph =
@@ -165,11 +164,10 @@ Convert qualifying spec
 
   op convertBSpec : BSpec -> Env Graph
   def convertBSpec bSpec =
-    if EdgSet.empty? (edges (shape (system bSpec))) then
+    if bSpec.transitions = [] then
       return []
     else {
-        coAlg <- return (succCoalgebra bSpec);
-        (graph,n,visited) <- convertBSpecAux bSpec coAlg (final bSpec) FinitePolyMap.empty 0 (initial bSpec) FinitePolyMap.empty;
+        (graph,n,visited) <- convertBSpecAux bSpec (final bSpec) FinitePolyMap.empty 0 (initial bSpec) FinitePolyMap.empty;
         print "convertBSpec VList =\n";
         print (printVList (mapToList visited));
         g <- return (sortGraph (fn ((n,_),(m,_)) -> n < m) (mapToList graph));
@@ -184,45 +182,42 @@ Convert qualifying spec
 
   op convertBSpecAux :
         BSpec
-     -> Coalgebra
-     -> VrtxSet.Set
+     -> List Mode
      -> FinitePolyMap.Map (Index,NodeContent)
      -> Index
-     -> Vrtx.Vertex
-     % -> FinitePolyMap.Map (Vrtx.Vertex,Index)
+     -> Mode
      -> FinitePolyMap.Map (String,Index)
-     % -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (Vrtx.Vertex,Index))
      -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (String,Index))
 
 (* The first test to see if the vertex is a final one is needed since the BSpec might be a loop in which case
 there is branching from a state and one of the branches takes you to a final state. Perhaps the other tests
 are no longer needed. *)
 
-  def convertBSpecAux bSpec coAlg final graph n vertex visited =
-    case evalPartial (visited,show vertex) of
+  def convertBSpecAux bSpec final graph n mode visited =
+    case evalPartial (visited,show (vertex mode)) of
       | Some index -> return (graph,n,visited)
       | None ->
-         (case (toList (coAlg vertex)) of
+         (case (outTrans bSpec mode) of
             | [] -> 
-                 if member? (final,vertex) then
+                 if Mode.member? final mode then
                    return (graph,n,visited)
                  else
-                   raise (SpecError (noPos, "convertBSpecAux: reached empty set of successors to vertex: " ^ (show vertex)))
+                   raise (SpecError (noPos, "convertBSpecAux: reached empty set of successors to vertex: " ^ (show (vertex mode))))
 
             (* A single edge leaving the node means that the edge is labelled with a statement.  *)
-            | [edge] -> {
-                 visited <- return (update (visited,show vertex,n));
-                 (node,newTerm) <- getEdgeTargetAndAction bSpec edge;
+            | [transition] -> {
+                 visited <- return (update (visited,show (vertex mode),n));
+                 newTerm <- getTransitionAction transition;
                  (graph,next,visited) <-
-                   if member? (final,node) then
+                   if Mode.member? final (target transition) then
                      return (graph,n+1,visited)
                    else
-                     convertBSpecAux bSpec coAlg final graph (n+1) node visited;
+                     convertBSpecAux bSpec final graph (n+1) (target transition) visited;
                  let graph =
-                    if member? (final,node) then
+                    if Mode.member? final (target transition) then
                       update (graph,n,Return newTerm)
                     else
-                      let index = vertexToIndex visited node in
+                      let index = vertexToIndex visited (vertex (target transition)) in
                       update (graph,n,Block {statements=[Assign newTerm],next=index}) in
                  return (graph,next,visited)
                }
@@ -236,21 +231,21 @@ are no longer needed. *)
               a different semantics where the order of the guards is significant.
              *)
 
-            | [leftEdge,rightEdge] -> {
-                 visited <- return (update(visited,show vertex,n)); 
-                 (leftNode,leftTerm) <- getEdgeTargetAndAction bSpec leftEdge;
-                 (rightNode,rightTerm) <- getEdgeTargetAndAction bSpec rightEdge;
-                 (graph,next1,visited) <- convertBSpecAux bSpec coAlg final graph (n+1) leftNode visited; 
-                 (graph,next2,visited) <- convertBSpecAux bSpec coAlg final graph next1 rightNode visited;
+            | [leftTrans,rightTrans] -> {
+                 visited <- return (update(visited,show (vertex mode),n)); 
+                 leftTerm <- getTransitionAction leftTrans;
+                 rightTerm <- getTransitionAction rightTrans;
+                 (graph,next1,visited) <- convertBSpecAux bSpec final graph (n+1) (target leftTrans) visited; 
+                 (graph,next2,visited) <- convertBSpecAux bSpec final graph next1 (target rightTrans) visited;
                  let graph =
-                   let leftIndex = vertexToIndex visited leftNode in
-                   let rightIndex = vertexToIndex visited rightNode in
+                   let leftIndex = vertexToIndex visited (vertex (target leftTrans)) in
+                   let rightIndex = vertexToIndex visited (vertex (target rightTrans)) in
                    update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
                  return (graph,next2,visited)
                }
-            | edges -> {
-                  visited <- return (update(visited,show vertex,n)); 
-                  (graph,next,visited,idx) <- makeBranches bSpec coAlg final graph n edges visited;
+            | transitions -> {
+                  visited <- return (update(visited,show (vertex mode),n)); 
+                  (graph,next,visited,idx) <- makeBranches bSpec final graph n transitions visited;
                   return (graph,next,visited)
                 })
                 
@@ -263,36 +258,33 @@ are no longer needed. *)
 
   op makeBranches :
         BSpec
-     -> Coalgebra
-     -> VrtxSet.Set
+     -> List Mode
      -> FinitePolyMap.Map (Index,NodeContent)
      -> Index
-     -> List Edg.Edge
+     -> List Transition
      -> FinitePolyMap.Map (String,Index)
-     % -> FinitePolyMap.Map (Vrtx.Vertex,Index)
-     % -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (Vrtx.Vertex,Index) * Index)
      -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (String,Index) * Index)
-  def makeBranches bSpec coAlg final graph n edges visited =
-    case edges of
+  def makeBranches bSpec final graph n transitions visited =
+    case transitions of
       | [] -> raise (SpecError (noPos, "makeBranches: empty list in make branches"))
       | [x] -> raise (SpecError (noPos, "makeBranches: singleton list in make branches"))
-      | [leftEdge,rightEdge] -> {
-           (leftNode,leftTerm) <- getEdgeTargetAndAction bSpec leftEdge;
-           (rightNode,rightTerm) <- getEdgeTargetAndAction bSpec rightEdge;
-           (graph,next1,visited) <- convertBSpecAux bSpec coAlg final graph (n+1) leftNode visited; 
-           (graph,next2,visited) <- convertBSpecAux bSpec coAlg final graph next1 rightNode visited;
+      | [leftTrans,rightTrans] -> {
+           leftTerm <- getTransitionAction leftTrans;
+           rightTerm <- getTransitionAction rightTrans;
+           (graph,next1,visited) <- convertBSpecAux bSpec final graph (n+1) (target leftTrans) visited; 
+           (graph,next2,visited) <- convertBSpecAux bSpec final graph next1 (target rightTrans) visited;
            let graph =
-             let leftIndex = vertexToIndex visited leftNode in
-             let rightIndex = vertexToIndex visited rightNode in
+             let leftIndex = vertexToIndex visited (vertex (target leftTrans)) in
+             let rightIndex = vertexToIndex visited (vertex (target rightTrans)) in
              update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
            return (graph,next2,visited,n)
          }
-      | leftEdge::edges -> {
-           (leftNode,leftTerm) <- getEdgeTargetAndAction bSpec leftEdge;
-           (graph,next1,visited,rightIndex) <- makeBranches bSpec coAlg final graph (n+1) edges visited;
-           (graph,next2,visited) <- convertBSpecAux bSpec coAlg final graph next1 leftNode visited; 
+      | leftTrans::transitions -> {
+           leftTerm <- getTransitionAction leftTrans;
+           (graph,next1,visited,rightIndex) <- makeBranches bSpec final graph (n+1) transitions visited;
+           (graph,next2,visited) <- convertBSpecAux bSpec final graph next1 (target leftTrans) visited; 
            let graph =
-             let leftIndex = vertexToIndex visited leftNode in
+             let leftIndex = vertexToIndex visited (vertex (target leftTrans)) in
              update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
            return (graph,next2,visited,n)
          }
@@ -305,24 +297,22 @@ are no longer needed. *)
       | None -> ~1
       | Some index -> index
 
-  op getEdgeTargetAndAction : BSpec -> Edg.Edge -> Env (Vrtx.Vertex * MSlang.Term)
-  def getEdgeTargetAndAction bSpec edge = {
-      node <- return (GraphMap.eval (target (shape (system bSpec)), edge));
-      spc <- return (edgeLabel (system bSpec) edge);
-      invars <- foldVariants (fn l -> fn claim -> return (cons (term claim,l))) [] (modeSpec spc);
-      invars <- foldVariables infoToBindings invars (modeSpec spc);
+  op getTransitionAction : Transition -> Env MSlang.Term
+  def getTransitionAction transition = {
+      invars <- foldVariants (fn l -> fn claim -> return (cons (term claim,l))) [] (modeSpec (transSpec transition));
+      invars <- foldVariables infoToBindings invars (modeSpec (transSpec transition));
       term <- case invars of
         | [] -> {
-             print ("convertBSpecAux: no axiom for edge" ^ (Edg.show edge) ^ "\n");
+             print ("convertBSpecAux: no axiom for edge" ^ (Edg.show (edge transition)) ^ "\n");
              MSlangEnv.mkTuple ([],noPos)
            }
         | [term] -> return term
         | _ -> raise (SpecError (noPos, ppFormat (ppConcat [
-                        ppString ("Something wrong with spec properties for edge " ^ (Edg.show edge) ^ "\n"),
+                        ppString ("Something wrong with spec properties for edge " ^ (Edg.show (edge transition)) ^ "\n"),
                         ppBreak,
                         ppSep ppBreak (map pp invars)
                       ])));
-      return (node,term)
+      return term
     }
 
   op infoToBindings : List MSlang.Term -> Op.OpInfo -> Env (List MSlang.Term)

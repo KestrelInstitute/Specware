@@ -20,5 +20,6 @@ Subst qualifying spec
   op show : Subst -> String
 
   op equalSubst? : Subst * Subst -> Boolean
+  op Subst.eq? : Subst * Subst -> Boolean
 endspec
 \end{spec}

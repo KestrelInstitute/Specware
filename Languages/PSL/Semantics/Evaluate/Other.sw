@@ -5,7 +5,6 @@ SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
   import ../../AbstractSyntax/SimplePrinter
   import Oscar
-  import Reindex
   import /Languages/SpecCalculus/Semantics/Evaluate/SpecMorphism
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
   import Transformations/PartialEval
@@ -16,7 +15,7 @@ SpecCalc qualifying spec {
   def Convert.mapToList map = map
 
   % op Convert.toList : EdgSet.Set -> List Edg.Edge
-  def Convert.toList set = set
+  % def Convert.toList set = set
 
   def SpecCalc.evaluateOther other pos = 
     case other of
@@ -63,18 +62,6 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateOtherPrint oscarSpec pos = {
        base <- baseOscarSpec;
        oscarString <- OscarEnv.show oscarSpec (modeSpec base);
-       print ("before reindexing\n");
-       print (oscarString ^ "\n");
-       conv <- convertOscarSpec oscarSpec;
-       convString <- return (OscarStruct.show conv (modeSpec base));
-       print ("converted\n" ^ convString ^ "\n");
-       struct <- structOscarSpec conv;
-       structString <- return (OscarStruct.show struct (modeSpec base));
-       print ("structured\n" ^ structString ^ "\n");
-
-       oscarSpec <- reindex oscarSpec;
-       oscarString <- OscarEnv.show oscarSpec (modeSpec base);
-       print ("after reindexing\n");
        print (oscarString ^ "\n");
        conv <- convertOscarSpec oscarSpec;
        convString <- return (OscarStruct.show conv (modeSpec base));
@@ -133,7 +120,6 @@ SpecCalc qualifying spec {
       (Spec pslBase,_,_) <- SpecCalc.evaluateUID (Internal "Oscar base") pslBaseUnitId;
       case lang of
         | "c" -> {
-             oscSpec <- reindex oscSpec; 
              CSpec <- oscarToC oscSpec pslBase; 
              return (Other oscSpec,timeStamp,depUnitIds)
            }

@@ -99,21 +99,6 @@ end{spec}
 There is a hack here as we represent external procedures using systems
 with no edges.
 
-begin{spec}
-  op simplifyProcedure : Procedure_ms -> Procedure_ms
-  def simplifyProcedure proc = {
-      parameters = proc.parameters,
-      return = proc.return,
-      static = proc.static,
-      axmSpec = proc.axmSpec,
-      dynamic = proc.dynamic,
-      code =
-        if empty?_e proc.code.system.shape.edges then
-          proc.code
-        else
-          removeNilTransitions proc.code
-  }
-
 \begin{spec}
 Simplify qualifying spec
   import /Languages/PSL/Semantics/Evaluate/Specs/Oscar
@@ -123,14 +108,12 @@ Simplify qualifying spec
   (* We prematurely refine transition specs here. *)
   import /Languages/PSL/Semantics/Evaluate/Specs/TransSpec/Legacy
 
-  op PE.connect : BSpec -> Vrtx.Vertex -> Vrtx.Vertex -> Edg.Edge -> TransSpec -> Env BSpec
+  op PE.connect : BSpec -> Mode -> Mode -> Transition -> TransSpec -> Env BSpec
 
   op removeNilTransitions : BSpec -> Env BSpec
   def removeNilTransitions oldBSpec = {
-      newBSpec <- return (BSpec.make (initial oldBSpec) (modeSpec oldBSpec (initial oldBSpec)));
-      succCoalg <- return (succCoalgebra oldBSpec);
-      predCoalg <- return (predCoalgebra oldBSpec);
-      removeNilsFrom oldBSpec succCoalg predCoalg (initial oldBSpec) (succCoalg (initial oldBSpec)) newBSpec
+      (newBSpec,newInitial) <- return (BSpec.initFromOld oldBSpec);
+      removeNilsFrom oldBSpec (initial oldBSpec) (outTrans oldBSpec (initial oldBSpec)) newBSpec
     }
 \end{spec}
 
@@ -149,31 +132,26 @@ an undesirable degree of non-determinism.
 \begin{spec}
   op removeNilsFrom :
        BSpec
-    -> Coalgebra
-    -> Coalgebra
-    -> Vrtx.Vertex
-    -> EdgSet.Set
+    -> Mode
+    -> List Transition
     -> BSpec
     -> Env BSpec
 
-  def removeNilsFrom oldBSpec succCoalg predCoalg src edges newBSpec = 
-    case (takeOne edges) of
-      | None -> return newBSpec
-      | One (edge,rest) -> 
-          if (empty? rest) then {
-            transSpec <- return (edgeLabel (system oldBSpec) edge);
-            target <- return (GraphMap.eval (target (shape (system oldBSpec)), edge));
-            if (isNilTransition? transSpec)
-                            & ~(member? (final oldBSpec,target))
-                            & (indegreeOne predCoalg target) then
-              removeNilsFrom oldBSpec succCoalg predCoalg src (succCoalg target) newBSpec
+  def removeNilsFrom oldBSpec src transitions newBSpec = 
+    case transitions of
+      | [] -> return newBSpec
+      | [transition] -> 
+            if (isNilTransition? transition)
+                            & ~(Mode.member? (final oldBSpec) (Transition.target transition))
+                            & (lengthOne (inTrans oldBSpec (Transition.target transition))) then
+              removeNilsFrom oldBSpec src (outTrans oldBSpec (Transition.target transition)) newBSpec
             else
-              extendBSpec oldBSpec succCoalg predCoalg src newBSpec edge
-          } else {
-             nilLeavingState? <- existsInSet (fn edge -> isNilTransition? (edgeLabel (system oldBSpec) edge)) edges;
+              extendBSpec oldBSpec src newBSpec transition
+      | _ -> {
+             nilLeavingState? <- existsInSet isNilTransition? transitions;
              when nilLeavingState?
                 (raise (SpecError (noPos, "Nil transition leaving branching node")));
-             EdgSetEnv.foldl (extendBSpec oldBSpec succCoalg predCoalg src) newBSpec edges
+             foldM (extendBSpec oldBSpec src) newBSpec transitions
           }
 \end{spec}
 
@@ -183,39 +161,29 @@ explores the transitions leaving the target state.
 \begin{spec}
   op extendBSpec :
        BSpec
-    -> Coalgebra
-    -> Coalgebra
-    -> Vrtx.Vertex
+    -> Mode
     -> BSpec
-    -> Edg.Edge 
+    -> Transition
     -> Env BSpec
 
-  def extendBSpec oldBSpec succCoalg predCoalg src newBSpec edge = {
-      transSpec <- return (edgeLabel (system oldBSpec) edge); 
-      target <- return (GraphMap.eval (target (shape (system oldBSpec)), edge));
-      if VrtxSet.member? (vertices (shape (system newBSpec)), target) then
-        connect newBSpec src target edge transSpec
+  def extendBSpec oldBSpec src newBSpec transition =
+      if Mode.member? (modes newBSpec) (Transition.target transition) then
+        return (newTrans newBSpec src (Transition.target transition) (transSpec transition)).1
       else {
-        targetSpec <- return (modeSpec oldBSpec target);
         newBSpec <-
-          if VrtxSet.member? (final oldBSpec, target) then
-            return (addFinalMode newBSpec target targetSpec)
+          if Mode.member? (final oldBSpec) (Transition.target transition) then
+            return (addFinalMode newBSpec (Transition.target transition))
           else
-            return (addMode newBSpec target targetSpec);
-        newBSpec <- connect newBSpec src target edge transSpec;
-        removeNilsFrom oldBSpec succCoalg predCoalg target (succCoalg target) newBSpec
+            return (addMode newBSpec (Transition.target transition));
+        newBSpec <- return (newTrans newBSpec src (Transition.target transition) (transSpec transition)).1;
+        removeNilsFrom oldBSpec (Transition.target transition) (outTrans oldBSpec (Transition.target transition)) newBSpec
       }
-    }
 
-  op indegreeOne : Coalgebra -> Vrtx.Vertex -> Boolean
-  def indegreeOne predCoalg vertex =
-    case takeOne (predCoalg vertex) of
-      | None -> fail "removeNilTransitions: vertex with no predecessors?"
-      | One (edge,rest) ->
-          if empty? rest then
-            true
-          else
-            false
+  op lengthOne : List Transition -> Boolean
+  def lengthOne l =
+    case l of 
+      | [_] -> true
+      | _ -> false
 \end{spec}
 endspec
 
@@ -231,19 +199,20 @@ To see if we need to pe a procedure, then check to see which
 map it is in.
 
 \begin{spec}
-  op existsInSet : (Edg.Edge -> Boolean) -> EdgSet.Set -> Env Boolean
-  def existsInSet f s =
-    case (takeOne s) of
-      | None -> return false
-      | One (x,s) ->
+  op existsInSet : (Transition -> Boolean) -> List Transition -> Env Boolean
+  def existsInSet f l =
+    case l of
+      | [] -> return false
+      | (x::l) ->
          if (f x) then
            return true
          else
-           existsInSet f s
+           existsInSet f l
 
-  op isNilTransition? : TransSpec -> Boolean
-  def isNilTransition? transSpec =
-    let ms = modeSpec transSpec in
+  % This should be a fold
+  op isNilTransition? : Transition -> Boolean
+  def isNilTransition? transition =
+    let ms = Transition.modeSpec transition in
     let def trueAxiom? claim =
         if member? (invariants ms, refOf claim) then
           case (claimType claim,term claim) of
@@ -252,8 +221,8 @@ map it is in.
         else
           true
     in
-      empty? (changedVars (backMorph transSpec))
-      & (all trueAxiom? (specOf (modeSpec transSpec)).properties)
+      empty? (changedVars (backMorph (transSpec transition)))
+      & (all trueAxiom? (specOf (modeSpec (transSpec transition))).properties)
 endspec
 \end{spec}
 

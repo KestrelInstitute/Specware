@@ -28,5 +28,9 @@ in SpecCalc qualifying spec
 
   op EnvNoPos.fatalError : fa(a) String -> Env a
   def EnvNoPos.fatalError str = fatalError str internalPosition
+
+  % This should't be here as is defined in SpecCalculus/Semantcs/Monad
+  op foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
+
 endspec
 \end{spec}

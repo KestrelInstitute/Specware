@@ -52,7 +52,8 @@ Inline qualifying spec
   import ../Specs/MetaSlang
   import ../Specs/MetaSlang/Legacy
   import ../Specs/Subst/AsOpInfo
-  import ../../../CodeGen/Convert % This is for FinitePolyMap.fold .. def below doesn't work
+  import Simplify
+  % import ../../../CodeGen/Convert % This is for FinitePolyMap.fold .. def below doesn't work
   % import translate /Library/Structures/Data/Maps/Finite/Polymorphic/AsAssocList by
      % {Map._ +-> FinitePolyMap._}
 
@@ -64,8 +65,6 @@ Inline qualifying spec
 
   op remove : ProcMap.Map * Id.Id -> ProcMap.Map
 
-  def EdgSetEnv.fold = EdgSetEnv.foldl
-
   op inlineProc : Oscar.Spec -> Id.Id -> Env Oscar.Spec 
   def inlineProc oscSpec procId = {
       (newOscSpec,proc) <-
@@ -75,13 +74,12 @@ Inline qualifying spec
           | Some proc -> return (oscSpec,proc);
   
       oldBSpec <- return (bSpec proc);
-      coAlg <- return (succCoalgebra (bSpec proc)); 
-      newBSpec <- return (BSpec.make (initial oldBSpec) (modeSpec oldBSpec (initial oldBSpec)));
-      newBSpec <- return (addMode newBSpec (theSingleton (final oldBSpec)) (modeSpec oldBSpec (theSingleton (final oldBSpec))));
-      newBSpec <- return (newBSpec withFinal (final oldBSpec));
-      newBSpec <-
-        EdgSetEnv.fold (inlineEdge (procedures oscSpec) (initial oldBSpec) (theSingleton (final oldBSpec)) oldBSpec coAlg None None)
-          newBSpec (coAlg (initial oldBSpec));
+      (newBSpec,newInitial) <- return (BSpec.make procId (modeSpec (initial oldBSpec)));
+      (newBSpec,newFinal) <- return (newFinalMode newBSpec (modeSpec (hd (final oldBSpec))));
+      (newBSpec,visited) <-
+        foldM (inlineTransition (procedures oscSpec) newInitial newFinal oldBSpec None None)
+          (newBSpec,[]) (outTrans oldBSpec (initial oldBSpec));
+      newBSpec <- removeNilTransitions newBSpec;
       newProc <- makeProcedure (parameters proc)
                                (varsInScope proc)
                                (returnInfo proc)
@@ -100,17 +98,26 @@ the assignment for the result .. that variable becomes the new Lhs if it exists
 if the lhs variable is the return variable then the lhs variable remains the same.
 
 \begin{spec}
-  op inlineEdge :
+  op findVertex : List (Mode * Mode) -> Mode -> Option Mode
+  def findVertex pairs mode =
+    case pairs of
+      | [] -> None
+      | (old,new)::rest ->
+           if Mode.eq? (old,mode) then
+             Some new
+           else
+             findVertex rest mode
+
+  op inlineTransition :
         ProcMap.Map
-     -> Vrtx.Vertex
-     -> Vrtx.Vertex
+     -> Mode
+     -> Mode
      -> BSpec
-     -> Coalgebra
      -> ReturnInfo
      -> Option Op.Ref
-     -> BSpec
-     -> Edg.Edge
-     -> Env BSpec
+     -> BSpec * List (Mode * Mode)
+     -> Transition
+     -> Env (BSpec * List (Mode * Mode))
 \end{spec}
 
 We are in the process of copying a procedure into the new bspec. We are
@@ -120,18 +127,18 @@ whose whose destination is the final vertex, then rather than copy the
 vertex, we connect the edge to the endPoint.
 
 \begin{spec}
-  def inlineEdge procs src endPoint oldBSpec coAlg optReturnRef optLHSRef newBSpec edge = {
-    dst <- return (GraphMap.eval (target (shape (system oldBSpec)), edge));
-    (newDst,successors,newBSpec) <-
-       if member? (final oldBSpec, dst) then
-         return (endPoint,empty,newBSpec)
+  def inlineTransition procs src endPoint oldBSpec optReturnRef optLHSRef (newBSpec,visited) transition = {
+    dst <- return (target transition);
+    (newDst,successors,newBSpec,visited) <-
+       if Mode.member? (final oldBSpec) dst then
+         return (endPoint,[],newBSpec,visited)
        else
-         if VrtxSet.member? (vertices (shape (system newBSpec)),dst) then
-           return (dst,empty,newBSpec)
-         else {
-           newBSpec <- return (addMode newBSpec dst (modeSpec oldBSpec dst));
-           return (dst, coAlg dst, newBSpec)
-         };
+         case findVertex visited dst of
+           | None -> {
+                (newBSpec,newDst) <- return (newMode newBSpec (modeSpec dst));
+                return (newDst, outTrans oldBSpec dst, newBSpec, Cons ((dst,newDst),visited))
+              }
+           | Some newDst -> return (newDst,[],newBSpec,visited);
 \end{spec}
 
 Now we look at the transition in the procedure being inline. If it is a procedure call,
@@ -143,12 +150,14 @@ We make provision (to be implemented later) to introduce a transition that
 copies fills in the calling arguments.
 
 \begin{spec}
-    transSpec <- return (edgeLabel (system oldBSpec) edge); 
+    transSpec <- return (Transition.transSpec transition); 
     called <- procCalled transSpec;
-    newBSpec <-
+    (newBSpec,visited) <-
       case (called, optReturnRef, optLHSRef) of
         | (None, None, _) ->
-            connect newBSpec src newDst edge transSpec
+            let (newBSpec,newTrans) = newTrans newBSpec src newDst transSpec in
+              return (newBSpec,visited)
+            %% connect newBSpec src newDst edge transSpec
         | (None, Some returnRef, Some lhsRef) -> {
               transSpec <- catch {
                 varInfo <- findTheVariable (modeSpec transSpec) returnRef;
@@ -160,26 +169,26 @@ copies fills in the calling arguments.
                   addVariable transSpec (varInfo withId (makePrimedId lhsRef)) noPos
                 } (fn except -> return transSpec)
               } (fn except -> return transSpec);
-              connect newBSpec src newDst edge transSpec
+              (newBSpec,newTransition) <- return (newTrans newBSpec src newDst transSpec);
+              return (newBSpec,visited)
             }
         | (Some procInfo, None, _) -> {   % if well formed then no return value returnTerm = ().
               % when (~(procInfo.argList = []))
-              %   (raise (SpecError (noPos, "inlineEdge: cannot inline procedures with parameters: " ^ (show procInfo.procId))));
+              %   (raise (SpecError (noPos, "inlineTransition: cannot inline procedures with parameters: " ^ (show procInfo.procId))));
               when (~(procInfo.argList = []))
-                (print ("inlineEdge: cannot inline procedures with parameters: " ^ (Id.show procInfo.procId) ^ "\n"));
+                (print ("inlineTransition: cannot inline procedures with parameters: " ^ (Id.show procInfo.procId) ^ "\n"));
               newLHSRef <-
                 case procInfo.returnTerm of
                   | (Fun (Op(qid,fxty),_,_)) -> return (Some qid)
                   | _ -> return None; % raise (SpecError (noPos, "bad return term: " ^ (show procInfo.returnTerm)));
               proc <-
                 case evalPartial (procs, procInfo.procId) of
-                  | None -> raise (SpecError (noPos, "inlineEdge: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
+                  | None -> raise (SpecError (noPos, "inlineTransition: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
-              reindexed <- return (reindex (bSpec proc));
-              newCoAlg <- return (succCoalgebra reindexed);
               print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
-              fold (inlineEdge procs src newDst reindexed newCoAlg (returnInfo proc) newLHSRef)
-                newBSpec (newCoAlg (initial reindexed))
+              (newBSpec,procVisited) <- foldM (inlineTransition procs src newDst (bSpec proc) (returnInfo proc) newLHSRef)
+                (newBSpec,[]) (outTrans (bSpec proc) (initial (bSpec proc)));
+              return (newBSpec,visited)
             }
         | (Some procInfo, Some returnRef, Some lhsRef) -> {
               newLHSRef <-
@@ -188,18 +197,17 @@ copies fills in the calling arguments.
                   | _ -> return None; % raise (SpecError (noPos, "bad return term: " ^ (show procInfo.returnTerm)));
               proc <-
                 case evalPartial (procs, procInfo.procId) of
-                  | None -> raise (SpecError (noPos, "inlineEdge: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
+                  | None -> raise (SpecError (noPos, "inlineTransition: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
-              reindexed <- return (reindex (bSpec proc));
-              newCoAlg <- return (succCoalgebra reindexed);
               print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
-              EdgSetEnv.fold (inlineEdge procs src newDst reindexed newCoAlg (returnInfo proc) newLHSRef)
-                  newBSpec (newCoAlg (initial reindexed))
+              (newBSpec,procVisited) <- foldM (inlineTransition procs src newDst (bSpec proc) (returnInfo proc) newLHSRef)
+                  (newBSpec,[]) (outTrans (bSpec proc) (initial (bSpec proc)));
+              return (newBSpec,visited)
             }
-        | _ -> fail ("inlineEdge: called=" ^ (System.toString called)
+        | _ -> fail ("inlineTransition: called=" ^ (System.toString called)
                                            ^ "\noptReturnRef=" ^ (System.toString optReturnRef)
                                            ^ "\noptLHSRef=" ^ (System.toString optLHSRef));
-    fold (inlineEdge procs newDst endPoint oldBSpec coAlg optReturnRef optLHSRef) newBSpec successors
+    foldM (inlineTransition procs newDst endPoint oldBSpec optReturnRef optLHSRef) (newBSpec,visited) successors
   }
 
   op procCalled : TransSpec -> Env (Option CallInfo)
@@ -257,9 +265,9 @@ copies fills in the calling arguments.
          }
       | _ -> return None
 
-  op connect : BSpec -> Vrtx.Vertex -> Vrtx.Vertex -> Edg.Edge -> TransSpec -> Env BSpec
-  def connect bSpec first last edge transSpec =
-    return (addTrans bSpec first last edge (modeSpec transSpec) (forwMorph transSpec) (backMorph transSpec))
+  % op connect : BSpec -> Vrtx.Vertex -> Vrtx.Vertex -> Edg.Edge -> TransSpec -> Env BSpec
+  % def connect bSpec first last edge transSpec =
+    % return (addTrans bSpec first last edge (modeSpec transSpec) (forwMorph transSpec) (backMorph transSpec))
 endspec
 \end{spec}
 

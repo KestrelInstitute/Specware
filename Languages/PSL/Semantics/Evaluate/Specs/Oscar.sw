@@ -96,7 +96,7 @@ Oscar qualifying spec
   def Env.withProcedures (oscSpec,newProcs) = return (oscSpec withProcedures newProcs)
 
   op addProcedure : Spec -> Id.Id -> Procedure -> Env Spec
-  def addProcedure spc id proc = spc withProcedures (update (procedures spc, id, proc))
+  def addProcedure spc id prc = spc withProcedures (update (procedures spc, id, prc))
 
   op join : SpecCalc.Term Position -> Spec -> Spec -> Position -> Env Spec
   def join term spc1 spc2 position = {
@@ -104,7 +104,7 @@ Oscar qualifying spec
     newProcs <- fold (fn procMap -> fn id -> fn proc ->
       case evalPartial (procedures spc1, id) of
         | None -> return (update (procMap, id, proc))
-        | Some _ -> raise (SpecError (noPos, "Procedure " ^ (show id) ^ " was redefined")))
+        | Some _ -> raise (SpecError (noPos, "Procedure " ^ (Id.show id) ^ " was redefined")))
       (procedures spc1) (procedures spc2);
     return (make newModeSpec newProcs)
   }
@@ -112,11 +112,11 @@ Oscar qualifying spec
   op pp : Spec -> Doc
   def pp oscarSpec =
     ppConcat [
-      pp "modeSpec=",
+      String.pp "modeSpec=",
       ppNewline,
       ppIndent (ModeSpec.pp (modeSpec oscarSpec)),   % Why must pp be qualified?
       ppNewline,
-      pp "procedures=",
+      String.pp "procedures=",
       ppNewline,
       ppIndent (pp (procedures oscarSpec))
     ]
@@ -136,42 +136,42 @@ Oscar qualifying spec
       procDoc <- pp (procedures oscarSpec);
       return
         (ppConcat [
-          pp "modeSpec=",
+          String.pp "modeSpec=",
           ppNewline,
           ppIndent (ModeSpec.pp (subtract (modeSpec oscarSpec) ms)),   % Why must pp be qualified?
           ppNewline,
-          pp "procedures=",
+          String.pp "procedures=",
           ppNewline,
           ppIndent procDoc
         ])
     }
 
-  op ppLess : Spec -> ModeSpec -> Doc
-  def ppLess oscarSpec ms =
-    let
-      def ppPair (name,proc) =
-        ppConcat [
-          pp name,
-          pp "=",
-          ppLess proc (modeSpec oscarSpec)
-        ]
-    in
-      ppConcat [
-        pp "modeSpec=",
-        ppNewline,
-        pp "  ",
-        ppIndent (ModeSpec.pp (subtract (modeSpec oscarSpec) ms)),   % Why must pp be qualified?
-        ppNewline,
-        pp "procedures=",
-        ppNewline,
-        pp "  ",
-        ppIndent (ppConcat [
-          pp "{",
-          ppNest 1
-            (ppSep ppNewline (fold (fn (doc,pair) -> cons (ppPair pair, doc), [], procedures oscarSpec))),
-          pp "}"
-        ])
-      ]
+%   op ppLess : Spec -> ModeSpec -> Doc
+%   def ppLess oscarSpec ms =
+%     let
+%       def ppPair (name,proc) =
+%         ppConcat [
+%           pp name,
+%           pp "=",
+%           ppLess proc (modeSpec oscarSpec)
+%         ]
+%     in
+%       ppConcat [
+%         pp "modeSpec=",
+%         ppNewline,
+%         pp "  ",
+%         ppIndent (ModeSpec.pp (subtract (modeSpec oscarSpec) ms)),   % Why must pp be qualified?
+%         ppNewline,
+%         pp "procedures=",
+%         ppNewline,
+%         pp "  ",
+%         ppIndent (ppConcat [
+%           pp "{",
+%           ppNest 1
+%             (ppSep ppNewline (ProcMap.fold (fn (doc,pair) -> cons (ppPair pair, doc), [], procedures oscarSpec))),
+%           pp "}"
+%         ])
+%       ]
 
   op LocalProcMap.show : ProcMap.Map -> Env String
   def LocalProcMap.show map =
@@ -205,14 +205,14 @@ Oscar qualifying spec
              | One (_,_) ->
                  return (ppGroup (ppConcat [
                    procDoc,
-                   pp ",",
+                   String.pp ",",
                    ppBreak,
                    restDoc
                  ]))
            }
      in {
        procDoc <- ppContents map;
-       return (ppConcat [pp "{", procDoc, pp "}"])
+       return (ppConcat [String.pp "{", procDoc, String.pp "}"])
      }
 endspec
 \end{spec}

@@ -22,16 +22,15 @@ states.
 
 \begin{spec}
 Proc qualifying spec
-  import TransSpec
-  import Env
-  import EdgeSets
+  import BSpec
+  % import EdgeSets
 
-  import translate (translate /Languages/BSpecs/Predicative/Coalgebra
-    by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
-    by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._,
-        Vertex._ +-> Vrtx._, Edge._ +-> Edg._,
-        VertexSet._ +-> VrtxSet._, EdgeSet._ +-> EdgSet._}
-
+%   import translate (translate /Languages/BSpecs/Predicative/Coalgebra
+%     by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
+%     by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._,
+%         Vertex._ +-> Vrtx._, Edge._ +-> Edg._,
+%         VertexSet._ +-> VrtxSet._, EdgeSet._ +-> EdgSet._}
+% 
   sort ReturnInfo = Option Op.Ref
 
   op ReturnInfo.make : Op.Ref -> ReturnInfo
@@ -81,6 +80,15 @@ Proc qualifying spec
 
   op modeSpec : Procedure -> ModeSpec
   def modeSpec proc = proc.modeSpec
+
+  op withBSpec infixl 17 : Procedure * BSpec -> Procedure
+  def withBSpec (proc,newBSpec) = {
+    parameters = parameters proc,
+    varsInScope = varsInScope proc,
+    returnInfo = returnInfo proc,
+    modeSpec = modeSpec proc,
+    bSpec = newBSpec
+  }
 \end{spec}
 
 The field \verb+returnName+ holds the name of the identifier within the
@@ -101,7 +109,7 @@ Proper scoping of variables requires thought.
 problem requiring thought. The current scheme, for example, will not
 handle name clashes properly.
 
-\begin{spec}
+begin{spec}
   op pp : Procedure -> Doc
   def pp proc =
     ppConcat [
@@ -127,100 +135,32 @@ handle name clashes properly.
     in
       pp procShort
 
+\begin{spec}
   op ReturnInfo.pp : ReturnInfo -> Doc
   def ReturnInfo.pp info =
     case info of
-      | None -> pp "None"
-      | Some ref -> pp ref
+      | None -> String.pp "None"
+      | Some ref -> Id.pp ref
+\end{spec}
 
    op show : Procedure -> String 
    def show proc = ppFormat (pp proc)
-\end{spec}
 
 \begin{spec}
   op ProcEnv.pp : Id.Id -> Procedure -> Env Doc
   def ProcEnv.pp procId proc = {
-      bs <- return (bSpec proc);
-      (visited,doc) <- ppFrom procId (modeSpec proc) bs (succCoalgebra bs) (initial bs) empty ppNil;
-      return 
-       (ppConcat [
-          pp "proc ",
-          pp procId,
-          pp " params=(",
-          ppSep (pp ",") (map pp (parameters proc)),
-          pp "), returnInfo=",
-          pp (returnInfo proc),
-          pp ", bSpec=",
-          ppConcat [
-            pp "{initial=",
-            pp (initial bs),
-            pp ", final=",
-            pp (final bs),
-            pp ", system=",
-            ppNewline,
-            pp "  ",
-            ppIndent doc
-          ]
-        ])
+    doc <- pp proc.bSpec (modeSpec proc);
+    return 
+     (ppConcat [
+        String.pp "proc ",
+        Id.pp procId,
+        String.pp " params=(",
+        ppSep (String.pp ",") (map Id.pp (parameters proc)),
+        String.pp "), returnInfo=",
+        pp (returnInfo proc),
+        String.pp ", bSpec=",
+        doc
+     ])
     }
-
-  sort Coalg = Vrtx.Vertex -> EdgSet.Set
-
-  op ppEdge :
-        Id.Id
-     -> ModeSpec
-     -> BSpec
-     -> Coalgebra
-     -> (VrtxSet.Set * Doc)
-     -> Edg.Edge
-     -> Env (VrtxSet.Set * Doc)
-  def ppEdge procId procModeSpec bSpec coAlg (visited,doc) edge = {
-      first <- return (GraphMap.eval (source (shape (system bSpec)), edge));
-      last <- return (GraphMap.eval (target (shape (system bSpec)), edge));
-      transSpec <- return (edgeLabel (system bSpec) edge);
-      newDoc <-
-        return (ppConcat [
-                  if doc = ppNil then ppNil else ppCons doc ppBreak, % do what ppSep does. could be cleaner
-                  pp "(",
-                  pp edge,
-                  pp " : ",
-                  pp first,
-                  pp " -> ",
-                  pp last,
-                  pp ") +-> ",
-                  ppBreak,
-                  pp "    ",
-                  ppNest 4 (ppConcat [
-                    pp (subtract (TransSpec.modeSpec transSpec) procModeSpec),
-                    ppBreak,
-                    pp "changed=",
-                    pp (changedVars (backMorph transSpec))
-                  ])
-               ]);
-      if member? (visited,last) then
-        return (visited,newDoc)
-      else
-        ppFrom procId procModeSpec bSpec coAlg last visited newDoc
-    }
-  
-  op ppFrom :
-       Id.Id
-    -> ModeSpec
-    -> BSpec
-    -> Coalgebra
-    -> Vrtx.Vertex
-    -> VrtxSet.Set
-    -> Doc
-    -> Env (VrtxSet.Set * Doc)
-  def ppFrom procId procModeSpec bSpec coAlg src visited doc = {
-      visited <- return (insert (visited, src));
-      successors <- return (coAlg src);
-      % when ((empty? successors) & ~(member? (final bSpec,src))) 
-      %   (raise (SpecError (noPos,"ppFrom: procedure " ^ (show procId) ^ " has empty set of successors")));
-      EdgSetEnv.foldl (ppEdge procId procModeSpec bSpec coAlg) (visited,doc) successors 
-    }
-
-  op SpecCalc.when : Boolean -> Env () -> Env ()
-  % def when p command = if p then (fn s -> (command s)) else return ()
 endspec
 \end{spec}

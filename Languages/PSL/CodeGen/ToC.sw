@@ -3,7 +3,7 @@ SpecCalc qualifying spec {
   import ../../MetaSlang/CodeGen/C/ToC
   import /Languages/PSL/Semantics/Evaluate/Specs/Op/Legacy
 
-  sort Spec.Spec = ASpec Position
+  % sort Spec.Spec = ASpec Position
 
   op oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
   def oscarToC oscSpec base =
@@ -19,7 +19,7 @@ SpecCalc qualifying spec {
 
   op generateCProcedure : CSpec -> Id.Id -> Procedure -> Env CSpec
   def generateCProcedure cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
-    let initSpec = BSpec.modeSpec bSpec (initial bSpec) in
+    let initSpec = Mode.modeSpec (initial bSpec) in
     let varDecls =
       List.map (fn argRef -> let (names,fxty,(tyVars,srt),_) = Op.deref (specOf initSpec, argRef) in
             (OpRef.show argRef, sortToCType srt)) parameters in
@@ -33,9 +33,6 @@ SpecCalc qualifying spec {
       case except of
         | SpecError (pos, msg) -> {
              print ("convertOscarSpec exception:" ^ msg ^ "\n");
-             print "shape=";
-             print (ppFormat (pp (shape (system (Proc.bSpec proc)))));
-             print "\n";
              procDoc <- ProcEnv.pp id proc;
              print (ppFormat procDoc);
              print "\n";

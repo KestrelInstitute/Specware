@@ -16,13 +16,12 @@ CompCtxt qualifying spec
   sort CompCtxt = {
       procedures : ProcMap.Map,
       modeSpec : ModeSpec,
-      graphCounter : Nat,
       varCounter : Nat,
-      initial : Vrtx.Vertex,
-      final : Vrtx.Vertex,
-      exit : Vrtx.Vertex,
-      break : Option Vrtx.Vertex,
-      continue : Option Vrtx.Vertex,
+      initial : Mode,
+      final : Mode,
+      exit : Mode,
+      break : Option Mode,
+      continue : Option Mode,
       bSpec : BSpec,
       procId : Id.Id,
       returnInfo : ReturnInfo
@@ -34,31 +33,22 @@ CompCtxt qualifying spec
   op modeSpec : CompCtxt -> ModeSpec
   def modeSpec ctxt = ctxt.modeSpec
   
-  op graphCounter : CompCtxt -> Nat
-  def graphCounter ctxt = ctxt.graphCounter
-
-  % op newGraphElement : CompCtxt -> (Vrtx.Vertex * CompCtxt)
-  % def newGraphElement ctxt =
-    % (mkNatVertexEdge (graphCounter ctxt),
-     % ctxt withGraphCounter ((graphCounter ctxt) + 1))
-
-% perhaps we should have just new var function?
   op varCounter : CompCtxt -> Nat
   def varCounter ctxt = ctxt.varCounter
 
-  op initial : CompCtxt -> Vrtx.Vertex
+  op initial : CompCtxt -> Mode
   def initial ctxt = ctxt.initial
   
-  op final : CompCtxt -> Vrtx.Vertex
+  op final : CompCtxt -> Mode
   def final ctxt = ctxt.final
   
-  op exit : CompCtxt -> Vrtx.Vertex
+  op exit : CompCtxt -> Mode
   def exit ctxt = ctxt.exit
   
-  op break : CompCtxt -> Option Vrtx.Vertex
+  op break : CompCtxt -> Option Mode
   def break ctxt = ctxt.break
   
-  op continue : CompCtxt -> Option Vrtx.Vertex
+  op continue : CompCtxt -> Option Mode
   def continue ctxt = ctxt.continue
   
   op bSpec : CompCtxt -> BSpec
@@ -74,7 +64,6 @@ CompCtxt qualifying spec
   def withProcedures (ctxt,procs) = {
       procedures = procs,
       modeSpec = modeSpec ctxt,
-      graphCounter = graphCounter ctxt,
       varCounter = varCounter ctxt,
       initial = initial ctxt,
       final = final ctxt,
@@ -90,7 +79,6 @@ CompCtxt qualifying spec
   def withModeSpec (ctxt,modeSpec) = {
       procedures = procedures ctxt,
       modeSpec = modeSpec,
-      graphCounter = graphCounter ctxt,
       varCounter = varCounter ctxt,
       initial = initial ctxt,
       final = final ctxt,
@@ -102,14 +90,13 @@ CompCtxt qualifying spec
       returnInfo = returnInfo ctxt
     }
   
-  op withFinal infixl 17 : CompCtxt * Vrtx.Vertex -> CompCtxt 
-  def withFinal (ctxt,vertex) = {
+  op withFinal infixl 17 : CompCtxt * Mode -> CompCtxt 
+  def withFinal (ctxt,mode) = {
       procedures = procedures ctxt,
       modeSpec = modeSpec ctxt,
-      graphCounter = graphCounter ctxt,
       varCounter = varCounter ctxt,
       initial = initial ctxt,
-      final = vertex,
+      final = mode,
       exit = exit ctxt,
       break = break ctxt,
       continue = continue ctxt,
@@ -118,11 +105,10 @@ CompCtxt qualifying spec
       returnInfo = returnInfo ctxt
     }
   
-  op withBreak infixl 17 : CompCtxt * (Option Vrtx.Vertex) -> CompCtxt 
+  op withBreak infixl 17 : CompCtxt * (Option Mode) -> CompCtxt 
   def withBreak (ctxt,optVertex) = {
       procedures = procedures ctxt,
       modeSpec = modeSpec ctxt,
-      graphCounter = graphCounter ctxt,
       varCounter = varCounter ctxt,
       initial = initial ctxt,
       final = final ctxt,
@@ -134,11 +120,10 @@ CompCtxt qualifying spec
       returnInfo = returnInfo ctxt
     }
   
-  op withContinue infixl 17 : CompCtxt * (Option Vrtx.Vertex) -> CompCtxt 
+  op withContinue infixl 17 : CompCtxt * (Option Mode) -> CompCtxt 
   def withContinue (ctxt,optVertex) = {
       procedures = procedures ctxt,
       modeSpec = modeSpec ctxt,
-      graphCounter = graphCounter ctxt,
       varCounter = varCounter ctxt,
       initial = initial ctxt,
       final = final ctxt,
@@ -150,11 +135,10 @@ CompCtxt qualifying spec
       returnInfo = returnInfo ctxt
     }
   
-  op withInitial infixl 17 : CompCtxt * Vrtx.Vertex -> CompCtxt 
+  op withInitial infixl 17 : CompCtxt * Mode -> CompCtxt 
   def withInitial (ctxt,vertex) = {
       procedures = procedures ctxt,
       modeSpec = modeSpec ctxt,
-      graphCounter = graphCounter ctxt,
       varCounter = varCounter ctxt,
       initial = vertex,
       final = final ctxt,
@@ -170,7 +154,6 @@ CompCtxt qualifying spec
   def withBSpec (ctxt,bSpec) = {
       procedures = procedures ctxt,
       modeSpec = modeSpec ctxt,
-      graphCounter = graphCounter ctxt,
       varCounter = varCounter ctxt,
       initial = initial ctxt,
       final = final ctxt,
@@ -185,22 +168,6 @@ CompCtxt qualifying spec
   op CompCtxtEnv.withBSpec infixl 17 : CompCtxt * BSpec -> Env CompCtxt 
   def CompCtxtEnv.withBSpec (ctxt,bSpec) = return (ctxt withBSpec bSpec)
   
-  op withGraphCounter infixl 17 : CompCtxt * Nat -> CompCtxt 
-  def withGraphCounter (ctxt,graphCounter) = {
-      procedures = procedures ctxt,
-      modeSpec = modeSpec ctxt,
-      graphCounter = graphCounter,
-      varCounter = varCounter ctxt,
-      initial = initial ctxt,
-      final = final ctxt,
-      exit = exit ctxt,
-      break = break ctxt,
-      continue = continue ctxt,
-      bSpec = bSpec ctxt,
-      procId = procId ctxt,
-      returnInfo = returnInfo ctxt
-    }
-
   op withExit infixl 17 : CompCtxt * Vrtx.Vertex -> CompCtxt 
   op withReturnInfo infixl 17 : CompCtxt * ReturnInfo -> CompCtxt 
 endspec
