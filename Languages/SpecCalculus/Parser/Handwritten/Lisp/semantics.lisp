@@ -161,13 +161,10 @@
 
 ;; The counter here is for freshMetaTypeVar. Perhaps it should be moved
 ;; out of the parser. Needs thought.
-(defun make-spec-definition (optional-qualifier optional-declaration-sequence l r)
+(defun make-spec-definition (optional-qualifier declaration-sequence l r)
   :comment "A specification"
   (setq *varcounter* 0)
-  (let* ((declaration-sequence (if (eq :unspecified optional-declaration-sequence)
-                                   nil
-                                 optional-declaration-sequence))
-         (spec_def (cons (cons :|Spec| declaration-sequence)
+  (let* ((spec_def (cons (cons :|Spec| declaration-sequence)
                          (make-pos l r))))
     (if (eq :unspecified optional-qualifier)
         spec_def
