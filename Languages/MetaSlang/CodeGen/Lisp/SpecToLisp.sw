@@ -32,7 +32,7 @@ SpecToLisp qualifying spec {
 	%% Added because of Xanalys packages, but prudent anyway
 	"SYSTEM", "IO", "BOOTSTRAP",
 	%% Added for cmulisp compatibility
-	"HASHTABLE"]
+	"ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
 
  def notReallyLispStrings =
        ["C","D","I","M","N","P","S","V","X","Y","Z","KEY","NAME","VALUE","PATTERN"]
