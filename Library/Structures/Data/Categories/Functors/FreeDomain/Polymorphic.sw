@@ -31,7 +31,7 @@ The names of some of these operators clash with Cats and Graphs.
 let Sketches =
   Sketch qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic in
 let Cats = Cats qualifying /Library/Structures/Data/Categories/Polymorphic in
-let Maps = Poly qualifying /Library/Structures/Data/Maps/Polymorphic in
+let Maps = PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic in
 spec {
   import Sketches
   import Cats
@@ -41,8 +41,8 @@ spec {
 
   op dom : fa(O,A) Functor (O,A) -> Sketch
   op cod : fa(O,A) Functor (O,A) -> Cat (O,A)
-  op vertexMap : fa(O,A) Functor (O,A) -> Poly.Map (Vertex.Elem,O)
-  op edgeMap : fa(O,A) Functor (O,A) -> Poly.Map (Edge.Elem,A)
+  op vertexMap : fa(O,A) Functor (O,A) -> PolyMap.Map (Vertex.Elem,O)
+  op edgeMap : fa(O,A) Functor (O,A) -> PolyMap.Map (Edge.Elem,A)
 \end{spec}
 
 When pretty printing a functor, we don't print the domain or codomain. 
@@ -55,12 +55,12 @@ Printing the domain (generator) is not unreasonable.
       ppString "Vertex Map =",
       ppNewline,
       ppString "  ",
-      ppIndent (Poly.ppMap Vertex.ppElem (ppObj (cod functor)) (vertexMap functor)),
+      ppIndent (PolyMap.ppMap Vertex.ppElem (ppObj (cod functor)) (vertexMap functor)),
       ppNewline,
       ppString "Edge Map =",
       ppNewline,
       ppString "  ",
-      ppIndent (Poly.ppMap Edge.ppElem (ppArr (cod functor)) (edgeMap functor))
+      ppIndent (PolyMap.ppMap Edge.ppElem (ppArr (cod functor)) (edgeMap functor))
    ]
 }
 \end{spec}
