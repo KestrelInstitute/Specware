@@ -54,7 +54,7 @@ Cat qualifying spec {
 %  op ppObj: fa(O,A) Cat(O,A) -> O -> Pretty
 %  op ppArr: fa(O,A) Cat(O,A) -> A -> Pretty
 
-  def Cat.ident cat = cat.ident
+  def Cat.ident cat = cat.ident 
   def Cat.dom cat = cat.dom
   def Cat.cod cat = cat.cod
   % def composable? cat = cat.composable?

@@ -50,9 +50,9 @@ let
           (case terms of
                | [Nonfix(t1)] -> [Nonfix(t1)]
                | [Infix(t,_)] -> [Nonfix(t)]
-               | [] -> System.fail (printPosition pos^": No terms to apply")
+               | [] -> System.fail (print pos^": No terms to apply")
                | (Infix(t,p)) :: _ ->  
-                     System.fail (printPosition pos^": Infix "^printTerm t ^" given without left argument")
+                     System.fail (print pos^": Infix "^printTerm t ^" given without left argument")
                | (Nonfix(t1)):: (Infix(infix1,(a1,delta1)))::rest -> 
                   let rest = scan(delta1,rest) in
                   if delta0 > delta1 or (delta0 = delta1 & a1 = Left) then
@@ -87,11 +87,11 @@ let
                          %% As indicated above, the first infix operator here (infix1) 
                          %%  binds tighter than the prior infix operator.
                          [Nonfix(applyInfix(t1,infix1,t2))]
-                       | _ -> System.fail (printPosition pos^": Infix "^printTerm infix1^
+                       | _ -> System.fail (print pos^": Infix "^printTerm infix1^
                                           " given without left argument"))
                 
                | (Nonfix _)::(Nonfix _)::_ ->
-                      System.fail (printPosition pos^":Unreduced nonfix"))
+                      System.fail (print pos^":Unreduced nonfix"))
          in
          let def scanrec(tagged) = 
            (case scan(0,tagged) of

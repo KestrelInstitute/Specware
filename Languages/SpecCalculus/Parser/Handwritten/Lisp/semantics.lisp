@@ -2,6 +2,7 @@
 
 (in-package :PARSER4)
 
+(defpackage "POSITION")
 (defpackage "POSSPEC")
 
 ;;; variables associated with new definition tables (circa May 8, 2002)
@@ -16,13 +17,14 @@
 ;;;  Misc utilities
 ;;; ========================================================================
 
-(defun make-pos (l r) (cons l r))
-(defparameter position0 (cons (make-pos 0 0) (make-pos 0 0)))
+(defun make-pos (left right) 
+  (declare (special *parse-file-name*))
+  (cons :|File| (vector *parse-file-name* left right)))
 
-(defun freshMetaTypeVar (l r)
+(defun freshMetaTypeVar (left right)
   (cons :|MetaTyVar|
         (cons (cons :|Ref| (vector (cons :|None| nil) "#intern" (incf *varcounter*)))
-              (make-pos l r))))
+              (make-pos left right))))
 
 (defun namedTypeVar (name)
   name
@@ -100,11 +102,12 @@
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
 
-(defparameter char-sort   (cons :|PBase| (vector (mkQualifiedId "Char"    "Char")    nil position0)))
-(defparameter bool-sort   (cons :|PBase| (vector (mkQualifiedId "Boolean" "Boolean") nil position0)))
-(defparameter string-sort (cons :|PBase| (vector (mkQualifiedId "String"  "String")  nil position0)))
-(defparameter int-sort    (cons :|PBase| (vector (mkQualifiedId "Integer" "Integer") nil position0)))
-(defparameter nat-sort    (cons :|PBase| (vector (mkQualifiedId "Nat"     "Nat")     nil position0)))
+(defparameter internal-parser-position (cons :|Internal| "built-in from parser"))
+(defparameter char-sort   (cons :|PBase| (vector (mkQualifiedId "Char"    "Char")    nil internal-parser-position)))
+(defparameter bool-sort   (cons :|PBase| (vector (mkQualifiedId "Boolean" "Boolean") nil internal-parser-position)))
+(defparameter string-sort (cons :|PBase| (vector (mkQualifiedId "String"  "String")  nil internal-parser-position)))
+(defparameter int-sort    (cons :|PBase| (vector (mkQualifiedId "Integer" "Integer") nil internal-parser-position)))
+(defparameter nat-sort    (cons :|PBase| (vector (mkQualifiedId "Nat"     "Nat")     nil internal-parser-position)))
 
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))

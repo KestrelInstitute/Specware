@@ -10,7 +10,8 @@ Specware qualifying spec {
   import Evaluate/Term 
   import Environment 
   import SpecPath
-  import ../../MetaSlang/Specs/PosSpec     % for pos0
+  % import ../../MetaSlang/Specs/PosSpec    
+  import ../../MetaSlang/Specs/Position     
   import ../AbstractSyntax/Printer % for showUI
 \end{spec}
 
@@ -68,13 +69,16 @@ exists with a non-zero status and hence the bootstrap fails.
     let run = {
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      uri <- pathToRelativeURI (removeSWsuffix path); 
-      evaluateURI pos0 uri;
-      return true
-    } in
+      let path_body = removeSWsuffix path in
+      {uri <- pathToRelativeURI path_body;
+       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
+       evaluateURI position uri;
+       return true
+    }} in
     case catch run toplevelHandler initialSpecwareState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
+
 \end{spec}
 
 We provide two functions (callable from the Lisp read-eval-print loop)
@@ -89,11 +93,16 @@ compiles the resulting specification to lisp.
       restoreSavedSpecwareState;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      uri <- pathToRelativeURI (removeSWsuffix path); 
-      evaluateURI pos0 uri;
-      saveSpecwareState;
-      return true
-    } in
+      %% removeSWsuffix could be generalized to extractURIpath
+      %% and then the code to create the position would use the
+      %% start and end positions of path_body within path
+      let path_body = removeSWsuffix path in
+      {uri <- pathToRelativeURI path_body;
+       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
+       evaluateURI position uri;
+       saveSpecwareState;
+       return true
+    }} in
     case catch run toplevelHandler ignoredState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
@@ -106,11 +115,13 @@ compiles the resulting specification to lisp.
       restoreSavedSpecwareState;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      uri <- pathToRelativeURI (removeSWsuffix path); 
-      evaluatePrint (URI uri, pos0);
-      saveSpecwareState;
-      return true
-    } in
+      let path_body = removeSWsuffix path in
+      {uri <- pathToRelativeURI path_body;
+       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
+       evaluatePrint (URI uri, position);
+       saveSpecwareState;
+       return true
+    }} in
     case catch run toplevelHandler ignoredState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
@@ -148,12 +159,14 @@ The following corresponds to the :show command.
       restoreSavedSpecwareState;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      uri <- pathToRelativeURI (removeSWsuffix path); 
-      spcInfo <- evaluateURI pos0 uri;
-      evaluateLispCompile (spcInfo,(URI uri,pos0), target);
-      saveSpecwareState;
-      return true
-    } in
+      let path_body = removeSWsuffix path in
+      {uri <- pathToRelativeURI path_body;
+       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
+       {spcInfo <- evaluateURI position uri;
+        evaluateLispCompile (spcInfo, (URI uri, position), target);
+        saveSpecwareState;
+        return true
+    }}} in
     case catch run toplevelHandler ignoredState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
@@ -232,12 +245,12 @@ sense that no toplevel functions return anything.
                "Error in specification: "
              ^ msg
              ^ " at "
-             ^ (showPosition position)
+             ^ (print position)
          | DiagError (position,msg) ->
                "Diagram error: "
              ^ msg
              ^ " at "
-             ^ (showPosition position)
+             ^ (print position)
          | ParserError fileName ->
                "Syntax error: file "
              ^ fileName
@@ -249,26 +262,16 @@ sense that no toplevel functions return anything.
          | URINotFound (position,uri) ->
                "Unknown unit error: "
              ^ (showRelativeURI uri)
-             ^ (if position = pos0 then
-                  ""
-                else
-                  (" referenced from " ^ (showPosition position)))
+             ^ " referenced from " ^ (print position)
          | TypeCheck (position,str) ->
                "Type error: "
              ^ str
-             ^ (if position = pos0 then
-                  ""
-                else
-                  (" referenced from " ^ (showPosition position)))
-         %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
-         | OldTypeCheck str ->
-               "Type errors:\n"
-             ^ str
+             ^ " referenced from " ^ (print position)
          | Unsupported (position,str) ->
                "Unsupported operation: "
              ^ str
              ^ " at "
-             ^ (showPosition position)
+             ^ (print position)
          | _ -> 
                "Unknown exception" 
              ^ (System.toString except));
@@ -288,18 +291,5 @@ in the Specware environment, is saved.
 \begin{spec}
   op saveSpecwareState: SpecCalc.Env ()
   op restoreSavedSpecwareState: SpecCalc.Env ()
-\end{spec}
-
-This doesn't belong here. Perhaps it belongs in the instance
-of the MetaSlang terms used for parsing.
-
-\begin{spec}
-  op showPosition : Position -> String
-  def showPosition (p1,p2) = 
-    let def printPos (l,r) = (Nat.toString l) ^ "." ^ (Nat.toString r) in
-    (printPos p1) ^ "-" ^ (printPos p2)
-\end{spec}
-
-\begin{spec}
 }
 \end{spec}

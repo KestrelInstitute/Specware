@@ -29,7 +29,7 @@ spec {
 
   %% ========================================================================
 
-  sort Filename = String
+  % sort Filename = String % see Position.sw
   sort Message  = String
 
   %% ========================================================================
@@ -926,11 +926,6 @@ spec {
                         "                with " ^ printSort s2], 
               chooseNonZeroPos (sortAnn s1, sortAnn s2)));
     s1Checked)
-
-  def chooseNonZeroPos (p1: Position, p2: Position) : Position =
-   case p1 of
-    | ((0, 0), (0, 0)) -> p2
-    | _                -> p1
 
   % ========================================================================
   %% Called inside elaborateTerm 

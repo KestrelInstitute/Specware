@@ -3,11 +3,9 @@
 
 PosSpec qualifying spec {
  import AnnSpec
+ import Position
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
-
-
- sort Position = (Nat * Nat) * (Nat * Nat)
 
  %% -- See ../AbstractSyntax/AnnTerm.sl
  sort PTerm            = ATerm           Position
@@ -45,26 +43,11 @@ PosSpec qualifying spec {
  % sort PQualifierMap    = AQualifierMap   Position
 
  % ------------------------------------------------------------------------
- %  Built-in operator supported from the compiler side.
- %
-
- def zeroPosition () : Position = ((0,0),(0,0))
-
- def pos0 = zeroPosition()
-
- % ------------------------------------------------------------------------
-
- op printPosition : Position -> String
- def printPosition (p1,p2) = 
-     let printPos = fn(l,r) -> (Nat.toString l)^"."^(Nat.toString r) in
-     printPos p1^"-"^printPos p2
-
- % ------------------------------------------------------------------------
  %  Base PSort's
  % ------------------------------------------------------------------------
 
  op mkPBase : QualifiedId * List PSort -> PSort
- def mkPBase (qid, srts) = PBase (qid, srts, pos0)
+ def mkPBase (qid, srts) = PBase (qid, srts, internalPosition)
 
  op boolPSort   : PSort
  op charPSort   : PSort
@@ -93,9 +76,9 @@ PosSpec qualifying spec {
         | [] -> []
         | (psrt::psorts) -> List.cons((Nat.toString n, psrt), loop(n + 1, psorts))
   in
-    (Product(loop(1, psorts), pos0))
+    (Product(loop(1, psorts), internalPosition))
 
- def mkArrow (s1, s2) : PSort = Arrow (s1, s2, pos0)
+ def mkArrow (s1, s2) : PSort = Arrow (s1, s2, internalPosition)
 
  % ------------------------------------------------------------------------
  %   Primitive PTerm's
@@ -107,11 +90,11 @@ PosSpec qualifying spec {
 
  % ------------------------------------------------------------------------
 
- def mkTrue ()  = Fun(Bool true,boolPSort,pos0)
- %def mkFalse() = Fun(Bool false,boolPSort,pos0)
+ def mkTrue ()  = Fun (Bool true,  boolPSort, internalPosition)
+ %def mkFalse() = Fun (Bool false, boolPSort, internalPosition)
 
- def mkString s = Fun(String s,stringPSort,pos0)
- def mkOp (qid, srt) = Fun (Op (qid, Nonfix), srt, pos0)
+ def mkString s = Fun (String s, stringPSort, internalPosition)
+ def mkOp (qid, srt) = Fun (Op (qid, Nonfix), srt, internalPosition)
 
  % ------------------------------------------------------------------------
  %  Constructors of PTerm's
@@ -123,8 +106,8 @@ PosSpec qualifying spec {
 
  % ------------------------------------------------------------------------
 
- def mkApplyN (t1, t2) : PTerm = ApplyN ([t1, t2],       pos0)
- def mkTuple  terms    : PTerm = Record (tagTuple terms, pos0)
+ def mkApplyN (t1, t2) : PTerm = ApplyN ([t1, t2],       internalPosition)
+ def mkTuple  terms    : PTerm = Record (tagTuple terms, internalPosition)
 
  op tagTuple  : fa(A) List A -> List (Id * A)
  def tagTuple terms = 
@@ -144,8 +127,8 @@ PosSpec qualifying spec {
   let def mkCons (x, xs) = ApplyN ([consFun, Record( [("1",x), ("2",xs)], pos)], pos) in
   List.foldr mkCons empty_list terms
 
- def mkOneName  (x,    fixity, srt) = Fun (OneName  (x,    fixity), srt, pos0)
- def mkTwoNames (x, y, fixity, srt) = Fun (TwoNames (x, y, fixity), srt, pos0)
+ % def mkOneName  (x,    fixity, srt) = Fun (OneName  (x,    fixity), srt, internalPosition)
+ % def mkTwoNames (x, y, fixity, srt) = Fun (TwoNames (x, y, fixity), srt, internalPosition)
 
  % ------------------------------------------------------------------------
  %  Recursive constructors of PPattern's
@@ -391,15 +374,10 @@ PosSpec qualifying spec {
       mapSpec (export_sort, export_term, fn p -> p) spc                
  *)
 
- def mkFail (((l1,r1), (l2,r2)), srt) =
-  let srt1 = Arrow (stringPSort, srt, pos0) in
-  let msg  = if l1 = 0 & l2 = 0 & r1 = 0 & r2 = 0 
-             % Location is non-informative.
-             then "Non-exhaustive match failure"
-             else "Non-exhaustive match failure around " ^
-                  Nat.toString l1^"."^Nat.toString r1^" - "^
-                  Nat.toString l2^"."^Nat.toString r2 in                 
+ def mkFail (position, srt) =
+  let srt1 = Arrow (stringPSort, srt, internalPosition) in
+  let msg  = "Non-exhaustive match failure near " ^ print position in
   ApplyN ([mkOp (Qualified ("BuiltIn", "Fail"), srt1),
            mkString msg],
-          pos0)
+          internalPosition)
 }

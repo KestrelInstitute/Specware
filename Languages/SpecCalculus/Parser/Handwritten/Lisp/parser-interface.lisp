@@ -6,8 +6,10 @@
 ;;;  Parser interface
 ;;; ======================================================================
 
-(defun parseFile (fileName) 
-  (let* ((session (parse-file fileName *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
+(defvar *parse-file-name*)
+
+(defun parseFile (*parse-file-name*)
+  (let* ((session (parse-file *parse-file-name* *specware4-parser* *specware4-tokenizer* :report-gaps? nil))
 	 (pres (parse-session-results session))
 	 (error? (or (parse-session-error-reported? session) (parse-session-gaps session) (null pres))))
     (if error?  '(:|None|)
@@ -20,7 +22,7 @@
 	(let ((res2 (mapcar #'eval res1)))
 					; (when (null res2)
 					; (format t "~%---~%")
-					; (format t "~&;;; Note: ~A was legal, but vacuous.~%" fileName))
+					; (format t "~&;;; Note: ~A was legal, but vacuous.~%" *parse-file-name*))
 	  (cons :|Some| (car res2)))))))
 
 (defun parseFileMsg (fileName) 

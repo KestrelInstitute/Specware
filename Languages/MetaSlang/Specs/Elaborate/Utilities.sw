@@ -29,8 +29,6 @@ spec {
 
  op error          : LocalEnv * String * Position -> ()
 
- % def pos0 = zeroPosition() ... ### defined in ../PosSpec
-
  (* Auxiliary functions: *)
 
  % Generate a fresh type variable at a given position.
@@ -63,7 +61,8 @@ spec {
    if null tyVars then
      ([],srt)
    else
-     let tyVarMap = List.map (fn tv -> (tv, freshMetaTyVar pos0)) tyVars in
+     let mtvar_position = Internal "copySort" in
+     let tyVarMap = List.map (fn tv -> (tv, freshMetaTyVar mtvar_position)) tyVars in
      let
         def mapTyVar (tv, tvs, pos) : PSort = 
             case tvs
@@ -113,7 +112,7 @@ spec {
  def initialEnv ((* spec_name, *) spc, file) = 
    let errs : List (String * Position) = [] in
    let {importInfo, sorts, ops, properties} = spc in
-   let MetaTyVar(tv,_)  = freshMetaTyVar(pos0) in % ?
+   let MetaTyVar(tv,_)  = freshMetaTyVar (Internal "ignored") in
    %% importedSpecs is the subset of external used
    %% let importMap = importedSpecs in
    let spc = {importInfo   = importInfo,
@@ -200,37 +199,39 @@ spec {
 
  def checkErrors(env:LocalEnv) = 
    let errors = env.errors in
-   let def comp((l,c),(l2,c2)) = 
-         case compare(l,l2) of
-           | Equal -> compare(c,c2)
-           | c -> c
-   in
-   let def compare((m1,(l,r)),(m2,(l2,r2))) = 
-         case comp(l,l2) of
-           | Equal -> 
-              (case comp(r,r2) of
-                  | Equal -> String.compare(m1,m2)
-                  | c     -> c)
-           | c -> c
+   let def compare ((msg_1, pos_1), (msg_2, pos_2)) =
+         case Position.compare (pos_1, pos_2) of
+           | Equal -> String.compare (msg_1, msg_2)     
+           | c -> c     
    in
    let errors = MergeSort.uniqueSort compare (! errors) in
    let errMsg = (Ref "") : Ref String in
    let def printError(msg,pos) = 
          errMsg := (! errMsg) ^
-                   printPosition pos^":"^msg^PrettyPrint.newlineString()
+                   print pos^":"^msg^PrettyPrint.newlineString()
               
    in
    if null(errors) then 
      None
    else
-     (let (_,((l,r),_))::_ = errors in
-      IO.gotoFilePosition(env.file,l,r);
+     (gotoErrorLocation errors;
       app printError errors;
       %               StringMap.app
       %                (fn spc -> MetaSlangPrint.printSpecToTerminal 
       %                                (convertPosSpecToSpec spc)) env.importMap;
       Some(! errMsg)
      )
+
+  def gotoErrorLocation errors = 
+   case errors of
+     | (first_msg, first_position)::other_errors ->
+        (case first_position of
+          | File (file, (left_line, left_column, left_byte), right) ->   
+            IO.gotoFilePosition (file, left_line, left_column)
+          | _ -> 
+            gotoErrorLocation other_errors)
+     | _ -> ()
+
       
   def error(env as {errors,importMap,internal, (* specName, *) vars,
                     firstPass?,constrs,file},
@@ -451,8 +452,8 @@ spec {
        def unify (s1,s2,pairs):Unification = 
          let pos1 = sortAnn s1  in
          let pos2 = sortAnn s2  in
-         let srt1 = withAnnS (unlinkPSort s1, pos1) in
-         let srt2 = withAnnS (unlinkPSort s2, pos2) in
+         let srt1 = withAnnS (unlinkPSort s1, pos1) in % ? DerivedFrom pos1 ?
+         let srt2 = withAnnS (unlinkPSort s2, pos2) in % ? DerivedFrom pos2 ?
          if equalSort?(srt1,srt2) then 
            Unify pairs 
          else

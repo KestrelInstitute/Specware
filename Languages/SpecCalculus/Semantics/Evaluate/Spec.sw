@@ -25,8 +25,8 @@ and then qualify the resulting spec if the spec was given a name.
   %%      spec_elements
   %%     else
   %%      let base_path = ["Library","Base","Base"]    in
-  %%      let base_uri    : SpecCalc.Term     Position = (URI (SpecPath_Relative base_path), pos0) in
-  %%      let base_import : SpecCalc.SpecElem Position = (Import base_uri,                   pos0) in
+  %%      let base_uri    : SpecCalc.Term     Position = (URI (SpecPath_Relative base_path), Internal) in
+  %%      let base_import : SpecCalc.SpecElem Position = (Import base_uri,                   Internal) in
   %%      let _ = toScreen ("\nAdding import of Base\n") in
   %%      cons(base_import, spec_elements)
   %% in
@@ -145,7 +145,7 @@ of there are explicit imports or the spec is in a directory that ends in
        {uri <- getCurrentURI;
         if baseSpecURI? uri then return spc       % used when defining base
         else {(Spec baseSpec,_,_)
-                <- SpecCalc.evaluateURI pos0
+                <- SpecCalc.evaluateURI (Internal "adding base import")
                      (SpecPath_Relative {path = ["Library","Base"],
                                          hashSuffix = None});
               return (convertSpecToPosSpec baseSpec)}}
