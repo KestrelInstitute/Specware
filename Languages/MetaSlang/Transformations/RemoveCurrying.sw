@@ -59,17 +59,26 @@ RemoveCurrying qualifying spec
     let newOps =
         foldriAQualifierMap
 	  (fn (q, id, info, new_ops) ->
+	   let pos = termAnn info.dfn in
 	   let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
 	   case old_defs of
 	     | old_def :: _ ->
 	       (let (old_tvs, old_srt, old_tm) = unpackTerm old_def in
 		case newUncurriedOp (spc, id, old_srt) of
 		  | Some (new_id, new_srt) ->
-		    let new_dfn = maybeAndTerm (old_decls, termAnn info.dfn) in % remove old defs
-		    let new_ops = insertAQualifierMap (new_ops, q, id, info << {dfn = new_dfn}) in
-		    % Add definition of replacement (only bother with first def)
+		    let new_ops = 
+		        (%% remove old defs, but insure at least one real decl
+			 let decls_but_no_defs = 
+                             case old_decls of
+			       | [] -> [maybePiTerm (old_tvs, SortedTerm (Any pos, old_srt, pos))]
+			       | _ -> old_decls
+			 in
+			 let new_dfn = maybeAndTerm (decls_but_no_defs, pos) in 
+			 insertAQualifierMap (new_ops, q, id, info << {dfn = new_dfn}))
+		    in
+		    %% Add definition of replacement (only bother with first def)
 		    %% TODO: Handle multiple defs??
-		    let new_dfn = maybePiTerm (old_tvs, SortedTerm (old_tm, new_srt, termAnn old_def)) in
+		    let new_dfn = maybePiTerm (old_tvs, SortedTerm (old_tm, new_srt, pos)) in
 		    insertAQualifierMap (new_ops, q, new_id,
 					 info << {names = [Qualified (q, new_id)],
 						  dfn   = new_dfn})
