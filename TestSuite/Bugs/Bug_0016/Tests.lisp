@@ -6,6 +6,6 @@
   :path "/loser/loser/loser"
   :output "Warning: Directory does not exist: /loser/loser/loser
 Keeping old path:
-$SPECWARE:/:$SPECWARE/")
+$SPECWARE:.:$SPECWARE/")
 
  )
