@@ -95,7 +95,7 @@ spec
 	let res = termToExpression(tcx,t,k,l,spc) in
 	Some res
       | Apply(Fun(Op(Qualified("Boolean","<=>"),_),_,_),Record([(_,t1),(_,t2)],_),b) ->
-	let srt = Arrow(boolSort,boolSort,b) in
+	let srt = Arrow(boolSort,boolSort,b):Sort in
 	let nott2 = Apply(Fun(Op(Qualified("Boolean","~"),Nonfix),srt,b),t2,b) in
 	let t = IfThenElse(t1,t2,nott2,b) in
 	let res = termToExpression(tcx,t,k,l,spc) in

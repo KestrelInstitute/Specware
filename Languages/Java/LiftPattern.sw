@@ -6,7 +6,7 @@ import /Languages/SpecCalculus/Semantics/Environment
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec
 
 sort Term = MS.Term
-sort Env a = SpecCalc.Env a
+%sort Env a = SpecCalc.Env a
 
 sort Op = QualifiedId
 
@@ -209,15 +209,15 @@ op opDom: Spec * Op -> List Sort
 op opRange: Spec * Op -> Sort
 
 def opDom(spc, oper) =
-  let opinfo = findTheOp(spc, oper) in
+  let opinfo = findAllOps(spc, oper) in
   case opinfo of
-    | Some (_,_,(_,srt),_) -> srtDom(srt)
+    | (_,_,(_,srt),_)::_ -> srtDom(srt)
     | _ -> let _ = unSupported(oper) in []
 
 def opRange(spc, oper) =
-  let opinfo = findTheOp(spc, oper) in
+  let opinfo = findAllOps(spc, oper) in
   case opinfo of
-    | Some (_,_,(_,srt),_) -> srtRange(srt)
+    | (_,_,(_,srt),_)::_ -> srtRange(srt)
     | _ -> let _ = unSupported(oper) in boolSort
 
 op srtDom: Sort -> List Sort
@@ -267,9 +267,9 @@ op opDelta: Spec * Op -> List Var * Term
 def opDelta(spc, oper) =
   let opDom = opDom(spc, oper) in
   let opRng = opRange(spc, oper) in
-  let opinfo = findTheOp(spc, oper) in
+  let opinfo = findAllOps(spc, oper) in
   case opinfo of
-    | Some (_,_,_,[(_,trm)]) ->
+    | (_,_,_,[(_,trm)])::_ ->
     (case trm of
        | Lambda ([(pat, cond, body)],_) ->
        let argNames = patternNamesOpt(pat) in

@@ -8,7 +8,7 @@ def mkSubSortTypeClsDecl(id, subSortFieldDecls, subSortMethodDecls, subSortConst
   ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, subSortFieldDecls), subSortMethodDecls), subSortConstrDecls))
 
 
-op subSortToClsDecls: Id * Sort * Term * Spec -> List ClsDecl * Collected
+op subSortToClsDecls: Id * Sort * MS.Term * Spec -> List ClsDecl * Collected
 def subSortToClsDecls(id, superSort, pred, spc) =
   case superSort of
     | Base (Qualified (q, superSortId), _, b) ->

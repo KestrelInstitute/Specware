@@ -736,7 +736,7 @@ def getStringAttributesFromSpec(spc) =
 	 ) StringMap.empty ops
 
 
-sort AttrValue = | String String | Nat Nat | StringList (List String) | Null
+sort AttrValue = | String String | Nat Nat | StringList (List String) | Bool Boolean | Null
 
 (**
  * reads an "option" spec and returns the value of the given operator using the AttrValue sort
@@ -762,6 +762,7 @@ def getAttributeFromSpec(spc,aname) =
 	         (case term of
 		    | Fun(String val,_,_) -> String val
 		    | Fun(Nat val,_,_) -> Nat val
+		    | Fun(Bool val,_,_) -> Bool val
 		    | Fun(Embed(Nil,_),_,_) -> StringList []
 		    | Apply(Fun(Embed(Cons,_),_,_),Record([(_,Fun(String elem,_,_)),(_,t)],_),_) ->
 		      StringList(extractList(t,[elem]))

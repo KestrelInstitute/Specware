@@ -5,6 +5,7 @@
  * @created Sun Jul 13 15:34:43 PDT 2003
  *)
 
+%JGen qualifying 
 spec
   import ToJavaBase
   import ToJavaStatements
@@ -55,17 +56,24 @@ spec
    op translateLambdaTerm: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
    def translateLambdaTerm(tcx,term as Lambda((pat,cond,body)::_,_),k,l,spc) =
      let termSrt = inferType(spc,term) in
+     %let _ = writeLine("stand-alone lambda term "^printTerm(term)^" has sort "^printSort(termSrt)) in
      let freeVars = freeVars(term) in
      let (block,tcx0,col0) = foldl (fn((wi,wisrt),(block0,tcx0,col0)) -> 
 			       let initExpr = case StringMap.find(tcx,wi) of
 						| Some exp -> exp
 						| None -> mkVarJavaExpr(wi)
 			       in
-			       let finwi = mkFinalVar(wi) in
-			       let finwi_exp = mkVarJavaExpr(finwi) in
-			       let tcx0 = StringMap.insert(tcx0,wi,finwi_exp) in
-			       let (locvdecl,col) = mkFinalVarDecl(finwi,wisrt,initExpr) in
-			       (concat(block0,[locvdecl]),tcx0,concatCollected(col0,col))
+			       let (tcx2,locvdecl,col) =
+				    let finwi = mkFinalVar(wi) in
+				    %let _ = writeLine("final var: " ^ finwi) in
+				    let finwi_exp = mkVarJavaExpr(finwi) in
+				    let tcx1 = StringMap.insert(tcx0,wi,finwi_exp) in
+				    let (locvdecl,col) = mkFinalVarDecl(finwi,wisrt,initExpr) in
+				    if isIdentityAssignment?(locvdecl) then (tcx0,[],col) else
+				    %let _ = writeLine("adding final var decl for "^finwi) in
+				    (tcx1,[locvdecl],col)
+			       in
+			       (concat(block0,locvdecl),tcx2,concatCollected(col0,col))
 			       ) ([],tcx,nothingCollected) freeVars
      in
      let ((s,_,_),col1) = termToExpressionRet(tcx0,body,1,1,spc) in

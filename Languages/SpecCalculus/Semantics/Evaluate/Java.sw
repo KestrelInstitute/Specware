@@ -14,9 +14,9 @@ SpecCalc qualifying spec
      javaFileName <- UIDtoJavaFile (cUID, optFileNm);
      (optBaseUnitId,baseSpec) <- getBase;
      let _ = ensureDirectoriesExist javaFileName in
-     let spc = subtractSpec spc baseSpec in
+     let spc0 = subtractSpec spc baseSpec in
      %let _ = specToJava(spc,javaFileName) in
-     let _ = specToJava(spc,optspec,javaFileName) in
+     let _ = specToJava(baseSpec,spc0,optspec,javaFileName) in
      %let _ = toJavaFile (subtractSpec spc baseSpec, javaFileName,[]) in
 %     let _ = System.fail ("evaluateJavaGen ") in
      %{

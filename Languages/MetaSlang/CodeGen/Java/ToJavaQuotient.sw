@@ -7,7 +7,7 @@ op mkQuotientTypeClsDecl: Id * List FldDecl * List MethDecl * List ConstrDecl ->
 def mkQuotientTypeClsDecl(id, fieldDecls, methodDecls, constrDecls) =
   ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, fieldDecls), methodDecls), constrDecls))
 
-op quotientToClsDecls: Id * Sort * Term * Spec -> List ClsDecl * Collected
+op quotientToClsDecls: Id * Sort * MS.Term * Spec -> List ClsDecl * Collected
 def quotientToClsDecls(id, superSort, quotientPred, spc) =
   case superSort of
   | Base (Qualified (q, superSortId), _, b) ->

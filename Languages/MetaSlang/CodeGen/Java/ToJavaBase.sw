@@ -5,6 +5,8 @@ import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 %import /Languages/SpecCalculus/Semantics/Exception
+import ../../Transformations/LambdaLift
+import ../../Transformations/PatternMatch
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
@@ -207,9 +209,19 @@ op mkTag: Id -> Id
 def mkTag(cons) =
   "TAG_"^cons
 
+def finalVarPrefix = "fin_"
+
 op mkFinalVar: Id -> Id
 def mkFinalVar(id) =
-  "fin_"^id
+  finalVarPrefix^id
+
+op isFinalVar?: Id -> Boolean
+def isFinalVar?(id) =
+  let l = length(finalVarPrefix) in
+  if length(id) > l then
+      substring(id,0,l) = finalVarPrefix
+  else
+      false
 
 op mkFinalVarDecl: Id * Sort * Java.Expr -> BlockStmt * Collected
 def mkFinalVarDecl(varid,srt,exp) =
@@ -217,6 +229,18 @@ def mkFinalVarDecl(varid,srt,exp) =
   let isfinal = true in
   let vdecl = ((varid,0),Some(Expr exp)) in
   (LocVarDecl(isfinal,type,vdecl,[]),col)
+
+op isIdentityAssignment?: Java.BlockStmt -> Boolean
+def isIdentityAssignment?(stmt) =
+  case stmt of
+    | LocVarDecl(_,_,((lhsid,0),Some(Expr rhsexpr)),_) ->
+      (case rhsexpr of
+	 | CondExp (Un (Prim (Name ([], rhsid))), None) -> 
+           let res = lhsid = rhsid in
+	   %let _ = if res then writeLine("identity assignment: "^lhsid^" = "^rhsid) else () in
+	   res
+	 | _ -> false)
+    | _ -> false
 
 sort TCx = StringMap.Map Java.Expr
 
@@ -261,6 +285,9 @@ def tt_v3(srt) =
     | Product(_,_) ->
       let (sid,col) = srtId(srt) in
       (mkJavaObjectType(sid),col)
+    | TyVar id -> 
+      let id = "Object" in
+      (mkJavaObjectType(id),nothingCollected)
     | _ -> fail("tt_v3 can't handle sort "^printSort(srt))
 
 op tt_id: Sort -> Id * Collected
@@ -270,6 +297,9 @@ def tt_id(srt) =
 
 op JVoid: Java.Type
 def JVoid = (Basic Void,0)
+
+%op sortId: Sort -> String 
+def CodeGenTransforms.sortId(srt) = (project 1)(srtId srt)
 
 (**
  * srtId returns for a given type the string representation accorinding the rules
@@ -310,7 +340,7 @@ def srtId_internal(srt,addIds?) =
       let col = addArrowClassToCollected(clsDecl,concatCollected(col1,col2)) in
       %let col = concatCollected(col1,concatCollected(col2,col3)) in
       ([tt_v2 id],id,col)
-    | TyVar _ ->
+    | TyVar(id,_) ->
       let id = "Object" in
       ([tt_v2 id],id,nothingCollected)
     | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")

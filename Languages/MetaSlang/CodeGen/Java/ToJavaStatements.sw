@@ -1,3 +1,4 @@
+%JGen qualifying
 spec
 
 import ToJavaBase
@@ -59,7 +60,7 @@ def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
       | Record _ -> translateRecordToExpr(tcx, term, k, l, spc)
       | IfThenElse _ -> translateIfThenElseToExpr(tcx, term, k, l, spc)
       | Let _ -> translateLetToExpr(tcx, term, k, l, spc)
-      | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*)translateLambdaToExpr(tcx,term,k,l,spc)
+      | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*) translateLambdaToExpr(tcx,term,k,l,spc)
       | _ ->
 	     if caseTerm?(term)
 	       then translateCaseToExpr(tcx, term, k, l, spc)
@@ -394,10 +395,13 @@ def relaxChooseTerm(spc,t) =
     | Apply(Fun(Restrict,_,_),_,_) -> t
     | Apply(Fun(Choose,_,_),_,_) -> t
     | _ -> 
-    let srt0 = inferTypeFoldRecords(spc,t) in
+    %let srt0 = inferTypeFoldRecords(spc,t) in
+    let srt0 = termSort(t) in
     let srt = unfoldBase(spc,srt0) in
+    %let _ = writeLine("relaxChooseTerm: termSort("^printTerm(t)^") = "^printSort(srt)) in
     case srt of
       | Subsort(ssrt,_,b) ->
+      %let _ = writeLine("relaxChooseTerm: subsort "^printSort(srt)^" found") in
       let rsrt = Arrow(srt0,ssrt,b) in
       let t = Apply(Fun(Relax,rsrt,b),t,b) in
       relaxChooseTerm(spc,t)
@@ -836,7 +840,7 @@ def translateOtherTermApply(tcx,opTerm,argsTerm,k,l,spc) =
   let ((block,exprs,k,l),col2) = doArgs(argterms,k,l,[],[],nothingCollected) in
   let japply = mkMethExprInv(e,"apply",exprs) in
   let col = concatCollected(col1,col2) in
-  ((block,japply,k,l),col)
+  ((s++block,japply,k,l),col)
 
 op concatBlock: Block * Block -> Block
 def concatBlock(b1,b2) =

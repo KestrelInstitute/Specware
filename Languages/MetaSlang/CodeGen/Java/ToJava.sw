@@ -9,12 +9,6 @@ import ToJavaHO
 import ToJavaSpecial
 import /Languages/Java/JavaPrint
 
-%import Java qualifying /Languages/Java/Java
-%import /Languages/Java/DistinctVariable
-%import /Languages/MetaSlang/Specs/StandardSpec
-
-%sort JSpec = CompUnit
-
 sort JcgInfo = {
 		clsDecls : List ClsDecl,
 		collected : Collected
@@ -331,20 +325,22 @@ def mkNonCaseMethodBody(vId, body, spc) =
 op addMethDeclToSummands: Spec * Id * Id * MethDecl * Term * JcgInfo -> JcgInfo
 def addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
-  let Some (_, _, [(_,srt)])  = findTheSort(spc, mkUnQualifiedId(srthId)) in 
-  let CoProduct (summands, _) = srt in
-  let caseTerm = caseTerm(body) in
-  let cases = filter (fn(WildPat _,_,_) -> false | _ -> true) (caseCases(body)) in
-  % find the missing constructors:
-  let missingsummands = getMissingConstructorIds(srt,cases) in
-  %let _ = (writeLine("missing cases in "^opId^" for sort "^srthId^":");
-  %	   app (fn(id) -> writeLine("  "^id)) missingsummands)
-  %in
-  let jcginfo = foldr (fn(consId,jcginfo) -> addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo))
-                      jcginfo missingsummands
-  in
-  %% cases = List (pat, cond, body)
-  foldr (fn((pat, _, cb), newJcgInfo) -> addSumMethDeclToClsDecls(opId,srthId, caseTerm, pat, cb, methodDecl, newJcgInfo, spc)) jcginfo cases
+  case findAllSorts(spc, mkUnQualifiedId(srthId)) of
+    | (_, _, (_,srt)::_)::_  ->  
+    let CoProduct (summands, _) = srt in
+    let caseTerm = caseTerm(body) in
+    let cases = filter (fn(WildPat _,_,_) -> false | _ -> true) (caseCases(body)) in
+    % find the missing constructors:
+    let missingsummands = getMissingConstructorIds(srt,cases) in
+    %let _ = (writeLine("missing cases in "^opId^" for sort "^srthId^":");
+	      %	   app (fn(id) -> writeLine("  "^id)) missingsummands)
+    %in
+    let jcginfo = foldr (fn(consId,jcginfo) -> addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo))
+    jcginfo missingsummands
+    in
+      %% cases = List (pat, cond, body)
+      foldr (fn((pat, _, cb), newJcgInfo) -> addSumMethDeclToClsDecls(opId,srthId, caseTerm, pat, cb, methodDecl, newJcgInfo, spc)) jcginfo cases
+    | _ -> fail("sort not found: "^srthId)
 
 op addMissingSummandMethDeclToClsDecls: Id * Id * Id * MethDecl * JcgInfo -> JcgInfo
 def addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo) =
@@ -491,8 +487,8 @@ def exchangeClsDecls({clsDecls=_,collected=col},newClsDecls) =
  *)
 op processOptions : JSpec * Option Spec * String -> List JavaFile
 def processOptions(jspc as (_,_,cidecls), optspec, filename) =
-  let (pkgname,bdir,pubops,imports) = 
-     let defaultvals = (packageName,baseDir,publicOps,[]) in
+  let (pkgname,bdir,pubops,imports,cleandir) = 
+     let defaultvals = (packageName,baseDir,publicOps,[],false) in
      case optspec of
        | None -> defaultvals
        | Some ospc ->
@@ -518,7 +514,11 @@ def processOptions(jspc as (_,_,cidecls), optspec, filename) =
 	           | StringList l -> l
 	           | _ -> []
 	 in
-	 (p,b,o,i)
+         let c = case getAttributeFromSpec(ospc,"cleandir") of
+	           | Bool b -> b
+	           | _ -> false
+	 in
+	 (p,b,o,i,c)
   in
   let jimports = map packageNameToJavaName imports in
   let dir = if bdir = "" then "." else bdir in
@@ -542,6 +542,7 @@ def processOptions(jspc as (_,_,cidecls), optspec, filename) =
   else
     let res = map processOptionsForClsInterf cidecls in
     let cnt = length(cidecls) in
+    let _ = if cleandir then deleteFile(relpath^"/*") else () in
     let _ = if cnt > 0
 	      then writeLine(";;; "^natToString(cnt)^" Java files written to directory \""^dir^"/"^relpath^"/\"")
 	    else writeLine(";;; no Java files generated.")
@@ -554,13 +555,36 @@ def printJavaFile(jfile as (filename,jspc)) =
     let _ = ensureDirectoriesExist filename in
     toFile (filename, t)
 
+% --------------------------------------------------------------------------------
+
+op builtinSortOp: QualifiedId -> Boolean
+def builtinSortOp(qid) =
+  let Qualified(q,i) = qid in
+  (q="Nat" & (i="Nat" or i="PosNat" or i="toString" or i="natToString" or i="show" or i="stringToNat"))
+  or
+  (q="Integer" & (i="Integer" or i="NZInteger" or i="+" or i="-" or i="*" or i="div" or i="rem" or i="<=" or
+		  i=">" or i=">=" or i="toString" or i="intToString" or i="show" or i="stringToInt"))
+  or
+  (q="Boolean" & (i="Boolean" or i="true" or i="false" or i="~" or i="&" or i="or" or
+		  i="=>" or i="<=>" or i="~="))
+  or
+  (q="Char" & (i="Char" or i="chr" or i="isUpperCase" or i="isLowerCase" or i="isAlpha" or
+	       i="isNum" or i="isAlphaNum" or i="isAscii" or i="toUpperCase" or i="toLowerCase"))
+  or
+  (q="String" & (i="String" or i="writeLine" or i="toScreen" or i="concat" or i="++" or
+		 i="^" or i="newline" or i="length" or i="substring"))
 
 % --------------------------------------------------------------------------------
 
-op specToJava : Spec * Option Spec * String -> JSpec
+op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
-def specToJava(spc,optspec,filename) =
+def specToJava(basespc,spc,optspec,filename) =
+  %let spc = translateMatch spc in
+  %let spc = lambdaLift spc in
   let spc = identifyIntSorts spc in
+  let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  %let _ = writeLine(printSpecWithSort spc) in
+  let spc = poly2mono(spc,false) in
   let spc = letWildPatToSeq spc in
   let spc = unfoldSortAliases spc in
   %let spc = foldRecordSorts spc in

@@ -13,7 +13,7 @@
  Assumption here is that all variables have unique names.
  **)
 
-spec
+LambdaLift qualifying spec
  import ArityNormalize
  import Map qualifying /Library/Structures/Data/Maps/Simple
 
@@ -53,7 +53,7 @@ spec
  % 		   
 
  sort Ops      = Map.Map(String,LiftInfo)
- sort Env      = 
+ sort LLEnv      = 
       {
 	spc 	    : Spec,
 	opers       : Ops,
@@ -82,7 +82,7 @@ spec
   | Seq          List(VarTerm)
  sort VarMatch = List(Pattern * Term * VarTerm)
  op makeVarTerm: Term -> VarTerm
- op lambdaLiftTerm : Env * VarTerm -> List(LiftInfo) * Term
+ op lambdaLiftTerm : LLEnv * VarTerm -> List(LiftInfo) * Term
 
 
 (**
@@ -102,7 +102,14 @@ spec
      case pat
        of VarPat(v,_) -> [v]
 	| RecordPat(fields,_) -> foldr (fn((_,p),vs)-> patternVars p ++ vs) [] fields
-	| _ -> System.fail "Unexpected pattern in match normalized expression"
+	| WildPat _ -> []
+        | EmbedPat(_,Some(pat),_,_) -> patternVars(pat)
+        | EmbedPat(_,None,_,_) -> []
+	| AliasPat(pat1,pat2,_) -> concat(patternVars pat1,patternVars pat2)
+	| RelaxPat(pat,_,_) -> patternVars(pat)
+	| QuotientPat(pat,_,_) -> patternVars(pat)
+	| SortedPat(pat,_,_) -> patternVars(pat)
+	| _ -> System.fail("Unexpected pattern in match normalized expression: "^printPattern(pat))
 
  def makeVarTerm(term:Term) = 
    %let _ = String.writeLine("{") in
@@ -202,7 +209,7 @@ spec
 %
 % (dom sort should be a list of dom sorts corresponding to record/tuple patterns in functions)
 %
- def makeClosureApplication(env:Env,name,freeVars,dom,rng) = 
+ def makeClosureApplication(env:LLEnv,name,freeVars,dom,rng) = 
      case freeVars
        of [] -> mkOp(Qualified(UnQualified,name),mkArrow(dom,rng))
 (**
@@ -234,7 +241,7 @@ spec
       pattern = pat,
       body = body}
 
- def insertOper(liftInfo:LiftInfo,{opName,opers,counter,spc}:Env) =
+ def insertOper(liftInfo:LiftInfo,{opName,opers,counter,spc}:LLEnv) =
      { 
 	opName  = opName,
        	opers   = Map.update(opers,liftInfo.ident,liftInfo),
@@ -242,7 +249,7 @@ spec
 	spc = spc
      }
 
- def actualFreeVars({opName,opers,counter,spc}:Env,vars) =
+ def actualFreeVars({opName,opers,counter,spc}:LLEnv,vars) =
    %let _ = String.writeLine("actualFreeVars: vars="^varsToString(vars)) in
      let
 	def lookup(v as (id,_)) = 
@@ -291,8 +298,20 @@ spec
  *)
 
  def lambdaLiftTerm(env,term as (trm,vars)) = 
-     case trm
-       of Let(decls,body) -> 
+     case trm of
+       | Apply((Lambda(match as _::_),vars1),t) ->
+         let (infos1,match) = foldl 
+	        (fn((p:Pattern,t1:Term,trm2 as (t2,vars):VarTerm),(infos,match)) -> 
+		 %let (infos1,t1) = lambdaLiftTerm(env,(t1,[])) in
+		 let (infos2,t2) = lambdaLiftTerm(env,trm2) in
+		 let match = concat(match,[(p,t1,t2)]) in
+		 let infos = infos++infos2 in
+		 (infos,match)) ([],[]) match
+	 in
+	 let (infos2,t2) = lambdaLiftTerm(env,t) in
+	 (infos1++infos2,Apply(Lambda(match,noPos),t2,noPos))
+	 
+       | Let(decls,body) -> 
 (*
    Let:
 
@@ -582,7 +601,7 @@ spec
      let srt   = mkArrow(alpha,any) in
      mkApply(mkOp(Qualified("TranslationBuiltIn","toAny"),srt),t)
 
- op abstractName: Env * String * FreeVars * Pattern * Term -> OpInfo
+ op abstractName: LLEnv * String * FreeVars * Pattern * Term -> OpInfo
  def abstractName(env,_(* name *),freeVars,pattern,body) = 
      let varSort = mkProduct (List.map (fn(_,srt)-> srt) freeVars) in
      let closureVar = ("closure-var",mkAny varSort) in
@@ -623,7 +642,7 @@ spec
 	 [([],mkLambda(newPattern,newBody))]
 	)
 
-op getSpecEnv: Env -> Spec
+op getSpecEnv: LLEnv -> Spec
 def getSpecEnv(env) =
   env.spc			% Better be defined
 
