@@ -257,7 +257,13 @@ FSeq qualifying spec
 
   % a permutation of a sequence of length N can be represented by
   % a permutation of the sequence of natural numbers 0,...,N-1:
-  type Permutation = {prm : FSeqNR Nat | fa(i:Nat) i in? prm => i < length prm}
+
+  op permutation? : FSeq Nat -> Boolean
+  def permutation? s =
+    noRepetitions? s &&
+    (fa(i:Nat) i in? s => i < length s)
+
+  type Permutation = ((FSeq Nat) | permutation?)
 
   % i-th element of input sequence becomes (prm!i)-th element of output sequence:
   op permute : [a]

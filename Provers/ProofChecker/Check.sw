@@ -73,26 +73,53 @@ spec
     aux (s, empty)
 
 
+  (* Check whether a finite sequence of natural numbers is a permutation
+  (see spec `FiniteSequences' in the library. If it is, return it as a
+  permutation, i.e. as a value of type `FSeq.Permutation' (there is an
+  implicit `restrict'). *)
+
   op checkPermutation : FSeq Nat -> MayFail Permutation
-  def checkPermutation natS =
-    if noRepetitions? natS
-    && forall? (natS, fn i:Nat -> i < length natS)
-    then OK natS
+  def checkPermutation nS =
+    if permutation? nS then OK nS
     else FAIL
+
+
+  (* ... *)
+
+  op checkAllTypeVarDecls : Context -> MayFail TypeVariables
+  def checkAllTypeVarDecls cx =
+    let def aux (cx  : Context,
+                 tvS : TypeVariables)  % accumulator
+                : MayFail TypeVariables =
+          if cx = empty then OK tvS
+          else case first cx of
+                 | typeVarDeclaration tv -> aux (rtail cx, tvS <| tv)
+                 | _ -> FAIL
+    in
+    aux (cx, empty)
+
+
+
+  (* Check whether `cx2 = cx1 ++ multiTypeVarDecls tvS' for some `tvS' (i.e.
+  `cx2' is `cx1' with some extra type variables; if so, return `tvS'. *)
 
   op checkExtraTypeVars : Context -> Context -> MayFail TypeVariables
   def checkExtraTypeVars cx1 cx2 =
     if length cx1 <= length cx2
     && firstN (cx2, length cx1) = cx1 then
     let cxExtra = lastN (cx2, length cx2 - length cx1) in
-    if forall? (cxExtra, embed? typeVarDeclaration) then
-    let def getTypeVar (ce:ContextElement) : Option TypeVariable =
-          case ce of typeVarDeclaration tv -> Some tv
-                   | _                     -> None in
-    let tvS:TypeVariables = removeNones (map (getTypeVar, cxExtra)) in
-    OK tvS
+    let def collectTypeVars (cx  : Context,
+                             tvS : TypeVariables)  % accumulator
+                            : MayFail TypeVariables =
+          if cx = empty then OK tvS
+          else case first cx of
+                 | typeVarDeclaration tv ->
+                   collectTypeVars (rtail cx, tvS <| tv)
+                 | _ -> FAIL
+    in
+    collectTypeVars (cxExtra, empty)
     else FAIL
-    else FAIL
+
 
   op checkLastNVars : Context -> Nat -> MayFail (Context * Variables * Types)
   def checkLastNVars cx n =
