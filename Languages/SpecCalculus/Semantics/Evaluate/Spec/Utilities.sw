@@ -705,8 +705,8 @@ SpecCalc qualifying spec
      | (String    x1,       String    x2)       -> x1 = x2
      | (Bool      x1,       Bool      x2)       -> x1 = x2
 
-     | (OneName   x1,       OneName   x2)       -> x1 = x2
-     | (TwoNames  x1,       TwoNames  x2)       -> x1 = x2 
+     | (OneName   x1,       OneName   x2)       -> x1.1 = x2.1
+     | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2) 
      | _ -> false
 
  def equivVar? spc ((id1,s1), (id2,s2)) = 

@@ -189,8 +189,7 @@
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
 
-(defparameter nonfix nil  ;:|Nonfix|
-              )
+(defparameter unspecified-fixity :|Unspecified|) ;:|Nonfix|
 
 ;; The counter here is for freshMetaTypeVar. Perhaps it should be moved
 ;; out of the parser. Needs thought.
@@ -471,7 +470,7 @@ If we want the precedence to be optional:
 (defun make-unqualified-op-ref (name l r)
   (make-fun (if (equal name "=")
                 (cons :|Equals| nil)
-              (cons :|OneName| (cons name nonfix)))
+              (cons :|OneName| (cons name unspecified-fixity)))
             (freshMetaTypeVar l r)
             l r))
 
@@ -480,7 +479,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-two-name-expression (name-1 name-2 l r)
-  (make-fun (cons :|TwoNames| (vector name-1 name-2 nonfix))
+  (make-fun (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity))
             (freshMetaTypeVar l r)
             l r))
 
