@@ -752,32 +752,40 @@ def mkLTerm (sp,dpn,vars,term : Term) =
 			     %%  the args (ignoring the body)?
                              %% Why not always substitute? (I.e. return count of 0 or 1)
 			     %% Is this related to the capture issue above?
-			     (x, countOccurrence2(x,0,args),  arg)
+			     (x, countOccurrence2(x,0,args),  false, arg)
                            else if pure arg then
-			     (x, countOccurrence2(x,0,terms), arg)
-                           else 
+			     (x, countOccurrence2(x,0,terms), false, arg)
+                           else if countOccurrence2(x,0,terms) > 0 then
+			     %% arg has possible side effects, and var is used,
+			     %% so leave it in place and don't substitute into body
+			     (x, 2,                           false, arg)
+	                   else
 			     %% arg has possible side effects, 
-			     %% so leave it in place as arg to let var,
-			     %% and don't substitute into body
-			     (x, 2,                           arg)) 
+			     %% but var is never used, so convert to sequence
+			     (x, 2,                           true, arg)) 
                          xArgs                              
            in
            let (xs,args,body)  = 
-                foldr (fn ((x,num,arg),(xs,args,body)) -> 
+                foldr (fn ((x, num, convert_to_seq?, arg), (xs,args,body)) -> 
 		       %% If num = 0, then x and arg will vanish from result.
 		       %% This happens only if arg is pure or simpleTerm.
 		       if num < 2 then
 			 (xs, 
 			  args, 
 			  substitute (x,arg) body)
-		       else 
+		       else if convert_to_seq? then
+			 %% "let _ = xxx in yyy" => "(xxx ; yyy)"
+			 (xs,
+			  args,
+			  mkLSeq [arg, body])
+	               else
 			 (cons(x,xs),
 			  cons(arg,args),
 			  body)) 
 		      ([],[],body) 
 		      xNumArgs
            in
-           mkLLet(rev xs,rev args,body)
+           mkLLet(rev xs, rev args, body)
          | Letrec(vars,terms,body) -> 
            mkLLetRec(vars,List.map reduceTerm terms,reduceTerm body)
          | If(t1,t2,t3) -> 
