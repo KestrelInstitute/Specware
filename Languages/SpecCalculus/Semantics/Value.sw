@@ -48,6 +48,8 @@ SpecCalc qualifying spec {
       | Colimit    spec_colimit  -> ppColimit    spec_colimit
       | Other      other_value   -> ppOtherValue other_value
       | InProcess                -> ppString "InProcess"
+      | UnEvaluated x            -> ppString "some unevaluated term"
+      | _                        -> ppString "<unrecognized value>"
 
   op ppOtherValue : OtherValue -> Doc % Used for extensions to Specware
 
