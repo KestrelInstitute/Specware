@@ -1,8 +1,8 @@
 spec
 
 import UnitId
-import Spec/Utilities                               % for coerceToSpec
 import UnitId/Utilities                                % for uidToString, if used...
+import Spec/CoerceToSpec
 import /Languages/MetaSlang/Specs/Categories/AsRecord
 import /Languages/Snark/SpecToSnark
 import /Library/Legacy/DataStructures/ListPair

@@ -4,7 +4,8 @@
 SpecCalc qualifying spec 
 {
   import Signature 
-  import Spec/Utilities
+  import Spec/CompressSpec
+  import Spec/MergeSpecs
 \end{spec}
 
 To qualify a spec means to change all unqualified names to qualified

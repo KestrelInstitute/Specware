@@ -4,7 +4,6 @@ AnnSpec qualifying spec
  import MSTerm
  import QualifierMapAsSTHashTable
  import SpecCalc
- 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec
@@ -470,7 +469,6 @@ AnnSpec qualifying spec
    =
    propType1 = propType2 && equalTerm? (fm1, fm2) && equalTyVars? (tvs1, tvs2)
 
-
  % --------------------------------------------------------------------------------
 
   op emptyOpNames : OpNames
@@ -488,9 +486,6 @@ AnnSpec qualifying spec
   op memberQualifiedId : Qualifier * Id * List QualifiedId -> Boolean
  def memberQualifiedId (q, id, qids) =
    exists (fn (Qualified (qq, ii)) -> q = qq && id = ii) qids
-
-  op addToNames : QualifiedId * List QualifiedId -> List QualifiedId 
- def addToNames (qid, qids) = cons (qid, qids)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec Consructors
@@ -520,23 +515,9 @@ AnnSpec qualifying spec
 
  %% Create new spec with added sort, op, property, import, etc.
 
- op addImport           : [a] Import                                 * ASpec a -> ASpec a
- op addProperty         : [a] (AProperty a)                          * ASpec a -> ASpec a
- op addAxiom            : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addConjecture       : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addTheorem          : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addTheoremLast      : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addConjectures      : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
- op addTheorems         : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
-
- op addLocalSortName    : [a] ASpec a * QualifiedId -> ASpec a
- op addLocalOpName      : [a] ASpec a * QualifiedId -> ASpec a
- op addLocalPropertyName: [a] ASpec a * QualifiedId -> ASpec a
-
  op localOp?            : [a] QualifiedId * ASpec a -> Boolean
  op localSort?          : [a] QualifiedId * ASpec a -> Boolean
  op localProperty?      : [a] QualifiedId * ASpec a -> Boolean
-
  op localProperties     : [a] ASpec a -> AProperties a
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -574,52 +555,15 @@ AnnSpec qualifying spec
  def setOps        (spc, new_ops)         = spc << {ops        = new_ops}
  def setProperties (spc, new_properties)  = spc << {properties = new_properties}
 
- % ------------------------------------------------------------------------
-
- def addImport ((specCalcTerm, imported_spec), spc) =
-   setImports (spc, cons ((specCalcTerm, imported_spec), spc.importInfo.imports))
-
- def addProperty (new_property, spc) =
-   let spc = setProperties (spc, spc.properties ++ [new_property]) in
-   addLocalPropertyName(spc,propertyName new_property)
-
- def addAxiom       ((name, tvs, formula), spc) = addProperty ((Axiom      : PropertyType, name, tvs, formula), spc) 
- def addConjecture  ((name, tvs, formula), spc) = addProperty ((Conjecture : PropertyType, name, tvs, formula), spc) 
- def addTheorem     ((name, tvs, formula), spc) = addProperty ((Theorem    : PropertyType, name, tvs, formula), spc) 
-
- def addTheoremLast ((name, tvs, formula), spc) =  
-   setProperties (spc, spc.properties ++ [(Theorem : PropertyType, name, tvs, formula)])
-
- def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
- def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
-
- def addLocalSortName (spc, new_local_sort) =
-   let localSorts = spc.importInfo.localSorts in
-   if memberNames (new_local_sort, localSorts) then
-     spc
-   else 
-     setLocalSorts (spc, addToNames (new_local_sort, localSorts))
-
- def addLocalOpName (spc, new_local_op) =
-   let localOps = spc.importInfo.localOps in
-   if memberNames (new_local_op, localOps) then
-     spc
-   else 
-     setLocalOps (spc, addToNames (new_local_op, localOps))
-
- def addLocalPropertyName (spc, new_local_op) =
-   let localProperties = spc.importInfo.localProperties in
-   if memberNames (new_local_op, localProperties) then
-     spc
-   else 
-     setLocalProperties (spc, addToNames (new_local_op, localProperties))
-
  def localOp?       (Qualified (q, id), spc) = memberQualifiedId (q, id, spc.importInfo.localOps)
  def localSort?     (Qualified (q, id), spc) = memberQualifiedId (q, id, spc.importInfo.localSorts)
  def localProperty? (Qualified (q, id), spc) = memberQualifiedId (q, id, spc.importInfo.localProperties)
 
  def localProperties spc =
    filter (fn p -> localProperty? (propertyName p, spc)) spc.properties
+
+
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op findTheSort  : [a] ASpec a * QualifiedId -> Option (ASortInfo a)  
  op findTheOp    : [a] ASpec a * QualifiedId -> Option (AOpInfo   a)

@@ -55,6 +55,7 @@ AnnSpecPrinter qualifying spec
 
  %% ========================================================================
 
+ op printTyVars                  : TyVars            -> String 
  op printTerm                    : [a] ATerm       a -> String
  op printSort                    : [a] ASort       a -> String 
  op printPattern                 : [a] APattern    a -> String
@@ -772,6 +773,11 @@ AnnSpecPrinter qualifying spec
 
      | _ -> System.fail "Uncovered case for pattern"
       
+
+ def printTyVars tvs =
+   case tvs of
+     | []     -> "[]"
+     | v1::vs -> "[" ^ v1 ^ (foldl (fn (v, str) -> str ^","^ v) "" vs) ^ "]"
 
  def printTerm term = 
    PrettyPrint.toString (format (80, ppTerm (initialize (asciiPrinter, false))

@@ -3,7 +3,7 @@
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
-  import Spec/Utilities                               % for coerceToSpec
+  import Spec/CoerceToSpec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import UnitId/Utilities                                % for uidToString, if used...
 \end{spec}

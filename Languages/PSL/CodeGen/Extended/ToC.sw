@@ -4,6 +4,7 @@ SpecCalc qualifying spec {
   import ../../../MetaSlang/CodeGen/C/CG
   %import ../../MetaSlang/CodeGen/CodeGenTransforms
   import /Languages/PSL/Semantics/Evaluate/Specs/Op/Legacy
+  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AccessSpec
   import ../CGenUtils
 
   % sort Spec.Spec = ASpec Position

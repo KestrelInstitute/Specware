@@ -6,7 +6,9 @@ SpecCalc qualifying spec {
   import UnitId/Utilities
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Transformations/DefToAxiom
-  import Spec/Utilities
+  import Spec/MergeSpecs
+  import Spec/CompressSpec
+  import Spec/AddSpecElements
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
 \end{spec}
 

@@ -7,6 +7,8 @@ CodeGenTransforms qualifying spec
 
 import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
+import /Languages/MetaSlang/Transformations/InstantiateHOFns
+import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements % addLocalOpName
 
 % --------------------------------------------------------------------------------
 

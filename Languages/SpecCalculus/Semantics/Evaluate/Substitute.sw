@@ -6,142 +6,32 @@ Dialog about adding this feature is at end of file
 SpecCalc qualifying spec {
   import Signature
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
-  import Translate                                    % for auxTranslateSpec
-  import Spec/SpecUnion                               % for specUnion
-  import UnitId/Utilities                                % for uidToString, if used...
+  import UnitId/Utilities                             % for uidToString, if used...
+  import SpecSubst   
 
-  def SpecCalc.evaluateSubstitute (spec_tm, morph_tm) term_pos = {
+  def SpecCalc.evaluateSubstitute (spec_tm, sm_tm) term_pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating spec-substitution at " ^ (uidToString unitId) ^ "\n");
     spec_value_info  as (spec_value,  spec_timestamp,  spec_dep_UIDs)  <- evaluateTermInfo spec_tm;
-    morph_value_info as (morph_value, morph_timestamp, morph_dep_UIDs) <- evaluateTermInfo morph_tm;
+    sm_value_info as (sm_value, sm_timestamp, sm_dep_UIDs) <- evaluateTermInfo sm_tm;
     coercedSpecValue <- return (coerceToSpec spec_value);
-    case (coercedSpecValue, morph_value) of % TODO: coerceToMorphism morph_value ??
-      | (Spec spc, Morph morph) ->
-           let timeStamp = max (spec_timestamp, morph_timestamp) in
-           let dep_UIDs  = listUnion (spec_dep_UIDs, morph_dep_UIDs) in {
-             new_spec <- attemptSubstitution spc morph morph_tm term_pos;
+    case (coercedSpecValue, sm_value) of % TODO: coerceToMorphism sm_value ??
+      | (Spec spc, Morph sm) ->
+           let timeStamp = max (spec_timestamp, sm_timestamp) in
+           let dep_UIDs  = listUnion (spec_dep_UIDs, sm_dep_UIDs) in {
+             new_spec <- applySpecMorphismSubstitution sm spc sm_tm term_pos;
              compressed_spec <- complainIfAmbiguous (compressDefs new_spec) term_pos;
              return (Spec compressed_spec, timeStamp, dep_UIDs)
            }
       | (Other _, Other _) ->
-        evaluateOtherSubstitute spec_tm spec_value_info morph_tm morph_value_info term_pos
+        evaluateOtherSubstitute spec_tm spec_value_info sm_tm sm_value_info term_pos
       | (_,        Morph _)  ->
            raise (TypeCheck (positionOf spec_tm, "substitution attempted on a non-spec"))
       | (Spec _,   _) ->
-           raise (TypeCheck (positionOf morph_tm, "substitution is not a morphism"))
+           raise (TypeCheck (positionOf sm_tm, "substitution is not a morphism"))
       | (_,        _) ->
            raise (TypeCheck (term_pos, "substitution is not a morphism, and is attempted on a non-spec"))
     }
-
-
-  op attemptSubstitution : Spec -> Morphism -> SCTerm -> Position -> SpecCalc.Env Spec
-  def attemptSubstitution original_spec sm sm_tm term_pos =
-    let sub_spec             = SpecCalc.dom sm in
-    let should_be_empty_spec = subtractSpec sub_spec original_spec in
-    {when (~ (should_be_empty_spec.sorts      = emptyASortMap) or
-           ~ (should_be_empty_spec.ops        = emptyAOpMap)   or
-           ~ (should_be_empty_spec.properties = emptyProperties))
-          (raise (TypeCheck (term_pos, warnAboutMissingItems should_be_empty_spec)));
-     applySubstitution sm original_spec sm_tm term_pos}
-
-  op applySubstitution : Morphism -> Spec -> SCTerm -> Position -> SpecCalc.Env Spec
-  def applySubstitution sm spc sm_tm position = 
-
-      let 
-        def translate_op_names op_names =
-	  let op_map = opMap sm in
-	  List.map (fn qid -> 
-		    case evalPartial op_map qid of
-		     | Some qid -> qid
-		     | _ -> qid)
-	           op_names
-
-        def translate_sort_names sort_names =
-	  let sort_map = sortMap sm in
-	  List.map (fn qid -> 
-		    case evalPartial sort_map qid of
-		     | Some qid -> qid
-		     | _ -> qid)
-                   sort_names
-      in
-
-   %% Warning: this assumes that dom_spec is a subspec of spc
-   %%    S' = M(S - dom(M)) U cod(M)
-   let dom_spec           = SpecCalc.dom sm            in     % dom(M)
-   let cod_spec           = SpecCalc.cod sm            in     % cod(M)
-   let residue            = subtractSpec spc dom_spec  in     % S - dom(M)
-   {translated_residue <- applyMorphism sm residue position;  % M(S - dom(M))
-    new_spec <- specUnion [translated_residue, cod_spec];     % M(S - dom(M)) U cod(M)
-    cod_spec_term <- return (case sm_tm of
-			  | (SpecMorph (_,cod_spec_tm,_),_) -> cod_spec_tm
-			  | _ -> sm_tm);
-    return (setImportInfo (new_spec,
-			   {imports      = [(cod_spec_term, cod_spec)],
-			    localOps     = translate_op_names   spc.importInfo.localOps,  
-			    localSorts   = translate_sort_names spc.importInfo.localSorts,
-			    localProperties = spc.importInfo.localProperties
-			   }))}
-
-  op  convertIdMap: QualifiedIdMap -> AQualifierMap (QualifiedId * Aliases)
-  def convertIdMap m =
-    foldMap (fn op_id_map -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
-	     insertAQualifierMap (op_id_map, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
-      emptyAQualifierMap m
-
-  op applyMorphism : Morphism -> Spec -> Position -> Env Spec 
-  def applyMorphism sm spc position =
-   %% The opMap and sortMap in sm are PolyMap's  :  dom_qid -> cod_qid
-   %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
-   %%  so we first convert formats...
-   let op_id_map   = convertIdMap (opMap sm)   in
-   let sort_id_map = convertIdMap (sortMap sm) in
-   auxTranslateSpec spc (op_id_map, sort_id_map) position
-    
-  %% ======================================================================  
-  %%  Error handling...
-  %% ======================================================================  
-
-  def warnAboutMissingItems should_be_empty_spec = 
-    let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
-    let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
-    let props_msg = (foldl (fn ((_, prop_name, _, _), str) ->
-			    if str = "" then printQualifiedId(prop_name) else str^", "^printQualifiedId(prop_name))
-		           ""			 
-			   should_be_empty_spec.properties)
-    in
-    "\n" ^
-    (if sorts_msg = "" then 
-       ""  
-     else
-       "  These sorts from the domain of the morphism are not in the source spec: " ^ sorts_msg ^ "\n")
-    ^
-    (if ops_msg = "" then 
-       ""  
-     else
-       "  These ops from the domain of the morphism are not in the source spec: " ^ ops_msg  ^ "\n")
-    ^
-    (if props_msg = "" then 
-       ""  
-     else
-       "  These axioms, etc. from the domain of the morphism are not in the source spec: " ^ props_msg  ^ "\n")
-    ^
-    "  in substitution term"
-
-
-  op printNamesInAQualifierMap : fa (a) AQualifierMap a -> String
-  def printNamesInAQualifierMap qmap =
-    foldriAQualifierMap (fn (qualifier, id, _, str) ->
-			 let qid = printQualifierDotId (qualifier, id) in
-			 if str = "" then qid else str^", "^qid)
-                        ""
-			qmap 
-
-  %% As of 11/18/02, no one uses this...
-  op countKeysInAQualifierMap : fa (a) AQualifierMap a -> Nat
-  def countKeysInAQualifierMap qmap =
-    foldriAQualifierMap (fn (_, _, _, n) -> n + 1) 0 qmap
-
 
 }
 \end{spec}

@@ -1,6 +1,6 @@
 SpecCalc qualifying spec {
   import UnitId
-  import Spec/SpecUnion
+  import SpecUnion
   import /Languages/Snark/SpecToSnark
   import /Provers/DP/ToFourierMotzkin
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms

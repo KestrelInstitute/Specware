@@ -10,9 +10,9 @@ SpecCalc qualifying spec
   import Signature
   import /Languages/MetaSlang/Specs/TypeObligations
   % import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
-  import Spec/Utilities % for compressDefs and complainIfAmbiguous
   import UnitId/Utilities  % should work for both Specware and PSL
   import /Languages/MetaSlang/Transformations/DefToAxiom
+  import Spec/CompressSpec
 
   def SpecCalc.evaluateObligations term = {
      unitId <- getCurrentUID;

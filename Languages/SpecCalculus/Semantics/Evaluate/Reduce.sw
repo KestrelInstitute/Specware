@@ -6,7 +6,6 @@ and apply them to the given term.
 \begin{spec}
 SpecCalc qualifying spec
   import Signature
-  import Spec/Utilities
   import Spec
   import UnitId/Utilities
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker

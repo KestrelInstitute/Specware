@@ -10,7 +10,9 @@ agree with myself. I couldn't agree more.
 \begin{spec}
 SpecCalc qualifying spec
   import Signature 
-  import Spec/Utilities
+  import Spec/CompressSpec
+  import Spec/AccessSpec
+  import Spec/MergeSpecs
   import UnitId/Utilities                                % for uidToString, if used...
 \end{spec}
 

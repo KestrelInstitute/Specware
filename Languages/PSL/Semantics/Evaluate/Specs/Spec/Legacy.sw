@@ -9,11 +9,11 @@ Spec qualifying spec
   import ../Claim/Legacy
   import ../MetaSlang/Legacy
   % import ../Env
-  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/Utilities
+  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/AddSpecElements
   import /Languages/MetaSlang/Specs/AnnSpec
   import /Languages/MetaSlang/Specs/SimplePrinter
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
-  import /Languages/SpecCalculus/Semantics/Evaluate/Spec/SpecUnion
+  import /Languages/SpecCalculus/Semantics/Evaluate/SpecUnion
 \end{spec}
 
 \begin{spec}
@@ -74,7 +74,7 @@ where exceptions are raised.
     SpecCalc.addSort info.names info.dfn spc position
 
   % op SpecEnv.addClaim : Spec -> Claim -> Position -> Env Spec
-  def SpecEnv.addClaim spc claim position = return (AnnSpec.addProperty (claim,spc))
+  def SpecEnv.addClaim spc claim position = return (SpecCalc.addProperty (claim,spc))
 \end{spec}
 
 \begin{spec}

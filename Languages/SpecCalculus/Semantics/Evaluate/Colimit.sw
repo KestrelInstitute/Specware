@@ -6,7 +6,7 @@ SpecCalc qualifying spec
 {
  import Signature
  import UnitId/Utilities  % for uidToString, if used...
- import Colimit/Utilities
+ import SpecColimit
 
  def SpecCalc.evaluateColimit term = 
    {
