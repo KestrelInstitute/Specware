@@ -13,9 +13,14 @@ SpecCalc qualifying spec {
       codValue <- SpecCalc.evaluateTermInfo codTerm;
       raise (Unsupported ((positionOf domTerm),
                           "diagram morphisms not available yet\n" 
-			  ^ "Dom   = " ^ showValue domValue ^"\"
-			  ^ "Cod   = " ^ showValue codValue ^"\"
-			  ^ toString (List.length morphRules) " rules"))
+			  ^ "Dom diagram  = \n" 
+			  ^ showValue domValue 
+			  ^ "\n"
+			  ^ "Cod diagram  = \n" 
+			  ^ showValue codValue 
+			  ^ "\n"
+			  ^ (toString (List.length morphRules)) 
+			  ^ " diagram-morphism rules \n"))
     }
 }
 \end{spec}
