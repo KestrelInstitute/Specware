@@ -218,7 +218,7 @@ spec
            let vertex_spec             = vertexLabel dg          vertex in
            let cocone_translation_expr = eval vertex_to_sm_rules vertex in
            let translated_spec = run (translateSpec (subtractSpec vertex_spec base_spec) cocone_translation_expr) in
-           let combined_spec = run (specUnion [apex_spec, translated_spec]) in
+           let combined_spec   = run (specUnion [apex_spec, translated_spec]) in
            combined_spec)
          base_spec % proto_apex_spec
          dg
