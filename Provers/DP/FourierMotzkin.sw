@@ -87,6 +87,20 @@ FM qualifying spec
   op trueIneq: Ineq
   def trueIneq = trueIneqGtEq
 
+  op trueIneq?: Ineq -> Boolean
+  def trueIneq?(ineq as (comp, poly)) =
+    if constantPoly?(poly)
+      then
+	let [Constant c] = poly in
+	case comp of
+	  | Gt -> c > 0
+	  | GtEq -> c >= 0
+	  | Lt -> c < 0
+	  | LtEq -> c <= 0
+	  | Eq -> c = 0
+	  | Neq -> c ~= 0
+    else false
+
   op mkNormIneq: CompPred * Poly -> Ineq
   def mkNormIneq(comp, p) =
     normalize(mkIneq(comp, p))
@@ -253,9 +267,16 @@ FM qualifying spec
 	   | Less -> Less
 	   | Greater -> Greater
 
+  op termGT: Term * Term -> Boolean
+  def termGT(t1, t2) =
+    let comp = compare(t1, t2) in
+    case comp of
+      | Greater -> true
+      | _ -> false
+
   op normalizePoly: Poly -> Poly
   def normalizePoly(sum) =
-    let sortedSum = uniqueSort compare sum in
+    let sortedSum = sortGT termGT sum in
     let simplifiedSum = mergeCommonVars(sortedSum) in
     %let reducedSum = reduceCoefs(simplifiedSum) in
     simplifiedSum
@@ -264,11 +285,24 @@ FM qualifying spec
 
   def normalize(ineq as (comp, sum)) =
     let normPoly = reduceCoefs(normalizePoly(sum)) in
+    if zeroPoly?(normPoly)
+      then normalizeZeroPolyIneq(comp)
+    else
+      case comp of
+	| Gt -> (Gt, normPoly)
+	| GtEq -> (GtEq, normPoly)
+	| Eq -> (Eq, normPoly)
+	| _ -> ((oppositeComp(comp)), negateSum(normPoly))
+
+  op normalizeZeroPolyIneq: CompPred -> Ineq
+  def normalizeZeroPolyIneq(comp) =
     case comp of
-      | Gt -> (Gt, normPoly)
-      | GtEq -> (GtEq, normPoly)
-      | Eq -> (Eq, normPoly)
-      | _ -> ((oppositeComp(comp)), negateSum(normPoly))
+      | Gt -> falseIneq
+      | GtEq -> trueIneq
+      | Lt -> falseIneq
+      | LtEq -> trueIneq
+      | Eq -> trueIneq
+      | Neq -> falseIneq
 
   op negateIneq: Ineq -> Ineq
   def negateIneq(ineq as (comp, sum)) =
@@ -358,7 +392,7 @@ FM qualifying spec
 	Some newIneq
     else None
 
-  op tightenNeqInteger: Ineq -> Ineq -> Ineq
+  op tightenWithNeqInteger: Ineq -> Ineq -> Ineq
   def tightenWithNeqInteger (neq as (Neq, poly1)) (ineq2 as (comp2, poly2)) =
     let hdT1 = hdTerm(poly1) in
     let hdT2 = hdTerm(poly2) in
@@ -376,6 +410,9 @@ FM qualifying spec
 	let newP1 = coefTimesPoly(p1Mult, poly1) in
 	let newP2 = coefTimesPoly(p2Mult, poly2) in
 	let newP = polyPlusPoly(newP1, newP2) in
+	%let _ = writeLine("tighten neq: "^printIneq(neq)) in
+	%let _ = writeLine("tighten ineq2: "^printIneq(ineq2)) in
+	%let _ = writeLine("tighten newP: "^printPoly(newP)) in
 	if zeroPoly?(newP)
 	  then let newP = polyMinusPoly(poly2, mkPoly1(mkConstant(1))) in
 	       mkNormIneq(GtEq, newP)
@@ -451,8 +488,18 @@ FM qualifying spec
     let polyRes = poly.compare(poly1, poly2) in
     if polyRes = Equal then
       case (comp1, comp2) of
-	| (Neq, GtEq) -> Less
 	| (GtEq, Neq) -> Greater
+	| (Neq, GtEq) -> Less
+	| (GtEq, Gt) -> Greater
+	| (Gt, GtEq) -> Less
+	| (GtEq, LtEq) -> Greater
+	| (LtEq, GtEq) -> Less
+	| (LtEq, Lt) -> Greater
+	| (Lt, LtEq) -> Less
+	| (LtEq, Neq) -> Greater
+	| (Neq, LtEq) -> Less
+	| (Neq, Eq) -> Greater
+	| (Eq, Neq) -> Less
 	| _ -> Equal
     else polyRes
 
@@ -492,8 +539,11 @@ FM qualifying spec
           case neqs of
 	    | [] -> ineqSet
 	    | hdNeq::restNeqs ->
-	    let tightenedIneqs = tightenNeqBounds(hdNeq, ineqSet) in
-	    tightenAllNeqBounds(restNeqs, tightenedIneqs) in
+	    if trueIneq?(hdNeq)
+	      then tightenAllNeqBounds(restNeqs, ineqSet)
+	    else
+	      let tightenedIneqs = tightenNeqBounds(hdNeq, ineqSet) in
+	      tightenAllNeqBounds(restNeqs, tightenedIneqs) in
     let ineqSet = map tightenGTInteger ineqSet in
     tightenAllNeqBounds(neqs, ineqSet)
     
