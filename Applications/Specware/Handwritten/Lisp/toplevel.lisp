@@ -92,6 +92,14 @@
 (defun sw-temp-file? (fil)
   (equal fil *current-temp-file*))
 
+(defun add-to-swpath (dir)
+  (let ((swpath (specware::getEnv "SWPATH")))
+    (unless *saved-swpath*
+      (setq *saved-swpath* swpath))
+    (specware::setenv "SWPATH"
+		      (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
+			      dir swpath))))
+
 (defun maybe-restore-swpath ()
   (when *saved-swpath*
     (specware::setenv "SWPATH" *saved-swpath*)
@@ -120,15 +128,11 @@
 ;;;		    (tmp-device (car tmp-device-uid-pr))
 		    (tmp-uid (format nil "/~a" tmp-name))
 		    (tmp-full-uid (format nil "~A~A"  tmp-dir tmp-name))
-		    (tmp-sw (format nil "~A~A.sw" tmp-dir tmp-name))
-		    (old-swpath (or *saved-swpath* (specware::getEnv "SWPATH")))
-		    (new-swpath (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
-					tmp-dir old-swpath)))
+		    (tmp-sw (format nil "~A~A.sw" tmp-dir tmp-name)))
 	       (ensure-directories-exist tmp-dir)
 	       (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
 		 (format s "~A" str))
-	       (setq *saved-swpath* old-swpath)
-	       (specware::setenv "SWPATH" new-swpath)
+	       (add-to-swpath tmp-dir)
 	       (setq *temp-file-in-use?* t)
 	       (setq *current-temp-file* tmp-sw)
 	       (setq SpecCalc::aliasPaths
@@ -407,10 +411,7 @@
 	(unless swpath-relative?
 	  ;(format t "~&coercing ~A to /~A~%" x x)
 	  (setq x (format nil "/~A" x))
-	  (specware::setEnv "SWPATH"
-			    (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
-				    (specware::current-directory)
-				    (specware::getEnv "SWPATH"))))
+	  (add-to-swpath (specware::current-directory)))
 	;;      (setq x (norm-unitid-str x))
 	(let ((saved-swpath (and *saved-swpath*
 				 (specware::getEnv "SWPATH"))))

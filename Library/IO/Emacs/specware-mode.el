@@ -1029,24 +1029,53 @@ If anyone has a good algorithm for this..."
       (push specware4 result))
     (nreverse result)))
 
+(defun split-filename-for-path (filename)
+  ;; Splits absolute filename into head suitable for swpath entry and
+  ;; tail suitable for a uid. Note that uids cannot contain ~ or spaces
+  ;; Assumes sw::normalize-filename has been called
+  (let (head pos) 
+    (if (eq (elt filename 1) ?:)
+	(progn (setq head (subseq filename 0 3))
+	       (setq filename (subseq filename 3)))
+      (progn (setq head (subseq filename 0 1))
+	     (setq filename (subseq filename 1))))
+    (while (and (position-if-not 'unitIdChar filename)
+		(setq pos (position ?/ filename)))
+      (setq head (concat head (subseq filename 0 (1+ pos))))
+      (setq filename (subseq filename (1+ pos))))
+    (cons head (concat "/" filename))))
+
+(defun unitIdChar (ch)
+  (or (member ch '(?/ ?_ ?#))
+      (let ((num (char-to-int ch)))
+	(or (and (>= num (char-to-int ?0))
+		 (<= num (char-to-int ?9)))
+	    (and (>= num (char-to-int ?a))
+		 (<= num (char-to-int ?z)))
+	    (and (>= num (char-to-int ?A))
+		 (<= num (char-to-int ?Z)))))))
+
 (defun name-relative-to-swpath (filename)
   (let ((swpath (get-swpath)))
     (loop for dir in swpath
-	  do (let ((dir (sw::normalize-filename dir)))
-	       (if (string-equal dir (substring filename 0 (min (length dir)
-								(length filename))))
-		   (let ((rel-filename (substring filename (length dir))))
-		     (return (if (eq (elt rel-filename 0) ?/)
-				 rel-filename
-			       (concat "/" rel-filename))))))
-	  finally (let ((oldpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")")))
-		    (lisp-or-specware-command ":swpath " "path "
-					      oldpath
-					      (if (eq window-system 'mswindows) ";" ":")
-					      (if (eq (elt filename 0) ?/) "/"
-						(substring filename 0 3)))
-		    (sleep-for 0.1)	; Just to avoid confusing output
-		    (return filename)))))
+       do (let ((dir (sw::normalize-filename dir)))
+	    (if (string-equal dir
+			      (substring filename 0 (min (length dir)
+							 (length filename))))
+		(let ((rel-filename (substring filename (length dir))))
+		  (unless (position-if-not 'unitIdChar rel-filename)
+		    (return (if (eq (elt rel-filename 0) ?/)
+				rel-filename
+			      (concat "/" rel-filename)))))))
+       finally (let ((oldpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")"))
+		     (head-dir-uid (split-filename-for-path filename)))
+		 (lisp-or-specware-command
+		  ":swpath " "path "
+		  oldpath
+		  (if (eq window-system 'mswindows) ";" ":")
+		  (car head-dir-uid))
+		 (sleep-for 0.1)	; Just to avoid confusing output
+		 (return (cdr head-dir-uid))))))
 
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "

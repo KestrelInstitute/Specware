@@ -127,6 +127,83 @@ information on how to send the mail."
 (defvar *allegro-prompt-regexp*
   "^\\(\\(\\[[0-9]+i?c?\\] \\|\\[step\\] \\)?\\(<?[-A-Za-z]* ?[0-9]*?>\\|[-A-Za-z0-9]+([0-9]+):\\) \\)+")
 
+(defun simple-scan-works ()
+  (while (and (not (eobp))
+	      (not (or (looking-at "(")
+		       (looking-at "\""))))
+    (forward-char 1))
+  (eobp))
+
+(defun fi:inferior-lisp-newline ()
+  "When at the end of the buffer, insert a newline into a Lisp subprocess
+buffer, and if a complete form has been entered, send the input to the Lisp
+subprocess.  This allows partially complete, multi-line expressions to be
+edited before Lisp sees them.
+
+If not at the end of the buffer, this function does its best to find a
+complete form around the point, copy it to the end of the buffer, and send
+it to the Lisp subprocess."
+  (interactive)
+  (if (eobp)
+      (let ((start (marker-position
+		    (process-mark (get-buffer-process (current-buffer)))))
+	    (send-that-sexp t))
+	(goto-char start)
+	(while (and (not (eobp))
+		    (condition-case ()
+			(progn (forward-sexp 1) t)
+		      (error (or (simple-scan-works)
+				 (setq send-that-sexp nil)))))
+	  (while (looking-at ")")
+	    ;; Can either signal an error or delete them silently.  Hmm,
+	    ;; for now we'll signal the error:
+	    ;;(delete-char 1)
+	    (error "too many )'s")
+	    ))
+	(goto-char (point-max))
+	(if send-that-sexp
+	    (fi:subprocess-send-input)
+	  (progn
+	    (newline)
+	    (funcall indent-line-function))))
+
+    ;;NOT AT THE END OF THE BUFFER!
+    ;; find the user's input contained around the cursor and send that to
+    ;; the inferior lisp
+    (let ((start-of-last-prompt
+	   (save-excursion
+	     (or (and (re-search-backward fi::prompt-pattern nil t)
+		      (point))
+		 (point-max))))
+	  start end)
+      (if (or (and (bolp) (looking-at "("))
+	      (re-search-backward "^(" start-of-last-prompt t)
+	      (prog1 (re-search-backward fi::prompt-pattern nil t)
+		(goto-char (match-end 0))))
+	  (progn
+	    (setq start (point))
+	    (let* ((eol (save-excursion (end-of-line) (point)))
+		   (state (save-excursion (parse-partial-sexp start eol)))
+		   (depth (car state)))
+	      (if (zerop depth)
+		  (setq end eol)
+		(setq end
+		  (condition-case ()
+		      (save-excursion
+			(if (< depth 0)
+			    (up-list (- depth))
+			  (goto-char eol)
+			  (up-list depth))
+			(point))
+		    (error nil))))
+
+	      (if (or (null end) (= end (point-max)))
+		  (progn
+		    (goto-char (point-max))
+		    (fi:inferior-lisp-newline))
+		(fi:subprocess-input-region start end))))
+	(error "couldn't find start of input")))))
+
 ;;; Make listener commands bound to same keys as comint
 (defun add-specware-listener-key-bindings (m)
   (define-key m "\en" 'fi:push-input)
