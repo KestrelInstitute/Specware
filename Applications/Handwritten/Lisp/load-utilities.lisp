@@ -111,7 +111,7 @@
   #+sbcl    sb-fasl:*fasl-file-type*)
 
 (unless (fboundp 'compile-file-if-needed)
-  ;; Conditional because of an apparent Allegro bug in generate-application
+  ;; Conditional because of an app/usr/lib/sbcl/arent Allegro bug in generate-application
   ;; where excl::compile-file-if-needed compiles even if not needed
   (defun compile-file-if-needed (file)
     #+allegro (excl::compile-file-if-needed file)

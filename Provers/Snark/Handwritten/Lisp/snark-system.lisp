@@ -48,9 +48,10 @@
 	      #+openmcl            	     "dfsl"
 	      #+(and mcl (not openmcl) powerpc) "pfsl"
 	      #+(and mcl (not powerpc))      "fasl"
-	      #+(and (or cmu sbcl) sparc)    "sparcf"
-	      #+(and (or cmu sbcl) x86)      "x86f"
+	      #+(and cmu sparc)    "sparcf"
+	      #+(and cmu x86)      "x86f"
               #+clisp                        "fas"
+	      #+sbcl			     "sfsl"
 	      )
 
 (dolist (x '("sparse-array-pkg"
