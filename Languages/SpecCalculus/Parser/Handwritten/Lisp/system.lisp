@@ -61,34 +61,38 @@
 (compile-and-load-lisp-file "parser-interface")
 
 (progn
-  (comment-blank-lines 1)
-  (comment "========================================================================")
-  (comment "Load parser for specware 4")
-  (comment " ")
-  (comment "Before loading specware4 parser")
-  (comment "PARSER::*CURRENT-PARSER*    = ~S" PARSER::*CURRENT-PARSER*)
-  (comment "PARSER4::*CURRENT-PARSER*   = ~S" PARSER4::*CURRENT-PARSER*)
-  (comment "PARSER4::*SPECWARE4-PARSER* = ~S" PARSER4::*SPECWARE4-PARSER*)
-
+  ;; (comment-blank-lines 1)
+  ;; (comment "========================================================================")
+  ;; (comment "Load parser for specware 4")
+  ;; (comment " ")
+  ;; (comment "Before loading specware4 parser")
+  ;;  (comment "PARSER::*CURRENT-PARSER*    = ~S" PARSER::*CURRENT-PARSER*))
+  ;; (comment "PARSER4::*CURRENT-PARSER*   = ~S" PARSER4::*CURRENT-PARSER*)
+  ;; (comment "PARSER4::*SPECWARE4-PARSER* = ~S" PARSER4::*SPECWARE4-PARSER*)
+  
   (setq *specware4-parser*
     (load-parser
      "rules" 
      :name 'SPECWARE4-PARSER 
      :case-sensitive? t))
 
-  (comment-blank-lines 1)
-  (comment "After loading specware4 parser")
-  (comment "PARSER::*CURRENT-PARSER*    = ~S" PARSER::*CURRENT-PARSER*)
-  (comment "PARSER4::*CURRENT-PARSER*   = ~S" PARSER4::*CURRENT-PARSER*)
-  (comment "PARSER4::*SPECWARE4-PARSER* = ~S" PARSER4::*SPECWARE4-PARSER*)
-  (comment "========================================================================")
-  (comment-blank-lines 1))
-
+  ;; (comment-blank-lines 1)
+  ;; (comment "After loading specware4 parser")
+  ;;  (comment "PARSER::*CURRENT-PARSER*    = ~S" PARSER::*CURRENT-PARSER*))
+  ;; (comment "PARSER4::*CURRENT-PARSER*   = ~S" PARSER4::*CURRENT-PARSER*)
+  ;; (comment "PARSER4::*SPECWARE4-PARSER* = ~S" PARSER4::*SPECWARE4-PARSER*)
+  ;; (comment "========================================================================")
+  ;; (comment-blank-lines 1)
+  )
+  
 (progn
-  (comment "=======================================================================================================================")
-  (comment "Printing grammar as .ps file")
+  ;;(comment "=======================================================================================================================")
+  (comment " ")
+  ;; (comment "Printing grammar as .ps file")
   (print-grammar-ps-file)
-  (comment "======================================================================================================================="))
+  (comment " ")
+  ;;(comment "=======================================================================================================================")
+  )
 
 (defun user::test-specware4-parser (&optional (file "Languages/SpecCalculus/Parser/test.spec"))
   ;; (parse-file file *meta-slang-parser* *meta-slang-tokenizer*)

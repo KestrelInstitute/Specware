@@ -32,22 +32,26 @@
 							    '("TeX"))))
 	 (*default-pathname-defaults* parser-tex-dir)
 	 (tex-file (make-pathname :name "metaslang.tex" :defaults parser-tex-dir)) ; metaslang.tex is the name expected by parser-main.tex
-	 (ps-file  (make-pathname :name "grammar.ps"    :defaults parser-tex-dir)))
+	 (ps-file  (make-pathname :name "grammar.ps"    :defaults parser-tex-dir))
+	 (log-file (make-pathname :name "latex.log"     :defaults parser-tex-dir))
+	 )
     (unless just-rerun-latex?
       (when (probe-file tex-file)
 	(let ((old-tex-file (make-pathname :name "old-metaslang.tex" :defaults parser-tex-dir)))
-	  (format t "~&Renaming ~A~&      to ~A~%" tex-file old-tex-file)
+	  (format t "~&;;; Renaming ~A~&;;;       to ~A~%" tex-file old-tex-file)
 	  (rename-file tex-file old-tex-file)))
       (when (probe-file ps-file)
 	(let ((old-ps-file  (make-pathname :name "old-grammar.ps"    :defaults parser-tex-dir)))
-	  (format t "~&Renaming ~A~&      to ~A~%" ps-file old-ps-file)
+	  (format t "~&;;; Renaming ~A~&;;;       to ~A~%" ps-file old-ps-file)
 	  (rename-file ps-file old-ps-file)))
       (write-bnf-in-latex-for-grammar tex-file))
-    (format t "~&~%--------------------------------------------------------------------------------~%")
-    (let ((cmd (format nil "cd ~A ; latex parser-main.tex ; dvips -f parser-main.dvi > grammar.ps"
+    (when (probe-file log-file)
+      (delete-file log-file))
+    ;; (format t "~&~%--------------------------------------------------------------------------------~%")
+    (let ((cmd (format nil "cd ~A ; latex parser-main.tex > latex.log ; dvips -q -f parser-main.dvi > grammar.ps"
 		       parser-tex-dir)))
       (excl::run-shell-command cmd :wait t))
-    (format t "~&See ~Agrammar.ps~%" parser-tex-dir)
+    (format t "~&;;; See ~Agrammar.ps~%" parser-tex-dir)
     (make-pathname :name "grammar" :type "ps" :defaults parser-tex-dir)))
 
 (defun write-bnf-in-latex-for-grammar (latex-file-or-stream &optional (parser *current-parser*)) 

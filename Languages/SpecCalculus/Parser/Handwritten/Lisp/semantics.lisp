@@ -30,6 +30,12 @@
   ;;(cons :|ref| (vector (cons :|None| nil) name (incf *varcounter*)))
   )
 
+(defun mkQualifiedId (qualifier id) 
+  (MetaSlang::mkQualifiedId qualifier id))
+
+(defun mkUnQualifiedId (id) 
+  (MetaSlang::mkUnQualifiedId id))
+
 ;;; ========================================================================
 ;;;  Primitives
 ;;; ========================================================================
@@ -94,11 +100,11 @@
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
 
-(defparameter char-sort   (cons :|PBase| (vector (ATerm::mkQualifiedId "Char"    "Char")    nil position0)))
-(defparameter bool-sort   (cons :|PBase| (vector (ATerm::mkQualifiedId "Boolean" "Boolean") nil position0)))
-(defparameter string-sort (cons :|PBase| (vector (ATerm::mkQualifiedId "String"  "String")  nil position0)))
-(defparameter int-sort    (cons :|PBase| (vector (ATerm::mkQualifiedId "Integer" "Integer") nil position0)))
-(defparameter nat-sort    (cons :|PBase| (vector (ATerm::mkQualifiedId "Nat"     "Nat")     nil position0)))
+(defparameter char-sort   (cons :|PBase| (vector (mkQualifiedId "Char"    "Char")    nil position0)))
+(defparameter bool-sort   (cons :|PBase| (vector (mkQualifiedId "Boolean" "Boolean") nil position0)))
+(defparameter string-sort (cons :|PBase| (vector (mkQualifiedId "String"  "String")  nil position0)))
+(defparameter int-sort    (cons :|PBase| (vector (mkQualifiedId "Integer" "Integer") nil position0)))
+(defparameter nat-sort    (cons :|PBase| (vector (mkQualifiedId "Nat"     "Nat")     nil position0)))
 
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
@@ -385,7 +391,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defparameter *unqualified-equal*
-    (ATerm::mkUnQualifiedId "="))
+    (mkUnQualifiedId "="))
 
 (defun make-unqualified-op-ref (name l r)
   (make-fun (if (equal name "=")

@@ -501,11 +501,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-SORT-NAME ()
   (1 :SORT-NAME)
-  (ATerm::mkUnQualifiedId 1))
+  (mkUnQualifiedId 1))
 
 (define-sw-parser-rule :QUALIFIED-SORT-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :SORT-NAME))
-  (ATerm::mkQualifiedId 1 2))
+  (mkQualifiedId 1 2))
 
 (define-sw-parser-rule :QUALIFIER ()
   (1 :NAME)
@@ -829,11 +829,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-OP-NAME ()
   (1 :OP-NAME)
-  (ATerm::mkUnQualifiedId 1))
+  (mkUnQualifiedId 1))
 
 (define-sw-parser-rule :QUALIFIED-OP-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :OP-NAME))
-  (ATerm::mkQualifiedId 1 2))
+  (mkQualifiedId 1 2))
 
 (define-sw-parser-rule :OP-NAME ()
   (1 :NAME)
