@@ -10,9 +10,9 @@
 ;;; Elaborating spec at $TESTDIR/t0103_1#position
 ;;; Elaborating spec at $TESTDIR/t0103_1#move
 Errors in $TESTDIR/t0103_1.sw
-40.33-40.38	:  Could not match sort constraint
-              legal? of sort move -> Boolean
-          with expected sort Boolean
+40.33-40.38	: Could not match type constraint
+              legal? of type move -> Boolean
+          with expected type Boolean
 ")
       ("twk message 1/8/03 fix 1"
        :sw "t0103_2"
