@@ -29,10 +29,12 @@
 
    ;; Fri Apr  9 01:46:42 PDT 2004
    ;; We are in the process of replacing "sort" with "type" as a keyword.
-   ;;
+   ;; "type" is now a keyword synonym for "sort", but is also a symbol
+   ;; Fri Apr 23 17:00:23 PDT 2004
+   ;; "type" is now just a keyword synonym for "sort", and is no longer a symbol
 
-   :ad-hoc-keywords             '("end-spec" "_" ".." "reduce" "expand" "type") ; "using" "options" 
-   :ad-hoc-symbols              '("__" "reduce" "expand" "type")                ; "using" "options" 
+   :ad-hoc-keywords             '("end-spec" "_" ".." "reduce" "expand") ; "using" "options" 
+   :ad-hoc-symbols              '("__" "reduce" "expand")                ; "using" "options" 
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"
