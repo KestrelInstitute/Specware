@@ -16,11 +16,9 @@ spec {
   
   op mkProductAt : List (ASort Position) -> Position -> (ASort Position)
   def mkProductAt sorts position =
-    let def loop (n, sorts) = 
-      case sorts  of
-        | [] -> []
-        | srt::sorts -> cons ((Nat.toString n, srt), loop (n + 1, sorts)) in
-      Product (loop(1,sorts), position)
+    case sorts of
+      | [x] -> x
+      | _ -> Product (tagTuple sorts, position)
   
   op mkBaseAt : QualifiedId -> List (ASort Position) -> Position -> (ASort Position)
   def mkBaseAt qid srts position = Base (qid, srts, position)

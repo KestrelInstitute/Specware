@@ -56,16 +56,16 @@ not a procedure. This includes vars and ops.
             (foldriAQualifierMap
                (fn (qual,id,opInfo,recSorts) -> Cons (sortOf (sortScheme opInfo),recSorts)) [] tmpSpec.ops) position);
           procSort <- return (mkBaseAt (unQualified "Proc") [argProd,procInfo.returnSort,storeProd] position); 
-          qualProcId as Qualified (procQual,procName) <- return (unQualified procName);
+          qualProcId <- return (unQualified procName);
           static <- staticSpec pSpec;
           static <- addOp [qualProcId] Nonfix (tyVarsOf procSort,procSort) [] static position;
           pSpec <- setStaticSpec pSpec static;
           pSpec <-
-            case findAQualifierMap (static.ops, procQual, procName) of
+            case findTheOp (static, qualProcId) of
               | None -> return pSpec
               | Some info -> {
                     dynamic <- dynamicSpec pSpec;
-                    dynamic <- addNonLocalOpInfo dynamic procQual procName info;
+                    dynamic <- addNonLocalOpInfo dynamic qualProcId info;
                     setDynamicSpec pSpec dynamic
                  };
 \end{spec}
@@ -131,7 +131,7 @@ we are carrying around the slice.
                                  pSpec.staticSpec  
                                  pSpec.dynamicSpec
                                  bSpec);
-          setProcedures pSpec (PolyMap.update pSpec.procedures (unQualified procName) proc)
+          setProcedures pSpec (PolyMap.update pSpec.procedures qualProcId proc)
         }
       | _ -> return pSpec
 \end{spec}
@@ -374,7 +374,7 @@ under the assumption that they are never used. Needs thought.
           axm <- return (mkNotAt (disjList (map (fn ((guard,term),_) -> guard) alts) position) position);
           apexSpec <- return (addAxiom (("guard", [], axm), dynamic ctxt));
           apexElab <- elaborateSpec apexSpec;
-          connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab []
+          connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
         }
 \end{spec}
 
@@ -476,7 +476,7 @@ axiom but we might be better off without an axiom at all.
             | (None,None) -> {
                   apexSpec <- return (addAxiom (("assign", [], mkTrueAt position),dynamic ctxt)); 
                   apexElab <- elaborateSpec apexSpec; 
-                  connectVertices ctxt (initialV ctxt) (exit ctxt) apexElab []
+                  connectVertices ctxt (initialV ctxt) (exit ctxt) apexElab
                 }
             | (None,Some {returnSort,returnName}) ->
                 raise (SpecError (position, "Procedure has return sort " ^ (printSort returnSort) ^ " but no return value"))
@@ -508,7 +508,7 @@ axiom but we might be better off without an axiom at all.
           (case (continue ctxt) of
              | Some continueVertex -> {
                    apexElab <- elaborateSpec (dynamic ctxt); 
-                   connectVertices ctxt (initialV ctxt) continueVertex apexElab []
+                   connectVertices ctxt (initialV ctxt) continueVertex apexElab
                  }
              | None ->
                  raise (SpecError (position, "continue appears outside of a loop")))
@@ -517,14 +517,33 @@ axiom but we might be better off without an axiom at all.
           (case (break ctxt) of
              | Some breakVertex -> {
                    apexElab <- elaborateSpec (dynamic ctxt); 
-                   connectVertices ctxt (initialV ctxt) breakVertex apexElab []
+                   connectVertices ctxt (initialV ctxt) breakVertex apexElab
                  }
              | None ->
                  raise (SpecError (position, "break appears outside of a loop")))
 \end{spec}
 
-	  | Exec trm -> compileAxiomStmt pSpec initialV finalV exit bSpec cnt trm
-      | Relation trm -> compileAxiomStmt ctxt trm
+\begin{spec}
+	  | Exec trm ->
+          (case trm of
+            | ApplyN ([Fun(OneName(id,fixity),srt,position),argTerm],_) ->
+                if ~((PolyMap.evalPartial (procedures ctxt) (unQualified id)) = None) then
+                  compileProcCall ctxt None (unQualified id) argTerm position
+                else
+                  raise (SpecError (position, "call to undefined procedure: " ^ id))
+            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,position),argTerm],_) ->
+                if ~((PolyMap.evalPartial (procedures ctxt) (Qualified (id1,id2))) = None) then
+                  compileProcCall ctxt None (Qualified (id1,id2)) argTerm position
+                else
+                  raise (SpecError (position, "call to undefined procedure: " ^ id1 ^ "." ^ id2))
+            | _ ->
+               raise (SpecError (position, "invalid procedure call or relation statement")))
+\end{spec}
+
+
+\begin{spec}
+      | Relation trm -> compileAxiomStmt ctxt trm position
+\end{spec}
 
 To compile a \verb+let+, we first compile its declarations, thus enlarging
 the context. Then, we compile the command in the enlarged context.
@@ -559,7 +578,7 @@ This should be an invariant. Must check.
       | Skip -> {
           apexSpec <- return (addAxiom (("assign", [], mkTrueAt position),dynamic ctxt));  % why bother?
           apexElab <- elaborateSpec apexSpec; 
-          connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab []
+          connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
         }
 \end{spec}
 
@@ -614,7 +633,7 @@ type variables.
 \begin{spec}
     apexSpec <- return (addAxiom (("assign",[],axm),apexSpec)); 
     apexElab <- elaborateSpec apexSpec; 
-    connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab [leftId]
+    connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
   }
 \end{spec}
 
@@ -732,7 +751,8 @@ So the following doesn't handle the situation where the name are captured by lam
        )) (dynamic ctxt) primedNames; 
      apexSpec <- return (addAxiom (("axiom stmt",[],trm),apexSpec));
      apexElab <- elaborateSpec apexSpec; 
-     connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab (map (fn name -> removePrime name) primedNames)
+     % connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab (map (fn name -> removePrime name) primedNames)
+     connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
   }
 \end{spec}
 
@@ -804,16 +824,27 @@ the procedure is the unit \verb+()+.
              raise (SpecError (position, "compileProcCall: call to undefined procedure: " ^ (printQualifiedId procId)))
           | Some info -> return info);
 
-      (leftQualId as Qualified(leftQual,leftId), leftPrimedTerm) <-
-         return (case trm? of
-           | Some trm -> processLHS trm
-           % | None -> ("dummy", mkRecord []);
-%                  (case procOpInfo of
-%                      (_,(_,(Base(_,srts),_)),_) -> 
-%                          (mkVar_ast("x___x",hd(tl srts)),hd(tl srts))
-%                    | _ -> fail
-%                        ("compileProcCall: bad procedure opInfo: " ^ pr))
-           | _ -> fail "compileProcCall: result term not a variable"); 
+      (*
+        If the procedure we are calling returns something, then we need to add a primed
+        version of the receiving identifier to the dynamic spec. If it doesn't return something
+        then we assume the return value is ().
+       *)
+      (apexSpec,leftPrimedTerm) <-
+        case trm? of
+          | None -> return (ctxt.dynamic, mkRecordAt [] position)
+          | Some trm -> {
+               (leftQualId, leftPrimedTerm) <- return (processLHS trm);
+
+               % ### This is wrong since we find it in dynamic but it might be static. must check that it is a var
+               case findTheOp (dynamic ctxt, leftQualId) of
+                 | None ->
+                     raise (SpecError (position,
+                                      "compileProcCall: id '" ^ (printQualifiedId leftQualId) ^ "' is undefined"))
+                 | Some opInfo -> {
+                        apexSpec <- addLocalOpInfo ctxt.dynamic (makePrimedId leftQualId) opInfo;
+                        return (apexSpec,leftPrimedTerm)
+                     }
+              };
 \end{spec}
 
 So a procedure can write to anything in scope when it was declared.
@@ -823,45 +854,32 @@ If a variable name appears here and in the dynamic context of the procedure,
 then they are the same variable. Moreover we can be certain that the new primed
 version of the variable doesn't exist.
 
-#### The bug here is that we want the dynamic spec that does not contain
-### the arguments
-
 So what is the rule for names. When we call the procedure, we need to
 pass the entire state that is in scope when the procedure is declared.
 This is all the local names in the procInfo.dynamicSpec.
 
-# Something funny about the way we retieve the local ops and local op info.
+# The order in which the list if changed ops is obtained is significant. It
+must agree with the definition of the Proc op for this procedure.
 
 \begin{spec}
       procInfo <- return (eval (procedures ctxt) procId); 
-      localDynamicOps <- return (getLocalOps procInfo.dynamicSpec);
-      print ("localDynamicOps = " ^ (show " " (map printQualifiedId localDynamicOps)) ^ "\n");
-      changedOps <-
-        foldOverQualifierMap
-           (fn (qual,id,opInfo,opList) ->
-               return (if (member (mkQualifiedId (qual,id), localDynamicOps)) then
-                         Cons ((qual,id,opInfo),opList)
-                       else
-                         opList))
-           []
-           procInfo.dynamicSpec.ops;
-      apexSpec <- foldM (fn spc -> fn (qual,id,opInfo) -> addLocalOpInfo spc qual (id ^ "'") opInfo)
-                             ctxt.dynamic
-                             changedOps;
+      variables <- return (getLocalOps procInfo.dynamicSpec);
+      print ("context variables = " ^ (show " " (map printQualifiedId variables)) ^ "\n");
+      variableOps <- mapM (fn qualId ->
+        case findTheOp (procInfo.dynamicSpec, qualId) of
+          | Some opInfo -> return (qualId,opInfo)                 % Including the qualId here is redundant as it is part of the opInfo
+          | None -> raise (Fail "compileProcCall: local op not found in dynamic spec"))
+          variables;
+      apexSpec <- foldM (fn spc -> fn (qualId,opInfo) -> addLocalOpInfo spc (makePrimedId qualId) opInfo)
+                             apexSpec
+                             variableOps;
       oldRec <- return (mkTupleAt 
-           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id), sortOf (sortScheme opInfo))) changedOps) position);
+           (map (fn (qualId,opInfo) -> mkOp (qualId, sortOf (sortScheme opInfo))) variableOps) position);
       newRec <- return (mkTupleAt
-           (map (fn (qual,id,opInfo) -> mkOp (mkQualifiedId (qual,id ^ "'"), sortOf (sortScheme opInfo))) changedOps) position);
-      changedNames <- return (map (fn (qual,id,opInfo) -> mkQualifiedId (qual,id)) changedOps);
-      changedNames <-
-        return (case trm? of
-                  | None -> changedNames
-                  | Some _ -> Cons (leftQualId,changedNames));
-      print ("changedNames = " ^ (show " " (map printQualifiedId changedNames)) ^ "\n");
+           (map (fn (qualId,opInfo) -> mkOp (makePrimedId qualId, sortOf (sortScheme opInfo))) variableOps) position);
 
       recPair <- return (mkTupleAt [oldRec,newRec] position); 
       totalTuple <- return (mkTupleAt [argTerm,leftPrimedTerm,recPair] position); 
-      % procOp <- return (mkOpAt procId sortOf (sortScheme procOpInfo) position);
       procOp <- let procName =
         case procId of
           | Qualified (qual,id) ->
@@ -871,30 +889,9 @@ This is all the local names in the procInfo.dynamicSpec.
                TwoNames (qual,id,Nonfix) in
              return (mkFunAt procName (sortOf (sortScheme procOpInfo)) position);
       axm <- return (mkApplyNAt procOp totalTuple position);
-      apexSpec <-
-        case trm? of
-          | Some trm -> 
-              (case findTheOp (dynamic ctxt, leftQualId) of
-                 | None ->
-                     raise (SpecError (position,
-                                      "compileProcCall: id '" ^ (printQualifiedId leftQualId) ^ "' is undefined"))
-                 | Some (names,fixity,sortScheme,optTerm) ->
-\end{spec}
-
-The point here is that, if the variable was defined in an scope outside
-the procedure, then, thanks to the addOp above, it will already exist
-in the apexSpec. Hence, before adding we must make sure its not already
-there.
-
-\begin{spec}
-
-                       (case findTheOp (apexSpec, makePrimedId leftQualId) of
-                          | None -> addLocalOpInfo apexSpec leftQual (leftId ^ "'") (map makePrimedId names,fixity,sortScheme,optTerm)
-                          | Some _ -> return apexSpec))
-          | None -> return apexSpec; 
       apexSpec <- return (addAxiom (("call", [], axm), apexSpec));
       apexElab <- elaborateSpec apexSpec;
-      connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab changedNames
+      connectVertices ctxt (initialV ctxt) (finalV ctxt) apexElab
    }
 \end{spec}
 
@@ -1162,7 +1159,7 @@ Perhaps addMode and friends shoul act on and return a context rather than a bSpe
       apexSpec <- return (addAxiom (("guard",[],trm), dynamic ctxt)); 
       apexElab <- elaborateSpec apexSpec;
       saveFirst <- return (initialV ctxt);
-      ctxt <- connectVertices ctxt (initialV ctxt) newVertex apexElab [];
+      ctxt <- connectVertices ctxt (initialV ctxt) newVertex apexElab;
       ctxt <- compileCommand (setInitial ctxt newVertex) cmd;
       return (setInitial ctxt saveFirst)
     }
@@ -1199,29 +1196,32 @@ unqualified operators appearing in terms, and other things.
       | Spec elabSpc -> return (convertPosSpecToSpec elabSpc)
       | Errors errors -> raise (TypeCheckErrors errors)
 
-  op addNonLocalSortInfo : Spec -> Qualifier -> Id -> SortInfo -> SpecCalc.Env Spec
-  def addNonLocalSortInfo spc qual id newInfo = {
-      mergedInfo <- mergeSortInfo newInfo (findAQualifierMap (spc.sorts,qual,id)) internalPosition;
+  op addNonLocalSortInfo : Spec -> QualifiedId -> SortInfo -> SpecCalc.Env Spec
+  def addNonLocalSortInfo spc (qualId as Qualified (qual,id)) newInfo = {
+      mergedInfo <- mergeSortInfo newInfo (findTheSort (spc,qualId)) internalPosition;
       return (setSorts (spc, insertAQualifierMap (spc.sorts,qual,id,mergedInfo)))
     }
 
-  op addNonLocalOpInfo : Spec -> Qualifier -> Id -> OpInfo -> SpecCalc.Env Spec
-  def addNonLocalOpInfo spc qual id newInfo = {
-      mergedInfo <- mergeOpInfo newInfo (findAQualifierMap (spc.ops,qual,id)) internalPosition;
+  op addNonLocalOpInfo : Spec -> QualifiedId -> OpInfo -> SpecCalc.Env Spec
+  def addNonLocalOpInfo spc (qualId as Qualified(qual,id)) newInfo = {
+      mergedInfo <- mergeOpInfo newInfo (findTheOp (spc,qualId)) internalPosition;
       return (setOps (spc, insertAQualifierMap (spc.ops,qual,id,mergedInfo)))
     }
 
-  op addLocalOpInfo : Spec -> Qualifier -> Id -> OpInfo -> SpecCalc.Env Spec
-  def addLocalOpInfo spc qual id newInfo = {
-      mergedInfo <- mergeOpInfo newInfo (findAQualifierMap (spc.ops,qual,id)) internalPosition;
-      return (addLocalOpName (setOps (spc, insertAQualifierMap (spc.ops,qual,id,mergedInfo)),Qualified (qual,id)))
+  % ### Should really eliminate all the names in the opInfo except the one we have.
+  % since we don't go through an uniformly rename things.
+  op addLocalOpInfo : Spec -> QualifiedId -> OpInfo -> SpecCalc.Env Spec
+  def addLocalOpInfo spc (qualId as Qualified(qual,id)) newInfo = {
+      mergedInfo <- mergeOpInfo newInfo (findTheOp (spc,qualId)) internalPosition;
+      return (addLocalOpName (setOps (spc, insertAQualifierMap (spc.ops,qual,id,mergedInfo)),qualId))
     }
 
-  op connectVertices : ProcContext -> V.Elem -> V.Elem -> Spec -> List QualifiedId -> SpecCalc.Env ProcContext
-  def connectVertices ctxt first last spc changedNames = {
+  op connectVertices : ProcContext -> V.Elem -> V.Elem -> Spec -> SpecCalc.Env ProcContext
+  def connectVertices ctxt first last spc = {
     (newEdge,ctxt) <- return (newGraphElement ctxt); 
     morph1 <- mkMorph (modeSpec (bSpec ctxt) first) spc [] [];
-    morph2 <- mkMorph (modeSpec (bSpec ctxt) last) spc [] (map (fn x -> (x, makePrimedId x)) changedNames);
+    % morph2 <- mkMorph (modeSpec (bSpec ctxt) last) spc [] (map (fn x -> (x, makePrimedId x)) changedNames);
+    morph2 <- mkMorph (modeSpec (bSpec ctxt) last) spc [] [];
     bSpec <- return (addTrans (bSpec ctxt) first last newEdge spc morph1 morph2);
     return (setBSpec ctxt bSpec)
   }

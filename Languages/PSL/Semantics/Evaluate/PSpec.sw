@@ -162,34 +162,34 @@ They are procedures in context.
   op evaluatePSpecContextElemPassTwo : PSpec -> PSpecElem Position -> SpecCalc.Env PSpec
   def evaluatePSpecContextElemPassTwo pSpec (elem, position) =
     case elem of
-      | Sort ((qid as Qualified (qual,id))::_, (tyVars,optSort)) -> {
+      | Sort (qualId::_, (tyVars,optSort)) -> {
             static <- staticSpec pSpec;
-            case findAQualifierMap (static.sorts, qual, id) of
+            case findTheSort (static, qualId) of
               | None -> fail "evaluatePSpecContextElemPassTwo: Sort" 
               | Some info -> {
                     dynamic <- dynamicSpec pSpec;
-                    dynamic <- addNonLocalSortInfo dynamic qual id info;
+                    dynamic <- addNonLocalSortInfo dynamic qualId info;
                     setDynamicSpec pSpec dynamic
                   }
           }
-      | Def ([qid as Qualified(qual,id)],(fxty,srtScheme,optTerm)) -> {
+      | Def ([qualId],(fxty,srtScheme,optTerm)) -> {
             static <- staticSpec pSpec;
-            case findAQualifierMap (static.ops, qual, id) of
+            case findTheOp (static, qualId) of
               | None -> return pSpec
               | Some info -> {
                     dynamic <- dynamicSpec pSpec;
-                    dynamic <- addNonLocalOpInfo dynamic qual id info;
+                    dynamic <- addNonLocalOpInfo dynamic qualId info;
                     setDynamicSpec pSpec dynamic
                  }
           }
       | Var (names,(fxty,srtScheme,optTerm)) -> return pSpec
-      | Op ((qid as Qualified (qual,id))::_,(fxty,srtScheme,optTerm)) -> {
+      | Op (qualId::_,(fxty,srtScheme,optTerm)) -> {
             static <- staticSpec pSpec;
-            case findAQualifierMap (static.ops, qual, id) of
+            case findTheOp (static, qualId) of
               | None -> fail "evaluatePSpecContextElemPassTwo: Op" 
               | Some info -> {
                     dynamic <- dynamicSpec pSpec;
-                    dynamic <- addNonLocalOpInfo dynamic qual id info;
+                    dynamic <- addNonLocalOpInfo dynamic qualId info;
                     setDynamicSpec pSpec dynamic
                  }
           }
@@ -249,3 +249,39 @@ procedure. Don't we want to elaborate as we go along?
   }
 }
 \end{spec}
+
+      op addConstantSort : PSpec -> QualifiedId -> TyVars ASortScheme Position -> Position -> SpecCalc.Env PSpec
+      def addConstantSort pSpec name tyVars optSort)) position = {
+            static <- staticSpec pSpec;
+            static <- addSort names tyVars [optSort] static position;
+            setStaticSpec pSpec static
+          }
+A constant must be added to both the static and dynamic spec. We do this
+by adding it to the static spec and then copy the opInfo to the dynamic
+spec. In the dynamic spec, the operators remain distinguishable from the
+variables since the variables are considered "local" to the spec. This
+mechanism is a design descision and perhaps a poor one. There should
+be a more abstract way of doing this. For instance, to label each state
+with both the static and dynamic specs. Needs thought.
+
+      op addConstant : PSpec -> QualifiedId -> Fixity -> ASortScheme Position -> Position -> SpecCalc.Env PSpec
+      def addConstant pSpec qualId fxty srtScheme position = {
+            static <- staticSpec pSpec;
+            static <- addOp [qualId] fxty srtScheme [] static position;
+            pSpec <- setStaticSpec pSpec static;
+            case findAQualifierMap (static, qualId) of
+              | None -> fail "addConstant: inserted op not found" 
+              | Some info -> {
+                    dynamic <- dynamicSpec pSpec;
+                    dynamic <- addNonLocalOpInfo dynamic qualId info;
+                    setDynamicSpec pSpec dynamic
+                 }
+          }
+
+      op addVariable : PSpec -> QualifiedId -> Fixity -> ASortScheme Position -> Position -> SpecCalc.Env PSpec
+      def addVariable pSpec qualId fxty srtScheme optTerm = {
+            dynamic <- dynamicSpec pSpec;
+            dynamic <- addOp [qualId] fxty srtScheme [] dynamic position;
+            setDynamicSpec pSpec dynamic
+          }
+
