@@ -123,13 +123,21 @@ spec
      javaFileName <- UIDtoJavaFile (uid, None);
      (optBaseUnitId,baseSpec) <- getBase;
      spc0 <- return (subtractSpec spc baseSpec);
+
+     %% Generate Java files
      return (specToJava(baseSpec, spc0, Some option_spec, javaFileName));
-     main_java_file   <- return (version ^ "/java/Primitive.java");
-     compile_cmd      <- return ("javac -sourcepath `pwd` " ^ main_java_file);
-     link_cmd         <- return ("java -cp `pwd` " ^ main_java_file);
-     compile_and_link <- return (compile_cmd ^ " ; " ^ link_cmd);
-     print (";;; Make java command: " ^ compile_and_link ^ "\n");
-     return (run_cmd compile_and_link)
+
+     %% Compile java files to class files, 
+     compile_cmd  <- return ("javac -sourcepath `pwd` " ^ version ^ "/java/Primitive.java");
+     print (";;; Compiling java files: " ^ compile_cmd ^ "\n");
+     return (run_cmd compile_cmd);
+
+     %% Create script to invoke java interpreter on given class files
+     script      <- return ("#!/bin/sh\n\njava -cp ../.. " ^ version ^ "/java/Primitive $*");
+     script_file <- return (version ^ "/java/" ^ (last uid.path));
+     print (";;; Writing script to invoke java program: " ^ script_file ^ "\n");
+     return (writeStringToFile (script, script_file));
+     return (run_cmd ("chmod a+x " ^ script_file))
     }
 
   op  mkOptionsSpec : String -> Env ValueInfo
