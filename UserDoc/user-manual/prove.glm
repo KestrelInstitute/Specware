@@ -18,7 +18,10 @@ The user invokes the Snark theorem prover by constructing a proof
 term.  A typical proof term is of the form:
 </para>
 
-[[ prove property in spec_term using hypothesis1 hypothesis2 ... options "(use-paramodulation t) (use-resolution nil) (use-hyperresolution t)" ]]
+[[
+||prove property in spec_term using hypothesis1 hypothesis2 ... 
+||  options "(use-paramodulation t) (use-resolution nil) (use-hyperresolution t)"
+]]
 
 <para>
 If this term is in file <"proof.sw"> then issuing the command
