@@ -23,6 +23,8 @@ BSpec qualifying spec {
     system : System
   }
 
+  op insertEq : VertexSet.Set * Vertex.Vertex -> VertexSet.Set
+
   op initial : BSpec -> Vertex.Vertex
   def initial bSpec = bSpec.initial
 
@@ -46,7 +48,7 @@ BSpec qualifying spec {
   op addFinalMode : BSpec -> Vertex.Vertex -> Object -> BSpec
   def addFinalMode bSpec vertex spc =
     (bSpec withSystem (labelVertex (addVertex (system bSpec) vertex) vertex spc))
-           withFinal (insert (final bSpec, vertex))
+           withFinal (insertEq (final bSpec, vertex))
 
   op map : BSpec -> (Object -> Object) -> (Arrow -> Arrow) -> BSpec
   def map bSpec objMap arrMap = bSpec withSystem (map (system bSpec) objMap arrMap)
