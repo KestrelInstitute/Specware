@@ -378,8 +378,8 @@ ModeSpec qualifying spec
     }
 
   def ModeSpec.simplifyInvariants ruleModeSpec modeSpec =
-    % let rules = mergeDemodRules [rewriteRules ruleModeSpec, rewriteRules modeSpec] in
-    let rules = rewriteRules ruleModeSpec in
+    let rules = mergeDemodRules [rewriteRules ruleModeSpec, rewriteRules modeSpec] in
+    % let rules = rewriteRules ruleModeSpec in
     let
       def doTerm count trm =
         let lazy = rewriteRecursivePre ((context ruleModeSpec) withSpec (specOf ruleModeSpec),[],rules,trm) in
