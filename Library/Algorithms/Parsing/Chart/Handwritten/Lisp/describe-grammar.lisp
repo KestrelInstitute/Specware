@@ -95,10 +95,10 @@
 		  (make-string max-name-char-length :initial-element #\A)
 		  (make-string 37 :initial-element #\A))
 	  (dolist (bnf-expression bnf-expressions)
-	    (let* ((lhs-latex (latex-for-bnf (car bnf-expression)))
+	    (let* ((lhs-latex (latex-for-bnf (car bnf-expression) 0 t))
 		   (rhs-latex 
 		    (let ((*lhs-latex* lhs-latex))  ; *lhs-latex* is used only for debugging messages
-		      (latex-for-bnf (cdr bnf-expression)))))
+		      (latex-for-bnf (cdr bnf-expression) 0 t))))
 	      (format latex-stream "~&\\\\~%\\\\ ~A \\> $::=$ \\> \\> ~A~%"
 		      lhs-latex
 		      rhs-latex)
@@ -153,7 +153,7 @@
 	      (bnf-width (first items))
 	      ))))))
 
-(defun latex-for-bnf (bnf &optional (indent 0))
+(defun latex-for-bnf (bnf &optional (indent 0) top-level?)
   (cond ((symbolp bnf)
 	 (format nil "\\grnonterminal {~A}" 
 		 ;; string-upcase, string-downcase, string-capitalize
@@ -206,9 +206,12 @@
 			(mapcar #'(lambda (x) (latex-for-bnf x)) 
 				items))))
 	     (parser-anyof-rule 
-	      (format nil "  ~A~{ ~&\\\\  \\>  \\>   \\bnfalternative \\>  ~A~}" 
-		      (latex-for-bnf (first items))
-		      (mapcar #'(lambda (x) (latex-for-bnf x)) 
+	      (format nil 
+		      (if top-level?
+			  "  ~A~{ ~&\\\\  \\>  \\>   \\bnfalternative \\>  ~A~}" 
+			  "  {\\tt\\char40} ~A~{ \\bnfalternative ~A~} {\\tt\\char41}")
+		      (latex-for-bnf (first items) indent)
+		      (mapcar #'(lambda (x) (latex-for-bnf x indent))
 			      (rest items))))
 	     (parser-repeat-rule 
 	      (values
