@@ -1,4 +1,4 @@
-MS qualifying spec {
+MS qualifying spec
  import ../AbstractSyntax/AnnTerm
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
  import Position
@@ -254,6 +254,14 @@ MS qualifying spec {
       | _ -> System.fail ("CoProduct sort expected for mkSelectTerm "^
                            System.toString  srt)
 
+
+ op negateTerm: Term -> Term
+ %% Gets the negated version of term. 
+ def negateTerm tm =
+   case tm of
+     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),negTm,_) -> negTm
+     | _ -> mkApply(notOp,tm)
+
  %% Patterns ...
 
  op mkVarPat    : Var           -> Pattern
@@ -264,6 +272,7 @@ MS qualifying spec {
  op mkRecordPat : List(Id * Pattern) -> Pattern
  op mkTuplePat  : List Pattern  -> Pattern
  op mkWildPat   : Sort          -> Pattern
+ op patternToList: fa(a) APattern a -> List(APattern a)
 
  def mkNatPat    n    = NatPat    (n,              noPos)
  def mkBoolPat   b    = BoolPat   (b,              noPos)
@@ -273,12 +282,11 @@ MS qualifying spec {
  def mkWildPat   s    = WildPat   (s,              noPos)
  def mkRecordPat pats = RecordPat (pats, noPos)
  def mkTuplePat  pats = RecordPat (tagTuple(pats), noPos)
-
- op negateTerm: Term -> Term
- %% Gets the negated version of term. 
- def negateTerm tm =
-   case tm of
-     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),negTm,_) -> negTm
-     | _ -> mkApply(notOp,tm)
-
-}
+ def patternToList t =
+    case t of
+      | RecordPat (fields,_) ->
+        if tupleFields? fields
+	  then map (fn (_,x) -> x) fields
+	 else [t]
+      | _ -> [t]
+endspec

@@ -1107,6 +1107,7 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
 
   def toLispEnv (spc) =
       % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
+      let spc = setProperties(spc,[]) in % axioms are irrelevant for code generation
       let spc = if instantiateHOFns?
                  then instantiateHOFns spc
 		 else spc 
