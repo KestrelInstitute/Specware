@@ -577,7 +577,7 @@ A ``unit'' is an identifiable `unit-term, where
 ``identifiable'' means that the `unit-term can be referred
 to by a `unit-identifier.
 `Unit-terms can be ``elaborated'', resulting in `specs,
-mprhisms, diagrams or other entities.
+morphisms, diagrams or other entities.
 The effect of elaborating a `unit-definition is that its
 `unit-term is elaborated and becomes associated with its
 `unit-identifier.
