@@ -9,6 +9,7 @@ spec
 
   import /Languages/MetaSlang/Specs/Categories/Specs       % AnnSpec.Spec
   import Java qualifying /Languages/Java/Java
+  import Monad
 
   %% TYPES
 
@@ -38,6 +39,11 @@ spec
    * from it
    *)
   op generateJavaCodeFromTransformedSpec: Spec -> JSpec
+
+  (**
+   * same as above using the JGenEnv monad defined in Monad.sw
+   *)
+  op generateJavaCodeFromTransformedSpecM: Spec -> JGenEnv JSpec
 
   (**
    * reads the optional option spec, which contains user-supplied

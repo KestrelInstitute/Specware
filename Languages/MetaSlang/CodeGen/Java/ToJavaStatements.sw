@@ -24,6 +24,7 @@ def termToExpressionM(tcx, term, k, l) =
 op termToExpression_internalM: TCx * JGen.Term * Nat * Nat * Boolean -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
   {
+   primitiveClassName <- getPrimitiveClassName;
    specialResult <- specialTermToExpressionM(tcx,term,k,l);
    spc <- getEnvSpec;
    case specialResult of
@@ -43,7 +44,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 		| Base (Qualified (q, srtId), _, _) -> return (mts, mkQualJavaExpr(srtId, id), k, l)
 		| Boolean _                         -> return (mts, mkQualJavaExpr("Boolean", id), k, l)
 		| Arrow(dom,rng,_) -> translateLambdaToExprM(tcx,term,k,l)
-		| _ -> raise(UnsupportedTermFormat(printTerm term),termAnn term)
+		| _ -> raise(UnsupportedTermFormat((printTerm term)^" [2]"),termAnn term)
 	      )
 	 | Fun (Nat (n),_,__) -> return(mts, mkJavaNumber(n), k, l)
 	 | Fun (Bool (b),_,_) -> return(mts, mkJavaBool(b), k, l)
@@ -62,13 +63,13 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 	 | IfThenElse _ -> translateIfThenElseToExprM(tcx, term, k, l)
 	 | Let _ -> translateLetToExprM(tcx, term, k, l)
 	 | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*) translateLambdaToExprM(tcx,term,k,l)
+	 | Any _ -> return(mts,mkJavaNumber(888),k,l)
 	 | _ ->
 	   if caseTerm?(term) then
 	     translateCaseToExprM(tcx, term, k, l)
 	   else
-	       %let _ = print term in
 	       %unsupportedInTerm(term,k,l,"term not supported by Java code generator(2): "^(printTerm term))
-	       raise(UnsupportedTermFormat(printTerm term),termAnn term)
+	       raise(UnsupportedTermFormat((printTerm term)^" [1]"),termAnn term)
   }
 
 % --------------------------------------------------------------------------------
@@ -269,7 +270,10 @@ def translateConstructToExprM(tcx, srtId, opId, argsTerm, k, l) =
 
 op translatePrimBaseApplToExprM: TCx * Id * Term * Nat * Nat -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def translatePrimBaseApplToExprM(tcx, opId, argsTerm, k, l) =
-  translateBaseApplToExprM(tcx,opId,argsTerm,k,l,primitiveClassName)
+  {
+   primitiveClassName <- getPrimitiveClassName;
+   translateBaseApplToExprM(tcx,opId,argsTerm,k,l,primitiveClassName)
+  }
 
 op translateBaseApplToExprM: TCx * Id * Term * Nat * Nat * Id -> JGenEnv (Block * Java.Expr * Nat * Nat)
 def translateBaseApplToExprM(tcx, opId, argsTerm, k, l, clsId) =
@@ -453,8 +457,9 @@ def translateCaseCasesToSwitchesM(tcx, _(* caseType *), caseExpr, cres, cases, k
   let
     def mkCaseInit(cons,coSrt) =
       {
+       sep <- getSep;
        caseType <- srtIdM coSrt;
-       let sumdType = mkSumd(cons, caseType) in
+       let sumdType = mkSumd(cons, caseType, sep) in
        let subId = mkSub(cons, l) in
        let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
        return (mkVarInit(subId, sumdType, castExpr))
@@ -703,8 +708,9 @@ op translateCaseCasesToSwitchesRetM: TCx * Id * Java.Expr * Match * Nat * Nat * 
 def translateCaseCasesToSwitchesRetM(tcx, _(* caseType *), caseExpr, cases, k0, l0, l) =
   let def mkCaseInit(cons,caseSort) =
         {
+	 sep <- getSep;
 	 caseType <- srtIdM caseSort;
-	 sumdType <- return(mkSumd(cons, caseType));
+	 sumdType <- return(mkSumd(cons, caseType, sep));
 	 subId <- return(mkSub(cons, l));
 	 castExpr <- return(CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None));
 	 return (mkVarInit(subId, sumdType, castExpr))
@@ -820,8 +826,9 @@ op translateCaseCasesToSwitchesAsgNVM: Id * TCx * Id * Java.Expr * Match * Nat *
 def translateCaseCasesToSwitchesAsgNVM(oldVId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l) =
   let def mkCaseInit(cons,srt) =
         {
+	 sep <- getSep;
 	 caseType <- srtIdM srt;
-	 let sumdType = mkSumd(cons, caseType) in
+	 let sumdType = mkSumd(cons, caseType, sep) in
 	 let subId = mkSub(cons, l) in
 	 let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
 	 return (mkVarInit(subId, sumdType, castExpr))
@@ -935,12 +942,13 @@ def translateCaseCasesToSwitchesAsgVM(oldVId, tcx, _(* caseType *), caseExpr, ca
   let
     def mkCaseInit(cons,coSrt) =
       {
-	caseType <- srtIdM coSrt;
-        sumdType <- return(mkSumd(cons, caseType));
-	subId <- return(mkSub(cons, l));
-	let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
-	return(mkVarInit(subId, sumdType, castExpr))
-       }
+       sep <- getSep;
+       caseType <- srtIdM coSrt;
+       sumdType <- return(mkSumd(cons, caseType, sep));
+       subId <- return(mkSub(cons, l));
+       let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
+       return(mkVarInit(subId, sumdType, castExpr))
+      }
   in
   let
     def translateCaseCaseToSwitch(c, ks, ls) =
@@ -1057,8 +1065,9 @@ op translateCaseCasesToSwitchesAsgFM: Id * Id * TCx * Id * Java.Expr * Match * N
 def translateCaseCasesToSwitchesAsgFM(cId, fId, tcx, _(* caseType *), caseExpr, cases, k0, l0, l) =
   let def mkCaseInit(cons,coSrt) =
         {
+	 sep <- getSep;
 	 caseType <- srtIdM coSrt;
-	 let sumdType = mkSumd(cons, caseType) in
+	 let sumdType = mkSumd(cons, caseType, sep) in
 	 let subId = mkSub(cons, l) in
 	 let castExpr = CondExp (Un (Cast (((Name ([], sumdType)), 0), Prim (Paren (caseExpr)))), None) in
 	 return (mkVarInit(subId, sumdType, castExpr))

@@ -154,8 +154,11 @@ spec
 		  standaloneM(mkReturnStmt(rexp),(apdom,apran),(atdom,atran),k,l)
 		 }
 	       | None -> % v3:p46:r5
-		 let rexp = mkMethInv(primitiveClassName,id,mkNArgsExpr(dom,None)) in
-		 standaloneM(mkReturnStmt(rexp),(apdom,apran),(atdom,atran),k,l)
+		 {
+		  primitiveClassName <- getPrimitiveClassName;
+		  rexp <- return(mkMethInv(primitiveClassName,id,mkNArgsExpr(dom,None)));
+		  standaloneM(mkReturnStmt(rexp),(apdom,apran),(atdom,atran),k,l)
+		 }
 	   else
 	     % v3:p46:r3: first user type found is the range type
 	     let rexp = mkMethInv(apran,id,mkNArgsExpr(dom,None)) in

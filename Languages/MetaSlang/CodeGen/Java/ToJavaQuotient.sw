@@ -40,7 +40,11 @@ def mkQuotEqBody(superSrtId, superSort, quotPredId) =
       {
        classname <- (case ut(spc,superSort) of
 		       | Some s -> srtIdM s
-		       | None -> return primitiveClassName);
+		       | None -> 
+		         {
+			  primitiveClassName <- getPrimitiveClassName;
+			  return primitiveClassName
+			 });
        return (mkMethInv(classname, quotPredId, [mkQualJavaExpr("this", "choose"), mkQualJavaExpr("eqarg", "choose")]))
       }
     else

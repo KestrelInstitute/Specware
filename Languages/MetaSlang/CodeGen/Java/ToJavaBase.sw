@@ -91,8 +91,8 @@ def appendMethodBody(m as (methHdr,methBody),b) =
     | Some b0 -> (methHdr,Some(b0++b))
     | None -> (methHdr, Some(b))
 
-op mkPrimOpsClsDecl: ClsDecl
-def mkPrimOpsClsDecl =
+op mkPrimOpsClsDecl: String -> ClsDecl
+def mkPrimOpsClsDecl primitiveClassName =
   ([], (primitiveClassName, None, []), emptyClsBody)
 
 op varsToFormalParamsM: Vars -> JGenEnv (List FormPar)
@@ -197,10 +197,10 @@ op mkSub: Id * Nat -> Id
 def mkSub(id, l) =
   "sub_"^id^"_"^natToString(l)
 
-op mkSumd: Id * Id -> Id
-def mkSumd(cons, caseType) =
+op mkSumd: Id * Id * String -> Id
+def mkSumd(cons, caseType, sep) =
   %"sumd_"^cons^"_"^caseType
-  caseType^"$$"^cons % v3 page 67
+  caseType^sep^sep^cons % v3 page 67
 
 op mkTag: Id -> Id
 def mkTag(cons) =
@@ -336,11 +336,12 @@ def srtId_internalM(srt,addIds?) =
   case srt of
     | Base (Qualified (q, id), tvs, _) -> 
       {
+       sep <- getSep;
        id <- if length(tvs)>0 & (all (fn(tv) -> case tv of TyVar _ -> false | _ -> true) tvs) then
                 foldM (fn s -> fn srt ->
 		       {
 			id0 <- srtIdM srt;
-			return (s^"$"^id0)
+			return (s^sep^id0)
 		       }) id tvs
 	     else return id;
        return ([tt_v2 id],id)
@@ -351,9 +352,10 @@ def srtId_internalM(srt,addIds?) =
       {
        (l,str) <- foldM (fn (types,str) -> fn (id,fsrt) ->
 			 {
+			  sep <- getSep;
 			  str0 <- srtIdM fsrt;
-			  str <- return (str ^ (if str = "" then "" else "$_$") ^ str0);
-			  str <- return (if addIds? then str^"$"^id else str);
+			  str <- return (str ^ (if str = "" then "" else sep^"_"^sep) ^ str0);
+			  str <- return (if addIds? then str^sep^id else str);
 			  let types = concat(types,[tt_v2(str0)]) in
 			  return (types,str)
 			 }) ([],"") fields;
@@ -363,16 +365,18 @@ def srtId_internalM(srt,addIds?) =
     | CoProduct(fields,_) ->
       foldM (fn (types,str) -> fn (id,optfsrt) ->
 	     {
+	      sep <- getSep;
 	      str0 <- case optfsrt of
 			| Some fsrt -> srtIdM fsrt
 			| None -> return "";
-	      str <- return (str ^ (if str = "" then "" else "$_$") ^ str0);
-	      str <- return (if addIds? then str^"$"^id else str);
+	      str <- return (str ^ (if str = "" then "" else sep^"_"^sep) ^ str0);
+	      str <- return (if addIds? then str^sep^id else str);
 	      let types = concat(types,[tt_v2(str0)]) in
 	      return (types,str)
 	     }) ([],"") fields
     | Arrow(dsrt,rsrt,_) ->
       {
+       sep <- getSep;
        (dtypes,dsrtid) <- srtId_internalM(dsrt,false);
        (_,rsrtid) <- srtId_internalM(rsrt,addIds?);
        (pars,_) <- return (foldl (fn(ty,(pars,nmb)) -> 
@@ -380,7 +384,7 @@ def srtId_internalM(srt,addIds?) =
 				  (concat(pars,[fpar]),nmb+1)
 				 ) ([],1) dtypes);
        methHdr <- return ([],Some(tt_v2(rsrtid)),"apply",pars,[]);
-       id <- return(dsrtid^"$To$"^rsrtid);
+       id <- return(dsrtid^sep^"To"^sep^rsrtid);
        %let clsDecl = mkArrowClassDecl(id,(methHdr,None)) in
        addArrowClass (mkArrowClassDecl(id,(methHdr,None)));
        return ([tt_v2 id],id)
@@ -1070,10 +1074,10 @@ def packageNameToJavaName(s) =
 
 % --------------------------------------------------------------------------------
 
-op mapJavaIdent: Ident -> Ident
-def mapJavaIdent(id) =
+op mapJavaIdent: String -> Ident -> Ident
+def mapJavaIdent sep id =
   let idarray = explode(id) in
-  let id = foldr (fn(#?,id) -> "$Q"^id
+  let id = foldr (fn(#?,id) -> sep^"Q"^id
 		  | (c,id) -> Char.toString(c)^id) "" idarray
   in
     id
@@ -1098,12 +1102,12 @@ def issueUnsupportedError(pos,msg) =
 %
 % --------------------------------------------------------------------------------
 
-op primitiveClassName : Id
+%op primitiveClassName : Id
 op publicOps : List Id
 op packageName : Id
 op baseDir : Id
 
-def primitiveClassName = "Primitive"
+%def primitiveClassName = "Primitive"
 def publicOps: List Id = []
 def packageName : Id = "specware.generated"
 def baseDir : Id = "."

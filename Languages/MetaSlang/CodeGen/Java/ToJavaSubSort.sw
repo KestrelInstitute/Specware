@@ -58,7 +58,10 @@ def mkSubSortConstBody(superSrtId,superSrt,pred) =
 	     return(mkMethInv(sid, pred, [mkVarJavaExpr("relax")]))
 	    }
 	  | _ ->
-	    return(mkMethInv(primitiveClassName, pred, [mkVarJavaExpr("relax")]))
+	    {
+	     primitiveClassName <- getPrimitiveClassName;
+	     return(mkMethInv(primitiveClassName, pred, [mkVarJavaExpr("relax")]))
+	    }
     else
       return(mkMethInv("relax", pred, []));
    return([Stmt(Expr(mkMethInvName(([],"assert"), [assertExp]))), assn])

@@ -21,25 +21,39 @@ type Type = JGen.Type
 op clsDeclsFromSorts: Spec -> JGenEnv ()
 def clsDeclsFromSorts spc =
   {
+   primitiveClassName <- getPrimitiveClassName;
    putEnvSpec spc;
-   primClsDecl <- return mkPrimOpsClsDecl;
+   primClsDecl <- return (mkPrimOpsClsDecl primitiveClassName);
    foldM (fn _ -> fn (q,id,sortInfo) ->
 	  sortToClsDecls(q,id,sortInfo))
          () (sortsAsList spc);
    addClsDecl primClsDecl
   }
 
-op checkSubsortFormat: Sort -> JGenEnv ()
+op checkSubsortFormat: Sort -> JGenEnv Sort
 def checkSubsortFormat srt =
-  let ok = case srt of
-	     | Subsort  (_,Fun(Op _,_,_),_) -> true
-	     | Subsort  _                   -> false
-	     | Quotient (_,Fun(Op _,_,_),_) -> true
-	     | Quotient _                   -> false
-	     | _ -> true
+  let (ok,ssrt,issubsortorquotient) = case srt of
+		   | Subsort(ssrt,Fun(Op _,_,_),_) -> (true,ssrt,true)
+		   | Subsort(ssrt,_,_)             -> (false,ssrt,true)
+		   | Quotient(ssrt,Fun(Op _,_,_),_) -> (true,ssrt,true)
+		   | Quotient(ssrt,_,_)              -> (false,ssrt,true)
+		   | _ -> (true,srt,false)
   in
-  if ok then return () else
-    raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
+    {
+     ignoreSubsorts <- isIgnoreSubsorts;
+     if ignoreSubsorts then
+       {
+	if issubsortorquotient then
+	  println(";; Warning: removed subsort information from \""^(printSort srt)^"\"")
+	else return();
+	return ssrt
+       }
+     else
+       if ok then
+	 return srt
+       else
+	 raise(UnsupportedSubsortTerm(printSort srt),sortAnn(srt))
+    }
 
 op checkBaseTypeAlias: Sort -> JGenEnv ()
 def checkBaseTypeAlias srt =
@@ -59,7 +73,7 @@ def sortToClsDecls (_(* qualifier *), id, sort_info) =
    else
      {
       srtDef <- return(firstSortDefInnerSort sort_info);
-      checkSubsortFormat srtDef;
+      srtDef <- checkSubsortFormat srtDef;
       checkBaseTypeAlias srtDef;
       case srtDef of
 	| Product   (fields,                    _) -> productToClsDecls   (id, srtDef)
@@ -69,7 +83,7 @@ def sortToClsDecls (_(* qualifier *), id, sort_info) =
 	| Base      (Qualified (qual, id1), [], _) -> userTypeToClsDecls  (id, id1)
 	| Boolean   _                              -> userTypeToClsDecls  (id, "Boolean")
 	| _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
-	  raise(NotSupported("sort definition: "^printSort(srtDef)),sortAnn(srtDef))
+	  raise(NotSupported("type definition: type "^id^" = "^printSort(srtDef)),sortAnn(srtDef))
     }
 
 (**
@@ -187,7 +201,10 @@ def addStaticMethodToClsDeclsM(opId, srt, dom, dompreds, rng (*as Base (Qualifie
 
 op addPrimMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
 def addPrimMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
-  addStaticMethodToClsDeclsM(opId,srt,dom,dompreds,rng,trm,primitiveClassName)
+  {
+   primitiveClassName <- getPrimitiveClassName;
+   addStaticMethodToClsDeclsM(opId,srt,dom,dompreds,rng,trm,primitiveClassName)
+  }
 
 op mkAsrtStmt: Id * List FormPar -> Block
 def mkAsrtStmt(asrtOpId,fpars) =
@@ -597,10 +614,17 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
 	if notAUserType?(spc,srt)
 	  then
 	    {
+	     primitiveClassName <- getPrimitiveClassName;
 	     (vars, body) <- return(srtTermDelta(srt, trm));
-	     (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
+	     optjexpr <-
+	        (case trm of
+		   | Any _ -> return None
+		   | _ -> {
+			   (_, jE, _, _) <- termToExpressionM(empty, body, 1, 1);
+			   return (Some (Expr jE))
+			  });
 	     jtype <- baseSrtToJavaTypeM srt;
-	     let fldDecl = ([Static], jtype, ((id, 0), Some (Expr (jE))), []) in
+	     let fldDecl = ([Static], jtype, ((id, 0), optjexpr), []) in
 	     addFldDeclToClsDeclsM(primitiveClassName, fldDecl)
 	    }
 	else
@@ -759,6 +783,7 @@ def builtinSortOp(qid) =
 
 %op transformSpecForJavaCodeGen: Spec -> Spec -> Spec
 def transformSpecForJavaCodeGen basespc spc =
+  %let _ = writeLine("transformSpecForJavaCodeGen...") in
   let spc = translateRecordMergeInSpec spc in
   let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
@@ -766,12 +791,12 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = unfoldSortAliases spc in
   let spc = letWildPatToSeq spc in
   let spc = lambdaLift(spc) in
-  let spc = distinctVariable(spc) in
+  %let spc = distinctVariable(spc) in
   spc
 
 %op generateJavaCodeFromTransformedSpec: Spec -> JSpec
 def JGen.generateJavaCodeFromTransformedSpec spc =
-  let (res,_) = generateJavaCodeFromTransformedSpecM spc initialState in
+  let (res,_) = generateJavaCodeFromTransformedSpecM spc JGen.initialState in
   case res of
     | Ok jspc -> jspc
     | Exception e -> efail e
@@ -779,6 +804,7 @@ def JGen.generateJavaCodeFromTransformedSpec spc =
 op generateJavaCodeFromTransformedSpecM: Spec -> JGenEnv JSpec
 def generateJavaCodeFromTransformedSpecM spc =
   {
+   sep <- getSep;
    clsDeclsFromSorts spc;
    modifyClsDeclsFromOps;
    arrowcls <- getArrowClasses;
@@ -789,7 +815,7 @@ def generateJavaCodeFromTransformedSpecM spc =
    let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
    let imports = [] in
    let jspc = (None, imports, clsOrInterfDecls) in
-   let jspc = mapJName mapJavaIdent jspc in
+   let jspc = mapJName (mapJavaIdent sep) jspc in
    return jspc
   }
 
