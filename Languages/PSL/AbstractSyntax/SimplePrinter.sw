@@ -140,26 +140,26 @@ SpecCalc qualifying spec {
   op ppOscarSpecElem : fa(a) OscarSpecElem a -> Pretty
   def ppOscarSpecElem (decl,_) = 
     case decl of
-      | Sort (names,(tyVars,defs)) -> 
+      | Sort (names,(tvs,dfn)) -> 
           ppConcat [
             ppString "sort ",
-            ppASortInfo (names,tyVars,defs)
+            ppASortInfo {names = names, tvs = tvs, dfn = dfn}
           ]
-      | Def (names,(fxty,srtScheme,defs)) ->
+      | Def (names,(fixity,typ,dfn)) ->
           ppConcat [
             ppString "def ",
-            ppAOpInfo (names,fxty,srtScheme,defs)
+            ppAOpInfo {names = names, fixity = fixity, typ = typ, dfn = dfn}
           ]
-      | Op (names,(fxty,srtScheme,defs)) ->
+      | Op (names,(fixity,typ,dfn)) ->
           ppConcat [
             ppString "op ",
-            ppAOpInfo (names,fxty,srtScheme,defs)
+            ppAOpInfo {names = names, fixity = fixity, typ = typ, dfn = dfn}
           ]
       | Claim claim -> pp claim
-      | Var (names,(fxty,srtScheme,defs)) ->
+      | Var (names,(fixity,typ,dfn)) ->
           ppConcat [
             ppString "var ",
-            ppAOpInfo (names,fxty,srtScheme,defs)
+            ppAOpInfo {names = names, fixity = fixity, typ = typ, dfn = dfn}
           ]
       | Proc (name,procInfo) ->
           ppConcat [

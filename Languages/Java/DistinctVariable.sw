@@ -200,22 +200,26 @@ def mkNewId(id, n) =
 op distinctVariable: Spec -> Spec
 
 def distinctVariable(spc) =
-  let newOpDefs
-  = foldriAQualifierMap 
-  (fn 
-    |(qualifier, name, (op_names, fixity, (tyVars, srt), [(_, term)]),
-       result) ->
-   let origOp = mkQualifiedId(qualifier, name) in
-   let (formals, body) = srtTermDelta(srt, term) in
-   let ids = map (fn (id, srt) -> id) formals in
-   let (newTerm, newIds) = distinctVar(body, ids) in
-   let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
-   let origOpNewDef = (origOp, srtDomKeepSubsorts(srt), srtRange(srt), formals, newTerm,isConstantOp?) in
-   cons(origOpNewDef, result)
-    |(qualifier,name,opinfo,result) -> result
-  )
-  []
-  spc.ops in
+  let newOpDefs = foldriAQualifierMap 
+                    (fn (q, id, info, result) ->
+		     case (info.typ, info.dfn) of
+		       | ((_,srt), [(_, term)]) ->
+		         let origOp = mkQualifiedId (q, id) in
+			 let (formals, body) = srtTermDelta (srt, term) in
+			 let ids = map (fn (id, srt) -> id) formals in
+			 let (newTerm, newIds) = distinctVar (body, ids) in
+			 let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
+			   let origOpNewDef = (origOp, 
+					       srtDomKeepSubsorts srt, 
+					       srtRange srt, 
+					       formals, 
+					       newTerm, 
+					       isConstantOp?) in
+			   cons (origOpNewDef, result)
+		       | _ -> result)
+		    []
+		    spc.ops 
+  in
   let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
   let result = setSorts(result, spc.sorts) in
   let result = foldr addOpToSpec2 result newOpDefs in

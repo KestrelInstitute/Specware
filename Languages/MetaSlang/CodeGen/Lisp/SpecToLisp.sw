@@ -573,7 +573,7 @@ SpecToLisp qualifying spec {
  op  sortOfOp : Spec * QualifiedId -> Sort
  def sortOfOp (sp, qid) =
    case findTheOp (sp, qid) of
-     | Some (_, _, (_, srt), _) -> srt
+     | Some info -> info.typ.2
 
  op  fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term -> Option LispTerm
  def fullCurriedApplication (sp, dpn, vars, term) =
@@ -1222,9 +1222,10 @@ SpecToLisp qualifying spec {
    %          of x :: r -> (x, r)
    %           | [] -> (defaultSpecwarePackage, [])
    let
-     def mkLOpDef (q, id, decl, defs) = % ???
-       case decl : OpInfo of
-	 | (aliases, fixity, (_, srt), (_, term) :: _) -> % TODO: check for other defs?
+     def mkLOpDef (q, id, info, defs) = % ???
+       case info.dfn of
+	 | (_, term) :: _ -> % TODO: check for other defs?
+	   let srt = info.typ.2 in
 	   let term = lispTerm (spc, defPkgName, term) in
 	   let qid = Qualified (q, id) in
 	   let uName = unaryName (printPackageId (qid, defPkgName)) in
@@ -1363,11 +1364,11 @@ SpecToLisp qualifying spec {
    let localOps = spc.importInfo.localOps in
    let spc = setOps (spc, 
 		     mapiAQualifierMap
-		       (fn (q, id, opinfo as (aliases, fixity, sort_scheme, defs)) ->
+		       (fn (q, id, info) ->
 			if memberQualifiedId (q, id, localOps) then
-			  opinfo
+			  info
 			else 
-			  (aliases, fixity, sort_scheme, []))
+			  info << {dfn = []})
 		       spc.ops)
    in 
      toLispFile (spc, file, preamble)

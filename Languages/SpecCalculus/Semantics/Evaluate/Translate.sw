@@ -137,8 +137,9 @@ Note: The code below does not yet match the documentation above, but should.
 	let 
           def add_type_rule translation_op_map translation_sort_map (dom_qid as Qualified (dom_q, dom_id)) dom_types cod_qid cod_aliases =
 	    case dom_types of
-	      | ((Qualified (found_q, _))::_,_,_)::other_aliases  ->
-	        (if other_aliases = [] or found_q = UnQualified then
+	      | first_info :: other_infos ->
+	        (let Qualified (found_q, _) = primarySortName first_info in
+		 if other_infos = [] || found_q = UnQualified then
 		  %% dom_qid has a unique referent, either because it refers to 
 		  %% exactly one type, or becauses it is unqualified and refers 
 		  %% to an unqualified type (perhaps among others), in which 
@@ -172,8 +173,9 @@ Note: The code below does not yet match the documentation above, but should.
 	      
 	  def add_op_rule translation_op_map translation_sort_map (dom_qid as Qualified(dom_q, dom_id)) dom_ops cod_qid cod_aliases =
 	    case dom_ops of
-	      | ((Qualified (found_q, _))::_,_,_,_)::rs  ->
-	        (if rs = [] or found_q = UnQualified then
+	      | first_op :: other_ops ->
+	        (let Qualified (found_q, _) = primaryOpName first_op in
+		 if other_ops = [] || found_q = UnQualified then
 		   %% See note above for types.
 		   case findAQualifierMap (translation_op_map, dom_q, dom_id) of
 		     | None -> 
@@ -388,13 +390,13 @@ Note: The code below does not yet match the documentation above, but should.
   op  translateOp              : TranslationMap -> MS.Term -> MS.Term
   op  translateSort            : TranslationMap -> MS.Sort -> MS.Sort
 
-  def translateOpQualifiedId op_id_map (qid as Qualified (qualifier, id)) =
-    case findAQualifierMap (op_id_map, qualifier,id) of
+  def translateOpQualifiedId op_id_map (qid as Qualified (q, id)) =
+    case findAQualifierMap (op_id_map, q,id) of
       | Some (nQId,_) -> nQId
       | None -> qid
 
-  def translateSortQualifiedId sort_id_map (qid as Qualified (qualifier, id)) =
-    case findAQualifierMap (sort_id_map, qualifier,id) of
+  def translateSortQualifiedId sort_id_map (qid as Qualified (q, id)) =
+    case findAQualifierMap (sort_id_map, q,id) of
       | Some (nQId,_) -> nQId
       | None -> qid
 
@@ -405,13 +407,11 @@ Note: The code below does not yet match the documentation above, but should.
 	 case new_qid of
 	   | Qualified ("Boolean", id) -> 
 	     if new_qid = qid then 
-	       %% following line is temporary hack to detect problems during transition to new booleans:
-	       let _ = (if id = "toString" or id = "Compare" then () else toScreen("\nWarning: using Boolean as a qualifier in '" ^ (printQualifiedId qid) ^ "' from " ^ (printAll pos) ^ "\n")) in
 	       op_term 
 	     else 
 	       fail ("translateOp: Cannot use Boolean as a qualifier in 'Boolean." ^ id ^ "' at " ^ (printAll pos))
 	   | Qualified (q, id) ->
-	       if q = UnQualified or q = "Boolean" then
+	       if q = UnQualified || q = "Boolean" then
 		 (case id of
 		    | "~"    -> fail ("translateOp: cannot refer to syntax '~' in '"   ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
 		    | "&"    -> fail ("translateOp: cannot refer to syntax '&' in '"   ^ (printQualifiedId qid) ^ "' (from " ^ (printAll pos) ^ ") +-> " ^ (printQualifiedId new_qid))
@@ -446,152 +446,139 @@ Note: The code below does not yet match the documentation above, but should.
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_q in all qualified names ??
     let
-      def translateOpQualifiedIdToAliases op_id_map (qid as Qualified (qualifier, id)) =
-        case findAQualifierMap (op_id_map, qualifier,id) of
+      def translateOpQualifiedIdToAliases op_id_map (qid as Qualified (q, id)) =
+        case findAQualifierMap (op_id_map, q,id) of
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
-      def translateSortQualifiedIdToAliases sort_id_map (qid as Qualified (qualifier, id)) =
-        case findAQualifierMap (sort_id_map, qualifier,id) of
+      def translateSortQualifiedIdToAliases sort_id_map (qid as Qualified (q, id)) =
+        case findAQualifierMap (sort_id_map, q,id) of
           | Some (_,new_aliases) -> new_aliases
           | None -> [qid]
   
       def translatePattern pat = pat
 
       def translateOpMap old_ops =
-        let def translateStep (ref_q, 
-			       ref_id, 
-			       old_opinfo as
-			       (old_aliases as (primary_name as Qualified (primary_q, primary_id))::_, 
-				fixity, 
-				sort_scheme, 
-				defs),
-			       new_op_map)
-	    =
-	    if ~ (ref_q = primary_q & ref_id = primary_id) then
+        let 
+          def translateStep (old_q, old_id, old_info, new_op_map) =
+	    let Qualified (primary_q, primary_id) = primaryOpName old_info in
+	    if ~ (old_q = primary_q && old_id = primary_id) then
 	      return new_op_map
-	    else if basicQualifier? ref_q then
-	      return (insertAQualifierMap (new_op_map, ref_q, ref_id, old_opinfo))
+	    else if basicQualifier? old_q then
+	      return (insertAQualifierMap (new_op_map, old_q, old_id, old_info))
 	    else
 	      {
-	       new_aliases <- foldM (fn new_aliases -> fn old_alias ->
-				     foldM (fn new_aliases -> fn new_alias ->
-					    if member (new_alias, new_aliases) then
-					      return new_aliases
-					    else 
-					      return (Cons(new_alias, new_aliases)))
-				           new_aliases
-					   (translateOpQualifiedIdToAliases op_id_map old_alias))
-	                            [] 
-				    old_aliases;
-	       new_aliases <- return (rev new_aliases);
-	       mapM (fn old_alias ->
-		     if basicQualifiedId? old_alias then
+	       new_names <- foldM (fn new_qids -> fn old_qid ->
+				   foldM (fn new_qids -> fn new_qid ->
+					  if member (new_qid, new_qids) then
+					    return new_qids
+					  else 
+					    return (Cons (new_qid, new_qids)))
+				         new_qids
+					 (translateOpQualifiedIdToAliases op_id_map old_qid))
+	                          [] 
+				  old_info.names;
+	       new_names <- return (rev new_names);
+	       mapM (fn old_qid ->
+		     if basicQualifiedId? old_qid then
 		       {
-			raise_later (TranslationError ("Illegal to translate base op " ^ (explicitPrintQualifiedId old_alias),
+			raise_later (TranslationError ("Illegal to translate base op " ^ (explicitPrintQualifiedId old_qid),
 						       position));
-			return old_alias
+			return old_qid
 			}
 		     else
-		       return old_alias)
-	            old_aliases;
-	       first_opinfo  <- return (new_aliases, fixity, sort_scheme, defs);
-	       merged_opinfo <- foldM (fn merged_opinfo -> fn (new_alias as Qualified (new_q, new_id)) ->
-					  mergeOpInfo spc
-					              merged_opinfo 
-					              (findAQualifierMap (new_op_map, new_q, new_id))
-						      position)
-		                       first_opinfo
-				       new_aliases;
+		       return old_qid)
+	            old_info.names;
+	       new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
+				  mergeOpInfo spc
+				              merged_info 
+					      (findAQualifierMap (new_op_map, new_q, new_id))
+					      position)
+	                         (old_info << {names = new_names})
+				 new_names;
 	       foldM (fn new_op_map -> fn (Qualified (new_q, new_id)) ->
-		      return (insertAQualifierMap (new_op_map, new_q, new_id, merged_opinfo)))
+		      return (insertAQualifierMap (new_op_map, new_q, new_id, new_info)))
 	             new_op_map  
-		     new_aliases 
+		     new_names
 	      }
 	in
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_ops 
 
       def translateSortMap old_sorts =
-        let def translateStep (ref_q, 
-			       ref_id, 
-			       old_sortinfo as
-			       (old_aliases as (primary_name as Qualified (primary_q, primary_id))::_, 
-				ty_vars, 
-				defs),
-			       new_sort_map) = 
-	    if ~ (ref_q = primary_q & ref_id = primary_id) then
+        let 
+          def translateStep (old_q, old_id, old_info, new_sort_map) =
+	    let Qualified (primary_q, primary_id) = primarySortName old_info in
+	    if ~ (old_q = primary_q && old_id = primary_id) then
 	      return new_sort_map
-	    else if basicQualifier? ref_q then
-	      return (insertAQualifierMap (new_sort_map, ref_q, ref_id, old_sortinfo))
+	    else if basicQualifier? old_q then
+	      return (insertAQualifierMap (new_sort_map, old_q, old_id, old_info))
 	    else
 	      {
-	       new_aliases <- foldM (fn new_aliases -> fn old_alias ->
-				     foldM (fn new_aliases -> fn new_alias ->
-					    if member (new_alias, new_aliases) then
-					      return new_aliases
-					    else 
-					      return (Cons(new_alias, new_aliases)))
-				           new_aliases
-					   (translateSortQualifiedIdToAliases sort_id_map old_alias))
-	                            [] 
-				    old_aliases;
-	       new_aliases <- return (rev new_aliases);
-	       mapM (fn old_alias ->
-		     if basicQualifiedId? old_alias & ~ (member (old_alias, new_aliases)) then
+	       new_names <- foldM (fn new_qids -> fn old_qid ->
+				   foldM (fn new_qids -> fn new_qid ->
+					  if member (new_qid, new_qids) then
+					    return new_qids
+					  else 
+					    return (Cons (new_qid, new_qids)))
+				         new_qids
+					 (translateSortQualifiedIdToAliases sort_id_map old_qid))
+	                          [] 
+				  old_info.names;
+	       new_names <- return (rev new_names);
+	       mapM (fn old_qid ->
+		     if basicQualifiedId? old_qid && ~ (member (old_qid, new_names)) then
 		       {
-			raise_later (TranslationError ("Illegal to translate base type " ^ (explicitPrintQualifiedId old_alias),
+			raise_later (TranslationError ("Illegal to translate base type " ^ (explicitPrintQualifiedId old_qid),
 						       position));
-			return old_alias
+			return old_qid
 		       }
 		     else
-		       return old_alias)
-	       old_aliases;
-	       if member (unqualified_Boolean,  new_aliases) or member (Boolean_Boolean,  new_aliases) then
+		       return old_qid)
+	            old_info.names;
+	       if member (unqualified_Boolean, new_names) || member (Boolean_Boolean, new_names) then
 		 return new_sort_map
 	       else
-		{ first_sortinfo  <- return (new_aliases, ty_vars, defs);
-		  merged_sortinfo <- foldM (fn merged_sortinfo -> fn (new_alias as Qualified (new_q, new_id)) ->
-					    mergeSortInfo spc
-					                  merged_sortinfo 
-							  (findAQualifierMap (new_sort_map, new_q, new_id))
-							  position)
-		                           first_sortinfo
-					   new_aliases;
+		{ 
+		 new_info <- foldM (fn merged_info -> fn Qualified (new_q, new_id) ->
+				     mergeSortInfo spc
+				                   merged_info 
+						   (findAQualifierMap (new_sort_map, new_q, new_id))
+						   position)
+				    (old_info << {names = new_names})
+				    new_names;
 		  foldM (fn new_sort_map -> fn (Qualified (new_q, new_id)) ->
-			 return (insertAQualifierMap (new_sort_map, new_q, new_id, merged_sortinfo)))
+			 return (insertAQualifierMap (new_sort_map, new_q, new_id, new_info)))
 		        new_sort_map  
-			new_aliases 
-		       }}
-		
+			new_names 
+		}}
 	in
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
 
     in
     let {importInfo = {imports,localOps,localSorts,localProperties}, sorts, ops, properties}
-         = mapSpec (translateOp op_id_map, translateSort sort_id_map, translatePattern) spc
-    in {
-      newSorts <- translateSortMap sorts;
-      newOps   <- translateOpMap   ops;
-      return {
-	      importInfo = {
-			    imports      = [],
-			    localOps     = map (translateOpQualifiedId op_id_map) localOps,
-			    localSorts   = foldl (fn (ty, local_types) -> 
-						  let new_type = translateSortQualifiedId sort_id_map ty in
-						  %% Avoid adding Boolean or Boolean.Boolean to local sorts,
-						  %% since it is built in.
-						  if new_type = Boolean_Boolean or new_type = unqualified_Boolean then
-						    local_types
-						  else
-						    local_types ++ [new_type])
-			                         []
-						 localSorts,
-			    localProperties = localProperties
-			   },  
-	      sorts      = newSorts,
-	      ops        = newOps,
-	      properties = properties
-	     }
-       }
+         = 
+         mapSpec (translateOp op_id_map, translateSort sort_id_map, translatePattern) spc
+    in 
+    {
+     newSorts <- translateSortMap sorts;
+     newOps   <- translateOpMap   ops;
+     return {importInfo = {imports      = [],
+			   localOps     = map (translateOpQualifiedId op_id_map) localOps,
+			   localSorts   = foldl (fn (ty, local_types) -> 
+						 let new_type = translateSortQualifiedId sort_id_map ty in
+						 %% Avoid adding Boolean or Boolean.Boolean to local sorts,
+						 %% since it is built in.
+						 if new_type = Boolean_Boolean || new_type = unqualified_Boolean then
+						   local_types
+						 else
+						   local_types ++ [new_type])
+			                        []
+						localSorts,
+			   localProperties = localProperties},  
+	     sorts      = newSorts,
+	     ops        = newOps,
+	     properties = properties}
+    }
+
 endspec
 \end{spec}

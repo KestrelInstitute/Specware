@@ -718,60 +718,75 @@ spec
      | Fun(Op(Qualified(q,id),_),_,_) -> q
      | _ -> UnQualified
 
- def checkSpec(spc) = 
-     let localOps = spc.importInfo.localOps in
-     let names = foldl (fn (Qualified(q,id),m) ->
-			if q = UnQualified then m
-			  else StringMap.insert(m,id,0))
-                   empty localOps
-     in
-     let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, tau,Ref names) in
-     let tcc = ([],empty) in
-     %% Definitions of ops
-     let tcc = 
-	 foldriAQualifierMap
-	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
-	     if member(Qualified(qname, name),localOps) then
-	         foldl (fn ((type_vars, term), tcc) ->
-			 let usedNames = addLocalVars(term,StringSet.empty) in
-			 let term = etaExpand(spc, usedNames, tau, term) in
-			 let term = renameTerm (emptyContext()) term in 
-			 (tcc,gamma0 tvs (Some (unfoldStripSort(spc,tau,false)))
-			        (Some(Qualified(qname,name),(curriedParams term).1))
-			        (mkQualifiedId(qname, (name^"_Obligation"))))
-			      |- term ?? tau)
-		   tcc defs
-	       else 
-		 tcc)
-	   tcc spc.ops
-     in
-     %% Properties (Axioms etc.)
-     let tcc = foldl (fn (pr as (_,pname as Qualified(qname, name),tvs,fm),tcc) ->
-		       let fm = renameTerm (emptyContext()) fm in
-		       (tcc,gamma0 tvs None None (mkQualifiedId(qname, (name^"_Obligation"))))
-		         |- fm ?? boolSort)
-                 tcc (localProperties spc)
-     in
-     %% Quotient relations are equivalence relations
-     let quotientRelations: Ref(List MS.Term) = Ref [] in
-     let _ = appSpec (fn _ -> (),
-		      fn s ->
-			(case s of
-			   | Quotient(_,r,_) ->
-			     if List.exists (fn rx -> equalTerm?(r,rx)) (!quotientRelations)
-			      then ()
-			      else let _ = (quotientRelations := Cons(r,!quotientRelations)) in ()
-			   | _ -> ()),
-		      fn _ -> ())
-                spc
+ def checkSpec spc = 
+   let localOps = spc.importInfo.localOps in
+   let names = foldl (fn (Qualified (q, id), m) ->
+		      if q = UnQualified then 
+			m
+		      else 
+			StringMap.insert (m, id, 0))
+                     empty 
+		     localOps
+   in
+   let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, tau, Ref names) in
+   let tcc = ([],empty) in
+   %% Definitions of ops
+   let tcc = 
+       foldriAQualifierMap
+         (fn (q, id, info, tcc) ->
+	  let (tvs,tau) = info.typ in
+	  if member (Qualified (q, id), localOps) then
+	    foldl (fn ((type_vars, term), tcc) ->
+		   let usedNames = addLocalVars (term, StringSet.empty) in
+		   let term = etaExpand (spc, usedNames, tau, term) in
+		   let term = renameTerm (emptyContext ()) term in 
+		   (tcc, 
+		    gamma0 
+		    tvs 
+		    (Some (unfoldStripSort (spc, tau, false)))
+		    (Some (Qualified (q, id), (curriedParams term).1))
+		    (Qualified (q, id ^ "_Obligation")))
+		   |- 
+		   term ?? tau)
+	          tcc 
+		  info.dfn
+	  else 
+	    tcc)
+	 tcc 
+	 spc.ops
+   in
+   %% Properties (Axioms etc.)
+   let tcc = foldl (fn (pr as (_,pname as Qualified (q, id),tvs,fm),tcc) ->
+		    let fm = renameTerm (emptyContext()) fm in
+		    (tcc, gamma0 tvs None None (mkQualifiedId (q, (id^"_Obligation"))))
+		     |- fm ?? boolSort)
+                   tcc 
+		   (localProperties spc)
+   in
+   %% Quotient relations are equivalence relations
+   let quotientRelations: Ref(List MS.Term) = Ref [] in
+   let _ = appSpec (fn _ -> (), 
+		    fn s -> case s of
+			      | Quotient(_,r,_) ->
+		                if List.exists (fn rx -> equalTerm?(r,rx)) (!quotientRelations) then
+				  ()
+				else 
+				  let _ = (quotientRelations := Cons(r,!quotientRelations)) in 
+				  ()
+			      | _ -> (),
+		    fn _ -> ())
+                   spc
      in
      let tcc = foldl (fn (r,(tccs,names)) -> ((equivalenceConjectures(r,spc)) ++ tccs,names))
-                 tcc (!quotientRelations)
+                     tcc 
+		     (!quotientRelations)
      in			       
-     tcc
+       tcc
 
  op  wfoSpecTerm: SpecCalc.Term Position
- def wfoSpecTerm = (UnitId(SpecPath_Relative{path = ["Library","Base","WFO"], hashSuffix = None}),noPos)
+ def wfoSpecTerm = (UnitId (SpecPath_Relative {path       = ["Library","Base","WFO"], 
+					       hashSuffix = None}),
+		    noPos)
 
  def makeTypeCheckObligationSpec (spc,specCalcTerm) =
    %let spc = lambdaLift(instantiateHOFns(spc)) in
@@ -780,14 +795,14 @@ spec
      | Some wfoSpec ->
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
-   let tcSpec = spc << {importInfo = {imports      = [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)],
-				      % importedSpec = Some (addDisjointImport(spc,wfoSpec)),
-				      localOps     = emptyOpNames,
-				      localSorts   = emptySortNames,
+   let tcSpec = spc << {importInfo = {imports         = [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)],
+				      % importedSpec  = Some (addDisjointImport(spc,wfoSpec)),
+				      localOps        = emptyOpNames,
+				      localSorts      = emptySortNames,
 				      localProperties = emptyPropertyNames}}
    in
-   let tcSpec = addDisjointImport(tcSpec,wfoSpec) in
-   addConjectures (rev (checkSpec spc).1,tcSpec)
+   let tcSpec = addDisjointImport (tcSpec, wfoSpec) in
+   addConjectures (rev (checkSpec spc).1, tcSpec)
 
 % op  boundVars    : Gamma -> List Var
 % op  boundTypeVars : Gamma -> TyVars

@@ -33,7 +33,7 @@
    (fn f -> f(1,2)) foo
         translates to: funcall #' (lambda (f) (funcall f 1 2)) #'foo
 
- *)
+*)
 
 ArityNormalize qualifying spec { 
  import ../Specs/Environment
@@ -41,7 +41,6 @@ ArityNormalize qualifying spec {
  % import MetaSlang               % imported by SpecEnvironment
 
  op arityNormalize : Spec -> Spec
-
 
 
 (*
@@ -120,14 +119,14 @@ ArityNormalize qualifying spec {
         | _ -> None
 
  def polymorphicDomainOp? (spc, idf) =
-   case findTheOp (spc, idf)
-     of Some (_,_,(_,srt),_) -> polymorphicDomain?(spc,srt)
-      | None                 -> false
+   case findTheOp (spc, idf) of
+     | Some info -> polymorphicDomain? (spc, info.typ.2)
+     | None -> false
 
  def polymorphicDomain? (sp, srt) =
-   case arrowOpt (sp, srt)
-     of Some(TyVar _, _) -> true
-      | _                -> false
+   case arrowOpt (sp, srt) of
+     | Some (TyVar _, _) -> true
+     | _                -> false
 
 (*
  Arities are associated with term identifiers according to 
@@ -435,23 +434,21 @@ ArityNormalize qualifying spec {
 % This one ignores arity normalization in sorts, axioms and theorems.
 %     
 
-  def arityNormalize (spc) =
+  def arityNormalize spc =
     let usedNames = StringSet.fromList(qualifierIds spc.ops) in
     setOps (spc, 
-            mapOpInfos (fn (aliases, fixity, (tyVars, srt), old_defs)->
-			let new_defs =
-			    map (fn (type_vars, term) ->
-				 let usedNames = addLocalVars(term,usedNames) in
-				 (type_vars,
+            mapOpInfos (fn info -> 
+			let (_, srt) = info.typ in
+			let new_dfn =
+			    map (fn (tvs, term) ->
+				 let usedNames = addLocalVars (term, usedNames) in
+				 (tvs,
 				  normalizeArityTopLevel (spc, [], usedNames,
-							  etaExpand(spc, usedNames, srt, term))))
-			        old_defs
+							  etaExpand (spc, usedNames, srt, term))))
+				info.dfn
 			in 
-			  (aliases, fixity, (tyVars, srt), new_defs))
+			  info << {dfn = new_dfn})
 	               spc.ops)
-
-}
-
 
 (****
          | WildPat  _ -> result
@@ -465,3 +462,4 @@ ArityNormalize qualifying spec {
         | _ -> result
 
  ****)
+}

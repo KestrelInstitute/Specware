@@ -64,14 +64,14 @@ where exceptions are raised.
   % op SpecEnv.addOp : Spec -> OpInfo -> Env Spec
   % def SpecEnv.addOp spc opInfo position =
   % SpecCalc.addOp [idOf opInfo] (fixity opInfo) (type opInfo) [term opInfo] spc position
-  def SpecEnv.addOp spc (names,fixity,sortScheme,termSchemes) position =
-    SpecCalc.addOp names fixity sortScheme termSchemes spc position
+  def SpecEnv.addOp spc info position =
+    SpecCalc.addOp info.names info.fixity info.typ info.dfn spc position
 
   % op SpecEnv.addSort : Spec -> SortInfo -> Position -> Env Spec
   % def SpecEnv.addSort spc sortInfo position =
   %   SpecCalc.addSort [idOf sortInfo] [] [type sortInfo] spc position
-  def SpecEnv.addSort spc (names,tyVars,sortSchemes) position =
-    SpecCalc.addSort names tyVars sortSchemes spc position
+  def SpecEnv.addSort spc info position =
+    SpecCalc.addSort info.names info.tvs info.dfn spc position
 
   % op SpecEnv.addClaim : Spec -> Claim -> Position -> Env Spec
   def SpecEnv.addClaim spc claim position = return (AnnSpec.addProperty (claim,spc))

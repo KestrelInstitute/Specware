@@ -127,19 +127,24 @@ spec
   op  evalFun: Fun * MS.Term * Spec * Nat -> Value
   def evalFun(fun,t,spc,depth) =
     case fun of
-      | Op(qid,_) ->
-        (case findTheOp(spc,qid) of
-	   | Some (_,_,_,(_,defn)::_) ->
-	     evalRec(defn,emptySubst,spc,depth+1)
+      | Op (qid, _) ->
+        (case findTheOp (spc, qid) of
+	   | Some info ->
+	     (case info.dfn of
+		| (_,defn)::_ -> evalRec (defn, emptySubst, spc, depth+1)
+		| _ ->
+	          case qid of 
+		    | Qualified ("Nat", "zero") -> Int 0
+		    | _ -> Unevaluated t)
 	   | _ -> 
 	     case qid of 
-	       | Qualified("Nat","zero") -> Int 0
+	       | Qualified ("Nat", "zero") -> Int 0
 	       | _ -> Unevaluated t)
-      | Nat n    -> Int n
-      | Char c   -> Char c
+      | Nat    n -> Int    n
+      | Char   c -> Char   c
       | String s -> String s
-      | Bool b   -> Bool b
-      | Embed(id,false) -> Constant id
+      | Bool   b -> Bool   b
+      | Embed (id, false) -> Constant id
       | _ -> Unevaluated t
 
   op  nonStrict?: MS.Term -> Boolean

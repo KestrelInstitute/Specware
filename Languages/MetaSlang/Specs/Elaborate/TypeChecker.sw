@@ -94,37 +94,32 @@ TypeChecker qualifying spec
 
     %% ---------- SORTS : PASS 1 ----------
     let
-      def elaborate_sort_1 (sortInfo as (aliases, tyvars, defs)) =
-	if someAliasIsLocal? (aliases, localSorts) then
-	  (aliases,
-	   tyvars, 
-	   map (fn def_1 -> checkSortScheme (env_2, def_1)) defs)
+      def elaborate_sort_1 info =
+	if someAliasIsLocal? (info.names, localSorts) then
+	  info << {dfn = map (fn def_1 -> checkSortScheme (env_2, def_1)) info.dfn}
 	else 
-	  sortInfo
+	  info
     in
     let sorts_2 = mapSortInfos elaborate_sort_1 sorts_1 in
     let env_2a  = setEnvSorts (env_2, sorts_2) in
 
     %% ---------- OPS   : PASS 1 ----------
     let 
-      def elaborate_op_1 poly? (opinfo as (aliases, fixity, sort_scheme, defs)) =
-	if someAliasIsLocal? (aliases, localOps) then
-	  let sort_scheme_2 = checkSortScheme (env_2a, sort_scheme) in
-	  (aliases,
-	   fixity, 
-	   sort_scheme_2,
-	   map (fn (_,term_1) ->
-		let tyvars = sort_scheme.1 in
-		let term_2 = (if poly? = (tyvars ~= []) then
-				elaborateTermTop (env_2a, term_1, sort_scheme_2.2)
-			      else 
-				term_1)
-		in
-		  % TODO: Check that op sort is an instance of def sort
-		  (tyvars, term_2))
-	       defs)
+      def elaborate_op_1 poly? info = % fino (opinfo as (aliases, fixity, sort_scheme, defs)) =
+	if someAliasIsLocal? (info.names, localOps) then
+	  let sort_scheme_2 as (tvs, srt) = checkSortScheme (env_2a, info.typ) in
+	  info << {typ = sort_scheme_2,
+		   dfn = map (fn (_,term_1) ->
+			      let term_2 = (if poly? = (tvs ~= []) then
+					      elaborateTermTop (env_2a, term_1, srt)
+					    else 
+					      term_1)
+			      in
+				% TODO: Check that op sort is an instance of def sort
+				(tvs, term_2))
+		             info.dfn}
 	else
-	  opinfo
+	  info
     in
     %% Do polymorphic definitions first
     let ops_2_a = mapOpInfos (elaborate_op_1 true)  ops_1   in
@@ -134,12 +129,12 @@ TypeChecker qualifying spec
 
     %% ---------- PROPERTIES : PASS 1. ---------- 
     let
-      def elaborate_prop_1 (prop as (prop_type, name, tyvars, fm)) =
+      def elaborate_prop_1 (prop as (prop_type, name, tvs, fm)) =
 	if ~(member (name, localProperties)) then 
 	  prop
 	else
 	  let fm_2 = elaborateTermTop (env_2a, fm, type_bool) in
-	  (prop_type, name, tyvars, fm_2)
+	  (prop_type, name, tvs, fm_2)
     in
     let props_2 = map elaborate_prop_1 props_1 in
 
@@ -155,119 +150,118 @@ TypeChecker qualifying spec
 
     %% ---------- SORTS : PASS 2 ---------- 
     let
-      def elaborate_sort_2 (sortInfo as (aliases, tyvars, defs)) =
-	if someAliasIsLocal? (aliases, localSorts) then
-	  (aliases,
-	   tyvars, 
-	   map (fn def_2 -> checkSortScheme (env_3, def_2)) defs)
+      def elaborate_sort_2 info =
+	if someAliasIsLocal? (info.names, localSorts) then
+	  info << {dfn = map (fn def_2 -> checkSortScheme (env_3, def_2)) info.dfn}
 	else
-	  sortInfo
+	  info
     in
     let sorts_3 = mapSortInfos elaborate_sort_2 sorts_2 in
 
     %% ---------- OPS : PASS 2 ---------- 
     let
-      def elaborate_op_2 (opinfo as (aliases, fixity, sort_scheme_2, defs_2)) =
-	if someAliasIsLocal? (aliases, localOps) then
-	  let (tyvars_3, srt_3) = checkSortScheme (env_3, sort_scheme_2) in
-	  let all_different? = checkDifferent (tyvars_3, StringSet.empty)  in
+      def elaborate_op_2 info = % s (aliases, fixity, sort_scheme_2, defs_2)) =
+	if someAliasIsLocal? (info.names, localOps) then
+	  let (tvs_3, srt_3) = checkSortScheme (env_3, info.typ) in
+	  let all_different? = checkDifferent (tvs_3, StringSet.empty)  in
 	  let defs_3 =
-	      map (fn (tyvars_2, term_2) ->
+	      map (fn (tvs_2, term_2) ->
 		   let pos    = termAnn term_2 in
 		   let term_3 = elaborateTermTop (env_3, term_2, srt_3)  in
 		   %%  ---
-		   let tyvars_used  =
+		   let tvs_used  =
 	               (let tv_cell = Ref [] : Ref TyVars in
 			let 
                           def insert tv = 
 			    tv_cell := ListUtilities.insert (tv, ! tv_cell) 
 
-			  def record_tyvars_used aSrt = 
+			  def record_tvs_used aSrt = 
 			    case aSrt of
 			      | MetaTyVar (mtv,     _) -> 
 				(let {name = _, uniqueId, link} = ! mtv in
 				 case link of
-				   | Some s -> record_tyvars_used s
+				   | Some s -> record_tvs_used s
 				   | None   -> error (env_3, 
-						      "Incomplete type for op "^(printQualifiedId (hd aliases))
+						      "Incomplete type for op "^(printQualifiedId (primaryOpName info))
 						      ^":"^newline
 						      ^(printSort aSrt), 
 						      pos))
 			      | TyVar     (tv,      _) -> insert tv
-			      | Product   (fields,  _) -> app (fn (_, s)      -> record_tyvars_used s) 
+			      | Product   (fields,  _) -> app (fn (_, s)      -> record_tvs_used s) 
 				                              fields
-			      | CoProduct (fields,  _) -> app (fn (_, Some s) -> record_tyvars_used s | _ -> ())
+			      | CoProduct (fields,  _) -> app (fn (_, Some s) -> record_tvs_used s | _ -> ())
 							      fields
-			      | Subsort   (s, _,    _) -> record_tyvars_used s
-			      | Quotient  (s, _,    _) -> record_tyvars_used s
-			      | Arrow     (s1, s2,  _) -> (record_tyvars_used s1; 
-							   record_tyvars_used s2)
-			      | Base      (_, srts, _) -> app record_tyvars_used srts
+			      | Subsort   (s, _,    _) -> record_tvs_used s
+			      | Quotient  (s, _,    _) -> record_tvs_used s
+			      | Arrow     (s1, s2,  _) -> (record_tvs_used s1; 
+							   record_tvs_used s2)
+			      | Base      (_, srts, _) -> app record_tvs_used srts
 			      | Boolean _ -> ()
 			in                        
-			  let _ = record_tyvars_used srt_3 in
+			  let _ = record_tvs_used srt_3 in
 			  ! tv_cell)
 		   in
-		   let tyvars_3_b =
-		       if null tyvars_3 then
-			 tyvars_used % Function was polymorphic, but not declared so.
-		       else if length tyvars_used = length tyvars_3 then
-			 tyvars_3 (* Probably correct ;-*)
+		   let tvs_3_b =
+		       if null tvs_3 then
+			 tvs_used % Function was polymorphic, but not declared so.
+		       else if length tvs_used = length tvs_3 then
+			 tvs_3 (* Probably correct ;-*)
 		       else 
-			 let scheme =  (tyvars_3, srt_3)   in
+			 let scheme =  (tvs_3, srt_3)   in
 			 let scheme = printSortScheme (scheme) in
 			 (error (env_3, 
 				 "mismatch between bound and free variables "^scheme, 
 				 pos);
-			  tyvars_3)
+			  tvs_3)
 		   in
 		     ((if all_different? then
 			 ()
 		       else 
-			 let scheme = (tyvars_3_b, srt_3) in
+			 let scheme = (tvs_3_b, srt_3) in
 			 error(env_3, 
 			       "Repeated type variables contained in "^(printSortScheme scheme),
 			       pos));
-		      (tyvars_3_b, term_3)))
-	          defs_2
+		      (tvs_3_b, term_3)))
+	          info.dfn
 	  in
-	  let tyvars_4 =
+	  let tvs_4 =
 	      case defs_3 of
-		| (tyvars_3_b,_)::_ -> (if length tyvars_3_b > length tyvars_3 then
-					  tyvars_3_b 
+		| (tvs_3_b,_)::_ -> (if length tvs_3_b > length tvs_3 then
+					  tvs_3_b 
 					else 
-					  tyvars_3)
-		| _ -> tyvars_3
+					  tvs_3)
+		| _ -> tvs_3
 	  in
-	    (aliases, fixity, (tyvars_4, srt_3), defs_3)
+	    info << {typ = (tvs_4, srt_3),
+		     dfn = defs_3}
 	else
-	  opinfo
+	  info
     in
     let ops_3 = mapOpInfos elaborate_op_2 ops_2 in
 
     %% ---------- AXIOMS : PASS 2 ----------
     let 
 
-      def elaborate_prop_2 (prop as (prop_type, name, tyvars_2, fm_2)) =
+      def elaborate_prop_2 (prop as (prop_type, name, tvs_2, fm_2)) =
 	if ~(member (name, localProperties)) then 
 	  prop
 	else
-	  let tyvars_3 = tyvars_2 in
+	  let tvs_3 = tvs_2 in
 	  let fm_3 = elaborateTermTop (env_3, fm_2, type_bool) in
 
 	  %String.writeLine "Elaborating formula";
-	  %let context = initializeTyVars() in
+	  %let context = initializeTvs() in
 	  %let term1 = termToMetaSlang context term in
-	  %let tyVars1 = deleteTyVars context tyVars in
-	  %let tyVars  = map unlinkTyVar tyVars in
-	  %let tyVars2 = deleteTyVars context tyVars in
+	  %let tvs1 = deleteTyVars context tvs in
+	  %let tvs  = map unlinkTyVars tvs in
+	  %let tvs2 = deleteTyVars context tvs in
 	  %let term3 = termToMetaSlang context term_3 in
 	  (%String.writeLine (MetaSlangPrint.printTermWithSorts term1);
-	   %app String.writeLine tyVars1;
+	   %app String.writeLine tvs1;
 	   %String.writeLine (MetaSlangPrint.printTermWithSorts term3);
-	   %app String.writeLine tyVars2;
+	   %app String.writeLine tvs2;
 
-	   (prop_type, name, tyvars_3, fm_3))
+	   (prop_type, name, tvs_3, fm_3))
 
     in
     let props_3 = map elaborate_prop_2 props_2 in
@@ -303,8 +297,8 @@ TypeChecker qualifying spec
   %% ---- called inside SORTS : PASS 0  -----
   % ========================================================================
  
-  def checkSortScheme (env, (tyvars, srt)) = 
-    (tyvars, checkSort (env, srt))
+  def checkSortScheme (env, (tvs, srt)) = 
+    (tvs, checkSort (env, srt))
 
   %% TODO: convert checkSort to work on sort scheme?
   def TypeChecker.checkSort (env, srt) = 
@@ -339,51 +333,46 @@ TypeChecker qualifying spec
                      pos);
               Base (given_sort_qid, instance_sorts, pos))
 
-           | (first_info as (first_aliases,first_ty_vars,_))::other_infos -> 
+           | info :: other_infos -> 
 	     let _ =
-	         (%% Check for errors...
-		  %% Note: If multiple candidates are returned, then given_sort_qid must be unqualified,
-		  %%       so if some candidate has given_sort_qid as an exact alias, then that
-		  %%       candidate will be first in the list (see comments for findAllSorts),
-		  %%       in which case choose it.
-		  if ((null other_infos) or
-		      exists (fn alias -> alias = given_sort_qid)
-		             first_aliases)
-		    then
-		      (if ~(length first_ty_vars = length instance_sorts) then
-			 let found_sort_str =
-			     (printAliases first_aliases)
-			     ^ (case first_ty_vars of
-				  | Nil    -> ""    
-				  | hd::tl -> "("^ hd ^ (foldl (fn (ty_var, str) ->
-								str^", "^ ty_var) 
-							  "" tl) 
-					      ^ ")")
-			 in                                
-			 error (env, 
-				"Type reference "^(given_sort_str ())
-				^" does not match declared type "^found_sort_str, 
-				pos)
-		       else 
-			 %%  Normal case goes through here:
-			 %%  either there are no other infos or the first info has as unqualified
-			 %%   alias, and the number of type vars equals the number of instance sorts.
-			 ())
-		  else
-		    %% We know that there are multiple options 
-		    %% (which implies that the given_sort_qid is unqualified), 
-		    %% and that none of them are unqualified, so complain.
-		    let candidates_str = foldl (fn ((aliases, _, _), str) -> 
-						str ^", "^  printAliases aliases)
-		                               (printAliases first_aliases)
-					       other_infos
-		    in
-		      error (env, 
-			     "Type reference "^(given_sort_str ())
-			     ^" is ambiguous among "^candidates_str,
-			     pos))
+	     (%% Check for errors...
+	      %% Note: If multiple candidates are returned, then given_sort_qid must be unqualified,
+	      %%       so if some candidate has given_sort_qid as an exact alias, then that
+	      %%       candidate will be first in the list (see comments for findAllSorts),
+	      %%       in which case choose it.
+	      if ((null other_infos) or exists (fn alias -> alias = given_sort_qid) info.names) then
+		(if length info.tvs ~= length instance_sorts then
+		   let found_sort_str =
+		       (printAliases info.names)
+		       ^ (case info.tvs of
+			    | [] -> ""    
+			    | hd::tl -> 
+			    "("^ hd ^ (foldl (fn (tv, str) -> str^", "^ tv) "" tl) ^ ")")
+		   in                                
+		     error (env, 
+			    "Type reference "^(given_sort_str ())
+			    ^" does not match declared type "^found_sort_str, 
+			    pos)
+		 else 
+		   %%  Normal case goes through here:
+		   %%  either there are no other infos or the first info has as unqualified
+		   %%   alias, and the number of type vars equals the number of instance sorts.
+		   ())
+	      else
+		%% We know that there are multiple options 
+		%% (which implies that the given_sort_qid is unqualified), 
+		%% and that none of them are unqualified, so complain.
+		let candidates_str = foldl (fn (other_info, str) -> 
+					    str ^", "^  printAliases other_info.names)
+		                           (printAliases info.names)
+					   other_infos
+		in
+		  error (env, 
+			 "Type reference " ^ (given_sort_str ())
+			 ^" is ambiguous among " ^ candidates_str,
+			 pos))
              in
-	     let new_sort_qid = hd first_aliases in
+	     let new_sort_qid = primarySortName info in
 	     let new_instance_sorts = 
                  map (fn instance_sort -> checkSort (env, instance_sort))
 	             instance_sorts
@@ -517,9 +506,9 @@ TypeChecker qualifying spec
     case trm of
 
       | Fun (OneName (id, fixity), srt, pos) ->
-        let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
-	(* resolve sort from environment *)
-	(case findVarOrOps (env, id, pos) of
+        (let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
+	 %% resolve sort from environment
+	 case findVarOrOps (env, id, pos) of
 	   | terms as _::_ ->
 	     %% selectTermWithConsistentSort calls consistentSortOp?, which calls unifySorts 
 	     (case selectTermWithConsistentSort (env, id, pos, terms, term_sort) of
@@ -533,16 +522,17 @@ TypeChecker qualifying spec
 		     | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
 		     | _ -> System.fail "Variable or constant expected"))
 	   | [] -> 
-	     resolveNameFromSort (env, trm, id, srt, pos)
-	    )
+	     resolveNameFromSort (env, trm, id, srt, pos))
       | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
-	let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
-	%% Either Qualified (id1, id2) or field selection
-	(case findTheOp2 (env, id1, id2) of
-           | Some ((Qualified(q,id)):: aliases, fixity, (tyvars,srt), _) ->
+	(let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
+	 %% Either Qualified (id1, id2) or field selection
+	 case findTheOp2 (env, id1, id2) of
+           | Some info -> 
 	     %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
-	     let (_,srt) = copySort(tyvars,srt) in
-	     let term = Fun (TwoNames (q, id, fixity), srt, pos) in
+	     let Qualified (q, id) = primaryOpName info in
+	     let (tvs, srt) = info.typ in
+	     let (_,srt) = copySort (tvs, srt) in
+	     let term = Fun (TwoNames (q, id, info.fixity), srt, pos) in
 	     let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
 	     (case term of
 		| Fun (TwoNames xx, _, pos) -> Fun (TwoNames xx, srt, pos)
@@ -901,7 +891,10 @@ TypeChecker qualifying spec
 		%% If, due to union semantics, findOps always returns 0 or 1 hits for Q.Id, 
 		%% then consistentTag will necessarily return (true, priority).
 		(case findTheOp2 (env, id1, id2) of
-		   | Some (_,Infix p,_,_) -> Infix  (term, p)
+		   | Some info ->
+		     (case info.fixity of
+			| Infix p -> Infix  (term, p)
+			| _ -> Nonfix term)
 		   | _                    -> Nonfix term)
 	      | Fun (And,       _, _) -> Infix (term, (Right, 15))
 	      | Fun (Or,        _, _) -> Infix (term, (Right, 14))

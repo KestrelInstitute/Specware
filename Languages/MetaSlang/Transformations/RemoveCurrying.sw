@@ -26,70 +26,74 @@ RemoveCurrying qualifying spec
   op  removeCurrying: Spec -> Spec
   def removeCurrying spc =
     let spc = addUnCurriedOps spc in
-    let newOps = mapOpInfos
-                   (fn (aliases,fixity,srtScheme,(dtvs,def1)::_) ->
-		       (aliases,fixity,srtScheme,[(dtvs,unCurryTerm(def1,spc))])
-		    | x -> x)
-		   spc.ops
+    let newOps = mapOpInfos (fn info ->
+			     case info.dfn of
+			       | (dtvs,def1)::_ -> info << {dfn = [(dtvs, unCurryTerm (def1, spc))]}
+			       | _ -> info)
+                            spc.ops
     in
-    let newSorts = mapSortInfos
-                     (fn (aliases,tvs,(tvs1,srt)::_) ->
-		         (aliases,tvs,[(tvs1,(unCurrySort(srt,spc)).2)])
-		      | x -> x)
-		     spc.sorts
+    let newSorts = mapSortInfos (fn info ->
+				 case info.dfn of
+				   | (tvs1,srt)::_ -> info << {dfn = [(tvs1,(unCurrySort(srt,spc)).2)]}
+				   | _ -> info)
+                                spc.sorts
     in
-    setOps(setSorts(spc,newSorts),newOps)
+    setOps (setSorts (spc, newSorts), newOps)
 
   op  addUnCurriedOps: Spec -> Spec
   def addUnCurriedOps spc =
     let newOps =
         foldriAQualifierMap
-	  (fn (qualifier,id,(nms,fixity,(stvs,srt),
-			     ((dtvs,def1)::_)),
-	       new_ops) ->
-	     (case newUncurriedOp(spc,id,srt) of
-	        | Some(nNm,nSrt) ->
-		  % Remove definition of old op
-		  let new_ops =
-		      insertAQualifierMap(new_ops,qualifier,id,
-					  (nms,fixity,(stvs,srt),[]))
-		  in
-		  % Add definition of replacement (only bother with first def)
-		  insertAQualifierMap(new_ops,qualifier,nNm,
-				      ([Qualified(qualifier,nNm)],fixity,
-				       (stvs,nSrt),
-				       [(dtvs,def1)]))
-	        | None -> new_ops)
-	    | (qualifier,id,inf,new_ops) -> (debug(qualifier,id,inf);new_ops))
+	  (fn (q, id, info, new_ops) ->
+	   case info.dfn of
+	     | first_def :: _ ->
+	       (let (stvs, srt) = info.typ in
+		case newUncurriedOp (spc, id, srt) of
+		  | Some (new_id, new_srt) ->
+		    % Remove definition of old op
+		    let new_ops = insertAQualifierMap (new_ops, q, id, info << {dfn = []}) in
+		    % Add definition of replacement (only bother with first def)
+		    insertAQualifierMap (new_ops, q, new_id,
+					 info << {names = [Qualified (q, new_id)],
+						  typ   = (stvs, new_srt),
+						  dfn   = [first_def]})
+		  | None -> new_ops)
+	     | _ ->
+	       (debug (q, id, info.fixity); 
+		new_ops))
 	  spc.ops
 	  spc.ops
     in
-      setOps(spc,newOps)
+      setOps (spc, newOps)
 
   def debug tp = tp
 
-  op  newUncurriedOp: Spec * Id * Sort -> Option(Id * Sort)
-  def newUncurriedOp(spc,nm,srt) =
-    let (hasCurried?,unCurriedSrt) = unCurrySort(srt,spc) in
-    if ~hasCurried? then None
-     else let curryshape = curryShapeNum(spc,srt) in
-          Some(unCurryName(nm,curryshape),
-	       unCurriedSrt)
+  op  newUncurriedOp: Spec * Id * Sort -> Option (Id * Sort)
+  def newUncurriedOp (spc, nm, srt) =
+    let (hasCurried?, unCurriedSrt) = unCurrySort (srt, spc) in
+    if ~hasCurried? then 
+      None
+    else 
+      let curryshape = curryShapeNum (spc, srt) in
+      Some(unCurryName (nm, curryshape),
+	   unCurriedSrt)
 
-%  op  unCurryDef: MS.Term * Nat -> MS.Term
-%  def unCurryDef(tm,curryshape) =
+ %op  unCurryDef: MS.Term * Nat -> MS.Term
+ %def unCurryDef(tm,curryshape) =
+
   op  getCurryFnArgs: MS.Term -> Option(MS.Term * List MS.Term)
   def getCurryFnArgs t =
-    let def aux(term,i,args) =
-        case term
-          of Fun _ -> Some(term,args)
-	   | Var _ -> Some(term,args)
-           | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
-           | _ -> None
-  in aux(t,0,[])
+    let def aux (term, i, args) =
+      case term of
+	| Fun _ -> Some (term, args)
+	| Var _ -> Some (term, args)
+	| Apply (t1, t2,_) -> aux (t1, i + 1, cons (t2, args))
+	| _ -> None
+    in 
+      aux (t, 0, [])
 
   op  unCurryTerm: MS.Term * Spec -> MS.Term
-  def unCurryTerm(tm,spc) =
+  def unCurryTerm (tm, spc) =
     let def unCurryTermRec t = unCurryTerm(t,spc)
         def unCurryApply(f,args,spc) =
 	  let fsrt = termSortEnv(spc,f) in

@@ -37,14 +37,17 @@ SpecCalc qualifying spec {
   def generateCProcedure spc cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
     let initSpec = Mode.modeSpec (initial bSpec) in
     let varDecls =
-      List.map (fn argRef -> let (names,fxty,(tyVars,srt),_) = Op.deref (specOf initSpec, argRef) in
-            (OpRef.show argRef, sortToCType srt)) parameters in
+      List.map (fn argRef -> 
+		let info = Op.deref (specOf initSpec, argRef) in
+		(OpRef.show argRef, sortToCType info.typ.2))
+               parameters 
+    in
     let returnType =
       case returnInfo of
         | None -> Void 
         | Some retRef ->
-            let (names,fixity,(tyVars,srt),_) = Op.deref (specOf initSpec, retRef) in
-              sortToCType srt in
+          let info = Op.deref (specOf initSpec, retRef) in
+	  sortToCType info.typ.2 in
     let def handler id proc except =
       case except of
         | SpecError (pos, msg) -> {

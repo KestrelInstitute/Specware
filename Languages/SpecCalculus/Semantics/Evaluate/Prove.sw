@@ -140,15 +140,21 @@ SpecCalc qualifying spec {
      return (subtractSpec rewriteProverSpec baseSpec)
     }
 
- def proverOptionsFromSpec(name, spc, spec_name) = {
-   possible_options_op <- return(AnnSpec.findTheOp(spc, name));
+ def proverOptionsFromSpec (name, spc, spec_name) = {
+   possible_options_op <- return(AnnSpec.findTheOp (spc, name));
    options_def <-
       (case possible_options_op of
-	 | Some (_,_,_,[(_,opTerm)]) -> return (opTerm)
-	 | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId(name) ^
-		       (case spec_name of
-			  | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
-			  | _ -> "."))));
+	 | Some info ->
+	   (case info.dfn of
+	      | [(_,opTerm)] -> return opTerm
+	      | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^
+					 (case spec_name of
+					    | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
+					    | _ -> "."))))
+	 | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^
+				    (case spec_name of
+				       | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
+				       | _ -> "."))));
    options_string <-
       (case options_def of
 	 | Fun (String (opString),_,_) -> return (opString)

@@ -700,19 +700,17 @@ Utilities qualifying spec
  op letRecToLetTermSpec: Spec -> Spec
  def letRecToLetTermSpec(spc) =
    let 
-     def letRecToLetTermSortInfo ((aliases, tyvars, defs)) =
-       (aliases,
-	tyvars,
-	map (fn (type_vars, srt) ->
-	     (type_vars, letRecToLetTermSort srt))
-        defs)
-     def letRecToLetTermOpInfo((aliases, fixity, (tyvars, srt), defs)) =
-       (aliases,
-	fixity, 
-	(tyvars, letRecToLetTermSort srt),
-	map (fn (type_vars, term) ->
-	     (type_vars, letRecToLetTermTerm term))
-            defs)
+     def letRecToLetTermSortInfo info =
+       info << {dfn = map (fn (tvs, srt) ->
+			   (tvs, letRecToLetTermSort srt))
+		          info.dfn}
+
+     def letRecToLetTermOpInfo info = 
+       let (tvs, srt) = info.typ in
+       info << {typ = (tvs, letRecToLetTermSort srt),
+		dfn = map (fn (tvs, term) ->
+			   (tvs, letRecToLetTermTerm term))
+		          info.dfn}
    in
    {importInfo       = spc.importInfo,
     sorts            = mapSortInfos letRecToLetTermSortInfo spc.sorts,

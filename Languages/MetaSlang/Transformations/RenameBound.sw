@@ -90,11 +90,8 @@ spec
   def renameFormula c (pt,name, tyvars, term) =
     (pt,name, tyvars, renameTerm c term)
 
-  def renameOp c (aliases, fixity, sortScheme, defs) =
-    (aliases,
-     fixity,
-     sortScheme,
-     map (fn (tvs,term) -> (tvs, renameTerm c term)) defs)
+  def renameOp c info =
+    info << {dfn = map (fn (tvs,term) -> (tvs, renameTerm c term)) info.dfn}
 
   def renameClosedTerm c term =
     savingEnvContext c (fn () ->

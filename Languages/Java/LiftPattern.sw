@@ -218,17 +218,17 @@ def exchangeArgTerms(argTerm,args) =
 op opDom: Spec * Op -> List Sort
 op opRange: Spec * Op -> Sort
 
-def opDom(spc, oper) =
-  let opinfo = findAllOps(spc, oper) in
-  case opinfo of
-    | (_,_,(_,srt),_)::_ -> srtDom(srt)
-    | _ -> let _ = unSupported(oper) in []
+def opDom (spc, oper) =
+  let infos = findAllOps (spc, oper) in
+  case infos of
+    | info ::_ -> srtDom info.typ.2
+    | _ -> let _ = unSupported oper in []
 
-def opRange(spc, oper) =
-  let opinfo = findAllOps(spc, oper) in
-  case opinfo of
-    | (_,_,(_,srt),_)::_ -> srtRange(srt)
-    | _ -> let _ = unSupported(oper) in boolSort
+def opRange (spc, oper) =
+  let infos = findAllOps (spc, oper) in
+  case infos of
+    | info ::_ -> srtRange info.typ.2
+    | _ -> let _ = unSupported oper in boolSort
 
 op srtDom: Sort -> List Sort
 op srtRange: Sort -> Sort
@@ -236,37 +236,38 @@ op srtRange: Sort -> Sort
 def srtDom(srt) =
   let def domSrtDom(dom) =
        (case dom of
-	  | Product (fields, _) -> map (fn (_,srt) -> srt) fields
-	  | Subsort (subSrt, _, _) -> domSrtDom(subSrt)
-	  | _ -> [dom]) in
+	  | Product (fields,    _) -> map (fn (_,srt) -> srt) fields
+	  | Subsort (subSrt, _, _) -> domSrtDom subSrt
+	  | _ -> [dom]) 
+  in
   case srt of
     | Arrow (dom, rng, _) ->
-    (let argSorts = domSrtDom(dom) in
-     argSorts)
+      (let argSorts = domSrtDom dom in
+       argSorts)
     | _ -> []
 
 op srtDomKeepSubsorts: Sort -> List Sort
-def srtDomKeepSubsorts(srt) =
-  let def domSrtDom(dom) =
+def srtDomKeepSubsorts srt =
+  let def domSrtDom dom =
        (case dom of
 	  | Product (fields, _) -> map (fn (_,srt) -> srt) fields
 	  %| Subsort (subSrt, _, _) -> domSrtDom(subSrt)
 	  | _ -> [dom]) in
   case srt of
     | Arrow (dom, rng, _) ->
-    (let argSorts = domSrtDom(dom) in
-     argSorts)
+      (let argSorts = domSrtDom(dom) in
+       argSorts)
     | _ -> []
 
-def srtRange(srt) =
+def srtRange srt =
   case srt of
     | Arrow (dom, rng, _) -> rng
     | _ -> srt
 
-op srtDomPreds: Sort -> List(Option Term)
-def srtDomPreds(srt) =
+op srtDomPreds: Sort -> List (Option Term)
+def srtDomPreds srt =
   %let _ = writeLine("srtDomPreds "^printSort(srt)) in
-  let def srtPred(srt) : Option Term =
+  let def srtPred (srt) : Option Term =
         case srt of
 	  | Subsort(_,pred,_) -> 
 	    %let _ = writeLine("collecting restriction term "^printTerm(pred)) in
@@ -274,30 +275,31 @@ def srtDomPreds(srt) =
 	  | _ -> None
   in
     case srt of
-      | Arrow(Product(fields,_),_,_) -> map (fn(_,srt) -> srtPred(srt)) fields
-      | Arrow(srt,_,_) -> [srtPred(srt)]
+      | Arrow (Product (fields,_),_,_) -> map (fn(_,srt) -> srtPred(srt)) fields
+      | Arrow (srt, _, _) -> [srtPred(srt)]
       | _ -> []
 
- op patternNameOpt : Pattern       -> Option Id
- op patternNamesOpt: Pattern       -> Option (List Id)
+op patternNameOpt : Pattern       -> Option Id
+op patternNamesOpt: Pattern       -> Option (List Id)
 
- def patternNameOpt (pattern) = 
-   case pattern of
-     | VarPat((id,_),_) -> Some id 
-     | _ -> None
+def patternNameOpt (pattern) = 
+  case pattern of
+    | VarPat((id,_),_) -> Some id 
+    | _ -> None
 
- def patternNamesOpt (pattern) = 
-   case pattern of
-     | VarPat((id,_),_) -> Some [id]
-     | RecordPat(fields,_) ->
-         List.foldl (fn ((_,p), namesOpt) ->
-		     case namesOpt of
-		       | Some names ->
-		       (case patternNameOpt(p) of
-			  | Some name -> Some (names ++ [name])
-			  | _ -> None)
-		       | _-> None)
-	            (Some ([])) fields
+def patternNamesOpt (pattern) = 
+  case pattern of
+    | VarPat((id,_),_) -> Some [id]
+    | RecordPat(fields,_) ->
+      List.foldl (fn ((_,p), namesOpt) ->
+		  case namesOpt of
+		    | Some names ->
+		      (case patternNameOpt(p) of
+			 | Some name -> Some (names ++ [name])
+			 | _ -> None)
+		    | _-> None)
+                 (Some ([])) 
+		 fields
      | _ -> None
 
 op opDelta: Spec * Op -> List Var * Term
@@ -305,25 +307,27 @@ op opDelta: Spec * Op -> List Var * Term
 def opDelta(spc, oper) =
   let opDom = opDom(spc, oper) in
   let opRng = opRange(spc, oper) in
-  let opinfo = findAllOps(spc, oper) in
-  case opinfo of
-    | (_,_,_,[(_,trm)])::_ ->
-    (case trm of
-       | Lambda ([(pat, cond, body)],_) ->
-       let argNames = patternNamesOpt(pat) in
-       (case argNames of
-	  | Some argNames ->
-	  let numArgs = length argNames in
-	  let arity = length(opDom) in
-	  if arity = numArgs
-	    then 
-	      let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
-	      (newArgs, body)
-	  else
-	    let _ = unSupported(oper) in ([], mkFalse())
-	    | _ -> let _ = unSupported(oper) in ([], mkFalse()))
-       | _ -> ([], trm))
-     | _ -> let _ = unSupported(oper) in ([], mkFalse())
+  let infos = findAllOps(spc, oper) in
+  case infos of
+    | info::_ ->
+      (case info.dfn of
+	| [(_,trm)] ->
+	  (case trm of
+	     | Lambda ([(pat, cond, body)],_) ->
+	       let argNames = patternNamesOpt pat in
+	       (case argNames of
+		  | Some argNames ->
+		    let numArgs = length argNames in
+		    let arity   = length opDom    in
+		    if arity = numArgs then
+		      let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
+		      (newArgs, body)
+		    else
+		      let _ = unSupported(oper) in ([], mkFalse())
+		  | _ -> let _ = unSupported(oper) in ([], mkFalse()))
+	     | _ -> ([], trm))
+	| _ -> let _ = unSupported oper in ([], mkFalse()))
+    | _ -> let _ = unSupported oper in ([], mkFalse())
 
 
 op srtTermDelta : Sort * Term -> List Var * Term
@@ -476,22 +480,24 @@ def lift(spc,oper, (formals, body)) =
 
 op liftPattern: Spec -> Spec
 
-def liftPattern(spc) =
-  let newOpDefs
-  = foldriAQualifierMap 
-  (fn (qualifier, name, (op_names, fixity, (tyVars, srt), [(_, term)]),
-       result) ->
-   let origOp = mkQualifiedId(qualifier, name) in
-   let (origOpVars, origOpBody) = srtTermDelta(srt, term) in
-   let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
-   let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
-   let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
-   let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
-   cons(origOpNewDef, newOds++result))
-  []
-  spc.ops in
+def liftPattern spc =
+  let newOpDefs = foldriAQualifierMap 
+                    (fn (q, id, info, result) ->
+		     case (info.typ, info.dfn) of
+		       | ((_,srt), [(_, term)]) ->
+		         let origOp = mkQualifiedId (q, id) in
+			 let (origOpVars, origOpBody) = srtTermDelta (srt, term) in
+			 let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
+			 let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
+			 let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
+			 let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
+			 cons (origOpNewDef, newOds++result)
+		       | _ -> result)
+		    []
+		    spc.ops 
+  in
   let result = initialSpecInCat in % if we started instead with emptySpec, might we omit some built-in defs?
-  let result = setSorts(result, spc.sorts) in
+  let result = setSorts (result, spc.sorts) in
   let result = foldr addOpToSpec result newOpDefs in
    result
 

@@ -39,35 +39,37 @@ def clsDeclsFromSorts(spc) =
 op sortToClsDecls: Qualifier * Id * SortInfo * Spec * JcgInfo -> JcgInfo
 def sortToClsDecls (_(* qualifier *), id, sort_info, spc, jcginfo) =
   let clsDecls = jcginfo.clsDecls in
-  case sort_info of
-    | (_, _, [(_, srtDef)]) -> 
+  case sort_info.dfn of
+    | [(_, srtDef)] -> 
       let ok? = case srtDef of
-		  | Subsort(_,Fun(Op _,_,_),_) -> true
-		  | Subsort _ -> false
-		  | Quotient(_,Fun(Op _,_,_),_) -> true
-		  | Quotient _ -> false
+		  | Subsort  (_,Fun(Op _,_,_),_) -> true
+		  | Subsort  _                   -> false
+		  | Quotient (_,Fun(Op _,_,_),_) -> true
+		  | Quotient _                   -> false
 		  | _ -> true
       in
-      if ~ok? then (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported: "^printSort(srtDef));jcginfo)
-      else
-      if baseType?(spc,srtDef)
-	then (issueUnsupportedError(sortAnn(srtDef),"sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");jcginfo)
+      if ~ok? then 
+	(issueUnsupportedError(sortAnn(srtDef),"sort definition not supported: "^printSort(srtDef)); 
+	 jcginfo)
+      else if baseType? (spc, srtDef) then
+	(issueUnsupportedError(sortAnn(srtDef),"sort definition: \"sort "^id^" = "^printSort(srtDef)^"\" ignored.");
+	 jcginfo)
       else
 	let (newClsDecls,col) = 
-	%let _ = writeLine("sort "^id^" = "^printSort srtDef) in
-	(case srtDef of
-	   | Product (fields, _) -> productToClsDecls(id,srtDef,spc)
-	   | CoProduct (summands, _) -> coProductToClsDecls(id,srtDef,spc)
-	   | Quotient (superSort, quotientPred, _) -> quotientToClsDecls(id,superSort,quotientPred,spc)
-	   | Subsort (superSort, pred, _) -> subSortToClsDecls(id,superSort,pred,spc)
-	   | Base (Qualified (qual, id1), [], _) -> userTypeToClsDecls(id,id1)
-	   | Boolean _                           -> userTypeToClsDecls(id,"Boolean")
-	   | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort(srtDef))
-	   (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported");(jcginfo.clsDecls,nothingCollected))
-	  )
-      in
-	let newjcginfo = newJcgInfo(newClsDecls,col) in
-	concatJcgInfo(jcginfo,newjcginfo)
+	    %let _ = writeLine("sort "^id^" = "^printSort srtDef) in
+	    case srtDef of
+	      | Product   (fields,                    _) -> productToClsDecls   (id, srtDef, spc)
+	      | CoProduct (summands,                  _) -> coProductToClsDecls (id, srtDef, spc)
+	      | Quotient  (superSort, quotientPred,   _) -> quotientToClsDecls  (id, superSort, quotientPred, spc)
+	      | Subsort   (superSort, pred,           _) -> subSortToClsDecls   (id, superSort, pred,         spc)
+	      | Base      (Qualified (qual, id1), [], _) -> userTypeToClsDecls  (id, id1)
+	      | Boolean   _                              -> userTypeToClsDecls  (id, "Boolean")
+	      | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort srtDef)
+	        (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported");
+		 (jcginfo.clsDecls, nothingCollected))
+	in
+	let newjcginfo = newJcgInfo (newClsDecls, col) in
+	concatJcgInfo (jcginfo, newjcginfo)
 	%appendClsDecls(jcginfo,newClsDecls)
     | _ -> jcginfo
 
@@ -372,37 +374,48 @@ def unfoldToCoProduct(spc,srt) =
  * each sub-class get one method, except in the case where there is a "default" (wild- or var-pattern) 
  * case and the constructor is not mentioned as case in the case construct.
  *)
-op addMethDeclToSummands: Spec * Id * Id * MethDecl * Term * JcgInfo -> JcgInfo
-def addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo) =
-  let clsDecls = jcginfo.clsDecls in
-  case findAllSorts(spc, mkUnQualifiedId(srthId)) of
-    | (_, _, (_,srt)::_)::_  -> 
-    %let _ = writeLine("in addMethDeclToSummands: srt="^printSort(srt)) in
-    let CoProduct (summands, _) = srt in
-    let caseTerm = caseTerm(body) in
-    %let cases = filter (fn(WildPat _,_,_) -> false | _ -> true) (caseCases(body)) in
-    let cases = caseCases(body) in
-    % find the missing constructors:
-    let missingsummands = getMissingConstructorIds(srt,cases) in
-    %let jcginfo = foldr (fn(consId,jcginfo) -> addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo))
-    %              jcginfo missingsummands
-    %in
-    let jcginfo = 
-        case findVarOrWildPat cases of
-	  | Some _ -> jcginfo % don't add anything for the missing summands in presence of a default case
-	  | None   ->
-	    %let _ = if length(missingsummands) > 0 then
-	    %          (writeLine("missing cases in "^opId^" for sort "^srthId^":");
-	    %	       app (fn(id) -> writeLine("  "^id)) missingsummands)
-	    %	    else ()
-	    %in
-	    foldr (fn(consId,jcginfo) ->
-		   addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo)
-		  ) jcginfo missingsummands
-    in
-      %% cases = List (pat, cond, body)
-      foldr (fn((pat, _, cb), newJcgInfo) -> addSumMethDeclToClsDecls(opId,srthId, caseTerm, pat, cb, methodDecl, newJcgInfo, spc)) jcginfo cases
-    | _ -> fail("sort not found: "^srthId)
+ op  addMethDeclToSummands: Spec * Id * Id * MethDecl * Term * JcgInfo -> JcgInfo
+ def addMethDeclToSummands (spc, opId, srthId, methodDecl, body, jcginfo) =
+   let clsDecls = jcginfo.clsDecls in
+   case findAllSorts (spc, mkUnQualifiedId srthId) of
+     | info  ::_  ->  % consider only one candidate
+       (case info.dfn of 
+	  | (_,srt) :: _ ->  % consider only first definition
+	    (%let _ = writeLine("in addMethDeclToSummands: srt="^printSort(srt)) in
+	     case srt of
+	       | CoProduct (summands, _) ->
+	         let caseTerm = caseTerm(body) in
+		 %let cases = filter (fn (WildPat _, _, _) -> false | _ -> true) (caseCases body) in
+		 let cases = caseCases(body) in
+		 % find the missing constructors:
+		 let missingsummands = getMissingConstructorIds(srt,cases) in
+		 %let jcginfo = foldr (fn (consId, jcginfo) -> 
+		 %                     addMissingSummandMethDeclToClsDecls (opId, srthId, consId, methodDecl, jcginfo))
+		 %                    jcginfo 
+		 %                    missingsummands
+		 %in
+		 let jcginfo = 
+		     case findVarOrWildPat cases of
+		       | Some _ -> jcginfo % don't add anything for the missing summands in presence of a default case
+		       | None   ->
+		         %let _ = if length(missingsummands) > 0 then
+		         %          (writeLine("missing cases in "^opId^" for sort "^srthId^":");
+			 %	       app (fn(id) -> writeLine("  "^id)) missingsummands)
+		         %	    else ()
+		         %in
+		         foldr (fn (consId, jcginfo) ->
+				addMissingSummandMethDeclToClsDecls (opId, srthId, consId, methodDecl, jcginfo))
+			       jcginfo 
+			       missingsummands
+                 in
+		   %% cases = List (pat, cond, body)
+		   foldr (fn ((pat, _, cb), newJcgInfo) -> 
+			  addSumMethDeclToClsDecls (opId, srthId, caseTerm, pat, cb, methodDecl, newJcgInfo, spc)) 
+		         jcginfo 
+			 cases
+	       | _ -> fail("sort is not a CoProduct: "^srthId))
+	  | _ -> fail("sort has no definition: "^srthId))
+    | _ -> fail ("sort not found: " ^ srthId)
 
 op addMissingSummandMethDeclToClsDecls: Id * Id * Id * MethDecl * JcgInfo -> JcgInfo
 def addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo) =
@@ -468,10 +481,12 @@ def modifyClsDeclsFromOps(spc, jcginfo) =
   jcginfo spc.ops
 
 op modifyClsDeclsFromOp: Spec * Id * Id * OpInfo * JcgInfo -> JcgInfo
-def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, opsrt), [(_, trm)]), jcginfo) =
+def modifyClsDeclsFromOp (spc, qual, id, op_info, jcginfo) =
+  let (_, opsrt) = op_info.typ in
+  let [(_, trm)] = op_info.dfn in
   let clsDecls = jcginfo.clsDecls in
-  let dompreds = srtDomPreds(opsrt) in
-  let srt = inferType(spc,trm) in
+  let dompreds = srtDomPreds opsrt in
+  let srt = inferType (spc, trm) in
   let srt = foldRecordsForOpSort(spc,srt) in
   let srtrng = unfoldBase(spc,srtRange(srt)) in
   let opsrtrng = unfoldBase(spc,srtRange(opsrt)) in
@@ -569,13 +584,16 @@ def insertClsDeclsForCollectedProductSorts(spc,jcginfo) =
   %let tmp = List.show "," (map printSort psrts) in
   %let _ = writeLine("collected product sorts:"^newline^tmp) in
   let
-    def insertSort(srt,jcginfo) =
-      let (id,_) = srtId(srt) in
-      let sortinfo = ([mkUnQualifiedId(id)],[],[([],srt)]) in
-      sortToClsDecls(UnQualified,id,sortinfo,spc,jcginfo)
+    def insertSort (srt, jcginfo) =
+      let (id,_) = srtId srt in
+      let sort_info = {names = [mkUnQualifiedId id],
+		       tvs   = [],
+		       dfn   = [([],srt)]}
+      in
+	sortToClsDecls (UnQualified, id, sort_info, spc, jcginfo)
   in
   let jcginfo = foldr insertSort jcginfo psrts in
-  insertClsDeclsForCollectedProductSorts(spc,jcginfo)
+  insertClsDeclsForCollectedProductSorts (spc, jcginfo)
 
 
 

@@ -333,8 +333,11 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 	       return (let (value,_,_) = spcInfo in
 		       case coerceToSpec value of
 			 | Spec spc ->
-			   (case AnnSpec.findTheOp(spc,qid) of
-			      | Some(_,_,_,(_,defn)::_) -> Some(MSInterpreter.eval(defn,spc))
+			   (case AnnSpec.findTheOp (spc, qid) of
+			      | Some info -> 
+			        (case info.dfn of
+				   | (_,defn) :: _ -> Some (MSInterpreter.eval (defn, spc))
+				   | _ -> None)
 			      | _ -> None) % Dummy
 			 | _ -> None)
 	      }

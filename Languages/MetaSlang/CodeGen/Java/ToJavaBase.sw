@@ -856,36 +856,46 @@ def findMatchingUserTypeCol(spc,srt) =
  * restrict operator. The sort must be in the form X -> (X|p), and this op returns the name of the user type
  * that is defined as (X|p)
  *)
-op findMatchingRestritionType: Spec * Sort -> Option Sort
-def findMatchingRestritionType(spc,srt) =
-  case srt of
-    | Arrow(X0,ssrt as Subsort(X1,pred,_),_) -> 
-      if equalSort?(X0,X1) then
-	(let srts = sortsAsList(spc) in
+ op  findMatchingRestritionType: Spec * Sort -> Option Sort
+ def findMatchingRestritionType(spc,srt) =
+   case srt of
+     | Arrow (X0, ssrt as Subsort (X1, pred, _), _) -> 
+       if equalSort? (X0, X1) then
+	 let srts = sortsAsList spc in
 	 let srtPos = sortAnn ssrt in
-	 let foundSrt = find (fn|(qualifier,id,(_,_,[(_,srt)])) -> equalSort?(ssrt,srt)| _ -> false) srts in
-	 case foundSrt of
-	   | Some (q,subsortid,_) -> Some(Base(mkUnQualifiedId(subsortid),[],srtPos))
-	   | None -> None
-	  )
-      else None
-    | _ -> None
+	 let foundSrt = 
+	     find (fn (_, _, info) ->
+		   case info.dfn of 
+		     | [(_,srt)] -> equalSort? (ssrt, srt)
+		     | _ -> false)
+	          srts 
+	 in
+	   case foundSrt of
+	     | Some (q, subsortid, _) -> 
+	       Some (Base (mkUnQualifiedId subsortid, [], srtPos))
+	     | None -> None
+       else 
+	 None
+     | _ -> None
 
-op foldRecordsForOpSort : Spec * Sort -> Sort
-def foldRecordsForOpSort(spc,srt) =
-  case srt of
-    | Arrow(domsrt,rngsrt,b) ->
-      let domsrt =
-          (case domsrt of
-	     | Product(fields,b) -> 
-	       let fields = map (fn(id,srt0) -> (id,findMatchingUserType(spc,srt0))) fields in
-	       Product(fields,b)
-	     | _ -> findMatchingUserType(spc,domsrt)
-	      )
+ op  foldRecordsForOpSort : Spec * Sort -> Sort
+ def foldRecordsForOpSort (spc, srt) =
+   case srt of
+     | Arrow (domsrt, rngsrt, b) ->
+       let domsrt =
+           case domsrt of
+	     | Product (fields, b) -> 
+	       let fields = 
+	           map (fn (id, srt0) -> (id, findMatchingUserType (spc, srt0))) 
+		       fields 
+	       in
+		 Product (fields, b)
+	     | _ -> 
+	       findMatchingUserType (spc, domsrt)
       in
-      let rngsrt = findMatchingUserType(spc,rngsrt) in
+      let rngsrt = findMatchingUserType (spc, rngsrt) in
       Arrow(domsrt,rngsrt,b)
-    | _ -> findMatchingUserType(spc,srt)
+    | _ -> findMatchingUserType (spc, srt)
 
 
 

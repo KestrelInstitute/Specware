@@ -89,15 +89,18 @@ spec
    unfoldBaseV (sp, srt, true)
 
  def unfoldBaseV (sp:Spec, srt, verbose) = 
-  case srt
-    of Base (qid, srts, a) ->
-       (case findTheSort(sp,qid)
-          of None -> srt
-           | Some(_, _, [])      -> srt
-           | Some(_, _, (type_vars, srt2)::_) ->
-             let ssrt = substSort(zip(type_vars,srts), srt2) in
-             unfoldBaseV (sp, ssrt, verbose))
-     | _ -> srt
+  case srt of
+    | Base (qid, srts, a) ->
+      (case findTheSort (sp, qid) of
+	 | None -> srt
+	 | Some info ->
+	   case info.dfn of
+	     | [] -> srt
+	     | _ -> 
+	       let (tvs, srt) :: _ = info.dfn in
+	       let ssrt = substSort (zip (tvs, srts), srt) in
+	       unfoldBaseV (sp, ssrt, verbose))
+    | _ -> srt
 
  op unfoldStripSort : Spec * Sort * Boolean -> Sort
  def unfoldStripSort (spc, srt, verbose) =

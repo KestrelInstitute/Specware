@@ -827,54 +827,50 @@ AnnSpecPrinter qualifying spec {
 
   %op ppOp: fa(a) context -> Qualifier * String * AOpInfo a * Line -> Nat * Lines
   % op ppOpDecl : fa(a) context -> Qualifier * String * (AOpInfo a) * (Nat * Lines) -> Lines
-  def fa(a) ppOpDecl (context : context)
-                     (ref_qualifier, ref_id,
-		      (aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_,
-		       fixity, 
-		       (tyVars, srt), 
-		       defs) : AOpInfo a, 
-                      (index, lines)) = 
-   if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
+  def fa(a) ppOpDecl (context : context) (ref_q, ref_id, info, (index, lines)) =
+   let primary_name as Qualified (primary_q, primary_id) = primaryOpName info in		     
+   if ~ (ref_q = primary_q & ref_id = primary_id) then
      (index, lines)
    else
      let pp : ATermPrinter = context.pp in
      % let def ppOpNm() = pp.ppOpId(Qualified(qualifier,id)) in
      % let def ppOpNm() = (if spName = qualifier then pp.ppOp id
      %                  else pp.ppOpId(Qualified(qualifier,id))) in
-     let def ppOpName (qid as Qualified(qualifier, id)) =
-      (if qualifier = UnQualified then
+     let def ppOpName (qid as Qualified (q, id)) =
+      (if q = UnQualified then
          pp.ppOp id
        else
          pp.ppOpId qid)
      in
      let def ppOpNames () =
-       case aliases of
+       case info.names of
          | [name] -> ppOpName name
-         | _      -> ppList ppOpName ("{", ",", "}") aliases
+         | _      -> ppList ppOpName ("{", ",", "}") info.names
      in
      let index1 = -(index + 1) in
-     let button1 = if markSubterm?(context) & ~ (null defs)
+     let button1 = if markSubterm?(context) & ~ (null info.dfn)
                     then PrettyPrint.buttonPretty
                            (~(IntegerSet.member(context.indicesToDisable,index1)),
                             index1,string " ",false)
                   else string "" in
-     let button2 = if markSubterm?(context) & ~ (null defs)
+     let button2 = if markSubterm?(context) & ~ (null info.dfn)
                     then PrettyPrint.buttonPretty
                            (IntegerSet.member(context.sosIndicesToEnable,index1),
                             index1,string " ",true)
                   else string "" in
+     let (tvs, srt) = info.typ in
      (index + 1,
       cons((1,blockFill
                 (0, [(0, pp.Op),
                      (0, string " "),
                      (0, ppOpNames()),
-                     (0, case fixity 
-                           of Nonfix         -> string ""
-			    | Unspecified    -> string ""
-                            | Infix(Left,i)  -> string (" infixl "^Nat.toString i)
-                            | Infix(Right,i) -> string (" infixr "^Nat.toString i)),
+                     (0, case info.fixity of
+                           | Nonfix         -> string ""
+			   | Unspecified    -> string ""
+			   | Infix(Left,i)  -> string (" infixl "^Nat.toString i)
+			   | Infix(Right,i) -> string (" infixr "^Nat.toString i)),
                      (0, string " :"),
-                     (0, ppForallTyVars pp tyVars),
+                     (0, ppForallTyVars pp tvs),
                      (0, string " "),
                      (3, ppSort context ([index,opIndex],Top:ParentSort) srt)])),
            (foldl (fn ((defining_type_vars, defining_term), lines) ->
@@ -913,37 +909,33 @@ AnnSpecPrinter qualifying spec {
 				       ++ prettys)),
 			lines))
 	          lines
-		  defs)))
+		  info.dfn)))
 
 
-  def fa(a) ppSortDecl (context : context)
-                       (ref_qualifier, ref_id,
-			(aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_,
-			 tyVars, 
-			 defs) : ASortInfo a, 
-			(index, lines)) = 
-   if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
+  def [a] ppSortDecl (context : context) (ref_q, ref_id, info, (index, lines)) =
+    let Qualified (primary_q, primary_id) = primarySortName info in
+    if ~ (ref_q = primary_q & ref_id = primary_id) then
      (index, lines)
    else
      let pp : ATermPrinter = context.pp in
-     let def ppSortName (qid as Qualified (qualifier, id)) =
-      (if qualifier = UnQualified then
+     let def ppSortName (qid as Qualified (q, id)) =
+      (if q = UnQualified then
          pp.ppSort id
        else
          pp.ppSortId qid)
      in
      let def ppSortNames () =
-       case aliases of
+       case info.names of
          | [qid] -> ppSortName qid
-         | _     -> ppList ppSortName ("{", ",", "}") aliases
+         | _     -> ppList ppSortName ("{", ",", "}") info.names
      in
      (index + 1,
-      case defs of
+      case info.dfn of
 	| [] -> 
 	  cons ((1,blockFill(0,[(0, pp.Type),
 				(0, string " "),
 				(0, ppSortNames ()),
-				(0, ppTyVars pp tyVars)])),
+				(0, ppTyVars pp info.tvs)])),
 		lines)
 	| _ ->
 	  foldl (fn ((defining_type_vars, defining_sort), lines) ->
@@ -957,7 +949,7 @@ AnnSpecPrinter qualifying spec {
 				       (3, ppSort context ([index,sortIndex],Top:ParentSort) defining_sort)])),
 		       lines))
 	        lines
-		defs)
+		info.dfn)
 
    % op isBuiltIn? : Import -> Boolean
    % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false

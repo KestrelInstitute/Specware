@@ -15,7 +15,7 @@ SpecCalc qualifying spec
        -> Position
        -> SpecCalc.Env (ASpec a)
 
- def addSort new_sort_names new_type_vars  new_defs old_spec position =
+ def addSort new_sort_names new_tvs  new_defs old_spec position =
   %%% some of the names may refer to previously declared sorts,
   %%% some of which may be identical
   %%% Collect the info's for such references
@@ -35,17 +35,20 @@ SpecCalc qualifying spec
      case old_infos of
        | [] ->
          %%  We're declaring a brand new sort.
-         let new_info = (new_sort_names, new_type_vars, new_defs) in
-         return (foldl (fn (name as Qualified(qualifier, id), new_sorts) ->                         
-                        insertAQualifierMap (new_sorts, qualifier, id, new_info))
+         let new_info = {names = new_sort_names, 
+			 tvs   = new_tvs, 
+			 dfn   = new_defs}
+	 in
+         return (foldl (fn (name as Qualified (q, id), new_sorts) ->                         
+                        insertAQualifierMap (new_sorts, q, id, new_info))
                        old_spec.sorts
                        new_sort_names)
-       | [old_info as (old_sort_names, old_type_vars, old_defs)] ->
+       | [old_info] ->
          %%  We're merging new information with a previously declared sort.
-         let combined_sort_names = listUnion (old_sort_names, new_sort_names) in
+         let combined_sort_names = listUnion (old_info.names, new_sort_names) in
 	 let combined_sort_names = removeDuplicates combined_sort_names in % redundant?
-         if new_type_vars = old_type_vars then % TODO: for now at least, this is very literal -- should test for alpha-equivalence.
-           (case (old_defs, new_defs) of
+         if new_tvs = old_info.tvs then % TODO: for now at least, this is very literal -- should test for alpha-equivalence.
+           (case (old_info.dfn, new_defs) of
               | ([],   []) -> 
                 %%  Old: Sort S    [or S(A,B), etc.]
                 %%  New: Sort S    [or S(X,Y), etc.]
@@ -53,18 +56,21 @@ SpecCalc qualifying spec
               | ([],   _::_) ->
                 %%  Old: Sort S (A,B)
                 %%  New: Sort S (X,Y) = T(X,Y)
-                let new_info = (combined_sort_names, new_type_vars, new_defs) in
-                return (foldl (fn (name as Qualified(qualifier, id), new_sorts) ->                          
-                               insertAQualifierMap (new_sorts, qualifier, id, new_info))
+		let new_info = {names = combined_sort_names, 
+				tvs   = new_tvs, 
+				dfn   = new_defs}
+		in
+                return (foldl (fn (name as Qualified (q, id), new_sorts) ->                          
+                               insertAQualifierMap (new_sorts, q, id, new_info))
                               old_spec.sorts
                               combined_sort_names)
               | (_::_, []) ->
                 %%  TODO: Shouldn't this be an error???
                 %%  Old: Sort S (X,Y) = T(X,Y)
                 %%  New: Sort S (A,B)
-                let new_info = (combined_sort_names, old_type_vars, old_defs) in
-                return (foldl (fn (name as Qualified(qualifier, id), new_sorts) ->
-                               insertAQualifierMap (new_sorts, qualifier, id, new_info))
+		let new_info = old_info << {names = combined_sort_names} in
+                return (foldl (fn (name as Qualified (q, id), new_sorts) ->
+                               insertAQualifierMap (new_sorts, q, id, new_info))
                               old_spec.sorts
                               combined_sort_names)
               | (old_def::_,  new_def::_) ->
@@ -79,8 +85,8 @@ SpecCalc qualifying spec
            %%  New: Sort S (x,y)
            raise (SpecError (position, 
                            "Sort "^(printAliases new_sort_names)^" has been redeclared or redefined"
-                           ^"\n with new type variables "^(printTypeVars new_type_vars)
-                           ^"\n    differing from prior "^(printTypeVars old_type_vars)))
+                           ^"\n with new type variables "^(printTypeVars new_tvs)
+                           ^"\n    differing from prior "^(printTypeVars old_info.tvs)))
        | _ ->
          %%  We're trying to merge information with two or more previously declared sorts.
          raise (SpecError (position, 
@@ -105,7 +111,7 @@ SpecCalc qualifying spec
 
  def addOp new_op_names
            new_fixity 
-           (new_sort_scheme as (new_type_vars, new_sort)) 
+           (new_sort_scheme as (new_tvs, new_sort)) 
            new_defs 
            old_spec 
            position 
@@ -129,28 +135,29 @@ SpecCalc qualifying spec
    case old_infos of
      | [] ->
        %%  We're declaring a brand new op
-       let new_info = (new_op_names, new_fixity, new_sort_scheme, new_defs) in
-       return (foldl (fn (name as Qualified(qualifier, id), new_ops) ->
-                      insertAQualifierMap (new_ops, qualifier, id, new_info))
+       let new_info = {names  = new_op_names, 
+		       fixity = new_fixity, 
+		       typ    = new_sort_scheme, 
+		       dfn    = new_defs}
+       in
+       return (foldl (fn (name as Qualified (q, id), new_ops) ->
+                      insertAQualifierMap (new_ops, q, id, new_info))
                      old_spec.ops
                      new_op_names)
-     | [old_info as (old_op_names, 
-                     old_fixity, 
-                     old_sort_scheme as (old_type_vars, old_sort), 
-                     old_defs)]
-       ->
+
+     | [old_info] ->
        %%  We're merging new information with a previously declared op.
-       (let combined_op_names = listUnion (old_op_names, new_op_names) in
+       (let combined_op_names = listUnion (old_info.names, new_op_names) in
 	let combined_op_names = removeDuplicates combined_op_names in % redundant?
-        case (old_defs, new_defs) of
+        case (old_info.dfn, new_defs) of
           | ([],   []) -> 
             %%  Old: op foo : ...
             %%  New: op foo : ...
             raise (SpecError (position, 
                               "Operator "^(printAliases new_op_names)^" has been redeclared"
-                              ^ "\n from " ^ (printSortScheme old_sort_scheme)
+                              ^ "\n from " ^ (printSortScheme old_info.typ)
                               ^ "\n   to " ^ (printSortScheme new_sort_scheme)))
-          | ([],   _::_) -> 
+          | ([],  (old_tvs,  _)::_) -> 
             %%  Old: op foo 
             %%  New: def foo 
             let happy? = (case new_sort_scheme of
@@ -161,29 +168,33 @@ SpecCalc qualifying spec
                             | _ -> 
                               %%  Old:  op foo : ...
                               %%  New:  def fa (a,b,c) foo ... = ...
-                              new_type_vars = old_type_vars)
+                              new_tvs = old_tvs)
             in
             if happy? then
-              let new_info = (combined_op_names, old_fixity, old_sort_scheme, new_defs) in
-              return (foldl (fn (name as Qualified(qualifier, id), new_ops) ->
-                             insertAQualifierMap (new_ops, qualifier, id, new_info))
+              let new_info = {names = combined_op_names, 
+			      fixity = old_info.fixity, 
+			      typ    = old_info.typ,
+			      dfn    = new_defs}
+	      in
+              return (foldl (fn (name as Qualified (q, id), new_ops) ->
+                             insertAQualifierMap (new_ops, q, id, new_info))
                             old_spec.ops
                             combined_op_names)
             else
               raise (SpecError (position, 
                                 "Operator "^(printAliases new_op_names)^" has been redeclared or redefined"
-                                ^"\n with new type variables "^(printTypeVars new_type_vars)
-                                ^"\n    differing from prior "^(printTypeVars old_type_vars)))
+                                ^"\n with new type variables "^(printTypeVars new_tvs)
+                                ^"\n    differing from prior "^(printTypeVars old_tvs)))
           | (_::_, []) -> 
-            let happy? = (case old_sort_scheme of
+            let happy? = (case old_info.typ of
                             | ([], MetaTyVar _) -> 
                               %%  Old:  def foo ... = ...
                               %%  New:  op foo : ...
                               true
-                            | (old_type_vars, MetaTyVar _) -> 
+                            | (old_tvs, MetaTyVar _) -> 
                               %%  Old:  def fa (a,b,c) foo x = ...
                               %%  New:  op foo : ...
-                              new_type_vars = old_type_vars
+                              new_tvs = old_tvs
                             | _ -> 
                               %%  Old:  op foo : ...
                               %%  New:  op foo : ...
@@ -192,9 +203,13 @@ SpecCalc qualifying spec
             if happy? then
               %%  Old:  def foo x = ...
               %%  New:  op foo : T
-              let new_info = (combined_op_names, new_fixity, new_sort_scheme, old_defs) in
-              return (foldl (fn (name as Qualified(qualifier, id), new_ops) ->
-                             insertAQualifierMap (new_ops, qualifier, id, new_info))
+	      let new_info = {names  = combined_op_names, 
+			      fixity = new_fixity, 
+			      typ    = new_sort_scheme, 
+			      dfn    = old_info.dfn}
+	      in
+              return (foldl (fn (name as Qualified (q, id), new_ops) ->
+                             insertAQualifierMap (new_ops, q, id, new_info))
                             old_spec.ops
                             combined_op_names)
             else
@@ -203,7 +218,7 @@ SpecCalc qualifying spec
               %%  New: op foo : T
               raise (SpecError (position, 
                                 "Operator "^(printAliases new_op_names)^" has been redeclared"
-                                ^ "\n from type " ^ (printSortScheme old_sort_scheme)
+                                ^ "\n from type " ^ (printSortScheme old_info.typ)
                                 ^ "\n   to type " ^ (printSortScheme new_sort_scheme)))
           | (old_def::_, new_def::_) -> 
             %%  def foo ...
@@ -223,28 +238,24 @@ SpecCalc qualifying spec
 
  % ------------------------------------------------------------------------
 
- op mergeSortInfo :
-   fa(a) ASpec a
-      -> ASortInfo a
-      -> Option (ASortInfo a)
-      -> Position
-      -> SpecCalc.Env (ASortInfo a)
- def mergeSortInfo spc newPSortInfo optOldPSortInfo position =
-   case (newPSortInfo,optOldPSortInfo) of
-     | (_,None) -> return newPSortInfo
-     | ((new_sort_names, new_type_vars, new_defs), Some (old_sort_names, old_type_vars, old_defs)) ->
-       let sort_names = listUnion(old_sort_names,new_sort_names) in % this order of args is more efficient
+ op mergeSortInfo : [a] ASpec a -> ASortInfo a -> Option (ASortInfo a) -> Position -> SpecCalc.Env (ASortInfo a)
+
+ def mergeSortInfo spc new_info opt_old_info position =
+   case opt_old_info of
+     | None -> return new_info
+     | Some old_info ->
+       let sort_names = listUnion (old_info.names, new_info.names) in % this order of args is more efficient
        let sort_names = removeDuplicates sort_names in % redundant?
-       if ~(new_type_vars = old_type_vars) then % TODO: for now at least, this is very literal.
+       if new_info.tvs ~= old_info.tvs then % TODO: for now at least, this is very literal.
          raise (SpecError (position, 
-                           "Merged versions of Sort "^(printAliases sort_names)^" have differing type variables:"
-                           ^"\n "^(printTypeVars old_type_vars)
-                           ^"\n "^(printTypeVars new_type_vars)))
+                           "Merged versions of Sort "^(printAliases old_info.names)^" have differing type variables:"
+                           ^"\n "^(printTypeVars old_info.tvs)
+                           ^"\n "^(printTypeVars new_info.tvs)))
        else
-         case (old_defs, new_defs) of
-           | ([],   [])   -> return (sort_names, new_type_vars, [])
-           | ([],   _::_) -> return (sort_names, new_type_vars, new_defs)
-           | (_::_, [])   -> return (sort_names, old_type_vars, old_defs)
+         case (old_info.dfn, new_info.dfn) of
+           | ([],   [])   -> return (new_info << {names = sort_names, dfn = []})
+           | ([],   _::_) -> return (new_info << {names = sort_names})
+           | (_::_, [])   -> return (old_info << {names = sort_names})
            | _            -> 
                let combined_defs =
                    foldl (fn (new_def, combined_defs) ->
@@ -252,8 +263,8 @@ SpecCalc qualifying spec
                             combined_defs
                           else
                             cons (new_def, combined_defs))
-                         old_defs                                      
-                         new_defs
+                         old_info.dfn
+                         new_info.dfn
                in
                %%% defer checks for errors until later, after the caller 
                %%% of this has had a chance to call compressDefs   
@@ -263,68 +274,66 @@ SpecCalc qualifying spec
                %%%                               ("Merged versions of Sort "^(printAliases sort_names)^" have different definitions:\n")
                %%%                               combined_defs))
                %%% else
-               return (sort_names, old_type_vars, combined_defs)
+		 return {names = sort_names, tvs = old_info.tvs, dfn = combined_defs}
     
- op mergeOpInfo :
-   fa(a) ASpec a
-      -> AOpInfo a
-      -> Option (AOpInfo a)
-      -> Position
-      -> SpecCalc.Env (AOpInfo a)
- def mergeOpInfo spc newPOpInfo optOldPOpInfo position =
-   case (newPOpInfo,optOldPOpInfo) of
-     | (_,None) -> return newPOpInfo
-     | ((new_op_names, new_fixity, new_sort_scheme, new_defs), Some (old_op_names, old_fixity, old_sort_scheme, old_defs)) ->
-       let op_names = listUnion(old_op_names,new_op_names) in % this order of args is more efficient
+ op mergeOpInfo : [a] ASpec a -> AOpInfo a -> Option (AOpInfo a) -> Position -> SpecCalc.Env (AOpInfo a)
+
+ def mergeOpInfo spc new_info opt_old_info position =
+   case opt_old_info of
+     | None -> return new_info
+     | Some old_info ->
+       let op_names = listUnion (old_info.names, new_info.names) in % this order of args is more efficient
        let op_names = removeDuplicates op_names in % redundant?
-       if ~(new_fixity = old_fixity) then
+       if new_info.fixity ~= old_info.fixity then
          raise (SpecError (position, "Merged versions of Op " ^ (printAliases op_names) ^ " have different fixity"))
        else
          %% TODO:  Need smarter test here?
          let happy? =
-           case (old_sort_scheme, new_sort_scheme) of
-              | (([], MetaTyVar _), _)  -> 
-                 %%  Old:  def foo ... = ...
-                 true
-              | (_, ([], MetaTyVar _))  -> 
+	     case (old_info.typ, new_info.typ) of
+	       | (([], MetaTyVar _), _)  -> 
+	         %%  Old:  def foo ... = ...
+	         true
+	       | (_, ([], MetaTyVar _))  -> 
                  %%  New:  def foo ... = ...
                  true
-              | ((old_type_vars, old_srt), (new_type_vars, new_srt)) -> 
+	       | ((old_tvs, old_srt), (new_tvs, new_srt)) -> 
                  %%  Old:  op ... : fa (...) ...  OR  def fa (...) ...  
                  %%  New:  op ... : fa (...) ...  OR  def fa (...) ...  
                  let _ =
-                    if ~(equivSortScheme? spc (old_sort_scheme,new_sort_scheme)) then
-                      toScreen ("Merged versions of op " ^ (printAliases op_names) ^ " have possibly different sorts:"
-				^ "\n " ^ (printSortScheme new_sort_scheme) 
-				^ "\n " ^ (printSortScheme old_sort_scheme) 
-				^ (if specwareWizard? then
-				     "\n\n " ^ (anyToString new_sort_scheme)
-				     ^ "\n " ^ (anyToString old_sort_scheme)
-				     ^ "\n"
-				   else
-				     "\n"))
-                    else () in
-                 new_type_vars = old_type_vars
-              | _ -> 
-                 %% maybe the merged sorts are really equivalent (e.g., in a colimit)
-                 true
+		     if ~(equivSortScheme? spc (old_info.typ, new_info.typ)) then
+		       toScreen ("Merged versions of op " ^ (printAliases op_names) ^ " have possibly different sorts:"
+				 ^ "\n " ^ (printSortScheme new_info.typ)
+				 ^ "\n " ^ (printSortScheme old_info.typ)
+				 ^ (if specwareWizard? then
+				      "\n\n " ^ (anyToString new_info.typ)
+				      ^ "\n " ^ (anyToString old_info.typ)
+				      ^ "\n"
+				    else
+				      "\n"))
+		     else
+		       () 
+		 in
+		   new_tvs = old_tvs
+	       | _ -> 
+		 %% maybe the merged sorts are really equivalent (e.g., in a colimit)
+		 true
          in
-           if (~ happy?) then
+           if ~ happy? then
              raise (SpecError (position,
 			       "Merged versions of Op "^(printAliases op_names)^" have different sorts:"
-			       ^ "\n " ^ (printSortScheme new_sort_scheme)
-			       ^ "\n " ^ (printSortScheme old_sort_scheme)
+			       ^ "\n " ^ (printSortScheme new_info.typ)
+			       ^ "\n " ^ (printSortScheme old_info.typ)
 			       ^ (if specwareWizard? then
-				    "\n\n " ^ (anyToString new_sort_scheme)
-				    ^ "\n " ^ (anyToString old_sort_scheme)
+				    "\n\n " ^ (anyToString new_info.typ)
+				    ^ "\n " ^ (anyToString old_info.typ)
 				    ^ "\n"
 				  else
 				    "\n")))
            else
-             case (old_defs, new_defs) of
-               | ([],   [])   -> return (op_names, new_fixity, new_sort_scheme, [])
-               | ([],   _::_) -> return (op_names, new_fixity, new_sort_scheme, new_defs)
-               | (_::_, [])   -> return (op_names, new_fixity, new_sort_scheme, old_defs)
+             case (old_info.dfn, new_info.dfn) of
+               | ([],   [])   -> return (new_info << {names = op_names, dfn = []})
+               | ([],   _::_) -> return (new_info << {names = op_names})
+               | (_::_, [])   -> return (old_info << {names = op_names})
                | _            -> 
                  let combined_defs =
                       foldl (fn (new_def, result_defs) ->
@@ -332,8 +341,8 @@ SpecCalc qualifying spec
                                result_defs
                              else
                                cons (new_def, result_defs))
-                            old_defs                                     
-                            new_defs
+                            old_info.dfn
+                            new_info.dfn
                   in
                   %%% defer checks for errors until later, after the caller 
                   %%% of this has had a chance to call compressDefs   
@@ -343,15 +352,18 @@ SpecCalc qualifying spec
                   %%%                          ("Merged versions of op "^(printAliases op_names)^" have different definitions:\n")
                   %%%                          combined_defs))
                   %%% else
-                  return (op_names, new_fixity, new_sort_scheme, combined_defs)
+                  return {names = op_names, 
+			  fixity = new_info.fixity, 
+			  typ    = new_info.typ,
+			  dfn    = combined_defs}
 
  def printAliases (name::aliases) = 
    let 
-      def print_qid (Qualified (qualifier, id)) =
-	if qualifier = UnQualified then
+      def print_qid (Qualified (q, id)) =
+	if q = UnQualified then
 	  id
 	else
-	  qualifier ^ "." ^ id
+	  q ^ "." ^ id
    in
    let str = print_qid name in
    case aliases of
@@ -373,8 +385,8 @@ SpecCalc qualifying spec
   op complainIfAmbiguous : Spec -> Position -> Env Spec
   def complainIfAmbiguous spc position =
     let ambiguous_sorts = 
-        foldriAQualifierMap (fn (_, _, info as (_,_,defs), ambiguous_sorts) ->
-			     case defs of
+        foldriAQualifierMap (fn (_, _, info, ambiguous_sorts) ->
+			     case info.dfn of
 			       | []  -> ambiguous_sorts
 			       | [_] -> ambiguous_sorts
 			       | _   -> ListUtilities.insert (info, ambiguous_sorts))
@@ -382,8 +394,8 @@ SpecCalc qualifying spec
 			    spc.sorts
     in
     let ambiguous_ops = 
-        foldriAQualifierMap (fn (_, _, info as (_,_,_,defs), ambiguous_ops) ->
-			     case defs of
+        foldriAQualifierMap (fn (_, _, info, ambiguous_ops) ->
+			     case info.dfn of
 			       | []  -> ambiguous_ops
 			       | [_] -> ambiguous_ops
 			       | _   -> ListUtilities.insert (info, ambiguous_ops))
@@ -418,28 +430,22 @@ SpecCalc qualifying spec
   op compressDefs : Spec -> Spec
   def compressDefs spc =
     let new_sorts = foldriAQualifierMap 
-                     (fn (qualifier, id, old_info, revised_sorts) ->
+                     (fn (q, id, old_info, revised_sorts) ->
 		      let new_info = compressSortDefs spc old_info in
 		      if new_info = old_info then
 			revised_sorts
 		      else
-			insertAQualifierMap (revised_sorts,
-					     qualifier,
-					     id,
-					     new_info))
+			insertAQualifierMap (revised_sorts, q, id, new_info))
 		     spc.sorts
 		     spc.sorts
     in
     let new_ops = foldriAQualifierMap 
-                     (fn (qualifier, id, old_info, revised_ops) ->
+                     (fn (q, id, old_info, revised_ops) ->
 		      let new_info = compressOpDefs spc old_info in
 		      if new_info = old_info then
 			revised_ops
 		      else
-			insertAQualifierMap (revised_ops,
-					     qualifier,
-					     id,
-					     new_info))
+			insertAQualifierMap (revised_ops, q, id, new_info))
 		     spc.ops
 		     spc.ops
     in
@@ -450,51 +456,61 @@ SpecCalc qualifying spec
 
 
   op compressSortDefs : Spec -> SortInfo -> SortInfo
-  def compressSortDefs spc (info as (names, tyVars:TyVars, old_defs)) =
-    case old_defs of
+  def compressSortDefs spc info =
+    case info.dfn of
       | []  -> info
       | [_] -> info
       | _ ->
-        let tyVarsSorts = foldl (fn (tyVar, srts) -> cons (mkTyVar(tyVar), srts)) [] tyVars in
-	let new_sorts = foldl (fn (name, srts) -> cons (mkBase(name, tyVarsSorts), srts))
-	                      [] names in
-	let new_sort_schemas = foldl (fn (srt, srtSchemas) -> cons ((tyVars, srt), srtSchemas)) [] new_sorts in
+        let tyVarsSorts = foldl (fn (tv,   srts) -> cons (mkTyVar tv, 
+							  srts)) 
+	                        [] 
+				info.tvs 
+	in
+	let new_sorts   = foldl (fn (name, srts) -> cons (mkBase (name, tyVarsSorts), 
+							  srts))
+	                        [] 
+				info.names 
+	in
+	let new_dfn = foldl (fn (srt, srtSchemas) -> cons ((info.tvs, srt), srtSchemas)) 
+	                    [] 
+			    new_sorts 
+	in
         let distinct_defs = 
 	    foldl (fn (old_def:SortScheme, distinct_defs) ->
-		   if (exists (fn new_sort_scheme -> 
-			      equivSortScheme? spc (old_def, new_sort_scheme)) 
-		             new_sort_schemas) or
-		      exists (fn distinct_def -> 
-			      equivSortScheme? spc (old_def, distinct_def)) 
-		             distinct_defs
+		   if ((exists (fn new_def -> equivSortScheme? spc (old_def, new_def)) 
+			       new_dfn)
+		       or
+		       exists (fn distinct_def -> equivSortScheme? spc (old_def, distinct_def)) 
+		              distinct_defs)
 		     then
 		       distinct_defs
 		   else
 		     cons (old_def, distinct_defs))
                   []
-		  old_defs
+		  info.dfn
 	in
-	(removeDuplicates names, tyVars, distinct_defs) % rev names?
+	  info << {names = removeDuplicates info.names, 
+		   dfn   = distinct_defs}
 
   op compressOpDefs : Spec -> OpInfo -> OpInfo
-  def compressOpDefs spc (info as (names, fixity, sort_scheme, old_defs)) =
-    case old_defs of
+  def compressOpDefs spc info =
+    case info.dfn of
       | []  -> info
       | [_] -> info
       | _ ->
         let distinct_defs = 
 	    foldl (fn (old_def, distinct_defs) ->
-		   if exists (fn distinct_def -> 
-			      equivTermScheme? spc (old_def, distinct_def)) 
+		   if exists (fn distinct_def -> equivTermScheme? spc (old_def, distinct_def)) 
 		             distinct_defs 
 		     then
 		       distinct_defs
 		   else
 		     cons (old_def, distinct_defs))
                   []
-		  old_defs
+		  info.dfn
 	in
-        (removeDuplicates names, fixity, sort_scheme, distinct_defs) % rev names?
+	  info << {names = removeDuplicates info.names, 
+		   dfn   = distinct_defs}
 	          
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%      Term Equivalences wrt aliases
@@ -664,39 +680,39 @@ SpecCalc qualifying spec
      | _ -> false
 
 
- def myUnfoldSort (spc,s1) = 
+ def myUnfoldSort (spc, s1) = 
    let Base (qid, ts, pos) = s1 in
    case findAllSorts (spc, qid) of
      | [] -> s1
-     | sort_info::_ ->
-       (case sort_info of
-	  | (main_qid::_, _, []) -> 
-	    Base (main_qid, ts, pos)
-	  | (aliases, tvs, df :: _) ->
-	    let (some_type_vars, some_def) = df in
-	    myInstantiateScheme(ts, some_type_vars, some_def))
+     | info::_ ->
+       (case info.dfn of
+	  | [] -> 
+	    Base (primarySortName info, ts, pos)
+	  | _ ->
+	    let (some_type_vars, some_def) = hd info.dfn in
+	    myInstantiateScheme (ts, some_type_vars, some_def))
 
  op myInstantiateScheme : fa (a) List (ASort a) * TyVars * ASort a -> ASort a
- def fa (a) myInstantiateScheme (types, tyVars, srt) = 
-   if null tyVars then
+ def fa (a) myInstantiateScheme (types, tvs, srt) = 
+   if null tvs then
      srt
    else
      let mtvar_position = Internal "copySort" in
-     let tyVarMap = zip (tyVars, types) in
+     let tyVarMap = zip (tvs, types) in
      let
         def mapTyVar (tv : TyVar, tvs : List (TyVar * ASort a), pos) : ASort a = 
-            case tvs
-              of [] -> TyVar(tv,pos)
-               | (tv1,s)::tvs -> 
-                 if tv = tv1 then s else mapTyVar (tv, tvs, pos)
+            case tvs of
+              | [] -> TyVar (tv, pos)
+	      | (tv1,s)::tvs -> 
+	        if tv = tv1 then s else mapTyVar (tv, tvs, pos)
      in
      let
         def cp (srt : ASort a) : ASort a =
-            case srt
-              of TyVar (tv, pos) -> mapTyVar (tv, tyVarMap, pos)
-               | srt -> srt
+	  case srt of
+	    | TyVar (tv, pos) -> mapTyVar (tv, tyVarMap, pos)
+	    | srt -> srt
      in
-     mapSort (id, cp, id) srt
+       mapSort (id, cp, id) srt
 
  def equivPattern? spc (p1,p2) =
   case (p1, p2) of
@@ -793,81 +809,90 @@ SpecCalc qualifying spec
  * generation (e.g. the Java package name etc.)
  *)
 op getStringAttributesFromSpec: Spec -> StringMap.Map String
-def getStringAttributesFromSpec(spc) =
+def getStringAttributesFromSpec spc =
   let ops = opsAsList spc in
-  foldl (fn((_,id,opinfo as (_,_,_,termSchemes)),map) ->
-	 case termSchemes of
+  foldl (fn ((_ , id, info), map) ->
+	 case info.dfn of
 	   | (_,term)::_ ->
 	     (case term of
-		| Fun(String val,_,_) -> StringMap.insert(map,id,val)
+		| Fun (String val,_,_) -> StringMap.insert (map, id, val)
 		| _ -> map)
-	   | _ -> map
-	 ) StringMap.empty ops
+	   | _ -> map)
+	StringMap.empty
+	ops
 
 
-sort AttrValue = | String String | Nat Nat | StringList (List String) | Bool Boolean | Null
+ sort AttrValue = | String String | Nat Nat | StringList (List String) | Bool Boolean | Null
 
-(**
- * reads an "option" spec and returns the value of the given operator using the AttrValue sort
- * as result type.
- *)
-op getAttributeFromSpec: Spec * String -> AttrValue
-def getAttributeFromSpec(spc,aname) =
-  let
-    def extractList(t,list) =
-      case t of
-	| Apply(Fun(Embed(Cons,_),_,_),Record([(_,Fun(String elem,_,_)),(_,t)],_),_) ->
-	  extractList(t,concat(list,[elem]))
-	| _ -> list
-  in
-  let
-    def getAttrFromOps(ops) =
-      case ops of
-	| [] -> Null
-	| (_,id,opinfo as (_,_,_,termSchemes))::ops ->
-          if (id = aname) then
-	    (case termSchemes of
+ (**
+  * reads an "option" spec and returns the value of the given operator using the AttrValue sort
+  * as result type.
+  *)
+ op getAttributeFromSpec: Spec * String -> AttrValue
+ def getAttributeFromSpec (spc, aname) =
+   let
+     def extractList (t, list) =
+       case t of
+	 | Apply(Fun(Embed(Cons,_),_,_),Record([(_,Fun(String elem,_,_)),(_,t)],_),_) ->
+	   extractList (t, concat (list, [elem]))
+	 | _ -> list
+   in
+   let
+     def getAttrFromOps ops =
+       case ops of
+	 | [] -> Null
+	 | (_, id, info)::ops ->
+           if (id = aname) then
+	     case info.dfn of
 	       | (_,term)::_ ->
 	         (case term of
-		    | Fun(String val,_,_) -> String val
-		    | Fun(Nat val,_,_) -> Nat val
-		    | Fun(Bool val,_,_) -> Bool val
-		    | Fun(Embed(Nil,_),_,_) -> StringList []
-		    | Apply(Fun(Embed(Cons,_),_,_),Record([(_,Fun(String elem,_,_)),(_,t)],_),_) ->
-		      StringList(extractList(t,[elem]))
-		    | _ -> getAttrFromOps(ops))
-	       | _ -> getAttrFromOps(ops))
+		    | Fun   (String val,      _, _) -> String val
+		    | Fun   (Nat    val,      _, _) -> Nat    val
+		    | Fun   (Bool   val,      _, _) -> Bool   val
+		    | Fun   (Embed  (Nil, _), _, _) -> StringList []
+		    | Apply (Fun (Embed (Cons,_), _, _),
+			     Record([(_, Fun (String elem,_,_)), (_,t)],_),
+			     _) ->
+		      StringList (extractList (t, [elem]))
+		    | _ -> getAttrFromOps ops)
+	       | _ -> getAttrFromOps ops
 	  else
-	    getAttrFromOps(ops)
+	    getAttrFromOps ops
   in
-    getAttrFromOps(opsAsList spc)
+    getAttrFromOps (opsAsList spc)
 
-(**
- * returns whether or not id is declared without a definition
- * as sort in spc
- *)
-op sortIsUnrefinedInSpec?: Spec * Sort -> Boolean
-def sortIsUnrefinedInSpec?(spc,srt) =
+ (**
+  * returns whether or not id is declared without a definition
+  * as sort in spc
+  *)
+ op sortIsUnrefinedInSpec?: Spec * Sort -> Boolean
+ def sortIsUnrefinedInSpec? (spc, srt) =
   case srt of
-    | Base(Qualified(_,id),_,_) ->
-      sortIdIsUnrefinedInSpec?(spc,id)
+    | Base (Qualified (_,id),_,_) ->
+      sortIdIsUnrefinedInSpec? (spc, id)
     | Boolean _ -> true
     | _ -> false
 
-op sortIdIsUnrefinedInSpec?: Spec * Id -> Boolean
-def sortIdIsUnrefinedInSpec?(spc,id) =
-  let srts = sortsAsList spc in
-  case find (fn(_,id0,sortinfo) -> (id0 = id)) srts of
-     | Some (_,_,(_,_,[])) -> true
+ op sortIdIsUnrefinedInSpec?: Spec * Id -> Boolean
+ def sortIdIsUnrefinedInSpec? (spc, id) =
+   let srts = sortsAsList spc in
+   case find (fn (_, id0, _) -> id0 = id) srts of
+     | Some (_,_,info) -> 
+       (case info.dfn of
+	  | [] -> true
+	  | _ -> false)
      | _ -> false % TODO: should this be (id = "Boolean") ? [who calls this?]
 
-op opIdIsDefinedInSpec?: Spec * Id -> Boolean
-def opIdIsDefinedInSpec?(spc,id) =
-  let ops = opsAsList spc in
-  case find (fn(_,id0,opinfo) -> (id0 = id)) ops of
-    | Some (_,_,(_,_,_,_::_)) -> true
-   % TODO: do we need cases for Not, And, Or, etc. ? [who calls this?]
-    | _ -> false
+ op opIdIsDefinedInSpec?: Spec * Id -> Boolean
+ def opIdIsDefinedInSpec?(spc,id) =
+   let ops = opsAsList spc in
+   case find (fn (_, id0, _) -> id0 = id) ops of
+     | Some (_,_,info) ->
+       (case info.dfn of
+	  | _::_ -> true
+	  | _ -> false)
+     % TODO: do we need cases for Not, And, Or, etc. ? [who calls this?]
+     | _ -> false
 
 
 % --------------------------------------------------------------------------------
@@ -875,26 +900,30 @@ def opIdIsDefinedInSpec?(spc,id) =
  * merges the two given specs into one
  *)
 
-op mergeSpecs: Spec * Spec -> Spec
-def mergeSpecs(spc1,spc2) =
-  let srts = foldriAQualifierMap
-             (fn(q,id,sinfo,map) -> insertAQualifierMap(map,q,id,sinfo))
-	     spc1.sorts spc2.sorts
-  in
-  let ops = foldriAQualifierMap
-             (fn(q,id,oinfo,map) -> insertAQualifierMap(map,q,id,oinfo))
-	     spc1.ops spc2.ops
-  in
-  let props = foldr (fn(prop as (pname,_,_,_),props) ->
-		     if exists (fn(pname0,_,_,_) -> pname=pname0) props
-		       then props
-		     else cons(prop,props)
-		      ) spc1.properties spc2.properties
+ op mergeSpecs: Spec * Spec -> Spec
+ def mergeSpecs (spc1, spc2) =
+   let srts = foldriAQualifierMap
+                (fn (q, id, info, map) -> insertAQualifierMap (map, q, id, info))
+		spc1.sorts 
+		spc2.sorts
+   in
+   let ops = foldriAQualifierMap
+               (fn (q, id, info, map) -> insertAQualifierMap (map, q, id, info))
+	       spc1.ops 
+	       spc2.ops
+   in
+   let props = foldr (fn(prop as (pname,_,_,_),props) ->
+		      if exists (fn(pname0,_,_,_) -> pname=pname0) props then
+			props
+		      else 
+			cons(prop,props))
+                     spc1.properties 
+		     spc2.properties
   in
   let spc = initialSpecInCat in  % maybe emptySpec would be ok, but this is safer
-  let spc = setSorts(spc,srts) in
-  let spc = setOps(spc,ops) in
-  let spc = setProperties(spc,props) in
+  let spc = setSorts      (spc, srts)  in
+  let spc = setOps        (spc, ops)   in
+  let spc = setProperties (spc, props) in
   spc
 
 % --------------------------------------------------------------------------------
@@ -902,17 +931,19 @@ def mergeSpecs(spc1,spc2) =
  * returns the list of qualified id's that are declared in the spec (sorts and ops)
  *)
 
-op getDeclaredQualifiedIds: Spec -> List QualifiedId
-def getDeclaredQualifiedIds(spc) =
-  let qids = foldriAQualifierMap
-             (fn(q,id,_,qids) -> cons(Qualified(q,id),qids))
-	     [] spc.sorts
-  in
-  let qids = foldriAQualifierMap
-             (fn(q,id,_,qids) -> cons(Qualified(q,id),qids))
-	     qids spc.ops
-  in
-  qids
+ op getDeclaredQualifiedIds: Spec -> List QualifiedId
+ def getDeclaredQualifiedIds spc =
+   let qids = foldriAQualifierMap
+                (fn (q, id, _, qids) -> cons (Qualified (q, id), qids))
+	        [] 
+	        spc.sorts
+   in
+   let qids = foldriAQualifierMap
+                (fn (q, id, _, qids) -> cons (Qualified (q, id), qids))
+		qids 
+		spc.ops
+   in
+     qids
 
 % --------------------------------------------------------------------------------
 

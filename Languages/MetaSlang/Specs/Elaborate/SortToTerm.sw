@@ -231,12 +231,14 @@ XML qualifying spec
       %% unfoldSortRec would look for circularities here.
       %% We do that above in scan and add_to_table in sort_expansion_table
       (case findAllSorts (env.internal, qid) of
-	 | sort_info::r ->
-	   (case sort_info of
-	      | (main_qid::_, tvs, []) ->        % sjw: primitive sort
+	 | info::r ->
+	   (case info.dfn of
+	      | [] ->        % sjw: primitive sort
+	        let main_qid = primarySortName info in
+	        let tvs      = info.tvs in
 	        let l1 = length tvs in
 		let l2 = length ts  in
-		((if ~(l1 = l2) then
+		((if l1 ~= l2 then
 		    error(env,"\n  Instantiation list does not match argument list",
 			  pos)
 		  else 
@@ -244,19 +246,19 @@ XML qualifying spec
 		    %% Use the primary name, even if the reference was via some alias.
 		    %% This normalizes all references to be via the same name.
 		    Base (main_qid, ts, pos))
-	      | (aliases, tvs, defs) ->
+	      | _ ->
    	        let possible_base_def = find (fn srt_def ->
 					      case srt_def of
 						| (_, Base _) -> true
 						| _           -> false)
-	                                     defs
+	                                     info.dfn
 		in
 		  case possible_base_def of
 		    | Some (type_vars, srt as (Base (_,_,pos))) ->
 		      %% unfoldSortRec would recur here.  We don't.
 		      instantiateScheme (env, pos, ts, type_vars, srt)
 		    | _ ->
-		      let (some_type_vars, some_def) = hd defs in % if multiple defs, pick first def arbitrarily
+		      let (some_type_vars, some_def) = hd info.dfn in % if multiple defs, pick first def arbitrarily
 		      instantiateScheme(env, pos, ts, some_type_vars, some_def))
 	 | [] -> 
 	   (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);

@@ -392,16 +392,16 @@ ModeSpec qualifying spec
               else
                 trm
  
-      def doOp (opInfo as (names,fixity,sortSchemes,termSchemes)) =
-        let ref = Op.refOf opInfo in
+      def doOp info =
+        let ref = Op.refOf info in
         if member? (variables modeSpec, ref) then
-          case termSchemes of
-            | [] -> opInfo    % fail "empty term schemes"
-            | [(typeVars,term)] ->
-               (names,fixity,sortSchemes,[(typeVars, doTerm 20 term)])
+          case info.dfn of
+            | [] -> info  % fail "empty term schemes"
+            | [(tvs, term)] ->
+               info << {dfn = [(tvs, doTerm 20 term)]}
             | _ -> fail "multiple term schemes"
         else
-          opInfo
+          info
 
       def doClaim claim =
         let ref = refOf claim in

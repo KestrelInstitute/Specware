@@ -166,7 +166,7 @@ spec
 	    %%   | _ -> ())
           | _ -> constrMap
    in
-     foldSortInfos (fn ((_, _, defs), constrMap) -> foldl addSort constrMap defs)
+     foldSortInfos (fn (info, constrMap) -> foldl addSort constrMap info.dfn)
                    StringMap.empty 
 		   sorts
 
@@ -323,12 +323,13 @@ spec
           unlinked_sort)
       else
         (case findAllSorts (env.internal, qid) of
-          | sort_info::r ->
-            (case sort_info of
-              | (main_qid::_, tvs, []) ->        % sjw: primitive sort
+          | info::r ->
+            (let tvs = info.tvs in
+	     case info.dfn of
+              | [] ->        % sjw: primitive sort
                 let l1 = length tvs in
                 let l2 = length ts  in
-                ((if ~(l1 = l2) then
+                ((if l1 ~= l2 then
                     error(env,
 			  "\n  [A] Instantiation list (" ^ 
 			  (foldl (fn (arg, s) -> s ^ " " ^ (anyToString arg)) "" ts) ^
@@ -340,13 +341,13 @@ spec
                     ());
                  %% Use the primary name, even if the reference was via some alias.
                  %% This normalizes all references to be via the same name.
-                 Base (main_qid, ts, pos))
-              | (aliases, tvs, defs) ->
+                 Base (primarySortName info, ts, pos))
+              | _ ->
 		let possible_base_def = find (fn srt_def ->
 					      case srt_def of
 						| (_, Base _) -> true
 						| _           -> false)
-		                             defs
+		                             info.dfn
 		in
 		case possible_base_def of
 		  | Some (type_vars, srt as (Base (_,_,pos))) ->
@@ -357,9 +358,9 @@ spec
 				   %% Watch for self-references, even via aliases: 
 				   foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
 				         qids
-					 aliases)
+					 info.names)
 		  | _ ->
-		    let (some_type_vars, some_def) = hd defs in % if multiple defs, pick first def arbitrarily
+		    let (some_type_vars, some_def) = hd info.dfn in % if multiple defs, pick first def arbitrarily
 		    instantiateScheme(env, pos, ts, some_type_vars, some_def))
           | [] -> 
                (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
@@ -396,23 +397,23 @@ spec
                    a)
   =
   let 
-     def mkTerm (a, (qids, fixity, (tyvars,srt), _)) = 
-      let (_,srt) = copySort(tyvars,srt) in
-      case qids of
-       | (Qualified (qualifier, id))::misc ->
-         Fun (%% Allow (UnQualified, x) through as TwoNames term ...
-              %% if qualifier = UnQualified
-              %%  then OneName  (           id, fixity) 
-              %% else 
-              TwoNames (qualifier, id, fixity),
-              srt, 
-              a)
+    def mkTerm (a, info) =
+      let (tvs, srt) = info.typ in
+      let (_,srt) = copySort (tvs, srt) in
+      let Qualified (q, id) = primaryOpName info in
+      Fun (%% Allow (UnQualified, x) through as TwoNames term ...
+	   %% if qualifier = UnQualified
+	   %%  then OneName  (           id, fixity) 
+	   %% else 
+	   TwoNames (q, id, info.fixity),
+	   srt, 
+	   a)
     def mkTerms infos =
       List.map (fn info -> mkTerm  (a, info)) infos
   in
-  case StringMap.find (vars, id) of
-   | Some srt -> [Var((id, srt), a)]
-   | None     -> mkTerms (wildFindUnQualified (internal.ops, id))
+    case StringMap.find (vars, id) of
+      | Some srt -> [Var((id, srt), a)]
+      | None     -> mkTerms (wildFindUnQualified (internal.ops, id))
 
 
  def instantiateScheme (env, pos, types, type_vars, srt) = 

@@ -62,29 +62,30 @@ CGen qualifying spec {
 %                       ^ " is not a lambda : '"
 %                       ^ (printTerm trm)
 %                       ^ "'")
-      def doOp (qual, id, (aliases, fixity, (tyVars,srt), defs), cSpec) =
-        case defs of
+      def doOp (q, id, info, cSpec) =
+        case info.dfn of
           | []         -> cSpec
-          | (_,trm)::_ -> toCFunc cSpec (showQualifiedId (Qualified (qual,id))) trm srt
+          | (_,trm)::_ -> toCFunc cSpec (showQualifiedId (Qualified (q, id))) trm info.typ.2
     in
       foldriAQualifierMap doOp cSpec spc.ops
 
   op derefSort : Spec -> ASort Position -> ASort Position
   def derefSort spc srt =
     case srt of
-      | Base (qid,srts,_) ->
-          (case findTheSort (spc,qid) of
-            | None -> srt %
-            % | None -> fail ("derefSort: failed to find sort: " ^ (showQualifiedId qid))
-            | Some (aliases,tyVars,[]) -> srt
-            | Some (aliases,tyVars,(_,srt)::_) -> derefSort spc srt)
+      | Base (qid, srts,_) ->
+        (case findTheSort (spc, qid) of
+	   | None -> srt % fail ("derefSort: failed to find sort: " ^ (showQualifiedId qid))
+	   | Some info ->
+	     case info.dfn of
+	       | [] -> srt
+	       | (_,srt)::_ -> derefSort spc srt)
       | _ -> srt
 
   op generateCVars : CSpec -> Spec -> CSpec
   def generateCVars cSpec spc =
-    let def doOp (qual, id, (aliases, fixity, (tyVars,srt), defs), cSpec) =
-      case defs of
-        | [] -> addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (sortToCType srt)
+    let def doOp (q, id, info, cSpec) =
+      case info.dfn of
+        | [] -> addVarDecl cSpec (showQualifiedId (Qualified (q, id))) (sortToCType info.typ.2)
 %             (case (srt : ASort Position) of
 %               | Base (qid,srts,_) ->
 %                  (case (derefSort spc srt) of
@@ -130,10 +131,10 @@ CGen qualifying spec {
              let _ = writeLine ("generateCTypes: unsupported sort: " ^ (printSort srt) ^ "\n") in
              cSpec
 
-      def doSort (qual, id, (aliases, tyVars, defs), cSpec) =
-        case defs of
+      def doSort (q, id, info, cSpec) =
+        case info.dfn of
           | []          -> cSpec
-          | (_, srt)::_ -> makeCType cSpec (showQualifiedId (Qualified (qual,id))) srt
+          | (_, srt)::_ -> makeCType cSpec (showQualifiedId (Qualified (q, id))) srt
     in
       addTypeDefn (foldriAQualifierMap doSort cSpec spc.sorts) "bool" Int
 

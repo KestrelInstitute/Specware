@@ -149,25 +149,17 @@ SpecsToI2L qualifying spec {
    transforms a sortinfo into a type definition; the name of the type
    is the unqualified name, the qualifier is ignored.
    *)
-  op sortinfo2typedef: CgContext * Spec * QualifiedId * SortInfo -> Option TypeDefinition
-  def sortinfo2typedef(ctxt,spc,qid,(aliases,tvs,defs)) =
-    let def qid2typedefId(qid) =
-          case qid of
-	    | Qualified(spcname,name) -> (spcname,name)
-%	    | Local(name) -> ("",name)
-    in
-    let typename = qid2typedefId(qid) in
-    let res = case defs of
-                 | [] -> None % Some (typename,Any) %None 
-                 | (tvs,srt)::_ -> Some (typename,sort2type(ctxt,spc,tvs,srt))
-    in
-    res
+  op  sortinfo2typedef: CgContext * Spec * QualifiedId * SortInfo -> Option TypeDefinition
+  def sortinfo2typedef (ctxt, spc, Qualified (q, id), info) =
+    case info.dfn of
+      | [] -> None % Some (typename,Any) %None 
+      | (tvs, srt)::_ -> 
+        let typename = (q, id) in
+        Some (typename,
+	      sort2type (ctxt, spc, tvs, srt))
 
-  def sort2type(ctxt,spc,tvs,srt) =
-    let def qid2typedefId(qid) =
-    case qid of
-      | Qualified(spcname,name) -> (spcname,name)
-    in
+
+  def sort2type (ctxt, spc, tvs, srt) =
     let usrt = unfoldToSpecials(spc,srt) in
     %let usrt = unfoldBaseVP(spc,srt,false,true) in
     %let _ = String.writeLine(printSort(srt)^"-[unfold]->"^printSort(usrt)) in
@@ -301,7 +293,7 @@ SpecsToI2L qualifying spec {
 			  "polymorphic types.")
 
       % use the base sorts as given, assume that the original definition has been checked
-      | Base(qid,_,_) -> Base (qid2typedefId qid)
+      | Base(Qualified (q, id),_,_) -> Base (q, id)
 
       | Subsort(srt,trm,_) -> % ignore the term...
 	sort2type(ctxt,spc,tvs,srt)
@@ -331,16 +323,13 @@ SpecsToI2L qualifying spec {
    returns the definition term of the given op, if it exists in the given spec.
    *)
   op getOpDefinition: Spec * QualifiedId -> Option Term
-  def getOpDefinition(spc,qid as Qualified(q,id)) =
-    let opmap = spc.ops in
-    case findAQualifierMap(opmap,q,id) of
+  def getOpDefinition (spc, (Qualified (q, id))) =
+    case findAQualifierMap (spc.ops, q, id) of
       | None -> None
-      | Some (_,_,_,termschemes) -> 
-      (case termschemes of
-	 | [] -> None
-	 | (tvs,term)::_ -> Some term
-	)
-
+      | Some info ->
+        case info.dfn of
+	  | [] -> None
+	  | (tvs,term)::_ -> Some term
 
   (**
     unfolds a sort, only if it is an alias for a Product, otherwise it's left unchanged;
@@ -348,10 +337,10 @@ SpecsToI2L qualifying spec {
     an arrow sort is a product or not. Only "real" products are unfolded, i.e. sort of the
     form (A1 * A2 * ... * An) are unfolded, not those of the form {x1:A1,x2:A2,...,xn:An}
   *)
-  op unfoldToProduct: Spec * Sort -> Sort
-  def unfoldToProduct(spc,srt) =
+  op  unfoldToProduct: Spec * Sort -> Sort
+  def unfoldToProduct (spc, srt) =
     let
-      def unfoldRec(srt) =
+      def unfoldRec srt =
 	let usrt = unfoldBaseKeepPrimitives(spc,srt) in
 	if usrt = srt then srt else unfoldRec(usrt)
 
@@ -414,32 +403,34 @@ SpecsToI2L qualifying spec {
 
  op unfoldBaseKeepPrimitives  : Spec * Sort -> Sort 
  def unfoldBaseKeepPrimitives (sp:Spec, srt) = 
-  case srt of
-    | Base (qid, srts, a) ->
-       (case findTheSort(sp,qid)
-          of None -> srt
-           | Some(_, _, []) -> srt
-           | Some(_, _, (tvs, srt2)::_) ->
-             let
-               def continue() =
-		 let ssrt = substSort (zip (tvs, srts), srt2) in
-		 unfoldBaseKeepPrimitives (sp, ssrt)
-	     in
-	       (case srt of
-		 | Boolean _ -> srt
-		 | Base(Qualified("Nat","Nat"),[],_) -> srt
-		 | Base(Qualified("Integer","Integer"),[],_) -> srt
-		 | Base(Qualified("Char","Char"),[],_) -> srt
-		 | Base(Qualified("String","String"),[],_) -> srt
-		 | Base(Qualified("List","List"),[psrt],X) ->
-		   let upsrt = unfoldBaseKeepPrimitives(sp,psrt) in
-		   Base(Qualified("List","List"),[upsrt],X)
-		 | Base(Qualified("Option","Option"),[psrt],X) ->
-		   let upsrt = unfoldBaseKeepPrimitives(sp,psrt) in
-		   Base(Qualified("Option","Option"),[upsrt],X)
-		 | _ -> continue()
-	       )
-	  )
+   case srt of
+     | Base (qid, srts, a) ->
+       (case findTheSort (sp, qid) of
+          | None -> srt
+	  | Some info ->
+	    case info.dfn of
+	      | [] -> srt
+	      | (tvs, srt2)::_ ->
+	        let
+                  def continue () =
+		    let ssrt = substSort (zip (tvs, srts), srt2) in
+		    unfoldBaseKeepPrimitives (sp, ssrt)
+		in
+		case srt of
+		  | Boolean _ -> srt
+		  | Base (Qualified ("Nat",     "Nat"),    [],      _) -> srt
+		  | Base (Qualified ("Integer", "Integer"),[],      _) -> srt
+		  | Base (Qualified ("Char",    "Char"),   [],      _) -> srt
+		  | Base (Qualified ("String",  "String"), [],      _) -> srt
+		  | Base (Qualified ("List",    "List"),   [psrt],  X) ->
+		    Base (Qualified ("List",    "List"),   
+			  [unfoldBaseKeepPrimitives (sp, psrt)], 
+			  X)
+		  | Base (Qualified ("Option",  "Option"), [psrt],  X) ->
+		    Base (Qualified ("Option",  "Option"), 
+			  [unfoldBaseKeepPrimitives (sp, psrt)],
+			  X)
+		  | _ -> continue())
      | _ -> srt
 
 
@@ -470,11 +461,9 @@ SpecsToI2L qualifying spec {
 
   op opinfo2declOrDefn: CgContext * Spec * QualifiedId * OpInfo * Option(List String) -> opInfoResult
   
-  def opinfo2declOrDefn(ctxt,spc,qid,(opnames,fixity,(tvs,srt),opterms),optParNames) =
-    let def qid2declid(qid) =
-          case qid of
-            | Qualified(spcname,name) -> (spcname,name)
-        def qid2str(Qualified(q,id)) =
+  def opinfo2declOrDefn (ctxt, spc, qid, info, optParNames) =
+    let (tvs, srt) = info.typ in
+    let def qid2str(Qualified(q,id)) =
 	  if q = UnQualified then id else q^"."^id
         def getParamNames(ctxt,t) =
 	  %let _ = System.print(t) in
@@ -495,49 +484,41 @@ SpecsToI2L qualifying spec {
 	      (plist,bodyterm)
 	    | _ -> System.fail(errmsg ctxt)
     in
-    let id as (spcname,lid) = qid2declid(qid) in
+    let Qualified (spcname,lid) = qid in
+    let id = (spcname,lid) in
     let id0 = (spcname,"__"^lid^"__") in
     %let _ = writeLine("translating op "^lid^"...") in
     let srt = unfoldToArrow(spc,srt) in
     %let _ = writeLine("srt: "^printSort(srt)) in
     let typ = sort2type(unsetToplevel ctxt,spc,tvs,srt) in
     let ctxt = setCurrentOpSort(ctxt,qid) in
-    let res = 
-      case typ of 
-        | FunOrMap(types,rtype) ->
-	  (case opterms of
-             | [] -> let params = (case optParNames of
-					    | None -> List.map (fn(t) -> ("",t)) types
-					    | Some pnames -> zip(pnames,types)
-				    )
-		       in
-	               FunDecl {
-				name=id,
-				params = params,
-				returntype = rtype
-			       }
-	     | (tvs,term)::_ ->
-		            let term = liftUnsupportedPattern(spc,term) in
-		            let (pnames,bodyterm) = getParamNames(ctxt,term) in
-	                    let decl = {
-					name = id,
-					params = zip(pnames,types),
-					returntype = rtype
-				       }
-			    in
-			    let expr = term2expression(ctxt,spc,bodyterm) in
-			    FunDefn {
-				     decl = decl,
-				     body = Exp expr % functional function body
-				    }
-	    )
-        | _ -> (case opterms of
-		| [] -> OpDecl(id,typ,None)
-		| (tvs,term)::_ -> OpDecl(id,typ,Some(term2expression(ctxt,spc,term)))
-	       )
-    in
+    case typ of 
+      | FunOrMap(types,rtype) ->
+        (case info.dfn of
+	   | [] -> let params = 
+	               case optParNames of
+			 | None -> List.map (fn t -> ("", t)) types
+			 | Some pnames -> zip(pnames, types)
+		   in
+		     FunDecl {name       = id,
+			      params     = params,
+			      returntype = rtype}
+	   | (tvs,term)::_ ->
+	     let term = liftUnsupportedPattern(spc,term) in
+	     let (pnames,bodyterm) = getParamNames(ctxt,term) in
+	     let decl = {name       = id,
+			 params     = zip (pnames, types),
+			 returntype = rtype}
+	     in
+	     let expr = term2expression(ctxt,spc,bodyterm) in
+	     FunDefn {decl = decl,
+		      body = Exp expr % functional function body
+		     })
+      | _ -> 
+	case info.dfn of
+	  | [] -> OpDecl(id,typ,None)
+	  | (tvs,term)::_ -> OpDecl(id,typ,Some(term2expression(ctxt,spc,term)))
 
-    res
 
   op liftUnsupportedPattern: Spec * Term -> Term
   def liftUnsupportedPattern(spc,t) =
@@ -801,7 +782,7 @@ SpecsToI2L qualifying spec {
       | _ -> false
 
   op getEqOpQid: QualifiedId -> QualifiedId
-  def getEqOpQid(qid as Qualified(q,id)) =
+  def getEqOpQid(Qualified(q,id)) =
     Qualified(q,"eq$"^id)
 
   op equalsExpression: CgContext * Spec * Term * Term -> Expr
@@ -1123,31 +1104,32 @@ SpecsToI2L qualifying spec {
 
 % --------------------------------------------------------------------------------
 
-op foldSort : Spec * Sort -> Sort
-def foldSort(spc,srt) =
-  let optsrt =
-    foldriAQualifierMap
-    (fn(q,id,sortinfo as (aliases,tvs,defs),optsrt) ->
-     case optsrt of
-       | Some srt -> Some srt
-       | None -> (case defs of
-		    | [] -> None
-		    | (tvs,srt0)::_ ->
-		      %let usrt = unfoldBase(spc,srt) in
-		      %let usrt0 = unfoldBase(spc,srt0) in
-		      if equalSort?(srt,srt0) then
-			let b = sortAnn srt0 in
-			let qid = Qualified(q,id) in
-			let tvs = map (fn(tv) -> TyVar(tv,b)) tvs in
-			Some(Base(qid,tvs,b))
-		      else None
-		       )
-    )
-    None spc.sorts
-  in
-  case optsrt of
-    | Some srt -> srt
-    | None -> srt
+ op  foldSort : Spec * Sort -> Sort
+ def foldSort (spc, srt) =
+   let opt_srt =
+       foldriAQualifierMap
+         (fn (q, id, info, opt_srt) ->
+	  case opt_srt of
+	    | Some _ -> opt_srt
+	    | None -> 
+	      case info.dfn of
+		| [] -> None
+		| (tvs, srt0)::_ ->
+		  %let usrt = unfoldBase(spc,srt) in
+		  %let usrt0 = unfoldBase(spc,srt0) in
+		  if equalSort? (srt, srt0) then
+		    let b = sortAnn srt0 in
+		    let qid = Qualified (q, id) in
+		    let tvs = map (fn tv -> TyVar (tv, b)) tvs in
+		    Some (Base (qid, tvs, b))
+		  else 
+		    None)
+	 None 
+	 spc.sorts
+   in
+     case opt_srt of
+       | Some srt -> srt
+       | None -> srt
 
 
 }

@@ -268,68 +268,69 @@ snark qualifying spec {
                               sorts in
          snarkBuiltInSorts(false) ++ snarkSorts ++ snarkSubSorts
 
-  op sortInfoToSnarkSubsort: Spec * Id * SortInfo -> Option LispCell
-  def sortInfoToSnarkSubsort(spc, id, info) =
-    let (_, _, srtScheme) = info in
-    case srtScheme of
-      | Nil -> None
-      | [(_, srt)] ->
-        case srt of
-	  | Subsort (supSrt, pred, _) ->
-	     Some (Lisp.list [declare_subsorts, Lisp.quote(snarkBaseSort(spc, supSrt, false)), Lisp.quote(Lisp.symbol("SNARK", snarkSortId(id)))])
-	  | _ -> None
+ op  sortInfoToSnarkSubsort: Spec * Id * SortInfo -> Option LispCell
+ def sortInfoToSnarkSubsort(spc, id, info) =
+   case info.dfn of
+     | [] -> None
+     | [(_, srt)] ->
+       case srt of
+	 | Subsort (supSrt, pred, _) ->
+	   Some (Lisp.list [declare_subsorts, 
+			    Lisp.quote (snarkBaseSort (spc, supSrt, false)), 
+			    Lisp.quote (Lisp.symbol ("SNARK", snarkSortId id))])
+	 | _ -> None
 
-  op snarkFunctionNoArityDecl: Spec * String * Sort -> LispCell
-
-  def snarkFunctionNoArityDecl(spc, name, srt) =
-    (case srt of
-       | Boolean _ -> snarkPropositionSymbolDecl(name)
-       | Base (Qualified(qual, id), srts, _) ->
-          Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
-		     Lisp.symbol("KEYWORD","SORT"),
-		     Lisp.quote(snarkBaseSort(spc, srt, true))]
-       | Arrow(dom, rng, _) ->
-	  (case rng of
+ op  snarkFunctionNoArityDecl: Spec * String * Sort -> LispCell
+ def snarkFunctionNoArityDecl (spc, name, srt) =
+   case srt of
+     | Boolean _ -> snarkPropositionSymbolDecl(name)
+     | Base (Qualified(qual, id), srts, _) ->
+       Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
+		  Lisp.symbol("KEYWORD","SORT"),
+		  Lisp.quote(snarkBaseSort(spc, srt, true))]
+     | Arrow(dom, rng, _) ->
+       (case rng of
 	  | Boolean _ -> snarkPredicateDecl(spc, name, dom, 1)
 	  | _ -> 
 	    let snarkDomSrt = snarkBaseSort(spc, dom, false) in
-	        Lisp.list[declare_function,
-			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
-			  Lisp.symbol("KEYWORD","SORT"),
-			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))])
-       | _ -> Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
-		     Lisp.symbol("KEYWORD","SORT"),
-		     Lisp.quote(snarkBaseSort(spc, srt, true))]
-       )
+	    Lisp.list[declare_function,
+		      Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
+		      Lisp.symbol("KEYWORD","SORT"),
+		      Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))])
+     | _ -> Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
+		       Lisp.symbol("KEYWORD","SORT"),
+		       Lisp.quote(snarkBaseSort(spc, srt, true))]
 
-  def snarkPropositionSymbolDecl(name) =
-    Lisp.list[declare_proposition_symbol,
-	      Lisp.quote(Lisp.symbol("SNARK", name))]
+  def snarkPropositionSymbolDecl name =
+    Lisp.list [declare_proposition_symbol,
+	       Lisp.quote(Lisp.symbol("SNARK", name))]
 
-  def snarkBaseSort(spc, s:Sort, rng?):LispCell = 
+  def snarkBaseSort (spc, s:Sort, rng?) : LispCell = 
     let s = unfoldBaseUnInterp(spc, s) in
-	          case s of
-		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    | Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-		    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
-		    %| Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
-                      %let _ = if specwareDebug? then toScreen("findBuiltInSort: "^printSort(s)^" returns ") else () in
-                      %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
-		      %let _ = if specwareDebug? then  writeLine("") else () in
-		      %res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
-		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
-                                                       else Lisp.symbol("SNARK",snarkSortId(id))
-		    | Subsort(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
-		    | Product _ -> Lisp.symbol("SNARK","TRUE")
-		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
-		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
-		    | _ -> Lisp.symbol("SNARK", "TRUE")
+    case s of
+      | Base (Qualified ("Nat",     "Nat"),     _,_) -> Lisp.symbol ("SNARK", "NUMBER")
+      | Base (Qualified ("Nat",     "PosNat"),  _,_) -> Lisp.symbol ("SNARK", "NUMBER")
+      | Base (Qualified ("Integer", "Integer"), _,_) -> Lisp.symbol ("SNARK", "NUMBER")
+      | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
+     %| Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
+     %let _ = if specwareDebug? then toScreen("findBuiltInSort: "^printSort(s)^" returns ") else () in
+     %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
+     %let _ = if specwareDebug? then  writeLine("") else () in
+     %res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
+      | Base(Qualified( _,id),_,_) -> (if rng? then 
+					 Lisp.symbol ("SNARK", snarkSortId id)
+				      else 
+					 Lisp.symbol ("SNARK", snarkSortId id))
+      | Subsort(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
+      | Product _ -> Lisp.symbol("SNARK", "TRUE")
+      | Arrow   _ -> Lisp.symbol("SNARK", "TRUE")
+      | TyVar   _ -> Lisp.symbol("SNARK", "TRUE")
+      | _         -> Lisp.symbol("SNARK", "TRUE")
 
   def findBuiltInSort(spc, qid as Qualified(qual,id), rng?) =
     let optSrt = AnnSpec.findTheSort(spc, qid) in
     case optSrt of
-      | Some (names, _, schemes) ->
+      | Some info ->
       (let
         def builtinSort?(s) =
 	  case s of 
@@ -343,10 +344,10 @@ snark qualifying spec {
 	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
-      let builtinScheme = find (fn (_, srt) -> builtinSort?(srt)) schemes in
+      let builtinScheme = find (fn (_, srt) -> builtinSort?(srt)) info.dfn in
         (case builtinScheme of
 	  | Some (_, srt) -> builtinSnarkSort(srt)
-	  | _ -> case schemes of
+	  | _ -> case info.dfn of
 	           | [(_, srt)] -> 
 	              (case srt of
 			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))

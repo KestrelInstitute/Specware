@@ -34,23 +34,26 @@ spec
   sort DefInfo = List Pattern * Term * Sort * List Nat * Boolean * Boolean
 
   op  makeUnfoldMap: Spec -> AQualifierMap DefInfo
-  def makeUnfoldMap(spc) =
+  def makeUnfoldMap spc =
     mapiPartialAQualifierMap
-      (fn (q,id,(op_names, _, (_,srt), defs)) ->
-        case defs of
+      (fn (q, id, info) -> 
+        case info.dfn of
 	  | [] -> None
 	  | (defSch1 as (tvs,def1)):: _ ->
-	    if (~(tvs = [])) & hoFnSort?(spc,srt)
-	         & unfoldable?(Qualified(q,id), def1)
+	    let srt = info.typ.2 in
+	    if (tvs ~= []) & hoFnSort? (spc, srt)
+	                   & unfoldable? (Qualified (q, id), def1)
              then let numCurryArgs = curryShapeNum(spc,srt) in
-	          let argSorts = if numCurryArgs > 1
-				   then curryArgSorts(spc,srt)
-				   else noncurryArgSorts(spc,srt)
+	          let argSorts = (if numCurryArgs > 1 then
+				    curryArgSorts    (spc, srt)
+				  else 
+				    noncurryArgSorts (spc, srt))
 		  in
 		  let HOArgs = map (fn s -> hoSort?(spc,s)) argSorts in
-	          if numCurryArgs > 1
-	           then analyzeCurriedDefn  (Qualified(q,id),def1,numCurryArgs,HOArgs,srt)
-		   else analyzeUnCurriedDefn(Qualified(q,id),def1,HOArgs,srt)
+	          if numCurryArgs > 1 then
+		    analyzeCurriedDefn    (Qualified(q,id), def1, numCurryArgs, HOArgs, srt)
+		  else 
+		     analyzeUnCurriedDefn (Qualified(q,id), def1, HOArgs, srt)
 	     else None)
       spc.ops
 
@@ -177,7 +180,7 @@ spec
 	  | Fun(Op(qid as Qualified(q,id),_),srt,_) ->
 	    (case findAQualifierMap(unfoldMap,q,id) of
 	       | None -> t
-	       | Some(vs,defn,defsrt,fnIndices,curried?,recursive?) ->
+	       | Some (vs, defn, defsrt, fnIndices, curried?, recursive?) ->
 		 if ~curried?
 		      & length(termList a) > foldr max 0 fnIndices
 		      & exists (fn i -> constantTerm?(getTupleArg(a,i)))
@@ -435,16 +438,17 @@ spec
   def normalizeCurriedDefinitions spc =
     let normOps =
         mapiAQualifierMap
-	  (fn (q,id,opinfo as (op_names, inf, (svs,srt), defs)) ->
-	     case defs of
-	       | [] -> opinfo
-	       | (tvs,def1) :: rDefs ->		% Currently additional defs ignored
-	         let numCurryArgs = curryShapeNum(spc,srt) in
-	         let argSorts = curryArgSorts(spc,srt) in
-		 let normDef1 = normalizeCurriedDefn(def1,argSorts) in
-		 (op_names, inf, (svs,srt), cons((tvs,normDef1),rDefs)))
+	  (fn (q, id, info) ->
+	   let (_,srt) = info.typ in
+	   case info.dfn of
+	     | [] -> info
+	     | (tvs, def1) :: rDefs -> % Currently additional defs ignored
+	       let numCurryArgs = curryShapeNum (spc, srt) in
+	       let argSorts     = curryArgSorts (spc, srt) in
+	       let normDef1 = normalizeCurriedDefn (def1, argSorts) in
+	       info << {dfn = cons((tvs, normDef1), rDefs)})
           spc.ops
-    in setOps(spc,normOps)
+    in setOps (spc, normOps)
 
   op  normalizeCurriedDefn: Term * List Sort -> Term
   def normalizeCurriedDefn(defn,curryArgSorts) =
@@ -475,13 +479,16 @@ spec
 
   op  transparentRenaming: Qualifier * Id * Term * Spec -> Qualifier * Id * Term
   %% If definition is just a renaming then "unfold"
-  def transparentRenaming(q,id,def1,spc) =
+  def transparentRenaming (q, id, def1, spc) =
     case def1 of
-      | Fun(Op(Qualified(q2,id2),_),_,_) ->
-        (case findAQualifierMap(spc.ops,q2,id2) of
-	  | Some (_, _, _, [(_,def2)]) -> (q2,id2,def2)
-	  | _ -> (q,id,def1))
-      | _ -> (q,id,def1)
+      | Fun (Op (Qualified (q2, id2),_), _, _) ->
+        (case findAQualifierMap (spc.ops, q2, id2) of
+	  | Some info -> 
+	    (case info.dfn of
+	       | [(_,def2)] -> (q2, id2, def2)
+	       | _ -> (q, id, def1))
+	  | _ -> (q, id, def1))
+      | _ -> (q, id, def1)
 
 
   op  getCurryArgs: Term -> Option(Term * List Term)

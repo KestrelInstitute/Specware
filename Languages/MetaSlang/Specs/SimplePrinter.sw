@@ -71,11 +71,10 @@ SpecCalc qualifying spec {
         ppNewline,
         ppSep ppNewline [
           ppImports,    
-          ppSep ppNewline (map doSortInfo (filter (fn (qid::_,tyVars,defs) ->
-						   member(qid,localSorts))
-					     (sortInfosAsList spc))),
-          ppSep ppNewline (map doOpInfo (filter (fn (qid::_,fxty,srtScheme,defs) -> member(qid,localOps))
-					   (opInfosAsList spc))),
+          ppSep ppNewline (map doSortInfo (filter (fn info -> member (primarySortName info, localSorts))
+					          (sortInfosAsList spc))),
+          ppSep ppNewline (map doOpInfo   (filter (fn info -> member (primaryOpName   info, localOps))
+					           (opInfosAsList spc))),
           ppSep ppNewline (map ppAProperty (localProperties spc))
         ]
       ]),
@@ -84,15 +83,15 @@ SpecCalc qualifying spec {
 
   
   op ppASortInfo : fa (a) ASortInfo a -> Pretty
-  def ppASortInfo (sortInfo as (names,tyVars,defs)) =
+  def ppASortInfo info =
     let ppNames =
-      case names of
+      case info.names of
         | [] -> fail "ppASortInfo: empty name list in sort info"
         | [name] -> ppQualifiedId name
         | _ -> 
             ppConcat [
               ppString "{",
-              ppSep (ppString ",") (map ppQualifiedId names),
+              ppSep (ppString ",") (map ppQualifiedId info.names),
               ppString "}"
             ] in
     let def doTyVars ty_vars =
@@ -109,27 +108,28 @@ SpecCalc qualifying spec {
 		    ppString " = ", 
 		    ppASort srt] 
     in
-    case defs of
-      | []        -> ppConcat [ppNames, doTyVars tyVars]
+    case info.dfn of
+      | []        -> ppConcat [ppNames, 
+			       doTyVars info.tvs]
       | [srt_def] -> doSortDef srt_def
       | _         -> ppConcat [ppNewline, 
 			       ppString " (* Warning: Multiple Sort Definitions for following sort *) ",
 			       ppNewline, 
-			       ppSep ppNewline (map doSortDef defs)]
+			       ppSep ppNewline (map doSortDef info.dfn)]
 
 
   op ppAOpInfo : fa (a) AOpInfo a -> Pretty
-  def ppAOpInfo (opInfo as (names,fxty,srtScheme,defs)) =
+  def ppAOpInfo info = 
     let ppNames =
-      case names of
+      case info.names of
         | [] -> fail "ppAOpInfo: empty name list in sort info"
         | [name] -> ppQualifiedId name
         | _      -> ppConcat [ppString "{",
-			      ppSep (ppString ",") (map ppQualifiedId names),
+			      ppSep (ppString ",") (map ppQualifiedId info.names),
 			      ppString "}"]
     in
     let ppSrtScheme =
-      case srtScheme of
+      case info.typ of
         | ([],srt) -> ppASort srt
         | (tyVars,srt) ->
           ppConcat [ppString "[",
@@ -151,13 +151,13 @@ SpecCalc qualifying spec {
 			    ])
     in
     let ppDefs =
-      case defs of
-        | []       -> ppNil
+      case info.dfn of
+        | []   -> ppNil
         | [op_def] -> ppCons ppNewline (doOpDef op_def)
         | _        -> ppConcat [ppNewline, 
                                 ppString " (* Warning: Multiple Definitions for following op *) ",
                                 ppNewline, 
-                                ppSep ppNewline (map doOpDef defs)]
+                                ppSep ppNewline (map doOpDef info.dfn)]
     in
     ppConcat [ppNames,
               ppString " : ",
@@ -165,7 +165,7 @@ SpecCalc qualifying spec {
               ppDefs]
 
   op ppAProperty : fa (a) AProperty a -> Pretty
-  def ppAProperty (propType,name,tyVars,term) =
+  def ppAProperty (propType, name, tyVars, term) =
     ppConcat [
       ppPropertyType propType,
       ppString " ",
@@ -191,8 +191,8 @@ SpecCalc qualifying spec {
   op ppPropertyType : PropertyType -> Pretty
   def ppPropertyType propType =
     case propType of
-      | Axiom -> ppString "axiom"
-      | Theorem -> ppString "theorem"
+      | Axiom      -> ppString "axiom"
+      | Theorem    -> ppString "theorem"
       | Conjecture -> ppString "conjecture"
       | any ->
            fail ("No match in ppPropertyType with: '"

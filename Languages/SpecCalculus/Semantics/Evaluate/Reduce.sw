@@ -29,7 +29,9 @@ SpecCalc qualifying spec
           elabTerm <-
             case AnnSpec.findTheOp (elabSpc,tempOpName) of
               | None -> raise (SpecError (pos, "Reduce lost its operator!"))
-              | Some (names,fxty,srtScheme,[(tyVars,trm)]) -> return trm;
+              | Some info -> 
+		let [(tyVars, trm)] = info.dfn in
+		return trm;
           reducedTerm <-
             let
               def reduceTerm count trm =

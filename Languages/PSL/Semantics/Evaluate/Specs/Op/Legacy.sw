@@ -12,8 +12,8 @@ Op qualifying spec
   sort Op.Fixity = MetaSlang.Fixity
 
   % op Op.idOf : Op.OpInfo -> Id
-  def Op.idOf (names,fxty as _,srtScheme as _,termSchemes as _) =
-    case names of
+  def Op.idOf info =
+    case info.names of
       | [] -> fail "idOf: op with empty list of ids"
       | [name] -> name
       | _::_ -> fail "idOf: op with more than one id"
@@ -22,20 +22,20 @@ Op qualifying spec
   % def ids opInfo =
 
   % op Op.fixity : OpInfo -> Fixity
-  def Op.fixity (names as _,fxty,srtScheme as _,termSchemes as _) = fxty
+  def Op.fixity info = info.fixity
 
   % op opinfo_type : OpInfo -> Type
-  def Op.opinfo_type (names as _,fxty as _,srtScheme,termSchemes as _) = srtScheme
+  def Op.opinfo_type info = info.typ
 
   % op term : OpInfo -> Option MS.Term
-  def Op.term (names as _,fxty as _,srtScheme as _,termSchemes) =
-    case termSchemes of
+  def Op.term info =
+    case info.dfn of
       | [] -> None
-      | [(tyVars,trm)] -> Some trm
+      | [(_,trm)] -> Some trm
       | _::_ -> fail "term: op with more than one term"
 
   % op withId infixl 18 : OpInfo * Id -> OpInfo
-  def Op.withId ((names,fxty,srtScheme,termSchemes),id) = ([id],fxty,srtScheme,termSchemes)
+  def Op.withId (info, id) = info << {names = [id]}
   % op withIds infixl 18 : OpInfo * IdSet.Set -> OpInfo
   % op withFixity infixl 18 : OpInfo * Fixity -> OpInfo
   % op withType infixl 18 : OpInfo * Type -> OpInfo
@@ -43,13 +43,21 @@ Op qualifying spec
 
   % ## Why are there type variables associated with terms???
   % ## Here we set the term but assume that there are no type vars!!
-  def Op.withTerm ((names,fxty,srtScheme,termSchemes),newTerm) = (names,fxty,srtScheme,[([],newTerm)])
+  def Op.withTerm (info,newTerm) = info << {dfn = [([],newTerm)]}
 
   % op makeOp : Id * Fixity * MSlang.Term * Type -> OpInfo
-  def Op.makeOp (id,fixity,term,oi_type as (tyVars,_)) = ([id],fixity,oi_type,[(tyVars,term)])
+  def Op.makeOp (id, fixity, term, oi_type as (tvs,_)) = 
+    {names  = [id],
+     fixity = fixity,
+     typ    = oi_type,
+     dfn    = [(tvs,term)]}
 
   % op OpNoTerm.makeOp : Id * Fixity * Type -> OpInfo
-  def OpNoTerm.makeOp (id,fixity,oi_type) = ([id],fixity,oi_type,[])
+  def OpNoTerm.makeOp (id, fixity, oi_type) = 
+    {names  = [id],
+     fixity = fixity,
+     typ    = oi_type,
+     dfn    = []}
 
   % op join : OpInfo -> OpInfo -> Env OpInfo
 

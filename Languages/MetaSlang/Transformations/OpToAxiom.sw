@@ -13,7 +13,8 @@ Prover qualifying spec
   def proverNatSort() =
     let baseProverSpec = run getBaseProverSpec in
     let optSrt = findTheSort(baseProverSpec, mkUnQualifiedId("ProverNat")) in
-    let Some (names, _, [(_, srt)]) = optSrt in
+    let Some info = optSrt in
+    let [(_, srt)] = info.dfn in
     srt
   
   op getBaseProverSpec : Env Spec
@@ -46,10 +47,10 @@ Prover qualifying spec
       | Some topBaseQId ->
       let optSrt = findTheSort(spc, topBaseQId) in
       (case optSrt of
-	 | Some (names, _, schemes) ->
-	 (case schemes of
-	    | [(_, newSrt)] -> Utilities.mkAnd(topPred, srtPred(spc, newSrt, tm))
-	    | _ -> topPred)
+	 | Some info ->
+	   (case info.dfn of
+	      | [(_, newSrt)] -> Utilities.mkAnd (topPred, srtPred (spc, newSrt, tm))
+	      | _ -> topPred)
 	 | _ -> topPred)
       | _ -> topPred
      

@@ -12,8 +12,8 @@ Sort qualifying spec
   sort Sort.SortInfo = AnnSpec.ASortInfo Position
 
   % op Sort.idOf : SortInfo -> Id
-  def Sort.idOf (sortNames,tyVars as _,srtSchemes as _) =
-    case sortNames of
+  def Sort.idOf info =
+    case info.names of
       | [] -> fail "Sort.idOf: sort with empty list of ids"
       | [name] -> name
       | _::_ -> fail "Sort.idOf: sort with more than one id"
@@ -21,8 +21,8 @@ Sort qualifying spec
   % op ids : SortInfo -> IdSet.Set
 
   % op Sort.sortinfo_type : SortInfo -> Type
-  def Sort.sortinfo_type (sortNames as _,tyVars as _,srtSchemes) =
-    case srtSchemes of
+  def Sort.sortinfo_type info =
+    case info.dfn of
       | [] -> fail "Sort.sortinfo_type: sort with empty list of sort schemes"
       | [si_type] -> si_type
       | _::_ -> fail "Sort.sortinfo_type: sort with more than one sort scheme"
@@ -32,8 +32,15 @@ Sort qualifying spec
   % op withType infixl 18 : SortInfo * Type -> SortInfo
 
   % op makeSort : Id -> Type -> SortInfo
-  def Sort.makeSort id (si_type as (tyVars,_)) = ([id],tyVars,[si_type])
-  def SortNoType.makeSort id = ([id],[],[])
+  def Sort.makeSort id (si_type as (tvs, _)) = 
+    {names = [id],
+     tvs   = tvs,
+     dfn   = [si_type]}
+
+  def SortNoType.makeSort id = 
+    {names = [id], 
+     tvs   = [], 
+     dfn   = []}
 
   % op join : SortInfo -> SortInfo -> Env SortInfo
 
