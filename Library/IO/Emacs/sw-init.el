@@ -47,7 +47,8 @@
     ;; A "HEAP_IMAGE" is what Franz calls an image and what Kestrel calls a world.
     ;; The suffix on such files is .dxl.
     ;;
-    (setq sw:common-lisp-image-file world-name)
+    (unless (and sw:common-lisp-image-file (not in-current-dir?))
+      (setq sw:common-lisp-image-file world-name))
     (setq sw:common-lisp-image-arguments
       (if *windows-system-p* '("+cn") nil))
 
