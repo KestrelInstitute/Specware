@@ -780,18 +780,30 @@ AnnSpecPrinter qualifying spec {
   %op ppOp: fa(a) context -> Qualifier * String * AOpInfo a * Line -> Nat * Lines
   % op ppOpDecl : fa(a) context -> Qualifier * String * (AOpInfo a) * (Nat * Lines) -> Lines
   def fa(a) ppOpDecl (context : context)
-                     (qualifier, id, 
-                      (op_names, fixity, (tyVars, srt), optDefn) : AOpInfo a, 
+                     (ref_qualifier, ref_id,
+		      (aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_,
+		       fixity, 
+		       (tyVars, srt), 
+		       optDefn) : AOpInfo a, 
                       (index, lines)) = 
+   if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
+     (index, lines)
+   else
      let pp : ATermPrinter = context.pp in
      % let def ppOpNm() = pp.ppOpId(Qualified(qualifier,id)) in
      % let def ppOpNm() = (if spName = qualifier then pp.ppOp id
      %                  else pp.ppOpId(Qualified(qualifier,id))) in
-     let def ppOpNm() =
+     let def ppOpName (qid as Qualified(qualifier, id)) =
       (if qualifier = "" then
          pp.ppOp id
        else
-         pp.ppOpId (Qualified(qualifier,id))) in
+         pp.ppOpId qid)
+     in
+     let def ppOpNames () =
+       case aliases of
+         | [name] -> ppOpName name
+         | _      -> ppList ppOpName ("{", ",", "}") aliases
+     in
      let index1 = Integer.~(index + 1) in
      let button1 = if markSubterm?(context) & some? optDefn
                     then PrettyPrint.buttonPretty
@@ -807,7 +819,7 @@ AnnSpecPrinter qualifying spec {
       cons((1,blockFill
                 (0, [(0, pp.Op),
                      (0, string " "),
-                     (0, ppOpNm()),
+                     (0, ppOpNames()),
                      (0, case fixity 
                            of Nonfix -> string ""
                             | Infix(Left,i)  -> string (" infixl "^Nat.toString i)
@@ -846,38 +858,50 @@ AnnSpecPrinter qualifying spec {
                                                       (if printSort?(context) 
                                                          then (0,ppForallTyVars pp tyVars) 
                                                        else (0,string "")),
-                                                      (0, ppOpNm()),
+                                                      (0, ppOpName primary_name),
                                                       (0, string " ")]
                                                     ))]
                                      ++ prettys)),
                       lines))))
 
   def fa(a) ppSortDecl (context : context)
-                       (qualifier, id, (sort_names, tyVars, optSort) : ASortInfo a, 
+                       (ref_qualifier, ref_id,
+			(aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_,
+			 tyVars, 
+			 optSort) : ASortInfo a, 
                        (index, lines)) = 
-   let pp : ATermPrinter = context.pp in
-   let pretty_name_or_names = 
+   if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
+     (index, lines)
+   else
+     let pp : ATermPrinter = context.pp in
+     let def ppSortName (qid as Qualified (qualifier, id)) =
       (if qualifier = "" then
          pp.ppSort id
        else
-         pp.ppSortId (Qualified (qualifier, id))) in
-   (index + 1,
-    cons(case optSort
-           of None -> 
-              (1,blockFill(0,[(0, pp.Sort),
-                              (0, string " "),
-                              (0, pretty_name_or_names),
-                              (0, ppTyVars pp tyVars)]))
-            | Some srt -> 
-              (1,blockFill(0,[(0, pp.Sort),
-                              (0, string " "),
-                              (0, pretty_name_or_names),
-                              (0, ppTyVars pp tyVars),
-                              (0, string " "),
-                              (0, pp.DefEquals),
-                              (0, string " "),
-                              (3, ppSort context ([index,sortIndex],Top:ParentSort) srt)])),
-         lines))
+         pp.ppSortId qid)
+     in
+     let def ppSortNames () =
+       case aliases of
+         | [qid] -> ppSortName qid
+         | _     -> ppList ppSortName ("{", ",", "}") aliases
+     in
+     (index + 1,
+      cons (case optSort of
+	      | None -> 
+	        (1,blockFill(0,[(0, pp.Sort),
+				(0, string " "),
+				(0, ppSortNames ()),
+				(0, ppTyVars pp tyVars)]))
+	      | Some srt -> 
+		(1,blockFill(0,[(0, pp.Sort),
+				(0, string " "),
+				(0, ppSortNames()),
+				(0, ppTyVars pp tyVars),
+				(0, string " "),
+				(0, pp.DefEquals),
+				(0, string " "),
+				(3, ppSort context ([index,sortIndex],Top:ParentSort) srt)])),
+	    lines))
 
   op isBuiltIn? : Import -> Boolean
   def isBuiltIn? (spec_ref, _ (* spc *)) =
