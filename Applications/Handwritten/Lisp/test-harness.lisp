@@ -104,6 +104,7 @@ be the option to run each (test ...) form in a fresh image.
 		    (run-test-directories-rec-fn (list dir-item)))))))
 
 (defun run-test-directories-fn (dirs)
+  (setq specware::specware4 (specware::getenv "SPECWARE4"))
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
 			    (parse-namestring (specware::ensure-final-slash dir))
