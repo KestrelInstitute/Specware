@@ -1,6 +1,6 @@
 SpecCalc qualifying spec 
 
- import EquivPreds
+ import ../../Environment
 
 % --------------------------------------------------------------------------------
 (**
@@ -36,9 +36,8 @@ SpecCalc qualifying spec
 
  % ------------------------------------------------------------------------
 
-  op mergeSortInfo : Spec -> SortInfo -> Option SortInfo -> Position -> SpecCalc.Env SortInfo
- def mergeSortInfo _(*spc*) new_info opt_old_info pos =
-   %% spc is not currently used, but could be, for example, if we were to use equivSort? instead of equalSort?
+  op mergeSortInfo : SortInfo -> Option SortInfo -> Position -> SpecCalc.Env SortInfo
+ def mergeSortInfo new_info opt_old_info pos =
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
@@ -89,8 +88,8 @@ SpecCalc qualifying spec
 	     let combined_dfn = maybeAndSort (combined_decls ++ combined_defs, sortAnn new_info.dfn) in
 	     return {names = names, dfn = combined_dfn}
 
-  op mergeOpInfo : Spec -> OpInfo -> Option OpInfo -> Position -> SpecCalc.Env OpInfo 
- def mergeOpInfo spc new_info opt_old_info pos =
+  op mergeOpInfo : OpInfo -> Option OpInfo -> Position -> SpecCalc.Env OpInfo 
+ def mergeOpInfo new_info opt_old_info pos =
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
@@ -115,24 +114,7 @@ SpecCalc qualifying spec
 	       | _ ->
                  %%  Old:  op ... : fa (...) ...  OR  def fa (...) ...  
                  %%  New:  op ... : fa (...) ...  OR  def fa (...) ...  
-                 let _ =
-		     if old_tvs ~= new_tvs || ~(equivSort? spc (old_srt, new_srt)) then
-		       let old_srt = maybePiSort (old_tvs, old_srt) in
-		       let new_srt = maybePiSort (new_tvs, new_srt) in
-		       toScreen ("Merged versions of op " ^ (printAliases combined_names) ^ " have possibly different sorts:"
-				 ^ "\n " ^ (printSort old_srt)
-				 ^ "\n " ^ (printSort new_srt)
-				 ^ (if specwareWizard? then
-				      "\n\n " ^ (anyToString old_srt)
-				      ^ "\n " ^ (anyToString new_srt)
-				      ^ "\n"
-				    else
-				      "\n"))
-		     else
-		       () 
-		 in
-		   new_tvs = old_tvs
-
+		 new_tvs = old_tvs
          in
            if ~ happy? then
 	     let old_srt = maybePiSort (old_tvs, old_srt) in

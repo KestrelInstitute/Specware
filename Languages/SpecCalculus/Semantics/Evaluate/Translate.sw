@@ -542,8 +542,7 @@ Note: The code below does not yet match the documentation above, but should.
 		       return new_qid)
 	            new_names;
 	       new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
-				  mergeOpInfo spc
-				              merged_info 
+				  mergeOpInfo merged_info 
 					      (findAQualifierMap (new_op_map, new_q, new_id))
 					      position)
 	                         (old_info << {names = new_names})
@@ -592,8 +591,7 @@ Note: The code below does not yet match the documentation above, but should.
 	       else
 		{ 
 		 new_info <- foldM (fn merged_info -> fn Qualified (new_q, new_id) ->
-				     mergeSortInfo spc
-				                   merged_info 
+				     mergeSortInfo merged_info 
 						   (findAQualifierMap (new_sort_map, new_q, new_id))
 						   position)
 				    (old_info << {names = new_names})

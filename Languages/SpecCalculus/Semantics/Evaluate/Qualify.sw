@@ -67,7 +67,7 @@ Change UnQualified to new_qualifier in all qualified names
           let new_q = if q = UnQualified then new_q else q in
           let old_info = findAQualifierMap (new_map, new_q, id) in 
 	  {
-	   new_info <- mergeOpInfo spc new_info old_info position;
+	   new_info <- mergeOpInfo new_info old_info position;
 	   %% Possibly the new name already is used
 	   return (insertAQualifierMap (new_map, new_q, id, new_info))
 	  } 
@@ -82,7 +82,7 @@ Change UnQualified to new_qualifier in all qualified names
           let new_q = if q = UnQualified then new_q else q in
           let old_info = findAQualifierMap (new_map, new_q, id) in 
 	  {
-	   new_info <- mergeSortInfo spc new_info old_info position; 
+	   new_info <- mergeSortInfo new_info old_info position; 
 	   %% Possibly the new name already is used
 	   return (insertAQualifierMap (new_map, new_q, id, new_info))
 	  } 

@@ -102,7 +102,7 @@ axioms, etc.
   def mergeImport spec_term imported_spec spec_a position =
     let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, (spc, combined_sorts)) =
       let oldSortInfo = findAQualifierMap (combined_sorts,imported_qualifier, imported_id) in {
-          mergedSorts <- SpecCalc.mergeSortInfo spc imported_sort_info oldSortInfo position;
+          mergedSorts <- SpecCalc.mergeSortInfo imported_sort_info oldSortInfo position;
           return (spc,
 		  insertAQualifierMap (combined_sorts,
                                        imported_qualifier,
@@ -111,7 +111,7 @@ axioms, etc.
         } in
     let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, (spc, combined_ops)) =
       let oldOpInfo = findAQualifierMap (combined_ops,imported_qualifier, imported_id) in {
-           mergedOps <- SpecCalc.mergeOpInfo spc imported_op_info oldOpInfo position;
+           mergedOps <- SpecCalc.mergeOpInfo imported_op_info oldOpInfo position;
            return (spc,
 		   insertAQualifierMap (combined_ops,
                                         imported_qualifier,

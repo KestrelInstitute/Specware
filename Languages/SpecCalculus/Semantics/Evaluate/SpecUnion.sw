@@ -89,7 +89,7 @@ SpecUnion qualifying spec
 	  %% a more informative spec for resolving equivalent sorts,
 	  %% but its not obvious what spec(s) to pass in here.
 	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeSortInfo context_spec new_info optional_old_info noPos;
+	  {merged_info <- mergeSortInfo new_info optional_old_info noPos;
 	   all_names <- return (merged_info.names);    % new and old names
 	   foldM (fn merged_sort_map -> fn  Qualified(q, id) ->
 		  return (insertAQualifierMap (merged_sort_map, q, id, merged_info)))
@@ -114,7 +114,7 @@ SpecUnion qualifying spec
 	  %% a more informative spec for resolving equivalent ops,
 	  %% but its not obvious what spec(s) to pass in here.
 	  %% Perhaps the entire spec union algorithm needs revision...
-	  {merged_info <- mergeOpInfo context_spec new_info optional_old_info noPos;
+	  {merged_info <- mergeOpInfo new_info optional_old_info noPos;
 	   all_names <- return (merged_info.names);    % new and old
 	   foldM (fn merged_op_map -> fn Qualified(q, id) ->
 		  return (insertAQualifierMap (merged_op_map, q, id, merged_info)))
