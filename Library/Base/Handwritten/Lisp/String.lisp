@@ -115,7 +115,8 @@
   (the cl:simple-base-string (subseq s start end)))
 
 (define-compiler-macro substring-3 (s start end)
-  `(subseq (the cl:simple-base-string ,s) (the cl:fixnum ,start) (the cl:fixnum ,end)))
+  `(subseq
+     (the cl:simple-base-string ,s) (the cl:fixnum ,start) (the cl:fixnum ,end)))
 
 (defun substring (sse)
   (the cl:simple-base-string (subseq (the cl:simple-base-string (svref sse 0))
