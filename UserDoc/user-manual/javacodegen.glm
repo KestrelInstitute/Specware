@@ -2,36 +2,32 @@
 <title>Generating Java Code</title>
 
 <para> As an experimental feature, Specware provides the possibility
-to generate Java code from executable MetaSlang specs.  The Java code
+to generate Java code from constructive &Metaslang; specs.  The Java code
 generator can either be called from the &SShell; or using the
 [[generate]] construct inside a <".sw"> file. In both cases, an
-additional ``option'' spec can be supplied that is used to specify
-certain parameters.  For the format of the option-spec see below.
+additional ``option'' spec can be supplied, which is used to specify
+certain parameters that govern aspects of code generation.
+For the format of the option spec, see <xref linkend="optionspec">.
 </para>
 
-<para>Specware shell:</para>
+<para>The command has the form:
+[[
+||   gen-java $spec-term$ [$option-spec-term$]
+]]
+where the result of elaborating the spec term gives the spec
+to be translated into Java and
+the second spec term
+gives the option spec (see below).</para>
+
+<!--
+
+<para>Inside a <".sw"> file:
 
 [[
-||   gen-java <UnitId> [<option-spec-id>]
+||   generate Java <spec-term> with <option spec-id>
 ]]
 
-<para>Example:</para>
-
-[[
-||   gen-java MyExample MyExampleOptions
-]]
-
-<para>where MyExample.sw contains the spec that is to be translated into Java and MyExampleOptions.sw
-contains the option-spec (see below).</para>
-
-
-<para>Inside a <".sw"> file:</para>
-
-[[
-||   generate Java <spec-term> with <option-spec-id>
-]]
-
-<para>Example contents of a <".sw"> file generating Java code: </para>
+Example contents of a <".sw"> file generating Java code: 
 
 [[
 ||  let myspec = spec 
@@ -43,67 +39,75 @@ contains the option-spec (see below).</para>
 ||      ...
 ||  endspec
 ||  in
-||  generate Java myspec with myoptions
+||  generate java myspec with myoptions
 ]]
+</para>
 
-<section>
-<title>The Option-Spec</title>
+-->
 
-<para>The option spec is a regular MetaSlang spec that is used as an attribute store to be
-able to control certain parameters used to the Java code generator.  The parameters are
-given by constant operator definitions inside the option-spec.  The following list
-contains the operator names and types that are currently interpreted as parameters by the
+<section id="optionspec">
+<title>The Option Spec</title>
+
+<para>The option spec is used as an attribute store to be
+able to control certain parameters used by the Java code generator.
+The option spec is a regular &Metaslang; spec.
+The parameters are
+given by constant ops defined inside the option spec.
+The following list
+contains the op names and types that are currently
+interpreted as parameters by the
 Java code generator:</para>
 
 <informaltable frame="sides" colsep="1">
  <tgroup cols="3">
-  <colspec colname="op"      colnum="1" colwidth="110" rowsep="1">
-  <colspec colname="used"    colnum="2" colwidth="200" rowsep="1">
-  <colspec colname="default" colnum="3" colwidth="110" rowsep="1">
+  <colspec colname="op"      colnum="1" colwidth="143" rowsep="1">
+  <colspec colname="used"    colnum="2" colwidth="145" rowsep="1">
+  <colspec colname="default" colnum="3" colwidth="135" rowsep="1">
   <thead>
    <row>
-     <entry colname="op">Operator name &amp; type</entry>
+     <entry colname="op">Op name &amp; type</entry>
      <entry colname="used">Used as</entry>
      <entry colname="default">Default value</entry>
    </row>
   </thead>
   <tbody>
    <row>
-    <entry colname="op">package : String</entry>
+    <entry colname="op">[[package : String]]</entry>
     <entry colname="used">Name of the Java package for all generated Java class files. The
       package name also determines the relative path of the generated
-      .java files (see "basedir" parameter)
+      <".java"> files (see the [[basedir]] parameter)
      </entry>
-    <entry colname="default">"specware.generated"</entry>
+    <entry colname="default">[["specware.generated"]]</entry>
    </row>
    <row>
-    <entry colname="op">basedir : String</entry>
+    <entry colname="op">[[basedir : String]]</entry>
     <entry colname="used">The base directory used for the generated Java class files. The
      full path is determine by this parameter and the relative path
-     derived from the packge name. For instance, if basedir is "/a/b"
-     and the package name is "c.d.e" then the generated Java class
-     files would go into the directory "/a/b/c/d/e".
+     derived from the package name. For instance, if the value of [[basedir]]
+     is the string [["/a/b"]]
+     and the package name is <"c.d.e">, then the generated Java class
+     files would go into the directory <"/a/b/c/d/e">.
     </entry>
-    <entry colname="default">"."</entry>
+    <entry colname="default">[["."]]</entry>
    </row>
    <row>
-    <entry colname="op">public : List String</entry>
-    <entry colname="used">The list of operators that are to be declared as "public" in the
+    <entry colname="op">[[public : List String]]</entry>
+    <entry colname="used">The list of op names that are to be declared as [[public]] in the
      generated Java code. Only unqualified identifiers can be used in
-     this list. The ops in this list determine the "entry-points" to
+     this list. The ops in this list determine the ``entry points'' into
      the generated Java code, if it is embedded in another Java
      application.
     </entry>
-    <entry colname="default">[]</entry>
+    <entry colname="default">[[[]]]</entry>
    </row>
    <row>
-    <entry colname="op">imports : List String</entry>
+    <entry colname="op">[[imports : List String]]</entry>
     <entry colname="used">The list of imports that are to be used for all generated Java
      class files. Each element of this list has the usual format of
-     the argument used by Java's import statement; e,.g.,
-     "java.util.*"
+     the argument used by Java's import statement; e.g.,
+     [["java.util.*"]]
     </entry>
-    <entry colname="default">[]</entry>
+    <entry colname="default">[[[]]]</entry>
    </row>
   </tbody>
  </tgroup>
@@ -111,7 +115,7 @@ Java code generator:</para>
 
 
 
-<para>Example option-spec:</para>
+<para>Example option spec:
 
 [[
 ||  spec
@@ -122,12 +126,17 @@ Java code generator:</para>
 ||  endspec
 ]]
 
+If no option spec is specified in the [[gen-java]] command, default
+values are used for all option parameters.
+</para>
+
+
 </section>
 
 <section>
-<title>Translation of Builtin Ops</title>
+<title>Translation of Inbuilt Ops</title>
 
-<para>The following table shows the translation of some builtin MetaSlang operators into Java:</para>
+<para>The following table shows the translation of some inbuilt &Metaslang; ops into Java:</para>
 
 <informaltable frame="sides" colsep="1">
  <tgroup cols="2">
@@ -135,7 +144,7 @@ Java code generator:</para>
   <colspec colname="java" colnum="2" colwidth="200" rowsep="1">
   <thead>
    <row>
-     <entry colname="mtsl">MetaSlang</entry>
+     <entry colname="mtsl">&Metaslang;</entry>
      <entry colname="java">Java</entry>
    </row>
   </thead>
@@ -221,33 +230,33 @@ Java code generator:</para>
 </section>
 
 <section>
-<title>MetaSlang/Java Interface</title>
+<title>&Metaslang;/Java Interface</title>
 
-<para>In order to use Java methods and classes inside a MetaSlang spec, the following
+<para>In order to use Java methods and classes inside a &Metaslang; spec, the following
 conventions are used by the Java code generator:</para>
 
 <itemizedlist>
 <listitem>
 <para>
 Java Classes --
-  In order to use Java classes as sorts inside MetaSlang, you have to declare the sort without
-  a definition term and add corresponding Java import statements using the option-spec (see above).
+  In order to use Java classes as types inside &Metaslang;, you have to declare the type without
+  a definition and add corresponding Java import statements using the option spec (see above).
 </para>
 
-  <para>Example: use of the Java class "java.util.Vector"</para>
+  <para>Example: use of the Java class <"java.util.Vector"></para>
 
-     <para>In the spec:</para>
+     <para>In the spec for which code is generated:
 
 [[
 ||   ...
-||   sort Vector
+||   type Vector
 ||   ...
 ||   op myvectorop: Vector -> Nat
 ||   def myvectorop(v) = ...
 ||   ...
 ]]
 
-     <para>In the option-spec:</para>
+     In the option spec:
 
 [[
 ||   ...
@@ -255,98 +264,99 @@ Java Classes --
 ||   ...
 ]]
 
-  <para>The code generator interprets all sorts without a definition as base types,
-  so that in this case the op myvectorop would become a static method in the
+  The code generator interprets all types without a definition as base types,
+  so that in this case the op [[myvectorop]] becomes a static method in the
   generated [[Primitive]] class.</para>
 </listitem>
 <listitem>
   <para>
-  Accessing Java Instance Methods --
-  Instance methods as well as static class methods can be called from MetaSlang using
+  Accessing External Java Instance Methods --
+  Instance methods as well as static class methods can be accessed from inside
+  &Metaslang; specs using
   the following convention:</para>
 
   <para>
-  Assume, we want to use the instance method [[foo(args)]] defined in Java class Bar.
-  First, the class must be known to MetaSlang by providing a sort declaration
-  for the class. Then, an op [[foo]] must be declared with a signature that corresponds
-  to the method's signature with an additional parameter preceeding the others. The sort
-  of the parameter must be the class type:</para>
+  Assume, we want to use some instance method [[epi(args)]] defined in Java class <"Tecton">.
+  First, the class must be made known to &Metaslang; by providing a type declaration
+  for the class. Then, an op [[epi]] must be declared with a signature that corresponds
+  to the method's signature, but with an additional parameter preceeding the others. The type
+  of that parameter must be the class type:
 
 [[
-|| sort Bar
-|| op foo: Bar * T1 * ... * Tn -> T
+|| type Tecton
+|| op epi: Tecton * T1 * ... * Tn -> T
 ]]
 
-  <para>where T1 * ... * Tn -> T is the original signature of foo without the additional parameter.
-  The T's are the translated MetaSlang sorts that correspond to the Java types occuring in
-  foo's signature; see the table below concerning the type conversion. In the MetaSlang code,
-  a call to the instance method is created by the Java code generator whenever foo is called.
-  </para>
+  where [[T1 * ... * Tn -> T]] is the original signature of [[epi]] without the additional parameter.
+  The [[Ti]]'s are the translated &Metaslang; types that correspond to the Java types occurring in
+  [[epi]]'s signature; see the table below for the type correspondence.
+  In the &Metaslang; code,
+  a call to the instance method is created by the Java code generator whenever [[epi]] is applied:
 
 [[
 ||  def mycode(...) =
 ||    ...
-||    let b:Bar = ... in
-||    ...
-||    ... foo(b,arg1,...argn) ...
+||    let b : Tecton = ... in
+||      ...
+||      ... epi(b,arg1,...argn) ...
 ]]
 
-  <para>Note, that a definition term must not be given for foo.
-  Limitation: using foo as a function symbol in higher-order context will not yield the
+  Note, that a definition term must not be given for [[epi]].
+  Limitation: using [[epi]] as a function symbol in higher-order contexts will not yield the
   expected result.</para>
 </listitem>
 <listitem>
 <para>
-  Accessing Java Class Methods --
-  The access to Java class methods is very similar to instance methods with the difference
+  Accessing External Java Class Methods --
+  Accessing Java class methods is very similar to instance methods, with the difference
   that instead of the type of the first argument, the qualifier of the op declaration is
   used to determine the class name. Therefore, in general, it is not necessary to declare
-  the class as a sort. Assume we want to access to class method [[Math.abs()]] from the Java
-  library. We therefore declare the [[abs]] operator in MetaSlang as follows:</para>
+  the class as a type. Assume we want to access to class method [[Math.abs()]] from the Java
+  library. We therefore declare the [[abs]] operator in &Metaslang; as follows:
 
 [[
 ||   op Math.abs: Integer -> Nat
 ]]
 
-  <para>The code generator will then generate a call to the static method [[Math.abs()]] whenever
-  it is used in the MetaSlang spec.  The access to static methods has lower priority than
-  the access to instance methods: if the first argument is a user type that is not refined
+  The code generator will then generate a call to the static method [[Math.abs()]] whenever
+  it is used in the &Metaslang; spec.  The access to static methods has lower priority than
+  the access to instance methods: if the first argument is a user type that is not defined
   in the spec, than the instance call is generated. In other words, a static method in
-  class A with first argument of type A will not be accessible from MetaSlang. The latter
-  situation is not very common, so it does not represent a limitation of the
-  MetaSlang-Java interface in practice.</para>
+  <emphasis>class</emphasis> <"A"> with a first argument of <emphasis>type</emphasis> [[A]] will not be accessible from &Metaslang;. The latter
+  situation is not very common, and in practice this does not constitute a limitation of the
+  &Metaslang;-Java interface.</para>
 </listitem>
 <listitem>
 <para>
 Accessing Java Constructors --
-  The access of Java constructors follows the same principle as the access of class
-  methods.  The difference is that on the MetaSlang side, an op with a name having the
-  prefix [[new]] and an appropiate result type must be declared.  For instance, the Java
+  Accessing Java constructors follows the same principle as for class
+  methods.  The difference is that on the &Metaslang; side, an op with a name having the
+  prefix [[new]] and an appropriate result type must be declared.  For instance, the Java
   class [[Vector]] declares a constructor with no arguments.  If we want to use that in
-  MetaSlang, we have to provide the following declarations:</para>
+  &Metaslang;, we have to provide the following declarations:
 
 [[
-|| sort Vector
+|| type Vector
 || op Vector.new: () -> Vector
 ]]
 
-  <para>Whenever [[Vector.new()]] is used as a term in the MetaSlang spec, a call to the
-  corresponding Java constructor in the Vector class is generated.
+  Whenever [[Vector.new()]] is used as a term in the &Metaslang; spec, a call to the
+  corresponding Java constructor in the <"Vector"> class is generated.
   If the class has
   multiple constructors with different parameter lists, multiple [[new]] ops can be declared
-  in the MetaSlang spec with different suffixes (e.g., [[new_2]]) The Java code ignores the
-  suffixes, but they are essential for MetaSlang, which doesn't allow the redefinition of
+  in the &Metaslang; spec with different suffixes (e.g., [[new_2]]) The Java code ignores the
+  suffixes, but they are essential for &Metaslang;, which does not allow the redefinition of
   ops with different signatures.
 </para>
 
 
 <para>In general, if multiple methods and constructors from a class in the Java library need to
-be accessed in the MetaSlang spec, it is a good idea to structure them using the
-[[qualifying]] features of MetaSlang. For instance:</para>
+be accessed in a &Metaslang; spec, it is a good idea to structure them using the
+[[qualifying]] feature of &Metaslang;. For instance:
 
 [[
 || Vector qualifying spec 
-||       sort Vector
+||       type Vector
 ||       op new: () -> Vector
 ||       op add: [a] Vector * a -> Vector
 ||       op size: Vector -> Nat
@@ -359,7 +369,7 @@ be accessed in the MetaSlang spec, it is a good idea to structure them using the
 || endspec
 ]]
 
-<para>and then importing the specs into the application spec that uses it. Future versions of the
+and then importing the specs into the application spec that uses it. Future versions of the
 Specware system will provide a utility to convert a given Java class into a spec following
 the above conventions.</para>
 </listitem>
@@ -367,10 +377,10 @@ the above conventions.</para>
 </section>
 
 <section>
-<title>Type Conversion between Java and MetaSlang</title>
+<title>Type Conversion between Java and &Metaslang;</title>
 
-<para>The following table shows the conversion of Java types to MetaSlang, which can be used
-when accessing Java methods from MetaSlang</para>
+<para>The following table shows the conversion of Java types to &Metaslang;, which can be used
+when accessing Java methods from &Metaslang;</para>
 
 <informaltable frame="sides" colsep="1">
  <tgroup cols="2">
@@ -379,7 +389,7 @@ when accessing Java methods from MetaSlang</para>
   <thead>
    <row>
      <entry colname="java">Java</entry>
-     <entry colname="mtsl">MetaSlang</entry>
+     <entry colname="mtsl">&Metaslang;</entry>
    </row>
   </thead>
   <tbody>
@@ -412,7 +422,7 @@ when accessing Java methods from MetaSlang</para>
    </row>
    <row>
     <entry colname="java">Any Java class name</entry>
-    <entry colname="mtsl">MetaSlang type with the same name (type must be declared in the spec)</entry>
+    <entry colname="mtsl">&Metaslang; type with the same name (type must be declared in the spec)</entry>
    </row>
   </tbody>
  </tgroup>

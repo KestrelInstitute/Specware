@@ -46,7 +46,7 @@ The following documentation is included with the distribution package:
 
 <listitem>
   <para> &SpecwareV; Quick Reference -- The Quick Reference gives an
-  overview of processing commands and Metaslang language constructs.
+  overview of processing commands and &Metaslang; language constructs.
   </para>
 </listitem>
 
@@ -71,8 +71,8 @@ The following documentation is included with the distribution package:
 <listitem>
   <para>
      &SpecwareV; Language Manual -- The Language Manual discusses
-     the Metaslang specification language and gives the grammar rules
-     and meaning for each Metaslang language construct.
+     the &Metaslang; specification language and gives the grammar rules
+     and meaning for each &Metaslang; language construct.
   </para>
 </listitem>
 

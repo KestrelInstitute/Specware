@@ -52,7 +52,7 @@ example, when Lisp code is generated from a spec, the code is
 deposited into a <".lisp"> file.</para>
 
 <para>From the &SShell; it is possible to evaluate
-Metaslang expressions in the context of a given spec, either
+&Metaslang; expressions in the context of a given spec, either
 directly or through generated Lisp code.</para>
 
 <para>&Specware; also features auxiliary commands to display

@@ -18,6 +18,7 @@
  <!ENTITY Metaslang "Metaslang">
  <!ENTITY lt "&#60;">
  <!ENTITY gt "&#62;">
+ <!ENTITY amp "&#38;">
  <!ENTITY emdash "--">
  <!ENTITY swpath "<computeroutput>SWPATH</computeroutput>">
 ]>
@@ -49,6 +50,8 @@
 &prove;
 &generatedlisp;
 &debug;
+<!--
 &emacs;
+-->
 
 </book>

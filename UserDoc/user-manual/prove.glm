@@ -28,12 +28,14 @@ A typical proof term is of the form: </para>
 term, and [[f_stable]], [[stable_charn]], and [[f_defn]] must all be
 names of claims (i.e. axioms, conjectures, or theorems) that appear in
 the spec resulting from elaborating that unit term.
-If this proof term is in file <"pruf.sw"> then issuing the command
-[[proc pruf]] will result in translating [[stable_charn]],
-[[f_defn]] and [[f_stable]] to Snark formulas and then invoking the Snark
+If this proof term is in the single-unit file <"pruf.sw">,
+then issuing the command [[proc pruf]] will result in
+first translating [[stable_charn]], [[f_defn]] and [[f_stable]]
+to Snark formulas, and then invoking the Snark
 prover to try to prove [[f_stable]] from the hypotheses [[stable_charn]]
 and [[f_defn]], using the options in the [[options]] list.
-Note that the claims used as hypotheses -- [[stable_charn]] and
+To avoid circular proofs,
+the claims used as hypotheses -- [[stable_charn]] and
 [[f_defn]] in the example -- are required to appear earlier in that spec
 than the claim to be proved -- [[f_stable]] in the example.
 Most users will omit the [[options]] part.
@@ -48,7 +50,7 @@ failure of the Snark proof.  </para>
 </section>
 
 <section>
-<title>Proof errors</title>
+<title>Proof Errors</title>
 
 <para> &Specware; will report an error if the claim to be proved
 does not occur in the spec, or if not all claims following [[using]]
