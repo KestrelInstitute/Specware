@@ -30,6 +30,7 @@
   #+cmu       (extensions:default-directory) ; pathname
   #+sbcl      (sb-unix:posix-getcwd)
   #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
+  #+clisp     (ext:default-directory)
   )
 
 #+gcl
@@ -78,11 +79,17 @@
       (make-pathname :directory dir
 		     :device dev))))
 
+(defvar *tdir*)
+(defvar *tdirp*)
+
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
   (let ((dirpath (dir-to-path directory)))
     (setq directory (namestring dirpath))
-    (if (probe-file dirpath)
+    (if (#-clisp probe-file
+	 #+clisp ext:probe-directory
+	         #-clisp (remove-final-slash directory)  ; remove necessary in some cl's
+	         #+clisp directory) 
 	(progn
 	  #+allegro   (excl::chdir          directory)
 	  #+Lispworks (hcl:change-directory directory)
@@ -91,6 +98,7 @@
 	  #+cmu       (setf (extensions:default-directory) directory)
 	  #+cmu       (unix:unix-chdir directory)
 	  #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
+	  #+clisp     (setf (ext:default-directory) directory)
 					;#+gcl       
 	  ;; in Allegro CL, at least,
 	  ;; if (current-directory) is already a pathname, then
@@ -112,6 +120,7 @@
   #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
   #+sbcl      (sb-ext:posix-getenv  varname)
   #+gcl       (si:getenv varname)
+  #+clisp     (ext:getenv varname)
   )
 
 (defun setenv (varname newvalue)
@@ -129,6 +138,7 @@
 					   varname newvalue 1)
 		     (getenv varname))
   #+gcl       (si:setenv varname newvalue)
+  #+clisp     (setf (ext:getenv varname) newvalue)
   )
 
 #+(or mcl Lispworks)
@@ -157,9 +167,11 @@
 (defvar *fasl-type*
   #+allegro "fasl"
   #+mcl     "dfsl"
-  #+cmu     "x86f"
+  #+(and cmu (not ppc)) "x86f"
+  #+(and cmu ppc)       "ppcf"
   #+sbcl    sb-fasl:*fasl-file-type*
-  #+gcl     "o")
+  #+gcl     "o"
+  #+clisp   "fas")
 
 #+cmu
 (setq lisp::*load-lp-object-types* (remove "FASL" lisp::*load-lp-object-types* :test 'string=)
@@ -171,11 +183,12 @@
   (defun compile-file-if-needed (file)
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
-    #+(or cmu mcl sbcl gcl)
+    #+(or cmu mcl sbcl gcl clisp)
     (when (> (file-write-date file)
-	     (or (file-write-date (make-pathname :defaults file
-						 :type *fasl-type*))
-		 0)) 
+	     (let ((fasl-file (probe-file (make-pathname :defaults file
+							 :type *fasl-type*))))
+	       (if fasl-file (or (file-write-date fasl-file) 0)
+		 0))) 
       (compile-file file))))
 
 (defun compile-and-load-lisp-file (file)
@@ -205,6 +218,12 @@
 	      '(#\/ #\\))
       dirname
     (concatenate 'string dirname "/")))
+
+(defun remove-final-slash (dirname)
+  (let ((last-index (- (length dirname) 1)))
+    (if (member (elt dirname last-index) '(#\/ #\\))
+	(subseq dirname 0 last-index)
+      dirname)))
 
 (defparameter temporaryDirectory
   (ensure-final-slash
@@ -240,9 +259,10 @@
     (do ((ch (read-char str nil nil) (read-char str nil nil))) 
 	((null ch) (close str) (sys:os-wait)) (write-char ch)))
   #+cmu  (ext:run-program command-str nil :output t)
-  #+mcl  (ccl:run-program command-str :output t)
+  #+mcl  (ccl:run-program command-str nil :output t)
   #+sbcl (sb-ext:run-program (format nil "command -p ~A" command-str) :output t)
   #+gcl  (lisp:system command-str)
+  #+clisp (ext:run-program command-str )
   #-(or cmu mcl sbcl allegro gcl) (format nil "Not yet implemented"))
 
 (defun copy-file (source target)
@@ -321,12 +341,13 @@
   #+allegro(sys::copy-directory source target)
   ;#+cmu (unix::copy-directory source target)
   #-allegro
-  (let ((source-dirpath (if (stringp source)
-			    (parse-namestring (ensure-final-slash source))
-			  source))
-	(target-dirpath (if (stringp target)
-			    (parse-namestring (ensure-final-slash target))
-			  target)))
+  (let* ((source-dirpath (if (stringp source)
+			     (parse-namestring (ensure-final-slash source))
+			   source))
+	 (source-dirpath (merge-pathnames (make-pathname :name :wild) source-dirpath))
+	 (target-dirpath (if (stringp target)
+			     (parse-namestring (ensure-final-slash target))
+			   target)))
     (unless (probe-file target-dirpath)
       (make-directory target-dirpath))
     (loop for dir-item in (directory source-dirpath)

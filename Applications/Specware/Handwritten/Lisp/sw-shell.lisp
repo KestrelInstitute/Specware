@@ -119,7 +119,7 @@
 		    (setq form (intern (symbol-name form) sw-shell-pkg)))
 		  (cond ((member form '(quit exit))
 			 (setq exiting-lisp? t)
-			 (cl-user::exit))
+			 (specware::exit))
 			((eq form 'ok)
 			 (return))
 			((not (eq form magic-eof-cookie))
@@ -138,7 +138,7 @@
 			((> number-of-eofs eofs-before-quit)
 			 (format t "~&Received more than ~D EOFs; Aborting.~%"
 				 eofs-before-quit)
-			 (cl-user::exit))
+			 (specware::exit))
 			(t
 			 (format t "~&Received EOF.~%"))))))))
       
@@ -180,7 +180,7 @@
 	      (cl-user::sw-help argstr)))
       (cd (if (null argstr)
 	      (princ (namestring (specware::current-directory)))
-	    (cl-user::cd argstr))
+	    (specware::cd argstr))
 	  (values))
       (pwd (princ (namestring (specware::current-directory)))
 	   (values))

@@ -60,9 +60,9 @@
 #+cmu
 (compile-and-load-lisp-file (concatenate 'string
 					 Specware4 "/Applications/Handwritten/Lisp/cmucl-patch"))
-#+sbcl
-(compile-and-load-lisp-file (concatenate 'string
-					 Specware4 "/Applications/Handwritten/Lisp/sbcl-patch"))
+;#+sbcl
+;(compile-and-load-lisp-file (concatenate 'string
+;					 Specware4 "/Applications/Handwritten/Lisp/sbcl-patch"))
 
 (defun ignore-warning (condition)
    (declare (ignore condition))

@@ -371,7 +371,9 @@
   `(#+Allegro excl::fixnump 
     #+CMU     extensions::fixnump
     #+gcl     si:fixnump
-    #-(or Allegro CMU gcl) (error "parser4::fixnum? not defined!")
+    #+mcl     ccl:fixnump
+    #+clisp   system::fixnump
+    #-(or Allegro CMU gcl clisp) (error "parser4::fixnum? not defined!")
     ,x))
     
 #+OPTIMIZE-PARSER

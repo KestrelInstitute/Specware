@@ -1042,6 +1042,8 @@
   (if b? (princ (setq SpecCalc::specwareWizard? b))
     (princ SpecCalc::specwareWizard?)))
 
+(defpackage :System-Spec)
+
 ;; When the following boolean is true, then the System.debug function will
 ;; take the user into the Lisp debugger.
 ;; already declared in ~/Work/Generic/Specware4/Library/Base/Handwritten/Lisp/System.lisp :
@@ -1116,7 +1118,7 @@
   (and (find-package "ILISP")
        (find-symbol "ILISP-COMPILE" "ILISP")))
 
-(defun cd (&optional (dir ""))
+(defun specware::cd (&optional (dir ""))
   (if (equal dir "")
       (setq dir (home-dir))
     (setq dir (subst-home dir)))
@@ -1125,13 +1127,13 @@
     (loop while (and (not error?) (> (length dir) 1) (equal (subseq dir 0 2) ".."))
       do (setq dir (subseq dir (if (and (> (length dir) 2) (eq (elt dir 2) #\/))
 				   3 2)))
-         (let* ((olddirpath (pathname-directory new-dir))
-		(pathlen (length olddirpath)))
-	   (if (< pathlen 2)
-	       (progn (warn "At top of directory tree")
-		      (setq error? t))
-	     (setq new-dir (make-pathname :directory (subseq olddirpath 0 (- pathlen 1))
-					  :defaults new-dir)))))
+      (let* ((olddirpath (pathname-directory new-dir))
+	     (pathlen (length olddirpath)))
+	(if (< pathlen 2)
+	    (progn (warn "At top of directory tree")
+		   (setq error? t))
+	  (setq new-dir (make-pathname :directory (subseq olddirpath 0 (- pathlen 1))
+				       :defaults new-dir)))))
     (unless error?
       (setq new-dir (specware::dir-to-path dir new-dir))
       (when (specware::change-directory new-dir)
@@ -1144,7 +1146,10 @@
                                                (cons default-directory nil))"
 					  (specware::ensure-final-slash newdir)))))))
     (princ (namestring (specware::current-directory)))
-    (values))))
+    (values)))
+
+(unless (fboundp 'cd)
+  (defun cd (&optional (dir "")) (specware::cd dir)))
 
 (defun ld (file)
   (load (subst-home file)))
@@ -1153,7 +1158,7 @@
   (princ (namestring (specware::current-directory)))
   (values))
 
-#-allegro
+#-(or allegro clisp)
 (defun exit ()
   (quit))
 
@@ -1229,8 +1234,12 @@
     (list-files sw-files)
     (values)))
 
-(defun dir (&optional (str ""))
+(defun specware::dir (&optional (str ""))
   (ls str))
+
+(unless (fboundp 'dir)
+  (defun dir (&optional (str ""))
+    (ls str)))
 
 (defun dirr (&optional (str ""))
   (list-directory-rec (specware::dir-to-path str))
