@@ -243,7 +243,6 @@ $LISP -batch <<-XXXX
 	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x2000000)
 XXXX
 
-
 echo " "
 echo "Loading Specware ... (for dumplisp)"
 echo " "

@@ -63,12 +63,13 @@
 
 (defun compact-memory (&optional verbose?)
   (gc)
-  (sys::resize-areas :old            #x2000000  ; make oldspace at least this large
-		     :global-gc      t          ; trigger global gc to compact oldspace
-		     :tenure         t          ; move data from newspace into oldspace
-		     :expand         t          ; expand oldspace if necessary
-		     :sift-old-areas t          ; combine adjacent oldspaces
+  (sys::resize-areas :verbose        verbose?
+		     :global-gc      t          ; first, trigger global gc to compact oldspace
+		     :tenure         t          ; second, move data from newspace into oldspace
+		     :sift-old-areas t          ; third, combine adjacent oldspaces
 		     :pack-heap      nil        ; do not make topmost oldspace as small as possible
+		     :expand         t          ; expand oldspace if necessary, as follows:
+		     :old            #x2000000  ; last, make oldspace at least this large 
 		     )
   (when verbose?
     (sys::gsgc-parameters)
