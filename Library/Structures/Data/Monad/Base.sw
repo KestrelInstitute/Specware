@@ -24,12 +24,12 @@ spec {
   op >>= infixl 6 : fa (a,b) Monad a * (a -> Monad b) -> Monad b
   op >> infixl 6 : fa (a,b) Monad a * Monad b -> Monad b
 
-  axiom "left unit" is
+  axiom left_unit is
     sort fa (a,b) fa (f : a -> Monad b, x : a) ((return x) >>= f) = (f x)
 
-  axiom "right unit" is sort fa (a) fa (m : Monad a) (m >>= return) = m
+  axiom right_unit is sort fa (a) fa (m : Monad a) (m >>= return) = m
 
-  axiom "associativity" is
+  axiom associativity is
     sort fa (a,b,c) fa (m : Monad a, f : a -> Monad b, h : b -> Monad c)
       (m >>= (fn x -> (f x >>= h))) = ((m >>= f) >>= h)
 \end{spec}
@@ -38,7 +38,7 @@ This next axiom could just as well be definition of the second
 sequencing operator but that would preclude one from refining it.
 
 \begin{spec}
-  axiom "non-binding sequence" is
+  axiom non_binding_sequence is
     sort fa (a) fa (f : Monad a, g : Monad a) (f >> g) = (f >>= (fn _ -> g))
 \end{spec}
 
