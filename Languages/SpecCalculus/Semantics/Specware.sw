@@ -89,6 +89,41 @@ compiles the resulting specification to lisp.
 \end{spec}
 
 \begin{spec}
+  op evaluatePrint_fromLisp : String -> ()
+  def evaluatePrint_fromLisp path = 
+    let run = {
+      restoreSavedSpecwareState;
+      currentURI <- pathToCanonicalURI ".";
+      setCurrentURI currentURI;
+      uri <- pathToRelativeURI (removeSWsuffix path); 
+      evaluatePrint (URI uri, pos0);
+      saveSpecwareState
+    } in
+    case catch run toplevelHandler ignoredState of
+      | (Ok val,_) -> ()
+      | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
+The following corresponds to the :show command.
+
+\begin{spec}
+  op listLoadedUnits : () -> ()
+  def listLoadedUnits () = 
+    let run = {
+      restoreSavedSpecwareState;
+      globalContext <- getGlobalContext;
+      uriList <-
+        return (foldMap
+          (fn lst -> fn dom -> fn cod -> Cons (dom, lst)) [] globalContext);
+      print (ppFormat (ppSep ppNewline (map ppURI uriList)));
+      saveSpecwareState     % shouldn't change anything
+    } in
+    case catch run toplevelHandler ignoredState of
+      | (Ok val,_) -> ()
+      | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
+\begin{spec}
   op evaluateLispCompile_fromLisp : String * Option String -> ()
   def evaluateLispCompile_fromLisp (path,targetFile) = 
     let target =
@@ -174,6 +209,11 @@ sense that no toplevel functions return anything.
      let message = % "Uncaught exception: " ++
        (case except of
          | Fail str -> "Fail: " ^ str
+         | SpecError (position,msg) ->
+               "Error in specification: "
+             ^ msg
+             ^ " at "
+             ^ (showPosition position)
          | DiagError (position,msg) ->
                "Diagram error: "
              ^ msg
@@ -210,7 +250,9 @@ sense that no toplevel functions return anything.
              ^ str
              ^ " at "
              ^ (showPosition position)
-         | _ -> "Unknown exception")
+         | _ -> 
+               "Unknown exception" 
+             ^ (System.toString except))
      in
        if specwareWizard? then
          fail message

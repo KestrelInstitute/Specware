@@ -893,9 +893,8 @@ AnnSpecPrinter qualifying spec {
       let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
       blockAll(0,
                [(0,blockFill(0,
-                             [(0, pp.Module),
-                              (0, string " "),
-                              (0, pp.Equals)]))]
+                             [(0, pp.Spec),
+                              (0, string " ")]))]
                ++
                (map (fn (spec_ref, spc) -> (1,prettysFill [pp.Import, string spec_ref])) imports) 
                ++
@@ -905,7 +904,7 @@ AnnSpecPrinter qualifying spec {
                ++
                (ListUtilities.mapWithIndex (ppProperty context) properties)
                ++
-               [(0, pp.EndModule),
+               [(0, pp.EndSpec),
                 (0, string "")])
 
   def ppSpecR context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
@@ -915,8 +914,7 @@ AnnSpecPrinter qualifying spec {
       blockAll(0,
                [(0, blockFill(0,
                               [(0, pp.Spec),
-                               (0, string " "),
-                               (0, pp.Equals)]))]
+                               (0, string " ")]))]
                ++
                (map (fn (spec_ref, spc) -> (1,prettysFill [pp.Import, string spec_ref])) imports) 
                ++

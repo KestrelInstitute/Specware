@@ -13,5 +13,5 @@ spec {
   op throw : fa (a) Exception -> Monad a
   op catch : fa (a) Monad a -> (Exception -> Monad a) -> Monad a
 
-  axiom throw_and_raise is throw = raise
+  axiom throw_is_raise is throw = raise
 }

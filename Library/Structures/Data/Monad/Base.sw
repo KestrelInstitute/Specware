@@ -14,6 +14,7 @@ Structures/Data/Monad resolves to Structures/Data/Monad/Base.sw
 This defines both the prefix and infix operators. There is
 support for the prefix form in the MetaSlang parser.
 
+\begin{spec}
 spec {
   sort Monad a
 
@@ -21,25 +22,24 @@ spec {
   op monadSeq : fa (a,b) (Monad a) * (Monad b) -> Monad b
   op return : fa (a) a -> Monad a
 
-  op >>= infixl 6 : fa (a,b) Monad a * (a -> Monad b) -> Monad b
-  op >> infixl 6 : fa (a,b) Monad a * Monad b -> Monad b
-
   axiom left_unit is
-    sort fa (a,b) fa (f : a -> Monad b, x : a) ((return x) >>= f) = (f x)
+    sort fa (a,b) fa (f:a->Monad b,x:a) monadBind (return x,f) = f x
 
-  axiom right_unit is sort fa (a) fa (m : Monad a) (m >>= return) = m
+  axiom right_unit is sort fa (a) fa (m:Monad a) monadBind (m,return) = m
 
   axiom associativity is
-    sort fa (a,b,c) fa (m : Monad a, f : a -> Monad b, h : b -> Monad c)
-      (m >>= (fn x -> (f x >>= h))) = ((m >>= f) >>= h)
+    sort fa (a,b,c) fa (m:Monad a, f:a ->Monad b, h:b->Monad c)
+      monadBind (m,(fn x -> monadBind (f x, h))) = monadBind (monadBind (m,f), h)
 \end{spec}
 
+Can the above we written using the monadic syntax?
+
 This next axiom could just as well be definition of the second
-sequencing operator but that would preclude one from refining it.
+sequencing operator but that might preclude one from refining it.
 
 \begin{spec}
-  axiom non_binding_sequence is
-    sort fa (a) fa (f : Monad a, g : Monad a) (f >> g) = (f >>= (fn _ -> g))
+axiom non_binding_sequence is
+  sort fa (a) fa (f:Monad a,g:Monad a) monadSeq (f,g) = monadBind (f,fn _ -> g)
 \end{spec}
 
 The following is essentially a \verb+foldl+ over a list but within a
@@ -47,8 +47,8 @@ monad. We may want to change the order this function takes its arguments
 and the structure of the argument (ie. curried or not) to be consistent
 with other fold operations. (But they are in the order that I like :-).
 
-Perhaps these don't belong here .. as we can probably abstract
-the sort List to any type we can iterate over.
+These don't belong here .. there are specific to lists and
+should be abstracted to data-types over which one can iterate.
 
 \begin{spec}
   op fold : fa (a,b) (a -> b -> Monad a) -> a -> List b -> Monad a

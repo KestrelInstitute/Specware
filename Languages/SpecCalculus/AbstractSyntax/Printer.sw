@@ -85,7 +85,6 @@ SpecCalc qualifying spec {
       | Spec specElems -> 
           ppConcat [
             ppString "spec {",
-            %% case optName of None -> ppNil | Some name -> ppString name,
             ppNewline,
             ppString "  ",
             ppNest 2 (ppSpecElems specElems),

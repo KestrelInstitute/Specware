@@ -36,6 +36,8 @@ SpecCalc qualifying spec {
 
   op evaluateTermInfo : SpecCalc.Term Position -> Env ValueInfo
 
+  op evaluatePrint : SpecCalc.Term Position -> Env ValueInfo
+
   op evaluateLet :
        List (Decl Position)
     -> SpecCalc.Term Position

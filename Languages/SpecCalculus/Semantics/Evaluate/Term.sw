@@ -15,6 +15,7 @@ SpecCalc qualifying spec {
  import DiagMorphism 
  import Generate      
  import Translate      
+ import Print      
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.
@@ -26,11 +27,7 @@ This is a monadic interpreter for the Spec Calculus.
 
  def SpecCalc.evaluateTermInfo term =
    case (valueOf term) of
-    | Print term -> {
-          (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
-          print (showValue value);
-          return (value,timeStamp,depURIs)
-        }
+    | Print term -> SpecCalc.evaluatePrint term
 
     | URI uri -> SpecCalc.evaluateURI (positionOf term) uri
 
@@ -88,7 +85,7 @@ This is a monadic interpreter for the Spec Calculus.
                                 ^ lang
                                 ^ "yet")))
             | _ -> raise (TypeCheck ((positionOf sub_term),
-                        "compiling a term that is not a specification")))
+                        "attempting to generate code from an object that is not a specification")))
         }
 }
 \end{spec}

@@ -8,7 +8,7 @@ SpecCalc qualifying spec {
   import URI/Utilities
   % import ../../../MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
-  import /Languages/MetaSlang/Specs/PosSpec
+  import Spec/Utilities
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -51,29 +51,29 @@ and then qualify the resulting spec if the spec was given a name.
   op evaluateSpecImport : (ASpec Position * TimeStamp * URI_Dependency)
                           -> SpecElem Position
                           -> Env (ASpec Position * TimeStamp * URI_Dependency)
-  def evaluateSpecImport (val as (spc,cTS,cDepURIs)) (elem, _(* position *)) =
+  def evaluateSpecImport (val as (spc,cTS,cDepURIs)) (elem, position) =
     case elem of
       | Import term -> {
             (value,iTS,depURIs) <- evaluateTermInfo term;
             (case value of
-              | Spec impSpec ->
-                 return (mergeImport ((term, impSpec), spc),
-			 max(cTS,iTS), cDepURIs ++ depURIs)
-                  %% return (extendImports spc impSpec) 
-              | _ -> raise(Fail("Import not a spec")))
+              | Spec impSpec -> {
+                    newSpc <- mergeImport term impSpec spc position;
+                    return (newSpc, max(cTS,iTS), cDepURIs ++ depURIs)
+                  }
+              | _ -> raise (Fail ("Import not a spec")))
           }
       | _ -> return val
 
   op evaluateSpecElem : ASpec Position
                           -> SpecElem Position
                           -> Env (ASpec Position)
-  def evaluateSpecElem spc (elem, _(* position *)) =
+  def evaluateSpecElem spc (elem, position) =
     case elem of
       | Import term -> return spc
       | Sort (name,(tyVars,optSort)) ->
-          return (addPSort ((name, tyVars, optSort), spc))
+          addPSort ((name, tyVars, optSort), spc) position
       | Op (name,(fxty,srtScheme,optTerm)) ->
-          return (addPOp ((name, fxty, srtScheme, optTerm), spc))
+          addPOp ((name, fxty, srtScheme, optTerm), spc) position
       | Claim (Axiom, name, tyVars, term) ->
           return (addAxiom ((name,tyVars,term), spc)) 
       | Claim (Theorem, name, tyVars, term) ->
@@ -82,45 +82,33 @@ and then qualify the resulting spec if the spec was given a name.
           return (addConjecture ((name,tyVars,term), spc))
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
 
- def mergeImport ((spec_term, imported_spec), spec_a) =
-   let spec_b = addImport ((showTerm spec_term, imported_spec), spec_a) in
-   let spec_c = setSorts
-                  (spec_b,
-		   foldriAQualifierMap
-		     (fn (imported_qualifier, 
-			  imported_id, 
-			  imported_sort_info, 
-			  combined_psorts) ->
-		      let newPSortInfo = convertSortInfoToPSortInfo imported_sort_info in
-		      let oldPSortInfo = findAQualifierMap(combined_psorts,imported_qualifier,
-							   imported_id) in
-		      insertAQualifierMap(combined_psorts,
-					  imported_qualifier,
-					  imported_id,
-					  mergePSortInfo(newPSortInfo,oldPSortInfo,
-							 imported_qualifier,imported_id)))
-		     spec_b.sorts
-		     imported_spec.sorts)
-   in
-   let spec_d = setOps(spec_c,
-                       foldriAQualifierMap
-		         (fn (imported_qualifier, 
-			      imported_id, 
-			      imported_op_info, 
-			      combined_pops) ->
-			  let newPOpInfo = convertOpInfoToPOpInfo imported_op_info in
-			  let oldPOpInfo = findAQualifierMap(combined_pops,imported_qualifier,
-							     imported_id) in
-			  insertAQualifierMap(combined_pops,
-					      imported_qualifier,
-					      imported_id,
-					      mergePOpInfo(newPOpInfo,oldPOpInfo,
-							   imported_qualifier,imported_id)))
-			 spec_c.ops
-			 imported_spec.ops)
-   in
-     spec_d
-
+  def mergeImport spec_term imported_spec spec_a position =
+    let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_psorts) =
+      let newPSortInfo = convertSortInfoToPSortInfo imported_sort_info in
+      let oldPSortInfo = findAQualifierMap (combined_psorts,imported_qualifier, imported_id) in {
+          mergedSorts <- SpecCalc.mergePSortInfo (newPSortInfo,oldPSortInfo, imported_qualifier,imported_id) position;
+          return (insertAQualifierMap (combined_psorts,
+                                       imported_qualifier,
+                                       imported_id,
+                                       mergedSorts))
+        } in
+    let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_pops) =
+      let newPOpInfo = convertOpInfoToPOpInfo imported_op_info in
+      let oldPOpInfo = findAQualifierMap (combined_pops,imported_qualifier, imported_id) in {
+           mergedOps <- SpecCalc.mergePOpInfo (newPOpInfo,oldPOpInfo, imported_qualifier,imported_id) position;
+           return (insertAQualifierMap (combined_pops,
+                                        imported_qualifier,
+                                        imported_id,
+                                        mergedOps))
+        } in
+    {
+      spec_b <- return (addImport ((showTerm spec_term, imported_spec), spec_a)); 
+      sorts_b <- foldOverQualifierMap mergeSortStep spec_b.sorts imported_spec.sorts;
+      spec_c <- return (setSorts (spec_b, sorts_b));
+      ops_c <- foldOverQualifierMap mergeOpStep spec_c.ops imported_spec.ops;
+      spec_d <- return (setOps(spec_c, ops_c));
+      return spec_d
+    }
 \end{spec}
 
 The following wraps the existing \verb+elaborateSpec+ in a monad until
@@ -145,15 +133,15 @@ of there are explicit imports or the spec is in a directory that ends in
 \begin{spec}
   op maybeAddBaseImport : ASpec Position * ASpec Position -> Env (ASpec Position)
   def maybeAddBaseImport (spc, initialSpec) =
-    if ~(spc = initialSpec) then return spc	% should already include Base
+    if ~(spc = initialSpec) then return spc        % should already include Base
      else
        {uri <- getCurrentURI;
-	if aBaseSpec?(uri, spc) then return spc       % defining base
-	else {(Spec baseSpec,_,_)
-	        <- SpecCalc.evaluateURI pos0
-	             (SpecPath_Relative {path = ["Library","Base"],
-					 hashSuffix = None});
-	      return (convertSpecToPosSpec baseSpec)}}
+        if aBaseSpec?(uri, spc) then return spc       % defining base
+        else {(Spec baseSpec,_,_)
+                <- SpecCalc.evaluateURI pos0
+                     (SpecPath_Relative {path = ["Library","Base"],
+                                         hashSuffix = None});
+              return (convertSpecToPosSpec baseSpec)}}
 
  op aBaseSpec? : URI * ASpec Position -> Boolean
  def aBaseSpec?(uri, spc) =
@@ -169,8 +157,5 @@ of there are explicit imports or the spec is in a directory that ends in
      | [_,_] -> false
      | ["Library","Base",_] -> true
      | _::r -> baseSpecPath? r
-\end{spec}
-
-\begin{spec}
 }
 \end{spec}
