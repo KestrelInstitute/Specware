@@ -43,9 +43,9 @@ SpecCalc qualifying spec {
    }
 
  def proverOptionsFromSpec(name, spc, spec_name) = {
-   options <- return(findTheOp(spc, name));
+   possible_options_op <- return(findTheOp(spc, name));
    options_def <-
-      (case options of
+      (case possible_options_op of
 	 | Some (_,_,_,[(_,opTerm)]) -> return (opTerm)
 	 | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId(name) ^
 		       (case spec_name of
