@@ -31,4 +31,23 @@ XML qualifying spec
   def MakeSubsortSortDescriptor   (base, pp)  : SortDescriptor = Subsort    (base, pp)
   def MakeBaseSortDescriptor      (q,id,args) : SortDescriptor = Base       ((q,id), args)
 
+  %% Does this belong here (for use by apps) or elsewhere (for use by just Specware itself) ?
+
+  sort SortDescriptorExpansionTable = List (SortDescriptor * SortDescriptor)
+
+  def expand_SortDescriptor (sd : SortDescriptor, table : SortDescriptorExpansionTable) =
+   let
+      def aux sd =
+	let possible_entry = find (fn (x,_) -> x = sd) table in
+	case possible_entry of
+	  | None -> sd
+	  | Some (_, expansion) ->
+	    case expansion of
+	      | Base     _      -> aux expansion
+	      | Subsort  (x, _) -> aux x
+	      | Quotient (x, _) -> aux x
+	      | _               -> expansion
+   in
+     aux sd
+
 endspec
