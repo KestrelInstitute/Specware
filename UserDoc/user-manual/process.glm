@@ -139,6 +139,26 @@ file must be a multiple-unit file. Assuming that this is the case and
 that it contains a unit definition with identifier [[f]], its defining
 text is the result of the fourth step.</para>
 
+<para>The directories in &swpath; are searched in order in the third
+step of resolution. So, in the last example if the directory
+<"c:\tmp"> also contains a file <"e.sw">, such a file is ignored.
+This features can be used, for example, to shadow selected library
+units that populate certain file system directories in
+&swpath;.</para>
+
+<para>For example, suppose that the first directory in &swpath; is
+<"\specware\libs"> and that the directory
+<"c:\specware\libs\data-structures"> contains files <"Sets.sw">,
+<"Bags.sw">, <"Lists.sw">, etc. defining specs of sets, bags, lists,
+etc. The unit reference [[/data-structures/Sets]] resolves to the
+content of the file <"c:\specware\libs\data-structures\Sets.sw">. If
+the user wanted to experiment with a slightly version of the spec of
+sets, it is sufficient to prepend another directory to &swpath;, e.g.,
+<"shadow-lib"> and to create the slightly different version of the
+spec of sets in <"c:\shadow-lib\data-structures\Sets.sw">. The same
+unit reference [[/data-structures/Sets]] will now resolve to the new
+version.</para>
+
 </section>  <!-- absolute references -->
 
 <section>
@@ -286,18 +306,198 @@ reference is a single identifier.</para>
 <section>
 <title>Processing Commands</title>
 
+<para>The &Specware; command to process units is [[L::sw]]. The user
+supplies this command in the XEmacs buffer of the Lisp shell, followed
+by an argument. The argument is a unit reference, a piece of text
+defining an unnamed unit, or the name of a multiple-unit file. The
+whole command (including the argument) must fit in one line.</para>
+
+<section>
+<title>Processing a Named Unit</title>
+
+<para>The command to process a named unit is:</para>
+
+[[L:
+||    :sw <unit-reference>
+]]
+
+<para>The unit reference can be absolute or relative. If it is
+absolute, &Specware; attempts to resolve it as explained in the
+section on resolution of absolute references above.  If it is
+relative, &Specware; attempts to resolve it as explained in the
+section on resolution of relative references above, as if the
+reference occurred in a single-unit file of the current Lisp
+directory. Either way, if resolution fails an error is signaled by
+&Specware;.</para>
+
+<para>If instead resolution succeeds, &Specware; parses and evaluates
+the unit-defining text that results from resolution. Parsing and
+evaluation carry out the computations to construct the unit; they are
+&Specware;'s ``core'' functionality. Parsing and evaluation implement
+the semantics of the &Metaslang; language.</para>
+
+<para>If the defining text of the unit includes references to other
+units. &Specware; recursively resolves the references and parses and
+evaluates their defining text.</para>
+
 </section>
 
 <section>
+<title>Processing an Unnamed Unit</title>
+
+<para>The command to process an unnamed unit is:</para>
+
+[[L:
+||    :sw <unit-defining-text>
+]]
+
+<para>The unit defining text is written in the &Metaslang;
+language. It can be anything that can appear in a single-unit file or
+at the right of ``='' in a unit definition is a multiple-unit file.
+The only restriction is that it must fit in one line.  &Specware;
+parses and evaluates the text. If it contains references to other
+units, &Specware; recursively resolves the references and parses and
+evaluates their defining text.</para>
+
+</section>
+
+<section>
+<title>Processing a Multiple-Unit File</title>
+
+<para>The command to process a multiple-unit file is:</para>
+
+[[L:
+||   :sw <file-reference>
+]]
+
+<para>The file reference is syntactically exactly like a unit
+reference that does not contain ``#''. &Specware; attempts to resolve
+the reference as if it were a unit reference. If it is a relative
+reference, it is resolved as if it occurred inside a single-unit file
+in the Lisp current directory.  However, the file obtained at the
+third step must be a multi-unit file, and not a single-unit file.  If
+it is indeed a multi-unit file, &Specware; parses and evaluates all
+the unit definitions inside the file.</para>
+
+</section>
+
+<section>
+<title>Repeating the Last Processing Command</title>
+
+<para>If the [[L::sw]] command is given without an argument,
+&Specware; re-executes the last [[L::sw]] command that has been
+executed. If no [[L::sw]] command has been yet executed in the current
+&Specware; session, an error is signaled.</para>
+
+</section>
+
+</section>  <!-- processing commands -->
+
+<section>
 <title>Unit-Specific Processing</title>
+
+<para>This section describes what happens when specific kinds of units
+are processed.</section>
 
 </section>
 
 <section>
 <title>Auxiliary Commands</title>
 
-<!-- command to clear the cache -->
+<section>
+<title>Displaying Unit Values</title>
+
+<para>When a unit definition is processed, a unit value is produced.
+For example, a spec is essentially a set of sorts, ops, and axioms.  A
+spec can be constructed by means of various operators in the
+&Metaslang; language, but the final result is always a spec, i.e., a
+set of sorts, ops, and axioms.</para>
+
+<para>The [[L::show]] command is used to display the value of a
+unit. Like [[L::sw]], it is also supplied in the XEmacs buffer of the
+Lisp shell and it is followed by a one-line argument. The argument
+is either a unit reference or a unnamed unit.</para>
+
+<para>The command to display a named unit is:</para>
+[[L:
+||    :show <unit-reference>
+]]
+
+<para>This command first processes the unit, exactly as if it were
+[[L::sw <unit-reference>]]. In addition, if processing does not yield
+errors, the value of the unit is displayed on screen. Of course, if
+the referenced unit has been already processed via a [[L::sw]] command
+and its defining text has not been changed after that, the [[L::show]]
+command will access the results saved in &Specware;'s internal
+cache.</para>
+
+<para>The command to display an unnamed unit is:</para>
+
+[[L:
+||    :show <unit-defining-text>
+]]
+
+<para>This command first processes the unit, exactly as if it were
+[[L::sw <unit-defining-text>]]. In addition, if processing does not
+yield errors, the value of the unit is displayed on screen.</para>
+
+<para>If the [[L::show]] command is given without an argument, it
+displays the value of the unit processed by the last [[L::show]]
+command that has been executed. If no [[L::sw]] command has been yet
+executed in the current &Specware; session, an error is
+signaled.</para>
+
+<para>The [[L::show]] serves to inspect the value of units constructed
+via the &Metaslang; operators. This is especially useful for beginning
+users as an aid to clarify the semantics of such operators.</para>
 
 </section>
+
+<section>
+<title>Inspecting and Clearing the Cache</title>
+
+<para>As already mentioned, &Specware; maintains an internal cache
+that associates processing results to unit references.</para>
+
+<para>A list of the units currently present in the cache is displayed
+on screen via the following command:</para>
+
+[[L:
+||    :swlist
+]]
+
+<para>The cache is cleared (i.e., re-initialized) via the following
+command:</para>
+
+[[L:
+||    :swinit
+]]
+
+<para>Normally, there is no need to use these commands.</para>
+
+</section>
+
+<section>
+<title>Inspecting and Setting &swpath;</title>
+
+<para>The value of the &swpath; environment variable is displayed on
+screen via the following command:</para>
+
+[[L:
+||    :swpath
+]]
+
+<para>The value of the &swpath; environment variable is changed
+via the following command:</para>
+
+[[L:
+||    :swpath <string>
+]]
+
+<para>As already explained, the string must be a colon-separated list
+of absolute directory paths of the underlying operating system,
+surrounded by double quotes.</para>
+
+</section>  <!-- auxiliary commands -->
 
 </chapter>
