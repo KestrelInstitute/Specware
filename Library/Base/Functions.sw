@@ -37,6 +37,6 @@ Functions qualifying spec
     fa (f : a -> b) bijective? f <=> injective? f & surjective? f
 
   axiom inverse_def is sort fa(a,b)
-    fa (f : a -> b)  (inverse f) o f = id  &  f o (inverse f) = id
+    fa (f : Bijective(a,b))  (inverse f) o f = id  &  f o (inverse f) = id
 
 endspec
