@@ -7,6 +7,7 @@
   :output '(";;; Elaborating proof-term at $TESTDIR/Option#P"
 	    ";;; Elaborating obligator at $TESTDIR/Option#P"
 	    ";;; Elaborating spec at $TESTDIR/Option#O"
+	    (:optional ";;; Elaborating spec at $SPECWARE/Provers/ProofChecker/Libs/Logic")
 	    (:optional ";; ensure-directories-exist: creating $TESTDIR/Snark/Option/P.log")
 	    ";; Directory $TESTDIR/Snark/ does not exist, will create."
 	    ";; Directory $TESTDIR/Snark/Option/ does not exist, will create."
