@@ -9,7 +9,8 @@ corresponding to initial and final states.
 
 \begin{spec}
 spec {
-  import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
+  % import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
+  import SpecCalc qualifying /Languages/BSpecs/Predicative/BetterPrinter
   % import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
 
   sort Procedure = {
@@ -85,7 +86,7 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppString "bspec=",
       ppNewline,
       ppString "  ",
-      ppIndent (ppBSpecLess proc.code proc.staticSpec)
+      ppIndent (ppBSpecShort proc.code proc.dynamicSpec)
     ]
 
   op ppProcedure : Procedure -> Pretty

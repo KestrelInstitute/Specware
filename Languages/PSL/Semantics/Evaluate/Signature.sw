@@ -2,7 +2,6 @@
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import ../../AbstractSyntax/Types
   import ../Environment
 
   op evaluateURI : Position -> RelativeURI -> Env ValueInfo

@@ -6,12 +6,7 @@ the P as parameterized spec.
 
 \begin{spec}
 SpecCalc qualifying spec {
-  % import /Languages/MetaSlang/Specs/PosSpec
-  import Spec
-  % import ../Utilities
   import New
-  % import Signature 
-  % import Util
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -71,7 +66,16 @@ They are procedures in context.
       | Import term -> {
             (value,importTimeStamp,depURIs) <- evaluateTermInfo term;
             (case value of
-              | PSpec impPSpec -> return (impPSpec,importTimeStamp,depURIs)  % This is wrong .. should merge!
+              | PSpec impPSpec -> {
+                    newStatic <- mergeImport term (convertPosSpecToSpec impPSpec.staticSpec) pSpec.staticSpec position;
+                    newDynamic <- mergeImport term (convertPosSpecToSpec impPSpec.dynamicSpec) pSpec.dynamicSpec position;
+                    newPSpec <- setStaticSpec pSpec newStatic;
+                    newPSpec <- setDynamicSpec newPSpec newDynamic;
+                    newPSpec <- setProcedures newPSpec (foldMap
+                            (fn newMap -> fn d -> fn c -> PolyMap.update newMap d c)
+                                  newPSpec.procedures impPSpec.procedures);
+                    return (newPSpec, max (currentTimeStamp,importTimeStamp), currentDeps ++ depURIs)
+                  }
               | Spec impSpec -> {
                     newStatic <- mergeImport term impSpec pSpec.staticSpec position;
                     newPSpec <- setStaticSpec pSpec newStatic;
@@ -126,6 +130,11 @@ They are procedures in context.
             static <- staticSpec pSpec;
             static <- addOp names fxty srtScheme optTerm static position;
             setStaticSpec pSpec static
+          }
+      | Claim (Invariant, name, tyVars, term) -> {
+            dynamic <- dynamicSpec pSpec;
+            dynamic <- return (addAxiom ((name,tyVars,term), dynamic));
+            setDynamicSpec pSpec dynamic
           }
       | Claim (Axiom, name, tyVars, term) -> {
             static <- staticSpec pSpec;

@@ -2,14 +2,13 @@
 
 \begin{spec}
 spec {
-  import Signature 
+  % import Signature 
   import /Languages/MetaSlang/Specs/Elaborate/Utilities
   import /Languages/MetaSlang/Specs/PosSpec
   import /Languages/MetaSlang/AbstractSyntax/Fold
   import /Library/Legacy/DataStructures/ListPair
   import Spec/Utilities
   import ../Utilities
-  import Util
   import Spec
   import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
 
@@ -325,7 +324,7 @@ under the assumption that they are never used. Needs thought.
       | Do [] -> fail "compileCommand: Do: empty list of alternatives"
       | Do alts -> {
           (bSpec,cnt,pSpec) <- compileAlternatives pSpec first first bSpec cnt alts; 
-          axm <- return (disjList (map (fn ((guard,term),_) -> guard) alts));
+          axm <- return (mkNot (disjList (map (fn ((guard,term),_) -> guard) alts)));
           dyCtxt <- dynamicSpec pSpec;
           staticCtxt <- staticSpec pSpec;
           apexSpec <- return (addAxiom (("guard", [], axm), dyCtxt));
@@ -1229,6 +1228,15 @@ Second argument is context .. another spec.
       spcElab <- elaborateSpec spc;
       return spcElab
     }
+
+  op unQualified : String -> QualifiedId
+  def unQualified name = Qualified (UnQualified,name)
+
+  op elaborateSpec : PosSpec -> SpecCalc.Env Spec
+  def elaborateSpec spc =
+    case elaboratePosSpec (spc, "internal") of
+      | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
+      | Error msg   -> raise  (OldTypeCheck msg)
 \end{spec}
 
     let specs = StringMap_listItems (emptyEnv_ms ()) in
