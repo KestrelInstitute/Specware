@@ -33,10 +33,10 @@
 ;;; ;      (n ignore) (read-from-string s)
 ;;; ;    n))
 ;;; 
-;;; (defun stringToNat (s)
-;;;   ;; lisp automatically returns the first value as a normal value
-;;;   (read-from-string s))
-;;; 
+(defun stringToNat (s)
+  ;; lisp automatically returns the first value as a normal value
+  (read-from-string s))
+
 ;;; (defun |!<| (x y)
 ;;;   (< x y))
 ;;; (defun |!<-1| (x)

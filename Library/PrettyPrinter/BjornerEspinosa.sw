@@ -207,11 +207,12 @@ PrettyPrint qualifying spec {
 
 
   %%% Text output
-
-  def blanks (n : Nat) : String = 
-    case n of
-      | 0 -> ""
-      | _ -> String.concat (" ", blanks (n - 1))
+  op blanks: Nat -> String
+%% Defined in /Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp  to avoid n-squared behavior
+%  def blanks (n : Nat) : String = 
+%    case n of
+%      | 0 -> ""
+%      | _ -> String.concat (" ", blanks (n - 1))
     
 
   def newlineString () : String = Char.toString (Char.chr 10)
@@ -253,6 +254,24 @@ PrettyPrint qualifying spec {
              let head = foldr cont head strings in
              head
         
+  %% A tail recursive version of toStream that processes text in the reverse order
+  %% Shouldn't need two versions, but some calls would need to be rewritten to
+  %% to handle the order reversal
+  def toStreamT (text, cont, base, newlineAndBlanks) = 
+      case rev text
+	of [] -> base
+	 | (_, strings) :: rest ->	% Indentation of first line ignored!
+	   let _ = foldr cont () strings in
+	   let _ = app (fn textel ->
+			case textel of 
+			  | (_, [(0,_)]) -> 
+			    %% Empty line so ignore indent
+			    newlineAndBlanks(0,())
+			  | (indent2, strings) -> 
+			  let _ = newlineAndBlanks(indent2,()) in
+			  foldr cont () strings)
+		      rest
+	   in cont ((0,blanks 0), base)
 
    def toString (text : Text) : String = 
        toStream (text, 
@@ -281,10 +300,10 @@ PrettyPrint qualifying spec {
      IO.withOpenFileForWrite
        (fileName,
         fn stream ->
-            toStream (text,
-                      fn ((_,string), ()) -> streamWriter(stream,string),
-                      (),
-                      fn (n,()) -> streamWriter(stream,newlineAndBlanks n)))
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> streamWriter(stream,newlineAndBlanks n)))
 
 %
 % Pretty printer for accumulating path indexing.

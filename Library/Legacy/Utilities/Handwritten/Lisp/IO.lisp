@@ -121,6 +121,25 @@
   ;; (declare (special re::*specware-home-directory*))
   ;; (concatenate 'string re::*specware-home-directory* "/" s))
 
+;;; Lisp functions to avoid creating grarbage for indentation strings when prettyprinting
+(defpackage "PRETTYPRINT")
+
+(defun make-blanks-array (n)
+  (let ((a (make-array n)))
+    (loop for i from 1 to n do (setf (svref a (- i 1))
+				     (format nil "~v@t" i)))
+    a))
+
+(defvar *blanks-array-size* 60)
+
+(defvar *blanks-array* (make-blanks-array *blanks-array-size*))
+
+(defun prettyprint::blanks (n)
+  (if (= n 0) ""
+    (if (<= n *blanks-array-size*) (svref *blanks-array* (- n 1))
+      (format nil "~vT" n))))
+
 (defpackage "EMACS")
 (defun gotoFilePosition (file line col)
   (emacs::goto-file-position file line col))
+
