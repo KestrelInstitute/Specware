@@ -1,7 +1,7 @@
-(in-package :PARSER4)
+(in-package :PARSER)
 
 (defparameter *specware4-tokenizer-parameters*
-  (parser::create-tokenizer-parameters 
+  (create-tokenizer-parameters 
    ;;
    :name                        'meta-slang
    ;;
@@ -45,6 +45,6 @@
 
 
 (defun extract-specware4-tokens-from-file (file)
-  (parser::extract-tokens-from-file file *specware4-tokenizer-parameters*))
+  (extract-tokens-from-file file *specware4-tokenizer-parameters*))
 
 

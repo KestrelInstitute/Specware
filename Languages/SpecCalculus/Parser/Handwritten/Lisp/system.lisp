@@ -84,6 +84,12 @@
   (comment "========================================================================")
   (comment-blank-lines 1))
 
+(progn
+  (comment "=======================================================================================================================")
+  (comment "Printing grammar as .ps file")
+  (print-grammar-ps-file)
+  (comment "======================================================================================================================="))
+
 (defun user::test-specware4-parser (&optional (file "Languages/SpecCalculus/Parser/test.spec"))
   ;; (parse-file file *meta-slang-parser* *meta-slang-tokenizer*)
   (format t "~&~%;;; SPECWARE4 Parsing ~A~%" file)
