@@ -8,6 +8,13 @@
 
 #+allegro(setq excl:*global-gc-behavior* '(10 2.0))
 
+;; The following flag disables the collection of xref information when a lisp
+;; file is compiled and loaded. When true, it collects such information,
+;; but it seems that for monadic code (with lots of closures), compiling
+;; such information is very slow (ie. minutes). Other than changing the
+;; load time, there is no change to the behaviour of a program.
+#+allegro(setq xref::*record-xref-info* nil)
+
 ;;; ---------------
 ;; The following collection have been adapted from the 2000 load.lisp
 ;; file. Perhaps they should be factored into a separate file as they
