@@ -55,5 +55,5 @@
 (copy-directory (in-specware-dir "Applications/Specware/Courses/")
 		(in-distribution-dir "Courses/"))
 
-(copy-directory (in-lisp-dir "eli/")
+(copy-directory (in-lisp-dir "xeli/")
 		(in-distribution-dir "Library/IO/Emacs/xeli/"))
