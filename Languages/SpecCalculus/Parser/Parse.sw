@@ -13,7 +13,7 @@ SpecCalc qualifying spec {
     % let file   = Lisp.string (FilePath.toString file) in
     let file   = Lisp.string (file) in
     let result = Lisp.apply (Lisp.symbol ("PARSER4","PARSEFILE"), [file]) in
-    %  See semantics.lisp for definition of parseFile
+    %  See Handwritten/Lisp/parser-interface.lisp for definition of parseFile
     Lisp.uncell result
 }
 \end{spec}
