@@ -306,6 +306,10 @@
 			     "/Applications/Specware/lisp"))
 	 (slash-dir (sw::normalize-filename "/"))
 	 (world-name (concat bin-dir "/Specware4." *lisp-image-extension*))
+	 (base-world-name
+	   (if (and (eq *specware-lisp* 'allegro))
+	       (concat bin-dir "/big-alisp." *lisp-image-extension*)
+	     nil))
 	 (specware4-lisp (concat lisp-dir "/Specware4.lisp"))
 	 (specware4-base-lisp (concat specware4-dir "/Applications/Specware/Specware4-base.lisp")))
     (run-plain-lisp)
@@ -327,7 +331,7 @@
     (simulate-input-expression "(load \"Specware4.lisp\")")
     (continue-form-when-ready
      (`(build-specware4-continue (, specware4-dir) (, dir) (, bin-dir)
-				 (, slash-dir) (, world-name))))))
+				 (, slash-dir) (, world-name) (, base-world-name))))))
 
 (defun bootstrap-specware4 (in-current-dir?)
   (interactive "P")
