@@ -69,3 +69,8 @@ See list-motion-handlers for more details."
   (byte-compile 'mode-motion+-highlight)
   (set-mode-motion-handler 'dired-mode 'highlight-vline)
   (global-set-key '(control shift button2) 'mode-motion-copy))
+
+;; a hack to simplify writing scripts (e.g. for testing) 
+;; that run lisp under emacs and then exit
+(defun sw:kill-emacs-and-then-lisp ()
+  (sw:eval-in-lisp "(emacs::kill-emacs-and-then-lisp)"))
