@@ -118,6 +118,7 @@
   (report-ambiguities? t)
   package
   (error-reported?    nil) 
+  (warning-issued?    nil) 
   )
 
 (defun print-parser-session (session stream ignore-level)

@@ -3,18 +3,20 @@
 (in-package "PARSER4")
 
 ;; ======================================================================
-(defmacro warn-pos (&rest args)
-  `(warn-pos-fn session ,@args))
+(defmacro warn-pos (location &rest args)
+  `(warn-pos-fn session ,location ,@args))
 
 (defvar *suppress-warnings?* nil)
 (defvar *warnings*   '())
 
-(defun warn-pos-fn (session &rest args)
+(defun warn-pos-fn (session location &rest args)
   (cond (*suppress-warnings?*
 	 (push (apply 'format nil args) *warnings*))
 	(t
-	 (emacs::goto-file-position (namestring (parse-session-file session))
-				    (second args) (third args))
+	 (unless (parse-session-warning-issued? session)
+	   (emacs::goto-file-position (namestring (parse-session-file session))
+				      (first location) (second location))
+	   (setf (parse-session-warning-issued? session) t))
 	 (apply 'warn args))))
 
 (defun parser-attach-rules (session)
@@ -81,7 +83,8 @@
 			   (find-if #'(lambda (node) (parser-token-rule-p (parser-node-rule node)))
 				    (parser-location-post-nodes prior-location))))
 		     (cond ((null prior-token-node)
-			    (warn-pos "At line ~3D:~2D  Peculiar syntax error (no tokens seen)."
+			    (warn-pos (list prior-line prior-column prior-byte-pos)
+				      "At line ~3D:~2D  Peculiar syntax error (no tokens seen)."
 				      prior-line prior-column prior-byte-pos))
 			   ((eq (first (parser-node-semantics prior-token-node))
 				:EXTENDED-COMMENT-ERROR)
@@ -96,12 +99,14 @@
 			      ;; trim text of comment down to include at most 20 characters
 			      (when (> (length comment-text) 20)
 				(setq comment-text (format nil "~A ..." (subseq comment-text 0 16))))
-			      (warn-pos "At line ~3D:~2D  EOF while scanning for close of extended comment starting with \"~A\""
+			      (warn-pos (list prior-line prior-column prior-byte-pos)
+					"At line ~3D:~2D  EOF while scanning for close of extended comment starting with \"~A\""
 					prior-line prior-column ;; prior-byte-pos
 					comment-text 
 					)))
 			   (t
-			    (warn-pos "At line ~3D:~2D  Syntactic error with \"~A\""
+			    (warn-pos (list prior-line prior-column prior-byte-pos)
+				      "At line ~3D:~2D  Syntactic error with \"~A\""
 				      prior-line prior-column ; prior-byte-pos
 				      (second (parser-node-semantics prior-token-node))
 				      ))))))

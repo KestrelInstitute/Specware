@@ -88,7 +88,9 @@
 	     (first-char (third  first-pos))
 	     ;; (last-line 0)
 	     )
-	(warn-pos "Pending or unparsed text at line ~4D, column ~2D   (byte ~D)" first-line first-char first-byte)
+	(warn-pos (list first-line first-char first-byte)
+		  "Pending or unparsed text at line ~4D, column ~2D   (byte ~D)"
+		  first-line first-char first-byte)
 	;; (let ((line-count 0))
 	;;   (dolist (token tokens)
 	;;     (let ((this-line (second (third token))))
@@ -109,10 +111,16 @@
 (defun report-ambiguity (session start end alternative-results)
   (push alternative-results (parse-session-ambiguities session))
   ;; (comment "============================================================================")
-  (warn-pos "There are ~D results for the text from ~D to ~D"
-	    (length alternative-results) start end)
-  ;; (comment "============================================================================")
-  )
+  (let* ((start-blc (parser-location-position (svref (parse-session-locations session) start)))
+	 (end-blc   (parser-location-position (svref (parse-session-locations session) end)))
+	 (start-lcb (list (second start-blc) (third start-blc) (first start-blc))))
+    (warn-pos start-lcb
+	      "There are ~D results for the text from ~D:~D to ~D:~D"
+	      (length alternative-results) 
+	      (second start-blc) (third start-blc)
+	      (second   end-blc) (third   end-blc))
+    ;; (comment "============================================================================")
+    ))
 
 (defun eval-node (session node)
   (if (null node)
