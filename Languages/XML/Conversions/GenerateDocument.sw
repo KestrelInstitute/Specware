@@ -7,6 +7,19 @@ XML qualifying spec
   import Make_XML_Things
   import Magic
 
+  def quote_special_chars (uchars : UChars) : UChars =
+    case uchars of
+      | [] -> []
+      | 38 :: tail (* & *) -> (* &apos; *)
+        %      &         a         p         o	       s        ;
+        cons (38,  cons(97, cons(112, cons(111, cons(115, cons(59, quote_special_chars tail))))))
+      | 60 :: tail (* < *) -> (* &lt; *)
+        %      &          l         t        ;			
+        cons (38,  cons(108, cons(116, cons(59, quote_special_chars tail))))
+      | char:: tail ->
+        cons (char,  quote_special_chars tail)
+
+
   def indentation_chardata (vspacing, indent) : UChars =
     (repeat_char (UChar.newline, vspacing)) ^  (repeat_char (UChar.space, indent))
 
@@ -174,7 +187,7 @@ XML qualifying spec
 	(case qid of
 	  | ("String",  "String") ->
 	    let string : String = Magic.magicCastToString datum in
-	    indent_ustring (UString.double_quote ^ (ustring string) ^ UString.double_quote)
+	    indent_ustring (UString.double_quote ^ (quote_special_chars (ustring string)) ^ UString.double_quote)
 
 	  | ("Integer", "Integer") ->
 	    let n = Magic.magicCastToInteger datum in
@@ -217,7 +230,7 @@ XML qualifying spec
 				   indent))
 	  | qid ->
 	    let str = write_ad_hoc_string (sd_pattern, datum) in
-	    indent_ustring (ustring str))
+	    indent_ustring (quote_special_chars (ustring str)))
 
       | _ ->
 	indent_ustring (ustring ("?? unrecognized type  ?? "))
@@ -285,7 +298,7 @@ XML qualifying spec
 	(case qid of
 	  | ("String",  "String") ->
 	    let string : String = Magic.magicCastToString datum in
-	    indent_text_item (vspacing, indent, ustring string)
+	    indent_text_item (vspacing, indent, quote_special_chars (ustring string))
 
 	  | ("Integer", "Integer") ->
 	    let n = Magic.magicCastToInteger datum in
@@ -319,9 +332,10 @@ XML qualifying spec
 					indent))
 
 	  | qid ->
+	    let str = write_ad_hoc_string (sd_pattern, datum) in
 	    indent_text_item (vspacing,
 			      indent,
-			      ustring ("?? Base: " ^ (print_qid qid) ^  " ?? ")))
+			      quote_special_chars (ustring str)))
 
       | _ ->
 	indent_text_item (vspacing,

@@ -220,11 +220,12 @@ XML qualifying spec
   %%  [K34]  content       ::=  (CharData? content_item)* CharData?
   %% -------------------------------------------------------------------------------------------------
 
-  def entity_value (name) : UChars =
-    case name of
-      | [97, 112, 111, 115] (* apos *) -> [38]
-      | [108, 116]          (* lt *)   -> [60]
-      | _ -> name
+  def entity_value (name) : Env UChars =
+    %% this should refer to monad for values of declared entities...
+    return (case name of
+	      | [97, 112, 111, 115] (* apos *) -> [38]
+	      | [108, 116]          (* lt *)   -> [60]
+	      | _ -> name)
 
   def parse_Content (start : UChars, pending_open_tags : List (ElementTag)) : Required Content =
     let
@@ -235,10 +236,18 @@ XML qualifying spec
 	  case possible_item of
 	    | Some item ->
 	      (case item of
-		 | Reference (Entity {name}) -> 
-		   parse_items (scout, 
-				pending_chars ++ char_data ++ (entity_value name),
-				rev_items)
+		 | Reference ref ->
+		   (case ref of
+		      | Entity {name} -> 
+		        { expansion <- entity_value name;
+			  parse_items (scout, 
+				       pending_chars ++ char_data ++ expansion,
+				       rev_items)}
+		      | Char cref ->
+			parse_items (scout, 
+				     pending_chars ++ char_data ++ [cref.char],
+				     rev_items))
+
 		 | _ ->
 		   parse_items (scout,
 				[],
