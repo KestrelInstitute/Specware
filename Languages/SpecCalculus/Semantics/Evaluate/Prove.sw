@@ -31,7 +31,8 @@ SpecCalc qualifying spec {
      liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
      %liftedNoHOSpec <- return(lambdaLift(noHOSpec));
      _ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
-     expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
+     expandedSpec:Spec <- return(explicateHiddenAxioms(noHOSpec));
+%    expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
      %expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
      _ <- return (if specwareDebug? then writeString(printSpec(subtractSpecProperties(expandedSpec, baseSpec))) else ());
      %expandedSpec:Spec <- return(explicateHiddenAxioms(noHOSpec));

@@ -1004,6 +1004,13 @@ If we want the precedence to be optional:
 	 (read_list_of_s_expressions_from_string name_or_string))
 	(t (cons :|OptionName| name_or_string))))
 
+;; ========================================================================
+;;;  SC-OBLIGATIONS
+;;; ========================================================================
+
+(defun make-sc-expand (term l r)
+  (speccalc::mkExpand-2 term (make-pos l r)))
+
 ;;; ========================================================================
 ;;;  SC-REDUCE
 ;;; ========================================================================

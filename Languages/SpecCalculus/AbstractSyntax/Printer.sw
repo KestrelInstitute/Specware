@@ -291,6 +291,13 @@ SpecCalc qualifying spec {
 						    ppString " options ",
 						    ppString (printQualifiedId(prover_option_name)) ])
 		    ]
+
+      | Expand term ->
+          ppConcat [
+            ppString "expand ",
+            ppTerm term
+          ]
+
       | Obligations term ->
           ppConcat [
             ppString "obligations ",

@@ -2,17 +2,34 @@ spec
 
   import Integer
   import Nat
+  import List
 %  import NatPlus
 
   sort ProverNat = {i: Integer | i >= 0}
 
+  axiom plus_0 is fa (i) i = i + 0
+
+  axiom geqs is fa (i) i >= i
+
+  axiom minusii is fa (i) i - i = 0
+
+  axiom geqminu1 is fa (i, k) i >= k+1 => i >= k
+
+  axiom gm1 is fa (i, k) i >= k+1 => ~(i - k = 0)
+
+  axiom gm1g is fa (i, k) i >= k+1 => (i - k >= 0)
+
+  axiom m1m is fa (i, k, j) i - (k + j) = (i - k) - j
+
+(*
   axiom not_gt is fa (i, j: Integer) ~(i <= j) => (i > j)
 
   axiom min_ax1 is fa(i: Integer, j: Integer) i >= min(i, j) & j >= min(i, j) 
   axiom min_ax2 is fa(i: Integer, j: Integer, k: Integer) i >= k & j >= k => min(i, j) >= k
 
   axiom geq is fa(i: Integer, j: Integer) i <= j <=> j >= i
-
+*)
+%  axiom listComp is sort fa (a) fa(l: List a) ex (hd, tl) l = Cons(hd, tl) or l = Nil
 
 %  axiom arith1 is fa (i, j: Integer) i >= 0 & j = i + 1 => ~1 < j
 %  axiom arith2 is fa (i, j, k: Integer) i >= 0 & j >= 0 & k = i + j => ~1 < k

@@ -18,6 +18,7 @@ SpecCalc qualifying spec {
  import Substitute      
  import Print      
  import Prove
+ import Expand			
  import Reduce
 \end{spec}
 
@@ -69,6 +70,8 @@ This is a monadic interpreter for the Spec Calculus.
         SpecCalc.evaluateTranslate sub_term translation
 
     | Obligations(sub_term) -> SpecCalc.evaluateObligations sub_term
+
+    | Expand(sub_term) -> SpecCalc.evaluateExpand sub_term pos
 
     | Prove args -> SpecCalc.evaluateProve args pos
 

@@ -166,6 +166,14 @@ the proof obligations as conjectures.
     | Obligations (Term a)
 \end{spec}
 
+Expand takes a spec and returns a transformed spec that has lambdas
+lifted nad HO functions instantiated and defintions expanded into
+axioms.  It is essentially the input to the Snark prover interface.
+
+\begin{spec}
+    | Expand (Term a)
+\end{spec}
+
 Reduce will rewrite the given term in the context of the given spec
 using the definitions and axioms of the spec as rules.
 
@@ -328,6 +336,7 @@ The following are invoked from the parser:
   op mkGenerate    : fa (a) String * (Term a) * (Option String)                             * a -> Term a
   op mkSubst       : fa (a) (Term a) * (Term a)                                             * a -> Term a
   op mkObligations : fa (a) (Term a)                                                        * a -> Term a
+  op mkExpand      : fa (a) (Term a)                                                        * a -> Term a
   op mkReduce      : fa (a) (ATerm a) * (Term a)                                            * a -> Term a
   op mkOther       : fa (a) (OtherTerm a)                                                   * a -> Term a
 
@@ -357,6 +366,7 @@ The following are invoked from the parser:
   def mkGenerate    (lang, term, opt_file,      pos) = (Generate    (lang, term, opt_file),      pos)
   def mkSubst       (spec_term, sm_term,        pos) = (Subst       (spec_term, sm_term),        pos)
   def mkObligations (term,                      pos) = (Obligations (term),                      pos)
+  def mkExpand      (term,                      pos) = (Expand      (term),                      pos)
   def mkReduce      (term_a, term_b,            pos) = (Reduce      (term_a, term_b),            pos)
   def mkOther       (other,                     pos) = (Other       other,                       pos)
 

@@ -159,6 +159,7 @@
    (1 :SC-GENERATE)
    (1 :SC-OBLIGATIONS)
    (1 :SC-PROVE)
+   (1 :SC-EXPAND)
    (1 :SC-REDUCE)
    (1 :SC-EXTEND))
   1)
@@ -1559,6 +1560,14 @@ If we want the precedence to be optional:
   ;; returns (:|OptionString| <sexpressions>) or (:|Error| msg string) or (:|OptionName| op)
   (make-sc-prover-options 1))
 
+
+;;; ========================================================================
+;;;  SC-EXPAND
+;;; ========================================================================
+
+(define-sw-parser-rule :SC-EXPAND ()
+  (:tuple "expand" (1 :SC-TERM))
+  (make-sc-expand 1 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-REDUCE

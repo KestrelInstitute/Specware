@@ -175,6 +175,7 @@ snark qualifying spec
       | ("Integer",     "<=") -> "=<"
       | ("Nat",     "~") -> "-"
       | ("Integer",     "~") -> "-"
+      | (_, "hoapply") ->  "HOAPPLY"
       | _ -> id
 
   def snarkBoolOp(id) = 
