@@ -886,8 +886,8 @@ from a natural number.
     | Pair (Vrtx.Vertex * Subst)
 
   op Vrtx.eq? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
-  % def Vrtx.eq? = Vrtx.equalVertex?
-  def Vrtx.eq? (v1,v2) = (show v1) = (show v2)
+  def Vrtx.eq? = Vrtx.equalVertex?
+  % def Vrtx.eq? (v1,v2) = (show v1) = (show v2)
 
   op Vrtx.equalVertex? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
   def Vrtx.equalVertex? (v1,v2) =

@@ -280,7 +280,8 @@ PE qualifying spec
               if ((size (final newBSpec)) > 1)  then
                 (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
                                       ^ " by " ^ (show subst)
-                                      ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))))
+                                      ^ " has multiple final states: " ^ (System.toString (final newBSpec)))))
+                                      % ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))))
               else {
             newFinal <- return (theSingleton (final newBSpec));
             postcondition <-
