@@ -74,7 +74,12 @@
     (lgen-lisp (cl-user::swll argstr) (values))
     (punits (cl-user::swpf argstr))
     (lpunits (cl-user::swpf argstr))	; No local version yet
-    (ctext (cl-user::swe-spec argstr))
+    (ctext (if (null argstr)
+	       (progn (if cl-user::*current-swe-spec*
+			  (format t "~&Current context: ~a" cl-user::*current-swe-spec*)
+			(format t "~&Current context: Base Spec"))
+		      (values))
+	     (cl-user::swe-spec argstr)))
     ((eval e) (let ((cl-user::*swe-use-interpreter?* t)
 		    (argstr (or argstr *last-eval-expr*)))
 		(if (null argstr)

@@ -209,23 +209,25 @@
 
 (defun swe-spec (&optional x)
   (when (null x)
-    (setq x (car *last-swl-args*)))
-  (unless (eq (elt x 0) #\/)
-    (format t "~&coercing ~A to /~A~%" x x)
-    (setq x (format nil "/~A" x)))
-  (setq x (subst-home x))
-  (cond ((sw (string x))
-	 (setq *current-swe-spec* x)
-	 (setq *current-swe-spec-dir* (specware::current-directory))
-	 (format t "~&Subsequent evaluation commands will now import ~A.~%" x)
-	 (unless *swe-use-interpreter?*
-	   (format t "~&The following will produce, compile and load code for this spec:~%")
-	   (format t "~&:swll ~A~%" x)))
-	(t
-	 (format t "~&:swe-spec had no effect.~%" x)
-	 (if *current-swe-spec*
-	     (format t "~&Subsequent :swe commands will still import ~A.~%" *current-swe-spec*)
-	   (format t "~&Subsequent :swe commands will still import just the base spec.~%"))))
+    (setq x (and (consp *last-swl-args*) (car *last-swl-args*))))
+  (if (null x) (format t "~&No previous spec")
+    (progn 
+      (unless (eq (elt x 0) #\/)
+	(format t "~&coercing ~A to /~A~%" x x)
+	(setq x (format nil "/~A" x)))
+      (setq x (subst-home x))
+      (cond ((sw (string x))
+	     (setq *current-swe-spec* x)
+	     (setq *current-swe-spec-dir* (specware::current-directory))
+	     (format t "~&Subsequent evaluation commands will now import ~A.~%" x)
+	     (unless *swe-use-interpreter?*
+	       (format t "~&The following will produce, compile and load code for this spec:~%")
+	       (format t "~&:swll ~A~%" x)))
+	    (t
+	     (format t "~&:swe-spec had no effect.~%" x)
+	     (if *current-swe-spec*
+		 (format t "~&Subsequent :swe commands will still import ~A.~%" *current-swe-spec*)
+	       (format t "~&Subsequent :swe commands will still import just the base spec.~%"))))))
   (values))
 
 #+allegro
