@@ -69,16 +69,15 @@ exists with a non-zero status and hence the bootstrap fails.
     let run = {
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      let path_body = removeSWsuffix path in
-      {uri <- pathToRelativeURI path_body;
-       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
-       evaluateURI position uri;
-       return true
-    }} in
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      evaluateURI position uri;
+      return true
+    } in
     case catch run toplevelHandler initialSpecwareState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
-
 \end{spec}
 
 We provide two functions (callable from the Lisp read-eval-print loop)
@@ -96,13 +95,13 @@ compiles the resulting specification to lisp.
       %% removeSWsuffix could be generalized to extractURIpath
       %% and then the code to create the position would use the
       %% start and end positions of path_body within path
-      let path_body = removeSWsuffix path in
-      {uri <- pathToRelativeURI path_body;
-       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
-       evaluateURI position uri;
-       saveSpecwareState;
-       return true
-    }} in
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      evaluateURI position uri;
+      saveSpecwareState;
+      return true
+    } in
     case catch run toplevelHandler ignoredState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
@@ -115,13 +114,13 @@ compiles the resulting specification to lisp.
       restoreSavedSpecwareState;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      let path_body = removeSWsuffix path in
-      {uri <- pathToRelativeURI path_body;
-       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
-       evaluatePrint (URI uri, position);
-       saveSpecwareState;
-       return true
-    }} in
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      evaluatePrint (URI uri, position);
+      saveSpecwareState;
+      return true
+    } in
     case catch run toplevelHandler ignoredState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
@@ -159,14 +158,14 @@ The following corresponds to the :show command.
       restoreSavedSpecwareState;
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      let path_body = removeSWsuffix path in
-      {uri <- pathToRelativeURI path_body;
-       let position = String (path, startLineColumnByte, endLineColumnByte path_body) in
-       {spcInfo <- evaluateURI position uri;
-        evaluateLispCompile (spcInfo, (URI uri, position), target);
-        saveSpecwareState;
-        return true
-    }}} in
+      path_body <- return (removeSWsuffix path);
+      uri <- pathToRelativeURI path_body;
+      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      spcInfo <- evaluateURI position uri;
+      evaluateLispCompile (spcInfo, (URI uri, position), target);
+      saveSpecwareState;
+      return true
+    } in
     case catch run toplevelHandler ignoredState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
@@ -244,13 +243,13 @@ sense that no toplevel functions return anything.
          | SpecError (position,msg) ->
                "Error in specification: "
              ^ msg
-             ^ " at "
-             ^ (print position)
+             ^ " at\n"
+             ^ (printAll position)
          | DiagError (position,msg) ->
                "Diagram error: "
              ^ msg
-             ^ " at "
-             ^ (print position)
+             ^ " at\n"
+             ^ (printAll position)
          | ParserError fileName ->
                "Syntax error: file "
              ^ fileName
@@ -262,16 +261,20 @@ sense that no toplevel functions return anything.
          | URINotFound (position,uri) ->
                "Unknown unit error: "
              ^ (showRelativeURI uri)
-             ^ " referenced from " ^ (print position)
+             ^ " referenced from\n" ^ (printAll position)
          | TypeCheck (position,str) ->
                "Type error: "
              ^ str
-             ^ " referenced from " ^ (print position)
+             ^ " referenced from\n" ^ (printAll position)
+         %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
+         | OldTypeCheck str ->
+               "Type errors:\n"
+             ^ str
          | Unsupported (position,str) ->
                "Unsupported operation: "
              ^ str
-             ^ " at "
-             ^ (print position)
+             ^ " at\n"
+             ^ (printAll position)
          | _ -> 
                "Unknown exception" 
              ^ (System.toString except));
