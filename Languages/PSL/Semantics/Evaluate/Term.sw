@@ -11,13 +11,15 @@ SpecCalc qualifying spec {
  import Qualify         
  import Diagram      
  import Colimit
- % import SpecMorphism 
- % import DiagMorphism 
- % import Generate      
+ import SpecMorphism 
+ import DiagMorphism 
+ import Generate      
+ import Snark
  import Translate      
- % import Obligations
- import PSpec
+ import Obligations
+ import Substitute      
  import Print      
+ import /Languages/MetaSlang/CodeGen/C/ToC
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.
@@ -28,6 +30,7 @@ This is a monadic interpreter for the Spec Calculus.
     return value}
 
  def SpecCalc.evaluateTermInfo term =
+   let pos = positionOf term in
    case (valueOf term) of
     | Print term -> SpecCalc.evaluatePrint term
 
@@ -39,9 +42,9 @@ This is a monadic interpreter for the Spec Calculus.
 
     | Diag elems -> SpecCalc.evaluateDiag elems
 
-    | PSL elems -> SpecCalc.evaluatePSpec elems
-
     | Colimit sub_term -> SpecCalc.evaluateColimit sub_term
+
+    | Subst args   -> SpecCalc.evaluateSubstitute  args pos
 
     | DiagMorph fields -> SpecCalc.evaluateDiagMorph fields
 
@@ -66,21 +69,30 @@ This is a monadic interpreter for the Spec Calculus.
 
     | Obligations(sub_term) -> SpecCalc.evaluateObligations sub_term
 
+    | PSL elems -> SpecCalc.evaluatePSpec elems
+
     | Generate (language, sub_term as (term,position), optFile) -> {
           (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
+          baseURI <- pathToRelativeURI "/Library/Base";
+          (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
           (case value of
             | Spec spc -> 
                 (case language of
                    | "lisp" -> evaluateLispCompile ((value,timeStamp,depURIs),
 						   sub_term,optFile)
+                   | "snark" -> evaluateSnarkGen ((value,timeStamp,depURIs),
+						   sub_term,optFile)
                    | "spec" -> {
                           print (showValue value);
                           return (value,timeStamp,depURIs)
                         }
+                   | "c" -> 
+                         let _ = specToC (subtractSpec spc baseSpec) in
+                         return (value,timeStamp,depURIs)
                    | lang -> raise (Unsupported ((positionOf sub_term),
                                   "no generation for language "
                                 ^ lang
-                                ^ "yet")))
+                                ^ " yet")))
             | _ -> raise (TypeCheck ((positionOf sub_term),
                         "attempting to generate code from an object that is not a specification")))
         }

@@ -4,12 +4,10 @@ SpecCalc qualifying spec {
 
   def SpecCalc.evaluatePrint term = {
      (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
-                     (SpecPath_Relative {path = ["Library","Base"],
-                                         hashSuffix = None});
-     (Spec pslBase,_,_) <- SpecCalc.evaluateURI (Internal "PSpec base")
-                     (SpecPath_Relative {path = ["Library","PSL","Base"],
-                                         hashSuffix = None});
+     baseURI <- pathToRelativeURI "/Library/Base";
+     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
+     pslBaseURI <- pathToRelativeURI "/Library/PSL/Base";
+     (Spec pslBase,_,_) <- SpecCalc.evaluateURI (Internal "PSpec base") pslBaseURI;
      (case value of
        | Spec spc -> print (printSpec (subtractSpec spc baseSpec))
        | Morph morph -> print (ppFormat (ppMorphism morph))

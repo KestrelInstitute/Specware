@@ -121,18 +121,15 @@ never mixed in the specs labeling \BSpecs.
     -> SpecCalc.Env PSpec
 
   def compileProcedure pSpec cnt name {args,returnSort,command} = {
-   print ("compiling proc " ^ name ^ "\n");
-   print (ppFormat ((ppASpec (subtractSpec pSpec.dynamicSpec pSpec.staticSpec))));
    saveDyCtxt <- dynamicSpec pSpec;
    statCtxt <- staticSpec pSpec;
    dyCtxt <-
-      foldM (fn dCtxt -> fn (argName,argSort) -> {
-          print ("compileProc: adding " ^ argName ^ "\n");
+      foldM (fn dCtxt -> fn (argName,argSort) ->
           addOp [unQualified argName]
                 Nonfix
                 (tyVarsOf argSort,argSort)
                 None
-                dCtxt (Internal "compileProcedure") })
+                dCtxt (Internal "compileProcedure"))
                   saveDyCtxt args;
    dyCtxt <- 
       case returnSort of
@@ -164,7 +161,7 @@ never mixed in the specs labeling \BSpecs.
 % the environment in case the procedure is recursive
 
    (bSpec,cnt,pSpec) <- compileCommand pSpec first last bSpec (cnt + 2) command;
-   saveDyCtxt <- dynamicSpec pSpec;
+   dyCtxt <- dynamicSpec pSpec;
    statCtxt <- staticSpec pSpec;
    dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
    statCtxtElab <- elaborateSpec statCtxt; 
@@ -176,8 +173,6 @@ never mixed in the specs labeling \BSpecs.
    pSpec <- addProcedure pSpec (unQualified name) proc;
    pSpec <- setDynamicSpec pSpec saveDyCtxt;
    pSpec <- setStaticSpec pSpec statCtxt;
-   print ("done compiling proc " ^ name ^ "\n");
-   print (ppFormat ((ppASpec (subtractSpec pSpec.dynamicSpec pSpec.staticSpec))));
    return pSpec
   }
 \end{spec}
@@ -631,9 +626,8 @@ This should be an invariant. Must check.
           | None ->
              raise (SpecError (internalPosition, "compileCommand: Assign: id '"
                           ^ (printQualifiedId leftId) ^ "' is undefined"))
-          | Some (names,fixity,sortScheme,optTerm) -> {
-             print ("compileAssign " ^ (printQualifiedId leftId) ^ "\n");
-             addOp [makePrimedId leftId] fixity sortScheme optTerm dyCtxt (Internal "compileAssign")}); 
+          | Some (names,fixity,sortScheme,optTerm) ->
+             addOp [makePrimedId leftId] fixity sortScheme optTerm dyCtxt (Internal "compileAssign")); 
 \end{spec}
  
 The next clause may seem puzzling. The point is that, from the time
