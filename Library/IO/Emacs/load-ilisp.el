@@ -6,7 +6,10 @@
 (defconst *specware* (getenv "SPECWARE4"))
 (defconst *specware-home-directory* (getenv "SPECWARE4"))
 
-(defconst *specware-emacs* (concatenate 'string *specware* "/Library/IO/Emacs/"))
+(defconst *specware-emacs* (concat *specware* "/Library/IO/Emacs/"))
+
+(push (concat *specware-emacs* "ilisp/")
+      load-path)
 
 ;; This sets the emacs to lisp interface to be the one supplied by franz
 ;; The alternative supported is ilisp which is enabled by setting this

@@ -136,7 +136,6 @@ accepted in lieu of prompting."
 (defun insert-negation () (interactive) (insert "¬"))
 (defun insert-emptyset () (interactive) (insert "Ø"))
 
-
 (require 'easymenu) 
 
 (defconst specware-menu 

@@ -1,16 +1,18 @@
 (defpackage "SPECWARE")
 (in-package "SPECWARE")
 
-#+allegro(setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+#+allegro
+(setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
 
 (defvar Specware4 #+allegro(sys:getenv "SPECWARE4")
+                  #+mcl(ccl::getenv "SPECWARE4")
                   #+cmu (cdr (assoc :SPECWARE4 ext:*environment-list*))
 		  )
 
 ;; Used in printing out the license and about-specware command
-(defvar user::Specware-version "4.0")
-(defvar user::Specware-version-name "Specware-4-0")
-(defvar user::Specware-patch-level "1")
+(defvar cl-user::Specware-version "4.0")
+(defvar cl-user::Specware-version-name "Specware-4-0")
+(defvar cl-user::Specware-patch-level "1")
 
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-0")
@@ -22,14 +24,17 @@
 ;;    change-directory
 ;;    current-directory
 (load (make-pathname
-       :defaults (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
+       :defaults "../../../Handwritten/Lisp/load-utilities"
        :type     "lisp"))
+
+(defvar Specware4 (specware::getenv "SPECWARE4"))
 
 (load (make-pathname
-       :defaults (concatenate 'string Specware4 "/Provers/Snark/Handwritten/Lisp/snark-system")
+       :defaults (concatenate 'string Specware4
+                              "/Provers/Snark/Handwritten/Lisp/snark-system")
        :type     "lisp"))
 
-;(snark:make-snark-system t)
+(snark:make-snark-system t)
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
@@ -98,7 +103,6 @@
   (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
   SpecwareRuntime
 )
-
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
 			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
@@ -106,11 +110,11 @@
 			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
 ;;; Preload the base specs
-(user::sw "/Library/Base")
+(cl-user::sw "/Library/Base")
 
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
-(defun user::boot ()
-  (user::sw "/Applications/Specware/Specware4")
+(defun cl-user::boot ()
+  (cl-user::sw "/Applications/Specware/Specware4")
   )

@@ -14,6 +14,7 @@
 	((eq system-type 'usg-unix-v)    30)
 	((eq system-type 'windows-nt)    30)
 	((eq system-type 'linux)         30)
+	((eq system-type 'darwin)        30)
 	(t (error "unknown operating system type")))
   "Signal number to tell lisp that a message is comming.")
 
@@ -25,6 +26,7 @@
 	((eq system-type 'usg-unix-v)    31)
 	((eq system-type 'windows-nt)    31)
 	((eq system-type 'linux)         31)
+	((eq system-type 'darwin)        31)
 	(t (error "unknown operating system type")))
   "Signal number to tell lisp that a preemptive message is comming.")
 
