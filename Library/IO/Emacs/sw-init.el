@@ -46,7 +46,7 @@
     ;; The suffix on such files is .dxl.
     ;;
     (setq sw:common-lisp-image-file world-name)
-    (setq sw:common-lisp-image-arguments nil ;'("+c")
+    (setq sw:common-lisp-image-arguments '("+cx")
 	  )
 
     (sw:common-lisp sw:common-lisp-buffer-name
@@ -180,7 +180,8 @@
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" root-dir))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH:/\") %S)" root-dir))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir))
-    (sw:eval-in-lisp "(sys::set-stack-cushion 10000000)")
+    (sw:eval-in-lisp "#+allegro(sys::set-stack-cushion 10000000)
+                      #-allegro()")
     (sw:eval-in-lisp "(time (user::boot))")
     (build-specware4 root-dir)))
 
