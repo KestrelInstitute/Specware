@@ -20,17 +20,17 @@ SpecCalc qualifying spec {
              new_spec <- attemptSubstitution spc sm term_pos;
              return (Spec new_spec, timeStamp, dep_URIs)
            }
-      | (PSpec pSpec, Morph sm) ->
-           let timeStamp = max (spec_timestamp, sm_timestamp) in
-           let dep_URIs  = listUnion (spec_dep_URIs, sm_dep_URIs) in {
-             dyCtxt <- dynamicSpec pSpec;
-             newDyCtxt <- attemptSubstitution dyCtxt sm term_pos;
-             procs <- procedures pSpec
-             procs <- foldM (fn ps -> fn proc -> 
-                       dyCtxt <- attemptSubstitution proc.dynamicSpec
-             
-             return (PSpec new_spec, timeStamp, dep_URIs)
-           }
+%       | (PSpec pSpec, Morph sm) ->
+%            let timeStamp = max (spec_timestamp, sm_timestamp) in
+%            let dep_URIs  = listUnion (spec_dep_URIs, sm_dep_URIs) in {
+%              dyCtxt <- dynamicSpec pSpec;
+%              newDyCtxt <- attemptSubstitution dyCtxt sm term_pos;
+%              procs <- procedures pSpec
+%              procs <- foldM (fn ps -> fn proc -> 
+%                        dyCtxt <- attemptSubstitution proc.dynamicSpec
+%              
+%              return (PSpec new_spec, timeStamp, dep_URIs)
+%            }
       | (_,        Morph _)  ->
            raise (TypeCheck (positionOf spec_tm, "substitution attempted on a non-spec"))
       | (Spec _,   _) ->
@@ -39,8 +39,9 @@ SpecCalc qualifying spec {
            raise (TypeCheck (term_pos, "substitution is not a morphism, and is attempted on a non-spec"))
     }
 }
+\end{spec}
 
-\begin{spec}
+begin{spec}
   op mapSystem : fa (O,A) System (O,A) -> (O -> O) -> (A -> A) -> System (O,A)
   def mapSystem sys objMap arrMap = {
     shape = sys.shape,
@@ -51,6 +52,3 @@ SpecCalc qualifying spec {
       edgeMap = mapMap arrMap sys.functor.edgeMap
     }
   }
-\end{spec}
-
-\end{spec}

@@ -14,12 +14,13 @@ SpecCalc qualifying spec {
  import SpecMorphism 
  import DiagMorphism 
  import Generate      
- import Snark
+ % import Snark
  import Translate      
  import Obligations
  import Substitute      
  import Print      
  import /Languages/MetaSlang/CodeGen/C/ToC
+ import /Languages/PSL/CodeGen/Convert
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.
@@ -80,14 +81,23 @@ This is a monadic interpreter for the Spec Calculus.
                 (case language of
                    | "lisp" -> evaluateLispCompile ((value,timeStamp,depURIs),
 						   sub_term,optFile)
-                   | "snark" -> evaluateSnarkGen ((value,timeStamp,depURIs),
-						   sub_term,optFile)
+                   % | "snark" -> evaluateSnarkGen ((value,timeStamp,depURIs),
+				   % 	   sub_term,optFile)
                    | "spec" -> {
                           print (showValue value);
                           return (value,timeStamp,depURIs)
                         }
                    | "c" -> 
                          let _ = specToC (subtractSpec spc baseSpec) in
+                         return (value,timeStamp,depURIs)
+                   | lang -> raise (Unsupported ((positionOf sub_term),
+                                  "no generation for language "
+                                ^ lang
+                                ^ " yet")))
+            | PSpec pSpec -> 
+                (case language of
+                   | "c" -> 
+                         let _ = convertPSpec pSpec in
                          return (value,timeStamp,depURIs)
                    | lang -> raise (Unsupported ((positionOf sub_term),
                                   "no generation for language "

@@ -1,6 +1,7 @@
 SpecCalc qualifying spec {
   import Signature 
   import /Languages/MetaSlang/Specs/Elaborate/PosSpecToSpec
+  import URI/Utilities
 
   def SpecCalc.evaluatePrint term = {
      (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
