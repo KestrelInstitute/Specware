@@ -84,9 +84,10 @@
   (:anyof
    ((:tuple "=")                   "=") ; so we can refer to = (and "is" ?) as an operator in a term
    ((:tuple "*")                   "*") ; so we can refer to * as an operator in a term
-   ((:tuple "translate")        "translate") ; so we can use translate as a function
-   ((:tuple "colimit")        "colimit") ; so we can use translate as a function
-   ((:tuple "diagram")        "diagram") ; so we can use translate as a function
+   ((:tuple "translate")      "translate") ; so we can use translate as a function
+   ((:tuple "colimit")        "colimit") ; so we can use colimit as a function
+   ((:tuple "diagram")        "diagram") ; so we can use diagram as a function
+   ((:tuple "print")          "print") ; so we can use print as a function
    ((:tuple (1 :NON_KEYWORD_NAME)) 1)
    ))
 
@@ -159,7 +160,7 @@
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-PRINT ()
-  (:tuple "printF" (1 :SC-TERM))
+  (:tuple "print" (1 :SC-TERM))
   (make-sc-print 1 ':left-lc ':right-lc))
 
 ;;; ========================================================================
