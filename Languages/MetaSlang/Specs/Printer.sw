@@ -1109,7 +1109,10 @@ def AnnSpecPrinter.printTerm term =
 	  else
 	    [(0, string (" (* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
    in
-   let ppDecls = map ppDecl decls in
+   let ppDecls = case defs of 
+		   | [] -> map ppDecl decls % if no defs, print decl
+		   | _ -> []                % but if there are defs, suppress printing of decls
+   in
    let ppDefs  = map ppDef  defs  in
    (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
