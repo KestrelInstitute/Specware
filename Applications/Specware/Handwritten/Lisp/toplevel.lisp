@@ -428,7 +428,8 @@
 			 "")
 		     (specware::current-directory)))
 		 (format t "~&Subsequent evaluation commands will now import ~A~A.~%"
-			 *current-swe-spec-dir* (subseq x 1))
+			 *current-swe-spec-dir*
+			 (if (equal *current-swe-spec-dir* "") x (subseq x 1)))
 		 (unless *swe-use-interpreter?*
 		   (format t "~&The following will produce, compile and load code for this spec:~%")
 		   (format t "~&:swll ~A~%" x)))
