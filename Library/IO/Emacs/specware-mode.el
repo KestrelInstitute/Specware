@@ -153,9 +153,9 @@ accepted in lieu of prompting."
   (define-key map "\C-\M-\\" 'sw:indent-region)
   (define-key map "\t"       'sw:indent-line) ; ...except this one
 
-  (define-key map "\M-."     'specware-meta-point)
-  (define-key map "\M-,"     'continue-specware-meta-point)
-  (define-key map "\C-c\C-p" 'process-specware-file)
+  (define-key map "\M-."     'sw:meta-point)
+  (define-key map "\M-,"     'sw:continue-meta-point)
+  (define-key map "\C-c\C-p" 'sw:process-file)
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
@@ -959,7 +959,7 @@ If anyone has a good algorithm for this..."
     (setq indent (current-indentation))
     (end-of-line) (insert "\n") (indent-to (+ sw:indent-level indent))))
 
-(defun process-specware-file (filename)
+(defun sw:process-file (filename)
   (interactive "fProcess Specware Unit: ")
   (simulate-input-expression (concat ":sw " (expand-file-name filename))))
 
@@ -969,8 +969,8 @@ If anyone has a good algorithm for this..."
 
 (defvar *pending-specware-meta-point-results* nil)
 
-(defun continue-specware-meta-point ()
-  "Continue last \"\\[specware-meta-point]\" command."
+(defun sw:continue-meta-point ()
+  "Continue last \"\\[sw:meta-point]\" command."
   (interactive)
   (if (null *pending-specware-meta-point-results*)
       (error "No more Definitions")
@@ -980,7 +980,7 @@ If anyone has a good algorithm for this..."
 
 ;;;; Meta-point facility (adapted from refine-meta-point fi:lisp-find-definition)
 ;;;; Uses Franz interface functions to communicate with Lisp
-(defun specware-meta-point (name)
+(defun sw:meta-point (name)
   (interactive (list (car (sw::get-default-symbol "Specware locate source" t t))))
   (let* ((pr (find-qualifier-info name))
 	 (qualifier (car pr))

@@ -4,6 +4,7 @@
  <!ENTITY model SYSTEM "model.dbk">
  <!ENTITY defining SYSTEM "defining.dbk">
  <!ENTITY process SYSTEM "process.dbk">
+ <!ENTITY generatedlisp SYSTEM "generatedlisp.dbk">
  <!ENTITY debug SYSTEM "debug.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
@@ -42,6 +43,7 @@
 &model;
 &defining;
 &process;
+&generatedlisp;
 &debug;
 
 </book>
