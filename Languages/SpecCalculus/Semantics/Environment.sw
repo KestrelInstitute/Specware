@@ -104,6 +104,18 @@ UnitId_Dependency.
       } in
       run prog 
 
+
+  op getBaseSpecUID : () -> RelativeUnitId
+  def getBaseSpecUID() =
+    let prog = {
+       (optBaseUnitId,baseSpec) <- getBase;
+       case optBaseUnitId of
+         | None -> raise (Fail "No Base Spec")
+         | Some uid -> return uid
+      } in
+      run prog 
+
+
   op clearBaseNames : Env ()
   def clearBaseNames =  writeGlobalVar ("BaseNames", [])
 
