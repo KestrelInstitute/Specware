@@ -9,7 +9,7 @@
 	     "Warning: Directory does not exist: /loser/loser/loser/")
 	    "Keeping old path:"
 	    (:alternatives 
-	     "$SPECWARE:/:$SPECWARE/"
+	     "/:$SPECWARE/"
 	     "$SPECWARE:.:$SPECWARE/"
 	     "$SPECWARE/:./"
 	     "$SPECWARE/:/"
