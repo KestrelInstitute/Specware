@@ -39,7 +39,7 @@ BEGIN
   Expression : DATATYPE
   BEGIN
     varr (varr : Variable) : var?
-    option (op : Operation) : op?
+    op (op : Operation) : op?
     app (func, arg : Expression) : app?
     abs (varr : Variable, typ : Typee, body : Expression) : abs?
     eq (lhs, rhs : Expression) : eq?
@@ -73,3 +73,37 @@ BEGIN
   END Judgment
 
 END Syntax
+
+
+Positions : THEORY
+BEGIN
+  Position : TYPE = finseq [nat]
+END Positions
+
+
+SyntaxWithCoreOps : THEORY
+BEGIN
+
+  IMPORTING Syntax, Positions
+
+  exprFreeVars (e : Expression) : RECURSIVE finite_set [Variable] =
+    CASES e OF
+      varr(v) : singleton(v),
+      op(oo) : emptyset,
+      app(e1,e2) : union (exprFreeVars(e1), exprFreeVars(e2)),
+      abs(v,t,e) : remove (v, exprFreeVars(e)),
+      eq(e1,e2) : union (exprFreeVars(e1), exprFreeVars(e2))
+    ENDCASES
+    MEASURE e BY <<
+
+  exprOps (e : Expression) : RECURSIVE finite_set [Operation] =
+    CASES e OF
+      varr(v) : emptyset,
+      op(oo) : singleton(oo),
+      app(e1,e2) : union (exprOps(e1), exprOps(e2)),
+      abs(v,t,e) : exprOps(e),
+      eq(e1,e2) : union (exprOps(e1), exprOps(e2))
+    ENDCASES
+    MEASURE e BY <<
+
+END SyntaxWithCoreOps
