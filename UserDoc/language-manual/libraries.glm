@@ -56,13 +56,13 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[=]]</entry>
         <entry colname="fxty">&nbsp; [[R 20]]</entry>
-        <entry colname="type">&nbsp; [[[a] a * a -> a]]</entry>
+        <entry colname="type">&nbsp; [[[a] a * a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; tests if the parameters are equal</entry>
        </row>
        <row>
         <entry colname="name">&nbsp; [[~=]]</entry>
         <entry colname="fxty">&nbsp; [[R 20]]</entry>
-        <entry colname="type">&nbsp; [[[a] a * a -> a]]</entry>
+        <entry colname="type">&nbsp; [[[a] a * a -> Boolean]]</entry>
         <entry colname="desc">&nbsp; tests if the parameters are unequal</entry>
        </row>
        <row>
