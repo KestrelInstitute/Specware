@@ -167,6 +167,10 @@ spec
 			     then attemptEval1(opName,a,ft)
 			     else Unevaluated(mkApply(ft,valueToTerm a))))
 	   else Unevaluated(mkApply(ft,valueToTerm a)))
+      | Fun(Not,_,_) ->
+	(case a of
+	  | Bool x -> Bool(~ x)
+	  | _ -> default())
       | Fun(And,_,_) ->
 	(case a of
 	   | RecordVal(fields) -> 
@@ -176,7 +180,7 @@ spec
 		| [(_,_),(_,Bool false)]  -> Bool false
 		| [(_,ut),(_,Bool true)]  -> ut
 		| [(_,Bool true),(_,ut)]  -> ut
-		| _  -> default())
+		| _ -> default())
 	   | None -> default())
       | Fun(Or,_,_) ->
 	(case a of
