@@ -124,11 +124,14 @@ spec
   op  evalFun: Fun * MS.Term * Spec * Nat -> Value
   def evalFun(fun,t,spc,depth) =
     case fun of
-      | Op(qid,__) ->
+      | Op(qid,_) ->
         (case findTheOp(spc,qid) of
 	   | Some (_,_,_,(_,defn)::_) ->
 	     evalRec(defn,emptySubst,spc,depth+1)
-	   | _ -> Unevaluated t)
+	   | _ -> 
+	     case qid of 
+	       | Qualified("Nat","zero") -> Int 0
+	       | _ -> Unevaluated t)
       | Nat n    -> Int n
       | Char c   -> Char c
       | String s -> String s
@@ -383,7 +386,8 @@ spec
       
 
   %% Evaluation of constant terms
-  def evalQualifiers = ["Nat","Integer","Integer_","String","Char","System"] % "Boolean"
+  %% we need to include "Boolean" for "compare", "toString", "show", "pp", etc.
+  def evalQualifiers = ["Nat","Integer","Integer_","String","Char","System","Boolean"] 
   def evalConstant?(v) =
     case v
       of Unevaluated _ -> false
