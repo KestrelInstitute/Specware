@@ -16,7 +16,7 @@ Lots of proof obligations. Needs thought.
 \begin{spec}
   def SpecCalc.evaluateDiag elems = {
       (dgm,timeStamp,depURIs) <- foldM evaluateDiagElem ((emptyDiagram specCat),0,[]) elems;
-      print (ppFormat (ppDiagram dgm));
+      % print (ppFormat (ppDiagram dgm));
       return (Diag dgm,timeStamp,depURIs)
     }
 \end{spec}
