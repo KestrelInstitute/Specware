@@ -42,8 +42,8 @@ p5: Conjecture word_matching_Obligation0 in MatchingObligations#FindMatches0_Obl
 p6: Conjecture word_matching_Obligation1 in MatchingObligations#FindMatches0_Oblig is NOT proved.
     Snark Log file: $SPECWARE/UserDoc/tutorial/example/snark/MatchingProofs/p6.log
 ")
-      ("swl find-matches" :swl "$SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches find-matches"
-                       :output ";;; Generating lisp file find-matches.lisp
+      ("swl find-matches" :swl "$SPECWARE/UserDoc/tutorial/example/MatchingRefinements#FindMatches $TESTDIR/find-matches"
+                       :output ";;; Generating lisp file $TESTDIR/find-matches.lisp
 "
 		       :files '("$TESTDIR/find-matches.lisp"))
       ("Load find-matches.lisp" :lisp "(let (#+allegro excl:*redefinition-warnings*)

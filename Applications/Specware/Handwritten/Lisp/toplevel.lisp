@@ -170,15 +170,19 @@
 
 (defun sw (&optional x)
   (setq x (norm-unitid-str x))
-  (let ((emacs::*goto-file-position-store?* t)
-	(emacs::*goto-file-position-stored* nil))
-    (let ((val (if x
-		   (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
-		 (if *last-unit-Id-_loaded*
-		     (Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
-		   (format t "No previous unit evaluated~%")))))
-      (show-error-position emacs::*goto-file-position-stored*)
-      val)))
+  (flet ((sw-int (x)
+	   (let ((val (if x
+			  (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
+			(if *last-unit-Id-_loaded*
+			    (Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
+			  (format t "No previous unit evaluated~%")))))
+	     (show-error-position emacs::*goto-file-position-stored*)
+	     val)))
+    (if *running-test-harness?*
+	(sw-int x)
+      (let ((emacs::*goto-file-position-store?* t)
+	    (emacs::*goto-file-position-stored* nil))
+	(sw-int x)))))
 
 #+allegro
 (top-level:alias ("sw" :case-sensitive :string) (&optional x)
@@ -186,15 +190,19 @@
 
 (defun show (&optional x)
   (setq x (norm-unitid-str x))
-  (let ((emacs::*goto-file-position-store?* t)
-	(emacs::*goto-file-position-stored* nil))
-    (if x
-	(Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
-      (if *last-unit-Id-_loaded*
-	  (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
-	(format t "No previous unit evaluated~%")))
-    (show-error-position emacs::*goto-file-position-stored*)
-    (values)))
+  (flet ((show-int (x)
+	   (if x
+	       (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+	     (if *last-unit-Id-_loaded*
+		 (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
+	       (format t "No previous unit evaluated~%")))
+	   (show-error-position emacs::*goto-file-position-stored*)
+	   (values)))
+    (if *running-test-harness?*
+	(show-int x)
+      (let ((emacs::*goto-file-position-store?* t)
+	    (emacs::*goto-file-position-stored* nil))
+	(show-int x)))))
 
 #+allegro
 (top-level:alias ("show" :case-sensitive :string) (&optional x)
@@ -202,13 +210,18 @@
 
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl-internal (x &optional y)
-  (let ((emacs::*goto-file-position-store?* t)
-	(emacs::*goto-file-position-stored* nil))
-    (let ((val (Specware::evaluateLispCompile_fromLisp-2 (norm-unitid-str x)
-							 (if y (cons :|Some| (subst-home y))
-							   '(:|None|)))))
-      (show-error-position emacs::*goto-file-position-stored*)
-      val)))
+  (setq x (norm-unitid-str x))
+  (flet ((swl1 (x y)
+	   (let ((val (Specware::evaluateLispCompile_fromLisp-2 x
+								(if y (cons :|Some| (subst-home y))
+								  '(:|None|)))))
+	     (show-error-position emacs::*goto-file-position-stored*)
+	     val)))
+    (if *running-test-harness?*
+	(swl1 x y)
+      (let ((emacs::*goto-file-position-store?* t)
+	    (emacs::*goto-file-position-stored* nil))
+	(swl1 x y)))))
 
 ;;; For non-allegro front-end to handle arguments separated by spaces
 (defun toplevel-parse-args (arg-string)
@@ -269,16 +282,20 @@
   (let ((lisp-file-name (subst-home (or y (concatenate 'string
 					    specware::temporaryDirectory
 					    "cl-current-file"))))
-	(emacs::*goto-file-position-store?* t)
-	(emacs::*goto-file-position-stored* nil))
-    (let ((val (if (Specware::evaluateLispCompileLocal_fromLisp-2
-		    (norm-unitid-str x)
-		    (cons :|Some| lisp-file-name))
-		   (let (#+allegro *redefinition-warnings*)
-		     (specware::compile-and-load-lisp-file lisp-file-name))
-		 "Specware Processing Failed!")))
-      (show-error-position emacs::*goto-file-position-stored*)
-      val)))
+	(x (norm-unitid-str x)))
+    (flet ((swll1 (x lisp-file-name)
+	     (let ((val (if (Specware::evaluateLispCompileLocal_fromLisp-2
+			     x (cons :|Some| lisp-file-name))
+			    (let (#+allegro *redefinition-warnings*)
+			      (specware::compile-and-load-lisp-file lisp-file-name))
+			  "Specware Processing Failed!")))
+	       (show-error-position emacs::*goto-file-position-stored*)
+	       val)))
+      (if *running-test-harness?*
+	  (swll1 x lisp-file-name)
+	(let ((emacs::*goto-file-position-store?* t)
+	      (emacs::*goto-file-position-stored* nil))
+	  (swll1 x lisp-file-name))))))
 
 (defun swll (&optional args)
   (let ((r-args (if (not (null args))
