@@ -16,7 +16,7 @@ pdf: $(SUM).pdf
 DB2PDF= ../bin/db2pdf -E9999
 
 PDFDBK= debug.dbk defining.dbk emacs.dbk generatedlisp.dbk \
-  install.dbk model.dbk process.dbk prove.dbk start.dbk \
+  install.dbk model.dbk shell.dbk prove.dbk start.dbk \
   javacodegen.dbk ccodegen.dbk
 
 $(SUM).pdf: Makefile $(SUM).dbk $(PDFDBK)
@@ -64,11 +64,11 @@ model.dbk: Makefile $(GLM2DBK) model.glm
 	 fi
 	$(GLM2DBK) -pdf model.glm > model.dbk
 
-process.dbk: Makefile $(GLM2DBK) process.glm
-	@if test -r process.dbk; \
-	 then /bin/mv -f process.dbk process.dbk.old; \
+shell.dbk: Makefile $(GLM2DBK) shell.glm
+	@if test -r shell.dbk; \
+	 then /bin/mv -f shell.dbk shell.dbk.old; \
 	 fi
-	$(GLM2DBK) -pdf process.glm > process.dbk
+	$(GLM2DBK) -pdf shell.glm > shell.dbk
 
 prove.dbk: Makefile $(GLM2DBK) prove.glm
 	@if test -r prove.dbk; \
@@ -107,7 +107,7 @@ DB2HTML= ../bin/db2html -E9999
 ADJUSTFONTHTML= bin/adjustFontHTML
 
 HTMDBK= debug-htm.dbk defining-htm.dbk emacs-htm.dbk generatedlisp-htm.dbk \
-  install-htm.dbk model-htm.dbk process-htm.dbk prove-htm.dbk start-htm.dbk \
+  install-htm.dbk model-htm.dbk shell-htm.dbk prove-htm.dbk start-htm.dbk \
   javacodegen-htm.dbk ccodegen-htm.dbk
 
 $(HTMDIR): Makefile $(SUM)-htm.dbk $(HTMDBK) $(ADJUSTFONTHTML)
@@ -163,11 +163,11 @@ model-htm.dbk: Makefile $(GLM2DBK) model.glm
 	 fi
 	$(GLM2DBK) -htm model.glm > model-htm.dbk
 
-process-htm.dbk: Makefile $(GLM2DBK) process.glm
-	@if test -r process-htm.dbk; \
-	 then /bin/mv -f process-htm.dbk process-htm.dbk.old; \
+shell-htm.dbk: Makefile $(GLM2DBK) shell.glm
+	@if test -r shell-htm.dbk; \
+	 then /bin/mv -f shell-htm.dbk shell-htm.dbk.old; \
 	 fi
-	$(GLM2DBK) -htm process.glm > process-htm.dbk
+	$(GLM2DBK) -htm shell.glm > shell-htm.dbk
 
 prove-htm.dbk: Makefile $(GLM2DBK) prove.glm
 	@if test -r prove-htm.dbk; \

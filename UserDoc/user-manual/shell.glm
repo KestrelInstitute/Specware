@@ -1,3 +1,25 @@
+<!-- TODO
+ctext [spec-term]                Sets the current context for eval commands.
+                                 With no arguments displays context.
+eval [expression]                Evaluates expression with respect to current
+                                 context.
+e [expression]                   Abbreviation for eval.
+eval-lisp [expression]           Like `eval' except the expression is
+                                 translated to Lisp and evaluated in Lisp.
+gen-lisp [spec-term [filename]]  Generates Lisp code for unit in filename.
+                                 With no argument uses last processed unit.
+lgen-lisp [spec-term [filename]] Like `gen-lisp' but only generates lisp for
+                                 local definitions of spec.
+gen-c [spec-term [filename]]     Generates C code for unit in filename.
+                                 With no argument uses last processed unit.
+make [spec-term]                 Generate C code with makefile and call make
+                                 on it.
+gen-java [spec-term [filename]]  Generates Java code for unit in filename.
+                                 With no argument uses last processed unit.
+exit                             Exits shell and Lisp.
+quit                             Alias for exit.
+-->
+
 <chapter id="process">
 <title>The &SShell;</title>
 
@@ -42,21 +64,34 @@ transparent to the user. However, it improves the performance and
 response time of the system.</para>
 
 <para>
-To determine whether the files &Specware; is asked to process may have
-changed since the last time they were processed, the caching mechanism
-uses the ``last modified'' date and time of the files.
-Under certain circumstances this may lead to the wrong result.
+However, under certain circumstances this may lead to the wrong result.
+Files only need to be processed if they may have changed since the last
+time they were processed.
+To determine whether this is the case, the caching mechanism uses the
+``last modified'' date and time of the files.
 Say there are two files named <"mickey.sw"> and <"minny.sw">.
 If the user first lets &Specware; process <"mickey.sw">, and then
 deletes that file and renames <"minny.sw"> to <"mickey.sw">,
 the system will be fooled into assuming that <"mickey.sw"> does not need
-to be re-processed, since its modification time is that of the otriginal
-<"minny.sw"> file, and so is older than the last time <"mickey.sw"> was
-processed.
+to be re-processed.
+After all, its modification time is that of the original <"minny.sw">
+file, and so it is older than the last time <"mickey.sw"> was processed.
+A likely scenario under which this may happen is when a user copies a
+file to a back up, modifies the file, has &Specware; process it, and
+then restores it by moving the back-up version in its place.
 All other scenarios that may lead to the wrong results are variations on
 this theme, replacing a file with one with the same name but different
 content during a &Specware; session without adjusting its modification
 time, or by antedating its modification time.
+</para>
+
+<para>
+Clearly, to retain cache integrity, the user is well-advised not to
+rename, move or delete <".sw"> files while a &Specware; session is
+in progress.
+If there is any reason to suspect that the integrity of the cache has
+become compromised, the &SShell; command [[cinit]] will clear the
+unit cache and thereby restore integrity.
 </para>
 
 </section>  <!-- overview -->
@@ -410,7 +445,7 @@ that the command must be executed.
 
 </section>
 
-<section>
+<section id="swpath">
 <title>Miscellaneous Commands</title>
 <para>
 The commands described in this section do not process units, but some
@@ -418,18 +453,27 @@ may influence the way later processing commands work.
 </para>
 
 <para>
-There is a help command:
+A terse description of all Shell commands is produced by
+the help command:
 [[
-||    help [$command-name$]
+||    help
 ]]
-It shows a terse description of the command on the output.
-Without argument, it gives a description of all Shell commands.
+With an argument:
+[[
+||    help $command-name$
+]]
+it shows a description of just that command.
 </para>
 
 <para>
-The change-directory command
+The pathname of the current directory is shown on the putput by
+the following command:
 [[
-||    cd [$directory$]
+||    cd
+]]
+The change-directory command:
+[[
+||    cd $directory$
 ]]
 sets the current directory (folder) to the argument, which must be a valid
 pathname for a directory in the file system, either absolute or relative
@@ -453,6 +497,26 @@ list the <".sw"> files in the current directory, while
 ]]
 (for DIR Recursive) also lists those in sub-directories.
 </para>
+
+<para>The value of the &swpath; environment variable is shown
+via the following command:
+[[
+||    path
+]]
+The value of the &swpath; environment variable is changed
+via the following command:
+[[
+||    path $dir$;$dir$;...;$dir$
+]]
+The argument must be a semicolon-separated list of
+absolute directory paths of the underlying operating system.
+For example, in order to set &swpath; to <"C:\users\me"> it is necessary
+to write [[path C:\users\me]].</para>
+
+<para>Changes to &swpath; only apply to the currently running
+&Specware; session. If &Specware; is quit and then restarted, &swpath;
+loses the value assigned to it during the previous session, reverting
+to its default value.</para>
 
 </section>
 
@@ -493,6 +557,9 @@ signals any errors detected.</para>
 <para>The elaboration of some unit terms may have side effects: code
 generation; prover invocation.  This is only done if no error was
 encountered.
+Code can also be generated directly from the &SShell; using the
+[[gen-$Language$]] commands.
+For proving properties in specs, see <xref linkend="proving">.
 </para>
 
 <para>
@@ -516,7 +583,16 @@ single-unit file.  If it is indeed a multi-unit file, &Specware;
 parses and elaborates all the unit definitions inside the file.</para>
 
 <para>
-Finally, the command [[proc]] may be abbreviated to [[p]].
+The command [[proc]] may be abbreviated to [[p]].
+</para>
+
+<para>
+The values of processed units are kept in the unit cache.
+To clear the unit cache, as mentioned before, use:
+[[
+||    cinit
+]]
+(Cache INITialize).
 </para>
 
 </section>
@@ -524,7 +600,13 @@ Finally, the command [[proc]] may be abbreviated to [[p]].
 <section>
 <title>Showing a Unit</title>
 
-<para>The command to show a unit is:
+<para>When a unit definition is elaborated, a unit value is produced.
+For example, a spec is essentially a set of types, ops, and axioms.  A
+spec can be constructed by means of various operations in the
+&Metaslang; language, but the final result is always a spec, i.e., a
+set of types, ops, and axioms.</para>
+
+<para>The command for showing unit values is:
 [[
 ||    show [$unit-term$]
 ]]
@@ -535,11 +617,14 @@ However, unlike for [[proc]], the argument can not be a multi-unit identifier.
 </para>
 
 <para>The unit term is processed as for the [[proc]] command.
-If no error occurred, the unit resulting from elaborating the 
+If no error occurred, the unit value resulting from elaborating the 
 unit term is shown on the output.
-Imported specs may not be expanded in the output, white space may be
-different, declarations may have been added or re-ordered, and
-explicit qualifications may have been added.
+However, an attempt is made to keep imported specs as import
+declarations, instead of expanded in the output.
+If the argument was already a spec form, the output may look
+different in several ways: white space may be different,
+declarations may have been added or re-ordered, and explicit
+qualifications may have been added.
 </para>
 
 <para>To show imported specs expanded in place, use:
@@ -547,6 +632,7 @@ explicit qualifications may have been added.
 ||    showx [$unit-term$]
 ]]
 (for SHOW eXpanded).
+</para>
 
 <para>
 ``Showing'' a proof unit has the same effect as just processing it;
@@ -555,7 +641,81 @@ the elaboration of a proof unit is only in the side effects.
 
 </section>
 
-&prove; <!-- section on proofs -->
+<section>
+<title>Generating Proof Units</title>
+
+<para> Two &SShell; commands facilitate the creation of proof units.
+The first is:
+[[
+||    punits [$unit-identifier$ [$filename$]]
+]]
+in which the unit identifier must be that of a single spec term.
+Executing the command then generates proof units
+for all the conjectures, theorems and proof obligations of the spec
+resulting from elaborating that spec term.
+</para>
+
+<para>These proof units are written to a file that can then be processed
+to attempt proving all the conjectures in the spec.
+The proof file can also be edited to add [[using]]s and [[options]] to
+the proof units.
+By default, the proof units are written in a file obtained from the unit
+identifier given to the [[punits]] command.
+For example, if the unit identifier is <"/dir1/dir2/foo">,
+then the proof units are written to <"/dir1/dir2/foo_Proofs.sw">.
+Optionally, the file for the proof units to be written to can be given
+as the second argument to the [[punits]] command.</para>
+
+<para>Using [[punits]], proof units are generated not just for the
+conjectures explicitly present in the spec, but also for all
+non-local conjectures for the spec.
+The user can use the command:
+[[
+||    lpunits [$unit-identifier$ [$filename$]]
+]]
+to generate a proof-unit file with only the ``local'' conjectures.
+</para>
+
+</section>
+
+<section>
+<title>Generating Lisp Code</title>
+
+<para>HIRO: Normally, Lisp code is generated by constructing a Lisp program
+unit via the &Metaslang; [[generate]] operation and by processing such
+unit via the [[proc]] command.</para>
+
+<para>&Specware; provides an additional command to accomplish the same
+result without actually creating an explicit Lisp program unit. The
+command is:
+[[L:
+||    gen-lisp $unit-identifier$ $string$
+]]
+The unit identifier must resolve to a spec, which is processed
+by &Specware;. If the spec is successfully processed, &Specware;
+generates Lisp code from it (according to the semantics of [[generate]])
+and deposits the resulting code into the file whose path is given by
+the string.</para>
+
+<para>The second argument to [[L:gen-lisp]], i.e. the string, is optional.
+If it is not given, a file name is inferred as explained in <xref
+linkend="generatelisp"> for [[generate]].
+[[L:
+||    lgen-lisp $unit-identifier$
+]]
+This is like [[L:gen-lisp]] except it generates code only for the
+local definitions of the spec given by the unit identifier and not any
+of the imports. It is intended for incremental development, so it
+compiles and loads the lisp definitions. Note that if you have not
+generated code for the imported specs and loaded them, trying to run
+the code generated by this command will give undefined function errors.
+Also, if the spec is unqualified but it is imported into a spec that
+is qualified, the package used will be [[L::SW-USER]] instead of the
+package of the qualifier. To avoid this problem qualification can be
+added to the spec.
+</para>
+
+</section>
 
 <section id="generatelisp">
 <title>Generating Lisp Code</title>
@@ -600,183 +760,49 @@ Then the code is deposited into the file
 
 &ccodegen; <!-- section on C code generation -->
 
-
 <section>
-<title>Auxiliary Commands</title>
+<title>Auxiliary Commands for Lisp</title>
 
-<section>
-<title>Displaying Unit Values</title>
-
-<para>When a unit definition is processed, a unit value is produced.
-For example, a spec is essentially a set of types, ops, and axioms.  A
-spec can be constructed by means of various operations in the
-&Metaslang; language, but the final result is always a spec, i.e., a
-set of types, ops, and axioms.</para>
-
-<para>The [[L::show]] command is used to display the value of a
-unit. Like [[proc]], it is also supplied in the XEmacs buffer of the
-Lisp shell and it is followed by a one-line argument. The argument
-is a unit identifier.</para>
-
-<para>The command to display a unit is:
-[[L:
-||    :show $unit-identifier$
-]]
-This command first processes the unit, exactly as if it were
-[[proc <unit-identifier>]]. In addition, if processing does not yield
-errors, the value of the unit is displayed on screen. Of course, if
-the unit has been already processed via a [[proc]] command and its
-unit term has not been changed after that, the [[L::show]] command
-will access the results saved in &Specware;'s internal cache.</para>
-
-<!-- LEFT OUT FOR NOW:
-
-<para>The command to display an unnamed unit is:
-[[L:
-||    :show $unit-defining-text$
-]]
-This command first processes the unit, exactly as if it were
-[[proc <unit-defining-text>]]. In addition, if processing does not
-yield errors, the value of the unit is displayed on screen.</para>
-
--->
-
-<!-- LEFT OUT FOR NOW:
-
-<para>If the [[L::show]] command is given without an argument, it
-displays the value of the unit processed by the last [[L::show]]
-command that has been executed. If no [[proc]] command has been yet
-executed in the current &Specware; session, an error is
-signaled.</para>
-
--->
-
-<para>The [[L::show]] command serves to inspect the value of units
-constructed via the &Metaslang; operations. This is especially useful
-for beginning users as an aid to clarify the semantics of such
-operations.</para>
-
-</section>
-
-<section>
-<title>Inspecting and Clearing the Cache</title>
-
-<para>As already mentioned, &Specware; maintains an internal cache
-that associates processing results with unit identifiers.</para>
-
-<para>A list of the units currently present in the cache is displayed
-on screen via the following command:
-[[L:
-||    :list
-]]
-The cache is cleared (i.e., re-initialized) via the following
-command:
-[[L:
-||    :sw-init
-]]
-Normally, there is no need to use these commands.</para>
-
-</section>
-
-<section id="swpath">
-<title>Inspecting and Setting &swpath;</title>
-
-<para>The value of the &swpath; environment variable is displayed on
-screen via the following command:
-[[L:
-||    :swpath
-]]
-The value of the &swpath; environment variable is changed
-via the following command:
-[[L:
-||    :swpath $string$
-]]
-The [[L:<string>]] must be a semicolon-separated list of
-absolute directory paths of the underlying operating system. For
-example, in order to set &swpath; to <"C:\users\me"> it is necessary
-to write [[L::swpath C:\users\me]].</para>
-
-<para>Changes to &swpath; only apply to the currently running
-&Specware; session. If &Specware; is quit and then restarted, &swpath;
-loses the value assigned to it during the previous session, reverting
-to its default value.</para>
-
-</section>
-
-<section>
-<title>Generating Lisp Code</title>
-
-<para>Normally, Lisp code is generated by constructing a Lisp program
-unit via the &Metaslang; [[generate]] operation and by processing such
-unit via the [[proc]] command.</para>
-
-<para>&Specware; provides an additional command to accomplish the same
-result without actually creating an explicit Lisp program unit. The
-command is:
-[[L:
-||    :swl $unit-identifier$ $string$
-]]
-The unit identifier must resolve to a spec, which is processed
-by &Specware;. If the spec is successfully processed, &Specware;
-generates Lisp code from it (according to the semantics of [[generate]])
-and deposits the resulting code into the file whose path is given by
-the string.</para>
-
-<para>The second argument to [[L::swl]], i.e. the string, is optional.
-If it is not given, a file name is inferred as explained in <xref
-linkend="generatelisp"> for [[generate]].
-[[L:
-||    :swll $unit-identifier$
-]]
-This is like [[L::swl]] except it generates code only for the
-local definitions of the spec given by the unit identifier and not any
-of the imports. It is intended for incremental development, so it
-compiles and loads the lisp definitions. Note that if you have not
-generated code for the imported specs and loaded them, trying to run
-the code generated by this command will give undefined function errors.
-Also, if the spec is unqualified but it is imported into a spec that
-is qualified, the package used will be [[L::SW-USER]] instead of the
-package of the qualifier. To avoid this problem qualification can be
-added to the spec.
+<para>
+When developing a &Specware; application you generate code for your
+application, compile, load and test it. Then if you make a
+modification to a single spec you can use the [[lgen-lisp]] command
+to just generate the generated code for the modification.
+This command is also useful when you just want to see the
+generated code for a particular spec.
 </para>
 
 <para>
-When developing a specware application you generate code for your
-application, compile, load and test it. Then if you make a
-modification to a single spec you can use the [[L::swll]] to just load
-the generated code for the modification.
-This command is also useful when you just want to see the
-generated code for a particular spec.
-[[L:
-||    :cl $lisp-file-name$
+To load and compile Lisp files from the &SShell;, the following commands
+can be used:
+[[
+||    ld $lisp-file-name$
 ]]
-Compiles and loads a lisp file.</para>
+to load a lisp file,
+[[
+||    cf $lisp-file-name$
+]]
+to compile a lisp file, and
+[[
+||    ld $lisp-file-name$
+]]
+to load and compile it.
+</para>
 	
 </section>
 
-<section> 
-<title>Miscellaneous Commands</title>
+<section>
+<title>Finally</title>
 
 <para>
-[[L:
-||    :sw-help $command-name$
+To terminate a &Specware; session:
+[[
+||    exit
 ]]
-Prints brief documentation for the specware command
-command-name. If command-name is omitted it prints documentation for
-all the specware commands.
-[[L:
-||    :dir $directory$
+or, equivalently,
+[[
+||    quit
 ]]
-Gives directory listing of directory. If directory is omitted
-it uses the current directory.
-[[L:
-||    :ls $directory$
-]]
-Gives directory listing of directory. If directory is omitted
-it uses the current directory.</para>
-
 </section>
-
-</section>  <!-- auxiliary commands -->
 
 </chapter>

@@ -1,4 +1,4 @@
-<section>
+<chapter id="proving">
 <title>Proving Properties in Specs</title>
 
 <para> &Specware; provides a mechanism for verifying the correctness
@@ -11,35 +11,38 @@ proof unit described below.</para>
 <section>
 <title>The Proof Unit</title>
 
-<para> The user invokes the Snark theorem prover by constructing a
-proof term.  A typical proof term is of the form: </para>
+<para>
+The user invokes the Snark theorem prover by constructing and processing
+a proof term.
+A typical proof term is of the form: </para>
 
 [[
-||    prove property in spec_term
-||          using hypothesis1, hypothesis2
+||    prove f_stable in Stability
+||          using stable_charn, f_defn
 ||          options "(use-paramodulation t)
 ||                   (use-resolution nil)
 ||                   (use-hyperresolution t)"
 ]]
 
-<para> If this term is in file <"proof.sw"> then issuing the command
-[[:sw proof]] will result in translating [[hypothesis1]],
-[[hypothesis2]] and [[property]] to Snark and then invoking the Snark
-prover to try to prove [[property]] from [[hypothesis1]] and
-[[hypothesis2]] using the options in the [[options]] list. Note that
-the properties
-[[property]], [[hypothesis1]], and [[hypothesis2]] must all be
-names of claims
-(i.e. axioms, conjectures, or theorems) that appear in the
-spec resulting from elaborating [[spec_term]].
-Note also that [[hypothesis1]] and [[hypothesis2]] are required to
-appear earlier in that spec than [[property]].  Most users will
-omit the [[options]] list.  Additionally, the [[using]] part can
-be omitted as well.  In this case all the properties that appear in
-[[spec_term]] prior to [[property]] will be used to prove
-[[property]].  </para>
+<para>In this proof term, [[Stability]] must be a spec-valued unit
+term, and [[f_stable]], [[stable_charn]], and [[f_defn]] must all be
+names of claims (i.e. axioms, conjectures, or theorems) that appear in
+the spec resulting from elaborating that unit term.
+If this proof term is in file <"pruf.sw"> then issuing the command
+[[proc pruf]] will result in translating [[stable_charn]],
+[[f_defn]] and [[f_stable]] to Snark formulas and then invoking the Snark
+prover to try to prove [[f_stable]] from the hypotheses [[stable_charn]]
+and [[f_defn]], using the options in the [[options]] list.
+Note that the claims used as hypotheses -- [[stable_charn]] and
+[[f_defn]] in the example -- are required to appear earlier in that spec
+than the claim to be proved -- [[f_stable]] in the example.
+Most users will omit the [[options]] part.
+Additionally, the [[using]] part can be omitted as well.
+In that case all the claims that appear in the spec term before the
+claim to be proved will be used as hypotheses in the proof.
+</para>
 
-<para> After Snark completes &Specware; will report on the success or
+<para> After Snark completes, &Specware; will report on the success or
 failure of the Snark proof.  </para>
 
 </section>
@@ -47,9 +50,9 @@ failure of the Snark proof.  </para>
 <section>
 <title>Proof errors</title>
 
-<para> &Specware; will report an error if [[property]] does not occur
-in [[spec_term]] or if one of the axioms do not occur in [[spec_term]]
-prior to [[property]].  </para>
+<para> &Specware; will report an error if the claim to be proved
+does not occur in the spec, or if not all claims following [[using]]
+occur in the spec before the claim to be proved.  </para>
 
 <para> Snark will likely break into Lisp if the user inputs an
 incorrect option.  </para>
@@ -61,12 +64,12 @@ incorrect option.  </para>
 
 <para> In the course of its execution Snark typically outputs a lot of
 information as well as a proof when it finds one.  All this output can
-be overwhelming to the user, yet invaluable in understanding why his
+be overwhelming to the user, yet invaluable in understanding why the
 proofs succeeded or failed.  To deal with all this output &Specware;
 redirects all the Snark output to log files. In our example above,
-which executed a proof in the file <"proof.sw">, &Specware; will
-create a subdirectory called <"snark"> at the same level as
-<"proof.sw">.  In that directory a log file called <"proof.log"> will be
+which executed a proof in the file <"pruf.sw">, &Specware; will
+create a subdirectory called <"Snark"> at the same level as
+<"pruf.sw">.  In that directory a log file called <"pruf.log"> will be
 created that contains all the Snark output.</para>
 
 </section>
@@ -74,63 +77,36 @@ created that contains all the Snark output.</para>
 <section>
 <title>Multiple Proofs</title>
 
-<para> Just as there can be multiple units per file, there can be
-multiple proofs in single file.  For example, in file <"proof.sw"> we
-could include more than one proof as follows: </para>
+<para> As there can be multiple units per file, there can be
+multiple proof units in single file.  For example, in file <"pruuf.sw"> we
+could include more than one proof unit, as follows: </para>
 
 [[
-||p1  = prove prop1 using ax1, ax2
-||p1a = prove prop1 using ax3
-||p2  = prove prop2
+||    p1  = prove prop1 using ax1, ax2
+||    p1a = prove prop1 using ax3
+||    p2  = prove prop2
 ]]
 
-<para> In this case Snark will be invoked three separate times,
+<para> In this case [[proc pruuf]] will invoke Snark three separate times,
 writing three different log files.  In this case an additional
-subdirectory will be created under <"Snark">, called <"proof">.  The
-three log files will then be: <"Snark/proof/p1.log">,
-<"Snark/proof/p1a.log">, and <"Snark/proof/p2.log">.  </para>
+subdirectory will be created under <"Snark">, called <"pruuf">.  The
+three log files will then be: <"Snark/pruuf/p1.log">,
+<"Snark/pruuf/p1a.log">, and <"Snark/pruuf/p2.log">.  </para>
 
 </section>
-
-<section>
-<title>Generating Proof Units</title>
-
-<para> To facilitate the creation of proof units we provide the :swpu
-command. The :swpu commands takes a SpecCalculus term and generates
-proof units for all the conjectures and theorems in the spec denoted
-by the SpecCalculus term.</para>
-
-<para>These proof units are written to a file that can then be elaborated to
-attempt proving all the conjectures in the spec.  The proof file can
-also be edited to add options and usings to the proofs.  By default
-the proofs are written in a file obtained from the unit id given to
-the :swpu command.  For example, if the unit id is <"/dir1/dir2/foo">,
-then the proof units are written to <"/dir1/dir2/foo_Proofs.sw">.
-Optionally the file for the proof units to be written to can be given
-as the second argument to the :spwu command.</para>
-
-<para> By default proof units are generated not just for the
-conjectures explicitly in the spec, but also for all the proof
-obligations generated for the spcec.  The user can use the
-:obligations keyword to control the generation of proof
-obligations. For example, :swpu spec :obligations nil, will only
-generate proof units for the conjectures explicitly in spec.</para>
-
-</section>
-
 
 <section>
 <title>Interrupting Snark</title>
 
-<para> As is the case with any first-order prover, Snark is likely to
+<para> As any first-order prover is wont to do, Snark is likely to
 either loop forever or run for a longer time than the user can
 wait.  The user can provide a time limit for Snark by using an
 appropriate option.  However, there are likely to be times when the
-user wants to stop Snark in the middle of execution.  He can do this
-by typing Cntrl-C Cntrl-C in the *common-lisp* buffer.  This will
-then interrupt Snark and place the user in the Lisp debugger.  He can
+user wants to stop Snark in the middle of execution.  The user can do this
+by typing Cntrl-[[C]] Cntrl-[[C]] in the *common-lisp* buffer.  This will
+then interrupt Snark and place the user in the Lisp debugger.  The user can
 exit the debugger by issuing the [[:pop]] command.  A log file will
-still be written that he can look at if he needs to.  </para>
+still be written that can be perused if so desired.  </para>
 
 </section>
 
@@ -171,4 +147,4 @@ where needed.  </para>
 
 </section>
 
-</section>
+</chapter>

@@ -3,7 +3,7 @@
  <!ENTITY start SYSTEM "start.dbk">
  <!ENTITY model SYSTEM "model.dbk">
  <!ENTITY defining SYSTEM "defining.dbk">
- <!ENTITY process SYSTEM "process.dbk">
+ <!ENTITY shell SYSTEM "shell.dbk">
  <!ENTITY prove SYSTEM "prove.dbk">
  <!ENTITY generatedlisp SYSTEM "generatedlisp.dbk">
  <!ENTITY debug SYSTEM "debug.dbk">
@@ -45,7 +45,8 @@
 &start;
 &model;
 &defining;
-&process; <!-- includes &prove; -->
+&shell;
+&prove;
 &generatedlisp;
 &debug;
 &emacs;

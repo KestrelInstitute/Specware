@@ -76,7 +76,7 @@ even be made totally transparent to the user.</para>
 defined by the environment variable &swpath;. Similarly to the
 [[PATH]] environment variable in operating systems, &swpath; is a
 string consisting of a semicolon-separated list of absolute directory
-paths in the file system. See <xref linkend="swpath"> for information
+paths in the file system.  See <xref linkend = "swpath"> for information
 on how to inspect and set &swpath;.</para>
 
 <para>Roughly speaking, the unit tree consists of all the units defined
