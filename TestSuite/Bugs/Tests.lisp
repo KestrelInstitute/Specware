@@ -96,6 +96,30 @@ Ambiguous ops:
  found in $TESTDIR/Bug_0083/Ambop.sw
 3.4-3.43")
 
+ ("Bug 0085 : Proof obligations for quotient pattern are not generated"
+  :show   "Bug_0085/quotpat#O" 
+  :output ";;; Elaborating obligator at ~/Work/Generic/Specware4/TestSuite/Bugs/Bug_0085/quotpat#O
+;;; Elaborating spec at ~/Work/Generic/Specware4/TestSuite/Bugs/Bug_0085/quotpat#S
+;;; Elaborating spec at ~/Work/Generic/Specware4/Library/Base/WFO
+
+spec  
+ import S
+ import /Library/Base/WFO
+ conjecture f_Obligation is 
+    fa(x : Q, y : Nat) x = quotient eq_mod10 y => natural?(y + 1)
+ conjecture f_Unique is 
+    fa(x : Q, y : Nat, z :Nat) x = quotient eq_mod10 y & x = quotient eq_mod10 z => (y + 1) = (z + 1)
+ conjecture eq_mod10_Obligation is natural?(10) => true
+ conjecture eq_mod10_Obligation0 is natural?(10) => true
+ conjecture eq_mod10_reflexive is fa(x : Nat) eq_mod10(x, x)
+ conjecture eq_mod10_symmetric is 
+    fa(x : Nat, y : Nat) eq_mod10(x, y) => eq_mod10(y, x)
+ conjecture eq_mod10_transitive is 
+    fa(x : Nat, y : Nat, z : Nat) 
+     eq_mod10(x, y) && eq_mod10(y, z) => eq_mod10(x, z)
+endspec
+")
+
  ("Bug 0093 : No check on clashing defs in colimit"
   :show   "Bug_0093/IncompatColimit.sw" 
   :output ";;; Elaborating spec at $TESTDIR/Bug_0093/IncompatColimit#I
