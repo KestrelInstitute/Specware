@@ -47,9 +47,8 @@ SpecCalc qualifying spec {
     -> SpecCalc.Env ValueInfo
 
   op SpecCalc.evaluateOtherSubstitute :
-       ValueInfo
-    -> ValueInfo
-    -> SCTerm
+       SCTerm -> ValueInfo
+    -> SCTerm -> ValueInfo
     -> Position
     -> SpecCalc.Env ValueInfo
 

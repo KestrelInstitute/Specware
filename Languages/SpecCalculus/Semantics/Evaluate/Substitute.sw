@@ -13,8 +13,8 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateSubstitute (spec_tm, morph_tm) term_pos = {
     unitId <- getCurrentUID;
     print (";;; Elaborating spec-substitution at " ^ (uidToString unitId) ^ "\n");
-    (spec_value, spec_timestamp, spec_dep_UIDs) <- evaluateTermInfo spec_tm;
-    (morph_value, morph_timestamp, morph_dep_UIDs) <- evaluateTermInfo morph_tm;
+    spec_value_info  as (spec_value,  spec_timestamp,  spec_dep_UIDs)  <- evaluateTermInfo spec_tm;
+    morph_value_info as (morph_value, morph_timestamp, morph_dep_UIDs) <- evaluateTermInfo morph_tm;
     coercedSpecValue <- return (coerceToSpec spec_value);
     case (coercedSpecValue, morph_value) of % TODO: coerceToMorphism morph_value ??
       | (Spec spc, Morph morph) ->
@@ -24,9 +24,8 @@ SpecCalc qualifying spec {
              compressed_spec <- complainIfAmbiguous (compressDefs new_spec) term_pos;
              return (Spec compressed_spec, timeStamp, dep_UIDs)
            }
-      | (Other other, Morph morph) ->
-           evaluateOtherSubstitute (coercedSpecValue,spec_timestamp,spec_dep_UIDs)
-                                   (morph_value,morph_timestamp,morph_dep_UIDs) morph_tm term_pos
+      | (Other _, Other _) ->
+        evaluateOtherSubstitute spec_tm spec_value_info morph_tm morph_value_info term_pos
       | (_,        Morph _)  ->
            raise (TypeCheck (positionOf spec_tm, "substitution attempted on a non-spec"))
       | (Spec _,   _) ->

@@ -14,7 +14,7 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId) ^ "\n"))
   }
 
-  def SpecCalc.evaluateOtherSubstitute _ _ _ (* morph other morphTerm *) pos = {
+  def SpecCalc.evaluateOtherSubstitute _(* spec_tm *) _(* spec_value *) _(* morph_tm *) _(* morph_value *) pos = {
     unitId <- getCurrentUID;
     raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
