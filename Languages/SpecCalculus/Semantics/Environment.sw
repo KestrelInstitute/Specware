@@ -13,7 +13,9 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
   import /Library/IO/Primitive/IO
-  import Map
+  import SpecCat qualifying /Languages/MetaSlang/Specs/Categories/Specs
+  import /Library/Structures/Data/Categories/Diagrams/Polymorphic
+  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 \end{spec}
 
 All terms in the calculus have a value.  A value is a specification, a
@@ -26,8 +28,8 @@ diagram, morphism etc.  We combine them with a coproduct.
 
   sort Value =
     | Spec  Spec
-    | Morph String
-    | Diag  String
+    | Morph (Spec * Spec * Morphism)
+    | Diag  (Diagram (Spec,Morphism))
     % | DiagMorph
 
   op showValue : Value -> String
@@ -37,8 +39,8 @@ diagram, morphism etc.  We combine them with a coproduct.
   def ppValue value =
     case value of
       | Spec  spc -> ppString (printSpec spc)
-      | Morph str -> ppString str
-      | Diag  str -> ppString str
+      % | Morph str -> ppString str
+      % | Diag  str -> ppString str
 \end{spec}
 
 The interpreter maintains state.  The state of the interpreter includes
@@ -72,8 +74,8 @@ URI_Dependency.
   sort TimeStamp = Time          % Not a fixnum
   sort URI_Dependency = List URI
   sort ValueInfo = Value * TimeStamp * URI_Dependency
-  sort GlobalContext = Map.Map (URI, ValueInfo)
-  sort LocalContext  = Map.Map (RelativeURI, ValueInfo)
+  sort GlobalContext = PolyMap.Map (URI, ValueInfo)
+  sort LocalContext  = PolyMap.Map (RelativeURI, ValueInfo)
   sort State = GlobalContext * LocalContext * Option URI
 
   op ppValueInfo : ValueInfo -> Doc
@@ -159,7 +161,7 @@ are used.
   op lookupInGlobalContext : URI -> Env (Option ValueInfo)
   def lookupInGlobalContext uri =
     fn state as (globalContext,localContext,currentURI) ->
-      (Ok (eval globalContext uri), state)
+      (Ok (evalPartial globalContext uri), state)
 
   op bindInLocalContext : RelativeURI -> ValueInfo -> Env ()
   def bindInLocalContext uri value =
@@ -169,7 +171,7 @@ are used.
   op lookupInLocalContext : RelativeURI -> Env (Option ValueInfo)
   def lookupInLocalContext uri =
     fn state as (globalContext,localContext,currentURI) ->
-      (Ok (eval localContext uri), state)
+      (Ok (evalPartial localContext uri), state)
 
   op showLocalContext : Env String
   def showLocalContext = fn state as (globalContext,localContext,uri) ->

@@ -9,8 +9,9 @@ SpecCalc qualifying spec {
  import Spec         
  import Let         
  import Qualify         
- import SpecMorphism 
  import Diagram      
+ import SpecMorphism 
+ import DiagMorphism 
  import Generate      
  import Translate      
 \end{spec}
