@@ -31,7 +31,7 @@
 ;;; VERSION STRING
 
 (defconst specware-mode-version-string
-  "specware-mode, Version 0.2")
+  "specware-mode, Version 1.0")
 
 (provide 'specware-mode)
 
@@ -147,12 +147,15 @@ accepted in lieu of prompting."
       ["Find Definition" sw:meta-point t]
       ["Find Next Definition" sw:continue-meta-point
        *pending-specware-meta-point-results*]
-      ["Switch to *common-lisp* " sw:switch-to-lisp t]
+      ["Switch to *specware* buffer" sw:switch-to-lisp t]
       ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark)]
       ["Uncomment Region"
        (comment-region (region-beginning) (region-end) '(4))
        (mark)]
-      ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)])) 
+      ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)]
+      ["Run Specware" run-specware4 (not (inferior-lisp-running-p))]
+      "-----"
+      ["About Specware" about-specware t])) 
 
 ;;; BINDINGS: should be common to the source and process modes...
 
@@ -946,8 +949,8 @@ If anyone has a good algorithm for this..."
 
 (defun sw:process-current-file ()
   (interactive)
-  (setq filename (sw::file-to-specware-unit-id buffer-file-name))
-  (simulate-input-expression (concat ":sw " filename)))
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
+    (simulate-input-expression (concat ":sw " filename))))
 
 (defun sw::file-to-specware-unit-id (filename)
   (when (eq (elt filename 1) ?:)
@@ -969,8 +972,8 @@ If anyone has a good algorithm for this..."
 
 (defun sw:dired-process-current-file ()
   (interactive)
-  (setq filename (sw::file-to-specware-unit-id (dired-get-filename)))
-  (simulate-input-expression (concat ":sw " filename)))
+  (let ((filename (sw::file-to-specware-unit-id (dired-get-filename))))
+    (simulate-input-expression (concat ":sw " filename))))
 
 (when (boundp 'dired-mode-map)
   (define-key dired-mode-map "\C-cp" 'sw:dired-process-current-file)
@@ -1206,6 +1209,139 @@ If anyone has a good algorithm for this..."
 	  (error
 	   ;; save file if user types "yes":
 	   (not (y-or-n-p "Parens are not balanced.  Save file anyway? ")))))))
+
+;;; About Specware command implementation
+(defvar specware-logo
+  (make-glyph `[xpm :file ,(concat *specware*
+				   "/Library/IO/Emacs/specware_logo.xpm")]))
+
+(defun goto-specware-web-page (&rest ign)
+  (browse-url "http://specware.org/"))
+
+(defun goto-specware-release-notes (&rest ign)
+  (browse-url
+   (if (inferior-lisp-running-p)
+       (format "http://specware.org/release-notes-%s-%s.html"
+	       (sw:eval-in-lisp "specware::Major-Version-String")
+	       (sw:eval-in-lisp "user::Specware-patch-level"))
+     "http://specware.org/news.html")))
+
+(defface about-specware-link-face
+  '((((class color) (background dark))
+     (:foreground "blue" :underline t))
+    ;; blue4 is hardly different from black on windows.
+    (((class color) (background light) (type mswindows))
+     (:foreground "blue3" :underline t))
+    (((class color) (background light))
+     (:foreground "blue4" :underline t))
+    (((class grayscale) (background light))
+     (:foreground "DimGray" :bold t :italic t :underline t))
+    (((class grayscale) (background dark))
+     (:foreground "LightGray" :bold t :italic t :underline t))
+    (t (:underline t)))
+  "Face used for links in the Specware About page.")
+
+;; Derived from about.el functions
+;; I don't use the about functions because they are different in different 
+;; versions of xemacs
+(defun about-specware-get-buffer (name)
+  (cond ((get-buffer name)
+	 (switch-to-buffer name)
+	 (goto-line 2)
+	 name)
+	(t
+	 (switch-to-buffer name)
+	 (buffer-disable-undo)
+	 ;; #### This is a temporary fix until wid-edit gets fixed right.
+	 ;; We don't do everything that widget-button-click does -- i.e.
+	 ;; we don't change the link color on button down -- but that's
+	 ;; not important.
+	 (add-local-hook
+	  'mouse-track-click-hook
+	  #'(lambda (event count)
+	      (cond
+	       ((widget-event-point event)
+		(let* ((pos (widget-event-point event))
+		       (button (get-char-property pos 'button)))
+		  (when button
+		    (widget-apply-action button event)
+		    t))))))
+	 (set-specifier left-margin-width about-left-margin (current-buffer))
+	 (set (make-local-variable 'widget-button-face) 'about-specware-link-face)
+	 nil)))
+
+(defvar about-left-margin 3)
+
+(defun about-specware-center (string-or-glyph)
+  (let ((n (- (startup-center-spaces string-or-glyph) about-left-margin)))
+    (make-string (if (natnump n) n 0) ?\ )))
+
+(defun about-specware-finish-buffer ()
+  (widget-insert "\n")
+  (widget-create 'link
+		 :help-echo "Bury this buffer"
+		 :action (lambda (widget event)
+			   (if event
+			       ;; For some reason,
+			       ;; (bury-buffer (event-buffer event))
+			       ;; doesn't work.
+			       (with-selected-window (event-window event)
+				 (bury-buffer))
+			     (bury-buffer)))
+		 :tag "Bury")
+  (widget-insert " this buffer and return to previous.\n")
+  (use-local-map (make-sparse-keymap))
+  (set-keymap-parent (current-local-map) widget-keymap)
+  (local-set-key "q" 'bury-buffer)
+  (local-set-key "l" 'bury-buffer)
+  (local-set-key " " 'scroll-up)
+  (local-set-key [backspace] 'scroll-down)
+  (local-set-key "\177" 'scroll-down)
+  (widget-setup)
+  (goto-char (point-min))
+  (toggle-read-only 1)
+  (set-buffer-modified-p nil))
+
+(defun about-specware ()
+  "Describe the Specware System"
+  (interactive)
+  (unless (about-specware-get-buffer "*About Specware*")
+    (set-glyph-image specware-logo
+		     "./specware_logo.xpm"
+		     'global 'x)
+    (widget-insert (about-specware-center specware-logo))
+    (widget-create 'default
+		   :format "%t"
+		   :tag-glyph specware-logo)
+    (widget-insert "\n\n")
+    (when (inferior-lisp-running-p)
+      (let* ((specware-version (sw:eval-in-lisp "user::Specware-version"))
+	     (specware-patch-number (sw:eval-in-lisp "user::Specware-patch-level"))
+	     (specware-version (format "Version %s.%s"
+				       specware-version
+				       specware-patch-number)))
+	(widget-insert (about-specware-center specware-version))
+	(widget-create 'link :help-echo "Specware Version Release Notes"
+		       :action 'goto-specware-release-notes
+		       :button-prefix ""
+		       :button-suffix ""
+		       specware-version)))
+    (widget-insert "\n\n")
+    (widget-create 'link :help-echo "Specware Web Page"
+		   :action 'goto-specware-web-page
+		   :button-prefix ""
+		   :button-suffix ""
+		   "Specware")
+    (widget-insert " is a leading-edge automated software development system 
+that allows users to precisely specify the desired functionality of 
+their applications and to generate provably correct code based on 
+these requirements. At the core of the design process in Specware 
+lies stepwise refinement, in which users begin with a simple, abstract 
+model of their problem and iteratively refine this model until it 
+uniquely and concretely describes their application.")
+    (widget-insert "\n")
+    (about-specware-finish-buffer)
+    (goto-line 2)))
 
 ;;; & do the user's customisation
 

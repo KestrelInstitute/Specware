@@ -124,8 +124,19 @@ information on how to send the mail."
 ;;;"
 ;;;	  ipc-version fi::required-ipc-version))))
 
+(defconst specware-interaction-menu 
+    '("Specware"
+      ["Find Definition" sw:meta-point t]
+      ["Find Next Definition" sw:continue-meta-point
+       *pending-specware-meta-point-results*]
+      ["Switch to Previous File" sw:switch-to-lisp t]
+      ["Search for Previous Input" fi:re-search-backward-input t]
+      ["Exit Specware" sw:exit-lisp (inferior-lisp-running-p)]
+      "-----"
+      ["About Specware" about-specware t]))
+
 ;;; Make listener commands bound to same keys as comint
-(defun add-comint-key-bindings (m)
+(defun add-specware-listener-key-bindings (m)
   (define-key m "\en" 'fi:push-input)
   (define-key m "\ep" 'fi:pop-input)
   (define-key m '(control meta y) 'fi:pop-input)
@@ -137,13 +148,18 @@ information on how to send the mail."
     "^\\(\\(\\[[0-9]+i?c?\\] \\|\\[step\\] \\)?\\(<?[-A-Za-z]* ?[0-9]*?>\\|[-A-Za-z0-9]+([0-9]+):\\) \\)+")
   (define-key m "\C-a" 'comint-bol)
   (autoload 'comint-bol "comint" "\
-Beginning of line; skip prompt." t nil))
+Beginning of line; skip prompt." t nil)
+  (easy-menu-define specware-interaction-buffer-menu
+		    m
+		    "Menu used in Specware buffer."
+		    specware-interaction-menu)
+  (easy-menu-add specware-interaction-buffer-menu m))
 
 (defun cleanup-fi:lisp-listener-mode ()
   (and fi:lisp-listener-mode-map
-       (add-comint-key-bindings fi:lisp-listener-mode-map))
+       (add-specware-listener-key-bindings fi:lisp-listener-mode-map))
   (and fi:inferior-common-lisp-mode-map
-       (add-comint-key-bindings fi:inferior-common-lisp-mode-map)))
+       (add-specware-listener-key-bindings fi:inferior-common-lisp-mode-map)))
 
 (if (and (boundp 'fi:inferior-common-lisp-mode-map)
 	 fi:inferior-common-lisp-mode-map)

@@ -1,5 +1,5 @@
 (defvar lisp-emacs-interface-type 'franz)
-(defvar sw:common-lisp-buffer-name "*common-lisp*")
+(defvar sw:common-lisp-buffer-name "*specware*")
 
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
@@ -29,7 +29,7 @@
   (define-function 'inferior-lisp-newline 'fi:inferior-lisp-newline)
   (define-function 'inferior-lisp-running-p 'fi::lep-open-connection-p)
   (define-function 'sw:find-unbalanced-parenthesis 'fi:find-unbalanced-parenthesis)
-  (defvar *specware-buffer-name* fi:common-lisp-buffer-name)
+  (defvar *specware-buffer-name* sw:common-lisp-buffer-name)
   (when (and (boundp 'fi:lisp-mode-syntax-table)
 	     fi:lisp-mode-syntax-table)
     (modify-syntax-entry ?. "." fi:lisp-mode-syntax-table)))
