@@ -80,15 +80,6 @@ Proc qualifying spec
 
   op modeSpec : Procedure -> ModeSpec
   def modeSpec proc = proc.modeSpec
-
-  op withBSpec infixl 17 : Procedure * BSpec -> Procedure
-  def withBSpec (proc,newBSpec) = {
-    parameters = parameters proc,
-    varsInScope = varsInScope proc,
-    returnInfo = returnInfo proc,
-    modeSpec = modeSpec proc,
-    bSpec = newBSpec
-  }
 \end{spec}
 
 The field \verb+returnName+ holds the name of the identifier within the

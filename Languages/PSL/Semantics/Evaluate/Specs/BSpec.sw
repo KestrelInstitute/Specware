@@ -45,7 +45,7 @@ BSpec qualifying spec
   def BSpec.modes bSpec = bSpec.modes
 
   op BSpec.pp : BSpec -> ModeSpec -> Env Doc
-  def BSpec.pp = ppRaw
+  def BSpec.pp = ppShort
 
   op BSpec.ppShort : BSpec -> ModeSpec -> Env Doc
   def BSpec.ppShort bSpec modeSpec = {
