@@ -681,6 +681,7 @@ an abstract type). As another example, the spec
 [[WordMatching0]]: thus, the validity of the morphism [[WordMatching_Ref]]
 (i.e., that all axioms in the source are theorems in the target) follows
 immediately from the validity of the morphism [[WordMatching_Ref0]].
+</para>
 
 <para>The proof obligations associated to the spec [[SymbolMatching]] can be
 displayed by using the following command:</para>
