@@ -166,6 +166,9 @@ AnnSpecPrinter qualifying spec
 	  | _              -> Nonfix)
      | _ -> Nonfix
  
+
+ def mkAEquals (srt,pos) = Fun (Equals, srt, pos)
+
  def [a] printOp (context, 
 		  pp     : ATermPrinter, 
 		  termOp : AFun  a, 
@@ -182,10 +185,24 @@ AnnSpecPrinter qualifying spec
      | Project     s           -> pp.fromString ("project("^s^")")
      | RecordMerge             -> pp.fromString "<<"
      | Embedded    s           -> pp.fromString ("embed?("^s^")")
-     | Quotient                -> pp.fromString ("quotient")
-     | Choose                  -> pp.fromString ("choose")
-     | PQuotient   _           -> pp.fromString ("quotient")
-     | PChoose     _           -> pp.fromString ("choose")
+     | Quotient                -> let p = case srt of Arrow(_, Quotient(_,p,_),_) -> p | _ -> mkAEquals (srt,a) in
+                                  prettysFill [pp.fromString "quotient", 
+					       string " ",
+					       ppTerm context ([], Top : ParentTerm) p, 
+					       string " "]
+     | Choose                  -> let p = case srt of Arrow(_, Quotient(_,p,_),_) -> p | _ -> mkAEquals (srt,a) in
+                                  prettysFill [pp.fromString "choose",
+					       string " ",
+					       ppTerm context ([], Top : ParentTerm) p, 
+					       string " "]
+     | PQuotient   p           -> prettysFill [pp.fromString ("quotient"),
+					       string " ",
+					       ppTerm context ([], Top : ParentTerm) p, 
+					       string " "]
+     | PChoose     p           -> prettysFill [pp.fromString ("choose"),
+					       string " ",
+					       ppTerm context ([], Top : ParentTerm) p, 
+					       string " "]
      | Not                     -> pp.Not
      | And                     -> pp.And
      | Or                      -> pp.Or
