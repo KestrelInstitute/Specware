@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/19 15:46:20  gilham
+ * Added submenu for GenerateCodeAction.
+ *
  * Revision 1.1  2003/01/30 02:01:38  gilham
  * Initial version.
  *
@@ -20,6 +23,7 @@ import javax.swing.event.*;
 
 import org.openide.actions.*;
 import org.openide.filesystems.FileObject;
+import org.openide.filesystems.FileStateInvalidException;
 import org.openide.loaders.DataObject;
 import org.openide.util.enum.ArrayEnumeration;
 import org.openide.util.HelpCtx;
@@ -34,6 +38,7 @@ import org.openide.windows.WindowManager;
 
 import edu.kestrel.netbeans.MetaSlangDataObject;
 import edu.kestrel.netbeans.Util;
+import edu.kestrel.netbeans.lisp.LispProcessManager;
 import edu.kestrel.netbeans.model.SourceElement;
 
 /**
@@ -103,16 +108,20 @@ public class GenerateCodeAction extends NodeAction {
     void generateCodeForNode (Node node, int target) {
 	MetaSlangDataObject dataObj = (MetaSlangDataObject) node.getCookie(DataObject.class);
 	FileObject fileObj = dataObj.getPrimaryFile();
-	String fileName = fileObj.getNameExt();
-	SourceElement source = dataObj.getSource();
+        String pathName = "";
+        try {
+            pathName = fileObj.getFileSystem().getSystemName();
+        } catch (FileStateInvalidException e) {}
+        String fileName = fileObj.getPackageName('/');
+
 	switch (target) {
 	case ActSubMenuModel.LISP_TARGET:
-	    Util.log("*** Generating Lisp code: fileName ="+fileName);
-	    // TODO
+	    //Util.log("*** Generating Lisp code: fileName ="+fileName);
+	    LispProcessManager.generateLispCode(pathName, fileName);
 	    break;
 	case ActSubMenuModel.JAVA_TARGET: 
-	    Util.log("*** Generating Java code: fileName ="+fileName);
-	    // TODO
+	    //Util.log("*** Generating Java code: fileName ="+fileName);
+	    LispProcessManager.generateJavaCode(pathName, fileName);
 	    break;
         }
     }
