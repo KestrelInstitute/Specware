@@ -65,25 +65,11 @@ coherence conditions of the morphism elements.
                 return found_qid
               }
           | _ -> 
-	    case qid of
-	      %% qualified names such as   Qualified ("Boolean", "=>")
-	      %% may appear in codomain of mapping, but actually refer to built-in ops
-	      | Qualified ("<unqualified>", "~")   -> return Boolean_Not
-	      | Qualified ("<unqualified>", "&")   -> return Boolean_And
-	      | Qualified ("<unqualified>", "or")  -> return Boolean_Or
-	      | Qualified ("<unqualified>", "=>")  -> return Boolean_Implies
-	      | Qualified ("<unqualified>", "<=>") -> return Boolean_Iff
-	      | Qualified ("<unqualified>", "=")   -> return Boolean_Equals
-	      | Qualified ("<unqualified>", "~=")  -> return Boolean_NotEquals
-	      | Qualified ("Boolean",       "~")   -> return qid
-	      | Qualified ("Boolean",       "&")   -> return qid
-	      | Qualified ("Boolean",       "or")  -> return qid
-	      | Qualified ("Boolean",       "=>")  -> return qid
-	      | Qualified ("Boolean",       "<=>") -> return qid
-	      | Qualified ("Boolean",       "=")   -> return qid
-	      | Qualified ("Boolean",       "~=")  -> return qid
-	      | _ ->
-	        raise (MorphError (position, "Unrecognized target op " ^ (printQualifiedId qid)))
+	    raise (MorphError (position, 
+			       if syntactic_qid? qid then
+				 "`" ^ (printQualifiedId qid) ^ "' is syntax, not an op, hence cannot be the target of a morphism."
+			       else
+				 "Unrecognized target op " ^ (printQualifiedId qid)))
 
       def findCodSort position qid =
         case findAllSorts (cod_spec, qid) of
@@ -112,8 +98,8 @@ coherence conditions of the morphism elements.
                        | None -> {
                              cod_sort <- findCodSort position cod_qid;
                              return (op_map, 
-                                   insertAQualifierMap (sort_map, found_qualifier, found_id, cod_sort))
-                           }
+				     insertAQualifierMap (sort_map, found_qualifier, found_id, cod_sort))
+				 }
                        | _ -> raise (MorphError (position, "Multiple rules for source sort "
                                                            ^ (printQualifiedId dom_qid)))
                    }

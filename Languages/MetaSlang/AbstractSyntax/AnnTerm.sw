@@ -34,15 +34,21 @@ MetaSlang qualifying spec {
 
  %% These are used by translation, morphism code
  def unqualified_Boolean = mkUnQualifiedId "Boolean"
- def unqualified_Boolean? qid = (qid = unqualified_Boolean)
  def Boolean_Boolean     = mkQualifiedId ("Boolean", "Boolean")
- def Boolean_Not         = mkQualifiedId ("Boolean", "~")
- def Boolean_And         = mkQualifiedId ("Boolean", "&")
- def Boolean_Or          = mkQualifiedId ("Boolean", "or")
- def Boolean_Implies     = mkQualifiedId ("Boolean", "=>")
- def Boolean_Iff         = mkQualifiedId ("Boolean", "<=>")
- def Boolean_Equals      = mkQualifiedId ("Boolean", "=")
- def Boolean_NotEquals   = mkQualifiedId ("Boolean", "~=")
+ def syntactic_qid? (Qualified(q,id)) = 
+   if q = "Boolean" or q = UnQualified then
+     (case id of
+	| "~"   -> true
+	| "&"   -> true
+	| "or"  -> true
+	| "=>"  -> true
+	| "<=>" -> true
+	| "="   -> true
+	| "~="  -> true
+	| _ -> false)
+   else
+     false
+	
 
  op printQualifiedId : QualifiedId -> String
  def printQualifiedId (Qualified (qualifier, id)) =

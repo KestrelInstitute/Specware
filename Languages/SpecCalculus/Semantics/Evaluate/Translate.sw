@@ -95,6 +95,9 @@ Note: The code below does not yet match the documentation above, but should.
 	       (if rs = [] or found_qualifier = UnQualified then
                   case findAQualifierMap (translation_sort_map, dom_qualifier, dom_id) of
 		    | None -> return (translation_op_map, 
+				      %% We allow Qualified("Boolean", "Boolean") as a cod_qid,
+				      %% but rely on translateSort to notice it and replace any 
+				      %% resulting sort term with built-in Boolean.
 				      insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)))
 		    | _    -> raise (SpecError (rule_pos, 
 						"translate: Duplicate rules for source sort "^
@@ -110,8 +113,23 @@ Note: The code below does not yet match the documentation above, but should.
 	     | ((Qualified (found_qualifier, _))::_,_,_,_)::rs  ->
 	       (if rs = [] or found_qualifier = UnQualified then
                   case findAQualifierMap (translation_op_map, dom_qualifier, dom_id) of
-		    | None -> return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)),
-				      translation_sort_map)
+		    | None -> 
+		      {
+		       cod_qid <- (if syntactic_qid? cod_qid then 
+				     raise (MorphError (rule_pos,
+							"`" ^ (printQualifiedId cod_qid) ^ "' is syntax, not an op, hence cannot be the target of a translation."))
+				   else
+				     foldM (fn cod_qid -> fn alias ->
+					    if syntactic_qid? alias then 
+					      raise (MorphError (rule_pos,
+								 "Alias `" ^ (printQualifiedId alias) ^ "' is syntax, not an op, hence cannot be the target of a translation."))
+					    else
+					      return cod_qid)
+				            cod_qid
+					    cod_aliases);
+		       return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)),
+			       translation_sort_map)
+		      }
 		    | _ -> raise (SpecError (rule_pos, 
 						"translate: Duplicate rules for source op "^
 						(printQualifiedId dom_qid)))
@@ -126,8 +144,22 @@ Note: The code below does not yet match the documentation above, but should.
                 if op_qualifier = dom_qualifier then
                   case findAQualifierMap (translation_op_map, op_qualifier,op_id) of
                     | None -> 
-                        let new_cod_qid = mkQualifiedId (cod_qualifier, op_id) in
-                        return (insertAQualifierMap (translation_op_map, op_qualifier, op_id, (new_cod_qid, [new_cod_qid])))
+		      let new_cod_qid = mkQualifiedId (cod_qualifier, op_id) in
+		      {
+		       new_cod_qid <- (if syntactic_qid? new_cod_qid then
+					 raise (MorphError (rule_pos,
+							    "`" ^ (printQualifiedId new_cod_qid) ^ "' is syntax, not an op, hence cannot be the target of a translation."))
+				       else
+					 foldM (fn cod_qid -> fn alias ->
+						if syntactic_qid? alias then 
+						  raise (MorphError (rule_pos,
+								     "Alias `" ^ (printQualifiedId alias) ^ "' is syntax, not an op, hence cannot be the target of a translation."))
+						else
+						  return cod_qid)
+					       new_cod_qid
+					       cod_aliases);
+		       return (insertAQualifierMap (translation_op_map, op_qualifier, op_id, (new_cod_qid, [new_cod_qid])))
+		       }
                     | _ -> raise (SpecError (rule_pos, "translate: Duplicate rules for source op "^
                                                        (printQualifiedId (mkQualifiedId (op_qualifier,op_id)))))
                 else
@@ -137,8 +169,11 @@ Note: The code below does not yet match the documentation above, but should.
                   case findAQualifierMap (translation_sort_map, sort_qualifier, sort_id) of
                     | None -> 
                         let new_cod_qid = case (cod_qualifier, sort_id) of
-					    | ("<unqualified>", "Boolean") -> Boolean_Boolean
-					    | _ -> mkQualifiedId (cod_qualifier, sort_id) 
+					    %% We allow Qualified("Boolean", "Boolean") as a cod_qid,
+					    %% but rely on translateSort to notice it and replace any 
+					    %% resulting sort term with built-in Boolean.
+		                            | ("<unqualified>", "Boolean") -> Boolean_Boolean
+					    | _ -> mkQualifiedId (cod_qualifier, sort_id)
                         in
                         return (insertAQualifierMap (translation_sort_map, sort_qualifier, sort_id, (new_cod_qid, [new_cod_qid])))
                     | _ -> raise (SpecError (rule_pos, "translate: Duplicate rules for source sort "^
@@ -154,9 +189,12 @@ Note: The code below does not yet match the documentation above, but should.
           (let dom_sorts = findAllSorts (dom_spec, dom_qid) in
 	   let dom_ops   = findAllOps   (dom_spec, dom_qid) in
 	   case (dom_sorts, dom_ops) of
+
+             %% neither:
 	     | ([], []) ->
 	       raise (SpecError (rule_pos, "translate: Unrecognized source sort/op "^(printQualifiedId dom_qid)))
 
+	     %% Sort(s) only:
 	     | (((Qualified (found_qualifier, _))::_,_,_)::rs, [])  ->
 	       if rs = [] or found_qualifier = UnQualified then
 		 case findAQualifierMap (translation_sort_map, dom_qualifier, dom_id) of
@@ -168,32 +206,36 @@ Note: The code below does not yet match the documentation above, but should.
 	       else 
 		 raise (SpecError (rule_pos, "translate: Ambiguous source sort "^(printQualifiedId dom_qid))) % should be same as dom_id
 
+	     %% Op(s) only:
 	     | ([], ((Qualified (found_qualifier, _))::_,_,_,_)::rs) ->
 	       if rs = [] or found_qualifier = UnQualified then
 		 case findAQualifierMap (translation_op_map, dom_qualifier, dom_id) of
-		   | None -> return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, 
-							  (case cod_qid of
-							     | Qualified ("<unqualified>", x) ->
-							       (case x of
-								  | "~"   -> Boolean_Not
-								  | "&"   -> Boolean_And
-								  | "or"  -> Boolean_Or
-								  | "=>"  -> Boolean_Implies
-								  | "<=>" -> Boolean_Iff
-								  | "="   -> Boolean_Equals
-								  | "~="  -> Boolean_NotEquals
-								  | _     -> cod_qid)
-							     | _ -> cod_qid, 
-							   cod_aliases)),
-				     translation_sort_map)
+		   | None -> 
+		     { 
+		      cod_qid <- (if syntactic_qid? cod_qid then
+				    raise (MorphError (rule_pos,
+						       "`" ^ (printQualifiedId cod_qid) ^ "' is syntax, not an op, hence cannot be the target of a translation."))
+				  else
+				    foldM (fn cod_qid -> fn alias ->
+					   if syntactic_qid? alias then 
+					     raise (MorphError (rule_pos,
+								"Alias `" ^ (printQualifiedId alias) ^ "' is syntax, not an op, hence cannot be the target of a translation."))
+					   else
+					     return cod_qid)
+				          cod_qid
+					  cod_aliases);
+		      return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, (cod_qid, cod_aliases)),
+			      translation_sort_map)
+		     }
 		   | _ -> raise (SpecError (rule_pos, 
 						"translate: Duplicate rules for source op "^
 						(printQualifiedId dom_qid)))
 	       else
 		 raise (SpecError (rule_pos, "translate: Ambiguous source op "^(printQualifiedId dom_qid))) % should be same as dom_id
 
+             %% Both sort(s) and op(s):
 	     | (_, _) ->
-	       raise (SpecError (rule_pos, "translate: Ambiguous source sort/op "^(printQualifiedId dom_qid))))
+	       raise (SpecError (rule_pos, "translate: Ambiguous source is both sort and op " ^ (printQualifiedId dom_qid))))
     in
       foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules
 
@@ -216,7 +258,6 @@ Note: The code below does not yet match the documentation above, but should.
     case op_term of
       | Fun (Op (qid, fixity), srt, a) ->
 	(let new_qid = translateOpQualifiedId op_id_map qid in
-	 % let _ = toScreen ("\nTranslate op from " ^ (anyToString qid) ^ " to " ^ (anyToString new_qid) ^ "\n") in
 	 case new_qid of
 	   | Qualified ("Boolean", x) ->
 	     (case x of
@@ -340,18 +381,21 @@ Note: The code below does not yet match the documentation above, but should.
 				           [] 
 					   old_aliases)
 	      in
-	      { first_sortinfo  <- return (new_aliases, ty_vars, defs);
-	        merged_sortinfo <- foldM (fn merged_sortinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
-					  mergeSortInfo spc
-					                merged_sortinfo 
-					                (findAQualifierMap (new_sort_map, new_qualifier, new_id))
-						        position)
-		                         first_sortinfo
-				         new_aliases;
-	        foldM (fn new_sort_map -> fn (Qualified (new_qualifier, new_id)) ->
-		       return (insertAQualifierMap (new_sort_map, new_qualifier, new_id, merged_sortinfo)))
-		      new_sort_map  
-		      new_aliases }
+	      if new_aliases = [Qualified(UnQualified,"Boolean")] then
+		return new_sort_map
+	      else
+		{ first_sortinfo  <- return (new_aliases, ty_vars, defs);
+		  merged_sortinfo <- foldM (fn merged_sortinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
+					    mergeSortInfo spc
+					                  merged_sortinfo 
+							  (findAQualifierMap (new_sort_map, new_qualifier, new_id))
+							  position)
+		                           first_sortinfo
+					   new_aliases;
+		  foldM (fn new_sort_map -> fn (Qualified (new_qualifier, new_id)) ->
+			 return (insertAQualifierMap (new_sort_map, new_qualifier, new_id, merged_sortinfo)))
+		        new_sort_map  
+			new_aliases }
 	in
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
 
@@ -365,8 +409,17 @@ Note: The code below does not yet match the documentation above, but should.
 	      importInfo = {
 			    imports      = [],
 			    importedSpec = None,
-			    localOps     = map (translateOpQualifiedId     op_id_map) localOps,
-			    localSorts   = map (translateSortQualifiedId sort_id_map) localSorts
+			    localOps     = map (translateOpQualifiedId op_id_map) localOps,
+			    localSorts   = foldl (fn (ty, local_types) -> 
+						  let new_type = translateSortQualifiedId sort_id_map ty in
+						  %% Avoid adding Boolean or Boolean.Boolean to local sorts,
+						  %% since it is built in.
+						  if new_type = Boolean_Boolean or new_type = unqualified_Boolean then
+						    local_types
+						  else
+						    local_types ++ [new_type])
+			                         []
+						 localSorts
 			   },  
 	      sorts      = newSorts,
 	      ops        = newOps,
