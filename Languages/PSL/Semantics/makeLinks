@@ -1,17 +1,22 @@
+#!/bin/bash
+
 cd $SPECWARE4/Languages/PSL/Semantics
 ln -s ../../SpecCalculus/Semantics/Specware.sw .
 ln -s ../../SpecCalculus/Semantics/SpecPath.sw .
-ln -s ../../SpecCalculus/Semantics/Evaluate/Spec.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Colimit.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/DiagMorphism.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Diagram.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Generate.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Let.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Obligations.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Print.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Qualify.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/SpecMorphism.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Translate.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/URI.sw Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/Spec Evaluate
-ln -s ../../SpecCalculus/Semantics/Evaluate/URI Evaluate
+ln -s ../../SpecCalculus/Semantics/Environment.sw .
+
+cd $SPECWARE4/Languages/PSL/Semantics/Evaluate
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Spec.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Colimit.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/DiagMorphism.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Diagram.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Generate.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Let.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Obligations.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Print.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Qualify.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/SpecMorphism.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Translate.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/URI.sw .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/Spec .
+ln -s ../../../SpecCalculus/Semantics/Evaluate/URI .
