@@ -18,8 +18,12 @@ SpecCalc qualifying spec {
         case cValue of
           | Spec spc -> 
               (case language of
-                 | "lisp" -> evaluateLispCompile ((cValue,timeStamp,depURIs), sub_term,optFile)
-                 | "snark" -> evaluateSnarkGen ((cValue,timeStamp,depURIs), sub_term,optFile)
+                 | "lisp" -> evaluateLispCompile
+		             ((cValue,timeStamp,depURIs), sub_term,optFile)
+                 | "lisp_local" -> evaluateLispCompileLocal
+			          ((cValue,timeStamp,depURIs), sub_term,optFile)
+                 | "snark" -> evaluateSnarkGen
+			       ((cValue,timeStamp,depURIs), sub_term,optFile)
                  | "spec" -> {
                         print (showValue cValue);
                         return (cValue,timeStamp,depURIs)
@@ -53,7 +57,20 @@ SpecCalc qualifying spec {
          return valueInfo}
       | _ -> raise (TypeCheck ((positionOf cterm),
                                "attempting to generate code from an object that is not a specification"))
-       
+
+  %% Need to add error detection code
+  def SpecCalc.evaluateLispCompileLocal(valueInfo as (value,_,_), cterm, optFileName) =
+    case coerceToSpec value of
+      | Spec spc ->
+        {cURI <- SpecCalc.getURI cterm;
+         lispFileName <- URItoLispFile (cURI, optFileName);
+         print (";;; Generating lisp file " ^ lispFileName ^ "\n");
+         let _ = ensureDirectoriesExist lispFileName in
+         let _ = localDefsToLispFile (spc, lispFileName,[]) in
+         return valueInfo}
+      | _ -> raise (TypeCheck ((positionOf cterm),
+                               "attempting to generate code from an object that is not a specification"))
+      
 \end{spec}
 
 Make a lisp file name for a URI.

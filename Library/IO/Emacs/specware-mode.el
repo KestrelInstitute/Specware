@@ -188,6 +188,7 @@ accepted in lieu of prompting."
   (define-key map "\M-,"     'sw:continue-meta-point)
   (define-key map "\C-cp"    'sw:process-current-file)
   (define-key map "\C-c\C-p" 'sw:process-unit)
+  (define-key map "\C-c\C-l" 'sw:cl-current-file)
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
   (define-key map "\M-*"     'sw:switch-to-lisp)
@@ -964,6 +965,17 @@ If anyone has a good algorithm for this..."
   (save-buffer)
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
     (simulate-input-expression (concat ":sw " filename))))
+
+(defun sw:cl-current-file ()
+  (interactive)
+  (save-buffer)
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
+	(temp-file-name (concat (temp-directory) "-cl-current-file")))
+    (sw:eval-in-lisp (format "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
+		     filename temp-file-name))
+    (sw:eval-in-lisp (format "(let (*redefinition-warnings*)
+                                (specware::compile-and-load-lisp-file %S))"
+			     temp-file-name))))
 
 (defun sw::file-to-specware-unit-id (filename)
   (when (eq (elt filename 1) ?:)

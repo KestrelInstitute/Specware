@@ -1045,6 +1045,20 @@ def mkLTerm (sp,dpn,vars,term : Term) =
       let p = ppSpec lSpc in
       format(80, p)
       
+ %% Just generates code for the local defs
+ def localDefsToLispFile
+       (spc as {importInfo = {imports, importedSpec, localOps, localSorts},
+		sorts, ops, properties},
+	file, preamble)
+    = let spc = setOps(spc, mapiAQualifierMap
+		              (fn(qualifier,op_name,
+				  opinfo as (op_names, fixity, sort_scheme_1, defs_1))
+			        -> if memberQualifiedId(qualifier,op_name,localOps)
+				     then opinfo
+				   else (op_names, fixity, sort_scheme_1, []))
+			      ops)
+      in toLispFile (spc, file, preamble)
+     
 
 (*
 This is the same as MetaSlang.toLispFile only with an extra argument
