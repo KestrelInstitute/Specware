@@ -52,6 +52,13 @@ LambdaLift qualifying spec
  %    closure: TranslationBuiltIn.makeClosure(name,freeVars)
  % 		   
 
+(**
+sjw: I made simulateClosures? an option so that the transformation could be used as a
+MetaSlang -> MetaSlang transformation that makes free variables into explicit parameters
+where possible and lifts local functions to global functions. The latter could be
+made optional as well. It seems the allegro compiler handles global functions more 
+efficiently, but cmulisp may do better with local functions.
+**)
  op  simulateClosures?: Boolean		% If false just use lambdas with free vars
  def simulateClosures? = false
 
@@ -103,7 +110,7 @@ LambdaLift qualifying spec
 	- Pattern matching compilation has been performed.
  *)
 
- def patternVars(pat:Pattern) = 
+ def patternVars(pat:Pattern): List Var = 
      case pat
        of VarPat(v,_) -> [v]
 	| RecordPat(fields,_) -> foldr (fn((_,p),vs)-> patternVars p ++ vs) [] fields
@@ -130,27 +137,23 @@ LambdaLift qualifying spec
 	  let vars  = flatten(List.map(fn(_,(_,vars))-> vars) decls) in
 	  let letVars = flatten(List.map (fn(pat,_) -> patternVars pat) decls) in
 	  let body as (_,bodyVars) = makeVarTerm(body) in
-	  let vars = removeDuplicates(vars ++ diff(bodyVars,letVars)) in
+	  let vars = removeDuplicates(vars ++ diffVs(bodyVars,letVars)) in
 	  (Let(decls,body),vars) 
 	| LetRec(decls,body,a) -> 
 	  let decls = List.map (fn(v,term) -> (v,makeVarTerm(term))) decls in
 	  let vars  = flatten(List.map(fn(_,(_,vars))-> vars) decls) in
 	  let letVars = List.map (fn(v,_)-> v) decls in
 	  let body as (_,bodyVars) = makeVarTerm(body) in
-	  let diffVars = diff(bodyVars,letVars) in
-	  %let _ = String.writeLine("  bodyVars: "^varsToString(bodyVars)) in
-	  %let _ = String.writeLine("  -letVars: "^varsToString(letVars)) in
-	  %let _ = String.writeLine("  --------------------------------------") in
-	  %let _ = String.writeLine("            "^varsToString(diffVars)) in
-	  let vars = removeDuplicates(vars ++ diffVars) in
-	  (LetRec(decls,body),vars)
+	  let vars = removeDuplicates(vars ++ bodyVars) in
+	  let diffVars = diffVs(vars,letVars) in
+	  (LetRec(decls,body),diffVars)
 	| Lambda(match,a) -> 
 	  % let (pat,_,_)::_ = match in
 	  %let _ = String.writeLine("  lambda-term, pattern: "^MetaSlangPrint.printPattern(pat)) in
 	  let match = map (fn(pat,cond,term)-> (pat,cond,makeVarTerm term)) match in
 	  let vars  = flatten(map(fn(_,_,(_,vars))-> vars) match) in
 	  let boundVars = flatten(map (fn(pat,_,_)-> patternVars(pat)) match) in
-	  let vars = diff(vars,boundVars) in
+	  let vars = diffVs(vars,boundVars) in
 	  (Lambda(match),vars)
 	  
 	| Var(v,a) -> (Var(v),[v])
@@ -177,7 +180,7 @@ LambdaLift qualifying spec
 	  (Record(fields),vars)
 	| Bind(binder,bound,body,a) -> 
 	  let body as (_,vs) = makeVarTerm(body) in
-	  let vars = diff(vs,bound) in
+	  let vars = diffVs(vs,bound) in
 	  (Bind(binder,bound,body),vars)
 	| _ -> System.fail "makeVarTerm"
     %in
@@ -185,6 +188,20 @@ LambdaLift qualifying spec
 	  %let _ = String.writeLine("vars: "^varsToString(vars)) in
 	  %let _ = String.writeLine("}") in
 	  %res
+
+ op  diffVs: List Var * List Var -> List Var
+ def diffVs (l1,l2) =
+   case l1 of
+      | []     -> []
+      | hd::tl -> if memberPred(hd,l2,fn((id1,_),(id2,_)) -> id1 = id2)
+		   then diffVs(tl,l2) 
+		   else Cons(hd,diffVs(tl,l2))
+
+  op  memberPred: fa(a) a * List a * (a * a -> Boolean) -> Boolean
+  def memberPred(x,l,p) =
+    case l of
+       | []     -> false
+       | hd::tl -> if p(x, hd) then true else memberPred(x,tl,p)
 
  % Build:
  %
@@ -255,12 +272,11 @@ LambdaLift qualifying spec
        mkApply(makeClosureOp(),
 	       mkTuple[oper, ArityNormalize.mkArityTuple(env.spc,prod)])	
 
- def makeLiftInfo(env,id,name,pat,body,vars) = 
+ def makeLiftInfo(env,id,name,pat,body,rng,vars) = 
      {ident = id,
       name = name,
       freeVars = vars,
-      closure = makeClosureApplication(env,name,vars,pat,
-				       termSortEnv(getSpecEnv(env),body)),
+      closure = makeClosureApplication(env,name,vars,pat,rng),
       pattern = pat,
       body = body}
 
@@ -281,7 +297,6 @@ LambdaLift qualifying spec
      uniqueName
 
  def actualFreeVars({qName,opName,opers,counter,usedNames,spc}:LLEnv,vars) =
-   %let _ = String.writeLine("actualFreeVars: vars="^varsToString(vars)) in
      let
 	def lookup(v as (id,_)) = 
 	    case Map.apply (opers, id)
@@ -289,7 +304,6 @@ LambdaLift qualifying spec
 	       | Some (info) -> info.freeVars
      in 
        let res = removeDuplicates(flatten(List.map lookup vars)) in
-       %let _ = String.writeLine("freeVars: "^varsToString(res)) in
        res
   
 
@@ -393,7 +407,7 @@ Given let definition:
 		   let (opers2,body) = lambdaLiftTerm(env,body) in
 		   let name = freshName(opName ^ "__" ^ id,env) in
 		   let vars = actualFreeVars(env,vars) in
-		   let oper = makeLiftInfo(env,id,name,pat2,body,vars) in
+		   let oper = makeLiftInfo(env,id,name,pat2,body,termSortEnv(getSpecEnv(env),body),vars) in
 		   let env  = insertOper(oper,env) in
 		   (cons(oper,opers ++ opers2),env,decls)
 		 | _ ->
@@ -458,51 +472,48 @@ in
 
 *)
      | LetRec(decls,body) ->
-       let opName = env.opName in
-%
 % Step 1.
-% 
+       let opName = env.opName in
        let (free,bound) = 
-	   List.foldr (fn((v,(_,vars)),(free,bound))->
-		      (vars ++ bound,cons(v,bound))) ([],[]) decls in
+	   List.foldr (fn((v,(_,vars)),(free,bound)) ->
+		       (vars ++ free,cons(v,bound)))
+	     ([],[]) decls in
        let vars = removeBound(free,bound) in
-       let _(* free *) = removeDuplicates free in % unused. side-effect?
        let vars = actualFreeVars(env,vars) in
 
-       % let opers  = env.opers in % unused
-%
 % Step 2.
-% 
        let tmpOpers =
            map (fn(v as (id,srt),(Lambda([(pat,_,body)]),_)) ->
 		  let name = freshName(opName ^ "__" ^ id,env) in
 		  (body,makeLiftInfo(env,id,name,pat,mkTrue()(* Dummy body *),
+				     range(getSpecEnv(env),srt),
 				     vars))
-	         | _ -> System.fail "liftDecl Non-lambda abstracted term") decls
+	         | _ -> System.fail "liftDecl Non-lambda abstracted term")
+	     decls
        in
        let env1 = foldl (fn((_,oper),env)-> insertOper(oper,env)) env tmpOpers in
-%
+
 % Step 3.
-%
        let
 	   def liftDecl((realBody,{ident,name,pattern,closure,body,freeVars}),
 			opers) = 
 	       let (opers2,body) = lambdaLiftTerm(env1,realBody) in
-	       let oper = makeLiftInfo(env,ident,name,pattern,body,freeVars) in
+	       let oper = makeLiftInfo(env,ident,name,pattern,body,termSortEnv(getSpecEnv(env),body),
+				       freeVars)
+	       in
 	       cons(oper,opers ++ opers2)
        in
        let opers1 = List.foldr liftDecl [] tmpOpers in
-%
+
 % Step 4.
-%
        let (opers2,body) = lambdaLiftTerm(env1,body) in
        (opers1 ++ opers2,body) 
 
      | Var(id,srt) ->
        (case Map.apply (env.opers, id)
 	  of Some (liftInfo) -> 
-	    let liftInfoClosure = ensureClosure(liftInfo.closure) in
-	    ([],liftInfoClosure)
+	     let liftInfoClosure = ensureClosure(liftInfo.closure) in
+	     ([],liftInfoClosure)
 	  %of Some (liftInfo:LiftInfo) -> ([],mkApply(makeUnitClosureOp(),liftInfo.closure))
 	   | None -> ([],(Var((id,srt),noPos)))
        )
@@ -520,10 +531,8 @@ in
 	case srt
 	  of (Arrow _) -> mkApply(makeUnitClosureOp(),term)
 	   | (TyVar _) -> mkApply(makeUnitClosureOp(),term)
-	   | _ -> term
-	    )
+	   | _ -> term)
      | Lambda [(pat,cond,body)] -> 
-       %let _ = String.writeLine("lambdaLiftTerm: pattern: " ^ MetaSlangPrint.printPattern(pat)^", vars: "^varsToString(vars)) in
        let (opers,body) = lambdaLiftTerm(env,body) in
        if ~simulateClosures?
 	 then (opers,Lambda ([(pat,cond,body)],noPos))
@@ -537,14 +546,11 @@ in
        let ident = name ^ "__closure" in
        let vars = actualFreeVars(env,vars) in
 
-       let liftInfo = makeLiftInfo(env,ident,name,pat,body,vars) in
+       let liftInfo = makeLiftInfo(env,ident,name,pat,body,termSortEnv(getSpecEnv(env),body),vars) in
 
-% [MA
-% make sure that liftInfo.closure is really a closure
+% MA: make sure that liftInfo.closure is really a closure
        let liftInfoClosure = ensureClosure(liftInfo.closure) in
-
        (cons(liftInfo,opers),liftInfoClosure)
-       %(cons(liftInfo,opers),mkApply(makeUnitClosureOp(),liftInfo.closure))
 
      | Lambda (match as ((pat,cond,body)::_)) ->
        let argSorts = productSorts(getSpecEnv env,patternSort pat) in
@@ -560,7 +566,8 @@ in
        let (opers1,t1) = lambdaLiftTerm(env,t1) in
        let (opers2,t2) = lambdaLiftTerm(env,t2) in
        let (opers3,t3) = lambdaLiftTerm(env,t3) in
-       (opers1 ++ opers2 ++ opers3,(IfThenElse(t1,t2,t3,noPos)))
+       (opers1 ++ opers2 ++ opers3,IfThenElse(t1,t2,t3,noPos))
+
      | Seq(terms) -> 
        let
 	  def liftRec(t,(opers,terms)) = 
