@@ -248,10 +248,11 @@ echo "Loading Specware ... (for dumplisp)"
 echo " "
 $LISP -I ${BIG_ALISP} -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
-	(set-gc-parameters t)
+	(set-gc-parameters-for-build t)
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
 	(compact-memory t)
+	(set-gc-parameters-for-use t)
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
 XXXX

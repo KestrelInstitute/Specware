@@ -51,26 +51,61 @@
   (format t "enlarge-stack is currently a no-op for non-Allegro lisp")
   )
 
-(defun set-gc-parameters (&optional verbose?)
+(defun set-gc-parameters-for-build (&optional verbose?)
+  (format t "~3%;;; Set GC parameters to good values for building specware (e.g. loading fasl files).~2%")
+  ;;
+  ;; make newspace grow slowly (maybe not the best strategy?)
+  ;;
   (setf (sys::gsgc-parameter :free-percent-new)            5) ; default is 25
   (setf (sys::gsgc-parameter :expansion-free-percent-new) 10) ; default is 35
+  ;;
+  ;; make oldspaces grow quickly, to minimize the number of them
+  ;;
   (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
-  (setf (sys::gsgc-parameter :expansion-free-percent-old) 90) ; default is 35
+  ;;
+  ;; reduce the number of generations data must live before being tenured,
+  ;; since most data created during the build phase is destined for 
+  ;; permanent residence in oldspace anyway
+  ;;
   (setf (sys::gsgc-parameter :generation-spread)           2) ; default is  4, range is 0-26 
+  ;;
+  (when verbose?
+    (sys::gsgc-parameters)
+    (room t)))
+
+(defun set-gc-parameters-for-use (&optional verbose?)
+  (format t "~3%;;; Set GC parameters to good values for normal use (e.g. processing specs).~2%")
+  ;;
+  ;; Restore parameters to default values.  (Still might want to fine tune these more.)
+  ;;
+  (setf (sys::gsgc-parameter :free-percent-new)           25) ; default is 25
+  (setf (sys::gsgc-parameter :expansion-free-percent-new) 35) ; default is 35
+  (setf (sys::gsgc-parameter :expansion-free-percent-old) 35) ; default is 35
+  (setf (sys::gsgc-parameter :expansion-free-percent-old) 35) ; default is 35
+  ;;
+  ;; Make this at least about 6, to avoid tenuring interim data created by type checker, etc.
+  ;;
+  (setf (sys::gsgc-parameter :generation-spread)          12) ; default is  4, range is 0-26 
   (when verbose?
     (sys::gsgc-parameters)
     (room t)))
 
 (defun compact-memory (&optional verbose?)
+  (format t "~3%;;; Restructure memory to compact old spaces, etc.~2%")
   (gc)
+  (gc t)
   (sys::resize-areas :verbose        verbose?
 		     :global-gc      t          ; first, trigger global gc to compact oldspace
 		     :tenure         t          ; second, move data from newspace into oldspace
 		     :sift-old-areas t          ; third, combine adjacent oldspaces
 		     :pack-heap      nil        ; do not make topmost oldspace as small as possible
 		     :expand         t          ; expand oldspace if necessary, as follows:
-		     :old            #x2000000  ; last, make oldspace at least this large 
+		     :old            #x2000000  ; last, make oldspace at least this large (~ 20 MByte)
 		     )
+  ;; close all but the latest oldspace areas, so their contents
+  ;; won't be gc'd again and again...
+  (setf (sys::gsgc-parameter :open-old-area-fence)        -1)
+  (gc t)
   (when verbose?
     (sys::gsgc-parameters)
     (room t)))
