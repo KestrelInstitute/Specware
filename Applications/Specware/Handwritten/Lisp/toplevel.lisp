@@ -557,6 +557,16 @@
 		       (warn "No value for expression?")))
 		(values)))))))))
 
+(defun Specware::initializeInterpreterBase-0 () ; called from intializeSpecware in Specware.sw
+  (unwind-protect
+      (progn
+	;; clear base names so adding defs for base ops won't complain
+	(SpecCalc::clearBaseNames_fromLisp nil)
+	(let ((*swe-return-value?* t))
+	  (swe "0")))
+    ;; restore base names
+    (SpecCalc::setBaseNames_fromLisp nil)))
+
 #+allegro
 (top-level:alias ("swe" :case-sensitive :string) (x) (swe x))
 
