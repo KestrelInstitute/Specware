@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/14 04:15:31  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.5  2003/02/18 18:10:09  weilyn
  * Added support for imports.
  *
@@ -138,6 +141,17 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	return info;
     }
     
+    /** Creates an element for a morphism.
+	@param name Name of the morphism.
+    */
+    public Item createMorphism(String name) {
+	MorphismInfo info = new MorphismInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createMorphism(): "+info);
+	}
+	return info;
+    }
+
     /** Sets bounds for the whole element. Begin is offset of first character of the element,
 	end is the offset of the last one.
     */
@@ -294,6 +308,8 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	       addMember(SourceInfo.SPEC, childInfo);
 	    } else if (child instanceof ProofInfo) {
                addMember(SourceInfo.PROOF, childInfo); 
+            } else if (child instanceof MorphismInfo) {
+               addMember(SourceInfo.MORPHISM, childInfo); 
             }
 	} else if (parent instanceof SpecInfo) {
 	    SpecInfo parentInfo = (SpecInfo)parent;
@@ -310,6 +326,8 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
             }
 	} else if (parent instanceof ProofInfo) {
             ProofInfo parentInfo = (ProofInfo)parent;
+        } else if (parent instanceof MorphismInfo) {
+            MorphismInfo parentInfo = (MorphismInfo)parent;
         }
     }
     

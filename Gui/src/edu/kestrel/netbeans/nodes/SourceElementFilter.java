@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/14 04:14:22  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.1  2003/01/30 02:02:12  gilham
  * Initial version.
  *
@@ -31,12 +34,13 @@ public class SourceElementFilter {
 
     public static final int       SPEC = 1;
     public static final int       PROOF = 2;
-    public static final int       ALL = SPEC | PROOF;
+    public static final int       MORPHISM = 4;
+    public static final int       ALL = SPEC | PROOF | MORPHISM;
     /** Default order of the top-level element types in the hierarchy.
     * A list, each of whose elements is a bitwise disjunction of element types.
     * By default, only classes and interfaces are listed, and these together.
     */
-    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF };
+    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF | MORPHISM};
 
     /** stores property value */
     private int[]                 order = null;

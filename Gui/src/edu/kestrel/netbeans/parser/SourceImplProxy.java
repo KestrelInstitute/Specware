@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/14 04:15:33  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.1  2003/01/30 02:02:27  gilham
  * Initial version.
  *
@@ -44,6 +47,7 @@ PropertyChangeListener {
     
     private static final SpecElement[] NO_SPECS = new SpecElement[0];
     private static final ProofElement[] NO_PROOFS = new ProofElement[0];
+    private static final MorphismElement[] NO_MORPHISMS = new MorphismElement[0];
     
     /**
      * PropertyChangeListeners attached to the SourceElement.
@@ -163,6 +167,27 @@ PropertyChangeListener {
         return null;
     }
     
+    public void changeMorphisms(MorphismElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeMorphisms(elems, action);
+    }
+    
+    public MorphismElement[] getMorphisms() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getMorphisms(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getMorphisms(): specs="+impl.getMorphisms());
+            return impl.getMorphisms();
+        }
+        return NO_MORPHISMS;
+    }
+    
+    public MorphismElement getMorphism(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getMorphism(name);
+        return null;
+    }
+
     public Collection getPropertyChangeListeners() {
         SourceElement.Impl impl = safeFindModelDelegate();
         if (impl != null)

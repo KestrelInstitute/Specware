@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/14 04:14:00  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.2  2003/02/18 18:13:46  weilyn
  * Added insert strategy for claims, defs and imports.
  *
@@ -88,6 +91,8 @@ class DefaultInsertStrategy implements Positioner {
 		return getFirstNonEmpty(source, 0);
 	    } else if (selector instanceof ProofElement) {
                 return getFirstNonEmpty(source, 1);
+            } else if (selector instanceof MorphismElement) {
+                return getFirstNonEmpty(source, 1);
             }
 	} else if (container instanceof SpecElement) {
 	    SpecElement spec = (SpecElement) container;
@@ -104,6 +109,9 @@ class DefaultInsertStrategy implements Positioner {
 	    }
 	} else if (container instanceof ProofElement) {
             ProofElement proof = (ProofElement) container;
+            //TODO
+        } else if (container instanceof MorphismElement) {
+            MorphismElement proof = (MorphismElement) container;
             //TODO
         }
 	return null;

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:15:31  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:10:07  weilyn
  * Added support for imports.
  *
@@ -67,4 +70,7 @@ public class DefaultWrapper implements WrapperFactory {
         return new ProofElement(theImpl, parent);
     }    
     
+    public MorphismElement wrapMorphism(MemberElement.Impl theImpl, Element parent) {
+        return new MorphismElement(theImpl, parent);
+    }       
 }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/14 04:14:21  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.5  2003/02/18 18:06:34  weilyn
  * Added support for imports.
  *
@@ -207,6 +210,42 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
     }
     else {
       return new ProofChildren(factory, element);
+    }
+  }
+  
+  /* Returns the node asociated with specified element.
+   * @return ElementNode
+   */
+  public Node createMorphismNode (MorphismElement element) {
+    return new MorphismElementNode(element, createMorphismChildren(element), writeable);
+  }
+
+  /** Create children for a morphism node.
+   * Could be subclassed to customize, e.g., the ordering of children.
+   * The default implementation used {@link MorphismChildren}.
+   * @param element a morphism element
+   * @return children for the morphism element
+   */
+  protected Children createMorphismChildren(MorphismElement element) {
+    return createMorphismChildren( element, writeable ? READ_WRITE : READ_ONLY );
+  }
+
+  /** Create children for a morphism node, with specified factory.
+   * The default implementation used {@link SpecChildren}.
+   * @param element a morphism element
+   * @param factory the factory which will be used to create children
+   * @return children for the morphism element
+   */
+  final protected Children createMorphismChildren(MorphismElement element, ElementNodeFactory factory ) {
+    if (ElementNode.sourceOptions.getCategoriesUsage()) {
+      MorphismChildren children = new MorphismCategorizingChildren(factory, element, writeable);
+      MorphismElementFilter filter = new MorphismElementFilter();
+      filter.setOrder(new int[] {FILTER_CATEGORIES});
+      children.setFilter(filter);
+      return children;
+    }
+    else {
+      return new MorphismChildren(factory, element);
     }
   }
   
@@ -629,6 +668,173 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
 	return;
       }
       ((ProofElementNode)n).createPasteTypes(t, s);
+    }
+  }
+
+  /*
+   * Simple descendant of MorphismChildren that distributes nodes from the morphism to various
+   * categories. 
+   */
+  static class MorphismCategorizingChildren extends MorphismChildren {
+    boolean writeable;
+    TreeSet activeCategories;
+        
+    MorphismCategorizingChildren(ElementNodeFactory factory, MorphismElement data, boolean wr) {
+      super(factory, data);
+      writeable = wr;
+      initializeCategories();
+    }
+
+    private void initializeCategories() {
+      activeCategories = new TreeSet();
+/*      if (element.getImports().length > 0) {
+        activeCategories.add(CATEGORIES[0]);
+      }
+      if (element.getSorts().length > 0) {
+	activeCategories.add(CATEGORIES[1]);
+      }
+      if (element.getOps().length > 0) {
+	activeCategories.add(CATEGORIES[2]);
+      }
+      if (element.getDefs().length > 0) {
+	activeCategories.add(CATEGORIES[3]);
+      }
+      if (element.getClaims().length > 0) {
+	activeCategories.add(CATEGORIES[4]);
+      } */     
+    }
+        
+    protected Node[] createNodes(Object key) {
+      if (key instanceof Integer) {
+	return new Node[]{new MorphismElementCategoryNode(((Integer)key).intValue(), factory, element, writeable)};
+      } 
+      return super.createNodes(key);
+    }
+        
+    protected void addCategory(int filter) {
+      activeCategories.add(filterToCategory(filter));
+    }
+
+    protected void removeCategory(int filter) {
+      activeCategories.remove(filterToCategory(filter));
+    }
+
+    protected void refreshKeys (int filter, Object oldValue, Object newValue) {
+      boolean emptyOld = ((Element[])oldValue).length == 0;
+      boolean emptyNew = ((Element[])newValue).length == 0;
+      if (emptyOld && !emptyNew) {
+	addCategory(filter);
+      } else if (!emptyOld && emptyNew) {
+	removeCategory(filter);
+      }
+      super.refreshKeys(filter);
+    }
+
+    protected Collection getKeysOfType(int type) {
+      if (type == FILTER_CATEGORIES) {
+	return activeCategories;
+      }
+      return super.getKeysOfType(type);
+    }
+  }
+  
+  /**
+   * Category node - represents one section under morphism element node.
+   */
+  static class MorphismElementCategoryNode extends AbstractNode {
+
+    /** The morphism element for this node */
+    MorphismElement element;
+
+    /** The type of the category node - for new types. */
+    int newTypeIndex;
+        
+    /** The Help context ID for this node. */
+    String  helpID;
+
+    /** Create new element category node for the specific category.
+     * @param index The index of type 
+     * @param factory The factory which is passed down to the morphism children object
+     * @param element the morphism element which this node is created for
+     */
+    MorphismElementCategoryNode(int index, ElementNodeFactory factory, MorphismElement element, boolean writeable) {
+      this(index, new MorphismChildren(factory, element));
+      this.element = element;
+      newTypeIndex = writeable ? index : -1;
+      switch (index) {
+/*      case 0: setName("Imports"); break; //NOI18N
+      case 1: setName("Sorts"); break; // NOI18N
+      case 2: setName("Ops"); break; // NOI18N
+      case 3: setName("Defs"); break; // NOI18N
+      case 4: setName("Claims"); break; // NOI18N*/
+      }
+    }
+
+    /** Create new element node.
+     * @param index The index of type (0=imports, 1=sorts, 2=ops, 3=defs, 4=claims)
+     * @param children the morphism children of this node
+     */
+    private MorphismElementCategoryNode(int index, MorphismChildren children) {
+      super(children);
+      setDisplayName(NAMES[index]);
+      setShortDescription (SHORTDESCRS[index]);
+      helpID = HELP_IDS[index];
+      MorphismElementFilter filter = new MorphismElementFilter();
+      filter.setOrder(FILTERS[index]);
+      children.setFilter(filter);
+      systemActions = CATEGORY_ACTIONS;
+      setIconBase(PROOF_CATEGORY_ICONS[index]);
+    }
+
+    public org.openide.util.HelpCtx getHelpCtx () {
+      return new org.openide.util.HelpCtx (helpID);
+    }
+	
+    /** Disables copy for the whole category. Sub-elements need to be selected individually.
+     */
+    public boolean canCopy() {
+      return false;
+    }
+
+    /* Get the new types that can be created in this node.
+     * @return array of new type operations that are allowed
+     */
+    public NewType[] getNewTypes() {
+      if (!SourceEditSupport.isWriteable(element)) {
+	return new NewType[0];
+      }
+      switch (newTypeIndex) {
+/*      case 0:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 0)
+	    };
+      case 1:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 1),
+	    };
+      case 2:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 2),
+	    };
+      case 3:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 3),
+	    };
+      case 4:
+	return new NewType[] {
+	  new SourceEditSupport.SpecElementNewType(element, (byte) 4),
+	    };            */
+      default:
+	return super.getNewTypes();
+      }
+    }
+
+    public void createPasteTypes(java.awt.datatransfer.Transferable t, java.util.List s) {
+      Node n = getParentNode();
+      if (n == null || !(n instanceof MorphismElementNode)) {
+	return;
+      }
+      ((MorphismElementNode)n).createPasteTypes(t, s);
     }
   }
 }

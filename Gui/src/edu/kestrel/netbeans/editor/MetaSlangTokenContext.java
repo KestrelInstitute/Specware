@@ -6,6 +6,12 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/13 01:23:55  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
  * Revision 1.4  2003/02/17 07:02:04  weilyn
  * Made scURI an Item, and added more rules for scProve.
  *
@@ -66,19 +72,27 @@ public class MetaSlangTokenContext extends TokenContext {
     // Operator numeric-ids - do not modify //GEN-BEGIN
     public static final int LPAREN_ID = INT_LITERAL_ID + 1;    // (
     public static final int RPAREN_ID = LPAREN_ID + 1;         // )
-    public static final int COMMA_ID = RPAREN_ID + 1;          // ,
-    public static final int DOT_ID = COMMA_ID + 1;             // .
+    public static final int STAR_ID = RPAREN_ID + 1;           // *
+    public static final int COMMA_ID = STAR_ID + 1;            // ,
+    public static final int ARROW_ID = COMMA_ID + 1;           // ->
+    public static final int DOT_ID = ARROW_ID + 1;             // .
     public static final int DOTDOT_ID = DOT_ID + 1;            // ..
-    public static final int SEMICOLON_ID = DOTDOT_ID + 1;      // ;
-    public static final int LBRACKET_ID = SEMICOLON_ID + 1;    // [
+    public static final int SLASH_ID = DOTDOT_ID + 1;          // /
+    public static final int COLON_ID = SLASH_ID + 1;           // :
+    public static final int COLONCOLON_ID = COLON_ID + 1;      // ::
+    public static final int SEMICOLON_ID = COLONCOLON_ID + 1;  // ;
+    public static final int BACKWARDSARROW_ID = SEMICOLON_ID + 1; // <-
+    public static final int LBRACKET_ID = BACKWARDSARROW_ID + 1; // [
     public static final int RBRACKET_ID = LBRACKET_ID + 1;     // ]
     public static final int UBAR_ID = RBRACKET_ID + 1;         // _
     public static final int LBRACE_ID = UBAR_ID + 1;           // {
-    public static final int RBRACE_ID = LBRACE_ID + 1;         // }
+    public static final int VERTICALBAR_ID = LBRACE_ID + 1;    // |
+    public static final int RBRACE_ID = VERTICALBAR_ID + 1;    // }
     // End of Operator numeric-ids //GEN-END
 
     // Keywords numeric-ids - do not modify //GEN-BEGIN
-    public static final int AS_ID = RBRACE_ID + 1;
+    public static final int SNARK_ID = RBRACE_ID + 1;
+    public static final int AS_ID = SNARK_ID + 1;
     public static final int AXIOM_ID = AS_ID + 1;
     public static final int BY_ID = AXIOM_ID + 1;
     public static final int CASE_ID = BY_ID + 1;
@@ -172,18 +186,26 @@ public class MetaSlangTokenContext extends TokenContext {
     // Operator token-ids - do not modify //GEN-BEGIN
     public static final BaseImageTokenID LPAREN = new BaseImageTokenID("lparen", LPAREN_ID, OPERATORS, "(");
     public static final BaseImageTokenID RPAREN = new BaseImageTokenID("rparen", RPAREN_ID, OPERATORS, ")");
+    public static final BaseImageTokenID STAR = new BaseImageTokenID("star", STAR_ID, OPERATORS, "*");
     public static final BaseImageTokenID COMMA = new BaseImageTokenID("comma", COMMA_ID, OPERATORS, ",");
+    public static final BaseImageTokenID ARROW = new BaseImageTokenID("arrow", ARROW_ID, OPERATORS, "->");
     public static final BaseImageTokenID DOT = new BaseImageTokenID("dot", DOT_ID, OPERATORS, ".");
     public static final BaseImageTokenID DOTDOT = new BaseImageTokenID("dotdot", DOTDOT_ID, OPERATORS, "..");
+    public static final BaseImageTokenID SLASH = new BaseImageTokenID("slash", SLASH_ID, OPERATORS, "/");
+    public static final BaseImageTokenID COLON = new BaseImageTokenID("colon", COLON_ID, OPERATORS, ":");
+    public static final BaseImageTokenID COLONCOLON = new BaseImageTokenID("coloncolon", COLONCOLON_ID, OPERATORS, "::");
     public static final BaseImageTokenID SEMICOLON = new BaseImageTokenID("semicolon", SEMICOLON_ID, OPERATORS, ";");
+    public static final BaseImageTokenID BACKWARDSARROW = new BaseImageTokenID("backwardsarrow", BACKWARDSARROW_ID, OPERATORS, "<-");
     public static final BaseImageTokenID LBRACKET = new BaseImageTokenID("lbracket", LBRACKET_ID, OPERATORS, "[");
     public static final BaseImageTokenID RBRACKET = new BaseImageTokenID("rbracket", RBRACKET_ID, OPERATORS, "]");
     public static final BaseImageTokenID UBAR = new BaseImageTokenID("ubar", UBAR_ID, OPERATORS, "_");
     public static final BaseImageTokenID LBRACE = new BaseImageTokenID("lbrace", LBRACE_ID, OPERATORS, "{");
+    public static final BaseImageTokenID VERTICALBAR = new BaseImageTokenID("verticalbar", VERTICALBAR_ID, OPERATORS, "|");
     public static final BaseImageTokenID RBRACE = new BaseImageTokenID("rbrace", RBRACE_ID, OPERATORS, "}");
     // End of Operator token-ids //GEN-END
 
     // Keyword token-ids - do not modify //GEN-BEGIN
+    public static final BaseImageTokenID SNARK = new BaseImageTokenID("Snark", SNARK_ID, KEYWORDS);
     public static final BaseImageTokenID AS = new BaseImageTokenID("as", AS_ID, KEYWORDS);
     public static final BaseImageTokenID AXIOM = new BaseImageTokenID("axiom", AXIOM_ID, KEYWORDS);
     public static final BaseImageTokenID BY = new BaseImageTokenID("by", BY_ID, KEYWORDS);
@@ -247,7 +269,7 @@ public class MetaSlangTokenContext extends TokenContext {
 
     static {
         BaseImageTokenID[] kwds = new BaseImageTokenID[] {//GEN-BEGIN
-            AS, AXIOM, BY, CASE, CHOOSE, COLIMIT, CONJECTURE, DEF, 
+            SNARK, AS, AXIOM, BY, CASE, CHOOSE, COLIMIT, CONJECTURE, DEF, 
             DIAGRAM, ELSE, EMBED, EMBEDP, ENDSPEC, EX, FA, FALSE, FN, 
             GENERATE, IF, IMPORT, IN, INFIXL, INFIXR, IS, LET, MORPHISM, 
             OBLIGATIONS, OF, OP, OPTIONS, PRINT, PROJECT, PROVE, 
@@ -265,7 +287,7 @@ public class MetaSlangTokenContext extends TokenContext {
     */
     public static boolean isKeyword(TokenID keywordTokenID) {
         int numID = (keywordTokenID != null) ? keywordTokenID.getNumericID() : -1;  //GEN-BEGIN
-        return (numID >= AS_ID && numID <= WHERE_ID);
+        return (numID >= SNARK_ID && numID <= WHERE_ID);
 	//GEN-END
     }
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/14 04:14:21  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.1  2003/01/30 02:02:11  gilham
  * Initial version.
  *
@@ -167,6 +170,9 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     if (key instanceof ProofElement) {
         return new Node[] { factory.createProofNode((ProofElement)key) };
     }
+    if (key instanceof MorphismElement) {
+        return new Node[] { factory.createMorphismNode((MorphismElement)key) };
+    }
     if (NOT_KEY.equals(key))
       return new Node[] { factory.createWaitNode() };
     // never should get here
@@ -302,6 +308,9 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
         if ((elementType & SourceElementFilter.PROOF) != 0) {
             keys.addAll(Arrays.asList(element.getProofs()));
         }
+        if ((elementType & SourceElementFilter.MORPHISM) != 0) {
+            keys.addAll(Arrays.asList(element.getMorphisms()));
+        }
     }
 
 
@@ -313,7 +322,8 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
         public void propertyChange (PropertyChangeEvent evt) {
             String propName = evt.getPropertyName();
             boolean refresh = (propName.equals(ElementProperties.PROP_SPECS) ||
-                               propName.equals(ElementProperties.PROP_PROOFS));
+                               propName.equals(ElementProperties.PROP_PROOFS) ||
+                               propName.equals(ElementProperties.PROP_MORPHISMS));
 			       
             if (!refresh && ElementProperties.PROP_STATUS.equals(evt.getPropertyName())) {
                 Integer val = (Integer) evt.getNewValue();

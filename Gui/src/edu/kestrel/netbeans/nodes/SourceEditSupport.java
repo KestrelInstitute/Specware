@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/14 04:14:22  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.5  2003/02/18 18:06:42  weilyn
  * Added support for imports.
  *
@@ -71,6 +74,10 @@ class SourceEditSupport {
     
     };
         
+    static final String[] MORPHISM_MENU_NAMES = {
+    
+    };
+    
     /* Get the new types that can be created in this node.
      * For example, a node representing a Java package will permit classes to be added.
      * @return array of new type operations that are allowed
@@ -99,6 +106,20 @@ class SourceEditSupport {
         };
     }
     
+    /* Get the new types that can be created in this node.
+     * For example, a node representing a Java package will permit classes to be added.
+     * @return array of new type operations that are allowed
+     */
+    public static NewType[] createNewTypes(MorphismElement element) {
+	return new NewType[] {
+/*	    new SpecElementNewType(element, (byte) 0),
+            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),*/
+        };
+    }
+
     /** New types for spec element */
     static class SpecElementNewType extends NewType {
 	/** Spec element where to create new element */
@@ -295,6 +316,78 @@ class SourceEditSupport {
 	}
 	}
     
+    /** New types for morphism element */
+    static class MorphismElementNewType extends NewType {
+	/** Morphism element where to create new element */
+        MorphismElement element;
+
+	/** The kind of element to create */
+	byte kind;
+        
+	/** Creates new type
+	 * @param element Where to create new element.
+	 * @param kind The kind of the element to create
+	 */
+	public MorphismElementNewType(MorphismElement element, byte kind) {
+	    this.element = element;
+	    this.kind = kind;
+	}
+
+	/** Get the name of the new type.
+	 * @return localized name.
+	 */
+	public String getName() {
+	    return MORPHISM_MENU_NAMES[kind];
+	}
+
+	/** Help context */
+	public org.openide.util.HelpCtx getHelpCtx() {
+	    return new org.openide.util.HelpCtx (SourceEditSupport.class.getName () + ".newElement" + kind); // NOI18N
+	}
+
+	/** Creates new element */
+	public void create () throws IOException {
+	    final String name = element.getName();
+
+	    Element newElement = null;
+
+/*	    try {
+		switch (kind) {
+		case 0:
+		    {
+			// Adding import
+			ImportElement e = new ImportElement();
+			e.setName("<name of unit to import>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Import");
+			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		}
+                
+	    }
+	    catch (SourceException exc) {
+		// shouldn't happen - memory implementation
+		// is not based on java source.
+	    }*/
+
+	    if (newElement == null)
+		return;
+
+	    final Element addingElement = newElement;
+	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
+		    public void run() throws SourceException {
+			switch (kind) {
+/*			case 0:
+			    ((SpecElement)element).addImport((ImportElement)addingElement);
+			    return;*/
+			}
+                        
+		    }
+		});
+	}
+	}
+
     /** Show dialog and allow user to modify new element.
      * @param customizer The component to be displayed
      * @param titleKey the key to resource bundle for the title of dialog
@@ -414,7 +507,16 @@ class SourceEditSupport {
 		return findSource(mm.getParent());
 	    }           
         }
-	if (element instanceof MemberElement) {
+        if (element instanceof MorphismElement) {
+            MorphismElement mm = (MorphismElement) element;
+ 	    SourceElement source = mm.getSource();
+	    if (source != null) {
+		return source;
+	    } else {
+		return findSource(mm.getParent());
+	    }           
+        }
+        if (element instanceof MemberElement) {
 	    return findSource(((MemberElement) element).getParent());
 	}
 	return null;
@@ -452,6 +554,8 @@ class SourceEditSupport {
             cookie.getSource().addSpec((SpecElement)elem);
         } else if (elem instanceof ProofElement) {
             cookie.getSource().addProof((ProofElement)elem);
+        } else if (elem instanceof MorphismElement) {
+            cookie.getSource().addMorphism((MorphismElement)elem);
         }
 	
     }
@@ -478,6 +582,17 @@ class SourceEditSupport {
 	src.removeProof(proof);
     }
     
+    static void removeMorphism(MorphismElement morphism) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(morphism);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeMorphism(morphism);
+    }
+
     /* default */static class PackagePaste implements NodeTransfer.Paste {
 	private static PasteType[] EMPTY_TYPES = new PasteType[0];                         
 	/** True, if the paste should remove the original class element.
@@ -500,7 +615,12 @@ class SourceEditSupport {
 	    this.element = element;
 	}
         
-	public PasteType[] types(Node target) {
+        PackagePaste(MorphismElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+
+        public PasteType[] types(Node target) {
 	    DataObject obj = (DataObject)target.getCookie(DataObject.class);
 	    if (element == null || obj == null) 
 		return EMPTY_TYPES;
@@ -550,8 +670,10 @@ class SourceEditSupport {
                                         removeSpec((SpecElement)elem);
                                     } else if (elem instanceof ProofElement) {
                                         removeProof((ProofElement)elem);
+                                    } else if (elem instanceof MorphismElement) {
+                                        removeMorphism((MorphismElement)elem);
                                     }
-				} catch (SourceException e) {
+ 				} catch (SourceException e) {
 				    ex[0] = e;
 				} 
 			    }
@@ -613,4 +735,27 @@ class SourceEditSupport {
 		return null;
 	}
     }    
+
+    static class MorphismMultiPasteType extends PasteType {
+	MorphismElementNode target;
+	Collection members;
+	boolean delete;
+
+	MorphismMultiPasteType(MorphismElementNode target, Collection members, boolean delete) {
+	    this.target = target;
+	    this.members = members;
+	    this.delete = delete;
+	}
+
+	public Transferable paste() throws IOException {
+	    for (Iterator it = members.iterator(); it.hasNext(); ) {
+		target.pasteElement((Element)it.next(), delete);
+	    }
+	    if (delete) 
+		return ExTransferable.EMPTY;
+	    else
+		return null;
+	}
+    }    
+
 }

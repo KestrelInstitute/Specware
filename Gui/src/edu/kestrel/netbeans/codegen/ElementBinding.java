@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:12:30  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 17:59:33  weilyn
  * Added support for imports.
  *
@@ -707,5 +710,8 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
             mark(element, what);
         }
 
+        public void markMorphism(MorphismElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
     }
 }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/14 04:14:00  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.5  2003/02/18 18:12:50  weilyn
  * Added support for imports.
  *
@@ -144,5 +147,7 @@ public interface Binding {
     public interface Proof extends Member, Container {
     }
     
+    public interface Morphism extends Member, Container {
+    }
 }
 

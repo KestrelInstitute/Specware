@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:14:00  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:12:52  weilyn
  * Added support for imports.
  *
@@ -38,5 +41,6 @@ public interface BindingFactory {
     public Binding.Claim bindClaim(ClaimElement impl);
     public Binding.Import bindImport(ImportElement impl);
     public Binding.Proof bindProof(ProofElement impl);
+    public Binding.Morphism bindMorphism(MorphismElement impl);
 }
 

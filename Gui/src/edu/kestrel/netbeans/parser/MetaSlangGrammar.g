@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.24  2003/03/23 02:55:35  weilyn
+ * Reverted "sort" and "expression" rules because actual SpecCalculus grammar was too ambiguous and low performance (due to extensive need for syntactic predicates).  Kept pattern rules.  Eliminated most other syntactic predicates for performance.  TODO: resolve lexical nondetermisim warnings.
+ *
  * Revision 1.23  2003/03/21 02:48:45  weilyn
  * Attempting to add entire SpecCalculus grammar.  Added patterns,
  * expressions, and sorts.  Updated existing rules to use new
@@ -166,7 +169,7 @@ private scBasicTerm[Token unitIdToken] returns[ElementFactory.Item item]
     | item=scQualify[unitIdToken]
     | item=scDiag[unitIdToken]
     | item=scColimit[unitIdToken]
-    | item=scSpecMorph[unitIdToken]
+    | item=scMorphism[unitIdToken]
     | item=scGenerate[unitIdToken]
     | item=scObligations[unitIdToken]
     | item=scProve[unitIdToken]
@@ -279,19 +282,30 @@ private scSubstitute[Token unitIdToken] returns[ElementFactory.Item substitute]
       scSubstituteTermList
     ;
 
-private scSpecMorph[Token unitIdToken] returns[ElementFactory.Item morph]
+private scMorphism[Token unitIdToken] returns[ElementFactory.Item morphism]
 {
-    morph = null;
-    ElementFactory.Item childItem = null;
+    morphism = null;
+    ElementFactory.Item src = null;
+    ElementFactory.Item dest = null;
     ElementFactory.Item ignore = null;
     Token headerEnd = null;
+    List children = new LinkedList();
+    String name = (unitIdToken == null) ? "" : unitIdToken.getText();
 }
 
-    : begin:"morphism"        {headerEnd = begin;}
-      ignore=scTerm[null]
-      nonWordSymbol["->"]
-      ignore=scTerm[null]
-      nameMap
+    : begin:"morphism"            {headerEnd = begin;}
+      src=scTerm[null]            {if (src != null) children.add(src);}
+      ARROW
+      dest=scTerm[null]           {if (dest != null) children.add(dest);}
+      nameMap                     //TODO:make this an Item object
+
+                                  {morphism = builder.createMorphism(name);
+                                   if (unitIdToken != null) {
+                                       begin = unitIdToken;
+                                   }
+                                   builder.setParent(children, morphism);
+                                   ParserUtil.setAllBounds(builder, morphism, begin, headerEnd, LT(0));
+                                  }
     ;
 
 private scGenerate[Token unitIdToken] returns[ElementFactory.Item generate]
@@ -347,13 +361,13 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item proof]
 
 private fullURIPath returns[String path]
 {
-    path = null;
+    path = "";
     String item = null;
 }
-    : ( SLASH item=partialURIPath        {path = "/" + item;}
-        | item=partialURIPath            {path = item;}
+    : ( slash:SLASH item=partialURIPath        {path = slash.getText() + item;}
+        | item=partialURIPath                  {path = item;}
       )
-      (ref:INNER_UNIT_REF                {path += ref.getText();}
+      (ref:INNER_UNIT_REF                      {path += ref.getText();}
       )?
     ;
 
@@ -362,53 +376,69 @@ private partialURIPath returns[String path]
     path = "";
     String item = null;
 }
-    : id:IDENTIFIER                       {path = path + id.getText();} 
-      ( SLASH item=partialURIPath         {path = path + "/" + item;}
+    : ( id:IDENTIFIER                           {path = path + id.getText();} 
+      | dotdot:DOTDOT                           {path = path + dotdot.getText();}
+      )
+      ( slash:SLASH item=partialURIPath         {path = path + slash.getText() + item;}
       |
       )
     ;
 
 //------------------------------------------------------------------------------
 
-private nameMap
-    : LBRACE
-      (nameMapItem
-       ( COMMA nameMapItem)*
-      )?
-      RBRACE
-    ;
-
-private nameMapItem
-    : sortNameMapItem
-    | opNameMapItem
-    ;
-
-private sortNameMapItem
+private nameMap returns[String nameMap]
 {
-    String ignore = null;
-}
-    : ("sort"
+    nameMap = "";
+    String text = null;
+}   
+    : lbrace:LBRACE                     {nameMap = lbrace.getText();}
+      (text=nameMapItem                 {nameMap = nameMap + text;}
+       (comma:COMMA text=nameMapItem    {nameMap = nameMap + comma.getText() + text;}
+       )*
       )?
-      ignore=qualifiableSortNames
-      nonWordSymbol["+->"]
-      ignore=qualifiableSortNames
+      rbrace:RBRACE                     {nameMap = nameMap + rbrace;}
     ;
 
-private opNameMapItem
-    : ("op"
-      )?
-      annotableQualifiableName
-      nonWordSymbol["+->"]
-      annotableQualifiableName
-    ;
-
-private annotableQualifiableName
+private nameMapItem returns[String mapItem]
 {
-    String ignore = null;
+    mapItem = "";
 }
-    : ignore=qualifiableOpNames
-      (nonWordSymbol[":"]
-       ignore=sort
+    : mapItem=sortNameMapItem
+    | mapItem=opNameMapItem
+    ;
+
+private sortNameMapItem returns[String mapItem]
+{
+    mapItem = "";
+    String text = null;
+}
+    : ("sort"                           {mapItem = "sort ";}
+      )?
+      text=qualifiableSortNames         {mapItem = mapItem + text;}
+      nonWordSymbol["+->"]              {mapItem = mapItem + " +-> ";}
+      text=qualifiableSortNames         {mapItem = mapItem + text;}
+    ;
+
+private opNameMapItem returns[String mapItem]
+{
+    mapItem = "";
+    String text = null;
+}
+    : ("op"                             {mapItem = "op ";}
+      )?
+      text=annotableQualifiableName     {mapItem = mapItem + text;}
+      nonWordSymbol["+->"]              {mapItem = mapItem + " +-> ";}
+      text=annotableQualifiableName     {mapItem = mapItem + text;}
+    ;
+
+private annotableQualifiableName returns[String name]
+{
+    name = "";
+    String text = null;
+}
+    : text=qualifiableOpNames           {name = text;}
+      (nonWordSymbol[":"]               {name = name + " : ";}
+       text=sort                        {name = name + text;}
       )?
     ;
 
@@ -536,14 +566,17 @@ private importDeclaration returns[ElementFactory.Item importItem]
 {
     importItem = null;
     ElementFactory.Item term = null;
-    //String strURI = null;
+    String uri = null;
 }
     : begin:"import"
-      term=scTerm[null]     {if (term != null) {
+      uri=fullURIPath       {importItem = builder.createImport(uri);
+                             ParserUtil.setBounds(builder, importItem, begin, LT(0));
+                            }
+/*      term=scTerm[null]     {if (term != null) {
                                 importItem = builder.createImport(term.getClass().getName());
                                 ParserUtil.setBounds(builder, importItem, begin, LT(0));
                              }
-                            }
+                            }*/
     ;
 
 //---------------------------------------------------------------------------
@@ -586,16 +619,25 @@ private qualifiableSortName returns[String sortName]
 {
     sortName = null;
 }   
-    : unqualifiedSortName
-    | qualifiedSortName
+    : sortName=unqualifiedSortName
+    | sortName=qualifiedSortName
     ;
 
-private unqualifiedSortName
-    : nonKeywordName
+private unqualifiedSortName returns[String sortName]
+{
+    sortName = null;
+}
+    : sortName=nonKeywordName
     ;
 
-private qualifiedSortName
-    : qualifier DOT nonKeywordName
+private qualifiedSortName returns[String sortName]
+{
+    sortName = null;
+    String text = null;
+}
+    : text=qualifier             {sortName = text;}
+      dot:DOT                    {sortName = sortName + ".";}
+      text=nonKeywordName        {sortName = sortName + text;}
     ;
 
 private idName returns[String name]
@@ -656,8 +698,6 @@ private qualifiableOpNames returns[String opName]
                             {opName = opName + ", " + member;}
       )*
       RBRACE                {opName = opName + "}";}
-      
-                            
     ;
 
 private qualifiableOpName returns[String opName]
@@ -687,20 +727,38 @@ private fixity
 private sortScheme returns[String sortScheme]
 {
     sortScheme = "";
+    String text = null;
 }
-    : (sortVariableBinder)? sort
+    : (text=sortVariableBinder              {sortScheme = sortScheme + text;}
+      )?
+      text=sort                             {sortScheme = sortScheme + text;}
     ;
 
-private sortVariableBinder
-    : "fa" localSortVariableList
+private sortVariableBinder returns[String binder]
+{
+    binder = "";
+    String text = null;
+}
+    : "fa" text=localSortVariableList       {binder = "fa " + text;}
     ;
 
-private localSortVariableList
-    : LPAREN localSortVariable (COMMA localSortVariable)* RPAREN
+private localSortVariableList returns[String list]
+{
+    list = "";
+    String text = null;
+}
+    : lparen:LPAREN                                {list = lparen.getText();}
+      text=localSortVariable                       {list = list + text;}
+      (comma:COMMA text=localSortVariable          {list = list + comma.getText() + text;}
+      )*
+      rparen:RPAREN                                {list = list + rparen.getText();}
     ;
 
-private localSortVariable
-    : nonKeywordName
+private localSortVariable returns[String var]
+{
+    var = "";
+}
+    : var=nonKeywordName
     ;
 
 private sort returns[String sort]
@@ -718,107 +776,6 @@ private sort returns[String sort]
                            {sort = sort + text;}
       )+
     ;
-
-/* THIS SORT STUFF IS TOO AMBIGUOUS =(  Syntactic predicates are too costly for performance.
-
-                    : sortSum
-                   | (sortArrow) => sortArrow
-                    | slackSort
-                    ;
-
-                private sortSum
-                    : (VERTICALBAR name (slackSort)?
-                      )+
-                    ;
-
-                private sortArrow
-                    : arrowSource ARROW sort
-                    ;
-
-                private slackSort
-                    : tightSort (STAR tightSort)*
-                    ;
-
-                private arrowSource
-                    : sortSum
-                    | slackSort
-                    ;
-
-                private tightSort
-                    : sortInstantiation
-                    | closedSort
-                    ;
-
-                private sortInstantiation
-                    : qualifiableSortName actualSortParameters
-                    ;
-
-                private actualSortParameters
-                    : closedSort
-                    | properSortList
-                    ;
-
-                private closedSort
-                    : basicClosedSort
-                    | sortQuotient
-                    ;
-
-                private properSortList
-                    : LPAREN sort
-                      (COMMA sort
-                      )+
-                      RPAREN
-                    ;
-
-                private basicClosedSort
-                    : sortRef
-                    | parenthesizedSort
-                    | sortRecord
-                    | sortRestriction
-                    | sortComprehension
-                    ;
-
-                private sortRef
-                    : qualifiableSortName
-                    ;
-
-                private sortRecord
-                    : unitProductSort
-                    | LBRACE fieldSortList RBRACE
-                    ;
-
-                private unitProductSort
-                    : LBRACE RBRACE
-                    | LPAREN RPAREN
-                    ;
-
-                private fieldSortList
-                    : fieldSort
-                      (COMMA fieldSort
-                      )*
-                    ;
-
-                private fieldSort
-                    : name COLON sort
-                    ;
-
-                private sortRestriction
-                    : LPAREN slackSort VERTICALBAR expression RPAREN
-                    ;
-
-                private sortComprehension
-                    : LBRACE annotatedPattern VERTICALBAR expression RBRACE
-                    ;
-
-                private sortQuotient
-                    : basicClosedSort (closedSort)* SLASH tightExpression
-                    ;
-
-                private parenthesizedSort
-                    : LPAREN sort RPAREN
-                    ;
-
-END OF AMBIGUOUS SORT STUFF*/
 
 //---------------------------------------------------------------------------
 private definition returns[ElementFactory.Item item]
@@ -852,149 +809,202 @@ private claimDefinition returns[ElementFactory.Item claimDef]
     String kind = null;
     Token begin = null;
     String expr = null;
+    String text = null;
+    String sortQuant = null;
 }
-    : kind=claimKind       {begin = LT(0);}
+    : kind=claimKind                    {begin = LT(0);}
       name=idName
       equals
-      (sortQuantification
+      (sortQuant=sortQuantification     {expr = sortQuant;}
       )?
-      expr=expression
-                           {claimDef = builder.createClaim(name, kind, expr);
-                            ParserUtil.setBounds(builder, claimDef, begin, LT(0));
-                           }
+      text=expression                   {expr = expr + " " + text;}
+                                        {claimDef = builder.createClaim(name, kind, expr);
+                                         ParserUtil.setBounds(builder, claimDef, begin, LT(0));
+                                        }
 
     ;
 
 private claimKind returns[String kind]
 {
-    kind = null;
+    kind = "";
 }
     : "theorem"            {kind = "theorem";}
     | "axiom"              {kind = "axiom";}
     | "conjecture"         {kind = "conjecture";}
     ;
 
-private sortQuantification
+private sortQuantification returns[String sortQuant]
 {
-    String ignore = null;
+    sortQuant = "";
+    String text = null;
 }
-    : "sort"
-      "fa"
-      LPAREN
-      ignore=name
-      (COMMA ignore=name
+    : "sort" "fa"                 {sortQuant = "sort fa ";}
+      lparen:LPAREN               {sortQuant = sortQuant + lparen.getText();}
+      text=name                   {sortQuant = sortQuant + text;}
+      (comma:COMMA text=name      {sortQuant = sortQuant + comma.getText() + text;}
       )*
-      RPAREN
+      rparen:RPAREN               {sortQuant = sortQuant + rparen.getText();}
     ;
 
 private formalOpParameters returns[String[] params]
 {
     params = null;
     List paramList = new LinkedList();
+    String pattern = null;
 }
-    : (closedPattern
-      )*                    {params = (String[]) paramList.toArray(new String[]{});}
+    : (pattern=closedPattern      {paramList.add(pattern);}
+      )*                          {params = (String[]) paramList.toArray(new String[]{});}
     ;
 
 // patterns ---------------------------------------------------------------------------
 
-private pattern
-    : basicPattern
-    | annotatedPattern
+private pattern returns[String pattern]
+{
+    pattern = "";
+}
+    : pattern=basicPattern
+    | pattern=annotatedPattern
     ;
 
-private annotatedPattern
-    : basicPattern COLON sort
+private annotatedPattern returns[String pattern]
+{
+    pattern = "";
+    String sortStr = null;
+}
+    : pattern=basicPattern 
+      colon:COLON                           {pattern = pattern + colon.getText();}
+      sortStr=sort                          {pattern = pattern + sortStr;}
     ;
 
-private basicPattern
-    : tightPattern
+private basicPattern returns[String pattern]
+{
+    pattern = "";
+}
+    : pattern=tightPattern
     ;
 
-private tightPattern
-    : //for performance reasons, made this part of the closedPattern production... (embedPattern) => embedPattern
-//this is the (COLONCOLON tightPattern)? part of the closedPattern production...   | consPattern
-    | aliasedPattern
-    | quotientPattern
+private tightPattern returns[String pattern]
+{
+    pattern = "";
+    String text = null;
+}
+    : pattern=aliasedPattern
+    | pattern=quotientPattern
 //the rule for relaxPattern wasn't in the official grammar...    | relaxPattern
-    | (name)? closedPattern (COLONCOLON tightPattern)?
+    | (text=name                            {pattern = text;}
+      )? 
+      text=closedPattern                    {pattern = pattern + text;}
+      (cc:COLONCOLON text=tightPattern      {pattern = pattern + cc.getText() + text;}
+      )?
     ;
 
-private aliasedPattern
-    : variablePattern "as" tightPattern
-    ;
-
-private embedPattern
-    : name closedPattern
-    ;
-
-private variablePattern
+private aliasedPattern returns[String pattern]
 {
-    String ignore = null;
+    pattern = "";
+    String text = null;
 }
-    : ignore=nonKeywordName
+    : text=variablePattern               {pattern = text;}
+      "as" text=tightPattern             {pattern = pattern + "as" + text;}
     ;
 
-/* Made this part of tightPattern's closedPattern production
-private consPattern
-    : closedPattern COLONCOLON tightPattern
-    ;*/
-
-private closedPattern
-    : parenthesizedPattern
-    | variablePattern
-    | literalPattern
-    | listPattern
-    | recordPattern
-    | wildcardPattern
-    ;
-
-private wildcardPattern
-    : UBAR
-    ;
-
-private literalPattern
+private embedPattern returns[String pattern]
 {
-    String ignore = null;
+    pattern = "";
+    String text = null;
 }
-    : ignore=literal
+    : text=name                           {pattern = text;}
+      text=closedPattern                  {pattern = pattern + text;}
     ;
 
-private listPattern
-    : LBRACKET
-      (pattern
-       (COMMA pattern
+private variablePattern returns[String pattern]
+{
+    pattern = "";
+}
+    : pattern=nonKeywordName
+    ;
+
+private closedPattern returns[String pattern]
+{
+    pattern = "";
+}
+    : pattern=parenthesizedPattern
+    | pattern=variablePattern
+    | pattern=literalPattern
+    | pattern=listPattern
+    | pattern=recordPattern
+    | pattern=wildcardPattern
+    ;
+
+private wildcardPattern returns[String pattern]
+{
+    pattern = "";
+}
+    : ubar:UBAR                                {pattern = ubar.getText();}
+    ;
+
+private literalPattern returns[String pattern]
+{
+    pattern = "";
+}
+    : pattern=literal
+    ;
+
+private listPattern returns[String pattern]
+{
+    pattern = "";
+    String text = null;
+}
+    : lbracket:LBRACKET                        {pattern = lbracket.getText();}
+      (text=pattern                            {pattern = pattern + text;}
+       (comma:COMMA text=pattern               {pattern = pattern + comma.getText() + text;}
        )*
       )?
-      RBRACKET
+      rbracket:RBRACKET                        {pattern = pattern + rbracket.getText();}
     ;
 
-private parenthesizedPattern
-    : LPAREN
-      (pattern
-       (COMMA pattern
+private parenthesizedPattern returns[String pattern]
+{
+    pattern = "";
+    String text = null;
+}
+    : lparen:LPAREN                            {pattern = lparen.getText();}
+      (text=pattern                            {pattern = pattern + text;}
+       (comma:COMMA text=pattern               {pattern = pattern + comma.getText() + text;}
        )*
       )?
-      RPAREN
+      rparen:RPAREN                            {pattern = pattern + rparen.getText();}
     ;
 
-private recordPattern
-    : LBRACE
-      fieldPattern
-      (COMMA fieldPattern
+private recordPattern returns[String pattern]
+{
+    pattern = "";
+    String text = null;
+}
+    : lbrace:LBRACE                            {pattern = lbrace.getText();}
+      text=fieldPattern                        {pattern = pattern + text;}
+      (comma:COMMA text=fieldPattern           {pattern = pattern + comma.getText() + text;}
       )*
-      RBRACE
+      rbrace:RBRACE                            {pattern = pattern + rbrace.getText();}
     ;
 
-private fieldPattern
-    : name
-      (EQUALS
-       pattern
+private fieldPattern returns[String pattern]
+{
+    pattern = "";
+    String text = null;
+}
+    : text=name                                {pattern = text;}
+      (equals                                  {pattern = pattern + "=";}
+       text=pattern                            {pattern = pattern + text;}
       )?
     ;
 
-private quotientPattern
-    : "quotient" expression tightPattern
+private quotientPattern returns[String pattern]
+{
+    pattern = "";
+    String text = null;
+}
+    : "quotient" text=expression               {pattern = "quotient " + text;}
+      text=tightPattern                        {pattern = pattern + " " + text;}
     ;
 
 // expressions ---------------------------------------------------------------------------
@@ -1003,304 +1013,12 @@ private expression returns[String expr]
     expr = "";
     String item = null;
 }
-    : (  item=qualifiableRef    {expr = expr + item + " ";}
+    : (    item=qualifiableRef    {expr = expr + item + " ";}
          | item=literal           {expr = expr + item + " ";}
          | item=specialSymbol     {expr = expr + item + " ";}
          | item=expressionKeyword {expr = expr + item + " ";}
       )+
     ;
-
-/* EXPRESSIONS ARE TOO AMBIGUOUS =(
-
-                : lambdaForm
-                    | caseExpression
-                    | letExpression
-                    | ifExpression
-                    | quantification
-                    | tightExpression
-                    ;
-
-                private lambdaForm
-                    : "fn" match
-                    ;
-
-                private caseExpression
-                    : "case" expression "of" match
-                    ;
-
-                private letExpression
-                    : "let" reclessLetBinding "in" expression
-                    | "let" recLetBindingSequence "in" expression
-                    ;
-
-                private ifExpression
-                    : "if" expression "then" expression "else" expression
-                    ;
-
-                private quantification
-                    : quantifier localVariableList expression
-                    ;
-
-                private tightExpression
-                    : basicTightExpression
-                    | annotatedExpression
-                    ;
-
-                private basicTightExpression
-                    : application
-                    | closedExpression
-                    ;
-
-                private match
-                    : (VERTICALBAR)? auxMatch
-                    ;
-
-                private auxMatch
-                    : (nonBranchBranch VERTICALBAR) => nonBranchBranch VERTICALBAR auxMatch
-                    | branch
-                    ;
-
-                private nonBranchBranch
-                    : pattern ARROW nonBranchExpression
-                    ;
-
-                private branch
-                    : pattern ARROW expression
-                    ;
-
-                private nonBranchExpression
-                    : tightExpression
-                    ;
-
-                private reclessLetBinding
-                    : pattern EQUALS expression
-                    ;
-
-                private recLetBindingSequence
-                    : (recLetBinding)*
-                    ;
-
-                private recLetBinding
-                    : "def" name (formalParameterSequence)? (COLON sort)? EQUALS expression
-                    ;
-
-                private formalParameterSequence
-                    : ((closedPattern)*)?
-                    ;
-
-                private quantifier
-                    : "fa"
-                    | "ex"
-                    ;
-
-                private localVariableList
-                    : LPAREN
-                      annotatedVariable
-                      (COMMA annotatedVariable
-                      )*
-                      RPAREN
-                    ;
-
-                private annotatedVariable
-                    : nonKeywordName
-                      (COLON sort
-                      )?
-                    ;
-
-                private closedExpression
-                    : unqualifiedOpRef
-                    | selectableExpression
-                    ;
-
-                private application
-                    : closedExpression
-                      (closedExpression  // syntactic predicate to take care of cases like "case l of Nil -> true | _ -> false"
-                      )*
-                    ;
-
-                private annotatedExpression
-                    : basicTightExpression (tightExpression)? COLON sort
-                    ;
-
-                private unqualifiedOpRef
-                    : name
-                    ;
-
-                private selectableExpression
-                    : basicSelectableExpression
-                    | fieldSelection
-                    ;
-
-                // TODO: This could probably be optimized a lot by left-factoring
-                private basicSelectableExpression
-                    : twoNameExpression
-                    | natFieldSelection
-                    | literal
-                    | (tupleDisplay) => tupleDisplay
-                    | (sequentialExpression) => sequentialExpression
-                    | parenthesizedExpression
-                    | listDisplay
-                    | structor
-                    | recordDisplay
-                    | monadExpression
-                    ;
-
-                private twoNameExpression
-                    : name DOT name
-                    ;
-
-                private natFieldSelection
-                    : unqualifiedOpRef DOT natSelector
-                    ;
-
-                private natSelector
-                    : NAT_LITERAL
-                    ;
-
-                private fieldSelection
-                    : basicSelectableExpression 
-                      (selectableExpression
-                      )*
-                      DOT fieldSelector
-                    ;
-
-                private fieldSelector
-                    : NAT_LITERAL
-                    | name
-                    ;
-
-                private tupleDisplay
-                    : LPAREN
-                      (tupleDisplayBody
-                      )?
-                      RPAREN
-                    ;
-
-                private tupleDisplayBody
-                    : expression COMMA expression
-                      (COMMA
-                       expression
-                      )*
-                    ;
-
-                private recordDisplay
-                    : LBRACE
-                      (recordDisplayBody
-                      )?
-                      RBRACE
-                    ;
-
-                private recordDisplayBody
-                    : fieldFiller
-                      (COMMA
-                       fieldFiller
-                      )*
-                    ;
-
-                private fieldFiller
-                    : name EQUALS expression
-                    ;
-
-                private sequentialExpression
-                    : LPAREN
-                      openSequentialExpression
-                      RPAREN
-                    ;
-
-                private openSequentialExpression
-                    : expression (SEMICOLON expression)+
-                    ;
-
-                private voidExpression
-                    : expression
-                    ;
-                
-                private listDisplay
-                    : LBRACKET
-                      (listDisplayBody
-                      )?
-                      RBRACKET
-                    ;
-
-                private listDisplayBody
-                    : (expression
-                       (COMMA expression
-                       )*
-                      )?
-                    ;
-
-                private structor
-                    : projector
-                    | relaxator
-                    | restrictor
-                    | quotienter
-                    | chooser
-                    | embedder
-                    | embeddingTest
-                    ;
-
-                private projector
-                    : "project" fieldSelector
-                    ;
-
-                private relaxator
-                    : "relax" closedExpression
-                    ;
-
-                private restrictor
-                    : "restrict" closedExpression
-                    ;
-
-                private quotienter
-                    : "quotient" closedExpression
-                    ;
-
-                private chooser
-                    : "choose" closedExpression
-                    ;
-
-                private embedder
-                    : "embed" name
-                    ;
-
-                private embeddingTest
-                    : "embed?" name
-                    ;
-
-                private parenthesizedExpression
-                    : LPAREN
-                      expression
-                      RPAREN
-                    ;
-
-                private monadExpression
-                    : monadTermExpression
-                    | monadBindingExpression
-                    ;
-
-                private monadTermExpression
-                    : LBRACE
-                      expression SEMICOLON monadStmtList
-                      RBRACE
-                    ;
-
-                private monadStmtList
-                    : expression
-                    | expression SEMICOLON monadStmtList
-                    | pattern BACKWARDSARROW expression SEMICOLON monadStmtList
-                    ;
-
-                private monadBindingExpression
-                    : LBRACE
-                      pattern BACKWARDSARROW expression SEMICOLON monadStmtList
-                      RBRACE
-                    ;
-
-                private relaxPattern
-                    : "relax" closedExpression tightPattern
-                    ;
-
-END OF EXPRESSION STUFF*/
 
 //---------------------------------------------------------------------------
 private specialSymbol returns[String text]

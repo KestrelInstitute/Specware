@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/14 04:14:02  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.1  2003/01/30 02:02:04  gilham
  * Initial version.
  *
@@ -43,6 +46,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
      */
   private SpecCollection  specs;
   private ProofCollection proofs;
+  private MorphismCollection morphisms;
   private MemberCollection members;
     
     private static final long serialVersionUID = 8506642610861188475L;
@@ -151,6 +155,41 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         //firePropertyChangeEvent(event);
     }
 
+    public MorphismElement getMorphism(String id) {
+        if (morphisms == null)
+            return null;
+        return morphisms.getMorphism(id);
+    }
+    
+    public MorphismElement[] getMorphisms() {
+        if (morphisms == null)
+            return MorphismCollection.EMPTY;
+        return (MorphismElement[])morphisms.getElements();
+    }
+    
+    // Setters/changers
+    public void changeMorphisms(MorphismElement[] mms, int operation) throws SourceException {
+        //Util.log("SourceElementImpl.changeMorphism -- adding morphism");
+        Object token = takeLock();
+        try {
+            if (morphisms == null) {
+                if (operation != MorphismElement.Impl.REMOVE && mms.length == 0)
+		  return;
+                initializeMorphisms();
+            }
+	    //Util.log("SourceElementimpl.changeMorphisms calling change members for Morphisms "+mms.length);
+            morphisms.changeMembers(mms, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+        //IndexedPropertyBase.Change changes = IndexedPropertyBase.computeChanges(getMorphisms(), mms);
+        //Util.log("SourceElementImpl.changeMorphism -- Changes  "+changes);
+        //MultiPropertyChangeEvent event = new MultiPropertyChangeEvent (this, ElementProperties.PROP_MORPHISMS, getMorphisms(), mms);
+        //Util.log("SourceElementImpl.changeMorphism -- event " + event);
+        //firePropertyChangeEvent(event);
+    }
+
     private void notifyCreate(Element[] els) {
         for (int i = 0; i < els.length; i++) {
             ElementImpl impl = (ElementImpl)els[i].getCookie(ElementImpl.class);
@@ -160,8 +199,14 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
     
     protected void notifyCreate() {
         Element[] els;
+        if (this.specs != null) {
+            notifyCreate(specs.getElements());
+        }
         if (this.proofs != null) {
             notifyCreate(proofs.getElements());
+        }
+        if (this.morphisms != null) {
+            notifyCreate(morphisms.getElements());
         }
         super.notifyCreate();
     }
@@ -211,6 +256,16 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
             proofs.updateMembers(elements, indices, optMap);
 	    //Util.log("SourceElementimpl.updateMembers after PartialCollection.updateMembers proofs = "+Util.print(getProofs())+
 	    //			     " members =  "+members);
+	} else if (name == ElementProperties.PROP_MORPHISMS) {
+            if (morphisms == null) {
+                if (elements.length == 0)
+                    return;
+                initializeMorphisms();
+            }
+	    //Util.log("SourceElementimpl.updateMembers calling morphisms update members indices =  "+Util.print(indices));
+            morphisms.updateMembers(elements, indices, optMap);
+	    //Util.log("SourceElementimpl.updateMembers after PartialCollection.updateMembers morphisms = "+Util.print(getMorphisms())+
+	    //			     " members =  "+members);
 	} else {
             throw new IllegalArgumentException("Unsupported property: " + name); // NOI18N
         }
@@ -235,6 +290,11 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
     private void initializeProofs() {
       this.proofs = new ProofCollection(this, getModelImpl(), members);
       //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
+    }
+    
+    private void initializeMorphisms() {
+      this.morphisms = new MorphismCollection(this, getModelImpl(), members);
+      //((Binding.Source)getRawBinding()).getMorphismSection(),  getModelImpl(), this);
     }
     
     protected SourceElementImpl findSource() {

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:14:00  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:12:54  weilyn
  * Added support for imports.
  *
@@ -184,15 +187,22 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         return impl;
     }
     
-    public SourceElementImpl createSource() {
-        return new SourceElementImpl(this);
-    }
-
     public ProofElementImpl createProof(Element src) {
         ProofElementImpl c = new ProofElementImpl(this);
         getWrapper().wrapProof(c, src);
         c.setParent(src);
         return c;
+    }
+    
+    public MorphismElementImpl createMorphism(Element src) {
+        MorphismElementImpl c = new MorphismElementImpl(this);
+        getWrapper().wrapMorphism(c, src);
+        c.setParent(src);
+        return c;
+    }
+    
+    public SourceElementImpl createSource() {
+        return new SourceElementImpl(this);
     }
         
     public void addPreCommitListener(CommitListener l) {
@@ -645,6 +655,9 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         } else if (target instanceof ProofElement) {
             ProofElementImpl impl = (ProofElementImpl)getElementImpl(target);
             impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof MorphismElement) {
+            MorphismElementImpl impl = (MorphismElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
         } else {
 	    Util.log("DefaultLangModel.updateMembers() : "+propertyName+" els = "+els.length);
 	    Util.log("DefaultLangModel.updateMembers() orderIndices = "+Util.print(orderIndices)+" optMap = "+Util.print(optMap));
@@ -664,6 +677,9 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
 	    impl.updateMemberOrder(orderedMembers);
 	} else if (target instanceof ProofElement) {
             ProofElementImpl impl = (ProofElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        } else if (target instanceof MorphismElement) {
+            MorphismElementImpl impl = (MorphismElementImpl)getElementImpl(target);
             impl.updateMemberOrder(orderedMembers);
         }
     }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:14:21  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:06:40  weilyn
  * Added support for imports.
  *
@@ -49,6 +52,9 @@ interface IconStrings {
 
      static final String PROOF =
         "edu/kestrel/resources/images/ProofNodeIcon"; // NOI18N     
+     
+     static final String MORPHISM =
+        "edu/kestrel/resources/images/MorphismNodeIcon"; // NOI18N     
      
      static final String WAIT =
         "edu/kestrel/resources/images/wait"; // NOI18N

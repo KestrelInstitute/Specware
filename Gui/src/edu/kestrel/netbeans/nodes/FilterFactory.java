@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:14:21  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:06:38  weilyn
  * Added support for imports.
  *
@@ -102,6 +105,14 @@ public class FilterFactory implements ElementNodeFactory {
         return delegate.createProofNode( element );
     }
 
+    /** Make a node representing a morphism
+    * @param element the morphism
+    * @return a morphism node instance
+    */
+    public Node createMorphismNode (MorphismElement element) {
+        return delegate.createMorphismNode( element );
+    }
+    
     /** Make a node indicating that the creation of children
     * is still under way.
     * It should be used when the process is slow.

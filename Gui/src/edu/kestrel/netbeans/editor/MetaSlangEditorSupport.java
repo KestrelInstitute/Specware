@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/03/14 04:13:22  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.3  2003/03/13 01:23:53  gilham
  * Handle Latex comments.
  * Report Lexer errors.
@@ -570,6 +573,9 @@ public class MetaSlangEditorSupport extends DataEditorSupport implements EditorC
             } 
             else if (element instanceof ProofElement) {
                 n = factory.createProofNode((ProofElement)element);
+            } 
+            else if (element instanceof MorphismElement) {
+                n = factory.createMorphismNode((MorphismElement)element);
             } 
             else if (element instanceof SourceElement) {
                 n = support.getDataObject().getNodeDelegate();

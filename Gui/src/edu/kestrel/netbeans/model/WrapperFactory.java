@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:14:02  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:13:08  weilyn
  * Added support for imports.
  *
@@ -27,12 +30,13 @@ package edu.kestrel.netbeans.model;
 import org.openide.src.*;
 
 public interface WrapperFactory {
-    public SpecElement    wrapSpec(MemberElement.Impl theImpl, Element parent);
-    public SortElement    wrapSort(SortElement.Impl theImpl, Element parent);
-    public OpElement      wrapOp(OpElement.Impl theImpl, Element parent);
-    public DefElement     wrapDef(DefElement.Impl theImpl, Element parent);
-    public ClaimElement   wrapClaim(ClaimElement.Impl theImpl, Element parent);
-    public ImportElement  wrapImport(ImportElement.Impl theImpl, Element parent);
-    public ProofElement   wrapProof(MemberElement.Impl theImpl, Element parent);
+    public SpecElement          wrapSpec(MemberElement.Impl theImpl, Element parent);
+    public SortElement          wrapSort(SortElement.Impl theImpl, Element parent);
+    public OpElement            wrapOp(OpElement.Impl theImpl, Element parent);
+    public DefElement           wrapDef(DefElement.Impl theImpl, Element parent);
+    public ClaimElement         wrapClaim(ClaimElement.Impl theImpl, Element parent);
+    public ImportElement        wrapImport(ImportElement.Impl theImpl, Element parent);
+    public ProofElement         wrapProof(MemberElement.Impl theImpl, Element parent);
+    public MorphismElement      wrapMorphism(MemberElement.Impl theImpl, Element parent);
 }
 

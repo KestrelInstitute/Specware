@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/03/14 04:11:56  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.7  2003/02/20 23:07:14  weilyn
  * Added prove stuff.
  *
@@ -133,6 +136,26 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	//SystemAction.get(PropertiesAction.class)
     };
 
+    /** Array of the actions of the meta-slang classes. */
+    private static final SystemAction[] MORPHISM_ACTIONS = new SystemAction[] {
+	SystemAction.get(EditAction.class),
+	//SystemAction.get(OpenAction.class),
+	null,
+ //       SystemAction.get(ProcessUnitAction.class),
+//        null,
+	SystemAction.get(CutAction.class),
+	SystemAction.get(CopyAction.class),
+	SystemAction.get(PasteAction.class),
+	null,
+	SystemAction.get(NewAction.class),
+	SystemAction.get(DeleteAction.class),
+	SystemAction.get(RenameAction.class),
+	//null,
+	//SystemAction.get(OverrideAction.class),
+	//SystemAction.get(ToolsAction.class),
+	//SystemAction.get(PropertiesAction.class)
+    };
+    
     private static final SystemAction[] CONTAINER_ACTIONS
 	= new SystemAction[] {SystemAction.get(CutAction.class),
 			      SystemAction.get(CopyAction.class),
@@ -299,6 +322,46 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
     
     protected Children createProofChildren( ProofElement element ) {
         return createProofChildren(element, MetaSlangDataObject.getExplorerFactory() );
+    }
+    
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createMorphismNode(final MorphismElement element) {
+        if ( element == null ) {
+            return FACTORY_GETTER_NODE;
+        }
+        MorphismElementNode n;
+        if (tree) {
+            MorphismChildren children = (MorphismChildren) createMorphismChildren(element);
+            MorphismElementFilter filter = new MorphismElementFilter();
+            n = new MorphismElementNode(element, children ,true) {
+		    {
+			getCookieSet().add((FilterCookie) getChildren ());
+		    }
+		};
+
+            n.setElementFormat(new ElementFormat(NbBundle.getBundle (MetaSlangElementNodeFactory.class).getString("CTL_Morphism_name_format")));
+
+            filter.setOrder (new int[] {
+/*                SpecElementFilter.IMPORT,
+		SpecElementFilter.SORT,
+		SpecElementFilter.OP,
+                SpecElementFilter.DEF,
+                SpecElementFilter.CLAIM,*/
+            });
+            children.setFilter (filter);
+        }
+        else {
+            n = (MorphismElementNode) super.createMorphismNode(element);
+        }
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(MORPHISM_ACTIONS);
+        return n;
+    }
+    
+    protected Children createMorphismChildren(MorphismElement element ) {
+        return createMorphismChildren(element, MetaSlangDataObject.getExplorerFactory() );
     }
     
     /**

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:14:01  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:13:01  weilyn
  * Added support for imports.
  *
@@ -488,4 +491,46 @@ abstract class MemoryCollection extends Object implements Serializable {
             return newProof;
         }
     }    
+    
+    /** Collection of morphisms.
+    */
+    static class Morphism extends Member {
+        private static final MorphismElement[] EMPTY = new MorphismElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce morphism element memory impl to work in
+        */
+        public Morphism (MorphismElement.Memory memory) {
+            super (memory, ElementProperties.PROP_PROOFS, EMPTY);
+        }
+        
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                MorphismElement element = (MorphismElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    MorphismElement morphism = (MorphismElement) obj;
+            MorphismElement.Memory mem = new MorphismElement.Memory (morphism);
+            MorphismElement newMorphism = new MorphismElement(mem, morphism.getSource());
+            mem.copyFrom(morphism);
+            return newMorphism;
+        }
+    }        
 }

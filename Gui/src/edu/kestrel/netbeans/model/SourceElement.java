@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/14 04:14:01  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.1  2003/01/30 02:02:03  gilham
  * Initial version.
  *
@@ -276,6 +279,88 @@ public final class SourceElement extends Element {
         return getSourceImpl().getProof(name);
     }
 
+  //================== morphisms ==========================
+
+    /** Add a new morphism.
+    * @param el the morphism to add
+    * @throws SourceException if impossible
+    */
+    public void addMorphism (MorphismElement el) throws SourceException {
+      //Util.log("SourceElement.addMorphism -- adding morphism "+el.getName());
+        String id = el.getName();
+        if (getMorphism(id) != null)
+            throwAddException("FMT_EXC_AddMorphismToSource", el); // NOI18N
+        getSourceImpl().changeMorphisms(new MorphismElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new morphisms.
+    * @param el the morphisms to add
+    * @throws SourceException if impossible
+    */
+    public void addMorphisms(final MorphismElement[] els) throws SourceException {
+        String id;
+        
+        for (int i = 0; i < els.length; i++) {
+            id = els[i].getName();
+            if (getMorphism(id) != null)
+                throwAddException("FMT_EXC_AddMorphismToSource", els[i]); // NOI18N
+        }
+        getSourceImpl().changeMorphisms(els, Impl.ADD);
+    }
+
+    /** This method just throws localized exception. It is used during
+    * adding morphism element, which already exists in source.
+    * @param formatKey The message format key to localized bundle.
+    * @param element The element which can't be added
+    * @exception SourceException is alway thrown from this method.
+    */
+    private void throwAddException(String formatKey, MorphismElement element) throws SourceException {
+	String msg = NbBundle.getMessage(ElementFormat.class, formatKey,
+					 element.getName());
+        throwSourceException(msg);
+    }
+
+    /** Remove a morphism.
+    * @param el the morphism to remove
+    * @throws SourceException if impossible
+    */
+    public void removeMorphism(MorphismElement el) throws SourceException {
+        getSourceImpl().changeMorphisms(new MorphismElement[] { el }, Impl.REMOVE);
+    }
+
+    /** Remove some morphisms.
+    * @param els the morphisms to remove
+    * @throws SourceException if impossible
+    */
+    public void removeMorphisms (final MorphismElement[] els) throws SourceException {
+        getSourceImpl().changeMorphisms(els, Impl.REMOVE);
+    }
+
+    /** Set the morphisms.
+    * The old ones will be replaced.
+    * @param els the new morphisms
+    * @throws SourceException if impossible
+    */
+    public void setMorphisms (MorphismElement[] els) throws SourceException {
+        getSourceImpl().changeMorphisms(els, Impl.SET);
+    }
+
+    /** Get the morphisms.
+    * @return all morphisms
+    */
+    public MorphismElement[] getMorphisms() {
+        System.err.println("*** getMorphisms(): SourceImpl="+ getSourceImpl());
+        return getSourceImpl().getMorphisms();
+    }
+
+    /** Find a morphism by name.
+    * @param name the name to look for
+    * @return the morphism, or <code>null</code> if it does not exist
+    */
+    public MorphismElement getMorphism(String name) {
+        return getSourceImpl().getMorphism(name);
+    }
+
     //-------------------------------------------------------------
     
     /* Prints the element into the element printer.
@@ -285,6 +370,7 @@ public final class SourceElement extends Element {
     public void print(ElementPrinter printer) throws ElementPrinterInterruptException {
         print(getSpecs(), printer);
         print(getProofs(), printer);
+        print(getMorphisms(), printer);
     }
     
     /** Lock the underlaing document to have exclusive access to it and could make changes
@@ -375,6 +461,24 @@ public final class SourceElement extends Element {
         * @return the proof, or <code>null</code> if it does not exist
         */
         public ProofElement getProof (String name);
+
+        /** Change the set of specs.
+        * @param elems the specs to change
+        * @param action one of {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+        * @exception SourceException if the action cannot be handled
+        */
+        public void changeMorphisms (MorphismElement[] elems, int action) throws SourceException;
+
+        /** Get all Morphisms.
+        * @return the Morphisms
+        */
+        public MorphismElement[] getMorphisms ();
+
+        /** Find a Morphism by name.
+        * @param name the name to look for
+        * @return the Morphism, or <code>null</code> if it does not exist
+        */
+        public MorphismElement getMorphism (String name);
 
         /** Lock the underlaing document to have exclusive access to it and could make changes
         * on this SourceElement.

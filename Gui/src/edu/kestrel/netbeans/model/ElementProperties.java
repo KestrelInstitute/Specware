@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/14 04:14:01  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.5  2003/02/18 18:12:59  weilyn
  * Added support for imports.
  *
@@ -61,4 +64,5 @@ public interface ElementProperties {
 
     public static final String PROP_PROOFS = "proofs"; // NOI18N        
 
+    public static final String PROP_MORPHISMS = "morphisms"; // NOI18N         
 }

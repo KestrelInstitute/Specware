@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/14 04:15:33  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.1  2003/01/30 02:02:28  gilham
  * Initial version.
  *
@@ -28,6 +31,7 @@ import edu.kestrel.netbeans.codegen.TextBinding;
 public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater {
     public static final int SPEC = 0;
     public static final int PROOF = 1;
+    public static final int MORPHISM = 2;
 
     SourceElement.Impl  sourceImpl;
     LangModel.Updater   updater;
@@ -49,19 +53,27 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         new ProofFinder()
     };
 
+    private static final ElementMatch.Finder[] MORPHISM_FINDERS = {
+        //new TextPositionMatch(),
+        new MorphismFinder()
+    };
+
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         SPEC_FINDERS,
         PROOF_FINDERS,
+        MORPHISM_FINDERS,
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
         ElementProperties.PROP_SPECS,
         ElementProperties.PROP_PROOFS,
+        ElementProperties.PROP_MORPHISMS,
     };
     
     private static final Class[] CHILDREN_TYPES = {
         SpecElement.class,
         ProofElement.class,
+        MorphismElement.class,
     };
     
     SourceInfo() {
@@ -125,7 +137,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         SourceElement source = (SourceElement)target;
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
-	for (int kind = SPEC; kind <= PROOF; kind++) {
+	for (int kind = SPEC; kind <= MORPHISM; kind++) {
             Element[] curMembers;
             switch (kind) {
 	    case SPEC:
@@ -133,6 +145,9 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
 		break;
             case PROOF:
                 curMembers = source.getProofs();
+                break;
+            case MORPHISM:
+                curMembers = source.getMorphisms();
                 break;
             default:
 		throw new InternalError("Illegal member type"); // NOI18N
@@ -165,6 +180,12 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
     }
 
     private static final class ProofFinder extends ElementMatch.AbstractFinder {
+        protected boolean matches(BaseElementInfo info, Element el) {
+            return info.name.equals(((MemberElement)el).getName());
+        }
+    }
+
+    private static final class MorphismFinder extends ElementMatch.AbstractFinder {
         protected boolean matches(BaseElementInfo info, Element el) {
             return info.name.equals(((MemberElement)el).getName());
         }

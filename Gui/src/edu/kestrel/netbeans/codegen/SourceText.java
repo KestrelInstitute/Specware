@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:12:31  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 17:59:38  weilyn
  * Added support for imports.
  *
@@ -320,6 +323,11 @@ public class SourceText implements DocumentBinding {
         return b;
     }
 
+    public Binding.Morphism bindMorphism(MorphismElement impl) {
+        MorphismB b = new MorphismB(impl, this);
+        return b;
+    }
+    
     public void dumpDocument() {
         System.err.println("Document dump:"); // NOI18N
         final StyledDocument doc = getEditorSupport().getDocument();

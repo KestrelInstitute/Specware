@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/14 04:14:22  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.5  2003/02/18 18:06:45  weilyn
  * Added support for imports.
  *
@@ -66,7 +69,7 @@ public final class SourceOptions extends SystemOption {
     private static final byte T_DEF = 4;
     private static final byte T_CLAIM = 5;
     private static final byte T_PROOF = 6;
-
+    private static final byte T_MORPHISM = 7;
 
     /** Names of all properties. */
     static final String[] PROP_NAMES = {
@@ -77,6 +80,7 @@ public final class SourceOptions extends SystemOption {
         "defElementFormat",   //NOI18N
         "claimElementFormat", // NOI18N
         "proofElementFormat", // N0I18N
+        "morphismElementFormat", // N0I18N
     };
     
     static Element[] TEST_ELEMENTS;
@@ -146,6 +150,9 @@ public final class SourceOptions extends SystemOption {
     /** Property name of the proof display format. */
     public static final String PROP_PROOF_FORMAT = PROP_NAMES[T_PROOF];
     
+    /** Property name of the morphism display format. */
+    public static final String PROP_MORPHISM_FORMAT = PROP_NAMES[T_MORPHISM];
+
     /** Property name of the 'categories usage' property. */
     public static final String PROP_CATEGORIES_USAGE = "categoriesUsage"; // NOI18N
 
@@ -278,6 +285,20 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_PROOF);
     }
     
+    /** Set the morphism format.
+    * @param format the new format
+    */
+    public void setMorphismElementFormat(ElementFormat format) {
+        setElementFormat(T_MORPHISM, format);
+    }
+
+    /** Get the morphism format.
+    * @return the current format
+    */
+    public ElementFormat getMorphismElementFormat() {
+        return getElementFormat(T_MORPHISM);
+    }
+
     // ============= getters for long form of formats =================
 
     /** Get the spec format for longer hints.
@@ -334,6 +355,14 @@ public final class SourceOptions extends SystemOption {
     public ElementFormat getProofElementLongFormat() {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_PROOF];
+    }
+
+    /** Get the morphism format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getMorphismElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_MORPHISM];
     }
 
     // ============= categories of elements usage ===================

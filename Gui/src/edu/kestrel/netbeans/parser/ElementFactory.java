@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/14 04:15:31  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.5  2003/02/18 18:10:12  weilyn
  * Added support for imports.
  *
@@ -81,6 +84,11 @@ public interface ElementFactory {
     */
     public Item createProof(String name);
     
+    /** Creates an element for a morphism.
+	@param name Name of the morphism.
+    */
+    public Item createMorphism(String name);
+
     public void setParent(Collection children, Item parent);
 
     /** Binds two Items together in a parent-child relationship.

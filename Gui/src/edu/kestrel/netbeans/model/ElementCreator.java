@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/03/14 04:14:01  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.4  2003/02/18 18:12:57  weilyn
  * Added support for imports.
  *
@@ -27,12 +30,13 @@ package edu.kestrel.netbeans.model;
 import org.openide.src.*;
 
 public interface ElementCreator {
-    public SourceElementImpl createSource();
-    public SpecElementImpl   createSpec(Element parent);
-    public SortElementImpl   createSort(SpecElement parent);
-    public OpElementImpl     createOp(SpecElement parent);
-    public DefElementImpl    createDef(SpecElement parent);
-    public ClaimElementImpl  createClaim(SpecElement parent);
-    public ImportElementImpl createImport(SpecElement parent);
-    public ProofElementImpl  createProof(Element parent);
+    public SourceElementImpl        createSource();
+    public SpecElementImpl          createSpec(Element parent);
+    public SortElementImpl          createSort(SpecElement parent);
+    public OpElementImpl            createOp(SpecElement parent);
+    public DefElementImpl           createDef(SpecElement parent);
+    public ClaimElementImpl         createClaim(SpecElement parent);
+    public ImportElementImpl        createImport(SpecElement parent);
+    public ProofElementImpl         createProof(Element parent);
+    public MorphismElementImpl      createMorphism(Element parent);
 }
