@@ -233,7 +233,7 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
   sort SpecElem a = (SpecElem_ a) * a
 
   sort SpecElem_ a =
-    | Import Term a
+    | Import List (Term a)
     | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
     | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (AProperty a)

@@ -45,17 +45,21 @@ axioms, etc.
   op evaluateSpecImport : (ASpec Position * TimeStamp * UnitId_Dependency)
                           -> SpecElem Position
                           -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
-  def evaluateSpecImport (val as (spc,cTS,cDepUIDs)) (elem, position) =
+  def evaluateSpecImport val (elem, position) =
     case elem of
-      | Import term -> {
-            (value,iTS,depUIDs) <- evaluateTermInfo term;
-            (case coerceToSpec value of
-              | Spec impSpec -> {
-                    newSpc <- mergeImport term impSpec spc position;
-                    return (newSpc, max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
-                  }
-              | _ -> raise (Fail ("Import not a spec")))
-          }
+      | Import terms -> 
+        foldM (fn (spc,cTS,cDepUIDs) -> fn term ->
+	       {
+		(value,iTS,depUIDs) <- evaluateTermInfo term;
+		(case coerceToSpec value of
+		   | Spec impSpec -> {
+				      newSpc <- mergeImport term impSpec spc position;
+				      return (newSpc, max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
+				     }
+		   | _ -> raise (Fail ("Import not a spec")))
+		  })
+              val               
+              (rev terms) % just so result shows in same order as read
       | _ -> return val
 
   op  anyImports?: List (SpecElem Position) -> Boolean
@@ -67,7 +71,7 @@ axioms, etc.
                           -> SpecCalc.Env (ASpec Position)
   def evaluateSpecElem spc (elem, position) =
     case elem of
-      | Import term -> return spc
+      | Import terms -> return spc
       | Sort (names,(tyVars,defs)) ->
           addSort names tyVars defs spc position
       | Op (names,(fxty,srtScheme,defs)) ->

@@ -261,7 +261,7 @@
 
 ;;;  TODO: In doc: import sc-term, not just spec-name
 (define-sw-parser-rule :IMPORT-DECLARATION ()
-  (:tuple "import" (1 :SC-TERM))
+  (:tuple "import" (1 (:repeat+ :SC-TERM ",")))
   (make-import-declaration 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------

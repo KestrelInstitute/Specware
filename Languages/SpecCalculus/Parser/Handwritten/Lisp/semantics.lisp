@@ -191,8 +191,8 @@
 ;;;  IMPORT-DECLARATION
 ;;; ------------------------------------------------------------------------
 
-(defun make-import-declaration (sc-term l r)
-  (cons (cons :|Import| sc-term)
+(defun make-import-declaration (sc-terms l r)
+  (cons (cons :|Import| sc-terms)
         (make-pos l r)))
 
 ;;; ------------------------------------------------------------------------

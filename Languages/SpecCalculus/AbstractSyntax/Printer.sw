@@ -317,7 +317,7 @@ SpecCalc qualifying spec {
       | Import term ->
           ppConcat [
             ppString "import ",
-            ppTerm term
+            ppSep (ppString ", ") (map ppTerm term)
           ]
       | Sort (aliases, sortInfo) -> myppASortInfo (aliases, sortInfo)
       | Op   (aliases, opInfo)   -> myppAOpInfo   (aliases, opInfo)
