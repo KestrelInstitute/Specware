@@ -233,9 +233,9 @@ SpecCalc qualifying spec {
            Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
 	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)])
 	  ]
-	  Lisp.++ (Lisp.list prover_options)
 	  Lisp.++ (Lisp.list snarkSortDecl)
 	  Lisp.++ (Lisp.list snarkOpDecls)
+	  Lisp.++ (Lisp.list prover_options)
 	  Lisp.++ (Lisp.list snarkBaseHypothesis)
 	  Lisp.++ (Lisp.list baseAxioms)
 	  Lisp.++ (Lisp.list snarkHypothesis)
