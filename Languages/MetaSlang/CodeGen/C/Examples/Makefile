@@ -27,8 +27,8 @@ CPPFLAGS := -g $(CPPFLAGS)
 # If you have defined a main operator in Specware (see
 # ../README.CCodeGen) then you don't need to specify a rule for the
 # main target, because make's implicit rules already take care of
-# everything. For instance, if your MetaSlang code defines an operator
-# main like this:
+# everything. For instance, if your MetaSlang code defines an (unqualified!)
+# operator "main" like this:
 #
 #   op main: () -> ()
 #   def main() = ...

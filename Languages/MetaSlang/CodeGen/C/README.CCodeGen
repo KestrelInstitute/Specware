@@ -95,8 +95,8 @@ Supplying a C "main" function
 -----------------------------
 If you want to create a stand-alone C application using the
 Specware-generated code, you have to supply a main function. This can
-be done either by directly defining a MetaSlang operator "main" like
-this
+be done either by directly defining an unqualified MetaSlang operator
+"main" like this
 
     op main: () -> ()
     def main () ...
