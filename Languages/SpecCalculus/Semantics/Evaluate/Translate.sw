@@ -252,7 +252,8 @@ Note: The code below does not yet match the documentation above, but should.
 	      in
 	      { first_opinfo  <- return (new_aliases, fixity, sort_scheme, defs);
 	        merged_opinfo <- foldM (fn merged_opinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
-					  mergeOpInfo merged_opinfo 
+					  mergeOpInfo spc
+					              merged_opinfo 
 					              (findAQualifierMap (new_op_map, new_qualifier, new_id))
 						      position)
 		                       first_opinfo
@@ -287,7 +288,8 @@ Note: The code below does not yet match the documentation above, but should.
 	      in
 	      { first_sortinfo  <- return (new_aliases, ty_vars, defs);
 	        merged_sortinfo <- foldM (fn merged_sortinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
-					  mergeSortInfo merged_sortinfo 
+					  mergeSortInfo spc
+					                merged_sortinfo 
 					                (findAQualifierMap (new_sort_map, new_qualifier, new_id))
 						        position)
 		                         first_sortinfo

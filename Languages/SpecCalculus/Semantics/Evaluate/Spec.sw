@@ -81,27 +81,29 @@ axioms, etc.
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
 
   def mergeImport spec_term imported_spec spec_a position =
-    let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_sorts) =
+    let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, (spc, combined_sorts)) =
       let oldSortInfo = findAQualifierMap (combined_sorts,imported_qualifier, imported_id) in {
-          mergedSorts <- SpecCalc.mergeSortInfo imported_sort_info oldSortInfo position;
-          return (insertAQualifierMap (combined_sorts,
+          mergedSorts <- SpecCalc.mergeSortInfo spc imported_sort_info oldSortInfo position;
+          return (spc,
+		  insertAQualifierMap (combined_sorts,
                                        imported_qualifier,
                                        imported_id,
                                        mergedSorts))
         } in
-    let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_ops) =
+    let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, (spc, combined_ops)) =
       let oldOpInfo = findAQualifierMap (combined_ops,imported_qualifier, imported_id) in {
-           mergedOps <- SpecCalc.mergeOpInfo imported_op_info oldOpInfo position;
-           return (insertAQualifierMap (combined_ops,
+           mergedOps <- SpecCalc.mergeOpInfo spc imported_op_info oldOpInfo position;
+           return (spc,
+		   insertAQualifierMap (combined_ops,
                                         imported_qualifier,
                                         imported_id,
                                         mergedOps))
         } in
     {
       spec_b <- return (addImport ((spec_term, imported_spec), spec_a)); 
-      sorts_b <- foldOverQualifierMap mergeSortStep spec_b.sorts imported_spec.sorts;
+      (_, sorts_b) <- foldOverQualifierMap mergeSortStep (spec_b, spec_b.sorts) imported_spec.sorts;
       spec_c <- return (setSorts (spec_b, sorts_b));
-      ops_c <- foldOverQualifierMap mergeOpStep spec_c.ops imported_spec.ops;
+      (_, ops_c) <- foldOverQualifierMap mergeOpStep (spec_c, spec_c.ops) imported_spec.ops;
       spec_d <- return (setOps (spec_c, ops_c));
       spec_e <- return (setProperties (spec_d, listUnion (imported_spec.properties,spec_d.properties)));
       return spec_e

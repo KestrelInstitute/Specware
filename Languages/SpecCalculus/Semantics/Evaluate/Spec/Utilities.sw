@@ -224,11 +224,12 @@ SpecCalc qualifying spec
  % ------------------------------------------------------------------------
 
  op mergeSortInfo :
-   fa(a) ASortInfo a
+   fa(a) ASpec a
+      -> ASortInfo a
       -> Option (ASortInfo a)
       -> Position
       -> SpecCalc.Env (ASortInfo a)
- def mergeSortInfo newPSortInfo optOldPSortInfo position =
+ def mergeSortInfo spc newPSortInfo optOldPSortInfo position =
    case (newPSortInfo,optOldPSortInfo) of
      | (_,None) -> return newPSortInfo
      | ((new_sort_names, new_type_vars, new_defs), Some (old_sort_names, old_type_vars, old_defs)) ->
@@ -265,11 +266,12 @@ SpecCalc qualifying spec
                return (sort_names, old_type_vars, combined_defs)
     
  op mergeOpInfo :
-   fa(a) AOpInfo a
+   fa(a) ASpec a
+      -> AOpInfo a
       -> Option (AOpInfo a)
       -> Position
       -> SpecCalc.Env (AOpInfo a)
- def mergeOpInfo newPOpInfo optOldPOpInfo position =
+ def mergeOpInfo spc newPOpInfo optOldPOpInfo position =
    case (newPOpInfo,optOldPOpInfo) of
      | (_,None) -> return newPOpInfo
      | ((new_op_names, new_fixity, new_sort_scheme, new_defs), Some (old_op_names, old_fixity, old_sort_scheme, old_defs)) ->
@@ -291,8 +293,8 @@ SpecCalc qualifying spec
                  %%  Old:  op ... : fa (...) ...  OR  def fa (...) ...  
                  %%  New:  op ... : fa (...) ...  OR  def fa (...) ...  
                  let _ =
-                    if ~(equivSortScheme? emptySpec (old_sort_scheme,new_sort_scheme)) then
-                      toScreen ("Merged versions of op " ^ (printAliases op_names) ^ " have different sorts:"
+                    if ~(equivSortScheme? spc (old_sort_scheme,new_sort_scheme)) then
+                      toScreen ("Merged versions of op " ^ (printAliases op_names) ^ " have possibly different sorts:"
                              ^ "\n " ^ (printSortScheme new_sort_scheme)
                              ^ "\n " ^ (printSortScheme old_sort_scheme) ^ "\n")
                     else () in
@@ -303,7 +305,7 @@ SpecCalc qualifying spec
          in
            if (~ happy?) then
              raise (SpecError (position,
-                             "Merged versions of Op "^(printAliases op_names)^" have incompatible sorts:"
+                             "Merged versions of Op "^(printAliases op_names)^" have different sorts:"
                              ^ "\n " ^ (printSortScheme new_sort_scheme)
                              ^ "\n " ^ (printSortScheme old_sort_scheme)))
            else
@@ -641,46 +643,54 @@ SpecCalc qualifying spec
                | Some ls2 -> equivSort? spc (s1, ls2)
                | _ -> false)
 
-(*
-     | (Base _,  _) ->
-        %% We know second sort is not a Base sort.
-        %% TODO: There is probably some awful way to get an infinite recursion here.
-	%% Tedious, but unfoldSort expects to get the current spc via 
-        %% the internal field of a LocalEnv, so we make an ad hoc env.
-        %% Fortunately, this case is rare.
-        let env = {importMap  = StringMap.empty, % importMap,
-		   %specName   = spec_name,
-		   internal   = spc,
-		   errors     = Ref [],
-		   vars       = StringMap.empty,
-		   firstPass? = true,
-		   constrs    = StringMap.empty,
-		   file       = "Internal"
-		  }
-       in
-       let expanded_s1 = unfoldSort (env, s1) in
-       equivSort? spc (expanded_s1, s2)
 
-     | (_, Base _) ->
-        %% We know first sort is not a Base sort.
-        %% TODO: There is probably some awful way to get an infinite recursion here.
-	%% Tedious, but unfoldSort expects to get the current spc via 
-        %% the internal field of a LocalEnv, so we make an ad hoc env.
-        %% Fortunately, this case is rare.
-        let env = {importMap  = StringMap.empty, % importMap,
-		   %specName   = spec_name,
-		   internal   = spc,
-		   errors     = Ref [],
-		   vars       = StringMap.empty,
-		   firstPass? = true,
-		   constrs    = StringMap.empty,
-		   file       = "Internal"
-		  }
-       in
-       let expanded_s2 = unfoldSort (env, s2) in
-       equivSort? spc (s1, expanded_s2)
-*)
+     | (Base _,  _     ) -> (let s3 = myUnfoldSort (spc, s1) in
+			     if s1 = s3 then
+			       false
+			     else
+			       equivSort? spc (s3,  s2))
+     | (_,       Base _) -> (let s3 = myUnfoldSort (spc, s2) in
+			     if s2 = s3 then
+			       false
+			     else
+			       equivSort? spc (s1,  s3))
+
      | _ -> false
+
+
+ def myUnfoldSort (spc,s1) = 
+   let Base (qid, ts, pos) = s1 in
+   case findAllSorts (spc, qid) of
+     | [] -> s1
+     | sort_info::_ ->
+       (case sort_info of
+	  | (main_qid::_, _, []) -> 
+	    Base (main_qid, ts, pos)
+	  | (aliases, tvs, df :: _) ->
+	    let (some_type_vars, some_def) = df in
+	    myInstantiateScheme(ts, some_type_vars, some_def))
+
+ op myInstantiateScheme : fa (a) List (ASort a) * TyVars * ASort a -> ASort a
+ def fa (a) myInstantiateScheme (types, tyVars, srt) = 
+   if null tyVars then
+     srt
+   else
+     let mtvar_position = Internal "copySort" in
+     let tyVarMap = zip (tyVars, types) in
+     let
+        def mapTyVar (tv : TyVar, tvs : List (TyVar * ASort a), pos) : ASort a = 
+            case tvs
+              of [] -> TyVar(tv,pos)
+               | (tv1,s)::tvs -> 
+                 if tv = tv1 then s else mapTyVar (tv, tvs, pos)
+     in
+     let
+        def cp (srt : ASort a) : ASort a =
+            case srt
+              of TyVar (tv, pos) -> mapTyVar (tv, tyVarMap, pos)
+               | srt -> srt
+     in
+     mapSort (id, cp, id) srt
 
  def equivPattern? spc (p1,p2) =
   case (p1, p2) of
@@ -843,7 +853,6 @@ def opIdIsDefinedInSpec?(spc,id) =
   case find (fn(_,id0,opinfo) -> (id0 = id)) ops of
     | Some (_,_,(_,_,_,_::_)) -> true
     | _ -> false
-
 
 
 endspec
