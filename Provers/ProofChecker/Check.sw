@@ -708,6 +708,20 @@ spec
       exprSubstAt (e, old, new, pos) = OK newE
 
 
+  (* Check whether positional expression substitution satisfies predicate
+  `exprSubstAtOK?' (which is defined in spec `SyntaxWithCoreOps'), assuming
+  that `pos' is valid in `e' (and regardless of whether the subexpression at
+  `pos' in `e' is `old' or not). *)
+
+  op checkExprSubstAtOK :
+     {(e,old,new,pos) : Expression * Expression * Expression * Position
+      | positionInExpr? (pos, e)} -> MayFail ()
+  def checkExprSubstAtOK(e,old,new,pos) =
+    if exprFreeVars old /\ captVarsAt(pos,e) = empty
+    && exprFreeVars new /\ captVarsAt(pos,e) = empty
+    then OK () else FAIL
+
+
   (* This is the main op of this spec. Before defining it, we define various
   auxiliary checking ops that are mutually recursive with this op. *)
 
@@ -2174,7 +2188,9 @@ spec
       (case checkTheorem prf of OK (cx, oldE) ->
       (case checkTheoremEquationWithContext cx prf1 of OK (e1, e2) ->
       (case exprSubstAt (oldE, e1, e2, pos) of OK newE ->
+      (case checkExprSubstAtOK (oldE, e1, e2, pos) of OK () ->
       OK (theoreM (cx, newE))
+      | _ -> FAIL)
       | _ -> FAIL)
       | _ -> FAIL)
       | _ -> FAIL)

@@ -6,7 +6,6 @@ spec
   available in every spec. *)
 
   import /Library/General/Assert,
-         /Library/General/Predicates,
          /Library/General/FiniteStructures
          
 endspec

@@ -165,9 +165,9 @@ spec
   induction axiom on types, expressions, and patterns. *)
 
   axiom inductionTypesExpressionsPatterns is
-    fa (predT : Predicate Type,
-        predE : Predicate Expression,
-        predP : Predicate Pattern)
+    fa (predT : Type       -> Boolean,
+        predE : Expression -> Boolean,
+        predP : Pattern    -> Boolean)
 
   %%%%% induction base and step for types:
       predT boolean
@@ -271,10 +271,9 @@ spec
   So, we define some meta ops to construct types, expressions, and patterns in
   a more readable way. The names and fixities of these ops are meant to
   resemble object Metaslang syntax as much as possible, e.g. prefix `RELAX'
-  for `relax' and infix `==' for `='. The priorities of the infix meta ops are
-  the same as the relative priorities of their object counterparts. We also
-  use currying as much as possible, to reduce the number of extra parentheses
-  and commas and thus improve readability. *)
+  for `relax' and infix `==' for `='. We also use currying as much as
+  possible, to reduce the number of extra parentheses and commas and thus
+  improve readability. *)
 
   % types:
 
@@ -336,13 +335,13 @@ spec
   op ~~ : Expression -> Expression
   def ~~ e = unary (negation, e)
 
-  op @ infixl 23 : Expression * Expression -> Expression
+  op @ infixl 30 : Expression * Expression -> Expression
   def @ (e1,e2) = binary (application, e1, e2)
 
-  op == infixl 20 : Expression * Expression -> Expression
+  op == infixl 29 : Expression * Expression -> Expression
   def == (e1,e2) = binary (equation, e1, e2)
 
-  op ~== infixl 20 : Expression * Expression -> Expression
+  op ~== infixl 29 : Expression * Expression -> Expression
   def ~== (e1,e2) = binary (inequation, e1, e2)
 
   op <<< infixl 25 : Expression * Expression -> Expression
@@ -354,16 +353,16 @@ spec
   op CHOOSE : Expression -> Expression -> Expression
   def CHOOSE q e = binary (choice, q, e)
 
-  op &&& infixl 15 : Expression * Expression -> Expression
+  op &&& infixr 25 : Expression * Expression -> Expression
   def &&& (e1,e2) = binary (conjunction, e1, e2)
 
-  op ||| infixl 14 : Expression * Expression -> Expression
+  op ||| infixr 24 : Expression * Expression -> Expression
   def ||| (e1,e2) = binary (disjunction, e1, e2)
 
-  op ==> infixl 13 : Expression * Expression -> Expression
+  op ==> infixr 23 : Expression * Expression -> Expression
   def ==> (e1,e2) = binary (implication, e1, e2)
 
-  op <==> infixl 12 : Expression * Expression -> Expression
+  op <==> infixr 22 : Expression * Expression -> Expression
   def <==> (e1,e2) = binary (equivalence, e1, e2)
 
   op IF : Expression -> Expression -> Expression -> Expression
