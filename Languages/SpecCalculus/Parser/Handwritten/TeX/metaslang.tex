@@ -478,7 +478,8 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {SC\char45QUALIFY} \> $::=$ \> \>    \grnonterminal {QUALIFIER}\  \grterminal {qualifying}\  \grnonterminal {SC\char45TERM}
 \\
-\\ \grnonterminal {SC\char45DIAG} \> $::=$ \> \>    \grterminal {diagram}\  \grterminal {\{}\  \bnfrepeatopen  \grnonterminal {SC\char45DIAG\char45ELEM} \bnfrepeatclose\  \grterminal {\}}
+\\ \grnonterminal {SC\char45DIAG} \> $::=$ \> \>   \grterminal {diagram}  \grterminal {\{}  \grnonterminal {SC\char45DIAG\char45ELEM} 
+\\  \>  \>  \> \ \ \ \ \ \ \ \ \ \  \bnfrepeatopen \grterminal {\char44} \grnonterminal {SC\char45DIAG\char45ELEM} \bnfrepeatclose  \grterminal {\}}
 \\
 \\ \grnonterminal {SC\char45DIAG\char45ELEM} \> $::=$ \> \>   \grnonterminal {SC\char45DIAG\char45NODE} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {SC\char45DIAG\char45EDGE}

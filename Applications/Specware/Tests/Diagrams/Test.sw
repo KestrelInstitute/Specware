@@ -15,7 +15,7 @@ let
   n = morphism a -> c {X +-> Z, x +-> z}
   p = morphism b -> c {Y +-> Z, y +-> z}
   d = diagram {
-      u : v -> w +-> m
+      u : v -> w +-> m,
       x : v -> z +-> p
     }
 in

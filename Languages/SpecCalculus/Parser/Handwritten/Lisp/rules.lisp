@@ -1266,7 +1266,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-DIAG ()
-  (:tuple "diagram" "{" (1 (:repeat :SC-DIAG-ELEM nil)) "}")
+  (:tuple "diagram" "{" (1 (:repeat :SC-DIAG-ELEM ",")) "}")
   (make-sc-diag (list . 1) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-DIAG-ELEM ()
