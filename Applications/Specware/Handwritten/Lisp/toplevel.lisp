@@ -286,6 +286,7 @@
       (format t "No previous unit evaluated~%"))))
 
 (defun swj-config-pkg (&optional pkg)
+  #+(or allegro lispworks)
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
     nil)
