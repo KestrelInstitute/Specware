@@ -90,7 +90,7 @@ spec
  def removeUnnecessaryVariable spc term =
      case term
        of Let([(VarPat (id,_),e)],body,_) ->
-	  let noSideEffects =  sideEffectFree(e) in
+	  let noSideEffects = sideEffectFree(e) in
 	  (case countVarRefs(body,id)
 	     of 0 -> if noSideEffects then body else term
 	      | 1 -> if noSideEffects
@@ -119,6 +119,7 @@ spec
 	       %% We don't know in general when an application can cause a side-effect 
 	       | Apply(Fun (f,_,_),_,_) ->
 	         if knownSideEffectFreeFn? f then result else (false,true)
+	       | Apply _ -> (false,true)
 	       %% We don't know when the body of a lambda will be evaluated
 	       | Lambda _ -> (false,true)
 	       | _ -> result)
@@ -150,7 +151,7 @@ spec
       | Op(Qualified(qid),_) ->
         member(qid,knownSideEffectFreeQIds)
       % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
-      | _ -> true
+      | _ -> false
       
 
 % We implement a version of tuple instantiation that works on terms after pattern 
@@ -312,14 +313,14 @@ spec
 	  (zip(lhs_flds,rhs_flds))
       | _ -> [cj]
 
-  op  varNamesSet: List Var * List MS.Term -> StringSet.Set
+  op  varNamesSet: List Var * List MS.Term -> Set.Set String
   def varNamesSet(vs,tms) =
-    foldl (fn ((nm,_),nm_set) -> StringSet.add(nm_set,nm))
-      StringSet.empty
+    foldl (fn ((nm,_),nm_set) -> Set.insert nm_set nm)
+      Set.empty
       (vs ++ foldl (fn (t,fvs) -> freeVars t ++ fvs) [] tms)
     
 
-  op  normForallBody: MS.Term * StringSet.Set * Spec -> Option(List Var * List MS.Term * MS.Term)
+  op  normForallBody: MS.Term * Set.Set String * Spec -> Option(List Var * List MS.Term * MS.Term)
   %% fa(x) p => let y = m in n --> fa(x,y) p & y = m => n
   def normForallBody(body,used_names,spc) =
     case body of
@@ -335,7 +336,7 @@ spec
 	   | _ -> None)
       | _ -> None
 
-  op  getRenamingSubst: List Var * StringSet.Set -> List Var * List (Var * MS.Term)
+  op  getRenamingSubst: List Var * Set.Set String -> List Var * List (Var * MS.Term)
   def getRenamingSubst(vs,used_names) =
     foldr (fn (v as (nm,ty),(vs,sb)) ->
 	   let new_nm = StringUtilities.freshName(nm,used_names) in
