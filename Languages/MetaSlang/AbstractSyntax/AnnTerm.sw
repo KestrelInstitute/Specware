@@ -229,14 +229,38 @@ MetaSlang qualifying spec {
 
   op maybeAndSort : [b] List (ASort b) * b -> ASort b
  def maybeAndSort (srts, pos) =
-   case srts of
+   let compressed_sorts =
+       foldl (fn (srt, new_srts) ->
+	      case sortInnerSort srt of
+	       %| Any _ -> new_srts
+		| _ -> 
+		  if exists (fn new_srt -> equalSort? (srt, new_srt)) new_srts then
+		    new_srts
+		  else
+		    new_srts ++ [srt])
+             []
+	     srts
+   in
+   case compressed_sorts of
      | []    -> Any pos
      | [srt] -> srt
      | _     -> And (srts, pos)
 
   op maybeAndTerm : [b] List (ATerm b) * b -> ATerm b
  def maybeAndTerm (tms, pos) =
-   case tms of
+   let compressed_terms =
+       foldl (fn (tm, new_tms) ->
+	      case termInnerTerm tm of
+	       %| Any _ -> new_tms   
+		| _ -> 
+		  if exists (fn new_tm -> equalTerm? (tm, new_tm)) new_tms then
+		    new_tms
+		  else
+		    new_tms ++ [tm])
+             []
+	     tms
+   in
+   case compressed_terms of
      | []   -> Any pos
      | [tm] -> tm
      | _    -> And (tms, pos)
