@@ -145,7 +145,7 @@ if [ -f bin/linux/Specware4.dxl ]; then
         echo " "
 	bin/linux/Specware4-text -batch <<-XXXX
                 :swpath
-		(load "$EXIT_ON_ERRORS")
+		(load "$EXIT_ON_ERRORS") ; bin/linux/exit-on-errors
 		(enlarge-stack)
 		(exiting-on-errors 
 		  (if (sw "/Applications/Specware/Specware4")
