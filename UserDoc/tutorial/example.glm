@@ -911,7 +911,7 @@ means of the following command (this and all the following commands must be
 given in the Lisp environment, not the &Specware; shell):</para>
 
 [[L:
-||    :ld find-matches-test
+||    ld find-matches-test
 ]]
 
 <para>In Lisp, entities like functions, constants, etc. are defined inside
@@ -932,7 +932,7 @@ Alternatively, we can supply a single argument by consing [[L:<arg1>]] and
 </para>
 
 <para>To follow the second approach, we would first change package by means of
-the Lisp command [[L::pa sw-user]], and then we can just write
+the Lisp command [[L:pa sw-user]], and then we can just write
 [[L:(test_find_matches-2 <arg1> <arg2>)]] to call the function.</para>
 
 <para>In order to test the program on the example input and output given at
