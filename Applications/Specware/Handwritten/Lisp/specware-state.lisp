@@ -15,6 +15,7 @@
 
 (defvar *specware-global-context* nil)
 (defun specware-state ()
+  (declare (special SpecCalc::initialSpecwareState)) ;  declared in /Languages/SpecCalculus/Semantics/Environment.sw
   (vector *specware-global-context*
       (svref SpecCalc::initialSpecwareState 1)
       (svref SpecCalc::initialSpecwareState 2)))
@@ -30,10 +31,12 @@
   (SPECWARE::restoreSavedSpecwareState-1 (vector globalContext localContext optURI)))
 
 (defun SPECWARE::restoreSavedSpecwareState-1 (State)
+  (declare (ignore State)
+	   (special SpecCalc::initialSpecwareState)) ;  declared in /Languages/SpecCalculus/Semantics/Environment.sw
   (cons '(:|Ok|)
-     (vector *specware-global-context*
-	         (svref SpecCalc::initialSpecwareState 1)
-	         (svref SpecCalc::initialSpecwareState 2))))
+	(vector *specware-global-context*
+		(svref SpecCalc::initialSpecwareState 1)
+		(svref SpecCalc::initialSpecwareState 2))))
 
 ;; When the following boolean is true, then all exceptions (not just Fail)
 ;; take the user into the Lisp debugger.
