@@ -46,12 +46,30 @@ XML qualifying spec
 				  table   : SortDescriptorExpansionTable)
     : Option X =
     let pattern   = expand_SortDescriptor (sd, table) in
-    % let attribute_info = ... in
     case element of
       | Full elt -> 
         let desired = print_SortDescriptor sd in
         let given   = string elt.stag.name in
-        let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ given ^ "\n") in
+	let attributes = elt.stag.attributes in
+	let given_type = (case (foldl (fn (attribute, result) ->
+				 case result of
+				   | Some _ -> result
+				   | _ -> Some (if "type" = (string attribute.name) then
+						  foldl (fn (item, result) ->
+							 result ^ (case item of
+								     | NonRef ustr -> string ustr
+								     | Ref _ -> "<xmlref>"))
+						        "type "
+							attribute.value.items
+						else
+						  "unknown type"))
+			        None
+				attributes)
+			    of
+			      | Some str -> str
+			      | _ -> "unspecified type")
+	in
+	let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ given ^ " of " ^ given_type ^ "\n") in
         internalize_PossibleElement (elt, pattern, table)
       | Empty _ -> fail "empty element"
 
