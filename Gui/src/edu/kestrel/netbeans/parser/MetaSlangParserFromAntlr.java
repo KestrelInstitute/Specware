@@ -490,7 +490,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_axiom:
 			case LITERAL_conjecture:
 			{
-				definition();
+				item=definition();
 				break;
 			}
 			default:
@@ -726,7 +726,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return op;
 	}
 	
-	private final void definition() throws RecognitionException, TokenStreamException {
+	private final ElementFactory.Item  definition() throws RecognitionException, TokenStreamException {
+		ElementFactory.Item item;
+		
+		
+		item=null;
 		
 		
 		try {      // for error handling
@@ -740,7 +744,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_axiom:
 			case LITERAL_conjecture:
 			{
-				claimDefinition();
+				item=claimDefinition();
 				break;
 			}
 			default:
@@ -758,6 +762,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			  throw ex;
 			}
 		}
+		return item;
 	}
 	
 	private final String  qualifiableSortNames() throws RecognitionException, TokenStreamException {
@@ -1607,17 +1612,29 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		}
 	}
 	
-	private final void claimDefinition() throws RecognitionException, TokenStreamException {
+	private final ElementFactory.Item  claimDefinition() throws RecognitionException, TokenStreamException {
+		ElementFactory.Item claim;
 		
 		
+		claim = null;
 		String name = null;
+		String kind = null;
+		Token begin = null;
 		
 		
 		try {      // for error handling
-			claimKind();
+			kind=claimKind();
+			if ( inputState.guessing==0 ) {
+				begin = LT(0);
+			}
 			name=idName();
 			equals();
 			expression();
+			if ( inputState.guessing==0 ) {
+				claim = builder.createClaim(name, kind);
+				ParserUtil.setBounds(builder, claim, begin, LT(0));
+				
+			}
 		}
 		catch (RecognitionException ex) {
 			if (inputState.guessing==0) {
@@ -1628,6 +1645,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			  throw ex;
 			}
 		}
+		return claim;
 	}
 	
 	private final String[]  formalOpParameters() throws RecognitionException, TokenStreamException {
@@ -1797,7 +1815,11 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		}
 	}
 	
-	private final void claimKind() throws RecognitionException, TokenStreamException {
+	private final String  claimKind() throws RecognitionException, TokenStreamException {
+		String kind;
+		
+		
+		kind = null;
 		
 		
 		try {      // for error handling
@@ -1805,16 +1827,25 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case LITERAL_theorem:
 			{
 				match(LITERAL_theorem);
+				if ( inputState.guessing==0 ) {
+					kind = "theorem";
+				}
 				break;
 			}
 			case LITERAL_axiom:
 			{
 				match(LITERAL_axiom);
+				if ( inputState.guessing==0 ) {
+					kind = "axiom";
+				}
 				break;
 			}
 			case LITERAL_conjecture:
 			{
 				match(LITERAL_conjecture);
+				if ( inputState.guessing==0 ) {
+					kind = "conjecture";
+				}
 				break;
 			}
 			default:
@@ -1832,6 +1863,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			  throw ex;
 			}
 		}
+		return kind;
 	}
 	
 	private final String  booleanLiteral() throws RecognitionException, TokenStreamException {
