@@ -174,6 +174,15 @@ def translateLetToExpr(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
 %  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
   (b0++b1, jLetBody, k1, l1)
 
+def translateLetRet(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
+  let [(VarPat (v, _), letTerm)] = letBindings in
+  let (vId, vSrt) = v in
+  let (b0, k0, l0) = termToExpressionAsgNV(srtId(vSrt), vId, tcx, letTerm, k, l, spc) in
+  let (b1, k1, l1) = termToExpressionRet(tcx, letBody, k0, l0, spc) in
+%  let vInit = mkVarInit(vId, srtId(vSrt), jLetTerm) in
+  (b0++b1, k1, l1)
+
+
 def translateCaseToExpr(tcx, term, k, l, spc) =
   let caseType = termSort(term) in
   let caseTypeId = srtId(caseType) in
@@ -290,6 +299,7 @@ def termToExpressionRet(tcx, term, k, l, spc) =
   else
     case term of
       | IfThenElse _ -> translateIfThenElseRet(tcx, term, k, l, spc)
+      | Let _ -> translateLetRet(tcx,term,k,l,spc)
       | _ ->
         let (b, jE, newK, newL) = termToExpression(tcx, term, k, l, spc) in
 	let retStmt = Stmt (Return (Some (jE))) in
@@ -317,7 +327,7 @@ def translateCaseRet(tcx, term, k, l, spc) =
         let (caseTermBlock, k0, l0) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	(caseTermBlock, mkVarJavaExpr(tgt), k0, l0) in
    let (casesSwitches, finalK, finalL) = translateCaseCasesToSwitchesRet(tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
-   let switchStatement = Stmt (Switch (caseTermJExpr, casesSwitches)) in
+   let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
    (caseTermBlock++[switchStatement], finalK, finalL)
 
 
@@ -396,7 +406,7 @@ def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
         let (caseTermBlock, k0, l0) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	(caseTermBlock, mkVarJavaExpr(tgt), k0, l0) in
    let (casesSwitches, finalK, finalL) = translateCaseCasesToSwitchesAsgNV(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
-   let switchStatement = Stmt (Switch (caseTermJExpr, casesSwitches)) in
+   let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
    let declV = mkVarDecl(vId, vSrtId) in
    ([declV]++caseTermBlock++[switchStatement], finalK, finalL)
 
@@ -474,7 +484,7 @@ def translateCaseAsgV(vId, tcx, term, k, l, spc) =
         let (caseTermBlock, k0, l0) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	(caseTermBlock, mkVarJavaExpr(tgt), k0, l0) in
    let (casesSwitches, finalK, finalL) = translateCaseCasesToSwitchesAsgV(vId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
-   let switchStatement = Stmt (Switch (caseTermJExpr, casesSwitches)) in
+   let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
    (caseTermBlock++[switchStatement], finalK, finalL)
 
 
@@ -550,7 +560,7 @@ def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
         let (caseTermBlock, k0, l0) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	(caseTermBlock, mkVarJavaExpr(tgt), k0, l0) in
    let (casesSwitches, finalK, finalL) = translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseTypeId, caseTermJExpr, cases, k0, l0, l, spc) in
-   let switchStatement = Stmt (Switch (caseTermJExpr, casesSwitches)) in
+   let switchStatement = Stmt (Switch (mkFldAcc(caseTermJExpr,"tag"), casesSwitches)) in
    (caseTermBlock++[switchStatement], finalK, finalL)
 
 
