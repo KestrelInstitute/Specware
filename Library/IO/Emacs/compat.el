@@ -69,7 +69,7 @@
   (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
 				  (search "build" lisp-program))
 			      'allegro
-			    (if (search "dpccl" lisp-program)
+			    (if (search "dppccl" lisp-program)
 				'openmcl
 			      (if (search "sbcl" lisp-program)
 				  'sbcl				'sbcl
