@@ -41,15 +41,15 @@ variable, then it will appear twice is the list of URI's we generate.
   def getSpecPath =
     let strings =
       case getEnv "SWPATH" of
-        | Some str -> (splitStringAtChar #: str) ++ [getCurrentDirectory ()]
-        | _ ->
-      case getEnv "SPECPATH" of
-        | Some str -> (splitStringAtChar #: str) ++ [getCurrentDirectory ()]
-        | _ ->
-      case getEnv "SPECWARE4" of
-	| Some str -> ([str,getCurrentDirectory (),"/"])
+        | Some str ->
+	  (splitStringAtChar specPathSeparator str)
+	  ++ [getCurrentDirectory ()]
 	| _ -> [getCurrentDirectory (),"/"]
     in
       mapM pathToCanonicalURI strings
+
+ op specPathSeparator: Char
+ def specPathSeparator = (if msWindowsSystem? then #; else #:)
+
 }
 \end{spec}
