@@ -26,8 +26,11 @@
 				  #\. #\, #\;              ; dot, comma, semi
 				  ;; #\'                   ; apostrophe
 				  )
-   :ad-hoc-keywords             '("end-spec" "_" ".." "reduce") ; "using" "options" 
-   :ad-hoc-symbols              '("__" "reduce")                ; "using" "options" 
+   ;; Fri Apr  9 01:46:42 PDT 2004
+   ;; We are in the process of replacing "sort" with "type" as a keyword.
+
+   :ad-hoc-keywords             '("end-spec" "_" ".." "reduce" "expand" "type") ; "using" "options" 
+   :ad-hoc-symbols              '("__" "reduce" "expand" "type")                ; "using" "options" 
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"
