@@ -46,41 +46,6 @@
     (when parser4::*verbose?*
       (parser4::comment ,@body))))
 
-#+allegro 
-;;; The strategy below is perhaps misguided.
-;;; Keeping the old space large and new space small might be the best strategy, e.g.
-;;;  (setf (sys::gsgc-parameter :expansion-free-percent-new)  5) ; default is 35
-;;;  (setf (sys::gsgc-parameter :expansion-free-percent-old) 80) ; default is 35
-;;; At any rate, do this in the main build file, not down here.
-'(progn
-  ; (proclaim '(:explain :types :calls :boxing :variables))
-  (proclaim '(:explain :notypes :nocalls :noboxing :novariables))
-
-  ;; Increase initial freespace by factor of 16, to reduce frequency of GC's 
-  ;;  (setting it too large, e.g. another facto of 16,  tends to cause many page faults during gc's)
-  (setf (sys::gsgc-parameter :free-bytes-new-other) #x200000) ; default is #x20000
-
-  ;; The next three settings cause new/old space to grow more aggressively than
-  ;;  the defaults settings.
-  ;; This setting will tend to make free space grow more aggressively, since each scavange 
-  ;; must this percentage free to avoid expansion...
-  (setf (sys::gsgc-parameter :free-percent-new) 30) ; default is 25
-  ;;  These two indicate the per cent of new/old space that must be free 
-  ;; after gc to avoid expanding new/old space.
-  (setf (sys::gsgc-parameter :expansion-free-percent-new) 50) ; default is 35
-  (setf (sys::gsgc-parameter :expansion-free-percent-old) 50) ; default is 35
-)
-
-;;; Remove quote to enable gc messages...
-#+allegro
-'(progn
-  (setf (sys::gsgc-parameter :print)   t) ; default is nil
-  (setf (sys::gsgc-parameter :stats)   t) ; default is nil
-  (setf (sys::gsgc-parameter :verbose) nil) ; default is nil
-  )
-
-;(sys::resize-areas :new #x6000000) ; big! (hmm... too big...)
-
 (compile-and-load-local-file "comment-hack")
 (compile-and-load-local-file "parse-decls")
 
@@ -103,19 +68,4 @@
 
 (compile-and-load-local-file "describe-grammar")
 
-;(parser4::load-slang-parser "/usr/local/specware/parser/sw-ops") ; object, arrow, span, pullback, etc.
 
-;(gc)
-;(setf (sys::gsgc-parameter :generation-spread) 0) ; default is 4 -- this triggers immediate tenuring
-;(gc)
-;(gc)
-;(gc)
-;(gc)
-
-
-;; Making generation-spread larger avoids having temp structures being 
-;;  promoted into old space.  With this setting they need to survive 
-;; 20 gc's for that to happen.  (Legal range is 4-26)  Downside: they get
-;; copied back and forth more.
-#+allegro
-(setf (sys::gsgc-parameter :generation-spread) 12) ; default is 4
