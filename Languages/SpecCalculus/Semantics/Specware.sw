@@ -217,7 +217,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
     run (catch prog toplevelHandler) 
 \end{spec}
 
-\begin{spec}
+\begin{spec}  %%% show command
   op evaluatePrint_fromLisp : String -> Boolean
   def evaluatePrint_fromLisp path = 
     let prog = {
