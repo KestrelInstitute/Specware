@@ -8,14 +8,45 @@ SpecCalc qualifying spec {
 
   % sort Spec.Spec = ASpec Position
 
-  op oscarToC : Oscar.Spec -> Spec.Spec -> Option String -> Env CSpec
+  %% similar_specs? is used only to cache old work, so false negatives are ok, 
+  %% but undesirable 
+  %%
+  %% The specs in question differ just enough that Lisp::EQ and Lisp:EQUAL 
+  %% generate too many false negatives to be useful.
+  %%			  
+  %% specEqual? from Specware4/Languages/MetaSlang/Specs/Utilities.sw would be
+  %% the logical candidate definition, but it is commented out, and can't just
+  %% be uncommented, because it calls equalAQualifierMap?, which is declared in
+  %% Specware4/Languages/MetaSlang/Specs/QualifierMap, but is not defined in any
+  %% of the implementation files for QualifierMap 
+  %% (e.g. Specware4/Languages/MetaSlang/Specs/QualifierMapAsSTHashTable.sw)
+  %%
+  %% Moreover, equalAQualifierMap? has an inadequate signature that doesn't 
+  %% include an equality function to apply on elements (it uses generic =).
+  %%
+  %% All of that is fixable, but needs some thought, so for now similar_specs?
+  %% is just defined as LISP::EQUALP in Accord/Scripts/Lisp/process-files.lisp
+  %% This works well enough for now for Accord.
+
+   op similar_specs? : Spec.Spec * Spec.Spec -> Boolean  % See note above
+
   def oscarToC oscSpec base opt_name =
     let oscSpec = mapOscarSpec (fn(spc) -> (identifyIntSorts (subtractSpec spc base))) oscSpec in
     %let _ = writeLine("initial envSpec="^(printSpec (specOf oscSpec.modeSpec))) in
-    let missing = foldlSpecsOscarSpec (fn(spc,missing) ->
-				       let spc = transformSpecForCodeGen base spc in
-				       mergeSpecs(spc,missing)
-				      ) emptySpec oscSpec in
+    let (missing, cached_transforms) = 
+        foldlSpecsOscarSpec (fn (spc,(missing, cached_transforms)) ->
+			     %% Looking for cached results here and below reduces the
+			     %% expensive calls to transformSpecForCodeGen by about a
+			     %% factor of 10.
+			     if (exists (fn (old_spec, _) -> similar_specs? (spc, old_spec)) cached_transforms) then
+			       (missing, cached_transforms)
+			     else
+			       let transformed_spec = transformSpecForCodeGen base spc in
+			       (mergeSpecs(transformed_spec, missing), 
+				[(spc,transformed_spec)] ++ cached_transforms))
+	                    (emptySpec, [])
+			    oscSpec 
+    in
     %let _ = writeLine("missing from base: "^(printSpec missing)) in
     %let oscSpec = mapOscarSpec (fn(spc) -> transformSpecForCodeGen base spc) oscSpec in
     let cSpec = emptyCSpec("") in
@@ -23,11 +54,23 @@ SpecCalc qualifying spec {
     %let _ = writeLine("envSpec="^printSpec(envSpec)) in
     %let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
     %let cSpec = generateCSpecFromTransformedSpec envSpec in
+
+    let def transform_using_cache base spc =
+         %% Looking for cached results here and above reduces the
+         %% expensive calls to transformSpecForCodeGen by about a
+         %% factor of 10.   
+         case (find (fn (old_spec, _) -> similar_specs? (spc, old_spec)) cached_transforms) of
+	   | Some (_, new_spec) -> new_spec
+	   | _ -> 
+	     let _ = toScreen ("\n Huh? Spec should have been in tranforms cache. Transforming now.\n") in
+	     transformSpecForCodeGen base spc
+    in
     {
       %envSpec <- return (subtractSpec (specOf oscSpec.modeSpec) base);
       %print("envSpec="^(printSpec envSpec));
       %oscSpec <- return (mapOscarSpec (fn(spc) -> mergeSpecs(spc,envSpec)) oscSpec);
-      oscSpec <- return (mapOscarSpec (fn(spc) -> transformSpecForCodeGen base spc) oscSpec);
+      oscSpec <- return (mapOscarSpec (fn(spc) -> transform_using_cache  base spc)
+			 oscSpec);
       envSpec <- return (specOf oscSpec.modeSpec);
       %print("envSpec="^(printSpec envSpec));
       cSpec <- generateCSpecFromTransformedSpecEnv envSpec;
