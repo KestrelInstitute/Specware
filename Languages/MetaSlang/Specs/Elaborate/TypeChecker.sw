@@ -76,228 +76,110 @@ TypeChecker qualifying spec
     %% ---------- INITIALIZE SPEC (see ast-environment.sl) ----------
     %%   AstEnvironment.init adds default imports, etc.
     %%
-    let spec_1 = given_spec in
-    let env_1  = initialEnv (spec_1, filename) in
+    let initial_env  = initialEnv (given_spec, filename) in
     let {importInfo = importInfo as {imports = _, localOps, localSorts, localProperties},
-	 sorts      = sorts_1, 
-	 ops        = ops_1, 
-	 properties = props_1} 
-        = spec_1
+	 sorts      = given_sorts, 
+	 ops        = given_ops, 
+	 properties = given_props} 
+        = given_spec
     in
-
-    %% ======================================================================
-    %%                           PASS ONE  [ 1 => 2 ]
-    %% ======================================================================
-
-    %% ---------- ADD MAP FOR CONSTRUCTORS ----------
-    let env_2 = addConstrsEnv (env_1, spec_1) in
-
-    %% ---------- SORTS : PASS 1 ----------
     let
-      def elaborate_sort_1 info =
-	if someAliasIsLocal? (info.names, localSorts) then
-	  info << {dfn = map (fn def_1 -> checkSortScheme (env_2, def_1)) info.dfn}
-	else 
-	  info
-    in
-    let sorts_2 = mapSortInfos elaborate_sort_1 sorts_1 in
-    let env_2a  = setEnvSorts (env_2, sorts_2) in
 
-    %% ---------- OPS   : PASS 1 ----------
-    let 
-      def elaborate_op_1 poly? info = % fino (opinfo as (aliases, fixity, sort_scheme, defs)) =
-	if someAliasIsLocal? (info.names, localOps) then
-	  let sort_scheme_2 as (tvs, srt) = checkSortScheme (env_2a, info.typ) in
-	  info << {typ = sort_scheme_2,
-		   dfn = map (fn (_,term_1) ->
-			      let term_2 = (if poly? = (tvs ~= []) then
-					      elaborateTermTop (env_2a, term_1, srt)
-					    else 
-					      term_1)
-			      in
-				% TODO: Check that op sort is an instance of def sort
-				(tvs, term_2))
-		             info.dfn}
-	else
-	  info
-    in
-    %% Do polymorphic definitions first
-    let ops_2_a = mapOpInfos (elaborate_op_1 true)  ops_1   in
-    let ops_2_b = mapOpInfos (elaborate_op_1 false) ops_2_a in
-    let ops_2_c = mapOpInfos (elaborate_op_1 true)  ops_2_b in
-    let ops_2   = mapOpInfos (elaborate_op_1 false) ops_2_c in
+      def elaborate_local_sorts (sorts, env) =
+	mapSortInfos (fn info ->
+		      if someAliasIsLocal? (info.names, localSorts) then
+			info << {dfn = map (fn dfn -> checkSortScheme (env, dfn)) info.dfn}
+		      else 
+			info)
+	             sorts 
 
-    %% ---------- PROPERTIES : PASS 1. ---------- 
-    let
-      def elaborate_prop_1 (prop as (prop_type, name, tvs, fm)) =
-	if ~(member (name, localProperties)) then 
-	  prop
-	else
-	  let fm_2 = elaborateTermTop (env_2a, fm, type_bool) in
-	  (prop_type, name, tvs, fm_2)
-    in
-    let props_2 = map elaborate_prop_1 props_1 in
+      def elaborate_local_ops (ops, env, poly?) = 
+	mapOpInfos (fn info ->
+		    if someAliasIsLocal? (info.names, localOps) then
+		      let sig as (tvs, srt) = checkSortScheme (env, info.typ) in
+		      info << {typ = sig,
+			       dfn = map (fn (_,tm) ->
+					  let elaborated_tm = 
+					      if poly? = (tvs ~= []) then
+						elaborateTermTop (env, tm, srt)
+					      else 
+						tm
+					  in
+					    % TODO: Check that op sort is an instance of def sort
+					    (tvs, elaborated_tm))
+			                 info.dfn}
+		    else
+		      info)
+	           ops
 
-    %% ---------- SPEC AFTER PASS 1  ----------
-    %%  (don't need spec_2)
+      def elaborate_local_props (props, env) =
+	map (fn (prop as (prop_type, name, tvs, fm)) ->
+	     if member (name, localProperties) then 
+	       let elaborated_fm = elaborateTermTop (env, fm, type_bool) in
+	       (prop_type, name, tvs, elaborated_fm)
+	     else
+	       prop)
+	    props
+
+
+      def reelaborate_local_ops (ops, env) =
+	mapOpInfos (fn info ->
+		    if someAliasIsLocal? (info.names, localOps) then
+		      checkOp (info, env)
+		    else
+		      info)
+	           ops
+
+    in
+    %% ======================================================================
+    %%                           PASS ONE  
+    %% ======================================================================
+
+    %% Add constructors to environment
+    let env_with_constrs = addConstrsEnv (initial_env, given_spec) in
+
+    %% Elaborate sorts
+    let elaborated_sorts = elaborate_local_sorts (given_sorts, env_with_constrs) in
+    let env_with_elaborated_sorts = setEnvSorts (env_with_constrs, elaborated_sorts) in
+
+    %% Elaborate ops (do polymorphic definitions first)
+    let elaborated_ops_a = elaborate_local_ops (given_ops,        env_with_elaborated_sorts, true)  in
+    let elaborated_ops_b = elaborate_local_ops (elaborated_ops_a, env_with_elaborated_sorts, false) in
+    let elaborated_ops_c = elaborate_local_ops (elaborated_ops_b, env_with_elaborated_sorts, true)  in
+    let elaborated_ops   = elaborate_local_ops (elaborated_ops_c, env_with_elaborated_sorts, false) in
+
+    %% Elaborate properties
+    let elaborated_props = elaborate_local_props (given_props, env_with_elaborated_sorts) in
 
     %% ======================================================================
-    %%                           PASS TWO  [ 2 => 3 ]
+    %%                           PASS TWO  
     %% ======================================================================
 
     %% sjw: 7/17/01 Added a second pass so that order is not so important
-    let env_3 = secondPass env_2a in
+    let second_pass_env = secondPass env_with_elaborated_sorts in
 
-    %% ---------- SORTS : PASS 2 ---------- 
-    let
-      def elaborate_sort_2 info =
-	if someAliasIsLocal? (info.names, localSorts) then
-	  info << {dfn = map (fn def_2 -> checkSortScheme (env_3, def_2)) info.dfn}
-	else
-	  info
+    let final_sorts =   elaborate_local_sorts (elaborated_sorts, second_pass_env) in
+    let final_ops   = reelaborate_local_ops   (elaborated_ops,   second_pass_env) in
+    let final_props =   elaborate_local_props (elaborated_props, second_pass_env) in
+
+    let final_spec = {importInfo   = importInfo,   
+		      sorts        = final_sorts, 
+		      ops          = final_ops, 
+		      properties   = final_props}
     in
-    let sorts_3 = mapSortInfos elaborate_sort_2 sorts_2 in
+    %% We no longer check that all metaTyVars have been resolved,
+    %% because we don't need to know the type for _
 
-    %% ---------- OPS : PASS 2 ---------- 
-    let
-      def elaborate_op_2 info = % s (aliases, fixity, sort_scheme_2, defs_2)) =
-	if someAliasIsLocal? (info.names, localOps) then
-	  let (tvs_3, srt_3) = checkSortScheme (env_3, info.typ) in
-	  let all_different? = checkDifferent (tvs_3, StringSet.empty)  in
-	  let defs_3 =
-	      map (fn (tvs_2, term_2) ->
-		   let pos    = termAnn term_2 in
-		   let term_3 = elaborateTermTop (env_3, term_2, srt_3)  in
-		   %%  ---
-		   let tvs_used  =
-	               (let tv_cell = Ref [] : Ref TyVars in
-			let 
-                          def insert tv = 
-			    tv_cell := ListUtilities.insert (tv, ! tv_cell) 
-
-			  def record_tvs_used aSrt = 
-			    case aSrt of
-			      | MetaTyVar (mtv,     _) -> 
-				(let {name = _, uniqueId, link} = ! mtv in
-				 case link of
-				   | Some s -> record_tvs_used s
-				   | None   -> error (env_3, 
-						      "Incomplete type for op "^(printQualifiedId (primaryOpName info))
-						      ^":"^newline
-						      ^(printSort aSrt), 
-						      pos))
-			      | TyVar     (tv,      _) -> insert tv
-			      | Product   (fields,  _) -> app (fn (_, s)      -> record_tvs_used s) 
-				                              fields
-			      | CoProduct (fields,  _) -> app (fn (_, Some s) -> record_tvs_used s | _ -> ())
-							      fields
-			      | Subsort   (s, _,    _) -> record_tvs_used s
-			      | Quotient  (s, _,    _) -> record_tvs_used s
-			      | Arrow     (s1, s2,  _) -> (record_tvs_used s1; 
-							   record_tvs_used s2)
-			      | Base      (_, srts, _) -> app record_tvs_used srts
-			      | Boolean _ -> ()
-			in                        
-			  let _ = record_tvs_used srt_3 in
-			  ! tv_cell)
-		   in
-		   let tvs_3_b =
-		       if null tvs_3 then
-			 tvs_used % Function was polymorphic, but not declared so.
-		       else if length tvs_used = length tvs_3 then
-			 tvs_3 (* Probably correct ;-*)
-		       else 
-			 let scheme =  (tvs_3, srt_3)   in
-			 let scheme = printSortScheme (scheme) in
-			 (error (env_3, 
-				 "mismatch between bound and free variables "^scheme, 
-				 pos);
-			  tvs_3)
-		   in
-		     ((if all_different? then
-			 ()
-		       else 
-			 let scheme = (tvs_3_b, srt_3) in
-			 error(env_3, 
-			       "Repeated type variables contained in "^(printSortScheme scheme),
-			       pos));
-		      (tvs_3_b, term_3)))
-	          info.dfn
-	  in
-	  let tvs_4 =
-	      case defs_3 of
-		| (tvs_3_b,_)::_ -> (if length tvs_3_b > length tvs_3 then
-					  tvs_3_b 
-					else 
-					  tvs_3)
-		| _ -> tvs_3
-	  in
-	    info << {typ = (tvs_4, srt_3),
-		     dfn = defs_3}
-	else
-	  info
-    in
-    let ops_3 = mapOpInfos elaborate_op_2 ops_2 in
-
-    %% ---------- AXIOMS : PASS 2 ----------
-    let 
-
-      def elaborate_prop_2 (prop as (prop_type, name, tvs_2, fm_2)) =
-	if ~(member (name, localProperties)) then 
-	  prop
-	else
-	  let tvs_3 = tvs_2 in
-	  let fm_3 = elaborateTermTop (env_3, fm_2, type_bool) in
-
-	  %String.writeLine "Elaborating formula";
-	  %let context = initializeTvs() in
-	  %let term1 = termToMetaSlang context term in
-	  %let tvs1 = deleteTyVars context tvs in
-	  %let tvs  = map unlinkTyVars tvs in
-	  %let tvs2 = deleteTyVars context tvs in
-	  %let term3 = termToMetaSlang context term_3 in
-	  (%String.writeLine (MetaSlangPrint.printTermWithSorts term1);
-	   %app String.writeLine tvs1;
-	   %String.writeLine (MetaSlangPrint.printTermWithSorts term3);
-	   %app String.writeLine tvs2;
-
-	   (prop_type, name, tvs_3, fm_3))
-
-    in
-    let props_3 = map elaborate_prop_2 props_2 in
-
-    %% ---------- SPEC AFTER PASS 2 ----------
-    let spec_3 = {importInfo   = importInfo,   
-		  sorts        = sorts_3, 
-		  ops          = ops_3, 
-		  properties   = props_3}
-    in
-    %% Check that all metaTyVars have been resolved
-    %% This is too demanding because of _ where we don't need to know the type
-    %%    let _ = appSpec (fn _ -> (),
-    %%		     fn s ->
-    %%		     case s of
-    %%		       | MetaTyVar(tv,pos) ->
-    %%		         let {name=_,uniqueId=_,link} = ! tv in
-    %%			 (case link
-    %%			    of None -> (error(env_3, 
-    %%					      "Unresolved type variable "^printSort s,
-    %%					      pos);
-    %%					())
-    %%			     | _ -> ())
-    %%		       | _ -> (),
-    %%		     fn _ -> ())
-    %%              spec_3
-    %%    in
-    case checkErrors (env_3) of
-      | []   -> Spec (convertPosSpecToSpec spec_3)
+    case checkErrors second_pass_env of
+      | []   -> Spec (convertPosSpecToSpec final_spec)
       | msgs -> Errors msgs
 
   % ========================================================================
   %% ---- called inside SORTS : PASS 0  -----
   % ========================================================================
  
-  def checkSortScheme (env, (tvs, srt)) = 
+  def checkSortScheme (env, ss as (tvs, srt)) = 
+    let _ = verifyDistinctTyVars (env, ss) in
     (tvs, checkSort (env, srt))
 
   %% TODO: convert checkSort to work on sort scheme?
@@ -461,11 +343,6 @@ TypeChecker qualifying spec
   def resolveMetaTyVars trm =
     mapTerm (id,resolveMetaTyVar,id) trm
 
-  def elaborateTermTop (env, trm, term_sort) =
-    let trm = elaborateTerm(env, trm, term_sort) in
-    %% Resolve now rather than later to release space
-    resolveMetaTyVars trm
-
   %% elaborateTerm calls elaborateCheckSortForTerm, 
   %% which calls elaborateSortForTerm, 
   %% which calls unifySorts, 
@@ -501,6 +378,78 @@ TypeChecker qualifying spec
       | _    -> ambiguousCons (env, trm, id, srt, pos)
 
   op my_break : () -> ()
+
+ def collectUsedTyVars (srt, info, pos, env) =
+   let tv_cell = Ref [] : Ref TyVars in
+   let 
+   
+     def insert tv = 
+       tv_cell := ListUtilities.insert (tv, ! tv_cell) 
+
+     def scan srt = 
+       case srt of
+	 | TyVar     (tv,      _) -> insert tv
+	 | Product   (fields,  _) -> app (fn (_, s)      -> scan s)           fields
+	 | CoProduct (fields,  _) -> app (fn (_, Some s) -> scan s | _ -> ()) fields
+	 | Subsort   (s, _,    _) -> scan s
+	 | Quotient  (s, _,    _) -> scan s
+	 | Arrow     (s1, s2,  _) -> (scan s1; scan s2)
+	 | Base      (_, srts, _) -> app scan srts
+	 | Boolean              _ -> ()
+	 | MetaTyVar (mtv,     _) -> 
+	   (let {name = _, uniqueId, link} = ! mtv in
+	    case link of
+	      | Some s -> scan s
+	      | None   -> error (env, 
+				 "Incomplete type for op "^(printQualifiedId (primaryOpName info))
+				 ^":"^newline
+				 ^(printSort srt), 
+				 pos))
+
+   in                        
+     let _ = scan srt in
+     ! tv_cell
+
+
+ def checkOp (info, env) =
+   let sig as (sig_tvs, sig_srt) = checkSortScheme (env, info.typ) in
+     let elaborated_dfn =
+         map (fn (_, dfn_tm) ->
+	      let pos = termAnn dfn_tm in
+	      let elaborated_dfn_tm = elaborateTermTop (env, dfn_tm, sig_srt)  in
+	      %%  ---
+	      let tvs_used = collectUsedTyVars (sig_srt, info, pos, env) in
+	      let dfn_tvs =
+	          if null sig_tvs then
+		    tvs_used % Function was polymorphic, but not declared so.
+		  else if length tvs_used = length sig_tvs then
+		    sig_tvs (* Probably correct ;-*)
+		  else 
+		    let scheme =  (sig_tvs, sig_srt)   in
+		    let scheme = printSortScheme scheme in
+		    (error (env, 
+			    "mismatch between bound and free variables "^scheme, 
+			    pos);
+		     sig_tvs)
+	      in
+		(dfn_tvs, elaborated_dfn_tm))
+           info.dfn
+     in
+       let final_tvs =
+           case elaborated_dfn of
+	     | (dfn_tvs,_)::_ -> (if length dfn_tvs > length sig_tvs then
+				    dfn_tvs
+				  else 
+				    sig_tvs)
+	     | _ -> sig_tvs
+       in
+	 info << {typ = (final_tvs, sig_srt),
+		  dfn = elaborated_dfn}
+
+  def elaborateTermTop (env, trm, term_sort) =
+    let trm = elaborateTerm(env, trm, term_sort) in
+    %% Resolve now rather than later to release space
+    resolveMetaTyVars trm
 
   def elaborateTerm (env, trm, term_sort) =
     case trm of
@@ -1571,13 +1520,19 @@ TypeChecker qualifying spec
      
   %% ---- called inside OPS : PASS 2  -----
 
-  def checkDifferent (tvs : TyVars, setOfUniqueIds) =
-    case tvs of
-      | []      -> true
-      | id::tvs ->  
-        if StringSet.member(setOfUniqueIds, id) then
-          false
-        else 
-          checkDifferent (tvs, StringSet.add (setOfUniqueIds, id))
+  def verifyDistinctTyVars (env, ss as (tvs, srt)) =
+    let 
+      def aux (tvs, already_seen) =
+	case tvs of
+	  | []      -> ()
+	  | id::tvs ->  
+	    if StringSet.member (already_seen, id) then
+	      error (env, 
+		     "Repeated type variables contained in " ^ (printSortScheme ss),
+		     sortAnn srt)
+	    else 
+	      aux (tvs, StringSet.add (already_seen, id))
+    in 
+      aux (tvs, StringSet.empty)
 
 endspec
