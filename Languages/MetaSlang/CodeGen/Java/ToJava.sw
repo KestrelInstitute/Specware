@@ -147,7 +147,7 @@ def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
  * this op is responsible for adding the method that correspond to a given op to the right
  * classes.
  *)
-op addMethodFromOpToClsDeclsM: Id * Sort * List(Option Term) * Term -> JGenEnv ()
+op addMethodFromOpToClsDeclsM: Id * Sort * List(Option JGen.Term) * JGen.Term -> JGenEnv ()
 def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
   {
    spc <- getEnvSpec;
@@ -178,7 +178,7 @@ def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
      addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm)
   }
 
-op addStaticMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term * Id -> JGenEnv ()
+op addStaticMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term * Id -> JGenEnv ()
 def addStaticMethodToClsDeclsM(opId, srt, dom, dompreds, rng (*as Base (Qualified (q, rngId), _,  _)*), trm, classId) =
   {
    spc <- getEnvSpec;
@@ -211,7 +211,7 @@ def addStaticMethodToClsDeclsM(opId, srt, dom, dompreds, rng (*as Base (Qualifie
   addMethDeclToClsDeclsM(opId, classId, methodDecl)
  }
 
-op addPrimMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
+op addPrimMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term -> JGenEnv ()
 def addPrimMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   {
    primitiveClassName <- getPrimitiveClassName;
@@ -237,14 +237,14 @@ def mkAssertFromDomM dom =
       }
     | _ -> return []
 
-op mkPrimArgsMethodBodyM: Term -> JGenEnv Block
+op mkPrimArgsMethodBodyM: JGen.Term -> JGenEnv Block
 def mkPrimArgsMethodBodyM body =
   {
    (b,_,_) <- termToExpressionRetM(empty,body,1,1);
    return b
   }
 
-op addPrimArgsMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
+op addPrimArgsMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term -> JGenEnv ()
 def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
   {
    spc <- getEnvSpec;
@@ -279,7 +279,7 @@ def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
    addMethDeclToClsDeclsM(opId, classId, methodDecl)
   }
 
-op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
+op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option JGen.Term) * JGen.Type * JGen.Term -> JGenEnv ()
 def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   {
    spc <- getEnvSpec;
@@ -302,7 +302,7 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
      | _ -> raise(Fail("cannot find user type in arguments of op "^opId),termAnn(trm))
   }
 
-op addCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
+op addCaseMethodsToClsDeclsM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv ()
 def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
   {
    spc <- getEnvSpec;
@@ -339,7 +339,7 @@ def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
    addMethDeclToSummandsM(opId, srthId, methodDecl, body)
   }
   
-op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
+op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv ()
 def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
   {
    rngId <- srtIdM rng;
@@ -389,7 +389,7 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
  * case will be the body of the default method; otherwise the method is abstract.
  *)
 
-%op mkDefaultMethodForCaseM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv (Option MethDecl)
+%op mkDefaultMethodForCaseM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv (Option MethDecl)
 %def mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars,body) =
 %  {
 %   spc <- getEnvSpec;
@@ -398,7 +398,7 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
 %   return res
 %  }
 
-op mkDefaultMethodForCaseM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv (Option MethDecl)
+op mkDefaultMethodForCaseM: Id * List Type * List(Option JGen.Term) * Type * List Var * JGen.Term -> JGenEnv (Option MethDecl)
 def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
   {
@@ -419,7 +419,7 @@ def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,body) =
        }
   }
 
-op mkNonCaseMethodBodyM: Id * Term -> JGenEnv Block
+op mkNonCaseMethodBodyM: Id * JGen.Term -> JGenEnv Block
 def mkNonCaseMethodBodyM(vId, body) =
   let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
   let tcx = StringMap.insert(empty, vId, thisExpr) in
@@ -443,7 +443,7 @@ def unfoldToCoProduct(spc,srt) =
  * each sub-class get one method, except in the case where there is a "default" (wild- or var-pattern) 
  * case and the constructor is not mentioned as case in the case construct.
  *)
- op  addMethDeclToSummandsM: Id * Id * MethDecl * Term -> JGenEnv ()
+ op  addMethDeclToSummandsM: Id * Id * MethDecl * JGen.Term -> JGenEnv ()
  def addMethDeclToSummandsM (opId, srthId, methodDecl, body) =
    {
     spc <- getEnvSpec;
@@ -487,7 +487,7 @@ def addMissingSummandMethDeclToClsDeclsM(opId,srthId,consId,methodDecl) =
   let newMethDecl = appendMethodBody(methodDecl,body) in
   addMethDeclToClsDeclsM(opId,summandId,newMethDecl)
 
-op addSumMethDeclToClsDeclsM: Id * Id * Term * Pattern * Term * MethDecl -> JGenEnv ()
+op addSumMethDeclToClsDeclsM: Id * Id * JGen.Term * Pattern * JGen.Term * MethDecl -> JGenEnv ()
 def addSumMethDeclToClsDeclsM(opId, srthId, caseTerm, pat, body, methodDecl) =
   let
     def addMethodM(classid,vids,args) =
@@ -585,7 +585,7 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
       let domSrts = map (fn(srt) -> unfoldBase(spc,srt)) domSrts in
       let trm = case trm of
                   | Lambda((p,cond,body)::match,b) ->
-                    let vars:List(Option Term) =
+                    let vars:List(Option JGen.Term) =
 		               case p of
 		                 | VarPat((id,srt),b) -> [Some(Var((id,srt),b))]
 		                 | RecordPat(fields,b) -> foldl (fn((_,p),varterms) ->
