@@ -1,18 +1,18 @@
 spec
  import ../Specs/Environment
 
-  op unCurry: StandardSpec.Term * Nat -> Option ((List Id) * StandardSpec.Term)
+  op unCurry: MS.Term * Nat -> Option ((List Id) * MS.Term)
 
   op unCurrySort: Sort * Nat -> Sort
 
-  op mkUncurryEquality: Spec * Sort * QualifiedId * StandardSpec.Term -> StandardSpec.Term
+  op mkUncurryEquality: Spec * Sort * QualifiedId * MS.Term -> MS.Term
 
   def mkUncurryEquality(sp, srt, qid, trm) =
     let funOp = mkOp(qid, srt) in
       mkUncurryEqualityRec(sp, srt, trm, funOp, srt, trm, [])
 
-  op mkUncurryEqualityRec: Spec * Sort * StandardSpec.Term * StandardSpec.Term *
-                           Sort * StandardSpec.Term * List StandardSpec.Term -> StandardSpec.Term
+  op mkUncurryEqualityRec: Spec * Sort * MS.Term * MS.Term *
+                           Sort * MS.Term * List MS.Term -> MS.Term
 
   def mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, trm, prevArgs) =
     case srt of
@@ -40,9 +40,9 @@ spec
 	      | Lambda ([(pat, cond, body)],_) ->  mkEquality(topSrt, topFunOp, topTrm)
 	      | _ -> mkEquality(srt, mkAppl(topFunOp, prevArgs), trm))
       
-(*  op mkUncurryEqualityRec: Spec * Sort * StandardSpec.Term *
+(*  op mkUncurryEqualityRec: Spec * Sort * MS.Term *
                            Sort * QualifiedId * Pattern *
-			   Sort * StandardSpec.Term * Nat -> StandardSpec.Term
+			   Sort * MS.Term * Nat -> MS.Term
 
   def mkUncurryEqualityRec(sp, srt, trm, dom, qid, pat, rng, body, curryN) =
     let argNames = patternNames(pat) in
@@ -61,7 +61,7 @@ spec
       mkEquality(srt, funOp, trm)
 *)
 
-  op mkDefEquality: Sort * QualifiedId * StandardSpec.Term -> StandardSpec.Term
+  op mkDefEquality: Sort * QualifiedId * MS.Term -> MS.Term
 
   def mkDefEquality(srt, qid, trm) =
     mkEquality(srt, mkOp(qid, srt), trm)
@@ -105,7 +105,7 @@ spec
       of Some (dom,rng) -> 1 + curryShapeNum(sp,rng)
        | _ -> 0
 
-  op unLambdaDef: Spec * Sort * QualifiedId * StandardSpec.Term -> List StandardSpec.Term
+  op unLambdaDef: Spec * Sort * QualifiedId * MS.Term -> List MS.Term
 
   def unLambdaDef(spc, srt, name, term) =
     let new_equality = mkUncurryEquality(spc, srt, name, term) in
@@ -159,7 +159,7 @@ spec
 	       []
 	
 
-  op explicateHiddenAxioms: PosSpec -> Spec
+  op explicateHiddenAxioms: Spec -> Spec
   def explicateHiddenAxioms spc =
     let def axiomFromOpDef(qname,name,decl,defs) = defs ++ axiomFromOpDefTop(spc,qname,name,decl) in
     let norm_spc = spc in

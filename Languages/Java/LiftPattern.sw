@@ -5,7 +5,7 @@ import /Languages/MetaSlang/Specs/Environment
 import /Languages/SpecCalculus/Semantics/Environment
 import /Languages/SpecCalculus/Semantics/Evaluate/Spec
 
-sort Term = StandardSpec.Term
+sort Term = MS.Term
 sort Env a = SpecCalc.Env a
 
 sort Op = QualifiedId
@@ -228,7 +228,7 @@ def liftCaseRecord(oper, term as Record (fields,_), k) =
 def liftCaseIfThenElse(oper, term as IfThenElse(t1, t2, t3, _), k) =
   let args = [t1, t2, t3] in
   let ([newT1, newT2, newT3], newK, newOds) = liftCases(oper, args, k) in
-    (StandardSpec.mkIfThenElse(newT1, newT2, newT3), newK, newOds)
+    (MS.mkIfThenElse(newT1, newT2, newT3), newK, newOds)
 
 def liftCaseLet(oper, term as Let (letBindings, letBody, _), k) =
   case letBindings of

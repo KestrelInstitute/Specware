@@ -34,7 +34,7 @@ def renameVarIfThenElse(term as IfThenElse(t1, t2, t3, _), oldV, newV) =
   let newT1 = renameVar(t1, oldV, newV) in
   let newT2 = renameVar(t2, oldV, newV) in
   let newT3 = renameVar(t3, oldV, newV) in
-    StandardSpec.mkIfThenElse(newT1, newT2, newT3)
+    MS.mkIfThenElse(newT1, newT2, newT3)
 
 def renameVarCase(term, oldV, newV) =
   let caseTerm = caseTerm(term) in
@@ -117,7 +117,7 @@ def distinctVarRecord(term as Record (fields,_), ids) =
 def distinctVarIfThenElse(term as IfThenElse(t1, t2, t3, _), ids) =
   let args = [t1, t2, t3] in
   let ([newT1, newT2, newT3], newIds) = distinctVars(args, ids) in
-    (StandardSpec.mkIfThenElse(newT1, newT2, newT3), newIds)
+    (MS.mkIfThenElse(newT1, newT2, newT3), newIds)
 
 def distinctVarCase(term, ids) =
   let caseTerm = caseTerm(term) in

@@ -18,7 +18,7 @@ spec
 	       []
 	
 
-  op explicateHiddenAxioms: PosSpec -> Spec
+  op explicateHiddenAxioms: Spec -> Spec
   def explicateHiddenAxioms spc =
     let def axiomFromOpDef(qname,name,decl,defs) = defs ++ axiomFromOpDefTop(spc,qname,name,decl) in
     let norm_spc = spc in

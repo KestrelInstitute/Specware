@@ -1,12 +1,13 @@
-% derived from SW4/Languages/MetaSlang/ADT/Specs/PosSpec.sl, v1.5
-% derived from SW4/Languages/MetaSlang/ADT/Specs/PosSpecSig.sl v1.1.1.1
+This file is now deprecated.
+
+Use StandardSpec.
 
 PosSpec qualifying spec {
  import StandardSpec
  import Position
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
- import /Library/Legacy/DataStructures/StringMapSplay % for makeTyVarMap
+ % import /Library/Legacy/DataStructures/StringMapSplay % for makeTyVarMap
 
  %% -- See ../AbstractSyntax/AnnTerm.sl
  sort PTerm            = ATerm           Position
@@ -55,6 +56,7 @@ PosSpec qualifying spec {
 % op mkPBase : QualifiedId * List PSort -> PSort
 % def mkPBase (qid, srts) = Base (qid, srts, internalPosition)
 
+(* ### unused
  op boolPSort   : PSort
  op charPSort   : PSort
  op stringPSort : PSort
@@ -66,6 +68,7 @@ PosSpec qualifying spec {
  def stringPSort = mkBase (Qualified ("String",  "String"),  [])
  def natPSort    = mkBase (Qualified ("Nat",     "Nat"),     [])
  % def intPSort  = mkBase (Qualified ("Integer", "Integer"), [])
+*)
 
  % ------------------------------------------------------------------------
  %  Constructors of PSort's
@@ -106,13 +109,10 @@ PosSpec qualifying spec {
  %  Constructors of PTerm's
  % ------------------------------------------------------------------------
 
- op mkApplyN      : PTerm * PTerm                 -> PTerm
 % op mkTuple       : List PTerm                    -> PTerm
- op mkList        : List PTerm * Position * PSort -> PTerm
 
  % ------------------------------------------------------------------------
 
- def mkApplyN (t1, t2) : PTerm = ApplyN ([t1, t2],       internalPosition)
 % def mkTuple  terms    : PTerm = Record (tagTuple terms, internalPosition)
 
 % op tagTuple  : fa(A) List A -> List (Id * A)
@@ -125,43 +125,13 @@ PosSpec qualifying spec {
 
 % % ------------------------------------------------------------------------
 
- def mkList (terms : List PTerm, pos, element_type) = 
-  let list_type  = Base (Qualified ("List", "List"),                                [element_type], pos) in
-  let cons_type  = Arrow (Product   ([("1", element_type), ("2", list_type)], pos),  list_type,      pos) in
-  let consFun    = Fun   (Embed     ("Cons", true),                                  cons_type,      pos) in
-  let empty_list = Fun   (Embed     ("Nil",  false),                                 list_type,      pos) in
-  let def mkCons (x, xs) = ApplyN ([consFun, Record( [("1",x), ("2",xs)], pos)], pos) in
-  List.foldr mkCons empty_list terms
-
- % def mkOneName  (x,    fixity, srt) = Fun (OneName  (x,    fixity), srt, internalPosition)
- % def mkTwoNames (x, y, fixity, srt) = Fun (TwoNames (x, y, fixity), srt, internalPosition)
-
- % ------------------------------------------------------------------------
- %  Recursive constructors of PPattern's
- % ------------------------------------------------------------------------
-
- op mkListPattern : List PPattern       * Position * PSort -> PPattern
- op mkConsPattern : PPattern * PPattern * Position * PSort -> PPattern
-
- def mkListPattern (patterns : List PPattern, pos, element_type) : PPattern = 
-  let list_type  = Base (Qualified("List","List"),  [element_type], pos) in
-  let empty_list = EmbedPat ("Nil",  None,  list_type, pos) in
-  let def mkCons (x, xs) = 
-       EmbedPat ("Cons", Some (RecordPat ([("1",x), ("2",xs)], pos)), list_type, pos) in
-  List.foldr mkCons empty_list patterns
-
- def mkConsPattern (p1 : PPattern, p2 : PPattern, pos, element_type) : PPattern =
-  let list_type  = Base (Qualified("List","List"), [element_type], pos) in
-  EmbedPat ("Cons", Some (RecordPat ([("1",p1), ("2",p2)], pos)), list_type, pos)
-
 % % ------------------------------------------------------------------------
 % %   ???
 % % ------------------------------------------------------------------------
 
 % op insertDefaultMatches : PosSpec -> PosSpec
 
- op abstractSort : (String -> TyVar) * List String * PSort -> TyVars * PSort
- op abstractTerm : (String -> TyVar) * List String * PTerm -> TyVars * PTerm
+(* ### unused
 
  op removeDefinitions : PosSpec -> PosSpec
  op exportSpec        : PosSpec -> PosSpec
@@ -210,10 +180,12 @@ PosSpec qualifying spec {
         | _::rules ->  loop rules
   in
     loop match
+*)
 
  % ------------------------------------------------------------------------
  %   Construct or extend a PosSpec
  % ------------------------------------------------------------------------
+(* ### unused
 
  % sort PropertyName = String
  sort SpecName     = String
@@ -288,7 +260,9 @@ PosSpec qualifying spec {
   in
   let sp = setOps (old_spec, new_ops) in
   foldl (fn (name, sp) -> addLocalOpName (sp, name)) sp names
+*)
 
+(* ### unused
  % ------------------------------------------------------------------------
 
  def removeDefinitions old_spec : PosSpec =
@@ -303,69 +277,13 @@ PosSpec qualifying spec {
      properties       = emptyAProperties}
 
  % ------------------------------------------------------------------------
+*)
 
- sort MetaTyVarsContext = {map     : Ref (NatMap.Map String),
-                           counter : Ref Nat}
-
- def initializeMetaTyVars() : MetaTyVarsContext = 
-   { map = (Ref NatMap.empty), counter = (Ref 0)}
-
- def findTyVar (context : MetaTyVarsContext, uniqueId) : TyVar = 
-    let mp = ! context.map in
-    case NatMap.find(mp,uniqueId) of
-       | Some name -> name
-       | None -> 
-         let number    = ! context.counter   in
-         let increment = number Nat.div 5           in
-         let parity    = number Nat.rem 5           in
-         let prefix = 
-             (case parity 
-                of 0 -> "a" | 1 -> "b" | 2 -> "c" | 3 -> "d" | 4 -> "e")
-         in
-         let suffix = if increment = 0 then "" else Nat.toString increment in
-         let name = prefix ^ suffix in name
-         
- %%
- %% It is important that the order of the type variables is preserved
- %% as this function is used to abstract sort in recursive sort defintions.
- %% For example, if 
- %% sort ListPair(a,b) = | Nil | Cons a * b * ListPair(a,b)
- %% is defined, then abstractSort is used to return the pair:
- %% ( (a,b), | Nil | Cons a * b * ListPair(a,b) )
- %%
-
- op makeTyVarMap: (String -> TyVar) * List String
-                 -> StringMap.Map String * (PSort -> PSort)
- def makeTyVarMap (fresh, tyVars) = 
-  let def insert (tv, map) = StringMap.insert (map, tv, fresh tv) in
-  let m = List.foldr insert StringMap.empty tyVars in
-  let doSort = 
-      fn (srt as (Base (Qualified (_, s), [], pos)) : PSort) -> 
-         (case StringMap.find (m, s) of
-           | Some tyVar -> (TyVar (tyVar, pos)) : PSort
-           | None -> srt) 
-       | s -> s
-  in
-    (m, doSort)
-
- def mapImage (m, vars) = 
-     List.map (fn d -> case StringMap.find (m, d) of Some v -> v) vars
-
- def abstractSort (fresh, tyVars, srt) = 
-  if null tyVars then ([], srt) else
-  let (m, doSort) = makeTyVarMap (fresh, tyVars) in
-  let srt = mapSort (fn M -> M, doSort, fn p -> p) srt in
-  (mapImage (m, tyVars), srt)
-
- def abstractTerm (fresh, tyVars, trm) = 
-  let (m, doSort) = makeTyVarMap (fresh, tyVars) in
-  let trm = mapTerm (fn M -> M, doSort, fn p -> p) trm in
-  (mapImage (m, tyVars), trm)
-
-
+(* ### unused
   %% Replace locally defined declarations by imported ones, such that
   %% when looking up the name from a different spec these declarations
   %% appear as external.
+
 
  def exportSpec (spc : PosSpec) = spc
  (* TODO: Fix this?
@@ -393,4 +311,5 @@ PosSpec qualifying spec {
   ApplyN ([mkOp (Qualified ("BuiltIn", "Fail"), srt1),
            mkString msg],
           internalPosition)
+*)
 }

@@ -1,23 +1,27 @@
-% Synchronized with version 1.3 of SW4/Languages/MetaSlang/TypeChecker/SpecToPosSpec.sl
-
 SpecToPosSpec qualifying spec {
  %%  convert standard terms to pos terms
 
  import ../StandardSpec
- import ../PosSpec
+ % import ../PosSpec
 
- op convertSpecToPosSpec       : Spec      -> PosSpec
- op convertSortInfoToPSortInfo : SortInfo  -> PSortInfo
- op convertOpInfoToPOpInfo     : OpInfo    -> POpInfo
-
- op convertTermToPTerm         : Term      -> PTerm
- op convertVarToPVar           : Var       -> PVar
- op convertVarsToPVars         : List Var  -> List PVar
- op convertPatternToPPattern   : Pattern   -> PPattern
- op convertSortToPSort         : Sort      -> PSort
- op convertFunToPFun           : Fun       -> PFun
-
+ op convertSpecToPosSpec       : Spec      -> Spec
  def convertSpecToPosSpec spc = spc
+
+(* ### unused
+ op convertSortInfoToPSortInfo : SortInfo  -> MS.SortInfo
+ op convertOpInfoToPOpInfo     : OpInfo    -> MS.OpInfo
+
+ op convertTermToPTerm         : MS.Term      -> MS.Term
+ op convertVarToPVar           : Var       -> MS.Var
+ op convertVarsToPVars         : List Var  -> List MS.Var
+ op convertPatternToPPattern   : Pattern   -> MS.Pattern
+ op convertSortToPSort         : Sort      -> MS.Sort
+ op convertFunToPFun           : Fun       -> MS.Fun
+*)
+
+(* ### unused
+ * Remainder of the file is not longer used
+
  %% Half-baked conversion from StandardSpec to PosSpec
 % def convertSpecToPosSpec {importInfo, sorts, ops, properties = _} =
 %  {importInfo   = importInfo,
@@ -170,4 +174,5 @@ def convertOpInfoToPOpInfo info = info
    | Relax                 -> Relax
    | OneName  x            -> OneName  x
    | TwoNames x            -> TwoNames x
+*)
 }

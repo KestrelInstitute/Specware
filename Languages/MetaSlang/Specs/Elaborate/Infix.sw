@@ -3,19 +3,13 @@
 (* Resolve infixe operators     *)
 
 Infix qualifying spec {
- import ../PosSpec
+ import ../StandardSpec
  import ../Printer % for error messages
 
- % def printTerm term = MetaSlangPrint4.printTerm(deleteTerm term)
+ sort FixatedTerm = | Infix   MS.Term *  (Associativity * Precedence)
+                     | Nonfix  MS.Term
 
- %% ========================================================================
-
- sort FixatedPTerm = | Infix   PTerm *  (Associativity * Precedence)
-                     | Nonfix  PTerm
-
- %% ========================================================================
-
- op resolveInfixes : (PTerm -> FixatedPTerm) * Position * List(PTerm) -> PTerm
+ op resolveInfixes : (MS.Term -> FixatedTerm) * Position * List(MS.Term) -> MS.Term
 
  %    fun printTagged(Nonfix t) = TextIO.print("Nonfix "^AstPrint4.printTerm t^"\n")
  %      | printTagged(Infix(t,(assoc,p))) = 
@@ -23,8 +17,6 @@ Infix qualifying spec {
  %                     AstPrint4.printTerm t^" "^
  %                     (case assoc of Left => "left " | Right => "right ")^
  %                     Int.toString p^"\n")
-
- %% ========================================================================
 
  (* 
   This scans a list of terms and reparses it according to 
@@ -46,7 +38,7 @@ let
       let tagged = map tagTermWithInfixInfo terms in
       let tagged = applyPrefixes tagged in
       let 
-        def scan (delta0,terms) : List FixatedPTerm = 
+        def scan (delta0,terms) : List FixatedTerm = 
           (case terms of
                | [Nonfix(t1)] -> [Nonfix(t1)]
                | [Infix(t,_)] -> [Nonfix(t)]

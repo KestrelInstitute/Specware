@@ -20,7 +20,7 @@ SpecCalc qualifying spec {
     let ppImports =
       let {imports,importedSpec,localOps,localSorts} = importInfo in
       let ppNames =
-        map (fn (spcRef,spc) -> ppString ("import " ^ spcRef)) imports in
+        map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) imports in
       ppSep ppNewline ppNames in
 
     % this assume that a name used to index into the sort map also appears
@@ -54,7 +54,7 @@ SpecCalc qualifying spec {
     let {imports,importedSpec,localOps,localSorts} = importInfo in
     let ppImports =
       let ppNames =
-        map (fn (spcRef,spc) -> ppString ("import " ^ spcRef)) imports in
+        map (fn (specCalcTerm,spc) -> ppString ("import " ^ (showTerm specCalcTerm))) imports in
       ppSep ppNewline ppNames in
 
     % this assume that a name used to index into the sort map also appears

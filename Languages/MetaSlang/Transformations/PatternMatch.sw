@@ -71,7 +71,7 @@ PatternMatch qualifying spec {
   def match_type(srt) = mkBase(Qualified("TranslationBuiltIn","Match"),[srt])
 
   def mkBreak(srt) = mkOp(Qualified("TranslationBuiltIn","mkBreak"),match_type srt)
-  def isBreak(term:Term) = 
+  def isBreak(term:MS.Term) = 
       case term
 	of Fun(Op(Qualified("TranslationBuiltIn","mkBreak"),_),_,_) -> true
          | _ -> false
@@ -86,7 +86,7 @@ PatternMatch qualifying spec {
 	   true
 	 | _ -> false
 
-  def isTrue(term:Term) = 
+  def isTrue(term:MS.Term) = 
       case term
 	of Fun(Bool true,_,_) -> true
 	 | _ -> false
@@ -109,7 +109,7 @@ PatternMatch qualifying spec {
    
  *)
 
-  op failWith : Context -> Term -> Term -> Term
+  op failWith : Context -> MS.Term -> MS.Term -> MS.Term
   def failWith context t1 t2 = 
       (if isBreak(t2) then t1 else
       if isSuccess(t1) then (warnUnreachable context; t1) else
@@ -126,25 +126,25 @@ PatternMatch qualifying spec {
 		   of Some t -> printTerm t
 		    | _ -> ""))
   
-  sort Rule  = List(Pattern) * Term * Term
+  sort Rule  = List(Pattern) * MS.Term * MS.Term
   sort Rules = List Rule
   
 
   sort Context = {counter : Ref Nat,
 		  spc     : Spec,
 		  funName : String,
-		  term    : Option Term}
+		  term    : Option MS.Term}
 
   def storeTerm(tm,{counter, spc, funName, term}) =
     {counter=counter, spc=spc, funName=funName, term=Some tm}
 
-%  op mkProjectTerm : Spec * Id * Term -> Term
+%  op mkProjectTerm : Spec * Id * MS.Term -> MS.Term
 %  def mkProjectTerm = SpecEnvironment.mkProjectTerm
-%  op mkRestrict :    Spec * {pred:Term,term: Term} -> Term
+%  op mkRestrict :    Spec * {pred:MS.Term,term: MS.Term} -> MS.Term
 %  def mkRestrict = SpecEnvironment.mkRestrict
   
 
-  op match :  Context * List(Term) * Rules * Term * Term -> Term
+  op match :  Context * List(MS.Term) * Rules * MS.Term * MS.Term -> MS.Term
 
   (* The following invariant holds of the patterns:
      - for a call to match(vars,rules,default):
@@ -284,14 +284,14 @@ PatternMatch qualifying spec {
 
   def relaxed(predicate) term = mkApply(predicate,term)
  
-  def equalToConstant(srt,constantTerm:Term) term =
+  def equalToConstant(srt,constantTerm:MS.Term) term =
       mkEquality(srt,constantTerm,term)
 
 
-  def mkLet(lets:List(Pattern*Term),term) = 
+  def mkLet(lets:List(Pattern*MS.Term),term) = 
       case lets
-        of [] -> term : Term
-         | _  -> StandardSpec.mkLet(lets,term)
+        of [] -> term : MS.Term
+         | _  -> MS.mkLet(lets,term)
         	
   op partition : fa(A,B) (A -> B) -> List(A) -> List(List(A))
   op tack : fa(A) A -> List(List(A)) -> List(List(A))
@@ -309,7 +309,7 @@ PatternMatch qualifying spec {
 
   sort RuleType = 
      | Var | Con | Alias  Pattern * Pattern
-     | Relax  Pattern * Term | Quotient  Pattern * Term
+     | Relax  Pattern * MS.Term | Quotient  Pattern * MS.Term
 
   def ruleType (q:Rule) : RuleType = 
       case q
@@ -375,8 +375,8 @@ PatternMatch qualifying spec {
 		   constructor CONSTR.
 		
  *)
-  sort DestructedRule = Term * List(Term) * List(Pattern * Term) * Pattern * Rules
-  op partitionConstructors : Context * Term * Rules -> List(DestructedRule)
+  sort DestructedRule = MS.Term * List(MS.Term) * List(Pattern * MS.Term) * Pattern * Rules
+  op partitionConstructors : Context * MS.Term * Rules -> List(DestructedRule)
 
   op freshVar : Context * Sort -> Var
 
@@ -403,7 +403,7 @@ PatternMatch qualifying spec {
    *  of the pattern 
    *)
 
-  def queryPat(pattern:Pattern): Term -> Term = 
+  def queryPat(pattern:Pattern): MS.Term -> MS.Term = 
       case pattern
         of EmbedPat(e,_,_,_) -> embedded(e)
 	 | NatPat(n,_)    ->    equalToConstant(natSort,mkNat(n))
@@ -423,7 +423,7 @@ PatternMatch qualifying spec {
 
   def partitionConstructors(context,t,rules) =
       let
-	  def patDecompose(pattern: Pattern):List(Pattern*Term) = 
+	  def patDecompose(pattern: Pattern):List(Pattern*MS.Term) = 
 	      case pattern
 	        of RecordPat(pats,_) -> 
 		   map (fn(index,p)-> (p,mkProjectTerm(context.spc,index,t))) pats
@@ -475,7 +475,7 @@ PatternMatch qualifying spec {
 	       
   
   
-  def abstract(vs:List(String * Var),t:Term,srt):Term = 
+  def abstract(vs:List(String * Var),t:MS.Term,srt):MS.Term = 
       let srt = mkArrow(match_type(srt),srt) in
       let oper = mkOp(Qualified("TranslationBuiltIn","block"),srt) in
       let t  = mkApply(oper,t) in
@@ -605,7 +605,7 @@ def zipFields(fields,terms) =
        | ((_,pat)::fields,(_,t)::terms) -> cons((pat,t),zipFields(fields,terms))
        | _ -> System.fail "zipFields: Uneven length of fields"
 
-def flattenLetDecl((pat:Pattern,term:Term),(context,decls)) =
+def flattenLetDecl((pat:Pattern,term:MS.Term),(context,decls)) =
     case (pat,term)
       of (WildPat(srt,_),Var _) -> (context,decls)
        | (WildPat(srt,_),Record([],_)) -> (context,decls)
@@ -623,7 +623,7 @@ def flattenLetDecl((pat:Pattern,term:Term),(context,decls)) =
        | _ -> (context,cons((pat,term),decls))
 
 op  eliminatePattern: Context -> Pattern -> Pattern 
-op  eliminateTerm   : Context -> Term -> Term
+op  eliminateTerm   : Context -> MS.Term -> MS.Term
 op  eliminateSort   : Context -> Sort -> Sort
 
 %def elimPattern x = x % dummy implementation
@@ -689,7 +689,7 @@ def makeDefault(context:Context,srt,rules,vs,term) =
 	       | [(WildPat _,Fun(Bool true,_,_),body)] ->
 		 (rev firstRules,mkSuccess(srt,body))
 	       | [(VarPat(v,_),Fun(Bool true,_,_),body)] ->
-		let term: Term = 
+		let term: MS.Term = 
 		    case vs
 		      of [(_,v)] -> Var(v,noPos)
 		       | _ -> Record(map (fn(l,v)-> (l,mkVar v)) vs,noPos) 
@@ -890,7 +890,7 @@ def eliminateTerm context term =
 % pattern matching compilation
 % because that flattens the record patterns.
 
- def arityRaising(term:Term):Term = 
+ def arityRaising(term:MS.Term):MS.Term = 
      case term
        of (Lambda 
 	   [((VarPat(v1,_),pos0),(Fun(Bool true,_),_),
@@ -898,7 +898,7 @@ def eliminateTerm context term =
 	  if (v1 = v2) &  
 	     all (fn(_,(VarPat v3,_))-> ~(v1 = v3) | _ -> false) fields
 	  then 
-	  let letTerm:Term = mkRecord(map (fn(id,(VarPat v,p))-> (id,(Var v,p))) fields) in
+	  let letTerm:MS.Term = mkRecord(map (fn(id,(VarPat v,p))-> (id,(Var v,p))) fields) in
 	  (Lambda [(pat,mkTrue(),Match.mkLet([(mkVarPat v1,letTerm)],body))],pos0)
 	  else term
 	| _ -> term

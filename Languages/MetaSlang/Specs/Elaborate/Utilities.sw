@@ -11,48 +11,48 @@ spec {
  sort Environment = StringMap Spec
  sort LocalEnv = 
       {importMap  : Environment,
-       internal   : PosSpec,
+       internal   : Spec,
        errors     : Ref(List (String * Position)),
       %specName   : String,
-       vars       : StringMap PSort,
+       vars       : StringMap MS.Sort,
        firstPass? : Boolean,
-       constrs    : StringMap (List PSortScheme),
+       constrs    : StringMap (List SortScheme),
        file       : String}
  
- op initialEnv     : (* SpecRef * *) PosSpec * String -> LocalEnv
- op addConstrsEnv  : LocalEnv * PosSpec -> LocalEnv
+ op initialEnv     : (* SpecRef * *) Spec * String -> LocalEnv
+ op addConstrsEnv  : LocalEnv * Spec -> LocalEnv
 
- op addVariable    : LocalEnv * String * PSort -> LocalEnv
+ op addVariable    : LocalEnv * String * MS.Sort -> LocalEnv
  op secondPass     : LocalEnv                  -> LocalEnv
- op unfoldPSort    : LocalEnv * PSort          -> PSort
- op findVarOrOps   : LocalEnv * Id * Position  -> List PTerm
+ op unfoldSort    : LocalEnv * MS.Sort          -> MS.Sort
+ op findVarOrOps   : LocalEnv * Id * Position  -> List MS.Term
 
  op error          : LocalEnv * String * Position -> ()
 
  (* Auxiliary functions: *)
 
  % Generate a fresh type variable at a given position.
- op freshMetaTyVar : Position -> PSort
+ op freshMetaTyVar : Position -> MS.Sort
  def counter = (Ref 0) : Ref Nat
  def freshMetaTyVar pos = 
    (counter := 1 + (! counter);
     MetaTyVar (Ref {link = None,uniqueId = ! counter,name = "#fresh"}, pos))
  def initializeMetaTyVar() = counter := 0
 
- op copySort : PSortScheme -> PMetaSortScheme
+ op copySort : SortScheme -> MetaSortScheme
 
- op  unlinkPSort : PSort -> PSort
+ op  unlinkSort : MS.Sort -> MS.Sort
  %% sjw: Dereferences the link recursively
- def unlinkPSort srt = 
+ def unlinkSort srt = 
   case srt of
    | MetaTyVar (tv, _) -> 
      (case ! tv of
-       | {link = Some srt, name, uniqueId} -> unlinkPSort srt
+       | {link = Some srt, name, uniqueId} -> unlinkSort srt
        | _ -> srt)
    | _ -> srt 
 
  %% sjw: unused?
- def unlinkMetaTyVar (tv : PMetaTyVar) = 
+ def unlinkMetaTyVar (tv : MS.MetaTyVar) = 
    case ! tv
      of {link = Some (MetaTyVar (tw, _)), name, uniqueId} -> unlinkMetaTyVar tw
       | _ -> tv
@@ -64,20 +64,20 @@ spec {
      let mtvar_position = Internal "copySort" in
      let tyVarMap = List.map (fn tv -> (tv, freshMetaTyVar mtvar_position)) tyVars in
      let
-        def mapTyVar (tv, tvs, pos) : PSort = 
+        def mapTyVar (tv, tvs, pos) : MS.Sort = 
             case tvs
               of [] -> TyVar(tv,pos)
                | (tv1,s)::tvs -> 
                  if tv = tv1 then s else mapTyVar (tv, tvs, pos)
      in
      let
-        def cp (srt : PSort) = 
+        def cp (srt : MS.Sort) = 
             case srt
               of TyVar (tv, pos) -> mapTyVar (tv, tyVarMap, pos)
                | srt -> srt
      in
      let srt = mapSort (fn x -> x, cp, fn x -> x) srt                              in
-     let metaTyVars = List.map (fn(_, (MetaTyVar (y,_)) : PSort) -> y) tyVarMap in
+     let metaTyVars = List.map (fn(_, (MetaTyVar (y,_)) : MS.Sort) -> y) tyVarMap in
      (metaTyVars,srt)
 
 
@@ -119,7 +119,7 @@ spec {
 	      sorts        = sorts,
 	      ops          = ops,
 	      properties   = properties
-	     } : PosSpec
+	     } : Spec
    in
    let env = {importMap  = StringMap.empty, % importMap,
              %specName   = spec_name,
@@ -133,7 +133,7 @@ spec {
    in
    env
 
- def sameCPSort? (s1: PSort, s2: PSort): Boolean =
+ def sameCPSort? (s1: MS.Sort, s2: MS.Sort): Boolean =
    case (s1,s2) of
     | (CoProduct(row1,_), CoProduct(row2,_)) ->
       length row1 = length row2
@@ -155,9 +155,9 @@ spec {
     file       = file}
 
  %% Computes a map from constructor names to set of sorts for them
- def computeConstrMap (spc) : StringMap (List PSortScheme) =
+ def computeConstrMap (spc) : StringMap (List SortScheme) =
   let sorts = spc.sorts in
-   let constrMap : Ref (StringMap (List PSortScheme)) = Ref StringMap.empty 
+   let constrMap : Ref (StringMap (List SortScheme)) = Ref StringMap.empty 
    in
    let def addConstr (id, tvs, cp_srt, constrMap) =
          let cMap = ! constrMap in
@@ -170,7 +170,7 @@ spec {
 						  cons((tvs,cp_srt),srt_prs))
    in
    let def addSort (tvs, srt, constrMap) =
-        case srt : PSort of
+        case srt : MS.Sort of
 	 | CoProduct (row, _) ->
 	   app (fn (id,_) -> addConstr (id, tvs, srt, constrMap)) row
 	 %% | Base (Qualified (qid, id), _, _) ->
@@ -287,10 +287,10 @@ spec {
    | result -> result
 
  %% sjw: Replace base srt by its instantiated definition
- def unfoldPSort (env,srt) = unfoldPSortRec(env, srt, SplaySet.empty compareQId)
+ def unfoldSort (env,srt) = unfoldSortRec(env, srt, SplaySet.empty compareQId)
 
- def unfoldPSortRec (env, srt, qids) : PSort = 
-   let unlinked_sort = unlinkPSort srt in
+ def unfoldSortRec (env, srt, qids) : MS.Sort = 
+   let unlinked_sort = unlinkSort srt in
    case unlinked_sort of
     | Base (qid, ts, pos) -> 
       if SplaySet.member (qids, qid) then
@@ -324,7 +324,7 @@ spec {
 		  | Some (type_vars, srt as (Base (_,_,pos))) ->
 		    %% A base sort can be defined in terms of another base sort.
    		    %% So we unfold recursively here.
-		    unfoldPSortRec(env,
+		    unfoldSortRec(env,
 				   instantiateScheme (env, pos, ts, type_vars, srt),
 				   %% Watch for self-references, even via aliases: 
 				   foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
@@ -341,14 +341,14 @@ spec {
  %% sjw: Returns srt with all  sort variables dereferenced
  def unlinkRec(srt) = 
    mapSort (fn x -> x, 
-            fn s -> unlinkPSort s,
+            fn s -> unlinkSort s,
             fn x -> x)
            srt
     
  %% findTheFoo2 is just a variant of findTheFoo, 
  %%  but taking Qualifier * Id instead of QualifiedId
- op findTheSort2 : LocalEnv * Qualifier * Id -> Option PSortInfo
- op findTheOp2   : LocalEnv * Qualifier * Id -> Option POpInfo
+ op findTheSort2 : LocalEnv * Qualifier * Id -> Option SortInfo
+ op findTheOp2   : LocalEnv * Qualifier * Id -> Option OpInfo
 
  def findTheSort2 (env, qualifier, id) =
   %% We're looking for precisely one sort,
@@ -401,11 +401,11 @@ spec {
       new_srt)
 
 
- sort Unification = | NotUnify  PSort * PSort 
-                    | Unify List(PSort * PSort)
+ sort Unification = | NotUnify  MS.Sort * MS.Sort 
+                    | Unify List(MS.Sort * MS.Sort)
 
- op  unifyL : fa(a) PSort * PSort * List(a) * List(a) * List(PSort * PSort) *         
-                    (a * a *  List(PSort * PSort) -> Unification) 
+ op  unifyL : fa(a) MS.Sort * MS.Sort * List(a) * List(a) * List(MS.Sort * MS.Sort) *         
+                    (a * a *  List(MS.Sort * MS.Sort) -> Unification) 
                     ->
                         Unification
  def unifyL(srt1,srt2,l1,l2,pairs,unify):Unification = 
@@ -457,7 +457,7 @@ spec {
                   if id1 = id2 then
                     (case (s1,s2) of
                         | (None,None) -> Unify pairs 
-                        | ((Some s1): (Option PSort),(Some s2) : (Option PSort)) ->
+                        | ((Some s1): (Option MS.Sort),(Some s2) : (Option MS.Sort)) ->
                              unify (s1,s2,pairs) % ### (le) Why is the sort necessary? won't typecheck with it.
                         | _ -> NotUnify (srt1,srt2))
                   else
@@ -473,8 +473,8 @@ spec {
        def unify (s1,s2,pairs):Unification = 
          let pos1 = sortAnn s1  in
          let pos2 = sortAnn s2  in
-         let srt1 = withAnnS (unlinkPSort s1, pos1) in % ? DerivedFrom pos1 ?
-         let srt2 = withAnnS (unlinkPSort s2, pos2) in % ? DerivedFrom pos2 ?
+         let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
+         let srt2 = withAnnS (unlinkSort s2, pos2) in % ? DerivedFrom pos2 ?
          if equalSort?(srt1,srt2) then 
            Unify pairs 
          else
@@ -509,8 +509,8 @@ spec {
                      if id = id_ then
                        unifyL(srt1,srt2,ts,ts_,pairs,unify)
                      else 
-                       let s1_ = unfoldPSort(env,srt1) in
-                       let s2_ = unfoldPSort(env,srt2) in
+                       let s1_ = unfoldSort(env,srt1) in
+                       let s2_ = unfoldSort(env,srt2) in
                        if equalSort?(s1,s1_) & equalSort?(s2_,s2) then
                          NotUnify (srt1,srt2)
                        else 
@@ -522,8 +522,8 @@ spec {
                 then Unify pairs
                 else NotUnify (srt1,srt2)
               | (MetaTyVar(mtv,_), _) -> 
-                 let s2_ = unfoldPSort(env,srt2) in
-                 let t = unlinkPSort s2_ in
+                 let s2_ = unfoldSort(env,srt2) in
+                 let t = unlinkSort s2_ in
                  if equalSort?(t,s1)
                      then Unify pairs
                  else
@@ -531,8 +531,8 @@ spec {
                          then NotUnify (srt1,srt2)
                      else (linkMetaTyVar mtv (withAnnS(s2,pos2)); Unify pairs)
               | (t, MetaTyVar (mtv, _)) -> 
-                let t = unfoldPSort (env, t) in
-                let t = unlinkPSort t in
+                let t = unfoldSort (env, t) in
+                let t = unlinkSort t in
                 if equalSort? (t, s2) then
                   Unify pairs
                 else
@@ -543,12 +543,12 @@ spec {
               | (Subsort(ty,_,_),ty2) -> unify(ty,ty2,pairs)
               | (ty,Subsort(ty2,_,_)) -> unify(ty,ty2,pairs)
               | (Base _,_) -> 
-                 let  s1_ = unfoldPSort(env,srt1) in
+                 let  s1_ = unfoldSort(env,srt1) in
                 if equalSort?(s1,s1_)
                 then NotUnify (srt1,srt2)
                 else unify(s1_,s2,pairs)
               | (_,Base _) ->
-                let s2_ = unfoldPSort(env,srt2) in
+                let s2_ = unfoldSort(env,srt2) in
                 if equalSort?(s2,s2_)
                 then NotUnify (srt1,srt2)
                 else unify(s1,s2_,pairs)
@@ -558,7 +558,7 @@ spec {
        of Unify _ -> (true,"")
         | NotUnify(s1,s2) -> (false,printSort s1^" ! = "^printSort s2)
 
- op consistentSorts?: LocalEnv * PSort * PSort -> Boolean
+ op consistentSorts?: LocalEnv * MS.Sort * MS.Sort -> Boolean
  def consistentSorts?(env,srt1,srt2) =
    let free_meta_ty_vars = freeTypeVars(srt1) ++ freeTypeVars(srt2) in
    let (val,_) = (unifySorts env srt1 srt2) in
@@ -573,11 +573,11 @@ spec {
 
 
  def freeTypeVars(srt) = 
-   let vars = (Ref []) : Ref(PMetaTyVars) in
+   let vars = (Ref []) : Ref(MS.MetaTyVars) in
    let def vr(srt) = 
          case srt
            of MetaTyVar(tv,pos) -> 
-              (case unlinkPSort srt of
+              (case unlinkSort srt of
                 | MetaTyVar(tv,_) -> (vars := cons (tv,! vars); srt)
                 | s -> mapSort (fn x -> x,vr,fn x -> x) (withAnnS (s, pos)))
             | _ -> srt
@@ -585,7 +585,7 @@ spec {
    let _ = mapSort(fn x -> x,vr,fn x -> x) srt in
    ! vars
 
- def occurs(v: PMetaTyVar,srt: PSort): Boolean = 
+ def occurs(v: MS.MetaTyVar,srt: MS.Sort): Boolean = 
    let
       def occursOptRow(v,row) =
        case row of
@@ -605,7 +605,7 @@ spec {
       | Subsort(t,pred,_)  -> occurs(v,t)  or occursT(v,pred)
       | Base(_,srts,_)     -> exists (fn s -> occurs(v,s)) srts
       | TyVar _            -> false 
-      | MetaTyVar _        -> (case unlinkPSort srt of
+      | MetaTyVar _        -> (case unlinkSort srt of
                                | MetaTyVar(w1,_) -> v = w1 
                                | t -> occurs(v,t))
 
@@ -624,8 +624,8 @@ spec {
       | _                    -> false
 
  (* Apply substitution as variable linking *)
- op linkMetaTyVar : PMetaTyVar -> PSort -> ()
- def linkMetaTyVar (v:PMetaTyVar) t = 
+ op linkMetaTyVar : MS.MetaTyVar -> MS.Sort -> ()
+ def linkMetaTyVar (v:MS.MetaTyVar) t = 
    let {link,uniqueId,name} = ! v in
    (%%String.writeLine ("Linking "^name^Nat.toString uniqueId^" with "^printSort t);
    v := {link = Some t, uniqueId = uniqueId, name = name})

@@ -124,7 +124,7 @@ spec
     let name = mkSnarkName("Boolean", id) in
        Lisp.symbol("SNARK", name)
 
-  op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * Fun * Sort * Term -> LispCell
+  op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
 
   def mkSnarkFmlaApp(context, sp, dpn, vars, f, srt, arg) =
     let args = case arg
@@ -170,7 +170,7 @@ spec
 	      else Lisp.cons(Lisp.symbol("SNARK","="), Lisp.list [snarkArg1, snarkArg2])
 
 
-  op mkSnarkFmla: Context * Spec * String * StringSet.Set * Vars * Term -> LispCell
+  op mkSnarkFmla: Context * Spec * String * StringSet.Set * Vars * MS.Term -> LispCell
 
   def mkSnarkFmla(context, sp, dpn, vars, globalVars, fmla) =
     case fmla
@@ -192,7 +192,7 @@ spec
       | Fun ((Bool false), Boolean, _) -> Lisp.symbol("SNARK","FALSE")
       | _ -> mkSnarkTerm(context, sp, dpn, vars, fmla)
 
-  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * Fun * Term -> LispCell
+  op mkSnarkTermApp: Context * Spec * String * StringSet.Set * Fun * MS.Term -> LispCell
 
   def mkSnarkTermApp(context, sp, dpn, vars, f, arg) =
     let args = case arg
@@ -203,7 +203,7 @@ spec
 	   let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
 
-  op mkSnarkTerm: Context * Spec * String * StringSet.Set * Term -> LispCell
+  op mkSnarkTerm: Context * Spec * String * StringSet.Set * MS.Term -> LispCell
 
   def mkSnarkTerm(context, sp, dpn, vars, term) =
 %    let _ = writeLine("Translating to snark: "^printTerm(term)) in
@@ -219,7 +219,7 @@ spec
       | Var (v,_) -> snarkVar(v)
       | _ -> mkNewSnarkTerm(context, term) %% Unsupported construct
 
-  op mkNewSnarkTerm: Context * Term -> LispCell
+  op mkNewSnarkTerm: Context * MS.Term -> LispCell
 
   def mkNewSnarkTerm(context, term) =
     let vars = freeVars term in
@@ -237,7 +237,7 @@ spec
        Lisp.symbol("SNARK", ("sApply" ++ (Nat.toString num)))
       )
 
-%  op lispFmla: Spec * String * Term -> LispTerm
+%  op lispFmla: Spec * String * MS.Term -> LispTerm
 
 %  def lispFmla(spc, dpn, fmla) =
 %    reduceTerm(mkLFmla(spc, dpn, StringSet.empty, fmla))

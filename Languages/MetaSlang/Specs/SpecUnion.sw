@@ -1,4 +1,5 @@
-% derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUnion.sl, v1.3
+% This is no longer used nor supported. Monadic versions of functions like
+% those below appear under the SpecCalculus tree.
 
 SpecUnion qualifying spec {
  import StandardSpec

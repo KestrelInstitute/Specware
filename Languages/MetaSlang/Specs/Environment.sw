@@ -9,14 +9,14 @@
  
 SpecEnvironment qualifying
 spec {
- import PosSpec
+ import StandardSpec
  import Printer
  import /Library/Legacy/DataStructures/ListPair
  %% importing TypecChecker is overkill
  %import Elaborate/TypeChecker
 
  sort SpecEnvironment = StringMap Spec
- sort Env             = SpecName * SpecEnvironment
+ % sort Env             = SpecName * SpecEnvironment
 
  op makeEnv     : List Spec              -> SpecEnvironment
  op empty       : ()                     -> SpecEnvironment
@@ -24,21 +24,7 @@ spec {
  op add_        : Spec * SpecEnvironment -> SpecEnvironment 
  op unfoldBase  : Spec * Sort -> Sort 
  op unfoldBaseV : Spec * Sort * Boolean -> Sort 
- op inferType   : Spec * Term -> Sort
-
- op makeSpec            : Specs * PosSpec -> Spec
-% op makeSpecReportError : Specs * PosSpec * Environment * String
-%                          -> ErrorMonad.Result Spec
-
- op primitiveSpecNames : List String
- def primitiveSpecNames = ["Nat",
-                           "Integer",
-                           "String",
-                           "Char",
-                           "Boolean",
-                           "General",
-                           "List",
-                           "TranslationBuiltIn"]
+ op inferType   : Spec * MS.Term -> Sort
 
 % %% makeSpecReportError is called only from ui::loadFile
 % %%  (and from some mysterious GlueFront routines)
@@ -214,7 +200,7 @@ spec {
     of CoProduct (fields, _) -> Some fields
      | _ -> None
 
- def inferType (sp, tm : Term) = 
+ def inferType (sp, tm : MS.Term) = 
   case tm
     of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1))
                                                   of Some rng -> rng
@@ -265,9 +251,9 @@ spec {
 %   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternSort pat
 
 
- op mkRestrict    : Spec * {pred : Term, term : Term} -> Term
- op mkProjectTerm : Spec * Id * Term                  -> Term
- op mkSelectTerm  : Spec * Id * Term                  -> Term
+ op mkRestrict    : Spec * {pred : MS.Term, term : MS.Term} -> MS.Term
+ op mkProjectTerm : Spec * Id * MS.Term                  -> MS.Term
+ op mkSelectTerm  : Spec * Id * MS.Term                  -> MS.Term
 
  def mkRestrict (sp, {pred, term}) = 
   let srt = inferType (sp, term) in
@@ -296,6 +282,7 @@ spec {
  % Assuming that op names are unambiguous in a spec
  % one can obtain the sort of ops given the name and spec only.
 
+(* ### unused
  op  getSortOfOp : Spec * String * String -> TyVars * Sort
  def getSortOfOp (spc, qid, opName) =
   % sjw: (4/02) Not sure if should check imports
@@ -304,6 +291,7 @@ spec {
                 System.fail ("Operator "^qid^"."^opName^" has not been declared"
                              ))
      | Some (op_names, fixity, (tyVars, srt), opt_def) -> (tyVars, srt)
+*)
 
  %- ----------------------------------------------------------------
  %- get dependencies transitively
@@ -367,6 +355,7 @@ spec {
  %- --------------------------------------------------------------------------
  %- search for a spec with a given name
 
+(* ### unused
  op lookupSpec : SpecEnvironment * String -> Option Spec
  def lookupSpec (env, spcname) =
   StringMap.foldli (fn (_,     _,   Some spc) -> Some spc
@@ -375,12 +364,14 @@ spec {
                                                  else None)
                    None 
                    (env : StringMap Spec)
+*)
 
  %- --------------------------------------------------------------------------------
  (**
   unfold to an arrow sort; if it doesn't unfold to an arrow, leave it unchanged.
   *)
 
+(* ### unused
  op unfoldToArrow: Spec * Sort -> Sort
  def unfoldToArrow (sp, srt) =
   let 
@@ -392,6 +383,7 @@ spec {
   case usrt
     of Arrow _ -> usrt
      | _       -> srt
+*)
 
 
  %- --------------------------------------------------------------------------------
@@ -399,7 +391,8 @@ spec {
    determine the sort of a term including unfolding of base sorts.
   *)
 
- op termSortEnv : Spec * Term -> Sort
+(* ### unused
+ op termSortEnv : Spec * MS.Term -> Sort
  def termSortEnv(sp,term) = 
   let res =
    case term 
@@ -426,4 +419,5 @@ spec {
   in
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
   res
+*)
 }

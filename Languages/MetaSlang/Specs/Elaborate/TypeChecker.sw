@@ -1,5 +1,3 @@
-% Synchronized with version 1.11 of /SW4/Languages/MetaSlang/TypeChecker/TypeChecker.sl
-
 (* This structure adds type checking and 
    inference to the abstract syntax tree.
       - It infers sorts of each subterm.
@@ -32,44 +30,44 @@ spec {
 
   % sort Filename = String % see Position.sw
   sort Message  = String
-  sort Result = | Spec PosSpec | Errors (List(String * Position))
+  sort Result = | Spec Spec | Errors (List(String * Position))
 
   %% ========================================================================
 
-  % op elaboratePosSpecMaybeFail   : List Spec     * PosSpec                        -> PosSpec
-  % op elaboratePosSpecReportError : List Spec     * PosSpec * Environment * String -> ErrorMonad.Result PosSpec
+  % op elaboratePosSpecMaybeFail   : List Spec     * Spec                        -> Spec
+  % op elaboratePosSpecReportError : List Spec     * Spec * Environment * String -> ErrorMonad.Result Spec
 
-  op elaboratePosSpec           : PosSpec * Filename -> Result
+  op elaboratePosSpec           : Spec * Filename -> Result
 
-  op unlinkRec                  : PSort -> PSort
-  op undeterminedSort?          : PSort -> Boolean
+  op unlinkRec                  : MS.Sort -> MS.Sort
+  op undeterminedSort?          : MS.Sort -> Boolean
 
-  op checkSort                  : LocalEnv * PSort                    -> PSort
-  op checkSortScheme            : LocalEnv * (TyVars   * PSort)       -> (TyVars * PSort)
-  op elaborateSort              : LocalEnv * PSort    * PSort         -> PSort
-  op elaborateCheckSortForTerm  : LocalEnv * PTerm    * PSort * PSort -> PSort 
-  op elaborateSortForTerm       : LocalEnv * PTerm    * PSort * PSort -> PSort
-  op elaborateTerm              : LocalEnv * PTerm    * PSort         -> PTerm
-  op elaboratePattern           : LocalEnv * PPattern * PSort         -> PPattern * LocalEnv
+  op checkSort                  : LocalEnv * MS.Sort                    -> MS.Sort
+  op checkSortScheme            : LocalEnv * (TyVars   * MS.Sort)       -> (TyVars * MS.Sort)
+  op elaborateSort              : LocalEnv * MS.Sort    * MS.Sort         -> MS.Sort
+  op elaborateCheckSortForTerm  : LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort 
+  op elaborateSortForTerm       : LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort
+  op elaborateTerm              : LocalEnv * MS.Term    * MS.Sort         -> MS.Term
+  op elaboratePattern           : LocalEnv * MS.Pattern * MS.Sort         -> MS.Pattern * LocalEnv
 
-  op mkEmbed0                   : LocalEnv * PSort         * Id            -> Option Id
-  op mkEmbed1                   : LocalEnv * PSort * PTerm * Id * Position -> Option PTerm
-  op lookupEmbedId              : LocalEnv * Id * PSort                    -> Option (Option PSort)
-  op isCoproduct                : LocalEnv * PSort                         -> Option (List (Id * Option PSort))
-  op mkProject                  : LocalEnv * Id * PSort * Position         -> Option PTerm
+  op mkEmbed0                   : LocalEnv * MS.Sort         * Id            -> Option Id
+  op mkEmbed1                   : LocalEnv * MS.Sort * MS.Term * Id * Position -> Option MS.Term
+  op lookupEmbedId              : LocalEnv * Id * MS.Sort                    -> Option (Option MS.Sort)
+  op isCoproduct                : LocalEnv * MS.Sort                         -> Option (List (Id * Option MS.Sort))
+  op mkProject                  : LocalEnv * Id * MS.Sort * Position         -> Option MS.Term
 
-  op undeclared                 : LocalEnv * PTerm      * Id * PSort * Position -> PTerm
-  op undeclaredResolving        : LocalEnv * PTerm      * Id * PSort * Position -> PTerm
-  op undeclared2                : LocalEnv * PTerm * Id * Id * PSort * Position -> PTerm
+  op undeclared                 : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op undeclaredResolving        : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op undeclared2                : LocalEnv * MS.Term * Id * Id * MS.Sort * Position -> MS.Term
 
-  op pass2Error                 : LocalEnv * PSort * Message * Position         -> ()
+  op pass2Error                 : LocalEnv * MS.Sort * Message * Position         -> ()
 
   %% ========================================================================
 
-  def type_nat    = natPSort
-  def type_bool   = boolPSort
-  def type_char   = charPSort
-  def type_string = stringPSort
+  def type_nat    = natSort
+  def type_bool   = boolSort
+  def type_char   = charSort
+  def type_string = stringSort
 
   % ========================================================================
   %% The TypeChecker function is elaboratePosSpec 
@@ -119,7 +117,7 @@ spec {
  
    %% ---------- OPS : PASS 0 ----------
 %% Identity!
-%   let def elaborate_op_0 (op_name, op_info_0 : POpInfo) =
+%   let def elaborate_op_0 (op_name, op_info_0 : MS.OpInfo) =
 %        (case op_info_0 of
 %          | (given_op_names, Nonfix, ([], (op_sort_0 as MetaTyVar _)), opt_def_0) ->
 %             (if undeterminedSort? op_sort_0 then op_info_0
@@ -127,7 +125,7 @@ spec {
 %                 %% (case lookupImportedOp (env_1.importMap, op_name) of
 %                     %% | [(found_op_names, fixity, (ftvs, fsrt), _)] -> 
 %                 %% TODO:  Determine appropriate use of found_op_names vs. given_op_names
-%                 %%   (found_op_names, fixity, (ftvs, convertSortToPSort fsrt), opt_def_0)
+%                 %%   (found_op_names, fixity, (ftvs, convertSortToMS.Sort fsrt), opt_def_0)
 %                 %% | _ -> op_info_0)
 %          | _ -> op_info_0)
 %   in
@@ -231,7 +229,7 @@ spec {
 	      let type_vars_used  =
                 (let tv_cell = Ref [] : Ref TyVars in
                  let def insert tv = tv_cell := ListUtilities.insert (tv, ! tv_cell) in
-                 let def record_type_vars_used (aSrt : PSort) = 
+                 let def record_type_vars_used (aSrt : MS.Sort) = 
                       case aSrt of
                        | MetaTyVar (mtv,     _) -> 
                          (let {name = _, uniqueId, link} = ! mtv in
@@ -428,7 +426,7 @@ spec {
   % ========================================================================
 
   def undeterminedSort? srt =
-   case unlinkPSort srt of
+   case unlinkSort srt of
     | MetaTyVar _ -> true
     | _           -> false
 
@@ -447,9 +445,9 @@ spec {
   %%  which side-effects links for metaTyVar's via 
 
   %% TODO: convert elaborateTerm args to work on term scheme and sort scheme?
-  def elaborateTerm (env, trm, term_sort : PSort) = aux_elaborateTerm (env, trm, term_sort)
+  def elaborateTerm (env, trm, term_sort : MS.Sort) = aux_elaborateTerm (env, trm, term_sort)
 
-  def aux_elaborateTerm (env, trm, term_sort : PSort) = 
+  def aux_elaborateTerm (env, trm, term_sort : MS.Sort) = 
    case trm of
 
     | Fun (OneName (id, fixity), srt, pos) ->
@@ -508,14 +506,14 @@ spec {
                   | (field_id, field_sort) :: row -> 
                     if id2 = field_id then
                       let field_sort = checkSort (env, field_sort) in
-                      let projector : PTerm = Fun (Project id2, Arrow (big_sort, field_sort, pos), pos) in
-                      let projection = (ApplyN ([projector, big_term], pos)) : PTerm in
+                      let projector : MS.Term = Fun (Project id2, Arrow (big_sort, field_sort, pos), pos) in
+                      let projection = (ApplyN ([projector, big_term], pos)) : MS.Term in
                       let _ = elaborateSortForTerm (env, projection, field_sort, term_sort) in
                       projection
                     else
                       projectRow (big_term, big_sort, row, id2))
-               def getProduct srt : Option (List (String * PSort)) = 
-                 (case unfoldPSort (env, srt) of
+               def getProduct srt : Option (List (String * MS.Sort)) = 
+                 (case unfoldSort (env, srt) of
                   | Product (row,       _) -> Some row
                   | Subsort (srt, pred, _) -> getProduct srt
                   | _ -> None)
@@ -553,7 +551,7 @@ spec {
 
     | Fun (Embedded id, srt, pos) -> 
          let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
-         ((case unfoldPSort (env, srt)
+         ((case unfoldSort (env, srt)
              of Arrow (dom, _, _) -> 
                  (case isCoproduct (env, dom)
                    of Some fields -> 
@@ -573,27 +571,27 @@ spec {
     | Fun (PChoose equiv, srt, pos) ->  (* Has sort (a -> b) -> Quotient(a, equiv) -> b *)
          let a = freshMetaTyVar pos in
          let b = freshMetaTyVar pos in
-         let ty1 : PSort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty1 : MS.Sort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          let equiv = elaborateTerm (env, equiv, ty1)                   in 
-         let ty2 : PSort = Arrow (Quotient (a, equiv, pos), b, pos) in
-         let ty3 : PSort = Arrow (a, b, pos) in
-         let ty4 : PSort = Arrow (ty3, ty2, pos) in
+         let ty2 : MS.Sort = Arrow (Quotient (a, equiv, pos), b, pos) in
+         let ty3 : MS.Sort = Arrow (a, b, pos) in
+         let ty4 : MS.Sort = Arrow (ty3, ty2, pos) in
          (elaborateSortForTerm (env, trm, ty4, term_sort);
           elaborateSortForTerm (env, trm, srt, ty4);
           Fun (PChoose equiv, srt, pos))
 
     | Fun (PQuotient equiv, srt, pos) ->  % Has sort a -> Quotient(a, equiv)
          let a = freshMetaTyVar pos in
-         let ty1:PSort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty1:MS.Sort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          let equiv = elaborateTerm (env, equiv, ty1) in 
-         let ty2: PSort = Arrow (a, Quotient (a, equiv, pos), pos) in
+         let ty2: MS.Sort = Arrow (a, Quotient (a, equiv, pos), pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
           elaborateSortForTerm (env, trm, srt, ty2);
           Fun (PQuotient equiv, srt, pos))  
 
     | Fun (Equals, srt, pos) -> 
          let a = freshMetaTyVar pos in
-         let ty:PSort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         let ty:MS.Sort = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          (elaborateSortForTerm (env, trm, ty, term_sort);
           elaborateSortForTerm (env, trm, srt, ty);
           Fun (Equals, srt, pos))
@@ -620,9 +618,9 @@ spec {
 
     | Fun (PRelax pred, srt, pos) -> % Has sort Subsort(a, pred) -> a
          let a = freshMetaTyVar pos in
-         let ty1 : PSort = Arrow (a, type_bool, pos) in
+         let ty1 : MS.Sort = Arrow (a, type_bool, pos) in
          let pred = elaborateTerm (env, pred, ty1) in
-         let ty2 : PSort = Arrow (Subsort (a, pred, pos), a, pos) in
+         let ty2 : MS.Sort = Arrow (Subsort (a, pred, pos), a, pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
           elaborateSortForTerm (env, trm, srt, ty2);
           Fun (PRelax pred, srt, pos))
@@ -633,9 +631,9 @@ spec {
 
     | Fun (PRestrict pred, srt, pos) -> % Has sort a -> Subsort(a, pred)
          let a = freshMetaTyVar pos in
-         let ty1 : PSort = Arrow (a, type_bool, pos) in
+         let ty1 : MS.Sort = Arrow (a, type_bool, pos) in
          let pred = elaborateTerm (env, pred, ty1) in
-         let ty2 : PSort = Arrow (a, Subsort (a, pred, pos), pos) in
+         let ty2 : MS.Sort = Arrow (a, Subsort (a, pred, pos), pos) in
          (elaborateSortForTerm (env, trm, ty2, term_sort);
           elaborateSortForTerm (env, trm, srt, ty2);
           Fun (PRestrict pred, srt, pos))
@@ -670,9 +668,9 @@ spec {
                   this to the body such that the sort constraint is 
                   attatched to alpha.
                   *)
-               let (pat, bdy) = case pat:PPattern
+               let (pat, bdy) = case pat:MS.Pattern
                                  of SortedPat (pat, srt, pos) -> 
-                                   (pat, (SortedTerm (bdy, srt, pos)):PTerm)
+                                   (pat, (SortedTerm (bdy, srt, pos)):MS.Term)
                                   | _ -> (pat, bdy)
                in             
                let bdy = elaborateTerm (env0, bdy, alpha) in
@@ -692,7 +690,7 @@ spec {
 
     | Record (row, pos) -> 
          let def unfoldConstraint (srt) = 
-               (case unfoldPSort (env, srt)
+               (case unfoldSort (env, srt)
                  of Product (rows, _) -> 
                     (if ~(length (row) = length (rows)) then
                        error (env, 
@@ -704,13 +702,13 @@ spec {
                   | MetaTyVar (mtv, _) ->
                     let row = map (fn (id, _)-> (id, freshMetaTyVar pos)) row 
 		    in
-                      (linkMetaTyVar mtv ((Product (row, pos)):PSort);
+                      (linkMetaTyVar mtv ((Product (row, pos)):MS.Sort);
                        row)
                         
                   | Subsort (srt, term, _) -> 
                       unfoldConstraint (srt)        
 
-                  | sv : PSort -> 
+                  | sv : MS.Sort -> 
                       (pass2Error (env, 
                                   sv, 
                                   printTerm trm^" is constrained to be of an incompatible sort "^newline^ printSort term_sort, 
@@ -733,7 +731,7 @@ spec {
     | Lambda (rules, pos) -> 
          let alpha = freshMetaTyVar pos in
           let beta  = freshMetaTyVar pos in
-          let ty    = (Arrow (alpha, beta, pos)):PSort in
+          let ty    = (Arrow (alpha, beta, pos)):MS.Sort in
           let _     = elaborateSort (env, ty, term_sort) in 
           Lambda 
            (map 
@@ -808,7 +806,7 @@ spec {
          ApplyN ([t1, t2], pos)
 
     | ApplyN (terms, pos) ->
-          (let def tagTermWithInfixInfo (term : PTerm) : FixatedPTerm = 
+          (let def tagTermWithInfixInfo (term : MS.Term) : FixatedTerm = 
                  case term of
                   | Fun (OneName (_ ,  Infix p), _, pos) -> Infix (term, p)
                   | Fun (OneName (id, _),        _, pos) ->
@@ -842,7 +840,7 @@ spec {
    case terms of
     | [term] -> Some term
     | _ ->
-   case unlinkPSort srt of
+   case unlinkSort srt of
     | MetaTyVar _ -> None
     | rsort ->
 	let srtPos = sortAnn srt in
@@ -957,11 +955,11 @@ spec {
     | _   -> None
         
   def lookupEmbedId (env, id, srt) = 
-   case unfoldPSort (env, srt) of
+   case unfoldSort (env, srt) of
     | CoProduct(row, _) -> 
      let def lookup row =
           case row of
-           | [] -> None : Option (Option PSort)
+           | [] -> None : Option (Option MS.Sort)
            | (found_id, entry) :: row ->  
              if id = found_id then
                Some (case entry of
@@ -998,8 +996,8 @@ spec {
        findId row
     | _ -> None
 
-  def isArrowCoProduct (env, srt) : Option (PSort * List (Id * Option PSort)) =
-   case unfoldPSort (env, srt) of
+  def isArrowCoProduct (env, srt) : Option (MS.Sort * List (Id * Option MS.Sort)) =
+   case unfoldSort (env, srt) of
     | Arrow (dom, rng, _) -> 
       (case isCoproduct (env, rng) of
         | Some row -> Some (dom, row)
@@ -1007,7 +1005,7 @@ spec {
     | _ -> None
 
   def isCoproduct (env, srt)  = 
-   case unfoldPSort (env, srt) of
+   case unfoldSort (env, srt) of
     | CoProduct (row, _)    -> Some row
     | Subsort   (srt, _, _) -> isCoproduct (env, srt)
     | _ -> None
@@ -1030,14 +1028,14 @@ spec {
     | _ -> None
 
   def mkProject (env, id, srt, pos) = 
-   case unfoldPSort (env, srt) of
+   case unfoldSort (env, srt) of
     | Arrow (dom, rng, _) -> 
       (let def analyzeDom dom =
-            case unfoldPSort (env, dom) of
+            case unfoldSort (env, dom) of
              | Product (row, _) -> 
                (let def findId ls = 
                      case ls of
-                      | [] -> None : Option PTerm
+                      | [] -> None : Option MS.Term
                       | (selector_id, selector_rng_srt) :: ids -> 
                           if id = selector_id then
                           (elaborateSort (env, withAnnS (rng, pos), selector_rng_srt);
@@ -1061,19 +1059,19 @@ spec {
    %% Note: due to union semantics, findVarOrOps should always returns 0 or 1 hits for Q.Id, 
    %%       in which case this routine will necessarily return (true, priority).
    case competing_pterms of
-    | (Fun (OneName  (_,    Infix priority), _, pos))::r -> consistentInfixPTerms (r, Some priority)
-    | (Fun (TwoNames (_, _, Infix priority), _, pos))::r -> consistentInfixPTerms (r, Some priority) % r must be []
-    | _::r                                               -> consistentInfixPTerms (r, None)
+    | (Fun (OneName  (_,    Infix priority), _, pos))::r -> consistentInfixMS.Terms (r, Some priority)
+    | (Fun (TwoNames (_, _, Infix priority), _, pos))::r -> consistentInfixMS.Terms (r, Some priority) % r must be []
+    | _::r                                               -> consistentInfixMS.Terms (r, None)
     | _                                                  -> (true, None)
 
-  def consistentInfixPTerms (competing_pterms, optional_priority) = 
+  def consistentInfixMS.Terms (competing_pterms, optional_priority) = 
    case competing_pterms of
     | [] -> (true, optional_priority)
     | (Fun (OneName (_, Infix element_priority), _, pos))::tail ->
       (case optional_priority of
         | None -> (false, None)
         | Some priority -> if element_priority = priority
-                            then consistentInfixPTerms (tail, optional_priority)
+                            then consistentInfixMS.Terms (tail, optional_priority)
                             else (false, None))
     | (Fun (TwoNames (_, _, Infix element_priority), _, pos))::tail ->
       %% Union semantics should preclude multiple alternatives for Q.Id,
@@ -1081,15 +1079,15 @@ spec {
       (case optional_priority of
         | None -> (false, None)
         | Some priority -> if element_priority = priority
-                            then consistentInfixPTerms (tail, optional_priority)
+                            then consistentInfixMS.Terms (tail, optional_priority)
                             else (false, None))
     | _::tail -> (case optional_priority of
-                  | None -> consistentInfixPTerms (tail, optional_priority)
+                  | None -> consistentInfixMS.Terms (tail, optional_priority)
                   | _    -> (false, None))
        
 
   def adjustEqualitySort (env, srt, t1, eq_args) =
-   case (eq_args, unlinkPSort srt) of
+   case (eq_args, unlinkSort srt) of
     | (Record ([("1", e1), ("2", e2)], _), 
        Arrow (Product ([("1", elSrt1), ("2", _)], _), _, _)) -> 
       t1
@@ -1141,7 +1139,7 @@ spec {
   else
     (error (env, "Name "^id^" has not been declared."^" Resolving with "^printSort srt, pos);
      % raise (TypeCheck (pos, "Name "^id^" has not been declared."^" Resolving with "^printSort srt));
-     (Fun (OneName (id, Nonfix), srt, pos)) : PTerm)
+     (Fun (OneName (id, Nonfix), srt, pos)) : MS.Term)
 
 
   % ========================================================================
@@ -1150,7 +1148,7 @@ spec {
 
   def elaboratePattern (env, p, sort1) = 
   let sort1 = checkSort (env, sort1) in
-  let def elab (p:PPattern):PPattern * LocalEnv =
+  let def elab (p:MS.Pattern):MS.Pattern * LocalEnv =
     case p of
       | WildPat (s, pos) -> (WildPat (elaborateSort (env, s, sort1), pos), env)
       | BoolPat _ -> (elaborateSort (env, sort1, type_bool); (p, env))
@@ -1209,7 +1207,7 @@ spec {
 	    (EmbedPat (embedId, epat, sort0, pos), env)
 	  else
 	    let srt = lookupEmbedId (env, embedId, sort0) in
-	    let (env, pat):LocalEnv * Option (PPattern) = 
+	    let (env, pat):LocalEnv * Option (MS.Pattern) = 
 	    (case (srt, pattern) of
 	       | (Some (Some srt), Some pat) -> 
 	         let (pat, env) = elaboratePattern (env, pat, srt) in
@@ -1246,7 +1244,7 @@ spec {
 	      (EmbedPat (embedId, pat, sort1, pos), env)
       | RecordPat (row, pos) ->
 	let r = map (fn (id, srt)-> (id, freshMetaTyVar pos)) row in
-	let _ = elaborateSort (env, (Product (r, pos)):PSort, sort1) in
+	let _ = elaborateSort (env, (Product (r, pos)):MS.Sort, sort1) in
 	let r = ListPair.zip (r, row) in
 	let (r, env) = 
 	    foldr (fn (((id, srt), (_, p)), (row, env))->
@@ -1257,12 +1255,12 @@ spec {
       | RelaxPat (pat, term, pos) -> 
 	let term = elaborateTerm (env, term, 
 				 Arrow (sort1, type_bool, pos)) in
-	let sort2 = (Subsort (sort1, term, pos)):PSort in
+	let sort2 = (Subsort (sort1, term, pos)):MS.Sort in
 	let (pat, env) = elaboratePattern (env, pat, sort2) in
 	(RelaxPat (pat, term, pos), env)
       | QuotientPat (pat, term, pos) ->
 	let v = freshMetaTyVar pos in
-	let sort2 = (Quotient (v, term, pos)):PSort in
+	let sort2 = (Quotient (v, term, pos)):MS.Sort in
 	let _ = elaborateSort (env, sort2, sort1) in
 	let term = elaborateTerm (env, term, 
 				 Arrow (Product ([("1", v), ("2", v)], pos), 

@@ -3,17 +3,11 @@
 
 AnnSpec qualifying spec 
  import Position
- import ../AbstractSyntax/AnnTerm   
+%  import ../AbstractSyntax/AnnTerm   
+ import MSTerm
  import QualifierMapAsSTHashTable
+ import SpecCalc
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                SpecRef
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- %%  This is a bit of a hack for now.
- %%  A SpecRef is a string which if parsed and evaluated will yield a spec
-
- sort SpecRef = String % a bit of a hack -- emulate URI
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec
@@ -27,15 +21,13 @@ AnnSpec qualifying spec
  %% conceivably it could be more interesting in the future.
 
 
- sort StandardAnnotation = Position	% was ()
+ % sort StandardAnnotation = Position	% was ()
 
  sort Spec = ASpec StandardAnnotation
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                ASpec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%% Spec    = ASpec StandardAnnotation
- %%% PosSpec = ASpec Position
 
  sort ASpec b = 
   {
@@ -53,7 +45,7 @@ AnnSpec qualifying spec
  sort Aliases = List QualifiedId 
 
  sort Imports = List Import
- sort Import  = SpecRef * Spec
+ sort Import  = (SpecCalc.Term Position) * Spec
 
  sort ASortMap  b = AQualifierMap (ASortInfo b) % Qualifier -> Id -> info
  sort AOpMap    b = AQualifierMap (AOpInfo   b) % Qualifier -> Id -> info
@@ -117,6 +109,7 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
+(* ### unused
  op appSpec    : fa(a) appTSP a -> ASpec a    -> ()
 
  def appSpec tsp spc = 
@@ -133,6 +126,7 @@ AnnSpec qualifying spec
    app
      (fn (_, nm, tvs, term) -> appt term)
      spc.properties)
+*)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Sorts, Ops
@@ -223,7 +217,7 @@ AnnSpec qualifying spec
 
  % --------------------------------------------------------------------------------
  % get the sort/op names as list of strings
-
+(* ### unused
  op sortNames : fa(b) ASpec b -> List String
  op opNames   : fa(b) ASpec b -> List String
 
@@ -236,6 +230,7 @@ AnnSpec qualifying spec
   foldriAQualifierMap (fn (_, op_name, _, new_list) -> 
                          List.concat (new_list, [op_name])) 
                      [] spc.ops
+*)
 
  op emptyOpNames: OpNames
  def emptyOpNames = []
@@ -412,8 +407,8 @@ AnnSpec qualifying spec
 
  % ------------------------------------------------------------------------
 
- def addImport ((spec_ref, imported_spec), spc) =
-  setImports    (spc, cons ((spec_ref, imported_spec), spc.importInfo.imports))
+ def addImport ((specCalcTerm, imported_spec), spc) =
+  setImports    (spc, cons ((specCalcTerm, imported_spec), spc.importInfo.imports))
 
  def addProperty (new_property, spc) =
   setProperties (spc, cons (new_property, spc.properties))
@@ -469,6 +464,60 @@ AnnSpec qualifying spec
 		      sorts, ops, properties})
    = memberQualifiedId(qualifier,sort_name,localSorts)
 
+ op findTheSort  : fa(a) ASpec a * QualifiedId -> Option (ASortInfo a)  
+ op findTheOp    : fa(a) ASpec a * QualifiedId -> Option (AOpInfo   a)
+
+ op findAllSorts : fa(a) ASpec a * QualifiedId -> List (ASortInfo a)
+ op findAllOps   : fa(a) ASpec a * QualifiedId -> List (AOpInfo   a)
+
+ def findTheSort (spc, Qualified (qualifier,id)) =
+  %% We're looking for precisely one sort,
+  %% which we might have specified as being unqualified.
+  %% (I.e., unqualified is not a wildcard here.)
+  findAQualifierMap (spc.sorts, qualifier, id)
+
+ def findTheOp (spc, Qualified (qualifier,id)) =
+  %% We're looking for precisely one op,
+  %% which we might have specified as being unqualified.
+  %% (I.e., unqualified is not a wildcard here.)
+  findAQualifierMap (spc.ops, qualifier, id)
+
+
+  %% Overloading is not particularly meaningful for sorts. 
+ %% (Would we ever want both  FOO.FOO x and FOO.FOO x y  as distinct sorts?)
+ %% but we might have two or more sorts X.S, Y.S, etc.
+ %% If the qualifier is UnQualified then we return unqualified answer first so as to
+ %% give preference to it because there is no other way to refer to this entry.
+ %% Note that checkSort depends on this behavior.
+ def findAllSorts (spc, Qualified (qualifier,id)) =
+  let found = (case findAQualifierMap (spc.sorts, qualifier, id) of
+                | Some sort_info -> [sort_info]
+		| None           -> [])
+  in
+  if qualifier = UnQualified
+    then found
+       ++ filter (fn op_info -> ~(member(op_info,found)))
+             (wildFindUnQualified (spc.sorts, id))
+    else found
+ 
+ def findAllOps (spc, Qualified (qualifier,id)) =
+  if qualifier = UnQualified then
+    wildFindUnQualified (spc.ops, id)
+  else
+    case findAQualifierMap (spc.ops, qualifier, id) of
+     | Some op_info -> [op_info]
+     | None         -> []
+		
+ %%  find all the matches to id in every second level map
+ op wildFindUnQualified : fa (a) AQualifierMap a * Id -> List a
+ def wildFindUnQualified (qualifier_map, id) =
+   foldriAQualifierMap (fn (_, mId, val, results) ->
+			if id = mId
+			 then Cons(val,results)
+			 else results)
+     []
+     qualifier_map
+
  % this next one is use only in substract spec. it cannot be defined inside
  % the scope of subtractSpec as there is no let-polymorphism in Specware
  op mapDiff : fa (a) AQualifierMap a -> AQualifierMap a -> AQualifierMap a
@@ -489,11 +538,12 @@ AnnSpec qualifying spec
      sorts = mapDiff x.sorts y.sorts
    }
 
+(* ### unused
  op addDisjointImport: Spec * Spec -> Spec
  def addDisjointImport (spc, imported_spec) =
    let def mergeSortStep (imported_qualifier, imported_id,
 			  imported_sort_info, combined_psorts) =
-         insertAQualifierMap (combined_psorts,
+        insertAQualifierMap (combined_psorts,
 			      imported_qualifier,
 			      imported_id,
 			      imported_sort_info)
@@ -511,5 +561,6 @@ AnnSpec qualifying spec
    let newOps = foldriAQualifierMap mergeOpStep spc.ops imported_spec.ops in
    let spc = setOps (spc, newOps) in
    setProperties (spc,  spc.properties ++ imported_spec.properties)
-   
+*)
+
 endspec

@@ -1,5 +1,3 @@
-% Synchronized with version 1.6 of SW4/Languages/MetaSlang/Printer/ASpecPrinter.sl
-
 (*
  * This works but it's a mess. This will be refactored and perhaps
  * rewritten.
@@ -936,12 +934,11 @@ AnnSpecPrinter qualifying spec {
 		defs)
 
   op isBuiltIn? : Import -> Boolean
-  def isBuiltIn? (spec_ref, _ (* spc *)) =
-   %% Regard "List" and "General" as built-in.
-   spec_ref = "String"  or spec_ref = "Nat"  or 
-   spec_ref = "Boolean" or spec_ref = "Char" or
-   spec_ref = "Integer" or spec_ref = "List" or 
-   spec_ref = "General"
+  def isBuiltIn? (specCalcTerm, _ (* spc *)) = false
+   % spec_ref = "String"  or spec_ref = "Nat"  or 
+   % spec_ref = "Boolean" or spec_ref = "Char" or
+   % spec_ref = "Integer" or spec_ref = "List" or 
+   % spec_ref = "General"
 
   %% Top-level print module; lower-level print spec
   def ppSpec context  {importInfo = {imports, importedSpec=_,localOps=_,localSorts=_},
@@ -953,7 +950,7 @@ AnnSpecPrinter qualifying spec {
                              [(0, pp.Spec),
                               (0, string " ")]))]
                ++
-               (map (fn (spec_ref, spc) -> (1,prettysFill [pp.Import, string spec_ref])) imports) 
+               (map (fn (specCalcTerm, spc) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)])) imports) 
                ++
                (ppSortDecls context sorts)
                ++
@@ -973,7 +970,7 @@ AnnSpecPrinter qualifying spec {
                               [(0, pp.Spec),
                                (0, string " ")]))]
                ++
-               (map (fn (spec_ref, spc) -> (1,prettysFill [pp.Import, string spec_ref])) imports) 
+               (map (fn (specCalcTerm, spc) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)])) imports) 
                ++
                (ppSortDecls context sorts)
                ++
@@ -1036,7 +1033,7 @@ AnnSpecPrinter qualifying spec {
 		                              imports
 		in
 		let pps : Lines =
-		  List.map (fn (spec_ref, _) -> (1,prettysFill [pp.Import, string spec_ref])) 
+		  List.map (fn (specCalcTerm, _) -> (1,prettysFill [pp.Import, string (showTerm specCalcTerm)])) 
 		           non_base_imports
 		in
 		  pps)
@@ -1079,10 +1076,10 @@ AnnSpecPrinter qualifying spec {
                           sorts, ops, properties} = 
       let pp : ATermPrinter = context.pp in
       let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
-      let ppImports = map (fn (spec_ref, spc) ->
+      let ppImports = map (fn (specCalcTerm, spc) ->
                            (2, blockFill (0,
                                           [(0,string "import "),
-                                           (0,string spec_ref),
+                                           (0,string (showTerm specCalcTerm)),
                                            (0,string " |-> "),
                                            (0,ppSpecAll context spc)])))
                           imports in

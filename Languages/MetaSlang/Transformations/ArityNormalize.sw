@@ -78,9 +78,9 @@ ArityNormalize qualifying spec {
  sort UsedNames = StringSet.Set
  sort Gamma         = List(String * Option(Sort * Nat))
 
- op normalizeArity : Spec * Gamma * UsedNames * Term -> Term
+ op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
  
- op termArity : Spec * Gamma * Term    -> Option(Sort * Nat)
+ op termArity : Spec * Gamma * MS.Term    -> Option(Sort * Nat)
  op sortArity : Spec * Sort            -> Option(Sort * Nat)
 % op opArity   : Spec * String * String -> Option(Sort * Nat)
 
@@ -137,7 +137,7 @@ ArityNormalize qualifying spec {
  as many arguments as possible.
  *)
   
- def termArity(sp,gamma,term:Term) = 
+ def termArity(sp,gamma,term:MS.Term) = 
      case term
        of Apply _ -> None
         | Var((id,_),_) -> 
@@ -236,7 +236,7 @@ ArityNormalize qualifying spec {
 
 
 
-  op  etaExpand : Spec * UsedNames * Sort * Term -> Term
+  op  etaExpand : Spec * UsedNames * Sort * MS.Term -> MS.Term
 
   def etaExpand(sp,usedNames,srt,term) = 
       case arrowOpt(sp,srt)
@@ -258,16 +258,16 @@ ArityNormalize qualifying spec {
          | _ -> 
            let (names,_) = freshNames("x",fields,usedNames) in
            let vars = ListPair.map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
-           let trm:Term  = Lambda 
+           let trm:MS.Term  = Lambda 
                               ([(RecordPat(map (fn (l,v) -> (l,VarPat(v,noPos))) vars,noPos),
                                     mkTrue(),
                                     Apply(term,Record((map 
                                         (fn (l,v) -> 
-                                            (l,(Var(v,noPos)):Term)) vars),noPos),noPos))],noPos)
+                                            (l,(Var(v,noPos)):MS.Term)) vars),noPos),noPos))],noPos)
            in
            trm)))
 
- def normalizeArityTopLevel(sp,gamma,usedNames,term:Term):Term = 
+ def normalizeArityTopLevel(sp,gamma,usedNames,term:MS.Term):MS.Term = 
      case term
        of Lambda(rules,a) -> 
           Lambda 
@@ -285,7 +285,7 @@ ArityNormalize qualifying spec {
 
  def normalizeArity(sp,gamma,usedNames,term) = 
      let
-        def normalizeRecordArguments(t:Term):Term * Boolean = 
+        def normalizeRecordArguments(t:MS.Term):MS.Term * Boolean = 
             case t
               of Record(fields,_) -> 
                  let fields = 
@@ -386,7 +386,7 @@ ArityNormalize qualifying spec {
         | Fun _ -> convertToArity1(sp,gamma,usedNames,term)
 
 
-  def convertToArity1(sp,gamma,usedNames,term):Term = 
+  def convertToArity1(sp,gamma,usedNames,term):MS.Term = 
       case termArity(sp,gamma,term)
         of None -> term
          | Some (dom,num) ->

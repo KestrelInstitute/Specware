@@ -1,5 +1,3 @@
-% derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUtilities.sl, v1.3
-
 Utilities qualifying spec { 
  import StandardSpec    % defines sorts Spec, Term, etc.
  import /Library/Legacy/DataStructures/IntSetSplay
@@ -13,68 +11,59 @@ Utilities qualifying spec {
  op specEqual? : Spec * Spec -> Boolean
  op subspec?   : Spec * Spec -> Boolean
 
- op substitute    : Term * List (Var * Term) -> Term
-%op freeVars      : fa(a) ATerm a -> Vars
- op freeVars      : Term -> Vars
+ op substitute    : MS.Term * List (Var * MS.Term) -> MS.Term
+ op freeVars      : MS.Term -> Vars
 
  %% Translate a term encoding an assignment to a list of pairs.
  %% Redundant assignments of a variable to itself are eliminated.
 
- op extractAssignment : Term * Term -> List (Pattern * Term)
-
- %% Unfold the imports by expanding the argument
- %% list of specs.
-
- op unfoldImports  : List(Spec) * Spec -> Spec 
+ op extractAssignment : MS.Term * MS.Term -> List (Pattern * MS.Term)
 
  op removeDefinitions : Spec -> Spec
 
- op disableProperties : IntegerSet.Set * Spec -> Spec
+ op patternToTerm : Pattern -> Option MS.Term
 
- %% Were in ../transformations/meta-slang-match.sl
- op isFree        : Var * Term -> Boolean
- op replace       : Term * List (Term * Term) -> Term
- op patternToTerm : Pattern -> Option Term
-
-% --------------------------------------------------------------------------
- def isFree(v,term:Term) = 
-   case term
-     of Var(w,_)               -> v = w
-      | Apply(M1,M2,_)         -> isFree(v,M1) or isFree(v,M2)
-      | Record(fields,_)       -> exists (fn (_,M) -> isFree(v,M)) fields
-      | Fun _                  -> false
-      | Lambda(rules,_)        -> exists (fn (pat,cond,body) -> 
+ op isFree : Var * MS.Term -> Boolean
+ def isFree (v,term) = 
+   case term of
+     | Var(w,_)               -> v = w
+     | Apply(M1,M2,_)         -> isFree(v,M1) or isFree(v,M2)
+     | Record(fields,_)       -> exists (fn (_,M) -> isFree(v,M)) fields
+     | Fun _                  -> false
+     | Lambda(rules,_)        -> exists (fn (pat,cond,body) -> 
 					  ~(isPatBound(v,pat)) 
 					  & 
 					  (isFree(v,cond) or isFree(v,body)))
                                          rules
-      | Let(decls,M,_)         -> exists (fn (_,M) -> isFree(v,M)) decls
+     | Let(decls,M,_)         -> exists (fn (_,M) -> isFree(v,M)) decls
 			  	  or
 				  (all (fn (p,_) -> ~(isPatBound(v,p))) decls
 				   &
 				   isFree(v,M))
-      | LetRec(decls,M,_)      -> all (fn (w,_) -> ~(v = w)) decls 
+     | LetRec(decls,M,_)      -> all (fn (w,_) -> ~(v = w)) decls 
 				  & 
 				  (exists (fn (_,M) -> isFree(v,M)) decls
 				   or 
 				   isFree(v,M)) 
-      | Bind(b,vars,M,_)       -> all (fn w -> ~(v = w)) vars 
+     | Bind(b,vars,M,_)       -> all (fn w -> ~(v = w)) vars 
 			          & 
 			          isFree(v,M)
-      | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) or 
+     | IfThenElse(t1,t2,t3,_) -> isFree(v,t1) or 
 			          isFree(v,t2) or 
 				  isFree(v,t3)
 
- def isPatBound(v,pat:Pattern) = 
-   case pat
-     of AliasPat(p1,p2,_)      -> isPatBound(v,p1) or isPatBound(v,p2)
-      | EmbedPat(_,Some p,_,_) -> isPatBound(v,p)
-      | VarPat(w,_)            -> v = w
-      | RecordPat(fields,_)    -> exists (fn (_,p) -> isPatBound(v,p)) fields
-      | RelaxPat(p,_,_)        -> isPatBound(v,p)
-      | QuotientPat(p,_,_)     -> isPatBound(v,p)
-      | _ -> false
+ op isPatBound : Var * Pattern -> Boolean
+ def isPatBound (v,pat) = 
+   case pat of
+     | AliasPat(p1,p2,_)      -> isPatBound(v,p1) or isPatBound(v,p2)
+     | EmbedPat(_,Some p,_,_) -> isPatBound(v,p)
+     | VarPat(w,_)            -> v = w
+     | RecordPat(fields,_)    -> exists (fn (_,p) -> isPatBound(v,p)) fields
+     | RelaxPat(p,_,_)        -> isPatBound(v,p)
+     | QuotientPat(p,_,_)     -> isPatBound(v,p)
+     | _ -> false
 
+ op replace : MS.Term * List (MS.Term * MS.Term) -> MS.Term
  def replace(M,sub) = 
    if null sub then 
      M 
@@ -90,7 +79,7 @@ Utilities qualifying spec {
  
  def replace2(M,sub,freeNames) = 
    let
-       def rep(M:Term):Term = 
+       def rep(M:MS.Term):MS.Term = 
          case lookup(fn N -> N = M,sub)
 	   of Some N -> N
 	    | None -> 
@@ -149,8 +138,8 @@ Utilities qualifying spec {
    in
      rep(M)
 
- op repPattern : Pattern * List (Term * Term) * StringSet.Set -> Pattern * List (Term * Term) * StringSet.Set
- op repBoundVars: Vars *  List (Term * Term) * StringSet.Set -> Vars *  List (Term * Term) * StringSet.Set
+ op repPattern : Pattern * List (MS.Term * MS.Term) * StringSet.Set -> Pattern * List (MS.Term * MS.Term) * StringSet.Set
+ op repBoundVars: Vars *  List (MS.Term * MS.Term) * StringSet.Set -> Vars *  List (MS.Term * MS.Term) * StringSet.Set
 
 
  def repBoundVars(vars,sub,freeNames) = 
@@ -199,11 +188,11 @@ Utilities qualifying spec {
 
 
  %----------------------
- def freeVars(M) = 
+ def freeVars (M) = 
    let vars = freeVarsRec(M) in
    ListUtilities.removeDuplicates vars
 
- def freeVarsRec(M:Term) =   
+ def freeVarsRec(M:MS.Term) =   
    case M
      of Var(v,_) -> [v]
       | Apply(M1,M2,_)   -> freeVarsRec(M1) ++ freeVarsRec(M2)
@@ -227,7 +216,7 @@ Utilities qualifying spec {
       | IfThenElse(t1,t2,t3,_) -> 
 	freeVarsRec(t1) ++ freeVarsRec(t2) ++ freeVarsRec(t3)
 
- op  freeVarsList : fa(a) List(a * Term) -> Vars
+ op  freeVarsList : fa(a) List(a * MS.Term) -> Vars
  def freeVarsList list = 
    List.foldr (fn ((_,trm),vs) -> vs ++ freeVarsRec trm) [] list
 
@@ -327,7 +316,7 @@ Utilities qualifying spec {
    % let _ = List.app (fn ((v,_),tm) -> 
    %		       String.writeLine (v^" |-> "^MetaSlangPrint.printTerm tm)) sub in	
    let
-       def subst(M:Term):Term = 
+       def subst(M:MS.Term):MS.Term = 
          case M
 	   of Var ((s,_),_) -> 
 	      (%String.writeLine ("Looking up "^s);
@@ -459,7 +448,7 @@ Utilities qualifying spec {
   	  [(VarPat v,arguments)]
       | (Record(fields,_),Record(fields2,_)) -> 
 	  ListPair.foldr 
-	    (fn((_,(Var(v,_)):Term),(_,arg:Term),assignments)->
+	    (fn((_,(Var(v,_)):MS.Term),(_,arg:MS.Term),assignments)->
 	     (case arg
 		of (Var(w,_)) -> if v = w 
                                  then assignments else
@@ -503,9 +492,8 @@ Utilities qualifying spec {
     sorts            = spc.sorts,
     properties       = emptyProperties}
 
-
-
- def disableProperties(indices,spc:Spec) = 
+ op disableProperties : IntegerSet.Set * Spec -> Spec
+ def disableProperties (indices,spc) = 
    if IntegerSet.isEmpty indices then
      spc
    else
@@ -536,11 +524,13 @@ Utilities qualifying spec {
  op filterWithIndex : (Integer * Property -> Boolean) -> Properties -> Properties
  def filterWithIndex p l = 
    let def fRec(n,l) = 
-         case l 
-	   of []    -> [] 
-            | x::xs -> if p(n,x) 
-	               then cons(x,fRec(n + 1,xs))
-		       else fRec(n + 1,xs)
+     case l of
+       | []    -> [] 
+       | x::xs ->
+           if p(n,x) then
+             cons(x,fRec(n + 1,xs))
+		   else
+             fRec(n + 1,xs)
    in
      fRec(0,l)
 
@@ -592,7 +582,7 @@ Utilities qualifying spec {
 	  a)
    | _ -> srt
 
- op modifyNamesTerm: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * Term -> Term
+ op modifyNamesTerm: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * MS.Term -> MS.Term
  def modifyNamesTerm(mSrt,mOp,term) =
    case term
      of Apply(t1,t2,a) ->
@@ -759,7 +749,7 @@ Utilities qualifying spec {
 	     a)
       | _ -> srt
 
- op letRecToLetTermTerm: Term -> Term
+ op letRecToLetTermTerm: MS.Term -> MS.Term
  def letRecToLetTermTerm term =
    case term
      of Apply(t1,t2,a) -> 
@@ -908,7 +898,7 @@ Utilities qualifying spec {
      loopP(p,[])
 
 
- def mkIfThenElse(t1,t2:Term,t3:Term):Term =
+ def mkIfThenElse(t1,t2:MS.Term,t3:MS.Term):MS.Term =
    case t2 of
      | Fun(Bool true,_,_)  -> mkOr(t1,t3)
      | Fun(Bool false,_,_) -> mkAnd(mkNot t1,t3)
@@ -920,18 +910,18 @@ Utilities qualifying spec {
    IfThenElse(t1,t2,t3,noPos)
 
  def mkOr(t1,t2) = 
-     case (t1:Term,t2:Term)
+     case (t1:MS.Term,t2:MS.Term)
        of (Fun(Bool true,_,_),_) -> t1
 	| (Fun(Bool false,_,_),_) -> t2
 	| (_,Fun(Bool true,_,_)) -> t2
 	| (_,Fun(Bool false,_,_)) -> t1
-	| _ -> StandardSpec.mkOr(t1,t2)
+	| _ -> MS.mkOr(t1,t2)
 
  def mkAnd(t1,t2) = 
-     case (t1:Term,t2:Term)
+     case (t1:MS.Term,t2:MS.Term)
        of (Fun(Bool true,_,_),_) -> t2
 	| (Fun(Bool false,_,_),_) -> t1
 	| (_,Fun(Bool true,_,_)) -> t1
 	| (_,Fun(Bool false,_,_)) -> t2
-	| _ -> StandardSpec.mkAnd(t1,t2)
+	| _ -> MS.mkAnd(t1,t2)
 }

@@ -4,7 +4,7 @@ spec
   import /Languages/MetaSlang/Specs/Environment
   import /Languages/MetaSlang/Transformations/PatternMatch
 
- op makeTypeCheckObligationSpec: Spec * SpecRef -> Spec
+ op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
 % Auxiliary variable environment.
@@ -13,16 +13,16 @@ spec
 
  sort Decl  = 
    | Var Var 
-   | Cond Term 
-   | LetRec List (Var * Term) 
-   | Let List (Pattern * Term)
+   | Cond MS.Term 
+   | LetRec List (Var * MS.Term) 
+   | Let List (Pattern * MS.Term)
 
  sort Gamma = List Decl * TyVars * Spec * String * StringSet.Set
 
  op  insert       : Var * Gamma -> Gamma
- op  assertCond   : Term * Gamma -> Gamma
- op  insertLet    : List (Pattern * Term) * Gamma -> Gamma
- op  insertLetRec : List (Var * Term) * Gamma -> Gamma
+ op  assertCond   : MS.Term * Gamma -> Gamma
+ op  insertLet    : List (Pattern * MS.Term) * Gamma -> Gamma
+ op  insertLetRec : List (Var * MS.Term) * Gamma -> Gamma
 % op  boundVars    : Gamma -> List Var
 % op  boundTypeVars : Gamma -> TyVars
 
@@ -77,10 +77,10 @@ spec
      ()
  
 
- sort TypeCheckCondition  = String * TyVars * Term 
+ sort TypeCheckCondition  = String * TyVars * MS.Term 
  sort TypeCheckConditions = List TypeCheckCondition
 
- op addCondition : TypeCheckConditions * Gamma * Term -> 
+ op addCondition : TypeCheckConditions * Gamma * MS.Term -> 
 		   TypeCheckConditions
  op addFailure :   TypeCheckConditions * Gamma * String -> 
 		   TypeCheckConditions
@@ -93,13 +93,13 @@ spec
 
  op |- infixl 7 :    
       (TypeCheckConditions * Gamma) * 
-       (Term * Sort) -> TypeCheckConditions
+       (MS.Term * Sort) -> TypeCheckConditions
 
- op <= : TypeCheckConditions * Gamma * Term * Sort * Sort -> 
+ op <= : TypeCheckConditions * Gamma * MS.Term * Sort * Sort -> 
 	 TypeCheckConditions
 
  op getSpec        : Gamma -> Spec
-% op inferType  : Spec * Term -> Sort
+% op inferType  : Spec * MS.Term -> Sort
 % op domain     : Spec * Sort -> Sort
 % op range      : Spec * Sort -> Sort
  op unfoldBase : Gamma * Sort -> Sort
@@ -214,7 +214,7 @@ spec
           let rules = 
 	      (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	in
           let x  = freshName(gamma,"x")				in
-          let vs = [Var((x,dom),noPos):Term]	        	in
+          let vs = [Var((x,dom),noPos):MS.Term]	        	in
 	  let (_,_,spc,name,_) = gamma				in
 	  let context = {counter = Ref 0,
 		         spc = spc,
@@ -252,7 +252,7 @@ spec
 
 
 
- op bindPattern : Gamma * Pattern * Sort  -> Gamma * Term
+ op bindPattern : Gamma * Pattern * Sort  -> Gamma * MS.Term
 
  def returnPatternRec(pairs,gamma,M,tau,sigma) =
      if tau = sigma or 
@@ -293,7 +293,7 @@ spec
             | EmbedPat(constr,Some p,tau_,_) -> 
 	      let tau1 = patternSort p 			        in
 	      let (gamma1,t1) = bindPattern(gamma,p,tau1)       in
-	      let t2:Term     = Apply(Fun(Embed(constr,true),
+	      let t2:MS.Term     = Apply(Fun(Embed(constr,true),
 					  Arrow(tau1,tau_,noPos),noPos),t1,noPos) in
 	      returnPattern(gamma1,t2,tau_,tau)
 	    | EmbedPat(constr,None,tau_,_) -> 
@@ -308,7 +308,7 @@ spec
 		   (gamma,cons((id,trm),terms)))
 			(gamma,[]) fields
               in
-	      let trm: Term = Record(terms,noPos) 		 in
+	      let trm: MS.Term = Record(terms,noPos) 		 in
 	      returnPattern(gamma, trm, patternSort pat,tau)
 	    | WildPat(sigma,_)	-> 
 	      let v = freshName(gamma,"v")		 in
@@ -326,12 +326,12 @@ spec
            | RelaxPat(p,pred,_) 	-> 
 	     let tau1:Sort = Subsort(tau,pred,noPos) in
              let (gamma,trm) = bindPattern(gamma,p,tau1)  in
-	     (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos):Term)
+	     (gamma,Apply(Fun(Relax,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
            | QuotientPat(p,pred,_) 	-> 
 	     let Quotient(tau1,_,_):Sort = tau in
 	     let (gamma,trm) = bindPattern(gamma,p,tau1)
 	     in
-	     (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos):Term)
+	     (gamma,Apply(Fun(Quotient,Arrow(tau1,tau,noPos),noPos),trm,noPos):MS.Term)
 
 
 %
@@ -339,8 +339,8 @@ spec
 % by replacing TranslationBuiltIn.failWith by "or"
 %
 
- op simplifyMatch: Term -> Term
- def simplifyMatch(trm:Term) = 
+ op simplifyMatch: MS.Term -> MS.Term
+ def simplifyMatch(trm:MS.Term) = 
      case trm
        of IfThenElse(t1,t2,t3,_) -> 
 	  let t2 = simplifyMatch(t2) in
@@ -397,7 +397,7 @@ spec
      case (tau1,sigma1)
        of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) -> 
 	  let x = freshName(gamma,"x") 				in
-          let xVar   = Var((x,sigma1),noPos):Term			in
+          let xVar   = Var((x,sigma1),noPos):MS.Term			in
           let gamma1 = insert((x,sigma1),gamma) 		in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVar,sigma1,tau1) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,
@@ -480,9 +480,9 @@ spec
      in
      tcc
 
- def makeTypeCheckObligationSpec (spc,spcRef) =
-   let tcSpec = addImport((spcRef,spc),emptySpec) in
-   addConjectures(checkSpec(spc),tcSpec)
+ def makeTypeCheckObligationSpec (spc,specCalcTerm) =
+   let tcSpec = addImport ((specCalcTerm,spc),emptySpec) in
+   addConjectures (checkSpec spc,tcSpec)
 
 % def boundTypeVars(_,tyVars,_,_,_) = tyVars
 

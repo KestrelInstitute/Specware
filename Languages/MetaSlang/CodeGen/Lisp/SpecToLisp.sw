@@ -230,7 +230,7 @@ def mkLEqualityOp(sp,srt) =
         | _ -> "slang-built-in::slang-term-equals"
 
 op  mkLTermOp : fa(a) Spec * String * StringSet.Set * (Fun * Sort * a)
-                       * Option(Term) -> LispTerm
+                       * Option(MS.Term) -> LispTerm
 
 def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
     case termOp
@@ -363,7 +363,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
         | Some term -> mkLTerm(sp,dpn,vars,term))
   | _ -> (System.fail "Unexpected termOp")
 
- op flattenFailWith : Term -> List (Term)
+ op flattenFailWith : MS.Term -> List (MS.Term)
 
  def flattenFailWith term =
      case term
@@ -373,12 +373,12 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
         | _ -> [term]
 
 
-  def lispBlock(sp,dpn,vars,term:Term):LispTerm = 
+  def lispBlock(sp,dpn,vars,term:MS.Term):LispTerm = 
       let terms = flattenFailWith term in
       let terms = List.map (fn term -> blockAtom(sp,dpn,vars,term)) terms in
       mkLSeq(terms)        
 
-  def blockAtom(sp,dpn,vars,term:Term):LispTerm = 
+  def blockAtom(sp,dpn,vars,term:MS.Term):LispTerm = 
      case term
 
        of IfThenElse (t1, t2, Fun (Op (Qualified ("TranslationBuiltIn", "mkBreak"),
@@ -412,7 +412,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
 
 % DIE HARD if the above cases are not exhaustive
 
-op fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * StandardSpec.Term -> Option LispTerm
+op fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term -> Option LispTerm
 def fullCurriedApplication(sp,dpn,vars,term) =
   let def aux(term,i,args) =
         case term
@@ -426,12 +426,12 @@ def fullCurriedApplication(sp,dpn,vars,term) =
   in aux(term,0,[])
 
 
-def mkLTermList(sp,dpn,vars,term:Term) = 
+def mkLTermList(sp,dpn,vars,term:MS.Term) = 
     case term 
       of Record(fields,_) -> List.map (fn (_,t) -> mkLTerm(sp,dpn,vars,t)) fields
        | _ -> [mkLTerm(sp,dpn,vars,term)]
 
-def mkLTerm (sp,dpn,vars,term : Term) = 
+def mkLTerm (sp,dpn,vars,term : MS.Term) = 
   case fullCurriedApplication(sp,dpn,vars,term)
     of Some lTerm -> lTerm
      | _ ->

@@ -1,13 +1,10 @@
-% synchronized with version 1.4 of SW4/Languages/MetaSlang/TypeChecker/PosSpecToSpec.sl
-
-PosSpecToSpec qualifying
-spec {
+PosSpecToSpec qualifying spec {
  %%  convert pos terms to standard terms
 
- import ../PosSpec
  import ../StandardSpec
+ import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
 
- op convertPosSpecToSpec: PosSpec -> Spec
+ op convertPosSpecToSpec: Spec -> Spec
 
  def convertPosSpecToSpec spc =
    let context = initializeMetaTyVars() in
