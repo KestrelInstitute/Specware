@@ -38,7 +38,7 @@ SpecCalc qualifying spec
 
   op mergeSortInfo : Spec -> SortInfo -> Option SortInfo -> Position -> SpecCalc.Env SortInfo
  def mergeSortInfo _(*spc*) new_info opt_old_info pos =
-   %% spc is not currently used, but could be, for example if we were to iterate to a fixpoint
+   %% spc is not currently used, but could be, for example, if we were to use equivSort? instead of equalSort?
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
