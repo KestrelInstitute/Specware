@@ -360,7 +360,7 @@
 
 ;;;  TODO: In doc: sort-definition now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DEFINITION ()
-  (:tuple "sort" (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT))
+  (:tuple :KW-TYPE (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT))
   (make-sort-definition 1 2 3 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
@@ -471,7 +471,7 @@ If we want the precedence to be optional:
   (cons 1 2))
 
 (define-sw-parser-rule :SORT-QUANTIFICATION ()
-  (:tuple "sort" (1 :SORT-VARIABLE-BINDER))
+  (:tuple :KW-TYPE (1 :SORT-VARIABLE-BINDER))
   1)
 
 ;;; ========================================================================
@@ -1289,7 +1289,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-DECL-REF ()
   (:anyof 
-   ((:tuple "sort"          (1 :SC-SORT-REF))          (make-sc-sort-ref      1 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE        (1 :SC-SORT-REF))          (make-sc-sort-ref      1 ':left-lcb ':right-lcb))
    ((:tuple "op"            (1 :SC-OP-REF))            (make-sc-op-ref        1 ':left-lcb ':right-lcb))
    ((:tuple (1 :CLAIM-KIND) (2 :SC-CLAIM-REF))         (make-sc-claim-ref     1 2 ':left-lcb ':right-lcb))
    ;; Without an explicit "sort" or "op" keyword, if ref is annotated, its an op ref:
@@ -1412,8 +1412,8 @@ If we want the precedence to be optional:
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
   ;; (make-sc-translate-rule 1 2 ':left-lcb ':right-lcb))
   (:anyof 
-   ((:tuple "sort" (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sc-sort-rule      1 2 ':left-lcb ':right-lcb))
-   ((:tuple "op"   (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sc-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple "op"     (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sc-op-rule        1 2 ':left-lcb ':right-lcb))
    ;; ?? axiom/thoerem/conjecture ??
    ;;
    ;; Without an explicit "sort" or "op" keyword, 
@@ -1448,8 +1448,8 @@ If we want the precedence to be optional:
   ;; (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
   ;; (make-sc-spec-morph-rule 1 2 ':left-lcb ':right-lcb))
   (:anyof 
-   ((:tuple "sort" (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sm-sort-rule      1 2 ':left-lcb ':right-lcb))
-   ((:tuple "op"   (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
+   ((:tuple :KW-TYPE (1 :SC-SORT-REF)         :MAPS-TO (2 :SC-SORT-REF))          (make-sm-sort-rule      1 2 ':left-lcb ':right-lcb))
+   ((:tuple "op"     (1 :SC-OP-REF)           :MAPS-TO (2 :SC-OP-REF))            (make-sm-op-rule        1 2 ':left-lcb ':right-lcb))
    ;; ?? axiom/thoerem/conjecture ??
    ;;
    ;; Without an explicit "sort" or "op" keyword, 
