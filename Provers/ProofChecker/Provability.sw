@@ -80,15 +80,12 @@ spec
     | exNonRecursiveLet
     | exEquivalentTypes
     | exAlphaAbstraction
-    | exAlphaUniversal
-    | exAlphaExistential
-    | exAlphaExistential1
     | exAlphaCase
     | exAlphaRecursiveLet
-    | exAlphaNonRecursiveLet
     % well-typed pattern:
     | paVariable
-    | paEmbedding
+    | paEmbedding0
+    | paEmbedding1
     | paRecord
     | paTuple
     | paAlias
@@ -178,7 +175,7 @@ spec
       && ~(contextDefinesOp? (cx, o))
       && pj (theore (cx ++ multiTypeVarDecls tvS1,
                      EX1 (v, typeSubstInType tsbs t)
-                         (OPmt o == e)))
+                         (VAR v == e)))
       && ~(o in? exprOps e)
       => pj (wellFormedContext (cx <| opDefinition (tvS1, o, e))))
     | cxAxiom ->
@@ -247,7 +244,8 @@ spec
       => pj (wellFormedType (cx, TRECORD fS tS)))
     | tyProduct ->
       (fa (cx:Context, tS:Types)
-         (fa(i:Nat) i < length tS =>
+         pj (wellFormedContext cx)
+      && (fa(i:Nat) i < length tS =>
             pj (wellFormedType (cx, tS elem i)))
       => pj (wellFormedType (cx, PRODUCT tS)))
     | tySub ->
@@ -488,7 +486,7 @@ spec
       && t?S elem i = None
       && pj (wellFormedType (cx, SUM cS t?S))
       => pj (wellTypedExpr (cx, EMBED (SUM cS t?S) (cS elem i), SUM cS t?S)))
-    | exEmbedder0 ->
+    | exEmbedder1 ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, i:Nat, t:Type)
          i < length cS
       && i < length t?S
@@ -775,7 +773,7 @@ spec
       && i < length eS2
       && pj (wellTypedExpr (cx, RECORD fS1 eS1, TRECORD fS1 tS1))
       && pj (wellTypedExpr (cx, RECORD fS2 eS2, TRECORD fS2 tS2))
-      && pj (theore (cx,
+      => pj (theore (cx,
                      ((RECORD fS1 eS1) <<< (RECORD fS2 eS2)) DOTr (fS2 elem i)
                      == (eS2 elem i))))
     | thEmbedderSurjective ->
@@ -955,7 +953,7 @@ spec
     | thAbbrevUniversal ->
       (fa (cx:Context, bvS:BoundVars, e:Expression)
          pj (wellTypedExpr (cx, FAA bvS e, BOOL))
-      && pj (theore (cx, FAA bvS e ==
+      => pj (theore (cx, FAA bvS e ==
                          (FNN bvS e == FNN bvS TRUE))))
     | thAbbrevExistential ->
       (fa (cx:Context, bvS:BoundVars, e:Expression)

@@ -4,6 +4,25 @@ again. *)
 
 
 
+%%% formulation of inference rules as relations over judgements:
+
+  op rel : InferenceRule -> (FSeq Judgement * Judgement -> Boolean)
+  def rel = fn
+    | cxTypeDecl ->
+      min (fn r ->
+       (fa (cx:Context, tn:TypeName, n:Nat)
+          ~(tn in? contextTypes cx) =>
+          r (singleton (wellFormedContext cx),
+             wellFormedContext (cx <| typeDeclaration (tn, n)))))
+
+  op prov? : Judgement -> Boolean
+  def prov? = min (fn prov? ->
+    (fa (ir:InferenceRule, jS:FSeq Judgement, j:Judgement)
+       rel ir (jS, j) && (fa(i:Nat) i < length jS => prov? (jS elem i)) =>
+       prov? j))
+
+
+
 %%% explicit def of pattVars (vs. using pattBoundVars):
 
   op pattVars : Pattern -> FSet Variable
