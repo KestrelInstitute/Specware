@@ -791,6 +791,7 @@ Utilities qualifying spec
 	Base(qid,
 	     List.map (fn(s) -> letRecToLetTermSort(s)) srts,
 	     a)
+     %| Boolean is the same as default case
       | _ -> srt
 
  op letRecToLetTermTerm: MS.Term -> MS.Term

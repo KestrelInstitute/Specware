@@ -608,6 +608,7 @@ SpecsToI2L qualifying spec {
       % this is active, when a Fun occurs "standalone", i.e. not in the context of an apply.
       % we restrict the possible forms to those not having an arrow sort, i.e. we don't support
       % functions as objects
+      % Not, And, Or, etc,. should never occur "standalone", so we don't look for them here
       | Fun(fun,srt,_) ->
          if arrowSort?(spc,srt) then
 	   case fun of
@@ -637,6 +638,7 @@ SpecsToI2L qualifying spec {
 		   | Base(qid,_,_) ->
 		     let vname = qid2varid qid in
 		     ConstrCall(vname,id,[])
+		   | Boolean _ -> ConstrCall(("Boolean", "Boolean"), id, [])
 		   | _ -> AssignUnion(id,None)
 		    )
 	      else AssignUnion(id,None)
@@ -706,6 +708,18 @@ SpecsToI2L qualifying spec {
 					   )
 				 in
 				 ConstrCall(vname,id,exprs)
+			       | Boolean _ -> 
+				 let exprs = 
+				     (case t2 of
+					| Record(fields,b) ->
+					  if fieldsAreNumbered fields then
+					    %let _ = writeLine("t2="^printTerm(t2)) in
+					    map (fn(_,t) -> term2expression(ctxt,spc,t)) fields
+					  else [mkExpr2()]
+					| _ -> [mkExpr2()]
+					   )
+				 in
+				 ConstrCall(("Boolean", "Boolean"), id, exprs)
 			       | _ -> AssignUnion(id,Some(mkExpr2()))
 			      )
 			  else AssignUnion(id,Some(mkExpr2()))

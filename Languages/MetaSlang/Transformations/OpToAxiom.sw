@@ -27,11 +27,13 @@ Prover qualifying spec
 
   op srtPred: Spec * Sort * MS.Term -> MS.Term
 
+  %% compute the predicate constraining srt to its ultimate supersort
   def srtPred(spc, srt, tm) =
     let def topPredBaseSrt(srt) =
          case srt of
 	   | Base(Qualified("Nat","Nat"),_,_) -> topPredBaseSrt(proverNatSort())
 	   | Base (qid, _, _) -> (Some qid, mkTrue())
+	   | Boolean _        -> (None,     mkTrue())
 	   | Subsort (supSrt, predFn, _) ->
 	   let (supBaseSrt, supPred) = topPredBaseSrt(supSrt) in
 	   let pred = (simplify spc (mkApply(predFn, tm))) in

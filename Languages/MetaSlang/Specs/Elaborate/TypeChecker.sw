@@ -236,7 +236,6 @@ spec {
 					      ^":"^newline
                                               ^(printSort aSrt), 
                                               pos))
-		       | Boolean _ -> ()
                        | TyVar     (tv,      _) -> insert tv
                        | Product   (fields,  _) ->
 			 app (fn (_, s)      -> record_type_vars_used s) fields
@@ -248,6 +247,7 @@ spec {
                        | Arrow     (s1, s2,  _) ->
 			 (record_type_vars_used s1; record_type_vars_used s2)
                        | Base     (_, srts, _) -> app record_type_vars_used srts
+		       | Boolean _ -> ()
                  in                        
                  let _ = record_type_vars_used srt_3 in
                  ! tv_cell)

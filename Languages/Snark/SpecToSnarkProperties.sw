@@ -116,6 +116,7 @@ snark qualifying spec
       | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
       | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
 				      else Lisp.symbol("SNARK",snarkSortId(id))
+      | Boolean _ -> Lisp.symbol("SNARK",snarkSortId("Boolean"))
       | Product _ -> Lisp.symbol("SNARK","TRUE")
       | Arrow _ -> Lisp.symbol("SNARK","TRUE")
       | TyVar _ -> Lisp.symbol("SNARK","TRUE") in

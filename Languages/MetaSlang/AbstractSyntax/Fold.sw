@@ -48,9 +48,8 @@ spec {
        | Arrow (s1, s2, a) -> foldSort tsp_folds (foldSort tsp_folds acc s1) s2
        | Quotient (srt, trm, a) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt
        | Subsort (srt, trm, a) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt
-     % | Subset (ssrt, trm, a) -> 
        | Base (qid, srts, a) -> foldl (fn (srt,acc) -> foldSort tsp_folds acc srt) acc srts
-%       | Base (qid, srts, a) -> foldl (fn (srt,acc) -> foldSort tsp_folds acc srt) acc srts
+       | Boolean _ -> acc
        | _ -> acc
    in
      sortFold foldOfChildren srt

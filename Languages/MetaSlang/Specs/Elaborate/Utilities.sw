@@ -351,6 +351,7 @@ spec
           | [] -> 
                (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
                 unlinked_sort))
+   %| Boolean is the same as default case
     | s -> s 
 
  %% sjw: Returns srt with all  sort variables dereferenced

@@ -60,6 +60,7 @@ def sortToClsDecls (_(* qualifier *), id, sort_info, spc, jcginfo) =
 	   | Quotient (superSort, quotientPred, _) -> quotientToClsDecls(id,superSort,quotientPred,spc)
 	   | Subsort (superSort, pred, _) -> subSortToClsDecls(id,superSort,pred,spc)
 	   | Base (Qualified (qual, id1), [], _) -> userTypeToClsDecls(id,id1)
+	   | Boolean _                           -> userTypeToClsDecls(id,"Boolean")
 	   | _ -> %fail("Unsupported sort definition: sort "^id^" = "^printSort(srtDef))
 	   (issueUnsupportedError(sortAnn(srtDef),"sort definition not supported");(jcginfo.clsDecls,nothingCollected))
 	  )

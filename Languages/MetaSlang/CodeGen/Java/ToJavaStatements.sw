@@ -43,6 +43,7 @@ def termToExpression_internal(tcx, term, k, l, spc, _ (*addRelaxChoose?*)) =
 	 else
 	   (case srt of
 	      | Base (Qualified (q, srtId), _, _) -> ((mts, mkQualJavaExpr(srtId, id), k, l),nothingCollected)
+	      | Boolean _                         -> ((mts, mkQualJavaExpr("Boolean", id), k, l),nothingCollected)
 	      | Arrow(dom,rng,_) -> translateLambdaToExpr(tcx,term,k,l,spc)
 	      | _ -> unsupportedInTerm(term,k,l,"term not supported by Java code generator")
 	      )
@@ -138,6 +139,8 @@ def translateRestrictToExpr(tcx, srt, argsTerm, k, l, spc) =
   case srt of
     | Base (Qualified (q, srtId), _, _) ->
       ((newBlock, mkNewClasInst(srtId, [newArg]), newK, newL),col1)
+    | Boolean _ ->
+      ((newBlock, mkNewClasInst("Boolean", [newArg]), newK, newL),col1)
     | _ -> 
       (case findMatchingRestritionType(spc,srt) of
 	 | Some (Base(Qualified(q,srtId),_,_)) ->

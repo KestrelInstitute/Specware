@@ -874,7 +874,7 @@ MetaSlang qualifying spec {
 	 let newSrts = mapSLst(tsp_maps,sort_map,srts) in
 	 if newSrts = srts then srt
 	   else Base (qid, newSrts, a)
-       | Boolean a -> Boolean a
+       | Boolean a -> srt
        | MetaTyVar(tv,pos) -> 
 	   let {name,uniqueId,link} = ! tv in
 	   (case link
@@ -1281,7 +1281,7 @@ MetaSlang qualifying spec {
        | Base      (qid, srts,                 a) ->
          Base      (qid, map replaceRec srts,  a)
 
-       | Boolean a -> Boolean a
+       | Boolean a -> srt
 
        | _ -> srt
 

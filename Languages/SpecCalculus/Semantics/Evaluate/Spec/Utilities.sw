@@ -844,6 +844,7 @@ def sortIsUnrefinedInSpec?(spc,srt) =
   case srt of
     | Base(Qualified(_,id),_,_) ->
       sortIdIsUnrefinedInSpec?(spc,id)
+    | Boolean _ -> true
     | _ -> false
 
 op sortIdIsUnrefinedInSpec?: Spec * Id -> Boolean
@@ -851,13 +852,14 @@ def sortIdIsUnrefinedInSpec?(spc,id) =
   let srts = sortsAsList spc in
   case find (fn(_,id0,sortinfo) -> (id0 = id)) srts of
      | Some (_,_,(_,_,[])) -> true
-     | _ -> false
+     | _ -> false % TODO: should this be (id = "Boolean") ? [who calls this?]
 
 op opIdIsDefinedInSpec?: Spec * Id -> Boolean
 def opIdIsDefinedInSpec?(spc,id) =
   let ops = opsAsList spc in
   case find (fn(_,id0,opinfo) -> (id0 = id)) ops of
     | Some (_,_,(_,_,_,_::_)) -> true
+   % TODO: do we need cases for Not, And, Or, etc. ? [who calls this?]
     | _ -> false
 
 

@@ -113,7 +113,8 @@ def unfoldSortAliases(spc) =
 op findMatchingUserTypeOption: Spec * Sort -> Option Sort
 def findMatchingUserTypeOption(spc,srtdef) =
   case srtdef of
-    | Base _ -> Some srtdef
+    | Base    _ -> Some srtdef
+    | Boolean _ -> Some srtdef
     | _ ->
     let srts = sortsAsList(spc) in
     let srtPos = sortAnn srtdef in
@@ -279,6 +280,8 @@ op p2mSort: Spec * Boolean * MS.Sort * SortOpInfos -> MS.Sort * SortOpInfos
 def p2mSort(spc,modifyConstructors?,srt,minfo) =
   case srt of
     | Base(qid0 as Qualified(q,id),insttv as _::_,b) ->
+      %% We are trying to simplify instances of polymorphic sorts where
+      %% all the type vars have been instantitated.
       if exists (fn(TyVar _) -> true | s -> false) insttv then (srt,minfo) else
       let suffix = getSortNameSuffix insttv in
       let qid = Qualified(q,id^suffix) in
@@ -319,6 +322,7 @@ def p2mSort(spc,modifyConstructors?,srt,minfo) =
 		      | _ -> minfo)
       in
       (Base(qid,[],b),minfo)
+    | Boolean _ -> (srt,minfo) 
     | Arrow(srt1,srt2,b) ->
       let (srt1,minfo) = p2mSort(spc,modifyConstructors?,srt1,minfo) in
       let (srt2,minfo) = p2mSort(spc,modifyConstructors?,srt2,minfo) in
@@ -429,11 +433,13 @@ op p2mPattern: Spec * Boolean * Pattern * SortOpInfos -> Pattern * SortOpInfos
 def p2mPattern(spc,modifyConstructors?,pat,minfo) =
   case pat of
     | EmbedPat(id,optPat,srt,b) ->
+      %% Given "| Foo List(Nat)", we might convert to "| Foo_Nat List_Nat"
       let id = (case srt of
 		  | Base(qid,insttv as _::_,_) ->
 		    if exists (fn(TyVar _) -> true | s -> false) insttv then id else
 		      if modifyConstructors? then id^(getSortNameSuffix insttv)
 		      else id
+		 %| Boolean is same as default case
 		  | _ -> id)
       in
       let (optPat,minfo) = (case optPat of
@@ -485,10 +491,12 @@ def p2mFun(spc,modifyConstructors?,fun,srt,minfo) =
       in
       (case cpsrt of
 	| Base(sqid,insttv as _::_,_) ->
+          %% constructor Cons could become Cons_Nat for List(Nat), etc.
 	  if exists (fn(TyVar _) -> true | s -> false) insttv then (fun,srt1,minfo) else
 	  let id_ = id^(getSortNameSuffix insttv) in
 	  let fun = Embed(if modifyConstructors? then id_ else id,b?) in
 	  (fun,srt1,minfo)
+       %| Boolean is same as default case
 	| _ -> (fun,srt1,minfo)
 	)
     | Op(qid as Qualified(q,id),fix) ->
@@ -545,6 +553,7 @@ def p2mFun(spc,modifyConstructors?,fun,srt,minfo) =
 	  (nfun,srt1,minfo)
 	| _ -> (fun,srt1,minfo)
 	 )
+   %| Not/And/Or/Implies/Equals/NotEquals are all same as default
     | _ -> (fun,srt1,minfo)
 
 
@@ -727,6 +736,7 @@ def addMissingFromSort(bspc,spc,ignore,srt,minfo) =
 		        addSortInfo2SortOpInfos(qid,sinfo,minfo)
 		   )
 	)
+   %| Boolean is same as default case
     | _ -> minfo
 
 
@@ -1265,7 +1275,7 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
       | Base(Qualified(_,"Char"),[],_) -> spc
       | Base(Qualified(_,"Boolean"),[],_) -> spc
       | Boolean _ -> spc
-      %| Base(Qualified(_,"Float"),[],_) -> spc
+     %| Base(Qualified(_,"Float"),[],_) -> spc
       | Base(Qualified(_,"String"),[],_) -> spc
       | _ ->
         let b = sortAnn(srt) in
@@ -1301,6 +1311,7 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
 	    let args = Record([("1",varx),("2",vary)],b) in
 	    let body = Apply(fun,args,b) in
 	    addEqOp(eqqid,osrt,body,b)
+         %| Boolean is same as default case
 	  | _ ->
 	    %let _ = writeLine("srt="^printSort(srt)) in
 	    case srt of

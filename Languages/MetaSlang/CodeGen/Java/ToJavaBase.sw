@@ -257,7 +257,7 @@ def tt = tt_v2
 op tt_v2: Id -> Java.Type
 def tt_v2(id) =
   case id of
-    | "Boolean" -> (Basic (JBool), 0)
+    | "Boolean" -> (Basic (JBool), 0) % see tt_v3
     | "Integer" -> (Basic (JInt), 0)
     | "Nat" -> (Basic (JInt), 0)
     | "Char" -> (Basic (Char), 0)
@@ -283,6 +283,7 @@ op tt_v3: Sort -> Java.Type * Collected
 def tt_v3(srt) =
   case srt of
     | Base(Qualified(_,id),_,_) -> (tt_v2(id),nothingCollected)
+    | Boolean _                 -> (tt_v2("Boolean"),nothingCollected)
     | Arrow(srt0,srt1,_) -> 
       let (sid,col) = srtId(srt) in
       (mkJavaObjectType(sid),col)
@@ -331,6 +332,7 @@ def srtId_internal(srt,addIds?) =
 	       else (id,nothingCollected)
       in
       ([tt_v2 id],id,col)
+    | Boolean _ -> ([tt_v2 "Boolean"],"Boolean",nothingCollected)
     | Product([],_) -> ([JVoid],"void",nothingCollected)
     | Product(fields,_) -> 
       let (l,str,col) = foldl (fn((id,fsrt),(types,str,col)) ->

@@ -660,6 +660,7 @@ def eliminateSort context srt =
        | Subsort(s,t,a) -> Subsort(eliminateSort context s,
 				eliminateTerm context t,a)
        | Base(qid,sorts,a) -> Base(qid,map (eliminateSort context) sorts,a)
+       | Boolean _ -> srt
        | TyVar _ -> srt
 
 (*

@@ -210,6 +210,7 @@ XML qualifying spec
 							 add_to_table (srt, table))
 					  in
 					    foldl scan table srts)
+	  | Boolean   _               -> table
           | TyVar     _               -> table
 	  | MetaTyVar _               -> let new_sort = unlinkSort srt in
 	                                 if new_sort = srt then
@@ -260,6 +261,7 @@ XML qualifying spec
 	 | [] -> 
 	   (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
 	    unlinked_sort))
+   %| Boolean is the same as default case
     | s -> s 
   %% ================================================================================
 

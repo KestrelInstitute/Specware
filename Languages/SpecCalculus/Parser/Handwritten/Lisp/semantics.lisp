@@ -461,23 +461,22 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-unqualified-op-ref (name l r)
-  
-  (make-fun (if ms::|usingNewBooleans?|
-		(case name 
-		  ("not" (cons :|Not| nil))
-		  ("&"   (cons :|And| nil))
-		  ("or"  (cons :|Or| nil))
-		  ;("&&"  (cons :|And| nil))
-		  ;("||"  (cons :|Or| nil))
-		  ("=>"  (cons :|Implies| nil))
-		  ("<=>" (cons :|Iff| nil))
-		  ("="   (cons :|Equals| nil))
-		  ("~="  (cons :|NotEquals| nil))
+  (make-fun (cond (ms::|usingNewBooleans?|
+		   (cond ((equal name "not") (cons :|Not| nil))
+			 ((equal name "&")  (cons :|And| nil))
+			 ((equal name "or") (cons :|Or| nil))
+			 ;;((equal name ("&&") (cons :|And| nil))
+			 ;;((equal name ("||") (cons :|Or| nil))
+			 ((equal name "=>") (cons :|Implies| nil))
+			 ((equal name "<=>")(cons :|Iff| nil))
+			 ((equal name "=")  (cons :|Equals| nil))
+			 ((equal name "~=") (cons :|NotEquals| nil))
+			 (t
+			  (cons :|OneName| (cons name unspecified-fixity)))))
+		  ((equal name "=")
+		   (cons :|Equals| nil))
 		  (t
 		   (cons :|OneName| (cons name unspecified-fixity))))
-		(if (equal name "=")
-		    (cons :|Equals| nil)
-		  (cons :|OneName| (cons name unspecified-fixity))))	      
             (freshMetaTypeVar l r)
             l r))
 

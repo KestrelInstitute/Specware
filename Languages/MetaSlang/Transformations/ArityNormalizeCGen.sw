@@ -172,6 +172,7 @@ ArityNormalizeCGen qualifying spec {
 		  let usrt = SpecEnvironment.unfoldBase(sp,srt) in
 		  if usrt = srt then None
 		  else findCoProduct(usrt)
+	       %| Boolean is the same as default case
 		| _ -> None
 
    in

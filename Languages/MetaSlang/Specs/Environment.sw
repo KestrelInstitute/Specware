@@ -58,6 +58,8 @@ spec
           | Base (id,                   srts, a) ->  
             Base (id, List.map substRec srts, a) 
 
+	  | Boolean _ -> srt
+
           | Arrow (         s1,          s2,  a) ->  
             Arrow (substRec s1, substRec s2,  a) 
 
@@ -133,6 +135,7 @@ spec
              srt
          else
           unfoldStripSort1 (sp, srt, List.cons(srt0,vsrts), verbose)
+       | Boolean _ -> srt
        | TyVar (tv, a) -> srt
      
 

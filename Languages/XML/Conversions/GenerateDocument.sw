@@ -69,6 +69,7 @@ XML qualifying spec
     let
        def aux sd =
 	 case sd of
+	   | Boolean -> "Boolean"
 	   | Base (qid, args) ->
 	     (case args of
 		| []            -> (print_qid qid)
@@ -265,6 +266,7 @@ XML qualifying spec
       | Product sd_fields ->
         (let raw_item_name = 
 	     case sd of
+	       | Boolean -> "Boolean"
 	       | Base ((q,id), []) -> ((if q = "<unqualified>" then "" else q ^ ".") ^ id)
 	       | _ -> "item"
 	 in
