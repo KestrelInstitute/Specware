@@ -20,7 +20,9 @@
 
 (make-sw4 "../SW4")
 
-(format t "~2%To test, run (test)~2%")
+(format t "~2%No don't do that.~2%")
+(format t "~2%To test, run (test)~%")
+(format t "~%That will run (sw \"/Applications/Specware/Generate\")~2%")
 
 (defun test ()
   ;; (sw "/Library/Structures/Data/Categories/Diagrams/Polymorphic/AsRecord")
