@@ -63,14 +63,14 @@ Integer qualifying spec
   op <   infixl 20 : Integer * Integer -> Boolean
   op >=  infixl 20 : Integer * Integer -> Boolean
   op >   infixl 20 : Integer * Integer -> Boolean
-  op abs           : Integer -> {i : Integer | i >= 0}
+  op abs           : Integer -> Nat
   op min           : Integer * Integer -> Integer
   op max           : Integer * Integer -> Integer
   op compare       : Integer * Integer -> Comparison
   op pred          : Nat -> Integer
 
   axiom addition_def1 is
-    fa(i:Integer) i+0 = 0 & 0+i = 0
+    fa(i:Integer) i+0 = i & 0+i = i
   axiom addition_def2 is
     fa(n1,n2:PosNat)   n1  +   n2  = plus(n1,n2)
                    & (-n1) + (-n2) = -(plus(n1,n2))
