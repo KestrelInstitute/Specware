@@ -47,15 +47,15 @@ Prover qualifying spec
 		       let newArgs = map (fn(id, srt) -> mkVar (id,srt)) (argNames, argSorts) in
 		       mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, rng, body, prevArgs ++ newArgs)
 		   else
-		     let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in 
+		     %let _ = if topFunOp = mkOp(mkUnQualifiedId("switch"), topSrt) then debug("topUnc") else () in 
 		     mkEquality(topSrt, topFunOp, topTrm)
-	      | _-> %let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in
+	      | _-> %let _ = if topFunOp = mkOp(mkUnQualifiedId("switch"), topSrt) then debug("topUnc") else () in
 		    mkEquality(topSrt, topFunOp, topTrm))
-	  | _ -> %let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in
+	  | _ -> %let _ = if topFunOp = mkOp(mkUnQualifiedId("switch"), topSrt) then debug("topUnc") else () in
 	         mkEquality(topSrt, topFunOp, topTrm))
        | _ ->
 	   (case trm of
-	      | Lambda ([(pat, cond, body)],_) ->  %let _ = if topFunOp = mkOp(mkUnQualifiedId("project_AA_1"), topSrt) then debug("topUnc") else () in
+	      | Lambda ([(pat, cond, body)],_) ->  %let _ = if topFunOp = mkOp(mkUnQualifiedId("switch"), topSrt) then debug("topUnc") else () in
 	                                           mkEquality(topSrt, topFunOp, topTrm)
 	      | _ -> mkEquality(srt, mkAppl(topFunOp, prevArgs), trm))
       
