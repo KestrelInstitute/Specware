@@ -332,8 +332,11 @@
 
 ;;;  TODO: Fix doc: sort-declaration now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DECLARATION ()
-  (:tuple "sort" (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)))
+  (:tuple :KW-TYPE (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)))
   (make-sort-declaration 1 2 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :KW-TYPE ()
+  (:anyof "sort" "type"))
 
 (define-sw-parser-rule :FORMAL-SORT-PARAMETERS ()
   ;; a little tricky.  Allow "X" "(X)" "(X,Y)" etc. but not "()"
