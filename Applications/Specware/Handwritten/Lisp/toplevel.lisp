@@ -840,21 +840,18 @@
   )
 
 (defun ls (&optional (str ""))
-  #+allegro (tpl:do-command "ls" str)
-  #+cmu  (ext:run-program "ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
-  #+mcl  (ccl:run-program "ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
-  #+sbcl (sb-ext:run-program "/bin/ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
-  #-(or cmu mcl sbcl allegro) (format t "Not yet implemented")
+  (specware::run-program (format nil "ls -FC ~a" str))
   (values))
 
-#-allegro
 (defun dir (&optional (str ""))
   (ls str))
 
 (defun dirr (&optional (str "*.sw"))
-  #+allegro (excl:run-shell-command
-	      (format nil "ls `find . -name '~a' -print | sed 's/^\\.\\///'`"
-		      str))
+  ;; The command -p is to ensure the path is set to a default that gets correct find
+  ;; (was a problem on windows)
+  (specware::run-program
+   (format nil "ls -FC `command -p find . -name '~a' -print | sed 's/^\\.\\///'`"
+	   str))
   (values))
 
 #-allegro

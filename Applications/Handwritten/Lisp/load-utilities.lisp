@@ -162,6 +162,21 @@
 (defun setTemporaryDirectory ()
   (setq temporaryDirectory (temporaryDirectory-0)))
 
+(defun run-program (command-str)
+  #+(and allegro unix)
+  (excl:run-shell-command command-str)
+  #+(and allegro mswindows)
+  (let ((str (excl:run-shell-command (format nil "c:\\cygwin\\bin\\bash.exe -c ~S"
+					     (format nil "command -p ~A" command-str))
+				     :wait nil :output :stream
+				     :show-window :hide))) 
+    (do ((ch (read-char str nil nil) (read-char str nil nil))) 
+	((null ch) (close str) (sys:os-wait)) (write-char ch)))
+  #+cmu  (ext:run-program command-str :output t)
+  #+mcl  (ccl:run-program command-str :output t)
+  #+sbcl (sb-ext:run-program (format nil "command -p ~A" command-str) :output t)
+  #-(or cmu mcl sbcl allegro) (format nil "Not yet implemented"))
+
 (defun copy-file (source target)
   #+allegro(sys:copy-file source target)
   #+cmu(ext:run-program "cp" (list (namestring source)
