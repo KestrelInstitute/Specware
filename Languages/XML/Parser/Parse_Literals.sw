@@ -26,8 +26,9 @@ XML qualifying spec
 	 case tail of
 	   | 60  (* < *)   :: _ -> 
 	     error ("'<' is not allowed in an attribute value", start, nthTail (tail, 20))
-	   | 38  (* & *)   :: _ -> 
+	   | 38  (* & *)   :: tail -> 
 	     {
+	      %% parse_Reference assumes we're just past the ampersand.
 	      (possible_ref, tail) <- parse_Reference tail;
 	      case possible_ref of
 		| Some ref ->
@@ -38,7 +39,7 @@ XML qualifying spec
 			 qchar)
 		| _ ->
 		  error ("'&' is not allowed in an attribute value unless it starts a refernce.", 
-				      start, nthTail (tail, 20))
+			 start, nthTail (tail, 20))
 		 }
 	   | char :: tail -> 
 	     if char = qchar then

@@ -129,7 +129,7 @@ XML qualifying spec
       %% DTD
       | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 (* '<!DOCTYPE' *) :: tail ->
 	{
-	 (dtd, tail) <- parse_DocTypeDecl start;
+	 (dtd, tail) <- parse_DocTypeDecl tail;
 	 return (DTD dtd,
 		 tail)
 	}

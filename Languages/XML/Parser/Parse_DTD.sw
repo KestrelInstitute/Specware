@@ -1,7 +1,7 @@
 
 XML qualifying spec
 
-  import XML_Parser_Base
+  import Parse_Character_Strings % parse_WhiteSpace
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Data_Type_Document                                                                  %%%
@@ -113,11 +113,62 @@ XML qualifying spec
   %% [83]  PublicID        ::=  'PUBLIC' S PubidLiteral 
   %% ----------------------------------------------------------------------------------------------------
 
-  op parse_DocTypeDecl : UChars -> Required DocTypeDecl
+  def parse_DocTypeDecl (start : UChars) : Required DocTypeDecl =
+   %% [28]  doctypedecl     ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
+   %% assumes we're just past '<!DOCTYPE'
+   {
+    (w1,          tail) <- parse_WhiteSpace start;
+    (name,        tail) <- parse_Name       tail;
+    (external_id, tail) <- parse_ExternalID tail;
+    (w3,          tail) <- parse_WhiteSpace tail;
+    (markups,     tail) <- parse_markups    tail;
+    case tail of
+      | 62 (* '>' *) :: tail ->
+        return ({w1          = w1,
+		 name        = name,
+		 external_id = external_id,
+		 w3          = w3,
+		 markups     = markups},
+		tail)
+      | _ ->
+	error ("DTD doesn't end with '>'", start, nthTail (tail, 10))
+       }
 
-  op parse_ExternalID : UChars -> Possible ExternalID
+  def parse_ExternalID (start : UChars) : Possible (WhiteSpace * ExternalID) =
+    {
+     (w1, tail) <- parse_WhiteSpace start;
+     if null w1 then
+       return (None, start)
+     else
+       %% [75]  ExternalID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
+       case tail of 
+	 | 83 :: 89 :: 83 :: 84 :: 69 :: 77 (* 'SYSTEM' *) :: tail ->
+	   {
+	    (w2,     tail) <- parse_WhiteSpace tail;
+	    (syslit, tail) <- parse_SystemLiteral tail;
+	    return (Some (w1, System (w2, syslit)),
+		    tail)
+	    }
+
+         | 80 :: 85 :: 66 :: 76 :: 73 :: 67 (* 'PUBLIC' *) :: tail ->
+	   {
+	    (w2,     tail) <- parse_WhiteSpace    tail;
+	    (publit, tail) <- parse_PubidLiteral  tail;
+	    (w3,     tail) <- parse_WhiteSpace    tail;
+	    (syslit, tail) <- parse_SystemLiteral tail;
+	    return (Some (w1, Public (w2, publit, w3, syslit)),
+		    tail)
+	    }
+	 | _ ->
+	   return (None, start)
+	  }	
+	 
+  op parse_markups    : UChars -> Possible (List (| Decl MarkupDecl | Sep DeclSep) * 
+					    WhiteSpace)
 
   op parse_SystemLiteral : UChars -> Required SystemLiteral
+
+  op parse_PubidLiteral : UChars -> Required PubidLiteral
 
   op parse_MarkupDecl : UChars -> Possible MarkupDecl
 

@@ -114,7 +114,7 @@ XML qualifying spec
 	   | 33 :: 91  :: 67 :: 68 :: 65 :: 84 :: 65 :: 91 :: tail ->
 	     %% "<![CDATA["
 	     {
-	      %% parse_Comment assumes we're past "<![CDATA["
+	      %% parse_CDSECT assumes we're past "<![CDATA["
 	      (cdsect, tail) <- parse_CDSect tail;   
 	      return (Some (CDSect cdsect),
 		      tail)
@@ -136,9 +136,9 @@ XML qualifying spec
 	      })
       | [] ->
 	error ("EOF scanning content of element.", start, [])
-      | _ ->
+      | 38  (* & *)   :: tail -> 
 	{
-	 %% parse_Reference assumes we're back at the (non-"<") start
+	 %% parse_Reference assumes we're just past the ampersand.
 	 (possible_reference, tail) <- parse_Reference start;
 	 return (case possible_reference of
 		   | Some ref ->
@@ -147,6 +147,8 @@ XML qualifying spec
 		   | _ ->	 
 		     (None, start))
 	}
+      | _ ->
+	return (None, start)
 
 
   %% ----------------------------------------------------------------------------------------------------

@@ -80,6 +80,19 @@ XML qualifying spec
 
   %% ----------------------------------------------------------------------------------------------------
 
-  op parse_CDSect : UChars -> Required CDSect
+  def parse_CDSect (start : UChars) : Required CDSect =
+    %% parse_CDSECT assumes we're past "<![CDATA["
+    let
+       def probe (tail, rev_comment) =
+	 case tail of
+	   | 93 :: 93 :: 62 (* ']]>' *) :: tail ->
+	     return ({cdata = rev rev_comment}, 
+		     tail)
+	   | [] ->
+	     error ("EOF inside CDSect", start, tail)
+	   | char :: tail ->
+	     probe (tail, cons (char, rev_comment))
+    in
+      probe (start, [])
 
 endspec
