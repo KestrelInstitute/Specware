@@ -1000,12 +1000,12 @@ XML qualifying spec
   %%   [53]  AttDef          ::=  S Name S AttType S DefaultDecl
   %% -------------------------------------------------------------------------------------------------
 
-  sort AttDef = {w1      : WhiteSpace,
-		 name    : Name,
-		 w2      : WhiteSpace,
-		 type    : AttType,
-		 w3      : WhiteSpace,
-		 default : DefaultDecl}
+  sort AttDef = {w1       : WhiteSpace,
+		 name     : Name,
+		 w2       : WhiteSpace,
+		 att_type : AttType,
+		 w3       : WhiteSpace,
+		 default  : DefaultDecl}
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K26]  AttType         ::=  'CDATA'

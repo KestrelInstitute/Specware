@@ -372,11 +372,11 @@ def mapNameInterfDecl ii (mods,hdr as (id,superifs),bdy) =
 
 
 op mapNameFldDecl: (Ident -> Ident) -> FldDecl -> FldDecl
-def mapNameFldDecl ii (mods,type,vdecl,vdecls) =
-  let type = mapNameType ii type in
+def mapNameFldDecl ii (mods,ftype,vdecl,vdecls) =
+  let ftype = mapNameType ii ftype in
   let vdecl = mapNameVarDecl ii vdecl in
   let vdecls = map (mapNameVarDecl ii) vdecls in
-  (mods,type,vdecl,vdecls)
+  (mods,ftype,vdecl,vdecls)
 
 op mapNameConstrDecl: (Ident -> Ident) -> ConstrDecl -> ConstrDecl
 def mapNameConstrDecl ii (mods,id,fpars,throws,block) =
@@ -415,10 +415,10 @@ def mapNameVarInit ii varinit =
     | ArrInit arrinit -> ArrInit(map (mapOption (mapNameVarInit ii)) arrinit)
 
 op mapNameFormPar: (Ident -> Ident) -> FormPar -> FormPar
-def mapNameFormPar ii (isfinal,type,vdeclid) =
+def mapNameFormPar ii (isfinal,ptype,vdeclid) =
   let vdeclid = mapNameVarDeclId ii vdeclid in
-  let type = mapNameType ii type in
-  (isfinal,type,vdeclid)
+  let ptype = mapNameType ii ptype in
+  (isfinal,ptype,vdeclid)
 
 op mapNameExpr: (Ident -> Ident) -> Expr -> Expr
 def mapNameExpr ii expr =
@@ -520,14 +520,14 @@ op mapNameBinExp: (Ident -> Ident) -> BinExp -> BinExp
 def mapNameBinExp ii binexp =
   case binexp of
     | Bin(binop,binexp1,binexp2) -> Bin(binop,mapNameBinExp ii binexp1,mapNameBinExp ii binexp2)
-    | InstOf(binexp,type) -> InstOf(mapNameBinExp ii binexp,mapNameType ii type)
+    | InstOf(binexp,etype) -> InstOf(mapNameBinExp ii binexp,mapNameType ii etype)
     | Un(unexp) -> Un(mapNameUnExp ii unexp)
 
 op mapNameUnExp: (Ident -> Ident) -> UnExp -> UnExp
 def mapNameUnExp ii unexp =
   case unexp of
     | Un(unop,unexp) -> Un(unop,mapNameUnExp ii unexp)
-    | Cast(type,unexp) -> Cast(mapNameType ii type,mapNameUnExp ii unexp)
+    | Cast(etype,unexp) -> Cast(mapNameType ii etype,mapNameUnExp ii unexp)
     | PostUn(unexp,pop) -> PostUn(mapNameUnExp ii unexp,pop)
     | Prim p -> Prim(mapNamePrim ii p)
 

@@ -359,8 +359,8 @@ parameter variables.
           in
           ([],[])
       | vardecl::vardecls ->
-          let (id,type) = vardecl in
-          if type = Void then divideDecls(vardecls,funParNames) else
+          let (id,vartype) = vardecl in
+          if vartype = Void then divideDecls(vardecls,funParNames) else
           if List.member(id,funParNames) then
             %- add the decl as parameter decls
             let funParNames = List.filter (fn(x) -> Boolean.~(id = x)) funParNames in
@@ -384,9 +384,9 @@ parameter variables.
                 in
                 (Void,VoidReturn)
         | vardecl::vardecls ->
-                let (id,type) = vardecl in
+                let (id,vartype) = vardecl in
                 if id = resOpName then
-                  (type,if type = Void then VoidReturn else Return(Var(id,type)))
+                  (vartype,if vartype = Void then VoidReturn else Return(Var(id,vartype)))
                 else
                   getReturnInfo(vardecls,Some resOpName)
 \end{spec}
@@ -1182,8 +1182,8 @@ from an auxiliary update of the form $x = x_0$.
 
           op removeFancyCharsFnDefns: FnDefns -> FnDefns
           def removeFancyCharsFnDefns(fndefns) =
-            List.map (fn(fname,decls,type,stmt) -> (fname,removeFancyCharsVarDecls(decls),type,
-                                                    removeFancyCharsStmt(stmt))) fndefns
+            List.map (fn(fname,decls,ftype,stmt) -> (fname,removeFancyCharsVarDecls(decls),ftype,
+                                                     removeFancyCharsStmt(stmt))) fndefns
 
           op removeFancyCharsStmt: Stmt -> Stmt
           def removeFancyCharsStmt(stmt) =

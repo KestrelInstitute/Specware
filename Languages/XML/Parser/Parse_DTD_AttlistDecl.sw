@@ -157,12 +157,12 @@ XML qualifying spec
 	  (possible_default,  tail) <- parse_DefaultDecl tail;
 	  case possible_default of
 	    | Some default ->
-	      return (Some {w1      = w1,
-			    name    = name,
-			    w2      = w2,
-                            type    = att_type,
-			    w3      = w3,
-			    default = default},
+	      return (Some {w1       = w1,
+			    name     = name,
+			    w2       = w2,
+                            att_type = att_type,
+			    w3       = w3,
+			    default  = default},
 		      tail)
 	    | _ -> return (None, start)
 	     }}

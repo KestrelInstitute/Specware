@@ -14,7 +14,7 @@ CGen qualifying spec {
     let cSpec = generateCTypes cSpec spc in
     let cSpec = generateCVars cSpec spc in
     let cSpec = generateCFunctions cSpec spc in
-    let stmt = Block ([],map (fn (type,name,tyVars,term) -> termToCStmt term) spc.properties) in
+    let stmt = Block ([],map (fn (typ,name,tyVars,term) -> termToCStmt term) spc.properties) in
     let cSpec = addFuncDefn cSpec "main" [] Int stmt in
     let _ = writeLine (PrettyPrint.toString (format (80, ppCSpec cSpec))) in
     cSpec
@@ -215,11 +215,11 @@ the base types in C. For instance \verb+typedef int Integer+.
     }
 
   op addVarDecl : CSpec -> String -> Type -> CSpec
-  def addVarDecl cSpec name type = {
+  def addVarDecl cSpec name vtype = {
       includes    = cSpec.includes,
       defines     = cSpec.defines,
       constDefns  = cSpec.constDefns,
-      vars        = Cons ((name,type), cSpec.vars),
+      vars        = Cons ((name,vtype), cSpec.vars),
       extVars     = cSpec.extVars,
       fns         = cSpec.fns,
       axioms      = cSpec.axioms,
@@ -231,7 +231,7 @@ the base types in C. For instance \verb+typedef int Integer+.
     }
 
   op addFuncDefn : CSpec -> String -> VarDecls -> Type -> Stmt -> CSpec
-  def addFuncDefn cSpec name params type stmt = {
+  def addFuncDefn cSpec name params ftype stmt = {
       includes    = cSpec.includes,
       defines     = cSpec.defines,
       constDefns  = cSpec.constDefns,
@@ -243,7 +243,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       structDefns = cSpec.structDefns,
       unionDefns  = cSpec.unionDefns,
       varDefns    = cSpec.varDefns,
-      fnDefns     = Cons ((name,params,type,stmt),cSpec.fnDefns)
+      fnDefns     = Cons ((name,params,ftype,stmt),cSpec.fnDefns)
     }
 
   op addStruct : CSpec -> String -> VarDecls -> CSpec
@@ -263,7 +263,7 @@ the base types in C. For instance \verb+typedef int Integer+.
     }
 
   op addTypeDefn : CSpec -> String -> Type -> CSpec
-  def addTypeDefn cSpec name type = {
+  def addTypeDefn cSpec name typ = {
       includes    = cSpec.includes,
       defines     = cSpec.defines,
       constDefns  = cSpec.constDefns,
@@ -271,7 +271,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       extVars     = cSpec.extVars,
       fns         = cSpec.fns,
       axioms      = cSpec.axioms,
-      typeDefns   = Cons ((name,type), cSpec.typeDefns),
+      typeDefns   = Cons ((name,typ), cSpec.typeDefns),
       structDefns = cSpec.structDefns,
       unionDefns  = cSpec.unionDefns,
       varDefns    = cSpec.varDefns,

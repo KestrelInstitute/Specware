@@ -31,10 +31,10 @@ def unSupported x =
  * are just declared.
  *)
 op baseType?: Spec * Sort -> Boolean
-def baseType?(spc,type) =
-  if boolSort?(type) or integerSort?(type) or natSort?(type) or stringSort?(type) or charSort?(type)
+def baseType?(spc,typ) =
+  if boolSort?(typ) or integerSort?(typ) or natSort?(typ) or stringSort?(typ) or charSort?(typ)
     then true
-  else sortIsUnrefinedInSpec?(spc,type)
+  else sortIsUnrefinedInSpec?(spc,typ)
 
 
 op baseTypeAlias?: Spec * Sort -> Boolean

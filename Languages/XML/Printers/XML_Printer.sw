@@ -833,8 +833,8 @@ XML qualifying spec
   %%   [53]  AttDef          ::=  S Name S AttType S DefaultDecl
   %% -------------------------------------------------------------------------------------------------
 
-  def print_AttDef {w1, name, w2, type, w3, default} =
-    w1 ^ name ^ w2 ^ (print_AttType type) ^ w3 ^ (print_DefaultDecl default)
+  def print_AttDef {w1, name, w2, att_type, w3, default} =
+    w1 ^ name ^ w2 ^ (print_AttType att_type) ^ w3 ^ (print_DefaultDecl default)
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K26]  AttType         ::=  'CDATA'
