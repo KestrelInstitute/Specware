@@ -661,7 +661,7 @@ in a file <"MatchingObligations.sw">, in the same directory as
 the following definitions:</para>
 
 [[
-||    SymbolMatching = 
+||    SymbolMatching_Oblig = 
 ||      obligations MatchingSpecs#SymbolMatching
 ||
 ||    Symbols_Ref_Oblig =
@@ -674,10 +674,10 @@ the following definitions:</para>
 ||      obligations MatchingRefinements#FindMatches_Ref0
 ]]
 
-<para>[[SymbolMatching_Oblig]] is a spec that express the proof
-obligations that arise as a result of typechecking the spec SymbolMatching.
-[[Symbols_Ref_Oblig]], [[WordMatching_Ref0_Oblig]], and
-[[FindMatches_Ref0_Oblig]] are specs that express the proof
+<para>[[SymbolMatching_Oblig]] is a spec that expresses the proof
+obligations that arise as a result of typechecking the spec
+[[SymbolMatching]]. [[Symbols_Ref_Oblig]], [[WordMatching_Ref0_Oblig]],
+and [[FindMatches_Ref0_Oblig]] are specs that express the proof
 obligations of the associated morphisms as conjectures. &Specware;
 provides the capability to display (i.e., print) any spec, morphism,
 etc., via the [[:show]] command. This command can be used to see the
@@ -732,25 +732,26 @@ define [[MatchingRefinements#FindMatches]].</para>
 <para>&Specware; provides the capability to invoke external theorem
 provers in order to attempt proofs of conjectures. Concretely, this is
 carried out by creating proof objects. Each proof object is associated
-to a certain conjecture in a certain spec; it also indicates the
+with a certain conjecture in a certain spec; it also indicates the
 prover to use and some directives on how to perform the proof.
 Processing of the proof object invokes the indicated prover with the
 given directives. Currently, the only available prover is Snark; more
 provers will be added in the future.</para>
 
 <para>For example, the user can attempt to discharge the proof
-obligation for [[SymbolMatching]] by writing the following command
-in a file named <"MatchingProof.sw">, located in the same directory
-as <"MatchingObligations.sw">:</para>
+obligation for [[MatchingSpecs#SymbolMatching]] by writing the
+following command in a file named <"MatchingProof.sw">, located in the
+same directory as <"MatchingObligations.sw">:</para>
 
 [[
 ||    prove symb_matches? in
 ||      MatchingObligations#SymbolMatching_Oblig
+]]
 
 Then at the Lisp prompt, issue this command to discharge the proof:
 
 [[L:
-||    :sw MatchingProof.sw
+||    :sw MatchingProof
 ]]
 
 The obligation is translated to the Snark theorem prover and
