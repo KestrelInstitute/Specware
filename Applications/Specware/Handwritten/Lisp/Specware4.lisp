@@ -11,7 +11,7 @@
 #+cmu
 (setq ext:*gc-verbose* nil)
 #+cmu
-(setq extensions:*bytes-consed-between-gcs* 10000000)
+(setq extensions:*bytes-consed-between-gcs* 40000000)
 #+cmu
 (setq *compile-verbose* nil)
 #+cmu
@@ -175,6 +175,8 @@
 ;;; Load base in correct location
 #+allegro
 (push  'cl-user::sw-re-init cl-user::*restart-actions*)
+#+cmu
+(push  'cl-user::sw-re-init ext:*after-save-initializations*)
 
 ;;; Set temporaryDirectory
 #+allegro
