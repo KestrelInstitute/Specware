@@ -741,14 +741,21 @@ spec
 		   let usedNames = addLocalVars (term, StringSet.empty) in
 		   let term = etaExpand (spc, usedNames, tau, term) in
 		   let term = renameTerm (emptyContext ()) term in 
-		   (tcc, 
-		    gamma0 
-		    tvs 
-		    (Some (unfoldStripSort (spc, tau, false)))
-		    (Some (Qualified (q, id), (curriedParams term).1))
-		    (Qualified (q, id ^ "_Obligation")))
-		   |- 
-		   term ?? tau)
+		   let taus = case tau of
+		                | And (srts, _) -> srts
+				| _ -> [tau]
+		   in
+		   foldl (fn (tau, tcc) ->
+			  (tcc, 
+			   gamma0 
+			   tvs 
+			   (Some (unfoldStripSort (spc, tau, false)))
+			   (Some (Qualified (q, id), (curriedParams term).1))
+			   (Qualified (q, id ^ "_Obligation")))
+			   |- 
+			  term ?? tau)
+		         tcc
+		         taus)
 	          tcc 
 		  (opInfoDefs info)
 	  else 
