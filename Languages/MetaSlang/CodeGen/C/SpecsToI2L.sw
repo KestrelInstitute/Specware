@@ -178,6 +178,7 @@ SpecsToI2L qualifying spec {
       | Base(Qualified(_,"Char"),[],_) -> Primitive "Char"
       | Base(Qualified(_,"String"),[],_) -> Primitive "String"
       | Base(Qualified(_,"Boolean"),[],_) -> Primitive "Boolean"
+      | Boolean _  -> Primitive "Boolean"
       %| Base(Qualified(_,"Float"),[],_) -> Primitive "Float"
 
       % reference type
@@ -431,6 +432,7 @@ SpecsToI2L qualifying spec {
 		 | Base(Qualified("Char","Char"),[],_) -> srt
 		 | Base(Qualified("String","String"),[],_) -> srt
 		 | Base(Qualified("Boolean","Boolean"),[],_) -> srt
+		 | Boolean _ -> srt
 		 | Base(Qualified("List","List"),[psrt],X) ->
 		   let upsrt = unfoldBaseKeepPrimitives(sp,psrt) in
 		   Base(Qualified("List","List"),[upsrt],X)
@@ -811,6 +813,7 @@ SpecsToI2L qualifying spec {
       | Base(Qualified(_,"Integer"),[],_) -> primEq()
       | Base(Qualified(_,"Char"),[],_) -> primEq()
       | Base(Qualified(_,"Boolean"),[],_) -> primEq()
+      | Boolean _ -> primEq()
       %| Base(Qualified(_,"Float"),[],_) -> primEq()
       | Base(Qualified(_,"String"),[],_) -> Builtin(StrEquals(t2e t1,t2e t2))
       | _ ->
