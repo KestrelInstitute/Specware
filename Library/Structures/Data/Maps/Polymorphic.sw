@@ -140,7 +140,7 @@ in the reverse order to the way it it traversed by foldMap.
      ppSep ppNewline (foldMap (fn l -> fn dom -> fn cod
                -> Cons (ppConcat [
                           ppKey dom,
-                          ppString " |-> ",
+                          ppString " +-> ",
                           ppValue cod], l)) [] map)
 \end{spec}
 

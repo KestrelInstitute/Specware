@@ -155,7 +155,7 @@ in the reverse order to the way it it traversed by foldMap.
      ppSep ppNewline (foldMap (fn l -> fn dom -> fn cod
                -> Cons (ppConcat [
                           ppDom dom,
-                          ppString "|->",
+                          ppString "+->",
                           ppCod cod], l)) [] map)
 }
 \end{spec}
