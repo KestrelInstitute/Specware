@@ -60,29 +60,30 @@ resolved in slightly different ways.</para>
 <para>An absolute reference starts with ``/'' (forward slash),
 followed by a ``/''-separated sequence of one or more identifiers,
 where the last separator can be ``#'' (sharp). Examples are
-[[/a/b/c]], [[/d]], and [[/e#f]].
+[[/a/b/c]], [[/d]], and [[/e#f]].</para>
 
 <para>&Specware; resolves an absolute reference in the following
 steps:</para>
 
 <orderedlist>
 
-<listitem>If the reference contains ``#'', the ``#'' itself and the
-identifier following it are removed, obtaining a ``/''-separated
+<listitem><para>If the reference contains ``#'', the ``#'' itself and
+the identifier following it are removed, obtaining a ``/''-separated
 sequence of one or more identifiers, preceded by ``/''. Otherwise, no
 removal takes place. Either way, the result of this first step is a
-``/''-separated sequence of identifiers preceded by ``/''.</listitem>
+``/''-separated sequence of identifiers preceded by
+``/''.</para></listitem>
 
-<listitem>If the underlying operating system is Windows, the ``/''
-signs of the ``/''-separated sequence of identifiers preceded by
+<listitem><para>If the underlying operating system is Windows, the
+``/'' signs of the ``/''-separated sequence of identifiers preceded by
 ``/'', resulting from the previous step, are turned into ``\''
 (backward slash); in addition, <".sw"> is appended at the
 end. Otherwise, the ``/'' signs are left unchanged and <".sw"> is
 appended at the end. Either way, the result of this second step is a
-(partial) path in the file system.</listitem>
+(partial) path in the file system.</para></listitem>
 
-<listitem>The path resulting from the previous step is appended after
-the first directory of &swpath;. If the resulting absolute path
+<listitem><para>The path resulting from the previous step is appended
+after the first directory of &swpath;. If the resulting absolute path
 identifies an existing file, that is the result of this third step.
 Otherwise, the same attempt is made with the second directory of
 &swpath; (if any). Attempts continue until a directory is found in
@@ -90,21 +91,22 @@ Otherwise, the same attempt is made with the second directory of
 directory with the result of the previous step identifies an existing
 file; such a file is the result of this step. If no such directory is
 found, the unit reference cannot be resolved and an error is signaled
-by &Specware;.</listitem>
+by &Specware;.</para></listitem>
 
-<listitem>There are two alternative steps here, depending on whether
-the original unit reference contains ``#'' or not.</listitem>
+<listitem><para>There are two alternative steps here, depending on
+whether the original unit reference contains ``#'' or
+not.</para></listitem>
 
 <orderedlist>
 
-<listitem>This is the case that the original unit reference does not
-contain ``#''. If the file resulting from the previous step is a
+<listitem><para>This is the case that the original unit reference does
+not contain ``#''. If the file resulting from the previous step is a
 single-unit file, i.e., it contains the defining text for a unit, the
 defining text is the final result of resolution. Otherwise, an error
-is signaled by &Specware;.</listitem>
+is signaled by &Specware;.</para></listitem>
 
-<listitem>This is the case that the original unit reference contains
-``#''. The file resulting from the previous step must be a
+<listitem><para>This is the case that the original unit reference
+contains ``#''. The file resulting from the previous step must be a
 multiple-unit file, i.e., it must contain a sequence of one or more
 unit definitions. If this is not the case, the unit reference cannot
 be resolved and an error is signaled by &Specware;. If that is the
@@ -114,7 +116,7 @@ the original unit reference. If no such unit definition is found, the
 unit reference cannot be resolved and an error is signaled by
 &Specware. If instead such a unit definition is found, its defining
 text (at the right of ``='') is the final result of
-resolution.</listitem>
+resolution.</para></listitem>
 
 </orderedlist>
 
@@ -182,38 +184,40 @@ following steps:</para>
 
 <orderedlist>
 
-<listitem>If the reference contains ``#'', the ``#'' itself and the
-identifier following it are removed, obtaining a ``/''-separated
+<listitem><para>If the reference contains ``#'', the ``#'' itself and
+the identifier following it are removed, obtaining a ``/''-separated
 sequence of one or more identifiers. Otherwise, no removal takes
 place. Either way, the result of this first step is a ``/''-separated
-sequence of identifiers.</listitem>
+sequence of identifiers.</para></listitem>
 
-<listitem>If the underlying operating system is Windows, the ``/''
-signs of the ``/''-separated sequence of identifiers, resulting from
-the previous step, are turned into ``\''; in addition, <".sw"> is
+<listitem><para>If the underlying operating system is Windows, the
+``/'' signs of the ``/''-separated sequence of identifiers, resulting
+from the previous step, are turned into ``\''; in addition, <".sw"> is
 appended at the end. Otherwise, the ``/'' signs are left unchanged and
 <".sw"> is appended at the end. Either way, the result of this second
-step is a (partial) path in the file system.</listitem>
+step is a (partial) path in the file system.</para></listitem>
 
-<listitem>The path resulting from the previous step is appended after
-the absolute path of the directory of the file containing the relative
-reference. If the resulting absolute path identifies an existing file,
-that is the result of this third step.  Otherwise, the unit reference
-cannot be resolved and an error is signaled by &Specware;.</listitem>
+<listitem><para>The path resulting from the previous step is appended
+after the absolute path of the directory of the file containing the
+relative reference. If the resulting absolute path identifies an
+existing file, that is the result of this third step.  Otherwise, the
+unit reference cannot be resolved and an error is signaled by
+&Specware;.</para></listitem>
 
-<listitem>There are two alternative steps here, depending on whether
-the original unit reference contains ``#'' or not.</listitem>
+<listitem><para>There are two alternative steps here, depending on
+whether the original unit reference contains ``#'' or
+not.</para></listitem>
 
 <orderedlist>
 
-<listitem>This is the case that the original unit reference does not
-contain ``#''. If the file resulting from the previous step is a
+<listitem><para>This is the case that the original unit reference does
+not contain ``#''. If the file resulting from the previous step is a
 single-unit file, i.e., it contains the defining text for a unit, the
 defining text is the final result of resolution. Otherwise, an error
-is signaled by &Specware;.</listitem>
+is signaled by &Specware;.</para></listitem>
 
-<listitem>This is the case that the original unit reference contains
-``#''. The file resulting from the previous step must be a
+<listitem><para>This is the case that the original unit reference
+contains ``#''. The file resulting from the previous step must be a
 multiple-unit file, i.e., it must contain a sequence of one or more
 unit definitions. If this is not the case, the unit reference cannot
 be resolved and an error is signaled by &Specware;. If that is the
@@ -223,7 +227,7 @@ the original unit reference. If no such unit definition is found, the
 unit reference cannot be resolved and an error is signaled by
 &Specware. If instead such a unit definition is found, its defining
 text (at the right of ``='') is the final result of
-resolution.</listitem>
+resolution.</para></listitem>
 
 </orderedlist>
 
@@ -240,44 +244,47 @@ in the following steps:</para>
 
 <orderedlist>
 
-<listitem>If the relative reference is a single identifier, &Specware;
-attempts to find a unit definition with that identifier inside the
-file where the reference occurs. If such a unit definition is found,
-its defining text is the final result of resolution. Otherwise, the
-following steps are carried out.</listitem>
+<listitem><para>If the relative reference is a single identifier,
+&Specware; attempts to find a unit definition with that identifier
+inside the file where the reference occurs. If such a unit definition
+is found, its defining text is the final result of
+resolution. Otherwise, the following steps are carried
+out.</para></listitem>
 
-<listitem>If the reference contains ``#'', the ``#'' itself and the
-identifier following it are removed, obtaining a ``/''-separated
+<listitem><para>If the reference contains ``#'', the ``#'' itself and
+the identifier following it are removed, obtaining a ``/''-separated
 sequence of one or more identifiers. Otherwise, no removal takes
 place. Either way, the result of this first step is a ``/''-separated
-sequence of identifiers.</listitem>
+sequence of identifiers.</para></listitem>
 
-<listitem>If the underlying operating system is Windows, the ``/''
-signs of the ``/''-separated sequence of identifiers, resulting from
-the previous step, are turned into ``\''; in addition, <".sw"> is
+<listitem><para>If the underlying operating system is Windows, the
+``/'' signs of the ``/''-separated sequence of identifiers, resulting
+from the previous step, are turned into ``\''; in addition, <".sw"> is
 appended at the end. Otherwise, the ``/'' signs are left unchanged and
 <".sw"> is appended at the end. Either way, the result of this second
-step is a (partial) path in the file system.</listitem>
+step is a (partial) path in the file system.</para></listitem>
 
-<listitem>The path resulting from the previous step is appended after
-the absolute path of the directory of the file containing the relative
-reference. If the resulting absolute path identifies an existing file,
-that is the result of this third step.  Otherwise, the unit reference
-cannot be resolved and an error is signaled by &Specware;.</listitem>
+<listitem><para>The path resulting from the previous step is appended
+after the absolute path of the directory of the file containing the
+relative reference. If the resulting absolute path identifies an
+existing file, that is the result of this third step.  Otherwise, the
+unit reference cannot be resolved and an error is signaled by
+&Specware;.</para></listitem>
 
-<listitem>There are two alternative steps here, depending on whether
-the original unit reference contains ``#'' or not.</listitem>
+<listitem><para>There are two alternative steps here, depending on
+whether the original unit reference contains ``#'' or
+not.</para></listitem>
 
 <orderedlist>
 
-<listitem>This is the case that the original unit reference does not
-contain ``#''. If the file resulting from the previous step is a
+<listitem><para>This is the case that the original unit reference does
+not contain ``#''. If the file resulting from the previous step is a
 single-unit file, i.e., it contains the defining text for a unit, the
 defining text is the final result of resolution. Otherwise, an error
-is signaled by &Specware;.</listitem>
+is signaled by &Specware;.</para></listitem>
 
-<listitem>This is the case that the original unit reference contains
-``#''. The file resulting from the previous step must be a
+<listitem><para>This is the case that the original unit reference
+contains ``#''. The file resulting from the previous step must be a
 multiple-unit file, i.e., it must contain a sequence of one or more
 unit definitions. If this is not the case, the unit reference cannot
 be resolved and an error is signaled by &Specware;. If that is the
@@ -287,7 +294,7 @@ the original unit reference. If no such unit definition is found, the
 unit reference cannot be resolved and an error is signaled by
 &Specware. If instead such a unit definition is found, its defining
 text (at the right of ``='') is the final result of
-resolution.</listitem>
+resolution.</para></listitem>
 
 </orderedlist>
 
