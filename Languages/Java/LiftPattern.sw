@@ -16,6 +16,10 @@ sort Type = Sort
 sort OpDef = Op * List Sort * Sort * List Var * Term
 
 op unSupported: Op -> String
+def unSupported x =
+  let msg = "\nWarning: unsupported op: " ^ (printQualifiedId x) ^ "\n" in
+  let _ = toScreen msg in
+  msg
 
 (**
  * a base type wrt. code generation are the builtin base types Boolean,Nat,Integer,Char,String
