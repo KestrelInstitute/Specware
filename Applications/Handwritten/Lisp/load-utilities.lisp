@@ -70,9 +70,8 @@
   (if (pathnamep directory) directory
     (multiple-value-bind (dev dir)
 	(parse-device-directory directory)
-      (if (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\))) ; jlm: I blindly added gcl test since root is non-standard
-	  #-gcl nil 
-	  #+gcl (setq dir (cons :root (split-dir-components dir)))
+      (if (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\)))
+	  (setq dir (cons #+gcl :root #-gcl :absolute (split-dir-components dir)))
 	(setq dir (concatenate 'list
 			       (pathname-directory (current-directory))
 			       (split-dir-components directory))))
@@ -206,21 +205,21 @@
 (defparameter temporaryDirectory
   (ensure-final-slash
    (substitute #\/ #\\
-	       (namestring #+(or win32 winnt)
-			   (or (getenv "TEMP") (getenv "TMP")
-			       #+allegro
-			       (SYSTEM:temporary-directory))
-			   #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-			   #+(or mcl cmu sbcl unix) "/tmp/"
-			   ))))
+	       (namestring  #+(or win32 winnt)
+			    (or (getenv "TEMP") (getenv "TMP")
+				#+allegro
+				(SYSTEM:temporary-directory))
+			    #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
+			    #+unix "/tmp/"
+			    ))))
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
    (namestring #+(or win32 winnt)
 	       (or (getenv "TEMP") (getenv "TMP")
 		   #+allegro
 		   (SYSTEM:temporary-directory))
-	       #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-	       #+(or mcl cmu sbcl unix) "/tmp/"
+	       #+(and (not unix) Lispworks) SYSTEM::*TEMP-DIRECTORY*
+	       #+unix "/tmp/"
 	       )))
 
 (defun setTemporaryDirectory ()

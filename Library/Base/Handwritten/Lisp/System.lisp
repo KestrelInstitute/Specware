@@ -41,11 +41,7 @@
 
 ;;;  op temporaryDirectory : String
 (defparameter temporaryDirectory
-    (substitute #\/ #\\ (namestring #+allegro   (SYSTEM:temporary-directory)
-				    #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-				    #+(and unix (not allegro))  "/tmp/"
-				    )))
-
+    (substitute #\/ #\\ (specware::temporaryDirectory-0)))
 
 ;;; op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a
 (defun withRestartHandler-3 (restart-msg restart-action body-action)
