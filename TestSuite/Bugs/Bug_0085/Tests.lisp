@@ -15,8 +15,6 @@ spec
     fa(x : Q, y : Nat) x = quotient eq_mod10  y => natural?(y + 1)
  conjecture f_Unique is 
     fa(x : Q, y : Nat, z :Nat) x = quotient eq_mod10 y & x = quotient eq_mod10 z => (y + 1) = (z + 1)
- conjecture eq_mod10_Obligation is natural?(10) => true
- conjecture eq_mod10_Obligation0 is natural?(10) => true
  conjecture eq_mod10_reflexive is fa(x : Nat) eq_mod10(x, x)
  conjecture eq_mod10_symmetric is 
     fa(x : Nat, y : Nat) eq_mod10(x, y) => eq_mod10(y, x)

@@ -210,7 +210,8 @@ be the option to run each (test ...) form in a fresh image.
     file))
 
 (defun test-1 (name &key sw swe swe-spec swl swll lisp show path
-			 output (output-predicate 'equal)
+			 output 
+			 (output-predicate 'diff-output)
 			 (value "--NotAValue--")
 			 (value-predicate 'equal)
 			 file-goto-error
@@ -242,10 +243,11 @@ be the option to run each (test ...) form in a fresh image.
       (when (and (not (equal value "--NotAValue--")) (not error-type)
 		 (not (funcall value-predicate val value)))
 	(push (format nil "Expected:~%~S~%;; Got: ~%~S" value val) error-messages))
-      (when (and output (not error-type)
-		 (not (funcall output-predicate output test-output)))
-	(push (diff-output test-output output)
-	      error-messages))
+      (when (and output (not error-type))
+	(let ((diff-results (funcall output-predicate output test-output)))
+	  (unless (null diff-results)
+	    (push (format-output-errors diff-results)
+		  error-messages))))
       (when (and file-goto-error
 		 (not (equal file-goto-error emacs::*goto-file-position-stored*)))
 	(push (format nil "Expected error location: ~%~s~%;; Got:~%~s" file-goto-error
@@ -291,67 +293,109 @@ be the option to run each (test ...) form in a fresh image.
 			 (subseq str (+ match (length old))))))
     str))
 
-(defun diff-output (expected got)
-  (with-output-to-string (s)
-    (multiple-value-bind (past-match-at-start? past-match-at-end? expected got)
-	(diff-aux got expected)
+(defun format-output-errors (results)
+  (let ((partial-match-at-start? (first results))
+	(expected                (second results))
+	(got                     (third  results))
+	(partial-match-at-end?   (fourth results)))
+    (with-output-to-string (s)
       (format s "~%;;; Expected:~%")
       (format s "~&;;;~%")
-      (when past-match-at-start?
+      (when partial-match-at-start?
 	(format s "~&;;; <  ...~%"))
       (dolist (line expected)
-	(format s "~&;;; <  ~A~%" (coerce line 'string)))
-      (when past-match-at-end?
+	(cond ((consp line)
+	       (format s "~&;;; ?  ~A   [optional]~%" (cdr line)))
+	      (t
+	       (format s "~&;;; <  ~A~%" line))))
+      (when partial-match-at-end?
 	(format s "~&;;; <  ...~%"))
       (format s "~&;;;")
       (format s "~&;;; But got:~%")
       (format s "~&;;;~%")
-      (when past-match-at-start?
+      (when partial-match-at-start?
 	(format s "~&;;; >  ...~%"))
       (dolist (line got)
-	(format s "~&;;; >  ~A~%" (coerce line 'string)))
-      (when past-match-at-end?
+	(format s "~&;;; >  ~A~%" line))
+      (when partial-match-at-end?
 	(format s "~&;;; >  ...~%"))
       (format s "~&;;;")
       )))
-    
 
-(defun diff-aux (expected got)
-  (let ((expected-lines  (convert-to-lines expected))
-	(got-lines       (convert-to-lines got)))
-    (do ((past-match-at-start? nil            t)
-	 (expected             expected-lines (cdr expected))
-	 (got                  got-lines      (cdr got)))
-	((or (null got)
-	     (not (equal (car expected) (car got))))
-	 (diff-aux-tails past-match-at-start?
-			 (reverse expected)
-			 (reverse got))))))
+(defun diff-output (wanted saw)
+  (labels ((convert-to-lines (text)
+	     (if (stringp text)
+		 (let ((lines nil)
+		       (local-chars nil))
+		   (do ((chars (coerce text 'list) (cdr chars)))
+		       ((null chars)
+			(reverse (cons (coerce (reverse local-chars) 'string) 
+				       lines)))
+		     (let ((char (car chars)))
+		       (cond ((equal char #\Newline)
+			      (push (coerce (reverse local-chars) 'string) 
+				    lines)
+			      (setq local-chars nil))
+			     (t
+			      (push char local-chars))))))
+	       text))
 
-(defun diff-aux-tails (past-match-at-start? expected-rev got-rev)
-  (do ((past-match-at-end? nil          t)
-       (expected-rev       expected-rev (cdr expected-rev))
-       (got-rev            got-rev      (cdr got-rev)))
-      ((or (null got-rev)
-	   (not (equal (car expected-rev) (car got-rev))))
-       (values past-match-at-start? 
-	       past-match-at-end? 
-	       (reverse expected-rev) 
-	       (reverse got-rev)))))
+	   (optional? (x) 
+	     (and (consp x)
+		  (eq (car x) :optional)))
 
-(defun convert-to-lines (text)
-  (if (stringp text)
-      (let ((lines nil)
-	    (local-chars nil))
-	(do ((chars (coerce text 'list) (cdr chars)))
-	    ((null chars)
-	     (reverse (cons (reverse local-chars) lines)))
-	  (let ((char (car chars)))
-	    (cond ((equal char #\Newline)
-		   (push (reverse local-chars) lines)
-		   (setq local-chars nil))
-		  (t
-		   (push char local-chars))))))
-    text))
+	   (alternatives? (x) 
+	     (and (consp x)
+		  (eq (car x) :alternatives)))
+
+	   (lines-match? (x y)
+	     (equalp x y))
+
+	   (extend-match (wanted saw)
+	     (cond ((null wanted)
+		    (values wanted saw))
+		   ((null saw)
+		    (values wanted saw))
+		   ((optional? (car wanted))
+		    (if (lines-match? (cadr (car wanted)) (car saw))
+			(extend-match (cdr wanted) (cdr saw))
+		      (extend-match (cdr wanted) saw)))
+		   ((alternatives? (car wanted))
+		    (dolist (alternative (cdr (car wanted))
+			      ;; all the alternatives fail
+			      (values wanted saw))
+		      (when (lines-match? (car alternative)
+					  (car saw))
+			;; if the first line of an alternative matches, 
+			;; commit to using the rest of that alternative
+			(return
+			  (extend-match (append (cdr alternative) (cdr wanted))
+					(cdr saw))))))
+		   ((lines-match? (car wanted) (car saw))
+		    (extend-match (cdr wanted) (cdr saw)))
+		   (t
+		    (values wanted saw)))))
+	   
+    (multiple-value-bind (w-tail s-tail)
+	(extend-match (convert-to-lines wanted)
+		      (convert-to-lines saw))
+      (if (null s-tail)
+	  nil
+	(let ((rev-w-tail (reverse w-tail))
+	      (rev-s-tail (reverse s-tail)))
+	  (multiple-value-bind (w-middle s-middle)
+	      (extend-match rev-w-tail rev-s-tail)
+	    (let* ((incomplete-match? 
+		    (or (not (null w-middle))
+			(not (null s-middle))))
+		   (partial-match-at-start? (and incomplete-match?
+						 (not (eq s-tail saw))))
+		   (partial-match-at-end?   (and incomplete-match?
+						 (not (eq s-middle rev-s-tail)))))
+	      (list partial-match-at-start? 
+		    (reverse w-middle) 
+		    (reverse s-middle)
+		    partial-match-at-end?))))))))
+
 
     
