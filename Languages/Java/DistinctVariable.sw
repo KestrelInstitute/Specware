@@ -77,6 +77,7 @@ op distinctVar: Term * List Id -> Term * List Id
 op distinctVars: List Term * List Id -> List Term * List Id
 
 op distinctVarApply: Term * List Id -> Term * List Id
+op distinctVarLambda: Term * List Id -> Term * List Id
 op distinctVarRecord: Term * List Id -> Term * List Id
 op distinctVarIfThenElse: Term * List Id -> Term * List Id
 op distinctVarLet: Term * List Id -> Term * List Id
@@ -91,8 +92,9 @@ def distinctVar(term, ids) =
     | Record _ -> distinctVarRecord(term, ids)
     | IfThenElse _ -> distinctVarIfThenElse(term, ids)
     | Let _ -> distinctVarLet(term, ids)
-    | _ -> %TODO: catch lambda terms
-           (term,ids)
+    | Lambda _ -> distinctVarLambda(term, ids)
+		  %TODO: catch lambda terms
+    %(term,ids)
     %| _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
 
 def distinctVars(terms, ids) =
@@ -109,6 +111,15 @@ def distinctVarApply(term as Apply (opTerm, argsTerm, _), ids) =
   let (newArgs, newIds) = distinctVars(args, ids) in
     (mkApplication(opTerm, newArgs), newIds)
 
+def distinctVarLambda(term as Lambda ([(pat, cond, body)],b), ids) =
+  let argNames = patternNamesOpt(pat) in
+    (case argNames of
+       | Some argNames ->
+          (let (newBody, _) = distinctVar(body, argNames) in
+	   (Lambda ([(pat, cond, newBody)],b), ids)
+	 )
+       | _ -> fail("DistinctVarLambda with no args: "^printTerm(term))
+     )
 
 def distinctVarRecord(term as Record (fields,_), ids) =
   let recordTerms = recordFieldsToTerms(fields) in
