@@ -243,7 +243,10 @@ spec {
 		    let (vertex, dom_qid) = mu_node.key in
 		    let cod_qid  = eval (eval v_sm_rules vertex) dom_qid in
 		    (merge_infos (merged_info, new_info),
-		     Cons (cod_qid, qids)))
+		     if member (cod_qid, qids) then
+		       qids
+		     else
+		       Cons (cod_qid, qids)))
 	           (initial_info, initial_qids)
 		   qlist
 	 in
@@ -273,11 +276,15 @@ spec {
        foldl (fn (qlist, qid_to_qlists) ->
 	      foldl (fn (mu_node, qid_to_qlists) ->
                          let qid = mu_node.key.2 in
-                         update qid_to_qlists qid 
-                                (Cons (qlist,
-				       case evalPartial qid_to_qlists qid of
-					 | None        -> []
-					 | Some qlists -> qlists)))
+			 let prior_qlists =
+			     case evalPartial qid_to_qlists qid of
+			       | None        -> []
+			       | Some qlists -> qlists
+			 in
+			   if member (qlist, prior_qlists) then
+			     qid_to_qlists
+			   else
+			     update qid_to_qlists qid (Cons (qlist, prior_qlists)))
 		    qid_to_qlists
 		    qlist)
 	     PolyMap.emptyMap 
