@@ -419,17 +419,17 @@ ArityNormalize qualifying spec {
   def arityNormalize (spc) =
     let usedNames = StringSet.fromList(qualifierIds spc.ops) in
     setOps (spc, 
-            mapAQualifierMap
-	      (fn (op_names, fixity, (tyVars, srt), old_defs)->
-	       let new_defs =
-	           map (fn (type_vars, term) ->
-			let usedNames = addLocalVars(term,usedNames) in
-			(type_vars,
-			 normalizeArityTopLevel (spc, [], usedNames,
-						 etaExpand(spc, usedNames, srt, term))))
-		     old_defs
-	       in (op_names, fixity, (tyVars, srt), new_defs))
-	      spc.ops)
+            mapOpMap (fn (aliases, fixity, (tyVars, srt), old_defs)->
+		      let new_defs =
+		          map (fn (type_vars, term) ->
+			       let usedNames = addLocalVars(term,usedNames) in
+			       (type_vars,
+				normalizeArityTopLevel (spc, [], usedNames,
+							etaExpand(spc, usedNames, srt, term))))
+			      old_defs
+		      in 
+			(aliases, fixity, (tyVars, srt), new_defs))
+	             spc.ops)
 
 }
 

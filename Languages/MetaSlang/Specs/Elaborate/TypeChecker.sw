@@ -95,7 +95,7 @@ TypeChecker qualifying spec
     %% ---------- SORTS : PASS 1 ----------
     let
       def elaborate_sort_1 (sortInfo as (aliases, tyvars, defs)) =
-	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localSorts)) aliases then
+	if someAliasIsLocal? (aliases, localSorts) then
 	  (aliases,
 	   tyvars, 
 	   map (fn def_1 -> checkSortScheme (env_2, def_1)) defs)
@@ -108,7 +108,7 @@ TypeChecker qualifying spec
     %% ---------- OPS   : PASS 1 ----------
     let 
       def elaborate_op_1 poly? (opinfo as (aliases, fixity, sort_scheme, defs)) =
-	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localOps)) aliases then
+	if someAliasIsLocal? (aliases, localOps) then
 	  let sort_scheme_2 = checkSortScheme (env_2a, sort_scheme) in
 	  (aliases,
 	   fixity, 
@@ -135,7 +135,7 @@ TypeChecker qualifying spec
     %% ---------- PROPERTIES : PASS 1. ---------- 
     let
       def elaborate_prop_1 (prop as (prop_type, name, tyvars, fm)) =
-	if ~(member(name, localProperties)) then 
+	if ~(member (name, localProperties)) then 
 	  prop
 	else
 	  let fm_2 = elaborateTermTop (env_2a, fm, type_bool) in
@@ -156,7 +156,7 @@ TypeChecker qualifying spec
     %% ---------- SORTS : PASS 2 ---------- 
     let
       def elaborate_sort_2 (sortInfo as (aliases, tyvars, defs)) =
-	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localSorts)) aliases then
+	if someAliasIsLocal? (aliases, localSorts) then
 	  (aliases,
 	   tyvars, 
 	   map (fn def_2 -> checkSortScheme (env_3, def_2)) defs)
@@ -168,7 +168,7 @@ TypeChecker qualifying spec
     %% ---------- OPS : PASS 2 ---------- 
     let
       def elaborate_op_2 (opinfo as (aliases, fixity, sort_scheme_2, defs_2)) =
-	if exists (fn Qualified (q, id) -> memberQualifiedId (q, id, localOps)) aliases then
+	if someAliasIsLocal? (aliases, localOps) then
 	  let (tyvars_3, srt_3) = checkSortScheme (env_3, sort_scheme_2) in
 	  let all_different? = checkDifferent (tyvars_3, StringSet.empty)  in
 	  let defs_3 =

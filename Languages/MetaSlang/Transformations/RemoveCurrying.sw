@@ -26,16 +26,16 @@ RemoveCurrying qualifying spec
   op  removeCurrying: Spec -> Spec
   def removeCurrying spc =
     let spc = addUnCurriedOps spc in
-    let newOps = mapAQualifierMap
-                   (fn (nms,fixity,srtScheme,(dtvs,def1)::_) ->
-		     (nms,fixity,srtScheme,[(dtvs,unCurryTerm(def1,spc))])
-		     | x -> x)
+    let newOps = mapOpMap 
+                   (fn (aliases,fixity,srtScheme,(dtvs,def1)::_) ->
+		       (aliases,fixity,srtScheme,[(dtvs,unCurryTerm(def1,spc))])
+		    | x -> x)
 		   spc.ops
     in
-    let newSorts = mapAQualifierMap
+    let newSorts = mapSortMap
                      (fn (aliases,tvs,(tvs1,srt)::_) ->
-		       (aliases,tvs,[(tvs1,(unCurrySort(srt,spc)).2)])
-		       | x -> x)
+		         (aliases,tvs,[(tvs1,(unCurrySort(srt,spc)).2)])
+		      | x -> x)
 		     spc.sorts
     in
     setOps(setSorts(spc,newSorts),newOps)

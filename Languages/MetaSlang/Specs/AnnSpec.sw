@@ -37,6 +37,10 @@ AnnSpec qualifying spec
 
  type Aliases = List QualifiedId 
 
+   op someAliasIsLocal? : Aliases * List QualifiedId -> Boolean
+  def someAliasIsLocal? (aliases, local_names) =
+    exists (fn qid -> member (qid, local_names)) aliases 
+    
  type Imports = List Import
  type Import  = (SpecCalc.Term Position) * Spec
 
