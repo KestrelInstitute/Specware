@@ -22,10 +22,10 @@ spec {
  op initialEnv     : (* SpecRef * *) Spec * String -> LocalEnv
  op addConstrsEnv  : LocalEnv * Spec -> LocalEnv
 
- op addVariable    : LocalEnv * String * MS.Sort -> LocalEnv
- op secondPass     : LocalEnv                  -> LocalEnv
- op unfoldSort    : LocalEnv * MS.Sort          -> MS.Sort
- op findVarOrOps   : LocalEnv * Id * Position  -> List MS.Term
+ op addVariable    : LocalEnv * String * Sort -> LocalEnv
+ op secondPass     : LocalEnv                 -> LocalEnv
+ op unfoldSort     : LocalEnv * Sort          -> Sort
+ op findVarOrOps   : LocalEnv * Id * Position -> List MS.Term
 
  op error          : LocalEnv * String * Position -> ()
 
@@ -416,6 +416,7 @@ spec {
 	    | notUnify    -> notUnify)
       | _ -> NotUnify(srt1,srt2)
 
+ op  unifySorts: LocalEnv -> Sort -> Sort -> Boolean * String
  def unifySorts env s1 s2 =
 
    (* Unify possibly recursive sorts s1 and s2.
@@ -453,26 +454,30 @@ spec {
        of Unify _ -> (true,"")
         | NotUnify(s1,s2) -> (false,printSort s1^" ! = "^printSort s2)
 
- def unifyCP (env,srt1,srt2,r1,r2,pairs):Unification = 
+ op  unifyCP: LocalEnv * Sort * Sort * List(Id * Option Sort) * List(Id * Option Sort) * List(Sort * Sort)
+               -> Unification
+ def unifyCP (env,srt1,srt2,r1,r2,pairs) = 
      unifyL (env,srt1, srt2, r1, r2, pairs,
 	     fn (env,(id1,s1),(id2,s2),pairs) -> 
-	     if id1 = id2 then
-	       (case (s1,s2) of
-		   | (None,None) -> Unify pairs 
-		   | ((Some s1): (Option MS.Sort),(Some s2) : (Option MS.Sort)) ->
-			unify (env,s1,s2,pairs) % ### (le) Why is the sort necessary? won't typecheck with it.
-		   | _ -> NotUnify (srt1,srt2))
-	     else
-	       NotUnify(srt1,srt2))
+	       if id1 = id2 then
+		 (case (s1,s2) of
+		     | (None,None) -> Unify pairs 
+		     | (Some s1,Some s2) -> unify (env,s1,s2,pairs)
+		     | _ -> NotUnify (srt1,srt2))
+	       else
+		 NotUnify(srt1,srt2))
 
- def unifyP (env,srt1,srt2,r1,r2,pairs):Unification = 
+ op  unifyP: LocalEnv * Sort * Sort * List(Id * Sort) * List(Id * Sort) * List(Sort * Sort)
+               -> Unification
+ def unifyP (env,srt1,srt2,r1,r2,pairs) = 
      unifyL (env,srt1,srt2,r1,r2,pairs,
 	     fn(env,(id1,s1),(id2,s2),pairs) -> 
-	     if id1 = id2 
-	     then unify(env,s1,s2,pairs)
-	     else NotUnify(srt1,srt2))
+	       if id1 = id2 
+	       then unify(env,s1,s2,pairs)
+	       else NotUnify(srt1,srt2))
 
- def unify (env,s1,s2,pairs):Unification = 
+ op  unify: LocalEnv * Sort * Sort * List(Sort * Sort) -> Unification
+ def unify (env,s1,s2,pairs) = 
    let pos1 = sortAnn s1  in
    let pos2 = sortAnn s2  in
    let srt1 = withAnnS (unlinkSort s1, pos1) in % ? DerivedFrom pos1 ?
@@ -490,10 +495,9 @@ spec {
 	     of Unify pairs -> unify(env,t2,s2,pairs)
 	      | notUnify -> notUnify)
 	| (Quotient(ty,trm,_),Quotient(ty_,trm_,_)) ->
-	     %if equalTerm?(trm,trm_)
-	       %then
-		 unify(env,ty,ty_,pairs)
-	       %else NotUnify(srt1,srt2)
+	     if equalTermStruct?(trm,trm_)
+	       then unify(env,ty,ty_,pairs)
+	       else NotUnify(srt1,srt2)
 	     %                 if trm = trm_ 
 	     %                     then unify(ty,ty_,pairs) 
 	     %                    else NotUnify(srt1,srt2)

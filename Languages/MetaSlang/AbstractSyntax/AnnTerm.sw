@@ -330,6 +330,11 @@ MetaSlang qualifying spec {
  op equalPattern? : fa(a,b) APattern a * APattern b -> Boolean
  op equalFun?     : fa(a,b) AFun     a * AFun     b -> Boolean
  op equalVar?     : fa(a,b) AVar     a * AVar     b -> Boolean
+ %% term equality ignoring sorts
+ op equalTermStruct?    : fa(a,b) ATerm    a * ATerm    b -> Boolean
+ op equalPatternStruct? : fa(a,b) APattern a * APattern b -> Boolean
+ op equalFunStruct?     : fa(a,b) AFun     a * AFun     b -> Boolean
+ op equalVarStruct?     : fa(a,b) AVar     a * AVar     b -> Boolean
 
  op equalList? : fa(a,b) List a * List b * (a * b -> Boolean) -> Boolean
  def equalList? (x, y, eqFn) =
@@ -533,6 +538,7 @@ MetaSlang qualifying spec {
 
      | (OneName   x1,       OneName   x2)       -> x1.1 = x2.1
      | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2)
+    
      | _ -> false
 
  def equalVar? ((id1,s1), (id2,s2)) = id1 = id2 & equalSort? (s1, s2)
@@ -543,6 +549,144 @@ MetaSlang qualifying spec {
  op equalTyVars?: TyVars * TyVars -> Boolean
  def equalTyVars?(tyVars1, tyVars2) =
    all (fn (tyV1, tyV2) -> equalTyVar?(tyV1, tyV2)) (tyVars1, tyVars2)
+
+ def equalTermStruct? (t1, t2) =
+  case (t1, t2) of
+
+     | (Apply      (x1, y1,      _), 
+        Apply      (x2, y2,      _)) -> equalTermStruct? (x1, x2) & equalTermStruct? (y1, y2)
+
+     | (ApplyN     (xs1,         _),   
+        ApplyN     (xs2,         _)) -> equalList? (xs1, xs2, equalTermStruct?)
+
+     | (Record     (xs1,         _), 
+        Record     (xs2,         _)) -> equalList? (xs1, xs2, 
+                                                    fn ((label1,x1),(label2,x2)) -> 
+                                                       label1 = label2 & 
+                                                       equalTermStruct? (x1, x2))
+
+     | (Bind       (b1, vs1, x1, _),
+        Bind       (b2, vs2, x2, _)) -> b1 = b2 & 
+                                        %% Could check modulo alpha conversion...
+                                        equalList? (vs1, vs2, equalVarStruct?) &
+                                        equalTermStruct? (x1,  x2)
+
+     | (Let        (pts1, b1,    _),
+        Let        (pts2, b2,    _)) -> equalTermStruct? (b1, b2) &
+                                        equalList? (pts1, pts2,
+                                                    fn ((p1,t1),(p2,t2)) -> 
+                                                      equalPatternStruct? (p1, p2) & 
+                                                      equalTermStruct?    (t1, t2))
+
+     | (LetRec     (vts1, b1,    _),
+        LetRec     (vts2, b2,    _)) -> equalTermStruct? (b1, b2) &
+                                        equalList? (vts1, vts2,
+                                                    fn ((v1,t1),(v2,t2)) -> 
+                                                     equalVarStruct?  (v1, v2) & 
+                                                     equalTermStruct? (t1, t2))
+
+     | (Var        (v1,          _),
+        Var        (v2,          _)) -> equalVarStruct?(v1,v2)
+
+     | (Fun        (f1, _,       _),
+        Fun        (f2, _,       _)) -> equalFunStruct?(f1,f2)
+
+     | (Lambda     (xs1,         _),
+        Lambda     (xs2,         _)) -> equalList? (xs1, xs2,
+                                                    fn ((p1,c1,b1),(p2,c2,b2)) ->
+                                                      equalPatternStruct?  (p1, p2) & 
+                                                      equalTermStruct?     (c1, c2) & 
+                                                      equalTermStruct?     (b1, b2))
+
+     | (IfThenElse (c1, x1, y1,  _),
+        IfThenElse (c2, x2, y2,  _)) -> equalTermStruct? (c1, c2) & 
+                                        equalTermStruct? (x1, x2) & 
+                                        equalTermStruct? (y1, y2)
+
+     | (Seq        (xs1,         _),
+        Seq        (xs2,         _)) -> equalList? (xs1, xs2, equalTermStruct?)
+
+     | (SortedTerm (x1, s1,      _),
+        SortedTerm (x2, s2,      _)) -> equalTermStruct? (x1, x2)
+
+     | _ -> false
+
+
+ def equalFunStruct? (f1, f2) =
+  case (f1, f2) of
+     | (PQuotient t1,       PQuotient t2)       -> equalTermStruct? (t1, t2)
+     | (PChoose   t1,       PChoose   t2)       -> equalTermStruct? (t1, t2)
+     | (PRestrict t1,       PRestrict t2)       -> equalTermStruct? (t1, t2)
+     | (PRelax    t1,       PRelax    t2)       -> equalTermStruct? (t1, t2)
+
+     | (Equals,             Equals      )       -> true
+     | (Quotient,           Quotient    )       -> true
+     | (Choose,             Choose      )       -> true
+     | (Restrict,           Restrict    )       -> true
+     | (Relax,              Relax       )       -> true
+
+     | (Op        x1,       Op        x2)       -> x1 = x2
+     | (Project   x1,       Project   x2)       -> x1 = x2
+     | (Embed     x1,       Embed     x2)       -> x1 = x2
+     | (Embedded  x1,       Embedded  x2)       -> x1 = x2
+     % | (Select    x1,       Select    x2)       -> x1 = x2
+     | (Nat       x1,       Nat       x2)       -> x1 = x2
+     | (Char      x1,       Char      x2)       -> x1 = x2
+     | (String    x1,       String    x2)       -> x1 = x2
+     | (Bool      x1,       Bool      x2)       -> x1 = x2
+
+     | (OneName   x1,       OneName   x2)       -> x1.1 = x2.1
+     | (TwoNames  x1,       TwoNames  x2)       -> (x1.1 = x2.1) & (x1.2 = x2.2)
+     | (OneName   x1,       TwoNames  x2)       -> x1.1 = x2.2
+     | (TwoNames  x1,       OneName   x2)       -> x1.2 = x2.1
+    
+     | _ -> false
+
+ def equalPatternStruct?(p1,p2) =
+  case (p1, p2) of
+     | (AliasPat    (x1, y1,      _),
+        AliasPat    (x2, y2,      _)) -> equalPatternStruct?(x1,x2) & equalPatternStruct?(y1,y2)
+
+     | (VarPat      (v1,          _),
+        VarPat      (v2,          _)) -> equalVarStruct?(v1,v2)
+
+     | (EmbedPat    (i1, op1, _,  _),
+        EmbedPat    (i2, op2, _,  _)) -> i1 = i2 & 
+                                         equalOpt?  (op1, op2, equalPatternStruct?)
+
+     | (RecordPat   (xs1,         _),
+        RecordPat   (xs2,         _)) -> equalList? (xs1, xs2, 
+                                                     fn ((label1,x1), (label2,x2)) -> 
+                                                        label1 = label2 & 
+                                                        equalPatternStruct? (x1, x2))
+
+     | (WildPat     (s1,          _),
+        WildPat     (s2,          _)) -> equalSort?(s1,s2)
+
+     | (StringPat   (x1,          _),
+        StringPat   (x2,          _)) -> x1 = x2
+
+     | (BoolPat     (x1,          _),
+        BoolPat     (x2,          _)) -> x1 = x2
+
+     | (CharPat     (x1,          _),
+        CharPat     (x2,          _)) -> x1 = x2
+
+     | (NatPat      (x1,          _),
+        NatPat      (x2,          _)) -> x1 = x2
+
+     | (RelaxPat    (x1, t1,      _),
+        RelaxPat    (x2, t2,      _)) -> equalPatternStruct?(x1,x2) & equalTermStruct?(t1,t2)
+
+     | (QuotientPat (x1, t1,      _),
+        QuotientPat (x2, t2,      _)) -> equalPatternStruct?(x1,x2) & equalTermStruct?(t1,t2)
+
+     | (SortedPat   (x1, _,       _),
+        SortedPat   (x2, _,       _)) -> equalPatternStruct?(x1,x2)
+
+     | _ -> false
+
+ def equalVarStruct? ((id1,_), (id2,_)) = id1 = id2
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP Mappings

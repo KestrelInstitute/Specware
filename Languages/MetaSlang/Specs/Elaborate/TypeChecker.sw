@@ -780,28 +780,27 @@ spec {
          Record (row, pos)
 
     | Lambda (rules, pos) -> 
-         let alpha = freshMetaTyVar pos in
-          let beta  = freshMetaTyVar pos in
-          let ty    = (Arrow (alpha, beta, pos)) in
-          let _     = elaborateSort (env, ty, term_sort) in 
-          Lambda 
-           (map 
-             (fn (pat, cond, term)->
-                 let (pat, env) = elaboratePattern (env, pat, alpha) in
-                 let term = elaborateTerm (env, term, beta) in
-                 let cond = elaborateTerm (env, cond, type_bool) in
-                 (pat, cond, term)) 
-             rules,    pos)
-          
+	let alpha = freshMetaTyVar pos in
+	let beta  = freshMetaTyVar pos in
+	let ty    = (Arrow (alpha, beta, pos)) in
+	let _     = elaborateSort (env, ty, term_sort) in 
+	Lambda 
+	 (map 
+	   (fn (pat, cond, term)->
+	       let (pat, env) = elaboratePattern (env, pat, alpha) in
+	       let term = elaborateTerm (env, term, beta) in
+	       let cond = elaborateTerm (env, cond, type_bool) in
+	       (pat, cond, term)) 
+	   rules,    pos)
 
     | Bind (bind, vars, term, pos) ->
           let _ = elaborateSort (env, term_sort, type_bool) in
           let (vars, env) = 
-              foldl (fn ((id, srt), (vars, env))->
-                              let srt = checkSort (env, srt) in
-                         (cons ((id, srt), vars), 
-                          addVariable (env, id, srt)))
-                          ([], env) vars 
+              foldl (fn ((id, srt), (vars, env)) ->
+		       let srt = checkSort (env, srt) in
+		       (cons ((id, srt), vars), 
+			addVariable (env, id, srt)))
+	        ([], env) vars 
 	  in
           let vars = rev vars in
              Bind (bind, vars, elaborateTerm (env, term, term_sort), 
@@ -819,9 +818,9 @@ spec {
                     of [] -> []
                      | [t] -> [elaborateTerm (env, t, term_sort)]
                      | (t::ts) -> 
-                      let alpha = freshMetaTyVar pos in
-                      let t = elaborateTerm (env, t, alpha) in
-                      cons (t, elab ts))
+		       let alpha = freshMetaTyVar pos in
+		       let t = elaborateTerm (env, t, alpha) in
+		       cons (t, elab ts))
 	  in
               Seq (elab terms, pos) 
 
@@ -1371,8 +1370,8 @@ spec {
 	let sort2 = (Quotient (v, term, pos)) in
 	let _ = elaborateSort (env, sort2, sort1) in
 	let term = elaborateTerm (env, term, 
-				 Arrow (Product ([("1", v), ("2", v)], pos), 
-				       type_bool, pos)) in
+				  Arrow (Product ([("1", v), ("2", v)], pos), 
+					 type_bool, pos)) in
 	let (pat, env) = elaboratePattern (env, pat, v) in
 	(QuotientPat (pat, term, pos), env)
       | p -> (System.print p; System.fail "Nonexhaustive")
