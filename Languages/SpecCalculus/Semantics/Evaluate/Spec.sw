@@ -130,10 +130,10 @@ axioms, etc.
 	} in
     {
       spec_b <- return (addImport ((spec_term, imported_spec), spec_a));
-      (_, sorts_b) <- if spec_a = emptySpec then return (spec_b,imported_spec.sorts)
+      (_, sorts_b) <- if spec_a.sorts = emptySpec.sorts then return (spec_b,imported_spec.sorts)
                        else foldOverQualifierMap mergeSortStep (spec_b, spec_b.sorts) imported_spec.sorts;
       spec_c <- return (setSorts (spec_b, sorts_b));
-      (_, ops_c) <- if spec_a = emptySpec then return (spec_c,imported_spec.ops)
+      (_, ops_c) <- if spec_a.ops = emptySpec.ops then return (spec_c,imported_spec.ops)
                      else foldOverQualifierMap mergeOpStep (spec_c, spec_c.ops) imported_spec.ops;
       spec_d <- return (setOps (spec_c, ops_c));
       return spec_d
