@@ -140,12 +140,14 @@ echo "\$SWPATH=$SWPATH"
 # handler is invoked. If, when bootrapping, the toplevel handler is
 # called, then we abort the bootstrap.
 
-if [ -f bin/linux/Specware4.dxl ]; then
+if [   -f bin/linux/Specware4.dxl \
+     -a \(   \( ! -f Specware4-base.lisp \) \
+         -o bin/linux/Specware4.dxl -nt Specware4-base.lisp \) ]; then
 	echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
         echo " "
 	bin/linux/Specware4-text -batch <<-XXXX
                 :swpath
-		(load "$EXIT_ON_ERRORS")
+		(load "$EXIT_ON_ERRORS") ; bin/linux/exit-on-errors
 		(enlarge-stack)
 		(exiting-on-errors 
 		  (if (sw "/Applications/Specware/Specware4")
@@ -154,7 +156,12 @@ if [ -f bin/linux/Specware4.dxl ]; then
 	XXXX
         RC=$?
 else
-	if [ -f lisp/Specware4.lisp ]; then
+        if [   -f lisp/Specware4.lisp \
+	     -a \(    \( ! -f Specware4-base.lisp \) \
+                 -o lisp/Specware4.lisp -nt Specware4-base.lisp \) ]; then
+		if [ -f bin/linux/Specware4.dxl ]; then
+  		    echo "Cvs saved lisp, Specware4-base.lisp, is newer than bin/linux/Specware4.dxl."
+		fi
 		echo "Bootstrapping from previously generated lisp: lisp/Specware4.lisp"
                 echo " "
 		cd Handwritten/Lisp
@@ -169,14 +176,38 @@ else
 		XXXX
                 RC=$?
 	else
-		# This is where you end up if you do cvs checkout and then
-		#  run bootstrap.  Maybe we could get a default version of
-		#  Specware4.lisp from somewhere?
-		echo " "
-		echo "Bootstrap failed"
-		echo "Could not find bin/linux/Specware4.dxl or lisp/Specware4.lisp"
-		echo "under $SPECWARE4/Applications/Specware"
-		exit 1
+                if [ -f Specware4-base.lisp ]; then
+			if [ -f bin/linux/Specware4.dxl ]; then
+			    echo "Cvs saved lisp, Specware4-base.lisp, is newer than bin/linux/Specware4.dxl."
+			fi
+			if [ -f lisp/Specware4.lisp ]; then
+			    echo "Cvs saved lisp, Specware4-base.lisp, is newer than both lisp/Specware4.lisp."
+			fi
+                        echo "Bootstrapping from cvs saved lisp: Specware4-base.lisp"
+			echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+			cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+			echo " "
+			cd Handwritten/Lisp
+			$LISP -batch <<-XXXX
+			    (load "$EXIT_ON_ERRORS")
+			    (enlarge-stack)
+			    (exiting-on-errors 
+			      (load "Specware4.lisp")
+			      (if (sw "/Applications/Specware/Specware4")
+				(exit 0)
+			        (exit 1)))
+			XXXX
+			RC=$?
+		else
+		    # You should never end up here.
+		    # If you do then cvs checkout/update did not correctly
+		    # provide you with a Specware4-base.lisp.
+		    echo " "
+		    echo "Bootstrap failed"
+		    echo "Could not find bin/linux/Specware4.dxl or lisp/Specware4.lisp or Specware4-base.lisp"
+		    echo "under $SPECWARE4/Applications/Specware"
+		    exit 1
+		fi
 	fi
 fi
 
