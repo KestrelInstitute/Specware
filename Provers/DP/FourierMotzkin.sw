@@ -434,8 +434,14 @@ FM qualifying spec
       else hdRes
 
   op ineq.compare: Ineq * Ineq -> Comparison
-  def ineq.compare(ineq1, ineq2) =
-    poly.compare(ineqPoly(ineq1), ineqPoly(ineq2))
+  def ineq.compare(ineq1 as (comp1, poly1), ineq2 as (comp2, poly2)) =
+    let polyRes = poly.compare(poly1, poly2) in
+    if polyRes = Equal then
+      case (comp1, comp2) of
+	| (Neq, GtEq) -> Less
+	| (GtEq, Neq) -> Greater
+	| _ -> Equal
+    else polyRes
 
   sort IneqSet = List Ineq
 
