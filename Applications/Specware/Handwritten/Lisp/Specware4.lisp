@@ -158,6 +158,10 @@
     ;; that are not grounded in normal base specs such as Boolean, Integer, etc.
     "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
 
+    ;; Preface.lisp defines misc things called by Specware4.lisp code, 
+    ;; so that compiling Specware4.lisp won't genereate compiler warnings.
+    "Applications/Specware/Handwritten/Lisp/Preface.lisp"
+
     ;; The generated lisp code.  This also initializes the Specware
     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
     "Applications/Specware/lisp/Specware4.lisp"
