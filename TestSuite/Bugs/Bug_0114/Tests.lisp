@@ -2,7 +2,7 @@
 
 (test 
 
- ("Bug 0114 : Equivalence of op decls should be detected"
+ ("Bug 0114 : Equivalent op decls should be coalesced"
   :show   "Colimit#C"
   :output '(
 	    ";;; Elaborating diagram-colimit at $TESTDIR/Colimit#C"
