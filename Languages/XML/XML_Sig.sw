@@ -26,7 +26,7 @@ XML qualifying spec
   %%%   typos and misspellings, or noticing that attrs were specified, but out of 
   %%%   order, etc.
   %%%
-  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K32]
+  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K36]
   %%%   which are implemented here to factor some original W3 ruls into a parsing 
   %%%   stage using KI rules followed by post-parsing well formedness checks based 
   %%%   perhaps on other W3 rules.  
@@ -50,12 +50,12 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
   %%
-  %%   [1] transforms as follows:
+  %%  *[1] transforms as follows:
   %%
   %%       document  ::=  XMLDecl? Misc* (doctypedecl  Misc*)? element Misc*
   %%       document  ::=  XMLDecl? Misc*  doctypedecl? Misc*   element Misc*
   %%
-  %%  so we can recast [1] [22] [27] as:
+  %%  so we can recast *[1] *[22] *[27] as:
   %%
   %%  [K1]  document  ::=  DocItems
   %%
@@ -188,7 +188,7 @@ XML qualifying spec
   %%      4.  The declaration matches ANY, and the types of any child elements have been declared.
   %% 
   %%
-  %%  TODO
+  %%  TODO -- Validity Check
   %%
 
   %% Prolog disappears as distinct sort, given [K1] [K2] [K3]
@@ -339,7 +339,6 @@ XML qualifying spec
   %%                                                             [WFC: In DTD]
   %%                                                             [VC: Unique Element Type Declaration]
   %%                                                             [VC: One ID per Element Type]    
-  %%                                                             [VC: Unique Notation Name]
   %%                                                             [VC: One Notation Per Element Type] 
   %%                                                             [VC: No Notation on Empty Element]
   %%
@@ -401,27 +400,54 @@ XML qualifying spec
   %%
   %%    Parameter-entity references may only appear in the DTD.  
   %%
-  %%  TODO
+  %%  TODO -- Handled by grammar, or post check?
   %%  
 
-  %%  [VC: Unique Element Type Declaration]         [K12] *[45]
+  %%  [VC: Unique Element Type Declaration]         [K12] [45]
   %%
   %%    No element type may be declared more than once.
   %%
-  %% TODO
+  def unique_element_type_declarations? (external_subset : ExtSubset) : Boolean =
+    %% This is O(N**2) and could be smarter, but that's not worth it unless
+    %% there's an implausibly huge DTD (tens of thousands of element decls).
+    let 
+      def probe (decls, names_seen) =
+	case decls of
+	  | [] -> true
+
+	  | (Element decl) :: tail ->
+	    let name = decl.name in
+	    if member (name, names_seen) then
+	      false
+	    else
+	      probe (tail, cons (name, names_seen))
+	  | _ :: tail -> 
+	    probe (tail, names_seen)
+    in
+      probe (external_subset.decls, [])
 
   %%  [VC: One ID per Element Type]                 [K12] [K23] *[56]
   %%
   %%    No element type may have more than one ID attribute specified.
   %%
-  %% TODO
+  def one_id_per_element_type? (external_subset : ExtSubset) : Boolean =
+    %% This is O(N**2) and could be smarter, but that's not worth it unless
+    %% there's an implausibly huge DTD (tens of thousands of attlist decls).
+    let 
+      def probe (decls, names_seen) =
+	case decls of
+	  | [] -> true
 
-  %%  [VC: Unique Notation Name]                    [K12] [K24] *[82] 
-  %%  
-  %%    Only one notation declaration can declare a given Name.
-  %%  
-  %%  TODO
-  %%  
+	  | (Attributes decl) :: tail ->
+	    let name_of_element_type = decl.name in
+	    if member (name_of_element_type, names_seen) then
+	      false
+	    else
+	      probe (tail, cons (name_of_element_type, names_seen))
+	  | _ :: tail -> 
+	    probe (tail, names_seen)
+    in
+      probe (external_subset.decls, [])
 
   %%
   %%  [VC: One Notation Per Element Type]           [K12] [58]
@@ -490,8 +516,10 @@ XML qualifying spec
   %%  I.e., a PEReference may not appear within a ExtSubsetDecl, so we'll need to recursively search.
   %%  Tedious but straightforward.
 
-
   %%  [VC: Proper Group/PE Nesting]                 [K21] [K22] *[49] *[50] [51]
+  %%
+  %%  TODO -- Test during expansion
+  %%
 
   %% -------------------------------------------------------------------------------------------------
 
@@ -537,7 +565,7 @@ XML qualifying spec
   %%    text for a parameter-entity reference, all of them must be contained in the same replacement
   %%     text.
   %%
-  %%  TODO
+  %%  TODO -- test during expansion
   %%
 
   %% -------------------------------------------------------------------------------------------------
@@ -658,8 +686,8 @@ XML qualifying spec
   %%     *  element types with element content, if white space occurs directly within any instance 
   %%        of those types.
   %%
-
-  %% TODO: implement [VC: Standalone Document Declaration]
+  %% TODO -- misc validity checks
+  %%
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          DTD (Doc Type Decl)                                                                 %%%
@@ -720,7 +748,7 @@ XML qualifying spec
   %%
   %%    The external subset, if any, must match the production for extSubset.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
  
   %%
@@ -749,7 +777,7 @@ XML qualifying spec
   %%    The replacement text of a parameter entity reference in a DeclSep must match the production
   %%    extSubsetDecl.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
 
   %%  [WFC: PEs in Internal Subset]                 [K18] *[28a] *[29] 
@@ -778,23 +806,26 @@ XML qualifying spec
   %%
   %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
   %%
-  %%   [47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%  *[47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%    ==>
+  %%  [K19]  children     ::=  cp
   %%
+  %%                                                             [KWFC: Children Decl]
   %%
   %%  *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
   %%    ==>
-  %%  [K19]  cp           ::=  cpbody ('?' | '*' | '+')? 
-  %%  [K20]  cpbody       ::=  Name | choice | seq
+  %%  [K20]  cp           ::=  cpbody ('?' | '*' | '+')? 
+  %%  [K21]  cpbody       ::=  Name | choice | seq
   %%
   %%  *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
   %%    ==>
-  %%  [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
+  %%  [K22]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%
   %%  *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
   %%    ==>
-  %%  [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
+  %%  [K23]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting]
   %%
@@ -825,43 +856,47 @@ XML qualifying spec
                      | Children Children
 
   %%
-  %%  [47] % TODO
+  %%  [K19]  children ::=  cp  -- [KWFC: Children Decl]
   %%
-  sort Children = (CP | not_just_a_cp_name?)
+  sort Children = (CP | well_formed_children?)
 
   %%
-  %%  [47] % TODO
+  %%  [KWFC: Children Decl]                         [K19] 
   %%
-  def not_just_a_cp_name? cp =
+  %%    The basic production for children in the contentspec of an elementdecl in the DTD 
+  %%    must be a choice or seq, not a simple name.
+  %%
+  def well_formed_children? cp =
     case cp.body of
-      | Name _ -> false
-      | _ -> true
+      | Choice _ -> true
+      | Seq    _ -> true
+      | Name   _ -> false
    
   %%
-  %%  [K19] *[48]
+  %%  [K20] *[48]
   %%
   sort BNF_Directive = | ZeroOrOne | ZeroOrMore | OneOrMore | One
 
   %%
-  %%  [K19] *[48]
+  %%  [K20] *[48]
   %%
   sort CP = {body : CPBody,
 	     rule : BNF_Directive}
    
   %%
-  %%  [K20] *[48]
+  %%  [K21] *[48]
   %%
   sort CPBody = | Name   Name 
                 | Choice Choice 
                 | Seq    Seq
 
   %%
-  %%  [K21] *[49]
+  %%  [K22] *[49]
   %%
   sort Choice = {alternatives : NE_List (WhiteSpace * CP * WhiteSpace)}
 
   %%
-  %%  [K22] *[50]
+  %%  [K23] *[50]
   %%
   sort Seq    = {items        :    List (WhiteSpace * CP * WhiteSpace)}
 
@@ -884,7 +919,7 @@ XML qualifying spec
   sort Mixed_Without_Names = {w1 : WhiteSpace,
 			      w2 : WhiteSpace}
 
-  %%  [VC: Proper Group/PE Nesting]                 [K21] [K22] *[49] *[50] [51]
+  %%  [VC: Proper Group/PE Nesting]                 [K22] [K23] *[49] *[50] [51]
   %%
   %%    Parameter-entity replacement text must be properly nested with parenthesized groups. 
   %%
@@ -902,7 +937,21 @@ XML qualifying spec
   %%
   %%    The same name must not appear more than once in a single mixed-content declaration.
   %%
-  %% TODO (easy)
+  def valid_mixed? (mixed : Mixed) : Boolean =
+    case mixed of
+      | Names {w1, names, w2} -> 
+        let 
+	   def probe (tail, names_seen) =
+	     case tail of
+	       | [] -> true
+	       | name :: tail ->
+	         if member (name, names_seen) then 
+		   false
+		 else
+		   probe (tail, cons (name, names_seen))
+	in
+	  probe (names, [])
+      | _ -> true
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          DTD AttListDecl                                                                     %%%
@@ -926,7 +975,7 @@ XML qualifying spec
   %%                            | 'NMTOKENS'                    *[VC: Name Token]
   %%  *[57]  EnumeratedType  ::=  NotationType | Enumeration 
   %%    ==>
-  %%  [K23]  AttType         ::=  'CDATA'
+  %%  [K24]  AttType         ::=  'CDATA'
   %%                            | 'ID'                           [VC: ID]
   %%                                                             [VC: One ID per Element Type]
   %%                                                             [VC: ID Attribute Default]
@@ -977,7 +1026,7 @@ XML qualifying spec
 		 default : DefaultDecl}
 
   %%
-  %%  [VC: ID Attribute Default]                    [53] [K23] *[56]
+  %%  [VC: ID Attribute Default]                    [53] [K24] *[56]
   %%
   %%    An ID attribute must have a declared default of #IMPLIED or #REQUIRED.
   %%
@@ -989,7 +1038,7 @@ XML qualifying spec
   %%
 
   %%
-  %%  [K23] *[54] *[55] *[56] *[57]
+  %%  [K24] *[54] *[55] *[56] *[57]
   %%
   sort AttType = %% *[55] StringType 
                  | String        
@@ -1006,45 +1055,43 @@ XML qualifying spec
                  | Enumeration Enumeration
   
 
-  %%  [VC: ID]                                      [K23] *[56]
+  %%  [VC: ID]                                      [K24] *[56]
   %%
   %%    Values of type ID must match the Name production. A name must not appear more than once in an
   %%    XML document as a value of this type; i.e., ID values must uniquely identify the elements
   %%    which bear them.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
 
-  %%  [VC: One ID per Element Type]                 [K12] [K23] *[56]
-
-  %%  [VC: ID Attribute Default]                    [53] [K23] *[56]
+  %%  [VC: One ID per Element Type]                 [K12] [K24] *[56]
 
   %%
-  %%  [VC: IDREF]                                   [K23] *[56]
+  %%  [VC: IDREF]                                   [K24] *[56]
   %%
   %%    Values of type IDREF must match the Name production, and values of type IDREFS must match 
   %%    Names; each Name must match the value of an ID attribute on some element in the XML document;
   %%     i.e. IDREF values must match the value of some ID attribute.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
 
   %%
-  %%  [VC: Entity Name]                             [K23] *[56]
+  %%  [VC: Entity Name]                             [K24] *[56]
   %%
   %%    Values of type ENTITY must match the Name production, values of type ENTITIES must match 
   %%    Names; each Name must match the name of an unparsed entity declared in the DTD.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
 
   %%
-  %%  [VC: Name Token]                              [K23] *[56]
+  %%  [VC: Name Token]                              [K24] *[56]
   %%  
   %%    Values of type NMTOKEN must match the Nmtoken production; values of type NMTOKENS must match 
   %%    Nmtokens.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
 
   %%
@@ -1062,12 +1109,16 @@ XML qualifying spec
   %%    Values of this type must match one of the notation names included in the declaration;
   %%    all notation names in the declaration must be declared.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
 
   %%  [VC: One Notation Per Element Type]           [K12] [58]
+  %%
+  %%  TODO -- Validity Check
 
   %%  [VC: No Notation on Empty Element]            [K12] [58]
+  %%
+  %%  TODO -- Validity Check
 
   %%
   %%  [59]
@@ -1082,7 +1133,7 @@ XML qualifying spec
   %%  
   %%    Values of this type must match one of the Nmtoken tokens in the declaration.
   %%
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%
 
   %%
@@ -1100,7 +1151,7 @@ XML qualifying spec
   %%    If an attribute has a default value declared with the #FIXED keyword, instances of that 
   %%    attribute must match the default value.
   %%  
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%  
 
   %%  [VC: Required Attribute]                      [60]
@@ -1108,8 +1159,7 @@ XML qualifying spec
   %%    If the default declaration is the keyword #REQUIRED, then the attribute must be specified for
   %%    all elements of the type in the attribute-list declaration.
   %%
-  %%  
-  %%  TODO
+  %%  TODO -- Expansion Rule
   %%  
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -1135,7 +1185,7 @@ XML qualifying spec
   %%
   %%  *[82]  NotationDecl   ::=  '<!NOTATION' S Name S (ExternalID | PublicID) S? '>' 
   %%    ==>
-  %%  [K24]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
+  %%  [K25]  NotationDecl   ::=  '<!NOTATION' S Name S GenericID S? '>' 
   %%
   %%                                                             [VC: Unique Notation Name]
   %%
@@ -1143,17 +1193,17 @@ XML qualifying spec
   %%
   %%  *[75]  ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %%    ==>
-  %%  [K25]  ExternalID     ::=  GenericID
+  %%  [K26]  ExternalID     ::=  GenericID
   %%
   %%                                                             [KWFC: External ID]
   %%
   %%  *[83]  PublicID       ::=  'PUBLIC' S PubidLiteral 
   %%    ==>
-  %%  [K26]  PublicID       ::=  GenericID
+  %%  [K27]  PublicID       ::=  GenericID
   %%
   %%                                                             [KWFC: Public ID]
   %%
-  %%  [K27]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
+  %%  [K28]  GenericID      ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral (S SystemLiteral)?
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1206,13 +1256,13 @@ XML qualifying spec
   %%
   %%    The Name must match the declared name of a notation.
   %%
-  %%  TODO
+  %%  TODO -- Search through <!NOTATION decls, both internal and external subset
   %%
 
   %% ----------------------------------------------------------------------------------------------------
 
   %%
-  %%  [K27]
+  %%  [K28]
   %%
   sort GenericID = {w1     : WhiteSpace,
 		    public : Option PubidLiteral,
@@ -1220,17 +1270,17 @@ XML qualifying spec
 		    system : Option SystemLiteral}
 		   
   %%
-  %%  [K25] *[75]
+  %%  [K26] *[75]
   %%
   sort ExternalID = (GenericID | well_formed_external_id?)
 
   %%
-  %%  [K26] *[83]
+  %%  [K27] *[83]
   %%
   sort PublicID   = (GenericID | well_formed_public_id?)
 
   %%
-  %%  [KWFC: External ID]                           [K25] *[75] -- well_formed_external_id?
+  %%  [KWFC: External ID]                           [K26] *[75] -- well_formed_external_id?
   %%
   %%    ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %%
@@ -1239,7 +1289,7 @@ XML qualifying spec
       | Some _ -> true
       | _ -> false
 
-  %%  [KWFC: Public ID]                             [K26] *[83] -- well_formed_public_id?
+  %%  [KWFC: Public ID]                             [K27] *[83] -- well_formed_public_id?
   %%
   %%    PublicID       ::=  'PUBLIC' S PubidLiteral 
   %%
@@ -1251,7 +1301,7 @@ XML qualifying spec
   %% ----------------------------------------------------------------------------------------------------
 
   %%
-  %%  [K24] *[82]
+  %%  [K25] *[82]
   %%
   sort NotationDecl = {w1   : WhiteSpace,
 		       name : Name,
@@ -1259,7 +1309,13 @@ XML qualifying spec
 		       id   : GenericID,
 		       w3   : WhiteSpace}
 
-  %%  [VC: Unique Notation Name]                    [K12] [K24] *[82] 
+  %%  [VC: Unique Notation Name]                    [K25] *[82] 
+  %%  
+  %%    Only one notation declaration can declare a given Name.
+  %%  
+  %%  TODO -- check both internal and external subsets
+  %%
+
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Element                                                                             %%%
@@ -1274,7 +1330,7 @@ XML qualifying spec
   %%
   %%                                                            *[WFC: Unique Att Spec]
   %%    ==>
-  %%  [K28]  STag          ::=  ElementTag                            
+  %%  [K29]  STag          ::=  ElementTag                            
   %%
   %%                                                             [KWFC: Start Tag]
   %%                                                             [WFC:  Unique Att Spec]
@@ -1289,31 +1345,32 @@ XML qualifying spec
   %%
   %%  *[42]  ETag          ::=  '</' Name S? '>'
   %%    ==>
-  %%  [K29]  ETag          ::=  ElementTag                   
+  %%  [K30]  ETag          ::=  ElementTag                   
   %%
   %%                                                             [KWFC: End Tag]
   %%
-  %%  Since the chardata in [43] is typically used for indentation, 
+  %%  Since the chardata in *[43] is typically used for indentation, 
   %%  it makes more sense to group it as in [K18]:
   %%
   %%  *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
   %%    ==>
-  %%  [K30]  content       ::=  content_item* CharData?
-  %%  [K31]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
+  %%  [K31]  content       ::=  content_item* CharData?
+  %%  [K32]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
   %% 
   %%  *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
   %%
   %%                                                             [WFC: Unique Att Spec]
   %%    ==>
-  %%  [K32]  EmptyElemTag  ::=  ElementTag
+  %%  [K33]  EmptyElemTag  ::=  ElementTag
   %%
   %%                                                             [KWFC: Empty Tag]
   %%                                                             [WFC:  Unique Att Spec]
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+  %% TODO -- valid vs. well_formed
   %%
-  %%  [39]
+  %%  [39] TODO
   %%
   sort Element = | Empty EmptyElemTag
                  | Full  (PossibleElement | element_types_match?)
@@ -1338,13 +1395,13 @@ XML qualifying spec
   %% ----------------------------------------------------------------------------------------------------
 
   %%
-  %%  [K28] *[40] -- [KWFC: Start Tag]  
+  %%  [K29] *[40] -- [KWFC: Start Tag]  
   %%              -- [WFC: Unique Att Spec] 
   %%
   sort STag = ((ElementTag | well_formed_start_tag?) | unique_attributes?)
 
   %%
-  %%  [KWFC: Start Tag]                             [K28] *[40] -- well_formed_start_tag?
+  %%  [KWFC: Start Tag]                             [K29] *[40] -- well_formed_start_tag?
   %%
   %%    STag  ::=  '<'  Name  (S Attribute)*  S?  '>' 
   %%    where Name is not a variant of 'xml'
@@ -1367,7 +1424,7 @@ XML qualifying spec
       | _ -> false
       
   %%
-  %%  [WFC: Unique Att Spec]                        [K28] [K32] *[40] *[44] -- unique_attributes?
+  %%  [WFC: Unique Att Spec]                        [K29] [K33] *[40] *[44] -- unique_attributes?
   %%
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %%
@@ -1389,8 +1446,8 @@ XML qualifying spec
 
   %%
   %%  [K8] *[41] -- [VC:  Attribute Value Type]
-  %%            -- [WFC: No External Entity References]
-  %%            -- [WFC: No < in Attribute Values]
+  %%             -- [WFC: No External Entity References]
+  %%             -- [WFC: No < in Attribute Values]
   %%
   sort Attribute = {name     : Name,
 		    w1       : WhiteSpace,
@@ -1403,7 +1460,7 @@ XML qualifying spec
   %%    The attribute must have been declared; the value must be of the type declared for it. 
   %%    (For attribute types, see 3.3 Attribute-List Declarations.)
   %%  
-  %%  TODO
+  %%  TODO -- Check against DTD
   %%  
 
   %%  [WFC: No External Entity References]          [K8] *[41]
@@ -1416,12 +1473,12 @@ XML qualifying spec
   %% ----------------------------------------------------------------------------------------------------
 
   %%
-  %%  [K29] *[42] -- [KWFC: End Tag]
+  %%  [K30] *[42] -- [KWFC: End Tag]
   %%
   sort ETag = (ElementTag | well_formed_end_tag?)
 
   %%
-  %%  [KWFC: End Tag]                               [K29] *[42] -- well_formed_end_tag?
+  %%  [KWFC: End Tag]                               [K30] *[42] -- well_formed_end_tag?
   %%
   %%    ETag  ::=  '</'  Name  S?  '>'
   %%    where Name is not a variant of 'xml'
@@ -1435,13 +1492,13 @@ XML qualifying spec
   %% ----------------------------------------------------------------------------------------------------
 
   %%
-  %%  [K30] *[43]
+  %%  [K31] *[43]
   %%
   sort Content = {items   : List (Option CharData * Content_Item),
 		  trailer : Option CharData}
 
   %%
-  %%  [K31] *[43]
+  %%  [K32] *[43]
   %%
   sort Content_Item = | Element   Element 
                       | Reference Reference 
@@ -1452,13 +1509,13 @@ XML qualifying spec
   %% ----------------------------------------------------------------------------------------------------
 
   %%
-  %%  [K32] *[44] -- [KWFC: Empty Tag]
+  %%  [K33] *[44] -- [KWFC: Empty Tag]
   %%              -- [WFC:  Unique Att Spec]
   %%
   sort EmptyElemTag = ((ElementTag | well_formed_empty_tag?) | unique_attributes?)  
 
   %%
-  %%  [KWFC: Empty Tag]                             [K32] *[44] -- well_formed_empty_tag?
+  %%  [KWFC: Empty Tag]                             [K33] *[44] -- well_formed_empty_tag?
   %%
   %%    EmptyElemTag  ::=  '<'  Name  (S Attribute)*  S?  '/>' 
   %%    where Name is not a variant of 'xml'
@@ -1468,7 +1525,7 @@ XML qualifying spec
     (~ (xml_prefix? tag.name)) &
     (tag.postfix = [47])          (* '/' *) 
 
-  %%  [WFC: Unique Att Spec]                        [K28] [K32] *[40] *[44] -- unique_attributes?
+  %%  [WFC: Unique Att Spec]                        [K29] [K33] *[40] *[44] -- unique_attributes?
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Character_Strings                                                                   %%%
@@ -1542,17 +1599,17 @@ XML qualifying spec
   %%
   %%  *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%    ==>
-  %%  [K33]  SystemuLiteral  ::=  QuotedText
+  %%  [K34]  SystemuLiteral  ::=  QuotedText
   %%                
   %%  *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
   %%    ==>
-  %%  [K34]  PubidLiteral    ::=  QuotedText
+  %%  [K35]  PubidLiteral    ::=  QuotedText
   %%                
   %%                                                             [KWFC: Pubid Literal]   
   %%
   %%   [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
-  %%  [K35]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%  [K36]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -1563,7 +1620,7 @@ XML qualifying spec
 		      items : List EntityValue_Item}
 
   %%
-  %%  [9] TODO
+  %%  [9] aux
   %%
   sort EntityValue_Item = | NonRef UString
                           | PERef  PEReference
@@ -1576,7 +1633,7 @@ XML qualifying spec
 		   items : List AttValue_Item}
 
   %%
-  %%  [10] TODO
+  %%  [10] aux
   %%
   sort AttValue_Item = | NonRef UString
                        | Ref    Reference
@@ -1589,17 +1646,17 @@ XML qualifying spec
   %%
 
   %%
-  %%  [K33] *[11]
+  %%  [K34] *[11]
   %%
   sort SystemLiteral = QuotedText
 
   %%
-  %%  [K34] *[12]
+  %%  [K35] *[12]
   %%
   sort PubidLiteral  = (QuotedText | well_formed_pubid_literal?)
 
   %%
-  %%  [KWFC: Pubid Literal]                         [K34] *[12] -- well_formed_pubid_literal?
+  %%  [KWFC: Pubid Literal]                         [K35] *[12] -- well_formed_pubid_literal?
   %%
   %%    All chars in a pubid literal are PubidChar's :
   %%    PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
@@ -1608,17 +1665,17 @@ XML qualifying spec
     (all? pubid_char? quoted_text.text) 	  			
 
   %%
-  %%  [K35]
+  %%  [K36]
   %%
   sort QuotedText = (BoundedText | quoted_text?)
 
   %%
-  %%  [K35]
+  %%  [K36]
   %%
   def quoted_text? btext = ~ (member (btext.qchar, btext.text))
 
   %%
-  %%  [K35] TODO
+  %%  [K36] aux
   %%
   sort BoundedText = {qchar : QuoteChar,
 		      text  : UString}
@@ -1685,14 +1742,14 @@ XML qualifying spec
   %%    of the following entities: amp, lt, gt, apos, quot. The declaration of a general entity must
   %%    precede any reference to it which appears in a default value in an attribute-list declaration.
   %%
-  op entity_declared? : Name -> Boolean   % tricky  % TODO
+  op entity_declared? : Name -> Boolean   % TODO -- tricky 
 
   %%  [WFC: Parsed Entity]                          [68]   
   %%
   %%    An entity reference must not contain the name of an unparsed entity. Unparsed entities may 
   %%    be referred to only in attribute values declared to be of type ENTITY or ENTITIES.
   %%
-  %%  TODO
+  %%  TODO -- stateful
   %%
 
   %%
@@ -1707,7 +1764,7 @@ XML qualifying spec
   %%    A parsed entity must not contain a recursive reference to itself, either directly or 
   %%    indirectly.
   %%
-  %%  TODO
+  %%  TODO 
   %%
 
   %%  [WFC: In DTD]                                 [K12] [69] *[31]
@@ -1887,13 +1944,13 @@ XML qualifying spec
   op name_start_char?       : UChar -> Boolean    %  [5]   % See /Languages/XML/Handwritten/Lisp/Chars.lisp
   op pubid_char?            : UChar -> Boolean    %  [13]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
   op hex_digit?             : UChar -> Boolean    %  [66]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op version_num_char?      : UChar -> Boolean    %  [26]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op enc_name_char?         : UChar -> Boolean    %  [81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
-  op latin_alphabetic_char? : UChar -> Boolean    %  [81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op version_num_char?      : UChar -> Boolean    % *[26]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op enc_name_char?         : UChar -> Boolean    % *[81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
+  op latin_alphabetic_char? : UChar -> Boolean    % *[81]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
   op char_data_char?        : UChar -> Boolean    %  [14]  % See /Languages/XML/Handwritten/Lisp/Chars.lisp
 
   %%
-  %%  [9] [10] *[11] *[12] *[24] *[32] *[80] [K35]  
+  %%  [9] [10] *[11] *[12] *[24] *[32] *[80] [K36]  
   %%
   def quote_char? (char : UChar) : Boolean =
     (char = UChar.double_quote) or
@@ -1910,10 +1967,10 @@ XML qualifying spec
   sort NameStartChar        = (UChar | name_start_char?)       %  [5]
   sort PubidChar            = (UChar | pubid_char?)            %  [13]
   sort HexDigit             = (UChar | hex_digit?)             %  [66]
-  sort VersionNumChar       = (UChar | version_num_char?)      % *[26] [K15]
-  sort EncNameChar          = (UChar | enc_name_char?)         %  [81]
-  sort LatinAlphabeticChar? = (UChar | latin_alphabetic_char?) %  [81]
-  sort QuoteChar            = (UChar | quote_char?)            %  [9] [10] *[11] *[12] *[24] *[32] *[80] [K35]
+  sort VersionNumChar       = (UChar | version_num_char?)      % *[26]
+  sort EncNameChar          = (UChar | enc_name_char?)         % *[81]
+  sort LatinAlphabeticChar? = (UChar | latin_alphabetic_char?) % *[81]
+  sort QuoteChar            = (UChar | quote_char?)            %  [9] [10] *[11] *[12] *[24] *[32] *[80] [K36]
 
   %%
   %%  [3]
@@ -1968,7 +2025,7 @@ XML qualifying spec
   %% 
   %%    The Name in an element's end-tag must match the element type in the start-tag.
   %% 
-  %%  [WFC: Unique Att Spec]                        [K28] [K32] *[40] *[44] -- unique_attributes?
+  %%  [WFC: Unique Att Spec]                        [K29] [K33] *[40] *[44] -- unique_attributes?
   %%
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
   %%
@@ -2022,30 +2079,35 @@ XML qualifying spec
   %%
   %%    XMLDecl  ::=  '<?xml' VersionInfo EncodingDecl? SDDecl? S? '?>'
   %%
-  %%  [KWFC: External ID]                           [K25] *[75] -- well_formed_external_id?
+  %%  [KWFC: Children Decl]                         [K19] 
+  %%
+  %%    The basic production for children in the contentspec of an elementdecl in the DTD 
+  %%    must be a choice or seq, not a simple name.
+  %%
+  %%  [KWFC: External ID]                           [K26] *[75] -- well_formed_external_id?
   %%
   %%    ExternalID     ::=  'SYSTEM' S SystemLiteral | 'PUBLIC' S PubidLiteral S SystemLiteral 
   %%
-  %%  [KWFC: Public ID]                             [K26] *[83] -- well_formed_public_id?
+  %%  [KWFC: Public ID]                             [K27] *[83] -- well_formed_public_id?
   %%
   %%    PublicID       ::=  'PUBLIC' S PubidLiteral 
   %%
-  %%  [KWFC: Start Tag]                             [K28] *[40] -- well_formed_start_tag?
+  %%  [KWFC: Start Tag]                             [K29] *[40] -- well_formed_start_tag?
   %%
   %%    STag  ::=  '<'  Name  (S Attribute)*  S?  '>' 
   %%    where Name is not a variant of 'xml'
   %%
-  %%  [KWFC: End Tag]                               [K29] *[42] -- well_formed_end_tag?
+  %%  [KWFC: End Tag]                               [K30] *[42] -- well_formed_end_tag?
   %%
   %%    ETag  ::=  '</'  Name  S?  '>'
   %%    where Name is not a variant of 'xml'
   %%
-  %%  [KWFC: Empty Tag]                             [K32] *[44] -- well_formed_empty_tag?
+  %%  [KWFC: Empty Tag]                             [K33] *[44] -- well_formed_empty_tag?
   %%
   %%    EmptyElemTag  ::=  '<'  Name  (S Attribute)*  S?  '/>' 
   %%    where Name is not a variant of 'xml'
   %%
-  %%  [KWFC: Pubid Literal]                         [K34] *[12] -- well_formed_pubid_literal?
+  %%  [KWFC: Pubid Literal]                         [K35] *[12] -- well_formed_pubid_literal?
   %%
   %%    All chars in a pubid literal are PubidChar's :
   %%    PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
@@ -2113,32 +2175,32 @@ XML qualifying spec
   %%
   %%    The same name must not appear more than once in a single mixed-content declaration.
   %%
-  %%  [VC: ID]                                      [K23] *[56]
+  %%  [VC: ID]                                      [K24] *[56]
   %%
   %%    Values of type ID must match the Name production. A name must not appear more than once in an
   %%    XML document as a value of this type; i.e., ID values must uniquely identify the elements
   %%    which bear them.
   %%
-  %%  [VC: One ID per Element Type]                 [K12] [K23] *[56]
+  %%  [VC: One ID per Element Type]                 [K12] [K24] *[56]
   %%
   %%    No element type may have more than one ID attribute specified.
   %%
-  %%  [VC: ID Attribute Default]                    [53] [K23] *[56]
+  %%  [VC: ID Attribute Default]                    [53] [K24] *[56]
   %%
   %%    An ID attribute must have a declared default of #IMPLIED or #REQUIRED.
   %%
-  %%  [VC: IDREF]                                   [K23] *[56]
+  %%  [VC: IDREF]                                   [K24] *[56]
   %%
   %%    Values of type IDREF must match the Name production, and values of type IDREFS must match 
   %%    Names; each Name must match the value of an ID attribute on some element in the XML document;
   %%     i.e. IDREF values must match the value of some ID attribute.
   %%
-  %%  [VC: Entity Name]                             [K23] *[56]
+  %%  [VC: Entity Name]                             [K24] *[56]
   %%
   %%    Values of type ENTITY must match the Name production, values of type ENTITIES must match 
   %%    Names; each Name must match the name of an unparsed entity declared in the DTD.
   %%
-  %%  [VC: Name Token]                              [K23] *[56]
+  %%  [VC: Name Token]                              [K24] *[56]
   %%  
   %%    Values of type NMTOKEN must match the Nmtoken production; values of type NMTOKENS must match 
   %%    Nmtokens.
@@ -2179,7 +2241,7 @@ XML qualifying spec
   %%
   %%    The Name must match the declared name of a notation.
   %%
-  %%  [VC: Unique Notation Name]                    [K12] [K24] *[82] 
+  %%  [VC: Unique Notation Name]                    [K25] *[82] 
   %%  
   %%    Only one notation declaration can declare a given Name.
   %%  
