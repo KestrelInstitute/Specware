@@ -22,6 +22,11 @@ SpecCalc qualifying spec {
  import Prove
  import Expand			
  import Reduce
+
+ %% Experimental file:
+ import Make   % we don't yet have SpecCalc term to dispatch to this,
+               % but it can in principle be accessed from toplevel.lisp
+	       % via hooks in Specware.sw (Prism actually does this)
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.

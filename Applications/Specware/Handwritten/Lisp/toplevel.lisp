@@ -879,6 +879,9 @@
   (cl:substitute #\_  #\# (string unitid))
   )
 
+(defun SPECWARE::run_cmd (cmd) % non-hypenated name to define corresponding MetaSlang op 
+  (run-cmd cmd))
+
 #-(or allegro cmu mcl sbcl) 
 (defun run-cmd (cmd &rest args)
   (warn "ignoring non-[ALLEGRO/CMU/MCL/SBCL] RUN-CMD : ~A~{ ~A~}" cmd args))
