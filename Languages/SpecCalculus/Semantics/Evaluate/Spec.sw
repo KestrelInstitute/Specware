@@ -42,8 +42,9 @@ and then qualify the resulting spec if the spec was given a name.
                            -> Env (ASpec Position * TimeStamp * URI_Dependency)
   def evaluateSpecElems initialSpec specElems =
      %% Get import information first
-     {(spcWithImports,TS,depURIs)
+     {(spcWithImports0,TS,depURIs)
         <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
+      spcWithImports <- maybeAddBaseImport(spcWithImports0,initialSpec);
       fullSpec <- foldM evaluateSpecElem spcWithImports specElems;
       return (fullSpec,TS,depURIs)}
 
@@ -134,6 +135,40 @@ such time as the current one can made monadic.
        | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
        | Error msg   -> raise  (OldTypeCheck msg)
    }
+\end{spec}
+
+A first attempt at adding implicit import of Base spec. Assumes
+/Library/Base/Base is in the spec path, and doesn't do implicit import
+of there are explicit imports or the spec is in a directory that ends in
+/Libary/Base/ .
+
+\begin{spec}
+  op maybeAddBaseImport : ASpec Position * ASpec Position -> Env (ASpec Position)
+  def maybeAddBaseImport (spc, initialSpec) =
+    if ~(spc = initialSpec) then return spc	% should already include Base
+     else
+       {uri <- getCurrentURI;
+	if aBaseSpec?(uri, spc) then return spc       % defining base
+	else {(Spec baseSpec,_,_)
+	        <- SpecCalc.evaluateURI pos0
+	             (SpecPath_Relative {path = ["Library","Base"],
+					 hashSuffix = None});
+	      return (convertSpecToPosSpec baseSpec)}}
+
+ op aBaseSpec? : URI * ASpec Position -> Boolean
+ def aBaseSpec?(uri, spc) =
+   case uri of
+     | {path,hashSuffix = None} -> baseSpecPath? path
+     | _ -> false
+  
+ def baseSpecPath? path =
+   case path of
+     | [] -> false
+     | [_] -> false
+     | ["Library","Base"] -> true
+     | [_,_] -> false
+     | ["Library","Base",_] -> true
+     | _::r -> baseSpecPath? r
 \end{spec}
 
 \begin{spec}

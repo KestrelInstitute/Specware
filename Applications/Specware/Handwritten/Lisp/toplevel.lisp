@@ -16,7 +16,7 @@
 
 (defun sw0 (x) (Specware::runSpecwareURI (fix_URI x)))
 
-(top-level:alias ("sw0" :case-sensitive) (x) (sw (string x)))
+(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defvar *specware-global-context* nil)
 (defun specware-state ()
