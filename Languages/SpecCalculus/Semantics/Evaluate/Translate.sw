@@ -74,15 +74,55 @@ Note: The code below does not yet match the documentation above, but should.
   op translateSpec : Spec -> TranslateExpr Position -> Env Spec
   def translateSpec spc expr = {
       translation_maps <- makeTranslationMaps spc expr;
+      %%
+      %% translation_maps is an explicit map for which each name in its domain
+      %% refers to a particular type or op in the domain spec.  Each rule
+      %% explicitly states that it is mapping a type or an op, and there are
+      %% no wildcards.   [makeTranslationMaps raises various exceptions if it
+      %% cannot guarantee all of this]
+      %%
+      %% However, it is still possible that a renaming could cause an
+      %% inadvertant capture, so now we need to check for that.
+      %%
+      %% In particular, we worry that a rule such as A.X +-> Y could make 
+      %% an unqualified reference Y that had refered to B.Y in the domain 
+      %% spec translate by default into an unqualified Y that now refers 
+      %% to the new unqualified Y in the codomain spec.  Such captures are 
+      %% avoided by renaming the "capturable" unqualified Y to a more 
+      %% explicit B.Y   This is simpler but similar in spirit to the 
+      %% kinds of alpha conversions that are done to avoid capture when 
+      %% instantiating quantified variables in a logical formula.
+      %%
+      %% [We avoid gratuitously qualifying every reference, to keep print
+      %%  forms for specs as similar as possible to their original input text.
+      %%  Seeing Integer.+, String.^ etc. everywhere would be confusing and
+      %%  annoying.]
+      %%
+      %% On the other hand, if a capture is forced by the presence of an
+      %% additional explicit rule such as Y +-> Y, B.Y +-> Y, B._ +-> _, etc.,
+      %% we assume the user knows what they are doing and allow it.
+      %%
+      translation_maps <- avoidTranslationCaptures spc translation_maps;
+      %%
+      %% Now we produce a new spec using the unambiguous maps.
+      %%
       new_spec <- auxTranslateSpec spc translation_maps (positionOf expr);
+      %%
+      %% One final pass to see if we've managed to collapse necessarily 
+      %% distinct types (e.g. A = X * Y and B = Z | p), or necessarily
+      %% distinct ops (e.g. op i = 4 and op j = "oops") onto the same name.
+      %%
       complainIfAmbiguous (compressDefs new_spec) (positionOf expr)
     } 
     
 
+  sort TranslationMap  = AQualifierMap (QualifiedId * Aliases) 
+  sort TranslationMaps = TranslationMap * TranslationMap
+
   op makeTranslationMaps :
         Spec
      -> TranslateExpr Position
-     -> SpecCalc.Env (AQualifierMap (QualifiedId * Aliases) * AQualifierMap (QualifiedId * Aliases))
+     -> SpecCalc.Env TranslationMaps
 
   def makeTranslationMaps dom_spec (translation_rules, position) =
     %% Similar to code in SpecMorphism.sw
@@ -249,10 +289,18 @@ Note: The code below does not yet match the documentation above, but should.
     in
       foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules
 
-  op  translateOpQualifiedId:   AQualifierMap(QualifiedId * Aliases) -> QualifiedId -> QualifiedId
-  op  translateSortQualifiedId: AQualifierMap(QualifiedId * Aliases) -> QualifiedId -> QualifiedId
-  op  translateOp:   AQualifierMap(QualifiedId * Aliases) -> MS.Term -> MS.Term
-  op  translateSort: AQualifierMap(QualifiedId * Aliases) -> MS.Sort -> MS.Sort
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op avoidTranslationCaptures : Spec -> TranslationMaps -> Env TranslationMaps
+
+  def avoidTranslationCaptures spc map = return map
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  op  translateOpQualifiedId   : TranslationMap -> QualifiedId -> QualifiedId
+  op  translateSortQualifiedId : TranslationMap -> QualifiedId -> QualifiedId
+  op  translateOp              : TranslationMap -> MS.Term -> MS.Term
+  op  translateSort            : TranslationMap -> MS.Sort -> MS.Sort
 
   def translateOpQualifiedId op_id_map (qid as Qualified (qualifier, id)) =
     case findAQualifierMap (op_id_map, qualifier,id) of
@@ -314,11 +362,7 @@ Note: The code below does not yet match the documentation above, but should.
       | _ -> sort_term
 
 
-  op auxTranslateSpec :
-        Spec
-     -> AQualifierMap (QualifiedId * Aliases) * AQualifierMap (QualifiedId * Aliases)
-     -> Position
-     -> SpecCalc.Env Spec
+  op auxTranslateSpec : Spec -> TranslationMaps -> Position -> SpecCalc.Env Spec
 
   def auxTranslateSpec spc (op_id_map, sort_id_map) position =
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
