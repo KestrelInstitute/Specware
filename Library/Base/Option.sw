@@ -12,7 +12,7 @@ Option qualifying spec
   op some? : fa (a) Option a -> Boolean
   op none? : fa (a) Option a -> Boolean
   op compare : fa (a) (a * a -> Comparison) -> Option a * Option a -> Comparison
-  op  mapOption : fa (a,b) (a -> b) -> Option a -> Option b
+  op mapOption : fa (a,b) (a -> b) -> Option a -> Option b
 
   def some? x =
     case x of
