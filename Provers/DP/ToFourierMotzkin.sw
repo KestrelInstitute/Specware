@@ -360,6 +360,18 @@ MSToFM qualifying spec
       let (restFMTerms, context) = toFMProperties(context, spc, restProps) in
       (Cons(fmTerm, restFMTerms), context)
 
+  op toFMTermTop: Context * Spec * MS.Term -> FMTerm * Context
+  def toFMTermTop(context, sp, term) =
+    case term of 
+      | Bind(Forall, bndVars, term, _) ->
+	let fmBndList = fmBndVars bndVars in
+	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MS.Term in
+	let newTerm = Utilities.mkSimpImplies(bndVarsPred, term) in
+	let (fmFmla, newContext) = toFMTerm(context, sp, newTerm) in
+	(fmFmla, newContext)
+      | _ -> toFMTerm(context, sp, term)
+
+
   op toFMTerm: Context * Spec * MS.Term -> FMTerm * Context
   def toFMTerm(context, sp, term) =
     let term = cleanTerm(term) in
@@ -369,12 +381,13 @@ MSToFM qualifying spec
       | _ -> 
     let (resTerm, newContext) =
     case term of 
-      | Bind(Forall, bndVars, term, _) ->
+      (* | Bind(Forall, bndVars, term, _) ->
 	let fmBndList = fmBndVars bndVars in
 	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List MS.Var))):MS.Term in
 	let newTerm = Utilities.mkSimpImplies(bndVarsPred, term) in
 	let (fmFmla, newContext) = toFMTerm(context, sp, newTerm) in
 	(fmFmla, newContext)
+	*)
       | Apply(Fun(f, srt, _), arg, _) ->
 	let (resTerm, newContext) = toFMTermApp(context, sp, term, f, srt, arg) in
 	(resTerm, newContext)
