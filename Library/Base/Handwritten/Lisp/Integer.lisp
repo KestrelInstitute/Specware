@@ -4,24 +4,30 @@
 ;;; The functions commented out acquire definitions from the compilation of Specware4.sw
 ;;;  before they are used.
 
+;;; Added various declarations to quiet down cmucl.
+
 (defun |!+| (x y)
-  (+ x y))
+  (declare (integer x y))
+  (the integer (+ x y)))
 
 ;;; (defun |!+-1| (x)
 ;;;   (+ (car x) (cdr x)))
 
 (defun |!*| (x y)
-  (* x y))
+  (declare (integer x y))
+  (the integer (* x y)))
 ;;; (defun |!*-1| (x)
 ;;;   (* (car x) (cdr x)))
 
 (defun |!-| (x y)
-  (- x y))
+  (declare (integer x y))
+  (the integer (- x y)))
 ;;; (defun |!--1| (x)
 ;;;   (- (car x)(cdr x)))
 
 (defun toString (x)
-  (princ-to-string x))
+  (declare (type integer x))
+  (the string (princ-to-string x)))
 
 ;;; (defun intToString (x)
 ;;;   (princ-to-string x))
@@ -38,7 +44,8 @@
 ;;;;   (read-from-string s))
 
 (defun |!<| (x y)
-  (< x y))
+  (declare (integer x y))
+  (the boolean (< x y)))
 ;;; (defun |!<-1| (x)
 ;;;   (< (car x) (cdr x)))
 
@@ -49,7 +56,8 @@
 ;;;;  (> (car x) (cdr x)))
 
 (defun |!<=| (x y)
-  (<= x y))
+  (declare (integer x y))
+  (the boolean (<= x y)))
 
 ;;; (defun |!<=-1| (x)
 ;;;   (<= (car x) (cdr x)))
@@ -62,7 +70,9 @@
 ;;; (defun succ (x)
 ;;;   (+ 1 x))
 
-(defun ~(x) (- 0 x))
+(defun ~ (x) 
+  (declare (integer x))
+  (the integer (- 0 x)))
 
 ;;; (defun compare (i1 i2) 
 ;;;     (if (< i1 i2)

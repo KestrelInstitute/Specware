@@ -7,7 +7,6 @@
 ;;;  before they are used.  [This wasn't true for concat-1 at least, so I restored its definition here.]
 
 ;;; Added various declarations to quiet down cmucl.
-;;; See Decls.lisp for definition of macro named THE-STRING.
 
 (defun |!length| (x)
   (declare (type lisp:simple-base-string x))
@@ -108,11 +107,25 @@
 ;;; 	      (ses (mapcar #'(lambda (ch) (string (funcall f ch))) se)))
 ;;; 	 (apply #'concatenate (cons 'string ses)))))
 
-(defun translate-1-1 (f s) 
-  (let* ((chars (explode s))
-	 (translated-char-strings (mapcar #'(lambda (ch) (string (funcall f ch)))
-					  chars)))
-    (declare (type list translated-chars))
+(defun translate-1-1 (f str)
+  (let* ((chars (explode str))
+	 (translated-char-strings 
+	  (mapcar #'(lambda (ch) 
+		      ;; prototypical call from specId in SpecToLisp.lisp :
+		      ;; let id = translate (fn #| -> "\\|" | ## -> "\\#" | ch -> Char.toString ch) id
+		      ;; e.g., this will translate some special chars (vertical-bar and hash-mark)
+		      ;; into two-character strings:
+		      ;;   #\|   =>   "\\!"
+		      ;;   #\#   =>   "\\#"      
+		      ;; and other chars to one-character strings:
+		      ;;   #\A   =>   "A"
+		      ;;   ...
+		      ;; Note that in this prototypical case, the result of the 
+		      ;; funcall is already a string, so the call to string here 
+		      ;; is just the identity (i.e., result is EQ to arg).
+		      (string (funcall f ch)))
+		  chars)))
+    (declare (type list translated-char-strings))
     (the lisp:simple-base-string 
       (apply #'concatenate 'string translated-char-strings))))
 

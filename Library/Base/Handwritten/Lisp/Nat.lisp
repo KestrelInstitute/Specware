@@ -1,6 +1,7 @@
 (defpackage :NAT-SPEC)
 (IN-PACKAGE :NAT-SPEC)
 
+;;; Added various declarations to quiet down cmucl.
 
 ;;; The functions commented out acquire definitions from the compilation of Specware4.sw
 ;;;  before they are used.
@@ -21,10 +22,12 @@
 ;;;   (- (car x) (cdr x)))
 
 (defun toString (x)
-  (princ-to-string x))
+  (declare (type integer x))
+  (the string (princ-to-string x)))
 
 (defun natToString (x)
-  (princ-to-string x))
+  (declare (type integer x))
+  (the string (princ-to-string x)))
 
 ;;; ;; Is this ugly or what?
 ;;; 
@@ -34,8 +37,9 @@
 ;;; ;    n))
 ;;; 
 (defun stringToNat (s)
+  (declare (type string s))
   ;; lisp automatically returns the first value as a normal value
-  (read-from-string s))
+  (the integer (read-from-string s)))
 
 ;;; (defun |!<| (x y)
 ;;;   (< x y))
@@ -62,7 +66,8 @@
 ;;;   (- x 1))
 
 (defun |!rem| (x y)
-  (rem x y))
+  (declare (integer x y))
+  (the integer (rem x y)))
 
 ;;; (defun |!rem-1| (x)
 ;;;   (rem (car x) (cdr x)))

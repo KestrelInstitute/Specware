@@ -7,7 +7,7 @@
 ;;;  before they are used.
 
 (defun toString (x)
-  (format nil (if x "true" "false")))
+  (if x "true" "false"))
 
 ;;;  (defun & (x y)
 ;;;    (and x y))
