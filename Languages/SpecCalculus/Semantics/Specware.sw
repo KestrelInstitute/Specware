@@ -315,7 +315,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 		  return res
 		 }
       in
-      runSpecCommand (catch prg toplevelHandlerOption)
+      run (catch prg toplevelHandlerOption)
 \end{spec}
 
 \begin{spec}
