@@ -102,6 +102,16 @@ def addArrowClass clsDecl =
   fn state ->
   (Ok (), state << { arrowclasses = state.arrowclasses ++ [clsDecl] })
 
+op putProductSorts: List Sort -> JGenEnv ()
+def putProductSorts srts =
+  fn state ->
+  (Ok (), state << { productSorts = srts })
+
+op putArrowClasses: List ClsDecl -> JGenEnv ()
+def putArrowClasses clsDecls =
+  fn state ->
+  (Ok (), state << { arrowclasses = clsDecls })
+
 op getProductSorts: JGenEnv (List Sort)
 def getProductSorts =
   fn state ->

@@ -18,7 +18,7 @@ type ArrowType = List Sort * Sort
 
 type Type = JGen.Type
 
-op clsDeclsFromSorts: Spec -> JGenEnv JcgInfo
+op clsDeclsFromSorts: Spec -> JGenEnv ()
 def clsDeclsFromSorts spc =
   {
    putEnvSpec spc;
@@ -26,18 +26,8 @@ def clsDeclsFromSorts spc =
    foldM (fn _ -> fn (q,id,sortInfo) ->
 	  sortToClsDecls(q,id,sortInfo))
          () (sortsAsList spc);
-   addClsDecl primClsDecl;
-   getJcgInfo
+   addClsDecl primClsDecl
   }
-
-%op sortToClsDeclsM: Qualifier * Id * SortInfo -> JGenEnv ()
-%def sortToClsDeclsM(q,id,sortInfo) =
-%  {
-%   jcginfo <- getJcgInfo;
-%   spc <- getEnvSpec;
-%   jcginfo <- return (sortToClsDecls(q,id,sortInfo,spc,jcginfo));
-%   putJcgInfo jcginfo
-%  }
 
 op checkSubsortFormat: Sort -> JGenEnv ()
 def checkSubsortFormat srt =
@@ -108,19 +98,6 @@ def addFldDeclToClsDeclsM(srtId, fldDecl) =
   }
 
 
-op addMethDeclToClsDecls: Id * Id * MethDecl * JcgInfo -> JcgInfo
-def addMethDeclToClsDecls(_ (* opId *), srtId, methDecl, jcginfo) =
-  let clsDecls =
-         map (fn (clsDecl as (lm, (clsId, sc, si), cb)) -> 
-	      if clsId = srtId
-		then
-		  let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
-		  (lm, (clsId, sc, si), newCb)
-	      else clsDecl)
-	 jcginfo.clsDecls
-  in
-    exchangeClsDecls(jcginfo,clsDecls)
-
 % --------------------------------------------------------------------------------
 
 op addMethDeclToClsDeclsM: Id * Id * MethDecl -> JGenEnv ()
@@ -144,15 +121,6 @@ def addMethDeclToClsDeclsM(_ (* opId *), srtId, methDecl) =
  * this op is responsible for adding the method that correspond to a given op to the right
  * classes.
  *)
-%op addMethodFromOpToClsDeclsM: Id * Sort * List(Option Term) * Term -> JGenEnv ()
-%def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
-%  {
-%   spc <- getEnvSpec;
-%   jcginfo <- getJcgInfo;
-%   jcginfo <- return (addMethodFromOpToClsDecls(spc, opId, srt, dompreds, trm, jcginfo));
-%   putJcgInfo jcginfo
-%  }
-
 op addMethodFromOpToClsDeclsM: Id * Sort * List(Option Term) * Term -> JGenEnv ()
 def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
   {
@@ -174,7 +142,6 @@ def addMethodFromOpToClsDeclsM(opId, srt, dompreds, trm) =
 	      classId <- srtIdM usrt;
 	      addStaticMethodToClsDeclsM(opId,srt,dom,dompreds,rng,trm,classId)
 	     }
-	     %addCollectedToJcgInfo(jcginfo,col)
 	     | None ->
 	     %let _ = writeLine(";;; -> static method in class Primitive") in
 	     % v3:p46:r1
@@ -300,15 +267,6 @@ def addPrimArgsMethodToClsDeclsM(opId, srt, _(* dom *), dompreds, rng, trm) =
    addMethDeclToClsDeclsM(opId, classId, methodDecl)
   }
 
-%op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
-%def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
-%  {
-%   spc <- getEnvSpec;
-%   jcginfo <- getJcgInfo;
-%   jcginfo <- return (addUserMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, jcginfo));
-%   putJcgInfo jcginfo
-%  }
-
 op addUserMethodToClsDeclsM: Id * JGen.Type * List JGen.Type * List(Option Term) * JGen.Type * Term -> JGenEnv ()
 def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
   {
@@ -331,16 +289,6 @@ def addUserMethodToClsDeclsM(opId, srt, dom, dompreds, rng, trm) =
 
      | _ -> raise(Fail("cannot find user type in arguments of op "^opId),termAnn(trm))
   }
-
-%op addCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
-%def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
-%  {
-%   spc <- getEnvSpec;
-%   jcginfo <- getJcgInfo;
-%   jcginfo <- return(addCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo));
-%   putJcgInfo jcginfo
-%  }
-
 
 op addCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
 def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
@@ -379,15 +327,6 @@ def addCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
    addMethDeclToSummandsM(opId, srthId, methodDecl, body)
   }
   
-%op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
-%def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
-%  {
-%   spc <- getEnvSpec;
-%   jcginfo <- getJcgInfo;
-%   jcginfo <- return(addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo));
-%   putJcgInfo jcginfo
-%  }
-
 op addNonCaseMethodsToClsDeclsM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv ()
 def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
   {
@@ -438,34 +377,35 @@ def addNonCaseMethodsToClsDeclsM(opId, dom, dompreds, rng, vars, body) =
  * case will be the body of the default method; otherwise the method is abstract.
  *)
 
-op mkDefaultMethodForCaseM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv (Option MethDecl)
-def mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars,body) =
-  {
-   spc <- getEnvSpec;
-   (res,col) <- return(mkDefaultMethodForCase(spc ,opId,dom,dompreds,rng,vars,body));
-   addCollected col;
-   return res
-  }
+%op mkDefaultMethodForCaseM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv (Option MethDecl)
+%def mkDefaultMethodForCaseM(opId,dom,dompreds,rng,vars,body) =
+%  {
+%   spc <- getEnvSpec;
+%   (res,col) <- return(mkDefaultMethodForCase(spc ,opId,dom,dompreds,rng,vars,body));
+%   addCollected col;
+%   return res
+%  }
 
-op mkDefaultMethodForCase: Spec * Id * List Type * List(Option Term) * Type * List Var * Term -> Option MethDecl * Collected
-def mkDefaultMethodForCase(spc ,opId,_(* dom *),_(* dompreds *),rng,vars,body) =
+op mkDefaultMethodForCaseM: Id * List Type * List(Option Term) * Type * List Var * Term -> JGenEnv (Option MethDecl)
+def mkDefaultMethodForCaseM(opId,_(* dom *),_(* dompreds *),rng,vars,body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
-  let (rngId,col0) = srtId(rng) in
-  let opt = %(mods,opt_mbody,col1) =
-    let caseTerm = caseTerm(body) in
-    let cases = caseCases(body) in
-    case findVarOrWildPat(cases) of
-      | Some t -> None
-        %let ((b,_,_),col) = termToExpressionRet(empty,t,1,1,spc) in
-	%Some([],Some(b),col)
-      | _ -> Some ([Abstract],None,nothingCollected)
-  in
-  case opt of
-    | None -> (None,nothingCollected)
-    | Some (mods,opt_mbody,col1) ->
-      let (fpars,col2) = varsToFormalParams spc (vars) in
-      let col = concatCollected(col0,concatCollected(col1,col2)) in
-      (Some((mods, Some (tt(rngId)), opId, fpars, []), opt_mbody),col)
+  {
+   rngId <- srtIdM rng;
+   let opt = 
+       let caseTerm = caseTerm(body) in
+       let cases = caseCases(body) in
+       case findVarOrWildPat(cases) of
+	 | Some t -> None
+	 | _ -> Some ([Abstract],None)
+   in
+   case opt of
+     | None -> return None
+     | Some (mods,opt_mbody) ->
+       {
+	fpars <- varsToFormalParamsM vars;
+	return (Some((mods, Some (tt(rngId)), opId, fpars, []), opt_mbody))
+       }
+  }
 
 op mkNonCaseMethodBodyM: Id * Term -> JGenEnv Block
 def mkNonCaseMethodBodyM(vId, body) =
@@ -495,91 +435,74 @@ def unfoldToCoProduct(spc,srt) =
  def addMethDeclToSummandsM (opId, srthId, methodDecl, body) =
    {
     spc <- getEnvSpec;
-    jcginfo <- getJcgInfo;
-    jcginfo <- return(addMethDeclToSummands (spc, opId, srthId, methodDecl, body, jcginfo));
-    putJcgInfo jcginfo
+    case findAllSorts (spc, mkUnQualifiedId srthId) of
+      | info  ::_  ->  % consider only one candidate
+
+        if definedSortInfo? info then
+
+	  let srt = firstSortDefInnerSort info in % consider only first definition
+	  case srt of
+	    | CoProduct (summands, _) ->
+
+	      let caseTerm = caseTerm(body) in
+	      let cases = caseCases(body) in
+	      % find the missing constructors:
+	      let missingsummands = getMissingConstructorIds(srt,cases) in
+	      {
+	       case findVarOrWildPat cases of
+		 | Some _ -> return() % don't add anything for the missing summands in presence of a default case
+		 | None   ->
+		   foldM (fn _ -> fn consId ->
+			  addMissingSummandMethDeclToClsDeclsM(opId,srthId,consId,methodDecl)
+			 ) () missingsummands;
+		   foldM (fn _ -> fn(pat,_,cb) ->
+			  addSumMethDeclToClsDeclsM(opId,srthId,caseTerm,pat,cb,methodDecl)
+			 ) () cases
+	      }
+
+	     | _ -> raise(Fail("sort is not a CoProduct: "^srthId),termAnn body)
+
+	else
+	  raise(Fail("sort has no definition: "^srthId),termAnn body)
+
+     | _ -> raise(Fail("sort not found: " ^ srthId),termAnn body)
    }
 
- op  addMethDeclToSummands: Spec * Id * Id * MethDecl * Term * JcgInfo -> JcgInfo
- def addMethDeclToSummands (spc, opId, srthId, methodDecl, body, jcginfo) =
-   let clsDecls = jcginfo.clsDecls in
-   case findAllSorts (spc, mkUnQualifiedId srthId) of
-     | info  ::_  ->  % consider only one candidate
-       (if definedSortInfo? info then
-	  let srt = firstSortDefInnerSort info in % consider only first definition
-	  (%let _ = writeLine("in addMethDeclToSummands: srt="^printSort(srt)) in
-	   case srt of
-	     | CoProduct (summands, _) ->
-	       let caseTerm = caseTerm(body) in
-	       %let cases = filter (fn (WildPat _, _, _) -> false | _ -> true) (caseCases body) in
-	       let cases = caseCases(body) in
-	       % find the missing constructors:
-	       let missingsummands = getMissingConstructorIds(srt,cases) in
-	       %let jcginfo = foldr (fn (consId, jcginfo) -> 
-	       %                     addMissingSummandMethDeclToClsDecls (opId, srthId, consId, methodDecl, jcginfo))
-	       %                    jcginfo 
-	       %                    missingsummands
-	       %in
-	       let jcginfo = 
-	           case findVarOrWildPat cases of
-		     | Some _ -> jcginfo % don't add anything for the missing summands in presence of a default case
-		     | None   ->
-		       %let _ = if length(missingsummands) > 0 then
-		       %          (writeLine("missing cases in "^opId^" for sort "^srthId^":");
-		       %	          app (fn(id) -> writeLine("  "^id)) missingsummands)
-		       %	       else ()
-		       %in
-		       foldr (fn (consId, jcginfo) ->
-			      addMissingSummandMethDeclToClsDecls (opId, srthId, consId, methodDecl, jcginfo))
-		             jcginfo 
-			     missingsummands
-               in
- 	       %% cases = List (pat, cond, body)
-	       foldr (fn ((pat, _, cb), newJcgInfo) -> 
-		      addSumMethDeclToClsDecls (opId, srthId, caseTerm, pat, cb, methodDecl, newJcgInfo, spc)) 
-	             jcginfo 
-		     cases
-	     | _ -> fail("sort is not a CoProduct: "^srthId))
-	else
-	  fail("sort has no definition: "^srthId))
-     | _ -> fail ("sort not found: " ^ srthId)
-
-op addMissingSummandMethDeclToClsDecls: Id * Id * Id * MethDecl * JcgInfo -> JcgInfo
-def addMissingSummandMethDeclToClsDecls(opId,srthId,consId,methodDecl,jcginfo) =
+op addMissingSummandMethDeclToClsDeclsM: Id * Id * Id * MethDecl -> JGenEnv ()
+def addMissingSummandMethDeclToClsDeclsM(opId,srthId,consId,methodDecl) =
   let summandId = mkSummandId(srthId,consId) in
   let body = [Stmt(mkThrowUnexp())] in
   let newMethDecl = appendMethodBody(methodDecl,body) in
-  addMethDeclToClsDecls(opId,summandId,newMethDecl,jcginfo)
+  addMethDeclToClsDeclsM(opId,summandId,newMethDecl)
 
-op addSumMethDeclToClsDecls: Id * Id * Term * Pattern * Term * MethDecl * JcgInfo * Spec -> JcgInfo
-def addSumMethDeclToClsDecls(opId, srthId, caseTerm, pat (*as EmbedPat (cons, argsPat, coSrt, _)*), body, methodDecl, jcginfo, spc) =
+op addSumMethDeclToClsDeclsM: Id * Id * Term * Pattern * Term * MethDecl -> JGenEnv ()
+def addSumMethDeclToClsDeclsM(opId, srthId, caseTerm, pat, body, methodDecl) =
   let
-    def addMethod(classid,vids,args) =
+    def addMethodM(classid,vids,args) =
       %let _ = writeLine("adding method "^opId^" in class "^classid^"...") in
       let thisExpr = CondExp (Un (Prim (Name ([], "this"))), None) in
       let tcx = foldr (fn(vid,tcx) -> StringMap.insert(tcx,vid,thisExpr)) empty vids in
       %let tcx = StringMap.insert(empty, vId, thisExpr) in
       let tcx = addArgsToTcx(tcx, args) in
-      let ((b, k, l),col) = termToExpressionRet(tcx, body, 1, 1, spc) in
-      let JBody = b in
-      let newMethDecl = appendMethodBody(methodDecl, JBody) in
-      let jcginfo = addCollectedToJcgInfo(jcginfo,col) in
-      addMethDeclToClsDecls(opId, classid, newMethDecl, jcginfo)
+      {
+       (jbody, k, l) <- termToExpressionRetM(tcx, body, 1, 1);
+       newMethDecl <- return(appendMethodBody(methodDecl,jbody));
+       addMethDeclToClsDeclsM(opId,classid,newMethDecl)
+      }
   in
     case caseTerm of
       | Var ((vId, vSrt), b) ->
         (case pat of
 	   | EmbedPat (cons, argsPat, coSrt, _) ->
 	     let (args,ok?) = getVarsPattern(argsPat) in
-	     if ~ ok? then jcginfo else
+	     if ~ ok? then return () else
 	       let summandId = mkSummandId(srthId, cons) in
-	       addMethod(summandId,[vId],args)
-	   | VarPat((vid,_),_) -> addMethod(srthId,[vid,vId],[])
-	   | WildPat _ -> addMethod(srthId,[vId],[])
-	   | _ -> (warnNoCode(termAnn(caseTerm),opId,Some("pattern format not supported: '"^printPattern(pat)^"'"));jcginfo)
-	      )
-      | _ -> (issueUnsupportedError(termAnn(caseTerm),"term format not supported for toplevel case term: "^printTerm(caseTerm));
-	      jcginfo)
+	       addMethodM(summandId,[vId],args)
+	   | VarPat((vid,_),_) -> addMethodM(srthId,[vid,vId],[])
+	   | WildPat _ -> addMethodM(srthId,[vId],[])
+	   | _ -> raise(UnsupportedPattern(printPattern pat),termAnn(caseTerm)) 
+	)
+      | _ -> raise(UnsupportTermInCase(printTerm caseTerm),termAnn(caseTerm))
 
 
 op addArgsToTcx: TCx * List Id -> TCx
@@ -609,11 +532,6 @@ def modifyClsDeclsFromOps =
 	  modifyClsDeclsFromOp(qualifier,id,opinfo)
 	 ) () opsAsList
   }
-
-%  foldriAQualifierMap (fn (qualifier, id, op_info, jcginfo) -> 
-%		       let newJcgInfo = modifyClsDeclsFromOp(spc, qualifier, id, op_info, jcginfo) in
-%		       newJcgInfo)
-%  jcginfo spc.ops
 
 op modifyClsDeclsFromOp: Id * Id * OpInfo -> JGenEnv ()
 def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
@@ -712,32 +630,28 @@ def modifyClsDeclsFromOp (_ (*qual*), id, op_info) =
    }
 % --------------------------------------------------------------------------------
 
-op insertClsDeclsForCollectedProductSorts : JGenEnv JcgInfo
+op insertClsDeclsForCollectedProductSorts : JGenEnv ()
 def insertClsDeclsForCollectedProductSorts =
   {
-   jcginfo <- getJcgInfo;
-   let psrts = jcginfo.collected.productSorts in
+   psrts <- getProductSorts;
    if psrts = [] then
-     return jcginfo
+     return ()
    else
-     let psrts = uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts in
-     let jcginfo = clearCollectedProductSorts(jcginfo) in
-     %let tmp = List.show "," (map printSort psrts) in
-     %let _ = writeLine("collected product sorts:"^newline^tmp) in
-     let
+     {
+      psrts <- return(uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts);
+      clearCollectedProductSortsM;
+      let
        def insertSort (srt) =
 	 let (id,_) = srtId srt in
 	 let sort_info = {names = [mkUnQualifiedId id],
 			  dfn   = srt}
 	 in
 	 sortToClsDecls (UnQualified, id, sort_info)
-     in
-%  let jcginfo = foldr insertSort jcginfo psrts in
-%  insertClsDeclsForCollectedProductSorts (spc, jcginfo)
-     {
-      putJcgInfo jcginfo;
-      foldM (fn _ -> fn srt -> insertSort srt) () psrts;
-      insertClsDeclsForCollectedProductSorts
+      in
+	{
+	 foldM (fn _ -> fn srt -> insertSort srt) () psrts;
+	 insertClsDeclsForCollectedProductSorts
+	}
      }
   }
    
@@ -746,40 +660,13 @@ def insertClsDeclsForCollectedProductSorts =
 
 % --------------------------------------------------------------------------------
 
-
-
-op concatClsDecls: JcgInfo * JcgInfo -> JcgInfo
-def concatClsDecls({clsDecls=cd1,collected=col1},{clsDecls=cd2,collected=col2}) =
-  {clsDecls = cd1 ++ cd2,collected=concatCollected(col1,col2)}
-
-op newJcgInfo: List ClsDecl * Collected -> JcgInfo
-def newJcgInfo(cd,col) =
-  {clsDecls=cd,collected=col}
-
-op concatJcgInfo: JcgInfo * JcgInfo -> JcgInfo
-def concatJcgInfo({clsDecls=cd1,collected=col1},{clsDecls=cd2,collected=col2}) =
-  {clsDecls=cd1++cd2,collected=concatCollected(col1,col2)}
-
-op appendClsDecls: JcgInfo * List ClsDecl -> JcgInfo
-def appendClsDecls({clsDecls=cd1,collected=col},cd2) =
-  {clsDecls=cd1++cd2,collected=col}
-
-%% TO BE REMOVED
-op addCollectedToJcgInfo: JcgInfo * Collected -> JcgInfo
-def addCollectedToJcgInfo({clsDecls=cd,collected=col1},col2) =
-  {clsDecls=cd,collected=concatCollected(col1,col2)}
-
-op addCollectedToJcgInfoM: Collected -> JGenEnv ()
-def addCollectedToJcgInfoM col =
-  addCollected col
-
-op clearCollectedProductSorts: JcgInfo -> JcgInfo
-def clearCollectedProductSorts({clsDecls=cd,collected=_}) =
-  {clsDecls=cd,collected=nothingCollected}
-
-op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
-def exchangeClsDecls({clsDecls=_,collected=col},newClsDecls) =
-  {clsDecls=newClsDecls,collected=col}
+op clearCollectedProductSortsM: JGenEnv ()
+def clearCollectedProductSortsM =
+  {
+   putProductSorts [];
+   putArrowClasses []
+  }
+  %{clsDecls=cd,collected=nothingCollected}
 
 % --------------------------------------------------------------------------------
 (**
@@ -887,20 +774,6 @@ def transformSpecForJavaCodeGen basespc spc =
   let spc = lambdaLift(spc) in
   let spc = distinctVariable(spc) in
   spc
-  %let jcginfo = clsDeclsFromSorts(spc) in
-  %let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
-  %let arrowcls = jcginfo.collected.arrowclasses in
-  %let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
-  %let clsDecls = jcginfo.clsDecls in
-  %let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
-  %let clsDecls = clsDecls ++ arrowcls in
-  %let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
-  %let imports = [] in
-  %let jspc = (None, imports, clsOrInterfDecls) in
-  %let jspc = mapJName mapJavaIdent jspc in
-%  let jfiles = processOptions(jspc,optspec,filename) in
-%  let _ = app printJavaFile jfiles in
-  %jspc
 
 %op generateJavaCodeFromTransformedSpec: Spec -> JSpec
 def JGen.generateJavaCodeFromTransformedSpec spc =
@@ -916,16 +789,13 @@ def generateJavaCodeFromTransformedSpecM spc =
    modifyClsDeclsFromOps;
    arrowcls <- getArrowClasses;
    insertClsDeclsForCollectedProductSorts;
-   jcginfo <- getJcgInfo;
-   let clsDecls = jcginfo.clsDecls in
+   clsDecls <- getClsDecls;
    let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
    let clsDecls = clsDecls ++ arrowcls in
    let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
    let imports = [] in
    let jspc = (None, imports, clsOrInterfDecls) in
    let jspc = mapJName mapJavaIdent jspc in
-   %  let jfiles = processOptions(jspc,optspec,filename) in
-   %  let _ = app printJavaFile jfiles in
    return jspc
   }
 
@@ -934,26 +804,7 @@ def generateJavaCodeFromTransformedSpecM spc =
 op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
 def specToJava(basespc,spc,optspec,filename) =
-  %let spc = translateRecordMergeInSpec spc in
-  %let spc = identifyIntSorts spc in
-  %let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
-  %let spc = poly2mono(spc,false) in
-  %let spc = unfoldSortAliases spc in
-  %let spc = letWildPatToSeq spc in
-  %let spc = lambdaLift(spc) in
-  %let spc = distinctVariable(spc) in
   let spc = transformSpecForJavaCodeGen basespc spc in
-  %let jcginfo = clsDeclsFromSorts(spc) in
-  %let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
-  %let arrowcls = jcginfo.collected.arrowclasses in
-  %let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
-  %let clsDecls = jcginfo.clsDecls in
-  %let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
-  %let clsDecls = clsDecls ++ arrowcls in
-  %let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls in
-  %let imports = [] in
-  %let jspc = (None, imports, clsOrInterfDecls) in
-  %let jspc = mapJName mapJavaIdent jspc in
   let jspc = generateJavaCodeFromTransformedSpec spc in
   let jfiles = processOptions(jspc,optspec,filename) in
   let _ = List.app printJavaFile jfiles in

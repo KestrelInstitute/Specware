@@ -12,10 +12,14 @@ sort JGenError =
        | UnsupportedSubsortTerm String
        | UnsupportedQuotient String
        | UnsupportedSubsort String
+       | UnsupportedPattern String
+       | UnsupportTermInCase String
 
 op errToString: JGenError -> String
 def errToString err =
   case err of
+    | UnsupportTermInCase termstr -> "term format not supported for toplevel case term: '"^termstr^"'"
+    | UnsupportedPattern patstr -> "pattern format not supported: '"^(patstr)^"'"
     | UnsupportedSubsort termstr -> "unsupported term for subsort: '"^termstr^"'; only operator names are supported."
     | UnsupportedQuotient termstr -> "unsupported term for quotient sort: '"^termstr^"'; only operator names are supported."
     | NotSupported s -> "Feature not supported: "^s
