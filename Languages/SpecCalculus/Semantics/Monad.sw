@@ -117,8 +117,8 @@ Raise an exception. Should this be called throw?
        (Ok (),
 	{exceptions = cons (exception, state.exceptions)})
 
-   op raise_any_pending_exceptions : () -> Env ()
-  def raise_any_pending_exceptions exception =
+   op raise_any_pending_exceptions : Env ()
+  def raise_any_pending_exceptions =
     fn state ->
       case state.exceptions of
 	| [] ->  (Ok (), state)

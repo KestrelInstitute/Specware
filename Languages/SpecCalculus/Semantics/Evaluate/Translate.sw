@@ -105,12 +105,12 @@ Note: The code below does not yet match the documentation above, but should.
       %% we assume the user knows what they are doing and allow it.
       %%
       translation_maps <- avoidTranslationCaptures spc translation_maps;
-      raise_any_pending_exceptions();
+      raise_any_pending_exceptions;
       %%
       %% Now we produce a new spec using the unambiguous maps.
       %%
       new_spec <- auxTranslateSpec spc translation_maps (positionOf expr);
-      raise_any_pending_exceptions();
+      raise_any_pending_exceptions;
       %%
       %% One final pass to see if we've managed to collapse necessarily 
       %% distinct types (e.g. A = X * Y and B = Z | p), or necessarily
