@@ -1011,7 +1011,7 @@ generates code in the language suggested by the
 ||
 ||`proof-particular ::=
 ||      with `prover-name [ `prover-options ]
-||    | using `{ `claim-list `}
+||    | using '{ `claim-list '}
 ||
 ||`prover-name ::= snark
 ||
