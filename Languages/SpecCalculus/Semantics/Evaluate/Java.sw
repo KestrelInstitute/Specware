@@ -4,7 +4,7 @@ SpecCalc qualifying spec
   import /Languages/MetaSlang/CodeGen/Java/ToJava
   import /Languages/Java/JavaPrint
 
-  op SpecCalc.evaluateJavaGen : ValueInfo * (SpecCalc.Term Position) * Option String -> Monad ValueInfo
+  op SpecCalc.evaluateJavaGen : ValueInfo * (SpecCalc.Term Position) * Option String -> SpecCalc.Monad ValueInfo
 
   %% Need to add error detection code
   def SpecCalc.evaluateJavaGen (valueInfo as (Spec spc,_,_), cterm, optFileNm) =

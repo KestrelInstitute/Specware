@@ -299,7 +299,7 @@ spec {
  op  getSortOfOp : Spec * String * String -> TyVars * Sort
  def getSortOfOp (spc, qid, opName) =
   % sjw: (4/02) Not sure if should check imports
-  case find2 (spc.ops, qid, opName)
+  case findAQualifierMap (spc.ops, qid, opName)
     of None -> (printSpecToTerminal spc;
                 System.fail ("Operator "^qid^"."^opName^" has not been declared"
                              ))

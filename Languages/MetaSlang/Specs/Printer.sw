@@ -121,7 +121,9 @@ AnnSpecPrinter qualifying spec {
       (case isFiniteList t2 of
         | Some terms -> Some (cons (t1, terms))
         | None ->  None)
-    | ApplyN ([Fun (Embed ("Cons", true), _, _), _, Record ([(_, t1), (_, t2)], _), _], _) -> 
+    | ApplyN ([Fun (Embed ("Cons", true), _, _), _,
+	       Record ([(_, t1), (_, t2)], _),
+	       _], _) -> 
       (case isFiniteList t2 of
         | Some terms -> Some (cons (t1, terms))
         | None ->  None)
@@ -1039,7 +1041,7 @@ AnnSpecPrinter qualifying spec {
 		in
 		  pps)
                ++
-	       (let (index,pps : Lines) = StringMap.foldriDouble (fn (qualifier, id, sort_info, index_and_pps) ->
+	       (let (index,pps : Lines) = foldriAQualifierMap (fn (qualifier, id, sort_info, index_and_pps) ->
 							  if imported_sort? (qualifier, id) then
 							    index_and_pps
 							  else
@@ -1049,7 +1051,7 @@ AnnSpecPrinter qualifying spec {
 		in
 		  pps)
    	       ++
-	       (let (index,pps : Lines) = StringMap.foldriDouble (fn (qualifier, id, op_info, index_and_pps) ->
+	       (let (index,pps : Lines) = foldriAQualifierMap (fn (qualifier, id, op_info, index_and_pps) ->
 							  if imported_op? (qualifier, id) then
 							    index_and_pps
 							  else
@@ -1101,11 +1103,11 @@ AnnSpecPrinter qualifying spec {
                [(0, pp.EndSpec),
                 (0, string "")])
   def ppSortDecls context sorts =  
-      let (index,pps) = StringMap.foldriDouble (ppSortDecl context) (0,[]) sorts in
+      let (index,pps) = foldriAQualifierMap (ppSortDecl context) (0,[]) sorts in
       pps
 
   def ppOpDecls context ops =  
-      let (index,pps) = StringMap.foldriDouble (ppOpDecl context) (0,[]) ops in
+      let (index,pps) = foldriAQualifierMap (ppOpDecl context) (0,[]) ops in
       pps
 
   def specToPrettyVerbose spc = 
@@ -1180,7 +1182,7 @@ AnnSpecPrinter qualifying spec {
 
   def pdfMenu(spc) = 
      let sorts = 
-        StringMap.foldriDouble 
+        foldriAQualifierMap 
           (fn (qualifier,id,_,sorts) -> 
               cons(
                 prettysNone
@@ -1194,7 +1196,7 @@ AnnSpecPrinter qualifying spec {
           spc.sorts        
      in
      let ops = 
-        StringMap.foldriDouble 
+        foldriAQualifierMap 
           (fn (qualifier,id,_,ops) -> 
               cons(
                 prettysNone

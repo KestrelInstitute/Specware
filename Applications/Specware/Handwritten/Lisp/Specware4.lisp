@@ -1,7 +1,7 @@
 (defpackage "SPECWARE")
 (in-package "SPECWARE")
 
-(declaim (optimize (speed 3) (debug 1)))
+(declaim (optimize (speed 3) (debug 2) (safety 1)))
 
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
@@ -39,6 +39,8 @@
 
 (snark:make-snark-system t)
 
+(declaim (optimize (speed 3) (debug 2) (safety 1)))
+
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
 
@@ -68,6 +70,7 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
+    "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
     )
   )
 
@@ -75,6 +78,23 @@
 	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
      HandwrittenFiles
      )
+(defpackage "UTILITIES")
+(defpackage "MAP-SPEC")
+(defpackage "ANNSPEC")
+(defpackage "METASLANG")
+
+#||
+#+allegro
+(progn (setf (get 'LIST-SPEC::|!exists|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       ;(setf (get 'UTILITIES::occursT 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil t))
+       (setf (get 'LIST-SPEC::|!map|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'LIST-SPEC::filter-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'MAP-SPEC::foldi-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
+       ;(setf (get 'LIST-SPEC::foldl-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
+       (setf (get 'ANNSPEC::foldriAQualifierMap-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE)
+	 '(t nil nil))
+       (setf (get 'METASLANG::equallist? 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil nil t)))
+||#
 
 ;; The following are specific to Specware and languages that
 ;; extend Specware. The order is significant: specware-state

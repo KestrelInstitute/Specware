@@ -401,8 +401,8 @@ ArityNormalize qualifying spec {
 % This one ignores arity normalization in sorts, axioms and theorems.
 %     
 
-  def arityNormalize (spc) = 
-    let usedNames = StringSet.fromList(StringMap.listDomain(spc.ops)) in
+  def arityNormalize (spc) =
+    let usedNames = StringSet.fromList(qualifierIds spc.ops) in
     setOps (spc, 
             mapAQualifierMap (fn (op_names, fixity, (tyVars, srt), old_defs)->
                               let new_defs =

@@ -102,6 +102,6 @@
 ;;;	  1 font-lock-fixed-width-comment-face t)
 	))
 
-(defconst specware-font-lock-keywords specware-font-lock-keywords)
+;(defconst specware-font-lock-keywords specware-font-lock-keywords)
 
 (provide 'sw-font)

@@ -4,7 +4,7 @@
 AnnSpec qualifying spec 
  import Position
  import ../AbstractSyntax/AnnTerm   
- import /Library/Legacy/DataStructures/StringMapSplay % for qualifier maps
+ import QualifierMapAsSTHashTable
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                SpecRef
@@ -75,44 +75,6 @@ AnnSpec qualifying spec
 
  sort AOpSignature  b = String * String * TyVars * ASort b
  sort SortSignature   = String * String * TyVars 
-
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%                AQualifierMap
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
- % AQualifierMap implemented as nested StringMap
- % Assumes implementation of Qualifier and Id as Strings
- sort AQualifierMap b  = StringMap (StringMap b)    
-
- %% op findStringMap: fa(a) String * StringMap(StringMap a) -> StringMap a
- %% def findStringMap (id, dm) =
- %%  case find (dm, id) of
- %%     | None   -> StringMap.empty
- %%     | Some m -> m
-
- op foldriAQualifierMap : fa(a,b) (Qualifier * Id * a * b -> b) -> b
-                                   -> (AQualifierMap a) -> b
- op emptyAQualifierMap  : fa(a) AQualifierMap a
- op findAQualifierMap   : fa(a) AQualifierMap a * Qualifier * Id -> Option a 
- op insertAQualifierMap : fa(a) AQualifierMap a * Qualifier * Id * a
-                                 -> AQualifierMap a 
- op mapAQualifierMap    : fa(a,b) (a -> b)  -> AQualifierMap a -> AQualifierMap b
- op mapiAQualifierMap   : fa(a,b) (Qualifier * Id * a -> b)  -> AQualifierMap a
-                                  -> AQualifierMap b
- op appAQualifierMap    : fa(a)   (a -> ()) -> AQualifierMap a -> ()
- op qualifiers          : fa(a) AQualifierMap a -> List Qualifier
-
- % Currently implemented as nested StringMap
-
- def foldriAQualifierMap = StringMap.foldriDouble  % f ini qm
- def emptyAQualifierMap  = StringMap.empty         % 
- def findAQualifierMap   = StringMap.find2         % (m, x, y)
- def insertAQualifierMap = StringMap.insert2       % (qm, x, y, v)
- def mapAQualifierMap    = StringMap.mapDouble     % f m
- def mapiAQualifierMap   = StringMap.mapiDouble     % f m
- def appAQualifierMap    = StringMap.appDouble     % f m
- def qualifiers m =
-    StringMap.foldri (fn(qname,_,quals) -> cons(qname,quals)) [] m
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs

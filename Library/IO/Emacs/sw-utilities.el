@@ -8,6 +8,7 @@
 ;;; changes directory. 
 ;;; (defvar default-directory-name (concatenate 'string *specware* "/"))
 
+(require 'dired)			; For (default-directory)
 (defvar default-directory-name (default-directory)) ; moved to top of file to avoid warning msg
 
 ;; (verify-emacs-version)

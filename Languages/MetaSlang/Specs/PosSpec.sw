@@ -6,6 +6,7 @@ PosSpec qualifying spec {
  import Position
  import /Library/Legacy/DataStructures/NatMapSplay  % for metaTyVars
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+ import /Library/Legacy/DataStructures/StringMapSplay % for makeTyVarMap
 
  %% -- See ../AbstractSyntax/AnnTerm.sl
  sort PTerm            = ATerm           Position
@@ -159,8 +160,8 @@ PosSpec qualifying spec {
 
 % op insertDefaultMatches : PosSpec -> PosSpec
 
-% op abstractSort : (String -> TyVar) * List String * PSort -> TyVars * PSort
-% op abstractTerm : (String -> TyVar) * List String * PTerm -> TyVars * PTerm
+ op abstractSort : (String -> TyVar) * List String * PSort -> TyVars * PSort
+ op abstractTerm : (String -> TyVar) * List String * PTerm -> TyVars * PTerm
 
  op removeDefinitions : PosSpec -> PosSpec
  op exportSpec        : PosSpec -> PosSpec
@@ -184,12 +185,11 @@ PosSpec qualifying spec {
   setOps (old_spec, 
           %% sjw: Might need to replace  srt  by  mkS srt  if we do coercion of quotients
           %% but now the terms in sorts of ops do not get executed
-          StringMap.map (fn qmap -> StringMap.map (fn (op_names, fixity, srt, defs) ->
-                                                      (op_names, fixity, srt, 
-						       map (fn (tyvars, term) -> (tyvars, mkT term)) 
-						           defs))
-                                                  qmap)
-                        old_spec.ops)
+	  mapAQualifierMap (fn (op_names, fixity, srt, defs) ->
+			     (op_names, fixity, srt, 
+			      map (fn (tyvars, term) -> (tyvars, mkT term))
+			        defs))
+	    old_spec.ops)
 
 
  % Extend a pattern match with a default case if the last case
@@ -221,16 +221,14 @@ PosSpec qualifying spec {
  op addPSort : (List QualifiedId * TyVars * PSortSchemes)               * PosSpec -> PosSpec
  op addPOp   : (List QualifiedId * Fixity * PSortScheme * PTermSchemes) * PosSpec -> PosSpec
 
- def addPSort ((names as (Qualified(qualifier, id))::_, new_type_vars, new_defs), old_spec) =
+ def addPSort ((names as (Qualified(qualifier, id))::_,
+	       new_type_vars, new_defs), old_spec) =
   %% qualifier could be "<unqualified>" !
   let old_sorts = old_spec.sorts in
-  let old_qmap = case StringMap.find (old_sorts, qualifier) of
-                  | None          -> StringMap.empty
-                  | Some old_qmap -> old_qmap
-  in
-  let new_qmap =  
-      case StringMap.find (old_qmap, id) of
-       | None -> StringMap.insert (old_qmap, id, (names, new_type_vars, new_defs))
+  let new_sorts =  
+      case findAQualifierMap (old_sorts, qualifier, id) of
+       | None -> insertAQualifierMap (old_sorts, qualifier, id,
+				      (names, new_type_vars, new_defs))
        | Some (old_sort_names, old_type_vars, old_defs) -> 
 	 case (new_defs, old_defs) of
 	   | ([],   [])   -> 
@@ -240,7 +238,8 @@ PosSpec qualifying spec {
 	     if new_type_vars = old_type_vars then % was just testing lengths 
 	       %%  Sort S (A,B)
 	       %%  Sort S (X,Y) = T(X,Y)
-	       StringMap.insert(old_qmap, id, (old_sort_names, new_type_vars, new_defs))
+	       insertAQualifierMap(old_sorts, qualifier, id,
+				   (old_sort_names, new_type_vars, new_defs))
 	     else 
 	       fail ("Sort "^id^" redefined using different type variable lists")
 	   | ([],   _::_) -> 
@@ -248,38 +247,36 @@ PosSpec qualifying spec {
 	     if new_type_vars = old_type_vars then % was just testing lengths 
 	       %%  Sort S (X,Y) = T(X,Y)
 	       %%  Sort S (A,B)
-	       old_qmap % StringMap.insert(old_qmap, id, (old_sort_names, old_type_vars, old_defs))
+	       old_sorts
 	     else 
 	       fail ("Sort "^id^" redefined using different type variable lists")
 	   | (_::_, _::_) -> 
 	     fail ("Sort "^id^" has been redefined")
-  in
-  let new_sorts = StringMap.insert (old_sorts, qualifier, new_qmap)
   in 
   let sp = setSorts (old_spec, new_sorts) in
   foldl (fn (name, sp) -> addLocalSortName (sp, name)) sp names
 
- def addPOp ((names as (Qualified(qualifier, id))::_, new_fixity, new_sort_scheme, new_defs),
+ def addPOp ((names as (Qualified(qualifier, id))::_,
+	      new_fixity, new_sort_scheme, new_defs),
 	     old_spec) : PosSpec =
   %% qualifier could be "<unqualified>" !
   let old_ops = old_spec.ops in
-  let old_qmap = case StringMap.find (old_ops, qualifier) of
-                  | None          -> StringMap.empty
-		  | Some old_qmap -> old_qmap
-  in
-  let new_qmap =
-      case StringMap.find (old_qmap, id) of
-       | None -> StringMap.insert(old_qmap, id, (names, new_fixity, new_sort_scheme, new_defs))
+  let new_ops =
+      case findAQualifierMap (old_ops, qualifier, id) of
+       | None -> insertAQualifierMap(old_ops, qualifier, id,
+				     (names, new_fixity, new_sort_scheme, new_defs))
        | Some (old_op_names, old_fixity, old_sort_scheme, old_defs) -> 
 	 case (new_defs, old_defs) of
 	   | ([],   _::_) ->
 	     %%  def foo (x, y) = baz (x, y)
 	     %%  op foo : A * B -> C
-	     StringMap.insert(old_qmap, id, (old_op_names, new_fixity, new_sort_scheme, old_defs))
+	     insertAQualifierMap(old_ops, qualifier, id,
+				 (old_op_names, new_fixity, new_sort_scheme, old_defs))
 	   | (_::_, [])   -> 
 	     %%  op foo : A * B -> C
 	     %%  def foo (x, y) = baz (x, y)
-	     StringMap.insert(old_qmap, id, (old_op_names, old_fixity, old_sort_scheme, new_defs))
+	     insertAQualifierMap(old_ops, qualifier, id,
+				 (old_op_names, old_fixity, old_sort_scheme, new_defs))
 	   | ([],   [])   -> 
 	     %%  op foo : ...
 	     %%  op foo : ...
@@ -289,8 +286,6 @@ PosSpec qualifying spec {
 	     %%  def foo ...
 	     fail ("Operator "^id^" has been redefined")
   in
-  let new_ops = StringMap.insert (old_ops, qualifier, new_qmap)
-  in
   let sp = setOps (old_spec, new_ops) in
   foldl (fn (name, sp) -> addLocalOpName (sp, name)) sp names
 
@@ -298,9 +293,9 @@ PosSpec qualifying spec {
 
  def removeDefinitions old_spec : PosSpec =
   let new_ops =
-      StringMap.mapDouble (fn (op_names, fixity, (tyVars, srt), _) -> 
+      mapAQualifierMap (fn (op_names, fixity, (tyVars, srt), _) -> 
 			      (op_names, fixity, (tyVars, srt), []))
-                          old_spec.ops
+        old_spec.ops
   in
     {importInfo       = old_spec.importInfo,
      ops              = new_ops,
@@ -339,6 +334,8 @@ PosSpec qualifying spec {
  %% ( (a,b), | Nil | Cons a * b * ListPair(a,b) )
  %%
 
+ op makeTyVarMap: (String -> TyVar) * List String
+                 -> StringMap.Map String * (PSort -> PSort)
  def makeTyVarMap (fresh, tyVars) = 
   let def insert (tv, map) = StringMap.insert (map, tv, fresh tv) in
   let m = List.foldr insert StringMap.empty tyVars in

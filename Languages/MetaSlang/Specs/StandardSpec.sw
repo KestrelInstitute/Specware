@@ -350,10 +350,10 @@ StandardSpec qualifying spec {
  %%  find all the matches to id in every second level map
  op wildFindUnQualified : fa (a) AQualifierMap a * Id -> List a
  def wildFindUnQualified (qualifier_map, id) =
-  StringMap.foldri (fn (qualifier, qmap, results) ->
-                     case StringMap.find (qmap, id) of
-                      | Some result -> results ++ [result]
-                      | None        -> results)
-                   []
-                   qualifier_map
+   foldriAQualifierMap (fn (_, mId, val, results) ->
+			if id = mId
+			 then Cons(val,results)
+			 else results)
+     []
+     qualifier_map
 }

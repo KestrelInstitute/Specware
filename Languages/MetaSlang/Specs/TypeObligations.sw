@@ -467,7 +467,7 @@ spec
      let gamma0 = fn tvs -> fn nm -> ([], tvs, spc, nm, names) in
      let tcc = [] in
      let tcc = 
-	 StringMap.foldriDouble
+	 foldriAQualifierMap
 	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
 	     if member(Qualified(qname, name),localOps) then
 		 foldl (fn ((type_vars, term), tcc) ->

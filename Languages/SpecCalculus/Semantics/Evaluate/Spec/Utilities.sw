@@ -330,12 +330,6 @@ SpecCalc qualifying spec
      | [] -> str
      | _  -> "{" ^ (foldl (fn (name, str) -> str ^ "," ^ print_qid name) str aliases) ^ "}"
 
-  op foldOverQualifierMap :
-    fa(a,b) (Qualifier * Id * a * b -> SpecCalc.Env b)
-         -> b
-         -> (AQualifierMap a)
-         -> SpecCalc.Env b
-  def foldOverQualifierMap = foldDoubleMap
 
   %%  To simplify the syntax for users, when a spec is expected, 
   %%  coerce a morphism to its codomain spec or a colimit to its apex spec.

@@ -483,24 +483,23 @@ Utilities qualifying spec {
    %(s1.imports                = s2.imports)                &
    % (s1.importedSpec           = s2.importedSpec)           & % ??
    (s1.properties             = s2.properties)             &
-   (StringMap.toList s1.sorts = StringMap.toList s2.sorts) &
-   (StringMap.toList s1.ops   = StringMap.toList s2.ops)
+   equalAQualifierMap?(s1.sorts, s2.sorts) &
+   equalAQualifierMap?(s1.ops, s2.ops)
 
  def subspec? (s1, s2) =
    %ListUtilities.subset? (s1.imports,    s2.imports)    &
    ListUtilities.subset? (s1.properties, s2.properties) &
-   StringMap.subset?     (s1.sorts,      s2.sorts)      &
-   StringMap.subset?     (s1.ops,        s2.ops)
+   subsetAQualifierMap?  (s1.sorts,      s2.sorts)      &
+   subsetAQualifierMap?  (s1.ops,        s2.ops)
 
 
  %% Remove op definitions, axioms, and theorems from a spec.
 
  def removeDefinitions spc =
    {importInfo       = spc.importInfo,
-    ops              = StringMap.map (fn m -> StringMap.map (fn (op_names, fixity, srt, _) -> 
-							        (op_names, fixity, srt, []))
-				                            m)
-                                     spc.ops,
+    ops              = mapAQualifierMap (fn (op_names, fixity, srt, _) -> 
+					 (op_names, fixity, srt, []))
+                         spc.ops,
     sorts            = spc.sorts,
     properties       = emptyProperties}
 
@@ -512,14 +511,12 @@ Utilities qualifying spec {
    else
      let idx = Ref 0 in
      let revised_ops =
-         StringMap.map
-	   (fn m -> StringMap.map
-	              (fn(op_names,fixity,srt,defs) ->
+         mapAQualifierMap
+	   (fn(op_names,fixity,srt,defs) ->
 		       (idx := !idx - 1;
 		        if IntegerSet.member(indices,!idx)
 			 then (op_names,fixity,srt,[])
 			 else (op_names,fixity,srt,defs)))
-		      m)
 	   spc.ops
      % let (_,ops) =
      %     (fn (m,StringMap.foldri 
@@ -889,8 +886,8 @@ Utilities qualifying spec {
  op letRecToLetTermSpec: Spec -> Spec
  def letRecToLetTermSpec(spc) =
    {importInfo       = spc.importInfo,
-    sorts            = StringMap.mapDouble letRecToLetTermSortInfo spc.sorts,
-    ops              = StringMap.mapDouble letRecToLetTermOpInfo   spc.ops,
+    sorts            = mapAQualifierMap letRecToLetTermSortInfo spc.sorts,
+    ops              = mapAQualifierMap letRecToLetTermOpInfo   spc.ops,
     properties       = spc.properties}
 
  op  patternVars  : Pattern -> List Var
