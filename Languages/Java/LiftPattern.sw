@@ -33,13 +33,16 @@ def unSupported x =
  *)
 op baseType?: Spec * Sort -> Boolean
 def baseType? (spc, typ) =
+  %let _ = writeLine("baseType? "^(printSort typ)^"...") in
   %% TODO: is this a complete set?  See basicQualifiers
   boolSort?    typ || 
   integerSort? typ || 
   natSort?     typ || 
   stringSort?  typ || 
   charSort?    typ ||
-  ~ (sortIsDefinedInSpec? (spc, typ))
+  (case typ of
+     | Base _ -> ~ (sortIsDefinedInSpec? (spc, typ))
+     | _ -> false)
 
  op baseTypeAlias?: Spec * Sort -> Boolean
 def baseTypeAlias? (spc, srt) =
