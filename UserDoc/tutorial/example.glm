@@ -951,10 +951,19 @@ that Lisp is case-insensitive).</para>
 it has been loaded), it is necessary either to prepend the package
 name to them, or to move to that package and then call them without
 package qualification.  To follow the first approach, we would write
-[[(sw-user::test_find_matches <arg1> <arg2>)]] to call the function.
+[[L:(sw-user::test_find_matches-2 <arg1> <arg2>)]] to call the function.
+(The <quote>[[-2]]</quote> appended to the function name is
+for the two-argument version of the Lisp function; see the
+Section on Arity and Currying Normalization in the User
+Manual.  Alternatively, we can supply a single argument by
+consing [[<arg1>]] and [[<arg2>]], thus:
+[[L:(sw-user::test_find_matches (cons <arg1> <arg2>))]].)
+</para>
+
+<para>
 To follow the second approach, we would first change package by means
 of the Lisp command [[:pa sw-user]], and then we can just write 
-[[(test_find_matches <arg1> <arg2>)]] to call the function.</para>
+[[(test_find_matches-2 <arg1> <arg2>)]] to call the function.</para>
 
 <para>In order to test the program on the example input and output
 given at the beginning of the chapter, we proceed as follows. First,
@@ -976,7 +985,7 @@ we define a variable containing the message:</para>
 <para>Finally, we call (assuming to be in package [[sw-user]]):</para>
 
 [[L:
-||    (test_find_matches msg words)
+||    (test_find_matches-2 msg words)
 ]]
 
 <para>The following result is then displayed:</para>
