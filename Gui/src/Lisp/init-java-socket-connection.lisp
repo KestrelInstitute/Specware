@@ -16,10 +16,13 @@
       (mp:process-kill p)))
   (values))
 
+(defvar *java-listener-name* "Java Listener")
+(defvar *end-method-string* "--end--arguments--")
+
 (defun java-listener-running-p ()
   (loop for process in sys::*all-processes* 
       for name = (mp::process-name process)
-      if (search  "LinkerListener" name)
+      if (search *java-listener-name* name)
       do (return t)
       finally (return nil)))
 
@@ -27,24 +30,42 @@
 (defvar *java-socket-stream*)
 
 (defun init-java-listener ()
+  (mp:process-run-function *java-listener-name* 'java-listener))
+
+(defun java-listener ()
   (setq *java-socket* (socket:make-socket :connect :passive :local-port 4323))
   (setq *java-socket-stream* (socket:accept-connection *java-socket*))
   (loop while (open-stream-p *java-socket-stream*)
-	   do (socket::wait-for-input *java-socket-stream*)
-	      (when (listen *java-socket-stream*)
-		(let ((form (read *java-socket-stream* :eof-errorp nil :eof-value :end)))
+	   do ;;(socket::wait-for-input *java-socket-stream*)
+	      ;;(when (listen *java-socket-stream*)
+	      ;; read will wait for stream
+		(let ((form (read *java-socket-stream* nil :end)))
 		  (if (eq form :end)
 		      (return)
-		    (ignore-errors (eval form))))))
+		    (ignore-errors (eval form)))));)
   (close *java-socket-stream*)
   ;; close socket
+  (close *java-socket*)
   )
 
+#| for testing purposes make a lisp server
+(setq *java-socket* (socket:make-socket :connect :active :remote-port 4323))
+(defun output-to-java-socket (str)
+  (format *java-socket* "(format t \"~a~%\")" str)
+  (force-output *java-socket*))
+(defun read-method-call-from-java-socket ()
+  (loop for val = (read-line *java-socket*)
+	until (equal val *end-method-string*)
+	collect val))
+|#
+
 (defun jstatic (method cl &rest args)
-  (format *java-socket-stream* "~a ~a(" method cl)
+  ;; for the moment the class is assumed
+  (declare (ignore cl))
+  (format *java-socket-stream* "~a~%" method)
   (loop for arg in args
-         do (format *java-socket-stream* " ~a" arg))
-  (format *java-socket-stream* ")")
+         do (format *java-socket-stream* "~a~%" arg))
+  (format *java-socket-stream* "~a~%" *end-method-string*)
   (force-output *java-socket-stream*))
 
 (defvar *current-path-name*)
@@ -75,7 +96,8 @@
   (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
 	 (file-name-uri (concatenate 'string "/Gui/src/" file-name))
 	 (full-path-name (cl-user::path-namestring full-file-name)))
-    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S " full-file-name file-name-uri full-path-name)
+    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S "
+	    full-file-name file-name-uri full-path-name)
     (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
     (specware::change-directory  full-path-name)
     (setq *default-pathname-defaults* (excl::current-directory))
@@ -84,7 +106,8 @@
     (let ((output-str (with-output-to-string (str)
 		      (let ((*standard-output* str))
 			(cl-user::swl file-name-uri)))))
-    (jstatic "setGenerateLispResults" "edu.kestrel.netbeans.lisp.LispProcessManager" path-name file-name output-str))
+    (jstatic "setGenerateLispResults" "edu.kestrel.netbeans.lisp.LispProcessManager"
+	     path-name file-name output-str))
 
     (format t "~%~% FINISHED")))
 
@@ -93,7 +116,8 @@
   (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
 	 (file-name-uri (concatenate 'string "/Gui/src/" file-name))
 	 (full-path-name (cl-user::path-namestring full-file-name)))
-    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S " full-file-name file-name-uri full-path-name)
+    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S "
+	    full-file-name file-name-uri full-path-name)
     (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
     (specware::change-directory  full-path-name)
     (setq *default-pathname-defaults* (excl::current-directory))
@@ -102,7 +126,8 @@
     (let ((output-str (with-output-to-string (str)
 		      (let ((*standard-output* str))
 			(cl-user::swj file-name-uri)))))
-    (jstatic "setGenerateJavaResults" "edu.kestrel.netbeans.lisp.LispProcessManager" path-name file-name output-str))
+    (jstatic "setGenerateJavaResults" "edu.kestrel.netbeans.lisp.LispProcessManager"
+	     path-name file-name output-str))
 
     (format t "~%~% FINISHED")))
 
@@ -111,7 +136,8 @@
   (let* ((filepath (parse-namestring file))
 	 (name (pathname-name filepath))
 	 (filedir (pathname-directory filepath))
-	 (path (pathname-directory (parse-namestring (concatenate 'string *current-path-name* "/"))))
+	 (path (pathname-directory (parse-namestring (concatenate 'string
+						       *current-path-name* "/"))))
 	 (rel-path (remove-common-prefix path filedir))
 	 (rel-dir (concat-with-dots rel-path)))
     (jstatic "setProcessUnitResults" "edu.kestrel.netbeans.lisp.LispProcessManager"
