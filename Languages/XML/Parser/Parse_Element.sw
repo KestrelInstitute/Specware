@@ -2,7 +2,7 @@
 XML qualifying spec
 
   import Parse_GenericTag
-  import Parse_Character_Data
+  import Parse_Character_Strings
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Element                                                                             %%%

@@ -1,7 +1,6 @@
 
 XML qualifying spec
 
-  import Parse_Misc
   import Parse_XML_Decl
   import Parse_DTD
   import Parse_Element

@@ -1,6 +1,7 @@
 XML qualifying spec
 
   import Parse_Literals
+  import Parse_Character_Strings
 
   %% ====================================================================================================
   %%
@@ -10,6 +11,12 @@ XML qualifying spec
   %% [K4]  GenericName        ::= ...
   %% [K5]  GenericAttributes  ::= GenericAttribute*
   %% [K6]  GenericAttribute   ::= GenericName Eq GenericValue 
+  %% 
+  %% [16]  PI        ::= '<?' PITarget (S (Char* - (Char* '?>' Char*)))? '?>' 
+  %% [17]  PITarget  ::=  Name - (('X' | 'x') ('M' | 'm') ('L' | 'l'))
+  %%
+  %% [K7]  PI        ::= '<?' PITarget (S PIValue)? '?>'           
+  %% [K8]  PIValue   ::= Char* - (Char* '?>' Char*)
   %% 
   %% ====================================================================================================
 
@@ -104,22 +111,6 @@ XML qualifying spec
 	   return (None, start)
 	  }	   
 
-  def parse_WhiteSpace (start : UChars) : Required WhiteSpace =
-    let
-       def probe (tail, rev_whitespace) =
-	 case tail of
-	   | char :: scout ->
-	     if white_char? char then
-	       probe (scout, cons (char, rev_whitespace))
-	     else
-	       return (rev rev_whitespace,
-		       tail)
-	   | _ ->
-	     return (rev rev_whitespace,
-		     tail)
-    in
-      probe (start, [])
-
   def parse_GenericPostfix (start : UChars) : Required UString =
     %%
     %% This should typically proceed for only about 0 or 1 characters.
@@ -147,6 +138,53 @@ XML qualifying spec
 	       error ("EOF looking for '>'", start, tail)
     in
       probe (start, 5, [])
+
+  %% ----------------------------------------------------------------------------------------------------
+
+  def parse_PI (start : UChars) : Required PI =
+    %% assumes we're past initial '<?'
+    let 
+      def probe (tail, rev_result) =
+	case tail of
+	  | 63 :: 62 (* '?>' *) :: tail ->
+	    return (rev rev_result,
+		    tail)
+	  | char :: tail ->
+	    probe (tail, cons (char, rev_result))
+	  | _ ->
+	    error ("EOF scanning PI", start, [])
+    in
+      {
+       (target, tail_0) <- parse_GenericName start;
+
+       (when (~ (pi_target? target))
+	(error ("Illegal PI Target name", start, tail_0)));
+
+       (whitespace_and_value, tail) <- probe (tail_0, []);
+
+       case whitespace_and_value of
+	 | char :: tail ->
+	   if white_char? char then
+	     {
+	      (whitespace, value) <- parse_WhiteSpace whitespace_and_value;
+	      return ({target = target,
+		       value  = Some (whitespace, value)},
+		      tail)
+	      }
+	   else
+	     {
+	      (when true
+	       (error ("PI value must begin with whitespace", whitespace_and_value, [])));
+	      return ({target = target,
+		       value  = Some ([], whitespace_and_value)},
+		      tail)
+	     }
+	 | _ ->
+	     return ({target = target,
+		      value  = None},
+		     tail_0)
+	  }
+
 
 
 endspec

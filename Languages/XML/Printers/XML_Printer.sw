@@ -591,9 +591,12 @@ XML qualifying spec
   def print_Comment x = 
     (ustring "<!--") ^ x ^ (ustring "-->")
 
-  def print_PI {target, text} = 
-   %% note: at least first char of text is whitespace 
-   (ustring "<?") ^ target ^ text ^ (ustring "?>")
+  def print_PI {target, value} = 
+    (ustring "<?") ^ target ^ 
+    (case value of
+       | Some (whitespace, text) -> whitespace ^ text
+       | _ -> []) ^
+    (ustring "?>")
 
   def print_CDSect cdsect = 
    (ustring "<![CDATA[")  ^ cdsect.cdata ^ (ustring "]]>")
