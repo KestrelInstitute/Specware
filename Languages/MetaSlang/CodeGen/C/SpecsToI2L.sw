@@ -83,6 +83,7 @@ SpecsToI2L qualifying spec {
     let transformedOps = foldriAQualifierMap
                           (fn(qid,name,opinfo,l1) ->
 			   if filter(Qualified(qid,name)) then
+			     %let _ = writeLine("adding "^(printQualifiedId(Qualified(qid,name)))) in
 			     let trOp = opinfo2declOrDefn(ctxt,spc,Qualified(qid,name),opinfo,None) in
 			     List.concat(l1,[trOp])
 			   else
@@ -92,7 +93,7 @@ SpecsToI2L qualifying spec {
 			   [] spc.ops
     in
     %let _ = writeLine("ops transformed.") in
-    let len = List.length(transformedOps) in
+    %let len = List.length(transformedOps) in
     %let _ = writeLine(";;            "^Integer.toString(len)^" ops have been transformed.") in
 %    let _ = foldriAQualifierMap 
 %	   (fn(qid,name,(aliases,tvs,defs),l) -> 
