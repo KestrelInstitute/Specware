@@ -7,12 +7,12 @@
 ;;;The next three variable initializations need to be changed when going to a new minor version
 
 ;; Used in printing out the license and about-specware command
-(defvar cl-user::Specware-version "4.0")
-(defvar cl-user::Specware-version-name "Specware-4-0")
+(defvar cl-user::Specware-version "4.1")
+(defvar cl-user::Specware-version-name "Specware-4-1")
 (defvar cl-user::Specware-patch-level "1")
 
 ;; Used in patch detection and about-specware command
-(defvar Major-Version-String "4-0")
+(defvar Major-Version-String "4-1")
 
 ;;; Normally autoloaded, but we want to preload them for a stand-alone world
 #+(and allegro mswindows)
@@ -29,7 +29,7 @@
 #+allegro
 (defun compile-file-if-needed (file) file)
 
-;;;Patch .fasl files will be named in the form "patch-4-0-x.fasl" and
+;;;Patch .fasl files will be named in the form "patch-4-1-x.fasl" and
 ;;;will probably be copied into a Patches folder in the installation
 ;;;directory.  Old patch files will not be removed or overwritten.
 

@@ -234,6 +234,11 @@
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
+;;;#+allegro
+;;;(excl:without-package-locks
+;;; (setf (symbol-function 'TPL:TOP-LEVEL-READ-EVAL-PRINT-LOOP)
+;;;   #'swshell::specware-shell0))
+
 (defun cl-user::boot ()
   (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
     (unless val

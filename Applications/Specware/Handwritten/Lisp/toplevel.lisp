@@ -986,8 +986,8 @@
 
 (defun normalize-path (path)
   (let ((path-dirs (specware::split-components path '(#+mswindows #\; #-mswindows #\:)))
-	(curr-dir (namestring (specware::current-directory)))
-	(specware4-dir (specware::ensure-final-slash (specware::getenv "SPECWARE4"))))
+	(curr-dir (substitute #\/ #\\ (namestring (specware::current-directory))))
+	(specware4-dir (substitute #\/ #\\ (specware::ensure-final-slash (specware::getenv "SPECWARE4")))))
     (unless (member curr-dir path-dirs :test 'string=)
       (setq path (concatenate 'string path #+mswindows ";" #-mswindows ":" curr-dir))
       (push curr-dir path-dirs))

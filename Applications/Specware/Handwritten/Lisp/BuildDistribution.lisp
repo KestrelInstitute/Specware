@@ -29,7 +29,7 @@
 ;;    (excl::delete-directory-and-files
 ;;      (make-pathname :directory distribution-directory)))
 
-  (generate-application
+  (excl:generate-application
     ;; this is the name of the application
     Specware-name
 
@@ -41,8 +41,9 @@
     '("BuildPreamble.lisp" "Specware4.lisp" "license.lisp")
 
     ;; a list of files to copy to the distribution directory
-    ;; :application-files
-    ;; (list (in-specware-dir "Release/Windows/Specware4.cmd"))
+    :application-files
+    (list (in-specware-dir "Release/Windows/Specware4.cmd")
+	  (in-specware-dir "Release/Windows/Specware4 Shell.cmd"))
 
     ;; Possible option instead of excl::delete-directory-and-files call
     :allow-existing-directory t
@@ -56,15 +57,17 @@
   )
 
 ;;; Copy needed directories to distribution
-(copy-directory (in-specware-dir "Library/Base/")
+(specware::copy-directory (in-specware-dir "Library/Base/")
 		(in-distribution-dir "Library/Base/"))
 (specware::copy-file (in-specware-dir "Library/Base.sw")
                      (in-distribution-dir "Library/Base.sw"))
-(copy-directory (in-specware-dir "Library/IO/Emacs/")
+(specware::copy-file (in-specware-dir "Library/InterpreterBase.sw")
+                     (in-distribution-dir "Library/InterpreterBase.sw"))
+(specware::copy-directory (in-specware-dir "Library/IO/Emacs/")
 		(in-distribution-dir "Library/IO/Emacs/"))
-(copy-directory (in-specware-dir "UserDoc/tutorial/example/")
+(specware::copy-directory (in-specware-dir "UserDoc/tutorial/example/")
 		(in-distribution-dir "Examples/Matching/"))
-(copy-directory (in-specware-dir "UserDoc/examples/")
+(specware::copy-directory (in-specware-dir "UserDoc/examples/")
 		(in-distribution-dir "Examples/"))
 
 (specware::concatenate-files
@@ -77,8 +80,9 @@
 		      "Legacy/Utilities/Handwritten/Lisp/IO"
 		      "Legacy/Utilities/Handwritten/Lisp/Lisp"
 		      "Structures/Data/Monad/Handwritten/Lisp/State"
-		      "../Applications/Handwritten/Lisp/meta-slang-runtime")
-      collect (format nil "~a/Library/~a.lisp" Specware-dir fil))
+		      "../Applications/Handwritten/Lisp/meta-slang-runtime"
+		      "../Applications/Specware/Handwritten/Lisp/ProvideSpecwareRuntime")
+      collect (format nil "~a/Library/~a.lisp" Specware4-dir fil))
    (in-distribution-dir "Library/SpecwareRuntime.lisp"))
 
 (specware::make-directory (in-distribution-dir "Documentation/"))
@@ -88,29 +92,12 @@
  	   (in-distribution-dir "Documentation/SpecwareTutorial.pdf"))
 (specware::copy-file (in-specware-dir "UserDoc/user-manual/SpecwareUserManual.pdf")
  	   (in-distribution-dir "Documentation/SpecwareUserManual.pdf"))
-(specware::copy-file (in-specware-dir "UserDoc/cheat-sheet/Specware-405-QuickReference.pdf")
+(specware::copy-file (in-specware-dir "UserDoc/cheat-sheet/QuickReference.pdf")
  	   (in-distribution-dir "Documentation/Specware-QuickReference.pdf"))
-(specware::copy-file (in-accord-dir "UserDoc/ReleaseNotes.txt")
-		     (in-distribution-dir "Documentation/AccordReleaseNotes.txt"))
-(specware::copy-file (in-accord-dir "UserDoc/Cygwin.txt")
-		     (in-distribution-dir "Documentation/Cygwin.txt"))
-(specware::copy-file (in-accord-dir "UserDoc/tutorial.pdf")
-		     (in-distribution-dir "Documentation/AccordTutorial.pdf"))
+;(specware::copy-file (in-specware-dir "UserDoc/ReleaseNotes.txt")
+;		     (in-distribution-dir "Documentation/ReleaseNotes.txt"))
 
-(copy-directory (in-accord-dir "Tests/Queens/")
-		(in-distribution-dir "Tests/Queens/"))
-(copy-directory (in-accord-dir "Tests/Library/")
-		(in-distribution-dir "Tests/Library/"))
-(copy-directory (in-accord-dir "Tests/GCD/")
-		(in-distribution-dir "Tests/GCD/"))
-(copy-directory (in-accord-dir "Tests/Cipher/")
-		(in-distribution-dir "Tests/Cipher/"))
-
-(copy-directory (in-accord-dir "Sources/Handwritten/")
-		(in-distribution-dir "Sources/Handwritten/"))
-
-(copy-directory (in-lisp-dir "xeli/")
-		(in-distribution-dir "Library/IO/Emacs/xeli/"))
+(specware::copy-directory (in-lisp-dir "xeli/") (in-distribution-dir "Library/IO/Emacs/xeli/"))
 
 (specware::make-directory (in-distribution-dir "Patches/"))
 
