@@ -1154,7 +1154,8 @@ I2LToC qualifying spec {
 
   op qname2id: String * String -> String
   def qname2id(qualifier,id) =
-    let quali = if qualifier = UnQualified or qualifier = "" then "" else qualifier^"_" in
+    let quali = if qualifier = UnQualified or qualifier = "" or qualifier = "#return#" 
+		  then "" else qualifier^"_" in
     cString (quali^id)
     %cString(id)
 
