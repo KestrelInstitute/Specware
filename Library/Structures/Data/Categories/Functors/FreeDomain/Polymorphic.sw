@@ -28,14 +28,10 @@ for more on this.
 The names of some of these operators clash with Cats and Graphs.
 
 \begin{spec}
-let Sketches =
-  Sketch qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic in
-let Cats = Cats qualifying /Library/Structures/Data/Categories/Polymorphic in
-let Maps = PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic in
 spec {
-  import Sketches
-  import Cats
-  import Maps
+  import Sketch qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic
+  import Cat qualifying /Library/Structures/Data/Categories/Polymorphic
+  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
   sort Functor (O,A)
 

@@ -15,7 +15,7 @@ Lots of proof obligations. Needs thought.
 
 \begin{spec}
   def SpecCalc.evaluateDiag elems = {
-      dgm <- foldM evaluateDiagElem emptyDiagram elems;
+      dgm <- foldM evaluateDiagElem (emptyDiagram specCat) elems;
       return (Diag dgm,0,[])
     }
 \end{spec}
@@ -50,14 +50,14 @@ the typechecker complains. I don't understand it.
 
   def evaluateDiagElem dgm elem =
     case (valueOf elem) of
-      | Node (nodeId,term) -> return emptyDiagram
+      | Node (nodeId,term) -> return (emptyDiagram specCat)
 %%%          {
 %%%            value <- evaluateTerm term;
 %%%            case value of
-%%%              | Spec spc -> return emptyDiagram
+%%%              | Spec spc -> return (emptyDiagram specCat)
 %%%              | _ -> raise (TypeCheck (positionOf term, "diagram node not labeled with a spec"))
 %%%            % if member (vertices (shape dgm)) elem then
 %%%          }
-      | Edge (edgeId,domNode,codNode,term) -> return emptyDiagram
+      | Edge (edgeId,domNode,codNode,term) -> return (emptyDiagram specCat)
 }
 \end{spec}
