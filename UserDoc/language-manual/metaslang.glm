@@ -701,7 +701,7 @@ used.  When &Specware is started with environment variable
 <"SWPATH"> set to a semicolon-separated list of pathnames for
 directories, the &Specware; files are searched for
 relative to these pathnames; for example, if <"SWPATH"> is set
-to <"C:/units/Layout;A:/units/Layout/Cart">, then
+to <"C:/units/Layout;C:/units/Layout/Cart">, then
 <"C:/units/Layout/Fixture.sw"> may be shortened to [[/Fixture]],
 and <"C:/units/Layout/Cart.sw"> to [[/Cart]].
 How `unit-definitions are processed by &Specware; is further
@@ -1296,7 +1296,8 @@ from elaborating the corresponding `spec-terms and
 <section><title>Generate Terms</title>
 <para>
 <<
-||`target-code-term ::= generate `target-language-name `spec-term [ in `string-literal ]
+||`target-code-term ::=
+||      generate `target-language-name `spec-term [ in `string-literal ]
 ||
 ||`target-language-name ::= lisp
 >>
@@ -1316,10 +1317,10 @@ generates code in the language suggested by the
 <para>
 <<
 ||`proof-term ::=
-||  prove `claim-name in `spec-term
-||                  [ with `prover-name ]
-||                  [ using '{ `claim-sequence '} ]
-||                  [ options `prover-options ]
+||      prove `claim-name in `spec-term
+||                      [ with `prover-name ]
+||                      [ using '{ `claim-sequence '} ]
+||                      [ options `prover-options ]
 ||
 ||`prover-name ::= snark
 ||
