@@ -84,6 +84,23 @@ echo " "
 cd $SPECWARE4/Applications/Specware
 bin/linux/Specware4-text -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
+	;; This apparent madness causes the stack to increase in size,
+	;;  which allows the sw command below to succeed.
+	;; There shold be a better way to do this using Allegro commands.
+	(progn
+	 (format t "~2%We are about to deliberately cause a stack overflow,~%")
+	 (format t "~&for the side effect of increasing the size of the stack.~2%")
+ 	 (defun cause-overflow (x) (cons (cause-overflow x) 3))
+	 (catch (quote top)
+	  (handler-bind ((synchronous-operating-system-signal 
+			  (function (lambda (x) 
+				      (format t "~&Now handling a synchronous error (presumably the deliberate stack overflow),~%") 
+				      (format t "~&by throwing to top-level (this takes a while)...~%")
+				      (throw (quote top) (quote ok))))))
+		(cause-overflow 3)))
+	 (format t "~%Now the stack should be large enough for printing PSL.lisp~%")
+	 (format t "~&which we do after processing all the PSL files.~2%"))
+	;; Then on with our feaure presentation... 
 	(exiting-on-errors 
 	  (if (sw "/Applications/PSL/PSL")
 	    (exit 0)
