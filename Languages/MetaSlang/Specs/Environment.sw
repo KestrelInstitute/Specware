@@ -243,7 +243,7 @@ spec
      | _ -> (System.print(tm);System.fail ("inferType: Non-exhaustive match"))
 
 % def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
-% def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], noPos)
+% def booleanSort : Sort = Boolean noPos
 % def SpecEnvironment.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], noPos)
 % def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], noPos)
 
