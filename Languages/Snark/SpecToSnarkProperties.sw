@@ -205,7 +205,9 @@ snark qualifying spec
       | ("Integer", "-") -> "-"
       | ("Integer", "*") -> "*"
       | (_, "hoapply") ->  "HOAPPLY"
-      | _ -> printQualifiedId(mkQualifiedId(qual, id))
+      | _ -> if qual = UnQualified
+	       then id
+	     else qual^"."^id
 
   op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
 
