@@ -109,37 +109,49 @@ SpecCalc qualifying spec {
 
  %% Not to be confused with ppMorphism in /Languages/MetaSlang/Specs/Categories/AsRecord.sw (sigh)
  def ppMorphismX base_spec reverse_context sm =
-   let dom_spec = dom sm in
-   let cod_spec = cod sm in
    %% Use of str_1 is a bit of a hack to get the effect that
    %% dom/cod specs are grouped on one line if possible,
    %% and they either follow "morphism" on the first line 
    %% (with map on same line or indented on next line),
    %% or are by themselves, indented, on the second line,
    %% with the map indented starting on the third line.
-   let str_1 = ppFormat
-               (ppGroup 
-		(ppConcat 
-		 [ppString "morphism",
-		  ppNest 4 (ppGroup
-			    (ppConcat 
-			     [ppBreak,
-			      ppString (case evalPartial reverse_context (Spec dom_spec) of
-					  | Some rel_uid -> relativeUID_ToString rel_uid  
-					  | None         -> printSpec base_spec reverse_context dom_spec),
-			      ppBreak,
-			      ppString "->",
-			      ppBreak,
-			      ppString (case evalPartial reverse_context (Spec cod_spec) of
-					  | Some rel_uid -> relativeUID_ToString rel_uid  
-					  | None         -> printSpec base_spec reverse_context cod_spec)
-			     ]))
-		 ]))
+   let prefix =
+       case sm.sm_tm of
+	| Some (SpecMorph (dom_tm, cod_tm, _), _) ->
+	  (ppGroup 
+	    (ppConcat 
+	      [ppString "morphism ",
+	       ppString (showTerm dom_tm),
+	       ppString " -> ",
+	       ppString (showTerm cod_tm)
+	      ]))
+	| _ ->
+	  let dom_spec = dom sm in
+	  let cod_spec = cod sm in
+	  (ppGroup 
+	    (ppConcat 
+	      [ppString "morphism",
+	       ppNest 4 (ppGroup
+			  (ppConcat 
+			    [ppBreak, 
+			     ppString (case evalPartial reverse_context (Spec dom_spec) of
+					 | Some rel_uid -> relativeUID_ToString rel_uid  
+					 | None         -> printSpec base_spec reverse_context dom_spec),
+			     % ppBreak, % too many newlines!
+			     ppString " -> ",
+			     % ppBreak, % too many newlines!
+			     ppString (case evalPartial reverse_context (Spec cod_spec) of
+					 | Some rel_uid -> relativeUID_ToString rel_uid  
+					 | None         -> printSpec base_spec reverse_context cod_spec)
+			    ]))
+	      ]))
    in
-   ppGroup 
-    (ppConcat 
-     [ppString str_1,
-      ppNest 4 (ppMorphismMap sm)])
+     ppGroup 
+      (ppConcat 
+        [prefix,
+	 ppNest 1 (ppConcat [ppBreak,
+			     (ppMorphismMap sm)])
+	])
 
 
   %% inspired by ppMorphMap from /Languages/MetaSlang/Specs/Categories/AsRecord.sw,
@@ -159,22 +171,20 @@ SpecCalc qualifying spec {
 	foldMap (fn lst -> fn dom -> fn cod ->
 		 Cons (ppGroup (ppConcat [ppString keyword,				    
 					  ppQualifiedId dom,
-					  ppBreak,
-					  ppString "+->",
-					  ppBreak,
+					  % ppBreak, % too many newlines!
+					  ppString " +-> ",
+					  % ppBreak, % too many newlines!
 					  ppQualifiedId cod]), 
 		       lst))
                 [] 
 		(abbrevMap map)
     in
-    ppGroup (ppConcat
-	     (case (ppAbbrevMap "type " sortMap) ++ (ppAbbrevMap "op " opMap) of
-		| []         -> [ppBreak, 
-				 ppString "{}"]
-		| abbrev_map -> [ppBreak,
-				 ppString "{",
-				 ppNest 1 (ppSep (ppCons (ppString ",") ppBreak) abbrev_map),
-				 ppString "}"]))
+      ppConcat
+        (case (ppAbbrevMap "type " sortMap) ++ (ppAbbrevMap "op " opMap) of
+	   | []         -> [ppString "{}"]
+	   | abbrev_map -> [ppString "{",
+			    ppNest 1 (ppSep (ppCons (ppString ",") ppBreak) abbrev_map),
+			    ppString "}"])
 
 
  %% ======================================================================
@@ -220,9 +230,9 @@ SpecCalc qualifying spec {
 	      Cons (ppGroup 
 		    (ppConcat 
 		     [ppElem vertex, 
-		      ppBreak,
-		      ppString "+->",
-		      ppBreak,
+		      % ppBreak, % way too many newlines!
+		      ppString " +-> ",
+		      % ppBreak, % way too many newlines!
 		      let spc = eval vertex_map vertex in
 		      ppString (case evalPartial reverse_context (Spec spc) of
 				  | Some rel_uid -> relativeUID_ToString rel_uid  
@@ -238,17 +248,17 @@ SpecCalc qualifying spec {
  		      [ppGroup 
 		        (ppConcat 
 			  [ppElem edge,
-			   ppBreak,
-			   ppString ":",
-			   ppBreak,
+			   % ppBreak, % way too many newlines!
+			   ppString " : ",
+			   % ppBreak, % way too many newlines!
 			   ppElem (eval src_map edge),
-			   ppBreak,
-			   ppString "->",
-			   ppBreak,
+			   % ppBreak, % too many newlines!
+			   ppString " -> ",
+			   % ppBreak, % way too many newlines!
 			   ppElem (eval target_map edge)]),
-			ppBreak,
+			ppBreak, 
 			ppString "+->",
-		        ppBreak,
+			ppBreak, 
 			let sm = eval edge_map edge in
 			case evalPartial reverse_context (Morph sm) of
 			  | Some rel_uid -> ppString (relativeUID_ToString rel_uid)  
