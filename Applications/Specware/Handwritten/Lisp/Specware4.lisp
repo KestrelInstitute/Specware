@@ -39,7 +39,7 @@
 (defvar cl-user::Specware-patch-level "0")
 
 ;; Used in patch detection and about-specware command
-(defvar Major-Version-String "4-0")
+(defvar Major-Version-String "4-1")
 
 ;; The following defines functions such as:
 ;;    compile-and-load-lisp-file
