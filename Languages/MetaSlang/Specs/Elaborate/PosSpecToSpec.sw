@@ -209,6 +209,11 @@ spec {
 	| OneName(n,fxty)  -> Op(Qualified(UnQualified,n), fxty)
 	| TwoNames(qn,n,fxty) -> Op(Qualified(qn,n), fxty)
 	| Op x             -> Op x
+	%% Not sure about these cases, but have to do something
+	| Quotient         -> Quotient 
+	| Choose           -> Choose
+	| Restrict         -> Restrict
+	| Relax            -> Relax
 
 
  def convertMetaTyVarToTyVar (context: MetaTyVarsContext) (mTyVar : PMetaTyVar) : TyVar = 

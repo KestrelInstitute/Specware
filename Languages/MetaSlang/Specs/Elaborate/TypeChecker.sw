@@ -432,7 +432,7 @@ spec {
   def aux_elaborateTerm (env, trm, term_sort : PSort) = 
    case trm of
 
-    | Fun (OneName (idXXX, fixity), srt, pos) -> % ### Changed id to idXXX to avoid name conflict
+    | Fun (OneName (idXXX, fixity), srt, pos) ->
       let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
       (* resolve sort from environment *)
       (case findVarOrOps (env, idXXX, pos) of
@@ -450,16 +450,15 @@ spec {
                 | _ -> System.fail "Variable or constant expected"))
         | [] -> 
           (* resolve identifier declaration from sort information *)
-          (case mkEmbed0 (env, srt, idXXX) of
+          case mkEmbed0 (env, srt, idXXX) of
            | Some idXXX -> Fun (Embed (idXXX, false), checkSort (env, srt), pos)
            | None -> 
-              (case mkEmbed1 (env, srt, trm, idXXX, pos) of
-               | Some term -> term
-               | None ->
-                  (case uniqueConstr (env, trm, idXXX, pos) of
-                   | Some term -> term
-                   | _ -> undeclared  (env, trm, idXXX, term_sort, pos)))))
-
+          case mkEmbed1 (env, srt, trm, idXXX, pos) of
+           | Some term -> term
+           | None ->
+          case uniqueConstr (env, trm, idXXX, pos) of
+           | Some term -> term
+           | _ -> undeclared  (env, trm, idXXX, term_sort, pos))
 
     | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
       let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
@@ -520,9 +519,9 @@ spec {
          (case mkEmbed0 (env, term_sort, id)
             of Some id -> Fun (Embed (id,false),checkSort (env, term_sort),pos)
              | None -> 
-          (case mkEmbed1 (env,term_sort,trm,id,pos)
+          case mkEmbed1 (env,term_sort,trm,id,pos)
             of Some term -> term
-             | None -> undeclared (env,trm,id,term_sort,pos)))
+             | None -> undeclared (env,trm,id,term_sort,pos))
 
     | Fun (Project id,srt,pos) -> 
          let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
@@ -599,7 +598,6 @@ spec {
           elaborateCheckSortForTerm (env, trm, srt, type_char);
           Fun (Char ch, srt, pos))
 
-
     | Fun (PRelax pred, srt, pos) -> % Has sort Subsort(a, pred) -> a
          let a = freshMetaTyVar pos in
          let ty1 : PSort = Arrow (a, type_bool, pos) in
@@ -632,13 +630,13 @@ spec {
     | LetRec (decls, body, pos) -> 
          let def declareFun (((id, srt), bdy), env) = 
               addVariable (env, id, srt)
- in
+	 in
          let  def elaborateDecl env ((id, srt), bdy) = 
                     let terms = findVarOrOps (env, id, pos) in
                 let srt = termSort (hd terms) in
                 let bdy = elaborateTerm (env, bdy, srt) in
                 ((id, srt), bdy)
- in
+	 in
          let env = foldr declareFun env decls in
          let decls = map (elaborateDecl env) decls         in 
          let bdy = elaborateTerm (env, body, term_sort)                 in 
@@ -685,7 +683,7 @@ spec {
                      rows)
                   | MetaTyVar (mtv, _) ->
                     let row = map (fn (id, _)-> (id, freshMetaTyVar pos)) row 
- in
+		    in
                       (linkMetaTyVar mtv ((Product (row, pos)):PSort);
                        row)
                         
@@ -698,7 +696,7 @@ spec {
                                   printTerm trm^" is constrained to be of an incompatible sort "^newline^ printSort term_sort, 
                                   pos);
                        map (fn (id, _)-> (id, freshMetaTyVar pos)) row))
- in
+	 in
          let tyrows = unfoldConstraint (term_sort) in
          let trow = ListPair.zip (row, tyrows) in
          let row = map (fn ((id, t), (id_, ty))->
@@ -709,7 +707,7 @@ spec {
             " is not the one imposed by sort constraint.  Expected field-name is: "^
                            id_, pos);
              (id, t))) trow
- in
+	 in
          Record (row, pos)
 
     | Lambda (rules, pos) -> 
@@ -822,51 +820,51 @@ spec {
   def selectTermWithConsistentSort (env, id, pos, terms, srt) =
    %% calls consistentSortOp?, which calls unifySorts 
    case terms of
-    | [term] -> (Some term) : (Option PosSpec.PTerm)
+    | [term] -> Some term
     | _ ->
-       (case unlinkPSort srt of
-         | MetaTyVar _ -> None
-         | rsort ->
-             let srtPos = sortAnn srt in
-             (case filter (consistentSortOp? (env, withAnnS (rsort, srtPos))) terms of
-                | [] -> (error (env,
-                          "No matches for op "^id^" of sort "^ printSort srt,
-                           pos);
-                             None)
-                | [term]        -> Some term
-                | tms ->
-                   if env.firstPass? then
-                     None
-                   else %% If there is a valid unqualified term then prefer that because you
-                        %% cannot explicitly
-                     let def findUnqualified tms =
-                        case tms of
-                          | [] -> None
-                          | tm::rtms ->
-                              (case tm of
-                                 |Fun (OneName  (     _,_), _, _) -> Some tm
-                                 | Fun (TwoNames (id1, _,_), _, _) ->
-                                    if id1 = UnQualified then
-                                      Some tm
-                                    else
-                                      findUnqualified rtms
-                                 | _ -> findUnqualified rtms)
-                     in
-                       (case findUnqualified tms of
-                         | Some term -> Some term
-                         | None ->
-                             (error (env,
-                                    "Several matches for overloaded op "
-                                    ^ id
-                                    ^ " of sort "
-                                    ^ printSort srt
-                                    ^ (foldl (fn (tm, str) -> str ^
-                                         (case tm of
-                                            | Fun (OneName  (     id2, _), _, _) -> " "^id2
-                                            | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
-                                          " : "
-                                          terms),
-                              pos); None))))
+   case unlinkPSort srt of
+    | MetaTyVar _ -> None
+    | rsort ->
+	let srtPos = sortAnn srt in
+	(case filter (consistentSortOp? (env, withAnnS (rsort, srtPos))) terms of
+	   | [] -> (error (env,
+		     "No matches for op "^id^" of sort "^ printSort srt,
+		      pos);
+			None)
+	   | [term]        -> Some term
+	   | tms ->
+	      if env.firstPass? then
+		None
+	      else %% If there is a valid unqualified term then prefer that because you
+		   %% cannot explicitly
+		let def findUnqualified tms =
+		   case tms of
+		     | [] -> None
+		     | tm::rtms ->
+			 (case tm of
+			    |Fun (OneName  (     _,_), _, _) -> Some tm
+			    | Fun (TwoNames (id1, _,_), _, _) ->
+			       if id1 = UnQualified then
+				 Some tm
+			       else
+				 findUnqualified rtms
+			    | _ -> findUnqualified rtms)
+		in
+		  (case findUnqualified tms of
+		    | Some term -> Some term
+		    | None ->
+			(error (env,
+			       "Several matches for overloaded op "
+			       ^ id
+			       ^ " of sort "
+			       ^ printSort srt
+			       ^ (foldl (fn (tm, str) -> str ^
+				    (case tm of
+				       | Fun (OneName  (     id2, _), _, _) -> " "^id2
+				       | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+				     " : "
+				     terms),
+			 pos); None)))
 
   def consistentSortOp? (env, srt1) (Fun (_, srt2, _)) =
    %% calls unifySorts, but then resets metatyvar links to None...
@@ -956,7 +954,7 @@ spec {
                       | Some s -> Some (checkSort (env, s)))
              else 
                lookup row
- in
+     in
        lookup row
     | Subsort (srt, pred, _) -> lookupEmbedId (env, id, srt)
     | _ -> None
@@ -969,7 +967,7 @@ spec {
        def findId ls = 
         case ls of
          | [] -> Some (undeclared (env, trm, id, srt, pos))
-         | (constructor_id, (Some constructor_dom_sort) : Option PSort) :: row -> 
+         | (constructor_id, Some constructor_dom_sort) :: row -> 
            if id = constructor_id then
              %%  let _ = String.writeLine ("coprod: "^printSort (Arrow (s, CoProduct (row, pos0)), pos0)) in
              %%  let _ = String.writeLine ("srt:  "^printSort srt) in
@@ -981,7 +979,7 @@ spec {
            else 
              findId row
          | _ :: row -> findId row
- in
+      in
        findId row
     | _ -> None
 
@@ -1010,7 +1008,7 @@ spec {
                         | Some (_, Some dom_srt) -> Arrow (dom_srt, c_srt, pos)
                         | _ -> c_srt)
                     | _ -> c_srt
- in
+      in
       (case mkEmbed0 (env, id_srt, id) of
         | Some id -> Some (Fun (Embed (id, false), checkSort (env, id_srt), pos))
         | None    -> mkEmbed1 (env, id_srt, trm, id, pos))
@@ -1031,7 +1029,7 @@ spec {
                            Some (Fun (Project id, srt, pos)))
                         else 
                           findId ids
- in
+		in
                   findId row)
              | Subsort (ssrt, _, _) -> analyzeDom ssrt
              | _ -> None
@@ -1204,7 +1202,7 @@ spec {
                         | (None, Some pat) -> 
                           let alpha = freshMetaTyVar pos in
                           let (pat, env) = elaboratePattern (env, pat, alpha)
- in
+			  in
                               (error (env, "Sort for constructor "
                                       ^ embedId
                                       ^ " not found. Resolving with sort "
@@ -1231,7 +1229,7 @@ spec {
                    foldr (fn (((id, srt), (_, p)), (row, env))->
                            let (p, env) = elaboratePattern (env, p, srt) in
                            (cons ((id, p), row), env)) ([], env) r
- in
+	    in
                 (RecordPat (r, pos), env)
           | RelaxPat (pat, term, pos) -> 
             let term = elaborateTerm (env, term, 

@@ -309,17 +309,22 @@ StandardSpec qualifying spec {
   findAQualifierMap (spc.ops, qualifier, id)
 
 
- %% Overloading is not particularly meaningful for sorts. 
+  %% Overloading is not particularly meaningful for sorts. 
  %% (Would we ever want both  FOO.FOO x and FOO.FOO x y  as distinct sorts?)
  %% but we might have two or more sorts X.S, Y.S, etc.
+ %% If the qualifier is UnQualified then we return unqualified answer first so as to
+ %% give preference to it.
  def findAllSorts (spc, Qualified (qualifier,id)) =
-  if qualifier = UnQualified then
-    wildFindUnQualified (spc.sorts, id)
-  else
-    case findAQualifierMap (spc.sorts, qualifier, id) of
-     | Some sort_info -> [sort_info]
-     | None           -> []
-
+  let found = (case findAQualifierMap (spc.sorts, qualifier, id) of
+                | Some sort_info -> [sort_info]
+		| None           -> [])
+  in
+  if qualifier = UnQualified
+    then found
+       ++ filter (fn op_info -> ~(member(op_info,found)))
+             (wildFindUnQualified (spc.sorts, id))
+    else found
+ 
  def findAllOps (spc, Qualified (qualifier,id)) =
   if qualifier = UnQualified then
     wildFindUnQualified (spc.ops, id)
@@ -327,18 +332,17 @@ StandardSpec qualifying spec {
     case findAQualifierMap (spc.ops, qualifier, id) of
      | Some op_info -> [op_info]
      | None         -> []
-
+		
  %%  find all the matches to id in every second level map
  %%  ?? Prefer match to unqualified entry ??
  op wildFindUnQualified : fa (a) AQualifierMap a * Id -> List a
  def wildFindUnQualified (qualifier_map, id) =
   StringMap.foldri (fn (qualifier, qmap, results) ->
-                     (case StringMap.find (qmap, id) of
+                     case StringMap.find (qmap, id) of
                       | Some result -> results ++ [result]
-                      | None        -> results))
+                      | None        -> results)
                    []
                    qualifier_map
-
  % ------------------------------------------------------------------------
 
  op mergeSortInfo: SortInfo * Option SortInfo * Qualifier * Id -> SortInfo
@@ -347,7 +351,7 @@ StandardSpec qualifying spec {
      | (_,None) -> newSortInfo
      | ((new_sort_names, new_type_vars, new_opt_def),
 	Some (old_sort_names, old_type_vars, old_opt_def)) ->
-   (if ~(length new_type_vars = length old_type_vars)
+   if ~(length new_type_vars = length old_type_vars)
      then fail ("Merged versions of Sort "^qualifier^"."^id^" have different type variable lists")
    else
    let sort_names = listUnion(new_sort_names,old_sort_names) in
@@ -358,7 +362,7 @@ StandardSpec qualifying spec {
        | (Some sNew, Some sOld) ->
          if sNew = sOld % Could use a smarter equivalence test
 	   then (sort_names, new_type_vars, new_opt_def)
-	   else fail ("Merged versions of Sort "^qualifier^"."^id^" have different definitions"))
+	   else fail ("Merged versions of Sort "^qualifier^"."^id^" have different definitions")
 
  op mergeOpInfo: OpInfo * Option OpInfo * Qualifier * Id -> OpInfo
  def mergeOpInfo(newOpInfo,optOldOpInfo,qualifier,id) =
@@ -366,7 +370,7 @@ StandardSpec qualifying spec {
      | (_,None) -> newOpInfo
      | ((new_op_names, new_fixity, new_sort_scheme, new_opt_def),
 	Some (old_op_names, old_fixity, old_sort_scheme, old_opt_def)) ->
-   (if ~(new_fixity = old_fixity)
+   if ~(new_fixity = old_fixity)
      then fail ("Merged versions of Op "^qualifier^"."^id^" have different fixity")
    else
    if ~(new_sort_scheme = old_sort_scheme) % Could use a smarter equivalence test
@@ -380,6 +384,6 @@ StandardSpec qualifying spec {
        | (Some sNew, Some sOld) ->
          if sNew = sOld   % Could use a smarter equivalence test
 	   then (op_names, new_fixity, new_sort_scheme, new_opt_def)
-	   else fail ("Merged versions of Op "^qualifier^"."^id^" have different definitions"))
+	   else fail ("Merged versions of Op "^qualifier^"."^id^" have different definitions")
 
 }

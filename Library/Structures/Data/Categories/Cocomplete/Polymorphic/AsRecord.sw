@@ -33,7 +33,16 @@ spec {
       ppArr : A -> Pretty
     }
 
-  def ident cat = cat.ident
+%  op ident: fa(O,A) Cat(O,A) -> O -> A
+%  op dom: fa(O,A) Cat(O,A) -> A -> O
+%  op cod: fa(O,A) Cat(O,A) -> A -> O
+%  % op composable?: fa(O,A) Cat(O,A)  -> A -> A -> Boolean
+%  op compose: fa(O,A) Cat(O,A) -> A -> A -> A 
+%  op colimit: fa(O,A) Cat(O,A) -> Diagram (O,A) -> InitialCocone (O,A)
+%  op ppObj: fa(O,A) Cat(O,A) -> O -> Pretty
+%  op ppArr: fa(O,A) Cat(O,A) -> A -> Pretty
+
+  def ident (cat) = cat.ident
   def dom cat = cat.dom
   def cod cat = cat.cod
   % def composable? cat = cat.composable?
