@@ -48,6 +48,7 @@ spec {
   op elaborateSort            : LocalEnv * MS.Sort    * MS.Sort         -> MS.Sort
   op elaborateCheckSortForTerm: LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort 
   op elaborateSortForTerm     : LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort
+  op resolveNameFromSort      : LocalEnv * MS.Term*Id * MS.Sort * Position -> MS.Term
   op elaborateTerm            : LocalEnv * MS.Term    * MS.Sort         -> MS.Term
   op elaboratePattern         : LocalEnv * MS.Pattern * MS.Sort         -> MS.Pattern * LocalEnv
 
@@ -57,7 +58,8 @@ spec {
   op isCoproduct              : LocalEnv * MS.Sort                         -> Option (List (Id * Option MS.Sort))
   op mkProject                : LocalEnv * Id * MS.Sort * Position         -> Option MS.Term
 
-  op undeclared               : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op undeclaredName           : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
+  op ambiguousCons            : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
   op undeclaredResolving      : LocalEnv * MS.Term      * Id * MS.Sort * Position -> MS.Term
   op undeclared2              : LocalEnv * MS.Term * Id * Id * MS.Sort * Position -> MS.Term
 
@@ -480,6 +482,20 @@ spec {
        | Unspecified -> q_id_fixity.3
        | _           -> explicit_fixity)
 
+  def resolveNameFromSort(env, trm, id, srt, pos) =
+    case mkEmbed0 (env, srt, id) of
+     | Some id -> Fun (Embed (id, false), checkSort (env, srt), pos)
+     | None -> 
+    case mkEmbed1 (env, srt, trm, id, pos) of
+     | Some term -> term
+     | None ->
+    case uniqueConstr (env, trm, id, pos) of
+     | Some term -> term
+     | _ ->
+    case StringMap.find (env.constrs, id) of
+     | None -> undeclaredName (env, trm, id, srt, pos)
+     | _    -> ambiguousCons (env, trm, id, srt, pos)
+
   %% TODO: convert elaborateTerm args to work on term scheme and sort scheme?
   def elaborateTerm (env, trm, term_sort) =
    case trm of
@@ -501,17 +517,8 @@ spec {
                 | Fun (TwoNames qidf, _, pos) -> Fun (TwoNames (fixateTwoNames (qidf, fixity)), srt, pos)
                 | _ -> System.fail "Variable or constant expected"))
         | [] -> 
-          (* resolve identifier declaration from sort information *)
-          case mkEmbed0 (env, srt, id) of
-           | Some id -> Fun (Embed (id, false), checkSort (env, srt), pos)
-           | None -> 
-          case mkEmbed1 (env, srt, trm, id, pos) of
-           | Some term -> term
-           | None ->
-          case uniqueConstr (env, trm, id, pos) of
-           | Some term -> term
-           | _ -> undeclared  (env, trm, id, term_sort, pos))
-
+          resolveNameFromSort (env, trm, id, srt, pos)
+      )
     | Fun (TwoNames (id1, id2, fixity), srt, pos) -> 
       let _ = elaborateCheckSortForTerm (env, trm, srt, term_sort) in 
       %% Either Qualified (id1, id2) or field selection
@@ -560,21 +567,14 @@ spec {
             | _ -> 
               %% Both id1.id2 and id1 fail to refer to anything
               undeclared2 (env, trm, id1, id2, term_sort, pos)
-             )
+          )
         | _ -> 
           %% id1.id2 is ambiguous??  That shouldn't be possible.
           undeclared2 (env, trm, id1, id2, term_sort, pos)
-         )
-
+      )
     | Fun (Embed (id, _), srt, pos) -> 
-         let _  (* srt *) = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
-         (case mkEmbed0 (env, term_sort, id)
-            of Some id -> Fun (Embed (id,false),checkSort (env, term_sort),pos)
-             | None -> 
-          case mkEmbed1 (env,term_sort,trm,id,pos)
-            of Some term -> term
-             | None -> undeclared (env,trm,id,term_sort,pos))
-
+       let _  (* srt *) = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
+       resolveNameFromSort (env, trm, id, term_sort, pos)
     | Fun (Project id,srt,pos) -> 
          let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
          (case mkProject (env,id,srt,pos)
@@ -582,27 +582,26 @@ spec {
              | None -> undeclaredResolving (env,trm,id,term_sort,pos))
 
     % | Fun (Select id,srt,pos) -> Fun (Select id,srt,pos)      (*** Not checked ***)
-
     | Fun (Embedded id, srt, pos) -> 
-         let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
-         ((case unfoldSort (env, srt)
-             of Arrow (dom, _, _) -> 
-                 (case isCoproduct (env, dom)
-                   of Some fields -> 
-                      if exists (fn (id2, _) -> id = id2) fields
-                            then ()
-                         else
-                         error
-                           (env, "Name "^id^" is not among the constructors of "^
-                                 printSort dom, pos)
-                    | None -> 
-                        pass2Error
-                          (env, dom, newLines ["Sum sort with constructor "^id^" expected", 
-                                             "found instead "^printSort dom], pos))
-              | _ -> pass2Error (env, srt, "Function sort expected ", pos));
-          Fun (Embedded id, srt, pos))
-
-    | Fun (PChoose equiv, srt, pos) ->  (* Has sort (a -> b) -> Quotient(a, equiv) -> b *)
+      let srt = elaborateCheckSortForTerm (env, trm, srt, term_sort) in
+      ((case unfoldSort (env, srt)
+          of Arrow (dom, _, _) -> 
+              (case isCoproduct (env, dom)
+                of Some fields -> 
+                   if exists (fn (id2, _) -> id = id2) fields
+                         then ()
+                      else
+                      error
+                        (env, "Name "^id^" is not among the constructors of "^
+                              printSort dom, pos)
+                 | None -> 
+                     pass2Error
+                       (env, dom, newLines ["Sum sort with constructor "^id^" expected", 
+                                          "found instead "^printSort dom], pos))
+           | _ -> pass2Error (env, srt, "Function sort expected ", pos));
+       Fun (Embedded id, srt, pos)
+      )
+    | Fun (PChoose equiv, srt, pos)->(*Has sort (a->b)->Quotient (a, equiv)->b *)
          let a = freshMetaTyVar pos in
          let b = freshMetaTyVar pos in
          let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
@@ -1053,7 +1052,7 @@ spec {
        %% This checks that a sum-sort constructor is given the proper sort
        def findId ls = 
         case ls of
-         | [] -> Some (undeclared (env, trm, id, srt, pos))
+         | [] -> Some (undeclaredName (env, trm, id, srt, pos))
          | (constructor_id, Some constructor_dom_sort) :: row -> 
            if id = constructor_id then
              %%  let _ = String.writeLine ("coprod: "^printSort (Arrow (s, CoProduct (row, pos0)), pos0)) in
@@ -1191,28 +1190,35 @@ spec {
             t1)
 
 
-  def undeclared (env, fun, id, srt, pos) =
+  def undeclaredName (env, trm, id, srt, pos) =
   if env.firstPass? then %& undeterminedSort? s 
-    fun
+    trm
   else
-    (error (env, "Name "^id^" has not been declared", pos);
-     % raise (TypeCheck (pos, "Name "^id^" has not been declared"));
+    (error (env, "Name "^id^" could not be identified", pos);
+     % raise (TypeCheck (pos, "Name "^id^" could not be identified"));
      Fun (OneName (id, Nonfix), srt, pos))
 
-  def undeclared2 (env, fun, id1, id2, srt, pos) =
+  def ambiguousCons (env, trm, id, srt, pos) =
   if env.firstPass? then %& undeterminedSort? s 
-    fun
+    trm
+  else
+    (error (env, "Constructor "^id^" could not be disambiguated", pos);
+     Fun (OneName (id, Nonfix), srt, pos))
+
+  def undeclared2 (env, trm, id1, id2, srt, pos) =
+  if env.firstPass? then %& undeterminedSort? s 
+    trm
   else
     (error (env, id1^"."^id2^" has not been declared as a qualified name or as a field selection", pos);
      % raise (TypeCheck (pos, id1^"."^id2^" has not been declared as a qualified name or as a field selection"));
      Fun (TwoNames (id1, id2, Nonfix), srt, pos))
 
-  def undeclaredResolving (env, fun, id, srt, pos) = 
+  def undeclaredResolving (env, trm, id, srt, pos) = 
   if env.firstPass? then %& undeterminedSort? s
-    fun
+    trm
   else
-    (error (env, "Name "^id^" has not been declared."^" Resolving with "^printSort srt, pos);
-     % raise (TypeCheck (pos, "Name "^id^" has not been declared."^" Resolving with "^printSort srt));
+    (error (env, "Name "^id^" could not be identified; resolving with "^printSort srt, pos);
+     % raise (TypeCheck (pos, "Name "^id^" could not be identified; resolving with "^printSort srt));
      (Fun (OneName (id, Nonfix), srt, pos)) : MS.Term)
 
 
