@@ -81,6 +81,7 @@
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
 (defun sw (&optional x)
+  (setq x (subst-home x))
   (if x
       (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* x))
     (if *last-unit-Id-_loaded*
@@ -323,7 +324,7 @@
 ;;; --------------------------------------------------------------------------------
 
 (defun swj (x &optional y)
-  (Specware::evaluateJavaGen_fromLisp-2 x 
+  (Specware::evaluateJavaGen_fromLisp-2 (subst-home x) 
 					(if y 
 					    (cons :|Some| y)
 					  '(:|None|)))
