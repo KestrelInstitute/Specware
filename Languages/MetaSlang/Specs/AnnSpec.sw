@@ -65,6 +65,64 @@ AnnSpec qualifying spec
  
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ op packSortDef   : [b] List (TyVars * ASort b) * b -> ASort b
+ op unpackSortDef : [b] ASort b -> List (TyVars * ASort b)
+
+ op packOpDef     : [b] List (TyVars * ASort b * ATerm b) * b -> ATerm b
+ op unpackOpDef   : [b] ATerm b -> List (TyVars * ASort b * ATerm b)
+
+
+ def packSortDef (pairs, pos) =
+   let srts =
+       map (fn (tvs, srt) ->
+	    case tvs of
+	      | [] -> srt
+	      | _ -> Pi (tvs, srt, sortAnn srt))
+           pairs
+   in
+     case srts of
+       | [] -> Any pos
+       | [srt] -> srt
+       | _  -> And (srts, pos)
+
+ def unpackSortDef srt =
+   let 
+     def aux srt =
+       case srt of
+	 | Pi (tvs, srt, _) -> (tvs, srt)
+	 | _ -> ([], srt)
+   in
+     case srt of
+       | And (srts, _) -> map aux srts
+       | _ -> [aux srt]
+
+ def packOpDef (triples, pos)  =
+   let tms = 
+       map (fn (tvs, srt, tm) ->
+	    let a = termAnn tm in
+	    case tvs of
+	      | [] -> SortedTerm (tm, srt, a)
+	      | _ -> Pi (tvs, SortedTerm (tm, srt, a), a))
+           triples
+   in
+     case tms of
+       | []   -> Any pos
+       | [tm] -> tm
+       | _ -> And (tms, pos)
+
+ def unpackOpDef tm =
+   let
+     def aux tm =
+       case tm of
+	 | Pi (tvs, SortedTerm (tm, srt, _), _) -> (tvs, srt, tm)
+	 | SortedTerm (tm, srt, _) -> ([], srt, tm)
+   in
+     case tm of
+       | And (tms, _) -> map aux tms
+       | _ -> [aux tm]
+       
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
  type ASpecs b = List (ASpec b)
 
  type AOpSignature  b = String * String * TyVars * ASort b
