@@ -11,12 +11,12 @@ SpecCalc qualifying spec {
   op oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
   def oscarToC oscSpec base =
     let oscSpec = mapOscarSpec (fn(spc) -> (identifyIntSorts (subtractSpec spc base))) oscSpec in
-    let _ = writeLine("initial envSpec="^(printSpec (specOf oscSpec.modeSpec))) in
+    %let _ = writeLine("initial envSpec="^(printSpec (specOf oscSpec.modeSpec))) in
     let missing = foldlSpecsOscarSpec (fn(spc,missing) ->
 				       let spc = transformSpecForCodeGen base spc in
 				       mergeSpecs(spc,missing)
 				      ) emptySpec oscSpec in
-    let _ = writeLine("missing from base: "^(printSpec missing)) in
+    %let _ = writeLine("missing from base: "^(printSpec missing)) in
     %let oscSpec = mapOscarSpec (fn(spc) -> transformSpecForCodeGen base spc) oscSpec in
     let cSpec = emptyCSpec("") in
     %let envSpec = specOf oscSpec.modeSpec in
