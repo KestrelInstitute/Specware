@@ -1242,11 +1242,8 @@ If anyone has a good algorithm for this..."
 	 nil)))
 
 (defvar specware-logo
-  (make-glyph ()))
-
-(set-glyph-image specware-logo
-		 "./specware_logo.xpm"
-		 'global 'x)
+  (make-glyph `[xpm :file ,(concat *specware*
+				   "/Library/IO/Emacs/specware_logo.xpm")]))
 
 (defun goto-specware-web-page (&rest ign)
   (browse-url "http://specware.org/"))
@@ -1263,6 +1260,9 @@ If anyone has a good algorithm for this..."
   "Describe the Specware System"
   (interactive)
   (unless (about-get-buffer "*About Specware*")
+    (set-glyph-image specware-logo
+		     "./specware_logo.xpm"
+		     'global 'x)
     (widget-insert (about-center specware-logo))
     (widget-create 'default
 		   :format "%t"
@@ -1297,6 +1297,65 @@ uniquely and concretely describes their application.")
     (about-finish-buffer)
     (goto-line 2)))
 
+
+;;; For compatibility with older version of XEmacs
+(defun make-local-hook (hook)
+  "Make the hook HOOK local to the current buffer.
+When a hook is local, its local and global values
+work in concert: running the hook actually runs all the hook
+functions listed in *either* the local value *or* the global value
+of the hook variable.
+
+This function works by making `t' a member of the buffer-local value,
+which acts as a flag to run the hook functions in the default value as
+well.  This works for all normal hooks, but does not work for most
+non-normal hooks yet.  We will be changing the callers of non-normal
+hooks so that they can handle localness; this has to be done one by
+one.
+
+This function does nothing if HOOK is already local in the current
+buffer.
+
+Do not use `make-local-variable' to make a hook variable buffer-local.
+
+See also `add-local-hook' and `remove-local-hook'."
+  (if (local-variable-p hook (current-buffer)) ; XEmacs
+      nil
+    (or (boundp hook) (set hook nil))
+    (make-local-variable hook)
+    (set hook (list t))))
+
+(defun add-local-hook (hook function &optional append)
+  "Add to the local value of HOOK the function FUNCTION.
+This modifies only the buffer-local value for the hook (which is
+automatically make buffer-local, if necessary), not its default value.
+FUNCTION is not added if already present.
+FUNCTION is added (if necessary) at the beginning of the hook list
+unless the optional argument APPEND is non-nil, in which case
+FUNCTION is added at the end.
+
+HOOK should be a symbol, and FUNCTION may be any valid function.  If
+HOOK is void, it is first set to nil.  If HOOK's value is a single
+function, it is changed to a list of functions.
+
+You can remove this hook yourself using `remove-local-hook'.
+
+See also `add-hook' and `make-local-hook'."
+  (make-local-hook hook)
+  (add-hook hook function append t))
+
+;; XEmacs addition
+(defun remove-local-hook (hook function)
+  "Remove from the local value of HOOK the function FUNCTION.
+This modifies only the buffer-local value for the hook, not its default
+value. (Nothing happens if the hook is not buffer-local.)
+HOOK should be a symbol, and FUNCTION may be any valid function.  If
+FUNCTION isn't the value of HOOK, or, if FUNCTION doesn't appear in the
+list of hooks to run in HOOK, then nothing is done.  See `add-hook'.
+
+See also `add-local-hook' and `make-local-hook'."
+  (if (local-variable-p hook (current-buffer))
+      (remove-hook hook function t)))
 
 ;;; & do the user's customisation
 
