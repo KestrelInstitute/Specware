@@ -34,7 +34,9 @@
 ;;;directory.  Old patch files will not be removed or overwritten.
 
 (defun patch-directory ()
-  (let ((specware-dir (specware::getEnv "SPECWARE4")))
+  (let ((specware-dir (system-spec::getEnv "SPECWARE4")))
+    ;; system-spec::getEnv returns  (:|Some| . <string>)  or  (:|None|)
+    ;;    specware::getEnv returns  <string>              or  NIL.
     (if (equal specware-dir '(:|None|))
 	(warn "patch-directory: SPECWARE4 environment variable not set")
       (concatenate 'string (cdr specware-dir) "/Patches/"))))
