@@ -1398,7 +1398,10 @@ from elaborating the corresponding `spec-terms and
 <para>
 <<
 ||`target-code-term ::=
-||      generate `target-language-name `spec-term [ in `string-literal ]
+||      generate `target-language-name `spec-term [ `generate-option ]
+||
+||`generate-option ::=
+||      in `string-literal | with `unit-identifier
 ||
 ||`target-language-name ::= c | java | lisp
 >>
