@@ -173,6 +173,53 @@ AnnSpec qualifying spec
      emptyAQualifierMap
      ops
 
+  op foldSortInfos : fa(a,b) (ASortInfo a * b -> b) -> b -> ASortMap a -> b
+ def foldSortInfos f init sorts =
+   foldriAQualifierMap 
+     (fn (index_q, index_id, info as (aliases,_,_), result) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id then
+	f (info, result)
+      else
+	result)
+     init
+     sorts
+
+  op foldOpInfos : fa(a,b) (AOpInfo a * b -> b) -> b -> AOpMap a -> b
+ def foldOpInfos f init ops =
+   foldriAQualifierMap 
+     (fn (index_q, index_id, info as (aliases,_,_,_), result) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id then
+	f (info, result)
+      else
+	result)
+     init
+     ops
+
+  op appSortInfos : fa(b) (ASortInfo b -> ()) -> ASortMap b -> ()
+ def appSortInfos f sorts =
+   appiAQualifierMap 
+     (fn (index_q, index_id, info as (aliases,_,_)) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id then
+	f info
+      else
+	())
+     sorts
+
+  op appOpInfos : fa(b) (AOpInfo b -> ()) -> AOpMap b -> ()
+ def appOpInfos f ops =
+   appiAQualifierMap 
+     (fn (index_q, index_id, info as (aliases,_,_,_)) ->
+      let (Qualified (q, id)) :: _ = aliases in
+      if index_q = q && index_id = id then
+	f info
+      else
+	())
+     ops
+
+
   op mapSpecProperties : fa(b) TSP_Maps b -> AProperties b ->  AProperties b 
  def mapSpecProperties tsp_maps properties =
    map (fn (pt, nm, tvs, term) -> 
