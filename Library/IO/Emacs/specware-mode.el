@@ -969,11 +969,22 @@ If anyone has a good algorithm for this..."
     (insert "in\n") (indent-to (+ sw:indent-level indent))
     (previous-line 1) (end-of-line)))
 
+(defun sw:running-specware-shell-p ()
+  (and (inferior-lisp-running-p)
+       (sw:eval-in-lisp "SWShell::*in-specware-shell?*")))
+
+(defun lisp-or-specware-command (lisp-comm spec-comm &rest argstrs)
+  (simulate-input-expression
+   (apply 'concat
+	  (if (sw:running-specware-shell-p)
+	      spec-comm lisp-comm)
+	   argstrs)))
+
 (defun sw:process-current-file ()
   (interactive)
   (save-buffer)
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
-    (simulate-input-expression (concat ":sw " filename))))
+    (lisp-or-specware-command ":sw " "proc " filename)))
 
 (defun sw::file-to-specware-unit-id (filename)
   (let ((len (length filename)))
@@ -1015,11 +1026,11 @@ If anyone has a good algorithm for this..."
 				 rel-filename
 			       (concat "/" rel-filename))))))
 	  finally (let ((oldpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")")))
-		    (simulate-input-expression
-		     (concat ":swpath " oldpath
-			     (if (eq window-system 'mswindows) ";" ":")
-			     (if (eq (elt filename 0) ?/) "/"
-			       (substring filename 0 3))))
+		    (lisp-or-specware-command ":swpath " "path "
+					      oldpath
+					      (if (eq window-system 'mswindows) ";" ":")
+					      (if (eq (elt filename 0) ?/) "/"
+						(substring filename 0 3)))
 		    (sleep-for 0.1)	; Just to avoid confusing output
 		    (return filename)))))
 
@@ -1027,7 +1038,7 @@ If anyone has a good algorithm for this..."
   (interactive (list (read-from-minibuffer "Process Unit: "
 					   (sw::file-to-specware-unit-id
 					    buffer-file-name))))
-  (simulate-input-expression (concat ":sw " unitid)))
+  (lisp-or-specware-command ":sw " "proc " unitid))
 
 (defun sw:generate-lisp (compile-and-load?)
   (interactive "P")
@@ -1035,15 +1046,15 @@ If anyone has a good algorithm for this..."
   (let* ((filename (sw::file-to-specware-unit-id buffer-file-name))
 	 (dir default-directory)
 	 (unitname (substring filename (length dir))))
-    (simulate-input-expression (concat ":swl " filename))
+    (lisp-or-specware-command ":swl " "gen-lisp " filename)
     (when compile-and-load?
-      (simulate-input-expression (concat ":cl " dir "lisp/" unitname)))))
+      (lisp-or-specware-command ":cl " "cl " dir "lisp/" unitname))))
 
 (defun sw:gcl-current-file ()
   (interactive)
   (save-buffer)
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
-    (simulate-input-expression (concat ":swll " filename))))
+    (lisp-or-specware-command ":swll " "lgen-lisp " filename)))
 
 (defun sw:evaluate-region (beg end)
   (interactive "r")
@@ -1056,14 +1067,14 @@ If anyone has a good algorithm for this..."
       (sleep-for 1))			; Give :swll a chance to finish
     (unless (string-equal filename
 			  (sw:eval-in-lisp "cl-user::*current-swe-spec*"))
-      (simulate-input-expression (concat ":swe-spec " filename))
+      (lisp-or-specware-command ":swe-spec " "ctext " filename)
       (sleep-for 0.1))
-    (simulate-input-expression (concat ":swe " text))))
+    (lisp-or-specware-command ":swe " "eval " text)))
 
 (defun sw:set-swe-spec ()
   (interactive)
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
-    (simulate-input-expression (concat ":swe-spec " filename))))
+    (lisp-or-specware-command ":swe-spec " "ctext " filename)))
 
 (defun sw:cl-unit (unitid)
   (interactive (list (read-from-minibuffer "Compile and Load Unit: "
@@ -1083,7 +1094,7 @@ If anyone has a good algorithm for this..."
 (defun sw:dired-process-current-file ()
   (interactive)
   (let ((filename (sw::file-to-specware-unit-id (dired-get-filename))))
-    (simulate-input-expression (concat ":sw " filename))))
+    (lisp-or-specware-command ":sw " "proc " filename)))
 
 (when (boundp 'dired-mode-map)
   (define-key dired-mode-map "\C-cp" 'sw:dired-process-current-file)
@@ -1091,7 +1102,7 @@ If anyone has a good algorithm for this..."
 
 (defun cd-current-directory ()
   (interactive)
-  (simulate-input-expression (concat ":cd " default-directory)))
+  (lisp-or-specware-command ":cd " "cd " default-directory))
 
 (defvar *pending-specware-meta-point-results* nil)
 

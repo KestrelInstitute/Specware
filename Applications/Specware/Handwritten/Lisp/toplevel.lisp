@@ -204,7 +204,7 @@
   (cond ((sw (string x))
 	 (setq *current-swe-spec* x)
 	 (setq *current-swe-spec-dir* (specware::current-directory))
-	 (format t "~&Subsequent :swe commands will now import ~A.~%" x)
+	 (format t "~&Subsequent evaluation commands will now import ~A.~%" x)
 	 (unless *swe-use-interpreter?*
 	   (format t "~&The following will produce, compile and load code for this spec:~%")
 	   (format t "~&:swll ~A~%" x)))
@@ -244,6 +244,7 @@
 
 (defun swe (x)
   (let* ((tmp-dir (format nil "~Aswe/" specware::temporaryDirectory))
+	 (SpecCalc::printElaborateSpecMessage? nil)   ; Suppress Elaborating spec message
 	 (tmp-name (format nil "swe_tmp_~D_~D"
 			   (incf *tmp-counter*) 
 			   (ymd-hms)))
@@ -721,22 +722,24 @@
   (and (find-package "ILISP")
        (find-symbol "ILISP-COMPILE" "ILISP")))
 
-#-allegro
 (defun cd (&optional (dir ""))
   (if (equal dir "")
       (setq dir (specware::getenv "HOME"))
     (setq dir (subst-home dir)))
-  #+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
-  #-cmu (specware::change-directory dir)
-  (let* ((dirpath (specware::current-directory))
-	 (newdir (namestring dirpath)))
-    #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
-    (when (under-ilisp?)
-      (emacs::eval-in-emacs (format nil "(setq default-directory ~s
+  (if #+allegro t #-allegro nil
+      (tpl:do-command "cd" dir)
+      (progn 
+	#+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
+	#-cmu (specware::change-directory dir)
+	(let* ((dirpath (specware::current-directory))
+	       (newdir (namestring dirpath)))
+	  #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
+	  (when (under-ilisp?)
+	    (emacs::eval-in-emacs (format nil "(setq default-directory ~s
                                                lisp-prev-l/c-dir/file (cons default-directory nil))"
-				    (specware::ensure-final-slash newdir))))
-    (princ newdir)
-    (values)))
+					  (specware::ensure-final-slash newdir))))
+	  (princ newdir)
+	  (values)))))
 
 #-allegro
 (defun ld (file)
@@ -751,7 +754,6 @@
 (defun exit ()
   (quit))
 
-#-allegro
 (defun cl (file)
   (specware::compile-and-load-lisp-file (subst-home file)))
 
@@ -819,12 +821,12 @@
 	      (return t))))))
   )
 
-#-allegro
 (defun ls (&optional (str ""))
+  #+allegro (tpl:do-command "ls" str)
   #+cmu  (ext:run-program "ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
   #+mcl  (ccl:run-program "ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
   #+sbcl (sb-ext:run-program "/bin/ls" (if (equal str "") '("-FC") (list "-FC" str)) :output t)
-  #-(or cmu mcl sbcl) (format t "Not yet implemented")
+  #-(or cmu mcl sbcl allegro) (format t "Not yet implemented")
   (values))
 
 #-allegro

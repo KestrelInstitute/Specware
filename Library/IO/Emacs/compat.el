@@ -65,7 +65,9 @@
 			      'openmcl
 			    (if (search "sbcl" lisp-program)
 				'sbcl				'sbcl
-			      'cmulisp)))
+			      (if (search "gcl" lisp-program)
+				  'gcl
+				'cmulisp))))
   (defvar *lisp-image-extension*
     (case *specware-lisp*
       (openmcl "openmcl-image")

@@ -161,6 +161,9 @@
     ;; Toplevel aliases 
     "Applications/Specware/Handwritten/Lisp/toplevel"
 
+    ;; Specware Shell
+    "Applications/Specware/Handwritten/Lisp/sw-shell"
+
     ;; Debugging utilities
     "Applications/Specware/Handwritten/Lisp/debug"
 
