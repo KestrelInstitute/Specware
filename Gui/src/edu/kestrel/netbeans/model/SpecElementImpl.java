@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:13:06  weilyn
+ * Added support for imports.
+ *
  * Revision 1.3  2003/02/16 02:14:04  weilyn
  * Added support for defs.
  *
@@ -76,11 +79,11 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         super.createFromModel(model);
 
         // member elements need the Element already.
-        changeImports(element.getImports(), SpecElement.Impl.ADD);
-        changeSorts(element.getSorts(), SpecElement.Impl.ADD);
-        changeOps(element.getOps(), SpecElement.Impl.ADD);
-        changeDefs(element.getDefs(), SpecElement.Impl.ADD);
-        changeClaims(element.getClaims(), SpecElement.Impl.ADD);
+        changeImports(element.getImports(), ADD);
+        changeSorts(element.getSorts(), ADD);
+        changeOps(element.getOps(), ADD);
+        changeDefs(element.getDefs(), ADD);
+        changeClaims(element.getClaims(), ADD);
     }
     
     public final void setParent(ElementImpl impl) {

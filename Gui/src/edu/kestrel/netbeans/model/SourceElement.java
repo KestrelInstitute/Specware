@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/04/01 02:29:37  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.3  2003/03/29 03:13:57  weilyn
  * Added support for morphism nodes.
  *
@@ -528,6 +531,88 @@ public final class SourceElement extends Element {
         return getSourceImpl().getColimit(name);
     }
 
+  //================== URIs ==========================
+
+    /** Add a new uri.
+    * @param el the uri to add
+    * @throws SourceException if impossible
+    */
+/*    public void addURI (URIElement el) throws SourceException {
+      //Util.log("SourceElement.addURI -- adding uri "+el.getName());
+        String id = el.getPath();
+        if (getURI(id) != null)
+            throwAddException("FMT_EXC_AddURIToSource", el); // NOI18N
+        getSourceImpl().changeURIs(new URIElement[] { el }, Impl.ADD);
+    }*/
+
+    /** Add some new uris.
+    * @param el the uris to add
+    * @throws SourceException if impossible
+    */
+    /*public void addURIs(final URIElement[] els) throws SourceException {
+        String id;
+        
+        for (int i = 0; i < els.length; i++) {
+            id = els[i].getPath();
+            if (getURI(id) != null)
+                throwAddException("FMT_EXC_AddURIToSource", els[i]); // NOI18N
+        }
+        getSourceImpl().changeURIs(els, Impl.ADD);
+    }*/
+
+    /** This method just throws localized exception. It is used during
+    * adding uri element, which already exists in source.
+    * @param formatKey The message format key to localized bundle.
+    * @param element The element which can't be added
+    * @exception SourceException is alway thrown from this method.
+    */
+/*    private void throwAddException(String formatKey, URIElement element) throws SourceException {
+	String msg = NbBundle.getMessage(ElementFormat.class, formatKey,
+					 element.getPath());
+        throwSourceException(msg);
+    }*/
+
+    /** Remove a uri.
+    * @param el the uri to remove
+    * @throws SourceException if impossible
+    */
+/*    public void removeURI(URIElement el) throws SourceException {
+        getSourceImpl().changeURIs(new URIElement[] { el }, Impl.REMOVE);
+    }*/
+
+    /** Remove some uris.
+    * @param els the uris to remove
+    * @throws SourceException if impossible
+    */
+/*    public void removeURIs (final URIElement[] els) throws SourceException {
+        getSourceImpl().changeURIs(els, Impl.REMOVE);
+    }*/
+
+    /** Set the uris.
+    * The old ones will be replaced.
+    * @param els the new uris
+    * @throws SourceException if impossible
+    */
+/*    public void setURIs (URIElement[] els) throws SourceException {
+        getSourceImpl().changeURIs(els, Impl.SET);
+    }*/
+
+    /** Get the uris.
+    * @return all uris
+    */
+/*    public URIElement[] getURIs() {
+        System.err.println("*** getURIs(): SourceImpl="+ getSourceImpl());
+        return getSourceImpl().getURIs();
+    }*/
+
+    /** Find a uri by path.
+    * @param path the path to look for
+    * @return the uri, or <code>null</code> if it does not exist
+    */
+/*    public URIElement getURI(String path) {
+        return getSourceImpl().getURI(path);
+    }*/
+
     //-------------------------------------------------------------
     
     /* Prints the element into the element printer.
@@ -540,6 +625,7 @@ public final class SourceElement extends Element {
         print(getMorphisms(), printer);
         print(getDiagrams(), printer);
         print(getColimits(), printer);
+        //print(getURIs(), printer);
     }
     
     /** Lock the underlaing document to have exclusive access to it and could make changes
@@ -567,12 +653,6 @@ public final class SourceElement extends Element {
     * @see SourceElement
     */
     public static interface Impl extends Element.Impl {
-        /** Add some specs. */
-        public static final int ADD = SpecElement.Impl.ADD;
-        /** Remove some specs. */
-        public static final int REMOVE = SpecElement.Impl.REMOVE;
-        /** Set the top-specs. */
-        public static final int SET = SpecElement.Impl.SET;
 
         /** @deprecated Only public by accident. */
         /* public static final */ long serialVersionUID = -2181228658756563166L;
@@ -684,6 +764,24 @@ public final class SourceElement extends Element {
         * @return the colimit, or <code>null</code> if it does not exist
         */
         public ColimitElement getColimit (String name);
+
+        /** Change the set of uris.
+        * @param elems the uris to change
+        * @param action one of {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+        * @exception SourceException if the action cannot be handled
+        */
+       // public void changeURIs (URIElement[] elems, int action) throws SourceException;
+
+        /** Get all uris.
+        * @return the uris
+        */
+        //public URIElement[] getURIs ();
+
+        /** Find a uri by path.
+        * @param path the path to look for
+        * @return the uri, or <code>null</code> if it does not exist
+        */
+        //public URIElement getURI (String path);
 
         /** Lock the underlaing document to have exclusive access to it and could make changes
         * on this SourceElement.

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:54  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -216,7 +219,14 @@ public abstract class Element extends Object
     /** Pluggable implementation of the storage of element properties.
      * @see Element#Element
      */
-    public interface Impl extends Serializable {
+    interface Impl extends Serializable {
+        /** Add some items. */
+        public static final int ADD = 1;
+        /** Remove some items. */
+        public static final int REMOVE = -1;
+        /** Set some items, replacing the old ones. */
+        public static final int SET = 0;
+        
         /** @deprecated Only public by accident. */
         /* public static final */ long serialVersionUID = -3246061193296761293L;
         /** Called to attach the implementation to a specific

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:37  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:56  weilyn
  * Added support for morphism nodes.
  *
@@ -44,4 +47,6 @@ public interface ElementCreator {
     public MorphismElementImpl      createMorphism(Element parent);
     public DiagramElementImpl       createDiagram(Element parent);
     public ColimitElementImpl       createColimit(Element parent);
+    //public URIElementImpl           createURI(Element parent);
+    public DiagElemElementImpl      createDiagElem(DiagramElement parent);
 }

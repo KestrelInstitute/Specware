@@ -258,12 +258,6 @@ public final class ProofElement extends MemberElement {
      * @see ProofElement
      */
     public static interface Impl extends MemberElement.Impl {
-        /** Add some items. */
-        public static final int ADD = SpecElement.Impl.ADD;//1;
-        /** Remove some items. */
-        public static final int REMOVE = SpecElement.Impl.REMOVE;//-1;
-        /** Set some items, replacing the old ones. */
-        public static final int SET = SpecElement.Impl.SET;//0;
 
         //==============TODO======================
         /** Change the set of imports.

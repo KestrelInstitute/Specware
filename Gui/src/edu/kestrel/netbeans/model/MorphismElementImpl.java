@@ -22,6 +22,10 @@ class MorphismElementImpl extends MemberElementImpl implements MorphismElement.I
 
     private MemberCollection        members;
 
+    private UnitID                  sourceUnitID;
+    
+    private UnitID                  targetUnitID;
+    
     private static final long serialVersionUID = -7718381719188756697L;
     
     // Construction
@@ -38,16 +42,18 @@ class MorphismElementImpl extends MemberElementImpl implements MorphismElement.I
     
     MorphismElementImpl(DefaultLangModel model) {
         super(model);
+        sourceUnitID = null;
+        targetUnitID = null;
     }
     
     protected void createFromModel(Element model) throws SourceException {
         MorphismElement element = (MorphismElement)model;
-
-        // PENDING: set these directly.
         super.createFromModel(model);
-
+        setSourceUnitID(element.getSourceUnitID());
+        setTargetUnitID(element.getTargetUnitID());
+        
         // member elements need the Element already.
-//        changeImports(element.getImports(), SpecElement.Impl.ADD);
+//        changeImports(element.getImports(), ADD);
     }
     
     public final void setParent(ElementImpl impl) {
@@ -63,6 +69,67 @@ class MorphismElementImpl extends MemberElementImpl implements MorphismElement.I
         members = new MemberCollection(this, (Binding.Container)b);
     }
         
+    /** Getter for the initial value.
+    * @return initial value for the variable or empty string if it is not initialized
+    */
+    public UnitID getSourceUnitID() {
+        return this.sourceUnitID;
+    }
+
+    /** Setter for the initial value.
+    * @param value initial value for the variable
+    */
+    public void setSourceUnitID(UnitID sourceUnitID) throws SourceException {
+        Object token = takeLock();
+        try {
+            PropertyChangeEvent evt;
+            if (!isCreated()) {
+                if (sourceUnitID != this.sourceUnitID) {
+                    evt = new PropertyChangeEvent(getElement(), PROP_SOURCE_UNIT_ID, this.sourceUnitID, sourceUnitID);
+                    checkVetoablePropertyChange(evt);
+                    getMorphismBinding().changeSourceUnitID(sourceUnitID);
+                    fireOwnPropertyChange(evt);
+                    //addPropertyChange(evt);
+                }
+            }
+            this.sourceUnitID = sourceUnitID;
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+
+    /** Getter for the initial value.
+    * @return initial value for the variable or empty string if it is not initialized
+    */
+    public UnitID getTargetUnitID() {
+        return this.targetUnitID;
+    }
+
+    /** Setter for the initial value.
+    * @param value initial value for the variable
+    */
+    public void setTargetUnitID(UnitID targetUnitID) throws SourceException {
+        Object token = takeLock();
+        try {
+            PropertyChangeEvent evt;
+            if (!isCreated()) {
+                if (targetUnitID != this.targetUnitID) {
+                    evt = new PropertyChangeEvent(getElement(), PROP_TARGET_UNIT_ID, this.targetUnitID, targetUnitID);
+                    checkVetoablePropertyChange(evt);
+                    getMorphismBinding().changeTargetUnitID(targetUnitID);
+                    fireOwnPropertyChange(evt);
+                    //addPropertyChange(evt);
+                }
+            }
+            this.targetUnitID = targetUnitID;
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+    
+    
     // Member management methods
     // - will delegate to collection helpers.
     ///////////////////////////////////////////////////////////////////////////////////

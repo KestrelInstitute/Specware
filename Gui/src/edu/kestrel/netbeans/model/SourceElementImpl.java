@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/04/01 02:29:38  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.3  2003/03/29 03:13:57  weilyn
  * Added support for morphism nodes.
  *
@@ -52,6 +55,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
   private MorphismCollection morphisms;
   private DiagramCollection diagrams;
   private ColimitCollection colimits;
+//  private URICollection uris;
   private MemberCollection members;
     
     private static final long serialVersionUID = 8506642610861188475L;
@@ -108,7 +112,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         Object token = takeLock();
         try {
             if (specs == null) {
-                if (operation != SpecElement.Impl.REMOVE && mms.length == 0)
+                if (operation != Element.Impl.REMOVE && mms.length == 0)
 		  return;
                 initializeSpecs();
             }
@@ -143,7 +147,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         Object token = takeLock();
         try {
             if (proofs == null) {
-                if (operation != ProofElement.Impl.REMOVE && mms.length == 0)
+                if (operation != Element.Impl.REMOVE && mms.length == 0)
 		  return;
                 initializeProofs();
             }
@@ -178,7 +182,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         Object token = takeLock();
         try {
             if (morphisms == null) {
-                if (operation != MorphismElement.Impl.REMOVE && mms.length == 0)
+                if (operation != Element.Impl.REMOVE && mms.length == 0)
 		  return;
                 initializeMorphisms();
             }
@@ -213,7 +217,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         Object token = takeLock();
         try {
             if (diagrams == null) {
-                if (operation != DiagramElement.Impl.REMOVE && mms.length == 0)
+                if (operation != Element.Impl.REMOVE && mms.length == 0)
 		  return;
                 initializeDiagrams();
             }
@@ -248,7 +252,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         Object token = takeLock();
         try {
             if (colimits == null) {
-                if (operation != ColimitElement.Impl.REMOVE && mms.length == 0)
+                if (operation != Element.Impl.REMOVE && mms.length == 0)
 		  return;
                 initializeColimits();
             }
@@ -258,12 +262,37 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         } finally {
             releaseLock(token);
         }
-        //IndexedPropertyBase.Change changes = IndexedPropertyBase.computeChanges(getColimits(), mms);
-        //Util.log("SourceElementImpl.changeColimit -- Changes  "+changes);
-        //MultiPropertyChangeEvent event = new MultiPropertyChangeEvent (this, ElementProperties.PROP_PROOFS, getColimits(), mms);
-        //Util.log("SourceElementImpl.changeColimit -- event " + event);
-        //firePropertyChangeEvent(event);
     }
+
+/*    public URIElement getURI(String id) {
+        if (uris == null)
+            return null;
+        return uris.getURI(id);
+    }
+    
+    public URIElement[] getURIs() {
+        if (uris == null)
+            return URICollection.EMPTY;
+        return (URIElement[])uris.getElements();
+    }
+    
+    // Setters/changers
+    public void changeURIs(URIElement[] mms, int operation) throws SourceException {
+        //Util.log("SourceElementImpl.changeURI -- adding uri ");
+        Object token = takeLock();
+        try {
+            if (uris == null) {
+                if (operation != Element.Impl.REMOVE && mms.length == 0)
+		  return;
+                initializeURIs();
+            }
+	    //Util.log("SourceElementimpl.changeURIs calling change members for URIs "+mms.length);
+            uris.changeMembers(mms, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }*/
 
     private void notifyCreate(Element[] els) {
         for (int i = 0; i < els.length; i++) {
@@ -289,6 +318,9 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         if (this.colimits != null) {
             notifyCreate(colimits.getElements());
         }
+        /*if (this.uris != null) {
+            notifyCreate(uris.getElements());
+        }*/
         super.notifyCreate();
     }
     
@@ -358,7 +390,17 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
                 initializeColimits();
             }
             colimits.updateMembers(elements, indices, optMap);
-	} else {
+	} /*else if (name == ElementProperties.PROP_URIS) {
+            if (uris == null) {
+                if (elements.length == 0)
+                    return;
+                initializeURIs();
+            }
+	    //Util.log("SourceElementimpl.updateMembers calling proofs update members indices =  "+Util.print(indices));
+            uris.updateMembers(elements, indices, optMap);
+	    //Util.log("SourceElementimpl.updateMembers after PartialCollection.updateMembers proofs = "+Util.print(getProofs())+
+	    //			     " members =  "+members);
+	} */else {
             throw new IllegalArgumentException("Unsupported property: " + name); // NOI18N
         }
     }
@@ -399,6 +441,11 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
       //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
     }
 
+/*    private void initializeURIs() {
+      this.uris = new URICollection(this, getModelImpl(), members);
+      //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
+    }*/
+    
     protected SourceElementImpl findSource() {
         return this;
     }

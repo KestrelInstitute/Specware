@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:38  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:57  weilyn
  * Added support for morphism nodes.
  *
@@ -33,15 +36,17 @@ package edu.kestrel.netbeans.model;
 import org.openide.src.*;
 
 public interface WrapperFactory {
-    public SpecElement          wrapSpec(MemberElement.Impl theImpl, Element parent);
+    public SpecElement          wrapSpec(SpecElement.Impl theImpl, Element parent);
     public SortElement          wrapSort(SortElement.Impl theImpl, Element parent);
     public OpElement            wrapOp(OpElement.Impl theImpl, Element parent);
     public DefElement           wrapDef(DefElement.Impl theImpl, Element parent);
     public ClaimElement         wrapClaim(ClaimElement.Impl theImpl, Element parent);
     public ImportElement        wrapImport(ImportElement.Impl theImpl, Element parent);
-    public ProofElement         wrapProof(MemberElement.Impl theImpl, Element parent);
-    public MorphismElement      wrapMorphism(MemberElement.Impl theImpl, Element parent);
-    public DiagramElement       wrapDiagram(MemberElement.Impl theImpl, Element parent);
-    public ColimitElement       wrapColimit(MemberElement.Impl theImpl, Element parent);
+    public ProofElement         wrapProof(ProofElement.Impl theImpl, Element parent);
+    public MorphismElement      wrapMorphism(MorphismElement.Impl theImpl, Element parent);
+    public DiagramElement       wrapDiagram(DiagramElement.Impl theImpl, Element parent);
+    public ColimitElement       wrapColimit(ColimitElement.Impl theImpl, Element parent);
+//    public URIElement           wrapURI(URIElement.Impl theImpl, Element parent);
+    public DiagElemElement      wrapDiagElem(DiagElemElement.Impl theImpl, Element parent);
 }
 

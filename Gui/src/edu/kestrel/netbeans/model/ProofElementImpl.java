@@ -47,7 +47,7 @@ class ProofElementImpl extends MemberElementImpl implements ProofElement.Impl, E
         super.createFromModel(model);
 
         // member elements need the Element already.
-//        changeImports(element.getImports(), SpecElement.Impl.ADD);
+//        changeImports(element.getImports(), ADD);
     }
     
     public final void setParent(ElementImpl impl) {

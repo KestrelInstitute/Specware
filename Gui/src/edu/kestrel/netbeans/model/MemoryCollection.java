@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:37  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:56  weilyn
  * Added support for morphism nodes.
  *
@@ -113,13 +116,13 @@ abstract class MemoryCollection extends Object implements Serializable {
         Collection data;
         
         switch (action) {
-            case SpecElement.Impl.ADD:
+            case Element.Impl.ADD:
                 data = cloneElements(arr);
                 break;
-            case SpecElement.Impl.REMOVE:
+            case Element.Impl.REMOVE:
                 data = Arrays.asList(arr);
                 break;
-            case SpecElement.Impl.SET:
+            case Element.Impl.SET:
                 data = makeClones(arr);
                 break;
             default:
@@ -134,7 +137,7 @@ abstract class MemoryCollection extends Object implements Serializable {
     protected void change (Collection c, int action) {
         boolean anChange;
         switch (action) {
-        case SpecElement.Impl.ADD:
+        case Element.Impl.ADD:
             anChange = c.size () > 0;
             if (array != null) {
                 if (insertionMark != null) {
@@ -152,13 +155,13 @@ abstract class MemoryCollection extends Object implements Serializable {
                 break;
             }
             // fall thru to initialize the array
-        case SpecElement.Impl.SET:
+        case Element.Impl.SET:
             // PENDING: better change detection; currently any SET operation will fire change.
             anChange = c.size () > 0 || (array != null && array.size () > 0);
             array = new LinkedList (c);
             insertionMark = null;
             break;
-        case SpecElement.Impl.REMOVE:
+        case Element.Impl.REMOVE:
         {
             Element newMark = null;
             if (insertionMark != null && c.contains(insertionMark)) {
@@ -283,6 +286,28 @@ abstract class MemoryCollection extends Object implements Serializable {
         }
     }
     
+    static final class DiagElem extends Member {
+        private static final DiagElemElement[] EMPTY = new DiagElemElement[0];
+
+        static final long serialVersionUID =5715072242254795093L;
+        /**
+        * @param memory memory element to fire changes to
+        * @param propertyName name of property to fire when array changes
+        * @param emptyArray emptyArray instance that provides the type of arrays
+        *   that should be returned by toArray method
+        */
+        public DiagElem (DiagramElement.Memory memory) {
+            super (memory,
+		   ElementProperties.PROP_DIAG_ELEMS,
+		   EMPTY);
+        }
+
+        protected Object clone(Object el) {
+            return new DiagElemElement(new DiagElemElement.Memory((DiagElemElement)el), 
+					((DiagramElement.Memory)memory).getDiagramElement());
+        }
+    }
+
     static final class Sort extends Member {
         private static final SortElement[] EMPTY = new SortElement[0];
 
@@ -550,6 +575,10 @@ abstract class MemoryCollection extends Object implements Serializable {
             super (memory, ElementProperties.PROP_DIAGRAMS, EMPTY);
         }
         
+        public Diagram (ColimitElement.Memory memory) {
+            super (memory, ElementProperties.PROP_DIAGRAMS, EMPTY);
+        }
+
         public MemberElement find(String name) {
             if (array == null)
                 return null;
@@ -573,10 +602,18 @@ abstract class MemoryCollection extends Object implements Serializable {
         protected Object clone (Object obj) {
 	    DiagramElement diagram = (DiagramElement) obj;
             DiagramElement.Memory mem = new DiagramElement.Memory (diagram);
-            DiagramElement newDiagram = new DiagramElement(mem, diagram.getSource());
-            mem.copyFrom(diagram);
+            
+            //WLP: will this work?
+            DiagramElement newDiagram;
+            if (diagram.getSource() != null) {
+                newDiagram = new DiagramElement(mem, diagram.getSource());
+                mem.copyFrom(diagram);
+            } else {
+                newDiagram = new DiagramElement(mem, ((ColimitElement.Memory)memory).getColimitElement());
+            }
             return newDiagram;
         }
+        
     }    
 
     /** Collection of colimits.
@@ -619,6 +656,46 @@ abstract class MemoryCollection extends Object implements Serializable {
             mem.copyFrom(colimit);
             return newColimit;
         }
-    }    
+    }
+    
+   /* static final class URI extends Member {
+        private static final URIElement[] EMPTY = new URIElement[0];
 
+        static final long serialVersionUID =5715072242254795093L;
+     
+        public URI (URIElement.Memory memory) {
+            super (memory,
+		   ElementProperties.PROP_URIS,
+		   EMPTY);
+        }
+
+        protected Object clone(Object el) {
+	    URIElement uri = (URIElement) el;
+            URIElement.Memory mem = new URIElement.Memory (uri);
+            
+            //WLP: will this work?
+            URIElement newURI = null;
+            if (memory instanceof MorphismElement.Memory) {
+                newURI = new URIElement(mem, ((MorphismElement.Memory)memory).getMorphismElement());
+            }
+            return newURI;
+        }
+        
+        public URIElement find (String id, String path) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                URIElement uri = (URIElement)it.next ();
+                if (id.equals(uri.getName()) && path.equals(uri.getPath())) {
+		    return uri;
+		}
+	    }
+            // nothing found
+            return null;
+        }
+        
+    }    
+    */
 }

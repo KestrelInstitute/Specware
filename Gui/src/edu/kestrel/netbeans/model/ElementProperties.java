@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/01 02:29:37  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.7  2003/03/29 03:13:56  weilyn
  * Added support for morphism nodes.
  *
@@ -51,6 +54,8 @@ public interface ElementProperties {
     
     public static final String PROP_CLAIMS = "claims"; // NOI18N
     
+    public static final String PROP_DIAG_ELEMS = "diagram_elements";
+    
     public static final String PROP_NAME = "name"; // NOI18N
     
     public static final String PROP_PARAMETERS = "parameters"; // NOI18N
@@ -73,4 +78,13 @@ public interface ElementProperties {
 
     public static final String PROP_COLIMITS = "colimits"; // NOI18N      
 
+//    public static final String PROP_URIS = "uris"; // NOI18N
+    
+    public static final String PROP_PATH = "path"; // NOI18N
+    
+    public static final String PROP_SOURCE_UNIT_ID = "source_unit_id"; // NOI18N
+    
+    public static final String PROP_TARGET_UNIT_ID = "target_unit_id"; // NOI18N
+    
+    public static final String PROP_UNIT_IMPORTED = "unit_imported"; //NOI18N
 }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:36  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:55  weilyn
  * Added support for morphism nodes.
  *
@@ -190,6 +193,13 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         return impl;
     }
     
+    public DiagElemElementImpl createDiagElem(DiagramElement parent) {
+        DiagElemElementImpl impl = new DiagElemElementImpl(this);
+        getWrapper().wrapDiagElem(impl, parent);
+        impl.setParent(parent);
+        return impl;
+    }
+
     public ProofElementImpl createProof(Element src) {
         ProofElementImpl c = new ProofElementImpl(this);
         getWrapper().wrapProof(c, src);
@@ -205,18 +215,26 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
     }
 
     public DiagramElementImpl createDiagram(Element src) {
+        System.out.println("DefaultLangModel.createDiagram");
         DiagramElementImpl c = new DiagramElementImpl(this);
         getWrapper().wrapDiagram(c, src);
         c.setParent(src);
         return c;
-    }    
-    
+    }
+
     public ColimitElementImpl createColimit(Element src) {
         ColimitElementImpl c = new ColimitElementImpl(this);
         getWrapper().wrapColimit(c, src);
         c.setParent(src);
         return c;
     }    
+
+    /*public URIElementImpl createURI(Element src) {
+        URIElementImpl c = new URIElementImpl(this);
+        getWrapper().wrapURI(c, src);
+        c.setParent(src);
+        return c;
+    }*/
 
     public SourceElementImpl createSource() {
         return new SourceElementImpl(this);
@@ -710,7 +728,7 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         } else if (target instanceof ColimitElement) {
             ColimitElementImpl impl = (ColimitElementImpl)getElementImpl(target);
             impl.updateMemberOrder(orderedMembers);
-        } 
+        }
     }
     
     public void activate(Element target) {

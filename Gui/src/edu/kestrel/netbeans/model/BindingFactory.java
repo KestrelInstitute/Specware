@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/04/01 02:29:36  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.6  2003/03/29 03:13:55  weilyn
  * Added support for morphism nodes.
  *
@@ -47,5 +50,7 @@ public interface BindingFactory {
     public Binding.Morphism bindMorphism(MorphismElement impl);
     public Binding.Diagram bindDiagram(DiagramElement impl);
     public Binding.Colimit bindColimit(ColimitElement impl);
+    //public Binding.URI bindURI(URIElement impl);
+    public Binding.DiagElem bindDiagElem(DiagElemElement impl);
 }
 

@@ -55,6 +55,7 @@ public class MorphismElement extends MemberElement {
 	    this.source = (SourceElement) parent;
 	    this.topLevel = true;
 	} else {
+            this.source = null;
 	    this.topLevel = false;
 	}
     }
@@ -88,6 +89,36 @@ public class MorphismElement extends MemberElement {
     public void setSource(SourceElement source) {
         this.source = source;
     }
+    
+    /** Get the value sourceUnitID of the Morphism.
+     * @return the sourceUnitID as a string
+     */
+    public UnitID getSourceUnitID() {
+        return getMorphismImpl().getSourceUnitID();
+    }
+
+    /** Set the value sourceUnitID of the morphism
+     * @param sourceUnitID of the morphism
+     * @throws SourceException if impossible
+     */
+    public void setSourceUnitID(UnitID sourceUnitID) throws SourceException {
+        getMorphismImpl().setSourceUnitID(sourceUnitID);
+    }
+
+    /** Get the value targetUnitID of the Morphism.
+     * @return the targetUnitID as a string
+     */
+    public UnitID getTargetUnitID() {
+        return getMorphismImpl().getTargetUnitID();
+    }
+
+    /** Set the value targetUnitID of the morphism
+     * @param targetUnitID of the morphism
+     * @throws SourceException if impossible
+     */
+    public void setTargetUnitID(UnitID targetUnitID) throws SourceException {
+        getMorphismImpl().setTargetUnitID(targetUnitID);
+    }    
     
     //================== TODO: ADD THESE METHODS FOR EACH SUB-ELEMENT ===============================
 
@@ -168,23 +199,19 @@ public class MorphismElement extends MemberElement {
 
         printer.markMorphism(this, printer.HEADER_BEGIN); // HEADER begin
         if (topLevel) {
-	    printer.println(getName()+" =");
+	    printer.print(getName()+" = ");
 	}
 	printer.print(HEADER_FORMAT.format(this));
 
         printer.markMorphism(this, printer.HEADER_END); // HEADER end
 
         printer.markMorphism(this, printer.BODY_BEGIN); // BODY begin
-        printer.println(""); // NOI18N
-
-/*        if (print(getImports(), printer)) {
-            printer.println(""); // NOI18N
-            printer.println(""); // NOI18N
-        }
-*/
-        printer.println(""); // NOI18N
+        printer.print(" "); // NOI18N
+        printer.print(getSourceUnitID().toString());
+        printer.println(" -> "); // NOI18N
+        printer.print(getTargetUnitID().toString());
+        printer.println(" {} ");
         printer.markMorphism(this, printer.BODY_END); // BODY end
-//        printer.print("endspec"); // NOI18N
 
         if (topLevel) {
 	    printer.println("");
@@ -260,12 +287,28 @@ public class MorphismElement extends MemberElement {
      * @see MorphismElement
      */
     public static interface Impl extends MemberElement.Impl {
-        /** Add some items. */
-        public static final int ADD = SpecElement.Impl.ADD;//1;
-        /** Remove some items. */
-        public static final int REMOVE = SpecElement.Impl.REMOVE;//-1;
-        /** Set some items, replacing the old ones. */
-        public static final int SET = SpecElement.Impl.SET;//0;
+
+        /** Get the value sourceUnitID of the Morphism.
+         * @return the sourceUnitID element
+         */
+        public UnitID getSourceUnitID();
+
+        /** Set the value sourceUnitID of the Morphism.
+         * @param sourceUnitID the sourceUnitID element
+         * @throws SourceException if impossible
+         */
+        public void setSourceUnitID(UnitID sourceUnitID) throws SourceException;
+
+        /** Get the value targetUnitID of the Morphism.
+         * @return the targetUnitID element
+         */
+        public UnitID getTargetUnitID();
+
+        /** Set the value targetUnitID of the Morphism.
+         * @param targetUnitID the targetUnitID element
+         * @throws SourceException if impossible
+         */
+        public void setTargetUnitID(UnitID targetUnitID) throws SourceException;
 
         //==============TODO======================
         /** Change the set of imports.
@@ -292,10 +335,15 @@ public class MorphismElement extends MemberElement {
     /** Memory based implementation of the element factory.
      */
     static final class Memory extends MemberElement.Memory implements Impl {
+
+        private UnitID sourceUnitID;
+        private UnitID targetUnitID;
+        
         /** collection of imports */
 //        private MemoryCollection.Import imports;       
 
         public Memory() {
+            sourceUnitID = targetUnitID = null;
         }
 
         /** Copy constructor.
@@ -303,14 +351,50 @@ public class MorphismElement extends MemberElement {
 	 */
         public Memory(MorphismElement el) {
             super(el);
+
         }
 
         /** Late initialization of initialization of copy elements.
         */
-        public void copyFrom (MorphismElement copyFrom) {
-//            changeImports (copyFrom.getImports (), SET);
+        public void copyFrom (MorphismElement copyFrom)/*throws SourceException*/ {
+            //try {
+		setSourceUnitID(copyFrom.getSourceUnitID()); 
+		setTargetUnitID(copyFrom.getTargetUnitID()); 
+	    //} catch (SourceException ex) { }
         }
 
+        /** SourceUnitID of the variable.
+	 * @return the sourceUnitID
+	 */
+        public UnitID getSourceUnitID() {
+            return sourceUnitID;
+        }
+
+        /** Setter for the sourceUnitID variable.
+	 * @param sourceUnitID the variable sourceUnitID
+	 */
+        public void setSourceUnitID(UnitID sourceUnitID) {
+            UnitID old = this.sourceUnitID;
+            this.sourceUnitID = sourceUnitID;
+            firePropertyChange (PROP_SOURCE_UNIT_ID, old, sourceUnitID);
+        }
+        
+        /** DTargetUnitID of the variable.
+	 * @return the targetUnitID
+	 */
+        public UnitID getTargetUnitID() {
+            return targetUnitID;
+        }
+
+        /** Setter for the targetUnitID variable.
+	 * @param targetUnitID the variable targetUnitID
+	 */
+        public void setTargetUnitID(UnitID targetUnitID) {
+            UnitID old = this.targetUnitID;
+            this.targetUnitID = targetUnitID;
+            firePropertyChange (PROP_TARGET_UNIT_ID, old, targetUnitID);
+        }
+        
         /** Changes set of elements.
 	 * @param elems elements to change
 	 * @param action the action to do(ADD, REMOVE, SET)

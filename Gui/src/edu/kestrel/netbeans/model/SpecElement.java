@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/02/18 18:13:04  weilyn
+ * Added support for imports.
+ *
  * Revision 1.4  2003/02/17 07:03:03  weilyn
  * Removed the {n} tag in the ElementFormat because it gave parsing errors.
  *
@@ -77,6 +80,7 @@ public final class SpecElement extends MemberElement {
 	    this.source = (SourceElement) parent;
 	    this.topLevel = true;
 	} else {
+            this.source = null;
 	    this.topLevel = false;
 	}
     }
@@ -448,7 +452,7 @@ public final class SpecElement extends MemberElement {
 
         printer.markSpec(this, printer.HEADER_BEGIN); // HEADER begin
         if (topLevel) {
-	    printer.println(getName()+" =");
+	    printer.print(getName()+" = ");
 	}
 	printer.print(HEADER_FORMAT.format(this));
 
@@ -560,12 +564,6 @@ public final class SpecElement extends MemberElement {
      * @see SpecElement
      */
     public static interface Impl extends MemberElement.Impl {
-        /** Add some items. */
-        public static final int ADD = 1;
-        /** Remove some items. */
-        public static final int REMOVE = -1;
-        /** Set some items, replacing the old ones. */
-        public static final int SET = 0;
 
         /** Change the set of imports.
          * @param elems the new imports

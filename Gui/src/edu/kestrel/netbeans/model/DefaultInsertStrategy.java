@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/01 02:29:36  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.4  2003/03/29 03:13:55  weilyn
  * Added support for morphism nodes.
  *
@@ -100,7 +103,9 @@ class DefaultInsertStrategy implements Positioner {
                 return getFirstNonEmpty(source, 3);
             } else if (selector instanceof ColimitElement) {
                 return getFirstNonEmpty(source, 4);
-            }
+            } /*else if (selector instanceof URIElement) {
+                return getFirstNonEmpty(source, 5);
+            } */
 	} else if (container instanceof SpecElement) {
 	    SpecElement spec = (SpecElement) container;
 	    if (selector instanceof ImportElement) {
@@ -125,6 +130,9 @@ class DefaultInsertStrategy implements Positioner {
             //TODO
         } else if (container instanceof ColimitElement) {
             ColimitElement diagram = (ColimitElement) container;
+            //TODO
+        } else if (container instanceof ProofElement) {
+            ProofElement proof = (ProofElement) container;
             //TODO
         } 
 	return null;
