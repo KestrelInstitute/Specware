@@ -95,13 +95,41 @@ SpecCalc qualifying spec
 	  case evalPartial m QId of
 	    | Some nQId -> nQId
 	    | _ -> QId
-	def translateSort (srt) =
+	def translateSort srt =
 	  case srt of
-	    | Base (QId, srts, a) -> Base (findName sortMap QId, srts, a)
+	    | Base (QId, srts, a) -> 
+	      let cod_srt =
+	          (case findName sortMap QId of
+		     | Qualified("Boolean", "Boolean") -> Boolean a
+		     | cod_qid -> Base (cod_qid, srts, a))
+	      in
+		cod_srt
 	    | _ -> srt
-	def translateTerm (trm) =
+	def translateTerm trm =
 	  case trm of
-	    | Fun (Op (QId, f), srt, a) -> Fun (Op (findName opMap QId, f), srt, a)
+	    | Fun (Op (dom_qid, fixity), srt, a) -> 
+	      let cod_qid as Qualified (q, id) = findName opMap dom_qid in
+	      let fun =
+	          (case q of
+		     | "Boolean" ->
+	               (case id of 
+			  | "~"   -> Not
+			  | "&&"  -> 
+			    let _ = toScreen ("\n?? Translating " ^ (printQualifiedId dom_qid) ^  " to '&&' ??\n") in
+			    And
+			  | "||"  -> 
+			    let _ = toScreen ("\n?? Translating " ^ (printQualifiedId dom_qid) ^  " to '||' ??\n") in
+			    Or
+			  | "=>"  -> 
+			    let _ = toScreen ("\n?? Translating " ^ (printQualifiedId dom_qid) ^  " to '=>' ??\n") in
+			    Implies
+			  | "<=>" -> Iff
+			  | "="   -> Equals
+			  | "~="  -> NotEquals
+			  | _ -> Op (cod_qid, fixity))
+		     | _ -> Op (cod_qid, fixity))
+	      in
+		Fun (fun, srt, a)
 	    | _ -> trm
     in 
     mapTerm (translateTerm, translateSort, id) tm
