@@ -20,13 +20,10 @@ spec
   type Type?    = Option Type
   type Pattern? = Option Pattern
 
-  type BoundVariable  = Variable * Type
-
-  type Types          = FSeq Type
-  type Expressions    = FSeq Expression
-  type Patterns       = FSeq Pattern
-  type Type?s         = FSeq Type?
-  type BoundVariables = FSeq BoundVariable
+  type Types       = FSeq Type
+  type Expressions = FSeq Expression
+  type Patterns    = FSeq Pattern
+  type Type?s      = FSeq Type?
 
 
   %%%%%%%%
@@ -122,11 +119,11 @@ spec
     | binary          BinaryExprOperator * Expression * Expression
     | ifThenElse      Expression * Expression * Expression
     | nary            NaryExprOperator * Expressions
-    | binding         BindingExprOperator * BoundVariables * Expression
+    | binding         BindingExprOperator * Variables * Types * Expression
     | opInstance      Operation * Types
     | embedder        Type * Constructor
     | casE            Expression * Patterns * Expressions
-    | recursiveLet    BoundVariables * Expressions * Expression
+    | recursiveLet    Variables * Types * Expressions * Expression
     | nonRecursiveLet Pattern * Expression * Expression
 
 
@@ -151,11 +148,11 @@ spec
   pattern. We use `Option' for that. *)
 
   type Pattern =
-    | variable  BoundVariable
+    | variable  Variable * Type
     | embedding Type * Constructor * Pattern?
     | record    Fields * Patterns
     | tuple     Patterns
-    | alias     BoundVariable * Pattern
+    | alias     Variable * Type * Pattern
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -207,7 +204,7 @@ spec
          length vS = length tS
       && forall? (tS, predT)
       && predE e
-      => predE (binding (eo, zip (vS, tS), e)))
+      => predE (binding (eo, vS, tS, e)))
    && (fa (o:Operation, tS:Types)
          forall? (tS, predT)
       => predE (opInstance (o, tS)))
@@ -224,7 +221,7 @@ spec
       && forall? (tS, predT)
       && forall? (eS, predE)
       && predE e
-      => predE (recursiveLet (zip (vS, tS), eS, e)))
+      => predE (recursiveLet (vS, tS, eS, e)))
    && (fa (p:Pattern, e:Expression, e1:Expression)
          predP p
       && predE e
@@ -251,7 +248,7 @@ spec
    && (fa (v:Variable, t:Type, p:Pattern)
          predT t
       && predP p
-      => predP (alias ((v,t), p)))
+      => predP (alias (v, t, p)))
 
   %%%%% induction conclusion:
    => (fa(t) predT t)
@@ -305,7 +302,7 @@ spec
   def PRODUCT tS = nary (product, tS)
 
   op \ infixl 30 : Type * Expression -> Type
-     % can't use `|'
+     % `|' causes syntax error
   def \ (t,e) = subQuot (embed sub, t, e)
                          % without `embed', type checker complains
 
@@ -380,29 +377,29 @@ spec
   op PAIR : Expression -> Expression -> Expression
   def PAIR e1 e2 = TUPLE (seq2 (e1, e2))
 
-  op FN : BoundVariable -> Expression -> Expression
-  def FN bv e = binding (abstraction, singleton bv, e)
+  op FN : Variable -> Type -> Expression -> Expression
+  def FN v t e = binding (abstraction, singleton v, singleton t, e)
 
-  op FNN : BoundVariables -> Expression -> Expression
-  def FNN bvS e = binding (abstraction, bvS, e)
+  op FNN : Variables -> Types -> Expression -> Expression
+  def FNN vS tS e = binding (abstraction, vS, tS, e)
 
-  op FA : BoundVariable -> Expression -> Expression
-  def FA bv e = binding (universal, singleton bv, e)
+  op FA : Variable -> Type -> Expression -> Expression
+  def FA v t e = binding (universal, singleton v, singleton t, e)
 
-  op FAA : BoundVariables -> Expression -> Expression
-  def FAA bvS e = binding (universal, bvS, e)
+  op FAA : Variables -> Types -> Expression -> Expression
+  def FAA vS tS e = binding (universal, vS, tS, e)
 
-  op EX : BoundVariable -> Expression -> Expression
-  def EX bv e = binding (existential, singleton bv, e)
+  op EX : Variable -> Type -> Expression -> Expression
+  def EX v t e = binding (existential, singleton v, singleton t, e)
 
-  op EXX : BoundVariables -> Expression -> Expression
-  def EXX bvS e = binding (existential, bvS, e)
+  op EXX : Variables -> Types -> Expression -> Expression
+  def EXX vS tS e = binding (existential, vS, tS, e)
 
-  op EX1 : BoundVariable -> Expression -> Expression
-  def EX1 bv e = binding (existential1, singleton bv, e)
+  op EX1 : Variable -> Type -> Expression -> Expression
+  def EX1 v t e = binding (existential1, singleton v, singleton t, e)
 
-  op EXX1 : BoundVariables -> Expression -> Expression
-  def EXX1 bvS e = binding (existential1, bvS, e)
+  op EXX1 : Variables -> Types -> Expression -> Expression
+  def EXX1 vS tS e = binding (existential1, vS, tS, e)
 
   op OPP : Operation -> Types -> Expression
   def OPP o tS = opInstance(o,tS)
@@ -416,16 +413,16 @@ spec
   op CASE : Expression -> Patterns -> Expressions -> Expression
   def CASE e pS eS = casE (e, pS, eS)
 
-  op LETDEF : BoundVariables -> Expressions -> Expression -> Expression
-  def LETDEF bvS eS e = recursiveLet (bvS, eS, e)
+  op LETDEF : Variables -> Types -> Expressions -> Expression -> Expression
+  def LETDEF vS tS eS e = recursiveLet (vS, tS, eS, e)
 
   op LET : Pattern -> Expression -> Expression -> Expression
   def LET p e e1 = nonRecursiveLet (p, e, e1)
 
   % patterns:
 
-  op PVAR : BoundVariable -> Pattern
-  def PVAR = embed variable
+  op PVAR : Variable -> Type -> Pattern
+  def PVAR v t = variable (v, t)
 
   op PEMBE : Type -> Constructor -> Pattern
   def PEMBE t c = embedding (t, c, None)
@@ -439,8 +436,8 @@ spec
   op PTUPLE : Patterns -> Pattern
   def PTUPLE pS = tuple pS
 
-  op AS infixl 30 : BoundVariable * Pattern -> Pattern
-  def AS (bv,p) = alias (bv, p)
+  op AS : Variable -> Type -> Pattern -> Pattern
+  def AS v t p = alias (v, t, p)
 
 
   %%%%%%%%%%%
@@ -459,7 +456,7 @@ spec
     | opDefinition       Operation * TypeVariables * Expression
     | axioM              AxiomName * TypeVariables * Expression
     | typeVarDeclaration TypeVariable
-    | varDeclaration     BoundVariable
+    | varDeclaration     Variable * Type
 
   type Context = FSeq ContextElement
 
