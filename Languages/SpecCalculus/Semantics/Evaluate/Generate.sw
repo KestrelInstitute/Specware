@@ -37,7 +37,7 @@ Make a lisp file name for a URI.
      let filNm = (uriToPath {path=prefix,hashSuffix=None})
         ^ "/lisp/" ^ mainName ^ ".lisp"
      in
-     {print("Lisp file name " ^ filNm ^ "\n");
+     {print(";;; Generating lisp file " ^ filNm ^ "\n");
       return filNm}}
 \end{spec}
 
