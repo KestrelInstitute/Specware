@@ -134,7 +134,7 @@
 	     (loop for l on alist
 		 until (not (consp l))
 		 when (equal (caar l) x)
-		 return (mkSome (cdar l))
+		 return (cdar l)
 		 finally (return (gethash x (map-as-undo-harray--harray m)
 					  *undefined*)))))))
     (if (eq val *undefined*) *undefined*
@@ -216,10 +216,12 @@
 (defvar *foldi-vector* (vector nil nil nil))
 
 (defun foldi-vector (x y z)
+  ;(vector x y z)
   (setf (svref *foldi-vector* 0) x)
   (setf (svref *foldi-vector* 1) y)
   (setf (svref *foldi-vector* 2) z)
-  *foldi-vector*)
+  *foldi-vector*
+  )
 
 #+allegro
 (progn (setf (get 'foldi 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
