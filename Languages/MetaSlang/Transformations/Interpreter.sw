@@ -391,6 +391,11 @@ spec
 				   | Some s -> Constructor("Some",String s))
        | ("garbageCollect",Bool b) -> let _ = garbageCollect b in RecordVal []
        | ("trueFilename",String s) -> String(trueFilename s)
+
+       | ("anyToString", Int i)      -> String (toString i)
+       | ("anyToString", Bool b)     -> String (toString b)
+       | ("anyToString", Char c)     -> String (toString c)
+       | ("anyToString", arg)     -> String (anyToString arg)
        %% Missing System. time, msWindowsSystem?, hackMemory
 
        | _                      -> default()
