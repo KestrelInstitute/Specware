@@ -22,7 +22,13 @@ writing the definitions in <".sw"> files.
 syllables in ``&Specware;''.)</para>
 
 <para>Currently, the only way to construct units in &Specware; is by
-writing text in &Metaslang;. Future versions of &Specware; will
+writing text in &Metaslang;.
+The <".sw"> files that define units are
+edited outside of &Specware;, using XEmacs, Notepad,
+Vim, or any other text editor of choice.
+These files are processed by &Specware; by giving
+suitable commands to the &SShell;.
+Future versions of &Specware; will
 include the ability to construct units by other means. For instance,
 instead of listing the nodes and edges of a diagram in text, it will
 be possible to draw the diagram on the screen.</para>
@@ -33,22 +39,19 @@ be possible to draw the diagram on the screen.</para>
 <title>Interaction</title>
 
 <para>The interaction between the user and &Specware; takes place
-through the &Specware; shell. The <".sw"> files that define units are
-edited outside of &Specware;, i.e., using XEmacs, Notepad,
-Vim, or any other text editor of choice.
-These files are processed by &Specware; by giving
-suitable commands to the &Specware; shell.</para>
+through the &SShell;.
+</para>
 
 <para>When <".sw"> files are processed by &Specware;, progress and
 error messages are displayed in the XEmacs buffer containing
-the &Specware; shell.
+the &SShell;.
 In addition, the results of processing are saved into an
 internal cache that &Specware; maintains. Lastly, processing of
 certain kinds of units result in new files being created.  For
 example, when Lisp code is generated from a spec, the code is
 deposited into a <".lisp"> file.</para>
 
-<para>From the &Specware; shell it is possible to evaluate
+<para>From the &SShell; it is possible to evaluate
 Metaslang expressions in the context of a given spec, either
 directly or through generated Lisp code.</para>
 

@@ -110,7 +110,7 @@ containing the following text:</para>
 ]]
 
 <para>The absolute path of the file in the file system is
-<"C:\users\me\specware\one\two\A.sw">. The unit is a spec containing
+<"C:\users\me\specware\one\two\A.sw">. The unit is a spec declaring
 just a type [[X]]. The identifier of the unit is [[/one/two/A]]. Note
 that the path components are separated by ``/'' (forward slash), even
 though the underlying file system uses ``\'' (backward slash). Unit
@@ -158,8 +158,9 @@ text:</para>
 ||    endspec
 ]]
 
-<para>This file defines two specs, one containing just a type [[Y]],
-the other containing just a type [[Z]]. The identifier of the first
+<para>This file defines two specs, one declaring just a type [[Y]],
+the other, next to importing the first spec,
+declaring just a type [[Z]]. The identifier of the first
 spec is [[/one/two/three#B]], the identifier of the second spec is
 [[/one/two/three#three]].</para>
 

@@ -5,7 +5,7 @@
 generate C code from executable MetaSlang specs. The C generator has
 been tested to work under Linux as well as Windows the latter using
 the cygwin package.  The C code generator can either be called from
-the &Specware; shell or using the SpecCalc "generate" construct inside
+the &SShell; or using the SpecCalc "generate" construct inside
 a .sw file. In both cases, an additional parameter can be supplied
 specifying the base name of the C source and header files into which
 the C code will be generated.  </para>
@@ -44,7 +44,7 @@ suffix ".c" can be omitted or not.</para>
 <title>Generating, Compiling and Running the generated C code using "make"</title>
 
 <para>The easiest and recommended way of generating C code and compiling it
-is by using the &Specware; shell command</para>
+is by using the &SShell; command</para>
 
 [[
 ||   make <unit-id>

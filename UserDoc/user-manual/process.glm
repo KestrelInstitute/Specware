@@ -1,5 +1,5 @@
 <chapter id="process">
-<title>Processing Units</title>
+<title>The &SShell;</title>
 
 <section>
 <title>Overview</title>
@@ -18,14 +18,13 @@ processed, [[B]] and [[C]] are also processed. There must be no
 circularities in the chain of unit dependencies.</para>
 
 <para>Processing causes progress and/or error messages to be displayed
-in the XEmacs buffer containing the Lisp shell (which is also where
-the user supplies commands to &Specware;). Progress messages inform
+in the XEmacs buffer containing the &SShell;. Progress messages inform
 the user that units were processed without error. Error messages
 provide information on the cause of errors, so that the user can fix
 them by editing the unit definitions. When an error occurs in the
 definition of some unit, &Specware; displays the <".sw"> file
 containing the unit term in a separate XEmacs buffer, with the cursor
-positioned at the point containing the erroneous text.</para>
+positioned at the point of the erroneous text.</para>
 
 <para>The processing of certain kinds of units also results in the
 creation of new files as an additional side effect. For instance, Lisp
@@ -38,11 +37,71 @@ results into an internal cache, associating the results with the
 unit's identifier. By using this cache, &Specware; avoids unnecessary
 re-computations: it only re-processes the units whose files have
 changed since the last time they were processed. From the point of
-view of the final result, this caching mechanism is completely
+view of the final result, this caching mechanism is
 transparent to the user. However, it improves the performance and
 response time of the system.</para>
 
+<para>
+To determine whether the files &Specware; is asked to process may have
+changed since the last time they were processed, the caching mechanism
+uses the ``last modified'' date and time of the files.
+Under certain circumstances this may lead to the wrong result.
+Say there are two files named <"mickey.sw"> and <"minny.sw">.
+If the user first lets &Specware; process <"mickey.sw">, and then
+deletes that file and renames <"minny.sw"> to <"mickey.sw">,
+the system will be fooled into assuming that <"mickey.sw"> does not need
+to be re-processed, since its modification time is that of the otriginal
+<"minny.sw"> file, and so is older than the last time <"mickey.sw"> was
+processed.
+All other scenarios that may lead to the wrong results are variations on
+this theme, replacing a file with one with the same name but different
+content during a &Specware; session without adjusting its modification
+time, or by antedating its modification time.
+</para>
+
 </section>  <!-- overview -->
+
+<section>
+<title>Typechecking Specs</title>
+
+<para>The user can construct specs by explicitly listing the types,
+ops, and axioms comprising the spec, possibly after importing one or
+more spec. When a spec is processed, &Specware;
+typechecks all the expressions that appear in the spec. Typechecking
+means checking that the expressions are type-correct, according to the
+rules of the &Metaslang; language.</para>
+
+<para>In general, only some of the ops and variables that appear in an
+expression have explicit type information. Typechecking
+also involves reconstructing the types of those ops and variables that
+lack explicit type information.</para>
+
+<para>Typechecking is an integrated process that checks the type
+correctness of expressions while reconstructing the missing type
+information. This is done by deriving and solving type constraints
+from the expression. For instance, if it is known that an op [[f]] has
+type [[A -> B]] then the type of the variable [[x]] in the expression
+[[f(x)]] must be [[A]], and the type of the whole expression must be
+[[B]].</para>
+
+<para>If the missing type information cannot be uniquely reconstructed
+and/or if certain constraints are violated, &Specware; signals an
+error, indicating the textual position of the problematic
+expression.</para>
+
+<para>Since the &Metaslang; type system features subtypes defined by
+arbitrary predicates, it is in general undecidable whether an
+expression involving subtypes is type-correct or not. When &Specware;
+processes a spec, it assumes that the type constraints arising from
+subtypes are satisfied, thus making typechecking decidable.</para>
+
+<para>The proof obligations associated with a spec, which are
+extracted via the &Metaslang; [[obligations]] operation, include
+conjectures derived from the type constraints arising from subtypes.
+If all of these conjectures can be proved (using a theorem prover)
+then all the expressions in the spec are type-correct.</para>
+
+</section>
 
 <section>
 <title>Resolution of Unit Identifiers</title>
@@ -329,156 +388,170 @@ identifier is a path element.</para>
 </section>  <!-- resolution of unit identifiers -->
 
 <section>
-<title>Processing Commands</title>
+<title>Command Format</title>
 
-<para>The &Specware; command to process units is [[L::sw]]. The user
-supplies this command in the XEmacs buffer of the Lisp shell, followed
-by an argument. The argument is a unit identifier.</para>
+<para> Each &SShell; command consists of a keyword, the command name,
+followed by zero or more arguments.
+Several &SShell; commands have ``optional arguments'': they allow a
+variable number of arguments; e.g.,
+zero or one.
+For many such commands, the zero-argument version means: use the last
+argument of the same kind last used for a &SShell; command.
+In other cases, it means: use a default value for the omitted argument.
+Which commands use which convention is detailed below.
+Optional arguments are given between square brackets [[[]] and [[]]].
+</para>
 
-<!-- LEFT OUT FOR NOW:
+<para>
+A command entered by the user should be typed all on one line.
+The Return/Enter at the end of the line signals to the &SShell;
+that the command must be executed.
+</para>
 
-<para>The &Specware; command to process units is [[L::sw]]. The user
-supplies this command in the XEmacs buffer of the Lisp shell, followed
-by an argument. The argument is a unit reference, a piece of text
-defining an unnamed unit, or the name of a multiple-unit file. The
-whole command (including the argument) must fit in one line.</para>
+</section>
 
--->
+<section>
+<title>Miscellaneous Commands</title>
+<para>
+The commands described in this section do not process units, but some
+may influence the way later processing commands work.
+</para>
+
+<para>
+There is a help command:
+[[
+||    help [$command-name$]
+]]
+It shows a terse description of the command on the output.
+Without argument, it gives a description of all Shell commands.
+</para>
+
+<para>
+The change-directory command
+[[
+||    cd [$directory$]
+]]
+sets the current directory (folder) to the argument, which must be a valid
+pathname for a directory in the file system, either absolute or relative
+to the present directory.
+To move one level up, to the parent of the current directory, the
+special notation ``[[..]]'' can be used.
+The full pathname of the new current directory is then displayed.
+This influences the subsequent resolution of unit identifiers
+if ``[[.]]'' is on the &swpath;.
+With no argument, the command [[cd]] just shows the current directory.
+</para>
+
+<para>
+Two commands allow listing &Specware; files:
+[[
+||    dir
+]]
+list the <".sw"> files in the current directory, while
+[[
+||    dirr
+]]
+(for DIR Recursive) also lists those in sub-directories.
+</para>
+
+</section>
 
 <section>
 <title>Processing a Unit</title>
 
-<para>The command to process a unit is:</para>
-
-[[L:
-||    :sw <unit-identifier>
+<para>The command to process a unit is:
+[[
+||    proc [$unit-term$]
 ]]
+The argument can be any unit term: a simple unit identifier, a
+diagram colimit, a proof term, and so on.
+</para>
 
-<para>The unit identifier can be &swpath;-based or relative. If it is
-&swpath;-based, &Specware; attempts to resolve it as explained in
-<xref linkend="swpathuid">.  If it is relative, &Specware; attempts to
-resolve it as explained in <xref linkend="relativeuid">, as if the
-unit identifier occurred in a single-unit file of the current Lisp
-directory. Either way, if resolution fails an error is signaled by
-&Specware;.</para>
+<para>If the argument is not a syntactically valid unit term,
+or some unit identifier in the term fails to resolve
+as explained in <xref linkend="swpathuid">,
+an error is signaled by &Specware;.</para>
 
-<para>If instead resolution succeeds, &Specware; parses and evaluates
-the unit term that results from resolution. Parsing and evaluation
+<para>Otherwise &Specware; parses and elaborates
+the unit term that results from resolution. Parsing and elaboration
 carry out the computations to construct the unit; they are
-&Specware;'s ``core'' functionality. Parsing and evaluation implement
+&Specware;'s ``core'' functionality. Parsing and elaboration implement
 the semantics of the &Metaslang; language.</para>
 
+<para>In this process, &Specware; performs further checks on the
+requirements as stated in the language manual, such as non-ambiguity of
+names.  If any errors are found, they are signaled</para>
+
 <para>If the unit term references other units, &Specware; recursively
-resolves the unit identifiers and parses and evaluates their unit
+resolves the unit identifiers and parses and elaborates their unit
 terms.</para>
 
-</section>
+<para>Finally, if all went well, &Specware; typechecks the unit
+resulting from the elaboration process, if applicable, and
+signals any errors detected.</para>
 
-<!-- LEFT OUT FOR NOW:
+<para>The elaboration of some unit terms may have side effects: code
+generation; prover invocation.  This is only done if no error was
+encountered.
+</para>
 
-<section>
-<title>Processing an Unnamed Unit</title>
+<para>
+Without argument, the [[proc]] command re-processes the last unit term
+given.
+It is an error if no unit term was given before.
+</para>
 
-<para>The command to process an unnamed unit is:</para>
-
-[[L:
-||    :sw <unit-defining-text>
+<para>
+It is also possible to process a multiple-unit file all at once:
+[[
+||    proc $multi-unit-identifier$
 ]]
-
-<para>The unit defining text is written in the &Metaslang;
-language. It can be anything that can appear in a single-unit file or
-to the right of ``='' in a unit definition is a multiple-unit file.
-The only restriction is that it must fit in one line.  &Specware;
-parses and evaluates the text. If it references other units, &Specware;
-recursively resolves the unit identifiers and parses and evaluates
-their unit terms.</para>
-
-</section>
-
--->
-
-<section>
-<title>Processing a Multiple-Unit File</title>
-
-<para>The command to process a multiple-unit file is:</para>
-
-[[L:
-||   :sw <unit-identifier>
-]]
-
-<para>The unit identifier must not contain ``#'' and the the file must
+The unit identifier must not contain ``<:#:>'' and the file must
 not contain a unit of the same name as the file (without the directory
 and extension). &Specware; attempts to resolve the unit identifier. If
 it is a relative unit identifier, it is resolved as if it occurred
 inside a single-unit file in the Lisp current directory.  However, the
 file obtained at the third step must be a multi-unit file, and not a
 single-unit file.  If it is indeed a multi-unit file, &Specware;
-parses and evaluates all the unit definitions inside the file.</para>
+parses and elaborates all the unit definitions inside the file.</para>
 
-
-</section>
-
-<!-- LEFT OUT FOR NOW:
-
-<section>
-<title>Repeating the Last Processing Command</title>
-
-<para>If the [[L::sw]] command is given without an argument,
-&Specware; re-executes the last [[L::sw]] command that has been
-executed. If no [[L::sw]] command has been yet executed in the current
-&Specware; session, an error is signaled.</para>
+<para>
+Finally, the command [[proc]] may be abbreviated to [[p]].
+</para>
 
 </section>
 
--->
-
-</section>  <!-- processing commands -->
-
 <section>
-<title>Unit-Specific Processing</title>
+<title>Showing a Unit</title>
 
-<para>This section describes what happens when specific kinds of units
-are processed.</para>
+<para>The command to show a unit is:
+[[
+||    show [$unit-term$]
+]]
+As for [[proc]] the argument can be any unit term: a simple unit identifier, a
+diagram colimit, a proof term, and so on, and a missing argument means:
+use the last argument supplied in a unit-term position.
+However, unlike for [[proc]], the argument can not be a multi-unit identifier.
+</para>
 
-<section>
-<title>Typechecking Specs</title>
+<para>The unit term is processed as for the [[proc]] command.
+If no error occurred, the unit resulting from elaborating the 
+unit term is shown on the output.
+Imported specs may not be expanded in the output, white space may be
+different, declarations may have been added or re-ordered, and
+explicit qualifications may have been added.
+</para>
 
-<para>The user can construct specs by explicitly listing the types,
-ops, and axioms comprising the spec, possibly after importing one or
-more spec. When these spec definitions are processed, &Specware;
-typechecks all the expressions that appear in the spec. Typechecking
-means checking that the expressions are type-correct, according to the
-rules of the &Metaslang; language.</para>
+<para>To show imported specs expanded in place, use:
+[[
+||    showx [$unit-term$]
+]]
+(for SHOW eXpanded).
 
-<para>In general, only some of the ops and variables that appear in an
-expression have explicit type information. Typechecking
-also involves reconstructing the types of those ops and variables that
-lack explicit type information.</para>
-
-<para>Typechecking is an integrated process that checks the type
-correctness of expressions while reconstructing the missing type
-information. This is done by deriving and solving type constraints
-from the expression. For instance, if it is known that an op [[f]] has
-type [[A -> B]] then the type of the variable [[x]] in the expression
-[[f(x)]] must be [[A]], and the type of the whole expression must be
-[[B]].</para>
-
-<para>If the missing type information cannot be uniquely reconstructed
-and/or if certain constraints are violated, &Specware; signals an
-error, indicating the textual position of the problematic
-expression.</para>
-
-<para>Since the &Metaslang; type system features subsorts defined by
-arbitrary predicates, it is in general undecidable whether an
-expression involving subsorts is type-correct or not. When &Specware;
-processes a spec, it assumes that the type constraints arising from
-subsorts are satisfied, thus making typechecking decidable.</para>
-
-<para>The proof obligations associated with a spec, which are
-extracted via the &Metaslang; [[obligations]] operation, include
-conjectures derived from the type constraints arising from subsorts.
-If all of these conjectures are discharged (using a theorem prover)
-then all the expressions in the spec are type-correct.</para>
+<para>
+``Showing'' a proof unit has the same effect as just processing it;
+the elaboration of a proof unit is only in the side effects.
+</para>
 
 </section>
 
@@ -504,34 +577,29 @@ unit identifier given as argument to [[generate]].</para>
 <para>For example, suppose that the first directory in &swpath; is
 <"C:\tmp"> and that a spec is defined in the single-unit file
 <"C:\tmp\one\two\A.sw">. Suppose that the Lisp program unit is defined
-by:</para>
-
+by:
 [[
 ||    generate lisp /one/two/A
 ]]
-
-<para>Then the code is deposited into the file
+Then the code is deposited into the file
 <"C:\tmp\one\two\lisp\A.lisp">.</para>
 
 <para>As another example, suppose that &swpath; is as before and that
 a spec is defined in the multiple-unit file <"C:\tmp\one\two\f.sw">,
 and that [[B]] is the path element associated with the spec. Suppose
-that the Lisp program unit is defined by:</para>
-
+that the Lisp program unit is defined by:
 [[
 ||    generate lisp /one/two/f#B
 ]]
-
-<para>Then the code is deposited into the file
+Then the code is deposited into the file
 <"C:\tmp\one\two\lisp\B.lisp">.</para>
 
 </section>
 
 &javacodegen; <!-- section on Java code generation -->
+
 &ccodegen; <!-- section on C code generation -->
 
-
-</section>  <!-- unit-specific processing -->
 
 <section>
 <title>Auxiliary Commands</title>
@@ -546,32 +614,29 @@ spec can be constructed by means of various operations in the
 set of types, ops, and axioms.</para>
 
 <para>The [[L::show]] command is used to display the value of a
-unit. Like [[L::sw]], it is also supplied in the XEmacs buffer of the
+unit. Like [[proc]], it is also supplied in the XEmacs buffer of the
 Lisp shell and it is followed by a one-line argument. The argument
 is a unit identifier.</para>
 
-<para>The command to display a unit is:</para>
+<para>The command to display a unit is:
 [[L:
-||    :show <unit-identifier>
+||    :show $unit-identifier$
 ]]
-
-<para>This command first processes the unit, exactly as if it were
-[[L::sw <unit-identifier>]]. In addition, if processing does not yield
+This command first processes the unit, exactly as if it were
+[[proc <unit-identifier>]]. In addition, if processing does not yield
 errors, the value of the unit is displayed on screen. Of course, if
-the unit has been already processed via a [[L::sw]] command and its
+the unit has been already processed via a [[proc]] command and its
 unit term has not been changed after that, the [[L::show]] command
 will access the results saved in &Specware;'s internal cache.</para>
 
 <!-- LEFT OUT FOR NOW:
 
-<para>The command to display an unnamed unit is:</para>
-
+<para>The command to display an unnamed unit is:
 [[L:
-||    :show <unit-defining-text>
+||    :show $unit-defining-text$
 ]]
-
-<para>This command first processes the unit, exactly as if it were
-[[L::sw <unit-defining-text>]]. In addition, if processing does not
+This command first processes the unit, exactly as if it were
+[[proc <unit-defining-text>]]. In addition, if processing does not
 yield errors, the value of the unit is displayed on screen.</para>
 
 -->
@@ -580,7 +645,7 @@ yield errors, the value of the unit is displayed on screen.</para>
 
 <para>If the [[L::show]] command is given without an argument, it
 displays the value of the unit processed by the last [[L::show]]
-command that has been executed. If no [[L::sw]] command has been yet
+command that has been executed. If no [[proc]] command has been yet
 executed in the current &Specware; session, an error is
 signaled.</para>
 
@@ -600,20 +665,16 @@ operations.</para>
 that associates processing results with unit identifiers.</para>
 
 <para>A list of the units currently present in the cache is displayed
-on screen via the following command:</para>
-
+on screen via the following command:
 [[L:
 ||    :list
 ]]
-
-<para>The cache is cleared (i.e., re-initialized) via the following
-command:</para>
-
+The cache is cleared (i.e., re-initialized) via the following
+command:
 [[L:
 ||    :sw-init
 ]]
-
-<para>Normally, there is no need to use these commands.</para>
+Normally, there is no need to use these commands.</para>
 
 </section>
 
@@ -621,20 +682,16 @@ command:</para>
 <title>Inspecting and Setting &swpath;</title>
 
 <para>The value of the &swpath; environment variable is displayed on
-screen via the following command:</para>
-
+screen via the following command:
 [[L:
 ||    :swpath
 ]]
-
-<para>The value of the &swpath; environment variable is changed
-via the following command:</para>
-
+The value of the &swpath; environment variable is changed
+via the following command:
 [[L:
-||    :swpath <string>
+||    :swpath $string$
 ]]
-
-<para>The [[L:<string>]] must be a semicolon-separated list of
+The [[L:<string>]] must be a semicolon-separated list of
 absolute directory paths of the underlying operating system. For
 example, in order to set &swpath; to <"C:\users\me"> it is necessary
 to write [[L::swpath C:\users\me]].</para>
@@ -651,17 +708,15 @@ to its default value.</para>
 
 <para>Normally, Lisp code is generated by constructing a Lisp program
 unit via the &Metaslang; [[generate]] operation and by processing such
-unit via the [[L::sw]] command.</para>
+unit via the [[proc]] command.</para>
 
 <para>&Specware; provides an additional command to accomplish the same
 result without actually creating an explicit Lisp program unit. The
-command is:</para>
-
+command is:
 [[L:
-||    :swl <unit-identifier> <string>
+||    :swl $unit-identifier$ $string$
 ]]
-
-<para>The unit identifier must resolve to a spec, which is processed
+The unit identifier must resolve to a spec, which is processed
 by &Specware;. If the spec is successfully processed, &Specware;
 generates Lisp code from it (according to the semantics of [[generate]])
 and deposits the resulting code into the file whose path is given by
@@ -669,13 +724,11 @@ the string.</para>
 
 <para>The second argument to [[L::swl]], i.e. the string, is optional.
 If it is not given, a file name is inferred as explained in <xref
-linkend="generatelisp"> for [[generate]].</para>
-
+linkend="generatelisp"> for [[generate]].
 [[L:
-||    :swll <unit-identifier>
+||    :swll $unit-identifier$
 ]]
-
-<para>This is like [[L::swl]] except it generates code only for the
+This is like [[L::swl]] except it generates code only for the
 local definitions of the spec given by the unit identifier and not any
 of the imports. It is intended for incremental development, so it
 compiles and loads the lisp definitions. Note that if you have not
@@ -693,40 +746,33 @@ application, compile, load and test it. Then if you make a
 modification to a single spec you can use the [[L::swll]] to just load
 the generated code for the modification.
 This command is also useful when you just want to see the
-generated code for a particular spec.</para>
-
+generated code for a particular spec.
 [[L:
-||    :cl <lisp-file-name>
+||    :cl $lisp-file-name$
 ]]
-
-<para>Compiles and loads a lisp file.</para>
+Compiles and loads a lisp file.</para>
 	
 </section>
 
 <section> 
 <title>Miscellaneous Commands</title>
 
-
+<para>
 [[L:
-||    :sw-help <command-name>
+||    :sw-help $command-name$
 ]]
-
-<para> Prints brief documentation for the specware command
+Prints brief documentation for the specware command
 command-name. If command-name is omitted it prints documentation for
-all the specware commands.</para>
-
+all the specware commands.
 [[L:
-||    :dir <directory>
+||    :dir $directory$
 ]]
-
-<para> Gives directory listing of directory. If directory is omitted
-it uses the current directory.</para>
-
+Gives directory listing of directory. If directory is omitted
+it uses the current directory.
 [[L:
-||    :ls <directory>
+||    :ls $directory$
 ]]
-
-<para> Gives directory listing of directory. If directory is omitted
+Gives directory listing of directory. If directory is omitted
 it uses the current directory.</para>
 
 </section>

@@ -14,6 +14,7 @@
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.1">
  <!ENTITY SpecwareV "&Specware; &V;">
+ <!ENTITY SShell "&Specware; Shell">
  <!ENTITY Metaslang "Metaslang">
  <!ENTITY lt "&#60;">
  <!ENTITY gt "&#62;">

@@ -3,9 +3,9 @@
 
 <para> As an experimental feature, Specware provides the possibility
 to generate Java code from executable MetaSlang specs.  The Java code
-generator can either be called from the &Specware; shell or using the
-SpecCalc "generate" construct inside a .sw file. In both cases, an
-additional "option" spec can be supplied that is used to specify
+generator can either be called from the &SShell; or using the
+[[generate]] construct inside a <".sw"> file. In both cases, an
+additional ``option'' spec can be supplied that is used to specify
 certain parameters.  For the format of the option-spec see below.
 </para>
 
@@ -25,13 +25,13 @@ certain parameters.  For the format of the option-spec see below.
 contains the option-spec (see below).</para>
 
 
-<para>Inside a .sw file:</para>
+<para>Inside a <".sw"> file:</para>
 
 [[
 ||   generate Java <spec-term> with <option-spec-id>
 ]]
 
-<para>Example contents of a .sw file generating Java code: </para>
+<para>Example contents of a <".sw"> file generating Java code: </para>
 
 [[
 ||  let myspec = spec 
@@ -257,7 +257,7 @@ Java Classes --
 
   <para>The code generator interprets all sorts without a definition as base types,
   so that in this case the op myvectorop would become a static method in the
-  generated "Primitive" class.</para>
+  generated [[Primitive]] class.</para>
 </listitem>
 <listitem>
   <para>
@@ -266,9 +266,9 @@ Java Classes --
   the following convention:</para>
 
   <para>
-  Assume, we want to use the instance method "foo(args)" defined in Java class Bar.
+  Assume, we want to use the instance method [[foo(args)]] defined in Java class Bar.
   First, the class must be known to MetaSlang by providing a sort declaration
-  for the class. Then, an op "foo" must be declared with a signature that corresponds
+  for the class. Then, an op [[foo]] must be declared with a signature that corresponds
   to the method's signature with an additional parameter preceeding the others. The sort
   of the parameter must be the class type:</para>
 
@@ -301,14 +301,14 @@ Java Classes --
   The access to Java class methods is very similar to instance methods with the difference
   that instead of the type of the first argument, the qualifier of the op declaration is
   used to determine the class name. Therefore, in general, it is not necessary to declare
-  the class as a sort. Assume we want to access to class method "Math.abs()" from the Java
-  library. We therefore declare the "abs" operator in MetaSlang as follows:</para>
+  the class as a sort. Assume we want to access to class method [[Math.abs()]] from the Java
+  library. We therefore declare the [[abs]] operator in MetaSlang as follows:</para>
 
 [[
 ||   op Math.abs: Integer -> Nat
 ]]
 
-  <para>The code generator will then generate a call to the static method "Math.abs()" whenever
+  <para>The code generator will then generate a call to the static method [[Math.abs()]] whenever
   it is used in the MetaSlang spec.  The access to static methods has lower priority than
   the access to instance methods: if the first argument is a user type that is not refined
   in the spec, than the instance call is generated. In other words, a static method in
@@ -321,8 +321,8 @@ Java Classes --
 Accessing Java Constructors --
   The access of Java constructors follows the same principle as the access of class
   methods.  The difference is that on the MetaSlang side, an op with a name having the
-  prefix "new" and an appropiate result type must be declared.  For instance, the Java
-  class "Vector" declares a constructor with no arguments.  If we want to use that in
+  prefix [[new]] and an appropiate result type must be declared.  For instance, the Java
+  class [[Vector]] declares a constructor with no arguments.  If we want to use that in
   MetaSlang, we have to provide the following declarations:</para>
 
 [[
@@ -330,11 +330,11 @@ Accessing Java Constructors --
 || op Vector.new: () -> Vector
 ]]
 
-  <para>Whenever "Vector.new()" is used as a term in the MetaSlang spec, a call to the
+  <para>Whenever [[Vector.new()]] is used as a term in the MetaSlang spec, a call to the
   corresponding Java constructor in the Vector class is generated.
   If the class has
-  multiple constructors with different parameter lists, multiple "new" ops can be declared
-  in the MetaSlang spec with different suffixes (e.g., "new_2") The Java code ignores the
+  multiple constructors with different parameter lists, multiple [[new]] ops can be declared
+  in the MetaSlang spec with different suffixes (e.g., [[new_2]]) The Java code ignores the
   suffixes, but they are essential for MetaSlang, which doesn't allow the redefinition of
   ops with different signatures.
 </para>
@@ -342,7 +342,7 @@ Accessing Java Constructors --
 
 <para>In general, if multiple methods and constructors from a class in the Java library need to
 be accessed in the MetaSlang spec, it is a good idea to structure them using the
-"qualifying spec" features of MetaSlang. For instance:</para>
+[[qualifying]] features of MetaSlang. For instance:</para>
 
 [[
 || Vector qualifying spec 
