@@ -10,6 +10,10 @@
 (setq ext:*gc-verbose* nil)
 #+cmu
 (setq extensions:*bytes-consed-between-gcs* 10000000)
+#+cmu
+(setq *compile-verbose* nil)
+#+cmu
+(setq *efficiency-note-cost-threshold* 30)
 #+mcl
 (egc t)					; Turn on ephemeral gc
 

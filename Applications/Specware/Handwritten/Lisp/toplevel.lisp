@@ -171,16 +171,16 @@
 	    (mod year 100) month day
 	    hour minute second)))
 
-(defun ensure-directory (pathname)
-  (let* ((full-dir-list (pathname-directory pathname))
-	 (mode (car full-dir-list))
-	 (dir-list (list mode)))
-    (dolist (subdir (cdr full-dir-list))
-      (setq dir-list (append dir-list (list subdir)))
-      (let ((dir-name (make-pathname :directory dir-list)))
-	(unless (probe-file dir-name)
-	  (excl::make-directory dir-name))))
-    (probe-file (make-pathname :directory full-dir-list))))
+;;; This seems to be the commonlisp ensure-directories-exist
+;;;(defun ensure-directory (pathname)
+;;;  (let* ((full-dir-list (pathname-directory pathname))
+;;;	 (mode (car full-dir-list))
+;;;	 (dir-list (list mode)))
+;;;    (dolist (subdir (cdr full-dir-list))
+;;;      (setq dir-list (append dir-list (list subdir)))
+;;;      (let ((dir-name (make-pathname :directory dir-list)))
+;;;	(ensure-directories-exist dir-name)))
+;;;    (probe-file (make-pathname :directory full-dir-list))))
 
 (defun swe (x)
   (let* ((tmp-dir (format nil "~Aswe/" specware::temporaryDirectory))
@@ -195,7 +195,7 @@
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
-    (ensure-directory tmp-dir)
+    (ensure-directories-exist tmp-dir)
     (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
       (if (null *current-swe-spec*)
 	  (format s "spec~%  def swe.tmp = ~A~%endspec~%" x)
@@ -220,7 +220,8 @@
 				 swe::tmp)
 		       (format t "~%Value is ~S~2%" swe::tmp)))
 		    ((fboundp 'swe::tmp)
-		     (let* ((code (excl::func_code #'swe::tmp))
+		     (let* ((code #+allegro (excl::func_code #'swe::tmp)
+				  #-allegro #'swe::tmp)
 			    (auxfn (find-aux-fn code)))
 		       (format t "~%Function is ")
 		       (pprint code)
@@ -228,7 +229,8 @@
 		       (when (fboundp auxfn)
 			 (format t "~%where ~A is " auxfn)
 			 (let ((fn (symbol-function auxfn)))
-			   (let ((code (excl::func_code fn)))
+			   (let ((code #+allegro (excl::func_code fn)
+				       #-allegro fn))
 			     (if (consp code)
 				 (pprint code)
 			       (format t "the compiled function ~A" fn))))
@@ -286,6 +288,7 @@
 (defun swj-config-pkg (&optional pkg)
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
+    #+cmu
     nil)
   (if (not (null pkg))
       (defparameter JGEN::packageName (string pkg))
@@ -293,6 +296,7 @@
   (format t "~A~%" JGEN::packageName))
 
 (defun swj-config-dir (&optional dir)
+  #-cmu
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
     nil)
@@ -302,6 +306,7 @@
   (format t "~A~%" JGEN::baseDir))
 
 (defun swj-config-make-public (&optional ops)
+  #-cmu
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
     nil)
@@ -311,6 +316,7 @@
   (format t "~A~%" JGEN::publicOps))
 
 (defun swj-config-reset ()
+  #-cmu
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
     nil)
