@@ -65,8 +65,10 @@
                                                         
 (defun concat-1 (x) (concat (car x) (cdr x)))
                                              
+#+JLMTEST
 (defun |!cons| (a l) (cons a l))
                                 
+#+JLMTEST
 (defun |!cons|-1 (x) x)
                                                
 (defun |!member| (a l) 
