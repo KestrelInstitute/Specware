@@ -557,6 +557,17 @@ AnnSpecPrinter qualifying spec
 	    let pp2 = ppTerm context (path, parentTerm) tm in
 	    prettysNone [pp1, string " ", pp2]     
 
+          | Any _ -> string "<anyterm>"
+          | And (tms, _) -> prettysNone ([string "<AndTerms: "] 
+					 ++
+					 (foldl (fn (tm, pps) -> 
+						 pps ++
+						 [ppTerm context (path, Top : ParentTerm) tm,
+						  string " "])
+					        []
+						tms)
+					 ++
+					 [string ">"])
 	  | _ -> System.fail "Uncovered case for term")
       
 
@@ -683,7 +694,18 @@ AnnSpecPrinter qualifying spec
       let pp2 = ppSort context (path, parent) srt in
       prettysNone [pp1, string " ", pp2]     
 
-    | Any _ -> string ("<anything>")
+    | Any _ -> string ("<anysort>")
+
+    | And (srts, _) -> prettysNone ([string "<AndSorts: "] 
+				    ++
+				    (foldl (fn (srt, pps) -> 
+					    pps ++
+					    [ppSort context (path, Top : ParentSort) srt,
+					     string " "])
+				           []
+					   srts)
+				    ++
+				    [string ">"])
 
     | _ -> string ("ignoring bad case for sort: " ^ (anyToString srt))
       
