@@ -545,12 +545,14 @@
 	  ;;
 	  (adopt-child node children child-index candidate-child)
 	  ;; number of children is fixed...
-	  (cond (cannibalizing?
-		 (debugging-comment "Cannibalized ~D.  Last node now ~D"
-				    (parser-node-number node)
-				    (parser-node-number candidate-child))
-		 (revise-cannibalized-node node candidate-child))
-		(all-other-required-children-present?
+	  (when cannibalizing?
+	    (debugging-comment "Cannibalized ~D.  Last node now ~D"
+			       (parser-node-number node)
+			       (parser-node-number candidate-child))
+	    (revise-cannibalized-node node candidate-child))
+	  ;; whether or not we're cannibalizing, see if we're done 
+	  ;; (revision 7/31/03 for forges parsers)
+	  (cond (all-other-required-children-present?
 		 (install-completed-node session node candidate-child))
 		(t
 		 (when-debugging
