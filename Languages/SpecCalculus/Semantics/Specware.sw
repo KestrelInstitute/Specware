@@ -1,7 +1,5 @@
 \section{Specware toplevel}
 
-Synchronized with r1.11 SW4/Languages/SpecCalculus/Semantics/Specware.sl
-
 It seems clear now that some of specs that make up the calculus need
 some amount of refactoring.
 
@@ -13,8 +11,6 @@ Specware qualifying spec {
   % import ../../MetaSlang/Specs/PosSpec    
   import ../../MetaSlang/Specs/Position     
   import ../AbstractSyntax/Printer % for showUI
-  import /Languages/MetaSlang/Specs/Categories/Colimit % for specColimit
-
 \end{spec}
 
 The following is what starts Specware. It initializes the state and
@@ -290,6 +286,10 @@ sense that no toplevel functions return anything.
 		"Error in specification: " ^ msg 
               ^ "\n  found at " ^ (printAll position)
 
+      | MorphError (position,msg) ->
+		"Error in morphism: " ^ msg 
+              ^ "\n  found at " ^ (printAll position)
+
       | DiagError (position,msg) ->
 		"Diagram error: " ^ msg 
               ^ "\n  found at " ^ (printAll position)
@@ -312,8 +312,6 @@ sense that no toplevel functions return anything.
       | _ -> 
 		"Unknown exception: " 
               ^ (System.toString except)
-
-
 \end{spec}
 
 getBaseSpec is a bit of a hack used by colimit to avoid some bootstrapping 
@@ -322,7 +320,7 @@ and typing issues.
 \begin{spec}
   def SpecCalc.getBaseSpec () =
     let run : SpecCalc.Env Spec = 
-        {restoreSavedSpecwareState;
+	{restoreSavedSpecwareState;
 	 base_URI               <- pathToRelativeURI "/Library/Base";
 	 (Spec base_spec, _, _) <- SpecCalc.evaluateURI (Internal "base") base_URI;
 	 saveSpecwareState;
@@ -333,6 +331,5 @@ and typing issues.
     case catch run myHandler ignoredState of
       | (Ok base_spec,_) -> base_spec
       | (Exception _,_) -> fail "Can't find base spec!"
-
 }
 \end{spec}

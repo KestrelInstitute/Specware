@@ -4,15 +4,13 @@
 SpecCalc qualifying spec {
   import Signature
   import URI/Utilities  % for uriToString, if used...
+  import Colimit/Utilities
 \end{spec}
 
 \begin{spec}
   def SpecCalc.evaluateColimit term = {
-    %% -------------------------------------------
-    %% next two lines are optional:
     uri <- getCurrentURI;
-    print (";;; Processing colimit at "^(uriToString uri)^"\n");
-    %% -------------------------------------------
+    print (";;; Processing colimit at " ^ (uriToString uri) ^ "\n");
     (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
     case value of
       | Diag dgm -> 

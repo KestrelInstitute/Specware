@@ -168,9 +168,10 @@ Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 \begin{spec}
   sort TranslateExpr  a = List (TranslateRule a) * a
   sort TranslateRule  a = (TranslateRule_ a) * a
-  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases
-                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
-                          | Ambiguous  QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
+  sort TranslateRule_ a =
+    | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases
+    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
+    | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
 \end{spec}
 
 A \verb+NamesExpr+ denotes list of names and operators. They are used in
@@ -232,9 +233,11 @@ The tagging in the sorts below may be excessive given the \verb+ATerm+
 is already tagged.
 
 \begin{spec}
-  sort SpecMorphRule a = | Sort       QualifiedId                 * QualifiedId                 * a
-                         | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * a
-                         | Ambiguous  QualifiedId                 * QualifiedId                 * a
+  sort SpecMorphRule a = (SpecMorphRule_ a) * a
+  sort SpecMorphRule_ a = 
+    | Sort      QualifiedId * QualifiedId
+    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort)
+    | Ambiguous QualifiedId * QualifiedId 
 \end{spec}
 
 The current syntax allows one to write morphisms mapping names to terms
@@ -250,8 +253,6 @@ them to be presented in any order.
   sort DiagMorphRule_ a =
     | ShapeMap    Name * Name
     | NatTranComp Name * (Term a) 
-
-
 
   sort Assertions = | All
                     | Explicit List ClaimName

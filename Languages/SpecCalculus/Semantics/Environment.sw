@@ -118,6 +118,7 @@ enters something bad. A ParserError is raised when the file parser fails.
     | ParserError  String   % Here the string is the filename.
     | DiagError    Position * String
     | SpecError    Position * String
+    | MorphError   Position * String
     | CircularDefinition URI
     | Proof       Position * String
 \end{spec}
@@ -253,7 +254,6 @@ The corresponding operations for retrieving and setting the current URI.
       (Ok (), (globalContext,localContext,currentURI,cons(uri,validatedURIs)))
 \end{spec}
 
-
 The initial state within Specware has no URI's evaluated and a current
 URI that corresponds to "/". The latter needs thought.
 
@@ -353,7 +353,6 @@ Some basic operations for debugging. There should be a proper IO monad.
     fn state ->
       let _ = toScreen str in
       (Ok (), state)
-
 \end{spec}
 
 Some hacks for twiddling memory.  hackMemory essentially calls (room nil)

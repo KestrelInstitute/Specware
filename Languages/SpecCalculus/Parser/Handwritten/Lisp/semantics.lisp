@@ -924,27 +924,23 @@ If we want the precedence to be optional:
 
 (defun make-sc-spec-morph (dom-sc-term cod-sc-term rules l r)
   ;; (let ((rules (if (eq rules :unspecified) nil rules))) ...)
-  (cons (cons :|SpecMorph|
-	      (vector dom-sc-term cod-sc-term rules))
-	(make-pos l r)))
+  (cons (cons :|SpecMorph| (vector dom-sc-term cod-sc-term rules))
+	    (make-pos l r)))
 
 ;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
 ;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
 
 (defun make-sm-sort-rule (left-sort-ref right-sort-ref l r)
-  (cons :|Sort|
-	(vector left-sort-ref right-sort-ref
-		(make-pos l r))))
+  (cons (cons :|Sort| (cons left-sort-ref right-sort-ref))
+		(make-pos l r)))
 
 (defun make-sm-op-rule (left-op-ref right-op-ref l r)
-  (cons :|Op| 
-	(vector left-op-ref right-op-ref
-		(make-pos l r))))
+  (cons (cons :|Op| (cons left-op-ref right-op-ref))
+		(make-pos l r)))
 
 (defun make-sm-ambiguous-rule (left-ref right-ref l r)
-  (cons :|Ambiguous|  
-	(vector left-ref right-ref
-		(make-pos l r))))
+  (cons (cons :|Ambiguous| (cons left-ref right-ref))
+		(make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-SHAPE
