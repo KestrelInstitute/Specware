@@ -96,39 +96,6 @@
 ;; Debugging utilities
 (compile-and-load-lisp-file "debug")
 
-;; Might need this?
-;;(defun compilelisp::additionaldefinitions ()
-;;  (if (boundp 'parser4::*collected-definitions*) 
-;;      (symbol-value 'parser4::*collected-definitions*)
-;;    nil))
-
-;; The following are temporary until the parser migrates under the Specware4
-;; tree. The following are referred to in semantics.lisp but the qualifiers
-;; have changed in the move to Specware 4. 
-;; Can we remove this dependency? It would be nice if the parser didn't
-;; refer to MetaSlang specs.
-
-;; (defpackage :ATERM)
-
-;;(defun ATerm::mkQualifiedId (qualifier id) 
-;;  (MetaSlang::mkQualifiedId qualifier id))
-
-;;(defun ATerm::mkQualifiedId-1 (x) 
-;;  (MetaSlang::mkQualifiedId (car x) (cdr x)))
-                                             
-;;(defun ATerm::mkUnQualifiedId (id) 
-;;  (MetaSlang::mkUnQualifiedId id))
-
-;; Does this belong here? Why not in the parser?
-;;(defpackage "PARSER")
-
-;; This is also temporary. The SW4 tokenizer.lisp file refers to
-;;   parser::create-tokenizer-parameters
-;;   parser::extract-tokens-from file.
-;; And yet it has its own version of basic parser library in parser4.
-;; So there needs to be a rationalization of the parser.
-;; (make-system (concatenate 'string Specware4 "/../2000/parser1"))
-
 (make-system (concatenate 'string
     Specware4 "/../Specware4/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 (make-system (concatenate 'string
