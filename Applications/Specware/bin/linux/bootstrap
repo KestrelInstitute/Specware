@@ -39,11 +39,13 @@ LISP=${LISP:-/usr/local/acl/acl61/alisp}
 echo cd $SPECWARE4/Applications/Specware
 cd $SPECWARE4/Applications/Specware
 
+echo " "
 echo Saving previous image and build ... 
 echo cp -f lisp/Specware4.lisp lisp/Specware4-save.lisp
 cp -f lisp/Specware4.lisp lisp/Specware4-save.lisp
 echo cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
+echo " "
 
 # Note the use of the <<-XXXX in the following. The - means that preceeding
 # tabs are removed.  Thus the tabs that follow are significant. If you
@@ -63,14 +65,17 @@ SWPATH=$SPECWARE4:.
 
 if [ -f bin/linux/Specware4.dxl ]; then
 	echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
+        echo " "
 	bin/linux/Specware4-text -batch <<-XXXX
 		(if (sw "/Applications/Specware/Specware4")
 		  (exit 0)
 		  (exit 1))
 	XXXX
+        RC=$?
 else
 	if [ -f lisp/Specware4.lisp ]; then
 		echo "Bootstrapping from previously generated lisp: lisp/Specware4.lisp"
+                echo " "
 		cd Handwritten/Lisp
 		$LISP -batch <<-XXXX
 			(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
@@ -79,6 +84,7 @@ else
 			  (exit 0)
 			  (exit 1))
 		XXXX
+                RC=$?
 	else
 		# This is where you end up if you do cvs checkout and then
 		#  run bootstrap.  Maybe we could get a default version of
@@ -92,12 +98,13 @@ else
 fi
 
 # If the bootstrap failed (non-zero exit status) then we abort.
-if [ $? ]; then
+if [ $RC -ne 0 ]; then
   echo ""
-  echo "Bootstrap failed, exiting ..."
+  echo "Bootstrap failed with code $RC, exiting ..."
   exit 1
 fi
 
+echo " "
 echo cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 
@@ -107,16 +114,19 @@ cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 # We could do the load and compile up above in the lisp that generated it,
 # but that seems weird to me ...
 
-echo Loading Specware ... (to compile)
+echo " "
+echo "Loading Specware ... (to compile)"
+echo " "
 $LISP -batch <<-XXXX
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (load "Specware4.lisp"))
 XXXX
+RC=$?
 
 # If the load failed (non-zero exit status) then we abort.
-if [ $? ]; then
+if [ $RC -ne 0 ]; then
   echo ""
-  echo "First load failed, exiting ..."
+  echo "First load failed with code $RC, exiting ..."
   exit 1
 fi
 
@@ -133,16 +143,19 @@ fi
 # be more complicated) when the lines are excessively broken.  So I'd ask
 # it to be left in unless there's a reason to remove it.
 
-echo Loading Specware ... (for dumplisp)
+echo " "
+echo "Loading Specware ... (for dumplisp)"
+echo " "
 $LISP -batch <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
 XXXX
+RC=$?
 
 # If the load failed (non-zero exit status) then we abort.
-if [ $? ]; then
+if [ $RC -ne 0 ]; then
   echo ""
-  echo "Second load failed, exiting ..."
+  echo "Second load failed with code $RC, exiting ..."
   exit 1
 fi
