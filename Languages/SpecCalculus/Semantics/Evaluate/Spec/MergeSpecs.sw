@@ -94,6 +94,9 @@ SpecCalc qualifying spec
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
+       if new_info = old_info
+	 then return new_info
+       else
        let names = listUnion (old_info.names, new_info.names) in % this order of args is more efficient
        let combined_names = removeDuplicates names in % redundant?
 
