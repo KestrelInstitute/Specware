@@ -4,7 +4,7 @@ This is a hopelessly naive implementation of monomorphic Sets as instances
 of polymorphic Lists. Very naughty.
 
 \begin{spec}
-spec {
+spec
   import PolySet qualifying ../Polymorphic/AsLists
   import ../Monomorphic
 
@@ -13,6 +13,7 @@ spec {
   def empty? = PolySet.empty?
   def empty = PolySet.empty
   def member? = PolySet.member?
+  def subset? = PolySet.subset?
   def delete = PolySet.delete
   def insert = PolySet.insert
   def fold = PolySet.fold
@@ -21,4 +22,4 @@ spec {
   def union = PolySet.union
   def toList = PolySet.toList
   % def takeOne = PolySet.takeOne
-} 
+endspec

@@ -15,6 +15,7 @@ spec
   op difference : fa (a) Set a * Set a -> Set a
 
   op member? : fa(a) Set a * a -> Boolean
+  op subset? : fa(a) Set a * Set a -> Boolean
   op delete : fa(a) Set a * a -> Set a
 
   op singleton : fa (a) a -> Set a

@@ -8,30 +8,31 @@ spec
 
   sort Set a
 
-  op empty : fa(a) Set a
-  op empty? : fa(a) Set a -> Boolean
+  op empty : [a] Set a
+  op empty? : [a] Set a -> Boolean
 
-  op union : fa(a) Set a -> Set a -> Set a
-  op intersection : fa(a) Set a -> Set a -> Set a
-  op difference : fa(a) Set a -> Set a -> Set a
+  op union : [a] Set a -> Set a -> Set a
+  op intersection : [a] Set a -> Set a -> Set a
+  op difference : [a] Set a -> Set a -> Set a
 
-  op member? : fa(a) Set a -> a -> Boolean
+  op member? : [a] Set a -> a -> Boolean
+  op subset?: [a] Set a -> Set a -> Boolean
 
-  op delete : fa(a) Set a -> a -> Set a
-  op insert : fa(a) Set a -> a -> Set a
+  op delete : [a] Set a -> a -> Set a
+  op insert : [a] Set a -> a -> Set a
 
-  op find: fa(a) (a -> Boolean) -> Set a -> Option a
+  op find: [a] (a -> Boolean) -> Set a -> Option a
 
-  op singleton : fa(a) a -> Set a
+  op singleton : [a] a -> Set a
 
   % op fold : fa (a) (a -> a -> a) -> a -> Set a -> a
 
-  op fold : fa (a,b) (a -> b -> a) -> a -> Set b -> a
-  op map : fa (a,b) (a -> b) -> Set a -> Set b
+  op fold : [a,b] (a -> b -> a) -> a -> Set b -> a
+  op map  : [a,b] (a -> b) -> Set a -> Set b
 
   % op takeOne : fa (a) Set a -> Option (a * Set a)
 
-  op ppSet : fa(a) (a -> Pretty) -> Set a -> Pretty
+  op ppSet : [a] (a -> Pretty) -> Set a -> Pretty
 \end{spec}
 
 The operator \verb+take+ will remove an arbitrary element
@@ -41,9 +42,9 @@ list is empty it yields \verb+None+.
 These shouldn't be here.
 
 \begin{spec}
-  op toList : fa(a) Set a -> List a
-%  op fromList : fa(a) List a -> Set a
-%  op addList : fa(a) Set a -> List a -> Set a
+  op toList : [a] Set a -> List a
+%  op fromList : [a] List a -> Set a
+%  op addList : [a] Set a -> List a -> Set a
 end
 \end{spec}
 

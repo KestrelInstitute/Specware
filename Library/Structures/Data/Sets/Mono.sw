@@ -24,6 +24,7 @@ spec
   op difference : Set -> Set -> Set
 
   op member? : Set -> Elem -> Boolean
+  op subset? : Set -> Set -> Boolean
   op delete : Set -> Elem -> Set
 
   op singleton : Elem -> Set

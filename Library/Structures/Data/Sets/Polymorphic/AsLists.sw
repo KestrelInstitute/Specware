@@ -15,6 +15,9 @@ spec {
       | [] -> false
       | h::t -> (h = x) or (member? t x)
 
+  def subset? s1 s2 =
+    all (fn e1 -> member? s2 e1) s1
+
   def empty = []
 
   def delete l x =
@@ -32,10 +35,10 @@ spec {
     else
       Cons (a,l)
 
-  def fold f e l =
+  def fold fl e l =
     case l of
       | [] -> e
-      | h::t -> fold f (f e h) t  % this looks to be the wrong way around
+      | h::t -> fold fl (fl e h) t  % this looks to be the wrong way around
 
   def map f s =
     case s of
