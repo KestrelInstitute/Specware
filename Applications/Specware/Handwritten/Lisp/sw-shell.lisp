@@ -260,6 +260,7 @@
 (defun cl-user::sw-shell ()
   (specware-shell nil))
 
+#|| Didn't pan out
 (defvar original-error #'error)
 
 (defun just-print-error-message
@@ -294,6 +295,7 @@
   (excl:without-package-locks #-allegro progn
    (setf (symbol-function 'error) original-error))
   t)
+||#
 
 #+allegro
 (top-level:alias ("sw-shell") () (specware-shell nil))
