@@ -1,0 +1,495 @@
+<chapter id="concepts">
+<title>Specware Concepts</title>
+
+<section>
+<title>Overview</title>
+
+<para>Specware is designed with the idea that large and complex
+problems can be specified by combining small and simple
+specifications, and that problem specifications can be refined into a
+working system by the controlled stepwise introduction of
+implementation design decisions, in such a way that the refined
+specifications and ultimately the working code is a provably correct
+refinement of the original problem specification.</para>
+
+<para>Specware allows you to express requirements as formal
+specifications without regard to the ultimate implementation or target
+language.  Specifications can describe the desired functionality of a
+program independently of such implementation concerns as architecture,
+algorithms, data structures, and efficiency.  This makes it possible
+to focus on the correctness, which is crucial to the reliability of
+large software systems.</para>
+
+<para>Often, there are many possible solutions to a single problem,
+all valid, with different advantages and drawbacks.  It is sometimes
+very difficult to make a decision given all the different trade-offs.
+Using Specware, the analysis of the problem can be kept separate from
+the implementation process, and implementation choices can be
+introduced piecemeal, making it easier to backtrack or explore
+alternatives.</para>
+
+<para>Specware allows you to articulate software requirements, make
+implementation choices, and generate provably correct code in a
+formally verifiable manner.  The progression of specifications forms a
+record of the system design and development that is invaluable for
+system maintenance.  You can later adapt the specifications to new or
+changed requirements or make different implementation decisions at any
+level of the development while reusing what has not changed, and
+generate provably correct new code by the same process.</para>
+
+</section>  <!-- overview -->
+
+<section>
+<title>Building Specifications</title>
+
+<para>The first step in building an application in Specware is to
+describe the problem domain in abstract form.  You use the Metaslang
+language to build specifications (specs) that describe the abstract
+concepts of the problem domain.  Specs contain sorts, which are like
+data types, operations, which are functions defined on sorts, and
+axioms, which describe the required properties of the operations in
+logical formulas.</para>
+
+<para>To design specifications, you may combine top-down and bottom-up
+approaches.  To begin, you break down the problem domain into small,
+manageable parts that you can understand more easily in complete
+detail.  You create specifications for each part.  This conceptual
+decomposition process allows you to isolate and describe each detail
+of functionality.</para>
+
+<para>You then extend and compose the smaller specifications to form
+a larger, more complex specification.</para>
+
+<para>You create morphisms to describe how specifications are related.
+A morphism is a formal mapping between two specifications that
+describes exactly how one is translated or extended into the other.
+Morphisms can describe ``part-of'' as well as ``is-a''
+relationships.</para>
+
+<para>You can extend a specification by importing it and adding new
+concepts.  When you extend a specification, you can also translate the
+names of the concepts to a different terminology.</para>
+
+<para>As you extend the specification, you provide more and more
+information about the structure and details of the sorts and
+operations, by including axioms and theorems to describe them.</para>
+
+<para>You compose simple specifications to form more complex
+specifications using the colimit operation.  Colimit ``glues'' specs
+together along shared concepts.  Morphisms describe exactly how
+concepts are shared.</para>
+
+<section>
+<title>Refining Specifications</title>
+
+<para>When you have described the abstract concepts in your problem
+domain, you begin the refinement process.  Refinement maps a problem
+specification set into a solution specification set.  Refinements
+replace functionality constraints with algorithms and abstract sorts
+with implementation data structures.  You refine a specification by
+mapping it into the implementation domain.  You describe how the
+concepts of the problem domain are implemented in terms of
+computational concepts.  Computational concepts, such as numbers
+(e.g., integers) and collections (e.g., lists) are already specified
+in the Specware library.  In the process of refinement, you build a
+bridge from your abstract specifications to these concrete,
+implementation-specific specifications.</para>
+
+<para>Morphisms are also used to describe how each specification is to
+be mapped into a desired target specification.  The source spec is a
+more abstract description of concepts, while the target spec describes
+those concepts more concretely. Often, the target spec is obtained by
+extending some other spec that contains concepts in term of which the
+concepts of the source spec are expressed.  For example, if you have
+an abstract spec for a house, you can refine it by importing a spec
+for materials (wood, etc.) and expressing how the house is built in
+terms of those materials.</para>
+
+<para>A morphism maps each sort or operation of the source spec to a
+sort or operation of the target spec. In certain cases, it may be
+useful to map a sort or operation to a new sort or operation that is
+not present in the target spec but that is defined in terms of those
+in the target spec. Interpretations are used for this purpose.</para>
+
+<para>An interpretation contains three specs: a source spec (the
+domain), a target spec (the codomain), and a mediator.  The mediator
+spec extends the target, so there is an inclusion morphism from the
+target to the mediator.  A morphism from the source spec to the
+mediator expresses how the source spec maps to the extension of the
+target spec.</para>
+
+<para>A morphisms can be viewed as a particular kind of interpretation
+where the mediator coincides with the target. Indeed, the refinement
+relation between a more abstract spec and a more concrete one can be
+expressed by a morphism but also by an interpretation.</para>
+
+</section>  <!-- refining -->
+
+<section>
+<title>Extending a Refinement</title>
+
+<para>You build up a refinement in the same way you build up a
+specification, in an iterative, stepwise progression.  You build basic
+morphisms (or interpretations) from more abstract specs to more
+concrete specs, then compose the morphisms to extend the refinement.
+There are two ways to compose morphisms.</para>
+
+<para>Sequential composition 
+(<literal>A=&gt;B + B=&gt;C = A=&gt;C</literal>) 
+deepens a refinement.  For example, if you are specifying a house, you
+might use sequential composition of morphisms to create an
+increasingly detailed description of a single room.</para>
+
+<para>Parallel composition 
+(<literal>A=&gt;A' + B=&gt;B' = (A,B) =&gt; (A',B')</literal>)
+widens, or increases the complexity of a refinement.  For example, in
+the specification of a house, when you have several morphisms that
+refine different rooms, you could combine them in parallel to create a
+description of a multi-room house.  You could do this before or after
+providing the additional detail for each one.  You use the colimit
+method for this kind of composition, as you do to compose
+specifications.</para>
+
+<para>Specware contains a library of specs that fully describe various
+mathematical and computational concepts that you need to produce an
+implementation of an abstract specification.  The goal of refinement
+is to refine your abstract specs in terms of these library specs.
+This process guarantees that Specware can generate code to implement
+your specifications in its target language, Lisp.</para>
+
+</section>  <!-- refining -->
+
+<section>
+<title>Generating Code</title>
+
+<para>Once the abstract spec is refined to a ``constructive'' spec,
+Specware can generate code in the target language.  The generated code
+contains a function for each of the operations you have described in
+the abstract specification.  After you examine and test it, you can
+embed it in an application that uses the functions.</para>
+
+</section>  <!-- code gen -->
+
+</section>  <!-- building specs -->
+
+<section>
+<title>Specification Components</title>
+
+<para>A specification (spec) consists of some sorts, some operations
+(ops), and some axioms about the sorts and ops.</para>
+
+<section>
+<title>Sorts, Operations, Axioms</title>
+
+<para>A sort is a syntactic entity that denotes a set of values. In
+its simplest form, a sort is a symbol. For example, a spec can contain
+a sort <literal>Nat</literal> that denotes the set of natural numbers,
+i.e., <literal>0,1,2,...</literal>.</para>
+
+<para>Sort symbols can be combined by means of some pre-defined
+constructs to build more complex sorts. One such construct is
+``<literal>-&gt;</literal>'': if <literal>A</literal> and
+<literal>B</literal> are sorts, <literal>A -&gt; B</literal> is also a
+sort.  The set denoted by <literal>A -&gt; B</literal> is the set of
+all total functions from the set denoted by <literal>A</literal> to
+the set denoted by <literal>B</literal>.</para>
+
+<para>An op is a syntactic symbol accompanied by a sort: the sort is
+the ``type'' of the op. An op denotes an element of the set denoted by
+its sort.  For example, a spec can contain an op
+<literal>zero</literal> of type <literal>Nat</literal>, which denotes
+the natural number 0. It can also contain an op
+<literal>succ</literal> of type <literal>Nat -&gt; Nat</literal>,
+which denotes the function that returns the successor of any given
+natural number.</para>
+
+<para>From the sort <literal>Nat</literal> and the ops
+<literal>zero</literal> and <literal>succ</literal> alone, it does not
+follow that they denote the natural numbers, 0, and successor
+function. They could denote the set of the days of the week,
+Wednesday, and the identity function, respectively. The intended
+meaning can be enforced by means of axioms.</para>
+
+<para>An axiom is a term of type
+<literal>Boolean</literal>. <literal>Boolean</literal> is a sort
+automatically present (built-in) in every spec, which denotes the set
+of boolean truth values (``true'' and ``false''). Terms are built from
+typed variables (a variable is a symbol accompanied by a sort), ops,
+and some pre-defined constructs. These include universal and
+existential quantifiers (``for all'' and ``exists''), logical
+connectives (``and'', ``or'', ``implies'', ``iff'', ``not''), and
+equality.</para>
+
+<para>Here is an example of an axiom to constrain successor never to
+return 0:</para>
+<programlisting>
+fa(x) ~(succ x = zero)
+</programlisting>
+
+<para>In the axiom, ``<literal>=</literal>'' denotes equality,
+``<literal>~</literal>'' boolean negation, and
+``<literal>fa</literal>'' universal quantification. Note that this
+axiom rules out the possibility that <literal>succ</literal> is the
+identity function.  Additional axioms can be added to constrain the
+spec to capture exactly the natural numbers (essentially, the other
+Peano's axioms).</para>
+
+</section>
+
+<section>
+<title>Models</title>
+
+<para>In the above description, the notion of a sort or op
+``denoting'' a set or a function corresponds to the notion of model of
+a spec. A model of a spec is an assignment of a set to each sort and
+of an element to each op from the set assigned to the type of the op,
+such that all the axioms of the spec are satisfied.</para>
+
+<para>For example, in the example spec sketched above, a model
+consists of a set <literal>N</literal> assigned to
+<literal>Nat</literal>, an element <literal>z</literal> in
+<literal>N</literal> assigned to <literal>zero</literal>, and a
+function <literal>s: N -&gt; N</literal> (i.e., an element
+<literal>s</literal> in <literal>N -&gt; N</literal>) assigned to
+<literal>succ</literal>.  In the absence of axioms, the model where
+<literal>N</literal> is the days of the week, <literal>z</literal>
+Wednesday, and <literal>s</literal> identity, is a valid model. But
+with the axiom shown above, since <literal>s(z) = z</literal>, this
+cannot be a model. With all the other Peano's axioms,
+<literal>N</literal>, <literal>z</literal>, and <literal>s</literal>
+are constrained to be isomorphic to natural numbers, 0, and successor.
+(No matter how many axioms are added to a spec, it is not
+possible to pin down <literal>N</literal> to be exactly the set of
+natural numbers. Things can be pinned down only up to isomorphism. But
+this is fine because isomorphic sets are totally
+equivalent.)</para>
+
+<para>A spec may have no models. This happens when the spec contains
+incompatible axioms. This situation is often subtle and difficult to
+detect, and it is always a symptom of human errors in the
+specification process. Whether a spec has models is an undecidable
+problem. However, by following certain practices and disciplines in
+the development of specs, this situation can be avoided.</para>
+
+</section>
+
+<section>
+<title>Polymorphism</title>
+
+<para>Sorts can be polymorphic. In its simplest form, a polymorphic
+sort is a symbol plus one or more ``parameter sorts''. While a
+monomorphic (i.e., non-polymorphic) sort denotes a set, a polymorphic
+sort denotes a function that returns a set given sets for all its
+parameters. For example, a spec can contain a sort <literal>List
+a</literal>, where <literal>a</literal> is the sort parameter, which
+denotes the set of (finite) lists over <literal>a</literal>: more
+precisely, it denotes a function that, given a set
+<literal>S</literal> for <literal>a</literal>, returns the set of all
+lists of elements of <literal>S</literal>. If <literal>S</literal> is
+the set of natural numbers, it returns the set of all lists of natural
+numbers; if <literal>S</literal> is the set of the days of the week,
+it returns the set of all lists of days of the week.</para>
+
+<para>A polymorphic sort can be instantiated by replacing its
+parameters with other sorts. The latter can be polymorphic or
+monomorphic: if at least one is polymorphic, the instantiated sort is
+polymorphic; otherwise, it is monomorphic. For example, <literal>List
+a</literal> can be instantiated to the monomorphic <literal>List
+Nat</literal> or to the polymorphic <literal>List(List
+a)</literal>.</para>
+
+<para>Correspondingly, ops can be polymorphic. An op is polymorphic
+when its type is a polymorphic sort. While a monomorphic op denotes an
+element of the set denoted by the type of the op, a polymorphic op
+denotes a function that, given a set for each parameter sort of the
+polymorphic type of the op, returns an element of the set obtained by
+applying to such parameter sets the function denoted by the type of
+the op. For example, a spec can contain an op <literal>nil</literal>
+of type <literal>List a</literal>, that denotes the empty list, for
+each set assigned to parameter <literal>a</literal>.</para>
+
+</section>
+
+<section>
+<title>Morphisms</title>
+
+<para>A morphism is a mapping from a source spec to a target
+spec. More precisely, it consists of two functions: one maps each sort
+symbol of the source to a sort symbol of the target, and the other
+maps each op symbol of the source to an op symbol of the target. The
+mapping must be type-consistent: if <literal>f</literal> of type
+<literal>T</literal> in the source spec is mapped to
+<literal>g</literal> of type <literal>U</literal> in the target spec,
+then <literal>T</literal> must be mapped to <literal>U</literal>. This
+mapping of sorts and ops can be lifted to terms, and thus to the
+axioms of the source spec. A morphism must be such that each axiom of
+the source spec maps to a theorem in the target spec: in other words,
+the translation of the axiom (according to the mapping expressed by
+the morphism) must be provable from the axioms in the target
+spec.</para>
+
+<para>So, a morphism expresses that all the properties (i.e., the
+axioms) of the source spec are satisfied by the target spec. This is
+why refinement is expressed by means of morphisms: the source spec
+contains more abstract concepts; the target spec contains more
+concrete concepts, but all the properties of the abstract concepts
+must be satisfied by the concrete ones.</para>
+
+<para>At the level of models, a morphism <literal>m</literal> induces
+a function that maps models of the target spec to models of the source
+spec (the function goes in the opposite direction of the
+morphism). The function operates as follows: given a model of the
+target spec, the corresponding model of the source spec is constructed
+as follows. The set assigned to a sort <literal>S</literal> of the
+source spec is the set assigned to <literal>m(S)</literal> by the
+model of the target spec (or, if <literal>S</literal> is polymorphic,
+replace ``set'' with ``set-valued function over sets''); the element
+assigned to an op <literal>f</literal> of type <literal>S</literal> of
+the source spec is the element (of the set assigned to
+<literal>S</literal>) assigned to <literal>m(f)</literal> by the model
+of the target spec (or, if <literal>f</literal> has a polymorphic
+type, replace ``element'' with ``element-valued function over
+sets'').</para>
+
+<para>In other words, the morphism induces a reduction of the models
+of the target spec to models of the source spec. A model of the target
+spec can be reduced to a model of the source spec. This shows how a
+morphism can express an ``is-a'' relationship.</para>
+
+<para>For example, if a spec imports another spec, possibly adding
+sorts, ops, and axioms, there is an inclusion morphism from the
+imported spec to the importing spec. Since all the sorts, ops, and
+axioms are mapped to themselves, the fact that axioms are mapped to
+theorems is immediate.</para>
+
+<para>As another, less trivial example, consider a spec for natural
+numbers that also includes an op <literal>plus</literal> and an an op
+<literal>times</literal>, both of type <literal>Nat * Nat -&gt;
+Nat</literal>. (The construct ``<literal>*</literal>'' builds the
+cartesian product of two sorts: in a model, <literal>A * B</literal>
+denotes the cartesian product of the set denoted by
+<literal>A</literal> and the set denoted by <literal>B</literal>.) The
+spec also contains axioms that define <literal>plus</literal> and
+<literal>times</literal> to be addition and multiplication. Now,
+consider another spec consisting of a sort <literal>X</literal>, an op
+<literal>f</literal> of type <literal>X * X -&gt; X</literal>, and an
+axiom stating that <literal>f</literal> is commutative:</para>
+
+<programlisting>
+fa(x,y) f(x,y) = f(y,x)
+</programlisting>
+
+<para>There is a morphism from the latter spec to the former that maps
+<literal>X</literal> to <literal>Nat</literal> and
+<literal>f</literal> to <literal>plus</literal>: since addition is
+commutative, the commutativity axiom can be proved as a theorem in the
+spec for natural numbers. Note that there is also another morphism
+that maps <literal>X</literal> to <literal>Nat</literal> and
+<literal>f</literal> to <literal>times</literal>.</para>
+
+</section>
+
+<section>
+<title>Diagrams and Colimits</title>
+
+A diagram is a graph whose nodes are labeled by specs and whose edges
+are labeled by morphisms. The morphism labeling an edge must be such
+that its source is the spec labeling the source node of the edge, and
+its target is the spec labeling the target node of the edge.
+
+The colimit operation produces a spec from a diagram. The resulting
+spec is the gluing of the specs of the diagram, with the sharing
+expressed by the morphisms of the diagram.
+
+In order to understand how the colimit operation works, consider first
+the simple case of a diagram without edges (and morphisms). This is
+called a discrete diagram. The colimit operation produces a spec whose
+sorts, ops, and axioms are the disjoint union of the sorts, ops, and
+axioms of the specs in the diagram. In other words, the specs are all
+glued together without any sharing.
+
+Now, consider a diagram with some edges, labeled by morphisms. The
+colimit operation produces a spec containing all the sorts, ops, and
+axioms of the specs in the diagram, but all the sorts or ops that are
+linked, directly or indirectly, through the morphisms, are identified
+(i.e., they are the same sort or op).
+
+<para>Consider, for example, a diagram with three nodes,
+<literal>a</literal>, <literal>b</literal>, and <literal>c</literal>,
+and two edges, one from <literal>a</literal> to <literal>b</literal>
+and the other from <literal>a</literal> to <literal>c</literal>. Node
+<literal>a</literal> is labeled by a spec consisting of a sort
+<literal>X</literal>, node <literal>b</literal> by a spec consisting
+of two sorts <literal>Y</literal> and <literal>Z</literal>, and node
+<literal>c</literal> by a spec consisting of a sort
+<literal>W</literal>. The morphism labeling the edge from
+<literal>a</literal> to <literal>b</literal> maps <literal>X</literal>
+to <literal>Y</literal>, and the one labeling the edge from
+<literal>a</literal> to <literal>c</literal> maps <literal>X</literal>
+to <literal>W</literal>.  The colimit contains all sorts
+<literal>X</literal>, <literal>Y</literal>, <literal>Z</literal>, and
+<literal>W</literal>, but <literal>X</literal>, <literal>Y</literal>,
+and <literal>W</literal> are identified.  So, the colimit effectively
+contains two sorts, one that can be referred to as
+<literal>X</literal>, <literal>Y</literal>, or <literal>W</literal>,
+and the other that can be only referred to as
+<literal>Z</literal>. For diagrams of this shape, with three nodes and
+two edges forming a wedge, the colimit operation is also called a
+pushout.</para>
+
+</section>
+
+<section>
+<title>Interpretations</title>
+
+<para>A morphism maps a sort or op of the source spec to a sort or op
+of the target spec. In certain cases, it may be useful to map the sort
+or op to a new sort or op that is not present in the target spec but
+that can be defined in terms of those present in the target spec. This
+is captured by the concept of interpretation.</para>
+
+<para>An interpretation is a morphism from a spec to a definitional
+extension of another spec. A definitional extension is an extension of
+a spec that only introduces new sorts and ops with axioms that define
+them in terms of those present in the spec that is being
+extended.</para>
+
+<para>More precisely, an interpretation contains three specs: a source
+spec (the domain), a target spec (the codomain), and a mediator
+spec. The mediator is a definitional extension of the target spec, and
+there is an inclusion morphism from the target spec to the
+mediator. There is a morphism from the source spec to the
+mediator.</para>
+
+<para>Consider, as an example, a spec for natural numbers without any
+<literal>plus</literal> op, but just with <literal>zero</literal> and
+<literal>succ</literal>, and with Peano's axioms. Consider the spec
+(also used as an example above) consisting of a sort
+<literal>X</literal>, and op <literal>f</literal>, and a commutativity
+axiom about <literal>f</literal>. There is no morphism from the latter
+spec to the one for natural numbers. But there is an interpretation,
+where the mediator extends the spec for natural numbers with an op
+<literal>plus</literal> for addition, which can be inductively defined
+by the following two axioms:</para>
+<programlisting>
+fa(x) plus(x,zero) = x
+fa(x,y) plus(x,succ y) = succ(plus(x,y))
+</programlisting>
+
+<para>A morphism can be viewed as a particular case of an
+interpretation, where the mediator is the same spec as the target, and
+the inclusion morphism from the target to the mediator is the identity
+morphism.</para>
+
+<para>Diagrams of specs and morphisms can be generalized to diagrams
+of specs and interpretations: nodes are labeled by specs and edges by
+interpretations.  The colimit operation works on these diagrams as
+well. The sorts and ops in the resulting spec include not only those
+from the specs labeling the nodes, but also those from the mediators
+of the interpretations.</para>
+
+</section>
+
+</section>  <!-- spec components -->
+
+</chapter>
