@@ -4,6 +4,7 @@
 MSInterpreter qualifying
 spec
   import /Languages/MetaSlang/Specs/Environment
+  import ../Specs/Utilities
 
   sort Value =
     | Int         Integer
@@ -68,6 +69,7 @@ spec
 	      | Some e -> e
 	      | None -> Unevaluated t)
 	  | Fun(fun,_,_) -> evalFun(fun,t,spc,depth)
+	  | Apply(Fun(Op(Qualified("System","time"),_),_,_),y,_) -> time(evalRec(y,sb,spc,depth+1))
 	  | Apply(x,y,_) -> evalApply(evalRec(x,sb,spc,depth+1),evalRec(y,sb,spc,depth+1),sb,spc,depth)
 	  | Record(fields,a) ->
 	    RecordVal(map (fn(lbl,e) -> (lbl,evalRec(e,sb,spc,depth+1))) fields)
@@ -212,7 +214,7 @@ spec
        of [] -> None
         | (pat,Fun(Bool true,_,_),body)::rules -> 
 	  (case patternMatch(pat,N,sb)
-	     of Match S -> Some(evalRec(body,S,spc,depth+1))
+	     of Match S -> Some(maybeMkLetOrSubst(evalRec(body,S,spc,depth+1),S,sb))
 	      | NoMatch -> patternMatchRules(rules,N,sb,spc,depth)
 	      | DontKnow -> None)
 	| _ :: rules -> None
@@ -273,6 +275,40 @@ spec
 	     | Unevaluated _ -> DontKnow
 	     | _ -> NoMatch)
 	| _ -> DontKnow
+
+  %% Considers incremental newSb vs oldSb. Looks for references to these vars in val and
+  %% either substitutees them (if their values are simple) or let-binds them.
+  op  maybeMkLetOrSubst: Value * Subst * Subst -> Value
+  def maybeMkLetOrSubst(val,newSb,oldSb) =
+    let def splitSubst sb =
+          List.foldl (fn ((vr,val),(letSb,substSb)) ->
+		 if evalConstant? val	% Could be more discriminating
+		  then (letSb,Cons((vr,valueToTerm val),substSb))
+		  else (Cons((vr,valueToTerm val),letSb),substSb))
+	    ([],[]) sb
+    in
+    case val of
+      | Unevaluated t ->
+        let localSb = ldiff(newSb,oldSb) in
+	if localSb = emptySubst then val
+	  else
+	  let fvs = freeVars t in
+	  let usedSb = foldl (fn ((id1,v),rsb) ->
+			      case find (fn (id2,_) -> id1 = id2) fvs of
+				| Some vr -> Cons((vr,v),rsb)
+				| None -> rsb)
+	                 [] localSb
+	  in
+	  let (letSb,substSb) = splitSubst usedSb in
+	  Unevaluated(mkLetWithSubst(substitute(t,substSb),letSb))
+      | _ -> val
+
+  %% First list should contain second list as a tail
+  op  ldiff: fa(a) List a * List a -> List a
+  def ldiff(l1,l2) =
+    if l1 = l2 or l1 = [] then []
+      else Cons(hd l1,ldiff(tl l1,l2))
+      
 
   %% Evaluation of constant terms
   def evalQualifiers = ["Nat","Integer","String","Boolean","Char","System"]
