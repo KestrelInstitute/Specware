@@ -157,12 +157,19 @@ spec
      case M
        of Apply(N1,N2,_) -> 
 	  let spc = getSpec gamma in
-          let sigma1 = inferType(spc,N1) 		       in
-	  let tcc  = (tcc,gamma) |- N1 ?? sigma1 	       in
-	  let tcc  = (tcc,gamma) |- N2 ?? domain(spc,sigma1)   in
-	  let tau2 = range(spc,sigma1) 		    	       in
-	  let tcc  = <= (tcc,gamma,M,tau2,tau) 		       in
-	  tcc
+          let sigma1 = inferType(spc,N1) 		           in
+	  let tcc  = (tcc,gamma) |- N1 ?? sigma1 	           in
+	  (case nonStrictAppl(N1,N2) of
+	     | Some (p1,p2,polarity) ->
+	       let tcc1   = (tcc,gamma)   |- p1 ?? boolSort 	   in
+	       let gamma1 = assertCond(if polarity then p1 else negateTerm p1,gamma) in
+	       let tcc2   = (tcc1,gamma1) |- p2 ?? tau 		   in
+	       tcc2
+	     | _ ->
+	       let tcc  = (tcc,gamma) |- N2 ?? domain(spc,sigma1)  in
+	       let tau2 = range(spc,sigma1) 		    	   in
+	       let tcc  = <= (tcc,gamma,M,tau2,tau) 		   in
+	       tcc)
         | Record(fields,_) -> 
 	  let spc = getSpec gamma in
  	  let types = product(spc,tau) in
@@ -274,6 +281,20 @@ spec
 	  let tcc   = (tcc,gamma) |- M ?? sigma			in
 	  let tcc   = (tcc,gamma) |- Seq(Ms,noPos) ?? tau	in
 	  tcc
+
+ op  nonStrictAppl: MS.Term * MS.Term -> Option (MS.Term * MS.Term * Boolean)
+ def nonStrictAppl(rator,args) =
+   case rator of
+     | Fun(Op(Qualified("Boolean",f),_),_,_) ->
+       (case args of
+	  | Record([("1",p),("2",q)],_) ->
+	    (case f of
+	       | "&"  -> Some (p,q,true)
+	       | "or" -> Some (p,q,false)
+	       | "=>" -> Some (p,q,true)
+	       | _ -> None)
+	  | _ -> None)
+     | _ -> None
 
 % 
 % This should also capture that the previous patterns failed.

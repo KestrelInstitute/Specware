@@ -114,13 +114,44 @@ spec
 	       % case
 	       | Apply(Lambda _,_,_) -> result
 	       %% We don't know in general when an application can cause a side-effect 
-	       | Apply _ -> (false,true)
+	       | Apply(Fun (f,_,_),_,_) ->
+	         if knownSideEffectFreeFn? f then result else (false,true)
 	       %% We don't know when the body of a lambda will be evaluated
 	       | Lambda _ -> (false,true)
 	       | _ -> result)
 	  (true,false)
 	  tm
     in result.1
+
+  op  knownSideEffectFreeQIds: List(Qualifier * Id)
+  def knownSideEffectFreeQIds =
+    [("Boolean","&"),
+     ("Boolean","~"),
+     ("Boolean","or"),
+     ("Boolean","=>"),
+     ("Boolean","<=>"),
+     ("Boolean","~="),
+     ("Integer","~"),
+     ("Integer","+"),
+     ("Integer","<"),
+     ("Integer",">"),
+     ("Integer","<="),
+     ("Integer",">="),
+     ("Integer","-"),
+     ("Integer","div"),
+     ("Integer","rem"),
+     ("Integer","abs"),
+     ("Integer","min"),
+     ("Integer","max"),
+     ("Integer","compare"),
+     ("List","length")]
+
+  op  knownSideEffectFreeFn?: Fun -> Boolean
+  def knownSideEffectFreeFn? f =
+    case f of
+      | Op(Qualified(qid),_) ->
+        member(qid,knownSideEffectFreeQIds)
+      | _ -> true
       
 
 % We implement a version of tuple instantiation that works on terms after pattern 
@@ -231,7 +262,7 @@ spec
 	%% fa(x,y) x = a & p(x,y) => q(x,y) --> fa(x,y) p(a,y) => q(a,y)
 	| Bind(Forall,_,_,_) -> simplifyForall(forallComponents term)
         | Bind(Exists,_,_,_) -> simplifyExists(existsComponents term)
-	| _ -> case simplifyCase term of
+	| _ -> case simplifyCase spc term of
 	        | Some tm -> tm
 	        | None -> tupleInstantiate spc term
 
@@ -277,13 +308,16 @@ spec
   def simplifyExists(vs,cjs) =
     mkSimpBind(Exists,vs,mkSimpConj cjs)    
 
-  def simplifyCase term =
+  def simplifyCase spc term =
     case term of
       %% case (a,b,c) of (x,y,z) -> g(x,y,z) -> g(a,b,c)
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),Record(acts,_),_) ->
-        if all (fn(_,VarPat _) -> true |_ -> false) pats
-	    & all (fn(_,Var _) -> true |_ -> false) acts
-	  then Some(substitute(body,makeSubstFromRecord(pats,acts)))
+        if all (fn(_,VarPat _) -> true |_ -> false) pats 
+	  then (if all (fn(_,Var _) -> true |_ -> false) acts
+		  then Some(substitute(body,makeSubstFromRecord(pats,acts)))
+		  else Some(List.foldr (fn (((_,v),(_,val)),body) ->
+					 simplifyOne spc (mkLet([(v,val)],body)))
+			      body (zip(pats,acts))))
 	  else None
       | _ -> None
 

@@ -35,7 +35,7 @@ WordMatching = spec
         fa(wrd,msg,pos)
           word_matches_at?(wrd,msg,pos) <=>
           pos + length wrd <= length msg &
-          (fa(i) i < length wrd =>
+          (fa(i:Nat) i < length wrd =>
                  symb_matches?(nth(wrd, i),
                                nth(msg, pos + i)))
 
