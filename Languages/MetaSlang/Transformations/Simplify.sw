@@ -265,6 +265,8 @@ spec
 	  (case getField(m,i) of
 	    | Some fld -> fld
 	    | None -> term)
+	| Apply(Fun (Implies, _, _), Record([("1",t1),("2",t2)],_),_) ->
+	  mkSimpImplies(t1,t2)
 	| _ -> case simplifyCase spc term of
 	        | Some tm -> tm
 	        | None -> tupleInstantiate spc term

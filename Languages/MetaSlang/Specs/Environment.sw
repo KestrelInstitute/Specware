@@ -102,6 +102,7 @@ spec
 	     srt)
     | _ -> srt
 
+ %% This is dangerous as there may be recursion (I have removed calls to it -- sjw)
  op unfoldStripSort : Spec * Sort * Boolean -> Sort
  def unfoldStripSort (spc, srt, verbose) =
   unfoldStripSort1 (spc, srt, [], verbose)

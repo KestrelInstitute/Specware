@@ -7,7 +7,7 @@ SpecCalc qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% These are patterned after equalTerm? etc. in AnnTerm.sw
 
- op equivSort?    : Spec -> MS.Sort    * MS.Sort    -> Boolean
+ op equivSort?    : Spec -> Boolean -> MS.Sort * MS.Sort -> Boolean
  op equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean
  op equivFun?     : Spec -> MS.Fun     * MS.Fun     -> Boolean
  op equivPattern? : Spec -> MS.Pattern * MS.Pattern -> Boolean
@@ -17,11 +17,11 @@ SpecCalc qualifying spec
  %%%      Sort Equivalences, expanding definitions
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def equivSort? spc (s1, s2) =
+ def equivSort? spc ignoreSubsorts? (s1, s2) =
    (equalSort? (s1, s2))
    ||
    (let env = initialEnv (spc, "internal") in
-    let (result, msg) = unifySorts env false s1 s2 in
+    let (result, msg) = unifySorts env ignoreSubsorts? s1 s2 in
     result)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -201,7 +201,8 @@ SpecCalc qualifying spec
  def equivVar? spc ((id1,s1), (id2,s2)) = 
    (id1 = id2)
    &&
-   (equivSort? spc (s1, s2))
+   %% May want to make the ignoreSubsort? be a parameter rather than false
+   (equivSort? spc false (s1, s2))
 
 
 endspec

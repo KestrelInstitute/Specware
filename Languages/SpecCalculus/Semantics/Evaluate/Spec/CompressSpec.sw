@@ -49,7 +49,7 @@ SpecCalc qualifying spec
 		      % given {A,B,C} = List Nat
 		      %   and {A,B,C} = Nats       
 		      % keep just one version
-		      (exists (fn new_def -> equivSort? spc (old_def, new_def)) new_defs)) 
+		      (exists (fn new_def -> equivSort? spc false (old_def, new_def)) new_defs)) 
 		    then
 		      new_defs
 		  else

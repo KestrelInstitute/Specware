@@ -803,7 +803,8 @@ SpecsToI2L qualifying spec {
     % already made sure, that the types fit, so just look at one
     % of the terms
     let srt = inferType(spc,t1) in
-    let usrt = unfoldStripSort(spc,srt,false) in
+    %% Was unfoldStripSort which is unnecessary and dangerous because of recursive types
+    let usrt = stripSubsorts(spc,srt) in
     case usrt of
       | Boolean                            _  -> primEq()
       | Base    (Qualified(_,"Nat"),    [],_) -> primEq()

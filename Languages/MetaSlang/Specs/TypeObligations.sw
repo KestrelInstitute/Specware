@@ -8,6 +8,7 @@ spec
  import /Languages/MetaSlang/Transformations/InstantiateHOFns
  import /Languages/MetaSlang/Transformations/RenameBound
  import /Languages/SpecCalculus/Semantics/Evaluate/Signature
+ import /Languages/SpecCalculus/Semantics/Evaluate/Spec/EquivPreds
 
  op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
@@ -150,6 +151,9 @@ spec
      let term = foldl insert term decls in
      case simplify spc term of
        | Fun(Bool true,_,_) -> None
+       %% In general simplify doesn't change e -> true because of strictness, but that should not be
+       %% issue here
+       | Apply(Fun (Implies, _, _), Record([("1",t1),("2",Fun(Bool true,_,_))],_),_) -> None
        | claim -> Some(mkQualifiedId(qual, StringUtilities.freshName(id,claimNames)),tvs,claim)
 
  def addCondition(tcc as (tccs,claimNames),gamma,term) =
@@ -481,7 +485,7 @@ spec
 		     %let vs = map (fn (VarPat(v,_)) -> v) vs in
 		     (if vs = []
 			then tcc
-			else if equalSort?(unfoldStripSort(spc,oty,false),ty)
+			else if equivSort? spc true (oty,ty)
 			then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) ->
 								      let tm::_ = patternToTerms(pat) in tm) vs),
 					       mkTuple args)
@@ -500,7 +504,7 @@ spec
 	    (let vs = (getParams p) in
 	     if vs = []
 	       then tcc
-	     else if (equalSort?(unfoldStripSort(spc,oty,false),ty))
+	     else if equivSort? spc true (oty,ty)
 	     then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),
 				    n2)
 	     else addErrorCondition(tcc,gamma,"IllegalRecursion"))
@@ -612,7 +616,8 @@ spec
 	  tcc
 	| _ ->
      case (tau1,sigma1)
-       of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) -> 
+       of (Arrow(tau1,tau2,_),Arrow(sigma1,sigma2,_)) ->
+	  let sigma1 = unfoldBase(gamma,sigma1) in
           let (xVarTm,gamma1) = freshVars("X",sigma1,gamma) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,xVarTm,sigma1,tau1) in
           let tcc    = subtypeRec(pairs,tcc,gamma1,
@@ -748,8 +753,10 @@ spec
 		   foldl (fn (tau, tcc) ->
 			  (tcc, 
 			   gamma0 
-			   tvs 
-			   (Some (unfoldStripSort (spc, tau, false)))
+			   tvs
+			   %% Was unfoldStripSort but that cause infinite recursion.
+			   %% Is stripSubsorts sufficient (or necessary)?
+			   (Some (stripSubsorts(spc, tau)))
 			   (Some (Qualified (q, id), (curriedParams term).1))
 			   (Qualified (q, id ^ "_Obligation")))
 			   |- 
