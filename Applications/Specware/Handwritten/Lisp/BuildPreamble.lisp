@@ -15,14 +15,14 @@
 ;; Used in patch detection and about-specware command
 (defvar Major-Version-String "4-0")
 
-#+allegro
-(#+mswindows
-  (;;; Normally autoloaded, but we want to preload them for a stand-alone world
-    (require "eli")
-    (require "sock")
-    (require "trace")
-  )
-)
+;;; Normally autoloaded, but we want to preload them for a stand-alone world
+#+(and allegro mswindows)
+(require "eli")
+#+(and allegro mswindows)
+(require "sock")
+#+(and allegro mswindows)
+(require "trace")
+
 
 ;; Override normal definition because of an apparent Allegro bug in
 ;; generate-application where excl::compile-file-if-needed compiles
