@@ -144,7 +144,7 @@ spec
          pj (wellFormedContext cx)
       && varDeclaration (v,t) in? cx
       => pj (wellTypedExpr (cx, VAR v, t)))
-    | exOpInstance ->
+    | exOp ->
       (fa (cx:Context, o:Operation, t:Type)
          pj (wellFormedContext cx)
       && opDeclaration (o, t) in? cx
