@@ -83,6 +83,13 @@
   (declare (ignore left right))
   (MetaSlang::mkQualifiedId qualifier id))
 
+(defun make-unqualified-ambiguous-name (id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-ambiguous-name (qualifier id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkQualifiedId qualifier id))
 
 ;;; ========================================================================
 ;;;  Primitives
@@ -266,8 +273,8 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
-  (let* ((params     (if (equal :unspecified params) nil params))
-         (tyVars     (if (equal :unspecified tyVars) nil tyVars))
+  (let* ((params     (if (equal :unspecified params) '() params))
+         (tyVars     (if (equal :unspecified tyVars) '() tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
          (term       (bind-parameters params term l r))
          (tyVarsTerm (PosSpec::abstractTerm #'namedTypeVar tyVars term))
@@ -589,6 +596,8 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-tuple-display (optional-tuple-display-body l r)
+  ;; :unspecified for 0, otherwise length of optional-tuple-display-body will be at least 2
+  ;;  I.e., length of terms will be 0 or 2-or-more, but will never be 1.
   (let ((terms (if (equal optional-tuple-display-body :unspecified)
                    '()
                  optional-tuple-display-body)))

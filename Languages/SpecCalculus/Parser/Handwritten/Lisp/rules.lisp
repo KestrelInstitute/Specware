@@ -1343,11 +1343,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-AMBIGUOUS-NAME ()
   (1 :NAME)
-  (list 1))
+  (make-unqualified-ambiguous-name 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :QUALIFIED-AMBIGUOUS-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :NAME))
-  (list 1 2))
+  (make-qualified-ambiguous-name 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
