@@ -16,7 +16,7 @@ let
   p = morphism b -> c {Y +-> Z, y +-> z}
   d = diagram {
       u : v -> w +-> m,
-      x : v -> z +-> p
+      x : v -> z +-> n
     }
 in
   colimit d
