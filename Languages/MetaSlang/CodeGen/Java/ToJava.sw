@@ -27,6 +27,13 @@ def JGen.metaSlangTermToJavaExpr term =
    return (block,expr)
   }
 
+%op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (Block * List Java.Expr)
+def metaSlangTermsToJavaExprs terms =
+  {
+   (block,exprs,_,_) <- translateTermsToExpressionsM(empty,terms,0,0);
+   return (block,exprs)
+  }
+
 
 % --------------------------------------------------------------------------------
 

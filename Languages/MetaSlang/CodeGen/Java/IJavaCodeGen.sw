@@ -55,6 +55,8 @@ spec
 
   op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (Block * Java.Expr)
 
+  op metaSlangTermsToJavaExprs: (List MS.Term) -> JGenEnv (Block * List Java.Expr)
+
   (**
    * reads the optional option spec, which contains user-supplied
    * information concerning the target directory of the code generation,
@@ -66,6 +68,12 @@ spec
    *)
   op processOptions : JSpec * Option Spec * String -> List JavaFile
   op printJavaFile : Java.JavaFile -> ()
+
+
+  % utils for constructing Java elements ------------------------
+
+  op mkBinExp: Id * List Java.Expr -> Java.Expr
+  op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
 
 
 end-spec

@@ -512,7 +512,7 @@ def javaBaseOp?(id) =
     | "~" -> true
     | _ -> false
 
-op mkBinExp: Id * List Java.Expr -> Java.Expr
+%op mkBinExp: Id * List Java.Expr -> Java.Expr
 def mkBinExp(opId, javaArgs) =
   let [ja1, ja2] = javaArgs in
   CondExp (Bin (mkBaseJavaBinOp(opId), Un (Prim (Paren (ja1))), Un (Prim (Paren (ja2)))), None)
@@ -575,7 +575,7 @@ def mkFldAssn(cId, vId, jT1) =
   let fldAcc = mkFldAccViaClass(cId, vId) in
   Stmt (Expr (Ass (FldAcc (ViaCls (([], cId), vId)), Assgn, jT1)))
 
-op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
+%op mkMethInvName: Java.Name * List Java.Expr -> Java.Expr
 def mkMethInvName(name, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaName (name, javaArgs)))), None)
 
