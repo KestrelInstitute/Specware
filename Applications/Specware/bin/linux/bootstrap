@@ -263,12 +263,12 @@ echo " "
 $LISP -I ${BIG_ALISP} -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(load "$MEMORY_MANAGEMENT") 
-	(compact-memory t 0 32000000)
-	(set-gc-parameters-for-build nil)
+	(compact-memory nil 0 32000000)   ; not verbose
+	(set-gc-parameters-for-build nil) ; not verbose
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
-	(compact-memory t -1 0)
-	(set-gc-parameters-for-use nil)
+	(compact-memory nil -1 0)         ; not verbose
+	(set-gc-parameters-for-use nil)   ; not verbose
         (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX
 RC=$?
