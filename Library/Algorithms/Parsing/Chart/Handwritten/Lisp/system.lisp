@@ -13,11 +13,13 @@
 
 (load-local-file "parser-package") 
 
+;; Setting the count to 1 means you can push :DEBUG-PARSER twice onto
+;;  *features* prior to loading this file and one occurrence will survive.
 (setq *features* (remove :DEBUG-PARSER    *features* :count 1))
 (setq *features* (remove :OPTIMIZE-PARSER *features* :count 1))
 
 ;; Choose either or neither (both is ok, but would be peculiar)
-(pushnew :DEBUG-PARSER *features*)
+;(pushnew :DEBUG-PARSER *features*)
 ;(pushnew :OPTIMIZE-PARSER *features*)
 
 #+DEBUG-PARSER    (format t "~%DEBUG-PARSER    feature is on.~2%")
