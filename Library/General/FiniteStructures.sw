@@ -11,7 +11,7 @@ spec
   def FSeq.toSet s = toFSet (fn x -> x in? s)
 
   % intersection of all sets contained in a sequence:
-  op FSeq.//\\ : [a] FSeq (FSet a) -> FSet a
+  op FSeq.//\\ : [a] NonEmptyFSeq (FSet a) -> FSet a
   def FSeq.//\\ seqOfSets = FSet.//\\ (toSet seqOfSets)
 
   % union of all sets contained in a sequence:
@@ -19,7 +19,7 @@ spec
   def FSeq.\\// seqOfSets = FSet.\\// (toSet seqOfSets)
 
   % intersection of all sets in a map's range:
-  op FMap.//\\ : [a,b] FMap (a, FSet b) -> FSet b
+  op FMap.//\\ : [a,b] NonEmptyFMap (a, FSet b) -> FSet b
   def FMap.//\\ setValuedMap = FSet.//\\ (range setValuedMap)
 
   % union of all sets in a map's range:
