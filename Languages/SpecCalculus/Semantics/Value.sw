@@ -5,6 +5,8 @@ SpecCalc qualifying spec {
 
   sort OtherValue                % Used for extensions to Specware
 
+  sort SCTerm			 % Defined in Evaluate/Signature.sw
+
   sort Value =
     | Spec     Spec
     | Morph    Morphism
@@ -12,6 +14,7 @@ SpecCalc qualifying spec {
     | Colimit  SpecInitialCocone 
     | Proof    Proof
     | InProcess			  % Used for catching circular definitions
+    | UnEvaluated SCTerm	  % To allow evaluation by need of multiple terms within a file
     % | DiagMorph
     | Other    OtherValue         % Used for extensions to Specware
 

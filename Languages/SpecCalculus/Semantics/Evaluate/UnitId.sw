@@ -38,27 +38,17 @@ the canonical UnitId found.
     case optValue of
       | Some valueInfo -> return (valueInfo,currentUID)
       | None -> {
-          % trace "evaluateUID: not found in local context\n";
           uidList <- generateUIDList unitId;
-          % trace ("evaluateUID: resolved to \n\n   "
-          %     ^ (List.show "\n   " (map showUID uidList))
-          %     ^ "\n\n");
           optValue <- searchContextForUID uidList;
           (case optValue of      
              | Some value -> return value
              | None -> {
-               % trace "evaluateUID: not found in global context\n";
                uidPathPairs <-
                  foldM
                   (fn l -> fn unitId -> {
                      pair <- generateFileList unitId;
                      return (l ++ pair)})
                   [] uidList;
-                  % trace ("evaluateUID: uidPathPairs =\n  "
-                  %        ^ (List.show "\n   "
-                  %            (map (fn (unitId,path) -> "\n   " ^ (showUID unitId) ^ "\n   path: " ^ path)
-                  %           uidPathPairs))
-                  %        ^ "\n\n");
                 searchFileSystemForUID (position, unitId, uidPathPairs, currentUID)
               })
         }
@@ -68,24 +58,49 @@ the canonical UnitId found.
 These are called only from evaluateUID.
 
 \begin{spec}
-  op searchContextForUID : List UnitId -> Env (Option (ValueInfo * UnitId))
+  op  searchContextForUID : List UnitId -> Env (Option (ValueInfo * UnitId))
   def searchContextForUID uids =
+    let def searchForUID unitId =
+          {optValue <- lookupInGlobalContext unitId;
+	   (case optValue of      
+	      | Some (value,timeStamp,_) ->
+                (case value of
+		   | InProcess -> raise (CircularDefinition unitId)
+		   | _ ->
+		   {cacheTS <- validateCache unitId;
+		    if cacheTS <= timeStamp
+		      then
+			(case value of
+			   | UnEvaluated term ->
+			     {saveUID <- getCurrentUID;
+			      setCurrentUID unitId;
+			      bindInGlobalContext unitId (InProcess,0,[]);
+			      (value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
+			      setCurrentUID saveUID;
+			      let val = (value,max(timeStamp,rTimeStamp),depUIDs) in
+			      {bindInGlobalContext unitId val;
+			       return (Some (val,unitId))}}
+			   | _ -> return (Some ((value,timeStamp,[unitId]), unitId)))
+		    else return None})
+	      | None -> return None)}
+    in
     case uids of
       | [] -> return None
-      | unitId::rest -> {
-          optValue <- lookupInGlobalContext unitId;
-          (case optValue of      
-            | Some (value,timeStamp,_) ->
-              (case value of
-                 | InProcess -> raise (CircularDefinition unitId)
-                 | _ -> {cacheTS <- validateCache unitId;
-                         return (if cacheTS <= timeStamp
-				   then Some ((value,timeStamp,[unitId]), unitId)
-                                 else None)})
-            | None -> searchContextForUID rest)
-        }
+      | unitId::rest ->
+        {optValue <- searchForUID unitId;
+         case optValue of
+	   | Some v -> return (Some v)
+	   | None ->
+	 case unitId of
+	   | {path = path as _::_, hashSuffix = None} ->
+	     %% Allow .../foo as abbreviation for .../foo#foo
+	     {optValue <- searchForUID {path = path, hashSuffix = lastElt path};
+	      case optValue of
+	      | Some v -> return (Some v)
+	      | None -> searchContextForUID rest}
+	   | None -> searchContextForUID rest}
 
-  op searchFileSystemForUID : Position * RelativeUID * List (UnitId * String) * UnitId
+  op  searchFileSystemForUID : Position * RelativeUID * List (UnitId * String) * UnitId
                                 -> Env (ValueInfo * UnitId)
   def searchFileSystemForUID (position, relUID, pairs, currentUID) =
     case pairs of
@@ -93,29 +108,67 @@ These are called only from evaluateUID.
       | ((unitId,fileName)::rest) -> {
             test <- fileExistsAndReadable? fileName;
             if test & ~(inSameFile?(unitId,currentUID)) then {
-              loadFile unitId fileName;
+	      saveUID <- getCurrentUID;
+	      saveLocalContext <- getLocalContext;
+	      setCurrentUID unitId;
+	      clearLocalContext;
+              subUnitNames <- loadFile unitId fileName;
               % The desired side effect of loadFile is that
               % the UnitId is now bound in the global context.
-              optValue <- lookupInGlobalContext unitId;
-              % Either return found value or keep looking:
-              case optValue of
-                | Some (value,timeStamp,_)
-                   -> return ((value, timeStamp, [unitId]), unitId)
-                % | None -> searchFileSystemForUID (position, relUID, rest, currentUID)
-                | None -> raise (UIDNotFound (position,relUID))
+	      let def lookup unitId =
+	            {optValue <- lookupInGlobalContext unitId;
+		     % Either return found value or keep looking:
+		     case optValue of
+		     | Some (value,timeStamp,_)
+		       -> (case value of
+			     | UnEvaluated term ->
+			       {setCurrentUID unitId;
+				bindInGlobalContext unitId (InProcess,0,[]);
+				(value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
+				let val = (value,max(timeStamp,rTimeStamp),depUIDs) in
+				{bindInGlobalContext unitId val;
+				 return (Some(val,unitId))}}
+			     | _ -> return (Some((value, timeStamp, [unitId]), unitId)))
+		     | None -> return None}
+	      in
+	      {optValue <- lookup unitId;
+	       case optValue of
+		 | Some val ->
+		   {setCurrentUID saveUID;
+		    setLocalContext saveLocalContext;
+		    return val}
+		 | None ->
+	       case unitId of
+		 | {path = path as _::_, hashSuffix = None} ->
+		   %% Allow .../foo as abbreviation for .../foo#foo
+		   {optValue <- lookup {path = path, hashSuffix = lastElt path};
+		    case optValue of
+		      | Some val ->
+		        {setCurrentUID saveUID;
+			 setLocalContext saveLocalContext;
+			 return val}
+		      | None ->
+			%% :sw .../foo processes all subunits but doesn't return any
+		        {mapM (fn name -> lookup {path = path, hashSuffix = Some name})
+			   subUnitNames;
+			 raise (UIDNotFound (position,relUID))}}
+		 | _ -> raise (UIDNotFound (position,relUID))}
             } else
               searchFileSystemForUID (position, relUID, rest, currentUID)
           }
 
   %% Don't want to try loading from file you are currently processing
-  op inSameFile?: UnitId * UnitId -> Boolean
+  op  inSameFile?: UnitId * UnitId -> Boolean
   def inSameFile?(unitId,currentUID) =
     case (unitId,currentUID) of
       | ({path = path1, hashSuffix = Some _},
          {path = path2, hashSuffix = _}) ->
         path1 = path2
       | _ -> false
-      
+
+  op  lastElt: fa(a) List a -> Option a
+  def lastElt l = if l = [] then None else Some(nth(l,length l - 1))
+
 \end{spec}
 
 The following converts a relative UnitId into a list of candidate canonical
@@ -131,10 +184,10 @@ it easy to experiment with different UnitId path resolution strategies..
       | SpecPath_Relative {path,hashSuffix} -> {
             specPath <- getSpecPath;
             return (map (fn {path=root,hashSuffix=_} ->
-                 normalizeUID {path = root ++ path,
-                               hashSuffix = hashSuffix})
-                 specPath)
-          }
+			   normalizeUID {path = root ++ path,
+					 hashSuffix = hashSuffix})
+		      specPath)
+        }
       | UnitId_Relative {path=newPath,hashSuffix=newSuffix} -> {
             {path=currentPath,hashSuffix=currentSuffix} <- getCurrentUID;
             root <- removeLast currentPath;
@@ -144,8 +197,9 @@ it easy to experiment with different UnitId path resolution strategies..
                             normalizeUID {path=root++newPath,hashSuffix=None}]
               | (_,_,_,_) -> 
                     return [normalizeUID {path=root++newPath,hashSuffix=newSuffix}]
-                 )
-          }
+             )
+        }
+
 \end{spec}
    
 The following converts a canonical UnitId into a list of candidate files
@@ -159,7 +213,7 @@ There should be a separate syntax for referring to UIDs that resolve
 to one of many bindings in a file. For example \verb|/a/b#c|.
 
 \begin{spec}
-  op generateFileList : UnitId -> Env (List (UnitId * String))
+  op  generateFileList : UnitId -> Env (List (UnitId * String))
   def generateFileList unitId =
       return [(unitId, (uidToFullPath unitId) ^ ".sw")]
 \end{spec}
@@ -167,7 +221,7 @@ to one of many bindings in a file. For example \verb|/a/b#c|.
 Given a term find a canonical UnitId for it.
 
 \begin{spec}
-  op SpecCalc.getUID : SpecCalc.Term Position -> Env UnitId
+  op  SpecCalc.getUID : SpecCalc.Term Position -> Env UnitId
   def SpecCalc.getUID term =
     case (valueOf term) of
       | UnitId unitId -> {(_,r_uid) <- evaluateReturnUID (positionOf term) unitId;
@@ -192,7 +246,7 @@ term. This is to ensure that relative UIDs within the term are
 handled correctly.
 
 \begin{spec}
-  op loadFile : UnitId -> String -> Env ()
+  op  loadFile : UnitId -> String -> Env (List String)
   def loadFile unitId fileName = %{
     % print ("Loading: " ^ fileName ^ "\n");
     case (parseFile fileName) of
@@ -206,38 +260,25 @@ handled correctly.
 		  %%  Loading Foo#Bogus is an error if Foo contains just a term (as opposed to decls).
                   %%  We assume the caller of loadFile (e.g. searchFileSystemForUID) will raise an
 		  %%   exception when it cannot find the unitId.
-		  return ()
+		  return []
 		| _ -> 
-		  { saveUID <- getCurrentUID;
-		    saveLocalContext <- getLocalContext;
-		    setCurrentUID unitId;
-		    clearLocalContext;
-		    bindInGlobalContext unitId (InProcess,0,[]);
+		  { bindInGlobalContext unitId (InProcess,0,[]);
 		    (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
-		    setCurrentUID saveUID;
-		    setLocalContext saveLocalContext;
-		    bindInGlobalContext unitId (value, max(timeStamp,fileWriteTime fileName), depUIDs)
+		    bindInGlobalContext unitId (value, max(timeStamp,fileWriteTime fileName), depUIDs);
+		    return []
 		   })
-	   | Decls decls -> evaluateGlobalDecls unitId fileName decls)
+	   | Decls decls -> storeGlobalDecls unitId fileName decls)
   %  }
 
-  op evaluateGlobalDecls : UnitId -> String -> List (Decl Position) -> Env ()
-  def evaluateGlobalDecls {path, hashSuffix=_} fileName decls =
-    let def evaluateGlobalDecl (name,term) =
-      let newUID = {path=path,hashSuffix=Some name} in {
-        setCurrentUID newUID;
-        (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
-        bindInGlobalContext newUID (value,max(timeStamp,fileWriteTime fileName),depUIDs)
-    }
-    in {
-      checkForMultipleDefs decls;
-      saveUID <- getCurrentUID;
-      saveLocalContext <- getLocalContext;
-      clearLocalContext;
-      mapM evaluateGlobalDecl decls;
-      setCurrentUID saveUID;
-      setLocalContext saveLocalContext
-    }
+  op storeGlobalDecls : UnitId -> String -> List (Decl Position) -> Env (List String)
+  def storeGlobalDecls {path, hashSuffix=_} fileName decls =
+    let def storeGlobalDecl (name,term) =
+	  let newUID = {path=path,hashSuffix=Some name} in
+	  {setCurrentUID newUID;
+	   bindInGlobalContext newUID (UnEvaluated term,fileWriteTime fileName,[]);
+	   return name}
+    in {checkForMultipleDefs decls;
+	mapM storeGlobalDecl decls}
 
   op checkForMultipleDefs: List (Decl Position) -> Env ()
   def checkForMultipleDefs decls =
