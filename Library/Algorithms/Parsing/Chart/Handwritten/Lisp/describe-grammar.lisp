@@ -38,11 +38,11 @@
     (unless just-rerun-latex?
       (when (probe-file tex-file)
 	(let ((old-tex-file (make-pathname :name "old-metaslang.tex" :defaults parser-tex-dir)))
-	  (format t "~&;;; Renaming ~A~&;;;       to ~A~%" tex-file old-tex-file)
+	  ; (format t "~&;;; Renaming ~A~&;;;       to ~A~%" tex-file old-tex-file)
 	  (rename-file tex-file old-tex-file)))
       (when (probe-file ps-file)
 	(let ((old-ps-file  (make-pathname :name "old-grammar.ps"    :defaults parser-tex-dir)))
-	  (format t "~&;;; Renaming ~A~&;;;       to ~A~%" ps-file old-ps-file)
+	  ; (format t "~&;;; Renaming ~A~&;;;       to ~A~%" ps-file old-ps-file)
 	  (rename-file ps-file old-ps-file)))
       (write-bnf-in-latex-for-grammar tex-file))
     (when (probe-file log-file)
