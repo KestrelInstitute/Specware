@@ -509,11 +509,11 @@
 	    str))
       str)))
 
-#+cmu
+#+(or sbcl cmu)
 (defun cl::commandp (form)
   (keywordp form))
 
-#+(or cmu mcl)
+#+(or cmu mcl sbcl)
 (defun cl::invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command)))
 	(ch (read-char-no-hang)))

@@ -11,9 +11,9 @@
 #+cmu
 (setq ext:*gc-verbose* nil)
 #+cmu
-(setq extensions:*bytes-consed-between-gcs* 40000000)
+(setq extensions:*bytes-consed-between-gcs* 50331648)
 #+sbcl
-(setf (sb-ext:bytes-consed-between-gcs) 40000000)
+(setf (sb-ext:bytes-consed-between-gcs) 50331648)
 #+(or cmu sbcl)
 (setq *compile-verbose* nil)
 #+cmu

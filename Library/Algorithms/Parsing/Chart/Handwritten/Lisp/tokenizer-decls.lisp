@@ -41,7 +41,7 @@
   ad-hoc-table
   ad-hoc-strings)
 
-(defconstant +tokenizer-eof+ (cons nil nil))
+(defparameter +tokenizer-eof+ (cons nil nil))
 
 (defstruct pseudo-stream
   unread-chars

@@ -76,7 +76,9 @@
 		(if pr (setf (cdr pr) newvalue)
 		  (push (cons (intern varname "KEYWORD") newvalue)
 			ext:*environment-list*)))
-  #+sbcl      (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int) varname newvalue 1)
+  #+sbcl      (progn (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int)
+					   varname newvalue 1)
+		     (getenv varname))
   )
 
 #+(or mcl Lispworks)
