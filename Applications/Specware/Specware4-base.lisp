@@ -17,6 +17,8 @@
 (defpackage "INFIX")
 (defpackage "INTEGER-SPEC")
 (defpackage "INTEGERSET")
+(defpackage "JGEN")
+(defpackage "JAVA")
 (defpackage "LISP-SPEC")
 (defpackage "LISP-SPEC")
 (defpackage "LIST-SPEC")
@@ -38,6 +40,7 @@
 (defpackage "POSSPECTOSPEC")
 (defpackage "POSITION-SPEC")
 (defpackage "PRETTYPRINT")
+(defpackage "SNARK")
 (defpackage "SKETCH")
 (defpackage "SPECCALC")
 (defpackage "SPECENVIRONMENT")
@@ -1056,7 +1059,7 @@
    (error "Nonexhaustive match failure in length")))
 
 (defun METASLANG::equalList? (x y eqFn) 
-  (lisp::and 
+  (cl::and 
    ( =  (LIST-SPEC::|!length| x) (LIST-SPEC::|!length| y)) 
    (block 
     nil 
@@ -1065,7 +1068,7 @@
         (if (consp x) 
             (if (consp y) 
                 (return 
-                 (lisp::and 
+                 (cl::and 
                   (funcall eqFn (cons (car x) (car y))) 
                   (METASLANG::equalList? (cdr x) (cdr y) eqFn)))))) 
     (return nil))))
@@ -1209,7 +1212,7 @@
   (block 
    nil 
    (return 
-    (lisp::and 
+    (cl::and 
      (string=  (car pV1) (car pV2)) 
      (METASLANG::equalSort? (cdr pV1) (cdr pV2)))) 
    (error "Nonexhaustive match failure in equalVar?")))
@@ -1222,7 +1225,7 @@
          (if (eq (car p2) :|AliasPat|) 
              (let ((pV114 (cdr p2))) 
                (return 
-                (lisp::and 
+                (cl::and 
                  (METASLANG::equalPattern? (svref pV45 0) (svref pV114 0)) 
                  (METASLANG::equalPattern? (svref pV45 1) (svref pV114 1))))))) 
        (if (eq (car p1) :|VarPat|) 
@@ -1233,9 +1236,9 @@
                  (if (eq (car p2) :|EmbedPat|) 
                      (let ((pV101 (cdr p2))) 
                        (return 
-                        (lisp::and 
+                        (cl::and 
                          (string=  (svref pV43 0) (svref pV101 0)) 
-                         (lisp::and 
+                         (cl::and 
                           (METASLANG::equalSort? (svref pV43 2) (svref pV101 2)) 
                           (METASLANG::equalOpt? 
                            (svref pV43 1) 
@@ -1253,7 +1256,7 @@
                               (block 
                                nil 
                                (return 
-                                (lisp::and 
+                                (cl::and 
                                  (string=  (car pV9) (car pV10)) 
                                  (METASLANG::equalPattern? (cdr pV9) (cdr pV10)))) 
                                (error 
@@ -1281,7 +1284,7 @@
                                              (if (eq (car p2) :|RelaxPat|) 
                                                  (let ((pV63 (cdr p2))) 
                                                    (return 
-                                                    (lisp::and 
+                                                    (cl::and 
                                                      (METASLANG::equalPattern? 
                                                       (svref pV36 0) 
                                                       (svref pV63 0)) 
@@ -1293,7 +1296,7 @@
                                                  (if (eq (car p2) :|QuotientPat|) 
                                                      (let ((pV56 (cdr p2))) 
                                                        (return 
-                                                        (lisp::and 
+                                                        (cl::and 
                                                          (METASLANG::equalPattern? 
                                                           (svref pV35 0) 
                                                           (svref pV56 0)) 
@@ -1307,7 +1310,7 @@
                                                           :|SortedPat|) 
                                                          (let ((pV49 (cdr p2))) 
                                                            (return 
-                                                            (lisp::and 
+                                                            (cl::and 
                                                              (METASLANG::equalPattern? 
                                                               (svref pV34 0) 
                                                               (svref pV49 0)) 
@@ -1328,7 +1331,7 @@
          (if (eq (car t2) :|Apply|) 
              (let ((pV140 (cdr t2))) 
                (return 
-                (lisp::and 
+                (cl::and 
                  (METASLANG::equalTerm? (svref pV65 0) (svref pV140 0)) 
                  (METASLANG::equalTerm? (svref pV65 1) (svref pV140 1))))))) 
        (if (eq (car t1) :|ApplyN|) 
@@ -1350,7 +1353,7 @@
                           (block 
                            nil 
                            (return 
-                            (lisp::and 
+                            (cl::and 
                              (string=  (car pV7) (car pV8)) 
                              (METASLANG::equalTerm? (cdr pV7) (cdr pV8)))) 
                            (error "Nonexhaustive match failure in equalTerm?"))))))) 
@@ -1359,11 +1362,11 @@
                      (if (eq (car t2) :|Bind|) 
                          (let ((pV122 (cdr t2))) 
                            (return 
-                            (lisp::and 
+                            (cl::and 
                              (slang-built-in::slang-term-equals 
                               (svref pV62 0) 
                               (svref pV122 0)) 
-                             (lisp::and 
+                             (cl::and 
                               (METASLANG::equalList? 
                                (svref pV62 1) 
                                (svref pV122 1) 
@@ -1376,7 +1379,7 @@
                          (if (eq (car t2) :|Let|) 
                              (let ((pV114 (cdr t2))) 
                                (return 
-                                (lisp::and 
+                                (cl::and 
                                  (METASLANG::equalTerm? 
                                   (svref pV61 1) 
                                   (svref pV114 1)) 
@@ -1389,7 +1392,7 @@
                                        (block 
                                         nil 
                                         (return 
-                                         (lisp::and 
+                                         (cl::and 
                                           (METASLANG::equalPattern? 
                                            (car pV17) 
                                            (car pV18)) 
@@ -1403,7 +1406,7 @@
                              (if (eq (car t2) :|LetRec|) 
                                  (let ((pV107 (cdr t2))) 
                                    (return 
-                                    (lisp::and 
+                                    (cl::and 
                                      (METASLANG::equalTerm? 
                                       (svref pV60 1) 
                                       (svref pV107 1)) 
@@ -1416,7 +1419,7 @@
                                            (block 
                                             nil 
                                             (return 
-                                             (lisp::and 
+                                             (cl::and 
                                               (METASLANG::equalVar? 
                                                (car pV25) 
                                                (car pV26)) 
@@ -1436,7 +1439,7 @@
                                      (if (eq (car t2) :|Fun|) 
                                          (let ((pV95 (cdr t2))) 
                                            (return 
-                                            (lisp::and 
+                                            (cl::and 
                                              (METASLANG::equalFun? 
                                               (svref pV58 0) 
                                               (svref pV95 0)) 
@@ -1455,11 +1458,11 @@
                                                   (block 
                                                    nil 
                                                    (return 
-                                                    (lisp::and 
+                                                    (cl::and 
                                                      (METASLANG::equalPattern? 
                                                       (svref pV37 0) 
                                                       (svref pV38 0)) 
-                                                     (lisp::and 
+                                                     (cl::and 
                                                       (METASLANG::equalTerm? 
                                                        (svref pV37 1) 
                                                        (svref pV38 1)) 
@@ -1473,11 +1476,11 @@
                                              (if (eq (car t2) :|IfThenElse|) 
                                                  (let ((pV82 (cdr t2))) 
                                                    (return 
-                                                    (lisp::and 
+                                                    (cl::and 
                                                      (METASLANG::equalTerm? 
                                                       (svref pV56 0) 
                                                       (svref pV82 0)) 
-                                                     (lisp::and 
+                                                     (cl::and 
                                                       (METASLANG::equalTerm? 
                                                        (svref pV56 1) 
                                                        (svref pV82 1)) 
@@ -1498,7 +1501,7 @@
                                                           :|SortedTerm|) 
                                                          (let ((pV69 (cdr t2))) 
                                                            (return 
-                                                            (lisp::and 
+                                                            (cl::and 
                                                              (METASLANG::equalTerm? 
                                                               (svref pV54 0) 
                                                               (svref pV69 0)) 
@@ -1515,7 +1518,7 @@
          (if (eq (car s2) :|Arrow|) 
              (let ((pV121 (cdr s2))) 
                (return 
-                (lisp::and 
+                (cl::and 
                  (METASLANG::equalSort? (svref pV76 0) (svref pV121 0)) 
                  (METASLANG::equalSort? (svref pV76 1) (svref pV121 1))))))) 
        (if (eq (car s1) :|Product|) 
@@ -1530,7 +1533,7 @@
                       (block 
                        nil 
                        (return 
-                        (lisp::and 
+                        (cl::and 
                          (string=  (car pV5) (car pV6)) 
                          (METASLANG::equalSort? (cdr pV5) (cdr pV6)))) 
                        (error "Nonexhaustive match failure in equalSort?"))))))) 
@@ -1546,7 +1549,7 @@
                           (block 
                            nil 
                            (return 
-                            (lisp::and 
+                            (cl::and 
                              (string=  (car pV13) (car pV14)) 
                              (METASLANG::equalOpt? 
                               (cdr pV13) 
@@ -1558,7 +1561,7 @@
                      (if (eq (car s2) :|Quotient|) 
                          (let ((pV104 (cdr s2))) 
                            (return 
-                            (lisp::and 
+                            (cl::and 
                              (METASLANG::equalSort? 
                               (svref pV73 0) 
                               (svref pV104 0)) 
@@ -1570,7 +1573,7 @@
                          (if (eq (car s2) :|Subsort|) 
                              (let ((pV97 (cdr s2))) 
                                (return 
-                                (lisp::and 
+                                (cl::and 
                                  (METASLANG::equalSort? 
                                   (svref pV72 0) 
                                   (svref pV97 0)) 
@@ -1582,7 +1585,7 @@
                              (if (eq (car s2) :|Base|) 
                                  (let ((pV90 (cdr s2))) 
                                    (return 
-                                    (lisp::and 
+                                    (cl::and 
                                      (slang-built-in::slang-term-equals 
                                       (svref pV71 0) 
                                       (svref pV90 0)) 
@@ -1611,7 +1614,7 @@
                                                           (let ((pV38 
                                                                  (svref pV37 0))) 
                                                             (return 
-                                                             (lisp::or 
+                                                             (cl::or 
                                                               ( =  
                                                                (svref pV41 2) 
                                                                (svref pV37 2)) 
@@ -1683,7 +1686,7 @@
   (block 
    nil 
    (return 
-    (lisp::and 
+    (cl::and 
      (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
      (METASLANG::equalSort? (cdr pV1) (cdr pV2)))) 
    (error "Nonexhaustive match failure in equalSortScheme?")))
@@ -1692,7 +1695,7 @@
   (block 
    nil 
    (return 
-    (lisp::and 
+    (cl::and 
      (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
      (METASLANG::equalTerm? (cdr pV1) (cdr pV2)))) 
    (error "Nonexhaustive match failure in equalTermScheme?")))
@@ -1702,11 +1705,11 @@
    nil 
    (let ((pV10 (svref pV2 3))) 
      (return 
-      (lisp::and 
+      (cl::and 
        (slang-built-in::slang-term-equals (svref pV1 0) (svref pV2 0)) 
-       (lisp::and 
+       (cl::and 
         (slang-built-in::slang-term-equals (svref pV1 1) (svref pV2 1)) 
-        (lisp::and 
+        (cl::and 
          (equalSortScheme? (svref pV1 2) (svref pV2 2)) 
          (LIST-SPEC::all-1-1 
           #'(lambda (def1) 
@@ -1723,9 +1726,9 @@
    nil 
    (let ((pV8 (svref pV2 2))) 
      (return 
-      (lisp::and 
+      (cl::and 
        (slang-built-in::slang-term-equals (svref pV1 0) (svref pV2 0)) 
-       (lisp::and 
+       (cl::and 
         (slang-built-in::slang-term-equals (svref pV1 1) (svref pV2 1)) 
         (LIST-SPEC::all-1-1 
          #'(lambda (def1) 
@@ -1773,7 +1776,7 @@
        (if (eq (car pV1) :|Qualified|) 
            (let ((pV2 (cdr pV1))) 
              (return 
-              (lisp::and (string=  (car pV2) qualifier) (string=  (cdr pV2) id))))) 
+              (cl::and (string=  (car pV2) qualifier) (string=  (cdr pV2) id))))) 
        (error "Nonexhaustive match failure in memberQualifiedId"))) 
    qids))
 
@@ -1882,7 +1885,7 @@
                  (return 
                   (let ((newP1 (mapRec pV35))) 
                     (let ((newP2 (mapRec pV36))) 
-                      (if (lisp::and 
+                      (if (cl::and 
                            (slang-built-in::slang-term-equals newP1 pV35) 
                            (slang-built-in::slang-term-equals newP2 pV36)) 
                           pattern 
@@ -1899,7 +1902,7 @@
                             (let ((newPat (mapRec pV34))) 
                               (let ((newSrt 
                                      (METASLANG::mapSort-1-1 tsp_maps1 pV32))) 
-                                (if (lisp::and 
+                                (if (cl::and 
                                      (slang-built-in::slang-term-equals 
                                       newPat 
                                       pV34) 
@@ -1933,7 +1936,7 @@
                           (let ((newPat (mapRec pV27))) 
                             (let ((newTrm 
                                    (METASLANG::mapTerm-1-1 tsp_maps1 pV28))) 
-                              (if (lisp::and 
+                              (if (cl::and 
                                    (slang-built-in::slang-term-equals 
                                     newPat 
                                     pV27) 
@@ -1952,7 +1955,7 @@
                               (let ((newPat (mapRec pV24))) 
                                 (let ((newTrm 
                                        (METASLANG::mapTerm-1-1 tsp_maps1 pV25))) 
-                                  (if (lisp::and 
+                                  (if (cl::and 
                                        (slang-built-in::slang-term-equals 
                                         newPat 
                                         pV24) 
@@ -2024,7 +2027,7 @@
                                                        (METASLANG::mapSort-1-1 
                                                         tsp_maps1 
                                                         pV14))) 
-                                                  (if (lisp::and 
+                                                  (if (cl::and 
                                                        (slang-built-in::slang-term-equals 
                                                         newPat 
                                                         pV13) 
@@ -2083,7 +2086,7 @@
                                       (mapRec (cdr x1)))) 
                                   pV45))) 
                             (let ((newBdy (mapRec pV46))) 
-                              (if (lisp::and 
+                              (if (cl::and 
                                    (slang-built-in::slang-term-equals 
                                     pV45 
                                     newDecls) 
@@ -2117,7 +2120,7 @@
                                              "Nonexhaustive match failure in mapTerm")))) 
                                       pV42))) 
                                 (let ((newBdy (mapRec pV43))) 
-                                  (if (lisp::and 
+                                  (if (cl::and 
                                        (slang-built-in::slang-term-equals 
                                         pV42 
                                         newDecls) 
@@ -2151,11 +2154,11 @@
                                       (let ((newT1 (mapRec pV36))) 
                                         (let ((newT2 (mapRec pV37))) 
                                           (let ((newT3 (mapRec pV38))) 
-                                            (if (lisp::and 
+                                            (if (cl::and 
                                                  (slang-built-in::slang-term-equals 
                                                   newT1 
                                                   pV36) 
-                                                 (lisp::and 
+                                                 (cl::and 
                                                   (slang-built-in::slang-term-equals 
                                                    newT2 
                                                    pV37) 
@@ -2206,7 +2209,7 @@
                                                            (cdr x1)))) 
                                                       pV31))) 
                                                 (let ((newTrm (mapRec pV32))) 
-                                                  (if (lisp::and 
+                                                  (if (cl::and 
                                                        (slang-built-in::slang-term-equals 
                                                         pV31 
                                                         newVars) 
@@ -2228,7 +2231,7 @@
                                                  (return 
                                                   (let ((newT1 (mapRec pV27))) 
                                                     (let ((newT2 (mapRec pV28))) 
-                                                      (if (lisp::and 
+                                                      (if (cl::and 
                                                            (slang-built-in::slang-term-equals 
                                                             newT1 
                                                             pV27) 
@@ -2292,7 +2295,7 @@
                                                                        (METASLANG::mapSort-1-1 
                                                                         tsp_maps1 
                                                                         pV21))) 
-                                                                  (if (lisp::and 
+                                                                  (if (cl::and 
                                                                        (slang-built-in::slang-term-equals 
                                                                         newTrm 
                                                                         pV20) 
@@ -2385,7 +2388,7 @@
                          (return 
                           (let ((newS1 (mapRec tsp_maps1 sort_map pV29))) 
                             (let ((newS2 (mapRec tsp_maps1 sort_map pV30))) 
-                              (if (lisp::and 
+                              (if (cl::and 
                                    (slang-built-in::slang-term-equals newS1 pV29) 
                                    (slang-built-in::slang-term-equals newS2 pV30)) 
                                   srt 
@@ -2400,7 +2403,7 @@
                               (let ((newSsrt (mapRec tsp_maps1 sort_map pV26))) 
                                 (let ((newTrm 
                                        (METASLANG::mapTerm-1-1 tsp_maps1 pV27))) 
-                                  (if (lisp::and 
+                                  (if (cl::and 
                                        (slang-built-in::slang-term-equals 
                                         newSsrt 
                                         pV26) 
@@ -2422,7 +2425,7 @@
                                            (METASLANG::mapTerm-1-1 
                                             tsp_maps1 
                                             pV24))) 
-                                      (if (lisp::and 
+                                      (if (cl::and 
                                            (slang-built-in::slang-term-equals 
                                             newSsrt 
                                             pV23) 
@@ -2828,7 +2831,7 @@
        (return t) 
        (if (consp row) 
            (return 
-            (lisp::and 
+            (cl::and 
              (string=  (car (car row)) (NAT-SPEC::toString i)) 
              (ANNSPECPRINTER::isShortTuple (INTEGER-SPEC::|!+| i 1) (cdr row)))))) 
    (error "Nonexhaustive match failure in isShortTuple")))
@@ -5827,19 +5830,19 @@
                (pV3 (car pV2))) 
            (return 
             (PRETTYPRINT::|!string| 
-             (if (lisp::or 
+             (if (cl::or 
                   (string=  pV3 METASLANG::UnQualified) 
-                  (lisp::or 
+                  (cl::or 
                    (string=  pV3 "Nat") 
-                   (lisp::or 
+                   (cl::or 
                     (string=  pV3 "Boolean") 
-                    (lisp::or 
+                    (cl::or 
                      (string=  pV3 "String") 
-                     (lisp::or 
+                     (cl::or 
                       (string=  pV3 "Integer") 
-                      (lisp::or 
+                      (cl::or 
                        (string=  pV3 "General") 
-                       (lisp::or (string=  pV3 "Char") (string=  pV3 "List")))))))) 
+                       (cl::or (string=  pV3 "Char") (string=  pV3 "List")))))))) 
                  pV4 
                  (STRING-SPEC::^ (STRING-SPEC::^ pV3 ".") pV4))))))) 
    (error "Nonexhaustive match failure in ppAsciiId")))
@@ -5894,69 +5897,74 @@
    #'PRETTYPRINT::|!string| 
    #'ANNTERMPRINTER::ppAsciiId))
 
-(defun PRETTYPRINT::blanks (n) 
-  (block 
-   nil 
-   (if ( =  0 n) (return "")) 
-   (return 
-    (STRING-SPEC::concat " " (PRETTYPRINT::blanks (INTEGER-SPEC::|!-| n 1))))))
-
 (defun PRETTYPRINT::newlineString () (CHAR-SPEC::toString (CHAR-SPEC::chr 10)))
 
 (defun PRETTYPRINT::newlineAndBlanks (n) 
   (STRING-SPEC::^ (PRETTYPRINT::newlineString) (PRETTYPRINT::blanks n)))
 
-(defun PRETTYPRINT::toStream (text cont base newlineAndBlanks) 
-  (labels 
-    ((|!loop| (text indent) 
-      (block 
-       nil 
-       (if (null text) 
-           (return 
-            (funcall cont (cons (cons indent (PRETTYPRINT::blanks indent)) base))) 
-           (if (consp text) 
-               (let ((pV6 (cdr text))
-                     (pV5 (car text))) 
-                 (let ((pV8 (cdr pV5))) 
-                   (progn (if (consp pV8) 
-                              (if ( =  0 (car (car pV8))) 
-                                  (if (null (cdr pV8)) 
-                                      (return 
-                                       (let ((head (|!loop| pV6 0))) 
-                                         (let ((head 
-                                                (funcall newlineAndBlanks 
-                                                         (cons indent head)))) 
-                                           head)))))) 
-                          (return 
-                           (let ((head (|!loop| pV6 (car pV5)))) 
-                             (let ((head (LIST-SPEC::foldr-1-1-1 cont head pV8))) 
-                               (let ((head 
-                                      (funcall newlineAndBlanks 
-                                               (cons indent head)))) head))))))))) 
-       (error "Nonexhaustive match failure in toStream")))) 
+(defun PRETTYPRINT::streamWriter (|!stream| |!string|) 
+  (IO-SPEC::format1 |!stream| "~A" |!string|))
+
+(defun LIST-SPEC::rev2 (l r) 
+  (block 
+   nil 
+   (if (null l) 
+       (return r) 
+       (if (consp l) (return (LIST-SPEC::rev2 (cdr l) (cons (car l) r))))) 
+   (error "Nonexhaustive match failure in rev2")))
+
+(defun LIST-SPEC::rev (s) (LIST-SPEC::rev2 s nil))
+
+(defun PRETTYPRINT::toStreamT (text cont base newlineAndBlanks) 
+  (let ((pV14 (LIST-SPEC::rev text))) 
     (block 
      nil 
-     (if (null text) 
+     (if (null pV14) 
          (return base) 
-         (if (consp text) 
-             (let ((pV16 (car text))) 
-               (return 
-                (let ((head (|!loop| (cdr text) (car pV16)))) 
-                  (let ((head (LIST-SPEC::foldr-1-1-1 cont head (cdr pV16)))) 
-                    head)))))) 
-     (error "Nonexhaustive match failure in toStream"))))
+         (if (consp pV14) 
+             (return 
+              (progn (LIST-SPEC::foldr-1-1-1 cont nil (cdr (car pV14))) 
+                     (progn (LIST-SPEC::app-1-1 
+                             #'(lambda (textel) 
+                                (let ((pV8 (cdr textel))) 
+                                  (block 
+                                   nil 
+                                   (if (consp pV8) 
+                                       (if ( =  0 (car (car pV8))) 
+                                           (if (null (cdr pV8)) 
+                                               (return 
+                                                (funcall newlineAndBlanks 
+                                                         (cons 0 nil)))))) 
+                                   (return 
+                                    (progn (funcall newlineAndBlanks 
+                                                    (cons (car textel) nil)) 
+                                           (LIST-SPEC::foldr-1-1-1 cont nil pV8))) 
+                                   (error 
+                                    "Nonexhaustive match failure in toStreamT")))) 
+                             (cdr pV14)) 
+                            (funcall cont 
+                                     (cons (cons 0 (PRETTYPRINT::blanks 0)) base))))))) 
+     (error "Nonexhaustive match failure in toStreamT"))))
 
 (defun PRETTYPRINT::toString (text) 
-  (PRETTYPRINT::toStream 
-   text 
-   #'(lambda (x) 
-      (block 
+  (IO-SPEC::withOutputToString 
+   #'(lambda (|!stream|) 
+      (PRETTYPRINT::toStreamT 
+       text 
+       #'(lambda (x) 
+          (block 
+           nil 
+           (return (PRETTYPRINT::streamWriter |!stream| (cdr (car x)))) 
+           (error "Nonexhaustive match failure in toString"))) 
        nil 
-       (return (STRING-SPEC::^ (cdr x) (cdr (car x)))) 
-       (error "Nonexhaustive match failure in toString"))) 
-   "" 
-   #'(lambda (x) 
-      (STRING-SPEC::^ (cdr x) (PRETTYPRINT::newlineAndBlanks (car x))))))
+       #'(lambda (x) 
+          (block 
+           nil 
+           (return 
+            (PRETTYPRINT::streamWriter 
+             |!stream| 
+             (PRETTYPRINT::newlineAndBlanks (car x)))) 
+           (error "Nonexhaustive match failure in toString")))))))
 
 (defun PRETTYPRINT::emptyText () nil)
 
@@ -5996,17 +6004,17 @@
 
 (defun ANNSPECPRINTER::isBuiltIn? (spec_ref pV1) 
   (declare (ignore pV1)) 
-  (lisp::or 
+  (cl::or 
    (string=  spec_ref "String") 
-   (lisp::or 
+   (cl::or 
     (string=  spec_ref "Nat") 
-    (lisp::or 
+    (cl::or 
      (string=  spec_ref "Boolean") 
-     (lisp::or 
+     (cl::or 
       (string=  spec_ref "Char") 
-      (lisp::or 
+      (cl::or 
        (string=  spec_ref "Integer") 
-       (lisp::or (string=  spec_ref "List") (string=  spec_ref "General"))))))))
+       (cl::or (string=  spec_ref "List") (string=  spec_ref "General"))))))))
 
 (defun ANNSPECPRINTER::isBuiltIn?-1 (x) 
   (ANNSPECPRINTER::isBuiltIn? (car x) (cdr x)))
@@ -6139,7 +6147,7 @@
                            (pV55 (cdr pV41))) 
                        (return 
                         (if (BOOLEAN-SPEC::~ 
-                             (lisp::and 
+                             (cl::and 
                               (string=  (svref x 0) (car pV49)) 
                               (string=  (svref x 1) (cdr pV49)))) 
                             (cons pV54 pV55) 
@@ -6174,7 +6182,7 @@
                                          (INTEGER-SPEC::~ 
                                           (INTEGER-SPEC::|!+| pV54 1)))) 
                                     (let ((button1 
-                                           (if (lisp::and 
+                                           (if (cl::and 
                                                 (ANNSPECPRINTER::markSubterm?-1 
                                                  context) 
                                                 (BOOLEAN-SPEC::~ 
@@ -6189,7 +6197,7 @@
                                                 nil) 
                                                (PRETTYPRINT::|!string| "")))) 
                                       (let ((button2 
-                                             (if (lisp::and 
+                                             (if (cl::and 
                                                   (ANNSPECPRINTER::markSubterm?-1 
                                                    context) 
                                                   (BOOLEAN-SPEC::~ 
@@ -6602,7 +6610,7 @@
                          (pV31 (cdr pV20))) 
                      (return 
                       (if (BOOLEAN-SPEC::~ 
-                           (lisp::and 
+                           (cl::and 
                             (string=  (svref x 0) (car pV27)) 
                             (string=  (svref x 1) (cdr pV27)))) 
                           (cons pV30 pV31) 
@@ -6920,14 +6928,11 @@
       (cons pSpec (cons (PRETTYPRINT::|!string| "</pre></body></html>") nil))))))
 
 
-(defun PRETTYPRINT::streamWriter (|!stream| |!string|) 
-  (IO-SPEC::format1 |!stream| "~A" |!string|))
-
 (defun PRETTYPRINT::toFileWithNewline (|!fileName| text newlineAndBlanks) 
   (IO-SPEC::withOpenFileForWrite 
    |!fileName| 
    #'(lambda (|!stream|) 
-      (PRETTYPRINT::toStream 
+      (PRETTYPRINT::toStreamT 
        text 
        #'(lambda (x) 
           (block 
@@ -7139,16 +7144,24 @@
    (PRETTYPRINT::latexBlanks n)))
 
 (defun PRETTYPRINT::toLatexString (text) 
-  (PRETTYPRINT::toStream 
-   text 
-   #'(lambda (x) 
-      (block 
+  (IO-SPEC::withOutputToString 
+   #'(lambda (|!stream|) 
+      (PRETTYPRINT::toStreamT 
+       text 
+       #'(lambda (x) 
+          (block 
+           nil 
+           (return (PRETTYPRINT::streamWriter |!stream| (cdr (car x)))) 
+           (error "Nonexhaustive match failure in toLatexString"))) 
        nil 
-       (return (STRING-SPEC::^ (cdr x) (cdr (car x)))) 
-       (error "Nonexhaustive match failure in toLatexString"))) 
-   "" 
-   #'(lambda (x) 
-      (STRING-SPEC::^ (cdr x) (PRETTYPRINT::latexNewlineAndBlanks (car x))))))
+       #'(lambda (x) 
+          (block 
+           nil 
+           (return 
+            (PRETTYPRINT::streamWriter 
+             |!stream| 
+             (PRETTYPRINT::latexNewlineAndBlanks (car x)))) 
+           (error "Nonexhaustive match failure in toLatexString")))))))
 
 (defun ANNSPECPRINTER::latexSpec-1 (spc) 
   (PRETTYPRINT::toLatexString 
@@ -7183,16 +7196,6 @@
 (defun INTEGER-SPEC::|!>| (x y) (INTEGER-SPEC::|!<| y x))
 
 (defun ANNSPECPRINTER::positive? (n) (if (INTEGER-SPEC::|!>| n 0) 1 0))
-
-(defun LIST-SPEC::rev2 (l r) 
-  (block 
-   nil 
-   (if (null l) 
-       (return r) 
-       (if (consp l) (return (LIST-SPEC::rev2 (cdr l) (cons (car l) r))))) 
-   (error "Nonexhaustive match failure in rev2")))
-
-(defun LIST-SPEC::rev (s) (LIST-SPEC::rev2 s nil))
 
 (defun ANNSPECPRINTER::pdfMenu-1 (spc) 
   (let ((sorts 
@@ -7534,7 +7537,7 @@
 (defun PRETTYPRINT::appendFileWithNewline (|!fileName| text newlineAndBlanks) 
   (labels 
     ((writeFun (|!stream|) 
-      (PRETTYPRINT::toStream 
+      (PRETTYPRINT::toStreamT 
        text 
        #'(lambda (x) 
           (block 
@@ -7953,7 +7956,7 @@
                          #'(lambda (imp_props) 
                             (LIST-SPEC::|!exists|-1-1 
                              #'(lambda (x1) 
-                                (lisp::and 
+                                (cl::and 
                                  (slang-built-in::slang-term-equals 
                                   |!type| 
                                   (svref x1 0)) 
@@ -8274,6 +8277,46 @@
 
 (defun PRETTYPRINT::shift (id pos1 stack) 
   (LIST-SPEC::|!cons| (vector id pos1 0 nil nil) stack))
+
+(defun PRETTYPRINT::toStream (text cont base newlineAndBlanks) 
+  (labels 
+    ((|!loop| (text indent) 
+      (block 
+       nil 
+       (if (null text) 
+           (return 
+            (funcall cont (cons (cons indent (PRETTYPRINT::blanks indent)) base))) 
+           (if (consp text) 
+               (let ((pV6 (cdr text))
+                     (pV5 (car text))) 
+                 (let ((pV8 (cdr pV5))) 
+                   (progn (if (consp pV8) 
+                              (if ( =  0 (car (car pV8))) 
+                                  (if (null (cdr pV8)) 
+                                      (return 
+                                       (let ((head (|!loop| pV6 0))) 
+                                         (let ((head 
+                                                (funcall newlineAndBlanks 
+                                                         (cons indent head)))) 
+                                           head)))))) 
+                          (return 
+                           (let ((head (|!loop| pV6 (car pV5)))) 
+                             (let ((head (LIST-SPEC::foldr-1-1-1 cont head pV8))) 
+                               (let ((head 
+                                      (funcall newlineAndBlanks 
+                                               (cons indent head)))) head))))))))) 
+       (error "Nonexhaustive match failure in toStream")))) 
+    (block 
+     nil 
+     (if (null text) 
+         (return base) 
+         (if (consp text) 
+             (let ((pV16 (car text))) 
+               (return 
+                (let ((head (|!loop| (cdr text) (car pV16)))) 
+                  (let ((head (LIST-SPEC::foldr-1-1-1 cont head (cdr pV16)))) 
+                    head)))))) 
+     (error "Nonexhaustive match failure in toStream"))))
 
 (defun PRETTYPRINT::insertElem (pV1 pV2) 
   (block 
@@ -8668,7 +8711,7 @@
   (ANNSPECPRINTER::printSortScheme-1 (cons x0 x1)))
 
 (defun PRETTYPRINT::toTerminal (text) 
-  (PRETTYPRINT::toStream 
+  (PRETTYPRINT::toStreamT 
    text 
    #'(lambda (x) 
       (block 
@@ -12863,7 +12906,7 @@
        (return nil) 
        (if (consp l) 
            (return 
-            (lisp::or 
+            (cl::or 
              (slang-built-in::slang-term-equals (car l) x) 
              (POLYSET::member?-1-1 (cdr l) x))))) 
    (error "Nonexhaustive match failure in member?")))
@@ -13676,11 +13719,11 @@
                                                                (scan 
                                                                 pV52 
                                                                 (cdr pV41)))) 
-                                                          (if (lisp::or 
+                                                          (if (cl::or 
                                                                (INTEGER-SPEC::|!>| 
                                                                 delta0 
                                                                 pV52) 
-                                                               (lisp::and 
+                                                               (cl::and 
                                                                 ( =  delta0 pV52) 
                                                                 (slang-built-in::slang-term-equals 
                                                                  pV51 
@@ -13755,11 +13798,11 @@
                                                                                                             (cdr 
                                                                                                              pV32))) 
                                                                                                        (return 
-                                                                                                        (if (lisp::or 
+                                                                                                        (if (cl::or 
                                                                                                              (INTEGER-SPEC::|!>| 
                                                                                                               pV52 
                                                                                                               pV30) 
-                                                                                                             (lisp::and 
+                                                                                                             (cl::and 
                                                                                                               ( =  
                                                                                                                pV52 
                                                                                                                pV30) 
@@ -14204,18 +14247,18 @@
                               (return (SPLAYSET::memberT comp pV5 t_)))) 
                       (if (eq (car pV4) :|SplayNil|) 
                           (return 
-                           (lisp::and 
+                           (cl::and 
                             (SPLAYSET::memberT comp pV5 t_) 
                             (SPLAYSET::treeIn comp pV3 t_)))) 
                       (if (eq (car pV3) :|SplayNil|) 
                           (return 
-                           (lisp::and 
+                           (cl::and 
                             (SPLAYSET::memberT comp pV5 t_) 
                             (SPLAYSET::treeIn comp pV4 t_)))) 
                       (return 
-                       (lisp::and 
+                       (cl::and 
                         (SPLAYSET::memberT comp pV5 t_) 
-                        (lisp::and 
+                        (cl::and 
                          (SPLAYSET::treeIn comp pV3 t_) 
                          (SPLAYSET::treeIn comp pV4 t_))))))))) 
    (error "Nonexhaustive match failure in treeIn")))
@@ -14228,7 +14271,7 @@
          (if (eq (car set2) :|SET|) 
              (let ((pV12 (cdr set2))) 
                (return 
-                (lisp::and 
+                (cl::and 
                  ( =  (svref pV7 1) (svref pV12 1)) 
                  (SPLAYSET::treeIn 
                   (svref pV7 0) 
@@ -14677,6 +14720,6558 @@
 
 (defun INTEGERSET::|!union|-1 (x) (INTEGERSET::|!union| (car x) (cdr x)))
 
+(defun JGEN::mkArgProj (fieldProj) (STRING-SPEC::^ "arg_" fieldProj))
+
+(defun JGEN::addArgsToTcx (tcx args) 
+  (labels 
+    ((addArgRec (tcx args n) 
+      (block 
+       nil 
+       (if (null args) 
+           (return tcx) 
+           (if (consp args) 
+               (return 
+                (let ((argName (JGEN::mkArgProj (NAT-SPEC::natToString n)))) 
+                  (let ((argExpr 
+                         (cons 
+                          :|CondExp| 
+                          (cons 
+                           (cons 
+                            :|Un| 
+                            (cons 
+                             :|Prim| 
+                             (cons :|Name| (cons (cons "this" nil) argName)))) 
+                           '(:|None|))))) 
+                    (addArgRec 
+                     (STRINGMAP::insert tcx (car args) argExpr) 
+                     (cdr args) 
+                     (INTEGER-SPEC::|!+| n 1))))))) 
+       (error "Nonexhaustive match failure in addArgsToTcx")))) 
+    (addArgRec tcx args 1)))
+
+(defun JGEN::addArgsToTcx-1 (x) (JGEN::addArgsToTcx (car x) (cdr x)))
+
+(defun JGEN::setMethods (clsBody methodDecls) 
+  (vector 
+   (svref clsBody 0) 
+   (svref clsBody 1) 
+   (svref clsBody 2) 
+   (svref clsBody 3) 
+   methodDecls 
+   (svref clsBody 5)))
+
+(defun JGEN::addMethDeclToClsDecls (srtId methDecl clsDecls) 
+  (LIST-SPEC::|!map|-1-1 
+   #'(lambda (cd) 
+      (let ((pV3 (svref cd 2))
+            (pV2 (svref cd 1))) 
+        (block 
+         nil 
+         (let ((pV4 (svref pV2 0))) 
+           (return 
+            (if (string=  pV4 srtId) 
+                (let ((newCb 
+                       (JGEN::setMethods 
+                        pV3 
+                        (LIST-SPEC::|!cons| methDecl (svref pV3 4))))) 
+                  (vector 
+                   (svref cd 0) 
+                   (vector pV4 (svref pV2 1) (svref pV2 2)) 
+                   newCb)) 
+                cd))) 
+         (error "Nonexhaustive match failure in addMethDeclToClsDecls")))) 
+   clsDecls))
+
+(defun JGEN::mkSummandId (ty c) (STRING-SPEC::^ (STRING-SPEC::^ ty "_") c))
+
+(defun JGEN::setMethodBody (m b) 
+  (block 
+   nil 
+   (return (cons (car m) (cons :|Some| b))) 
+   (error "Nonexhaustive match failure in setMethodBody")))
+
+(defun METASLANG::boolSort? (s) 
+  (block 
+   nil 
+   (if (eq (car s) :|Base|) 
+       (let ((pV4 (cdr s))) 
+         (let ((pV5 (svref pV4 0))) 
+           (if (eq (car pV5) :|Qualified|) 
+               (let ((pV8 (cdr pV5))) 
+                 (if (string=  "Boolean" (car pV8)) 
+                     (if (string=  "Boolean" (cdr pV8)) 
+                         (if (null (svref pV4 1)) (return t))))))))) 
+   (return nil)))
+
+(defun METASLANG::integerSort? (s) 
+  (block 
+   nil 
+   (if (eq (car s) :|Base|) 
+       (let ((pV4 (cdr s))) 
+         (let ((pV5 (svref pV4 0))) 
+           (if (eq (car pV5) :|Qualified|) 
+               (let ((pV8 (cdr pV5))) 
+                 (if (string=  "Integer" (car pV8)) 
+                     (if (string=  "Integer" (cdr pV8)) 
+                         (if (null (svref pV4 1)) (return t))))))))) 
+   (return nil)))
+
+(defun METASLANG::natSort? (s) 
+  (block 
+   nil 
+   (if (eq (car s) :|Base|) 
+       (let ((pV4 (cdr s))) 
+         (let ((pV5 (svref pV4 0))) 
+           (if (eq (car pV5) :|Qualified|) 
+               (let ((pV8 (cdr pV5))) 
+                 (if (string=  "Nat" (car pV8)) 
+                     (if (string=  "Nat" (cdr pV8)) 
+                         (if (null (svref pV4 1)) (return t))))))))) 
+   (return nil)))
+
+(defun JGEN::baseType? (|!type|) 
+  (cl::or 
+   (METASLANG::boolSort? |!type|) 
+   (cl::or (METASLANG::integerSort? |!type|) (METASLANG::natSort? |!type|))))
+
+(defun JGEN::mkJavaNumber (i) 
+  (cons 
+   :|CondExp| 
+   (cons (cons :|Un| (cons :|Prim| (cons :|IntL| i))) '(:|None|))))
+
+(defun JGEN::mkMethInv (srtId opId javaArgs) 
+  (cons 
+   :|CondExp| 
+   (cons 
+    (cons 
+     :|Un| 
+     (cons 
+      :|Prim| 
+      (cons 
+       :|MethInv| 
+       (cons :|ViaPrim| (vector (cons :|Name| (cons nil srtId)) opId javaArgs))))) 
+    '(:|None|))))
+
+(defun JGEN::mkQualJavaExpr (id1 id2) 
+  (cons 
+   :|CondExp| 
+   (cons 
+    (cons :|Un| (cons :|Prim| (cons :|Name| (cons (cons id1 nil) id2)))) 
+    '(:|None|))))
+
+(defun JGEN::mkVarJavaExpr (id) 
+  (cons 
+   :|CondExp| 
+   (cons (cons :|Un| (cons :|Prim| (cons :|Name| (cons nil id)))) '(:|None|))))
+
+(defparameter JGEN::mts nil)
+
+(defun JGEN::srtId (srt) 
+  (block 
+   nil 
+   (if (eq (car srt) :|Base|) 
+       (let ((pV5 (svref (cdr srt) 0))) 
+         (if (eq (car pV5) :|Qualified|) (return (cdr (cdr pV5)))))) 
+   (error "Nonexhaustive match failure in srtId")))
+
+(defun JGEN::recordFieldsToTerms (fields) 
+  (block 
+   nil 
+   (if (null fields) 
+       (return nil) 
+       (if (consp fields) 
+           (return 
+            (LIST-SPEC::|!cons| 
+             (cdr (car fields)) 
+             (JGEN::recordFieldsToTerms (cdr fields)))))) 
+   (error "Nonexhaustive match failure in recordFieldsToTerms")))
+
+(defun JGEN::applyArgsToTerms (args) 
+  (block 
+   nil 
+   (if (eq (car args) :|Record|) 
+       (return (JGEN::recordFieldsToTerms (car (cdr args))))) 
+   (return (cons args nil))))
+
+(defun JGEN::javaBaseOp? (id) 
+  (block 
+   nil 
+   (if (string=  "and" id) 
+       (return t) 
+       (if (string=  "or" id) 
+           (return t) 
+           (if (string=  "=" id) 
+               (return t) 
+               (if (string=  ">" id) 
+                   (return t) 
+                   (if (string=  "<" id) 
+                       (return t) 
+                       (if (string=  ">=" id) 
+                           (return t) 
+                           (if (string=  "<=" id) 
+                               (return t) 
+                               (if (string=  "+" id) 
+                                   (return t) 
+                                   (if (string=  "-" id) 
+                                       (return t) 
+                                       (if (string=  "*" id) 
+                                           (return t) 
+                                           (if (string=  "div" id) 
+                                               (return t) 
+                                               (if (string=  "rem" id) 
+                                                   (return t) 
+                                                   (if (string=  "~" id) 
+                                                       (return t)))))))))))))) 
+   (return nil)))
+
+(defun JGEN::mkBaseJavaBinOp (id) 
+  (block 
+   nil 
+   (if (string=  "and" id) 
+       (return '(:|CdAnd|)) 
+       (if (string=  "or" id) 
+           (return '(:|CdOr|)) 
+           (if (string=  "=" id) 
+               (return '(:|Eq|)) 
+               (if (string=  ">" id) 
+                   (return '(:|Gt|)) 
+                   (if (string=  "<" id) 
+                       (return '(:|Lt|)) 
+                       (if (string=  ">=" id) 
+                           (return '(:|Ge|)) 
+                           (if (string=  "<=" id) 
+                               (return '(:|Le|)) 
+                               (if (string=  "+" id) 
+                                   (return '(:|Plus|)) 
+                                   (if (string=  "-" id) 
+                                       (return '(:|Minus|)) 
+                                       (if (string=  "*" id) 
+                                           (return '(:|Mul|)) 
+                                           (if (string=  "div" id) 
+                                               (return '(:|Div|)) 
+                                               (if (string=  "rem" id) 
+                                                   (return '(:|Rem|)))))))))))))) 
+   (error "Nonexhaustive match failure in mkBaseJavaBinOp")))
+
+(defun JGEN::mkBinExp (opId javaArgs) 
+  (block 
+   nil 
+   (if (consp javaArgs) 
+       (let ((pV4 (cdr javaArgs))) 
+         (if (consp pV4) 
+             (if (null (cdr pV4)) 
+                 (return 
+                  (cons 
+                   :|CondExp| 
+                   (cons 
+                    (cons 
+                     :|Bin| 
+                     (vector 
+                      (JGEN::mkBaseJavaBinOp opId) 
+                      (cons :|Un| (cons :|Prim| (cons :|Paren| (car javaArgs)))) 
+                      (cons :|Un| (cons :|Prim| (cons :|Paren| (car pV4)))))) 
+                    '(:|None|)))))))) 
+   (error "Nonexhaustive match failure in mkBinExp")))
+
+(defun JGEN::mkBaseJavaUnOp (id) 
+  (block 
+   nil 
+   (if (string=  "-" id) 
+       (return '(:|Minus|)) 
+       (if (string=  "~" id) (return '(:|LogNot|)))) 
+   (error "Nonexhaustive match failure in mkBaseJavaUnOp")))
+
+(defun JGEN::mkUnExp (opId javaArgs) 
+  (block 
+   nil 
+   (if (consp javaArgs) 
+       (if (null (cdr javaArgs)) 
+           (return 
+            (cons 
+             :|CondExp| 
+             (cons 
+              (cons 
+               :|Un| 
+               (cons 
+                :|Un| 
+                (cons 
+                 (JGEN::mkBaseJavaUnOp opId) 
+                 (cons :|Prim| (cons :|Paren| (car javaArgs)))))) 
+              '(:|None|)))))) 
+   (error "Nonexhaustive match failure in mkUnExp")))
+
+(defun JGEN::translateTermsToExpressions (tcx terms k) 
+  (block 
+   nil 
+   (if (null terms) 
+       (return (vector nil nil k)) 
+       (if (consp terms) 
+           (return 
+            (let ((pV5 (JGEN::termToExpression tcx (car terms) k))) 
+              (block 
+               nil 
+               (return 
+                (let ((pV1 
+                       (JGEN::translateTermsToExpressions 
+                        tcx 
+                        (cdr terms) 
+                        (svref pV5 2)))) 
+                  (block 
+                   nil 
+                   (return 
+                    (vector 
+                     (LIST-SPEC::|!++| (svref pV5 0) (svref pV1 0)) 
+                     (LIST-SPEC::|!cons| (svref pV5 1) (svref pV1 1)) 
+                     (svref pV1 2))) 
+                   (error 
+                    "Nonexhaustive match failure in translateTermsToExpressions")))) 
+               (error 
+                "Nonexhaustive match failure in translateTermsToExpressions")))))) 
+   (error "Nonexhaustive match failure in translateTermsToExpressions")))
+
+(defun JGEN::translateBaseApplToExpr (tcx opId argsTerm k) 
+  (let ((args (JGEN::applyArgsToTerms argsTerm))) 
+    (let ((pV1 (JGEN::translateTermsToExpressions tcx args k))) 
+      (block 
+       nil 
+       (let ((pV4 (svref pV1 2))
+             (pV3 (svref pV1 1))
+             (pV2 (svref pV1 0))) 
+         (return 
+          (if (JGEN::javaBaseOp? opId) 
+              (if ( =  (LIST-SPEC::|!length| args) 2) 
+                  (vector pV2 (JGEN::mkBinExp opId pV3) pV4) 
+                  (vector pV2 (JGEN::mkUnExp opId pV3) pV4)) 
+              (vector pV2 (JGEN::mkMethInv "Primitive" opId pV3) pV4)))) 
+       (error "Nonexhaustive match failure in translateBaseApplToExpr")))))
+
+(defun JGEN::translateBaseArgsApplToExpr (tcx opId argsTerm rng k) 
+  (let ((args (JGEN::applyArgsToTerms argsTerm))) 
+    (let ((pV1 (JGEN::translateTermsToExpressions tcx args k))) 
+      (block 
+       nil 
+       (let ((pV4 (svref pV1 2))
+             (pV3 (svref pV1 1))
+             (pV2 (svref pV1 0))) 
+         (return 
+          (if (JGEN::javaBaseOp? opId) 
+              (vector pV2 (JGEN::mkBinExp opId pV3) pV4) 
+              (vector pV2 (JGEN::mkMethInv (JGEN::srtId rng) opId pV3) pV4)))) 
+       (error "Nonexhaustive match failure in translateBaseArgsApplToExpr")))))
+
+(defun JGEN::translateConstructToExpr (tcx srtId opId argsTerm k) 
+  (let ((args (JGEN::applyArgsToTerms argsTerm))) 
+    (let ((pV1 (JGEN::translateTermsToExpressions tcx args k))) 
+      (block 
+       nil 
+       (return 
+        (vector 
+         (svref pV1 0) 
+         (JGEN::mkMethInv srtId opId (svref pV1 1)) 
+         (svref pV1 2))) 
+       (error "Nonexhaustive match failure in translateConstructToExpr")))))
+
+(defun JGEN::mkJavaEq (e1 e2 t1) 
+  (if (cl::or (string=  t1 "Boolean") (string=  t1 "Integer")) 
+      (cons 
+       :|CondExp| 
+       (cons 
+        (cons 
+         :|Bin| 
+         (vector 
+          '(:|Eq|) 
+          (cons :|Un| (cons :|Prim| (cons :|Paren| e1))) 
+          (cons :|Un| (cons :|Prim| (cons :|Paren| e2))))) 
+        '(:|None|))) 
+      (cons 
+       :|CondExp| 
+       (cons 
+        (cons 
+         :|Un| 
+         (cons 
+          :|Prim| 
+          (cons 
+           :|MethInv| 
+           (cons :|ViaPrim| (vector (cons :|Paren| e1) "equals" (cons e2 nil)))))) 
+        '(:|None|)))))
+
+(defun LIST-SPEC::hd (l) 
+  (block 
+   nil 
+   (if (consp l) (return (car l))) 
+   (error "Nonexhaustive match failure in hd")))
+
+(defun JGEN::translateEqualsToExpr (tcx argsTerm k) 
+  (let ((args (JGEN::applyArgsToTerms argsTerm))) 
+    (let ((pV1 (JGEN::translateTermsToExpressions tcx args k))) 
+      (block 
+       nil 
+       (let ((pV3 (svref pV1 1))) 
+         (if (consp pV3) 
+             (let ((pV7 (cdr pV3))) 
+               (if (consp pV7) 
+                   (if (null (cdr pV7)) 
+                       (return 
+                        (vector 
+                         (svref pV1 0) 
+                         (JGEN::mkJavaEq 
+                          (car pV3) 
+                          (car pV7) 
+                          (JGEN::srtId 
+                           (METASLANG::termSort (LIST-SPEC::hd args)))) 
+                         (svref pV1 2)))))))) 
+       (error "Nonexhaustive match failure in translateEqualsToExpr")))))
+
+(defun JGEN::mkFldAcc (e id) 
+  (cons 
+   :|CondExp| 
+   (cons 
+    (cons 
+     :|Un| 
+     (cons 
+      :|Prim| 
+      (cons :|FldAcc| (cons :|ViaPrim| (cons (cons :|Paren| e) id))))) 
+    '(:|None|))))
+
+(defun JGEN::translateProjectToExpr (tcx id argsTerm k) 
+  (let ((args (JGEN::applyArgsToTerms argsTerm))) 
+    (let ((pV1 (JGEN::translateTermsToExpressions tcx args k))) 
+      (block 
+       nil 
+       (let ((pV3 (svref pV1 1))) 
+         (if (consp pV3) 
+             (if (null (cdr pV3)) 
+                 (return 
+                  (vector 
+                   (svref pV1 0) 
+                   (JGEN::mkFldAcc (car pV3) id) 
+                   (svref pV1 2)))))) 
+       (error "Nonexhaustive match failure in translateProjectToExpr")))))
+
+(defun JGEN::mkMethExprInv (topJArg opId javaArgs) 
+  (cons 
+   :|CondExp| 
+   (cons 
+    (cons 
+     :|Un| 
+     (cons 
+      :|Prim| 
+      (cons 
+       :|MethInv| 
+       (cons :|ViaPrim| (vector (cons :|Paren| topJArg) opId javaArgs))))) 
+    '(:|None|))))
+
+(defun JGEN::userType? (|!type|) (BOOLEAN-SPEC::~ (JGEN::baseType? |!type|)))
+
+(defun LIST-SPEC::|!nth| (ls i) 
+  (block 
+   nil 
+   (if (consp ls) 
+       (return 
+        (if ( =  i 0) 
+            (car ls) 
+            (LIST-SPEC::|!nth| (cdr ls) (INTEGER-SPEC::|!-| i 1))))) 
+   (error "Nonexhaustive match failure in nth")))
+
+(defun LIST-SPEC::tl (l) 
+  (block 
+   nil 
+   (if (consp l) (return (cdr l))) 
+   (error "Nonexhaustive match failure in tl")))
+
+(defun LISTUTILITIES::deleteNth (n ls) 
+  (if ( =  n 0) 
+      (LIST-SPEC::tl ls) 
+      (cons 
+       (LIST-SPEC::hd ls) 
+       (LISTUTILITIES::deleteNth (INTEGER-SPEC::|!-| n 1) (LIST-SPEC::tl ls)))))
+
+(defun LISTUTILITIES::findIndex-1-1 (p l) 
+  (labels 
+    ((findIndexRec (p l n) 
+      (block 
+       nil 
+       (if (null l) 
+           (return '(:|None|)) 
+           (if (consp l) 
+               (let ((pV3 (car l))) 
+                 (return 
+                  (if (funcall p pV3) 
+                      (cons :|Some| (cons n pV3)) 
+                      (findIndexRec p (cdr l) (INTEGER-SPEC::|!+| n 1))))))) 
+       (error "Nonexhaustive match failure in findIndex")))) 
+    (findIndexRec p l 0)))
+
+(defun JGEN::translateUserApplToExpr (tcx opId dom argsTerm k) 
+  (let ((args (JGEN::applyArgsToTerms argsTerm))) 
+    (let ((pV6 
+           (LISTUTILITIES::findIndex-1-1 
+            #'(lambda (srt) (JGEN::userType? srt)) 
+            dom))) 
+      (block 
+       nil 
+       (if (eq (car pV6) :|Some|) 
+           (let ((pV8 (car (cdr pV6)))) 
+             (return 
+              (let ((pV2 (JGEN::translateTermsToExpressions tcx args k))) 
+                (block 
+                 nil 
+                 (let ((pV4 (svref pV2 1))) 
+                   (return 
+                    (let ((topJArg (LIST-SPEC::|!nth| pV4 pV8))) 
+                      (let ((resJArgs (LISTUTILITIES::deleteNth pV8 pV4))) 
+                        (vector 
+                         (svref pV2 0) 
+                         (JGEN::mkMethExprInv topJArg opId resJArgs) 
+                         (svref pV2 2)))))) 
+                 (error "Nonexhaustive match failure in translateUserApplToExpr")))))) 
+       (error "Nonexhaustive match failure in translateUserApplToExpr")))))
+
+(defun JGEN::translateApplyToExpr (pV24 pV25 pV26) 
+  (block 
+   nil 
+   (if (eq (car pV25) :|Apply|) 
+       (let ((pV27 (cdr pV25))) 
+         (let ((pV29 (svref pV27 1))
+               (pV28 (svref pV27 0))) 
+           (return 
+            (block 
+             nil 
+             (if (eq (car pV28) :|Fun|) 
+                 (let ((pV11 (svref (cdr pV28) 0))) 
+                   (if (eq (car pV11) :|Equals|) 
+                       (return (JGEN::translateEqualsToExpr pV24 pV29 pV26)) 
+                       (if (eq (car pV11) :|Project|) 
+                           (return 
+                            (JGEN::translateProjectToExpr 
+                             pV24 
+                             (cdr pV11) 
+                             pV29 
+                             pV26)) 
+                           (if (eq (car pV11) :|Embed|) 
+                               (return 
+                                (JGEN::translateConstructToExpr 
+                                 pV24 
+                                 (JGEN::srtId (METASLANG::termSort pV25)) 
+                                 (car (cdr pV11)) 
+                                 pV29 
+                                 pV26)) 
+                               (if (eq (car pV11) :|Op|) 
+                                   (let ((pV17 (car (cdr pV11)))) 
+                                     (if (eq (car pV17) :|Qualified|) 
+                                         (let ((pV19 (cdr pV17))) 
+                                           (let ((pV21 (cdr pV19))
+                                                 (pV20 (car pV19))) 
+                                             (return 
+                                              (let ((id 
+                                                     (if (cl::and 
+                                                          (string=  pV21 "~") 
+                                                          (cl::or 
+                                                           (string=  
+                                                            pV20 
+                                                            "Integer") 
+                                                           (string=  pV20 "Nat"))) 
+                                                         "-" 
+                                                         pV21))) 
+                                                (let ((srt 
+                                                       (METASLANG::termSort pV25))) 
+                                                  (let ((args 
+                                                         (JGEN::applyArgsToTerms 
+                                                          pV29))) 
+                                                    (let ((dom 
+                                                           (LIST-SPEC::|!map|-1-1 
+                                                            #'METASLANG::termSort 
+                                                            args))) 
+                                                      (if (LIST-SPEC::all-1-1 
+                                                           #'(lambda (srt1) 
+                                                              (JGEN::baseType? 
+                                                               srt1)) 
+                                                           dom) 
+                                                          (if (JGEN::baseType? 
+                                                               srt) 
+                                                              (JGEN::translateBaseApplToExpr 
+                                                               pV24 
+                                                               id 
+                                                               pV29 
+                                                               pV26) 
+                                                              (JGEN::translateBaseArgsApplToExpr 
+                                                               pV24 
+                                                               id 
+                                                               pV29 
+                                                               srt 
+                                                               pV26)) 
+                                                          (JGEN::translateUserApplToExpr 
+                                                           pV24 
+                                                           id 
+                                                           dom 
+                                                           pV29 
+                                                           pV26))))))))))))))))) 
+             (error "Nonexhaustive match failure in translateApplyToExpr")))))) 
+   (error "Nonexhaustive match failure in translateApplyToExpr")))
+
+(defun JGEN::mkIfRes (k) (STRING-SPEC::^ "ifres_" (NAT-SPEC::natToString k)))
+
+(defun JGEN::mkIfStmt (jT0 b1 b2) 
+  (cons 
+   :|Stmt| 
+   (cons :|If| (vector jT0 (cons :|Block| b1) (cons :|Some| (cons :|Block| b2))))))
+
+
+(defun JGEN::mkVarAssn (v jT1) 
+  (cons 
+   :|Stmt| 
+   (cons 
+    :|Expr| 
+    (cons :|Ass| (vector (cons :|Name| (cons nil v)) '(:|Assgn|) jT1)))))
+
+(defun JGEN::tt (id) 
+  (block 
+   nil 
+   (if (string=  "Boolean" id) 
+       (return (cons (cons :|Basic| '(:|JBool|)) 0)) 
+       (if (string=  "Integer" id) (return (cons (cons :|Basic| '(:|JInt|)) 0)))) 
+   (return (cons (cons :|Name| (cons nil id)) 0))))
+
+(defun JGEN::mkVarDecl (v srtId) 
+  (cons 
+   :|LocVarDecl| 
+   (vector nil (JGEN::tt srtId) (cons (cons v 0) '(:|None|)) nil)))
+
+(defun JGEN::translateIfThenElseToExpr (pV16 pV17 pV18) 
+  (block 
+   nil 
+   (if (eq (car pV17) :|IfThenElse|) 
+       (let ((pV19 (cdr pV17))) 
+         (let ((pV22 (svref pV19 2))) 
+           (return 
+            (let ((pV12 
+                   (JGEN::termToExpression 
+                    pV16 
+                    (svref pV19 0) 
+                    (INTEGER-SPEC::|!+| pV18 1)))) 
+              (block 
+               nil 
+               (let ((pV14 (svref pV12 1))
+                     (pV13 (svref pV12 0))) 
+                 (return 
+                  (let ((pV8 
+                         (JGEN::termToExpression 
+                          pV16 
+                          (svref pV19 1) 
+                          (svref pV12 2)))) 
+                    (block 
+                     nil 
+                     (let ((pV10 (svref pV8 1))
+                           (pV9 (svref pV8 0))) 
+                       (return 
+                        (let ((pV4 
+                               (JGEN::termToExpression pV16 pV22 (svref pV8 2)))) 
+                          (block 
+                           nil 
+                           (let ((pV7 (svref pV4 2))
+                                 (pV6 (svref pV4 1))
+                                 (pV5 (svref pV4 0))) 
+                             (return 
+                              (let ((pV3 (LIST-SPEC::|!++| pV9 pV5))) 
+                                (block 
+                                 nil 
+                                 (if (null pV3) 
+                                     (return 
+                                      (let ((vExpr 
+                                             (cons 
+                                              :|CondExp| 
+                                              (cons 
+                                               (cons 
+                                                :|Un| 
+                                                (cons 
+                                                 :|Prim| 
+                                                 (cons :|Paren| pV14))) 
+                                               (cons 
+                                                :|Some| 
+                                                (cons 
+                                                 pV10 
+                                                 (cons 
+                                                  (cons 
+                                                   :|Un| 
+                                                   (cons 
+                                                    :|Prim| 
+                                                    (cons :|Paren| pV6))) 
+                                                  '(:|None|)))))))) 
+                                        (vector pV13 vExpr pV7)))) 
+                                 (return 
+                                  (let ((v (JGEN::mkIfRes pV18))) 
+                                    (let ((vDecl 
+                                           (JGEN::mkVarDecl 
+                                            v 
+                                            (JGEN::srtId 
+                                             (METASLANG::termSort pV22))))) 
+                                      (let ((vAss1 (JGEN::mkVarAssn v pV10))) 
+                                        (let ((vAss2 (JGEN::mkVarAssn v pV6))) 
+                                          (let ((ifStmt 
+                                                 (JGEN::mkIfStmt 
+                                                  pV14 
+                                                  (LIST-SPEC::|!++| 
+                                                   pV9 
+                                                   (cons vAss1 nil)) 
+                                                  (LIST-SPEC::|!++| 
+                                                   pV5 
+                                                   (cons vAss2 nil))))) 
+                                            (let ((vExpr (JGEN::mkVarJavaExpr v))) 
+                                              (vector 
+                                               (LIST-SPEC::|!++| 
+                                                pV13 
+                                                (cons vDecl (cons ifStmt nil))) 
+                                               vExpr 
+                                               pV7)))))))))))) 
+                           (error 
+                            "Nonexhaustive match failure in translateIfThenElseToExpr"))))) 
+                     (error 
+                      "Nonexhaustive match failure in translateIfThenElseToExpr"))))) 
+               (error "Nonexhaustive match failure in translateIfThenElseToExpr"))))))) 
+   (error "Nonexhaustive match failure in translateIfThenElseToExpr")))
+
+(defun JGEN::mkVarInit (vId srtId jInit) 
+  (cons 
+   :|LocVarDecl| 
+   (vector 
+    nil 
+    (JGEN::tt srtId) 
+    (cons (cons vId 0) (cons :|Some| (cons :|Expr| jInit))) 
+    nil)))
+
+(defun JGEN::translateLetToExpr (pV23 pV24 pV25) 
+  (block 
+   nil 
+   (if (eq (car pV24) :|Let|) 
+       (let ((pV26 (cdr pV24))) 
+         (let ((pV27 (svref pV26 0))) 
+           (return 
+            (block 
+             nil 
+             (if (consp pV27) 
+                 (let ((pV16 (car pV27))) 
+                   (let ((pV18 (car pV16))) 
+                     (if (eq (car pV18) :|VarPat|) 
+                         (let ((pV21 (car (cdr pV18)))) 
+                           (if (null (cdr pV27)) 
+                               (return 
+                                (let ((pV10 
+                                       (JGEN::termToExpression 
+                                        pV23 
+                                        (cdr pV16) 
+                                        pV25))) 
+                                  (block 
+                                   nil 
+                                   (return 
+                                    (let ((pV6 
+                                           (JGEN::termToExpression 
+                                            pV23 
+                                            (svref pV26 1) 
+                                            (svref pV10 2)))) 
+                                      (block 
+                                       nil 
+                                       (return 
+                                        (block 
+                                         nil 
+                                         (return 
+                                          (let ((vInit 
+                                                 (JGEN::mkVarInit 
+                                                  (car pV21) 
+                                                  (JGEN::srtId (cdr pV21)) 
+                                                  (svref pV10 1)))) 
+                                            (vector 
+                                             (LIST-SPEC::|!++| 
+                                              (LIST-SPEC::|!++| 
+                                               (svref pV10 0) 
+                                               (cons vInit nil)) 
+                                              (svref pV6 0)) 
+                                             (svref pV6 1) 
+                                             (svref pV6 2)))) 
+                                         (error 
+                                          "Nonexhaustive match failure in translateLetToExpr"))) 
+                                       (error 
+                                        "Nonexhaustive match failure in translateLetToExpr")))) 
+                                   (error 
+                                    "Nonexhaustive match failure in translateLetToExpr")))))))))) 
+             (error "Nonexhaustive match failure in translateLetToExpr")))))) 
+   (error "Nonexhaustive match failure in translateLetToExpr")))
+
+(defun JGEN::mkNewClasInst (id javaArgs) 
+  (cons 
+   :|CondExp| 
+   (cons 
+    (cons 
+     :|Un| 
+     (cons 
+      :|Prim| 
+      (cons 
+       :|NewClsInst| 
+       (cons :|ForCls| (vector (cons nil id) javaArgs '(:|None|)))))) 
+    '(:|None|))))
+
+(defun JGEN::translateRecordToExpr (pV6 pV7 pV8) 
+  (block 
+   nil 
+   (if (eq (car pV7) :|Record|) 
+       (return 
+        (let ((recordTerms (JGEN::recordFieldsToTerms (car (cdr pV7))))) 
+          (let ((pV2 (JGEN::translateTermsToExpressions pV6 recordTerms pV8))) 
+            (block 
+             nil 
+             (return 
+              (vector 
+               (svref pV2 0) 
+               (JGEN::mkNewClasInst "Point" (svref pV2 1)) 
+               (svref pV2 2))) 
+             (error "Nonexhaustive match failure in translateRecordToExpr")))))) 
+   (error "Nonexhaustive match failure in translateRecordToExpr")))
+
+(defun JGEN::termToExpression (tcx term k) 
+  (block 
+   nil 
+   (if (eq (car term) :|Var|) 
+       (let ((pV50 (car (car (cdr term))))) 
+         (return 
+          (let ((pV3 (STRINGMAP::|!find| tcx pV50))) 
+            (block 
+             nil 
+             (if (eq (car pV3) :|Some|) (return (vector JGEN::mts (cdr pV3) k))) 
+             (return (vector JGEN::mts (JGEN::mkVarJavaExpr pV50) k)))))) 
+       (if (eq (car term) :|Fun|) 
+           (let ((pV30 (cdr term))) 
+             (let ((pV36 (svref pV30 1))
+                   (pV35 (svref pV30 0))) 
+               (if (eq (car pV35) :|Op|) 
+                   (let ((pV43 (car (cdr pV35)))) 
+                     (if (eq (car pV43) :|Qualified|) 
+                         (let ((pV47 (cdr (cdr pV43)))) 
+                           (return 
+                            (if (JGEN::baseType? pV36) 
+                                (vector 
+                                 JGEN::mts 
+                                 (JGEN::mkQualJavaExpr "Primitive" pV47) 
+                                 k) 
+                                (block 
+                                 nil 
+                                 (if (eq (car pV36) :|Base|) 
+                                     (let ((pV11 (svref (cdr pV36) 0))) 
+                                       (if (eq (car pV11) :|Qualified|) 
+                                           (return 
+                                            (vector 
+                                             JGEN::mts 
+                                             (JGEN::mkQualJavaExpr 
+                                              (cdr (cdr pV11)) 
+                                              pV47) 
+                                             k))))) 
+                                 (error 
+                                  "Nonexhaustive match failure in termToExpression"))))))) 
+                   (if (eq (car pV35) :|Nat|) 
+                       (return 
+                        (vector JGEN::mts (JGEN::mkJavaNumber (cdr pV35)) k)) 
+                       (if (eq (car pV35) :|Embed|) 
+                           (return 
+                            (vector 
+                             JGEN::mts 
+                             (JGEN::mkMethInv 
+                              (JGEN::srtId pV36) 
+                              (car (cdr pV35)) 
+                              nil) 
+                             k))))))) 
+           (if (eq (car term) :|Apply|) 
+               (return (JGEN::translateApplyToExpr tcx term k)) 
+               (if (eq (car term) :|Record|) 
+                   (return (JGEN::translateRecordToExpr tcx term k)) 
+                   (if (eq (car term) :|IfThenElse|) 
+                       (return (JGEN::translateIfThenElseToExpr tcx term k)) 
+                       (if (eq (car term) :|Let|) 
+                           (return (JGEN::translateLetToExpr tcx term k)))))))) 
+   (return (SYSTEM-SPEC::fail "unsupported term in termToExpression"))))
+
+(defun JGEN::addSumMethDeclToClsDecls (pV35 pV36 pV37 pV38 pV39 pV40) 
+  (block 
+   nil 
+   (if (eq (car pV37) :|EmbedPat|) 
+       (let ((pV41 (cdr pV37))) 
+         (let ((pV43 (svref pV41 1))) 
+           (return 
+            (block 
+             nil 
+             (if (eq (car pV36) :|Var|) 
+                 (return 
+                  (let ((args 
+                         (block 
+                          nil 
+                          (if (eq (car pV43) :|Some|) 
+                              (let ((pV16 (cdr pV43))) 
+                                (if (eq (car pV16) :|RecordPat|) 
+                                    (return 
+                                     (LIST-SPEC::|!map|-1-1 
+                                      #'(lambda (x) 
+                                         (let ((pV7 (cdr x))) 
+                                           (block 
+                                            nil 
+                                            (if (eq (car pV7) :|VarPat|) 
+                                                (return (car (car (cdr pV7))))) 
+                                            (error 
+                                             "Nonexhaustive match failure in addSumMethDeclToClsDecls")))) 
+                                      (car (cdr pV16)))) 
+                                    (if (eq (car pV16) :|VarPat|) 
+                                        (return 
+                                         (cons (car (car (cdr pV16))) nil))))) 
+                              (if (eq (car pV43) :|None|) (return nil))) 
+                          (error 
+                           "Nonexhaustive match failure in addSumMethDeclToClsDecls")))) 
+                    (let ((summandId (JGEN::mkSummandId pV35 (svref pV41 0)))) 
+                      (let ((thisExpr 
+                             (cons 
+                              :|CondExp| 
+                              (cons 
+                               (cons 
+                                :|Un| 
+                                (cons :|Prim| (cons :|Name| (cons nil "this")))) 
+                               '(:|None|))))) 
+                        (let ((tcx 
+                               (STRINGMAP::insert 
+                                STRINGMAP::empty 
+                                (car (car (cdr pV36))) 
+                                thisExpr))) 
+                          (let ((tcx (JGEN::addArgsToTcx tcx args))) 
+                            (let ((pV25 (JGEN::termToExpression tcx pV38 1))) 
+                              (block 
+                               nil 
+                               (return 
+                                (let ((JBody 
+                                       (LIST-SPEC::|!++| 
+                                        (svref pV25 0) 
+                                        (cons 
+                                         (cons 
+                                          :|Stmt| 
+                                          (cons 
+                                           :|Return| 
+                                           (cons :|Some| (svref pV25 1)))) 
+                                         nil)))) 
+                                  (let ((newMethDecl 
+                                         (JGEN::setMethodBody pV39 JBody))) 
+                                    (JGEN::addMethDeclToClsDecls 
+                                     summandId 
+                                     newMethDecl 
+                                     pV40)))) 
+                               (error 
+                                "Nonexhaustive match failure in addSumMethDeclToClsDecls")))))))))) 
+             (error "Nonexhaustive match failure in addSumMethDeclToClsDecls")))))) 
+   (error "Nonexhaustive match failure in addSumMethDeclToClsDecls")))
+
+(defun JGEN::caseCases (trm) 
+  (block 
+   nil 
+   (if (eq (car trm) :|Apply|) 
+       (let ((pV5 (svref (cdr trm) 0))) 
+         (if (eq (car pV5) :|Lambda|) (return (car (cdr pV5)))))) 
+   (error "Nonexhaustive match failure in caseCases")))
+
+(defun JGEN::caseTerm (term) 
+  (block 
+   nil 
+   (if (eq (car term) :|Apply|) 
+       (let ((pV4 (cdr term))) 
+         (if (eq (car (svref pV4 0)) :|Lambda|) (return (svref pV4 1))))) 
+   (error "Nonexhaustive match failure in caseTerm")))
+
+(defun METASLANG::mkUnQualifiedId (id) 
+  (cons :|Qualified| (cons METASLANG::UnQualified id)))
+
+(defun JGEN::addMethDeclToSummands (spc srthId methodDecl body clsDecls) 
+  (let ((pV15 
+         (STANDARDSPEC::findTheSort spc (METASLANG::mkUnQualifiedId srthId)))) 
+    (block 
+     nil 
+     (if (eq (car pV15) :|Some|) 
+         (let ((pV19 (svref (cdr pV15) 2))) 
+           (if (consp pV19) 
+               (if (null (cdr pV19)) 
+                   (return 
+                    (block 
+                     nil 
+                     (if (eq (car (cdr (car pV19))) :|CoProduct|) 
+                         (return 
+                          (let ((caseTerm (JGEN::caseTerm body))) 
+                            (let ((cases (JGEN::caseCases body))) 
+                              (LIST-SPEC::foldr-1-1-1 
+                               #'(lambda (x) 
+                                  (let ((pV6 (car x))) 
+                                    (block 
+                                     nil 
+                                     (return 
+                                      (JGEN::addSumMethDeclToClsDecls 
+                                       srthId 
+                                       caseTerm 
+                                       (svref pV6 0) 
+                                       (svref pV6 2) 
+                                       methodDecl 
+                                       (cdr x))) 
+                                     (error 
+                                      "Nonexhaustive match failure in addMethDeclToSummands")))) 
+                               clsDecls 
+                               cases))))) 
+                     (error 
+                      "Nonexhaustive match failure in addMethDeclToSummands"))))))) 
+     (error "Nonexhaustive match failure in addMethDeclToSummands"))))
+
+(defun JGEN::varToFormalParam-1 (var) 
+  (let ((pV4 (cdr var))) 
+    (block 
+     nil 
+     (if (eq (car pV4) :|Base|) 
+         (let ((pV6 (svref (cdr pV4) 0))) 
+           (if (eq (car pV6) :|Qualified|) 
+               (return 
+                (vector nil (JGEN::tt (cdr (cdr pV6))) (cons (car var) 0)))))) 
+     (error "Nonexhaustive match failure in varToFormalParam"))))
+
+(defun JGEN::varsToFormalParams (vars) 
+  (LIST-SPEC::|!map|-1-1 #'JGEN::varToFormalParam-1 vars))
+
+(defun LIST-SPEC::splitListHelper (p l res) 
+  (block 
+   nil 
+   (if (null l) 
+       (return '(:|None|)) 
+       (if (consp l) 
+           (let ((pV4 (cdr l))
+                 (pV3 (car l))) 
+             (return 
+              (if (funcall p pV3) 
+                  (cons :|Some| (vector (LIST-SPEC::rev res) pV3 pV4)) 
+                  (LIST-SPEC::splitListHelper p pV4 (cons pV3 res))))))) 
+   (error "Nonexhaustive match failure in splitListHelper")))
+
+(defun LIST-SPEC::splitList-1-1 (p l) (LIST-SPEC::splitListHelper p l nil))
+
+(defun JGEN::addCaseMethodsToClsDecls
+ (spc opId dom rng rngId vars body clsDecls) 
+  (let ((pV14 
+         (LIST-SPEC::splitList-1-1 
+          #'(lambda (v) (JGEN::userType? (cdr v))) 
+          vars))) 
+    (block 
+     nil 
+     (if (eq (car pV14) :|Some|) 
+         (let ((pV15 (cdr pV14))) 
+           (let ((pV18 (svref pV15 2))
+                 (pV16 (svref pV15 0))) 
+             (return 
+              (let ((methodDeclA 
+                     (cons 
+                      (vector 
+                       (cons '(:|Abstract|) nil) 
+                       (let ((x (JGEN::tt rngId))) 
+                         (cons :|Some| (cons (car x) (cdr x)))) 
+                       opId 
+                       (JGEN::varsToFormalParams (LIST-SPEC::|!++| pV16 pV18)) 
+                       nil) 
+                      '(:|None|)))) 
+                (let ((methodDecl 
+                       (cons 
+                        (vector 
+                         nil 
+                         (let ((x (JGEN::tt rngId))) 
+                           (cons :|Some| (cons (car x) (cdr x)))) 
+                         opId 
+                         (JGEN::varsToFormalParams (LIST-SPEC::|!++| pV16 pV18)) 
+                         nil) 
+                        '(:|None|)))) 
+                  (block 
+                   nil 
+                   (let ((pV6 (cdr (svref pV15 1)))) 
+                     (if (eq (car pV6) :|Base|) 
+                         (let ((pV8 (svref (cdr pV6) 0))) 
+                           (if (eq (car pV8) :|Qualified|) 
+                               (let ((pV13 (cdr (cdr pV8)))) 
+                                 (return 
+                                  (let ((newClsDecls 
+                                         (JGEN::addMethDeclToClsDecls 
+                                          pV13 
+                                          methodDeclA 
+                                          clsDecls))) 
+                                    (JGEN::addMethDeclToSummands 
+                                     spc 
+                                     pV13 
+                                     methodDecl 
+                                     body 
+                                     newClsDecls)))))))) 
+                   (error 
+                    "Nonexhaustive match failure in addCaseMethodsToClsDecls")))))))) 
+     (error "Nonexhaustive match failure in addCaseMethodsToClsDecls"))))
+
+(defun JGEN::addCaseMethodsToClsDecls-1 (x) 
+  (JGEN::addCaseMethodsToClsDecls 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5) 
+   (svref x 6) 
+   (svref x 7)))
+
+(defun JGEN::setFlds (clsBody fldDecls) 
+  (vector 
+   (svref clsBody 0) 
+   (svref clsBody 1) 
+   fldDecls 
+   (svref clsBody 3) 
+   (svref clsBody 4) 
+   (svref clsBody 5)))
+
+(defun JGEN::addFldDeclToClsDecls (srtId fldDecl clsDecls) 
+  (LIST-SPEC::|!map|-1-1 
+   #'(lambda (cd) 
+      (let ((pV3 (svref cd 2))
+            (pV2 (svref cd 1))) 
+        (block 
+         nil 
+         (let ((pV4 (svref pV2 0))) 
+           (return 
+            (if (string=  pV4 srtId) 
+                (let ((newCb 
+                       (JGEN::setFlds 
+                        pV3 
+                        (LIST-SPEC::|!cons| fldDecl (svref pV3 2))))) 
+                  (vector 
+                   (svref cd 0) 
+                   (vector pV4 (svref pV2 1) (svref pV2 2)) 
+                   newCb)) 
+                cd))) 
+         (error "Nonexhaustive match failure in addFldDeclToClsDecls")))) 
+   clsDecls))
+
+(defun JGEN::addFldDeclToClsDecls-1 (x) 
+  (JGEN::addFldDeclToClsDecls (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::addMethDeclToClsDecls-1 (x) 
+  (JGEN::addMethDeclToClsDecls (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::addMethDeclToSummands-1 (x) 
+  (JGEN::addMethDeclToSummands 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JGEN::mkPrimArgsMethodBody (body) 
+  (let ((pV1 (JGEN::termToExpression STRINGMAP::empty body 1))) 
+    (block 
+     nil 
+     (return 
+      (LIST-SPEC::|!++| 
+       (svref pV1 0) 
+       (cons (cons :|Stmt| (cons :|Return| (cons :|Some| (svref pV1 1)))) nil))) 
+     (error "Nonexhaustive match failure in mkPrimArgsMethodBody"))))
+
+(defun JGEN::patternNameOpt (pattern) 
+  (block 
+   nil 
+   (if (eq (car pattern) :|VarPat|) 
+       (return (cons :|Some| (car (car (cdr pattern)))))) 
+   (return '(:|None|))))
+
+(defun JGEN::patternNamesOpt (pattern) 
+  (block 
+   nil 
+   (if (eq (car pattern) :|VarPat|) 
+       (return (cons :|Some| (cons (car (car (cdr pattern))) nil))) 
+       (if (eq (car pattern) :|RecordPat|) 
+           (return 
+            (LIST-SPEC::foldl-1-1-1 
+             #'(lambda (x) 
+                (let ((pV12 (cdr x))) 
+                  (block 
+                   nil 
+                   (return 
+                    (block 
+                     nil 
+                     (if (eq (car pV12) :|Some|) 
+                         (return 
+                          (let ((pV6 (JGEN::patternNameOpt (cdr (car x))))) 
+                            (block 
+                             nil 
+                             (if (eq (car pV6) :|Some|) 
+                                 (return 
+                                  (cons 
+                                   :|Some| 
+                                   (LIST-SPEC::|!++| 
+                                    (cdr pV12) 
+                                    (cons (cdr pV6) nil))))) 
+                             (return '(:|None|)))))) 
+                     (return '(:|None|)))) 
+                   (error "Nonexhaustive match failure in patternNamesOpt")))) 
+             (cons :|Some| nil) 
+             (car (cdr pattern)))))) 
+   (return '(:|None|))))
+
+(defun JGEN::srtDom (srt) 
+  (block 
+   nil 
+   (if (eq (car srt) :|Arrow|) 
+       (let ((pV12 (svref (cdr srt) 0))) 
+         (return 
+          (let ((argSorts 
+                 (block 
+                  nil 
+                  (if (eq (car pV12) :|Product|) 
+                      (return 
+                       (LIST-SPEC::|!map|-1-1 
+                        #'(lambda (x) (cdr x)) 
+                        (car (cdr pV12))))) 
+                  (return (cons pV12 nil))))) argSorts)))) 
+   (return nil)))
+
+(defun JGEN::srtRange (srt) 
+  (block 
+   nil 
+   (if (eq (car srt) :|Arrow|) (return (svref (cdr srt) 1))) 
+   (return srt)))
+
+(defun JGEN::srtTermDelta (srt term) 
+  (let ((opDom (JGEN::srtDom srt))) 
+    (progn (JGEN::srtRange srt) 
+           (block 
+            nil 
+            (if (eq (car term) :|Lambda|) 
+                (let ((pV8 (car (cdr term)))) 
+                  (if (consp pV8) 
+                      (let ((pV11 (car pV8))) 
+                        (if (null (cdr pV8)) 
+                            (return 
+                             (let ((argNames 
+                                    (JGEN::patternNamesOpt (svref pV11 0)))) 
+                               (block 
+                                nil 
+                                (if (eq (car argNames) :|Some|) 
+                                    (let ((pV4 (cdr argNames))) 
+                                      (return 
+                                       (let ((|!numArgs| 
+                                              (LIST-SPEC::|!length| pV4))) 
+                                         (let ((arity 
+                                                (LIST-SPEC::|!length| opDom))) 
+                                           (if ( =  arity |!numArgs|) 
+                                               (let ((newArgs 
+                                                      (LISTPAIR::|!map|-1-1 
+                                                       #'(lambda (x) 
+                                                          (cons (car x) (cdr x))) 
+                                                       (cons pV4 opDom)))) 
+                                                 (cons newArgs (svref pV11 2))) 
+                                               (SYSTEM-SPEC::fail 
+                                                "type Mismatch in delta"))))))) 
+                                (return 
+                                 (SYSTEM-SPEC::fail "type Mismatch in delta")))))))))) 
+            (return (cons nil term))))))
+
+(defun JGEN::addPrimArgsMethodToClsDecls (pV6 pV7 pV8 pV9 pV10 pV11) 
+  (declare (ignore pV8)) 
+  (block 
+   nil 
+   (if (eq (car pV9) :|Base|) 
+       (let ((pV13 (svref (cdr pV9) 0))) 
+         (if (eq (car pV13) :|Qualified|) 
+             (let ((pV18 (cdr (cdr pV13)))) 
+               (return 
+                (let ((pV3 (JGEN::srtTermDelta pV7 pV10))) 
+                  (block 
+                   nil 
+                   (return 
+                    (let ((methodDecl 
+                           (cons 
+                            (vector 
+                             (cons '(:|Static|) nil) 
+                             (let ((x (JGEN::tt pV18))) 
+                               (cons :|Some| (cons (car x) (cdr x)))) 
+                             pV6 
+                             (JGEN::varsToFormalParams (car pV3)) 
+                             nil) 
+                            '(:|None|)))) 
+                      (let ((methodBody (JGEN::mkPrimArgsMethodBody (cdr pV3)))) 
+                        (let ((methodDecl 
+                               (JGEN::setMethodBody methodDecl methodBody))) 
+                          (JGEN::addMethDeclToClsDecls pV18 methodDecl pV11))))) 
+                   (error 
+                    "Nonexhaustive match failure in addPrimArgsMethodToClsDecls")))))))) 
+   (error "Nonexhaustive match failure in addPrimArgsMethodToClsDecls")))
+
+(defun JGEN::addPrimMethodToClsDecls (pV6 pV7 pV8 pV9 pV10 pV11) 
+  (declare (ignore pV8)) 
+  (block 
+   nil 
+   (if (eq (car pV9) :|Base|) 
+       (let ((pV13 (svref (cdr pV9) 0))) 
+         (if (eq (car pV13) :|Qualified|) 
+             (return 
+              (let ((pV3 (JGEN::srtTermDelta pV7 pV10))) 
+                (block 
+                 nil 
+                 (return 
+                  (let ((methodDecl 
+                         (cons 
+                          (vector 
+                           (cons '(:|Static|) nil) 
+                           (let ((x (JGEN::tt (cdr (cdr pV13))))) 
+                             (cons :|Some| (cons (car x) (cdr x)))) 
+                           pV6 
+                           (JGEN::varsToFormalParams (car pV3)) 
+                           nil) 
+                          '(:|None|)))) 
+                    (let ((methodBody (JGEN::mkPrimArgsMethodBody (cdr pV3)))) 
+                      (let ((methodDecl 
+                             (JGEN::setMethodBody methodDecl methodBody))) 
+                        (JGEN::addMethDeclToClsDecls "Primitive" methodDecl pV11))))) 
+                 (error "Nonexhaustive match failure in addPrimMethodToClsDecls"))))))) 
+   (error "Nonexhaustive match failure in addPrimMethodToClsDecls")))
+
+(defun JGEN::mkNonCaseMethodBody (vId body) 
+  (let ((thisExpr 
+         (cons 
+          :|CondExp| 
+          (cons 
+           (cons :|Un| (cons :|Prim| (cons :|Name| (cons nil "this")))) 
+           '(:|None|))))) 
+    (let ((tcx (STRINGMAP::insert STRINGMAP::empty vId thisExpr))) 
+      (let ((pV1 (JGEN::termToExpression tcx body 1))) 
+        (block 
+         nil 
+         (return 
+          (LIST-SPEC::|!++| 
+           (svref pV1 0) 
+           (cons 
+            (cons :|Stmt| (cons :|Return| (cons :|Some| (svref pV1 1)))) 
+            nil))) 
+         (error "Nonexhaustive match failure in mkNonCaseMethodBody"))))))
+
+(defun JGEN::addNonCaseMethodsToClsDecls
+ (opId dom rng rngId vars body clsDecls) 
+  (let ((pV18 
+         (LIST-SPEC::splitList-1-1 
+          #'(lambda (v) (JGEN::userType? (cdr v))) 
+          vars))) 
+    (block 
+     nil 
+     (if (eq (car pV18) :|Some|) 
+         (let ((pV19 (cdr pV18))) 
+           (let ((pV21 (svref pV19 1))) 
+             (return 
+              (block 
+               nil 
+               (return 
+                (let ((methodBody (JGEN::mkNonCaseMethodBody (car pV21) body))) 
+                  (let ((methodDecl 
+                         (cons 
+                          (vector 
+                           nil 
+                           (let ((x (JGEN::tt rngId))) 
+                             (cons :|Some| (cons (car x) (cdr x)))) 
+                           opId 
+                           (JGEN::varsToFormalParams 
+                            (LIST-SPEC::|!++| (svref pV19 0) (svref pV19 2))) 
+                           nil) 
+                          (cons :|Some| methodBody)))) 
+                    (block 
+                     nil 
+                     (let ((pV7 (cdr pV21))) 
+                       (if (eq (car pV7) :|Base|) 
+                           (let ((pV9 (svref (cdr pV7) 0))) 
+                             (if (eq (car pV9) :|Qualified|) 
+                                 (return 
+                                  (JGEN::addMethDeclToClsDecls 
+                                   (cdr (cdr pV9)) 
+                                   methodDecl 
+                                   clsDecls)))))) 
+                     (error 
+                      "Nonexhaustive match failure in addNonCaseMethodsToClsDecls"))))) 
+               (error 
+                "Nonexhaustive match failure in addNonCaseMethodsToClsDecls")))))) 
+     (error "Nonexhaustive match failure in addNonCaseMethodsToClsDecls"))))
+
+(defun JGEN::caseTerm? (term) 
+  (block 
+   nil 
+   (if (eq (car term) :|Apply|) 
+       (if (eq (car (svref (cdr term) 0)) :|Lambda|) (return t))) 
+   (return nil)))
+
+(defun JGEN::addUserMethodToClsDecls (pV6 pV7 pV8 pV9 pV10 pV11 pV12) 
+  (block 
+   nil 
+   (if (eq (car pV10) :|Base|) 
+       (let ((pV14 (svref (cdr pV10) 0))) 
+         (if (eq (car pV14) :|Qualified|) 
+             (let ((pV19 (cdr (cdr pV14)))) 
+               (return 
+                (let ((pV3 (JGEN::srtTermDelta pV8 pV11))) 
+                  (block 
+                   nil 
+                   (let ((pV5 (cdr pV3))
+                         (pV4 (car pV3))) 
+                     (return 
+                      (if (JGEN::caseTerm? pV5) 
+                          (JGEN::addCaseMethodsToClsDecls 
+                           pV6 
+                           pV7 
+                           pV9 
+                           pV10 
+                           pV19 
+                           pV4 
+                           pV5 
+                           pV12) 
+                          (JGEN::addNonCaseMethodsToClsDecls 
+                           pV7 
+                           pV9 
+                           pV10 
+                           pV19 
+                           pV4 
+                           pV5 
+                           pV12)))) 
+                   (error 
+                    "Nonexhaustive match failure in addUserMethodToClsDecls")))))))) 
+   (error "Nonexhaustive match failure in addUserMethodToClsDecls")))
+
+(defun JGEN::addMethodFromOpToClsDecls (spc opId srt trm clsDecls) 
+  (let ((dom (JGEN::srtDom srt))) 
+    (let ((rng (JGEN::srtRange srt))) 
+      (if (LIST-SPEC::all-1-1 #'(lambda (srt) (JGEN::baseType? srt)) dom) 
+          (if (JGEN::baseType? rng) 
+              (JGEN::addPrimMethodToClsDecls opId srt dom rng trm clsDecls) 
+              (JGEN::addPrimArgsMethodToClsDecls opId srt dom rng trm clsDecls)) 
+          (JGEN::addUserMethodToClsDecls spc opId srt dom rng trm clsDecls)))))
+
+(defun JGEN::addMethodFromOpToClsDecls-1 (x) 
+  (JGEN::addMethodFromOpToClsDecls 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JGEN::addNonCaseMethodsToClsDecls-1 (x) 
+  (JGEN::addNonCaseMethodsToClsDecls 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5) 
+   (svref x 6)))
+
+(defun LISTUTILITIES::insert (e l) 
+  (block 
+   nil 
+   (if (null l) 
+       (return (cons e nil)) 
+       (if (consp l) 
+           (let ((pV3 (car l))) 
+             (return 
+              (if (slang-built-in::slang-term-equals e pV3) 
+                  l 
+                  (cons pV3 (LISTUTILITIES::insert e (cdr l)))))))) 
+   (error "Nonexhaustive match failure in insert")))
+
+(defun LISTUTILITIES::insert-1 (x) (LISTUTILITIES::insert (car x) (cdr x)))
+
+(defun LISTUTILITIES::listUnion (l1 l2) 
+  (LIST-SPEC::foldr-1-1-1 #'LISTUTILITIES::insert-1 l1 l2))
+
+(defun SPECCALC::monadBind-1-1 (!x1 state) 
+  (let ((x (funcall (car !x1) state))) 
+    (let ((pV1 (car x))
+          (pV2 (cdr x))) 
+      (block 
+       nil 
+       (if (eq (car pV1) :|Ok|) 
+           (return (funcall (funcall (cdr !x1) (cdr pV1)) pV2)) 
+           (if (eq (car pV1) :|Exception|) 
+               (return (cons (cons :|Exception| (cdr pV1)) pV2)))) 
+       (error "Nonexhaustive match failure in monadBind")))))
+
+(defun SPECCALC::monadBind-1 (x1) 
+  #'(lambda (x2) (SPECCALC::monadBind-1-1 x1 x2)))
+
+(defun SPECCALC::monadBind (x0 x1) (SPECCALC::monadBind-1 (cons x0 x1)))
+
+(defun SPECCALC::|!return|-1-1 (x state) (cons (cons :|Ok| x) state))
+
+(defun SPECCALC::|!return| (x1) 
+  #'(lambda (x2) (SPECCALC::|!return|-1-1 x1 x2)))
+
+(defun SPECCALC::foldM (f) 
+  #'(lambda (a) 
+     #'(lambda (l) 
+        (block 
+         nil 
+         (if (null l) 
+             (return (SPECCALC::|!return| a)) 
+             (if (consp l) 
+                 (let ((pV4 (cdr l))) 
+                   (return 
+                    (SPECCALC::monadBind 
+                     (funcall (funcall f a) (car l)) 
+                     #'(lambda (y) 
+                        (funcall (funcall (SPECCALC::foldM f) y) pV4))))))) 
+         (error "Nonexhaustive match failure in foldM")))))
+
+(defun SPECCALC::printAliases (pV7) 
+  (block 
+   nil 
+   (if (consp pV7) 
+       (let ((pV10 (cdr pV7))
+             (pV9 (car pV7))) 
+         (return 
+          (labels 
+            ((print_qid (pV1) 
+              (block 
+               nil 
+               (if (eq (car pV1) :|Qualified|) 
+                   (let ((pV2 (cdr pV1))) 
+                     (let ((pV4 (cdr pV2))
+                           (pV3 (car pV2))) 
+                       (return 
+                        (if (string=  pV3 METASLANG::UnQualified) 
+                            pV4 
+                            (STRING-SPEC::^ (STRING-SPEC::^ pV3 ".") pV4)))))) 
+               (error "Nonexhaustive match failure in printAliases")))) 
+            (let ((str (print_qid pV9))) 
+              (block 
+               nil 
+               (if (null pV10) (return str)) 
+               (return 
+                (STRING-SPEC::^ 
+                 (STRING-SPEC::^ 
+                  "{" 
+                  (LIST-SPEC::foldl-1-1-1 
+                   #'(lambda (x) 
+                      (STRING-SPEC::^ 
+                       (STRING-SPEC::^ (cdr x) ",") 
+                       (print_qid (car x)))) 
+                   str 
+                   pV10)) 
+                 "}")))))))) 
+   (error "Nonexhaustive match failure in printAliases")))
+
+(defun SPECCALC::printTypeVars (vars) 
+  (block 
+   nil 
+   (if (null vars) 
+       (return "()") 
+       (if (consp vars) 
+           (return 
+            (STRING-SPEC::^ 
+             (STRING-SPEC::^ 
+              (STRING-SPEC::^ "(" (car vars)) 
+              (LIST-SPEC::foldl-1-1-1 
+               #'(lambda (x) 
+                  (STRING-SPEC::^ (STRING-SPEC::^ (cdr x) ",") (car x))) 
+               "" 
+               (cdr vars))) 
+             ")")))) 
+   (error "Nonexhaustive match failure in printTypeVars")))
+
+(defun SPECCALC::raise-1-1 (except state) 
+  (progn (if SPECCALC::specwareWizard? 
+             (SYSTEM-SPEC::fail (SYSTEM-SPEC::toString except)) 
+             nil) 
+         (cons (cons :|Exception| except) state)))
+
+(defun SPECCALC::raise (x1) #'(lambda (x2) (SPECCALC::raise-1-1 x1 x2)))
+
+(defun SPECCALC::addOp (new_op_names) 
+  #'(lambda (new_fixity) 
+     #'(lambda (new_sort_scheme) 
+        (let ((new_type_vars (car new_sort_scheme))) 
+          #'(lambda (new_defs) 
+             #'(lambda (old_spec) 
+                #'(lambda (|!position|) 
+                   (let ((old_infos 
+                          (LIST-SPEC::foldl-1-1-1 
+                           #'(lambda (x1) 
+                              (let ((old_infos (cdr x1))) 
+                                (let ((pV2 
+                                       (STANDARDSPEC::findTheOp 
+                                        old_spec 
+                                        (car x1)))) 
+                                  (block 
+                                   nil 
+                                   (if (eq (car pV2) :|Some|) 
+                                       (let ((pV3 (cdr pV2))) 
+                                         (return 
+                                          (if (LIST-SPEC::|!exists|-1-1 
+                                               #'(lambda (old_info) 
+                                                  (slang-built-in::slang-term-equals 
+                                                   pV3 
+                                                   old_info)) 
+                                               old_infos) 
+                                              old_infos 
+                                              (LIST-SPEC::|!cons| pV3 old_infos))))) 
+                                   (return old_infos))))) 
+                           nil 
+                           new_op_names))) 
+                     (SPECCALC::monadBind 
+                      (block 
+                       nil 
+                       (if (null old_infos) 
+                           (return 
+                            (let ((new_info 
+                                   (vector 
+                                    new_op_names 
+                                    new_fixity 
+                                    new_sort_scheme 
+                                    new_defs))) 
+                              (SPECCALC::|!return| 
+                               (LIST-SPEC::foldl-1-1-1 
+                                #'(lambda (x1) 
+                                   (let ((pV4 (car x1))) 
+                                     (block 
+                                      nil 
+                                      (if (eq (car pV4) :|Qualified|) 
+                                          (let ((pV6 (cdr pV4))) 
+                                            (return 
+                                             (insertAQualifierMap 
+                                              (cdr x1) 
+                                              (car pV6) 
+                                              (cdr pV6) 
+                                              new_info)))) 
+                                      (error 
+                                       "Nonexhaustive match failure in addOp")))) 
+                                (svref old_spec 1) 
+                                new_op_names)))) 
+                           (if (consp old_infos) 
+                               (let ((pV51 (car old_infos))) 
+                                 (let ((pV56 (svref pV51 3))
+                                       (pV55 (svref pV51 2))) 
+                                   (let ((pV57 (car pV55))) 
+                                     (if (null (cdr old_infos)) 
+                                         (return 
+                                          (let ((combined_op_names 
+                                                 (LISTUTILITIES::listUnion 
+                                                  (svref pV51 0) 
+                                                  new_op_names))) 
+                                            (block 
+                                             nil 
+                                             (if (null pV56) 
+                                                 (if (null new_defs) 
+                                                     (return 
+                                                      (SPECCALC::raise 
+                                                       (cons 
+                                                        :|SpecError| 
+                                                        (cons 
+                                                         |!position| 
+                                                         (STRING-SPEC::^ 
+                                                          (STRING-SPEC::^ 
+                                                           (STRING-SPEC::^ 
+                                                            (STRING-SPEC::^ 
+                                                             (STRING-SPEC::^ 
+                                                              (STRING-SPEC::^ 
+                                                               "Operator " 
+                                                               (SPECCALC::printAliases 
+                                                                new_op_names)) 
+                                                              " has been redeclared") 
+                                                             "
+ from ") 
+                                                            (ANNSPECPRINTER::printSortScheme-1 
+                                                             pV55)) 
+                                                           "
+   to ") 
+                                                          (ANNSPECPRINTER::printSortScheme-1 
+                                                           new_sort_scheme)))))) 
+                                                     (if (consp new_defs) 
+                                                         (return 
+                                                          (let ((happy? 
+                                                                 (block 
+                                                                  nil 
+                                                                  (if (null 
+                                                                       (car 
+                                                                        new_sort_scheme)) 
+                                                                      (if (eq 
+                                                                           (car 
+                                                                            (cdr 
+                                                                             new_sort_scheme)) 
+                                                                           :|MetaTyVar|) 
+                                                                          (return 
+                                                                           t))) 
+                                                                  (return 
+                                                                   (slang-built-in::slang-term-equals 
+                                                                    new_type_vars 
+                                                                    pV57))))) 
+                                                            (if happy? 
+                                                                (let ((new_info 
+                                                                       (vector 
+                                                                        combined_op_names 
+                                                                        (svref 
+                                                                         pV51 
+                                                                         1) 
+                                                                        pV55 
+                                                                        new_defs))) 
+                                                                  (SPECCALC::|!return| 
+                                                                   (LIST-SPEC::foldl-1-1-1 
+                                                                    #'(lambda (x1) 
+                                                                       (let ((pV16 
+                                                                              (car 
+                                                                               x1))) 
+                                                                         (block 
+                                                                          nil 
+                                                                          (if (eq 
+                                                                               (car 
+                                                                                pV16) 
+                                                                               :|Qualified|) 
+                                                                              (let ((pV18 
+                                                                                     (cdr 
+                                                                                      pV16))) 
+                                                                                (return 
+                                                                                 (insertAQualifierMap 
+                                                                                  (cdr 
+                                                                                   x1) 
+                                                                                  (car 
+                                                                                   pV18) 
+                                                                                  (cdr 
+                                                                                   pV18) 
+                                                                                  new_info)))) 
+                                                                          (error 
+                                                                           "Nonexhaustive match failure in addOp")))) 
+                                                                    (svref 
+                                                                     old_spec 
+                                                                     1) 
+                                                                    combined_op_names))) 
+                                                                (SPECCALC::raise 
+                                                                 (cons 
+                                                                  :|SpecError| 
+                                                                  (cons 
+                                                                   |!position| 
+                                                                   (STRING-SPEC::^ 
+                                                                    (STRING-SPEC::^ 
+                                                                     (STRING-SPEC::^ 
+                                                                      (STRING-SPEC::^ 
+                                                                       (STRING-SPEC::^ 
+                                                                        (STRING-SPEC::^ 
+                                                                         "Operator " 
+                                                                         (SPECCALC::printAliases 
+                                                                          new_op_names)) 
+                                                                        " has been redeclared or redefined") 
+                                                                       "
+ with new type variables ") 
+                                                                      (SPECCALC::printTypeVars 
+                                                                       new_type_vars)) 
+                                                                     "
+    differing from prior ") 
+                                                                    (SPECCALC::printTypeVars 
+                                                                     pV57)))))))))) 
+                                                 (if (consp pV56) 
+                                                     (if (null new_defs) 
+                                                         (return 
+                                                          (let ((happy? 
+                                                                 (let ((pV27 
+                                                                        (cdr 
+                                                                         pV55))
+                                                                       (pV26 
+                                                                        (car 
+                                                                         pV55))) 
+                                                                   (block 
+                                                                    nil 
+                                                                    (if (null 
+                                                                         pV26) 
+                                                                        (if (eq 
+                                                                             (car 
+                                                                              pV27) 
+                                                                             :|MetaTyVar|) 
+                                                                            (return 
+                                                                             t))) 
+                                                                    (if (eq 
+                                                                         (car 
+                                                                          pV27) 
+                                                                         :|MetaTyVar|) 
+                                                                        (return 
+                                                                         (slang-built-in::slang-term-equals 
+                                                                          new_type_vars 
+                                                                          pV26))) 
+                                                                    (return nil))))) 
+                                                            (if happy? 
+                                                                (let ((new_info 
+                                                                       (vector 
+                                                                        combined_op_names 
+                                                                        new_fixity 
+                                                                        new_sort_scheme 
+                                                                        pV56))) 
+                                                                  (SPECCALC::|!return| 
+                                                                   (LIST-SPEC::foldl-1-1-1 
+                                                                    #'(lambda (x1) 
+                                                                       (let ((pV30 
+                                                                              (car 
+                                                                               x1))) 
+                                                                         (block 
+                                                                          nil 
+                                                                          (if (eq 
+                                                                               (car 
+                                                                                pV30) 
+                                                                               :|Qualified|) 
+                                                                              (let ((pV32 
+                                                                                     (cdr 
+                                                                                      pV30))) 
+                                                                                (return 
+                                                                                 (insertAQualifierMap 
+                                                                                  (cdr 
+                                                                                   x1) 
+                                                                                  (car 
+                                                                                   pV32) 
+                                                                                  (cdr 
+                                                                                   pV32) 
+                                                                                  new_info)))) 
+                                                                          (error 
+                                                                           "Nonexhaustive match failure in addOp")))) 
+                                                                    (svref 
+                                                                     old_spec 
+                                                                     1) 
+                                                                    combined_op_names))) 
+                                                                (SPECCALC::raise 
+                                                                 (cons 
+                                                                  :|SpecError| 
+                                                                  (cons 
+                                                                   |!position| 
+                                                                   (STRING-SPEC::^ 
+                                                                    (STRING-SPEC::^ 
+                                                                     (STRING-SPEC::^ 
+                                                                      (STRING-SPEC::^ 
+                                                                       (STRING-SPEC::^ 
+                                                                        (STRING-SPEC::^ 
+                                                                         "Operator " 
+                                                                         (SPECCALC::printAliases 
+                                                                          new_op_names)) 
+                                                                        " has been redeclared") 
+                                                                       "
+ from type ") 
+                                                                      (ANNSPECPRINTER::printSortScheme-1 
+                                                                       pV55)) 
+                                                                     "
+   to type ") 
+                                                                    (ANNSPECPRINTER::printSortScheme-1 
+                                                                     new_sort_scheme)))))))) 
+                                                         (if (consp new_defs) 
+                                                             (return 
+                                                              (SPECCALC::raise 
+                                                               (cons 
+                                                                :|SpecError| 
+                                                                (cons 
+                                                                 |!position| 
+                                                                 (STRING-SPEC::^ 
+                                                                  (STRING-SPEC::^ 
+                                                                   (STRING-SPEC::^ 
+                                                                    (STRING-SPEC::^ 
+                                                                     (STRING-SPEC::^ 
+                                                                      (STRING-SPEC::^ 
+                                                                       "Operator " 
+                                                                       (SPECCALC::printAliases 
+                                                                        new_op_names)) 
+                                                                      " has been redefined") 
+                                                                     "
+ from ") 
+                                                                    (ANNSPECPRINTER::printTermScheme-1 
+                                                                     (car pV56))) 
+                                                                   "
+   to ") 
+                                                                  (ANNSPECPRINTER::printTermScheme-1 
+                                                                   (car new_defs))))))))))) 
+                                             (error 
+                                              "Nonexhaustive match failure in addOp")))))))))) 
+                       (return 
+                        (SPECCALC::raise 
+                         (cons 
+                          :|SpecError| 
+                          (cons 
+                           |!position| 
+                           (STRING-SPEC::^ 
+                            (STRING-SPEC::^ 
+                             "Op " 
+                             (SPECCALC::printAliases new_op_names)) 
+                            " refers to multiple prior ops")))))) 
+                      #'(lambda (new_ops) 
+                         (SPECCALC::monadBind 
+                          (SPECCALC::|!return| (setOps old_spec new_ops)) 
+                          #'(lambda (sp) 
+                             (funcall (funcall (SPECCALC::foldM 
+                                                #'(lambda (sp) 
+                                                   #'(lambda (name) 
+                                                      (SPECCALC::|!return| 
+                                                       (addLocalOpName sp name))))) 
+                                               sp) 
+                                      new_op_names)))))))))))))
+
+(defun SPECCALC::monadSeq (f g) 
+  (SPECCALC::monadBind f #'(lambda (pV1) (declare (ignore pV1)) 
+                                         g)))
+
+(defun JGEN::optAddOp (oper srt term spc) 
+  (SPECCALC::monadSeq 
+   #'SPECWARE::restoreSavedSpecwareState-1 
+   (SPECCALC::monadBind 
+    (funcall (funcall (funcall (funcall (funcall (SPECCALC::addOp 
+                                                  (cons oper nil)) 
+                                                 nil) 
+                                        (cons nil srt)) 
+                               (cons (cons nil term) nil)) 
+                      spc) 
+             POSITION-SPEC::noPos) 
+    #'(lambda (spc) 
+       (SPECCALC::|!return| 
+        (cons 
+         :|Some| 
+         (vector (svref spc 0) (svref spc 1) (svref spc 2) (svref spc 3))))))))
+
+(defun POLYMAP::mapPartial-1-1 (f m) 
+  (labels 
+    ((g (m) 
+      #'(lambda (key) 
+         #'(lambda (item) 
+            (let ((pV1 (funcall f item))) 
+              (block 
+               nil 
+               (if (eq (car pV1) :|None|) 
+                   (return m) 
+                   (if (eq (car pV1) :|Some|) 
+                       (return (POLYMAP::update-1-1-1 m key (cdr pV1))))) 
+               (error "Nonexhaustive match failure in mapPartial"))))))) 
+    (POLYMAP::foldMap-1-1-1 #'g POLYMAP::emptyMap m)))
+
+(defun SPECCALC::getGlobalContext
+ (globalContext localContext uri validatedURIs) 
+  (cons 
+   (cons :|Ok| globalContext) 
+   (vector globalContext localContext uri validatedURIs)))
+
+(defun SPECCALC::getGlobalContext-1 (x) 
+  (SPECCALC::getGlobalContext (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun SPECCALC::setGlobalContext-1-1 (newGlobalContext x) 
+  (cons 
+   (cons :|Ok| nil) 
+   (vector newGlobalContext (svref x 1) (svref x 2) (svref x 3))))
+
+(defun SPECCALC::setGlobalContext (x1) 
+  #'(lambda (x2) (SPECCALC::setGlobalContext-1-1 x1 x2)))
+
+(defun SPECCALC::cleanupGlobalContext (x2 x1 x0 x) 
+  (SPECCALC::monadBind-1-1 
+   (cons 
+    #'SPECCALC::getGlobalContext-1 
+    #'(lambda (gCtxt) 
+       (SPECCALC::setGlobalContext 
+        (POLYMAP::mapPartial-1-1 
+         #'(lambda (x) 
+            (block 
+             nil 
+             (if (eq (car (svref x 0)) :|InProcess|) (return '(:|None|))) 
+             (return (cons :|Some| (vector (svref x 0) (svref x 1) (svref x 2)))))) 
+         gCtxt)))) 
+   (vector x2 x1 x0 x)))
+
+(defun SPECCALC::cleanupGlobalContext-1 (x) 
+  (SPECCALC::cleanupGlobalContext 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3)))
+
+(defun SPECCALC::|!print|-1-1 (str state) 
+  (progn (STRING-SPEC::toScreen str) (cons (cons :|Ok| nil) state)))
+
+(defun SPECCALC::|!print| (x1) 
+  #'(lambda (x2) (SPECCALC::|!print|-1-1 x1 x2)))
+
+(defun SPECWARE::getFirstRealPosition (errs) 
+  (block 
+   nil 
+   (if (null errs) 
+       (return '(:|None|)) 
+       (if (consp errs) 
+           (let ((pV13 (cdr errs))) 
+             (let ((pV15 (cdr (car errs)))) 
+               (return 
+                (block 
+                 nil 
+                 (if (eq (car pV15) :|File|) 
+                     (let ((pV5 (svref (cdr pV15) 1))) 
+                       (return 
+                        (if (cl::and ( =  (svref pV5 0) 0) ( =  (svref pV5 1) 0)) 
+                            (SPECWARE::getFirstRealPosition pV13) 
+                            (cons :|Some| pV15))))) 
+                 (return (SPECWARE::getFirstRealPosition pV13)))))))) 
+   (error "Nonexhaustive match failure in getFirstRealPosition")))
+
+(defun SPECWARE::getFirstErrorLocation (except) 
+  (block 
+   nil 
+   (if (eq (car except) :|Unsupported|) 
+       (return (cons :|Some| (car (cdr except)))) 
+       (if (eq (car except) :|URINotFound|) 
+           (return (cons :|Some| (car (cdr except)))) 
+           (if (eq (car except) :|FileNotFound|) 
+               (return (cons :|Some| (car (cdr except)))) 
+               (if (eq (car except) :|SpecError|) 
+                   (return (cons :|Some| (car (cdr except)))) 
+                   (if (eq (car except) :|MorphError|) 
+                       (return (cons :|Some| (car (cdr except)))) 
+                       (if (eq (car except) :|DiagError|) 
+                           (return (cons :|Some| (car (cdr except)))) 
+                           (if (eq (car except) :|TypeCheck|) 
+                               (return (cons :|Some| (car (cdr except)))) 
+                               (if (eq (car except) :|Proof|) 
+                                   (return (cons :|Some| (car (cdr except)))) 
+                                   (if (eq (car except) :|TypeCheckErrors|) 
+                                       (return 
+                                        (SPECWARE::getFirstRealPosition 
+                                         (cdr except)))))))))))) 
+   (return '(:|None|))))
+
+(defun SPECWARE::gotoErrorLocation (except) 
+  (let ((pV2 (SPECWARE::getFirstErrorLocation except))) 
+    (block 
+     nil 
+     (if (eq (car pV2) :|Some|) 
+         (let ((pV3 (cdr pV2))) 
+           (if (eq (car pV3) :|File|) 
+               (let ((pV4 (cdr pV3))) 
+                 (let ((pV6 (svref pV4 1))) 
+                   (return 
+                    (IO-SPEC::gotoFilePosition 
+                     (svref pV4 0) 
+                     (svref pV6 0) 
+                     (svref pV6 1)))))))) 
+     (return nil))))
+
+(defun WADLERLINDIG::ppAppend-1-1 (p1 p2) (WADLERLINDIG::ppCons-1-1 p1 p2))
+
+(defun SPECCALC::ppURIlocal (hashSuffix path) 
+  (let ((prefix 
+         (WADLERLINDIG::ppSep-1-1 
+          (WADLERLINDIG::ppString "/") 
+          (LIST-SPEC::|!map|-1-1 #'WADLERLINDIG::ppString path)))) 
+    (block 
+     nil 
+     (if (eq (car hashSuffix) :|None|) 
+         (return prefix) 
+         (if (eq (car hashSuffix) :|Some|) 
+             (return 
+              (WADLERLINDIG::ppAppend-1-1 
+               prefix 
+               (WADLERLINDIG::ppString (STRING-SPEC::^ "#" (cdr hashSuffix))))))) 
+     (error "Nonexhaustive match failure in ppURIlocal"))))
+
+(defun SPECCALC::ppURIlocal-1 (x) (SPECCALC::ppURIlocal (car x) (cdr x)))
+
+(defun SPECCALC::ppRelativeURI (relURI) 
+  (block 
+   nil 
+   (if (eq (car relURI) :|SpecPath_Relative|) 
+       (return 
+        (WADLERLINDIG::ppAppend-1-1 
+         (WADLERLINDIG::ppString "/") 
+         (SPECCALC::ppURIlocal-1 (cdr relURI)))) 
+       (if (eq (car relURI) :|URI_Relative|) 
+           (return (SPECCALC::ppURIlocal-1 (cdr relURI))))) 
+   (error "Nonexhaustive match failure in ppRelativeURI")))
+
+(defun WADLERLINDIG::ppFits-1-1 (w x) 
+  (cl::and 
+   (INTEGER-SPEC::|!>=| w 0) 
+   (block 
+    nil 
+    (if (null x) 
+        (return t) 
+        (if (consp x) 
+            (let ((pV4 (car x))
+                  (pV5 (cdr x))) 
+              (let ((pV6 (svref pV4 0))
+                    (pV7 (svref pV4 1))
+                    (pV8 (svref pV4 2))) 
+                (progn (if (eq (car pV8) :|DocNil|) 
+                           (return (WADLERLINDIG::ppFits-1-1 w pV5)) 
+                           (if (eq (car pV8) :|DocCons|) 
+                               (let ((pV14 (cdr pV8))) 
+                                 (return 
+                                  (WADLERLINDIG::ppFits-1-1 
+                                   w 
+                                   (cons 
+                                    (vector pV6 pV7 (car pV14)) 
+                                    (cons (vector pV6 pV7 (cdr pV14)) pV5))))) 
+                               (if (eq (car pV8) :|DocNest|) 
+                                   (let ((pV13 (cdr pV8))) 
+                                     (return 
+                                      (WADLERLINDIG::ppFits-1-1 
+                                       w 
+                                       (cons 
+                                        (vector 
+                                         (INTEGER-SPEC::|!+| pV6 (car pV13)) 
+                                         pV7 
+                                         (cdr pV13)) 
+                                        pV5)))) 
+                                   (if (eq (car pV8) :|DocText|) 
+                                       (return 
+                                        (WADLERLINDIG::ppFits-1-1 
+                                         (INTEGER-SPEC::|!-| 
+                                          w 
+                                          (STRING-SPEC::|!length| (cdr pV8))) 
+                                         pV5)))))) 
+                       (if (eq (car pV7) :|Flat|) 
+                           (if (eq (car pV8) :|DocBreak|) 
+                               (return 
+                                (WADLERLINDIG::ppFits-1-1 
+                                 (INTEGER-SPEC::|!-| 
+                                  w 
+                                  (STRING-SPEC::|!length| (cdr pV8))) 
+                                 pV5))) 
+                           (if (eq (car pV7) :|Break|) 
+                               (if (eq (car pV8) :|DocBreak|) (return t)))) 
+                       (if (eq (car pV8) :|DocGroup|) 
+                           (return 
+                            (WADLERLINDIG::ppFits-1-1 
+                             w 
+                             (cons (vector pV6 '(:|Flat|) (cdr pV8)) pV5))))))))) 
+    (error "Nonexhaustive match failure in ppFits"))))
+
+(defun WADLERLINDIG::ppBest-1-1-1 (w k x) 
+  (block 
+   nil 
+   (if (null x) 
+       (return '(:|SNil|)) 
+       (if (consp x) 
+           (let ((pV3 (car x))
+                 (pV4 (cdr x))) 
+             (let ((pV5 (svref pV3 0))
+                   (pV6 (svref pV3 1))
+                   (pV7 (svref pV3 2))) 
+               (progn (if (eq (car pV7) :|DocNil|) 
+                          (return (WADLERLINDIG::ppBest-1-1-1 w k pV4)) 
+                          (if (eq (car pV7) :|DocCons|) 
+                              (let ((pV13 (cdr pV7))) 
+                                (return 
+                                 (WADLERLINDIG::ppBest-1-1-1 
+                                  w 
+                                  k 
+                                  (cons 
+                                   (vector pV5 pV6 (car pV13)) 
+                                   (cons (vector pV5 pV6 (cdr pV13)) pV4))))) 
+                              (if (eq (car pV7) :|DocNest|) 
+                                  (let ((pV12 (cdr pV7))) 
+                                    (return 
+                                     (WADLERLINDIG::ppBest-1-1-1 
+                                      w 
+                                      k 
+                                      (cons 
+                                       (vector 
+                                        (INTEGER-SPEC::|!+| pV5 (car pV12)) 
+                                        pV6 
+                                        (cdr pV12)) 
+                                       pV4)))) 
+                                  (if (eq (car pV7) :|DocText|) 
+                                      (let ((pV11 (cdr pV7))) 
+                                        (return 
+                                         (cons 
+                                          :|SText| 
+                                          (cons 
+                                           pV11 
+                                           (WADLERLINDIG::ppBest-1-1-1 
+                                            w 
+                                            (INTEGER-SPEC::|!+| 
+                                             k 
+                                             (STRING-SPEC::|!length| pV11)) 
+                                            pV4))))))))) 
+                      (if (eq (car pV6) :|Flat|) 
+                          (if (eq (car pV7) :|DocBreak|) 
+                              (let ((pV10 (cdr pV7))) 
+                                (return 
+                                 (cons 
+                                  :|SText| 
+                                  (cons 
+                                   pV10 
+                                   (WADLERLINDIG::ppBest-1-1-1 
+                                    w 
+                                    (INTEGER-SPEC::|!+| 
+                                     k 
+                                     (STRING-SPEC::|!length| pV10)) 
+                                    pV4)))))) 
+                          (if (eq (car pV6) :|Break|) 
+                              (if (eq (car pV7) :|DocBreak|) 
+                                  (return 
+                                   (cons 
+                                    :|SLine| 
+                                    (cons 
+                                     pV5 
+                                     (WADLERLINDIG::ppBest-1-1-1 w pV5 pV4))))))) 
+                      (if (eq (car pV7) :|DocGroup|) 
+                          (let ((pV8 (cdr pV7))) 
+                            (return 
+                             (if (WADLERLINDIG::ppFits-1-1 
+                                  (INTEGER-SPEC::|!-| w k) 
+                                  (cons (vector pV5 '(:|Flat|) pV8) pV4)) 
+                                 (WADLERLINDIG::ppBest-1-1-1 
+                                  w 
+                                  k 
+                                  (cons (vector pV5 '(:|Flat|) pV8) pV4)) 
+                                 (WADLERLINDIG::ppBest-1-1-1 
+                                  w 
+                                  k 
+                                  (cons (vector pV5 '(:|Break|) pV8) pV4))))))))))) 
+   (error "Nonexhaustive match failure in ppBest")))
+
+(defun WADLERLINDIG::ppLayout (doc) 
+  (labels 
+    ((replicate (cnt) 
+      #'(lambda (str) 
+         (if ( =  cnt 0) 
+             (cons "" nil) 
+             (cons str (funcall (replicate (INTEGER-SPEC::|!-| cnt 1)) str)))))) 
+    (labels 
+      ((makeStringList (doc) 
+        (block 
+         nil 
+         (if (eq (car doc) :|SNil|) 
+             (return (cons "" nil)) 
+             (if (eq (car doc) :|SText|) 
+                 (let ((pV3 (cdr doc))) 
+                   (return (cons (car pV3) (makeStringList (cdr pV3))))) 
+                 (if (eq (car doc) :|SLine|) 
+                     (let ((pV2 (cdr doc))) 
+                       (return 
+                        (cons 
+                         (STRING-SPEC::concatList 
+                          (cons "
+" (funcall (replicate (car pV2)) " "))) 
+                         (makeStringList (cdr pV2)))))))) 
+         (error "Nonexhaustive match failure in ppLayout")))) 
+      (STRING-SPEC::concatList (makeStringList doc)))))
+
+(defun WADLERLINDIG::ppFormatWidth-1-1 (w doc) 
+  (WADLERLINDIG::ppLayout 
+   (WADLERLINDIG::ppBest-1-1-1 
+    w 
+    0 
+    (cons (vector 0 '(:|Flat|) (cons :|DocGroup| doc)) nil))))
+
+(defun WADLERLINDIG::ppFormat (doc) (WADLERLINDIG::ppFormatWidth-1-1 80 doc))
+
+(defun SPECCALC::showRelativeURI (uri) 
+  (WADLERLINDIG::ppFormat (SPECCALC::ppRelativeURI uri)))
+
+(defun SPECCALC::ppURI-1 (uri) 
+  (WADLERLINDIG::ppAppend-1-1 
+   (WADLERLINDIG::ppString "/") 
+   (SPECCALC::ppURIlocal-1 uri)))
+
+(defun SPECCALC::showURI-1 (uri) 
+  (WADLERLINDIG::ppFormat (SPECCALC::ppURI-1 uri)))
+
+(defun POSITION-SPEC::|!print| (|!position|) 
+  (block 
+   nil 
+   (if (eq (car |!position|) :|Internal|) 
+       (return (cdr |!position|)) 
+       (if (eq (car |!position|) :|String|) 
+           (let ((pV3 (cdr |!position|))) 
+             (return 
+              (let ((printPos 
+                     #'(lambda (x) 
+                        (STRING-SPEC::^ 
+                         (STRING-SPEC::^ (NAT-SPEC::toString (svref x 0)) ".") 
+                         (NAT-SPEC::toString (svref x 1)))))) 
+                (STRING-SPEC::^ 
+                 (STRING-SPEC::^ 
+                  (STRING-SPEC::^ 
+                   (STRING-SPEC::^ (funcall printPos (svref pV3 1)) "-") 
+                   (funcall printPos (svref pV3 2))) 
+                  " in ") 
+                 (svref pV3 0))))) 
+           (if (eq (car |!position|) :|File|) 
+               (let ((pV2 (cdr |!position|))) 
+                 (return 
+                  (let ((printPos 
+                         #'(lambda (x) 
+                            (STRING-SPEC::^ 
+                             (STRING-SPEC::^ 
+                              (NAT-SPEC::toString (svref x 0)) 
+                              ".") 
+                             (NAT-SPEC::toString (svref x 1)))))) 
+                    (STRING-SPEC::^ 
+                     (STRING-SPEC::^ (funcall printPos (svref pV2 1)) "-") 
+                     (funcall printPos (svref pV2 2))))))))) 
+   (error "Nonexhaustive match failure in print")))
+
+(defun SPECWARE::printTypeErrors (errs) 
+  (labels 
+    ((printErr (pV7 pV8) 
+      (block 
+       nil 
+       (let ((pV10 (cdr pV7))) 
+         (return 
+          (let ((filename 
+                 (block 
+                  nil 
+                  (if (eq (car pV10) :|File|) (return (svref (cdr pV10) 0))) 
+                  (return "")))) 
+            (cons 
+             (STRING-SPEC::^ 
+              (STRING-SPEC::^ 
+               (STRING-SPEC::^ 
+                (STRING-SPEC::^ 
+                 (car pV8) 
+                 (if (string=  filename (cdr pV8)) 
+                     (POSITION-SPEC::|!print| pV10) 
+                     (POSITION-SPEC::printAll pV10))) 
+                " : ") 
+               (car pV7)) 
+              "
+") 
+             filename)))) 
+       (error "Nonexhaustive match failure in printTypeErrors")))) 
+    (car 
+     (LIST-SPEC::foldl-1-1-1 
+      #'(lambda (x) (printErr (car x) (cdr x))) 
+      (cons "" "") 
+      errs))))
+
+(defun SPECWARE::printException (except) 
+  (block 
+   nil 
+   (if (eq (car except) :|Fail|) 
+       (return (STRING-SPEC::^ "Fail: " (cdr except))) 
+       (if (eq (car except) :|SyntaxError|) 
+           (return (STRING-SPEC::^ "Syntax error: " (cdr except))) 
+           (if (eq (car except) :|ParserError|) 
+               (return 
+                (STRING-SPEC::^ "Syntax error for filename: " (cdr except))) 
+               (if (eq (car except) :|Unsupported|) 
+                   (let ((pV13 (cdr except))) 
+                     (return 
+                      (STRING-SPEC::^ 
+                       (STRING-SPEC::^ 
+                        (STRING-SPEC::^ "Unsupported operation: " (cdr pV13)) 
+                        "
+  found at ") 
+                       (POSITION-SPEC::printAll (car pV13))))) 
+                   (if (eq (car except) :|URINotFound|) 
+                       (let ((pV12 (cdr except))) 
+                         (return 
+                          (STRING-SPEC::^ 
+                           (STRING-SPEC::^ 
+                            (STRING-SPEC::^ 
+                             "Unknown unit " 
+                             (SPECCALC::showRelativeURI (cdr pV12))) 
+                            "
+  referenced from ") 
+                           (POSITION-SPEC::printAll (car pV12))))) 
+                       (if (eq (car except) :|FileNotFound|) 
+                           (let ((pV11 (cdr except))) 
+                             (return 
+                              (STRING-SPEC::^ 
+                               (STRING-SPEC::^ 
+                                (STRING-SPEC::^ 
+                                 "Unknown unit " 
+                                 (SPECCALC::showRelativeURI (cdr pV11))) 
+                                "
+  referenced from ") 
+                               (POSITION-SPEC::printAll (car pV11))))) 
+                           (if (eq (car except) :|SpecError|) 
+                               (let ((pV10 (cdr except))) 
+                                 (return 
+                                  (STRING-SPEC::^ 
+                                   (STRING-SPEC::^ 
+                                    (STRING-SPEC::^ 
+                                     "Error in specification: " 
+                                     (cdr pV10)) 
+                                    "
+  found at ") 
+                                   (POSITION-SPEC::printAll (car pV10))))) 
+                               (if (eq (car except) :|MorphError|) 
+                                   (let ((pV9 (cdr except))) 
+                                     (return 
+                                      (STRING-SPEC::^ 
+                                       (STRING-SPEC::^ 
+                                        (STRING-SPEC::^ 
+                                         "Error in morphism: " 
+                                         (cdr pV9)) 
+                                        "
+  found at ") 
+                                       (POSITION-SPEC::printAll (car pV9))))) 
+                                   (if (eq (car except) :|DiagError|) 
+                                       (let ((pV8 (cdr except))) 
+                                         (return 
+                                          (STRING-SPEC::^ 
+                                           (STRING-SPEC::^ 
+                                            (STRING-SPEC::^ 
+                                             "Diagram error: " 
+                                             (cdr pV8)) 
+                                            "
+  found at ") 
+                                           (POSITION-SPEC::printAll (car pV8))))) 
+                                       (if (eq (car except) :|TypeCheck|) 
+                                           (let ((pV7 (cdr except))) 
+                                             (return 
+                                              (STRING-SPEC::^ 
+                                               (STRING-SPEC::^ 
+                                                (STRING-SPEC::^ 
+                                                 "Type error: " 
+                                                 (cdr pV7)) 
+                                                "
+  found at ") 
+                                               (POSITION-SPEC::printAll 
+                                                (car pV7))))) 
+                                           (if (eq (car except) :|Proof|) 
+                                               (let ((pV6 (cdr except))) 
+                                                 (return 
+                                                  (STRING-SPEC::^ 
+                                                   (STRING-SPEC::^ 
+                                                    (STRING-SPEC::^ 
+                                                     "Proof error: " 
+                                                     (cdr pV6)) 
+                                                    "
+  found at ") 
+                                                   (POSITION-SPEC::printAll 
+                                                    (car pV6))))) 
+                                               (if (eq 
+                                                    (car except) 
+                                                    :|CircularDefinition|) 
+                                                   (return 
+                                                    (STRING-SPEC::^ 
+                                                     "Circular definition: " 
+                                                     (SPECCALC::showURI-1 
+                                                      (cdr except)))) 
+                                                   (if (eq 
+                                                        (car except) 
+                                                        :|TypeCheckErrors|) 
+                                                       (return 
+                                                        (SPECWARE::printTypeErrors 
+                                                         (cdr except))) 
+                                                       (if (eq 
+                                                            (car except) 
+                                                            :|OldTypeCheck|) 
+                                                           (return 
+                                                            (STRING-SPEC::^ 
+                                                             "Type errors:
+" 
+                                                             (cdr except))))))))))))))))) 
+   (return (STRING-SPEC::^ "Unknown exception: " (SYSTEM-SPEC::toString except)))))
+
+
+(defun SPECWARE::toplevelHandler (except) 
+  (SPECCALC::monadSeq 
+   #'SPECCALC::cleanupGlobalContext-1 
+   (SPECCALC::monadSeq 
+    #'SPECWARE::saveSpecwareState-1 
+    (SPECCALC::monadBind 
+     (SPECCALC::|!return| (SPECWARE::printException except)) 
+     #'(lambda (message) 
+        (SPECCALC::monadSeq 
+         (SPECCALC::|!return| (SPECWARE::gotoErrorLocation except)) 
+         (SPECCALC::monadSeq 
+          (if SPECCALC::specwareWizard? 
+              (SYSTEM-SPEC::fail message) 
+              (SPECCALC::|!print| message)) 
+          (SPECCALC::|!return| nil))))))))
+
+(defun JGEN::localHandler (except) 
+  (SPECCALC::monadSeq 
+   (SPECWARE::toplevelHandler except) 
+   (SPECCALC::|!return| '(:|None|))))
+
+(defun SPECCALC::|!catch|-1-1-1 (f handler state) 
+  (let ((x (funcall f state))) 
+    (let ((pV1 (car x))
+          (pV2 (cdr x))) 
+      (block 
+       nil 
+       (if (eq (car pV1) :|Ok|) 
+           (return (cons (cons :|Ok| (cdr pV1)) pV2)) 
+           (if (eq (car pV1) :|Exception|) 
+               (return (funcall (funcall handler (cdr pV1)) pV2)))) 
+       (error "Nonexhaustive match failure in catch")))))
+
+(defparameter SPECCALC::initialSpecwareState 
+  (vector 
+   POLYMAP::emptyMap 
+   POLYMAP::emptyMap 
+   (cons :|Some| (cons '(:|None|) (cons "/" nil))) 
+   nil))
+
+(defparameter SPECWARE::ignoredState SPECCALC::initialSpecwareState)
+
+(defun JGEN::run_monad (monad) 
+  (let ((x 
+         (SPECCALC::|!catch|-1-1-1 
+          monad 
+          #'JGEN::localHandler 
+          SPECWARE::ignoredState))) 
+    (let ((pV4 (car x))) 
+      (block 
+       nil 
+       (if (eq (car pV4) :|Ok|) 
+           (return (cdr pV4)) 
+           (if (eq (car pV4) :|Exception|) 
+               (return 
+                (SYSTEM-SPEC::fail 
+                 "Specware toplevel handler failed within colimit!")))) 
+       (error "Nonexhaustive match failure in run_monad")))))
+
+(defun STANDARDSPEC::mkLambda (pat term) 
+  (cons 
+   :|Lambda| 
+   (cons 
+    (cons (vector pat (STANDARDSPEC::mkTrue) term) nil) 
+    POSITION-SPEC::noPos)))
+
+(defun STANDARDSPEC::mkProduct (sorts) 
+  (labels 
+    ((|!loop| (n sorts) 
+      (block 
+       nil 
+       (if (null sorts) 
+           (return nil) 
+           (if (consp sorts) 
+               (return 
+                (LIST-SPEC::|!cons| 
+                 (cons (NAT-SPEC::toString n) (car sorts)) 
+                 (|!loop| (INTEGER-SPEC::|!+| n 1) (cdr sorts)))))) 
+       (error "Nonexhaustive match failure in mkProduct")))) 
+    (cons :|Product| (cons (|!loop| 1 sorts) POSITION-SPEC::noPos))))
+
+(defun STANDARDSPEC::mkTuplePat (pats) 
+  (cons :|RecordPat| (cons (STANDARDSPEC::tagTuple pats) POSITION-SPEC::noPos)))
+
+(defun JGEN::addOdToSpec (pV12 pV13) 
+  (block 
+   nil 
+   (let ((pV16 (svref pV12 2))
+         (pV15 (svref pV12 1))) 
+     (return 
+      (let ((srt 
+             (block 
+              nil 
+              (if (null pV15) 
+                  (return pV16) 
+                  (if (consp pV15) 
+                      (if (null (cdr pV15)) 
+                          (return (STANDARDSPEC::mkArrow (car pV15) pV16))))) 
+              (return 
+               (STANDARDSPEC::mkArrow (STANDARDSPEC::mkProduct pV15) pV16))))) 
+        (let ((varPatterns 
+               (LIST-SPEC::|!map|-1-1 #'STANDARDSPEC::mkVarPat-1 (svref pV12 3)))) 
+          (let ((term 
+                 (STANDARDSPEC::mkLambda 
+                  (STANDARDSPEC::mkTuplePat varPatterns) 
+                  (svref pV12 4)))) 
+            (progn (JGEN::srtTermDelta srt term) 
+                   (block 
+                    nil 
+                    (return 
+                     (let ((pV7 
+                            (JGEN::run_monad 
+                             (JGEN::optAddOp (svref pV12 0) srt term pV13)))) 
+                       (block 
+                        nil 
+                        (if (eq (car pV7) :|Some|) (return (cdr pV7))) 
+                        (return (SYSTEM-SPEC::fail "internal monad error"))))) 
+                    (error "Nonexhaustive match failure in addOdToSpec")))))))) 
+   (error "Nonexhaustive match failure in addOdToSpec")))
+
+(defun JGEN::addOdToSpec-1 (x) (JGEN::addOdToSpec (car x) (cdr x)))
+
+(defun JGEN::addPrimArgsMethodToClsDecls-1 (x) 
+  (JGEN::addPrimArgsMethodToClsDecls 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5)))
+
+(defun JGEN::addPrimMethodToClsDecls-1 (x) 
+  (JGEN::addPrimMethodToClsDecls 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5)))
+
+(defun JGEN::addSumMethDeclToClsDecls-1 (x) 
+  (JGEN::addSumMethDeclToClsDecls 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5)))
+
+(defun JGEN::addUserMethodToClsDecls-1 (x) 
+  (JGEN::addUserMethodToClsDecls 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5) 
+   (svref x 6)))
+
+(defun JGEN::baseSrtToJavaType (srt) 
+  (if (METASLANG::boolSort? srt) (JGEN::tt "Boolean") (JGEN::tt "Integer")))
+
+(defun JGEN::baseVar?-1 (var) 
+  (block 
+   nil 
+   (return (JGEN::baseType? (cdr var))) 
+   (error "Nonexhaustive match failure in baseVar?")))
+
+(defun JGEN::baseVar? (x0 x1) (JGEN::baseVar?-1 (cons x0 x1)))
+
+(defparameter JGEN::emptyClsBody (vector nil nil nil nil nil nil))
+
+(defparameter JGEN::mkPrimOpsClsDecl 
+  (vector nil (vector "Primitive" '(:|None|) nil) JGEN::emptyClsBody))
+
+(defun JGEN::fieldToFldDecl (fieldProj fieldType) 
+  (vector nil (JGEN::tt fieldType) (cons (cons fieldProj 0) '(:|None|)) nil))
+
+(defun JGEN::mkEqarg (id) "eqarg")
+
+(defun JGEN::mkEqualityMethDecl (id) 
+  (cons 
+   (vector 
+    nil 
+    (let ((x (JGEN::tt "Boolean"))) (cons :|Some| (cons (car x) (cdr x)))) 
+    "equals" 
+    (cons (vector nil (JGEN::tt id) (cons (JGEN::mkEqarg id) 0)) nil) 
+    nil) 
+   '(:|None|)))
+
+(defun JGEN::fieldToFormalParam (fieldProj fieldType) 
+  (vector nil (JGEN::tt fieldType) (cons fieldProj 0)))
+
+(defun JGEN::mkNameAssn (|!n1| |!n2|) 
+  (cons 
+   :|Stmt| 
+   (cons 
+    :|Expr| 
+    (cons 
+     :|Ass| 
+     (vector 
+      (cons :|Name| (cons (car |!n1|) (cdr |!n1|))) 
+      '(:|Assgn|) 
+      (cons 
+       :|CondExp| 
+       (cons 
+        (cons :|Un| (cons :|Prim| (cons :|Name| (cons (car |!n2|) (cdr |!n2|))))) 
+        '(:|None|))))))))
+
+(defun JGEN::mkSumConstBody (n) 
+  (if ( =  n 0) 
+      nil 
+      (let ((thisName 
+             (cons (cons "this" nil) (JGEN::mkArgProj (NAT-SPEC::natToString n))))) 
+        (let ((argName (cons nil (JGEN::mkArgProj (NAT-SPEC::natToString n))))) 
+          (let ((assn (JGEN::mkNameAssn thisName argName))) 
+            (let ((restAssns (JGEN::mkSumConstBody (INTEGER-SPEC::|!-| n 1)))) 
+              (LIST-SPEC::|!++| restAssns (cons assn nil))))))))
+
+(defun JGEN::mkSumConstrDecl (id fields) 
+  (let ((formParams 
+         (LIST-SPEC::|!map|-1-1 
+          #'(lambda (x) 
+             (let ((pV3 (cdr x))) 
+               (block 
+                nil 
+                (if (eq (car pV3) :|Base|) 
+                    (let ((pV4 (cdr pV3))) 
+                      (let ((pV5 (svref pV4 0))) 
+                        (if (eq (car pV5) :|Qualified|) 
+                            (if (null (svref pV4 1)) 
+                                (return 
+                                 (JGEN::fieldToFormalParam 
+                                  (JGEN::mkArgProj (car x)) 
+                                  (cdr (cdr pV5))))))))) 
+                (error "Nonexhaustive match failure in mkSumConstrDecl")))) 
+          fields))) 
+    (let ((sumConstrBody 
+           (JGEN::mkSumConstBody (LIST-SPEC::|!length| formParams)))) 
+      (vector nil id formParams nil sumConstrBody))))
+
+(defun JGEN::mkEqualityBodyForSum (fields) 
+  (block 
+   nil 
+   (if (null fields) 
+       (return 
+        (cons 
+         :|CondExp| 
+         (cons (cons :|Un| (cons :|Prim| (cons :|Bool| t))) '(:|None|)))) 
+       (if (consp fields) 
+           (let ((pV4 (cdr fields))
+                 (pV3 (car fields))) 
+             (let ((pV6 (cdr pV3))
+                   (pV5 (car pV3))) 
+               (progn (if (null pV4) 
+                          (return 
+                           (let ((e1 
+                                  (cons 
+                                   :|CondExp| 
+                                   (cons 
+                                    (cons 
+                                     :|Un| 
+                                     (cons 
+                                      :|Prim| 
+                                      (cons 
+                                       :|Name| 
+                                       (cons 
+                                        (cons "this" nil) 
+                                        (JGEN::mkArgProj pV5))))) 
+                                    '(:|None|))))) 
+                             (let ((e2 
+                                    (cons 
+                                     :|CondExp| 
+                                     (cons 
+                                      (cons 
+                                       :|Un| 
+                                       (cons 
+                                        :|Prim| 
+                                        (cons 
+                                         :|Name| 
+                                         (cons 
+                                          (cons "eqarg2" nil) 
+                                          (JGEN::mkArgProj pV5))))) 
+                                      '(:|None|))))) 
+                               (JGEN::mkJavaEq e1 e2 (JGEN::srtId pV6)))))) 
+                      (return 
+                       (let ((e1 
+                              (cons 
+                               :|CondExp| 
+                               (cons 
+                                (cons 
+                                 :|Un| 
+                                 (cons 
+                                  :|Prim| 
+                                  (cons 
+                                   :|Name| 
+                                   (cons (cons "this" nil) (JGEN::mkArgProj pV5))))) 
+                                '(:|None|))))) 
+                         (let ((e2 
+                                (cons 
+                                 :|CondExp| 
+                                 (cons 
+                                  (cons 
+                                   :|Un| 
+                                   (cons 
+                                    :|Prim| 
+                                    (cons 
+                                     :|Name| 
+                                     (cons 
+                                      (cons "eqarg2" nil) 
+                                      (JGEN::mkArgProj pV5))))) 
+                                  '(:|None|))))) 
+                           (let ((|!eq| (JGEN::mkJavaEq e1 e2 (JGEN::srtId pV6)))) 
+                             (let ((restEq (JGEN::mkEqualityBodyForSum pV4))) 
+                               (cons 
+                                :|CondExp| 
+                                (cons 
+                                 (cons 
+                                  :|Bin| 
+                                  (vector 
+                                   '(:|CdAnd|) 
+                                   (cons 
+                                    :|Un| 
+                                    (cons :|Prim| (cons :|Paren| |!eq|))) 
+                                   (cons 
+                                    :|Un| 
+                                    (cons :|Prim| (cons :|Paren| restEq))))) 
+                                 '(:|None|))))))))))))) 
+   (error "Nonexhaustive match failure in mkEqualityBodyForSum")))
+
+(defun JGEN::mkSumEqMethBody (summandId flds) 
+  (let ((eqExpr (JGEN::mkEqualityBodyForSum flds))) 
+    (let ((s 
+           (JGEN::mkVarInit 
+            "eqarg2" 
+            summandId 
+            (cons 
+             :|CondExp| 
+             (cons 
+              (cons 
+               :|Un| 
+               (cons 
+                :|Cast| 
+                (cons 
+                 (cons (cons :|Name| (cons nil summandId)) 0) 
+                 (cons :|Prim| (cons :|Name| (cons nil "eqarg")))))) 
+              '(:|None|)))))) 
+      (let ((instanceExpr 
+             (cons 
+              :|CondExp| 
+              (cons 
+               (cons 
+                :|InstOf| 
+                (cons 
+                 (cons :|Un| (cons :|Prim| (cons :|Name| (cons nil "eqarg")))) 
+                 (cons (cons :|Name| (cons nil summandId)) 0))) 
+               '(:|None|))))) 
+        (let ((negateInstanceExpr 
+               (cons 
+                :|CondExp| 
+                (cons 
+                 (cons 
+                  :|Un| 
+                  (cons 
+                   :|Un| 
+                   (cons 
+                    '(:|LogNot|) 
+                    (cons :|Prim| (cons :|Paren| instanceExpr))))) 
+                 '(:|None|))))) 
+          (cons 
+           (JGEN::mkIfStmt 
+            negateInstanceExpr 
+            (cons 
+             (cons 
+              :|Stmt| 
+              (cons 
+               :|Return| 
+               (cons 
+                :|Some| 
+                (cons 
+                 :|CondExp| 
+                 (cons (cons :|Un| (cons :|Prim| (cons :|Bool| nil))) '(:|None|)))))) 
+             nil) 
+            (cons 
+             s 
+             (cons (cons :|Stmt| (cons :|Return| (cons :|Some| eqExpr))) nil))) 
+           nil))))))
+
+(defun JGEN::setConstrs (clsBody constrDecls) 
+  (vector 
+   (svref clsBody 0) 
+   constrDecls 
+   (svref clsBody 2) 
+   (svref clsBody 3) 
+   (svref clsBody 4) 
+   (svref clsBody 5)))
+
+(defun JGEN::sumToClsDecl (id c args) 
+  (let ((summandId (JGEN::mkSummandId id c))) 
+    (let ((fldDecls 
+           (LIST-SPEC::|!map|-1-1 
+            #'(lambda (x) 
+               (let ((pV3 (cdr x))) 
+                 (block 
+                  nil 
+                  (if (eq (car pV3) :|Base|) 
+                      (let ((pV4 (cdr pV3))) 
+                        (let ((pV5 (svref pV4 0))) 
+                          (if (eq (car pV5) :|Qualified|) 
+                              (if (null (svref pV4 1)) 
+                                  (return 
+                                   (JGEN::fieldToFldDecl 
+                                    (JGEN::mkArgProj (car x)) 
+                                    (cdr (cdr pV5))))))))) 
+                  (error "Nonexhaustive match failure in sumToClsDecl")))) 
+            args))) 
+      (let ((eqMethDecl (JGEN::mkEqualityMethDecl id))) 
+        (let ((eqMethBody (JGEN::mkSumEqMethBody summandId args))) 
+          (let ((eqMethDecl (JGEN::setMethodBody eqMethDecl eqMethBody))) 
+            (let ((constrDecl 
+                   (JGEN::mkSumConstrDecl (JGEN::mkSummandId id c) args))) 
+              (vector 
+               nil 
+               (vector summandId (cons :|Some| (cons nil id)) nil) 
+               (JGEN::setConstrs 
+                (JGEN::setMethods 
+                 (JGEN::setFlds JGEN::emptyClsBody fldDecls) 
+                 (cons eqMethDecl nil)) 
+                (cons constrDecl nil))))))))))
+
+(defun JGEN::mkSumConstructBody (id n) 
+  (labels 
+    ((mkArgs (k) 
+      (if ( =  k n) 
+          (cons 
+           (cons 
+            :|CondExp| 
+            (cons 
+             (cons 
+              :|Un| 
+              (cons 
+               :|Prim| 
+               (cons 
+                :|Name| 
+                (cons nil (JGEN::mkArgProj (NAT-SPEC::natToString k)))))) 
+             '(:|None|))) 
+           nil) 
+          (LIST-SPEC::|!cons| 
+           (cons 
+            :|CondExp| 
+            (cons 
+             (cons 
+              :|Un| 
+              (cons 
+               :|Prim| 
+               (cons 
+                :|Name| 
+                (cons nil (JGEN::mkArgProj (NAT-SPEC::natToString k)))))) 
+             '(:|None|))) 
+           (mkArgs (INTEGER-SPEC::|!+| k 1)))))) 
+    (let ((args (if ( =  n 0) nil (mkArgs 1)))) 
+      (cons 
+       (cons 
+        :|Stmt| 
+        (cons 
+         :|Return| 
+         (cons 
+          :|Some| 
+          (cons 
+           :|CondExp| 
+           (cons 
+            (cons 
+             :|Un| 
+             (cons 
+              :|Prim| 
+              (cons 
+               :|NewClsInst| 
+               (cons :|ForCls| (vector (cons nil id) args '(:|None|)))))) 
+            '(:|None|)))))) 
+       nil))))
+
+(defun JGEN::sumToConsMethodDecl (id c args) 
+  (let ((formalParams 
+         (LIST-SPEC::|!map|-1-1 
+          #'(lambda (x) 
+             (let ((pV3 (cdr x))) 
+               (block 
+                nil 
+                (if (eq (car pV3) :|Base|) 
+                    (let ((pV4 (cdr pV3))) 
+                      (let ((pV5 (svref pV4 0))) 
+                        (if (eq (car pV5) :|Qualified|) 
+                            (if (null (svref pV4 1)) 
+                                (return 
+                                 (JGEN::fieldToFormalParam 
+                                  (JGEN::mkArgProj (car x)) 
+                                  (cdr (cdr pV5))))))))) 
+                (error "Nonexhaustive match failure in sumToConsMethodDecl")))) 
+          args))) 
+    (let ((constBody 
+           (JGEN::mkSumConstructBody 
+            (JGEN::mkSummandId id c) 
+            (LIST-SPEC::|!length| args)))) 
+      (cons 
+       (vector 
+        (cons '(:|Static|) nil) 
+        (let ((x (JGEN::tt id))) (cons :|Some| (cons (car x) (cdr x)))) 
+        c 
+        formalParams 
+        nil) 
+       (cons :|Some| constBody)))))
+
+(defun JGEN::mkAbstractEqualityMethDecl (id) 
+  (cons 
+   (vector 
+    (cons '(:|Abstract|) nil) 
+    (let ((x (JGEN::tt "Boolean"))) (cons :|Some| (cons (car x) (cdr x)))) 
+    "equals" 
+    (cons (vector nil (JGEN::tt id) (cons (JGEN::mkEqarg id) 0)) nil) 
+    nil) 
+   '(:|None|)))
+
+(defun JGEN::sumTypeToClsDecl (id sumConstructorMethDecls) 
+  (let ((sumEqMethod (JGEN::mkAbstractEqualityMethDecl id))) 
+    (vector 
+     (cons '(:|Abstract|) nil) 
+     (vector id '(:|None|) nil) 
+     (JGEN::setMethods 
+      JGEN::emptyClsBody 
+      (LIST-SPEC::|!cons| sumEqMethod sumConstructorMethDecls)))))
+
+(defun JGEN::coProductToClsDecls (pV16 pV17) 
+  (block 
+   nil 
+   (if (eq (car pV17) :|CoProduct|) 
+       (let ((pV19 (car (cdr pV17)))) 
+         (return 
+          (let ((sumConstructorMethDecls 
+                 (LIST-SPEC::|!map|-1-1 
+                  #'(lambda (x) 
+                     (let ((pV4 (cdr x))
+                           (pV3 (car x))) 
+                       (block 
+                        nil 
+                        (if (eq (car pV4) :|Some|) 
+                            (let ((pV5 (cdr pV4))) 
+                              (progn (if (eq (car pV5) :|Product|) 
+                                         (return 
+                                          (JGEN::sumToConsMethodDecl 
+                                           pV16 
+                                           pV3 
+                                           (car (cdr pV5))))) 
+                                     (return 
+                                      (JGEN::sumToConsMethodDecl 
+                                       pV16 
+                                       pV3 
+                                       (cons (cons "1" pV5) nil))))) 
+                            (if (eq (car pV4) :|None|) 
+                                (return (JGEN::sumToConsMethodDecl pV16 pV3 nil)))) 
+                        (error 
+                         "Nonexhaustive match failure in coProductToClsDecls")))) 
+                  pV19))) 
+            (let ((sumTypeClsDecl 
+                   (JGEN::sumTypeToClsDecl pV16 sumConstructorMethDecls))) 
+              (let ((sumClsDecls 
+                     (LIST-SPEC::|!map|-1-1 
+                      #'(lambda (x) 
+                         (let ((pV11 (cdr x))
+                               (pV10 (car x))) 
+                           (block 
+                            nil 
+                            (if (eq (car pV11) :|Some|) 
+                                (let ((pV12 (cdr pV11))) 
+                                  (progn (if (eq (car pV12) :|Product|) 
+                                             (return 
+                                              (JGEN::sumToClsDecl 
+                                               pV16 
+                                               pV10 
+                                               (car (cdr pV12))))) 
+                                         (return 
+                                          (JGEN::sumToClsDecl 
+                                           pV16 
+                                           pV10 
+                                           (cons (cons "1" pV12) nil))))) 
+                                (if (eq (car pV11) :|None|) 
+                                    (return (JGEN::sumToClsDecl pV16 pV10 nil)))) 
+                            (error 
+                             "Nonexhaustive match failure in coProductToClsDecls")))) 
+                      pV19))) (LIST-SPEC::|!cons| sumTypeClsDecl sumClsDecls))))))) 
+   (error "Nonexhaustive match failure in coProductToClsDecls")))
+
+(defun JGEN::mkEqualityBodyForProduct (fields) 
+  (block 
+   nil 
+   (if (null fields) 
+       (return 
+        (cons 
+         :|CondExp| 
+         (cons (cons :|Un| (cons :|Prim| (cons :|Bool| t))) '(:|None|)))) 
+       (if (consp fields) 
+           (let ((pV4 (cdr fields))
+                 (pV3 (car fields))) 
+             (let ((pV6 (cdr pV3))
+                   (pV5 (car pV3))) 
+               (progn (if (null pV4) 
+                          (return 
+                           (let ((e1 
+                                  (cons 
+                                   :|CondExp| 
+                                   (cons 
+                                    (cons 
+                                     :|Un| 
+                                     (cons 
+                                      :|Prim| 
+                                      (cons :|Name| (cons (cons "this" nil) pV5)))) 
+                                    '(:|None|))))) 
+                             (let ((e2 
+                                    (cons 
+                                     :|CondExp| 
+                                     (cons 
+                                      (cons 
+                                       :|Un| 
+                                       (cons 
+                                        :|Prim| 
+                                        (cons 
+                                         :|Name| 
+                                         (cons (cons "eqarg" nil) pV5)))) 
+                                      '(:|None|))))) 
+                               (JGEN::mkJavaEq e1 e2 (JGEN::srtId pV6)))))) 
+                      (return 
+                       (let ((e1 
+                              (cons 
+                               :|CondExp| 
+                               (cons 
+                                (cons 
+                                 :|Un| 
+                                 (cons 
+                                  :|Prim| 
+                                  (cons :|Name| (cons (cons "this" nil) pV5)))) 
+                                '(:|None|))))) 
+                         (let ((e2 
+                                (cons 
+                                 :|CondExp| 
+                                 (cons 
+                                  (cons 
+                                   :|Un| 
+                                   (cons 
+                                    :|Prim| 
+                                    (cons :|Name| (cons (cons "eqarg" nil) pV5)))) 
+                                  '(:|None|))))) 
+                           (let ((|!eq| (JGEN::mkJavaEq e1 e2 (JGEN::srtId pV6)))) 
+                             (let ((restEq (JGEN::mkEqualityBodyForProduct pV4))) 
+                               (cons 
+                                :|CondExp| 
+                                (cons 
+                                 (cons 
+                                  :|Bin| 
+                                  (vector 
+                                   '(:|CdAnd|) 
+                                   (cons 
+                                    :|Un| 
+                                    (cons :|Prim| (cons :|Paren| |!eq|))) 
+                                   (cons 
+                                    :|Un| 
+                                    (cons :|Prim| (cons :|Paren| restEq))))) 
+                                 '(:|None|))))))))))))) 
+   (error "Nonexhaustive match failure in mkEqualityBodyForProduct")))
+
+(defun JGEN::mkProdConstBody (fieldProjs) 
+  (block 
+   nil 
+   (if (null fieldProjs) 
+       (return nil) 
+       (if (consp fieldProjs) 
+           (let ((pV3 (car fieldProjs))) 
+             (return 
+              (let ((assn 
+                     (JGEN::mkNameAssn 
+                      (cons (cons "this" nil) pV3) 
+                      (cons nil pV3)))) 
+                (let ((restAssns (JGEN::mkProdConstBody (cdr fieldProjs)))) 
+                  (LIST-SPEC::|!cons| assn restAssns))))))) 
+   (error "Nonexhaustive match failure in mkProdConstBody")))
+
+(defun JGEN::mkProdConstrDecl (id fields) 
+  (let ((formParams 
+         (LIST-SPEC::|!map|-1-1 
+          #'(lambda (x) 
+             (let ((pV3 (cdr x))) 
+               (block 
+                nil 
+                (if (eq (car pV3) :|Base|) 
+                    (let ((pV4 (cdr pV3))) 
+                      (let ((pV5 (svref pV4 0))) 
+                        (if (eq (car pV5) :|Qualified|) 
+                            (if (null (svref pV4 1)) 
+                                (return 
+                                 (JGEN::fieldToFormalParam 
+                                  (car x) 
+                                  (cdr (cdr pV5))))))))) 
+                (error "Nonexhaustive match failure in mkProdConstrDecl")))) 
+          fields))) 
+    (let ((fieldProjs (LIST-SPEC::|!map|-1-1 #'(lambda (x) (car x)) fields))) 
+      (let ((prodConstrBody (JGEN::mkProdConstBody fieldProjs))) 
+        (vector nil id formParams nil prodConstrBody)))))
+
+(defun JGEN::mkProductTypeClsDecl
+ (id prodFieldsDecl prodMethodDecls constrDecls) 
+  (vector 
+   nil 
+   (vector id '(:|None|) nil) 
+   (JGEN::setConstrs 
+    (JGEN::setMethods 
+     (JGEN::setFlds JGEN::emptyClsBody prodFieldsDecl) 
+     prodMethodDecls) 
+    constrDecls)))
+
+(defun JGEN::productToClsDecl (pV12 pV13) 
+  (block 
+   nil 
+   (if (eq (car pV13) :|Product|) 
+       (let ((pV15 (car (cdr pV13)))) 
+         (return 
+          (let ((prodFieldsDecls 
+                 (LIST-SPEC::|!map|-1-1 
+                  #'(lambda (x) 
+                     (let ((pV4 (cdr x))) 
+                       (block 
+                        nil 
+                        (if (eq (car pV4) :|Base|) 
+                            (let ((pV5 (cdr pV4))) 
+                              (let ((pV6 (svref pV5 0))) 
+                                (if (eq (car pV6) :|Qualified|) 
+                                    (if (null (svref pV5 1)) 
+                                        (return 
+                                         (JGEN::fieldToFldDecl 
+                                          (car x) 
+                                          (cdr (cdr pV6))))))))) 
+                        (error "Nonexhaustive match failure in productToClsDecl")))) 
+                  pV15))) 
+            (let ((equalityConjunction (JGEN::mkEqualityBodyForProduct pV15))) 
+              (let ((prodMethodDecl (JGEN::mkEqualityMethDecl pV12))) 
+                (let ((prodMethodDecl 
+                       (JGEN::setMethodBody 
+                        prodMethodDecl 
+                        (cons 
+                         (cons 
+                          :|Stmt| 
+                          (cons :|Return| (cons :|Some| equalityConjunction))) 
+                         nil)))) 
+                  (let ((prodConstrDecls 
+                         (cons (JGEN::mkProdConstrDecl pV12 pV15) nil))) 
+                    (JGEN::mkProductTypeClsDecl 
+                     pV12 
+                     prodFieldsDecls 
+                     (cons prodMethodDecl nil) 
+                     prodConstrDecls))))))))) 
+   (error "Nonexhaustive match failure in productToClsDecl")))
+
+(defun JGEN::userTypeToClsDecl (id) 
+  (vector nil (vector id '(:|None|) nil) JGEN::emptyClsBody))
+
+(defun JGEN::sortToClsDecls (qualifier id sort_info) 
+  (block 
+   nil 
+   (let ((pV25 (svref sort_info 2))) 
+     (if (consp pV25) 
+         (let ((pV30 (cdr (car pV25)))) 
+           (if (null (cdr pV25)) 
+               (return 
+                (if (JGEN::baseType? pV30) 
+                    (SYSTEM-SPEC::fail "Unsupported sort definition") 
+                    (block 
+                     nil 
+                     (if (eq (car pV30) :|Product|) 
+                         (return (cons (JGEN::productToClsDecl id pV30) nil)) 
+                         (if (eq (car pV30) :|CoProduct|) 
+                             (return (JGEN::coProductToClsDecls id pV30)) 
+                             (if (eq (car pV30) :|Base|) 
+                                 (let ((pV9 (cdr pV30))) 
+                                   (let ((pV12 (svref pV9 0))) 
+                                     (if (eq (car pV12) :|Qualified|) 
+                                         (if (null (svref pV9 1)) 
+                                             (return 
+                                              (cons 
+                                               (JGEN::userTypeToClsDecl 
+                                                (cdr (cdr pV12))) 
+                                               nil))))))))) 
+                     (return (SYSTEM-SPEC::fail "unsupported sort defintion"))))))))) 
+   (error "Nonexhaustive match failure in sortToClsDecls")))
+
+(defun JGEN::clsDeclsFromSorts-1 (spc) 
+  (LIST-SPEC::|!cons| 
+   JGEN::mkPrimOpsClsDecl 
+   (foldriAQualifierMap-1-1-1 
+    #'(lambda (x) 
+       (let ((newClsDecls 
+              (JGEN::sortToClsDecls (svref x 0) (svref x 1) (svref x 2)))) 
+         (LIST-SPEC::|!++| newClsDecls (svref x 3)))) 
+    nil 
+    (svref spc 3))))
+
+(defun JGEN::clsDeclsFromSorts (x0 x1 x2 x3) 
+  (JGEN::clsDeclsFromSorts-1 (vector x0 x1 x2 x3)))
+
+(defun JGEN::coProductToClsDecls-1 (x) 
+  (JGEN::coProductToClsDecls (car x) (cdr x)))
+
+(defun JGEN::distinctVars (terms ids) 
+  (block 
+   nil 
+   (if (null terms) 
+       (return (cons nil ids)) 
+       (if (consp terms) 
+           (return 
+            (let ((pV4 (JGEN::distinctVar (car terms) ids))) 
+              (block 
+               nil 
+               (return 
+                (let ((pV1 (JGEN::distinctVars (cdr terms) (cdr pV4)))) 
+                  (block 
+                   nil 
+                   (return 
+                    (cons (LIST-SPEC::|!cons| (car pV4) (car pV1)) (cdr pV1))) 
+                   (error "Nonexhaustive match failure in distinctVars")))) 
+               (error "Nonexhaustive match failure in distinctVars")))))) 
+   (error "Nonexhaustive match failure in distinctVars")))
+
+(defun STANDARDSPEC::mkAppl (t1 tms) 
+  (cons :|Apply| (vector t1 (STANDARDSPEC::mkTuple tms) POSITION-SPEC::noPos)))
+
+(defun STANDARDSPEC::mkApplication (t1 tms) 
+  (block 
+   nil 
+   (if (consp tms) 
+       (progn (if (null (cdr tms)) (return (STANDARDSPEC::mkApply t1 (car tms)))) 
+              (return (STANDARDSPEC::mkAppl t1 tms)))) 
+   (error "Nonexhaustive match failure in mkApplication")))
+
+(defun JGEN::distinctVarApply (pV5 pV6) 
+  (block 
+   nil 
+   (if (eq (car pV5) :|Apply|) 
+       (let ((pV7 (cdr pV5))) 
+         (return 
+          (let ((args (JGEN::applyArgsToTerms (svref pV7 1)))) 
+            (let ((pV2 (JGEN::distinctVars args pV6))) 
+              (block 
+               nil 
+               (return 
+                (cons 
+                 (STANDARDSPEC::mkApplication (svref pV7 0) (car pV2)) 
+                 (cdr pV2))) 
+               (error "Nonexhaustive match failure in distinctVarApply"))))))) 
+   (error "Nonexhaustive match failure in distinctVarApply")))
+
+(defun JGEN::distinctVarCase (term ids) 
+  (let ((caseTerm (JGEN::caseTerm term))) 
+    (let ((pV10 (JGEN::distinctVar caseTerm ids))) 
+      (block 
+       nil 
+       (return 
+        (let ((cases (JGEN::caseCases term))) 
+          (let ((caseBodys 
+                 (LIST-SPEC::|!map|-1-1 #'(lambda (x) (svref x 2)) cases))) 
+            (let ((pV7 (JGEN::distinctVars caseBodys (cdr pV10)))) 
+              (block 
+               nil 
+               (return 
+                (let ((newCases 
+                       (LISTPAIR::|!map|-1-1 
+                        #'(lambda (x) 
+                           (let ((pV2 (car x))) 
+                             (block 
+                              nil 
+                              (return 
+                               (vector (svref pV2 0) (svref pV2 1) (cdr x))) 
+                              (error 
+                               "Nonexhaustive match failure in distinctVarCase")))) 
+                        (cons cases (car pV7))))) 
+                  (let ((newTerm 
+                         (STANDARDSPEC::mkApply 
+                          (cons :|Lambda| (cons newCases POSITION-SPEC::noPos)) 
+                          (car pV10)))) (cons newTerm (cdr pV7))))) 
+               (error "Nonexhaustive match failure in distinctVarCase")))))) 
+       (error "Nonexhaustive match failure in distinctVarCase")))))
+
+(defun STANDARDSPEC::mkIfThenElse (t1 t2 t3) 
+  (cons :|IfThenElse| (vector t1 t2 t3 POSITION-SPEC::noPos)))
+
+(defun JGEN::distinctVarIfThenElse (pV14 pV15) 
+  (block 
+   nil 
+   (if (eq (car pV14) :|IfThenElse|) 
+       (let ((pV16 (cdr pV14))) 
+         (return 
+          (let ((pV2 
+                 (JGEN::distinctVars 
+                  (cons 
+                   (svref pV16 0) 
+                   (cons (svref pV16 1) (cons (svref pV16 2) nil))) 
+                  pV15))) 
+            (block 
+             nil 
+             (let ((pV3 (car pV2))) 
+               (if (consp pV3) 
+                   (let ((pV7 (cdr pV3))) 
+                     (if (consp pV7) 
+                         (let ((pV10 (cdr pV7))) 
+                           (if (consp pV10) 
+                               (if (null (cdr pV10)) 
+                                   (return 
+                                    (cons 
+                                     (STANDARDSPEC::mkIfThenElse 
+                                      (car pV3) 
+                                      (car pV7) 
+                                      (car pV10)) 
+                                     (cdr pV2)))))))))) 
+             (error "Nonexhaustive match failure in distinctVarIfThenElse")))))) 
+   (error "Nonexhaustive match failure in distinctVarIfThenElse")))
+
+(defun JGEN::mkNewId (id n) 
+  (STRING-SPEC::^ (STRING-SPEC::^ id "___") (NAT-SPEC::natToString n)))
+
+(defun JGEN::findNewId (vId ids) 
+  (labels 
+    ((findNewIdRec (id ids num) 
+      (if (LIST-SPEC::|!member| id ids) 
+          (findNewIdRec (JGEN::mkNewId id num) ids (INTEGER-SPEC::|!+| num 1)) 
+          id))) (findNewIdRec (JGEN::mkNewId vId 1) ids 2)))
+
+(defun JGEN::renameVarApply (pV2 pV3 pV4) 
+  (block 
+   nil 
+   (if (eq (car pV2) :|Apply|) 
+       (let ((pV5 (cdr pV2))) 
+         (return 
+          (let ((args (JGEN::applyArgsToTerms (svref pV5 1)))) 
+            (let ((newArgs 
+                   (LIST-SPEC::|!map|-1-1 
+                    #'(lambda (arg) (JGEN::renameVar arg pV3 pV4)) 
+                    args))) (STANDARDSPEC::mkApplication (svref pV5 0) newArgs)))))) 
+   (error "Nonexhaustive match failure in renameVarApply")))
+
+(defun JGEN::renameVarIfThenElse (pV2 pV3 pV4) 
+  (block 
+   nil 
+   (if (eq (car pV2) :|IfThenElse|) 
+       (let ((pV5 (cdr pV2))) 
+         (return 
+          (let ((newT1 (JGEN::renameVar (svref pV5 0) pV3 pV4))) 
+            (let ((newT2 (JGEN::renameVar (svref pV5 1) pV3 pV4))) 
+              (let ((newT3 (JGEN::renameVar (svref pV5 2) pV3 pV4))) 
+                (STANDARDSPEC::mkIfThenElse newT1 newT2 newT3))))))) 
+   (error "Nonexhaustive match failure in renameVarIfThenElse")))
+
+(defun JGEN::renameVarLetNewVar (letTerm letBody oldV newV) 
+  (let ((newLetTerm (JGEN::renameVar letTerm oldV newV))) 
+    (STANDARDSPEC::mkLet 
+     (cons (cons (STANDARDSPEC::mkVarPat-1 newV) newLetTerm) nil) 
+     letBody)))
+
+(defun JGEN::renameVarLetOldVar (letTerm letBody oldV newV) 
+  (let ((newLetTerm (JGEN::renameVar letTerm oldV newV))) 
+    (let ((newLetBody (JGEN::renameVar letBody oldV newV))) 
+      (STANDARDSPEC::mkLet 
+       (cons (cons (STANDARDSPEC::mkVarPat-1 oldV) newLetTerm) nil) 
+       newLetBody))))
+
+(defun JGEN::renameVarLet (pV13 pV14 pV15) 
+  (block 
+   nil 
+   (if (eq (car pV13) :|Let|) 
+       (let ((pV16 (cdr pV13))) 
+         (let ((pV18 (svref pV16 1))
+               (pV17 (svref pV16 0))) 
+           (return 
+            (block 
+             nil 
+             (if (consp pV17) 
+                 (let ((pV6 (car pV17))) 
+                   (let ((pV9 (cdr pV6))
+                         (pV8 (car pV6))) 
+                     (if (eq (car pV8) :|VarPat|) 
+                         (if (null (cdr pV17)) 
+                             (return 
+                              (if (METASLANG::equalVar? (car (cdr pV8)) pV14) 
+                                  (JGEN::renameVarLetNewVar pV9 pV18 pV14 pV15) 
+                                  (JGEN::renameVarLetOldVar pV9 pV18 pV14 pV15)))))))) 
+             (return (SYSTEM-SPEC::fail "unsupported in renameVarLet"))))))) 
+   (error "Nonexhaustive match failure in renameVarLet")))
+
+(defun JGEN::renameVarRecord (pV7 pV8 pV9) 
+  (block 
+   nil 
+   (if (eq (car pV7) :|Record|) 
+       (let ((pV11 (car (cdr pV7)))) 
+         (return 
+          (let ((recordTerms (JGEN::recordFieldsToTerms pV11))) 
+            (let ((newTerms 
+                   (LIST-SPEC::|!map|-1-1 
+                    #'(lambda (recordTerm) (JGEN::renameVar recordTerm pV8 pV9)) 
+                    recordTerms))) 
+              (let ((newFields 
+                     (LISTPAIR::|!map|-1-1 
+                      #'(lambda (x) 
+                         (block 
+                          nil 
+                          (return (cons (car (car x)) (cdr x))) 
+                          (error 
+                           "Nonexhaustive match failure in renameVarRecord"))) 
+                      (cons pV11 newTerms)))) 
+                (STANDARDSPEC::mkRecord newFields))))))) 
+   (error "Nonexhaustive match failure in renameVarRecord")))
+
+(defun JGEN::renameVar (term oldV newV) 
+  (block 
+   nil 
+   (if (eq (car term) :|Var|) 
+       (let ((pV11 (cdr term))) 
+         (return 
+          (if (METASLANG::equalVar? (car pV11) oldV) 
+              (cons :|Var| (cons newV (cdr pV11))) 
+              term))) 
+       (if (eq (car term) :|Apply|) 
+           (return (JGEN::renameVarApply term oldV newV)) 
+           (if (eq (car term) :|Record|) 
+               (return (JGEN::renameVarRecord term oldV newV)) 
+               (if (eq (car term) :|IfThenElse|) 
+                   (return (JGEN::renameVarIfThenElse term oldV newV)) 
+                   (if (eq (car term) :|Let|) 
+                       (return (JGEN::renameVarLet term oldV newV))))))) 
+   (return (SYSTEM-SPEC::fail "unsupported in renameVar"))))
+
+(defun JGEN::distinctVarLetNewVar (pV7 pV8 pV9 pV10) 
+  (block 
+   nil 
+   (let ((pV11 (car pV7))) 
+     (return 
+      (let ((newId (JGEN::findNewId pV11 pV10))) 
+        (let ((newIds (LIST-SPEC::|!cons| pV11 pV10))) 
+          (let ((newVar (cons newId (cdr pV7)))) 
+            (let ((pV4 (JGEN::distinctVar pV8 newIds))) 
+              (block 
+               nil 
+               (return 
+                (let ((renamedLetBody (JGEN::renameVar pV9 pV7 newVar))) 
+                  (let ((pV1 (JGEN::distinctVar renamedLetBody (cdr pV4)))) 
+                    (block 
+                     nil 
+                     (return 
+                      (cons 
+                       (STANDARDSPEC::mkLet 
+                        (cons 
+                         (cons (STANDARDSPEC::mkVarPat-1 newVar) (car pV4)) 
+                         nil) 
+                        (car pV1)) 
+                       (cdr pV1))) 
+                     (error 
+                      "Nonexhaustive match failure in distinctVarLetNewVar"))))) 
+               (error "Nonexhaustive match failure in distinctVarLetNewVar")))))))) 
+   (error "Nonexhaustive match failure in distinctVarLetNewVar")))
+
+(defun JGEN::distinctVarLetNoNewVar (pV7 pV8 pV9 pV10) 
+  (block 
+   nil 
+   (return 
+    (let ((newIds (LIST-SPEC::|!cons| (car pV7) pV10))) 
+      (let ((pV4 (JGEN::distinctVar pV8 newIds))) 
+        (block 
+         nil 
+         (return 
+          (let ((pV1 (JGEN::distinctVar pV9 (cdr pV4)))) 
+            (block 
+             nil 
+             (return 
+              (cons 
+               (STANDARDSPEC::mkLet 
+                (cons (cons (STANDARDSPEC::mkVarPat-1 pV7) (car pV4)) nil) 
+                (car pV1)) 
+               (cdr pV1))) 
+             (error "Nonexhaustive match failure in distinctVarLetNoNewVar")))) 
+         (error "Nonexhaustive match failure in distinctVarLetNoNewVar"))))) 
+   (error "Nonexhaustive match failure in distinctVarLetNoNewVar")))
+
+(defun JGEN::distinctVarLet (pV16 pV17) 
+  (block 
+   nil 
+   (if (eq (car pV16) :|Let|) 
+       (let ((pV18 (cdr pV16))) 
+         (let ((pV20 (svref pV18 1))
+               (pV19 (svref pV18 0))) 
+           (return 
+            (block 
+             nil 
+             (if (consp pV19) 
+                 (let ((pV9 (car pV19))) 
+                   (let ((pV12 (cdr pV9))
+                         (pV11 (car pV9))) 
+                     (if (eq (car pV11) :|VarPat|) 
+                         (let ((pV14 (car (cdr pV11)))) 
+                           (if (null (cdr pV19)) 
+                               (return 
+                                (block 
+                                 nil 
+                                 (return 
+                                  (if (LIST-SPEC::|!member| (car pV14) pV17) 
+                                      (JGEN::distinctVarLetNewVar 
+                                       pV14 
+                                       pV12 
+                                       pV20 
+                                       pV17) 
+                                      (JGEN::distinctVarLetNoNewVar 
+                                       pV14 
+                                       pV12 
+                                       pV20 
+                                       pV17))) 
+                                 (error 
+                                  "Nonexhaustive match failure in distinctVarLet"))))))))) 
+             (return (SYSTEM-SPEC::fail "unsupported in distinctVarLet"))))))) 
+   (error "Nonexhaustive match failure in distinctVarLet")))
+
+(defun JGEN::distinctVarRecord (pV10 pV11) 
+  (block 
+   nil 
+   (if (eq (car pV10) :|Record|) 
+       (let ((pV13 (car (cdr pV10)))) 
+         (return 
+          (let ((recordTerms (JGEN::recordFieldsToTerms pV13))) 
+            (let ((pV7 (JGEN::distinctVars recordTerms pV11))) 
+              (block 
+               nil 
+               (return 
+                (let ((newFields 
+                       (LISTPAIR::|!map|-1-1 
+                        #'(lambda (x) 
+                           (block 
+                            nil 
+                            (return (cons (car (car x)) (cdr x))) 
+                            (error 
+                             "Nonexhaustive match failure in distinctVarRecord"))) 
+                        (cons pV13 (car pV7))))) 
+                  (cons (STANDARDSPEC::mkRecord newFields) (cdr pV7)))) 
+               (error "Nonexhaustive match failure in distinctVarRecord"))))))) 
+   (error "Nonexhaustive match failure in distinctVarRecord")))
+
+(defun JGEN::distinctVar (term ids) 
+  (if (JGEN::caseTerm? term) 
+      (JGEN::distinctVarCase term ids) 
+      (block 
+       nil 
+       (if (eq (car term) :|Var|) 
+           (return (cons term ids)) 
+           (if (eq (car term) :|Fun|) 
+               (return (cons term ids)) 
+               (if (eq (car term) :|Apply|) 
+                   (return (JGEN::distinctVarApply term ids)) 
+                   (if (eq (car term) :|Record|) 
+                       (return (JGEN::distinctVarRecord term ids)) 
+                       (if (eq (car term) :|IfThenElse|) 
+                           (return (JGEN::distinctVarIfThenElse term ids)) 
+                           (if (eq (car term) :|Let|) 
+                               (return (JGEN::distinctVarLet term ids)))))))) 
+       (return (SYSTEM-SPEC::fail "unsupported in distinctVar")))))
+
+(defun JGEN::distinctVar-1 (x) (JGEN::distinctVar (car x) (cdr x)))
+
+(defun JGEN::distinctVarApply-1 (x) (JGEN::distinctVarApply (car x) (cdr x)))
+
+(defun JGEN::distinctVarCase-1 (x) (JGEN::distinctVarCase (car x) (cdr x)))
+
+(defun JGEN::distinctVarIfThenElse-1 (x) 
+  (JGEN::distinctVarIfThenElse (car x) (cdr x)))
+
+(defun JGEN::distinctVarLet-1 (x) (JGEN::distinctVarLet (car x) (cdr x)))
+
+(defun JGEN::distinctVarLetNewVar-1 (x) 
+  (JGEN::distinctVarLetNewVar (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JGEN::distinctVarLetNoNewVar-1 (x) 
+  (JGEN::distinctVarLetNoNewVar (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+
+(defun JGEN::distinctVarRecord-1 (x) (JGEN::distinctVarRecord (car x) (cdr x)))
+
+(defun METASLANG::mkQualifiedId (qualifier id) 
+  (cons :|Qualified| (cons qualifier id)))
+
+(defun JGEN::distinctVariable-1 (spc) 
+  (let ((newOpDefs 
+         (foldriAQualifierMap-1-1-1 
+          #'(lambda (x) 
+             (let ((pV10 (svref x 2))) 
+               (block 
+                nil 
+                (let ((pV15 (svref pV10 3))) 
+                  (let ((pV17 (cdr (svref pV10 2)))) 
+                    (if (consp pV15) 
+                        (if (null (cdr pV15)) 
+                            (return 
+                             (let ((origOp 
+                                    (METASLANG::mkQualifiedId 
+                                     (svref x 0) 
+                                     (svref x 1)))) 
+                               (let ((pV5 
+                                      (JGEN::srtTermDelta pV17 (cdr (car pV15))))) 
+                                 (block 
+                                  nil 
+                                  (let ((pV6 (car pV5))) 
+                                    (return 
+                                     (let ((ids 
+                                            (LIST-SPEC::|!map|-1-1 
+                                             #'(lambda (x1) (car x1)) 
+                                             pV6))) 
+                                       (let ((pV2 
+                                              (JGEN::distinctVar (cdr pV5) ids))) 
+                                         (block 
+                                          nil 
+                                          (return 
+                                           (let ((origOpNewDef 
+                                                  (vector 
+                                                   origOp 
+                                                   (JGEN::srtDom pV17) 
+                                                   (JGEN::srtRange pV17) 
+                                                   pV6 
+                                                   (car pV2)))) 
+                                             (LIST-SPEC::|!cons| 
+                                              origOpNewDef 
+                                              (svref x 3)))) 
+                                          (error 
+                                           "Nonexhaustive match failure in distinctVariable")))))) 
+                                  (error 
+                                   "Nonexhaustive match failure in distinctVariable"))))))))) 
+                (error "Nonexhaustive match failure in distinctVariable")))) 
+          nil 
+          (svref spc 1)))) 
+    (let ((result (setSorts emptySpec (svref spc 3)))) 
+      (let ((result 
+             (LIST-SPEC::foldr-1-1-1 #'JGEN::addOdToSpec-1 result newOpDefs))) 
+        result))))
+
+(defun JGEN::distinctVariable (x0 x1 x2 x3) 
+  (JGEN::distinctVariable-1 (vector x0 x1 x2 x3)))
+
+(defun JGEN::distinctVars-1 (x) (JGEN::distinctVars (car x) (cdr x)))
+
+(defparameter JGEN::emptyJSpec (vector '(:|None|) nil nil))
+
+(defun JGEN::fieldToFldDecl-1 (x) (JGEN::fieldToFldDecl (car x) (cdr x)))
+
+(defun JGEN::fieldToFormalParam-1 (x) 
+  (JGEN::fieldToFormalParam (car x) (cdr x)))
+
+(defun JGEN::findNewId-1 (x) (JGEN::findNewId (car x) (cdr x)))
+
+(defun JGEN::liftCases (oper terms k) 
+  (block 
+   nil 
+   (if (null terms) 
+       (return (vector nil k nil)) 
+       (if (consp terms) 
+           (return 
+            (let ((pV5 (JGEN::liftCase oper (car terms) k))) 
+              (block 
+               nil 
+               (return 
+                (let ((pV1 (JGEN::liftCases oper (cdr terms) (svref pV5 1)))) 
+                  (block 
+                   nil 
+                   (return 
+                    (vector 
+                     (LIST-SPEC::|!cons| (svref pV5 0) (svref pV1 0)) 
+                     (svref pV1 1) 
+                     (LIST-SPEC::|!++| (svref pV5 2) (svref pV1 2)))) 
+                   (error "Nonexhaustive match failure in liftCases")))) 
+               (error "Nonexhaustive match failure in liftCases")))))) 
+   (error "Nonexhaustive match failure in liftCases")))
+
+(defun JGEN::liftCaseApply (pV6 pV7 pV8) 
+  (block 
+   nil 
+   (if (eq (car pV7) :|Apply|) 
+       (let ((pV9 (cdr pV7))) 
+         (return 
+          (let ((args (JGEN::applyArgsToTerms (svref pV9 1)))) 
+            (let ((pV2 (JGEN::liftCases pV6 args pV8))) 
+              (block 
+               nil 
+               (return 
+                (vector 
+                 (STANDARDSPEC::mkApplication (svref pV9 0) (svref pV2 0)) 
+                 (svref pV2 1) 
+                 (svref pV2 2))) 
+               (error "Nonexhaustive match failure in liftCaseApply"))))))) 
+   (error "Nonexhaustive match failure in liftCaseApply")))
+
+(defun JGEN::mkNewOp (oper k) 
+  (block 
+   nil 
+   (if (eq (car oper) :|Qualified|) 
+       (let ((pV2 (cdr oper))) 
+         (return 
+          (METASLANG::mkQualifiedId 
+           (car pV2) 
+           (STRING-SPEC::^ (cdr pV2) (NAT-SPEC::natToString k)))))) 
+   (error "Nonexhaustive match failure in mkNewOp")))
+
+(defun JGEN::mkNewVar (oper k |!t|) 
+  (block 
+   nil 
+   (if (eq (car oper) :|Qualified|) 
+       (return 
+        (cons (STRING-SPEC::^ (cdr (cdr oper)) (NAT-SPEC::natToString k)) |!t|))) 
+   (error "Nonexhaustive match failure in mkNewVar")))
+
+(defun NAT-SPEC::div (n m) 
+  (if (INTEGER-SPEC::|!<| n m) 
+      0 
+      (INTEGER-SPEC::|!+| 1 (NAT-SPEC::div (INTEGER-SPEC::|!-| n m) m))))
+
+(defun MERGESORT::uniqueSort-1-1 (cmpfn ls) 
+  (labels 
+    ((|!merge| (xs ys) 
+      (block 
+       nil 
+       (if (null xs) (return ys)) 
+       (if (null ys) (return xs)) 
+       (if (consp xs) 
+           (let ((pV6 (car xs))
+                 (pV7 (cdr xs))) 
+             (if (consp ys) 
+                 (let ((pV9 (car ys))
+                       (pV10 (cdr ys))) 
+                   (return 
+                    (let ((pV2 (funcall cmpfn (cons pV6 pV9)))) 
+                      (block 
+                       nil 
+                       (if (eq (car pV2) :|Greater|) 
+                           (return (cons pV9 (|!merge| (cons pV6 pV7) pV10))) 
+                           (if (eq (car pV2) :|Equal|) 
+                               (return (|!merge| (cons pV6 pV7) pV10)))) 
+                       (return (cons pV6 (|!merge| pV7 (cons pV9 pV10))))))))))) 
+       (error "Nonexhaustive match failure in uniqueSort")))) 
+    (labels 
+      ((mergepairs (ls k) 
+        (block 
+         nil 
+         (if (consp ls) 
+             (let ((pV14 (car ls))
+                   (pV15 (cdr ls))) 
+               (if (null pV15) 
+                   (return ls) 
+                   (if (consp pV15) 
+                       (let ((pV17 (car pV15))
+                             (pV18 (cdr pV15))) 
+                         (return 
+                          (if ( =  (NAT-SPEC::|!rem| k 2) 1) 
+                              (cons pV14 (cons pV17 pV18)) 
+                              (mergepairs 
+                               (cons (|!merge| pV14 pV17) pV18) 
+                               (NAT-SPEC::div k 2))))))))) 
+         (return (SYSTEM-SPEC::fail "Impossible: mergepairs"))))) 
+      (labels 
+        ((nextrun (run xs) 
+          (block 
+           nil 
+           (if (null xs) 
+               (return (cons (LIST-SPEC::rev run) nil)) 
+               (if (consp xs) 
+                   (let ((pV23 (car xs))
+                         (pV24 (cdr xs))) 
+                     (return 
+                      (let ((pV20 
+                             (funcall cmpfn (cons pV23 (LIST-SPEC::hd run))))) 
+                        (block 
+                         nil 
+                         (if (eq (car pV20) :|Greater|) 
+                             (return (nextrun (cons pV23 run) pV24)) 
+                             (if (eq (car pV20) :|Equal|) 
+                                 (return (nextrun run pV24)))) 
+                         (return (cons (LIST-SPEC::rev run) (cons pV23 pV24))))))))) 
+           (error "Nonexhaustive match failure in uniqueSort")))) 
+        (labels 
+          ((samsorting (xs ls k) 
+            (block 
+             nil 
+             (if (null xs) 
+                 (return (LIST-SPEC::hd (mergepairs ls 0))) 
+                 (if (consp xs) 
+                     (return 
+                      (let ((pV25 (nextrun (cons (car xs) nil) (cdr xs)))) 
+                        (block 
+                         nil 
+                         (return 
+                          (samsorting 
+                           (cdr pV25) 
+                           (mergepairs 
+                            (cons (car pV25) ls) 
+                            (INTEGER-SPEC::|!+| k 1)) 
+                           (INTEGER-SPEC::|!+| k 1))) 
+                         (error "Nonexhaustive match failure in uniqueSort")))))) 
+             (error "Nonexhaustive match failure in uniqueSort")))) 
+          (block nil (if (null ls) (return nil)) (return (samsorting ls nil 0))))))))
+
+
+(defun LISTUTILITIES::|!delete| (e l) 
+  (block 
+   nil 
+   (if (null l) 
+       (return nil) 
+       (if (consp l) 
+           (let ((pV4 (cdr l))
+                 (pV3 (car l))) 
+             (return 
+              (if (slang-built-in::slang-term-equals e pV3) 
+                  (LISTUTILITIES::|!delete| e pV4) 
+                  (cons pV3 (LISTUTILITIES::|!delete| e pV4))))))) 
+   (error "Nonexhaustive match failure in delete")))
+
+(defun LISTUTILITIES::|!delete|-1 (x) 
+  (LISTUTILITIES::|!delete| (car x) (cdr x)))
+
+(defun UTILITIES::deleteVars (vars1 vars2) 
+  (LIST-SPEC::foldr-1-1-1 #'LISTUTILITIES::|!delete|-1 vars1 vars2))
+
+(defun UTILITIES::freeVarsList (|!list|) 
+  (LIST-SPEC::foldr-1-1-1 
+   #'(lambda (x) 
+      (block 
+       nil 
+       (return (LIST-SPEC::|!++| (cdr x) (UTILITIES::freeVarsRec (cdr (car x))))) 
+       (error "Nonexhaustive match failure in freeVarsList"))) 
+   nil 
+   |!list|))
+
+(defun UTILITIES::patVars (pat) 
+  (block 
+   nil 
+   (if (eq (car pat) :|AliasPat|) 
+       (let ((pV33 (cdr pat))) 
+         (return 
+          (LIST-SPEC::|!++| 
+           (UTILITIES::patVars (svref pV33 0)) 
+           (UTILITIES::patVars (svref pV33 1))))) 
+       (if (eq (car pat) :|VarPat|) 
+           (return (cons (car (cdr pat)) nil)) 
+           (if (eq (car pat) :|EmbedPat|) 
+               (progn (let ((pV43 (svref (cdr pat) 1))) 
+                        (if (eq (car pV43) :|Some|) 
+                            (return (UTILITIES::patVars (cdr pV43))))) 
+                      (return nil)) 
+               (if (eq (car pat) :|RecordPat|) 
+                   (return 
+                    (LIST-SPEC::foldr-1-1-1 
+                     #'(lambda (x) 
+                        (block 
+                         nil 
+                         (return 
+                          (LIST-SPEC::|!++| 
+                           (UTILITIES::patVars (cdr (car x))) 
+                           (cdr x))) 
+                         (error "Nonexhaustive match failure in patVars"))) 
+                     nil 
+                     (car (cdr pat)))) 
+                   (if (eq (car pat) :|WildPat|) 
+                       (return nil) 
+                       (if (eq (car pat) :|StringPat|) 
+                           (return nil) 
+                           (if (eq (car pat) :|BoolPat|) 
+                               (return nil) 
+                               (if (eq (car pat) :|CharPat|) 
+                                   (return nil) 
+                                   (if (eq (car pat) :|NatPat|) 
+                                       (return nil) 
+                                       (if (eq (car pat) :|RelaxPat|) 
+                                           (return 
+                                            (UTILITIES::patVars 
+                                             (svref (cdr pat) 0))) 
+                                           (if (eq (car pat) :|QuotientPat|) 
+                                               (return 
+                                                (UTILITIES::patVars 
+                                                 (svref (cdr pat) 0)))))))))))))) 
+   (error "Nonexhaustive match failure in patVars")))
+
+(defun UTILITIES::freeVarsRec (|!M|) 
+  (block 
+   nil 
+   (if (eq (car |!M|) :|Var|) 
+       (return (cons (car (cdr |!M|)) nil)) 
+       (if (eq (car |!M|) :|Apply|) 
+           (let ((pV28 (cdr |!M|))) 
+             (return 
+              (LIST-SPEC::|!++| 
+               (UTILITIES::freeVarsRec (svref pV28 0)) 
+               (UTILITIES::freeVarsRec (svref pV28 1))))) 
+           (if (eq (car |!M|) :|Record|) 
+               (return (UTILITIES::freeVarsList (car (cdr |!M|)))) 
+               (if (eq (car |!M|) :|Fun|) 
+                   (return nil) 
+                   (if (eq (car |!M|) :|Lambda|) 
+                       (return 
+                        (LIST-SPEC::foldr-1-1-1 
+                         #'(lambda (x) 
+                            (LIST-SPEC::|!++| 
+                             (cdr x) 
+                             (UTILITIES::freeVarsMatch-1 (car x)))) 
+                         nil 
+                         (car (cdr |!M|)))) 
+                       (if (eq (car |!M|) :|Let|) 
+                           (let ((pV24 (cdr |!M|))) 
+                             (return 
+                              (let ((pV13 
+                                     (LIST-SPEC::foldr-1-1-1 
+                                      #'(lambda (x) 
+                                         (let ((pV8 (cdr x))
+                                               (pV7 (car x))) 
+                                           (block 
+                                            nil 
+                                            (return 
+                                             (cons 
+                                              (LIST-SPEC::|!++| 
+                                               (UTILITIES::patVars (car pV7)) 
+                                               (car pV8)) 
+                                              (LIST-SPEC::|!++| 
+                                               (UTILITIES::freeVarsRec (cdr pV7)) 
+                                               (cdr pV8)))) 
+                                            (error 
+                                             "Nonexhaustive match failure in freeVarsRec")))) 
+                                      (cons nil nil) 
+                                      (svref pV24 0)))) 
+                                (block 
+                                 nil 
+                                 (return 
+                                  (let ((mVars 
+                                         (UTILITIES::freeVarsRec (svref pV24 1)))) 
+                                    (LIST-SPEC::|!++| 
+                                     (cdr pV13) 
+                                     (UTILITIES::deleteVars mVars (car pV13))))) 
+                                 (error 
+                                  "Nonexhaustive match failure in freeVarsRec"))))) 
+                           (if (eq (car |!M|) :|LetRec|) 
+                               (let ((pV23 (cdr |!M|))) 
+                                 (let ((pV38 (svref pV23 0))) 
+                                   (return 
+                                    (let ((vars1 
+                                           (UTILITIES::freeVarsRec 
+                                            (svref pV23 1)))) 
+                                      (let ((vars2 
+                                             (UTILITIES::freeVarsList pV38))) 
+                                        (UTILITIES::deleteVars 
+                                         (LIST-SPEC::|!map|-1-1 
+                                          #'(lambda (x) (car x)) 
+                                          pV38) 
+                                         (LIST-SPEC::|!++| vars1 vars2))))))) 
+                               (if (eq (car |!M|) :|Bind|) 
+                                   (let ((pV22 (cdr |!M|))) 
+                                     (return 
+                                      (UTILITIES::deleteVars 
+                                       (UTILITIES::freeVarsRec (svref pV22 2)) 
+                                       (svref pV22 1)))) 
+                                   (if (eq (car |!M|) :|IfThenElse|) 
+                                       (let ((pV21 (cdr |!M|))) 
+                                         (return 
+                                          (LIST-SPEC::|!++| 
+                                           (LIST-SPEC::|!++| 
+                                            (UTILITIES::freeVarsRec 
+                                             (svref pV21 0)) 
+                                            (UTILITIES::freeVarsRec 
+                                             (svref pV21 1))) 
+                                           (UTILITIES::freeVarsRec 
+                                            (svref pV21 2)))))))))))))) 
+   (error "Nonexhaustive match failure in freeVarsRec")))
+
+(defun UTILITIES::freeVarsMatch (pat |!cond| body) 
+  (let ((vars (UTILITIES::patVars pat))) 
+    (let ((vars1 (UTILITIES::freeVarsRec |!cond|))) 
+      (let ((vars2 (UTILITIES::freeVarsRec body))) 
+        (UTILITIES::deleteVars (LIST-SPEC::|!++| vars1 vars2) vars)))))
+
+(defun UTILITIES::freeVarsMatch-1 (x) 
+  (UTILITIES::freeVarsMatch (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCaseCase (oper term k) 
+  (let ((ttermSort (METASLANG::termSort term))) 
+    (let ((caseTerm (JGEN::caseTerm term))) 
+      (let ((caseTermSort (METASLANG::termSort caseTerm))) 
+        (let ((pV19 (JGEN::liftCase oper caseTerm (INTEGER-SPEC::|!+| k 1)))) 
+          (block 
+           nil 
+           (return 
+            (let ((cases (JGEN::caseCases term))) 
+              (let ((caseBodys 
+                     (LIST-SPEC::|!map|-1-1 #'(lambda (x) (svref x 2)) cases))) 
+                (let ((pV15 (JGEN::liftCases oper caseBodys (svref pV19 1)))) 
+                  (block 
+                   nil 
+                   (return 
+                    (let ((newCases 
+                           (LISTPAIR::|!map|-1-1 
+                            #'(lambda (x) 
+                               (let ((pV2 (car x))) 
+                                 (block 
+                                  nil 
+                                  (return 
+                                   (vector (svref pV2 0) (svref pV2 1) (cdr x))) 
+                                  (error 
+                                   "Nonexhaustive match failure in liftCaseCase")))) 
+                            (cons cases (svref pV15 0))))) 
+                      (let ((freeVarsCases 
+                             (LIST-SPEC::foldr-1-1-1 
+                              #'(lambda (x) 
+                                 (LIST-SPEC::|!++| 
+                                  (cdr x) 
+                                  (UTILITIES::freeVarsMatch-1 (car x)))) 
+                              nil 
+                              newCases))) 
+                        (let ((freeVars 
+                               (MERGESORT::uniqueSort-1-1 
+                                #'(lambda (x) 
+                                   (block 
+                                    nil 
+                                    (return 
+                                     (STRING-SPEC::compare 
+                                      (car (car x)) 
+                                      (car (cdr x)))) 
+                                    (error 
+                                     "Nonexhaustive match failure in liftCaseCase"))) 
+                                freeVarsCases))) 
+                          (let ((freeVarsSorts 
+                                 (LIST-SPEC::|!map|-1-1 
+                                  #'(lambda (x) (cdr x)) 
+                                  freeVars))) 
+                            (let ((newOp (JGEN::mkNewOp oper k))) 
+                              (let ((newOpSrt 
+                                     (STANDARDSPEC::mkArrow 
+                                      (STANDARDSPEC::mkProduct 
+                                       (LIST-SPEC::|!cons| 
+                                        caseTermSort 
+                                        freeVarsSorts)) 
+                                      ttermSort))) 
+                                (let ((newVar 
+                                       (JGEN::mkNewVar oper k caseTermSort))) 
+                                  (let ((newOpTerm 
+                                         (STANDARDSPEC::mkApply 
+                                          (cons 
+                                           :|Lambda| 
+                                           (cons newCases POSITION-SPEC::noPos)) 
+                                          (STANDARDSPEC::mkVar-1 newVar)))) 
+                                    (let ((newOpDef 
+                                           (vector 
+                                            newOp 
+                                            (LIST-SPEC::|!cons| 
+                                             caseTermSort 
+                                             freeVarsSorts) 
+                                            ttermSort 
+                                            (LIST-SPEC::|!cons| newVar freeVars) 
+                                            newOpTerm))) 
+                                      (let ((newTerm 
+                                             (STANDARDSPEC::mkApplication 
+                                              (STANDARDSPEC::mkOp newOp newOpSrt) 
+                                              (LIST-SPEC::|!cons| 
+                                               (svref pV19 0) 
+                                               (LIST-SPEC::|!map|-1-1 
+                                                #'STANDARDSPEC::mkVar-1 
+                                                freeVars))))) 
+                                        (vector 
+                                         newTerm 
+                                         (svref pV15 1) 
+                                         (LIST-SPEC::|!++| 
+                                          (LIST-SPEC::|!++| 
+                                           (svref pV19 2) 
+                                           (svref pV15 2)) 
+                                          (cons newOpDef nil)))))))))))))) 
+                   (error "Nonexhaustive match failure in liftCaseCase")))))) 
+           (error "Nonexhaustive match failure in liftCaseCase")))))))
+
+(defun JGEN::liftCaseIfThenElse (pV15 pV16 pV17) 
+  (block 
+   nil 
+   (if (eq (car pV16) :|IfThenElse|) 
+       (let ((pV18 (cdr pV16))) 
+         (return 
+          (let ((pV2 
+                 (JGEN::liftCases 
+                  pV15 
+                  (cons 
+                   (svref pV18 0) 
+                   (cons (svref pV18 1) (cons (svref pV18 2) nil))) 
+                  pV17))) 
+            (block 
+             nil 
+             (let ((pV3 (svref pV2 0))) 
+               (if (consp pV3) 
+                   (let ((pV8 (cdr pV3))) 
+                     (if (consp pV8) 
+                         (let ((pV11 (cdr pV8))) 
+                           (if (consp pV11) 
+                               (if (null (cdr pV11)) 
+                                   (return 
+                                    (vector 
+                                     (STANDARDSPEC::mkIfThenElse 
+                                      (car pV3) 
+                                      (car pV8) 
+                                      (car pV11)) 
+                                     (svref pV2 1) 
+                                     (svref pV2 2)))))))))) 
+             (error "Nonexhaustive match failure in liftCaseIfThenElse")))))) 
+   (error "Nonexhaustive match failure in liftCaseIfThenElse")))
+
+(defun JGEN::liftCaseLet (pV24 pV25 pV26) 
+  (block 
+   nil 
+   (if (eq (car pV25) :|Let|) 
+       (let ((pV27 (cdr pV25))) 
+         (let ((pV28 (svref pV27 0))) 
+           (return 
+            (block 
+             nil 
+             (if (consp pV28) 
+                 (let ((pV17 (car pV28))) 
+                   (let ((pV19 (car pV17))) 
+                     (if (eq (car pV19) :|VarPat|) 
+                         (if (null (cdr pV28)) 
+                             (return 
+                              (let ((pV3 
+                                     (JGEN::liftCases 
+                                      pV24 
+                                      (cons (cdr pV17) (cons (svref pV27 1) nil)) 
+                                      pV26))) 
+                                (block 
+                                 nil 
+                                 (let ((pV4 (svref pV3 0))) 
+                                   (if (consp pV4) 
+                                       (let ((pV9 (cdr pV4))) 
+                                         (if (consp pV9) 
+                                             (if (null (cdr pV9)) 
+                                                 (return 
+                                                  (vector 
+                                                   (STANDARDSPEC::mkLet 
+                                                    (cons 
+                                                     (cons 
+                                                      (STANDARDSPEC::mkVarPat-1 
+                                                       (car (cdr pV19))) 
+                                                      (car pV4)) 
+                                                     nil) 
+                                                    (car pV9)) 
+                                                   (svref pV3 1) 
+                                                   (svref pV3 2)))))))) 
+                                 (error 
+                                  "Nonexhaustive match failure in liftCaseLet"))))))))) 
+             (return (progn (JGEN::unSupported pV24) (vector pV25 pV26 nil)))))))) 
+   (error "Nonexhaustive match failure in liftCaseLet")))
+
+(defun JGEN::liftCaseRecord (pV11 pV12 pV13) 
+  (block 
+   nil 
+   (if (eq (car pV12) :|Record|) 
+       (let ((pV15 (car (cdr pV12)))) 
+         (return 
+          (let ((recordTerms (JGEN::recordFieldsToTerms pV15))) 
+            (let ((pV7 (JGEN::liftCases pV11 recordTerms pV13))) 
+              (block 
+               nil 
+               (return 
+                (let ((newFields 
+                       (LISTPAIR::|!map|-1-1 
+                        #'(lambda (x) 
+                           (block 
+                            nil 
+                            (return (cons (car (car x)) (cdr x))) 
+                            (error 
+                             "Nonexhaustive match failure in liftCaseRecord"))) 
+                        (cons pV15 (svref pV7 0))))) 
+                  (vector 
+                   (STANDARDSPEC::mkRecord newFields) 
+                   (svref pV7 1) 
+                   (svref pV7 2)))) 
+               (error "Nonexhaustive match failure in liftCaseRecord"))))))) 
+   (error "Nonexhaustive match failure in liftCaseRecord")))
+
+(defun JGEN::liftCase (oper term k) 
+  (if (JGEN::caseTerm? term) 
+      (JGEN::liftCaseCase oper term k) 
+      (block 
+       nil 
+       (if (eq (car term) :|Var|) 
+           (return (vector term k nil)) 
+           (if (eq (car term) :|Fun|) 
+               (return (vector term k nil)) 
+               (if (eq (car term) :|Apply|) 
+                   (return (JGEN::liftCaseApply oper term k)) 
+                   (if (eq (car term) :|Record|) 
+                       (return (JGEN::liftCaseRecord oper term k)) 
+                       (if (eq (car term) :|IfThenElse|) 
+                           (return (JGEN::liftCaseIfThenElse oper term k)) 
+                           (if (eq (car term) :|Let|) 
+                               (return (JGEN::liftCaseLet oper term k)))))))) 
+       (return (progn (JGEN::unSupported oper) (vector term k nil))))))
+
+(defun JGEN::liftCaseTopCase (oper body k) 
+  (let ((caseTerm (JGEN::caseTerm body))) 
+    (let ((cases (JGEN::caseCases body))) 
+      (let ((caseBodys 
+             (LIST-SPEC::|!map|-1-1 #'(lambda (x) (svref x 2)) cases))) 
+        (let ((pV7 (JGEN::liftCases oper caseBodys k))) 
+          (block 
+           nil 
+           (return 
+            (let ((newCases 
+                   (LISTPAIR::|!map|-1-1 
+                    #'(lambda (x) 
+                       (let ((pV2 (car x))) 
+                         (block 
+                          nil 
+                          (return (vector (svref pV2 0) (svref pV2 1) (cdr x))) 
+                          (error 
+                           "Nonexhaustive match failure in liftCaseTopCase")))) 
+                    (cons cases (svref pV7 0))))) 
+              (let ((newTerm 
+                     (STANDARDSPEC::mkApply 
+                      (cons :|Lambda| (cons newCases POSITION-SPEC::noPos)) 
+                      caseTerm))) (vector newTerm (svref pV7 1) (svref pV7 2))))) 
+           (error "Nonexhaustive match failure in liftCaseTopCase")))))))
+
+(defun JGEN::userVar?-1 (var) (BOOLEAN-SPEC::~ (JGEN::baseVar?-1 var)))
+
+(defun JGEN::lift (pV30 pV31) 
+  (block 
+   nil 
+   (let ((pV33 (cdr pV31))) 
+     (return 
+      (let ((firstUserVar (LIST-SPEC::|!find|-1-1 #'JGEN::userVar?-1 (car pV31)))) 
+        (block 
+         nil 
+         (if (eq (car firstUserVar) :|Some|) 
+             (return 
+              (if (JGEN::caseTerm? pV33) 
+                  (let ((pV15 (JGEN::caseTerm pV33))) 
+                    (block 
+                     nil 
+                     (if (eq (car pV15) :|Var|) 
+                         (return 
+                          (if (METASLANG::equalVar? 
+                               (car (cdr pV15)) 
+                               (cdr firstUserVar)) 
+                              (let ((pV2 (JGEN::liftCaseTopCase pV30 pV33 1))) 
+                                (block 
+                                 nil 
+                                 (return (cons (svref pV2 0) (svref pV2 2))) 
+                                 (error "Nonexhaustive match failure in lift"))) 
+                              (let ((pV6 (JGEN::liftCase pV30 pV33 1))) 
+                                (block 
+                                 nil 
+                                 (return (cons (svref pV6 0) (svref pV6 2))) 
+                                 (error "Nonexhaustive match failure in lift")))))) 
+                     (return 
+                      (let ((pV11 (JGEN::liftCase pV30 pV33 1))) 
+                        (block 
+                         nil 
+                         (return (cons (svref pV11 0) (svref pV11 2))) 
+                         (error "Nonexhaustive match failure in lift")))))) 
+                  (let ((pV19 (JGEN::liftCase pV30 pV33 1))) 
+                    (block 
+                     nil 
+                     (return (cons (svref pV19 0) (svref pV19 2))) 
+                     (error "Nonexhaustive match failure in lift")))))) 
+         (return 
+          (let ((pV24 (JGEN::liftCase pV30 pV33 1))) 
+            (block 
+             nil 
+             (return (cons (svref pV24 0) (svref pV24 2))) 
+             (error "Nonexhaustive match failure in lift")))))))) 
+   (error "Nonexhaustive match failure in lift")))
+
+(defun JGEN::lift-1 (x) (JGEN::lift (car x) (cdr x)))
+
+(defun JGEN::liftCase-1 (x) 
+  (JGEN::liftCase (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCaseApply-1 (x) 
+  (JGEN::liftCaseApply (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCaseCase-1 (x) 
+  (JGEN::liftCaseCase (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCaseIfThenElse-1 (x) 
+  (JGEN::liftCaseIfThenElse (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCaseLet-1 (x) 
+  (JGEN::liftCaseLet (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCaseRecord-1 (x) 
+  (JGEN::liftCaseRecord (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCaseTopCase-1 (x) 
+  (JGEN::liftCaseTopCase (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftCases-1 (x) 
+  (JGEN::liftCases (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::liftPattern-1 (spc) 
+  (let ((newOpDefs 
+         (foldriAQualifierMap-1-1-1 
+          #'(lambda (x) 
+             (let ((pV13 (svref x 2))) 
+               (block 
+                nil 
+                (let ((pV18 (svref pV13 3))) 
+                  (let ((pV20 (cdr (svref pV13 2)))) 
+                    (if (consp pV18) 
+                        (if (null (cdr pV18)) 
+                            (return 
+                             (let ((origOp 
+                                    (METASLANG::mkQualifiedId 
+                                     (svref x 0) 
+                                     (svref x 1)))) 
+                               (let ((pV8 
+                                      (JGEN::srtTermDelta pV20 (cdr (car pV18))))) 
+                                 (block 
+                                  nil 
+                                  (let ((pV9 (car pV8))) 
+                                    (return 
+                                     (let ((pV5 
+                                            (JGEN::lift 
+                                             origOp 
+                                             (cons pV9 (cdr pV8))))) 
+                                       (block 
+                                        nil 
+                                        (let ((pV6 (car pV5))) 
+                                          (return 
+                                           (progn (JGEN::srtTermDelta pV20 pV6) 
+                                                  (block 
+                                                   nil 
+                                                   (return 
+                                                    (let ((origOpNewDef 
+                                                           (vector 
+                                                            origOp 
+                                                            (JGEN::srtDom pV20) 
+                                                            (JGEN::srtRange pV20) 
+                                                            pV9 
+                                                            pV6))) 
+                                                      (LIST-SPEC::|!cons| 
+                                                       origOpNewDef 
+                                                       (LIST-SPEC::|!++| 
+                                                        (cdr pV5) 
+                                                        (svref x 3))))) 
+                                                   (error 
+                                                    "Nonexhaustive match failure in liftPattern"))))) 
+                                        (error 
+                                         "Nonexhaustive match failure in liftPattern"))))) 
+                                  (error 
+                                   "Nonexhaustive match failure in liftPattern"))))))))) 
+                (error "Nonexhaustive match failure in liftPattern")))) 
+          nil 
+          (svref spc 1)))) 
+    (let ((result (setSorts emptySpec (svref spc 3)))) 
+      (let ((result 
+             (LIST-SPEC::foldr-1-1-1 #'JGEN::addOdToSpec-1 result newOpDefs))) 
+        result))))
+
+(defun JGEN::liftPattern (x0 x1 x2 x3) 
+  (JGEN::liftPattern-1 (vector x0 x1 x2 x3)))
+
+(defun JGEN::localHandler-1-1 (x1 x2) (funcall (JGEN::localHandler x1) x2))
+
+(defun JGEN::mkBinExp-1 (x) (JGEN::mkBinExp (car x) (cdr x)))
+
+(defun JGEN::mkFldAcc-1 (x) (JGEN::mkFldAcc (car x) (cdr x)))
+
+(defun JGEN::mkIfStmt-1 (x) 
+  (JGEN::mkIfStmt (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::mkJavaEq-1 (x) 
+  (JGEN::mkJavaEq (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::mkMethExprInv-1 (x) 
+  (JGEN::mkMethExprInv (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::mkMethInv-1 (x) 
+  (JGEN::mkMethInv (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::mkNameAssn-1 (x) (JGEN::mkNameAssn (car x) (cdr x)))
+
+(defun JGEN::mkNewClasInst-1 (x) (JGEN::mkNewClasInst (car x) (cdr x)))
+
+(defun JGEN::mkNewId-1 (x) (JGEN::mkNewId (car x) (cdr x)))
+
+(defun JGEN::mkNewOp-1 (x) (JGEN::mkNewOp (car x) (cdr x)))
+
+(defun JGEN::mkNewVar-1 (x) 
+  (JGEN::mkNewVar (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::mkNonCaseMethodBody-1 (x) 
+  (JGEN::mkNonCaseMethodBody (car x) (cdr x)))
+
+(defun JGEN::mkProdConstrDecl-1 (x) (JGEN::mkProdConstrDecl (car x) (cdr x)))
+
+(defun JGEN::mkProductTypeClsDecl-1 (x) 
+  (JGEN::mkProductTypeClsDecl (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JGEN::mkQualJavaExpr-1 (x) (JGEN::mkQualJavaExpr (car x) (cdr x)))
+
+(defun JGEN::mkSumConstrDecl-1 (x) (JGEN::mkSumConstrDecl (car x) (cdr x)))
+
+(defun JGEN::mkSumConstructBody-1 (x) 
+  (JGEN::mkSumConstructBody (car x) (cdr x)))
+
+(defun JGEN::mkSumEqMethBody-1 (x) (JGEN::mkSumEqMethBody (car x) (cdr x)))
+
+(defun JGEN::mkSummandId-1 (x) (JGEN::mkSummandId (car x) (cdr x)))
+
+(defun JGEN::mkUnExp-1 (x) (JGEN::mkUnExp (car x) (cdr x)))
+
+(defun JGEN::mkVarAssn-1 (x) (JGEN::mkVarAssn (car x) (cdr x)))
+
+(defun JGEN::mkVarDecl-1 (x) (JGEN::mkVarDecl (car x) (cdr x)))
+
+(defun JGEN::mkVarInit-1 (x) 
+  (JGEN::mkVarInit (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::modifyClsDeclsFromOp (pV38 pV39 pV40 pV41 pV42) 
+  (declare (ignore pV39)) 
+  (block 
+   nil 
+   (let ((pV46 (svref pV41 3))) 
+     (let ((pV48 (cdr (svref pV41 2)))) 
+       (if (consp pV46) 
+           (let ((pV53 (cdr (car pV46)))) 
+             (if (null (cdr pV46)) 
+                 (return 
+                  (block 
+                   nil 
+                   (if (eq (car pV48) :|Arrow|) 
+                       (return 
+                        (JGEN::addMethodFromOpToClsDecls 
+                         pV38 
+                         pV40 
+                         pV48 
+                         pV53 
+                         pV42))) 
+                   (return 
+                    (if (JGEN::baseType? pV48) 
+                        (let ((pV13 (JGEN::srtTermDelta pV48 pV53))) 
+                          (block 
+                           nil 
+                           (return 
+                            (let ((pV9 
+                                   (JGEN::termToExpression 
+                                    STRINGMAP::empty 
+                                    (cdr pV13) 
+                                    1))) 
+                              (block 
+                               nil 
+                               (return 
+                                (let ((fldDecl 
+                                       (vector 
+                                        (cons '(:|Static|) nil) 
+                                        (JGEN::baseSrtToJavaType pV48) 
+                                        (cons 
+                                         (cons pV40 0) 
+                                         (cons 
+                                          :|Some| 
+                                          (cons :|Expr| (svref pV9 1)))) 
+                                        nil))) 
+                                  (let ((newClsDecls 
+                                         (JGEN::addFldDeclToClsDecls 
+                                          "Primitive" 
+                                          fldDecl 
+                                          pV42))) newClsDecls))) 
+                               (error 
+                                "Nonexhaustive match failure in modifyClsDeclsFromOp")))) 
+                           (error 
+                            "Nonexhaustive match failure in modifyClsDeclsFromOp"))) 
+                        (block 
+                         nil 
+                         (if (eq (car pV48) :|Base|) 
+                             (let ((pV30 (svref (cdr pV48) 0))) 
+                               (if (eq (car pV30) :|Qualified|) 
+                                   (let ((pV35 (cdr (cdr pV30)))) 
+                                     (return 
+                                      (let ((pV25 (JGEN::srtTermDelta pV48 pV53))) 
+                                        (block 
+                                         nil 
+                                         (return 
+                                          (let ((pV21 
+                                                 (JGEN::termToExpression 
+                                                  STRINGMAP::empty 
+                                                  (cdr pV25) 
+                                                  1))) 
+                                            (block 
+                                             nil 
+                                             (return 
+                                              (let ((fldDecl 
+                                                     (vector 
+                                                      (cons '(:|Static|) nil) 
+                                                      (JGEN::tt pV35) 
+                                                      (cons 
+                                                       (cons pV40 0) 
+                                                       (cons 
+                                                        :|Some| 
+                                                        (cons 
+                                                         :|Expr| 
+                                                         (svref pV21 1)))) 
+                                                      nil))) 
+                                                (let ((newClsDecls 
+                                                       (JGEN::addFldDeclToClsDecls 
+                                                        pV35 
+                                                        fldDecl 
+                                                        pV42))) newClsDecls))) 
+                                             (error 
+                                              "Nonexhaustive match failure in modifyClsDeclsFromOp")))) 
+                                         (error 
+                                          "Nonexhaustive match failure in modifyClsDeclsFromOp")))))))) 
+                         (error 
+                          "Nonexhaustive match failure in modifyClsDeclsFromOp"))))))))))) 
+   (error "Nonexhaustive match failure in modifyClsDeclsFromOp")))
+
+(defun JGEN::modifyClsDeclsFromOp-1 (x) 
+  (JGEN::modifyClsDeclsFromOp 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JGEN::modifyClsDeclsFromOps (spc clsDecls) 
+  (foldriAQualifierMap-1-1-1 
+   #'(lambda (x) 
+      (let ((newClsDecls 
+             (JGEN::modifyClsDeclsFromOp 
+              spc 
+              (svref x 0) 
+              (svref x 1) 
+              (svref x 2) 
+              (svref x 3)))) newClsDecls)) 
+   clsDecls 
+   (svref spc 1)))
+
+(defun JGEN::modifyClsDeclsFromOps-1 (x) 
+  (JGEN::modifyClsDeclsFromOps (car x) (cdr x)))
+
+(defun JGEN::opDom (spc oper) 
+  (let ((opinfo (STANDARDSPEC::findTheOp spc oper))) 
+    (block 
+     nil 
+     (if (eq (car opinfo) :|Some|) 
+         (return (JGEN::srtDom (cdr (svref (cdr opinfo) 2))))) 
+     (return (progn (JGEN::unSupported oper) nil)))))
+
+(defun JGEN::opRange (spc oper) 
+  (let ((opinfo (STANDARDSPEC::findTheOp spc oper))) 
+    (block 
+     nil 
+     (if (eq (car opinfo) :|Some|) 
+         (return (JGEN::srtRange (cdr (svref (cdr opinfo) 2))))) 
+     (return (progn (JGEN::unSupported oper) STANDARDSPEC::boolSort)))))
+
+(defun STANDARDSPEC::mkFalse () 
+  (STANDARDSPEC::mkFun (cons :|Bool| nil) STANDARDSPEC::boolSort))
+
+(defun JGEN::opDelta (spc oper) 
+  (let ((opDom (JGEN::opDom spc oper))) 
+    (progn (JGEN::opRange spc oper) 
+           (let ((opinfo (STANDARDSPEC::findTheOp spc oper))) 
+             (block 
+              nil 
+              (if (eq (car opinfo) :|Some|) 
+                  (let ((pV29 (svref (cdr opinfo) 3))) 
+                    (if (consp pV29) 
+                        (let ((pV34 (cdr (car pV29)))) 
+                          (if (null (cdr pV29)) 
+                              (return 
+                               (block 
+                                nil 
+                                (if (eq (car pV34) :|Lambda|) 
+                                    (let ((pV14 (car (cdr pV34)))) 
+                                      (if (consp pV14) 
+                                          (let ((pV17 (car pV14))) 
+                                            (if (null (cdr pV14)) 
+                                                (return 
+                                                 (let ((argNames 
+                                                        (JGEN::patternNamesOpt 
+                                                         (svref pV17 0)))) 
+                                                   (block 
+                                                    nil 
+                                                    (if (eq 
+                                                         (car argNames) 
+                                                         :|Some|) 
+                                                        (let ((pV10 
+                                                               (cdr argNames))) 
+                                                          (return 
+                                                           (let ((|!numArgs| 
+                                                                  (LIST-SPEC::|!length| 
+                                                                   pV10))) 
+                                                             (let ((arity 
+                                                                    (LIST-SPEC::|!length| 
+                                                                     opDom))) 
+                                                               (if ( =  
+                                                                    arity 
+                                                                    |!numArgs|) 
+                                                                   (let ((newArgs 
+                                                                          (LISTPAIR::|!map|-1-1 
+                                                                           #'(lambda (x) 
+                                                                              (cons 
+                                                                               (car 
+                                                                                x) 
+                                                                               (cdr 
+                                                                                x))) 
+                                                                           (cons 
+                                                                            pV10 
+                                                                            opDom)))) 
+                                                                     (cons 
+                                                                      newArgs 
+                                                                      (svref 
+                                                                       pV17 
+                                                                       2))) 
+                                                                   (progn (JGEN::unSupported 
+                                                                           oper) 
+                                                                          (cons 
+                                                                           nil 
+                                                                           (STANDARDSPEC::mkFalse))))))))) 
+                                                    (return 
+                                                     (progn (JGEN::unSupported 
+                                                             oper) 
+                                                            (cons 
+                                                             nil 
+                                                             (STANDARDSPEC::mkFalse)))))))))))) 
+                                (return (cons nil pV34))))))))) 
+              (return 
+               (progn (JGEN::unSupported oper) 
+                      (cons nil (STANDARDSPEC::mkFalse)))))))))
+
+(defun JGEN::opDelta-1 (x) (JGEN::opDelta (car x) (cdr x)))
+
+(defun JGEN::opDom-1 (x) (JGEN::opDom (car x) (cdr x)))
+
+(defun JGEN::opRange-1 (x) (JGEN::opRange (car x) (cdr x)))
+
+(defun JGEN::optAddOp-1 (x) 
+  (JGEN::optAddOp (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JGEN::optAddOp-1-1 (x1 x2) (funcall (JGEN::optAddOp-1 x1) x2))
+
+(defun JGEN::productToClsDecl-1 (x) (JGEN::productToClsDecl (car x) (cdr x)))
+
+(defun JGEN::renameVar-1 (x) 
+  (JGEN::renameVar (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::renameVarApply-1 (x) 
+  (JGEN::renameVarApply (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::renameVarMatch (pV1 pV2 pV3) 
+  (block 
+   nil 
+   (let ((pV6 (svref pV1 2))
+         (pV5 (svref pV1 1))
+         (pV4 (svref pV1 0))) 
+     (return 
+      (let ((boundVars (UTILITIES::patVars pV4))) 
+        (labels 
+          ((newBody (patBody) 
+            (if (LIST-SPEC::|!exists|-1-1 
+                 #'(lambda (var) (METASLANG::equalVar? var pV2)) 
+                 boundVars) 
+                patBody 
+                (JGEN::renameVar patBody pV2 pV3)))) 
+          (let ((newCaseBody (newBody pV6))) 
+            (let ((newCond (newBody pV5))) (vector pV4 newCond newCaseBody))))))) 
+   (error "Nonexhaustive match failure in renameVarMatch")))
+
+(defun JGEN::renameVarCase (term oldV newV) 
+  (let ((caseTerm (JGEN::caseTerm term))) 
+    (let ((newCaseTerm (JGEN::renameVar caseTerm oldV newV))) 
+      (let ((cases (JGEN::caseCases term))) 
+        (let ((newCases 
+               (LIST-SPEC::|!map|-1-1 
+                #'(lambda (match) (JGEN::renameVarMatch match oldV newV)) 
+                cases))) 
+          (let ((newTerm 
+                 (STANDARDSPEC::mkApply 
+                  (cons :|Lambda| (cons newCases POSITION-SPEC::noPos)) 
+                  newCaseTerm))) newTerm))))))
+
+(defun JGEN::renameVarCase-1 (x) 
+  (JGEN::renameVarCase (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::renameVarIfThenElse-1 (x) 
+  (JGEN::renameVarIfThenElse (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::renameVarLet-1 (x) 
+  (JGEN::renameVarLet (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::renameVarLetNewVar-1 (x) 
+  (JGEN::renameVarLetNewVar (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JGEN::renameVarLetOldVar-1 (x) 
+  (JGEN::renameVarLetOldVar (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JGEN::renameVarMatch-1 (x) 
+  (JGEN::renameVarMatch (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::renameVarRecord-1 (x) 
+  (JGEN::renameVarRecord (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::setConstrs-1 (x) (JGEN::setConstrs (car x) (cdr x)))
+
+(defun JGEN::setFlds-1 (x) (JGEN::setFlds (car x) (cdr x)))
+
+(defun JGEN::setMethodBody-1 (x) (JGEN::setMethodBody (car x) (cdr x)))
+
+(defun JGEN::setMethods-1 (x) (JGEN::setMethods (car x) (cdr x)))
+
+(defun JGEN::sortToClsDecls-1 (x) 
+  (JGEN::sortToClsDecls (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::specToJava-1 (spc) 
+  (progn (STRING-SPEC::writeLine "Lifting Patterns") 
+         (let ((spc (JGEN::liftPattern-1 spc))) 
+           (progn (STRING-SPEC::writeLine "Renaming Variables") 
+                  (let ((spc (JGEN::distinctVariable-1 spc))) 
+                    (progn (STRING-SPEC::writeLine "Generating Classes") 
+                           (let ((clsDecls (JGEN::clsDeclsFromSorts-1 spc))) 
+                             (progn (STRING-SPEC::writeLine "Adding Bodies") 
+                                    (let ((clsDecls 
+                                           (JGEN::modifyClsDeclsFromOps 
+                                            spc 
+                                            clsDecls))) 
+                                      (progn (STRING-SPEC::writeLine 
+                                              "Ready to Write") 
+                                             (let ((clsOrInterfDecls 
+                                                    (LIST-SPEC::|!map|-1-1 
+                                                     #'(lambda (cd) 
+                                                        (cons 
+                                                         :|ClsDecl| 
+                                                         (vector 
+                                                          (svref cd 0) 
+                                                          (svref cd 1) 
+                                                          (svref cd 2)))) 
+                                                     clsDecls))) 
+                                               (vector 
+                                                '(:|None|) 
+                                                nil 
+                                                clsOrInterfDecls))))))))))))
+
+(defun JGEN::specToJava (x0 x1 x2 x3) (JGEN::specToJava-1 (vector x0 x1 x2 x3)))
+
+(defun JGEN::srtTermDelta-1 (x) (JGEN::srtTermDelta (car x) (cdr x)))
+
+(defun JGEN::sumArgToClsDecl (ty c) 
+  (let ((summandId (JGEN::mkSummandId ty c))) 
+    (vector 
+     nil 
+     (vector summandId (cons :|Some| (cons nil ty)) nil) 
+     JGEN::emptyClsBody)))
+
+(defun JGEN::sumArgToClsDecl-1 (x) (JGEN::sumArgToClsDecl (car x) (cdr x)))
+
+(defun JGEN::sumToClsDecl-1 (x) 
+  (JGEN::sumToClsDecl (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::sumToConsMethodDecl-1 (x) 
+  (JGEN::sumToConsMethodDecl (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::sumTypeToClsDecl-1 (x) (JGEN::sumTypeToClsDecl (car x) (cdr x)))
+
+(defun JGEN::termToExpression-1 (x) 
+  (JGEN::termToExpression (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::translateApplyToExpr-1 (x) 
+  (JGEN::translateApplyToExpr (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::translateBaseApplToExpr-1 (x) 
+  (JGEN::translateBaseApplToExpr (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+
+(defun JGEN::translateBaseArgsApplToExpr-1 (x) 
+  (JGEN::translateBaseArgsApplToExpr 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JGEN::translateConstructToExpr-1 (x) 
+  (JGEN::translateConstructToExpr 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JGEN::translateEqualsToExpr-1 (x) 
+  (JGEN::translateEqualsToExpr (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::translateIfThenElseToExpr-1 (x) 
+  (JGEN::translateIfThenElseToExpr (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::translateLetToExpr-1 (x) 
+  (JGEN::translateLetToExpr (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::translateProjectToExpr-1 (x) 
+  (JGEN::translateProjectToExpr (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+
+(defun JGEN::translateRecordToExpr-1 (x) 
+  (JGEN::translateRecordToExpr (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::translateTermsToExpressions-1 (x) 
+  (JGEN::translateTermsToExpressions (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JGEN::translateUserApplToExpr-1 (x) 
+  (JGEN::translateUserApplToExpr 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JGEN::userVar? (x0 x1) (JGEN::userVar?-1 (cons x0 x1)))
+
+(defun JGEN::varToFormalParam (x0 x1) (JGEN::varToFormalParam-1 (cons x0 x1)))
+
+(defun JAVA::toPretty (x) (PRETTYPRINT::|!string| x))
+
+(defun JAVA::addCommentLine (comment ps) 
+  (if (string=  comment "") ps (LIST-SPEC::|!cons| (JAVA::toPretty comment) ps)))
+
+
+(defun JAVA::addCommentLine-1 (x) (JAVA::addCommentLine (car x) (cdr x)))
+
+(defun JAVA::addEmpty (ps) 
+  (if (slang-built-in::slang-term-equals ps nil) 
+      nil 
+      (LIST-SPEC::|!cons| (PRETTYPRINT::emptyPretty) ps)))
+
+(defun JAVA::addPrettys (ps p) 
+  (block 
+   nil 
+   (if (null ps) 
+       (return ps) 
+       (if (consp ps) 
+           (let ((pV4 (cdr ps))) 
+             (if (null pV4) 
+                 (return ps) 
+                 (if (consp pV4) 
+                     (return 
+                      (LIST-SPEC::|!cons| 
+                       (car ps) 
+                       (LIST-SPEC::|!cons| 
+                        p 
+                        (JAVA::addPrettys 
+                         (LIST-SPEC::|!cons| (car pV4) (cdr pV4)) 
+                         p))))))))) 
+   (error "Nonexhaustive match failure in addPrettys")))
+
+(defun JAVA::addEmptys (ps) (JAVA::addPrettys ps (PRETTYPRINT::emptyPretty)))
+
+(defun JAVA::addPrettys-1 (x) (JAVA::addPrettys (car x) (cdr x)))
+
+(defun JAVA::assOpToString (o) 
+  (block 
+   nil 
+   (if (eq (car o) :|Assgn|) 
+       (return " = ") 
+       (if (eq (car o) :|Mul|) 
+           (return "* = ") 
+           (if (eq (car o) :|Div|) 
+               (return "/ = ") 
+               (if (eq (car o) :|Rem|) 
+                   (return "% = ") 
+                   (if (eq (car o) :|Plus|) 
+                       (return "+ = ") 
+                       (if (eq (car o) :|Minus|) 
+                           (return "- = ") 
+                           (if (eq (car o) :|LShift|) 
+                               (return "<<= ") 
+                               (if (eq (car o) :|RShift|) 
+                                   (return ">>= ") 
+                                   (if (eq (car o) :|LShiftSpec|) 
+                                       (return ">>>= ") 
+                                       (if (eq (car o) :|BitAnd|) 
+                                           (return "& = ") 
+                                           (if (eq (car o) :|BitExclOr|) 
+                                               (return "^ = ") 
+                                               (if (eq (car o) :|BitInclOr|) 
+                                                   (return "| = "))))))))))))) 
+   (error "Nonexhaustive match failure in assOpToString")))
+
+(defun JAVA::binOpToString (o) 
+  (block 
+   nil 
+   (if (eq (car o) :|CdAnd|) 
+       (return "&&") 
+       (if (eq (car o) :|CdOr|) 
+           (return "||") 
+           (if (eq (car o) :|InclOr|) 
+               (return "|") 
+               (if (eq (car o) :|ExclOr|) 
+                   (return "^") 
+                   (if (eq (car o) :|And|) 
+                       (return "&") 
+                       (if (eq (car o) :|Eq|) 
+                           (return " == ") 
+                           (if (eq (car o) :|NotEq|) 
+                               (return "! = ") 
+                               (if (eq (car o) :|Gt|) 
+                                   (return ">") 
+                                   (if (eq (car o) :|Lt|) 
+                                       (return "<") 
+                                       (if (eq (car o) :|Ge|) 
+                                           (return ">= ") 
+                                           (if (eq (car o) :|Le|) 
+                                               (return "<= ") 
+                                               (if (eq (car o) :|LShft|) 
+                                                   (return "<<") 
+                                                   (if (eq (car o) :|RShft|) 
+                                                       (return ">>") 
+                                                       (if (eq 
+                                                            (car o) 
+                                                            :|RShftSp|) 
+                                                           (return ">>>") 
+                                                           (if (eq 
+                                                                (car o) 
+                                                                :|Plus|) 
+                                                               (return "+") 
+                                                               (if (eq 
+                                                                    (car o) 
+                                                                    :|Minus|) 
+                                                                   (return "-") 
+                                                                   (if (eq 
+                                                                        (car o) 
+                                                                        :|Mul|) 
+                                                                       (return 
+                                                                        "*") 
+                                                                       (if (eq 
+                                                                            (car 
+                                                                             o) 
+                                                                            :|Div|) 
+                                                                           (return 
+                                                                            "/") 
+                                                                           (if (eq 
+                                                                                (car 
+                                                                                 o) 
+                                                                                :|Rem|) 
+                                                                               (return 
+                                                                                "%")))))))))))))))))))) 
+   (error "Nonexhaustive match failure in binOpToString")))
+
+(defun JAVA::clsDecl1 () 
+  (vector 
+   (cons :|Some| (cons (cons "kestrel" nil) "zhenyu")) 
+   (cons 
+    (cons (cons "java" (cons "lang" nil)) "*") 
+    (cons (cons (cons "java" (cons "swing" nil)) "xyz") nil)) 
+   (cons 
+    (cons 
+     :|ClsDecl| 
+     (vector 
+      (cons '(:|Public|) nil) 
+      (vector 
+       "MyClass" 
+       (cons :|Some| (cons nil "SuperClass")) 
+       (cons (cons nil "SuperI1") (cons (cons nil "SuperI2") nil))) 
+      (vector 
+       nil 
+       nil 
+       (cons 
+        (vector 
+         (cons '(:|Private|) nil) 
+         (cons (cons :|Basic| '(:|JInt|)) 2) 
+         (cons (cons "xx" 0) '(:|None|)) 
+         (cons 
+          (cons 
+           (cons "yy" 2) 
+           (cons 
+            :|Some| 
+            (cons :|ArrInit| (cons '(:|None|) (cons '(:|None|) nil))))) 
+          nil)) 
+        nil) 
+       nil 
+       (cons 
+        (cons 
+         (vector 
+          (cons '(:|Static|) (cons '(:|Public|) nil)) 
+          '(:|None|) 
+          "mm" 
+          (cons 
+           (vector t (cons (cons :|Name| (cons nil "String")) 1) (cons "p" 2)) 
+           (cons 
+            (vector nil (cons (cons :|Basic| '(:|JBool|)) 0) (cons "b" 0)) 
+            nil)) 
+          (cons (cons nil "Exception") nil)) 
+         '(:|None|)) 
+        nil) 
+       nil))) 
+    nil)))
+
+(defun JAVA::clsDecl1-1 (ignore) (declare (ignore ignore)) 
+                                 (JAVA::clsDecl1))
+
+(defun JAVA::concatList (sl) 
+  (LIST-SPEC::foldr-1-1-1 #'STRING-SPEC::concat-1 "" sl))
+
+(defun JAVA::emptyBrackets (n) 
+  (if (INTEGER-SPEC::|!<=| n 0) 
+      (PRETTYPRINT::emptyPretty) 
+      (PRETTYPRINT::prettysNone 
+       (cons 
+        (JAVA::toPretty "[]") 
+        (cons (JAVA::emptyBrackets (INTEGER-SPEC::|!-| n 1)) nil)))))
+
+(defun JAVA::isEmptyClsBody-1 (cb) 
+  (cl::and 
+   (LIST-SPEC::|!null| (svref cb 5)) 
+   (cl::and 
+    (LIST-SPEC::|!null| (svref cb 2)) 
+    (cl::and 
+     (LIST-SPEC::|!null| (svref cb 1)) 
+     (cl::and 
+      (LIST-SPEC::|!null| (svref cb 4)) 
+      (cl::and 
+       (LIST-SPEC::|!null| (svref cb 0)) 
+       (LIST-SPEC::|!null| (svref cb 3))))))))
+
+(defun JAVA::isEmptyClsBody (x0 x1 x2 x3 x4 x5) 
+  (JAVA::isEmptyClsBody-1 (vector x0 x1 x2 x3 x4 x5)))
+
+(defun JAVA::isEmptyInterfBody-1 (ib) 
+  (cl::and 
+   (LIST-SPEC::|!null| (svref ib 1)) 
+   (cl::and 
+    (LIST-SPEC::|!null| (svref ib 3)) 
+    (cl::and (LIST-SPEC::|!null| (svref ib 0)) (LIST-SPEC::|!null| (svref ib 2))))))
+
+
+(defun JAVA::isEmptyInterfBody (x0 x1 x2 x3) 
+  (JAVA::isEmptyInterfBody-1 (vector x0 x1 x2 x3)))
+
+(defun JAVA::itfDecl1 () 
+  (vector 
+   (cons :|Some| (cons (cons "kestrel" nil) "zhenyu")) 
+   nil 
+   (cons 
+    (cons 
+     :|InterfDecl| 
+     (vector 
+      (cons '(:|Public|) nil) 
+      (cons 
+       "MyClass" 
+       (cons (cons nil "SuperI1") (cons (cons nil "SuperI2") nil))) 
+      (vector nil nil nil nil))) 
+    nil)))
+
+(defun JAVA::itfDecl1-1 (ignore) (declare (ignore ignore)) 
+                                 (JAVA::itfDecl1))
+
+(defun JAVA::mkArrAccPr (aac) (cons :|ArrAcc| aac))
+
+(defun JAVA::mkBoolPr (b) (cons :|Bool| b))
+
+(defun JAVA::mkCharPr (c) (cons :|Char| c))
+
+(defun JAVA::mkClsInstPr (oty) (cons :|ClsInst| oty))
+
+(defun JAVA::mkFldAccPr (fac) (cons :|FldAcc| fac))
+
+(defun JAVA::mkFloatPr (i j) (cons :|Float| (cons i j)))
+
+(defun JAVA::mkFloatPr-1 (x) (JAVA::mkFloatPr (car x) (cdr x)))
+
+(defun JAVA::mkForClsNCI (nm args cbd) (cons :|ForCls| (vector nm args cbd)))
+
+(defun JAVA::mkForClsNCI-1 (x) 
+  (JAVA::mkForClsNCI (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::mkForInnClsNCI (pm id args cbd) 
+  (cons :|ForInnCls| (vector pm id args cbd)))
+
+(defun JAVA::mkForInnClsNCI-1 (x) 
+  (JAVA::mkForInnClsNCI (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JAVA::mkIntLPr (i) (cons :|IntL| i))
+
+(defun JAVA::mkMethInvPr (mi) (cons :|MethInv| mi))
+
+(defun JAVA::mkNamePr-1 (nm) (cons :|Name| (cons (car nm) (cdr nm))))
+
+(defun JAVA::mkNamePr (x0 x1) (JAVA::mkNamePr-1 (cons x0 x1)))
+
+(defun JAVA::mkNewArrPr (na) (cons :|NewArr| na))
+
+(defun JAVA::mkNewClsInstPr (nci) (cons :|NewClsInst| nci))
+
+(defun JAVA::mkNullPr () '(:|Null|))
+
+(defun JAVA::mkNullPr-1 (ignore) (declare (ignore ignore)) 
+                                 (JAVA::mkNullPr))
+
+(defun JAVA::mkParenPr (e) (cons :|Paren| e))
+
+(defun JAVA::mkStringPr (s) (cons :|String| s))
+
+(defun JAVA::mkThisPr (onm) (cons :|This| onm))
+
+(defun JAVA::mkViaClsFA (nm id) (cons :|ViaCls| (cons nm id)))
+
+(defun JAVA::mkViaClsFA-1 (x) (JAVA::mkViaClsFA (car x) (cdr x)))
+
+(defun JAVA::mkViaClsSuperMI (nm id args) 
+  (cons :|ViaClsSuper| (vector nm id args)))
+
+(defun JAVA::mkViaClsSuperMI-1 (x) 
+  (JAVA::mkViaClsSuperMI (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::mkViaNameMI (nm args) (cons :|ViaName| (cons nm args)))
+
+(defun JAVA::mkViaNameMI-1 (x) (JAVA::mkViaNameMI (car x) (cdr x)))
+
+(defun JAVA::mkViaPrimFA (pm id) (cons :|ViaPrim| (cons pm id)))
+
+(defun JAVA::mkViaPrimFA-1 (x) (JAVA::mkViaPrimFA (car x) (cdr x)))
+
+(defun JAVA::mkViaPrimMI (pm id args) (cons :|ViaPrim| (vector pm id args)))
+
+(defun JAVA::mkViaPrimMI-1 (x) 
+  (JAVA::mkViaPrimMI (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::mkViaSuperFA (id) (cons :|ViaSuper| id))
+
+(defun JAVA::mkViaSuperMI (id args) (cons :|ViaSuper| (cons id args)))
+
+(defun JAVA::mkViaSuperMI-1 (x) (JAVA::mkViaSuperMI (car x) (cdr x)))
+
+(defun JAVA::postUnOpToString (o) 
+  (block 
+   nil 
+   (if (eq (car o) :|PostInc|) 
+       (return "++") 
+       (if (eq (car o) :|PostDec|) (return "--"))) 
+   (error "Nonexhaustive match failure in postUnOpToString")))
+
+(defun JAVA::ppAssOp (o) (JAVA::toPretty (JAVA::assOpToString o)))
+
+(defun JAVA::qualName (ids id) 
+  (LIST-SPEC::foldr-1-1-1 
+   #'(lambda (x) 
+      (let ((y (cdr x))
+            (x1 (car x))) 
+        (if (string=  x1 "") 
+            y 
+            (if (string=  y "") 
+                x1 
+                (JAVA::concatList (cons x1 (cons "." (cons y nil)))))))) 
+   "" 
+   (LIST-SPEC::concat ids (cons id nil))))
+
+(defun JAVA::ppName (ids id) (JAVA::toPretty (JAVA::qualName ids id)))
+
+(defun JAVA::ppName-1 (x) (JAVA::ppName (car x) (cdr x)))
+
+(defun JAVA::ppMethInv (mi) 
+  (labels 
+    ((ppArgs (es) 
+      (PRETTYPRINT::prettysNone 
+       (LIST-SPEC::flatten 
+        (cons 
+         (cons (JAVA::toPretty "(") nil) 
+         (cons 
+          (JAVA::addPrettys 
+           (LIST-SPEC::|!map|-1-1 #'JAVA::ppExpr es) 
+           (JAVA::toPretty ",")) 
+          (cons (cons (JAVA::toPretty ")") nil) nil))))))) 
+    (block 
+     nil 
+     (if (eq (car mi) :|ViaName|) 
+         (let ((pV5 (cdr mi))) 
+           (return 
+            (PRETTYPRINT::prettysNone 
+             (cons (JAVA::ppName-1 (car pV5)) (cons (ppArgs (cdr pV5)) nil))))) 
+         (if (eq (car mi) :|ViaPrim|) 
+             (let ((pV4 (cdr mi))) 
+               (return 
+                (PRETTYPRINT::prettysNone 
+                 (cons 
+                  (JAVA::ppPrim (svref pV4 0)) 
+                  (cons 
+                   (JAVA::toPretty ".") 
+                   (cons 
+                    (JAVA::toPretty (svref pV4 1)) 
+                    (cons (ppArgs (svref pV4 2)) nil))))))) 
+             (if (eq (car mi) :|ViaSuper|) 
+                 (let ((pV3 (cdr mi))) 
+                   (return 
+                    (PRETTYPRINT::prettysNone 
+                     (cons 
+                      (JAVA::toPretty "super.") 
+                      (cons 
+                       (JAVA::toPretty (car pV3)) 
+                       (cons (ppArgs (cdr pV3)) nil)))))) 
+                 (if (eq (car mi) :|ViaClsSuper|) 
+                     (let ((pV2 (cdr mi))) 
+                       (return 
+                        (PRETTYPRINT::prettysNone 
+                         (cons 
+                          (JAVA::ppName-1 (svref pV2 0)) 
+                          (cons 
+                           (JAVA::toPretty ".super.") 
+                           (cons 
+                            (JAVA::toPretty (svref pV2 1)) 
+                            (cons (ppArgs (svref pV2 2)) nil))))))))))) 
+     (error "Nonexhaustive match failure in ppMethInv"))))
+
+(defun JAVA::ppVarInit (vin) 
+  (block 
+   nil 
+   (if (eq (car vin) :|Expr|) 
+       (return (JAVA::ppExpr (cdr vin))) 
+       (if (eq (car vin) :|ArrInit|) 
+           (return 
+            (PRETTYPRINT::prettysNone 
+             (cons 
+              (JAVA::toPretty "{") 
+              (cons (JAVA::ppArrInit (cdr vin)) (cons (JAVA::toPretty "}") nil))))))) 
+   (error "Nonexhaustive match failure in ppVarInit")))
+
+(defun JAVA::ppOptVarInit (oai) 
+  (block 
+   nil 
+   (if (eq (car oai) :|None|) 
+       (return (PRETTYPRINT::emptyPretty)) 
+       (if (eq (car oai) :|Some|) (return (JAVA::ppVarInit (cdr oai))))) 
+   (error "Nonexhaustive match failure in ppOptVarInit")))
+
+(defun JAVA::ppArrInit (ais) 
+  (PRETTYPRINT::prettysNone 
+   (JAVA::addPrettys 
+    (LIST-SPEC::|!map|-1-1 #'JAVA::ppOptVarInit ais) 
+    (JAVA::toPretty ", "))))
+
+(defun JAVA::ppNewArr (nw) 
+  (block 
+   nil 
+   (if (eq (car nw) :|Arr|) 
+       (let ((pV3 (cdr nw))) 
+         (return 
+          (PRETTYPRINT::prettysNone 
+           (cons 
+            (JAVA::toPretty "new ") 
+            (cons 
+             (JAVA::ppName-1 (svref pV3 0)) 
+             (cons 
+              (PRETTYPRINT::prettysNone 
+               (LIST-SPEC::|!map|-1-1 
+                #'(lambda (e) 
+                   (PRETTYPRINT::prettysNone 
+                    (cons 
+                     (JAVA::toPretty "[") 
+                     (cons (JAVA::ppExpr e) (cons (JAVA::toPretty "]") nil))))) 
+                (svref pV3 1))) 
+              (cons (JAVA::emptyBrackets (svref pV3 2)) nil))))))) 
+       (if (eq (car nw) :|ArrWInit|) 
+           (let ((pV2 (cdr nw))) 
+             (return 
+              (PRETTYPRINT::prettysNone 
+               (cons 
+                (JAVA::toPretty "new ") 
+                (cons 
+                 (JAVA::ppName-1 (svref pV2 0)) 
+                 (cons 
+                  (JAVA::emptyBrackets (svref pV2 1)) 
+                  (cons (JAVA::ppArrInit (svref pV2 2)) nil))))))))) 
+   (error "Nonexhaustive match failure in ppNewArr")))
+
+(defun JAVA::ppSuperCls (sc) 
+  (block 
+   nil 
+   (if (eq (car sc) :|None|) 
+       (return (PRETTYPRINT::emptyPretty)) 
+       (if (eq (car sc) :|Some|) (return (JAVA::ppName-1 (cdr sc))))) 
+   (error "Nonexhaustive match failure in ppSuperCls")))
+
+(defun JAVA::ppSuperInterf (sis) 
+  (if (slang-built-in::slang-term-equals sis nil) 
+      (PRETTYPRINT::emptyPretty) 
+      (PRETTYPRINT::prettysNone 
+       (JAVA::addPrettys 
+        (LIST-SPEC::|!map|-1-1 #'JAVA::ppName-1 sis) 
+        (JAVA::toPretty ", ")))))
+
+(defun JAVA::ppClsHeader (id sc sis) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::toPretty "class ") 
+    (cons 
+     (JAVA::toPretty id) 
+     (cons 
+      (JAVA::toPretty 
+       (if (slang-built-in::slang-term-equals sc '(:|None|)) "" " extends ")) 
+      (cons 
+       (JAVA::ppSuperCls sc) 
+       (cons 
+        (JAVA::toPretty 
+         (if (slang-built-in::slang-term-equals sis nil) "" " implements ")) 
+        (cons (JAVA::ppSuperInterf sis) nil))))))))
+
+(defun JAVA::ppClsHeader-1 (x) 
+  (JAVA::ppClsHeader (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::ppMods (|!ms|) 
+  (let ((ps 
+         (LIST-SPEC::|!map|-1-1 
+          #'(lambda (n) 
+             (JAVA::toPretty 
+              (block 
+               nil 
+               (if (eq (car n) :|Public|) 
+                   (return "public ") 
+                   (if (eq (car n) :|Protected|) 
+                       (return "protected ") 
+                       (if (eq (car n) :|Private|) 
+                           (return "private ") 
+                           (if (eq (car n) :|Static|) 
+                               (return "static ") 
+                               (if (eq (car n) :|Abstract|) 
+                                   (return "abstract ") 
+                                   (if (eq (car n) :|Final|) 
+                                       (return "final ") 
+                                       (if (eq (car n) :|Native|) 
+                                           (return "native ") 
+                                           (if (eq (car n) :|Synchronized|) 
+                                               (return "synchronized ") 
+                                               (if (eq (car n) :|Transient|) 
+                                                   (return "transient ") 
+                                                   (if (eq (car n) :|Volatile|) 
+                                                       (return "volatile ") 
+                                                       (if (eq 
+                                                            (car n) 
+                                                            :|Strictfp|) 
+                                                           (return "strictfp ")))))))))))) 
+               (error "Nonexhaustive match failure in ppMods")))) 
+          |!ms|))) (PRETTYPRINT::prettysNone ps)))
+
+(defun JAVA::ppClsDecl (|!ms| ch cb) 
+  (PRETTYPRINT::prettysAll 
+   (LIST-SPEC::|!cons| 
+    (PRETTYPRINT::prettysNone 
+     (cons 
+      (JAVA::ppMods |!ms|) 
+      (cons 
+       (JAVA::ppClsHeader-1 ch) 
+       (cons (JAVA::toPretty " ") (cons (JAVA::toPretty "{") nil))))) 
+    (if (JAVA::isEmptyClsBody-1 cb) 
+        (cons (JAVA::toPretty "}") nil) 
+        (cons 
+         (PRETTYPRINT::emptyPretty) 
+         (cons 
+          (PRETTYPRINT::prettysNone 
+           (cons (JAVA::toPretty "  ") (cons (JAVA::ppClsBody-1 cb) nil))) 
+          (cons (PRETTYPRINT::emptyPretty) (cons (JAVA::toPretty "}") nil))))))))
+
+
+(defun JAVA::ppClsDecl-1 (x) 
+  (JAVA::ppClsDecl (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::ppBasic (bt) 
+  (JAVA::toPretty 
+   (block 
+    nil 
+    (if (eq (car bt) :|JBool|) 
+        (return "boolean") 
+        (if (eq (car bt) :|Byte|) 
+            (return "byte") 
+            (if (eq (car bt) :|Short|) 
+                (return "short") 
+                (if (eq (car bt) :|Char|) 
+                    (return "char") 
+                    (if (eq (car bt) :|JInt|) 
+                        (return "int") 
+                        (if (eq (car bt) :|Long|) 
+                            (return "int") 
+                            (if (eq (car bt) :|JFloat|) 
+                                (return "float") 
+                                (if (eq (car bt) :|Double|) (return "double"))))))))) 
+    (error "Nonexhaustive match failure in ppBasic"))))
+
+(defun JAVA::ppBasicOrName (btn) 
+  (block 
+   nil 
+   (if (eq (car btn) :|Basic|) 
+       (return (JAVA::ppBasic (cdr btn))) 
+       (if (eq (car btn) :|Name|) (return (JAVA::ppName-1 (cdr btn))))) 
+   (error "Nonexhaustive match failure in ppBasicOrName")))
+
+(defun JAVA::ppType (btn n) 
+  (PRETTYPRINT::prettysNone 
+   (cons (JAVA::ppBasicOrName btn) (cons (JAVA::emptyBrackets n) nil))))
+
+(defun JAVA::ppType-1 (x) (JAVA::ppType (car x) (cdr x)))
+
+(defun JAVA::ppVarDeclId (id n) 
+  (PRETTYPRINT::prettysNone 
+   (cons (JAVA::toPretty id) (cons (JAVA::emptyBrackets n) nil))))
+
+(defun JAVA::ppVarDeclId-1 (x) (JAVA::ppVarDeclId (car x) (cdr x)))
+
+(defun JAVA::ppVarDecl (vdi vi) 
+  (block 
+   nil 
+   (if (eq (car vi) :|None|) 
+       (return (JAVA::ppVarDeclId-1 vdi)) 
+       (if (eq (car vi) :|Some|) 
+           (return 
+            (PRETTYPRINT::prettysNone 
+             (cons 
+              (JAVA::ppVarDeclId-1 vdi) 
+              (cons (JAVA::toPretty " = ") (cons (JAVA::ppVarInit (cdr vi)) nil))))))) 
+   (error "Nonexhaustive match failure in ppVarDecl")))
+
+(defun JAVA::ppVarDecl-1 (x) (JAVA::ppVarDecl (car x) (cdr x)))
+
+(defun JAVA::ppVarDecls (vdl) 
+  (PRETTYPRINT::prettysNone 
+   (JAVA::addPrettys 
+    (LIST-SPEC::|!map|-1-1 #'JAVA::ppVarDecl-1 vdl) 
+    (JAVA::toPretty ", "))))
+
+(defun JAVA::ppLocVarDecl (b |!t| vd vds) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::toPretty (if b "final " "")) 
+    (cons 
+     (JAVA::ppType-1 |!t|) 
+     (cons 
+      (JAVA::toPretty " ") 
+      (cons 
+       (JAVA::ppVarDecl-1 vd) 
+       (cons 
+        (JAVA::toPretty (if (slang-built-in::slang-term-equals vds nil) "" ", ")) 
+        (cons (JAVA::ppVarDecls vds) nil))))))))
+
+(defun JAVA::ppLocVarDecl-1 (x) 
+  (JAVA::ppLocVarDecl (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JAVA::ppFormPar (b |!t| vdi) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::toPretty (if (eq b t) "final " "")) 
+    (cons 
+     (JAVA::ppType-1 |!t|) 
+     (cons (JAVA::toPretty " ") (cons (JAVA::ppVarDeclId-1 vdi) nil))))))
+
+(defun JAVA::ppFormPar-1 (x) 
+  (JAVA::ppFormPar (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::ppOptExpr (ope) 
+  (block 
+   nil 
+   (if (eq (car ope) :|None|) 
+       (return (PRETTYPRINT::emptyPretty)) 
+       (if (eq (car ope) :|Some|) (return (JAVA::ppExpr (cdr ope))))) 
+   (error "Nonexhaustive match failure in ppOptExpr")))
+
+(defun JAVA::ppOptForInit (opfi) 
+  (block 
+   nil 
+   (if (eq (car opfi) :|None|) 
+       (return (PRETTYPRINT::emptyPretty)) 
+       (if (eq (car opfi) :|Some|) 
+           (let ((pV7 (cdr opfi))) 
+             (return 
+              (block 
+               nil 
+               (if (eq (car pV7) :|LocVarDecl|) 
+                   (return (JAVA::ppLocVarDecl-1 (cdr pV7))) 
+                   (if (eq (car pV7) :|StmtExprs|) 
+                       (let ((pV2 (cdr pV7))) 
+                         (return 
+                          (PRETTYPRINT::prettysLinear 
+                           (JAVA::addPrettys 
+                            (LIST-SPEC::|!map|-1-1 
+                             #'JAVA::ppExpr 
+                             (LIST-SPEC::|!cons| (car pV2) (cdr pV2))) 
+                            (JAVA::toPretty ","))))))) 
+               (error "Nonexhaustive match failure in ppOptForInit")))))) 
+   (error "Nonexhaustive match failure in ppOptForInit")))
+
+(defun JAVA::ppOptForUpdate (opfu) 
+  (block 
+   nil 
+   (if (eq (car opfu) :|None|) 
+       (return (PRETTYPRINT::emptyPretty)) 
+       (if (eq (car opfu) :|Some|) 
+           (let ((pV2 (cdr opfu))) 
+             (return 
+              (PRETTYPRINT::prettysLinear 
+               (JAVA::addPrettys 
+                (LIST-SPEC::|!map|-1-1 
+                 #'JAVA::ppExpr 
+                 (LIST-SPEC::|!cons| (car pV2) (cdr pV2))) 
+                (JAVA::toPretty ","))))))) 
+   (error "Nonexhaustive match failure in ppOptForUpdate")))
+
+(defun JAVA::ppSwitchLab (sl) 
+  (block 
+   nil 
+   (if (eq (car sl) :|JCase|) 
+       (return 
+        (PRETTYPRINT::prettysNone 
+         (cons 
+          (JAVA::toPretty "case ") 
+          (cons (JAVA::ppExpr (cdr sl)) (cons (JAVA::toPretty ":") nil))))) 
+       (if (eq (car sl) :|Default|) (return (JAVA::toPretty "default:")))) 
+   (error "Nonexhaustive match failure in ppSwitchLab")))
+
+(defun JAVA::ppSwitchLabStmtPa (slabs bksts) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (PRETTYPRINT::prettysNone (LIST-SPEC::|!map|-1-1 #'JAVA::ppSwitchLab slabs)) 
+    (cons 
+     (JAVA::toPretty " ") 
+     (cons 
+      (PRETTYPRINT::prettysAll (LIST-SPEC::|!map|-1-1 #'JAVA::ppBlockStmt bksts)) 
+      nil)))))
+
+(defun JAVA::ppSwitchLabStmtPa-1 (x) (JAVA::ppSwitchLabStmtPa (car x) (cdr x)))
+
+(defun JAVA::ppSwitchBlock (swbk) 
+  (PRETTYPRINT::prettysAll 
+   (cons 
+    (PRETTYPRINT::prettysNone 
+     (cons 
+      (JAVA::toPretty "{ ") 
+      (cons 
+       (PRETTYPRINT::prettysNone 
+        (LIST-SPEC::|!map|-1-1 #'JAVA::ppSwitchLabStmtPa-1 swbk)) 
+       nil))) 
+    (cons (JAVA::toPretty "}") nil))))
+
+(defun JAVA::ppStmt (st) 
+  (block 
+   nil 
+   (if (eq (car st) :|Block|) 
+       (let ((pV31 (cdr st))) 
+         (return 
+          (block 
+           nil 
+           (if (null pV31) (return (JAVA::toPretty "{ }"))) 
+           (return 
+            (PRETTYPRINT::prettysNone 
+             (cons 
+              (JAVA::toPretty "{ ") 
+              (cons (JAVA::ppBlock pV31) (cons (JAVA::toPretty " }") nil)))))))) 
+       (if (eq (car st) :|Labeled|) 
+           (let ((pV30 (cdr st))) 
+             (return 
+              (PRETTYPRINT::prettysNone 
+               (cons 
+                (JAVA::toPretty (STRING-SPEC::concat (car pV30) " : ")) 
+                (cons (JAVA::ppStmt (cdr pV30)) nil))))) 
+           (if (eq (car st) :|If|) 
+               (let ((pV29 (cdr st))) 
+                 (let ((pV49 (svref pV29 2))) 
+                   (return 
+                    (PRETTYPRINT::prettysAll 
+                     (LIST-SPEC::|!cons| 
+                      (PRETTYPRINT::prettysNone 
+                       (cons 
+                        (JAVA::toPretty "if (") 
+                        (cons 
+                         (JAVA::ppExpr (svref pV29 0)) 
+                         (cons 
+                          (JAVA::toPretty ") ") 
+                          (cons (JAVA::ppStmt (svref pV29 1)) nil))))) 
+                      (block 
+                       nil 
+                       (if (eq (car pV49) :|None|) 
+                           (return nil) 
+                           (if (eq (car pV49) :|Some|) 
+                               (return 
+                                (cons 
+                                 (JAVA::toPretty "else ") 
+                                 (cons (JAVA::ppStmt (cdr pV49)) nil))))) 
+                       (error "Nonexhaustive match failure in ppStmt"))))))) 
+               (if (eq (car st) :|For|) 
+                   (let ((pV28 (cdr st))) 
+                     (return 
+                      (PRETTYPRINT::prettysAll 
+                       (cons 
+                        (PRETTYPRINT::prettysNone 
+                         (cons 
+                          (JAVA::toPretty "for ( ") 
+                          (cons 
+                           (JAVA::ppOptForInit (svref pV28 0)) 
+                           (cons 
+                            (JAVA::toPretty "; ") 
+                            (cons 
+                             (JAVA::ppOptExpr (svref pV28 1)) 
+                             (cons 
+                              (JAVA::toPretty "; ") 
+                              (cons 
+                               (JAVA::ppOptForUpdate (svref pV28 2)) 
+                               (cons (JAVA::toPretty " )") nil)))))))) 
+                        (cons (JAVA::ppStmt (svref pV28 3)) nil))))) 
+                   (if (eq (car st) :|While|) 
+                       (let ((pV27 (cdr st))) 
+                         (return 
+                          (PRETTYPRINT::prettysAll 
+                           (cons 
+                            (PRETTYPRINT::prettysLinear 
+                             (cons 
+                              (JAVA::toPretty "while ( ") 
+                              (cons 
+                               (JAVA::ppExpr (car pV27)) 
+                               (cons (JAVA::toPretty " ) ") nil)))) 
+                            (cons (JAVA::ppStmt (cdr pV27)) nil))))) 
+                       (if (eq (car st) :|Do|) 
+                           (let ((pV26 (cdr st))) 
+                             (return 
+                              (PRETTYPRINT::prettysLinear 
+                               (cons 
+                                (PRETTYPRINT::prettysNone 
+                                 (cons 
+                                  (JAVA::toPretty "do ") 
+                                  (cons 
+                                   (JAVA::ppStmt (car pV26)) 
+                                   (cons (JAVA::toPretty " ") nil)))) 
+                                (cons 
+                                 (JAVA::toPretty "while ( ") 
+                                 (cons 
+                                  (JAVA::ppExpr (cdr pV26)) 
+                                  (cons (JAVA::toPretty " )") nil))))))) 
+                           (if (eq (car st) :|Try|) 
+                               (let ((pV25 (cdr st))) 
+                                 (let ((pV38 (svref pV25 2))) 
+                                   (return 
+                                    (let ((try 
+                                           (cons 
+                                            (JAVA::toPretty "try { ") 
+                                            (cons 
+                                             (PRETTYPRINT::prettysNone 
+                                              (cons 
+                                               (JAVA::toPretty "  ") 
+                                               (cons 
+                                                (JAVA::ppBlock (svref pV25 0)) 
+                                                nil))) 
+                                             nil)))) 
+                                      (let ((cat 
+                                             (LIST-SPEC::|!map|-1-1 
+                                              #'(lambda (x) 
+                                                 (PRETTYPRINT::prettysAll 
+                                                  (cons 
+                                                   (PRETTYPRINT::prettysNone 
+                                                    (cons 
+                                                     (JAVA::toPretty 
+                                                      "} catch ( ") 
+                                                     (cons 
+                                                      (JAVA::ppFormPar-1 (car x)) 
+                                                      (cons 
+                                                       (JAVA::toPretty " ) {") 
+                                                       nil)))) 
+                                                   (cons 
+                                                    (PRETTYPRINT::prettysNone 
+                                                     (cons 
+                                                      (JAVA::toPretty "  ") 
+                                                      (cons 
+                                                       (JAVA::ppBlock (cdr x)) 
+                                                       nil))) 
+                                                    nil)))) 
+                                              (svref pV25 1)))) 
+                                        (let ((fin 
+                                               (block 
+                                                nil 
+                                                (if (eq (car pV38) :|None|) 
+                                                    (return nil) 
+                                                    (if (eq (car pV38) :|Some|) 
+                                                        (let ((pV8 (cdr pV38))) 
+                                                          (return 
+                                                           (block 
+                                                            nil 
+                                                            (if (null pV8) 
+                                                                (return nil)) 
+                                                            (return 
+                                                             (cons 
+                                                              (JAVA::toPretty 
+                                                               "} finally {") 
+                                                              (cons 
+                                                               (PRETTYPRINT::prettysNone 
+                                                                (cons 
+                                                                 (JAVA::toPretty 
+                                                                  "  ") 
+                                                                 (cons 
+                                                                  (JAVA::ppBlock 
+                                                                   pV8) 
+                                                                  nil))) 
+                                                               nil)))))))) 
+                                                (error 
+                                                 "Nonexhaustive match failure in ppStmt")))) 
+                                          (PRETTYPRINT::prettysAll 
+                                           (LIST-SPEC::flatten 
+                                            (cons 
+                                             try 
+                                             (cons 
+                                              cat 
+                                              (cons 
+                                               fin 
+                                               (cons 
+                                                (cons (JAVA::toPretty "}") nil) 
+                                                nil)))))))))))) 
+                               (if (eq (car st) :|Switch|) 
+                                   (let ((pV24 (cdr st))) 
+                                     (return 
+                                      (PRETTYPRINT::prettysNone 
+                                       (cons 
+                                        (JAVA::toPretty "switch (") 
+                                        (cons 
+                                         (JAVA::ppExpr (car pV24)) 
+                                         (cons 
+                                          (JAVA::toPretty " ) ") 
+                                          (cons 
+                                           (JAVA::ppSwitchBlock (cdr pV24)) 
+                                           nil))))))) 
+                                   (if (eq (car st) :|Synchronized|) 
+                                       (let ((pV23 (cdr st))) 
+                                         (let ((pV33 (cdr pV23))) 
+                                           (return 
+                                            (let ((hd 
+                                                   (PRETTYPRINT::prettysNone 
+                                                    (cons 
+                                                     (JAVA::toPretty 
+                                                      "synchronized ( ") 
+                                                     (cons 
+                                                      (JAVA::ppExpr (car pV23)) 
+                                                      (cons 
+                                                       (JAVA::toPretty " ) { ") 
+                                                       nil)))))) 
+                                              (block 
+                                               nil 
+                                               (if (null pV33) 
+                                                   (return 
+                                                    (PRETTYPRINT::prettysNone 
+                                                     (cons 
+                                                      hd 
+                                                      (cons 
+                                                       (JAVA::toPretty "}") 
+                                                       nil))))) 
+                                               (return 
+                                                (PRETTYPRINT::prettysAll 
+                                                 (cons 
+                                                  hd 
+                                                  (cons 
+                                                   (PRETTYPRINT::prettysNone 
+                                                    (cons 
+                                                     (JAVA::toPretty "  ") 
+                                                     (cons 
+                                                      (JAVA::ppBlock pV33) 
+                                                      nil))) 
+                                                   (cons 
+                                                    (JAVA::toPretty "}") 
+                                                    nil)))))))))) 
+                                       (if (eq (car st) :|Return|) 
+                                           (let ((pV22 (cdr st))) 
+                                             (return 
+                                              (PRETTYPRINT::prettysNone 
+                                               (cons 
+                                                (JAVA::toPretty "return") 
+                                                (cons 
+                                                 (block 
+                                                  nil 
+                                                  (if (eq (car pV22) :|None|) 
+                                                      (return 
+                                                       (PRETTYPRINT::emptyPretty)) 
+                                                      (if (eq (car pV22) :|Some|) 
+                                                          (return 
+                                                           (PRETTYPRINT::prettysNone 
+                                                            (cons 
+                                                             (JAVA::toPretty 
+                                                              " ( ") 
+                                                             (cons 
+                                                              (JAVA::ppExpr 
+                                                               (cdr pV22)) 
+                                                              (cons 
+                                                               (JAVA::toPretty 
+                                                                " ) ") 
+                                                               nil))))))) 
+                                                  (error 
+                                                   "Nonexhaustive match failure in ppStmt")) 
+                                                 (cons (JAVA::toPretty ";") nil)))))) 
+                                           (if (eq (car st) :|Throw|) 
+                                               (return 
+                                                (PRETTYPRINT::prettysNone 
+                                                 (cons 
+                                                  (JAVA::toPretty "throw ") 
+                                                  (cons 
+                                                   (JAVA::ppExpr (cdr st)) 
+                                                   (cons 
+                                                    (JAVA::toPretty ";") 
+                                                    nil))))) 
+                                               (if (eq (car st) :|Break|) 
+                                                   (let ((pV20 (cdr st))) 
+                                                     (return 
+                                                      (PRETTYPRINT::prettysNone 
+                                                       (cons 
+                                                        (JAVA::toPretty "break") 
+                                                        (cons 
+                                                         (block 
+                                                          nil 
+                                                          (if (eq 
+                                                               (car pV20) 
+                                                               :|None|) 
+                                                              (return 
+                                                               (PRETTYPRINT::emptyPretty)) 
+                                                              (if (eq 
+                                                                   (car pV20) 
+                                                                   :|Some|) 
+                                                                  (return 
+                                                                   (JAVA::toPretty 
+                                                                    (STRING-SPEC::concat 
+                                                                     " " 
+                                                                     (cdr pV20)))))) 
+                                                          (error 
+                                                           "Nonexhaustive match failure in ppStmt")) 
+                                                         (cons 
+                                                          (JAVA::toPretty ";") 
+                                                          nil)))))) 
+                                                   (if (eq (car st) :|Continue|) 
+                                                       (let ((pV19 (cdr st))) 
+                                                         (return 
+                                                          (PRETTYPRINT::prettysNone 
+                                                           (cons 
+                                                            (JAVA::toPretty 
+                                                             "continue") 
+                                                            (cons 
+                                                             (block 
+                                                              nil 
+                                                              (if (eq 
+                                                                   (car pV19) 
+                                                                   :|None|) 
+                                                                  (return 
+                                                                   (PRETTYPRINT::emptyPretty)) 
+                                                                  (if (eq 
+                                                                       (car pV19) 
+                                                                       :|Some|) 
+                                                                      (return 
+                                                                       (JAVA::toPretty 
+                                                                        (STRING-SPEC::concat 
+                                                                         " " 
+                                                                         (cdr 
+                                                                          pV19)))))) 
+                                                              (error 
+                                                               "Nonexhaustive match failure in ppStmt")) 
+                                                             (cons 
+                                                              (JAVA::toPretty 
+                                                               ";") 
+                                                              nil)))))) 
+                                                       (if (eq (car st) :|Expr|) 
+                                                           (return 
+                                                            (PRETTYPRINT::prettysNone 
+                                                             (cons 
+                                                              (JAVA::ppExpr 
+                                                               (cdr st)) 
+                                                              (cons 
+                                                               (JAVA::toPretty 
+                                                                ";") 
+                                                               nil)))) 
+                                                           (if (eq 
+                                                                (car st) 
+                                                                :|Empty|) 
+                                                               (return 
+                                                                (JAVA::toPretty 
+                                                                 ";"))))))))))))))))) 
+   (error "Nonexhaustive match failure in ppStmt")))
+
+(defun JAVA::ppBlockStmt (bs) 
+  (block 
+   nil 
+   (if (eq (car bs) :|LocVarDecl|) 
+       (return 
+        (PRETTYPRINT::prettysNone 
+         (cons (JAVA::ppLocVarDecl-1 (cdr bs)) (cons (JAVA::toPretty ";") nil)))) 
+       (if (eq (car bs) :|ClsDecl|) 
+           (return (JAVA::ppClsDecl-1 (cdr bs))) 
+           (if (eq (car bs) :|Stmt|) (return (JAVA::ppStmt (cdr bs)))))) 
+   (error "Nonexhaustive match failure in ppBlockStmt")))
+
+(defun JAVA::ppBlock (bss) 
+  (PRETTYPRINT::prettysAll (LIST-SPEC::|!map|-1-1 #'JAVA::ppBlockStmt bss)))
+
+(defun JAVA::ppFormPars (fps) 
+  (PRETTYPRINT::prettysNone 
+   (JAVA::addPrettys 
+    (LIST-SPEC::|!map|-1-1 #'JAVA::ppFormPar-1 fps) 
+    (JAVA::toPretty ", "))))
+
+(defun JAVA::ppThrows (ns) 
+  (PRETTYPRINT::prettysNone 
+   (JAVA::addPrettys 
+    (LIST-SPEC::|!map|-1-1 #'JAVA::ppName-1 ns) 
+    (JAVA::toPretty ", "))))
+
+(defun JAVA::ppConstrDecl (|!ms| id fps thrs bk) 
+  (let ((hd 
+         (PRETTYPRINT::prettysNone 
+          (cons 
+           (JAVA::ppMods |!ms|) 
+           (cons 
+            (JAVA::toPretty id) 
+            (cons 
+             (JAVA::toPretty " (") 
+             (cons 
+              (JAVA::ppFormPars fps) 
+              (cons 
+               (JAVA::toPretty ")") 
+               (cons 
+                (if (slang-built-in::slang-term-equals thrs nil) 
+                    (PRETTYPRINT::emptyPretty) 
+                    (PRETTYPRINT::prettysNone 
+                     (cons 
+                      (JAVA::toPretty " throws ") 
+                      (cons (JAVA::ppThrows thrs) nil)))) 
+                nil))))))))) 
+    (block 
+     nil 
+     (if (null bk) 
+         (return 
+          (PRETTYPRINT::prettysNone (cons hd (cons (JAVA::toPretty " { }") nil))))) 
+     (return 
+      (PRETTYPRINT::prettysAll 
+       (cons 
+        (PRETTYPRINT::prettysNone (cons hd (cons (JAVA::toPretty " {") nil))) 
+        (cons (JAVA::ppBlock bk) (cons (JAVA::toPretty "}") nil))))))))
+
+(defun JAVA::ppConstrDecl-1 (x) 
+  (JAVA::ppConstrDecl 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JAVA::ppFldDecl (|!ms| |!t| vd vds) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::ppMods |!ms|) 
+    (cons 
+     (JAVA::ppType-1 |!t|) 
+     (cons 
+      (JAVA::toPretty " ") 
+      (cons (JAVA::ppVarDecl-1 vd) (cons (JAVA::toPretty ";") nil)))))))
+
+(defun JAVA::ppFldDecl-1 (x) 
+  (JAVA::ppFldDecl (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun JAVA::ppMethHeader (|!ms| rt id fps thrs) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::ppMods |!ms|) 
+    (cons 
+     (block 
+      nil 
+      (if (eq (car rt) :|None|) 
+          (return (JAVA::toPretty "void")) 
+          (if (eq (car rt) :|Some|) (return (JAVA::ppType-1 (cdr rt))))) 
+      (error "Nonexhaustive match failure in ppMethHeader")) 
+     (cons 
+      (JAVA::toPretty " ") 
+      (cons 
+       (JAVA::toPretty id) 
+       (cons 
+        (JAVA::toPretty " (") 
+        (cons 
+         (JAVA::ppFormPars fps) 
+         (cons 
+          (JAVA::toPretty ")") 
+          (cons 
+           (if (slang-built-in::slang-term-equals thrs nil) 
+               (PRETTYPRINT::emptyPretty) 
+               (PRETTYPRINT::prettysNone 
+                (cons 
+                 (JAVA::toPretty " throws ") 
+                 (cons (JAVA::ppThrows thrs) nil)))) 
+           nil))))))))))
+
+(defun JAVA::ppMethHeader-1 (x) 
+  (JAVA::ppMethHeader 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4)))
+
+(defun JAVA::ppInterfBody-1 (ib) 
+  (PRETTYPRINT::prettysAll 
+   (JAVA::addEmptys 
+    (LIST-SPEC::flatten 
+     (cons 
+      (LIST-SPEC::|!map|-1-1 #'JAVA::ppFldDecl-1 (svref ib 1)) 
+      (cons 
+       (LIST-SPEC::|!map|-1-1 
+        #'(lambda (mh) 
+           (PRETTYPRINT::prettysNone 
+            (cons (JAVA::ppMethHeader-1 mh) (cons (JAVA::toPretty ";") nil)))) 
+        (svref ib 3)) 
+       (cons 
+        (LIST-SPEC::|!map|-1-1 #'JAVA::ppClsDecl-1 (svref ib 0)) 
+        (cons (LIST-SPEC::|!map|-1-1 #'JAVA::ppInterfDecl-1 (svref ib 2)) nil))))))))
+
+
+(defun JAVA::ppInterfHeader (id sis) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::toPretty "interface ") 
+    (cons 
+     (JAVA::toPretty id) 
+     (cons 
+      (JAVA::toPretty 
+       (if (slang-built-in::slang-term-equals sis nil) "" " extends ")) 
+      (cons (JAVA::ppSuperInterf sis) nil))))))
+
+(defun JAVA::ppInterfHeader-1 (x) (JAVA::ppInterfHeader (car x) (cdr x)))
+
+(defun JAVA::ppInterfDecl (|!ms| ih ib) 
+  (PRETTYPRINT::prettysAll 
+   (LIST-SPEC::|!cons| 
+    (PRETTYPRINT::prettysNone 
+     (cons 
+      (JAVA::ppMods |!ms|) 
+      (cons 
+       (JAVA::ppInterfHeader-1 ih) 
+       (cons (JAVA::toPretty " ") (cons (JAVA::toPretty "{") nil))))) 
+    (if (JAVA::isEmptyInterfBody-1 ib) 
+        (cons (JAVA::toPretty "}") nil) 
+        (cons 
+         (PRETTYPRINT::emptyPretty) 
+         (cons 
+          (PRETTYPRINT::prettysNone 
+           (cons (JAVA::toPretty "  ") (cons (JAVA::ppInterfBody-1 ib) nil))) 
+          (cons (PRETTYPRINT::emptyPretty) (cons (JAVA::toPretty "}") nil))))))))
+
+
+(defun JAVA::ppInterfDecl-1 (x) 
+  (JAVA::ppInterfDecl (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::ppMethDecl (mh obk) 
+  (block 
+   nil 
+   (if (eq (car obk) :|None|) 
+       (return 
+        (PRETTYPRINT::prettysNone 
+         (cons (JAVA::ppMethHeader-1 mh) (cons (JAVA::toPretty ";") nil)))) 
+       (if (eq (car obk) :|Some|) 
+           (let ((pV4 (cdr obk))) 
+             (return 
+              (block 
+               nil 
+               (if (null pV4) 
+                   (return 
+                    (PRETTYPRINT::prettysNone 
+                     (cons 
+                      (JAVA::ppMethHeader-1 mh) 
+                      (cons (JAVA::toPretty " { }") nil))))) 
+               (return 
+                (PRETTYPRINT::prettysAll 
+                 (cons 
+                  (PRETTYPRINT::prettysNone 
+                   (cons 
+                    (JAVA::ppMethHeader-1 mh) 
+                    (cons (JAVA::toPretty " {") nil))) 
+                  (cons (JAVA::ppBlock pV4) (cons (JAVA::toPretty "}") nil)))))))))) 
+   (error "Nonexhaustive match failure in ppMethDecl")))
+
+(defun JAVA::ppMethDecl-1 (x) (JAVA::ppMethDecl (car x) (cdr x)))
+
+(defun JAVA::ppStaticInits (bk) 
+  (block 
+   nil 
+   (if (null bk) (return (JAVA::toPretty "static { }"))) 
+   (return 
+    (PRETTYPRINT::prettysAll 
+     (cons 
+      (JAVA::toPretty "static {") 
+      (cons (JAVA::ppBlock bk) (cons (JAVA::toPretty "}") nil)))))))
+
+(defun JAVA::ppClsBody-1 (cb) 
+  (PRETTYPRINT::prettysAll 
+   (JAVA::addEmptys 
+    (LIST-SPEC::flatten 
+     (cons 
+      (LIST-SPEC::|!map|-1-1 #'JAVA::ppStaticInits (svref cb 5)) 
+      (cons 
+       (LIST-SPEC::|!map|-1-1 #'JAVA::ppFldDecl-1 (svref cb 2)) 
+       (cons 
+        (LIST-SPEC::|!map|-1-1 #'JAVA::ppConstrDecl-1 (svref cb 1)) 
+        (cons 
+         (LIST-SPEC::|!map|-1-1 #'JAVA::ppMethDecl-1 (svref cb 4)) 
+         (cons 
+          (LIST-SPEC::|!map|-1-1 #'JAVA::ppClsDecl-1 (svref cb 0)) 
+          (cons (LIST-SPEC::|!map|-1-1 #'JAVA::ppInterfDecl-1 (svref cb 3)) nil))))))))))
+
+
+(defun JAVA::ppNewClsInst (nw) 
+  (block 
+   nil 
+   (if (eq (car nw) :|ForCls|) 
+       (let ((pV6 (cdr nw))) 
+         (let ((pV13 (svref pV6 2))) 
+           (return 
+            (PRETTYPRINT::prettysNone 
+             (cons 
+              (JAVA::toPretty "new ") 
+              (cons 
+               (JAVA::ppName-1 (svref pV6 0)) 
+               (cons 
+                (JAVA::toPretty "(") 
+                (cons 
+                 (PRETTYPRINT::prettysNone 
+                  (JAVA::addPrettys 
+                   (LIST-SPEC::|!map|-1-1 #'JAVA::ppExpr (svref pV6 1)) 
+                   (JAVA::toPretty ","))) 
+                 (cons 
+                  (JAVA::toPretty ")") 
+                  (cons 
+                   (block 
+                    nil 
+                    (if (eq (car pV13) :|None|) 
+                        (return (PRETTYPRINT::emptyPretty)) 
+                        (if (eq (car pV13) :|Some|) 
+                            (return 
+                             (PRETTYPRINT::prettysAll 
+                              (cons 
+                               (JAVA::toPretty "{") 
+                               (cons 
+                                (JAVA::ppClsBody-1 (cdr pV13)) 
+                                (cons (JAVA::toPretty "}") nil))))))) 
+                    (error "Nonexhaustive match failure in ppNewClsInst")) 
+                   nil)))))))))) 
+       (if (eq (car nw) :|ForInnCls|) 
+           (let ((pV5 (cdr nw))) 
+             (return 
+              (PRETTYPRINT::prettysNone 
+               (cons 
+                (JAVA::toPretty "new ") 
+                (cons 
+                 (JAVA::ppPrim (svref pV5 0)) 
+                 (cons 
+                  (JAVA::toPretty ".") 
+                  (cons 
+                   (JAVA::toPretty (svref pV5 1)) 
+                   (cons 
+                    (JAVA::toPretty "(") 
+                    (cons 
+                     (PRETTYPRINT::prettysNone 
+                      (JAVA::addPrettys 
+                       (LIST-SPEC::|!map|-1-1 #'JAVA::ppExpr (svref pV5 2)) 
+                       (JAVA::toPretty ","))) 
+                     (cons 
+                      (JAVA::toPretty ")") 
+                      (cons 
+                       (block 
+                        nil 
+                        (if (eq (car (svref pV5 3)) :|None|) 
+                            (return (PRETTYPRINT::emptyPretty))) 
+                        (error "Nonexhaustive match failure in ppNewClsInst")) 
+                       nil))))))))))))) 
+   (error "Nonexhaustive match failure in ppNewClsInst")))
+
+(defun JAVA::ppPrim (pm) 
+  (block 
+   nil 
+   (if (eq (car pm) :|Name|) 
+       (return (JAVA::ppName-1 (cdr pm))) 
+       (if (eq (car pm) :|IntL|) 
+           (return (JAVA::toPretty (INTEGER-SPEC::toString (cdr pm)))) 
+           (if (eq (car pm) :|Float|) 
+               (let ((pV17 (cdr pm))) 
+                 (return 
+                  (PRETTYPRINT::prettysNone 
+                   (cons 
+                    (JAVA::toPretty (INTEGER-SPEC::toString (car pV17))) 
+                    (cons 
+                     (JAVA::toPretty ".") 
+                     (cons 
+                      (JAVA::toPretty (INTEGER-SPEC::toString (cdr pV17))) 
+                      nil)))))) 
+               (if (eq (car pm) :|Bool|) 
+                   (return (JAVA::toPretty (BOOLEAN-SPEC::toString (cdr pm)))) 
+                   (if (eq (car pm) :|Char|) 
+                       (return (JAVA::toPretty (CHAR-SPEC::toString (cdr pm)))) 
+                       (if (eq (car pm) :|String|) 
+                           (return 
+                            (JAVA::toPretty 
+                             (JAVA::concatList 
+                              (cons "\"" (cons (cdr pm) (cons "\"" nil)))))) 
+                           (if (eq (car pm) :|Null|) 
+                               (return (JAVA::toPretty "null")) 
+                               (if (eq (car pm) :|ClsInst|) 
+                                   (let ((pV13 (cdr pm))) 
+                                     (return 
+                                      (PRETTYPRINT::prettysNone 
+                                       (cons 
+                                        (block 
+                                         nil 
+                                         (if (eq (car pV13) :|None|) 
+                                             (return (JAVA::toPretty "void")) 
+                                             (if (eq (car pV13) :|Some|) 
+                                                 (return 
+                                                  (JAVA::ppType-1 (cdr pV13))))) 
+                                         (error 
+                                          "Nonexhaustive match failure in ppPrim")) 
+                                        (cons (JAVA::toPretty ".class") nil))))) 
+                                   (if (eq (car pm) :|This|) 
+                                       (let ((pV12 (cdr pm))) 
+                                         (return 
+                                          (block 
+                                           nil 
+                                           (if (eq (car pV12) :|None|) 
+                                               (return (JAVA::toPretty "this")) 
+                                               (if (eq (car pV12) :|Some|) 
+                                                   (return 
+                                                    (PRETTYPRINT::prettysNone 
+                                                     (cons 
+                                                      (JAVA::ppName-1 (cdr pV12)) 
+                                                      (cons 
+                                                       (JAVA::toPretty "this") 
+                                                       nil)))))) 
+                                           (error 
+                                            "Nonexhaustive match failure in ppPrim")))) 
+                                       (if (eq (car pm) :|Paren|) 
+                                           (return 
+                                            (PRETTYPRINT::prettysNone 
+                                             (cons (JAVA::ppExpr (cdr pm)) nil))) 
+                                           (if (eq (car pm) :|NewClsInst|) 
+                                               (return 
+                                                (JAVA::ppNewClsInst (cdr pm))) 
+                                               (if (eq (car pm) :|NewArr|) 
+                                                   (return 
+                                                    (JAVA::ppNewArr (cdr pm))) 
+                                                   (if (eq (car pm) :|FldAcc|) 
+                                                       (return 
+                                                        (JAVA::ppFldAcc (cdr pm))) 
+                                                       (if (eq 
+                                                            (car pm) 
+                                                            :|MethInv|) 
+                                                           (return 
+                                                            (JAVA::ppMethInv 
+                                                             (cdr pm))) 
+                                                           (if (eq 
+                                                                (car pm) 
+                                                                :|ArrAcc|) 
+                                                               (return 
+                                                                (JAVA::ppArrAcc 
+                                                                 (cdr pm)))))))))))))))))) 
+   (error "Nonexhaustive match failure in ppPrim")))
+
+(defun JAVA::ppFldAcc (fac) 
+  (block 
+   nil 
+   (if (eq (car fac) :|ViaPrim|) 
+       (let ((pV4 (cdr fac))) 
+         (return 
+          (PRETTYPRINT::prettysNone 
+           (cons 
+            (JAVA::ppPrim (car pV4)) 
+            (cons (JAVA::toPretty ".") (cons (JAVA::toPretty (cdr pV4)) nil)))))) 
+       (if (eq (car fac) :|ViaSuper|) 
+           (return (JAVA::toPretty (STRING-SPEC::concat "super." (cdr fac)))) 
+           (if (eq (car fac) :|ViaCls|) 
+               (let ((pV2 (cdr fac))) 
+                 (return 
+                  (PRETTYPRINT::prettysNone 
+                   (cons 
+                    (JAVA::ppName-1 (car pV2)) 
+                    (cons 
+                     (JAVA::toPretty (STRING-SPEC::concat ".super." (cdr pV2))) 
+                     nil)))))))) 
+   (error "Nonexhaustive match failure in ppFldAcc")))
+
+(defun JAVA::ppLHS (l) 
+  (block 
+   nil 
+   (if (eq (car l) :|Name|) 
+       (return (JAVA::ppName-1 (cdr l))) 
+       (if (eq (car l) :|FldAcc|) 
+           (return (JAVA::ppFldAcc (cdr l))) 
+           (if (eq (car l) :|ArrAcc|) (return (JAVA::ppArrAcc (cdr l)))))) 
+   (error "Nonexhaustive match failure in ppLHS")))
+
+(defun JAVA::ppAss (l o e) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::ppLHS l) 
+    (cons 
+     (JAVA::toPretty " ") 
+     (cons 
+      (JAVA::ppAssOp o) 
+      (cons (JAVA::toPretty " ") (cons (JAVA::ppExpr e) nil)))))))
+
+(defun JAVA::ppAss-1 (x) (JAVA::ppAss (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::ppBinOp (o) (JAVA::toPretty (JAVA::binOpToString o)))
+
+(defun JAVA::ppPostUnOp (o) (JAVA::toPretty (JAVA::postUnOpToString o)))
+
+(defun JAVA::unOpToString (o) 
+  (block 
+   nil 
+   (if (eq (car o) :|Plus|) 
+       (return "+") 
+       (if (eq (car o) :|Minus|) 
+           (return "-") 
+           (if (eq (car o) :|PreInc|) 
+               (return "++") 
+               (if (eq (car o) :|PreDec|) 
+                   (return "--") 
+                   (if (eq (car o) :|BitNot|) 
+                       (return "~") 
+                       (if (eq (car o) :|LogNot|) (return "!"))))))) 
+   (error "Nonexhaustive match failure in unOpToString")))
+
+(defun JAVA::ppUnOp (o) (JAVA::toPretty (JAVA::unOpToString o)))
+
+(defun JAVA::ppUnExp (ue) 
+  (block 
+   nil 
+   (if (eq (car ue) :|Un|) 
+       (let ((pV5 (cdr ue))) 
+         (return 
+          (PRETTYPRINT::prettysNone 
+           (cons 
+            (JAVA::toPretty "( ") 
+            (cons 
+             (JAVA::ppUnOp (car pV5)) 
+             (cons 
+              (JAVA::toPretty " ") 
+              (cons (JAVA::ppUnExp (cdr pV5)) (cons (JAVA::toPretty " )") nil)))))))) 
+       (if (eq (car ue) :|Cast|) 
+           (let ((pV4 (cdr ue))) 
+             (return 
+              (PRETTYPRINT::prettysNone 
+               (cons 
+                (JAVA::toPretty "(") 
+                (cons 
+                 (JAVA::ppType-1 (car pV4)) 
+                 (cons (JAVA::toPretty ")") (cons (JAVA::ppUnExp (cdr pV4)) nil))))))) 
+           (if (eq (car ue) :|PostUn|) 
+               (let ((pV3 (cdr ue))) 
+                 (return 
+                  (PRETTYPRINT::prettysNone 
+                   (cons 
+                    (JAVA::ppUnExp (car pV3)) 
+                    (cons (JAVA::ppPostUnOp (cdr pV3)) nil))))) 
+               (if (eq (car ue) :|Prim|) (return (JAVA::ppPrim (cdr ue))))))) 
+   (error "Nonexhaustive match failure in ppUnExp")))
+
+(defun JAVA::ppBinExp (be) 
+  (block 
+   nil 
+   (if (eq (car be) :|Bin|) 
+       (let ((pV4 (cdr be))) 
+         (return 
+          (PRETTYPRINT::prettysNone 
+           (cons 
+            (JAVA::toPretty "( ") 
+            (cons 
+             (JAVA::ppBinExp (svref pV4 1)) 
+             (cons 
+              (JAVA::toPretty " ") 
+              (cons 
+               (JAVA::ppBinOp (svref pV4 0)) 
+               (cons 
+                (JAVA::toPretty " ") 
+                (cons 
+                 (JAVA::ppBinExp (svref pV4 2)) 
+                 (cons (JAVA::toPretty " )") nil)))))))))) 
+       (if (eq (car be) :|InstOf|) 
+           (let ((pV3 (cdr be))) 
+             (return 
+              (PRETTYPRINT::prettysNone 
+               (cons 
+                (JAVA::toPretty "( ") 
+                (cons 
+                 (JAVA::ppBinExp (car pV3)) 
+                 (cons 
+                  (JAVA::toPretty " instanceof ") 
+                  (cons 
+                   (JAVA::ppType-1 (cdr pV3)) 
+                   (cons (JAVA::toPretty " )") nil)))))))) 
+           (if (eq (car be) :|Un|) (return (JAVA::ppUnExp (cdr be)))))) 
+   (error "Nonexhaustive match failure in ppBinExp")))
+
+(defun JAVA::ppCondExp (be |!rest|) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::ppBinExp be) 
+    (cons 
+     (block 
+      nil 
+      (if (eq (car |!rest|) :|None|) 
+          (return (PRETTYPRINT::emptyPretty)) 
+          (if (eq (car |!rest|) :|Some|) 
+              (let ((pV2 (cdr |!rest|))) 
+                (return 
+                 (PRETTYPRINT::prettysNone 
+                  (cons 
+                   (JAVA::toPretty " ? ") 
+                   (cons 
+                    (JAVA::ppExpr (car pV2)) 
+                    (cons 
+                     (JAVA::toPretty " : ") 
+                     (cons (JAVA::ppCondExp-1 (cdr pV2)) nil))))))))) 
+      (error "Nonexhaustive match failure in ppCondExp")) 
+     nil))))
+
+(defun JAVA::ppCondExp-1 (x) (JAVA::ppCondExp (car x) (cdr x)))
+
+(defun JAVA::ppExpr (e) 
+  (block 
+   nil 
+   (if (eq (car e) :|Ass|) 
+       (return (JAVA::ppAss-1 (cdr e))) 
+       (if (eq (car e) :|CondExp|) (return (JAVA::ppCondExp-1 (cdr e))))) 
+   (error "Nonexhaustive match failure in ppExpr")))
+
+(defun JAVA::ppArrAcc (aa) 
+  (block 
+   nil 
+   (if (eq (car aa) :|ViaName|) 
+       (let ((pV3 (cdr aa))) 
+         (return 
+          (PRETTYPRINT::prettysNone 
+           (cons 
+            (JAVA::ppName-1 (car pV3)) 
+            (cons 
+             (JAVA::toPretty " [ ") 
+             (cons (JAVA::ppExpr (cdr pV3)) (cons (JAVA::toPretty " ]") nil))))))) 
+       (if (eq (car aa) :|ViaNoNewArray|) 
+           (let ((pV2 (cdr aa))) 
+             (return 
+              (PRETTYPRINT::prettysNone 
+               (cons 
+                (JAVA::ppPrim (car pV2)) 
+                (cons 
+                 (JAVA::toPretty " [ ") 
+                 (cons (JAVA::ppExpr (cdr pV2)) (cons (JAVA::toPretty " ]") nil))))))))) 
+   (error "Nonexhaustive match failure in ppArrAcc")))
+
+(defun JAVA::ppClsBody (x0 x1 x2 x3 x4 x5) 
+  (JAVA::ppClsBody-1 (vector x0 x1 x2 x3 x4 x5)))
+
+(defun JAVA::ppClsOrInterfDecl (cid) 
+  (block 
+   nil 
+   (if (eq (car cid) :|ClsDecl|) 
+       (return (JAVA::ppClsDecl-1 (cdr cid))) 
+       (if (eq (car cid) :|InterfDecl|) 
+           (return (JAVA::ppInterfDecl-1 (cdr cid))))) 
+   (error "Nonexhaustive match failure in ppClsOrInterfDecl")))
+
+(defun JAVA::ppImports (ims) 
+  (PRETTYPRINT::prettysAll 
+   (LIST-SPEC::|!map|-1-1 
+    #'(lambda (nm) 
+       (PRETTYPRINT::prettysNone 
+        (cons 
+         (JAVA::toPretty "import ") 
+         (cons (JAVA::ppName-1 nm) (cons (JAVA::toPretty ";") nil))))) 
+    ims)))
+
+(defun JAVA::ppPackageName-1 (nm) 
+  (PRETTYPRINT::prettysNone 
+   (cons 
+    (JAVA::toPretty "package ") 
+    (cons (JAVA::ppName-1 nm) (cons (JAVA::toPretty ";") nil)))))
+
+(defun JAVA::ppCompUnit (pn ims cids) 
+  (let ((pnps 
+         (block 
+          nil 
+          (if (eq (car pn) :|None|) 
+              (return nil) 
+              (if (eq (car pn) :|Some|) 
+                  (return 
+                   (JAVA::addEmpty (cons (JAVA::ppPackageName-1 (cdr pn)) nil))))) 
+          (error "Nonexhaustive match failure in ppCompUnit")))) 
+    (let ((imsps 
+           (if (slang-built-in::slang-term-equals ims nil) 
+               nil 
+               (JAVA::addEmpty (cons (JAVA::ppImports ims) nil))))) 
+      (PRETTYPRINT::prettysAll 
+       (LIST-SPEC::flatten 
+        (cons 
+         pnps 
+         (cons 
+          imsps 
+          (cons 
+           (JAVA::addEmpty 
+            (JAVA::addEmptys 
+             (LIST-SPEC::|!map|-1-1 #'JAVA::ppClsOrInterfDecl cids))) 
+           nil))))))))
+
+(defun JAVA::ppCompUnit-1 (x) 
+  (JAVA::ppCompUnit (svref x 0) (svref x 1) (svref x 2)))
+
+(defun JAVA::ppInterfBody (x0 x1 x2 x3) 
+  (JAVA::ppInterfBody-1 (vector x0 x1 x2 x3)))
+
+(defun JAVA::ppPackageName (x0 x1) (JAVA::ppPackageName-1 (cons x0 x1)))
+
+(defun JAVA::qualName-1 (x) (JAVA::qualName (car x) (cdr x)))
+
+(defun JAVA::testcls1 (n) 
+  (PRETTYPRINT::toTerminal 
+   (PRETTYPRINT::|!format| n (JAVA::ppCompUnit-1 (JAVA::clsDecl1)))))
+
+(defun JAVA::testitf1 (n) 
+  (PRETTYPRINT::toTerminal 
+   (PRETTYPRINT::|!format| n (JAVA::ppCompUnit-1 (JAVA::itfDecl1)))))
+
 (defun LIST-SPEC::|!++|-1 (x) (LIST-SPEC::|!++| (car x) (cdr x)))
 
 (defun LIST-SPEC::@-1 (x) (LIST-SPEC::@ (car x) (cdr x)))
@@ -14763,12 +21358,6 @@
 (defun LIST-SPEC::foldr (x1) 
   #'(lambda (x2) #'(lambda (x3) (LIST-SPEC::foldr-1-1-1 x1 x2 x3))))
 
-(defun LIST-SPEC::hd (l) 
-  (block 
-   nil 
-   (if (consp l) (return (car l))) 
-   (error "Nonexhaustive match failure in hd")))
-
 (defun LIST-SPEC::insert (hd tl) (cons hd tl))
 
 (defun LIST-SPEC::insert-1 (x) (LIST-SPEC::insert (car x) (cdr x)))
@@ -14799,16 +21388,6 @@
 (defun LIST-SPEC::|!member|-1 (x) (LIST-SPEC::|!member| (car x) (cdr x)))
 
 (defparameter LIST-SPEC::|!nil| nil)
-
-(defun LIST-SPEC::|!nth| (ls i) 
-  (block 
-   nil 
-   (if (consp ls) 
-       (return 
-        (if ( =  i 0) 
-            (car ls) 
-            (LIST-SPEC::|!nth| (cdr ls) (INTEGER-SPEC::|!-| i 1))))) 
-   (error "Nonexhaustive match failure in nth")))
 
 (defun LIST-SPEC::|!nth|-1 (x) (LIST-SPEC::|!nth| (car x) (cdr x)))
 
@@ -14846,6 +21425,12 @@
 
 (defun LIST-SPEC::show (x1) #'(lambda (x2) (LIST-SPEC::show-1-1 x1 x2)))
 
+(defun LIST-SPEC::splitList (x1) 
+  #'(lambda (x2) (LIST-SPEC::splitList-1-1 x1 x2)))
+
+(defun LIST-SPEC::splitListHelper-1 (x) 
+  (LIST-SPEC::splitListHelper (svref x 0) (svref x 1) (svref x 2)))
+
 (defun LIST-SPEC::tabulate (n f) 
   (labels 
     ((tabulateRec (m tl) 
@@ -14857,12 +21442,6 @@
     (tabulateRec (INTEGER-SPEC::|!-| n 1) nil)))
 
 (defun LIST-SPEC::tabulate-1 (x) (LIST-SPEC::tabulate (car x) (cdr x)))
-
-(defun LIST-SPEC::tl (l) 
-  (block 
-   nil 
-   (if (consp l) (return (cdr l))) 
-   (error "Nonexhaustive match failure in tl")))
 
 (defun LISTADT::addDefinition (modulename defn |!lspc|) 
   (let ((mname (STRING-SPEC::|!map|-1-1 #'CHAR-SPEC::toUpperCase modulename))) 
@@ -15511,7 +22090,7 @@
      (if (consp l) 
          (if (consp r) 
              (return 
-              (lisp::and 
+              (cl::and 
                (funcall p (cons (car l) (car r))) 
                (LISTPAIR::all-1-1 p (cons (cdr l) (cdr r))))))) 
      (return t))))
@@ -15540,7 +22119,7 @@
      (if (consp l) 
          (if (consp r) 
              (return 
-              (lisp::or 
+              (cl::or 
                (funcall p (cons (car l) (car r))) 
                (LISTPAIR::|!exists|-1-1 p (cons (cdr l) (cdr r))))))) 
      (return nil))))
@@ -15657,30 +22236,6 @@
 (defun LISTUTILITIES::collectDuplicates-1 (x) 
   (LISTUTILITIES::collectDuplicates (car x) (cdr x)))
 
-(defun LISTUTILITIES::|!delete| (e l) 
-  (block 
-   nil 
-   (if (null l) 
-       (return nil) 
-       (if (consp l) 
-           (let ((pV4 (cdr l))
-                 (pV3 (car l))) 
-             (return 
-              (if (slang-built-in::slang-term-equals e pV3) 
-                  (LISTUTILITIES::|!delete| e pV4) 
-                  (cons pV3 (LISTUTILITIES::|!delete| e pV4))))))) 
-   (error "Nonexhaustive match failure in delete")))
-
-(defun LISTUTILITIES::|!delete|-1 (x) 
-  (LISTUTILITIES::|!delete| (car x) (cdr x)))
-
-(defun LISTUTILITIES::deleteNth (n ls) 
-  (if ( =  n 0) 
-      (LIST-SPEC::tl ls) 
-      (cons 
-       (LIST-SPEC::hd ls) 
-       (LISTUTILITIES::deleteNth (INTEGER-SPEC::|!-| n 1) (LIST-SPEC::tl ls)))))
-
 (defun LISTUTILITIES::deleteNth-1 (x) 
   (LISTUTILITIES::deleteNth (car x) (cdr x)))
 
@@ -15704,6 +22259,9 @@
 
 (defun LISTUTILITIES::enumerate-1 (x) 
   (LISTUTILITIES::enumerate (car x) (cdr x)))
+
+(defun LISTUTILITIES::findIndex (x1) 
+  #'(lambda (x2) (LISTUTILITIES::findIndex-1-1 x1 x2)))
 
 (defun LISTUTILITIES::findOption-1-1 (f l) 
   (block 
@@ -15782,24 +22340,6 @@
        (error "Nonexhaustive match failure in index")))) (indexRec ls 1)))
 
 (defun LISTUTILITIES::index-1 (x) (LISTUTILITIES::index (car x) (cdr x)))
-
-(defun LISTUTILITIES::insert (e l) 
-  (block 
-   nil 
-   (if (null l) 
-       (return (cons e nil)) 
-       (if (consp l) 
-           (let ((pV3 (car l))) 
-             (return 
-              (if (slang-built-in::slang-term-equals e pV3) 
-                  l 
-                  (cons pV3 (LISTUTILITIES::insert e (cdr l)))))))) 
-   (error "Nonexhaustive match failure in insert")))
-
-(defun LISTUTILITIES::insert-1 (x) (LISTUTILITIES::insert (car x) (cdr x)))
-
-(defun LISTUTILITIES::listUnion (l1 l2) 
-  (LIST-SPEC::foldr-1-1-1 #'LISTUTILITIES::insert-1 l1 l2))
 
 (defun LISTUTILITIES::listUnion-1 (x) 
   (LISTUTILITIES::listUnion (car x) (cdr x)))
@@ -16073,12 +22613,7 @@
 (defun MFSET::updateMFSetMap (x1) 
   #'(lambda (x2) #'(lambda (x3) (MFSET::updateMFSetMap-1-1-1 x1 x2 x3))))
 
-(defun NAT-SPEC::div (n m) 
-  (if (INTEGER-SPEC::|!<| n m) 
-      0 
-      (INTEGER-SPEC::|!+| 1 (NAT-SPEC::div (INTEGER-SPEC::|!-| n m) m))))
-
-(defun MERGESORT::sortGT-1-1 (cmpGT ls) 
+(defun MERGESORT::sortGT-1-1 (|!cmpGT| ls) 
   (block 
    nil 
    (if (null ls) (return nil) (if (consp ls) (if (null (cdr ls)) (return ls)))) 
@@ -16096,7 +22631,7 @@
                    (let ((pV9 (car ys))
                          (pV10 (cdr ys))) 
                      (return 
-                      (if (funcall cmpGT (cons pV6 pV9)) 
+                      (if (funcall |!cmpGT| (cons pV6 pV9)) 
                           (cons pV9 (|!merge| (cons pV6 pV7) pV10)) 
                           (cons pV6 (|!merge| pV7 (cons pV9 pV10))))))))) 
          (error "Nonexhaustive match failure in sortGT")))) 
@@ -16129,7 +22664,7 @@
                      (let ((pV21 (car xs))
                            (pV22 (cdr xs))) 
                        (return 
-                        (if (funcall cmpGT (cons pV21 (LIST-SPEC::hd run))) 
+                        (if (funcall |!cmpGT| (cons pV21 (LIST-SPEC::hd run))) 
                             (nextrun (cons pV21 run) pV22) 
                             (cons (LIST-SPEC::rev run) (cons pV21 pV22))))))) 
              (error "Nonexhaustive match failure in sortGT")))) 
@@ -16160,104 +22695,19 @@
 
 (defun MERGESORT::sortGT (x1) #'(lambda (x2) (MERGESORT::sortGT-1-1 x1 x2)))
 
-(defun MERGESORT::sorted-1-1 (cmpGT xs) 
+(defun MERGESORT::sorted-1-1 (|!cmpGT| xs) 
   (block 
    nil 
    (if (consp xs) 
        (let ((pV6 (cdr xs))) 
          (if (consp pV6) 
              (return 
-              (lisp::and 
-               (BOOLEAN-SPEC::~ (funcall cmpGT (cons (car xs) (car pV6)))) 
-               (MERGESORT::sorted-1-1 cmpGT pV6)))))) 
+              (cl::and 
+               (BOOLEAN-SPEC::~ (funcall |!cmpGT| (cons (car xs) (car pV6)))) 
+               (MERGESORT::sorted-1-1 |!cmpGT| pV6)))))) 
    (return t)))
 
 (defun MERGESORT::sorted (x1) #'(lambda (x2) (MERGESORT::sorted-1-1 x1 x2)))
-
-(defun MERGESORT::uniqueSort-1-1 (cmpfn ls) 
-  (labels 
-    ((|!merge| (xs ys) 
-      (block 
-       nil 
-       (if (null xs) (return ys)) 
-       (if (null ys) (return xs)) 
-       (if (consp xs) 
-           (let ((pV6 (car xs))
-                 (pV7 (cdr xs))) 
-             (if (consp ys) 
-                 (let ((pV9 (car ys))
-                       (pV10 (cdr ys))) 
-                   (return 
-                    (let ((pV2 (funcall cmpfn (cons pV6 pV9)))) 
-                      (block 
-                       nil 
-                       (if (eq (car pV2) :|Greater|) 
-                           (return (cons pV9 (|!merge| (cons pV6 pV7) pV10))) 
-                           (if (eq (car pV2) :|Equal|) 
-                               (return (|!merge| (cons pV6 pV7) pV10)))) 
-                       (return (cons pV6 (|!merge| pV7 (cons pV9 pV10))))))))))) 
-       (error "Nonexhaustive match failure in uniqueSort")))) 
-    (labels 
-      ((mergepairs (ls k) 
-        (block 
-         nil 
-         (if (consp ls) 
-             (let ((pV14 (car ls))
-                   (pV15 (cdr ls))) 
-               (if (null pV15) 
-                   (return ls) 
-                   (if (consp pV15) 
-                       (let ((pV17 (car pV15))
-                             (pV18 (cdr pV15))) 
-                         (return 
-                          (if ( =  (NAT-SPEC::|!rem| k 2) 1) 
-                              (cons pV14 (cons pV17 pV18)) 
-                              (mergepairs 
-                               (cons (|!merge| pV14 pV17) pV18) 
-                               (NAT-SPEC::div k 2))))))))) 
-         (return (SYSTEM-SPEC::fail "Impossible: mergepairs"))))) 
-      (labels 
-        ((nextrun (run xs) 
-          (block 
-           nil 
-           (if (null xs) 
-               (return (cons (LIST-SPEC::rev run) nil)) 
-               (if (consp xs) 
-                   (let ((pV23 (car xs))
-                         (pV24 (cdr xs))) 
-                     (return 
-                      (let ((pV20 
-                             (funcall cmpfn (cons pV23 (LIST-SPEC::hd run))))) 
-                        (block 
-                         nil 
-                         (if (eq (car pV20) :|Greater|) 
-                             (return (nextrun (cons pV23 run) pV24)) 
-                             (if (eq (car pV20) :|Equal|) 
-                                 (return (nextrun run pV24)))) 
-                         (return (cons (LIST-SPEC::rev run) (cons pV23 pV24))))))))) 
-           (error "Nonexhaustive match failure in uniqueSort")))) 
-        (labels 
-          ((samsorting (xs ls k) 
-            (block 
-             nil 
-             (if (null xs) 
-                 (return (LIST-SPEC::hd (mergepairs ls 0))) 
-                 (if (consp xs) 
-                     (return 
-                      (let ((pV25 (nextrun (cons (car xs) nil) (cdr xs)))) 
-                        (block 
-                         nil 
-                         (return 
-                          (samsorting 
-                           (cdr pV25) 
-                           (mergepairs 
-                            (cons (car pV25) ls) 
-                            (INTEGER-SPEC::|!+| k 1)) 
-                           (INTEGER-SPEC::|!+| k 1))) 
-                         (error "Nonexhaustive match failure in uniqueSort")))))) 
-             (error "Nonexhaustive match failure in uniqueSort")))) 
-          (block nil (if (null ls) (return nil)) (return (samsorting ls nil 0))))))))
-
 
 (defun MERGESORT::uniqueSort (x1) 
   #'(lambda (x2) (MERGESORT::uniqueSort-1-1 x1 x2)))
@@ -16299,19 +22749,6 @@
 (defun METASLANG::appTermSchemes (x0 x1 x2) 
   (METASLANG::appTermSchemes-1 (vector x0 x1 x2)))
 
-(defun METASLANG::boolSort? (s) 
-  (block 
-   nil 
-   (if (eq (car s) :|Base|) 
-       (let ((pV4 (cdr s))) 
-         (let ((pV5 (svref pV4 0))) 
-           (if (eq (car pV5) :|Qualified|) 
-               (let ((pV8 (cdr pV5))) 
-                 (if (string=  "Boolean" (car pV8)) 
-                     (if (string=  "Boolean" (cdr pV8)) 
-                         (if (null (svref pV4 1)) (return t))))))))) 
-   (return nil)))
-
 (defun METASLANG::equalFun?-1 (x) (METASLANG::equalFun? (car x) (cdr x)))
 
 (defun METASLANG::equalList?-1 (x) 
@@ -16321,7 +22758,7 @@
   (METASLANG::equalOpt? (svref x 0) (svref x 1) (svref x 2)))
 
 (defun METASLANG::existsSubTerm-1-1 (pred? term) 
-  (lisp::or 
+  (cl::or 
    (funcall pred? term) 
    (block 
     nil 
@@ -16332,7 +22769,7 @@
             (if (eq (car term) :|Apply|) 
                 (let ((pV29 (cdr term))) 
                   (return 
-                   (lisp::or 
+                   (cl::or 
                     (METASLANG::existsSubTerm-1-1 pred? (svref pV29 0)) 
                     (METASLANG::existsSubTerm-1-1 pred? (svref pV29 1))))) 
                 (if (eq (car term) :|Record|) 
@@ -16344,7 +22781,7 @@
                     (if (eq (car term) :|Let|) 
                         (let ((pV27 (cdr term))) 
                           (return 
-                           (lisp::or 
+                           (cl::or 
                             (METASLANG::existsSubTerm-1-1 pred? (svref pV27 1)) 
                             (LIST-SPEC::|!exists|-1-1 
                              #'(lambda (x) 
@@ -16353,7 +22790,7 @@
                         (if (eq (car term) :|LetRec|) 
                             (let ((pV26 (cdr term))) 
                               (return 
-                               (lisp::or 
+                               (cl::or 
                                 (METASLANG::existsSubTerm-1-1 
                                  pred? 
                                  (svref pV26 1)) 
@@ -16369,11 +22806,11 @@
                                 (if (eq (car term) :|IfThenElse|) 
                                     (let ((pV24 (cdr term))) 
                                       (return 
-                                       (lisp::or 
+                                       (cl::or 
                                         (METASLANG::existsSubTerm-1-1 
                                          pred? 
                                          (svref pV24 0)) 
-                                        (lisp::or 
+                                        (cl::or 
                                          (METASLANG::existsSubTerm-1-1 
                                           pred? 
                                           (svref pV24 1)) 
@@ -16389,7 +22826,7 @@
                                             (return 
                                              (LIST-SPEC::|!exists|-1-1 
                                               #'(lambda (x) 
-                                                 (lisp::or 
+                                                 (cl::or 
                                                   (METASLANG::existsSubTerm-1-1 
                                                    pred? 
                                                    (svref x 1)) 
@@ -16447,36 +22884,17 @@
 (defun METASLANG::mkFalseA (a) 
   (cons :|Fun| (vector (cons :|Bool| nil) (METASLANG::boolSort a) a)))
 
-(defun METASLANG::mkQualifiedId (qualifier id) 
-  (cons :|Qualified| (cons qualifier id)))
-
 (defun METASLANG::mkQualifiedId-1 (x) 
   (METASLANG::mkQualifiedId (car x) (cdr x)))
 
-(defun METASLANG::mkUnQualifiedId (id) 
-  (cons :|Qualified| (cons METASLANG::UnQualified id)))
-
-(defun METASLANG::natSort? (s) 
-  (block 
-   nil 
-   (if (eq (car s) :|Base|) 
-       (let ((pV4 (cdr s))) 
-         (let ((pV5 (svref pV4 0))) 
-           (if (eq (car pV5) :|Qualified|) 
-               (let ((pV8 (cdr pV5))) 
-                 (if (string=  "Nat" (car pV8)) 
-                     (if (string=  "Nat" (cdr pV8)) 
-                         (if (null (svref pV4 1)) (return t))))))))) 
-   (return nil)))
-
 (defun METASLANG::printQualifierDotId (qualifier id) 
-  (if (lisp::or 
+  (if (cl::or 
        (string=  qualifier "Nat") 
-       (lisp::or 
+       (cl::or 
         (string=  qualifier "Boolean") 
-        (lisp::or 
+        (cl::or 
          (string=  qualifier "String") 
-         (lisp::or 
+         (cl::or 
           (string=  qualifier "Char") 
           (string=  qualifier METASLANG::UnQualified))))) 
       id 
@@ -16996,6 +23414,70 @@
 
 (defun METASLANG::withAnnS-1 (x) (METASLANG::withAnnS (car x) (cdr x)))
 
+(defun METASLANG::withAnnT (|!t| a) 
+  (block 
+   nil 
+   (if (eq (car |!t|) :|Apply|) 
+       (let ((pV25 (cdr |!t|))) 
+         (return (cons :|Apply| (vector (svref pV25 0) (svref pV25 1) a)))) 
+       (if (eq (car |!t|) :|ApplyN|) 
+           (return (cons :|ApplyN| (cons (car (cdr |!t|)) a))) 
+           (if (eq (car |!t|) :|Record|) 
+               (return (cons :|Record| (cons (car (cdr |!t|)) a))) 
+               (if (eq (car |!t|) :|Bind|) 
+                   (let ((pV22 (cdr |!t|))) 
+                     (return 
+                      (cons 
+                       :|Bind| 
+                       (vector (svref pV22 0) (svref pV22 1) (svref pV22 2) a)))) 
+                   (if (eq (car |!t|) :|Let|) 
+                       (let ((pV21 (cdr |!t|))) 
+                         (return 
+                          (cons :|Let| (vector (svref pV21 0) (svref pV21 1) a)))) 
+                       (if (eq (car |!t|) :|LetRec|) 
+                           (return 
+                            (cons :|LetRec| (vector (svref (cdr |!t|) 0) |!t| a))) 
+                           (if (eq (car |!t|) :|Var|) 
+                               (return (cons :|Var| (cons (car (cdr |!t|)) a))) 
+                               (if (eq (car |!t|) :|SortedTerm|) 
+                                   (let ((pV18 (cdr |!t|))) 
+                                     (return 
+                                      (cons 
+                                       :|SortedTerm| 
+                                       (vector (svref pV18 0) (svref pV18 1) a)))) 
+                                   (if (eq (car |!t|) :|Fun|) 
+                                       (let ((pV17 (cdr |!t|))) 
+                                         (return 
+                                          (cons 
+                                           :|Fun| 
+                                           (vector 
+                                            (svref pV17 0) 
+                                            (svref pV17 1) 
+                                            a)))) 
+                                       (if (eq (car |!t|) :|Lambda|) 
+                                           (return 
+                                            (cons 
+                                             :|Lambda| 
+                                             (cons (car (cdr |!t|)) a))) 
+                                           (if (eq (car |!t|) :|IfThenElse|) 
+                                               (let ((pV15 (cdr |!t|))) 
+                                                 (return 
+                                                  (cons 
+                                                   :|IfThenElse| 
+                                                   (vector 
+                                                    (svref pV15 0) 
+                                                    (svref pV15 1) 
+                                                    (svref pV15 2) 
+                                                    a)))) 
+                                               (if (eq (car |!t|) :|Seq|) 
+                                                   (return 
+                                                    (cons 
+                                                     :|Seq| 
+                                                     (cons (car (cdr |!t|)) a))))))))))))))) 
+   (error "Nonexhaustive match failure in withAnnT")))
+
+(defun METASLANG::withAnnT-1 (x) (METASLANG::withAnnT (car x) (cdr x)))
+
 (defun NAT-SPEC::div-1 (x) (NAT-SPEC::div (car x) (cdr x)))
 
 (defparameter NAT-SPEC::one 1)
@@ -17278,7 +23760,7 @@
                (let ((pV5 (cdr rules))) 
                  (progn (if (null pV5) (return nil)) 
                         (return 
-                         (lisp::or 
+                         (cl::or 
                           (PATTERNMATCH::wildPattern?-1 (car rules)) 
                           (nonfinalWildPattern? pV5))))))) 
        (error "Nonexhaustive match failure in checkUnreachableCase")))) 
@@ -17621,21 +24103,6 @@
        (if (eq (car pV2) :|Some|) (return (ANNSPECPRINTER::printTerm (cdr pV2)))) 
        (return ""))))))
 
-(defun STANDARDSPEC::mkProduct (sorts) 
-  (labels 
-    ((|!loop| (n sorts) 
-      (block 
-       nil 
-       (if (null sorts) 
-           (return nil) 
-           (if (consp sorts) 
-               (return 
-                (LIST-SPEC::|!cons| 
-                 (cons (NAT-SPEC::toString n) (car sorts)) 
-                 (|!loop| (INTEGER-SPEC::|!+| n 1) (cdr sorts)))))) 
-       (error "Nonexhaustive match failure in mkProduct")))) 
-    (cons :|Product| (cons (|!loop| 1 sorts) POSITION-SPEC::noPos))))
-
 (defun PATTERNMATCH::failWith-1-1-1 (context t1 t2) 
   (if (PATTERNMATCH::isBreak t2) 
       t1 
@@ -17686,9 +24153,6 @@
        (let ((pV6 (svref (cdr term) 0))) 
          (if (eq (car pV6) :|Bool|) (if (eq t (cdr pV6)) (return t))))) 
    (return nil)))
-
-(defun STANDARDSPEC::mkIfThenElse (t1 t2 t3) 
-  (cons :|IfThenElse| (vector t1 t2 t3 POSITION-SPEC::noPos)))
 
 (defun PATTERNMATCH::mkOptimizedIfThenElse (|!cond| thenBranch elseBranch) 
   (if (PATTERNMATCH::isTrue |!cond|) 
@@ -17971,13 +24435,6 @@
           (STANDARDSPEC::mkArrow (STANDARDSPEC::mkQuotientSort srt1 equiv) srt2)))) 
     (let ((ch (STANDARDSPEC::mkFun '(:|Choose|) chSrt))) 
       (STANDARDSPEC::mkApply ch f))))
-
-(defun STANDARDSPEC::mkLambda (pat term) 
-  (cons 
-   :|Lambda| 
-   (cons 
-    (cons (vector pat (STANDARDSPEC::mkTrue) term) nil) 
-    POSITION-SPEC::noPos)))
 
 (defun PATTERNMATCH::matchQuotient (pV18 pV19 pV20 pV21 pV22) 
   (block 
@@ -18343,7 +24800,7 @@
            (progn (if (eq (car pV10) :|RecordPat|) 
                       (if (null pV9) 
                           (return 
-                           (lisp::and 
+                           (cl::and 
                             (PATTERNMATCH::isTrue pV11) 
                             (LIST-SPEC::all-1-1 
                              #'(lambda (x) 
@@ -18351,7 +24808,7 @@
                              (car (cdr pV10))))))) 
                   (if (null pV9) 
                       (return 
-                       (lisp::and 
+                       (cl::and 
                         (PATTERNMATCH::simplePattern pV10) 
                         (PATTERNMATCH::isTrue pV11)))))))) 
    (return nil)))
@@ -18922,7 +25379,7 @@
        (return t) 
        (if (consp row) 
            (return 
-            (lisp::and 
+            (cl::and 
              (string=  (car (car row)) (NAT-SPEC::toString i)) 
              (PATTERNMATCH::isShortTuple (INTEGER-SPEC::|!+| i 1) (cdr row)))))) 
    (error "Nonexhaustive match failure in isShortTuple")))
@@ -19157,7 +25614,7 @@
        (return nil) 
        (if (consp |!map|) 
            (return 
-            (lisp::or 
+            (cl::or 
              (slang-built-in::slang-term-equals (car (car |!map|)) key) 
              (POLYMAP::inDomain?-1-1 (cdr |!map|) key))))) 
    (error "Nonexhaustive match failure in inDomain?")))
@@ -19166,21 +25623,6 @@
   #'(lambda (x2) (POLYMAP::inDomain?-1-1 x1 x2)))
 
 (defun POLYMAP::mapMap (x1) #'(lambda (x2) (POLYMAP::mapMap-1-1 x1 x2)))
-
-(defun POLYMAP::mapPartial-1-1 (f m) 
-  (labels 
-    ((g (m) 
-      #'(lambda (key) 
-         #'(lambda (item) 
-            (let ((pV1 (funcall f item))) 
-              (block 
-               nil 
-               (if (eq (car pV1) :|None|) 
-                   (return m) 
-                   (if (eq (car pV1) :|Some|) 
-                       (return (POLYMAP::update-1-1-1 m key (cdr pV1))))) 
-               (error "Nonexhaustive match failure in mapPartial"))))))) 
-    (POLYMAP::foldMap-1-1-1 #'g POLYMAP::emptyMap m)))
 
 (defun POLYMAP::mapPartial (x1) 
   #'(lambda (x2) (POLYMAP::mapPartial-1-1 x1 x2)))
@@ -20075,41 +26517,6 @@
   (let ((|!last| (INTEGER-SPEC::|!-| (STRING-SPEC::|!length| |!string|) 1))) 
     (vector 1 |!last| |!last|)))
 
-(defun POSITION-SPEC::|!print| (|!position|) 
-  (block 
-   nil 
-   (if (eq (car |!position|) :|Internal|) 
-       (return (cdr |!position|)) 
-       (if (eq (car |!position|) :|String|) 
-           (let ((pV3 (cdr |!position|))) 
-             (return 
-              (let ((printPos 
-                     #'(lambda (x) 
-                        (STRING-SPEC::^ 
-                         (STRING-SPEC::^ (NAT-SPEC::toString (svref x 0)) ".") 
-                         (NAT-SPEC::toString (svref x 1)))))) 
-                (STRING-SPEC::^ 
-                 (STRING-SPEC::^ 
-                  (STRING-SPEC::^ 
-                   (STRING-SPEC::^ (funcall printPos (svref pV3 1)) "-") 
-                   (funcall printPos (svref pV3 2))) 
-                  " in ") 
-                 (svref pV3 0))))) 
-           (if (eq (car |!position|) :|File|) 
-               (let ((pV2 (cdr |!position|))) 
-                 (return 
-                  (let ((printPos 
-                         #'(lambda (x) 
-                            (STRING-SPEC::^ 
-                             (STRING-SPEC::^ 
-                              (NAT-SPEC::toString (svref x 0)) 
-                              ".") 
-                             (NAT-SPEC::toString (svref x 1)))))) 
-                    (STRING-SPEC::^ 
-                     (STRING-SPEC::^ (funcall printPos (svref pV2 1)) "-") 
-                     (funcall printPos (svref pV2 2))))))))) 
-   (error "Nonexhaustive match failure in print")))
-
 (defparameter POSITION-SPEC::startLineColumnByte (vector 1 0 0))
 
 (defun PRETTYPRINT::addBreak-1 (x) 
@@ -20252,6 +26659,9 @@
 (defun PRETTYPRINT::toStream-1 (x) 
   (PRETTYPRINT::toStream (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
 
+(defun PRETTYPRINT::toStreamT-1 (x) 
+  (PRETTYPRINT::toStreamT (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
 (defun PRETTYPRINT::widthPretty (x0 x1) 
   (PRETTYPRINT::widthPretty-1 (cons x0 x1)))
 
@@ -20310,220 +26720,6 @@
 
 (defun SKETCH::vertices (x0 x1 x2 x3) (SKETCH::vertices-1 (vector x0 x1 x2 x3)))
 
-(defun WADLERLINDIG::ppAppend-1-1 (p1 p2) (WADLERLINDIG::ppCons-1-1 p1 p2))
-
-(defun SPECCALC::ppURIlocal (hashSuffix path) 
-  (let ((prefix 
-         (WADLERLINDIG::ppSep-1-1 
-          (WADLERLINDIG::ppString "/") 
-          (LIST-SPEC::|!map|-1-1 #'WADLERLINDIG::ppString path)))) 
-    (block 
-     nil 
-     (if (eq (car hashSuffix) :|None|) 
-         (return prefix) 
-         (if (eq (car hashSuffix) :|Some|) 
-             (return 
-              (WADLERLINDIG::ppAppend-1-1 
-               prefix 
-               (WADLERLINDIG::ppString (STRING-SPEC::^ "#" (cdr hashSuffix))))))) 
-     (error "Nonexhaustive match failure in ppURIlocal"))))
-
-(defun SPECCALC::ppURIlocal-1 (x) (SPECCALC::ppURIlocal (car x) (cdr x)))
-
-(defun SPECCALC::ppRelativeURI (relURI) 
-  (block 
-   nil 
-   (if (eq (car relURI) :|SpecPath_Relative|) 
-       (return 
-        (WADLERLINDIG::ppAppend-1-1 
-         (WADLERLINDIG::ppString "/") 
-         (SPECCALC::ppURIlocal-1 (cdr relURI)))) 
-       (if (eq (car relURI) :|URI_Relative|) 
-           (return (SPECCALC::ppURIlocal-1 (cdr relURI))))) 
-   (error "Nonexhaustive match failure in ppRelativeURI")))
-
-(defun WADLERLINDIG::ppFits-1-1 (w x) 
-  (lisp::and 
-   (INTEGER-SPEC::|!>=| w 0) 
-   (block 
-    nil 
-    (if (null x) 
-        (return t) 
-        (if (consp x) 
-            (let ((pV4 (car x))
-                  (pV5 (cdr x))) 
-              (let ((pV6 (svref pV4 0))
-                    (pV7 (svref pV4 1))
-                    (pV8 (svref pV4 2))) 
-                (progn (if (eq (car pV8) :|DocNil|) 
-                           (return (WADLERLINDIG::ppFits-1-1 w pV5)) 
-                           (if (eq (car pV8) :|DocCons|) 
-                               (let ((pV14 (cdr pV8))) 
-                                 (return 
-                                  (WADLERLINDIG::ppFits-1-1 
-                                   w 
-                                   (cons 
-                                    (vector pV6 pV7 (car pV14)) 
-                                    (cons (vector pV6 pV7 (cdr pV14)) pV5))))) 
-                               (if (eq (car pV8) :|DocNest|) 
-                                   (let ((pV13 (cdr pV8))) 
-                                     (return 
-                                      (WADLERLINDIG::ppFits-1-1 
-                                       w 
-                                       (cons 
-                                        (vector 
-                                         (INTEGER-SPEC::|!+| pV6 (car pV13)) 
-                                         pV7 
-                                         (cdr pV13)) 
-                                        pV5)))) 
-                                   (if (eq (car pV8) :|DocText|) 
-                                       (return 
-                                        (WADLERLINDIG::ppFits-1-1 
-                                         (INTEGER-SPEC::|!-| 
-                                          w 
-                                          (STRING-SPEC::|!length| (cdr pV8))) 
-                                         pV5)))))) 
-                       (if (eq (car pV7) :|Flat|) 
-                           (if (eq (car pV8) :|DocBreak|) 
-                               (return 
-                                (WADLERLINDIG::ppFits-1-1 
-                                 (INTEGER-SPEC::|!-| 
-                                  w 
-                                  (STRING-SPEC::|!length| (cdr pV8))) 
-                                 pV5))) 
-                           (if (eq (car pV7) :|Break|) 
-                               (if (eq (car pV8) :|DocBreak|) (return t)))) 
-                       (if (eq (car pV8) :|DocGroup|) 
-                           (return 
-                            (WADLERLINDIG::ppFits-1-1 
-                             w 
-                             (cons (vector pV6 '(:|Flat|) (cdr pV8)) pV5))))))))) 
-    (error "Nonexhaustive match failure in ppFits"))))
-
-(defun WADLERLINDIG::ppBest-1-1-1 (w k x) 
-  (block 
-   nil 
-   (if (null x) 
-       (return '(:|SNil|)) 
-       (if (consp x) 
-           (let ((pV3 (car x))
-                 (pV4 (cdr x))) 
-             (let ((pV5 (svref pV3 0))
-                   (pV6 (svref pV3 1))
-                   (pV7 (svref pV3 2))) 
-               (progn (if (eq (car pV7) :|DocNil|) 
-                          (return (WADLERLINDIG::ppBest-1-1-1 w k pV4)) 
-                          (if (eq (car pV7) :|DocCons|) 
-                              (let ((pV13 (cdr pV7))) 
-                                (return 
-                                 (WADLERLINDIG::ppBest-1-1-1 
-                                  w 
-                                  k 
-                                  (cons 
-                                   (vector pV5 pV6 (car pV13)) 
-                                   (cons (vector pV5 pV6 (cdr pV13)) pV4))))) 
-                              (if (eq (car pV7) :|DocNest|) 
-                                  (let ((pV12 (cdr pV7))) 
-                                    (return 
-                                     (WADLERLINDIG::ppBest-1-1-1 
-                                      w 
-                                      k 
-                                      (cons 
-                                       (vector 
-                                        (INTEGER-SPEC::|!+| pV5 (car pV12)) 
-                                        pV6 
-                                        (cdr pV12)) 
-                                       pV4)))) 
-                                  (if (eq (car pV7) :|DocText|) 
-                                      (let ((pV11 (cdr pV7))) 
-                                        (return 
-                                         (cons 
-                                          :|SText| 
-                                          (cons 
-                                           pV11 
-                                           (WADLERLINDIG::ppBest-1-1-1 
-                                            w 
-                                            (INTEGER-SPEC::|!+| 
-                                             k 
-                                             (STRING-SPEC::|!length| pV11)) 
-                                            pV4))))))))) 
-                      (if (eq (car pV6) :|Flat|) 
-                          (if (eq (car pV7) :|DocBreak|) 
-                              (let ((pV10 (cdr pV7))) 
-                                (return 
-                                 (cons 
-                                  :|SText| 
-                                  (cons 
-                                   pV10 
-                                   (WADLERLINDIG::ppBest-1-1-1 
-                                    w 
-                                    (INTEGER-SPEC::|!+| 
-                                     k 
-                                     (STRING-SPEC::|!length| pV10)) 
-                                    pV4)))))) 
-                          (if (eq (car pV6) :|Break|) 
-                              (if (eq (car pV7) :|DocBreak|) 
-                                  (return 
-                                   (cons 
-                                    :|SLine| 
-                                    (cons 
-                                     pV5 
-                                     (WADLERLINDIG::ppBest-1-1-1 w pV5 pV4))))))) 
-                      (if (eq (car pV7) :|DocGroup|) 
-                          (let ((pV8 (cdr pV7))) 
-                            (return 
-                             (if (WADLERLINDIG::ppFits-1-1 
-                                  (INTEGER-SPEC::|!-| w k) 
-                                  (cons (vector pV5 '(:|Flat|) pV8) pV4)) 
-                                 (WADLERLINDIG::ppBest-1-1-1 
-                                  w 
-                                  k 
-                                  (cons (vector pV5 '(:|Flat|) pV8) pV4)) 
-                                 (WADLERLINDIG::ppBest-1-1-1 
-                                  w 
-                                  k 
-                                  (cons (vector pV5 '(:|Break|) pV8) pV4))))))))))) 
-   (error "Nonexhaustive match failure in ppBest")))
-
-(defun WADLERLINDIG::ppLayout (doc) 
-  (labels 
-    ((replicate (cnt) 
-      #'(lambda (str) 
-         (if ( =  cnt 0) 
-             (cons "" nil) 
-             (cons str (funcall (replicate (INTEGER-SPEC::|!-| cnt 1)) str)))))) 
-    (labels 
-      ((makeStringList (doc) 
-        (block 
-         nil 
-         (if (eq (car doc) :|SNil|) 
-             (return (cons "" nil)) 
-             (if (eq (car doc) :|SText|) 
-                 (let ((pV3 (cdr doc))) 
-                   (return (cons (car pV3) (makeStringList (cdr pV3))))) 
-                 (if (eq (car doc) :|SLine|) 
-                     (let ((pV2 (cdr doc))) 
-                       (return 
-                        (cons 
-                         (STRING-SPEC::concatList 
-                          (cons "
-" (funcall (replicate (car pV2)) " "))) 
-                         (makeStringList (cdr pV2)))))))) 
-         (error "Nonexhaustive match failure in ppLayout")))) 
-      (STRING-SPEC::concatList (makeStringList doc)))))
-
-(defun WADLERLINDIG::ppFormatWidth-1-1 (w doc) 
-  (WADLERLINDIG::ppLayout 
-   (WADLERLINDIG::ppBest-1-1-1 
-    w 
-    0 
-    (cons (vector 0 '(:|Flat|) (cons :|DocGroup| doc)) nil))))
-
-(defun WADLERLINDIG::ppFormat (doc) (WADLERLINDIG::ppFormatWidth-1-1 80 doc))
-
-(defun SPECCALC::showRelativeURI (uri) 
-  (WADLERLINDIG::ppFormat (SPECCALC::ppRelativeURI uri)))
-
 (defun SPECCALC::SpecTermToSpecName-1 (scterm) 
   (let ((term (car scterm))) 
     (block 
@@ -20536,20 +26732,7 @@
 (defun SPECCALC::SpecTermToSpecName (x0 x1) 
   (SPECCALC::SpecTermToSpecName-1 (cons x0 x1)))
 
-(defun SPECCALC::raise-1-1 (except state) 
-  (progn (if SPECCALC::specwareWizard? 
-             (SYSTEM-SPEC::fail (SYSTEM-SPEC::toString except)) 
-             nil) 
-         (cons (cons :|Exception| except) state)))
-
-(defun SPECCALC::raise (x1) #'(lambda (x2) (SPECCALC::raise-1-1 x1 x2)))
-
 (defun SPECCALC::|!error| (str) (SPECCALC::raise (cons :|Fail| str)))
-
-(defun SPECCALC::|!return|-1-1 (x state) (cons (cons :|Ok| x) state))
-
-(defun SPECCALC::|!return| (x1) 
-  #'(lambda (x2) (SPECCALC::|!return|-1-1 x1 x2)))
 
 (defun SPECCALC::lastElem (elems) 
   (block 
@@ -20561,23 +26744,6 @@
              (progn (if (null pV5) (return (SPECCALC::|!return| (car elems)))) 
                     (return (SPECCALC::lastElem pV5)))))) 
    (error "Nonexhaustive match failure in lastElem")))
-
-(defun SPECCALC::monadBind-1-1 (!x1 state) 
-  (let ((x (funcall (car !x1) state))) 
-    (let ((pV1 (car x))
-          (pV2 (cdr x))) 
-      (block 
-       nil 
-       (if (eq (car pV1) :|Ok|) 
-           (return (funcall (funcall (cdr !x1) (cdr pV1)) pV2)) 
-           (if (eq (car pV1) :|Exception|) 
-               (return (cons (cons :|Exception| (cdr pV1)) pV2)))) 
-       (error "Nonexhaustive match failure in monadBind")))))
-
-(defun SPECCALC::monadBind-1 (x1) 
-  #'(lambda (x2) (SPECCALC::monadBind-1-1 x1 x2)))
-
-(defun SPECCALC::monadBind (x0 x1) (SPECCALC::monadBind-1 (cons x0 x1)))
 
 (defun SPECCALC::removeLastElem (elems) 
   (block 
@@ -20688,12 +26854,47 @@
                  #'(lambda (x) 
                     (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
                  nil 
-                 (if (lisp::or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
+                 (if (cl::or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
           (if tildaPath? 
               (STRING-SPEC::^ "~" mainPath) 
               (if device? 
                   (STRING-SPEC::^ (LIST-SPEC::hd path) mainPath) 
                   mainPath)))))))
+
+(defun SPECCALC::URItoJavaFile (pV4 pV5) 
+  (block 
+   nil 
+   (let ((pV7 (cdr pV4))) 
+     (return 
+      (block 
+       nil 
+       (if (eq (car pV5) :|Some|) (return (SPECCALC::|!return| (cdr pV5)))) 
+       (return 
+        (SPECCALC::monadBind 
+         (SPECCALC::removeLastElem pV7) 
+         #'(lambda (prefix) 
+            (SPECCALC::monadBind 
+             (SPECCALC::lastElem pV7) 
+             #'(lambda (mainName) 
+                (let ((filNm 
+                       (STRING-SPEC::^ 
+                        (STRING-SPEC::^ 
+                         (STRING-SPEC::^ 
+                          (SPECCALC::uriToPath '(:|None|) prefix) 
+                          "/java/") 
+                         mainName) 
+                        ".java"))) 
+                  (SPECCALC::monadSeq 
+                   (SPECCALC::|!print| 
+                    (STRING-SPEC::^ (STRING-SPEC::^ "Java file name " filNm) "
+")) 
+                   (SPECCALC::|!return| filNm))))))))))) 
+   (error "Nonexhaustive match failure in URItoJavaFile")))
+
+(defun SPECCALC::URItoJavaFile-1 (x) (SPECCALC::URItoJavaFile (car x) (cdr x)))
+
+(defun SPECCALC::URItoJavaFile-1-1 (x1 x2) 
+  (funcall (SPECCALC::URItoJavaFile-1 x1) x2))
 
 (defun SPECCALC::URItoLispFile (pV4 pV5) 
   (block 
@@ -20791,16 +26992,6 @@
 
 (defun SPECCALC::URItoSingleSnarkLogFile-1-1 (x1 x2) 
   (funcall (SPECCALC::URItoSingleSnarkLogFile-1 x1) x2))
-
-(defun SPECCALC::monadSeq (f g) 
-  (SPECCALC::monadBind f #'(lambda (pV1) (declare (ignore pV1)) 
-                                         g)))
-
-(defun SPECCALC::|!print|-1-1 (str state) 
-  (progn (STRING-SPEC::toScreen str) (cons (cons :|Ok| nil) state)))
-
-(defun SPECCALC::|!print| (x1) 
-  #'(lambda (x2) (SPECCALC::|!print|-1-1 x1 x2)))
 
 (defun SPECCALC::URItoSnarkFile (pV4 pV5) 
   (block 
@@ -20910,397 +27101,6 @@
   (funcall (funcall (funcall (funcall (SPECCALC::addLabelledVertex-1 x1) x2) x3) 
                     x4) 
            x5))
-
-(defun SPECCALC::foldM (f) 
-  #'(lambda (a) 
-     #'(lambda (l) 
-        (block 
-         nil 
-         (if (null l) 
-             (return (SPECCALC::|!return| a)) 
-             (if (consp l) 
-                 (let ((pV4 (cdr l))) 
-                   (return 
-                    (SPECCALC::monadBind 
-                     (funcall (funcall f a) (car l)) 
-                     #'(lambda (y) 
-                        (funcall (funcall (SPECCALC::foldM f) y) pV4))))))) 
-         (error "Nonexhaustive match failure in foldM")))))
-
-(defun SPECCALC::printAliases (pV7) 
-  (block 
-   nil 
-   (if (consp pV7) 
-       (let ((pV10 (cdr pV7))
-             (pV9 (car pV7))) 
-         (return 
-          (labels 
-            ((print_qid (pV1) 
-              (block 
-               nil 
-               (if (eq (car pV1) :|Qualified|) 
-                   (let ((pV2 (cdr pV1))) 
-                     (let ((pV4 (cdr pV2))
-                           (pV3 (car pV2))) 
-                       (return 
-                        (if (string=  pV3 METASLANG::UnQualified) 
-                            pV4 
-                            (STRING-SPEC::^ (STRING-SPEC::^ pV3 ".") pV4)))))) 
-               (error "Nonexhaustive match failure in printAliases")))) 
-            (let ((str (print_qid pV9))) 
-              (block 
-               nil 
-               (if (null pV10) (return str)) 
-               (return 
-                (STRING-SPEC::^ 
-                 (STRING-SPEC::^ 
-                  "{" 
-                  (LIST-SPEC::foldl-1-1-1 
-                   #'(lambda (x) 
-                      (STRING-SPEC::^ 
-                       (STRING-SPEC::^ (cdr x) ",") 
-                       (print_qid (car x)))) 
-                   str 
-                   pV10)) 
-                 "}")))))))) 
-   (error "Nonexhaustive match failure in printAliases")))
-
-(defun SPECCALC::printTypeVars (vars) 
-  (block 
-   nil 
-   (if (null vars) 
-       (return "()") 
-       (if (consp vars) 
-           (return 
-            (STRING-SPEC::^ 
-             (STRING-SPEC::^ 
-              (STRING-SPEC::^ "(" (car vars)) 
-              (LIST-SPEC::foldl-1-1-1 
-               #'(lambda (x) 
-                  (STRING-SPEC::^ (STRING-SPEC::^ (cdr x) ",") (car x))) 
-               "" 
-               (cdr vars))) 
-             ")")))) 
-   (error "Nonexhaustive match failure in printTypeVars")))
-
-(defun SPECCALC::addOp (new_op_names) 
-  #'(lambda (new_fixity) 
-     #'(lambda (new_sort_scheme) 
-        (let ((new_type_vars (car new_sort_scheme))) 
-          #'(lambda (new_defs) 
-             #'(lambda (old_spec) 
-                #'(lambda (|!position|) 
-                   (let ((old_infos 
-                          (LIST-SPEC::foldl-1-1-1 
-                           #'(lambda (x1) 
-                              (let ((old_infos (cdr x1))) 
-                                (let ((pV2 
-                                       (STANDARDSPEC::findTheOp 
-                                        old_spec 
-                                        (car x1)))) 
-                                  (block 
-                                   nil 
-                                   (if (eq (car pV2) :|Some|) 
-                                       (let ((pV3 (cdr pV2))) 
-                                         (return 
-                                          (if (LIST-SPEC::|!exists|-1-1 
-                                               #'(lambda (old_info) 
-                                                  (slang-built-in::slang-term-equals 
-                                                   pV3 
-                                                   old_info)) 
-                                               old_infos) 
-                                              old_infos 
-                                              (LIST-SPEC::|!cons| pV3 old_infos))))) 
-                                   (return old_infos))))) 
-                           nil 
-                           new_op_names))) 
-                     (SPECCALC::monadBind 
-                      (block 
-                       nil 
-                       (if (null old_infos) 
-                           (return 
-                            (let ((new_info 
-                                   (vector 
-                                    new_op_names 
-                                    new_fixity 
-                                    new_sort_scheme 
-                                    new_defs))) 
-                              (SPECCALC::|!return| 
-                               (LIST-SPEC::foldl-1-1-1 
-                                #'(lambda (x1) 
-                                   (let ((pV4 (car x1))) 
-                                     (block 
-                                      nil 
-                                      (if (eq (car pV4) :|Qualified|) 
-                                          (let ((pV6 (cdr pV4))) 
-                                            (return 
-                                             (insertAQualifierMap 
-                                              (cdr x1) 
-                                              (car pV6) 
-                                              (cdr pV6) 
-                                              new_info)))) 
-                                      (error 
-                                       "Nonexhaustive match failure in addOp")))) 
-                                (svref old_spec 1) 
-                                new_op_names)))) 
-                           (if (consp old_infos) 
-                               (let ((pV51 (car old_infos))) 
-                                 (let ((pV56 (svref pV51 3))
-                                       (pV55 (svref pV51 2))) 
-                                   (let ((pV57 (car pV55))) 
-                                     (if (null (cdr old_infos)) 
-                                         (return 
-                                          (let ((combined_op_names 
-                                                 (LISTUTILITIES::listUnion 
-                                                  (svref pV51 0) 
-                                                  new_op_names))) 
-                                            (block 
-                                             nil 
-                                             (if (null pV56) 
-                                                 (if (null new_defs) 
-                                                     (return 
-                                                      (SPECCALC::raise 
-                                                       (cons 
-                                                        :|SpecError| 
-                                                        (cons 
-                                                         |!position| 
-                                                         (STRING-SPEC::^ 
-                                                          (STRING-SPEC::^ 
-                                                           (STRING-SPEC::^ 
-                                                            (STRING-SPEC::^ 
-                                                             (STRING-SPEC::^ 
-                                                              (STRING-SPEC::^ 
-                                                               "Operator " 
-                                                               (SPECCALC::printAliases 
-                                                                new_op_names)) 
-                                                              " has been redeclared") 
-                                                             "
- from ") 
-                                                            (ANNSPECPRINTER::printSortScheme-1 
-                                                             pV55)) 
-                                                           "
-   to ") 
-                                                          (ANNSPECPRINTER::printSortScheme-1 
-                                                           new_sort_scheme)))))) 
-                                                     (if (consp new_defs) 
-                                                         (return 
-                                                          (let ((happy? 
-                                                                 (block 
-                                                                  nil 
-                                                                  (if (null 
-                                                                       (car 
-                                                                        new_sort_scheme)) 
-                                                                      (if (eq 
-                                                                           (car 
-                                                                            (cdr 
-                                                                             new_sort_scheme)) 
-                                                                           :|MetaTyVar|) 
-                                                                          (return 
-                                                                           t))) 
-                                                                  (return 
-                                                                   (slang-built-in::slang-term-equals 
-                                                                    new_type_vars 
-                                                                    pV57))))) 
-                                                            (if happy? 
-                                                                (let ((new_info 
-                                                                       (vector 
-                                                                        combined_op_names 
-                                                                        (svref 
-                                                                         pV51 
-                                                                         1) 
-                                                                        pV55 
-                                                                        new_defs))) 
-                                                                  (SPECCALC::|!return| 
-                                                                   (LIST-SPEC::foldl-1-1-1 
-                                                                    #'(lambda (x1) 
-                                                                       (let ((pV16 
-                                                                              (car 
-                                                                               x1))) 
-                                                                         (block 
-                                                                          nil 
-                                                                          (if (eq 
-                                                                               (car 
-                                                                                pV16) 
-                                                                               :|Qualified|) 
-                                                                              (let ((pV18 
-                                                                                     (cdr 
-                                                                                      pV16))) 
-                                                                                (return 
-                                                                                 (insertAQualifierMap 
-                                                                                  (cdr 
-                                                                                   x1) 
-                                                                                  (car 
-                                                                                   pV18) 
-                                                                                  (cdr 
-                                                                                   pV18) 
-                                                                                  new_info)))) 
-                                                                          (error 
-                                                                           "Nonexhaustive match failure in addOp")))) 
-                                                                    (svref 
-                                                                     old_spec 
-                                                                     1) 
-                                                                    combined_op_names))) 
-                                                                (SPECCALC::raise 
-                                                                 (cons 
-                                                                  :|SpecError| 
-                                                                  (cons 
-                                                                   |!position| 
-                                                                   (STRING-SPEC::^ 
-                                                                    (STRING-SPEC::^ 
-                                                                     (STRING-SPEC::^ 
-                                                                      (STRING-SPEC::^ 
-                                                                       (STRING-SPEC::^ 
-                                                                        (STRING-SPEC::^ 
-                                                                         "Operator " 
-                                                                         (SPECCALC::printAliases 
-                                                                          new_op_names)) 
-                                                                        " has been redeclared or redefined") 
-                                                                       "
- with new type variables ") 
-                                                                      (SPECCALC::printTypeVars 
-                                                                       new_type_vars)) 
-                                                                     "
-    differing from prior ") 
-                                                                    (SPECCALC::printTypeVars 
-                                                                     pV57)))))))))) 
-                                                 (if (consp pV56) 
-                                                     (if (null new_defs) 
-                                                         (return 
-                                                          (let ((happy? 
-                                                                 (let ((pV27 
-                                                                        (cdr 
-                                                                         pV55))
-                                                                       (pV26 
-                                                                        (car 
-                                                                         pV55))) 
-                                                                   (block 
-                                                                    nil 
-                                                                    (if (null 
-                                                                         pV26) 
-                                                                        (if (eq 
-                                                                             (car 
-                                                                              pV27) 
-                                                                             :|MetaTyVar|) 
-                                                                            (return 
-                                                                             t))) 
-                                                                    (if (eq 
-                                                                         (car 
-                                                                          pV27) 
-                                                                         :|MetaTyVar|) 
-                                                                        (return 
-                                                                         (slang-built-in::slang-term-equals 
-                                                                          new_type_vars 
-                                                                          pV26))) 
-                                                                    (return nil))))) 
-                                                            (if happy? 
-                                                                (let ((new_info 
-                                                                       (vector 
-                                                                        combined_op_names 
-                                                                        new_fixity 
-                                                                        new_sort_scheme 
-                                                                        pV56))) 
-                                                                  (SPECCALC::|!return| 
-                                                                   (LIST-SPEC::foldl-1-1-1 
-                                                                    #'(lambda (x1) 
-                                                                       (let ((pV30 
-                                                                              (car 
-                                                                               x1))) 
-                                                                         (block 
-                                                                          nil 
-                                                                          (if (eq 
-                                                                               (car 
-                                                                                pV30) 
-                                                                               :|Qualified|) 
-                                                                              (let ((pV32 
-                                                                                     (cdr 
-                                                                                      pV30))) 
-                                                                                (return 
-                                                                                 (insertAQualifierMap 
-                                                                                  (cdr 
-                                                                                   x1) 
-                                                                                  (car 
-                                                                                   pV32) 
-                                                                                  (cdr 
-                                                                                   pV32) 
-                                                                                  new_info)))) 
-                                                                          (error 
-                                                                           "Nonexhaustive match failure in addOp")))) 
-                                                                    (svref 
-                                                                     old_spec 
-                                                                     1) 
-                                                                    combined_op_names))) 
-                                                                (SPECCALC::raise 
-                                                                 (cons 
-                                                                  :|SpecError| 
-                                                                  (cons 
-                                                                   |!position| 
-                                                                   (STRING-SPEC::^ 
-                                                                    (STRING-SPEC::^ 
-                                                                     (STRING-SPEC::^ 
-                                                                      (STRING-SPEC::^ 
-                                                                       (STRING-SPEC::^ 
-                                                                        (STRING-SPEC::^ 
-                                                                         "Operator " 
-                                                                         (SPECCALC::printAliases 
-                                                                          new_op_names)) 
-                                                                        " has been redeclared") 
-                                                                       "
- from type ") 
-                                                                      (ANNSPECPRINTER::printSortScheme-1 
-                                                                       pV55)) 
-                                                                     "
-   to type ") 
-                                                                    (ANNSPECPRINTER::printSortScheme-1 
-                                                                     new_sort_scheme)))))))) 
-                                                         (if (consp new_defs) 
-                                                             (return 
-                                                              (SPECCALC::raise 
-                                                               (cons 
-                                                                :|SpecError| 
-                                                                (cons 
-                                                                 |!position| 
-                                                                 (STRING-SPEC::^ 
-                                                                  (STRING-SPEC::^ 
-                                                                   (STRING-SPEC::^ 
-                                                                    (STRING-SPEC::^ 
-                                                                     (STRING-SPEC::^ 
-                                                                      (STRING-SPEC::^ 
-                                                                       "Operator " 
-                                                                       (SPECCALC::printAliases 
-                                                                        new_op_names)) 
-                                                                      " has been redefined") 
-                                                                     "
- from ") 
-                                                                    (ANNSPECPRINTER::printTermScheme-1 
-                                                                     (car pV56))) 
-                                                                   "
-   to ") 
-                                                                  (ANNSPECPRINTER::printTermScheme-1 
-                                                                   (car new_defs))))))))))) 
-                                             (error 
-                                              "Nonexhaustive match failure in addOp")))))))))) 
-                       (return 
-                        (SPECCALC::raise 
-                         (cons 
-                          :|SpecError| 
-                          (cons 
-                           |!position| 
-                           (STRING-SPEC::^ 
-                            (STRING-SPEC::^ 
-                             "Op " 
-                             (SPECCALC::printAliases new_op_names)) 
-                            " refers to multiple prior ops")))))) 
-                      #'(lambda (new_ops) 
-                         (SPECCALC::monadBind 
-                          (SPECCALC::|!return| (setOps old_spec new_ops)) 
-                          #'(lambda (sp) 
-                             (funcall (funcall (SPECCALC::foldM 
-                                                #'(lambda (sp) 
-                                                   #'(lambda (name) 
-                                                      (SPECCALC::|!return| 
-                                                       (addLocalOpName sp name))))) 
-                                               sp) 
-                                      new_op_names)))))))))))))
 
 (defun SPECCALC::addOp-1-1-1-1-1-1-1 (x1 x2 x3 x4 x5 x6 x7) 
   (funcall (funcall (funcall (funcall (funcall (funcall (SPECCALC::addOp x1) x2) 
@@ -21532,6 +27332,19 @@
                     x5) 
            x6))
 
+(defun SPECCALC::answerVarsFromSnark () 
+  (let ((snarkAnswer (SNARK::ANSWER t))) 
+    (let ((lispAnswerVars (LISP-SPEC::|!cdr| snarkAnswer))) 
+      (let ((answerVars (LISP-SPEC::uncell lispAnswerVars))) 
+        (let ((answerStrings 
+               (LIST-SPEC::|!map|-1-1 
+                #'(lambda (lv) (LISP-SPEC::LispString lv)) 
+                answerVars))) answerStrings)))))
+
+(defun SPECCALC::answerVarsFromSnark-1 (ignore) 
+  (declare (ignore ignore)) 
+  (SPECCALC::answerVarsFromSnark))
+
 (defun SPECCALC::foldMapAp (abf) 
   #'(lambda (x) 
      (let ((b (cdr x))
@@ -21609,8 +27422,8 @@
                    (return 
                     (let ((op_names 
                            (LISTUTILITIES::listUnion 
-                            (svref newPOpInfo 0) 
-                            (svref pV40 0)))) 
+                            (svref pV40 0) 
+                            (svref newPOpInfo 0)))) 
                       (if (BOOLEAN-SPEC::~ 
                            (slang-built-in::slang-term-equals 
                             pV37 
@@ -21714,8 +27527,8 @@
                    (return 
                     (let ((sort_names 
                            (LISTUTILITIES::listUnion 
-                            (svref newPSortInfo 0) 
-                            (svref pV20 0)))) 
+                            (svref pV20 0) 
+                            (svref newPSortInfo 0)))) 
                       (if (BOOLEAN-SPEC::~ 
                            (slang-built-in::slang-term-equals pV18 pV22)) 
                           (SPECCALC::raise 
@@ -21794,7 +27607,7 @@
                                (let ((pV94 (cdr pV92))) 
                                  (return 
                                   (if (BOOLEAN-SPEC::~ 
-                                       (lisp::and 
+                                       (cl::and 
                                         (string=  pV84 (car pV94)) 
                                         (string=  pV85 (cdr pV94)))) 
                                       (SPECCALC::|!return| pV87) 
@@ -21903,7 +27716,7 @@
                                (let ((pV72 (cdr pV70))) 
                                  (return 
                                   (if (BOOLEAN-SPEC::~ 
-                                       (lisp::and 
+                                       (cl::and 
                                         (string=  pV61 (car pV72)) 
                                         (string=  pV62 (cdr pV72)))) 
                                       (SPECCALC::|!return| pV64) 
@@ -22250,6 +28063,8 @@
 
 (defun SPECCALC::ppDiagElem-1 (x) (SPECCALC::ppDiagElem (car x) (cdr x)))
 
+(defun SPECCALC::ppOtherTerm (term) (WADLERLINDIG::ppString "<some OtherTerm>"))
+
 (defun SPECCALC::ppQualifier (pV1) 
   (block 
    nil 
@@ -22407,7 +28222,7 @@
          (let ((pV4 (cdr pV2))
                (pV3 (car pV2))) 
            (return 
-            (if (lisp::or 
+            (if (cl::or 
                  (string=  pV3 METASLANG::UnQualified) 
                  (LIST-SPEC::|!member| pV3 SPECCALC::omittedQualifiers)) 
                 (WADLERLINDIG::ppString pV4) 
@@ -22746,7 +28561,7 @@
                                                                                    (cdr 
                                                                                     pV124)) 
                                                                                   (return 
-                                                                                   (if (lisp::or 
+                                                                                   (if (cl::or 
                                                                                         (SPECCALC::isSimpleTerm? 
                                                                                          pV126) 
                                                                                         (SPECCALC::isSimpleTerm? 
@@ -22827,7 +28642,7 @@
                                                                                (cdr 
                                                                                 pV106)) 
                                                                               (return 
-                                                                               (if (lisp::or 
+                                                                               (if (cl::or 
                                                                                     (SPECCALC::isSimpleTerm? 
                                                                                      pV108) 
                                                                                     (SPECCALC::isSimpleTerm? 
@@ -22897,7 +28712,7 @@
                                                           pV89))) 
                                                        nil)))))))))))) 
                               (return 
-                               (if (lisp::or 
+                               (if (cl::or 
                                     (SPECCALC::isSimpleTerm? pV84) 
                                     (SPECCALC::isSimpleTerm? pV85)) 
                                    (WADLERLINDIG::ppGroup 
@@ -23203,7 +29018,7 @@
          (let ((pV57 (svref pV35 1))
                (pV56 (svref pV35 0))) 
            (return 
-            (if (lisp::or 
+            (if (cl::or 
                  (SPECCALC::isSimpleSort? pV56) 
                  (SPECCALC::isSimpleSort? pV57)) 
                 (WADLERLINDIG::ppGroup 
@@ -23674,18 +29489,18 @@
                       WADLERLINDIG::ppNewline 
                       (cons (WADLERLINDIG::ppString "}") nil)))))))) 
                (if (eq (car term) :|Qualify|) 
-                   (let ((pV34 (cdr term))) 
+                   (let ((pV35 (cdr term))) 
                      (return 
                       (WADLERLINDIG::ppConcat 
                        (cons 
-                        (WADLERLINDIG::ppString (cdr pV34)) 
+                        (WADLERLINDIG::ppString (cdr pV35)) 
                         (cons 
                          (WADLERLINDIG::ppString " qualifying ") 
-                         (cons (SPECCALC::ppTerm-1 (car pV34)) nil)))))) 
+                         (cons (SPECCALC::ppTerm-1 (car pV35)) nil)))))) 
                    (if (eq (car term) :|Translate|) 
-                       (let ((pV33 (cdr term))) 
-                         (let ((pV47 (car pV33))) 
-                           (let ((pV49 (car (cdr pV33)))) 
+                       (let ((pV34 (cdr term))) 
+                         (let ((pV48 (car pV34))) 
+                           (let ((pV50 (car (cdr pV34)))) 
                              (return 
                               (labels 
                                 ((ppTranslateRule (rule pV3) 
@@ -23742,14 +29557,14 @@
                                     (LIST-SPEC::|!map|-1-1 
                                      #'(lambda (x) 
                                         (ppTranslateRule (car x) (cdr x))) 
-                                     pV49)) 
+                                     pV50)) 
                                    (cons 
                                     (WADLERLINDIG::ppString "}") 
                                     (cons 
                                      (WADLERLINDIG::ppString " translating ") 
-                                     (cons (SPECCALC::ppTerm-1 pV47) nil))))))))))) 
+                                     (cons (SPECCALC::ppTerm-1 pV48) nil))))))))))) 
                        (if (eq (car term) :|Let|) 
-                           (let ((pV32 (cdr term))) 
+                           (let ((pV33 (cdr term))) 
                              (return 
                               (WADLERLINDIG::ppConcat 
                                (cons 
@@ -23761,7 +29576,7 @@
                                   (cons 
                                    (WADLERLINDIG::ppNest-1-1 
                                     2 
-                                    (SPECCALC::ppDecls (car pV32))) 
+                                    (SPECCALC::ppDecls (car pV33))) 
                                    (cons 
                                     WADLERLINDIG::ppNewline 
                                     (cons 
@@ -23771,14 +29586,14 @@
                                       (cons 
                                        (WADLERLINDIG::ppNest-1-1 
                                         2 
-                                        (SPECCALC::ppTerm-1 (cdr pV32))) 
+                                        (SPECCALC::ppTerm-1 (cdr pV33))) 
                                        nil))))))))))) 
                            (if (eq (car term) :|Where|) 
-                               (let ((pV31 (cdr term))) 
+                               (let ((pV32 (cdr term))) 
                                  (return 
                                   (WADLERLINDIG::ppConcat 
                                    (cons 
-                                    (SPECCALC::ppTerm-1 (cdr pV31)) 
+                                    (SPECCALC::ppTerm-1 (cdr pV32)) 
                                     (cons 
                                      WADLERLINDIG::ppNewline 
                                      (cons 
@@ -23792,7 +29607,7 @@
                                          (cons 
                                           (WADLERLINDIG::ppNest-1-1 
                                            4 
-                                           (SPECCALC::ppDecls (car pV31))) 
+                                           (SPECCALC::ppDecls (car pV32))) 
                                           (cons 
                                            WADLERLINDIG::ppNewline 
                                            (cons 
@@ -23827,21 +29642,21 @@
                                            (SPECCALC::ppTerm-1 (cdr term)) 
                                            nil)))) 
                                        (if (eq (car term) :|Subst|) 
-                                           (let ((pV28 (cdr term))) 
+                                           (let ((pV29 (cdr term))) 
                                              (return 
                                               (WADLERLINDIG::ppConcat 
                                                (cons 
-                                                (SPECCALC::ppTerm-1 (car pV28)) 
+                                                (SPECCALC::ppTerm-1 (car pV29)) 
                                                 (cons 
                                                  (WADLERLINDIG::ppString " [") 
                                                  (cons 
-                                                  (SPECCALC::ppTerm-1 (cdr pV28)) 
+                                                  (SPECCALC::ppTerm-1 (cdr pV29)) 
                                                   (cons 
                                                    (WADLERLINDIG::ppString "]") 
                                                    nil))))))) 
                                            (if (eq (car term) :|Generate|) 
-                                               (let ((pV27 (cdr term))) 
-                                                 (let ((pV40 (svref pV27 2))) 
+                                               (let ((pV28 (cdr term))) 
+                                                 (let ((pV41 (svref pV28 2))) 
                                                    (return 
                                                     (WADLERLINDIG::ppConcat 
                                                      (cons 
@@ -23849,25 +29664,29 @@
                                                        (STRING-SPEC::^ 
                                                         (STRING-SPEC::^ 
                                                          "generate " 
-                                                         (svref pV27 0)) 
+                                                         (svref pV28 0)) 
                                                         " ")) 
                                                       (cons 
                                                        (SPECCALC::ppTerm-1 
-                                                        (svref pV27 1)) 
+                                                        (svref pV28 1)) 
                                                        (cons 
                                                         (block 
                                                          nil 
                                                          (if (eq 
-                                                              (car pV40) 
+                                                              (car pV41) 
                                                               :|Some|) 
                                                              (return 
                                                               (WADLERLINDIG::ppString 
                                                                (STRING-SPEC::^ 
                                                                 " in " 
-                                                                (cdr pV40))))) 
+                                                                (cdr pV41))))) 
                                                          (return 
                                                           WADLERLINDIG::ppNil)) 
-                                                        nil)))))))))))))))))) 
+                                                        nil))))))) 
+                                               (if (eq (car term) :|Other|) 
+                                                   (return 
+                                                    (SPECCALC::ppOtherTerm 
+                                                     (cdr term))))))))))))))) 
    (error "Nonexhaustive match failure in ppTerm")))
 
 (defun SPECCALC::ppTerm-1 (x) (SPECCALC::ppTerm (car x) (cdr x)))
@@ -23908,7 +29727,7 @@
                            (if (eq (car f2) :|Op|) 
                                (let ((pV25 (cdr f2))) 
                                  (return 
-                                  (lisp::and 
+                                  (cl::and 
                                    (slang-built-in::slang-term-equals 
                                     (cdr pV13) 
                                     (cdr pV25)) 
@@ -23967,7 +29786,7 @@
   (let ((x1 (svref x 0))
         (y (svref x 1))
         (eqFn (svref x 2))) 
-    (lisp::and 
+    (cl::and 
      ( =  (LIST-SPEC::|!length| x1) (LIST-SPEC::|!length| y)) 
      (block 
       nil 
@@ -23976,7 +29795,7 @@
           (if (consp x1) 
               (if (consp y) 
                   (return 
-                   (lisp::and 
+                   (cl::and 
                     (funcall (funcall eqFn spc) (cons (car x1) (car y))) 
                     (SPECCALC::equivList?-1-1 spc (vector (cdr x1) (cdr y) eqFn))))))) 
       (return nil)))))
@@ -24010,7 +29829,7 @@
            (if (eq (car s2) :|Arrow|) 
                (let ((pV121 (cdr s2))) 
                  (return 
-                  (lisp::and 
+                  (cl::and 
                    (SPECCALC::equivSort?-1-1 
                     spc 
                     (cons (svref pV76 0) (svref pV121 0))) 
@@ -24032,7 +29851,7 @@
                             (block 
                              nil 
                              (return 
-                              (lisp::and 
+                              (cl::and 
                                (string=  (car pV5) (car pV6)) 
                                (SPECCALC::equivSort?-1-1 
                                 spc 
@@ -24053,7 +29872,7 @@
                                 (block 
                                  nil 
                                  (return 
-                                  (lisp::and 
+                                  (cl::and 
                                    (string=  (car pV13) (car pV14)) 
                                    (SPECCALC::equivOpt?-1-1 
                                     spc 
@@ -24068,7 +29887,7 @@
                        (if (eq (car s2) :|Quotient|) 
                            (let ((pV104 (cdr s2))) 
                              (return 
-                              (lisp::and 
+                              (cl::and 
                                (SPECCALC::equivSort?-1-1 
                                 spc 
                                 (cons (svref pV73 0) (svref pV104 0))) 
@@ -24080,7 +29899,7 @@
                            (if (eq (car s2) :|Subsort|) 
                                (let ((pV97 (cdr s2))) 
                                  (return 
-                                  (lisp::and 
+                                  (cl::and 
                                    (SPECCALC::equivSort?-1-1 
                                     spc 
                                     (cons (svref pV72 0) (svref pV97 0))) 
@@ -24092,7 +29911,7 @@
                                (if (eq (car s2) :|Base|) 
                                    (let ((pV90 (cdr s2))) 
                                      (return 
-                                      (lisp::and 
+                                      (cl::and 
                                        (slang-built-in::slang-term-equals 
                                         (STANDARDSPEC::findTheSort 
                                          spc 
@@ -24128,7 +29947,7 @@
                                                             (let ((pV38 
                                                                    (svref pV37 0))) 
                                                               (return 
-                                                               (lisp::or 
+                                                               (cl::or 
                                                                 ( =  
                                                                  (svref pV41 2) 
                                                                  (svref pV37 2)) 
@@ -24209,7 +30028,7 @@
     (block 
      nil 
      (return 
-      (lisp::and 
+      (cl::and 
        (string=  (car pV1) (car pV2)) 
        (SPECCALC::equivSort?-1-1 spc (cons (cdr pV1) (cdr pV2))))) 
      (error "Nonexhaustive match failure in equivVar?"))))
@@ -24224,7 +30043,7 @@
            (if (eq (car p2) :|AliasPat|) 
                (let ((pV114 (cdr p2))) 
                  (return 
-                  (lisp::and 
+                  (cl::and 
                    (SPECCALC::equivPattern?-1-1 
                     spc 
                     (cons (svref pV45 0) (svref pV114 0))) 
@@ -24242,9 +30061,9 @@
                    (if (eq (car p2) :|EmbedPat|) 
                        (let ((pV101 (cdr p2))) 
                          (return 
-                          (lisp::and 
+                          (cl::and 
                            (string=  (svref pV43 0) (svref pV101 0)) 
-                           (lisp::and 
+                           (cl::and 
                             (SPECCALC::equivSort?-1-1 
                              spc 
                              (cons (svref pV43 2) (svref pV101 2))) 
@@ -24269,7 +30088,7 @@
                                     (block 
                                      nil 
                                      (return 
-                                      (lisp::and 
+                                      (cl::and 
                                        (string=  (car pV9) (car pV10)) 
                                        (SPECCALC::equivPattern?-1-1 
                                         spc 
@@ -24302,7 +30121,7 @@
                                                (if (eq (car p2) :|RelaxPat|) 
                                                    (let ((pV63 (cdr p2))) 
                                                      (return 
-                                                      (lisp::and 
+                                                      (cl::and 
                                                        (SPECCALC::equivPattern?-1-1 
                                                         spc 
                                                         (cons 
@@ -24320,7 +30139,7 @@
                                                         :|QuotientPat|) 
                                                        (let ((pV56 (cdr p2))) 
                                                          (return 
-                                                          (lisp::and 
+                                                          (cl::and 
                                                            (SPECCALC::equivPattern?-1-1 
                                                             spc 
                                                             (cons 
@@ -24338,7 +30157,7 @@
                                                             :|SortedPat|) 
                                                            (let ((pV49 (cdr p2))) 
                                                              (return 
-                                                              (lisp::and 
+                                                              (cl::and 
                                                                (SPECCALC::equivPattern?-1-1 
                                                                 spc 
                                                                 (cons 
@@ -24367,7 +30186,7 @@
            (if (eq (car t2) :|Apply|) 
                (let ((pV140 (cdr t2))) 
                  (return 
-                  (lisp::and 
+                  (cl::and 
                    (SPECCALC::equivTerm?-1-1 
                     spc 
                     (cons (svref pV65 0) (svref pV140 0))) 
@@ -24398,7 +30217,7 @@
                                 (block 
                                  nil 
                                  (return 
-                                  (lisp::and 
+                                  (cl::and 
                                    (string=  (car pV7) (car pV8)) 
                                    (SPECCALC::equivTerm?-1-1 
                                     spc 
@@ -24410,11 +30229,11 @@
                        (if (eq (car t2) :|Bind|) 
                            (let ((pV122 (cdr t2))) 
                              (return 
-                              (lisp::and 
+                              (cl::and 
                                (slang-built-in::slang-term-equals 
                                 (svref pV62 0) 
                                 (svref pV122 0)) 
-                               (lisp::and 
+                               (cl::and 
                                 (SPECCALC::equivList?-1-1 
                                  spc 
                                  (vector 
@@ -24429,7 +30248,7 @@
                            (if (eq (car t2) :|Let|) 
                                (let ((pV114 (cdr t2))) 
                                  (return 
-                                  (lisp::and 
+                                  (cl::and 
                                    (SPECCALC::equivTerm?-1-1 
                                     spc 
                                     (cons (svref pV61 1) (svref pV114 1))) 
@@ -24445,7 +30264,7 @@
                                              (block 
                                               nil 
                                               (return 
-                                               (lisp::and 
+                                               (cl::and 
                                                 (SPECCALC::equivPattern?-1-1 
                                                  spc 
                                                  (cons (car pV17) (car pV18))) 
@@ -24459,7 +30278,7 @@
                                (if (eq (car t2) :|LetRec|) 
                                    (let ((pV107 (cdr t2))) 
                                      (return 
-                                      (lisp::and 
+                                      (cl::and 
                                        (SPECCALC::equivTerm?-1-1 
                                         spc 
                                         (cons (svref pV60 1) (svref pV107 1))) 
@@ -24475,7 +30294,7 @@
                                                  (block 
                                                   nil 
                                                   (return 
-                                                   (lisp::and 
+                                                   (cl::and 
                                                     (SPECCALC::equivVar?-1-1 
                                                      spc 
                                                      (cons (car pV25) (car pV26))) 
@@ -24495,7 +30314,7 @@
                                        (if (eq (car t2) :|Fun|) 
                                            (let ((pV95 (cdr t2))) 
                                              (return 
-                                              (lisp::and 
+                                              (cl::and 
                                                (SPECCALC::equivFun?-1-1 
                                                 spc 
                                                 (cons 
@@ -24521,13 +30340,13 @@
                                                         (block 
                                                          nil 
                                                          (return 
-                                                          (lisp::and 
+                                                          (cl::and 
                                                            (SPECCALC::equivPattern?-1-1 
                                                             spc 
                                                             (cons 
                                                              (svref pV37 0) 
                                                              (svref pV38 0))) 
-                                                           (lisp::and 
+                                                           (cl::and 
                                                             (SPECCALC::equivTerm?-1-1 
                                                              spc 
                                                              (cons 
@@ -24545,13 +30364,13 @@
                                                (if (eq (car t2) :|IfThenElse|) 
                                                    (let ((pV82 (cdr t2))) 
                                                      (return 
-                                                      (lisp::and 
+                                                      (cl::and 
                                                        (SPECCALC::equivTerm?-1-1 
                                                         spc 
                                                         (cons 
                                                          (svref pV56 0) 
                                                          (svref pV82 0))) 
-                                                       (lisp::and 
+                                                       (cl::and 
                                                         (SPECCALC::equivTerm?-1-1 
                                                          spc 
                                                          (cons 
@@ -24578,7 +30397,7 @@
                                                             :|SortedTerm|) 
                                                            (let ((pV69 (cdr t2))) 
                                                              (return 
-                                                              (lisp::and 
+                                                              (cl::and 
                                                                (SPECCALC::equivTerm?-1-1 
                                                                 spc 
                                                                 (cons 
@@ -24597,7 +30416,7 @@
     (block 
      nil 
      (return 
-      (lisp::and 
+      (cl::and 
        (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
        (SPECCALC::equivTerm?-1-1 spc (cons (cdr pV1) (cdr pV2))))) 
      (error "Nonexhaustive match failure in equivTermScheme?"))))
@@ -24633,7 +30452,7 @@
     (block 
      nil 
      (return 
-      (lisp::and 
+      (cl::and 
        (slang-built-in::slang-term-equals (car pV1) (car pV2)) 
        (SPECCALC::equivSort?-1-1 spc (cons (cdr pV1) (cdr pV2))))) 
      (error "Nonexhaustive match failure in equivSortScheme?"))))
@@ -24660,15 +30479,9 @@
         (let ((new_sorts 
                (LIST-SPEC::foldl-1-1-1 
                 #'(lambda (x) 
-                   (let ((name (car x))) 
-                     (progn (if (string=  
-                                 "SpecCalc.Env" 
-                                 (METASLANG::printQualifiedId name)) 
-                                "" 
-                                "") 
-                            (LIST-SPEC::|!cons| 
-                             (STANDARDSPEC::mkBase name tyVarsSorts) 
-                             (cdr x))))) 
+                   (LIST-SPEC::|!cons| 
+                    (STANDARDSPEC::mkBase (car x) tyVarsSorts) 
+                    (cdr x))) 
                 nil 
                 names))) 
           (let ((new_sort_schemas 
@@ -24682,7 +30495,7 @@
                     #'(lambda (x) 
                        (let ((old_def (car x))
                              (distinct_defs (cdr x))) 
-                         (if (lisp::or 
+                         (if (cl::or 
                               (LIST-SPEC::|!exists|-1-1 
                                #'(lambda (new_sort_scheme) 
                                   (SPECCALC::equivSortScheme?-1-1 
@@ -24742,14 +30555,52 @@
 (defun SPECUNION::unionOpMaps (old_op_map) 
   #'(lambda (new_op_map) 
      (labels 
-       ((augmentOpMap (qualifier id new_info merged_op_map) 
-         (let ((opt_old_info (findAQualifierMap merged_op_map qualifier id))) 
-           (SPECCALC::monadBind 
-            (funcall (funcall (SPECCALC::mergeOpInfo-1 new_info) opt_old_info) 
-                     POSITION-SPEC::noPos) 
-            #'(lambda (merged_info) 
-               (SPECCALC::|!return| 
-                (insertAQualifierMap merged_op_map qualifier id merged_info))))))) 
+       ((augmentOpMap (new_qualifier new_id new_info merged_op_map) 
+         (let ((pV5 (LIST-SPEC::hd (svref new_info 0)))) 
+           (block 
+            nil 
+            (if (eq (car pV5) :|Qualified|) 
+                (let ((pV6 (cdr pV5))) 
+                  (return 
+                   (if (cl::and 
+                        (string=  new_qualifier (car pV6)) 
+                        (string=  new_id (cdr pV6))) 
+                       (let ((optional_old_info 
+                              (findAQualifierMap 
+                               merged_op_map 
+                               new_qualifier 
+                               new_id))) 
+                         (SPECCALC::monadBind 
+                          (funcall (funcall (SPECCALC::mergeOpInfo-1 new_info) 
+                                            optional_old_info) 
+                                   POSITION-SPEC::noPos) 
+                          #'(lambda (merged_info) 
+                             (SPECCALC::monadBind 
+                              (SPECCALC::|!return| (svref merged_info 0)) 
+                              #'(lambda (all_names) 
+                                 (funcall (funcall (SPECCALC::foldM 
+                                                    #'(lambda (merged_op_map) 
+                                                       #'(lambda (pV1) 
+                                                          (block 
+                                                           nil 
+                                                           (if (eq 
+                                                                (car pV1) 
+                                                                :|Qualified|) 
+                                                               (let ((pV2 
+                                                                      (cdr pV1))) 
+                                                                 (return 
+                                                                  (SPECCALC::|!return| 
+                                                                   (insertAQualifierMap 
+                                                                    merged_op_map 
+                                                                    (car pV2) 
+                                                                    (cdr pV2) 
+                                                                    merged_info))))) 
+                                                           (error 
+                                                            "Nonexhaustive match failure in unionOpMaps"))))) 
+                                                   merged_op_map) 
+                                          all_names)))))) 
+                       (SPECCALC::|!return| merged_op_map))))) 
+            (error "Nonexhaustive match failure in unionOpMaps"))))) 
        (funcall (funcall (SPECCALC::foldOverQualifierMap 
                           #'(lambda (x) 
                              (augmentOpMap 
@@ -24780,14 +30631,52 @@
 (defun SPECUNION::unionSortMaps (old_sort_map) 
   #'(lambda (new_sort_map) 
      (labels 
-       ((augmentSortMap (qualifier id new_info merged_sort_map) 
-         (let ((opt_old_info (findAQualifierMap merged_sort_map qualifier id))) 
-           (SPECCALC::monadBind 
-            (funcall (funcall (SPECCALC::mergeSortInfo-1 new_info) opt_old_info) 
-                     POSITION-SPEC::noPos) 
-            #'(lambda (merged_info) 
-               (SPECCALC::|!return| 
-                (insertAQualifierMap merged_sort_map qualifier id merged_info))))))) 
+       ((augmentSortMap (new_qualifier new_id new_info merged_sort_map) 
+         (let ((pV5 (LIST-SPEC::hd (svref new_info 0)))) 
+           (block 
+            nil 
+            (if (eq (car pV5) :|Qualified|) 
+                (let ((pV6 (cdr pV5))) 
+                  (return 
+                   (if (cl::and 
+                        (string=  new_qualifier (car pV6)) 
+                        (string=  new_id (cdr pV6))) 
+                       (let ((optional_old_info 
+                              (findAQualifierMap 
+                               merged_sort_map 
+                               new_qualifier 
+                               new_id))) 
+                         (SPECCALC::monadBind 
+                          (funcall (funcall (SPECCALC::mergeSortInfo-1 new_info) 
+                                            optional_old_info) 
+                                   POSITION-SPEC::noPos) 
+                          #'(lambda (merged_info) 
+                             (SPECCALC::monadBind 
+                              (SPECCALC::|!return| (svref merged_info 0)) 
+                              #'(lambda (all_names) 
+                                 (funcall (funcall (SPECCALC::foldM 
+                                                    #'(lambda (merged_sort_map) 
+                                                       #'(lambda (pV1) 
+                                                          (block 
+                                                           nil 
+                                                           (if (eq 
+                                                                (car pV1) 
+                                                                :|Qualified|) 
+                                                               (let ((pV2 
+                                                                      (cdr pV1))) 
+                                                                 (return 
+                                                                  (SPECCALC::|!return| 
+                                                                   (insertAQualifierMap 
+                                                                    merged_sort_map 
+                                                                    (car pV2) 
+                                                                    (cdr pV2) 
+                                                                    merged_info))))) 
+                                                           (error 
+                                                            "Nonexhaustive match failure in unionSortMaps"))))) 
+                                                   merged_sort_map) 
+                                          all_names)))))) 
+                       (SPECCALC::|!return| merged_sort_map))))) 
+            (error "Nonexhaustive match failure in unionSortMaps"))))) 
        (funcall (funcall (SPECCALC::foldOverQualifierMap 
                           #'(lambda (x) 
                              (augmentSortMap 
@@ -25069,12 +30958,12 @@
                     (subtractSpec-1-1 sub_spec original_spec))) 
                (SPECCALC::monadSeq 
                 (funcall (SPECCALC::|!when| 
-                          (lisp::or 
+                          (cl::or 
                            (BOOLEAN-SPEC::~ 
                             (slang-built-in::slang-term-equals 
                              (svref should_be_empty_spec 3) 
                              emptyASortMap)) 
-                           (lisp::or 
+                           (cl::or 
                             (BOOLEAN-SPEC::~ 
                              (slang-built-in::slang-term-equals 
                               (svref should_be_empty_spec 1) 
@@ -25110,11 +30999,171 @@
 (defun SPECCALC::auxTranslateSpec-1-1-1-1 (x1 x2 x3 x4) 
   (funcall (funcall (funcall (SPECCALC::auxTranslateSpec-1 x1) x2) x3) x4))
 
-(defun SPECCALC::axiomFromDef (term_def sort_scheme sp) 
-  (vector '(:|Axiom|) "foo" nil (METASLANG::mkTrueA POSITION-SPEC::noPos)))
+(defun SPECCALC::patternNameOpt (pattern) 
+  (block 
+   nil 
+   (if (eq (car pattern) :|VarPat|) 
+       (return (cons :|Some| (car (car (cdr pattern)))))) 
+   (return '(:|None|))))
 
-(defun SPECCALC::axiomFromDef-1 (x) 
-  (SPECCALC::axiomFromDef (svref x 0) (svref x 1) (svref x 2)))
+(defun SPECCALC::patternNamesOpt (pattern) 
+  (block 
+   nil 
+   (if (eq (car pattern) :|VarPat|) 
+       (return (cons :|Some| (cons (car (car (cdr pattern))) nil))) 
+       (if (eq (car pattern) :|RecordPat|) 
+           (return 
+            (LIST-SPEC::foldl-1-1-1 
+             #'(lambda (x) 
+                (let ((pV12 (cdr x))) 
+                  (block 
+                   nil 
+                   (return 
+                    (block 
+                     nil 
+                     (if (eq (car pV12) :|Some|) 
+                         (return 
+                          (let ((pV6 (SPECCALC::patternNameOpt (cdr (car x))))) 
+                            (block 
+                             nil 
+                             (if (eq (car pV6) :|Some|) 
+                                 (return 
+                                  (cons 
+                                   :|Some| 
+                                   (LIST-SPEC::|!++| 
+                                    (cdr pV12) 
+                                    (cons (cdr pV6) nil))))) 
+                             (return '(:|None|)))))) 
+                     (return '(:|None|)))) 
+                   (error "Nonexhaustive match failure in patternNamesOpt")))) 
+             (cons :|Some| nil) 
+             (car (cdr pattern)))))) 
+   (return '(:|None|))))
+
+(defun SPECCALC::mkUncurryEqualityRec
+ (sp topSrt topTrm topFunOp srt trm prevArgs) 
+  (block 
+   nil 
+   (if (eq (car srt) :|Arrow|) 
+       (let ((pV34 (cdr srt))) 
+         (let ((pV35 (svref pV34 0))) 
+           (return 
+            (block 
+             nil 
+             (if (eq (car trm) :|Lambda|) 
+                 (let ((pV12 (car (cdr trm)))) 
+                   (if (consp pV12) 
+                       (let ((pV15 (car pV12))) 
+                         (if (null (cdr pV12)) 
+                             (return 
+                              (let ((argNames 
+                                     (SPECCALC::patternNamesOpt (svref pV15 0)))) 
+                                (block 
+                                 nil 
+                                 (if (eq (car argNames) :|Some|) 
+                                     (let ((pV8 (cdr argNames))) 
+                                       (return 
+                                        (let ((numargs 
+                                               (LIST-SPEC::|!length| pV8))) 
+                                          (let ((argSorts 
+                                                 (let ((pV4 
+                                                        (SPECENVIRONMENT::productOpt 
+                                                         sp 
+                                                         pV35))) 
+                                                   (block 
+                                                    nil 
+                                                    (if (eq (car pV4) :|Some|) 
+                                                        (return 
+                                                         (LIST-SPEC::|!map|-1-1 
+                                                          #'(lambda (x) (cdr x)) 
+                                                          (cdr pV4))) 
+                                                        (if (eq 
+                                                             (car pV4) 
+                                                             :|None|) 
+                                                            (return 
+                                                             (cons pV35 nil)))) 
+                                                    (error 
+                                                     "Nonexhaustive match failure in mkUncurryEqualityRec"))))) 
+                                            (let ((arity 
+                                                   (LIST-SPEC::|!length| 
+                                                    argSorts))) 
+                                              (if ( =  arity numargs) 
+                                                  (let ((newArgs 
+                                                         (LISTPAIR::|!map|-1-1 
+                                                          #'(lambda (x) 
+                                                             (STANDARDSPEC::mkVar 
+                                                              (car x) 
+                                                              (cdr x))) 
+                                                          (cons pV8 argSorts)))) 
+                                                    (SPECCALC::mkUncurryEqualityRec 
+                                                     sp 
+                                                     topSrt 
+                                                     topTrm 
+                                                     topFunOp 
+                                                     (svref pV34 1) 
+                                                     (svref pV15 2) 
+                                                     (LIST-SPEC::|!++| 
+                                                      prevArgs 
+                                                      newArgs))) 
+                                                  (STANDARDSPEC::mkEquality 
+                                                   topSrt 
+                                                   topFunOp 
+                                                   topTrm)))))))) 
+                                 (return 
+                                  (STANDARDSPEC::mkEquality 
+                                   topSrt 
+                                   topFunOp 
+                                   topTrm)))))))))) 
+             (return (STANDARDSPEC::mkEquality topSrt topFunOp topTrm))))))) 
+   (return 
+    (block 
+     nil 
+     (if (eq (car trm) :|Lambda|) 
+         (let ((pV25 (car (cdr trm)))) 
+           (if (consp pV25) 
+               (if (null (cdr pV25)) 
+                   (return (STANDARDSPEC::mkEquality topSrt topFunOp topTrm)))))) 
+     (return 
+      (STANDARDSPEC::mkEquality srt (STANDARDSPEC::mkAppl topFunOp prevArgs) trm))))))
+
+
+(defun SPECCALC::mkUncurryEquality (sp srt qid trm) 
+  (let ((funOp (STANDARDSPEC::mkOp qid srt))) 
+    (SPECCALC::mkUncurryEqualityRec sp srt trm funOp srt trm nil)))
+
+(defun SPECCALC::unLambdaDef (spc srt name term) 
+  (let ((new_equality (SPECCALC::mkUncurryEquality spc srt name term))) 
+    (let ((eqltyWithPos 
+           (METASLANG::withAnnT new_equality (METASLANG::termAnn term)))) 
+      (cons eqltyWithPos nil))))
+
+(defun SPECCALC::axiomFromOpDefTop (spc qname name decl) 
+  (let ((pV5 (svref decl 3))) 
+    (block 
+     nil 
+     (if (consp pV5) 
+         (let ((pV12 (cdr (car pV5)))) 
+           (if (null (cdr pV5)) 
+               (return 
+                (if (memberQualifiedId qname name (svref (svref spc 0) 2)) 
+                    (progn (METASLANG::termAnn pV12) 
+                           (let ((opName (METASLANG::mkQualifiedId qname name))) 
+                             (let ((ax 
+                                    (vector 
+                                     '(:|Axiom|) 
+                                     (STRING-SPEC::^ name "_def") 
+                                     nil 
+                                     (LIST-SPEC::hd 
+                                      (SPECCALC::unLambdaDef 
+                                       spc 
+                                       (cdr (svref decl 2)) 
+                                       opName 
+                                       pV12))))) (cons ax nil)))) 
+                    nil))))) 
+     (return nil))))
+
+(defun SPECCALC::axiomFromOpDefTop-1 (x) 
+  (SPECCALC::axiomFromOpDefTop (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
 
 (defparameter SPECCALC::snark_assert (LISP-SPEC::|!symbol| "SNARK" "ASSERT"))
 
@@ -25237,74 +31286,83 @@
        (if (eq (car bndr) :|Exists|) (return "EXISTS"))) 
    (error "Nonexhaustive match failure in bndrString")))
 
-(defun SPECCALC::completeMorphismMap (trans_map dom_map cod_map) 
-  (foldriAQualifierMap-1-1-1 
-   #'(lambda (x) 
-      (let ((new_map (svref x 3))
-            (id (svref x 1))
-            (qualifier (svref x 0))) 
-        (let ((pV7 (findAQualifierMap trans_map qualifier id))) 
-          (block 
-           nil 
-           (if (eq (car pV7) :|Some|) 
-               (return 
-                (POLYMAP::update-1-1-1 
-                 new_map 
-                 (cons :|Qualified| (cons qualifier id)) 
-                 (cdr pV7)))) 
-           (return 
-            (let ((pV5 (findAQualifierMap cod_map qualifier id))) 
-              (block 
-               nil 
-               (if (eq (car pV5) :|Some|) 
-                   (return 
-                    (POLYMAP::update-1-1-1 
-                     new_map 
-                     (cons :|Qualified| (cons qualifier id)) 
-                     (cons :|Qualified| (cons qualifier id))))) 
-               (return 
-                (SYSTEM-SPEC::fail 
-                 (STRING-SPEC::^ 
-                  (STRING-SPEC::^ 
-                   (STRING-SPEC::^ "morphism: No mapping for " qualifier) 
-                   ".") 
-                  id)))))))))) 
-   POLYMAP::emptyMap 
-   dom_map))
+(defun SPECCALC::completeMorphismMap (trans_map) 
+  #'(lambda (dom_map) 
+     #'(lambda (cod_map) 
+        #'(lambda (|!position|) 
+           (labels 
+             ((compl (qualifier id val new_map) 
+               (let ((pV6 (findAQualifierMap trans_map qualifier id))) 
+                 (block 
+                  nil 
+                  (if (eq (car pV6) :|Some|) 
+                      (return 
+                       (SPECCALC::|!return| 
+                        (POLYMAP::update-1-1-1 
+                         new_map 
+                         (cons :|Qualified| (cons qualifier id)) 
+                         (cdr pV6))))) 
+                  (return 
+                   (let ((pV4 (findAQualifierMap cod_map qualifier id))) 
+                     (block 
+                      nil 
+                      (if (eq (car pV4) :|Some|) 
+                          (return 
+                           (SPECCALC::|!return| 
+                            (POLYMAP::update-1-1-1 
+                             new_map 
+                             (cons :|Qualified| (cons qualifier id)) 
+                             (cons :|Qualified| (cons qualifier id)))))) 
+                      (return 
+                       (SPECCALC::raise 
+                        (cons 
+                         :|MorphError| 
+                         (cons 
+                          |!position| 
+                          (STRING-SPEC::^ 
+                           (STRING-SPEC::^ 
+                            (STRING-SPEC::^ "No mapping for " qualifier) 
+                            ".") 
+                           id)))))))))))) 
+             (funcall (funcall (SPECCALC::foldOverQualifierMap 
+                                #'(lambda (x) 
+                                   (compl 
+                                    (svref x 0) 
+                                    (svref x 1) 
+                                    (svref x 2) 
+                                    (svref x 3)))) 
+                               POLYMAP::emptyMap) 
+                      dom_map))))))
 
-(defun SPECCALC::buildSpecMorphism (pV15 pV16 pV17) 
-  (block 
-   nil 
-   (return 
-    (block 
-     nil 
-     (return 
-      (block 
-       nil 
-       (return 
-        (vector 
-         pV16 
-         pV15 
-         (SPECCALC::completeMorphismMap (car pV17) (svref pV15 1) (svref pV16 1)) 
-         (SPECCALC::completeMorphismMap (cdr pV17) (svref pV15 3) (svref pV16 3)))) 
-       (error "Nonexhaustive match failure in buildSpecMorphism"))) 
-     (error "Nonexhaustive match failure in buildSpecMorphism"))) 
-   (error "Nonexhaustive match failure in buildSpecMorphism")))
+(defun SPECCALC::buildSpecMorphism-1 (domSpec) 
+  #'(lambda (codSpec) 
+     #'(lambda (x) 
+        (let ((sortMap (cdr x))
+              (opMap (car x))) 
+          #'(lambda (|!position|) 
+             (SPECCALC::monadBind 
+              (funcall (funcall (funcall (SPECCALC::completeMorphismMap opMap) 
+                                         (svref domSpec 1)) 
+                                (svref codSpec 1)) 
+                       |!position|) 
+              #'(lambda (newOpMap) 
+                 (SPECCALC::monadBind 
+                  (funcall (funcall (funcall (SPECCALC::completeMorphismMap 
+                                              sortMap) 
+                                             (svref domSpec 3)) 
+                                    (svref codSpec 3)) 
+                           |!position|) 
+                  #'(lambda (newSortMap) 
+                     (SPECCALC::|!return| 
+                      (vector codSpec domSpec newOpMap newSortMap)))))))))))
 
-(defun SPECCALC::buildSpecMorphism-1 (x) 
-  (SPECCALC::buildSpecMorphism (svref x 0) (svref x 1) (svref x 2)))
+(defun SPECCALC::buildSpecMorphism (x0 x1 x2 x3) 
+  (SPECCALC::buildSpecMorphism-1 (vector x0 x1 x2 x3)))
 
-(defun SPECCALC::|!catch|-1-1-1 (f handler state) 
-  (let ((x (funcall f state))) 
-    (let ((pV1 (car x))
-          (pV2 (cdr x))) 
-      (block 
-       nil 
-       (if (eq (car pV1) :|Ok|) 
-           (return (cons (cons :|Ok| (cdr pV1)) pV2)) 
-           (if (eq (car pV1) :|Exception|) 
-               (return (funcall (funcall handler (cdr pV1)) pV2)))) 
-       (error "Nonexhaustive match failure in catch")))))
+(defun SPECCALC::buildSpecMorphism-1-1-1-1-1 (x1 x2 x3 x4 x5) 
+  (funcall (funcall (funcall (funcall (SPECCALC::buildSpecMorphism-1 x1) x2) x3) 
+                    x4) 
+           x5))
 
 (defun SPECCALC::|!catch| (x1) 
   #'(lambda (x2) #'(lambda (x3) (SPECCALC::|!catch|-1-1-1 x1 x2 x3))))
@@ -25324,45 +31382,6 @@
                (STRING-SPEC::^ "Directory does not exist: " dir)))) 
        (SPECCALC::splitStringAtChar-1-1 SPECCALC::specPathSeparator str)) 
       nil))
-
-(defun SPECCALC::getGlobalContext
- (globalContext localContext uri validatedURIs) 
-  (cons 
-   (cons :|Ok| globalContext) 
-   (vector globalContext localContext uri validatedURIs)))
-
-(defun SPECCALC::getGlobalContext-1 (x) 
-  (SPECCALC::getGlobalContext (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
-
-(defun SPECCALC::setGlobalContext-1-1 (newGlobalContext x) 
-  (cons 
-   (cons :|Ok| nil) 
-   (vector newGlobalContext (svref x 1) (svref x 2) (svref x 3))))
-
-(defun SPECCALC::setGlobalContext (x1) 
-  #'(lambda (x2) (SPECCALC::setGlobalContext-1-1 x1 x2)))
-
-(defun SPECCALC::cleanupGlobalContext (x2 x1 x0 x) 
-  (SPECCALC::monadBind-1-1 
-   (cons 
-    #'SPECCALC::getGlobalContext-1 
-    #'(lambda (gCtxt) 
-       (SPECCALC::setGlobalContext 
-        (POLYMAP::mapPartial-1-1 
-         #'(lambda (x) 
-            (block 
-             nil 
-             (if (eq (car (svref x 0)) :|InProcess|) (return '(:|None|))) 
-             (return (cons :|Some| (vector (svref x 0) (svref x 1) (svref x 2)))))) 
-         gCtxt)))) 
-   (vector x2 x1 x0 x)))
-
-(defun SPECCALC::cleanupGlobalContext-1 (x) 
-  (SPECCALC::cleanupGlobalContext 
-   (svref x 0) 
-   (svref x 1) 
-   (svref x 2) 
-   (svref x 3)))
 
 (defun SPECCALC::setLocalContext-1-1 (newLocalContext x) 
   (cons 
@@ -25431,7 +31450,7 @@
                      (error "Nonexhaustive match failure in complainIfAmbiguous")))) 
                nil 
                (svref spc 1)))) 
-         (if (lisp::and 
+         (if (cl::and 
               (slang-built-in::slang-term-equals ambiguous_sorts nil) 
               (slang-built-in::slang-term-equals ambiguous_ops nil)) 
              (SPECCALC::|!return| spc) 
@@ -25510,11 +31529,21 @@
 ")))))) 
                          (error 
                           "Nonexhaustive match failure in complainIfAmbiguous")))) 
-                   (SPECCALC::raise 
-                    (cons 
-                     :|SpecError| 
-                     (cons |!position| (STRING-SPEC::^ sort_msg op_msg))))))))))))
-
+                   (let ((spc_msg 
+                          (STRING-SPEC::^ 
+                           "
+ in following spec: 
+" 
+                           (ANNSPECPRINTER::printSpec-1 spc)))) 
+                     (SPECCALC::raise 
+                      (cons 
+                       :|SpecError| 
+                       (cons 
+                        |!position| 
+                        (STRING-SPEC::^ 
+                         (STRING-SPEC::^ (STRING-SPEC::^ "
+" sort_msg) op_msg) 
+                         spc_msg)))))))))))))
 
 (defun SPECCALC::complainIfAmbiguous (x0 x1 x2 x3) 
   (SPECCALC::complainIfAmbiguous-1 (vector x0 x1 x2 x3)))
@@ -25522,8 +31551,10 @@
 (defun SPECCALC::complainIfAmbiguous-1-1-1 (x1 x2 x3) 
   (funcall (funcall (SPECCALC::complainIfAmbiguous-1 x1) x2) x3))
 
-(defun SPECCALC::completeMorphismMap-1 (x) 
-  (SPECCALC::completeMorphismMap (svref x 0) (svref x 1) (svref x 2)))
+(defun SPECCALC::completeMorphismMap-1-1-1-1-1 (x1 x2 x3 x4 x5) 
+  (funcall (funcall (funcall (funcall (SPECCALC::completeMorphismMap x1) x2) x3) 
+                    x4) 
+           x5))
 
 (defun SPECCALC::compose-1-1 (mor1 mor2) 
   (vector 
@@ -25835,11 +31866,25 @@
    0 
    qmap))
 
+(defun SPECCALC::curryShapeNum (sp srt) 
+  (let ((pV2 (SPECENVIRONMENT::arrowOpt sp srt))) 
+    (block 
+     nil 
+     (if (eq (car pV2) :|Some|) 
+         (return 
+          (INTEGER-SPEC::|!+| 1 (SPECCALC::curryShapeNum sp (cdr (cdr pV2)))))) 
+     (return 0))))
+
+(defun SPECCALC::curryShapeNum-1 (x) (SPECCALC::curryShapeNum (car x) (cdr x)))
+
 (defparameter SPECCALC::declare_constant 
   (LISP-SPEC::|!symbol| "SNARK" "DECLARE-CONSTANT-SYMBOL"))
 
 (defparameter SPECCALC::declare_predicate 
   (LISP-SPEC::|!symbol| "SNARK" "DECLARE-PREDICATE-SYMBOL"))
+
+(defparameter SPECCALC::declare_proposition_symbol 
+  (LISP-SPEC::|!symbol| "SNARK" "DECLARE-PROPOSITION-SYMBOL"))
 
 (defun SPECCALC::displayMultipleAnonymousProofResult
  (proof_name claim_type claim_name proved) 
@@ -25999,15 +32044,6 @@
              (let ((pV2 (cdr optURI))) 
                (return (cons (cons :|Ok| (cons (car pV2) (cdr pV2))) state))))) 
      (error "Nonexhaustive match failure in getCurrentURI"))))
-
-(defun SPECCALC::hackMemory-1-1 (pV1 state) 
-  (declare (ignore pV1)) 
-  (progn (SYSTEM-SPEC::hackMemory) (cons (cons :|Ok| nil) state)))
-
-(defun SPECCALC::hackMemory-1 (x1) 
-  #'(lambda (x2) (SPECCALC::hackMemory-1-1 x1 x2)))
-
-(defun SPECCALC::hackMemory () (SPECCALC::hackMemory-1 nil))
 
 (defun SPECCALC::uriToPath-1 (x) (SPECCALC::uriToPath (car x) (cdr x)))
 
@@ -26270,7 +32306,7 @@
            (if (eq (car pred) :|Bind|) 
                (let ((pV25 (cdr pred))) 
                  (return 
-                  (lisp::or 
+                  (cl::or 
                    (LIST-SPEC::|!exists|-1-1 
                     #'(lambda (x) (UTILITIES::occurs v (cdr x))) 
                     (svref pV25 1)) 
@@ -26278,9 +32314,9 @@
                (if (eq (car pred) :|IfThenElse|) 
                    (let ((pV24 (cdr pred))) 
                      (return 
-                      (lisp::or 
+                      (cl::or 
                        (UTILITIES::occursT v (svref pV24 0)) 
-                       (lisp::or 
+                       (cl::or 
                         (UTILITIES::occursT v (svref pV24 1)) 
                         (UTILITIES::occursT v (svref pV24 2)))))) 
                    (if (eq (car pred) :|Var|) 
@@ -26295,7 +32331,7 @@
                                (if (eq (car pred) :|Let|) 
                                    (let ((pV20 (cdr pred))) 
                                      (return 
-                                      (lisp::or 
+                                      (cl::or 
                                        (UTILITIES::occursT v (svref pV20 1)) 
                                        (LIST-SPEC::|!exists|-1-1 
                                         #'(lambda (x) 
@@ -26304,7 +32340,7 @@
                                    (if (eq (car pred) :|LetRec|) 
                                        (let ((pV19 (cdr pred))) 
                                          (return 
-                                          (lisp::or 
+                                          (cl::or 
                                            (UTILITIES::occursT v (svref pV19 1)) 
                                            (LIST-SPEC::|!exists|-1-1 
                                             #'(lambda (x) 
@@ -26329,7 +32365,7 @@
            (return nil) 
            (if (consp row) 
                (return 
-                (lisp::or 
+                (cl::or 
                  (UTILITIES::occurs v (cdr (car row))) 
                  (occursRow v (cdr row)))))) 
        (error "Nonexhaustive match failure in occurs")))
@@ -26343,7 +32379,7 @@
                  (let ((pV8 (cdr (car row)))) 
                    (if (eq (car pV8) :|Some|) 
                        (return 
-                        (lisp::or 
+                        (cl::or 
                          (UTILITIES::occurs v (cdr pV8)) 
                          (occursOptRow v pV6))) 
                        (if (eq (car pV8) :|None|) (return (occursOptRow v pV6)))))))) 
@@ -26357,19 +32393,19 @@
              (if (eq (car srt) :|Arrow|) 
                  (let ((pV37 (cdr srt))) 
                    (return 
-                    (lisp::or 
+                    (cl::or 
                      (UTILITIES::occurs v (svref pV37 0)) 
                      (UTILITIES::occurs v (svref pV37 1))))) 
                  (if (eq (car srt) :|Quotient|) 
                      (let ((pV36 (cdr srt))) 
                        (return 
-                        (lisp::or 
+                        (cl::or 
                          (UTILITIES::occurs v (svref pV36 0)) 
                          (UTILITIES::occursT v (svref pV36 1))))) 
                      (if (eq (car srt) :|Subsort|) 
                          (let ((pV35 (cdr srt))) 
                            (return 
-                            (lisp::or 
+                            (cl::or 
                              (UTILITIES::occurs v (svref pV35 0)) 
                              (UTILITIES::occursT v (svref pV35 1))))) 
                          (if (eq (car srt) :|Base|) 
@@ -26697,7 +32733,7 @@
                                                (return 
                                                 (if (LIST-SPEC::|!exists|-1-1 
                                                      #'(lambda (x) 
-                                                        (lisp::and 
+                                                        (cl::and 
                                                          (METASLANG::equalSort? 
                                                           (car x) 
                                                           srt1) 
@@ -26728,7 +32764,7 @@
                                                                  (UTILITIES::unfoldPSort 
                                                                   env 
                                                                   srt2))) 
-                                                            (if (lisp::and 
+                                                            (if (cl::and 
                                                                  (METASLANG::equalSort? 
                                                                   s1 
                                                                   s1_) 
@@ -27290,7 +33326,7 @@
                                                                                      "Nonexhaustive match failure in elaboratePattern")))))))) 
                                                                   (return sort0))) 
                                                                sort0))) 
-                                                      (if (lisp::and 
+                                                      (if (cl::and 
                                                            (svref env 3) 
                                                            (TYPECHECKER::undeterminedSort? 
                                                             sort0)) 
@@ -29687,7 +35723,7 @@
                                                                                                    pV244) 
                                                                                                   alpha))) 
                                                                                             (let ((t1 
-                                                                                                   (if (lisp::and 
+                                                                                                   (if (cl::and 
                                                                                                         (BOOLEAN-SPEC::~ 
                                                                                                          (svref 
                                                                                                           env 
@@ -29975,7 +36011,7 @@
                                    (let ((pV30 (svref pV27 1))
                                          (pV29 (svref pV27 0))) 
                                      (return 
-                                      (progn (if (lisp::or 
+                                      (progn (if (cl::or 
                                                   (LIST-SPEC::|!null| pV28) 
                                                   (LIST-SPEC::|!exists|-1-1 
                                                    #'(lambda (alias) 
@@ -30190,7 +36226,7 @@
          (if (eq (car s2) :|CoProduct|) 
              (let ((pV10 (car (cdr s2)))) 
                (return 
-                (lisp::and 
+                (cl::and 
                  ( =  (LIST-SPEC::|!length| pV7) (LIST-SPEC::|!length| pV10)) 
                  (LIST-SPEC::all-1-1 
                   #'(lambda (x) 
@@ -30198,7 +36234,7 @@
                            (id1 (car x))) 
                        (LIST-SPEC::|!exists|-1-1 
                         #'(lambda (x1) 
-                           (lisp::and 
+                           (cl::and 
                             (string=  id1 (car x1)) 
                             (slang-built-in::slang-term-equals cs1 (cdr x1)))) 
                         pV10))) 
@@ -30266,25 +36302,6 @@
      (svref pV1 6))) 
    (error "Nonexhaustive match failure in addConstrsEnv")))
 
-(defun UTILITIES::gotoErrorLocation (errors) 
-  (block 
-   nil 
-   (if (consp errors) 
-       (let ((pV16 (cdr (car errors)))) 
-         (return 
-          (block 
-           nil 
-           (if (eq (car pV16) :|File|) 
-               (let ((pV3 (cdr pV16))) 
-                 (let ((pV5 (svref pV3 1))) 
-                   (return 
-                    (IO-SPEC::gotoFilePosition 
-                     (svref pV3 0) 
-                     (svref pV5 0) 
-                     (svref pV5 1)))))) 
-           (return (UTILITIES::gotoErrorLocation (cdr errors))))))) 
-   (return nil)))
-
 (defun UTILITIES::checkErrors-1 (env) 
   (let ((errors (svref env 1))) 
     (labels 
@@ -30302,42 +36319,7 @@
       (let ((errors 
              (MERGESORT::uniqueSort-1-1 
               #'(lambda (x) (compare (car x) (cdr x))) 
-              (STATE::|!!| errors)))) 
-        (let ((errMsg (cons :|Ref| ""))) 
-          (let ((last_file (cons :|Ref| ""))) 
-            (labels 
-              ((printError (msg pos) 
-                (let ((same_file? 
-                       (block 
-                        nil 
-                        (if (eq (car pos) :|File|) 
-                            (let ((pV11 (svref (cdr pos) 0))) 
-                              (return 
-                               (let ((same? 
-                                      (string=  pV11 (STATE::|!!| last_file)))) 
-                                 (progn (STATE::|:=| last_file pV11) same?))))) 
-                        (return nil)))) 
-                  (STATE::|:=| 
-                   errMsg 
-                   (STRING-SPEC::^ 
-                    (STRING-SPEC::^ 
-                     (STRING-SPEC::^ 
-                      (STRING-SPEC::^ 
-                       (STATE::|!!| errMsg) 
-                       (funcall (if same_file? 
-                                    #'POSITION-SPEC::|!print| 
-                                    #'POSITION-SPEC::printAll) 
-                                pos)) 
-                      " : ") 
-                     msg) 
-                    (PRETTYPRINT::newlineString)))))) 
-              (if (LIST-SPEC::|!null| errors) 
-                  '(:|None|) 
-                  (progn (UTILITIES::gotoErrorLocation errors) 
-                         (LIST-SPEC::app-1-1 
-                          #'(lambda (x) (printError (car x) (cdr x))) 
-                          errors) 
-                         (cons :|Some| (STATE::|!!| errMsg)))))))))))
+              (STATE::|!!| errors)))) errors))))
 
 (defun UTILITIES::initialEnv (spc file) 
   (block 
@@ -30380,19 +36362,19 @@
          (let ((env_1 (UTILITIES::initialEnv given_spec filename))) 
            (block 
             nil 
-            (let ((pV94 (svref given_spec 3))
-                  (pV93 (svref given_spec 2))
-                  (pV92 (svref given_spec 1))
-                  (pV91 (svref given_spec 0))) 
-              (let ((pV98 (svref pV91 3))
-                    (pV97 (svref pV91 2))) 
+            (let ((pV93 (svref given_spec 3))
+                  (pV92 (svref given_spec 2))
+                  (pV91 (svref given_spec 1))
+                  (pV90 (svref given_spec 0))) 
+              (let ((pV97 (svref pV90 3))
+                    (pV96 (svref pV90 2))) 
                 (return 
                  (labels 
                    ((elaborate_sort_0 (pV4 pV5 pV6) 
                      (block 
                       nil 
                       (return 
-                       (if (BOOLEAN-SPEC::~ (memberQualifiedId pV4 pV5 pV98)) 
+                       (if (BOOLEAN-SPEC::~ (memberQualifiedId pV4 pV5 pV97)) 
                            pV6 
                            (vector 
                             (svref pV6 0) 
@@ -30409,11 +36391,11 @@
                                (svref x 0) 
                                (svref x 1) 
                                (svref x 2))) 
-                           pV94))) 
+                           pV93))) 
                      (let ((env_2 
                             (UTILITIES::addConstrsEnv 
                              env_1 
-                             (vector pV91 pV92 pV93 sorts_1)))) 
+                             (vector pV90 pV91 pV92 sorts_1)))) 
                        (labels 
                          ((elaborate_op_1 (poly?) 
                            #'(lambda (x) 
@@ -30426,7 +36408,7 @@
                                          (memberQualifiedId 
                                           (svref x 0) 
                                           (svref x 1) 
-                                          pV97)) 
+                                          pV96)) 
                                         pV13 
                                         (let ((sort_scheme_2 
                                                (TYPECHECKER::checkSortScheme 
@@ -30458,7 +36440,7 @@
                                  (error 
                                   "Nonexhaustive match failure in elaboratePosSpec")))))) 
                          (let ((ops_2_a 
-                                (mapiAQualifierMap-1-1 (elaborate_op_1 t) pV92))) 
+                                (mapiAQualifierMap-1-1 (elaborate_op_1 t) pV91))) 
                            (let ((ops_2_b 
                                   (mapiAQualifierMap-1-1 
                                    (elaborate_op_1 nil) 
@@ -30488,7 +36470,7 @@
                                                (svref x 1) 
                                                (svref x 2) 
                                                (svref x 3))) 
-                                           pV93))) 
+                                           pV92))) 
                                      (let ((env_3 
                                             (UTILITIES::secondPass-1 env_2))) 
                                        (labels 
@@ -30525,7 +36507,7 @@
                                                       (memberQualifiedId 
                                                        pV81 
                                                        pV82 
-                                                       pV97)) 
+                                                       pV96)) 
                                                      pV83 
                                                      (let ((pV78 
                                                             (TYPECHECKER::checkSortScheme 
@@ -30800,37 +36782,29 @@
                                                              (svref x 2) 
                                                              (svref x 3))) 
                                                          props_2))) 
-                                                   (let ((spec_3 
-                                                          (vector 
-                                                           pV91 
-                                                           ops_3 
-                                                           props_3 
-                                                           sorts_3))) 
-                                                     (let ((pV88 
-                                                            (UTILITIES::checkErrors-1 
-                                                             env_3))) 
-                                                       (block 
-                                                        nil 
-                                                        (if (eq 
-                                                             (car pV88) 
-                                                             :|None|) 
-                                                            (return 
+                                                   (let ((pV88 
+                                                          (UTILITIES::checkErrors-1 
+                                                           env_3))) 
+                                                     (block 
+                                                      nil 
+                                                      (if (null pV88) 
+                                                          (return 
+                                                           (let ((x 
+                                                                  (POSSPECTOSPEC::convertPosSpecToSpec-1 
+                                                                   (vector 
+                                                                    pV90 
+                                                                    ops_3 
+                                                                    props_3 
+                                                                    sorts_3)))) 
                                                              (cons 
-                                                              :|Ok| 
+                                                              :|Spec| 
                                                               (vector 
-                                                               (svref spec_3 0) 
-                                                               (svref spec_3 1) 
-                                                               (svref spec_3 2) 
-                                                               (svref spec_3 3)))) 
-                                                            (if (eq 
-                                                                 (car pV88) 
-                                                                 :|Some|) 
-                                                                (return 
-                                                                 (cons 
-                                                                  :|Error| 
-                                                                  (cdr pV88))))) 
-                                                        (error 
-                                                         "Nonexhaustive match failure in elaboratePosSpec")))))))))))))))))))))))) 
+                                                               (svref x 0) 
+                                                               (svref x 1) 
+                                                               (svref x 2) 
+                                                               (svref x 3)))))) 
+                                                      (return 
+                                                       (cons :|Errors| pV88)))))))))))))))))))))))) 
             (error "Nonexhaustive match failure in elaboratePosSpec")))))
 
 (defun SPECCALC::elaborateSpecM-1 (spc) 
@@ -30840,18 +36814,15 @@
       (SPECCALC::monadBind 
        (SPECCALC::|!return| (STRING-SPEC::^ (SPECCALC::uriToPath-1 uri) ".sw")) 
        #'(lambda (filename) 
-          (SPECCALC::monadSeq 
-           (SPECCALC::hackMemory) 
-           (let ((pV1 (TYPECHECKER::elaboratePosSpec spc filename))) 
-             (block 
-              nil 
-              (if (eq (car pV1) :|Ok|) 
-                  (return 
-                   (SPECCALC::|!return| 
-                    (POSSPECTOSPEC::convertPosSpecToSpec-1 (cdr pV1)))) 
-                  (if (eq (car pV1) :|Error|) 
-                      (return (SPECCALC::raise (cons :|OldTypeCheck| (cdr pV1)))))) 
-              (error "Nonexhaustive match failure in elaborateSpecM")))))))))
+          (let ((pV1 (TYPECHECKER::elaboratePosSpec spc filename))) 
+            (block 
+             nil 
+             (if (eq (car pV1) :|Spec|) 
+                 (return (SPECCALC::|!return| (cdr pV1))) 
+                 (if (eq (car pV1) :|Errors|) 
+                     (return 
+                      (SPECCALC::raise (cons :|TypeCheckErrors| (cdr pV1)))))) 
+             (error "Nonexhaustive match failure in elaborateSpecM"))))))))
 
 (defun SPECCALC::elaborateSpecM (x0 x1 x2 x3) 
   (SPECCALC::elaborateSpecM-1 (vector x0 x1 x2 x3)))
@@ -30972,7 +36943,7 @@
                                 (let ((pV6 (cdr termValue))) 
                                   (return 
                                    (if (CAT::edgeInDiagram?-1-1 dgm pV10) 
-                                       (if (lisp::and 
+                                       (if (cl::and 
                                             (string=  
                                              pV11 
                                              (SKETCH::|!eval|-1-1 
@@ -31362,9 +37333,24 @@
 (defun SPECCALC::ppMorphism-1 (x) 
   (SPECCALC::ppMorphism (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
 
+(defun SPECCALC::uriToFullPath (pV1 path) 
+  (declare (ignore pV1)) 
+  (let ((device? (SPECCALC::deviceString? (LIST-SPEC::hd path)))) 
+    (let ((mainPath 
+           (STRING-SPEC::concatList 
+            (LIST-SPEC::foldr-1-1-1 
+             #'(lambda (x) 
+                (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
+             nil 
+             (if device? (LIST-SPEC::tl path) path))))) 
+      (if device? (STRING-SPEC::^ (LIST-SPEC::hd path) mainPath) mainPath))))
+
+(defun SPECCALC::uriToFullPath-1 (x) (SPECCALC::uriToFullPath (car x) (cdr x)))
+
 (defun SPECCALC::generateFileList-1 (uri) 
   (SPECCALC::|!return| 
-   (cons (cons uri (STRING-SPEC::^ (SPECCALC::uriToPath-1 uri) ".sw")) nil)))
+   (cons (cons uri (STRING-SPEC::^ (SPECCALC::uriToFullPath-1 uri) ".sw")) nil)))
+
 
 (defun SPECCALC::mapM (f) 
   #'(lambda (l) 
@@ -31437,7 +37423,7 @@
                                       (cdr pV4)))) 
                                 (LIST-SPEC::|!++| 
                                  (LIST-SPEC::|!++| path (cons currDir nil)) 
-                                 (if (lisp::or 
+                                 (if (cl::or 
                                       (slang-built-in::slang-term-equals 
                                        specware4Dirs 
                                        nil) 
@@ -31598,7 +37584,7 @@
   #'(lambda (x2) (SPECCALC::setValidatedURI-1-1 x1 x2)))
 
 (defun SPECCALC::upToDate? (uri timeStamp) 
-  (let ((|!fileName| (STRING-SPEC::^ (SPECCALC::uriToPath-1 uri) ".sw"))) 
+  (let ((|!fileName| (STRING-SPEC::^ (SPECCALC::uriToFullPath-1 uri) ".sw"))) 
     (INTEGER-SPEC::|!<=| (IO-SPEC::fileWriteTime |!fileName|) timeStamp)))
 
 (defun SPECCALC::validatedURI?-1-1 (uri state) 
@@ -31639,7 +37625,7 @@
                                                pV5) 
                                       (svref pV3 2)) 
                              #'(lambda (rVal) 
-                                (if (lisp::and 
+                                (if (cl::and 
                                      (INTEGER-SPEC::|!>=| pV5 rVal) 
                                      (SPECCALC::upToDate? uri rVal)) 
                                     (SPECCALC::monadSeq 
@@ -31849,7 +37835,7 @@
                 (SPECCALC::monadBind 
                  (SPECCALC::fileExistsAndReadable? pV12) 
                  #'(lambda (test) 
-                    (if (lisp::and 
+                    (if (cl::and 
                          test 
                          (BOOLEAN-SPEC::~ 
                           (SPECCALC::inSameFile? pV11 currentURI))) 
@@ -32102,142 +38088,6 @@
                                   "URI contains two or more # symbols")))))))))))))))))))))
 
 
-(defparameter SPECCALC::initialSpecwareState 
-  (vector 
-   POLYMAP::emptyMap 
-   POLYMAP::emptyMap 
-   (cons :|Some| (cons '(:|None|) (cons "/" nil))) 
-   nil))
-
-(defparameter SPECWARE::ignoredState SPECCALC::initialSpecwareState)
-
-(defun SPECCALC::ppURI-1 (uri) 
-  (WADLERLINDIG::ppAppend-1-1 
-   (WADLERLINDIG::ppString "/") 
-   (SPECCALC::ppURIlocal-1 uri)))
-
-(defun SPECCALC::showURI-1 (uri) 
-  (WADLERLINDIG::ppFormat (SPECCALC::ppURI-1 uri)))
-
-(defun SPECWARE::printException (except) 
-  (block 
-   nil 
-   (if (eq (car except) :|Fail|) 
-       (return (STRING-SPEC::^ "Fail: " (cdr except))) 
-       (if (eq (car except) :|SyntaxError|) 
-           (return (STRING-SPEC::^ "Syntax error: " (cdr except))) 
-           (if (eq (car except) :|ParserError|) 
-               (return 
-                (STRING-SPEC::^ "Syntax error for filename: " (cdr except))) 
-               (if (eq (car except) :|Unsupported|) 
-                   (let ((pV11 (cdr except))) 
-                     (return 
-                      (STRING-SPEC::^ 
-                       (STRING-SPEC::^ 
-                        (STRING-SPEC::^ "Unsupported operation: " (cdr pV11)) 
-                        "
-  found at ") 
-                       (POSITION-SPEC::printAll (car pV11))))) 
-                   (if (eq (car except) :|URINotFound|) 
-                       (let ((pV10 (cdr except))) 
-                         (return 
-                          (STRING-SPEC::^ 
-                           (STRING-SPEC::^ 
-                            (STRING-SPEC::^ 
-                             "Unknown unit " 
-                             (SPECCALC::showRelativeURI (cdr pV10))) 
-                            "
-  referenced from ") 
-                           (POSITION-SPEC::printAll (car pV10))))) 
-                       (if (eq (car except) :|FileNotFound|) 
-                           (let ((pV9 (cdr except))) 
-                             (return 
-                              (STRING-SPEC::^ 
-                               (STRING-SPEC::^ 
-                                (STRING-SPEC::^ 
-                                 "Unknown unit " 
-                                 (SPECCALC::showRelativeURI (cdr pV9))) 
-                                "
-  referenced from ") 
-                               (POSITION-SPEC::printAll (car pV9))))) 
-                           (if (eq (car except) :|SpecError|) 
-                               (let ((pV8 (cdr except))) 
-                                 (return 
-                                  (STRING-SPEC::^ 
-                                   (STRING-SPEC::^ 
-                                    (STRING-SPEC::^ 
-                                     "Error in specification: " 
-                                     (cdr pV8)) 
-                                    "
-  found at ") 
-                                   (POSITION-SPEC::printAll (car pV8))))) 
-                               (if (eq (car except) :|DiagError|) 
-                                   (let ((pV7 (cdr except))) 
-                                     (return 
-                                      (STRING-SPEC::^ 
-                                       (STRING-SPEC::^ 
-                                        (STRING-SPEC::^ 
-                                         "Diagram error: " 
-                                         (cdr pV7)) 
-                                        "
-  found at ") 
-                                       (POSITION-SPEC::printAll (car pV7))))) 
-                                   (if (eq (car except) :|TypeCheck|) 
-                                       (let ((pV6 (cdr except))) 
-                                         (return 
-                                          (STRING-SPEC::^ 
-                                           (STRING-SPEC::^ 
-                                            (STRING-SPEC::^ 
-                                             "Type error: " 
-                                             (cdr pV6)) 
-                                            "
-  found at ") 
-                                           (POSITION-SPEC::printAll (car pV6))))) 
-                                       (if (eq (car except) :|Proof|) 
-                                           (let ((pV5 (cdr except))) 
-                                             (return 
-                                              (STRING-SPEC::^ 
-                                               (STRING-SPEC::^ 
-                                                (STRING-SPEC::^ 
-                                                 "Proof error: " 
-                                                 (cdr pV5)) 
-                                                "
-  found at ") 
-                                               (POSITION-SPEC::printAll 
-                                                (car pV5))))) 
-                                           (if (eq 
-                                                (car except) 
-                                                :|CircularDefinition|) 
-                                               (return 
-                                                (STRING-SPEC::^ 
-                                                 "Circular definition: " 
-                                                 (SPECCALC::showURI-1 
-                                                  (cdr except)))) 
-                                               (if (eq 
-                                                    (car except) 
-                                                    :|OldTypeCheck|) 
-                                                   (return 
-                                                    (STRING-SPEC::^ 
-                                                     "Type errors:
-" 
-                                                     (cdr except))))))))))))))) 
-   (return (STRING-SPEC::^ "Unknown exception: " (SYSTEM-SPEC::toString except)))))
-
-
-(defun SPECWARE::toplevelHandler (except) 
-  (SPECCALC::monadSeq 
-   #'SPECCALC::cleanupGlobalContext-1 
-   (SPECCALC::monadSeq 
-    #'SPECWARE::saveSpecwareState-1 
-    (SPECCALC::monadBind 
-     (SPECCALC::|!return| (SPECWARE::printException except)) 
-     #'(lambda (message) 
-        (SPECCALC::monadSeq 
-         (if SPECCALC::specwareWizard? 
-             (SYSTEM-SPEC::fail message) 
-             (SPECCALC::|!print| message)) 
-         (SPECCALC::|!return| nil)))))))
-
 (defun SPECCALC::getBaseSpec () 
   (let ((run 
          (SPECCALC::monadSeq 
@@ -32406,7 +38256,7 @@
                                                (let ((pV16 (car pV12))) 
                                                  (if (eq (car pV16) :|Qualified|) 
                                                      (return 
-                                                      (if (lisp::or 
+                                                      (if (cl::or 
                                                            (slang-built-in::slang-term-equals 
                                                             (cdr pV8) 
                                                             nil) 
@@ -32488,7 +38338,7 @@
                                                           (car pV38) 
                                                           :|Qualified|) 
                                                          (return 
-                                                          (if (lisp::or 
+                                                          (if (cl::or 
                                                                (slang-built-in::slang-term-equals 
                                                                 (cdr pV29) 
                                                                 nil) 
@@ -32581,7 +38431,7 @@
                                                                 :|Qualified|) 
                                                                (if (null dom_ops) 
                                                                    (return 
-                                                                    (if (lisp::or 
+                                                                    (if (cl::or 
                                                                          (slang-built-in::slang-term-equals 
                                                                           (cdr 
                                                                            dom_sorts) 
@@ -32659,7 +38509,7 @@
                                                                              pV69) 
                                                                             :|Qualified|) 
                                                                            (return 
-                                                                            (if (lisp::or 
+                                                                            (if (cl::or 
                                                                                  (slang-built-in::slang-term-equals 
                                                                                   (cdr 
                                                                                    dom_ops) 
@@ -32975,7 +38825,7 @@
                  #'(lambda (x) 
                     (LIST-SPEC::|!cons| "/" (LIST-SPEC::|!cons| (car x) (cdr x)))) 
                  nil 
-                 (if (lisp::or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
+                 (if (cl::or tildaPath? device?) (LIST-SPEC::tl path) path))))) 
           (let ((|!fileName| 
                  (if tildaPath? 
                      (STRING-SPEC::^ "~" mainPath) 
@@ -33034,6 +38884,9 @@
 
 (defun SPECCALC::ppColimit-1 (x) (SPECCALC::ppColimit (car x) (cdr x)))
 
+(defun SPECCALC::ppOtherValue (value) 
+  (WADLERLINDIG::ppString "<some OtherValue>"))
+
 (defun SPECCALC::ppValue (value) 
   (block 
    nil 
@@ -33047,7 +38900,9 @@
                (if (eq (car value) :|Colimit|) 
                    (return (SPECCALC::ppColimit-1 (cdr value))) 
                    (if (eq (car value) :|InProcess|) 
-                       (return (WADLERLINDIG::ppString "InProcess"))))))) 
+                       (return (WADLERLINDIG::ppString "InProcess")) 
+                       (if (eq (car value) :|Other|) 
+                           (return (SPECCALC::ppOtherValue (cdr value))))))))) 
    (error "Nonexhaustive match failure in ppValue")))
 
 (defun SPECCALC::showValue (value) 
@@ -33100,38 +38955,2102 @@
 (defun SPECCALC::evaluateDiagMorph-1 (x) 
   (SPECCALC::evaluateDiagMorph (svref x 0) (svref x 1) (svref x 2)))
 
-(defun SPECCALC::evaluateLocalDecls (decls) 
-  (labels 
-    ((evaluateLocalDecl (name term) 
-      (SPECCALC::monadBind 
-       (SPECCALC::evaluateTermInfo-1 term) 
-       #'(lambda (valueInfo) 
-          (SPECCALC::monadSeq 
-           (funcall (SPECCALC::bindInLocalContext 
-                     (cons :|URI_Relative| (cons '(:|None|) (cons name nil)))) 
-                    valueInfo) 
-           (SPECCALC::|!return| nil)))))) 
-    (funcall (funcall (SPECCALC::foldM 
-                       #'(lambda (pV1) 
-                          (declare (ignore pV1)) 
-                          #'(lambda (decl) 
-                             (evaluateLocalDecl (car decl) (cdr decl))))) 
-                      nil) 
-             decls)))
+(defun SPECCALC::extendMorphismWithAnswer (morph domVars) 
+  (let ((codIds (SPECCALC::answerVarsFromSnark))) 
+    (let ((domIds (LIST-SPEC::|!map|-1-1 #'(lambda (x) (car x)) domVars))) 
+      (let ((newOpMap 
+             (LISTPAIR::foldl-1-1-1 
+              #'(lambda (x) 
+                 (POLYMAP::update-1-1-1 
+                  (svref x 2) 
+                  (METASLANG::mkUnQualifiedId (svref x 0)) 
+                  (METASLANG::mkUnQualifiedId (svref x 1)))) 
+              (svref morph 2) 
+              (cons domIds codIds)))) 
+        (progn (if SYSTEM-SPEC::specwareDebug? 
+                   (LIST-SPEC::|!map|-1-1 
+                    #'(lambda (id) 
+                       (SYSTEM-SPEC::|!print| 
+                        (STRING-SPEC::^ (STRING-SPEC::^ "domOp: " id) "
+"))) 
+                    domIds) 
+                   (cons "" nil)) 
+               (progn (if SYSTEM-SPEC::specwareDebug? 
+                          (LIST-SPEC::|!map|-1-1 
+                           #'(lambda (id) 
+                              (SYSTEM-SPEC::|!print| 
+                               (STRING-SPEC::^ (STRING-SPEC::^ "codOp: " id) "
+"))) 
+                           codIds) 
+                          (cons "" nil)) 
+                      (SPECCALC::makeMorphism 
+                       (svref morph 1) 
+                       (svref morph 0) 
+                       (svref morph 3) 
+                       newOpMap)))))))
 
-(defun SPECCALC::evaluateLet (decls) 
-  #'(lambda (term) 
-     (SPECCALC::monadBind 
-      #'SPECCALC::getLocalContext-1 
-      #'(lambda (context) 
-         (SPECCALC::monadSeq 
-          (SPECCALC::evaluateLocalDecls decls) 
-          (SPECCALC::monadBind 
-           (SPECCALC::evaluateTermInfo-1 term) 
-           #'(lambda (valueInfo) 
-              (SPECCALC::monadSeq 
-               (SPECCALC::setLocalContext context) 
-               (SPECCALC::|!return| valueInfo)))))))))
+(defun SPECCALC::termOpsInSpec (term spc) 
+  (labels 
+    ((mapRec (term) (mapT spc term))
+     (mapT (spc term) 
+      (block 
+       nil 
+       (if (eq (car term) :|Fun|) 
+           (let ((pV60 (svref (cdr term) 0))) 
+             (progn (if (eq (car pV60) :|Op|) 
+                        (return 
+                         (let ((pV3 
+                                (STANDARDSPEC::findTheOp spc (car (cdr pV60))))) 
+                           (block 
+                            nil 
+                            (if (eq (car pV3) :|Some|) (return (cons term nil))) 
+                            (return nil))))) 
+                    (return nil))) 
+           (if (eq (car term) :|Var|) 
+               (return nil) 
+               (if (eq (car term) :|Let|) 
+                   (return (let ((res (mapRec (svref (cdr term) 1)))) res)) 
+                   (if (eq (car term) :|LetRec|) 
+                       (return (let ((res (mapRec (svref (cdr term) 1)))) res)) 
+                       (if (eq (car term) :|Record|) 
+                           (return 
+                            (let ((res 
+                                   (LIST-SPEC::foldl-1-1-1 
+                                    #'(lambda (x) 
+                                       (block 
+                                        nil 
+                                        (return 
+                                         (LIST-SPEC::|!++| 
+                                          (cdr x) 
+                                          (mapRec (cdr (car x))))) 
+                                        (error 
+                                         "Nonexhaustive match failure in termOpsInSpec"))) 
+                                    nil 
+                                    (car (cdr term))))) res)) 
+                           (if (eq (car term) :|IfThenElse|) 
+                               (let ((pV22 (cdr term))) 
+                                 (return 
+                                  (let ((resT1 (mapRec (svref pV22 0)))) 
+                                    (let ((resT2 (mapRec (svref pV22 1)))) 
+                                      (let ((resT3 (mapRec (svref pV22 2)))) 
+                                        (LIST-SPEC::|!++| 
+                                         (LIST-SPEC::|!++| resT1 resT2) 
+                                         resT3)))))) 
+                               (if (eq (car term) :|Lambda|) 
+                                   (return 
+                                    (let ((resMatch 
+                                           (LIST-SPEC::foldl-1-1-1 
+                                            #'(lambda (x) 
+                                               (block 
+                                                nil 
+                                                (return 
+                                                 (LIST-SPEC::|!++| 
+                                                  (cdr x) 
+                                                  (mapRec (svref (car x) 2)))) 
+                                                (error 
+                                                 "Nonexhaustive match failure in termOpsInSpec"))) 
+                                            nil 
+                                            (car (cdr term))))) resMatch)) 
+                                   (if (eq (car term) :|Bind|) 
+                                       (return 
+                                        (let ((resTrm 
+                                               (mapRec (svref (cdr term) 2)))) 
+                                          resTrm)) 
+                                       (if (eq (car term) :|Apply|) 
+                                           (let ((pV19 (cdr term))) 
+                                             (return 
+                                              (let ((resT1 
+                                                     (mapRec (svref pV19 0)))) 
+                                                (let ((resT2 
+                                                       (mapRec (svref pV19 1)))) 
+                                                  (LIST-SPEC::|!++| resT1 resT2))))) 
+                                           (if (eq (car term) :|Seq|) 
+                                               (return 
+                                                (let ((resTerms 
+                                                       (LIST-SPEC::foldl-1-1-1 
+                                                        #'(lambda (x) 
+                                                           (LIST-SPEC::|!++| 
+                                                            (cdr x) 
+                                                            (mapRec (car x)))) 
+                                                        nil 
+                                                        (car (cdr term))))) 
+                                                  resTerms)) 
+                                               (if (eq (car term) :|ApplyN|) 
+                                                   (return 
+                                                    (let ((resTerms 
+                                                           (LIST-SPEC::foldl-1-1-1 
+                                                            #'(lambda (x) 
+                                                               (LIST-SPEC::|!++| 
+                                                                (cdr x) 
+                                                                (mapRec (car x)))) 
+                                                            nil 
+                                                            (car (cdr term))))) 
+                                                      resTerms)) 
+                                                   (if (eq 
+                                                        (car term) 
+                                                        :|SortedTerm|) 
+                                                       (return 
+                                                        (let ((resTrm 
+                                                               (mapRec 
+                                                                (svref 
+                                                                 (cdr term) 
+                                                                 0)))) resTrm)))))))))))))) 
+       (error "Nonexhaustive match failure in termOpsInSpec")))) (mapRec term)))
+
+(defun SPECCALC::mkExistential (spc term) 
+  (let ((opsToQuantify (SPECCALC::termOpsInSpec term spc))) 
+    (let ((newVars 
+           (LIST-SPEC::|!map|-1-1 
+            #'(lambda (pV2) 
+               (block 
+                nil 
+                (if (eq (car pV2) :|Fun|) 
+                    (let ((pV3 (cdr pV2))) 
+                      (let ((pV4 (svref pV3 0))) 
+                        (if (eq (car pV4) :|Op|) 
+                            (let ((pV8 (car (cdr pV4)))) 
+                              (if (eq (car pV8) :|Qualified|) 
+                                  (return (cons (cdr (cdr pV8)) (svref pV3 1))))))))) 
+                (error "Nonexhaustive match failure in mkExistential"))) 
+            opsToQuantify))) 
+      (let ((opToVarMap 
+             (LISTPAIR::foldl-1-1-1 
+              #'(lambda (x) 
+                 (let ((pV16 (svref x 0))) 
+                   (block 
+                    nil 
+                    (if (eq (car pV16) :|Fun|) 
+                        (let ((pV20 (svref (cdr pV16) 0))) 
+                          (if (eq (car pV20) :|Op|) 
+                              (return 
+                               (POLYMAP::update-1-1-1 
+                                (svref x 2) 
+                                (car (cdr pV20)) 
+                                (svref x 1)))))) 
+                    (error "Nonexhaustive match failure in mkExistential")))) 
+              POLYMAP::emptyMap 
+              (cons opsToQuantify newVars)))) 
+        (labels 
+          ((substVarForOp (term) 
+            (block 
+             nil 
+             (if (eq (car term) :|Fun|) 
+                 (let ((pV31 (svref (cdr term) 0))) 
+                   (if (eq (car pV31) :|Op|) 
+                       (return 
+                        (let ((newVar 
+                               (POLYMAP::evalPartial-1-1 
+                                opToVarMap 
+                                (car (cdr pV31))))) 
+                          (block 
+                           nil 
+                           (if (eq (car newVar) :|Some|) 
+                               (return (STANDARDSPEC::mkVar-1 (cdr newVar))) 
+                               (if (eq (car newVar) :|None|) (return term))) 
+                           (error "Nonexhaustive match failure in mkExistential"))))))) 
+             (return term)))) 
+          (let ((newTerm 
+                 (METASLANG::mapTerm-1-1 
+                  (vector 
+                   #'(lambda (trm) (substVarForOp trm)) 
+                   #'(lambda (s) s) 
+                   #'(lambda (p) p)) 
+                  term))) 
+            (let ((existTerm 
+                   (cons 
+                    :|Bind| 
+                    (vector '(:|Exists|) newVars newTerm POSITION-SPEC::noPos)))) 
+              (progn (if SYSTEM-SPEC::specwareDebug? 
+                         (ANNSPECPRINTER::printTermToTerminal existTerm) 
+                         nil) 
+                     (cons 
+                      (vector 
+                       '(:|Conjecture|) 
+                       "morphismExistential" 
+                       nil 
+                       existTerm) 
+                      newVars)))))))))
+
+(defun SPECCALC::makeSnarkAnsEvalForm
+ (prover_options 
+  snarkSortDecl 
+  snarkOpDecls 
+  snarkBaseHypothesis 
+  snarkHypothesis 
+  snarkConjecture 
+  snarkLogFileName) 
+  (LISP-SPEC::|!list| 
+   (cons 
+    (LISP-SPEC::|!symbol| "CL-USER" "WITH-OPEN-FILE") 
+    (cons 
+     (LISP-SPEC::|!list| 
+      (cons 
+       (LISP-SPEC::|!symbol| "CL-USER" "LOGFILE") 
+       (cons 
+        (LISP-SPEC::|!string| snarkLogFileName) 
+        (cons 
+         (LISP-SPEC::|!symbol| "KEYWORD" "DIRECTION") 
+         (cons 
+          (LISP-SPEC::|!symbol| "KEYWORD" "OUTPUT") 
+          (cons 
+           (LISP-SPEC::|!symbol| "KEYWORD" "IF-EXISTS") 
+           (cons (LISP-SPEC::|!symbol| "KEYWORD" "SUPERSEDE") nil))))))) 
+     (cons 
+      (LISP-SPEC::|!++| 
+       (LISP-SPEC::|!++| 
+        (LISP-SPEC::|!++| 
+         (LISP-SPEC::|!++| 
+          (LISP-SPEC::|!++| 
+           (LISP-SPEC::|!++| 
+            (LISP-SPEC::|!++| 
+             (LISP-SPEC::|!list| 
+              (cons 
+               (LISP-SPEC::|!symbol| "LISP" "LET") 
+               (cons 
+                (LISP-SPEC::|!list| nil) 
+                (cons 
+                 (LISP-SPEC::|!list| 
+                  (cons (LISP-SPEC::|!symbol| "SNARK" "INITIALIZE") nil)) 
+                 (cons 
+                  (LISP-SPEC::|!list| 
+                   (cons 
+                    (LISP-SPEC::|!symbol| "SNARK" "RUN-TIME-LIMIT") 
+                    (cons (LISP-SPEC::|!nat| 60) nil))) 
+                  (cons 
+                   (LISP-SPEC::|!list| 
+                    (cons 
+                     (LISP-SPEC::|!symbol| "SNARK" "USE-LISP-TYPES-AS-SORTS") 
+                     (cons (LISP-SPEC::bool t) nil))) 
+                   (cons 
+                    (LISP-SPEC::|!list| 
+                     (cons 
+                      (LISP-SPEC::|!symbol| "SNARK" "USE-CODE-FOR-NUMBERS") 
+                      (cons (LISP-SPEC::bool t) nil))) 
+                    (cons 
+                     (LISP-SPEC::|!list| 
+                      (cons 
+                       (LISP-SPEC::|!symbol| "SNARK" "USE-RESOLUTION") 
+                       (cons (LISP-SPEC::bool t) nil))) 
+                     nil)))))))) 
+             (LISP-SPEC::|!list| prover_options)) 
+            (LISP-SPEC::|!list| snarkSortDecl)) 
+           (LISP-SPEC::|!list| snarkOpDecls)) 
+          (LISP-SPEC::|!list| snarkBaseHypothesis)) 
+         (LISP-SPEC::|!list| SPECCALC::baseAxioms)) 
+        (LISP-SPEC::|!list| snarkHypothesis)) 
+       (LISP-SPEC::|!list| (cons snarkConjecture nil))) 
+      nil)))))
+
+(defparameter SPECCALC::newContext (vector (cons :|Ref| 0)))
+
+(defun SPECCALC::mkSnarkName (qual id) 
+  (block 
+   nil 
+   (if (string=  "Boolean" qual) 
+       (if (string=  "~" id) 
+           (return "NOT") 
+           (if (string=  "&" id) 
+               (return "AND") 
+               (if (string=  "or" id) 
+                   (return "OR") 
+                   (if (string=  "=>" id) 
+                       (return "IMPLIES") 
+                       (if (string=  "<=>" id) (return "IFF")))))) 
+       (if (string=  "Nat" qual) 
+           (if (string=  "<=" id) (return "=<")) 
+           (if (string=  "Integer" qual) (if (string=  "<=" id) (return "=<"))))) 
+   (return id)))
+
+(defun SPECCALC::mkNewSnarkOp (context) 
+  (let ((num (INTEGER-SPEC::|!+| (STATE::|!!| (svref context 0)) 1))) 
+    (progn (STATE::|:=| (svref context 0) num) 
+           (LISP-SPEC::|!symbol| 
+            "SNARK" 
+            (STRING-SPEC::|!++| "sApply" (NAT-SPEC::toString num))))))
+
+(defun SPECCALC::snarkVar-1 (v) 
+  (LISP-SPEC::|!symbol| "SNARK" (STRING-SPEC::^ "?" (car v))))
+
+(defun UTILITIES::freeVars (|!M|) 
+  (let ((vars (UTILITIES::freeVarsRec |!M|))) 
+    (LISTUTILITIES::removeDuplicates vars)))
+
+(defun SPECCALC::mkNewSnarkTerm (context term) 
+  (let ((vars (UTILITIES::freeVars term))) 
+    (let ((newFun (SPECCALC::mkNewSnarkOp context))) 
+      (let ((snarkVars 
+             (LIST-SPEC::|!map|-1-1 
+              #'(lambda (v) (SPECCALC::snarkVar-1 v)) 
+              vars))) 
+        (block 
+         nil 
+         (if (null snarkVars) (return newFun)) 
+         (return (LISP-SPEC::|!cons| newFun (LISP-SPEC::|!list| snarkVars))))))))
+
+
+(defun SPECCALC::mkSnarkTermApp (context sp dpn vars f arg) 
+  (let ((args 
+         (block 
+          nil 
+          (if (eq (car arg) :|Record|) 
+              (return 
+               (LIST-SPEC::|!map|-1-1 #'(lambda (x) (cdr x)) (car (cdr arg))))) 
+          (return (cons arg nil))))) 
+    (block 
+     nil 
+     (if (eq (car f) :|Op|) 
+         (let ((pV11 (car (cdr f)))) 
+           (if (eq (car pV11) :|Qualified|) 
+               (let ((pV13 (cdr pV11))) 
+                 (return 
+                  (let ((snarkArgs 
+                         (LIST-SPEC::|!map|-1-1 
+                          #'(lambda (arg) 
+                             (SPECCALC::mkSnarkTerm context sp dpn vars arg)) 
+                          args))) 
+                    (LISP-SPEC::|!cons| 
+                     (LISP-SPEC::|!symbol| 
+                      "SNARK" 
+                      (SPECCALC::mkSnarkName (car pV13) (cdr pV13))) 
+                     (LISP-SPEC::|!list| snarkArgs)))))))) 
+     (error "Nonexhaustive match failure in mkSnarkTermApp"))))
+
+(defun SPECCALC::mkSnarkTerm (context sp dpn vars term) 
+  (block 
+   nil 
+   (if (eq (car term) :|Apply|) 
+       (let ((pV14 (cdr term))) 
+         (let ((pV31 (svref pV14 0))) 
+           (if (eq (car pV31) :|Fun|) 
+               (return 
+                (SPECCALC::mkSnarkTermApp 
+                 context 
+                 sp 
+                 dpn 
+                 vars 
+                 (svref (cdr pV31) 0) 
+                 (svref pV14 1)))))) 
+       (if (eq (car term) :|IfThenElse|) 
+           (let ((pV13 (cdr term))) 
+             (return 
+              (LISP-SPEC::|!list| 
+               (cons 
+                (LISP-SPEC::|!symbol| "SNARK" "IF") 
+                (cons 
+                 (SPECCALC::mkSnarkTerm context sp dpn vars (svref pV13 0)) 
+                 (cons 
+                  (SPECCALC::mkSnarkTerm context sp dpn vars (svref pV13 1)) 
+                  (cons 
+                   (SPECCALC::mkSnarkTerm context sp dpn vars (svref pV13 2)) 
+                   nil))))))) 
+           (if (eq (car term) :|Fun|) 
+               (let ((pV17 (svref (cdr term) 0))) 
+                 (if (eq (car pV17) :|Op|) 
+                     (let ((pV22 (car (cdr pV17)))) 
+                       (if (eq (car pV22) :|Qualified|) 
+                           (let ((pV24 (cdr pV22))) 
+                             (return 
+                              (LISP-SPEC::|!symbol| 
+                               "SNARK" 
+                               (SPECCALC::mkSnarkName (car pV24) (cdr pV24))))))) 
+                     (if (eq (car pV17) :|Nat|) 
+                         (return (LISP-SPEC::|!nat| (cdr pV17)))))) 
+               (if (eq (car term) :|Var|) 
+                   (return (SPECCALC::snarkVar-1 (car (cdr term)))))))) 
+   (return (SPECCALC::mkNewSnarkTerm context term))))
+
+(defun SPECCALC::snarkBoolOp (id) 
+  (let ((name (SPECCALC::mkSnarkName "Boolean" id))) 
+    (LISP-SPEC::|!symbol| "SNARK" name)))
+
+(defun SPECCALC::mkSnarkFmlaApp (context sp dpn vars f srt arg) 
+  (let ((args 
+         (block 
+          nil 
+          (if (eq (car arg) :|Record|) 
+              (return 
+               (LIST-SPEC::|!map|-1-1 #'(lambda (x) (cdr x)) (car (cdr arg))))) 
+          (return (cons arg nil))))) 
+    (block 
+     nil 
+     (if (eq (car f) :|Op|) 
+         (let ((pV72 (car (cdr f)))) 
+           (if (eq (car pV72) :|Qualified|) 
+               (let ((pV74 (cdr pV72))) 
+                 (let ((pV76 (cdr pV74))
+                       (pV75 (car pV74))) 
+                   (progn (if (string=  "Boolean" pV75) 
+                              (return 
+                               (let ((snarkArgs 
+                                      (LIST-SPEC::|!map|-1-1 
+                                       #'(lambda (arg) 
+                                          (SPECCALC::mkSnarkFmla 
+                                           context 
+                                           sp 
+                                           dpn 
+                                           vars 
+                                           nil 
+                                           arg)) 
+                                       args))) 
+                                 (LISP-SPEC::|!cons| 
+                                  (SPECCALC::snarkBoolOp pV76) 
+                                  (LISP-SPEC::|!list| snarkArgs))))) 
+                          (return 
+                           (let ((snarkArgs 
+                                  (LIST-SPEC::|!map|-1-1 
+                                   #'(lambda (arg) 
+                                      (SPECCALC::mkSnarkTerm 
+                                       context 
+                                       sp 
+                                       dpn 
+                                       vars 
+                                       arg)) 
+                                   args))) 
+                             (LISP-SPEC::|!cons| 
+                              (LISP-SPEC::|!symbol| 
+                               "SNARK" 
+                               (SPECCALC::mkSnarkName pV75 pV76)) 
+                              (LISP-SPEC::|!list| snarkArgs))))))))) 
+         (if (eq (car f) :|Embedded|) 
+             (let ((pV70 (cdr f))) 
+               (return 
+                (labels 
+                  ((boolArgp (srt) 
+                    (block 
+                     nil 
+                     (if (eq (car srt) :|Base|) 
+                         (let ((pV15 (svref (cdr srt) 0))) 
+                           (if (eq (car pV15) :|Qualified|) 
+                               (let ((pV18 (cdr pV15))) 
+                                 (return 
+                                  (cl::or 
+                                   (string=  (car pV18) "Boolean") 
+                                   (string=  (cdr pV18) "Boolean"))))))) 
+                     (return nil)))) 
+                  (block 
+                   nil 
+                   (if (eq (car srt) :|Arrow|) 
+                       (return 
+                        (let ((isfmla (boolArgp (svref (cdr srt) 0)))) 
+                          (let ((snarkArg 
+                                 (if isfmla 
+                                     (SPECCALC::mkSnarkFmla 
+                                      context 
+                                      sp 
+                                      dpn 
+                                      vars 
+                                      nil 
+                                      arg) 
+                                     (SPECCALC::mkSnarkTerm 
+                                      context 
+                                      sp 
+                                      dpn 
+                                      vars 
+                                      arg)))) 
+                            (LISP-SPEC::|!cons| 
+                             (LISP-SPEC::|!symbol| "SNARK" "embed?") 
+                             (LISP-SPEC::|!list| 
+                              (cons 
+                               (LISP-SPEC::|!symbol| "SNARK" pV70) 
+                               (cons snarkArg nil)))))))) 
+                   (error "Nonexhaustive match failure in mkSnarkFmlaApp"))))) 
+             (if (eq (car f) :|Equals|) 
+                 (return 
+                  (labels 
+                    ((boolArgp (srt) 
+                      (block 
+                       nil 
+                       (if (eq (car srt) :|Base|) 
+                           (let ((pV32 (svref (cdr srt) 0))) 
+                             (if (eq (car pV32) :|Qualified|) 
+                                 (let ((pV35 (cdr pV32))) 
+                                   (return 
+                                    (cl::or 
+                                     (string=  (car pV35) "Boolean") 
+                                     (string=  (cdr pV35) "Boolean"))))))) 
+                       (return nil)))) 
+                    (block 
+                     nil 
+                     (if (consp args) 
+                         (let ((pV65 (cdr args))
+                               (pV64 (car args))) 
+                           (if (consp pV65) 
+                               (let ((pV67 (car pV65))) 
+                                 (if (null (cdr pV65)) 
+                                     (return 
+                                      (block 
+                                       nil 
+                                       (if (eq (car srt) :|Arrow|) 
+                                           (let ((pV59 (svref (cdr srt) 0))) 
+                                             (return 
+                                              (block 
+                                               nil 
+                                               (if (eq (car pV59) :|Product|) 
+                                                   (let ((pV55 (car (cdr pV59)))) 
+                                                     (return 
+                                                      (block 
+                                                       nil 
+                                                       (if (consp pV55) 
+                                                           (let ((pV45 
+                                                                  (cdr pV55))) 
+                                                             (if (consp pV45) 
+                                                                 (if (null 
+                                                                      (cdr pV45)) 
+                                                                     (return 
+                                                                      (let ((isfmla 
+                                                                             (cl::or 
+                                                                              (boolArgp 
+                                                                               (cdr 
+                                                                                (car 
+                                                                                 pV55))) 
+                                                                              (boolArgp 
+                                                                               (cdr 
+                                                                                (car 
+                                                                                 pV45)))))) 
+                                                                        (let ((snarkArg1 
+                                                                               (if isfmla 
+                                                                                   (SPECCALC::mkSnarkFmla 
+                                                                                    context 
+                                                                                    sp 
+                                                                                    dpn 
+                                                                                    vars 
+                                                                                    nil 
+                                                                                    pV64) 
+                                                                                   (SPECCALC::mkSnarkTerm 
+                                                                                    context 
+                                                                                    sp 
+                                                                                    dpn 
+                                                                                    vars 
+                                                                                    pV64)))) 
+                                                                          (let ((snarkArg2 
+                                                                                 (if isfmla 
+                                                                                     (SPECCALC::mkSnarkFmla 
+                                                                                      context 
+                                                                                      sp 
+                                                                                      dpn 
+                                                                                      vars 
+                                                                                      nil 
+                                                                                      pV67) 
+                                                                                     (SPECCALC::mkSnarkTerm 
+                                                                                      context 
+                                                                                      sp 
+                                                                                      dpn 
+                                                                                      vars 
+                                                                                      pV67)))) 
+                                                                            (if isfmla 
+                                                                                (LISP-SPEC::|!cons| 
+                                                                                 (LISP-SPEC::|!symbol| 
+                                                                                  "SNARK" 
+                                                                                  "IFF") 
+                                                                                 (LISP-SPEC::|!list| 
+                                                                                  (cons 
+                                                                                   snarkArg1 
+                                                                                   (cons 
+                                                                                    snarkArg2 
+                                                                                    nil)))) 
+                                                                                (LISP-SPEC::|!cons| 
+                                                                                 (LISP-SPEC::|!symbol| 
+                                                                                  "SNARK" 
+                                                                                  "=") 
+                                                                                 (LISP-SPEC::|!list| 
+                                                                                  (cons 
+                                                                                   snarkArg1 
+                                                                                   (cons 
+                                                                                    snarkArg2 
+                                                                                    nil))))))))))))) 
+                                                       (error 
+                                                        "Nonexhaustive match failure in mkSnarkFmlaApp"))))) 
+                                               (error 
+                                                "Nonexhaustive match failure in mkSnarkFmlaApp"))))) 
+                                       (error 
+                                        "Nonexhaustive match failure in mkSnarkFmlaApp")))))))) 
+                     (error "Nonexhaustive match failure in mkSnarkFmlaApp"))))))) 
+     (error "Nonexhaustive match failure in mkSnarkFmlaApp"))))
+
+(defun SPECCALC::findPBuiltInSort (pV52 pV53 pV54) 
+  (block 
+   nil 
+   (if (eq (car pV53) :|Qualified|) 
+       (let ((pV57 (cdr (cdr pV53)))) 
+         (return 
+          (let ((|!optSrt| (STANDARDSPEC::findTheSort pV52 pV53))) 
+            (block 
+             nil 
+             (if (eq (car |!optSrt|) :|Some|) 
+                 (let ((pV51 (svref (cdr |!optSrt|) 2))) 
+                   (return 
+                    (labels 
+                      ((builtinSort? (s) 
+                        (block 
+                         nil 
+                         (if (eq (car s) :|Base|) 
+                             (let ((pV11 (svref (cdr s) 0))) 
+                               (if (eq (car pV11) :|Qualified|) 
+                                   (let ((pV14 (cdr pV11))) 
+                                     (let ((pV16 (cdr pV14))
+                                           (pV15 (car pV14))) 
+                                       (if (string=  "Nat" pV15) 
+                                           (if (string=  "Nat" pV16) (return t)) 
+                                           (if (string=  "Integer" pV15) 
+                                               (if (string=  "Integer" pV16) 
+                                                   (return t)) 
+                                               (if (string=  "Boolean" pV15) 
+                                                   (if (string=  "Boolean" pV16) 
+                                                       (return t)))))))))) 
+                         (return nil)))) 
+                      (labels 
+                        ((builtinSnarkSort (s) 
+                          (block 
+                           nil 
+                           (if (eq (car s) :|Base|) 
+                               (let ((pV25 (svref (cdr s) 0))) 
+                                 (if (eq (car pV25) :|Qualified|) 
+                                     (let ((pV28 (cdr pV25))) 
+                                       (let ((pV30 (cdr pV28))
+                                             (pV29 (car pV28))) 
+                                         (if (string=  "Nat" pV29) 
+                                             (if (string=  "Nat" pV30) 
+                                                 (return 
+                                                  (LISP-SPEC::|!symbol| 
+                                                   "SNARK" 
+                                                   "NATURAL"))) 
+                                             (if (string=  "Integer" pV29) 
+                                                 (if (string=  "Integer" pV30) 
+                                                     (return 
+                                                      (LISP-SPEC::|!symbol| 
+                                                       "SNARK" 
+                                                       "INTEGER"))) 
+                                                 (if (string=  "Boolean" pV29) 
+                                                     (if (string=  
+                                                          "Boolean" 
+                                                          pV30) 
+                                                         (return 
+                                                          (if pV54 
+                                                              (LISP-SPEC::|!symbol| 
+                                                               "SNARK" 
+                                                               "BOOLEAN") 
+                                                              (LISP-SPEC::|!symbol| 
+                                                               "SNARK" 
+                                                               "TRUE")))))))))))) 
+                           (error 
+                            "Nonexhaustive match failure in findPBuiltInSort")))) 
+                        (let ((builtinScheme 
+                               (LIST-SPEC::|!find|-1-1 
+                                #'(lambda (x) (builtinSort? (cdr x))) 
+                                pV51))) 
+                          (block 
+                           nil 
+                           (if (eq (car builtinScheme) :|Some|) 
+                               (return 
+                                (builtinSnarkSort (cdr (cdr builtinScheme))))) 
+                           (return 
+                            (block 
+                             nil 
+                             (if (consp pV51) 
+                                 (if (null (cdr pV51)) 
+                                     (return 
+                                      (SPECCALC::snarkPBaseSort 
+                                       pV52 
+                                       (cdr (car pV51)) 
+                                       pV54)))) 
+                             (return (LISP-SPEC::|!symbol| "SNARK" pV57))))))))))) 
+             (return (LISP-SPEC::|!symbol| "SNARK" pV57))))))) 
+   (error "Nonexhaustive match failure in findPBuiltInSort")))
+
+(defun SPECCALC::snarkPBaseSort (spc s rng?) 
+  (block 
+   nil 
+   (if (eq (car s) :|Base|) 
+       (let ((pV21 (svref (cdr s) 0))) 
+         (if (eq (car pV21) :|Qualified|) 
+             (let ((pV24 (cdr pV21))) 
+               (let ((pV26 (cdr pV24))
+                     (pV25 (car pV24))) 
+                 (progn (if (string=  "Nat" pV25) 
+                            (if (string=  "Nat" pV26) 
+                                (return (LISP-SPEC::|!symbol| "SNARK" "NATURAL"))) 
+                            (if (string=  "Integer" pV25) 
+                                (if (string=  "Integer" pV26) 
+                                    (return 
+                                     (LISP-SPEC::|!symbol| "SNARK" "INTEGER"))) 
+                                (if (string=  "Boolean" pV25) 
+                                    (if (string=  "Boolean" pV26) 
+                                        (return 
+                                         (if rng? 
+                                             (LISP-SPEC::|!symbol| 
+                                              "SNARK" 
+                                              "BOOLEAN") 
+                                             (LISP-SPEC::|!symbol| 
+                                              "SNARK" 
+                                              "TRUE"))))))) 
+                        (return 
+                         (SPECCALC::findPBuiltInSort 
+                          spc 
+                          (cons :|Qualified| (cons pV25 pV26)) 
+                          rng?)) 
+                        (return 
+                         (if rng? 
+                             (LISP-SPEC::|!symbol| "SNARK" pV26) 
+                             (LISP-SPEC::|!symbol| "SNARK" pV26)))))))) 
+       (if (eq (car s) :|Product|) 
+           (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
+           (if (eq (car s) :|Arrow|) 
+               (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
+               (if (eq (car s) :|TyVar|) 
+                   (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")))))) 
+   (return (LISP-SPEC::|!symbol| "SNARK" "TRUE"))))
+
+(defun SPECCALC::snarkBndVar (sp var globalVars) 
+  (block 
+   nil 
+   (let ((pV4 (cdr var))
+         (pV3 (car var))) 
+     (return 
+      (if (LIST-SPEC::|!exists|-1-1 
+           #'(lambda (x) (string=  pV3 (car x))) 
+           globalVars) 
+          (LISP-SPEC::|!list| 
+           (cons 
+            (SPECCALC::snarkVar-1 var) 
+            (cons 
+             (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
+             (cons 
+              (SPECCALC::snarkPBaseSort sp pV4 nil) 
+              (cons 
+               (LISP-SPEC::|!symbol| "KEYWORD" "GLOBAL") 
+               (cons (LISP-SPEC::|!symbol| "SNARK" "T") nil)))))) 
+          (LISP-SPEC::|!list| 
+           (cons 
+            (SPECCALC::snarkVar-1 var) 
+            (cons 
+             (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
+             (cons (SPECCALC::snarkPBaseSort sp pV4 nil) nil))))))) 
+   (error "Nonexhaustive match failure in snarkBndVar")))
+
+(defun SPECCALC::snarkBndVars (sp vars globalVars) 
+  (let ((snarkVarList 
+         (LIST-SPEC::|!map|-1-1 
+          #'(lambda (var) (SPECCALC::snarkBndVar sp var globalVars)) 
+          vars))) (let ((res (LISP-SPEC::|!list| snarkVarList))) res)))
+
+(defparameter SPECTOLISP::lispStrings 
+  (STRINGSET::fromList 
+   (cons 
+    "NIL" 
+    (cons 
+     "T" 
+     (cons 
+      "CONS" 
+      (cons 
+       "NULL" 
+       (cons 
+        "CAR" 
+        (cons 
+         "CDR" 
+         (cons 
+          "LIST" 
+          (cons 
+           "LISP" 
+           (cons 
+            "APPEND" 
+            (cons 
+             "REVAPPEND" 
+             (cons 
+              "REVERSE" 
+              (cons 
+               "COMPILE" 
+               (cons 
+                "REDUCE" 
+                (cons 
+                 "SUBSTITUTE" 
+                 (cons 
+                  "COUNT" 
+                  (cons 
+                   "ENCLOSE" 
+                   (cons 
+                    "EVAL" 
+                    (cons 
+                     "ERROR" 
+                     (cons 
+                      "FIRST" 
+                      (cons 
+                       "LAST" 
+                       (cons 
+                        "SECOND" 
+                        (cons 
+                         "THIRD" 
+                         (cons 
+                          "FOURTH" 
+                          (cons 
+                           "FIFTH" 
+                           (cons 
+                            "SIXTH" 
+                            (cons 
+                             "SEVENTH" 
+                             (cons 
+                              "EIGHTH" 
+                              (cons 
+                               "NINTH" 
+                               (cons 
+                                "TENTH" 
+                                (cons 
+                                 "UNION" 
+                                 (cons 
+                                  "INTERSECTION" 
+                                  (cons 
+                                   "SET" 
+                                   (cons 
+                                    "SETQ" 
+                                    (cons 
+                                     "SOME" 
+                                     (cons 
+                                      "ARRAY" 
+                                      (cons 
+                                       "POP" 
+                                       (cons 
+                                        "PUSH" 
+                                        (cons 
+                                         "TOP" 
+                                         (cons 
+                                          "REMOVE" 
+                                          (cons 
+                                           "GET" 
+                                           (cons 
+                                            "REPLACE" 
+                                            (cons 
+                                             "PI" 
+                                             (cons 
+                                              "DELETE" 
+                                              (cons 
+                                               "IDENTITY" 
+                                               (cons 
+                                                "REM" 
+                                                (cons 
+                                                 "NTH" 
+                                                 (cons 
+                                                  "EQ" 
+                                                  (cons 
+                                                   "EQL" 
+                                                   (cons 
+                                                    "EQUAL" 
+                                                    (cons 
+                                                     "ZEROP" 
+                                                     (cons 
+                                                      "ODDP" 
+                                                      (cons 
+                                                       "EVENP" 
+                                                       (cons 
+                                                        "SEARCH" 
+                                                        (cons 
+                                                         "COMPILE" 
+                                                         (cons 
+                                                          "MERGE" 
+                                                          (cons 
+                                                           "RETURN" 
+                                                           (cons 
+                                                            "VECTOR" 
+                                                            (cons 
+                                                             "SVREF" 
+                                                             (cons 
+                                                              "FORALL" 
+                                                              (cons 
+                                                               "EXISTS" 
+                                                               (cons 
+                                                                "SETF" 
+                                                                (cons 
+                                                                 "LOOP" 
+                                                                 (cons 
+                                                                  "OR" 
+                                                                  (cons 
+                                                                   "AND" 
+                                                                   (cons 
+                                                                    "NOT" 
+                                                                    (cons 
+                                                                     "LENGTH" 
+                                                                     (cons 
+                                                                      "MAP" 
+                                                                      (cons 
+                                                                       "MEMBER" 
+                                                                       (cons 
+                                                                        "TIME" 
+                                                                        (cons 
+                                                                         "CHAR" 
+                                                                         (cons 
+                                                                          "STRING" 
+                                                                          (cons 
+                                                                           "SYMBOL" 
+                                                                           (cons 
+                                                                            "NAT" 
+                                                                            (cons 
+                                                                             "MAKE-STRING" 
+                                                                             (cons 
+                                                                              "CONST" 
+                                                                              (cons 
+                                                                               "IF" 
+                                                                               (cons 
+                                                                                "APPLY" 
+                                                                                (cons 
+                                                                                 "QUOTE" 
+                                                                                 (cons 
+                                                                                  "MIN" 
+                                                                                  (cons 
+                                                                                   "GO" 
+                                                                                   (cons 
+                                                                                    "PRINT" 
+                                                                                    (cons 
+                                                                                     "READ" 
+                                                                                     (cons 
+                                                                                      "WRITE" 
+                                                                                      (cons 
+                                                                                       "LOAD" 
+                                                                                       (cons 
+                                                                                        ".." 
+                                                                                        (cons 
+                                                                                         "BLOCK" 
+                                                                                         (cons 
+                                                                                          "FORMAT" 
+                                                                                          (cons 
+                                                                                           "BREAK" 
+                                                                                           (cons 
+                                                                                            "SUBST" 
+                                                                                            (cons 
+                                                                                             "FIND" 
+                                                                                             (cons 
+                                                                                              "CLASS" 
+                                                                                              (cons 
+                                                                                               "+" 
+                                                                                               (cons 
+                                                                                                "++" 
+                                                                                                (cons 
+                                                                                                 "**" 
+                                                                                                 (cons 
+                                                                                                  "-" 
+                                                                                                  (cons 
+                                                                                                   "*" 
+                                                                                                   (cons 
+                                                                                                    ">" 
+                                                                                                    (cons 
+                                                                                                     "<" 
+                                                                                                     (cons 
+                                                                                                      "<=" 
+                                                                                                      (cons 
+                                                                                                       ">= " 
+                                                                                                       (cons 
+                                                                                                        "\\=" 
+                                                                                                        (cons 
+                                                                                                         "BOOLEAN" 
+                                                                                                         (cons 
+                                                                                                          "INTEGER" 
+                                                                                                          (cons 
+                                                                                                           "SHADOW" 
+                                                                                                           (cons 
+                                                                                                            "TRACE" 
+                                                                                                            (cons 
+                                                                                                             "WHEN" 
+                                                                                                             (cons 
+                                                                                                              "SYSTEM" 
+                                                                                                              (cons 
+                                                                                                               "IO" 
+                                                                                                               (cons 
+                                                                                                                "BOOTSTRAP" 
+                                                                                                                nil)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
+
+
+(defun SPECTOLISP::isLispString (id) 
+  (cl::or 
+   (STRINGSET::|!member| SPECTOLISP::lispStrings id) 
+   (LISP-SPEC::uncell 
+    (LISP-SPEC::|!apply| 
+     (LISP-SPEC::|!symbol| "LISP" "FIND-SYMBOL") 
+     (cons 
+      (LISP-SPEC::|!string| id) 
+      (cons (LISP-SPEC::|!string| "COMMON-LISP") nil))))))
+
+(defparameter SPECTOLISP::userStrings (cons :|Ref| STRINGSET::empty))
+
+(defparameter SPECTOLISP::userUpper (cons :|Ref| STRINGSET::empty))
+
+(defun SPECTOLISP::lookupSpecId (id |!ID|) 
+  (if (STRINGSET::|!member| (STATE::|!!| SPECTOLISP::userUpper) |!ID|) 
+      (if (STRINGSET::|!member| (STATE::|!!| SPECTOLISP::userStrings) id) 
+          id 
+          (STRING-SPEC::^ (STRING-SPEC::^ "|!" id) "|")) 
+      (progn (STATE::|:=| 
+              SPECTOLISP::userUpper 
+              (STRINGSET::add (STATE::|!!| SPECTOLISP::userUpper) |!ID|)) 
+             (STATE::|:=| 
+              SPECTOLISP::userStrings 
+              (STRINGSET::add (STATE::|!!| SPECTOLISP::userStrings) id)) 
+             id)))
+
+(defun SPECTOLISP::specId (id) 
+  (let ((id 
+         (STRING-SPEC::translate-1-1 
+          #'(lambda (pV1) 
+             (block 
+              nil 
+              (if (eq #\| pV1) (return "\\|") (if (eq #\# pV1) (return "\\#"))) 
+              (return (CHAR-SPEC::toString pV1)))) 
+          id))) 
+    (let ((|!ID| (STRING-SPEC::|!map|-1-1 #'CHAR-SPEC::toUpperCase id))) 
+      (if (cl::or 
+           (SPECTOLISP::isLispString |!ID|) 
+           (eq (STRING-SPEC::sub id 0) #\!)) 
+          (STRING-SPEC::^ (STRING-SPEC::^ "|!" id) "|") 
+          (if (LIST-SPEC::|!exists|-1-1 
+               #'(lambda (ch) (eq ch #\:)) 
+               (STRING-SPEC::explode id)) 
+              (STRING-SPEC::^ (STRING-SPEC::^ "|" id) "|") 
+              (SPECTOLISP::lookupSpecId id |!ID|))))))
+
+(defun STRINGSET::addList (x0 x) (SPLAYSET::addList x0 x))
+
+(defun SPECCALC::mkSnarkFmla (context sp dpn vars globalVars fmla) 
+  (block 
+   nil 
+   (if (eq (car fmla) :|Bind|) 
+       (let ((pV12 (cdr fmla))) 
+         (let ((pV29 (svref pV12 1))) 
+           (return 
+            (let ((snarkBndList (SPECCALC::snarkBndVars sp pV29 globalVars))) 
+              (let ((newVars 
+                     (LIST-SPEC::|!map|-1-1 
+                      #'(lambda (x) (SPECTOLISP::specId (car x))) 
+                      pV29))) 
+                (let ((snarkFmla 
+                       (SPECCALC::mkSnarkFmla 
+                        context 
+                        sp 
+                        dpn 
+                        (STRINGSET::addList vars newVars) 
+                        globalVars 
+                        (svref pV12 2)))) 
+                  (LISP-SPEC::|!list| 
+                   (cons 
+                    (LISP-SPEC::|!symbol| 
+                     "SNARK" 
+                     (SPECCALC::bndrString (svref pV12 0))) 
+                    (cons snarkBndList (cons snarkFmla nil)))))))))) 
+       (if (eq (car fmla) :|Apply|) 
+           (let ((pV11 (cdr fmla))) 
+             (let ((pV21 (svref pV11 0))) 
+               (if (eq (car pV21) :|Fun|) 
+                   (let ((pV24 (cdr pV21))) 
+                     (return 
+                      (SPECCALC::mkSnarkFmlaApp 
+                       context 
+                       sp 
+                       dpn 
+                       vars 
+                       (svref pV24 0) 
+                       (svref pV24 1) 
+                       (svref pV11 1))))))) 
+           (if (eq (car fmla) :|IfThenElse|) 
+               (let ((pV10 (cdr fmla))) 
+                 (return 
+                  (LISP-SPEC::|!list| 
+                   (cons 
+                    (LISP-SPEC::|!symbol| "SNARK" "IF") 
+                    (cons 
+                     (SPECCALC::mkSnarkFmla 
+                      context 
+                      sp 
+                      dpn 
+                      vars 
+                      globalVars 
+                      (svref pV10 0)) 
+                     (cons 
+                      (SPECCALC::mkSnarkFmla 
+                       context 
+                       sp 
+                       dpn 
+                       vars 
+                       globalVars 
+                       (svref pV10 1)) 
+                      (cons 
+                       (SPECCALC::mkSnarkFmla 
+                        context 
+                        sp 
+                        dpn 
+                        vars 
+                        globalVars 
+                        (svref pV10 2)) 
+                       nil))))))) 
+               (if (eq (car fmla) :|Fun|) 
+                   (let ((pV13 (svref (cdr fmla) 0))) 
+                     (if (eq (car pV13) :|Bool|) 
+                         (let ((pV16 (cdr pV13))) 
+                           (if (eq t pV16) 
+                               (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
+                               (if (eq nil pV16) 
+                                   (return 
+                                    (LISP-SPEC::|!symbol| "SNARK" "FALSE"))))))))))) 
+   (return (SPECCALC::mkSnarkTerm context sp dpn vars fmla))))
+
+(defparameter SPECCALC::snark_prove (LISP-SPEC::|!symbol| "SNARK" "PROVE"))
+
+(defun SPECCALC::snarkAnswer (pV1 pV2 pV3 pV4) 
+  (block 
+   nil 
+   (return 
+    (let ((snarkFmla 
+           (SPECCALC::mkSnarkFmla 
+            pV1 
+            pV2 
+            "SNARK" 
+            STRINGSET::empty 
+            pV4 
+            (svref pV3 3)))) 
+      (let ((snarkAnsVars 
+             (LIST-SPEC::|!map|-1-1 
+              #'(lambda (v) (SPECCALC::snarkVar-1 v)) 
+              pV4))) 
+        (let ((snarkAnsTerm 
+               (LISP-SPEC::|!list| 
+                (LIST-SPEC::|!++| 
+                 (cons (LISP-SPEC::|!symbol| "SNARK" "ANS") nil) 
+                 snarkAnsVars)))) 
+          (LISP-SPEC::|!list| 
+           (cons 
+            SPECCALC::snark_prove 
+            (cons 
+             (LISP-SPEC::|!quote| snarkFmla) 
+             (cons 
+              (LISP-SPEC::|!symbol| "KEYWORD" "ANSWER") 
+              (cons 
+               (LISP-SPEC::|!quote| snarkAnsTerm) 
+               (cons 
+                (LISP-SPEC::|!symbol| "KEYWORD" "NAME") 
+                (cons (LISP-SPEC::|!symbol| "KEYWORD" (svref pV3 1)) nil))))))))))) 
+   (error "Nonexhaustive match failure in snarkAnswer")))
+
+(defparameter SPECCALC::snarkBaseDecls 
+  (cons 
+   (LISP-SPEC::|!list| 
+    (cons 
+     SPECCALC::declare_predicate 
+     (cons 
+      (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" "embed?")) 
+      (cons (LISP-SPEC::|!nat| 2) nil)))) 
+   nil))
+
+(defun SPECCALC::snarkFunctionCurryDecl () (LISP-SPEC::|!nil|))
+
+(defun SPECCALC::findBuiltInSort (pV52 pV53 pV54) 
+  (block 
+   nil 
+   (if (eq (car pV53) :|Qualified|) 
+       (let ((pV57 (cdr (cdr pV53)))) 
+         (return 
+          (let ((|!optSrt| (STANDARDSPEC::findTheSort pV52 pV53))) 
+            (block 
+             nil 
+             (if (eq (car |!optSrt|) :|Some|) 
+                 (let ((pV51 (svref (cdr |!optSrt|) 2))) 
+                   (return 
+                    (labels 
+                      ((builtinSort? (s) 
+                        (block 
+                         nil 
+                         (if (eq (car s) :|Base|) 
+                             (let ((pV11 (svref (cdr s) 0))) 
+                               (if (eq (car pV11) :|Qualified|) 
+                                   (let ((pV14 (cdr pV11))) 
+                                     (let ((pV16 (cdr pV14))
+                                           (pV15 (car pV14))) 
+                                       (if (string=  "Nat" pV15) 
+                                           (if (string=  "Nat" pV16) (return t)) 
+                                           (if (string=  "Integer" pV15) 
+                                               (if (string=  "Integer" pV16) 
+                                                   (return t)) 
+                                               (if (string=  "Boolean" pV15) 
+                                                   (if (string=  "Boolean" pV16) 
+                                                       (return t)))))))))) 
+                         (return nil)))) 
+                      (labels 
+                        ((builtinSnarkSort (s) 
+                          (block 
+                           nil 
+                           (if (eq (car s) :|Base|) 
+                               (let ((pV25 (svref (cdr s) 0))) 
+                                 (if (eq (car pV25) :|Qualified|) 
+                                     (let ((pV28 (cdr pV25))) 
+                                       (let ((pV30 (cdr pV28))
+                                             (pV29 (car pV28))) 
+                                         (if (string=  "Nat" pV29) 
+                                             (if (string=  "Nat" pV30) 
+                                                 (return 
+                                                  (LISP-SPEC::|!symbol| 
+                                                   "SNARK" 
+                                                   "NATURAL"))) 
+                                             (if (string=  "Integer" pV29) 
+                                                 (if (string=  "Integer" pV30) 
+                                                     (return 
+                                                      (LISP-SPEC::|!symbol| 
+                                                       "SNARK" 
+                                                       "INTEGER"))) 
+                                                 (if (string=  "Boolean" pV29) 
+                                                     (if (string=  
+                                                          "Boolean" 
+                                                          pV30) 
+                                                         (return 
+                                                          (if pV54 
+                                                              (LISP-SPEC::|!symbol| 
+                                                               "SNARK" 
+                                                               "BOOLEAN") 
+                                                              (LISP-SPEC::|!symbol| 
+                                                               "SNARK" 
+                                                               "TRUE")))))))))))) 
+                           (error 
+                            "Nonexhaustive match failure in findBuiltInSort")))) 
+                        (let ((builtinScheme 
+                               (LIST-SPEC::|!find|-1-1 
+                                #'(lambda (x) (builtinSort? (cdr x))) 
+                                pV51))) 
+                          (block 
+                           nil 
+                           (if (eq (car builtinScheme) :|Some|) 
+                               (return 
+                                (builtinSnarkSort (cdr (cdr builtinScheme))))) 
+                           (return 
+                            (block 
+                             nil 
+                             (if (consp pV51) 
+                                 (if (null (cdr pV51)) 
+                                     (return 
+                                      (SPECCALC::snarkBaseSort 
+                                       pV52 
+                                       (cdr (car pV51)) 
+                                       pV54)))) 
+                             (return (LISP-SPEC::|!symbol| "SNARK" pV57))))))))))) 
+             (return (LISP-SPEC::|!symbol| "SNARK" pV57))))))) 
+   (error "Nonexhaustive match failure in findBuiltInSort")))
+
+(defun SPECCALC::snarkBaseSort (spc s rng?) 
+  (block 
+   nil 
+   (if (eq (car s) :|Base|) 
+       (let ((pV21 (svref (cdr s) 0))) 
+         (if (eq (car pV21) :|Qualified|) 
+             (let ((pV24 (cdr pV21))) 
+               (let ((pV26 (cdr pV24))
+                     (pV25 (car pV24))) 
+                 (progn (if (string=  "Nat" pV25) 
+                            (if (string=  "Nat" pV26) 
+                                (return (LISP-SPEC::|!symbol| "SNARK" "NATURAL"))) 
+                            (if (string=  "Integer" pV25) 
+                                (if (string=  "Integer" pV26) 
+                                    (return 
+                                     (LISP-SPEC::|!symbol| "SNARK" "INTEGER"))) 
+                                (if (string=  "Boolean" pV25) 
+                                    (if (string=  "Boolean" pV26) 
+                                        (return 
+                                         (if rng? 
+                                             (LISP-SPEC::|!symbol| 
+                                              "SNARK" 
+                                              "BOOLEAN") 
+                                             (LISP-SPEC::|!symbol| 
+                                              "SNARK" 
+                                              "TRUE"))))))) 
+                        (return 
+                         (SPECCALC::findBuiltInSort 
+                          spc 
+                          (cons :|Qualified| (cons pV25 pV26)) 
+                          rng?)) 
+                        (return 
+                         (if rng? 
+                             (LISP-SPEC::|!symbol| "SNARK" pV26) 
+                             (LISP-SPEC::|!symbol| "SNARK" pV26)))))))) 
+       (if (eq (car s) :|Product|) 
+           (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
+           (if (eq (car s) :|Arrow|) 
+               (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
+               (if (eq (car s) :|TyVar|) 
+                   (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")))))) 
+   (return (LISP-SPEC::|!symbol| "SNARK" "TRUE"))))
+
+(defun SPECCALC::snarkPropositionSymbolDecl (name) 
+  (LISP-SPEC::|!list| 
+   (cons 
+    SPECCALC::declare_proposition_symbol 
+    (cons (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" name)) nil))))
+
+(defun SPECCALC::snarkFunctionNoArityDecl (spc name srt) 
+  (block 
+   nil 
+   (if (eq (car srt) :|Base|) 
+       (let ((pV8 (svref (cdr srt) 0))) 
+         (if (eq (car pV8) :|Qualified|) 
+             (progn (if (string=  "Boolean" (cdr (cdr pV8))) 
+                        (return (SPECCALC::snarkPropositionSymbolDecl name))) 
+                    (return 
+                     (LISP-SPEC::|!list| 
+                      (cons 
+                       SPECCALC::declare_constant 
+                       (cons 
+                        (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" name)) 
+                        (cons 
+                         (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
+                         (cons 
+                          (LISP-SPEC::|!quote| 
+                           (SPECCALC::snarkBaseSort spc srt t)) 
+                          nil)))))))))) 
+   (return (LISP-SPEC::|!nil|))))
+
+(defun SPECCALC::snarkFunctionCurryNoArityDecl (spc name srt) 
+  (SPECCALC::snarkFunctionNoArityDecl spc name srt))
+
+(defun SPECCALC::snarkPredicateDecl (spc name dom arity) 
+  (let ((pV1 (SPECENVIRONMENT::productOpt spc dom))) 
+    (block 
+     nil 
+     (if (eq (car pV1) :|Some|) 
+         (return 
+          (let ((domSortList 
+                 (LIST-SPEC::|!map|-1-1 
+                  #'(lambda (x) (SPECCALC::snarkBaseSort spc (cdr x) nil)) 
+                  (cdr pV1)))) 
+            (LISP-SPEC::|!list| 
+             (cons 
+              SPECCALC::declare_predicate 
+              (cons 
+               (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" name)) 
+               (cons 
+                (LISP-SPEC::|!nat| arity) 
+                (cons 
+                 (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
+                 (cons 
+                  (LISP-SPEC::|!quote| 
+                   (LISP-SPEC::|!cons| 
+                    (LISP-SPEC::|!symbol| "SNARK" "BOOLEAN") 
+                    (LISP-SPEC::|!list| domSortList))) 
+                  nil))))))))) 
+     (error "Nonexhaustive match failure in snarkPredicateDecl"))))
+
+(defun SPECCALC::snarkFunctionNoCurryDecl (spc name srt arity) 
+  (let ((pV15 (SPECENVIRONMENT::arrowOpt spc srt))) 
+    (block 
+     nil 
+     (if (eq (car pV15) :|Some|) 
+         (let ((pV16 (cdr pV15))) 
+           (let ((pV18 (cdr pV16))
+                 (pV17 (car pV16))) 
+             (return 
+              (block 
+               nil 
+               (if (eq (car pV18) :|Base|) 
+                   (let ((pV9 (svref (cdr pV18) 0))) 
+                     (if (eq (car pV9) :|Qualified|) 
+                         (if (string=  "Boolean" (cdr (cdr pV9))) 
+                             (return 
+                              (SPECCALC::snarkPredicateDecl spc name pV17 arity)))))) 
+               (return 
+                (let ((pV5 (SPECENVIRONMENT::productOpt spc pV17))) 
+                  (block 
+                   nil 
+                   (if (eq (car pV5) :|Some|) 
+                       (return 
+                        (let ((domSortList 
+                               (LIST-SPEC::|!map|-1-1 
+                                #'(lambda (x) 
+                                   (SPECCALC::snarkBaseSort spc (cdr x) nil)) 
+                                (cdr pV5)))) 
+                          (LISP-SPEC::|!list| 
+                           (cons 
+                            SPECCALC::declare_function 
+                            (cons 
+                             (LISP-SPEC::|!quote| 
+                              (LISP-SPEC::|!symbol| "SNARK" name)) 
+                             (cons 
+                              (LISP-SPEC::|!nat| arity) 
+                              (cons 
+                               (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
+                               (cons 
+                                (LISP-SPEC::|!quote| 
+                                 (LISP-SPEC::|!cons| 
+                                  (SPECCALC::snarkBaseSort spc pV18 t) 
+                                  (LISP-SPEC::|!list| domSortList))) 
+                                nil))))))))) 
+                   (error 
+                    "Nonexhaustive match failure in snarkFunctionNoCurryDecl"))))))))) 
+     (error "Nonexhaustive match failure in snarkFunctionNoCurryDecl"))))
+
+(defun SPECTOLISP::curryShapeNum (sp srt) 
+  (let ((pV2 (SPECENVIRONMENT::arrowOpt sp srt))) 
+    (block 
+     nil 
+     (if (eq (car pV2) :|Some|) 
+         (return 
+          (INTEGER-SPEC::|!+| 1 (SPECTOLISP::curryShapeNum sp (cdr (cdr pV2)))))) 
+     (return 0))))
+
+(defun SPECCALC::snarkFunctionDecl (spc name srt) 
+  (let ((pV5 (ARITYNORMALIZE::sortArity spc srt))
+        (pV4 (SPECTOLISP::curryShapeNum spc srt))) 
+    (block 
+     nil 
+     (if ( =  1 pV4) 
+         (if (eq (car pV5) :|None|) 
+             (return (SPECCALC::snarkFunctionNoArityDecl spc name srt)) 
+             (if (eq (car pV5) :|Some|) 
+                 (return 
+                  (SPECCALC::snarkFunctionNoCurryDecl 
+                   spc 
+                   name 
+                   srt 
+                   (cdr (cdr pV5))))))) 
+     (if (eq (car pV5) :|None|) 
+         (return (SPECCALC::snarkFunctionCurryNoArityDecl spc name srt)) 
+         (if (eq (car pV5) :|Some|) (return (SPECCALC::snarkFunctionCurryDecl)))) 
+     (return (SPECCALC::snarkFunctionNoArityDecl spc name srt)))))
+
+(defun SPECTOLISP::functionSort? (sp srt) 
+  (let ((pV5 (SPECENVIRONMENT::unfoldBase sp srt))) 
+    (block 
+     nil 
+     (if (eq (car pV5) :|Arrow|) 
+         (return t) 
+         (if (eq (car pV5) :|Subsort|) 
+             (return (SPECTOLISP::functionSort? sp (svref (cdr pV5) 0))))) 
+     (return nil))))
+
+(defun SPECCALC::snarkOpDecl (spc name srt) 
+  (if (SPECTOLISP::functionSort? spc srt) 
+      (SPECCALC::snarkFunctionDecl spc name srt) 
+      (SPECCALC::snarkFunctionDecl spc name srt)))
+
+(defun SPECCALC::snarkOpDeclPartial (spc name srt) 
+  (let ((decl (SPECCALC::snarkOpDecl spc name srt))) 
+    (if (LISP-SPEC::|!null| decl) '(:|None|) (cons :|Some| decl))))
+
+(defun SPECCALC::snarkOpDecls-1 (spc) 
+  (let ((opsigs (specOps-1 spc))) 
+    (let ((snarkOpDecls 
+           (LIST-SPEC::mapPartial-1-1 
+            #'(lambda (x) 
+               (SPECCALC::snarkOpDeclPartial 
+                spc 
+                (SPECCALC::mkSnarkName (svref x 0) (svref x 1)) 
+                (svref x 3))) 
+            opsigs))) (LIST-SPEC::|!++| SPECCALC::snarkBaseDecls snarkOpDecls))))
+
+
+(defun SPECCALC::snarkProperty (pV1 pV2 pV3) 
+  (block 
+   nil 
+   (return 
+    (let ((snarkFmla 
+           (SPECCALC::mkSnarkFmla 
+            pV1 
+            pV2 
+            "SNARK" 
+            STRINGSET::empty 
+            nil 
+            (svref pV3 3)))) 
+      (LISP-SPEC::|!list| 
+       (cons 
+        SPECCALC::snark_assert 
+        (cons 
+         (LISP-SPEC::|!quote| snarkFmla) 
+         (cons 
+          (LISP-SPEC::|!symbol| "KEYWORD" "NAME") 
+          (cons (LISP-SPEC::|!symbol| "KEYWORD" (svref pV3 1)) nil))))))) 
+   (error "Nonexhaustive match failure in snarkProperty")))
+
+(defparameter SPECCALC::logicalSorts 
+  (cons 
+   (LISP-SPEC::|!list| 
+    (cons 
+     SPECCALC::declare_function 
+     (cons 
+      (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" "logical-&")) 
+      (cons 
+       (LISP-SPEC::|!nat| 2) 
+       (cons 
+        (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
+        (cons 
+         (LISP-SPEC::|!quote| 
+          (LISP-SPEC::|!list| 
+           (cons 
+            (LISP-SPEC::|!symbol| "SNARK" "logical") 
+            (cons 
+             (LISP-SPEC::|!symbol| "SNARK" "logical") 
+             (cons (LISP-SPEC::|!symbol| "SNARK" "logical") nil))))) 
+         (cons 
+          (LISP-SPEC::|!symbol| "KEYWORD" "ASSOCIATIVE") 
+          (cons 
+           (LISP-SPEC::bool t) 
+           (cons 
+            (LISP-SPEC::|!symbol| "KEYWORD" "COMMUTATIVE") 
+            (cons (LISP-SPEC::bool t) nil)))))))))) 
+   (cons 
+    (LISP-SPEC::|!list| 
+     (cons 
+      SPECCALC::declare_function 
+      (cons 
+       (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" "logical-or")) 
+       (cons 
+        (LISP-SPEC::|!nat| 2) 
+        (cons 
+         (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
+         (cons 
+          (LISP-SPEC::|!quote| 
+           (LISP-SPEC::|!list| 
+            (cons 
+             (LISP-SPEC::|!symbol| "SNARK" "logical") 
+             (cons 
+              (LISP-SPEC::|!symbol| "SNARK" "logical") 
+              (cons (LISP-SPEC::|!symbol| "SNARK" "logical") nil))))) 
+          (cons 
+           (LISP-SPEC::|!symbol| "KEYWORD" "ASSOCIATIVE") 
+           (cons 
+            (LISP-SPEC::bool t) 
+            (cons 
+             (LISP-SPEC::|!symbol| "KEYWORD" "COMMUTATIVE") 
+             (cons (LISP-SPEC::bool t) nil)))))))))) 
+    nil)))
+
+(defun SPECCALC::snarkBuiltInSorts (useLogicalSorts) 
+  (LIST-SPEC::|!++| 
+   (LIST-SPEC::|!++| 
+    (if useLogicalSorts SPECCALC::logicalSorts nil) 
+    SPECCALC::arithmeticSorts) 
+   SPECCALC::baseSorts))
+
+(defun SPECCALC::snarkSorts-1 (spc) 
+  (let ((sorts (sortsAsList-1 spc))) 
+    (let ((snarkSorts 
+           (LIST-SPEC::|!map|-1-1 
+            #'(lambda (x) 
+               (LISP-SPEC::|!list| 
+                (cons 
+                 SPECCALC::declare_sort 
+                 (cons 
+                  (LISP-SPEC::|!quote| 
+                   (LISP-SPEC::|!symbol| "SNARK" (svref x 1))) 
+                  nil)))) 
+            sorts))) 
+      (LIST-SPEC::|!++| (SPECCALC::snarkBuiltInSorts nil) snarkSorts))))
+
+(defun SPECCALC::proveForAns
+ (ansVars claim spc base_hypothesis base_spc prover_options snarkLogFileName) 
+  (block 
+   nil 
+   (let ((pV7 (svref claim 0))) 
+     (return 
+      (labels 
+        ((claimType (ct) 
+          (block 
+           nil 
+           (if (eq (car ct) :|Conjecture|) 
+               (return "Conjecture") 
+               (if (eq (car ct) :|Theorem|) 
+                   (return "Theorem") 
+                   (if (eq (car ct) :|Axiom|) (return "Axiom")))) 
+           (error "Nonexhaustive match failure in proveForAns")))) 
+        (let ((claim_type (claimType pV7))) 
+          (let ((snarkSortDecls (SPECCALC::snarkSorts-1 spc))) 
+            (let ((snarkOpDecls (SPECCALC::snarkOpDecls-1 spc))) 
+              (let ((snarkBaseHypothesis 
+                     (LIST-SPEC::|!map|-1-1 
+                      #'(lambda (prop) 
+                         (SPECCALC::snarkProperty 
+                          SPECCALC::newContext 
+                          base_spc 
+                          prop)) 
+                      base_hypothesis))) 
+                (let ((snarkHypothesis 
+                       (LIST-SPEC::|!map|-1-1 
+                        #'(lambda (prop) 
+                           (SPECCALC::snarkProperty 
+                            SPECCALC::newContext 
+                            spc 
+                            prop)) 
+                        (svref spc 2)))) 
+                  (let ((snarkConjecture 
+                         (SPECCALC::snarkAnswer 
+                          SPECCALC::newContext 
+                          spc 
+                          claim 
+                          ansVars))) 
+                    (let ((snarkEvalForm 
+                           (SPECCALC::makeSnarkAnsEvalForm 
+                            prover_options 
+                            snarkSortDecls 
+                            snarkOpDecls 
+                            snarkBaseHypothesis 
+                            snarkHypothesis 
+                            snarkConjecture 
+                            snarkLogFileName))) 
+                      (progn (if SYSTEM-SPEC::specwareDebug? 
+                                 (STRING-SPEC::writeLine 
+                                  "Calling Snark by evaluating: ") 
+                                 nil) 
+                             (progn (if SYSTEM-SPEC::specwareDebug? 
+                                        (LISP-SPEC::|!PPRINT| snarkEvalForm) 
+                                        (LISP-SPEC::|!list| nil)) 
+                                    (let ((result 
+                                           (LISP-SPEC::|!apply| 
+                                            (LISP-SPEC::|!symbol| 
+                                             "LISP" 
+                                             "FUNCALL") 
+                                            (cons 
+                                             (LISP-SPEC::|!list| 
+                                              (cons 
+                                               (LISP-SPEC::|!symbol| 
+                                                "SNARK" 
+                                                "LAMBDA") 
+                                               (cons 
+                                                (LISP-SPEC::|!nil|) 
+                                                (cons snarkEvalForm nil)))) 
+                                             nil)))) 
+                                      (let ((proved 
+                                             (string=  
+                                              ":PROOF-FOUND" 
+                                              (SYSTEM-SPEC::toString result)))) 
+                                        proved)))))))))))))) 
+   (error "Nonexhaustive match failure in proveForAns")))
+
+(defun SPECCALC::substOpMap (opMap term) 
+  (labels 
+    ((mapRec (term) (mapT opMap term))
+     (mapT (opMap term) 
+      (block 
+       nil 
+       (if (eq (car term) :|Fun|) 
+           (let ((pV15 (cdr term))) 
+             (let ((pV48 (svref pV15 0))) 
+               (progn (if (eq (car pV48) :|Op|) 
+                          (let ((pV51 (cdr pV48))) 
+                            (return 
+                             (let ((newQid 
+                                    (POLYMAP::evalPartial-1-1 opMap (car pV51)))) 
+                               (block 
+                                nil 
+                                (if (eq (car newQid) :|Some|) 
+                                    (return 
+                                     (cons 
+                                      :|Fun| 
+                                      (vector 
+                                       (cons 
+                                        :|Op| 
+                                        (cons (cdr newQid) (cdr pV51))) 
+                                       (svref pV15 1) 
+                                       (svref pV15 2)))) 
+                                    (if (eq (car newQid) :|None|) (return term))) 
+                                (error 
+                                 "Nonexhaustive match failure in substOpMap")))))) 
+                      (return term)))) 
+           (if (eq (car term) :|Var|) 
+               (return term) 
+               (if (eq (car term) :|Let|) 
+                   (let ((pV13 (cdr term))) 
+                     (let ((pV42 (svref pV13 1))
+                           (pV41 (svref pV13 0))) 
+                       (return 
+                        (let ((newBdy (mapRec pV42))) 
+                          (if (cl::and 
+                               (slang-built-in::slang-term-equals pV41 pV41) 
+                               (slang-built-in::slang-term-equals pV42 newBdy)) 
+                              term 
+                              (cons :|Let| (vector pV41 newBdy (svref pV13 2)))))))) 
+                   (if (eq (car term) :|LetRec|) 
+                       (let ((pV12 (cdr term))) 
+                         (let ((pV39 (svref pV12 1))
+                               (pV38 (svref pV12 0))) 
+                           (return 
+                            (let ((newBdy (mapRec pV39))) 
+                              (if (cl::and 
+                                   (slang-built-in::slang-term-equals pV38 pV38) 
+                                   (slang-built-in::slang-term-equals 
+                                    pV39 
+                                    newBdy)) 
+                                  term 
+                                  (cons 
+                                   :|LetRec| 
+                                   (vector pV38 newBdy (svref pV12 2)))))))) 
+                       (if (eq (car term) :|Record|) 
+                           (let ((pV11 (cdr term))) 
+                             (let ((pV36 (car pV11))) 
+                               (return 
+                                (let ((newRow 
+                                       (LIST-SPEC::|!map|-1-1 
+                                        #'(lambda (x) 
+                                           (cons (car x) (mapRec (cdr x)))) 
+                                        pV36))) 
+                                  (if (slang-built-in::slang-term-equals 
+                                       pV36 
+                                       newRow) 
+                                      term 
+                                      (cons :|Record| (cons newRow (cdr pV11)))))))) 
+                           (if (eq (car term) :|IfThenElse|) 
+                               (let ((pV10 (cdr term))) 
+                                 (let ((pV34 (svref pV10 2))
+                                       (pV33 (svref pV10 1))
+                                       (pV32 (svref pV10 0))) 
+                                   (return 
+                                    (let ((newT1 (mapRec pV32))) 
+                                      (let ((newT2 (mapRec pV33))) 
+                                        (let ((newT3 (mapRec pV34))) 
+                                          (if (cl::and 
+                                               (slang-built-in::slang-term-equals 
+                                                newT1 
+                                                pV32) 
+                                               (cl::and 
+                                                (slang-built-in::slang-term-equals 
+                                                 newT2 
+                                                 pV33) 
+                                                (slang-built-in::slang-term-equals 
+                                                 newT3 
+                                                 pV34))) 
+                                              term 
+                                              (cons 
+                                               :|IfThenElse| 
+                                               (vector 
+                                                newT1 
+                                                newT2 
+                                                newT3 
+                                                (svref pV10 3)))))))))) 
+                               (if (eq (car term) :|Lambda|) 
+                                   (let ((pV9 (cdr term))) 
+                                     (let ((pV30 (car pV9))) 
+                                       (return 
+                                        (let ((|!newMatch| 
+                                               (LIST-SPEC::|!map|-1-1 
+                                                #'(lambda (x) 
+                                                   (vector 
+                                                    (svref x 0) 
+                                                    (mapRec (svref x 1)) 
+                                                    (mapRec (svref x 2)))) 
+                                                pV30))) 
+                                          (if (slang-built-in::slang-term-equals 
+                                               pV30 
+                                               |!newMatch|) 
+                                              term 
+                                              (cons 
+                                               :|Lambda| 
+                                               (cons |!newMatch| (cdr pV9)))))))) 
+                                   (if (eq (car term) :|Bind|) 
+                                       (let ((pV8 (cdr term))) 
+                                         (let ((pV28 (svref pV8 2))
+                                               (pV27 (svref pV8 1))) 
+                                           (return 
+                                            (let ((newTrm (mapRec pV28))) 
+                                              (if (cl::and 
+                                                   (slang-built-in::slang-term-equals 
+                                                    pV27 
+                                                    pV27) 
+                                                   (slang-built-in::slang-term-equals 
+                                                    pV28 
+                                                    newTrm)) 
+                                                  term 
+                                                  (cons 
+                                                   :|Bind| 
+                                                   (vector 
+                                                    (svref pV8 0) 
+                                                    pV27 
+                                                    newTrm 
+                                                    (svref pV8 3)))))))) 
+                                       (if (eq (car term) :|Apply|) 
+                                           (let ((pV7 (cdr term))) 
+                                             (let ((pV24 (svref pV7 1))
+                                                   (pV23 (svref pV7 0))) 
+                                               (return 
+                                                (let ((newT1 (mapRec pV23))) 
+                                                  (let ((newT2 (mapRec pV24))) 
+                                                    (if (cl::and 
+                                                         (slang-built-in::slang-term-equals 
+                                                          newT1 
+                                                          pV23) 
+                                                         (slang-built-in::slang-term-equals 
+                                                          newT2 
+                                                          pV24)) 
+                                                        term 
+                                                        (cons 
+                                                         :|Apply| 
+                                                         (vector 
+                                                          (mapRec newT1) 
+                                                          (mapRec newT2) 
+                                                          (svref pV7 2))))))))) 
+                                           (if (eq (car term) :|Seq|) 
+                                               (let ((pV6 (cdr term))) 
+                                                 (let ((pV21 (car pV6))) 
+                                                   (return 
+                                                    (let ((newTerms 
+                                                           (LIST-SPEC::|!map|-1-1 
+                                                            #'mapRec 
+                                                            pV21))) 
+                                                      (if (slang-built-in::slang-term-equals 
+                                                           newTerms 
+                                                           pV21) 
+                                                          term 
+                                                          (cons 
+                                                           :|Seq| 
+                                                           (cons 
+                                                            newTerms 
+                                                            (cdr pV6)))))))) 
+                                               (if (eq (car term) :|ApplyN|) 
+                                                   (let ((pV5 (cdr term))) 
+                                                     (let ((pV19 (car pV5))) 
+                                                       (return 
+                                                        (let ((newTerms 
+                                                               (LIST-SPEC::|!map|-1-1 
+                                                                #'mapRec 
+                                                                pV19))) 
+                                                          (if (slang-built-in::slang-term-equals 
+                                                               newTerms 
+                                                               pV19) 
+                                                              term 
+                                                              (cons 
+                                                               :|ApplyN| 
+                                                               (cons 
+                                                                newTerms 
+                                                                (cdr pV5)))))))) 
+                                                   (if (eq 
+                                                        (car term) 
+                                                        :|SortedTerm|) 
+                                                       (let ((pV4 (cdr term))) 
+                                                         (let ((pV17 
+                                                                (svref pV4 1))
+                                                               (pV16 
+                                                                (svref pV4 0))) 
+                                                           (return 
+                                                            (let ((newTrm 
+                                                                   (mapRec pV16))) 
+                                                              (if (cl::and 
+                                                                   (slang-built-in::slang-term-equals 
+                                                                    newTrm 
+                                                                    pV16) 
+                                                                   (slang-built-in::slang-term-equals 
+                                                                    pV17 
+                                                                    pV17)) 
+                                                                  term 
+                                                                  (cons 
+                                                                   :|SortedTerm| 
+                                                                   (vector 
+                                                                    newTrm 
+                                                                    pV17 
+                                                                    (svref pV4 2)))))))))))))))))))) 
+       (error "Nonexhaustive match failure in substOpMap")))) (mapRec term)))
+
+(defun SPECCALC::termOpsInSpec? (term spc) 
+  (labels 
+    ((mapRec (term) (mapT spc term))
+     (mapT (spc term) 
+      (block 
+       nil 
+       (if (eq (car term) :|Fun|) 
+           (let ((pV60 (svref (cdr term) 0))) 
+             (progn (if (eq (car pV60) :|Op|) 
+                        (return 
+                         (let ((pV3 
+                                (STANDARDSPEC::findTheOp spc (car (cdr pV60))))) 
+                           (block 
+                            nil 
+                            (if (eq (car pV3) :|Some|) (return t)) 
+                            (return nil))))) 
+                    (return nil))) 
+           (if (eq (car term) :|Var|) 
+               (return nil) 
+               (if (eq (car term) :|Let|) 
+                   (return (let ((res (mapRec (svref (cdr term) 1)))) res)) 
+                   (if (eq (car term) :|LetRec|) 
+                       (return (let ((res (mapRec (svref (cdr term) 1)))) res)) 
+                       (if (eq (car term) :|Record|) 
+                           (return 
+                            (let ((res 
+                                   (LIST-SPEC::foldl-1-1-1 
+                                    #'(lambda (x) 
+                                       (block 
+                                        nil 
+                                        (return 
+                                         (cl::or (cdr x) (mapRec (cdr (car x))))) 
+                                        (error 
+                                         "Nonexhaustive match failure in termOpsInSpec?"))) 
+                                    nil 
+                                    (car (cdr term))))) res)) 
+                           (if (eq (car term) :|IfThenElse|) 
+                               (let ((pV22 (cdr term))) 
+                                 (return 
+                                  (let ((resT1 (mapRec (svref pV22 0)))) 
+                                    (let ((resT2 (mapRec (svref pV22 1)))) 
+                                      (let ((resT3 (mapRec (svref pV22 2)))) 
+                                        (cl::or resT1 (cl::or resT2 resT3))))))) 
+                               (if (eq (car term) :|Lambda|) 
+                                   (return 
+                                    (let ((resMatch 
+                                           (LIST-SPEC::foldl-1-1-1 
+                                            #'(lambda (x) 
+                                               (block 
+                                                nil 
+                                                (return 
+                                                 (cl::or 
+                                                  (cdr x) 
+                                                  (mapRec (svref (car x) 2)))) 
+                                                (error 
+                                                 "Nonexhaustive match failure in termOpsInSpec?"))) 
+                                            nil 
+                                            (car (cdr term))))) resMatch)) 
+                                   (if (eq (car term) :|Bind|) 
+                                       (return 
+                                        (let ((resTrm 
+                                               (mapRec (svref (cdr term) 2)))) 
+                                          resTrm)) 
+                                       (if (eq (car term) :|Apply|) 
+                                           (let ((pV19 (cdr term))) 
+                                             (return 
+                                              (let ((resT1 
+                                                     (mapRec (svref pV19 0)))) 
+                                                (let ((resT2 
+                                                       (mapRec (svref pV19 1)))) 
+                                                  (cl::or resT1 resT2))))) 
+                                           (if (eq (car term) :|Seq|) 
+                                               (return 
+                                                (let ((resTerms 
+                                                       (LIST-SPEC::foldl-1-1-1 
+                                                        #'(lambda (x) 
+                                                           (cl::or 
+                                                            (cdr x) 
+                                                            (mapRec (car x)))) 
+                                                        nil 
+                                                        (car (cdr term))))) 
+                                                  resTerms)) 
+                                               (if (eq (car term) :|ApplyN|) 
+                                                   (return 
+                                                    (let ((resTerms 
+                                                           (LIST-SPEC::foldl-1-1-1 
+                                                            #'(lambda (x) 
+                                                               (cl::or 
+                                                                (cdr x) 
+                                                                (mapRec (car x)))) 
+                                                            nil 
+                                                            (car (cdr term))))) 
+                                                      resTerms)) 
+                                                   (if (eq 
+                                                        (car term) 
+                                                        :|SortedTerm|) 
+                                                       (return 
+                                                        (let ((resTrm 
+                                                               (mapRec 
+                                                                (svref 
+                                                                 (cdr term) 
+                                                                 0)))) resTrm)))))))))))))) 
+       (error "Nonexhaustive match failure in termOpsInSpec?")))) (mapRec term)))
+
+
+(defun SPECCALC::extendMorphism (morph base_spc) 
+  (let ((dom (svref morph 1))) 
+    (let ((opMap (svref morph 2))) 
+      (let ((axioms 
+             (LIST-SPEC::filter-1-1 
+              #'(lambda (x) 
+                 (slang-built-in::slang-term-equals (svref x 0) '(:|Axiom|))) 
+              (svref dom 2)))) 
+        (let ((axiomFmlas 
+               (LIST-SPEC::|!map|-1-1 #'(lambda (x) (svref x 3)) axioms))) 
+          (let ((newAxiomFmlas 
+                 (LIST-SPEC::|!map|-1-1 
+                  #'(lambda (fmla) (SPECCALC::substOpMap opMap fmla)) 
+                  axiomFmlas))) 
+            (let ((incompleteAxioms 
+                   (LIST-SPEC::filter-1-1 
+                    #'(lambda (fmla) (SPECCALC::termOpsInSpec? fmla dom)) 
+                    newAxiomFmlas))) 
+              (progn (if SYSTEM-SPEC::specwareDebug? 
+                         (LIST-SPEC::|!map|-1-1 
+                          #'(lambda (f) (ANNSPECPRINTER::printTermToTerminal f)) 
+                          incompleteAxioms) 
+                         (cons nil nil)) 
+                     (let ((testAxiom (LIST-SPEC::hd incompleteAxioms))) 
+                       (progn (if SYSTEM-SPEC::specwareDebug? 
+                                  (ANNSPECPRINTER::printTermToTerminal testAxiom) 
+                                  nil) 
+                              (let ((pV9 (SPECCALC::mkExistential dom testAxiom))) 
+                                (block 
+                                 nil 
+                                 (let ((pV11 (cdr pV9))) 
+                                   (return 
+                                    (let ((succ 
+                                           (SPECCALC::proveForAns 
+                                            pV11 
+                                            (car pV9) 
+                                            (subtractSpec-1-1 
+                                             (svref morph 0) 
+                                             base_spc) 
+                                            (svref base_spc 2) 
+                                            base_spc 
+                                            (cons (LISP-SPEC::|!list| nil) nil) 
+                                            "foo.log"))) 
+                                      (if succ 
+                                          (SPECCALC::extendMorphismWithAnswer 
+                                           morph 
+                                           pV11) 
+                                          morph)))) 
+                                 (error 
+                                  "Nonexhaustive match failure in extendMorphism")))))))))))))
+
+
+(defun SPECCALC::evaluateExtendMorph-1 (term) 
+  (SPECCALC::monadBind 
+   #'SPECCALC::getCurrentURI-1 
+   #'(lambda (uri) 
+      (SPECCALC::monadSeq 
+       (SPECCALC::|!print| 
+        (STRING-SPEC::^ 
+         (STRING-SPEC::^ 
+          ";;; Extending Morphisms for " 
+          (SPECCALC::uriToString-1 uri)) 
+         "
+")) 
+       (SPECCALC::monadBind 
+        (SPECCALC::evaluateTermInfo-1 term) 
+        #'(lambda (x) 
+           (let ((dep_URIs (svref x 2))
+                 (time_stamp (svref x 1))
+                 (value (svref x 0))) 
+             (SPECCALC::monadBind 
+              (SPECCALC::pathToRelativeURI "/Library/Base") 
+              #'(lambda (base_URI) 
+                 (SPECCALC::monadBind 
+                  (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) 
+                           base_URI) 
+                  #'(lambda (x1) 
+                     (let ((pV6 (svref x1 0))) 
+                       (block 
+                        nil 
+                        (if (eq (car pV6) :|Spec|) 
+                            (return 
+                             (block 
+                              nil 
+                              (if (eq (car value) :|Morph|) 
+                                  (return 
+                                   (SPECCALC::monadBind 
+                                    (SPECCALC::|!return| 
+                                     (SPECCALC::extendMorphism 
+                                      (cdr value) 
+                                      (cdr pV6))) 
+                                    #'(lambda (newMorph) 
+                                       (SPECCALC::|!return| 
+                                        (vector 
+                                         (cons 
+                                          :|Morph| 
+                                          (vector 
+                                           (svref newMorph 0) 
+                                           (svref newMorph 1) 
+                                           (svref newMorph 2) 
+                                           (svref newMorph 3))) 
+                                         time_stamp 
+                                         dep_URIs)))))) 
+                              (return 
+                               (SPECCALC::raise 
+                                (cons 
+                                 :|Unsupported| 
+                                 (cons 
+                                  (SPECCALC::positionOf-1 term) 
+                                  "Can only extend Morphisms"))))))) 
+                        (error 
+                         "Nonexhaustive match failure in evaluateExtendMorph"))))))))))))))
+
 
 (defun SPECCALC::getURI-1 (term) 
   (let ((pV3 (SPECCALC::valueOf-1 term))) 
@@ -33145,14 +41064,58 @@
            #'(lambda (x) (SPECCALC::|!return| (cdr x)))))) 
      (return #'SPECCALC::getCurrentURI-1))))
 
-(defun SPECTOLISP::curryShapeNum (sp srt) 
-  (let ((pV2 (SPECENVIRONMENT::arrowOpt sp srt))) 
-    (block 
-     nil 
-     (if (eq (car pV2) :|Some|) 
-         (return 
-          (INTEGER-SPEC::|!+| 1 (SPECTOLISP::curryShapeNum sp (cdr (cdr pV2)))))) 
-     (return 0))))
+(defun SPECCALC::ppJSpecToFile (spc file preamble) 
+  (let ((p (JAVA::ppCompUnit-1 spc))) 
+    (let ((|!t| (PRETTYPRINT::|!format| 80 p))) 
+      (PRETTYPRINT::toFile file (LIST-SPEC::|!++| |!t| preamble)))))
+
+(defun SPECCALC::toJavaFileEnv (spc file preamble) 
+  (progn (STRING-SPEC::writeLine (STRING-SPEC::^ "Writing Java file " file)) 
+         (let ((spc (JGEN::specToJava-1 spc))) 
+           (SPECCALC::ppJSpecToFile spc file preamble))))
+
+(defun SPECCALC::toJavaFile (spc file preamble) 
+  (SPECCALC::toJavaFileEnv spc file preamble))
+
+(defun SPECCALC::evaluateJavaGen (pV11 pV12 pV13) 
+  (block 
+   nil 
+   (let ((pV14 (svref pV11 0))) 
+     (if (eq (car pV14) :|Spec|) 
+         (let ((pV17 (cdr pV14))) 
+           (return 
+            (SPECCALC::monadBind 
+             (SPECCALC::getURI-1 pV12) 
+             #'(lambda (cURI) 
+                (SPECCALC::monadBind 
+                 (SPECCALC::URItoJavaFile cURI pV13) 
+                 #'(lambda (javaFileName) 
+                    (SPECCALC::monadBind 
+                     (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) 
+                              (cons 
+                               :|SpecPath_Relative| 
+                               (cons 
+                                '(:|None|) 
+                                (cons "Library" (cons "Base" nil))))) 
+                     #'(lambda (x) 
+                        (let ((pV7 (svref x 0))) 
+                          (block 
+                           nil 
+                           (if (eq (car pV7) :|Spec|) 
+                               (return 
+                                (progn (IO-SPEC::ensureDirectoriesExist 
+                                        javaFileName) 
+                                       (progn (SPECCALC::toJavaFile 
+                                               (subtractSpec-1-1 pV17 (cdr pV7)) 
+                                               javaFileName 
+                                               nil) 
+                                              (SPECCALC::monadSeq 
+                                               (SPECCALC::|!print| 
+                                                "Translated to Java") 
+                                               (SPECCALC::|!return| pV11)))))) 
+                           (error 
+                            "Nonexhaustive match failure in evaluateJavaGen"))))))))))))) 
+   (error "Nonexhaustive match failure in evaluateJavaGen")))
 
 (defun SPECTOLISP::genNNames (n) 
   (LIST-SPEC::tabulate 
@@ -33180,7 +41143,7 @@
                    (if (eq (car pV30) :|Lambda|) 
                        (let ((pV10 (cdr pV30))) 
                          (return 
-                          (if (lisp::or 
+                          (if (cl::or 
                                (LIST-SPEC::|!member| x (svref pV10 0)) 
                                ( =  
                                 (SPECTOLISP::countOccurrence2 
@@ -33194,7 +41157,7 @@
                            (let ((pV9 (cdr pV30))) 
                              (let ((pV22 (svref pV9 2))) 
                                (return 
-                                (if (lisp::or 
+                                (if (cl::or 
                                      (LIST-SPEC::|!member| x (svref pV9 0)) 
                                      ( =  
                                       (SPECTOLISP::countOccurrence2 
@@ -33634,7 +41597,7 @@
                           #'(lambda (x) 
                              (let ((unused_vars (cdr x))
                                    (var_name (car x))) 
-                               (if (lisp::and 
+                               (if (cl::and 
                                     (SPECTOLISP::pV? var_name) 
                                     ( =  
                                      (SPECTOLISP::countOccurrence2 
@@ -33865,20 +41828,6 @@
 
 (defparameter SPECTOLISP::defaultSpecwarePackage "SW-USER")
 
-(defun SPECTOLISP::functionSort? (sp srt) 
-  (let ((pV5 (SPECENVIRONMENT::unfoldBase sp srt))) 
-    (block 
-     nil 
-     (if (eq (car pV5) :|Arrow|) 
-         (return t) 
-         (if (eq (car pV5) :|Subsort|) 
-             (return (SPECTOLISP::functionSort? sp (svref (cdr pV5) 0))))) 
-     (return nil))))
-
-(defparameter SPECTOLISP::userStrings (cons :|Ref| STRINGSET::empty))
-
-(defparameter SPECTOLISP::userUpper (cons :|Ref| STRINGSET::empty))
-
 (defun SPECTOLISP::initializeSpecId () 
   (progn (STATE::|:=| SPECTOLISP::userStrings STRINGSET::empty) 
          (STATE::|:=| SPECTOLISP::userUpper STRINGSET::empty)))
@@ -33928,274 +41877,6 @@
      (STRING-SPEC::^ 
       "SpecToLisp.patternName " 
       (ANNSPECPRINTER::printPattern pattern))))))
-
-(defparameter SPECTOLISP::lispStrings 
-  (STRINGSET::fromList 
-   (cons 
-    "NIL" 
-    (cons 
-     "T" 
-     (cons 
-      "CONS" 
-      (cons 
-       "NULL" 
-       (cons 
-        "CAR" 
-        (cons 
-         "CDR" 
-         (cons 
-          "LIST" 
-          (cons 
-           "LISP" 
-           (cons 
-            "APPEND" 
-            (cons 
-             "REVAPPEND" 
-             (cons 
-              "REVERSE" 
-              (cons 
-               "COMPILE" 
-               (cons 
-                "REDUCE" 
-                (cons 
-                 "SUBSTITUTE" 
-                 (cons 
-                  "COUNT" 
-                  (cons 
-                   "ENCLOSE" 
-                   (cons 
-                    "EVAL" 
-                    (cons 
-                     "ERROR" 
-                     (cons 
-                      "FIRST" 
-                      (cons 
-                       "LAST" 
-                       (cons 
-                        "SECOND" 
-                        (cons 
-                         "THIRD" 
-                         (cons 
-                          "FOURTH" 
-                          (cons 
-                           "FIFTH" 
-                           (cons 
-                            "SIXTH" 
-                            (cons 
-                             "SEVENTH" 
-                             (cons 
-                              "EIGHTH" 
-                              (cons 
-                               "NINTH" 
-                               (cons 
-                                "TENTH" 
-                                (cons 
-                                 "UNION" 
-                                 (cons 
-                                  "INTERSECTION" 
-                                  (cons 
-                                   "SET" 
-                                   (cons 
-                                    "SETQ" 
-                                    (cons 
-                                     "SOME" 
-                                     (cons 
-                                      "ARRAY" 
-                                      (cons 
-                                       "POP" 
-                                       (cons 
-                                        "PUSH" 
-                                        (cons 
-                                         "TOP" 
-                                         (cons 
-                                          "REMOVE" 
-                                          (cons 
-                                           "GET" 
-                                           (cons 
-                                            "REPLACE" 
-                                            (cons 
-                                             "PI" 
-                                             (cons 
-                                              "DELETE" 
-                                              (cons 
-                                               "IDENTITY" 
-                                               (cons 
-                                                "REM" 
-                                                (cons 
-                                                 "NTH" 
-                                                 (cons 
-                                                  "EQ" 
-                                                  (cons 
-                                                   "EQL" 
-                                                   (cons 
-                                                    "EQUAL" 
-                                                    (cons 
-                                                     "ZEROP" 
-                                                     (cons 
-                                                      "ODDP" 
-                                                      (cons 
-                                                       "EVENP" 
-                                                       (cons 
-                                                        "SEARCH" 
-                                                        (cons 
-                                                         "COMPILE" 
-                                                         (cons 
-                                                          "MERGE" 
-                                                          (cons 
-                                                           "RETURN" 
-                                                           (cons 
-                                                            "VECTOR" 
-                                                            (cons 
-                                                             "SVREF" 
-                                                             (cons 
-                                                              "FORALL" 
-                                                              (cons 
-                                                               "EXISTS" 
-                                                               (cons 
-                                                                "SETF" 
-                                                                (cons 
-                                                                 "LOOP" 
-                                                                 (cons 
-                                                                  "OR" 
-                                                                  (cons 
-                                                                   "AND" 
-                                                                   (cons 
-                                                                    "NOT" 
-                                                                    (cons 
-                                                                     "LENGTH" 
-                                                                     (cons 
-                                                                      "MAP" 
-                                                                      (cons 
-                                                                       "MEMBER" 
-                                                                       (cons 
-                                                                        "TIME" 
-                                                                        (cons 
-                                                                         "CHAR" 
-                                                                         (cons 
-                                                                          "STRING" 
-                                                                          (cons 
-                                                                           "SYMBOL" 
-                                                                           (cons 
-                                                                            "NAT" 
-                                                                            (cons 
-                                                                             "MAKE-STRING" 
-                                                                             (cons 
-                                                                              "CONST" 
-                                                                              (cons 
-                                                                               "IF" 
-                                                                               (cons 
-                                                                                "APPLY" 
-                                                                                (cons 
-                                                                                 "QUOTE" 
-                                                                                 (cons 
-                                                                                  "MIN" 
-                                                                                  (cons 
-                                                                                   "GO" 
-                                                                                   (cons 
-                                                                                    "PRINT" 
-                                                                                    (cons 
-                                                                                     "READ" 
-                                                                                     (cons 
-                                                                                      "WRITE" 
-                                                                                      (cons 
-                                                                                       "LOAD" 
-                                                                                       (cons 
-                                                                                        ".." 
-                                                                                        (cons 
-                                                                                         "BLOCK" 
-                                                                                         (cons 
-                                                                                          "FORMAT" 
-                                                                                          (cons 
-                                                                                           "BREAK" 
-                                                                                           (cons 
-                                                                                            "SUBST" 
-                                                                                            (cons 
-                                                                                             "FIND" 
-                                                                                             (cons 
-                                                                                              "CLASS" 
-                                                                                              (cons 
-                                                                                               "+" 
-                                                                                               (cons 
-                                                                                                "++" 
-                                                                                                (cons 
-                                                                                                 "**" 
-                                                                                                 (cons 
-                                                                                                  "-" 
-                                                                                                  (cons 
-                                                                                                   "*" 
-                                                                                                   (cons 
-                                                                                                    ">" 
-                                                                                                    (cons 
-                                                                                                     "<" 
-                                                                                                     (cons 
-                                                                                                      "<=" 
-                                                                                                      (cons 
-                                                                                                       ">= " 
-                                                                                                       (cons 
-                                                                                                        "\\=" 
-                                                                                                        (cons 
-                                                                                                         "BOOLEAN" 
-                                                                                                         (cons 
-                                                                                                          "INTEGER" 
-                                                                                                          (cons 
-                                                                                                           "SHADOW" 
-                                                                                                           (cons 
-                                                                                                            "TRACE" 
-                                                                                                            (cons 
-                                                                                                             "WHEN" 
-                                                                                                             (cons 
-                                                                                                              "SYSTEM" 
-                                                                                                              (cons 
-                                                                                                               "IO" 
-                                                                                                               (cons 
-                                                                                                                "BOOTSTRAP" 
-                                                                                                                nil)))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))))
-
-
-(defun SPECTOLISP::isLispString (id) 
-  (lisp::or 
-   (STRINGSET::|!member| SPECTOLISP::lispStrings id) 
-   (LISP-SPEC::uncell 
-    (LISP-SPEC::|!apply| 
-     (LISP-SPEC::|!symbol| "LISP" "FIND-SYMBOL") 
-     (cons 
-      (LISP-SPEC::|!string| id) 
-      (cons (LISP-SPEC::|!string| "COMMON-LISP") nil))))))
-
-(defun SPECTOLISP::lookupSpecId (id |!ID|) 
-  (if (STRINGSET::|!member| (STATE::|!!| SPECTOLISP::userUpper) |!ID|) 
-      (if (STRINGSET::|!member| (STATE::|!!| SPECTOLISP::userStrings) id) 
-          id 
-          (STRING-SPEC::^ (STRING-SPEC::^ "|!" id) "|")) 
-      (progn (STATE::|:=| 
-              SPECTOLISP::userUpper 
-              (STRINGSET::add (STATE::|!!| SPECTOLISP::userUpper) |!ID|)) 
-             (STATE::|:=| 
-              SPECTOLISP::userStrings 
-              (STRINGSET::add (STATE::|!!| SPECTOLISP::userStrings) id)) 
-             id)))
-
-(defun SPECTOLISP::specId (id) 
-  (let ((id 
-         (STRING-SPEC::translate-1-1 
-          #'(lambda (pV1) 
-             (block 
-              nil 
-              (if (eq #\| pV1) (return "\\|") (if (eq #\# pV1) (return "\\#"))) 
-              (return (CHAR-SPEC::toString pV1)))) 
-          id))) 
-    (let ((|!ID| (STRING-SPEC::|!map|-1-1 #'CHAR-SPEC::toUpperCase id))) 
-      (if (lisp::or 
-           (SPECTOLISP::isLispString |!ID|) 
-           (eq (STRING-SPEC::sub id 0) #\!)) 
-          (STRING-SPEC::^ (STRING-SPEC::^ "|!" id) "|") 
-          (if (LIST-SPEC::|!exists|-1-1 
-               #'(lambda (ch) (eq ch #\:)) 
-               (STRING-SPEC::explode id)) 
-              (STRING-SPEC::^ (STRING-SPEC::^ "|" id) "|") 
-              (SPECTOLISP::lookupSpecId id |!ID|))))))
-
-(defun STRINGSET::addList (x0 x) (SPLAYSET::addList x0 x))
 
 (defun SPECTOLISP::blockAtom (sp dpn vars term) 
   (block 
@@ -34358,7 +42039,7 @@
              (let ((pV11 (svref pV7 0))) 
                (if (eq (car pV11) :|Op|) 
                    (return 
-                    (if (lisp::and 
+                    (if (cl::and 
                          (INTEGER-SPEC::|!>| i 1) 
                          ( =  i (SPECTOLISP::curryShapeNum sp (svref pV7 1)))) 
                         (cons 
@@ -34857,7 +42538,7 @@
                                                                                             (return 
                                                                                              (LISTADT::mkLApply 
                                                                                               (LISTADT::mkLOp 
-                                                                                               "lisp::and") 
+                                                                                               "cl::and") 
                                                                                               (cons 
                                                                                                (SPECTOLISP::mkLTerm 
                                                                                                 sp 
@@ -34927,7 +42608,7 @@
                                                                                             (return 
                                                                                              (LISTADT::mkLApply 
                                                                                               (LISTADT::mkLOp 
-                                                                                               "lisp::or") 
+                                                                                               "cl::or") 
                                                                                               (cons 
                                                                                                (SPECTOLISP::mkLTerm 
                                                                                                 sp 
@@ -34997,11 +42678,11 @@
                                                                                             (return 
                                                                                              (LISTADT::mkLApply 
                                                                                               (LISTADT::mkLOp 
-                                                                                               "lisp::or") 
+                                                                                               "cl::or") 
                                                                                               (cons 
                                                                                                (LISTADT::mkLApply 
                                                                                                 (LISTADT::mkLOp 
-                                                                                                 "lisp::not") 
+                                                                                                 "cl::not") 
                                                                                                 (cons 
                                                                                                  (SPECTOLISP::mkLTerm 
                                                                                                   sp 
@@ -36211,6 +43892,289 @@
            "attempting to generate code from an object that is not a specification"))))))) 
    (error "Nonexhaustive match failure in evaluateLispCompile")))
 
+(defun SPECCALC::evaluateOtherGenerate-1 (args) 
+  #'(lambda (valueInfo) 
+     #'(lambda (pos) 
+        (SPECCALC::monadBind 
+         #'SPECCALC::getCurrentURI-1 
+         #'(lambda (uri) 
+            (SPECCALC::raise 
+             (cons 
+              :|TypeCheck| 
+              (cons 
+               pos 
+               (STRING-SPEC::^ 
+                (STRING-SPEC::^ 
+                 "Unexpected OtherTerm at " 
+                 (SPECCALC::uriToString-1 uri)) 
+                "
+")))))))))
+
+(defun SPECCALC::evaluateOtherGenerate (x0 x1 x2) 
+  (SPECCALC::evaluateOtherGenerate-1 (vector x0 x1 x2)))
+
+(defun SPECCALC::ppLispCell (|!t|) 
+  (PRETTYPRINT::|!string| (SYSTEM-SPEC::toString |!t|)))
+
+(defun SPECCALC::ppSpec-1 (s) 
+  (PRETTYPRINT::prettysAll 
+   (LIST-SPEC::|!++| 
+    (LIST-SPEC::|!++| 
+     (LIST-SPEC::|!++| 
+      (LISTADT::section 
+       (STRING-SPEC::^ ";;; Snark spec: " (svref s 1)) 
+       (cons 
+        (PRETTYPRINT::|!string| 
+         (STRING-SPEC::^ (STRING-SPEC::^ "(in-package \"" "SNARK") "\")")) 
+        nil)) 
+      (LISTADT::section 
+       ";;; Sorts" 
+       (LIST-SPEC::|!map|-1-1 #'SPECCALC::ppLispCell (svref s 3)))) 
+     (LISTADT::section 
+      ";;; Ops" 
+      (LIST-SPEC::|!map|-1-1 #'SPECCALC::ppLispCell (svref s 2)))) 
+    (LISTADT::section 
+     ";;; Assertions" 
+     (LIST-SPEC::|!map|-1-1 #'SPECCALC::ppLispCell (svref s 0))))))
+
+(defun SPECCALC::ppSpecToFile (spc file preamble) 
+  (let ((p (SPECCALC::ppSpec-1 spc))) 
+    (let ((|!t| (PRETTYPRINT::|!format| 80 p))) 
+      (PRETTYPRINT::toFile file (LIST-SPEC::|!++| |!t| preamble)))))
+
+(defun SPECCALC::snarkName-1 (spc) 
+  (let ((packages 
+         (LIST-SPEC::|!map|-1-1 
+          #'SPECTOLISP::mkLPackageId 
+          (qualifiers (svref spc 1))))) 
+    (let ((pV5 
+           (block 
+            nil 
+            (if (consp packages) 
+                (return (cons (car packages) (cdr packages))) 
+                (if (null packages) 
+                    (return (cons SPECTOLISP::defaultSpecwarePackage nil)))) 
+            (error "Nonexhaustive match failure in snarkName")))) 
+      (block 
+       nil 
+       (return (car pV5)) 
+       (error "Nonexhaustive match failure in snarkName")))))
+
+(defun SPECCALC::snarkProperties-1 (spc) 
+  (let ((snarkProperties 
+         (LIST-SPEC::|!map|-1-1 
+          #'(lambda (prop) 
+             (SPECCALC::snarkProperty SPECCALC::newContext spc prop)) 
+          (svref spc 2)))) snarkProperties))
+
+(defun SPECCALC::snarkSpec-1 (spc) 
+  (vector 
+   (SPECCALC::snarkProperties-1 spc) 
+   (SPECCALC::snarkName-1 spc) 
+   (SPECCALC::snarkOpDecls-1 spc) 
+   (SPECCALC::snarkSorts-1 spc)))
+
+(defun SPECCALC::toSnarkEnv-1 (spc) 
+  (let ((spc (SPECCALC::snarkSpec-1 spc))) spc))
+
+(defun SPECCALC::toSnarkFileEnv (spc file preamble) 
+  (progn (STRING-SPEC::writeLine (STRING-SPEC::^ "Writing Snark file " file)) 
+         (let ((spc (SPECCALC::toSnarkEnv-1 spc))) 
+           (SPECCALC::ppSpecToFile spc file preamble))))
+
+(defun SPECCALC::toSnarkFile (spc file preamble) 
+  (SPECCALC::toSnarkFileEnv spc file preamble))
+
+(defun SPECCALC::evaluateSnarkGen (pV11 pV12 pV13) 
+  (block 
+   nil 
+   (let ((pV14 (svref pV11 0))) 
+     (if (eq (car pV14) :|Spec|) 
+         (let ((pV17 (cdr pV14))) 
+           (return 
+            (SPECCALC::monadBind 
+             (SPECCALC::getURI-1 pV12) 
+             #'(lambda (cURI) 
+                (SPECCALC::monadBind 
+                 (SPECCALC::URItoSnarkFile cURI pV13) 
+                 #'(lambda (snarkFileName) 
+                    (SPECCALC::monadBind 
+                     (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) 
+                              (cons 
+                               :|SpecPath_Relative| 
+                               (cons 
+                                '(:|None|) 
+                                (cons "Library" (cons "Base" nil))))) 
+                     #'(lambda (x) 
+                        (let ((pV7 (svref x 0))) 
+                          (block 
+                           nil 
+                           (if (eq (car pV7) :|Spec|) 
+                               (return 
+                                (progn (IO-SPEC::ensureDirectoriesExist 
+                                        snarkFileName) 
+                                       (progn (SPECCALC::toSnarkFile 
+                                               (subtractSpec-1-1 pV17 (cdr pV7)) 
+                                               snarkFileName 
+                                               nil) 
+                                              (SPECCALC::monadSeq 
+                                               (SPECCALC::|!print| 
+                                                "Translated to Snark") 
+                                               (SPECCALC::|!return| pV11)))))) 
+                           (error 
+                            "Nonexhaustive match failure in evaluateSnarkGen"))))))))))))) 
+   (error "Nonexhaustive match failure in evaluateSnarkGen")))
+
+(defun SPECCALC::evaluateGenerate (pV13 pV14 pV15) 
+  (block 
+   nil 
+   (return 
+    #'(lambda (pos) 
+       (SPECCALC::monadBind 
+        (SPECCALC::evaluateTermInfo-1 pV14) 
+        #'(lambda (x) 
+           (let ((depURIs (svref x 2))
+                 (timeStamp (svref x 1))
+                 (value (svref x 0))) 
+             (SPECCALC::monadBind 
+              (SPECCALC::pathToRelativeURI "/Library/Base") 
+              #'(lambda (baseURI) 
+                 (SPECCALC::monadBind 
+                  (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) 
+                           baseURI) 
+                  #'(lambda (x1) 
+                     (let ((pV9 (svref x1 0))) 
+                       (block 
+                        nil 
+                        (if (eq (car pV9) :|Spec|) 
+                            (let ((pV12 (cdr pV9))) 
+                              (return 
+                               (SPECCALC::monadBind 
+                                (SPECCALC::|!return| 
+                                 (SPECCALC::coerceToSpec value)) 
+                                #'(lambda (cValue) 
+                                   (block 
+                                    nil 
+                                    (if (eq (car cValue) :|Spec|) 
+                                        (return 
+                                         (block 
+                                          nil 
+                                          (if (string=  "lisp" pV13) 
+                                              (return 
+                                               (SPECCALC::evaluateLispCompile 
+                                                (vector cValue timeStamp depURIs) 
+                                                pV14 
+                                                pV15)) 
+                                              (if (string=  "snark" pV13) 
+                                                  (return 
+                                                   (SPECCALC::evaluateSnarkGen 
+                                                    (vector 
+                                                     cValue 
+                                                     timeStamp 
+                                                     depURIs) 
+                                                    pV14 
+                                                    pV15)) 
+                                                  (if (string=  "spec" pV13) 
+                                                      (return 
+                                                       (SPECCALC::monadSeq 
+                                                        (SPECCALC::|!print| 
+                                                         (SPECCALC::showValue 
+                                                          cValue)) 
+                                                        (SPECCALC::|!return| 
+                                                         (vector 
+                                                          cValue 
+                                                          timeStamp 
+                                                          depURIs)))) 
+                                                      (if (string=  "c" pV13) 
+                                                          (return 
+                                                           (progn (CGEN::specToC-1 
+                                                                   (subtractSpec-1-1 
+                                                                    (cdr cValue) 
+                                                                    pV12)) 
+                                                                  (SPECCALC::|!return| 
+                                                                   (vector 
+                                                                    cValue 
+                                                                    timeStamp 
+                                                                    depURIs)))) 
+                                                          (if (string=  
+                                                               "java" 
+                                                               pV13) 
+                                                              (return 
+                                                               (SPECCALC::evaluateJavaGen 
+                                                                (vector 
+                                                                 cValue 
+                                                                 timeStamp 
+                                                                 depURIs) 
+                                                                pV14 
+                                                                pV15))))))) 
+                                          (return 
+                                           (SPECCALC::raise 
+                                            (cons 
+                                             :|Unsupported| 
+                                             (cons 
+                                              (SPECCALC::positionOf-1 pV14) 
+                                              (STRING-SPEC::^ 
+                                               (STRING-SPEC::^ 
+                                                "no generation for language " 
+                                                pV13) 
+                                               " yet"))))))) 
+                                        (if (eq (car cValue) :|Other|) 
+                                            (return 
+                                             (funcall (funcall (SPECCALC::evaluateOtherGenerate 
+                                                                pV13 
+                                                                pV14 
+                                                                pV15) 
+                                                               (vector 
+                                                                (cdr cValue) 
+                                                                timeStamp 
+                                                                depURIs)) 
+                                                      pos)))) 
+                                    (return 
+                                     (SPECCALC::raise 
+                                      (cons 
+                                       :|TypeCheck| 
+                                       (cons 
+                                        pos 
+                                        "attempting to generate code from an object that is not a specification")))))))))) 
+                        (error "Nonexhaustive match failure in evaluateGenerate")))))))))))) 
+   (error "Nonexhaustive match failure in evaluateGenerate")))
+
+(defun SPECCALC::evaluateGenerate-1 (x) 
+  (SPECCALC::evaluateGenerate (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::evaluateLocalDecls (decls) 
+  (labels 
+    ((evaluateLocalDecl (name term) 
+      (SPECCALC::monadBind 
+       (SPECCALC::evaluateTermInfo-1 term) 
+       #'(lambda (valueInfo) 
+          (SPECCALC::monadSeq 
+           (funcall (SPECCALC::bindInLocalContext 
+                     (cons :|URI_Relative| (cons '(:|None|) (cons name nil)))) 
+                    valueInfo) 
+           (SPECCALC::|!return| nil)))))) 
+    (funcall (funcall (SPECCALC::foldM 
+                       #'(lambda (pV1) 
+                          (declare (ignore pV1)) 
+                          #'(lambda (decl) 
+                             (evaluateLocalDecl (car decl) (cdr decl))))) 
+                      nil) 
+             decls)))
+
+(defun SPECCALC::evaluateLet (decls) 
+  #'(lambda (term) 
+     (SPECCALC::monadBind 
+      #'SPECCALC::getLocalContext-1 
+      #'(lambda (context) 
+         (SPECCALC::monadSeq 
+          (SPECCALC::evaluateLocalDecls decls) 
+          (SPECCALC::monadBind 
+           (SPECCALC::evaluateTermInfo-1 term) 
+           #'(lambda (valueInfo) 
+              (SPECCALC::monadSeq 
+               (SPECCALC::setLocalContext context) 
+               (SPECCALC::|!return| valueInfo)))))))))
+
 (defun SPECCALC::findUnitIdforUnit (val globalContext) 
   (POLYMAP::foldMap-1-1-1 
    #'(lambda (result) 
@@ -36335,9 +44299,6 @@
 
 (defun TYPEOBLIGATIONS::?? (x0 x1) (TYPEOBLIGATIONS::??-1 (cons x0 x1)))
 
-(defun STANDARDSPEC::mkFalse () 
-  (STANDARDSPEC::mkFun (cons :|Bool| nil) STANDARDSPEC::boolSort))
-
 (defparameter STANDARDSPEC::unaryBoolSort 
   (STANDARDSPEC::mkArrow STANDARDSPEC::boolSort STANDARDSPEC::boolSort))
 
@@ -36375,7 +44336,7 @@
    (if (eq (car pat) :|AliasPat|) 
        (let ((pV19 (cdr pat))) 
          (return 
-          (lisp::or 
+          (cl::or 
            (UTILITIES::isPatBound v (svref pV19 0)) 
            (UTILITIES::isPatBound v (svref pV19 1))))) 
        (if (eq (car pat) :|EmbedPat|) 
@@ -36403,7 +44364,7 @@
        (if (eq (car term) :|Apply|) 
            (let ((pV23 (cdr term))) 
              (return 
-              (lisp::or 
+              (cl::or 
                (UTILITIES::isFree v (svref pV23 0)) 
                (UTILITIES::isFree v (svref pV23 1))))) 
            (if (eq (car term) :|Record|) 
@@ -36417,10 +44378,10 @@
                        (return 
                         (LIST-SPEC::|!exists|-1-1 
                          #'(lambda (x) 
-                            (lisp::and 
+                            (cl::and 
                              (BOOLEAN-SPEC::~ 
                               (UTILITIES::isPatBound v (svref x 0))) 
-                             (lisp::or 
+                             (cl::or 
                               (UTILITIES::isFree v (svref x 1)) 
                               (UTILITIES::isFree v (svref x 2))))) 
                          (car (cdr term)))) 
@@ -36428,11 +44389,11 @@
                            (let ((pV19 (cdr term))) 
                              (let ((pV36 (svref pV19 0))) 
                                (return 
-                                (lisp::or 
+                                (cl::or 
                                  (LIST-SPEC::|!exists|-1-1 
                                   #'(lambda (x) (UTILITIES::isFree v (cdr x))) 
                                   pV36) 
-                                 (lisp::and 
+                                 (cl::and 
                                   (LIST-SPEC::all-1-1 
                                    #'(lambda (x) 
                                       (BOOLEAN-SPEC::~ 
@@ -36443,7 +44404,7 @@
                                (let ((pV18 (cdr term))) 
                                  (let ((pV33 (svref pV18 0))) 
                                    (return 
-                                    (lisp::and 
+                                    (cl::and 
                                      (LIST-SPEC::all-1-1 
                                       #'(lambda (x) 
                                          (BOOLEAN-SPEC::~ 
@@ -36451,7 +44412,7 @@
                                            v 
                                            (car x)))) 
                                       pV33) 
-                                     (lisp::or 
+                                     (cl::or 
                                       (LIST-SPEC::|!exists|-1-1 
                                        #'(lambda (x) 
                                           (UTILITIES::isFree v (cdr x))) 
@@ -36460,7 +44421,7 @@
                                (if (eq (car term) :|Bind|) 
                                    (let ((pV17 (cdr term))) 
                                      (return 
-                                      (lisp::and 
+                                      (cl::and 
                                        (LIST-SPEC::all-1-1 
                                         #'(lambda (w) 
                                            (BOOLEAN-SPEC::~ 
@@ -36472,9 +44433,9 @@
                                    (if (eq (car term) :|IfThenElse|) 
                                        (let ((pV16 (cdr term))) 
                                          (return 
-                                          (lisp::or 
+                                          (cl::or 
                                            (UTILITIES::isFree v (svref pV16 0)) 
-                                           (lisp::or 
+                                           (cl::or 
                                             (UTILITIES::isFree v (svref pV16 1)) 
                                             (UTILITIES::isFree v (svref pV16 2))))))))))))))) 
    (error "Nonexhaustive match failure in isFree")))
@@ -36642,7 +44603,7 @@
    (error "Nonexhaustive match failure in unfoldBase")))
 
 (defun TYPEOBLIGATIONS::returnPatternRec (pairs gamma |!M| tau sigma) 
-  (if (lisp::or 
+  (if (cl::or 
        (slang-built-in::slang-term-equals tau sigma) 
        (LIST-SPEC::|!exists|-1-1 
         #'(lambda (p) (slang-built-in::slang-term-equals p (cons tau sigma))) 
@@ -37133,7 +45094,7 @@
    (error "Nonexhaustive match failure in addFailure")))
 
 (defun TYPEOBLIGATIONS::subtypeRec (pairs tcc gamma |!M| tau sigma) 
-  (if (lisp::or 
+  (if (cl::or 
        (slang-built-in::slang-term-equals tau sigma) 
        (LIST-SPEC::|!exists|-1-1 
         #'(lambda (p) (slang-built-in::slang-term-equals p (cons tau sigma))) 
@@ -37938,6 +45899,40 @@
                   "Can create obligations for Specs and Morphisms only"))))))))))))
 
 
+(defun SPECCALC::evaluateOther (args) 
+  #'(lambda (pos) 
+     (SPECCALC::monadBind 
+      #'SPECCALC::getCurrentURI-1 
+      #'(lambda (uri) 
+         (SPECCALC::raise 
+          (cons 
+           :|TypeCheck| 
+           (cons 
+            pos 
+            (STRING-SPEC::^ 
+             (STRING-SPEC::^ 
+              "Unexpected OtherTerm at " 
+              (SPECCALC::uriToString-1 uri)) 
+             "
+"))))))))
+
+(defun SPECCALC::evaluateOtherPrint (value) 
+  #'(lambda (pos) 
+     (SPECCALC::monadBind 
+      #'SPECCALC::getCurrentURI-1 
+      #'(lambda (uri) 
+         (SPECCALC::raise 
+          (cons 
+           :|TypeCheck| 
+           (cons 
+            pos 
+            (STRING-SPEC::^ 
+             (STRING-SPEC::^ 
+              "Unexpected OtherTerm at " 
+              (SPECCALC::uriToString-1 uri)) 
+             "
+"))))))))
+
 (defun SPECCALC::printSpec-1-1-1 (base_spec reverse_context spc) 
   (PRETTYPRINT::toString 
    (PRETTYPRINT::|!format| 
@@ -38356,11 +46351,11 @@
             (SPECCALC::monadBind 
              (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) base_URI) 
              #'(lambda (x1) 
-                (let ((pV8 (svref x1 0))) 
+                (let ((pV9 (svref x1 0))) 
                   (block 
                    nil 
-                   (if (eq (car pV8) :|Spec|) 
-                       (let ((pV11 (cdr pV8))) 
+                   (if (eq (car pV9) :|Spec|) 
+                       (let ((pV12 (cdr pV9))) 
                          (return 
                           (SPECCALC::monadBind 
                            #'SPECCALC::getGlobalContext-1 
@@ -38396,21 +46391,21 @@
                                              (return 
                                               (SPECCALC::|!print| 
                                                (SPECCALC::printSpec-1-1-1 
-                                                pV11 
+                                                pV12 
                                                 reverse_context 
                                                 (cdr value)))) 
                                              (if (eq (car value) :|Morph|) 
                                                  (return 
                                                   (SPECCALC::|!print| 
                                                    (SPECCALC::printMorphism-1-1-1 
-                                                    pV11 
+                                                    pV12 
                                                     reverse_context 
                                                     (cdr value)))) 
                                                  (if (eq (car value) :|Diag|) 
                                                      (return 
                                                       (SPECCALC::|!print| 
                                                        (SPECCALC::printDiagram-1-1-1 
-                                                        pV11 
+                                                        pV12 
                                                         reverse_context 
                                                         (cdr value)))) 
                                                      (if (eq 
@@ -38419,15 +46414,24 @@
                                                          (return 
                                                           (SPECCALC::|!print| 
                                                            (SPECCALC::printColimit-1-1-1 
-                                                            pV11 
+                                                            pV12 
                                                             reverse_context 
                                                             (cdr value)))) 
                                                          (if (eq 
                                                               (car value) 
-                                                              :|InProcess|) 
+                                                              :|Other|) 
                                                              (return 
-                                                              (SPECCALC::|!print| 
-                                                               "No value!"))))))) 
+                                                              (funcall (SPECCALC::evaluateOtherPrint 
+                                                                        (cdr 
+                                                                         value)) 
+                                                                       (SPECCALC::positionOf-1 
+                                                                        term))) 
+                                                             (if (eq 
+                                                                  (car value) 
+                                                                  :|InProcess|) 
+                                                                 (return 
+                                                                  (SPECCALC::|!print| 
+                                                                   "No value!")))))))) 
                                          (error 
                                           "Nonexhaustive match failure in evaluatePrint")) 
                                         (SPECCALC::monadSeq 
@@ -38519,600 +46523,18 @@
        (LISP-SPEC::|!list| (cons snarkConjecture nil))) 
       nil)))))
 
-(defparameter SPECCALC::newContext (vector (cons :|Ref| 0)))
-
-(defun SPECCALC::mkSnarkName (qual id) 
-  (block 
-   nil 
-   (if (string=  "Boolean" qual) 
-       (if (string=  "~" id) 
-           (return "NOT") 
-           (if (string=  "&" id) 
-               (return "AND") 
-               (if (string=  "or" id) 
-                   (return "OR") 
-                   (if (string=  "=>" id) 
-                       (return "IMPLIES") 
-                       (if (string=  "<=>" id) (return "IFF")))))) 
-       (if (string=  "Nat" qual) 
-           (if (string=  "<=" id) (return "=<")) 
-           (if (string=  "Integer" qual) (if (string=  "<=" id) (return "=<"))))) 
-   (return id)))
-
-(defun SPECCALC::mkNewSnarkOp (context) 
-  (let ((num (INTEGER-SPEC::|!+| (STATE::|!!| (svref context 0)) 1))) 
-    (progn (STATE::|:=| (svref context 0) num) 
-           (LISP-SPEC::|!symbol| 
-            "SNARK" 
-            (STRING-SPEC::|!++| "sApply" (NAT-SPEC::toString num))))))
-
-(defun UTILITIES::deleteVars (vars1 vars2) 
-  (LIST-SPEC::foldr-1-1-1 #'LISTUTILITIES::|!delete|-1 vars1 vars2))
-
-(defun UTILITIES::freeVarsList (|!list|) 
-  (LIST-SPEC::foldr-1-1-1 
-   #'(lambda (x) 
-      (block 
-       nil 
-       (return (LIST-SPEC::|!++| (cdr x) (UTILITIES::freeVarsRec (cdr (car x))))) 
-       (error "Nonexhaustive match failure in freeVarsList"))) 
-   nil 
-   |!list|))
-
-(defun UTILITIES::patVars (pat) 
-  (block 
-   nil 
-   (if (eq (car pat) :|AliasPat|) 
-       (let ((pV33 (cdr pat))) 
-         (return 
-          (LIST-SPEC::|!++| 
-           (UTILITIES::patVars (svref pV33 0)) 
-           (UTILITIES::patVars (svref pV33 1))))) 
-       (if (eq (car pat) :|VarPat|) 
-           (return (cons (car (cdr pat)) nil)) 
-           (if (eq (car pat) :|EmbedPat|) 
-               (progn (let ((pV43 (svref (cdr pat) 1))) 
-                        (if (eq (car pV43) :|Some|) 
-                            (return (UTILITIES::patVars (cdr pV43))))) 
-                      (return nil)) 
-               (if (eq (car pat) :|RecordPat|) 
-                   (return 
-                    (LIST-SPEC::foldr-1-1-1 
-                     #'(lambda (x) 
-                        (block 
-                         nil 
-                         (return 
-                          (LIST-SPEC::|!++| 
-                           (UTILITIES::patVars (cdr (car x))) 
-                           (cdr x))) 
-                         (error "Nonexhaustive match failure in patVars"))) 
-                     nil 
-                     (car (cdr pat)))) 
-                   (if (eq (car pat) :|WildPat|) 
-                       (return nil) 
-                       (if (eq (car pat) :|StringPat|) 
-                           (return nil) 
-                           (if (eq (car pat) :|BoolPat|) 
-                               (return nil) 
-                               (if (eq (car pat) :|CharPat|) 
-                                   (return nil) 
-                                   (if (eq (car pat) :|NatPat|) 
-                                       (return nil) 
-                                       (if (eq (car pat) :|RelaxPat|) 
-                                           (return 
-                                            (UTILITIES::patVars 
-                                             (svref (cdr pat) 0))) 
-                                           (if (eq (car pat) :|QuotientPat|) 
-                                               (return 
-                                                (UTILITIES::patVars 
-                                                 (svref (cdr pat) 0)))))))))))))) 
-   (error "Nonexhaustive match failure in patVars")))
-
-(defun UTILITIES::freeVarsMatch (pat |!cond| body) 
-  (let ((vars (UTILITIES::patVars pat))) 
-    (let ((vars1 (UTILITIES::freeVarsRec |!cond|))) 
-      (let ((vars2 (UTILITIES::freeVarsRec body))) 
-        (UTILITIES::deleteVars (LIST-SPEC::|!++| vars1 vars2) vars)))))
-
-(defun UTILITIES::freeVarsMatch-1 (x) 
-  (UTILITIES::freeVarsMatch (svref x 0) (svref x 1) (svref x 2)))
-
-(defun UTILITIES::freeVarsRec (|!M|) 
-  (block 
-   nil 
-   (if (eq (car |!M|) :|Var|) 
-       (return (cons (car (cdr |!M|)) nil)) 
-       (if (eq (car |!M|) :|Apply|) 
-           (let ((pV28 (cdr |!M|))) 
-             (return 
-              (LIST-SPEC::|!++| 
-               (UTILITIES::freeVarsRec (svref pV28 0)) 
-               (UTILITIES::freeVarsRec (svref pV28 1))))) 
-           (if (eq (car |!M|) :|Record|) 
-               (return (UTILITIES::freeVarsList (car (cdr |!M|)))) 
-               (if (eq (car |!M|) :|Fun|) 
-                   (return nil) 
-                   (if (eq (car |!M|) :|Lambda|) 
-                       (return 
-                        (LIST-SPEC::foldr-1-1-1 
-                         #'(lambda (x) 
-                            (LIST-SPEC::|!++| 
-                             (cdr x) 
-                             (UTILITIES::freeVarsMatch-1 (car x)))) 
-                         nil 
-                         (car (cdr |!M|)))) 
-                       (if (eq (car |!M|) :|Let|) 
-                           (let ((pV24 (cdr |!M|))) 
-                             (return 
-                              (let ((pV13 
-                                     (LIST-SPEC::foldr-1-1-1 
-                                      #'(lambda (x) 
-                                         (let ((pV8 (cdr x))
-                                               (pV7 (car x))) 
-                                           (block 
-                                            nil 
-                                            (return 
-                                             (cons 
-                                              (LIST-SPEC::|!++| 
-                                               (UTILITIES::patVars (car pV7)) 
-                                               (car pV8)) 
-                                              (LIST-SPEC::|!++| 
-                                               (UTILITIES::freeVarsRec (cdr pV7)) 
-                                               (cdr pV8)))) 
-                                            (error 
-                                             "Nonexhaustive match failure in freeVarsRec")))) 
-                                      (cons nil nil) 
-                                      (svref pV24 0)))) 
-                                (block 
-                                 nil 
-                                 (return 
-                                  (let ((mVars 
-                                         (UTILITIES::freeVarsRec (svref pV24 1)))) 
-                                    (LIST-SPEC::|!++| 
-                                     (cdr pV13) 
-                                     (UTILITIES::deleteVars mVars (car pV13))))) 
-                                 (error 
-                                  "Nonexhaustive match failure in freeVarsRec"))))) 
-                           (if (eq (car |!M|) :|LetRec|) 
-                               (let ((pV23 (cdr |!M|))) 
-                                 (let ((pV38 (svref pV23 0))) 
-                                   (return 
-                                    (let ((vars1 
-                                           (UTILITIES::freeVarsRec 
-                                            (svref pV23 1)))) 
-                                      (let ((vars2 
-                                             (UTILITIES::freeVarsList pV38))) 
-                                        (UTILITIES::deleteVars 
-                                         (LIST-SPEC::|!map|-1-1 
-                                          #'(lambda (x) (car x)) 
-                                          pV38) 
-                                         (LIST-SPEC::|!++| vars1 vars2))))))) 
-                               (if (eq (car |!M|) :|Bind|) 
-                                   (let ((pV22 (cdr |!M|))) 
-                                     (return 
-                                      (UTILITIES::deleteVars 
-                                       (UTILITIES::freeVarsRec (svref pV22 2)) 
-                                       (svref pV22 1)))) 
-                                   (if (eq (car |!M|) :|IfThenElse|) 
-                                       (let ((pV21 (cdr |!M|))) 
-                                         (return 
-                                          (LIST-SPEC::|!++| 
-                                           (LIST-SPEC::|!++| 
-                                            (UTILITIES::freeVarsRec 
-                                             (svref pV21 0)) 
-                                            (UTILITIES::freeVarsRec 
-                                             (svref pV21 1))) 
-                                           (UTILITIES::freeVarsRec 
-                                            (svref pV21 2)))))))))))))) 
-   (error "Nonexhaustive match failure in freeVarsRec")))
-
-(defun UTILITIES::freeVars (|!M|) 
-  (let ((vars (UTILITIES::freeVarsRec |!M|))) 
-    (LISTUTILITIES::removeDuplicates vars)))
-
-(defun SPECCALC::mkNewSnarkTerm (context term) 
-  (let ((vars (UTILITIES::freeVars term))) 
-    (let ((newFun (SPECCALC::mkNewSnarkOp context))) 
-      (let ((snarkVars 
-             (LIST-SPEC::|!map|-1-1 
-              #'(lambda (v) (LISP-SPEC::|!symbol| "SNARK" (car v))) 
-              vars))) 
-        (block 
-         nil 
-         (if (null snarkVars) (return newFun)) 
-         (return (LISP-SPEC::|!cons| newFun (LISP-SPEC::|!list| snarkVars))))))))
-
-
-(defun SPECCALC::mkSnarkTermApp (context sp dpn vars f arg) 
-  (let ((args 
-         (block 
-          nil 
-          (if (eq (car arg) :|Record|) 
-              (return 
-               (LIST-SPEC::|!map|-1-1 #'(lambda (x) (cdr x)) (car (cdr arg))))) 
-          (return (cons arg nil))))) 
-    (block 
-     nil 
-     (if (eq (car f) :|Op|) 
-         (let ((pV11 (car (cdr f)))) 
-           (if (eq (car pV11) :|Qualified|) 
-               (let ((pV13 (cdr pV11))) 
-                 (return 
-                  (let ((snarkArgs 
-                         (LIST-SPEC::|!map|-1-1 
-                          #'(lambda (arg) 
-                             (SPECCALC::mkSnarkTerm context sp dpn vars arg)) 
-                          args))) 
-                    (LISP-SPEC::|!cons| 
-                     (LISP-SPEC::|!symbol| 
-                      "SNARK" 
-                      (SPECCALC::mkSnarkName (car pV13) (cdr pV13))) 
-                     (LISP-SPEC::|!list| snarkArgs)))))))) 
-     (error "Nonexhaustive match failure in mkSnarkTermApp"))))
-
-(defun SPECCALC::mkSnarkTerm (context sp dpn vars term) 
-  (block 
-   nil 
-   (if (eq (car term) :|Apply|) 
-       (let ((pV14 (cdr term))) 
-         (let ((pV33 (svref pV14 0))) 
-           (if (eq (car pV33) :|Fun|) 
-               (return 
-                (SPECCALC::mkSnarkTermApp 
-                 context 
-                 sp 
-                 dpn 
-                 vars 
-                 (svref (cdr pV33) 0) 
-                 (svref pV14 1)))))) 
-       (if (eq (car term) :|IfThenElse|) 
-           (let ((pV13 (cdr term))) 
-             (return 
-              (LISP-SPEC::|!list| 
-               (cons 
-                (LISP-SPEC::|!symbol| "SNARK" "IF") 
-                (cons 
-                 (SPECCALC::mkSnarkTerm context sp dpn vars (svref pV13 0)) 
-                 (cons 
-                  (SPECCALC::mkSnarkTerm context sp dpn vars (svref pV13 1)) 
-                  (cons 
-                   (SPECCALC::mkSnarkTerm context sp dpn vars (svref pV13 2)) 
-                   nil))))))) 
-           (if (eq (car term) :|Fun|) 
-               (let ((pV19 (svref (cdr term) 0))) 
-                 (if (eq (car pV19) :|Op|) 
-                     (let ((pV24 (car (cdr pV19)))) 
-                       (if (eq (car pV24) :|Qualified|) 
-                           (let ((pV26 (cdr pV24))) 
-                             (return 
-                              (LISP-SPEC::|!symbol| 
-                               "SNARK" 
-                               (SPECCALC::mkSnarkName (car pV26) (cdr pV26))))))) 
-                     (if (eq (car pV19) :|Nat|) 
-                         (return (LISP-SPEC::|!nat| (cdr pV19)))))) 
-               (if (eq (car term) :|Var|) 
-                   (return (LISP-SPEC::|!symbol| "SNARK" (car (car (cdr term))))))))) 
-   (return (SPECCALC::mkNewSnarkTerm context term))))
-
-(defun SPECCALC::snarkBoolOp (id) 
-  (let ((name (SPECCALC::mkSnarkName "Boolean" id))) 
-    (LISP-SPEC::|!symbol| "SNARK" name)))
-
-(defun SPECCALC::mkSnarkFmlaApp (context sp dpn vars f srt arg) 
-  (let ((args 
-         (block 
-          nil 
-          (if (eq (car arg) :|Record|) 
-              (return 
-               (LIST-SPEC::|!map|-1-1 #'(lambda (x) (cdr x)) (car (cdr arg))))) 
-          (return (cons arg nil))))) 
-    (block 
-     nil 
-     (if (eq (car f) :|Op|) 
-         (let ((pV72 (car (cdr f)))) 
-           (if (eq (car pV72) :|Qualified|) 
-               (let ((pV74 (cdr pV72))) 
-                 (let ((pV76 (cdr pV74))
-                       (pV75 (car pV74))) 
-                   (progn (if (string=  "Boolean" pV75) 
-                              (return 
-                               (let ((snarkArgs 
-                                      (LIST-SPEC::|!map|-1-1 
-                                       #'(lambda (arg) 
-                                          (SPECCALC::mkSnarkFmla 
-                                           context 
-                                           sp 
-                                           dpn 
-                                           vars 
-                                           arg)) 
-                                       args))) 
-                                 (LISP-SPEC::|!cons| 
-                                  (SPECCALC::snarkBoolOp pV76) 
-                                  (LISP-SPEC::|!list| snarkArgs))))) 
-                          (return 
-                           (let ((snarkArgs 
-                                  (LIST-SPEC::|!map|-1-1 
-                                   #'(lambda (arg) 
-                                      (SPECCALC::mkSnarkTerm 
-                                       context 
-                                       sp 
-                                       dpn 
-                                       vars 
-                                       arg)) 
-                                   args))) 
-                             (LISP-SPEC::|!cons| 
-                              (LISP-SPEC::|!symbol| 
-                               "SNARK" 
-                               (SPECCALC::mkSnarkName pV75 pV76)) 
-                              (LISP-SPEC::|!list| snarkArgs))))))))) 
-         (if (eq (car f) :|Embedded|) 
-             (let ((pV70 (cdr f))) 
-               (return 
-                (labels 
-                  ((boolArgp (srt) 
-                    (block 
-                     nil 
-                     (if (eq (car srt) :|Base|) 
-                         (let ((pV15 (svref (cdr srt) 0))) 
-                           (if (eq (car pV15) :|Qualified|) 
-                               (let ((pV18 (cdr pV15))) 
-                                 (return 
-                                  (lisp::or 
-                                   (string=  (car pV18) "Boolean") 
-                                   (string=  (cdr pV18) "Boolean"))))))) 
-                     (return nil)))) 
-                  (block 
-                   nil 
-                   (if (eq (car srt) :|Arrow|) 
-                       (return 
-                        (let ((isfmla (boolArgp (svref (cdr srt) 0)))) 
-                          (let ((snarkArg 
-                                 (if isfmla 
-                                     (SPECCALC::mkSnarkFmla 
-                                      context 
-                                      sp 
-                                      dpn 
-                                      vars 
-                                      arg) 
-                                     (SPECCALC::mkSnarkTerm 
-                                      context 
-                                      sp 
-                                      dpn 
-                                      vars 
-                                      arg)))) 
-                            (LISP-SPEC::|!cons| 
-                             (LISP-SPEC::|!symbol| "SNARK" "embed?") 
-                             (LISP-SPEC::|!list| 
-                              (cons 
-                               (LISP-SPEC::|!symbol| "SNARK" pV70) 
-                               (cons snarkArg nil)))))))) 
-                   (error "Nonexhaustive match failure in mkSnarkFmlaApp"))))) 
-             (if (eq (car f) :|Equals|) 
-                 (return 
-                  (labels 
-                    ((boolArgp (srt) 
-                      (block 
-                       nil 
-                       (if (eq (car srt) :|Base|) 
-                           (let ((pV32 (svref (cdr srt) 0))) 
-                             (if (eq (car pV32) :|Qualified|) 
-                                 (let ((pV35 (cdr pV32))) 
-                                   (return 
-                                    (lisp::or 
-                                     (string=  (car pV35) "Boolean") 
-                                     (string=  (cdr pV35) "Boolean"))))))) 
-                       (return nil)))) 
-                    (block 
-                     nil 
-                     (if (consp args) 
-                         (let ((pV65 (cdr args))
-                               (pV64 (car args))) 
-                           (if (consp pV65) 
-                               (let ((pV67 (car pV65))) 
-                                 (if (null (cdr pV65)) 
-                                     (return 
-                                      (block 
-                                       nil 
-                                       (if (eq (car srt) :|Arrow|) 
-                                           (let ((pV59 (svref (cdr srt) 0))) 
-                                             (return 
-                                              (block 
-                                               nil 
-                                               (if (eq (car pV59) :|Product|) 
-                                                   (let ((pV55 (car (cdr pV59)))) 
-                                                     (return 
-                                                      (block 
-                                                       nil 
-                                                       (if (consp pV55) 
-                                                           (let ((pV45 
-                                                                  (cdr pV55))) 
-                                                             (if (consp pV45) 
-                                                                 (if (null 
-                                                                      (cdr pV45)) 
-                                                                     (return 
-                                                                      (let ((isfmla 
-                                                                             (lisp::or 
-                                                                              (boolArgp 
-                                                                               (cdr 
-                                                                                (car 
-                                                                                 pV55))) 
-                                                                              (boolArgp 
-                                                                               (cdr 
-                                                                                (car 
-                                                                                 pV45)))))) 
-                                                                        (let ((snarkArg1 
-                                                                               (if isfmla 
-                                                                                   (SPECCALC::mkSnarkFmla 
-                                                                                    context 
-                                                                                    sp 
-                                                                                    dpn 
-                                                                                    vars 
-                                                                                    pV64) 
-                                                                                   (SPECCALC::mkSnarkTerm 
-                                                                                    context 
-                                                                                    sp 
-                                                                                    dpn 
-                                                                                    vars 
-                                                                                    pV64)))) 
-                                                                          (let ((snarkArg2 
-                                                                                 (if isfmla 
-                                                                                     (SPECCALC::mkSnarkFmla 
-                                                                                      context 
-                                                                                      sp 
-                                                                                      dpn 
-                                                                                      vars 
-                                                                                      pV67) 
-                                                                                     (SPECCALC::mkSnarkTerm 
-                                                                                      context 
-                                                                                      sp 
-                                                                                      dpn 
-                                                                                      vars 
-                                                                                      pV67)))) 
-                                                                            (if isfmla 
-                                                                                (LISP-SPEC::|!cons| 
-                                                                                 (LISP-SPEC::|!symbol| 
-                                                                                  "SNARK" 
-                                                                                  "IFF") 
-                                                                                 (LISP-SPEC::|!list| 
-                                                                                  (cons 
-                                                                                   snarkArg1 
-                                                                                   (cons 
-                                                                                    snarkArg2 
-                                                                                    nil)))) 
-                                                                                (LISP-SPEC::|!cons| 
-                                                                                 (LISP-SPEC::|!symbol| 
-                                                                                  "SNARK" 
-                                                                                  "=") 
-                                                                                 (LISP-SPEC::|!list| 
-                                                                                  (cons 
-                                                                                   snarkArg1 
-                                                                                   (cons 
-                                                                                    snarkArg2 
-                                                                                    nil))))))))))))) 
-                                                       (error 
-                                                        "Nonexhaustive match failure in mkSnarkFmlaApp"))))) 
-                                               (error 
-                                                "Nonexhaustive match failure in mkSnarkFmlaApp"))))) 
-                                       (error 
-                                        "Nonexhaustive match failure in mkSnarkFmlaApp")))))))) 
-                     (error "Nonexhaustive match failure in mkSnarkFmlaApp"))))))) 
-     (error "Nonexhaustive match failure in mkSnarkFmlaApp"))))
-
-(defun SPECCALC::snarkPBaseSort (s rng?) 
-  (block 
-   nil 
-   (if (eq (car s) :|Base|) 
-       (let ((pV16 (svref (cdr s) 0))) 
-         (if (eq (car pV16) :|Qualified|) 
-             (let ((pV19 (cdr pV16))) 
-               (let ((pV21 (cdr pV19))
-                     (pV20 (car pV19))) 
-                 (progn (if (string=  "Nat" pV20) 
-                            (if (string=  "Nat" pV21) 
-                                (return (LISP-SPEC::|!symbol| "SNARK" "NATURAL"))) 
-                            (if (string=  "Integer" pV20) 
-                                (if (string=  "Integer" pV21) 
-                                    (return 
-                                     (LISP-SPEC::|!symbol| "SNARK" "INTEGER"))))) 
-                        (return 
-                         (if rng? 
-                             (LISP-SPEC::|!symbol| "SNARK" pV21) 
-                             (LISP-SPEC::|!symbol| "SNARK" pV21)))))))) 
-       (if (eq (car s) :|Product|) 
-           (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
-           (if (eq (car s) :|Arrow|) 
-               (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
-               (if (eq (car s) :|TyVar|) 
-                   (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")))))) 
-   (error "Nonexhaustive match failure in snarkPBaseSort")))
-
-(defun SPECCALC::snarkBndVar-1 (var) 
-  (block 
-   nil 
-   (return 
-    (LISP-SPEC::|!list| 
-     (cons 
-      (LISP-SPEC::|!symbol| "SNARK" (car var)) 
-      (cons 
-       (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
-       (cons (SPECCALC::snarkPBaseSort (cdr var) nil) nil))))) 
-   (error "Nonexhaustive match failure in snarkBndVar")))
-
-(defun SPECCALC::snarkBndVars (vars) 
-  (let ((snarkVarList (LIST-SPEC::|!map|-1-1 #'SPECCALC::snarkBndVar-1 vars))) 
-    (let ((res (LISP-SPEC::|!list| snarkVarList))) res)))
-
-(defun SPECCALC::mkSnarkFmla (context sp dpn vars fmla) 
-  (block 
-   nil 
-   (if (eq (car fmla) :|Bind|) 
-       (let ((pV12 (cdr fmla))) 
-         (let ((pV29 (svref pV12 1))) 
-           (return 
-            (let ((snarkBndList (SPECCALC::snarkBndVars pV29))) 
-              (let ((newVars 
-                     (LIST-SPEC::|!map|-1-1 
-                      #'(lambda (x) (SPECTOLISP::specId (car x))) 
-                      pV29))) 
-                (let ((snarkFmla 
-                       (SPECCALC::mkSnarkFmla 
-                        context 
-                        sp 
-                        dpn 
-                        (STRINGSET::addList vars newVars) 
-                        (svref pV12 2)))) 
-                  (LISP-SPEC::|!list| 
-                   (cons 
-                    (LISP-SPEC::|!symbol| 
-                     "SNARK" 
-                     (SPECCALC::bndrString (svref pV12 0))) 
-                    (cons snarkBndList (cons snarkFmla nil)))))))))) 
-       (if (eq (car fmla) :|Apply|) 
-           (let ((pV11 (cdr fmla))) 
-             (let ((pV21 (svref pV11 0))) 
-               (if (eq (car pV21) :|Fun|) 
-                   (let ((pV24 (cdr pV21))) 
-                     (return 
-                      (SPECCALC::mkSnarkFmlaApp 
-                       context 
-                       sp 
-                       dpn 
-                       vars 
-                       (svref pV24 0) 
-                       (svref pV24 1) 
-                       (svref pV11 1))))))) 
-           (if (eq (car fmla) :|IfThenElse|) 
-               (let ((pV10 (cdr fmla))) 
-                 (return 
-                  (LISP-SPEC::|!list| 
-                   (cons 
-                    (LISP-SPEC::|!symbol| "SNARK" "IF") 
-                    (cons 
-                     (SPECCALC::mkSnarkFmla context sp dpn vars (svref pV10 0)) 
-                     (cons 
-                      (SPECCALC::mkSnarkFmla context sp dpn vars (svref pV10 1)) 
-                      (cons 
-                       (SPECCALC::mkSnarkFmla context sp dpn vars (svref pV10 2)) 
-                       nil))))))) 
-               (if (eq (car fmla) :|Fun|) 
-                   (let ((pV13 (svref (cdr fmla) 0))) 
-                     (if (eq (car pV13) :|Bool|) 
-                         (let ((pV16 (cdr pV13))) 
-                           (if (eq t pV16) 
-                               (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
-                               (if (eq nil pV16) 
-                                   (return 
-                                    (LISP-SPEC::|!symbol| "SNARK" "FALSE"))))))))))) 
-   (return (SPECCALC::mkSnarkTerm context sp dpn vars fmla))))
-
-(defparameter SPECCALC::snark_prove (LISP-SPEC::|!symbol| "SNARK" "PROVE"))
-
 (defun SPECCALC::snarkConjecture (pV1 pV2 pV3) 
   (block 
    nil 
    (return 
     (let ((snarkFmla 
-           (SPECCALC::mkSnarkFmla pV1 pV2 "SNARK" STRINGSET::empty (svref pV3 3)))) 
+           (SPECCALC::mkSnarkFmla 
+            pV1 
+            pV2 
+            "SNARK" 
+            STRINGSET::empty 
+            nil 
+            (svref pV3 3)))) 
       (LISP-SPEC::|!list| 
        (cons 
         SPECCALC::snark_prove 
@@ -39122,276 +46544,6 @@
           (LISP-SPEC::|!symbol| "KEYWORD" "NAME") 
           (cons (LISP-SPEC::|!symbol| "KEYWORD" (svref pV3 1)) nil))))))) 
    (error "Nonexhaustive match failure in snarkConjecture")))
-
-(defparameter SPECCALC::snarkBaseDecls 
-  (cons 
-   (LISP-SPEC::|!list| 
-    (cons 
-     SPECCALC::declare_predicate 
-     (cons 
-      (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" "embed?")) 
-      (cons (LISP-SPEC::|!nat| 2) nil)))) 
-   nil))
-
-(defun SPECCALC::snarkFunctionCurryDecl () (LISP-SPEC::|!nil|))
-
-(defun SPECCALC::snarkFunctionNoArityDecl (name srt) 
-  (block 
-   nil 
-   (if (eq (car srt) :|Base|) 
-       (let ((pV5 (svref (cdr srt) 0))) 
-         (if (eq (car pV5) :|Qualified|) 
-             (return 
-              (LISP-SPEC::|!list| 
-               (cons 
-                SPECCALC::declare_constant 
-                (cons 
-                 (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" name)) 
-                 (cons 
-                  (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
-                  (cons 
-                   (LISP-SPEC::|!quote| 
-                    (LISP-SPEC::|!symbol| "SNARK" (cdr (cdr pV5)))) 
-                   nil))))))))) 
-   (return (LISP-SPEC::|!nil|))))
-
-(defun SPECCALC::snarkFunctionCurryNoArityDecl (name srt) 
-  (SPECCALC::snarkFunctionNoArityDecl name srt))
-
-(defun SPECCALC::snarkBaseSort (s rng?) 
-  (block 
-   nil 
-   (if (eq (car s) :|Base|) 
-       (let ((pV16 (svref (cdr s) 0))) 
-         (if (eq (car pV16) :|Qualified|) 
-             (let ((pV19 (cdr pV16))) 
-               (let ((pV21 (cdr pV19))
-                     (pV20 (car pV19))) 
-                 (progn (if (string=  "Nat" pV20) 
-                            (if (string=  "Nat" pV21) 
-                                (return (LISP-SPEC::|!symbol| "SNARK" "NATURAL"))) 
-                            (if (string=  "Integer" pV20) 
-                                (if (string=  "Integer" pV21) 
-                                    (return 
-                                     (LISP-SPEC::|!symbol| "SNARK" "INTEGER"))))) 
-                        (return 
-                         (if rng? 
-                             (LISP-SPEC::|!symbol| "SNARK" pV21) 
-                             (LISP-SPEC::|!symbol| "SNARK" pV21)))))))) 
-       (if (eq (car s) :|Product|) 
-           (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
-           (if (eq (car s) :|Arrow|) 
-               (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
-               (if (eq (car s) :|TyVar|) 
-                   (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")))))) 
-   (error "Nonexhaustive match failure in snarkBaseSort")))
-
-(defun SPECCALC::snarkPredicateDecl (spc name dom arity) 
-  (let ((pV1 (SPECENVIRONMENT::productOpt spc dom))) 
-    (block 
-     nil 
-     (if (eq (car pV1) :|Some|) 
-         (return 
-          (let ((domSortList 
-                 (LIST-SPEC::|!map|-1-1 
-                  #'(lambda (x) (SPECCALC::snarkBaseSort (cdr x) nil)) 
-                  (cdr pV1)))) 
-            (LISP-SPEC::|!list| 
-             (cons 
-              SPECCALC::declare_predicate 
-              (cons 
-               (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" name)) 
-               (cons 
-                (LISP-SPEC::|!nat| arity) 
-                (cons 
-                 (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
-                 (cons 
-                  (LISP-SPEC::|!quote| 
-                   (LISP-SPEC::|!cons| 
-                    (LISP-SPEC::|!symbol| "SNARK" "BOOLEAN") 
-                    (LISP-SPEC::|!list| domSortList))) 
-                  nil))))))))) 
-     (error "Nonexhaustive match failure in snarkPredicateDecl"))))
-
-(defun SPECCALC::snarkFunctionNoCurryDecl (spc name srt arity) 
-  (let ((pV15 (SPECENVIRONMENT::arrowOpt spc srt))) 
-    (block 
-     nil 
-     (if (eq (car pV15) :|Some|) 
-         (let ((pV16 (cdr pV15))) 
-           (let ((pV18 (cdr pV16))
-                 (pV17 (car pV16))) 
-             (return 
-              (block 
-               nil 
-               (if (eq (car pV18) :|Base|) 
-                   (let ((pV9 (svref (cdr pV18) 0))) 
-                     (if (eq (car pV9) :|Qualified|) 
-                         (if (string=  "Boolean" (cdr (cdr pV9))) 
-                             (return 
-                              (SPECCALC::snarkPredicateDecl spc name pV17 arity)))))) 
-               (return 
-                (let ((pV5 (SPECENVIRONMENT::productOpt spc pV17))) 
-                  (block 
-                   nil 
-                   (if (eq (car pV5) :|Some|) 
-                       (return 
-                        (let ((domSortList 
-                               (LIST-SPEC::|!map|-1-1 
-                                #'(lambda (x) 
-                                   (SPECCALC::snarkBaseSort (cdr x) nil)) 
-                                (cdr pV5)))) 
-                          (LISP-SPEC::|!list| 
-                           (cons 
-                            SPECCALC::declare_function 
-                            (cons 
-                             (LISP-SPEC::|!quote| 
-                              (LISP-SPEC::|!symbol| "SNARK" name)) 
-                             (cons 
-                              (LISP-SPEC::|!nat| arity) 
-                              (cons 
-                               (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
-                               (cons 
-                                (LISP-SPEC::|!quote| 
-                                 (LISP-SPEC::|!cons| 
-                                  (SPECCALC::snarkBaseSort pV18 t) 
-                                  (LISP-SPEC::|!list| domSortList))) 
-                                nil))))))))) 
-                   (error 
-                    "Nonexhaustive match failure in snarkFunctionNoCurryDecl"))))))))) 
-     (error "Nonexhaustive match failure in snarkFunctionNoCurryDecl"))))
-
-(defun SPECCALC::snarkFunctionDecl (spc name srt) 
-  (let ((pV5 (ARITYNORMALIZE::sortArity spc srt))
-        (pV4 (SPECTOLISP::curryShapeNum spc srt))) 
-    (block 
-     nil 
-     (if ( =  1 pV4) 
-         (if (eq (car pV5) :|None|) 
-             (return (SPECCALC::snarkFunctionNoArityDecl name srt)) 
-             (if (eq (car pV5) :|Some|) 
-                 (return 
-                  (SPECCALC::snarkFunctionNoCurryDecl 
-                   spc 
-                   name 
-                   srt 
-                   (cdr (cdr pV5))))))) 
-     (if (eq (car pV5) :|None|) 
-         (return (SPECCALC::snarkFunctionCurryNoArityDecl name srt)) 
-         (if (eq (car pV5) :|Some|) (return (SPECCALC::snarkFunctionCurryDecl)))) 
-     (return (SPECCALC::snarkFunctionNoArityDecl name srt)))))
-
-(defun SPECCALC::snarkOpDecl (spc name srt) 
-  (if (SPECTOLISP::functionSort? spc srt) 
-      (SPECCALC::snarkFunctionDecl spc name srt) 
-      (SPECCALC::snarkFunctionDecl spc name srt)))
-
-(defun SPECCALC::snarkOpDeclPartial (spc name srt) 
-  (let ((decl (SPECCALC::snarkOpDecl spc name srt))) 
-    (if (LISP-SPEC::|!null| decl) '(:|None|) (cons :|Some| decl))))
-
-(defun SPECCALC::snarkOpDecls-1 (spc) 
-  (let ((opsigs (specOps-1 spc))) 
-    (let ((snarkOpDecls 
-           (LIST-SPEC::mapPartial-1-1 
-            #'(lambda (x) 
-               (SPECCALC::snarkOpDeclPartial 
-                spc 
-                (SPECCALC::mkSnarkName (svref x 0) (svref x 1)) 
-                (svref x 3))) 
-            opsigs))) (LIST-SPEC::|!++| SPECCALC::snarkBaseDecls snarkOpDecls))))
-
-
-(defun SPECCALC::snarkProperty (pV1 pV2 pV3) 
-  (block 
-   nil 
-   (return 
-    (let ((snarkFmla 
-           (SPECCALC::mkSnarkFmla pV1 pV2 "SNARK" STRINGSET::empty (svref pV3 3)))) 
-      (LISP-SPEC::|!list| 
-       (cons 
-        SPECCALC::snark_assert 
-        (cons 
-         (LISP-SPEC::|!quote| snarkFmla) 
-         (cons 
-          (LISP-SPEC::|!symbol| "KEYWORD" "NAME") 
-          (cons (LISP-SPEC::|!symbol| "KEYWORD" (svref pV3 1)) nil))))))) 
-   (error "Nonexhaustive match failure in snarkProperty")))
-
-(defparameter SPECCALC::logicalSorts 
-  (cons 
-   (LISP-SPEC::|!list| 
-    (cons 
-     SPECCALC::declare_function 
-     (cons 
-      (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" "logical-&")) 
-      (cons 
-       (LISP-SPEC::|!nat| 2) 
-       (cons 
-        (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
-        (cons 
-         (LISP-SPEC::|!quote| 
-          (LISP-SPEC::|!list| 
-           (cons 
-            (LISP-SPEC::|!symbol| "SNARK" "logical") 
-            (cons 
-             (LISP-SPEC::|!symbol| "SNARK" "logical") 
-             (cons (LISP-SPEC::|!symbol| "SNARK" "logical") nil))))) 
-         (cons 
-          (LISP-SPEC::|!symbol| "KEYWORD" "ASSOCIATIVE") 
-          (cons 
-           (LISP-SPEC::bool t) 
-           (cons 
-            (LISP-SPEC::|!symbol| "KEYWORD" "COMMUTATIVE") 
-            (cons (LISP-SPEC::bool t) nil)))))))))) 
-   (cons 
-    (LISP-SPEC::|!list| 
-     (cons 
-      SPECCALC::declare_function 
-      (cons 
-       (LISP-SPEC::|!quote| (LISP-SPEC::|!symbol| "SNARK" "logical-or")) 
-       (cons 
-        (LISP-SPEC::|!nat| 2) 
-        (cons 
-         (LISP-SPEC::|!symbol| "KEYWORD" "SORT") 
-         (cons 
-          (LISP-SPEC::|!quote| 
-           (LISP-SPEC::|!list| 
-            (cons 
-             (LISP-SPEC::|!symbol| "SNARK" "logical") 
-             (cons 
-              (LISP-SPEC::|!symbol| "SNARK" "logical") 
-              (cons (LISP-SPEC::|!symbol| "SNARK" "logical") nil))))) 
-          (cons 
-           (LISP-SPEC::|!symbol| "KEYWORD" "ASSOCIATIVE") 
-           (cons 
-            (LISP-SPEC::bool t) 
-            (cons 
-             (LISP-SPEC::|!symbol| "KEYWORD" "COMMUTATIVE") 
-             (cons (LISP-SPEC::bool t) nil)))))))))) 
-    nil)))
-
-(defun SPECCALC::snarkBuiltInSorts (useLogicalSorts) 
-  (LIST-SPEC::|!++| 
-   (LIST-SPEC::|!++| 
-    (if useLogicalSorts SPECCALC::logicalSorts nil) 
-    SPECCALC::arithmeticSorts) 
-   SPECCALC::baseSorts))
-
-(defun SPECCALC::snarkSorts-1 (spc) 
-  (let ((sorts (sortsAsList-1 spc))) 
-    (let ((snarkSorts 
-           (LIST-SPEC::|!map|-1-1 
-            #'(lambda (x) 
-               (LISP-SPEC::|!list| 
-                (cons 
-                 SPECCALC::declare_sort 
-                 (cons 
-                  (LISP-SPEC::|!quote| 
-                   (LISP-SPEC::|!symbol| "SNARK" (svref x 1))) 
-                  nil)))) 
-            sorts))) 
-      (LIST-SPEC::|!++| (SPECCALC::snarkBuiltInSorts nil) snarkSorts))))
 
 (defun SPECCALC::proveWithHypothesis
  (proof_name 
@@ -39412,8 +46564,8 @@
              nil) 
          (block 
           nil 
-          (let ((pV8 (svref claim 1))
-                (pV7 (svref claim 0))) 
+          (let ((pV10 (svref claim 1))
+                (pV9 (svref claim 0))) 
             (return 
              (labels 
                ((claimType (ct) 
@@ -39425,7 +46577,7 @@
                           (return "Theorem") 
                           (if (eq (car ct) :|Axiom|) (return "Axiom")))) 
                   (error "Nonexhaustive match failure in proveWithHypothesis")))) 
-               (let ((claim_type (claimType pV7))) 
+               (let ((claim_type (claimType pV9))) 
                  (let ((snarkSortDecls (SPECCALC::snarkSorts-1 spc))) 
                    (let ((snarkOpDecls (SPECCALC::snarkOpDecls-1 spc))) 
                      (let ((snarkBaseHypothesis 
@@ -39458,29 +46610,42 @@
                                    snarkHypothesis 
                                    snarkConjecture 
                                    snarkLogFileName))) 
-                             (let ((result 
-                                    (LISP-SPEC::|!apply| 
-                                     (LISP-SPEC::|!symbol| "LISP" "FUNCALL") 
-                                     (cons 
-                                      (LISP-SPEC::|!list| 
-                                       (cons 
-                                        (LISP-SPEC::|!symbol| "SNARK" "LAMBDA") 
-                                        (cons 
-                                         (LISP-SPEC::|!nil|) 
-                                         (cons snarkEvalForm nil)))) 
-                                      nil)))) 
-                               (let ((proved 
-                                      (string=  
-                                       ":PROOF-FOUND" 
-                                       (SYSTEM-SPEC::toString result)))) 
-                                 (progn (SPECCALC::displayProofResult 
-                                         proof_name 
-                                         claim_type 
-                                         pV8 
-                                         spec_name 
-                                         proved 
-                                         snarkLogFileName) 
-                                        proved))))))))))))) 
+                             (progn (if SYSTEM-SPEC::specwareDebug? 
+                                        (STRING-SPEC::writeLine 
+                                         "Calling Snark by evaluating: ") 
+                                        nil) 
+                                    (progn (if SYSTEM-SPEC::specwareDebug? 
+                                               (LISP-SPEC::|!PPRINT| 
+                                                snarkEvalForm) 
+                                               (LISP-SPEC::|!list| nil)) 
+                                           (let ((result 
+                                                  (LISP-SPEC::|!apply| 
+                                                   (LISP-SPEC::|!symbol| 
+                                                    "LISP" 
+                                                    "FUNCALL") 
+                                                   (cons 
+                                                    (LISP-SPEC::|!list| 
+                                                     (cons 
+                                                      (LISP-SPEC::|!symbol| 
+                                                       "SNARK" 
+                                                       "LAMBDA") 
+                                                      (cons 
+                                                       (LISP-SPEC::|!nil|) 
+                                                       (cons snarkEvalForm nil)))) 
+                                                    nil)))) 
+                                             (let ((proved 
+                                                    (string=  
+                                                     ":PROOF-FOUND" 
+                                                     (SYSTEM-SPEC::toString 
+                                                      result)))) 
+                                               (progn (SPECCALC::displayProofResult 
+                                                       proof_name 
+                                                       claim_type 
+                                                       pV10 
+                                                       spec_name 
+                                                       proved 
+                                                       snarkLogFileName) 
+                                                      proved))))))))))))))) 
           (error "Nonexhaustive match failure in proveWithHypothesis"))))
 
 (defun SPECCALC::proveInSpec
@@ -39993,118 +47158,6 @@
                   (SPECCALC::positionOf-1 term) 
                   "qualifying a term that is not a specification")))))))))))
 
-(defun SPECCALC::ppLispCell (|!t|) 
-  (PRETTYPRINT::|!string| (SYSTEM-SPEC::toString |!t|)))
-
-(defun SPECCALC::ppSpec-1 (s) 
-  (PRETTYPRINT::prettysAll 
-   (LIST-SPEC::|!++| 
-    (LIST-SPEC::|!++| 
-     (LIST-SPEC::|!++| 
-      (LISTADT::section 
-       (STRING-SPEC::^ ";;; Snark spec: " (svref s 1)) 
-       (cons 
-        (PRETTYPRINT::|!string| 
-         (STRING-SPEC::^ (STRING-SPEC::^ "(in-package \"" "SNARK") "\")")) 
-        nil)) 
-      (LISTADT::section 
-       ";;; Sorts" 
-       (LIST-SPEC::|!map|-1-1 #'SPECCALC::ppLispCell (svref s 3)))) 
-     (LISTADT::section 
-      ";;; Ops" 
-      (LIST-SPEC::|!map|-1-1 #'SPECCALC::ppLispCell (svref s 2)))) 
-    (LISTADT::section 
-     ";;; Assertions" 
-     (LIST-SPEC::|!map|-1-1 #'SPECCALC::ppLispCell (svref s 0))))))
-
-(defun SPECCALC::ppSpecToFile (spc file preamble) 
-  (let ((p (SPECCALC::ppSpec-1 spc))) 
-    (let ((|!t| (PRETTYPRINT::|!format| 80 p))) 
-      (PRETTYPRINT::toFile file (LIST-SPEC::|!++| |!t| preamble)))))
-
-(defun SPECCALC::snarkName-1 (spc) 
-  (let ((packages 
-         (LIST-SPEC::|!map|-1-1 
-          #'SPECTOLISP::mkLPackageId 
-          (qualifiers (svref spc 1))))) 
-    (let ((pV5 
-           (block 
-            nil 
-            (if (consp packages) 
-                (return (cons (car packages) (cdr packages))) 
-                (if (null packages) 
-                    (return (cons SPECTOLISP::defaultSpecwarePackage nil)))) 
-            (error "Nonexhaustive match failure in snarkName")))) 
-      (block 
-       nil 
-       (return (car pV5)) 
-       (error "Nonexhaustive match failure in snarkName")))))
-
-(defun SPECCALC::snarkProperties-1 (spc) 
-  (let ((snarkProperties 
-         (LIST-SPEC::|!map|-1-1 
-          #'(lambda (prop) 
-             (SPECCALC::snarkProperty SPECCALC::newContext spc prop)) 
-          (svref spc 2)))) snarkProperties))
-
-(defun SPECCALC::snarkSpec-1 (spc) 
-  (vector 
-   (SPECCALC::snarkProperties-1 spc) 
-   (SPECCALC::snarkName-1 spc) 
-   (SPECCALC::snarkOpDecls-1 spc) 
-   (SPECCALC::snarkSorts-1 spc)))
-
-(defun SPECCALC::toSnarkEnv-1 (spc) 
-  (let ((spc (SPECCALC::snarkSpec-1 spc))) spc))
-
-(defun SPECCALC::toSnarkFileEnv (spc file preamble) 
-  (progn (STRING-SPEC::writeLine (STRING-SPEC::^ "Writing Snark file " file)) 
-         (let ((spc (SPECCALC::toSnarkEnv-1 spc))) 
-           (SPECCALC::ppSpecToFile spc file preamble))))
-
-(defun SPECCALC::toSnarkFile (spc file preamble) 
-  (SPECCALC::toSnarkFileEnv spc file preamble))
-
-(defun SPECCALC::evaluateSnarkGen (pV11 pV12 pV13) 
-  (block 
-   nil 
-   (let ((pV14 (svref pV11 0))) 
-     (if (eq (car pV14) :|Spec|) 
-         (let ((pV17 (cdr pV14))) 
-           (return 
-            (SPECCALC::monadBind 
-             (SPECCALC::getURI-1 pV12) 
-             #'(lambda (cURI) 
-                (SPECCALC::monadBind 
-                 (SPECCALC::URItoSnarkFile cURI pV13) 
-                 #'(lambda (snarkFileName) 
-                    (SPECCALC::monadBind 
-                     (funcall (SPECCALC::evaluateURI (cons :|Internal| "base")) 
-                              (cons 
-                               :|SpecPath_Relative| 
-                               (cons 
-                                '(:|None|) 
-                                (cons "Library" (cons "Base" nil))))) 
-                     #'(lambda (x) 
-                        (let ((pV7 (svref x 0))) 
-                          (block 
-                           nil 
-                           (if (eq (car pV7) :|Spec|) 
-                               (return 
-                                (progn (IO-SPEC::ensureDirectoriesExist 
-                                        snarkFileName) 
-                                       (progn (SPECCALC::toSnarkFile 
-                                               (subtractSpec-1-1 pV17 (cdr pV7)) 
-                                               snarkFileName 
-                                               nil) 
-                                              (SPECCALC::monadSeq 
-                                               (SPECCALC::|!print| 
-                                                "Translated to Snark") 
-                                               (SPECCALC::|!return| pV11)))))) 
-                           (error 
-                            "Nonexhaustive match failure in evaluateSnarkGen"))))))))))))) 
-   (error "Nonexhaustive match failure in evaluateSnarkGen")))
-
 (defun SPECCALC::evaluateSpecElem-1 (spc) 
   #'(lambda (x) 
      (let ((|!position| (cdr x))
@@ -40387,335 +47440,486 @@
                           |!TS| 
                           depURIs))))))))))))))
 
-(defun SPECCALC::makeResolvedMapping (dom_spec cod_spec sm_rules) 
-  (labels 
-    ((insert (pV136 pV137) 
-      (block 
-       nil 
-       (let ((pV139 (cdr pV137))
-             (pV138 (car pV137))) 
-         (return 
-          (block 
-           nil 
-           (if (eq (car pV136) :|Sort|) 
-               (let ((pV122 (cdr pV136))) 
-                 (let ((pV133 (svref pV122 0))) 
-                   (return 
-                    (let ((pV45 (STANDARDSPEC::findAllSorts dom_spec pV133))) 
-                      (block 
-                       nil 
-                       (if (consp pV45) 
-                           (let ((pV49 (svref (car pV45) 0))) 
-                             (if (consp pV49) 
-                                 (let ((pV53 (car pV49))) 
-                                   (if (eq (car pV53) :|Qualified|) 
-                                       (let ((pV55 (cdr pV53))) 
-                                         (let ((pV57 (cdr pV55))
-                                               (pV56 (car pV55))) 
-                                           (return 
-                                            (progn (if (lisp::or 
-                                                        (slang-built-in::slang-term-equals 
-                                                         (cdr pV45) 
-                                                         nil) 
-                                                        (string=  
-                                                         pV56 
-                                                         METASLANG::UnQualified)) 
-                                                       nil 
-                                                       (SYSTEM-SPEC::fail 
-                                                        (STRING-SPEC::^ 
-                                                         "morphism: Ambiguous source sort " 
-                                                         (METASLANG::printQualifiedId 
-                                                          pV133)))) 
-                                                   (let ((pV43 
-                                                          (findAQualifierMap 
-                                                           pV139 
-                                                           pV56 
-                                                           pV57))) 
-                                                     (block 
-                                                      nil 
-                                                      (if (eq (car pV43) :|None|) 
-                                                          (return 
-                                                           (cons 
-                                                            pV138 
-                                                            (insertAQualifierMap 
-                                                             pV139 
-                                                             pV56 
-                                                             pV57 
-                                                             (findCodSort 
-                                                              (svref pV122 1)))))) 
-                                                      (return 
-                                                       (SYSTEM-SPEC::fail 
-                                                        (STRING-SPEC::^ 
-                                                         "morphism: Multiple rules for source sort " 
-                                                         (METASLANG::printQualifiedId 
-                                                          pV133))))))))))))))) 
-                       (return 
-                        (SYSTEM-SPEC::fail 
-                         (STRING-SPEC::^ 
-                          "morphism: Unrecognized source sort " 
-                          (METASLANG::printQualifiedId pV133))))))))) 
-               (if (eq (car pV136) :|Op|) 
-                   (let ((pV121 (cdr pV136))) 
-                     (let ((pV129 (car (svref pV121 0)))) 
-                       (return 
-                        (let ((pV65 (STANDARDSPEC::findAllOps dom_spec pV129))) 
-                          (block 
-                           nil 
-                           (if (consp pV65) 
-                               (let ((pV69 (svref (car pV65) 0))) 
-                                 (if (consp pV69) 
-                                     (let ((pV74 (car pV69))) 
-                                       (if (eq (car pV74) :|Qualified|) 
-                                           (let ((pV76 (cdr pV74))) 
-                                             (let ((pV78 (cdr pV76))
-                                                   (pV77 (car pV76))) 
-                                               (return 
-                                                (progn (if (lisp::or 
-                                                            (slang-built-in::slang-term-equals 
-                                                             (cdr pV65) 
-                                                             nil) 
-                                                            (string=  
-                                                             pV77 
-                                                             METASLANG::UnQualified)) 
-                                                           nil 
-                                                           (SYSTEM-SPEC::fail 
-                                                            (STRING-SPEC::^ 
-                                                             "morphism: Ambiguous source op " 
-                                                             (METASLANG::printQualifiedId 
-                                                              pV129)))) 
-                                                       (let ((pV63 
-                                                              (findAQualifierMap 
-                                                               pV138 
-                                                               pV77 
-                                                               pV78))) 
-                                                         (block 
-                                                          nil 
-                                                          (if (eq 
-                                                               (car pV63) 
-                                                               :|None|) 
-                                                              (return 
+(defun SPECCALC::evaluateOtherSpecMorph-1 (spc) 
+  #'(lambda (morph) 
+     #'(lambda (rules) 
+        #'(lambda (pos) 
+           (SPECCALC::monadBind 
+            #'SPECCALC::getCurrentURI-1 
+            #'(lambda (uri) 
+               (SPECCALC::raise 
+                (cons 
+                 :|TypeCheck| 
+                 (cons 
+                  pos 
+                  (STRING-SPEC::^ 
+                   (STRING-SPEC::^ 
+                    "Unexpected OtherTerm at " 
+                    (SPECCALC::uriToString-1 uri)) 
+                   "
+"))))))))))
+
+(defun SPECCALC::evaluateOtherSpecMorph (x0 x1 x2) 
+  (SPECCALC::evaluateOtherSpecMorph-1 (vector x0 x1 x2)))
+
+(defun SPECCALC::makeResolvedMapping-1 (dom_spec) 
+  #'(lambda (cod_spec) 
+     #'(lambda (sm_rules) 
+        (labels 
+          ((insert (op_map sort_map) 
+            #'(lambda (x) 
+               (let ((|!position| (cdr x))
+                     (sm_rule (car x))) 
+                 (block 
+                  nil 
+                  (if (eq (car sm_rule) :|Sort|) 
+                      (let ((pV122 (cdr sm_rule))) 
+                        (let ((pV131 (car pV122))) 
+                          (return 
+                           (let ((pV45 
+                                  (STANDARDSPEC::findAllSorts dom_spec pV131))) 
+                             (block 
+                              nil 
+                              (if (consp pV45) 
+                                  (let ((pV49 (svref (car pV45) 0))) 
+                                    (if (consp pV49) 
+                                        (let ((pV53 (car pV49))) 
+                                          (if (eq (car pV53) :|Qualified|) 
+                                              (let ((pV55 (cdr pV53))) 
+                                                (let ((pV57 (cdr pV55))
+                                                      (pV56 (car pV55))) 
+                                                  (return 
+                                                   (SPECCALC::monadSeq 
+                                                    (funcall (SPECCALC::|!when| 
+                                                              (cl::and 
+                                                               (BOOLEAN-SPEC::~ 
+                                                                (slang-built-in::slang-term-equals 
+                                                                 (cdr pV45) 
+                                                                 nil)) 
+                                                               (BOOLEAN-SPEC::~ 
+                                                                (string=  
+                                                                 pV56 
+                                                                 METASLANG::UnQualified)))) 
+                                                             (SPECCALC::raise 
+                                                              (cons 
+                                                               :|MorphError| 
                                                                (cons 
-                                                                (insertAQualifierMap 
-                                                                 pV138 
-                                                                 pV77 
-                                                                 pV78 
-                                                                 (findCodOp 
-                                                                  (car 
-                                                                   (svref 
-                                                                    pV121 
-                                                                    1)))) 
-                                                                pV139))) 
-                                                          (return 
-                                                           (SYSTEM-SPEC::fail 
-                                                            (STRING-SPEC::^ 
-                                                             "morphism: Multiple rules for source op " 
-                                                             (METASLANG::printQualifiedId 
-                                                              pV129))))))))))))))) 
-                           (return 
-                            (SYSTEM-SPEC::fail 
-                             (STRING-SPEC::^ 
-                              "morphism: Unrecognized source op " 
-                              (METASLANG::printQualifiedId pV129))))))))) 
-                   (if (eq (car pV136) :|Ambiguous|) 
-                       (let ((pV120 (cdr pV136))) 
-                         (let ((pV124 (svref pV120 1))
-                               (pV123 (svref pV120 0))) 
-                           (return 
-                            (let ((dom_sorts 
-                                   (STANDARDSPEC::findAllSorts dom_spec pV123))) 
-                              (let ((dom_ops 
-                                     (STANDARDSPEC::findAllOps dom_spec pV123))) 
-                                (block 
-                                 nil 
-                                 (if (consp dom_sorts) 
-                                     (let ((pV110 (svref (car dom_sorts) 0))) 
-                                       (if (consp pV110) 
-                                           (let ((pV114 (car pV110))) 
-                                             (if (eq (car pV114) :|Qualified|) 
-                                                 (let ((pV116 (cdr pV114))) 
-                                                   (let ((pV118 (cdr pV116))
-                                                         (pV117 (car pV116))) 
-                                                     (if (null dom_ops) 
-                                                         (return 
-                                                          (progn (if (lisp::or 
-                                                                      (slang-built-in::slang-term-equals 
-                                                                       (cdr 
-                                                                        dom_sorts) 
-                                                                       nil) 
-                                                                      (string=  
-                                                                       pV117 
-                                                                       METASLANG::UnQualified)) 
-                                                                     nil 
-                                                                     (SYSTEM-SPEC::fail 
-                                                                      (STRING-SPEC::^ 
-                                                                       "morphism: Ambiguous source sort " 
-                                                                       (METASLANG::printQualifiedId 
-                                                                        pV123)))) 
-                                                                 (let ((pV83 
-                                                                        (findAQualifierMap 
-                                                                         pV139 
-                                                                         pV117 
-                                                                         pV118))) 
-                                                                   (block 
-                                                                    nil 
-                                                                    (if (eq 
-                                                                         (car 
-                                                                          pV83) 
-                                                                         :|None|) 
-                                                                        (return 
-                                                                         (cons 
-                                                                          pV138 
-                                                                          (insertAQualifierMap 
-                                                                           pV139 
-                                                                           pV117 
-                                                                           pV118 
-                                                                           (findCodSort 
-                                                                            pV124))))) 
-                                                                    (return 
-                                                                     (SYSTEM-SPEC::fail 
-                                                                      (STRING-SPEC::^ 
-                                                                       "morphism: Multiple rules for source sort " 
-                                                                       (METASLANG::printQualifiedId 
-                                                                        pV123))))))))))))))) 
-                                     (if (null dom_sorts) 
-                                         (if (null dom_ops) 
-                                             (return 
-                                              (SYSTEM-SPEC::fail 
-                                               (STRING-SPEC::^ 
-                                                "morphism: Unrecognized source sort/op identifier " 
-                                                (METASLANG::printQualifiedId 
-                                                 pV123)))) 
-                                             (if (consp dom_ops) 
-                                                 (let ((pV98 
-                                                        (svref (car dom_ops) 0))) 
-                                                   (if (consp pV98) 
-                                                       (let ((pV103 (car pV98))) 
-                                                         (if (eq 
-                                                              (car pV103) 
-                                                              :|Qualified|) 
-                                                             (let ((pV105 
-                                                                    (cdr pV103))) 
-                                                               (let ((pV107 
-                                                                      (cdr pV105))
-                                                                     (pV106 
-                                                                      (car pV105))) 
-                                                                 (return 
-                                                                  (progn (if (lisp::or 
+                                                                |!position| 
+                                                                (STRING-SPEC::^ 
+                                                                 "Ambiguous source sort " 
+                                                                 (METASLANG::printQualifiedId 
+                                                                  pV131)))))) 
+                                                    (let ((pV43 
+                                                           (findAQualifierMap 
+                                                            sort_map 
+                                                            pV56 
+                                                            pV57))) 
+                                                      (block 
+                                                       nil 
+                                                       (if (eq 
+                                                            (car pV43) 
+                                                            :|None|) 
+                                                           (return 
+                                                            (SPECCALC::monadBind 
+                                                             (funcall (findCodSort 
+                                                                       |!position|) 
+                                                                      (cdr pV122)) 
+                                                             #'(lambda (cod_sort) 
+                                                                (SPECCALC::|!return| 
+                                                                 (cons 
+                                                                  op_map 
+                                                                  (insertAQualifierMap 
+                                                                   sort_map 
+                                                                   pV56 
+                                                                   pV57 
+                                                                   cod_sort))))))) 
+                                                       (return 
+                                                        (SPECCALC::raise 
+                                                         (cons 
+                                                          :|MorphError| 
+                                                          (cons 
+                                                           |!position| 
+                                                           (STRING-SPEC::^ 
+                                                            "Multiple rules for source sort " 
+                                                            (METASLANG::printQualifiedId 
+                                                             pV131))))))))))))))))) 
+                              (return 
+                               (SPECCALC::raise 
+                                (cons 
+                                 :|MorphError| 
+                                 (cons 
+                                  |!position| 
+                                  (STRING-SPEC::^ 
+                                   "Unrecognized source sort " 
+                                   (METASLANG::printQualifiedId pV131))))))))))) 
+                      (if (eq (car sm_rule) :|Op|) 
+                          (let ((pV121 (cdr sm_rule))) 
+                            (let ((pV127 (car (car pV121)))) 
+                              (return 
+                               (let ((pV65 
+                                      (STANDARDSPEC::findAllOps dom_spec pV127))) 
+                                 (block 
+                                  nil 
+                                  (if (consp pV65) 
+                                      (let ((pV69 (svref (car pV65) 0))) 
+                                        (if (consp pV69) 
+                                            (let ((pV74 (car pV69))) 
+                                              (if (eq (car pV74) :|Qualified|) 
+                                                  (let ((pV76 (cdr pV74))) 
+                                                    (let ((pV78 (cdr pV76))
+                                                          (pV77 (car pV76))) 
+                                                      (return 
+                                                       (SPECCALC::monadSeq 
+                                                        (funcall (SPECCALC::|!when| 
+                                                                  (cl::and 
+                                                                   (BOOLEAN-SPEC::~ 
+                                                                    (slang-built-in::slang-term-equals 
+                                                                     (cdr pV65) 
+                                                                     nil)) 
+                                                                   (BOOLEAN-SPEC::~ 
+                                                                    (string=  
+                                                                     pV77 
+                                                                     METASLANG::UnQualified)))) 
+                                                                 (SPECCALC::raise 
+                                                                  (cons 
+                                                                   :|MorphError| 
+                                                                   (cons 
+                                                                    |!position| 
+                                                                    (STRING-SPEC::^ 
+                                                                     "Ambiguous source op " 
+                                                                     (METASLANG::printQualifiedId 
+                                                                      pV127)))))) 
+                                                        (let ((pV63 
+                                                               (findAQualifierMap 
+                                                                op_map 
+                                                                pV77 
+                                                                pV78))) 
+                                                          (block 
+                                                           nil 
+                                                           (if (eq 
+                                                                (car pV63) 
+                                                                :|None|) 
+                                                               (return 
+                                                                (SPECCALC::monadBind 
+                                                                 (funcall (findCodOp 
+                                                                           |!position|) 
+                                                                          (car 
+                                                                           (cdr 
+                                                                            pV121))) 
+                                                                 #'(lambda (cod_op) 
+                                                                    (SPECCALC::|!return| 
+                                                                     (cons 
+                                                                      (insertAQualifierMap 
+                                                                       op_map 
+                                                                       pV77 
+                                                                       pV78 
+                                                                       cod_op) 
+                                                                      sort_map)))))) 
+                                                           (return 
+                                                            (SPECCALC::raise 
+                                                             (cons 
+                                                              :|MorphError| 
+                                                              (cons 
+                                                               |!position| 
+                                                               (STRING-SPEC::^ 
+                                                                "Multiple rules for source op " 
+                                                                (METASLANG::printQualifiedId 
+                                                                 pV127))))))))))))))))) 
+                                  (return 
+                                   (SPECCALC::raise 
+                                    (cons 
+                                     :|MorphError| 
+                                     (cons 
+                                      |!position| 
+                                      (STRING-SPEC::^ 
+                                       "Unrecognized source op " 
+                                       (METASLANG::printQualifiedId pV127))))))))))) 
+                          (if (eq (car sm_rule) :|Ambiguous|) 
+                              (let ((pV120 (cdr sm_rule))) 
+                                (let ((pV124 (cdr pV120))
+                                      (pV123 (car pV120))) 
+                                  (return 
+                                   (let ((dom_sorts 
+                                          (STANDARDSPEC::findAllSorts 
+                                           dom_spec 
+                                           pV123))) 
+                                     (let ((dom_ops 
+                                            (STANDARDSPEC::findAllOps 
+                                             dom_spec 
+                                             pV123))) 
+                                       (block 
+                                        nil 
+                                        (if (consp dom_sorts) 
+                                            (let ((pV110 
+                                                   (svref (car dom_sorts) 0))) 
+                                              (if (consp pV110) 
+                                                  (let ((pV114 (car pV110))) 
+                                                    (if (eq 
+                                                         (car pV114) 
+                                                         :|Qualified|) 
+                                                        (let ((pV116 (cdr pV114))) 
+                                                          (let ((pV118 
+                                                                 (cdr pV116))
+                                                                (pV117 
+                                                                 (car pV116))) 
+                                                            (if (null dom_ops) 
+                                                                (return 
+                                                                 (SPECCALC::monadSeq 
+                                                                  (funcall (SPECCALC::|!when| 
+                                                                            (cl::and 
+                                                                             (BOOLEAN-SPEC::~ 
                                                                               (slang-built-in::slang-term-equals 
                                                                                (cdr 
-                                                                                dom_ops) 
-                                                                               nil) 
+                                                                                dom_sorts) 
+                                                                               nil)) 
+                                                                             (BOOLEAN-SPEC::~ 
                                                                               (string=  
-                                                                               pV106 
-                                                                               METASLANG::UnQualified)) 
+                                                                               pV117 
+                                                                               METASLANG::UnQualified)))) 
+                                                                           (SPECCALC::raise 
+                                                                            (cons 
+                                                                             :|MorphError| 
+                                                                             (cons 
+                                                                              |!position| 
+                                                                              (STRING-SPEC::^ 
+                                                                               "Ambiguous source sort " 
+                                                                               (METASLANG::printQualifiedId 
+                                                                                pV123)))))) 
+                                                                  (let ((pV83 
+                                                                         (findAQualifierMap 
+                                                                          sort_map 
+                                                                          pV117 
+                                                                          pV118))) 
+                                                                    (block 
+                                                                     nil 
+                                                                     (if (eq 
+                                                                          (car 
+                                                                           pV83) 
+                                                                          :|None|) 
+                                                                         (return 
+                                                                          (SPECCALC::monadBind 
+                                                                           (funcall (findCodSort 
+                                                                                     |!position|) 
+                                                                                    pV124) 
+                                                                           #'(lambda (cod_sort) 
+                                                                              (SPECCALC::|!return| 
+                                                                               (cons 
+                                                                                op_map 
+                                                                                (insertAQualifierMap 
+                                                                                 sort_map 
+                                                                                 pV117 
+                                                                                 pV118 
+                                                                                 cod_sort))))))) 
+                                                                     (return 
+                                                                      (SPECCALC::raise 
+                                                                       (cons 
+                                                                        :|MorphError| 
+                                                                        (cons 
+                                                                         |!position| 
+                                                                         (STRING-SPEC::^ 
+                                                                          "Multiple rules for source sort " 
+                                                                          (METASLANG::printQualifiedId 
+                                                                           pV123))))))))))))))))) 
+                                            (if (null dom_sorts) 
+                                                (if (null dom_ops) 
+                                                    (return 
+                                                     (SPECCALC::raise 
+                                                      (cons 
+                                                       :|MorphError| 
+                                                       (cons 
+                                                        |!position| 
+                                                        (STRING-SPEC::^ 
+                                                         "Unrecognized source sort/op identifier " 
+                                                         (METASLANG::printQualifiedId 
+                                                          pV123)))))) 
+                                                    (if (consp dom_ops) 
+                                                        (let ((pV98 
+                                                               (svref 
+                                                                (car dom_ops) 
+                                                                0))) 
+                                                          (if (consp pV98) 
+                                                              (let ((pV103 
+                                                                     (car pV98))) 
+                                                                (if (eq 
+                                                                     (car pV103) 
+                                                                     :|Qualified|) 
+                                                                    (let ((pV105 
+                                                                           (cdr 
+                                                                            pV103))) 
+                                                                      (let ((pV107 
+                                                                             (cdr 
+                                                                              pV105))
+                                                                            (pV106 
+                                                                             (car 
+                                                                              pV105))) 
+                                                                        (return 
+                                                                         (SPECCALC::monadSeq 
+                                                                          (funcall (SPECCALC::|!when| 
+                                                                                    (cl::and 
+                                                                                     (BOOLEAN-SPEC::~ 
+                                                                                      (slang-built-in::slang-term-equals 
+                                                                                       (cdr 
+                                                                                        dom_ops) 
+                                                                                       nil)) 
+                                                                                     (BOOLEAN-SPEC::~ 
+                                                                                      (string=  
+                                                                                       pV106 
+                                                                                       METASLANG::UnQualified)))) 
+                                                                                   (SPECCALC::raise 
+                                                                                    (cons 
+                                                                                     :|MorphError| 
+                                                                                     (cons 
+                                                                                      |!position| 
+                                                                                      (STRING-SPEC::^ 
+                                                                                       "Ambiguous source op " 
+                                                                                       (METASLANG::printQualifiedId 
+                                                                                        pV123)))))) 
+                                                                          (let ((pV89 
+                                                                                 (findAQualifierMap 
+                                                                                  op_map 
+                                                                                  pV106 
+                                                                                  pV107))) 
+                                                                            (block 
                                                                              nil 
-                                                                             (SYSTEM-SPEC::fail 
-                                                                              (STRING-SPEC::^ 
-                                                                               "morphism: Ambiguous source op " 
-                                                                               (METASLANG::printQualifiedId 
-                                                                                pV123)))) 
-                                                                         (let ((pV89 
-                                                                                (findAQualifierMap 
-                                                                                 pV138 
-                                                                                 pV106 
-                                                                                 pV107))) 
-                                                                           (block 
-                                                                            nil 
-                                                                            (if (eq 
-                                                                                 (car 
-                                                                                  pV89) 
-                                                                                 :|None|) 
-                                                                                (return 
-                                                                                 (cons 
-                                                                                  (insertAQualifierMap 
-                                                                                   pV138 
-                                                                                   pV106 
-                                                                                   pV107 
-                                                                                   (findCodOp 
-                                                                                    pV124)) 
-                                                                                  pV139))) 
-                                                                            (return 
-                                                                             (SYSTEM-SPEC::fail 
-                                                                              (STRING-SPEC::^ 
-                                                                               "morphism: Multiple rules for source op " 
-                                                                               (METASLANG::printQualifiedId 
-                                                                                pV123)))))))))))))))))) 
-                                 (return 
-                                  (SYSTEM-SPEC::fail 
-                                   (STRING-SPEC::^ 
-                                    "morphism: Ambiguous source sort/op identifier " 
-                                    (METASLANG::printQualifiedId pV123)))) 
-                                 (error 
-                                  "Nonexhaustive match failure in makeResolvedMapping")))))))))) 
-           (error "Nonexhaustive match failure in makeResolvedMapping")))) 
-       (error "Nonexhaustive match failure in makeResolvedMapping")))
-     (findCodSort (qid) 
-      (let ((pV26 (STANDARDSPEC::findAllSorts cod_spec qid))) 
-        (block 
-         nil 
-         (if (consp pV26) 
-             (let ((pV30 (svref (car pV26) 0))) 
-               (if (consp pV30) 
-                   (let ((pV34 (car pV30))) 
-                     (if (eq (car pV34) :|Qualified|) 
-                         (return 
-                          (progn (if (lisp::or 
-                                      (slang-built-in::slang-term-equals 
-                                       (cdr pV26) 
-                                       nil) 
-                                      (string=  
-                                       (car (cdr pV34)) 
-                                       METASLANG::UnQualified)) 
-                                     nil 
-                                     (SYSTEM-SPEC::fail 
-                                      (STRING-SPEC::^ 
-                                       "morphism: Ambiguous target sort " 
-                                       (METASLANG::printQualifiedId qid)))) 
-                                 pV34))))))) 
-         (return 
-          (SYSTEM-SPEC::fail 
-           (STRING-SPEC::^ 
-            "morphism: Unrecognized target sort " 
-            (METASLANG::printQualifiedId qid)))))))
-     (findCodOp (qid) 
-      (let ((pV7 (STANDARDSPEC::findAllOps cod_spec qid))) 
-        (block 
-         nil 
-         (if (consp pV7) 
-             (let ((pV11 (svref (car pV7) 0))) 
-               (if (consp pV11) 
-                   (let ((pV16 (car pV11))) 
-                     (if (eq (car pV16) :|Qualified|) 
-                         (return 
-                          (progn (if (lisp::or 
-                                      (slang-built-in::slang-term-equals 
-                                       (cdr pV7) 
-                                       nil) 
-                                      (string=  
-                                       (car (cdr pV16)) 
-                                       METASLANG::UnQualified)) 
-                                     nil 
-                                     (SYSTEM-SPEC::fail 
-                                      (STRING-SPEC::^ 
-                                       "morphism: Ambiguous target op " 
-                                       (METASLANG::printQualifiedId qid)))) 
-                                 pV16))))))) 
-         (return 
-          (SYSTEM-SPEC::fail 
-           (STRING-SPEC::^ 
-            "morphism: Unrecognized target op " 
-            (METASLANG::printQualifiedId qid)))))))) 
-    (LIST-SPEC::foldr-1-1-1 
-     #'(lambda (x) (insert (car x) (cdr x))) 
-     (cons emptyAQualifierMap emptyAQualifierMap) 
-     sm_rules)))
+                                                                             (if (eq 
+                                                                                  (car 
+                                                                                   pV89) 
+                                                                                  :|None|) 
+                                                                                 (return 
+                                                                                  (SPECCALC::monadBind 
+                                                                                   (funcall (findCodOp 
+                                                                                             |!position|) 
+                                                                                            pV124) 
+                                                                                   #'(lambda (cod_op) 
+                                                                                      (SPECCALC::|!return| 
+                                                                                       (cons 
+                                                                                        (insertAQualifierMap 
+                                                                                         op_map 
+                                                                                         pV106 
+                                                                                         pV107 
+                                                                                         cod_op) 
+                                                                                        sort_map)))))) 
+                                                                             (return 
+                                                                              (SPECCALC::raise 
+                                                                               (cons 
+                                                                                :|MorphError| 
+                                                                                (cons 
+                                                                                 |!position| 
+                                                                                 (STRING-SPEC::^ 
+                                                                                  "Multiple rules for source op " 
+                                                                                  (METASLANG::printQualifiedId 
+                                                                                   pV123)))))))))))))))))))) 
+                                        (return 
+                                         (SPECCALC::raise 
+                                          (cons 
+                                           :|MorphError| 
+                                           (cons 
+                                            |!position| 
+                                            (STRING-SPEC::^ 
+                                             "Ambiguous source sort/op identifier " 
+                                             (METASLANG::printQualifiedId pV123)))))) 
+                                        (error 
+                                         "Nonexhaustive match failure in makeResolvedMapping")))))))))) 
+                  (error "Nonexhaustive match failure in makeResolvedMapping")))))
+           (findCodSort (|!position|) 
+            #'(lambda (qid) 
+               (let ((pV26 (STANDARDSPEC::findAllSorts cod_spec qid))) 
+                 (block 
+                  nil 
+                  (if (consp pV26) 
+                      (let ((pV30 (svref (car pV26) 0))) 
+                        (if (consp pV30) 
+                            (let ((pV34 (car pV30))) 
+                              (if (eq (car pV34) :|Qualified|) 
+                                  (return 
+                                   (SPECCALC::monadSeq 
+                                    (funcall (SPECCALC::|!when| 
+                                              (cl::and 
+                                               (BOOLEAN-SPEC::~ 
+                                                (slang-built-in::slang-term-equals 
+                                                 (cdr pV26) 
+                                                 nil)) 
+                                               (BOOLEAN-SPEC::~ 
+                                                (string=  
+                                                 (car (cdr pV34)) 
+                                                 METASLANG::UnQualified)))) 
+                                             (SPECCALC::raise 
+                                              (cons 
+                                               :|MorphError| 
+                                               (cons 
+                                                |!position| 
+                                                (STRING-SPEC::^ 
+                                                 "Ambiguous target sort " 
+                                                 (METASLANG::printQualifiedId 
+                                                  qid)))))) 
+                                    (SPECCALC::|!return| pV34)))))))) 
+                  (return 
+                   (SPECCALC::raise 
+                    (cons 
+                     :|MorphError| 
+                     (cons 
+                      |!position| 
+                      (STRING-SPEC::^ 
+                       "Unrecognized target sort " 
+                       (METASLANG::printQualifiedId qid))))))))))
+           (findCodOp (|!position|) 
+            #'(lambda (qid) 
+               (let ((pV7 (STANDARDSPEC::findAllOps cod_spec qid))) 
+                 (block 
+                  nil 
+                  (if (consp pV7) 
+                      (let ((pV11 (svref (car pV7) 0))) 
+                        (if (consp pV11) 
+                            (let ((pV16 (car pV11))) 
+                              (if (eq (car pV16) :|Qualified|) 
+                                  (return 
+                                   (SPECCALC::monadSeq 
+                                    (funcall (SPECCALC::|!when| 
+                                              (cl::and 
+                                               (BOOLEAN-SPEC::~ 
+                                                (slang-built-in::slang-term-equals 
+                                                 (cdr pV7) 
+                                                 nil)) 
+                                               (BOOLEAN-SPEC::~ 
+                                                (string=  
+                                                 (car (cdr pV16)) 
+                                                 METASLANG::UnQualified)))) 
+                                             (SPECCALC::raise 
+                                              (cons 
+                                               :|MorphError| 
+                                               (cons 
+                                                |!position| 
+                                                (STRING-SPEC::^ 
+                                                 "Ambiguous target op " 
+                                                 (METASLANG::printQualifiedId 
+                                                  qid)))))) 
+                                    (SPECCALC::|!return| pV16)))))))) 
+                  (return 
+                   (SPECCALC::raise 
+                    (cons 
+                     :|MorphError| 
+                     (cons 
+                      |!position| 
+                      (STRING-SPEC::^ 
+                       "Unrecognized target op " 
+                       (METASLANG::printQualifiedId qid))))))))))) 
+          (funcall (funcall (SPECCALC::foldM 
+                             #'(lambda (x) (insert (car x) (cdr x)))) 
+                            (cons emptyAQualifierMap emptyAQualifierMap)) 
+                   sm_rules)))))
 
-(defun SPECCALC::makeSpecMorphism (domSpec codSpec rawMapping) 
-  (SPECCALC::|!return| 
-   (SPECCALC::buildSpecMorphism 
-    domSpec 
-    codSpec 
-    (SPECCALC::makeResolvedMapping domSpec codSpec rawMapping))))
+(defun SPECCALC::makeSpecMorphism-1 (domSpec) 
+  #'(lambda (codSpec) 
+     #'(lambda (rawMapping) 
+        #'(lambda (|!position|) 
+           (SPECCALC::monadBind 
+            (funcall (funcall (SPECCALC::makeResolvedMapping-1 domSpec) codSpec) 
+                     rawMapping) 
+            #'(lambda (morph) 
+               (funcall (funcall (funcall (SPECCALC::buildSpecMorphism-1 domSpec) 
+                                          codSpec) 
+                                 morph) 
+                        |!position|)))))))
 
 (defun SPECCALC::evaluateSpecMorph (domTerm codTerm morphRules) 
   (SPECCALC::monadBind 
@@ -40739,64 +47943,120 @@
               (SPECCALC::evaluateTermInfo-1 codTerm) 
               #'(lambda (x1) 
                  (let ((codDepURIs (svref x1 2))
-                       (codTimeStamp (svref x1 1))) 
-                   (let ((pV8 (SPECCALC::coerceToSpec (svref x1 0)))
-                         (pV7 (SPECCALC::coerceToSpec domValue))) 
-                     (block 
-                      nil 
-                      (if (eq (car pV7) :|Spec|) 
-                          (progn (if (eq (car pV8) :|Spec|) 
-                                     (return 
-                                      (SPECCALC::monadBind 
-                                       (SPECCALC::makeSpecMorphism 
-                                        (cdr pV7) 
-                                        (cdr pV8) 
-                                        morphRules) 
-                                       #'(lambda (morph) 
-                                          (SPECCALC::|!return| 
-                                           (vector 
-                                            (cons 
-                                             :|Morph| 
-                                             (vector 
-                                              (svref morph 0) 
-                                              (svref morph 1) 
-                                              (svref morph 2) 
-                                              (svref morph 3))) 
-                                            (INTEGER-SPEC::|!max| 
-                                             domTimeStamp 
-                                             codTimeStamp) 
-                                            (LISTUTILITIES::listUnion 
-                                             domDepURIs 
-                                             codDepURIs))))))) 
-                                 (return 
-                                  (SPECCALC::raise 
+                       (codTimeStamp (svref x1 1))
+                       (codValue (svref x1 0))) 
+                   (SPECCALC::monadBind 
+                    (SPECCALC::|!return| (SPECCALC::coerceToSpec domValue)) 
+                    #'(lambda (coercedDomValue) 
+                       (SPECCALC::monadBind 
+                        (SPECCALC::|!return| (SPECCALC::coerceToSpec codValue)) 
+                        #'(lambda (coercedCodValue) 
+                           (block 
+                            nil 
+                            (if (eq (car coercedDomValue) :|Spec|) 
+                                (if (eq (car coercedCodValue) :|Spec|) 
+                                    (return 
+                                     (SPECCALC::monadBind 
+                                      (funcall (funcall (funcall (SPECCALC::makeSpecMorphism-1 
+                                                                  (cdr 
+                                                                   coercedDomValue)) 
+                                                                 (cdr 
+                                                                  coercedCodValue)) 
+                                                        morphRules) 
+                                               (SPECCALC::positionOf-1 domTerm)) 
+                                      #'(lambda (morph) 
+                                         (SPECCALC::|!return| 
+                                          (vector 
+                                           (cons 
+                                            :|Morph| 
+                                            (vector 
+                                             (svref morph 0) 
+                                             (svref morph 1) 
+                                             (svref morph 2) 
+                                             (svref morph 3))) 
+                                           (INTEGER-SPEC::|!max| 
+                                            domTimeStamp 
+                                            codTimeStamp) 
+                                           (LISTUTILITIES::listUnion 
+                                            domDepURIs 
+                                            codDepURIs))))))) 
+                                (if (eq (car coercedDomValue) :|Other|) 
+                                    (return 
+                                     (funcall (funcall (funcall (SPECCALC::evaluateOtherSpecMorph 
+                                                                 coercedDomValue 
+                                                                 domTimeStamp 
+                                                                 domDepURIs) 
+                                                                (vector 
+                                                                 coercedCodValue 
+                                                                 codTimeStamp 
+                                                                 codDepURIs)) 
+                                                       morphRules) 
+                                              (SPECCALC::positionOf-1 domTerm))))) 
+                            (if (eq (car coercedCodValue) :|Other|) 
+                                (return 
+                                 (funcall (funcall (funcall (SPECCALC::evaluateOtherSpecMorph 
+                                                             coercedDomValue 
+                                                             domTimeStamp 
+                                                             domDepURIs) 
+                                                            (vector 
+                                                             coercedCodValue 
+                                                             codTimeStamp 
+                                                             codDepURIs)) 
+                                                   morphRules) 
+                                          (SPECCALC::positionOf-1 codTerm)))) 
+                            (if (eq (car coercedDomValue) :|Spec|) 
+                                (return 
+                                 (SPECCALC::raise 
+                                  (cons 
+                                   :|TypeCheck| 
                                    (cons 
-                                    :|TypeCheck| 
-                                    (cons 
-                                     (SPECCALC::positionOf-1 domTerm) 
-                                     "domain of spec morphism is not a spec")))))) 
-                      (if (eq (car pV8) :|Spec|) 
-                          (return 
-                           (SPECCALC::raise 
-                            (cons 
-                             :|TypeCheck| 
-                             (cons 
-                              (SPECCALC::positionOf-1 codTerm) 
-                              "codomain of spec morphism is not a spec"))))) 
-                      (return 
-                       (SPECCALC::raise 
-                        (cons 
-                         :|TypeCheck| 
-                         (cons 
-                          (SPECCALC::positionOf-1 domTerm) 
-                          "domain and codomain of spec morphism are not specs")))) 
-                      (error "Nonexhaustive match failure in evaluateSpecMorph")))))))))))))
+                                    (SPECCALC::positionOf-1 domTerm) 
+                                    "domain of spec morphism is not a spec"))))) 
+                            (if (eq (car coercedCodValue) :|Spec|) 
+                                (return 
+                                 (SPECCALC::raise 
+                                  (cons 
+                                   :|TypeCheck| 
+                                   (cons 
+                                    (SPECCALC::positionOf-1 codTerm) 
+                                    "codomain of spec morphism is not a spec"))))) 
+                            (return 
+                             (SPECCALC::raise 
+                              (cons 
+                               :|TypeCheck| 
+                               (cons 
+                                (SPECCALC::positionOf-1 domTerm) 
+                                "domain and codomain of spec morphism are not specs")))) 
+                            (error 
+                             "Nonexhaustive match failure in evaluateSpecMorph"))))))))))))))))
 
 
 (defun SPECCALC::evaluateSpecMorph-1 (x) 
   (SPECCALC::evaluateSpecMorph (svref x 0) (svref x 1) (svref x 2)))
 
-(defun SPECCALC::evaluateSubstitute (spec_tm sm_tm) 
+(defun SPECCALC::evaluateOtherSubstitute-1 (morph) 
+  #'(lambda (other) 
+     #'(lambda (morphTerm) 
+        #'(lambda (pos) 
+           (SPECCALC::monadBind 
+            #'SPECCALC::getCurrentURI-1 
+            #'(lambda (uri) 
+               (SPECCALC::raise 
+                (cons 
+                 :|TypeCheck| 
+                 (cons 
+                  pos 
+                  (STRING-SPEC::^ 
+                   (STRING-SPEC::^ 
+                    "Unexpected OtherTerm at " 
+                    (SPECCALC::uriToString-1 uri)) 
+                   "
+"))))))))))
+
+(defun SPECCALC::evaluateOtherSubstitute (x0 x1 x2) 
+  (SPECCALC::evaluateOtherSubstitute-1 (vector x0 x1 x2)))
+
+(defun SPECCALC::evaluateSubstitute (spec_tm morph_tm) 
   #'(lambda (term_pos) 
      (SPECCALC::monadBind 
       #'SPECCALC::getCurrentURI-1 
@@ -40816,72 +48076,91 @@
                     (spec_timestamp (svref x 1))
                     (spec_value (svref x 0))) 
                 (SPECCALC::monadBind 
-                 (SPECCALC::evaluateTermInfo-1 sm_tm) 
+                 (SPECCALC::evaluateTermInfo-1 morph_tm) 
                  #'(lambda (x1) 
-                    (let ((sm_value (svref x1 0))) 
-                      (let ((pV7 (SPECCALC::coerceToSpec spec_value))) 
-                        (block 
-                         nil 
-                         (if (eq (car pV7) :|Spec|) 
-                             (if (eq (car sm_value) :|Morph|) 
-                                 (return 
-                                  (let ((timeStamp 
-                                         (INTEGER-SPEC::|!max| 
-                                          spec_timestamp 
-                                          (svref x1 1)))) 
-                                    (let ((dep_URIs 
-                                           (LISTUTILITIES::listUnion 
-                                            spec_dep_URIs 
-                                            (svref x1 2)))) 
-                                      (SPECCALC::monadBind 
-                                       (funcall (funcall (funcall (SPECCALC::attemptSubstitution-1 
-                                                                   (cdr pV7)) 
-                                                                  (cdr sm_value)) 
-                                                         sm_tm) 
-                                                term_pos) 
-                                       #'(lambda (new_spec) 
-                                          (SPECCALC::monadBind 
-                                           (funcall (SPECCALC::complainIfAmbiguous-1 
-                                                     (SPECCALC::compressDefs-1 
-                                                      new_spec)) 
-                                                    term_pos) 
-                                           #'(lambda (compressed_spec) 
-                                              (SPECCALC::|!return| 
-                                               (vector 
-                                                (cons 
-                                                 :|Spec| 
+                    (let ((morph_dep_URIs (svref x1 2))
+                          (morph_timestamp (svref x1 1))
+                          (morph_value (svref x1 0))) 
+                      (SPECCALC::monadBind 
+                       (SPECCALC::|!return| (SPECCALC::coerceToSpec spec_value)) 
+                       #'(lambda (coercedSpecValue) 
+                          (block 
+                           nil 
+                           (if (eq (car coercedSpecValue) :|Spec|) 
+                               (if (eq (car morph_value) :|Morph|) 
+                                   (return 
+                                    (let ((timeStamp 
+                                           (INTEGER-SPEC::|!max| 
+                                            spec_timestamp 
+                                            morph_timestamp))) 
+                                      (let ((dep_URIs 
+                                             (LISTUTILITIES::listUnion 
+                                              spec_dep_URIs 
+                                              morph_dep_URIs))) 
+                                        (SPECCALC::monadBind 
+                                         (funcall (funcall (funcall (SPECCALC::attemptSubstitution-1 
+                                                                     (cdr 
+                                                                      coercedSpecValue)) 
+                                                                    (cdr 
+                                                                     morph_value)) 
+                                                           morph_tm) 
+                                                  term_pos) 
+                                         #'(lambda (new_spec) 
+                                            (SPECCALC::monadBind 
+                                             (funcall (SPECCALC::complainIfAmbiguous-1 
+                                                       (SPECCALC::compressDefs-1 
+                                                        new_spec)) 
+                                                      term_pos) 
+                                             #'(lambda (compressed_spec) 
+                                                (SPECCALC::|!return| 
                                                  (vector 
-                                                  (svref compressed_spec 0) 
-                                                  (svref compressed_spec 1) 
-                                                  (svref compressed_spec 2) 
-                                                  (svref compressed_spec 3))) 
-                                                timeStamp 
-                                                dep_URIs))))))))))) 
-                         (if (eq (car sm_value) :|Morph|) 
-                             (return 
-                              (SPECCALC::raise 
-                               (cons 
-                                :|TypeCheck| 
-                                (cons 
-                                 (SPECCALC::positionOf-1 spec_tm) 
-                                 "substitution attempted on a non-spec"))))) 
-                         (if (eq (car pV7) :|Spec|) 
-                             (return 
-                              (SPECCALC::raise 
-                               (cons 
-                                :|TypeCheck| 
-                                (cons 
-                                 (SPECCALC::positionOf-1 sm_tm) 
-                                 "substitution is not a morphism"))))) 
-                         (return 
-                          (SPECCALC::raise 
-                           (cons 
-                            :|TypeCheck| 
-                            (cons 
-                             term_pos 
-                             "substitution is not a morphism, and is attempted on a non-spec")))) 
-                         (error 
-                          "Nonexhaustive match failure in evaluateSubstitute"))))))))))))))
+                                                  (cons 
+                                                   :|Spec| 
+                                                   (vector 
+                                                    (svref compressed_spec 0) 
+                                                    (svref compressed_spec 1) 
+                                                    (svref compressed_spec 2) 
+                                                    (svref compressed_spec 3))) 
+                                                  timeStamp 
+                                                  dep_URIs)))))))))) 
+                               (if (eq (car coercedSpecValue) :|Other|) 
+                                   (if (eq (car morph_value) :|Morph|) 
+                                       (return 
+                                        (funcall (funcall (funcall (SPECCALC::evaluateOtherSubstitute 
+                                                                    coercedSpecValue 
+                                                                    spec_timestamp 
+                                                                    spec_dep_URIs) 
+                                                                   (vector 
+                                                                    morph_value 
+                                                                    morph_timestamp 
+                                                                    morph_dep_URIs)) 
+                                                          morph_tm) 
+                                                 term_pos))))) 
+                           (if (eq (car morph_value) :|Morph|) 
+                               (return 
+                                (SPECCALC::raise 
+                                 (cons 
+                                  :|TypeCheck| 
+                                  (cons 
+                                   (SPECCALC::positionOf-1 spec_tm) 
+                                   "substitution attempted on a non-spec"))))) 
+                           (if (eq (car coercedSpecValue) :|Spec|) 
+                               (return 
+                                (SPECCALC::raise 
+                                 (cons 
+                                  :|TypeCheck| 
+                                  (cons 
+                                   (SPECCALC::positionOf-1 morph_tm) 
+                                   "substitution is not a morphism"))))) 
+                           (return 
+                            (SPECCALC::raise 
+                             (cons 
+                              :|TypeCheck| 
+                              (cons 
+                               term_pos 
+                               "substitution is not a morphism, and is attempted on a non-spec")))) 
+                           (error 
+                            "Nonexhaustive match failure in evaluateSubstitute")))))))))))))))
 
 
 (defun SPECCALC::evaluateSubstitute-1 (x) 
@@ -40936,236 +48215,117 @@
 
 (defun SPECCALC::evaluateTermInfo-1 (term) 
   (let ((pos (SPECCALC::positionOf-1 term))) 
-    (let ((pV12 (SPECCALC::valueOf-1 term))) 
+    (let ((pV1 (SPECCALC::valueOf-1 term))) 
       (block 
        nil 
-       (if (eq (car pV12) :|Print|) 
-           (return (SPECCALC::evaluatePrint-1 (cdr pV12))) 
-           (if (eq (car pV12) :|URI|) 
+       (if (eq (car pV1) :|Print|) 
+           (return (SPECCALC::evaluatePrint-1 (cdr pV1))) 
+           (if (eq (car pV1) :|URI|) 
                (return 
                 (funcall (SPECCALC::evaluateURI (SPECCALC::positionOf-1 term)) 
-                         (cdr pV12))) 
-               (if (eq (car pV12) :|Spec|) 
-                   (return (funcall (SPECCALC::evaluateSpec (cdr pV12)) pos)) 
-                   (if (eq (car pV12) :|SpecMorph|) 
-                       (return (SPECCALC::evaluateSpecMorph-1 (cdr pV12))) 
-                       (if (eq (car pV12) :|Diag|) 
-                           (return (SPECCALC::evaluateDiag (cdr pV12))) 
-                           (if (eq (car pV12) :|Colimit|) 
-                               (return (SPECCALC::evaluateColimit-1 (cdr pV12))) 
-                               (if (eq (car pV12) :|Subst|) 
+                         (cdr pV1))) 
+               (if (eq (car pV1) :|Spec|) 
+                   (return (funcall (SPECCALC::evaluateSpec (cdr pV1)) pos)) 
+                   (if (eq (car pV1) :|SpecMorph|) 
+                       (return (SPECCALC::evaluateSpecMorph-1 (cdr pV1))) 
+                       (if (eq (car pV1) :|ExtendMorph|) 
+                           (return (SPECCALC::evaluateExtendMorph-1 (cdr pV1))) 
+                           (if (eq (car pV1) :|Diag|) 
+                               (return (SPECCALC::evaluateDiag (cdr pV1))) 
+                               (if (eq (car pV1) :|Colimit|) 
                                    (return 
-                                    (funcall (SPECCALC::evaluateSubstitute-1 
-                                              (cdr pV12)) 
-                                             pos)) 
-                                   (if (eq (car pV12) :|DiagMorph|) 
+                                    (SPECCALC::evaluateColimit-1 (cdr pV1))) 
+                                   (if (eq (car pV1) :|Subst|) 
                                        (return 
-                                        (SPECCALC::evaluateDiagMorph-1 
-                                         (cdr pV12))) 
-                                       (if (eq (car pV12) :|Qualify|) 
-                                           (let ((pV21 (cdr pV12))) 
-                                             (return 
-                                              (funcall (SPECCALC::evaluateQualify-1 
-                                                        (car pV21)) 
-                                                       (cdr pV21)))) 
-                                           (if (eq (car pV12) :|Let|) 
-                                               (let ((pV20 (cdr pV12))) 
+                                        (funcall (SPECCALC::evaluateSubstitute-1 
+                                                  (cdr pV1)) 
+                                                 pos)) 
+                                       (if (eq (car pV1) :|DiagMorph|) 
+                                           (return 
+                                            (SPECCALC::evaluateDiagMorph-1 
+                                             (cdr pV1))) 
+                                           (if (eq (car pV1) :|Qualify|) 
+                                               (let ((pV11 (cdr pV1))) 
                                                  (return 
-                                                  (funcall (SPECCALC::evaluateLet 
-                                                            (car pV20)) 
-                                                           (cdr pV20)))) 
-                                               (if (eq (car pV12) :|Where|) 
-                                                   (let ((pV19 (cdr pV12))) 
+                                                  (funcall (SPECCALC::evaluateQualify-1 
+                                                            (car pV11)) 
+                                                           (cdr pV11)))) 
+                                               (if (eq (car pV1) :|Let|) 
+                                                   (let ((pV10 (cdr pV1))) 
                                                      (return 
                                                       (funcall (SPECCALC::evaluateLet 
-                                                                (car pV19)) 
-                                                               (cdr pV19)))) 
-                                                   (if (eq (car pV12) :|Hide|) 
-                                                       (return 
-                                                        (SPECCALC::monadSeq 
-                                                         (SPECCALC::|!print| 
-                                                          "hide request ignored
-") 
-                                                         (SPECCALC::evaluateTermInfo-1 
-                                                          (cdr (cdr pV12))))) 
-                                                       (if (eq 
-                                                            (car pV12) 
-                                                            :|Export|) 
+                                                                (car pV10)) 
+                                                               (cdr pV10)))) 
+                                                   (if (eq (car pV1) :|Where|) 
+                                                       (let ((pV9 (cdr pV1))) 
+                                                         (return 
+                                                          (funcall (SPECCALC::evaluateLet 
+                                                                    (car pV9)) 
+                                                                   (cdr pV9)))) 
+                                                       (if (eq (car pV1) :|Hide|) 
                                                            (return 
                                                             (SPECCALC::monadSeq 
                                                              (SPECCALC::|!print| 
-                                                              "export request ignored
+                                                              "hide request ignored
 ") 
                                                              (SPECCALC::evaluateTermInfo-1 
-                                                              (cdr (cdr pV12))))) 
+                                                              (cdr (cdr pV1))))) 
                                                            (if (eq 
-                                                                (car pV12) 
-                                                                :|Translate|) 
-                                                               (let ((pV16 
-                                                                      (cdr pV12))) 
-                                                                 (return 
-                                                                  (funcall (SPECCALC::evaluateTranslate-1 
-                                                                            (car 
-                                                                             pV16)) 
-                                                                           (cdr 
-                                                                            pV16)))) 
+                                                                (car pV1) 
+                                                                :|Export|) 
+                                                               (return 
+                                                                (SPECCALC::monadSeq 
+                                                                 (SPECCALC::|!print| 
+                                                                  "export request ignored
+") 
+                                                                 (SPECCALC::evaluateTermInfo-1 
+                                                                  (cdr (cdr pV1))))) 
                                                                (if (eq 
-                                                                    (car pV12) 
-                                                                    :|Obligations|) 
-                                                                   (return 
-                                                                    (SPECCALC::evaluateObligations-1 
-                                                                     (cdr pV12))) 
+                                                                    (car pV1) 
+                                                                    :|Translate|) 
+                                                                   (let ((pV6 
+                                                                          (cdr 
+                                                                           pV1))) 
+                                                                     (return 
+                                                                      (funcall (SPECCALC::evaluateTranslate-1 
+                                                                                (car 
+                                                                                 pV6)) 
+                                                                               (cdr 
+                                                                                pV6)))) 
                                                                    (if (eq 
-                                                                        (car 
-                                                                         pV12) 
-                                                                        :|Prove|) 
+                                                                        (car pV1) 
+                                                                        :|Obligations|) 
                                                                        (return 
-                                                                        (funcall (SPECCALC::evaluateProve-1 
-                                                                                  (cdr 
-                                                                                   pV12)) 
-                                                                                 pos)) 
+                                                                        (SPECCALC::evaluateObligations-1 
+                                                                         (cdr 
+                                                                          pV1))) 
                                                                        (if (eq 
                                                                             (car 
-                                                                             pV12) 
-                                                                            :|Generate|) 
-                                                                           (let ((pV13 
-                                                                                  (cdr 
-                                                                                   pV12))) 
-                                                                             (let ((pV32 
-                                                                                    (svref 
-                                                                                     pV13 
-                                                                                     2))
-                                                                                   (pV31 
-                                                                                    (svref 
-                                                                                     pV13 
-                                                                                     1))
-                                                                                   (pV30 
-                                                                                    (svref 
-                                                                                     pV13 
-                                                                                     0))) 
+                                                                             pV1) 
+                                                                            :|Prove|) 
+                                                                           (return 
+                                                                            (funcall (SPECCALC::evaluateProve-1 
+                                                                                      (cdr 
+                                                                                       pV1)) 
+                                                                                     pos)) 
+                                                                           (if (eq 
+                                                                                (car 
+                                                                                 pV1) 
+                                                                                :|Generate|) 
                                                                                (return 
-                                                                                (SPECCALC::monadBind 
-                                                                                 (SPECCALC::evaluateTermInfo-1 
-                                                                                  pV31) 
-                                                                                 #'(lambda (x) 
-                                                                                    (let ((depURIs 
-                                                                                           (svref 
-                                                                                            x 
-                                                                                            2))
-                                                                                          (timeStamp 
-                                                                                           (svref 
-                                                                                            x 
-                                                                                            1))
-                                                                                          (value 
-                                                                                           (svref 
-                                                                                            x 
-                                                                                            0))) 
-                                                                                      (SPECCALC::monadBind 
-                                                                                       (SPECCALC::pathToRelativeURI 
-                                                                                        "/Library/Base") 
-                                                                                       #'(lambda (baseURI) 
-                                                                                          (SPECCALC::monadBind 
-                                                                                           (funcall (SPECCALC::evaluateURI 
-                                                                                                     (cons 
-                                                                                                      :|Internal| 
-                                                                                                      "base")) 
-                                                                                                    baseURI) 
-                                                                                           #'(lambda (x1) 
-                                                                                              (let ((pV8 
-                                                                                                     (svref 
-                                                                                                      x1 
-                                                                                                      0))) 
-                                                                                                (block 
-                                                                                                 nil 
-                                                                                                 (if (eq 
-                                                                                                      (car 
-                                                                                                       pV8) 
-                                                                                                      :|Spec|) 
-                                                                                                     (return 
-                                                                                                      (let ((pV6 
-                                                                                                             (SPECCALC::coerceToSpec 
-                                                                                                              value))) 
-                                                                                                        (block 
-                                                                                                         nil 
-                                                                                                         (if (eq 
-                                                                                                              (car 
-                                                                                                               pV6) 
-                                                                                                              :|Spec|) 
-                                                                                                             (return 
-                                                                                                              (block 
-                                                                                                               nil 
-                                                                                                               (if (string=  
-                                                                                                                    "lisp" 
-                                                                                                                    pV30) 
-                                                                                                                   (return 
-                                                                                                                    (SPECCALC::evaluateLispCompile 
-                                                                                                                     (vector 
-                                                                                                                      pV6 
-                                                                                                                      timeStamp 
-                                                                                                                      depURIs) 
-                                                                                                                     pV31 
-                                                                                                                     pV32)) 
-                                                                                                                   (if (string=  
-                                                                                                                        "snark" 
-                                                                                                                        pV30) 
-                                                                                                                       (return 
-                                                                                                                        (SPECCALC::evaluateSnarkGen 
-                                                                                                                         (vector 
-                                                                                                                          pV6 
-                                                                                                                          timeStamp 
-                                                                                                                          depURIs) 
-                                                                                                                         pV31 
-                                                                                                                         pV32)) 
-                                                                                                                       (if (string=  
-                                                                                                                            "spec" 
-                                                                                                                            pV30) 
-                                                                                                                           (return 
-                                                                                                                            (SPECCALC::monadSeq 
-                                                                                                                             (SPECCALC::|!print| 
-                                                                                                                              (SPECCALC::showValue 
-                                                                                                                               pV6)) 
-                                                                                                                             (SPECCALC::|!return| 
-                                                                                                                              (vector 
-                                                                                                                               pV6 
-                                                                                                                               timeStamp 
-                                                                                                                               depURIs)))) 
-                                                                                                                           (if (string=  
-                                                                                                                                "c" 
-                                                                                                                                pV30) 
-                                                                                                                               (return 
-                                                                                                                                (progn (CGEN::specToC-1 
-                                                                                                                                        (subtractSpec-1-1 
-                                                                                                                                         (cdr 
-                                                                                                                                          pV6) 
-                                                                                                                                         (cdr 
-                                                                                                                                          pV8))) 
-                                                                                                                                       (SPECCALC::|!return| 
-                                                                                                                                        (vector 
-                                                                                                                                         pV6 
-                                                                                                                                         timeStamp 
-                                                                                                                                         depURIs)))))))) 
-                                                                                                               (return 
-                                                                                                                (SPECCALC::raise 
-                                                                                                                 (cons 
-                                                                                                                  :|Unsupported| 
-                                                                                                                  (cons 
-                                                                                                                   (SPECCALC::positionOf-1 
-                                                                                                                    pV31) 
-                                                                                                                   (STRING-SPEC::^ 
-                                                                                                                    (STRING-SPEC::^ 
-                                                                                                                     "no generation for language " 
-                                                                                                                     pV30) 
-                                                                                                                    " yet")))))))) 
-                                                                                                         (return 
-                                                                                                          (SPECCALC::raise 
-                                                                                                           (cons 
-                                                                                                            :|TypeCheck| 
-                                                                                                            (cons 
-                                                                                                             (SPECCALC::positionOf-1 
-                                                                                                              pV31) 
-                                                                                                             "attempting to generate code from an object that is not a specification")))))))) 
-                                                                                                 (error 
-                                                                                                  "Nonexhaustive match failure in evaluateTermInfo")))))))))))))))))))))))))))))) 
+                                                                                (funcall (SPECCALC::evaluateGenerate-1 
+                                                                                          (cdr 
+                                                                                           pV1)) 
+                                                                                         pos)) 
+                                                                               (if (eq 
+                                                                                    (car 
+                                                                                     pV1) 
+                                                                                    :|Other|) 
+                                                                                   (return 
+                                                                                    (funcall (SPECCALC::evaluateOther 
+                                                                                              (cdr 
+                                                                                               pV1)) 
+                                                                                             pos))))))))))))))))))))) 
        (error "Nonexhaustive match failure in evaluateTermInfo")))))
 
 (defun SPECCALC::evaluateColimit-1 (term) 
@@ -41223,8 +48383,23 @@
 (defun SPECCALC::evaluateDiagMorph-1-1 (x1 x2) 
   (funcall (SPECCALC::evaluateDiagMorph-1 x1) x2))
 
+(defun SPECCALC::evaluateExtendMorph (x0 x1) 
+  (SPECCALC::evaluateExtendMorph-1 (cons x0 x1)))
+
+(defun SPECCALC::evaluateExtendMorph-1-1 (x1 x2) 
+  (funcall (SPECCALC::evaluateExtendMorph-1 x1) x2))
+
+(defun SPECCALC::evaluateGenerate-1-1-1 (x1 x2 x3) 
+  (funcall (funcall (SPECCALC::evaluateGenerate-1 x1) x2) x3))
+
 (defun SPECCALC::evaluateGlobalDecls-1-1-1-1 (x1 x2 x3 x4) 
   (funcall (funcall (funcall (SPECCALC::evaluateGlobalDecls-1 x1) x2) x3) x4))
+
+(defun SPECCALC::evaluateJavaGen-1 (x) 
+  (SPECCALC::evaluateJavaGen (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::evaluateJavaGen-1-1 (x1 x2) 
+  (funcall (SPECCALC::evaluateJavaGen-1 x1) x2))
 
 (defun SPECCALC::evaluateLet-1-1-1 (x1 x2 x3) 
   (funcall (funcall (SPECCALC::evaluateLet x1) x2) x3))
@@ -41243,6 +48418,28 @@
 
 (defun SPECCALC::evaluateObligations-1-1 (x1 x2) 
   (funcall (SPECCALC::evaluateObligations-1 x1) x2))
+
+(defun SPECCALC::evaluateOther-1-1-1 (x1 x2 x3) 
+  (funcall (funcall (SPECCALC::evaluateOther x1) x2) x3))
+
+(defun SPECCALC::evaluateOtherGenerate-1-1-1-1 (x1 x2 x3 x4) 
+  (funcall (funcall (funcall (SPECCALC::evaluateOtherGenerate-1 x1) x2) x3) x4))
+
+(defun SPECCALC::evaluateOtherPrint-1-1-1 (x1 x2 x3) 
+  (funcall (funcall (SPECCALC::evaluateOtherPrint x1) x2) x3))
+
+(defun SPECCALC::evaluateOtherSpecMorph-1-1-1-1-1 (x1 x2 x3 x4 x5) 
+  (funcall (funcall (funcall (funcall (SPECCALC::evaluateOtherSpecMorph-1 x1) x2) 
+                             x3) 
+                    x4) 
+           x5))
+
+(defun SPECCALC::evaluateOtherSubstitute-1-1-1-1-1 (x1 x2 x3 x4 x5) 
+  (funcall (funcall (funcall (funcall (SPECCALC::evaluateOtherSubstitute-1 x1) 
+                                      x2) 
+                             x3) 
+                    x4) 
+           x5))
 
 (defun SPECCALC::evaluatePrint (x0 x1) (SPECCALC::evaluatePrint-1 (cons x0 x1)))
 
@@ -41319,14 +48516,77 @@
 (defun SPECCALC::evaluateURI-1-1-1 (x1 x2 x3) 
   (funcall (funcall (SPECCALC::evaluateURI x1) x2) x3))
 
+(defun SPECCALC::explicateHiddenAxioms-1 (spc) 
+  (labels 
+    ((axiomFromOpDef (qname name decl defs) 
+      (LIST-SPEC::|!++| defs (SPECCALC::axiomFromOpDefTop spc qname name decl)))) 
+    (labels 
+      ((mergeAxiomsByPos (oas nas) 
+        (labels 
+          ((cmpGt (pV9 pV10) 
+            (block 
+             nil 
+             (return 
+              (let ((old_pos (METASLANG::termAnn (svref pV9 3)))) 
+                (let ((new_pos (METASLANG::termAnn (svref pV10 3)))) 
+                  (let ((pV8 (POSITION-SPEC::compare old_pos new_pos))) 
+                    (block 
+                     nil 
+                     (if (eq (car pV8) :|Greater|) (return nil)) 
+                     (return t)))))) 
+             (error "Nonexhaustive match failure in explicateHiddenAxioms")))) 
+          (block 
+           nil 
+           (if (null oas) (return nas)) 
+           (if (null nas) (return oas)) 
+           (if (consp oas) 
+               (let ((pV23 (cdr oas))
+                     (pV22 (car oas))) 
+                 (if (consp nas) 
+                     (let ((pV26 (cdr nas))
+                           (pV25 (car nas))) 
+                       (return 
+                        (if (cmpGt pV22 pV25) 
+                            (cons pV25 (mergeAxiomsByPos (cons pV22 pV23) pV26)) 
+                            (cons pV22 (mergeAxiomsByPos pV23 (cons pV25 pV26))))))))) 
+           (error "Nonexhaustive match failure in explicateHiddenAxioms"))))) 
+      (let ((newAxioms 
+             (foldriAQualifierMap-1-1-1 
+              #'(lambda (x) 
+                 (axiomFromOpDef (svref x 0) (svref x 1) (svref x 2) (svref x 3))) 
+              nil 
+              (svref spc 1)))) 
+        (let ((newProperties (mergeAxiomsByPos (svref spc 2) newAxioms))) 
+          (setProperties spc newProperties))))))
+
+(defun SPECCALC::explicateHiddenAxioms (x0 x1 x2 x3) 
+  (SPECCALC::explicateHiddenAxioms-1 (vector x0 x1 x2 x3)))
+
+(defun SPECCALC::explicateHiddenAxiomsM-1 (spc) (SPECCALC::|!return| spc))
+
+(defun SPECCALC::explicateHiddenAxiomsM (x0 x1 x2 x3) 
+  (SPECCALC::explicateHiddenAxiomsM-1 (vector x0 x1 x2 x3)))
+
+(defun SPECCALC::explicateHiddenAxiomsM-1-1 (x1 x2) 
+  (funcall (SPECCALC::explicateHiddenAxiomsM-1 x1) x2))
+
+(defun SPECCALC::extendMorphism-1 (x) 
+  (SPECCALC::extendMorphism (car x) (cdr x)))
+
+(defun SPECCALC::extendMorphismWithAnswer-1 (x) 
+  (SPECCALC::extendMorphismWithAnswer (car x) (cdr x)))
+
 (defun SPECCALC::fileExistsAndReadable?-1-1 (x1 x2) 
   (funcall (SPECCALC::fileExistsAndReadable? x1) x2))
+
+(defun SPECCALC::findBuiltInSort-1 (x) 
+  (SPECCALC::findBuiltInSort (svref x 0) (svref x 1) (svref x 2)))
 
 (defun SPECCALC::findDefiningURIforOp (opId spc uri depURIs globalContext rec?) 
   (labels 
     ((findLocalURI (opId) 
       (if (localOp? opId spc) 
-          (cons (cons "Op" (SPECCALC::uriToPath-1 uri)) nil) 
+          (cons (cons "Op" (SPECCALC::uriToFullPath-1 uri)) nil) 
           (LIST-SPEC::foldr-1-1-1 
            #'(lambda (x) 
               (LIST-SPEC::|!++| 
@@ -41406,7 +48666,7 @@
   (labels 
     ((findLocalURI (sortId) 
       (if (localSort? sortId spc) 
-          (cons (cons "Sort" (SPECCALC::uriToPath-1 uri)) nil) 
+          (cons (cons "Sort" (SPECCALC::uriToFullPath-1 uri)) nil) 
           (LIST-SPEC::foldr-1-1-1 
            #'(lambda (x) 
               (LIST-SPEC::|!++| 
@@ -41602,6 +48862,9 @@
    (svref x 2) 
    (svref x 3)))
 
+(defun SPECCALC::findPBuiltInSort-1 (x) 
+  (SPECCALC::findPBuiltInSort (svref x 0) (svref x 1) (svref x 2)))
+
 (defun SPECCALC::findUnitIdforUnit-1 (x) 
   (SPECCALC::findUnitIdforUnit (car x) (cdr x)))
 
@@ -41640,6 +48903,18 @@
 (defun SPECCALC::foldOverQualifierMap-1-1-1-1 (x0 x1 x2 x3) 
   (SPECCALC::foldDoubleMap-1-1-1-1 x0 x1 x2 x3))
 
+(defun SPECCALC::functionSort? (sp srt) 
+  (let ((pV5 (SPECENVIRONMENT::unfoldBase sp srt))) 
+    (block 
+     nil 
+     (if (eq (car pV5) :|Arrow|) 
+         (return t) 
+         (if (eq (car pV5) :|Subsort|) 
+             (return (SPECCALC::functionSort? sp (svref (cdr pV5) 0))))) 
+     (return nil))))
+
+(defun SPECCALC::functionSort?-1 (x) (SPECCALC::functionSort? (car x) (cdr x)))
+
 (defun SPECCALC::garbageCollect-1-1 (full? state) 
   (progn (SYSTEM-SPEC::garbageCollect full?) (cons (cons :|Ok| nil) state)))
 
@@ -41665,6 +48940,15 @@
 (defun SPECCALC::getURI (x0 x1) (SPECCALC::getURI-1 (cons x0 x1)))
 
 (defun SPECCALC::getURI-1-1 (x1 x2) (funcall (SPECCALC::getURI-1 x1) x2))
+
+(defun SPECCALC::hackMemory-1-1 (pV1 state) 
+  (declare (ignore pV1)) 
+  (progn (SYSTEM-SPEC::hackMemory) (cons (cons :|Ok| nil) state)))
+
+(defun SPECCALC::hackMemory-1 (x1) 
+  #'(lambda (x2) (SPECCALC::hackMemory-1-1 x1 x2)))
+
+(defun SPECCALC::hackMemory () (SPECCALC::hackMemory-1 nil))
 
 (defun SPECCALC::inSameFile?-1 (x) (SPECCALC::inSameFile? (car x) (cdr x)))
 
@@ -41692,8 +48976,21 @@
 (defun SPECCALC::makeMorphism-1 (x) 
   (SPECCALC::makeMorphism (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
 
-(defun SPECCALC::makeResolvedMapping-1 (x) 
-  (SPECCALC::makeResolvedMapping (svref x 0) (svref x 1) (svref x 2)))
+(defun SPECCALC::makeResolvedMapping (x0 x1 x2 x3) 
+  (SPECCALC::makeResolvedMapping-1 (vector x0 x1 x2 x3)))
+
+(defun SPECCALC::makeResolvedMapping-1-1-1-1 (x1 x2 x3 x4) 
+  (funcall (funcall (funcall (SPECCALC::makeResolvedMapping-1 x1) x2) x3) x4))
+
+(defun SPECCALC::makeSnarkAnsEvalForm-1 (x) 
+  (SPECCALC::makeSnarkAnsEvalForm 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5) 
+   (svref x 6)))
 
 (defun SPECCALC::makeSnarkProveEvalForm-1 (x) 
   (SPECCALC::makeSnarkProveEvalForm 
@@ -41718,11 +49015,13 @@
 (defun SPECCALC::makeSpecInitialCocone (x0 x1) 
   (SPECCALC::makeSpecInitialCocone-1 (cons x0 x1)))
 
-(defun SPECCALC::makeSpecMorphism-1 (x) 
-  (SPECCALC::makeSpecMorphism (svref x 0) (svref x 1) (svref x 2)))
+(defun SPECCALC::makeSpecMorphism (x0 x1 x2 x3) 
+  (SPECCALC::makeSpecMorphism-1 (vector x0 x1 x2 x3)))
 
-(defun SPECCALC::makeSpecMorphism-1-1 (x1 x2) 
-  (funcall (SPECCALC::makeSpecMorphism-1 x1) x2))
+(defun SPECCALC::makeSpecMorphism-1-1-1-1-1 (x1 x2 x3 x4 x5) 
+  (funcall (funcall (funcall (funcall (SPECCALC::makeSpecMorphism-1 x1) x2) x3) 
+                    x4) 
+           x5))
 
 (defun SPECCALC::makeTranslationMaps (x0 x1 x2 x3) 
   (SPECCALC::makeTranslationMaps-1 (vector x0 x1 x2 x3)))
@@ -41786,6 +49085,14 @@
 (defun SPECCALC::mergeSortInfo-1-1-1-1 (x1 x2 x3 x4) 
   (funcall (funcall (funcall (SPECCALC::mergeSortInfo-1 x1) x2) x3) x4))
 
+(defun SPECCALC::mkDefEquality (srt qid trm) 
+  (STANDARDSPEC::mkEquality srt (STANDARDSPEC::mkOp qid srt) trm))
+
+(defun SPECCALC::mkDefEquality-1 (x) 
+  (SPECCALC::mkDefEquality (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::mkExistential-1 (x) (SPECCALC::mkExistential (car x) (cdr x)))
+
 (defun SPECCALC::mkNewSnarkTerm-1 (x) 
   (SPECCALC::mkNewSnarkTerm (car x) (cdr x)))
 
@@ -41795,7 +49102,8 @@
    (svref x 1) 
    (svref x 2) 
    (svref x 3) 
-   (svref x 4)))
+   (svref x 4) 
+   (svref x 5)))
 
 (defun SPECCALC::mkSnarkFmlaApp-1 (x) 
   (SPECCALC::mkSnarkFmlaApp 
@@ -41825,6 +49133,19 @@
    (svref x 3) 
    (svref x 4) 
    (svref x 5)))
+
+(defun SPECCALC::mkUncurryEquality-1 (x) 
+  (SPECCALC::mkUncurryEquality (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
+
+(defun SPECCALC::mkUncurryEqualityRec-1 (x) 
+  (SPECCALC::mkUncurryEqualityRec 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5) 
+   (svref x 6)))
 
 (defun SPECCALC::monadSeq-1 (x) (SPECCALC::monadSeq (car x) (cdr x)))
 
@@ -41870,6 +49191,93 @@
 (defun SPECCALC::ppASpec (x0 x1 x2 x3) 
   (SPECCALC::ppASpec-1 (vector x0 x1 x2 x3)))
 
+(defun SPECCALC::ppASpecLocal-1 (spc) 
+  (let ((properties (svref spc 2))
+        (importInfo (svref spc 0))) 
+    (block 
+     nil 
+     (let ((pV20 (svref importInfo 3))
+           (pV19 (svref importInfo 2))) 
+       (return 
+        (let ((ppImports 
+               (let ((ppNames 
+                      (LIST-SPEC::|!map|-1-1 
+                       #'(lambda (x1) 
+                          (WADLERLINDIG::ppString 
+                           (STRING-SPEC::^ "import " (car x1)))) 
+                       (svref importInfo 1)))) 
+                 (WADLERLINDIG::ppSep-1-1 WADLERLINDIG::ppNewline ppNames)))) 
+          (labels 
+            ((doSortInfo (sortInfo) 
+              (WADLERLINDIG::ppConcat 
+               (cons 
+                (WADLERLINDIG::ppString "sort ") 
+                (cons (SPECCALC::ppASortInfo-1 sortInfo) nil))))) 
+            (labels 
+              ((doOpInfo (|!opInfo|) 
+                (WADLERLINDIG::ppConcat 
+                 (cons 
+                  (WADLERLINDIG::ppString "op ") 
+                  (cons (SPECCALC::ppAOpInfo-1 |!opInfo|) nil))))) 
+              (WADLERLINDIG::ppConcat 
+               (cons 
+                (WADLERLINDIG::ppString "spec {") 
+                (cons 
+                 (WADLERLINDIG::ppIndent 
+                  (WADLERLINDIG::ppConcat 
+                   (cons 
+                    WADLERLINDIG::ppNewline 
+                    (cons 
+                     (WADLERLINDIG::ppSep-1-1 
+                      WADLERLINDIG::ppNewline 
+                      (cons 
+                       ppImports 
+                       (cons 
+                        (WADLERLINDIG::ppSep-1-1 
+                         WADLERLINDIG::ppNewline 
+                         (LIST-SPEC::|!map|-1-1 
+                          #'doSortInfo 
+                          (LIST-SPEC::filter-1-1 
+                           #'(lambda (x1) 
+                              (let ((pV2 (svref x1 0))) 
+                                (block 
+                                 nil 
+                                 (if (consp pV2) 
+                                     (return 
+                                      (LIST-SPEC::|!member| (car pV2) pV20))) 
+                                 (error 
+                                  "Nonexhaustive match failure in ppASpecLocal")))) 
+                           (sortInfosAsList-1 spc)))) 
+                        (cons 
+                         (WADLERLINDIG::ppSep-1-1 
+                          WADLERLINDIG::ppNewline 
+                          (LIST-SPEC::|!map|-1-1 
+                           #'doOpInfo 
+                           (LIST-SPEC::filter-1-1 
+                            #'(lambda (x1) 
+                               (let ((pV9 (svref x1 0))) 
+                                 (block 
+                                  nil 
+                                  (if (consp pV9) 
+                                      (return 
+                                       (LIST-SPEC::|!member| (car pV9) pV19))) 
+                                  (error 
+                                   "Nonexhaustive match failure in ppASpecLocal")))) 
+                            (opInfosAsList-1 spc)))) 
+                         (cons 
+                          (WADLERLINDIG::ppSep-1-1 
+                           WADLERLINDIG::ppNewline 
+                           (LIST-SPEC::|!map|-1-1 
+                            #'SPECCALC::ppAProperty-1 
+                            properties)) 
+                          nil))))) 
+                     nil)))) 
+                 (cons (WADLERLINDIG::ppString "}") nil))))))))) 
+     (error "Nonexhaustive match failure in ppASpecLocal"))))
+
+(defun SPECCALC::ppASpecLocal (x0 x1 x2 x3) 
+  (SPECCALC::ppASpecLocal-1 (vector x0 x1 x2 x3)))
+
 (defun SPECCALC::ppAVar (id srt) 
   (WADLERLINDIG::ppConcat 
    (cons 
@@ -41877,6 +49285,9 @@
     (cons (WADLERLINDIG::ppString ":") (cons (SPECCALC::ppASort srt) nil)))))
 
 (defun SPECCALC::ppAVar-1 (x) (SPECCALC::ppAVar (car x) (cdr x)))
+
+(defun SPECCALC::ppJSpecToFile-1 (x) 
+  (SPECCALC::ppJSpecToFile (svref x 0) (svref x 1) (svref x 2)))
 
 (defun SPECCALC::ppMorphismX-1 (x1) 
   #'(lambda (x2) #'(lambda (x3) (SPECCALC::ppMorphismX-1-1-1 x1 x2 x3))))
@@ -42103,6 +49514,27 @@
 
 (defun SPECCALC::printSpec (x0 x1 x2 x3) 
   (SPECCALC::printSpec-1 (vector x0 x1 x2 x3)))
+
+(defun SPECCALC::productLength (sp srt) 
+  (let ((pV1 (SPECENVIRONMENT::productOpt sp srt))) 
+    (block 
+     nil 
+     (if (eq (car pV1) :|Some|) 
+         (return (LIST-SPEC::|!length| (cdr pV1))) 
+         (if (eq (car pV1) :|None|) (return 1))) 
+     (error "Nonexhaustive match failure in productLength"))))
+
+(defun SPECCALC::productLength-1 (x) (SPECCALC::productLength (car x) (cdr x)))
+
+(defun SPECCALC::proveForAns-1 (x) 
+  (SPECCALC::proveForAns 
+   (svref x 0) 
+   (svref x 1) 
+   (svref x 2) 
+   (svref x 3) 
+   (svref x 4) 
+   (svref x 5) 
+   (svref x 6)))
 
 (defun SPECCALC::proveInSpec-1 (x) 
   (SPECCALC::proveInSpec 
@@ -42364,9 +49796,17 @@ VQid => QualifiedId * Aliases:
          (STRING-SPEC::toScreen "==========================================
 ")))
 
-(defun SPECCALC::snarkBaseSort-1 (x) (SPECCALC::snarkBaseSort (car x) (cdr x)))
+(defun SPECCALC::snarkAnswer-1 (x) 
+  (SPECCALC::snarkAnswer (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
 
-(defun SPECCALC::snarkBndVar (x0 x1) (SPECCALC::snarkBndVar-1 (cons x0 x1)))
+(defun SPECCALC::snarkBaseSort-1 (x) 
+  (SPECCALC::snarkBaseSort (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::snarkBndVar-1 (x) 
+  (SPECCALC::snarkBndVar (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::snarkBndVars-1 (x) 
+  (SPECCALC::snarkBndVars (svref x 0) (svref x 1) (svref x 2)))
 
 (defparameter SPECCALC::snarkBuiltInOps SPECCALC::arithmeticFunctions)
 
@@ -42378,13 +49818,13 @@ VQid => QualifiedId * Aliases:
   (SPECCALC::snarkFunctionCurryDecl))
 
 (defun SPECCALC::snarkFunctionCurryNoArityDecl-1 (x) 
-  (SPECCALC::snarkFunctionCurryNoArityDecl (car x) (cdr x)))
+  (SPECCALC::snarkFunctionCurryNoArityDecl (svref x 0) (svref x 1) (svref x 2)))
 
 (defun SPECCALC::snarkFunctionDecl-1 (x) 
   (SPECCALC::snarkFunctionDecl (svref x 0) (svref x 1) (svref x 2)))
 
 (defun SPECCALC::snarkFunctionNoArityDecl-1 (x) 
-  (SPECCALC::snarkFunctionNoArityDecl (car x) (cdr x)))
+  (SPECCALC::snarkFunctionNoArityDecl (svref x 0) (svref x 1) (svref x 2)))
 
 (defun SPECCALC::snarkFunctionNoCurryDecl-1 (x) 
   (SPECCALC::snarkFunctionNoCurryDecl 
@@ -42406,7 +49846,50 @@ VQid => QualifiedId * Aliases:
   (SPECCALC::snarkOpDecls-1 (vector x0 x1 x2 x3)))
 
 (defun SPECCALC::snarkPBaseSort-1 (x) 
-  (SPECCALC::snarkPBaseSort (car x) (cdr x)))
+  (SPECCALC::snarkPBaseSort (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::snarkPPBaseSort (sp s rng?) 
+  (let ((res 
+         (block 
+          nil 
+          (if (eq (car s) :|Base|) 
+              (let ((pV16 (svref (cdr s) 0))) 
+                (if (eq (car pV16) :|Qualified|) 
+                    (let ((pV19 (cdr pV16))) 
+                      (let ((pV21 (cdr pV19))
+                            (pV20 (car pV19))) 
+                        (progn (if (string=  "Nat" pV20) 
+                                   (if (string=  "Nat" pV21) 
+                                       (return 
+                                        (LISP-SPEC::|!symbol| "SNARK" "NATURAL"))) 
+                                   (if (string=  "Integer" pV20) 
+                                       (if (string=  "Integer" pV21) 
+                                           (return 
+                                            (LISP-SPEC::|!symbol| 
+                                             "SNARK" 
+                                             "INTEGER"))))) 
+                               (return 
+                                (if rng? 
+                                    (LISP-SPEC::|!symbol| "SNARK" pV21) 
+                                    (LISP-SPEC::|!symbol| "SNARK" pV21)))))))) 
+              (if (eq (car s) :|Product|) 
+                  (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
+                  (if (eq (car s) :|Arrow|) 
+                      (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")) 
+                      (if (eq (car s) :|TyVar|) 
+                          (return (LISP-SPEC::|!symbol| "SNARK" "TRUE")))))) 
+          (error "Nonexhaustive match failure in snarkPPBaseSort")))) 
+    (progn (if SYSTEM-SPEC::specwareDebug? 
+               (STRING-SPEC::writeLine 
+                (STRING-SPEC::^ "snarkPBaseSort: " (ANNSPECPRINTER::printSort s))) 
+               nil) 
+           (progn (if SYSTEM-SPEC::specwareDebug? 
+                      (LISP-SPEC::|!PPRINT| res) 
+                      (LISP-SPEC::|!list| nil)) 
+                  res))))
+
+(defun SPECCALC::snarkPPBaseSort-1 (x) 
+  (SPECCALC::snarkPPBaseSort (svref x 0) (svref x 1) (svref x 2)))
 
 (defun SPECCALC::snarkPredicateDecl-1 (x) 
   (SPECCALC::snarkPredicateDecl (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
@@ -42423,6 +49906,8 @@ VQid => QualifiedId * Aliases:
 
 (defun SPECCALC::snarkSpec (x0 x1 x2 x3) 
   (SPECCALC::snarkSpec-1 (vector x0 x1 x2 x3)))
+
+(defun SPECCALC::snarkVar (x0 x1) (SPECCALC::snarkVar-1 (cons x0 x1)))
 
 (defun SPECCALC::sortMap (x0 x1 x2 x3) 
   (SPECCALC::sortMap-1 (vector x0 x1 x2 x3)))
@@ -42442,8 +49927,21 @@ VQid => QualifiedId * Aliases:
 (defun SPECCALC::splitStringAtChar (x1) 
   #'(lambda (x2) (SPECCALC::splitStringAtChar-1-1 x1 x2)))
 
+(defun SPECCALC::substOpMap-1 (x) (SPECCALC::substOpMap (car x) (cdr x)))
+
 (defun SPECCALC::takeWhile (x1) 
   #'(lambda (x2) (SPECCALC::takeWhile-1-1 x1 x2)))
+
+(defun SPECCALC::termOpsInSpec-1 (x) (SPECCALC::termOpsInSpec (car x) (cdr x)))
+
+(defun SPECCALC::termOpsInSpec?-1 (x) 
+  (SPECCALC::termOpsInSpec? (car x) (cdr x)))
+
+(defun SPECCALC::toJavaFile-1 (x) 
+  (SPECCALC::toJavaFile (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::toJavaFileEnv-1 (x) 
+  (SPECCALC::toJavaFileEnv (svref x 0) (svref x 1) (svref x 2)))
 
 (defun SPECCALC::toSnark-1 (spc) (SPECCALC::toSnarkEnv-1 spc))
 
@@ -42471,6 +49969,9 @@ VQid => QualifiedId * Aliases:
 
 (defun SPECCALC::translateTerm-1 (x) 
   (SPECCALC::translateTerm (svref x 0) (svref x 1) (svref x 2)))
+
+(defun SPECCALC::unLambdaDef-1 (x) 
+  (SPECCALC::unLambdaDef (svref x 0) (svref x 1) (svref x 2) (svref x 3)))
 
 (defun SPECCALC::upToDate?-1 (x) (SPECCALC::upToDate? (car x) (cdr x)))
 
@@ -43456,6 +50957,71 @@ VQid => QualifiedId * Aliases:
                                    (LIST-SPEC::rev (cdr pV8)))))))))))) 
      (return path))))
 
+(defun SPECWARE::evaluateJavaGen_fromLisp (path targetFile) 
+  (let ((target 
+         (block 
+          nil 
+          (if (eq (car targetFile) :|None|) 
+              (return '(:|None|)) 
+              (if (eq (car targetFile) :|Some|) 
+                  (return 
+                   (cons 
+                    :|Some| 
+                    (SPECWARE::maybeAddSuffix-1-1 (cdr targetFile) ".java"))))) 
+          (error "Nonexhaustive match failure in evaluateJavaGen_fromLisp")))) 
+    (let ((run 
+           (SPECCALC::monadSeq 
+            #'SPECWARE::restoreSavedSpecwareState-1 
+            (SPECCALC::monadBind 
+             (SPECCALC::pathToCanonicalURI ".") 
+             #'(lambda (currentURI) 
+                (SPECCALC::monadSeq 
+                 (SPECCALC::setCurrentURI-1 currentURI) 
+                 (SPECCALC::monadBind 
+                  (SPECCALC::|!return| (SPECWARE::removeSWsuffix path)) 
+                  #'(lambda (path_body) 
+                     (SPECCALC::monadBind 
+                      (SPECCALC::pathToRelativeURI path_body) 
+                      #'(lambda (uri) 
+                         (SPECCALC::monadBind 
+                          (SPECCALC::|!return| 
+                           (cons 
+                            :|String| 
+                            (vector 
+                             path 
+                             POSITION-SPEC::startLineColumnByte 
+                             (POSITION-SPEC::endLineColumnByte path_body)))) 
+                          #'(lambda (|!position|) 
+                             (SPECCALC::monadBind 
+                              (funcall (SPECCALC::evaluateURI |!position|) uri) 
+                              #'(lambda (spcInfo) 
+                                 (SPECCALC::monadSeq 
+                                  (SPECCALC::evaluateJavaGen 
+                                   spcInfo 
+                                   (cons (cons :|URI| uri) |!position|) 
+                                   target) 
+                                  (SPECCALC::monadSeq 
+                                   #'SPECWARE::saveSpecwareState-1 
+                                   (SPECCALC::|!return| t))))))))))))))))) 
+      (let ((x 
+             (SPECCALC::|!catch|-1-1-1 
+              run 
+              #'SPECWARE::toplevelHandler 
+              SPECWARE::ignoredState))) 
+        (let ((pV6 (car x))) 
+          (block 
+           nil 
+           (if (eq (car pV6) :|Ok|) 
+               (return (cdr pV6)) 
+               (if (eq (car pV6) :|Exception|) 
+                   (return 
+                    (SYSTEM-SPEC::fail "Specware toplevel handler failed")))) 
+           (error "Nonexhaustive match failure in evaluateJavaGen_fromLisp")))))))
+
+
+(defun SPECWARE::evaluateJavaGen_fromLisp-1 (x) 
+  (SPECWARE::evaluateJavaGen_fromLisp (car x) (cdr x)))
+
 (defun SPECWARE::evaluateLispCompile_fromLisp (path targetFile) 
   (let ((target 
          (block 
@@ -43577,6 +51143,145 @@ VQid => QualifiedId * Aliases:
                (SPECCALC::raise except)))) 
       (return (SPECCALC::raise except)))))
 
+(defun SPECWARE::reportErrorAtPosToJava (pos msg) 
+  (block 
+   nil 
+   (if (eq (car pos) :|File|) 
+       (let ((pV3 (cdr pos))) 
+         (let ((pV5 (svref pV3 1))) 
+           (return 
+            (SPECWARE::reportErrorToJava 
+             (svref pV3 0) 
+             (svref pV5 0) 
+             (svref pV5 1) 
+             msg))))) 
+   (return (SPECWARE::reportErrorToJava "" 0 0 msg))))
+
+(defun SPECWARE::reportTypeErrorsToJava (errs) 
+  (LIST-SPEC::app-1-1 
+   #'(lambda (x) (SPECWARE::reportErrorAtPosToJava (cdr x) (car x))) 
+   errs))
+
+(defun SPECWARE::reportExceptionToJava (except) 
+  (block 
+   nil 
+   (if (eq (car except) :|Unsupported|) 
+       (let ((pV11 (cdr except))) 
+         (return 
+          (SPECWARE::reportErrorAtPosToJava 
+           (car pV11) 
+           (STRING-SPEC::^ "Unsupported operation: " (cdr pV11))))) 
+       (if (eq (car except) :|URINotFound|) 
+           (let ((pV10 (cdr except))) 
+             (return 
+              (SPECWARE::reportErrorAtPosToJava 
+               (car pV10) 
+               (STRING-SPEC::^ 
+                "Unknown unit " 
+                (SPECCALC::showRelativeURI (cdr pV10)))))) 
+           (if (eq (car except) :|FileNotFound|) 
+               (let ((pV9 (cdr except))) 
+                 (return 
+                  (SPECWARE::reportErrorAtPosToJava 
+                   (car pV9) 
+                   (STRING-SPEC::^ 
+                    "Unknown unit " 
+                    (SPECCALC::showRelativeURI (cdr pV9)))))) 
+               (if (eq (car except) :|SpecError|) 
+                   (let ((pV8 (cdr except))) 
+                     (return 
+                      (SPECWARE::reportErrorAtPosToJava 
+                       (car pV8) 
+                       (STRING-SPEC::^ "Error in specification: " (cdr pV8))))) 
+                   (if (eq (car except) :|MorphError|) 
+                       (let ((pV7 (cdr except))) 
+                         (return 
+                          (SPECWARE::reportErrorAtPosToJava 
+                           (car pV7) 
+                           (STRING-SPEC::^ "Error in morphism: " (cdr pV7))))) 
+                       (if (eq (car except) :|DiagError|) 
+                           (let ((pV6 (cdr except))) 
+                             (return 
+                              (SPECWARE::reportErrorAtPosToJava 
+                               (car pV6) 
+                               (STRING-SPEC::^ "Diagram error: " (cdr pV6))))) 
+                           (if (eq (car except) :|TypeCheck|) 
+                               (let ((pV5 (cdr except))) 
+                                 (return 
+                                  (SPECWARE::reportErrorAtPosToJava 
+                                   (car pV5) 
+                                   (STRING-SPEC::^ "Type error: " (cdr pV5))))) 
+                               (if (eq (car except) :|Proof|) 
+                                   (let ((pV4 (cdr except))) 
+                                     (return 
+                                      (SPECWARE::reportErrorAtPosToJava 
+                                       (car pV4) 
+                                       (STRING-SPEC::^ "Proof error: " (cdr pV4))))) 
+                                   (if (eq (car except) :|TypeCheckErrors|) 
+                                       (return 
+                                        (SPECWARE::reportTypeErrorsToJava 
+                                         (cdr except)))))))))))) 
+   (return 
+    (SPECWARE::reportErrorToJava "" 0 0 (SPECWARE::printException except)))))
+
+(defun SPECWARE::toplevelHandlerForJava (except) 
+  (SPECCALC::monadSeq 
+   #'SPECCALC::cleanupGlobalContext-1 
+   (SPECCALC::monadSeq 
+    #'SPECWARE::saveSpecwareState-1 
+    (SPECCALC::monadSeq 
+     (SPECCALC::|!return| (SPECWARE::reportExceptionToJava except)) 
+     (SPECCALC::|!return| nil)))))
+
+(defun SPECWARE::evaluateURI_fromJava (path) 
+  (let ((run 
+         (SPECCALC::monadSeq 
+          #'SPECWARE::restoreSavedSpecwareState-1 
+          (SPECCALC::monadBind 
+           (SPECCALC::pathToCanonicalURI ".") 
+           #'(lambda (currentURI) 
+              (SPECCALC::monadSeq 
+               (SPECCALC::setCurrentURI-1 currentURI) 
+               (SPECCALC::monadBind 
+                (SPECCALC::|!return| (SPECWARE::removeSWsuffix path)) 
+                #'(lambda (path_body) 
+                   (SPECCALC::monadBind 
+                    (SPECCALC::pathToRelativeURI path_body) 
+                    #'(lambda (uri) 
+                       (SPECCALC::monadBind 
+                        (SPECCALC::|!return| 
+                         (cons 
+                          :|String| 
+                          (vector 
+                           path 
+                           POSITION-SPEC::startLineColumnByte 
+                           (POSITION-SPEC::endLineColumnByte path_body)))) 
+                        #'(lambda (|!position|) 
+                           (SPECCALC::monadSeq 
+                            (funcall (SPECCALC::|!catch| 
+                                      (SPECCALC::monadSeq 
+                                       (funcall (SPECCALC::evaluateURI 
+                                                 |!position|) 
+                                                uri) 
+                                       (SPECCALC::|!return| nil))) 
+                                     (SPECWARE::fileNameHandler uri)) 
+                            (SPECCALC::monadSeq 
+                             #'SPECWARE::saveSpecwareState-1 
+                             (SPECCALC::|!return| t))))))))))))))) 
+    (let ((x 
+           (SPECCALC::|!catch|-1-1-1 
+            run 
+            #'SPECWARE::toplevelHandlerForJava 
+            SPECWARE::ignoredState))) 
+      (let ((pV4 (car x))) 
+        (block 
+         nil 
+         (if (eq (car pV4) :|Ok|) 
+             (return (cdr pV4)) 
+             (if (eq (car pV4) :|Exception|) 
+                 (return (SYSTEM-SPEC::fail "Specware toplevel handler failed")))) 
+         (error "Nonexhaustive match failure in evaluateURI_fromJava"))))))
+
 (defun SPECWARE::evaluateURI_fromLisp (path) 
   (let ((run 
          (SPECCALC::monadSeq 
@@ -43625,6 +51330,48 @@ VQid => QualifiedId * Aliases:
              (if (eq (car pV4) :|Exception|) 
                  (return (SYSTEM-SPEC::fail "Specware toplevel handler failed")))) 
          (error "Nonexhaustive match failure in evaluateURI_fromLisp"))))))
+
+(defun SPECWARE::evaluateUnitId (path) 
+  (let ((run 
+         (SPECCALC::monadSeq 
+          #'SPECWARE::restoreSavedSpecwareState-1 
+          (SPECCALC::monadBind 
+           (SPECCALC::pathToCanonicalURI ".") 
+           #'(lambda (currentURI) 
+              (SPECCALC::monadSeq 
+               (SPECCALC::setCurrentURI-1 currentURI) 
+               (SPECCALC::monadBind 
+                (SPECCALC::|!return| (SPECWARE::removeSWsuffix path)) 
+                #'(lambda (path_body) 
+                   (SPECCALC::monadBind 
+                    (SPECCALC::pathToRelativeURI path_body) 
+                    #'(lambda (uri) 
+                       (SPECCALC::monadBind 
+                        (SPECCALC::|!return| 
+                         (cons 
+                          :|String| 
+                          (vector 
+                           path 
+                           POSITION-SPEC::startLineColumnByte 
+                           (POSITION-SPEC::endLineColumnByte path_body)))) 
+                        #'(lambda (|!position|) 
+                           (SPECCALC::monadBind 
+                            (funcall (SPECCALC::evaluateURI |!position|) uri) 
+                            #'(lambda (x) 
+                               (SPECCALC::monadSeq 
+                                #'SPECWARE::saveSpecwareState-1 
+                                (SPECCALC::|!return| (svref x 0))))))))))))))))) 
+    (let ((x (funcall run SPECWARE::ignoredState))) 
+      (let ((pV6 (car x))) 
+        (block 
+         nil 
+         (if (eq (car pV6) :|Ok|) 
+             (return (cons :|Some| (cdr pV6))) 
+             (if (eq (car pV6) :|Exception|) 
+                 (return 
+                  (progn (SYSTEM-SPEC::|!warn| "evaluateUnitId failed") 
+                         '(:|None|))))) 
+         (error "Nonexhaustive match failure in evaluateUnitId"))))))
 
 (defun SPECWARE::fileNameHandler-1-1-1 (x1 x2 x3) 
   (funcall (funcall (SPECWARE::fileNameHandler x1) x2) x3))
@@ -43689,6 +51436,9 @@ VQid => QualifiedId * Aliases:
 
 (defun SPECWARE::maybeAddSuffix (x1) 
   #'(lambda (x2) (SPECWARE::maybeAddSuffix-1-1 x1 x2)))
+
+(defun SPECWARE::reportErrorAtPosToJava-1 (x) 
+  (SPECWARE::reportErrorAtPosToJava (car x) (cdr x)))
 
 (defun SPECWARE::toplevelLoop (x2 x1 x0 x) 
   (SPECCALC::|!return|-1-1 t (vector x2 x1 x0 x)))
@@ -43758,10 +51508,13 @@ VQid => QualifiedId * Aliases:
 (defun SPECWARE::toplevelHandler-1-1 (x1 x2) 
   (funcall (SPECWARE::toplevelHandler x1) x2))
 
+(defun SPECWARE::toplevelHandlerForJava-1-1 (x1 x2) 
+  (funcall (SPECWARE::toplevelHandlerForJava x1) x2))
+
 (defun SPLAYMAP::all-1-1 (p? m) 
   (SPLAYMAP::foldri-1-1-1 
    #'(lambda (x) 
-      (lisp::and (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
+      (cl::and (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
    t 
    m))
 
@@ -43881,7 +51634,7 @@ VQid => QualifiedId * Aliases:
 (defun SPLAYMAP::|!exists|-1-1 (p? m) 
   (SPLAYMAP::foldri-1-1-1 
    #'(lambda (x) 
-      (lisp::or (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
+      (cl::or (svref x 2) (funcall p? (cons (svref x 0) (svref x 1))))) 
    nil 
    m))
 
@@ -44400,7 +52153,7 @@ VQid => QualifiedId * Aliases:
          (if (eq (car set2) :|SET|) 
              (let ((pV11 (cdr set2))) 
                (return 
-                (lisp::and 
+                (cl::and 
                  (INTEGER-SPEC::|!<=| (svref pV7 1) (svref pV11 1)) 
                  (SPLAYSET::treeIn 
                   (svref pV7 0) 
@@ -44478,10 +52231,10 @@ VQid => QualifiedId * Aliases:
 
 (defun STANDARDSPEC::mkAnd-1 (x) (STANDARDSPEC::mkAnd (car x) (cdr x)))
 
-(defun STANDARDSPEC::mkAppl (t1 tms) 
-  (cons :|Apply| (vector t1 (STANDARDSPEC::mkTuple tms) POSITION-SPEC::noPos)))
-
 (defun STANDARDSPEC::mkAppl-1 (x) (STANDARDSPEC::mkAppl (car x) (cdr x)))
+
+(defun STANDARDSPEC::mkApplication-1 (x) 
+  (STANDARDSPEC::mkApplication (car x) (cdr x)))
 
 (defun STANDARDSPEC::mkApply-1 (x) (STANDARDSPEC::mkApply (car x) (cdr x)))
 
@@ -44675,9 +52428,6 @@ VQid => QualifiedId * Aliases:
 (defun STANDARDSPEC::mkTrue-1 (ignore) 
   (declare (ignore ignore)) 
   (STANDARDSPEC::mkTrue))
-
-(defun STANDARDSPEC::mkTuplePat (pats) 
-  (cons :|RecordPat| (cons (STANDARDSPEC::tagTuple pats) POSITION-SPEC::noPos)))
 
 (defun STANDARDSPEC::mkWildPat (s) 
   (cons :|WildPat| (cons s POSITION-SPEC::noPos)))
@@ -46636,9 +54386,9 @@ VQid => QualifiedId * Aliases:
 (defun UTILITIES::sameCPSort?-1 (x) (UTILITIES::sameCPSort? (car x) (cdr x)))
 
 (defun UTILITIES::specEqual? (s1 s2) 
-  (lisp::and 
+  (cl::and 
    (slang-built-in::slang-term-equals (svref s1 2) (svref s2 2)) 
-   (lisp::and 
+   (cl::and 
     (slang-built-in::slang-term-equals 
      (STRINGMAP::toList (svref s1 3)) 
      (STRINGMAP::toList (svref s2 3))) 
@@ -46652,9 +54402,9 @@ VQid => QualifiedId * Aliases:
   (UTILITIES::initPrimitiveSpec-1-1-1 "String" "String" nil))
 
 (defun UTILITIES::subspec? (s1 s2) 
-  (lisp::and 
+  (cl::and 
    (LISTUTILITIES::subset? (svref s1 2) (svref s2 2)) 
-   (lisp::and 
+   (cl::and 
     (STRINGMAP::subset? (svref s1 3) (svref s2 3)) 
     (STRINGMAP::subset? (svref s1 1) (svref s2 1)))))
 
@@ -47267,4 +55017,3 @@ VQid => QualifiedId * Aliases:
 
 (defun WADLERLINDIG::ppSep (x1) 
   #'(lambda (x2) (WADLERLINDIG::ppSep-1-1 x1 x2)))
-                                                  
