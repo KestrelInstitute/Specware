@@ -16,8 +16,8 @@ all: myapp
 # code to compile; it sets CPPFLAGS and LDLIBS variables
 include $(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules
 
-# optional: augment the CPPFLAGs
-CPPFLAGS := -g -pg $(CPPFLAGS)
+# optional: augment the CPPFLAGS
+CPPFLAGS := -g $(CPPFLAGS)
 
 # The following assumes that you have the Specware code generated into 
 # files QuickSort.[ch]
