@@ -18,6 +18,7 @@ A typical proof term is of the form: </para>
 
 [[
 ||    prove f_stable in Stability
+||          with Snark
 ||          using stable_charn, f_defn
 ||          options "(use-paramodulation t)
 ||                   (use-resolution nil)
@@ -34,19 +35,61 @@ first translating [[stable_charn]], [[f_defn]] and [[f_stable]]
 to Snark formulas, and then invoking the Snark
 prover to try to prove [[f_stable]] from the hypotheses [[stable_charn]]
 and [[f_defn]], using the options in the [[options]] list.
-To avoid circular proofs,
-the claims used as hypotheses -- [[stable_charn]] and
-[[f_defn]] in the example -- are required to appear earlier in that spec
-than the claim to be proved -- [[f_stable]] in the example.
-Most users will omit the [[options]] part.
-Additionally, the [[using]] part can be omitted as well.
-In that case all the claims that appear in the spec term before the
-claim to be proved will be used as hypotheses in the proof.
+As of this release claim names are qualified.  If the user does not
+explicitly use a qualifier then all properties that have that name
+will be used, regardless of their qualification.  Note also that
+&Specware does not require property names to be unique.  If there are
+more than one property that has the same name as a claim in the
+[[using]] clause then they will all be sent to Snark.
 </para>
+
+<para>
+To avoid circular proofs, the claims used as hypotheses --
+[[stable_charn]] and [[f_defn]] in the example -- are required to
+appear earlier in that spec than the claim to be proved --
+[[f_stable]] in the example.  Most users will omit the [[options]]
+part.  Additionally, the [[using]] part can be omitted as well.  In
+that case all the claims that appear in the spec term before the claim
+to be proved will be used as hypotheses in the proof.  </para>
+
+<para> The [[with]] clause is used to specify which prover to be used.
+If the [[with]] clause is omitted which is typically the case, then
+before invoking Snark, the claim will be sent to a simple integer
+linear inequality decision procedure based on the Fourier Motzkin
+method.  If this fails then Snark will be invoked.  Optionally the
+user can specify either, [[Snark]] or [[FourierM]] to explicitly state
+which prover he wants used.  Note that the inequality decision
+procedure does not make use the properties specified in the [[using]]
+clause. </para>
 
 <para> After Snark completes, &Specware; will report on the success or
 failure of the Snark proof.  </para>
+</section>
 
+<section>
+<title>Implicit Axioms</title>
+
+<para>
+
+&Metaslang [[type]] and [[op]] declarations as well as [[op]]
+definitions give rise to implicit axioms that need to be sent to
+Snark.  In the case of [[type]] and [[op]] declarations, these axioms
+correspond to the semantics of the &Metaslang type system as described
+in the language manual.  In the case of an [[op]] definition, these
+axioms correspond to lifting embedded conditionals from the body of
+the definition as well as translating &Metaslang's pattern matching to
+first-order logic.  Note that a single definition can give rise to
+multiple axioms.  If the [[using]] clause of the proof unit is
+omitted then these axioms will automatically be sent to Snark.
+However, if an explicit [[using]] clause is used then only those
+axioms that are explicitly mentioned are sent to Snark.  In this case
+to send the axioms corresponding to [[op]] [[op_name]] to Snark the
+user would include the axiom [[op_name_def]] in the [[using]] clause.
+Similarily to include the axioms for [[type]] [[type_name]] the user
+should include the axioms [[type_name_def]].
+
+
+</para>
 </section>
 
 <section>
@@ -119,9 +162,13 @@ still be written that can be perused if so desired.  </para>
 every spec.  Unfortunately, the axioms in this library are not
 necessarily written to be useful by Snark.  Instead of having Snark
 use these libraries we have created a separate base library for Snark.
-This library is located at <"/Library/Base/ProverBase.sw">.  The
-axioms in this spec are automatically sent to Snark as part of any
-proof.  </para>
+This library is located at <"/Library/ProverBase/">.  For each spec in
+<"/Library/Base/"> there is a corresponding prover spec that shadows
+it.  This prover base spec imports the 'op and 'type declarations from
+the corresponding base spec, and substitututes for the original
+definitions and axioms, axioms that are more appropriate for sending
+to Snark.  The axioms in these specs are automatically sent to Snark
+as part of any proof.  </para>
 
 </section>
 
