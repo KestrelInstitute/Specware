@@ -95,7 +95,7 @@ be the option to run each (test ...) form in a fresh image.
     ;; The ~2,,,'0@a format directives ensure that the field takes up two spaces with a
     ;; leading 0 if necessary
     (let ((dir (merge-pathnames (parse-namestring
-				 (format nil "~a/~a-~2,,,'0@a-~2,,,'0@a-~2,,,'0@a~2,,,'0@a-~a/"
+				 (format nil "~a/~a~2,,,'0@a~2,,,'0@a~2,,,'0@a~2,,,'0@a~a/"
 					 *test-temporary-directory-name*
 					 year month day hour min i))
 				specware::temporaryDirectory)))
@@ -151,9 +151,20 @@ be the option to run each (test ...) form in a fresh image.
       ()
     (apply 'test-1 args)))
 
-(defun swe-test (swe-str cl-user::*current-swe-spec*)
-  (let ((cl-user::*swe-return-value?* t))
+(defun swe-test (swe-str swe-spec)
+  (let ((cl-user::*swe-return-value?* t)
+	(cl-user::*current-swe-spec* (if swe-spec
+					 (in-current-dir swe-spec)
+				       swe-spec)))
     (cl-user::swe swe-str)))
+
+(defun in-current-dir (file)
+  (concatenate 'string
+    (apply #'concatenate 'string
+	   (loop for d in (cdr (pathname-directory *test-temporary-directory*))
+	       nconcing (list "/" d)))
+    "/"
+    file))
 
 (defun test-1 (name &key sw swe swe-spec swl swll
 			 output (output-predicate 'equal)
@@ -174,7 +185,7 @@ be the option to run each (test ...) form in a fresh image.
 				(if (not (null swe))
 				  (swe-test swe swe-spec)
 				  (if (not (null swl))
-				  (cl-user::swl swe-spec))))))))))
+				  (cl-user::swl swl))))))))))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
 	(setf (car emacs::*goto-file-position-stored*)

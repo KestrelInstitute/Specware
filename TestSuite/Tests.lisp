@@ -31,5 +31,12 @@
 ;;; Processing colimit at $TESTDIR/colimit#C
 ;;; Processing spec at $TESTDIR/colimit#E
 ")
-      ("(~ ( true )) = false" :swe "(~ ( true )) = false" :value t)
+      ("libtest":swll "libtest"
+		:output ";;; Processing spec at $TESTDIR/libtest
+;;; Generating lisp file /tmp/cl-current-file.lisp
+;;; Compiling file /tmp/cl-current-file.lisp
+;;; Writing fasl file /tmp/cl-current-file.fasl
+;;; Fasl write complete
+; Fast loading /tmp/cl-current-file.fasl
+")
       )
