@@ -13,7 +13,6 @@ XML qualifying spec
      utext      = uchars,
      context    = default_processing_environment}
 
-
   sort Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.
 
   def default_processing_environment : Processing_Environment = 
@@ -33,9 +32,9 @@ XML qualifying spec
     case state.exceptions of
       | [] -> ""
       | exceptions ->
-        "\nXML Errors:\n " ^
+        "\nXML Errors:\n\n" ^
 	(foldl (fn (exception, result) -> result ^ (print_one_XML_Exception (exception, state.utext))) "" exceptions) ^
-	"\n"
+	"\n\n"
 
   def print_one_XML_Exception (exception : XML_Exception, utext : UChars) : String =
     "\n" ^
@@ -55,7 +54,8 @@ XML qualifying spec
   def print_EOF_Error (x : EOF_Error, utext : UChars) : String =
     let (line, column, byte) = location_of (x.start, utext) in
     let location = (Nat.toString line) ^ ":" ^ (Nat.toString column) ^ " (byte " ^ (Nat.toString byte) ^ ")" in
-    "EOF error " ^ x.context ^ ", starting at " ^ location
+      "\n From "       ^ location 
+    ^ "\n EOF error " ^ x.context
 
   %% --------------------------------------------------------------------------------
 
@@ -77,8 +77,8 @@ XML qualifying spec
 	 else
 	   " " ^ pad (n + 1)
     in
-      "\n "                ^ surprise.context 
-    ^ "\n at "             ^ location 
+      "\n At "             ^ location 
+    ^ "\n "                ^ surprise.context 
     ^ "\n having viewed [" ^ (string (prefix_to_tail (surprise.start, surprise.tail))) ^ "]"
     ^ "\n  with pending [" ^ (string (prefix_for_n   (surprise.tail,  surprise.peek))) ^ "]"
     ^ "\n expected one of: " 
@@ -86,7 +86,7 @@ XML qualifying spec
 		result ^ "\n    " ^ s1 ^ (pad (length s1)) ^ " for " ^ s2) 
 	       "" 
 	       surprise.expected) 
-      ^ "\n so took action: " ^ surprise.action
+    ^ "\n so took action: " ^ surprise.action
 
   def location_of (target : UChars, utext : UChars) : Nat * Nat * Nat =
     let

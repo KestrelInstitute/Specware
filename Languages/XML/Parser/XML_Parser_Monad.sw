@@ -59,10 +59,10 @@ XML qualifying spec
 	%% In exceptional cases, the handler might be a no-op,
 	%% might generate an 'Ok' value with associatd state,
         %% or might return a completely new exception.
-        | (Exception x, newState) -> handler x {exceptions = cons (x, state.exceptions),
-						messages   = state.messages,
-						utext      = state.utext,
-						context    = state.context})
+        | (Exception x, newState) -> handler x {exceptions = cons (x, newState.exceptions),
+						messages   = newState.messages,
+						utext      = newState.utext,
+						context    = newState.context})
 
 
   %% ================================================================================

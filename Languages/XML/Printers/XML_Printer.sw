@@ -354,7 +354,6 @@ XML qualifying spec
    ^
    (print_BNF_Directive rule)
 
-   
   def print_Choice choice =
     let alternatives = choice.alternatives in
     (ustring "(") 
