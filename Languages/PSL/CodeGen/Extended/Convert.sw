@@ -452,6 +452,8 @@ are no longer needed. *)
 	                   "" 
 			   ms) ^ 
 	    "\n");
+     %% Note: The variants of the transition are invariants of the modespec, so
+     %%       foldVariants is implemended to map over the invariants of the modespec.
      (guard_terms, aux_action_terms)  <- foldVariants (fn (guards, actions) -> fn claim -> 
 						       if claim.2 = "Guard" then
 							 return (cons (term claim,guards),
