@@ -62,7 +62,8 @@ LambdaLift qualifying spec
 	opers       : Ops,
 	opName      : String,
 	qName       : String,
-	counter	    : Ref Nat
+	counter	    : Ref Nat,
+	usedNames   : Ref StringSet.Set
       }
  sort FreeVars = List Var 
 
@@ -263,16 +264,23 @@ LambdaLift qualifying spec
       pattern = pat,
       body = body}
 
- def insertOper(liftInfo:LiftInfo,{qName,opName,opers,counter,spc}:LLEnv) =
+ def insertOper(liftInfo:LiftInfo,{qName,opName,opers,counter,usedNames,spc}:LLEnv) =
      { 
 	opName  = opName,
 	qName   = qName,
        	opers   = Map.update(opers,liftInfo.ident,liftInfo),
        	counter = counter,
+	usedNames = usedNames,
 	spc     = spc
      }
 
- def actualFreeVars({qName,opName,opers,counter,spc}:LLEnv,vars) =
+ op  freshName: Id * LLEnv -> Id
+ def freshName(name,env) =
+     let uniqueName = StringUtilities.freshName(name,!env.usedNames) in
+     let _ = env.usedNames := StringSet.add(!env.usedNames,uniqueName) in
+     uniqueName
+
+ def actualFreeVars({qName,opName,opers,counter,usedNames,spc}:LLEnv,vars) =
    %let _ = String.writeLine("actualFreeVars: vars="^varsToString(vars)) in
      let
 	def lookup(v as (id,_)) = 
@@ -383,7 +391,7 @@ Given let definition:
 	     case (pat,trm)
 		of (VarPat((id,srt),_),Lambda([(pat2,cond,body)])) -> 
 		   let (opers2,body) = lambdaLiftTerm(env,body) in
-		   let name = opName ^ "_" ^ id in
+		   let name = freshName(opName ^ "__" ^ id,env) in
 		   let vars = actualFreeVars(env,vars) in
 		   let oper = makeLiftInfo(env,id,name,pat2,body,vars) in
 		   let env  = insertOper(oper,env) in
@@ -467,12 +475,12 @@ in
 % 
        let tmpOpers =
            map (fn(v as (id,srt),(Lambda([(pat,_,body)]),_)) ->
-		  let name = opName ^ "_" ^ id in
+		  let name = freshName(opName ^ "__" ^ id,env) in
 		  (body,makeLiftInfo(env,id,name,pat,mkTrue()(* Dummy body *),
 				     vars))
 	         | _ -> System.fail "liftDecl Non-lambda abstracted term") decls
        in
-       let env1 = foldr (fn((_,oper),env)-> insertOper(oper,env)) env tmpOpers in
+       let env1 = foldl (fn((_,oper),env)-> insertOper(oper,env)) env tmpOpers in
 %
 % Step 3.
 %
@@ -522,11 +530,11 @@ in
        else
        let num = !(env.counter) in
        let _ = env.counter := num + 1 in
-       let name = env.opName ^ "_internal_" ^ (Nat.toString num) in
+       let name = env.opName ^ "__internal_" ^ (Nat.toString num) in
 
        %let _ = String.writeLine("  new oper: "^name) in
 
-       let ident = name ^ "_closure" in
+       let ident = name ^ "__closure" in
        let vars = actualFreeVars(env,vars) in
 
        let liftInfo = makeLiftInfo(env,ident,name,pat,body,vars) in
@@ -744,7 +752,8 @@ def toAny     = Term `TranslationBasic.toAny`
 	    qName  = qname,
 	    spc = spc,
 	    counter = counter,
-	    opers = Map.emptyMap} in
+	    opers = Map.emptyMap,
+	    usedNames = Ref empty} in
      let
        def insertOpers(opers,qname,spc) = 
 	 case opers
@@ -761,26 +770,26 @@ def toAny     = Term `TranslationBasic.toAny`
 	 %let _ = String.writeLine("lambdaLift \""^name^"\"...") in
 	 case defs
 	   of [] ->
-	     addNewOp (Qualified(qname,name), fixity, (tvs, srt), [], spc)
+	      addNewOp (Qualified(qname,name), fixity, (tvs, srt), [], spc)
 	    | [(def_tvs,Lambda([(pat,cond,term)],a))] -> 
-	     let env = mkEnv(qname,name) in
-	     let term = makeVarTerm(term) in
-	     let (opers,term) = lambdaLiftTerm(env,term) in
-	     let term = Lambda([(pat,cond,term)],a) in
-	     %-let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
-	     let spc = addNewOp(Qualified(qname,name),fixity,(tvs,srt),[([],term)],
-				spc)
-	     in
-	     insertOpers(opers,qname,spc)
+	      let env = mkEnv(qname,name) in
+	      let term = makeVarTerm(term) in
+	      let (opers,term) = lambdaLiftTerm(env,term) in
+	      let term = Lambda([(pat,cond,term)],a) in
+	      %-let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
+	      let spc = addNewOp(Qualified(qname,name),fixity,(tvs,srt),[([],term)],
+				 spc)
+	      in
+	      insertOpers(opers,qname,spc)
 	    | [(def_tvs,term)] -> 
-	     let env = mkEnv(qname,name) in
-	     let term = makeVarTerm(term) in
-	     let (opers,term) = lambdaLiftTerm(env,term) in
-	     %-let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
-	     let spc = addNewOp(Qualified(qname,name),fixity,(tvs,srt),[([],term)],
-				spc)
-	     in
-	     insertOpers(opers,qname,spc)
+	      let env = mkEnv(qname,name) in
+	      let term = makeVarTerm(term) in
+	      let (opers,term) = lambdaLiftTerm(env,term) in
+	      %-let _ = String.writeLine("addop "^name^":"^printSort(srt)) in
+	      let spc = addNewOp(Qualified(qname,name),fixity,(tvs,srt),[([],term)],
+				 spc)
+	      in
+	      insertOpers(opers,qname,spc)
    in
      let ops = spc.ops in
      let spc = 
