@@ -6,60 +6,60 @@
 
 <para>Unit definitions are processed by &Specware;. The user instructs
 &Specware; to process units by supplying certain commands. &Specware;
-has access, via the Lisp run time environment, to the underlying file
+has access, via the Lisp runtime environment, to the underlying file
 system, so it can access the unit definitions contained in <".sw">
 files. The environment variable &swpath; determines which <".sw">
 files are accessed by &Specware; to find unit definitions.</para>
 
-<para>Processing a unit causes processing of the units referenced in
-the defining text of the unit, recursively. For instance, if a spec
-[[A]] extends a spec [[B]] which in turns extends a spec [[C]], when
-[[A]] is processed also [[B]] and [[C]] are processed. There must be
-no circularities in the chain of unit dependencies.</para>
+<para>Processing a unit causes the recursive processing of the units
+referenced in the defining text of that unit. For instance, if a spec
+[[A]] extends a spec [[B]] which in turns extends a spec [[C]], then
+when [[A]] is processed, [[B]] and [[C]] are also processed. There
+must be no circularities in the chain of unit dependencies.</para>
 
 <para>Processing causes progress and/or error messages to be displayed
-on the screen, in the XEmacs buffer containing the Lisp shell (where
-the user also supplies commands to &Specware;). Progress messages
-inform the user that units are processed without error. Error messages
+in the XEmacs buffer containing the Lisp shell (which is also where
+the user supplies commands to &Specware;). Progress messages inform
+the user that units were processed without error. Error messages
 provide information on the cause of errors, so that the user can fix
 them by editing the unit definitions. When an error occurs in the
 definition of some unit, &Specware; displays the <".sw"> file
-containing the definition in an XEmacs buffer, with the cursor at the
-point where the erroneous text is.</para>
+containing the definition in a separate XEmacs buffer, with the cursor
+positioned at the point containing the erroneous text.</para>
 
 <para>The processing of certain kinds of units also results in the
-creation of new files, as an additional side effect. For instance,
+creation of new files as an additional side effect. For instance,
 Lisp programs are a kind of unit, constructed by the [[generate]]
 operator of &Metaslang;. A side effect of processing one such unit is
 that the resulting code is written into a <".lisp"> file.</para>
 
 <para>When &Specware; processes a unit, it saves the processing
-results into an internal cache, associating the results to the unit's
+results into an internal cache, associating the results with the unit's
 name. By using this cache, &Specware; avoids unnecessary
 re-computations: it only re-processes the units whose files have
-changed since they were processed last time. From the point of view of
-the final result, this caching mechanism is completely transparent to
-the user. However, it improves the performance and response time of
-the system.</para>
+changed since the last time they were processed. From the point of
+view of the final result, this caching mechanism is completely
+transparent to the user. However, it improves the performance and
+response time of the system.</para>
 
 </section>  <!-- overview -->
 
 <section>
 <title>Resolution of Unit References</title>
 
-<para>References to units may occur in the defining text of units and,
-as described later, in &Specware; commands. A unit reference is
-resolved to the defining text of the unit, which is contained in a
-<".sw"> file. Reference are either absolute or relative; these two
-kinds are syntactically distinguished from each other and they are
-resolved in slightly different ways.</para>
+<para>References to units may occur in the defining text of units.
+<!-- and, as described later, in &Specware; commands. -->
+A unit reference is resolved to the defining text of the unit, which
+is contained in a <".sw"> file. References are either absolute or
+relative; these two kinds are syntactically distinguished from each
+other and are resolved in slightly different ways.</para>
 
 <section id="absoluteref">
 <title>Absolute References</title>
 
 <para>An absolute reference starts with ``/'' (forward slash),
 followed by a ``/''-separated sequence of one or more identifiers,
-where the last separator can be ``#'' (sharp). Examples are
+where the last separator may be ``#'' (sharp). Examples are
 [[/a/b/c]], [[/d]], and [[/e#f]].</para>
 
 <para>&Specware; resolves an absolute reference in the following
@@ -71,8 +71,7 @@ steps:</para>
 the identifier following it are removed, obtaining a ``/''-separated
 sequence of one or more identifiers, preceded by ``/''. Otherwise, no
 removal takes place. Either way, the result of this first step is a
-``/''-separated sequence of identifiers preceded by
-``/''.</para></listitem>
+``/''-separated sequence of identifiers preceded by ``/''.</para></listitem>
 
 <listitem><para>If the underlying operating system is Windows, the
 ``/'' signs of the ``/''-separated sequence of identifiers preceded by
@@ -95,8 +94,8 @@ by &Specware;.</para></listitem>
 
 <listitem>
 
-<para>There are two alternative steps here, depending on whether the
-original unit reference contains ``#'' or not.</para>
+<para>There are two alternative steps here, depending on whether or
+not the original unit reference contains ``#''.</para>
 
 <orderedlist>
 
@@ -111,13 +110,12 @@ contains ``#''. The file resulting from the previous step must be a
 multiple-unit file, i.e., it must contain a sequence of one or more
 unit definitions. If this is not the case, the unit reference cannot
 be resolved and an error is signaled by &Specware;. If that is the
-case, a unit definition is searched in the file, whose identifier (at
-the left of ``='') is the same as the identifier that follows ``#'' in
-the original unit reference. If no such unit definition is found, the
-unit reference cannot be resolved and an error is signaled by
-&Specware;. If instead such a unit definition is found, its defining
-text (at the right of ``='') is the final result of
-resolution.</para></listitem>
+case, a unit definition is searched for in the file, whose identifier
+(at the left of ``='') is the same as the identifier that follows
+``#'' in the original unit reference. If no such unit definition is
+found, the unit reference cannot be resolved and an error is signaled
+by &Specware;. If such a unit definition is found, its defining text
+(at the right of ``='') is the final result of resolution.</para></listitem>
 
 </orderedlist>
 
@@ -144,12 +142,11 @@ file must be a multiple-unit file. Assuming that this is the case and
 that it contains a unit definition with identifier [[f]], its defining
 text is the result of the fourth step.</para>
 
-<para>The directories in &swpath; are searched in order in the third
-step of resolution. So, in the last example if the directory
+<para>The directories in &swpath; are searched in order during the
+third step of resolution. So, in the last example, if the directory
 <"c:\tmp"> also contains a file <"e.sw">, such a file is ignored.
 This features can be used, for example, to shadow selected library
-units that populate certain file system directories in
-&swpath;.</para>
+units that populate certain file system directories in &swpath;.</para>
 
 <para>For example, suppose that the first directory in &swpath; is
 <"\specware\libs"> and that the directory
@@ -157,12 +154,12 @@ units that populate certain file system directories in
 <"Bags.sw">, <"Lists.sw">, etc. defining specs of sets, bags, lists,
 etc. The unit reference [[/data-structures/Sets]] resolves to the
 content of the file <"c:\specware\libs\data-structures\Sets.sw">. If
-the user wanted to experiment with a slightly version of the spec of
-sets, it is sufficient to prepend another directory to &swpath;, e.g.,
-<"shadow-lib"> and to create the slightly different version of the
-spec of sets in <"c:\shadow-lib\data-structures\Sets.sw">. The same
-unit reference [[/data-structures/Sets]] will now resolve to the new
-version.</para>
+the user wanted to experiment with a slightly different version of 
+the spec for sets, it is sufficient to prepend another directory to 
+&swpath;, e.g. <"shadow-lib">, and to create the slightly different
+version of the spec for sets in 
+<"c:\shadow-lib\data-structures\Sets.sw">. The same unit reference
+[[/data-structures/Sets]] will now resolve to the new version.</para>
 
 </section>  <!-- absolute references -->
 
@@ -172,13 +169,13 @@ version.</para>
 <para>A relative reference is a ``/''-separated sequence of one or
 more identifiers, where the last separator can be ``#''.  Examples are
 [[a/b/c]], [[d]], and [[e#f]]. So, absolute and relative references
-can be distinguished by the presence or absence of ``/'' at their
-beginning.</para>
+can be distinguished by the presence or absence of ``/'' at the
+beginning of the reference.</para>
 
 <para>The resolution of relative references does not depend on
 &swpath;, but on the location of the unit-defining text where the
-reference occurs. There are two cases two consider: the reference
-occurring in a single-unit file; and the reference occurring in a
+reference occurs. There are two cases to consider: the reference
+occurring in a single-unit file and the reference occurring in a
 multiple-unit file.</para>
 
 <para>Suppose that the relative reference occurs in a single-unit
@@ -214,7 +211,7 @@ original unit reference contains ``#'' or not.</para>
 
 <orderedlist>
 
-<listitem><para>This is the case that the original unit reference does
+<listitem><para>This is the case where the original unit reference does
 not contain ``#''. If the file resulting from the previous step is a
 single-unit file, i.e., it contains the defining text for a unit, the
 defining text is the final result of resolution. Otherwise, an error
@@ -253,9 +250,8 @@ in the following steps:</para>
 <listitem><para>If the relative reference is a single identifier,
 &Specware; attempts to find a unit definition with that identifier
 inside the file where the reference occurs. If such a unit definition
-is found, its defining text is the final result of
-resolution. Otherwise, the following steps are carried
-out.</para></listitem>
+is found, its defining text is the final result of resolution. 
+Otherwise, the following steps are carried out:</para></listitem>
 
 <listitem><para>If the reference contains ``#'', the ``#'' itself and
 the identifier following it are removed, obtaining a ``/''-separated
