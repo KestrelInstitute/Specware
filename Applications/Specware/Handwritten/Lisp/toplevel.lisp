@@ -575,8 +575,8 @@
 
 #+allegro
 (defun run-cmd (cmd &rest args)
-  #+UNIX      (shell (format nil "~A~{ ~A}" cmd args))
-  #+MSWINDOWS (shell (format nil "~A~{ ~A}" cmd args))
+  #+UNIX      (shell (format nil "~A~{ ~A~}" cmd args))
+  #+MSWINDOWS (shell (format nil "~A~{ ~A~}" cmd args))
   #-(OR UNIX MSWINDOWS) (format t "~&Neither the UNIX nor MSWINDOWS feature is present, so I don't know what to do!~%")
   )
   
