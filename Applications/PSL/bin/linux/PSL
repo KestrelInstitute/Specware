@@ -86,10 +86,10 @@ export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
 
-xemacs -l "$LISP_DIR"/xeli/fi-site-init \
-       -l "$SPECWARE4"/Library/IO/Emacs/load \
-       -geometry 180x70+180+2 \
-       -eval "(run-specware4)" &
+$xemacs -no-init-file \
+	-l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+	-geometry 180x70+180+2 \
+	-eval "(run-specware4)" &
 #       -name "Specware" \
 #       -title "Specware" \
 #       -geometry =150x60+20+20 \
