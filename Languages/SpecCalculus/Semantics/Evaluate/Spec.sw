@@ -56,6 +56,7 @@ axioms, etc.
 				      newSpc <- mergeImport term impSpec spc position;
 				      return (newSpc, max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
 				     }
+		   | InProcess -> raise (Fail ("Circular import"))
 		   | _ -> raise (Fail ("Import not a spec")))
 		  })
               val               
