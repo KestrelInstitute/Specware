@@ -81,33 +81,35 @@ spec
      (metaTyVars,srt)
 
 
-  op initPrimitiveSpec : Qualifier -> Id -> List String -> Spec
-  def initPrimitiveSpec qualifier id tyvars =
-    %% we expect the qualifier to be the same as id, e.g. Boolean.Boolean
-    {importInfo       = emptyImportInfo,
-     sorts            = insertAQualifierMap (emptyAQualifierMap, qualifier, id,
-					     ([Qualified (qualifier, id)], tyvars, [])),
-     ops              = emptyAQualifierMap,
-     properties       = emptyProperties
-    } 
-
-  def stringSpec  = initPrimitiveSpec "String"  "String"  []
-  def charSpec    = initPrimitiveSpec "Char"    "Char"    []
-  def boolSpec    = initPrimitiveSpec "Boolean" "Boolean" []
-  def listSpec    = initPrimitiveSpec "List"    "List"    ["a"]
-  def generalSpec = initPrimitiveSpec "General" "General" ["a"]
-  def natSpec     = initPrimitiveSpec "Nat"     "Nat"     []
-  def intSpec     = initPrimitiveSpec "Integer" "Integer" []
-
- %
- % Boot strapping environment
- %        
- def baseSpec : Spec = 
-     {importInfo       = emptyImportInfo,
-      sorts            = emptyAQualifierMap,
-      ops              = emptyAQualifierMap,
-      properties       = emptyProperties
-     }
+%%%  No one ever looks at these:
+%%% 
+%%%  op initPrimitiveSpec : Qualifier -> Id -> List String -> Spec
+%%%  def initPrimitiveSpec qualifier id tyvars =
+%%%    %% we expect the qualifier to be the same as id, e.g. Boolean.Boolean
+%%%    {importInfo       = emptyImportInfo,
+%%%     sorts            = insertAQualifierMap (emptyAQualifierMap, qualifier, id,
+%%%					     ([Qualified (qualifier, id)], tyvars, [])),
+%%%     ops              = emptyAQualifierMap,
+%%%     properties       = emptyProperties
+%%%    } 
+%%%
+%%%  def stringSpec  = initPrimitiveSpec "String"  "String"  []
+%%%  def charSpec    = initPrimitiveSpec "Char"    "Char"    []
+%%%  def boolSpec    = initPrimitiveSpec "Boolean" "Boolean" []
+%%%  def listSpec    = initPrimitiveSpec "List"    "List"    ["a"]
+%%%  def generalSpec = initPrimitiveSpec "General" "General" ["a"]
+%%%  def natSpec     = initPrimitiveSpec "Nat"     "Nat"     []
+%%%  def intSpec     = initPrimitiveSpec "Integer" "Integer" []
+%%% 
+%%%  %
+%%%  % Boot strapping environment
+%%%  %        
+%%%  def baseSpec : Spec = 
+%%%      {importInfo       = emptyImportInfo,
+%%%       sorts            = emptyAQualifierMap,
+%%%       ops              = emptyAQualifierMap,
+%%%       properties       = emptyProperties
+%%%      }
 
  def initialEnv (spc, file) = 
    let errs : List (String * Position) = [] in
