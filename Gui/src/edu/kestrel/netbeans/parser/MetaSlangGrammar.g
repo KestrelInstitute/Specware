@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/01/31 00:47:15  gilham
+ * Fixed a bug in the lexer rule for block comments.
+ *
  * Revision 1.2  2003/01/30 22:02:38  gilham
  * Improved parse error messages for non-word symbols such as ":".
  *
@@ -226,7 +229,7 @@ private opDeclaration returns[ElementFactory.Item op]
     String sort = null;
 }
     : begin:"op" 
-      name=qualifiableNames[false] colon sort=sort[true]
+      name=qualifiableNames[false] nonWordSymbol[":"] sort=sort[true]
                             {op = builder.createOp(name, sort);
                              ParserUtil.setBounds(builder, op, begin, lastToken);
                             }
@@ -355,71 +358,21 @@ private qualifiableRef[boolean recordToken] returns[String name]
 
 //---------------------------------------------------------------------------
 private equals
-    : eq
+    : nonWordSymbol["="]
     | "is"
     ;
 
 //---------------------------------------------------------------------------
-// The following are defined as parser rules to get around the nondeterminism
-// caused (between the token and IDENTIFIER) if defined in the lexer.
-
-private colon
-    : t:IDENTIFIER          {t.getText().equals(":")}? 
+// Used to refer to any specific NON_WORD_SYMBOL in the Specware language syntax,
+// e.g. ":", "=", "*", "/", "|", "->".  (If these are defined as tokens, the 
+// lexer will be nonderterministic.)
+private nonWordSymbol[String expected]
+    : t:IDENTIFIER          {t.getText().equals(expected)}? 
     ;
     exception
     catch [RecognitionException ex] {
        int line = t.getLine();
-       String msg = "expecting \":\", found \"" + t.getText() + "\"";
-       throw new RecognitionException(msg, null, line);
-    }
-
-private eq
-    : t:IDENTIFIER          {t.getText().equals("=")}? 
-    ;
-    exception
-    catch [RecognitionException ex] {
-       int line = t.getLine();
-       String msg = "expecting \"=\", found \"" + t.getText() + "\"";
-       throw new RecognitionException(msg, null, line);
-    }
-
-private rarrow
-    : t:IDENTIFIER          {t.getText().equals("->")}? 
-    ;
-    exception
-    catch [RecognitionException ex] {
-       int line = t.getLine();
-       String msg = "expecting \"->\", found \"" + t.getText() + "\"";
-       throw new RecognitionException(msg, null, line);
-    }
-
-private star
-    : t:IDENTIFIER          {t.getText().equals("*")}? 
-    ;
-    exception
-    catch [RecognitionException ex] {
-       int line = t.getLine();
-       String msg = "expecting \"*\", found \"" + t.getText() + "\"";
-       throw new RecognitionException(msg, null, line);
-    }
-
-private vbar
-    : t:IDENTIFIER          {t.getText().equals("|")}? 
-    ;
-    exception
-    catch [RecognitionException ex] {
-       int line = t.getLine();
-       String msg = "expecting \"|\", found \"" + t.getText() + "\"";
-       throw new RecognitionException(msg, null, line);
-    }
-
-private slash
-    : t:IDENTIFIER          {t.getText().equals("/")}? 
-    ;
-    exception
-    catch [RecognitionException ex] {
-       int line = t.getLine();
-       String msg = "expecting \"/\", found \"" + t.getText() + "\"";
+       String msg = "expecting \"" + expected + "\", found \"" + t.getText() + "\"";
        throw new RecognitionException(msg, null, line);
     }
 

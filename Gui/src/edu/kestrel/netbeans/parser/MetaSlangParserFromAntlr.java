@@ -227,7 +227,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			switch ( LA(1)) {
 			case IDENTIFIER:
 			{
-				eq();
+				nonWordSymbol("=");
 				break;
 			}
 			case LITERAL_is:
@@ -460,7 +460,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			begin = LT(1);
 			match(LITERAL_op);
 			name=qualifiableNames(false);
-			colon();
+			nonWordSymbol(":");
 			sort=sort(true);
 			op = builder.createOp(name, sort);
 			ParserUtil.setBounds(builder, op, begin, lastToken);
@@ -628,20 +628,22 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return name;
 	}
 	
-	private final void colon() throws RecognitionException, TokenStreamException {
+	private final void nonWordSymbol(
+		String expected
+	) throws RecognitionException, TokenStreamException {
 		
 		Token  t = null;
 		
 		try {      // for error handling
 			t = LT(1);
 			match(IDENTIFIER);
-			if (!(t.getText().equals(":")))
-			  throw new SemanticException("t.getText().equals(\":\")");
+			if (!(t.getText().equals(expected)))
+			  throw new SemanticException("t.getText().equals(expected)");
 		}
 		catch (RecognitionException ex) {
 			
 			int line = t.getLine();
-			String msg = "expecting \":\", found \"" + t.getText() + "\"";
+			String msg = "expecting \"" + expected + "\", found \"" + t.getText() + "\"";
 			throw new RecognitionException(msg, null, line);
 			
 		}
@@ -1204,101 +1206,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			consumeUntil(_tokenSet_9);
 		}
 		return text;
-	}
-	
-	private final void eq() throws RecognitionException, TokenStreamException {
-		
-		Token  t = null;
-		
-		try {      // for error handling
-			t = LT(1);
-			match(IDENTIFIER);
-			if (!(t.getText().equals("=")))
-			  throw new SemanticException("t.getText().equals(\"=\")");
-		}
-		catch (RecognitionException ex) {
-			
-			int line = t.getLine();
-			String msg = "expecting \"=\", found \"" + t.getText() + "\"";
-			throw new RecognitionException(msg, null, line);
-			
-		}
-	}
-	
-	private final void rarrow() throws RecognitionException, TokenStreamException {
-		
-		Token  t = null;
-		
-		try {      // for error handling
-			t = LT(1);
-			match(IDENTIFIER);
-			if (!(t.getText().equals("->")))
-			  throw new SemanticException("t.getText().equals(\"->\")");
-		}
-		catch (RecognitionException ex) {
-			
-			int line = t.getLine();
-			String msg = "expecting \"->\", found \"" + t.getText() + "\"";
-			throw new RecognitionException(msg, null, line);
-			
-		}
-	}
-	
-	private final void star() throws RecognitionException, TokenStreamException {
-		
-		Token  t = null;
-		
-		try {      // for error handling
-			t = LT(1);
-			match(IDENTIFIER);
-			if (!(t.getText().equals("*")))
-			  throw new SemanticException("t.getText().equals(\"*\")");
-		}
-		catch (RecognitionException ex) {
-			
-			int line = t.getLine();
-			String msg = "expecting \"*\", found \"" + t.getText() + "\"";
-			throw new RecognitionException(msg, null, line);
-			
-		}
-	}
-	
-	private final void vbar() throws RecognitionException, TokenStreamException {
-		
-		Token  t = null;
-		
-		try {      // for error handling
-			t = LT(1);
-			match(IDENTIFIER);
-			if (!(t.getText().equals("|")))
-			  throw new SemanticException("t.getText().equals(\"|\")");
-		}
-		catch (RecognitionException ex) {
-			
-			int line = t.getLine();
-			String msg = "expecting \"|\", found \"" + t.getText() + "\"";
-			throw new RecognitionException(msg, null, line);
-			
-		}
-	}
-	
-	private final void slash() throws RecognitionException, TokenStreamException {
-		
-		Token  t = null;
-		
-		try {      // for error handling
-			t = LT(1);
-			match(IDENTIFIER);
-			if (!(t.getText().equals("/")))
-			  throw new SemanticException("t.getText().equals(\"/\")");
-		}
-		catch (RecognitionException ex) {
-			
-			int line = t.getLine();
-			String msg = "expecting \"/\", found \"" + t.getText() + "\"";
-			throw new RecognitionException(msg, null, line);
-			
-		}
 	}
 	
 	
