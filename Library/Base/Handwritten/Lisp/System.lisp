@@ -6,9 +6,20 @@
 (defun fail (s) (error "~a" s))
 (defun |!warn| (s) (warn "~a" s))
 (defmacro |!time| (x) (time x))
-#-Lispworks
-(defun getenv (x) (specware::getenv x))
-(defparameter temporaryDirectory (namestring #+allegro(SYSTEM:temporary-directory)
+
+;;; #-Lispworks
+;;; (defun getenv (x) (specware::getenv x))
+
+;; The Lisp getenv returns nil if the name is not in the environment. 
+;; Otherwise it returns a string. We want to be able to distinguish
+;; the outcomes in MetaSlang
+(defun getEnv (name)
+  (let ((val (system:getenv name)))
+    (if (or (eq val nil) (equal val ""))    ; I think it returns "" if not set
+	(cons :|None| nil)
+      (cons :|Some| val))))
+
+(defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*))
 
 

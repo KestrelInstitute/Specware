@@ -1,15 +1,6 @@
 (defpackage "IO-SPEC")
 (in-package "IO-SPEC")
 
-;; The Lisp getenv returns nil if the name is not in the environment. 
-;; Otherwise it returns a string. We want to be able to distinguish
-;; the outcomes in MetaSlang
-(defun getEnv (name)
-  (let ((val (system:getenv name)))
-    (if (or (eq val nil) (equal val ""))    ; I think it returns "" if not set
-	(cons :|None| nil)
-      (cons :|Some| val))))
-
 ;; This returns true if, as the name suggests, the given file
 ;; exists and is readable. Otherwise, it return false.
 (defun fileExistsAndReadable (x)

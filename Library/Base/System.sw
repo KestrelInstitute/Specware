@@ -5,6 +5,7 @@ data structures use fail. Until they are fixed, we need the following.
 \begin{spec}
 System qualifying spec {
   import PrimitiveSorts
+  import Option
 
   op fail     : fa(a) String -> a
   op toString : fa(a) a -> String
@@ -23,6 +24,7 @@ System qualifying spec {
   Lisp SYSTEM:getenv we need only extend this signature.
 *)
 %  op getenv   : String -> String
+  op getEnv : String -> Option String
 
 (*
  The following holds the name of the temporary directory on the

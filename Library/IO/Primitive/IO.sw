@@ -10,7 +10,6 @@ IO qualifying spec {
 
   sort Time = Nat          % Not a fixnum
 
-  op getEnv : String -> Option String
   op getCurrentDirectory : () -> String
   op fileExistsAndReadable : String -> Boolean
   op fileWriteTime : String -> Time
