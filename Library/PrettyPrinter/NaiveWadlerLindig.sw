@@ -10,26 +10,53 @@ WadlerLindig qualifying spec
 
   sort Pretty = Doc
 
-  op layout : Doc -> Doc -> Nat -> Nat -> List String
-  def layout doc rest column indent =
-    let def replicate (cnt:Integer) str suffix =
-      if cnt <= 0 then
-        suffix
-      else
-        Cons (str, replicate (cnt - 1) str suffix) in
-    case doc of
-      | DocGroup d -> layout d rest column indent
-      | DocText s -> Cons (s, layout rest DocNil (column + (length s)) indent)
-      | DocBreak s -> Cons ("\n", replicate indent " " (layout rest DocNil indent indent))
-      | DocIndent (newIndent,doc) -> layout doc rest column newIndent
-      | DocNest (n,innerDoc) ->
-          replicate (indent + n - column) " " (layout innerDoc (DocIndent (indent, rest)) column (indent + n))
-      | DocCons (l,r) -> layout l (ppCons r rest) column indent
-      | DocNil ->
-         if rest = DocNil then
-           []
-         else
-           layout rest DocNil column indent
+%   op layout : Doc -> Doc -> Nat -> Nat -> List String
+%   def layout doc rest column indent =
+%     let def replicate (cnt:Integer) str suffix =
+%       if cnt <= 0 then
+%         suffix
+%       else
+%         Cons (str, replicate (cnt - 1) str suffix) in
+%     case doc of
+%       | DocGroup d -> layout d rest column indent
+%       | DocText s -> Cons (s, layout rest DocNil (column + (length s)) indent)
+%       | DocBreak s -> Cons ("\n", replicate indent " " (layout rest DocNil indent indent))
+%       | DocIndent (newIndent,doc) -> layout doc rest column newIndent
+%       | DocNest (n,innerDoc) ->
+%           replicate (indent + n - column) " " (layout innerDoc (DocIndent (indent, rest)) column (indent + n))
+%       | DocCons (l,r) -> layout l (ppCons r rest) column indent
+%       | DocNil ->
+%          if rest = DocNil then
+%            []
+%          else
+%            layout rest DocNil column indent
+
+  op layout : Doc -> Doc -> Nat -> Nat -> List String -> List String
+  def layout doc rest column indent stream =
+    let
+      def spaces n = concatList (aux n)
+      def aux n =
+        if n <= 0 then
+          []
+        else
+          Cons (" ", aux (n - 1))
+    in
+      case doc of
+        | DocGroup d -> layout d rest column indent stream
+        | DocText s -> layout rest DocNil (column + (length s)) indent (Cons (s, stream))
+        | DocBreak s -> layout rest DocNil indent indent (Cons (spaces indent, Cons ("\n", stream)))
+        | DocIndent (newIndent,doc) -> layout doc rest column newIndent stream
+        | DocNest (n,innerDoc) ->
+            layout innerDoc (DocIndent (indent, rest)) column (indent + n) (Cons (spaces (indent + n - column), stream))
+        % | DocCons (l,r) -> layout l (ppCons r rest) column indent stream
+        | DocCons (l,r) ->
+            let s = layout l DocNil column indent stream in
+            layout r rest column indent s
+        | DocNil ->
+           if rest = DocNil then
+             stream
+           else
+             layout rest DocNil column indent stream
 
   sort Doc =
     | DocNil
@@ -78,8 +105,8 @@ WadlerLindig qualifying spec
   op ppFormatWidth : Doc -> String
 
   def ppFormatWidth doc =
-    let strings = layout doc DocNil 0 0 in
-    concatList strings
+    let strings = layout doc DocNil 0 0 [] in
+    concatList (rev strings)
 
   op ppAppend : Doc -> Doc -> Doc
   def ppAppend p1 p2 = ppCons p1 p2
