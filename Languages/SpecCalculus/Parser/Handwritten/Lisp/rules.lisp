@@ -787,7 +787,7 @@ If we want the precedence to be optional:
   (make-rec-let-binding 1 2 3 4 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETER-SEQUENCE ()
-  (:repeat* :FORMAL-PARAMETER ""))
+  (:repeat+ :FORMAL-PARAMETER ""))
 
 ;;; ------------------------------------------------------------------------
 ;;;   IF-EXPRESSION
