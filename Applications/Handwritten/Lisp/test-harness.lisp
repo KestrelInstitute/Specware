@@ -217,6 +217,8 @@ be the option to run each (test ...) form in a fresh image.
 			 (value-predicate 'equal)
 			 file-goto-error
 			 error files)
+  (let ((msg (format nil "Running test: ~A" name)))
+    (emacs::eval-in-emacs (format nil "(message ~S)" msg)))
   (let (val error-type (error-messages ())
 	(emacs::*goto-file-position-store?* t)
 	(emacs::*goto-file-position-stored* nil)
