@@ -127,6 +127,11 @@ SpecCalc qualifying spec {
             ppNewline,
             ppString "end"
           ]
+      | Colimit term ->
+          ppConcat [
+            ppString "colim ",
+            ppTerm term
+          ]
 (*
       | SpecMorph (dom,cod,elems) ->
           let def ppSpecMorphElem ((id,term),pos) =

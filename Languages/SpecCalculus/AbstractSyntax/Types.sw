@@ -84,6 +84,7 @@ The following is the sort given to us by the parser.
     | URI RelativeURI
     | Spec List (SpecElem a)
     | Diag (List (DiagElem a))
+    | Colimit (Term a)
 \end{spec}
 
 The calculus supports two types of morphisms: morphisms between specs and

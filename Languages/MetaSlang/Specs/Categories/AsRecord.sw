@@ -20,7 +20,7 @@ completed such that the maps only give the points where the morphism
 differs from the identity.
 
 \begin{spec}
-spec {
+SpecCat qualifying spec {
   import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
   import /Languages/MetaSlang/Specs/StandardSpec
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic

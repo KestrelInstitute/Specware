@@ -1,12 +1,11 @@
 \subsection{Evalution of a diagram term in the Spec Calculus}
 
-Synchronized with r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagram.sl
+Much extended from r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagram.sl
 
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature
   import /Languages/MetaSlang/Specs/Categories/AsRecord
-  import /Library/Structures/Data/Categories/Diagrams/Polymorphic
 \end{spec}
 
 When constructing the semantic representation of a diagram, what are
@@ -49,9 +48,9 @@ the typechecker complains. I don't understand it.
 
 \begin{spec}
   op evaluateDiagElem :
-       SpecCalc.Diagram (Spec,Morphism)
+       Diagram (Spec,Morphism)
     -> DiagElem Position
-    -> Env (SpecCalc.Diagram (Spec,Morphism))
+    -> Env (Diagram (Spec,Morphism))
 
   def evaluateDiagElem dgm elem =
     case (valueOf elem) of
@@ -95,11 +94,11 @@ if edge is not in the diagram then addLa
 
 \begin{spec}
   op addLabelledVertex :
-       SpecCalc.Diagram (Spec,Morphism) 
+       Diagram (Spec,Morphism) 
     -> Vertex.Elem
     -> Spec
     -> Position
-    -> Env (SpecCalc.Diagram (Spec,Morphism))
+    -> Env (Diagram (Spec,Morphism))
   def addLabelledVertex dgm nodeId spc position =
     if vertexInDiagram? dgm nodeId then
       if (spc = vertexLabel dgm nodeId) then

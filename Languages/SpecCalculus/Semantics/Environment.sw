@@ -13,8 +13,8 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
   import /Library/IO/Primitive/IO
-  import /Languages/MetaSlang/Specs/Categories/AsRecord	% Morphism
-  import /Library/Structures/Data/Categories/Diagrams/Polymorphic
+  import /Languages/MetaSlang/Specs/Categories/AsRecord	
+  % import Cat qualifying /Library/Structures/Data/Categories/Diagrams/Polymorphic
   import Map
 			  
 \end{spec}
