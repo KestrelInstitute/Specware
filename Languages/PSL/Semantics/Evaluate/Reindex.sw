@@ -2,27 +2,63 @@ Reindex qualifying spec
   import Oscar
 
   op newQid : State.Ref Id.Id
-  def newQid = Ref (Id.makeId "reindex" "new")
+  def newQid = Ref (makeId "ReIndex")
+
+  op counter : State.Ref Nat
+  def counter = Ref 0
+
+  op newIndex : () -> Nat
+  def newIndex () =
+    (counter := !counter + 1; !counter)
+
+  op Oscar.reindex : Oscar.Spec -> Env Oscar.Spec
+  def Oscar.reindex oscSpec =
+    let def handler id proc except =
+      case except of
+        | SpecError (pos, msg) -> {
+             print ("Oscar.reindex exception: procId=" ^ (Id.show id) ^ "\n");
+             print (msg ^ "\n");
+             % print (ppFormat (pp proc));
+             % print "\n";
+             raise (SpecError (pos, "except : " ^ msg))
+           }
+        | _ -> raise except
+    in {
+      procedures <- ProcMapEnv.fold (fn procMap -> fn procId -> fn proc -> {
+          print ("Oscar.reindex: procId=" ^ (Id.show procId) ^ "\n");
+          reindexedProc <- catch (Proc.reindex proc) (handler procId proc);
+          return (ProcMap.update (procMap,procId,reindexedProc))
+         }) ProcMap.empty (procedures oscSpec);
+      return {
+        modeSpec = modeSpec oscSpec,
+        procedures = procedures
+      }
+  }
+
+  op Proc.reindex : Procedure -> Env Procedure
+  def Proc.reindex proc = return (proc withBSpec (BSpec.reindex (bSpec proc)))
 
   op makeNewVertexList : List Vrtx.Vertex -> Nat -> (List Vrtx.Vertex) * List (Vrtx.Vertex * Vrtx.Vertex)
   def makeNewVertexList vertices n =
     case vertices of
       | [] -> ([],[])
       | vrtx::rest ->
+          let id = newIndex () in
           let (newList,newMap) = makeNewVertexList rest (n + 1) in
-          (cons (Nat (n,!newQid),newList), cons ((vrtx,Nat (n,!newQid)),newMap))
+          (cons (Nat (id,!newQid),newList), cons ((vrtx,Nat (id,!newQid)),newMap))
   
   op makeNewEdgeList : List Edg.Edge -> Nat -> (List Edg.Edge) * List (Edg.Edge * Edg.Edge)
   def makeNewEdgeList edges n =
     case edges of
       | [] -> ([],[])
       | edge::rest ->
+          let id = newIndex () in
           let (newList,newMap) = makeNewEdgeList rest (n + 1) in
-          (cons (Nat (n,!newQid),newList), cons ((edge,Nat (n,!newQid)),newMap))
+          (cons (Nat (id,!newQid),newList), cons ((edge,Nat (id,!newQid)),newMap))
   
-  op reindexBSpec : BSpec -> Id.Id -> BSpec 
-  def reindexBSpec bSpec id =
-    let _ = newQid := id in
+  op BSpec.reindex : BSpec -> BSpec 
+  def BSpec.reindex bSpec =
+    % let _ = newQid := id in
     let (newVertexList,vertexAssoc) = makeNewVertexList (vertices (shape (system bSpec))) 0 in
     let (newEdgeList,edgeAssoc) = makeNewEdgeList (edges (shape (system bSpec))) 0 in
     let newSourceMap = reindexMap (source (shape (system bSpec))) edgeAssoc vertexAssoc in

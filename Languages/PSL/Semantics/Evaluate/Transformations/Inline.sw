@@ -53,12 +53,14 @@ Inline qualifying spec
   import ../Specs/MetaSlang/Legacy
   import ../Specs/Subst/AsOpInfo
   import ../../../CodeGen/Convert % This is for FinitePolyMap.fold .. def below doesn't work
-  import translate /Library/Structures/Data/Maps/Finite/Polymorphic/AsAssocList by
-     {Map._ +-> FinitePolyMap._}
+  % import translate /Library/Structures/Data/Maps/Finite/Polymorphic/AsAssocList by
+     % {Map._ +-> FinitePolyMap._}
 
   % Doesn't belong here. Really need to fix up this curry / uncurry mess.
   % def FinitePolyMap.fold f unit map =
     % foldM (fn x -> fn (dom,cod) -> f x dom cod) unit map
+
+  op BSpec.reindex : BSpec -> BSpec
 
   op remove : ProcMap.Map * Id.Id -> ProcMap.Map
 
@@ -173,10 +175,11 @@ copies fills in the calling arguments.
                 case evalPartial (procs, procInfo.procId) of
                   | None -> raise (SpecError (noPos, "inlineEdge: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
-              newCoAlg <- return (succCoalgebra (bSpec proc));
+              reindexed <- return (reindex (bSpec proc));
+              newCoAlg <- return (succCoalgebra reindexed);
               print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
-              fold (inlineEdge procs src newDst (bSpec proc) newCoAlg (returnInfo proc) newLHSRef)
-                newBSpec (newCoAlg (initial (bSpec proc)))
+              fold (inlineEdge procs src newDst reindexed newCoAlg (returnInfo proc) newLHSRef)
+                newBSpec (newCoAlg (initial reindexed))
             }
         | (Some procInfo, Some returnRef, Some lhsRef) -> {
               newLHSRef <-
@@ -187,10 +190,11 @@ copies fills in the calling arguments.
                 case evalPartial (procs, procInfo.procId) of
                   | None -> raise (SpecError (noPos, "inlineEdge: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
-              newCoAlg <- return (succCoalgebra (bSpec proc));
+              reindexed <- return (reindex (bSpec proc));
+              newCoAlg <- return (succCoalgebra reindexed);
               print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
-              EdgSetEnv.fold (inlineEdge procs src newDst (bSpec proc) newCoAlg (returnInfo proc) newLHSRef)
-                  newBSpec (newCoAlg (initial (bSpec proc)))
+              EdgSetEnv.fold (inlineEdge procs src newDst reindexed newCoAlg (returnInfo proc) newLHSRef)
+                  newBSpec (newCoAlg (initial reindexed))
             }
         | _ -> fail ("inlineEdge: called=" ^ (System.toString called)
                                            ^ "\noptReturnRef=" ^ (System.toString optReturnRef)

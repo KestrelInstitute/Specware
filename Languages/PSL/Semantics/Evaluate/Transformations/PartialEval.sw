@@ -6,8 +6,6 @@ PE qualifying spec
   import /Languages/PSL/Semantics/Evaluate/Specs/Compiler
   import Simplify
 
-  op Reindex.reindexBSpec : BSpec -> Id.Id -> BSpec
-
   (* We prematurely refine transition specs here. *)
   import /Languages/PSL/Semantics/Evaluate/Specs/TransSpec/Legacy
 
@@ -178,6 +176,12 @@ PE qualifying spec
       case callArg of
         | (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) -> return (argTerm,returnTerm,storeTerm)
         | _ -> raise (SpecError (noPos, "Argument is not record"));
+    callReturnOpRef <-
+      case returnTerm of
+        | Fun (Op (id,fxty),srt,pos) -> return (Some (removePrime id))
+        | Var _ -> return None
+        | Record ([],_) -> return None
+        | _ -> raise (SpecError (noPos, "Return term is invalid: " ^ (System.toString returnTerm)));
     argList <-
       case argTerm of
         | Record (fields,_) -> return (map (fn (x,y) -> y) fields)
@@ -249,7 +253,6 @@ PE qualifying spec
          print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
        (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
        newProcId <- makeNewProcId procId extendedSubst;
-       % newBSpec <- return (reindexBSpec newBSpec newProcId);
        newBSpec <- removeNilTransitions newBSpec;
        if traceRewriting > 0 then
          print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
@@ -305,9 +308,14 @@ PE qualifying spec
               case newFinal of
                 | Nat _ -> return []
                 | Pair (vrtx,subst) -> return subst;
+
+            (* It may be that one of the global variables in scope is also the variable receiving the return value. We do
+             not want to propagte the global variable value .. and we assume no name clashes .. with local variables and those
+             in the enclosing scope *)
             (postSubst,bindingTerm) <-
               (foldM (fn (subst,term) -> fn varRef ->
-                projectSub postcondition subst term varRef) ([], MSlang.mkTrue noPos) (varsInScope procInfo));
+                projectSub postcondition subst term varRef) ([], MSlang.mkTrue noPos)
+                        (filter (fn ref -> ~(Some ref = callReturnOpRef)) (varsInScope procInfo)));
 
               (* We want to retrieve the return information for the new
               procedure.  So we look up the procedure info and there
@@ -354,7 +362,9 @@ PE qualifying spec
        newModeSpec <- addOp (modeSpec newOscSpec) newProcOp noPos;
        paramTerm <- mkTuple (residArgs,noPos);
        residCallStoreTerm <- mkTuple (residStateArgs,noPos);
-       residRtnStoreTerm <- mkTuple (map (fn | (Fun (Op (qid,fxty),srt,pos)) -> Fun (Op (makePrimedId qid,fxty),srt,pos) | x -> x) residStateArgs,noPos);
+       residRtnStoreTerm <-
+          mkTuple (map (fn | (Fun (Op (qid,fxty),srt,pos)) -> Fun (Op (makePrimedId qid,fxty),srt,pos)
+                           | x -> x) residStateArgs,noPos);
        residStoreTerm <- mkTuple ([residCallStoreTerm,residRtnStoreTerm],noPos);
        totalTuple <- mkTuple ([paramTerm,newReturnTerm,residStoreTerm],noPos);
        newProcRef <- mkFun (Op (newProcId,Nonfix), newProcType, noPos);
