@@ -1247,11 +1247,12 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
-  (:tuple "morph" "{" (1 (:repeat :SC-SPEC-MORPH-ELEM nil))"}" ":" (2 :SC-TERM) "->" (3 :SC-TERM))
+  (:tuple "morphism" (2 :SC-TERM) "->" (3 :SC-TERM)
+	  "{" (1 (:repeat :SC-SPEC-MORPH-ELEM ","))"}" )
   (make-sc-spec-morph 2 3 (list . 1) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-SPEC-MORPH-ELEM ()
-  (:tuple (1 :QUALIFIABLE-NAME) "|->" (2 :EXPRESSION))
+  (:tuple (1 :QUALIFIABLE-NAME) "+->" (2 :EXPRESSION))
   (make-sc-spec-morph-elem 1 2 ':left-lc ':right-lc))
 
 ;;; ========================================================================

@@ -104,7 +104,7 @@ PrettyPrint qualifying spec {
     if n <= 0 then
       text
     else
-      Cons ((0, []), blankLines (Nat.toNat ((Integer.fromNat n) - (Integer.fromNat 1)), text))
+      Cons ((0, []), blankLines (n - 1, text))
 
   def addBreak (indent : Nat, newlines : Nat, text : Text) : Text =
       Cons ((indent, []), blankLines (newlines, text))
@@ -211,7 +211,7 @@ PrettyPrint qualifying spec {
   def blanks (n : Nat) : String = 
     case n of
       | 0 -> ""
-      | _ -> String.concat (" ", blanks (Nat.toNat ((Integer.fromNat n) - (Integer.fromNat 1))))
+      | _ -> String.concat (" ", blanks (n - 1))
     
 
   def newlineString () : String = Char.toString (Char.chr 10)

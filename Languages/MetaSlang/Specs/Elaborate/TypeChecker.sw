@@ -886,8 +886,8 @@ spec {
        let pos        = termAnn   term in
        let termString = printTerm term in
        let tsLength   = length termString in
-       let fillerA    = blankString ((Integer.fromNat 10) - (Integer.fromNat tsLength)) in  % ### why the qualifier? why the coercion?
-       let fillerB    = blankString ((Integer.fromNat tsLength) - (Integer.fromNat 10)) in
+       let fillerA    = blankString (10 - tsLength) in  % ### why the qualifier? why the coercion?
+       let fillerB    = blankString (tsLength - 10) in
        error (env, 
              newLines [" Could not match sort constraint", 
                        fillerA ^ termString ^ " of sort " ^ printSort givenSort, 
@@ -1262,14 +1262,14 @@ spec {
     else error (env, msg, pos)
 
   def blankString (n:Integer) =
-   if n <= (Integer.fromNat 0) then 
+   if n <= 0 then 
      "" 
    else
    let oneHundredSpaces = "                                                                                                    " in
-   if n < (Integer.fromNat 100) then
-     substring (oneHundredSpaces, 0, (Nat.toNat n))
+   if n < 100 then
+     substring (oneHundredSpaces, 0, n)
    else
-     oneHundredSpaces ^ blankString (n - (Integer.fromNat 100))
+     oneHundredSpaces ^ blankString (n - 100)
 
   def newLines lines = 
    case lines of

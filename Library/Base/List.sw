@@ -114,10 +114,10 @@ List qualifying spec
   def nth(ls,i) = 
     case ls of
       hd::tl ->
-        if (i = (fromNat 0)) then
+        if i = 0 then
           hd
         else
-          nth (tl, toNat (i - (fromNat 1)))
+          nth (tl, i - 1)
 
   def nthTail(ls,i) = 
     case ls of
@@ -126,7 +126,7 @@ List qualifying spec
           if i = 0 then
             tl
           else
-            nthTail (tl, toNat (i - (fromNat 1)))
+            nthTail (tl, i - 1)
 
   (* May result in non-exhaustive match *)  
 
@@ -155,12 +155,12 @@ List qualifying spec
 
    def tabulate (n,f) = 
      let def tabulateRec(m:Integer,tl) = 
-        if m < (fromNat 0) then
+        if m < 0 then
           tl
         else
-          tabulateRec (m - (fromNat 1),cons (f (toNat m) ,tl))
+          tabulateRec (m - 1,cons (f m,tl))
      in
-       tabulateRec (n - (fromNat 1),[])
+       tabulateRec (n - 1,[])
 
    def compare comp (l1,l2) = 
      case (l1,l2) of

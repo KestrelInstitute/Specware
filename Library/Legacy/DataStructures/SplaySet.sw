@@ -132,7 +132,7 @@ SplaySet qualifying spec {
                 else
                   SET {
                       root = Ref (join(left,right)),
-                      nobj = toNat ((Nat.fromNat nobj) - (Nat.fromNat 1)),
+                      nobj = nobj - 1,
                       comp = comp
                     }
             | (_,r) -> (root := r; set))
@@ -142,7 +142,7 @@ SplaySet qualifying spec {
     case set of
       | EMPTY _ -> false
       | SET {root,nobj,comp} -> 
-          (case splay (compf (comp, key), State.! root) of
+          (case splay (compf (comp, key), ! root) of
             | (Equal, r) -> (root := r; true)
             | (_, r) -> (root := r; false))
 

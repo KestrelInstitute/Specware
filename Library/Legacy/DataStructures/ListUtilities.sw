@@ -110,7 +110,7 @@ ListUtilities qualifying spec {
     else
       case es of
         | []  -> []
-        | e::es -> Cons (e, take (toNat ((Integer.fromNat n) - (Integer.fromNat 1)), es))
+        | e::es -> Cons (e, take (n -  1, es))
 
   def drop (n, es) =
     if n = 0 then
@@ -118,14 +118,14 @@ ListUtilities qualifying spec {
     else
       case es of
         | [] -> []
-        | e::es -> drop (toNat ((Integer.fromNat n) - (Integer.fromNat 1)), es)
+        | e::es -> drop (n - 1, es)
 
   def deleteNth(n,ls) = 
     if n = 0 then
       tl ls
     else 
       Cons (hd ls,
-            deleteNth (toNat ((Integer.fromNat n) - (Integer.fromNat 1)), tl ls))
+            deleteNth (n - 1, tl ls))
 
   def flatMap f =
     let def loop l =

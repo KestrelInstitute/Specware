@@ -745,22 +745,22 @@ AnnSpecPrinter qualifying spec {
         of [] -> string ""
          | _ -> AnnTermPrinter.ppList string (pp.LP,pp.Comma,pp.RP) tyVars)
 
-  def sortIndex     = fromNat 0
-  def opIndex       = fromNat 1
-  def defIndex      = fromNat 2
-  def propertyIndex = fromNat 3
+  def sortIndex     = 0
+  def opIndex       = 1
+  def defIndex      = 2
+  def propertyIndex = 3
 
   def ppProperty context (index,(pt,name,tyVars,term)) = 
     let pp : ATermPrinter = context.pp in
     let button1 = if markSubterm?(context) 
                    then PrettyPrint.buttonPretty
-                          (~(IntegerSet.member (context.indicesToDisable, (fromNat index))),
-                           (fromNat index),string " ",false) 
+                          (~(IntegerSet.member (context.indicesToDisable, index)),
+			   index,string " ",false) 
                    else string "" in
     let button2 = if markSubterm?(context) 
                    then PrettyPrint.buttonPretty
-                          (IntegerSet.member(context.sosIndicesToEnable, (fromNat index)),
-                           (fromNat index),string " ",true) 
+                          (IntegerSet.member(context.sosIndicesToEnable, index),
+			   index,string " ",true) 
                    else string "" in
 
     (1,blockFill(0,
@@ -791,7 +791,7 @@ AnnSpecPrinter qualifying spec {
          pp.ppOp id
        else
          pp.ppOpId (Qualified(qualifier,id))) in
-     let index1 = Integer.~((fromNat index) + (fromNat 1)) in
+     let index1 = Integer.~(index + 1) in
      let button1 = if markSubterm?(context) & some? optDefn
                     then PrettyPrint.buttonPretty
                            (~(IntegerSet.member(context.indicesToDisable,index1)),

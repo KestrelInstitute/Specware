@@ -71,7 +71,7 @@ SpecCalc qualifying spec {
             %% case optName of None -> ppNil | Some name -> ppString name,
             ppNewline,
             ppString "  ",
-            ppNest (Integer.fromNat 2) (ppSpecElems specElems),
+            ppNest 2 (ppSpecElems specElems),
             ppNewline,
             ppString "}"
           ]
@@ -100,11 +100,11 @@ SpecCalc qualifying spec {
             ppString "let {",
             ppNewline,
             ppString "  ",
-            ppNest (Integer.fromNat 2) (ppDecls decls),
+            ppNest 2 (ppDecls decls),
             ppNewline,
             ppString "} in",
             ppNewline,
-            ppNest (Integer.fromNat 2) (ppTerm term)
+            ppNest 2 (ppTerm term)
           ]
       | Where (decls, term) ->
           ppConcat [
@@ -114,7 +114,7 @@ SpecCalc qualifying spec {
             ppString "where {",
             ppNewline,
             ppString "    ",
-            ppNest (Integer.fromNat 4) (ppDecls decls),
+            ppNest 4 (ppDecls decls),
             ppNewline,
             ppString "}"
           ]
@@ -123,7 +123,7 @@ SpecCalc qualifying spec {
             ppString "diag {",    % with apologies to stephen
             ppNewline,
             ppString "  ",
-            ppNest (Integer.fromNat 2) (ppSep ppNewline (map ppDiagElem elems)),
+            ppNest 2 (ppSep ppNewline (map ppDiagElem elems)),
             ppNewline,
             ppString "end"
           ]

@@ -113,7 +113,7 @@ SplayMap qualifying spec {
               })
            }
       | MAP {comp,root,nobj} ->
-         (case splay (fn (k,_) -> comp(k,key), State.! root) of
+         (case splay (fn (k,_) -> comp(k,key), ! root) of
            | (Equal,SplayObj {value,left,right}) -> 
               MAP {comp = comp,
                   nobj = nobj,
@@ -134,7 +134,7 @@ SplayMap qualifying spec {
                               right = SplayObj{value = value,left = SplayNil,right = right}
                            })
                  }
-          | (_,SplayNil) -> System.fail "SplayMap.insert SplayNil")
+          | (_,SplayNil) -> fail "SplayMap.insert SplayNil")
 
 
   def findR(sTree,key,comp) =
@@ -153,30 +153,28 @@ SplayMap qualifying spec {
       | (EMPTY _) -> None
       | MAP{comp,root,nobj} ->
          %let 
-         findR(State.! root,key,comp)
+         findR(! root,key,comp)
 
   %% The following is the standard code for find to make sure things are balanced, but it does a lot of
   %% consing and is slower in most cases
-  %        case splay (fn (k,_) -> comp(k,key), State.! root)
+  %        case splay (fn (k,_) -> comp(k,key), ! root)
   %          of (Equal, r as SplayObj{value = value as (_,e),left,right}) -> 
-  %             (root State.:= r; Some(e))
-  %           | (_, r) -> (root State.:= r; None)
+  %             (root := r; Some(e))
+  %           | (_, r) -> (root := r; None)
 
   def remove (map,key) = 
     case map of
       | EMPTY _ -> map
       | MAP {comp,root,nobj} -> 
-          (case splay (fn (k,_) -> comp(k,key), State.! root) of
+          (case splay (fn (k,_) -> comp(k,key), ! root) of
             | (Equal, SplayObj{value = value as (_,e), left, right}) -> 
               if nobj = 1 then
                   EMPTY comp
                 else
-                  MAP {
-                     comp = comp,
-                     root = Ref(join(left,right)),
-                     nobj = toNat ((Integer.fromNat nobj) - (Integer.fromNat 1))
-                   }
-            | (_,r) -> (root State.:= r; map))
+                  MAP { comp = comp,
+		        root = Ref(join(left,right)),
+		        nobj = nobj - 1 }
+            | (_,r) -> (root := r; map))
           
   def numItems map = 
     case map of
@@ -195,18 +193,18 @@ SplayMap qualifying spec {
   def listItems map = 
     case map of
       | EMPTY _ -> []
-      | MAP {root,nobj,comp} -> listItemsf(fn(_,v) -> v,State.! root,[])
+      | MAP {root,nobj,comp} -> listItemsf(fn(_,v) -> v,! root,[])
 
 
   def listItemsi map =
     case map of
       | EMPTY _ -> []
-      | MAP {root,nobj,comp} -> listItemsf(fn v -> v,State.! root,[])
+      | MAP {root,nobj,comp} -> listItemsf(fn v -> v,! root,[])
 
   def listDomain map = 
     case map of
       | EMPTY _ -> []
-      | MAP {root,nobj,comp} -> listItemsf(fn(k,_) -> k,State.! root,[])
+      | MAP {root,nobj,comp} -> listItemsf(fn(k,_) -> k,! root,[])
 
 
   def inDomain(map,key) = 
@@ -223,7 +221,7 @@ SplayMap qualifying spec {
   def appi af map = 
     case map of
       | EMPTY _ -> ()
-      | MAP {root,nobj,comp} -> applyi af (State.! root)
+      | MAP {root,nobj,comp} -> applyi af (! root)
 
   def apply af sp =
     case sp of
@@ -234,7 +232,7 @@ SplayMap qualifying spec {
   def app af map = 
     case map of
       | EMPTY _ -> ()
-      | MAP {root,nobj,comp} -> apply af (State.! root)
+      | MAP {root,nobj,comp} -> apply af (! root)
 
   def api af sp = 
     case sp of
@@ -248,7 +246,7 @@ SplayMap qualifying spec {
     case map of
       | EMPTY comp -> EMPTY comp
       | MAP {nobj,root,comp} -> 
-             MAP{root = Ref(api af (State.! root)),nobj = nobj,comp = comp}
+             MAP{root = Ref(api af (! root)),nobj = nobj,comp = comp}
 
   def ap af sp = 
     case sp of
@@ -262,7 +260,7 @@ SplayMap qualifying spec {
     case map of
       | EMPTY comp -> EMPTY comp
       | MAP {nobj,root,comp} -> 
-          MAP {root = Ref(ap af (State.! root)),nobj = nobj,comp = comp}
+          MAP {root = Ref(ap af (! root)),nobj = nobj,comp = comp}
 
   def foldriAp abf (sp,b) = 
     case sp of
@@ -273,7 +271,7 @@ SplayMap qualifying spec {
   def foldri abf b map = 
     case map of
       | EMPTY _ -> b
-      | MAP {root,comp,nobj} -> foldriAp abf (State.! root,b)
+      | MAP {root,comp,nobj} -> foldriAp abf (! root,b)
 
   def foldriDouble f ob omap = 
       foldri
@@ -291,7 +289,7 @@ SplayMap qualifying spec {
   def foldr abf b map = 
     case map of
       | EMPTY _ -> b
-      | MAP {root,comp,nobj} -> foldrAp abf (State.! root,b)
+      | MAP {root,comp,nobj} -> foldrAp abf (! root,b)
 
   def foldliAp abf (sp,b) = 
     case sp of
@@ -302,7 +300,7 @@ SplayMap qualifying spec {
   def foldli abf b map = 
     case map of
       | EMPTY _ -> b
-      | MAP {root,comp,nobj} -> foldliAp abf (State.! root,b)
+      | MAP {root,comp,nobj} -> foldliAp abf (! root,b)
 
   def foldlAp abf (sp,b) = 
     case sp of
@@ -313,7 +311,7 @@ SplayMap qualifying spec {
   def foldl abf b map = 
     case map of
       | EMPTY _ -> b
-      | MAP {root,comp,nobj} -> foldlAp abf (State.! root,b)
+      | MAP {root,comp,nobj} -> foldlAp abf (! root,b)
 
   def compose(map1,map2) = 
     foldri (fn (d,m,map3) ->
@@ -472,7 +470,7 @@ SplayMap qualifying spec {
                               | order -> order)
                        | order -> order)
           in
-             cmp (left (State.! s1, []), left (State.! s2, []))
+             cmp (left (! s1, []), left (! s2, []))
 
   %% Conversion to and from lists
 

@@ -43,10 +43,10 @@ WadlerLindig qualifying spec
   op ppLayout : SDoc -> String
   def ppLayout doc =
     let def replicate (cnt:Integer) str =
-      if cnt = (fromNat 0) then
+      if cnt = 0 then
         [""]
       else
-        Cons (str, replicate (cnt - (fromNat 1)) str) in
+        Cons (str, replicate (cnt - 1) str) in
     let def makeStringList doc =
       case doc of
           SNil -> [""]
@@ -70,13 +70,13 @@ WadlerLindig qualifying spec
   
   op ppFits : Integer -> List (Integer * Mode * Doc) -> Boolean
   def ppFits w x =
-    (w >= (fromNat 0)) &
+    (w >= 0) &
     (case x of
        | [] -> true
        | (i,m,DocNil) :: z -> ppFits w z
        | (i,m,DocCons(x,y)) :: z -> ppFits w (Cons((i,m,x),Cons((i,m,y),z)))
        | (i,m,DocNest(j,x)) :: z -> ppFits w (Cons ((i+j,m,x),z))
-       | (i,m,DocText(s)) :: z -> ppFits (w - (fromNat (length s))) z
+       | (i,m,DocText(s)) :: z -> ppFits (w - (length s)) z
        | (i,Flat,DocBreak s) :: z -> false % ppFits (w - (fromNat (length s))) z
        | (i,Break,DocBreak _) :: z -> true % impossible 
        | (i,m,DocGroup(x)) :: z -> ppFits w (Cons((i,Flat,x),z)))
@@ -92,9 +92,9 @@ WadlerLindig qualifying spec
       | (i,m,DocNil) :: z -> ppBest w k z
       | (i,m,DocCons(x,y)) :: z -> ppBest w k (Cons((i,m,x),Cons((i,m,y),z)))
       | (i,m,DocNest(j,x)) :: z -> ppBest w k (Cons((i+j,m,x),z))
-      | (i,m,DocText s) :: z -> SText(s,ppBest w (k + (fromNat (length s))) z)
+      | (i,m,DocText s) :: z -> SText(s,ppBest w (k + (length s)) z)
       | (i,Flat,DocBreak s) :: z ->
-          SText(s,ppBest w (k + (fromNat (length s))) z)
+          SText(s,ppBest w (k + (length s)) z)
       | (i,Break,DocBreak s) :: z -> SLine(i,ppBest w i z)
       | (i,m,DocGroup(x)) :: z ->
           if ppFits (w-k) (Cons((i,Flat,x),z)) then
@@ -123,14 +123,14 @@ WadlerLindig qualifying spec
   op ppFormatWidth : Integer -> Doc -> String
 
   def ppFormatWidth w doc =
-    ppLayout (ppBest w (fromNat 0) [((fromNat 0),Flat,DocGroup doc)])
-  def ppFormat doc = ppFormatWidth (fromNat 80) doc
+    ppLayout (ppBest w 0 [(0,Flat,DocGroup doc)])
+  def ppFormat doc = ppFormatWidth 80 doc
 
   op ppAppend : Doc -> Doc -> Doc
   def ppAppend p1 p2 = ppCons p1 p2
 
   op ppIndent : Doc -> Doc
-  def ppIndent p = ppNest (fromNat 2) p
+  def ppIndent p = ppNest 2 p
 
   op ppConcat : List Doc -> Doc
   def ppConcat l =

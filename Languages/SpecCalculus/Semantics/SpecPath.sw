@@ -10,7 +10,7 @@ SpecCalc qualifying spec {
   import Evaluate/URI/Utilities
 \end{spec}
 
-The \verb+SPECPATH+ environment variable holds a ":" separated list
+The \verb+SWPATH+ environment variable holds a ":" separated list
 of path names. Names may be relative or absolute. An absolute path
 begins with "/". A relative path does not. A relative path is taken
 with respect to the directory in which \Specware\ was inoked.
@@ -25,13 +25,13 @@ several full path names.
 It is silly to reconstruct the SpecPath every time. It should
 be done once at initialization and then added to the monadic state.
 
-This retrieves the value of the \verb+SPECPATH+ environment variable,
+This retrieves the value of the \verb+SWPATH+ environment variable,
 parses it and returns a list of canonical URIs. If the variable is
 not defined, then it returns the singleton list where the URI is the
 directory in which \Specware\ was invoked.
 
 Changed my mind. To be consistent, the \Specware\ starting directory is
-\emph{always} added to the \verb+SPECPATH+ as the last element.
+\emph{always} added to the \verb+SWPATH+ as the last element.
 
 This means that if the user adds the current path to the environment
 variable, then it will appear twice is the list of URI's we generate.
@@ -40,9 +40,15 @@ variable, then it will appear twice is the list of URI's we generate.
   op getSpecPath : Env (List URI)
   def getSpecPath =
     let strings =
-      case getEnv "SPECPATH" of
-        | None ->  [getCurrentDirectory (),"/"]
+      case getEnv "SWPATH" of
         | Some str -> (splitAtChar #: str) ++ [getCurrentDirectory ()]
+        | _ ->
+      case getEnv "SPECPATH" of
+        | Some str -> (splitAtChar #: str) ++ [getCurrentDirectory ()]
+        | _ ->
+      case getEnv "SPECWARE4" of
+	| Some str -> ([str,getCurrentDirectory (),"/"])
+	| _ -> [getCurrentDirectory (),"/"]
     in
       mapM pathToCanonicalURI strings
 }

@@ -239,8 +239,8 @@ spec {
  def checkErrors(env:LocalEnv) = 
    let errors = env.errors in
    let def comp((l,c),(l2,c2)) = 
-         case Nat.compare(l,l2) of
-           | Equal -> Nat.compare(c,c2)
+         case compare(l,l2) of
+           | Equal -> compare(c,c2)
            | c -> c
    in
    let def compare((m1,(l,r)),(m2,(l2,r2))) = 

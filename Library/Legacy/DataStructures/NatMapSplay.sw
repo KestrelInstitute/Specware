@@ -17,7 +17,7 @@ NatMap qualifying spec {
 
   op compose    : NatMap.Map Nat * NatMap.Map Nat -> NatMap.Map Nat
 
-  def empty      = SplayMap.empty Nat.compare
+  def empty      = SplayMap.empty compare
   def insert     = SplayMap.insert
   def find       = SplayMap.find
   def map        = SplayMap.map

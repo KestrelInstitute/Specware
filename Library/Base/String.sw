@@ -22,7 +22,7 @@ String qualifying spec {
 
   op map : (Char -> Char) -> String -> String
   op all : (Char -> Boolean) -> String -> Boolean
-  op sub : {(s,n) : String * Nat | (0 Nat.<= n) & (n Nat.< (length(s)))} -> Char
+  op sub : {(s,n) : String * Nat | (0 <= n) & (n < length(s))} -> Char
 
   %% Takes start and end; returns s[start...end-1].
   op substring : String * Nat * Nat -> String

@@ -272,7 +272,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
                   [mkLApply (mkLOp "car",[mkLTerm(sp,dpn,vars,term)]),
                    mkLIntern(id)])
         )
-   | (Nat n,srt,_) -> mkLInt (Integer.fromNat n)
+   | (Nat n,srt,_) -> mkLInt n
    | (String s,srt,_) -> mkLString s
    | (Bool b,srt,_) -> mkLBool b
    | (Char c,srt,_) -> mkLChar c
@@ -773,7 +773,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   def duplicateString(n,s) =
     case n
       of 0 -> ""
-       | _ -> s^duplicateString(Nat.toNat ((Integer.fromNat n) - (Integer.fromNat 1)),s)
+       | _ -> s^duplicateString(n - 1,s)
 
   def unCurryName(name,n) =
     name^duplicateString(n,"-1")
