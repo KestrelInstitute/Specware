@@ -1016,22 +1016,38 @@ TypeChecker qualifying spec
     case terms of
       | [term] -> Some term
       | _ ->
+        let def findUnqualified tms =
+	      case tms of
+		| [] -> None
+		| tm::rtms ->
+		  (case tm of
+		     | Fun (OneName  (     _,_), _, _) -> Some tm
+		     | Fun (TwoNames (id1, _,_), _, _) ->
+		       if id1 = UnQualified then
+			 Some tm
+		       else
+			 findUnqualified rtms
+		     | _ -> findUnqualified rtms)
+	in
         case unlinkSort srt of
 	  | MetaTyVar _ ->
 	    if env.firstPass? then 
 	      None
-	    else  
-	      (error (env,
-		      "Several matches for overloaded op " ^ id ^ " of " ^
-		      (printMaybeAndType srt) ^
-		      (foldl (fn (tm, str) -> str ^
-			      (case tm of
-				 | Fun (OneName  (     id2, _), _, _) -> " "^id2
-				 | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
-		             " : "
-			     terms),
-		      pos);
-	       None)
+	    else
+	      (case findUnqualified terms of
+		| Some term -> Some term
+		| None ->
+	          (error (env,
+			  "Several matches for overloaded op " ^ id ^ " of " ^
+			  (printMaybeAndType srt) ^
+			  (foldl (fn (tm, str) -> str ^
+				  (case tm of
+				     | Fun (OneName  (     id2, _), _, _) -> " "^id2
+				     | Fun (TwoNames (id1, id2, _), _, _) -> " "^id1^"."^id2))
+				 " : "
+				 terms),
+			  pos);
+		   None))
 	  | rsort ->
 	    let srtPos = sortAnn srt in
 	    (case filter (consistentSortOp? (env, withAnnS (rsort, srtPos),true)) terms of
@@ -1052,19 +1068,6 @@ TypeChecker qualifying spec
 		      | _ ->
 		        %% If there is a valid unqualified term then prefer that because you
 		        %% cannot explicitly qualify with unqualified!
-		        let def findUnqualified tms =
-			case tms of
-			  | [] -> None
-			  | tm::rtms ->
-			    (case tm of
-			       | Fun (OneName  (     _,_), _, _) -> Some tm
-			       | Fun (TwoNames (id1, _,_), _, _) ->
-			         if id1 = UnQualified then
-				   Some tm
-				 else
-				   findUnqualified rtms
-			       | _ -> findUnqualified rtms)
-			in
 			case findUnqualified remTerms of
 			  | Some term -> Some term
 			  | None ->
