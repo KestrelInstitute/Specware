@@ -6,6 +6,11 @@
  *
  *
  * $Log$
+ * Revision 1.23  2003/03/21 02:48:45  weilyn
+ * Attempting to add entire SpecCalculus grammar.  Added patterns,
+ * expressions, and sorts.  Updated existing rules to use new
+ * SpecCalculus rules.  Still needs a lot of work...
+ *
  * Revision 1.22  2003/03/19 21:33:13  gilham
  * Fixed LATEX_COMMENT to handle  comment blocks not ended with
  * "\begin{spec}".
@@ -109,7 +114,7 @@ starts
 {
     Token firstToken = LT(1);
 }
-    : (  (scDecl) => scToplevelDecls
+    : (  scToplevelDecls
        | scToplevelTerm
       )                     {Token lastToken = LT(0);
                              if (lastToken != null && lastToken.getText() != null) {
@@ -327,7 +332,6 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item proof]
       childItem=claimName               {if (childItem != null) children.add(childItem);}
       "in"
       childItem=scTerm[null]            {if (childItem != null) children.add(childItem);}
-      //ignore=fullURIPath
       (childItem=proverAssertions)?     {if (childItem != null) children.add(childItem);}
       (childItem=proverOptions)?        {if (childItem != null) children.add(childItem);}
                                         {proof = builder.createProof(name);
@@ -346,11 +350,10 @@ private fullURIPath returns[String path]
     path = null;
     String item = null;
 }
-    : (   (nonWordSymbol["/"]) => nonWordSymbol["/"] 
-                                  item=partialURIPath        {path = "/" + item;}
-        | item=partialURIPath                                {path = item;}
+    : ( SLASH item=partialURIPath        {path = "/" + item;}
+        | item=partialURIPath            {path = item;}
       )
-      (ref:INNER_UNIT_REF                                    {path += ref.getText();}
+      (ref:INNER_UNIT_REF                {path += ref.getText();}
       )?
     ;
 
@@ -359,9 +362,8 @@ private partialURIPath returns[String path]
     path = "";
     String item = null;
 }
-    : id:IDENTIFIER                                     {path = path + id.getText();} 
-      ( (nonWordSymbol["/"]) => nonWordSymbol["/"] 
-                                item=partialURIPath     {path = path + "/" + item;}
+    : id:IDENTIFIER                       {path = path + id.getText();} 
+      ( SLASH item=partialURIPath         {path = path + "/" + item;}
       |
       )
     ;
@@ -500,8 +502,9 @@ private name returns[String name]
 {
     name = null;
 }
-    : name=idName
+    : star:STAR                     {name=star.getText();}
     | sym:NON_WORD_SYMBOL           {name=sym.getText();}
+    | name=idName
     | translate:"translate"         {name="translate";}
     | colimit:"colimit"             {name="colimit";}
     | diagram:"diagram"             {name="diagram";}
@@ -541,9 +544,6 @@ private importDeclaration returns[ElementFactory.Item importItem]
                                 ParserUtil.setBounds(builder, importItem, begin, LT(0));
                              }
                             }
-      /*strURI=fullURIPath    {importItem = builder.createImport(strURI);
-                             ParserUtil.setBounds(builder, importItem, begin, LT(0));
-                            }*/
     ;
 
 //---------------------------------------------------------------------------
@@ -556,9 +556,8 @@ private sortDeclarationOrDefinition returns[ElementFactory.Item sort]
 }
     : begin:"sort" 
       sortName=qualifiableSortNames
-      ((formalSortParameters) => 
-            (params=formalSortParameters) (equals sortDef=sort)?
-          | (equals sortDef=sort)?
+      (params=formalSortParameters (equals sortDef=sort)?
+       | (equals sortDef=sort)?
       )
                            {sort = builder.createSort(sortName, params);
                              ParserUtil.setBounds(builder, sort, begin, LT(0));
@@ -709,102 +708,117 @@ private sort returns[String sort]
     String text = null;
     sort = "";
 }
-    : sortSum
-    | (sortArrow) => sortArrow
-    | slackSort
-    ;
-
-private sortSum
-    : (VERTICALBAR name (slackSort)?
+    : (text=qualifiableRef
+                           {sort = sort + text;}
+       | text=literal
+                           {sort = sort + text;}
+       | text=specialSymbol
+                           {sort = sort + text;}
+       | text=expressionKeyword
+                           {sort = sort + text;}
       )+
     ;
 
-private sortArrow
-    : arrowSource ARROW sort
-    ;
+/* THIS SORT STUFF IS TOO AMBIGUOUS =(  Syntactic predicates are too costly for performance.
 
-private slackSort
-    : tightSort (STAR tightSort)*
-    ;
+                    : sortSum
+                   | (sortArrow) => sortArrow
+                    | slackSort
+                    ;
 
-private arrowSource
-    : sortSum
-    | slackSort
-    ;
+                private sortSum
+                    : (VERTICALBAR name (slackSort)?
+                      )+
+                    ;
 
-private tightSort
-    : sortInstantiation
-    | closedSort
-    ;
+                private sortArrow
+                    : arrowSource ARROW sort
+                    ;
 
-private sortInstantiation
-    : qualifiableSortName actualSortParameters
-    ;
+                private slackSort
+                    : tightSort (STAR tightSort)*
+                    ;
 
-private actualSortParameters
-    : closedSort
-    | properSortList
-    ;
+                private arrowSource
+                    : sortSum
+                    | slackSort
+                    ;
 
-private closedSort
-    : basicClosedSort
-    | sortQuotient
-    ;
+                private tightSort
+                    : sortInstantiation
+                    | closedSort
+                    ;
 
-private properSortList
-    : LPAREN sort
-      (COMMA sort
-      )+
-      RPAREN
-    ;
+                private sortInstantiation
+                    : qualifiableSortName actualSortParameters
+                    ;
 
-private basicClosedSort
-    : sortRef
-    | parenthesizedSort
-    | sortRecord
-    | sortRestriction
-    | sortComprehension
-    ;
+                private actualSortParameters
+                    : closedSort
+                    | properSortList
+                    ;
 
-private sortRef
-    : qualifiableSortName
-    ;
+                private closedSort
+                    : basicClosedSort
+                    | sortQuotient
+                    ;
 
-private sortRecord
-    : unitProductSort
-    | LBRACE fieldSortList RBRACE
-    ;
+                private properSortList
+                    : LPAREN sort
+                      (COMMA sort
+                      )+
+                      RPAREN
+                    ;
 
-private unitProductSort
-    : LBRACE RBRACE
-    | LPAREN RPAREN
-    ;
+                private basicClosedSort
+                    : sortRef
+                    | parenthesizedSort
+                    | sortRecord
+                    | sortRestriction
+                    | sortComprehension
+                    ;
 
-private fieldSortList
-    : fieldSort
-      (COMMA fieldSort
-      )*
-    ;
+                private sortRef
+                    : qualifiableSortName
+                    ;
 
-private fieldSort
-    : name COLON sort
-    ;
+                private sortRecord
+                    : unitProductSort
+                    | LBRACE fieldSortList RBRACE
+                    ;
 
-private sortRestriction
-    : LPAREN slackSort VERTICALBAR expression RPAREN
-    ;
+                private unitProductSort
+                    : LBRACE RBRACE
+                    | LPAREN RPAREN
+                    ;
 
-private sortComprehension
-    : LBRACE annotatedPattern VERTICALBAR expression RBRACE
-    ;
+                private fieldSortList
+                    : fieldSort
+                      (COMMA fieldSort
+                      )*
+                    ;
 
-private sortQuotient
-    : basicClosedSort (closedSort)* SLASH tightExpression
-    ;
+                private fieldSort
+                    : name COLON sort
+                    ;
 
-private parenthesizedSort
-    : LPAREN sort RPAREN
-    ;
+                private sortRestriction
+                    : LPAREN slackSort VERTICALBAR expression RPAREN
+                    ;
+
+                private sortComprehension
+                    : LBRACE annotatedPattern VERTICALBAR expression RBRACE
+                    ;
+
+                private sortQuotient
+                    : basicClosedSort (closedSort)* SLASH tightExpression
+                    ;
+
+                private parenthesizedSort
+                    : LPAREN sort RPAREN
+                    ;
+
+END OF AMBIGUOUS SORT STUFF*/
 
 //---------------------------------------------------------------------------
 private definition returns[ElementFactory.Item item]
@@ -898,12 +912,12 @@ private basicPattern
     ;
 
 private tightPattern
-    : (embedPattern) => embedPattern
-//this is the (COLONCOLON tightPattern)? part of the closedPattern production    | consPattern
+    : //for performance reasons, made this part of the closedPattern production... (embedPattern) => embedPattern
+//this is the (COLONCOLON tightPattern)? part of the closedPattern production...   | consPattern
     | aliasedPattern
     | quotientPattern
-//the rule for relaxPattern wasn't in the official grammar    | relaxPattern
-    | closedPattern (COLONCOLON tightPattern)?
+//the rule for relaxPattern wasn't in the official grammar...    | relaxPattern
+    | (name)? closedPattern (COLONCOLON tightPattern)?
     ;
 
 private aliasedPattern
@@ -980,7 +994,7 @@ private fieldPattern
     ;
 
 private quotientPattern
-    : "quotient" closedExpression tightPattern
+    : "quotient" expression tightPattern
     ;
 
 // expressions ---------------------------------------------------------------------------
@@ -989,294 +1003,304 @@ private expression returns[String expr]
     expr = "";
     String item = null;
 }
-    : lambdaForm
-    | caseExpression
-    | letExpression
-    | ifExpression
-    | quantification
-    | tightExpression
+    : (  item=qualifiableRef    {expr = expr + item + " ";}
+         | item=literal           {expr = expr + item + " ";}
+         | item=specialSymbol     {expr = expr + item + " ";}
+         | item=expressionKeyword {expr = expr + item + " ";}
+      )+
     ;
 
-private lambdaForm
-    : "fn" match
-    ;
+/* EXPRESSIONS ARE TOO AMBIGUOUS =(
 
-private caseExpression
-    : "case" expression "of" match
-    ;
+                : lambdaForm
+                    | caseExpression
+                    | letExpression
+                    | ifExpression
+                    | quantification
+                    | tightExpression
+                    ;
 
-private letExpression
-    : "let" reclessLetBinding "in" expression
-    | "let" recLetBindingSequence "in" expression
-    ;
+                private lambdaForm
+                    : "fn" match
+                    ;
 
-private ifExpression
-    : "if" expression "then" expression "else" expression
-    ;
+                private caseExpression
+                    : "case" expression "of" match
+                    ;
 
-private quantification
-    : quantifier localVariableList expression
-    ;
+                private letExpression
+                    : "let" reclessLetBinding "in" expression
+                    | "let" recLetBindingSequence "in" expression
+                    ;
 
-private tightExpression
-    : basicTightExpression
-    | annotatedExpression
-    ;
+                private ifExpression
+                    : "if" expression "then" expression "else" expression
+                    ;
 
-private basicTightExpression
-    : application
-    | closedExpression
-    ;
+                private quantification
+                    : quantifier localVariableList expression
+                    ;
 
-private match
-    : (VERTICALBAR)? auxMatch
-    ;
+                private tightExpression
+                    : basicTightExpression
+                    | annotatedExpression
+                    ;
 
-private auxMatch
-    : (nonBranchBranch VERTICALBAR) => nonBranchBranch VERTICALBAR auxMatch
-    | branch
-    ;
+                private basicTightExpression
+                    : application
+                    | closedExpression
+                    ;
 
-private nonBranchBranch
-    : pattern ARROW nonBranchExpression
-    ;
+                private match
+                    : (VERTICALBAR)? auxMatch
+                    ;
 
-private branch
-    : pattern ARROW expression
-    ;
+                private auxMatch
+                    : (nonBranchBranch VERTICALBAR) => nonBranchBranch VERTICALBAR auxMatch
+                    | branch
+                    ;
 
-private nonBranchExpression
-    : tightExpression
-    ;
+                private nonBranchBranch
+                    : pattern ARROW nonBranchExpression
+                    ;
 
-private reclessLetBinding
-    : pattern EQUALS expression
-    ;
+                private branch
+                    : pattern ARROW expression
+                    ;
 
-private recLetBindingSequence
-    : (recLetBinding)*
-    ;
+                private nonBranchExpression
+                    : tightExpression
+                    ;
 
-private recLetBinding
-    : "def" name (formalParameterSequence)? (COLON sort)? EQUALS expression
-    ;
+                private reclessLetBinding
+                    : pattern EQUALS expression
+                    ;
 
-private formalParameterSequence
-    : ((closedPattern)*)?
-    ;
+                private recLetBindingSequence
+                    : (recLetBinding)*
+                    ;
 
-private quantifier
-    : "fa"
-    | "ex"
-    ;
+                private recLetBinding
+                    : "def" name (formalParameterSequence)? (COLON sort)? EQUALS expression
+                    ;
 
-private localVariableList
-    : LPAREN
-      annotatedVariable
-      (COMMA annotatedVariable
-      )*
-      RPAREN
-    ;
+                private formalParameterSequence
+                    : ((closedPattern)*)?
+                    ;
 
-private annotatedVariable
-    : nonKeywordName
-      (COLON sort
-      )?
-    ;
+                private quantifier
+                    : "fa"
+                    | "ex"
+                    ;
 
-private closedExpression
-    : unqualifiedOpRef
-    | selectableExpression
-    ;
+                private localVariableList
+                    : LPAREN
+                      annotatedVariable
+                      (COMMA annotatedVariable
+                      )*
+                      RPAREN
+                    ;
 
-private application
-    : closedExpression
-      (closedExpression  // syntactic predicate to take care of cases like "case l of Nil -> true | _ -> false"
-      )*
-    ;
+                private annotatedVariable
+                    : nonKeywordName
+                      (COLON sort
+                      )?
+                    ;
 
-private annotatedExpression
-    : basicTightExpression (tightExpression)? COLON sort
-    ;
+                private closedExpression
+                    : unqualifiedOpRef
+                    | selectableExpression
+                    ;
 
-private unqualifiedOpRef
-    : name
-    ;
-      
-private selectableExpression
-    : basicSelectableExpression
-    | fieldSelection
-    ;
+                private application
+                    : closedExpression
+                      (closedExpression  // syntactic predicate to take care of cases like "case l of Nil -> true | _ -> false"
+                      )*
+                    ;
 
-// TODO: This could probably be optimized a lot by left-factoring
-private basicSelectableExpression
-    : twoNameExpression
-    | natFieldSelection
-    | literal
-    | (tupleDisplay) => tupleDisplay
-    | (sequentialExpression) => sequentialExpression
-    | parenthesizedExpression
-    | listDisplay
-    | structor
-    | recordDisplay
-    | monadExpression
-    ;
+                private annotatedExpression
+                    : basicTightExpression (tightExpression)? COLON sort
+                    ;
 
-private twoNameExpression
-    : name DOT name
-    ;
+                private unqualifiedOpRef
+                    : name
+                    ;
 
-private natFieldSelection
-    : unqualifiedOpRef DOT natSelector
-    ;
+                private selectableExpression
+                    : basicSelectableExpression
+                    | fieldSelection
+                    ;
 
-private natSelector
-    : NAT_LITERAL
-    ;
+                // TODO: This could probably be optimized a lot by left-factoring
+                private basicSelectableExpression
+                    : twoNameExpression
+                    | natFieldSelection
+                    | literal
+                    | (tupleDisplay) => tupleDisplay
+                    | (sequentialExpression) => sequentialExpression
+                    | parenthesizedExpression
+                    | listDisplay
+                    | structor
+                    | recordDisplay
+                    | monadExpression
+                    ;
 
-private fieldSelection
-    : basicSelectableExpression 
-      (selectableExpression
-      )*
-      DOT fieldSelector
-    ;
+                private twoNameExpression
+                    : name DOT name
+                    ;
 
-private fieldSelector
-    : NAT_LITERAL
-    | name
-    ;
+                private natFieldSelection
+                    : unqualifiedOpRef DOT natSelector
+                    ;
 
-private tupleDisplay
-    : LPAREN
-      (tupleDisplayBody
-      )?
-      RPAREN
-    ;
+                private natSelector
+                    : NAT_LITERAL
+                    ;
 
-private tupleDisplayBody
-    : expression COMMA expression
-      (COMMA
-       expression
-      )*
-    ;
+                private fieldSelection
+                    : basicSelectableExpression 
+                      (selectableExpression
+                      )*
+                      DOT fieldSelector
+                    ;
 
-private recordDisplay
-    : LBRACE
-      (recordDisplayBody
-      )?
-      RBRACE
-    ;
+                private fieldSelector
+                    : NAT_LITERAL
+                    | name
+                    ;
 
-private recordDisplayBody
-    : fieldFiller
-      (COMMA
-       fieldFiller
-      )*
-    ;
+                private tupleDisplay
+                    : LPAREN
+                      (tupleDisplayBody
+                      )?
+                      RPAREN
+                    ;
 
-private fieldFiller
-    : name EQUALS expression
-    ;
+                private tupleDisplayBody
+                    : expression COMMA expression
+                      (COMMA
+                       expression
+                      )*
+                    ;
 
-private sequentialExpression
-    : LPAREN
-      openSequentialExpression
-      RPAREN
-    ;
+                private recordDisplay
+                    : LBRACE
+                      (recordDisplayBody
+                      )?
+                      RBRACE
+                    ;
 
-private openSequentialExpression
-    : expression (SEMICOLON expression)+
-    ;
+                private recordDisplayBody
+                    : fieldFiller
+                      (COMMA
+                       fieldFiller
+                      )*
+                    ;
 
-/*private voidExpression
-    : expression
-    ;
-*/
-private listDisplay
-    : LBRACKET
-      (listDisplayBody
-      )?
-      RBRACKET
-    ;
+                private fieldFiller
+                    : name EQUALS expression
+                    ;
 
-private listDisplayBody
-    : (expression
-       (COMMA expression
-       )*
-      )?
-    ;
+                private sequentialExpression
+                    : LPAREN
+                      openSequentialExpression
+                      RPAREN
+                    ;
 
-private structor
-    : projector
-    | relaxator
-    | restrictor
-    | quotienter
-    | chooser
-    | embedder
-    | embeddingTest
-    ;
+                private openSequentialExpression
+                    : expression (SEMICOLON expression)+
+                    ;
 
-private projector
-    : "project" fieldSelector
-    ;
+                private voidExpression
+                    : expression
+                    ;
+                
+                private listDisplay
+                    : LBRACKET
+                      (listDisplayBody
+                      )?
+                      RBRACKET
+                    ;
 
-private relaxator
-    : "relax" closedExpression
-    ;
+                private listDisplayBody
+                    : (expression
+                       (COMMA expression
+                       )*
+                      )?
+                    ;
 
-private restrictor
-    : "restrict" closedExpression
-    ;
+                private structor
+                    : projector
+                    | relaxator
+                    | restrictor
+                    | quotienter
+                    | chooser
+                    | embedder
+                    | embeddingTest
+                    ;
 
-private quotienter
-    : "quotient" closedExpression
-    ;
+                private projector
+                    : "project" fieldSelector
+                    ;
 
-private chooser
-    : "choose" closedExpression
-    ;
+                private relaxator
+                    : "relax" closedExpression
+                    ;
 
-private embedder
-    : "embed" name
-    ;
+                private restrictor
+                    : "restrict" closedExpression
+                    ;
 
-private embeddingTest
-    : "embed?" name
-    ;
+                private quotienter
+                    : "quotient" closedExpression
+                    ;
 
-private parenthesizedExpression
-    : LPAREN
-      expression
-      RPAREN
-    ;
+                private chooser
+                    : "choose" closedExpression
+                    ;
 
-private monadExpression
-    : monadTermExpression
-    | monadBindingExpression
-    ;
+                private embedder
+                    : "embed" name
+                    ;
 
-private monadTermExpression
-    : LBRACE
-      expression SEMICOLON monadStmtList
-      RBRACE
-    ;
+                private embeddingTest
+                    : "embed?" name
+                    ;
 
-private monadStmtList
-    : expression
-    | expression SEMICOLON monadStmtList
-    | pattern BACKWARDSARROW expression SEMICOLON monadStmtList
-    ;
+                private parenthesizedExpression
+                    : LPAREN
+                      expression
+                      RPAREN
+                    ;
 
-private monadBindingExpression
-    : LBRACE
-      pattern BACKWARDSARROW expression SEMICOLON monadStmtList
-      RBRACE
-    ;
+                private monadExpression
+                    : monadTermExpression
+                    | monadBindingExpression
+                    ;
 
-private relaxPattern
-    : "relax" closedExpression tightPattern
-    ;
+                private monadTermExpression
+                    : LBRACE
+                      expression SEMICOLON monadStmtList
+                      RBRACE
+                    ;
 
+                private monadStmtList
+                    : expression
+                    | expression SEMICOLON monadStmtList
+                    | pattern BACKWARDSARROW expression SEMICOLON monadStmtList
+                    ;
+
+                private monadBindingExpression
+                    : LBRACE
+                      pattern BACKWARDSARROW expression SEMICOLON monadStmtList
+                      RBRACE
+                    ;
+
+                private relaxPattern
+                    : "relax" closedExpression tightPattern
+                    ;
+
+END OF EXPRESSION STUFF*/
 
 //---------------------------------------------------------------------------
 private specialSymbol returns[String text]
@@ -1291,7 +1315,13 @@ private specialSymbol returns[String text]
     | LBRACE                {text = "{";}
     | RBRACE                {text = "}";}
     | COMMA                 {text = ", ";}
-//    | SEMICOLON             {text = ";";}
+
+    | STAR                  {text = "*";}
+    | ARROW                 {text = "->";}
+    | COLON                 {text = ":";}
+    | VERTICALBAR           {text = "|";}
+    | COLONCOLON            {text = "::";}
+    | SEMICOLON             {text = ";";}
 //    | DOT                   {text = ".";}
     ;
 
@@ -1345,7 +1375,6 @@ private qualifiableRef returns[String name]
 {
     name = null;
 }
-    // 
     : name=qualifiableOpName
     ;
 
@@ -1700,8 +1729,8 @@ protected NON_WORD_MARK
     : '`' | '~' | '!' | '@' 
     | '$' | '^' | '&' | '-'
     | '+' | '<' | '>' | '?' 
-    | '*' | '=' /*| ':' | '|' */
-    | '\\' /*| '/' */
+    | '*' | '=' | ':' | '|'
+    | '\\' | '/'
     ;
 
 
