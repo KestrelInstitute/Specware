@@ -16,16 +16,16 @@ spec
   op conjoinAll : Expressions -> Expression
   def conjoinAll = the (fn conjoinAll ->
     (conjoinAll empty = TRUE) &&
-    (fa(e) conjoinAll (singleton e) = e) &&
-    (fa(e,eS) eS ~= empty =>
-       conjoinAll (e |> eS) = (e &&& conjoinAll eS)))
+    (fa(e) conjoinAll (single e) = e) &&
+    (fa(e,eS) nonEmpty? eS =>
+      conjoinAll (e |> eS) = (e &&& conjoinAll eS)))
 
   op disjoinAll : Expressions -> Expression
   def disjoinAll = the (fn disjoinAll ->
     (disjoinAll empty = FALSE) &&
-    (fa(e) disjoinAll (singleton e) = e) &&
-    (fa(e,eS) eS ~= empty =>
-       disjoinAll (e |> eS) = (e ||| disjoinAll eS)))
+    (fa(e) disjoinAll (single e) = e) &&
+    (fa(e,eS) nonEmpty? eS =>
+      disjoinAll (e |> eS) = (e ||| disjoinAll eS)))
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -37,8 +37,8 @@ spec
     | variable(v,_)         -> VAR v
     | embedding(t,c,None)   -> EMBED t c
     | embedding(t,c,Some p) -> EMBED t c @ patt2expr p
-    | record(fS,pS)         -> RECORD fS (map (patt2expr, pS))
-    | tuple pS              -> TUPLE (map (patt2expr, pS))
+    | record(fS,pS)         -> RECORD fS (map patt2expr pS)
+    | tuple pS              -> TUPLE (map patt2expr pS)
     | alias(_,_,p)          -> patt2expr p
 
 
@@ -51,23 +51,20 @@ spec
     | variable _            -> TRUE
     | embedding(_,_,None)   -> TRUE
     | embedding(_,_,Some p) -> pattAliasAssumptions p
-    | record(_,pS)          -> conjoinAll (map (pattAliasAssumptions, pS))
-    | tuple pS              -> conjoinAll (map (pattAliasAssumptions, pS))
+    | record(_,pS)          -> conjoinAll (map pattAliasAssumptions pS)
+    | tuple pS              -> conjoinAll (map pattAliasAssumptions pS)
     | alias(v,_,p)          -> VAR v == patt2expr p &&& pattAliasAssumptions p
 
   op pattAssumptions : Expression -> Pattern -> Expression
-  def pattAssumptions e p =
-    e == patt2expr p &&& pattAliasAssumptions p
+  def pattAssumptions e p = (e == patt2expr p &&& pattAliasAssumptions p)
 
   op pattAssumptionsQuantified : Expression -> Pattern -> Expression
-  def pattAssumptionsQuantified e p =
-    let (vS,tS) = pattVarsWithTypes p in
-    EXX vS tS (pattAssumptions e p)
+  def pattAssumptionsQuantified e p = let (vS,tS) = pattVarsWithTypes p in
+                                      EXX vS tS (pattAssumptions e p)
 
   op pattAssumptionsNegatedQuantified : Expression -> Pattern -> Expression
-  def pattAssumptionsNegatedQuantified e p =
-    let (vS,tS) = pattVarsWithTypes p in
-    FAA vS tS (~~ (pattAssumptions e p))
+  def pattAssumptionsNegatedQuantified e p = let (vS,tS) = pattVarsWithTypes p in
+                                             FAA vS tS (~~ (pattAssumptions e p))
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -76,22 +73,18 @@ spec
 
   op pattVarsWithTypesZipped : Pattern -> FSeq (Variable * Type)
   def pattVarsWithTypesZipped = fn
-    | variable(v,t)         -> singleton (v,t)
+    | variable(v,t)         -> single (v,t)
     | embedding(t,c,None)   -> empty
     | embedding(t,c,Some p) -> pattVarsWithTypesZipped p
-    | record(_,pS)          -> flatten (map (pattVarsWithTypesZipped, pS))
-    | tuple pS              -> flatten (map (pattVarsWithTypesZipped, pS))
+    | record(_,pS)          -> flatten (map pattVarsWithTypesZipped pS)
+    | tuple pS              -> flatten (map pattVarsWithTypesZipped pS)
     | alias(v,t,p)          -> (v,t) |> pattVarsWithTypesZipped p
 
-  op pattVarsWithTypes :
-     Pattern -> {(vS,tS) : Variables * Types | length vS = length tS}
-  def pattVarsWithTypes p =
-    unzip (pattVarsWithTypesZipped p)
+  op pattVarsWithTypes : Pattern -> ((Variables * Types) | equiLong)
+  def pattVarsWithTypes p = unzip (pattVarsWithTypesZipped p)
 
   op pattVars : Pattern -> FSet Variable
-  def pattVars p =
-    let (vS,_) = pattVarsWithTypes p in
-    toSet vS
+  def pattVars p = (let (vS,_) = pattVarsWithTypes p in toSet vS)
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -105,31 +98,28 @@ spec
 
   op exprFreeVars : Expression -> FSet Variable
   def exprFreeVars = fn
-    | nullary(variable v)     -> singleton v
+    | nullary(variable v)     -> single v
     | nullary _               -> empty
     | unary(_,e)              -> exprFreeVars e
     | binary(_,e1,e2)         -> exprFreeVars e1 \/ exprFreeVars e2
     | ifThenElse(e0,e1,e2)    -> exprFreeVars e0 \/
-                                 exprFreeVars e1 \/
-                                 exprFreeVars e2
-    | nary(_,eS)              -> unionAll (map (exprFreeVars, eS))
+                                 exprFreeVars e1 \/ exprFreeVars e2
+    | nary(_,eS)              -> \\// (map exprFreeVars eS)
     | binding(_,vS,_,e)       -> exprFreeVars e -- toSet vS
     | opInstance _            -> empty
     | embedder _              -> empty
     | casE(e,pS,eS)           -> let n = min (length pS, length eS) in
                                      % in well-typed expressions,
                                      % n = length pS = length eS
-                                 let vSets =
-                                     seqSuchThat (fn(i:Nat) ->
-                                       if i < n
-                                       then Some (exprFreeVars (eS!i)
-                                                   -- pattVars (pS!i))
-                                       else None) in
-                                 exprFreeVars e \/ unionAll vSets
-    | recursiveLet(vS,_,eS,e) -> (unionAll (map (exprFreeVars, eS))
-                                  \/ exprFreeVars e) -- toSet vS
-    | nonRecursiveLet(p,e,e1) -> exprFreeVars e \/
-                                 (exprFreeVars e1 -- pattVars p)
+                                 let vSets = seq (fn(i:Nat) ->
+                                   if i < n
+                                   then Some (exprFreeVars (eS@i)
+                                              -- pattVars (pS@i))
+                                   else None) in
+                                 exprFreeVars e \/ \\// vSets
+    | recursiveLet(vS,_,eS,e) -> (\\// (map exprFreeVars eS) \/ exprFreeVars e)
+                                 -- toSet vS
+    | nonRecursiveLet(p,e,e1) -> exprFreeVars e \/ (exprFreeVars e1 -- pattVars p)
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -144,8 +134,8 @@ spec
     | boolean        -> empty
     | variable _     -> empty
     | arrow(t1,t2)   -> typeOps t1 \/ typeOps t2
-    | sum(_,t?S)     -> unionAll (map (typeOps, removeNones t?S))
-    | nary(_,tS)     -> unionAll (map (typeOps, tS))
+    | sum(_,t?S)     -> \\// (map typeOps (removeNones t?S))
+    | nary(_,tS)     -> \\// (map typeOps tS)
     | subQuot(_,t,e) -> typeOps t \/ exprOps e
 
   def exprOps = fn
@@ -153,22 +143,22 @@ spec
     | unary(_,e)              -> exprOps e
     | binary(_,e1,e2)         -> exprOps e1 \/ exprOps e2
     | ifThenElse(e0,e1,e2)    -> exprOps e0 \/ exprOps e1 \/ exprOps e2
-    | nary(_,eS)              -> unionAll (map (exprOps, eS))
-    | binding(_,_,tS,e)       -> unionAll (map (typeOps, tS)) \/ exprOps e
-    | opInstance(o,tS)        -> singleton o \/ unionAll (map (typeOps, tS))
+    | nary(_,eS)              -> \\// (map exprOps eS)
+    | binding(_,_,tS,e)       -> \\// (map typeOps tS) \/ exprOps e
+    | opInstance(o,tS)        -> single o \/ \\// (map typeOps tS)
     | embedder(t,_)           -> typeOps t
-    | casE(e,pS,eS)           -> exprOps e \/ unionAll (map (pattOps, pS))
-                                           \/ unionAll (map (exprOps, eS))
-    | recursiveLet(_,tS,eS,e) -> unionAll (map (typeOps, tS)) \/
-                                 unionAll (map (exprOps, eS)) \/ exprOps e
+    | casE(e,pS,eS)           -> exprOps e \/ \\// (map pattOps pS)
+                                           \/ \\// (map exprOps eS)
+    | recursiveLet(_,tS,eS,e) -> \\// (map typeOps tS) \/
+                                 \\// (map exprOps eS) \/ exprOps e
     | nonRecursiveLet(p,e,e1) -> pattOps p \/ exprOps e \/ exprOps e1
 
   def pattOps = fn
     | variable(_,t)         -> typeOps t
     | embedding(t,c,None)   -> typeOps t
     | embedding(t,c,Some p) -> typeOps t \/ pattOps p
-    | record(_,pS)          -> unionAll (map (pattOps, pS))
-    | tuple pS              -> unionAll (map (pattOps, pS))
+    | record(_,pS)          -> \\// (map pattOps pS)
+    | tuple pS              -> \\// (map pattOps pS)
     | alias(_,t,p)          -> typeOps t \/ pattOps p
 
 
@@ -183,23 +173,23 @@ spec
   op contextElementAxioms   : ContextElement -> FSet AxiomName
 
   def contextElementTypes = fn
-    | typeDeclaration(tn,_) -> singleton tn
+    | typeDeclaration(tn,_) -> single tn
     | _                     -> empty
 
   def contextElementOps = fn
-    | opDeclaration(o,_,_) -> singleton o
+    | opDeclaration(o,_,_) -> single o
     | _                    -> empty
 
   def contextElementTypeVars = fn
-    | typeVarDeclaration tv -> singleton tv
+    | typeVarDeclaration tv -> single tv
     | _                     -> empty
 
   def contextElementVars = fn
-    | varDeclaration(v,_) -> singleton v
+    | varDeclaration(v,_) -> single v
     | _                   -> empty
 
   def contextElementAxioms = fn
-    | axioM(an,_,_) -> singleton an
+    | axioM(an,_,_) -> single an
     | _             -> empty
 
   op contextTypes    : Context -> FSet TypeName
@@ -208,11 +198,11 @@ spec
   op contextVars     : Context -> FSet Variable
   op contextAxioms   : Context -> FSet AxiomName
 
-  def contextTypes    cx = unionAll (map (contextElementTypes,    cx))
-  def contextOps      cx = unionAll (map (contextElementOps,      cx))
-  def contextTypeVars cx = unionAll (map (contextElementTypeVars, cx))
-  def contextVars     cx = unionAll (map (contextElementVars,     cx))
-  def contextAxioms   cx = unionAll (map (contextElementAxioms,   cx))
+  def contextTypes    cx = \\// (map contextElementTypes    cx)
+  def contextOps      cx = \\// (map contextElementOps      cx)
+  def contextTypeVars cx = \\// (map contextElementTypeVars cx)
+  def contextVars     cx = \\// (map contextElementVars     cx)
+  def contextAxioms   cx = \\// (map contextElementAxioms   cx)
 
   op contextDefinesType? : Context * TypeName -> Boolean
   def contextDefinesType?(cx,tn) =
@@ -228,13 +218,10 @@ spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   op multiTypeVarDecls : TypeVariables -> Context
-  def multiTypeVarDecls tvS =
-    map (embed typeVarDeclaration, tvS)
+  def multiTypeVarDecls tvS = map (embed typeVarDeclaration) tvS
 
-  op multiVarDecls :
-     {(vS,tS) : Variables * Types | length vS = length tS} -> Context
-  def multiVarDecls(vS,tS) =
-    map (embed varDeclaration, zip(vS,tS))
+  op multiVarDecls : ((Variables * Types) | equiLong) -> Context
+  def multiVarDecls(vS,tS) = map (embed varDeclaration) (zip (vS, tS))
 
 
   %%%%%%%%%%%%%%%%%%%%
@@ -253,13 +240,13 @@ spec
 
   def typeSubstInType sbs = fn
     | boolean         -> boolean
-    | variable tv     -> if definedAt?(sbs,tv)
-                         then apply(sbs,tv)
+    | variable tv     -> if sbs definedAt tv
+                         then sbs @ tv
                          else variable tv
     | arrow(t1,t2)    -> arrow (typeSubstInType sbs t1,
                                 typeSubstInType sbs t2)
-    | sum(cS,t?S)     -> sum (cS, map (mapOption (typeSubstInType sbs), t?S))
-    | nary(tc,tS)     -> nary (tc, map (typeSubstInType sbs, tS))
+    | sum(cS,t?S)     -> sum (cS, map (mapOption (typeSubstInType sbs)) t?S)
+    | nary(tc,tS)     -> nary (tc, map (typeSubstInType sbs) tS)
     | subQuot(tc,t,e) -> subQuot (tc,
                                   typeSubstInType sbs t,
                                   typeSubstInExpr sbs e)
@@ -273,17 +260,17 @@ spec
     | ifThenElse(e0,e1,e2)     -> ifThenElse (typeSubstInExpr sbs e0,
                                               typeSubstInExpr sbs e1,
                                               typeSubstInExpr sbs e2)
-    | nary(eo,eS)              -> nary (eo, map (typeSubstInExpr sbs, eS))
-    | binding(eo,vS,tS,e)      -> binding (eo, vS, map (typeSubstInType sbs, tS),
+    | nary(eo,eS)              -> nary (eo, map (typeSubstInExpr sbs) eS)
+    | binding(eo,vS,tS,e)      -> binding (eo, vS, map (typeSubstInType sbs) tS,
                                            typeSubstInExpr sbs e)
-    | opInstance(o,tS)         -> opInstance (o, map (typeSubstInType sbs, tS))
+    | opInstance(o,tS)         -> opInstance (o, map (typeSubstInType sbs) tS)
     | embedder(t,c)            -> embedder (typeSubstInType sbs t, c)
     | casE(e,pS,eS)            -> casE (typeSubstInExpr sbs e,
-                                        map (typeSubstInPatt sbs, pS),
-                                        map (typeSubstInExpr sbs, eS))
+                                        map (typeSubstInPatt sbs) pS,
+                                        map (typeSubstInExpr sbs) eS)
     | recursiveLet(vS,tS,eS,e) -> recursiveLet
-                                    (vS, map (typeSubstInType sbs, tS),
-                                     map (typeSubstInExpr sbs, eS),
+                                    (vS, map (typeSubstInType sbs) tS,
+                                     map (typeSubstInExpr sbs) eS,
                                      typeSubstInExpr sbs e)
     | nonRecursiveLet(p,e,e1)  -> nonRecursiveLet (typeSubstInPatt sbs p,
                                                    typeSubstInExpr sbs e,
@@ -295,17 +282,16 @@ spec
     | embedding(t,c,Some p) -> embedding (typeSubstInType sbs t,
                                           c,
                                           Some (typeSubstInPatt sbs p))
-    | record(fS,pS)         -> record (fS, map (typeSubstInPatt sbs, pS))
-    | tuple pS              -> tuple (map (typeSubstInPatt sbs, pS))
-    | alias(v,t,p)          -> alias
-                                 (v, typeSubstInType sbs t, typeSubstInPatt sbs p)
+    | record(fS,pS)         -> record (fS, map (typeSubstInPatt sbs) pS)
+    | tuple pS              -> tuple (map (typeSubstInPatt sbs) pS)
+    | alias(v,t,p)          -> alias (v,
+                                      typeSubstInType sbs t,
+                                      typeSubstInPatt sbs p)
 
-  % true iff `tsbs' is substitution of `tvS!i' with `tS!i':
+  % true iff `tsbs' is substitution of `tvS@i' with `tS@i':
   op isTypeSubstFrom? : TypeSubstitution * TypeVariables * Types -> Boolean
   def isTypeSubstFrom?(tsbs,tvS,tS) =
-    noRepetitions? tvS &&
-    length tvS = length tS &&
-    tsbs = FMap.fromSequences (tvS, tS)
+    noRepetitions? tvS && length tvS = length tS && tsbs = fromSeqs (tvS, tS)
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -325,8 +311,8 @@ spec
 
   op exprSubst : ExprSubstitution -> Expression -> Expression
   def exprSubst sbs = fn
-    | nullary(variable v)      -> if definedAt?(sbs,v)
-                                  then apply(sbs,v)
+    | nullary(variable v)      -> if sbs definedAt v
+                                  then sbs @ v
                                   else nullary(variable v)
     | nullary truE             -> nullary truE
     | nullary falsE            -> nullary falsE
@@ -335,39 +321,35 @@ spec
     | ifThenElse(e0,e1,e2)     -> ifThenElse (exprSubst sbs e0,
                                               exprSubst sbs e1,
                                               exprSubst sbs e2)
-    | nary(eo,eS)              -> nary (eo, map (exprSubst sbs, eS))
-    | binding(eo,vS,tS,e)      -> let bodySbs = undefineMulti (sbs, toSet vS) in
+    | nary(eo,eS)              -> nary (eo, map (exprSubst sbs) eS)
+    | binding(eo,vS,tS,e)      -> let bodySbs = sbs -- (toSet vS) in
                                   binding (eo, vS, tS, exprSubst bodySbs e)
     | opInstance(o,tS)         -> opInstance(o,tS)
     | embedder(t,c)            -> embedder (t, c)
     | casE(e,pS,eS)            -> let n = min (length pS, length eS) in
                                       % in well-typed expressions,
                                       % n = length pS = length eS
-                                  let branchSbss =
-                                      seqSuchThat (fn(i:Nat) ->
-                                        if i < n
-                                        then Some (undefineMulti
-                                                     (sbs, pattVars (pS!i)))
-                                        else None) in
-                                  let newES =
-                                      seqSuchThat (fn(i:Nat) ->
-                                        if i < n
-                                        then Some (exprSubst (branchSbss!i) (eS!i))
-                                        else None) in
+                                  let branchSbss = seq (fn(i:Nat) ->
+                                    if i < n
+                                    then Some (sbs -- (pattVars (pS@i)))
+                                    else None) in
+                                  let newES = seq (fn(i:Nat) ->
+                                    if i < n
+                                    then Some (exprSubst (branchSbss@i) (eS@i))
+                                    else None) in
                                   casE (exprSubst sbs e, pS, newES)
-    | recursiveLet(vS,tS,eS,e) -> let bodySbs = undefineMulti (sbs, toSet vS) in
+    | recursiveLet(vS,tS,eS,e) -> let bodySbs = sbs -- (toSet vS) in
                                   recursiveLet (vS, tS,
-                                                map (exprSubst bodySbs, eS),
+                                                map (exprSubst bodySbs) eS,
                                                 exprSubst sbs e)
-    | nonRecursiveLet(p,e,e1)  -> let bodySbs = undefineMulti (sbs, pattVars p) in
+    | nonRecursiveLet(p,e,e1)  -> let bodySbs = sbs -- (pattVars p) in
                                   nonRecursiveLet (p,
                                                    exprSubst sbs e,
                                                    exprSubst bodySbs e1)
 
   % abbreviation for replacing one variable with an expression:
   op exprSubst1 : Variable -> Expression -> Expression -> Expression
-  def exprSubst1 v d e =
-    exprSubst (FMap.singleton (v, d)) e
+  def exprSubst1 v d e = exprSubst (single v d) e
 
   % captured variables at free occurrences of given variable:
   op captVars : Variable -> Expression -> FSet Variable
@@ -376,7 +358,7 @@ spec
     | unary(_,e)              -> captVars u e
     | binary(_,e1,e2)         -> captVars u e1 \/ captVars u e2
     | ifThenElse(e0,e1,e2)    -> captVars u e0 \/ captVars u e1 \/ captVars u e2
-    | nary(_,eS)              -> unionAll (map (captVars u, eS))
+    | nary(_,eS)              -> \\// (map (captVars u) eS)
     | binding(_,vS,_,e)       -> if u in? exprFreeVars e && ~(u in? vS)
                                  then toSet vS \/ captVars u e
                                  else empty
@@ -385,23 +367,22 @@ spec
     | casE(e,pS,eS)           -> let n = min (length pS, length eS) in
                                      % in well-typed expressions,
                                      % n = length pS = length eS
-                                 let varSets =
-                                     seqSuchThat (fn(i:Nat) ->
-                                       if i < n
-                                       then if u in? exprFreeVars (eS!i) &&
-                                               ~(u in? pattVars (pS!i))
-                                            then Some (pattVars (pS!i) \/
-                                                       captVars u (eS!i))
-                                            else Some empty
-                                       else None) in
-                                 unionAll varSets \/ captVars u e
+                                 let varSets = seq (fn(i:Nat) ->
+                                   if i < n
+                                   then if u in? exprFreeVars (eS@i) &&
+                                           ~(u in? pattVars (pS@i))
+                                        then Some (pattVars (pS@i) \/
+                                                   captVars u (eS@i))
+                                        else Some empty
+                                   else None) in
+                                 \\// varSets \/ captVars u e
     | recursiveLet(vS,_,eS,e) -> if (u in? exprFreeVars e ||
                                      (ex(e1) e1 in? eS &&
                                              u in? exprFreeVars e1)) &&
                                     ~(u in? toSet vS)
                                  then toSet vS \/
                                       captVars u e \/
-                                      unionAll (map (captVars u, eS))
+                                      \\// (map (captVars u) eS)
                                  else empty
     | nonRecursiveLet(p,e,e1) -> captVars u e \/
                                  (if u in? exprFreeVars e1 -- pattVars p
@@ -411,14 +392,12 @@ spec
   op exprSubstOK? : Expression * ExprSubstitution -> Boolean
   def exprSubstOK?(e,sbs) =
     (fa(v) v in? domain sbs =>
-           exprFreeVars (apply(sbs,v)) /\ captVars v e = empty)
+           exprFreeVars (sbs @ v) /\ captVars v e = empty)
 
-  % true iff `esbs' is substitution of `vS!i' with `eS!i':
+  % true iff `esbs' is substitution of `vS@i' with `eS@i':
   op isExprSubstFrom? : ExprSubstitution * Variables * Expressions -> Boolean
   def isExprSubstFrom?(esbs,vS,eS) =
-    noRepetitions? vS &&
-    length vS = length eS &&
-    esbs = FMap.fromSequences (vS, eS)
+    noRepetitions? vS && length vS = length eS && esbs = fromSeqs (vS, eS)
 
 
   %%%%%%%%%%%%%%%%%%%%%%%
@@ -434,8 +413,8 @@ spec
                                else variable (v,  t)
     | embedding(t,c,None)   -> embedding (t, c, None)
     | embedding(t,c,Some p) -> embedding (t, c, Some (pattSubst (old,new) p))
-    | record(fS,pS)         -> record (fS, map (pattSubst (old,new), pS))
-    | tuple pS              -> tuple (map (pattSubst (old,new), pS))
+    | record(fS,pS)         -> record (fS, map (pattSubst (old,new)) pS)
+    | tuple pS              -> tuple (map (pattSubst (old,new)) pS)
     | alias(v,t,p)          -> if v = old
                                then alias (new, t, pattSubst (old,new) p)
                                else alias (v,   t, pattSubst (old,new) p)
@@ -471,7 +450,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, cS:Constructors, t?S:Type?s,
          i:Nat, ti:Type, newTi:Type)
        i < length t?S &&
-       t?S!i = Some ti &&
+       t?S@i = Some ti &&
        isTypeSubstInTypeAt? (ti, old, new, pos, newTi) =>
        isTypeSubstInTypeAt? (sum (cS, t?S), old, new, (i+1) |> pos,
                              sum (cS, update(t?S,i,Some newTi))))
@@ -479,7 +458,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, tc:NaryTypeConstruct, tS:Types,
          i:Nat, newTi:Type)
        i < length tS &&
-       isTypeSubstInTypeAt? (tS!i, old, new, pos, newTi) =>
+       isTypeSubstInTypeAt? (tS@i, old, new, pos, newTi) =>
        isTypeSubstInTypeAt? (nary (tc, tS), old, new, (i+1) |> pos,
                              nary (tc, update(tS,i,newTi))))
     &&
@@ -535,14 +514,14 @@ spec
     (fa (old:Type, new:Type, pos:Position, eo:NaryExprOperator, eS:Expressions,
          i:Nat, newEi:Expression)
        i < length eS &&
-       isTypeSubstInExprAt? (eS!i, old, new, pos, newEi) =>
+       isTypeSubstInExprAt? (eS@i, old, new, pos, newEi) =>
        isTypeSubstInExprAt? (nary (eo, eS), old, new, (i+1) |> pos,
                              nary (eo, update(eS,i,newEi))))
     &&
     (fa (old:Type, new:Type, pos:Position, eo:BindingExprOperator,
          vS:Variables, tS:Types, e:Expression, i:Nat, newTi:Type)
        i < length tS &&
-       isTypeSubstInTypeAt? (tS!i, old, new, pos, newTi) =>
+       isTypeSubstInTypeAt? (tS@i, old, new, pos, newTi) =>
        isTypeSubstInExprAt? (binding (eo, vS, tS, e), old, new, (i+1) |> pos,
                              binding (eo, vS, update(tS,i,newTi), e)))
     &&
@@ -555,7 +534,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, o:Operation, tS:Types,
          i:Nat, newTi:Type)
        i < length tS &&
-       isTypeSubstInTypeAt? (tS!i, old, new, pos, newTi) =>
+       isTypeSubstInTypeAt? (tS@i, old, new, pos, newTi) =>
        isTypeSubstInExprAt? (opInstance (o, tS), old, new, (i+1) |> pos,
                              opInstance (o, update(tS,i,newTi))))
     &&
@@ -577,21 +556,21 @@ spec
     (fa (old:Type, new:Type, pos:Position,
          e:Expression, pS:Patterns, eS:Expressions, i:Nat, newPi:Pattern)
        i < length pS &&
-       isTypeSubstInPattAt? (pS!i, old, new, pos, newPi) =>
+       isTypeSubstInPattAt? (pS@i, old, new, pos, newPi) =>
        isTypeSubstInExprAt? (casE (e, pS, eS), old, new, (2*i+1) |> pos,
                              casE (e, update(pS,i,newPi), eS)))
     &&
     (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
          pS:Patterns, eS:Expressions, newEi:Expression)
        i < length eS &&
-       isTypeSubstInExprAt? (eS!i, old, new, pos, newEi) =>
+       isTypeSubstInExprAt? (eS@i, old, new, pos, newEi) =>
        isTypeSubstInExprAt? (casE (e, pS, eS), old, new, (2*i+2) |> pos,
                              casE (e, pS, update(eS,i,newEi))))
     &&
     (fa (old:Type, new:Type, pos:Position, e:Expression, vS:Variables, tS:Types,
          eS:Expressions, e:Expression, i:Nat, newTi:Type)
        i < length tS &&
-       isTypeSubstInTypeAt? (tS!i, old, new, pos, newTi) =>
+       isTypeSubstInTypeAt? (tS@i, old, new, pos, newTi) =>
        isTypeSubstInExprAt? (recursiveLet (vS, tS, eS, e),
                              old, new, (2*i+1) |> pos,
                              recursiveLet (vS, update(tS,i,newTi), eS, e)))
@@ -599,7 +578,7 @@ spec
     (fa (old:Type, new:Type, pos:Position, e:Expression, vS:Variables, tS:Types,
          eS:Expressions, e:Expression, i:Nat, newEi:Expression)
        i < length eS &&
-       isTypeSubstInExprAt? (eS!i, old, new, pos, newEi) =>
+       isTypeSubstInExprAt? (eS@i, old, new, pos, newEi) =>
        isTypeSubstInExprAt? (recursiveLet (vS, tS, eS, e),
                              old, new, (2*i+2) |> pos,
                              recursiveLet (vS, tS, update(eS,i,newEi), e)))
@@ -649,13 +628,13 @@ spec
     (fa (old:Type, new:Type, pos:Position, fS:Fields, pS:Patterns,
          i:Nat, newPi:Pattern)
        i < length pS &&
-       isTypeSubstInPattAt? (pS!i, old, new, pos, newPi) =>
+       isTypeSubstInPattAt? (pS@i, old, new, pos, newPi) =>
        isTypeSubstInPattAt? (record (fS, pS), old, new, (i+1) |> pos,
                              record (fS, update(pS,i,newPi))))
     &&
     (fa (old:Type, new:Type, pos:Position, pS:Patterns, i:Nat, newPi:Pattern)
        i < length pS &&
-       isTypeSubstInPattAt? (pS!i, old, new, pos, newPi) =>
+       isTypeSubstInPattAt? (pS@i, old, new, pos, newPi) =>
        isTypeSubstInPattAt? (tuple pS, old, new, (i+1) |> pos,
                              tuple (update(pS,i,newPi))))
     &&
@@ -721,7 +700,7 @@ spec
     &&
     (fa (old:Expression, new:Expression, pos:Position,
          eo:NaryExprOperator, eS:Expressions, i:Nat, newEi:Expression)
-       isExprSubstAt? (eS!i, old, new, pos, newEi) =>
+       isExprSubstAt? (eS@i, old, new, pos, newEi) =>
        isExprSubstAt? (nary (eo, eS), old, new, (i+1) |> pos,
                        nary (eo, update(eS,i,newEi))))
     &&
@@ -740,7 +719,7 @@ spec
     (fa (old:Expression, new:Expression, pos:Position, e:Expression,
          pS:Patterns, eS:Expressions, i:Nat, newEi:Expression)
        i < length eS &&
-       isExprSubstAt? (eS!i, old, new, pos, newEi) =>
+       isExprSubstAt? (eS@i, old, new, pos, newEi) =>
        isExprSubstAt? (casE (e, pS, eS), old, new, (i+1) |> pos,
                        casE (e, pS, update(eS,i,newEi))))
     &&
@@ -753,7 +732,7 @@ spec
     (fa (old:Expression, new:Expression, pos:Position, vS:Variables, tS:Types,
          eS:Expressions, e:Expression, i:Nat, newEi:Expression)
        i < length eS &&
-       isExprSubstAt? (eS!i, old, new, pos, newEi) =>
+       isExprSubstAt? (eS@i, old, new, pos, newEi) =>
        isExprSubstAt? (recursiveLet (vS, tS, eS, e), old, new, (i+1) |> pos,
                        recursiveLet (vS, tS, update(eS,i,newEi), e)))
     &&
@@ -790,24 +769,26 @@ spec
                                    else if i = 1 then captVarsAt(pos,e1)
                                    else (assert (i = 2); captVarsAt(pos,e2))
            | nary(_,eS)              -> (assert (1 <= i && i <= length eS);
-                                         captVarsAt (pos, eS!(i-1)))
+                                         captVarsAt (pos, eS@(i-1)))
            | binding(_,vS,_,e)       -> (assert (i = 0);
                                          captVarsAt(pos,e) \/ toSet vS)
-           | casE(e,pS,eS)           -> if i = 0 then captVarsAt(pos,e)
+           | casE(e,pS,eS)           -> if i = 0
+                                        then captVarsAt(pos,e)
                                         else
                                           (assert (1 <= i && i <= length eS);
-                                           captVarsAt (pos, eS!(i-1)) \/
+                                           captVarsAt (pos, eS@(i-1)) \/
                                            (if i <= length pS
                                                % in well-formed expressions,
                                                % i <= length pS = length eS
-                                            then pattVars (pS!(i-1))
+                                            then pattVars (pS@(i-1))
                                             else empty))
            | recursiveLet(vS,_,eS,e) -> toSet vS \/
                                         (if i = 0
                                          then captVarsAt(pos,e)
                                          else (assert (1 <= i && i <= length eS);
-                                               captVarsAt (pos, eS!(i-1))))
-           | nonRecursiveLet(p,e,e1) -> if i = 0 then captVarsAt(pos,e)
+                                               captVarsAt (pos, eS@(i-1))))
+           | nonRecursiveLet(p,e,e1) -> if i = 0
+                                        then captVarsAt(pos,e)
                                         else
                                           (assert (i = 1);
                                            pattVars p \/ captVarsAt(pos,e1))

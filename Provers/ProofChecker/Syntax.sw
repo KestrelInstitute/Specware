@@ -177,10 +177,10 @@ spec
          predT t1 && predT t2
       => predT (arrow (t1, t2)))
    && (fa (cS:Constructors, t?S:Type?s)
-         forall? (removeNones t?S, predT)
+         forall? predT (removeNones t?S)
       => predT (sum (cS, t?S)))
    && (fa (tc:NaryTypeConstruct, tS:Types)
-         forall? (tS, predT)
+         forall? predT tS
       => predT (nary (tc, tS)))
    && (fa (tc:SubOrQuotientTypeConstruct, t:Type, e:Expression)
          predT t && predE e
@@ -199,28 +199,28 @@ spec
          predE e0 && predE e1 && predE e2
       => predE (ifThenElse (e0, e1, e2)))
    && (fa (eo:NaryExprOperator, eS:Expressions)
-         forall? (eS, predE)
+         forall? predE eS
       => predE (nary (eo, eS)))
    && (fa (eo:BindingExprOperator, vS:Variables, tS:Types, e:Expression)
          length vS = length tS
-      && forall? (tS, predT)
+      && forall? predT tS
       && predE e
       => predE (binding (eo, vS, tS, e)))
    && (fa (o:Operation, tS:Types)
-         forall? (tS, predT)
+         forall? predT tS
       => predE (opInstance (o, tS)))
    && (fa (t:Type, c:Constructor)
          predT t
       => predE (embedder (t, c)))
    && (fa (e:Expression, pS:Patterns, eS:Expressions)
          predE e
-      && forall? (pS, predP)
-      && forall? (eS, predE)
+      && forall? predP pS
+      && forall? predE eS
       => predE (casE (e, pS, eS)))
    && (fa (vS:Variables, tS:Types, eS:Expressions, e:Expression)
          length vS  = length tS
-      && forall? (tS, predT)
-      && forall? (eS, predE)
+      && forall? predT tS
+      && forall? predE eS
       && predE e
       => predE (recursiveLet (vS, tS, eS, e)))
    && (fa (p:Pattern, e:Expression, e1:Expression)
@@ -241,10 +241,10 @@ spec
       && predP p
       => predP (embedding (t, c, Some p)))
    && (fa (fS:Fields, pS:Patterns)
-         forall? (pS, predP)
+         forall? predP pS
       => predP (record (fS, pS)))
    && (fa (pS:Patterns)
-         forall? (pS, predP)
+         forall? predP pS
       => predP (tuple pS))
    && (fa (v:Variable, t:Type, p:Pattern)
          predT t
@@ -303,7 +303,7 @@ spec
   def PRODUCT tS = nary (product, tS)
 
   op \ infixl 30 : Type * Expression -> Type
-     % `|' causes syntax error
+     % `|' is disallowed
   def \ (t,e) = subQuot (embed sub, t, e)
                          % without `embed', type checker complains
 
@@ -336,7 +336,7 @@ spec
   op ~~ : Expression -> Expression
   def ~~ e = unary (negation, e)
 
-  op @ infixl 30 : Expression * Expression -> Expression
+  op @ infixl 23 : Expression * Expression -> Expression
   def @ (e1,e2) = binary (application, e1, e2)
 
   op == infixl 20 : Expression * Expression -> Expression
@@ -376,28 +376,28 @@ spec
   def TUPLE eS = nary (tuple, eS)
 
   op PAIR : Expression -> Expression -> Expression
-  def PAIR e1 e2 = TUPLE (seq2 (e1, e2))
+  def PAIR e1 e2 = TUPLE (single e1 <| e2)
 
   op FN : Variable -> Type -> Expression -> Expression
-  def FN v t e = binding (abstraction, singleton v, singleton t, e)
+  def FN v t e = binding (abstraction, single v, single t, e)
 
   op FNN : Variables -> Types -> Expression -> Expression
   def FNN vS tS e = binding (abstraction, vS, tS, e)
 
   op FA : Variable -> Type -> Expression -> Expression
-  def FA v t e = binding (universal, singleton v, singleton t, e)
+  def FA v t e = binding (universal, single v, single t, e)
 
   op FAA : Variables -> Types -> Expression -> Expression
   def FAA vS tS e = binding (universal, vS, tS, e)
 
   op EX : Variable -> Type -> Expression -> Expression
-  def EX v t e = binding (existential, singleton v, singleton t, e)
+  def EX v t e = binding (existential, single v, single t, e)
 
   op EXX : Variables -> Types -> Expression -> Expression
   def EXX vS tS e = binding (existential, vS, tS, e)
 
   op EX1 : Variable -> Type -> Expression -> Expression
-  def EX1 v t e = binding (existential1, singleton v, singleton t, e)
+  def EX1 v t e = binding (existential1, single v, single t, e)
 
   op EXX1 : Variables -> Types -> Expression -> Expression
   def EXX1 vS tS e = binding (existential1, vS, tS, e)
@@ -470,8 +470,8 @@ spec
 
   op contextWithoutTypeVarOrVarDeclarations? : Context -> Boolean
   def contextWithoutTypeVarOrVarDeclarations? cx =
-    ~(exists? (cx, embed? typeVarDeclaration)) &&
-    ~(exists? (cx, embed? varDeclaration))
+    ~(exists? (embed? typeVarDeclaration) cx) &&
+    ~(exists? (embed? varDeclaration)     cx)
 
   type Spec = (Context | contextWithoutTypeVarOrVarDeclarations?)
 

@@ -79,9 +79,7 @@ spec
   implicit `restrict'). *)
 
   op checkPermutation : FSeq Nat -> MayFail Permutation
-  def checkPermutation nS =
-    if permutation? nS then OK nS
-    else FAIL
+  def checkPermutation nS = if permutation? nS then OK nS else FAIL
 
 
   (* Check whether element belongs to sequence. If it does, return index of
@@ -227,8 +225,8 @@ spec
   op checkExtraTypeVars : Context -> Context -> MayFail TypeVariables
   def checkExtraTypeVars cx1 cx2 =
     if length cx1 <= length cx2
-    && firstN (cx2, length cx1) = cx1 then
-    checkAllTypeVarDecls (lastN (cx2, length cx2 - length cx1))
+    && prefix (cx2, length cx1) = cx1 then
+    checkAllTypeVarDecls (removePrefix (cx2, length cx1))
     else FAIL
 
 
@@ -264,8 +262,8 @@ spec
   op checkLastNVars : Context -> Nat -> MayFail (Context * Variables * Types)
   def checkLastNVars cx n =
     if length cx >= n then
-    case checkAllVarDecls (lastN (cx, n)) of OK (vS, tS) ->
-    OK (firstN (cx, length cx - n), vS, tS)
+    case checkAllVarDecls (suffix (cx, n)) of OK (vS, tS) ->
+    OK (removeSuffix (cx, n), vS, tS)
     | _ -> FAIL
     else   FAIL
 
@@ -278,19 +276,19 @@ spec
      Context -> Expression -> Patterns -> Nat -> Context -> MayFail ()
   def checkCaseBranchContext cx e pS i cxi =
     if i < length pS then
-    if maxCommonPrefix (cx, cxi) = cx then
+    if longestCommonPrefix (cx, cxi) = cx then
     let cxExtra:Context =   % such that `cxi = cx ++ cxExtra'
-        lastN (cxi, length cxi - length cx) in
+        removePrefix (cxi, length cx) in
     if length cxExtra >= 2 then
     (case first cxExtra of axioM (_, mustBe_empty, mustBe_negPattAsm) ->
     if mustBe_empty = empty
     && mustBe_negPattAsm =
-       conjoinAll (map (pattAssumptionsNegatedQuantified e, firstN (pS, i))) then
+       conjoinAll (map (pattAssumptionsNegatedQuantified e) (prefix (pS, i))) then
     (case last cxExtra of axioM (_, mustBe_empty, mustBe_posPattAsm) ->
     if mustBe_empty = empty
-    && mustBe_posPattAsm = pattAssumptions e (pS!i)
+    && mustBe_posPattAsm = pattAssumptions e (pS@i)
     && subFromTo (cxExtra, 1, length cxExtra - 2) =
-       multiVarDecls (pattVarsWithTypes (pS!i)) then
+       multiVarDecls (pattVarsWithTypes (pS@i)) then
     OK ()
     else   FAIL
     | _ -> FAIL)
@@ -311,7 +309,7 @@ spec
     let def aux (i : Nat)   % current index in cxS
                 : MayFail () =
           if i < length cxS then
-            case checkCaseBranchContext cx e pS i (cxS!i) of
+            case checkCaseBranchContext cx e pS i (cxS@i) of
               | OK () -> aux (i+1)
               | _ -> FAIL
           else OK ()
@@ -326,7 +324,7 @@ spec
   def checkTypeSubstitution tvS tS =
     if noRepetitions? tvS
     && length tvS = length tS
-    then OK (FMap.fromSequences (tvS, tS))
+    then OK (fromSeqs (tvS, tS))
     else FAIL
 
 
@@ -337,7 +335,7 @@ spec
   def checkExprSubstitution vS eS =
     if noRepetitions? vS
     && length vS = length eS
-    then OK (FMap.fromSequences (vS, eS))
+    then OK (fromSeqs (vS, eS))
     else FAIL
 
 
@@ -356,15 +354,15 @@ spec
     MayFail Type  % resulting record type
   def checkRecordTypeMerging (fS_fS1, tS_tS1) (fS_fS2, tS_tS2) =
     % get common fields:
-    let fS:Fields = maxCommonPrefix (fS_fS1, fS_fS2) in
+    let fS:Fields = longestCommonPrefix (fS_fS1, fS_fS2) in
     % check that first `length fS' component types match:
-    if firstN (tS_tS1, length fS) = firstN (tS_tS2, length fS)
+    if prefix (tS_tS1, length fS) = prefix (tS_tS2, length fS)
     % and check that remaining fields are disjoint:
-    && toSet (lastN (fS_fS1, length fS_fS1 - length fS)) /\
-       toSet (lastN (fS_fS2, length fS_fS2 - length fS)) = empty then
+    && toSet (removePrefix (fS_fS1, length fS)) /\
+       toSet (removePrefix (fS_fS2, length fS)) = empty then
     % return result (note that `fS_fS1 = fS ++ fS1' and `tS_tS1 = tS ++ tS1'):
-    OK (TRECORD (fS_fS1 ++ lastN (fS_fS2, length fS_fS2 - length fS))
-                (tS_tS1 ++ lastN (tS_tS2, length tS_tS2 - length fS)))
+    OK (TRECORD (fS_fS1 ++ removePrefix (fS_fS2, length fS))
+                (tS_tS1 ++ removePrefix (tS_tS2, length fS)))
     else FAIL
 
 
@@ -399,7 +397,7 @@ spec
           else FAIL
         | sum(cS,t?S) ->
           if i ~= 0 && i <= length t?S then
-            case t?S ! (i-1) of
+            case t?S @ (i-1) of
               | Some ti ->
                 (case typeSubstInTypeAt (ti, old, new, pos) of
                    | OK newTi -> OK (sum (cS, update (t?S, i-1, Some newTi)))
@@ -408,7 +406,7 @@ spec
           else FAIL
         | nary(tc,tS) ->
           if i ~= 0 && i <= length tS then
-            case typeSubstInTypeAt (tS!(i-1), old, new, pos) of
+            case typeSubstInTypeAt (tS@(i-1), old, new, pos) of
               | OK newTi -> OK (nary (tc, update (tS, i-1, newTi)))
               | FAIL     -> FAIL
           else FAIL
@@ -464,7 +462,7 @@ spec
           else FAIL
         | nary(eo,eS) ->
           if i ~= 0 && i <= length eS then
-            case typeSubstInExprAt (eS!(i-1), old, new, pos) of
+            case typeSubstInExprAt (eS@(i-1), old, new, pos) of
               | OK newEi -> OK (nary (eo, update (eS, i-1, newEi)))
               | FAIL     -> FAIL
           else FAIL
@@ -474,13 +472,13 @@ spec
               | OK newE -> OK (binding (eo, vS, tS, newE))
               | FAIL    -> FAIL
           else if i <= length tS then
-            case typeSubstInTypeAt (tS!(i-1), old, new, pos) of
+            case typeSubstInTypeAt (tS@(i-1), old, new, pos) of
               | OK newTi -> OK (binding (eo, vS, update (tS, i-1, newTi), e))
               | FAIL     -> FAIL
           else FAIL
         | opInstance(o,tS) ->
           if i ~= 0 && i <= length tS then
-            case typeSubstInTypeAt (tS!(i-1), old, new, pos) of
+            case typeSubstInTypeAt (tS@(i-1), old, new, pos) of
               | OK newTi -> OK (opInstance (o, update (tS, i-1, newTi)))
               | FAIL     -> FAIL
           else FAIL
@@ -498,14 +496,14 @@ spec
           else if i rem 2 = 1 then  % i.e. `i' is odd
             let j:Nat = i div 2 in  % `j' in {0,1,2,...}
             if j < length pS then
-              case typeSubstInPattAt (pS!j, old, new, pos) of
+              case typeSubstInPattAt (pS@j, old, new, pos) of
                 | OK newPj -> OK (casE (e, update (pS, j, newPj), eS))
                 | FAIL     -> FAIL
             else FAIL
           else if i rem 2 = 0 then  % i.e. `i' is even
             let j:Nat = i div 2 in  % `j' in {0,1,2,...}
             if j < length eS then
-              case typeSubstInExprAt (eS!j, old, new, pos) of
+              case typeSubstInExprAt (eS@j, old, new, pos) of
                 | OK newEj -> OK (casE (e, pS, update (eS, j, newEj)))
                 | FAIL     -> FAIL
             else FAIL
@@ -518,14 +516,14 @@ spec
           else if i rem 2 = 1 then  % i.e. `i' is odd
             let j:Nat = i div 2 in  % `j' in {0,1,2,...}
             if j < length tS then
-              case typeSubstInTypeAt (tS!j, old, new, pos) of
+              case typeSubstInTypeAt (tS@j, old, new, pos) of
                 | OK newTj -> OK (recursiveLet (vS, update (tS, j, newTj), eS, e))
                 | FAIL     -> FAIL
             else FAIL
           else if i rem 2 = 0 then  % i.e. `i' is even
             let j:Nat = i div 2 in  % `j' in {0,1,2,...}
             if j < length eS then
-              case typeSubstInExprAt (eS!j, old, new, pos) of
+              case typeSubstInExprAt (eS@j, old, new, pos) of
                 | OK newEj -> OK (recursiveLet (vS, tS, update (eS, j, newEj), e))
                 | FAIL     -> FAIL
             else FAIL
@@ -576,13 +574,13 @@ spec
                | None -> FAIL)
         | record(fS,pS) ->
           if i ~= 0 && i <= length pS then
-            case typeSubstInPattAt (pS!(i-1), old, new, pos) of
+            case typeSubstInPattAt (pS@(i-1), old, new, pos) of
               | OK newPi -> OK (record (fS, update (pS, i-1, newPi)))
               | FAIL     -> FAIL
           else FAIL
         | tuple pS ->
           if i ~= 0 && i <= length pS then
-            case typeSubstInPattAt (pS!(i-1), old, new, pos) of
+            case typeSubstInPattAt (pS@(i-1), old, new, pos) of
               | OK newPi -> OK (tuple (update (pS, i-1, newPi)))
               | FAIL     -> FAIL
           else FAIL
@@ -661,7 +659,7 @@ spec
           else FAIL
         | nary(eo,eS) ->
           if i ~= 0 && i <= length eS then
-            case exprSubstAt (eS!(i-1), old, new, pos) of
+            case exprSubstAt (eS@(i-1), old, new, pos) of
               | OK newEi -> OK (nary (eo, update (eS, i-1, newEi)))
               | FAIL     -> FAIL
           else FAIL
@@ -677,7 +675,7 @@ spec
               | OK newE -> OK (casE (newE, pS, eS))
               | FAIL    -> FAIL
           else if i <= length eS then
-            case exprSubstAt (eS!(i-1), old, new, pos) of
+            case exprSubstAt (eS@(i-1), old, new, pos) of
                 | OK newEi -> OK (casE (e, pS, update (eS, i-1, newEi)))
                 | FAIL     -> FAIL
           else FAIL
@@ -687,7 +685,7 @@ spec
               | OK newE -> OK (recursiveLet (vS, tS, eS, newE))
               | FAIL    -> FAIL
           else if i <= length eS then
-            case exprSubstAt (eS!(i-1), old, new, pos) of
+            case exprSubstAt (eS@(i-1), old, new, pos) of
               | OK newEi -> OK (recursiveLet (vS, tS, update (eS, i-1, newEi), e))
               | FAIL     -> FAIL
           else FAIL
@@ -765,7 +763,7 @@ spec
 
   op checkWFTypesWithContext : Context -> Proofs -> MayFail Types
   def checkWFTypesWithContext cx prfS =
-    checkSequence (map (checkWFTypeWithContext cx, prfS))
+    checkSequence (map (checkWFTypeWithContext cx) prfS)
 
 
   (* Check optional proofs of well-formed types with given context; return
@@ -774,7 +772,7 @@ spec
 
   op checkWFType?sWithContext : Context -> Proof?s -> MayFail Type?s
   def checkWFType?sWithContext cx prf?S =
-    checkOptionSequence (map (mapOption (checkWFTypeWithContext cx), prf?S))
+    checkOptionSequence (map (mapOption (checkWFTypeWithContext cx)) prf?S)
 
 
   (* Check proof of well-formed sum type; return context, constructors, and
@@ -915,7 +913,7 @@ spec
 
   op checkWTExprs : Proofs -> MayFail (Contexts * Expressions * Types)
   def checkWTExprs prfS =
-    case checkSequence (map (checkWTExpr, prfS)) of
+    case checkSequence (map checkWTExpr prfS) of
       | OK cx_e_t_S -> OK (unzip3 cx_e_t_S)
       | _ -> FAIL
 
@@ -929,7 +927,7 @@ spec
   def checkWTExprsWithContextAndTypes cx tS prfS =
     case checkWTExprs prfS of
       | OK (mustBeAll_cx, eS, mustBe_tS) ->
-        if toSet mustBeAll_cx = singleton cx
+        if toSet mustBeAll_cx = single cx
         && mustBe_tS = tS then OK eS
         else FAIL
       | _ -> FAIL
@@ -1292,7 +1290,7 @@ spec
   op checkWTPattsWithContextAndTypes :
      Context -> Types -> Proofs -> MayFail Patterns
   def checkWTPattsWithContextAndTypes cx tS prfS =
-    case checkSequence (map (checkWTPattWithContext cx, prfS)) of
+    case checkSequence (map (checkWTPattWithContext cx) prfS) of
       | OK ptS ->
         let (pS, mustBe_tS) = unzip ptS in
         if mustBe_tS = tS then OK pS else FAIL
@@ -1306,7 +1304,7 @@ spec
   op checkWTPattsWithContextAndType :
      Context -> Type -> Proofs -> MayFail Patterns
   def checkWTPattsWithContextAndType cx t prfS =
-    checkSequence (map (checkWTPattWithContextAndType cx t, prfS))
+    checkSequence (map (checkWTPattWithContextAndType cx t) prfS)
 
 
   (* Check proof of type equivalence; return context and types if
@@ -1417,7 +1415,7 @@ spec
   op checkTheoremEquations :
      Proofs -> MayFail (Contexts * Expressions * Expressions)
   def checkTheoremEquations prfS =
-    case checkSequence (map (checkTheoremEquation, prfS)) of
+    case checkSequence (map checkTheoremEquation prfS) of
       | OK cx_leftE_rightE_S -> OK (unzip3 cx_leftE_rightE_S)
       | _ -> FAIL
 
@@ -1462,7 +1460,7 @@ spec
   `theoreM (cx ++ multiTypeVarDecls tvS1,
             EX1 v (typeSubstInType tsbs t) (VAR v == e))'
   for some `tvS1', `v', `e', and `tsbs' such that
-  `isTypeSubstFrom? (tsbs, tvS, map (TVAR, tvS1))' (see rule `cxOpDef' in spec
+  `isTypeSubstFrom? (tsbs, tvS, map TVAR tvS1)' (see rule `cxOpDef' in spec
   `Provability'); return `tvS1', `v', and `e' if successful. *)
 
   op checkTheoremOpDef : Context -> Type -> TypeVariables -> Proof ->
@@ -1470,12 +1468,12 @@ spec
   def checkTheoremOpDef cx t tvS prf =
     case checkTheoremWithContextAndExtraTypeVars cx prf of
       OK (tvS1,
-          binding (existential1, mustBe_singleton_v, mustBe_singleton_tsbs_of_t,
+          binding (existential1, mustBe_single_v, mustBe_single_tsbs_of_t,
                    binary (equation, nullary (variable v), e))) ->
-    (case checkTypeSubstitution tvS (map (TVAR, tvS1)) of OK tsbs ->
-    if length mustBe_singleton_v = 1 then
-    let v:Variable = first mustBe_singleton_v in
-    if mustBe_singleton_tsbs_of_t = singleton (typeSubstInType tsbs t) then
+    (case checkTypeSubstitution tvS (map TVAR tvS1) of OK tsbs ->
+    if length mustBe_single_v = 1 then
+    let v:Variable = first mustBe_single_v in
+    if mustBe_single_tsbs_of_t = single (typeSubstInType tsbs t) then
     OK (tvS, v, e)
     else   FAIL
     else   FAIL
@@ -1494,12 +1492,12 @@ spec
      Proof -> MayFail (Context * Variable * Type * Expression)
   def checkTheoremReflexivity prf =
     case checkTheorem prf of
-      OK (cx, binding (universal, mustBe_singleton_v, mustBe_singleton_t,
+      OK (cx, binding (universal, mustBe_single_v, mustBe_single_t,
                        binary (application, q, mustBe_pair_v_v))) ->
-    if length mustBe_singleton_v = 1
-    && length mustBe_singleton_t = 1 then
-    let v:Variable = first mustBe_singleton_v in
-    let t:Type     = first mustBe_singleton_t in
+    if length mustBe_single_v = 1
+    && length mustBe_single_t = 1 then
+    let v:Variable = first mustBe_single_v in
+    let t:Type     = first mustBe_single_t in
     if exprFreeVars q = empty
     &&  mustBe_pair_v_v = PAIR (VAR v) (VAR v) then
     OK (cx, v, t, q)
@@ -1511,7 +1509,7 @@ spec
   (* Check proof of symmetry theorem required to form well-formed quotient
   type. More precisely, given arguments `cx', `t', and `q', check that proof
   proves
-  `theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t))
+  `theoreM (cx, FAA (single v1 <| v2) (single t <| t)
                     (q @ PAIR (VAR v1) (VAR v2) ==>
                      q @ PAIR (VAR v2) (VAR v1)))'
   for some distinct `v1' and `v2' (see rule `tyQuot' in spec `Provability');
@@ -1521,13 +1519,13 @@ spec
      Context -> Type -> Expression -> Proof -> MayFail ()
   def checkTheoremSymmetry cx t q prf =
     case checkTheoremWithContext cx prf of
-      OK (binding (universal, mustBe_seq2_v1_v2, mustBe_seq2_t_t,
+      OK (binding (universal, mustBe_v1_v2, mustBe_t_t,
                    mustBe_q_pair_v1_v2_implies_q_pair_v2_v1)) ->
-    if length mustBe_seq2_v1_v2 = 2 then
-    let v1:Variable = mustBe_seq2_v1_v2 ! 0 in
-    let v2:Variable = mustBe_seq2_v1_v2 ! 1 in
+    if length mustBe_v1_v2 = 2 then
+    let v1:Variable = mustBe_v1_v2 @ 0 in
+    let v2:Variable = mustBe_v1_v2 @ 1 in
     if v1 ~= v2
-    && mustBe_seq2_t_t = seq2 (t, t)
+    && mustBe_t_t = single t <| t
     && mustBe_q_pair_v1_v2_implies_q_pair_v2_v1 =
        (q @ PAIR (VAR v1) (VAR v2) ==> q @ PAIR (VAR v2) (VAR v1)) then
     OK ()
@@ -1539,7 +1537,7 @@ spec
   (* Check proof of transitivity theorem required to form well-formed quotient
   type. More precisely, given arguments `cx', `t', and `q', check that proof
   proves
-  `theoreM (cx, FAA (seq3(u1,u2,u3)) (seq3(t,t,t))
+  `theoreM (cx, FAA (single u1 <| u2 <| u3)) (single t <| t <| t)
                     (q @ PAIR (VAR u1) (VAR u2) &&&
                      q @ PAIR (VAR u2) (VAR u3) ==>
                      q @ PAIR (VAR u1) (VAR u3)))'
@@ -1550,16 +1548,16 @@ spec
      Context -> Type -> Expression -> Proof -> MayFail ()
   def checkTheoremTransitivity cx t q prf =
     case checkTheoremWithContext cx prf of
-      OK (binding (universal, mustBe_seq3_u1_u2_u3, mustBe_seq3_t_t_t,
+      OK (binding (universal, mustBe_u1_u2_u3, mustBe_t_t_t,
                    mustBe_q_pair_u1_u2_and_q_pair_u2_u3_implies_q_pair_u1_u3)) ->
-    if length mustBe_seq3_u1_u2_u3 = 3 then
-    let u1:Variable = mustBe_seq3_u1_u2_u3 ! 0 in
-    let u2:Variable = mustBe_seq3_u1_u2_u3 ! 1 in
-    let u3:Variable = mustBe_seq3_u1_u2_u3 ! 2 in
+    if length mustBe_u1_u2_u3 = 3 then
+    let u1:Variable = mustBe_u1_u2_u3 @ 0 in
+    let u2:Variable = mustBe_u1_u2_u3 @ 1 in
+    let u3:Variable = mustBe_u1_u2_u3 @ 2 in
     if u1 ~= u2
     && u2 ~= u3
     && u3 ~= u1
-    && mustBe_seq3_t_t_t = seq3 (t, t, t)
+    && mustBe_t_t_t = single t <| t <| t
     && mustBe_q_pair_u1_u2_and_q_pair_u2_u3_implies_q_pair_u1_u3 =
        (q @ PAIR (VAR u1) (VAR u2) &&& q @ PAIR (VAR u2) (VAR u3) ==>
         q @ PAIR (VAR u1) (VAR u3)) then
@@ -1572,7 +1570,7 @@ spec
   (* Check proof of theorem required to form well-typed choice expressions.
   More precisely, given arguments `cx', `t', `q', and `e', check that proof
   proves
-  `theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t))
+  `theoreM (cx, FAA (single v1 <| v2) (single t <| t)
                     (q @ PAIR (VAR v1) (VAR v2) ==>
                      e @ VAR v1 == e @ VAR v2))'
   for some distinct `v1' and `v2'. Return nothing if successul. *)
@@ -1581,13 +1579,13 @@ spec
      Context -> Type -> Expression -> Expression -> Proof -> MayFail ()
   def checkTheoremChoice cx t q e prf =
     case checkTheoremWithContext cx prf of
-      OK (binding (universal, mustBe_seq2_v1_v2, mustBe_seq2_t_t,
+      OK (binding (universal, mustBe_v1_v2, mustBe_t_t,
                    mustBe_q_pair_v1_v2_implies_e_v1_equals_e_v2)) ->
-    if length mustBe_seq2_v1_v2 = 2 then
-    let v1:Variable = mustBe_seq2_v1_v2 ! 0 in
-    let v2:Variable = mustBe_seq2_v1_v2 ! 1 in
+    if length mustBe_v1_v2 = 2 then
+    let v1:Variable = mustBe_v1_v2 @ 0 in
+    let v2:Variable = mustBe_v1_v2 @ 1 in
     if v1 ~= v2
-    && mustBe_seq2_t_t = seq2 (t, t)
+    && mustBe_t_t = single t <| t
     && mustBe_q_pair_v1_v2_implies_e_v1_equals_e_v2 =
        (q @ PAIR (VAR v1) (VAR v2) ==> e @ VAR v1 == e @ VAR v2) then
     OK ()
@@ -1598,7 +1596,7 @@ spec
 
   (* Check proof of theorem required to form well-typed recursive let. More
   precisely, check that proof proves
-  `theoreM (cx, EXX1 vS tS (TUPLE (map (VAR, vS)) == TUPLE eS))'
+  `theoreM (cx, EXX1 vS tS (TUPLE (map VAR vS) == TUPLE eS))'
   for some `cx', `vS', `tS', and `eS', which are returned if successful. *)
 
   op checkTheoremRecursiveLet :
@@ -1610,14 +1608,14 @@ spec
                     (existential1, vS, tS,
                      binary (equation,
                              nary (tuple, mustBe_vS), nary (tuple, eS))))) ->
-        if mustBe_vS = map (VAR, vS) then OK (cx, vS, tS, eS) else FAIL
+        if mustBe_vS = map VAR vS then OK (cx, vS, tS, eS) else FAIL
       | _ -> FAIL
 
 
   (* Check proofs of theorems required to prove that a case expression that is
   well-typed in `cx' and that has target expression `e', patterns `pS', and
   branch expressions `eS' is equal to some expression `e0'. Each theorem must
-  say that `eS!i == e0' in the context for branch `i'. Return `e0' if
+  say that `eS@i == e0' in the context for branch `i'. Return `e0' if
   successful. *)
 
   op checkCaseBranchTheorems :
@@ -1673,7 +1671,7 @@ spec
       if ~(contextDefinesOp? (cx, o)) then
       (case checkTheoremOpDef cx t tvS prf1 of OK (tvS1, v, e) ->
       if ~(o in? exprOps e) then
-      let esbs:ExprSubstitution = FMap.singleton (v, OPP o (map (TVAR, tvS1))) in
+      let esbs:ExprSubstitution = single v (OPP o (map TVAR tvS1)) in
       OK (wellFormedContext (cx <| opDefinition (o, tvS1, exprSubst esbs e)))
       else   FAIL
       | _ -> FAIL)
@@ -1872,13 +1870,13 @@ spec
     | exRecordProjection (prf, f) ->
       (case checkWTExprOfRecordType prf of OK (cx, e, fS, tS) ->
       (case checkIndex f fS of OK i ->
-      OK (wellTypedExpr (cx, e DOTr f, tS!i))
+      OK (wellTypedExpr (cx, e DOTr f, tS@i))
       | _ -> FAIL)
       | _ -> FAIL)
     | exTupleProjection (prf, pi) ->
       (case checkWTExprOfProductType prf of OK (cx, e, tS) ->
       if pi <= length tS then
-      OK (wellTypedExpr (cx, e DOTt pi, tS!(pi-1)))
+      OK (wellTypedExpr (cx, e DOTt pi, tS@(pi-1)))
       else   FAIL
       | _ -> FAIL)
     | exRelaxator prf ->
@@ -2016,7 +2014,7 @@ spec
     | exEmbedder0 (prf, c) ->
       (case checkWFSumType prf of OK (cx, cS, t?S) ->
       (case checkIndex c cS of OK i ->
-      if t?S ! i = None then
+      if t?S @ i = None then
       OK (wellTypedExpr (cx, EMBED (SUM cS t?S) c, SUM cS t?S))
       else   FAIL
       | _ -> FAIL)
@@ -2024,7 +2022,7 @@ spec
     | exEmbedder1 (prf, c) ->
       (case checkWFSumType prf of OK (cx, cS, t?S) ->
       (case checkIndex c cS of OK i ->
-      (case t?S ! i of Some ti ->
+      (case t?S @ i of Some ti ->
       OK (wellTypedExpr (cx, EMBED (SUM cS t?S) c, ti --> SUM cS t?S))
       | _ -> FAIL)
       | _ -> FAIL)
@@ -2034,7 +2032,7 @@ spec
       (case checkWTPattsWithContextAndType cx t prfS of OK pS ->
       if length pS > 0 then
       (case checkTheoremWithContextAndFormula
-            cx (disjoinAll (map (pattAssumptionsQuantified e, pS))) prf1 of
+            cx (disjoinAll (map (pattAssumptionsQuantified e) pS)) prf1 of
          OK () ->
       (case checkWTCaseBranchExprs cx e pS prfS1 of OK (eS, t1) ->
       OK (wellTypedExpr (cx, CASE e pS eS, t1))
@@ -2066,7 +2064,7 @@ spec
     | exAlphaAbstraction (prf, oldV, newV) ->
       (case checkWTAbstraction prf of OK (cx, vS, tS, e, t) ->
       (case checkIndex oldV vS of OK i ->
-      let esbs:ExprSubstitution = FMap.singleton (oldV, VAR newV) in
+      let esbs:ExprSubstitution = single oldV (VAR newV) in
       if ~(newV in? toSet vS \/ exprFreeVars e \/ captVars oldV e) then
       OK (wellTypedExpr (cx, FNN (update(vS,i,newV)) tS (exprSubst esbs e), t))
       else   FAIL
@@ -2075,12 +2073,12 @@ spec
     | exAlphaCase (prf, i, oldV, newV) ->
       (case checkWTCase prf of OK (cx, e, pS, eS, t) ->
       if i < length pS
-      && oldV in? pattVars (pS!i)
+      && oldV in? pattVars (pS@i)
       && ~(newV in?
-           pattVars (pS!i) \/ exprFreeVars (eS!i) \/ captVars oldV (eS!i)) then
-      let newPi:Pattern = pattSubst (oldV, newV) (pS!i) in
-      let esbs:ExprSubstitution = FMap.singleton (oldV, VAR newV) in
-      let newEi:Expression = exprSubst esbs (eS!i) in
+           pattVars (pS@i) \/ exprFreeVars (eS@i) \/ captVars oldV (eS@i)) then
+      let newPi:Pattern = pattSubst (oldV, newV) (pS@i) in
+      let esbs:ExprSubstitution = single oldV (VAR newV) in
+      let newEi:Expression = exprSubst esbs (eS@i) in
       OK (wellTypedExpr
            (cx, CASE e (update(pS,i,newPi)) (update(eS,i,newEi)), t))
       else   FAIL
@@ -2088,14 +2086,14 @@ spec
     | exAlphaRecursiveLet (prf, oldV, newV) ->
       (case checkWTRecursiveLet prf of OK (cx, vS, tS, eS, e, t) ->
       (case checkIndex oldV vS of OK i ->
-      let esbs:ExprSubstitution = FMap.singleton (oldV, VAR newV) in
+      let esbs:ExprSubstitution = single oldV (VAR newV) in
       if ~(newV in? toSet vS \/ captVars oldV e \/ exprFreeVars e \/
-                    unionAll (map (exprFreeVars, eS)) \/
-                    unionAll (map (captVars oldV, eS))) then
+                    \\// (map exprFreeVars eS) \/
+                    \\// (map (captVars oldV) eS)) then
       OK (wellTypedExpr
            (cx,
             LETDEF (update(vS,i,newV)) tS
-                   (map (exprSubst esbs, eS)) (exprSubst esbs e),
+                   (map (exprSubst esbs) eS) (exprSubst esbs e),
             t))
       else   FAIL
       | _ -> FAIL)
@@ -2111,7 +2109,7 @@ spec
     | paEmbedding0 (prf, c) ->
       (case checkWFSumType prf of OK (cx, cS, t?S) ->
       (case checkIndex c cS of OK i ->
-      if t?S ! i = None then
+      if t?S @ i = None then
       OK (wellTypedPatt (cx, PEMBE (SUM cS t?S) c, SUM cS t?S))
       else   FAIL
       | _ -> FAIL)
@@ -2119,7 +2117,7 @@ spec
     | paEmbedding1 (prf, prf1, c) ->
       (case checkWFSumType prf of OK (cx, cS, t?S) ->
       (case checkIndex c cS of OK i ->
-      (case t?S ! i of Some ti ->
+      (case t?S @ i of Some ti ->
       (case checkWTPattWithContextAndType cx ti prf1 of OK p ->
       OK (wellTypedPatt (cx, PEMBED (SUM cS t?S) c p, SUM cS t?S))
       | _ -> FAIL)
@@ -2237,7 +2235,7 @@ spec
       if noRepetitions? (v |> vS)
       && length vS = length tS then
       OK (theoreM (cx, FA v (TRECORD fS tS)
-                          (EXX1 vS tS (VAR v == RECORD fS (map (VAR, vS))))))
+                          (EXX1 vS tS (VAR v == RECORD fS (map VAR vS)))))
       else   FAIL
       | _ -> FAIL)
     | thTuple (prf, v, vS) ->
@@ -2245,19 +2243,19 @@ spec
       if noRepetitions? (v |> vS)
       && length vS = length tS then
       OK (theoreM (cx, FA v (PRODUCT tS)
-                          (EXX1 vS tS (VAR v == TUPLE (map (VAR, vS))))))
+                          (EXX1 vS tS (VAR v == TUPLE (map VAR vS)))))
       else   FAIL
       | _ -> FAIL)
     | thRecordProjection (prf, f) ->
       (case checkWTRecord prf of OK (cx, fS, eS, _) ->
       (case checkIndex f fS of OK i ->
-      OK (theoreM (cx, (RECORD fS eS) DOTr f == (eS!i)))
+      OK (theoreM (cx, (RECORD fS eS) DOTr f == (eS@i)))
       | _ -> FAIL)
       | _ -> FAIL)
     | thTupleProjection (prf, pi) ->
       (case checkWTTuple prf of OK (cx, eS, _) ->
       if pi <= length eS then
-      OK (theoreM (cx, (TUPLE eS) DOTt pi == (eS!(pi-1))))
+      OK (theoreM (cx, (TUPLE eS) DOTt pi == (eS@(pi-1))))
       else   FAIL
       | _ -> FAIL)
     | thRecordUpdate1 (prf1, prf2, f) ->
@@ -2265,7 +2263,7 @@ spec
       (case checkWTRecordWithContext cx prf2 of OK (fS2, eS2, _) ->
       (case checkIndex f fS1 of OK i ->
       if ~(f in? fS2) then
-      OK (theoreM (cx, (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr f == (eS1!i)))
+      OK (theoreM (cx, (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr f == (eS1@i)))
       else   FAIL
       | _ -> FAIL)
       | _ -> FAIL)
@@ -2274,7 +2272,7 @@ spec
       (case checkWTRecord prf1 of OK (cx, fS1, eS1, _) ->
       (case checkWTRecordWithContext cx prf2 of OK (fS2, eS2, _) ->
       (case checkIndex f fS2 of OK i ->
-      OK (theoreM (cx, (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr f == (eS2!i)))
+      OK (theoreM (cx, (RECORD fS1 eS1 <<< RECORD fS2 eS2) DOTr f == (eS2@i)))
       | _ -> FAIL)
       | _ -> FAIL)
       | _ -> FAIL)
@@ -2283,13 +2281,13 @@ spec
       if v ~= v1 then
       let n:Nat = length cS in
       if length t?S = n then
-      let disjuncts:Expressions = seqSuchThat (fn(i:Nat) ->
+      let disjuncts:Expressions = seq (fn(i:Nat) ->
         if i < n then
-          Some (case (t?S ! i) of
+          Some (case (t?S @ i) of
                   | Some t ->
-                    EX v1 t (VAR v == EMBED (SUM cS t?S) (cS!i) @ VAR v1)
+                    EX v1 t (VAR v == EMBED (SUM cS t?S) (cS@i) @ VAR v1)
                   | None ->
-                    VAR v == EMBED (SUM cS t?S) (cS!i))
+                    VAR v == EMBED (SUM cS t?S) (cS@i))
         else None) in
       OK (theoreM (cx, FA v (SUM cS t?S) (disjoinAll disjuncts)))
       else   FAIL
@@ -2300,12 +2298,12 @@ spec
       (case checkIndex ci cS of OK i ->
       (case checkIndex cj cS of OK j ->
       if i ~= j then
-      (case (t?S ! i, t?S ! j) of
+      (case (t?S @ i, t?S @ j) of
          | (Some ti, Some tj) ->
            (case (vi?, vj?) of
               | (Some vi, Some vj) ->
                 if vi ~= vj then
-                  OK (theoreM (cx, FAA (seq2(vi,vj)) (seq2(ti,tj))
+                  OK (theoreM (cx, FAA (single vi <| vj) (single ti <| tj)
                                        (EMBED (SUM cS t?S) ci @ VAR vi ~==
                                         EMBED (SUM cS t?S) cj @ VAR vj)))
                 else FAIL
@@ -2333,9 +2331,9 @@ spec
     | thEmbedderInjective (prf, c, v1, v2) ->
       (case checkWFSumType prf of OK (cx, cS, t?S) ->
       (case checkIndex c cS of OK i ->
-      (case t?S ! i of Some t ->
+      (case t?S @ i of Some t ->
       if v1 ~= v2 then
-      OK (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t))
+      OK (theoreM (cx, FAA (single v1 <| v2) (single t <| t)
                            (VAR v1 ~== VAR v2 ==>
                             EMBED (SUM cS t?S) c @ VAR v1 ~==
                             EMBED (SUM cS t?S) c @ VAR v2)))
@@ -2350,7 +2348,7 @@ spec
     | thRelaxatorInjective (prf, v1, v2) ->
       (case checkWFSubType prf of OK (cx, t, r) ->
       if v1 ~= v2 then
-      OK (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t\r,t\r))
+      OK (theoreM (cx, FAA (single v1 <| v2) (single (t\r) <| (t\r))
                            (VAR v1 ~== VAR v2 ==>
                             RELAX r @ VAR v1 ~== RELAX r @ VAR v2)))
       else   FAIL
@@ -2376,7 +2374,7 @@ spec
     | thQuotienterEquivClass (prf, v1, v2) ->
       (case checkWFQuotientType prf of OK (cx, t, q) ->
       if v1 ~= v2 then
-      OK (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t))
+      OK (theoreM (cx, FAA (single v1 <| v2) (single t <| t)
                            (q @ PAIR (VAR v1) (VAR v2) <==>
                             QUOTIENT q @ VAR v1 == QUOTIENT q @ VAR v2)))
       else   FAIL
@@ -2399,7 +2397,7 @@ spec
          OK (mustBe_cx_vS_vSEqualsES, e0) ->
       (case checkExtraAxiomWithTypeVarsAndFormula
               (cx ++ multiVarDecls (vS, tS)) mustBe_cx_vS_vSEqualsES
-              empty (TUPLE (map (VAR, vS)) == TUPLE eS) of OK _ ->
+              empty (TUPLE (map VAR vS) == TUPLE eS) of OK _ ->
       if toSet vS /\ exprFreeVars e0 = empty then
       OK (theoreM (cx, LETDEF vS tS eS e == e0))
       else   FAIL
@@ -2450,19 +2448,19 @@ spec
       (case checkWTExistential1 prf of OK (cx, vS, tS, e) ->
       if length vS1 = length vS
       && toSet vS /\ toSet vS1 = empty then
-      let esbs:ExprSubstitution = FMap.fromSequences (vS, map (VAR, vS1)) in
+      let esbs:ExprSubstitution = fromSeqs (vS, map VAR vS1) in
       if exprSubstOK? (e, esbs) then
       OK (theoreM (cx, EXX1 vS tS e <==>
                        EXX vS tS (e &&&
                                   FAA vS1 tS (exprSubst esbs e ==>
-                                              TUPLE (map (VAR, vS)) ==
-                                              TUPLE (map (VAR, vS1))))))
+                                              TUPLE (map VAR vS) ==
+                                              TUPLE (map VAR vS1)))))
       else   FAIL
       else   FAIL
       | _ -> FAIL)
     | thAbbrevNonRecursiveLet prf ->
       (case checkWTNonRecursiveLet prf of OK (cx, p, e, e1, t) ->
-      OK (theoreM (cx, LET p e e1 == CASE e (singleton p) (singleton e1)))
+      OK (theoreM (cx, LET p e e1 == CASE e (single p) (single e1)))
       | _ -> FAIL)
 
 endspec
