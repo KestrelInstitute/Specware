@@ -250,7 +250,6 @@ are no longer needed. *)
     let spc = specOf (Transition.modeSpec transition) in
     %let spc = transformSpecForCodeGen base spc in
     {
-     print ("\nConverting 1, Getting Guard and Actions...\n");
      (opt_guard_term, actions) <- getTransitionGuardAndActions transition;
      (graph,next,visited) <- 
        if Mode.member? final_modes (target transition) then
@@ -325,13 +324,9 @@ are no longer needed. *)
     %let left_spec = transformSpecForCodeGen base left_spec in
     {
 
-     print ("\nConverting 2, Getting left Guard and Actions...\n");
      (opt_left_guard, left_actions) <- getTransitionGuardAndActions left_trans;
-     print ("\nConverting 2, Getting right Guard and Actions...\n");
      (opt_right_guard, right_actions) <- getTransitionGuardAndActions right_trans;
-     print ("\nConverting 2 => 1 for left..\n");
      (g1, n1, visited) <- convertBSpecAux bSpec final_modes graph (n+1) (target left_trans)  visited; 
-     print ("\nConverting 2 => 1 for right..\n");
      (g2, n2, visited) <- convertBSpecAux bSpec final_modes g1    n1    (target right_trans) visited;
      %% At this point, we've processed everything reachable from here (with frontier at next).
      %% Now we need to attach some semantics to this node (at n).
@@ -402,11 +397,8 @@ are no longer needed. *)
         let left_spec = specOf (Transition.modeSpec left_trans) in
 	%let left_spec = transformSpecForCodeGen base left_spec  in
         {
-	 print ("\nFor N, Getting Left guard and actions...\n");
 	 (opt_left_guard, left_actions) <- getTransitionGuardAndActions left_trans;
-	 print ("\nFor N, Right N-1...\n");
 	 (g1, n1, visited, right_index) <- convertBSpecAux_N bSpec final_modes graph (n+1) right_transitions   visited;
-	 print ("\nFor N, Left 1...\n");
 	 (g2, n2, visited)              <- convertBSpecAux   bSpec final_modes g1    n1    (target left_trans) visited; 
 	 original_left_index            <- return (vertexToIndex visited (vertex (target left_trans)));
 	 (g3, n3, revised_left_index) <-
