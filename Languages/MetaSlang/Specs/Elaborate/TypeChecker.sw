@@ -1254,9 +1254,7 @@ spec {
         | Some priority -> if element_priority = priority
                             then consistentInfixMS.Terms (tail, optional_priority)
                             else (false, None))
-    | _::tail -> (case optional_priority of
-                  | None -> consistentInfixMS.Terms (tail, optional_priority)
-                  | _    -> (false, None))
+    | _::tail -> consistentInfixMS.Terms (tail, optional_priority)
        
 
   def adjustEqualitySort (env, srt, t1, eq_args) =
