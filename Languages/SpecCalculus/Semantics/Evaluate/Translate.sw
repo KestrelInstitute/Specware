@@ -95,7 +95,7 @@ Note: The code below does not yet match the documentation above, but should.
      %%
      %% Now we produce a new spec using these unmbiguous maps.
      %%
-     spc <- auxTranslateSpec require_monic? spc translation_maps pos;
+     spc <- auxTranslateSpec spc translation_maps pos;
      raise_any_pending_exceptions;
      %%
      %% Next we worry about traditional captures in which a (global) op Y,
@@ -373,12 +373,6 @@ Note: The code below does not yet match the documentation above, but should.
 					       position));
 		return (op_translation_map, sort_translation_map)
 		}
-	     else if require_monic? && basicQualifier? cod_q then
-	       {
-		raise_later (TranslationError ("Illegal to translate into base: " ^ cod_q,
-					       position));
-		return (op_translation_map, sort_translation_map)
-		}
 	     else
 	       let
 
@@ -389,18 +383,11 @@ Note: The code below does not yet match the documentation above, but should.
 		       | None -> 
 		         %% No rule yet for this candidate...
 		         let new_cod_qid = mkQualifiedId (cod_q, sort_id) in
-			 if require_monic? && basicCodSortName? new_cod_qid then
-			   {
-			    raise_later (TranslationError ("Illegal to translate into base type: " ^ (explicitPrintQualifiedId new_cod_qid),
-							   rule_pos));
-			    return sort_translation_map
-			   }
-			 else
-			   {
-                            when require_monic? 
-			     (complain_if_sort_collision (sorts, sort_translation_map, sort_q, sort_id, new_cod_qid, rule_pos));
-			    return (insertAQualifierMap (sort_translation_map, sort_q, sort_id, (new_cod_qid, [new_cod_qid])))
-			   }
+			 {
+			  when require_monic? 
+			   (complain_if_sort_collision (sorts, sort_translation_map, sort_q, sort_id, new_cod_qid, rule_pos));
+			  return (insertAQualifierMap (sort_translation_map, sort_q, sort_id, (new_cod_qid, [new_cod_qid])))
+			 }
 		       | _ -> 
 			 {
 			  raise_later (TranslationError ("Multiple (wild) rules for source type "^
@@ -439,17 +426,9 @@ Note: The code below does not yet match the documentation above, but should.
 						     return cod_qid)
 					          new_cod_qid
 						  cod_aliases);
-			 if require_monic? && basicCodOpName? new_cod_qid then
-			   {
-			    raise_later (TranslationError ("Illegal to translate into base op: " ^ (explicitPrintQualifiedId new_cod_qid),
-							   rule_pos));
-			    return op_translation_map
-			    }
-			 else
-			   {
-			    complain_if_op_collision (ops, op_translation_map, op_q, op_id, new_cod_qid, rule_pos);
-			    return (insertAQualifierMap (op_translation_map, op_q, op_id, (new_cod_qid, [new_cod_qid])))
-			    }
+			  when require_monic? 
+			   (complain_if_op_collision (ops, op_translation_map, op_q, op_id, new_cod_qid, rule_pos));
+			  return (insertAQualifierMap (op_translation_map, op_q, op_id, (new_cod_qid, [new_cod_qid])))
 			 }
 		       | _ -> 
 			 %% Candidate already has a rule (e.g. via some explicit mapping)...
@@ -483,13 +462,7 @@ Note: The code below does not yet match the documentation above, but should.
 					    rule_pos));
 	     return (op_translation_map, sort_translation_map)
 	    }
-	  else if require_monic? && basicCodSortName? cod_qid then
-	    {
-	     raise_later (TranslationError ("Illegal to translate into base type: " ^ (explicitPrintQualifiedId cod_qid),
-					    rule_pos));
-	     return (op_translation_map, sort_translation_map)
-	    }
-	  else
+	  else 
 	    let dom_types = findAllSorts (dom_spec, dom_qid) in
 	    add_type_rule op_translation_map sort_translation_map dom_qid dom_types cod_qid cod_aliases
 
@@ -506,13 +479,7 @@ Note: The code below does not yet match the documentation above, but should.
 					    rule_pos));
 	     return (op_translation_map, sort_translation_map)
 	    }
-	  else if require_monic? && basicCodOpName? cod_qid then
-	    {
-	     raise_later (TranslationError ("Illegal to translate into base op: " ^ (explicitPrintQualifiedId cod_qid),
-					    rule_pos));
-	     return (op_translation_map, sort_translation_map)
-	    }
-	  else
+	  else 
 	    let dom_ops = findAllOps (dom_spec, dom_qid) in
 	    add_op_rule op_translation_map sort_translation_map dom_qid dom_ops cod_qid cod_aliases
 
@@ -529,12 +496,6 @@ Note: The code below does not yet match the documentation above, but should.
 	  else if basicQualifiedId? dom_qid then
 	    {
 	     raise_later (TranslationError ("Illegal to translate from base type or op: " ^ (explicitPrintQualifiedId dom_qid),
-					    rule_pos));
-	     return (op_translation_map, sort_translation_map)
-	     }
-	  else if require_monic? && basicCodName? cod_qid then
-	    {
-	     raise_later (TranslationError ("Illegal to translate into base type or op: " ^ (explicitPrintQualifiedId cod_qid),
 					    rule_pos));
 	     return (op_translation_map, sort_translation_map)
 	     }
@@ -617,8 +578,8 @@ Note: The code below does not yet match the documentation above, but should.
       | _ -> sort_term
 
 
-  op  auxTranslateSpec : Boolean -> Spec -> TranslationMaps -> Position -> SpecCalc.Env Spec
-  def auxTranslateSpec require_monic? spc (op_id_map, sort_id_map) position =
+  op  auxTranslateSpec : Spec -> TranslationMaps -> Position -> SpecCalc.Env Spec
+  def auxTranslateSpec spc (op_id_map, sort_id_map) position =
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_q in all qualified names ??
     let
@@ -640,8 +601,6 @@ Note: The code below does not yet match the documentation above, but should.
 	    let primary_qid as Qualified (primary_q, primary_id) = primaryOpName old_info in
 	    if ~ (old_q = primary_q && old_id = primary_id) then
 	      return new_op_map
-	    else if exists basicOpName? old_info.names then
-	      return (insertAQualifierMap (new_op_map, old_q, old_id, old_info))
 	    else
 	      {
 	       new_names <- foldM (fn new_qids -> fn old_qid ->
@@ -655,16 +614,6 @@ Note: The code below does not yet match the documentation above, but should.
 	                          [] 
 				  old_info.names;
 	       new_names <- return (rev new_names);
-	       mapM (fn new_qid ->
-		     if require_monic? && basicOpName? new_qid then
-		       {
-			raise_later (TranslationError ("Illegal to translate into base op " ^ (explicitPrintQualifiedId new_qid),
-						       position));
-			return new_qid
-		       }
-		     else
-		       return new_qid)
-	            new_names;
 	       new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
 				  mergeOpInfo merged_info 
 					      (findAQualifierMap (new_op_map, new_q, new_id))
@@ -685,8 +634,6 @@ Note: The code below does not yet match the documentation above, but should.
 	    let Qualified (primary_q, primary_id) = primarySortName old_info in
 	    if ~ (old_q = primary_q && old_id = primary_id) then
 	      return new_sort_map
-	    else if exists basicSortName? old_info.names then
-	      return (insertAQualifierMap (new_sort_map, old_q, old_id, old_info))
 	    else
 	      {
 	       new_names <- foldM (fn new_qids -> fn old_qid ->
@@ -700,21 +647,11 @@ Note: The code below does not yet match the documentation above, but should.
 	                          [] 
 				  old_info.names;
 	       new_names <- return (rev new_names);
-	       mapM (fn new_qid ->
-		     if require_monic? && basicSortName? new_qid then
-		       {
-			raise_later (TranslationError ("Illegal to translate into base type " ^ (explicitPrintQualifiedId new_qid),
-						       position));
-			return new_qid
-		       }
-		     else
-		       return new_qid)
-	            new_names;
 	       if member (unqualified_Boolean, new_names) || member (Boolean_Boolean, new_names) then
 		 return new_sort_map
 	       else
 		{ 
-		 new_info <- foldM (fn merged_info -> fn Qualified (new_q, new_id) ->
+		 new_info <- foldM (fn merged_info -> fn (Qualified (new_q, new_id)) ->
 				     mergeSortInfo merged_info 
 						   (findAQualifierMap (new_sort_map, new_q, new_id))
 						   position)

@@ -90,6 +90,7 @@ SpecCalc qualifying spec
 
   op mergeOpInfo : OpInfo -> Option OpInfo -> Position -> SpecCalc.Env OpInfo 
  def mergeOpInfo new_info opt_old_info pos =
+
    case opt_old_info of
      | None -> return new_info
      | Some old_info ->
@@ -97,7 +98,19 @@ SpecCalc qualifying spec
        let combined_names = removeDuplicates names in % redundant?
 
        if new_info.fixity ~= old_info.fixity then
-         raise (SpecError (pos, "Merged versions of Op " ^ (printAliases combined_names) ^ " have different fixity"))
+	 let 
+	   def print_fixity fixity =
+	     case fixity of
+	       | Nonfix         -> "Nonfix"
+	       | Unspecified    -> "Unspecified"
+	       | Infix (Left, i)  -> (" infixl " ^ toString i)
+	       | Infix (Right, i) -> (" infixr " ^ toString i)
+	       | _ -> "Unrecognized: [" ^ (anyToString fixity) ^ "]"
+	 in
+	   raise (SpecError (pos, "Merged versions of Op " ^ (printAliases combined_names) ^ " have differing fixities: " ^
+			     print_fixity (new_info.fixity) ^ " vs." ^
+			     print_fixity (old_info.fixity)))
+
        else
 	 let (old_tvs, old_srt, _) = unpackFirstOpDef old_info in
 	 let (new_tvs, new_srt, _) = unpackFirstOpDef new_info in

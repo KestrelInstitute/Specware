@@ -79,6 +79,17 @@ spec
   let base_spec = getBaseSpec () in  % TODO: base spec should be an arg to specColimit, or part of monad
 
   let 
+     def extract_sorts (spc : Spec) =
+       foldriAQualifierMap (fn (qualifier, id, info, sorts) ->
+			    cons ((qualifier, id, info), sorts))
+                           [] 
+			   spc.sorts    
+     def extract_ops (spc : Spec) =
+       foldriAQualifierMap (fn (qualifier, id, info, ops) ->
+			    cons ((qualifier, id, info), ops))
+                           [] 
+			   spc.ops
+
      def extract_non_base_sorts spc =
        let base_sorts = base_spec.sorts in
        foldriAQualifierMap (fn (qualifier, id, info, non_base_sorts) ->
@@ -113,8 +124,8 @@ spec
   %%     this could be optimized to O(1) with clever refinement.
   %% -------------------------------------------------------------------------------------------------------------
 
-  let sort_qset : QuotientSet = computeQuotientSet dg extract_non_base_sorts sortMap in 
-  let   op_qset : QuotientSet = computeQuotientSet dg extract_non_base_ops     opMap in 
+  let sort_qset : QuotientSet = computeQuotientSet dg extract_sorts sortMap in 
+  let   op_qset : QuotientSet = computeQuotientSet dg extract_ops     opMap in 
  %let prop_qset : QuotientSet = computeQuotientSet dg extract_non_base_props propMap in 
 
   %% debugging
@@ -204,7 +215,8 @@ spec
   in
 
   %% debugging
-  %% let _ = showVertexToTranslateExprMaps vertex_to_sm_rules in
+  % let _ = toScreen ("\nV2SM rules: "^ (anyToString vertex_to_sm_rules ) ^ "\n") in
+  % let _ = showVertexToTranslateExprMaps vertex_to_sm_rules in
 
   %% -------------------------------------------------------------------------------------------------------------
   %% (4)  Use the translation expressions to construct as a translation morphism the
@@ -217,7 +229,10 @@ spec
         (fn apex_spec -> fn vertex ->
            let vertex_spec             = vertexLabel dg          vertex in
            let cocone_translation_expr = eval vertex_to_sm_rules vertex in
+	   % let _ = toScreen ("\nTranslation expr "^ (anyToString cocone_translation_expr) ^ "\n") in
+	   % let _ = toScreen ("\nSpec: "^ (printSpec vertex_spec) ^ "\n") in
            let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_translation_expr) in
+	   % let _ = toScreen ("\nTranslated Spec: "^ (printSpec translated_spec) ^ "\n") in
            let combined_spec   = run (specUnion [apex_spec, translated_spec]) in
            combined_spec)
          base_spec % proto_apex_spec
@@ -290,9 +305,9 @@ spec
  %% diagram, using MFSet.merge to produce implicit quotient sets of items that are 
  %% connected via morphisms labelling those edges.
 
- def fa (info) computeQuotientSet (dg              : SpecDiagram)
-                                  (non_base_items  : Spec -> List (Qualifier * Id * info))
-				  (sm_qid_map      : Morphism -> QualifiedIdMap)
+ def fa (info) computeQuotientSet (dg           : SpecDiagram)
+                                  (select_items : Spec -> List (Qualifier * Id * info))
+				  (sm_qid_map   : Morphism -> QualifiedIdMap)
   : QuotientSet =				    
   %% "mfset" = "Merge/Find Set", "vqid" = "vertex, qualified id", 
   let initial_mfset_vqid_map = 
@@ -302,7 +317,7 @@ spec
 			       let vqid = (vertex, Qualified (qualifier, id)) in
 			       augmentMFSetMap mfset_map vqid)
 			      mfset_map  
-			      (non_base_items (vertexLabel dg vertex)))
+			      (select_items (vertexLabel dg vertex)))
                        emptyMFSetMap
 		       dg
   in
@@ -488,7 +503,7 @@ spec
 
  def makeVertexToTranslateRulesMap dg 
                                    vqid_to_apex_qid_and_aliases
-				   extract_non_base_items
+				   select_items
 				   make_translate_rule 
    = 
    %% Build the map: vertex => TranslateRules Position
@@ -503,7 +518,7 @@ spec
 				Cons (make_translate_rule (vertex_qid, apex_qid, apex_aliases),
 				      translate_rules))
 			       []
-			       (extract_non_base_items spc)
+			       (select_items spc)
 		     in 
 		     update vertex_to_translation vertex translate_rules)
                     emptyMap
