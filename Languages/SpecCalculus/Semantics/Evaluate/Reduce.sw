@@ -24,13 +24,15 @@ SpecCalc qualifying spec
           ctxt <- return (makeContext spc);
           rules <- return (specRules ctxt spc);
           tempOpName <- return (mkQualifiedId ("Reduce", "#reduce#"));
-          newSpc <- addOp [tempOpName] Nonfix ([],Utilities.freshMetaTyVar ("reduce", pos)) [([],ms_term)] spc pos;
+          newSrt <- return (Utilities.freshMetaTyVar ("reduce", pos));
+          newDef <- return (SortedTerm (ms_term, newSrt, pos));
+	  newSpc <- addOp [tempOpName] Nonfix newDef spc pos;
           elabSpc <- elaborateSpecM newSpc;
           elabTerm <-
             case AnnSpec.findTheOp (elabSpc,tempOpName) of
               | None -> raise (SpecError (pos, "Reduce lost its operator!"))
               | Some info -> 
-		let [(tyVars, trm)] = info.dfn in
+		let (_, _, trm) = unpackOpDef info.dfn in
 		return trm;
           reducedTerm <-
             let
@@ -38,8 +40,8 @@ SpecCalc qualifying spec
                 let lazy = rewriteRecursive (ctxt,[],rules,trm) in
                 case lazy of
                   | Nil -> trm
-                  | Cons([],tl) -> trm
-                  | Cons((rule,trm,subst)::_,tl) ->
+                  | Cons ([], _) -> trm
+                  | Cons ((rule,trm,subst)::_, _) ->
                       if (count > 0) then 
                         reduceTerm (count - 1) trm
                       else

@@ -698,19 +698,32 @@ Utilities qualifying spec
  def letRecToLetTermFun fun = fun
 
  op letRecToLetTermSpec: Spec -> Spec
- def letRecToLetTermSpec(spc) =
+ def letRecToLetTermSpec spc =
    let 
      def letRecToLetTermSortInfo info =
-       info << {dfn = map (fn (tvs, srt) ->
-			   (tvs, letRecToLetTermSort srt))
-		          info.dfn}
+       let pos = sortAnn info.dfn in
+       let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+       let new_defs = 
+           map (fn srt ->
+		let pos = sortAnn srt in
+		let (tvs, srt) = unpackSort srt in
+		Pi (tvs, letRecToLetTermSort srt, pos))
+	       old_defs
+       in
+	 info << {dfn = maybeAndSort (old_decls ++ new_defs, pos)}
 
      def letRecToLetTermOpInfo info = 
-       let (tvs, srt) = info.typ in
-       info << {typ = (tvs, letRecToLetTermSort srt),
-		dfn = map (fn (tvs, term) ->
-			   (tvs, letRecToLetTermTerm term))
-		          info.dfn}
+       let pos = termAnn info.dfn in
+       let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+       let new_defs = 
+           map (fn tm ->
+		let pos = termAnn tm in
+		let (tvs, srt, tm) = unpackTerm tm in
+		Pi (tvs, SortedTerm (tm, letRecToLetTermSort srt, pos), pos))
+	       old_defs
+       in
+	 info << {dfn = maybeAndTerm (old_decls ++ new_defs, pos)}
+
    in
    {importInfo       = spc.importInfo,
     sorts            = mapSortInfos letRecToLetTermSortInfo spc.sorts,

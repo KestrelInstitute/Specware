@@ -71,7 +71,7 @@
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
     (goto-char (point-max))
-    (unless already-running?
+    (unless already-running? 
       (simulate-input-expression ":sw-shell"))
     ))
 

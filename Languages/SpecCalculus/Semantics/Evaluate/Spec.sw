@@ -85,10 +85,10 @@ axioms, etc.
   def evaluateSpecElem spc (elem, position) =
     case elem of
       | Import terms -> return spc
-      | Sort (names,(tyVars,defs)) ->
-          addSort names tyVars defs spc position
-      | Op (names,(fxty,srtScheme,defs)) ->
-          addOp names fxty srtScheme defs spc position
+      | Sort (names, dfn) ->
+          addSort names dfn spc position
+      | Op (names, fxty, dfn) ->
+          addOp names fxty dfn spc position
       | Claim (Axiom, name, tyVars, term) ->
           return (addAxiom ((name,tyVars,term), spc)) 
       | Claim (Theorem, name, tyVars, term) ->

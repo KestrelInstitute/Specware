@@ -14,7 +14,9 @@ Prover qualifying spec
     let baseProverSpec = run getBaseProverSpec in
     let optSrt = findTheSort(baseProverSpec, mkUnQualifiedId("ProverNat")) in
     let Some info = optSrt in
-    let [(_, srt)] = info.dfn in
+    let (decls, defs) = sortDeclsAndDefs info.dfn in
+    let first_def :: _ = defs ++ defs in
+    let (_, srt) = unpackSort first_def in
     srt
   
   op getBaseProverSpec : Env Spec
@@ -48,8 +50,11 @@ Prover qualifying spec
       let optSrt = findTheSort(spc, topBaseQId) in
       (case optSrt of
 	 | Some info ->
-	   (case info.dfn of
-	      | [(_, newSrt)] -> Utilities.mkAnd (topPred, srtPred (spc, newSrt, tm))
+	   (let (decls, defs) = sortDeclsAndDefs info.dfn in
+	    case defs of
+	      | [dfn] ->
+	        let (_, newSrt) = unpackSort dfn in
+	        Utilities.mkAnd (topPred, srtPred (spc, newSrt, tm))
 	      | _ -> topPred)
 	 | _ -> topPred)
       | _ -> topPred

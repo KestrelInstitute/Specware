@@ -73,7 +73,7 @@ coherence conditions of the morphism elements.
 			       else
 				 "Unrecognized target op " ^ (explicitPrintQualifiedId qid)))
 
-      def findCodSort position qid dom_qid dom_defs =
+      def findCodSort position qid dom_qid dom_dfn =
         case findAllSorts (cod_spec, qid) of
           | info :: other_infos -> 
 	    let found_qid as Qualified (found_q,_) = primarySortName info in
@@ -83,11 +83,11 @@ coherence conditions of the morphism elements.
 	     return found_qid
 	    }
           | _ -> 
-	    case (qid, dom_defs) of
+	    case (qid, definedSort? dom_dfn) of
 	      %% qualified names such as   Qualified ("Boolean", "Boolean")  % TODO: Deprecate "Boolean" as qualifier?
 	      %% may appear in codomain of mapping, but actually refer to built-in sort
-	      | (Qualified ("<unqualified>", "Boolean"), []) -> return Boolean_Boolean  % TODO: Deprecate "Boolean" as qualifier?
-	      | (Qualified ("Boolean",       "Boolean"), []) -> return qid              % TODO: Deprecate "Boolean" as qualifier?
+	      | (Qualified ("<unqualified>", "Boolean"), false) -> return Boolean_Boolean  % TODO: Deprecate "Boolean" as qualifier?
+	      | (Qualified ("Boolean",       "Boolean"), false) -> return qid              % TODO: Deprecate "Boolean" as qualifier?
 	      | (Qualified ("<unqualified>", "Boolean"), _) -> 
 	        raise (MorphError (position, "Cannot map defined sort " ^ (explicitPrintQualifiedId dom_qid) ^ " to Boolean"))
 	      | (Qualified (q,               "Boolean"), _) -> 

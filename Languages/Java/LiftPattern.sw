@@ -31,36 +31,43 @@ def unSupported x =
  * are just declared.
  *)
 op baseType?: Spec * Sort -> Boolean
-def baseType?(spc,typ) =
+def baseType? (spc, typ) =
   %% TODO: is this a complete set?  See basicQualifiers
-  if boolSort?(typ) or integerSort?(typ) or natSort?(typ) or stringSort?(typ) or charSort?(typ)
-    then true
-  else sortIsUnrefinedInSpec?(spc,typ)
+  boolSort?    typ || 
+  integerSort? typ || 
+  natSort?     typ || 
+  stringSort?  typ || 
+  charSort?    typ ||
+  ~ (sortIsDefinedInSpec? (spc, typ))
 
-
-op baseTypeAlias?: Spec * Sort -> Boolean
-def baseTypeAlias?(spc,srt) =
-  if baseType?(spc,srt) then true
+ op baseTypeAlias?: Spec * Sort -> Boolean
+def baseTypeAlias? (spc, srt) =
+  if baseType? (spc, srt) then 
+    true
   else
-    let usrt = unfoldBase(spc,srt) in
+    let usrt = unfoldBase (spc, srt) in
     case usrt of
-      | Subsort(srt,_,_) -> baseTypeAlias?(spc,srt)
-      | Quotient(srt,_,_) -> baseTypeAlias?(spc,srt)
+      | Subsort  (srt,_,_) -> baseTypeAlias? (spc, srt)
+      | Quotient (srt,_,_) -> baseTypeAlias? (spc, srt)
       | _ -> baseType?(spc,usrt)
 
-
-
-op builtinBaseTypeId?: Id -> Boolean  
-def builtinBaseTypeId?(id) =
+ op builtinBaseTypeId?: Id -> Boolean  
+def builtinBaseTypeId? id =
   %% TODO: is this a complete set?  See basicQualifiers
-  id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char"
+  id = "Boolean" ||
+  id = "Integer" ||
+  id = "Nat"     ||
+  id = "String"  ||
+  id = "Char"
 
-
-op baseTypeId?: Spec * Id -> Boolean
-
-def baseTypeId?(spc,id) =
-  id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char" or sortIdIsUnrefinedInSpec?(spc,id)
-
+ op baseTypeId?: Spec * Id -> Boolean
+def baseTypeId? (spc, id) =
+  id = "Boolean" ||
+  id = "Integer" ||
+  id = "Nat"     ||
+  id = "String"  || 
+  id = "Char"    ||
+  ~ (sortIdIsDefinedInSpec? (spc, id))
 
 op userType?: Spec * Sort -> Boolean
 
@@ -221,14 +228,22 @@ op opRange: Spec * Op -> Sort
 def opDom (spc, oper) =
   let infos = findAllOps (spc, oper) in
   case infos of
-    | info ::_ -> srtDom info.typ.2
-    | _ -> let _ = unSupported oper in []
+    | info ::_ -> 
+      let (_, srt, _) = unpackOpDef info.dfn in
+      srtDom srt
+    | _ -> 
+      let _ = unSupported oper in 
+      []
 
 def opRange (spc, oper) =
   let infos = findAllOps (spc, oper) in
   case infos of
-    | info ::_ -> srtRange info.typ.2
-    | _ -> let _ = unSupported oper in boolSort
+    | info ::_ -> 
+      let (_, srt, _) = unpackOpDef info.dfn in
+      srtRange srt
+    | _ -> 
+      let _ = unSupported oper in 
+      boolSort
 
 op srtDom: Sort -> List Sort
 op srtRange: Sort -> Sort
@@ -310,23 +325,24 @@ def opDelta(spc, oper) =
   let infos = findAllOps(spc, oper) in
   case infos of
     | info::_ ->
-      (case info.dfn of
-	| [(_,trm)] ->
-	  (case trm of
-	     | Lambda ([(pat, cond, body)],_) ->
-	       let argNames = patternNamesOpt pat in
-	       (case argNames of
-		  | Some argNames ->
-		    let numArgs = length argNames in
-		    let arity   = length opDom    in
-		    if arity = numArgs then
-		      let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
-		      (newArgs, body)
-		    else
-		      let _ = unSupported(oper) in ([], mkFalse())
-		  | _ -> let _ = unSupported(oper) in ([], mkFalse()))
-	     | _ -> ([], trm))
-	| _ -> let _ = unSupported oper in ([], mkFalse()))
+      (case opDefs info.dfn of
+	 | [dfn] ->
+	   (let (tvs, srt, tm) = unpackTerm dfn in
+	    case tm of
+	      | Lambda ([(pat, cond, body)],_) ->
+	        let argNames = patternNamesOpt pat in
+		(case argNames of
+		   | Some argNames ->
+		     let numArgs = length argNames in
+		     let arity   = length opDom    in
+		     if arity = numArgs then
+		       let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
+		       (newArgs, body)
+		     else
+		       let _ = unSupported(oper) in ([], mkFalse())
+		   | _ -> let _ = unSupported(oper) in ([], mkFalse()))
+	      | _ -> ([], tm))
+	 | _ -> let _ = unSupported oper in ([], mkFalse()))
     | _ -> let _ = unSupported oper in ([], mkFalse())
 
 
@@ -487,9 +503,10 @@ op liftPattern: Spec -> Spec
 def liftPattern spc =
   let newOpDefs = foldriAQualifierMap 
                     (fn (q, id, info, result) ->
-		     case (info.typ, info.dfn) of
-		       | ((_,srt), [(_, term)]) ->
-		         let origOp = mkQualifiedId (q, id) in
+		     case opDefs info.dfn of
+		       | [dfn] ->
+		         let (tvs, srt, term) = unpackTerm dfn in
+			 let origOp = mkQualifiedId (q, id) in
 			 let (origOpVars, origOpBody) = srtTermDelta (srt, term) in
 			 let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
 			 let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
@@ -526,5 +543,5 @@ def addOpToSpec2((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Ter
    
 def addOp (oper, srt, term, spc) : SpecCalc.Env Spec =
   let b = termAnn(term) in
-  addOp [oper] Nonfix ([], srt) [([], term)] spc b
+  addOp [oper] Nonfix (SortedTerm (term, srt, noPos)) spc b
 endspec

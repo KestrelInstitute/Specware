@@ -151,7 +151,7 @@ SpecCalc qualifying spec {
       List.map (fn argRef ->
 		let spc = specOf initSpec in
 		let info = Op.deref (spc, argRef) in
-		let (_,srt) = info.typ in
+		let (_,srt,_) = unpackOpDef info.dfn in
 		let (cspc,ctype) = sortToCType cspc spc srt in
 		let Qualified (_,id) = argRef in
 		(OpRef.show (mkUnQualifiedId id), ctype))
@@ -162,7 +162,7 @@ SpecCalc qualifying spec {
 		let spc = specOf initSpec in
 		let argRef = mkUnQualifiedId id in
 		let info = Op.deref (spc, argRef) in
-		let (_,srt) = info.typ in
+		let (_,srt,_) = unpackOpDef info.dfn in
 		let (cspc,ctype) = sortToCType cspc spc srt in
 		let Qualified (_,id) = argRef in
 		(OpRef.show (mkUnQualifiedId id), ctype, None))
@@ -175,7 +175,8 @@ SpecCalc qualifying spec {
 	    let spc = specOf modeSpec in
 	    case AnnSpec.findAllOps (spc,retRef) of
 	      | [info] ->
-	        sortToCType cspc spc info.typ.2
+		let (_,srt,_) = unpackOpDef info.dfn in
+	        sortToCType cspc spc srt
 	      | _ ->
 		let _ = toScreen ("Could not find return var: " ^ (anyToString retRef) ^ "\n") in 
 		(cspc,Void)		

@@ -737,11 +737,13 @@ def toAny     = Term `TranslationBasic.toAny`
    if ~simulateClosures? then
      let oldPatLst = patternToList pattern in
      let newPattern = mkTuplePat (oldPatLst ++ map mkVarPat freeVars) in 
+     let new_sort = mkArrow (patternSort newPattern, 
+			     termSortEnv (getSpecEnv (env), body)) 
+     in
+     let new_term = mkLambda (newPattern, body) in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
-      typ    = ([], mkArrow (patternSort newPattern, 
-			   termSortEnv (getSpecEnv (env), body))), 
-      dfn    = [([], mkLambda (newPattern, body))]}
+      dfn    = SortedTerm (new_term, new_sort, termAnn body)}
    else
      let varSort = mkProduct (List.map (fn (_, srt) -> srt) freeVars) in
      let closureVar = ("closure-var", mkAny varSort) in
@@ -775,12 +777,14 @@ def toAny     = Term `TranslationBasic.toAny`
 		            freeVars
 	     in
 	       mkLet (decls, body)
-     in	
-       {names  = [], % TODO: Real names
-	fixity = Nonfix, 
-	typ    = ([], mkArrow (patternSort newPattern, 
-			       termSortEnv (getSpecEnv env, body))), 
-	dfn    = [([], mkLambda (newPattern, newBody))]}
+     in
+     let new_sort = mkArrow (patternSort newPattern, 
+			     termSortEnv (getSpecEnv env, body))
+     in
+     let new_term = mkLambda (newPattern, newBody) in
+     {names  = [], % TODO: Real names
+      fixity = Nonfix, 
+      dfn    = SortedTerm (new_term, new_sort, termAnn body)}
 
  op  getSpecEnv: LLEnv -> Spec
  def getSpecEnv env =
@@ -818,38 +822,40 @@ def toAny     = Term `TranslationBasic.toAny`
 
      def doOp (q, id, info, spc) = 
        %let _ = String.writeLine ("lambdaLift \""^id^"\"...") in
-       case info.dfn of
+       if ~ (definedOpInfo? info) then
+	 addNewOpAux (info << {names = [Qualified (q, id)]},
+		      spc)
+       else
+	 let (tvs, srt, term) = unpackOpDef info.dfn in
+	 case term of 
+	   | Lambda ([(pat, cond, term)], a) ->
+	     let env = mkEnv (q, id) in
+	     let term = makeVarTerm term in
+	     let (opers, term) = lambdaLiftTerm (env, term) in
+	     let term = Lambda ([(pat, cond, term)], a) in
+	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
+	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
+	     let spc = addNewOpAux (info << {names = [Qualified (q, id)], 
+					     dfn   = new_dfn},
+				    spc)
+	     in
+	       insertOpers (opers, q, spc)
 
-	 | [] ->
-	   addNewOpAux (info << {names = [Qualified (q, id)], 
-				 dfn   = []},
-			spc)
-
-	 | [(_, Lambda ([(pat, cond, term)], a))] -> 
-	   let env = mkEnv (q, id) in
-	   let term = makeVarTerm term in
-	   let (opers, term) = lambdaLiftTerm (env, term) in
-	   let term = Lambda ([(pat, cond, term)], a) in
-	   %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
-	   let spc = addNewOpAux (info << {names = [Qualified (q, id)], 
-					   dfn   = [([], term)]}, 
-				  spc)
-	   in
-	     insertOpers (opers, q, spc)
-
-	 | [(_, term)] -> 
-	   let env = mkEnv (q, id) in
-	   let term = makeVarTerm term in
-	   let (opers, term) = lambdaLiftTerm (env, term) in
-	   %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
-	   let spc = addNewOpAux (info << {names = [Qualified (q, id)], 
-					   dfn   = [([], term)]}, 
-				  spc)
-	   in
-	     insertOpers (opers, q, spc)
+	   | _ ->
+	     let env = mkEnv (q, id) in
+	     let term = makeVarTerm term in
+	     let (opers, term) = lambdaLiftTerm (env, term) in
+	     %-let _ = String.writeLine ("addop "^id^":"^printSort srt) in
+	     let new_dfn = maybePiTerm (tvs, SortedTerm (term, srt, termAnn term)) in
+	     let spc = addNewOpAux (info << {names = [Qualified (q, id)], 
+					     dfn   = new_dfn},
+				    spc)
+	     in
+	       insertOpers (opers, q, spc)
 
      def doProp ((pt, pn as Qualified (qname, name), tvs, fmla), spc) =
        let env = mkEnv (qname, name) in
+       let (_, _, fmla) = unpackTerm fmla in
        let term = makeVarTerm fmla in
        let (opers, term) = lambdaLiftTerm (env, term) in
        let newProp = (pt, pn, tvs, term) in
@@ -867,11 +873,10 @@ def toAny     = Term `TranslationBasic.toAny`
    let spc = foldl doProp spc props in
    foldriAQualifierMap doOp spc ops
 
- op  addNewOp : fa (a) QualifiedId * Fixity * ASortScheme a * List (ATermScheme a) * ASpec a -> ASpec a
- def addNewOp (name as Qualified (q, id), fixity, typ, dfn, spc) =
+ op  addNewOp : fa (a) QualifiedId * Fixity * ATerm a * ASpec a -> ASpec a
+ def addNewOp (name as Qualified (q, id), fixity, dfn, spc) =
    let info = {names = [name],
 	       fixity = fixity, 
-	       typ    = typ,
 	       dfn    = dfn}
    in
      addNewOpAux (info, spc)

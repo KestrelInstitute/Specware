@@ -573,7 +573,9 @@ SpecToLisp qualifying spec {
  op  sortOfOp : Spec * QualifiedId -> Sort
  def sortOfOp (sp, qid) =
    case findTheOp (sp, qid) of
-     | Some info -> info.typ.2
+     | Some info -> 
+       let (_, srt, _) = unpackOpDef info.dfn in
+       srt
 
  op  fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term -> Option LispTerm
  def fullCurriedApplication (sp, dpn, vars, term) =
@@ -1223,90 +1225,92 @@ SpecToLisp qualifying spec {
    %           | [] -> (defaultSpecwarePackage, [])
    let
      def mkLOpDef (q, id, info, defs) = % ???
-       case info.dfn of
-	 | (_, term) :: _ -> % TODO: check for other defs?
-	   let srt = info.typ.2 in
-	   let term = lispTerm (spc, defPkgName, term) in
-	   let qid = Qualified (q, id) in
-	   let uName = unaryName (printPackageId (qid, defPkgName)) in
-	   if functionSort? (spc, srt) then
-	     (case (curryShapeNum (spc, srt), sortArity (spc, srt)) of
-		| (1, None) ->
-		  (case term of
-		     | Lambda (formals, _, _) -> [(uName, term)]
-		     | _ -> [(uName, mkLLambda (["!x"], [], 
-						mkLApply (term, [mkLVar "!x"])))])
-		| (1, Some (_, arity)) ->
-		  let nName = naryName (qid, arity, defPkgName) in
-		  (case term of
-		     | Lambda (formals, _, _) ->
-		       let n = length formals in
-		       [(nName, 
-			 if n = arity then 
-			   term
-			 else 
-			   defNaryByUnary (uName, arity)),                 % fn (x, y, z) -> f-1 (tuple (x, y, z))
-			(uName, 
-			 if n = arity then
-			   defUnaryByNary (nName, n)                       % fn x -> f (x.1, x.2, x.3)
-			 else 
-			   term)]
-		     | _ ->  
-		       %% Not sure that arity normalization hasn't precluded this case
-		       [(nName, defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
-			(uName, mkLLambda (["!x"], [], 
-					   mkLApply (term, [mkLVar "!x"])))])
-		| (curryN, None) ->
-		  let ucName = unCurryName (qid, curryN, defPkgName) in
-		  (case unCurryDef (term, curryN) of
-		     | Some uCDef ->                                       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
-		       [(uName, defCurryByUncurry (ucName, curryN)), 
-			(ucName, uCDef)]
-		     | _ ->
-		       [(uName, term), 
-			(ucName, 
-			 case renameDef? term of
-			   | Some equivFn ->                               % fn (x, y, z) -> equivFn-1-1-1 ( x, y, z)
-			     %% Questionable call to unCurryName
-			     defAliasFn (unCurryName (Qualified (defPkgName, equivFn), 
-						      curryN, 
-						      defPkgName), 
-					curryN)
-			   | _ ->                                          % fn (x, y, z) -> f x y z
-			     defUncurryByUnary (uName, curryN))])
-		
-		| (curryN, Some (_, arity)) ->
-		  let ucName = unCurryName (qid, curryN, defPkgName) in
-		  let nName = naryName (qid, arity, defPkgName) in
-		  (case unCurryDef (term, curryN) of
-		     | Some uCDef ->
-		       [(nName, defNaryByUnary    (uName,  arity)),        % fn (x, y, z) -> f-1 (tuple (x, y, z))
-			(uName, defCurryByUncurry (ucName, curryN)),       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
-			(ucName, uCDef)]
-		     | _ ->
-                       (case term : LispTerm of
-			  | Lambda (formals, _, _) ->
-			    let n = length formals in
-                            [(nName, 
-                              if n = arity then 
-				term
-                              else 
-				defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
-                             (uName, 
-                              if n = arity then
-				defUnaryByNary (nName, n)                  % fn x -> f (x.1, x.2, x.3)
-                              else 
-				term), 
-                             (ucName, defUncurryByUnary (uName, curryN))]  % fn (x, y, z) -> f-1 x y z
-			  | _ ->
-                            [(nName, defNaryByUnary (uName, arity)),       % fn (x, y, z) -> f-1 (tuple (x, y, z))
-                             (uName, mkLLambda (["!x"], [], 
-					      mkLApply (term, [mkLVar "!x"]))), 
-                             (ucName, defUncurryByUnary (uName, curryN))])))
-		++ defs
-	   else 
-	     cons ((uName, term), defs)
-         | _ -> defs
+       foldl (fn (dfn, defs) -> 
+	      let (tvs, srt, term) = unpackTerm dfn in
+	      let term = lispTerm (spc, defPkgName, term) in
+	      let qid = Qualified (q, id) in
+	      let uName = unaryName (printPackageId (qid, defPkgName)) in
+	      let new_defs =
+	          if functionSort? (spc, srt) then
+		     (case (curryShapeNum (spc, srt), sortArity (spc, srt)) of
+			| (1, None) ->
+			  (case term of
+			     | Lambda (formals, _, _) -> [(uName, term)]
+			     | _ -> [(uName, mkLLambda (["!x"], [], 
+							mkLApply (term, [mkLVar "!x"])))])
+			| (1, Some (_, arity)) ->
+			  let nName = naryName (qid, arity, defPkgName) in
+			  (case term of
+			     | Lambda (formals, _, _) ->
+			       let n = length formals in
+			       [(nName, 
+				 if n = arity then 
+				   term
+				 else 
+				   defNaryByUnary (uName, arity)),                 % fn (x, y, z) -> f-1 (tuple (x, y, z))
+				(uName, 
+				 if n = arity then
+				   defUnaryByNary (nName, n)                       % fn x -> f (x.1, x.2, x.3)
+				 else 
+				   term)]
+			     | _ ->  
+			       %% Not sure that arity normalization hasn't precluded this case
+			       [(nName, defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
+				(uName, mkLLambda (["!x"], [], 
+						   mkLApply (term, [mkLVar "!x"])))])
+			| (curryN, None) ->
+			  let ucName = unCurryName (qid, curryN, defPkgName) in
+			  (case unCurryDef (term, curryN) of
+			     | Some uCDef ->                                       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
+			       [(uName, defCurryByUncurry (ucName, curryN)), 
+				(ucName, uCDef)]
+			     | _ ->
+			       [(uName, term), 
+				(ucName, 
+				 case renameDef? term of
+				   | Some equivFn ->                               % fn (x, y, z) -> equivFn-1-1-1 ( x, y, z)
+				   %% Questionable call to unCurryName
+				   defAliasFn (unCurryName (Qualified (defPkgName, equivFn), 
+							    curryN, 
+							    defPkgName), 
+					       curryN)
+				   | _ ->                                          % fn (x, y, z) -> f x y z
+				   defUncurryByUnary (uName, curryN))])
+			 
+			| (curryN, Some (_, arity)) ->
+			  let ucName = unCurryName (qid, curryN, defPkgName) in
+			  let nName = naryName (qid, arity, defPkgName) in
+			  (case unCurryDef (term, curryN) of
+			     | Some uCDef ->
+			       [(nName, defNaryByUnary    (uName,  arity)),        % fn (x, y, z) -> f-1 (tuple (x, y, z))
+				(uName, defCurryByUncurry (ucName, curryN)),       % fn x -> fn y -> fn z -> f-1-1-1 (x, y, z)
+				(ucName, uCDef)]
+			     | _ ->
+			       (case term : LispTerm of
+				  | Lambda (formals, _, _) ->
+				    let n = length formals in
+				    [(nName, 
+				      if n = arity then 
+					term
+				      else 
+					defNaryByUnary (uName, arity)),            % fn (x, y, z) -> f-1 (tuple (x, y, z))
+				     (uName, 
+				      if n = arity then
+					defUnaryByNary (nName, n)                  % fn x -> f (x.1, x.2, x.3)
+				      else 
+					term), 
+				     (ucName, defUncurryByUnary (uName, curryN))]  % fn (x, y, z) -> f-1 x y z
+				   | _ ->
+				    [(nName, defNaryByUnary (uName, arity)),       % fn (x, y, z) -> f-1 (tuple (x, y, z))
+				     (uName, mkLLambda (["!x"], [], 
+							mkLApply (term, [mkLVar "!x"]))), 
+				     (ucName, defUncurryByUnary (uName, curryN))])))
+		  else 
+		    [(uName, term)]
+	      in
+		defs ++ new_defs)
+             defs
+	     (opDefs info.dfn)
    in
      let defs = foldriAQualifierMap mkLOpDef [] spc.ops in
      {name          = defPkgName, 
@@ -1368,7 +1372,9 @@ SpecToLisp qualifying spec {
 			if memberQualifiedId (q, id, localOps) then
 			  info
 			else 
-			  info << {dfn = []})
+			  let pos = termAnn info.dfn in
+			  let (tvs, srt, _) = unpackOpDef info.dfn in
+			  info << {dfn = maybePiTerm (tvs, SortedTerm (Any pos, srt, pos))})
 		       spc.ops)
    in 
      toLispFile (spc, file, preamble)

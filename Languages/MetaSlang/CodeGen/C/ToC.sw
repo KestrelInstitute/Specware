@@ -63,9 +63,11 @@ CGen qualifying spec {
 %                       ^ (printTerm trm)
 %                       ^ "'")
       def doOp (q, id, info, cSpec) =
-        case info.dfn of
-          | []         -> cSpec
-          | (_,trm)::_ -> toCFunc cSpec (showQualifiedId (Qualified (q, id))) trm info.typ.2
+        case opDefs info.dfn of
+          | []     -> cSpec
+          | trm::_ -> 
+	    let (tvs, typ, tm) = unpackTerm trm in
+	    toCFunc cSpec (showQualifiedId (Qualified (q, id))) trm typ
     in
       foldriAQualifierMap doOp cSpec spc.ops
 
@@ -76,16 +78,18 @@ CGen qualifying spec {
         (case findTheSort (spc, qid) of
 	   | None -> srt % fail ("derefSort: failed to find sort: " ^ (showQualifiedId qid))
 	   | Some info ->
-	     case info.dfn of
+	     case sortDefs info.dfn of
 	       | [] -> srt
-	       | (_,srt)::_ -> derefSort spc srt)
+	       | srt::_ -> derefSort spc srt)
       | _ -> srt
 
   op generateCVars : CSpec -> Spec -> CSpec
   def generateCVars cSpec spc =
     let def doOp (q, id, info, cSpec) =
-      case info.dfn of
-        | [] -> addVarDecl cSpec (showQualifiedId (Qualified (q, id))) (sortToCType info.typ.2)
+      case opDefs info.dfn of
+        | [] -> 
+	  let (_, typ, _) = unpackOpDef info.dfn in
+	  addVarDecl cSpec (showQualifiedId (Qualified (q, id))) (sortToCType typ)
 %             (case (srt : ASort Position) of
 %               | Base (qid,srts,_) ->
 %                  (case (derefSort spc srt) of
@@ -132,9 +136,9 @@ CGen qualifying spec {
              cSpec
 
       def doSort (q, id, info, cSpec) =
-        case info.dfn of
-          | []          -> cSpec
-          | (_, srt)::_ -> makeCType cSpec (showQualifiedId (Qualified (q, id))) srt
+        case sortDefs info.dfn of
+          | []     -> cSpec
+          | srt::_ -> makeCType cSpec (showQualifiedId (Qualified (q, id))) srt
     in
       addTypeDefn (foldriAQualifierMap doSort cSpec spc.sorts) "bool" Int
 

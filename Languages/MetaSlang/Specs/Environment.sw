@@ -94,12 +94,12 @@ spec
       (case findTheSort (sp, qid) of
 	 | None -> srt
 	 | Some info ->
-	   case info.dfn of
-	     | [] -> srt
-	     | _ -> 
-	       let (tvs, srt) :: _ = info.dfn in
-	       let ssrt = substSort (zip (tvs, srts), srt) in
-	       unfoldBaseV (sp, ssrt, verbose))
+	   if definedSortInfo? info then
+	     let (tvs, srt) = unpackSortDef info.dfn in
+	     let ssrt = substSort (zip (tvs, srts), srt) in
+	     unfoldBaseV (sp, ssrt, verbose)
+	   else
+	     srt)
     | _ -> srt
 
  op unfoldStripSort : Spec * Sort * Boolean -> Sort
@@ -144,7 +144,8 @@ spec
 
  op stripSubsorts : Spec * Sort -> Sort
  def stripSubsorts (sp, srt) = 
-  case unfoldBase (sp, srt)
+  let X = unfoldBase (sp, srt) in
+  case X 
     of Subsort (srt, _, _) -> stripSubsorts (sp, srt)
      | srt -> srt
 
@@ -401,9 +402,9 @@ spec
      if usrt = srt then srt else unfoldRec usrt
   in
   let usrt = unfoldRec srt in
-  case usrt
-    of Arrow _ -> usrt
-     | _       -> srt
+  case usrt of
+    | Arrow _ -> usrt
+    | _       -> srt
 
  %- --------------------------------------------------------------------------------
  (**

@@ -395,10 +395,12 @@ ModeSpec qualifying spec
       def doOp info =
         let ref = Op.refOf info in
         if member? (variables modeSpec, ref) then
-          case info.dfn of
+          case opDefs info.dfn of
             | [] -> info  % fail "empty term schemes"
-            | [(tvs, term)] ->
-               info << {dfn = [(tvs, doTerm 20 term)]}
+            | [dfn] ->
+	      let (tvs, srt, tm) = unpackTerm dfn in
+              let tm = doTerm 20 tm in
+	      info << {dfn = maybePiTerm (tvs, SortedTerm (tm, srt, termAnn dfn))}
             | _ -> fail "multiple term schemes"
         else
           info

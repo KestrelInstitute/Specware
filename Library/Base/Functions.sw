@@ -12,7 +12,7 @@ Functions qualifying spec
   op bijective?  : fa(a,b) Function(a,b) -> Boolean
   op inverse     : fa(a,b) Bijection(a,b) -> Bijection(b,a)
 
-  def id x = x
+  def id (x) = x
 
   def o (f,g) x = f(g x)
 

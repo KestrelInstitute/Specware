@@ -734,9 +734,10 @@ spec
    let tcc = 
        foldriAQualifierMap
          (fn (q, id, info, tcc) ->
-	  let (tvs,tau) = info.typ in
+
 	  if member (Qualified (q, id), localOps) then
-	    foldl (fn ((_, term), tcc) ->
+	    foldl (fn (dfn, tcc) ->
+		   let (tvs, tau, term) = unpackTerm dfn in
 		   let usedNames = addLocalVars (term, StringSet.empty) in
 		   let term = etaExpand (spc, usedNames, tau, term) in
 		   let term = renameTerm (emptyContext ()) term in 
@@ -749,7 +750,7 @@ spec
 		   |- 
 		   term ?? tau)
 	          tcc 
-		  info.dfn
+		  (opDefs info.dfn)
 	  else 
 	    tcc)
 	 tcc 

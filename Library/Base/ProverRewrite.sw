@@ -1,7 +1,7 @@
 spec
 
-  import Integer
-  import Nat
+%  import Integer
+%  import Nat
 
 %  axiom ge_reflexive is fa (i: Integer) (i >= i) = true
 

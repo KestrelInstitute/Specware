@@ -135,19 +135,19 @@ Extract rewrite rules from function definition.
 \begin{spec}
 
  def defRule (context, q, id, info : OpInfo) = 
-   case info.dfn of
-     | [] -> []
-     | (_,term) :: _ -> 
-       let (tvs, srt) = info.typ in
-       let rule:RewriteRule = 
-           {name      = id,
-	    lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),
-	    rhs       = term,
-	    condition = None,
-	    freeVars  = [],	
-	    tyVars    = tvs}
-       in
-	 deleteLambdaFromRule context ([rule],[])
+   if definedOpInfo? info then
+     let (tvs, srt, term) = unpackOpDef info.dfn in
+     let rule:RewriteRule = 
+         {name      = id,
+	  lhs       = Fun (Op (Qualified (q, id), info.fixity), srt, noPos),
+	  rhs       = term,
+	  condition = None,
+	  freeVars  = [],	
+	  tyVars    = tvs}
+     in
+       deleteLambdaFromRule context ([rule],[])
+   else
+     []
 
 %% lhs = fn x -> body -->  lhs x = body
 %% Move lambda binding from right to left hand side,

@@ -173,60 +173,58 @@ Prover qualifying spec
 
   op axiomFromOpDefTop: Spec * Qualifier * Id * OpInfo -> Properties
   def axiomFromOpDefTop (spc, q, id, info) =
-    case info.dfn of
-      | [(termTyVars, term)] ->
-        let (_, srt) = info.typ in
-        let localOps = spc.importInfo.localOps in
-	if memberQualifiedId (q, id, localOps) then
-	  let pos = termAnn term in
-	  let qid = Qualified (q, id) in
-	  let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
-	  %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
-	  %let unTupleAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
-	  let unTupleAxioms = [] in
-	  %let _ = if true or id = "queens_gs_aux_1" then writeLine ("initialFmla: "^printTerm initialFmla) else () in
-	  let liftedFmlas = proverPattern initialFmla in
-	  %let simplifiedLiftedFmlas = map (fn fmla -> simplify (spc, fmla)) liftedFmlas in
-	  %let _ = if id = "queens_gs_aux_1" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
-	  let defAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) liftedFmlas in
-	  %%let ax:Property = (Axiom, id^"_def", [], hd (unLambdaDef (spc, srt, qid, term))) in
-	  %let _ = writeLine (id^": in axiomFromOpDef Def part") in
-	  defAxioms++unTupleAxioms
-	else 
-	  %let _ = writeLine (id^": in axiomFromOpDef Def part is not local") in
-	  %let _ = debug "not local op" in
-	  []
-      | _ -> 
-	%let _ = writeLine (id^": in axiomFromOpDef NOT def part") in
-	[]
+    case opDefs info.dfn of
+      | [] -> []
+      | defs ->
+        %% new: fold over all defs (but presumably just one for now)
+        foldl (fn (dfn, props) ->
+	       let (tvs, srt, term) = unpackTerm dfn in
+	       let localOps = spc.importInfo.localOps in
+	       if memberQualifiedId (q, id, localOps) then
+		 let pos = termAnn term in
+		 let qid = Qualified (q, id) in
+		 let initialFmla = hd (unLambdaDef (spc, srt, qid, term)) in
+		 %let unTupledFmlas = foldRecordFmla (spc, srt, initialFmla) in
+		 %let unTupleAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) unTupledFmlas in
+		 let unTupleAxioms = [] in
+		 %let _ = if true or id = "queens_gs_aux_1" then writeLine ("initialFmla: "^printTerm initialFmla) else () in
+		 let liftedFmlas = proverPattern initialFmla in
+		 %let simplifiedLiftedFmlas = map (fn fmla -> simplify (spc, fmla)) liftedFmlas in
+		 %let _ = if id = "queens_gs_aux_1" then map (fn lf -> writeLine ("LiftedAxioms: " ^ printTerm lf)) liftedFmlas else [] in
+		 let defAxioms = map (fn (fmla:MS.Term) -> (Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (fmla, pos))) liftedFmlas in
+		 %%let ax:Property = (Axiom, id^"_def", [], hd (unLambdaDef (spc, srt, qid, term))) in
+		 %let _ = writeLine (id^": in axiomFromOpDef Def part") in
+		 props ++ defAxioms ++ unTupleAxioms
+	       else 
+		 %let _ = writeLine (id^": in axiomFromOpDef Def part is not local") in
+		 %let _ = debug "not local op" in
+		 props)
+	      []
+	      defs
 
-  op axiomFromOpSrtTop: Spec * Qualifier * Id * OpInfo -> Properties
+   op axiomFromOpSrtTop: Spec * Qualifier * Id * OpInfo -> Properties
   def axiomFromOpSrtTop (spc, q, id, info) =
-    case info.typ of
-      | (_, srt) ->
-        let localOps = spc.importInfo.localOps in
-	if memberQualifiedId (q, id, localOps) then
-	  let pos = sortAnn srt in
-	  let qid = Qualified (q, id) in
-	  let subTypeFmla = opSubsortAxiom (spc, qid, srt) in
-	  let liftedFmlas = proverPattern subTypeFmla in
-	  let subTypeAxioms =
-	      map (fn (fmla : MS.Term) -> 
-		   (Axiom, 
-		    mkQualifiedId (q, id^"_def"), 
-		    [], 
-		    withAnnT (fmla, pos))) 
-	          liftedFmlas 
-	  in
-	    %(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (subTypeFmla, pos)) in
-            subTypeAxioms
-	else 
-	  %let _ = writeLine (id^": in axiomFromOpDef Def part is not local") in
-	  %let _ = debug "not local op" in
-	  []
-      | _ -> 
-	%let _ = writeLine (id^": in axiomFromOpDef NOT def part") in
-	[]
+    let (_, srt, _) = unpackOpDef info.dfn in
+    let localOps = spc.importInfo.localOps in
+    if memberQualifiedId (q, id, localOps) then
+      let pos = sortAnn srt in
+      let qid = Qualified (q, id) in
+      let subTypeFmla = opSubsortAxiom (spc, qid, srt) in
+      let liftedFmlas = proverPattern subTypeFmla in
+      let subTypeAxioms =
+          map (fn (fmla : MS.Term) -> 
+	       (Axiom, 
+		mkQualifiedId (q, id^"_def"), 
+		[], 
+		withAnnT (fmla, pos))) 
+	      liftedFmlas 
+      in
+	%(Axiom, mkQualifiedId (q, id^"_def"), [], withAnnT (subTypeFmla, pos)) in
+	subTypeAxioms
+    else 
+      %let _ = writeLine (id^": in axiomFromOpDef Def part is not local") in
+      %let _ = debug "not local op" in
+      []
 
   op foldRecordFmla: Spec * Sort * MS.Term -> List MS.Term
   def foldRecordFmla (spc, srt, fmla) =

@@ -530,6 +530,11 @@ AnnSpecPrinter qualifying spec
 	  | SortedTerm (t, s, _) -> prettysNone [ppTerm context ([0]++ path, Top:ParentTerm) t, 
 						 string ":", string " ", 
 						 ppSort context ([1]++ path, Top:ParentSort) s]
+	  | Pi (tvs, tm, _) ->
+	    let pp1 = ppForallTyVars context.pp tvs in
+	    let pp2 = ppTerm context (path, parentTerm) tm in
+	    prettysNone [pp1, string " ", pp2]     
+
 	  | _ -> System.fail "Uncovered case for term")
       
 
@@ -651,7 +656,12 @@ AnnSpecPrinter qualifying spec
 
     | MetaTyVar (mtv, _) -> string (TyVarString mtv)
 
-    | _ -> string "ignoring bad case for sort"
+    | Pi (tvs, srt, _) ->
+      let pp1 = ppForallTyVars context.pp tvs in
+      let pp2 = ppSort context (path, parent) srt in
+      prettysNone [pp1, string " ", pp2]     
+
+    | _ -> string ("ignoring bad case for sort: " ^ (anyToString srt))
       
 
  def [a] TyVarString (mtv: AMetaTyVar a) : String =
@@ -860,9 +870,6 @@ AnnSpecPrinter qualifying spec
      (index, lines)
    else
      let pp : ATermPrinter = context.pp in
-     % let def ppOpNm () = pp.ppOpId (Qualified (q, id)) in
-     % let def ppOpNm () = (if spName = q then pp.ppOp id
-     %                  else pp.ppOpId (Qualified (q, id))) in
      let 
        def ppOpName (qid as Qualified (q, id)) =
 	 if q = UnQualified then
@@ -876,21 +883,23 @@ AnnSpecPrinter qualifying spec
 	   | _      -> ppList ppOpName ("{", ", ", "}") info.names
      in
      let index1 = -(index + 1) in
-     let button1 = (if markSubterm? context & ~ (null info.dfn) then
+     let defined? = definedOpInfo? info in
+     let button1 = (if markSubterm? context & ~ defined? then
 		      PrettyPrint.buttonPretty (~(IntegerSet.member (context.indicesToDisable, index1)), 
 						index1, string " ", false)
 		    else 
 		      string "")
      in
-     let button2 = (if markSubterm? context & ~ (null info.dfn) then
+     let button2 = (if markSubterm? context & ~ defined? then
 		      PrettyPrint.buttonPretty (IntegerSet.member (context.sosIndicesToEnable, index1), 
 						index1, string " ", true)
 		    else 
 		      string "")
      in
-     let (tvs, srt) = info.typ in
-     let ppDecl =
-         (1, blockFill (0, [(0, pp.Op), 
+     let 
+       def ppDecl tm =
+	 let (tvs, srt, _) = unpackTerm tm in
+	 (1, blockFill (0, [(0, pp.Op), 
 			    (0, string " "), 
 			    (0, ppOpNames ()), 
 			    (0, case info.fixity of
@@ -902,12 +911,11 @@ AnnSpecPrinter qualifying spec
 			    (0, ppForallTyVars pp tvs), 
 			    (0, string " "), 
 			    (3, ppSort context ([index, opIndex], Top:ParentSort) srt)]))
-     in
-     let 
+
        def ppDefAux (path, term) = 
 	 case term of
 	   | Lambda ([(pat, Fun (Bool true, _, _), body)], _) ->
-	     let pat = ppPattern context ([0, 0] ++ path, false) pat in 
+	     let pat  = ppPattern context ([0, 0] ++ path, false) pat in 
 	     let body = ppDefAux ([2, 0] ++ path, body) in
 	     let prettys = [(0, pat), (0, string " ")] ++ body in
 	     if markSubterm? context then
@@ -919,11 +927,12 @@ AnnSpecPrinter qualifying spec
 	     else 
 	       prettys
 	   | _ -> 
-	     let pretty = ppTerm context (path, Top:ParentTerm) term in
-	     let prettys = [(0, pp.DefEquals), (0, string " "), (2, pretty)] in
-	     prettys
+	     [(0, pp.DefEquals), 
+	      (0, string " "), 
+	      (2, ppTerm context (path, Top:ParentTerm) term)]
 
-       def ppDef (tvs, tm) =
+       def ppDef tm =
+	 let (tvs, opt_srt, tm) = unpackTerm tm in
 	 let prettys = ppDefAux ([index, defIndex], tm) in
 	 (1, blockFill (0, 
 			[(0, blockFill (0, 
@@ -934,14 +943,29 @@ AnnSpecPrinter qualifying spec
 					    (0, ppForallTyVars pp tvs) 
 					  else 
 					    (0, string "")), 
-					    (0, ppOpName (primaryOpName info)),
-					    (0, string " ")]
+					 (0, ppOpName (primaryOpName info)),
+					 (0, string " ")]
 				       ))]
 			++ prettys))
      in
-     let ppDefs = map ppDef info.dfn in
-     (index + 1, [ppDecl] ++ ppDefs ++ lines)
-
+     let (decls, defs) = opDeclsAndDefs info.dfn in
+     let warnings = 
+         (let m = length decls in
+	  let n = length defs  in
+	  if m <= 1 then
+	    if n <= 1 then
+	      []
+	    else
+	      [(0, string ("(* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
+	  else
+	    if n <= 1 then
+	      [(0, string ("(* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
+	    else
+ 	      [(0, string ("(* Warning: " ^ (printQualifiedId (primaryOpName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
+     in
+     let ppDecls = map ppDecl decls in
+     let ppDefs  = map ppDef  defs  in
+     (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
  def [a] ppSortDecl (context : context) (q, id, info, (index, lines)) =
    if ~ (primarySortName? (q, id, info)) then
@@ -957,8 +981,8 @@ AnnSpecPrinter qualifying spec
 
        def ppSortNames () =
 	 case info.names of
-	   | [qid] -> ppSortName qid
-	   | _     -> ppList ppSortName ("{", ", ", "}") info.names
+	   | [name] -> ppSortName name
+	   | _      -> ppList ppSortName ("{", ", ", "}") info.names
 
        def ppLHS tvs =
 	 [(0, pp.Type), 
@@ -966,23 +990,39 @@ AnnSpecPrinter qualifying spec
 	  (0, ppSortNames()), 
 	  (0, ppTyVars pp tvs)]
 
-       def ppDef (tvs, srt) =
+       def ppDecl srt =
+	 let (tvs, srt) = unpackSort srt in
 	 (1, blockFill (0, 
-			(ppLHS tvs)
+			(ppLHS tvs))) 
+
+       def ppDef srt =
+	 let (tvs, srt) = unpackSort srt in
+	 (1, blockFill (0, 
+			(ppLHS tvs) 
 			++
 			[(0, string " "), 
 			 (0, pp.DefEquals), 
 			 (0, string " "), 
-			 (3, ppSort context 
-			            ([index, sortIndex], Top:ParentSort) 
-			            srt)]))
+			 (3, ppSort context ([index, sortIndex], Top:ParentSort) srt)]))
      in
-     let newlines =
-         case info.dfn of
-	   | [] -> [(1, blockFill (0, ppLHS info.tvs))] 
-	   | _ -> map ppDef info.dfn
+     let (decls, defs) = sortDeclsAndDefs info.dfn in
+     let warnings = 
+         (let m = length decls in
+	  let n = length defs  in
+	  if m <= 1 then
+	    if n <= 1 then
+	      []
+	    else
+	      [(0, string ("(* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString n) ^ " definitions. *)"))]
+	  else
+	    if n <= 1 then
+	      [(0, string ("(* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations. *)"))]
+	    else
+ 	      [(0, string ("(* Warning: " ^ (printQualifiedId (primarySortName info)) ^ " has " ^ (toString m) ^ " declarations and " ^ (toString n) ^ " definitions. *)"))])
      in
-       (index + 1, newlines ++ lines)
+     let ppDecls = map ppDecl decls in
+     let ppDefs  = map ppDef  defs  in
+     (index + 1, warnings ++ ppDecls ++ ppDefs ++ lines)
 
    % op isBuiltIn? : Import -> Boolean
    % def isBuiltIn? (specCalcTerm, _ (* spc *)) = false

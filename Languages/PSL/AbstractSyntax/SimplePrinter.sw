@@ -7,7 +7,7 @@ SpecCalc qualifying spec {
   import ../../MetaSlang/AbstractSyntax/SimplePrinter
   import ../../MetaSlang/Specs/SimplePrinter
   import ../../SpecCalculus/AbstractSyntax/Printer
-  import Types
+  import Other % was Types
 
   % op SpecCalc.ppOtherTerm : fa (a) SpecCalc.OtherTerm a -> Doc
   def SpecCalc.ppOtherTerm scTerm =
@@ -140,26 +140,26 @@ SpecCalc qualifying spec {
   op ppOscarSpecElem : fa(a) OscarSpecElem a -> Pretty
   def ppOscarSpecElem (decl,_) = 
     case decl of
-      | Sort (names,(tvs,dfn)) -> 
+      | Sort (names,(tvs,[(_,typ)])) -> 
           ppConcat [
             ppString "sort ",
-            ppASortInfo {names = names, tvs = tvs, dfn = dfn}
+            ppASortInfo {names = names, dfn = maybePiSort (tvs, typ)}
           ]
-      | Def (names,(fixity,typ,dfn)) ->
+      | Def (names,(fixity,(tvs,typ),[(_,tm)])) ->
           ppConcat [
             ppString "def ",
-            ppAOpInfo {names = names, fixity = fixity, typ = typ, dfn = dfn}
+            ppAOpInfo {names = names, fixity = fixity, dfn = maybePiTerm (tvs, SortedTerm (tm, typ, termAnn tm))}
           ]
-      | Op (names,(fixity,typ,dfn)) ->
+      | Op (names,(fixity,(tvs,typ),[(_,tm)])) ->
           ppConcat [
             ppString "op ",
-            ppAOpInfo {names = names, fixity = fixity, typ = typ, dfn = dfn}
+            ppAOpInfo {names = names, fixity = fixity, dfn = maybePiTerm (tvs, SortedTerm (tm, typ, termAnn tm))}
           ]
       | Claim claim -> pp claim
-      | Var (names,(fixity,typ,dfn)) ->
+      | Var (names,(fixity,(tvs,typ),[(_,tm)])) ->
           ppConcat [
             ppString "var ",
-            ppAOpInfo {names = names, fixity = fixity, typ = typ, dfn = dfn}
+            ppAOpInfo {names = names, fixity = fixity, dfn = maybePiTerm (tvs, SortedTerm (tm, typ, termAnn tm))}
           ]
       | Proc (name,procInfo) ->
           ppConcat [

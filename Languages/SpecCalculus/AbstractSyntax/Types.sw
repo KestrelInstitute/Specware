@@ -243,8 +243,8 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
 
   sort SpecElem_ a =
     | Import List (Term a)
-    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
+    | Sort   List QualifiedId          * ASort a
+    | Op     List QualifiedId * Fixity * ATerm a
     | Claim  (AProperty a)
 
 
@@ -254,15 +254,29 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
 
   op mkSortSpecElem : [a] SortNames * TyVars * List (ASort a) * a -> SpecElem a
  def [a] mkSortSpecElem (names, tvs, defs, pos) =
-   let dfn = map (fn srt : ASort a -> (tvs, srt)) defs in
-   (Sort (names, (tvs, dfn)), pos)
+   let dfn = 
+       case defs of
+	 | []    -> maybePiSort (tvs, Any pos)
+	 | [dfn] -> maybePiSort (tvs, dfn)
+	 | _     -> And (map (fn srt -> maybePiSort (tvs, srt)) defs, 
+			 pos)
+   in
+     (Sort (names, dfn), pos)
 
   op mkOpSpecElem : [a] OpNames * Fixity * TyVars * ASort a * List (ATerm a) * a -> SpecElem a
  def [a] mkOpSpecElem (names, fixity, tvs, srt, defs, pos) =
-   let sig = (tvs, srt) in
-   let dfn = map (fn trm : ATerm a -> (tvs, trm)) defs in
-   (Op (names, (fixity, sig, dfn)), pos)
-
+   %% We potentially could be smarter if srt is just a meta type var
+   %% and use just a normal term instead of a sorted term, but that's
+   %% a complication we don't need now (or perhaps ever).
+   let dfn =
+       case defs of
+	 | []   -> maybePiTerm (tvs, SortedTerm (Any pos, srt, pos))
+	 | [tm] -> maybePiTerm (tvs, SortedTerm (tm,      srt, pos))
+	 | _    -> And (map (fn tm -> maybePiTerm (tvs, SortedTerm (tm, srt, pos))) 
+			    defs,
+			pos)
+   in
+     (Op (names, fixity, dfn), pos)
 
 \end{spec}
 

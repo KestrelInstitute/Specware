@@ -874,9 +874,11 @@ def findMatchingUserTypeCol(spc,srt) =
 	 let srtPos = sortAnn ssrt in
 	 let foundSrt = 
 	     find (fn (_, _, info) ->
-		   case info.dfn of 
-		     | [(_,srt)] -> equalSort? (ssrt, srt)
-		     | _ -> false)
+		   if definedSortInfo? info then
+		     let (_, srt) = unpackSortDef info.dfn in
+		     equalSort? (ssrt, srt)
+		   else
+		     false)
 	          srts 
 	 in
 	   case foundSrt of

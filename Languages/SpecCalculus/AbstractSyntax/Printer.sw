@@ -21,6 +21,7 @@ as done here.
 
 \begin{spec}
 SpecCalc qualifying spec 
+{
  import Types
  import ../../MetaSlang/Specs/SimplePrinter 
  import /Library/PrettyPrinter/WadlerLindig
@@ -324,29 +325,31 @@ SpecCalc qualifying spec
   op ppSpecElem : [a] SpecElem a -> Doc
  def ppSpecElem (elem, _) = 
    case elem of
-     | Import term            -> ppConcat [ppString "import ",
-					   ppSep (ppString ", ") (map ppTerm term)]
-     | Sort   (aliases, info) -> myppASortInfo (aliases, info)
-     | Op     (aliases, info) -> myppAOpInfo   (aliases, info)
-     | Claim  property        -> ppAProperty property
+     | Import term                   -> ppConcat [ppString "import ",
+						  ppSep (ppString ", ") (map ppTerm term)]
+     | Sort   (aliases, dfn)         -> myppASortInfo (aliases, dfn)
+     | Op     (aliases, fixity, dfn) -> myppAOpInfo   (aliases, fixity, dfn)
+     | Claim  property               -> ppAProperty   property
 
   op ppIdInfo : List QualifiedId -> Doc
  def ppIdInfo qids = ppSep (ppString ",") (map ppString (map printQualifiedId qids))
    
-  op myppASortInfo : [a] List QualifiedId * (TyVars * List (ASortScheme a)) -> Doc
- def myppASortInfo (aliases, info) =
+  op myppASortInfo : [a] List QualifiedId * ASort a -> Doc
+ def myppASortInfo (aliases, dfn) =
    let prefix = ppConcat [ppString "sort ", ppIdInfo aliases] in
-   case info of
-     | ([], []) ->  prefix
-     | (_, [(tvs, srt)]) ->
+   case sortDefs dfn of
+     | [] ->  prefix
+     | [dfn] ->
+       let (tvs, srt) = unpackSort dfn in
        ppConcat [prefix,
 		 ppTyVars tvs,
 		 ppAppend (ppString " = ") (ppASort srt)]
-     | (tyVars, defs) -> 
+     | defs ->
        ppConcat [ppNewline,
 		 ppString " (* Warning: Multiple definitions for following sort: *) ",
 		 ppNewline,
-		 ppSep ppNewline (map (fn (tvs, srt) ->
+		 ppSep ppNewline (map (fn dfn ->
+				       let (tvs, srt) = unpackSort dfn in
 				       ppConcat [prefix,
 						 ppTyVars tvs,
 						 ppAppend (ppString " = ") (ppASort srt)])
@@ -360,14 +363,15 @@ SpecCalc qualifying spec
 		       ppSep (ppString ",") (map ppString tvs),
 		       ppString ") "]
 
-  op myppAOpInfo : [a] Aliases * (Fixity * ASortScheme a * List (List String * ATerm a)) -> Doc
-  def myppAOpInfo (aliases, (fixity, sort_scheme, defs)) =
-    case defs of
-     | [] -> ppAOpDecl (aliases, fixity, sort_scheme)
-     | _  -> ppAOpDefs (aliases, defs)
+  op myppAOpInfo : [a] Aliases * Fixity * ATerm a -> Doc
+  def myppAOpInfo (aliases, fixity, dfn) =
+    let (decls, defs) = opDeclsAndDefs dfn in
+    ppConcat [ppAOpDecl (aliases, fixity, decls),
+	      ppAOpDefs (aliases, defs)]
 
-  op ppAOpDecl : [a] Aliases * Fixity * ASortScheme a -> Doc
- def ppAOpDecl (aliases, fixity, (tvs, srt)) =
+  op ppAOpDecl : [a] Aliases * Fixity * List (ATerm a) -> Doc
+ def ppAOpDecl (aliases, fixity, dfn :: _) =
+   let (tvs, srt, _) = unpackTerm dfn in
    ppConcat [ppString "op ",
 	     ppIdInfo aliases,
 	     ppString " : ",
@@ -379,10 +383,11 @@ SpecCalc qualifying spec
 			    ppString "] "]),
 	     ppASort srt]
 
-  op ppAOpDefs : [a] Aliases * List (List String * ATerm a) -> Doc
+  op ppAOpDefs : [a] Aliases * List (ATerm a) -> Doc
  def ppAOpDefs (aliases, defs) =
    let 
-     def pp_def (tvs, term) =
+     def pp_def dfn =
+       let (tvs, srt, term) = unpackTerm dfn in
        ppConcat [ppString "def ", 
 		 (case tvs of
 		    | [] -> ppNil
@@ -435,5 +440,5 @@ SpecCalc qualifying spec
 
   op ppOtherTerm : [a] OtherTerm a -> Doc % Used for extensions to Specware
 
-endspec
+}
 \end{spec}

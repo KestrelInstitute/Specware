@@ -270,15 +270,16 @@ snark qualifying spec {
 
  op  sortInfoToSnarkSubsort: Spec * Id * SortInfo -> Option LispCell
  def sortInfoToSnarkSubsort(spc, id, info) =
-   case info.dfn of
-     | [] -> None
-     | [(_, srt)] ->
-       case srt of
-	 | Subsort (supSrt, pred, _) ->
-	   Some (Lisp.list [declare_subsorts, 
-			    Lisp.quote (snarkBaseSort (spc, supSrt, false)), 
-			    Lisp.quote (Lisp.symbol ("SNARK", snarkSortId id))])
-	 | _ -> None
+   if ~ (definedSortInfo? info) then
+     None
+   else
+     let (_, srt) = unpackSortDef info.dfn in
+     case srt of
+       | Subsort (supSrt, pred, _) ->
+         Some (Lisp.list [declare_subsorts, 
+			  Lisp.quote (snarkBaseSort (spc, supSrt, false)), 
+			  Lisp.quote (Lisp.symbol ("SNARK", snarkSortId id))])
+       | _ -> None
 
  op  snarkFunctionNoArityDecl: Spec * String * Sort -> LispCell
  def snarkFunctionNoArityDecl (spc, name, srt) =
@@ -344,12 +345,14 @@ snark qualifying spec {
 	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE") in
-      let builtinScheme = find (fn (_, srt) -> builtinSort?(srt)) info.dfn in
-        (case builtinScheme of
-	  | Some (_, srt) -> builtinSnarkSort(srt)
-	  | _ -> case info.dfn of
-	           | [(_, srt)] -> 
-	              (case srt of
+      let defs = sortDefs info.dfn in
+      let builtinSort = find builtinSort? defs in
+        (case builtinSort of
+	  | Some srt -> builtinSnarkSort srt
+	  | _ -> case defs of
+	           | [dfn] -> 
+	             (let (_, srt) = unpackSort dfn in
+	              case srt of
 			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))
 			| _ -> snarkBaseSort(spc, srt, rng?))
 	           | _ -> Lisp.symbol("SNARK",snarkSortId(id))))
@@ -474,17 +477,21 @@ snark qualifying spec {
 
   def snarkBuiltInOps = arithmeticFunctions
   
-  op snarkOpDecls: Spec -> List LispCell
-
-  def snarkOpDecls(spc) =
-    let opsigs = specOps(spc) in
+   op snarkOpDecls : Spec -> List LispCell
+  def snarkOpDecls spc =
     let snarkOpDecls =
-          mapPartial(fn (qname, name, _, srt) -> 
-		           snarkOpDeclPartial(spc, mkSnarkName(qname,name), srt))
-                    opsigs in
-%      snarkBuiltInOps ++ snarkOpDecls
-       snarkBaseDecls ++
-       snarkOpDecls
+        foldOpInfos (fn (info, decls) ->
+		     let Qualified (q, id) = primaryOpName info in
+		     let (tvs, srt, _) = unpackOpDef info.dfn in
+		     case snarkOpDeclPartial (spc, mkSnarkName (q, id), srt) of
+		       | None -> decls
+		       | Some snark_decl -> decls ++ [snark_decl])
+	            []
+	            spc.ops
+    in
+  % snarkBuiltInOps ++ snarkOpDecls
+    snarkBaseDecls ++
+    snarkOpDecls
 
   def ppLispCell(t:LispCell) =
 %    string (toString(LISP.PPRINT(t)))

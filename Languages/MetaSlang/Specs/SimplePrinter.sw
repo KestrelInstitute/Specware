@@ -84,30 +84,30 @@ SpecCalc qualifying spec
 		     ppString "}"]
    in
    let 
-     def ppTyVars tvs =
-       case tvs of
-	 | [] -> ppNil
-	 | [tv] -> ppString (" " ^ tv)
-	 | _::_ ->
-	   ppConcat [ppString " (",
-		     ppSep (ppString ",") (map ppString tvs),
-		     ppString ")"]
-     def ppDef (tvs, srt) =
-       ppConcat [ppNames, 
-		 ppTyVars tvs,
-		 ppString " = ", 
-		 ppASort srt] 
+      def ppTvs tvs =
+	case tvs of
+	  | [] -> ppNil
+	  | [tv] -> ppString (" " ^ tv)
+	  | _::_ ->
+	    ppConcat [ppString " (",
+		      ppSep (ppString ",") (map ppString tvs),
+		      ppString ")"]
+      def ppDef srt =
+	let (tvs, srt) = unpackSort srt in
+	ppConcat ([ppNames, ppTvs tvs]
+		  ++
+		  (case srt of
+		     | Any _   -> []
+		     | _       -> [ppString " = ", ppASort srt]))
    in
      case info.dfn of
-       | []        -> ppConcat [ppNames, 
-				ppTyVars info.tvs]
-       | [srt_def] -> ppDef srt_def
-       | _         -> ppConcat [ppNewline, 
-				ppString " (* Warning: Multiple Sort Definitions for following sort *) ",
-				ppNewline, 
-				ppSep ppNewline (map ppDef info.dfn)]
+       | And (srts, _) -> ppConcat [ppNewline, 
+				    ppString " (* Warning: Multiple Sort Definitions for following sort *) ",
+				    ppNewline, 
+				    ppSep ppNewline (map ppDef srts)]
+       | srt -> ppDef srt
 
-  op ppAOpInfo : fa (a) AOpInfo a -> Pretty
+  op ppAOpInfo : [a] AOpInfo a -> Pretty
  def ppAOpInfo info = 
    let ppNames =
        case info.names of
@@ -117,40 +117,42 @@ SpecCalc qualifying spec
 			       ppSep (ppString ",") (map ppQualifiedId info.names),
 			       ppString "}"]
    in
-   let
-     def ppTyVars tvs =
-       case tvs of
-	 | [] -> ppNil
-	 | _ -> 
+   let 
+     def ppType srt =
+       let (tvs, srt) = unpackSort srt in
+       case (tvs, srt) of
+	 | ([],srt) -> ppASort srt
+	 | (tvs,srt) ->
 	   ppConcat [ppString "[",
 		     ppSep (ppString ",") (map ppString tvs),
-		     ppString "] "]
-   in
-   let ppType =
-       let (tvs,srt) = info.typ in
-	 ppConcat [ppTyVars tvs, ppASort srt]
-   in
-   let ppDecl = [ppNames, ppString " : ", ppType] in
-   let 
-     def ppDef (tvs, term) =
+		     ppString "] ",
+		     ppASort srt]
+
+     def ppDecl tm =
+       let srt = termSort tm in
+       ppGroup (ppConcat [ppString "op ", 
+			  ppNames, 
+			  ppString " : ", 
+			  ppType srt])
+
+     def ppDef tm =
+       let (tvs, _, tm) = unpackTerm tm in
        ppGroup (ppConcat [ppString "def ",
-			  ppTyVars tvs,
+			  case tvs of
+			    | [] -> ppNil
+			    | _  -> ppConcat [ppString "[",
+					      ppSep (ppString ",") (map ppString tvs),
+					      ppString "] "],
 			  ppNames,
 			  ppGroup (ppIndent (ppConcat [ppString " =",
 						       ppBreak,
-						       ppGroup (ppATerm term)]))
+						       ppGroup (ppATerm tm)]))
 			 ])
    in
-   let ppDefs =
-       case info.dfn of
-	 | []    -> []
-	 | [dfn] -> [ppNewline, ppDef dfn]
-	 | _     -> [ppNewline, 
-		     ppString " (* Warning: Multiple Definitions for following op *) ",
-		     ppNewline, 
-		     ppSep ppNewline (map ppDef info.dfn)]
-   in
-     ppConcat (ppDecl ++ ppDefs)
+   let (decls, defs) = opDeclsAndDefs info.dfn in
+   let ppDecls = map ppDecl decls in
+   let ppDefs  = map ppDef  defs  in
+   ppConcat (ppDecls ++ ppDefs)
 
   op ppAProperty : fa (a) AProperty a -> Pretty
  def ppAProperty (propType, name, tvs, term) =

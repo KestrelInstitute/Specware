@@ -120,7 +120,9 @@ ArityNormalize qualifying spec {
 
  def polymorphicDomainOp? (spc, idf) =
    case findTheOp (spc, idf) of
-     | Some info -> polymorphicDomain? (spc, info.typ.2)
+     | Some info -> 
+       let (_, srt, _) = unpackOpDef info.dfn in
+       polymorphicDomain? (spc, srt)
      | None -> false
 
  def polymorphicDomain? (sp, srt) =
@@ -438,16 +440,22 @@ ArityNormalize qualifying spec {
     let usedNames = StringSet.fromList(qualifierIds spc.ops) in
     setOps (spc, 
             mapOpInfos (fn info -> 
-			let (_, srt) = info.typ in
-			let new_dfn =
-			    map (fn (tvs, term) ->
+			let pos = termAnn info.dfn in
+			let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+			let new_defs =
+			    map (fn dfn ->
+				 let pos = termAnn dfn in
+				 let (tvs, srt, term) = unpackTerm dfn in
 				 let usedNames = addLocalVars (term, usedNames) in
-				 (tvs,
-				  normalizeArityTopLevel (spc, [], usedNames,
-							  etaExpand (spc, usedNames, srt, term))))
-				info.dfn
-			in 
-			  info << {dfn = new_dfn})
+				 let tm = 
+				     normalizeArityTopLevel (spc, [], usedNames,
+							     etaExpand (spc, usedNames, srt, term))
+				 in
+				   maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+			        old_defs
+			in
+			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+			info << {dfn = new_dfn})
 	               spc.ops)
 
 (****

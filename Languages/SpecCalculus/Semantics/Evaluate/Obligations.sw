@@ -50,17 +50,18 @@ SpecCalc qualifying spec
     let dom_definitions_not_in_cod
        = foldriAQualifierMap
            (fn (q, id, dom_info, rdefs) ->
-	    case dom_info.dfn of
+	    case opDefs dom_info.dfn of
 	      | [] -> rdefs
 	      | dom_defs ->
 		let
                   def defsToConjectures defs =
-		    flatten (List.map (fn (_,t) -> defToConjecture (dom, q, id, t)) defs)
+		    flatten (List.map (fn tm -> defToConjecture (dom, q, id, tm)) defs)
 		in
 		case findAQualifierMap (cod.ops, q, id) of
-		  | None -> defsToConjectures dom_defs ++ rdefs
+		  | None -> 
+		    defsToConjectures dom_defs ++ rdefs
 		  | Some cod_info ->
-		    defsToConjectures (diff (dom_defs, cod_info.dfn)) ++ rdefs)
+		    defsToConjectures (diff (dom_defs, (opDefs cod_info.dfn))) ++ rdefs)
 	   [] 
 	   dom.ops
     in

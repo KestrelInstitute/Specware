@@ -22,9 +22,9 @@ Sort qualifying spec
 
   % op Sort.sortinfo_type : SortInfo -> Type
   def Sort.sortinfo_type info =
-    case info.dfn of
+    case sortDefs info.dfn of
       | [] -> fail "Sort.sortinfo_type: sort with empty list of sort schemes"
-      | [si_type] -> si_type
+      | [srt] -> unpackSort srt
       | _::_ -> fail "Sort.sortinfo_type: sort with more than one sort scheme"
 
   % op withId infixl 18 : SortInfo * Id -> SortInfo
@@ -32,15 +32,13 @@ Sort qualifying spec
   % op withType infixl 18 : SortInfo * Type -> SortInfo
 
   % op makeSort : Id -> Type -> SortInfo
-  def Sort.makeSort id (si_type as (tvs, _)) = 
+  def Sort.makeSort id (tvs, typ) = 
     {names = [id],
-     tvs   = tvs,
-     dfn   = [si_type]}
+     dfn   = maybePiSort (tvs, typ)}
 
   def SortNoType.makeSort id = 
     {names = [id], 
-     tvs   = [], 
-     dfn   = []}
+     dfn   = Any noPos}
 
   % op join : SortInfo -> SortInfo -> Env SortInfo
 

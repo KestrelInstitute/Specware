@@ -15,7 +15,7 @@ spec
        errors     : Ref (List (String * Position)),
        vars       : StringMap MS.Sort,
        firstPass? : Boolean,
-       constrs    : StringMap (List SortScheme),
+       constrs    : StringMap (List Sort),
        file       : String}
  
  op initialEnv     : (* SpecRef * *) Spec * String -> LocalEnv
@@ -73,8 +73,9 @@ spec
      | _ -> mtv
 
  %% create a copy of srt, but replace type vars by meta type vars
-  op metafySort : SortScheme -> MetaSortScheme
- def metafySort (tvs, srt) = 
+  op metafySort : Sort -> MetaSortScheme
+ def metafySort srt =
+   let (tvs, srt) = unpackSort srt in
    if null tvs then
      ([],srt)
    else
@@ -133,23 +134,24 @@ spec
 	   }
 
  %% Computes a map from constructor names to set of sorts for them
- def computeConstrMap (spc) : StringMap (List SortScheme) =
+ def computeConstrMap spc : StringMap (List Sort) =
    let sorts = spc.sorts in
    let 
 
-     def addConstr (id, tvs, cp_srt, constrMap) =
+     def addConstr (id, cp_srt, constrMap) =
        case StringMap.find (constrMap, id) of
-	 | None -> StringMap.insert (constrMap, id, [(tvs, cp_srt)])
+	 | None -> StringMap.insert (constrMap, id, [cp_srt])
 	 | Some srt_prs ->
-	   if exists (fn (_, o_srt) -> sameCPSort? (o_srt, cp_srt)) srt_prs then
+	   if exists (fn o_srt -> sameCPSort? (o_srt, cp_srt)) srt_prs then
 	     constrMap
 	   else 
-	     StringMap.insert (constrMap, id, cons ((tvs, cp_srt), srt_prs))
+	     StringMap.insert (constrMap, id, cons (cp_srt, srt_prs))
 
-     def addSort ((tvs, srt), constrMap) =
+     def addSort (dfn, constrMap) =
+       let (tvs, srt) = unpackSort dfn in
        case srt : MS.Sort of
 	 | CoProduct (row, _) ->
-	   foldl (fn ((id, _), constrMap) -> addConstr (id, tvs, srt, constrMap)) 
+	   foldl (fn ((id, _), constrMap) -> addConstr (id, dfn, constrMap)) 
 	         constrMap
 		 row
 	   %% | Base (Qualified (qid, id), _, _) ->
@@ -162,7 +164,8 @@ spec
 	   %%   | _ -> ())
 	 | _ -> constrMap
    in
-     foldSortInfos (fn (info, constrMap) -> foldl addSort constrMap info.dfn)
+     foldSortInfos (fn (info, constrMap) -> 
+		    foldl addSort constrMap (sortDefs info.dfn))
                    StringMap.empty 
 		   sorts
 
@@ -287,8 +290,9 @@ spec
      | result -> result
 
  %% sjw: Replace base srt by its instantiated definition
- def unfoldSort (env,srt) = unfoldSortRec (env, srt, SplaySet.empty compareQId)
-
+ def unfoldSort (env,srt) = 
+   unfoldSortRec (env, srt, SplaySet.empty compareQId) 
+   
  def unfoldSortRec (env, srt, qids) : MS.Sort = 
    let unlinked_sort = unlinkSort srt in
    case unlinked_sort of
@@ -301,46 +305,47 @@ spec
       else
         (case findAllSorts (env.internal, qid) of
           | info :: r ->
-            (let tvs = info.tvs in
-	     case info.dfn of
-              | [] ->        % sjw: primitive sort
-                let l1 = length tvs in
-                let l2 = length ts  in
-                ((if l1 ~= l2 then
-                    error (env,
-			   "\n  [A] Instantiation list (" ^ 
-			   (foldl (fn (arg, s) -> s ^ " " ^ (anyToString arg)) "" ts) ^
-			   " ) does not match argument list (" ^ 
-			   (foldl (fn (tv, s) -> s ^ " " ^ (anyToString tv)) "" tvs) ^
-			   " )",
-			   pos)
-                  else 
-                    ());
-                 %% Use the primary name, even if the reference was via some alias.
-                 %% This normalizes all references to be via the same name.
-                 Base (primarySortName info, ts, pos))
-              | _ ->
-		let possible_base_def = find (fn srt_def ->
-					      case srt_def of
-						| (_, Base _) -> true
-						| _           -> false)
-		                             info.dfn
-		in
-		case possible_base_def of
-		  | Some (tvs, srt as (Base (_,_,pos))) ->
-		    %% A base sort can be defined in terms of another base sort.
-   		    %% So we unfold recursively here.
-		    unfoldSortRec (env,
-				  instantiateScheme (env, pos, ts, tvs, srt),
-				  %% Watch for self-references, even via aliases: 
-				  foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
-				        qids
-					info.names)
-		  | _ ->
-		    let (some_tvs, some_def) = hd info.dfn in % if multiple defs, pick first def arbitrarily
-		    instantiateScheme (env, pos, ts, some_tvs, some_def))
+	    (if ~ (definedSortInfo? info) then
+	       let (tvs, _) = unpackSortDef info.dfn in
+	       let l1 = length tvs in
+	       let l2 = length ts  in
+	       ((if l1 ~= l2 then
+		   error (env,
+			  "\n  [A] Instantiation list (" ^ 
+			  (foldl (fn (arg, s) -> s ^ " " ^ (anyToString arg)) "" ts) ^
+			  " ) does not match argument list (" ^ 
+			  (foldl (fn (tv, s) -> s ^ " " ^ (anyToString tv)) "" tvs) ^
+			  " )",
+			  pos)
+		 else 
+		   ());
+		%% Use the primary name, even if the reference was via some alias.
+                %% This normalizes all references to be via the same name.
+		Base (primarySortName info, ts, pos))
+	     else
+	       let defs = sortDefs info.dfn in
+	       let possible_base_def = find (fn srt ->
+					     let (tvs, srt) = unpackSort srt in
+					     case srt of
+					       | Base _ -> true
+					       | _      -> false)
+	                                    defs
+	       in
+		 case possible_base_def of
+		   | Some srt ->
+		     %% A base sort can be defined in terms of another base sort.
+   		     %% So we unfold recursively here.
+		     unfoldSortRec (env,
+				    instantiateScheme (env, pos, ts, srt),
+				    %% Watch for self-references, even via aliases: 
+				    foldl (fn (qid, qids) -> SplaySet.add (qids, qid))
+				          qids
+					  info.names)
+		   | _ ->
+		     let any_dfn = hd defs in
+		     instantiateScheme (env, pos, ts, any_dfn))
           | [] -> 
-	    (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
+	    (error (env, "Could not find sort "^ printQualifiedId qid, pos);
 	     unlinked_sort))
    %| Boolean is the same as default case
     | s -> s 
@@ -372,15 +377,15 @@ spec
  def findVarOrOps (env, id, a) =
   let 
     def mkTerm (a, info) =
-      let (tvs, srt) = info.typ in
-      let (_,srt) = metafySort (tvs, srt) in
+      let (tvs, srt, tm) = unpackOpDef info.dfn in
+      let (_,srt) = metafySort (Pi (tvs, srt, noPos)) in
       let Qualified (q, id) = primaryOpName info in
       Fun (%% Allow (UnQualified, x) through as TwoNames term ...
 	   %% if qualifier = UnQualified
 	   %%  then OneName (id, fixity) 
 	   %% else 
 	   TwoNames (q, id, info.fixity),
-	   srt, 
+	   srt,
 	   a)
     def mkTerms infos =
       List.map (fn info -> mkTerm (a, info)) infos
@@ -390,7 +395,8 @@ spec
       | None     -> mkTerms (wildFindUnQualified (env.internal.ops, id))
 
 
- def instantiateScheme (env, pos, types, tvs, srt) = 
+ def instantiateScheme (env, pos, types, srt) = 
+   let (tvs, _) = unpackSort srt in
    if ~(length types = length tvs) then
      (error (env, 
 	     "\n  [B] Instantiation list (" ^ 
@@ -401,7 +407,7 @@ spec
 	     pos);
       srt)
    else
-     let (new_mtvs, new_srt) = metafySort (tvs, srt) in
+     let (new_mtvs, new_srt) = metafySort srt in
      (ListPair.app (fn (typ, mtv) -> 
                     let cell = ! mtv in
                     mtv := cell << {link = Some typ})

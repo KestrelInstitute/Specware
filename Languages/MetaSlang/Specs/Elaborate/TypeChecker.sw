@@ -35,7 +35,6 @@ TypeChecker qualifying spec
 
   op unlinkRec                : MS.Sort -> MS.Sort
   op undeterminedSort?        : MS.Sort -> Boolean
-  op checkSortScheme          : LocalEnv * (TyVars * MS.Sort)              -> (TyVars * MS.Sort)
   op elaborateSort            : LocalEnv * MS.Sort    * MS.Sort            -> MS.Sort
   op elaborateCheckSortForTerm: LocalEnv * MS.Term    * MS.Sort * MS.Sort  -> MS.Sort 
   op elaborateSortForTerm     : LocalEnv * MS.Term    * MS.Sort * MS.Sort  -> MS.Sort
@@ -83,12 +82,21 @@ TypeChecker qualifying spec
 	 properties = given_props} 
         = given_spec
     in
-    let
+    let 
 
       def elaborate_local_sorts (sorts, env) =
 	mapSortInfos (fn info ->
 		      if someAliasIsLocal? (info.names, localSorts) then
-			info << {dfn = map (fn dfn -> checkSortScheme (env, dfn)) info.dfn}
+			let
+                          def elaborate_dfn dfn =
+			    let (tvs, srt) = unpackSort dfn in
+			    let _ = checkTyVars (env, tvs, sortAnn dfn) in
+			    maybePiSort (tvs, checkSort (env, srt))
+			in
+			let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+			let new_defs = map elaborate_dfn old_defs in
+			let new_dfn = maybeAndSort (old_decls ++ new_defs, sortAnn info.dfn) in
+			info << {dfn = new_dfn}
 		      else 
 			info)
 	             sorts 
@@ -96,18 +104,23 @@ TypeChecker qualifying spec
       def elaborate_local_ops (ops, env, poly?) = 
 	mapOpInfos (fn info ->
 		    if someAliasIsLocal? (info.names, localOps) then
-		      let sig as (tvs, srt) = checkSortScheme (env, info.typ) in
-		      info << {typ = sig,
-			       dfn = map (fn (_,tm) ->
-					  let elaborated_tm = 
-					      if poly? = (tvs ~= []) then
-						elaborateTermTop (env, tm, srt)
-					      else 
-						tm
-					  in
-					    % TODO: Check that op sort is an instance of def sort
-					    (tvs, elaborated_tm))
-			                 info.dfn}
+		      let
+		        def elaborate_dfn dfn =
+			  let pos = termAnn dfn in
+			  let (tvs, srt, tm) = unpackTerm dfn in
+			  let _ = checkTyVars (env, tvs, pos) in
+			  let srt = checkSort (env, srt) in
+			  if poly? = (tvs ~= []) then
+			    let xx = elaborateTermTop (env, tm, srt) in
+			    maybePiTerm (tvs, SortedTerm (xx, srt, pos))
+			  else 
+			    dfn
+		      in
+		      let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+		      let new_defs = map elaborate_dfn old_defs in
+		      let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
+		      let new_info = info << {dfn = new_dfn} in
+		      new_info
 		    else
 		      info)
 	           ops
@@ -161,7 +174,6 @@ TypeChecker qualifying spec
     let final_sorts =   elaborate_local_sorts (elaborated_sorts, second_pass_env) in
     let final_ops   = reelaborate_local_ops   (elaborated_ops,   second_pass_env) in
     let final_props =   elaborate_local_props (elaborated_props, second_pass_env) in
-
     let final_spec = {importInfo   = importInfo,   
 		      sorts        = final_sorts, 
 		      ops          = final_ops, 
@@ -169,7 +181,6 @@ TypeChecker qualifying spec
     in
     %% We no longer check that all metaTyVars have been resolved,
     %% because we don't need to know the type for _
-
     case checkErrors second_pass_env of
       | []   -> Spec (convertPosSpecToSpec final_spec)
       | msgs -> Errors msgs
@@ -178,91 +189,90 @@ TypeChecker qualifying spec
   %% ---- called inside SORTS : PASS 0  -----
   % ========================================================================
  
-  def checkSortScheme (env, ss as (tvs, srt)) = 
-    let _ = verifyDistinctTyVars (env, ss) in
-    (tvs, checkSort (env, srt))
-
-  %% TODO: convert checkSort to work on sort scheme?
   def TypeChecker.checkSort (env, srt) = 
     %% checkSort calls elaborateTerm, which calls checkSort
-    case srt
-      of TyVar _ -> srt
+    case srt of
 
-       | MetaTyVar (v, _) ->
-         (case ! v
-            of {link = Some other_sort, uniqueId, name} -> checkSort(env,other_sort)
-             | _ -> srt)
+      | TyVar _ -> srt
 
-       | Boolean _ -> srt
+      | MetaTyVar (v, _) ->
+        (case ! v of
+	   | {link = Some other_sort, uniqueId, name} -> checkSort (env, other_sort)
+	   | _ -> srt)
 
-       | Base (given_sort_qid, instance_sorts, pos) ->
-	 let 
-           def given_sort_str () =
-	     (printQualifiedId given_sort_qid)
-	     ^(case instance_sorts of
-		 | Nil    -> ""    
+      | Boolean _ -> srt
+
+      | Base (given_sort_qid, instance_sorts, pos) ->
+	let 
+          def given_sort_str () =
+	    (printQualifiedId given_sort_qid)
+	    ^ (case instance_sorts of
+		 | []     -> ""    
 		 | hd::tl -> "("^ "??" ^ (foldl (fn (instance_sort, str) ->
 						 str^", "^ "??")
 					  ""
 					  tl) 
 		             ^ ")")
-	 in
-         (case findAllSorts (env.internal, given_sort_qid) of
+	in
+	  (case findAllSorts (env.internal, given_sort_qid) of
+	     | [] -> 
+               (error (env, 
+		       "Type identifier in "^(given_sort_str ())^" has not been declared", 
+		       pos);
+		Base (given_sort_qid, instance_sorts, pos))
 
-           | [] -> 
-             (error (env, 
-                     "Type identifier in "^(given_sort_str ())^" has not been declared", 
-                     pos);
-              Base (given_sort_qid, instance_sorts, pos))
-
-           | info :: other_infos -> 
-	     let _ =
-	     (%% Check for errors...
-	      %% Note: If multiple candidates are returned, then given_sort_qid must be unqualified,
-	      %%       so if some candidate has given_sort_qid as an exact alias, then that
-	      %%       candidate will be first in the list (see comments for findAllSorts),
-	      %%       in which case choose it.
-	      if ((null other_infos) or exists (fn alias -> alias = given_sort_qid) info.names) then
-		(if length info.tvs ~= length instance_sorts then
-		   let found_sort_str =
-		       (printAliases info.names)
-		       ^ (case info.tvs of
-			    | [] -> ""    
-			    | hd::tl -> 
-			    "("^ hd ^ (foldl (fn (tv, str) -> str^", "^ tv) "" tl) ^ ")")
-		   in                                
-		     error (env, 
-			    "Type reference "^(given_sort_str ())
-			    ^" does not match declared type "^found_sort_str, 
-			    pos)
+	     | info :: other_infos -> 
+	       let _ =
+	           (%% Check for errors...
+		    %% Note: If multiple candidates are returned, then given_sort_qid must be unqualified,
+		    %%       so if some candidate has given_sort_qid as an exact alias, then that
+		    %%       candidate will be first in the list (see comments for findAllSorts),
+		    %%       in which case choose it.
+		    if ((null other_infos) or exists (fn alias -> alias = given_sort_qid) info.names) then
+		      (let (decls, defs) = sortDeclsAndDefs info.dfn in
+		       let some_def_or_decl :: _ = defs ++ decls in
+		       let (tvs, srt) = unpackSort some_def_or_decl in
+		       if length tvs ~= length instance_sorts then
+			 let found_sort_str =
+			     (printAliases info.names)
+			     ^ (case tvs of
+				  | [] -> ""    
+				  | hd::tl -> 
+				    "("^ hd ^ (foldl (fn (tv, str) -> str^", "^ tv) "" tl) ^ ")")
+			 in                                
+			   let msg = 
+				  "Type reference " ^ (given_sort_str ())
+				  ^" does not match declared type " ^ found_sort_str
+			   in
+			     error (env, msg, pos)
+		       else 
+			 %%  Normal case goes through here:
+			 %%  either there are no other infos or the first info has as unqualified
+			 %%   alias, and the number of type vars equals the number of instance sorts.
+			 ())
+		    else
+		      %% We know that there are multiple options 
+		      %% (which implies that the given_sort_qid is unqualified), 
+		      %% and that none of them are unqualified, so complain.
+		      let candidates_str = foldl (fn (other_info, str) -> 
+						  str ^", "^  printAliases other_info.names)
+		                                 (printAliases info.names)
+						 other_infos
+		      in
+			error (env, 
+			       "Type reference " ^ (given_sort_str ())
+			       ^" is ambiguous among " ^ candidates_str,
+			       pos))
+	       in
+	       let new_sort_qid = primarySortName info in
+	       let new_instance_sorts = 
+	           map (fn instance_sort -> checkSort (env, instance_sort))
+		       instance_sorts
+	       in
+		 if given_sort_qid = new_sort_qid && instance_sorts = new_instance_sorts then 
+		   srt
 		 else 
-		   %%  Normal case goes through here:
-		   %%  either there are no other infos or the first info has as unqualified
-		   %%   alias, and the number of type vars equals the number of instance sorts.
-		   ())
-	      else
-		%% We know that there are multiple options 
-		%% (which implies that the given_sort_qid is unqualified), 
-		%% and that none of them are unqualified, so complain.
-		let candidates_str = foldl (fn (other_info, str) -> 
-					    str ^", "^  printAliases other_info.names)
-		                           (printAliases info.names)
-					   other_infos
-		in
-		  error (env, 
-			 "Type reference " ^ (given_sort_str ())
-			 ^" is ambiguous among " ^ candidates_str,
-			 pos))
-             in
-	     let new_sort_qid = primarySortName info in
-	     let new_instance_sorts = 
-                 map (fn instance_sort -> checkSort (env, instance_sort))
-	             instance_sorts
-	     in
-	     if given_sort_qid = new_sort_qid && instance_sorts = new_instance_sorts then 
-	       srt
-	     else 
-	       Base (new_sort_qid, new_instance_sorts, pos))
+		   Base (new_sort_qid, new_instance_sorts, pos))
 		
       | CoProduct (fields, pos) ->
 	let nfields = map (fn (id, None)   -> (id, None) 
@@ -311,6 +321,10 @@ TypeChecker qualifying spec
 	  srt
 	else 
 	  Arrow (nt1, nt2, pos)
+
+      | _ -> 
+        let _ = toScreen ("\ncheckSort, Unrecognized sort: " ^ (anyToString srt) ^ "\n") in
+	srt
 
   % ========================================================================
   %% ---- called inside OPS : PASS 0  -----
@@ -379,7 +393,38 @@ TypeChecker qualifying spec
 
   op my_break : () -> ()
 
- def collectUsedTyVars (srt, info, pos, env) =
+
+ def checkOp (info, env) =
+   let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+   let new_decls_and_defs  = map (fn tm -> checkOpDef  (tm, info, env)) 
+                                 (old_decls ++ old_defs)
+   in
+   let new_dfn = maybeAndTerm (new_decls_and_defs, termAnn info.dfn) in
+   info << {dfn = new_dfn}
+
+ def checkOpDef (dfn, info, env) =
+   let pos = termAnn dfn in
+   let (tvs, srt, tm) = unpackTerm dfn in
+   let _ = checkTyVars (env, tvs, pos) in
+   let srt = checkSort (env, srt) in
+   let elaborated_tm = elaborateTermTop (env, tm, srt) in
+   %% If tm is Any (as in an Op declaration), then elaborated_tm will be tm.
+   let tvs_used = collectUsedTyVars (srt, info, dfn, env) in
+   let new_tvs =
+       if null tvs then
+	 tvs_used
+       else if length tvs_used = length tvs then
+	 tvs_used  (* Probably correct ;-*)
+       else 
+	 (error (env, 
+		 "mismatch between bound vars [" ^ (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs) ^ "]"
+		 ^            " and free vars [" ^ (foldl (fn (tv, s) -> s ^ " " ^ tv) "" tvs_used) ^ "]",
+		 termAnn dfn);
+	  tvs)
+   in
+     maybePiTerm (new_tvs, SortedTerm (elaborated_tm, srt, pos))
+
+ def collectUsedTyVars (srt, info, dfn, env) =
    let tv_cell = Ref [] : Ref TyVars in
    let 
    
@@ -404,47 +449,14 @@ TypeChecker qualifying spec
 				 "Incomplete type for op "^(printQualifiedId (primaryOpName info))
 				 ^":"^newline
 				 ^(printSort srt), 
-				 pos))
+				 termAnn dfn))
+	 | Any _ -> 
+	   let _ = toScreen ("\ncollectUsedTyVars: Unexpected Any: " ^ (anyToString srt) ^ "\n") in
+	   ()
 
    in                        
      let _ = scan srt in
      ! tv_cell
-
-
- def checkOp (info, env) =
-   let sig as (sig_tvs, sig_srt) = checkSortScheme (env, info.typ) in
-     let elaborated_dfn =
-         map (fn (_, dfn_tm) ->
-	      let pos = termAnn dfn_tm in
-	      let elaborated_dfn_tm = elaborateTermTop (env, dfn_tm, sig_srt)  in
-	      %%  ---
-	      let tvs_used = collectUsedTyVars (sig_srt, info, pos, env) in
-	      let dfn_tvs =
-	          if null sig_tvs then
-		    tvs_used % Function was polymorphic, but not declared so.
-		  else if length tvs_used = length sig_tvs then
-		    sig_tvs (* Probably correct ;-*)
-		  else 
-		    let scheme =  (sig_tvs, sig_srt)   in
-		    let scheme = printSortScheme scheme in
-		    (error (env, 
-			    "mismatch between bound and free variables "^scheme, 
-			    pos);
-		     sig_tvs)
-	      in
-		(dfn_tvs, elaborated_dfn_tm))
-           info.dfn
-     in
-       let final_tvs =
-           case elaborated_dfn of
-	     | (dfn_tvs,_)::_ -> (if length dfn_tvs > length sig_tvs then
-				    dfn_tvs
-				  else 
-				    sig_tvs)
-	     | _ -> sig_tvs
-       in
-	 info << {typ = (final_tvs, sig_srt),
-		  dfn = elaborated_dfn}
 
   def elaborateTermTop (env, trm, term_sort) =
     let trm = elaborateTerm(env, trm, term_sort) in
@@ -479,8 +491,8 @@ TypeChecker qualifying spec
            | Some info -> 
 	     %% If Qualified (id1, id2) refers to an op, use the canonical name for that op.
 	     let Qualified (q, id) = primaryOpName info in
-	     let (tvs, srt) = info.typ in
-	     let (_,srt) = metafySort (tvs, srt) in
+	     let (tvs, srt, tm) = unpackOpDef info.dfn in
+	     let (_, srt) = metafySort (Pi (tvs, srt, sortAnn srt)) in
 	     let term = Fun (TwoNames (q, id, info.fixity), srt, pos) in
 	     let srt = elaborateCheckSortForTerm (env, term, srt, term_sort) in
 	     (case term of
@@ -1073,11 +1085,11 @@ TypeChecker qualifying spec
 	let tsLength   = length termString in
 	let fillerA    = blankString (10 - tsLength) in  % ### why the qualifier? why the coercion?
 	let fillerB    = blankString (tsLength - 10) in
-	error (env, 
-	       newLines ["Could not match type constraint", 
-			 fillerA ^ termString ^ " of type " ^ printSort givenSort, 
-			 fillerB ^ "with expected type " ^ printSort expectedSort], 
-	       pos));
+	let msg        = newLines ["Could not match type constraint", 
+				   fillerA ^ termString ^ " of type " ^ printSort givenSort, 
+				   fillerB ^ "with expected type " ^ printSort expectedSort]
+	in
+	  error (env, msg, pos));
      givenSort)
 
    % If f : A -> B, and x : C, then for f(x) we want to see
@@ -1109,10 +1121,10 @@ TypeChecker qualifying spec
     ((if success then
 	()
       else             
-	error (env, 
-	       newLines ["Could not match type " ^ printSort s1, 
-			 "                with " ^ printSort s2], 
-	       chooseNonZeroPos (sortAnn s1, sortAnn s2)));
+	let msg = newLines ["Could not match type " ^ printSort s1, 
+			    "                with " ^ printSort s2]
+	in
+	  error (env, msg, chooseNonZeroPos (sortAnn s1, sortAnn s2)));
      s1Checked)
 
   % ========================================================================
@@ -1520,7 +1532,7 @@ TypeChecker qualifying spec
      
   %% ---- called inside OPS : PASS 2  -----
 
-  def verifyDistinctTyVars (env, ss as (tvs, srt)) =
+  def checkTyVars (env, tvs, pos) =
     let 
       def aux (tvs, already_seen) =
 	case tvs of
@@ -1528,8 +1540,8 @@ TypeChecker qualifying spec
 	  | id::tvs ->  
 	    if StringSet.member (already_seen, id) then
 	      error (env, 
-		     "Repeated type variables contained in " ^ (printSortScheme ss),
-		     sortAnn srt)
+		     "Repeated type variables : " ^ (foldl (fn (tv, str) -> str ^ " " ^ tv) "" tvs),
+		     pos)
 	    else 
 	      aux (tvs, StringSet.add (already_seen, id))
     in 

@@ -79,14 +79,18 @@ op unfoldSortAliases: Spec -> Spec
 def unfoldSortAliases spc =
   let srts = sortsAsList spc in
   case find (fn (_, _, info) -> 
-	     case info.dfn of
-	       | (_, Base (_, _, _))::_ -> true
-	       | _ -> false) 
+	     let (_, srt) = unpackSortDef info.dfn in
+	     case srt of
+	       | Base (_, _, _) -> true
+	       | _ -> false)
             srts 
    of
     | None -> spc
     | Some (q0, id0, info) ->
-      let (_, Base (qid, psrts, _))::_ = info.dfn in
+      let (decls, defs) = sortDeclsAndDefs info.dfn in
+      let first_def :: _ = defs in
+      let (tvs, srt) = unpackSort first_def in
+      let Base (qid, psrts, _) = srt in
       let qid0 = mkQualifiedId (q0, id0) in
       %let _ = writeLine ("sort alias found: "^printQualifiedId qid0^" = "^printQualifiedId qid) in
       let srts = filter (fn (q1, id1, _) -> ~((q1 = q0) && (id1 = id0))) srts in
@@ -121,8 +125,11 @@ def findMatchingUserTypeOption (spc, srtdef) =
       let srts = sortsAsList spc in
       let srtPos = sortAnn srtdef in
       let foundSrt = find (fn (q, id, info) ->
-			   case info.dfn of
-			     | [(_, srt)] -> equalSort? (srtdef, srt)
+			   let (decls, defs) = sortDeclsAndDefs info.dfn in
+			   case defs of
+			     | [srt] -> 
+			       let (_, srt) = unpackSort srt in
+			       equalSort? (srtdef, srt)
 			     |_ -> false)
                           srts 
       in
@@ -167,15 +174,20 @@ def foldRecordSorts spc =
     def foldRecordSorts0 (spc, visited) =
       let srts = sortsAsList spc in
       case find (fn (q, i, info) -> 
-		 case info.dfn of
-		   | (_, Product _)::_ -> ~(member (Qualified (q, i), visited))
-		   | _ -> false) 
+		 let (decls, defs) = sortDeclsAndDefs info.dfn in
+		 case defs of
+		   | dfn :: _ -> 
+		     (let (_, srt) = unpackSort dfn in
+		      case srt of
+			| Product _ -> ~(member (Qualified (q, i), visited))
+			| _ -> false)
+		   | _ -> false)
 	        srts 
 	of
 	| None -> spc
 	| Some (q0, id0, info) ->
-	  case info.dfn of
-	    | (_, psrt)::_ ->
+	  case unpackSortDef info.dfn of
+	    | (_, psrt) ->
 	      let qid0 = mkQualifiedId (q0, id0) in
 	      %let _ = writeLine ("product sort found: "^printQualifiedId qid0) in
 	      let spc = foldRecordSorts_internal spc in
@@ -238,39 +250,45 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
   let (srts, minfo) =
       foldriAQualifierMap
         (fn (q, id, info, (map, minfo)) ->
-         let (dfn, minfo) =
-	     foldl (fn (def0 as (tvs, srt), (defs, minfo)) ->
+	 let pos = sortAnn info.dfn in
+	 let (old_decls, old_defs) = sortDeclsAndDefs info.dfn in
+         let (new_defs, minfo) =
+	     foldl (fn (def0, (defs, minfo)) ->
+		    let (tvs, srt) = unpackSort def0 in
 		    let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
-		    let ndef = (tvs, srt) in
+		    let ndef = maybePiSort (tvs, srt) in
 		    let defs = concat (defs, [ndef]) in
 		    %let minfo = concat (minfo, minfo0) in
 		    (defs, minfo)) 
-	           ([]:List SortScheme, minfo) 
-		   info.dfn
+	           ([]:List Sort, minfo) 
+		   old_defs
 	 in
-	   (insertAQualifierMap (map, q, id, info << {dfn = dfn}), 
-	    minfo))
+	 let dfn = maybeAndSort (old_decls ++ new_defs, pos) in
+	 (insertAQualifierMap (map, q, id, info << {dfn = dfn}), 
+	  minfo))
         (emptyASortMap, emptyMonoInfo) 
 	srts
   in
   let (ops, minfo) =
       foldriAQualifierMap
         (fn (q, id, info, (map, minfo)) ->
-	 let (tvs, srt) = info.typ in
-	 let (dfn, minfo) =
-	     foldl (fn (def0 as (tvs, trm), (defs, minfo)) ->
+	 let pos = termAnn info.dfn in
+	 let (tvs, srt, _) = unpackOpDef info.dfn in
+	 let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	 let (new_defs, minfo) =
+	     foldl (fn (def0, (defs, minfo)) ->
+		    let (tvs, srt, trm) = unpackTerm def0 in
+		    let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
 		    let (trm, minfo) = p2mTerm (spc, modifyConstructors?, trm, minfo) in
-		    let ndef = (tvs, trm) in
+		    let ndef = maybePiTerm (tvs, SortedTerm (trm, srt, termAnn def0)) in
 		    let defs = concat (defs, [ndef]) in
 		    %let minfo = concat (minfo, minfo0) in
 		    (defs, minfo)) 
 	           ([], minfo) 
-		   info.dfn
+		   old_defs
 	 in
-	 let (srt, minfo) = p2mSort (spc, modifyConstructors?, srt, minfo) in
-	 let new_typ = (tvs, srt) in
-	 (insertAQualifierMap (map, q, id, info << {typ = new_typ, 
-						    dfn = dfn}), 
+	 let dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+	 (insertAQualifierMap (map, q, id, info << {dfn = dfn}), 
 	  minfo))
         (emptyAOpMap, minfo)
 	ops
@@ -301,7 +319,8 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	      else 
 		foldriAQualifierMap
 		  (fn (q, id, info, map) ->
-		   case info.tvs of
+		   let (tvs, _) = unpackSortDef info.dfn in
+		   case tvs of
 		     | [] -> insertAQualifierMap (map, q, id, info)
 		     | _ -> map)
 		  emptyASortMap 
@@ -312,8 +331,9 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 	     else
 	       foldriAQualifierMap
 	         (fn (q, id, info, map) ->
-		  case info.typ of
-		    | ([], _) -> insertAQualifierMap (map, q, id, info)
+		  let (tvs, _, _) = unpackOpDef info.dfn in
+		  case tvs of
+		    | [] -> insertAQualifierMap (map, q, id, info)
 		    | _ -> map)
 		 emptyAOpMap 
 		 ops)
@@ -340,9 +360,27 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 	    case findTheSort (spc, qid0) of
 	      | Some info ->
 	        let names = info.names in
-	        let tvs   = info.tvs   in
-	        (case (tvs, info.dfn) of
-		  | (_::_, (_, srtdef)::_) ->
+	        let (tvs, srtdef) = unpackSortDef info.dfn in
+	        (case (tvs, srtdef) of
+		  | (_::_, Any _) ->
+		    %DAC:  Added this case for uninterpreted types.  After looking at the
+		    % code below for the interpreted case I am not sure this is the right
+		    % thing to do for code-generation, because in the above code, care is
+		    % to exchange the srt definition types for the original types.
+		    % However, this case is needed for the Snark translator and to ensure
+		    % that the resulting spec is a valid metaslang spec.
+		    if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
+		      let tvsubst = zip (tvs, insttv) in
+		      %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
+		      let names = cons (qid, (filter (fn qid_ -> qid_ ~= qid0) names)) in 
+		      let sinfo = {names = names, 
+				   dfn   = Any noPos} 
+		      in
+		      let minfo = addSortInfo2SortOpInfos (qid, sinfo, minfo) in
+		      minfo
+		    else 
+		      minfo
+		  | (_::_, _) ->
 		    let tvsubst = zip (tvs, insttv) in
 		    %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
 		    let names = cons (qid, (filter (fn qid_ -> qid_ ~= qid0) names)) in 
@@ -355,37 +393,16 @@ def p2mSort (spc, modifyConstructors?, srt, minfo) =
 		    %let _ = writeLine ("after applyTyVarSubst2Sort: "^printSort srtdef) in
 		    % add it first to prevent infinite loop:
 		    let tmp_sinfo = {names = names, 
-				     tvs   = [], 
-				     dfn   = [([], srtdef)]}
+				     dfn   = srtdef}
 		    in
 		    let minfo = addSortInfo2SortOpInfos (qid, tmp_sinfo, minfo) in
 		    let (srtdef, minfo) = p2mSort (spc, modifyConstructors?, srtdef, minfo) in
 		    %let _ = writeLine ("after p2mSort: "^printSort srtdef) in
 		    let sinfo = {names = names, 
-				 tvs   = [], 
-				 dfn   = [([], srtdef)]}
+				 dfn   = srtdef}
 		    in
 		    let minfo = exchangeSortInfoInSortOpInfos (qid, sinfo, minfo) in
 		    minfo
-		  | (_::_, []) ->
-		    %DAC:  Added this case for uninterpreted types.  After looking at the
-		    % code above for the interpreted case I am not sure this is the right
-		    % thing to do for code-generation, because in the above code, care is
-		    % to exchange the srt definition types for the original types.
-		    % However, this case is needed for the Snark translator and to ensure
-		    % that the resulting spec is a valid metaslang spec.
-		    if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
-		      let tvsubst = zip (tvs, insttv) in
-		      %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-		      let names = cons (qid, (filter (fn qid_ -> qid_ ~= qid0) names)) in 
-		      let sinfo = {names = names, 
-				   tvs   = [], 
-				   dfn   = []} 
-		      in
-		      let minfo = addSortInfo2SortOpInfos (qid, sinfo, minfo) in
-		      minfo
-		    else 
-		      minfo
 		  | _ -> minfo)
 	      | _ -> minfo
       in
@@ -594,14 +611,47 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
       (case AnnSpec.findTheOp (spc, qid) of
 	 | None -> (fun, srt1, minfo)
 	 | Some info ->
-	   let (mtvs, asrt) = info.typ in
-	   (case info.dfn of
-	      | ((tv as (_::_), term)::terms) ->
-	         %let _ = writeLine ("polymorphic op found: "^printQualifiedId qid) in
-	        let tvsubst0 = sortMatch (asrt, srt, spc) in
+	   (let (mtvs, asrt, term) = unpackOpDef info.dfn in
+	    if definedOpInfo? info then
+	      %let _ = writeLine ("polymorphic op found: "^printQualifiedId qid) in
+	      let tvsubst0 = sortMatch (asrt, srt, spc) in
+	      let tvsubst = filter (fn (id, TyVar _) -> false | _ -> true) tvsubst0 in
+	      if tvsubst = [] then 
+		(fun, srt1, minfo) 
+	      else
+		let ntvs = map (fn (id, _) -> id) (filter (fn (id, TyVar _) -> true | _ -> false) tvsubst0) in
+		let nqid = Qualified (q, id ^ getSortNameFromTyVarSubst tvsubst) in
+		let names = cons (nqid, (filter (fn qid0 -> qid0 ~= qid) info.names)) in
+		%let _ = writeLine ("  New op name:"^ (printQualifiedId nqid)) in
+		%let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
+		let nfun = Op (nqid, fix) in
+		let minfo = 
+		    if monoInfosContainOp? (nqid, minfo) then 
+		      minfo
+		    else
+		      % construct the new opinfo
+		      let term = applyTyVarSubst2Term (term, tvsubst) in
+		      %let _ = writeLine ("substituted op term[1]: "^printTerm (term)) in
+		      let dfn = maybePiTerm (mtvs, SortedTerm (Any noPos, srt1, noPos)) in
+		      let tmp_opinfo = info << {names = names, dfn = dfn} in
+		      let tmp_minfo = addOpInfo2SortOpInfos (nqid, tmp_opinfo, minfo) in
+		      let (term, minfo) = p2mTerm (spc, modifyConstructors?, term, tmp_minfo) in
+		      %let _ = writeLine ("substituted op term[2]: "^printTerm (term)) in
+		      let dfn = maybePiTerm (ntvs, SortedTerm (term, srt1, termAnn term)) in
+		      let nopinfo = info << {names = names, dfn = dfn} in
+		      %let _ = writeLine ("adding new opinfo for "^id^" with "^natToString (length (ntvs))^" tyvars...") in
+		      let minfo = exchangeOpInfoInSortOpInfos (nqid, nopinfo, minfo) in
+		      %let _ = writeLine (printSortOpInfos minfo) in
+		      minfo
+		in
+		  (nfun, srt1, minfo)
+	    else
+	      if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
+		%let _ = writeLine ("polymorphic op found: "^printQualifiedId qid) in
+		let tvsubst0 = sortMatch (asrt, srt, spc) in
 		let tvsubst = filter (fn (id, TyVar _) -> false | _ -> true) tvsubst0 in
 		if tvsubst = [] then 
-		  (fun, srt1, minfo) 
+		  (fun, srt1, minfo)
 		else
 		  let ntvs = map (fn (id, _) -> id) (filter (fn (id, TyVar _) -> true | _ -> false) tvsubst0) in
 		  let nqid = Qualified (q, id ^ getSortNameFromTyVarSubst tvsubst) in
@@ -614,63 +664,23 @@ def p2mFun (spc, modifyConstructors?, fun, srt, minfo) =
 			minfo
 		      else
 			% construct the new opinfo
-			let term = applyTyVarSubst2Term (term, tvsubst) in
-			%let _ = writeLine ("substituted op term[1]: "^printTerm (term)) in
-			let tmp_opinfo = info << {names = names,
-						  typ   = (mtvs, srt1)}
-			in
-			let tmp_minfo = addOpInfo2SortOpInfos (nqid, tmp_opinfo, minfo) in
-			let (term, minfo) = p2mTerm (spc, modifyConstructors?, term, tmp_minfo) in
-			%let _ = writeLine ("substituted op term[2]: "^printTerm (term)) in
-			let nopinfo = info << {names = names,
-					       typ   = (ntvs, srt1), 
-					       dfn   = [(ntvs, term)]}
-		        in
-			%let _ = writeLine ("adding new opinfo for "^id^" with "^natToString (length (ntvs))^" tyvars...") in
-			let minfo = exchangeOpInfoInSortOpInfos (nqid, nopinfo, minfo) in
-			%let _ = writeLine (printSortOpInfos minfo) in
+			let dfn = maybePiTerm (mtvs, SortedTerm (Any noPos, srt1, noPos)) in
+			let tmp_opinfo = info << {names = names, dfn = dfn} in
+			let minfo = addOpInfo2SortOpInfos (nqid, tmp_opinfo, minfo) in
+			% let nopinfo = info << {typ = (ntvs, srt1)} in
+			%let _ = if id = "empty_seq" then writeLine ("adding new opinfo for "^id^" with "^natToString (length (ntvs))^" tyvars...") else () in
+			%let _ = if id = "empty_seq" then writeLine (printSortOpInfos minfo) else () in
 			minfo
 		  in
 		    (nfun, srt1, minfo)
-	      | _ ->
-		if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
-		  %let _ = writeLine ("polymorphic op found: "^printQualifiedId qid) in
-		  let tvsubst0 = sortMatch (asrt, srt, spc) in
-		  let tvsubst = filter (fn (id, TyVar _) -> false | _ -> true) tvsubst0 in
-		  if tvsubst = [] then 
-		    (fun, srt1, minfo)
-		  else
-		    let ntvs = map (fn (id, _) -> id) (filter (fn (id, TyVar _) -> true | _ -> false) tvsubst0) in
-		    let nqid = Qualified (q, id ^ getSortNameFromTyVarSubst tvsubst) in
-		    let names = cons (nqid, (filter (fn qid0 -> qid0 ~= qid) info.names)) in
-		    %let _ = writeLine ("  New op name:"^ (printQualifiedId nqid)) in
-		    %let _ = writeLine ("  "^ (printTyVarSubst tvsubst)) in
-		    let nfun = Op (nqid, fix) in
-		    let minfo = 
-		        if monoInfosContainOp? (nqid, minfo) then 
-			  minfo
-			else
-			  % construct the new opinfo
-			  let tmp_opinfo = info << {names = names, 
-						    typ = (mtvs, srt1)} 
-			  in
-			  let minfo = addOpInfo2SortOpInfos (nqid, tmp_opinfo, minfo) in
-			  % let nopinfo = info << {typ = (ntvs, srt1)} in
-			  %let _ = if id = "empty_seq" then writeLine ("adding new opinfo for "^id^" with "^natToString (length (ntvs))^" tyvars...") else () in
-			  %let _ = if id = "empty_seq" then writeLine (printSortOpInfos minfo) else () in
-			  minfo
-		    in
-		      (nfun, srt1, minfo)
-		else 
-		  (fun, srt1, minfo))
+	      else 
+		(fun, srt1, minfo))
 	 | _ -> (fun, srt1, minfo))
 
    %| Not/And/Or/Implies/Equals/NotEquals are all same as default
     | _ -> (fun, srt1, minfo)
 
-
-
-op printTyVarSubst: TyVarSubst -> String
+ op printTyVarSubst: TyVarSubst -> String
 def printTyVarSubst tvsubst =
   case tvsubst of
     | [] -> ""
@@ -678,7 +688,7 @@ def printTyVarSubst tvsubst =
     | (id, srt)::tvsubst ->
       id^" -> "^printSort srt ^ ", "^printTyVarSubst (tvsubst)
 
-op printSortOpInfos : SortOpInfos -> String
+ op printSortOpInfos : SortOpInfos -> String
 def printSortOpInfos minfo =
   let s1 = foldl (fn (info, s) -> let Qualified (_, id) = primaryOpName   info in s ^ " " ^ id) "" minfo.ops in
   let s2 = foldl (fn (info, s) -> let Qualified (_, id) = primarySortName info in s ^ " " ^ id) "" minfo.sorts in
@@ -788,26 +798,29 @@ def addMissingFromBaseTo (bspc, spc, ignore, initSpec) =
   %let _ = writeLine ("---------------------- end basespc ---------------") in
   %let _ = writeLine ("addMissingFromBaseTo, spc="^ (printSpec spc)) in
   let minfo =
-    foldriAQualifierMap
-    (fn (q, i, info, minfo) ->
-      foldl (fn (def0 as (_, srt), minfo) ->
-	      let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
-	      minfo) 
-             minfo 
-	     info.dfn)
-     emptyMonoInfo 
-     spc.sorts
+      foldriAQualifierMap
+       (fn (q, i, info, minfo) ->
+	foldl (fn (def0, minfo) ->
+	       let (_, srt) = unpackSort def0 in
+	       let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
+	       minfo) 
+	      minfo 
+	      (sortDefs info.dfn))
+       emptyMonoInfo 
+       spc.sorts
   in
   let minfo =
       foldriAQualifierMap
        (fn (q, i, info, minfo) ->
 	 let minfo =
-	     foldl (fn ((_, trm), minfo) ->
+	     foldl (fn (dfn, minfo) ->
+		    let (_, _, trm) = unpackTerm dfn in
 		    addMissingFromTerm (bspc, spc, ignore, trm, minfo))
 	           minfo
-		   info.dfn
+		   (opDefs info.dfn)
 	 in
-	 let minfo = addMissingFromSort (bspc, spc, ignore, info.typ.2, minfo) in
+	 let (_, srt, _) = unpackOpDef info.dfn in
+	 let minfo = addMissingFromSort (bspc, spc, ignore, srt, minfo) in
 	 minfo)
 	minfo 
 	spc.ops
@@ -968,57 +981,57 @@ def addSortConstructorsToSpecInternal (spc, forSnark?) =
 
 op addSortConstructorsFromSort: Spec * Boolean * QualifiedId * SortInfo -> Spec * List (QualifiedId)
 def addSortConstructorsFromSort (spc, forSnark?, qid, info) =
-  case info.dfn of
-    | [] -> (spc, [])
-    | (tvs, srt)::_ -> 
-      case srt of
-	| CoProduct (fields, b) -> 
-	  %let _ = writeLine ("generating constructor ops for sort "^ (printQualifiedId qid)^"...") in
-	  %let _ = writeLine ("  typevars: "^ (List.show ", " tvs)) in
-	  List.foldr (fn ((id, optsrt), (spc, opnames)) ->
-		      let opqid as Qualified (opq, opid) = 
-		          if forSnark? then 
-			    getConstructorOpNameForSnark (qid, id) 
-			  else
-			    getConstructorOpName (qid, id) 
-		      in
-		      %let _ = writeLine ("  op "^ (printQualifiedId opqid)) in
-		      let tvsrts = map (fn (tv) -> TyVar (tv, b)) info.tvs in
-		      let codom:Sort  = Base (qid, tvsrts, b) in
-		      let opsrt = case optsrt of
-				    | None -> Arrow (Product ([], b), codom, b)
-				    | Some s -> Arrow (s, codom, b)
-		      in
-		      let (termsrt, eb) = case optsrt of
-					    | None -> (codom, false)
-					    | Some s -> (Arrow (s, codom, b), true)
-		      in
-		      let pat = patternFromSort (optsrt, b) in
-		      let cond = mkTrue () in
-		      let funterm = Fun (Embed (id, eb), termsrt, b) in
-		      let body = argTermFromSort (optsrt, funterm, b) in
-		      let term = Lambda ([(pat, cond, body)], b) in
-		      let opinfo = {names  = [opqid], 
-				    fixity = Nonfix, 
-				    typ    = (tvs, opsrt),
-				    dfn    = [(tvs, term)]}
-		      in
-		      let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
-		      let opnames = cons (opqid, opnames) in
+  if ~ (definedSortInfo? info) then
+    (spc, [])
+  else
+    let (tvs, srt) = unpackSortDef info.dfn in
+    case srt of
+      | CoProduct (fields, b) -> 
+        (%let _ = writeLine ("generating constructor ops for sort "^ (printQualifiedId qid)^"...") in
+	 %let _ = writeLine ("  typevars: "^ (List.show ", " tvs)) in
+	 List.foldr (fn ((id, optsrt), (spc, opnames)) ->
+		     let opqid as Qualified (opq, opid) = 
+		         if forSnark? then 
+			   getConstructorOpNameForSnark (qid, id) 
+			 else
+			   getConstructorOpName (qid, id) 
+		     in
+		     %let _ = writeLine ("  op "^ (printQualifiedId opqid)) in
+		     let tvsrts = map (fn tv -> TyVar (tv, b)) tvs in
+		     let codom:Sort  = Base (qid, tvsrts, b) in
+		     let opsrt = case optsrt of
+				   | None -> Arrow (Product ([], b), codom, b)
+				   | Some s -> Arrow (s, codom, b)
+		     in
+		     let (termsrt, eb) = 
+		         case optsrt of
+			   | None -> (codom, false)
+			   | Some s -> (Arrow (s, codom, b), true)
+		     in
+		     let pat = patternFromSort (optsrt, b) in
+		     let cond = mkTrue () in
+		     let funterm = Fun (Embed (id, eb), termsrt, b) in
+		     let body = argTermFromSort (optsrt, funterm, b) in
+		     let term = Lambda ([(pat, cond, body)], b) in
+		     let opinfo = {names  = [opqid], 
+				   fixity = Nonfix, 
+				   dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b))}
+		     in
+		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
+		     let opnames = cons (opqid, opnames) in
 		     (setOps (spc, newops), opnames))
 	            (spc, []) 
-		     fields
-        | _ -> (spc, [])
+		    fields)
+      | _ -> (spc, [])
 
-
-op getConstructorOpName: QualifiedId * String -> QualifiedId
+ op getConstructorOpName: QualifiedId * String -> QualifiedId
 def getConstructorOpName (qid as Qualified (q, id), consid) =
   % the two $'s are important: that how the constructor op names are
   % distinguished from other opnames (hack)
   let sep = "$$" in
   Qualified (q, id^sep^consid)
 
-op getConstructorOpNameForSnark: QualifiedId * String -> QualifiedId
+ op getConstructorOpNameForSnark: QualifiedId * String -> QualifiedId
 def getConstructorOpNameForSnark (qid as Qualified (q, id), consid) =
   % the two $'s are important: that how the constructor op names are
   % distinguished from other opnames (hack)
@@ -1026,7 +1039,7 @@ def getConstructorOpNameForSnark (qid as Qualified (q, id), consid) =
   Qualified (q, "embed"^sep^consid)
 
 % this is used to distinguish "real" product from "record-products"
-op productfieldsAreNumbered: fa (a) List (String * a) -> Boolean
+ op productfieldsAreNumbered: fa (a) List (String * a) -> Boolean
 def productfieldsAreNumbered (fields) =
   let
     def fieldsAreNumbered0 (i, fields) =
@@ -1112,33 +1125,33 @@ def getRecordConstructorOpName (qid as Qualified (q, id)) =
 
 op addProductSortConstructorsFromSort: Spec * QualifiedId * SortInfo -> Spec * List (QualifiedId)
 def addProductSortConstructorsFromSort (spc, qid, info) =
-  case info.dfn of
-    | [] -> (spc, [])
-    | (tvs, srt)::_ -> 
-      case srt of
-	| Product (fields, b) -> 
-	  %let _ = writeLine ("generating constructor ops for sort "^ (printQualifiedId qid)^"...") in
-	  %let _ = writeLine ("  typevars: "^ (List.show ", " tvs)) in
-	  let opqid as Qualified (opq, opid) = getRecordConstructorOpName qid in
-	  %let _ = writeLine ("  op "^ (printQualifiedId opqid)) in
-	  let tvsrts = map (fn (tv) -> TyVar (tv, b)) info.tvs in
-	  let codom:Sort  = Base (qid, tvsrts, b) in
-	  let opsrt   = Arrow (srt, codom, b) in
-	  let termsrt = Arrow (srt, codom, b) in
-	  let pat = patternFromSort (Some srt, b) in
-	  let cond = mkTrue () in
-	  let funterm = Fun (Op (opqid, Nonfix), termsrt, b) in
-	  let body = recordTermFromSort (srt, b) in
-	  let term = Lambda ([(pat, cond, body)], b) in
-	  let opinfo = {names = [opqid], 
-			fixity = Nonfix, 
-			typ    = (tvs, opsrt),
-			dfn    = []}
-	  in
-	  let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
-	  let opnames = [opqid] in
-	 (addLocalOpName (setOps (spc, newops), opqid), opnames)
-	| _ -> (spc, [])
+  if ~ (definedSortInfo? info) then
+    (spc, [])
+  else
+    let (tvs, srt) = unpackSortDef info.dfn in
+    case srt of
+      | Product (fields, b) -> 
+        (%let _ = writeLine ("generating constructor ops for sort "^ (printQualifiedId qid)^"...") in
+	 %let _ = writeLine ("  typevars: "^ (List.show ", " tvs)) in
+	 let opqid as Qualified (opq, opid) = getRecordConstructorOpName qid in
+	 %let _ = writeLine ("  op "^ (printQualifiedId opqid)) in
+	 let tvsrts = map (fn tv -> TyVar (tv, b)) tvs in
+	 let codom:Sort  = Base (qid, tvsrts, b) in
+	 let opsrt   = Arrow (srt, codom, b) in
+	 let termsrt = Arrow (srt, codom, b) in
+	 let pat = patternFromSort (Some srt, b) in
+	 let cond = mkTrue () in
+	 let funterm = Fun (Op (opqid, Nonfix), termsrt, b) in
+	 let body = recordTermFromSort (srt, b) in
+	 let term = Lambda ([(pat, cond, body)], b) in
+	 let opinfo = {names = [opqid], 
+		       fixity = Nonfix, 
+		       dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b))}
+	 in
+	 let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
+	 let opnames = [opqid] in
+	 (addLocalOpName (setOps (spc, newops), opqid), opnames))
+      | _ -> (spc, [])
 
  (**
  * adds for each product sort the accessor ops for each element.
@@ -1147,7 +1160,7 @@ def addProductSortConstructorsFromSort (spc, qid, info) =
  * def project_P_a (p) = project (a) p, ...
  *)
 
-op addProductAccessorsToSpec : Spec -> Spec * List (QualifiedId)
+ op addProductAccessorsToSpec : Spec -> Spec * List (QualifiedId)
 def addProductAccessorsToSpec spc =
   foldriAQualifierMap
    (fn (q, id, sortinfo, (spc, opnames)) ->
@@ -1158,42 +1171,41 @@ def addProductAccessorsToSpec spc =
 
 op addProductAccessorsFromSort: Spec * QualifiedId * SortInfo -> Spec * List (QualifiedId)
 def addProductAccessorsFromSort (spc, qid, info) =
-  case info.dfn of
-    | [] -> (spc, [])
-    | (tvs, srt)::_ ->
-      let srt = stripSubsorts (spc, srt) in
-      case srt of
-	| Product (fields, b) -> 
-	  %let _ = writeLine ("generating accessor ops for sort "^ (printQualifiedId qid)^"...") in
-	  %let _ = writeLine ("  typevars: "^ (List.show ", " tvs)) in
-	  List.foldr (fn ((id, srt), (spc, opnames)) ->
-		      let srtName = primarySortName info in
-		      let Qualified (_, srtId) = srtName in
-		      let opqid as Qualified (opq, opid) = getAccessorOpName (srtId, qid, id) in
-		      %let _ = writeLine ("  op "^ (printQualifiedId opqid)) in
-		      let tvsrts = map (fn tv -> TyVar (tv, b)) info.tvs in
-		      let codom:Sort  = Base (qid, tvsrts, b) in
-		      let opsrt   = Arrow (codom, srt, b) in
-		      let termsrt = Arrow (codom, srt, b) in
-		      let pat = patternFromSort (Some srt, b) in
-		      let cond = mkTrue () in
-		      let funterm = Fun (Project (id), termsrt, b) in
-		      let body = argTermFromSort (Some srt, funterm, b) in
-		      let term = Lambda ([(pat, cond, body)], b) in
-		      let opinfo = {names  = [opqid], 
-				    fixity = Nonfix, 
-				    typ    = (tvs, opsrt),
-				    dfn    = [(tvs, term)]}
-		      in
-		      let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
-		      let opnames = cons (opqid, opnames) in
+  if ~ (definedSortInfo? info) then
+    (spc, [])
+  else
+    let (tvs, srt) = unpackSortDef info.dfn in
+    let srt = stripSubsorts (spc, srt) in
+    case srt of
+      | Product (fields, b) -> 
+        (%let _ = writeLine ("generating accessor ops for sort "^ (printQualifiedId qid)^"...") in
+	 %let _ = writeLine ("  typevars: "^ (List.show ", " tvs)) in
+	 List.foldr (fn ((id, srt), (spc, opnames)) ->
+		     let srtName = primarySortName info in
+		     let Qualified (_, srtId) = srtName in
+		     let opqid as Qualified (opq, opid) = getAccessorOpName (srtId, qid, id) in
+		     %let _ = writeLine ("  op "^ (printQualifiedId opqid)) in
+		     let tvsrts = map (fn tv -> TyVar (tv, b)) tvs in
+		     let codom:Sort  = Base (qid, tvsrts, b) in
+		     let opsrt   = Arrow (codom, srt, b) in
+		     let termsrt = Arrow (codom, srt, b) in
+		     let pat = patternFromSort (Some srt, b) in
+		     let cond = mkTrue () in
+		     let funterm = Fun (Project (id), termsrt, b) in
+		     let body = argTermFromSort (Some srt, funterm, b) in
+		     let term = Lambda ([(pat, cond, body)], b) in
+		     let opinfo = {names  = [opqid], 
+				   fixity = Nonfix, 
+				   dfn    = maybePiTerm (tvs, SortedTerm (term, opsrt, b))}
+		     in
+		     let newops = insertAQualifierMap (spc.ops, opq, opid, opinfo) in
+		     let opnames = cons (opqid, opnames) in
 		     (addLocalOpName (setOps (spc, newops), opqid), opnames))
-	            (spc, []) 
-		     fields
-	| _ -> (spc, [])
+	            (spc, [])
+		    fields)
+      | _ -> (spc, [])
 
-
-op getAccessorOpName: String * QualifiedId * String -> QualifiedId
+ op getAccessorOpName: String * QualifiedId * String -> QualifiedId
 def getAccessorOpName (srtName, qid as Qualified (q, id), accid) =
   let sep = "_" in
   Qualified (q, "project"^sep^srtName^sep^accid)
@@ -1217,7 +1229,15 @@ def lambdaToInner spc =
   %let _ = writeLine ("lambdaToInner...") in
   let ops = foldriAQualifierMap
             (fn (q, id, info, newops) ->
-	     let new_dfn = List.map (fn (tvs, term) -> (tvs, lambdaToInnerToplevelTerm (spc, term))) info.dfn in
+	     let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	     let new_defs = 
+	         List.map (fn dfn ->
+			   let (tvs, srt, term) = unpackTerm dfn in
+			   let new_tm = lambdaToInnerToplevelTerm (spc, term) in
+			   maybePiTerm (tvs, SortedTerm (new_tm, srt, termAnn term)))
+		          old_defs
+	     in
+	     let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
 	     let new_info = info << {dfn = new_dfn} in
 	     insertAQualifierMap (newops, q, id, new_info))
 	    emptyAQualifierMap 
@@ -1306,11 +1326,15 @@ def conformOpDecls spc =
   %let _ = writeLine ("lambdaToInner...") in
   let ops = foldriAQualifierMap
             (fn (q, id, info, newops) ->
-	     let (_, srt) = info.typ in
-	     let new_dfn = 
-	         List.map (fn (tvs, term) -> (tvs, conformOpDeclsTerm (spc, srt, term, id))) 
-		          info.dfn 
+	     let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	     let new_defs = 
+	         List.map (fn dfn ->
+			   let (tvs, srt, term) = unpackTerm dfn in
+			   let new_tm = conformOpDeclsTerm (spc, srt, term, id) in
+			   maybePiTerm (tvs, SortedTerm (new_tm, srt, termAnn term)))
+		          old_defs
 	     in
+	     let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
 	     let new_info = info << {dfn = new_dfn} in
 	     insertAQualifierMap (newops, q, id, new_info))
 	    emptyAQualifierMap spc.ops
@@ -1403,7 +1427,7 @@ def conformOpDeclsTerm (spc, srt, term, _) =
    case findTheOp (spc, qid) of
      | None -> None
      | Some info ->
-       let (_,srt) = info.typ in
+       let (_,srt,_) = unpackOpDef info.dfn in
        let srt = unfoldToArrow (spc, srt) in
        case srt of
 	 | Arrow (domsrt as (Base _), ransrt, _) ->
@@ -1475,111 +1499,111 @@ def addEqOpsFromSort (spc, qid, info) =
       let term = getLambdaTerm (osrt, body, b) in
       let info = {names  = [eqqid],
 		  fixity = Nonfix,
-		  typ    = ([], getEqOpSort (osrt, b)),
-		  dfn    = [([], term)]}
+		  dfn    = SortedTerm (term, getEqOpSort (osrt, b), b)}
       in
       let ops = insertAQualifierMap (spc.ops, eq, eid, info) in
       setOps (spc, ops)
   in
-  case info.dfn of
-    | [] -> spc
-    | (_, srt)::_ ->
-      let usrt = unfoldStripSort (spc, srt, false) in
-      case usrt of
-	| Boolean _ -> spc
-	| Base (Qualified (_, "Nat"),     [], _) -> spc
-	| Base (Qualified (_, "Integer"), [], _) -> spc
-	| Base (Qualified (_, "Char"),    [], _) -> spc
-	| Base (Qualified (_, "String"),  [], _) -> spc
-       %| Base (Qualified (_, "Float"),   [], _) -> spc
-        | _ ->
-          let b = sortAnn srt in
-	  let osrt = Base (qid, map (fn (tv)->TyVar (tv, b)) info.tvs, b) in
-	  %let _ = writeLine ("generating eq-op for \""^ (printQualifiedId qid)^"\", unfolded sort="^ (printSort osrt)) in
-	  let varx = Var (("x", osrt), b) in
-	  let vary = Var (("y", osrt), b) in
-	  let eqqid as Qualified (eq, eid) = getEqOpQid qid in
-	  let
-            def getEqTermFromProductFields (fields, osrt, varx, vary) =
-	      foldr (fn ((fid, fsrt), body) ->
-		     let projsrt = Arrow (osrt, fsrt, b) in
-		     let eqsort = Arrow (Product ([("1", fsrt), ("2", fsrt)], b), Boolean b, b) in
-		     let proj = Fun (Project (fid), projsrt, b) in
-		     let t1 = Apply (proj, varx, b) in
-		     let t2 = Apply (proj, vary, b) in
-		     let t = Apply (Fun (Equals, eqsort, b), Record ([("1", t1), ("2", t2)], b), b) in
-		     if body = mkTrue () then 
-		       t
-		     else
-		       let andSrt = Arrow (Product ([("1", Boolean b), ("2", Boolean b)], b), Boolean b, b) in
-		       let andTerm = mkAndOp b in
-		       Apply (andTerm, Record ([("1", t), ("2", body)], b), b)
-		       %IfThenElse (t, body, mkFalse (), b)
-		      )
-	            (mkTrue ()) 
-		    fields
-	  in
-	  % check for aliases first
-	  case srt of
-	    | Base (aqid, _, b) ->
-	      % define the eq-op in terms of the aliased sort
-	      let aeqqid = getEqOpQid (aqid) in
-	      let fun = Fun (Op (aeqqid, Nonfix), getEqOpSort (osrt, b), b) in
-	      let args = Record ([("1", varx), ("2", vary)], b) in
-	      let body = Apply (fun, args, b) in
-	      addEqOp (eqqid, osrt, body, b)
-	   %| Boolean is same as default case
-	    | _ ->
-	      %let _ = writeLine ("srt="^printSort srt) in
-	      case srt of
-		| Product (fields, _) -> 
-	          let body = getEqTermFromProductFields (fields, osrt, varx, vary) in
-		  addEqOp (eqqid, osrt, body, b)
-		| CoProduct (fields, _) ->
-		  let applysrt = Arrow (osrt, Boolean b, b) in
-		  let match =
-		      foldr (fn ((fid, optfsrt), match) ->
-			     let xpat = EmbedPat (fid, 
-						  case optfsrt of 
-						    | None -> None 
-						    | Some fsrt -> Some (VarPat (("x0", fsrt), b)), osrt, b) 
-			     in
-			     let ypat = EmbedPat (fid, 
-						  case optfsrt of 
-						    | None -> None 
-						    | Some fsrt -> Some (VarPat (("y0", fsrt), b)), osrt, b) 
-			     in
-			     let eqFsrt =
-			         let 
-                                   def bcase fsrt =
-				     let eqsrt = getEqOpSort (fsrt, b) in
-				     Apply (Fun (Equals, eqsrt, b), 
-					    Record ([("1", Var (("x0", fsrt), b)), 
-						     ("2", Var (("y0", fsrt), b))],
-						    b), 
-					    b)
-				 in
-				   case optfsrt of
-				     | None -> mkTrue ()
-				     | Some (fsrt as Base _) -> bcase fsrt
-				     | Some fsrt ->
-				       let ufsrt = unfoldStripSort (spc, fsrt, false) in
-				       case fsrt of
-					 | Product (fields, _) -> 
-				           getEqTermFromProductFields (fields, fsrt, 
-								       Var (("x0", fsrt), b), 
-								       Var (("y0", fsrt), b))
-					 | _ -> bcase (fsrt)
-			     in
-			     let ymatch = [(ypat, mkTrue (), eqFsrt), (WildPat (osrt, b), mkTrue (), mkFalse ())] in
-			     let caseTerm = Apply (Lambda (ymatch, b), vary, b) in
-			     cons ((xpat, mkTrue (), caseTerm), match))
-		            []
-			    fields
-		  in
-		  let body = Apply (Lambda (match, b), varx, b) in
-		  addEqOp (eqqid, osrt, body, b)
-	       | _ -> spc
+  if ~ (definedSortInfo? info) then
+    spc
+  else
+    let (tvs, srt) = unpackSortDef info.dfn in
+    let usrt = unfoldStripSort (spc, srt, false) in
+    case usrt of
+      | Boolean _ -> spc
+      | Base (Qualified (_, "Nat"),     [], _) -> spc
+      | Base (Qualified (_, "Integer"), [], _) -> spc
+      | Base (Qualified (_, "Char"),    [], _) -> spc
+      | Base (Qualified (_, "String"),  [], _) -> spc
+     %| Base (Qualified (_, "Float"),   [], _) -> spc
+      | _ ->
+        let b = sortAnn srt in
+	let osrt = Base (qid, map (fn tv -> TyVar (tv, b)) tvs, b) in
+	%let _ = writeLine ("generating eq-op for \""^ (printQualifiedId qid)^"\", unfolded sort="^ (printSort osrt)) in
+	let varx = Var (("x", osrt), b) in
+	let vary = Var (("y", osrt), b) in
+	let eqqid as Qualified (eq, eid) = getEqOpQid qid in
+	let
+          def getEqTermFromProductFields (fields, osrt, varx, vary) =
+	    foldr (fn ((fid, fsrt), body) ->
+		   let projsrt = Arrow (osrt, fsrt, b) in
+		   let eqsort = Arrow (Product ([("1", fsrt), ("2", fsrt)], b), Boolean b, b) in
+		   let proj = Fun (Project (fid), projsrt, b) in
+		   let t1 = Apply (proj, varx, b) in
+		   let t2 = Apply (proj, vary, b) in
+		   let t = Apply (Fun (Equals, eqsort, b), Record ([("1", t1), ("2", t2)], b), b) in
+		   if body = mkTrue () then 
+		     t
+		   else
+		     let andSrt = Arrow (Product ([("1", Boolean b), ("2", Boolean b)], b), Boolean b, b) in
+		     let andTerm = mkAndOp b in
+		     Apply (andTerm, Record ([("1", t), ("2", body)], b), b)
+		     %IfThenElse (t, body, mkFalse (), b)
+		    )
+	          (mkTrue ()) 
+		  fields
+	in
+	% check for aliases first
+	case srt of
+	  | Base (aqid, _, b) ->
+	    % define the eq-op in terms of the aliased sort
+	    let aeqqid = getEqOpQid (aqid) in
+	    let fun = Fun (Op (aeqqid, Nonfix), getEqOpSort (osrt, b), b) in
+	    let args = Record ([("1", varx), ("2", vary)], b) in
+	    let body = Apply (fun, args, b) in
+	    addEqOp (eqqid, osrt, body, b)
+          %% Boolean is same as default case
+	  | _ ->
+	    %let _ = writeLine ("srt="^printSort srt) in
+	    case srt of
+	      | Product (fields, _) -> 
+	        let body = getEqTermFromProductFields (fields, osrt, varx, vary) in
+		addEqOp (eqqid, osrt, body, b)
+	      | CoProduct (fields, _) ->
+		(let applysrt = Arrow (osrt, Boolean b, b) in
+		 let match =
+		     foldr (fn ((fid, optfsrt), match) ->
+			    let xpat = EmbedPat (fid, 
+						 case optfsrt of 
+						   | None -> None 
+						   | Some fsrt -> Some (VarPat (("x0", fsrt), b)), osrt, b) 
+			    in
+			    let ypat = EmbedPat (fid, 
+						 case optfsrt of 
+						   | None -> None 
+						   | Some fsrt -> Some (VarPat (("y0", fsrt), b)), osrt, b) 
+			    in
+			    let eqFsrt =
+			        let 
+                                  def bcase fsrt =
+				    let eqsrt = getEqOpSort (fsrt, b) in
+				    Apply (Fun (Equals, eqsrt, b), 
+					   Record ([("1", Var (("x0", fsrt), b)), 
+						    ("2", Var (("y0", fsrt), b))],
+						   b), 
+					   b)
+				in
+				  case optfsrt of
+				    | None -> mkTrue ()
+				    | Some (fsrt as Base _) -> bcase fsrt
+				    | Some fsrt ->
+				      let ufsrt = unfoldStripSort (spc, fsrt, false) in
+				      case fsrt of
+					| Product (fields, _) -> 
+					  getEqTermFromProductFields (fields, fsrt, 
+								      Var (("x0", fsrt), b), 
+								      Var (("y0", fsrt), b))
+					| _ -> bcase (fsrt)
+			    in
+			    let ymatch = [(ypat, mkTrue (), eqFsrt), (WildPat (osrt, b), mkTrue (), mkFalse ())] in
+			    let caseTerm = Apply (Lambda (ymatch, b), vary, b) in
+			    cons ((xpat, mkTrue (), caseTerm), match))
+		           []
+			   fields
+		 in
+		 let body = Apply (Lambda (match, b), varx, b) in
+		 addEqOp (eqqid, osrt, body, b))
+	      | _ -> spc
 
 op getEqOpQid: QualifiedId -> QualifiedId
 def getEqOpQid (Qualified (q, id)) =

@@ -44,16 +44,14 @@ PosSpecToSpec qualifying spec {
 
     ops              = mapOpInfos (fn info ->
 				   if someAliasIsLocal? (info.names, localOps) then
-				     let (tvs, srt) = info.typ in
-				     info << {typ = (tvs, mapSort tsp srt), 
-					      dfn = mapTermSchemes tsp info.dfn}
+				     info << {dfn = mapTerm tsp info.dfn}
 				   else 
 				     info)
                                   ops,
 
     sorts            = mapSortInfos (fn info ->
 				     if someAliasIsLocal? (info.names, localSorts) then
-				       info << {dfn = mapSortSchemes tsp info.dfn}
+				       info << {dfn = mapSort tsp info.dfn}
 				     else 
 				       info)
                                     sorts,

@@ -4,7 +4,7 @@ AnnSpec qualifying spec
  import MSTerm
  import QualifierMapAsSTHashTable
  import SpecCalc
-
+ 
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Spec
@@ -58,13 +58,11 @@ AnnSpec qualifying spec
  type AOpMap    b = AQualifierMap (AOpInfo   b) % i.e., Qualifier -> Id -> info
 
  type ASortInfo b = {names : SortNames,
-		     tvs   : TyVars,
-		     dfn   : ASortSchemes b}
+		     dfn   : ASort b}
 
  type AOpInfo   b = {names  : OpNames,
 		     fixity : Fixity,
-		     typ    : ASortScheme b,
-		     dfn    : ATermSchemes b}
+		     dfn    : ATerm b}
 
  type AProperties   b  = List (AProperty b) 
  type AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
@@ -80,9 +78,90 @@ AnnSpec qualifying spec
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type AOpSignature  b = String * String * TyVars * ASort b
- type SortSignature   = String * String * TyVars 
+  op definedOpInfo? : [b] AOpInfo b -> Boolean
+ def definedOpInfo? info =
+   definedTerm? info.dfn
 
+  op definedTerm? : [b] ATerm b -> Boolean
+ def definedTerm? tm =
+   case tm of
+     | Any _ -> false 
+     | SortedTerm (tm, _, _) -> definedTerm? tm
+     | Pi         (_, tm, _) -> definedTerm? tm
+     | And         (tms,  _) -> exists definedTerm? tms
+     | _  -> true 
+
+  op definedSortInfo? : [b] ASortInfo b -> Boolean
+ def definedSortInfo? info =
+   definedSort? info.dfn
+
+  op definedSort? : [b] ASort b -> Boolean
+ def definedSort? srt =
+   case srt of
+     | Any _ -> false 
+     | Pi  (_, srt, _) -> definedSort? srt
+     | And (srts,   _) -> exists definedSort? srts
+     | _  -> true 
+
+  op opDefs : [b] ATerm b -> List (ATerm b) 
+ def opDefs tm =
+   case tm of
+     | And (tms, _) -> filter definedTerm? tms
+     | tm           -> filter definedTerm? [tm]
+
+  op opDeclsAndDefs : [b] ATerm b -> List (ATerm b) * List (ATerm b)
+ def opDeclsAndDefs tm =
+   let 
+     def segregate tms =
+       foldl (fn (tm, (decls, defs)) -> 
+	      if definedTerm? tm then
+		(decls, defs ++ [tm])
+	      else
+		(decls ++ [tm], defs))
+             ([],[])
+             tms				      
+   in
+     case tm of
+       | And (tms, _) -> segregate tms
+       | tm           -> segregate [tm]
+
+  op sortDefs : [b] ASort b -> List (ASort b) 
+ def sortDefs srt =
+   case srt of
+     | And (srts, _) -> filter definedSort? srts
+     | _             -> filter definedSort? [srt]
+
+  op sortDeclsAndDefs : [b] ASort b -> List (ASort b) * List (ASort b)
+ def sortDeclsAndDefs srt =
+   let 
+     def segregate srts =
+       foldl (fn (srt, (decls, defs)) -> 
+	      if definedSort? srt then
+		(decls, defs ++ [srt])
+	      else
+		(decls ++ [srt], defs))
+             ([],[])
+             srts
+   in
+     case srt of
+       | And (srts, _) -> segregate srts
+       | _             -> segregate [srt]
+
+ %% These extract information from the first available definition,
+ %% ignoring any additional definitions
+
+  op unpackOpDef : [b] ATerm b -> TyVars * ASort b * ATerm b
+ def unpackOpDef tm =
+   let (decls, defs) = opDeclsAndDefs tm in
+   let first_def :: _ = defs ++ decls in
+   unpackTerm first_def 
+
+  op unpackSortDef : [b] ASort b -> TyVars * ASort b 
+ def unpackSortDef srt =
+   let (decls, defs) = sortDeclsAndDefs srt in
+   let first_def :: _ = defs ++ decls in
+   unpackSort first_def 
+   
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -99,15 +178,12 @@ AnnSpec qualifying spec
 
   op mapSpecSorts : [b] TSP_Maps b -> ASortMap b -> ASortMap b 
  def mapSpecSorts tsp sorts =
-   mapSortInfos (fn info -> info << {dfn = mapSortSchemes tsp info.dfn})
+   mapSortInfos (fn info -> info << {dfn = mapSort tsp info.dfn})
                 sorts
 
   op mapSpecOps : [b] TSP_Maps b -> AOpMap b -> AOpMap b
  def mapSpecOps tsp ops =
-   mapOpInfos (fn info ->
-	       let (tvs, srt) = info.typ in
-	       info << {typ = (tvs, mapSort tsp srt), 
-			dfn = mapTermSchemes tsp info.dfn})
+   mapOpInfos (fn info -> info << {dfn = mapTerm tsp info.dfn})
               ops
 
  %% mapSortInfos and mapOpInfos apply the provided function
@@ -239,15 +315,6 @@ AnnSpec qualifying spec
            (pt, nm, tvs, mapTerm tsp term))
        properties
 
- op mapTermSchemes : [b] TSP_Maps b -> ATermSchemes b -> ATermSchemes b
- op mapSortSchemes : [b] TSP_Maps b -> ASortSchemes b -> ASortSchemes b
-
- def mapTermSchemes tsp term_schemes = 
-  map (fn (tvs, term) -> (tvs, mapTerm tsp term)) term_schemes
-
- def mapSortSchemes tsp sort_schemes =
-  map (fn (tvs, srt) -> (tvs, mapSort tsp srt)) sort_schemes
-
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -263,16 +330,11 @@ AnnSpec qualifying spec
 
   op appSpecSorts : [a] appTSP a -> ASortMap a -> ()
  def appSpecSorts tsp sorts = 
-   appAQualifierMap (fn info -> appSortSchemes tsp info.dfn)
-                    sorts 
+   appAQualifierMap (fn info -> appSort tsp info.dfn) sorts 
     
   op appSpecOps : [a] appTSP a -> AOpMap a -> ()
  def appSpecOps tsp ops =
-   appAQualifierMap (fn info ->
-		     let (_, srt) = info.typ in
-		     (appSort        tsp srt;
-		      appTermSchemes tsp info.dfn))
-                    ops
+   appAQualifierMap (fn info -> appTerm tsp info.dfn) ops
     
   op appSpecProperties : [a] appTSP a -> AProperties a -> ()
  def appSpecProperties tsp properties =
@@ -284,21 +346,6 @@ AnnSpec qualifying spec
  %%%                Sorts, Ops
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op specSorts : [b] ASpec b -> List SortSignature
- op specOps   : [b] ASpec b -> List (AOpSignature b)
-
- def specSorts (spc) = 
-   foldriAQualifierMap (fn (q, id, info, result) -> 
-			cons ((q, id, info.tvs), result)) 
-                       [] spc.sorts 
-
- def specOps (spc) = 
-   foldriAQualifierMap (fn (q, id, info, result) -> 
-			let (tvs, srt) = info.typ in
-			cons ((q, id, tvs, srt), result))
-                       [] spc.ops 
-
- % --------------------------------------------------------------------------------
  % return sorts/ops as list with entries of the form (qualifier, id, info)
 
  op sortsAsList     : [b] ASpec b -> List (Qualifier * Id * ASortInfo b)
@@ -341,32 +388,14 @@ AnnSpec qualifying spec
   op equalSortInfo?: [a] ASortInfo a * ASortInfo a -> Boolean
  def equalSortInfo? (info1, info2) =
    info1.names = info2.names
-   && info1.tvs = info2.tvs
    %% Could take into account substitution of tvs
-   && all (fn def1 -> 
-	   exists (fn def2 -> equalSortScheme? (def1, def2)) 
-	          info2.dfn) 
-          info1.dfn
+   && equalSort? (info1.dfn, info2.dfn)
 
   op equalOpInfo?: [a] AOpInfo a * AOpInfo a -> Boolean
  def equalOpInfo? (info1, info2) =
    info1.names = info2.names
    && info1.fixity = info2.fixity
-   && equalSortScheme? (info1.typ, info2.typ)
-   && all (fn def1 -> 
-	   exists (fn def2 -> equalTermScheme? (def1, def2)) 
-	          info2.dfn) 
-          info1.dfn
-
-  op equalSortScheme?: [a] ASortScheme a * ASortScheme a -> Boolean
- def equalSortScheme? ((tvs1, s1), (tvs2, s2)) =
-   %% TODO: take into account substitution of tvs
-   tvs1 = tvs2 && equalSort? (s1, s2)
-
-  op equalTermScheme?: [a] ATermScheme a * ATermScheme a -> Boolean
- def equalTermScheme? ((tvs1, t1), (tvs2, t2)) =
-   %% TODO: take into account substitution of tvs
-   tvs1 = tvs2 && equalTerm? (t1, t2)
+   && equalTerm? (info1.dfn, info2.dfn)
 
   op equalProperty?: [a] AProperty a * AProperty a -> Boolean
  def equalProperty? ((propType1, propName1, tvs1, fm1), 
@@ -586,27 +615,18 @@ AnnSpec qualifying spec
  def mapDiffOps xMap yMap =
    foldriAQualifierMap (fn (q, id, x_info, newMap) ->
 			case findAQualifierMap (yMap, q, id) of
-
                           | None -> 
 			    %% no y_info corresponding to the x_info,
 			    %% so include the x_info, whether it is defined or not
 			    insertAQualifierMap (newMap, q, id, x_info)
-
 			  | Some y_info ->
-			    case (x_info.dfn, y_info.dfn) of
-			      | ([], []) -> 
-			        %% there is an undefined y_info corresponding to an undefined x_info, 
-			        %% so omit the x_info
-			        newMap
-
-			      | (_, []) -> 
-				 %% there is an undefined y_info corresponding to a defined x_info, 
-				 %% so include the x_info
-				 insertAQualifierMap (newMap, q, id, x_info)
-			      | _ -> 
-				%% there is a defined y_info, 
-				%% so omit the x_info, whether it is defined or not
-				newMap)
+			    if definedOpInfo? y_info then
+			      %% omit the x_info, whether it is defined or not
+			      newMap
+			    else if definedOpInfo? x_info then
+			      insertAQualifierMap (newMap, q, id, x_info)
+			    else
+			      newMap)
                        emptyAQualifierMap 
                        xMap
 
@@ -614,26 +634,18 @@ AnnSpec qualifying spec
  def mapDiffSorts xMap yMap =
    foldriAQualifierMap (fn (q, id, x_info, newMap) ->
 			case findAQualifierMap (yMap, q, id) of
-
                           | None -> 
 			    %% no y_info corresponding to the x_info,
 			    %% so include the x_info, whether it is defined or not
 			    insertAQualifierMap (newMap, q, id, x_info)
-
 			  | Some y_info ->
-			    case (x_info.dfn, y_info.dfn) of
-			      | ([], []) -> 
-			        %% there is an undefined y_info corresponding to an undefined x_info, 
-			        %% so omit the x_info
-			        newMap
-			      | (_, []) -> 
-				%% there is an undefined y_info corresponding to an defined x_info, 
-				%% so include the x_info
-				insertAQualifierMap (newMap, q, id, x_info)
-			      | _ -> 
-				%% there is a defined y_info, 
-				%% so omit the x_info, whether it is defined or not
-				newMap)
+			    if definedSortInfo? y_info then
+			      %% omit the x_info, whether it is defined or not
+			      newMap
+			    else if definedSortInfo? x_info then
+			      insertAQualifierMap (newMap, q, id, x_info)
+			    else
+			      newMap)
                        emptyAQualifierMap 
                        xMap
 

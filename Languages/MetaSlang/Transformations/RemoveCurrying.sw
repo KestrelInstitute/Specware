@@ -27,36 +27,52 @@ RemoveCurrying qualifying spec
   def removeCurrying spc =
     let spc = addUnCurriedOps spc in
     let newOps = mapOpInfos (fn info ->
-			     case info.dfn of
-			       | (dtvs,def1)::_ -> info << {dfn = [(dtvs, unCurryTerm (def1, spc))]}
-			       | _ -> info)
+			     if definedOpInfo? info then
+			       %% TODO: Handle multiple defs??
+			       let (old_tvs, old_srt, old_tm) = unpackOpDef info.dfn in
+			       let new_tm = unCurryTerm (old_tm, spc) in
+			       let new_dfn = maybePiTerm (old_tvs, 
+							  SortedTerm (new_tm, 
+								      old_srt,
+								      termAnn info.dfn))
+			       in
+				 info << {dfn = new_dfn}
+			     else
+			       info)
                             spc.ops
     in
     let newSorts = mapSortInfos (fn info ->
-				 case info.dfn of
-				   | (tvs1,srt)::_ -> info << {dfn = [(tvs1,(unCurrySort(srt,spc)).2)]}
-				   | _ -> info)
+				 if definedSortInfo? info then
+				   %% TODO: Handle multiple defs??
+				   let (old_tvs, old_srt) = unpackSortDef info.dfn in
+				   let new_srt = (unCurrySort(old_srt,spc)).2 in
+				   let new_dfn = maybePiSort (old_tvs, new_srt) in
+				   info << {dfn = new_dfn}
+				 else
+				   info)
                                 spc.sorts
     in
     setOps (setSorts (spc, newSorts), newOps)
 
-  op  addUnCurriedOps: Spec -> Spec
+   op addUnCurriedOps: Spec -> Spec
   def addUnCurriedOps spc =
     let newOps =
         foldriAQualifierMap
 	  (fn (q, id, info, new_ops) ->
-	   case info.dfn of
-	     | first_def :: _ ->
-	       (let (stvs, srt) = info.typ in
-		case newUncurriedOp (spc, id, srt) of
+	   let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	   case old_defs of
+	     | old_def :: _ ->
+	       (let (old_tvs, old_srt, old_tm) = unpackTerm old_def in
+		case newUncurriedOp (spc, id, old_srt) of
 		  | Some (new_id, new_srt) ->
-		    % Remove definition of old op
-		    let new_ops = insertAQualifierMap (new_ops, q, id, info << {dfn = []}) in
+		    let new_dfn = maybeAndTerm (old_decls, termAnn info.dfn) in % remove old defs
+		    let new_ops = insertAQualifierMap (new_ops, q, id, info << {dfn = new_dfn}) in
 		    % Add definition of replacement (only bother with first def)
+		    %% TODO: Handle multiple defs??
+		    let new_dfn = maybePiTerm (old_tvs, SortedTerm (old_tm, new_srt, termAnn old_def)) in
 		    insertAQualifierMap (new_ops, q, new_id,
 					 info << {names = [Qualified (q, new_id)],
-						  typ   = (stvs, new_srt),
-						  dfn   = [first_def]})
+						  dfn   = new_dfn})
 		  | None -> new_ops)
 	     | _ ->
 	       (debug (q, id, info.fixity); 

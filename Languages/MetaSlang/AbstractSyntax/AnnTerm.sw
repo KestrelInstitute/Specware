@@ -213,53 +213,32 @@ MetaSlang qualifying spec {
      | Product _ -> true
      | _         -> false
 
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%%  These are utilities to help process sort and term definitions.
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- %%
- %% For now, we assume the dfn term of a SortInfo or OpInfo will be
- %% in one of the two forms:
- %%
- %%   And ([xx, xx, ...], ...)
- %%   xx
- %%
- %% where each xx is in one of the two forms:
- %%
- %%   Pi (.., yy, ..) 
- %%   yy
- %%
- %% and where yy is a Sort/Term not headed by And or Pi 
- %%
- %% If there is more than one xx, all such xx should have the same 
- %% number of type vars, but they can vary in name.
- %%
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  op maybePiSort : [b] TyVars * ASort b -> ASort b
+ def maybePiSort (tvs, srt) =
+   case tvs of
+     | [] -> srt
+     | _ -> Pi (tvs, srt, sortAnn srt)
 
- op factorSort : [b] ASort b -> List (TyVars * ASort b)
- op factorTerm : [b] ATerm b -> List (TyVars * ATerm b)
+  op maybePiTerm : [b] TyVars * ATerm b -> ATerm b
+ def maybePiTerm (tvs, tm) =
+   case tvs of
+     | [] -> tm
+     | _ -> Pi (tvs, tm, termAnn tm)
 
- def factorSort srt =
-   let 
-     def aux srt =
-       case srt of
-	 | Pi (tvs, srt, _) -> (tvs, srt)
-	 | _ -> ([], srt)
-   in
-     case srt of
-       | And (srts, _) -> map aux srts
-       | _ -> [aux srt]
+  op maybeAndSort : [b] List (ASort b) * b -> ASort b
+ def maybeAndSort (srts, pos) =
+   case srts of
+     | []    -> Any pos
+     | [srt] -> srt
+     | _     -> And (srts, pos)
 
- def factorTerm tm =
-   let
-     def aux tm =
-       case tm of
-	 | Pi (tvs, tm, _) -> (tvs, tm)
-	 | _               -> ([],  tm)
-   in
-     case tm of
-       | And (tms, _) -> map aux tms
-       | _ -> [aux tm]
-       
+  op maybeAndTerm : [b] List (ATerm b) * b -> ATerm b
+ def maybeAndTerm (tms, pos) =
+   case tms of
+     | []   -> Any pos
+     | [tm] -> tm
+     | _    -> And (tms, pos)
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Fields
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -385,7 +364,7 @@ MetaSlang qualifying spec {
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  op unpackSort : [b] ASort b -> TyVars * ASort b
- op unpackTerm : [b] ATerm b -> TyVars * Option (ASort b) * ATerm b
+ op unpackTerm : [b] ATerm b -> TyVars * ASort b * ATerm b
 
  def unpackSort s =
    case s of
@@ -401,8 +380,8 @@ MetaSlang qualifying spec {
 	 | _ -> ([], t)
    in
    case tm of
-     | SortedTerm (tm, srt, _) -> (tvs, Some srt, tm) 
-     | _ -> (tvs, None, tm)
+     | SortedTerm (tm, srt, _) -> (tvs, srt,         tm) 
+     | _                       -> (tvs, termSort tm, tm)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Sorts
@@ -432,10 +411,13 @@ MetaSlang qualifying spec {
      | Lambda     ([],                   _) -> System.fail "termSort: Ill formed lambda abstraction"
      | IfThenElse (_,t2,t3, _)              -> termSort t2
      | Seq        (_,       a)              -> Product([],a)
-     | SortedTerm (_,s,     _)              -> s
+     | SortedTerm (_,   s,  _)              -> s
      | Pi         (tvs, t,  a)              -> Pi (tvs, termSort t, a) 
      | And        (tms,     a)              -> And (map termSort tms,  a)
      | Any                  a               -> Any a
+     | _ -> 
+       fail ("\n termSort mystery term: " ^ (anyToString term) ^ "\n")
+
 
  def patternSort pat =
    case pat of
@@ -560,7 +542,7 @@ MetaSlang qualifying spec {
 					      true
 					      (tms1, tms2)
 
-     | (Any  _,    Any  _)           -> false  % TODO: Tricky -- should this be some kind of lisp EQ test?
+     | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
 
@@ -635,7 +617,7 @@ MetaSlang qualifying spec {
 					      true
 					      (srts1, srts2)
 
-     | (Any  _,    Any  _)           -> false  % TODO: Tricky -- should this be some kind of lisp EQ test?
+     | (Any  _,    Any  _)           -> true  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
 

@@ -17,9 +17,6 @@ StandardSpec qualifying spec {
  % sort Sorts        = ASorts          StandardAnnotation
  % sort Ops          = AOps            StandardAnnotation
 
- sort OpSignature  = AOpSignature    StandardAnnotation
- sort SortScheme   = ASortScheme     StandardAnnotation
- sort TermScheme   = ATermScheme     StandardAnnotation
  sort MetaSortScheme  = AMetaSortScheme StandardAnnotation
 
  op emptySortMap    : SortMap    
@@ -63,11 +60,28 @@ StandardSpec qualifying spec {
   let srt = mapSort (fn M -> M, doSort, fn p -> p) srt in
   (mapImage (m, tyVars), srt)
 
+ op newAbstractSort : (String -> TyVar) * List String * MS.Sort -> MS.Sort
+ def newAbstractSort (fresh, tyVars, srt) = 
+  if null tyVars then 
+    srt
+  else
+    let (m, doSort) = makeTyVarMap (fresh, tyVars) in
+    let srt = mapSort (fn M -> M, doSort, fn p -> p) srt in
+    let tvs = mapImage (m, tyVars) in
+    maybePiSort (tvs, srt)
+
  op abstractTerm : (String -> TyVar) * List String * MS.Term -> TyVars * MS.Term
  def abstractTerm (fresh, tyVars, trm) = 
   let (m, doSort) = makeTyVarMap (fresh, tyVars) in
   let trm = mapTerm (fn M -> M, doSort, fn p -> p) trm in
   (mapImage (m, tyVars), trm)
+
+ op newAbstractTerm : (String -> TyVar) * List String * MS.Term -> MS.Term
+ def newAbstractTerm (fresh, tyVars, trm) = 
+  let (m, doSort) = makeTyVarMap (fresh, tyVars) in
+  let trm = mapTerm (fn M -> M, doSort, fn p -> p) trm in
+  let tvs = mapImage (m, tyVars) in
+  maybePiTerm (tvs, trm)
 
  %%
  %% It is important that the order of the type variables is preserved

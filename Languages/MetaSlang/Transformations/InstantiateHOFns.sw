@@ -37,24 +37,27 @@ spec
   def makeUnfoldMap spc =
     mapiPartialAQualifierMap
       (fn (q, id, info) -> 
-        case info.dfn of
-	  | [] -> None
-	  | (defSch1 as (tvs,def1)):: _ ->
-	    let srt = info.typ.2 in
-	    if (tvs ~= []) & hoFnSort? (spc, srt)
-	                   & unfoldable? (Qualified (q, id), def1)
-             then let numCurryArgs = curryShapeNum(spc,srt) in
-	          let argSorts = (if numCurryArgs > 1 then
-				    curryArgSorts    (spc, srt)
-				  else 
-				    noncurryArgSorts (spc, srt))
-		  in
-		  let HOArgs = map (fn s -> hoSort?(spc,s)) argSorts in
-	          if numCurryArgs > 1 then
-		    analyzeCurriedDefn    (Qualified(q,id), def1, numCurryArgs, HOArgs, srt)
-		  else 
-		     analyzeUnCurriedDefn (Qualified(q,id), def1, HOArgs, srt)
-	     else None)
+       let (decls, defs) = opDeclsAndDefs info.dfn in
+       case defs of
+	 | [] -> None
+	 | dfn :: _ ->
+	   let (tvs, srt, def1) = unpackTerm dfn in
+	   if (tvs ~= []) & hoFnSort? (spc, srt)  & unfoldable? (Qualified (q, id), def1) then
+	     let numCurryArgs = curryShapeNum(spc,srt) in
+             % see note below about debugging indexing error
+             % let _ = toScreen ("\n numCurryArgs = " ^ (toString numCurryArgs) ^ " for " ^ (anyToString srt) ^ "\n") in
+	     let argSorts = (if numCurryArgs > 1 then
+			       curryArgSorts    (spc, srt)
+			     else 
+			       noncurryArgSorts (spc, srt))
+	     in
+	     let HOArgs = map (fn s -> hoSort?(spc,s)) argSorts in
+	     if numCurryArgs > 1 then
+	       analyzeCurriedDefn    (Qualified(q,id), def1, numCurryArgs, HOArgs, srt)
+	     else 
+	       analyzeUnCurriedDefn (Qualified(q,id), def1, HOArgs, srt)
+	   else 
+	     None)
       spc.ops
 
   op  analyzeCurriedDefn: QualifiedId * Term * Nat * List Boolean * Sort -> Option DefInfo
@@ -86,6 +89,11 @@ spec
       then None
     else
     let patinds = tabulate(length params,id) in
+    % possibly useful to help debug current indexing error that happens with:  proc MatchingProofs
+    % Confusion with Functions.o  (possibly because it it typed using Function(a,b) instead of a -> b)
+    % let _ = toScreen ("\n:Params  [" ^ (Nat.toString (List.length params))  ^ "]= " ^ (anyToString params) ^ "\n") in
+    % let _ = toScreen ("\n:Patinds [" ^ (Nat.toString (List.length patinds)) ^ "]= " ^ (anyToString patinds) ^ "\n") in
+    % let _ = toScreen ("\n:HOARgs  [" ^ (Nat.toString (List.length HOArgs))  ^ "]= " ^ (anyToString HOArgs)  ^ "\n") in
     Some(params,body,srt,
 	 filter (fn i -> nth(HOArgs,i)) patinds,
 	 curried?,
@@ -439,16 +447,25 @@ spec
     let normOps =
         mapiAQualifierMap
 	  (fn (q, id, info) ->
-	   let (_,srt) = info.typ in
-	   case info.dfn of
+	   let pos = termAnn info.dfn in
+	   let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+	   case old_defs of
 	     | [] -> info
-	     | (tvs, def1) :: rDefs -> % Currently additional defs ignored
-	       let numCurryArgs = curryShapeNum (spc, srt) in
-	       let argSorts     = curryArgSorts (spc, srt) in
-	       let normDef1 = normalizeCurriedDefn (def1, argSorts) in
-	       info << {dfn = cons((tvs, normDef1), rDefs)})
+	     | _ ->
+	       let new_defs =
+	           map (fn dfn ->
+			let pos = termAnn dfn in
+			let (tvs, srt, def1) = unpackTerm dfn in
+			let numCurryArgs = curryShapeNum (spc, srt) in
+			let argSorts     = curryArgSorts (spc, srt) in
+			let normDef1 = normalizeCurriedDefn (def1, argSorts) in
+			maybePiTerm (tvs, SortedTerm (normDef1, srt, pos)))
+	               old_defs
+	       in
+		 info << {dfn = maybeAndTerm (old_decls ++ new_defs, pos)})
           spc.ops
-    in setOps (spc, normOps)
+    in 
+      setOps (spc, normOps)
 
   op  normalizeCurriedDefn: Term * List Sort -> Term
   def normalizeCurriedDefn(defn,curryArgSorts) =
@@ -484,8 +501,9 @@ spec
       | Fun (Op (Qualified (q2, id2),_), _, _) ->
         (case findAQualifierMap (spc.ops, q2, id2) of
 	  | Some info -> 
-	    (case info.dfn of
-	       | [(_,def2)] -> (q2, id2, def2)
+	    (let (decls, defs) = opDeclsAndDefs info.dfn in
+	     case defs of
+	       | [def2] -> (q2, id2, def2)
 	       | _ -> (q, id, def1))
 	  | _ -> (q, id, def1))
       | _ -> (q, id, def1)

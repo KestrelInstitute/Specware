@@ -25,17 +25,20 @@ Op qualifying spec
   def Op.fixity info = info.fixity
 
   % op opinfo_type : OpInfo -> Type
-  def Op.opinfo_type info = info.typ
+  def Op.opinfo_type info = 
+    let (tvs, typ, _) = unpackOpDef info.dfn in
+    (tvs, typ)
 
   % op term : OpInfo -> Option MS.Term
   def Op.term info =
-    case info.dfn of
+    case opDefs info.dfn of
       | [] -> None
-      | [(_,trm)] -> Some trm
+      | [trm] -> Some trm
       | _::_ -> fail "term: op with more than one term"
 
   % op withId infixl 18 : OpInfo * Id -> OpInfo
   def Op.withId (info, id) = info << {names = [id]}
+
   % op withIds infixl 18 : OpInfo * IdSet.Set -> OpInfo
   % op withFixity infixl 18 : OpInfo * Fixity -> OpInfo
   % op withType infixl 18 : OpInfo * Type -> OpInfo
@@ -43,21 +46,19 @@ Op qualifying spec
 
   % ## Why are there type variables associated with terms???
   % ## Here we set the term but assume that there are no type vars!!
-  def Op.withTerm (info,newTerm) = info << {dfn = [([],newTerm)]}
+  def Op.withTerm (info, newTerm) = info << {dfn = newTerm}
 
   % op makeOp : Id * Fixity * MSlang.Term * Type -> OpInfo
-  def Op.makeOp (id, fixity, term, oi_type as (tvs,_)) = 
+  def Op.makeOp (id, fixity, term, (tvs,typ)) = 
     {names  = [id],
      fixity = fixity,
-     typ    = oi_type,
-     dfn    = [(tvs,term)]}
+     dfn    = maybePiTerm (tvs, SortedTerm (term, typ, termAnn term))}
 
   % op OpNoTerm.makeOp : Id * Fixity * Type -> OpInfo
-  def OpNoTerm.makeOp (id, fixity, oi_type) = 
+  def OpNoTerm.makeOp (id, fixity, (tvs, typ)) =
     {names  = [id],
      fixity = fixity,
-     typ    = oi_type,
-     dfn    = []}
+     dfn    = maybePiTerm (tvs, SortedTerm (Any noPos, typ, noPos))}
 
   % op join : OpInfo -> OpInfo -> Env OpInfo
 

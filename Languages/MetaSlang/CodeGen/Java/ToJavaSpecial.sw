@@ -170,7 +170,7 @@ spec
 	       % check whether the first argument has an unrefined sort
 	       %let _ = writeLine("checking for method call: "^printTerm(t1)) in
 	       let t1srt = unfoldBase(spc,inferTypeFoldRecords(spc,t1)) in
-	       if sortIsUnrefinedInSpec?(spc,t1srt) then
+	       if ~(sortIsDefinedInSpec?(spc,t1srt)) then
 		 %let _ = writeLine("   found java method call to "^printQualifiedId(qid)) in
 		 let opid = id in
 		 let ((s1,objexpr,k,l),col1) = termToExpression(tcx,t1,k,l,spc) in

@@ -46,19 +46,18 @@ snark qualifying spec
       (case AnnSpec.findTheSort (sp, qid) of
 	 | None -> srt
 	 | Some info ->
-	   case info.dfn of
-	     | []   -> srt
-	     | (tvs, srt2)::_ ->
-	       let ssrt = substSort (zip (tvs, srts), srt2) in
-	       case ssrt of
-		 | Product _ -> srt
-		 | Arrow _ -> ssrt
-		 | TyVar _ -> srt
-		 | CoProduct _ -> srt
-		 | _ -> unfoldBaseUnInterpV (sp, ssrt, verbose))
+	   if ~ (definedSortInfo? info) then
+	     srt
+	   else
+	     let (tvs, srt2) = unpackSortDef info.dfn in
+	     let ssrt = substSort (zip (tvs, srts), srt2) in
+	     case ssrt of
+	       | Product   _ -> srt
+	       | Arrow     _ -> ssrt
+	       | TyVar     _ -> srt
+	       | CoProduct _ -> srt
+	       | _ -> unfoldBaseUnInterpV (sp, ssrt, verbose))
     | _ -> srt
-
-
   
   def snarkPBaseSort(spc, s:Sort, rng?):LispCell = 
     let s = unfoldBaseUnInterp(spc, s) in
@@ -101,13 +100,15 @@ snark qualifying spec
 		 else 
 		   Lisp.symbol ("SNARK", "LOGICAL")
          in
-	 let builtinScheme = find (fn (_, srt) -> builtinSort? srt) info.dfn in
-	 case builtinScheme of
-	   | Some (_, srt) -> builtinSnarkSort srt
+	 let defs = sortDefs info.dfn in
+	 let builtinSort = find builtinSort? defs in
+	 case builtinSort of
+	   | Some srt -> builtinSnarkSort srt
 	   | _ -> 
-	     case info.dfn of
-	       | [(_, srt)] -> 
-	         (case srt of
+	     case defs of
+	       | [dfn] -> 
+	         (let (_, srt) = unpackSort dfn in
+		  case srt of
 		    | Subsort (supSrt, _, _) -> Lisp.symbol ("SNARK", snarkSortId id)
 		    | _ -> snarkPBaseSort (spc, srt, rng?))
 	       | _ -> Lisp.symbol ("SNARK", snarkSortId id))
@@ -445,19 +446,20 @@ snark qualifying spec
 
   op sortInfoToSnarkSubsortProp: Context * Spec * Id * SortInfo -> Option LispCell
   def sortInfoToSnarkSubsortProp(context, spc, id, info) =
-    case info.dfn of
-      | [] -> None
-      | [(_, srt)] ->
-        case srt of
-	  | Subsort (supSrt, pred, _) ->
-	     let snarkSubSrtId = snarkSortId(id) in
-	     let subSrtVar = (snarkSubSrtId, srt) in
-	     let snarkBndVar = snarkBndVar(spc, subSrtVar, []) in
-	     let subSrtPred = srtPred(spc, srt, mkVar(subSrtVar)) in
-	     let snarkSubSrtPred = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], subSrtPred) in
-	       Some (Lisp.list [snark_assert, Lisp.quote(snarkSubSrtPred),
-				Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD","subSort" ^ snarkSubSrtId)])
-	  | _ -> None
+    if ~ (definedSortInfo? info) then
+      None
+    else
+      let (_, srt) = unpackSortDef info.dfn in
+      case srt of
+	| Subsort (supSrt, pred, _) ->
+	  let snarkSubSrtId = snarkSortId(id) in
+	  let subSrtVar = (snarkSubSrtId, srt) in
+	  let snarkBndVar = snarkBndVar(spc, subSrtVar, []) in
+	  let subSrtPred = srtPred(spc, srt, mkVar(subSrtVar)) in
+	  let snarkSubSrtPred = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], subSrtPred) in
+	  Some (Lisp.list [snark_assert, Lisp.quote(snarkSubSrtPred),
+			   Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD","subSort" ^ snarkSubSrtId)])
+	| _ -> None
 
   op snarkPropertiesFromProperty: Context * Spec * Property -> List LispCell
 

@@ -130,12 +130,13 @@ spec
       | Op (qid, _) ->
         (case findTheOp (spc, qid) of
 	   | Some info ->
-	     (case info.dfn of
-		| (_,defn)::_ -> evalRec (defn, sb, spc, depth+1)
-		| _ ->
-	          case qid of 
-		    | Qualified ("Nat", "zero") -> Int 0
-		    | _ -> Unevaluated t)
+	     (if definedOpInfo? info then
+		let (_, _, tm) = unpackOpDef info.dfn in
+		evalRec (tm, sb, spc, depth+1)
+	      else
+		case qid of 
+		  | Qualified ("Nat", "zero") -> Int 0
+		  | _ -> Unevaluated t)
 	   | _ -> 
 	     case qid of 
 	       | Qualified ("Nat", "zero") -> Int 0

@@ -232,10 +232,11 @@ XML qualifying spec
       %% We do that above in scan and add_to_table in sort_expansion_table
       (case findAllSorts (env.internal, qid) of
 	 | info::r ->
-	   (case info.dfn of
-	      | [] ->        % sjw: primitive sort
+	   (let (decls, defs) = sortDeclsAndDefs info.dfn in
+	    case defs of
+	      | [] ->
 	        let main_qid = primarySortName info in
-	        let tvs      = info.tvs in
+		let (tvs, _) = unpackSort (hd decls) in
 	        let l1 = length tvs in
 		let l2 = length ts  in
 		((if l1 ~= l2 then
@@ -248,18 +249,18 @@ XML qualifying spec
 		    Base (main_qid, ts, pos))
 	      | _ ->
    	        let possible_base_def = find (fn srt_def ->
-					      case srt_def of
-						| (_, Base _) -> true
-						| _           -> false)
-	                                     info.dfn
+					      let (_, srt) = unpackSort srt_def in
+					      case srt of
+						| Base _ -> true
+						| _      -> false)
+	                                     defs
 		in
 		  case possible_base_def of
-		    | Some (tvs, srt as (Base (_,_,pos))) ->
+		    | Some srt ->
 		      %% unfoldSortRec would recur here.  We don't.
-		      instantiateScheme (env, pos, ts, tvs, srt)
+		      instantiateScheme (env, pos, ts, srt)
 		    | _ ->
-		      let (some_tvs, some_def) = hd info.dfn in % if multiple defs, pick first def arbitrarily
-		      instantiateScheme(env, pos, ts, some_tvs, some_def))
+		      instantiateScheme (env, pos, ts, (hd defs)))
 	 | [] -> 
 	   (error (env, "Could not find definition of sort "^ printQualifiedId qid, pos);
 	    unlinked_sort))

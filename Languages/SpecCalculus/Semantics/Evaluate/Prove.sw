@@ -146,12 +146,14 @@ SpecCalc qualifying spec {
    options_def <-
       (case possible_options_op of
 	 | Some info ->
-	   (case info.dfn of
-	      | [(_,opTerm)] -> return opTerm
-	      | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^
-					 (case spec_name of
-					    | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
-					    | _ -> "."))))
+	   if definedOpInfo? info then
+	     let (_, _, opTerm) = unpackOpDef info.dfn in
+	     return opTerm
+	   else
+	     raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^
+				 (case spec_name of
+				    | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
+				    | _ -> ".")))
 	 | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^
 				    (case spec_name of
 				       | Some spec_name -> ", in Spec, " ^ spec_name ^ "."

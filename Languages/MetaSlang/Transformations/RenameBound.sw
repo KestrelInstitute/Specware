@@ -91,11 +91,19 @@ spec
     (pt,name, tyvars, renameTerm c term)
 
   def renameOp c info =
-    info << {dfn = map (fn (tvs,term) -> (tvs, renameTerm c term)) info.dfn}
+    let (old_decls, old_defs) = opDeclsAndDefs info.dfn in
+    let new_defs = 
+        map (fn dfn ->
+	     let (tvs, srt, term) = unpackTerm dfn in
+	     maybePiTerm (tvs, SortedTerm (renameTerm c term, srt, termAnn dfn)))
+	    old_defs
+    in
+    let new_dfn = maybeAndTerm (old_decls ++ new_defs, termAnn info.dfn) in
+    info << {dfn = new_dfn}
 
   def renameClosedTerm c term =
-    savingEnvContext c (fn () ->
-      renameTerm (emptyEnvContext c) term)
+    savingEnvContext c 
+    (fn () -> renameTerm (emptyEnvContext c) term)
 
   def renameTerm c term =
     case term

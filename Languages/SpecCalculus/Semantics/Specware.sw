@@ -335,9 +335,11 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 			 | Spec spc ->
 			   (case AnnSpec.findTheOp (spc, qid) of
 			      | Some info -> 
-			        (case info.dfn of
-				   | (_,defn) :: _ -> Some (MSInterpreter.eval (defn, spc))
-				   | _ -> None)
+			        (if definedOpInfo? info then
+				   let (_, _, tm) = unpackOpDef info.dfn in
+				   Some (MSInterpreter.eval (tm, spc))
+				 else
+				   None)
 			      | _ -> None) % Dummy
 			 | _ -> None)
 	      }
