@@ -1,0 +1,375 @@
+===================================================
+
+M e t a s l a n g   L i b r a r y   S k e l e t o n 
+
+===================================================
+
+
+
+GENERAL NOTIONS
+
+  Relations and Functions
+    Functions
+    * associative
+    * commutative
+    * idempotent
+    * fixpoint
+    * function update
+    Predicates
+    Relations
+    * domain
+    * range
+    * composition
+    * identity
+    * total
+    * injective
+    * surjective
+    * functional
+    * transitive
+    * reflexive
+    * symmetric
+    * equivalence relation
+    * congruence relation
+    Symmetries
+
+  Naturals
+
+  Basics
+    Sets
+    * cardinality
+    * finite
+    * infinite
+    * enumerable
+    * closure
+    * relation with predicates
+    Bags
+    * relation with natural functions
+    Maps
+    * relation with functions
+    Orders
+    * preorder
+    * partial order
+    * discrete order
+    * total (linear) order
+    * monotonicity
+    * Galois connection
+    * order isomorphism
+    Lattices
+    * semi-lattice
+    * lattice
+    * lub, glb
+    * complete
+
+  General Algebra
+    Signatures
+    Algebras
+    * homomorphism
+    * kernel
+    * congruence
+    Free algebras
+    Lawful algebras
+    Coalgebras
+
+  Algebras
+    Monoids
+    Groups
+    Rings
+    Fields
+    Polynomials
+    Boolean algebras
+    Kleene algebras
+
+  Coalgebras
+    Streams
+
+DISCRETE MATHEMATICS
+
+  Finite Containers
+    Finite containers
+    * membership
+    * empty
+    * size
+    Finite bags/sets/maps
+    * union
+    Finite sequences
+    * concatenation
+    * priority queues
+    * deques
+    Finite rooted trees
+    * height
+    Databases
+    * filter
+    * projection
+    * join
+
+  Infinite sequences
+    Embedding of streams
+    Recurrence relations
+    Generating functions
+
+  Vectors & Matrices
+    Vector-matrix algebras
+    * monoidal / ring
+    * closure
+
+  Number Theory
+    Integers
+    * embedding of naturals
+    * arithmetic ring
+    * divisibility
+    * prime numbers
+    * factorization
+    * discrete log
+    Congruences
+    * arithmetic ring
+    Rationals
+    * embedding of integers
+
+  Combinatorics
+    Enumerations
+    Permutations
+
+  Graph Theory
+    Graphs
+    * path, cycle
+    * reachability
+    * forest, tree
+    * component
+    * bridge
+    * bipartite
+    * labeled graph
+    Digraphs
+    * path, cycle
+    * dag
+    * reachability
+    * source, sink
+    * strongly-connected component
+    * topological sort
+    Networks
+    * node, port
+    * (un)folding
+
+  Category Theory
+    Categories
+    Functors
+    Natural transformations
+    Monads
+    Adjunctions
+    Diagrams
+    (Co)limits
+    CCC
+    Topos
+    Concrete categories
+
+  Automata Theory
+    Mealy automata
+    Moore automata
+    * stream transducer
+    * deterministic
+    * equivalence
+    * minimal
+
+CONTINUOUS MATHEMATICS
+
+  Analysis
+    Reals
+    * embedding of rationals
+    * arithmetic field
+    Complex numbers
+    Real streams
+    * limit
+    Real functions
+    * continuity
+    * Lipschitz condition
+    Calculus
+    * derivative
+    * antiderivative, integral
+    * differential equations
+    Approximations
+    * intervals
+    * decimal expansions
+    * continued fractions
+
+  Special Functions and Constants
+    Exp, log
+    Trigonometric functions
+    Bessel functions
+
+  Geometry
+    Points, lines
+    * incidence
+    * colinear
+    Configurations
+    * similarity
+    * simplexes
+    * complexes
+    * simplicial complexes
+    * polylines
+    * symmetry
+    Euclidean geometries
+    Projective geometries
+
+  Topology
+    Topological spaces
+    * Hausdorff
+    * compactness
+    * homeomorphisms
+    * continuity
+    Metric spaces
+    * isometric mappings
+    * conformal mappings
+    Euclidean spaces
+    * N-space as geometry
+    * symmetries
+    Manifolds/Regions
+    * reachability
+    * connected
+    * disjoint
+    2-space
+    * above, besides
+    3-space
+
+  Linear Algebra
+    Vectors
+    Matrices
+    Lie & Clifford algebras
+    * quaternions
+    Linear systems
+
+  Probability Theory (Stochastics)
+    Probability
+    * joint probability
+    * independence
+    * conditional probability
+    Distributions
+    * mean, variance
+    * binomial
+    * Gaussian
+    * Poisson
+    Estimation
+    * sample
+    * unbiased
+    * maximum likelihood
+    * significance
+    * Bayesian methods
+    Processes
+    * Bernoulli
+    * Poisson
+    * Markov
+
+  Physics & Engineering
+    Dimensions
+    Laws
+    * statics
+    * dynamics
+    * electricity
+    * thermodynamics
+    Weights and measures
+    Tables of physical constants
+
+SYNTAXIS
+
+  Formal languages
+    Grammars
+    Parsing
+
+  Terms
+    Term grammars (signatures)
+    Ground-term algebras
+    Term algebras with variables
+    * substitution
+    * scope
+    * renaming
+    * unification
+    * generalization
+
+  Type Theory
+    Lambda calculi
+    System F
+
+  Logic
+    Logics
+    Proofs
+    Standard connectives
+    Higher-order logics
+    Propositions as types
+    Modal logics
+
+SEMANTICS
+
+  Models
+  * soundness
+  * completeness
+
+DOMAIN THEORIES
+
+  Constraints
+
+  Schedules
+
+  Control Theory
+
+ALGORITHMICS
+
+  Repeat Until Convergence
+
+  Divide and Conquer
+
+  Branch and Bound
+
+  Catas, Anas, Paras, Apos etc. etc.
+
+  Solving
+    Real systems
+    * by linear algebra
+    * bisection
+    * Newton-Raphson
+    2-valued systems
+    Systems over lattices
+    Differential equations
+
+  Optimization
+    Real systems
+    * (conjugate) gradient-based
+    * linear programming
+    * non-linear programming
+    * quadratic programming
+    Genetic algorithms
+    Soft Real-Time Distributed Graph Coloring using Decentralized Synchronous Stochastic Iterative-Repair Anytime Algorithms
+
+PRAGMATICS
+
+  I/O
+    Data conversion
+    Formatting
+    Files
+
+  User Interaction
+
+  Formalisms In Use
+    Metaslang
+    Lisp
+    Java
+    C
+    .NET
+    UML
+    XML
+
+-----------------------------------------
+
+Diverse not yet classified items:
+
+-- Bisimulation
+-- "Boxes & arrows"
+-- Dynkin diagram
+-- Fourier transform
+-- Finite-element method
+-- Galois field
+-- Hamiltonian
+-- Jacobian
+-- Lagrangrian
+-- Laplace transform
+-- Numerical mathematics
+-- Process algebras
+-- Tensor
+-- Wavelet transform
