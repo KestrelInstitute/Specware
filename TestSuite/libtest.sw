@@ -170,7 +170,7 @@ spec
 % Functions [ 30]:  op inverse     : fa(a,b) Bijective(a,b) -> Bijective(b,a)
 
 % Integer [ 31]:  op ~             : Integer -> Integer
-    tester ("(~ ( 3 )) = 0-3", (~ ( 3 )) = 0-3);
+    tester ("(Integer.~ ( 3 )) = 0-3", (Integer.~ ( 3 )) = 0-3);
 % Integer [ 32]:  op +   infixl 25 : Integer * Integer -> Integer
     tester ("(+ ( 3 , 4 )) = 7", (+ ( 3 , 4 )) = 7);
     tester ("let A = id ( 3 , 4 ) in (+ A) = 7", let A = id ( 3 , 4 ) in (+ A) = 7);
@@ -207,7 +207,7 @@ spec
     tester ("(>= ( 3 , 4 )) = false", (>= ( 3 , 4 )) = false);
     tester ("let A = id ( 3 , 4 ) in (>= A) = false", let A = id ( 3 , 4 ) in (>= A) = false);
 % Integer [ 41]:  op abs          : Integer -> Integer
-    tester ("(abs ( ~3 )) = 3", (abs ( ~3 )) = 3);
+    tester ("(abs ( Integer.~ 3 )) = 3", (abs ( Integer.~ 3 )) = 3);
     tester ("(abs ( 3 )) = 3", (abs ( 3 )) = 3);
 % Integer [ 42]:  op min          : Integer * Integer -> Integer
     tester ("(min ( 3 , 4 )) = 3", (min ( 3 , 4 )) = 3);
@@ -236,7 +236,7 @@ spec
     tester ("(intConvertible ( \"123.00\" )) = false", (intConvertible ( "123.00" )) = false);
 % Integer [125]:  op stringToInt    : (String | intConvertible) -> Integer
     tester ("(stringToInt ( \"123\" )) = 123", (stringToInt ( "123" )) = 123);
-    tester ("(stringToInt ( \"-123\" )) = ~123", (stringToInt ( "-123" )) = ~123);
+    tester ("(stringToInt ( \"-123\" )) = Integer.~ 123", (stringToInt ( "-123" )) = Integer.~ 123);
 % List [ 49]:  op nil             : fa(a)   List a
     tester ("(nil) = []", (nil) = []);
 % List [ 50]:  op cons            : fa(a)   a * List a -> List a

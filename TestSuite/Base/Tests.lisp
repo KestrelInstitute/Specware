@@ -159,7 +159,7 @@
        ;; Functions [ 30]:  op inverse     : fa(a,b) Bijective(a,b) -> Bijective(b,a)
 
        ;; Integer [ 31]:  op ~             : Integer -> Integer
-       ("(~ ( 3 )) = 0-3" :swe "(~ ( 3 )) = 0-3" :value '(:|Bool| . T))
+       ("(Integer.~ ( 3 )) = 0-3" :swe "(Integer.~ ( 3 )) = 0-3" :value '(:|Bool| . T))
        ;; Integer [ 32]:  op +   infixl 25 : Integer * Integer -> Integer
        ("(+ ( 3 , 4 )) = 7" :swe "(+ ( 3 , 4 )) = 7" :value '(:|Bool| . T))
        ("let A = id ( 3 , 4 ) in (+ A) = 7" :swe "let A = id ( 3 , 4 ) in (+ A) = 7" :value '(:|Bool| . T))
@@ -196,7 +196,7 @@
        ("(>= ( 3 , 4 )) = false" :swe "(>= ( 3 , 4 )) = false" :value '(:|Bool| . T))
        ("let A = id ( 3 , 4 ) in (>= A) = false" :swe "let A = id ( 3 , 4 ) in (>= A) = false" :value '(:|Bool| . T))
        ;; Integer [ 41]:  op abs          : Integer -> Integer
-       ("(abs ( ~3 )) = 3" :swe "(abs ( ~3 )) = 3" :value '(:|Bool| . T))
+       ("(abs ( Integer.~ 3 )) = 3" :swe "(abs ( Integer.~ 3 )) = 3" :value '(:|Bool| . T))
        ("(abs ( 3 )) = 3" :swe "(abs ( 3 )) = 3" :value '(:|Bool| . T))
        ;; Integer [ 42]:  op min          : Integer * Integer -> Integer
        ("(min ( 3 , 4 )) = 3" :swe "(min ( 3 , 4 )) = 3" :value '(:|Bool| . T))
@@ -225,7 +225,7 @@
        ("(intConvertible ( \"123.00\" )) = false" :swe "(intConvertible ( \"123.00\" )) = false" :value '(:|Bool| . T))
        ;; Integer [125]:  op stringToInt    : (String | intConvertible) -> Integer
        ("(stringToInt ( \"123\" )) = 123" :swe "(stringToInt ( \"123\" )) = 123" :value '(:|Bool| . T))
-       ("(stringToInt ( \"-123\" )) = ~123" :swe "(stringToInt ( \"-123\" )) = ~123" :value '(:|Bool| . T))
+       ("(stringToInt ( \"-123\" )) = Integer.~ 123" :swe "(stringToInt ( \"-123\" )) = Integer.~ 123" :value '(:|Bool| . T))
        ;; List [ 49]:  op nil             : fa(a)   List a
 
        ("(nil) = []" :swe "(nil) = []" :value '(:|Bool| . T))
