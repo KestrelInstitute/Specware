@@ -20,7 +20,7 @@ TransSpec qualifying spec
   % op make : ModeSpec -> OpRefSet.Set -> TranSpec
   def TransSpec.make modeSpec changedVars = ({changedVars=empty},modeSpec,{changedVars=changedVars})
 
-  op withModeSpec infixl 18 : TransSpec * ModeSpec -> TransSpec
+  op withModeSpec infixl 17 : TransSpec * ModeSpec -> TransSpec
   def withModeSpec ((forwMorph,oldModeSpec,backMorph), newModeSpec) = (forwMorph,newModeSpec,backMorph)
 
   % op applySubst : TransSpec * Subst -> Env TransSpec

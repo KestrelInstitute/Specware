@@ -26,16 +26,20 @@ SpecCalc qualifying spec {
           case value of
             | Other oscarSpec -> {
                   % newOscarSpec <- inlineProc oscarSpec (makeId procName);
-                  newOscarSpec <- return oscarSpec;
-                  junk <-
-                    case ProcMap.evalPartial (procedures newOscarSpec, makeId procName) of
+%                   newOscarSpec <- return oscarSpec;
+%                   junk <-
+%                     case ProcMap.evalPartial (procedures newOscarSpec, makeId procName) of
+%                       | None -> raise (SpecError (noPos, "project: procedure " ^ (Id.show (makeId procName)) ^ " is not defined"))
+%                       | Some proc -> {
+%                            cSpec <- generateCProcedure emptySpec (CGen.emptyCSpec "") (makeId procName) proc;
+%                            cSpec <- return (CInterface.addInclude (cSpec,"matlab.h"));
+%                            return (CInterface.printToFile(cSpec,Some(fileName)))
+%                          };
+                  newOscSpec <-
+                    case ProcMap.evalPartial (procedures oscarSpec, makeId procName) of
                       | None -> raise (SpecError (noPos, "project: procedure " ^ (Id.show (makeId procName)) ^ " is not defined"))
-                      | Some proc -> {
-                           cSpec <- generateCProcedure emptySpec (CGen.emptyCSpec "") (makeId procName) proc;
-                           cSpec <- return (CInterface.addInclude (cSpec,"matlab.h"));
-                           return (CInterface.printToFile(cSpec,Some(fileName)))
-                         };
-                  return (Other newOscarSpec,timeStamp,depUnitIds)
+                      | Some proc -> addProcedure (Oscar.empty withModeSpec (modeSpec oscarSpec)) (makeId procName) proc;
+                  return (Other newOscSpec,timeStamp,depUnitIds)
                 }
             | _ -> raise (SpecError (positionOf unit, "Unit for inline is not an Oscar spec"))
           }
