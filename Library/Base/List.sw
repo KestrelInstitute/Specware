@@ -42,20 +42,15 @@ List qualifying spec
   op tabulate        : fa(a)   Nat * (Nat -> a) -> List a
   op firstUpTo       : fa(a)   (a -> Boolean) -> List a ->
                                Option (a * List a)
-  op firstUpToHelper : fa(a)   ((a -> Boolean) * List a * List a) ->
-                               Option(a * List a)
-  op splitList       : fa(a)  (a -> Boolean) -> List a ->
-                              Option(List a * a * List a)
-  op splitListHelper : fa(a)  ((a -> Boolean) * List a * List a) ->
-                              Option(List a * a * List a)
-  op locationOf      : fa(a)  List a * List a -> Option(Nat * List a)
-  op compare         : fa(a)  (a * a -> Comparison) -> List a * List a ->
-                              Comparison
-  op app             : fa(a)  (a -> ()) -> List a -> ()  % deprecated
+  op splitList       : fa(a)   (a -> Boolean) -> List a ->
+                               Option(List a * a * List a)
+  op locationOf      : fa(a)   List a * List a -> Option(Nat * List a)
+  op compare         : fa(a)   (a * a -> Comparison) -> List a * List a ->
+                               Comparison
+  op app             : fa(a)   (a -> ()) -> List a -> ()  % deprecated
 
-  % the ops rev2, firstUpToHelper, and splitListHelper are auxiliary ops
-  % to define rev, firstUpTo, and splitList; they are not present in the
-  % base spec List of which this spec is a refinement
+  % the op rev2 is an auxiliary op to define rev; it is not present
+  % in the base spec List of which this spec is a refinement
 
   def nil = Nil
 
@@ -174,7 +169,6 @@ List qualifying spec
             else tabulateAux(i-1,Cons(f(i-1),l)) in
     tabulateAux(n,[])
 
-%  def firstUpTo p l = firstUpToHelper(p,l,[])
   def firstUpTo p l =
     case l of
        | []     -> None
@@ -183,13 +177,6 @@ List qualifying spec
                            | None       -> None
                            | Some(x,l1) -> Some(x,Cons(hd,l1))
 
-  def firstUpToHelper(p,l,r) =
-    case l of
-       | []     -> None
-       | hd::tl -> if (p hd) then Some(hd,rev r)
-                   else firstUpToHelper(p,tl,Cons(hd,r))
-
-%  def splitList p l = splitListHelper(p,l,[])
   def splitList p l =
     case l of
        | []     -> None
@@ -197,12 +184,6 @@ List qualifying spec
                    else case splitList p tl of
                            | None -> None
                            | Some(l1,x,l2) -> Some(Cons(hd,l1),x,l2)
-
-  def splitListHelper(p,l,r) =
-    case l of
-       | []     -> None
-       | hd::tl -> if (p hd) then Some(rev r,hd,tl)
-                   else splitListHelper(p,tl,Cons(hd,r))
 
   def fa(a) locationOf(subl,supl) =
     let def checkPrefix (subl : List a, supl : List a) : Option(List a) =

@@ -194,8 +194,7 @@ String qualifying spec
   def Integer.intConvertible s =
     let cs = explode s in
       (exists isNum cs) &
-      (hd cs = #- or isNum(hd cs)) &
-      (all isNum (tl cs))
+      ((all isNum cs) or (hd cs = #- & all isNum (tl cs)))
 
   def Boolean.show b = Boolean.toString b
 
