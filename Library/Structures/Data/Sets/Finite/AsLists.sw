@@ -9,6 +9,7 @@ spec
 
   def insert = FinitePolySet.insert
   def member? = FinitePolySet.member?
+  def delete = FinitePolySet.delete
   def size = FinitePolySet.size
   def singleton = FinitePolySet.singleton
   def theSingleton = FinitePolySet.theSingleton

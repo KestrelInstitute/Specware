@@ -41,8 +41,11 @@ spec
   def theSingleton x =
     case x of
       | [] -> fail "theSingleton: applied to empty list"
-      | x::[] -> x
+      | [x] -> x
       | _::_ -> fail "theSingleton: applied to non-singleton list"
 
-  def size = length
+  def size x =
+    case x of
+      | [] -> 0
+      | x::l -> 1 + (size l)
 endspec

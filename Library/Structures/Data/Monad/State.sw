@@ -150,9 +150,8 @@ in Monad qualifying spec
   def newVar value = return (MonadicStateInternal.newVar value)
 
   op readVar : fa (a) VarRef a -> Monad a
-  def readVar varRef =
-    case varRef of
-      | VarRef value -> return value
+  def readVar (VarRef value) = return value
+
 
   op writeVar : fa (a) VarRef a * a -> Monad (VarRef a)
   def writeVar (varRef,value) = return (MonadicStateInternal.writeVar (varRef,value))
