@@ -805,10 +805,14 @@
 					  :output       *standard-output* 
 					  :error-output :output 
 					  :wait t) 
-	   #+MSWINDOWS (run-shell-command cmd 
+	   #+MSWINDOWS (let ((str (run-shell-command cmd 
 					  ;; :output       *standard-output* ; mysterious problems under windows
 					  ;; :error-output :output           ; mysterious problems under windows
-					  :wait t)
+					  :output :stream
+					  :wait nil
+					  :show-window :hide)))
+			 (do ((ch (read-char str nil nil) (read-char str nil nil))) 
+			     ((null ch) (close str) (sys:os-wait)) (write-char ch)))
 	   #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
       (unless (equal rc 0)
 	(warn "Return code from run-shell-command was non-zero: ~S" rc))))
