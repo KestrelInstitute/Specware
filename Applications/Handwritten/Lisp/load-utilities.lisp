@@ -133,3 +133,8 @@
     (funcall ccl::*overwrite-dialog-hook* filename prompt)
     filename))
 )
+
+(defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
+                                             #+Lispworks SYSTEM::*TEMP-DIRECTORY*
+					     #+(or mcl cmu) "/tmp/"
+					     ))

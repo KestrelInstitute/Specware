@@ -30,6 +30,10 @@ StringMap qualifying spec {
     fa(a,b) (String * String * a -> b)
           -> StringMap.Map(StringMap.Map a)
           -> StringMap.Map(StringMap.Map b)
+  op mapiPartialDouble :
+    fa(a,b) (String * String * a -> Option b)
+          -> StringMap.Map(StringMap.Map a)
+          -> StringMap.Map(StringMap.Map b)
 
   op StringMap.app : fa(a) (a -> ()) -> StringMap.Map a -> ()
   op appDouble : fa(a) (a -> ()) -> StringMap.Map (StringMap.Map a) -> ()
@@ -105,6 +109,8 @@ StringMap qualifying spec {
   def StringMap.mapi  = SplayMap.mapi
   def mapiDouble f m =
     StringMap.mapi (fn (x,sm) -> StringMap.mapi (fn(y,z) -> f(x,y,z)) sm) m
+  def mapiPartialDouble f m =
+    StringMap.mapi (fn (x,sm) -> mapPartiali (fn(y,z) -> f(x,y,z)) sm) m
   def mapPartial = SplayMap.mapPartial
   def mapPartiali = SplayMap.mapPartiali
   def StringMap.app = SplayMap.app

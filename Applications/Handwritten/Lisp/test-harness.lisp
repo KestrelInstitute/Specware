@@ -98,7 +98,7 @@ be the option to run each (test ...) form in a fresh image.
 				 (format nil "~a/~a-~2,,,'0@a-~2,,,'0@a-~2,,,'0@a~2,,,'0@a-~a/"
 					 *test-temporary-directory-name*
 					 year month day hour min i))
-				(sys:temporary-directory))))
+				specware::temporaryDirectory)))
       (if (probe-file dir)
 	  (get-temporary-directory-i (+ i 1))
 	dir))))
@@ -130,7 +130,7 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames filepath *test-directory*))
 	       (target (merge-pathnames filepath *test-temporary-directory*)))
 	  (ensure-directories-exist target)
-	  (sys:copy-file source target))))
+	  (specware::copy-file source target))))
 
 (defmacro test-directories (&body dirs)
   `(test-directories-fn '(,@dirs)))
@@ -159,7 +159,7 @@ be the option to run each (test ...) form in a fresh image.
   (let (val error-type (error-messages ()))
     (let ((test-output (with-output-to-string (*standard-output*)
 			 (multiple-value-setq (val error-type)
-			   (ignore-errors (top-level:do-command "sw" sw))))))
+			   (ignore-errors (cl-user::sw sw))))))
       (setq test-output (normalize-output test-output))
       (when (and error-type (not error))
 	(push (format nil "~a" error-type) error-messages))

@@ -13,6 +13,7 @@ spec
  def insertAQualifierMap = StringMap.insert2       % (qm, x, y, v)
  def mapAQualifierMap    = StringMap.mapDouble     % f m
  def mapiAQualifierMap   = StringMap.mapiDouble     % f m
+ def mapiPartialAQualifierMap = mapiPartialDouble
  def appAQualifierMap    = StringMap.appDouble     % f m
  def qualifiers m =
     StringMap.foldri (fn(qname,_,quals) -> cons(qname,quals)) [] m
