@@ -1,5 +1,7 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" [
  <!ENTITY install SYSTEM "install.dbk">
+ <!ENTITY model SYSTEM "model.dbk">
+ <!ENTITY process SYSTEM "process.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.0">
@@ -21,7 +23,7 @@
   </copyright>
   <copyright>
      <year>2002</year>
-     <holder>Kestrel Technology</holder>
+     <holder>Kestrel Technology LLC</holder>
   </copyright>
 
   <abstract>
@@ -32,5 +34,7 @@
 </bookinfo>
 
 &install;
+&model;
+&process;
 
 </book>
