@@ -97,6 +97,74 @@
      (format t "No previous unit evaluated~%"))))
 
 
+(defpackage "SWE")
+
+(defvar *current-swe-spec* nil ) ; "/Library/Base"
+
+(defvar swe::tmp)
+
+#+allegro
+(top-level:alias ("in-spec" :case-sensitive :string) (x) 
+  (setq *current-swe-spec* x)
+  (format t "~&Subsequent :swe commands will now import ~A~%" x))
+
+(defun swe (x)
+  (let* ((tmp-uid "swe_tmp")
+	 (tmp-sw  (format nil "~A.sw" tmp-uid))
+	 (tmp-cl  (concatenate 'string specware::temporaryDirectory "swe_tmp")))
+    ;; clear any old values or function definitions:
+    (makunbound  'swe::tmp)
+    (fmakunbound 'swe::tmp)
+    (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
+      (if (null *current-swe-spec*)
+	  (format s "spec~%  def swe.tmp = ~A~%endspec~%" x)
+	(format s "spec~%  import ~A~%  def swe.tmp = ~A~%endspec~%" 
+		*current-swe-spec*
+		x)))
+    ;; Process unit id:
+    (if (Specware::evaluateLispCompileLocal_fromLisp-2 tmp-uid (cons :|Some| tmp-cl))
+	(let (*redefinition-warnings*)
+	  ;; Load resulting lisp code:
+	  (load (make-pathname :type "lisp" :defaults tmp-cl))
+	  ;; Print result:
+	  (let ((*package* (find-package "SW-USER")))
+	    (cond ((boundp 'swe::tmp)
+		   (format t "~%Value is ~S~2%" swe::tmp))
+		  ((fboundp 'swe::tmp)
+		   (let* ((code (excl::func_code #'swe::tmp))
+			  (auxfn (find-aux-fn code)))
+		     (format t "~%Function is ")
+		     (pprint code)
+		     (format t "~%")
+		     (when (fboundp auxfn)
+		       (format t "~%where ~A is " auxfn)
+		       (let ((fn (symbol-function auxfn)))
+			 (let ((code (excl::func_code fn)))
+			   (if (consp code)
+			       (pprint code)
+			     (format t "the compiled function ~A" fn))))
+		       (format t "~&~%"))))
+		  (t
+		   (warn "No value for expression?")))))
+      "Specware Processing Failed!")))
+#+allegro
+(top-level:alias ("swe" :case-sensitive :string) (x) (swe x))
+
+(defun find-aux-fn (code)
+  ;; step down through interpreted definitions to get past built-in stuff
+  ;; down to the highest level user function
+  ;; For example, if code is
+  ;;   (LAMBDA (X1) (BLOCK SWE::TMP #'(LAMBDA (X2) #'(LAMBDA (X3) (SWE::TMP-1-1-1 X1 X2 X3)))))
+  ;; this will find the symbol SWE::TMP-1-1-1
+  (let ((fn (car code)))
+    (cond ((equal fn 'function)
+	   (find-aux-fn (cadr code)))
+	  ((equal fn 'block)
+	   (find-aux-fn (caddr code)))
+	  ((equal fn 'lambda)
+	   (find-aux-fn (caddr code)))
+	  (t
+	   fn))))
 
 ;; Not sure if an optional UnitId make sense for swj
 (defun swj (x &optional y)
