@@ -472,12 +472,13 @@ spec
 		   %% Should be able to deal with length args < length vs
 		   then
 		     %let vs = map (fn (VarPat(v,_)) -> v) vs in
-		     if vs = [] 
-		       || ~(equalSort?(unfoldStripSort(spc,oty,false),ty))  % If different then not really recursive
-		       then tcc
-		       else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) ->
-								     let tm::_ = patternToTerms(pat) in tm) vs),
-					      mkTuple args)
+		     (if vs = []
+			then tcc
+			else if equalSort?(unfoldStripSort(spc,oty,false),ty)
+			then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) ->
+								      let tm::_ = patternToTerms(pat) in tm) vs),
+					       mkTuple args)
+			else addErrorCondition(tcc,gamma,"IllegalRecursion"))
 		   else tcc
 	       | _ -> tcc)
 	  | _ -> tcc)
@@ -489,12 +490,13 @@ spec
 	   if qid = lqid
 	    then
 	    %let vs = map (fn (VarPat(v,_)) -> v) (getParams p) in
-	    let vs = (getParams p) in
-	    if vs = []
-	      || ~(equalSort?(unfoldStripSort(spc,oty,false),ty))   % If different then not really recursive
-	      then tcc
-	    else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),
-				   n2)	       
+	    (let vs = (getParams p) in
+	     if vs = []
+	       then tcc
+	     else if (equalSort?(unfoldStripSort(spc,oty,false),ty))
+	     then add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),
+				    n2)
+	     else addErrorCondition(tcc,gamma,"IllegalRecursion"))
 	   else tcc
 	 | _ -> tcc)
      | _ -> tcc
@@ -528,6 +530,13 @@ spec
    let sname = StringUtilities.freshName(id,claimNames) in
    let name = mkQualifiedId(qual, sname) in
    let condn = (name,tvs,form) in
+   (Cons(condn,tccs),StringSet.add(claimNames,sname))
+
+ op  addErrorCondition: TypeCheckConditions * Gamma * String -> TypeCheckConditions
+ %% Impossible obligation str is an indication of the error
+ def addErrorCondition((tccs,claimNames),(_,_,_,_,Qualified(qual, id),_,_),str) =
+   let sname = StringUtilities.freshName(id^"_"^str,claimNames) in
+   let condn = (mkQualifiedId(qual, sname),[],mkFalse()) in
    (Cons(condn,tccs),StringSet.add(claimNames,sname))
 
 %
