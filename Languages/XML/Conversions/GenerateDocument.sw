@@ -182,26 +182,19 @@ XML qualifying spec
 
 	  | ("List",    "List") ->
 	    (let [element_sd] = args in
-	     let new_element_sd = expand_SortDescriptor(element_sd, table) in
-	     if new_element_sd = element_sd then
-	       let items = Magic.magicCastToList datum in
-	       Some {items = rev (foldl (fn (item, items) ->
-					 cons (generate_Content_Item (item,
-								      element_sd,
-								      table,
-								      2, % vspacing,
-								      indent),
-					       items))
-				        []
-					items),
-		     trailer = Some (indentation_chardata (2 (* vspacing*), indent - 2))}
-	     else
-	       generate_content (datum,
-				 Base (qid, [new_element_sd]),
-				 table,
-				 vspacing,
-				 indent))
-
+	     let expanded_element_sd = expand_SortDescriptor(element_sd, table) in
+	     let items = Magic.magicCastToList datum in
+	     Some {items = rev (foldl (fn (item, items) ->
+				       cons (generate_Content_Item (item,
+								    element_sd,
+								    expanded_element_sd,
+								    table,
+								    1, % vspacing,
+								    indent),
+					     items))
+				     []
+				     items),
+		   trailer = Some (indentation_chardata (2 (* vspacing*), indent - 2))})
 	  | ("Boolean", "Boolean") ->
 	    let bool = Magic.magicCastToBoolean datum in
 	    indent_ustring (ustring (if bool then "true" else "false"))
@@ -229,6 +222,7 @@ XML qualifying spec
 	indent_ustring (ustring ("?? unrecognized type  ?? "))
 
   def fa (X) generate_Content_Item (datum      : X,
+				    sd         : SortDescriptor,
 				    sd_pattern : SortDescriptor,
 				    table      : SortDescriptorExpansionTable,
 				    vspacing   : Nat,
@@ -236,8 +230,13 @@ XML qualifying spec
     : Option CharData * Content_Item =
     case sd_pattern of
       | Product sd_fields ->
-        (Some (indentation_chardata (vspacing, indent)),
-	 Element (generate_Element ("item", datum, sd_pattern, table, vspacing, indent, false)))
+        (let item_name = 
+	     case sd of
+	       | Base ((q,id), []) -> ((if q = "<unqualified>" then "" else q ^ ".") ^ id)
+	       | _ -> "item"
+	 in
+	   (Some (indentation_chardata (vspacing, indent)),
+	    Element (generate_Element (item_name, datum, sd_pattern, table, vspacing, indent, false))))
 
       | CoProduct sd_options ->
 	let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
@@ -257,12 +256,14 @@ XML qualifying spec
 	        case sd_options of
 		  | [("None", _), ("Some", _)]  ->
 		    generate_Content_Item (sub_datum,
+					   sd_sub_pattern,
 					   expand_SortDescriptor (sd_sub_pattern, table),
 					   table,
 					   1, % vspacing,
 					   indent)
 		  | [("Some", _), ("None", _)]->
 		    generate_Content_Item (sub_datum,
+					   sd_sub_pattern,
 					   expand_SortDescriptor (sd_sub_pattern, table),
 					   table,
 					   1, % vspacing,
@@ -308,6 +309,7 @@ XML qualifying spec
 		  Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))
 	       | _ ->
 		 generate_Content_Item (sub_datum,
+					sub_sd,
 					expand_SortDescriptor (sub_sd, table),
 					table,
 					vspacing,

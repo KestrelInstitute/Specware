@@ -210,7 +210,7 @@ XML qualifying spec
 						 expand_SortDescriptor (matching_sd_option, table),
 						 table) 
 		 of
-		 | Some datum -> Some datum
+		 | Some datum -> Some (magicMakeConstructor (element_name, datum))
 		 | _ ->
 		   fail ("looking for coproduct element: " ^ (print_SortDescriptor sd_pattern) ^ "\n" ))
            | _ ->

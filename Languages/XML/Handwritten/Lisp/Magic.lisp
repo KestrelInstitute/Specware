@@ -26,16 +26,30 @@
 ;;;
 ;;;   op Magic.magicCastToBoolean       : fa (X) X -> Boolean
 
+;;; Product
+
 (defun magicElements (product)
   (etypecase product
     (null   nil)
     (cons   (list (car product) (cdr product)))
     (vector (coerce product 'list))))
 
+(defun magicMakeProduct (x)
+  (if (equal (length x) 2)
+      (cons (car x) (cdr x))
+    (coerce x 'vector)))
+
+;;; CoProduct
+
 (defun magicConstructorNameAndValue (coproduct)
   (cons ; we give metaslang two values by consing them
    (symbol-name (car coproduct))  ; string
    (cdr coproduct)))              ; Y
+
+(defun magicMakeConstructor-2 (name value)
+  (cons (intern name "KEYWORD") value))
+
+;;; Misc Casts
 
 (defun magicCastToString  (x) x)
 (defun magicCastToInteger (x) x)
@@ -49,7 +63,3 @@
 (defun magicCastFromChar    (x) x)
 (defun magicCastFromBoolean (x) x)
 
-(defun magicMakeProduct (x)
-  (if (equal (length x) 2)
-      (cons (car x) (cdr x))
-    (coerce x 'vector)))
