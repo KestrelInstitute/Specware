@@ -12,11 +12,12 @@ XML qualifying spec
     %% coordinate with convert_ms_name_to_xml_name in GenerateDocument.sw
     %% they should be converses
     let reversed_xml_name = rev xml_name in
+    %% "?" is not allowed in an xml name, and "-" is not allowed in a ms name,
+    %% so we convert xml "foo-p" to ms "foo?" 
     let adjusted_xml_name =
         case reversed_xml_name of
-	  | 63 :: tail (* '?' *) -> 
-	    %%  "foo?" => "foo_p"
-	    rev (cons (112 (* p *), cons(95 (* _ *), tail)))
+	  | 112 :: 45 (* p - *) :: tail ->
+	    rev (cons (63 (* ? *), tail))
 	  | _ -> 
 	    xml_name
     in
