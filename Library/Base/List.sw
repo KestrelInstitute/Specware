@@ -38,6 +38,8 @@ List qualifying spec
   op compare          : fa(a)   (a * a -> Comparison) -> List a * List a -> Comparison
   op firstUpTo        : fa(a)   (a -> Boolean) -> List a -> Option (a * List a)
   op firstUpToHelper  : fa(a)   ((a -> Boolean) * List a * List a) -> Option(a * List a)
+  op splitList        : fa(a)   (a -> Boolean) -> List a -> Option(List a * a * List a)
+  op splitListHelper  : fa(a)   ((a -> Boolean) * List a * List a) -> Option(List a * a * List a)
 
   def nil       = Nil
   def cons(a,l) = Cons(a,l)
@@ -181,5 +183,14 @@ List qualifying spec
      case l of
        | [] -> None
        | hd::tl -> if p hd then Some (hd, res) else firstUpToHelper(p, tl, Cons(hd,res))
+
+   def splitList p l =
+     splitListHelper(p, l, [])
+
+   def splitListHelper(p, l, res) =
+     case l of
+       | [] -> None
+       | hd::tl -> if p hd then Some (rev res, hd, tl) else splitListHelper(p, tl, Cons(hd,res))
+
 endspec
 \end{spec}

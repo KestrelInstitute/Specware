@@ -21,6 +21,7 @@ ListUtilities qualifying spec {
 
   op findOption        : fa(a,b) (a -> Option b) -> List a -> Option b
   op findOptionIndex   : fa(a,b) (a * Nat -> Option b) -> List a -> Option (Nat * b)
+  op findIndex         : fa(a)   (a -> Boolean) -> List a -> Option(Nat * a)
 
   op mapWithIndex      : fa(a,b) (Nat * a -> b) -> List a -> List b
 
@@ -162,6 +163,14 @@ ListUtilities qualifying spec {
           (case f l of
             | None -> findOption f ls
             | result -> result)
+
+  def findIndex p l =
+    let def findIndexRec(p, l, n) =
+            case l of
+	      | [] -> None
+	      | hd::tl -> if p hd then Some (n, hd) else findIndexRec(p, tl, n+1) in
+      findIndexRec(p, l, 0)
+    
 
   def mapWithIndexRec(f,ls,i) = 
     case ls of

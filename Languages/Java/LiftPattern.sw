@@ -37,6 +37,9 @@ def baseVar?(var) =
 def userVar?(var) =
   ~ (baseVar?(var))
 
+op srtId: Sort -> Id 
+def srtId(srt as Base (Qualified (q, id), _, _)) = id
+
 op mkNewOp: Op * Nat -> Op
 
 def mkNewOp(oper, k) =
