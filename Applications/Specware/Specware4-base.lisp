@@ -10,7 +10,6 @@
 (defpackage "CHAR-SPEC")
 (defpackage "COMPARE")
 (defpackage "EDGE")
-(defpackage "ELEM")
 (defpackage "FUNCTIONS")
 (defpackage "FUNCTOR")
 (defpackage "HASHTABLE-SPEC")
@@ -13525,14 +13524,6 @@
 (defun POLYSET::member? (x1) #'(lambda (x2) (POLYSET::member?-1-1 x1 x2)))
 
 (defun EDGE::member? (x) (POLYSET::member? x))
-
-(defun EDGE::pp (|!set|) 
-  (WADLERLINDIG::ppSep-1-1 
-   (WADLERLINDIG::ppString ",") 
-   (EDGE::fold-1-1-1 
-    #'(lambda (l) #'(lambda (elem) (cons (ELEM::pp elem) l))) 
-    nil 
-    |!set|)))
 
 (defun POLYSET::singleton (x) (cons x nil))
 
@@ -55273,14 +55264,6 @@ VQid => QualifiedId * Aliases:
 (defun VERTEX::|!map|-1-1 (x0 x1) (POLYSET::|!map|-1-1 x0 x1))
 
 (defun VERTEX::member? (x) (POLYSET::member? x))
-
-(defun VERTEX::pp (|!set|) 
-  (WADLERLINDIG::ppSep-1-1 
-   (WADLERLINDIG::ppString ",") 
-   (VERTEX::fold-1-1-1 
-    #'(lambda (l) #'(lambda (elem) (cons (ELEM::pp elem) l))) 
-    nil 
-    |!set|)))
 
 (defun VERTEX::singleton (x) (POLYSET::singleton x))
 
