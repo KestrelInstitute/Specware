@@ -58,7 +58,7 @@
   (Specware::setBase_fromLisp (subst-home x))
   (values))
 #+allegro
-(top-level:alias ("set-base" :case-sensitive) (x) (set-base x))
+(top-level:alias ("set-base" :case-sensitive) (x) (set-base (string x)))
 
 (defun show-base-unit-id ()
   (Specware::showBase_fromLisp-0)
