@@ -1103,9 +1103,11 @@ If anyone has a good algorithm for this..."
 (defun sw::get-default-symbol (prompt &optional up-p ignore-keywords)
   (let ((symbol-at-point (sw::get-symbol-at-point up-p)))
     (let ((read-symbol
-	   (read-from-minibuffer (concat prompt ": ")
-	    (if symbol-at-point
-		symbol-at-point ""))))
+	   (read-from-minibuffer
+	    (concat prompt (if symbol-at-point
+			       (concat " (" symbol-at-point ")")
+			     "")
+		    ": "))))
       (list (if (string= read-symbol "")
 		symbol-at-point
 	      read-symbol)))))
@@ -1163,10 +1165,13 @@ If anyone has a good algorithm for this..."
 				    (point))))
 		   nil))
 	     (error nil))))))
+    (when (member symbol '(:))
+      (setq symbol nil))
     (or symbol
 	(if (and up-p (null symbol))
 	    (sw::get-symbol-at-point)))))
 
+(defvar sw:check-unbalanced-parentheses-when-saving t)
 (defun sw:check-unbalanced-parentheses-when-saving ()
   (if (and sw:check-unbalanced-parentheses-when-saving
 	   (memq major-mode '(fi:common-lisp-mode fi:emacs-lisp-mode

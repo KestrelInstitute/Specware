@@ -1,5 +1,5 @@
 (defvar lisp-emacs-interface-type 'franz)
-(defvar sw:common-lisp-buffer-name "common-lisp")
+(defvar sw:common-lisp-buffer-name "*common-lisp*")
 
 (when (or (eq lisp-emacs-interface-type 'franz))
   (defun sw:common-lisp (common-lisp-buffer-name
@@ -58,7 +58,7 @@
 			 (concat " -I " common-lisp-image-file) ""))))
   (defun extract-sexp ()
     "Delete the S-expression containing the S-expression that starts at point
-              and replace it with the S-expression that starts at the point."
+     and replace it with the S-expression that starts at the point."
     (interactive)
     (let ((start (point))
 	  (end nil)

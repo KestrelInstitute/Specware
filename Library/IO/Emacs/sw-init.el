@@ -1,4 +1,3 @@
-
 ;; This is called to start Specware. It is invoked by a command-line
 ;; argument to Xemacs. This spawns a Lisp process.
 (defun run-specware4 (&optional in-current-dir?)
@@ -24,7 +23,7 @@
     ;; This seems to work fine under Unix/Linux but under Windows there is 
     ;; a "stringp, nil" error message. So we set it to "c:." to avoid the problem.
     ;;
-    (setq sw:common-lisp-directory root-dir)
+    (setq sw:common-lisp-directory (concat root-dir "/"))
     ;;
     ;; Specware can be started in two ways. The familiar way is to start the
     ;; Lisp environment augmented with a Specware image. The term "image" comes
@@ -181,6 +180,7 @@
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" root-dir))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH:/\") %S)" root-dir))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir))
+    (sw:eval-in-lisp "(sys::set-stack-cushion 10000000)")
     (sw:eval-in-lisp "(time (user::boot))")
     (build-specware4 root-dir)))
 
