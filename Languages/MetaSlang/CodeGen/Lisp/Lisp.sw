@@ -175,7 +175,8 @@ ListADT qualifying spec {
          (0, [(0, prettysLinearDelim
                     ("#'(lambda (", " ", ") ")
                     (List.map string ss)),
-              (3, prettysNone [ppTerm t, string ")"])])
+	      (3, prettysAll ((List.map ppDecl decls) @ 
+			      [prettysNone [ppTerm t, string ")"]]))])
        | Apply (Op "list", [Const(Parameter v)]) ->
 	 % (list :foo) -> '(:foo)   optimization for nullary constructors
 	 if sub(v,0) = #:
@@ -226,7 +227,8 @@ ListADT qualifying spec {
                          prettysLinearDelim
                            ("(", " ", ")")
                            (List.map string args),
-                         ppTerm body])
+			 prettysAll ((List.map ppDecl decls) @ [prettysNone [ppTerm body]])
+			])
                     (ss, ts))),
               (2, prettysNone [ppTerm t, string ")"])])
 
@@ -245,7 +247,7 @@ ListADT qualifying spec {
 	                 (" (", " ", ") ")
 	                 (List.map string args)),
 		   (2, prettysAll ((List.map ppDecl decls) @ 
-				   [prettysNone ([ppTerm body, string ")"])])),
+				   [prettysNone [ppTerm body, string ")"]])),
 		   (0, PrettyPrint.newline ())])
 	 | _ -> 
 	    blockFill
