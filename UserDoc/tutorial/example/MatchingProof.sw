@@ -1,0 +1,1 @@
+prove word_matching in MatchingObligations#WordMatching_Ref0_Oblig
