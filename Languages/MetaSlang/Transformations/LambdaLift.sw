@@ -634,7 +634,9 @@ in
        let (opers,fields) = List.foldr liftRec ([],[]) fields in
        (opers,(Record(fields,noPos)))
      | Bind(binder,bound,body) -> 
-       System.fail "Unexpected binder"
+       let (_,liftBody) = lambdaLiftTerm(env, body) in
+       ([], mkBind(binder, bound, liftBody))
+       %System.fail "Unexpected binder"
      | _ -> System.fail "Unexpected term"
 
  op  makeNewVars: List Sort -> List Var
