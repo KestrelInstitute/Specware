@@ -752,7 +752,7 @@ SpecCalc qualifying spec
      | (PRestrict t1,       PRestrict t2)       -> equivTerm? spc (t1, t2)
      | (PRelax    t1,       PRelax    t2)       -> equivTerm? spc (t1, t2)
 
-     | (Equivs,             Equivs      )       -> true
+     | (Equals,             Equals      )       -> true
      | (Quotient,           Quotient    )       -> true
      | (Choose,             Choose      )       -> true
      | (Restrict,           Restrict    )       -> true
