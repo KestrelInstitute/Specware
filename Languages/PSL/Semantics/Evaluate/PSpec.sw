@@ -3,10 +3,10 @@
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
-  % import /Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
-  % import /Languages/SpecCalculus/Semantics/Evaluate/Spec/Utilities
-  import Utilities
+  import /Languages/MetaSlang/Specs/PosSpec
+  import Spec/Utilities
+  import ../Utilities
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -19,20 +19,19 @@ or names to spec like things that include procedures. I think the latter.
 They are procedures in context.
 
 \begin{spec}
- op basePSpec : fa (a) PSpec a
-
  op SpecCalc.evaluatePSpec :
-   fa (a) List (PSpecElem a)
+   List (PSpecElem Position)
        -> SpecCalc.Env ValueInfo
  def SpecCalc.evaluatePSpec pSpecElements = {
-    (pSpec,timeStamp,depURIs) <- evaluatePSpecElems basePSpec pSpecElements;
-    return (PSL pSpec,timeStamp,depURIs)
+    base <- basePSpec;
+    (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
+    return (PSpec pSpec,timeStamp,depURIs)
   }
 \end{spec}
 \begin{spec}
   op evaluatePSpecElems :
-    fa (a) PSpec a
-        -> List (PSpecElem a)
+           PSpec Position
+        -> List (PSpecElem Position)
         -> Env (PSpec Position * TimeStamp * URI_Dependency)
 
   def evaluatePSpecElems initialPSpec pSpecElems = {
@@ -43,9 +42,9 @@ They are procedures in context.
     }
 
   op evaluatePSpecImport :
-    fa (a) (PSpec a * TimeStamp * URI_Dependency)
-        -> PSpecElem a
-        -> Env (ASpec Position * TimeStamp * URI_Dependency)
+           (PSpec Position * TimeStamp * URI_Dependency)
+        -> PSpecElem Position
+        -> Env (PSpec Position * TimeStamp * URI_Dependency)
 %   def evaluatePSpecImport (val as (pSpec,currentTimeStamp,currentDeps)) (elem,position) =
 %     case elem of
 %       | Import term -> {
@@ -61,9 +60,9 @@ They are procedures in context.
 %       | _ -> return val
 
   op evaluatePSpecElem :
-    fa (a) PSpec a
-        -> PSpecElem a
-        -> Env (PSpec a)
+           PSpec Position
+        -> PSpecElem Position
+        -> Env (PSpec Position)
   def evaluatePSpecElem pSpec (elem, position) =
     case elem of
       | Import term -> return pSpec
@@ -99,5 +98,48 @@ They are procedures in context.
             dynamic <- addOp names fxty srtScheme optTerm dynamic position;
             setStaticSpec pSpec dynamic
           }
+\end{spec}
+
+So how do we reconcile these things?
+We construct a Spec with position, and then we start construction the diagram for the
+body of some procedure. Don't we want to elaborate as we go along?
+
+\begin{spec}
+  op unQual : String -> QualifiedId
+  def unQual id = Qualified (UnQualified, id)
+
+  op PosSpec.mkTyVar : String -> ASort Position
+  def PosSpec.mkTyVar name = TyVar (name, internalPosition)
+
+  op basePSpec : SpecCalc.Env (PSpec Position)
+  def basePSpec = {
+    deltaSort <- return (Some (PosSpec.mkProduct [PosSpec.mkTyVar "a", PosSpec.mkTyVar "a"]));
+    procSort <- return (Some
+                 (PosSpec.mkArrow
+                   (PosSpec.mkProduct [
+                      PosSpec.mkTyVar "args",
+                      PosSpec.mkTyVar "rtn",
+                      PosSpec.mkPBase (unQual "Delta", [PosSpec.mkTyVar "store"])],
+                    PosSpec.boolPSort)));
+    staticSpec <- addSort [unQual "Delta"] ["a"] deltaSort emptySpec internalPosition;
+    staticSpec <- addSort [unQual "Proc"]  ["args","rtn","store"] procSort staticSpec internalPosition;
+    staticSpec <- elaborateSpec staticSpec;
+    dynamicSpec <- return emptySpec;
+    % let dynamic = addImport ("Static", dynamic)
+    axiomSpec <- return emptySpec;
+    % let axiomSpec = addImport ("Static", axmSpec)
+    return {
+        staticSpec = staticSpec,
+        dynamicSpec = dynamicSpec,
+        axiomSpec = axiomSpec,
+        procedures = PolyMap.emptyMap
+      }
+  }
+
+ op elaborateSpec : PosSpec -> Env Spec
+ def elaborateSpec spc =
+   case elaboratePosSpec (spc, "internal") of
+       | Ok pos_spec -> return pos_spec % (convertPosSpecToSpec pos_spec)
+       | Error msg   -> raise  (OldTypeCheck msg)
 }
 \end{spec}

@@ -29,13 +29,11 @@ diagram, morphism etc.  We combine them with a coproduct.
   % sort Spec    = ASpec StandardAnnotation
   % sort PosSpec = ASpec Position
 
-  sort X = Position
-
   sort Value =
     | Spec  Spec
     | Morph SpecCat.Morphism     %%% BUG! This must be qualified here but need not be qualified in SpecCalculus version. Why??!!
     | Diag  (Diagram (Spec,Morphism))
-    | PSL (PSpec X)
+    | PSpec (PSpec Position)
     | InProcess			  % Used for catching circular definitions
     % | DiagMorph
 
