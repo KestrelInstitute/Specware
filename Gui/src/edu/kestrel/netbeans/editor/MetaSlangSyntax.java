@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/03/13 21:51:36  weilyn
+ * Made "\end{spec}" part of ProcessLatexCommentStart
+ *
  * Revision 1.5  2003/03/13 01:23:54  gilham
  * Handle Latex comments.
  * Report Lexer errors.
@@ -341,7 +344,9 @@ public class MetaSlangSyntax extends Syntax {
 	    case ISA_LPAREN:
 		state = INIT;
 		return MetaSlangTokenContext.LPAREN;
-	    }
+            case ISI_LATEX_COMMENT:
+                return MetaSlangTokenContext.LATEX_COMMENT;
+            }
 	}
 
 	/* At this stage there's no more text in the scanned buffer, but
@@ -530,6 +535,13 @@ public class MetaSlangSyntax extends Syntax {
         if (len <= 1)
             return null;
         switch (buffer[offset++]) {
+            case 'S':
+                return (len == 5
+                    && buffer[offset++] == 'n'
+                    && buffer[offset++] == 'a'
+                    && buffer[offset++] == 'r'
+                    && buffer[offset++] == 'k')
+                        ? MetaSlangTokenContext.SNARK : null;
             case 'a':
                 switch (buffer[offset++]) {
                     case 's':
