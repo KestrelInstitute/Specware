@@ -81,18 +81,19 @@ spec
 	      | _ -> Unevaluated t)
 	  | Lambda(match,_) -> Closure(match,sb)
 	  | Seq(tms,_) -> nth (map (fn s -> evalRec(s,sb,spc,depth+1)) tms, (length tms) - 1)
-	  | Let(decls, body, _) ->
-	    (case foldl (fn ((pat,e),ssb) ->
+	  | Let(decls, body, a) ->
+	    (let rdecls = map (fn (pat,e) -> (pat,evalRec(e,sb,spc,depth+1))) decls in
+	     case foldl (fn ((pat,e),ssb) ->
 			  case ssb of
 			    | Some sbr ->
 			      %% The e are evaluated in the outer environment (sb not sbr)
-			      (case patternMatch(pat,evalRec(e,sb,spc,depth+1),sbr) of
+			      (case patternMatch(pat,e,sbr) of
 				 | Match S -> Some S
 				 | _ -> None)
 			    | None -> None)
-		   (Some sb) decls
+		   (Some sb) rdecls
 	       of Some newsb -> maybeMkLetOrSubst(evalRec(body,newsb,spc,depth+1),newsb,sb)
-		| None -> Unevaluated t)
+		| None -> Unevaluated (Let(map (fn (pat,e) -> (pat,valueToTerm e)) rdecls, body, a)))
 	  | LetRec(decls, body, _) ->
 	    let ids = rev(map (fn ((v,_),_) -> v) decls) in
 	    (case foldl (fn (((v,_),e),ssb) ->
@@ -107,10 +108,10 @@ spec
 		   (Some sb) decls
 	       of Some sb ->
 		  (case evalRec(body,sb,spc,depth+1) of
-		     | Unevaluated t ->
+		     | Unevaluated t1 ->
 		       if exists (fn (id,_) -> member(id,ids)) (freeVars t)
-		        then Unevaluated(mkLetRec(decls,t))
-			else Unevaluated t
+		        then Unevaluated(mkLetRec(decls,t1))
+			else Unevaluated t1
 		     | v -> v)
 		| None -> Unevaluated t)
 
