@@ -164,18 +164,16 @@ spec
       => pj (wellFormedContext (cx <| typeDefinition (tn, tvS, t))))
     | cxOpDef ->
       (fa (cx:Context, o:Operation, tvS:TypeVariables, t:Type, tvS1:TypeVariables,
-           tsbs:TypeSubstitution, v:Variable, e:Expression, esbs:ExprSubstitution)
+           tsbs:TypeSubstitution, v:Variable, e:Expression, e1:Expression)
          pj (wellFormedContext cx)
       && opDeclaration (o, tvS, t) in? cx
       && ~(contextDefinesOp? (cx, o))
-      && noRepetitions? tvS
-      && length tvS1 = length tvS
-      && tsbs = FMap.fromSequences (tvS, map (TVAR, tvS1))
+      && isTypeSubstFrom? (tsbs, tvS, map (TVAR, tvS1))
       && pj (theoreM (cx ++ multiTypeVarDecls tvS1,
                       EX1 v (typeSubstInType tsbs t) (VAR v == e)))
       && ~(o in? exprOps e)
-      && esbs = FMap.singleton (v, OPP o (map (TVAR, tvS1)))
-      => pj (wellFormedContext (cx <| opDefinition (o, tvS1, exprSubst esbs e))))
+      && e1 = exprSubst1 v (OPP o (map (TVAR, tvS1))) e
+      => pj (wellFormedContext (cx <| opDefinition (o, tvS1, e1))))
     | cxAxiom ->
       (fa (cx:Context, tvS:TypeVariables, e:Expression, an:AxiomName)
          pj (wellFormedContext cx)
@@ -226,7 +224,7 @@ spec
       && length cS = length t?S
       && length cS > 0
       && (fa(i:Nat) i < length cS =>
-            (case t?S!i of
+            (case t?S ! i of
                | Some t -> pj (wellFormedType (cx, t))
                | None   -> true))
       => pj (wellFormedType (cx, SUM cS t?S)))
@@ -283,9 +281,7 @@ spec
       && typeDefinition (tn, tvS, t) in? cx
       && (fa(i:Nat) i < length tvS =>
             pj (wellFormedType (cx, tS!i)))
-      && noRepetitions? tvS
-      && length tvS = length tS
-      && tsbs = FMap.fromSequences (tvS, tS)
+      && isTypeSubstFrom? (tsbs, tvS, tS)
       => pj (typeEquivalence (cx, TYPE tn tS, typeSubstInType tsbs t)))
     | tyEqReflexive ->
       (fa (cx:Context, t:Type)
@@ -301,29 +297,29 @@ spec
       && pj (typeEquivalence (cx, t2, t3))
       => pj (typeEquivalence (cx, t1, t3)))
     | tyEqSubstitution ->
-      (fa (cx:Context, t:Type, t1:Type, t2:Type, pos:Position, newT:Type)
-         pj (wellFormedType (cx, t))
+      (fa (cx:Context, oldT:Type, t1:Type, t2:Type, pos:Position, newT:Type)
+         pj (wellFormedType (cx, oldT))
       && pj (typeEquivalence (cx, t1, t2))
-      && isTypeSubstInTypeAt (t, t1, t2, pos, newT)
-      => pj (typeEquivalence (cx, t, newT)))
+      && isTypeSubstInTypeAt? (oldT, t1, t2, pos, newT)
+      => pj (typeEquivalence (cx, oldT, newT)))
     | tyEqSumOrder ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, prm:Permutation)
          pj (wellFormedType (cx, SUM cS t?S))
       && length cS = length t?S
-      && permutationForLength? (prm, length cS)
+      && length prm = length cS
       => pj (typeEquivalence
                (cx, SUM cS t?S, SUM (permute(cS,prm)) (permute(t?S,prm)))))
     | tyEqRecordOrder ->
       (fa (cx:Context, fS:Fields, tS:Types, prm:Permutation)
          pj (wellFormedType (cx, TRECORD fS tS))
       && length fS = length tS
-      && permutationForLength? (prm, length fS)
+      && length prm = length fS
       => pj (typeEquivalence
                (cx, TRECORD fS tS, TRECORD (permute(fS,prm)) (permute(tS,prm)))))
     | tyEqProductOrder ->
       (fa (cx:Context, tS:Types, prm:Permutation)
          pj (wellFormedType (cx, PRODUCT tS))
-      && permutationForLength? (prm, length tS)
+      && length prm = length tS
       => pj (typeEquivalence (cx, PRODUCT tS, PRODUCT (permute(tS,prm)))))
     | tyEqSubPredicate ->
       (fa (cx:Context, t:Type, r1:Expression, r2:Expression)
@@ -359,10 +355,10 @@ spec
       && i < length tS
       => pj (wellTypedExpr (cx, e DOTr (fS!i), tS!i)))
     | exTupleProjection ->
-      (fa (cx:Context, e:Expression, tS:Types, i:PosNat)
+      (fa (cx:Context, e:Expression, tS:Types, pi:PosNat)
          pj (wellTypedExpr (cx, e, PRODUCT tS))
-      && i <= length tS
-      => pj (wellTypedExpr (cx, e DOTt i, tS!(i-1))))
+      && pi <= length tS
+      => pj (wellTypedExpr (cx, e DOTt pi, tS!(pi-1))))
     | exRelaxator ->
       (fa (cx:Context, t:Type, r:Expression)
          pj (wellFormedType (cx, t \ r))
@@ -455,17 +451,15 @@ spec
       => pj (wellTypedExpr (cx, FNN vS tS e, PRODUCT tS --> t)))
     | exUniversal ->
       (fa (cx:Context, vS:Variables, tS:Types, e:Expression)
-         length vS = length tS
-      && pj (wellTypedExpr (cx ++ multiVarDecls (vS, tS), e, BOOL))
+         pj (wellTypedExpr (cx, FNN vS tS e, PRODUCT tS --> BOOL))
       => pj (wellTypedExpr (cx, FAA vS tS e, BOOL)))
     | exExistential ->
       (fa (cx:Context, vS:Variables, tS:Types, e:Expression)
-         length vS = length tS
-      && pj (wellTypedExpr (cx ++ multiVarDecls (vS, tS), e, BOOL))
+         pj (wellTypedExpr (cx, FAA vS tS e, BOOL))
       => pj (wellTypedExpr (cx, EXX vS tS e, BOOL)))
     | exExistential1 ->
       (fa (cx:Context, vS:Variables, tS:Types, e:Expression)
-         pj (wellTypedExpr (cx ++ multiVarDecls (vS, tS), e, BOOL))
+         pj (wellTypedExpr (cx, EXX vS tS e, BOOL))
       => pj (wellTypedExpr (cx, EXX1 vS tS e, BOOL)))
     | exIfThenElse ->
       (fa (cx:Context, e0:Expression, e1:Expression, e2:Expression, t:Type,
@@ -481,23 +475,21 @@ spec
       && opDeclaration (o, tvS, t) in? cx
       && (fa(i:Nat) i < length tS =>
             pj (wellFormedType (cx, tS!i)))
-      && noRepetitions? tvS
-      && length tvS = length tS
-      && tsbs = FMap.fromSequences (tvS, tS)
+      && isTypeSubstFrom? (tsbs, tvS, tS)
       => pj (wellTypedExpr (cx, OPP o tS, typeSubstInType tsbs t)))
     | exEmbedder0 ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, i:Nat)
          pj (wellFormedType (cx, SUM cS t?S))
       && i < length cS
       && i < length t?S
-      && t?S!i = None
+      && t?S ! i = None
       => pj (wellTypedExpr (cx, EMBED (SUM cS t?S) (cS!i), SUM cS t?S)))
     | exEmbedder1 ->
       (fa (cx:Context, cS:Constructors, t?S:Type?s, i:Nat, t:Type)
          pj (wellFormedType (cx, SUM cS t?S))
       && i < length cS
       && i < length t?S
-      && t?S!i = Some t
+      && t?S ! i = Some t
       => pj (wellTypedExpr
                (cx, EMBED (SUM cS t?S) (cS!i), t --> SUM cS t?S)))
     | exCase ->
@@ -657,9 +649,7 @@ spec
       && axioM (an, tvS, e) in? cx
       && (fa(i:Nat) i < length tS =>
             pj (wellFormedType (cx, tS!i)))
-      && noRepetitions? tvS
-      && length tvS = length tS
-      && tsbs = FMap.fromSequences (tvS, tS)
+      && isTypeSubstFrom? (tsbs, tvS, tS)
       => pj (theoreM (cx, typeSubstInExpr tsbs e)))
     | thOpDef ->
       (fa (cx:Context, tvS:TypeVariables, o:Operation, e:Expression, tS:Types,
@@ -668,16 +658,14 @@ spec
       && opDefinition (o, tvS, e) in? cx
       && (fa(i:Nat) i < length tS =>
             pj (wellFormedType (cx, tS!i)))
-      && noRepetitions? tvS
-      && length tvS = length tS
-      && tsbs = FMap.fromSequences (tvS, tS)
+      && isTypeSubstFrom? (tsbs, tvS, tS)
       => pj (theoreM (cx, OPP o tS == typeSubstInExpr tsbs e)))
     | thSubstitution ->
       (fa (cx:Context, oldE:Expression, e1:Expression, e2:Expression,
            newE:Expression, pos:Position)
          pj (theoreM (cx, oldE))
       && pj (theoreM (cx, e1 == e2))
-      && isExprSubstAt (oldE, e1, e2, pos, newE)
+      && isExprSubstAt? (oldE, e1, e2, pos, newE)
       && exprSubstAtOK? (oldE, e1, e2, pos)
       => pj (theoreM (cx, newE)))
     | thTypeSubstitution ->
@@ -685,7 +673,7 @@ spec
            newE:Expression)
          pj (theoreM (cx, oldE))
       && pj (typeEquivalence (cx, t1, t2))
-      && isTypeSubstInExprAt (oldE, t1, t2, pos, newE)
+      && isTypeSubstInExprAt? (oldE, t1, t2, pos, newE)
       => pj (theoreM (cx, newE)))
     | thBoolean ->
       (fa (cx:Context, e:Expression, v:Variable)
@@ -711,9 +699,7 @@ spec
            t:Type, esbs:ExprSubstitution, an1:AxiomName, an2:AxiomName)
          length vS = length tS
       && pj (wellTypedExpr (cx, FNN vS tS e @ TUPLE eS, t))
-      && noRepetitions? vS
-      && length vS = length eS
-      && esbs = FMap.fromSequences (vS, eS)
+      && isExprSubstFrom? (esbs, vS, eS)
       && exprSubstOK? (e, esbs)
       => pj (theoreM (cx, FNN vS tS e @ TUPLE eS == exprSubst esbs e)))
     | thIfThenElse ->
@@ -951,9 +937,7 @@ spec
            esbs:ExprSubstitution)
          length vS = length tS
       && pj (wellTypedExpr (cx, EXX1 vS tS e, BOOL))
-      && length vS1 = length vS
-      && noRepetitions? vS
-      && esbs = FMap.fromSequences (vS, map (VAR, vS1))
+      && isExprSubstFrom? (esbs, vS, map (VAR, vS1))
       && toSet vS /\ toSet vS1 = empty
       && exprSubstOK? (e, esbs)
       => pj (theoreM (cx, EXX1 vS tS e <==>

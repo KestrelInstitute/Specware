@@ -2,37 +2,46 @@ spec
 
   (* This spec defines the recursive function described in spec `Proofs' (see
   that spec for an explanation). The function is called `check', because it
-  checks whether a proof is valid, and if it is valid, then it returns the
+  checks whether a proof is valid, and if it is valid, it returns the
   judgement proved by the proof. Failure is modeled via the meta type
-  `MayFail' defined in spec`Failures'.
+  `MayFail' defined in spec `Failures'. In the explanatory comments in this
+  file we often call "results" the values of type `MayFail', because those
+  values are generally the result of some other operation (e.g. checking a
+  proof and obtaining a judgement, or a failure, as result).
 
   Checking proof steps involves several checks, some by pattern matching (via
   `case') and some by testing conditions (via `if'). If a check fails, `FAIL'
   is returned. Since there can be several such checks one after the other,
-  the definitions below we do not always follow the usual Metaslang
-  indentation style, because after not many checks we would get too far to the
-  right. Rather, all the subsequent checks are left-aligned. After all checks
-  have succeeded and an `OK' result is returned, we deal with all the check
+  the definitions below do not always follow the usual Metaslang indentation
+  style, because after not many checks we would get too far on the right.
+  Rather, all the subsequent checks are left-aligned. After all checks have
+  succeeded and an `OK' result is returned, we deal with all the check
   failures, either as `_ -> FAIL' for a failed pattern matching or as `else
   FAIL' for a failed condition test, also all left-aligned. This indentation
   style should be clear when looking at the definitions below.
 
   The quite verbose handling of failures in the definitions below could be
-  made more succint and readable using a monadic approach with specialized
-  syntax.
+  probably made more succint and readable using a monadic approach with
+  specialized syntax.
 
   The definitions in this spec are executable. However, they could be made
-  more abstract, but non-executable. *)
+  more abstract and non-executable. *)
 
 
   import Proofs, Failures, SyntaxWithCoreOps
 
 
+  (* Given a sequence of results, return them (without individual `OK'
+  wrappers) if they are all successful, otherwise return failure. E.g.:
+    checkSequence [OK x, OK y] = OK [x,y]
+    checkSequence [OK x, FAIL] = FAIL
+  (where we use the pseudo-notation `[...]' for sequences). *)
+
   op checkSequence : [a] FSeq (MayFail a) -> MayFail (FSeq a)
   def [a] checkSequence s =
     let def aux (input  : FSeq (MayFail a),
-                 output : FSeq a)
-                : MayFail (FSeq a) =
+                 output : FSeq a)  % accumulator
+               : MayFail (FSeq a) =
           if input = empty then OK output
           else case first input of
                  | OK outputElement ->
@@ -41,12 +50,19 @@ spec
     in
     aux (s, empty)
 
+
+  (* Similar to the previous op, but here results are optional (modeled via
+  `Option'); `None' values are considered successeful. E.g.:
+     checkSequence [Some(OK x), Some(OK y), None] = OK [Some x, Some y, None]
+     checkSequence [Some(OK x), Some FAIL, None] = FAIL
+  *)
+
   op checkOptionSequence : [a] FSeq (Option (MayFail a)) ->
                                MayFail (FSeq (Option a))
   def [a] checkOptionSequence s =
     let def aux (input  : FSeq (Option (MayFail a)),
-                 output : FSeq (Option a))
-                : MayFail (FSeq (Option a)) =
+                 output : FSeq (Option a))  % accumulator
+               : MayFail (FSeq (Option a)) =
           if input = empty then OK output
           else case first input of
                  | Some (OK outputElement) ->
@@ -55,6 +71,7 @@ spec
                  | None -> aux (rtail input, output <| None)
     in
     aux (s, empty)
+
 
   op checkPermutation : FSeq Nat -> MayFail Permutation
   def checkPermutation natS =
