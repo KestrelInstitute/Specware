@@ -246,7 +246,8 @@
 	 (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
 	 (old-swpath (specware::getEnv "SWPATH"))
-	 (new-swpath (format nil ":/tmp/swe/:~A:~A" *current-swe-spec-dir* old-swpath)))
+	 (new-swpath (format nil #-mswindows "~A/swe/:~A:~A" #+mswindows "~A/swe/;~A;~A"
+			     Specware::temporaryDirectory *current-swe-spec-dir* old-swpath)))
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
