@@ -99,7 +99,7 @@
 
 (define-sw-parser-rule :VARDECL ()
   (:tuple "var" (1 :QUALIFIABLE-OP-NAMES) ":" (2 :SORT-SCHEME))
-  (OscarAbsSyn::mkVar-3 1 2 (make-pos ':left-lcb ':right-lcb))))
+  (OscarAbsSyn::mkVar-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-OP-DEFINITION ()
   (:tuple "def"
@@ -141,7 +141,7 @@
 (define-sw-parser-rule :PSL-RETURN ()
   (:tuple "return" (1 (:optional :EXPRESSION)))
   (let* ((opt 1)
-         (optTerm (if (equal :unspecified opt) Option::mkNone (Option::mkSome opt))))
+         (optTerm (if (equal :unspecified opt) Option::None (cons :|Some| opt))))
     (OscarAbsSyn::mkReturn-2 optTerm (make-pos ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :PSL-ASSIGN ()

@@ -1,6 +1,7 @@
 ;;; This file deals with terms in the procedural
 ;;; specification language (PSL).
 (defpackage "OscarAbsSyn")
+(in-package "PARSER4")
 
 ;; Identical to the Specware make-op-definition .. only the constructor has changed from Op to Def
 (defun make-psl-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
@@ -18,4 +19,4 @@
     ;;    so srtScheme will be tyVars * Mtv -- i.e. Mtv parameterized by tyVars
     ;;  (cdr tyVarsTerm) will be a copy of term with (PBase qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
-    (OscarAbsSyn::mkDef-5 qids Option::mkNone srtScheme (list (cons tyVars term)) (make-pos l r))))
+    (OscarAbsSyn::mkDef-5 qids Option::None srtScheme (list (cons tyVars term)) (make-pos l r))))
