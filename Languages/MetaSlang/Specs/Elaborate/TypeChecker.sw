@@ -1261,9 +1261,12 @@ spec {
 
   def adjustEqualitySort (env, srt, t1, eq_args) =
    case (eq_args, unlinkSort srt) of
-    | (Record ([("1", e1), ("2", e2)], _), 
-       Arrow (Product ([("1", elSrt1), ("2", _)], _), _, _)) -> 
+    | (_,  % consider "let A = (true, false) in =(A)"
+       Arrow (Product ([("1", _), ("2", _)], _), _, _)) -> 
       t1
+    % | (Record ([("1", e1), ("2", e2)], _), 
+    %   Arrow (Product ([("1", elSrt1), ("2", _)], _), _, _)) -> 
+    %  t1
       %% This code is correct except that termSort doesn't take account of defined sorts and gives an error
          %       let
          %         def subsort? (srt1_, srt2_) = 
@@ -1285,7 +1288,7 @@ spec {
          %                    then elSrt1 else (commonAnc (s1_, s2_), pos) in
          %       (Fun (Equals, (Arrow ((Product [("1", elSrt), ("2", elSrt)], pos), type_bool()), pos)), pos)
     | _ -> (error (env, 
-                   "Illegal Equality" ^ printTerm eq_args, 
+                   "Illegal Equality on " ^ printTerm eq_args, 
                    sortAnn srt);
             t1)
 
