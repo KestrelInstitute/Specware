@@ -78,7 +78,7 @@
 				   :global-gc      t ; first, trigger global gc to compact oldspace
 				   :tenure         t ; second, move data from newspace into oldspace
 				   :sift-old-areas t ; third, combine adjacent oldspaces
-				   :pack-heap      t ; make topmost oldspace as small as possible
+				   :pack-heap      nil ; make topmost oldspace as small as possible
 				   :expand         t ; expand oldspace if necessary, as follows:
 				   :old            old ; last, make oldspace at least this large
 				   ))
@@ -97,4 +97,5 @@
   (when verbose?
     (format t "~&;;; (room) after compacting:~%")
     (room)))
-  
+
+
