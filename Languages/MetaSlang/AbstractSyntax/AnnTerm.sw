@@ -235,7 +235,22 @@ MetaSlang qualifying spec {
      | TyVar     (_,   a) -> a
      | MetaTyVar (_,   a) -> a
 
- %op patAnn: fa(a) APattern a -> a        % Not needed yet
+ op patAnn: fa(a) APattern a -> a
+ def patAnn(pat) =
+   case pat of
+     | AliasPat(_,_,a) -> a
+     | VarPat(_,a) -> a
+     | EmbedPat(_,_,_,a) -> a
+     | RecordPat(_,a) -> a
+     | WildPat(_,a) -> a
+     | StringPat(_,a) -> a
+     | BoolPat(_,a) -> a
+     | CharPat(_,a) -> a
+     | NatPat(_,a) -> a
+     | RelaxPat(_,_,a) -> a
+     | QuotientPat(_,_,a) -> a
+     | SortedPat(_,_,a) -> a
+
 
  op withAnnS: fa(a) ASort a * a -> ASort a
  def withAnnS(s,a) =
