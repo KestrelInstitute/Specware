@@ -17,8 +17,8 @@ SpecCalc qualifying spec {
       | None -> fail "printCToFile: missing filename"
       | Some fileName -> toFile (fileName, format (80, ppCSpec cSpec))
 
-  op oscarToC : Oscar.Spec -> Spec.Spec -> Env CGen.CSpec
-  def oscarToC oscSpec base =
+  op oscarToC : Oscar.Spec -> Spec.Spec -> Option String -> Env CGen.CSpec
+  def oscarToC oscSpec base opt_name =
     let cSpec = CGen.emptyCSpec "" in
     let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
     let envSpec = addMissingFromBase(base,envSpec,builtinSortOp) in

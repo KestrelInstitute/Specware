@@ -138,7 +138,7 @@ SpecCalc qualifying spec {
       (Spec pslBase,_,_) <- SpecCalc.evaluateUID (Internal "Oscar base") pslBaseUnitId;
       case lang of
         | "c" -> {
-             CSpec <- oscarToC oscSpec pslBase; 
+             CSpec <- oscarToC oscSpec pslBase optFile; 
              return (Other oscSpec,timeStamp,depUnitIds)
            }
         | lang -> raise (Unsupported (pos, "no generation for language "
