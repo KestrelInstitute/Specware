@@ -25,6 +25,7 @@ SpecCat qualifying spec {
   import /Languages/MetaSlang/Specs/StandardSpec
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
   import /Library/Structures/Data/MergeUnion/MergeUnion
+  import ../Printer
 
   sort Morphism = {
     dom : Spec,
@@ -32,6 +33,20 @@ SpecCat qualifying spec {
     sortMap : PolyMap.Map (QualifiedId, QualifiedId),
     opMap : PolyMap.Map (QualifiedId, QualifiedId)
   }
+
+  op ppQualifiedId : QualifiedId -> Doc
+  def ppQualifiedId id = ppString (printQualifiedId id)
+  
+  op ppMorphism : Morphism -> Doc
+  def ppMorphism {dom,cod,sortMap,opMap} = 
+    ppConcat [
+      ppString "Sort map=",
+      ppNewline,
+      ppNest 2 (ppMap ppQualifiedId ppQualifiedId sortMap),
+      ppString "Op map=",
+      ppNewline,
+      ppNest 2 (ppMap ppQualifiedId ppQualifiedId opMap)
+    ]
 
   op dom : Morphism -> Spec
   op cod : Morphism -> Spec
@@ -65,9 +80,11 @@ SpecCat qualifying spec {
     colimit = colimit,
     initialObject = emptySpec,
     compose = compose,
-    ppObj = fn obj -> ppString "spec object ... later",
-    ppArr = fn {dom = dom, cod = cod, sortMap = sm, opMap = om} ->
-      ppString "spec morphism ... later"
+    ppObj = fn spc -> ppString (printSpec spc),
+    % ppObj = fn obj -> ppString "spec object ... later",
+    ppArr = ppMorphism
+    % ppArr = fn {dom = dom, cod = cod, sortMap = sm, opMap = om} ->
+    %  ppString "spec morphism ... later"
   }
 
  sort SpecDiagram        = Cat.Diagram       (Spec, Morphism)
