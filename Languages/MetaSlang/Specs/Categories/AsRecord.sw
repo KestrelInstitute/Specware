@@ -21,7 +21,7 @@ differs from the identity.
 
 \begin{spec}
 spec {
-  import CoCat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
+  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
   import /Languages/MetaSlang/Specs/StandardSpec
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
@@ -40,7 +40,7 @@ spec {
      opMap = PolyMap.compose mor1.opMap mor2.opMap
    }
 
-  op specCat : CoCat.Cat (Spec, Morphism)
+  op specCat : Cat.Cat (Spec, Morphism)
 
   def specCat = {
     dom = fn {dom = dom, cod = _, sortMap = _, opMap = _} -> dom,

@@ -11,14 +11,14 @@ clear how they should be qualified if at all.
 spec {
   import /Languages/MetaSlang/Specs/StandardSpec
   import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
-  import Cats qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic
+  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic
 
   sort Morphism
   op dom : Morphism -> Spec
   op cod : Morphism -> Spec
-  op compose : Morphism -> Morphism -> Spec
+  op compose : Morphism -> Morphism -> Morphism
 
-  op specCat : Cat (Spec, Morphism)
+  op specCat : Cat.Cat (Spec, Morphism)
 
   axiom dom is fa (m : Morphism) Cats.dom specCat m = dom m
   axiom cod is fa (m : Morphism) Cats.cod specCat m = cod m
