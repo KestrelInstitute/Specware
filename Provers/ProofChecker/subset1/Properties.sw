@@ -77,7 +77,8 @@ spec
       wtEx (cx <| varDeclaration(v,t)) e BOOL => wtEx cx (EX1 v t e) BOOL
 
   conjecture wellFormedTypeMonotonic is  % OK
-    fa(cx1,cx2,t) wfTy cx1 t && wfCx (cx1 ++ cx2) => wfTy (cx1 ++ cx2) t
+    fa(cx1,cx2,cx3,t)
+      wfTy (cx1++cx3) t && wfCx (cx1++cx2++cx3) => wfTy (cx1++cx2++cx3) t
 
   conjecture equivalentTypesAreWellFormed is  % OK
     fa(cx,t1,t2)
@@ -87,11 +88,12 @@ spec
     fa(cx,e,t) wtEx cx e t => wfTy cx t
 
   conjecture typeEquivalenceMonotonic is  % OK
-    fa(cx1,cx2,t1,t2)
-      tyEq cx1 t1 t2 && wfCx (cx1 ++ cx2) => tyEq (cx1 ++ cx2) t1 t2
+    fa(cx1,cx2,cx3,t1,t2)
+      tyEq (cx1++cx3) t1 t2 && wfCx (cx1++cx2++cx3) => tyEq (cx1++cx2++cx3) t1 t2
 
-  conjecture wellTypedExprMonotonic is
-    fa(cx1,cx2,e,t) wtEx cx1 e t && wfCx (cx1 ++ cx2) => wtEx (cx1 ++ cx2) e t
+  conjecture wellTypedExprMonotonic is  % OK
+    fa(cx1,cx2,cx3,e,t)
+      wtEx (cx1++cx3) e t && wfCx (cx1++cx2++cx3) => wtEx (cx1++cx2++cx3) e t
 
   conjecture theoremWellTyped is
     fa(cx,e) theo cx e => wtEx cx e BOOL
