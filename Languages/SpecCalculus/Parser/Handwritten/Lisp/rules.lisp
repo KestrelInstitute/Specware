@@ -262,7 +262,7 @@
 
 ;;;  TODO: In doc: sort-declaration now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DECLARATION ()
-  (:tuple "sort" (1 :QUALIFIABLE-SORT-NAME) (:optional (2 :FORMAL-SORT-PARAMETERS)))
+  (:tuple "sort" (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)))
   (make-sort-declaration 1 2 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :FORMAL-SORT-PARAMETERS ()
@@ -286,7 +286,7 @@
 
 ;;;  TODO: In doc: sort-definition now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DEFINITION ()
-  (:tuple "sort" (1 :QUALIFIABLE-SORT-NAME) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT))
+  (:tuple "sort" (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT))
   (make-sort-definition 1 2 3 ':left-lc ':right-lc))
 
 ;;; ------------------------------------------------------------------------
@@ -295,7 +295,7 @@
 
 ;;;  TODO: In doc: op-declaration now uses qualified name, not just name
 (define-sw-parser-rule :OP-DECLARATION ()
-  (:tuple "op" (1 :QUALIFIABLE-OP-NAME) (:optional (2 :FIXITY)) ":" (3 :SORT-SCHEME))
+  (:tuple "op" (1 :QUALIFIABLE-OP-NAMES) (:optional (2 :FIXITY)) ":" (3 :SORT-SCHEME))
   (make-op-declaration 1 2 3 ':left-lc ':right-lc))
 
 (define-sw-parser-rule :FIXITY ()
@@ -495,6 +495,17 @@ If we want the precedence to be optional:
   (list 1 . 2))
 
 ;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :QUALIFIABLE-SORT-NAMES ()
+  ;; "S"  "A.S"  "{S, A.X, Y}" etc.
+  ;; "{S}" is same as "S"
+  (:anyof 
+   ((:tuple (1 :QUALIFIABLE-SORT-NAME))
+    (list 1))
+   ((:tuple "{"
+	    (2 (:REPEAT :QUALIFIABLE-SORT-NAME ","))
+	    "}")
+    (list . 2))))
 
 (define-sw-parser-rule :QUALIFIABLE-SORT-NAME ()
   (:anyof :UNQUALIFIED-SORT-NAME :QUALIFIED-SORT-NAME))
@@ -823,6 +834,17 @@ If we want the precedence to be optional:
   :documentation "Annotated term")
 
 ;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :QUALIFIABLE-OP-NAMES ()
+  ;; "f"  "A.f"  "{f, A.g, h}" etc.
+  ;; "{f}" is same as "f"
+  (:anyof 
+   ((:tuple (1 :QUALIFIABLE-OP-NAME))
+    (list 1))
+   ((:tuple "{"
+	    (2 (:REPEAT :QUALIFIABLE-OP-NAME ","))
+	    "}")
+    (list . 2))))
 
 (define-sw-parser-rule :QUALIFIABLE-OP-NAME ()
   (:anyof :UNQUALIFIED-OP-NAME :QUALIFIED-OP-NAME))

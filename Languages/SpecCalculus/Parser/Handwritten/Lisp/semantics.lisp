@@ -146,7 +146,7 @@
 
 ;; To factor the parser further, perhaps we should think about removing
 ;; the reference to PosSpec from the semantic rules.
-(defun make-sort-declaration (qualifiable-sort-name formal-sort-parameters l r)
+(defun make-sort-declaration (qualifiable-sort-names formal-sort-parameters l r)
   (let*  ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
           (sort      nat-sort) ; hack -- conversion by abstractSort will be ignored
           (tyVarsSrt (PosSpec::abstractSort #'namedTypeVar typeVars1 sort))
@@ -155,14 +155,15 @@
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
     ;;  (cdr tyVarsSrt) will be ignored.
     ;; TODO: skip the code above and use typeVars1 for typeVars2 below
-    (cons (cons :|Sort| (cons qualifiable-sort-name (cons typeVars2 (cons :|None| nil))))
+    (cons (cons :|Sort| (cons (first qualifiable-sort-names)
+			      (cons typeVars2 (cons :|None| nil))))
           (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-definition (qualifiable-sort-name formal-sort-parameters sort l r)
+(defun make-sort-definition (qualifiable-sort-names formal-sort-parameters sort l r)
   (let* ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
          (tyVarsSrt (PosSpec::abstractSort #'namedTypeVar typeVars1 sort))
          (typeVars2 (car tyVarsSrt))
@@ -171,16 +172,17 @@
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
     ;;  (cdr tyVarsSrt) will be a copy of sort with (PBase qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for this conversion into the linker.
-    (cons (cons :|Sort| (cons qualifiable-sort-name (cons typeVars2 (cons :|Some| sort2))))
+    (cons (cons :|Sort| (cons (first qualifiable-sort-names)
+			      (cons typeVars2 (cons :|Some| sort2))))
           (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DECLARATION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-declaration (qualifiable-op-name optional-fixity sort-scheme l r)
+(defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
   (let ((fixity (if (equal :unspecified optional-fixity) nil optional-fixity)))
-    (cons (cons :|Op| (cons qualifiable-op-name
+    (cons (cons :|Op| (cons (first qualifiable-op-names)
                             (vector fixity sort-scheme (cons :|None| nil))))
           (make-pos l r))))
 
