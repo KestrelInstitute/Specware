@@ -148,8 +148,8 @@
 
 (defun intToRat (x)
   (declare (type rational x))
-  (the integer (truncate x)))
+  (the rational x))
 
 (defun ratToInt (x)
   (declare (type integer x))
-  (the rational x))
+  (the integer (truncate x)))
