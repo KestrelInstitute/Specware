@@ -25,6 +25,10 @@ SpecCalc qualifying spec {
  % sort LocalContext  = PolyMap.Map (RelativeURI, ValueInfo)
  % sort State = GlobalContext * LocalContext * Option URI * ValidatedURIs
 
+ % These may be used in various places throughout this file:
+ %  uriToString          produces (unparseable) UnitId's that are relative to the root of the OS, using ~ for home,    e.g. "~/foo"
+ %  relativeURI_ToString produces (parseable?)  UnitId's that are relativized to the currentURI, using ".." to ascend, e.g. "foo" or "../../foo"
+       
  sort ReverseContext = PolyMap.Map (Value, RelativeURI)
 
  def SpecCalc.evaluatePrint term = {
@@ -39,12 +43,14 @@ SpecCalc qualifying spec {
 				            (relativizeURI current_URI uri))
 			            emptyMap
 				    dep_URIs);
+   SpecCalc.print "\n";
    (case value of
       | Spec    spc -> SpecCalc.print (printSpec     base_spec reverse_context spc)
       | Morph   sm  -> SpecCalc.print (printMorphism base_spec reverse_context sm)
       | Diag    dg  -> SpecCalc.print (printDiagram  base_spec reverse_context dg)
       | Colimit col -> SpecCalc.print (printColimit  base_spec reverse_context col)
       | InProcess   -> SpecCalc.print "No value!");
+   SpecCalc.print "\n";
    return (value, time_stamp, dep_URIs)
    }
 
@@ -84,37 +90,47 @@ SpecCalc qualifying spec {
    %%    ...
    %%    ...}
    %%  
+   ppFormat (ppMorphismX base_spec reverse_context sm)
+
+ %% Not to be confused with ppMorphism in /Languages/MetaSlang/Specs/Categories/AsRecord.sw (sigh)
+ def ppMorphismX base_spec reverse_context sm =
    let dom_spec = dom sm in
    let cod_spec = cod sm in
-   ppFormat 
-     (ppGroup 
-       (ppConcat 
-	 [% TODO: uriToString may produce filenames that are reasonable to the OS but not readable by Specware, e.g. ~/foo.sw
-	  %       Not clear yet what the right solution is.  [Maybe specware should parse ~/foo.sw !]
-	  ppString "morphism",
-	  ppNest 4
- 	   (ppConcat 
-	     [ppBreak,
-	      ppGroup
-	        (ppConcat 
-		  [ppString (case evalPartial reverse_context (Spec dom_spec) of
-			       | Some rel_uri -> relativeURI_ToString rel_uri  
-			       | None         -> printSpec base_spec reverse_context dom_spec),
-		   ppBreak,
-		   ppString "->",
-		   ppBreak,
-		   ppString (case evalPartial reverse_context (Spec cod_spec) of
-			       | Some rel_uri -> relativeURI_ToString rel_uri  
-			       | None         -> printSpec base_spec reverse_context cod_spec)]),
-	      ppBreak,
-	      ppMorphismMap sm,
-	      ppBreak])]))
-	 
+   %% Use of str_1 is a bit of a hack to get the effect that
+   %% dom/cod specs are grouped on one line if possible,
+   %% and they either follow "morphism" on the first line 
+   %% (with map on same line or indented on next line),
+   %% or are by themselves, indented, on the second line,
+   %% with the map indented starting on the third line.
+   let str_1 = ppFormat
+               (ppGroup 
+		(ppConcat 
+		 [ppString "morphism",
+		  ppNest 4 (ppGroup
+			    (ppConcat 
+			     [ppBreak,
+			      ppString (case evalPartial reverse_context (Spec dom_spec) of
+					  | Some rel_uri -> relativeURI_ToString rel_uri  
+					  | None         -> printSpec base_spec reverse_context dom_spec),
+			      ppBreak,
+			      ppString "->",
+			      ppBreak,
+			      ppString (case evalPartial reverse_context (Spec cod_spec) of
+					  | Some rel_uri -> relativeURI_ToString rel_uri  
+					  | None         -> printSpec base_spec reverse_context cod_spec)
+			     ]))
+		 ]))
+   in
+   ppGroup 
+    (ppConcat 
+     [ppString str_1,
+      ppNest 4 (ppMorphismMap sm)])
+
 
   %% inspired by ppMorphMap from /Languages/MetaSlang/Specs/Categories/AsRecord.sw,
   %%  but substantially different
   op ppMorphismMap : Morphism -> Doc
-  def ppMorphismMap {dom, cod, sortMap, opMap} =
+  def ppMorphismMap {dom=_, cod=_, sortMap, opMap} =
     let 
       def abbrevMap map =
 	foldMap (fn newMap -> fn d -> fn c ->
@@ -136,11 +152,14 @@ SpecCalc qualifying spec {
                 [] 
 		(abbrevMap map)
     in
-      case (ppAbbrevMap "sort " sortMap) ++ (ppAbbrevMap "op " opMap) of
-	| [] -> ppString "{}"
-	| abbrev_map -> ppGroup (ppConcat [ppString "{",
-					   ppNest 1 (ppSep (ppCons (ppString ",") ppBreak) abbrev_map),
-					   ppString "}"])
+    ppGroup (ppConcat
+	     (case (ppAbbrevMap "sort " sortMap) ++ (ppAbbrevMap "op " opMap) of
+		| []         -> [ppBreak, 
+				 ppString "{}"]
+		| abbrev_map -> [ppBreak,
+				 ppString "{",
+				 ppNest 1 (ppSep (ppCons (ppString ",") ppBreak) abbrev_map),
+				 ppString "}"]))
 
 
  %% ======================================================================
@@ -150,10 +169,89 @@ SpecCalc qualifying spec {
  def printDiagram base_spec reverse_context dg =
    %% this uses /Library/Structures/Data/Categories/Diagrams/Polymorphic
    %% which uses /Library/PrettyPrinter/WadlerLindig
-   ppFormat (ppDiagram
-	     (mapDiagram dg 
-	      (fn obj -> subtractSpec obj base_spec) 
-	      (fn arr -> arr)))
+
+   let shape       = shape    dg    in
+   let vertice_set = vertices shape in
+   let edge_set    = edges    shape in
+   let src_map     = src      shape in
+   let target_map  = target   shape in
+
+   let functor     = functor   dg      in
+   let vertex_map  = vertexMap functor in
+   let edge_map    = edgeMap   functor in
+
+   %% warning: vertex.difference (based on sets) is not defined!
+   %%  so we use lists instead for linked_vertices and isolated_vertices
+   let linked_vertices = 
+       fold (fn linked_vertices -> fn edge -> 
+	     let src = eval src_map    edge in
+	     let tgt = eval target_map edge in
+	     %% simpler and faster to allow duplicates
+	     Cons (src, Cons (tgt, linked_vertices)))
+            []
+	    edge_set
+   in
+   let isolated_vertices =  
+       fold (fn isolated_vertices -> fn vertice ->
+	     if member (vertice, linked_vertices) then
+	       isolated_vertices
+	     else
+	       Cons (vertice, isolated_vertices))
+            []
+	    vertice_set
+   in
+   let pp_vertice_entries = 
+       foldl (fn (vertex, pp_entries) -> 
+	      Cons (ppGroup 
+		    (ppConcat 
+		     [ppElem vertex, 
+		      ppBreak,
+		      ppString "+->",
+		      ppBreak,
+		      let spc = eval vertex_map vertex in
+		      ppString (case evalPartial reverse_context (Spec spc) of
+				  | Some rel_uri -> relativeURI_ToString rel_uri  
+				  | None         -> printSpec base_spec reverse_context spc)]),
+		    pp_entries))
+             []
+	     isolated_vertices
+   in
+   let pp_edge_entries = 
+       fold (fn pp_entries -> fn edge -> 
+	     Cons (ppGroup 
+		    (ppConcat 
+ 		      [ppGroup 
+		        (ppConcat 
+			  [ppElem edge,
+			   ppBreak,
+			   ppString ":",
+			   ppBreak,
+			   ppElem (eval src_map edge),
+			   ppBreak,
+			   ppString "->",
+			   ppBreak,
+			   ppElem (eval target_map edge)]),
+			ppBreak,
+			ppString "+->",
+		        ppBreak,
+			let sm = eval edge_map edge in
+			case evalPartial reverse_context (Morph sm) of
+			  | Some rel_uri -> ppString (relativeURI_ToString rel_uri)  
+			  | None         -> ppMorphismX base_spec reverse_context sm]),
+		   pp_entries))
+            []
+            edge_set
+   in 
+   ppFormat 
+     (ppGroup 
+       (ppConcat [ppString "diagram {",
+		  ppNest 9 (ppSep (ppCons (ppString ",") ppBreak) (pp_vertice_entries ++ pp_edge_entries)),
+		  ppString "}"]))
+
+   %% ppFormat (ppDiagram
+   %%	     (mapDiagram dg 
+   %%	      (fn obj -> subtractSpec obj base_spec) 
+   %%	      (fn arr -> arr)))
 
  %% ======================================================================
  %% Colimit
