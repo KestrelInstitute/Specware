@@ -55,7 +55,7 @@ distinguished from each other and are resolved in slightly different
 ways.</para>
 
 <section id="swpathuid">
-<title>&swpath;-Based Unit Identifier/title>
+<title>&swpath;-Based Unit Identifier</title>
 
 <para>A &swpath;-based unit identifier starts with ``/'', followed by
 a ``/''-separated sequence of one or more word symbols, where the last
