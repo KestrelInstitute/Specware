@@ -12,15 +12,18 @@ htm-zip: htm
 	zip -r $(HTMDIR).zip $(HTMDIR)
 
 ARCH= i586
-#ARCH= sparc
 BIN= ../bin/$(ARCH)
-GLM2DBKMS= $(BIN)/glm2dbk -metaslang
-GLM2DBKGR= $(BIN)/glm2dbk -grammar
+GLM2DBK= $(BIN)/glm2dbk
+GLM2DBKMS= $(GLM2DBK) -metaslang
+GLM2DBKGR= $(GLM2DBK) -grammar
+SRC= ../src
+GLM2DBKSRC= $(SRC)/glm2dbk.c
 
-#DB2PDF= ../bin/db2pdf
+$(GLM2DBK): $(GLM2DBKSRC)
+	cc -O $(GLM2DBKSRC) -o $(GLM2DBK)
+
 DB2PDF= ../bin/db2pdf -E9999
 
-#DB2HTML= ../bin/db2html
 DB2HTML= ../bin/db2html -E9999
 
 ADJUSTFONTHTML= bin/adjustFontHTML
@@ -71,122 +74,122 @@ $(SLM)-htm.dbk: Makefile $(SLM).dbk
 	 fi
 	sed 's/.dbk/-htm.dbk/g' $(SLM).dbk > $(SLM)-htm.dbk
 
-bookinfo.dbk: Makefile bookinfo.glm
+bookinfo.dbk: Makefile $(GLM2DBK) bookinfo.glm
 	@if test -r bookinfo.dbk; \
 	 then /bin/mv -f bookinfo.dbk bookinfo.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf bookinfo.glm > bookinfo.dbk
 
-disclaimer.dbk: Makefile disclaimer.glm
+disclaimer.dbk: Makefile $(GLM2DBK) disclaimer.glm
 	@if test -r disclaimer.dbk; \
 	 then /bin/mv -f disclaimer.dbk disclaimer.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf disclaimer.glm > disclaimer.dbk
 
-intro.dbk: Makefile intro.glm
+intro.dbk: Makefile $(GLM2DBK) intro.glm
 	@if test -r intro.dbk; \
 	 then /bin/mv -f intro.dbk intro.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf intro.glm > intro.dbk
 
-metaslang.dbk: Makefile metaslang.glm
+metaslang.dbk: Makefile $(GLM2DBK) metaslang.glm
 	@if test -r metaslang.dbk; \
 	 then /bin/mv -f metaslang.dbk metaslang.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf metaslang.glm > metaslang.dbk
 
-usage.dbk: Makefile usage.glm
+usage.dbk: Makefile $(GLM2DBK) usage.glm
 	@if test -r usage.dbk; \
 	 then /bin/mv -f usage.dbk usage.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf usage.glm > usage.dbk
 
-install.dbk: Makefile install.glm
+install.dbk: Makefile $(GLM2DBK) install.glm
 	@if test -r install.dbk; \
 	 then /bin/mv -f install.dbk install.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf install.glm > install.dbk
 
-trouble.dbk: Makefile trouble.glm
+trouble.dbk: Makefile $(GLM2DBK) trouble.glm
 	@if test -r trouble.dbk; \
 	 then /bin/mv -f trouble.dbk trouble.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf trouble.glm > trouble.dbk
 
-differences.dbk: Makefile differences.glm
+differences.dbk: Makefile $(GLM2DBK) differences.glm
 	@if test -r differences.dbk; \
 	 then /bin/mv -f differences.dbk differences.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf differences.glm > differences.dbk
 
-grammar.dbk: Makefile grammar.glm
+grammar.dbk: Makefile $(GLM2DBK) grammar.glm
 	@if test -r grammar.dbk; \
 	 then /bin/mv -f grammar.dbk grammar.dbk.old; \
 	 fi
 	$(GLM2DBKGR) -pdf grammar.glm > grammar.dbk
 
-libraries.dbk: Makefile libraries.glm
+libraries.dbk: Makefile $(GLM2DBK) libraries.glm
 	@if test -r libraries.dbk; \
 	 then /bin/mv -f libraries.dbk libraries.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -pdf libraries.glm > libraries.dbk
 
 
-bookinfo-htm.dbk: Makefile bookinfo.glm
+bookinfo-htm.dbk: Makefile $(GLM2DBK) bookinfo.glm
 	@if test -r bookinfo-htm.dbk; \
 	 then /bin/mv -f bookinfo-htm.dbk bookinfo-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm bookinfo.glm > bookinfo-htm.dbk
 
-disclaimer-htm.dbk: Makefile disclaimer.glm
+disclaimer-htm.dbk: Makefile $(GLM2DBK) disclaimer.glm
 	@if test -r disclaimer-htm.dbk; \
 	 then /bin/mv -f disclaimer-htm.dbk disclaimer-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm disclaimer.glm > disclaimer-htm.dbk
 
-intro-htm.dbk: Makefile intro.glm
+intro-htm.dbk: Makefile $(GLM2DBK) intro.glm
 	@if test -r intro-htm.dbk; \
 	 then /bin/mv -f intro-htm.dbk intro-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm intro.glm > intro-htm.dbk
 
-metaslang-htm.dbk: Makefile metaslang.glm
+metaslang-htm.dbk: Makefile $(GLM2DBK) metaslang.glm
 	@if test -r metaslang-htm.dbk; \
 	 then /bin/mv -f metaslang-htm.dbk metaslang-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm metaslang.glm > metaslang-htm.dbk
 
-usage-htm.dbk: Makefile usage.glm
+usage-htm.dbk: Makefile $(GLM2DBK) usage.glm
 	@if test -r usage-htm.dbk; \
 	 then /bin/mv -f usage-htm.dbk usage-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm usage.glm > usage-htm.dbk
 
-install-htm.dbk: Makefile install.glm
+install-htm.dbk: Makefile $(GLM2DBK) install.glm
 	@if test -r install-htm.dbk; \
 	 then /bin/mv -f install-htm.dbk install-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm install.glm > install-htm.dbk
 
-trouble-htm.dbk: Makefile trouble.glm
+trouble-htm.dbk: Makefile $(GLM2DBK) trouble.glm
 	@if test -r trouble-htm.dbk; \
 	 then /bin/mv -f trouble-htm.dbk trouble-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm trouble.glm > trouble-htm.dbk
 
-differences-htm.dbk: Makefile differences.glm
+differences-htm.dbk: Makefile $(GLM2DBK) differences.glm
 	@if test -r differences-htm.dbk; \
 	 then /bin/mv -f differences-htm.dbk differences-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm differences.glm > differences-htm.dbk
 
-grammar-htm.dbk: Makefile grammar.glm
+grammar-htm.dbk: Makefile $(GLM2DBK) grammar.glm
 	@if test -r grammar-htm.dbk; \
 	 then /bin/mv -f grammar-htm.dbk grammar-htm.dbk.old; \
 	 fi
 	$(GLM2DBKGR) -htm grammar.glm > grammar-htm.dbk
 
-libraries-htm.dbk: Makefile libraries.glm
+libraries-htm.dbk: Makefile $(GLM2DBK) libraries.glm
 	@if test -r libraries-htm.dbk; \
 	 then /bin/mv -f libraries-htm.dbk libraries-htm.dbk.old; \
 	 fi

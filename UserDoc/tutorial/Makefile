@@ -5,6 +5,11 @@ ST= SpecwareTutorial
 ARCH= i586
 BIN= ../bin/$(ARCH)
 GLM2DBK= $(BIN)/glm2dbk
+SRC= ../src
+GLM2DBKSRC= $(SRC)/glm2dbk.c
+
+$(GLM2DBK): $(GLM2DBKSRC)
+	cc -O $(GLM2DBKSRC) -o $(GLM2DBK)
 
 pdf: $(ST).pdf
 
