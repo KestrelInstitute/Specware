@@ -209,6 +209,9 @@
      (format "(load %S)"
 	     (concat specware4-dir "/Applications/Handwritten/Lisp/load-utilities")))
     (sw:eval-in-lisp-no-value
+     (format "(load %S)"
+	     (concat specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
+    (sw:eval-in-lisp-no-value
      (format "(specware::setenv \"SWPATH\" %S)"
 	     (concat (sw::normalize-filename specware4-dir)
 		     (if *windows-system-p* ";" ":")
@@ -237,7 +240,10 @@
 				    (sw::normalize-filename specware4-dir)))
   (sw:eval-in-lisp-no-value
    (format "(load %S)"
-	   (concat specware4-dir "/Applications/Specware/bin/linux/exit-on-errors")))
+	   (concat specware4-dir "/Applications/Handwritten/Lisp/exit-on-errors")))
+  (sw:eval-in-lisp-no-value
+   (format "(load %S)"
+	   (concat specware4-dir "/Applications/Handwritten/Lisp/memory-management")))
   (sw:eval-in-lisp-no-value
    (format "(namestring (specware::change-directory %S))" build-dir))
   (sw:eval-in-lisp-no-value "(set-gc-parameters-for-build nil)")
