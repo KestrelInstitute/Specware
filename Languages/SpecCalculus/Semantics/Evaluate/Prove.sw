@@ -120,8 +120,10 @@ SpecCalc qualifying spec {
     {
      importInfo = spec1.importInfo,
      properties = newProperties,
-     ops   = mapDiffOps spec1.ops spec2.ops,
-     sorts = mapDiffSorts spec1.sorts spec2.sorts
+     ops   = spec1.ops,
+     %ops   = mapDiffOps spec1.ops spec2.ops,
+     sorts = spec1.sorts
+     %sorts = mapDiffSorts spec1.sorts spec2.sorts
    }
   
 

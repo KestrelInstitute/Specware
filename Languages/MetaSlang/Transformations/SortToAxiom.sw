@@ -33,13 +33,34 @@ Prover qualifying spec
  op  axiomFromProductDefTop: Spec * QualifiedId * Sort -> Properties
  def axiomFromProductDefTop (spc, name, srt as Product (fields, b)) =
     let projectAxioms = mkProjectAxioms(spc, name, srt, fields) in
+    let equalityAxiom = mkProdEqualityAxiom(spc, name, srt, fields) in
     %    let constructAxiom = mkConstructAxiom(spc, name, fields) in
     %    Cons(constructAxiom, projectAxioms)
-    projectAxioms
+    Cons(equalityAxiom, projectAxioms)
+
+ op  mkProdEqualityAxiom: Spec * QualifiedId * Sort * Fields -> Property
+ def mkProdEqualityAxiom(spc, name as Qualified (prodQ, prodSrtId), srt, fields) =
+   let rec1 as Record(fields1, _) = mkRecordTerm(spc, name, srt, "x") in
+   let rec2 as Record(fields2, _) = mkRecordTerm(spc, name, srt, "y") in
+   %let _ = writeLine("Record1 is: "^printTerm(rec1)) in
+   %let _ = writeLine("Record2 is: "^printTerm(rec2)) in
+   let recEq = mkEquality(srt, rec1, rec2) in
+   %let _ = writeLine("recEq is: "^printTerm(recEq)) in
+   let fieldEqs = ListPair.map 
+       (fn ((_, f1 as Var ((_, fsrt), _)), (_, f2)) -> mkEquality(fsrt, f1, f2))
+       (fields1, fields2) in
+   let fieldEqsConj = mkSimpConj(fieldEqs) in
+   %let _ = writeLine("conj is: "^printTerm(fieldEqsConj)) in
+   let term = mkSimpImplies(recEq, fieldEqsConj) in
+   %let _ = writeLine("impl is: "^printTerm(term)) in
+   let bndVars = freeVars(term) in
+   let fmla = mkBind(Forall, bndVars, term) in
+   %let _ = writeLine("fmla is: "^printTerm(fmla)) in
+   (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
 
  op  mkProjectAxioms: Spec * QualifiedId * Sort * Fields -> Properties
  def mkProjectAxioms(spc, name, srt, fields) =
-   let recordArg as Record(resFields, _) =  mkRecordTerm(spc, name, srt) in
+   let recordArg as Record(resFields, _) =  mkRecordTerm(spc, name, srt, "") in
    ListPair.map (fn (field, res) -> mkProjectAxiom(spc, name, srt, field, recordArg, res)) (fields, resFields)
 
  op  mkProjectAxiom: Spec * QualifiedId * Sort * Field * MS.Term * (Id * MS.Term) -> Property
@@ -52,8 +73,8 @@ Prover qualifying spec
    let fmla = mkBind(Forall, bndVars, eql) in
    (Axiom, mkQualifiedId(prodQ, prodSrtId^"_def"), [], fmla)
 
- op  mkRecordTerm: Spec * QualifiedId * Sort -> MS.Term
- def  mkRecordTerm(spc, srtName, srt as Product (fields, b)) =
+ op  mkRecordTerm: Spec * QualifiedId * Sort * String -> MS.Term
+ def  mkRecordTerm(spc, srtName, srt as Product (fields, b), prefix) =
    (*  let opqid as Qualified(opq,opid) = getRecordConstructorOpName(srtName) in
        let dom  = Base(srtName,[],b) in
        let opsrt = Arrow(srt,dom,b) in
@@ -66,10 +87,10 @@ Prover qualifying spec
       let term = 
         case srt of
 	  | Product (fields, _) ->
-	    if productfieldsAreNumbered fields then
+	    if productfieldsAreNumbered fields && prefix = "" then
 	      Record (List.map (fn (id, srt) -> (id, mkVarTerm ("x"^id, srt))) fields, b)
 	    else 
-	      Record (List.map (fn (id, srt) -> (id, mkVarTerm (id, srt))) fields, b)
+	      Record (List.map (fn (id, srt) -> (id, mkVarTerm (prefix^id, srt))) fields, b)
 	  | _ -> mkVarTerm ("x", srt)
       in term
 

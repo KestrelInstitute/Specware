@@ -87,13 +87,13 @@ PrList qualifying spec
   axiom nth_def is  fa(hd, tl)
      nth(Cons(hd,tl),0) = hd
 
-  axiom nth_def is  fa(hd, tl, i)
+  axiom nth_def is  fa(hd, tl, i) (i > 0) =>
      nth(Cons(hd,tl),i) = nth(tl, i-1)
 
   axiom nthTail_def is fa (hd, tl)
      nthTail(tl,0) = tl
 
-  axiom nthTail_def is fa (hd, tl, i)
+  axiom nthTail_def is fa (hd, tl, i) (i > 0) =>
      nthTail(tl,i) = nthTail(tl, i-1)
 
   axiom last_def is fa (hd)
@@ -117,94 +117,31 @@ PrList qualifying spec
   axiom member_def is fa (x, hd, tl)
      (x~= hd => (member(x, Cons(hd, tl)) <=> member(x, tl)))
 
-  axiom map_def is fa (f)
-     map f [] = []
+  axiom diff_def is fa (l2)
+     diff([], l2) = []
 
-  axiom map_def is fa (f, hd, tl)
-     map f (Cons(hd, tl)) = Cons(f hd, map f tl)
+  axiom diff_def is fa (hd, tl, l2)
+     member(hd, l2) => diff (Cons(hd, tl), l2) = diff(tl, l2)
 
-  axiom mapPartial_def is fa (f)
-     mapPartial f [] = []
+  axiom diff_def is fa (hd, tl, l2)
+     ~(member(hd, l2)) => diff (Cons(hd, tl), l2) = Cons(hd, diff(tl, l2))
 
-  axiom mapPartial_def is fa (f, hd, tl, x)
-     f hd = Some x => mapPartial f (Cons(hd, tl)) = Cons(x, mapPartial f tl)
-
-  axiom mapPartial_def is fa (f, hd, tl)
-     f hd = None => mapPartial f (Cons(hd, tl)) = mapPartial f tl
-
-  axiom foldl_def is fa (f, base)
-     foldl f base [] = base
-
-  axiom foldl_def is fa (f, base, hd, tl)
-     foldl f base (Cons(hd, tl)) = foldl f (f(hd, base)) tl
-
-  axiom foldr_def is fa (f, base)
-     foldr f base [] = base
-
-  axiom foldr_def is fa (f, base, hd, tl)
-     foldr f base (Cons(hd, tl)) = f(hd, foldr f base tl)
-
-(*
-  def exists p l =
-    case l of
-       | []     -> false
-       | hd::tl -> if (p hd) then true else (exists p tl)
-
-  def all p l =
-    case l of
-       | []     -> true
-       | hd::tl -> if (p hd) then all p tl else false
-
-  def filter p l =
-    case l of
-       | []     -> []
-       | hd::tl -> if (p hd) then Cons(hd,filter p tl) else (filter p tl)
-
-  def diff (l1,l2) =
-    case l1 of
-       | []     -> []
-       | hd::tl -> if member(hd,l2) then diff(tl,l2) 
-                                    else Cons(hd,diff(tl,l2))
-
+(* TODO
   def rev l = rev2(l,[])
 
   def rev2 (l,r) =
     case l of
        | []     -> r
        | hd::tl -> rev2(tl,Cons(hd,r))
+*)
 
-  def flatten l =
-    case l of
-       | []     -> []
-       | hd::tl -> concat(hd,flatten tl)
+  axiom flatten_def is fa (l)
+    flatten([]) = []
 
-  def find p l =
-    case l of
-       | []     -> None
-       | hd::tl -> if (p hd) then Some hd else find p tl
+  axiom flatten_def is fa (hd, tl)
+    flatten(Cons(hd, tl)) = concat(hd, flatten(tl))
 
-  def fa(a) tabulate(n,f) =
-    let def tabulateAux (i : Nat, l : List a) : List a =
-            if i = 0 then l
-            else tabulateAux(i-1,Cons(f(i-1),l)) in
-    tabulateAux(n,[])
-
-  def firstUpTo p l =
-    case l of
-       | []     -> None
-       | hd::tl -> if p hd then Some(hd,Nil)
-                   else case firstUpTo p tl of
-                           | None       -> None
-                           | Some(x,l1) -> Some(x,Cons(hd,l1))
-
-  def splitList p l =
-    case l of
-       | []     -> None
-       | hd::tl -> if (p hd) then Some(Nil,hd,tl)
-                   else case splitList p tl of
-                           | None -> None
-                           | Some(l1,x,l2) -> Some(Cons(hd,l1),x,l2)
-
+(* TODO
   def fa(a) locationOf(subl,supl) =
     let def checkPrefix (subl : List a, supl : List a) : Option(List a) =
             % checks if subl is prefix of supl and if so
@@ -241,10 +178,7 @@ PrList qualifying spec
        | ([],      _::_    ) -> Less
        | (_::_,    []      ) -> Greater
 
-  def app f l =
-    case l of
-       | []     -> ()
-       | hd::tl -> (f hd; app f tl)
+
 *)
 
 endspec

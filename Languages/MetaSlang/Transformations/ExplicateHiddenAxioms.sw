@@ -29,6 +29,7 @@ Prover qualifying spec
     let newProperties = mergeAxiomsByPos(spc.properties, newSortAxioms) in
     let newProperties = mergeAxiomsByPos(newProperties, newDefAxioms) in
     %%let _ = debug("explicateHidden") in 
-    simplifySpec((setProperties(spc, newProperties)))
+    %simplifySpec((setProperties(spc, newProperties)))
+    setProperties(spc, newProperties)
 
 endspec

@@ -1,6 +1,7 @@
 ;;;(test-files "proveOblig.sw" "simple.sw" "fib.sw"
 ;;;	    "colimit.sw"
 ;;;	    "t0103_1.sw" "t0103_2.sw" "t0103_3.sw"
+;;;         "Tuples.sw"
 ;;;	    "players.sw")
 
 (test-directories ".")
@@ -26,4 +27,51 @@ Errors in $TESTDIR/t0103_1.sw
 ;;; Elaborating spec at $TESTDIR/t0103_3#position
 ;;; Elaborating spec at $TESTDIR/t0103_3#move
 ")
+      ("twk_message 6/2/04"
+       :sw "Switch"
+       :output ";;; Elaborating spec at $TESTDIR/Switch#aspec
+;;; Elaborating obligator at $TESTDIR/Switch#aspecobs
+;;; Elaborating proof-term at $TESTDIR/Switch#p1
+p1: Conjecture doubleswitchidentity in aspec is Proved!
+    Snark Log file: $TESTDIR/Snark/Switch/p1.log
+")
+
+      ("twk_message 6/18/04"
+       :sw "ThreeValue"
+       :output ";;; Elaborating spec at $TESTDIR/ThreeValue#ThreeValues
+;;; Elaborating spec at $TESTDIR/ThreeValue#ThreeValuesDef
+;;; Elaborating spec-morphism at $TESTDIR/ThreeValue#ThreeM
+;;; Elaborating obligator at $TESTDIR/ThreeValue#ThreeObs
+;;; Elaborating proof-term at $TESTDIR/ThreeValue#ThreeP
+ThreeP: Theorem threedifferent in ThreeValuesDef is Proved!
+    Snark Log file: $TESTDIR/Snark/ThreeValue/ThreeP.log
+")
+
+      ("twk_message 8/2/04"
+       :sw "MathFact"
+       :output ";;; Elaborating spec at $TESTDIR/MathFact#mathfacts
+;;; Elaborating spec at $TESTDIR/MathFact#sum_spec
+;;; Elaborating obligator at $TESTDIR/MathFact#sum_spec_obs
+;;; Elaborating proof-term at $TESTDIR/MathFact#sum_spec_p1
+sum_spec_p1: Conjecture sum_zero in sum_spec_obs is Proved!
+    Snark Log file: $TESTDIR/Snark/MathFact/sum_spec_p1.log
+")
+      ("twk_message 8/13/04"
+       :sw "Tuples"
+       :output ";;; Elaborating spec at $TESTDIR/Tuples#X1
+;;; Elaborating obligator at $TESTDIR/Tuples#O1
+;;; Elaborating proof-term at $TESTDIR/Tuples#P1
+;; ensure-directories-exist: creating
+;;   $TESTDIR/Snark/Tuples/P1.log
+;; Directory $TESTDIR/Snark/Tuples/ does not exist,
+;;   will create.
+P1: Conjecture twoMakesMakeAMatch1 in O1 is Proved!
+    Snark Log file: $TESTDIR/Snark/Tuples/P1.log
+;;; Elaborating proof-term at $TESTDIR/Tuples#P2
+P2: Conjecture twoMakesMakeAMatch2 in O1 is Proved!
+    Snark Log file: $TESTDIR/Snark/Tuples/P2.log
+")
+
+
+
       )
