@@ -715,30 +715,38 @@ def mkLTerm (sp,dpn,vars,term : Term) =
 % occur in the body at all.
 %
          | Let(xs,args,body) -> 
-           let body = reduceTerm(body)                                            in
-           let args = List.map reduceTerm args                             in
-           let xArgs = ListPair.zip (xs,args)                                   in
+           let body = reduceTerm(body)          in
+           let args = List.map reduceTerm args  in
+           let xArgs = ListPair.zip (xs,args)   in
 %
 % Count along multiplicity of a variable in the let bound arguments.
 % This prevents capture in sequential substitution.
 %
-           let terms = cons(body,args)                                   in
+           let terms = cons(body,args)          in
            let xNumArgs = 
                List.map (fn(x,arg) ->
-                           if simpleTerm arg
-                                then (x,countOccurrence2(x,0,args), arg)
+                           if simpleTerm arg then
+			     (x, countOccurrence2(x,0,args),  arg)
+                           else if pure arg then
+			     (x, countOccurrence2(x,0,terms), arg)
                            else 
-                           if pure arg 
-                                then (x,countOccurrence2(x,0,terms),arg)
-                           else (x,2,arg)) xArgs                              
+			     (x, 2,                           arg)) 
+                         xArgs                              
            in
            let (xs,args,body)  = 
                 foldr (fn ((x,num,arg),(xs,args,body)) -> 
-                                if num < 2
-                                   then (xs,args,substitute (x,arg) body)
-                                else (cons(x,xs),
-                                      cons(arg,args),
-                                      body)) ([],[],body) xNumArgs
+                                % if num = 0, then presumably x and arg
+                                % both vanish from result
+                                if num < 2 then
+				  (xs, 
+				   args, 
+				   substitute (x,arg) body)
+                                else 
+				  (cons(x,xs),
+				   cons(arg,args),
+				   body)) 
+		      ([],[],body) 
+		      xNumArgs
            in
            mkLLet(rev xs,rev args,body)
          | Letrec(vars,terms,body) -> 
