@@ -7,7 +7,7 @@
   `(warn-pos-fn session ,@args))
 
 (defun warn-pos-fn (session &rest args)
-  (emacs::goto-file-position (parse-session-file session)
+  (emacs::goto-file-position (namestring (parse-session-file session))
 			     (second args) (third args))
   (apply 'warn args))
 
