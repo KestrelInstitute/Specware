@@ -49,7 +49,7 @@ the tree.</para>
 
 </section>
 
-</section>  <!-- conceptual -->
+</section>  <!-- conceptual model -->
 
 <section>
 <title>Realization via the File System</title>
@@ -98,25 +98,108 @@ directory paths, surrounded by double quotes.</para>
 loses the value assigned to it during the previous session, reverting
 to its default value.</para>
 
-<para>Let &swpath; consists of directories <"dir1">, ..., <"dirN">.
-Roughly speaking, the unit tree consist of all the units defined in
-<".sw"> files under <"dir1">, ..., <"dirN">; the name of each unit is
-its path inside <"dirI">, , i.e., its absolute path in the file system
-``minus'' the <"dirI"> prefix. This rough statement is made precise in
-the rest of this chapter.</para>
+<para>Roughly speaking, the unit tree consist of all the units defined
+in <".sw"> files under the directories listed in &swpath;. The name of
+each unit is its path from the directory in &swpath; under which the
+file defining the unit is: i.e., if the unit is under directory
+<"dir">, its name is its absolute path in the file system ``minus''
+the <"dir"> prefix.  This approximate statement is made precise below
+and illustrated by examples.</para>
 
 </section>
 
 <section>
-<title>...</title>
+<title>Single Unit in a File</title>
+
+<para>The simplest way to define a unit is to write its defining text
+into a <".sw"> file under one of the directories in &swpath;. The name
+of the unit is the name of the file, without <".sw">, prefixed by the
+path from the directory in &swpath; to the file.</para>
+
+<para>For example, suppose that &swpath; includes the directory
+<"c:\users\me\specware"> (in the Windows operating system). The user
+creates a file named <"A.sw"> immediately under the directory
+<"c:\users\me\specware\one\two">, containing the following
+text:</para>
+
+[[
+||    spec
+||      sort X
+||    endspec
+]]
+
+<para>The absolute path of the file in the file system is
+<"c:\users\me\specware\one\two\A.sw">. The unit is a spec containing
+just a sort [[X]]. The name of the unit is [[one/two/A]]. Note that
+the path components are separated by forward slashes ``/'', even
+though the underlying file system uses backward slashes ``\''. Unit
+names are sequences of identifiers separated by forward slashes,
+regardless of the underlying operating system.</para>
 
 </section>
-
-</section>  <!-- realization -->
 
 <section>
-<title>...</title>
+<title>Multiple Units in a File</title>
+
+<para>It is also possible to put multiple units inside a <".sw">
+file. The file must be under one of the directories in
+&swpath;. Instead of just containing the defining text of a unit, the
+file contains one or more unit definitions. A unit definition consists
+of an identifier, an equal sign ``='', and defining text.</para>
+
+<para>This case works almost exactly as if the file were replaced by a
+directory with the same name (without <".sw">) containing one <".sw">
+file for every unit defined therein. Each such file has the identifier
+of the unit as name (plus <".sw">) and its defining text as
+content.</para>
+
+<para>The only difference between the case of multiple units per file
+and the almost equivalent case where the file is replaced by a
+directory containing single-unit files, is that in the former case the
+last separator is not forward slash but the sharp sign ``#''. (This is
+reminiscent of the URI syntax, where subparts of a document are
+identified using the sharp sign.)</para>
+
+<para>Suppose, as in the previous example, that &swpath; includes the
+directory <"c:\users\me\specware">. The user creates a file named
+<"three.sw"> immediately under the directory
+<"c:\users\me\specware\one\two">, containing the following
+text:</para>
+
+[[
+||    B = spec
+||      sort Y
+||    endspec
+||
+||    C = spec
+||      sort Z
+||    endspec
+]]
+
+<para>This file defines two specs, one containing just a sort [[Y]],
+the other containing just a sort [[Z]]. The name of the first spec is
+[[one/two/three#B]], the name of the second spec is
+[[one/two/three#C]].</para>
+
+<para>As a particular instance of the case of multiple units per file,
+it is possible to have just one unit definition in the file. This is
+different from just having defining text of a unit in a file. If the
+file contains a unit definition, then the identifier at the left of
+the equal sign is part of the unit's name, together with the sharp
+sign and the file path (relative to the directory in &swpath;).  If
+instead the file contains defining text for a unit, then the name of
+the unit is the file path (relative to the directory in &swpath;),
+without any sharp sign and additional identifier.</para>
 
 </section>
+
+</section> <!-- realization -->
+
+<section>
+<title>Editing Outside of &Specware;</title>
+
+
+
+</section>  <!-- editing outside of specware -->
 
 </chapter>
