@@ -145,6 +145,12 @@ def mkThrowFunEq() = mkThrowException("illegal function equality")
 def mkThrowMalf() = mkThrowException("malformed sum value") 
 def mkThrowUnexp() = mkThrowException("unexpected sum value") 
 
+op mkDefaultCase: Match * Spec -> List SwitchLab * List BlockStmt
+def mkDefaultCase(cases,spc) =
+  let swlabel = [Default] in
+  let stmt = mkThrowMalf() in
+  (swlabel,[Stmt stmt])
+
 sort JSpec = CompUnit
 
 op mkIfRes: Nat -> Id

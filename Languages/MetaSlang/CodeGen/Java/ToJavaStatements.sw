@@ -240,15 +240,16 @@ def translateCaseCasesToSwitches(tcx, caseType, caseExpr, cres, cases, k0, l0, l
       let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(cres, newTcx, body, ks, ls, spc) in
       let initBlock = mkCaseInit(cons,coSrt) in
       let caseType = srtId coSrt in
-      let tagId = mkTag(cons) in
+      %let tagId = mkTag(cons) in
+      let tagId = mkTagCId(cons) in
       let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-      let switchElement = ([switchLab], [initBlock]++caseBlock) in
+      let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
       ((switchElement, newK, newL),col1)
   in
     let
       def translateCasesToSwitchesRec(cases, kr, lr) =
 	case cases of
-	  | Nil -> (([], kr, lr),nothingCollected)
+	  | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
 	  | hdCase::restCases ->
 	    let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
 	    let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
@@ -384,7 +385,7 @@ def translateCaseCasesToSwitchesRet(tcx, caseType, caseExpr, cases, k0, l0, l, s
   in
   let def translateCasesToSwitchesRec(cases, kr, lr) =
          case cases of
-	   | Nil -> (([], kr, lr),nothingCollected)
+	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
 	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
@@ -463,11 +464,11 @@ def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, caseType, caseExpr, cases, k0
 	let tagId = mkTagCId(cons) in
 	let caseType = srtId coSrt in
 	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	let switchElement = ([switchLab], [initBlock]++caseBlock) in
+	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
 	((switchElement, newK, newL),col) in
    let def translateCasesToSwitchesRec(cases, kr, lr) =
          case cases of
-	   | Nil -> (([], kr, lr),nothingCollected)
+	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
 	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
@@ -542,13 +543,14 @@ def translateCaseCasesToSwitchesAsgV(oldVId, tcx, caseType, caseExpr, cases, k0,
 	let ((caseBlock, newK, newL),col) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
 	let initBlock = mkCaseInit(cons,coSrt) in
 	let caseType = srtId coSrt in
-	let tagId = mkTag(cons) in
+	%let tagId = mkTag(cons) in
+	let tagId = mkTagCId(cons) in
 	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	let switchElement = ([switchLab], [initBlock]++caseBlock) in
+	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
 	((switchElement, newK, newL),col) in
    let def translateCasesToSwitchesRec(cases, kr, lr) =
          case cases of
-	   | Nil -> (([], kr, lr),nothingCollected)
+	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
 	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
@@ -622,13 +624,14 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseType, caseExpr, cases, k
 	let ((caseBlock, newK, newL),col) = termToExpressionAsgF(cId, fId, newTcx, body, ks, ls, spc) in
 	let initBlock = mkCaseInit(cons,coSrt) in
 	let caseType = srtId coSrt in
-	let tagId = mkTag(cons) in
+	%let tagId = mkTag(cons) in
+	let tagId = mkTagCId(cons) in
 	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	let switchElement = ([switchLab], [initBlock]++caseBlock) in
+	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
 	((switchElement, newK, newL),col) in
    let def translateCasesToSwitchesRec(cases, kr, lr) =
          case cases of
-	   | Nil -> (([], kr, lr),nothingCollected)
+	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
 	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
