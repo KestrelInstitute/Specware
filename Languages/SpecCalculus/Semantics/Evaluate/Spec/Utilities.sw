@@ -282,11 +282,62 @@ SpecCalc qualifying spec {
       | Colimit col -> Spec (Cat.apex (Cat.cocone col))
       | _           -> value
 
-  op unifyDefs : Spec -> Spec
-  def unifyDefs spc =
+  op complainIfAmbiguous : Spec -> Position -> Env Spec
+  def complainIfAmbiguous spc position =
+    let ambiguous_sorts = 
+        foldriAQualifierMap (fn (_, _, info as (_,_,defs), ambiguous_sorts) ->
+			     case defs of
+			       | []  -> ambiguous_sorts
+			       | [_] -> ambiguous_sorts
+			       | _   -> ListUtilities.insert (info, ambiguous_sorts))
+	                    []
+			    spc.sorts
+    in
+    let ambiguous_ops = 
+        foldriAQualifierMap (fn (_, _, info as (_,_,_,defs), ambiguous_ops) ->
+			     case defs of
+			       | []  -> ambiguous_ops
+			       | [_] -> ambiguous_ops
+			       | _   -> ListUtilities.insert (info, ambiguous_ops))
+                            []
+			    spc.ops
+    in
+    if ambiguous_sorts = [] & ambiguous_ops = [] then
+      return spc
+    else
+      let def print_qid (Qualified (qualifier, id)) =
+            if qualifier = UnQualified then
+	      id
+	    else
+	      qualifier^"."^id
+      in
+      let sort_msg = 
+          case ambiguous_sorts of
+	    | [] -> ""
+	    | (first_name::_,_,_)::other_infos -> 
+	      (foldl (fn ((name::_,_,_), msg) ->
+		      msg ^ ", " ^ print_qid name)
+	             ("Ambiguous sorts: "^(print_qid first_name))
+		     other_infos) 
+	      ^ "\n"
+      in
+      let op_msg = 
+          case ambiguous_ops of
+	    | [] -> ""
+	    | (first_name::_,_,_,_)::other_infos -> 
+	      (foldl (fn ((name::_,_,_,_), msg) ->
+		      msg ^ ", " ^ print_qid name)
+	             ("Ambiguous ops: "^(print_qid first_name))
+		     other_infos) 
+	      ^ "\n"
+      in
+	raise (SpecError (position, sort_msg ^ op_msg))
+
+  op compressDefs : Spec -> Spec
+  def compressDefs spc =
     let new_sorts = foldriAQualifierMap 
                      (fn (qualifier, id, old_info, revised_sorts) ->
-		      let new_info = unifySortDefs spc old_info in
+		      let new_info = compressSortDefs spc old_info in
 		      if new_info = old_info then
 			revised_sorts
 		      else
@@ -299,7 +350,7 @@ SpecCalc qualifying spec {
     in
     let new_ops = foldriAQualifierMap 
                      (fn (qualifier, id, old_info, revised_ops) ->
-		      let new_info = unifyOpDefs spc old_info in
+		      let new_info = compressOpDefs spc old_info in
 		      if new_info = old_info then
 			revised_ops
 		      else
@@ -316,8 +367,8 @@ SpecCalc qualifying spec {
      properties = spc.properties}
 
 
-  op unifySortDefs : Spec -> SortInfo -> SortInfo
-  def unifySortDefs spc (info as (names, sort_scheme, old_defs)) =
+  op compressSortDefs : Spec -> SortInfo -> SortInfo
+  def compressSortDefs spc (info as (names, sort_scheme, old_defs)) =
     case old_defs of
       | []  -> info
       | [_] -> info
@@ -336,8 +387,8 @@ SpecCalc qualifying spec {
 	in
 	(names, sort_scheme, distinct_defs)
 
-  op unifyOpDefs : Spec -> OpInfo -> OpInfo
-  def unifyOpDefs spc (info as (names, fixity, sort_scheme, old_defs)) =
+  op compressOpDefs : Spec -> OpInfo -> OpInfo
+  def compressOpDefs spc (info as (names, fixity, sort_scheme, old_defs)) =
     case old_defs of
       | []  -> info
       | [_] -> info
