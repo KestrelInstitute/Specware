@@ -27,7 +27,7 @@ SpecCalc qualifying spec
           newSpc <- addOp [tempOpName] Nonfix ([],Utilities.freshMetaTyVar ("reduce", pos)) [([],ms_term)] spc pos;
           elabSpc <- elaborateSpecM newSpc;
           elabTerm <-
-            case findTheOp (elabSpc,tempOpName) of
+            case AnnSpec.findTheOp (elabSpc,tempOpName) of
               | None -> raise (SpecError (pos, "Reduce lost its operator!"))
               | Some (names,fxty,srtScheme,[(tyVars,trm)]) -> return trm;
           reducedTerm <-
