@@ -1,4 +1,4 @@
-spec
+XML qualifying spec
 
   import ../XML_Sig
   import /Languages/MetaSlang/Specs/Elaborate/SortDescriptor
@@ -19,6 +19,22 @@ spec
     in
       implode (rev (trim (rev (trim chars))))
 
+  %% need to sanitize and strip quotes off of string that contains a string
+  %% " \"abcd\" "  => 'abcd'
+  def trim_whitespace_and_quotes (s : String) : String =
+    let chars = explode s in
+    let 
+       def trim chars =
+	 case chars of
+	   | [] -> []
+	   | #\s :: tail -> trim tail
+	   | #\t :: tail -> trim tail
+	   | #\n :: tail -> trim tail
+	   | #"  :: tail -> tail             % silliness with emacs: #"
+	   | _ -> chars
+    in
+      implode (rev (trim (rev (trim chars))))
+
   def fa (X) aux_internalize_Document (document : Document,
 				       sd       : SortDescriptor,
 				       table    : SortDescriptorExpansionTable)
@@ -32,13 +48,16 @@ spec
     let pattern   = expand_SortDescriptor (sd, table) in
     % let attribute_info = ... in
     case element of
-      | Full x -> internalize_content (x, (* sd, *) pattern, table)
+      | Full elt -> 
+        let desired = print_SortDescriptor sd in
+        let given   = string elt.stag.name in
+        let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ given ^ "\n") in
+        internalize_PossibleElement (elt, pattern, table)
       | Empty _ -> fail "empty element"
 
-  def fa (X) internalize_content (element    : PossibleElement,
-				  % sd         : SortDescriptor,
-				  sd_pattern : SortDescriptor,
-				  table      : SortDescriptorExpansionTable)
+  def fa (X) internalize_PossibleElement (element    : PossibleElement,
+					  sd_pattern : SortDescriptor,
+					  table      : SortDescriptorExpansionTable)
     : Option X =
     %%
     %%   sort Content = {items   : List (Option CharData * Content_Item),
@@ -76,10 +95,12 @@ spec
 		 in
 		 case possible_matching_elt of
 		   | Some matching_elt ->
-		     internalize_content (matching_elt,
-					  % desired_sd,
-					  expand_SortDescriptor (desired_sd, table),
-					  table)
+		     (case internalize_PossibleElement (matching_elt,
+							expand_SortDescriptor (desired_sd, table),
+							table) 
+			of
+			| Some x -> x
+			| None -> fail "Could not internalize")
 		   | None -> 
 		     let _ = toScreen ("Could not find field " ^ desired_name) in
 		     case desired_sd of
@@ -89,14 +110,17 @@ spec
 	        sd_fields
 	in
         let _ = toScreen ("\nEnd product\n") in
-	  Magic.magicMakeProduct new_fields
+	  Some (Magic.magicMakeProduct new_fields)
       | Base (qid, args) ->
 	let possible_datum = element.content.trailer in
 	(case qid of
 	  | ("String",  "String") ->
 	     Some (magicCastFromString 
 		   (case possible_datum of
-		      | Some char_data -> string char_data
+ 		      | Some char_data -> 
+		        %% '<...> "abcd" <...>'  => "abcd", as opposed to " \"abcd\" ",
+		        %% which would print back out as '<...> " "abcd" " <...>'
+		        trim_whitespace_and_quotes (string char_data)
 		      | None -> "<default string>"))
 	  | ("Integer", "Integer") ->
 	    Some (magicCastFromInteger 
