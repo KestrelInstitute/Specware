@@ -1,3 +1,6 @@
+(defvar *windows-system-p* (memq system-type '(ms-dos windows-nt windows-95
+					       ms-windows)))
+
 ;; This is called to start Specware. It is invoked by a command-line
 ;; argument to Xemacs. This spawns a Lisp process.
 (defun run-specware4 (&optional in-current-dir?)
@@ -9,8 +12,7 @@
 		     (concat (getenv "SPECWARE4"))))
 	 (bin-dir (concat root-dir
 			  "/Applications/Specware/bin/"
-			  (if (memq system-type '(ms-dos windows-nt windows-95
-						  ms-windows))
+			  (if *windows-system-p*
 			      "windows"
 			    (symbol-name system-type))))
 	 (world-name (concat bin-dir "/Specware4.dxl")))
@@ -46,16 +48,19 @@
     ;; The suffix on such files is .dxl.
     ;;
     (setq sw:common-lisp-image-file world-name)
-    (setq sw:common-lisp-image-arguments '("+cx")
-	  )
+    (setq sw:common-lisp-image-arguments
+      (if *windows-system-p* '("+cn") nil))
 
-    (sw:common-lisp sw:common-lisp-buffer-name
-		    sw:common-lisp-directory
-		    sw:common-lisp-image-name
-		    sw:common-lisp-image-arguments
-		    sw:common-lisp-host
-		    sw:common-lisp-image-file
-		    )
+    (let ((log-warning-minimum-level 'error))
+      ;; Don't show spurious warning message
+      (sw:common-lisp sw:common-lisp-buffer-name
+		      sw:common-lisp-directory
+		      sw:common-lisp-image-name
+		      sw:common-lisp-image-arguments
+		      sw:common-lisp-host
+		      sw:common-lisp-image-file
+		      ))
+    (goto-char (point-max))
     ))
 
 ;; The following is almost the same as the above. The difference is that
@@ -82,14 +87,16 @@
 
   (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
   (setq sw:common-lisp-image-file (getenv "LISP_HEAP_IMAGE"))
-  (setq sw:common-lisp-image-arguments nil) ; '("+c"))
+  (setq sw:common-lisp-image-arguments
+    (if *windows-system-p* '("+cn") nil))
 
-  (sw:common-lisp sw:common-lisp-buffer-name
-		  sw:common-lisp-directory
-		  sw:common-lisp-image-name
-		  sw:common-lisp-image-arguments
-		  sw:common-lisp-host
-		  sw:common-lisp-image-file))
+  (let ((log-warning-minimum-level 'error))
+    (sw:common-lisp sw:common-lisp-buffer-name
+		    sw:common-lisp-directory
+		    sw:common-lisp-image-name
+		    sw:common-lisp-image-arguments
+		    sw:common-lisp-host
+		    sw:common-lisp-image-file)))
 
 
 (defun run-plain-lisp ()
@@ -114,12 +121,13 @@
 
   (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
   (setq sw:common-lisp-image-file nil)
-  (setq sw:common-lisp-image-arguments nil) ; '("+c"))
+  (setq sw:common-lisp-image-arguments
+    (if *windows-system-p* '("+cn") nil))
 
-  (sw:common-lisp sw:common-lisp-buffer-name
-		  sw:common-lisp-directory
-		  sw:common-lisp-image-name)
-  (sleep-for 1))
+  (let ((log-warning-minimum-level 'error))
+    (sw:common-lisp sw:common-lisp-buffer-name
+		    sw:common-lisp-directory
+		    sw:common-lisp-image-name)))
 
 ;; (simulate-input-expression "t")
 (defun simulate-input-expression (str)
@@ -140,8 +148,7 @@
 	 (dir (concat root-dir "/Applications/Specware/Handwritten/Lisp"))
 	 (bin-dir (concat root-dir
 			     "/Applications/Specware/bin/"
-			     (if (memq system-type '(ms-dos windows-nt windows-95
-						     ms-windows))
+			     (if *windows-system-p*
 				 "windows"
 			       (symbol-name system-type))))
 	 (world-name (concat bin-dir "/Specware4.dxl")))
@@ -210,8 +217,7 @@
   (let* ((root-dir (concat (getenv "SPECWARE4") "/"))
 	 (bin-dir (concat root-dir
 			  "Applications/PSL/bin/"
-			  (if (memq system-type '(ms-dos windows-nt windows-95
-						  ms-windows))
+			  (if *windows-system-p*
 			      "windows"
 			    (symbol-name system-type))))
 	 (world-name (concat bin-dir "/PSL.dxl")))
@@ -221,14 +227,15 @@
     (setq sw:common-lisp-directory root-dir)
     (setq sw:common-lisp-image-name (getenv "LISP_EXECUTABLE"))
     (setq sw:common-lisp-image-file world-name)
-    (setq sw:common-lisp-image-arguments nil ;'("+c")
-	  )
+    (setq sw:common-lisp-image-arguments
+      (if *windows-system-p* '("+cn") nil))
 
-    (sw:common-lisp sw:common-lisp-buffer-name
-		    sw:common-lisp-directory
-		    sw:common-lisp-image-name
-		    sw:common-lisp-image-arguments
-		    sw:common-lisp-host
-		    sw:common-lisp-image-file
-		    )
+    (let ((log-warning-minimum-level 'error))
+      (sw:common-lisp sw:common-lisp-buffer-name
+		      sw:common-lisp-directory
+		      sw:common-lisp-image-name
+		      sw:common-lisp-image-arguments
+		      sw:common-lisp-host
+		      sw:common-lisp-image-file
+		      ))
     ))
