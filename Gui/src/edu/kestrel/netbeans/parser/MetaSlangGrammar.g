@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/02/07 20:06:19  gilham
+ * Added opDefinition and scURI to MetaSlangGrammar.
+ *
  * Revision 1.5  2003/01/31 17:38:33  gilham
  * Removed token recording code.
  *
@@ -154,7 +157,7 @@ private declaration returns[ElementFactory.Item item]
     item = null;
 }
     : importDeclaration
-    | item=sortDeclaration
+    | item=sortDeclarationOrDefinition
     | item=opDeclaration
     | definition
     ;
@@ -168,17 +171,20 @@ private importDeclaration
     ;
 
 //---------------------------------------------------------------------------
-private sortDeclaration returns[ElementFactory.Item sort]
+private sortDeclarationOrDefinition returns[ElementFactory.Item sort]
 {
     sort = null;
     String[] params = null;
     String name = null;
+    String sortDef = null;
 }
     : begin:"sort" 
       name=qualifiableNames
-      (params=formalSortParameters
-      )?
-                            {sort = builder.createSort(name, params);
+      ((formalSortParameters) => 
+            (params=formalSortParameters) (equals sortDef=sort)?
+          | (equals sortDef=sort)?
+      )
+                           {sort = builder.createSort(name, params);
                              ParserUtil.setBounds(builder, sort, begin, LT(0));
                             }
     ;
@@ -271,7 +277,9 @@ private sort returns[String sort]
 
 //---------------------------------------------------------------------------
 private definition
-    : opDefinition;
+    : opDefinition
+    | claimDefinition
+    ;
 
 private opDefinition
 {
@@ -279,9 +287,24 @@ private opDefinition
     String[] params = null;
 }
     : "def" name=qualifiableNames
-      ((params=formalOpParameters equals) => params=formalOpParameters equals
+      ((formalOpParameters equals) => params=formalOpParameters equals
        | equals) 
       expression
+    ;
+
+private claimDefinition
+{
+    String name = null;
+}
+    : claimKind name=idName
+      equals
+      expression
+    ;
+
+private claimKind
+    : "theorem"
+    | "axiom"
+    | "conjecture"
     ;
 
 private expression
@@ -312,7 +335,6 @@ private formalOpParameters returns[String[] params]
        )*)?
       RPAREN                {params = (String[]) paramList.toArray(new String[]{});}
     ;
-
 
 //---------------------------------------------------------------------------
 private specialSymbol returns[String text]
