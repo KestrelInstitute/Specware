@@ -86,6 +86,16 @@ spec
   conjecture wellTypedExprHasWellFormedType is  % OK
     fa(cx,e,t) wtEx cx e t => wfTy cx t
 
+  conjecture typeEquivalenceMonotonic is  % OK
+    fa(cx1,cx2,t1,t2)
+      tyEq cx1 t1 t2 && wfCx (cx1 ++ cx2) => tyEq (cx1 ++ cx2) t1 t2
+
+  conjecture wellTypedExprMonotonic is
+    fa(cx1,cx2,e,t) wtEx cx1 e t && wfCx (cx1 ++ cx2) => wtEx (cx1 ++ cx2) e t
+
+  conjecture theoremWellTyped is
+    fa(cx,e) theo cx e => wtEx cx e BOOL
+
   % more...
 
 endspec
