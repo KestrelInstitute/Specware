@@ -65,7 +65,7 @@ SpecCalc qualifying spec
 
       | Unsupported (position,str) ->
 		"Unsupported operation: " ^ str
-	      ^ "\n  found at " ^ (printAll position)
+	      ^ "\n  found in " ^ (printAll position)
 
       | UIDNotFound (position, unitId) ->
 		"Unknown unit " ^ (showRelativeUID unitId) 
@@ -77,23 +77,23 @@ SpecCalc qualifying spec
 
       | SpecError (position,msg) ->
 		"Error in specification: " ^ msg 
-              ^ "\n  found " ^ (printAll position)
+              ^ "\n  found in " ^ (printAll position)
 
       | MorphError (position,msg) ->
 		"Error in morphism: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
+              ^ "\n  found in " ^ (printAll position)
 
       | DiagError (position,msg) ->
 		"Diagram error: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
+              ^ "\n  found in " ^ (printAll position)
 
       | TypeCheck (position, msg) ->
 		"Type error: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
+              ^ "\n  found in " ^ (printAll position)
 
       | Proof (position, msg) ->
 		"Proof error: " ^ msg 
-              ^ "\n  found at " ^ (printAll position)
+              ^ "\n  found in " ^ (printAll position)
 
       | CircularDefinition unitId ->
 		"Circular definition: " ^ showUID unitId
@@ -109,12 +109,16 @@ SpecCalc qualifying spec
 
   op printTypeErrors : List(String * Position) -> String
   def printTypeErrors errs =
+    if length errs = 0 then "" else
     let def printErr((msg,pos),(result,lastfilename)) =
           let filename = (case pos of
 			    | File (filename, left, right) -> filename
 			    | _ -> "")
-          in (result ^ (if filename = lastfilename then print pos else printAll pos)
-	       ^ " : " ^ msg ^ "\n",
+          in (result
+	      ^ (if filename = lastfilename then
+	         print pos else
+		 "Sort errors in " ^ (printAll pos))
+	      ^ " : " ^ msg ^ "\n",
 	      filename)
     in
     (foldl printErr ("","") (firstN(errs,numberOfTypeErrorsToPrint))).1
