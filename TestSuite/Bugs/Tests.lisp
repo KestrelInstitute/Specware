@@ -80,23 +80,13 @@ endspec
 
 ")
 
- ("Bug 0074 : Similarity of definitions often missed."
-  :show   "Bug_0074/EquivalentSorts#XX" 
-  :output ";;; Elaborating diagram-colimit at $TESTDIR/Bug_0074/EquivalentSorts#XX
-;;; Elaborating diagram-term at $TESTDIR/Bug_0074/EquivalentSorts#DD
-;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#AA
-;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#BB
-;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#Foo
-;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#CC
-;;; Elaborating spec-morphism at $TESTDIR/Bug_0074/EquivalentSorts#MM
-;;; Elaborating spec-morphism at $TESTDIR/Bug_0074/EquivalentSorts#NN
+ ("Bug 0067 : Signature constraints in spec morphism are not checked"
+  :show   "Bug_0067/check_signature#M" 
+  :output "??")
 
-spec  
- type {A, B, C}
- type {A, B, C} = List(Nat * Nat)
-endspec
-
-")
+ ("Bug 0068 : Even numbers can be refined to odd numbers"
+  :show   "Bug_0068/EvenToOdd#O" 
+  :output "??")
 
  ("Bug 0069 : Translate from base"
   :show   "Bug_0069/TranslateFromBase#M" 
@@ -122,6 +112,24 @@ Errors in $TESTDIR/Bug_0069/TranslateIntoBase.sw
 ;;; Elaborating spec at $TESTDIR/Bug_0069/MorphismFromBase#T
 Errors in $TESTDIR/Bug_0069/MorphismFromBase.sw
 5.21-5.36	: Error in morphism: Illegal to translate from base type: Integer
+")
+
+ ("Bug 0074 : Similarity of definitions often missed."
+  :show   "Bug_0074/EquivalentSorts#XX" 
+  :output ";;; Elaborating diagram-colimit at $TESTDIR/Bug_0074/EquivalentSorts#XX
+;;; Elaborating diagram-term at $TESTDIR/Bug_0074/EquivalentSorts#DD
+;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#AA
+;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#BB
+;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#Foo
+;;; Elaborating spec at $TESTDIR/Bug_0074/EquivalentSorts#CC
+;;; Elaborating spec-morphism at $TESTDIR/Bug_0074/EquivalentSorts#MM
+;;; Elaborating spec-morphism at $TESTDIR/Bug_0074/EquivalentSorts#NN
+
+spec  
+ type {A, B, C}
+ type {A, B, C} = List(Nat * Nat)
+endspec
+
 ")
 
  ("Bug 0083 : Ambiguous op not detected"
