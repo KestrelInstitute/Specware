@@ -9,88 +9,80 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Element                                                                             %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %% 
-  %%  [39]  element  ::=  EmptyElemTag | STag content ETag 
   %%
+  %%  [Definition: Each XML document contains one or more elements, the boundaries of which are either 
+  %%   delimited by start-tags and end-tags, or, for empty elements, by an empty-element tag. 
+  %%   Each element has a type, identified by name, sometimes called its "generic identifier" (GI), 
+  %%   and may have a set of attribute specifications.] 
+  %%
+  %%   [39]  element  ::=  EmptyElemTag | STag content ETag 
   %%                                                             [WFC: Element Type Match] 
   %%                                                             [VC:  Element Valid]
+  %%                                                             [KVC: Element Valid]
   %%
-  %% *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
+  %%  [Definition: The beginning of every non-empty XML element is marked by a start-tag.]
   %%
-  %%                                                             [WFC: Unique Att Spec]
-  %%   ==>
-  %% [K27]  STag          ::=  ElementTag                            
+  %%  The Name in the start- and end-tags gives the element's type. 
   %%
-  %%                                                             [KC:  Proper Start Tag]
-  %%                                                             [WFC: Unique Att Spec]
+  %%  *[40]  STag          ::=  '<' Name (S Attribute)* S? '>' 
+  %%                                                            *[WFC: Unique Att Spec]
+  %%    ==>
+  %%  [K31]  STag          ::=  ElementTag                            
+  %%                                                             [KWFC: Start Tag]
+  %%                                                             [WFC:  Unique Att Spec]
   %% 
-  %% *[41]  Attribute     ::=  Name Eq AttValue 
-  %%   ==>
-  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
-  %%
-  %%                                                             [VC:  Attribute Value Type]
-  %%                                                             [WFC: No External Entity References]
-  %%                                                             [WFC: No < in Attribute Values]
-  %%
-  %% *[42]  ETag          ::=  '</' Name S? '>'
-  %%   ==>
-  %% [K28]  ETag          ::=  ElementTag                   
-  %%
-  %%                                                             [KC:  Proper End Tag]
-  %%
-  %%  Since the chardata in [43] is typically used for indentation, 
-  %%  it makes more sense to group it as in [K18]:
-  %%
-  %% *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
-  %%   ==>
-  %% [K29]  content       ::=  content_item* CharData?
-  %% [K30]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
+  %%  [Definition: The Name-AttValue pairs are referred to as the attribute specifications of the 
+  %%   element], 
   %% 
-  %% *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
+  %%  [Definition: with the Name in each pair referred to as the attribute name] and 
+  %% 
+  %%  [Definition: the content of the AttValue (the text between the ' or " delimiters) as the 
+  %%   attribute value.]
   %%
-  %%                                                             [WFC: Unique Att Spec]
-  %%   ==>
-  %% [K31]  EmptyElemTag  ::=  ElementTag
+  %%  Note that the order of attribute specifications in a start-tag or empty-element tag is not significant.
   %%
-  %%                                                             [KC:  Proper Empty Tag]
+  %%  [Definition: The end of every element that begins with a start-tag must be marked by an 
+  %%   end-tag containing a name that echoes the element's type as given in the start-tag:]
+  %%
+  %%  *[42]  ETag          ::=  '</' Name S? '>'
+  %%    ==>
+  %%  [K32]  ETag          ::=  ElementTag                   
+  %%                                                             [KWFC: End Tag]
+  %%
+  %%  [Definition: The text between the start-tag and end-tag is called the element's content:]
+  %%
+  %%  Note: Given the way Kestrel uses the chardata in *[43] for indentation, it makes more sense to 
+  %%        group it as in [K31].  (See print_Element in XML_Printer.sw)
+  %%
+  %%  *[43]  content       ::=  CharData? ((element | Reference | CDSect | PI | Comment) CharData?)*
+  %%    ==>
+  %%  [K33]  content       ::=  content_item* CharData?
+  %%  [K34]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment )
+  %% 
+  %%
+  %%  [Definition: An element with no content is said to be empty.] 
+  %%
+  %%  The representation of an empty element is either a start-tag immediately followed by an 
+  %%  end-tag, or an empty-element tag. 
+  %%
+  %%  [Definition: An empty-element tag takes a special form:]
+  %%
+  %%  *[44]  EmptyElemTag  ::=  '<' Name (S Attribute)* S? '/>' 60]
   %%                                                             [WFC: Unique Att Spec]
+  %%    ==>
+  %%  [K35]  EmptyElemTag  ::=  ElementTag
+  %%                                                             [KWFC: Empty Tag]
+  %%                                                             [WFC:  Unique Att Spec]
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [39]  element  ::=  EmptyElemTag | STag content ETag 
-  %%
+  %%   [39]  element  ::=  EmptyElemTag | STag content ETag 
   %%                                                             [WFC: Element Type Match] 
-  %%                                                             [VC:  Element Valid]
-  %%
   %% -------------------------------------------------------------------------------------------------
-  %%
   %%  [WFC: Element Type Match]                     [39]  -- element_types_match?
   %% 
   %%    The Name in an element's end-tag must match the element type in the start-tag.
-  %% 
-  %% -------------------------------------------------------------------------------------------------
-  %% 
-  %%  [VC: Element Valid]                           [39]
-  %%
-  %%    An element is valid if there is a declaration matching elementdecl where the Name matches the 
-  %%    element type, and one of the following holds:
-  %%    
-  %%      1.  The declaration matches EMPTY and the element has no content.
-  %%    
-  %%      2.  The declaration matches children and the sequence of child elements belongs to the 
-  %%          language generated by the regular expression in the content model, with optional white 
-  %%          space (characters matching the nonterminal S) between the start-tag and the first child
-  %%          element, between child elements, or between the last child element and the end-tag.
-  %%          Note that a CDATA section containing only white space does not match the nonterminal S, 
-  %%          and hence cannot appear in these positions.
-  %%    
-  %%      3.  The declaration matches Mixed and the content consists of character data and child 
-  %%          elements whose types match names in the content model.
-  %%    
-  %%      4.  The declaration matches ANY, and the types of any child elements have been declared.
-  %% 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Element (start : UChars, pending_open_tags : List (ElementTag)) : Required Element =
@@ -124,35 +116,26 @@ XML qualifying spec
 	}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [K27]  STag          ::=  ElementTag                            
-  %%
-  %%                                                             [KC:  Proper Start Tag]
-  %%                                                             [WFC: Unique Att Spec]
-  %%
-  %% [K31]  EmptyElemTag  ::=  ElementTag
-  %%
-  %%                                                             [KC:  Proper Empty Tag]
-  %%                                                             [WFC: Unique Att Spec]
-  %%
+  %%  [K31]  STag          ::=  ElementTag                            
+  %%                                                             [KWFC: Start Tag]
+  %%                                                             [WFC:  Unique Att Spec]
+  %%  [K35]  EmptyElemTag  ::=  ElementTag
+  %%                                                             [KWFC: Empty Tag]
+  %%                                                             [WFC:  Unique Att Spec]
   %% -------------------------------------------------------------------------------------------------
+  %%  [KWFC: Start Tag]                             [K31] *[40] -- well_formed_start_tag?
   %%
-  %%  [KC: Proper Start Tag]                       [K27] -- start_tag?
+  %%    STag  ::=  '<'  Name  (S Attribute)*  S?  '>' 
+  %%    where Name is not a variant of 'xml'
+  %% -------------------------------------------------------------------------------------------------
+  %%  [KWFC: Empty Tag]                             [K35] *[44] -- well_formed_empty_tag?
   %%
-  %%    prefix     = ''
-  %%    name       not 'xml'
-  %%    postfix    = ''
-  %%
-  %%  [KC: Proper Empty Tag]                       [K31] -- empty_tag?
-  %%
-  %%    prefix     = ''
-  %%    name       not 'xml'
-  %%    postfix    = '/'
-  %%
-  %%  [WFC: Unique Att Spec]                       *[40] *[44] [K27] [K31] -- unique_attributes?
+  %%    EmptyElemTag  ::=  '<'  Name  (S Attribute)*  S?  '/>' 
+  %%    where Name is not a variant of 'xml'
+  %% -------------------------------------------------------------------------------------------------
+  %%  [WFC: Unique Att Spec]                        [K31] [K35] *[40] *[44] -- unique_attributes?
   %%
   %%    No attribute name may appear more than once in the same start-tag or empty-element tag.
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_OpenTag (start : UChars) : Possible ElementTag =
@@ -178,126 +161,15 @@ XML qualifying spec
 	| _ -> return (None, start)
      }
 
-  %% -------------------------------------------------------------------------------------------------
+  %% ----------------------------------------------------------------------------------------------------
+  %%  [K32]  ETag          ::=  ElementTag                   
+  %%                                                             [KWFC: End Tag]
+  %% ----------------------------------------------------------------------------------------------------
+  %%  [KWFC: End Tag]                               [K32] *[42] -- well_formed_end_tag?
   %%
-  %% [K29]  content       ::=  content_item* CharData?
-  %%
-  %% -------------------------------------------------------------------------------------------------
-
-  def parse_Content (start : UChars, pending_open_tags : List (ElementTag)) : Required Content =
-    let 
-       def parse_items (tail, rev_items) =
-	 let (char_data, tail) = parse_CharData tail in
-	 {
-	  (possible_item, scout) <- parse_Content_Item (tail, pending_open_tags);
-	  case possible_item of
-	    | Some item ->
-	      parse_items (scout,
-			   cons ((char_data, item),
-				 rev_items))
-	    | _ -> 
-	      return ({items   = rev rev_items, 
-		       trailer = char_data},
-		      tail)
-	     }
-    in
-      parse_items (start, [])
-
-  %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [K30]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment
-  %%
-  %% -------------------------------------------------------------------------------------------------
-
-  def parse_Content_Item (start : UChars, pending_open_tags : List (ElementTag)) : Possible Content_Item =
-    %% All the options are readily distinguishable:
-    %%
-    %% Reference  -- "&" ...
-    %% Element    -- "<" Letter ...
-    %% PI         -- "<?"
-    %% CDSect     -- "<![CDATA[" ...
-    %% Comment    -- "<!--"
-    %%
-    %% So do a little lookahead to avoid needless backtracking...
-    %%
-    case start of
-      | 60 (* '<' *) :: tail ->
-        (case tail of
-	   | 33 :: 45 :: 45 (* '!--' *) :: tail -> 
- 	     %% "<!--"
-	     {
-	      %% parse_Comment assumes we're past "<!--"
-	      (comment, tail) <- parse_Comment tail; 
-	      return (Some (Comment comment),
-		      tail)
-	     }
-	   | 33 :: 91  :: 67 :: 68 :: 65 :: 84 :: 65 :: 91 (* '![CDATA[' *) :: tail ->
-	     %% "<![CDATA["
-	     {
-	      %% parse_CDSECT assumes we're past "<![CDATA["
-	      (cdsect, tail) <- parse_CDSect tail;   
-	      return (Some (CDSect cdsect),
-		      tail)
-	     }
-	   | 47 (* '/' *) :: _ -> 
-	     %% "</"
-	     %% start of an ETag, so not something we're looking for
-	     return (None, start)
-	   | 63 (* '?' *) :: _ -> 
-	     %% "<?"
-	     %% parse_PI assumes we're past '<?'
-	     {
-	      (pi, tail) <-  parse_PI tail;
-	      return (Some (PI pi),
-		      tail)
-	      }
-	   | _ ->
-	     {
-	      %% parse_Element assumes we're back at the original "<"
-	      (element, tail) <- parse_Element (start, pending_open_tags); 
-	      return (Some (Element element),
-		      tail)
-	     })
-      | [] ->
-	hard_error {kind        = EOF,
-		    requirement = "Each item in the element contents must be one of the options below.",
-		    start       = start,
-		    tail        = [],
-		    peek        = 0,
-		    we_expected = [("'<!--' ...",      "comment"),
-				   ("'<![CDATA[' ...", "unparsed character data"),				   
-				   ("'</' ...",        "end tag"),				   
-				   ("'<?' ...",        "PI"),
-				   ("'<' Name ...",    "start tag or empty element tag"),				   
-				   ("'&' ...",         "reference")],
-		    but          = "EOF occcurred first",
-		    so_we        = "fail immediately"}
-      | 38  (* '&' *)   :: tail -> 
-	{
-	 %% parse_Reference assumes we're just past the ampersand.
-	 (ref, tail) <- parse_Reference start;
-	 return (Some (Reference ref),
-		 tail)
-	}
-      | _ ->
-	return (None, start)
-
-
-  %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [K28]  ETag          ::=  ElementTag                   
-  %%
-  %%                                                             [KC:  Proper End Tag]
-  %%
-  %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [KC: Proper End   Tag]                       [K28] -- well_formed_end_tag?
-  %%
-  %%    prefix     = '/'
-  %%    name       not 'xml'
-  %%    postfix    = ''
-  %%
-  %% -------------------------------------------------------------------------------------------------
+  %%    ETag  ::=  '</'  Name  S?  '>'
+  %%    where Name is not a variant of 'xml'
+  %% ----------------------------------------------------------------------------------------------------
 
   def parse_ETag (start : UChars, pending_open_tags : List (STag)) : Required ETag =
     let stag = hd pending_open_tags in
@@ -344,5 +216,111 @@ XML qualifying spec
 		      but         = "the element content terminated without a following end tag", 
 		      so_we       = "fail immediately"}
 	 }
+
+  %% -------------------------------------------------------------------------------------------------
+  %%  [K33]  content       ::=  content_item* CharData?
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_Content (start : UChars, pending_open_tags : List (ElementTag)) : Required Content =
+    let 
+       def parse_items (tail, rev_items) =
+	 let (char_data, tail) = parse_CharData tail in
+	 {
+	  (possible_item, scout) <- parse_Content_Item (tail, pending_open_tags);
+	  case possible_item of
+	    | Some item ->
+	      parse_items (scout,
+			   cons ((char_data, item),
+				 rev_items))
+	    | _ -> 
+	      return ({items   = rev rev_items, 
+		       trailer = char_data},
+		      tail)
+	     }
+    in
+      parse_items (start, [])
+
+  %% -------------------------------------------------------------------------------------------------
+  %%  [K34]  content_item  ::=  CharData? (element | Reference | CDSect | PI | Comment )
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_Content_Item (start : UChars, pending_open_tags : List (ElementTag)) : Possible Content_Item =
+    %% All the options are readily distinguishable:
+    %%
+    %% Reference  -- "&" ...
+    %% Element    -- "<" Letter ...
+    %% PI         -- "<?"
+    %% CDSect     -- "<![CDATA[" ...
+    %% Comment    -- "<!--"
+    %%
+    %% So do a little lookahead to avoid needless backtracking...
+    %%
+    case start of
+      | 60 :: tail ->
+        %% '<' 
+        (case tail of
+	   | 33 :: 45 :: 45 :: tail -> 
+	     %% "<!--"
+  	     %% parse_Comment assumes we're past "<!--"
+	     {
+	      (comment, tail) <- parse_Comment tail; 
+	      return (Some (Comment comment),
+		      tail)
+	     }
+	   | 33 :: 91  :: 67 :: 68 :: 65 :: 84 :: 65 :: 91 :: tail ->
+	     %% "<![CDATA["
+	     {
+	      %% parse_CDSECT assumes we're past "<![CDATA["
+	      (cdsect, tail) <- parse_CDSect tail;   
+	      return (Some (CDSect cdsect),
+		      tail)
+	     }
+	   | 47 :: _ -> 
+	     %% "</"
+	     %% start of an ETag, so not something we're looking for
+	     return (None, start)
+
+	   | 63 :: _ -> 
+	     %% "<?" 
+	     %% parse_PI assumes we're past '<?'
+	     {
+	      (pi, tail) <-  parse_PI tail;
+	      return (Some (PI pi),
+		      tail)
+	      }
+	   | _ ->
+	     {
+	      %% parse_Element assumes we're back at the original "<"
+	      (element, tail) <- parse_Element (start, pending_open_tags); 
+	      return (Some (Element element),
+		      tail)
+	     })
+
+      | [] ->
+	hard_error {kind        = EOF,
+		    requirement = "Each item in the element contents must be one of the options below.",
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    we_expected = [("'<!--' ...",      "comment"),
+				   ("'<![CDATA[' ...", "unparsed character data"),				   
+				   ("'</' ...",        "end tag"),				   
+				   ("'<?' ...",        "PI"),
+				   ("'<' Name ...",    "start tag or empty element tag"),				   
+				   ("'&' ...",         "reference")],
+		    but          = "EOF occcurred first",
+		    so_we        = "fail immediately"}
+
+      | 38 :: tail -> 
+        %% '&'
+	{
+	 %% parse_Reference assumes we're just past the ampersand.
+	 (ref, tail) <- parse_Reference start;
+	 return (Some (Reference ref),
+		 tail)
+	}
+
+      | _ ->
+	return (None, start)
 
 endspec

@@ -6,38 +6,42 @@ XML qualifying spec
   %%%          ElementTag                                                                          %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  Rules [K4] -- [K10] simplify the parsing (and especially any associated error reporting) for
+  %%  Rules [K5] -- [K10] simplify the parsing (and especially any associated error reporting) for
   %%  several related constructs given by the W3 grammar as:
   %%
   %%  *[23]  XMLDecl       ::=  '<?xml'     VersionInfo  EncodingDecl? SDDecl?   S? '?>' 
   %%  *[77]  TextDecl      ::=  '<?xml'     VersionInfo? EncodingDecl            S? '?>'         
   %%  *[40]  STag          ::=  '<'  Name   (S Attribute)*                       S?  '>' 
   %%  *[42]  ETag          ::=  '</' Name                                        S?  '>'
+  %%  *[41]  Attribute     ::=  Name Eq AttValue 
   %%  *[44]  EmptyElemTag  ::=  '<'  Name   (S Attribute)*                       S? '/>' 
   %%
   %%  plus several supporting rules for the above
   %%
   %% -------------------------------------------------------------------------------------------------
-  %% They are all instances of [K4]:
+  %% They are all instances of [K5]:
   %%
-  %%  [K4]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
-  %%  [K5]  ElementTagPrefix   ::=  ( '?' | '/'  | '' )
-  %%  [K6]  ElementName        ::=  NmToken        
-  %%  [K7]  ElementAttributes  ::=  List ElementAttribute
-  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
-  %%  [K9]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
+  %%  [K5]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
+  %%  [K6]  ElementTagPrefix   ::=  ( '?' | '/'  | '' )
+  %%  [K7]  ElementName        ::=  NmToken        
+  %%  [K8]  ElementAttributes  ::=  List ElementAttribute
+  %%  [K9]  ElementAttribute   ::=  S NmToken S? '=' S? AttValue
+  %%
+  %%                                                             [WFC: No External Entity References]
+  %%                                                             [VC:  Attribute Value Type]
+  %%
+  %% [K10]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K4]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
-  %%
+  %%  [K5]  ElementTag         ::=  ElementTagPrefix ElementName ElementAttributes ElementTagPostfix 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Option_ElementTag (start : UChars) : Possible ElementTag =
     case start of
-      | 60 (* '<' *) :: tail -> 
+      | 60 :: tail -> 
+         %% '<'
          {
 	  (prefix,     tail) <- parse_ElementTagPrefix   tail;
 	  (name,       tail) <- parse_ElementName        tail;
@@ -55,9 +59,7 @@ XML qualifying spec
 	 return (None, start)
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K5]  ElementTagPrefix   ::=  ('?' | '/' | '')
-  %%
+  %%  [K6]  ElementTagPrefix   ::=  ( '?' | '/'  | '' )
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementTagPrefix (start : UChars) : Required UString =
@@ -66,21 +68,17 @@ XML qualifying spec
     case start of
       | 63 (* '?' *) :: tail -> return ([63], tail)
       | 47 (* '/' *) :: tail -> return ([47], tail)
-      | _ ->                    return ([],   start)
+      | _ ->                    return ([],  start)
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K6]  ElementName        ::=  NmToken        
-  %%
+  %%  [K7]  ElementName        ::=  NmToken        
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementName (start : UChars) : Required UString =
     parse_NmToken start
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K7]  ElementAttributes  ::=  List ElementAttribute
-  %%
+  %%  [K8]  ElementAttributes  ::=  List ElementAttribute
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementAttributes (start : UChars) : Required ElementAttributes =
@@ -99,9 +97,8 @@ XML qualifying spec
       probe (start, [])
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K8]  ElementAttribute   ::=  S NmToken S? '=' S? QuotedText
-  %%
+  %%  [K9]  ElementAttribute   ::=  S NmToken S? '=' S? AttValue
+  %%                                                             [WFC: No External Entity References]
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementAttribute (start : UChars) : Possible ElementAttribute =
@@ -131,9 +128,7 @@ XML qualifying spec
 	  }	   
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K9]  ElementTagPostfix  ::=  ('>' | '?>' | '/>')
-  %%
+  %% [K10]  ElementTagPostfix  ::=  ( '?' | '/'  | '' )
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementTagPostfix (start : UChars) : Required UString =

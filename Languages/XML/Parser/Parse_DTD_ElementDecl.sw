@@ -6,33 +6,51 @@ XML qualifying spec
   %%%          DTD ElementDecl                                                                     %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>' 
+  %%  [Definition: An element type declaration takes the form:]
+  %%
+  %%   [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>' 
   %%
   %%                                                             [VC: Unique Element Type Declaration]
   %%
-  %%  [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
+  %%  [Definition: An element type has element content when elements of that type must contain only 
+  %%   child elements (no character data), optionally separated by white space (characters matching 
+  %%   the nonterminal S).]
   %%
-  %%  [47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%  [Definition: In this case, the constraint includes a content model, a simple grammar governing
+  %%   the allowed types of the child elements and the order in which they are allowed to appear.]
   %%
+  %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
   %%
-  %% *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
-  %%   ==>
-  %% [K19]  cp           ::=  cpbody ('?' | '*' | '+')? 
-  %% [K20]  cpbody       ::=  Name | choice | seq
+  %%  *[47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%    ==>
+  %%  [K18]  children     ::=  cp
+  %%                                                             [KWFC: Children Decl]
   %%
-  %% *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
-  %%   ==>
-  %% [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
+  %%  The grammar is built on content particles (cps), which consist of names, choice lists of 
+  %%  content particles, or sequence lists of content particles:
   %%
+  %%  *[48]  cp           ::=  (Name | choice | seq) ('?' | '*' | '+')? 
+  %%    ==>
+  %%  [K19]  cp           ::=  cpbody Repeater
+  %%  [K20]  cpbody       ::=  Name | choice | seq
+  %%
+  %%  *[49]  choice       ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
+  %%    ==>
+  %%  [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%
-  %% *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
-  %%   ==>
-  %% [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
-  %%
+  %%  *[50]  seq          ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
+  %%    ==>
+  %%  [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %%                                                             [VC: Proper Group/PE Nesting]
   %%
-  %%  [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
+  %%  [K23]  Repeater     ::=  ('?' | '*' | '+' | '')
+  %%
+  %%  [Definition: An element type has mixed content when elements of that type may contain 
+  %%   character data, optionally interspersed with child elements.] In this case, the types of
+  %%   the child elements may be constrained, but not their order or their number of occurrences:
+  %%
+  %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
   %%
   %%                                                             [VC: Proper Group/PE Nesting] 
   %%                                                             [VC: No Duplicate Types]
@@ -40,11 +58,7 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>' 
-  %%
-  %%                                                             [VC: Unique Element Type Declaration]
-  %%
+  %%   [45]  elementdecl  ::=  '<!ELEMENT' S Name S contentspec S? '>' 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ElementDecl (start : UChars) : Required ElementDecl =
@@ -60,13 +74,16 @@ XML qualifying spec
      (contents, tail) <- parse_ContentSpec tail;
      (w3,       tail) <- parse_WhiteSpace  tail;
      case tail of
-       | 62 (* '>' *) :: tail ->
+
+       | 62 :: tail ->
+         %% '>'
          return ({w1       = w1,
 		  name     = name,
 		  w2       = w2,
 		  contents = contents,
 		  w3       = w3},
 		 tail)
+
        | _ ->
 	 {
 	  error {kind        = Syntax,
@@ -86,24 +103,29 @@ XML qualifying spec
 	}}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
-  %%
+  %%   [46]  contentspec  ::=  'EMPTY' | 'ANY' | Mixed | children 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_ContentSpec (start : UChars) : Required ContentSpec =
     case start of
-      | 69 :: 77 :: 80 :: 84 :: 89  (* 'EMPTY' *) :: tail ->
+
+      | 69 :: 77 :: 80 :: 84 :: 89  :: tail ->
+        %% 'EMPTY' 
         return (Empty, tail)
-      | 65 :: 78 :: 89              (* 'ANY' *)   :: tail ->
+
+      | 65 :: 78 :: 89 :: tail ->
+	%% 'ANY'
         return (Any, tail)
+
       | _ ->
         {
 	 (possible_mixed, tail) <- parse_Mixed start;
 	 case possible_mixed of
+
 	   | Some mixed ->
 	     return (Mixed mixed,
 		     tail)
+
 	   | _ ->
 	     {
 	      (children, tail) <- parse_Children start;
@@ -112,16 +134,23 @@ XML qualifying spec
 	      }}
 
   %% -------------------------------------------------------------------------------------------------
+  %%  [K18]  children     ::=  cp
+  %%                                                             [KWFC: Children Decl]
+  %% -------------------------------------------------------------------------------------------------
+  %%  [KWFC: Children Decl]                         [K18] -- well_formed_children?
   %%
-  %%  [47]  children     ::=  (choice | seq) ('?' | '*' | '+')? 
-  %%
+  %%    The basic production for children in the contentspec of an elementdecl in the DTD 
+  %%    must be a choice or seq, not a simple name.
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Children (start : UChars) : Required Children =
     case start of
       %% test for open-paren to rule out Name option in cp production
-      | 60 (* open-paren *) :: tail ->
+
+      | 40 :: tail ->
+        %% '('
         parse_CP start
+
       | char :: _ ->
 	hard_error {kind        = Syntax,
 		    requirement = "A children clause in an ElementDecl in a DTD should begin with '(' for a choice or seq.",
@@ -131,6 +160,7 @@ XML qualifying spec
 		    we_expected = [("'('", "To start description of a choice or sequence")],
 		    but         = "a children clause begins with " ^ (describe_char char) ^ " instead",
 		    so_we       = "fail immediately"}
+
       | _ ->
 	hard_error {kind        = Syntax,
 		    requirement = "A children clause in an ElementDecl in a DTD should begin with '(' for a choice or seq.",
@@ -142,53 +172,36 @@ XML qualifying spec
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [K17]  cp           ::=  cpbody ('?' | '*' | '+')? 
-  %%
+  %%  [K19]  cp           ::=  cpbody Repeater
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CP (start : UChars) : Required CP =
     {
-     (body, tail) <- parse_CPBody start;
-     %% Note: no whitespace allowed between name or right-paren and '?', '*', or '+'
-     case tail of
-       | 63 (* '?' *) :: tail ->
-         return ({body     = body,
-		  repeater = ZeroOrOne},
-		 tail)
-       | 42 (* '*' *) :: tail ->
-         return ({body     = body,
-		  repeater = ZeroOrMore},
-		 tail)
-       | 43 (* '+' *) :: tail ->
-         return ({body     = body,
-		  repeater = OneOrMore},
-		 tail)
-       | _ ->
-         return ({body     = body,
-		  repeater = One},
-		 tail)
-	}
+     (body,     tail) <- parse_CPBody start;
+     (repeater, tail) <- parse_Repeater tail;
+     return ({body     = body,
+	      repeater = repeater},
+	     tail)
+     }
      
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [K18]  cpbody       ::=  Name | choice | seq
-  %% [K19]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
-  %% [K20]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
-  %%
-  %%                                                             [VC: Proper Group/PE Nesting] 
-  %%
+  %%  [K20]  cpbody       ::=  Name | choice | seq
+  %%  [K21]  choice       ::=  '(' S? cp S? ( '|' S? cp S? )+ ')' 
+  %%  [K22]  seq          ::=  '(' S? cp S? ( ',' S? cp S? )* ')' 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CPBody (start : UChars) : Required CPBody =
     case start of
-      | 40 (* open-paren *) :: tail ->
+      | 40 :: tail ->
+        %% '('
         {
 	 (w1, tail) <- parse_WhiteSpace tail;
 	 (cp, tail) <- parse_CP         tail;
 	 (w2, tail) <- parse_WhiteSpace tail;
 	 case tail of
-	   | 124 (* '|' *) :: tail ->
+
+	   | 124 :: tail ->
+             %% '|'
 	     let 
 	       def probe (tail, rev_alternatives) =
 		 {
@@ -197,15 +210,20 @@ XML qualifying spec
 		  (w4, tail) <- parse_WhiteSpace tail;
 		  let rev_alternatives = cons ((w3, cp, w4), rev_alternatives) in
 		  case tail of 
-		    | 41 (* close-paren *) :: tail ->
+
+		    | 41 :: tail ->
+                      %% ')'
 		      return (Choice {alternatives = rev rev_alternatives},
 			      tail)
+
 		    | _ ->
 		      probe (tail, rev_alternatives)
 		     }
 	     in
 	       probe (tail, [(w1, cp, w2)])
-	   | 44 (* ',' *) :: tail ->
+
+	   | 44 :: tail ->
+             %% ','
 	     let 
 	       def probe (tail, rev_items) =
 		 {
@@ -214,16 +232,20 @@ XML qualifying spec
 		  (w4, tail) <- parse_WhiteSpace tail;
 		  let rev_items = cons ((w3, cp, w4), rev_items) in
 		  case tail of 
-		    | 41 (* close-paren *) :: tail ->
+
+		    | 41 :: tail ->
+                      %% ')'
 		      return (Seq {items = rev rev_items},
 			      tail)
+
 		    | _ ->
 		      probe (tail, rev_items)
 		     }
 	     in
 	       probe (tail, [(w1, cp, w2)])
 
-	   | 41 (* close-paren  *) :: tail ->
+	   | 41 :: tail ->
+	     %% ')'
 	     %% second item is optional for Seq, but not Choice
 	     return (Seq {items = [(w1, cp, w2)]},
 		     tail)
@@ -239,6 +261,7 @@ XML qualifying spec
 					("')'", "termination of choise or sequence")],
 			 but         = (describe_char char) ^ " was seen instead",
 			 so_we       = "fail immediately"}
+
 	   | _ ->
 	     hard_error {kind        = Syntax,
 			 requirement = "A choice or sequence in an elementdecl in DTD should continue with '|' or ',', or end with ')'.",
@@ -260,46 +283,64 @@ XML qualifying spec
 	 }
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [51]  Mixed  ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
-  %%
-  %%                                                             [VC: Proper Group/PE Nesting] 
-  %%                                                             [VC: No Duplicate Types]
-  %%
+  %%  [K23]  Repeater     ::=  ('?' | '*' | '+' | '')
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_Repeater (start : UChars) : Required Repeater =
+    %% Note: no whitespace allowed between name or right-paren and '?', '*', or '+'
+    case start of
+      | 63 (* '?' *) :: tail -> return (ZeroOrOne,  tail)
+      | 42 (* '*' *) :: tail ->	return (ZeroOrMore, tail)
+      | 43 (* '+' *) :: tail ->	return (OneOrMore,  tail)
+      | _ ->                	return (One,       start)
+
+  %% -------------------------------------------------------------------------------------------------
+  %%   [51]  Mixed        ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Mixed (start : UChars) : Possible Mixed =
     case start of
-      | 40  (* open-paren *) :: tail -> 
+      | 40 :: tail -> 
+        %% '('
         {
 	 (w1, tail) <- parse_WhiteSpace tail;
 	 case tail of
-	   | 35 :: 80 :: 67 :: 68 :: 65 :: 84 :: 65 (* '#PCDATA' *) :: tail_0 ->
+
+	   | 35 :: 80 :: 67 :: 68 :: 65 :: 84 :: 65 :: tail_0 ->
+             %% '#PCDATA'
 	     {
 	      (w2, tail) <- parse_WhiteSpace tail_0;
 	      (case w2 of
-		 | 41 (* close-paren *) :: tail ->
+
+		 | 41 :: tail ->
+                   %% ')'
 		   return (Some {w1    = w1,
 				 names = [],
 				 w2    = w2},
 			   tail)
+
 		 | _ ->
 		   let
                      def probe (tail, rev_names) =
 		       {
 			(w3, tail) <- parse_WhiteSpace tail;
 			case tail of
-			  | 124 (* '|' *) :: tail ->
+
+			  | 124 :: tail ->
+                            %% '|' 
 			    {
 			     (w4,   tail) <- parse_WhiteSpace tail;
 			     (name, tail) <- parse_Name        tail;
 			     probe (tail, cons ((w3, w4, name), rev_names))
 			    }
-			  | 41 :: 42 (* close-paren star *) :: tail ->
+
+			  | 41 :: 42 :: tail ->
+                            %% ')*'
 			    return (Some {w1    = w1,
 					  names = rev rev_names,
 					  w2    = w2},
 				    tail)
+
 			  | char :: _ ->
 			    {
 			     error {kind        = Syntax,
@@ -318,6 +359,7 @@ XML qualifying spec
 					| 41 :: tail -> tail  % skip past close paren
 					| _ -> tail))
 			    }
+
 			  | _  ->
 			    hard_error {kind        = EOF,
 					requirement = "Mixed construction in elementdecl in DTD requires '|' or ')'.",

@@ -7,68 +7,61 @@ XML qualifying spec
   %%%          References                                                                          %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %% [66]  CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';' 
+  %%  [Definition: A character reference refers to a specific character in the ISO/IEC 10646 
+  %%   character set, for example one not directly accessible from available input devices.]
+  %%
+  %%  [66]  CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';' 
   %%
   %%                                                             [WFC: Legal Character]
   %%
-  %% [67]  Reference    ::=  EntityRef | CharRef
+  %%  [67]  Reference    ::=  EntityRef | CharRef
   %%
-  %% [68]  EntityRef    ::=  '&' Name ';' 
+  %%  [Definition: An entity reference refers to the content of a named entity.] 
   %%
+  %%  [Definition: References to parsed general entities use ampersand (&) and semicolon (;) as 
+  %%   delimiters.] 
+  %%
+  %%  [Definition: Parameter-entity references use percent-sign (%) and semicolon (;) as delimiters.]
+  %%
+  %%  [68]  EntityRef    ::=  '&' Name ';' 
   %%                                                             [WFC: Entity Declared]
-  %%                                                             [VC:  Entity Declared]
   %%                                                             [WFC: Parsed Entity] 
   %%                                                             [WFC: No Recursion]
-  %%
-  %% [69]  PEReference  ::=  '%' Name ';' 
-  %%
   %%                                                             [VC:  Entity Declared]
-  %%                                                             [WFC: No Recursion]
+  %%
+  %%  [Definition: Entity and character references can both be used to escape the left angle bracket, 
+  %%   ampersand, and other delimiters. A set of general entities (amp, lt, gt, apos, quot) is 
+  %%   specified for this purpose. Numeric character references may also be used; they are expanded 
+  %%   immediately when recognized and must be treated as character data, so the numeric character 
+  %%   references "&#60;" and "&#38;" may be used to escape < and & when they occur in character 
+  %%   data.]
+  %%
+  %%  [69]  PEReference  ::=  '%' Name ';' 
   %%                                                             [WFC: In DTD]
+  %%                                                             [WFC: No Recursion]
+  %%                                                             [VC:  Entity Declared]
+  %%                                                             [VC:  Proper Group/PE Nesting] (implicit)
+  %%
+  %%  [Definition: An entity is included when its replacement text is retrieved and processed, 
+  %%   in place of the reference itself, as though it were part of the document at the location 
+  %%   the reference was recognized.] 
+  %%
+  %%  The replacement text may contain both character data and (except for parameter entities) 
+  %%  markup, which must be recognized in the usual way.  (The string "AT&amp;T;" expands to "AT&T;" 
+  %%  and the remaining ampersand is not recognized as an entity-reference delimiter.) 
+  %%  A character reference is included when the indicated character is processed in place of the 
+  %%  reference itself.
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [67]  Reference    ::=  EntityRef | CharRef
-  %%
-  %% -------------------------------------------------------------------------------------------------
-
-  def parse_Reference (start : UChars) : Required Reference =
-    %%
-    %%  We begin just past the '&' in rules [66] and [68], looking for one of:
-    %%
-    %%    '#x' [0-9a-fA-F]+ ';' 
-    %%    '#'  [0-9]+       ';' 
-    %%    Name              ';' 
-    %%
-    case start of
-      | 35 (* '#' *) :: tail -> parse_CharRef   (start, tail)
-      | _ :: _               -> parse_EntityRef start
-      | _ -> 
-        hard_error {kind        = EOF,
-		    requirement = "Ampersand starts some kind of reference.",
-		    start       = start,
-		    tail        = [],
-		    peek        = 0,
-		    we_expected = [("'&#x' [0-9a-fA-F]+ ';'", "Hex character reference"),
-				   ("'&#'  [0-9]+       ';'", "Decimal character reference"), 
-				   ("'&'   Name         ';'", "Entity reference")],
-		    but         = "EOF occurred first",
-		    so_we       = "fail immediately"}
-
-  %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [66]  CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';' 
+  %%  [66]  CharRef      ::=  '&#' [0-9]+ ';' | '&#x' [0-9a-fA-F]+ ';' 
   %%
   %%                                                             [WFC: Legal Character]
-  %%
   %% -------------------------------------------------------------------------------------------------
-  %%
   %%  [WFC: Legal Character]                        [66] -- char?
   %%
   %%    Characters referred to using character references must match the production for Char.
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CharRef (start : UChars, tail : UChars) : Required Reference =
@@ -100,10 +93,13 @@ XML qualifying spec
 	      but         = (describe_char char) ^ "is not an XML Char",
 	      so_we       = "pass along the bogus character"}));
      case tail of
-       | 59  (* ';' *) :: tail ->
+
+       | 59 :: tail ->
+         %% ';' 
          return (Char {style = style,
 		       char  = char},
 		 tail)
+
        | char :: _ ->
 	 {
 	  error {kind        = Syntax,
@@ -118,6 +114,7 @@ XML qualifying spec
 			char  = char},
 		  tail)
 		  }
+
        | _ -> 
 	 {
 	  error {kind        = EOF,
@@ -213,17 +210,39 @@ XML qualifying spec
      probe (start, 0)
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [68]  EntityRef    ::=  '&' Name ';' 
-  %%
+  %%  [67]  Reference    ::=  EntityRef | CharRef
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_Reference (start : UChars) : Required Reference =
+    %%
+    %%  We begin just past the '&' in rules [66] and [68], looking for one of:
+    %%
+    %%    '#x' [0-9a-fA-F]+ ';' 
+    %%    '#'  [0-9]+       ';' 
+    %%    Name              ';' 
+    %%
+    case start of
+      | 35 (* '#' *) :: tail -> parse_CharRef   (start, tail)
+      | _ :: _               -> parse_EntityRef start
+      | _ -> 
+        hard_error {kind        = EOF,
+		    requirement = "Ampersand starts some kind of reference.",
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    we_expected = [("'&#x' [0-9a-fA-F]+ ';'", "Hex character reference"),
+				   ("'&#'  [0-9]+       ';'", "Decimal character reference"), 
+				   ("'&'   Name         ';'", "Entity reference")],
+		    but         = "EOF occurred first",
+		    so_we       = "fail immediately"}
+
+  %% -------------------------------------------------------------------------------------------------
+  %%  [68]  EntityRef    ::=  '&' Name ';' 
   %%                                                             [WFC: Entity Declared]
-  %%                                                             [VC:  Entity Declared]
   %%                                                             [WFC: Parsed Entity] 
   %%                                                             [WFC: No Recursion]
-  %%
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [WFC: Entity Declared]                        [68]
+  %%  [WFC: Entity Declared]                        [68]           -- entity_declared?
   %%
   %%    In a document without any DTD, a document with only an internal DTD subset which contains no 
   %%    parameter entity references, or a document with "standalone='yes'", for an entity reference 
@@ -232,39 +251,30 @@ XML qualifying spec
   %%    external subset or a parameter entity, except that well-formed documents need not declare any
   %%    of the following entities: amp, lt, gt, apos, quot. The declaration of a general entity must
   %%    precede any reference to it which appears in a default value in an attribute-list declaration.
-  %%
+  %% -------------------------------------------------------------------------------------------------
   %%  [WFC: Parsed Entity]                          [68]   
   %%
   %%    An entity reference must not contain the name of an unparsed entity. Unparsed entities may 
   %%    be referred to only in attribute values declared to be of type ENTITY or ENTITIES.
   %%
+  %%  TODO 
+  %% -------------------------------------------------------------------------------------------------
   %%  [WFC: No Recursion]                           [68]  [69]
   %%
   %%    A parsed entity must not contain a recursive reference to itself, either directly or 
   %%    indirectly.
-  %%
-  %% -------------------------------------------------------------------------------------------------
-  %%    
-  %%  [VC: Entity Declared]                         [68]  [69]     -- entity_declared?
-  %%  
-  %%    In a document with an external subset or external parameter entities with "standalone='no'", 
-  %%    the Name given in the entity reference must match that in an entity declaration. 
-  %% 
-  %%    For interoperability, valid documents should declare the entities amp, lt, gt, apos, quot, in 
-  %%    the form specified in 4.6 Predefined Entities. The declaration of a parameter entity must 
-  %%    precede any reference to it. Similarly, the declaration of a general entity must precede any 
-  %%    attribute-list declaration containing a default value with a direct or indirect reference to 
-  %%    that general entity.
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_EntityRef (start : UChars) : Required Reference =
     {
      (name, tail) <- parse_Name start;
      case tail of
-       | 59  (* ';' *) :: tail ->
+
+       | 59 :: tail ->
+         %% ';' 
          return (Entity {name = name},
 		 tail)
+
        | char :: _ -> 
 	 {
 	  error {kind        = Syntax,
@@ -293,37 +303,22 @@ XML qualifying spec
 	 }}
 	 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [69]  PEReference  ::=  '%' Name ';' 
-  %%
-  %%                                                             [VC:  Entity Declared]
-  %%                                                             [WFC: No Recursion]
+  %%  [69]  PEReference  ::=  '%' Name ';' 
   %%                                                             [WFC: In DTD]
-  %%
+  %%                                                             [WFC: No Recursion]
   %% -------------------------------------------------------------------------------------------------
+  %%  [WFC: In DTD]                                 [69] (really [31] [K12]) -- no_pe_reference?
   %%
+  %%    Parameter-entity references may only appear in the DTD.  
+  %%    Comment: This includes both the internal and external subsets!
+  %%    Comment: This appears to be vacuously true, given the grammar.
+  %% -------------------------------------------------------------------------------------------------
   %%  [WFC: No Recursion]                           [68]  [69]
   %%
   %%    A parsed entity must not contain a recursive reference to itself, either directly or 
   %%    indirectly.
   %%
-  %%  [WFC: In DTD]                                 [69] (really [31] [K12]) -- no_pe_reference?
-  %%
-  %%    Parameter-entity references may only appear in the DTD.  
-  %%    
-  %% -------------------------------------------------------------------------------------------------
-  %%    
-  %%  [VC: Entity Declared]                         [68]  [69]     -- entity_declared?
-  %%  
-  %%    In a document with an external subset or external parameter entities with "standalone='no'", 
-  %%    the Name given in the entity reference must match that in an entity declaration. 
-  %% 
-  %%    For interoperability, valid documents should declare the entities amp, lt, gt, apos, quot, in 
-  %%    the form specified in 4.6 Predefined Entities. The declaration of a parameter entity must 
-  %%    precede any reference to it. Similarly, the declaration of a general entity must precede any 
-  %%    attribute-list declaration containing a default value with a direct or indirect reference to 
-  %%    that general entity.
-  %%
+  %%  TODO 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_PEReference (start : UChars) : Required PEReference =
@@ -334,9 +329,12 @@ XML qualifying spec
      %%			 
      (name, tail) <- parse_Name start;
      case tail of
-       | 59  (* ';' *) :: tail ->
+
+       | 59 :: tail ->
+         %% ';' 
          return ({name = name},
 		 tail)
+
        | char :: _ -> 
 	 {
 	  error {kind        = Syntax,
@@ -350,6 +348,7 @@ XML qualifying spec
 	  return ({name = name},
 		  tail)
 	 }
+
        | _ -> 
 	 {
 	  error {kind        = Syntax,

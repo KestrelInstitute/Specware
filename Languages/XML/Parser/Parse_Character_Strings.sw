@@ -7,16 +7,29 @@ XML qualifying spec
   %%%          Character_Strings                                                                   %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [3]  S         ::=  (#x20 | #x9 | #xD | #xA)+
+  %%   [3]  S         ::=  (#x20 | #x9 | #xD | #xA)+
   %%
-  %% [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
+  %%  [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
   %%
-  %% [15]  Comment   ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
+  %%  [Definition: Comments may appear anywhere in a document outside other markup; in addition, 
+  %%   they may appear within the document type declaration at places allowed by the grammar. 
+  %%   They are not part of the document's character data; an XML processor may, but need not, 
+  %%   make it possible for an application to retrieve the text of comments. For compatibility, 
+  %%   the string "--" (double-hyphen) must not occur within comments.] 
   %%
-  %% [18]  CDSect    ::=  CDStart CData CDEnd 
-  %% [19]  CDStart   ::=  '<![CDATA[' 
-  %% [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
-  %% [21]  CDEnd     ::=  ']]>'
+  %%  Parameter entity references are not recognized within comments.
+  %%
+  %%  [15]  Comment   ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
+  %%
+  %%
+  %%  [Definition: CDATA sections may occur anywhere character data may occur; they are used to 
+  %%   escape blocks of text containing characters which would otherwise be recognized as markup. 
+  %%   CDATA sections begin with the string "<![CDATA[" and end with the string "]]>":]
+  %%
+  %%  [18]  CDSect    ::=  CDStart CData CDEnd 
+  %%  [19]  CDStart   ::=  '<![CDATA[' 
+  %%  [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
+  %%  [21]  CDEnd     ::=  ']]>'
   %%
   %%  Note that the anonymous rule about characters (see section below on WFC's) implicitly 
   %%  restricts the characters that may appear in CharData to be Char's.
@@ -24,45 +37,49 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [3]  S          ::=  (#x20 | #x9 | #xD | #xA)+
-  %%
+  %%   [3]  S         ::=  (#x20 | #x9 | #xD | #xA)+
   %% -------------------------------------------------------------------------------------------------
 
   def parse_WhiteSpace (start : UChars) : Required WhiteSpace =
     let
        def probe (tail, rev_whitespace) =
 	 case tail of
+
 	   | char :: scout ->
 	     if white_char? char then
 	       probe (scout, cons (char, rev_whitespace))
 	     else
 	       return (rev rev_whitespace,
 		       tail)
+
 	   | _ ->
 	     return (rev rev_whitespace,
 		     tail)
+
     in
       probe (start, [])
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
-  %%
+  %%  [14]  CharData  ::=  [^<&]* - ([^<&]* ']]>' [^<&]*)
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CharData (start : UChars) : (Option CharData) * UChars =
     let 
        def probe (tail, rev_char_data) =
 	 case tail of
-	   | 93 :: 93 :: 62 (* ']]>' *) :: _ -> (Some (rev rev_char_data), tail)	
+
+	   | 93 :: 93 :: 62 :: _ -> 
+	     %% ']]>'
+	     (Some (rev rev_char_data), tail)	
+
 	   | char :: scout -> 
 	     if char_data_char? char then
-	       %% note that char_data_char? is false for 60 (* '<' *) and 38 (* '&' *) 
+	       %% note that char_data_char? is false for 60 ('<') and 38 ('&') 
 	       probe (scout, cons (char, rev_char_data))
 	     else
 	       (Some (rev rev_char_data),
 		tail)
+
 	   | _ ->
 	     (Some (rev rev_char_data),
 	      tail)
@@ -70,9 +87,7 @@ XML qualifying spec
       probe (start, [])
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [15]  Comment   ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
-  %%
+  %%  [15]  Comment   ::=  '<!--' ((Char - '-') | ('-' (Char - '-')))* '-->'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Comment (start : UChars) : Required Comment	=
@@ -80,11 +95,16 @@ XML qualifying spec
     let
        def probe (tail, rev_comment) =
 	 case tail of
-	   | 45 :: 45 (* '--' *) :: scout ->
+
+	   | 45 :: 45 :: scout ->
+	     %% '--'
 	     (case scout of
-		| 62  (* '>' *) :: tail ->
+
+		| 62 :: tail ->
+		  %% '-->'
 		  return (rev rev_comment, 
 			  tail)
+
 		| _ ->
 		  {
 		   error {kind        = Syntax,
@@ -97,6 +117,7 @@ XML qualifying spec
 			  so_we       = "leave the bogus '--' in the comment"};
 		   probe (tl tail, cons (45, cons (45, rev_comment)))
 		   })
+
 	   | [] ->
 	     hard_error {kind        = EOF,
 			 requirement = "A comment must terminate with '-->'.",
@@ -106,28 +127,31 @@ XML qualifying spec
 			 we_expected = [("'-->'",   "end of comment")],
 			 but         = "EOF occurred first",
 			 so_we       = "fail immediately"}
+
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
+
     in
       probe (start, [])
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [18]  CDSect    ::=  CDStart CData CDEnd 
-  %% [19]  CDStart   ::=  '<![CDATA[' 
-  %% [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
-  %% [21]  CDEnd     ::=  ']]>'
-  %%
+  %%  [18]  CDSect    ::=  CDStart CData CDEnd 
+  %%  [19]  CDStart   ::=  '<![CDATA[' 
+  %%  [20]  CData     ::=  (Char* - (Char* ']]>' Char*)) 
+  %%  [21]  CDEnd     ::=  ']]>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_CDSect (start : UChars) : Required CDSect =
-    %% parse_CDSECT assumes we're past "<![CDATA["
+    %% assumes we're past "<![CDATA["
     let
        def probe (tail, rev_comment) =
 	 case tail of
-	   | 93 :: 93 :: 62 (* ']]>' *) :: tail ->
+
+	   | 93 :: 93 :: 62 :: tail ->
+	     %% ']]>'
 	     return ({cdata = rev rev_comment}, 
 		     tail)
+
 	   | [] ->
 	     hard_error {kind        = EOF,
 			 requirement = "A CDSect must terminate with ']]>'.",
@@ -137,6 +161,7 @@ XML qualifying spec
 			 we_expected = [("']]>'",   "end of CDSect")],
 			 but         = "EOF occurred first",
 			 so_we       = "fail immediately"}
+
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
     in

@@ -6,15 +6,35 @@ XML qualifying spec
   %%%          DTD AttListDecl                                                                     %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %% [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
+  %%  [Definition: Attribute-list declarations specify the name, data type, and default value 
+  %%   (if any) of each attribute associated with a given element type:]
   %%
-  %% [53]  AttDef          ::=  S Name S AttType S DefaultDecl
+  %%   [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
   %%
-  %% [54]  AttType         ::=  StringType | TokenizedType | EnumeratedType 
+  %%   [53]  AttDef          ::=  S Name S AttType S DefaultDecl
+  %%                                                             [VC: ID Attribute Default] (implicit)
   %%
-  %% [55]  StringType      ::=  'CDATA'
+  %%  *[54]  AttType         ::=  StringType | TokenizedType | EnumeratedType 
+  %%  *[55]  StringType      ::=  'CDATA'
+  %%  *[56]  TokenizedType   ::=  'ID'                          *[VC: ID]
+  %%                                                            *[VC: One ID per Element Type]
+  %%                                                            *[VC: ID Attribute Default]
+  %%                            | 'IDREF'                       *[VC: IDREF]
+  %%                            | 'IDREFS'                      *[VC: IDREF]
+  %%                            | 'ENTITY'                      *[VC: Entity Name]
+  %%                            | 'ENTITIES'                    *[VC: Entity Name]
+  %%                            | 'NMTOKEN'                     *[VC: Name Token]
+  %%                            | 'NMTOKENS'                    *[VC: Name Token]
   %%
-  %% [56]  TokenizedType   ::=    'ID'                           [VC: ID]
+  %%  [Definition: Enumerated attributes can take one of a list of values provided in the 
+  %%   declaration]. 
+  %%
+  %%  *[57]  EnumeratedType  ::=  NotationType | Enumeration 
+  %%
+  %%    ==>
+  %%
+  %%  [K24]  AttType         ::=  'CDATA'
+  %%                            | 'ID'                           [VC: ID]
   %%                                                             [VC: One ID per Element Type]
   %%                                                             [VC: ID Attribute Default]
   %%                            | 'IDREF'                        [VC: IDREF]
@@ -23,32 +43,38 @@ XML qualifying spec
   %%                            | 'ENTITIES'                     [VC: Entity Name]
   %%                            | 'NMTOKEN'                      [VC: Name Token]
   %%                            | 'NMTOKENS'                     [VC: Name Token]
+  %%                            | NotationType 
+  %%                            | Enumeration 
   %%
-  %% [57]  EnumeratedType  ::=  NotationType | Enumeration 
-  %%
-  %% [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
+  %%   [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
   %%
   %%                                                             [VC: Notation Attributes] 
   %%                                                             [VC: One Notation Per Element Type] 
   %%                                                             [VC: No Notation on Empty Element]
   %%
-  %% [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
+  %%   [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
   %%
   %%                                                             [VC: Enumeration]
   %%
-  %% [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue) 
+  %%   [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue) 
   %%
   %%                                                             [VC:  Required Attribute] 
   %%                                                             [VC:  Attribute Default Legal]
-  %%                                                             [WFC: No < in Attribute Values]
   %%                                                             [VC:  Fixed Attribute Default]
+  %% 
+  %%  In an attribute declaration, #REQUIRED means that the attribute must always be provided, 
+  %%  #IMPLIED that no default value is provided. 
+  %%
+  %%  [Definition: If the declaration is neither #REQUIRED nor #IMPLIED, then the AttValue value 
+  %%   contains the declared default value; the #FIXED keyword states that the attribute must 
+  %%   always have the default value. If a default value is declared, when an XML processor 
+  %%   encounters an omitted attribute, it is to behave as though the attribute were present with 
+  %%   the declared default value.]
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
-  %%
+  %%   [52]  AttlistDecl     ::=  '<!ATTLIST' S Name AttDef* S? '>'
   %% -------------------------------------------------------------------------------------------------
 
   def parse_AttlistDecl (start : UChars) : Required AttlistDecl =
@@ -71,7 +97,8 @@ XML qualifying spec
 	      {
 	       (w2, tail) <- parse_WhiteSpace tail;
 	       case tail of
-		 | 62  (* '>' *) :: tail ->
+		 | 62 :: tail ->
+		   %% '>'
 		   return ({w1   = w1,
 			    name = name,
 			    defs = rev rev_att_defs,
@@ -109,17 +136,18 @@ XML qualifying spec
       }
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [53]  AttDef          ::=  S Name S AttType S DefaultDecl
-  %%
+  %%   [53]  AttDef          ::=  S Name S AttType S DefaultDecl
   %% -------------------------------------------------------------------------------------------------
 
   def parse_AttDef (start : UChars) : Possible AttDef =
     {
      (w1,       tail) <- parse_WhiteSpace start;
      case tail of
-       | 62 (* '>' *) :: tail ->
+
+       | 62 :: tail ->
+         %% '>' 
          return (None, start)
+
        | _ ->
          {
 	  (name,              tail) <- parse_Name        tail;
@@ -140,12 +168,8 @@ XML qualifying spec
 	     }}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [54]  AttType         ::=  StringType | TokenizedType | EnumeratedType 
-  %%
-  %% [55]  StringType      ::=  'CDATA'
-  %%
-  %% [56]  TokenizedType   ::=    'ID'                           [VC: ID]
+  %%  [K24]  AttType         ::=  'CDATA'
+  %%                            | 'ID'                           [VC: ID]
   %%                                                             [VC: One ID per Element Type]
   %%                                                             [VC: ID Attribute Default]
   %%                            | 'IDREF'                        [VC: IDREF]
@@ -154,13 +178,11 @@ XML qualifying spec
   %%                            | 'ENTITIES'                     [VC: Entity Name]
   %%                            | 'NMTOKEN'                      [VC: Name Token]
   %%                            | 'NMTOKENS'                     [VC: Name Token]
-  %%
+  %%                            | NotationType 
+  %%                            | Enumeration 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_AttType (start : UChars) : Required AttType =
-    %%
-    %% We collapse rules 54,55,56 into one procedure:
-    %%
     case start of
 
       %% StringType
@@ -177,54 +199,56 @@ XML qualifying spec
       | 78 :: 77 :: 84 :: 79 :: 75 :: 69 :: 78 :: 83  (* 'NMTOKENS' *) :: tail -> return (NmTokens, tail)
       | 78 :: 77 :: 84 :: 79 :: 75 :: 69 :: 78        (* 'NMTOKEN ' *) :: tail -> return (NmToken,  tail)
 
+      %% can anyone say "S-Expression" ?  Sheesh, this is a botch of a grammar...
+
       %% EnumeratedType
-
-      | _ ->
-        parse_EnumeratedType start
-	
-  %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [57]  EnumeratedType  ::=  NotationType | Enumeration 
-  %%
-  %% -------------------------------------------------------------------------------------------------
-
-  def parse_EnumeratedType (start : UChars) : Required AttType =
-    %% can anyone say "S-Expression" ?  Sheesh, this is a botch of a grammar...
-    case start of
-      | 78 :: 79 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 (* 'NOTATION' *) :: tail ->
-        %% [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
+      | 78 :: 79 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail ->
+        %% 'NOTATION'
 	parse_NotationType tail
-      | 40 (* open-paren *) :: tail ->
+
+      | 40 :: tail ->
+        %% open-paren
         parse_Enumeration tail
+
       | char :: _ -> 
 	hard_error {kind        = Syntax,
-		    requirement = "EnumeratedType ::= NotationType | Enumeration",
+		    requirement = "Attribute Type",
 		    start       = start,
 		    tail        = start,
 		    peek        = 10,
-		    we_expected = [("'NOTATION'", "to start notationtype"),
+		    we_expected = [("'CDATA'",    "to declare CDATA    attribute"), 
+				   ("'IDREFS'",   "to declare IDREFS   attribute"),
+				   ("'IDREF'",    "to declare IDREF    attribute"),
+				   ("'ID'",       "to declare ID       attribute"),
+				   ("'ENTITIES'", "to declare ENTITIES attribute"),
+				   ("'ENTITY'",   "to declare ENTITY   attribute"),
+				   ("'NMTOKENS'", "to declare NMTOKENS attribute"),
+				   ("'NMTOKEN '", "to declare NMTOKEN  attribute"),
+				   ("'NOTATION'", "to start notationtype"),
 				   ("'('",        "to start enumeration")],
 		    but         = (describe_char char) ^ " was seen instead",
 		    so_we       = "fail immediately"}
       | _ -> 
 	hard_error {kind        = EOF,
-		    requirement = "EnumeratedType ::= NotationType | Enumeration",
+		    requirement = "Attribute Type",
 		    start       = start,
 		    tail        = [],
 		    peek        = 0,
-		    we_expected = [("'NOTATION'", "to start notationtype"),
+		    we_expected = [("'CDATA'",    "to declare CDATA    attribute"), 
+				   ("'IDREFS'",   "to declare IDREFS   attribute"),
+				   ("'IDREF'",    "to declare IDREF    attribute"),
+				   ("'ID'",       "to declare ID       attribute"),
+				   ("'ENTITIES'", "to declare ENTITIES attribute"),
+				   ("'ENTITY'",   "to declare ENTITY   attribute"),
+				   ("'NMTOKENS'", "to declare NMTOKENS attribute"),
+				   ("'NMTOKEN '", "to declare NMTOKEN  attribute"),
+				   ("'NOTATION'", "to start notationtype"),
 				   ("'('",        "to start enumeration")],
 		    but         = "EOF occurred first",
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
-  %%
-  %%                                                             [VC: Notation Attributes] 
-  %%                                                             [VC: One Notation Per Element Type] 
-  %%                                                             [VC: No Notation on Empty Element]
-  %%
+  %%   [58]  NotationType    ::=  'NOTATION' S '(' S? Name (S? '|' S? Name)* S? ')' 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_NotationType (start : UChars) : Required AttType =
@@ -236,7 +260,8 @@ XML qualifying spec
     {
      (w1, tail) <- parse_WhiteSpace start;
      case tail of
-       | 40 (* open-paren *) :: tail ->
+       | 40 :: tail ->
+         %% open-paren       
          %%  S? Name (S? '|' S? Name)* S? ')' 
          {
 	  (w2,    tail) <- parse_WhiteSpace tail;
@@ -248,19 +273,24 @@ XML qualifying spec
 	      {
 	       (w3, tail) <- parse_WhiteSpace tail;
 	       case tail of
-		 | 124 (* '|' *) :: tail ->
+
+		 | 124 :: tail ->
+                   %% '|'
 		   {
 		    (w4,   tail) <- parse_WhiteSpace tail;
 		    (name, tail) <- parse_Name       tail;
 		    probe (tail, cons ((w3, w4, name), rev_names))
 		   }
-		 | 41 (* close-paren *) :: tail ->
+
+		 | 41 :: tail ->
+                   %% close-paren
 		   return (Notation {w1     = w1,
 				     w2     = w2,
 				     first  = first,
 				     others = rev rev_names,
 				     w3     = w3},
 			   tail)
+
 		 | char :: _ ->
 		   hard_error {kind        = Syntax,
 			       requirement = "NOTATION decl uses '|' to separate options.",
@@ -271,6 +301,7 @@ XML qualifying spec
 					      ("')'", "to close decl")],
 			       but         = (describe_char char) ^ " was seen instead",
 			       so_we       = "fail immediately"}
+
 		 | _ ->
 		   hard_error {kind        = EOF,
 			       requirement = "NOTATION decl uses '|' to separate options.",
@@ -306,11 +337,7 @@ XML qualifying spec
 	  }
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
-  %%
-  %%                                                             [VC: Enumeration]
-  %%
+  %%   [59]  Enumeration     ::=  '(' S? Nmtoken (S? '|' S? Nmtoken)* S? ')' 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Enumeration (start : UChars) : Required AttType =
@@ -328,18 +355,23 @@ XML qualifying spec
 	 {
 	  (w2, tail) <- parse_WhiteSpace tail;
 	  case tail of
-	    | 124 (* '|' *) :: tail ->
+
+	    | 124 :: tail ->
+	      %% '|' 
 	      {
 	       (w3,   tail) <- parse_WhiteSpace tail;
 	       (name, tail) <- parse_Name       tail;
 	       probe (tail, cons ((w2, w3, name), rev_names))
 	      }
-	    | 41 (* close-paren *) :: tail ->
+
+	    | 41 :: tail ->
+              %% close-paren
 	      return (Enumeration {w1     = w1,
 				   first  = first,
 				   others = rev rev_names,
 				   w2     = w2},
 		      tail)
+
 	    | char :: _ ->
 	      hard_error {kind        = Syntax,
 			  requirement = "Enumeration decl in DTD requires '|' to separate options.",
@@ -350,6 +382,7 @@ XML qualifying spec
 					 ("')'", "to terminate enumeration decl")],
 			  but         = (describe_char char) ^ " was seen instead",
 			  so_we       = "fail immediately"}
+
 	    | _ ->
 	      hard_error {kind        = Syntax,
 			  requirement = "Enumeration decl in DTD requires '|' to separate options.",
@@ -366,31 +399,29 @@ XML qualifying spec
       }
 	 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue) 
-  %%
-  %%                                                             [VC:  Required Attribute] 
-  %%                                                             [VC:  Attribute Default Legal]
-  %%                                                             [WFC: No < in Attribute Values]
-  %%                                                             [VC:  Fixed Attribute Default]
-  %%
+  %%   [60]  DefaultDecl     ::=  '#REQUIRED' | '#IMPLIED' | (('#FIXED' S)? AttValue) 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_DefaultDecl (start : UChars) : Possible DefaultDecl =
     case start of
-      | 35 :: 82 :: 69 :: 81 :: 85 :: 73 :: 82 :: 69 :: 68 (* '#REQUIRED' *) :: tail ->
+
+      | 35 :: 82 :: 69 :: 81 :: 85 :: 73 :: 82 :: 69 :: 68 :: tail ->
+        %% '#REQUIRED'
         return (Some Required, tail)
 
-      | 35 :: 73 :: 77 :: 80 :: 76 :: 73 :: 69 :: 68       (* '#IMPLIED'  *) :: tail ->
+      | 35 :: 73 :: 77 :: 80 :: 76 :: 73 :: 69 :: 68 :: tail ->
+        %% '#IMPLIED'  
         return (Some Implied, tail)
 
-      | 35 :: 70 :: 73 :: 88 :: 69 :: 68                   (* '#FIXED'    *) :: tail ->
+      | 35 :: 70 :: 73 :: 88 :: 69 :: 68 :: tail ->
+	%% '#FIXED' 
 	{
 	 (w1,    tail) <- parse_WhiteSpace tail;
 	 (value, tail) <- parse_AttValue tail;
 	 return (Some (Fixed (Some w1, value)),
 		 tail)
 	}
+
       | _ ->
 	{
 	 (value, tail) <- parse_AttValue start;

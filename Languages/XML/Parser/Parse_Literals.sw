@@ -7,30 +7,30 @@ XML qualifying spec
   %%%          Literals                                                                            %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%   [9]  EntityValue     ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
+  %%    [9]  EntityValue     ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
   %%
-  %%  [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
+  %%   [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
   %%
-  %% *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
-  %%   ==>
-  %% [K32]  SystemuLiteral  ::=  QuotedText
+  %%                                                             [WFC: No < in Attribute Values] 
+  %%
+  %%  *[11]  SystemLiteral   ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%    ==>
+  %%  [K36]  SystemuLiteral  ::=  QuotedText
   %%                
-  %% *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
-  %%   ==>
-  %% [K33]  PubidLiteral    ::=  QuotedText
+  %%  *[12]  PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
+  %%    ==>
+  %%  [K37]  PubidLiteral    ::=  QuotedText
   %%                
-  %%                                                             [KC: Proper Pubid Literal]   
+  %%                                                             [KWFC: Pubid Literal]   
   %%
-  %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
+  %%   [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
   %%
-  %% [K34]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
+  %%  [K38]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%   [9]  EntityValue     ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
-  %%
+  %%    [9]  EntityValue     ::=  '"' ([^%&"] | PEReference | Reference)* '"'  |  "'" ([^%&'] | PEReference | Reference)* "'"
   %% -------------------------------------------------------------------------------------------------
 
   def parse_EntityValue (start : UChars) : Required EntityValue =
@@ -38,7 +38,8 @@ XML qualifying spec
        def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
 
-	   | 38  (* '&' *)   :: tail -> 
+	   | 38 :: tail -> 
+	     %% '&'
 	     {
 	      %% parse_Reference assumes we're just past the ampersand.
 	      (ref, tail) <- parse_Reference tail;
@@ -48,7 +49,8 @@ XML qualifying spec
 			   rev_items), 
 		     qchar)
 	     }
-	   | 37  (* '%' *)   :: tail -> 
+	   | 37 :: tail -> 
+	     %% '%'
              {
 	      (ref, tail) <- parse_PEReference tail;
 	      probe (tail,
@@ -71,6 +73,7 @@ XML qualifying spec
 		      cons (char, rev_char_data), 
 		      rev_items,
 		      qchar)
+
 	   | _ ->
 	     hard_error {kind        = EOF,
 			 requirement = "A quoted expression was being parsed as the value for an Entity declaration.",
@@ -83,8 +86,14 @@ XML qualifying spec
 			 so_we       = "fail immediately"}
     in
       case start of
-	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
-	| 39 (* apostrophe   *) :: tail -> probe (tail, [], [], 39)
+	| 34 :: tail -> 
+	  %% double-quote
+	  probe (tail, [], [], 34)
+
+	| 39 :: tail -> 
+	  %% apostrophe
+	  probe (tail, [], [], 39)
+
         | char :: _ ->
 	  hard_error {kind        = Syntax,
 		      requirement = "A quoted expression is needed for the value of an Entity declaration.",
@@ -94,6 +103,7 @@ XML qualifying spec
 		      we_expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")],   % silly comment to appease emacs: ")
 		      but         = (describe_char char) ^ " was seen instead",
 		      so_we       = "fail immediately"}
+
         | _ ->
 	  hard_error {kind        = Syntax,
 		      requirement = "A quoted expression is needed for the value of an Entity declaration.",
@@ -105,9 +115,16 @@ XML qualifying spec
 		      so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
+  %%   [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
   %%
-  %%  [10]  AttValue        ::=  '"' ([^<&"] | Reference)* '"' |  "'" ([^<&'] | Reference)* "'"
+  %%                                                             [WFC: No < in Attribute Values] 
+  %% -------------------------------------------------------------------------------------------------
+  %%  [WFC: No < in Attribute Values]               [10] [60] [K9] *[41]
   %%
+  %%    The replacement text of any entity referred to directly or indirectly in an attribute value
+  %%     must not contain a <.
+  %%
+  %%  TODO
   %% -------------------------------------------------------------------------------------------------
 
   def parse_AttValue (start : UChars) : Required AttValue =
@@ -115,7 +132,8 @@ XML qualifying spec
        def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
 
-	   | 60  (* '<' *)   :: _ -> 
+	   | 60 :: _ -> 
+	     %% '<'
 	     {
 	      error {kind        = Syntax,
 		     requirement = "'<', '&', and '\"' are not allowed in an attribute value.",            % silly comment to appease emacs: ")
@@ -132,7 +150,8 @@ XML qualifying spec
 		     qchar)
 	     }
 
-	   | 38  (* '&' *)   :: tail -> 
+	   | 38 :: tail -> 
+             %% '&'
 	     {
 	      %% parse_Reference assumes we're just past the ampersand.
 	      (ref, tail) <- parse_Reference tail;
@@ -142,6 +161,7 @@ XML qualifying spec
 			   rev_items), 
 		     qchar)
 	     }
+
 	   | char :: tail -> 
 	     if char = qchar then
 	       return ({qchar = qchar,
@@ -156,10 +176,11 @@ XML qualifying spec
 		      cons (char, rev_char_data), 
 		      rev_items,
 		      qchar)
+
 	   | _ ->
 	     hard_error {kind        = EOF,
 			 requirement = "An attribute value was expected.", 
-			 start       = start,
+ 			 start       = start,
 			 tail        = tail,
 			 peek        = 10,
 			 we_expected = [("[" ^ (string [qchar]) ^ "] ", 
@@ -168,8 +189,15 @@ XML qualifying spec
 			 so_we       = "fail immediately"}
     in
       case start of
-	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
-	| 39 (* apostrophe   *) :: tail -> probe (tail, [], [], 39)
+
+	| 34 :: tail -> 
+	  %% double-quote
+	  probe (tail, [], [], 34)
+
+	| 39 :: tail -> 
+	  %% apostrophe
+          probe (tail, [], [], 39)
+
         | _ ->
 	  hard_error {kind        = Syntax,
 		 requirement = "An attribute value was expected.", 
@@ -181,35 +209,29 @@ XML qualifying spec
 		 so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [K32]  SystemuLiteral  ::=  QuotedText
-  %%
+  %%  [K36]  SystemuLiteral  ::=  QuotedText
   %% -------------------------------------------------------------------------------------------------
 
   def parse_SystemLiteral (start : UChars) : Required SystemLiteral =
     parse_QuotedText start
 
   %% -------------------------------------------------------------------------------------------------
-  %%                
-  %% [K33]  PubidLiteral    ::=  QuotedText
-  %%                
-  %%                                                             [KC: Proper Pubid Literal]   
-  %%
-  %%  [13]  PubidChar       ::=  #x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%]
-  %%
+  %%  [K37]  PubidLiteral    ::=  QuotedText
+  %%                                                             [KWFC: Pubid Literal]   
   %% -------------------------------------------------------------------------------------------------
+  %%  [KWFC: Pubid Literal]                         [K37] *[12] -- well_formed_pubid_literal?
   %%
-  %%  [KC: Proper Pubid Literal]                   [K33] -- pubid_literal?
-  %%
-  %%    all chars are PubidChar's
-  %%
+  %%    All chars in a pubid literal are PubidChar's :
+  %%    PubidLiteral    ::=  '"' PubidChar* '"' | "'" (PubidChar - "'")* "'" 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_PubidLiteral (start : UChars) : Required PubidLiteral =
     let 
        def find_bad_char tail =
 	 case tail of
+
 	   | [] -> None
+
 	   | char :: tail -> 
 	     if pubid_char? char then
 	       find_bad_char tail
@@ -219,8 +241,10 @@ XML qualifying spec
     {
      (qtext, tail) <- parse_QuotedText start;
      case find_bad_char qtext.text of
+
        | None ->
          return (qtext, tail)
+
        | Some bad_char ->
 	 {
 	  (error {kind        = KC,
@@ -228,23 +252,21 @@ XML qualifying spec
 		  start       = start,
 		  tail        = tail,
 		  peek        = 10,
-		  we_expected = [("([#x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%])*", "pubid chars")],
+		  we_expected = [("([#x20 | #xD | #xA | [a-zA-Z0-9] | [-'()+,./:=?;!*#@$_%])*", "pubid chars")], 
 		  but         = (describe_char bad_char) ^ " was seen",
 		  so_we       = "pretend that is a pubid character"});
 	  return (qtext, tail)
-	  }}
-     
+	 }}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %% [K34]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
-  %%
+  %%  [K38]  QuotedText      ::=  ('"' [^"]* '"') | ("'" [^']* "'") 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_QuotedText (start : UChars) : Required QuotedText =
     let 
        def probe (tail, rev_text, qchar) =
 	 case tail of
+
 	   | char :: tail -> 
 	     if char = qchar then
 	       return ({qchar = qchar,
@@ -254,6 +276,7 @@ XML qualifying spec
 	       probe (tail,
 		      cons (char, rev_text),
 		      qchar)
+
 	   | _ ->
 	     hard_error {kind        = EOF,
 			 requirement = "Quoted text was required.",
@@ -266,8 +289,15 @@ XML qualifying spec
 			 so_we       = "fail immediately"}
     in
       case start of
-	| 34 (* double-quote *) :: tail -> probe (tail, [], 34)
-	| 39 (* apostrophe   *) :: tail -> probe (tail, [], 39)
+
+	| 34 :: tail -> 
+          %% double-quote				 
+          probe (tail, [], 34) 
+				   
+	| 39 :: tail -> 
+          %% apostrophe
+	  probe (tail, [], 39)
+
         | char :: _ ->
 	  hard_error {kind        = Syntax,
 		      requirement = "Quoted text was required.",

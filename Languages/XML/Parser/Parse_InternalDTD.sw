@@ -6,80 +6,130 @@ XML qualifying spec
   import Parse_PI
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          DTD (Doc Type Decl)                                                                 %%%
+  %%%          InternalDTD (Internal subset of Doc Type Decl)                                      %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %% The doctypedecl (DTD) has the following form, 
-  %%  <!DOCTYPE     ..>
+  %%  [Definition: The XML document type declaration contains or points to markup declarations that 
+  %%   provide a grammar for a class of documents. This grammar is known as a document type 
+  %%   definition, or DTD. The document type declaration can point to an external subset (a special 
+  %%   kind of external entity) containing markup declarations, or can contain the markup declarations 
+  %%   directly in an internal subset, or can do both. The DTD for a document consists of both subsets 
+  %%   taken together.]
   %%
-  %% It may contain the following atomic markup decls:
+  %%  [Definition: A markup declaration is an element type declaration, an attribute-list declaration, 
+  %%   an entity declaration, or a notation declaration.] 
   %%
-  %%  <!ELEMENT    ...>
-  %%  <!ATTLIST    ...>
-  %%  <!ENTITY     ...>
-  %%  <!NOTATATION ...>
+  %%  These declarations may be contained in whole or in part within parameter entities, as 
+  %%  described in the well-formedness and validity constraints below. 
+  %%
+  %%  The internal subset has the following overall form:
+  %%
+  %%  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls? '>' 
+  %%
+  %%  It may contain the following atomic markup decls:
+  %%
+  %%   <!ELEMENT    ... >
+  %%   <!ATTLIST    ... >
+  %%   <!ENTITY     ... >
+  %%   <!NOTATATION ... >
+  %%
+  %%  and/or the following decl separators:
+  %%
+  %%   <?   target value   ?>  -- PI           (i.e., program instruction)
+  %%   <!--     ...       -->  -- Comment
+  %%   % Name ;                -- PEReference  (parameter-entity reference)
+  %%   space, tab, cr, lf      -- Whitespace
+  %%
+  %%
+  %%  For clarity, we replace the ambiguous name "doctypedecl" with "InternalDTD" :
+  %%
   %%
   %%  *[28]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? ('[' (markupdecl | DeclSep)* ']' S?)? '>' 
   %%
-  %%                                                             [VC:  Root Element Type] 
-  %%                                                             [WFC: External Subset]
+  %%                                                            *[WFC: External Subset]
+  %%                                                            *[VC:  Root Element Type] 
   %%
   %% *[28a]  DeclSep      ::=  PEReference | S    
-  %%                                                             [WFC: PE Between Declarations]
+  %%                                                            *[WFC: PE Between Declarations]
+  %%
   %%
   %%  *[29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
   %%
-  %%                                                             [VC:  Proper Declaration/PE Nesting] 
-  %%                                                             [WFC: PEs in Internal Subset]
+  %%                                                            *[WFC: PEs in Internal Subset]
+  %%                                                            *[VC:  Proper Declaration/PE Nesting] 
+  %%
   %%    ==>
-  %%  [K16]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls? '>' 
   %%
+  %%  [K11]  InternalDTD  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
+  %%
+  %%                                                             [KWFC: External Subset]
+  %%                                                             [WFC:  PE Between Declarations]
+  %%                                                             [WFC:  PEs in Internal Subset]
   %%                                                             [VC:  Root Element Type] 
-  %%                                                             [WFC: External Subset]
-  %%                                                             [WFC: PE Between Declarations]
   %%                                                             [VC:  Proper Declaration/PE Nesting] 
   %%
-  %%  [K17]  DTD_Decls    ::=  '[' (DTD_Decl)* ']' S?
-  %%  [K18]  DTD_Decl     ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S
+  %%  [K12]  InternalDecls    ::=  '[' InternalDecl* ']' S?
+  %%  [K13]  InternalDecl     ::=  Decl
+  %%                                                             [KWFC: Internal Decl]
   %%
-  %%                                                             [WFC: PEs in Internal Subset]
+  %%  [K14]  Decl             ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
   %%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %% 
-  %%  [K16]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls? '>' 
+  %%  (renaming of doctypedecl)
+  %%  [K11]  InternalDTD  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? InternalDecls? '>' 
   %%
-  %%                                                             [VC:  Root Element Type] 
-  %%                                                             [WFC: External Subset]
-  %%                                                             [WFC: PE Between Declarations]
-  %%                                                             [VC:  Proper Declaration/PE Nesting] 
-  %% 
+  %%                                                             [KWFC: External Subset]
+  %%                                                             [WFC:  PE Between Declarations]
+  %%                                                             [WFC:  PEs in Internal Subset]
+  %% -------------------------------------------------------------------------------------------------
+  %%  [KWFC: External Subset]                       [K11] *[28]  -- see parser/printer
+  %%
+  %%     The external subset, if any, must match the production for ExternalDTD.
+  %%
+  %%  The parser and printer enforce this restriction.
+  %%
+  %%  [WFC: PE Between Declarations]                [K11] *[28a] -- see parser/printer
+  %%
+  %%    The replacement text of a parameter entity reference in a DeclSep must match the production
+  %%    extSubsetDecl.
+  %%
+  %%  The parser and printer enforce this restriction.
+  %%
+  %%  [WFC: PEs in Internal Subset]                 [K11] *[28] *[28a] *[29] -- no_pe_references_within_internal_markup?
+  %%
+  %%    In the internal DTD subset, parameter-entity references can occur only where markup
+  %%    declarations can occur, not within markup declarations. (This does not apply to references
+  %%    that occur in external parameter entities or to the external subset.)
   %% -------------------------------------------------------------------------------------------------
 
   def parse_InternalDTD (start : UChars) : Possible InternalDTD =
-   %%
-   %%
-   %%  [K15]  doctypedecl  ::=  '<!DOCTYPE' S Name (S ExternalID)? S? DTD_Decls '>' 
-   %%
    case start of
-     | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 (* '<!DOCTYPE' *) :: tail ->
+
+     | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 :: tail ->
+       %% '<!DOCTYPE'
        {
 	(w1,          tail) <- parse_WhiteSpace start;
 	(name,        tail) <- parse_Name       tail;
 	(wx,          tail) <- parse_WhiteSpace tail;
 	case tail of
-	  | 91 (* open-square-bracket *) :: _ ->
+
+	  | 91 :: _ ->
+	    %% '['
 	    {
 	     (decls,     tail) <- parse_InternalDecls tail;
 	     case tail of
-	       | 62 (* '>' *) :: tail ->
+
+	       | 62 :: tail ->
+                 %% '>'
 	         return (Some {w1          = w1,
 			       name        = name,
 			       external_id = None,
 			       w2          = wx,
 			       decls       = decls},
 			 tail)
+
 	       | char :: _ ->
 		 {
 		  error {kind        = Syntax,
@@ -97,6 +147,7 @@ XML qualifying spec
 				decls       = decls},
 			  tail)
 		 }
+
 	       | _ ->
 		 hard_error {kind         = Syntax,
 			     requirement  = "DTD must terminate with '>'.",
@@ -114,13 +165,16 @@ XML qualifying spec
 	     (w2,          tail) <- parse_WhiteSpace tail;
 	     (decls,       tail) <- parse_InternalDecls  tail;
 	     case tail of
-	       | 62 (* '>' *) :: tail ->
+
+	       | 62 :: tail ->
+                 %% '>'
 	         return (Some {w1          = w1,
 			       name        = name,
 			       external_id = Some (wx, external_id),
 			       w2          = w2,
 			       decls       = decls},
 			 tail)
+
 	       | char :: _ ->
 		 {
 		  error {kind        = Syntax,
@@ -138,6 +192,7 @@ XML qualifying spec
 				decls       = decls},
 			  tail)
 		 }
+
 	       | _ ->
 		 hard_error {kind        = Syntax,
 			     requirement = "DTD must terminate with '>'.",
@@ -151,35 +206,28 @@ XML qualifying spec
      | _ -> return (None, start)
        
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K17]  DTD_Decls    ::=  '[' (DTD_Decl)* ']' S?
-  %%  [K18]  DTD_Decl     ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S
-  %%
-  %%                                                             [WFC: PEs in Internal Subset]
-  %%
-  %%  [WFC: PEs in Internal Subset]                 *[29] [K18] 
-  %%
-  %%    In the internal DTD subset, parameter-entity references can occur only where markup
-  %%    declarations can occur, not within markup declarations. (This does not apply to references
-  %%    that occur in external parameter entities or to the external subset.)
-  %%
+  %%  [K12]  InternalDecls    ::=  '[' InternalDecl* ']' S?
+  %%  [K13]  InternalDecl     ::=  Decl
+  %%                                                             [KWFC: Internal Decl]
+  %%  [K14]  Decl             ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment | PEReference | S | includeSect | ignoreSect 
   %% -------------------------------------------------------------------------------------------------
 
   def parse_InternalDecls (start : UChars) : Possible InternalDecls =
     %%
-    %% We begin here with '[' pending in [K17], looking for:
+    %% We begin here with '[' pending in [K12], looking for:
     %%
     %%   '[' (DTD_Decl)* ']' S?
     %%
-    %% We handle both [K17] and [K18] in one procedure:
-    %%
     case start of
-      | 91 (* open-square-bracket *) :: tail ->                    
+
+      | 91 :: tail ->                    
+        %% '['
         (let 
             def probe (tail, rev_markups) =
 	      case tail of
 
-		| 93 (* close-square-bracket *) :: tail -> 
+		| 93 :: tail -> 
+		  %% ']'
 		  {
 		   (w1, tail) <- parse_WhiteSpace tail;
 		   return (Some {decls = rev rev_markups, 
@@ -189,37 +237,43 @@ XML qualifying spec
 
                 %% [29]  markupdecl   ::=  elementdecl | AttlistDecl | EntityDecl | NotationDecl | PI | Comment 
 
-		| 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 (* '<!ELEMENT'    *) :: tail -> 
+		| 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 :: tail -> 
+                  %% '<!ELEMENT'
 		  {
 		   (decl, tail) <- parse_ElementDecl tail;
 		   probe (tail, cons (Element decl, rev_markups))
 		  }
 		  
-		| 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 (* '<!ATTLIST'    *) :: tail -> 
+		| 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 :: tail -> 
+                  %% '<!ATTLIST' 
 		  {
 		   (decl, tail) <- parse_AttlistDecl tail;
 		   probe (tail, cons (Attributes decl, rev_markups))
 		  }
 		  
-		| 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89       (* '<!ENTITY'     *) :: tail -> 
+		| 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89 :: tail -> 
+                  %% '<!ENTITY'
 		  {
 		   (decl, tail) <- parse_EntityDecl (tail, false);
 		   probe (tail, cons (Entity decl, rev_markups))
 		  }
 		  
-		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 (* '<!NOTATATION' *) :: tail -> 
+		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 :: tail -> 
+                  %% '<!NOTATATION'
 		  {
 		   (decl, tail) <- parse_NotationDecl tail;
 		   probe (tail, cons (Notation decl, rev_markups))
 		  }
 		  
-		| 60 :: 63 (* '<?' *) :: tail ->
+		| 60 :: 63 :: tail ->
+                  %% '<?'
 		  {
 		   (decl, tail) <- parse_PI tail;
 		   probe (tail, cons (PI decl, rev_markups))
 		  }
 		  
-		| 60 :: 45 :: 45 (* '<--' *) :: tail ->
+		| 60 :: 45 :: 45 :: tail ->
+                  %% '<--'
 		  {
 		   (comment, tail) <- parse_Comment tail;
 		   probe (tail, cons (Comment comment, rev_markups))
@@ -227,7 +281,8 @@ XML qualifying spec
 		  
                 %% [28a] DeclSep      ::=  PEReference | S    
 
-		| 37 (* '%' *) :: tail ->
+		| 37 :: tail ->
+                  %% '%' 
 		  {
 		   (ref, tail) <- parse_PEReference tail;
 		   probe (tail, cons (PEReference ref, rev_markups))
@@ -255,6 +310,7 @@ XML qualifying spec
 					       ("']'",                    "end of markups in DTD")],
 				but         = (describe_char char) ^ " was seen instead",
 				so_we       = "fail immediately"}
+
 		| _ ->
 		    hard_error {kind        = EOF,
 				requirement = "Each markup or declsep in the DTD must be one of those indicated below.",
@@ -271,6 +327,7 @@ XML qualifying spec
 					       ("']'",                    "end of markups in DTD")],
 				but         = "EOF occurred first",
 				so_we       = "fail immediately"}
+
 	 in
 	   probe (tail, []))
 	

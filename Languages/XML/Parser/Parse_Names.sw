@@ -7,6 +7,18 @@ XML qualifying spec
   %%%          Names                                                                               %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
+  %%  [Definition: A Name is a token beginning with a letter or one of a few punctuation characters, 
+  %%   and continuing with letters, digits, hyphens, underscores, colons, or full stops, together 
+  %%   known as name characters.] Names beginning with the string "xml", or any string which would 
+  %%   match (('X'|'x') ('M'|'m') ('L'|'l')), are reserved for standardization in this or future 
+  %%   versions of this specification.
+  %%
+  %%  Note: The Namespaces in XML Recommendation [XML Names] assigns a meaning to names containing 
+  %%        colon characters. Therefore, authors should not use the colon in XML names except for 
+  %%        namespace purposes, but XML processors must accept the colon as a name character.
+  %%
+  %%  An Nmtoken (name token) is any mixture of name characters.
+  %%
   %%  [4]  NameChar  ::=  Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender
   %%  [5]  Name      ::=  (Letter | '_' | ':') (NameChar)*
   %%  [6]  Names     ::=  Name (S Name)*
@@ -16,10 +28,8 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
   %%  [4]  NameChar  ::=  Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender
   %%  [5]  Name      ::=  (Letter | '_' | ':') (NameChar)*
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Name (start : UChars) : Required Name =
@@ -63,18 +73,14 @@ XML qualifying spec
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
   %%  [6]  Names     ::=  Name (S Name)*
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   op parse_Names : UChars -> Required Names
 
   %% -------------------------------------------------------------------------------------------------
-  %%
   %%  [4]  NameChar  ::=  Letter | Digit | '.' | '-' | '_' | ':' | CombiningChar | Extender
   %%  [7]  Nmtoken   ::=  (NameChar)+
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_NmToken (start : UChars) : Required Name =
@@ -126,9 +132,7 @@ XML qualifying spec
 		    so_we       = "fail immediately"}
 
   %% -------------------------------------------------------------------------------------------------
-  %%
   %%  [8]  Nmtokens  ::=  Nmtoken (S Nmtoken)*
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   op parse_NmTokens : UChars -> Required NmTokens

@@ -2,7 +2,7 @@
 XML qualifying spec
 
   import Parse_XMLDecl
-  import Parse_DTD
+  import Parse_InternalDTD
   import Parse_Element
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -42,8 +42,8 @@ XML qualifying spec
   %%
   %%  [K1]  document  ::=  XMLDecl? MiscList InternalDTD? MiscList element MiscList
   %%
-  %%                                                             [KVC:  Valid DTD]  
   %%                                                             [VC:   Root Element Type]  
+  %%                                                             [KVC:  Valid DTD]  
   %%                                                             [KVC:  Valid Root Element]  
   %%                                                             [KVC:  Element Valid]
   %%
@@ -62,9 +62,7 @@ XML qualifying spec
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% -------------------------------------------------------------------------------------------------
-  %%
   %%  [K1]  document  ::=  XMLDecl? MiscList InternalDTD? MiscList element MiscList
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_XML_Document (start  : UChars) : Required XML_Document =
@@ -95,12 +93,7 @@ XML qualifying spec
      }
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%
   %%  [K2]  MiscList  ::=  Misc*
-  %%
-  %%  [27]  Misc      ::=  Comment | PI | S
-  %%
   %% -------------------------------------------------------------------------------------------------
 
   def parse_MiscList (start : UChars) : Required MiscList =
@@ -121,9 +114,7 @@ XML qualifying spec
       probe (start, [])
 
   %% -------------------------------------------------------------------------------------------------
-  %%
-  %%  [K3]  DocItem   ::=  XMLDecl | Comment | PI | S | doctypedecl | element
-  %%
+  %%  [27]  Misc      ::=  Comment | PI | S
   %% -------------------------------------------------------------------------------------------------
 
   def parse_Misc (start : UChars) : Possible Misc =
@@ -131,7 +122,8 @@ XML qualifying spec
     case start of
 
       %% Comment
-      | 60 :: 33 :: 45 :: 45 (* '<!--' *) :: tail ->
+      | 60 :: 33 :: 45 :: 45 :: tail ->
+        %% '<!--'
         {
 	 (comment, tail) <- parse_Comment tail;
 	 return (Some (Comment comment),
@@ -139,11 +131,13 @@ XML qualifying spec
 	}
 
       %% XML/PI
-      | 60 :: 63 (* '<?' *) :: tail -> 
+      | 60 :: 63 :: tail -> 
+        %% '<?'
         (case tail of
 
 	  %% XML
-	  | 120 :: 109 :: 108 (* 'xml' *) :: _ ->
+	  | 120 :: 109 :: 108 :: _ ->
+            %% 'xml'
 	    {
 	     error {kind        = EOF,
 		    requirement = "After the initial xmldecl, there should be no other xml decls in an XML Document",
@@ -180,6 +174,7 @@ XML qualifying spec
 	   }
 	else
 	  return (None, start)
+
       | _ ->
 	  hard_error {kind        = EOF,
 		      requirement = "Each top-level item in an XML Document should be one of the options below.",
@@ -195,36 +190,4 @@ XML qualifying spec
 		      but         = "EOF occurred first",
 		      so_we       = "fail immediately"}
 
-(*
-      %% DTD
-      | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 (* '<!DOCTYPE' *) :: tail ->
-	{
-	 (dtd, tail) <- parse_DocTypeDecl tail;
-	 return (DTD dtd,
-		 tail)
-	}
-
-      %% Element
-      | 60 (* '<' *) :: scout ->
-	{
-	 (possible_element, tail) <- parse_Element (start, []);
-	 case possible_element of
-	   | Some element ->
-	     return (Element element,
-		     tail)
-	   | _ ->
-	     hard_error {kind        = Syntax,
-			 requirement = "There should be one top-level element in an XML Document.",
-			 start       = start, 
-			 tail        = scout,
-			 peek        = 10,
-			 we_expected = [("'<?xml'",     "initial xml decl"),
-					("'<?'",        "PI"),
-					("'<!--'",      "Comment"),
-					("'<!DOCTYPE'", "DTD"), 
-					("'<'",         "Element")],
-			 but         = "there are no top-level elements",
-			 so_we       = "fail immediately"}
-	    }
-*)
 endspec
