@@ -4,11 +4,6 @@ The Base spec is implicitly imported by every user-defined spec.
 
 \begin{spec}
 spec {
-  % Note:
-  % The following definition is in ast-pp.sl :
-  % def isBuiltIn s = (s = "String" or s = "Nat" or s = "Boolean" or s = "Char" or s = "Integer")
-  % That predicate is used to prevent some imports from printing 
-
   import Base/Boolean
   import Base/Functions 
   import Base/Integer 
