@@ -1,12 +1,20 @@
-A = spec
-sort a
+R = spec
+ type A
 end
 
-B = spec
-sort b
+S = spec
+ type B
 end
 
-C = spec
-sort c
+T = spec
+ type C
 end
+
+M = morphism R -> S {A +-> B}
+N = morphism R -> T {A +-> C}
+
+D = diagram {a : x -> y +-> M, b : x -> z +-> N}
+
+C = colimit D
+
 
