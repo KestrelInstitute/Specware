@@ -265,14 +265,6 @@ spec
    ppProofsToFile(proofDecls, file)
 *)
 
-
-  %% Dispatch functions to call proof gen for other terms not defines in specware
-  %% The signatures are in Languages\SpecCalculus\Semantics\Evaluate\Signature.sw
-  %% The default implementation is in file Languages\SpecCalculus\Semantics\Evaluate\NoOther.sw
-  %% op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
-  %% op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
-
-
   op SpecCalc.evaluateProofGen : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ValueInfo
   %% Need to add error detection code
   def SpecCalc.evaluateProofGen (valueInfo as (value,_,_), cterm, optFileNm, fromObligations?) =
@@ -289,8 +281,8 @@ spec
      case value of
        | Spec spc -> return (toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false))
        | Morph morph -> return (toProofFileMorph (morph, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false))
-       | _ -> %raise (Unsupported ((positionOf cterm),  "Can generate proofs only for Specs and Morphisms."));
-       SpecCalc.evaluateProofGenOther(valueInfo, cterm, optFileNm, fromObligations?);
+       | Other other -> SpecCalc.evaluateOtherProofGen(other, cterm, optFileNm, fromObligations?) (positionOf(cterm))
+       | _ -> raise (Unsupported ((positionOf cterm),  "Can generate proofs only for Specs and Morphisms."));
 %     let _ = System.fail ("evaluateProofGen ") in
      {print("Generated Proof file.");
       return valueInfo}}
@@ -309,8 +301,8 @@ spec
      case value of
        | Spec spc -> return (toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true))
        | Morph morph -> return (toProofFileMorph (morph, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true))
-       | _ -> %raise (Unsupported ((positionOf cterm), "Can generate proofs only for Specs and Morphisms."));
-       SpecCalc.evaluateProofGenLocalOther(valueInfo, cterm, optFileName, fromObligations?);
+       | Other other -> SpecCalc.evaluateOtherProofGenLocal(other, cterm, optFileName, fromObligations?) (positionOf(cterm))
+       | _ -> raise (Unsupported ((positionOf cterm), "Can generate proofs only for Specs and Morphisms."));
      {print("Generated Proof file.");
       return valueInfo}}
 
@@ -378,5 +370,11 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.22  2004/11/12 19:04:53  becker
+%% Added the signature and default implementations to
+%% evaluateProofGenOther  and evaluateProofGenLocalOther
+%% to dispatch the generation of proof obligations to functions
+%% outside Specware.
+%%
 %%
 %%

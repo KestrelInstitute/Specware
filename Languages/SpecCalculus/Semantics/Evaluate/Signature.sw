@@ -61,15 +61,8 @@ SpecCalc qualifying spec {
 
   op evaluateOtherQualify : SCTerm -> ValueInfo -> Qualifier -> Position -> SpecCalc.Env ValueInfo
 
-
-
-  %% Dispatch functions to call proof gen for other terms not defines in specware
-  %% Called from Languages\SpecCalculus\Semantics\Evaluate\Proofs.evaluateProofGen() to dispatch to 
-  %% the function in the application that generates the proof obligations for the application term 
-  %% representation. 
-  op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
-  op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
-
+  op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
+  op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
 
   %% Lower-level support routines:
 
@@ -87,5 +80,11 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.35  2004/11/12 19:04:53  becker
+%% Added the signature and default implementations to
+%% evaluateProofGenOther  and evaluateProofGenLocalOther
+%% to dispatch the generation of proof obligations to functions
+%% outside Specware.
+%%
 %%
 %%

@@ -39,24 +39,19 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
+  def SpecCalc.evaluateOtherProofGen (_, _, _, _) (* value, term, optFileName, fromObligations? *) pos = {
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+  }
+
+  def SpecCalc.evaluateOtherProofGenLocal (_, _, _, _) (* value, term, optFileName, fromObligations? *) pos = {
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+  }
+
   def SpecCalc.ppOtherValue _ (* value *) = ppString "<some OtherValue>"
 
   def SpecCalc.ppOtherTerm  _ (* term *)  = ppString "<some OtherTerm>"
-
-
-  %% op SpecCalc.evaluateProofGenOther      : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
-  def SpecCalc.evaluateProofGenOther (valueInfo, cterm, optFileNm, fromObligations?) = 
-    %{
-    % unitId <- getCurrentUID; 
-     raise (Unsupported ((positionOf cterm), "SpecCalc.evaluateProofGenOther: Can generate proofs only for Specs and Morphisms."))
-    %  }
-
-    %% op SpecCalc.evaluateProofGenLocalOther : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean -> SpecCalc.Env ()
-  def SpecCalc.evaluateProofGenLocalOther (valueInfo, cterm, optFileName, fromObligations?) =
-    %{unitId <- getCurrentUID; 
-     raise (Unsupported ((positionOf cterm), "SpecCalc.evaluateProofGenLocalOther: Can generate proofs only for Specs and Morphisms."))
-    %  }
-
 
 endspec
 \end{spec}
@@ -65,5 +60,11 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.10  2004/11/12 19:04:53  becker
+%% Added the signature and default implementations to
+%% evaluateProofGenOther  and evaluateProofGenLocalOther
+%% to dispatch the generation of proof obligations to functions
+%% outside Specware.
+%%
 %%
 %%
