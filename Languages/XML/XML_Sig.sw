@@ -25,7 +25,7 @@ XML qualifying spec
   %%%   typos and misspellings, or noticing that attrs were specified, but out of
   %%%   order, etc.
   %%%
-  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K40]
+  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K39]
   %%%   which are implemented here to factor some original W3 ruls into a parsing
   %%%   stage using KI rules followed by post-parsing well-formedness checks based
   %%%   perhaps on other W3 rules.
@@ -33,7 +33,8 @@ XML qualifying spec
   %%%   All such substitutions are clearly indicated, and the required well-formedness
   %%%   checks are indicated by KWFC and KVC annotations, analogous to WFC and VC annotations.
   %%%
-  %%%   Original W3 rules that have been replaced by KI rules are flagged with an asterisk.
+  %%%   Original W3 rules that have been replaced by KI rules are flagged with an asterisk,
+  %%%   whereever they are referenced.
   %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 

@@ -11,6 +11,8 @@ XML qualifying spec
 
   def parse_DTD (start : UChars) : Required DocTypeDecl =
     {
+     %% If there are multiple declarations for a given name, the first occurrence is the match.
+     %% Also, look in the internal subset first, then the external subset.
      (possible_internal_dtd, tail) <- parse_InternalDTD start;
      possible_external_dtd <- parse_ExternalDTD possible_internal_dtd;
      return ({internal = possible_internal_dtd,

@@ -8,32 +8,31 @@ XML qualifying spec
   %%%
   %%% Grammar conventions:
   %%%
-  %%%   The grammar used here is based on the grammar specified by the rules [1]-[85],
+  %%%   The grammar used here is based on the grammar specified by rules [1]-[85],
   %%%   (but note there are no rules 33-38 or 79), found at
   %%%
   %%%       http://www.w3.org/TR/REC-xml#sec-documents
   %%%
-  %%%   and quoted here, including associated conditions tagged as one of:
+  %%%   and quoted in XML_Sig.sw, including associated conditions tagged as one of:
   %%%
   %%%     WFC : Well-formedness constraint
   %%%     VC  : Validity constraint
-  %%%
-  %%%   An explanation of each WFC/VC is included at the end of this file.
   %%%
   %%%   A straightforward implementation of the W3 grammar is possible, but would
   %%%   be less than ideal.  In particular, it would be poor at identifying simple
   %%%   typos and misspellings, or noticing that attrs were specified, but out of
   %%%   order, etc.
   %%%
-  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K21]
+  %%%   Accordingly, we introduce Kestrel specific productions, labelled [K1] .. [K39]
   %%%   which are implemented here to factor some original W3 ruls into a parsing
   %%%   stage using KI rules followed by post-parsing well formedness checks based
   %%%   perhaps on other W3 rules.
   %%%
-  %%%   All such substitutions are clearly indicated, and the required well formedness
-  %%%   checks are indicated by KC annotations, analogous to WFC and VC annotations.
+  %%%   All such substitutions are clearly indicated, and the required well-formedness
+  %%%   checks are indicated by KWFC and KVC annotations, analogous to WFC and VC annotations.
   %%%
-  %%%   Original W3 rules that are replaced by KI rules are flagged with an asterisk.
+  %%%   Original W3 rules that are replaced by KI rules are flagged with an asterisk,
+  %%%   whereever they are referenced.
   %%%
   %%% ================================================================================
   %%%
