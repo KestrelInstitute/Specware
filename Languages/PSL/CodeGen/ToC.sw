@@ -14,13 +14,14 @@ SpecCalc qualifying spec {
     let cSpec = generateCTypes cSpec envSpec in
     let cSpec = generateCVars cSpec envSpec in
     let cSpec = generateCFunctions cSpec envSpec in {
-      cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
+      % cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
+      cSpec <- ProcMapEnv.fold generateCProcedure cSpec oscSpec.procedures;
       print (PrettyPrint.toString (format (80, ppCSpec cSpec)));
       return cSpec
     }
 
-  op generateCProcedure : Spec.Spec -> CSpec -> Id.Id -> Procedure -> Env CSpec
-  def generateCProcedure spc cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
+  op generateCProcedure : CSpec -> Id.Id -> Procedure -> Env CSpec
+  def generateCProcedure cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
     let initSpec = Mode.modeSpec (initial bSpec) in
     let varDecls =
       List.map (fn argRef -> let (names,fxty,(tyVars,srt),_) = Op.deref (specOf initSpec, argRef) in
