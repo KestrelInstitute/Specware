@@ -258,8 +258,9 @@ SpecCalc qualifying spec {
  %% ======================================================================
 
  def printColimit base reverse_context col =
-   %% this uses /Languages/MetaSlang/Specs/Categories/AsRecord
+   %% ppColimit uses /Languages/MetaSlang/Specs/Categories/AsRecord
    %% which uses /Library/PrettyPrinter/WadlerLindig
-   ppFormat  (ppColimit col)
+   %% ppFormat  (ppColimit col)
+   printSpec base reverse_context (Cat.apex (Cat.cocone col))
 
 }
