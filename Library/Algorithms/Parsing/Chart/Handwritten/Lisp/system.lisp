@@ -50,6 +50,7 @@
 (compile-and-load-local-file "parse-decls")
 
 #+DEBUG-PARSER (compile-and-load-local-file "parse-debug-1")
+#-DEBUG-PARSER (defun parser4::verify-all-parser-rule-references (parser) (declare (ignore parser)) nil)
 
 (compile-and-load-local-file "parse-add-rules")
 (compile-and-load-local-file "seal-parser")
