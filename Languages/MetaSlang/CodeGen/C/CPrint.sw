@@ -29,9 +29,9 @@ CPrint qualifying spec {
        | Float         -> ppBaseType ("float"         , p)
        | Double        -> ppBaseType ("double"        , p)
        | LongDouble    -> ppBaseType ("long double"   , p)
-       | Base   t      -> ppBaseType (t               , p)
-       | Struct s      -> prettysNone [string "struct ", string s, p]
-       | Union  u      -> prettysNone [string "union ",  string u, p]
+       | Base   t      -> ppBaseType ((cId t)               , p)
+       | Struct s      -> prettysNone [string "struct ", string (cId s), p]
+       | Union  u      -> prettysNone [string "union ",  string (cId u), p]
        | Ptr    t      -> ppType (t, prettysNone [string "*", p, string ""])
        | Array  t      -> ppType (t, prettysNone [string "(",  p, string "[])"])
        | ArrayWithSize(conststr,t)  -> ppType (t, prettysNone [(*string "(",*)  p, 
@@ -144,8 +144,8 @@ CPrint qualifying spec {
     let prettysLinear = if inOneLine then prettysNone else prettysLinear in
     case e
       of Const v            -> ppConst v
-       | Fn (s, ts, t)      -> string s
-       | Var (s, t)         -> string s
+       | Fn (s, ts, t)      -> string (cId s)
+       | Var (s, t)         -> string (cId s)
        | Apply (e, es)      -> prettysFill_ [ppExp_internal(e,inOneLine), prettysNone [string " ", ppExpsInOneline es]]
        | Unary (u, e)       -> prettysNone
                                  (if unaryPrefix? u
@@ -154,9 +154,9 @@ CPrint qualifying spec {
        | Binary (b, e1, e2) -> prettysFill_ [ppExpRec(e1,inOneLine), ppBinary b, ppExpRec(e2,inOneLine)]
        | Cast (t, e)        -> parens (prettysNone [parens (ppPlainType t), string " ", ppExp_internal(e,inOneLine)])
        | StructRef (Unary (Contents, e), s) -> 
-			       prettysNone [ppExpRec(e,inOneLine), strings [" -> ", s]]
-       | StructRef (e, s)   -> prettysNone [ppExp_internal(e,inOneLine), strings [".", s]]
-       | UnionRef (e, s)    -> prettysNone [ppExp_internal(e,inOneLine), strings [".", s]]
+			       prettysNone [ppExpRec(e,inOneLine), strings [" -> ", (cId s)]]
+       | StructRef (e, s)   -> prettysNone [ppExp_internal(e,inOneLine), strings [".", (cId s)]]
+       | UnionRef (e, s)    -> prettysNone [ppExp_internal(e,inOneLine), strings [".", (cId s)]]
        | ArrayRef (e1, e2)  -> prettysNone [ppExpRec(e1,inOneLine), string "[", ppExp_internal(e2,inOneLine), string "]"]
        | IfExp (e1, e2, e3) -> prettysLinear
                                  [prettysNone [ppExpRec(e1,inOneLine), string " ? "],
@@ -204,7 +204,7 @@ CPrint qualifying spec {
                                 (2, ppInBlock s),
                                 (0, string "}")])
        | Label s        -> strings [(*"label ", *)s, ":"] %% Changed by Nikolaj
-       | Goto s         -> strings ["goto ", s, ";"]
+       | Goto s         -> strings ["goto ", (cId s), ";"]
        | Switch (e, ss) -> blockAll
                            (0, [(0, prettysNone [string "switch (", ppExp e, string ") {"]),
                                 (2, ppStmts ss),
@@ -224,7 +224,7 @@ CPrint qualifying spec {
     strings ["#define ", s]
 
   def ppArg (s : String, t : Type) : Pretty =
-    ppType (t, strings [" ", s])
+    ppType (t, strings [" ", (cId s)])
 
   def ppArgs (vds : VarDecls) : Pretty =
     prettysLinearDelim
@@ -272,14 +272,14 @@ CPrint qualifying spec {
 
   def ppStructDefn (s : String, vds : VarDecls) : Pretty =
     blockAll
-    (0, [(0, strings ["struct ", s, " {"]),
+    (0, [(0, strings ["struct ", (cId s), " {"]),
          (2, ppVarDecls vds),
          (0, string "};"),
          (0, emptyPretty ())])
 
   def ppUnionDefn (s : String, vds : VarDecls) : Pretty =
     blockAll
-    (0, [(0, strings ["union ", s, " {"]),
+    (0, [(0, strings ["union ", (cId s), " {"]),
          (2, ppVarDecls vds),
          (0, string "};"),
          (0, emptyPretty ())])
@@ -302,7 +302,7 @@ CPrint qualifying spec {
 
     prettysNone
       [(*string "extern ",*)
-       ppType (t, prettysFill [strings [" ", s, " "], ppPlainTypes ts]),
+       ppType (t, prettysFill [strings [" ", (cId s), " "], ppPlainTypes ts]),
        string ";"]
      )
 
@@ -329,13 +329,13 @@ CPrint qualifying spec {
   def ppVarDefn (asHeader:Boolean) (s : String, t : Type, e : Exp) : Pretty =
     if asHeader then ppVar asHeader (s,t) else
 	blockFill
-	(0, [(0, prettysNone [ppType (t, strings [" ", s]), string " = "]),
+	(0, [(0, prettysNone [ppType (t, strings [" ", (cId s)]), string " = "]),
 	     (2, prettysNone [ppExp e, string ";"]),
 	     (0, PrettyPrint.newline ())])
 
   def ppVarDefnAsDefine (s : String, (* t *)_: Type, e : Exp) : Pretty =
 	blockNone
-	(0, [(0, prettysNone [string "#define ", string s, string " "]),
+	(0, [(0, prettysNone [string "#define ", string (cId s), string " "]),
 	     (2, prettysNone [ppExpInOneLine e]),
 	     (0, PrettyPrint.newline ())])
 
@@ -365,13 +365,13 @@ CPrint qualifying spec {
     if asHeader then
       blockAll
       (0, [(0, prettysNone
-	    [ppType (t, prettysFill [strings [" ", s, " "], ppArgs vds]),
+	    [ppType (t, prettysFill [strings [" ", (cId s), " "], ppArgs vds]),
 	     string ";"]),
 	   (0, emptyPretty ())])
     else
       blockAll
       (0, [(0, prettysNone
-	    [ppType (t, prettysFill [strings [" ", s, " "], ppArgs vds]),
+	    [ppType (t, prettysFill [strings [" ", (cId s), " "], ppArgs vds]),
 	     string " {"]),
 	   (2, ppInBlock b),
 	   (0, string "}"),
@@ -539,6 +539,58 @@ CPrint qualifying spec {
 
   def findTypeDefn (x, defns) =
     List.find (fn (y, _) -> x = y) defns
+
+  op cId: String -> String
+  def cId(id) =
+    if id = "asm" or
+      id = "auto" or
+      id = "break" or
+      id = "case" or
+      id = "char" or
+      id = "const" or
+      id = "continue" or
+      id = "default" or
+      id = "define" or
+      id = "do" or
+      id = "double" or
+      id = "elif" or
+      id = "else" or
+      id = "endif" or
+      id = "entry" or
+      id = "error" or
+      id = "enum" or
+      id = "extern" or
+      id = "file" or
+      id = "filemacro" or
+      id = "float" or
+      id = "for" or
+      id = "fortran" or
+      id = "goto" or
+      id = "if" or
+      id = "ifdef" or
+      id = "ifndef" or
+      id = "include" or
+      id = "int" or
+      id = "line" or
+      id = "linemacro" or
+      id = "long" or
+      id = "pragma" or
+      id = "register" or
+      id = "return" or
+      id = "short" or
+      id = "signed" or
+      id = "sizeof" or
+      id = "static" or
+      id = "stdc" or
+      id = "struct" or
+      id = "switch" or
+      id = "typedef" or
+      id = "union" or
+      id = "undef" or
+      id = "unsigned" or
+      id = "void" or
+      id = "volatile" or
+      id = "while" then "_" ^ id else id
 
 }
 

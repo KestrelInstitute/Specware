@@ -335,7 +335,7 @@ CUtils qualifying spec {
 	     then CPrint.ppHeaderSpec(cspc)
 	     else CPrint.ppSpec(cspc)
     in
-    let txt = PrettyPrint.format(80,pr) in
+    let txt = PrettyPrint.format(120,pr) in
     case X of
       | File -> (String.writeLine("C-File: "^fname);
 		 PrettyPrint.toFile(fname,txt);"")
@@ -1031,5 +1031,48 @@ CUtils qualifying spec {
 
   % --------------------------------------------------------------------------------
 
+  op NULL: Exp
+  def NULL = Var("NULL",Int)
+
+  % --------------------------------------------------------------------------------
+
+  % splits the cspc into header and implementation cspcs
+  op splitCSpec: CSpec -> CSpec * CSpec
+  def splitCSpec(cspc) = 
+    let
+      def filterFnDefn isHdr (fndefn as (fname,_,_,_)) =
+	isHdr = exists (fn(c) -> c = #$) fname
+      %def filterFnDecl isHdr (fndecl as (fname,_,_)) =
+	%isHdr = exists (fn(c) -> c = #$) fname
+    in
+    let hdr = {
+	       name = cspc.name,
+	       includes = cspc.includes,
+	       defines = cspc.defines,
+	       constDefns = cspc.constDefns,
+	       vars = cspc.vars,
+	       fns = cspc.fns,
+	       axioms = [],
+	       structUnionTypeDefns = cspc.structUnionTypeDefns,
+	       varDefns = cspc.varDefns,
+	       fnDefns = filter (filterFnDefn true) cspc.fnDefns
+	      }
+    in
+    let cspc = {
+	       name = cspc.name,
+	       includes = [],
+	       defines = [],
+	       constDefns = [],
+	       vars = [],
+	       fns = [],
+	       axioms = cspc.axioms,
+	       structUnionTypeDefns = [],
+	       varDefns = [],
+	       fnDefns = filter (filterFnDefn false) cspc.fnDefns
+	       }
+    in
+    (hdr,cspc)
+
+	       
 
 }

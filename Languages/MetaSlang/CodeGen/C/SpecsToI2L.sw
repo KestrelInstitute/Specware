@@ -59,9 +59,8 @@ SpecsToI2L qualifying spec {
   op generateI2LCodeSpec: AnnSpec.Spec * AnnSpec.Spec * Boolean * List(QualifiedId) -> ImpUnit
   def generateI2LCodeSpec(spc, fullspec, useRefTypes, constrOps) =
     let _ = writeLine(";;   phase 1: Generating i2l...") in
-    %let _ = writeLine(";;; Generating C code for spec...") in
     let ctxt = {specname="",fullspec=fullspec, isToplevel=true, useRefTypes=useRefTypes, constrOps=constrOps, currentOpSort=None} in
-    let spc = normalizeArrowSortsInSpec(spc) in
+    %let spc = normalizeArrowSortsInSpec(spc) in
     let transformedOps = foldriAQualifierMap
                           (fn(qid,name,opinfo,l1) ->
 			   let trOp = opinfo2declOrDefn(ctxt,spc,Qualified(qid,name),opinfo,None) in
@@ -71,7 +70,7 @@ SpecsToI2L qualifying spec {
     in
     %let _ = writeLine("ops transformed.") in
     let len = List.length(transformedOps) in
-    let _ = writeLine(";; "^Integer.toString(len)^" ops have been transformed.") in
+    let _ = writeLine(";;            "^Integer.toString(len)^" ops have been transformed.") in
 %    let _ = foldriAQualifierMap 
 %	   (fn(qid,name,(sortnames,tyvars,sortschemes),l) -> 
 %	    let _ = writeLine("sort "^printQualifiedId(Qualified(qid,name))) in
@@ -152,7 +151,7 @@ SpecsToI2L qualifying spec {
       | Base(Qualified(_,"Char"),[],_) -> Primitive "Char"
       | Base(Qualified(_,"String"),[],_) -> Primitive "String"
       | Base(Qualified(_,"Boolean"),[],_) -> Primitive "Boolean"
-      | Base(Qualified(_,"Float"),[],_) -> Primitive "Float"
+      %| Base(Qualified(_,"Float"),[],_) -> Primitive "Float"
 
       % reference type
       %| Base(Qualified("ESpecPrimitives","Ref"),[srt],_) -> Ref(sort2type(ctxt,spc,tyvars,srt))
@@ -226,11 +225,12 @@ SpecsToI2L qualifying spec {
       % ----------------------------------------------------------------------
 
 
-      % for arrow sorts make a distinction between procucts and argument lists:
+      % for arrow sorts make a distinction between products and argument lists:
       % op foo(n:Nat,m:Nat) -> Nat must be called with two Nats
       | Arrow(srt1,srt2,_) ->
 	  let srt1 = unfoldToSpecials(spc,srt1) in
-	  let srt1 = unfoldToProduct(spc,srt1) in
+	  %let srt1 = unfoldToProduct(spc,srt1) in
+	  %let _ = writeLine("domsort: "^printSort(srt1)) in
 	  (case srt1 of
 	     | Product(fields,_) ->
 	        let types = List.map (fn(_,srt) -> 
@@ -351,7 +351,8 @@ SpecsToI2L qualifying spec {
   % unfold to special sort in order to get the necessary information to generate code
   % e.g. unfold to sort of the form {n:Nat|n<C} which is needed to generate arrays
   op unfoldToSpecials: Spec * Sort -> Sort
-  def unfoldToSpecials(spc,srt) =
+  def unfoldToSpecials(spc,srt) = srt
+  def unfoldToSpecials_(spc,srt) =
   let
     def unfoldToSpecials0(srt) =
       let
@@ -465,8 +466,10 @@ SpecsToI2L qualifying spec {
 	    | _ -> System.fail(errmsg)
     in
     let id as (spcname,lid) = qid2declid(qid) in
+    let id0 = (spcname,"__"^lid^"__") in
     %let _ = writeLine("translating op "^lid^"...") in
     let srt = unfoldToArrow(spc,srt) in
+    %let _ = writeLine("srt: "^printSort(srt)) in
     let type = sort2type(unsetToplevel ctxt,spc,tyvars,srt) in
     let ctxt = setCurrentOpSort(ctxt,qid) in
     let res = 

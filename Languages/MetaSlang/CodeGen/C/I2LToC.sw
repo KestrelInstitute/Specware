@@ -112,7 +112,7 @@ I2LToC qualifying spec {
     let (cspc,ctype) = c4Type(ctxt,cspc,typ) in
     let typedef = (tname,ctype) in
     let cspc = addTypeDefn(cspc,typedef) in
-    let cspc = if typ = Any then cspc else addDefine(cspc,"TypeDef_For_"^tname) in
+    %let cspc = if typ = Any then cspc else addDefine(cspc,"TypeDef_For_"^tname) in
     cspc
 
   op c4OpDecl:  CgContext * CSpec * I2L.Declaration -> CSpec
@@ -130,14 +130,32 @@ I2LToC qualifying spec {
 	if (block = emptyblock) & constExpr?(cspc,cexpr) then
 	  addVarDefn(cspc,(vname,ctype,cexpr))
 	else
-	  System.fail("code generation cannot handle the kind of definition terms as\n       "
-		      ^"the one you specified for op/var \""
-		      ^vname^"\".")
+	  c4NonConstVarDef(ctxt,vname,ctype,cspc,block,cexpr)
+	  %System.fail("code generation cannot handle the kind of definition terms as\n       "
+	  %	      ^"the one you specified for op/var \""
+	  %	      ^vname^"\".")
       | _ -> (case optinitstr of
 		| None -> addVar(cspc,(vname,ctype))
 		| Some initstr -> addVarDefn(cspc,(vname,ctype,Var(initstr,Void))) % ok,ok, ... 
 	     )
-             
+  
+  (*
+   * for each non-constant variable definition X an function get$X() and a
+   * boolean variable _X_initialized is generated 
+   *)
+  op c4NonConstVarDef: CgContext * Id * CType * CSpec * Block * CExp -> CSpec
+  def c4NonConstVarDef(ctxt,vname,ctype,cspc,block as (decls,stmts),cexpr) =
+    let initfname = "get$"^vname in
+    let valuevname = vname^"$value" in
+    let cspc = addDefine(cspc,vname^" "^initfname^"()") in
+    let cspc = addVarDefn(cspc,(valuevname,ctype,NULL)) in
+    let condexp = Binary(Eq,Var(valuevname,ctype),NULL) in
+    let setexp = Binary(Set,Var(valuevname,ctype),cexpr) in
+    let body = Block(decls,stmts++[IfThen(condexp,Exp(setexp)),Return(Var(valuevname,ctype))]) in
+    let fndefn = (initfname,[],ctype,body) in
+    let cspc = addFnDefn(cspc,fndefn) in
+    let cspc = addFn(cspc,(initfname,[],ctype)) in
+    cspc
 
   op c4FunDecl: CgContext * CSpec * I2L.FunDeclaration -> CSpec
   def c4FunDecl(ctxt,cspc,fdecl) =
@@ -1114,8 +1132,9 @@ I2LToC qualifying spec {
 
   op qname2id: String * String -> String
   def qname2id(qualifier,id) =
-    let quali = if qualifier = UnQualified or qualifier = "" then "" else qualifier^"_" in
-    cString (quali^id)
+    %let quali = if qualifier = UnQualified or qualifier = "" then "" else qualifier^"_" in
+    %cString (quali^id)
+    cString(id)
 
   op getConstructorOpNameFromQName: (String * String) * String -> String
   def getConstructorOpNameFromQName(qname,consid) =
