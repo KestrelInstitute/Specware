@@ -65,6 +65,9 @@ public class EspecNode extends XContainerNode {
         v.viewOptionsCollapsed.setBorderWidth(1);
         v.viewOptionsCollapsed.setUseGradientPaint(true);
         v.viewOptionsCollapsed.setGradientPaintTopLeftColor(bgColor);
+        //v.viewOptionsCollapsed.setUseIcon(true);
+        //v.viewOptionsCollapsed.setImageIconFileName("/tmp/engine.gif");
+        //v.viewOptionsCollapsed.setImageIcon(EConstants.e24Icon);
         // expanded
         v.viewOptionsExpanded.setUseBorder(true);
         v.viewOptionsExpanded.setBorderWidth(1);

@@ -45,6 +45,10 @@ public class StepEdge extends XStraightEdge {
         }
     }
     
+    public void initialConnectHook(XEdgeView ev) {
+        ev.edit();
+    }
+    
     public XGraphElementView createView(XGraphDisplay graph, CellMapper cm) {
         XEdgeView ev = new XEdgeView(this,graph,cm);
         ev.setUseMultiLineEditor(true);
