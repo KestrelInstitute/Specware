@@ -47,7 +47,12 @@
       (parser4::comment ,@body))))
 
 #+allegro 
-(progn
+;;; The strategy below is perhaps misguided.
+;;; Keeping the old space large and new space small might be the best strategy, e.g.
+;;;  (setf (sys::gsgc-parameter :expansion-free-percent-new)  5) ; default is 35
+;;;  (setf (sys::gsgc-parameter :expansion-free-percent-old) 80) ; default is 35
+;;; At any rate, do this in the main build file, not down here.
+'(progn
   ; (proclaim '(:explain :types :calls :boxing :variables))
   (proclaim '(:explain :notypes :nocalls :noboxing :novariables))
 
