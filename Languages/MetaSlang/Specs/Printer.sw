@@ -33,6 +33,8 @@ AnnSpecPrinter qualifying spec
  import /Library/Legacy/DataStructures/IntSetSplay  % for indicesToDisable
  import /Library/Legacy/DataStructures/NatMapSplay  % for markTable's
 
+ op SpecCalc.getBaseSpec : () -> Spec % defined in /Languages/SpecCalculus/Semantics/Environment
+
  %% ========================================================================
 
  type Path = List Nat
@@ -1188,7 +1190,12 @@ def AnnSpecPrinter.printTerm term =
 	      in
 	      let pps : Lines =
 	          List.map (fn (specCalcTerm, _) -> 
-			    (1, prettysFill [pp.Import, string (showTerm specCalcTerm)])) 
+			    (0, prettysFull [pp.Import, 
+					     %% TODO: indenting this way isn't quite right,
+					     %% since it will indent inside string literals
+					     %% But pretty printers make it inordinately 
+					     %% difficult to do simple things like indentation.
+					     string (indentString "  " (showTerm specCalcTerm))]))
 		           non_base_imports
 	      in
 		pps)
@@ -1210,8 +1217,22 @@ def AnnSpecPrinter.printTerm term =
 	      in
 		pps)
 	     ++
-	     [(0, pp.EndSpec), 
+	     [(1, pp.EndSpec), 
 	      (0, string "")])
+
+  op indentString : String -> String -> String
+ def indentString prefix s =
+   let newline_char = hd (explode newline) in
+   let prefix = explode prefix in
+   let s = foldl (fn (char, s) ->
+		  if char = newline_char then
+		    prefix ++ (cons (char, s))
+		  else
+		    cons (char, s))
+                 []  
+		 (explode s)
+   in
+     implode (rev s)
 
  def ppSpecAll context spc = 
    let pp : ATermPrinter = context.pp in
@@ -1261,7 +1282,8 @@ def AnnSpecPrinter.printTerm term =
    ppSpecAll (initialize (asciiPrinter, false)) spc
    
  def specToPretty spc = 
-   ppSpecR (initialize (asciiPrinter, false)) spc
+   let base_spec = SpecCalc.getBaseSpec () in
+   ppSpecHidingImportedStuff (initialize (asciiPrinter, false)) base_spec spc
    
  def specToPrettyR spc = 
    ppSpecR (initialize (asciiPrinter, false)) spc
