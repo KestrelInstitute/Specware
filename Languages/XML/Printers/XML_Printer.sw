@@ -4,8 +4,8 @@ XML qualifying spec
   import ../Utilities/XML_Unicode
   import ../XML_Sig
 
-  def print_Document_to_UString {items} : UString =
-    (foldl (fn (item, result) ->  result ^ (print_DocItem item)) [] items)
+  def print_Document_to_UString (document : Document) : UString =
+    (foldl (fn (item, result) ->  result ^ (print_DocItem item)) [] document.items)
 
   def print_DocItem (item) : UString =
     case item of
@@ -595,8 +595,8 @@ XML qualifying spec
    %% note: at least first char of text is whitespace 
    (ustring "<?") ^ target ^ text ^ (ustring "?>")
 
-  def print_CDSect {cdata} = 
-   (ustring "<![CDATA[")  ^ cdata ^ (ustring "]]>")
+  def print_CDSect cdsect = 
+   (ustring "<![CDATA[")  ^ cdsect.cdata ^ (ustring "]]>")
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -697,16 +697,16 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def print_PEReference {name} =
-    (ustring "%") ^ name ^ (ustring ";")
+  def print_PEReference ref =
+    (ustring "%") ^ ref.name ^ (ustring ";")
 
   def print_Reference x =
     case x of
       | Entity eref -> print_EntityRef eref
       | Char   cref -> print_CharRef   cref
 
-  def print_EntityRef {name} = 
-    (ustring "&") ^ name ^ (ustring ";")
+  def print_EntityRef ref = 
+    (ustring "&") ^ ref.name ^ (ustring ";")
 
   def print_CharRef  {style, char} =
     case style of

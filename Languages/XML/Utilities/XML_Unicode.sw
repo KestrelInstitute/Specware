@@ -60,6 +60,7 @@ XML qualifying spec
   def UString.period        = ustring "."
   def UString.comma         = ustring ","
   def UString.semicolon     = ustring ";"
+  def UString.colon         = ustring ":"
 
   def UString.percent       = ustring "%"
 
