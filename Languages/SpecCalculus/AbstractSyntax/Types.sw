@@ -166,6 +166,13 @@ the proof obligations as conjectures.
     | Obligations (Term a)
 \end{spec}
 
+Reduce will rewrite the given term in the context of the given spec
+using the definitions and axioms of the spec as rules.
+
+\begin{spec}
+    | Reduce (ATerm a * Term a)
+\end{spec}
+
 The following is a hook for creating applications that are 
 extensions to Specware.  If more than one new term is needed,
 you can make OtherTerm a coproduct of the desired terms.

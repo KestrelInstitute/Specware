@@ -263,6 +263,14 @@ SpecCalc qualifying spec {
                | _ -> ppNil)
           ]
 
+      | Reduce (msTerm,scTerm) ->
+          ppConcat [
+            ppString "reduce ",
+            ppATerm msTerm,
+            ppString " in ",
+            ppTerm scTerm
+          ]
+
       | Other other_term -> ppOtherTerm other_term
 
   def ppQualifier (Qualified (Qualifier,Id))  =
