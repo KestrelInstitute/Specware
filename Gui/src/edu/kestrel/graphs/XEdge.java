@@ -186,6 +186,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
     
     public void remove(GraphModel model) {
         java.util.List children = getChildren();
+        System.out.println("in XEdge:remove, children are "+children);
         ArrayList removees = new ArrayList();
         removees.add(this);
         model.remove(removees.toArray());

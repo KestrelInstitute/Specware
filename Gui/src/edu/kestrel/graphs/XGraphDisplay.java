@@ -559,16 +559,18 @@ public class XGraphDisplay extends JGraph implements Storable {
      * method of the element and the <code>mode.insert</code> (in that order).
      */
     public XGraphElementView insertGraphElement(XGraphElement element) {
-        CellView cv = getView().getMapping(element,true);
-        boolean viewOk = false;
-        if (cv != null)
+        if (element != null) {
+            CellView cv = getView().getMapping(element,true);
+            boolean viewOk = false;
+            if (cv != null)
+                if (cv instanceof XGraphElementView)
+                    viewOk = true;
+            element.insertHook(this,(viewOk?(XGraphElementView)cv:null));
+            getModel().insert(new Object[]{element},null,null,null);
+            element.setGraph(this);
             if (cv instanceof XGraphElementView)
-                viewOk = true;
-        element.insertHook(this,(viewOk?(XGraphElementView)cv:null));
-        getModel().insert(new Object[]{element},null,null,null);
-        element.setGraph(this);
-        if (cv instanceof XGraphElementView)
-            return (XGraphElementView)cv;
+                return (XGraphElementView)cv;
+        }
         return null;
     }
     
@@ -607,21 +609,25 @@ public class XGraphDisplay extends JGraph implements Storable {
     /** inserts a node into the graph and returns the corresponding view object.
      */
     public XNodeView insertNode(XNode node) {
-        XGraphElementView cv = insertGraphElement(node);
-        ModelNode mnode = node.getModelNode();
-        ModelContainerNode mc = getModelNode();
-        /*
-        try {
-            mc.addChild(mnode);
+        if (node != null) {
+        
+            XGraphElementView cv = insertGraphElement(node);
+            ModelNode mnode = node.getModelNode();
+            ModelContainerNode mc = getModelNode();
+            /*
+            try {
+                mc.addChild(mnode);
+                if (cv instanceof XNodeView)
+                    return (XNodeView)cv;
+            } catch (ModelException me) {
+                JOptionPane.showConfirmDialog(this,me.getMessage());
+                getModel().remove(new Object[]{node});
+            }
+             */
             if (cv instanceof XNodeView)
                 return (XNodeView)cv;
-        } catch (ModelException me) {
-            JOptionPane.showConfirmDialog(this,me.getMessage());
-            getModel().remove(new Object[]{node});
+        
         }
-         */
-        if (cv instanceof XNodeView)
-            return (XNodeView)cv;
         return null;
     }
     

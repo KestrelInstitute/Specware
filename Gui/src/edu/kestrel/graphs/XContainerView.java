@@ -537,7 +537,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             }
             //bounds = cbounds;
         }
-        if (collapsedBounds == null) {
+        if (collapsedBounds == null && node != null) {
             collapsedBounds = new Rectangle(bounds);
             node.setSavedCollapsedBounds(collapsedBounds);
         }
@@ -548,7 +548,9 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
                 node.setSavedCollapsedBounds(new Rectangle(bounds));
             }
         }
-        node.setSavedIsExpanded(isExpanded());
+        if (node != null) {
+            node.setSavedIsExpanded(isExpanded());
+        }
         runningGetBounds = false;
         return bounds;
     }

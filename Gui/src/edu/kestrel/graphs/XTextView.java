@@ -93,7 +93,7 @@ public class XTextView extends XNodeView {
                     }
                 }
             });
-            popupMenu.add(menuItem,0);
+            this.popupMenu.add(menuItem,0);
             menuItem = getPopupMenuItem(XGraphElementPopupMenu.EditMenuItemLabel);
             if (menuItem != null) {
                 try {
