@@ -31,7 +31,7 @@
        nil))
 )
 
-(defun |!newVar| (value) ; why does metaslang codegen think it should mangle this name?
+(defun newVar (value) ; why does metaslang codegen think it should mangle this name?
    (cons :|VarRef| value)
 )
 
