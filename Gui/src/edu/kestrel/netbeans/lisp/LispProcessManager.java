@@ -93,7 +93,6 @@ public class LispProcessManager {
     }
     
     public static void processUnit(String pathName, String fileName) {
-	writeToOutput("*** LispProcessManager.processUnit(): pathName="+pathName+", fileName="+fileName);
         if (connectToLisp()) {
             TranStruct [] ARGS = new TranStruct[2];
             TranStruct [] RES;
@@ -118,22 +117,19 @@ public class LispProcessManager {
         }
     }
     
-    // THis is called from specware
+    // This is called from specware
     public static void setProcessUnitResults(String results) {
-        writeToOutput("setProcessUnitResults");
         writeToSpecwareStatus(results);
-       /* Node node = ProcessUnitAction.currentNode;
-        MetaSlangDataObject dataObj = (MetaSlangDataObject) node.getCookie(DataObject.class);
-	FileObject fileObj = dataObj.getPrimaryFile();
-        ParseSourceRequest.pushProcessUnitError(fileObj, 3, 2, "Yo", "");*/
     }
     
     public static void setProcessUnitResults(String pathName, String fileName, int lineNum, int colNum, String errorMsg) {
-        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName from the mounted src dir in Weilyn's setup
+        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup
+        // from the mounted local directory C:\Program Files\Specware4\Gui\src
         String nonQualifiedFileName = fileName.substring(14);
         FileObject fileObj = Repository.getDefault().find("Demo_Examples", nonQualifiedFileName, "sw");
         if (fileObj != null) {
-            // SLIGHT HACK: ParseSourceRequest is the same class used for the netbeans parsing stuff...should probably create different class for the Specware processing stuff
+            // SLIGHT HACK: ParseSourceRequest is the same class used for the netbeans parsing stuff...
+            // should probably create different class for the Specware processing stuff
             ParseSourceRequest.pushProcessUnitError(fileObj, lineNum, colNum, errorMsg, "");
         }
     }
@@ -165,10 +161,19 @@ public class LispProcessManager {
     
     public static void setGenerateLispResults(String pathName, String fileName, String results) {
         writeToSpecwareStatus(results);
-        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup
+
+        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup from the
+        //  mounted local directory C:\Program Files\Specware4\Gui\src
         String nonQualifiedFileName = fileName.substring(14);
+        
+        // Do a refresh of Demo_Examples folder to show the possibly newly created "lisp" folder
         FileObject fileObj = Repository.getDefault().find("Demo_Examples", null, null);
         if (fileObj != null) fileObj.refresh();
+        // Do a refresh of lisp folder to show the newly generated file
+        fileObj = Repository.getDefault().find("Demo_Examples.lisp", null, null);
+        if (fileObj != null) fileObj.refresh();
+        
+        // TODO: Open the new lisp file in the editor as a text file
         fileObj = Repository.getDefault().find("Demo_Examples.lisp", nonQualifiedFileName, "lisp");
         if (fileObj != null) {
 //            CloneableEditorSupport editSupp = new CloneableEditorSupport(new CloneableEditorSupport.Env(fileObj));
@@ -204,10 +209,18 @@ public class LispProcessManager {
     
     public static void setGenerateJavaResults(String pathName, String fileName, String results) {
         writeToSpecwareStatus(results);
-        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup
+        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup from the
+        //  mounted local directory C:\Program Files\Specware4\Gui\src
         String nonQualifiedFileName = fileName.substring(14);
+
+        // Do a refresh of Demo_Examples folder to show the possibly newly created "java" folder
         FileObject fileObj = Repository.getDefault().find("Demo_Examples", null, null);
         if (fileObj != null) fileObj.refresh();
+        // Do a refresh of java folder to show the newly generated file
+        fileObj = Repository.getDefault().find("Demo_Examples.java", null, null);
+        if (fileObj != null) fileObj.refresh();
+  
+        // TODO: Open the new java file in the editor
         fileObj = Repository.getDefault().find("Demo_Examples.java", nonQualifiedFileName, "java");
         if (fileObj != null) {
 //            CloneableEditorSupport editSupp = new CloneableEditorSupport(new CloneableEditorSupport.Env(fileObj));
