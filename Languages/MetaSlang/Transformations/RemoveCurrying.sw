@@ -203,7 +203,7 @@ RemoveCurrying qualifying spec
   op  convertFun: MS.Term * Nat * Spec -> MS.Term
   def convertFun(tm,curryshape,spc) =
     case tm of
-      | Fun (Op (Qualified(q,id),a),srt,a) ->
+      | Fun (Op (Qualified(q,id),_),srt,_) ->
         mkOp(Qualified(q,unCurryName(id,curryshape)),
 	     (unCurrySort(srt,spc)).2)
       | Var((id,srt),a) -> Var((id,(unCurrySort(srt,spc)).2),a)

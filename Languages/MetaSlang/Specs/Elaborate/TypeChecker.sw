@@ -1326,42 +1326,54 @@ spec {
   %% Called inside elaborateTerm 
   % ========================================================================
 
-  def elaboratePattern (env, p, sort1) = 
-  let sort1 = checkSort (env, sort1) in
-  let def elab (p:MS.Pattern):MS.Pattern * LocalEnv =
+  def elaboratePattern (env, p, sort1) =
+    let (pat, env, _) = elaboratePatternRec (env, p, sort1, []) in
+    (pat,env)
+
+  op  elaboratePatternRec: LocalEnv * MS.Pattern * MS.Sort * List Id -> MS.Pattern * LocalEnv *  List Id 
+  def elaboratePatternRec (env, p, sort1, seenVars) =
+    let sort1 = checkSort (env, sort1) in
+    let def addSeenVar(id, seenVars, env, pos) =
+          if member(id,seenVars)
+	    then (error(env, "Variable "^id^" repeated in pattern.", pos);
+		  (env,seenVars))
+	    else (env,Cons(id,seenVars))
+    in
     case p of
-      | WildPat (s, pos) -> (WildPat (elaborateSort (env, s, sort1), pos), env)
-      | BoolPat _ -> (elaborateSort (env, sort1, type_bool()); (p, env))
-      | NatPat _ ->  (elaborateSort (env, sort1, type_nat); (p, env))
-      | StringPat _ ->  (elaborateSort (env, sort1, type_string);  (p, env))
-      | CharPat _ ->  (elaborateSort (env, sort1, type_char); (p, env))
+      | WildPat (s, pos) -> (WildPat (elaborateSort (env, s, sort1), pos), env, seenVars)
+      | BoolPat _ -> (elaborateSort (env, sort1, type_bool()); (p, env, seenVars))
+      | NatPat _ ->  (elaborateSort (env, sort1, type_nat); (p, env, seenVars))
+      | StringPat _ ->  (elaborateSort (env, sort1, type_string);  (p, env, seenVars))
+      | CharPat _ ->  (elaborateSort (env, sort1, type_char); (p, env, seenVars))
       | VarPat ((id, srt), pos) -> 
          let srt = elaborateSort (env, srt, sort1)  in 
            (case lookupEmbedId (env, id, srt) of
-              | Some None -> (EmbedPat (id, None, srt, pos), env)
+              | Some None -> (EmbedPat (id, None, srt, pos), env, seenVars)
               | Some _ -> 
                      (error (env, "Constructor "^id^" expects an argument, but was given none", pos);
                       % raise (TypeCheck (pos, "Constructor "^id^" expects an argument, but was given none"));
-                      (VarPat ((id, srt), pos), env))
+                      (VarPat ((id, srt), pos), env, seenVars))
               | None ->
                  if undeterminedSort? srt then
                    (case StringMap.find (env.constrs, id) of
                      | None ->
-                          (VarPat ((id, srt), pos), addVariable (env, id, srt))
+		       let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
+		       (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars)
                      | Some [srt_info] ->
                                  let (_, c_srt) = copySort srt_info in
-                                 (VarPat ((id, c_srt), pos), env)
-                     | Some _ -> (VarPat ((id, srt), pos), env))
+                                 (VarPat ((id, c_srt), pos), env, seenVars)
+                     | Some _ -> (VarPat ((id, srt), pos), env, seenVars))
                  else
-                   (VarPat ((id, srt), pos), addVariable (env, id, srt)))
+		   let (env,seenVars) = addSeenVar(id,seenVars,env,pos) in
+                   (VarPat ((id, srt), pos), addVariable (env, id, srt), seenVars))
       | SortedPat (pat, srt, _) -> 
 	let srt = elaborateSort (env, srt, sort1) in
-	let (p, env) = elaboratePattern (env, pat, srt) in
-	(p, env)
+	let (p, env, seenVars) = elaboratePatternRec (env, pat, srt, seenVars) in
+	(p, env, seenVars)
       | AliasPat (pat1, pat2, pos) ->
-	let (pat1, env) = elaboratePattern (env, pat1, sort1) in
-	let (pat2, env) = elaboratePattern (env, pat2, sort1) in
-	(AliasPat (pat1, pat2, pos), env)
+	let (pat1, env, seenVars) = elaboratePatternRec (env, pat1, sort1, seenVars) in
+	let (pat2, env, seenVars) = elaboratePatternRec (env, pat2, sort1, seenVars) in
+	(AliasPat (pat1, pat2, pos), env, seenVars)
       | EmbedPat (embedId, pattern, sort0, pos) ->
 	let sort0 = elaborateSort (env, sort0, sort1) in
 	let sort0 =
@@ -1376,68 +1388,69 @@ spec {
 	       sort0
 	in
 	  if env.firstPass? & undeterminedSort? sort0 then
-	    let (env,epat)
+	    let (env, epat, seenVars)
 	       = case pattern of
-		   | None -> (env,None)
+		   | None -> (env,None, seenVars)
 		   | Some pat ->
 	             let alpha = freshMetaTyVar pos in
-		     let (pat, env) = elaboratePattern (env, pat, alpha) in
-		     (env, Some pat)
+		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, alpha, seenVars) in
+		     (env, Some pat, seenVars)
 	    in
-	    (EmbedPat (embedId, epat, sort0, pos), env)
+	    (EmbedPat (embedId, epat, sort0, pos), env, seenVars)
 	  else
 	    let srt = lookupEmbedId (env, embedId, sort0) in
-	    let (env, pat):LocalEnv * Option (MS.Pattern) = 
-	    (case (srt, pattern) of
-	       | (Some (Some srt), Some pat) -> 
-	         let (pat, env) = elaboratePattern (env, pat, srt) in
-		 (env, Some pat)
+	    let (env, pat, seenVars) = 
+	        (case (srt, pattern) of
+		   | (Some (Some srt), Some pat) -> 
+		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, srt, seenVars) in
+		     (env, Some pat, seenVars)
 
-	       | (Some None, None) -> (env, None)
-	       | (None, None) -> 
-		 (error (env, "Sort for constructor "
-			 ^ embedId
-			 ^ " not found. Resolving with sort "
-			 ^ printSort sort1, pos);
-		  (env, None))
-	       | (None, Some pat) -> 
-		 let alpha = freshMetaTyVar pos in
-		 let (pat, env) = elaboratePattern (env, pat, alpha)
-		 in
-		 (error (env, "Sort for constructor "
-			 ^ embedId
-			 ^ " not found. Resolving with sort "
-			 ^ printSort sort1, pos);
-		  (env, None))
-	       | (Some None, Some pat) -> 
-		 (error (env, newLines ["Constructor "
-					^ embedId
-					^ " takes no argument", 
-					"but was given "
-					^ printPattern pat], pos);
-		  (env, Some pat))
-	       | (Some (Some _), None) -> 
-		 (error (env, "Argument expected for constructor "
-			 ^ embedId, pos);
-		  (env, None)))
+		   | (Some None, None) -> (env, None, seenVars)
+		   | (None, None) -> 
+		     (error (env, "Sort for constructor "
+			     ^ embedId
+			     ^ " not found. Resolving with sort "
+			     ^ printSort sort1, pos);
+		      (env, None, seenVars))
+		   | (None, Some pat) -> 
+		     let alpha = freshMetaTyVar pos in
+		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, alpha, seenVars)
+		     in
+		     (error (env, "Sort for constructor "
+			     ^ embedId
+			     ^ " not found. Resolving with sort "
+			     ^ printSort sort1, pos);
+		      (env, None, seenVars))
+		   | (Some None, Some pat) -> 
+		     (error (env, newLines ["Constructor "
+					    ^ embedId
+					    ^ " takes no argument", 
+					    "but was given "
+					    ^ printPattern pat], pos);
+		      (env, Some pat, seenVars))
+		   | (Some (Some _), None) -> 
+		     (error (env, "Argument expected for constructor "
+			     ^ embedId, pos);
+		      (env, None, seenVars)))
 	    in
-	      (EmbedPat (embedId, pat, sort1, pos), env)
+	      (EmbedPat (embedId, pat, sort1, pos), env, seenVars)
       | RecordPat (row, pos) ->
 	let r = map (fn (id, srt)-> (id, freshMetaTyVar pos)) row in
 	let _ = elaborateSort (env, (Product (r, pos)), sort1) in
 	let r = ListPair.zip (r, row) in
-	let (r, env) = 
-	    foldr (fn (((id, srt), (_, p)), (row, env))->
-		   let (p, env) = elaboratePattern (env, p, srt) in
-		   (cons ((id, p), row), env)) ([], env) r
+	let (r, env, seenVars) = 
+	    foldl (fn (((id, srt), (_, p)), (row, env, seenVars)) ->
+		   let (p, env, seenVars) = elaboratePatternRec (env, p, srt, seenVars) in
+		   (cons ((id, p), row), env, seenVars))
+	      ([], env, seenVars) r
 	in
-	  (RecordPat (r, pos), env)
+	  (RecordPat (rev r, pos), env, seenVars)
       | RelaxPat (pat, term, pos) -> 
 	let term = elaborateTerm (env, term, 
 				 Arrow (sort1, type_bool(), pos)) in
 	let sort2 = (Subsort (sort1, term, pos)) in
-	let (pat, env) = elaboratePattern (env, pat, sort2) in
-	(RelaxPat (pat, term, pos), env)
+	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort2, seenVars) in
+	(RelaxPat (pat, term, pos), env, seenVars)
       | QuotientPat (pat, term, pos) ->
 	let v = freshMetaTyVar pos in
 	let sort2 = (Quotient (v, term, pos)) in
@@ -1445,13 +1458,10 @@ spec {
 	let term = elaborateTerm (env, term, 
 				  Arrow (Product ([("1", v), ("2", v)], pos), 
 					 type_bool(), pos)) in
-	let (pat, env) = elaboratePattern (env, pat, v) in
-	(QuotientPat (pat, term, pos), env)
+	let (pat, env, seenVars) = elaboratePatternRec (env, pat, v, seenVars) in
+	(QuotientPat (pat, term, pos), env, seenVars)
       | p -> (System.print p; System.fail "Nonexhaustive")
 
- in
-  let (p, env) = elab p in
-  (p, env)
 
   % ========================================================================
 
