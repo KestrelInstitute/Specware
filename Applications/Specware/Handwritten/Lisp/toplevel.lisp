@@ -5,6 +5,7 @@
 (defpackage :IO-SPEC)
 (defpackage :SYSTEM-SPEC)
 (defpackage :EMACS)
+(defpackage :SWShell)
 ;; Toplevel Lisp aliases for Specware
 
 (defparameter *sw-help-strings*
@@ -127,8 +128,10 @@
 	  (charpos (third emacs-error-info)))
       (unless *running-test-harness?*
 	(if (sw-temp-file? error-file)
-	    (emacs::eval-in-emacs (format nil "(show-error-on-new-input ~a)"
-					  (+ charpos position-delta)))
+	    (let ((emacs-command (format nil "(show-error-on-new-input ~a)" (+ charpos position-delta))))
+	      (if SWShell::*in-specware-shell?*
+		  (setq swshell::*emacs-eval-form-after-prompt* emacs-command)
+		(emacs::eval-in-emacs emacs-command)))
 	  (emacs::eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)"
 					error-file linepos charpos)))))))
 
@@ -987,6 +990,9 @@
 (defun exit ()
   (quit))
 
+#+allegro
+(top-level:alias ("quit" ) () (exit))
+
 (defun cl (file)
   (specware::compile-and-load-lisp-file (subst-home file)))
 
@@ -1046,19 +1052,69 @@
   )
 
 (defun ls (&optional (str ""))
-  (specware::run-program (format nil "ls -FC ~a" str))
-  (values))
+  (let* ((contents (directory (if (string= str "")
+				  (specware::current-directory)
+				(make-pathname :directory str))))
+	 (sw-files (loop for p in contents
+		     when (string= (pathname-type p) "sw")
+		     collect p)))
+    (list-files sw-files)
+    (values)))
 
 (defun dir (&optional (str ""))
   (ls str))
 
 (defun dirr (&optional (str "*.sw"))
-  ;; The command -p is to ensure the path is set to a default that gets correct find
-  ;; (was a problem on windows)
-  (specware::run-program
-   (format nil "ls -FC `command -p find . -name '~a' -print | sed 's/^\\.\\///'`"
-	   str))
+  (list-directory-rec (specware::current-directory))
   (values))
+
+(defun list-directory-rec (dir)
+  (let* ((contents (directory dir))
+	 (sw-files (loop for p in contents
+		     when (string= (pathname-type p) "sw")
+		     collect p)))
+    (when (not (null sw-files))
+      (format t "~a:~%" (pathname-directory-string dir))
+      (list-files sw-files))
+    (loop for p in contents
+      unless (equal (pathname-name p) "CVS")
+      do ;; Work around allegro bug in directory
+          #+allegro (setq p (make-pathname :directory (namestring p)))
+	  (when (specware::directory? p)
+	   (list-directory-rec p))))
+  )
+
+(defparameter *dir-width* 80)
+
+(defun list-files (files)
+  (when files
+    (let* ((names (loop for fil in files collect (pathname-name fil)))
+	   (num-files (length names))
+	   (max-width (+ 3 (loop for name in names maximize (length name))))
+	   (across (floor *dir-width* max-width))
+	   (rows (ceiling num-files across))
+	   (grouped-names (loop for i from 0 to (- rows 1)
+			    collect
+			    (loop for j from i to (min (- num-files 1) (* across rows)) by rows
+			          collect (elt names j)))))
+      (loop for row in grouped-names
+	do (loop for fil in row
+	     do (format t " ~va" max-width (concatenate 'string fil ".sw")))
+	   (format t "~%")))))
+
+(defun pathname-directory-string (p)
+  (let* ((dirnames (pathname-directory p))
+	 (abbrev-dirnames (speccalc::abbreviatedPath (cdr dirnames)))
+	 (main-dir-str (apply #'concatenate 'string
+			      (loop for d in (if (string= (car abbrev-dirnames) "~")
+						 (cdr abbrev-dirnames)
+					       abbrev-dirnames)
+				nconcing (list "/" d)))))
+    (if (eq (car dirnames) :absolute)
+	(if (string= (car abbrev-dirnames) "~")
+	    (format nil "~~~a" main-dir-str)
+	  main-dir-str)
+      (format nil ".~a" main-dir-str))))
 
 (defun pa (&optional pkgname)
   (if (null pkgname)

@@ -36,11 +36,12 @@
     ("make" . "[spec-term] Generate C code with makefile and call make on it.")
     ("gen-java" . "[spec-term [filename]] Generates Java code for unit in filename.
                   With no argument uses last processed unit.")
-    ("j-config" . "Show configuration parameters for Java generation.")
-    ("j-config-dir" . "[dir] Set base directory to be used by gen-java.")
-    ("j-config-make-public" . "[names] Set public names to be used by gen-java.")
-    ("j-config-pkg" . "[pkg] Set package name to be used by gen-java.")
-    ("j-config-reset" . "Restore default configuration parameters for Java generation.")
+; obsolete
+;    ("j-config" . "Show configuration parameters for Java generation.")
+;    ("j-config-dir" . "[dir] Set base directory to be used by gen-java.")
+;    ("j-config-make-public" . "[names] Set public names to be used by gen-java.")
+;    ("j-config-pkg" . "[pkg] Set package name to be used by gen-java.")
+;    ("j-config-reset" . "Restore default configuration parameters for Java generation.")
     ("cf" . "[filename] Compile lisp file filename.")
     ("ld" . "[filename] Load lisp file filename.")
     ("cl" . "[filename] Compile and load lisp file filename.")
@@ -61,6 +62,9 @@
     ("wiz" . "[on] Set SpecCalc::specwareWizard?. No argument gives current setting.")
     ("swdbg" . "[on] Set System-spec::specwareDebug?. No argument gives current setting.")))
 
+(defun print-shell-prompt () (princ *prompt* *terminal-io*))
+
+(defvar *emacs-eval-form-after-prompt* nil)
 
 (defun specware-shell (exiting-lisp?)
   (let  ((magic-eof-cookie (cons :eof nil))
@@ -71,9 +75,12 @@
     (format t "Specware Shell~%")
     (unwind-protect
 	(loop
-	  (fresh-line)
-	  (princ *prompt*)
-	  (force-output)
+	  (fresh-line *terminal-io*)
+	  (print-shell-prompt)
+	  (force-output *terminal-io*)
+	  (when *emacs-eval-form-after-prompt*
+	    (emacs::eval-in-emacs *emacs-eval-form-after-prompt*)
+	    (setq *emacs-eval-form-after-prompt* nil))
 	  (with-simple-restart (abort "Return to Specware Shell top level.")
 	    (let ((form (read *standard-input* nil magic-eof-cookie)))
 	      (cond ((member form '(quit exit))
@@ -129,7 +136,7 @@
 	      (princ (namestring (specware::current-directory)))
 	    (cl-user::cd argstr))
 	  (values))
-      (dir (cl-user::ls (or argstr "*.sw")))
+      (dir (cl-user::ls (or argstr "")))
       (dirr (cl-user::dirr (or argstr "*.sw")))
       (path (cl-user::swpath argstr))
       ((proc p) (cl-user::sw argstr) (values))
@@ -140,11 +147,12 @@
       (gen-c (cl-user::swc argstr) (values))
       (make (cl-user::make argstr))
       (gen-java (cl-user::swj argstr) (values))
-      (j-config (cl-user::swj-config))
-      (j-config-dir (cl-user::swj-config-dir argstr))
-      (j-config-make-public (cl-user::swj-config-make-public argstr))
-      (j-config-pkg (cl-user::swj-config-pkg argstr))
-      (j-config-reset (cl-user::swj-config-reset))
+; obsolete
+;      (j-config (cl-user::swj-config))
+;      (j-config-dir (cl-user::swj-config-dir argstr))
+;      (j-config-make-public (cl-user::swj-config-make-public argstr))
+;      (j-config-pkg (cl-user::swj-config-pkg argstr))
+;      (j-config-reset (cl-user::swj-config-reset))
       (punits (cl-user::swpf argstr))
       (lpunits (cl-user::swpf argstr))	; No local version yet
       (ctext (if (null argstr)
