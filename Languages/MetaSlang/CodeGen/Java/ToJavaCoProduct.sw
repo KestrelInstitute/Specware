@@ -28,7 +28,7 @@ def sumTypeToClsDecl(id, fldDecls, sumConstructorMethDecls) =
 
 op mkSummandId: Id * Id -> Id
 def mkSummandId(ty, c) =
-  ty ^ "__" ^ c
+  ty ^ "$$" ^ c
 
 op sumArgToClsDecl: Id * Id -> ClsDecl
 def sumArgToClsDecl(ty, c) =
