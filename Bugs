@@ -23,3 +23,6 @@ functors imports poly maps qualified.
 typechecking fails inside functors because it says the instantiation
 of the type Poly.Maps (and Poly) aren't appropriate.
 solution was to qualify the maps in Sketches.
+
+URIs with ../../.. don't work see references to /Languages/MetaSlang etc in
+Spec Calculus
