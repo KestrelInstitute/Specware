@@ -102,6 +102,7 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
     }
     
     protected void overlay(Graphics graphics) {
+        //Dbg.pr("XMarqueeHandler.overlay()...");
         super.overlay(graphics);
     }
     

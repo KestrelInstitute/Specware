@@ -29,12 +29,12 @@ public class Dbg {
     }
     
     static public void pr2(String s) {
-        if (DEBUG_LEVEL == 2)
+        if (DEBUG_LEVEL >= 2)
             pr_(s);
     }
     
     static public void pr3(String s) {
-        if (DEBUG_LEVEL == 3)
+        if (DEBUG_LEVEL >= 3)
             pr_(s);
     }
     

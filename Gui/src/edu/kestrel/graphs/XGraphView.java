@@ -176,6 +176,27 @@ public class XGraphView extends GraphView {
         nv.toArray(res);
         return res;
     }
+
+    /** returns the most toplevel views of the given cells, i.e. it filters out inner nodes, if the container is part
+     * of cells.
+     */
+    public CellView[] getToplevelViews(Object[] cells) {
+        Object[] fcells = XCloneManager.makeCellsUnique(cells);
+        return getMapping(fcells);
+    }
+    
+    public CellView[] getVisibleRoots() {
+        CellView[] views = getRoots();
+        ArrayList list = new ArrayList();
+        for(int i=0;i<views.length;i++) {
+            if (GraphConstants.isVisible(views[i].getAttributes())) {
+                list.add(views[i]);
+            }
+        }
+        CellView[] res = new CellView[list.size()];
+        list.toArray(res);
+        return res;
+    }
     
     public void updateAllPorts() {
         super.updatePorts();

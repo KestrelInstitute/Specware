@@ -927,7 +927,7 @@ public class XGraphDisplay extends JGraph implements Storable, Observer, DropTar
      */
     public void scaleToFit(int bw, int when) {
         XGraphView gv = getXGraphView();
-        CellView[] roots = gv.getRoots();
+        CellView[] roots = gv.getVisibleRoots();
         if (roots.length == 0) return;
         Rectangle elemsize = null;
         for(int i=0;i<roots.length;i++) {
@@ -1096,6 +1096,7 @@ public class XGraphDisplay extends JGraph implements Storable, Observer, DropTar
                 g2d.setStroke(new BasicStroke(2,BasicStroke.CAP_BUTT,BasicStroke.JOIN_MITER,1,new float[]{5,5},0));
                 g2d.draw(outlineBounds);
                 if (moveImage != null) {
+                    g2d.setXORMode(getBackground());
                     int dx1 = outlineBounds.x;
                     int dy1 = outlineBounds.y;
                     int dx2 = outlineBounds.x + outlineBounds.width;
@@ -1239,6 +1240,7 @@ public class XGraphDisplay extends JGraph implements Storable, Observer, DropTar
             // contstruct a list of candidate views consisting of the given cell views and
             // all children of the views; only consider those view, which are around (x,y)
             for(int i = 0;i<cellviews.length;i++) {
+                //Dbg.pr(".");
                 boolean candidateFound = false;
                 if (GraphConstants.isVisible(cellviews[i].getAttributes()) &&
                 cellviews[i].intersects(getGraphics(),r)) {

@@ -19,7 +19,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      */
     protected ModelNode modelNode = null;
     
-    protected int defaultNumberOfPortsPerDimension = 6;
+    protected int defaultNumberOfPortsPerDimension = 2;
     
     protected XGraphDisplay graph;
     

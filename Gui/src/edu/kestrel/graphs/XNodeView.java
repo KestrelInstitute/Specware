@@ -1157,7 +1157,8 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
         public void paint(Graphics g) {
             //pushLocalScale(g);
             if (hasTemporaryViewAncestor()) {
-                Dbg.pr("Node "+node+" has temporary view ancestors, it's therefore not painted.");
+                Rectangle b = getBounds();
+                g.drawRect(0,0,b.width-2,b.height-2);
                 return;
             }
             ViewOptions vopts = viewOptions;
@@ -1263,8 +1264,6 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
             bounds = new Rectangle(b.x,b.y,imgw,imgh);
             Dbg.pr("bounds="+bounds);
         }
-        
- 
         
     }
  
