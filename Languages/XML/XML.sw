@@ -85,6 +85,37 @@ XML qualifying spec
     %% let _ = toScreen (print_XML_Exception except) in %% catch inserts exception into state
     return None
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%  special hacks for reading just a .dtd file
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  def read_external_dtd_from_file (filename : Filename) : Option ExternalDTD =
+    let possible_uchars = read_unicode_chars_from_file (filename, null_decoding) in % handwritten lisp
+    case possible_uchars of
+      | Some uchars ->
+        run_external_dtd_monad uchars
+	                       {
+				external_dtd <- parse_external_dtd uchars;
+				return external_dtd
+			       }
+      | _ -> None
+
+
+  def run_external_dtd_monad (uchars : UChars) (run : Env (Option ExternalDTD)) =
+    let (result, newstate) = catch run XML_DTD_Handler (initialState uchars) in
+    case (result, newstate.exceptions) of
+
+      | (Ok external_dtd, []) ->
+        external_dtd
+
+      | _ ->
+	let _ = toScreen (print_pending_XML_Exceptions newstate) in
+	None
+
+  def XML_DTD_Handler _ : Env (Option ExternalDTD) =
+    %% let _ = toScreen (print_XML_Exception except) in %% catch inserts exception into state
+    return None
+
 %%% from Specware.sw :
 %%%  def toplevelHandler except =
 %%%    {cleanupGlobalContext;		% Remove InProcess entries

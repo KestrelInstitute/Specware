@@ -82,12 +82,12 @@ XML qualifying spec
       | Some internal_dtd ->
         case internal_dtd.external_id of
           | None -> return None
-	  | Some id ->
-	    parse_external_dtd id
+	  | Some uri ->
+	    {start <- get_uchars_from_uri uri;
+	     parse_external_dtd start}
 
-  def parse_external_dtd (uri : ExternalID) : Env (Option ExternalDTD) =
+  def parse_external_dtd (start : UChars) : Env (Option ExternalDTD) =
     {
-     start <- get_uchars_from_uri uri;
      (textdecl, tail) <- parse_TextDecl      start;
      (decls,    tail) <- parse_ExternalDecls tail;
      return (Some {textdecl = textdecl,
