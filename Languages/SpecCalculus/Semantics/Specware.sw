@@ -418,7 +418,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
     let target =
       case targetFile of
         | None -> None
-        | Some name -> Some (maybeAddSuffix name ".sw") in
+        | Some name -> Some (name^".sw") in
     let prog = {
       cleanEnv;
       currentUID <- pathToCanonicalUID ".";
@@ -442,7 +442,7 @@ Second argument is interpreted as spec containing options for the code generatio
     let target =
       case targetFile of
         | None -> None
-        | Some name -> Some (maybeAddSuffix name ".sw") in
+        | Some name -> Some (name ^ ".sw") in
     let prog = {
       cleanEnv;
       currentUID <- pathToCanonicalUID ".";

@@ -40,8 +40,8 @@ spec
      | Some specFullUId ->
      let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
      if fromObligations?
-       then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
-     else(UnitId (SpecPath_Relative specUId), noPos)
+       then (Obligations specUId (* (UnitId (UnitId_Relative specUId), noPos) *), noPos)
+     else specUId %(UnitId (SpecPath_Relative specUId), noPos)
      | _ ->
        let (_, pos) = scTerm in
        if fromObligations?
@@ -59,15 +59,15 @@ spec
   If baseUid is None, then relativeUidToUidAndSWPATH returns a Uid that is equivalent to uid, but with respect to SWPATH.
   *)
  
- op relativeUidToUidAndSWPATH: UnitId * Option UnitId * List UnitId -> UnitId
+ op relativeUidToUidAndSWPATH: UnitId * Option UnitId * List UnitId -> SCTerm
  def relativeUidToUidAndSWPATH(uid as {path,hashSuffix}, baseUid, swpath) =
    case baseUid of
-     | None -> relativeUidToSWPATH(uid, swpath)
+     | None -> (UnitId (SpecPath_Relative (relativeUidToSWPATH(uid, swpath))), noPos)
      | Some baseUid ->
      let uIdRelativeToBase = relativeUidToUid(uid, baseUid) in
      case uIdRelativeToBase of
-       | Some newUid -> newUid
-       | _ -> relativeUidToSWPATH(uid, swpath)
+       | Some newUid -> (UnitId (UnitId_Relative newUid), noPos)
+       | _ -> (UnitId (SpecPath_Relative (relativeUidToSWPATH(uid, swpath))), noPos)
 
  op relativeUidToUid: UnitId * UnitId -> Option UnitId
  def relativeUidToUid(uid, baseUid) =
@@ -78,23 +78,10 @@ spec
  
  op relativeUidToSWPATH: UnitId * List UnitId -> UnitId
  def relativeUidToSWPATH(uid, swpath) =
-   let def goodUid(swUid) =
-         let uIdRelativeToSwUid = relativeUidToUid(uid, swUid) in
-	 case uIdRelativeToSwUid of
-	   | Some foundUid -> true
-	   | _ -> false in
-   let foundSwUid = find goodUid swpath in
+   let foundSwUid = findOption (fn (swUid) -> relativeUidToUid(uid, swUid)) swpath in
    case foundSwUid of
      | Some res -> res
      | _ -> fail("can't happen")
-
- op tailListList: fa (a) List a * List a -> Option (List a)
- def tailListList(l1, l2) =
-   if null(l2) then None else
-   let l1Head = sublist(l1, 0, length(l2)) in
-   if l1Head = l2 
-     then Some (nthTail(l1, length(l2)-1))
-   else None
 
  op baseUnitIdSCTerm?: SCTerm -> Boolean
  def baseUnitIdSCTerm?(scTerm) =
@@ -114,7 +101,6 @@ spec
           else
             Cons (pd1, ListUtilities.insert (pd, pds)) in
      foldl insert pfDecls1 pfDecls2
-
 
  op generateProofsInSpec: Spec * SCTerm * Boolean * Spec * Boolean * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
  def generateProofsInSpec (spc, scTerm, fromObligations?, baseSpc, multipleFiles, prover_name, prover_options, basePropNames, globalContext, swpath, fileUID) =
@@ -341,7 +327,11 @@ spec
  op UIDtoProofFile: UnitId * Option String -> SpecCalc.Env(Option UnitId * String * Boolean)
  def UIDtoProofFile ((unitId as {path,hashSuffix}), optFileNm) = 
    case optFileNm
-      of Some filNam -> return (None, filNam, false)
+      of Some filNam ->
+	let fileUid = normalizeUID(pathStringToCanonicalUID filNam) in
+	let filePath = fileUid.path in
+	let fileUid = {path=butLast filePath, hashSuffix=None} in
+	return (Some fileUid, filNam, false)
        | _ ->
 	{
    (fileUID, file, bool) <-
