@@ -45,8 +45,9 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
     | Fun (Op (Qualified (q, id), _), _, _) ->
       let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
       opvarcase(id)
-    | Var((id,srt),_) -> (writeLine("translateApplyToExpr: not yet supported term: "^printTerm(term));errorResultExp(k,l))
-    | _ -> fail("unsupported lhs of application: "^printTerm(opTerm))
+    | _ -> translateOtherTermApply(tcx,opTerm,argsTerm,k,l,spc)
+    %| _ -> (writeLine("translateApplyToExpr: not yet supported term: "^printTerm(term));errorResultExp(k,l))
+
 
 op translateRestrictToExpr: TCx * Sort * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
@@ -249,7 +250,7 @@ def termToExpression(tcx, term, k, l, spc) =
        | Some (newV) -> (mts, newV, k, l)
        | _ -> (mts, mkVarJavaExpr(id), k, l))
     | Fun (Op (Qualified (q, id), _), srt, _) -> 
-       if notAUserType?(srt) 
+       if baseType?(srt) 
 	 then (mts, mkQualJavaExpr("Primitive", id), k, l)
        else
 	 (case srt of
@@ -576,6 +577,30 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseType, caseExpr, cases, k
 	      (List.cons(hdSwitch, restSwitch), restK, restL) in
     translateCasesToSwitchesRec(cases, k0, l0)
 
+(**
+ * implements v3:p48:r3
+ *)
+op translateOtherTermApply: TCx * Term * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
+def translateOtherTermApply(tcx,opTerm,argsTerm,k,l,spc) =
+  let
+    def doArgs(terms,k,l,block,exprs) =
+      case terms of
+	| [] -> (block,exprs,k,l)
+	| t::terms ->
+	  let (si,ei,ki,li) = termToExpression(tcx,t,k,l,spc) in
+	  let block = concatBlock(block,si) in
+	  let exprs = concat(exprs,[ei]) in
+	  doArgs(terms,ki,li,block,exprs)
+  in
+  let (s,e,k0,l0) = termToExpression(tcx,opTerm,k,l,spc) in
+  let argterms = applyArgsToTerms(argsTerm) in
+  let (block,exprs,k,l) = doArgs(argterms,k,l,[],[]) in
+  let japply = mkMethExprInv(e,"apply",exprs) in
+  (block,japply,k,l)
+
+op concatBlock: Block * Block -> Block
+def concatBlock(b1,b2) =
+  concat(b1,b2)
 
 op errorResultExp: Nat * Nat -> Block * Java.Expr * Nat * Nat
 def errorResultExp(k,l) =

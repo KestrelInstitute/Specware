@@ -44,6 +44,32 @@ def userType?(srt) =
 
 def notAUserType?(srt) = ~(userType?(srt))
 
+(**
+ * implementation of the ut function as defined in v3:p38
+ * returns the first user type occuring in the type srt from left to right, where the constituents of
+ * each srt are also considered in case srt is an arrow type
+ *)
+op ut: Sort -> Option Sort
+def ut(srt) =
+  let
+    def utlist(srts) =
+      case srts of
+	| [] -> None
+	| srt::srts -> 
+	  (case ut(srt) of
+	     | Some s -> Some s
+	     | None -> utlist(srts)
+	    )
+  in
+  if userType?(srt) then Some srt
+  else
+    let domsrts = srtDom(srt) in
+    case utlist(domsrts) of
+      | Some s -> Some s
+      | None -> 
+        let rngsrt = srtRange(srt) in
+	ut(rngsrt)
+
 op baseVar?: Var -> Boolean
 op userVar?: Var -> Boolean
 
