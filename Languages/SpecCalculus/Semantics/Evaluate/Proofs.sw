@@ -316,17 +316,16 @@ spec
   def SpecCalc.evaluateProofGenLocal(valueInfo as (value,_,_), cterm, optFileName, fromObligations?) =
     {cUID <- SpecCalc.getUID cterm;
      globalContext <- getGlobalContext;
-     spc <- case value of
-              | Spec spc -> return spc
-              | Morph sm -> return (morphismObligations(sm, globalContext, positionOf(cterm)))
-              | _ -> raise (Unsupported ((positionOf cterm),
-					 "Can generate proofs only for Specs and Morphisms."));
      (proofFileUID, proofFileName, multipleFiles) <- UIDtoProofFile (cUID, optFileName);
      (optBaseUnitId,baseSpec) <- getBase;
      swpath <- getSpecPath;
      print (";;; Generating proof file " ^ proofFileName ^ "\n");
      let _ = ensureDirectoriesExist proofFileName in
-     let _ = toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true) in
+     case value of
+       | Spec spc -> return (toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true))
+       | Morph morph -> return (toProofFileMorph (morph, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true))
+       | _ -> raise (Unsupported ((positionOf cterm),
+				  "Can generate proofs only for Specs and Morphisms."));
      {print("Generated Proof file.");
       return valueInfo}}
 
