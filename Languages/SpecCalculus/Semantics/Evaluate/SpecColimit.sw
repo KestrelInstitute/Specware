@@ -224,9 +224,9 @@ spec
   %%      create the apex spec.
   %% -------------------------------------------------------------------------------------------------------------
 
-  let apex_spec : Spec =
+  let translated_specs : List Spec =
       foldOverVertices
-        (fn apex_spec -> fn vertex ->
+        (fn translated_specs -> fn vertex ->
            let vertex_spec             = vertexLabel dg          vertex in
            let cocone_translation_expr = eval vertex_to_sm_rules vertex in
 	   % let _ = toScreen ("\nTranslation expr "^ (anyToString cocone_translation_expr) ^ "\n") in
@@ -244,11 +244,11 @@ spec
            %%
            let translated_spec = run (translateSpec false (subtractSpec vertex_spec base_spec) cocone_translation_expr) in
 	   % let _ = toScreen ("\nTranslated Spec: "^ (printSpec translated_spec) ^ "\n") in
-           let combined_spec   = run (specUnion [apex_spec, translated_spec]) in
-           combined_spec)
-         base_spec % proto_apex_spec
+           cons (translated_spec, translated_specs))
+         [base_spec]
          dg
   in
+  let apex_spec : Spec = run (specUnion translated_specs) in
 
   %% -------------------------------------------------------------------------------------------------------------
   %% (4a) Test for ambiguity in result
@@ -525,9 +525,18 @@ spec
 				let vertex_qid = Qualified(qualifier,id) in
 				let vqid = (vertex, vertex_qid) in
 				let (apex_qid, apex_aliases) = eval vqid_to_apex_qid_and_aliases vqid in
-				% if vertex_qid = apex_qid then translate_rules else
-				Cons (make_translate_rule (vertex_qid, apex_qid, apex_aliases),
-				      translate_rules))
+				let rule = make_translate_rule (vertex_qid, apex_qid, apex_aliases) in
+				%% A rule is a no-op if it is just going to rename something to itself 
+				%% and moreover, that name is the primary name in the target.
+				let no_op? = case rule.1 of
+					       | Sort (x, y, first_alias :: _) -> x = y & x   = first_alias
+					       | Op   (x, y, first_alias :: _) -> x = y & x.1 = first_alias
+					       | _ -> false
+				in
+				  if no_op? then
+				    translate_rules
+				  else
+				    Cons (rule, translate_rules))
 			       []
 			       (select_items spc)
 		     in 
