@@ -1,5 +1,11 @@
 \subsection{Spec Translation}
 
+TODO: This has file suffers greatly from having to accommodate the representation
+of specs, ops, sorts and ids. 
+
+Also the parser seems to set up a cod_aliases field. I would argue that
+this should be removed from the parser.
+
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
@@ -13,11 +19,8 @@ Perhaps the calculus is getting too complicated.
 
 \begin{spec}
   def SpecCalc.evaluateTranslate term translation = {
-    %% -------------------------------------------
-    %% next two lines are optional:
     uri <- getCurrentURI;
     print (";;; Processing translation at "^(uriToString uri)^"\n");
-    %% -------------------------------------------
     (value,timeStamp,depURIs) <- evaluateTermInfo term;
     case coerceToSpec value of
       | Spec spc -> {
@@ -79,7 +82,7 @@ Note: The code below does not yet match the documentation above, but should.
      -> TranslateExpr Position
      -> SpecCalc.Env (AQualifierMap (QualifiedId * Aliases) * AQualifierMap (QualifiedId * Aliases))
   def makeTranslationMaps dom_spec (translation_rules, position) =
-    %% Similar to code in SpecMorphism.sw, but this is monadic, 
+    %% Similar to code in SpecMorphism.sw
     %% and types are factored as Foo a = (Foo_ a) * a
     %% TODO:  Detect multiple rules for same dom item.
     let def insert (translation_op_map, translation_sort_map) (translation_rule, rule_pos) =
@@ -116,6 +119,33 @@ Note: The code below does not yet match the documentation above, but should.
 	     | _ -> 
 		  raise (SpecError (rule_pos, "translate: Unrecognized source op "^(printQualifiedId dom_qid))))
 
+    	| Ambiguous (Qualified(dom_qualifier, "_"), Qualified(cod_qualifier,"_"), cod_aliases) -> 
+            let
+              def extend_op_map (op_qualifier,op_id,op_info,translation_op_map) =
+                if op_qualifier = dom_qualifier then
+                  case findAQualifierMap (translation_op_map, op_qualifier, op_id) of
+                    | None -> 
+                        let new_cod_qid = mkQualifiedId (cod_qualifier,op_id) in
+                        return (insertAQualifierMap (translation_op_map, op_qualifier, op_id, (new_cod_qid, [new_cod_qid])))
+                    | _ -> raise (SpecError (rule_pos, "translate: Duplicate rules for source op "^
+                                                       (printQualifiedId (mkQualifiedId (op_qualifier,op_id)))))
+                else
+                  return translation_op_map 
+              def extend_sort_map (sort_qualifier,sort_id,sort_info,translation_sort_map) =
+                if sort_qualifier = dom_qualifier then
+                  case findAQualifierMap (translation_sort_map, sort_qualifier, sort_id) of
+                    | None -> 
+                        let new_cod_qid = mkQualifiedId (cod_qualifier,sort_id) in
+                        return (insertAQualifierMap (translation_sort_map, sort_qualifier, sort_id, (new_cod_qid, [new_cod_qid])))
+                    | _ -> raise (SpecError (rule_pos, "translate: Duplicate rules for source sort "^
+    						       (printQualifiedId (mkQualifiedId (sort_qualifier,sort_id)))))
+                else
+                  return translation_sort_map
+            in {
+              translation_op_map <- foldOverQualifierMap extend_op_map translation_op_map dom_spec.ops;
+              translation_sort_map <- foldOverQualifierMap extend_sort_map translation_sort_map dom_spec.sorts;
+              return (translation_op_map, translation_sort_map)
+            }
 	| Ambiguous (dom_qid as Qualified(dom_qualifier, dom_id), cod_qid, cod_aliases) -> 
           (let dom_sorts = findAllSorts (dom_spec, dom_qid) in
 	   let dom_ops   = findAllOps   (dom_spec, dom_qid) in

@@ -64,15 +64,18 @@ SpecCalc qualifying spec {
  %% Spec
  %% ======================================================================
 
+ % The following loses too much information
+ % def printSpec base_spec reverse_context spc =
+ %   %% this uses /Languages/MetaSlang/Specs/Printer
+ %   %% which uses /Library/PrettyPrinter/BjornerEspinosa
+ %   PrettyPrint.toString (format(80, 
+ %				ppSpecHidingImportedStuff
+ %				(initialize(asciiPrinter,false))
+ %				base_spec
+ %				spc))
+
  def printSpec base_spec reverse_context spc =
-   %% this uses /Languages/MetaSlang/Specs/Printer
-   %% which uses /Library/PrettyPrinter/BjornerEspinosa
-   PrettyPrint.toString (format(80, 
-				%% subtractSpec spc base_spec
-				ppSpecHidingImportedStuff
-				(initialize(asciiPrinter,false))
-				base_spec
-				spc))
+   AnnSpecPrinter.printSpec (subtractSpec spc base_spec)
 
  %% ======================================================================
  %% Morphism
