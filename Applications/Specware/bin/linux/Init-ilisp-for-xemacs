@@ -77,7 +77,8 @@ else
 fi
 
 echo ""
-echo "At `pwd`"
+echo "At `pwd`/"
+echo ""
 ls -sltr *.x86f
 echo ""
 
