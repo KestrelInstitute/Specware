@@ -19,7 +19,7 @@ them are available in the &Specware menu in the menubar.
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
     <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
-    <colspec colname="name"     colnum="2" colwidth="135"  rowsep="1"/>
+    <colspec colname="name"     colnum="2" colwidth="135" rowsep="1"/>
     <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
     <thead>
       <row>
@@ -32,17 +32,17 @@ them are available in the &Specware menu in the menubar.
       <row>
 	<entry colname="key">&nbsp; [[tab]]</entry>
         <entry colname="name">&nbsp; [[sw:indent-line]]</entry>
-	<entry colname="descr">&nbsp; Indents line based on context</entry>
+	<entry colname="descr">&nbsp; Indents line based on context.</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[linefeed]]</entry>
         <entry colname="name">&nbsp; [[newline-and-indent]]</entry>
-	<entry colname="descr">&nbsp; Same as return followed by tab</entry>
+	<entry colname="descr">&nbsp; Same as return followed by tab.</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[M-tab]]</entry>
         <entry colname="name">&nbsp; [[sw:back-to-outer-indent]]</entry>
-	<entry colname="descr">&nbsp; Indents line for outer expression</entry>
+	<entry colname="descr">&nbsp; Indents line for outer expression.</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[M-C-q]]</entry>
@@ -54,12 +54,12 @@ them are available in the &Specware menu in the menubar.
       <row>
 	<entry colname="key">&nbsp; [[M-C-\]]</entry>
         <entry colname="name">&nbsp; [[sw:indent-region]]</entry>
-	<entry colname="descr">&nbsp; Indents region</entry>
+	<entry colname="descr">&nbsp; Indents region.</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[M-*]]</entry>
         <entry colname="name">&nbsp; [[sw:switch-to-lisp]]</entry>
-	<entry colname="descr">&nbsp; Switch to *common-lisp* buffer</entry>
+	<entry colname="descr">&nbsp; Switch to *common-lisp* buffer.</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[M-.]]</entry>
@@ -131,7 +131,7 @@ These are the commands available in the *common-lisp* buffer.
 <informaltable frame="sides" colsep="1">
   <tgroup cols="3">
     <colspec colname="key"      colnum="1" colwidth="50"  rowsep="1"/>
-    <colspec colname="name"     colnum="2" colwidth="135"  rowsep="1"/>
+    <colspec colname="name"     colnum="2" colwidth="135" rowsep="1"/>
     <colspec colname="descr"    colnum="3" colwidth="230" rowsep="1"/>
     <thead>
       <row>
@@ -145,8 +145,9 @@ These are the commands available in the *common-lisp* buffer.
 	<entry colname="key">&nbsp; [[M-*]]</entry>
         <entry colname="name">&nbsp; [[sw:switch-to-lisp]]</entry>
 	<entry colname="descr">&nbsp; When already in the
-	   *common-lisp* buffer, goes to the previous
-	   source file buffer. </entry>
+	  *common-lisp* buffer, goes to the previous
+	  source file buffer. 
+	</entry>
       </row>
       <row>
 	<entry colname="key">&nbsp; [[M-.]]</entry>
@@ -183,7 +184,7 @@ These are the commands available in the *common-lisp* buffer.
 
 <para>
 These are a few general Emacs commands which are useful when using
-&Specware. Commands with no key sequences are executed using [[M-x name]].
+Specware. Commands with no key sequences are executed using [[M-x name]].
 </para>
 
 <informaltable frame="sides" colsep="1">
