@@ -268,7 +268,7 @@
 		       (format t "~%Value is ~S~2%" swe::tmp)))
 		    ((fboundp 'swe::tmp)
 		     (let* ((code #+allegro (excl::func_code #'swe::tmp)
-				  #-allegro #'swe::tmp)
+				  #-allegro (symbol-function 'swe::tmp))
 			    (auxfn (find-aux-fn code)))
 		       (format t "~%Function is ")
 		       (pprint code)
@@ -478,18 +478,26 @@
 
 #-allegro
 (defun cd (&optional dir)
-  (let ((dir (or dir (specware::getenv "HOME"))))
-    #-cmu (specware::change-directory dir)
+  (let ((dir (if (equal dir "..")
+		 (namestring (specware::parent-directory (specware::current-directory)))
+	       (or dir (specware::getenv "HOME")))))
+    (specware::change-directory dir)
     #+cmu (unix:unix-chdir dir)
     (let ((newdir (namestring (specware::current-directory))))
       (when (under-ilisp?)
 	(emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
 				      (specware::ensure-final-slash newdir))))
-      newdir)))
+      (princ newdir)
+      (values))))
+
+#-allegro
+(defun ld (file)
+  (load file))
 
 #-allegro
 (defun pwd ()
-  (namestring (specware::current-directory)))
+  (princ (namestring (specware::current-directory)))
+  (values))
 
 #-allegro
 (defun exit ()
@@ -498,6 +506,14 @@
 #-allegro
 (defun cl (file)
   (specware::compile-and-load-lisp-file file))
+
+#-allegro
+(defun cf (file)
+  (compile-file file))
+
+#-allegro
+(defun help (&optional command)
+  (sw-help command))
 
 (defun strip-extraneous (str)
   (let ((len (length str)))
@@ -515,7 +531,7 @@
 
 #+(or cmu mcl sbcl)
 (defun cl::invoke-command-interactive (command)
-  (let ((fn (intern (symbol-name command)))
+  (let ((fn (intern (symbol-name command) (find-package "CL-USER")))
 	(ch (read-char-no-hang)))
     (if ch
 	(progn (unread-char ch)
@@ -559,6 +575,22 @@
 (defun dir (&optional (str ""))
   (ls str))
 
+#-allegro
+(defun pa (&optional pkgname)
+  (if (null pkgname)
+      (princ (package-name *package*))
+    (let ((pkg (find-package pkgname)))
+      (if pkg
+	  (setq *package* pkg)
+	(princ "Not a package"))))
+  (values))
+
+#-allegro
+(defun untr () (untrace))
+
+#-allegro
+(defun tr (&optional (nms-string ""))
+  (eval `(trace ,@(map 'list #'read-from-string (toplevel-parse-args nms-string)))))
 
 #+allegro
 (top-level:alias ("ls" :string) (&optional (str ""))

@@ -1,8 +1,8 @@
 #+Lispworks
 (setq *default-package-use-list* '("CL"))
 
-(defpackage "SPECWARE")
-(in-package "SPECWARE")
+(defpackage :Specware)
+(in-package :Specware)
 
 (terpri) ; purely cosmetic
 
@@ -219,3 +219,9 @@
       do (if (directory? dir-item)
 	     (copy-directory dir-item (extend-directory target-dirpath dir-item))
 	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
+
+(defun parent-directory (pathname)
+  (let ((dir (pathname-directory pathname)))
+    (if (< (length dir) 2)
+	pathname
+      (make-pathname :directory (butlast dir)))))
