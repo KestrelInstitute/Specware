@@ -16,6 +16,8 @@ SpecCalc qualifying spec {
   op evaluateUID         : Position -> RelativeUnitId                                               -> SpecCalc.Env ValueInfo
   op evaluateSpec        : List (SpecElem Position)                                     -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
+  op evaluateSpecPrism   : SCTerm * List SCTerm * List SCTerm                           -> Position -> SpecCalc.Env ValueInfo  % tentative
+  op evaluateSpecInterp  : SCTerm * SCTerm * (SpecInterpRules Position)                 -> Position -> SpecCalc.Env ValueInfo  % tentative
   op evaluateExtendMorph : SCTerm                                                                   -> SpecCalc.Env ValueInfo
   op evaluateLispCompile : ValueInfo * SCTerm * Option String                                       -> SpecCalc.Env ValueInfo
   op evaluateLispCompileLocal: ValueInfo * SCTerm * Option String                                   -> SpecCalc.Env ValueInfo
@@ -80,6 +82,9 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.36  2004/11/12 23:02:25  cyrluk
+%% Added other for ProofGen.
+%%
 %% Revision 1.35  2004/11/12 19:04:53  becker
 %% Added the signature and default implementations to
 %% evaluateProofGenOther  and evaluateProofGenLocalOther
