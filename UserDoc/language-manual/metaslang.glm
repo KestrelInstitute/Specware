@@ -9,7 +9,9 @@ The following sections give the grammar rules and meaning
 for each &Metaslang; language construct.
 </para>
 <!-- ================================================================= -->
-<formalpara id="GrammarDescriptionFormalism"><title>The grammar description formalism</title>
+<section id="Preliminaries"><title>Preliminaries</title>
+<!-- ================================================================= -->
+<section id="GrammarDescriptionFormalism"><title>The grammar description formalism</title>
 <para>
 The grammar rules used to describe the &Metaslang; language
 use the conventions of (extended) BNF.
@@ -33,7 +35,6 @@ times.
 All other signs stand for themselves, like the `symbol [[+]]
 in the example rule above.
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 In the grammar rules terminal `symbols appear in a bold font.
@@ -64,15 +65,16 @@ but also as:
 Some of the actual grammar rules allow ambiguities; the
 accompanying text will indicate how they are to be resolved.
 </para>
+</section>
 <!-- ================================================================= -->
-<formalpara id="Models"><title>Models</title>
+<section id="Models"><title>Models</title>
 <para>
 <<
 ||    `spec ::= `spec-form
 ||
 ||    `op ::= `op-name
 >>
-The term `spec is used as short for `spec-form
+The term `spec is used as short for `spec-form.
 The <emphasis>semantics</emphasis> of &Metaslang; `specs is given
 in terms of classes of <emphasis>models</emphasis>.
 A model is an assignment of sorts (sets of values) to all the
@@ -121,7 +123,6 @@ one possible model (out of many!) is the assignment of
 the even integers to [[Even]], and of the function that
 increments an even number by 2 to [[next]].
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 Each model has to <emphasis>respect sorting</emphasis>; for
@@ -131,7 +132,7 @@ to even numbers, and therefore can not -- in the same model
 -- be assigned to [[next]].
 Additionally, the axioms of the `spec have to be satisfied by
 the model.
-The axiom qualifiable-claim-nameed [[nextEffect]] above states that
+The axiom labeled [[nextEffect]] above states that
 the function assigned to `op-name [[next]]
 maps any value of the sort assigned to `sort-name [[Even]]
 to a different value.
@@ -193,8 +194,9 @@ the value of [[z]] is [["let-x"]] (`op [[x]]
 <emphasis>is</emphasis> hidden by the
 `local-variable [[x]] of the `let-binding).
 </para>
+</section>
 <!-- ================================================================= -->
-<formalpara id="Sort-correctness"><title>Sort-correctness</title>
+<section id="Sort-correctness"><title>Sort-correctness</title>
 <para>
 If no sort-respecting combinations of assignments exist for a given
 `spec, it is considered
@@ -206,7 +208,6 @@ Sort-incorrectness differs from inconsistency in that the
 meaning of the axioms does not come into play, and the
 question whether an incorrect `spec is consistent is moot.
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 To be precise, there are subtle and less subtle differences
@@ -276,8 +277,9 @@ See further under
 <link linkend="Op-definitions"><emphasis>Op-definitions</emphasis></link>
 and <link linkend="Structors"><emphasis>Structors</emphasis></link>.
 </para>
+</section>
 <!-- ================================================================= -->
-<formalpara id="Constructive"><title>Constructive</title>
+<section id="Constructive"><title>Constructive</title>
 <para>
 When code is generated for a `spec, complete
 <quote>self-contained</quote> code is only
@@ -296,7 +298,6 @@ The built-in polymorphic equality predicate [[=]] is only
 constructive for <emphasis>discrete sorts</emphasis> (see
 below).
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 A sort is called discrete if the equality predicate [[=]]
@@ -325,6 +326,8 @@ the equality test on the quotient sort is just the predicate
 <replaceable>Q</replaceable> applied to pairs of members of the
 <replaceable>Q</replaceable>-equivalence classes.)
 </para>
+</section>
+</section>
 <!-- ***************************************************************** -->
 <section id="LexicalConventions"><title>Lexical conventions</title>
 <para>
@@ -606,8 +609,6 @@ in `literals (which may not contain whitespace, including
 <section id="Units"><title>Units</title>
 <para>
 <<
-||`project ::= `unit-definition*
-||
 ||`specware-file ::=
 ||     `unit
 ||   | `unit-definition { `unit-definition }*
@@ -630,23 +631,24 @@ The `unit-identifier in each `unit-definition of a `specware-file
 must be a `name that is a `word-symbol.
 </para>
 <para>
-A `project consists of a collection of `unit-definitions.
-`Unit-definitions of a `project may use other
-`unit-definitions in the `project, including standard
-libraries which in &SpecwareV; are supposed to be part of
-each `project.
+A &Specware; project consists of a collection of
+&Metaslang; `unit-definitions.
+`Unit-definitions may use other
+`unit-definitions, including standard
+libraries, which in &SpecwareV; are supposed to be part of
+each project.
 However, the dependencies between `units must not form a
 cycle; it must always be possible to arrange the
 `unit-definitions in an order in which later
 `unit-definitions only depend on earlier ones.
 How `unit-definitions are processed by &Specware; is further
-dealt with in the &Specware; User Guide.
+dealt with in the &Specware; User Manual.
 </para>
 <para>
 `Unit-definitions are collected in `specware-files, which in
 &SpecwareV; must have an [[.sw]] extension.
 The `specware-files do not directly contain the
-`unit-definitions that form the `project.
+`unit-definitions that form the project.
 These are instead determined from the `specware-files using
 certain rules.
 There are two possibilities here.
@@ -709,8 +711,7 @@ filenames, cannot appear in `unit-identifiers. For this reason,
 some care must be taken when naming `units. 
 </para> </formalpara>
 <para>
-`Unit-identifiers are used to identify `units in the current
-`project.
+`Unit-identifiers are used to identify `units.
 Typically, only a final part of the full `unit-identifier is
 used.  When &Specware bis started with environment variable
 <"SWPATH"> set to a colon-separated list of pathnames for files or
@@ -723,7 +724,7 @@ As usual, the filename ``<".">'' stands for the current
 directory; and allows &Specware; to look there for
 `unit-definitions.
 How `unit-definitions are processed by &Specware; is further
-dealt with in the &Specware; User Guide.
+dealt with in the &Specware; User Manual.
 </para>
 <para>
 The `unit-identifier must determine a `unit-definition as
@@ -738,11 +739,12 @@ yielding a `spec, spec morphism, or diagram.
 <<
 ||`spec-term ::=
 ||     `unit-identifier
-||     `spec-form
+||   | `spec-form
 ||   | `spec-qualification
 ||   | `spec-translation
 ||   | `spec-substitution
 ||   | `diagram-colimit
+||   | `obligator
 ||
 >>
 <!--
@@ -760,7 +762,7 @@ The elaboration of a `spec-term, if defined, yields a
 <section><title>Spec Forms</title>
 <para>
 <<
-||`spec-form ::= spec `declaration-sequence endspec
+||`spec-form ::= spec { `declaration }* endspec
 >>
 Restriction.
 `Spec-forms must be sort-correct.
@@ -846,7 +848,7 @@ For example, the elaboration of
 ||    sort E
 ||    op i : E
 ||  endspec by {
-||    E +-> Counter
+||    E +-> Counter,
 ||    i +-> zero
 ||  }
 ]]
@@ -865,21 +867,68 @@ results in:
 <<
 ||`spec-substitution ::= `spec-term '[ `morphism-term ']
 >>
-Restriction.
-@@@ Domain of morphism must be the spec.
 </para>
 <para>
-Let <replaceable>R</replaceable> be the result of
-elaborating `spec-term <replaceable>S</replaceable>,
-and
-<replaceable>N</replaceable> that of
-`morphism-term <replaceable>M</replaceable>,
-Then the elaboration of [[\<replaceable>S\</replaceable>[qualifying \<replaceable>M\</replaceable>]]] is TODO blabla.
-Colimit of this pushout diagram PICTURE but better.
+The elaboration of
+[[\<replaceable>S\</replaceable>[\<replaceable>M\</replaceable>]]]
+yields the `spec
+<replaceable>T</replaceable> obtained as follows.
+Let `spec <replaceable>R</replaceable> be the result of
+elaborating <replaceable>S</replaceable>,
+and morphism <replaceable>N</replaceable> that of
+<replaceable>M</replaceable>.
+Let `specs <replaceable>D</replaceable> and
+<replaceable>C</replaceable> be the domain and codomain of
+<replaceable>N</replaceable>.
+First, remove from <replaceable>R</replaceable> all
+`declarations of <replaceable>D</replaceable>, and subject
+the result to the effect of <replaceable>N</replaceable>,
+meaning that all name translations of
+<replaceable>N</replaceable> and all extensions with
+`declarations are performed.
+Then add the `declarations of <replaceable>C</replaceable>,
+but without duplications, i.e., as if
+<replaceable>C</replaceable> is imported.
+The result obtained is <replaceable>T</replaceable>.
+</para>
+<para>
+Restriction.
+`Spec <replaceable>C</replaceable> must be
+a ``sub-spec'' of `spec <replaceable>R</replaceable>,
+meaning that each `declaration of
+<replaceable>C</replaceable> is also a
+`declaration of <replaceable>R</replaceable>.
+</para>
+<para>
+Informally,
+<replaceable>T</replaceable>
+is to <replaceable>R</replaceable> as
+<replaceable>C</replaceable> is to
+<replaceable>D</replaceable>.
+See also the &Specware; Tutorial.
+</para>
+<para>
+<replaceable>T</replaceable>
+is a categorical colimit of this pushout diagram:
+[[
+||              \<replaceable>D\</replaceable> ---------> \<replaceable>R\</replaceable>
+||              |         |
+||              |         |
+||              |         |
+||              v         v
+||              \<replaceable>C\</replaceable> ---------> \<replaceable>T\</replaceable>
+]]
+Although isomorphic to the result that would be obtained 
+by using a `diagram-colimit, <replaceable>T</replaceable>
+is more ``user-oriented'' in two ways:
+the names in <replaceable>T</replaceable> are names from
+<replaceable>C</replaceable>, and `axioms of
+<replaceable>D</replaceable> not repeated in
+<replaceable>C</replaceable> are not repeated here either.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section><title>Diagram Colimit</title>
+<section><title>Diagram Colimits</title>
 <para>
 <<
 ||`diagram-colimit ::= colimit `diagram-term
@@ -887,7 +936,21 @@ Colimit of this pushout diagram PICTURE but better.
 The result of elaborating a `diagram-colimit is the `spec
 which is the apex of the cocone forming the
 colimit in the category of `specs and `spec-morphisms.
-See further the &Specware; User Guide.
+See further the &Specware; Tutorial.
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Obligators</title>
+<para>
+<<
+||`obligator ::= obligations `morphism-term
+>>
+The result of elaborating an `obligator is a `spec
+containing the proof obligations engendered by the morphism
+resulting from elaborating its `morphism-term.
+These proof obligations are expressed as `conjectures;
+they can be discharged by proving them, using `proof-terms.
+See further the &Specware; User Manual.
 </para>
 </section>
 </section>
@@ -912,14 +975,13 @@ When used as a `morphism-term, the elaboration of a
 `unit-identifier must yield a spec morphism.
 </para>
 <para>
-Restriction.
+Restriction (``proof obligations'').
 Given `spec-morphism [[morphism \<replaceable>S\</replaceable> ->
-\<replaceable>T\</replaceable> {
+\<replaceable>T\</replaceable> { \<replaceable>M\</replaceable> }]],
+let <replaceable>S'</replaceable> be the result of elaborating
+[[translate \<replaceable>S\</replaceable> by {
 \<replaceable>M\</replaceable> }]],
-let <replaceable>S'</replaceable> be the result of
-elaborating [[translate \<replaceable>S\</replaceable> by {
-\<replaceable>M\</replaceable> }]], and let
-<replaceable>T'</replaceable> be the result of elaborating
+and let <replaceable>T'</replaceable> be the result of elaborating
 <replaceable>T</replaceable>.
 Then, first, each `sort-name or `op-name introduced in
 <replaceable>S'</replaceable> must also be introduced in
@@ -929,21 +991,27 @@ library `spec may have been subject to translation.
 Finally, each `axiom in
 <replaceable>S'</replaceable> must be a theorem that follows
 from the `axioms of <replaceable>T'</replaceable>.
+Collectively, the `axioms in <replaceable>S'</replaceable>
+are known as the <emphasis>proof obligations</emphasis>
+engendered by the morphism.
+They are the formal expression of the requirement that the step from
+<replaceable>S'</replaceable> to
+<replaceable>T</replaceable> is a proper refinement.
 </para>
 </section>
 <!-- ***************************************************************** -->
 <!--
-<section><title>Spec sort and operator visibility</title>
-<para>
-<<
-||`spec-visibility ::=
-||     hide `name-list in `spec-term
-||   | export `name-list from `spec-term
-||
-||`name-list ::= '{ `name { , `name }* '}
->>
-</para>
-</section>
+** <section><title>Spec sort and operator visibility</title>
+** <para>
+** <<
+** ||`spec-visibility ::=
+** ||     hide `name-list in `spec-term
+** ||   | export `name-list from `spec-term
+** ||
+** ||`name-list ::= '{ `name { , `name }* '}
+** >>
+** </para>
+** </section>
 -->
 <!-- ***************************************************************** -->
 <section><title>Diagrams</title>
@@ -970,8 +1038,8 @@ When used as a `diagram-term, the elaboration of a
 </para>
 <para>
 The result of elaborating a `diagram-form is the categorical
-diagram whose nodes are qualifiable-claim-nameled with `specs and
-whose edges are qualifiable-claim-nameled with `spec-morphisms.
+diagram whose nodes are labeled with `specs and
+whose edges are labeled with `spec-morphisms.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -999,7 +1067,7 @@ whose edges are qualifiable-claim-nameled with `spec-morphisms.
 The elaboration of a `generate-term for a correct `spec-term
 generates code in the language suggested by the
 `language-name (currently only Common Lisp); see further the
-&Specware; User Guide.
+&Specware; User Manual.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -1022,7 +1090,7 @@ using the prover suggested by the
 `prover-name (currently only SNARK).
 The `prover-options are prover-specific and are not
 defined here; see further the
-&Specware; User Guide.
+&Specware; User Manual.
 </para>
 </section>
 </section>
@@ -1050,14 +1118,14 @@ Example `declarations:
 ||    op present : Database * Key -> Boolean
 ||    sort Key = String
 ||    def present(db, k) = embed? Some (lookup (db, k))
-||    axiom norm-idempotent is fa(x) norm (norm x) = norm x
+||    axiom norm_idempotent is fa(x) norm (norm x) = norm x
 ]]
 </para>
 <!-- ***************************************************************** -->
 <section id="Import-declarations"><title>Import-declarations</title>
 <para>
 <<
-||`import-declaration ::= import `spec-name
+||`import-declaration ::= import `spec-term
 >>
 Example `import-declarations
 [[
@@ -1066,9 +1134,13 @@ Example `import-declarations
 </para>
 <!-- ================================================================= -->
 <para>
-An `import-declaration has the effect as
-if the `declarations of the imported `spec are expanded in
-place.
+An `import-declaration is contained in some `unit, and 
+to elaborate that `unit the `spec-term of
+the `import-declaration is elaborated first, giving some
+`spec <replaceable>S</replaceable>.
+The `import-declaration has then the effect as if the
+`declarations of the imported `spec
+<replaceable>S</replaceable> are expanded in place.
 This cascades: if `spec <replaceable>A</replaceable> imports
 <replaceable>B</replaceable>, and `spec
 <replaceable>B</replaceable> imports
@@ -1076,6 +1148,7 @@ This cascades: if `spec <replaceable>A</replaceable> imports
 <replaceable>A</replaceable> also imports
 <replaceable>C</replaceable>.
 An important difference with earlier versions of &Specware;
+than version 4
 is that multiple imports of the same `spec have the same
 effect as a single import.
 </para>
@@ -1649,7 +1722,7 @@ Otherwise, the `spec is incorrect.
 ||
 ||`claim-kind ::= axiom | theorem | conjecture
 ||
-||`qualifiable-claim-name ::= `any-text-up-to-equals
+||`qualifiable-claim-name ::= [ `qualifier . ] name
 ||
 ||`claim ::= [ `sort-quantification ] `expression
 ||
@@ -1657,26 +1730,17 @@ Otherwise, the `spec is incorrect.
 >>
 Example `claim-definitions:
 [[
-||    axiom norm-idempotent is
+||    axiom norm_idempotent is
 ||      norm o norm = norm
 ||
-||    theorem o-assoc is
+||    theorem o_assoc is
 ||      sort fa(a,b,c,d) fa(f : c -> d, g : b -> c, h : a -> b)
 ||        f o (g o h) = (f o g) o h
 ||
-||    conjecture pivot<->hold is
+||    conjecture pivot_hold is
 ||      let p = pivot hold in
 ||        fa (n : {n : Nat | n < p}) ~(hold n = hold p)
 ]]
-Restriction.
-The `qualifiable-claim-name must be a <emphasis>non-empty</emphasis>
-sequence of `symbols, none of which is
-a presentation of `equals (i.e., [[is]] or [[=]]).
-The rule about whitespace being required to separate `symbols
-is relaxed <emphasis>inside</emphasis> `qualifiable-claim-names, but the the
-first and last `symbols of the `qualifiable-claim-name must be properly
-separated from the `claim-kind preceding and `equals following
-the `qualifiable-claim-name.
 </para>
 <!-- ================================================================= -->
 <para>

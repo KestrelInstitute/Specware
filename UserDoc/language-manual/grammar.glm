@@ -8,6 +8,27 @@ They are brought together here, without additional text, for
 easy reference.
 </para>
 <!-- ***************************************************************** -->
+<formalpara><title>The grammar description formalism</title>
+<para>
+<<
+||    `wiffle ::= `waffle [ `waffle-tail ] | `piffle { + `piffle }*
+>>
+<<
+||    `piffle ::= 1 | M { `piffle }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Models</title>
+<para>
+<<
+||    `spec ::= `spec-form
+||  
+||    `op ::= `op-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
 <formalpara><title>Symbols and Names</title>
 <para>
 <<
@@ -70,8 +91,6 @@ easy reference.
 <formalpara><title>Units</title>
 <para>
 <<
-||  `project ::= `unit-definition*
-||  
 ||  `specware-file ::=
 ||     `unit
 ||   | `unit-definition { `unit-definition }*
@@ -111,11 +130,12 @@ easy reference.
 <<
 ||  `spec-term ::=
 ||     `unit-identifier
-||     `spec-form
+||   | `spec-form
 ||   | `spec-qualification
 ||   | `spec-translation
 ||   | `spec-substitution
 ||   | `diagram-colimit
+||   | `obligator
 ||  
 >>
 </para>
@@ -124,7 +144,7 @@ easy reference.
 <formalpara><title>Spec Forms</title>
 <para>
 <<
-||  `spec-form ::= spec `declaration-sequence endspec
+||  `spec-form ::= spec { `declaration }* endspec
 >>
 </para>
 </formalpara>
@@ -158,10 +178,18 @@ easy reference.
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Diagram Colimit</title>
+<formalpara><title>Diagram Colimits</title>
 <para>
 <<
 ||  `diagram-colimit ::= colimit `diagram-term
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Obligators</title>
+<para>
+<<
+||  `obligator ::= obligations `morphism-term
 >>
 </para>
 </formalpara>
@@ -174,18 +202,6 @@ easy reference.
 ||   | `spec-morphism
 ||  
 ||  `spec-morphism ::= morphism `spec-term -> `spec-term `name-map
->>
-</para>
-</formalpara>
-<!-- ***************************************************************** -->
-<formalpara><title>Spec sort and operator visibility</title>
-<para>
-<<
-||  `spec-visibility ::=
-||     hide `name-list in `spec-term
-||   | export `name-list from `spec-term
-||  
-||  `name-list ::= '{ `name { , `name }* '}
 >>
 </para>
 </formalpara>
@@ -260,7 +276,7 @@ easy reference.
 <formalpara><title>Import-declarations</title>
 <para>
 <<
-||  `import-declaration ::= import `spec-name
+||  `import-declaration ::= import `spec-term
 >>
 </para>
 </formalpara>
@@ -333,7 +349,7 @@ easy reference.
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
-||  `qualifiable-claim-name ::= `any-text-up-to-equals
+||  `qualifiable-claim-name ::= [ `qualifier . ] name
 ||  
 ||  `claim ::= [ `sort-quantification ] `expression
 ||  
