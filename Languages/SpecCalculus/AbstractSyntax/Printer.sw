@@ -12,8 +12,8 @@ discarded.
 We use \verb+show+ functions to render terms as strings. We
 use \verb+pp+ functions to render terms as "Pretty".
 
-Note that the spec calculus "print" command is implemented via 
-SpecCalc.evaluatePrint, which is defined in 
+Note that the shell command "show" and the spec calculus "print" command 
+are implemented via SpecCalc.evaluatePrint, which is defined in 
 /Languages/SpecCalculus/Semantics/Evaluate/Print.sw,
 and which uses an alternative strategy of printing the value
 that results from evaluating a term, as opposed the term itself
@@ -25,9 +25,14 @@ SpecCalc qualifying spec
  import Types
  import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
 
+ %% never called...
   op showSpecTerm : [a] SpecTerm a -> String
  def showSpecTerm spec_term = ppFormat (ppSpecTerm spec_term)
 
+ %% SpecCalc.showTerm is called from /Languages/MetaSlang/Specs/Printer.sw and 
+ %%  SimplePrinter.sw to print import terms.
+ %% They use /Languages/MetaSlang/Specs/SpecCalc.sw as a hack to refer to this,
+ %%  which they otherwise would not have access to.
   op showTerm : [a] SpecCalc.Term a -> String
  def showTerm term = ppFormat (ppTerm term)
 
@@ -78,12 +83,15 @@ SpecCalc qualifying spec
   op showRelativeUID : RelativeUID -> String
  def showRelativeUID unitId = ppFormat (ppRelativeUID unitId)
 
+ %% never called
   op ppSpecTerm : [a] SpecTerm a -> Doc
  def ppSpecTerm (sterm, _(* position *)) =
    case sterm of
      | Term  term -> ppTerm term
      | Decls decls -> ppDecls decls
 
+ %% From Specware, called only for printing import SC terms !!
+ %% From Forges, called for printing inline and specialize SC terms
   op ppTerm : [a] SpecCalc.Term a -> Doc
  def ppTerm (term, _(* position *)) =
    case term of

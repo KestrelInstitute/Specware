@@ -16,6 +16,8 @@ SpecCalc qualifying spec
  %    properties   : AProperties b
  %   }
 
+ %% called via ppObj attribute in specCat
+ %% (see /Languages/MetaSlang/Specs/Categories/AsRecord.sw)
   op ppASpec : fa (a) ASpec a -> Pretty
  def ppASpec (spc as {importInfo,sorts,ops,properties}) = 
    let ppImports = ppNil in
@@ -40,6 +42,7 @@ SpecCalc qualifying spec
        ppString "}"
 	      ]
 
+ %% not called by Specware per se (see PSL)
   op ppASpecLocal : fa (a) ASpec a -> Pretty
  def ppASpecLocal (spc as {importInfo,sorts,ops,properties}) = 
    let {imports,localOps,localSorts,localProperties=_} = importInfo in
@@ -72,6 +75,7 @@ SpecCalc qualifying spec
       ppString "}"
 	     ]
 
+ %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
   op ppASortInfo : fa (a) ASortInfo a -> Pretty
  def ppASortInfo info =
    let ppNames =
@@ -121,6 +125,7 @@ SpecCalc qualifying spec
    in
      ppConcat (ppDecls ++ ppDefs)
 
+ %% Other than from this file, called only from /Languages/SpecCalculus/Semantics/Evaluate/Spec/CompressSpec (and see PSL)
   op ppAOpInfo : [a] AOpInfo a -> Pretty
  def ppAOpInfo info = ppAOpInfoAux (" op  ", info)
 
@@ -200,6 +205,7 @@ SpecCalc qualifying spec
    in
      ppConcat (ppWarnings ++ ppDecls ++ [ppNewline] ++ ppDefs)
 
+ %% other than from here, called from /Languages/SpecCalculus/AbstractSyntax/Printer.sw
   op ppAProperty : fa (a) AProperty a -> Pretty
  def ppAProperty (propType, name, tvs, term) =
    ppConcat [
