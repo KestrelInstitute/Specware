@@ -2,7 +2,7 @@
 
 (in-package "PARSER4")
 
-;; (defpackage "METASLANG")
+(defpackage "METASLANG")
 (defpackage "SPECCALC")
 (defpackage "STANDARDSPEC")
 (defpackage "MS")
