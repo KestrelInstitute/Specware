@@ -44,9 +44,9 @@ the typechecker complains. I don't understand it.
 
 \begin{spec}
   op evaluateDiagElem :
-       SpecCalc.Diagram (Spec,SpecCat.Morphism)
+       SpecCalc.Diagram (Spec,Morphism)
     -> DiagElem Position
-    -> Env (SpecCalc.Diagram (Spec,SpecCat.Morphism))
+    -> Env (SpecCalc.Diagram (Spec,Morphism))
 
   def evaluateDiagElem dgm elem =
     case (valueOf elem) of

@@ -38,7 +38,5 @@
 (make-system "Languages/SpecCalculus/Parser/Handwritten/Lisp/")
 
 (defun test ()
-  (make-system "Library/Algorithms/Parsing/Chart/Handwritten/Lisp/")
-  (make-system "Languages/SpecCalculus/Parser/Handwritten/Lisp/")
   (sw "/Applications/Specware/Specware4")
   )

@@ -13,9 +13,10 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
   import /Library/IO/Primitive/IO
-  import SpecCat qualifying /Languages/MetaSlang/Specs/Categories/Specs
+  import /Languages/MetaSlang/Specs/Categories/AsRecord	% Morphism
   import /Library/Structures/Data/Categories/Diagrams/Polymorphic
-  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
+  import Map
+			  
 \end{spec}
 
 All terms in the calculus have a value.  A value is a specification, a
@@ -28,7 +29,7 @@ diagram, morphism etc.  We combine them with a coproduct.
 
   sort Value =
     | Spec  Spec
-    | Morph (Spec * Spec * Morphism)
+    | Morph Morphism
     | Diag  (Diagram (Spec,Morphism))
     % | DiagMorph
 
@@ -39,8 +40,8 @@ diagram, morphism etc.  We combine them with a coproduct.
   def ppValue value =
     case value of
       | Spec  spc -> ppString (printSpec spc)
-      % | Morph str -> ppString str
-      % | Diag  str -> ppString str
+      | Morph m -> ppString "morphism"
+      | Diag  d -> ppString "diagram"
 \end{spec}
 
 The interpreter maintains state.  The state of the interpreter includes
