@@ -125,7 +125,7 @@ Technologies.
 <para>
 Finally, note that a useful trick in lisp is to start your
 application, e.g.  (foo nil), then at an appropriate time
-hit control-C.  This will interrupt your application and put
+hit Cntrl-C.  This will interrupt your application and put
 your into the debugger.  From there you can enter the command
 :zoom to see the top of the stack.  That can often be quite
 revealing.  

@@ -79,8 +79,8 @@ even be made totally transparent to the user.</para>
 
 <para>The mapping of the conceptual unit tree to the file system is
 defined by the environment variable &swpath;. Similarly to the
-``path'' environment variable in operating systems, &swpath; is a
-string consisting of a colon-separated list of absolute directory
+[[PATH]] environment variable in operating systems, &swpath; is a
+string consisting of a semicolon-separated list of absolute directory
 paths in the file system. See <xref linkend="swpath"> for information
 on how to inspect and set &swpath;.</para>
 
@@ -104,11 +104,7 @@ prefixed by the path from the directory in &swpath; to the
 file.</para>
 
 <para>For example, suppose that &swpath; includes the directory
-<"\users\me\specware"> (assuming the Windows operating system;
-currently, since &swpath; is colon-separated, it is not possible to
-use drive letters in directories; &Specware; automatically prefixes
-directories with <"c:">; this restriction will be removed in future
-versions of &Specware;). The user creates a file named <"A.sw">
+<"c:\users\me\specware">. The user creates a file named <"A.sw">
 immediately under the directory <"c:\users\me\specware\one\two">,
 containing the following text:</para>
 
@@ -151,7 +147,7 @@ the URI syntax, where subparts of a document are referred to using
 ``#''.)</para>
 
 <para>Suppose, as in the previous example, that &swpath; includes the
-directory <"\users\me\specware">. The user creates a file named
+directory <"c:\users\me\specware">. The user creates a file named
 <"three.sw"> immediately under the directory
 <"c:\users\me\specware\one\two">, containing the following
 text:</para>
