@@ -16,7 +16,7 @@ fi
 LISP_MODE=$1
 
 echo "================================================================================"
-echo "  Generate_Lisp:  Use $LISP_MODE version of Specware to generate ${APP_NAME}.lisp from ${APP_NAME}.sw"
+echo "  Generate_Lisp:  Use $LISP_MODE version of Specware to generate ${APP_NAME}.lisp from ${APP_NAME}GenLisp.sw"
 echo " "
 echo "  Generate_Lisp:  APP_NAME  = [$APP_NAME]"
 echo "  Generate_Lisp:  APP_DIR   = [$APP_DIR]"
@@ -67,9 +67,9 @@ $BATCH_SPECWARE <<-XXXX
 	;; We inherit various utilities from Specware.
         ;; (describe-environment) ; pwd, swpath, etc.
 	(exiting-on-errors 
-	  (if (sw "/${APP_NAME}.sw")
-	    (cl-user::exit-from-lisp 0)
-	    (cl-user::exit-from-lisp 1)))
+	  (if (sw "/${APP_NAME}GenLisp.sw")
+	    (exit-from-lisp 0)
+	    (exit-from-lisp 1)))
 XXXX
 RC=$?
 
