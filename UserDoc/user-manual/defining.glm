@@ -117,12 +117,12 @@ of the unit is the name of the file, without <".sw">, prefixed by the
 path from the directory in &swpath; to the file.</para>
 
 <para>For example, suppose that &swpath; includes the directory
-<"\users\me\specware"> (in the Windows operating system; currently,
-since &swpath; is colon-separated, it is not possible to use drive
-identifiers in directories; &Specware; automatically prefixes
-directories with <"c:">; this restriction will be removed in future
-versions of &Specware;). The user creates a file named <"A.sw">
-immediately under the directory <"\users\me\specware\one\two">,
+<"\users\me\specware"> (assuming the Windows operating system;
+currently, since &swpath; is colon-separated, it is not possible to
+use drive identifiers in directories; &Specware; automatically
+prefixes directories with <"c:">; this restriction will be removed in
+future versions of &Specware;). The user creates a file named <"A.sw">
+immediately under the directory <"c:\users\me\specware\one\two">,
 containing the following text:</para>
 
 [[
@@ -132,7 +132,7 @@ containing the following text:</para>
 ]]
 
 <para>The absolute path of the file in the file system is
-<"\users\me\specware\one\two\A.sw">. The unit is a spec containing
+<"c:\users\me\specware\one\two\A.sw">. The unit is a spec containing
 just a sort [[X]]. The name of the unit is [[one/two/A]]. Note that
 the path components are separated by forward slashes ``/'', even
 though the underlying file system uses backward slashes ``\''. Unit
@@ -166,7 +166,7 @@ identified using the sharp sign.)</para>
 <para>Suppose, as in the previous example, that &swpath; includes the
 directory <"\users\me\specware">. The user creates a file named
 <"three.sw"> immediately under the directory
-<"\users\me\specware\one\two">, containing the following
+<"c:\users\me\specware\one\two">, containing the following
 text:</para>
 
 [[
@@ -193,6 +193,12 @@ sign and the file path (relative to the directory in &swpath;).  If
 instead the file contains defining text for a unit, then the name of
 the unit is the file path (relative to the directory in &swpath;),
 without any sharp sign and additional identifier.</para>
+
+<para>Despite the possibility of having one unit definition in a file,
+in this manual we use the term ``multiple-unit file'' to denote a file
+that contains one or more unit definitions. The term ``single-unit
+file'' is instead used to denote a file that only contains the
+defining text of a unit.</para>
 
 </section>
 
