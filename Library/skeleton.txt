@@ -16,11 +16,15 @@ GENERAL NOTIONS
   * function update
 
   Predicates
+  * logical operations
+  * comparisons
+  * satisfiable
   * epsilon
+  * uniquely satisfied
   * iota
+  * finite
   * min
   * max
-  * finite
 
   Relations
   * domain
