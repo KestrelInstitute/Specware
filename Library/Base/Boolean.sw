@@ -19,10 +19,10 @@ Boolean qualifying spec
 
   op compare  : Boolean * Boolean -> Comparison
 
-  def ~   x     = if x then false else true
-  def or  (x,y) = if x then true  else y
-  def &   (x,y) = if x then y     else false
-  def =>  (x,y) = if x then y     else true
-  def <=> (x,y) = if x then y     else ~y 
+  % def ~   x     = if x then false else true
+  % def or  (x,y) = if x then true  else y
+  % def &   (x,y) = if x then y     else false
+  % def =>  (x,y) = if x then y     else true
+  % def <=> (x,y) = if x then y     else ~y 
 endspec
 \end{spec}
