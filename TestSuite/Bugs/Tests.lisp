@@ -85,6 +85,29 @@ endspec
      flop}
 ")
 
+ ("Bug 0047 : prep -- process Aa"
+  :swll  "Bug_0047/UpLo#Aa" 
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0047/UpLo#Aa
+;;; Generating lisp file /tmp/cl-current-file.lisp
+")
+ 
+ ("Bug 0047 : prep -- process aA"
+  :swll  "Bug_0047/UpLo#aA" 
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0047/UpLo#aA
+;;; Generating lisp file /tmp/cl-current-file.lisp
+")
+
+ ("Bug 0047 : prep -- gen lisp for C"
+  :swll  "Bug_0047/UpLo#C" 
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0047/UpLo#C
+;;; Generating lisp file /tmp/cl-current-file.lisp
+")
+
+ ("Bug 0047 : Case insensitivity of Lisp considered harmful"
+  :lisp "(print SW-USER::result_0047)"
+  :output "
+123 ")
+
  ("Bug 0053 : Strange result is shown for result of spec-substitution"
   :show   "Bug_0053/Subst#BB" 
   :output ";;; Elaborating spec-substitution at $TESTDIR/Bug_0053/Subst#BB
@@ -234,6 +257,32 @@ endspec
 
 ")
 
+
+ ("Bug 0090 : Insufficient context to type-check case branches"
+  :show   "Bug_0090/caseContext#O"
+  :output ";;; Elaborating obligator at $TESTDIR/Bug_0090/caseContext#O
+;;; Elaborating spec at $TESTDIR/Bug_0090/caseContext#S
+
+spec  
+ import S
+ import /Library/Base/WFO
+ conjecture f_Obligation0 is [a] fa(P : List(a)) natural?(100 div length P)
+endspec
+
+")
+
+ ("Bug 0092 : Useless import of WFO"
+  :show   "Bug_0092/BogusImport#O" 
+  :output ";;; Elaborating obligator at $TESTDIR/Bug_0092/BogusImport#O
+;;; Elaborating spec at $TESTDIR/Bug_0092/BogusImport#S
+
+spec  
+ import S
+ import /Library/Base/WFO
+endspec
+
+")
+ 
  ("Bug 0093 : No check on clashing defs in colimit"
   :show   "Bug_0093/IncompatColimit.sw" 
   :output ";;; Elaborating spec at $TESTDIR/Bug_0093/IncompatColimit#I
