@@ -11,7 +11,7 @@ In most cases, the polymorphism appearing here is not needed and one
 is better to use a monomorphic sort. Also, often, one does not need a
 sort for category at all but rather just a spec.  Note that the spec
 below is roughly what you get from a naive internalization of the spec
-MathStructures/Categories/Cat. There is another such internalization
+Structures/Math/Categories/Cat. There is another such internalization
 without the polymorphism.
 
 This sort of internalization yields definitions closest to Burstall
