@@ -1,3 +1,4 @@
+(defpackage "SYSTEM-SPEC")
 (defpackage "STRING-SPEC")
 (IN-PACKAGE "STRING-SPEC")
 
@@ -194,8 +195,24 @@
 
 (defun stringToInt (s)
   (declare (type string s))
-  ;; lisp automatically returns the first value as a normal value
-  (the integer (read-from-string s)))
+  (multiple-value-bind (n new-index)
+      (parse-integer s :junk-allowed t)
+    (cond ((null n)
+	   (System-Spec::fail 
+	    (format nil "stringToInt could not parse ~S" 
+		    s)))
+	  ((< new-index (length s))
+	   (System-Spec::fail
+	    (format nil "stringToInt found ~D, but also extra junk in ~S" 
+		    n s)))
+	  ((let ((c0 (char s 0))) 
+	     (or (digit-char-p c0) 
+		 (eq c0 #\-)))
+	   (the integer n))
+	  (t
+	   (System-Spec::fail
+	    (format nil "stringToInt: leading ~:C in ~S is not allowed"
+		    (char s 0) s))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -214,7 +231,22 @@
 (defun stringToNat (s)
   (declare (type string s))
   ;; lisp automatically returns the first value as a normal value
-  (the integer (read-from-string s)))
+  (multiple-value-bind (n new-index)
+      (parse-integer s :junk-allowed t)
+    (cond ((null n)
+	   (System-Spec::fail
+	    (format nil "stringToNat could not parse ~S" 
+		    s)))
+	  ((< new-index (length s))
+	   (System-Spec::fail
+	    (format nil "stringToNat found ~D, but also extra junk in ~S" 
+		    n s)))
+	  ((digit-char-p (char s 0))
+	   (the integer n))
+	  (t
+	   (System-Spec::fail
+	    (format nil "stringToNat: leading ~:C in ~S is not allowed"
+		    (char s 0) s))))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
