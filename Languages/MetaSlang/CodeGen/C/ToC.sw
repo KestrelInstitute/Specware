@@ -82,23 +82,25 @@ spec {
   def generateCVars cSpec spc =
     let def doOp (qual, id, (aliases, fixity, (tyVars,srt), optTerm), cSpec) =
       case optTerm of
-        | None ->
-            (case (srt : ASort Position) of
-              | Base (qid,srts,_) ->
-                 (case (derefSort spc srt) of
-                   | Base (qid,srts,_) ->
-                       addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (Base (showQualifiedId qid))
-                   | Product (fields,_) ->
-                       addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (Ptr (Base (showQualifiedId qid)))
-                   | _ -> fail ("generateCVars: operator "
-                              ^ (showQualifiedId (Qualified (qual,id)))
-                              ^ " resolves to unsupported sort: "
-                              ^ (printSort srt)))
-              | Arrow (domSort,codSrt,_) -> cSpec
-              | _ -> fail ("generateCVars: operator "
-                              ^ (showQualifiedId (Qualified (qual,id)))
-                              ^ " has an unnamed sort: "
-                              ^ (printSort srt)))
+        | None -> addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (sortToCType srt)
+%             (case (srt : ASort Position) of
+%               | Base (qid,srts,_) ->
+%                  (case (derefSort spc srt) of
+%                    | Base (qid,srts,_) ->
+%                        addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (baseSortToCType qid)
+%                    | Product (fields,_) ->
+%                        addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (baseSortToCType qid)
+%                    | _ -> fail ("generateCVars: operator "
+%                               ^ (showQualifiedId (Qualified (qual,id)))
+%                               ^ " resolves to unsupported sort: "
+%                               ^ (printSort srt)))
+%               | Arrow (domSort,codSrt,_) -> cSpec % not a variable (leave it alone)
+%                        addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (sortToCType srt)
+% 
+%               | _ -> fail ("generateCVars: operator "
+%                           ^ (showQualifiedId (Qualified (qual,id)))
+%                           ^ " has an unnamed sort: "
+%                           ^ (printSort srt)))
         | Some _ -> cSpec
     in
       foldriAQualifierMap doOp cSpec spc.ops
@@ -106,27 +108,23 @@ spec {
   op generateCTypes : CSpec -> Spec -> CSpec
   def generateCTypes cSpec spc =
     let
-      def toCType cSpec name srt =
+      def makeCType cSpec name srt =
         case srt of
-          | Arrow (domSrt,codSrt,_) -> fail "generateCTypes: found arrow"
+          | Subsort (srt,term,_) -> makeCType cSpec name srt
+          | Product (("1",_)::_,_) -> fail "generateCTypes: found tuples without projections"
           | Product (fields,_) -> 
-              let def fieldToVarDecls (id,srt) =
-                case srt of 
-                  | Base (qid,[],_) -> (id, Base (showQualifiedId qid))
-                  | _ -> fail "generateCTypes: field not a base type"
-              in
-                addStruct cSpec name (map fieldToVarDecls fields)
+              addStruct cSpec name (map (fn (fieldName,srt) -> (fieldName, sortToCType srt)) fields)
           | CoProduct (fields,_) -> fail "generateCTypes: found coproduct"
           | Quotient (srt,term,_) -> fail "generateCTypes: found quotient"
-          | Subsort (srt,term,_) -> cSpec
-          | Base (qid,[],_) -> addTypeDefn cSpec name (Base (showQualifiedId qid))
+          | Base (qid,[],_) -> addTypeDefn cSpec name (baseSortToCType qid)
           | Base (qid,srts,_) -> fail "generateCTypes: found instantiated base type"
           | TyVar _ -> fail "generateCTypes: found type variable"
           | MetaTyVar _ -> fail "generateCTypes: found meta-type variable"
+          | _ -> fail ("generateCTypes: unsupported sort: " ^ (printSort srt))
       def doSort (qual, id, (aliases, tyVars, optSrt), cSpec) =
         case optSrt of
           | None -> cSpec
-          | Some srt -> toCType cSpec (showQualifiedId (Qualified (qual,id))) srt
+          | Some srt -> makeCType cSpec (showQualifiedId (Qualified (qual,id))) srt
     in
       foldriAQualifierMap doSort cSpec spc.sorts
 
@@ -143,15 +141,44 @@ spec {
       id
     else
       qual ^ "_" ^ id
+\end{spec}
+
+It is reasonable that the next function should disappear. One could argue,
+that we should never map the MetaSlang types to C types but rather define
+the base types in C. For instance \verb+typedef int Integer+.
+
+\begin{spec}
+  op baseSortToCType : QualifiedId -> Type
+  def baseSortToCType (Qualified (qual,id)) =
+    if qual = UnQualified then
+      Base id
+    else
+      case (qual,id) of
+        | ("Integer","Integer") -> Int
+        | ("Nat","Nat") -> UnsignedInt
+        | ("String","String") -> Ptr Char
+        | ("Char","Char") -> Char
+        | ("Double","Double") -> Double
+        | _ -> Base (showQualifiedId (Qualified (qual,id)))
 
   op sortToCType : ASort Position -> Type
   def sortToCType srt =
     case srt of
       | Subsort (srt,term,_) -> sortToCType srt
-      | Base (qid,[],_) -> Base (showQualifiedId qid)
+      | Base (Qualified ("Array","Array"),[srt],_) -> Array (sortToCType srt)
+      | Base (qid,[],_) -> baseSortToCType qid
       | Base (qid,srts,_) -> fail "sortToCType: found instantiated base type"
-      | _ -> fail ("sortToCType: reference to non-base type: "
-                 ^ (System.toString srt))
+      | Arrow (domSort,codSort,_) -> 
+          let domTypes =
+            case domSort of
+              | Product (fields as (("1",_)::_),_) -> 
+                   map (fn (fieldName,srt) -> sortToCType srt) fields
+              | _ -> [sortToCType domSort]
+          in
+            Fn (domTypes, sortToCType codSort)
+      | _ -> 
+         let _ = writeLine ("sortToCType: unsupported type: " ^ (printSort srt)) in
+         Void
    
   op addVarDecl : CSpec -> String -> Type -> CSpec
   def addVarDecl cSpec name type = {
@@ -194,7 +221,7 @@ spec {
       extVars     = cSpec.extVars,
       fns         = cSpec.fns,
       axioms      = cSpec.axioms,
-      typeDefns   = Cons ((name,Struct name), cSpec.typeDefns),
+      typeDefns   = Cons ((name,Ptr (Struct name)), cSpec.typeDefns),
       structDefns = Cons ((name,fields), cSpec.structDefns),
       unionDefns  = cSpec.unionDefns,
       varDefns    = cSpec.varDefns,
@@ -319,7 +346,9 @@ pendant on the C side.
       | Op (Qualified("Boolean","&"),_) -> Binary LogAnd
       | Op (Qualified("Boolean","or"),_) -> Binary LogOr
  
-      | Op (qid,_) -> Fn (showQualifiedId (removePrime qid), [], sortToCType srt)
+      % | Op (qid,_) -> Fn (showQualifiedId (removePrime qid), [], sortToCType srt)
+      | Op (qid,_) -> Var (showQualifiedId (removePrime qid),sortToCType srt)
+
       | Embed (id,_) -> 
           let _ = writeLine ("funToCExp: Ignoring constructor " ^ id) in
           Nop
