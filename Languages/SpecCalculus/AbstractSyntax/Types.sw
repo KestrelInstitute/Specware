@@ -160,17 +160,19 @@ bound by a let or listed in a file are unstructured.
 A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
-and sorts or for requalifying things. For now, a translation is just a
-mapping from names to names.
+and sorts or for requalifying things. For now, a translation is a
+mapping from names to names, annotated with the full list of names
+to be used in the target info.
 
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
 \begin{spec}
   sort TranslateExpr  a = List (TranslateRule a) * a
   sort TranslateRule  a = (TranslateRule_ a) * a
-  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId
-                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
-                          | Ambiguous  QualifiedId                 * QualifiedId                 
+  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId                  * SortNames % last arg is all aliases
+                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort)  * OpNames   % last arg is all aliases
+                          | Ambiguous  QualifiedId                 * QualifiedId                  * Aliases   % last arg is all aliases
+  sort Aliases = List QualifiedId
 \end{spec}
 
 A \verb+NamesExpr+ denotes list of names and operators. They are used in

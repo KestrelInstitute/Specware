@@ -896,15 +896,15 @@ If we want the precedence to be optional:
 ;;;        (make-pos l r)))
 
 (defun make-sc-sort-rule (left-sort-ref right-sort-ref l r)
-  (cons (cons :|Sort| (cons left-sort-ref right-sort-ref))
+  (cons (cons :|Sort| (vector left-sort-ref right-sort-ref (list right-sort-ref)))
         (make-pos l r)))
 
 (defun make-sc-op-rule (left-op-ref right-op-ref l r)
-  (cons (cons :|Op| (cons left-op-ref right-op-ref))
+  (cons (cons :|Op| (vector left-op-ref right-op-ref (list (car right-op-ref))))
         (make-pos l r)))
 
 (defun make-sc-ambiguous-rule (left-ref right-ref l r)
-  (cons (cons :|Ambiguous| (cons left-ref right-ref))
+  (cons (cons :|Ambiguous| (vector left-ref right-ref (list right-ref)))
         (make-pos l r)))
 
 ;;; ------------------------------------------------------------------------
