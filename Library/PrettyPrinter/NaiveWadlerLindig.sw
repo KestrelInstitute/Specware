@@ -33,7 +33,12 @@ WadlerLindig qualifying spec
 
   op PrettyPrint.blanks : Nat -> String
   op spaces : Nat -> String
-  def spaces n = blanks n
+  def spaces n = 
+    if n > 0 then
+      blanks n
+    else
+      ""
+
 %%     let
 %%       def spacesAux n stream =
 %%         if n <= 0 then
