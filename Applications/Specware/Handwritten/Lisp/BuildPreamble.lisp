@@ -5,8 +5,8 @@
 ;;; a Specware distribution
 
 ;; Used in printing out the license
-(defvar user::Specware-version "4.0 Beta")
-(defvar user::Specware-version-name "Specware-4-0-Beta")
+(defvar user::Specware-version "4.0")
+(defvar user::Specware-version-name "Specware-4-0")
 
 ;;; Normally autoloaded, but we want to preload them for a stand-alone world
 (require "eli")
