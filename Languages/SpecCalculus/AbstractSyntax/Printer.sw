@@ -25,6 +25,8 @@ SpecCalc qualifying spec
  import Types
  import ../../MetaSlang/Specs/SimplePrinter % based on /Library/PrettyPrinter/WadlerLindig
 
+  op ppValue : Value -> Doc
+
  %% never called...
   op showSpecTerm : [a] SpecTerm a -> String
  def showSpecTerm spec_term = ppFormat (ppSpecTerm spec_term)
@@ -287,6 +289,9 @@ SpecCalc qualifying spec
 	ppConcat [ppString "obligations ",
 		  ppTerm term]
 
+      | Quote value -> 
+	ppValue value
+
       | Other other_term -> 
 	ppOtherTerm other_term
 
@@ -407,10 +412,11 @@ SpecCalc qualifying spec
 		 ppATerm term]
    in
      case defs of
+       | []    -> ppNil
        | [dfn] -> pp_def dfn
        | _ ->
          ppConcat [ppNewline,
-		   ppString " (* Warning: Multiple definitions for following sort: *) ",
+		   ppString " (* Warning: Multiple definitions for following op: *) ",
 		   ppNewline,
 		   ppSep ppNewline (map pp_def defs)]
 
