@@ -293,3 +293,16 @@
 	  (return t))))))
 )
 
+#+allegro
+(top-level:alias ("ls" :string) (str)
+  #+UNIX      (shell (format nil "ls ~A"  str))
+  #+MSWINDOWS (shell (format nil "dir ~A" str))
+  #-(OR UNIX WINDOWS) (format t "~&I don't know what OS you're using!~%")
+  )
+
+#+allegro
+(top-level:alias ("dir" :string) (str)
+  #+UNIX      (shell (format nil "ls ~A"  str))
+  #+MSWINDOWS (shell (format nil "dir ~A" str))
+  #-(OR UNIX WINDOWS) (format t "~&I don't know what OS you're using!~%")
+  )
