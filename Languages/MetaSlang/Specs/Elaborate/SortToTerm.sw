@@ -29,13 +29,13 @@ XML qualifying spec
   %% Convert a sort S into an expression which will compile to code
   %% that will build a SortDescriptor (see below) that is similar to S.
   def convert_sort_to_descriptor_constructor (env, srt) =
-    let table           = sort_expansion_table (env, checkSort (env, srt)) in
-    let pos             = Internal "sort_descriptor" in
-    let sort_descriptor = Base (Qualified("XML",    "SortDescriptor"), [],         pos) in 
-    let ssort           = Base (Qualified("STRING", "STRING"),         [],         pos) in 
-    let junk_sort       = Base (Qualified("XML",    "junk"),           [],         pos) in  % TODO: eliminate this
-    let list_of_sd      = junk_sort                                                     in  % TODO: make real:  list sort_descriptor
-    let mynil           = Fun  (TwoNames ("List", "nil", Nonfix),      list_of_sd, pos) in 
+    let table                     = sort_expansion_table (env, checkSort (env, srt)) in
+    let pos                       = Internal "sort_descriptor" in
+    let sort_descriptor : MS.Sort = Base (Qualified("XML",    "SortDescriptor"), [],                 pos) in 
+    let string_sd       : MS.Sort = Base (Qualified("String", "String"),         [],                 pos) in 
+    let list_sd         : MS.Sort = Base (Qualified("List",   "List"),           [sort_descriptor],  pos) in 
+    let option_sd       : MS.Sort = Base (Qualified("Option", "Option"),         [sort_descriptor],  pos) in 
+    let mynil           : MS.Term = Fun  (TwoNames ("List", "nil", Nonfix),      list_sd,            pos) in 
     let 
        def mkrecord args =
 	 let (_, reversed_args : List (Id * MS.Term)) =
@@ -50,7 +50,7 @@ XML qualifying spec
 	   
        def mkapp (qualifier, id, arg : MS.Term) =
 	 ApplyN ([Fun (TwoNames (qualifier, id, Nonfix), 
-		       Arrow (list_of_sd, % TODO : put something correct here, even though no one looks at it
+		       Arrow (list_sd, % TODO : correct?
 			      sort_descriptor,
 			      pos),
 		       pos),
@@ -64,7 +64,7 @@ XML qualifying spec
 
        def mk_app_embed (id, _ (* srt *), arg) =
 	 ApplyN ([Fun (Embed (id, true), 
-		       Arrow (list_of_sd, % TODO : put something correct here, even though no one looks at it
+		       Arrow (list_sd, % TODO : correct?
 			      sort_descriptor,
 			      pos),
 
@@ -73,7 +73,7 @@ XML qualifying spec
 		 pos)
 
        def tag str = 
-	 Fun (String str, ssort, pos)
+	 Fun (String str, string_sd, pos)
 	 
        def convert srt =
 	 case resolveMetaTyVar srt of
@@ -99,24 +99,34 @@ XML qualifying spec
 											 mkrecord [tag id,
 												   case opt_srt of
 												     | None     -> % mkapp ("Option", "None", mynil)
-                												   mkembed ("None", junk_sort) 
+                												   mkembed ("None", option_sd) % Todo: correct?
 												                   
 												     | Some srt -> % mkapp ("Option", "Some", convert srt)
 														   mk_app_embed ("Some", 
-																 junk_sort, 
+																 option_sd, % Todo: correct?
 																 convert srt)]),
 										  result]))
 							        mynil
 								(rev fields)))
 	   
+
+           %% TODO:  (I think...)
+           %% For rel and pred, see if they have the form 
+           %%  | Fun          AFun b * ASort b * b
+           %% where the AFun has one of these forms:
+           %%  | Op             QualifiedId * Fixity
+           %%  | OneName        Id * Fixity         % Before elaborateSpec
+           %%  | TwoNames       Id * Id * Fixity    % Before elaborateSpec
+           %% Extract name and tag it
+
 	   | Quotient   (srt, rel,          _) -> mkapp ("XML", "MakeQuotientSortDescriptor-2",
 							 mkrecord [convert srt, 
-								   tag "QQQ"])
+								   tag "QQQ"]) % Todo: use name of rel, and complain if complex
 	   
 	   
 	   | Subsort    (srt, pred,         _) -> mkapp ("XML", "MakeSubsortSortDescriptor-2",
 							 mkrecord [convert srt, 
-								   tag "PPP"])
+								   tag "PPP"]) % Todo: use name of pred, and complain if complex
 	   
 	   | Base (Qualified (q, id), srts, _) -> mkapp ("XML", "MakeBaseSortDescriptor-3",
 							 mkrecord [tag q,
