@@ -1,7 +1,7 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/ASpec.sl v1.5
 % derived from SW4/Languages/MetaSlang/ADT/Specs/ASpecSig.sl v1.2
 
-spec {
+AnnSpec qualifying spec {
  import ../AbstractSyntax/AnnTerm   
  import /Library/Legacy/DataStructures/StringMapSplay % for qualifier maps
 

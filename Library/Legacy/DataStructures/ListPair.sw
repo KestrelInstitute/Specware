@@ -1,12 +1,16 @@
+% Why is this called ListPair?
+
 ListPair qualifying spec {
-  op zip    : fa(S,T) List S *  List T -> List (S * T)
-  op unzip  : fa(S,T) List (S * T) -> List S *  List T
-  op map    : fa(S,T,U) (S * T -> U) -> List S * List T -> List U
-  op all    : fa(S,T) (S * T -> Boolean) -> List S * List T -> Boolean
-  op exists : fa(S,T) (S * T -> Boolean) -> List S * List T -> Boolean
-  op foldr  : fa(S,T,U) (S * T * U -> U) -> U -> List S * List T -> U 
-  op foldl  : fa(S,T,U) (S * T * U -> U) -> U -> List S * List T -> U 
-  op app    : fa(a,b) (a*b -> ()) -> List a * List b -> ()
+  import /Library/Base
+
+  op zip    : fa (a,b) List a *  List b -> List (a * b)
+  op unzip  : fa (a,b) List (a * b) -> List a *  List b
+  op map    : fa (a,b,c) (a * b -> c) -> List a * List b -> List c
+  op all    : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
+  op exists : fa (a,b) (a * b -> Boolean) -> List a * List b -> Boolean
+  op foldr  : fa (a,b,c) (a * b * c -> c) -> c -> List a * List b -> c 
+  op foldl  : fa (a,b,c) (a * b * c -> c) -> c -> List a * List b -> c 
+  op app    : fa (a,b) (a * b -> ()) -> List a * List b -> ()
 
   def zip (l,r) = 
     case (l,r) of

@@ -26,7 +26,7 @@ spec {
 
  op error          : LocalEnv * String * Position -> ()
 
- def pos0 = zeroPosition()
+ % def pos0 = zeroPosition() ... ### defined in ../PosSpec
 
  (* Auxiliary functions: *)
 
@@ -471,8 +471,8 @@ spec {
            unifyL(srt1, srt2, r1, r2, pairs,
                   fn ((id1,s1),(id2,s2),pairs) -> 
                   if id1 = id2 then
-                    (case (s1,s2)
-                       of (None,None) -> Unify pairs 
+                    (case (s1,s2) of
+                        | (None,None) -> Unify pairs 
                         | (Some s1,Some s2) -> unify(s1,s2,pairs)
                         | _ -> NotUnify(srt1,srt2))
                   else
