@@ -120,13 +120,13 @@ public class LispProcessManager {
     // This is called from specware
     public static void setProcessUnitResults(String results) {
         writeToSpecwareStatus(results);
+        FileObject fileObj = Repository.getDefault().find("Demo_Examples", null, null);
+        if (fileObj != null)
+            fileObj.refresh();
     }
     
     public static void setProcessUnitResults(String pathName, String fileName, int lineNum, int colNum, String errorMsg) {
-        // TOTAL HACK: 14 is the length of "Demo_Examples/", which is the path to fileName in Weilyn's setup
-        // from the mounted local directory C:\Program Files\Specware4\Gui\src
-        String nonQualifiedFileName = fileName.substring(14);
-        FileObject fileObj = Repository.getDefault().find("Demo_Examples", nonQualifiedFileName, "sw");
+        FileObject fileObj = Repository.getDefault().find(pathName, fileName, "sw");
         if (fileObj != null) {
             // SLIGHT HACK: ParseSourceRequest is the same class used for the netbeans parsing stuff...
             // should probably create different class for the Specware processing stuff
@@ -228,7 +228,7 @@ public class LispProcessManager {
             
         }
     }
- 
+    
     public static void writeToOutput(String s) {
         InputOutput outputStream = TopManager.getDefault().getIO("Debug: LispProcessManager", false);
         OutputWriter writer = outputStream.getOut();
