@@ -14,6 +14,8 @@ spec
 
   op SpecCalc.opRefListToSet : List Op.Ref -> OpRefSet.Set
   def SpecCalc.opRefListToSet l = l
+
+  def OpRefEnv.fold = OpRefEnv.foldl
 endspec
 \end{spec}
 

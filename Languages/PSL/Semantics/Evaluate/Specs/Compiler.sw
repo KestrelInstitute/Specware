@@ -473,6 +473,12 @@ axiom but we might be better off without an axiom at all.
 \begin{spec}
 	  | Exec trm ->
           (case trm of
+            | Fun(OneName("skip",fixity),srt,position) ->
+                compileCommand ctxt (Skip,position)
+            | Fun(OneName("continue",fixity),srt,position) ->
+                compileCommand ctxt (Continue,position)
+            | Fun(OneName("break",fixity),srt,position) ->
+                compileCommand ctxt (Break,position)
             | Fun(OneName("return",fixity),srt,position) ->
                 compileCommand ctxt (Return None,position)
             | ApplyN ([Fun(OneName("return",fixity),srt,position)],_) ->

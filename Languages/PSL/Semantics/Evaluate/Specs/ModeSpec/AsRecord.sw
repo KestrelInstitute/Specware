@@ -16,7 +16,9 @@ ModeSpec qualifying spec
       invariants : ClaimRefSet.Set,
       context : HigherOrderMatching.Context,
       rewriteRules : DemodRewriteRules,
-      elaborated? : Boolean
+      localSorts : SortRefSet.Set,
+      localOps : OpRefSet.Set,
+      localClaims : ClaimRefSet.Set
     }
 
   % op specOf : ModeSpec -> Spec.Spec
@@ -41,8 +43,14 @@ ModeSpec qualifying spec
   op ModeSpec.rewriteRules : ModeSpec -> DemodRewriteRules
   def ModeSpec.rewriteRules modeSpec = modeSpec.rewriteRules
 
-  op ModeSpec.elaborated? : ModeSpec -> Boolean
-  def ModeSpec.elaborated? modeSpec = modeSpec.elaborated?
+  op ModeSpec.localSorts : ModeSpec -> SortRefSet.Set
+  def ModeSpec.localSorts modeSpec = modeSpec.localSorts
+
+  op ModeSpec.localOps : ModeSpec -> OpRefSet.Set
+  def ModeSpec.localOps modeSpec = modeSpec.localOps
+
+  op ModeSpec.localClaims : ModeSpec -> ClaimRefSet.Set
+  def ModeSpec.localClaims modeSpec = modeSpec.localClaims
 
   % op make : Spec.Spec -> OpRefSet.Set -> ClaimRefSet.Set -> ModeSpec
   def ModeSpec.make spc variables invariants = {
@@ -52,7 +60,9 @@ ModeSpec qualifying spec
       invariants = invariants,
       context = makeContext emptySpec,
       rewriteRules = {unconditional=empty,conditional=empty},
-      elaborated? = false
+      localSorts = empty,
+      localOps = empty,
+      localClaims = empty
     }
 
   op ModeSpec.withVariables infixl 18 : ModeSpec * OpRefSet.Set -> ModeSpec
@@ -63,7 +73,9 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      elaborated? = elaborated? modeSpec
+      localSorts = localSorts modeSpec,
+      localOps = localOps modeSpec,
+      localClaims = localClaims modeSpec
     }
 
   def ModeSpec.hideVariable modeSpec varRef =
@@ -74,18 +86,20 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      elaborated? = elaborated? modeSpec
+      localSorts = localSorts modeSpec,
+      localOps = localOps modeSpec,
+      localClaims = localClaims modeSpec
     }
 
   def ModeSpec.hideVariables modeSpec subst =
       let def rem ops (Qualified (qual,id)) = removeAQualifierMap (ops, qual,id) in {
-      (newOps,newVars) <- 
+      (localOps,newVars) <- 
         foldM (fn (ops,vars) -> fn varInfo -> return (rem ops (Op.refOf varInfo), delete (vars, Op.refOf varInfo)))
              ((specOf modeSpec).ops, variables modeSpec) subst;
       let spc = specOf modeSpec in
       let newSpec:Spec.Spec = {
         sorts = spc.sorts,
-        ops = newOps,
+        ops = localOps,
         properties = spc.properties,
         importInfo = spc.importInfo
       } in
@@ -101,7 +115,9 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      elaborated? = elaborated? modeSpec
+      localSorts = localSorts modeSpec,
+      localOps = localOps modeSpec,
+      localClaims = localClaims modeSpec
     }
 
   op withContext infixl 18 : ModeSpec * HigherOrderMatching.Context -> ModeSpec
@@ -112,7 +128,9 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = ctxt,
       rewriteRules = rewriteRules modeSpec,
-      elaborated? = elaborated? modeSpec
+      localSorts = localSorts modeSpec,
+      localOps = localOps modeSpec,
+      localClaims = localClaims modeSpec
     }
 
   op withRewriteRules infixl 18 : ModeSpec * DemodRewriteRules -> ModeSpec
@@ -123,18 +141,9 @@ ModeSpec qualifying spec
       invariants = invariants modeSpec,
       context = context modeSpec,
       rewriteRules = rules,
-      elaborated? = elaborated? modeSpec
-    }
-
-  op setElaborated infixl 18 : ModeSpec -> ModeSpec
-  def setElaborated modeSpec = {
-      spc = specOf modeSpec,
-      variables = variables modeSpec,
-      hidden = hidden modeSpec,
-      invariants = invariants modeSpec,
-      context = context modeSpec,
-      rewriteRules = rewriteRules modeSpec,
-      elaborated? = true
+      localSorts = localSorts modeSpec,
+      localOps = localOps modeSpec,
+      localClaims = localClaims modeSpec
     }
 
   % op withInvariants infixl 18 : ModeSpec * ClaimRefSet.Set -> ModeSpec
@@ -145,43 +154,88 @@ ModeSpec qualifying spec
       invariants = invariants,
       context = context modeSpec,
       rewriteRules = rewriteRules modeSpec,
-      elaborated? = elaborated? modeSpec
+      localSorts = localSorts modeSpec,
+      localOps = localOps modeSpec,
+      localClaims = localClaims modeSpec
+    }
+
+  op ModeSpec.addLocalOp : ModeSpec -> Op.Ref -> ModeSpec
+  def ModeSpec.addLocalOp modeSpec ref = {
+      spc = specOf modeSpec,
+      variables = variables modeSpec,
+      hidden = hidden modeSpec,
+      invariants = invariants modeSpec,
+      context = context modeSpec,
+      rewriteRules = rewriteRules modeSpec,
+      localSorts = localSorts modeSpec,
+      localOps = insert (localOps modeSpec, ref),
+      localClaims = localClaims modeSpec
+    }
+
+  op ModeSpec.addLocalClaim : ModeSpec -> Claim.Ref -> ModeSpec
+  def ModeSpec.addLocalClaim modeSpec ref = {
+      spc = specOf modeSpec,
+      variables = variables modeSpec,
+      hidden = hidden modeSpec,
+      invariants = invariants modeSpec,
+      context = context modeSpec,
+      rewriteRules = rewriteRules modeSpec,
+      localSorts = localSorts modeSpec,
+      localOps = localOps modeSpec,
+      localClaims = insert (localClaims modeSpec, ref)
+    }
+
+  op ModeSpec.addLocalSort : ModeSpec -> Sort.Ref -> ModeSpec
+  def ModeSpec.addLocalSort modeSpec ref = {
+      spc = specOf modeSpec,
+      variables = variables modeSpec,
+      hidden = hidden modeSpec,
+      invariants = invariants modeSpec,
+      context = context modeSpec,
+      rewriteRules = rewriteRules modeSpec,
+      localSorts = insert (localSorts modeSpec, ref),
+      localOps = localOps modeSpec,
+      localClaims = localClaims modeSpec
     }
 
   % op addOp : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
   def ModeSpec.addOp modeSpec opInfo position = {
       newSpec <- SpecEnv.addOp (specOf modeSpec) opInfo position;
-      if elaborated? modeSpec then
-        let Qualified (qual,id) = idOf opInfo in
-        let rules = defRule (context modeSpec,qual,id,opInfo) in
-        let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
-        return ((modeSpec withSpec newSpec)
-                          withRewriteRules rules)
-      else
-        return (modeSpec withSpec newSpec)
+      return (addLocalOp (modeSpec withSpec newSpec) (refOf opInfo))
     }
+
+        % let Qualified (qual,id) = idOf opInfo in
+        % let rules = defRule (context modeSpec,qual,id,opInfo) in
+        % let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
+        % return ((modeSpec withSpec newSpec)
+                          % withRewriteRules rules)
+      % else
+        % return (modeSpec withSpec newSpec)
 
   % op addSort : ModeSpec -> Sort.SortInfo -> Position -> Env ModeSpec
   def ModeSpec.addSort modeSpec sortInfo position = {
       newSpec <- SpecEnv.addSort (specOf modeSpec) sortInfo position;
-      return (modeSpec withSpec newSpec)
+      return (addLocalSort (modeSpec withSpec newSpec) (refOf sortInfo))
     }
 
   % op addVariable : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
   def ModeSpec.addVariable modeSpec opInfo position = {
       newSpec <- SpecEnv.addOp (specOf modeSpec) opInfo position;
-      ref <- refOf opInfo;
-      if elaborated? modeSpec then
-        let Qualified (qual,id) = idOf opInfo in
-        let rules = defRule (context modeSpec,qual,id,opInfo) in
-        let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
-        return (((modeSpec withSpec newSpec)
-                         withRewriteRules rules)
-                         withVariables (insert (variables modeSpec, ref)))
-      else
-        return ((modeSpec withSpec newSpec)
-                         withVariables (insert (variables modeSpec, ref)))
+      return ((addLocalOp (modeSpec withSpec newSpec) (refOf opInfo))
+                         withVariables (insert (variables modeSpec, refOf opInfo)))
     }
+%       ref <- refOf opInfo;
+%       if elaborated? modeSpec then
+%         let Qualified (qual,id) = idOf opInfo in
+%         let rules = defRule (context modeSpec,qual,id,opInfo) in
+%         let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
+%         return (((modeSpec withSpec newSpec)
+%                          withRewriteRules rules)
+%                          withVariables (insert (variables modeSpec, ref)))
+%       else
+%         return ((modeSpec withSpec newSpec)
+%                          withVariables (insert (variables modeSpec, ref)))
+%     }
 
   % op findTheOp : ModeSpec -> Id.Id -> Env Op.OpInfo
   def ModeSpec.findTheOp modeSpec id = findTheOp (specOf modeSpec) id
@@ -240,21 +294,22 @@ ModeSpec qualifying spec
   % op addClaim : ModeSpec -> Claim.Claim -> Position -> Env ModeSpec
   def ModeSpec.addClaim modeSpec property position = {
       newSpec <- addClaim (specOf modeSpec) property position;
-      if elaborated? modeSpec then
-        let newRules = axiomRules (context modeSpec) property in
-        let rules = addUnconditionalRules(newRules,rewriteRules modeSpec) in
-        return ((modeSpec withSpec newSpec)
-                         withRewriteRules rules)
-      else
-        return (modeSpec withSpec newSpec)
+      return (addLocalClaim (modeSpec withSpec newSpec) (refOf property))
+%       if elaborated? modeSpec then
+%         let newRules = axiomRules (context modeSpec) property in
+%         let rules = addUnconditionalRules(newRules,rewriteRules modeSpec) in
+%         return ((modeSpec withSpec newSpec)
+%                          withRewriteRules rules)
+%       else
+%         return (modeSpec withSpec newSpec)
     }
 
   % op addInvariant : ModeSpec -> Claim.Claim -> Position -> Env ModeSpec
   def ModeSpec.addInvariant modeSpec property position = {
       newSpec <- SpecEnv.addClaim (specOf modeSpec) property position;
       ref <- refOf property;
-      return ((modeSpec withSpec newSpec)
-                        withInvariants (insert (invariants modeSpec, ref)))
+      return (addLocalClaim ((modeSpec withSpec newSpec)
+                           withInvariants (insert (invariants modeSpec, ref))) ref)
     }
 
   % op elaborate : ModeSpec -> Env ModeSpec
@@ -267,11 +322,46 @@ ModeSpec qualifying spec
       %          print (show modeSpec);
       %          raise (SpecError (noPos, ""))
       %       });
-      newModeSpec <- return (setElaborated (modeSpec withSpec elabSpec));
+      % newModeSpec <- return (setElaborated (modeSpec withSpec elabSpec));
       % norm <- normalize newModeSpec;
-      ctxt <- return (makeContext (specOf newModeSpec));
-      rules <- return (demodRules (specRules ctxt (specOf newModeSpec)));
-      return ((newModeSpec withContext ctxt) withRewriteRules rules)
+      % ctxt <- return (makeContext (specOf newModeSpec));
+      % rules <- return (demodRules (specRules ctxt (specOf newModeSpec)));
+      modeSpec <- foldM (fn modeSpec -> fn claim ->
+        if member? (localClaims modeSpec, refOf claim) then 
+          let newRules = axiomRules (context modeSpec) claim in
+          let rules = addUnconditionalRules(newRules,rewriteRules modeSpec) in
+            return (modeSpec withRewriteRules rules)
+        else
+          return modeSpec
+        ) (modeSpec withSpec elabSpec) (specOf modeSpec).properties;
+      modeSpec <- fold (fn modeSpec -> fn ref -> {
+          opInfo <- findTheOp modeSpec ref;
+          let Qualified (qual,id) = idOf opInfo in
+          let rules = defRule (context modeSpec,qual,id,opInfo) in
+          let rules = addUnconditionalRules(rules,rewriteRules modeSpec) in
+          return (modeSpec withRewriteRules rules)
+        }) modeSpec (localOps modeSpec);
+      return {
+        spc = {
+            importInfo = {
+              imports = modeSpec.spc.importInfo.imports,
+              importedSpec = modeSpec.spc.importInfo.importedSpec,
+              localOps = [],
+              localSorts = []
+            },
+            sorts = modeSpec.spc.sorts,
+            ops = modeSpec.spc.ops,
+            properties = modeSpec.spc.properties
+          },
+        variables = variables modeSpec,
+        hidden = hidden modeSpec,
+        invariants = invariants modeSpec,
+        context = context modeSpec,
+        rewriteRules = rewriteRules modeSpec,
+        localSorts = empty,
+        localOps = empty,
+        localClaims = empty
+      }
     }
 
   % op subtract : ModeSpec -> ModeSpec -> ModeSpec
@@ -386,7 +476,7 @@ ModeSpec qualifying spec
     newHidden <- return (union (hidden ms1, hidden ms2));
     newInvars <- return (union (invariants ms1, invariants ms2));
     newRules <- return (mergeDemodRules [rewriteRules ms1, rewriteRules ms2]);
-    newElab <- return ((elaborated? ms1) & (elaborated? ms2));
+    % newElab <- return ((elaborated? ms1) & (elaborated? ms2));
     return {
         spc = newSpc,
         variables = newVars,
@@ -394,7 +484,10 @@ ModeSpec qualifying spec
         invariants = newInvars,
         context = context ms1,
         rewriteRules = newRules,
-        elaborated? = newElab
+        % elaborated? = newElab
+        localOps = empty,
+        localSorts = empty,
+        localClaims = empty
       }
   }
 
@@ -409,9 +502,6 @@ ModeSpec qualifying spec
       ppNewline,
       String.pp "invariants=",
       pp (invariants modeSpec),
-      ppNewline,
-      String.pp "elaborated?=",
-      pp (elaborated?  modeSpec),
       ppNewline,
       String.pp "hidden=",
       pp (hidden  modeSpec)

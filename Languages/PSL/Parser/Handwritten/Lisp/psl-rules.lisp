@@ -95,9 +95,9 @@
     (1 :PSL-CASE)
     (1 :PSL-LET)
     ;; (1 :PSL-RETURN)
-    (1 :PSL-SKIP)
-    (1 :PSL-CONTINUE)
-    (1 :PSL-BREAK)
+    ;; (1 :PSL-SKIP)
+    ;; (1 :PSL-CONTINUE)
+    ;; (1 :PSL-BREAK)
     (1 :PSL-EXEC)
     ;; (1 :PSL-ASSIGN)
     (1 :PSL-RELATION))
@@ -136,17 +136,17 @@
     (2 :PSL-COMMAND-SEQ) "}")
   (OscarAbsSyn::mkLet-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
-(define-sw-parser-rule :PSL-SKIP ()
-  (:tuple "skip")
-  (OscarAbsSyn::mkSkip (make-pos ':left-lcb ':right-lcb)))
-
-(define-sw-parser-rule :PSL-BREAK ()
-  (:tuple "break")
-  (OscarAbsSyn::mkBreak (make-pos ':left-lcb ':right-lcb)))
-
-(define-sw-parser-rule :PSL-CONTINUE ()
-  (:tuple "continue")
-  (OscarAbsSyn::mkContinue (make-pos ':left-lcb ':right-lcb)))
+;; (define-sw-parser-rule :PSL-SKIP ()
+;;   (:tuple "skip")
+;;   (OscarAbsSyn::mkSkip (make-pos ':left-lcb ':right-lcb)))
+;; 
+;; (define-sw-parser-rule :PSL-BREAK ()
+;;   (:tuple "break")
+;;   (OscarAbsSyn::mkBreak (make-pos ':left-lcb ':right-lcb)))
+;; 
+;; (define-sw-parser-rule :PSL-CONTINUE ()
+;;   (:tuple "continue")
+;;   (OscarAbsSyn::mkContinue (make-pos ':left-lcb ':right-lcb)))
 
 ;; (define-sw-parser-rule :PSL-RETURN ()
 ;;   (:tuple "return" (1 (:optional :EXPRESSION)))
@@ -175,13 +175,14 @@
   (OscarAbsSyn::mkCase-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-CASE-BRANCH ()
-  (:tuple (1 :VAR-LIST) (2 :PATTERN) "->" (3 :PSL-COMMAND-SEQ))
-  (OscarAbsSyn::mkCaseBranch-4 1 2 3 (make-pos ':left-lcb ':right-lcb)))
+  (:tuple (:optional (1 :VAR-LIST)) (2 :PATTERN) "->" (3 :PSL-COMMAND-SEQ))
+  (let* ((optVarList 1)
+         (varList (if (eq :unspecified optVarList) nil optVarList)))
+  (OscarAbsSyn::mkCaseBranch-4 varList 2 3 (make-pos ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :VAR-LIST ()
-  (:optional (:tuple "var" (1 :LOCAL-VARIABLE-LIST)))
-  (let* ((optVarList 1))
-         (if (eq :unspecified optVarList) nil optVarList)))
+  (:tuple "var" (1 :LOCAL-VARIABLE-LIST))
+  1)
     
 (define-sw-parser-rule :CLAIM-KIND ()
   (:anyof ((:tuple "axiom")       :|Axiom|)

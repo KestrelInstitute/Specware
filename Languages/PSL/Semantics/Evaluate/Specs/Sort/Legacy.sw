@@ -51,6 +51,9 @@ Sort qualifying spec
   % op deref : Spec -> Ref -> Env SortInfo
   def SortEnv.deref spc ref = findTheSort spc ref
     
+  % op refOf : SortInfo -> Ref
+  def Sort.refOf sortInfo = idOf sortInfo
+
   % op refOf : SortInfo -> Env Ref
   def SortEnv.refOf sortInfo = return (idOf sortInfo)
 endspec
