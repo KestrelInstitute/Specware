@@ -25,13 +25,12 @@ MetaSlang qualifying spec {
 
     % this assume that a name used to index into the sort map also appears
     % in the list of names for that sort.
-    let def doSort (qualifier,id,sortInfo) =
+    let def doSortInfo sortInfo =
       ppConcat [
         ppString "sort ",
         ppASortInfo sortInfo
       ] in
-
-    let def doOp (qualifier,id,opInfo) =
+    let def doOpInfo opInfo =
       ppConcat [
          ppString "op ",
          ppAOpInfo opInfo
@@ -42,8 +41,8 @@ MetaSlang qualifying spec {
         ppNewline,
         ppSep ppNewline [
           ppImports,    
-          ppSep ppNewline (map doSort (sortsAsList spc)),
-          ppSep ppNewline (map doOp (opsAsList spc)),
+          ppSep ppNewline (map doSortInfo (sortInfosAsList spc)),
+          ppSep ppNewline (map doOpInfo   (opInfosAsList   spc)),
           ppSep ppNewline (map ppAProperty properties)
         ]
       ]),

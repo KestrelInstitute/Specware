@@ -195,18 +195,38 @@ AnnSpec qualifying spec {
  % --------------------------------------------------------------------------------
  % return sorts/ops as list with entries of the form (qualifier, id, info)
 
- op sortsAsList : fa(b) ASpec b -> List (Qualifier * Id * ASortInfo b)
- op opsAsList   : fa(b) ASpec b -> List (Qualifier * Id * AOpInfo   b)
+ op sortsAsList     : fa(b) ASpec b -> List (Qualifier * Id * ASortInfo b)
+ op opsAsList       : fa(b) ASpec b -> List (Qualifier * Id * AOpInfo   b)
+ op sortInfosAsList : fa(b) ASpec b -> List (ASortInfo b)
+ op opInfosAsList   : fa(b) ASpec b -> List (AOpInfo   b)
 
  def sortsAsList(spc) =
   foldriAQualifierMap (fn (qualifier, id, sort_info, new_list) -> 
                          cons ((qualifier, id, sort_info), new_list))
                      [] spc.sorts
 
+ def sortInfosAsList(spc) =
+  foldriAQualifierMap (fn (_(* qualifier *), _(* id *), this_sort_info, new_list) -> 
+		       %% there could be multiple entries to the same sortInfo
+		       if exists (fn old_info -> equalSortInfo? (old_info, this_sort_info)) new_list then
+			 new_list
+		       else
+                         cons (this_sort_info, new_list))
+                      [] spc.sorts
+
  def opsAsList(spc) =
   foldriAQualifierMap (fn (qualifier, id, op_info, new_list) -> 
                          cons ((qualifier, id, op_info), new_list))
                      [] spc.ops
+
+ def opInfosAsList(spc) =
+  foldriAQualifierMap (fn (_(* qualifier *), _(* id *), this_op_info, new_list) -> 
+		       %% there could be multiple entries to the same opInfo
+		       if exists (fn old_info -> equalOpInfo? (old_info, this_op_info)) new_list then
+			 new_list
+		       else
+                         cons (this_op_info, new_list))
+                      [] spc.ops
 
  op equalSortInfo?: fa(a) ASortInfo a * ASortInfo a -> Boolean
  def equalSortInfo?((sortNames1,tyvs1,optDef1),(sortNames2,tyvs2,optDef2)) =

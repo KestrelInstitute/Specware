@@ -113,7 +113,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               (case fields of
                 | [] -> ppString "()"
                 | ("1",_)::_ ->
-                    let def ppField (x,y) = ppATerm y in
+                    let def ppField (_,y) = ppATerm y in
                     ppConcat [
                       ppString "(",
                       ppSep (ppString ",") (map ppField fields),
@@ -208,7 +208,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
       | Exists -> ppString "ex"
 
   op ppAVarWithoutSort : fa (a) AVar a -> Pretty
-  def ppAVarWithoutSort (id,srt) = ppString id
+  def ppAVarWithoutSort (id, _(* srt *)) = ppString id
 
   op ppAVar : fa (a) AVar a -> Pretty
   def ppAVar (id,srt) =
@@ -414,7 +414,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           (case fields of
               [] -> ppString "()"
             | ("1",_)::_ ->
-                let def ppField (x,y) = ppASort y in
+                let def ppField (_,y) = ppASort y in
                 ppGrConcat [
                   ppString "(",
                   ppSep (ppString "*") (map ppField fields),
