@@ -27,6 +27,7 @@ SpecCalc qualifying spec {
   op evaluateSubstitute  : SCTerm * SCTerm                       -> Position  -> Env ValueInfo
   op evaluateObligations : SCTerm                                             -> Env ValueInfo
   op evaluatePSpec       : List (PSpecElem Position)                          -> Env ValueInfo
+  op evaluatePSpecElems  : PSpec -> List (PSpecElem Position) -> Env (PSpec * TimeStamp * URI_Dependency)
 
   %% Lower-level support routines:
 

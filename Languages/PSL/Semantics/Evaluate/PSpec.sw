@@ -7,6 +7,7 @@ the P as parameterized spec.
 \begin{spec}
 SpecCalc qualifying spec {
   import New
+  import Signature
   import /Library/Legacy/DataStructures/ListUtilities
 \end{spec}
 
@@ -42,7 +43,7 @@ They are procedures in context.
 %         -> List (PSpecElem Position)
 %         -> Env (PSpec * TimeStamp * URI_Dependency)
 
-  def evaluatePSpecElems initialPSpec pSpecElems = {
+  def SpecCalc.evaluatePSpecElems initialPSpec pSpecElems = {
       (pSpecWithImports,timeStamp,depURIs)
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
       pSpec <- foldM evaluatePSpecContextElem pSpecWithImports pSpecElems;

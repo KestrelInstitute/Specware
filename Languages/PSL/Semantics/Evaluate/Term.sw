@@ -7,6 +7,7 @@ SpecCalc qualifying spec {
  % import Signature          
  import URI          
  import Spec         
+ import PSpec         
  import Let         
  import Qualify         
  import Diagram      
@@ -20,6 +21,7 @@ SpecCalc qualifying spec {
  import Substitute      
  import Print      
  import /Languages/MetaSlang/CodeGen/C/ToC
+ import /Languages/PSL/CodeGen/ToC
  import /Languages/PSL/CodeGen/Convert
 \end{spec}
 
@@ -76,6 +78,8 @@ This is a monadic interpreter for the Spec Calculus.
           (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
           baseURI <- pathToRelativeURI "/Library/Base";
           (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
+          pslBaseURI <- pathToRelativeURI "/Library/PSL/Base";
+          (Spec pslBase,_,_) <- SpecCalc.evaluateURI (Internal "PSpec base") pslBaseURI;
           (case value of
             | Spec spc -> 
                 (case language of
@@ -97,7 +101,7 @@ This is a monadic interpreter for the Spec Calculus.
             | PSpec pSpec -> 
                 (case language of
                    | "c" -> 
-                         let _ = convertPSpec pSpec in
+                         let _ = pSpecToC pSpec pslBase in
                          return (value,timeStamp,depURIs)
                    | lang -> raise (Unsupported ((positionOf sub_term),
                                   "no generation for language "

@@ -6,7 +6,7 @@ around a \BSpec\ program.
 
 \begin{spec}
 spec {
-  import /Library/Structures/Data/Categories/Cocomplete/Polymorphic
+  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic
   import Multipointed
   import PolySet qualifying /Library/Structures/Data/Sets/Polymorphic
 \end{spec}

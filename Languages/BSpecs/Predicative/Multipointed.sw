@@ -95,7 +95,14 @@ spec {
     final = bSpec.final,
     system = labelVertex (addVertex (system bSpec) vertex) vertex spc
   }
-    
+
+  op mapBSpec : BSpec -> (Spec -> Spec) -> (Morphism -> Morphism) -> BSpec
+  def mapBSpec bSpec objMap arrMap = {
+    initial = bSpec.initial,
+    final = bSpec.final,
+    system = mapSystem bSpec.system objMap arrMap
+  }
+
   op addTrans :
        BSpec 
     -> V.Elem

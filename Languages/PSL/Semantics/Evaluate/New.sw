@@ -1,8 +1,8 @@
 \section{Hopelessly Naive Compilation of PSL Procedures into BSpecs}
 
 \begin{spec}
-spec {
-  % import Signature 
+SpecCalc qualifying spec {
+  import Signature 
   import /Languages/MetaSlang/Specs/Elaborate/Utilities
   import /Languages/MetaSlang/AbstractSyntax/Fold
   import /Library/Legacy/DataStructures/ListPair

@@ -11,7 +11,7 @@ SpecCalc qualifying spec {
      (Spec pslBase,_,_) <- SpecCalc.evaluateURI (Internal "PSpec base") pslBaseURI;
      (case value of
        | Spec spc -> print (printSpec (subtractSpec spc baseSpec))
-       | Morph morph -> print (ppFormat (ppMorphism morph))
+       | Morph morph -> print ((ppFormat (ppMorphism morph)) ^ "\n")
        | Diag dgm -> print
            (ppFormat
               (ppDiagram
@@ -23,7 +23,7 @@ SpecCalc qualifying spec {
              dynamicSpec = convertPosSpecToSpec pSpec.dynamicSpec,
              procedures = pSpec.procedures
            } in
-           print (ppFormat (ppPSpecLess fixPSpec pslBase))
+           print ((ppFormat (ppPSpecLess fixPSpec pslBase)) ^ "\n")
        | InProcess -> print "No value!");
      return (value,timeStamp,depURIs)
    }

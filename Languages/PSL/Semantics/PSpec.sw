@@ -15,7 +15,7 @@ ops in the same name space?
 
 \begin{spec}
 % translate
-Context
+% Context
 % by {
 %   NatTrans.ppNatTrans +-> BSpec.ppNatTrans,
 %   NatTrans.components +-> BSpec.components,
@@ -24,8 +24,8 @@ Context
 %   Functor.edgeMap +-> BSpec.transitionMap,
 %   Functor.ppFunctor +-> BSpec.ppFunctor
 % }
-where { 
-Context = spec {
+% where { 
+SpecCalc qualifying spec {
   import Procedure
   import /Languages/MetaSlang/Specs/AnnSpec
   import /Languages/MetaSlang/Specs/SimplePrinter
@@ -70,5 +70,5 @@ Context = spec {
       ppNewline,
       ppIndent (ppMap ppQualifiedId (fn proc -> ppProcedureLess proc spc) pSpec.procedures)
     ]
-}}
+}
 \end{spec}

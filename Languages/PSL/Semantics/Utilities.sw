@@ -1,13 +1,8 @@
 \section{Construction / Destruction Operations}
 
 \begin{spec}
-spec {
+SpecCalc qualifying spec {
   import Environment
-
-  op evaluatePSpecElems :
-           PSpec
-        -> List (PSpecElem Position)
-        -> Env (PSpec * TimeStamp * URI_Dependency)
 
   op staticSpec : PSpec -> SpecCalc.Env Spec
   def staticSpec pSpec = return pSpec.staticSpec

@@ -246,6 +246,7 @@ spec
   op printGraph: Graph -> String
   op printNode : Node * Index -> String
   op printStat : Stat  -> String
+  op printNodeContent : NodeContent -> String
 
   def printGraph(g) =
     let (str,_) = foldl (fn (nd,(str,i)) -> (str ^ "\n" ^ printNode (nd,i),i+1))
@@ -256,7 +257,10 @@ spec
     "Node " ^ (Integer.toString i) ^ ": DFS index: " ^ (Integer.toString DFSindex)
       ^ " Preds: (" ^ (show " " (map Integer.toString preds))
       ^ ")\n  "
-      ^ (case content of
+      ^ (printNodeContent content)
+
+  def printNodeContent content =
+    case content of
 	  | Branch {condition, trueBranch, falseBranch} ->
 	    "Branch Condn: " ^ (printTerm condition) ^ "\n  "
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
@@ -280,7 +284,7 @@ spec
 	    (if preTest? then "While: " else "Until: ") ^ (printTerm condition) ^ "\n  "
 	    ^ "Body:: " ^ (Integer.toString body) ^ "\n  "
 	    ^ "End Loop: " ^ (Integer.toString endLoop) ^ "\n  "
-	    ^ "Continue: " ^ (Integer.toString continue))
+	    ^ "Continue: " ^ (Integer.toString continue)
 
   def printStat st =
     case st of

@@ -1,7 +1,7 @@
 \section{C Code Generator}
 
 \begin{spec}
-spec {
+CGen qualifying spec {
   import /Languages/MetaSlang/Specs/AnnSpec
   import /Languages/MetaSlang/Specs/StandardSpec
   import /Languages/MetaSlang/Specs/Printer
@@ -14,23 +14,23 @@ spec {
     let cSpec = generateCTypes cSpec spc in
     let cSpec = generateCVars cSpec spc in
     let cSpec = generateCFunctions cSpec spc in
-    let stmt = Block ([],map (fn (type,name,tyVars,term) -> termToStmt term) spc.properties) in
+    let stmt = Block ([],map (fn (type,name,tyVars,term) -> termToCStmt term) spc.properties) in
     let cSpec = addFuncDefn cSpec "main" [] Int stmt in
     let _ = writeLine (PrettyPrint.toString (format (80, ppCSpec cSpec))) in
     cSpec
 
-  op termToStmt : ATerm Position -> Stmt
-  def termToStmt trm =
+  op termToCStmt : ATerm Position -> Stmt
+  def termToCStmt trm =
     case trm of
       | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
           Exp (Apply (Binary Set, [termToCExp lhs, termToCExp rhs]))
-      | _ -> fail ("termToStmt: term '"
+      | _ -> fail ("termToCStmt: term '"
                   ^ (printTerm trm)
                   ^ "' is not an equality")
 
-  op codSort : ASort Position -> ASort Position
-  def codSort srt =
-    case srt of
+  op codSort : Spec -> ASort Position -> ASort Position
+  def codSort spc srt =
+    case (derefSort spc srt) of
       | Arrow (domSrt,codSrt,_) -> codSrt
       | _ -> fail ("codSort: '" ^ (printSort srt) ^ "' is not a function type")
   
@@ -42,24 +42,26 @@ spec {
           | Lambda ([match],_) ->
               (case match of
                  | (VarPat ((id,varSrt),_),_,trm) ->
-                      addFuncDefn cSpec name [(id,sortToCType varSrt)] (sortToCType (codSort srt)) (Return (termToCExp trm))
+                      addFuncDefn cSpec name [(id,sortToCType varSrt)] (sortToCType (codSort spc srt)) (Return (termToCExp trm))
                  | (RecordPat (fields,_),_,trm) ->
                      let def fieldToVarDecl (_,pat) = % was (id,pat) but this id seems to be unused...
                        case pat of
                          | VarPat ((id,varSrt),_) -> (id, sortToCType varSrt)
                          | _ -> fail "generateCFunctions: record field not a var pat"
                      in
-                       addFuncDefn cSpec name (map fieldToVarDecl fields) (sortToCType (codSort srt)) (Return (termToCExp trm))
+                       addFuncDefn cSpec name (map fieldToVarDecl fields) (sortToCType (codSort spc srt)) (Return (termToCExp trm))
                  | _ -> fail ("generateCFunctions: operator "
                               ^ name
                               ^ " is not a function: '"
                               ^ (printTerm trm)
                               ^ "'"))
-          | _ -> fail ("generateCFunctions: operator "
-                      ^ name
-                      ^ " is not a lambda : '"
-                      ^ (printTerm trm)
-                      ^ "'")
+          | trm -> addFuncDefn cSpec name [] (sortToCType srt) (Return (termToCExp trm))
+
+%           | _ -> fail ("generateCFunctions: operator "
+%                       ^ name
+%                       ^ " is not a lambda : '"
+%                       ^ (printTerm trm)
+%                       ^ "'")
       def doOp (qual, id, (aliases, fixity, (tyVars,srt), optTerm), cSpec) =
         case optTerm of
           | None -> cSpec
@@ -110,17 +112,23 @@ spec {
     let
       def makeCType cSpec name srt =
         case srt of
+          | Arrow (domSort,codSort,_) -> addTypeDefn cSpec name (sortToCType srt)
           | Subsort (srt,term,_) -> makeCType cSpec name srt
-          | Product (("1",_)::_,_) -> fail "generateCTypes: found tuples without projections"
+          % | Product (("1",_)::_,_) -> fail "generateCTypes: found tuples without projections"
           | Product (fields,_) -> 
               addStruct cSpec name (map (fn (fieldName,srt) -> (fieldName, sortToCType srt)) fields)
-          | CoProduct (fields,_) -> fail "generateCTypes: found coproduct"
-          | Quotient (srt,term,_) -> fail "generateCTypes: found quotient"
+          % | CoProduct (fields,_) -> fail "generateCTypes: found coproduct"
+          % | Quotient (srt,term,_) -> fail "generateCTypes: found quotient"
           | Base (qid,[],_) -> addTypeDefn cSpec name (baseSortToCType qid)
-          | Base (qid,srts,_) -> fail "generateCTypes: found instantiated base type"
-          | TyVar _ -> fail "generateCTypes: found type variable"
-          | MetaTyVar _ -> fail "generateCTypes: found meta-type variable"
-          | _ -> fail ("generateCTypes: unsupported sort: " ^ (printSort srt))
+          | Base (Qualified ("Array","Array"),[srt],_) -> addTypeDefn cSpec name (Array (sortToCType srt))
+          | Base (Qualified ("Store","Ptr"),[srt],_) -> addTypeDefn cSpec name (Ptr (sortToCType srt))
+          % | Base (qid,srts,_) -> fail "generateCTypes: found instantiated base type"
+          % | TyVar _ -> fail "generateCTypes: found type variable"
+          % | MetaTyVar _ -> fail "generateCTypes: found meta-type variable"
+          | _ ->
+             let _ = writeLine ("generateCTypes: unsupported sort: " ^ (printSort srt) ^ "\n") in
+             cSpec
+
       def doSort (qual, id, (aliases, tyVars, optSrt), cSpec) =
         case optSrt of
           | None -> cSpec
@@ -167,8 +175,11 @@ the base types in C. For instance \verb+typedef int Integer+.
     case srt of
       | Subsort (srt,term,_) -> sortToCType srt
       | Base (Qualified ("Array","Array"),[srt],_) -> Array (sortToCType srt)
+      | Base (Qualified ("Store","Ptr"),[srt],_) -> Ptr (sortToCType srt)
       | Base (qid,[],_) -> baseSortToCType qid
-      | Base (qid,srts,_) -> fail "sortToCType: found instantiated base type"
+      | Base (qid,srts,_) -> 
+          let _ = writeLine ("sortToCType: found instantiated base type: " ^ (printSort srt)) in
+          Void
       | Arrow (domSort,codSort,_) -> 
           let domTypes =
             case domSort of
@@ -222,7 +233,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       extVars     = cSpec.extVars,
       fns         = cSpec.fns,
       axioms      = cSpec.axioms,
-      typeDefns   = Cons ((name,Ptr (Struct name)), cSpec.typeDefns),
+      typeDefns   = Cons ((name,Struct name), cSpec.typeDefns),
       structDefns = Cons ((name,fields), cSpec.structDefns),
       unionDefns  = cSpec.unionDefns,
       varDefns    = cSpec.varDefns,
@@ -271,12 +282,26 @@ later to unfold sort definitions.
       | IfThenElse (test,term1,term2,_) -> IfExp (termToCExp test, termToCExp term1, termToCExp term2)
       | Apply (Fun (Project id, srt,pos),term,_) ->
           let cStruct = termToCExp term in
-          StructRef (Apply (Unary Contents, [cStruct]),id)
+          StructRef (cStruct,id)
+          % StructRef (Apply (Unary Contents, [cStruct]),id)
       | Apply (Apply (Fun (Op (Qualified ("Array","index"),fxty),srt,pos), arrayTerm,_), indexTerm,_) ->
           let cArray = termToCExp arrayTerm in
           let cIndex = termToCExp indexTerm in
           ArrayRef (cArray,cIndex)
-      | Apply (Apply (Fun (Op (Qualified ("Struct","project"),fxty),srt,pos), projTerm,_), structTerm,_) ->
+      | Apply (Fun (Op (Qualified ("Store","deref"),fxty),srt,pos), arg,_) ->
+          Apply (Unary Contents, [termToCExp arg])
+      | Apply (Fun (Op (Qualified ("Double","fromNat"),fxty),srt,pos), arg,_) -> termToCExp arg
+      | Apply (Fun (Op (Qualified ("Double","sqrt"),fxty),srt,pos), arg,_) ->
+          Apply (Var ("sqrt",Fn ([Double],Double)), [termToCExp arg])
+      | Apply (Fun (Op (Qualified ("Double","exp"),fxty),srt,pos), arg,_) ->
+          Apply (Var ("exp",Fn ([Double],Double)), [termToCExp arg])
+      | Apply (Fun (Op (Qualified ("Double","abs"),fxty),srt,pos), arg,_) ->
+          Apply (Var ("fabs",Fn ([Double],Double)), [termToCExp arg])
+      | Apply (Fun (Op (Qualified ("Functions","id"),fxty),srt,pos), arg,_) -> termToCExp arg 
+      | Apply (Apply (Fun (Op (Qualified ("Struct","proj"),fxty),srt,pos), Fun (Op (qid,fxty),_,_),_), structTerm,_) ->
+          let cStruct = termToCExp structTerm in
+          StructRef (cStruct, showQualifiedId (removePrime qid))
+      | Apply (Apply (Fun (Op (Qualified ("Struct","proj"),fxty),srt,pos), projTerm,_), structTerm,_) ->
           let cProjFunc = termToCExp projTerm in
           let cStruct = termToCExp structTerm in
             Apply (Apply (Unary Contents,[cProjFunc]), [cStruct])
@@ -295,7 +320,12 @@ later to unfold sort definitions.
                else
                  Apply (cFun,cArgs)
             | _ -> Apply (cFun,cArgs))
-       | _ -> fail ("termToCExp: term is neither a constant nor an application: " ^ (System.toString term))
+      | Apply (term1,term2,_) ->
+          let cFun = termToCExp term1 in
+          let cArgs = applyArgsToCExps term2 in
+          Apply (cFun,cArgs)
+       | _ -> 
+         let _ = writeLine ("termToCExp: term is neither a constant nor an application: " ^ (printTerm term)) in Nop
 \end{spec}
 
 In contrast, "funToCExp" converts a one- or more-ary function
@@ -312,6 +342,7 @@ pendant on the C side.
       | Char val -> Const (Char val)
       | Bool val -> Const (Int (true, if val then 1 else 0))
       | String val -> Const (String val)
+      | Op (Qualified("Store","nilPtr"),_) -> Var ("NULL",Void)
       | Op (Qualified("Nat","+"),_) -> Binary Add
       | Op (Qualified("Nat","*"),_) -> Binary Mul
       | Op (Qualified("Nat","-"),_) -> Binary Sub
@@ -342,6 +373,7 @@ pendant on the C side.
       | Op (Qualified("Double","<="),_) -> Binary Le
       | Op (Qualified("Double",">"),_) -> Binary Gt
       | Op (Qualified("Double",">="),_) -> Binary Ge
+      | Op (Qualified("Double","pi"),_) -> Var ("M_PI",Double)
 
       | Op (Qualified("Boolean","~"),_) -> Unary LogNot
       | Op (Qualified("Boolean","&"),_) -> Binary LogAnd

@@ -31,7 +31,7 @@ spec {
     return = proc.return,
     staticSpec = proc.staticSpec,
     dynamicSpec = proc.dynamicSpec,
-    code = convertBSpec proc.code
+    code = convertBSpec proc.code proc.dynamicSpec
   }
 
   op sortGraph : fa (a) (a * a -> Boolean) -> List a -> List a
@@ -51,59 +51,74 @@ spec {
           let (l1,l2) = partitionList hd tl in
              (sortGraph cmp l1) ++ [hd] ++ (sortGraph cmp l2)
 
-  op printNodeContent : NodeContent -> String
-  op printStructuredGraph : Struct.Graph -> String
-  op addPredecessors : List NodeContent -> Graph
-
-  op convertBSpec : BSpec -> Graph
-  def convertBSpec bSpec =
-    let coAlg = succCoalgebra bSpec in
-    let (graph,n,visited) = convertBSpecAux bSpec coAlg emptyMap 0 bSpec.initial emptyMap in
-    let g = sortGraph (fn ((n,_),(m,_)) -> n < m) graph in
-    let _ = writeLine (show " " (map (fn (x,y) ->
+  def printVList l = ppFormat (ppMap V.ppElem (fn n -> ppString (Nat.toString n)) l)
+  def printNCList l = show "\n" (map (fn (x,y) ->
                                       "("
                                     ^ (Nat.toString x)
                                     ^ ","
                                     ^ (printNodeContent y)
-                                    ^ ")") g)) in
-    let g = graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) graph)) in
-    let _ = writeLine (printStructuredGraph g) in
+                                    ^ ")") l)
+
+  op convertBSpec : BSpec -> Spec -> Graph
+  def convertBSpec bSpec spc =
+    let coAlg = succCoalgebra bSpec in
+    let (graph,n,visited) = convertBSpecAux bSpec spc coAlg bSpec.final emptyMap 0 bSpec.initial emptyMap in
+    let _ = writeLine (printVList visited) in
+    let _ = writeLine (printNCList graph) in
+    let g = sortGraph (fn ((n,_),(m,_)) -> n < m) graph in
+    let _ = writeLine (printNCList g) in
+    let g = graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)) in
+    let _ = writeLine (printGraph g) in
     g
 
   op convertBSpecAux :
         BSpec
+     -> Spec
      -> Coalgebra
+     -> V.Set
      -> PolyMap.Map (Index,NodeContent)
      -> Index
      -> V.Elem
      -> PolyMap.Map (V.Elem,Index)
      -> (PolyMap.Map (Index, NodeContent) * Index * PolyMap.Map (V.Elem,Index))
 
-  def convertBSpecAux bSpec coAlg graph n vertex visited =
+  def convertBSpecAux bSpec spc coAlg final graph n vertex visited =
     case (evalPartial visited vertex) of
       | Some index -> (graph,n,visited)
       | None ->
          (case (toList (coAlg vertex)) of
-            | [] -> (graph,n,visited)
+            | [] -> fail "reached empty set of successors"
 
             | [(edge,node)] ->
                let visited = update visited vertex n in
-               let (graph,n,visited) = convertBSpecAux bSpec coAlg graph (n+1) node visited in 
-               let trans = transitionSpec bSpec edge in
+               let (graph,next,visited) =
+                 if V.member? final node then
+                   (graph,n+1,visited)
+                 else
+                   convertBSpecAux bSpec spc coAlg final graph (n+1) node visited in 
+               let trans = subtractSpec (transitionSpec bSpec edge) spc in
                (case trans.properties of
                  | [] -> fail "no axiom"
                  | [(Axiom,name,tyVars,term)] ->
-                     let index = eval visited node in
-                     let graph = update graph n (Block {statements=[Assign term],next=index}) in
-                     (graph,n,visited)
-                 | _ -> fail "bad property")
+                     let graph =
+                       if V.member? final node then
+                         update graph n (Return term)
+                       else
+                         let index = eval visited node in
+                         update graph n (Block {statements=[Assign term],next=index}) in
+                     (graph,next,visited)
+                 | _ -> fail (ppFormat (ppConcat [
+                            ppString "Something wrong with spec properties",
+                            ppBreak,
+                            ppSep ppBreak (map ppAProperty trans.properties)
+                          ])))
 
             | [(leftEdge,leftNode),(rightEdge,rightNode)] ->
                let visited = update visited vertex n in
-               let (graph,n,visited) = convertBSpecAux bSpec coAlg graph (n+1) leftNode visited in
-               let (graph,n,visited) = convertBSpecAux bSpec coAlg graph n rightNode visited in
-               let leftTrans = transitionSpec bSpec leftEdge in
-               let rightTrans = transitionSpec bSpec rightEdge in
+               let (graph,next1,visited) = convertBSpecAux bSpec spc coAlg final graph (n+1) leftNode visited in
+               let (graph,next2,visited) = convertBSpecAux bSpec spc coAlg final graph next1 rightNode visited in
+               let leftTrans = subtractSpec (transitionSpec bSpec leftEdge) spc in
+               let rightTrans = subtractSpec (transitionSpec bSpec rightEdge) spc in
                (case (leftTrans.properties,rightTrans.properties) of
                  | ([],_) -> fail "no left axiom"
                  | (_,[]) -> fail "no right axiom"
@@ -111,7 +126,15 @@ spec {
                      let leftIndex = eval visited leftNode in
                      let rightIndex = eval visited rightNode in
                      let graph = update graph n (Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
-                     (graph,n,visited)
-                 | _ -> fail "bad property")
+                     (graph,next2,visited)
+                 | _ -> fail (ppFormat (ppConcat [
+                            ppString "Something wrong with spec properties",
+                            ppBreak,
+                            ppString "left = ",
+                            ppSep ppBreak (map ppAProperty leftTrans.properties),
+                            ppBreak,
+                            ppString "right = ",
+                            ppSep ppBreak (map ppAProperty rightTrans.properties)
+                          ])))
             | _ -> fail "more than two successors?")
 }

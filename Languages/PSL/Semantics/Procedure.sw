@@ -8,7 +8,7 @@ a diagram are all imports and where each \BSpec\ has two \emph{points};
 corresponding to initial and final states.
 
 \begin{spec}
-spec {
+SpecCalc qualifying spec {
   % import SpecCalc qualifying /Languages/BSpecs/Predicative/Multipointed
   import SpecCalc qualifying /Languages/BSpecs/Predicative/BetterPrinter
   % import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
