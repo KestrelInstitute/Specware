@@ -77,7 +77,7 @@ else
 fi
 
 echo ""
-echo "At `pwd`/"
+echo "Status of ilisp at `pwd`/"
 echo ""
 ls -sltr *.x86f
 echo ""
