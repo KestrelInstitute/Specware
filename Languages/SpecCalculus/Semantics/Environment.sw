@@ -72,7 +72,7 @@ UnitId_Dependency.
   op initGlobalVars : ()
   def initGlobalVars =
     run {
-      print "Declaring globals ...";
+      print "\nDeclaring globals ...";
       newGlobalVar ("BaseInfo", (None : Option RelativeUnitId, emptySpec));
       newGlobalVar ("GlobalContext", PolyMap.emptyMap);
       newGlobalVar ("LocalContext", PolyMap.emptyMap);
