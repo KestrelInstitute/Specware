@@ -881,18 +881,24 @@ spec {
 
   % ========================================================================
 
+  def sortCognizantOperators : List (Id * Id) =
+    [ ("XML" ,          "parseXML"),
+      ("<unqualified>", "parseXML"),
+
+      ("XML" ,          "printXML"),
+      ("<unqualified>", "printXML"),
+
+      ("XML" ,          "parseUnicodeXML"),
+      ("<unqualified>", "parseUnicodeXML"),
+
+      ("XML" ,          "printUnicodeXML"),
+      ("<unqualified>", "printUnicodeXML")
+      ]
+
   def sortCognizantOperator? (f1 : MS.Fun) : Boolean = 
     case f1 of
       | TwoNames (id1, id2, _) ->
-        (id1 = UnQualified or 
-	 id1 = "XML") 
-	& 
-	(case id2 of
-	   | "parseXML"        -> true
-	   | "printXML"        -> true
-	   | "parseUnicodeXML" -> true
-	   | "printUnicodeXML" -> true
-	   | _ -> false)
+        member ((id1, id2), sortCognizantOperators)
       | _ -> false
 
 
