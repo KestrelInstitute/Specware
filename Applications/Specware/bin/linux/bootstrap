@@ -42,16 +42,16 @@ cd $SPECWARE4/Applications/Specware
 echo " "
 if [ -f lisp/Specware4.lisp ]; then
   echo "Saving previous specware lisp file ..."
-  echo "cp -f lisp/Specware4.lisp lisp/Specware4-save.lisp"
-  cp -f lisp/Specware4.lisp lisp/Specware4-save.lisp
+  echo "cp -p -f lisp/Specware4.lisp lisp/Specware4-save.lisp"
+  cp -p -f lisp/Specware4.lisp lisp/Specware4-save.lisp
 else
   echo "Note: No previous specware lisp file."
 fi
 echo " "
 if [ -f bin/linux/Specware4.dxl ]; then
   echo "Saving previous specware image ..."
-  echo "cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl"
-  cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
+  echo "cp -p -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl"
+  cp -p -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 else
   echo "Note: No previous specware image."
 fi

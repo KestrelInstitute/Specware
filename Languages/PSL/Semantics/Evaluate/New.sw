@@ -39,7 +39,7 @@ spec {
           % let procSort = mkBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
           let procSort = mkArrow (argProd,resSort) in {
              static <- staticSpec pSpec;
-             % static <- addOp [unQualified name] Nonfix (tyVarsOf procSort,procSort) None static internalPosition;
+             % static <- addOp [unQualified name] Nonfix (tyVarsOf procSort,procSort) None static (Internal "evaluatePSpecProcElem");
              pSpec <- setStaticSpec pSpec static;
              compileProcedure pSpec 0 name procInfo
           }
@@ -121,16 +121,18 @@ never mixed in the specs labeling \BSpecs.
     -> SpecCalc.Env PSpec
 
   def compileProcedure pSpec cnt name {args,returnSort,command} = {
+   print ("compiling proc " ^ name ^ "\n");
+   print (ppFormat ((ppASpec (subtractSpec pSpec.dynamicSpec pSpec.staticSpec))));
    saveDyCtxt <- dynamicSpec pSpec;
    statCtxt <- staticSpec pSpec;
    dyCtxt <-
-      foldM (fn dCtxt -> fn arg ->
-        let (argName,argSort) = arg in
+      foldM (fn dCtxt -> fn (argName,argSort) -> {
+          print ("compileProc: adding " ^ argName ^ "\n");
           addOp [unQualified argName]
                 Nonfix
                 (tyVarsOf argSort,argSort)
                 None
-                dCtxt internalPosition)
+                dCtxt (Internal "compileProcedure") })
                   saveDyCtxt args;
    dyCtxt <- 
       case returnSort of
@@ -161,13 +163,7 @@ never mixed in the specs labeling \BSpecs.
 % again this is a little ugly .. we want to put the procedure into
 % the environment in case the procedure is recursive
 
-   (bSpec,cnt,pSpec) <-
-     compileCommand pSpec
-                    first
-                    last
-                    bSpec
-                    (cnt + 2)
-                    command;
+   (bSpec,cnt,pSpec) <- compileCommand pSpec first last bSpec (cnt + 2) command;
    saveDyCtxt <- dynamicSpec pSpec;
    statCtxt <- staticSpec pSpec;
    dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
@@ -180,6 +176,8 @@ never mixed in the specs labeling \BSpecs.
    pSpec <- addProcedure pSpec (unQualified name) proc;
    pSpec <- setDynamicSpec pSpec saveDyCtxt;
    pSpec <- setStaticSpec pSpec statCtxt;
+   print ("done compiling proc " ^ name ^ "\n");
+   print (ppFormat ((ppASpec (subtractSpec pSpec.dynamicSpec pSpec.staticSpec))));
    return pSpec
   }
 \end{spec}
@@ -633,8 +631,9 @@ This should be an invariant. Must check.
           | None ->
              raise (SpecError (internalPosition, "compileCommand: Assign: id '"
                           ^ (printQualifiedId leftId) ^ "' is undefined"))
-          | Some (names,fixity,sortScheme,optTerm) ->
-             addOp [makePrimedId leftId] fixity sortScheme optTerm dyCtxt internalPosition); 
+          | Some (names,fixity,sortScheme,optTerm) -> {
+             print ("compileAssign " ^ (printQualifiedId leftId) ^ "\n");
+             addOp [makePrimedId leftId] fixity sortScheme optTerm dyCtxt (Internal "compileAssign")}); 
 \end{spec}
  
 The next clause may seem puzzling. The point is that, from the time
@@ -803,8 +802,9 @@ So the following doesn't handle the situation where the name are captured by lam
          | None ->
              raise (SpecError (internalPosition, "compileAxiomStmt: unprimed id '"
                           ^ (printQualifiedId (removePrime qualId)) ^ "' is undefined"))
-         | Some (names,fixity,sortScheme,optTerm) ->
-                  addOp [qualId] fixity sortScheme optTerm spc internalPosition)) dyCtxt primedNames; 
+         | Some (names,fixity,sortScheme,optTerm) -> {
+                  print ("compileAxiomStmt: " ^ (printQualifiedId qualId) ^ "\n");
+                  addOp [qualId] fixity sortScheme optTerm spc (Internal "compileAxiomStmt")})) dyCtxt primedNames; 
       apexSpec <- return (addAxiom (("axiom stmt",[],trm),apexSpec));
       apexElab <- elaborateInContext apexSpec staticCtxt; 
       morph1 <- mkMorph (modeSpec bSpec first) apexElab [] [];
