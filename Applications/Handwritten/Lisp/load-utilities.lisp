@@ -42,7 +42,8 @@
   (let (found-index result)
     (loop while (setq found-index (loop for ch in chars
 				    thereis (position ch str)))
-      do (push (subseq str 0 found-index) result)
+      do (when (> found-index 0)
+	   (push (subseq str 0 found-index) result))
          (setq str (subseq str (1+ found-index))))
     (nreverse (if (string= str "")
 		  result (cons str result)))))

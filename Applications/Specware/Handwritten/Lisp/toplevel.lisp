@@ -63,7 +63,9 @@
   (when (stringp path)
     (when (and (>= (length path) 2) (equal (subseq path 0 2) "~/"))
       (setq path (concatenate 'string (home-dir) (subseq path 1))))
-    (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/"))))
+    (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/")))
+    (when #+mswindows t #-mswindows nil
+	  (string-subst path "/Program Files/" "/Progra~1/")))
     path)
 
 (defun strip-extraneous (str)
@@ -110,12 +112,12 @@
   (setq SpecCalc::aliasPaths nil)
   (if (null str) str
     (progn (setq str (strip-extraneous str))
-	   (setq str (subst-home str))
 	   (let ((len (length str)))
 	     (when (and (> len 3)
 			(string= (subseq str (- len 3)) ".sw"))
 	       (setq str (subseq str 0 (- len 3)))))
 	   (setq str (substitute #\/ #\\ str))
+	   (setq str (subst-home str))
 	   (setq *temp-file-in-use?* nil)
 	   (unless (unitIdString? str)
 	     ;; spec calc term. Need to put it in a temporary file
@@ -626,7 +628,8 @@
 
 (defun string-subst (str source target)
   (let (pos)
-    (loop while (setq pos (search source str))
+    (loop while (setq pos (search source str :test #+mswindows #'string-equal
+				                   #-mswindows #'string=))
 	  do (setq str (concatenate 'string
 			 (subseq str 0 pos)
 			 target
@@ -1069,26 +1072,32 @@
     (princ System-spec::proverUseBase?)))
 
 (defun swpath  (&optional str)
-  (setq str (subst-home (strip-extraneous str)))
+  (setq str (strip-extraneous str))
   (let ((newpath (if (or (null str) (equal str ""))
 		     (specware::getenv "SWPATH")
-		   (let ((str (string str)))
+		   (let ((str (normalize-path (string str) nil)))
 		     (if (speccalc::checkSpecPathsExistence str)
 			 (progn (specware::setenv "SWPATH" (string str))
 				(setq *saved-swpath* nil)
 				(string str))
 		       (progn (format t "Keeping old path:~%")
 			      (specware::getenv "SWPATH")))))))
-    (princ (normalize-path newpath))
+    (princ (normalize-path newpath t))
     (values)))
 
-(defun normalize-path (path)
-  (let ((path-dirs (specware::split-components path '(#+mswindows #\; #-mswindows #\:)))
-	(curr-dir (substitute #\/ #\\ (namestring (specware::current-directory))))
-	(specware4-dir (substitute #\/ #\\ (specware::ensure-final-slash (specware::getenv "SPECWARE4")))))
-    (unless (member specware4-dir path-dirs :test 'string-equal)
-      (setq path (concatenate 'string path #+mswindows ";" #-mswindows ":" specware4-dir)))
-    path))
+(defun normalize-path (path add-specware4-dir?)
+  (let* ((path-dirs (mapcar #'(lambda (nm)
+				(specware::ensure-final-slash (subst-home nm)))
+			    (specware::split-components path '(#+mswindows #\; #-mswindows #\:))))
+	 (specware4-dir (substitute #\/ #\\ (specware::ensure-final-slash (specware::getenv "SPECWARE4"))))
+	 (path-dirs-c-sw (if (and add-specware4-dir?
+				  (not (member specware4-dir path-dirs :test 'string-equal)))
+			     (nconc path-dirs (list specware4-dir))
+			   path-dirs)))
+    (format nil
+	    #+mswindows"~{~a~^;~}"
+	    #-mswindows"~{~a~^:~}"
+	    path-dirs-c-sw)))
 
 #+allegro
 (top-level:alias ("swpath" :case-sensitive :string) (&optional str)
