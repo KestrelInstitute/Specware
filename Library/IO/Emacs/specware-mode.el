@@ -137,6 +137,24 @@ accepted in lieu of prompting."
 (defun insert-emptyset () (interactive) (insert "Ø"))
 
 
+(require 'easymenu) 
+
+(defconst specware-menu 
+    '("Specware" 
+      ["Process Unit" sw:process-file t] 
+      [":cd this directory" cd-current-directory t] 
+      ["Find Definition " sw:meta-point t]
+      ["Switch to *common-lisp* " sw:switch-to-lisp t]
+      ["Comment Out Region" (comment-region (region-beginning) (region-end)) (mark)]
+      ["Uncomment Region"
+       (comment-region (region-beginning) (region-end) '(4))
+       (mark)]
+      ["Indent region" (sw:indent-region (region-beginning) (region-end)) (mark)])) 
+
+(easy-menu-define specware-mode-menu
+    specware-mode-map
+    "Menu used in Specware mode."
+  specware-menu)
 
 ;;; BINDINGS: should be common to the source and process modes...
 
@@ -175,14 +193,7 @@ accepted in lieu of prompting."
   (define-key map "\C-cn"    'insert-negation)
   (define-key map "\C-ce"    'insert-emptyset)
 
-
-
-  ;; Process commands added to specware-mode-map -- these should autoload
-;;;  (define-key map "\C-c\C-s" 'switch-to-sl)
-;;;  (define-key map "\C-c\C-l" 'sw:load-file)
-;;;  (define-key map "\C-c\C-r" 'sw:send-region)
-;;;  (define-key map "\C-c\C-b" 'sw:send-buffer)
-;;;  (define-key map "\C-c`"    'sw:next-error)
+  (easy-menu-add specware-mode-menu map) 
   )
 
 (defvar sw:no-doc
@@ -297,9 +308,8 @@ Mode map
   (use-local-map specware-mode-map)
   (setq major-mode 'specware-mode)
   (setq mode-name "Specware")
+  (easy-menu-add specware-mode-menu)
   (run-hooks 'specware-mode-hook))           ; Run the hook
-
-;; What is the deal? This is a symbol, but it's also defined as a var?
 
 (defvar specware-mode-abbrev-table nil "*Specware mode abbrev table (default nil)")
 
@@ -893,16 +903,14 @@ If anyone has a good algorithm for this..."
     (condition-case ()
         (cond
          ((string= name "let") (sw:let))
-         ((string= name "functor") (sw:functor))
-         ((string= name "case") (sw:case))
-         ((string= name "datatype") (sw:datatype)))
+         ((string= name "case") (sw:case)))
       (quit (if newline 
                 (progn
                   (delete-char -1)
                   (beep)))))))
 
 (defun sw:let () 
-  "Insert a `let in end'."
+  "Insert a `let in'."
   (sw:let-local "let"))
 
 (defun sw:case ()
@@ -931,33 +939,6 @@ If anyone has a good algorithm for this..."
     (insert "\n") (indent-to (+ sw:indent-level indent))
     (insert "\n") (indent-to indent)
     (insert "in\n") (indent-to (+ sw:indent-level indent)) (previous-line 1) (end-of-line)))
-
-(defun sw:functor ()
-  "Insert `functor ? () : ? = struct end', prompting for name/type."
-  (let (indent
-        (name (read-string "Name of functor: "))
-        (signame (read-string "Signature type of functor: ")))
-    (insert (concat "functor " name " () : " signame " ="))
-    (sw:indent-line)
-    (setq indent (current-indentation))
-    (end-of-line)
-    (insert "\n") (indent-to (+ sw:indent-level indent))
-    (insert "struct\n")
-    (indent-to (+ (* 2 sw:indent-level) indent))
-    (insert "\n") (indent-to (+ sw:indent-level indent))
-    (insert "end") (previous-line 1) (end-of-line)))
-
-(defun sw:datatype ()
-  "Insert a `datatype ??? =', prompting for name."
-  (let (indent 
-        (type (read-string (concat "Type of datatype (default none): ")))
-        (name (read-string (concat "Name of datatype: "))))
-    (insert (concat "datatype "
-                    (if (string= type "") "" (concat type " "))
-                    name " ="))
-    (sw:indent-line)
-    (setq indent (current-indentation))
-    (end-of-line) (insert "\n") (indent-to (+ sw:indent-level indent))))
 
 (defun sw:process-file (filename)
   (interactive "fProcess Specware Unit: ")
