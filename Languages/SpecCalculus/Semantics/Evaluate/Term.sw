@@ -3,7 +3,7 @@
 \begin{spec}
 SpecCalc qualifying spec {
  % import Signature          
- import URI          
+ import UnitId          
  import Spec         
  import Let         
  import Qualify         
@@ -32,7 +32,7 @@ This is a monadic interpreter for the Spec Calculus.
    case (valueOf term) of
     | Print term -> SpecCalc.evaluatePrint term
 
-    | URI uri -> SpecCalc.evaluateURI (positionOf term) uri
+    | UnitId unitId -> SpecCalc.evaluateUID (positionOf term) unitId
 
     | Spec elems -> SpecCalc.evaluateSpec elems pos
 

@@ -35,7 +35,7 @@ SpecUnion qualifying spec {
 					  specs)
   }
 
- %% TODO: The terms for the imports might not remain in a meaningful URI context
+ %% TODO: The terms for the imports might not remain in a meaningful UnitId context
  def importsUnion imports_list =
   List.foldl List.concat [] imports_list
 

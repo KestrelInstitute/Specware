@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.13  2003/06/24 23:43:11  weilyn
+ * added CompileSpecAction
+ *
  * Revision 1.12  2003/04/26 02:30:53  weilyn
  * Added GoToUnitDefinitionAction support
  *
@@ -516,8 +519,8 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
     /** Returns the node asociated with specified element.
      * @return ElementNode
      */
-    /*public Node createURINode(URIElement element) {
-        URIElementNode n = new URIElementNode(element, true);
+    /*public Node createUnitIdNode(UnitIdElement element) {
+        UnitIdElementNode n = new UnitIdElementNode(element, true);
         n.setDefaultAction(SystemAction.get(EditAction.class));
         n.setActions(DEFAULT_ACTIONS);
         return n;

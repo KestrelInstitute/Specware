@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/06/23 18:00:17  weilyn
+ * internal release version
+ *
  * Revision 1.8  2003/04/23 01:15:43  weilyn
  * ClaimCustomizer.java
  *
@@ -74,8 +77,8 @@ interface IconStrings {
      static final String COLIMIT =
         "edu/kestrel/resources/images/ColimitNodeIcon"; // NOI18N     
      
-    /* static final String URI =
-        "edu/kestrel/resources/images/URINodeIcon"; // NOI18N     */
+    /* static final String UnitId =
+        "edu/kestrel/resources/images/UnitIdNodeIcon"; // NOI18N     */
      
      static final String WAIT =
         "edu/kestrel/resources/images/wait"; // NOI18N

@@ -5,7 +5,7 @@ SpecCalc qualifying spec {
   import Signature 
   import Spec/Utilities                               % for coerceToSpec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
-  import URI/Utilities                                % for uriToString, if used...
+  import UnitId/Utilities                                % for uidToString, if used...
 \end{spec}
 
 For morphisms, evaluate the domain and codomain terms, and check
@@ -13,24 +13,24 @@ coherence conditions of the morphism elements.
 
 \begin{spec}
   def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules) = {
-    uri <- getCurrentURI;
-    print (";;; Processing spec morphism at " ^ (uriToString uri) ^ "\n");
-    (domValue,domTimeStamp,domDepURIs) <- evaluateTermInfo domTerm;
-    (codValue,codTimeStamp,codDepURIs) <- evaluateTermInfo codTerm;
+    unitId <- getCurrentUID;
+    print (";;; Processing spec morphism at " ^ (uidToString unitId) ^ "\n");
+    (domValue,domTimeStamp,domDepUIDs) <- evaluateTermInfo domTerm;
+    (codValue,codTimeStamp,codDepUIDs) <- evaluateTermInfo codTerm;
     coercedDomValue <- return (coerceToSpec domValue);
     coercedCodValue <- return (coerceToSpec codValue);
     case (coercedDomValue, coercedCodValue) of
       | (Spec spc1, Spec spc2) -> {
             morph <- makeSpecMorphism spc1 spc2 morphRules (positionOf domTerm);
             return (Morph morph,max(domTimeStamp,codTimeStamp),
-                    listUnion (domDepURIs,codDepURIs))
+                    listUnion (domDepUIDs,codDepUIDs))
           }
       | (Other _, _) ->
-          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepURIs)
-                             (coercedCodValue,codTimeStamp,codDepURIs) morphRules (positionOf domTerm)
+          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
+                             (coercedCodValue,codTimeStamp,codDepUIDs) morphRules (positionOf domTerm)
       | (_, Other _) -> 
-          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepURIs)
-                             (coercedCodValue,codTimeStamp,codDepURIs) morphRules (positionOf codTerm)
+          evaluateOtherSpecMorph (coercedDomValue,domTimeStamp,domDepUIDs)
+                             (coercedCodValue,codTimeStamp,codDepUIDs) morphRules (positionOf codTerm)
       | (Spec _, _) -> raise
           (TypeCheck (positionOf domTerm,
                       "domain of spec morphism is not a spec"))

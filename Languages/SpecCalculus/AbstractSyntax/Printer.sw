@@ -31,11 +31,11 @@ SpecCalc qualifying spec {
   op showTerm : fa (a) SpecCalc.Term a -> String
   def showTerm term = ppFormat (ppTerm term)
 
-  op showURI : URI -> String
-  def showURI uri = ppFormat (ppURI uri)
+  op showUID : UnitId -> String
+  def showUID unitId = ppFormat (ppUID unitId)
 
-%   op ppURI : URI -> Doc
-%   def ppURI {path,hashSuffix}  = 
+%   op ppUID : UnitId -> Doc
+%   def ppUID {path,hashSuffix}  = 
 %     let def ppElem elem =
 %       ppConcat [
 %           ppString "\"",
@@ -52,24 +52,24 @@ SpecCalc qualifying spec {
 %           ppString "]"
 %         ]
 
-  op ppURI : URI -> Doc
-  def ppURI uri = ppAppend (ppString "/") (ppURIlocal uri)
+  op ppUID : UnitId -> Doc
+  def ppUID unitId = ppAppend (ppString "/") (ppUIDlocal unitId)
 
-  op ppURIlocal : URI -> Doc
-  def ppURIlocal {path,hashSuffix} =
+  op ppUIDlocal : UnitId -> Doc
+  def ppUIDlocal {path,hashSuffix} =
     let prefix = ppSep (ppString "/") (map ppString path) in
     case hashSuffix of
       | None -> prefix
       | Some suffix -> ppAppend prefix (ppString ("#" ^ suffix))
 
-  op ppRelativeURI : RelativeURI -> Doc
-  def ppRelativeURI relURI =
-    case relURI of
-        | SpecPath_Relative uri -> ppAppend (ppString "/") (ppURIlocal uri)
-        | URI_Relative uri -> ppURIlocal uri
+  op ppRelativeUID : RelativeUID -> Doc
+  def ppRelativeUID relUID =
+    case relUID of
+        | SpecPath_Relative unitId -> ppAppend (ppString "/") (ppUIDlocal unitId)
+        | UnitId_Relative unitId -> ppUIDlocal unitId
 
-  op showRelativeURI : RelativeURI -> String
-  def showRelativeURI uri = ppFormat (ppRelativeURI uri)
+  op showRelativeUID : RelativeUID -> String
+  def showRelativeUID unitId = ppFormat (ppRelativeUID unitId)
 
   op ppSpecFile : fa (a) SpecFile a -> Doc
   def ppSpecFile (specFile as (term,_ (* position *))) =
@@ -85,7 +85,7 @@ SpecCalc qualifying spec {
             ppString "print ",
             ppTerm t
           ]
-      | URI uri -> ppRelativeURI uri
+      | UnitId unitId -> ppRelativeUID unitId
       | Spec specElems -> 
           ppConcat [
             ppString "spec",

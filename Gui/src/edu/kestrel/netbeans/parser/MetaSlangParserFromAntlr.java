@@ -446,7 +446,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		
 		
 		try {      // for error handling
-			unitID=fullURIPath();
+			unitID=fullUIDPath();
 			if ( inputState.guessing==0 ) {
 				UnitID.addInstance(unitID);
 			}
@@ -1157,7 +1157,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return parenTerm;
 	}
 	
-	private final String  fullURIPath() throws RecognitionException, TokenStreamException {
+	private final String  fullUIDPath() throws RecognitionException, TokenStreamException {
 		String path;
 		
 		Token  slash = null;
@@ -1174,7 +1174,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			{
 				slash = LT(1);
 				match(SLASH);
-				item=partialURIPath();
+				item=partialUIDPath();
 				if ( inputState.guessing==0 ) {
 					path = slash.getText() + item;
 				}
@@ -1183,7 +1183,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			case IDENTIFIER:
 			case DOTDOT:
 			{
-				item=partialURIPath();
+				item=partialUIDPath();
 				if ( inputState.guessing==0 ) {
 					path = item;
 				}
@@ -1586,7 +1586,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return optionsItem;
 	}
 	
-	private final String  partialURIPath() throws RecognitionException, TokenStreamException {
+	private final String  partialUIDPath() throws RecognitionException, TokenStreamException {
 		String path;
 		
 		Token  id = null;
@@ -1630,7 +1630,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			{
 				slash = LT(1);
 				match(SLASH);
-				item=partialURIPath();
+				item=partialUIDPath();
 				if ( inputState.guessing==0 ) {
 					path = path + slash.getText() + item;
 				}
@@ -2394,7 +2394,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		importItem = null;
 		Object item = null;
 		ElementFactory.Item term = null;
-		String uri = null;
+		String unitId = null;
 		
 		
 		try {      // for error handling

@@ -7,31 +7,31 @@ extensions of Specware that don't use OtherTerm, OtherValue, etc.
 SpecCalc qualifying spec 
 
   import Signature
-  import URI/Utilities
+  import UnitId/Utilities
 
   def SpecCalc.evaluateOther args pos = {
-    uri <- getCurrentURI;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri) ^ "\n"))
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId) ^ "\n"))
   }
 
   def SpecCalc.evaluateOtherSubstitute morph other morphTerm pos = {
-    uri <- getCurrentURI;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherSpecMorph spc morph rules pos = {
-    uri <- getCurrentURI;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherPrint value pos = {
-    uri <- getCurrentURI;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.evaluateOtherGenerate args valueInfo pos = {
-    uri <- getCurrentURI;
-    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uriToString uri)^ "\n"))
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
   def SpecCalc.ppOtherValue value = ppString "<some OtherValue>"

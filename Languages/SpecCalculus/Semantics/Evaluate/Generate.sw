@@ -2,46 +2,44 @@
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import Signature  
   import Snark
   import Java
   import C
   import /Languages/MetaSlang/CodeGen/C/ToC
-  import ../SpecPath
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
   %import /Languages/MetaSlang/CodeGen/Java/ToJava
 
   def SpecCalc.evaluateGenerate (language, sub_term as (term,position), optFile) pos = {
-        (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
-        baseURI <- pathToRelativeURI "/Library/Base";
-        (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
+        (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo sub_term;
+        baseUID <- pathToRelativeUID "/Library/Base";
+        (Spec baseSpec,_,_) <- SpecCalc.evaluateUID (Internal "base") baseUID;
         cValue <- return (coerceToSpec value);
         case cValue of
           | Spec spc -> 
               (case language of
                  | "lisp" -> evaluateLispCompile
-		             ((cValue,timeStamp,depURIs), sub_term,optFile)
+		             ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | "lisp_local" -> evaluateLispCompileLocal
-			          ((cValue,timeStamp,depURIs), sub_term,optFile)
+			          ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | "snark" -> evaluateSnarkGen
-			       ((cValue,timeStamp,depURIs), sub_term,optFile)
+			       ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | "spec" -> {
                         print (showValue cValue);
-                        return (cValue,timeStamp,depURIs)
+                        return (cValue,timeStamp,depUIDs)
                       }
                  | "c_old" -> 
                        let _ = specToC (subtractSpec spc baseSpec) in
-                       return (cValue,timeStamp,depURIs)
-		 | "c" -> evaluateCGen((cValue,timeStamp,depURIs),optFile)
-                 | "java" -> evaluateJavaGen ((cValue,timeStamp,depURIs), sub_term,optFile)
+                       return (cValue,timeStamp,depUIDs)
+		 | "c" -> evaluateCGen((cValue,timeStamp,depUIDs),optFile)
+                 | "java" -> evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
                        %let _ = specToJava (subtractSpec spc baseSpec) in
-                       %return (cValue,timeStamp,depURIs)
+                       %return (cValue,timeStamp,depUIDs)
                  | lang -> raise (Unsupported ((positionOf sub_term),
                                 "no generation for language "
                               ^ lang
                               ^ " yet")))
 
-          | Other value -> evaluateOtherGenerate (language,sub_term,optFile) (value,timeStamp,depURIs) pos
+          | Other value -> evaluateOtherGenerate (language,sub_term,optFile) (value,timeStamp,depUIDs) pos
 
           | _ -> raise (TypeCheck (pos,
                         "attempting to generate code from an object that is not a specification"))
@@ -51,8 +49,8 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName) =
     case coerceToSpec value of
       | Spec spc ->
-        {cURI <- SpecCalc.getURI cterm;
-         lispFileName <- URItoLispFile (cURI, optFileName);
+        {cUID <- SpecCalc.getUID cterm;
+         lispFileName <- UIDtoLispFile (cUID, optFileName);
          print (";;; Generating lisp file " ^ lispFileName ^ "\n");
          let _ = ensureDirectoriesExist lispFileName in
          let _ = toLispFile (spc, lispFileName,"") in
@@ -64,8 +62,8 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateLispCompileLocal(valueInfo as (value,_,_), cterm, optFileName) =
     case coerceToSpec value of
       | Spec spc ->
-        {cURI <- SpecCalc.getURI cterm;
-         lispFileName <- URItoLispFile (cURI, optFileName);
+        {cUID <- SpecCalc.getUID cterm;
+         lispFileName <- UIDtoLispFile (cUID, optFileName);
          print (";;; Generating lisp file " ^ lispFileName ^ "\n");
          let _ = ensureDirectoriesExist lispFileName in
          let _ = localDefsToLispFile (spc, lispFileName,"") in
@@ -75,24 +73,24 @@ SpecCalc qualifying spec {
       
 \end{spec}
 
-Make a lisp file name for a URI.
+Make a lisp file name for a UnitId.
 
 \begin{spec}
-  op URItoLispFile: URI * Option String -> SpecCalc.Env String
-  def URItoLispFile ((uri as {path,hashSuffix}), optFileName) =
+  op UIDtoLispFile: UnitId * Option String -> SpecCalc.Env String
+  def UIDtoLispFile ((unitId as {path,hashSuffix}), optFileName) =
     case optFileName of
       | Some fileName -> return fileName
       | _ -> {
          prefix <- removeLastElem path;
          mainName <- lastElem path;
-         fileName <- return ((uriToFullPath {path=prefix,hashSuffix=None})
+         fileName <- return ((uidToFullPath {path=prefix,hashSuffix=None})
                              ^ "/lisp/" ^ mainName ^ ".lisp");
          return fileName}
 \end{spec}
 
-Recursively compile imports. If there is a URI for the import then
+Recursively compile imports. If there is a UnitId for the import then
 compile it in a separate file if necessary, and return a load form. If
-no URI then generate the text for it.
+no UnitId then generate the text for it.
 
 Add these in later
 %\ begin{spec}

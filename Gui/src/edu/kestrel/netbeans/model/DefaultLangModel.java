@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/06/23 18:00:15  weilyn
+ * internal release version
+ *
  * Revision 1.8  2003/04/23 01:14:38  weilyn
  * BindingFactory.java
  *
@@ -231,9 +234,9 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         return c;
     }    
 
-    /*public URIElementImpl createURI(Element src) {
-        URIElementImpl c = new URIElementImpl(this);
-        getWrapper().wrapURI(c, src);
+    /*public UIDElementImpl createUID(Element src) {
+        UIDElementImpl c = new UIDElementImpl(this);
+        getWrapper().wrapUID(c, src);
         c.setParent(src);
         return c;
     }*/

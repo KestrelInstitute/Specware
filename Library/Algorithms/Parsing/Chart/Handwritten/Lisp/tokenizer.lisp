@@ -349,7 +349,7 @@
 						  ad-hoc-strings)
 	      (cond ((eq type :EOF)
 		     (return nil))
-		    ((eq type :WORD-SYMBOL-TERMINATED-BY-HASH) ; new hack for # inside URI's...
+		    ((eq type :WORD-SYMBOL-TERMINATED-BY-HASH) ; new hack for # inside UnitId's...
 		     (push (list (or (gethash value ht-ad-hoc-types)
 				     :WORD-SYMBOL)
 				 value 
@@ -681,7 +681,7 @@
 	  (otherwise                         (go unrecognized-char-while-scanning-word-symbol)))
 
        unrecognized-char-while-scanning-word-symbol
-	(when (eq char #\#) ; new hack for # inside URI's...
+	(when (eq char #\#) ; new hack for # inside UnitId's...
 	  (return-values-using-prior-last :WORD-SYMBOL-TERMINATED-BY-HASH (coerce (nreverse token-chars) 'string)))
 	(termination-warning char char-code "word symbol" "" ", which is unrecognized")
 	(go terminate-word-symbol)

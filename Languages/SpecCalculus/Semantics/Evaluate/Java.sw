@@ -1,6 +1,5 @@
 SpecCalc qualifying spec
-  import Signature  
-  import ../SpecPath
+  import UnitId
   import /Languages/MetaSlang/CodeGen/Java/ToJava
   import /Languages/Java/JavaPrint
 
@@ -9,8 +8,8 @@ SpecCalc qualifying spec
   %% Need to add error detection code
   def SpecCalc.evaluateJavaGen (valueInfo as (Spec spc,_,_), cterm, optFileNm) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
-     cURI <- SpecCalc.getURI cterm;
-     javaFileName <- URItoJavaFile (cURI, optFileNm);
+     cUID <- SpecCalc.getUID cterm;
+     javaFileName <- UIDtoJavaFile (cUID, optFileNm);
      (optBaseUnitId,baseSpec) <- getBase;
      let _ = ensureDirectoriesExist javaFileName in
      let _ = toJavaFile (subtractSpec spc baseSpec, javaFileName,[]) in
@@ -18,14 +17,14 @@ SpecCalc qualifying spec
      {print("Translated to Java");
       return valueInfo}}
 
-  op URItoJavaFile: URI * Option String -> SpecCalc.Env String
-  def URItoJavaFile ((uri as {path,hashSuffix}), optFileNm) =
+  op UIDtoJavaFile: UnitId * Option String -> SpecCalc.Env String
+  def UIDtoJavaFile ((unitId as {path,hashSuffix}), optFileNm) =
     case optFileNm
       of Some filNam -> return filNam
        | _ ->
     {prefix <- removeLastElem path;
      mainName <- lastElem path;
-     let filNm = (uriToFullPath {path=prefix,hashSuffix=None})
+     let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
         ^ "/java/" ^ mainName ^ ".java"
      in
      {print("Java file name " ^ filNm ^ "\n");

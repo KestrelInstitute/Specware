@@ -3,12 +3,12 @@
 
 ;; Toplevel Lisp aliases for Specware
 
-(defvar *last-uri-loaded* nil)
+(defvar *last-unit-Id-_loaded* nil)
 (defvar *last-swl-args* nil)
 (defvar *last-swj-args* nil)
 
 (defun sw0 (x)
-   (Specware::runSpecwareURI x)
+   (Specware::runSpecwareUID x)
    (values))
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
@@ -36,16 +36,16 @@
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
 (defun sw (x)
-   (Specware::evaluateURI_fromLisp x)
+   (Specware::evaluateUID_fromLisp x)
    ;; (values) ; breaks bootstrap!  why suppress result?
    )
 
 #+allegro
 (top-level:alias ("sw" :case-sensitive) (&optional x)
   (if x
-    (sw (setq *last-uri-loaded* (string x)))
-    (if *last-uri-loaded*
-      (sw *last-uri-loaded*)
+    (sw (setq *last-unit-Id-_loaded* (string x)))
+    (if *last-unit-Id-_loaded*
+      (sw *last-unit-Id-_loaded*)
       (format t "No previous unit evaluated~%"))))
 
 (defun show (x)
@@ -54,12 +54,12 @@
 #+allegro
 (top-level:alias ("show" :case-sensitive) (&optional x)
   (if x
-    (show (setq *last-uri-loaded* (string x)))
-    (if *last-uri-loaded*
-      (show *last-uri-loaded*)
+    (show (setq *last-unit-Id-_loaded* (string x)))
+    (if *last-unit-Id-_loaded*
+      (show *last-unit-Id-_loaded*)
       (format t "No previous unit evaluated~%"))))
 
-;; Not sure if an optional URI make sense for swl
+;; Not sure if an optional UnitId make sense for swl
 (defun swl (x &optional y)
    (Specware::evaluateLispCompile_fromLisp x
                          (if y (cons :|Some| y)
@@ -98,7 +98,7 @@
 
 
 
-;; Not sure if an optional URI make sense for swj
+;; Not sure if an optional UnitId make sense for swj
 (defun swj (x &optional y)
    (Specware::evaluateJavaGen_fromLisp x
                          (if y (cons :|Some| y)

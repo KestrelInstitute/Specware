@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/04/01 02:29:35  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.5  2003/03/29 03:13:54  weilyn
  * Added support for morphism nodes.
  *
@@ -19,7 +22,7 @@
  * and the parser output window is not open).
  *
  * Revision 1.2  2003/02/17 07:01:59  weilyn
- * Made scURI an Item, and added more rules for scProve.
+ * Made scUID an Item, and added more rules for scProve.
  *
  * Revision 1.1  2003/01/30 02:01:47  gilham
  * Initial version.

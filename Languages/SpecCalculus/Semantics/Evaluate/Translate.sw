@@ -10,7 +10,7 @@ this should be removed from the parser.
 SpecCalc qualifying spec {
   import Signature 
   import Spec/Utilities
-  import URI/Utilities                                % for uriToString, if used...
+  import UnitId/Utilities                                % for uidToString, if used...
 \end{spec}
 
 Perhaps evaluating a translation should yield a morphism rather than just 
@@ -19,13 +19,13 @@ Perhaps the calculus is getting too complicated.
 
 \begin{spec}
   def SpecCalc.evaluateTranslate term translation = {
-    uri <- getCurrentURI;
-    print (";;; Processing translation at "^(uriToString uri)^"\n");
-    (value,timeStamp,depURIs) <- evaluateTermInfo term;
+    unitId <- getCurrentUID;
+    print (";;; Processing translation at "^(uidToString unitId)^"\n");
+    (value,timeStamp,depUIDs) <- evaluateTermInfo term;
     case coerceToSpec value of
       | Spec spc -> {
             spcTrans <- translateSpec spc translation;
-            return (Spec spcTrans,timeStamp,depURIs)
+            return (Spec spcTrans,timeStamp,depUIDs)
 		    }
       | _ -> raise (TypeCheck (positionOf term,
 			       "translating a term that is not a specification"))

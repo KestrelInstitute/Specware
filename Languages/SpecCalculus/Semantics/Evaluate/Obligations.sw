@@ -9,24 +9,24 @@ SpecCalc qualifying spec
 {
   import Signature
   import /Languages/MetaSlang/Specs/TypeObligations
-  % import /Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
+  % import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
   import Spec/Utilities % for compressDefs and complainIfAmbiguous
-  import URI/Utilities  % should work for both Specware and PSL
+  import UnitId/Utilities  % should work for both Specware and PSL
 
   def SpecCalc.evaluateObligations term = {
-     uri <- getCurrentURI;
-     print (";;; Processing obligations at " ^ (uriToString uri) ^ "\n");
-     (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
+     unitId <- getCurrentUID;
+     print (";;; Processing obligations at " ^ (uidToString unitId) ^ "\n");
+     (value, time_stamp, dep_UIDs) <- evaluateTermInfo term;
       case value of
 
 	| Spec  spc -> {ob_spec <- return (specObligations (spc,term));
 			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec) (positionOf term);
-			return (Spec compressed_spec, time_stamp, dep_URIs)}
+			return (Spec compressed_spec, time_stamp, dep_UIDs)}
 
 	| Morph sm  -> {globalContext <- getGlobalContext;
 			ob_spec <- return (morphismObligations (sm,globalContext,positionOf term));
 			compressed_spec <- complainIfAmbiguous (compressDefs ob_spec) (positionOf term);
-			return (Spec compressed_spec, time_stamp, dep_URIs)}
+			return (Spec compressed_spec, time_stamp, dep_UIDs)}
 
 	| _ -> raise (Unsupported (positionOf term,
 				   "Can create obligations for Specs and Morphisms only"))
@@ -44,7 +44,7 @@ SpecCalc qualifying spec
 					   dom.properties
     in
     let import_of_cod = {imports = case findUnitIdforUnit(Spec cod,globalContext) of
-			                  | Some unitId -> [((URI (URI_Relative unitId),pos), cod)]
+			                  | Some unitId -> [((UnitId (UnitId_Relative unitId),pos), cod)]
 			                  | _ -> [],
 			 importedSpec = Some cod,
 			 localOps     = emptyOpNames,

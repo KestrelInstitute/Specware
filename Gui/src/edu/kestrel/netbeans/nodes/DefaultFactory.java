@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2003/06/23 18:00:16  weilyn
+ * internal release version
+ *
  * Revision 1.10  2003/04/26 02:36:06  weilyn
  * Commented out MorphismCategorizingChildren.refreshKeys because it gave exceptions on UnitID classes
  *
@@ -350,8 +353,8 @@ public class DefaultFactory extends Object implements ElementNodeFactory, IconSt
   /* Returns the node asociated with specified element.
    * @return ElementNode
    */
-  /*public Node createURINode (final URIElement element) {
-    return new URIElementNode(element, writeable);
+  /*public Node createUnitIdNode (final UnitIdElement element) {
+    return new UnitIdElementNode(element, writeable);
   }*/
   
   /* Creates and returns the instance of the node

@@ -33,23 +33,23 @@ begin{spec}
 end{spec}
 
 For the near term, we have a variation of the above which evaluates
-a given URI without looping.
+a given UnitId without looping.
 
 evaluateTerm has the side effect of parsing, loading, and
-caching the unit referenced by the uri, plus all the units that unit
+caching the unit referenced by the unitId, plus all the units that unit
 depends on.  
 
 Roadmap:
-evaluateTerm calls evaluateURI, which calls searchFileSystemForURI,
+evaluateTerm calls evaluateUID, which calls searchFileSystemForUID,
 which calls loadFile, which calls evaluateTerm on expressions parsed.
 
-In all of the following, we set the initial value of the currentURI to
-the current directory suffixed with "/.". The current URI is used to resolve
-relative URI references. These are URIs that do no begin with "/". Setting
-the current URI in this way means that the user can provide a top level
+In all of the following, we set the initial value of the currentUID to
+the current directory suffixed with "/.". The current UnitId is used to resolve
+relative UnitId references. These are UIDs that do no begin with "/". Setting
+the current UnitId in this way means that the user can provide a top level
 relative path. If a relative path is given at the toplevel, then the canonical 
-path is obtained by discarding the "." in the current URI and appending
-the relative path. See URI.sl. In fact any non-empty string would do
+path is obtained by discarding the "." in the current UnitId and appending
+the relative path. See UnitId.sl. In fact any non-empty string would do
 in place of ".".
 
 The toplevel functions that follow are all meant to be called from
@@ -63,16 +63,16 @@ toplevel is used within the bootstrap. If the toplevel fails, then lisp
 exists with a non-zero status and hence the bootstrap fails.
 
 \begin{spec}
-  op runSpecwareURI : String -> Boolean
-  def runSpecwareURI path = 
+  op runSpecwareUID : String -> Boolean
+  def runSpecwareUID path = 
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      evaluateURI position uri;
+      evaluateUID position unitId;
       return true
     } in
     run (catch prog toplevelHandler)
@@ -91,12 +91,12 @@ get a unit from a unit id string.
     in
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      (val,_,_) <- evaluateURI position uri;
+      (val,_,_) <- evaluateUID position unitId;
       return (Some val)
     } in
     run (catch prog handler)
@@ -126,33 +126,33 @@ get a unit from a unit id string.
 
 We provide two functions (callable from the Lisp read-eval-print loop)
 that invoke the corresponding evaluation functions for the Spec Calculus.
-The first just evaluates a URI. The second evaluates a URI and then
+The first just evaluates a UnitId. The second evaluates a UnitId and then
 compiles the resulting specification to lisp.
 
 \begin{spec}
-  op evaluateURI_fromLisp : String -> Boolean
-  def evaluateURI_fromLisp path = 
+  op evaluateUID_fromLisp : String -> Boolean
+  def evaluateUID_fromLisp path = 
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       catch {
-        evaluateURI position uri;
+        evaluateUID position unitId;
         return ()
-      } (fileNameHandler uri);
+      } (fileNameHandler unitId);
       return true
     } in
     run (catch prog toplevelHandler)
 \end{spec}
 
 \begin{spec}
-  op fileNameHandler : RelativeURI -> Exception -> SpecCalc.Env ()
+  op fileNameHandler : RelativeUID -> Exception -> SpecCalc.Env ()
   def fileNameHandler unitId except =
     case except of
-      | URINotFound (position, badUnitId) ->
+      | UIDNotFound (position, badUnitId) ->
          if badUnitId = unitId then
            return ()
          else
@@ -172,10 +172,10 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
   def setBase_fromLisp path =
     let prog = {
       resetGlobals;
-      unitId <- pathToCanonicalURI ".";
+      unitId <- pathToCanonicalUID ".";
       setCurrentUnitId unitId;
       path_body <- return (removeSWsuffix path);
-      relativeUnitId <- pathToRelativeURI path_body;
+      relativeUnitId <- pathToRelativeUID path_body;
       setBaseToRelativeUnitId relativeUnitId;
       return true
     } in
@@ -188,7 +188,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
       case optBaseUnitId of
         | None -> print "There is no base specification."
         | Some relativeUnitId ->
-            print ("Identifier of base spec: " ^ (showRelativeURI relativeUnitId));
+            print ("Identifier of base spec: " ^ (showRelativeUID relativeUnitId));
       return true
     } in
     run (catch prog toplevelHandler) 
@@ -199,12 +199,12 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
   def evaluatePrint_fromLisp path = 
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      evaluatePrint (URI uri, position);
+      evaluatePrint (UnitId unitId, position);
       return true
     } in
     run (catch prog toplevelHandler) 
@@ -217,11 +217,11 @@ The following corresponds to the :show command.
   def listLoadedUnits () = 
     let prog = {
       globalContext <- getGlobalContext;
-      uriList <-
+      uidList <-
         return (foldMap (fn lst -> fn dom -> fn _ (* cod *) -> Cons (dom, lst)) 
 		        [] 
 			globalContext);
-      print (ppFormat (ppSep ppNewline (map (fn uri -> ppString (uriToString uri)) uriList)));
+      print (ppFormat (ppSep ppNewline (map (fn unitId -> ppString (uidToString unitId)) uidList)));
       return true
     } in
     run (catch prog toplevelHandler) 
@@ -236,13 +236,13 @@ The following corresponds to the :show command.
         | Some name -> Some (maybeAddSuffix name ".lisp") in
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      spcInfo <- evaluateURI position uri;
-      evaluateLispCompile (spcInfo, (URI uri, position), target);
+      spcInfo <- evaluateUID position unitId;
+      evaluateLispCompile (spcInfo, (UnitId unitId, position), target);
       return true
     } in
     run (catch prog toplevelHandler) 
@@ -257,13 +257,13 @@ The following corresponds to the :show command.
         | Some name -> Some (maybeAddSuffix name ".lisp") in
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      spcInfo <- evaluateURI position uri;
-      evaluateLispCompileLocal (spcInfo, (URI uri, position), target);
+      spcInfo <- evaluateUID position unitId;
+      evaluateLispCompileLocal (spcInfo, (UnitId unitId, position), target);
       return true
     } in
     run (catch prog toplevelHandler)
@@ -278,32 +278,32 @@ The following corresponds to the :show command.
         | Some name -> Some (maybeAddSuffix name ".java") in
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      spcInfo <- evaluateURI position uri;
-      evaluateJavaGen (spcInfo, (URI uri, position), target);
+      spcInfo <- evaluateUID position unitId;
+      evaluateJavaGen (spcInfo, (UnitId unitId, position), target);
       return true
     } in
     run (catch prog toplevelHandler) 
 \end{spec}
 
 \begin{spec}
-  op evaluateURI_fromJava : String -> Boolean
-  def evaluateURI_fromJava path = 
+  op evaluateUID_fromJava : String -> Boolean
+  def evaluateUID_fromJava path = 
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       catch {
-        evaluateURI position uri;
+        evaluateUID position unitId;
         return ()
-      } (fileNameHandler uri);
+      } (fileNameHandler unitId);
       return true
     } in
     run (catch prog toplevelHandlerForJava)
@@ -318,19 +318,19 @@ The following corresponds to the :show command.
         | Some name -> Some (maybeAddSuffix name ".c") in
     let prog = {
       resetGlobals;
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
+      currentUID <- pathToCanonicalUID ".";
+      setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
-      uri <- pathToRelativeURI path_body;
+      unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      cValue <- evaluateURI position uri;
+      cValue <- evaluateUID position unitId;
       evaluateCGen(cValue,target);
       return true
     } in
     run (catch prog toplevelHandler)
 \end{spec}
 
-removeSWsuffix could be generalized to extractURIpath
+removeSWsuffix could be generalized to extractUIDpath
 and then the code to create the position would use the
 start and end positions of path_body within path
 
@@ -401,7 +401,7 @@ sense that no toplevel functions return anything.
   def getFirstErrorLocation except =
     case except of
       | Unsupported  (position,_) -> Some position
-      | URINotFound  (position,_) -> Some position
+      | UIDNotFound  (position,_) -> Some position
       | FileNotFound (position,_) -> Some position
       | SpecError    (position,_) -> Some position
       | MorphError   (position,_) -> Some position
@@ -437,10 +437,10 @@ sense that no toplevel functions return anything.
     case except of
       | Unsupported  (position,msg) -> 
         reportErrorAtPosToJava(position,"Unsupported operation: " ^ msg)
-      | URINotFound  (position,uri) ->
-        reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
-      | FileNotFound (position,uri) ->
-        reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeURI uri))
+      | UIDNotFound  (position,unitId) ->
+        reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeUID unitId))
+      | FileNotFound (position,unitId) ->
+        reportErrorAtPosToJava(position,"Unknown unit " ^ (showRelativeUID unitId))
       | SpecError    (position,msg) ->
         reportErrorAtPosToJava(position,"Error in specification: " ^ msg)
       | MorphError   (position,msg) ->

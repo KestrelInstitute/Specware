@@ -35,8 +35,8 @@ SpecCalc qualifying spec
 
   sort Monad.Exception =
     | Fail         String 
-    | FileNotFound  Position * RelativeURI
-    | URINotFound  Position * RelativeURI
+    | FileNotFound  Position * RelativeUID
+    | UIDNotFound  Position * RelativeUID
     | TypeCheck    Position * String
     | TypeCheckErrors List(String * Position)
     %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
@@ -47,7 +47,7 @@ SpecCalc qualifying spec
     | DiagError    Position * String
     | SpecError    Position * String
     | MorphError   Position * String
-    | CircularDefinition URI
+    | CircularDefinition UnitId
     | Proof       Position * String
 
   op printException : Exception -> String
@@ -67,12 +67,12 @@ SpecCalc qualifying spec
 		"Unsupported operation: " ^ str
 	      ^ "\n  found at " ^ (printAll position)
 
-      | URINotFound (position, uri) ->
-		"Unknown unit " ^ (showRelativeURI uri) 
+      | UIDNotFound (position, unitId) ->
+		"Unknown unit " ^ (showRelativeUID unitId) 
               ^ "\n  referenced from " ^ (printAll position)
 
-      | FileNotFound (position, uri) ->
-		"Unknown unit " ^ (showRelativeURI uri) 
+      | FileNotFound (position, unitId) ->
+		"Unknown unit " ^ (showRelativeUID unitId) 
               ^ "\n  referenced from " ^ (printAll position)
 
       | SpecError (position,msg) ->
@@ -95,8 +95,8 @@ SpecCalc qualifying spec
 		"Proof error: " ^ msg 
               ^ "\n  found at " ^ (printAll position)
 
-      | CircularDefinition uri ->
-		"Circular definition: " ^ showURI uri
+      | CircularDefinition unitId ->
+		"Circular definition: " ^ showUID unitId
 
       | TypeCheckErrors errs -> printTypeErrors errs
         

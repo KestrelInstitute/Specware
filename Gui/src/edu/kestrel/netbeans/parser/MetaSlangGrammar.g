@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.29  2003/06/24 23:43:11  weilyn
+ * added CompileSpecAction
+ *
  * Revision 1.28  2003/06/23 18:00:18  weilyn
  * internal release version
  *
@@ -59,7 +62,7 @@
  * Added support for imports.
  *
  * Revision 1.13  2003/02/17 07:04:09  weilyn
- * Made scURI return an Item, and added more rules for scProve.
+ * Made scUID return an Item, and added more rules for scProve.
  *
  * Revision 1.12  2003/02/17 04:35:26  weilyn
  * Added support for expressions.
@@ -80,7 +83,7 @@
  * Added rules to recognize claims and sort definitions
  *
  * Revision 1.6  2003/02/07 20:06:19  gilham
- * Added opDefinition and scURI to MetaSlangGrammar.
+ * Added opDefinition and scUID to MetaSlangGrammar.
  *
  * Revision 1.5  2003/01/31 17:38:33  gilham
  * Removed token recording code.
@@ -223,7 +226,7 @@ private scUnitID[Token unitIdToken] returns[String unitID]
     unitID = null;
     String partialPath = "";
 }
-    : unitID=fullURIPath                {UnitID.addInstance(unitID);}
+    : unitID=fullUIDPath                {UnitID.addInstance(unitID);}
     ;
 
 private scSubstitute[Token unitIdToken] returns[ElementFactory.Item substitute]
@@ -456,19 +459,19 @@ private scParenthesizedTerm[Token unitIdToken] returns[ElementFactory.Item paren
     
 //---------------------------------------------------------------------------
 
-private fullURIPath returns[String path]
+private fullUIDPath returns[String path]
 {
     path = "";
     String item = null;
 }
-    : ( slash:SLASH item=partialURIPath        {path = slash.getText() + item;}
-        | item=partialURIPath                  {path = item;}
+    : ( slash:SLASH item=partialUIDPath        {path = slash.getText() + item;}
+        | item=partialUIDPath                  {path = item;}
       )
       (ref:INNER_UNIT_REF                      {path += ref.getText();}
       )?
     ;
 
-private partialURIPath returns[String path]
+private partialUIDPath returns[String path]
 {
     path = "";
     String item = null;
@@ -476,7 +479,7 @@ private partialURIPath returns[String path]
     : ( id:IDENTIFIER                           {path = path + id.getText();} 
       | dotdot:DOTDOT                           {path = path + dotdot.getText();}
       )
-      ( slash:SLASH item=partialURIPath         {path = path + slash.getText() + item;}
+      ( slash:SLASH item=partialUIDPath         {path = path + slash.getText() + item;}
       |
       )
     ;
@@ -688,7 +691,7 @@ private importDeclaration returns[ElementFactory.Item importItem]
     importItem = null;
     Object item = null;
     ElementFactory.Item term = null;
-    String uri = null;
+    String unitId = null;
 }
     : begin:"import"
       item=scTerm[false, null]

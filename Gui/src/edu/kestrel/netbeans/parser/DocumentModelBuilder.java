@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/06/23 18:00:18  weilyn
+ * internal release version
+ *
  * Revision 1.9  2003/04/23 01:16:24  weilyn
  * DiagElemInfo.java
  *
@@ -197,13 +200,13 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	return info;
     }
     
-    /** Creates an element for a uri.
-	@param str The uri string.
+    /** Creates an element for a unitId.
+	@param str The unitId string.
     */
-    /*public Item	createURI(String name, String path) {
-	URIInfo info = new URIInfo(name, path);
+    /*public Item	createUID(String name, String path) {
+	UIDInfo info = new UIDInfo(name, path);
 	if (DEBUG) {
-	    Util.log("*** DocumentModelBuilder.createURI(): "+info);
+	    Util.log("*** DocumentModelBuilder.createUID(): "+info);
 	}
 	return info;
     }*/
@@ -369,8 +372,8 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
                addMember(SourceInfo.DIAGRAM, childInfo); 
             } else if (child instanceof ColimitInfo) {
                addMember(SourceInfo.COLIMIT, childInfo); 
-            } /*else if (child instanceof URIInfo) {
-               addMember(SourceInfo.URI, childInfo);
+            } /*else if (child instanceof UIDInfo) {
+               addMember(SourceInfo.UnitId, childInfo);
             }*/
 	} else if (parent instanceof SpecInfo) {
 	    SpecInfo parentInfo = (SpecInfo)parent;

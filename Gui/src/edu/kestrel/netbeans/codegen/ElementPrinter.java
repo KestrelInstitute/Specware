@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:08:31  weilyn
+ * Added support for diagram elements
+ *
  * Revision 1.7  2003/04/01 02:29:35  weilyn
  * Added support for diagrams and colimits
  *
@@ -161,11 +164,11 @@ public interface ElementPrinter {
     public void markColimit(ColimitElement element, int what)
     throws ElementPrinterInterruptException;    
 
-    /** Mark a notable point in a uri element.
+    /** Mark a notable point in a unitId element.
     * @param element the element
     * @param what which point
     * @exception ElementPrinterInterruptException - see class description
     */
-    //public void markURI(URIElement element, int what)
+    //public void markUID(UIDElement element, int what)
     //throws ElementPrinterInterruptException;    
 }

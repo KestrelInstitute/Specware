@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/06/23 18:00:15  weilyn
+ * internal release version
+ *
  * Revision 1.9  2003/04/23 01:11:50  weilyn
  * Added morphism source/target support
  *
@@ -115,11 +118,11 @@ public interface Binding {
         
     }
     
-    /** Binds a uri to the source.
+    /** Binds a unitId to the source.
      */
-//    public interface URI extends Member {
+//    public interface UnitId extends Member {
         /**
-         * Changes the arguments of the uri.
+         * Changes the arguments of the unitId.
          */
 //        public void changePath(String path) throws SourceException;
 //    }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
  * Revision 1.4  2003/04/01 02:29:40  weilyn
  * Added support for diagrams and colimits
  *
@@ -185,8 +188,8 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     if (key instanceof ColimitElement) {
         return new Node[] { factory.createColimitNode((ColimitElement)key) };
     }
-    /*if (key instanceof URIElement) {
-        return new Node[] { factory.createURINode((URIElement)key) };
+    /*if (key instanceof UnitIdElement) {
+        return new Node[] { factory.createUnitIdNode((UnitIdElement)key) };
     }*/
     if (NOT_KEY.equals(key))
       return new Node[] { factory.createWaitNode() };
@@ -332,8 +335,8 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
         if ((elementType & SourceElementFilter.COLIMIT) != 0) {
             keys.addAll(Arrays.asList(element.getColimits()));
         }
-        /*if ((elementType & SourceElementFilter.URI) != 0) {
-            keys.addAll(Arrays.asList(element.getURIs()));
+        /*if ((elementType & SourceElementFilter.UnitId) != 0) {
+            keys.addAll(Arrays.asList(element.getUnitIds()));
         }*/
     }
 
@@ -350,7 +353,7 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
                                propName.equals(ElementProperties.PROP_MORPHISMS) ||
                                propName.equals(ElementProperties.PROP_DIAGRAMS) ||
                                propName.equals(ElementProperties.PROP_COLIMITS)/* ||
-                               propName.equals(ElementProperties.PROP_URIS)*/);
+                               propName.equals(ElementProperties.PROP_UnitIdS)*/);
 			       
             if (!refresh && ElementProperties.PROP_STATUS.equals(evt.getPropertyName())) {
                 Integer val = (Integer) evt.getNewValue();

@@ -45,31 +45,29 @@ The type parameter should be instantiated with the type \verb+Position+.
     | Decls (List (Decl a))
 \end{spec}
 
-The support for URI's is somewhat simplistic but hopefully sufficient
-for now.  A user may specify a uri that is relative to the current uri
+The support for UnitId's is somewhat simplistic but hopefully sufficient
+for now.  A user may specify a unitId that is relative to the current unitId
 (ie relative to the object making the reference) or relative to a path
 in the \verb+SPECPATH+ environment variable. In the current syntax, the
-latter are indicated by an opening "/". In additon, each uri evaluates
+latter are indicated by an opening "/". In additon, each unitId evaluates
 to a full canonical system path. The latter cannot be directly entered
-by the user. My apologies for the long constructor names. A relative URI
-resolves to a canonical URI. The latter in turn resolves to an absolute
+by the user. My apologies for the long constructor names. A relative UnitId
+resolves to a canonical UnitId. The latter in turn resolves to an absolute
 path in the file system. Recall that file may contain a single anonymous
-term or a list of bindings. Thus a canonical URI may resolve to two
-possible path names. Later we may want to have URIs with network addresses.
+term or a list of bindings. Thus a canonical UnitId may resolve to two
+possible path names. Later we may want to have UIDs with network addresses.
 
 \begin{spec}
-  sort URI = {
+  sort UnitId = {
       path : List String,
       hashSuffix : Option String
    }
 
-  sort UnitId = URI
+  sort RelativeUID =
+    | UnitId_Relative UnitId
+    | SpecPath_Relative UnitId
 
-  sort RelativeURI =
-    | URI_Relative URI
-    | SpecPath_Relative URI
-
-  sort RelativeUnitId = RelativeURI
+  sort RelativeUnitId = RelativeUID
 \end{spec}
 
 The sort \verb+Name+ is used everywhere that one can expect a
@@ -79,7 +77,7 @@ qualifiers on op and sort names.
 
 In the near term, it also includes the identifiers bound by declarations.
 These are either \verb+let+ bound or bound by specs listed in a
-file. Later, we might allow bound identifiers to be URIs thus enabling
+file. Later, we might allow bound identifiers to be UIDs thus enabling
 one to override an existing definition.
 
 \begin{spec}
@@ -103,7 +101,7 @@ The following is the sort given to us by the parser.
   sort Term_ a = 
     | Print   (Term a)
     | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions
-    | URI     RelativeURI
+    | UnitId     RelativeUID
     | Spec    List (SpecElem a)
     | Diag    List (DiagElem a)
     | Colimit (Term a)
@@ -145,8 +143,8 @@ The next two control the visibilty of names outside a spec.
 This is an initial attempt at code generation. The first string is the
 name of the target language. Perhaps it should be a constructor.
 Also perhaps we should say where to put the output. The idea is that
-is should go in the file with the same root name as the URI calling
-compiler (but with a .lisp suffix) .. but the term may not have a URI.
+is should go in the file with the same root name as the UnitId calling
+compiler (but with a .lisp suffix) .. but the term may not have a UnitId.
 The third argument is an optional file name to store the result.
 
 \begin{spec}

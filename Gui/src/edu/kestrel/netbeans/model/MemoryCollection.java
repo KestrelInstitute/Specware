@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:14:39  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.7  2003/04/01 02:29:37  weilyn
  * Added support for diagrams and colimits
  *
@@ -658,38 +661,38 @@ abstract class MemoryCollection extends Object implements Serializable {
         }
     }
     
-   /* static final class URI extends Member {
-        private static final URIElement[] EMPTY = new URIElement[0];
+   /* static final class UnitId extends Member {
+        private static final UIDElement[] EMPTY = new UIDElement[0];
 
         static final long serialVersionUID =5715072242254795093L;
      
-        public URI (URIElement.Memory memory) {
+        public UnitId (UIDElement.Memory memory) {
             super (memory,
-		   ElementProperties.PROP_URIS,
+		   ElementProperties.PROP_UIDS,
 		   EMPTY);
         }
 
         protected Object clone(Object el) {
-	    URIElement uri = (URIElement) el;
-            URIElement.Memory mem = new URIElement.Memory (uri);
+	    UIDElement unitId = (UIDElement) el;
+            UIDElement.Memory mem = new UIDElement.Memory (unitId);
             
             //WLP: will this work?
-            URIElement newURI = null;
+            UIDElement newUID = null;
             if (memory instanceof MorphismElement.Memory) {
-                newURI = new URIElement(mem, ((MorphismElement.Memory)memory).getMorphismElement());
+                newUID = new UIDElement(mem, ((MorphismElement.Memory)memory).getMorphismElement());
             }
-            return newURI;
+            return newUID;
         }
         
-        public URIElement find (String id, String path) {
+        public UIDElement find (String id, String path) {
             if (array == null)
                 return null;
 
             Iterator it = array.iterator ();
             while (it.hasNext ()) {
-                URIElement uri = (URIElement)it.next ();
-                if (id.equals(uri.getName()) && path.equals(uri.getPath())) {
-		    return uri;
+                UIDElement unitId = (UIDElement)it.next ();
+                if (id.equals(unitId.getName()) && path.equals(unitId.getPath())) {
+		    return unitId;
 		}
 	    }
             // nothing found

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/06/23 18:00:14  weilyn
+ * internal release version
+ *
  * Revision 1.8  2003/03/19 21:34:36  gilham
  * Fixed parseToken()  to handle  comment blocks not ended with  "\begin{spec}".
  *
@@ -22,7 +25,7 @@
  * and the parser output window is not open).
  *
  * Revision 1.4  2003/02/17 07:02:02  weilyn
- * Made scURI an Item, and added more rules for scProve.
+ * Made scUnitId an Item, and added more rules for scProve.
  *
  * Revision 1.3  2003/02/14 16:58:56  weilyn
  * Added support for prove term.

@@ -8,25 +8,25 @@ SpecCalc qualifying spec {
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import Translate                                    % for auxTranslateSpec
   import Spec/SpecUnion                               % for specUnion
-  import URI/Utilities                                % for uriToString, if used...
+  import UnitId/Utilities                                % for uidToString, if used...
 
   def SpecCalc.evaluateSubstitute (spec_tm, morph_tm) term_pos = {
-    uri <- getCurrentURI;
-    print (";;; Processing substitution at " ^ (uriToString uri) ^ "\n");
-    (spec_value, spec_timestamp, spec_dep_URIs) <- evaluateTermInfo spec_tm;
-    (morph_value, morph_timestamp, morph_dep_URIs) <- evaluateTermInfo morph_tm;
+    unitId <- getCurrentUID;
+    print (";;; Processing substitution at " ^ (uidToString unitId) ^ "\n");
+    (spec_value, spec_timestamp, spec_dep_UIDs) <- evaluateTermInfo spec_tm;
+    (morph_value, morph_timestamp, morph_dep_UIDs) <- evaluateTermInfo morph_tm;
     coercedSpecValue <- return (coerceToSpec spec_value);
     case (coercedSpecValue, morph_value) of % TODO: coerceToMorphism morph_value ??
       | (Spec spc, Morph morph) ->
            let timeStamp = max (spec_timestamp, morph_timestamp) in
-           let dep_URIs  = listUnion (spec_dep_URIs, morph_dep_URIs) in {
+           let dep_UIDs  = listUnion (spec_dep_UIDs, morph_dep_UIDs) in {
              new_spec <- attemptSubstitution spc morph morph_tm term_pos;
              compressed_spec <- complainIfAmbiguous (compressDefs new_spec) term_pos;
-             return (Spec compressed_spec, timeStamp, dep_URIs)
+             return (Spec compressed_spec, timeStamp, dep_UIDs)
            }
       | (Other other, Morph morph) ->
-           evaluateOtherSubstitute (coercedSpecValue,spec_timestamp,spec_dep_URIs)
-                                   (morph_value,morph_timestamp,morph_dep_URIs) morph_tm term_pos
+           evaluateOtherSubstitute (coercedSpecValue,spec_timestamp,spec_dep_UIDs)
+                                   (morph_value,morph_timestamp,morph_dep_UIDs) morph_tm term_pos
       | (_,        Morph _)  ->
            raise (TypeCheck (positionOf spec_tm, "substitution attempted on a non-spec"))
       | (Spec _,   _) ->

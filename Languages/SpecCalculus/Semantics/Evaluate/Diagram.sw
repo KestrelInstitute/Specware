@@ -7,7 +7,7 @@ SpecCalc qualifying spec {
   import Signature
   import /Languages/MetaSlang/Specs/Categories/AsRecord
   import /Library/Legacy/DataStructures/ListUtilities     % for listUnion
-  import URI/Utilities                                    % for uriToString, if used...
+  import UnitId/Utilities                                    % for uidToString, if used...
 \end{spec}
 
 When constructing the semantic representation of a diagram, what are
@@ -18,12 +18,12 @@ Lots of proof obligations. Needs thought.
   def SpecCalc.evaluateDiag elems = {
     %% -------------------------------------------
     %% next two lines are optional:
-    uri <- getCurrentURI;
-    print (";;; Processing spec diagram at "^(uriToString uri)^"\n");
+    unitId <- getCurrentUID;
+    print (";;; Processing spec diagram at "^(uidToString unitId)^"\n");
     %% -------------------------------------------
-    (dgm : SpecDiagram, timeStamp, depURIs) <-
+    (dgm : SpecDiagram, timeStamp, depUIDs) <-
          foldM evaluateDiagElem ((emptyDiagram (specCat ())),0,[]) elems;
-    return (Diag dgm,timeStamp,depURIs)
+    return (Diag dgm,timeStamp,depUIDs)
     }
 \end{spec}
 
@@ -62,18 +62,18 @@ The conditions for a diagram expression to be valid include:
 
 \begin{spec}
   op evaluateDiagElem :
-       (SpecDiagram * TimeStamp * URI_Dependency)
+       (SpecDiagram * TimeStamp * UnitId_Dependency)
     -> DiagElem Position
-    -> Env (SpecDiagram * TimeStamp * URI_Dependency)
+    -> Env (SpecDiagram * TimeStamp * UnitId_Dependency)
 
-  def evaluateDiagElem (dgm : SpecDiagram,timeStamp,depURIs) elem =
+  def evaluateDiagElem (dgm : SpecDiagram,timeStamp,depUIDs) elem =
     case (valueOf elem) of
       | Node (nodeId,term) -> {
            (termValue,termTime,termDeps) <- evaluateTermInfo term;
            case coerceToSpec termValue of
              | Spec spc -> {
                     newDgm <- addLabelledVertex dgm nodeId spc (positionOf term);
-                    return (newDgm, max (timeStamp,termTime), listUnion (depURIs, termDeps))
+                    return (newDgm, max (timeStamp,termTime), listUnion (depUIDs, termDeps))
                   }
              | _ -> raise (TypeCheck (positionOf term, "diagram node not labeled with a specification"))
           }
@@ -85,7 +85,7 @@ The conditions for a diagram expression to be valid include:
                   if (domNode = Sketch.eval (src (shape dgm)) edgeId)
                    & (codNode = Sketch.eval (target (shape dgm)) edgeId) then
                     if (morph = edgeLabel dgm edgeId) then
-                      return (dgm, max (timeStamp, termTime), listUnion (depURIs, termDeps))
+                      return (dgm, max (timeStamp, termTime), listUnion (depUIDs, termDeps))
                     else
                       raise (DiagError (positionOf term,
                                         "edge "
@@ -100,7 +100,7 @@ The conditions for a diagram expression to be valid include:
                     dgm1 <- addLabelledVertex dgm domNode (dom morph) (positionOf term);
                     dgm2 <- addLabelledVertex dgm1 codNode (cod morph) (positionOf term);
                     let dgm3 = labelEdge (addEdge dgm2 edgeId domNode codNode) edgeId morph in
-                      return (dgm3, max (timeStamp,termTime), listUnion (depURIs, termDeps))
+                      return (dgm3, max (timeStamp,termTime), listUnion (depUIDs, termDeps))
                   }
              | _ -> raise (TypeCheck (positionOf term, "diagram edge not labeled by a morphism"))
            }

@@ -82,15 +82,15 @@
 ;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
 (define-sw-parser-rule :NAME ()
   (:anyof
-   ((:tuple "=")                   "=") ; so we can refer to = (and "is" ?) as an operator in a term
-   ((:tuple "*")                   "*") ; so we can refer to * as an operator in a term
-   ((:tuple "/")                   "/") ; so we can refer to / as an operator in a term
-   ((:tuple "translate")      "translate") ; so we can use translate as a function
-   ((:tuple "colimit")        "colimit") ; so we can use colimit as a function
-   ((:tuple "diagram")        "diagram") ; so we can use diagram as a function
-   ((:tuple "print")          "print") ; so we can use print as a function
-   ((:tuple "with")           "with") ; so we can use with as a function
-   ((:tuple "Snark")          "Snark") ; so we can use Snark as a Spec
+   ((:tuple "=")                   "=") ; so we can use = (and "is" ?) as an op-name
+   ((:tuple "*")                   "*") ; so we can use * as an op-name
+   ((:tuple "/")                   "/") ; so we can use / as an op-name
+   ((:tuple "translate")      "translate") ; so we can use translate as a op-name
+   ((:tuple "colimit")        "colimit") ; so we can use colimit as a op-name
+   ((:tuple "diagram")        "diagram") ; so we can use diagram as a op-name
+   ((:tuple "print")          "print") ; so we can use print as a op-name
+   ((:tuple "with")           "with") ; so we can use with as a op-name
+   ((:tuple "Snark")          "Snark") ; so we can use Snark as a unit-identifier
    ((:tuple (1 :NON_KEYWORD_NAME)) 1)
    ))
 
@@ -138,7 +138,7 @@
   (:anyof
    (:tuple "(" (1 :SC-TERM) ")")
    (1 :SC-PRINT)
-   (1 :SC-URI)
+   (1 :SC-UNIT-ID)
    (1 :SPEC-DEFINITION)
    (1 :SC-LET)
    (1 :SC-WHERE)
@@ -198,42 +198,43 @@
 
 
 ;;; ========================================================================
-;;;  SC-URI
+;;;  SC-UNIT-ID
 ;;; ========================================================================
 
-;; The following does not correspond to syntax in RFC 2396. It is not clear
-;; that it should. Perhaps, a URI below should evaluate
+;; The following does not correspond to URI syntax in RFC 2396. It is
+;; not clear that it should. Perhaps, a UNIT-ID below should evaluate
 ;; to something of the form given in the RFC.
 
 ;; Because things come through the tokenizer, the rules below permit
 ;; white space between path elements and the white space is lost. We treat
 ;; ".." as a special path element. While it is supported in the RFC for
-;; relative paths, it is not part standard URI grammar.
+;; relative paths, it is not part of the standard UNIT-ID grammar.
+;; It is used in the Specware source, though.
 
 ;; Maybe one day we will want network addresses.
 
-(define-sw-parser-rule :SC-URI ()
+(define-sw-parser-rule :SC-UNIT-ID ()
   (:anyof
-   (1 :SC-ABSOLUTE-URI)
-   (1 :SC-RELATIVE-URI))
+   (1 :SC-ABSOLUTE-UNIT-ID)
+   (1 :SC-RELATIVE-UNIT-ID))
   1)
 
-(define-sw-parser-rule :SC-ABSOLUTE-URI ()
-  (:tuple "/" (1 :SC-URI-PATH) (:optional (:tuple "#" (2 :NAME))))
-  (make-sc-absolute-uri 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :SC-ABSOLUTE-UNIT-ID ()
+  (:tuple "/" (1 :SC-UNIT-ID-PATH) (:optional (:tuple "#" (2 :NAME))))
+  (make-sc-absolute-unit-id 1 2 ':left-lcb ':right-lcb))
 
-(define-sw-parser-rule :SC-RELATIVE-URI ()
-  (:tuple (1 :SC-URI-PATH) (:optional (:tuple "#" (2 :NAME))))
-  (make-sc-relative-uri 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :SC-RELATIVE-UNIT-ID ()
+  (:tuple (1 :SC-UNIT-ID-PATH) (:optional (:tuple "#" (2 :NAME))))
+  (make-sc-relative-unit-id 1 2 ':left-lcb ':right-lcb))
 
-(define-sw-parser-rule :SC-URI-PATH ()
-  (:repeat+ :SC-URI-ELEMENT "/"))
+(define-sw-parser-rule :SC-UNIT-ID-PATH ()
+  (:repeat+ :SC-UNIT-ID-ELEMENT "/"))
 
 ;; The following is a horrible hack. We want ".." as a path element
 ;; but the tokenizer treats "." as a special character. The way things
 ;; are below, one could put white space between successive "."'s.
 ;; Should really change things in the tokenizer.
-(define-sw-parser-rule :SC-URI-ELEMENT ()
+(define-sw-parser-rule :SC-UNIT-ID-ELEMENT ()
   (:anyof
     ((:tuple (1 :NAME))             1)
     ((:tuple (1 :NUMBER_AS_STRING)) 1)    ; e.g. ../foo/00/abc/..

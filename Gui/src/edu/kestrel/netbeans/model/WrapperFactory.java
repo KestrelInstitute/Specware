@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:14:40  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.7  2003/04/01 02:29:38  weilyn
  * Added support for diagrams and colimits
  *
@@ -46,7 +49,7 @@ public interface WrapperFactory {
     public MorphismElement      wrapMorphism(MorphismElement.Impl theImpl, Element parent);
     public DiagramElement       wrapDiagram(DiagramElement.Impl theImpl, Element parent);
     public ColimitElement       wrapColimit(ColimitElement.Impl theImpl, Element parent);
-//    public URIElement           wrapURI(URIElement.Impl theImpl, Element parent);
+//    public UnitIdElement           wrapUnitId(UnitIdElement.Impl theImpl, Element parent);
     public DiagElemElement      wrapDiagElem(DiagElemElement.Impl theImpl, Element parent);
 }
 

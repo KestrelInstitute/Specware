@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:16:26  weilyn
+ * DiagElemInfo.java
+ *
  * Revision 1.4  2003/04/01 02:29:44  weilyn
  * Added support for diagrams and colimits
  *
@@ -56,7 +59,7 @@ PropertyChangeListener {
     private static final MorphismElement[] NO_MORPHISMS = new MorphismElement[0];
     private static final DiagramElement[] NO_DIAGRAMS = new DiagramElement[0];
     private static final ColimitElement[] NO_COLIMITS = new ColimitElement[0];
-    //private static final URIElement[] NO_URIS = new URIElement[0];
+    //private static final UIDElement[] NO_UIDS = new UIDElement[0];
     
     /**
      * PropertyChangeListeners attached to the SourceElement.
@@ -239,24 +242,24 @@ PropertyChangeListener {
         return null;
     }
 
-   /* public void changeURIs(URIElement[] elems, int action) throws SourceException {
-        findModelDelegate().changeURIs(elems, action);
+   /* public void changeUIDs(UIDElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeUIDs(elems, action);
     }
     
-    public URIElement[] getURIs() {
+    public UIDElement[] getUIDs() {
         SourceElement.Impl impl = safeFindModelDelegate();
         if (impl != null) {
-	    System.err.println("*** SourceImplProxy.getURIs(): impl="+impl);
-	    System.err.println("*** SourceImplProxy.getURIs(): specs="+impl.getURIs());
-            return impl.getURIs();
+	    System.err.println("*** SourceImplProxy.getUIDs(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getUIDs(): specs="+impl.getUIDs());
+            return impl.getUIDs();
         }
-        return NO_URIS;
+        return NO_UIDS;
     }
     
-    public URIElement getURI(String name) {
+    public UIDElement getUID(String name) {
         SourceElement.Impl impl = safeFindModelDelegate();
         if (impl != null)
-            return impl.getURI(name);
+            return impl.getUID(name);
         return null;
     }*/
     

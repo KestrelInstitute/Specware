@@ -30,14 +30,14 @@ They are procedures in context.
   op SpecCalc.evaluatePSpec : List (PSpecElem Position) -> SpecCalc.Env ValueInfo
   def SpecCalc.evaluatePSpec pSpecElements = {
      base <- basePSpec;
-     (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
+     (pSpec,timeStamp,depUIDs) <- evaluatePSpecElems base pSpecElements;
      dyCtxt <- dynamicSpec pSpec;
      statCtxt <- staticSpec pSpec;
      statCtxtElab <- elaborateSpec statCtxt; 
      dyCtxtElab <- elaborateSpec dyCtxt; 
      newPSpec <- setDynamicSpec pSpec dyCtxtElab;
      newPSpec <- setStaticSpec newPSpec statCtxtElab;
-     return (Other newPSpec,timeStamp,depURIs)
+     return (Other newPSpec,timeStamp,depUIDs)
    }
 \end{spec}
 
@@ -45,15 +45,15 @@ They are procedures in context.
   op evaluatePSpecElems :
            PSpec
         -> List (PSpecElem Position)
-        -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
+        -> SpecCalc.Env (PSpec * TimeStamp * UnitId_Dependency)
 
   def SpecCalc.evaluatePSpecElems initialPSpec pSpecElems = {
-      (pSpecWithImports,timeStamp,depURIs)
+      (pSpecWithImports,timeStamp,depUIDs)
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
       pSpec <- evaluatePSpecContextElems pSpecWithImports pSpecElems;
       pSpec <- foldM evaluatePSpecProcElemPassOne pSpec pSpecElems;
       pSpec <- foldM evaluatePSpecProcElemPassTwo pSpec pSpecElems;
-      return (pSpec,timeStamp,depURIs)
+      return (pSpec,timeStamp,depUIDs)
     }
   
   op evaluatePSpecContextElems : PSpec -> List (PSpecElem Position) -> SpecCalc.Env PSpec
@@ -69,13 +69,13 @@ They are procedures in context.
    }
 
   op evaluatePSpecImportElem :
-           (PSpec * TimeStamp * URI_Dependency)
+           (PSpec * TimeStamp * UnitId_Dependency)
         -> PSpecElem Position
-        -> SpecCalc.Env (PSpec * TimeStamp * URI_Dependency)
+        -> SpecCalc.Env (PSpec * TimeStamp * UnitId_Dependency)
   def evaluatePSpecImportElem (val as (pSpec,currentTimeStamp,currentDeps)) (elem,position) =
     case elem of
       | Import term -> {
-            (value,importTimeStamp,depURIs) <- evaluateTermInfo term;
+            (value,importTimeStamp,depUIDs) <- evaluateTermInfo term;
             (case value of
               | Other impPSpec -> {
                     newStatic <- mergeImport term impPSpec.staticSpec pSpec.staticSpec position;
@@ -85,14 +85,14 @@ They are procedures in context.
                     newPSpec <- setProcedures newPSpec (foldMap
                             (fn newMap -> fn d -> fn c -> PolyMap.update newMap d c)
                                   newPSpec.procedures impPSpec.procedures);
-                    return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depURIs))
+                    return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depUIDs))
                   }
               | Spec impSpec -> {
                     newStatic <- mergeImport term impSpec pSpec.staticSpec position;
                     newDynamic <- mergeImport term impSpec pSpec.dynamicSpec position;
                     newPSpec <- setStaticSpec pSpec newStatic;
                     newPSpec <- setDynamicSpec newPSpec newDynamic;
-                    return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depURIs))
+                    return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depUIDs))
                   }
               | _ -> raise (Fail ("Import not a spec")))
           }
@@ -223,23 +223,23 @@ procedure. Don't we want to elaborate as we go along?
 
   op staticBase : SpecCalc.Env Spec
   def staticBase = {
-      baseURI <- pathToRelativeURI "/Library/PSL/Base";
-      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "PSL base") baseURI;
+      baseUID <- pathToRelativeUID "/Library/PSL/Base";
+      (Spec baseSpec,_,_) <- SpecCalc.evaluateUID (Internal "PSL base") baseUID;
       return baseSpec
     }
 
   op baseSpec : SpecCalc.Env Spec
   def baseSpec = {
-      baseURI <- pathToRelativeURI "/Library/Base";
-      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "Specware base") baseURI;
+      baseUID <- pathToRelativeUID "/Library/Base";
+      (Spec baseSpec,_,_) <- SpecCalc.evaluateUID (Internal "Specware base") baseUID;
       return baseSpec
     }
 
   op basePSpec : SpecCalc.Env PSpec
   def basePSpec = {
     base <- staticBase;
-    uri <- pathToRelativeURI "/Library/PSL/Base";
-    dynamicSpec <- mergeImport (URI uri,internalPosition) base emptySpec internalPosition;
+    unitId <- pathToRelativeUID "/Library/PSL/Base";
+    dynamicSpec <- mergeImport (UnitId unitId,internalPosition) base emptySpec internalPosition;
     % dynamicSpec <- return (setImportedSpec(dynamicSpec,base));
     return {
         staticSpec = base,

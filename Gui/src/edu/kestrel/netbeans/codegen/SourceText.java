@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:10:06  weilyn
+ * Added diagram elment support
+ *
  * Revision 1.7  2003/04/01 02:29:35  weilyn
  * Added support for diagrams and colimits
  *
@@ -349,8 +352,8 @@ public class SourceText implements DocumentBinding {
         return b;
     }
     
-/*    public Binding.URI bindURI(URIElement impl) {
-        URIB b = new URIB(impl, this);
+/*    public Binding.UnitId bindUID(UIDElement impl) {
+        UIDB b = new UIDB(impl, this);
         return b;
     }   
 */

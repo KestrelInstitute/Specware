@@ -184,31 +184,31 @@
 	    (cons :|Error| (cons error-msg string))))))))
 
 ;;; ========================================================================
-;;;  SC-URI
+;;;  SC-UNIT-ID
 ;;; ========================================================================
 
-(defun make-sc-absolute-uri (sc-uri-path optional-hash-name l r)
-  (cons (cons :|URI|
+(defun make-sc-absolute-unit-id (sc-unit-id-path optional-hash-name l r)
+  (cons (cons :|UnitId|
               (cons :|SpecPath_Relative|
                     (cons
                        (if (eq :unspecified optional-hash-name)
                           (cons :|None| nil)
                           (cons :|Some| optional-hash-name))
-                       sc-uri-path)))
+                       sc-unit-id-path)))
 	    (make-pos l r)))
 
-(defun make-sc-relative-uri (sc-uri-path optional-hash-name l r)
-  (cons (cons :|URI|
-              (cons :|URI_Relative|
+(defun make-sc-relative-unit-id (sc-unit-id-path optional-hash-name l r)
+  (cons (cons :|UnitId|
+              (cons :|UnitId_Relative|
                     (cons
                        (if (eq :unspecified optional-hash-name)
                           (cons :|None| nil)
                           (cons :|Some| optional-hash-name))
-                       sc-uri-path)))
+                       sc-unit-id-path)))
 	    (make-pos l r)))
 
-;;;(defun make-sc-specpath-uri (sc-uri-path l r)
-;;;  (cons (cons :|URI| (cons :|SpecPath| sc-uri-path))
+;;;(defun make-sc-specpath-unit-id (sc-unit-id-path l r)
+;;;  (cons (cons :|UnitId| (cons :|SpecPath| sc-unit-id-path))
 ;;;        (make-pos l r)))
 ;;;
 

@@ -239,7 +239,7 @@ spec {
                            | None   -> error (env_3, 
                                               "Incomplete sort for op "^op_name
 					      ^":"^newline
-                                              ^(printSort srt_3), 
+                                              ^(printSort aSrt), 
                                               pos))
                        | TyVar     (tv,      _) -> insert tv
                        | Product   (fields,  _) ->

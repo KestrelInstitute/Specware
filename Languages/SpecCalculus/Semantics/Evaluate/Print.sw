@@ -1,6 +1,6 @@
 SpecCalc qualifying spec {
   import Signature 
-  import URI/Utilities
+  import UnitId/Utilities
 
  % This implements the "print" command, which evaluates its argument and 
  %  returns that value, with the side effect of printing the value.  
@@ -20,14 +20,14 @@ SpecCalc qualifying spec {
  %  /Languages/SpecCalculus/AbstractSyntax/Printer.sw
 
  % from Environment.sw :
- % sort ValueInfo = Value * TimeStamp * URI_Dependency
- % sort GlobalContext = PolyMap.Map (URI, ValueInfo)
- % sort LocalContext  = PolyMap.Map (RelativeURI, ValueInfo)
- % sort State = GlobalContext * LocalContext * Option URI * ValidatedURIs
+ % sort ValueInfo = Value * TimeStamp * UnitId_Dependency
+ % sort GlobalContext = PolyMap.Map (UnitId, ValueInfo)
+ % sort LocalContext  = PolyMap.Map (RelativeUID, ValueInfo)
+ % sort State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
 
  % These may be used in various places throughout this file:
- %  uriToString          produces (unparseable) UnitId's that are relative to the root of the OS, using ~ for home,    e.g. "~/foo"
- %  relativeURI_ToString produces (parseable?)  UnitId's that are relativized to the currentURI, using ".." to ascend, e.g. "foo" or "../../foo"
+ %  uidToString          produces (unparseable) UnitId's that are relative to the root of the OS, using ~ for home,    e.g. "~/foo"
+ %  relativeUID_ToString produces (parseable?)  UnitId's that are relativized to the currentUID, using ".." to ascend, e.g. "foo" or "../../foo"
        
  sort ReverseContext = PolyMap.Map (Value, RelativeUnitId)
 
@@ -39,7 +39,7 @@ SpecCalc qualifying spec {
    reverse_context <- return (foldr (fn (unitId, value_to_unit_id_map) -> 
 				     update value_to_unit_id_map
                                             ((eval global_context unitId).1) 
-				            (relativizeURI currentUnitId unitId))
+				            (relativizeUID currentUnitId unitId))
 			            emptyMap
 				    depUnitIds);
    SpecCalc.print "\n";
@@ -119,13 +119,13 @@ SpecCalc qualifying spec {
 			    (ppConcat 
 			     [ppBreak,
 			      ppString (case evalPartial reverse_context (Spec dom_spec) of
-					  | Some rel_uri -> relativeURI_ToString rel_uri  
+					  | Some rel_uid -> relativeUID_ToString rel_uid  
 					  | None         -> printSpec base_spec reverse_context dom_spec),
 			      ppBreak,
 			      ppString "->",
 			      ppBreak,
 			      ppString (case evalPartial reverse_context (Spec cod_spec) of
-					  | Some rel_uri -> relativeURI_ToString rel_uri  
+					  | Some rel_uid -> relativeUID_ToString rel_uid  
 					  | None         -> printSpec base_spec reverse_context cod_spec)
 			     ]))
 		 ]))
@@ -219,7 +219,7 @@ SpecCalc qualifying spec {
 		      ppBreak,
 		      let spc = eval vertex_map vertex in
 		      ppString (case evalPartial reverse_context (Spec spc) of
-				  | Some rel_uri -> relativeURI_ToString rel_uri  
+				  | Some rel_uid -> relativeUID_ToString rel_uid  
 				  | None         -> printSpec base_spec reverse_context spc)]),
 		    pp_entries))
              []
@@ -245,7 +245,7 @@ SpecCalc qualifying spec {
 		        ppBreak,
 			let sm = eval edge_map edge in
 			case evalPartial reverse_context (Morph sm) of
-			  | Some rel_uri -> ppString (relativeURI_ToString rel_uri)  
+			  | Some rel_uid -> ppString (relativeUID_ToString rel_uid)  
 			  | None         -> ppMorphismX base_spec reverse_context sm]),
 		   pp_entries))
             []

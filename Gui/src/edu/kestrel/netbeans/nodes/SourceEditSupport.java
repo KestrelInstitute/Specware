@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
  * Revision 1.8  2003/04/01 02:29:40  weilyn
  * Added support for diagrams and colimits
  *
@@ -702,8 +705,8 @@ class SourceEditSupport {
 		return findSource(mm.getParent());
 	    }           
         }
-/*	if (element instanceof URIElement) {
-	    URIElement mm = (URIElement) element;
+/*	if (element instanceof UIDElement) {
+	    UIDElement mm = (UIDElement) element;
 	    SourceElement source = mm.getSource();
 	    if (source != null) {
 		return source;
@@ -812,15 +815,15 @@ class SourceEditSupport {
 	src.removeColimit(colimit);
     }
 
-/*    static void removeURI(URIElement uri) throws SourceException {
-	SourceElement src = SourceEditSupport.findSource(uri);
+/*    static void removeUID(UIDElement unitId) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(unitId);
 	if (src == null) {
 	    throw (SourceException)ErrorManager.getDefault().annotate(
 								      new SourceException("Element has no source"), // NOI18N
 								      bundle.getString("EXC_NO_SOURCE")
 								      );
 	}
-	src.removeURI(uri);
+	src.removeUID(unitId);
     }*/
     
     /* default */static class PackagePaste implements NodeTransfer.Paste {
@@ -860,7 +863,7 @@ class SourceEditSupport {
 	    this.element = element;
 	}
 
-/*        PackagePaste(URIElement element, boolean deleteSelf) {
+/*        PackagePaste(UIDElement element, boolean deleteSelf) {
 	    this.deleteSelf = deleteSelf;
 	    this.element = element;
 	}
@@ -921,8 +924,8 @@ class SourceEditSupport {
                                         removeDiagram((DiagramElement)elem);
                                     } else if (elem instanceof ColimitElement) {
                                         removeColimit((ColimitElement)elem);
-                                    } /*else if (elem instanceof URIElement) {
-                                        removeURI((URIElement)elem);
+                                    } /*else if (elem instanceof UIDElement) {
+                                        removeUID((UIDElement)elem);
                                     }*/
  				} catch (SourceException e) {
 				    ex[0] = e;

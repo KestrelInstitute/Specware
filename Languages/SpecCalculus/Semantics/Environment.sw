@@ -24,48 +24,48 @@ diagram, morphism etc.  We combine them with a coproduct.
 \end{spec}
 
 The interpreter maintains state.  The state of the interpreter includes
-two maps assigning a value to a URI. We call these \emph{name contexts}
+two maps assigning a value to a UnitId. We call these \emph{name contexts}
 (but some thought should go into the nomenclature for contexts,
 environments, state \emph{etc}). One context is a global context. This
-are names of URIs that resolve to objects in the file system. The other
+are names of UIDs that resolve to objects in the file system. The other
 is a local context. These are names bound by \verb+let+ expressions. The
 scope of such names is limited.
 
-A name is a URI, a let bound name or a name bound by one amongst a list
-of definitions in a file. The latter two are cast into URIs.
+A name is a UnitId, a let bound name or a name bound by one amongst a list
+of definitions in a file. The latter two are cast into UIDs.
 
 By recording the binding of a name to a value in an environment, we seek
 to avoid re-elaborating spec terms.
 
-The state also includes the URI for the object currently being evaluated.
-This is needed to resolve relative URIs found within the object. A
-\emph{relative} URI is resolved relative to the \emph{canonical} URI for
+The state also includes the UnitId for the object currently being evaluated.
+This is needed to resolve relative UIDs found within the object. A
+\emph{relative} UnitId is resolved relative to the \emph{canonical} UnitId for
 the object containing the reference. A canonical path is always relative
-to the root of the filesystem. A URI in the environment should always be
+to the root of the filesystem. A UnitId in the environment should always be
 a canonical path.  See \url{Languages/SpecCalculus/AbstractSyntax/Types}.
 
 TimeStamps are the universal time values as returned by the lisp
-function file-write-date. URI_Dependency are the URIs that a value
-depends on. ValueInfo is a value plus its URI_Dependency and a
+function file-write-date. UnitId_Dependency are the UIDs that a value
+depends on. ValueInfo is a value plus its UnitId_Dependency and a
 TimeStamp that is latest of the TimeStamps of the files of its
-URI_Dependency.
+UnitId_Dependency.
 
 \begin{spec}
   sort TimeStamp = Time          % Not a fixnum
   op futureTimeStamp: TimeStamp		% > than any TimeStamp in foreseeable future
   def futureTimeStamp = 9999999999
-  sort URI_Dependency = List URI
-  sort ValidatedURIs = List URI
-  sort ValueInfo = Value * TimeStamp * URI_Dependency
-  sort GlobalContext = PolyMap.Map (URI, ValueInfo)
-  sort LocalContext  = PolyMap.Map (RelativeURI, ValueInfo)
-  % sort State = GlobalContext * LocalContext * Option URI * ValidatedURIs
+  sort UnitId_Dependency = List UnitId
+  sort ValidatedUIDs = List UnitId
+  sort ValueInfo = Value * TimeStamp * UnitId_Dependency
+  sort GlobalContext = PolyMap.Map (UnitId, ValueInfo)
+  sort LocalContext  = PolyMap.Map (RelativeUID, ValueInfo)
+  % sort State = GlobalContext * LocalContext * Option UnitId * ValidatedUIDs
 
   op ppValueInfo : ValueInfo -> Doc
-  def ppValueInfo (value,timeStamp,depURIs) =
+  def ppValueInfo (value,timeStamp,depUIDs) =
     ppConcat([ppValue value,
               ppString (Nat.toString timeStamp)]
-             ++ map ppURI depURIs)
+             ++ map ppUID depUIDs)
 \end{spec}
 
 \begin{spec}
@@ -90,7 +90,7 @@ URI_Dependency.
   op showGlobalContext : Env String
   def showGlobalContext = {
       globalContext <- readGlobalVar "GlobalContext";
-      return (ppFormat (ppMap (fn uri -> ppString (showURI uri)) ppValueInfo globalContext))
+      return (ppFormat (ppMap (fn unitId -> ppString (showUID unitId)) ppValueInfo globalContext))
     }
 
   op printGlobalContext : Env ()
@@ -108,19 +108,19 @@ URI_Dependency.
   op getGlobalContect : Env GlobalContext
   def getGlobalContext = readGlobalVar "GlobalContext"
 
-  op bindInGlobalContext : URI -> ValueInfo -> Env ()
+  op bindInGlobalContext : UnitId -> ValueInfo -> Env ()
   def bindInGlobalContext unitId value = {
       globalContext <- getGlobalContext;
       setGlobalContext (update globalContext unitId value)
     }
 
-  op lookupInGlobalContext : URI -> Env (Option ValueInfo)
+  op lookupInGlobalContext : UnitId -> Env (Option ValueInfo)
   def lookupInGlobalContext unitId = {
       globalContext <- getGlobalContext;
       return (evalPartial globalContext unitId)
     }
 
-  op removeFromGlobalContext : URI -> Env ()
+  op removeFromGlobalContext : UnitId -> Env ()
   def removeFromGlobalContext unitId = {
       globalContext <- getGlobalContext;
       setGlobalContext (remove globalContext unitId)
@@ -140,13 +140,13 @@ URI_Dependency.
 The local context is where "let" bindings are deposied
 
 \begin{spec}
-  op bindInLocalContext : RelativeURI -> ValueInfo -> Env ()
+  op bindInLocalContext : RelativeUID -> ValueInfo -> Env ()
   def bindInLocalContext relativeUnitId value = {
       localContext <- readGlobalVar "LocalContext";
       writeGlobalVar ("LocalContext", update localContext relativeUnitId value)
     }
 
-  op lookupInLocalContext : RelativeURI -> Env (Option ValueInfo)
+  op lookupInLocalContext : RelativeUID -> Env (Option ValueInfo)
   def lookupInLocalContext relativeUnitId = {
       localContext <- readGlobalVar "LocalContext";
       return (evalPartial localContext relativeUnitId)
@@ -155,7 +155,7 @@ The local context is where "let" bindings are deposied
   op showLocalContext : Env String
   def showLocalContext = {
       localContext <- readGlobalVar "LocalContext";
-      return (ppFormat (ppMap ppRelativeURI ppValueInfo localContext))
+      return (ppFormat (ppMap ppRelativeUID ppValueInfo localContext))
     }
 
   op printLocalContext : Env ()
@@ -181,14 +181,14 @@ a new UnitId, we must abandon the local context in the UnitId.
 \end{spec}
 
 The corresponding retrieve and set the current UnitId. They are duplicated
-while there is a transition from names with "URI" to "UnitId".
+while there is a transition from names with "UnitId" to "UnitId".
 
 \begin{spec}
-  op getCurrentURI : Env UnitId
-  def getCurrentURI = getCurrentUnitId
+  op getCurrentUID : Env UnitId
+  def getCurrentUID = getCurrentUnitId
 
-  op setCurrentURI : UnitId -> Env ()
-  def setCurrentURI = setCurrentUnitId
+  op setCurrentUID : UnitId -> Env ()
+  def setCurrentUID = setCurrentUnitId
 
   op getCurrentUnitId : Env UnitId
   def getCurrentUnitId = {
@@ -203,11 +203,11 @@ while there is a transition from names with "URI" to "UnitId".
 \end{spec}
 
 \begin{spec}
-  op  validatedURI? : UnitId -> Env Boolean
-  def validatedURI? = validatedUnitId?
+  op  validatedUID? : UnitId -> Env Boolean
+  def validatedUID? = validatedUnitId?
 
-  op setValidatedURI : UnitId -> Env ()
-  def setValidatedURI = setValidatedUnitId
+  op setValidatedUID : UnitId -> Env ()
+  def setValidatedUID = setValidatedUnitId
 
   op validatedUnitId? : UnitId -> Env Boolean
   def validatedUnitId? unitId = {

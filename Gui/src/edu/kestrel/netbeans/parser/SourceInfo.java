@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/06/23 18:00:20  weilyn
+ * internal release version
+ *
  * Revision 1.5  2003/04/23 01:16:26  weilyn
  * DiagElemInfo.java
  *
@@ -45,7 +48,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
     public static final int MORPHISM = 2;
     public static final int DIAGRAM = 3;
     public static final int COLIMIT = 4;
-//    public static final int URI = 5;
+//    public static final int UnitId = 5;
 
     SourceElement.Impl  sourceImpl;
     LangModel.Updater   updater;
@@ -82,9 +85,9 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         new ColimitFinder()
     };
     
-    /*private static final ElementMatch.Finder[] URI_FINDERS = {
+    /*private static final ElementMatch.Finder[] UnitId_FINDERS = {
         //new TextPositionMatch(),
-        new URIFinder()
+        new UnitIdFinder()
     };*/
     
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
@@ -93,7 +96,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         MORPHISM_FINDERS,
         DIAGRAM_FINDERS,
         COLIMIT_FINDERS,
-        //URI_FINDERS,
+        //UnitId_FINDERS,
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
@@ -102,7 +105,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         ElementProperties.PROP_MORPHISMS,
         ElementProperties.PROP_DIAGRAMS,
         ElementProperties.PROP_COLIMITS,
-        //ElementProperties.PROP_URIS,
+        //ElementProperties.PROP_UnitIdS,
     };
     
     private static final Class[] CHILDREN_TYPES = {
@@ -111,7 +114,7 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         MorphismElement.class,
         DiagramElement.class,
         ColimitElement.class,
-        //URIElement.class,
+        //UnitIdElement.class,
     };
     
     SourceInfo() {
@@ -195,8 +198,8 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
             case COLIMIT:
                 curMembers = source.getColimits();
                 break;
-            /*case URI:
-                curMembers = source.getURIs();
+            /*case UnitId:
+                curMembers = source.getUnitIds();
                 break;*/
             default:
 		throw new InternalError("Illegal member type"); // NOI18N
@@ -256,9 +259,9 @@ public class SourceInfo extends BaseElementInfo implements DocumentModelUpdater 
         }
     }
 
-    /*private static final class URIFinder extends ElementMatch.AbstractFinder {
+    /*private static final class UnitIdFinder extends ElementMatch.AbstractFinder {
         protected boolean matches(BaseElementInfo info, Element el) {
-            return ((URIInfo)info).path.equals(((URIElement)el).getPath());
+            return ((UnitIdInfo)info).path.equals(((UnitIdElement)el).getPath());
         }
     }*/
     

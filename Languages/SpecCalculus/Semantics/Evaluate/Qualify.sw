@@ -19,12 +19,12 @@ Change UnQualified to new_qualifier in all qualified names
 
 \begin{spec} 
   def SpecCalc.evaluateQualify term new_qualifier = {
-       (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
+       (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo term;
         case coerceToSpec value of
           | Spec spc -> {
                 qualified_spec <- qualifySpec spc new_qualifier (positionOf term);
 		compressed_spec <- complainIfAmbiguous (compressDefs qualified_spec) (positionOf term);
-                return (Spec compressed_spec,timeStamp,depURIs)
+                return (Spec compressed_spec,timeStamp,depUnitIds)
               }
           | _ -> raise (TypeCheck ((positionOf term),
                             "qualifying a term that is not a specification"))

@@ -3,7 +3,7 @@
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
-  import URI/Utilities
+  import UnitId/Utilities
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Transformations/DefToAxiom
   import Spec/Utilities
@@ -16,14 +16,14 @@ and then qualify the resulting spec if the spec was given a name.
 
 \begin{spec}
  def SpecCalc.evaluateSpec spec_elements position = {
-    uri <- getCurrentURI;
-    print (";;; Processing spec at " ^ (uriToString uri) ^ "\n");
+    unitId <- getCurrentUID;
+    print (";;; Processing spec at " ^ (uidToString unitId) ^ "\n");
     (optBaseUnitId,baseSpec) <- getBase;
-    (pos_spec,TS,depURIs) <- evaluateSpecElems baseSpec spec_elements;
+    (pos_spec,TS,depUIDs) <- evaluateSpecElems baseSpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
 %    full_spec <- explicateHiddenAxiomsM compressed_spec;
-    return (Spec compressed_spec,TS,depURIs)
+    return (Spec compressed_spec,TS,depUIDs)
   }
 \end{spec}
 
@@ -32,24 +32,24 @@ axioms, etc.
 
 \begin{spec}
   op evaluateSpecElems : ASpec Position -> List (SpecElem Position)
-                           -> SpecCalc.Env (ASpec Position * TimeStamp * URI_Dependency)
+                           -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
   def evaluateSpecElems initialSpec specElems = {
-      (spcWithImports,TS,depURIs) <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
+      (spcWithImports,TS,depUIDs) <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
       fullSpec <- foldM evaluateSpecElem spcWithImports specElems;
-      return (fullSpec,TS,depURIs)
+      return (fullSpec,TS,depUIDs)
     }
 
-  op evaluateSpecImport : (ASpec Position * TimeStamp * URI_Dependency)
+  op evaluateSpecImport : (ASpec Position * TimeStamp * UnitId_Dependency)
                           -> SpecElem Position
-                          -> SpecCalc.Env (ASpec Position * TimeStamp * URI_Dependency)
-  def evaluateSpecImport (val as (spc,cTS,cDepURIs)) (elem, position) =
+                          -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
+  def evaluateSpecImport (val as (spc,cTS,cDepUIDs)) (elem, position) =
     case elem of
       | Import term -> {
-            (value,iTS,depURIs) <- evaluateTermInfo term;
+            (value,iTS,depUIDs) <- evaluateTermInfo term;
             (case coerceToSpec value of
               | Spec impSpec -> {
                     newSpc <- mergeImport term impSpec spc position;
-                    return (newSpc, max(cTS,iTS), listUnion(cDepURIs,depURIs))
+                    return (newSpc, max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
                   }
               | _ -> raise (Fail ("Import not a spec")))
           }
@@ -107,8 +107,8 @@ such time as the current one can made monadic.
 \begin{spec}
  op elaborateSpecM : Spec -> SpecCalc.Env Spec
  def elaborateSpecM spc =
-   { uri      <- getCurrentURI;
-     filename <- return ((uriToFullPath uri) ^ ".sw");
+   { unitId      <- getCurrentUID;
+     filename <- return ((uidToFullPath unitId) ^ ".sw");
      case elaboratePosSpec (spc, filename) of
        | Spec spc    -> return spc
        | Errors msgs -> raise (TypeCheckErrors msgs)

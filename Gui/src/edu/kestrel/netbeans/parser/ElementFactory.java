@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/06/23 18:00:18  weilyn
+ * internal release version
+ *
  * Revision 1.9  2003/04/23 01:16:24  weilyn
  * DiagElemInfo.java
  *
@@ -115,11 +118,11 @@ public interface ElementFactory {
     */
     public Item createColimit(String name);
     
-    /** Creates an element for a uri.
-	@param name Name of the uri
-	@param path string path of the uri
+    /** Creates an element for a unitId.
+	@param name Name of the unitId
+	@param path string path of the unitId
     */
-    //public Item createURI(String name, String path);    
+    //public Item createUID(String name, String path);    
 
     public void setParent(Collection children, Item parent);
 

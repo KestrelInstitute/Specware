@@ -1,8 +1,8 @@
 spec
 
-import Signature 
+import UnitId
 import Spec/Utilities                               % for coerceToSpec
-import URI/Utilities                                % for uriToString, if used...
+import UnitId/Utilities                                % for uidToString, if used...
 import /Languages/MetaSlang/Specs/Categories/AsRecord
 import /Languages/Snark/SpecToSnark
 import /Library/Legacy/DataStructures/ListPair
@@ -21,7 +21,7 @@ def answerVarsFromSnark () =
 
 def SpecCalc.evaluateExtendMorph term = {
   unitId <- getCurrentUnitId;
-  print (";;; Extending Morphisms for " ^ (uriToString unitId) ^ "\n");
+  print (";;; Extending Morphisms for " ^ (uidToString unitId) ^ "\n");
   (value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
   (optBaseUnitId,baseSpec) <- getBase;
   case value of
@@ -308,7 +308,7 @@ def substOpMap (opMap, term) =
 
 
 (*
- (Spec baseProverSpec,_,_) <- SpecCalc.evaluateURI (Internal "ProverBase")
+ (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase")
                                                        (SpecPath_Relative {path = ["Library","Base","ProverBase"],
 									   hashSuffix = None});
 *)

@@ -1,11 +1,11 @@
 spec
-  import Signature
-  import URI/Utilities
+  import UnitId
+  import UnitId/Utilities
   import ../Value
 
   op setBaseToPath : String -> Env ()
   def setBaseToPath path = {
-      relativeUnitId <- pathToRelativeURI path;
+      relativeUnitId <- pathToRelativeUID path;
       setBaseToRelativeUnitId relativeUnitId
     }
 
@@ -20,14 +20,14 @@ spec
           }
         def prog () = {
             setBase (None,emptySpec);
-            val <- evaluateReturnURI internalPosition relativeUnitId;
+            val <- evaluateReturnUID internalPosition relativeUnitId;
             case val of
                 | ((Spec spc,_,_),unitId) -> {
-                   print ("Setting base to " ^ (uriToString unitId));
+                   print ("Setting base to " ^ (uidToString unitId));
                    setBase (Some relativeUnitId, spc)
                  }
                | (_,unitId) ->
-                   raise (TypeCheck (internalPosition, (showRelativeURI relativeUnitId) ^ " is not a spec"))
+                   raise (TypeCheck (internalPosition, (showRelativeUID relativeUnitId) ^ " is not a spec"))
            } in
         catch (prog ()) handler
     }

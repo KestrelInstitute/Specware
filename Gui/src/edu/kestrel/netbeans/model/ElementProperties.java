@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/06/23 18:00:15  weilyn
+ * internal release version
+ *
  * Revision 1.9  2003/04/23 01:14:39  weilyn
  * BindingFactory.java
  *
@@ -83,7 +86,7 @@ public interface ElementProperties {
 
     public static final String PROP_COLIMITS = "colimits"; // NOI18N      
 
-//    public static final String PROP_URIS = "uris"; // NOI18N
+//    public static final String PROP_UIDS = "uids"; // NOI18N
     
     public static final String PROP_PATH = "path"; // NOI18N
     

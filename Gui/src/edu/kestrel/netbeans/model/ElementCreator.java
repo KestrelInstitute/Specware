@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:14:38  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.7  2003/04/01 02:29:37  weilyn
  * Added support for diagrams and colimits
  *
@@ -47,6 +50,6 @@ public interface ElementCreator {
     public MorphismElementImpl      createMorphism(Element parent);
     public DiagramElementImpl       createDiagram(Element parent);
     public ColimitElementImpl       createColimit(Element parent);
-    //public URIElementImpl           createURI(Element parent);
+    //public UnitIdElementImpl           createUnitId(Element parent);
     public DiagElemElementImpl      createDiagElem(DiagramElement parent);
 }

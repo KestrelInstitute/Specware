@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:14:40  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.4  2003/04/01 02:29:37  weilyn
  * Added support for diagrams and colimits
  *
@@ -531,86 +534,86 @@ public final class SourceElement extends Element {
         return getSourceImpl().getColimit(name);
     }
 
-  //================== URIs ==========================
+  //================== UIDs ==========================
 
-    /** Add a new uri.
-    * @param el the uri to add
+    /** Add a new unitId.
+    * @param el the unitId to add
     * @throws SourceException if impossible
     */
-/*    public void addURI (URIElement el) throws SourceException {
-      //Util.log("SourceElement.addURI -- adding uri "+el.getName());
+/*    public void addUID (UIDElement el) throws SourceException {
+      //Util.log("SourceElement.addUID -- adding unitId "+el.getName());
         String id = el.getPath();
-        if (getURI(id) != null)
-            throwAddException("FMT_EXC_AddURIToSource", el); // NOI18N
-        getSourceImpl().changeURIs(new URIElement[] { el }, Impl.ADD);
+        if (getUID(id) != null)
+            throwAddException("FMT_EXC_AddUIDToSource", el); // NOI18N
+        getSourceImpl().changeUIDs(new UIDElement[] { el }, Impl.ADD);
     }*/
 
-    /** Add some new uris.
-    * @param el the uris to add
+    /** Add some new uids.
+    * @param el the uids to add
     * @throws SourceException if impossible
     */
-    /*public void addURIs(final URIElement[] els) throws SourceException {
+    /*public void addUIDs(final UIDElement[] els) throws SourceException {
         String id;
         
         for (int i = 0; i < els.length; i++) {
             id = els[i].getPath();
-            if (getURI(id) != null)
-                throwAddException("FMT_EXC_AddURIToSource", els[i]); // NOI18N
+            if (getUID(id) != null)
+                throwAddException("FMT_EXC_AddUIDToSource", els[i]); // NOI18N
         }
-        getSourceImpl().changeURIs(els, Impl.ADD);
+        getSourceImpl().changeUIDs(els, Impl.ADD);
     }*/
 
     /** This method just throws localized exception. It is used during
-    * adding uri element, which already exists in source.
+    * adding unitId element, which already exists in source.
     * @param formatKey The message format key to localized bundle.
     * @param element The element which can't be added
     * @exception SourceException is alway thrown from this method.
     */
-/*    private void throwAddException(String formatKey, URIElement element) throws SourceException {
+/*    private void throwAddException(String formatKey, UIDElement element) throws SourceException {
 	String msg = NbBundle.getMessage(ElementFormat.class, formatKey,
 					 element.getPath());
         throwSourceException(msg);
     }*/
 
-    /** Remove a uri.
-    * @param el the uri to remove
+    /** Remove a unitId.
+    * @param el the unitId to remove
     * @throws SourceException if impossible
     */
-/*    public void removeURI(URIElement el) throws SourceException {
-        getSourceImpl().changeURIs(new URIElement[] { el }, Impl.REMOVE);
+/*    public void removeUID(UIDElement el) throws SourceException {
+        getSourceImpl().changeUIDs(new UIDElement[] { el }, Impl.REMOVE);
     }*/
 
-    /** Remove some uris.
-    * @param els the uris to remove
+    /** Remove some uids.
+    * @param els the uids to remove
     * @throws SourceException if impossible
     */
-/*    public void removeURIs (final URIElement[] els) throws SourceException {
-        getSourceImpl().changeURIs(els, Impl.REMOVE);
+/*    public void removeUIDs (final UIDElement[] els) throws SourceException {
+        getSourceImpl().changeUIDs(els, Impl.REMOVE);
     }*/
 
-    /** Set the uris.
+    /** Set the uids.
     * The old ones will be replaced.
-    * @param els the new uris
+    * @param els the new uids
     * @throws SourceException if impossible
     */
-/*    public void setURIs (URIElement[] els) throws SourceException {
-        getSourceImpl().changeURIs(els, Impl.SET);
+/*    public void setUIDs (UIDElement[] els) throws SourceException {
+        getSourceImpl().changeUIDs(els, Impl.SET);
     }*/
 
-    /** Get the uris.
-    * @return all uris
+    /** Get the uids.
+    * @return all uids
     */
-/*    public URIElement[] getURIs() {
-        System.err.println("*** getURIs(): SourceImpl="+ getSourceImpl());
-        return getSourceImpl().getURIs();
+/*    public UIDElement[] getUIDs() {
+        System.err.println("*** getUIDs(): SourceImpl="+ getSourceImpl());
+        return getSourceImpl().getUIDs();
     }*/
 
-    /** Find a uri by path.
+    /** Find a unitId by path.
     * @param path the path to look for
-    * @return the uri, or <code>null</code> if it does not exist
+    * @return the unitId, or <code>null</code> if it does not exist
     */
-/*    public URIElement getURI(String path) {
-        return getSourceImpl().getURI(path);
+/*    public UIDElement getUID(String path) {
+        return getSourceImpl().getUID(path);
     }*/
 
     //-------------------------------------------------------------
@@ -625,7 +628,7 @@ public final class SourceElement extends Element {
         print(getMorphisms(), printer);
         print(getDiagrams(), printer);
         print(getColimits(), printer);
-        //print(getURIs(), printer);
+        //print(getUIDs(), printer);
     }
     
     /** Lock the underlaing document to have exclusive access to it and could make changes
@@ -765,23 +768,23 @@ public final class SourceElement extends Element {
         */
         public ColimitElement getColimit (String name);
 
-        /** Change the set of uris.
-        * @param elems the uris to change
+        /** Change the set of uids.
+        * @param elems the uids to change
         * @param action one of {@link #ADD}, {@link #REMOVE}, or {@link #SET}
         * @exception SourceException if the action cannot be handled
         */
-       // public void changeURIs (URIElement[] elems, int action) throws SourceException;
+       // public void changeUIDs (UIDElement[] elems, int action) throws SourceException;
 
-        /** Get all uris.
-        * @return the uris
+        /** Get all uids.
+        * @return the uids
         */
-        //public URIElement[] getURIs ();
+        //public UIDElement[] getUIDs ();
 
-        /** Find a uri by path.
+        /** Find a unitId by path.
         * @param path the path to look for
-        * @return the uri, or <code>null</code> if it does not exist
+        * @return the unitId, or <code>null</code> if it does not exist
         */
-        //public URIElement getURI (String path);
+        //public UIDElement getUID (String path);
 
         /** Lock the underlaing document to have exclusive access to it and could make changes
         * on this SourceElement.

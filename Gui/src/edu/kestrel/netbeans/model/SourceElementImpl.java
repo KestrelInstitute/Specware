@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/06/23 18:00:16  weilyn
+ * internal release version
+ *
  * Revision 1.5  2003/04/23 01:14:39  weilyn
  * BindingFactory.java
  *
@@ -61,7 +64,7 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
   private MorphismCollection morphisms;
   private DiagramCollection diagrams;
   private ColimitCollection colimits;
-//  private URICollection uris;
+//  private UIDCollection uids;
   private MemberCollection members;
     
     private static final long serialVersionUID = 8506642610861188475L;
@@ -270,30 +273,30 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         }
     }
 
-/*    public URIElement getURI(String id) {
-        if (uris == null)
+/*    public UIDElement getUID(String id) {
+        if (uids == null)
             return null;
-        return uris.getURI(id);
+        return uids.getUID(id);
     }
     
-    public URIElement[] getURIs() {
-        if (uris == null)
-            return URICollection.EMPTY;
-        return (URIElement[])uris.getElements();
+    public UIDElement[] getUIDs() {
+        if (uids == null)
+            return UIDCollection.EMPTY;
+        return (UIDElement[])uids.getElements();
     }
     
     // Setters/changers
-    public void changeURIs(URIElement[] mms, int operation) throws SourceException {
-        //Util.log("SourceElementImpl.changeURI -- adding uri ");
+    public void changeUIDs(UIDElement[] mms, int operation) throws SourceException {
+        //Util.log("SourceElementImpl.changeUID -- adding unitId ");
         Object token = takeLock();
         try {
-            if (uris == null) {
+            if (uids == null) {
                 if (operation != Element.Impl.REMOVE && mms.length == 0)
 		  return;
-                initializeURIs();
+                initializeUIDs();
             }
-	    //Util.log("SourceElementimpl.changeURIs calling change members for URIs "+mms.length);
-            uris.changeMembers(mms, operation);
+	    //Util.log("SourceElementimpl.changeUIDs calling change members for UIDs "+mms.length);
+            uids.changeMembers(mms, operation);
             commit();
         } finally {
             releaseLock(token);
@@ -324,8 +327,8 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
         if (this.colimits != null) {
             notifyCreate(colimits.getElements());
         }
-        /*if (this.uris != null) {
-            notifyCreate(uris.getElements());
+        /*if (this.uids != null) {
+            notifyCreate(uids.getElements());
         }*/
         super.notifyCreate();
     }
@@ -396,14 +399,14 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
                 initializeColimits();
             }
             colimits.updateMembers(elements, indices, optMap);
-	} /*else if (name == ElementProperties.PROP_URIS) {
-            if (uris == null) {
+	} /*else if (name == ElementProperties.PROP_UIDS) {
+            if (uids == null) {
                 if (elements.length == 0)
                     return;
-                initializeURIs();
+                initializeUIDs();
             }
 	    //Util.log("SourceElementimpl.updateMembers calling proofs update members indices =  "+Util.print(indices));
-            uris.updateMembers(elements, indices, optMap);
+            uids.updateMembers(elements, indices, optMap);
 	    //Util.log("SourceElementimpl.updateMembers after PartialCollection.updateMembers proofs = "+Util.print(getProofs())+
 	    //			     " members =  "+members);
 	} */else {
@@ -447,8 +450,8 @@ public class SourceElementImpl extends MemberElementImpl implements SourceElemen
       //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
     }
 
-/*    private void initializeURIs() {
-      this.uris = new URICollection(this, getModelImpl(), members);
+/*    private void initializeUIDs() {
+      this.uids = new UIDCollection(this, getModelImpl(), members);
       //((Binding.Source)getRawBinding()).getProofSection(),  getModelImpl(), this);
     }*/
     

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/07 20:06:21  gilham
+ * Added opDefinition and scUnitId to MetaSlangGrammar.
+ *
  * Revision 1.1  2003/01/30 02:02:25  gilham
  * Initial version.
  *

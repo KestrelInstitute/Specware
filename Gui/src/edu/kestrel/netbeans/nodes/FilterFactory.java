@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/06/23 18:00:17  weilyn
+ * internal release version
+ *
  * Revision 1.8  2003/04/23 01:15:43  weilyn
  * ClaimCustomizer.java
  *
@@ -147,9 +150,9 @@ public class FilterFactory implements ElementNodeFactory {
         return delegate.createColimitNode( element );
     }
 
-    /** Make a node representing a uri
-    * @param element the uri
-    * @return a uri node instance
+    /** Make a node representing a unitId
+    * @param element the unitId
+    * @return a unitId node instance
     */
     public Node createUnitIDObjectNode (Object object) {
         return delegate.createUnitIDObjectNode(object);

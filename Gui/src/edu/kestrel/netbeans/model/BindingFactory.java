@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:14:56  weilyn
+ * BindingFactory.java
+ *
  * Revision 1.7  2003/04/01 02:29:36  weilyn
  * Added support for diagrams and colimits
  *
@@ -50,7 +53,7 @@ public interface BindingFactory {
     public Binding.Morphism bindMorphism(MorphismElement impl);
     public Binding.Diagram bindDiagram(DiagramElement impl);
     public Binding.Colimit bindColimit(ColimitElement impl);
-    //public Binding.URI bindURI(URIElement impl);
+    //public Binding.UnitId bindUnitId(UnitIdElement impl);
     public Binding.DiagElem bindDiagElem(DiagElemElement impl);
 }
 

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
  * Revision 1.4  2003/04/01 02:29:40  weilyn
  * Added support for diagrams and colimits
  *
@@ -43,7 +46,7 @@ public class SourceElementFilter {
     public static final int       MORPHISM = 4;
     public static final int       DIAGRAM = 8;
     public static final int       COLIMIT = 16;
-    //public static final int       URI = 32;
+    //public static final int       UnitId = 32;
     public static final int       ALL = SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT;
     /** Default order of the top-level element types in the hierarchy.
     * A list, each of whose elements is a bitwise disjunction of element types.

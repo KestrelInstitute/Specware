@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/06/23 18:00:14  weilyn
+ * internal release version
+ *
  * Revision 1.6  2003/03/29 03:13:55  weilyn
  * Added support for morphism nodes.
  *
@@ -16,7 +19,7 @@
  * and the parser output window is not open).
  *
  * Revision 1.4  2003/02/17 07:02:04  weilyn
- * Made scURI an Item, and added more rules for scProve.
+ * Made scUnitId an Item, and added more rules for scProve.
  *
  * Revision 1.3  2003/02/14 16:58:56  weilyn
  * Added support for prove term.

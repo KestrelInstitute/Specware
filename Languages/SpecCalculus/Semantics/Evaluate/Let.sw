@@ -33,7 +33,7 @@ The list must be sorted in dependence order. Recursion is not allowed.
   def evaluateLocalDecls decls =
     let def evaluateLocalDecl ((name,term)) = {
         valueInfo <- evaluateTermInfo term;
-        bindInLocalContext (URI_Relative {path=[name], hashSuffix=None}) valueInfo;
+        bindInLocalContext (UnitId_Relative {path=[name], hashSuffix=None}) valueInfo;
         return ()
       } in
       foldM (fn _ -> fn decl -> evaluateLocalDecl decl)

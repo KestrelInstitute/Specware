@@ -14,8 +14,8 @@ SpecCalc qualifying spec {
 
   %% Specific kinds of terms:
 
-  op evaluateReturnURI   : Position -> RelativeURI -> Env (ValueInfo * URI)
-  op evaluateURI         : Position -> RelativeURI                                                  -> SpecCalc.Env ValueInfo
+  op evaluateReturnUnitId   : Position -> RelativeUnitId -> Env (ValueInfo * UnitId)
+  op evaluateUnitId         : Position -> RelativeUnitId                                                  -> SpecCalc.Env ValueInfo
   op evaluateSpec        : List (SpecElem Position)                                     -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
   op evaluateExtendMorph : SCTerm                                                                   -> SpecCalc.Env ValueInfo
@@ -55,13 +55,13 @@ SpecCalc qualifying spec {
 
   op evaluateOtherGenerate :
        String * SCTerm * Option String
-    -> OtherValue * TimeStamp * URI_Dependency
+    -> OtherValue * TimeStamp * UnitId_Dependency
     -> Position
     -> SpecCalc.Env ValueInfo
 
   %% Lower-level support routines:
 
-  op getURI : SCTerm -> SpecCalc.Env URI
+  op getUnitId : SCTerm -> SpecCalc.Env UnitId
   op coerceToSpec : Value -> Value
 
   op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 01:16:24  weilyn
+ * DiagElemInfo.java
+ *
  * Revision 1.7  2003/04/01 02:29:41  weilyn
  * Added support for diagrams and colimits
  *
@@ -92,8 +95,8 @@ public class DefaultWrapper implements WrapperFactory {
         return new ColimitElement(theImpl, parent);
     }       
 
-/*    public URIElement wrapURI(URIElement.Impl theImpl, Element parent) {
-        return new URIElement(theImpl, parent);
+/*    public UnitIdElement wrapUnitId(UnitIdElement.Impl theImpl, Element parent) {
+        return new UnitIdElement(theImpl, parent);
     }    */
     
 }

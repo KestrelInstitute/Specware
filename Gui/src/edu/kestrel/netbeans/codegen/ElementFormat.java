@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/06/23 18:00:14  weilyn
+ * internal release version
+ *
  * Revision 1.5  2003/04/23 01:08:08  weilyn
  * Added morphism target/source
  *
@@ -145,7 +148,7 @@ public final class ElementFormat extends Format {
         ElementProperties.PROP_PARAMETERS,          //p
         ElementProperties.PROP_CLAIM_KIND,          //c
         ElementProperties.PROP_EXPRESSION,          //e
-        ElementProperties.PROP_PATH,                //u for uri
+        ElementProperties.PROP_PATH,                //u for unitId
         ElementProperties.PROP_SOURCE_UNIT_ID,      //r
         ElementProperties.PROP_TARGET_UNIT_ID,      //t
         ElementProperties.PROP_PROOFSTRING,         //i for "prove ... _in_" (running out of letters..!)
@@ -434,7 +437,7 @@ public final class ElementFormat extends Format {
                     }
                     break;
                /* case 'u':
-                    buf.append(((URIElement)element).getPath());
+                    buf.append(((UIDElement)element).getPath());
                     break;*/
                 case 'r':
                     buf.append(((MorphismElement)element).getSourceUnitID());

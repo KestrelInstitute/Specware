@@ -1,22 +1,21 @@
 SpecCalc qualifying spec {
-  import Signature
+  import UnitId
   import Spec/SpecUnion
-  import ../SpecPath
   import /Languages/Snark/SpecToSnark
-  import URI/Utilities                                    % for uriToString, if used...
+  import UnitId/Utilities                                    % for uidToString, if used...
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
      unitId <- getCurrentUnitId;
-     print (";;; Processing prove at " ^ (uriToString unitId) ^ "\n");
-     (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
+     print (";;; Processing prove at " ^ (uidToString unitId) ^ "\n");
+     (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo spec_term;
      (optBaseUnitId,baseSpec) <- getBase;
-     proverBaseUnitId <- pathToRelativeURI "/Library/Base/ProverBase";
-     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateURI (Internal "ProverBase") proverBaseUnitId;
-     snarkLogFileName <- URItoSnarkLogFile unitId;
+     proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
+     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
+     snarkLogFileName <- UIDtoSnarkLogFile unitId;
      _ <- return (ensureDirectoriesExist snarkLogFileName);
-     proof_name <- return (URItoProofName unitId);
+     proof_name <- return (UIDtoProofName unitId);
      spec_name <- return (SpecTermToSpecName(spec_term));
      uspc <- (
 	     case coerceToSpec value of
@@ -40,7 +39,7 @@ SpecCalc qualifying spec {
 				     pos));
      result <- return (Proof {status = if proved then Proved else Unproved, 
 			      unit   = unitId});
-     return (result, timeStamp, depURIs)
+     return (result, timeStamp, depUIDs)
    }
 
  def proverOptionsFromSpec(name, spc, spec_name) = {
@@ -64,43 +63,43 @@ SpecCalc qualifying spec {
    return prover_options
   }
 
- op URItoSnarkLogFile: URI -> SpecCalc.Env String
- def URItoSnarkLogFile (uri as {path,hashSuffix}) = {
+ op UIDtoSnarkLogFile: UnitId -> SpecCalc.Env String
+ def UIDtoSnarkLogFile (unitId as {path,hashSuffix}) = {
    result <-
    case hashSuffix of
-     | None -> URItoSingleSnarkLogFile(uri)
-     | Some _ -> URItoMultipleSnarkLogFile(uri);
+     | None -> UIDtoSingleSnarkLogFile(unitId)
+     | Some _ -> UIDtoMultipleSnarkLogFile(unitId);
    return result
  }
 
- op URItoSingleSnarkLogFile: URI -> SpecCalc.Env String
- def URItoSingleSnarkLogFile (uri as {path,hashSuffix}) =
+ op UIDtoSingleSnarkLogFile: UnitId -> SpecCalc.Env String
+ def UIDtoSingleSnarkLogFile (unitId as {path,hashSuffix}) =
     {prefix <- removeLastElem path;
      mainName <- lastElem path;
-     let filNm = (uriToFullPath {path=prefix,hashSuffix=None})
+     let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
         ^ "/snark/" ^ mainName ^ ".log"
      in
       return filNm}
 
- op URItoMultipleSnarkLogFile: URI -> SpecCalc.Env String
- def URItoMultipleSnarkLogFile (uri as {path,hashSuffix}) =
+ op UIDtoMultipleSnarkLogFile: UnitId -> SpecCalc.Env String
+ def UIDtoMultipleSnarkLogFile (unitId as {path,hashSuffix}) =
    let Some hashSuffix = hashSuffix in
     {prefix <- removeLastElem path;
      newSubDir <- lastElem path;
      mainName <- return hashSuffix;
-     let filNm = (uriToFullPath {path=prefix,hashSuffix=None})
+     let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
         ^ "/snark/" ^ newSubDir ^ "/" ^ mainName ^ ".log"
      in
       return filNm}
 
- op URItoProofName: URI -> Option String
- def URItoProofName (uri as {path,hashSuffix}) =
+ op UIDtoProofName: UnitId -> Option String
+ def UIDtoProofName (unitId as {path,hashSuffix}) =
     hashSuffix
 
  op SpecTermToSpecName: SCTerm -> (Option String)
  def SpecTermToSpecName (scterm as (term,_)) =
    case term of
-     | URI rURI -> Some (showRelativeURI(rURI))
+     | UnitId rUID -> Some (showRelativeUID(rUID))
      | Spec _ -> None
      | _ -> None
 

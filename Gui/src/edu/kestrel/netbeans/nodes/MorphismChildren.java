@@ -230,10 +230,10 @@ public class MorphismChildren extends Children.Keys implements FilterCookie {
             if (src != element) {
 /*                if (src instanceof MemberElement &&
                     (propName == null || ElementProperties.PROP_NAME == propName)) {
-                    if (src instanceof URIElement && oldValue instanceof URIElement) {
-                        if (((URIElement)oldValue).getPath().equals(element.getSourceURI().getPath())) {
+                    if (src instanceof UnitIdElement && oldValue instanceof UnitIdElement) {
+                        if (((UnitIdElement)oldValue).getPath().equals(element.getSourceUnitId().getPath())) {
                             filter = MorphismElementFilter.SOURCE;
-                        } else if (((URIElement)oldValue).getPath().equals(element.getDestinationURI().getPath())) {
+                        } else if (((UnitIdElement)oldValue).getPath().equals(element.getDestinationUnitId().getPath())) {
                             filter = MorphismElementFilter.TARGET;
                         }
                     }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
  * Revision 1.8  2003/04/01 02:29:41  weilyn
  * Added support for diagrams and colimits
  *
@@ -78,7 +81,7 @@ public final class SourceOptions extends SystemOption {
     private static final byte T_MORPHISM = 7;
     private static final byte T_DIAGRAM = 8;
     private static final byte T_COLIMIT = 9;
-    //private static final byte T_URI = 10;
+    //private static final byte T_UID = 10;
     private static final byte T_DIAG_ELEM = 11;
 
     /** Names of all properties. */
@@ -93,7 +96,7 @@ public final class SourceOptions extends SystemOption {
         "morphismElementFormat", // N0I18N
         "diagramElementFormat", // N0I18N
         "colimitElementFormat", // N0I18N
-        "uriElementFormat", //NOI18N
+        "uidElementFormat", //NOI18N
         "diagElemElementFormat", // NOI18N
     };
     
@@ -176,8 +179,8 @@ public final class SourceOptions extends SystemOption {
     /** Property name of the colimit display format. */
     public static final String PROP_COLIMIT_FORMAT = PROP_NAMES[T_COLIMIT];
 
-    /** Property name of the uri display format. */
-   // public static final String PROP_uri_FORMAT = PROP_NAMES[T_URI];
+    /** Property name of the unitId display format. */
+   // public static final String PROP_uid_FORMAT = PROP_NAMES[T_UID];
 
     /** Property name of the 'categories usage' property. */
     public static final String PROP_CATEGORIES_USAGE = "categoriesUsage"; // NOI18N
@@ -367,18 +370,18 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_COLIMIT);
     }
 
-    /** Set the uri format.
+    /** Set the unitId format.
     * @param format the new format
     */
-   /* public void setURIElementFormat(ElementFormat format) {
-        setElementFormat(T_URI, format);
+   /* public void setUIDElementFormat(ElementFormat format) {
+        setElementFormat(T_UID, format);
     }*/
     
-    /** Get the uri format.
+    /** Get the unitId format.
     * @return the current format
     */
-    /*public ElementFormat getURIElementFormat() {
-        return getElementFormat(T_URI);
+    /*public ElementFormat getUIDElementFormat() {
+        return getElementFormat(T_UID);
     }*/
 
     // ============= getters for long form of formats =================
@@ -471,12 +474,12 @@ public final class SourceOptions extends SystemOption {
         return DEFAULT_FORMATS_LONG[T_COLIMIT];
     }
 
-    /** Get the uri format for longer hints.
+    /** Get the unitId format for longer hints.
     * @return the current format
     */
-    /*public ElementFormat getURIElementLongFormat() {
+    /*public ElementFormat getUIDElementLongFormat() {
         loadDefaultFormats();
-        return DEFAULT_FORMATS_LONG[T_URI];
+        return DEFAULT_FORMATS_LONG[T_UID];
     }*/
 
     // ============= categories of elements usage ===================
