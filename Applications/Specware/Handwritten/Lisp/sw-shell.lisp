@@ -19,7 +19,7 @@
                   With no argument, processes the last processed unit.")
     ("p" . "[unit-term] Abbreviation for proc.")
     ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
-    ("showx" . "[unit-term] Like `show' but shows all ops and sorts including imports.")
+    ("showx" . "[unit-term] Like `show' but shows all types and ops including imports.")
     ("cinit" . "Clears Spec unit cache.")    
     ("punits" . "[unit-term [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")
