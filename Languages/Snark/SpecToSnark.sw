@@ -70,6 +70,11 @@ spec {
 	Lisp.list [declare_subsorts, Lisp.quote(Lisp.symbol("SNARK", "Nat")),
 				     Lisp.quote(Lisp.symbol("SNARK", "PosNat"))]
       ]
+  op baseSorts: List LispCell
+  def baseSorts = 
+      [ 
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Option"))]
+      ]
 
   op arithmeticFunctions: List LispCell
   def arithmeticFunctions =
@@ -136,6 +141,8 @@ spec {
       (if useLogicalSorts then logicalSorts else [])
       ++
       arithmeticSorts 
+      ++
+      baseSorts
 
   op snarkSorts: Spec -> List LispCell
 
