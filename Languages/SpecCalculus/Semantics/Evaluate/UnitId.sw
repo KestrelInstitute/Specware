@@ -316,20 +316,29 @@ aren't are removed from the environment.
      case optValue of
        | None -> return futureTimeStamp   % Not in cache
        | Some (_,timeStamp,depUIDs) ->
-         {validated? <- validatedUID? unitId;   % True if already validated
-	  if validated?
-	    then return timeStamp
-	  else
-	    %% the foldM finds the max of the timeStamps of the dependents and its own
-	    %% "infinity" if invalid
-	    {rVal <- foldM (fn val -> (fn depUID -> {dVal <- validateCache depUID;
-						     return (max(val, dVal))}))
-	     timeStamp depUIDs;
-	     if timeStamp >= rVal & upToDateOrNotPresent?(unitId,rVal)
-	       then {setValidatedUID unitId;  % Remember that this unitId has been validated
-		     return rVal}
-	     else {removeFromGlobalContext unitId;
-		   return futureTimeStamp}}}}
+         if member (unitId, depUIDs) then
+	   fail ("\nCircular dependency for " ^ (anyToString unitId) ^ "\n")
+	 else      
+	   {
+	    validated? <- validatedUID? unitId;   % True if already validated
+	    if validated? then
+	      return timeStamp
+	    else 
+	      %% the foldM finds the max of the timeStamps of the dependents and its own
+	      %% "infinity" if invalid
+	      {rVal <- foldM (fn val -> fn depUID -> 
+			      {dVal <- validateCache depUID;
+			       return (max(val, dVal))})
+	                     timeStamp 
+			     depUIDs;
+	       if timeStamp >= rVal & upToDateOrNotPresent?(unitId,rVal) then
+		 {setValidatedUID unitId;  % Remember that this unitId has been validated
+		  return rVal}
+	       else 
+		 {removeFromGlobalContext unitId;
+		  return futureTimeStamp}}
+	     }
+	  }
 
   op  upToDateOrNotPresent?: UnitId * TimeStamp -> Boolean
   def upToDateOrNotPresent?(unitId,timeStamp) =
