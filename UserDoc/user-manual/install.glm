@@ -1,4 +1,4 @@
-<appendix id="install">
+<chapter id="install">
 <title>Installing &Specware;</title>
 
 <section>
@@ -85,4 +85,4 @@ Start menu.
 
 </section> <!-- installation instructions -->
 
-</appendix>
+</chapter>
