@@ -9,7 +9,8 @@ SpecCalc qualifying spec
 {
   import Signature
   import /Languages/MetaSlang/Specs/TypeObligations
-  import /Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities
+  % import /Languages/SpecCalculus/Semantics/Evaluate/URI/Utilities % breaks PSL by indirectly loading SpecCalculus version of Value.sw
+  import URI/Utilities  % should work for both Specware and PSL
 
   def SpecCalc.evaluateObligations term =
     { (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
