@@ -36,9 +36,10 @@ spec {
                    else
                      Cons ((qual ^ "_" ^ id,sortOfScheme (sortScheme opInfo)),recSorts))
                         [] tmpSpec.ops) in
-          let procSort = mkBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
+          % let procSort = mkBase(unQualified "Proc",[argProd,resSort,storeRec]) in {
+          let procSort = mkArrow (argProd,resSort) in {
              static <- staticSpec pSpec;
-             static <- addOp [unQualified name] Nonfix (tyVarsOf procSort,procSort) None static internalPosition;
+             % static <- addOp [unQualified name] Nonfix (tyVarsOf procSort,procSort) None static internalPosition;
              pSpec <- setStaticSpec pSpec static;
              compileProcedure pSpec 0 name procInfo
           }
@@ -120,7 +121,7 @@ never mixed in the specs labeling \BSpecs.
     -> SpecCalc.Env PSpec
 
   def compileProcedure pSpec cnt name {args,returnSort,command} = {
-    dyCtxt <- dynamicSpec pSpec;
+    saveDyCtxt <- dynamicSpec pSpec;
     statCtxt <- staticSpec pSpec;
     dyCtxt <-
       foldM (fn dCtxt -> fn arg ->
@@ -130,7 +131,7 @@ never mixed in the specs labeling \BSpecs.
                 (tyVarsOf argSort,argSort)
                 None
                 dCtxt internalPosition)
-                  dyCtxt args;
+                  saveDyCtxt args;
     dyCtxt <- 
       case returnSort of
         | Product ([],_) -> return dyCtxt 
@@ -172,7 +173,10 @@ never mixed in the specs labeling \BSpecs.
                                  statCtxtElab
                                  dyCtxtElab
                                  bSpec);
-   addProcedure pSpec (unQualified name) proc
+   pSpec <- addProcedure pSpec (unQualified name) proc;
+   pSpec <- setDynamicSpec pSpec saveDyCtxt;
+   pSpec <- setStaticSpec pSpec statCtxt;
+   return pSpec
   }
 \end{spec}
 
@@ -390,24 +394,24 @@ We choose the second approach.
       | Assign (trm1,trm2) ->
           (case trm2 of
             | ApplyN ([Fun(OneName(id,fixity),srt,_),Record (args,_)],_) -> {
-                  print "Assign: OneName found (with record args)";
+                  % print "Assign: OneName found (with record args)";
                   procs <- procedures pSpec;
-                  if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
-                    compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
-                  else
+                  % if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
+                   %  compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
+                  % else
                     compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(OneName(id,fixity),srt,pos),arg],_) -> {
-                  print "Assign: OneName found (unary arg)";
+                  % print "Assign: OneName found (unary arg)";
                   procs <- procedures pSpec;
-                  if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
-                    compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) [arg]
-                  else
+                  % if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
+                    % compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) [arg]
+                  % else
                     compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
 
             | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,_),Record (args,_)],_) -> {
-                  print "Assign: TwoNames found (with record args)";
+                  % print "Assign: TwoNames found (with record args)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
                     compileProcCall pSpec first last bSpec cnt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
@@ -415,7 +419,7 @@ We choose the second approach.
                     compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,pos),arg],_) -> {
-                  print "Assign: TwoNames found (unary arg)";
+                  % print "Assign: TwoNames found (unary arg)";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
                     compileProcCall pSpec first last bSpec cnt (Some trm1) (Qualified (id1,id2)) [arg]
@@ -424,7 +428,7 @@ We choose the second approach.
                 }
 
             | ApplyN ([Fun(Op(id,fixity),srt,_),Record (args,_)],_) -> {
-                  print "Assign: op found";
+                  % print "Assign: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
                     compileProcCall pSpec first last bSpec cnt (Some trm1) id (map (fn (x,y) -> y) args)
@@ -432,7 +436,7 @@ We choose the second approach.
                     compileAssign pSpec first last bSpec cnt trm1 trm2
                 }
             | ApplyN ([Fun(Op(id,fixity),srt,pos),arg],_) -> {
-                  print "Assign: op found";
+                  % print "Assign: op found";
                   procs <- procedures pSpec;
                   if ~((PolyMap.evalPartial procs id) = None) then
                     compileProcCall pSpec first last bSpec cnt (Some trm1) id [arg]
@@ -442,6 +446,61 @@ We choose the second approach.
             | _ ->
                 compileAssign pSpec first last bSpec cnt trm1 trm2)
 \end{spec}
+
+      | Return trm ->
+          (case trm of
+            | ApplyN ([Fun(OneName(id,fixity),srt,_),Record (args,_)],_) -> {
+                  print "Return: OneName found (with record args)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) (map (fn (x,y) -> y) args)
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+            | ApplyN ([Fun(OneName(id,fixity),srt,pos),arg],_) -> {
+                  print "Return: OneName found (unary arg)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (unQualified id)) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (unQualified id) [arg]
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+
+            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,_),Record (args,_)],_) -> {
+                  print "Return: TwoNames found (with record args)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (Qualified (id1,id2)) (map (fn (x,y) -> y) args)
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+            | ApplyN ([Fun(TwoNames(id1,id2,fixity),srt,pos),arg],_) -> {
+                  print "Return: TwoNames found (unary arg)";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs (Qualified (id1,id2))) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) (Qualified (id1,id2)) [arg]
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+
+            | ApplyN ([Fun(Op(id,fixity),srt,_),Record (args,_)],_) -> {
+                  print "Return: op found";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs id) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) id (map (fn (x,y) -> y) args)
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+            | ApplyN ([Fun(Op(id,fixity),srt,pos),arg],_) -> {
+                  print "Return: op found";
+                  procs <- procedures pSpec;
+                  if ~((PolyMap.evalPartial procs id) = None) then
+                    compileProcCall pSpec first last bSpec cnt (Some trm1) id [arg]
+                  else
+                    compileAssign pSpec first last bSpec cnt trm1 trm2
+                }
+            | _ ->
+                compileAssign pSpec first last bSpec cnt trm1 trm2)
 
 \begin{spec}
       | Relation trm -> compileAxiomStmt pSpec first last bSpec cnt trm

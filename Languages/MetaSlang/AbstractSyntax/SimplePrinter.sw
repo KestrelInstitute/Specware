@@ -135,7 +135,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
               ppGrConcat [
                 ppBinder binder,
                 ppString " (",
-                ppSep (ppString ",") (map ppAVar vars),
+                ppSep (ppString ",") (map ppAVarWithoutSort vars),
                 ppString ") ",
                 ppATerm term
               ]
@@ -156,20 +156,20 @@ infix with brackets. And similarly when we see an \verb+Equals+.
           | LetRec (decls,term,_) ->
               let def ppDecl (var,term) =
                 ppGrConcat [
-                  ppAVar var,
+                  ppString "def ",
+                  ppAVarWithoutSort var,
                   ppString " = ",
                   ppATerm term
                 ] in
               ppGrConcat [
-                ppString "letrec",
+                ppString "let",
                 ppNewline,
                 ppString "  ",
                 ppIndent (ppSep ppNewline (map ppDecl decls)),
                 ppNewline,
                 ppString "in",
                 ppNewline,
-                ppATerm term,
-                ppString ")"
+                ppATerm term
              ]
           | Var (var,_) -> ppAVarWithoutSort var
           | Fun (fun,srt,_) -> ppAFun fun
@@ -241,7 +241,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppString " as ",
             ppAPattern pat2
           ]
-      | VarPat (var,_) -> ppAVar var
+      | VarPat (var,_) -> ppAVarWithoutSort var
       | EmbedPat (constr,pat,srt,_) ->
           ppGrConcat [
             ppString constr,
@@ -419,7 +419,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
                 let def ppField (_,y) = ppASort y in
                 ppGrConcat [
                   ppString "(",
-                  ppSep (ppString "*") (map ppField fields),
+                  ppSep (ppString " * ") (map ppField fields),
                   ppString ")"
                 ]
             | _ ->
