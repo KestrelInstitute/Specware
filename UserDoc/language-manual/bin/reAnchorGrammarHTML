@@ -1,0 +1,29 @@
+#!/bin/sh
+PATH=/bin:/usr/bin:/usr/local/bin
+self=`basename $0`
+
+case $# in
+     1) : ok;;
+     *) for F
+        do "$0" "$F"
+	done
+	exit 0;;
+esac
+
+F="$1"
+
+if [ ! -r "$F" ]
+then exec echo "$self: cannot open $F" 2>&1
+fi
+
+if [ ! -w "$F" ]
+then exec echo "$self: cannot write to $F" 2>&1
+fi
+
+echo re-anchoring "$F"
+
+ed - "$F" <<!r0tAn1mReT
+g|NAME="METASLANG-|s||NAME="GRAMMAR-|
+w
+q
+!r0tAn1mReT
