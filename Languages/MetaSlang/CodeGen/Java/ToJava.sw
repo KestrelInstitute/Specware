@@ -360,7 +360,10 @@ def addSumMethDeclToClsDecls(opId, srthId, caseTerm, pat (*as EmbedPat (cons, ar
       (case caseTerm of
 	 | Var ((vId, vSrt), b) ->
 	 let (args,ok?) = case argsPat of
-		      | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId,_), _))) -> vId) args,true)
+		      | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId,_), _))) -> vId
+							      | (id,pat) -> (issueUnsupportedError(b,"pattern not supported: "^
+												   printPattern(pat));"$X$")
+							    ) args,true)
 		      | Some (VarPat ((vId, _), _)) -> ([vId],true)
 		      | Some (pat) -> (issueUnsupportedError(b,"pattern not supported");([],false))
 		      | None -> ([],true) in
@@ -436,7 +439,7 @@ def insertClsDeclsForCollectedProductSorts(spc,jcginfo) =
   let psrts = jcginfo.collected.productSorts in
   if psrts = [] then jcginfo else
   let psrts = uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts in
-  let jcginfo = clearCollected(jcginfo) in
+  let jcginfo = clearCollectedProductSorts(jcginfo) in
   %let tmp = List.show "," (map printSort psrts) in
   %let _ = writeLine("collected product sorts:"^newline^tmp) in
   let
@@ -474,8 +477,8 @@ op addCollectedToJcgInfo: JcgInfo * Collected -> JcgInfo
 def addCollectedToJcgInfo({clsDecls=cd,collected=col1},col2) =
   {clsDecls=cd,collected=concatCollected(col1,col2)}
 
-op clearCollected: JcgInfo -> JcgInfo
-def clearCollected({clsDecls=cd,collected=_}) =
+op clearCollectedProductSorts: JcgInfo -> JcgInfo
+def clearCollectedProductSorts({clsDecls=cd,collected=_}) =
   {clsDecls=cd,collected=nothingCollected}
 
 op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
@@ -570,10 +573,10 @@ def specToJava(spc,optspec,filename) =
   let jcginfo = clsDeclsFromSorts(spc) in
   %let _ = writeLine(";;; Adding Bodies") in
   let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
+  let arrowcls = jcginfo.collected.arrowclasses in
   let jcginfo = insertClsDeclsForCollectedProductSorts(spc,jcginfo) in
   %let _ = writeLine(";;; Writing Java file") in
   let clsDecls = jcginfo.clsDecls in
-  let arrowcls = jcginfo.collected.arrowclasses in
   let arrowcls = uniqueSort (fn(ifd1 as (_,(id1,_,_),_),ifd2 as (_,(id2,_,_),_)) -> compare(id1,id2)) arrowcls in
   let clsDecls = clsDecls ++ arrowcls in
   let clsOrInterfDecls = map (fn (cld) -> ClsDecl(cld)) clsDecls

@@ -71,7 +71,6 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
   let
     def opvarcase(id) =
       let srt = inferTypeFoldRecords(spc,term) in
-      %%Fixed here
       let args = applyArgsToTerms(argsTerm) in
       % use the sort of the operator for the domain, if possible; this
       % avoid problems like: the operator is defined on the restriction type, but
@@ -84,6 +83,7 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
 			      srt
 			     ) args
       in
+      %let _ = writeLine("dom of op "^id^": "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
       let args = insertRestricts(spc,dom,args) in
       let argsTerm = exchangeArgTerms(argsTerm,args) in
       let rng = srt in
@@ -238,9 +238,9 @@ def translateRecordToExpr(tcx, term as Record (fields, _), k, l, spc) =
      | None -> %
        %let _ = warn("Could not find sort definition for \""^printSort(recordSrt)^"\"") in
        if fieldsAreNumbered fields then
-	 let (recordClassId,col) = srtId recordSrt in
-	 let col = addProductSortToCollected(recordSrt,col) in
-	 ((newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL),col)
+	 let (recordClassId,col1) = srtId recordSrt in
+	 let col2 = addProductSortToCollected(recordSrt,col) in
+	 ((newBlock, mkNewClasInst(recordClassId, javaArgs), newK, newL),concatCollected(col1,col2))
        else
 	 unsupportedInSort(recordSrt,k,l,"product sort must be introduced as a sort definition")
 
@@ -337,35 +337,45 @@ def translateCaseCasesToSwitches(tcx, caseType, caseExpr, cres, cases, k0, l0, l
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let
     def translateCaseCaseToSwitch(c, ks, ls) =
-      let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
-      let patVars = case argsPat of
-		      | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
-		      | Some (VarPat ((vId, _), _)) -> [vId]
-		      | None -> [] in
-      let subId = mkSub(cons, l) in
-      %let sumdType = mkSumd(cons, caseType) in
-      let newTcx = addSubsToTcx(tcx, patVars, subId) in
-      let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(cres, newTcx, body, ks, ls, spc) in
-      let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-      let (caseType,col3) = srtId coSrt in
-      %let tagId = mkTag(cons) in
-      let tagId = mkTagCId(cons) in
-      let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-      let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-      let col = concatCollected(col1,concatCollected(col2,col3)) in
-      ((switchElement, newK, newL),col)
+      case c of
+        | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+	let patVars = case argsPat of
+			| Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
+			| Some (VarPat ((vId, _), _)) -> [vId]
+			| Some (pat) -> (issueUnsupportedError(b,"pattern not supported");[])
+			| None -> [] in
+	let subId = mkSub(cons, l) in
+	%let sumdType = mkSumd(cons, caseType) in
+	let newTcx = addSubsToTcx(tcx, patVars, subId) in
+	let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(cres, newTcx, body, ks, ls, spc) in
+	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	let (caseType,col3) = srtId coSrt in
+	%let tagId = mkTag(cons) in
+	let tagId = mkTagCId(cons) in
+	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
+	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	let col = concatCollected(col1,concatCollected(col2,col3)) in
+	((switchElement, newK, newL),col)
+       | (WildPat(srt,_),_,body) ->
+	let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
+	let switchLab = Default in
+	let switchElement = ([switchLab],caseBlock) in
+	((switchElement,newK,newL),col)
+       | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+		       ((([],[]),ks,ls),nothingCollected))
   in
     let
-      def translateCasesToSwitchesRec(cases, kr, lr) =
+      def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
 	case cases of
-	  | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
+	  | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
 	  | hdCase::restCases ->
 	    let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	    let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
+	    let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
+	    let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL,hasDefaultLabel?) in
 	    let col = concatCollected(col1,col2) in
 	    ((List.cons(hdSwitch, restSwitch), restK, restL),col)
     in
-      translateCasesToSwitchesRec(cases, k0, l0)
+      translateCasesToSwitchesRec(cases, k0, l0, false)
 
 op addSubsToTcx: TCx * List Id * Id -> TCx
 def addSubsToTcx(tcx, args, subId) =
@@ -473,36 +483,48 @@ def translateCaseCasesToSwitchesRet(tcx, caseType, caseExpr, cases, k0, l0, l, s
   in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
-        let (EmbedPat (cons, argsPat, coSrt, b), _, body) = c in
-	let (patVars,ok?) = case argsPat of
-	                | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId, _), _))) -> vId) args,true)
-	                | Some (VarPat ((vId, _), _)) -> ([vId],true)
-	                | None -> ([],true) 
-	                | Some(pat) -> ([],false)
-	in
-	if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
-	let subId = mkSub(cons, l) in
-	%let sumdType = mkSumd(cons, caseType) in
-        let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col1) = termToExpressionRet(newTcx, body, ks, ls, spc) in
-	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	let (caseType,col3) = srtId coSrt in
-	let tagId = mkTagCId(cons) in
-	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	let switchElement = ([switchLab], [initBlock]++caseBlock) in
-	let col = concatCollected(col1,concatCollected(col2,col3)) in
-	((switchElement, newK, newL),col)
+        case c of
+          | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+	  let (patVars,ok?) = case argsPat of
+				| Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId, _), _))) -> vId
+				| (id,pat) -> (issueUnsupportedError(b,"pattern not supported: "^
+								     printPattern(pat));"$X$")
+								     ) args,true)
+				| Some (VarPat ((vId, _), _)) -> ([vId],true)
+				| None -> ([],true) 
+				| Some(pat) -> ([],false)
+	  in
+	    if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
+	      let subId = mkSub(cons, l) in
+	      %let sumdType = mkSumd(cons, caseType) in
+	      let newTcx = addSubsToTcx(tcx, patVars, subId) in
+	      let ((caseBlock, newK, newL),col1) = termToExpressionRet(newTcx, body, ks, ls, spc) in
+	      let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	      let (caseType,col3) = srtId coSrt in
+	      let tagId = mkTagCId(cons) in
+	      let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
+	      let switchElement = ([switchLab], [initBlock]++caseBlock) in
+	      let col = concatCollected(col1,concatCollected(col2,col3)) in
+	      ((switchElement, newK, newL),col)
+	  | (WildPat(srt,_),_,body) ->
+	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
+	    let switchLab = Default in
+	    let switchElement = ([switchLab],caseBlock) in
+	    ((switchElement,newK,newL),col)
+	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+			     ((([],[]),ks,ls),nothingCollected))
   in
-  let def translateCasesToSwitchesRec(cases, kr, lr) =
+  let def translateCasesToSwitchesRec(cases,kr,lr,hasDefaultLabel?) =
          case cases of
-	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
+	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
+	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
+	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
 	      let col = concatCollected(col1,col2) in
 	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
   in
-    translateCasesToSwitchesRec(cases, k0, l0)
+    translateCasesToSwitchesRec(cases, k0, l0, false)
 
 
 op translateIfThenElseAsgNV: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
@@ -562,35 +584,45 @@ def translateCaseCasesToSwitchesAsgNV(oldVId, tcx, caseType, caseExpr, cases, k0
   in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
-        let (EmbedPat (cons, argsPat, coSrt, b), _, body) = c in
-	let (patVars,ok?) = case argsPat of
-	                | Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId, _), _))) -> vId) args,true)
-	                | Some (VarPat ((vId, _), _)) -> ([vId],true)
-	                | Some (pat) -> ([],false)
-	                | None -> ([],true)
-	in
-	if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
-	let subId = mkSub(cons, l) in
-	%let sumdType = mkSumd(cons, caseType) in
-        let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
-	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	let tagId = mkTagCId(cons) in
-	let (caseType,col3) = srtId coSrt in
-	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-	let col = concatCollected(col1,concatCollected(col2,col3)) in
-	((switchElement, newK, newL),col) in
-   let def translateCasesToSwitchesRec(cases, kr, lr) =
+        case c of
+          | (EmbedPat (cons, argsPat, coSrt, b), _, body) ->
+	  let (patVars,ok?) = case argsPat of
+				| Some (RecordPat (args, _)) -> (map (fn (id, (VarPat ((vId, _), _))) -> vId) args,true)
+				| Some (VarPat ((vId, _), _)) -> ([vId],true)
+				| Some (pat) -> ([],false)
+				| None -> ([],true)
+	  in
+	    if ~ ok? then (issueUnsupportedError(b,"pattern not supported");((([],[]),k0,l0),nothingCollected)) else
+	      let subId = mkSub(cons, l) in
+	      %let sumdType = mkSumd(cons, caseType) in
+	      let newTcx = addSubsToTcx(tcx, patVars, subId) in
+	      let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
+	      let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	      let tagId = mkTagCId(cons) in
+	      let (caseType,col3) = srtId coSrt in
+	      let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
+	      let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	      let col = concatCollected(col1,concatCollected(col2,col3)) in
+	      ((switchElement, newK, newL),col)
+	  | (WildPat(srt,_),_,body) ->
+	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
+	    let switchLab = Default in
+	    let switchElement = ([switchLab],caseBlock) in
+	    ((switchElement,newK,newL),col)
+	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+			     ((([],[]),ks,ls),nothingCollected))
+  in
+   let def translateCasesToSwitchesRec(cases,kr,lr,hasDefaultLabel?) =
          case cases of
-	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
+	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
+	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
+	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
 	      let col = concatCollected(col1,col2) in
 	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
    in
-     translateCasesToSwitchesRec(cases, k0, l0)
+     translateCasesToSwitchesRec(cases, k0, l0, false)
 
 
 
@@ -650,33 +682,43 @@ def translateCaseCasesToSwitchesAsgV(oldVId, tcx, caseType, caseExpr, cases, k0,
   in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
-        let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
-	let patVars = case argsPat of
-	                | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
-	                | Some (VarPat ((vId, _), _)) -> [vId]
-	                | None -> [] in
-	let subId = mkSub(cons, l) in
-	%let sumdType = mkSumd(cons, caseType) in
-        let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
-	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	let (caseType,col3) = srtId coSrt in
-	%let tagId = mkTag(cons) in
-	let tagId = mkTagCId(cons) in
-	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-	let col = concatCollected(col1,concatCollected(col2,col3)) in
-	((switchElement, newK, newL),col) in
-   let def translateCasesToSwitchesRec(cases, kr, lr) =
+        case c of
+          | (EmbedPat (cons, argsPat, coSrt, _), _, body) ->
+	  let patVars = case argsPat of
+			  | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
+			  | Some (VarPat ((vId, _), _)) -> [vId]
+			  | None -> [] in
+	  let subId = mkSub(cons, l) in
+	  %let sumdType = mkSumd(cons, caseType) in
+	  let newTcx = addSubsToTcx(tcx, patVars, subId) in
+	  let ((caseBlock, newK, newL),col1) = termToExpressionAsgV(oldVId, newTcx, body, ks, ls, spc) in
+	  let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	  let (caseType,col3) = srtId coSrt in
+	  %let tagId = mkTag(cons) in
+	  let tagId = mkTagCId(cons) in
+	  let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
+	  let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	  let col = concatCollected(col1,concatCollected(col2,col3)) in
+	  ((switchElement, newK, newL),col)
+	  | (WildPat(srt,_),_,body) ->
+	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
+	    let switchLab = Default in
+	    let switchElement = ([switchLab],caseBlock) in
+	    ((switchElement,newK,newL),col)
+	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+			     ((([],[]),ks,ls),nothingCollected))
+  in
+   let def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
          case cases of
-	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
+	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
+	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
+	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
 	      let col = concatCollected(col1,col2) in
 	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
    in
-     translateCasesToSwitchesRec(cases, k0, l0)
+     translateCasesToSwitchesRec(cases, k0, l0, false)
 
 
 op translateIfThenElseAsgF: Id * Id * TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
@@ -735,33 +777,43 @@ def translateCaseCasesToSwitchesAsgF(cId, fId, tcx, caseType, caseExpr, cases, k
   in
 	%LocVarDecl (false, sumdType, ((subId, 0), Expr (castExpr)), []) in
   let def translateCaseCaseToSwitch(c, ks, ls) =
-        let (EmbedPat (cons, argsPat, coSrt, _), _, body) = c in
-	let patVars = case argsPat of
-	                | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
-	                | Some (VarPat ((vId, _), _)) -> [vId]
-	                | None -> [] in
-	let subId = mkSub(cons, l) in
-	%let sumdType = mkSumd(cons, caseType) in
-        let newTcx = addSubsToTcx(tcx, patVars, subId) in
-	let ((caseBlock, newK, newL),col1) = termToExpressionAsgF(cId, fId, newTcx, body, ks, ls, spc) in
-	let (initBlock,col2) = mkCaseInit(cons,coSrt) in
-	let (caseType,col3) = srtId coSrt in
-	%let tagId = mkTag(cons) in
-	let tagId = mkTagCId(cons) in
-	let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
-	let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
-	let col = concatCollected(col1,concatCollected(col2,col3)) in
-	((switchElement, newK, newL),col) in
-   let def translateCasesToSwitchesRec(cases, kr, lr) =
+        case c of
+          | (EmbedPat (cons, argsPat, coSrt, _), _, body) ->
+	  let patVars = case argsPat of
+			  | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId, _), _))) -> vId) args
+			  | Some (VarPat ((vId, _), _)) -> [vId]
+			  | None -> [] in
+	  let subId = mkSub(cons, l) in
+	  %let sumdType = mkSumd(cons, caseType) in
+	  let newTcx = addSubsToTcx(tcx, patVars, subId) in
+	  let ((caseBlock, newK, newL),col1) = termToExpressionAsgF(cId, fId, newTcx, body, ks, ls, spc) in
+	  let (initBlock,col2) = mkCaseInit(cons,coSrt) in
+	  let (caseType,col3) = srtId coSrt in
+	  %let tagId = mkTag(cons) in
+	  let tagId = mkTagCId(cons) in
+	  let switchLab = JCase (mkFldAccViaClass(caseType, tagId)) in
+	  let switchElement = ([switchLab], [initBlock]++caseBlock++[Stmt(Break None)]) in
+	  let col = concatCollected(col1,concatCollected(col2,col3)) in
+	  ((switchElement, newK, newL),col)
+	  | (WildPat(srt,_),_,body) ->
+	    let ((caseBlock, newK, newL),col) = termToExpressionRet(tcx, body, ks, ls, spc) in
+	    let switchLab = Default in
+	    let switchElement = ([switchLab],caseBlock) in
+	    ((switchElement,newK,newL),col)
+	  | (pat,_,_) -> (issueUnsupportedError(patAnn(pat),"pattern not supported: "^printPattern(pat));
+			     ((([],[]),ks,ls),nothingCollected))
+  in
+   let def translateCasesToSwitchesRec(cases, kr, lr, hasDefaultLabel?) =
          case cases of
-	   | Nil -> (([mkDefaultCase(cases,spc)], kr, lr),nothingCollected)
+	   | Nil -> ((if hasDefaultLabel? then [] else mkDefaultCase(cases,spc), kr, lr),nothingCollected)
 	   | hdCase::restCases ->
 	      let ((hdSwitch, hdK, hdL),col1) = translateCaseCaseToSwitch(hdCase, kr, lr) in
-	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL) in
+	      let hasDefaultLabel? = if hasDefaultLabel? then true else member(Default,hdSwitch.1) in
+	      let ((restSwitch, restK, restL),col2) = translateCasesToSwitchesRec(restCases, hdK, hdL, hasDefaultLabel?) in
 	      let col = concatCollected(col1,col2) in
 	      ((List.cons(hdSwitch, restSwitch), restK, restL),col)
    in
-     translateCasesToSwitchesRec(cases, k0, l0)
+     translateCasesToSwitchesRec(cases, k0, l0, false)
 
 (**
  * implements v3:p48:r3

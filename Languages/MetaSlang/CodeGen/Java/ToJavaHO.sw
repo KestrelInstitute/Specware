@@ -173,6 +173,7 @@ def standaloneWithParNames(s,applySig as (apdom,apran),arrowTypeSig as (atdom,at
   let (exp,cldecl) = mkNewAnonymousClasInstOneMethod(clsname,[],meth) in
   %let col2 = {arrowclasses=[cldecl]} in
   %let col = concatCollected(col1,col2) in
+  %let _ = writeLine("collecting arrow class "^clsname) in
   let col = addArrowClassToCollected(cldecl,col1) in
   ((mts,exp,k,l),col)
 

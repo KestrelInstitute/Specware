@@ -174,11 +174,11 @@ def mkThrowFunEq() = mkThrowException("illegal function equality")
 def mkThrowMalf() = mkThrowException("malformed sum value") 
 def mkThrowUnexp() = mkThrowException("unexpected sum value") 
 
-op mkDefaultCase: Match * Spec -> List SwitchLab * List BlockStmt
+op mkDefaultCase: Match * Spec -> List (List SwitchLab * List BlockStmt)
 def mkDefaultCase(cases,spc) =
   let swlabel = [Default] in
   let stmt = mkThrowMalf() in
-  (swlabel,[Stmt stmt])
+  [(swlabel,[Stmt stmt])]
 
 sort JSpec = CompUnit
 
@@ -277,23 +277,28 @@ def JVoid = (Basic Void,0)
  *)
 op srtId: Sort -> String * Collected
 def srtId(srt) =
-  let (_,s,col) = srtId_internal(srt) in
+  let (_,s,col) = srtId_internal(srt,true) in
   (s,col)
 
-op srtId_internal: Sort -> List Java.Type * String * Collected
-def srtId_internal(srt) =
+op srtId_internal: Sort * Boolean -> List Java.Type * String * Collected
+def srtId_internal(srt,addIds?) =
   case srt of
     | Base (Qualified (q, id), _, _) -> ([tt_v2 id],id,nothingCollected)
     | Product([],_) -> ([JVoid],"void",nothingCollected)
-    | Product(fields,_) -> foldl (fn((id,fsrt),(types,str,col)) ->
-				  let (str0,col0) = srtId(fsrt) in
-				  let str = str ^ (if str = "" then "" else "$$") ^ str0(*^"$"^id*) in
-				  let col = concatCollected(col,col0) in
-				  let types = concat(types,[tt_v2(str0)]) in
-				  (types,str,col)) ([],"",nothingCollected) fields
+    | Product(fields,_) -> 
+      let (l,str,col) = foldl (fn((id,fsrt),(types,str,col)) ->
+			       let (str0,col0) = srtId(fsrt) in
+			       let str = str ^ (if str = "" then "" else "$$") ^ str0 in
+			       let str = if addIds? then str^"$"^id else str in
+			       let col = concatCollected(col,col0) in
+			       let types = concat(types,[tt_v2(str0)]) in
+			       (types,str,col)) ([],"",nothingCollected) fields
+      in
+      let col = if addIds? then addProductSortToCollected(srt,col) else col in
+      (l,str,col)
     | Arrow(dsrt,rsrt,_) ->
-      let (dtypes,dsrtid,col2) = srtId_internal dsrt in
-      let (rsrtid,col1) = srtId rsrt in
+      let (dtypes,dsrtid,col2) = srtId_internal(dsrt,false) in
+      let (_,rsrtid,col1) = srtId_internal(rsrt,addIds?) in
       let (pars,_) = foldl (fn(ty,(pars,nmb)) -> 
 			    let fpar = (false,ty,("arg"^Integer.toString(nmb),0)) in
 			    (concat(pars,[fpar]),nmb+1)
@@ -305,6 +310,9 @@ def srtId_internal(srt) =
       let col = addArrowClassToCollected(clsDecl,concatCollected(col1,col2)) in
       %let col = concatCollected(col1,concatCollected(col2,col3)) in
       ([tt_v2 id],id,col)
+    | TyVar _ ->
+      let id = "Object" in
+      ([tt_v2 id],id,nothingCollected)
     | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
 
 op getJavaTypeId: Java.Type -> Id
@@ -900,6 +908,7 @@ def addArrowClassToCollected(decl,col as {arrowclasses,productSorts}) =
 
 op addProductSortToCollected: Sort * Collected -> Collected
 def addProductSortToCollected(srt, col as {arrowclasses,productSorts}) =
+  %let _ = writeLine("collecting product sort "^printSort(srt)^"...") in
   {
    arrowclasses = arrowclasses,
    productSorts = if exists (fn(psrt) -> equalSort?(srt,psrt)) productSorts then productSorts
