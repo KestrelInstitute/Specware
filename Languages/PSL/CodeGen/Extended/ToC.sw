@@ -290,6 +290,9 @@ with a loop or out of a conditional.
             | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) ->
 	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
 	      (cspc,block,Return cexp)
+            | Fun (Op (Qualified ("<unqualified>","ignore'"),fxty),srt,pos) ->
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      (cspc,block,Exp cexp)
             | _ ->
 	      let (cspc,block,cexp1) = termToCExp cspc spc returnTerm in
 	      let (cspc,block,cexp2) = termToCExpB cspc spc block (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
