@@ -1037,7 +1037,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
       toLispFileEnv (spc, file, preamble) 
 
   def toLispFileEnv (spc, file, preamble) =
-      let _ = writeLine("Writing Lisp file "^file) in
+      % let _ = writeLine("Writing Lisp file "^file) in
       let spc = toLispEnv (spc) in
       ppSpecToFile (spc, file, preamble)
 
