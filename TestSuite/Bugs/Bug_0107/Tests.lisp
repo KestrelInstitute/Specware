@@ -10,7 +10,7 @@ spec
  type NotList =  | Nil | Whatever
  
  op  b : NotList
- def b = []
+ def b = Nil
 endspec
 
 ")
