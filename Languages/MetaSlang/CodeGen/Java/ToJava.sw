@@ -437,8 +437,8 @@ def insertClsDeclsForCollectedProductSorts(spc,jcginfo) =
   if psrts = [] then jcginfo else
   let psrts = uniqueSort (fn(s1,s2) -> compare((srtId s1).1,(srtId s2).1)) psrts in
   let jcginfo = clearCollected(jcginfo) in
-  let tmp = List.show "," (map printSort psrts) in
-  let _ = writeLine("collected product sorts:"^newline^tmp) in
+  %let tmp = List.show "," (map printSort psrts) in
+  %let _ = writeLine("collected product sorts:"^newline^tmp) in
   let
     def insertSort(srt,jcginfo) =
       let (id,_) = srtId(srt) in
