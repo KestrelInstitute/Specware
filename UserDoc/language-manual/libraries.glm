@@ -26,7 +26,7 @@ with the &Specware; distribution, for details (e.g. axioms).
   <variablelist>
    <varlistentry>
     <term><command>Sort</command></term>
-    <listitem><para>[[sort Boolean = | true | false]]</para></listitem>
+    <listitem><para>[[sort Boolean]]</para></listitem>
    </varlistentry>
    <varlistentry>
     <term><command>Ops</command></term>
