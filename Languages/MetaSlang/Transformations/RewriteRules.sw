@@ -14,7 +14,7 @@ skolemization.
 
 \begin{spec}
 
-spec RewriteRules
+RewriteRules qualifying spec 
  import HigherOrderMatching
 
  sort Context = HigherOrderMatching.Context

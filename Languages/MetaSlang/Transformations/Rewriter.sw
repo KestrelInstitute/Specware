@@ -2,7 +2,7 @@
 \section{Rewrite rule control}
 
 \begin{spec}
-spec MetaSlangRewriter
+MetaSlangRewriter qualifying spec 
  import /Library/Legacy/DataStructures/LazyList
  import DeModRewriteRules
  
