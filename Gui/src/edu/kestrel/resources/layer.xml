@@ -106,7 +106,7 @@
         <file name="A-X.instance">
             <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.actions.KillLispAction" />
         </file>
-        <file name="A-U.instance">
+        <file name="A-E.instance">
             <attr name="instanceClass" stringvalue="edu.kestrel.netbeans.actions.UpdateSWPathAction" />
         </file>
     </folder>
