@@ -23,12 +23,13 @@ spec
             val <- evaluateReturnUID internalPosition relativeUnitId;
             case val of
                 | ((Spec spc,_,_),unitId) -> {
-                   print ("Setting base to " ^ (uidToString unitId));
-                   setBase (Some relativeUnitId, spc)
-                 }
-               | (_,unitId) ->
+                     print ("Setting base to " ^ (uidToString unitId));
+                     setBase (Some relativeUnitId, spc)
+                   }
+                | (_,unitId) ->
                    raise (TypeCheck (internalPosition, (showRelativeUID relativeUnitId) ^ " is not a spec"))
-           } in
+           }
+      in
         catch (prog ()) handler
     }
 

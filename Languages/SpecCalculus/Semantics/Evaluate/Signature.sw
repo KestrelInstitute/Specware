@@ -14,8 +14,8 @@ SpecCalc qualifying spec {
 
   %% Specific kinds of terms:
 
-  op evaluateReturnUnitId   : Position -> RelativeUnitId -> Env (ValueInfo * UnitId)
-  op evaluateUnitId         : Position -> RelativeUnitId                                                  -> SpecCalc.Env ValueInfo
+  op evaluateReturnUID   : Position -> RelativeUnitId -> Env (ValueInfo * UnitId)
+  op evaluateUID         : Position -> RelativeUnitId                                               -> SpecCalc.Env ValueInfo
   op evaluateSpec        : List (SpecElem Position)                                     -> Position -> SpecCalc.Env ValueInfo
   op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))                        -> SpecCalc.Env ValueInfo
   op evaluateExtendMorph : SCTerm                                                                   -> SpecCalc.Env ValueInfo
