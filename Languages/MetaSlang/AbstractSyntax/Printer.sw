@@ -18,7 +18,7 @@ AnnTermPrinter qualifying spec {
   import AnnTerm
 
   import /Library/Legacy/DataStructures/ListUtilities
-  import /Library/Legacy/DataStructures/StringMap
+  import /Library/Legacy/DataStructures/StringMapSplay
 
   %% ========================================================================
 

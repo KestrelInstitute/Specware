@@ -1,10 +1,10 @@
 ListUtilities qualifying spec {
-  % import List       % DataStructures/List.sl
+  import /Library/Base
 
   % Ad hoc utility for removing duplicate elements in list
 
   op removeDuplicates  : fa(T) List T -> List T
-  op insert            : fa(T) T * List T -> List T
+  op ListUtilities.insert            : fa(T) T * List T -> List T
   op listUnion         : fa(T) List T * List T -> List T
   op delete            : fa(T) T * List T -> List T
   op enumerate         : Nat * Nat -> List Nat
@@ -30,14 +30,14 @@ ListUtilities qualifying spec {
   op mapi              : fa (a,b) (Nat * a -> b)  -> List a -> List b
   op appi              : fa (a)   (Nat * a -> ()) -> List a -> ()
 
-  def insert (e, l) = 
+  def ListUtilities.insert (e, l) = 
     case l of
       | [] -> [e]
       | e1::l1 ->
           if e = e1 then
             l
           else
-            Cons (e1, insert (e, l1))
+            Cons (e1, ListUtilities.insert (e, l1))
 
   def delete(e,l) = 
     case l of
@@ -51,9 +51,9 @@ ListUtilities qualifying spec {
   def removeDuplicates(l) = 
     case l of
       | [] -> l 
-      | elem::l -> insert(elem,removeDuplicates(l))
+      | elem::l -> ListUtilities.insert (elem,removeDuplicates(l))
 
-  def listUnion (l1, l2)  = List.foldr insert l1 l2
+  def listUnion (l1, l2)  = foldr ListUtilities.insert l1 l2
 
   def enumerate (i, j) = 
     if i > j then
@@ -62,16 +62,17 @@ ListUtilities qualifying spec {
       Cons (i, enumerate (i + 1, j))
 
   def split(test,l) = 
-      let
-         def splitAux(l,trues,falses) = 
-             case l
-               of [] -> (List.rev trues,List.rev falses)
-                | elem::elems -> 
-                  if test(elem)
-                     then splitAux(elems,Cons(elem,trues),falses)
-                  else splitAux(elems,trues,Cons(elem,falses))
-      in
-         splitAux(l,[],[])
+    let
+      def splitAux(l,trues,falses) = 
+        case l of
+          | [] -> (List.rev trues,List.rev falses)
+          | elem::elems -> 
+             if test elem then
+               splitAux(elems,Cons(elem,trues),falses)
+             else
+              splitAux(elems,trues,Cons(elem,falses))
+    in
+      splitAux(l,[],[])
 
   def collectDuplicates(l,eqTest) = 
     case l of
@@ -109,7 +110,7 @@ ListUtilities qualifying spec {
     else
       case es of
         | []  -> []
-        | e::es -> Cons (e, take (n - 1, es))
+        | e::es -> Cons (e, take (toNat ((Integer.fromNat n) - (Integer.fromNat 1)), es))
 
   def drop (n, es) =
     if n = 0 then
@@ -117,71 +118,69 @@ ListUtilities qualifying spec {
     else
       case es of
         | [] -> []
-        | e::es -> drop (n - 1, es)
+        | e::es -> drop (toNat ((Integer.fromNat n) - (Integer.fromNat 1)), es)
 
   def deleteNth(n,ls) = 
     if n = 0 then
-      List.tl ls
+      tl ls
     else 
-      Cons (List.hd ls, deleteNth (n - 1, List.tl ls))
+      Cons (hd ls,
+            deleteNth (toNat ((Integer.fromNat n) - (Integer.fromNat 1)), tl ls))
 
   def flatMap f =
     let def loop l =
-      case l
-        of []     -> []
-         | a :: l -> (f a) List.@ loop l in
-    loop
+      case l of
+        | [] -> []
+        | a::l -> (f a) @ loop l
+    in
+      loop
 
   op  findOptionIndexRec : fa(a,b) (a * Nat -> Option b) * List a * Nat -> Option (Nat * b)
 
   def findOptionIndexRec(f,xs,i) = 
-      case xs
-        of [] -> None
-         | x::xs -> 
-      case f(x,i)
-        of Some y -> Some(i,y)
-         | None -> findOptionIndexRec(f,xs,i + 1)
+    case xs of
+      | [] -> None
+      | x::xs -> 
+          (case f(x,i) of
+            | Some y -> Some(i,y)
+            | None -> findOptionIndexRec (f,xs,i + 1))
 
-  def findOptionIndex f l = 
-      findOptionIndexRec(f,l,0)
-
+  def findOptionIndex f l = findOptionIndexRec(f,l,0)
 
   def findOption f l = 
-      case l 
-        of [] -> None 
-         | l::ls -> 
-      case f l
-        of None -> findOption f ls
-         | result -> result
+    case l of
+      | [] -> None 
+      | l::ls -> 
+          (case f l of
+            | None -> findOption f ls
+            | result -> result)
 
   def mapWithIndexRec(f,ls,i) = 
-      case ls
-        of [] -> []
-         | x::xs -> List.cons(f(i,x),mapWithIndexRec(f,xs,i + 1))
+    case ls of
+      | [] -> []
+      | x::xs -> List.cons(f(i,x),mapWithIndexRec(f,xs,i + 1))
 
-  def mapWithIndex f l = 
-      mapWithIndexRec(f,l,0)
+  def mapWithIndex f l = mapWithIndexRec(f,l,0)
 
-  def subset? (l1, l2) =
-    List.all (fn x1 -> member (x1, l2)) l1
+  def subset? (l1, l2) = List.all (fn x1 -> member (x1, l2)) l1
 
-  def mapCross f (l1, l2) =
-    flatMap (fn a -> List.map (fn b -> f (a, b)) l2) l1
+  def mapCross f (l1, l2) = flatMap (fn a -> List.map (fn b -> f (a, b)) l2) l1
 
   def mapi f xs =
     let def loop (i, xs) =
-      case xs
-        of [] -> []
-         | x :: xs ->
-           List.cons (f (i, x), loop (i + 1, xs))
-    in loop (0, xs)
+      case xs of
+        | [] -> []
+        | x :: xs -> List.cons (f (i, x), loop (i + 1, xs))
+    in
+      loop (0, xs)
 
   def appi f xs =
     let def loop (i, xs) =
-      case xs
-        of [] -> ()
-         | x :: xs ->
+      case xs of
+        | [] -> ()
+        | x :: xs ->
            let _ = f (i, x) in
            loop (i + 1, xs)
-    in loop (0, xs)
+    in
+      loop (0, xs)
 }

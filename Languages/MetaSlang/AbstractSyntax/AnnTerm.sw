@@ -2,7 +2,7 @@
 
 spec { 
  import /Library/Base
- import /Library/Utilities/State  % for MetaTyVar's
+ import /Library/Legacy/State  % for MetaTyVar's
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                QualifiedId 

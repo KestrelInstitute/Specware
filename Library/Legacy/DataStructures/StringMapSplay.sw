@@ -23,14 +23,14 @@ StringMap qualifying spec {
   op foldri         : fa(a,b) (String * a * b -> b) -> b ->  Map a -> b
   op foldli         : fa(a,b) (String * a * b -> b) -> b ->  Map a -> b
   op foldriDouble   : fa(a,b) (String * String * a * b -> b) -> b -> Map (Map a) -> b
-  op compose        : fa(a)   Map(String) * Map a -> Map a
+  op compose        : fa(a)   Map String * Map a -> Map a
 
   op unionWith      : fa(a)   (a * a -> a) -> Map a * Map a -> Map a  
-  op union2With     : fa(a)   (a * a -> a) -> Map(Map a) * Map(Map a) -> Map(Map a)  
+  op union2With     : fa(a)   (a * a -> a) -> Map (Map a) * Map (Map a) -> Map(Map a)  
   op intersectWith  : fa(a)   (a * a -> a) -> Map a * Map a -> Map a  
   op listDomain     : fa(a)   Map a -> List String
   op filter         : fa(a)   (a -> Boolean) -> Map a -> Map a
-  op listItems      : fa(a)   Map a -> List (a)
+  op listItems      : fa(a)   Map a -> List a
   op listItemsi     : fa(a)   Map a -> List (String * a)
   op inDomain       : fa(a)   Map a * String -> Boolean
  
@@ -38,7 +38,7 @@ StringMap qualifying spec {
   op fromList       : fa(a)   List (String * a) -> Map a
   op numItems       : fa(a)   Map a -> Nat
  
-  op mapPartial     : fa(a,b) (a          -> Option b) -> Map a -> Map b
+  op mapPartial     : fa(a,b) (a -> Option b) -> Map a -> Map b
   op mapPartiali    : fa(a,b) (String * a -> Option b) -> Map a -> Map b
  
   op subset?        : fa(a)   Map a * Map a -> Boolean

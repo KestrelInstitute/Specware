@@ -82,14 +82,14 @@ List qualifying spec
       | [] -> true
       | hd::tl -> if p(hd) then all p tl else false
 
-  def insert(hd,tl) = Cons (hd,tl)
+  def insert (hd,tl) = Cons (hd,tl)
 
-  def concat(s1,s2) = 
+  def concat (s1,s2) = 
     case s1 of
       | [] -> s2
       | hd::tl -> Cons (hd,concat (tl,s2))
 
-  def ++(s1,s2) = concat (s1,s2)
+  def ++ (s1,s2) = concat (s1,s2)
   def @ (s1,s2) = concat (s1,s2)
 
   def member (a,l) = 

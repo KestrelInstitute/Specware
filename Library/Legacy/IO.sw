@@ -9,7 +9,7 @@ IO qualifying spec {
   sort Stream
   sort FileString = String
   sort Format     = String
-  sort Line       = String
+  % sort Line       = String
 
   op terminal : Stream
   op string   : Stream
@@ -33,12 +33,12 @@ IO qualifying spec {
   op formatString2   : fa (a,b)   Format * a * b     -> String
   op formatString3   : fa (a,b,c) Format * a * b * c -> String
 
-  op readLines       : fa(A) FileString * (Line * A -> A) * A -> A
+  op readLines       : fa(A) FileString * (String * A -> A) * A -> A
 
   % Write the lines to an indicated file
   % until the argument function returns NONE
 
-  op writeLines : FileString * (() -> Option Line) -> ()
+  op writeLines : FileString * (() -> Option String) -> ()
 
   op read  : fa (a) Stream -> Option a
   op write : fa (a) Stream * a -> ()
