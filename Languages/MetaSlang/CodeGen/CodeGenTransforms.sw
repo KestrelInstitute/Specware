@@ -311,15 +311,21 @@ def poly2monoInternal (spc, keepPolyMorphic?, modifyConstructors?) =
 		 | OpDef qid ->
 		   let Some opinfo = findTheOp(spc,qid) in
 		   let (ops,new_minfo) = processOpinfo(qid,opinfo,ops,minfo) in
-		   incorporateMinfo(r_elts,el,new_minfo,minfo,ops,srts)
+		   let el_s = if keepPolyMorphic? || firstOpDefTyVars opinfo = []
+		               then [el] else []
+		   in
+		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
 		 | SortDef qid ->
 		   let Some sortinfo = findTheSort(spc,qid) in
 		   let (srts,new_minfo) = processSortinfo(qid,sortinfo,srts,minfo) in
-		   incorporateMinfo(r_elts,el,new_minfo,minfo,ops,srts)
+		   let el_s = if keepPolyMorphic? || firstSortDefTyVars sortinfo = []
+		               then [el] else []
+		   in
+		   incorporateMinfo(r_elts,el_s,new_minfo,minfo,ops,srts)
 		 | Property(ptype, pname, tv, t) ->
 		   let (t, new_minfo) = p2mTerm (spc, modifyConstructors?, t, minfo) in
 		   let nprop = Property(ptype, pname, tv, t) in
-		   incorporateMinfo(r_elts,nprop,new_minfo,minfo,ops,srts)
+		   incorporateMinfo(r_elts,[nprop],new_minfo,minfo,ops,srts)
 		 | Import(s_tm,i_sp,elts) ->
 		   let (i_elts,minfo,ops,srts) = modElts(elts,minfo,ops,srts) in
 		   (Cons(Import(s_tm,i_sp,rev i_elts),r_elts),minfo,ops,srts)
@@ -732,10 +738,10 @@ def getSortNameSuffix (instlist) =
     | [] -> ""
     | srt::instlist -> "_" ^ (sortId srt)^ (getSortNameSuffix instlist)
 
-op  incorporateMinfo: SpecElements * SpecElement * SortOpInfos * SortOpInfos * OpMap * SortMap
+op  incorporateMinfo: SpecElements * SpecElements * SortOpInfos * SortOpInfos * OpMap * SortMap
        -> SpecElements * SortOpInfos * OpMap * SortMap
 %% Add newly added ops and sorts to elts before el (note elts are in reverse of their final order)
-def incorporateMinfo(elts,el,
+def incorporateMinfo(elts,el_s,
 		     new_minfo as {ops = new_ops,sorts = new_sorts},
 		     old_minfo as {ops = old_ops,sorts = old_sorts},
 		     ops,srts) =
@@ -750,7 +756,7 @@ def incorporateMinfo(elts,el,
 	       let qid = primaryOpName srtinfo in
 	       Cons(OpDef qid,Cons(Op qid,newOps r_ops))
   in
-    ([el] ++ newOps new_ops ++ newSorts new_sorts ++ elts,
+    (el_s ++ newOps new_ops ++ newSorts new_sorts ++ elts,
      new_minfo,ops,srts)
   
 
