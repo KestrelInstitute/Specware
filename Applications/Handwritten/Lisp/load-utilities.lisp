@@ -25,7 +25,7 @@
   #+allegro   (excl::current-directory)      ; pathname
   #+Lispworks (hcl:get-working-directory)    ; ??       (current-pathname)
   #+mcl       (ccl::current-directory-name)  ; ??
-  #+cmu       (extensions:default-directory) ; ??
+  #+cmu       (extensions:default-directory) ; pathname
   )
 
 (defun change-directory (directory)
@@ -110,4 +110,5 @@
    )
 
 (defun load-lisp-file (file &rest ignore)
+  (declare (ignore ignore))
   (load (make-pathname :defaults file :type "lisp")))

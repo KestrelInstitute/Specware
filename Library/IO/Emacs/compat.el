@@ -27,6 +27,7 @@
 		    common-lisp-host
 		    common-lisp-image-file))
   (defvar *specware-lisp* 'allegro)
+  (defvar *lisp-image-extension* "dxl")
   (define-function 'sw:exit-lisp 'fi:exit-lisp)
   (define-function 'sw:switch-to-lisp 'fi:toggle-to-lisp)
   (define-function 'extract-sexp 'fi:extract-list)
@@ -48,6 +49,7 @@
   (setq allegro-program (getenv "LISP_EXECUTABLE"))
   (setq expand-symlinks-rfs-exists t)	; ?
   (defvar *specware-lisp* 'cmulisp)
+  (defvar *lisp-image-extension* "cmuimage")
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
 			 &optional
@@ -112,8 +114,10 @@
     (when eob-p
       (goto-char (point-max))))
 
-  (defun sw:eval-in-lisp (&rest args)
-    (car (read-from-string (ilisp-send (apply 'format args)))))
+  (defun sw:eval-in-lisp (str &rest args)
+    (car (read-from-string (ilisp-send (apply 'format str args)
+				       "Eval in *specware*"
+				       t))))
 
   (define-function 'inferior-lisp-newline 'return-ilisp)
 
