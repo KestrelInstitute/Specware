@@ -2153,7 +2153,7 @@ Otherwise, the `spec is ill formed.
 ||
 ||`claim-kind ::= axiom | theorem | conjecture
 ||
-||`claim-name ::= `simple-name
+||`claim-name ::= `name
 ||
 ||`claim ::= [ `type-variable-binder ] `expression
 >>

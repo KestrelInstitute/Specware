@@ -355,7 +355,7 @@ easy reference.
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
-||  `claim-name ::= `simple-name
+||  `claim-name ::= `name
 ||  
 ||  `claim ::= [ `type-variable-binder ] `expression
 >>
