@@ -1,5 +1,6 @@
 Convert qualifying spec
-  import /Languages/PSL/AbstractSyntax/Types
+  import XTypes
+  % import /Languages/PSL/AbstractSyntax/Types
   import /Languages/SpecCalculus/Semantics/Monad
   import Struct qualifying GraphAnalysis
   import ../../Semantics/Evaluate/Specs/Oscar
