@@ -42,6 +42,7 @@ let PSL = spec {
   def V.fold = E.fold
   def V.map = E.map
   def V.union = E.union
+  def V.member? = E.member?
 
   % sort Systems.Elem = ATerm ()
 % These shouldn't be here.

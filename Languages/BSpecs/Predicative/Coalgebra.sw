@@ -18,8 +18,8 @@ can be updated. We define sorts for each of the two representations
 of coalgebras.
 
 \begin{spec}
-  sort Coalgebra = Vertex.Elem -> PolySet.Set (Vertex.Elem * Vertex.Elem)
-  sort CoalgebraMap = PolyMap.Map (Vertex.Elem, PolySet.Set (Vertex.Elem * Vertex.Elem))
+  sort Coalgebra = V.Elem -> PolySet.Set (V.Elem * V.Elem)
+  sort CoalgebraMap = PolyMap.Map (V.Elem, PolySet.Set (V.Elem * V.Elem))
 \end{spec}
 
 A better scheme might be to start with just the Map version and then
@@ -44,7 +44,7 @@ that state.
 We begin by constructing a map that takes every vertex to an emptySet.
 
 \begin{spec}
-    let initMap = Vertex.fold (fn map -> fn vertex -> PolyMap.update map vertex PolySet.empty)
+    let initMap = V.fold (fn map -> fn vertex -> PolyMap.update map vertex PolySet.empty)
                          PolyMap.emptyMap (vertices shape) in
 \end{spec}
 
@@ -58,7 +58,7 @@ set. This could be made much much more efficient.
       let set = PolyMap.eval map vertex in
         PolyMap.update map vertex (PolySet.insert set (edge, eval (target shape) edge))
     in
-      Edge.fold upd_map initMap (edges shape)
+      E.fold upd_map initMap (edges shape)
 \end{spec}
 
 Then we hide the map inside a function. It might be better to return the
@@ -81,13 +81,13 @@ that state.
   op predCoalgebraMap : BSpec -> CoalgebraMap
   def predCoalgebraMap prg =
     let shape = shape (system prg) in
-    let initMap = Vertex.fold (fn map -> fn vertex -> PolyMap.update map vertex PolySet.empty)
+    let initMap = V.fold (fn map -> fn vertex -> PolyMap.update map vertex PolySet.empty)
                          PolyMap.emptyMap (vertices shape) in
     let def upd_map map edge =
       let vertex = eval (target shape) edge in
       let set = PolyMap.eval map vertex in
         PolyMap.update map vertex (PolySet.insert set (edge, eval (src shape) edge))
     in
-      Edge.fold upd_map initMap (edges shape)
+      E.fold upd_map initMap (edges shape)
 }
 \end{spec}

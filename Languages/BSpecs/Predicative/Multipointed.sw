@@ -65,7 +65,7 @@ syntax of MetaSlang and spec morphisms.
 \begin{spec}
 spec {
   import Systems qualifying /Library/Structures/Data/Categories/Systems/Polymorphic
-  import /Languages/MetaSlang/Specs/Categories/Specs
+  import /Languages/MetaSlang/Specs/Categories/AsRecord
 
   sort BSpec = {
     initial : V.Elem,
