@@ -22,6 +22,12 @@ op baseType?: Type -> Boolean
 def baseType?(type) =
   boolSort?(type) or integerSort?(type) or natSort?(type)
 
+op baseTypeId?: Id -> Boolean
+
+def baseTypeId?(id) =
+  id = "Boolean" or id = "Integer" or id = "Nat"
+
+
 op userType?: Type -> Boolean
 
 def userType?(type) =
@@ -103,11 +109,14 @@ op srtDom: Type -> List Type
 op srtRange: Type -> Type
 
 def srtDom(srt) =
+  let def domSrtDom(dom) =
+       (case dom of
+	  | Product (fields, _) -> map (fn (_,srt) -> srt) fields
+	  | Subsort (subSrt, _, _) -> domSrtDom(subSrt)
+	  | _ -> [dom]) in
   case srt of
     | Arrow (dom, rng, _) ->
-    (let argSorts = (case dom of
-		       | Product (fields, _) -> map (fn (_,srt) -> srt) fields
-		       | _ -> [dom]) in
+    (let argSorts = domSrtDom(dom) in
      argSorts)
     | _ -> []
 
@@ -322,5 +331,5 @@ def addOdToSpec((oper:Op, dom:(List Type), rng:Type, formals:List Var, body:Term
   let (f, t) = srtTermDelta(srt, term) in
   run (addOp (oper, srt, term, spc))
    
-def addOp (oper, srt, term, spc) : Env Spec = addOp [oper] Nonfix ([], srt) [([], term)] spc noPos
+def addOp (oper, srt, term, spc) : SpecCalc.Env Spec = addOp [oper] Nonfix ([], srt) [([], term)] spc noPos
 endspec

@@ -133,26 +133,25 @@ def distinctVarLet(term as Let (letBindings, letBody, _), ids) =
   case letBindings of
     | [(VarPat (v, _), letTerm)] ->
     let (vId, vSrt) = v in
-    if member(vId, ids)
-      then distinctVarLetNewVar(v, letTerm, letBody, ids)
-    else distinctVarLetNoNewVar(v, letTerm, letBody, ids)
+    let (newLetTerm, newIds) = distinctVar(letTerm, ids) in
+    if member(vId, newIds)
+      then distinctVarLetNewVar(v, newLetTerm, letBody, newIds)
+    else distinctVarLetNoNewVar(v, newLetTerm, letBody, newIds)
     | _ -> fail "unsupported in distinctVarLet"
 
 def distinctVarLetNewVar(var as (vId, vSrt), letTerm, letBody, ids) =
   let newId = findNewId(vId, ids) in
   let newIds = cons(vId, ids) in
   let newVar = (newId, vSrt) in
-  let (newLetTerm, newNewIds) = distinctVar(letTerm, newIds) in
   let renamedLetBody = renameVar(letBody, var, newVar) in
-  let (newLetBody, finalIds) = distinctVar(renamedLetBody, newNewIds) in
-  (mkLet([(mkVarPat(newVar), newLetTerm)], newLetBody), finalIds)
+  let (newLetBody, finalIds) = distinctVar(renamedLetBody, newIds) in
+  (mkLet([(mkVarPat(newVar), letTerm)], newLetBody), finalIds)
 
 
 def distinctVarLetNoNewVar(var as (vId, vSrt), letTerm, letBody, ids) =
   let newIds = cons(vId, ids) in
-  let (newLetTerm, newNewIds) = distinctVar(letTerm, newIds) in
-  let (newLetBody, finalIds) = distinctVar(letBody, newNewIds) in
-  (mkLet([(mkVarPat(var), newLetTerm)], newLetBody), finalIds)
+  let (newLetBody, finalIds) = distinctVar(letBody, newIds) in
+  (mkLet([(mkVarPat(var), letTerm)], newLetBody), finalIds)
 
 
 op findNewId: Id * List Id -> Id
