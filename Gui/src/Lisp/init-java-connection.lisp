@@ -31,9 +31,6 @@
 (defun init-java-listener () 
   (when (and (not (javatools.jlinker::jlinker-query))
 	     (not (java-listener-running-p)))
-    ;(excl::current-directory "planware:java-ui;")
-    ;(excl::set-current-working-directory  "planware:java-ui;")
-    ;(setq *default-pathname-defaults* "planware:java-ui;")
     (load (concatenate 'string specware::Specware4 "/Gui/src/Lisp/jl-config.cl")) 
     (jlinker-listen :process-function #'print-result
 		    :init-args '(:lisp-file nil
@@ -64,12 +61,30 @@
 			(Specware::evaluateURI_fromJava  file-name)))))
     (jstatic "setProcessUnitResults" "edu.kestrel.netbeans.lisp.LispProcessManager" output-str)))
 
+(defun generate-lisp (path-name file-name)
+  (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
+  (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
+	 (file-name-uri (concatenate 'string "/Gui/src/" file-name))
+	 (full-path-name (user::path-namestring full-file-name)))
+    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S " full-file-name file-name-uri full-path-name)
+    (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
+    (excl::chdir  full-path-name)
+    (setq *default-pathname-defaults* (excl::current-directory))
+
+    (format t "~% GENERATING LISP FOR ~S" file-name-uri)
+    (let ((output-str (with-output-to-string (str)
+		      (let ((*standard-output* str))
+			(user::swl file-name-uri)))))
+    (jstatic "setGenerateLispResults" "edu.kestrel.netbeans.lisp.LispProcessManager" path-name file-name output-str))
+
+    (format t "~%~% FINISHED")))
+
 (defpackage "SPECWARE")
 (defun Specware::reportErrorToJava (file line col msg)
   (let* ((filepath (parse-namestring file))
-	 (name (format nil "~a.~a" (pathname-name filepath) (pathname-type filepath)))
+	 (name (pathname-name filepath))
 	 (filedir (pathname-directory filepath))
-	 (path (pathname-directory (parse-namestring *current-path-name*)))
+	 (path (pathname-directory (parse-namestring (concatenate 'string *current-path-name* "/"))))
 	 (rel-path (remove-common-prefix path filedir))
 	 (rel-dir (concat-with-dots rel-path)))
     (jstatic "setProcessUnitResults" "edu.kestrel.netbeans.lisp.LispProcessManager"
@@ -77,8 +92,11 @@
 
 (defun remove-common-prefix (p1 p2)
   (if (and (consp p1) (consp p2))
-      (if (equal (car p1) (car p2))
-	  (remove-common-prefix (cdr p1) (cdr p2)))
+      (if (or (equal (car p1) (car p2))
+              (and (member (car p1) '("Progra~1" "Program Files") :test 'equal)
+                   (member (car p2) '("Progra~1" "Program Files") :test 'equal)))
+	  (remove-common-prefix (cdr p1) (cdr p2))
+        p2)
     p2))
 
 (defun concat-with-dots (l)
@@ -86,6 +104,3 @@
     (if (null (cdr l))
 	(car l)
       (format nil "~a.~a" (car l) (concat-with-dots (cdr l))))))
-
-;(excl::chdir "planware:java-ui;")
-;(init-java-listener)
