@@ -38,13 +38,13 @@ SpecCalc qualifying spec {
   def showRelativeURI uri = ppFormat (ppRelativeURI uri)
 
   op ppSpecFile : fa (a) SpecFile a -> Doc
-  def ppSpecFile (specFile as (term,position)) =
+  def ppSpecFile (specFile as (term,_ (* position *))) =
     case term of
       | Term term -> ppTerm term
       | Decls decls -> ppDecls decls
 
   op ppTerm : fa (a) SpecCalc.Term a -> Doc
-  def ppTerm (term,position) =
+  def ppTerm (term, _(* position *)) =
     case term of
       | Print t ->
           ppConcat [
@@ -77,15 +77,30 @@ SpecCalc qualifying spec {
             ppTerm term
           ]
       | Translate (term, (translation,_)) ->
-          let def ppTranslatePair ((left,right),pos) =
-            ppConcat [
-              ppQualifier left,
-              ppString " -> ",
-              ppQualifier right
-            ] in
-          ppConcat [
+          let def ppTranslateRule (rule,pos) =
+	       case rule of
+		 | Sort (left_qid, right_qid) ->
+  		   ppConcat [
+			     ppQualifier left_qid,
+			     ppString " -> ",
+			     ppQualifier right_qid
+			    ] 
+		 | Op ((left_qid,_), (right_qid,_)) ->
+		   ppConcat [
+			     ppQualifier left_qid,
+			     ppString " -> ",
+			     ppQualifier right_qid
+			    ] 
+		 | Ambiguous (left_qid, right_qid) ->
+		   ppConcat [
+			     ppQualifier left_qid,
+			     ppString " -> ",
+			     ppQualifier right_qid
+			    ] 
+	  in
+	    ppConcat [
             ppString "{",
-            ppSep (ppString ", ") (map ppTranslatePair translation),
+            ppSep (ppString ", ") (map ppTranslateRule translation),
             ppString "}",
             ppString " translating ",
             ppTerm term
@@ -120,12 +135,19 @@ SpecCalc qualifying spec {
             ppString "  ",
             ppNest 2 (ppSep ppNewline (map ppDiagElem elems)),
             ppNewline,
-            ppString "end"
+            ppString "}"
           ]
       | Colimit term ->
           ppConcat [
             ppString "colim ",
             ppTerm term
+          ]
+      | Subst (specTerm,morphTerm) ->
+          ppConcat [
+            ppTerm specTerm,
+            ppString " [",
+            ppTerm morphTerm,
+            ppString "]"
           ]
 (*
       | SpecMorph (dom,cod,elems) ->
@@ -175,7 +197,7 @@ SpecCalc qualifying spec {
       else ppString(Qualifier^"."^Id)
 
   op ppDiagElem : fa (a) DiagElem a -> Doc
-  def ppDiagElem (elem,position) =
+  def ppDiagElem (elem, _ (* position *)) =
     case elem of
       | Node (nodeId,term) ->
           ppConcat [
