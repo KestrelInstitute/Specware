@@ -2,7 +2,7 @@ snark qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
-  import /Languages/MetaSlang/Transformations/ProverPattern
+  import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
   import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
   import /Languages/SpecCalculus/Semantics/Evaluate/UnitId
 %  import /Languages/MetaSlang/Transformations/Match
@@ -47,6 +47,7 @@ snark qualifying spec
 		      res   %findPBuiltInSort(spc, Qualified(qual,id), rng?)
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
                                                        else Lisp.symbol("SNARK",snarkSortId(id))
+		    | Subsort(supSrt, _, _) -> snarkPBaseSort(spc, supSrt, rng?)
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
 		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
 		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
@@ -195,53 +196,6 @@ snark qualifying spec
 	      else Lisp.cons(Lisp.symbol("SNARK","="), Lisp.list [snarkArg1, snarkArg2])
 
 
-  op proverNatSort: () -> Sort
-  
-  def proverNatSort() =
-    let baseProverSpec = run getBaseProverSpec in
-    let optSrt = findTheSort(baseProverSpec, mkUnQualifiedId("ProverNat")) in
-    let Some (names, _, [(_, srt)]) = optSrt in
-    srt
-  
-  op getBaseProverSpec : Env Spec
-  def getBaseProverSpec = 
-    {
-     (optBaseUnitId,baseSpec) <- getBase;
-     proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
-     (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
-     return (subtractSpec baseProverSpec baseSpec)
-    }
-
-(*  def getBaseSpec () : SpecCalc.Env Spec =
-    getBaseProverSpec()
-*)
-  op srtPred: Spec * Sort * Var -> MS.Term
-
-  def srtPred(spc, srt, var) =
-    let varTerm = mkVar(var) in
-    let def topPredBaseSrt(srt) =
-         case srt of
-	   | Base(Qualified("Nat","Nat"),_,_) -> topPredBaseSrt(proverNatSort())
-	   | Base (qid, _, _) -> (Some qid, mkTrue())
-	   | Subsort (supSrt, predFn, _) ->
-	   let (supBaseSrt, supPred) = topPredBaseSrt(supSrt) in
-	   let pred = (simplify spc (mkApply(predFn, varTerm))) in
-	     (case supBaseSrt of
-		| Some qid -> (Some qid, Utilities.mkAnd(supPred, pred))
-	        | _ -> (None, Utilities.mkAnd(supPred, pred))) 
-           | _ -> (None, mkTrue()) in
-    let (topBaseQId, topPred) = topPredBaseSrt(srt) in
-    case topBaseQId of
-      | Some topBaseQId ->
-      let optSrt = findTheSort(spc, topBaseQId) in
-      (case optSrt of
-	 | Some (names, _, schemes) ->
-	 (case schemes of
-	    | [(_, newSrt)] -> Utilities.mkAnd(topPred, srtPred(spc, newSrt, var))
-	    | _ -> topPred)
-	 | _ -> topPred)
-      | _ -> topPred
-     
 
   op mkSnarkFmla: Context * Spec * String * StringSet.Set * Vars * MS.Term -> LispCell
 
@@ -251,7 +205,7 @@ snark qualifying spec
 	let snarkBndList = snarkBndVars(sp, bndVars, globalVars) in
 	let newVars = map(fn (var, srt) -> specId(var,""))
 	                 bndVars in
-	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, (var, srt)), res)) (mkTrue()) (bndVars:(List Var))):MS.Term in
+	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, mkVar((var, srt))), res)) (mkTrue()) (bndVars:(List Var))):MS.Term in
 	let newTerm = case bndr of
 	                | Forall -> Utilities.mkSimpImplies(bndVarsPred, term)
 	                | Exists -> Utilities.mkAnd(bndVarsPred, term) in
@@ -346,7 +300,7 @@ snark qualifying spec
 	     let snarkSubSrtId = snarkSortId(id) in
 	     let subSrtVar = (snarkSubSrtId, srt) in
 	     let snarkBndVar = snarkBndVar(spc, subSrtVar, []) in
-	     let subSrtPred = srtPred(spc, srt, subSrtVar) in
+	     let subSrtPred = srtPred(spc, srt, mkVar(subSrtVar)) in
 	     let snarkSubSrtPred = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], subSrtPred) in
 	       Some (Lisp.list [snark_assert, Lisp.quote(snarkSubSrtPred),
 				Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD","subSort" ^ snarkSubSrtId)])
@@ -385,7 +339,7 @@ snark qualifying spec
     let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], liftedConjecture) in
       Lisp.list [snark_prove, Lisp.quote(snarkFmla),
 		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
-  
+
   op snarkConjecture: Context * Spec * Property -> LispCell
 
   def snarkConjecture(context, spc, prop as (ptype, name, tyvars, fmla)) =
@@ -415,8 +369,7 @@ snark qualifying spec
      snarkSubsortProperties ++ snarkProperties
 
 
-(*
-  op snarkOpProperties: Spec -> List LispCell
+(*  op snarkOpProperties: Spec -> List LispCell
 
   def snarkOpProperties(spc) =
     let opsigs = specOps(spc) in
@@ -454,25 +407,7 @@ snark qualifying spec
 	 snarkFunctionNoArityProp(spc, name, srt))
 
 
-  op snarkFunctionNoArityProp: Spec * String * Sort -> LispCell
 
-  def snarkFunctionNoArityProp(spc, name, srt) =
-    (case srt of
-       | Base(Qualified( _,"Boolean"),_,_) -> Lisp.nil()
-       | Base (Qualified(qual, id), srts, _) ->
-          Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
-		     Lisp.symbol("KEYWORD","SORT"),
-		     Lisp.quote(snarkBaseSort(spc, srt, true))]
-       | Arrow(dom, rng, _) ->
-	  case rng of
-	  | Base(Qualified( _,"Boolean"),_,_) -> snarkPredicateProp(spc, name, dom, 1)
-	  | _ -> 
-	    let snarkDomSrt = snarkBaseSort(spc, dom, false) in
-	        Lisp.list[declare_function,
-			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(1),
-			  Lisp.symbol("KEYWORD","SORT"),
-			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
-       )
 
   op snarkFunctionNoCurryProp: Spec * String * Sort * Nat -> LispCell
 
@@ -496,12 +431,6 @@ snark qualifying spec
 			  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
 			  Lisp.symbol("KEYWORD","SORT"),
 			  Lisp.quote(Lisp.cons(snarkBaseSort(spc, rng, true), Lisp.list([snarkDomSrt])))]
-
-  def snarkFunctionCurryNoArityProp(spc, name, srt) =
-    snarkFunctionNoArityProp(spc, name, srt)
-
-  def snarkFunctionCurryDecl() =
-    Lisp.nil() %Lisp.symbol("","Curry")
 
 *)
 

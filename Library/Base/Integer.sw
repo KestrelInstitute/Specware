@@ -15,8 +15,8 @@ Integer qualifying spec
   op *   infixl 27 : Integer * Integer -> Integer
   op div infixl 26 : Integer * NonZeroInteger -> Integer
   op rem infixl 26 : Integer * NonZeroInteger -> Integer
- %op <   infixl 20 : Integer * Integer -> Boolean
-  op <=  infixl 20 : Integer * Integer -> Boolean
+  op <   infixl 20 : Integer * Integer -> Boolean
+ %op <=  infixl 20 : Integer * Integer -> Boolean
 
   axiom subtraction_def is
     fa (x,y : Integer) (x - y) = x + (~y)
@@ -39,8 +39,11 @@ Integer qualifying spec
     fa (x : Integer, y : NonZeroInteger)
        x rem y = x - y * (x div y)
 
-  axiom less_than_equal_def is
-    fa (x,y : Integer) x <= y <=> (x < y or x = y)
+ %axiom less_than_equal_def is
+ %  fa (x,y : Integer) x <= y <=> (x < y or x = y)
+
+  axiom less_than_def is
+    fa (x,y : Integer) x < y <=> (x <= y & ~(x = y))
 
   % ops whose Lisp code is generated:
 

@@ -35,9 +35,11 @@ spec
   sort Integer.Integer
   op Integer.~ : Integer.Integer -> Integer.Integer
   op Integer.+ infixl 25 : Integer.Integer * Integer.Integer -> Integer.Integer
-  op Integer.< infixl 20 : Integer.Integer * Integer.Integer -> Boolean.Boolean
+  op Integer.<= infixl 20 : Integer.Integer * Integer.Integer -> Boolean.Boolean
 
-  sort Nat.Nat = {n : Integer.Integer | ~1 Integer.< n}
+  sort Nat.Nat = {n : Integer.Integer | 0 Integer.<= n}
+                                        % DAC: I've changed it back to <=, but
+                                        % leaving the comment below for a while.
                                         % the reason for this rather involved
                                         % way to say that n is non-negative is
                                         % that the op >= is not available yet
@@ -48,7 +50,7 @@ spec
                  % knowledge of this relationship between those two sorts
 
   sort Char.Char
-  op Char.ord : Char.Char -> {n : Nat.Nat | n < 256}
+  op Char.ord : Char.Char -> {n : Nat.Nat | n <= 255}
 
   sort List.List a = | Nil | Cons a * List.List a
                      % the definition of List.List(a) as a coproduct is

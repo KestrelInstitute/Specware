@@ -66,6 +66,7 @@ snark qualifying spec {
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "PosNat"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "NonZeroInteger"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "LOGICAL"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "BOOLEAN"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Char"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "String"))],
 	Lisp.list [declare_subsorts, Lisp.quote(Lisp.symbol("SNARK", "Integer")),
@@ -260,6 +261,7 @@ snark qualifying spec {
 		      res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",snarkSortId(id))
                                                        else Lisp.symbol("SNARK",snarkSortId(id))
+		    | Subsort(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
 		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
 		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
@@ -344,7 +346,7 @@ snark qualifying spec {
   def snarkFunctionDecl(spc, name, srt) =
     %let _ = toScreen("Generating snark decl for "^name^" with sort: ") in
     %let _ = printSortToTerminal srt in
-    (case (curryShapeNum(spc, srt), sortArity(spc, srt))
+    (case (Prover.curryShapeNum(spc, srt), sortArity(spc, srt))
        of (1,None) ->     %let _ = debug("noArity") in 
 	 snarkFunctionNoArityDecl(spc, name, srt)
 	| (1, Some(_,arity)) -> %let _ = debug("noCurry") in 
@@ -369,7 +371,7 @@ snark qualifying spec {
   op snarkOpDecl: Spec * String * Sort -> LispCell
 
   def snarkOpDecl(spc, name, srt) =
-    if functionSort?(spc, srt)
+    if Prover.functionSort?(spc, srt)
       then snarkFunctionDecl(spc, name, srt)
       else snarkFunctionDecl(spc, name, srt)
 
