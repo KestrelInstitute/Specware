@@ -235,13 +235,13 @@
   (when base-world-name
     (run-plain-lisp 1)
     ;; Currently
-    (sw:eval-in-lisp-no-value (format "(build-lisp-image %S :c-heap-start #xe0000000 :oldspace #x100)"
+    (sw:eval-in-lisp-no-value (format "(build-lisp-image %S :lisp-heap-start #x48000000 :oldspace #x100)"
 				      base-world-name))
     (sleep-for 4)
     (simulate-input-expression "(exit)")
     (sleep-for 2))
   (let ((sw:common-lisp-image-file base-world-name))
-    (run-plain-lisp 1))
+    (run-lisp-application))
   (unless (inferior-lisp-running-p)
     (sleep-for 1))
   (sw:eval-in-lisp-no-value
