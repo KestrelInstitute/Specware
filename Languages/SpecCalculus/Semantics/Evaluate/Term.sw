@@ -32,31 +32,21 @@ This is a monadic interpreter for the Spec Calculus.
  def SpecCalc.evaluateTermInfo term =
    let pos = positionOf term in
    case (valueOf term) of
-    | Print term -> SpecCalc.evaluatePrint term
+    | Print       term     -> SpecCalc.evaluatePrint       term
+    | UnitId      unitId   -> SpecCalc.evaluateUID         (positionOf term) unitId
+    | Spec        elems    -> SpecCalc.evaluateSpec        elems pos
+    | SpecMorph   fields   -> SpecCalc.evaluateSpecMorph   fields
+    | ExtendMorph term     -> SpecCalc.evaluateExtendMorph term
+    | Diag        elems    -> SpecCalc.evaluateDiag        elems
+    | Colimit     sub_term -> SpecCalc.evaluateColimit     sub_term
+    | Subst       args     -> SpecCalc.evaluateSubstitute  args pos
+    | DiagMorph   fields   -> SpecCalc.evaluateDiagMorph   fields
 
-    | UnitId unitId -> SpecCalc.evaluateUID (positionOf term) unitId
+    | Qualify  (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier
+    | Let      (decls, sub_term)     -> SpecCalc.evaluateLet     decls sub_term
+    | Where    (decls, sub_term)     -> SpecCalc.evaluateLet     decls sub_term
 
-    | Spec elems -> SpecCalc.evaluateSpec elems pos
-
-    | SpecMorph fields -> SpecCalc.evaluateSpecMorph fields
-
-    | ExtendMorph term -> SpecCalc.evaluateExtendMorph term
-
-    | Diag elems -> SpecCalc.evaluateDiag elems
-
-    | Colimit sub_term -> SpecCalc.evaluateColimit sub_term
-
-    | Subst args   -> SpecCalc.evaluateSubstitute  args pos
-
-    | DiagMorph fields -> SpecCalc.evaluateDiagMorph fields
-
-    | Qualify (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier
-
-    | Let (decls, sub_term) -> SpecCalc.evaluateLet decls sub_term
-
-    | Where (decls, sub_term) -> SpecCalc.evaluateLet decls sub_term
-
-    | Hide (names, sub_term) -> {
+    | Hide     (names, sub_term) -> {
           print "hide request ignored\n";
           SpecCalc.evaluateTermInfo sub_term
         }
@@ -66,21 +56,14 @@ This is a monadic interpreter for the Spec Calculus.
           SpecCalc.evaluateTermInfo sub_term
         }
 
-    | Translate (sub_term, translation) ->
-        SpecCalc.evaluateTranslate sub_term translation
+    | Translate   (sub_term, translation) -> SpecCalc.evaluateTranslate sub_term translation
 
-    | Obligations(sub_term) -> SpecCalc.evaluateObligations sub_term
-
-    | Expand(sub_term) -> SpecCalc.evaluateExpand sub_term pos
-
-    | Prove args -> SpecCalc.evaluateProve args pos
-
-    | Generate args -> SpecCalc.evaluateGenerate args pos
-
-    | Reduce (msTerm,scTerm) -> SpecCalc.reduce msTerm scTerm pos
-
-    | Quote value -> return (value, futureTimeStamp, []) % Probably should never be called.
-
-    | Other args -> SpecCalc.evaluateOther args pos  % used for extensions to Specware
+    | Obligations (sub_term)      -> SpecCalc.evaluateObligations sub_term
+    | Expand      (sub_term)      -> SpecCalc.evaluateExpand      sub_term pos
+    | Prove       args            -> SpecCalc.evaluateProve       args pos
+    | Generate    args            -> SpecCalc.evaluateGenerate    args pos
+    | Reduce      (msTerm,scTerm) -> SpecCalc.reduce              msTerm scTerm pos
+    | Other       args            -> SpecCalc.evaluateOther       args pos  % used for extensions to Specware
+    | Quote       value           -> return (value, futureTimeStamp, []) % Probably should never be called.
 }
 \end{spec}
