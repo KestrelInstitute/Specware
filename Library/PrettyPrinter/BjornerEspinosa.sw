@@ -39,7 +39,7 @@ or a file.
 
 **)
    
-BjornerEspinosa qualifying spec {
+PrettyPrint qualifying spec {
 
   import /Library/Legacy/IO
   import /Library/Legacy/DataStructures/StringUtilities

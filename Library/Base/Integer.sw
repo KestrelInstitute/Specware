@@ -34,9 +34,9 @@ Integer qualifying spec
   def >  (x,y) = y <  x
   def >= (x,y) = y <= x
 
-  op compare : Integer -> Integer -> Comparison
+  op compare : Integer * Integer -> Comparison
 
-  def compare n m  =
+  def compare (n,m)  =
     if n < m then
       Less
     else

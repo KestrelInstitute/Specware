@@ -330,65 +330,67 @@ SplayMap qualifying spec {
    *)
 
   def compOf(map) = 
-        case map
-          of EMPTY comp -> comp
-           | MAP{comp,root,nobj} -> comp
+    case map of
+      | EMPTY comp -> comp
+      | MAP {comp,root,nobj} -> comp
 
   def unionWith f (m1, m2) = 
-        let
-          def ins f (key, x, m) = 
-              case find(m, key)
-                of None -> insert(m, key, x)
-                 | Some x_ -> insert(m, key, f(x, x_))
-        in
-            if (numItems m1 > numItems m2)
-                then foldli (ins (fn (a, b) -> f(b, a))) m1 m2
-            else foldli (ins f) m2 m1
+    let
+      def ins f (key, x, m) = 
+        case find(m, key) of
+          | None -> insert (m, key, x)
+          | Some x_ -> insert (m, key, f(x, x_))
+    in
+      if (numItems m1 > numItems m2) then
+        foldli (ins (fn (a, b) -> f(b, a))) m1 m2
+      else
+        foldli (ins f) m2 m1
 
   def unionWithi f (m1, m2) = 
-        let
-           def ins f (key, x, m) = 
-               case find(m, key)
-                 of None -> insert(m, key, x)
-                  | Some x_ -> insert(m, key, f(key, x, x_))
-        in
-            if (numItems m1 > numItems m2)
-              then foldli (ins (fn (k, a, b) -> f(k, b, a))) m1 m2
-              else foldli (ins f) m2 m1
+    let
+      def ins f (key, x, m) = 
+        case find (m, key) of
+          | None -> insert (m, key, x)
+          | Some x_ -> insert (m, key, f (key, x, x_))
+    in
+      if (numItems m1 > numItems m2) then
+        foldli (ins (fn (k, a, b) -> f(k, b, a))) m1 m2
+      else
+        foldli (ins f) m2 m1
 
   def intersectWith f (m1, m2) = 
+    let
+      (* iterate over the elements of m1, checking for membership in m2 *)
+      def intersect f (m1, m2) = 
         let
-        (* iterate over the elements of m1, checking for membership in m2 *)
-           def intersect f (m1, m2) = 
-               let
-                  def ins (key, x, m) = 
-                      case find(m2, key)
-                        of None -> m
-                         | Some x_ -> insert(m, key, f(x, x_))
-                in
-                  foldli ins (empty(compOf m1)) m1
-                
-         in
-            if (numItems m1 > numItems m2)
-              then intersect f (m1, m2)
-            else intersect (fn (a, b) -> f(b, a)) (m2, m1)
+          def ins (key, x, m) = 
+            case find (m2, key) of
+              | None -> m
+              | Some x_ -> insert (m, key, f (x, x_))
+        in
+          foldli ins (empty(compOf m1)) m1
+    in
+      if (numItems m1 > numItems m2) then
+        intersect f (m1, m2)
+      else
+        intersect (fn (a, b) -> f(b, a)) (m2, m1)
 
   def intersectWithi f (m1, m2) = 
+    let
+      (* iterate over the elements of m1, checking for membership in m2 *)
+      def intersect f (m1, m2) = 
         let
-        (* iterate over the elements of m1, checking for membership in m2 *)
-           def intersect f (m1, m2) = 
-               let
-                  def ins (key, x, m) = 
-                      case find(m2, key)
-                        of None -> m
-                         | Some x_ -> insert(m, key, f(key, x, x_))
-               in
-                    foldli ins (empty(compOf m1)) m1
-          in
-            if (numItems m1 > numItems m2)
-              then intersect f (m1, m2)
-              else intersect (fn (k, a, b) -> f(k, b, a)) (m2, m1)
-
+          def ins (key, x, m) = 
+            case find(m2, key) of
+              | None -> m
+              | Some x_ -> insert(m, key, f(key, x, x_))
+        in
+          foldli ins (empty(compOf m1)) m1
+    in
+      if (numItems m1 > numItems m2) then
+        intersect f (m1, m2)
+      else
+        intersect (fn (k, a, b) -> f(k, b, a)) (m2, m1)
 
   (* 
    this is a generic implementation of filter.  It should
@@ -396,22 +398,24 @@ SplayMap qualifying spec {
    *)
 
   def filter predFn m = 
-        let
-          def f (key, item, m) = 
-              if predFn item
-                then insert(m, key, item)
-              else m
-        in
-            foldli f (empty(compOf m)) m
+    let
+      def f (key, item, m) = 
+         if predFn item then
+           insert(m, key, item)
+         else
+           m
+    in
+      foldli f (empty(compOf m)) m
 
     def filteri predFn m = 
-        let
-           def f (key, item, m) = 
-              if predFn(key, item)
-                  then insert(m, key, item)
-              else m
-         in
-            foldli f (empty(compOf m)) m
+      let
+        def f (key, item, m) = 
+          if predFn(key, item) then
+            insert(m, key, item)
+          else
+            m
+      in
+        foldli f (empty(compOf m)) m
 
   (* 
    This is a generic implementation of mapPartial.  It should
@@ -420,57 +424,55 @@ SplayMap qualifying spec {
 
 
   def mapPartial f m = 
-        let
-          def g (key, item, m) = 
-              case f item
-                of None -> m
-                 | (Some item_) -> insert(m, key, item_)
-        in
-            foldli g (empty (compOf m)) m
+    let
+      def g (key, item, m) = 
+        case f item of
+          | None -> m
+          | (Some item_) -> insert (m, key, item_)
+    in
+      foldli g (empty (compOf m)) m
 
   def mapPartiali f m = 
-        let
-           def g (key, item, m) = 
-               case f(key, item)
-                 of None -> m
-                  | (Some item_) -> insert(m, key, item_)
-        in
-            foldli g (empty (compOf m)) m
+    let
+      def g (key, item, m) = 
+        case f (key, item) of
+          | None -> m
+          | (Some item_) -> insert (m, key, item_)
+    in
+      foldli g (empty (compOf m)) m
 
   def next splays = 
-        case splays
-          of (t as SplayObj s)::rest -> 
-                (t,left(s.right, rest))
-           | _ -> (SplayNil, [])
+    case splays of
+      | (t as SplayObj s)::rest -> (t,left(s.right, rest))
+      | _ -> (SplayNil, [])
 
   def left (sp,rest) = 
-        case sp
-          of SplayNil -> rest
-           | SplayObj{left = l,right,value} -> left(l, cons(sp,rest))
+     case sp of
+       | SplayNil -> rest
+       | SplayObj {left = l,right,value} -> left (l, cons(sp,rest))
 
   def compare cmpRng (map1,map2) = 
-        case (map1,map2)
-          of (EMPTY _,EMPTY _) -> Equal
-           | (EMPTY _,_) -> Less
-           | (_,EMPTY _) -> Greater
-           | (MAP{root = s1,comp = c1,nobj = n1},
-              MAP{root = s2,comp = c2,nobj = n2}) -> 
-        let 
+    case (map1,map2) of
+      | (EMPTY _,EMPTY _) -> Equal
+      | (EMPTY _,_) -> Less
+      | (_,EMPTY _) -> Greater
+      | (MAP{root = s1,comp = c1,nobj = n1}, MAP{root = s2,comp = c2,nobj = n2}) -> 
+          let 
             def cmp(t1,t2) : Comparison = 
-                case (next t1, next t2)
-                  of ((SplayNil, _), (SplayNil, _)) -> Equal
-                   | ((SplayNil, _), _) -> Less
-                   | (_, (SplayNil, _)) -> Greater
-                   | ((SplayObj{value = (x1, y1),left = _,right = _}, r1),
-                      (SplayObj{value = (x2, y2),left = _,right = _}, r2)) -> 
-                (case c1(x1, x2)
-                   of Equal -> 
-                      (case cmpRng (y1, y2)
-                         of Equal -> cmp (r1, r2)
-                          | order -> order)
-                    | order -> order)
+              case (next t1, next t2) of
+                | ((SplayNil, _), (SplayNil, _)) -> Equal
+                | ((SplayNil, _), _) -> Less
+                | (_, (SplayNil, _)) -> Greater
+                | ((SplayObj{value = (x1, y1),left = _,right = _}, r1),
+                     (SplayObj{value = (x2, y2),left = _,right = _}, r2)) -> 
+                    (case c1(x1, x2) of
+                       | Equal -> 
+                           (case cmpRng (y1, y2) of
+                              | Equal -> cmp (r1, r2)
+                              | order -> order)
+                       | order -> order)
           in
-             cmp (left(State.! s1, []), left(State.! s2, []))
+             cmp (left (State.! s1, []), left (State.! s2, []))
 
   %% Conversion to and from lists
 

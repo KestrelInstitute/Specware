@@ -1,21 +1,21 @@
 NatMap qualifying spec {
   import SplayMap
 
-  sort Map a = SplayMap.Map (Nat, a)
+  sort NatMap.Map a = SplayMap.Map (Nat, a)
 
-  op empty      : fa(a)   Map a
-  op insert     : fa(a)   Map a * Nat * a -> Map a
-  op find       : fa(a)   Map a * Nat -> Option a 
+  op empty      : fa(a) NatMap.Map a
+  op insert     : fa(a) NatMap.Map a * Nat * a -> NatMap.Map a
+  op find       : fa(a) NatMap.Map a * Nat -> Option a 
 
-  op map        : fa(a,b) (a -> b) -> Map a -> Map(b)
-  op mapi       : fa(a,b) (Nat * a -> b)  -> Map a -> Map b
-  op appi       : fa(a)   (Nat * a -> ()) -> Map a -> ()
-  op foldri     : fa(a,b) (Nat * a * b -> b) -> b ->  Map a -> b
-  op listItems  : fa(a)   Map a -> List a
-  op inDomain   : fa(a)   Map a * Nat -> Boolean 
-  op numItems   : fa(a)   Map a -> Nat
+  op map        : fa(a,b) (a -> b) -> NatMap.Map a -> NatMap.Map b
+  op mapi       : fa(a,b) (Nat * a -> b)  -> NatMap.Map a -> NatMap.Map b
+  op appi       : fa(a) (Nat * a -> ()) -> NatMap.Map a -> ()
+  op foldri     : fa(a,b) (Nat * a * b -> b) -> b ->  NatMap.Map a -> b
+  op listItems  : fa(a) NatMap.Map a -> List a
+  op inDomain   : fa(a) NatMap.Map a * Nat -> Boolean 
+  op numItems   : fa(a) NatMap.Map a -> Nat
 
-  op compose    : Map Nat * Map Nat -> Map Nat
+  op compose    : NatMap.Map Nat * NatMap.Map Nat -> NatMap.Map Nat
 
   def empty      = SplayMap.empty Nat.compare
   def insert     = SplayMap.insert

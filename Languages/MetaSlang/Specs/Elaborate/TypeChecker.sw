@@ -18,6 +18,7 @@
 
 % TypeChecker qualifying
 spec { 
+
   %% The TypeChecker function is elaboratePosSpec 
 
   import /Library/Legacy/DataStructures/ErrorMonad
@@ -79,6 +80,7 @@ spec {
   %%    EvalSpec.sl                      : lEvalSpec.evaluateSpec
   %%    ...
   %%
+
   def elaboratePosSpec (given_spec, filename, verbose) = 
    let _ = if verbose then writeLine (";;; Elaborating spec ") else () in
    let _ = initializeMetaTyVar () in
@@ -298,7 +300,7 @@ spec {
 		 properties   = props_3}
    in
    case checkErrors (env_3) of
-    | None     -> Ok spec_3 : ErrorMonad.Result PosSpec
+    | None     -> (Ok spec_3) : ErrorMonad.Result PosSpec
     | Some msg -> Error msg
  
   % ========================================================================
@@ -937,7 +939,7 @@ spec {
        def findId ls = 
         case ls of
 	 | [] -> Some (undeclared (env, trm, id, srt, pos))
-	 | (constructor_id, Some constructor_dom_sort : Option PSort) :: row -> 
+	 | (constructor_id, (Some constructor_dom_sort) : Option PSort) :: row -> 
 	   if id = constructor_id then
 	     %%  let _ = String.writeLine ("coprod: "^printSort (Arrow (s, CoProduct (row, pos0)), pos0)) in
 	     %%  let _ = String.writeLine ("srt:  "^printSort srt) in
@@ -1096,7 +1098,7 @@ spec {
   else
     (error (env, "Name "^id^" has not been declared."^" Resolving with "^printSort srt, pos);
      % raise (TypeCheck (pos, "Name "^id^" has not been declared."^" Resolving with "^printSort srt));
-     Fun (OneName (id, Nonfix), srt, pos) : PTerm)
+     (Fun (OneName (id, Nonfix), srt, pos)) : PTerm)
 
 
   % ========================================================================
