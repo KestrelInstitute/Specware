@@ -30,7 +30,7 @@ if "%ALLEGRO%"=="" (
 
 rem  Set additional environment variables that depend on the previous ones:
 
-if "%SWPATH%"=="" set SWPATH=%SPECWARE4%
+if "%SWPATH%"=="" set SWPATH=C:/
   rem set SWPATH only if unset
 set SPECWARE_BIN=%SPECWARE4%\Applications\Specware\bin\windows
 set LISP_EXECUTABLE=%ALLEGRO%\alisp.exe

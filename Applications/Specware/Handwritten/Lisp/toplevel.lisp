@@ -54,13 +54,16 @@
 
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
+
+(defun home-dir ()
+  (specware::getenv #+mswindows "HOMEPATH" #-mswindows "HOME"))
     
 ;;; Normalization utilities
 (defun subst-home (path)
   (when (stringp path)
     (when (and (>= (length path) 2) (equal (subseq path 0 2) "~/"))
-      (setq path (concatenate 'string (specware::getenv "HOME") (subseq path 1))))
-    (setq path (string-subst path " ~/" (concatenate 'string " " (specware::getenv "HOME") "/"))))
+      (setq path (concatenate 'string (home-dir) (subseq path 1))))
+    (setq path (string-subst path " ~/" (concatenate 'string " " (home-dir) "/"))))
     path)
 
 (defun strip-extraneous (str)
@@ -89,6 +92,11 @@
 (defun sw-temp-file? (fil)
   (equal fil *current-temp-file*))
 
+(defun maybe-restore-swpath ()
+  (when *saved-swpath*
+    (specware::setenv "SWPATH" *saved-swpath*)
+    (setq *saved-swpath* nil)))
+
 (defun norm-unitid-str (str)
   (setq *current-temp-file* nil)
   (setq SpecCalc::aliasPaths nil)
@@ -106,15 +114,16 @@
 		    (tmp-name (format nil "sw_tmp_~D_~D"
 				      (incf *tmp-counter*) 
 				      (ymd-hms)))
-		    (tmp-full-name (format nil "~A~A" tmp-dir tmp-name))
-		    (tmp-device-uid-pr (split-device tmp-full-name))
-		    (tmp-uid (cdr tmp-device-uid-pr))
-		    (tmp-device (car tmp-device-uid-pr))
+;;;		    (tmp-full-name (format nil "~A~A" tmp-dir tmp-name))
+;;;		    (tmp-device-uid-pr (split-device tmp-full-name))
+;;;		    (tmp-uid (cdr tmp-device-uid-pr))
+;;;		    (tmp-device (car tmp-device-uid-pr))
+		    (tmp-uid (format nil "/~a" tmp-name))
 		    (tmp-full-uid (format nil "~A~A"  tmp-dir tmp-name))
 		    (tmp-sw (format nil "~A~A.sw" tmp-dir tmp-name))
 		    (old-swpath (or *saved-swpath* (specware::getEnv "SWPATH")))
-		    (new-swpath (format nil #-mswindows "~Asw/:~A" #+mswindows "~A/sw/;~A"
-					tmp-device old-swpath)))
+		    (new-swpath (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
+					tmp-dir old-swpath)))
 	       (ensure-directories-exist tmp-dir)
 	       (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
 		 (format s "~A" str))
@@ -122,8 +131,9 @@
 	       (specware::setenv "SWPATH" new-swpath)
 	       (setq *temp-file-in-use?* t)
 	       (setq *current-temp-file* tmp-sw)
-	       (setq SpecCalc::aliasPaths (list (cons (pathname-to-path (parse-namestring tmp-dir))
-						      (pathname-to-path (specware::current-directory)))))
+	       (setq SpecCalc::aliasPaths
+		 (list (cons (pathname-to-path (parse-namestring tmp-dir))
+			     (pathname-to-path (specware::current-directory)))))
 	       (setq SpecCalc::noElaboratingMessageFiles (cons tmp-full-uid nil))
 	       (setq str tmp-uid)))
 	   str)))
@@ -163,12 +173,14 @@
 
 (defun sw0 (x)
   (Specware::runSpecwareUID (norm-unitid-str x))
+  (maybe-restore-swpath)
   (values))
 
 #+allegro(top-level:alias ("sw0" :case-sensitive) (x) (sw0 (string x)))
 
 (defun set-base (x)
   (Specware::setBase_fromLisp (norm-unitid-str x))
+  (maybe-restore-swpath)
   (values))
 #+allegro
 (top-level:alias ("set-base" :case-sensitive) (x) (set-base (string x)))
@@ -203,6 +215,7 @@
 			    (Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
 			  (format t "No previous unit evaluated~%")))))
 	     (show-error-position emacs::*goto-file-position-stored* 1)
+	     (maybe-restore-swpath)
 	     val)))
     (if *running-test-harness?*
 	(sw-int x)
@@ -223,6 +236,7 @@
 		 (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
 	       (format t "No previous unit evaluated~%")))
 	   (show-error-position emacs::*goto-file-position-stored* 1)
+	   (maybe-restore-swpath)
 	   (values)))
     (if *running-test-harness?*
 	(show-int x)
@@ -244,6 +258,7 @@
 		   (Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
 		 (format t "No previous unit evaluated~%"))))
 	   (show-error-position emacs::*goto-file-position-stored* 1)
+	   (maybe-restore-swpath)
 	   (values)))
     (if *running-test-harness?*
 	(show-int x)
@@ -264,6 +279,7 @@
 								(if y (cons :|Some| (subst-home y))
 								  '(:|None|)))))
 	     (show-error-position emacs::*goto-file-position-stored* 1)
+	     (maybe-restore-swpath)
 	     val)))
     (if *running-test-harness?*
 	(swl1 x y)
@@ -341,6 +357,7 @@
 			      (specware::compile-and-load-lisp-file lisp-file-name))
 			  "Specware Processing Failed!")))
 	       (show-error-position emacs::*goto-file-position-stored* 1)
+	       (maybe-restore-swpath)
 	       val)))
       (if *running-test-harness?*
 	  (swll1 x lisp-file-name)
@@ -386,22 +403,39 @@
   (if (null x) (format t "~&No previous spec")
     (progn
       (setq x (norm-unitid-str x))
-      (unless (eq (elt x 0) #\/)
-	(format t "~&coercing ~A to /~A~%" x x)
-	(setq x (format nil "/~A" x)))
-      (setq x (norm-unitid-str x))
-      (cond ((sw (string x))
-	     (setq *current-swe-spec* x)
-	     (setq *current-swe-spec-dir* (specware::current-directory))
-	     (format t "~&Subsequent evaluation commands will now import ~A.~%" x)
-	     (unless *swe-use-interpreter?*
-	       (format t "~&The following will produce, compile and load code for this spec:~%")
-	       (format t "~&:swll ~A~%" x)))
-	    (t
-	     (format t "~&:swe-spec had no effect.~%" x)
-	     (if *current-swe-spec*
-		 (format t "~&Subsequent :swe commands will still import ~A.~%" *current-swe-spec*)
-	       (format t "~&Subsequent :swe commands will still import just the base spec.~%"))))))
+      (let ((swpath-relative? (eq (elt x 0) #\/)))
+	(unless swpath-relative?
+	  ;(format t "~&coercing ~A to /~A~%" x x)
+	  (setq x (format nil "/~A" x))
+	  (specware::setEnv "SWPATH"
+			    (format nil #-mswindows "~A:~A" #+mswindows "~A;~A"
+				    (specware::current-directory)
+				    (specware::getEnv "SWPATH"))))
+	;;      (setq x (norm-unitid-str x))
+	(let ((saved-swpath (and *saved-swpath*
+				 (specware::getEnv "SWPATH"))))
+	  (cond ((sw (string x))	; restores *saved-swpath* if necessary
+		 (setq *current-swe-spec* x)
+		 (setq *current-swe-spec-dir*
+		   (if swpath-relative?
+		       (if saved-swpath
+			   (subseq saved-swpath 0
+				   ;; if position returns nil we get the whole
+				   ;; thing which is correct
+				   (position #+mswindows #\; #-mswindows #\:
+					     saved-swpath))
+			 "")
+		     (specware::current-directory)))
+		 (format t "~&Subsequent evaluation commands will now import ~A~A.~%"
+			 *current-swe-spec-dir* (subseq x 1))
+		 (unless *swe-use-interpreter?*
+		   (format t "~&The following will produce, compile and load code for this spec:~%")
+		   (format t "~&:swll ~A~%" x)))
+		(t
+		 (format t "~&:swe-spec had no effect.~%" x)
+		 (if *current-swe-spec*
+		     (format t "~&Subsequent :swe commands will still import ~A.~%" *current-swe-spec*)
+		   (format t "~&Subsequent :swe commands will still import just the base spec.~%"))))))))
   (values))
 
 #+allegro
@@ -441,8 +475,9 @@
 	 (tmp-cl  (format nil "~A~A"    tmp-dir tmp-name))
 	 (SpecCalc::noElaboratingMessageFiles (list tmp-cl))
 	 (old-swpath (specware::getEnv "SWPATH"))
-	 (new-swpath (format nil #-mswindows "~Aswe/:~A:~A" #+mswindows "~A/swe/;~A;~A"
-			     Specware::temporaryDirectory *current-swe-spec-dir* old-swpath))
+	 (new-swpath (format nil
+			     #-mswindows "~A:~A:~A" #+mswindows "~A;~A;~A"
+			     tmp-dir *current-swe-spec-dir* old-swpath))
 	 (emacs::*goto-file-position-store?* t)
 	 (emacs::*goto-file-position-stored* nil)
 	 (parser-type-check-output)
@@ -600,6 +635,7 @@
 					      (cons :|Some| y)
 					    '(:|None|)))
     (show-error-position emacs::*goto-file-position-stored* 1)
+    (maybe-restore-swpath)
     (values)))
 
 (defvar *last-swj-args* nil)
@@ -703,6 +739,7 @@
 					(if y (cons :|Some| (subst-home y))
 					  '(:|None|)))
      (show-error-position emacs::*goto-file-position-stored* 1)
+     (maybe-restore-swpath)
      (values)))
 
 (defun swc (&optional args)
@@ -802,6 +839,7 @@
 	      ))
 	  (when *make-verbose* 
 	    (format t ";; invoking make command:  ~A -f ~A~%" make-command make-file))
+	  (maybe-restore-swpath)
 	  (run-cmd make-command "-f" (format nil "~A" make-file)))
       ;; else: no make-args
       (progn
@@ -876,6 +914,7 @@
 							'(:|None|))
 						      obligations)))
       (show-error-position emacs::*goto-file-position-stored* 1)
+      (maybe-restore-swpath)
       val)))
 
 (defun lswpf-internal (x &optional y &key (obligations t))
@@ -886,6 +925,7 @@
 							'(:|None|))
 						      obligations)))
       (show-error-position emacs::*goto-file-position-stored* 1)
+      (maybe-restore-swpath)
       val)))
 
 (defvar *last-swpf-args* nil)
@@ -1051,7 +1091,7 @@
 
 (defun cd (&optional (dir ""))
   (if (equal dir "")
-      (setq dir (specware::getenv "HOME"))
+      (setq dir (home-dir))
     (setq dir (subst-home dir)))
   (loop while (and (> (length dir) 1) (equal (subseq dir 0 2) ".."))
     do (setq dir (subseq dir (if (and (> (length dir) 2) (eq (elt dir 2) #\/))

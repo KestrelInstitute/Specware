@@ -1003,21 +1003,30 @@ If anyone has a good algorithm for this..."
 
 (defun sw::normalize-filename (filename)
   (setq filename (replace-in-string filename "\\\\" "/"))
-  (replace-in-string filename "Program Files" "Progra~1"))
+  (replace-in-string filename "Program Files" "Progra~1")
+  (when (and (> (length filename) 2)
+	     (= (position ?: filename) 1)
+	     (not (equal (elt filename 0) (upcase (elt filename 0)))))
+    (setq filename (concat (upcase (subseq filename 0 1))
+			   (subseq filename 1))))
+  filename)
 
 (defun get-swpath ()
   (let ((rawpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")"))
 	(delim (if (eq window-system 'mswindows) ?\; ?:))
 	(result ())
+	(specware4 (sw:eval-in-lisp "(specware::getenv \"SPECWARE4\")"))
 	pos)
     (when (eq rawpath 'nil)		; SWPATH not set
-      (setq rawpath (sw:eval-in-lisp "(specware::getenv \"SPECWARE4\")"))
+      (setq rawpath specware4)
       (when (eq rawpath 'nil)		; SPECWARE4 not set
 	(setq rawpath "")))
     (while (setq pos (position delim rawpath))
       (push (substring rawpath 0 pos) result)
       (setq rawpath (substring rawpath (+ pos 1))))
     (push rawpath result)
+    (unless (member specware4 result)
+      (push specware4 result))
     (nreverse result)))
 
 (defun name-relative-to-swpath (filename)
