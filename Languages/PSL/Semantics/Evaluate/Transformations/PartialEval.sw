@@ -15,6 +15,8 @@ PE qualifying spec
 
   def EdgSetEnv.fold = EdgSetEnv.foldl
 
+  op MetaSlangRewriter.traceRewriting : Nat
+
   (* We are given an oscar spec (a collection of procedures) and a
   term. We expect the term to be an application that we assume to be a
   procedure call. Arguments that are unconstrained are specified by the
@@ -168,7 +170,8 @@ PE qualifying spec
                 | None -> raise (SpecError (noPos, "application is not a procedure call" ^ (printTerm callTerm)))
                 | Some procInfo -> return (procId,procSort,procInfo,callArg))
         | _ -> raise (SpecError (noPos, "Term to be specialized: " ^ (printTerm callTerm) ^ " is not an application"));
-    print ("specializing " ^ (Id.show procId) ^ " with term " ^ (printTerm callTerm) ^ "\n");
+    if traceRewriting > 0 then
+      print ("specializing " ^ (Id.show procId) ^ " with term " ^ (printTerm callTerm) ^ "\n") else return ();
     (argTerm,returnTerm,storeTerm) <-
       case callArg of
         | (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) -> return (argTerm,returnTerm,storeTerm)
@@ -228,15 +231,18 @@ PE qualifying spec
           partitionState subst (varsInScope procInfo) storeList;
 
      if extendedSubst = [] then {
-       print ("omitting specialization of bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n");
+       if traceRewriting > 0 then
+         print ("omitting specialization of bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
        return (newOscSpec,callTerm,[])
      }
      else {
-       print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n");
+       if traceRewriting > 0 then
+         print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n") else return ();
        (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
        newBSpec <- removeNilTransitions newBSpec;
        newProcId <- makeNewProcId procId subst;
-       print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n");
+       if traceRewriting > 0 then
+         print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
        (newReturnInfo : ReturnInfo, newReturnTerm, newReturnSort,postcondition,bindingTerm) <-
          let
            def andOp () = MSlang.mkFun (Op (Qualified ("Boolean","&"),Infix (Right,15)), binaryBoolType noPos, noPos)
@@ -266,8 +272,9 @@ PE qualifying spec
                     else
                       projectSub subst subOut termOut varRef
           in {
-            print ("number of final states = " ^ (Nat.show (size (final newBSpec))) ^ "\n");
-            print ("final states = " ^ (ppFormat (pp (final newBSpec))) ^ "\n");
+            if traceRewriting > 0 then {
+              print ("number of final states = " ^ (Nat.show (size (final newBSpec))) ^ "\n");
+              print ("final states = " ^ (ppFormat (pp (final newBSpec))) ^ "\n") } else return ();
 %             when ((size (final newBSpec)) = 0) 
 %               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states.")));
 %             when ((size (final newBSpec)) > 1) 
@@ -280,8 +287,8 @@ PE qualifying spec
               if ((size (final newBSpec)) > 1)  then
                 (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
                                       ^ " by " ^ (show subst)
-                                      ^ " has multiple final states: " ^ (System.toString (final newBSpec)))))
-                                      % ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))))
+                                      % ^ " has multiple final states: " ^ (System.toString (final newBSpec)))))
+                                      ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))))
               else {
             newFinal <- return (theSingleton (final newBSpec));
             postcondition <-
@@ -388,15 +395,18 @@ PE qualifying spec
        case (claimType claim, idOf claim) of
          | (Axiom, "call") -> {
              (newOscSpec,newTerm,postcondition) <- specializeProcedure oscSpec (newOscSpec,term claim);
-             print ("specialize procedure gives " ^ (printTerm newTerm) ^ "\n");
+             if traceRewriting > 0 then
+               print ("specialize procedure gives " ^ (printTerm newTerm) ^ "\n") else return ();
              if newTerm = (term claim) then
                return (newOscSpec,transSpec)
              else {
                newInvariant <- abstractVars (variables (modeSpec transSpec)) newTerm;
-               print ("specialize procedure gives inv " ^ (printTerm newInvariant) ^ "\n");
+               if traceRewriting > 0 then
+                 print ("specialize procedure gives inv " ^ (printTerm newInvariant) ^ "\n") else return ();
                claim <- makeAxiom (makeId (printTerm newTerm)) [] newInvariant;
                newOscSpec <- addClaim newOscSpec claim noPos;
-               print "about to simplify (after procedure call)\n";
+               if traceRewriting > 0 then
+                 print "about to simplify (after procedure call)\n" else return ();
                % printRules (modeSpec newOscSpec);
                % print ((show (modeSpec newOscSpec)) ^ "\n");
                newTransSpec <- simplifyVariants (modeSpec newOscSpec) transSpec;
@@ -432,25 +442,30 @@ associated with the edge.
      -> Edg.Edge
      -> Env (Oscar.Spec * BSpec)
   def specializeEdge coAlg oldBSpec oldOscSpec newSrcVertex precondition (newOscSpec,newBSpec) edge = {
-      print ("specializing edge " ^ (Edg.show edge) ^ " precondition " ^ (show precondition) ^ "\n");
+      if traceRewriting > 1 then
+        print ("specializing edge " ^ (Edg.show edge) ^ " precondition " ^ (show precondition) ^ "\n") else return ();
       oldTargetVertex <- return (GraphMap.eval (target (shape (system oldBSpec)), edge));
       oldTargetSpec <- return (modeSpec oldBSpec oldTargetVertex);
       transSpec <- return (edgeLabel (system oldBSpec) edge);
       transSpec <- applySubst (transSpec, precondition);
-      print "about to simplify\n";
+      if traceRewriting > 1 then
+        print "about to simplify\n" else return ();
       transSpec <- simplifyVariants (modeSpec newOscSpec) transSpec;
       (newOscSpec,transSpec) <- processProcCall oldOscSpec transSpec newOscSpec; 
       if provablyInconsistent? transSpec then
         return (newOscSpec,newBSpec)
       else {
         postcondition <- projectPostSubst transSpec oldTargetSpec;
-        print ("specializing edge " ^ (Edg.show edge) ^ " postcondition " ^ (show postcondition) ^ "\n");
+        if traceRewriting > 1 then
+          print ("specializing edge " ^ (Edg.show edge) ^ " postcondition " ^ (show postcondition) ^ "\n") else return ();
         newTargetVertex <- makeNewVertex oldTargetVertex postcondition;
         newEdge <- makeNewEdge edge precondition postcondition;
-        print ("newEdge: " ^ (Edg.show newEdge) ^ "\n");
+        if traceRewriting > 1 then
+          print ("newEdge: " ^ (Edg.show newEdge) ^ "\n") else return ();
         newTargetSpec <- hideVariables oldTargetSpec postcondition;
         targetIsNew? <- return (~(VrtxSet.member? (vertices (shape (system newBSpec)), newTargetVertex)));
-        print ("target: " ^ (Vrtx.show newTargetVertex) ^ " is new? " ^ (show targetIsNew?) ^ "\n");
+        if traceRewriting > 1 then
+          print ("target: " ^ (Vrtx.show newTargetVertex) ^ " is new? " ^ (show targetIsNew?) ^ "\n") else return ();
         newBSpec <-
           if targetIsNew? then
             if VrtxSet.member? (final oldBSpec, oldTargetVertex) then

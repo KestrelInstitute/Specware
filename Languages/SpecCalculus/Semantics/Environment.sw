@@ -87,16 +87,15 @@ UnitId_Dependency.
   op setBase : ((Option RelativeUnitId) * Spec) -> Env ()
   def setBase baseInfo = writeGlobalVar ("BaseInfo", baseInfo)
 
-  op  getBaseSpec : () -> Spec
+  op getBaseSpec : () -> Spec
   def getBaseSpec() =
-    let def myHandler _ (* except *) = fail "!! Can't find base spec !!" in
-    let prog =
-        {(optBaseUnitId,baseSpec) <- getBase;
-	 case optBaseUnitId of
-	   | None -> raise  (Fail "No Base Spec")
-	   | Some _ -> return baseSpec}
-    in
-    run (catch prog myHandler)
+    let prog = {
+       (optBaseUnitId,baseSpec) <- getBase;
+       case optBaseUnitId of
+         | None -> raise (Fail "No Base Spec")
+         | Some _ -> return baseSpec
+      } in
+      run prog 
 
   op showGlobalContext : Env String
   def showGlobalContext = {

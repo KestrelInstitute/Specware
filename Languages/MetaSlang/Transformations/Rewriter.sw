@@ -8,6 +8,9 @@ spec MetaSlangRewriter
  
  sort Context = HigherOrderMatching.Context
 
+ op traceRewriting : Nat 
+ def traceRewriting = 2
+
  def mkVar = HigherOrderMatching.mkVar     
 
 %%
@@ -385,16 +388,16 @@ spec MetaSlangRewriter
      PrettyPrint.toString(PrettyPrint.format(60,termPP))
 
  def traceTerm(context:Context,term,(* subst *)_) = 
-     if context.trace
-	then 
+     if traceRewriting > 1 then 
+     % if context.trace then 
 	 (String.writeLine(printTerm(3 + ! context.traceIndent,term));
 	  ()
 	  ) 
      else ()
 
  def traceRule(context:Context,rule:RewriteRule) = 
-     if context.trace
-	then 
+     % if context.trace then
+     if traceRewriting > 0 then 
 	let depth = Nat.toString(! context.traceDepth) in
 	(String.toScreen (PrettyPrint.blanks (! context.traceIndent));
 	 String.writeLine("=  { "^depth^": "^ rule.name^" }"))
@@ -468,25 +471,30 @@ spec MetaSlangRewriter
 	         if t = mkTrue() then Some subst else None
 	       | Cons([],_) -> None
 
-	def solveCondition(rules,rule:RewriteRule,subst,history,solveCond) : Option Subst = 
-	    (case rule.condition
-	      of None -> 
-		 (traceRule(context,rule);
-	    	  Some subst)
-	       | Some cond ->
-	    if solveCond & completeMatch(rule.lhs,subst)
-		then 
-	        let traceIndent = ! context.traceIndent                   in
-		let _   = context.traceIndent := traceIndent + 3          in
-	        let _   = String.toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ ") in
-		let _   = String.writeLine (Nat.toString(! context.traceDepth)^" : "^rule.name) in
-%%		let _   = printSubst subst in
-	        let _   = context.traceDepth  := 0                        in
-	        let res = rewritesToTrue(rules,cond,subst,history)              in
-	        (context.traceIndent := traceIndent;
-		 String.writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
-	         res)
-	    else None)
+        def solveCondition(rules,rule:RewriteRule,subst,history,solveCond) : Option Subst = 
+            (case rule.condition of
+               | None -> 
+                 (traceRule(context,rule);
+                  Some subst)
+               | Some cond ->
+            if solveCond & completeMatch(rule.lhs,subst) then 
+                let traceIndent = ! context.traceIndent in
+                let res = if traceRewriting > 0 then
+                  (context.traceIndent := traceIndent + 3;
+                  String.toScreen ("=  "^PrettyPrint.blanks traceIndent^"{ "); 
+                  String.writeLine (Nat.toString(! context.traceDepth)^" : "^rule.name);
+  %%              printSubst subst;
+                  context.traceDepth := 0;
+                  rewritesToTrue(rules,cond,subst,history))
+                else 
+                  rewritesToTrue(rules,cond,subst,history) in
+                if traceRewriting > 0 then
+                  (context.traceIndent := traceIndent;
+                   String.writeLine ("   "^PrettyPrint.blanks traceIndent ^"}");
+                   res)
+                else
+                   res
+            else None)
 
 	def rewriteRec({unconditional,conditional},subst,term,history,solveCond) =
             let _ = traceTerm(context,term,subst)                      in
