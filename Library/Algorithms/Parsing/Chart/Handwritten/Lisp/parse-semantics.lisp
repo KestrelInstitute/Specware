@@ -126,6 +126,7 @@
 	       (first-line           (second first-plc))
 	       (first-column         (third  first-plc))
 	       (first-lc             (cons first-line first-column))
+	       (first-lcb            (vector first-line first-column first-byte-position))
 	       ;;
 	       (rightmost-token-node (rightmost-descendent session node))
 	       (token                (parser-node-semantics rightmost-token-node))
@@ -134,17 +135,20 @@
 	       (last-line            (second last-plc))
 	       (last-column          (third  last-plc))
 	       (last-lc              (cons last-line last-column))
+	       (last-lcb             (vector last-line last-column last-byte-position))
 	       (full-alist           (append (list 
 					      ;;
 					      (cons :left-pos     first-byte-position)
 					      (cons :left-line    first-line)
 					      (cons :left-column  first-column)
 					      (cons :left-lc      first-lc)
+					      (cons :left-lcb     first-lcb)
 					      ;;
 					      (cons :right-pos    last-byte-position)
 					      (cons :right-line   last-line)
 					      (cons :right-column last-column)
 					      (cons :right-lc     last-lc)
+					      (cons :right-lcb    last-lcb)
 					      )
 					     (children-alist session rule children) 
 					     default-alist))

@@ -19,6 +19,16 @@
 
 (defun make-pos (left right) 
   (declare (special *parse-file-name*))
+  (when (consp left)
+    (let* ((line   (car left))
+	   (column (cdr left))
+	   (byte   (+ (* 10 line) column))) ; evil
+      (setq left (vector line column byte))))
+  (when (consp right)
+    (let* ((line   (car right))
+	   (column (cdr right))
+	   (byte   (+ (* 10 line) column))) ; evil
+      (setq right (vector line column byte))))
   (cons :|File| (vector *parse-file-name* left right)))
 
 (defun freshMetaTypeVar (left right)

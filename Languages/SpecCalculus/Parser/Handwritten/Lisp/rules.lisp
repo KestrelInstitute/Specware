@@ -114,11 +114,11 @@
 
 (define-sw-parser-rule :SC-TOPLEVEL-TERM ()
   (:tuple (1 :SC-TERM))
-  (make-sc-toplevel-term 1 ':left-lc ':right-lc))
+  (make-sc-toplevel-term 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-TOPLEVEL-DECLS ()
   (:tuple (1 :SC-DECLS))
-  (make-sc-toplevel-decls 1 ':left-lc ':right-lc))
+  (make-sc-toplevel-decls 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-DECLS ()
   (1 (:repeat :SC-DECL nil))
@@ -126,7 +126,7 @@
 
 (define-sw-parser-rule :SC-DECL ()
   (:tuple  (1 :NAME) :EQUALS (2 :SC-TERM))
-  (make-sc-decl 1 2 ':left-lc ':right-lc))
+  (make-sc-decl 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-TERM
@@ -161,7 +161,7 @@
 
 (define-sw-parser-rule :SC-PRINT ()
   (:tuple "print" (1 :SC-TERM))
-  (make-sc-print 1 ':left-lc ':right-lc))
+  (make-sc-print 1 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-URI
@@ -186,11 +186,11 @@
 
 (define-sw-parser-rule :SC-ABSOLUTE-URI ()
   (:tuple "/" (1 :SC-URI-PATH) (:optional (:tuple "#" (2 :NAME))))
-  (make-sc-absolute-uri 1 2 ':left-lc ':right-lc))
+  (make-sc-absolute-uri 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-RELATIVE-URI ()
   (:tuple (1 :SC-URI-PATH) (:optional (:tuple "#" (2 :NAME))))
-  (make-sc-relative-uri 1 2 ':left-lc ':right-lc))
+  (make-sc-relative-uri 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-URI-PATH ()
   (:tuple (1 (:repeat :SC-URI-ELEMENT "/")))
@@ -216,7 +216,7 @@
   (:anyof
    (:tuple "spec" (1 (:optional :QUALIFIER)) "{" (2 (:optional :DECLARATION-SEQUENCE)) "}")
    (:tuple "spec" (1 (:optional :QUALIFIER)) (2 (:optional :DECLARATION-SEQUENCE)) :END-SPEC))
-  (make-spec-definition 1 2 ':left-lc ':right-lc))
+  (make-spec-definition 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :END-SPEC ()
   (:anyof "end" "end-spec"))
@@ -254,7 +254,7 @@
 ;;;  TODO: In doc: import sc-term, not just spec-name
 (define-sw-parser-rule :IMPORT-DECLARATION ()
   (:tuple "import" (1 :SC-TERM))
-  (make-import-declaration 1 ':left-lc ':right-lc))
+  (make-import-declaration 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DECLARATION
@@ -263,7 +263,7 @@
 ;;;  TODO: In doc: sort-declaration now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DECLARATION ()
   (:tuple "sort" (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)))
-  (make-sort-declaration 1 2 ':left-lc ':right-lc))
+  (make-sort-declaration 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-SORT-PARAMETERS ()
   (:anyof :SINGLE-SORT-VARIABLE :LOCAL-SORT-VARIABLE-LIST))
@@ -287,7 +287,7 @@
 ;;;  TODO: In doc: sort-definition now uses qualified name, not just name
 (define-sw-parser-rule :SORT-DEFINITION ()
   (:tuple "sort" (1 :QUALIFIABLE-SORT-NAMES) (:optional (2 :FORMAL-SORT-PARAMETERS)) :EQUALS (3 :SORT))
-  (make-sort-definition 1 2 3 ':left-lc ':right-lc))
+  (make-sort-definition 1 2 3 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DECLARATION
@@ -296,18 +296,18 @@
 ;;;  TODO: In doc: op-declaration now uses qualified name, not just name
 (define-sw-parser-rule :OP-DECLARATION ()
   (:tuple "op" (1 :QUALIFIABLE-OP-NAMES) (:optional (2 :FIXITY)) ":" (3 :SORT-SCHEME))
-  (make-op-declaration 1 2 3 ':left-lc ':right-lc))
+  (make-op-declaration 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIXITY ()
   (:tuple (1 :ASSOCIATIVITY) (2 :PRIORITY))
-  (make-fixity 1 2 ':left-lc ':right-lc))
+  (make-fixity 1 2 ':left-lcb ':right-lcb))
 
 #||
 If we want the precedence to be optional:
 (define-sw-parser-rule :FIXITY ()
   (:anyof
-   ((:tuple "infixl" (:optional (1 :NAT-LITERAL))) (make-fixity :|Left| 1 ':left-lc ':right-lc))
-   ((:tuple "infixr" (:optional (1 :NAT-LITERAL))) (make-fixity :|Left| 1 ':left-lc ':right-lc))
+   ((:tuple "infixl" (:optional (1 :NAT-LITERAL))) (make-fixity :|Left| 1 ':left-lcb ':right-lcb))
+   ((:tuple "infixr" (:optional (1 :NAT-LITERAL))) (make-fixity :|Left| 1 ':left-lcb ':right-lcb))
 ||#
 
 (define-sw-parser-rule :ASSOCIATIVITY ()
@@ -320,7 +320,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SORT-SCHEME ()
   (:tuple (:optional (1 :SORT-VARIABLE-BINDER)) (2 :SORT))
-  (make-sort-scheme 1 2 ':left-lc ':right-lc))
+  (make-sort-scheme 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SORT-VARIABLE-BINDER ()
   (:tuple "fa" (1 :LOCAL-SORT-VARIABLE-LIST))
@@ -340,7 +340,7 @@ If we want the precedence to be optional:
           (:optional (:tuple ":" (4 :SORT)))
           :EQUALS
           (5 :EXPRESSION))
-  (make-op-definition 1 2 3 4 5 ':left-lc ':right-lc))
+  (make-op-definition 1 2 3 4 5 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETERS ()
   (1 (:repeat :FORMAL-PARAMETER))
@@ -357,7 +357,7 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :CLAIM-DEFINITION ()
   ;; :EQUALS would be too confusing. e.g. "axiom x = y" would mean "axiom named x is defined as y"
   (:tuple (1 :CLAIM-KIND) (2 :LABEL) "is" (3 :CLAIM))
-  (make-claim-definition 1 2 3 ':left-lc ':right-lc))
+  (make-claim-definition 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :CLAIM-KIND ()
   (:anyof ((:tuple "axiom")       :|Axiom|)
@@ -445,11 +445,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SORT-SUM ()
   (:tuple (1 (:repeat :SORT-SUMMAND nil)))
-  (make-sort-sum (list . 1) ':left-lc ':right-lc))
+  (make-sort-sum (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SORT-SUMMAND ()
   (:tuple "|" (1 :CONSTRUCTOR) (:optional (2 :SLACK-SORT)))
-  (make-sort-summand 1 2 ':left-lc ':right-lc))
+  (make-sort-summand 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :CONSTRUCTOR ()
   :NAME)
@@ -460,7 +460,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SORT-ARROW ()
   (:tuple (1 :ARROW-SOURCE) "->" (2 :SORT))
-  (make-sort-arrow 1 2 ':left-lc ':right-lc))
+  (make-sort-arrow 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :ARROW-SOURCE ()
   (:anyof :SORT-SUM :SLACK-SORT))
@@ -471,7 +471,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SORT-PRODUCT ()
   (:tuple (1 :TIGHT-SORT) "*" (2 (:repeat :TIGHT-SORT "*")))
-  (make-sort-product (list 1 . 2) ':left-lc ':right-lc))
+  (make-sort-product (list 1 . 2) ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-INSTANTIATION
@@ -482,7 +482,7 @@ If we want the precedence to be optional:
   ;;  refer to sort variables as well as sorts,
   ;;  which we don't want to allow here.
   (:tuple (1 :QUALIFIABLE-SORT-NAME) (2 :ACTUAL-SORT-PARAMETERS))
-  (make-sort-instantiation 1 2 ':left-lc ':right-lc))
+  (make-sort-instantiation 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :ACTUAL-SORT-PARAMETERS ()
   (:anyof
@@ -533,7 +533,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SORT-REF ()
   (1 :QUALIFIABLE-SORT-NAME)
-  (make-sort-ref 1 ':left-lc ':right-lc))
+  (make-sort-ref 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-RECORD
@@ -552,15 +552,15 @@ If we want the precedence to be optional:
   (:anyof
    (:tuple "{" "}")
    (:tuple "(" ")"))
-  (make-sort-record  nil        ':left-lc ':right-lc) :documentation "Unit product")
+  (make-sort-record  nil        ':left-lcb ':right-lcb) :documentation "Unit product")
 
 (define-sw-parser-rule :FIELD-SORT-LIST ()
   (1 (:repeat :FIELD-SORT ","))
-  (make-sort-record  (list . 1) ':left-lc ':right-lc) :documentation "Record Sort")
+  (make-sort-record  (list . 1) ':left-lcb ':right-lcb) :documentation "Record Sort")
 
 (define-sw-parser-rule :FIELD-SORT ()
   (:tuple (1 :FIELD-NAME) ":" (2 :SORT))
-  (make-field-sort 1 2 ':left-lc ':right-lc))
+  (make-field-sort 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FIELD-NAME ()
   :NAME)
@@ -576,7 +576,7 @@ If we want the precedence to be optional:
   ;; But with parens required here, that would need to be {x : (Integer | f x)}
   ;; to get that effect.
   (:tuple "(" (1 :SLACK-SORT) "|" (2 :EXPRESSION) ")")
-  (make-sort-restriction 1 2 ':left-lc ':right-lc) :documentation "Subsort")
+  (make-sort-restriction 1 2 ':left-lcb ':right-lcb) :documentation "Subsort")
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-COMPREHENSION
@@ -584,7 +584,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SORT-COMPREHENSION ()
   (:tuple "{" (1 :ANNOTATED-PATTERN) "|" (2 :EXPRESSION) "}")
-  (make-sort-comprehension 1 2 ':left-lc ':right-lc) :documentation "Sort comprehension")
+  (make-sort-comprehension 1 2 ':left-lcb ':right-lcb) :documentation "Sort comprehension")
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-QUOTIENT
@@ -593,7 +593,7 @@ If we want the precedence to be optional:
 ;;;  TODO: In doc: sort-quotient relation is expression, but that's ambiguous -- need tight-expression
 (define-sw-parser-rule :SORT-QUOTIENT ()
   (:tuple (1 :CLOSED-SORT) "/" (2 :TIGHT-EXPRESSION)) ; CLOSED-EXPRESSION?
-  (make-sort-quotient 1 2 ':left-lc ':right-lc) :documentation "Quotient")
+  (make-sort-quotient 1 2 ':left-lcb ':right-lcb) :documentation "Quotient")
 
 ;;; ------------------------------------------------------------------------
 ;;;   PARENTHESIZED-SORT
@@ -678,7 +678,7 @@ If we want the precedence to be optional:
 ;;;       but the competing TWO-NAME-EXPRESSION may succeed.
 (define-sw-parser-rule :UNQUALIFIED-OP-REF ()
   (:tuple (1 :NAME))
-  (make-unqualified-op-ref 1 ':left-lc ':right-lc))
+  (make-unqualified-op-ref 1 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;   NAME-DOT-NAME
@@ -688,7 +688,7 @@ If we want the precedence to be optional:
 ;;;       but the competing UNQUALIFIED-OP-REF may succeed.
 (define-sw-parser-rule :TWO-NAME-EXPRESSION ()
   (:tuple (1 :NAME) "." (2 :NAME))
-  (make-two-name-expression 1 2 ':left-lc ':right-lc))
+  (make-two-name-expression 1 2 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;   LAMBDA-FORM
@@ -696,7 +696,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :LAMBDA-FORM ()
   (:tuple "fn" (1 :MATCH))
-  (make-lambda-form 1 ':left-lc ':right-lc)
+  (make-lambda-form 1 ':left-lcb ':right-lcb)
   :documentation "Lambda abstraction")
 
 ;;; ------------------------------------------------------------------------
@@ -705,7 +705,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :CASE-EXPRESSION ()
   (:tuple "case" (1 :EXPRESSION) "of" (2 :MATCH))
-  (make-case-expression 1 2 ':left-lc ':right-lc)
+  (make-case-expression 1 2 ':left-lcb ':right-lcb)
   :documentation "Case statement")
 
 ;;; ------------------------------------------------------------------------
@@ -714,19 +714,19 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :LET-EXPRESSION ()
   (:anyof
-   ((:tuple "let" (1 :RECLESS-LET-BINDING)      "in" (2 :EXPRESSION)) (make-let-binding-term     1 2 ':left-lc ':right-lc) :documentation "Let Binding")
-   ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lc ':right-lc) :documentation "RecLet Binding")
+   ((:tuple "let" (1 :RECLESS-LET-BINDING)      "in" (2 :EXPRESSION)) (make-let-binding-term     1 2 ':left-lcb ':right-lcb) :documentation "Let Binding")
+   ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lcb ':right-lcb) :documentation "RecLet Binding")
    ))
 
 (define-sw-parser-rule :NON-BRANCH-LET-EXPRESSION () ; as above, but not ending with "| .. -> .."
   (:anyof
-   ((:tuple "let" (1 :RECLESS-LET-BINDING)      "in" (2 :NON-BRANCH-EXPRESSION)) (make-let-binding-term     1 2 ':left-lc ':right-lc) :documentation "Let Binding")
-   ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :NON-BRANCH-EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lc ':right-lc) :documentation "RecLet Binding")
+   ((:tuple "let" (1 :RECLESS-LET-BINDING)      "in" (2 :NON-BRANCH-EXPRESSION)) (make-let-binding-term     1 2 ':left-lcb ':right-lcb) :documentation "Let Binding")
+   ((:tuple "let" (1 :REC-LET-BINDING-SEQUENCE) "in" (2 :NON-BRANCH-EXPRESSION)) (make-rec-let-binding-term 1 2 ':left-lcb ':right-lcb) :documentation "RecLet Binding")
    ))
 
 (define-sw-parser-rule :RECLESS-LET-BINDING ()
  (:tuple (1 :PATTERN) :EQUALS (2 :EXPRESSION))
- (make-recless-let-binding 1 2 ':left-lc ':right-lc))
+ (make-recless-let-binding 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :REC-LET-BINDING-SEQUENCE ()
   (1 (:repeat :REC-LET-BINDING nil))
@@ -734,7 +734,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :REC-LET-BINDING ()
   (:tuple "def" (1 :NAME) (2 :FORMAL-PARAMETER-SEQUENCE) (:optional (:tuple ":" (3 :SORT))) :EQUALS (4 :EXPRESSION))
-  (make-rec-let-binding 1 2 3 4 ':left-lc ':right-lc))
+  (make-rec-let-binding 1 2 3 4 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :FORMAL-PARAMETER-SEQUENCE ()
   (1 (:repeat :FORMAL-PARAMETER ""))
@@ -746,11 +746,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :IF-EXPRESSION ()
   (:tuple "if" (1 :EXPRESSION) "then" (2 :EXPRESSION) "else" (3 :EXPRESSION))
-  (make-if-expression 1 2 3 ':left-lc ':right-lc)  :documentation "If-Then-Else")
+  (make-if-expression 1 2 3 ':left-lcb ':right-lcb)  :documentation "If-Then-Else")
 
 (define-sw-parser-rule :NON-BRANCH-IF-EXPRESSION () ; as above, but not ending with "| .. -> .."
   (:tuple "if" (1 :EXPRESSION) "then" (2 :EXPRESSION) "else" (3 :NON-BRANCH-EXPRESSION))
-  (make-if-expression 1 2 3 ':left-lc ':right-lc)  :documentation "If-Then-Else")
+  (make-if-expression 1 2 3 ':left-lcb ':right-lcb)  :documentation "If-Then-Else")
 
 ;;; ------------------------------------------------------------------------
 ;;;   QUANTIFICATION
@@ -758,12 +758,12 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :QUANTIFICATION ()
   (:tuple (1 :QUANTIFIER) (2 :LOCAL-VARIABLE-LIST) (3 :EXPRESSION))
-  (make-quantification 1 2 3 ':left-lc ':right-lc)
+  (make-quantification 1 2 3 ':left-lcb ':right-lcb)
   :documentation "Quantification")
 
 (define-sw-parser-rule :NON-BRANCH-QUANTIFICATION () ; as above, but not ending with "| .. -> .."
   (:tuple (1 :QUANTIFIER) (2 :LOCAL-VARIABLE-LIST) (3 :NON-BRANCH-EXPRESSION))
-  (make-quantification 1 2 3 ':left-lc ':right-lc)
+  (make-quantification 1 2 3 ':left-lcb ':right-lcb)
   :documentation "Quantification")
 
 (define-sw-parser-rule :QUANTIFIER ()
@@ -773,11 +773,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :LOCAL-VARIABLE-LIST ()
   (:tuple "(" (1 (:repeat :ANNOTATED-VARIABLE ",")) ")")
-  (make-local-variable-list (list . 1) ':left-lc ':right-lc))
+  (make-local-variable-list (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :ANNOTATED-VARIABLE ()
   (:tuple (1 :LOCAL-VARIABLE) (:optional (:tuple ":" (2 :SORT))))
-  (make-annotated-variable 1 2 ':left-lc ':right-lc))
+  (make-annotated-variable 1 2 ':left-lcb ':right-lcb))
 
 ;;;  NOTE: We use normally use :NAME whereever the doc says :NAME,
 ;;;        but use :NON_KEYWORD_NAME instead for :SORT-NAME and :LOCAL-VARIABLE
@@ -816,7 +816,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :APPLICATION ()
   (:tuple (1 :CLOSED-EXPRESSION) (2 :CLOSED-EXPRESSIONS)) ;  (:optional (:tuple ":" (3 :SORT)))
-  (make-application 1 2 ':left-lc ':right-lc) ; see notes above
+  (make-application 1 2 ':left-lcb ':right-lcb) ; see notes above
   :documentation "Application")
 
 (define-sw-parser-rule :CLOSED-EXPRESSIONS ()
@@ -830,7 +830,7 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :ANNOTATED-EXPRESSION ()
   ;;  "P : S1 : S2" is legal,  meaning P is of type S1, which is also of type S2
   (:tuple (1 :TIGHT-EXPRESSION) ":" (2 :SORT))
-  (make-annotated-expression 1 2 ':left-lc ':right-lc)
+  (make-annotated-expression 1 2 ':left-lcb ':right-lcb)
   :documentation "Annotated term")
 
 ;;; ------------------------------------------------------------------------
@@ -874,19 +874,19 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :BOOLEAN-LITERAL ()
   (:anyof
-   ((:tuple "true")  (make-boolean-literal t   ':left-lc ':right-lc))
-   ((:tuple "false") (make-boolean-literal nil ':left-lc ':right-lc))
+   ((:tuple "true")  (make-boolean-literal t   ':left-lcb ':right-lcb))
+   ((:tuple "false") (make-boolean-literal nil ':left-lcb ':right-lcb))
    ))
 
 (define-sw-parser-rule :NAT-LITERAL ()
   (1 :NAT) ; A sequence of digits -- see lexer for details
-  (make-nat-literal 1 ':left-lc ':right-lc))
+  (make-nat-literal 1 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :NAT () :NUMBER) ; more explicit synonym
 
 (define-sw-parser-rule :CHAR-LITERAL ()
   (1 :CHARACTER) ; see lexer for details, should be same as in following comment
-  (make-char-literal 1 ':left-lc ':right-lc))
+  (make-char-literal 1 ':left-lcb ':right-lcb))
 
 ;;; :CHAR-LITERAL        ::= #:CHAR-LITERAL-GLYPH
 ;;; :CHAR-LITERAL-GLYPH  ::= :CHAR-GLYPH | "
@@ -900,7 +900,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :STRING-LITERAL ()
   (1 :STRING) ; see lexer for details, should be same as in following comment
-  (make-string-literal 1 ':left-lc ':right-lc))
+  (make-string-literal 1 ':left-lcb ':right-lcb))
 
 ;;; :STRING-LITERAL         ::= " :STRING-BODY "
 ;;; :STRING-BODY            ::= { :STRING-LITERAL-GLYPH }*
@@ -913,12 +913,12 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :FIELD-SELECTION ()
   (:tuple (1 :SELECTABLE-EXPRESSION) "." (2 :FIELD-SELECTOR))
-  (make-field-selection 2 1 ':left-lc ':right-lc))  ;; fix
+  (make-field-selection 2 1 ':left-lcb ':right-lcb))  ;; fix
 
 (define-sw-parser-rule :FIELD-SELECTOR ()
   (:anyof
-   ((:tuple (1 :NAT))         (make-nat-selector        1 ':left-lc ':right-lc))
-   ((:tuple (1 :FIELD-NAME))  (make-field-name-selector 1 ':left-lc ':right-lc))
+   ((:tuple (1 :NAT))         (make-nat-selector        1 ':left-lcb ':right-lcb))
+   ((:tuple (1 :FIELD-NAME))  (make-field-name-selector 1 ':left-lcb ':right-lcb))
    ))
 
 ;;; ------------------------------------------------------------------------
@@ -927,7 +927,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :TUPLE-DISPLAY ()
   (:tuple "(" (:optional (1 :TUPLE-DISPLAY-BODY)) ")")
-  (make-tuple-display 1 ':left-lc ':right-lc)
+  (make-tuple-display 1 ':left-lcb ':right-lcb)
   :documentation "Tuple")
 
 (define-sw-parser-rule :TUPLE-DISPLAY-BODY ()
@@ -945,12 +945,12 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :RECORD-DISPLAY-BODY ()
   (1 (:repeat :FIELD-FILLER ","))
-  (make-record-display (list . 1) ':left-lc ':right-lc)
+  (make-record-display (list . 1) ':left-lcb ':right-lcb)
   :documentation "Record")
 
 (define-sw-parser-rule :FIELD-FILLER ()
   (:tuple (1 :FIELD-NAME) "=" (2 :EXPRESSION))
-  (make-field-filler 1 2 ':left-lc ':right-lc))
+  (make-field-filler 1 2 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;  SEQUENTIAL-EXPRESSION
@@ -965,7 +965,7 @@ If we want the precedence to be optional:
   ;;    we collect here as "(void ; void ; void) ; expr"
   ;; but will interpret as "void ; (void ; (void ; expr))"
   (:tuple (1 (:repeat :VOID-EXPRESSION ";")) ";" (2 :EXPRESSION))
-  (make-sequential-expression (list . 1) 2 ':left-lc ':right-lc)  ; fix semantics
+  (make-sequential-expression (list . 1) 2 ':left-lcb ':right-lcb)  ; fix semantics
   :documentation "Sequence")
 
 (define-sw-parser-rule :VOID-EXPRESSION ()
@@ -978,13 +978,13 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :LIST-DISPLAY ()
   (:anyof
-   ((:tuple "[" "]")                         (make-list-display '() ':left-lc ':right-lc) :documentation "Empty List")
+   ((:tuple "[" "]")                         (make-list-display '() ':left-lcb ':right-lcb) :documentation "Empty List")
    ((:tuple "[" (1 :LIST-DISPLAY-BODY) "]")  1                                            :documentation "List")
    ))
 
 (define-sw-parser-rule :LIST-DISPLAY-BODY ()
   (1 (:repeat :EXPRESSION ","))
-  (make-list-display (list . 1) ':left-lc ':right-lc)
+  (make-list-display (list . 1) ':left-lcb ':right-lcb)
   :documentation "List")
 
 ;;; ------------------------------------------------------------------------
@@ -1005,38 +1005,38 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :PROJECTOR ()
   (:tuple "project" (1 :FIELD-SELECTOR))
-  (make-projector 1 ':left-lc ':right-lc)
+  (make-projector 1 ':left-lcb ':right-lcb)
   :documentation "Projection")
 
 (define-sw-parser-rule :RELAXATOR ()
   (:tuple "relax"    (1 :CLOSED-EXPRESSION))
-  (make-relaxator 1 ':left-lc ':right-lc)
+  (make-relaxator 1 ':left-lcb ':right-lcb)
   :documentation "Relaxation")
 
 (define-sw-parser-rule :RESTRICTOR ()
   (:tuple "restrict" (1 :CLOSED-EXPRESSION))
-  (make-restrictor 1 ':left-lc ':right-lc)
+  (make-restrictor 1 ':left-lcb ':right-lcb)
   :documentation "Restriction")
 
 (define-sw-parser-rule :QUOTIENTER ()
   (:tuple "quotient" (1 :CLOSED-EXPRESSION))
-  (make-quotienter 1  ':left-lc ':right-lc)
+  (make-quotienter 1  ':left-lcb ':right-lcb)
   :documentation "Quotient")
 
 (define-sw-parser-rule :CHOOSER ()
   (:tuple "choose"   (1 :CLOSED-EXPRESSION))
-  (make-chooser 1  ':left-lc ':right-lc)
+  (make-chooser 1  ':left-lcb ':right-lcb)
   :documentation "Choice")
 
 (define-sw-parser-rule :EMBEDDER ()
   ; (:tuple (:optional "embed") (1 :CONSTRUCTOR))
   (:tuple "embed" (1 :CONSTRUCTOR))
-  (make-embedder 1 ':left-lc ':right-lc)
+  (make-embedder 1 ':left-lcb ':right-lcb)
   :documentation "Embedding")
 
 (define-sw-parser-rule :EMEBDDING-TEST ()
   (:tuple "embed?"  (1 :CONSTRUCTOR))
-  (make-embedding-test 1 ':left-lc ':right-lc)
+  (make-embedding-test 1 ':left-lcb ':right-lcb)
   :documentation "Embedding Test")
 
 ;;; ------------------------------------------------------------------------
@@ -1057,19 +1057,19 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :MONAD-TERM-EXPRESSION ()
   (:tuple "{" (1 :EXPRESSION) ";" (2 :MONAD-STMT-LIST) "}")
-  (make-monad-term-expression 1 2 ':left-lc ':right-lc)
+  (make-monad-term-expression 1 2 ':left-lcb ':right-lcb)
   :documentation "Monadic sequence")
 
 (define-sw-parser-rule :MONAD-BINDING-EXPRESSION ()
   (:tuple "{" (1 :PATTERN) "<-" (2 :EXPRESSION) ";" (3 :MONAD-STMT-LIST) "}")
-  (make-monad-binding-expression 1 2 3 ':left-lc ':right-lc)
+  (make-monad-binding-expression 1 2 3 ':left-lcb ':right-lcb)
   :documentation "Monadic binding")
 
 (define-sw-parser-rule :MONAD-STMT-LIST ()
   (:anyof
    ((:tuple (1 :EXPRESSION))                                             1)
-   ((:tuple (1 :EXPRESSION) ";" (2 :MONAD-STMT-LIST))                    (make-monad-term-expression    1 2   ':left-lc ':right-lc))
-   ((:tuple (1 :PATTERN) "<-" (2 :EXPRESSION) ";" (3 :MONAD-STMT-LIST))  (make-monad-binding-expression 1 2 3 ':left-lc ':right-lc))
+   ((:tuple (1 :EXPRESSION) ";" (2 :MONAD-STMT-LIST))                    (make-monad-term-expression    1 2   ':left-lcb ':right-lcb))
+   ((:tuple (1 :PATTERN) "<-" (2 :EXPRESSION) ";" (3 :MONAD-STMT-LIST))  (make-monad-binding-expression 1 2 3 ':left-lcb ':right-lcb))
    ))
 
 ;;; ========================================================================
@@ -1093,12 +1093,12 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :BRANCH ()
   (:tuple (1 :PATTERN) "->" (2 :EXPRESSION))
-  (make-branch 1 2 ':left-lc ':right-lc))
+  (make-branch 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :NON-BRANCH-BRANCH () ; as above, but not ending with "| .. -> .."
   ;; i.e., a branch that doesn't end in a branch
   (:tuple (1 :PATTERN) "->" (2 :NON-BRANCH-EXPRESSION))
-  (make-branch 1 2 ':left-lc ':right-lc))
+  (make-branch 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  PATTERN
@@ -1132,56 +1132,56 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (define-sw-parser-rule :ANNOTATED-PATTERN ()
-  (:tuple (1 :PATTERN) ":" (2 :SORT))                            (make-annotated-pattern  1 2            ':left-lc ':right-lc) :documentation "Annotated Pattern")
+  (:tuple (1 :PATTERN) ":" (2 :SORT))                            (make-annotated-pattern  1 2            ':left-lcb ':right-lcb) :documentation "Annotated Pattern")
 
 (define-sw-parser-rule :ALIASED-PATTERN   ()
-  (:tuple (1 :VARIABLE-PATTERN) "as" (2 :TIGHT-PATTERN))         (make-aliased-pattern    1 2            ':left-lc ':right-lc) :documentation "Aliased pattern")
+  (:tuple (1 :VARIABLE-PATTERN) "as" (2 :TIGHT-PATTERN))         (make-aliased-pattern    1 2            ':left-lcb ':right-lcb) :documentation "Aliased pattern")
 
 (define-sw-parser-rule :CONS-PATTERN ()
-  (:tuple (1 :CLOSED-PATTERN) "::" (2 :TIGHT-PATTERN))           (make-cons-pattern       1 2            ':left-lc ':right-lc) :documentation "CONS pattern")
+  (:tuple (1 :CLOSED-PATTERN) "::" (2 :TIGHT-PATTERN))           (make-cons-pattern       1 2            ':left-lcb ':right-lcb) :documentation "CONS pattern")
 
 (define-sw-parser-rule :EMBED-PATTERN ()
-  (:tuple (1 :CONSTRUCTOR) (2 :CLOSED-PATTERN))                  (make-embed-pattern      1 2            ':left-lc ':right-lc) :documentation "Embed pattern")
+  (:tuple (1 :CONSTRUCTOR) (2 :CLOSED-PATTERN))                  (make-embed-pattern      1 2            ':left-lcb ':right-lcb) :documentation "Embed pattern")
 
 (define-sw-parser-rule :QUOTIENT-PATTERN ()
-  (:tuple "quotient" (1 :CLOSED-EXPRESSION) (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2            ':left-lc ':right-lc) :documentation "Quotient pattern")
+  (:tuple "quotient" (1 :CLOSED-EXPRESSION) (2 :TIGHT-PATTERN))  (make-quotient-pattern   1 2            ':left-lcb ':right-lcb) :documentation "Quotient pattern")
 
 (define-sw-parser-rule :RELAX-PATTERN ()
-  (:tuple "relax"    (1 :CLOSED-EXPRESSION) (2 :TIGHT-PATTERN))  (make-relax-pattern      1 2            ':left-lc ':right-lc) :documentation "Relax pattern")
+  (:tuple "relax"    (1 :CLOSED-EXPRESSION) (2 :TIGHT-PATTERN))  (make-relax-pattern      1 2            ':left-lcb ':right-lcb) :documentation "Relax pattern")
 
 (define-sw-parser-rule :VARIABLE-PATTERN ()
-  (1 :LOCAL-VARIABLE)                                            (make-variable-pattern   1              ':left-lc ':right-lc) :documentation "Variable pattern")
+  (1 :LOCAL-VARIABLE)                                            (make-variable-pattern   1              ':left-lcb ':right-lcb) :documentation "Variable pattern")
 
 (define-sw-parser-rule :WILDCARD-PATTERN ()
-  (:tuple "_")                                                   (make-wildcard-pattern                  ':left-lc ':right-lc) :documentation "Wildcard pattern")
+  (:tuple "_")                                                   (make-wildcard-pattern                  ':left-lcb ':right-lcb) :documentation "Wildcard pattern")
 
 (define-sw-parser-rule :LITERAL-PATTERN ()
   (:anyof
-   ((:tuple "true")                                              (make-boolean-pattern    't             ':left-lc ':right-lc) :documentation "Boolean Pattern")
-   ((:tuple "false")                                             (make-boolean-pattern    'nil           ':left-lc ':right-lc) :documentation "Boolean Pattern")
-   ((:tuple (1 :NAT))                                            (make-nat-pattern        1              ':left-lc ':right-lc) :documentation "Nat Pattern")
-   ((:tuple (1 :CHARACTER))                                      (make-char-pattern       1              ':left-lc ':right-lc) :documentation "Char Pattern")
-   ((:tuple (1 :STRING))                                         (make-string-pattern     1              ':left-lc ':right-lc) :documentation "String Pattern")
+   ((:tuple "true")                                              (make-boolean-pattern    't             ':left-lcb ':right-lcb) :documentation "Boolean Pattern")
+   ((:tuple "false")                                             (make-boolean-pattern    'nil           ':left-lcb ':right-lcb) :documentation "Boolean Pattern")
+   ((:tuple (1 :NAT))                                            (make-nat-pattern        1              ':left-lcb ':right-lcb) :documentation "Nat Pattern")
+   ((:tuple (1 :CHARACTER))                                      (make-char-pattern       1              ':left-lcb ':right-lcb) :documentation "Char Pattern")
+   ((:tuple (1 :STRING))                                         (make-string-pattern     1              ':left-lcb ':right-lcb) :documentation "String Pattern")
    ))
 
 (define-sw-parser-rule :LIST-PATTERN ()
   (:anyof
-   ((:tuple "[" "]")                                             (make-list-pattern       ()            ':left-lc ':right-lc) :documentation "The empty list")
-   ((:tuple "[" (1 (:repeat :PATTERN ",")) "]")                  (make-list-pattern       (list . 1)    ':left-lc ':right-lc) :documentation "List enumeration")
+   ((:tuple "[" "]")                                             (make-list-pattern       ()            ':left-lcb ':right-lcb) :documentation "The empty list")
+   ((:tuple "[" (1 (:repeat :PATTERN ",")) "]")                  (make-list-pattern       (list . 1)    ':left-lcb ':right-lcb) :documentation "List enumeration")
    ))
 
 (define-sw-parser-rule :TUPLE-PATTERN ()
   (:anyof
-   ((:tuple "(" ")")                                             (make-tuple-pattern      ()            ':left-lc ':right-lc) :documentation "Empty tuple pattern")
-   ((:tuple "(" (1 :PATTERN) "," (2 (:repeat :PATTERN ",")) ")") (make-tuple-pattern      (list 1 . 2)  ':left-lc ':right-lc) :documentation "Tuple pattern")
+   ((:tuple "(" ")")                                             (make-tuple-pattern      ()            ':left-lcb ':right-lcb) :documentation "Empty tuple pattern")
+   ((:tuple "(" (1 :PATTERN) "," (2 (:repeat :PATTERN ",")) ")") (make-tuple-pattern      (list 1 . 2)  ':left-lcb ':right-lcb) :documentation "Tuple pattern")
    ))
 
 (define-sw-parser-rule :RECORD-PATTERN ()
-  (:tuple "{" (1 (:repeat :FIELD-PATTERN ",")) "}")              (make-record-pattern     (list . 1)    ':left-lc ':right-lc) :documentation "Record pattern")
+  (:tuple "{" (1 (:repeat :FIELD-PATTERN ",")) "}")              (make-record-pattern     (list . 1)    ':left-lcb ':right-lcb) :documentation "Record pattern")
 
 (define-sw-parser-rule :FIELD-PATTERN ()
   (:tuple (1 :FIELD-NAME) (:optional (:tuple "=" (2 :PATTERN))))
-  (make-field-pattern 1 2 ':left-lc ':right-lc)
+  (make-field-pattern 1 2 ':left-lcb ':right-lcb)
   :documentation "Unstructured record element")
 
 (define-sw-parser-rule :PARENTHESIZED-PATTERN ()
@@ -1196,14 +1196,14 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-LET ()
   (:tuple "let" (1 :SC-DECLS) "in" (2 :SC-TERM))
-  (make-sc-let 1 2 ':left-lc ':right-lc))
+  (make-sc-let 1 2 ':left-lcb ':right-lcb))
 
 ;; The "where" is experimental. The semantics of "t where decls end" is the
 ;; same as "let decls in t"
 
 (define-sw-parser-rule :SC-WHERE ()
   (:tuple (2 :SC-TERM) "where" "{" (1 :SC-DECLS) "}")
-  (make-sc-where 1 2 ':left-lc ':right-lc))
+  (make-sc-where 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-QUALIFY
@@ -1211,7 +1211,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-QUALIFY ()
   (:tuple (1 :QUALIFIER) "qualifying" (2 :SC-TERM))
-  (make-sc-qualify 1 2 ':left-lc ':right-lc))
+  (make-sc-qualify 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-HIDE
@@ -1220,11 +1220,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-HIDE ()
   (:tuple "hide" "{" (:optional :QUALIFIABLE-NAME-LIST) "}" "in" (2 :SC-TERM))
-  (make-sc-hide 1 2 ':left-lc ':right-lc))
+  (make-sc-hide 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-EXPORT ()
   (:tuple "export" "{" (:optional :QUALIFIABLE-NAME-LIST) "}" "from" (2 :SC-TERM))
-  (make-sc-export 1 2 ':left-lc ':right-lc))
+  (make-sc-export 1 2 ':left-lcb ':right-lcb))
 
 ;; Right now we simply list the names to hide or export. Later
 ;; we might provide some sort of expressions or patterns
@@ -1244,17 +1244,17 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-TRANSLATE ()
   (:tuple "translate" (1 :SC-TERM) "by" (2 :SC-TRANSLATE-EXPR))
-  (make-sc-translate 1 2 ':left-lc ':right-lc))
+  (make-sc-translate 1 2 ':left-lcb ':right-lcb))
 
 ;; Right now a translation is just a name mapping. Later we may
 ;; provide support for matching patterns
 (define-sw-parser-rule :SC-TRANSLATE-EXPR ()
   (:tuple "{" (1 (:repeat :SC-TRANSLATE-MAP ",")) "}")
-  (make-sc-translate-expr (list . 1) ':left-lc ':right-lc))
+  (make-sc-translate-expr (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-TRANSLATE-MAP ()
   (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
-  (make-sc-translate-map 1 2 ':left-lc ':right-lc))
+  (make-sc-translate-map 1 2 ':left-lcb ':right-lcb))
 
 ;;; ------------------------------------------------------------------------
 ;;;  QUALIFIABLE-NAME (might refer to sort or op)
@@ -1279,7 +1279,7 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :SC-SPEC-MORPH ()
   (:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM)
 	  "{" (3 (:optional :SC-SPEC-MORPH-ELEM-LIST)) "}")
-  (make-sc-spec-morph 1 2 3 ':left-lc ':right-lc))
+  (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-SPEC-MORPH-ELEM-LIST ()
   (1 (:repeat :SC-SPEC-MORPH-ELEM ","))
@@ -1287,7 +1287,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-SPEC-MORPH-ELEM ()
   (:tuple (1 :QUALIFIABLE-OP-NAME) :MAPS-TO (2 :QUALIFIABLE-OP-NAME))
-  (make-sc-spec-morph-elem 1 2 ':left-lc ':right-lc))
+  (make-sc-spec-morph-elem 1 2 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-SHAPE
@@ -1299,7 +1299,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-DIAG ()
   (:tuple "diagram" "{" (1 (:repeat :SC-DIAG-ELEM ",")) "}")
-  (make-sc-diag (list . 1) ':left-lc ':right-lc))
+  (make-sc-diag (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-DIAG-ELEM ()
   (:anyof
@@ -1309,11 +1309,11 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-DIAG-NODE ()
   (:tuple (1 :NAME) :MAPS-TO (2 :SC-TERM))
-  (make-sc-diag-node 1 2 ':left-lc ':right-lc))
+  (make-sc-diag-node 1 2 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-DIAG-EDGE ()
   (:tuple (1 :NAME) ":" (2 :NAME) "->" (3 :NAME) :MAPS-TO (4 :SC-TERM))
-  (make-sc-diag-edge 1 2 3 4 ':left-lc ':right-lc))
+  (make-sc-diag-edge 1 2 3 4 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-COLIMIT
@@ -1321,7 +1321,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-COLIMIT ()
   (:tuple "colimit" (1 :SC-TERM))
-  (make-sc-colimit 1 ':left-lc ':right-lc))
+  (make-sc-colimit 1 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-DIAG-MORPH
@@ -1343,7 +1343,7 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-GENERATE ()
   (:tuple "generate" (1 :NAME) (2 :SC-TERM) (:optional (:tuple "in" (3 :STRING))))
-  (make-sc-generate 1 2 3 ':left-lc ':right-lc))
+  (make-sc-generate 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :MAPS-TO ()
   (:tuple "+->")
