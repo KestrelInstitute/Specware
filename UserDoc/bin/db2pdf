@@ -7,7 +7,7 @@ case $1 in
      -E*) jadeoptions="$jadeoptions $1";  shift;;
 esac
 
-STYLESHEET=~/specware/Specware4/UserDoc/bin/cygnus-both.dsl
+STYLESHEET=/usr/lib/sgml/stylesheets/cygnus-both.dsl
 
 NAME=`/bin/echo $1 | /bin/sed 's/\.sgml$//;s/\.sgm$//;s/\.dbk$//'`
 

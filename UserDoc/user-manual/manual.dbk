@@ -1,6 +1,5 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" [
- <!ENTITY concepts SYSTEM "concepts.dbk">
- <!ENTITY example SYSTEM "example.dbk">
+ <!ENTITY install SYSTEM "install.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.0">
@@ -13,7 +12,7 @@
  <!ENTITY emdash "--">
 ]>
 
-<book><title>&SpecwareV; Tutorial</title>
+<book><title>&SpecwareV; User Manual</title>
 
 <bookinfo>
   <copyright>
@@ -32,7 +31,6 @@
   </abstract>
 </bookinfo>
 
-&concepts;
-&example;
+&install;
 
 </book>
