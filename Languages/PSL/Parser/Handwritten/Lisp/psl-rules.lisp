@@ -38,11 +38,11 @@
 
 (define-sw-parser-rule :SC-PSL-DEFINITION ()
   (:tuple "psl" "{" (1 (:repeat* :PROCSPEC-ELEM nil)) "}")
-  (OscarAbsSyn::mkDecls 1 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkDecls-2 1 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :SC-PSL-SPECIALIZE ()
   (:tuple "specialize" (1 :TIGHT-EXPRESSION) "in" (2 :SC-TERM))
-  (OscarAbsSyn::mkSpecialize 1 2 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkSpecialize-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 ;;; The following is almost the same a SPEC-ELEM. The difference is the
 ;;; introduction of PROCDEF.
@@ -69,10 +69,10 @@
          (returnSort  3)
          (optCommands 4)
          (commandSeq (if (eq :unspecified optCommands)
-                         (OscarAbsSyn::mkSeq nil (make-pos ':left-lcb ':right-lcb))
+                         (OscarAbsSyn::mkSeq-2 nil (make-pos ':left-lcb ':right-lcb))
                          optCommands))
-         (procInfo (OscarAbsSyn::mkProcInfo params returnSort commandSeq)))
-         (OscarAbsSyn::mkProc procName procInfo (make-pos ':left-lcb ':right-lcb))))
+         (procInfo (OscarAbsSyn::mkProcInfo-3 params returnSort commandSeq)))
+         (OscarAbsSyn::mkProc-3 procName procInfo (make-pos ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :PSL-PROC-PARAM ()
   (:tuple (1 :NAME) ":" (2 :SORT))
@@ -95,11 +95,11 @@
 
 (define-sw-parser-rule :PSL-RELATION ()
   (:tuple "<|" (1 :EXPRESSION) "|>")
-  (OscarAbsSyn::mkRelation 1 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkRelation-2 1 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :VARDECL ()
   (:tuple "var" (1 :QUALIFIABLE-OP-NAMES) ":" (2 :SORT-SCHEME))
-  (OscarAbsSyn::mkVar 1 2 (make-pos ':left-lcb ':right-lcb))))
+  (OscarAbsSyn::mkVar-3 1 2 (make-pos ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :PSL-OP-DEFINITION ()
   (:tuple "def"
@@ -113,18 +113,18 @@
 
 (define-sw-parser-rule :PSL-IF ()
   (:tuple "if" "{" (:optional "|") (1 (:repeat+ :PSL-ALTERNATIVE "|")) "}")
-  (OscarAbsSyn::mkIf 1 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkIf-2 1 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-DO ()
   (:tuple "do" "{" (:optional "|") (1 (:repeat+ :PSL-ALTERNATIVE "|")) "}")
-  (OscarAbsSyn::mkDo 1 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkDo-2 1 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-LET ()
   (:tuple "let"
     (1 (:repeat* :PROCSPEC-ELEM nil))
     "in" "{"
     (2 :PSL-COMMAND-SEQ) "}")
-  (OscarAbsSyn::mkLet 1 2 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkLet-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-SKIP ()
   (:tuple "skip")
@@ -142,23 +142,23 @@
   (:tuple "return" (1 (:optional :EXPRESSION)))
   (let* ((opt 1)
          (optTerm (if (equal :unspecified opt) Option::mkNone (Option::mkSome opt))))
-    (OscarAbsSyn::mkReturn optTerm (make-pos ':left-lcb ':right-lcb))))
+    (OscarAbsSyn::mkReturn-2 optTerm (make-pos ':left-lcb ':right-lcb))))
 
 (define-sw-parser-rule :PSL-ASSIGN ()
   (:tuple (1 :EXPRESSION) ":=" (2 :EXPRESSION))
-  (OscarAbsSyn::mkAssign 1 2 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkAssign-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-EXEC ()
   (:tuple (1 :EXPRESSION))
-  (OscarAbsSyn::mkExec 1 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkExec-2 1 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-COMMAND-SEQ ()
   (1 (:repeat+ :PSL-COMMAND ";"))
-  (OscarAbsSyn::mkSeq 1 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkSeq-2 1 (make-pos ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :PSL-ALTERNATIVE ()
   (:tuple (1 :EXPRESSION) "->" (2 :PSL-COMMAND-SEQ))
-  (OscarAbsSyn::mkAlternative 1 2 (make-pos ':left-lcb ':right-lcb)))
+  (OscarAbsSyn::mkAlternative-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
 ;; (define-sw-parser-rule :PSL-CASE ()
 ;;   (:tuple "case" (1 :EXPRESSION) "{" (2 (:repeat+ :PSL-CASE-BRANCH "|")) "}")

@@ -8,7 +8,7 @@
          (tyVars     (if (equal :unspecified tyVars) nil tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
          (term       (bind-parameters params term l r))
-         (tyVarsTerm (StandardSpec::abstractTerm #'namedTypeVar tyVars term))
+         (tyVarsTerm (StandardSpec::abstractTerm-3 #'namedTypeVar tyVars term))
          (term       (cdr tyVarsTerm))
          (tyVars     (car tyVarsTerm))
          (srtScheme  (cons tyVars (freshMetaTypeVar l r)))
@@ -18,4 +18,4 @@
     ;;    so srtScheme will be tyVars * Mtv -- i.e. Mtv parameterized by tyVars
     ;;  (cdr tyVarsTerm) will be a copy of term with (PBase qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
-    (OscarAbsSyn::mkDef qids Option::mkNone srtScheme (list (cons tyVars term)) (make-pos l r))))
+    (OscarAbsSyn::mkDef-5 qids Option::mkNone srtScheme (list (cons tyVars term)) (make-pos l r))))
