@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.15  2003/02/20 23:17:41  weilyn
+ * Fixed parsing of assertions and options in prove term
+ *
  * Revision 1.14  2003/02/18 18:10:14  weilyn
  * Added support for imports.
  *
@@ -114,16 +117,45 @@ private scDecl
 
 private scTerm[Token unitIdToken] returns[ElementFactory.Item item]
 {
-    item = null;
+    item = null;    
 }
-    : ( item=specDefinition[unitIdToken]
-      | item=scProve[unitIdToken]
+    : ( (scSubstitute[unitIdToken]) => item=scSubstitute[unitIdToken]
+      | item=scBasicTerm[unitIdToken]
       )                     {if (item != null) builder.setParent(item, null);}
     ;
 
+// These are the non-left-recursive terms
+private scBasicTerm[Token unitIdToken] returns[ElementFactory.Item item]
+{
+    item = null;
+}
+    : item=scPrint[unitIdToken]
+    | item=scURI[unitIdToken]
+    | item=specDefinition[unitIdToken]
+    | item=scLet[unitIdToken]
+    | item=scTranslate[unitIdToken]
+    | item=scQualify[unitIdToken]
+    | item=scDiag[unitIdToken]
+    | item=scColimit[unitIdToken]
+    | item=scSpecMorph[unitIdToken]
+    | item=scGenerate[unitIdToken]
+    | item=scObligations[unitIdToken]
+    | item=scProve[unitIdToken]
+    ;
+
 //---------------------------------------------------------------------------
+
+private scPrint[Token unitIdToken] returns[ElementFactory.Item print]
+{
+    print = null;
+    ElementFactory.Item ignore = null;
+}
+    : "print"
+      ignore=scTerm[null]
+    ;
+
 // TODO: scURI should really be an object that has parameters (bool relOrAbs, string path, scTermItem optionalRef)
-private scURI returns[ElementFactory.Item uri]
+private scURI[Token unitIdToken] returns[ElementFactory.Item uri]
 {
     uri = null;
     String strURI = null;
@@ -131,31 +163,6 @@ private scURI returns[ElementFactory.Item uri]
     : strURI=fullURIPath
     ;
 
-private fullURIPath returns[String path]
-{
-    path = null;
-    String item = null;
-}
-    : (   (nonWordSymbol["/"]) => nonWordSymbol["/"] 
-                                  item=partialURIPath        {path = "/" + item;}
-        | item=partialURIPath                                {path = item;}
-      )
-      (ref:INNER_UNIT_REF)?
-    ;
-
-private partialURIPath returns[String path]
-{
-    path = "";
-    String item = null;
-}
-    : id:IDENTIFIER                                     {path = path + id.getText();} 
-      ( (nonWordSymbol["/"]) => nonWordSymbol["/"] 
-                                item=partialURIPath     {path = path + "/" + item;}
-      |
-      )
-    ;
-
-//---------------------------------------------------------------------------
 private specDefinition[Token unitIdToken] returns[ElementFactory.Item spec]
 {
     spec = null;
@@ -178,9 +185,114 @@ private specDefinition[Token unitIdToken] returns[ElementFactory.Item spec]
                              }
     ;
 
-private scProve[Token unitIdToken] returns[ElementFactory.Item prove]
+private scLet[Token unitIdToken] returns[ElementFactory.Item let]
 {
-    prove = null;
+    let = null;
+    ElementFactory.Item ignore = null;
+}
+    : "let"
+      (scDecl
+      )*
+      "in"
+      ignore=scTerm[unitIdToken]
+    ;
+
+private scTranslate[Token unitIdToken] returns[ElementFactory.Item translate]
+{
+    translate = null;
+    ElementFactory.Item ignore = null;
+}
+    : "translate"
+      ignore=scTerm[null]
+      "by"
+      nameMap
+    ;
+
+private scQualify[Token unitIdToken] returns[ElementFactory.Item qualify]
+{
+    qualify = null;
+    String strIgnore = null;
+    ElementFactory.Item itemIgnore = null;
+}
+    : strIgnore=qualifier
+      "qualifying"
+      itemIgnore=scTerm[null]
+    ;
+
+private scDiag[Token unitIdToken] returns[ElementFactory.Item diag]
+{
+    diag = null;
+    ElementFactory.Item ignore = null;
+}
+    : "diagram"
+      LBRACE
+      scDiagElem
+      (COMMA scDiagElem
+      )*
+      RBRACE
+    ;
+
+private scColimit[Token unitIdToken] returns[ElementFactory.Item colimit]
+{
+    colimit = null;
+    ElementFactory.Item ignore = null;
+}
+    : "colimit"
+      ignore=scTerm[null]
+    ;
+
+private scSubstitute[Token unitIdToken] returns[ElementFactory.Item substitute]
+{
+    substitute = null;
+    ElementFactory.Item ignore = null;
+}
+    : ignore=scBasicTerm[null]
+      scSubstituteTermList
+    ;
+
+private scSpecMorph[Token unitIdToken] returns[ElementFactory.Item morph]
+{
+    morph = null;
+    ElementFactory.Item childItem = null;
+    ElementFactory.Item ignore = null;
+    Token headerEnd = null;
+}
+
+    : begin:"morphism"        {headerEnd = begin;}
+      ignore=scTerm[null]
+      nonWordSymbol["->"]
+      ignore=scTerm[null]
+      nameMap
+    ;
+
+private scGenerate[Token unitIdToken] returns[ElementFactory.Item generate]
+{
+    generate = null;
+    String genName = null;
+    String fileName = null;
+    ElementFactory.Item ignore = null;
+    Token headerEnd = null;
+}
+    : begin:"generate"        {headerEnd = begin;}
+      genName=name
+      ignore=scTerm[null]
+      ("in" fileName=name
+      )?
+    ;
+
+private scObligations[Token unitIdToken] returns[ElementFactory.Item obligations]
+{
+    obligations=null;
+    ElementFactory.Item ignore=null;
+    Token headerEnd = null;
+}
+    : begin:"obligations"     {headerEnd = begin;}
+      ignore=scTerm[null]
+    ;
+
+private scProve[Token unitIdToken] returns[ElementFactory.Item proof]
+{
+    proof = null;
     ElementFactory.Item childItem = null;
     String ignore = null;
     Token headerEnd = null;
@@ -190,18 +302,137 @@ private scProve[Token unitIdToken] returns[ElementFactory.Item prove]
     : begin:"prove"                     {headerEnd = begin;}
       childItem=claimName               {if (childItem != null) children.add(childItem);}
       "in"
-      //childItem=scURI                   {if (childItem != null) children.add(childItem);}
-      ignore=fullURIPath
+      childItem=scTerm[null]            {if (childItem != null) children.add(childItem);}
+      //ignore=fullURIPath
       (childItem=proverAssertions)?     {if (childItem != null) children.add(childItem);}
       (childItem=proverOptions)?        {if (childItem != null) children.add(childItem);}
-                                        /*{prove = builder.createProve(name);
+                                        /*{proof = builder.createProof(name);
                                          if (unitIdToken != null) {
                                             begin = unitIdToken;
                                          }
-                                         builder.setParent(children, prove);
-                                         ParserUtil.setAllBounds(builder, prove, begin, headerEnd, LT(0));
+                                         builder.setParent(children, proof);
+                                         ParserUtil.setAllBounds(builder, proof, begin, headerEnd, LT(0));
                                          }*/
     ;
+
+//---------------------------------------------------------------------------
+
+private fullURIPath returns[String path]
+{
+    path = null;
+    String item = null;
+}
+    : (   (nonWordSymbol["/"]) => nonWordSymbol["/"] 
+                                  item=partialURIPath        {path = "/" + item;}
+        | item=partialURIPath                                {path = item;}
+      )
+      (ref:INNER_UNIT_REF                                    {path += ref.getText();}
+      )?
+    ;
+
+private partialURIPath returns[String path]
+{
+    path = "";
+    String item = null;
+}
+    : id:IDENTIFIER                                     {path = path + id.getText();} 
+      ( (nonWordSymbol["/"]) => nonWordSymbol["/"] 
+                                item=partialURIPath     {path = path + "/" + item;}
+      |
+      )
+    ;
+
+//------------------------------------------------------------------------------
+
+private nameMap
+    : LBRACE
+      (nameMapItem
+       ( COMMA nameMapItem)*
+      )?
+      RBRACE
+    ;
+
+private nameMapItem
+    : sortNameMapItem
+    | opNameMapItem
+    ;
+
+private sortNameMapItem
+{
+    String ignore = null;
+}
+    : ("sort"
+      )?
+      ignore=qualifiableSortNames
+      nonWordSymbol["+->"]
+      ignore=qualifiableSortNames
+    ;
+
+private opNameMapItem
+    : ("op"
+      )?
+      annotableQualifiableName
+      nonWordSymbol["+->"]
+      annotableQualifiableName
+    ;
+
+private annotableQualifiableName
+{
+    String ignore = null;
+}
+    : ignore=qualifiableOpNames
+      (nonWordSymbol[":"]
+       ignore=sort
+      )?
+    ;
+
+//------------------------------------------------------------------------------
+
+private scDiagElem
+    : scDiagNode
+    | scDiagEdge
+    ;
+
+private scDiagNode
+{
+    String nodeName = null;
+    ElementFactory.Item ignore = null;
+}
+    : nodeName=name
+      nonWordSymbol["+->"]
+      ignore=scTerm[null]
+    ;
+
+private scDiagEdge
+{
+    String name1 = null;
+    String name2 = null;
+    String name3 = null;
+    ElementFactory.Item ignore = null;
+}
+    : name1=name
+      nonWordSymbol[":"]
+      name2=name
+      nonWordSymbol["->"]
+      name3=name
+      nonWordSymbol["+->"]
+      ignore=scTerm[null]
+    ;
+
+//------------------------------------------------------------------------------
+
+private scSubstituteTermList
+{
+    ElementFactory.Item ignore = null;
+}
+    : LBRACKET
+      ignore=scTerm[null]
+      RBRACKET
+      (scSubstituteTermList
+      )*
+    ;
+
+//------------------------------------------------------------------------------
 
 private claimName returns[ElementFactory.Item claimName]
 {
@@ -217,8 +448,8 @@ private proverAssertions returns[ElementFactory.Item assertionsItem]
     String anAssertion = null;
 }
     : "using" 
-      (anAssertion=name COMMA
-       | anAssertion=name
+      (anAssertion=name
+       | COMMA anAssertion=name
       )+
     ;
 
@@ -231,6 +462,8 @@ private proverOptions returns[ElementFactory.Item optionsItem]
       (anOption=literal
       )+
     ;
+
+//------------------------------------------------------------------------------
 
 private qualifier returns[String qlf]
 {
@@ -247,6 +480,8 @@ private name returns[String name]
     : name=idName
     ;
 
+//------------------------------------------------------------------------------
+
 private declaration returns[ElementFactory.Item item]
 {
     item = null;
@@ -261,12 +496,18 @@ private declaration returns[ElementFactory.Item item]
 private importDeclaration returns[ElementFactory.Item importItem]
 {
     importItem = null;
-    String strURI = null;
+    ElementFactory.Item term = null;
+    //String strURI = null;
 }
     : begin:"import"
-      strURI=fullURIPath    {importItem = builder.createImport(strURI);
-                             ParserUtil.setBounds(builder, importItem, begin, LT(0));
+      term=scTerm[null]     {if (term != null) {
+                                importItem = builder.createImport(term.getClass().getName());
+                                ParserUtil.setBounds(builder, importItem, begin, LT(0));
+                             }
                             }
+      /*strURI=fullURIPath    {importItem = builder.createImport(strURI);
+                             ParserUtil.setBounds(builder, importItem, begin, LT(0));
+                            }*/
     ;
 
 //---------------------------------------------------------------------------
@@ -342,7 +583,7 @@ private formalSortParameters returns[String[] params]
     ;
 
 //---------------------------------------------------------------------------
-//!!! TODO: fixity !!!
+
 private opDeclaration returns[ElementFactory.Item op]
 {
     op = null;
@@ -351,6 +592,8 @@ private opDeclaration returns[ElementFactory.Item op]
 }
     : begin:"op" 
       name=qualifiableOpNames
+      (fixity
+      )?
       nonWordSymbol[":"] 
       sort=sort
                             {op = builder.createOp(name, sort);
@@ -394,6 +637,13 @@ private opName returns[String opName]
     | sym:NON_WORD_SYMBOL   {opName = sym.getText();}
     ;
 
+private fixity
+    : ("infixl"
+       | "infixr"
+      )
+      NAT_LITERAL
+    ;
+
 private sort returns[String sort]
 {
     String text = null;
@@ -435,9 +685,9 @@ private opDefinition returns[ElementFactory.Item def]
                                  }
     ;
 
-private claimDefinition returns[ElementFactory.Item claim]
+private claimDefinition returns[ElementFactory.Item claimDef]
 {
-    claim = null;
+    claimDef = null;
     String name = null;
     String kind = null;
     Token begin = null;
@@ -446,9 +696,11 @@ private claimDefinition returns[ElementFactory.Item claim]
     : kind=claimKind       {begin = LT(0);}
       name=idName
       equals
+      (sortQuantification
+      )?
       expr=expression
-                           {claim = builder.createClaim(name, kind, expr);
-                            ParserUtil.setBounds(builder, claim, begin, LT(0));
+                           {claimDef = builder.createClaim(name, kind, expr);
+                            ParserUtil.setBounds(builder, claimDef, begin, LT(0));
                            }
 
     ;
@@ -461,6 +713,20 @@ private claimKind returns[String kind]
     | "axiom"              {kind = "axiom";}
     | "conjecture"         {kind = "conjecture";}
     ;
+
+private sortQuantification
+{
+    String ignore = null;
+}
+    : "sort"
+      "fa"
+      LPAREN
+      ignore=name
+      (COMMA ignore=name
+      )*
+      RPAREN
+    ;
+    
 
 private expression returns[String expr]
 {
@@ -477,6 +743,13 @@ private expression returns[String expr]
 private formalOpParameters returns[String[] params]
 {
     params = null;
+    List paramList = new LinkedList();
+}
+    : (closedPattern[paramList]
+      )*                    {params = (String[]) paramList.toArray(new String[]{});}
+    ;
+/*{
+    params = null;
     String param = null;
     List paramList = null;
 }
@@ -491,6 +764,53 @@ private formalOpParameters returns[String[] params]
        )*)?
       RPAREN                {params = (String[]) paramList.toArray(new String[]{});}
     ;
+*/
+
+private closedPattern[List patternList]
+    : variablePattern[patternList]
+    | wildcardPattern[patternList]
+    | literalPattern[patternList]
+//TODO    | listPattern[patternList]
+//    | tuplePattern[patternList]
+//    | recordPattern[patternList]
+//    | parenthesizedPattern[patternList]
+    ;
+
+private variablePattern[List patternList]
+{
+    String pattern = null;
+}
+    : pattern=idName          {patternList.add(pattern);}
+    ;
+
+private wildcardPattern[List patternList]
+    : nonWordSymbol["_"]    {patternList.add("_");}
+    ;
+
+private literalPattern[List patternList]
+{
+    String pattern = null;
+}
+    : pattern=literal         {patternList.add(pattern);}
+    ;
+
+/*TODO private listPattern[List patternList]
+{
+    
+}*/
+
+
+private pattern[List patternList]
+    : annotatedPattern[patternList]
+    | tightPattern[patternList]
+    ;
+
+private annotatedPattern[List patternList]
+    : pattern[patternList]
+      nonWordSymbol[":"]
+      //TODO - fix sort to match grammar: sort
+    ;
+      
 
 //---------------------------------------------------------------------------
 private specialSymbol returns[String text]
