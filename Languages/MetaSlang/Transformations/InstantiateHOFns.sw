@@ -2,7 +2,8 @@ InstantiateHO qualifying
 spec
   import Simplify
   %import RenameBound
-  import CurryUtils
+  import ../Specs/Utilities
+  sort Term = MS.Term
 
   op  instantiateHOFns: Spec -> Spec
   def instantiateHOFns spc =
@@ -24,13 +25,13 @@ spec
     mapSpec (fn t -> maybeUnfoldTerm(t,m,simplifyTerm,spc),id,id)
       spc
 
-  op  unfoldInTerm: MS.Term * AQualifierMap DefInfo * (MS.Term -> MS.Term) * Spec -> MS.Term
+  op  unfoldInTerm: Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
   def unfoldInTerm(tm,m,simplifyTerm,spc) =
     mapSubTerms (fn t -> maybeUnfoldTerm(t,m,simplifyTerm,spc))
       tm
 
   %% (params,defn body,indices of applied fn args,curried?,recursive?)
-  sort DefInfo = List Pattern * MS.Term * Sort * List Nat * Boolean * Boolean
+  sort DefInfo = List Pattern * Term * Sort * List Nat * Boolean * Boolean
 
   op  makeUnfoldMap: Spec -> AQualifierMap DefInfo
   def makeUnfoldMap(spc) =
@@ -53,7 +54,7 @@ spec
 	     else None)
       spc.ops
 
-  op  analyzeCurriedDefn: QualifiedId * MS.Term * Nat * List Boolean * Sort -> Option DefInfo
+  op  analyzeCurriedDefn: QualifiedId * Term * Nat * List Boolean * Sort -> Option DefInfo
   def analyzeCurriedDefn(qid,defn,numCurryArgs,HOArgs,srt) =
     let (params,body) = curriedParams(defn) in
     if ~(length params = numCurryArgs) then None
@@ -69,13 +70,13 @@ spec
     let normalizedBody = mapSubTerms normalizeCurriedAppl body in
     analyzeDefn(qid,params,normalizedBody,HOArgs,true,srt)
 
-  op  analyzeUnCurriedDefn: QualifiedId * MS.Term * List Boolean * Sort -> Option DefInfo
+  op  analyzeUnCurriedDefn: QualifiedId * Term * List Boolean * Sort -> Option DefInfo
   def analyzeUnCurriedDefn(qid,defn,argSorts,srt) =
     case defn of
       | Lambda([(pat,_,body)],_) -> analyzeDefn(qid,getParams pat,body,argSorts,false,srt)
       | _ -> None
 
-  op  analyzeDefn: QualifiedId * List Pattern * MS.Term * List Boolean * Boolean * Sort
+  op  analyzeDefn: QualifiedId * List Pattern * Term * List Boolean * Boolean * Sort
                     -> Option DefInfo
   def analyzeDefn(qid,params,body,HOArgs,curried?,srt) =
     if ~(recursiveCallsPreserveHOParameters?(body,qid,params,HOArgs))
@@ -92,7 +93,7 @@ spec
 		      | _ -> false)
 	   body)
 
-  op  recursiveCallsPreserveHOParameters?: MS.Term * QualifiedId * List Pattern * List Boolean
+  op  recursiveCallsPreserveHOParameters?: Term * QualifiedId * List Pattern * List Boolean
                                           -> Boolean
   def recursiveCallsPreserveHOParameters? (body,qid,params,HOArgs) =
     ~(existsSubTerm
@@ -105,7 +106,7 @@ spec
 	   | _ -> false)
         body)
 
-  op  hoParamsSame?: List Pattern * List MS.Term * List Boolean -> Boolean
+  op  hoParamsSame?: List Pattern * List Term * List Boolean -> Boolean
   def hoParamsSame?(params,args,HOArgs) =
     length params = length args
       & all (fn i -> if nth(HOArgs,i)
@@ -113,7 +114,7 @@ spec
 		      else true)
           (tabulate(length params,id))
 
-  op  patternMatchesTerm?: Pattern * MS.Term -> Boolean
+  op  patternMatchesTerm?: Pattern * Term -> Boolean
   def patternMatchesTerm?(p,t) =
     case (p,t) of
       | (VarPat((vp,_),_),Var((v,_),_)) -> v = vp
@@ -161,13 +162,13 @@ spec
 
   def unfoldSizeThreshold = 80
   
-  op  unfoldable?: QualifiedId * MS.Term -> Boolean
+  op  unfoldable?: QualifiedId * Term -> Boolean
   def unfoldable?(qid,defn) =
     sizeTerm defn < unfoldSizeThreshold
 
   def sizeTerm t = foldSubTerms (fn (_,sum) -> sum + 1) 0 t
 
-  op  maybeUnfoldTerm: MS.Term * AQualifierMap DefInfo * (MS.Term -> MS.Term) * Spec -> MS.Term
+  op  maybeUnfoldTerm: Term * AQualifierMap DefInfo * (Term -> Term) * Spec -> Term
   def maybeUnfoldTerm(t,unfoldMap,simplifyTerm,spc) =
    case t of
      | Apply (f,a,_) ->
@@ -208,10 +209,10 @@ spec
 	  | _ -> t)
      | _ -> t
 
-  op  makeUnfoldedTerm: MS.Term * List MS.Term * Sort * TyVarSubst * List Pattern * MS.Term
+  op  makeUnfoldedTerm: Term * List Term * Sort * TyVarSubst * List Pattern * Term
                          * List Nat * Boolean * QualifiedId * String
-                         * AQualifierMap DefInfo * (MS.Term -> MS.Term) * Spec
-                      -> MS.Term
+                         * AQualifierMap DefInfo * (Term -> Term) * Spec
+                      -> Term
   def makeUnfoldedTerm(f,args,resultSort,tyVarSbst,vs,defbody,fnIndices,
 		       recursive?,qid,nm,unfoldMap,simplifyTerm,spc) =
     let replaceIndices = filter (fn i -> constantTerm?(nth(args,i))
@@ -241,7 +242,7 @@ spec
 
   %% Returns nm if it is not referenced in t, otherwise adds -i to
   %% to make it unique
-  op  locallyUniqueName: Id * MS.Term -> Id
+  op  locallyUniqueName: Id * Term -> Id
   def locallyUniqueName(baseName,t) =
     let def aux (baseName,t,i) =
           let indName = baseName^"-"^(Nat.toString i) in
@@ -250,7 +251,7 @@ spec
 	    else indName
     in aux(baseName,t,0)
 
-  op  idReferenced?: Id * MS.Term -> Boolean
+  op  idReferenced?: Id * Term -> Boolean
   def idReferenced?(id,t) =
     existsSubTerm
       (fn st -> case st of
@@ -362,7 +363,7 @@ spec
           spc.ops
     in setOps(spc,normOps)
 
-  op  normalizeCurriedDefn: MS.Term * List Sort -> MS.Term
+  op  normalizeCurriedDefn: Term * List Sort -> Term
   def normalizeCurriedDefn(defn,curryArgSorts) =
     let def aux(defn,curryArgSorts,argNum) = 
 	  case curryArgSorts of
@@ -389,7 +390,7 @@ spec
 		  mkLambda(mkVarPat(nv),aux(mkApply(defn,mkVar(nv)),rSorts,argNum+1))
     in aux(defn,curryArgSorts,0)
 
-  op  transparentRenaming: Qualifier * Id * MS.Term * Spec -> Qualifier * Id * MS.Term
+  op  transparentRenaming: Qualifier * Id * Term * Spec -> Qualifier * Id * Term
   %% If definition is just a renaming then "unfold"
   def transparentRenaming(q,id,def1,spc) =
     case def1 of
@@ -399,13 +400,26 @@ spec
 	  | _ -> (q,id,def1))
       | _ -> (q,id,def1)
 
-  op  getTupleArg: MS.Term * Nat -> MS.Term
+
+  op  getCurryArgs: Term -> Option(Term * List Term)
+  def getCurryArgs t =
+    let def aux(term,i,args) =
+        case term
+          of Fun(_,srt,_) ->
+             if i > 1
+               then Some(term,args)
+              else None
+           | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
+           | _ -> None
+  in aux(t,0,[])
+
+  op  getTupleArg: Term * Nat -> Term
   def getTupleArg(t,i) =
     case t of
       | Record (tms,_) -> (nth(tms,i)).2
       | tm -> (if i = 0 then tm else fail("Illegal getTupleArg call"))
 
-  op  termList: MS.Term -> List MS.Term
+  op  termList: Term -> List Term
   def termList t =
     case t of
       | Record(fields,_ ) -> foldr (fn ((_,st),r) -> cons(st,r)) [] fields
@@ -418,20 +432,42 @@ spec
       | Record(fields,_) -> exists (fn (_,stm) -> constantTerm? stm) fields
       | _ -> false
 
-  op  lambda?: MS.Term -> Boolean
+  op  lambda?: Term -> Boolean
   def lambda? t =
     case t of
       | Lambda _ -> true
       | _ -> false
 
-  op  makeLet: List Pattern * List MS.Term * MS.Term -> MS.Term
+  op  makeLet: List Pattern * List Term * Term -> Term
   def makeLet(params,args,body) =
     if params = [] then body
     else
     mkLet(tabulate (length params,fn i -> (nth(params,i),nth(args,i))),
 	  body)
 
-  op  matchPairs: Pattern * MS.Term -> List (Var * MS.Term)
+  op  termToList: Term -> List Term
+  def termToList t =
+    case t of
+      | Record (fields,_) -> map (fn (_,x) -> x) fields
+      | _ -> [t]
+
+  op  mkTuplePat  : List Pattern  -> Pattern
+  def mkTuplePat pats =
+    case pats of
+      | [pat] -> pat
+      | _ -> RecordPat (tagTuple(pats), noPos)
+
+  op  getParams: Pattern -> List Pattern
+  def getParams(pat:Pattern) = 
+    case pat
+      of VarPat(v,_)-> [pat]
+       | RecordPat(fields,_) ->
+	 if all (fn (_,VarPat _) -> true | (_,RecordPat _) -> true | _ -> false) fields
+	   then map (fn (_,vpat) -> vpat) fields
+	   else []
+       | _ -> []
+
+  op  matchPairs: Pattern * Term -> List (Var * Term)
   def matchPairs(p,t) =
     case (p,t) of
       | (VarPat(pv,_),t) -> [(pv,t)]
@@ -440,11 +476,50 @@ spec
 	  [] pfields
       | _ -> fail "matchPairs: Shouldn't happen"
 
-  op  lookupId: Id *  List (Id * MS.Term)  -> MS.Term  
+  op  lookupId: Id *  List (Id * Term)  -> Term  
   def lookupId(id,fields) =
     case find (fn (id1,t1) -> id = id1) fields of
       | Some (_,t) -> t
       | _ -> fail "lookupId: Shouldn't happen"
+
+  op  curriedSort?: Spec * Sort -> Boolean
+  def curriedSort?(sp,srt) = curryShapeNum(sp,srt) > 1
+
+  op  curryShapeNum: Spec * Sort -> Nat
+  def curryShapeNum(sp,srt) =
+    case arrowOpt(sp,srt)
+      of Some (_,rng) -> 1 + curryShapeNum(sp,rng)
+       | _ -> 0
+
+  op  curryArgSorts: Spec * Sort -> List Sort
+  def curryArgSorts(sp,srt) =
+    case arrowOpt(sp,srt)
+      of Some (dom,rng) -> cons(stripSubsorts(sp,dom),curryArgSorts(sp,rng))
+       | _ -> []
+
+  op  curriedParams: Term -> List Pattern * Term
+  def curriedParams defn =
+    let def aux(t,vs) =
+          case t of
+	    | Lambda([(p,_,body)],_) ->
+	      if (case p of
+		    | VarPat _ -> true
+		    | RecordPat _ -> true
+		    | _ -> false)
+		then aux(body,vs ++ [p])
+		else (vs,t)
+	    | _ -> (vs,t)
+    in
+    aux(defn,[])
+
+  op  noncurryArgSorts: Spec * Sort -> List Sort
+  def noncurryArgSorts(sp,srt) =
+    case arrowOpt(sp,srt)
+      of Some (dom,_) ->
+	 (case productOpt(sp,dom) of
+	   | Some fields -> map (fn(_,s) -> s) fields
+	   | _ -> [dom])
+       | _ -> []
 
 
 endspec

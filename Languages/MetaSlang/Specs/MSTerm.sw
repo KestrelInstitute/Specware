@@ -34,8 +34,6 @@ MS qualifying spec {
  def mkQuotientSort (srt, rel)  = Quotient (srt, rel,   noPos)
 
  def mkProduct sorts =
-  if length sorts = 1 then hd sorts
-  else
   let def loop (n, sorts) = 
        case sorts  of
           | []         -> []
@@ -149,7 +147,6 @@ MS qualifying spec {
  %% Record's
 
  op mkTuple : List Term -> Term
- op termToList: Term -> List Term
 
  op tagTuple : fa(A) List A -> List (Id * A)
 
@@ -165,22 +162,6 @@ MS qualifying spec {
   case terms of
      | [x] -> x
      | _   -> mkRecord (tagTuple terms)
-
-  def termToList t =
-    case t of
-      | Record (fields,_) ->
-        if tupleFields? fields
-	  then map (fn (_,x) -> x) fields
-	 else [t]
-      | _ -> [t]
-
- op  tupleFields?: fa(a) List (Id * a) -> Boolean
- def tupleFields? fields =
-   (foldl (fn ((id,_),i) ->
-	   if i < 0 then i
-	     else if id = Nat.toString i then i + 1 else ~1)
-      1 fields)
-   < 0
 
  %% Applications...
 
@@ -273,30 +254,7 @@ MS qualifying spec {
  def mkVarPat    v    = VarPat    (v,              noPos)
  def mkWildPat   s    = WildPat   (s,              noPos)
  def mkRecordPat pats = RecordPat (pats, noPos)
- def mkTuplePat pats =
-   case pats of
-     | [pat] -> pat
-     | _ -> RecordPat (tagTuple(pats), noPos)
-
- op  getParams: Pattern -> List Pattern
- def getParams(pat) = 
-   case pat
-     of VarPat(v,_)-> [pat]
-      | RecordPat(fields,_) ->
-	if all (fn (_,VarPat _) -> true | (_,RecordPat _) -> true | _ -> false) fields
-	  then map (fn (_,vpat) -> vpat) fields
-	  else []
-      | _ -> []
-
- op  patternToVars: Pattern -> List Var
- def patternToVars(pat) = 
-   case pat
-     of VarPat(v,_)-> [v]
-      | RecordPat(fields,_) ->
-	if all (fn (_,VarPat _) -> true | (_,RecordPat _) -> true | _ -> false) fields
-	  then map (fn (_,VarPat(v,_)) -> v) fields
-	  else []
-      | _ -> []
+ def mkTuplePat  pats = RecordPat (tagTuple(pats), noPos)
 
  op negateTerm: Term -> Term
  %% Gets the negated version of term. 

@@ -3,8 +3,6 @@
 SpecToLisp qualifying spec { 
   import ../../Transformations/PatternMatch
   import ../../Transformations/InstantiateHOFns
-  import ../../Transformations/LambdaLift
-  import ../../Transformations/RemoveCurrying
   import Lisp
   import ../../Specs/StandardSpec
   
@@ -479,8 +477,8 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
          let  names = List.map patternName pats  in
          let  names = List.map specId names      in
          mkLLet(names,
-		List.map (fn t -> mkLTerm(sp,dpn,vars,t)) terms,
-		mkLTerm(sp,dpn,StringSet.addList(vars,names),body))   
+            List.map (fn t -> mkLTerm(sp,dpn,vars,t)) terms,
+            mkLTerm(sp,dpn,StringSet.addList(vars,names),body))   
        | LetRec(decls,term,_) ->
            let
                def unfold(decls,names,terms) = 
@@ -868,6 +866,11 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
                                           mkLApply(mkLOp "cdr",[vr])]
                             else tabulate(n,fn i -> mkLApply(mkLOp "svref",[vr,mkLNat i]) )
 
+  def duplicateString(n,s) =
+    case n
+      of 0 -> ""
+       | _ -> s^duplicateString(n - 1,s)
+
   op  unCurryName: QualifiedId * Nat * String -> String
   def unCurryName(Qualified(qid,name),n,dpn) =
     printPackageId(Qualified(qid,name^duplicateString(n,"-1")),dpn)
@@ -1055,14 +1058,8 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       let spc = System.time(lisp(spc))                             in
       spc 
 *)
-  op  instantiateHOFns?: Boolean
+  op instantiateHOFns?: Boolean
   def instantiateHOFns? = true
-
-  op  lambdaLift?: Boolean
-  def lambdaLift? = false
-
-  op  removeCurrying?: Boolean
-  def removeCurrying? = false
 
   def toLispEnv (spc) =
       % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
@@ -1072,14 +1069,6 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       in
       let spc = translateMatch(spc) in
       let spc = arityNormalize(spc) in
-      let spc = if removeCurrying?
-                 then removeCurrying spc
-		 else spc
-      in
-      let spc = if lambdaLift?
-                 then lambdaLift spc
-		 else spc
-      in
       let spc = lisp(spc) in
       spc 
 
