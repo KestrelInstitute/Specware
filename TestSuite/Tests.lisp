@@ -49,8 +49,7 @@
 ;;; Generating lisp file /tmp/cl-current-file.lisp
 ")
       ("Restrict Obligations"
-       :show "RestrictObligation#O"
-       :output ";;; Elaborating obligator at $TESTDIR/RestrictObligation#O
+       :show ";;; Elaborating obligator at $TESTDIR/RestrictObligation#O
 ;;; Elaborating spec at $TESTDIR/RestrictObligation#A
 ;;; Elaborating spec at $SPECWARE/Library/Base/WFO
 
@@ -58,15 +57,14 @@ spec
  import A
  import /Library/Base/WFO
  conjecture f_Obligation is 
-    fa(y : Integer.Integer, x : Integer.Integer) 
-     x Integer.> Integer_.- y => nonNeg?(x Integer.+ y)
+    fa(y : Integer, x : Integer) x > Integer_.- y => nonNeg?(x + y)
  conjecture f_Obligation0 is 
-    fa(y : Integer.Integer, x : Integer.Integer) 
-     x Integer.> Integer_.- y && nonNeg?(x Integer.+ y) 
-     => Integer.natural?(x Integer.+ y)
+    fa(y : Integer, x : Integer) 
+     x > Integer_.- y && nonNeg?(x + y) => natural?(x + y)
 endspec
 
-")
+"
+)
       ("libtest" :swll "libtest"
 		 :output ";;; Elaborating spec at $TESTDIR/libtest
 ;;; Generating lisp file /tmp/cl-current-file.lisp

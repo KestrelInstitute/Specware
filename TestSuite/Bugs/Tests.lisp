@@ -12,10 +12,10 @@
   :show   "Bug_0045/ToString"
   :output ";;; Elaborating spec at $TESTDIR/Bug_0045/ToString
 
-spec  
- def b = Nat.toString
+spec
+  op b : Nat -> String
+  def b = toString
 endspec
-
 ")
 
 
@@ -53,7 +53,7 @@ endspec
 
 spec  
  import B
- type Interval = {start:Nat.Nat, stop:Nat.Nat}
+ type Interval = {start:Nat, stop:Nat}
  def isEmptyInterval? {start = x, stop = y} = x = y
 endspec
 
@@ -72,7 +72,7 @@ endspec
 
 spec  
  type {A, B, C}
- type {A, B, C} = List.List(Nat.Nat * Nat.Nat)
+ type {A, B, C} = List(Nat * Nat)
 endspec
 
 ")
