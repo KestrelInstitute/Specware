@@ -22,7 +22,7 @@
 		     :direction :output
 		     :if-exists :supersede)
     (dolist (byte bytes)
-      (write-byte s byte))))
+      (write-byte byte s))))
 
 (defun parseXML (filename pattern)
   (break "From ~A: ~% read ~S" 
