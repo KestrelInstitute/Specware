@@ -1358,7 +1358,8 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :SC-AMBIGUOUS-REF ()
   ;; When we're not sure if its a sort/op/axiom ref...
-  ;; "[A.]X" "([A.]X)", but X cannot be "="
+  ;; "X"  "A.X"  "(X)"  "(A.X)"
+  ;; We assume that semantic routines will disambiguate as an OP-REF if X is "="
   (:anyof 
    ((:tuple     (1 :QUALIFIABLE-AMBIGUOUS-NAME)     )  1) ; "[A.]f"  
    ((:tuple "(" (1 :QUALIFIABLE-AMBIGUOUS-NAME) ")" )  1) ; "([A.]f)"
@@ -1374,12 +1375,16 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
+   ;; maybe :NAME should be :NON-KEYWORD-NAME
+   ;; that would automatically rule out "=", "*", "/", "translate", etc.
    ((:tuple (1 :NAME)) (MetaSlang::mkUnQualifiedId 1))
    ((:tuple "_")       (MetaSlang::mkUnQualifiedId "_"))
    ))
 
 (define-sw-parser-rule :QUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
+   ;; maybe :NAME should be :NON-KEYWORD-NAME
+   ;; that would automatically rule out "=", "*", "/", "translate", etc.
    ((:tuple (1 :QUALIFIER) "." (2 :NAME)) (MetaSlang::mkQualifiedId-2 1 2))
    ((:tuple (1 :QUALIFIER) "." "_")       (MetaSlang::mkQualifiedId-2 1 "_"))
    ))
