@@ -4,6 +4,159 @@ again. *)
 
 
 
+%%% parsing stuff:
+
+  type ParserOp =
+    | nat
+    | posnat
+    | string
+    | proof
+    | seq ParserOp
+    | option ParserOp
+    | pair ParserOp * ParserOp
+    | triple ParserOp * ParserOp * ParserOp
+    | quadruple ParserOp * ParserOp * ParserOp
+    | quintuple ParserOp * ParserOp * ParserOp
+
+  type ParserResult
+
+  op exec : ParserOp -> ParserResult
+
+  type InputText =
+    {line   : PosNat,
+     column : Nat,
+     chars  : List Char}
+
+  op initialInputText : List Char -> InputText
+  def initialInputText chS = {line = 1, column = 0, chars = chS}
+
+  op parseWhite : InputText -> InputText
+  def parseWhite intx =
+    intx
+
+  type ErrorOr a =
+    | OK a
+    | ERR
+
+  type Parser a = InputText -> ErrorOr (InputText * a)
+
+  op parseProof : Parser Proof
+  def parseProof intx =
+    case parseToken intx of
+      | OK (newIntx, str) ->
+          (case str of
+            | "cxTypeDecl" ->
+              (case parseTriple (parseProof, parseToken, parseNat) of
+                | OK (prf, tok, n) -> OK (cxTypeDecl (prf, tok, n))
+            % ...
+          )
+      | ERR -> ERR
+
+
+
+%%% stuff about text and whites:
+
+spec
+
+  (* Proof and judgements have textual representations. This spec defines
+  various notions useful to specify such representations (which is done in
+  other specs). *)
+
+
+  import Libs   % systematically imported
+
+
+  (* We define text as consisting of characters in order. We do not model
+  lines; characters include line breaks. *)
+
+  type Text = FSeq Char
+
+
+  (* So-called "white" characters are special because they have no
+  significance in textual representations of proofs and judgements, except
+  that their presence may be necessary to separate significant textual
+  elements. *)
+
+  op whiteChar? : Char -> Boolean
+  def whiteChar? ch =
+    ch = #\t ||  % horizontal tab
+    ch = #\n ||  % newline
+    ch = #\v ||  % vertical tab
+    ch = #\f ||  % form feed
+    ch = #\r ||  % return
+    ch = #\s     % space
+
+  type WhiteChar = (Char | whiteChar?)
+
+  op nonWhiteChar? : Char -> Boolean
+  def nonWhiteChar? = ~~ whiteChar?
+
+  type NonWhiteChar = (Char | nonWhiteChar?)
+
+  type WhiteText = (Text | forall? whiteChar?)
+
+  type TextWithoutWhite = (Text | forall? nonWhiteChar?)
+
+
+  (* As mentioned above, white characters have no significance, except that
+  their presence is sometimes necessary. Other times their presence is allowed
+  but not required. In order to capture this, we define the notion of abstract
+  character as being either a non-white character or a sequence of white
+  characters. The latter option is subdivided into the case of zero or more
+  white characters and the case of one or more white characters: the first is
+  used when white characters are allowed but not required; the second is used
+  when they are required. Abstract text is defined as consisting of abstract
+  characters in order, with no contiguous white abstract characters (because
+  they would together constitute one abstract white character. *)
+
+  type AbstractChar =
+    | char NonWhiteChar
+    | white0  % 0 or more white characters
+    | white1  % 1 or more white characters
+
+  op whiteAbstractChar? : AbstractChar -> Boolean
+  def whiteAbstractChar? = fn
+    | white0 -> true
+    | white1 -> true
+    | char _ -> false
+
+  op noContiguousWhites? : FSeq AbstractChar -> Boolean
+  def noContiguousWhites? symS =
+    (fa(i:Nat) i < length symS - 1 =>
+      ~(whiteAbstractChar? (symS @ i) && whiteAbstractChar? (symS @ (i+1))))
+
+  type AbstractText = (FSeq AbstractChar | noContiguousWhites?)
+
+
+  (* The predicate below defines the correspondence between abstract text and
+  text. *)
+
+  op abstractedByText infixl 20 : AbstractText * Text -> Boolean
+  def abstractedByText = min (fn absBy ->
+    absBy (empty, empty)
+    &&
+    (fa(wtx:WhiteText) absBy (single white0, wtx))
+    &&
+    (fa(wtx:WhiteText) length wtx > 0 => absBy (single white1, wtx))
+    &&
+    (fa(ch:NonWhiteChar) absBy (single (char ch), single ch))
+    &&
+    (fa (atx1:AbstractText, atx2:AbstractText, tx1:Text, tx2:Text)
+      absBy (atx1, tx1) && absBy (atx2, tx2) =>
+      absBy (atx1 ++ atx2, tx1 ++ tx2)))
+
+  op typeNameToText     : TypeName     -> TextWithoutWhite
+  op operationToText    : Operation    -> TextWithoutWhite
+  op typeVariableToText : TypeVariable -> TextWithoutWhite
+  op variableToText     : Variable     -> TextWithoutWhite
+  op fieldToText        : Field        -> TextWithoutWhite
+  op constructorToText  : Constructor  -> TextWithoutWhite
+  op axiomNameToText    : AxiomName    -> TextWithoutWhite
+
+endspec
+
+
+
 %%% ops to check conditions on types:
 
   (* Check whether type is sum type with distinct constructors and with the

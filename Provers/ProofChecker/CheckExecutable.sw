@@ -9,5 +9,4 @@ a subspec of the spec resulting after substituting (3). *)
 
 Check[SyntaxWithCoreOpsRefinedMorphism]
      [PrimitivesAsStringsMorphism]
-     [morphism /Library/General/FiniteStructures ->
-               /Library/General/FiniteStructuresAsLists {}]
+     [/Library/General/FiniteStructuresAsListsMorphism]
