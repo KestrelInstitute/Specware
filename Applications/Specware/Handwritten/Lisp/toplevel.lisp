@@ -582,8 +582,14 @@
 (defun run-cmd (cmd &rest args)
   (let ((cmd (format nil "~A~{ ~A~}" cmd args)))
     (let ((rc
-	   #+UNIX      (run-shell-command cmd :output *standard-output* :error-output :output :wait t) 
-	   #+MSWINDOWS (run-shell-command cmd :output *standard-output* :error-output :output :wait t)
+	   #+UNIX      (run-shell-command cmd 
+					  :output       *standard-output* 
+					  :error-output :output 
+					  :wait t) 
+	   #+MSWINDOWS (run-shell-command cmd 
+					  ;; :output       *standard-output* ; mysterious problems under windows
+					  ;; :error-output :output           ; mysterious problems under windows
+					  :wait t)
 	   #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
       (unless (equal rc 0)
 	(warn "Return code from run-shell-command was non-zero: ~S" rc))))
