@@ -1,9 +1,8 @@
 echo off
-rem This starts Specware within an Xemacs window (plus a Allegro Lisp Console)
-set SPECWARE4=\Progra~1\Specware4
-rem SWPATH needs /s rather than \s so URI parsing works
-set SWPATH=/Progra~1/Specware4:/
-set XEMACS=C:\Progra~1\XEmacs\XEmacs-21.4.6
+rem These paths are set by the Specware installer.  SWPATH may be changed if your project necessitates it.
+set SPECWARE4=
+set SWPATH=
+set XEMACS_EXE=
 
 rem The following environment variables are used within the emacs
 rem interface to find the executable and the Specware world to run. Note
@@ -23,4 +22,4 @@ set "LISP_HEAP_IMAGE=%SPECWARE4%\Specware4.dxl"
 set LISP_DIRECTORY=%Specware4%/
 cd "%Specware4%"
 
-%XEMACS%\i586-pc-win32\xemacs.exe -l "%SPECWARE4%\Library\IO\Emacs\xeli\fi-site-init" -l "%SPECWARE4%\Library\IO\Emacs\load" -f run-lisp-application
+"%XEMACS_EXE%" -l "%SPECWARE4%\Library\IO\Emacs\xeli\fi-site-init" -l "%SPECWARE4%\Library\IO\Emacs\load" -f run-lisp-application
