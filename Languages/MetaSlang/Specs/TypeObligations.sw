@@ -524,6 +524,7 @@ spec
      let names = StringSet.fromList (map (fn Qualified(q,id) -> id) localOps) in
      let gamma0 = fn tvs -> fn nm -> ([], tvs, spc, nm, names) in
      let tcc = ([],empty) in
+     %% Definitions of ops
      let tcc = 
 	 foldriAQualifierMap
 	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
@@ -535,13 +536,56 @@ spec
 		 tcc)
 	   tcc spc.ops
      in
+     %% Properties (Axioms etc.)
      let baseProperties = (getBaseSpec()).properties in
      let tcc = foldr (fn (pr as (_,name,tvs,fm),tcc) ->
 		       if member(pr,baseProperties) then tcc
 			 else (tcc,gamma0 tvs (name^"_Obligation"))  |- fm ?? boolSort)
                  tcc spc.properties
      in
+     %% Quotient relations are equivalence relations
+     let quotientRelations: Ref(List MS.Term) = Ref [] in
+     let _ = appSpec (fn _ -> (),
+		      fn s ->
+			(case s of
+			   | Quotient(_,r,_) ->
+			     if List.exists (fn rx -> equalTerm?(r,rx)) (!quotientRelations)
+			      then ()
+			      else let _ = (quotientRelations := Cons(r,!quotientRelations)) in ()
+			   | _ -> ()),
+		      fn _ -> ())
+                spc
+     in
+     let tcc = foldl (fn (r,(tccs,names)) -> ((equivalenceConjectures(r,spc)) ++ tccs,names))
+                 tcc (!quotientRelations)
+     in			       
      tcc
+
+ op  equivalenceConjectures: MS.Term * Spec -> List TypeCheckCondition
+ def equivalenceConjectures (r,spc) =
+   let name = nameFromTerm r in
+   let domty = domain(spc,inferType(spc,r)) in
+   let elty = hd(productSorts(spc,domty)) in
+   let tyVars = freeTyVars elty in
+   let x = ("x",elty) in
+   let y = ("y",elty) in
+   let z = ("z",elty) in
+   [%% fa(x) r(x,x)
+    (name^"_reflexive",tyVars,
+     mkBind(Forall,[x],mkAppl(r,[mkVar x,mkVar x]))),
+    %% fa(x,y) r(x,y) => r(y,x)
+    (name^"_symmetric",tyVars,
+     mkBind(Forall,[x,y],mkImplies(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar x])))),
+    %% fa(x,y,z) r(x,y) & r(y,z) => r(x,z)
+    (name^"_transitive",tyVars,
+     mkBind(Forall,[x,y,z],mkImplies(MS.mkAnd(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar z])),
+				     mkAppl(r,[mkVar x,mkVar z]))))]
+
+ op  nameFromTerm: MS.Term -> String
+ def nameFromTerm t =
+   case t of
+     | Fun(Op(Qualified(q,id),_),_,_) -> id
+     | _ -> "UnnamedRelation"
 
  def makeTypeCheckObligationSpec (spc,specCalcTerm) =
    %% if you only do an addImport to the emptyspec you miss all the substance of the

@@ -558,7 +558,7 @@ spec {
 
  op consistentSorts?: LocalEnv * MS.Sort * MS.Sort -> Boolean
  def consistentSorts?(env,srt1,srt2) =
-   let free_meta_ty_vars = freeTypeVars(srt1) ++ freeTypeVars(srt2) in
+   let free_meta_ty_vars = freeMetaTypeVars(srt1) ++ freeMetaTypeVars(srt2) in
    let (val,_) = (unifySorts env srt1 srt2) in
    (clearMetaTyVarLinks free_meta_ty_vars;
     val)
@@ -570,7 +570,7 @@ spec {
       meta_ty_vars
 
 
- def freeTypeVars(srt) = 
+ def freeMetaTypeVars(srt) = 
    let vars = (Ref []) : Ref(MS.MetaTyVars) in
    let def vr(srt) = 
          case srt

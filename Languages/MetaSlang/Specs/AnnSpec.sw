@@ -106,7 +106,6 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
-(* ### unused?
  op appSpec    : fa(a) appTSP a -> ASpec a    -> ()
 
  def appSpec tsp spc = 
@@ -123,7 +122,6 @@ AnnSpec qualifying spec
    app
      (fn (_, nm, tvs, term) -> appt term)
      spc.properties)
-*)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Sorts, Ops
@@ -428,8 +426,8 @@ def equalProperty?((propType1, propName1, tyVars1, term1), (propType2, propName2
   setProperties (spc, 
                  spc.properties ++ [(Theorem : PropertyType, name, type_vars, formula)])
 
- def addConjectures (conjectures, spc) = foldr addConjecture spc conjectures
- def addTheorems    (theorems,    spc) = foldr addTheorem    spc theorems
+ def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
+ def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems
  def addLocalSortName (spc as {importInfo = {imports, importedSpec, localOps, localSorts},
                                sorts, ops, properties},
                        new_local_sort) =

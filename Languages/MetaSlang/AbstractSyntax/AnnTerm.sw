@@ -1138,11 +1138,9 @@ MetaSlang qualifying spec {
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
-(* ### unused?
  sort appTSP a = (ATerm    a -> ()) *
                  (ASort    a -> ()) *
                  (APattern a -> ())
-*)
 
  sort ATermOpt a = Option(ATerm a)
  sort ASortOpt a = Option(ASort a)
@@ -1152,7 +1150,6 @@ MetaSlang qualifying spec {
  sort ASortSchemes b = List (ASortScheme b)
  sort ATermSchemes b = List (ATermScheme b)
 
-(* ### unused?
  op appTerm        : fa(a) appTSP a -> ATerm        a -> ()
  op appSort        : fa(a) appTSP a -> ASort        a -> ()
  op appPattern     : fa(a) appTSP a -> APattern     a -> ()
@@ -1241,7 +1238,7 @@ MetaSlang qualifying spec {
 
  def appTermSchemes tsp_apps term_schemes =
    app (fn (_,term) -> appTerm tsp_apps term) term_schemes
-*)
+
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Misc Base Terms

@@ -258,6 +258,24 @@ Utilities qualifying spec
     | (key,value) :: alist_tail -> 
       if desired_key?(key) then Some value else lookup(desired_key?, alist_tail)
 
+
+
+ op  freeTyVars: Sort -> TyVars
+ def freeTyVars(srt) = 
+   let vars = Ref [] in
+   let def vr(srt) = 
+         case srt of
+	   | TyVar(tv,_) -> (vars := Cons (tv,! vars); ())
+	   | MetaTyVar(tv,pos) -> 
+	     (case unlinkSort srt of
+	       | TyVar(tv,_) -> (vars := Cons (tv,! vars); ())
+	       | _ -> ())
+	   | _ -> ()
+   in
+   let _ = appSort(fn _ -> (),vr,fn _ -> ()) srt in
+   ! vars
+
+
  % This implementation of substitution 
  % completely ignores free variables in sorts.
  %
