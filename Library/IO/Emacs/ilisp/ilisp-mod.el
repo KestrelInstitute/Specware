@@ -111,7 +111,7 @@ Takes the program name from the variable ilisp-program.
 			    (run-hooks 'ilisp-init-hook-local))))
 	(setq ilisp-initialized (delete* ilisp-buffer ilisp-initialized
 					 :test #'equal))
-	(unless (member* names ilisp-buffers :key #'car)
+	(unless (member* names ilisp-buffers :key #'car :test #'equal)
 	  (setq ilisp-buffers (cons (list names) ilisp-buffers)))
 	(lisp-pop-to-buffer ilisp-buffer)
 	(setq start (window-start (selected-window))

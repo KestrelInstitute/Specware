@@ -40,10 +40,11 @@
 (defvar msWindowsSystem? #+mswindows t #-mswindows nil)
 
 ;;;  op temporaryDirectory : String
-(defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
-                                             #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-					     #+(or mcl cmu sbcl) "/tmp/"
-					     ))
+(defparameter temporaryDirectory
+    (substitute #\/ #\\ (namestring #+allegro   (SYSTEM:temporary-directory)
+				    #+Lispworks SYSTEM::*TEMP-DIRECTORY*
+				    #+(or mcl cmu sbcl) "/tmp/"
+				    )))
 
 
 ;;; op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a

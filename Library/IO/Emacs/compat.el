@@ -66,7 +66,8 @@
     (load "ilisp/ilisp"))
   (setq lisp-program (getenv "LISP_EXECUTABLE"))
   (setq expand-symlinks-rfs-exists t)
-  (defvar *specware-lisp* (if (search "alisp" lisp-program)
+  (defvar *specware-lisp* (if (or (search "alisp" lisp-program)
+				  (search "build" lisp-program))
 			      'allegro
 			    (if (search "dpccl" lisp-program)
 				'openmcl
@@ -103,8 +104,13 @@
 				 common-lisp-image-file)
 		       common-lisp-image-name))
 		   (allegro (concat common-lisp-image-name
+				    " "
+				    (apply #'concat common-lisp-image-arguments)
 				    " -I "
-				    common-lisp-image-file))
+				    common-lisp-image-file
+				    (if *windows-system-p*
+					" -e \"(setf (eol-convention *standard-output*) :unix)\""
+				      "")))
 		   (otherwise
 		     (concat common-lisp-image-name " "
 			     common-lisp-image-file)))

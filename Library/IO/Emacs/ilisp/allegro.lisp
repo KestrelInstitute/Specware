@@ -14,8 +14,6 @@
 ;;; Allegro initializations
 ;;; Author: Chris McConnell, ccm@cs.cmu.edu
 
-(format t "Loading cl-ilisp...~%")
-
 (in-package :ilisp)
 
 ;;; 20001203 Patch suggested by Larry Hunter <Larry.Hunter@uchsc.edu>

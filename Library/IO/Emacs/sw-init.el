@@ -51,7 +51,8 @@
     (unless (and sw:common-lisp-image-file (not in-current-dir?))
       (setq sw:common-lisp-image-file world-name))
     (setq sw:common-lisp-image-arguments
-      (if *windows-system-p* '("+cn") nil))
+      (if (and *windows-system-p* (equal lisp-emacs-interface-type 'franz))
+	  '("+cn") nil))
     (when (getenv "SOCKET_INIT_FILE")
       (set-socket-init-for-specware))
 
@@ -60,9 +61,7 @@
       (sw:common-lisp sw:common-lisp-buffer-name
 		      sw:common-lisp-directory
 		      sw:common-lisp-image-name
-		      (if *windows-system-p*
-			  (cons "+cn" sw:common-lisp-image-arguments)
-			sw:common-lisp-image-arguments)
+		      sw:common-lisp-image-arguments
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
