@@ -1006,10 +1006,10 @@ def convertPattern(spc,pat as (p,_):Pattern):pattern =
 	  * constructors.
           *)
        | WildPat srt -> Var("",srt)
-       | StringPat s -> Con(CONST{const = STRING s,span = 0},[],stringSort())
-       | BoolPat b   -> Con(CONST{const = BOOL b,span = 2},[],boolSort())
-       | NatPat n    -> Con(CONST{const = NAT n,span = 0},[],intSort())
-       | CharPat ch  -> Con(CONST{const = CHAR ch,span = 256},[],charSort())
+       | StringPat s -> Con(CONST{const = STRING s,span = 0},[],stringSort)
+       | BoolPat b   -> Con(CONST{const = BOOL b,span = 2},[],boolSort)
+       | NatPat n    -> Con(CONST{const = NAT n,span = 0},[],intSort)
+       | CharPat ch  -> Con(CONST{const = CHAR ch,span = 256},[],charSort)
 
 def patternSort(pat:pattern):Sort = 
     case pat

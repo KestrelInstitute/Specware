@@ -841,7 +841,7 @@ SpecsToI2L qualifying spec {
     foldr (fn((fid,fsrt),body) ->
 	   let b = sortAnn(osrt) in
 	   let projsrt = Arrow(osrt,fsrt,b) in
-	   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),boolSort b,b) in
+	   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),boolASort b,b) in
 	   let proj = Fun(Project(fid),projsrt,b) in
 	   let t1 = Apply(proj,varx,b) in
 	   let t2 = Apply(proj,vary,b) in
@@ -849,7 +849,7 @@ SpecsToI2L qualifying spec {
 	   if body = mkTrue() then t
 	   else
 	     let andqid = Qualified("Boolean","&") in
-	     let andSrt = Arrow(Product([("1",boolSort b),("2",boolSort b)],b),boolSort b,b) in
+	     let andSrt = Arrow(Product([("1",boolASort b),("2",boolASort b)],b),boolASort b,b) in
 	     let andTerm = Fun(Op(andqid,Infix(Right,15)),andSrt,b) in
 	     Apply(andTerm,Record([("1",t),("2",body)],b),b)
 	     %IfThenElse(t,body,mkFalse(),b)

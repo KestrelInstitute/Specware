@@ -1245,7 +1245,7 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
   in
   let
     def getEqOpSort(srt,b) =
-      Arrow(Product([("1",srt),("2",srt)],b),(boolSort b),b)
+      Arrow(Product([("1",srt),("2",srt)],b),(boolASort b),b)
   in
   let
     def addEqOp(eqqid as Qualified(eq,eid),osrt,body,b) =
@@ -1277,7 +1277,7 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
 	  def getEqTermFromProductFields(fields,osrt,varx,vary) =
 	    foldr (fn((fid,fsrt),body) ->
 		   let projsrt = Arrow(osrt,fsrt,b) in
-		   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),boolSort b,b) in
+		   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),boolASort b,b) in
 		   let proj = Fun(Project(fid),projsrt,b) in
 		   let t1 = Apply(proj,varx,b) in
 		   let t2 = Apply(proj,vary,b) in
@@ -1285,7 +1285,7 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
 		   if body = mkTrue() then t
 		   else
 		     let andqid = Qualified("Boolean","&") in
-		     let andSrt = Arrow(Product([("1",boolSort b),("2",boolSort b)],b),boolSort b,b) in
+		     let andSrt = Arrow(Product([("1",boolASort b),("2",boolASort b)],b),boolASort b,b) in
 		     let andTerm = Fun(Op(andqid,Infix(Right,15)),andSrt,b) in
 		     Apply(andTerm,Record([("1",t),("2",body)],b),b)
 		     %IfThenElse(t,body,mkFalse(),b)
@@ -1308,7 +1308,7 @@ def addEqOpsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
 	        let body = getEqTermFromProductFields(fields,osrt,varx,vary) in
 		addEqOp(eqqid,osrt,body,b)
 	      | CoProduct(fields,_) ->
-		let applysrt = Arrow(osrt,boolSort b,b) in
+		let applysrt = Arrow(osrt,boolASort b,b) in
 		let match =
 		foldr (fn((fid,optfsrt),match) ->
 		       let xpat = EmbedPat(fid,case optfsrt of None -> None | Some fsrt -> Some(VarPat(("x0",fsrt),b)),osrt,b) in

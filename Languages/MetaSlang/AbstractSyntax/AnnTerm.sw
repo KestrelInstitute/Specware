@@ -105,8 +105,7 @@ MetaSlang qualifying spec {
   | CoProduct    List (Id * Option (ASort b))        * b
   | Quotient     ASort b * ATerm b                   * b
   | Subsort      ASort b * ATerm b                   * b
-  | Base         QualifiedId * List (ASort b)        * b
-%  | Base        QualifiedId * List (ASort b)        * b  % Before elaborateSpec
+  | Base         QualifiedId * List (ASort b)        * b  % Typechecker verifies that QualifiedId refers to some sortInfo 
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
        
@@ -125,7 +124,15 @@ MetaSlang qualifying spec {
   | SortedPat    APattern b * ASort b                * b  % Before elaborateSpec
 
  sort AFun b = 
+
+  | Not
+  | And
+  | Or
+  | Cond
+  | Iff
   | Equals 
+  | NotEquals 
+
   | Quotient
   | Choose
   | Restrict
@@ -520,7 +527,14 @@ MetaSlang qualifying spec {
      | (PRestrict t1,       PRestrict t2)       -> equalTerm? (t1, t2)
      | (PRelax    t1,       PRelax    t2)       -> equalTerm? (t1, t2)
 
+     | (Not,                Not         )       -> true
+     | (And,                And         )       -> true
+     | (Or,                 Or          )       -> true
+     | (Cond,               Cond        )       -> true
+     | (Iff,                Iff         )       -> true
      | (Equals,             Equals      )       -> true
+     | (NotEquals,          NotEquals   )       -> true
+
      | (Quotient,           Quotient    )       -> true
      | (Choose,             Choose      )       -> true
      | (Restrict,           Restrict    )       -> true
@@ -619,7 +633,14 @@ MetaSlang qualifying spec {
      | (PRestrict t1,       PRestrict t2)       -> equalTermStruct? (t1, t2)
      | (PRelax    t1,       PRelax    t2)       -> equalTermStruct? (t1, t2)
 
+     | (Not,                Not         )       -> true
+     | (And,                And         )       -> true
+     | (Or,                 Or          )       -> true
+     | (Cond,               Cond        )       -> true
+     | (Iff,                Iff         )       -> true
      | (Equals,             Equals      )       -> true
+     | (NotEquals,          NotEquals   )       -> true
+
      | (Quotient,           Quotient    )       -> true
      | (Choose,             Choose      )       -> true
      | (Restrict,           Restrict    )       -> true
@@ -1431,11 +1452,11 @@ MetaSlang qualifying spec {
  def mkABase (qid, srts, a) = Base (qid, srts, a)
 
  op boolASort : fa(b) b -> ASort b
- def boolSort a = mkABase (Qualified ("Boolean", "Boolean"), [], a)
+ def boolASort a = mkABase (Qualified ("Boolean", "Boolean"), [], a)
 
  op mkTrueA  : fa(b) b -> ATerm b
  op mkFalseA : fa(b) b -> ATerm b
 
- def mkTrueA (a) = Fun (Bool true,  boolSort a, a)
- def mkFalseA(a) = Fun (Bool false, boolSort a, a)
+ def mkTrueA (a) = Fun (Bool true,  boolASort a, a)
+ def mkFalseA(a) = Fun (Bool false, boolASort a, a)
 }
