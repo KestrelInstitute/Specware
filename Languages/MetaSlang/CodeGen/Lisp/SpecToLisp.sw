@@ -307,28 +307,27 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
     | (Not, srt, _ ) ->
       let oper = mkLOp("cl:not") in
       (case optArgs of
-         | None -> oper  
+        %| None -> oper  
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (And, srt, _ ) ->
       % Note: And ("&&") is non-strict -- it might not evalute the second arg.
       %       This means it is not commutative wrt termination.
       let oper = mkLOp("cl:and") in  % lisp AND is also non-strict
       (case optArgs of
-         | None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
+        %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Or, srt, _ ) ->
       % Note: Or ("||") is non-strict -- it might not evalute the second arg
       %       This means it is not commutative wrt termination.
       let oper = mkLOp("cl:or") in  % lisp OR is also non-strict
       (case optArgs of
-         | None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
+        %| None -> oper  % TODO: is this situation possible? Given note above, should it be allowed?
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (Implies, srt, _ ) ->
       % Note: Implies ("=>") is non-strict -- it might not evalute the second arg.
       %       This means it is not commutative (to the contrapositive) wrt termination.
       (case optArgs of
-         | None -> 
-	   mkLOp ("slang-built-in:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
+        %| None ->  mkLOp ("slang-built-in:implies-2") % TODO: is this situation possible? Given note above, should it be allowed?
 	 | Some (Record([(_,x),(_,y)],_)) ->
 	   % "x => y" = "if x then y else true" = "or (~ x, y)"
 	   mkLApply (mkLOp("cl:or"),         
@@ -339,7 +338,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
       % Note: Iff ("<=>") is strict, becasue the second arg must be evaluated, no matter what the value of the first arg is.
       %       This means it is commmuative wrt termination.
       (case optArgs of
-         | None -> mkLOp("cl:eq") % presumably boolean-valued args each evaluate to T or NIL, so this should be ok.
+        %| None -> mkLOp("cl:eq") % presumably boolean-valued args each evaluate to T or NIL, so this should be ok.
 	 | Some (Record([(_, x), (_, y)],_)) ->
 	   % "x => y" = "if x then y else ~ y"
 	   mkLIf (mkLTerm(sp,dpn,vars,x),
@@ -349,12 +348,11 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
     | (Equals,srt,_) ->
       let oper = mkLOp(mkLEqualityOp(sp,srt)) in
       (case optArgs of
-         | None -> oper
+        %| None -> oper
 	 | Some arg -> mkLApply (oper,mkLTermList(sp,dpn,vars,arg)))
     | (NotEquals,srt,_) ->
       (case optArgs of
-         | None -> 
-           mkLOp(mkLInEqualityOp(sp,srt))
+        %| None -> mkLOp(mkLInEqualityOp(sp,srt))
 	 | Some arg -> 
 	   %% for efficiency, open-code the call to not
            %% let ineq_op = mkLOp(mkLInEqualityOp(sp,srt)) in

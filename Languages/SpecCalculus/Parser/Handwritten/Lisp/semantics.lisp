@@ -704,6 +704,14 @@ If we want the precedence to be optional:
 					      '(:|Nonfix|))))
 			 (new-v (vector new-f (svref v 1) (svref v 2))))
 		    (cons :|Fun| new-v)))
+
+		 ((member (car f) '(:|And| :|Or| :|Implies| :|Iff|))
+		  (ms::mkUnaryBooleanFn (car f)))
+		 ((eq (car f) :|Not|)
+		  (ms::mkBinaryBooleanFn (car f)))
+		 ((member (car f) '(:|Equals| :|NotEquals|))
+		  (ms::mkBinaryPolyBooleanFn (car f)))
+
 		 (t
 		  x))))
 	(t

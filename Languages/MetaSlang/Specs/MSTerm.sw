@@ -290,4 +290,45 @@ MS qualifying spec
 	 else [t]
       | _ -> [t]
 
+
+  op mkUnaryBooleanFn : Fun -> Term
+ def mkUnaryBooleanFn f =
+   let pos = Internal "mkUnaryBooleanFn" in
+   let pattern = VarPat (("x", Boolean pos), pos) in
+   let f       = Fun (f, unaryBoolSort, pos) in
+   let arg     = Var (("x", Boolean pos), pos) in
+   let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
+   Lambda ([branch], pos)
+
+  op mkBinaryBooleanFn : Fun -> Term
+ def mkBinaryBooleanFn f =
+   let pos = Internal "mkBinaryBooleanFn" in
+   let pattern = RecordPat ([("1", VarPat(("x", Boolean pos), pos)),
+			     ("2", VarPat(("x", Boolean pos), pos))],
+			    pos)
+   in
+   let f       = Fun (f, binaryBoolSort, pos) in
+   let arg     = Record ([("1", Var(("x", Boolean pos), pos)),
+			  ("2", Var(("x", Boolean pos), pos))],
+			 pos)
+   in
+   let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
+   Lambda ([branch], pos)
+
+  op mkBinaryPolyBooleanFn : Fun -> Term
+ def mkBinaryPolyBooleanFn f =
+   let pos = Internal "mkBinaryPolyBooleanFn" in
+   let pattern = RecordPat ([("1", VarPat(("x", TyVar ("a", pos)), pos)),
+			     ("2", VarPat(("x", TyVar ("a", pos)), pos))],
+			    pos)
+   in
+   let f       = Fun (f, binaryBoolSort, pos) in
+   let arg     = Record ([("1", Var(("x", TyVar ("a", pos)), pos)),
+			  ("2", Var(("x", TyVar ("a", pos)), pos))],
+			 pos)
+   in
+   let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
+   Lambda ([branch], pos)
+
+
 endspec
