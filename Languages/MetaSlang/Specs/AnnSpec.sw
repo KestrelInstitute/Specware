@@ -270,9 +270,11 @@ AnnSpec qualifying spec
  %%% Qualification flag
  op qualifiedSpec?: [a] ASpec a -> Boolean
  op markQualified:  [a] ASpec a -> ASpec a
+ op markUnQualified:  [a] ASpec a -> ASpec a
  
  def qualifiedSpec? spc = spc.qualified?
  def markQualified  spc = spc << {qualified? = true}
+ def markUnQualified  spc = spc << {qualified? = false}
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP map over Specs
