@@ -43,7 +43,7 @@
 (defparameter temporaryDirectory
     (substitute #\/ #\\ (namestring #+allegro   (SYSTEM:temporary-directory)
 				    #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-				    #+unix "/tmp/"
+				    #+(and unix (not allegro))  "/tmp/"
 				    )))
 
 
