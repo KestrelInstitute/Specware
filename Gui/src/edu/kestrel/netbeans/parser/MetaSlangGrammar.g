@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/01/30 22:02:38  gilham
+ * Improved parse error messages for non-word symbols such as ":".
+ *
  * Revision 1.1  2003/01/30 02:02:18  gilham
  * Initial version.
  *
@@ -366,7 +369,6 @@ private colon
     exception
     catch [RecognitionException ex] {
        int line = t.getLine();
-       int column = t.getColumn();
        String msg = "expecting \":\", found \"" + t.getText() + "\"";
        throw new RecognitionException(msg, null, line);
     }
@@ -377,7 +379,6 @@ private eq
     exception
     catch [RecognitionException ex] {
        int line = t.getLine();
-       int column = t.getColumn();
        String msg = "expecting \"=\", found \"" + t.getText() + "\"";
        throw new RecognitionException(msg, null, line);
     }
@@ -388,7 +389,6 @@ private rarrow
     exception
     catch [RecognitionException ex] {
        int line = t.getLine();
-       int column = t.getColumn();
        String msg = "expecting \"->\", found \"" + t.getText() + "\"";
        throw new RecognitionException(msg, null, line);
     }
@@ -399,7 +399,6 @@ private star
     exception
     catch [RecognitionException ex] {
        int line = t.getLine();
-       int column = t.getColumn();
        String msg = "expecting \"*\", found \"" + t.getText() + "\"";
        throw new RecognitionException(msg, null, line);
     }
@@ -410,7 +409,6 @@ private vbar
     exception
     catch [RecognitionException ex] {
        int line = t.getLine();
-       int column = t.getColumn();
        String msg = "expecting \"|\", found \"" + t.getText() + "\"";
        throw new RecognitionException(msg, null, line);
     }
@@ -421,7 +419,6 @@ private slash
     exception
     catch [RecognitionException ex] {
        int line = t.getLine();
-       int column = t.getColumn();
        String msg = "expecting \"/\", found \"" + t.getText() + "\"";
        throw new RecognitionException(msg, null, line);
     }
@@ -481,7 +478,7 @@ BLOCK_COMMENT
        // newlines is ambiguous.  Consequently, the resulting grammar
        // must be ambiguous.  This warning is shut off.
        options {generateAmbigWarnings=false;}
-       : { LA(2)!='(' }? '*'
+       : { LA(2)!=')' }? '*'
 	 | '\r' '\n'		{newline();}
 	 | '\r'			{newline();}
 	 | '\n'			{newline();}

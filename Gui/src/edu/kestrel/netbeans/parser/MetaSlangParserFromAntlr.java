@@ -641,7 +641,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		catch (RecognitionException ex) {
 			
 			int line = t.getLine();
-			int column = t.getColumn();
 			String msg = "expecting \":\", found \"" + t.getText() + "\"";
 			throw new RecognitionException(msg, null, line);
 			
@@ -1220,7 +1219,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		catch (RecognitionException ex) {
 			
 			int line = t.getLine();
-			int column = t.getColumn();
 			String msg = "expecting \"=\", found \"" + t.getText() + "\"";
 			throw new RecognitionException(msg, null, line);
 			
@@ -1240,7 +1238,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		catch (RecognitionException ex) {
 			
 			int line = t.getLine();
-			int column = t.getColumn();
 			String msg = "expecting \"->\", found \"" + t.getText() + "\"";
 			throw new RecognitionException(msg, null, line);
 			
@@ -1260,7 +1257,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		catch (RecognitionException ex) {
 			
 			int line = t.getLine();
-			int column = t.getColumn();
 			String msg = "expecting \"*\", found \"" + t.getText() + "\"";
 			throw new RecognitionException(msg, null, line);
 			
@@ -1280,7 +1276,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		catch (RecognitionException ex) {
 			
 			int line = t.getLine();
-			int column = t.getColumn();
 			String msg = "expecting \"|\", found \"" + t.getText() + "\"";
 			throw new RecognitionException(msg, null, line);
 			
@@ -1300,7 +1295,6 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		catch (RecognitionException ex) {
 			
 			int line = t.getLine();
-			int column = t.getColumn();
 			String msg = "expecting \"/\", found \"" + t.getText() + "\"";
 			throw new RecognitionException(msg, null, line);
 			
