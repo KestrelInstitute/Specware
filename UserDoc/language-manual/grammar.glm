@@ -108,9 +108,9 @@ easy reference.
 ||  
 ||  `swpath-based-path ::= / `relative-path
 ||  
-||  `relative-path ::= { `name / }* `name [ # `fragment-identifier ]
+||  `relative-path ::= { `path-element / }* `path-element [ # `path-element ]
 ||  
-||  `fragment-identifier ::= `word-symbol
+||  `path-element ::= `word-symbol
 >>
 </para>
 </formalpara>

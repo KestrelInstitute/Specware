@@ -34,7 +34,7 @@ describes how the properties of one map to the properties of
 another. Morphisms describe both part-of and is-a
 relationships. You can propagate theorems from one
 specification to another using morphisms; for example, if the
-QETI is a ship, and ships cannot fly, then the QETI cannot
+QEII is a ship, and ships cannot fly, then the QEII cannot
 fly.</para>
 
 </section>
