@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.19  2003/03/14 04:15:31  weilyn
+ * Added support for proof terms
+ *
  * Revision 1.18  2003/03/13 01:23:55  gilham
  * Handle Latex comments.
  * Report Lexer errors.
@@ -1000,24 +1003,25 @@ BLOCK_COMMENT
 
 // Latex comments -- ignored
 LATEX_COMMENT
-    : "\\end{spec}"
-    | ( "\\section{"
-      | "\\subsection{"
-      | "\\document{"
-      )
-      (// '\r' '\n' can be matched in one alternative or by matching
-       // '\r' in one iteration and '\n' in another.  The language
-       // that allows both "\r\n" and "\r" and "\n" to be valid
-       // newlines is ambiguous.  Consequently, the resulting grammar
-       // must be ambiguous.  This warning is shut off.
-       options {generateAmbigWarnings=false;}
-       : { LA(2)!='b' || LA(3)!='e' || LA(4) !='g' || LA(5) !='i' || LA(6) !='n' || LA(7) != '{' || LA(8) != 's' || LA(9) != 'p' || LA(10) != 'e' || LA(11) != 'c' || LA(12) != '}'}? '\\'
-	 | '\r' '\n'		{newline();}
-	 | '\r'			{newline();}
-	 | '\n'			{newline();}
-	 | ~('\\'|'\n'|'\r')
-         )*
-      "\\begin{spec}"           {_ttype = Token.SKIP;}
+    : ( "\\end{spec}"
+      | ( "\\section{"
+      	| "\\subsection{"
+      	| "\\document{"
+      	)
+      	(// '\r' '\n' can be matched in one alternative or by matching
+       	// '\r' in one iteration and '\n' in another.  The language
+       	// that allows both "\r\n" and "\r" and "\n" to be valid
+       	// newlines is ambiguous.  Consequently, the resulting grammar
+       	// must be ambiguous.  This warning is shut off.
+       	options {generateAmbigWarnings=false;}
+       	: { LA(2)!='b' || LA(3)!='e' || LA(4) !='g' || LA(5) !='i' || LA(6) !='n' || LA(7) != '{' || LA(8) != 's' || LA(9) != 'p' || LA(10) != 'e' || LA(11) != 'c' || LA(12) != '}'}? '\\'
+	  | '\r' '\n'		{newline();}
+	  | '\r'		{newline();}
+	  | '\n'		{newline();}
+	  | ~('\\'|'\n'|'\r')
+          )*
+      	"\\begin{spec}"
+      )                         {_ttype = Token.SKIP;}
     ;
 
 //-----------------------------
