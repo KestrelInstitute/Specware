@@ -291,8 +291,17 @@ The unit of the monad.
 Raise an exception. Should this be called throw?
 
 \begin{spec}
+  op specwareWizard? : Boolean
+
   op raise : fa (a) Exception -> Env a
-  def raise except = fn state -> (Exception except, state)
+  def raise except = fn state -> 
+    let _ =
+      if specwareWizard? then
+        fail (System.toString except)
+      else
+        ()
+    in
+      (Exception except, state)
 \end{spec}
 
 This is meant to be for unrecoverable errors. Perhaps it should just call

@@ -22,6 +22,8 @@ then it seems to be executed at compile time ... and fails
 immediately. Perhaps it won't be a problem when the bootstrap
 changes and when the toplevel loop actually does something.
 
+This is not used at present.
+
 \begin{spec}
   op runSpecware : () -> ()
   def runSpecware () =
@@ -56,41 +58,23 @@ in place of ".".
     let run = {
       currentURI <- pathToCanonicalURI ".";
       setCurrentURI currentURI;
-      uri <- pathToRelativeURI path; 
-      evaluateTerm (URI uri,pos0)
+      uri <- pathToRelativeURI (removeSWsuffix path); 
+      evaluateURI pos0 uri;
+      return ()
     } in
     case catch run toplevelHandler initialSpecwareState of
       | (Ok val,_) -> ()
       | (Exception _,_) -> fail "Specware toplevel handler failed"
 \end{spec}
 
-The following is designed to allow for use by a lisp read-eval-print loop.
+We provide two functions (callable from the Lisp read-eval-print loop)
+that invoke the corresponding evaluation functions for the Spec Calculus.
+The first just evaluates a URI. The second evaluates a URI and then
+compiles the resulting specification to lisp.
 
 \begin{spec}
-  op runSpecwareURIenv : String * State -> (SpecCalc.Result Value) * State
-  def runSpecwareURIenv (path,specwareState) = 
-    let run = {
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
-      uri <- pathToRelativeURI path; 
-      evaluateTerm (URI uri,pos0)
-    } in
-    catch run toplevelHandler specwareState
-\end{spec}
-
-An experimental alternative to the above.
-
-\begin{spec}
-  op removeSWsuffix : String -> String
-  def removeSWsuffix path =
-    case (rev (explode path)) of
-      | #w :: #s :: #. ::rest -> implode (rev rest)
-      | _ -> path
-\end{spec}
-
-\begin{spec}
-  op evaluateURIfromLisp : String -> ()
-  def evaluateURIfromLisp path = 
+  op evaluateURI_fromLisp : String -> ()
+  def evaluateURI_fromLisp path = 
     let run = {
       restoreSavedSpecwareState;
       currentURI <- pathToCanonicalURI ".";
@@ -105,6 +89,33 @@ An experimental alternative to the above.
 \end{spec}
 
 \begin{spec}
+  op evaluateLispCompile_fromLisp : String * Option String -> ()
+  def evaluateLispCompile_fromLisp (path,targetFile) = 
+    let target =
+      case targetFile of
+        | None -> None
+        | Some name -> Some (maybeAddSuffix name ".lisp") in
+    let run = {
+      restoreSavedSpecwareState;
+      currentURI <- pathToCanonicalURI ".";
+      setCurrentURI currentURI;
+      uri <- pathToRelativeURI (removeSWsuffix path); 
+      spcInfo <- evaluateURI pos0 uri;
+      evaluateLispCompile (spcInfo,(URI uri,pos0), target);
+      saveSpecwareState
+    } in
+    case catch run toplevelHandler ignoredState of
+      | (Ok val,_) -> ()
+      | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
+When the lisp file for Specware is compiled and loaded, the following
+will initialize a lisp variable holding the initial state for the
+Specware environment. Subsequent invocations of the evaluate functions
+above, retrieve and restore the saved state, do some work, and save the
+state again in the lisp variable.
+
+\begin{spec}
   op initializeSavedSpecwareState : ()
   def initializeSavedSpecwareState = 
     case saveSpecwareState initialSpecwareState of
@@ -115,29 +126,30 @@ An experimental alternative to the above.
   def ignoredState = initialSpecwareState
 \end{spec}
 
-Allow the user to compile a URI from the lisp interface.
+\begin{spec}
+  op removeSWsuffix : String -> String
+  def removeSWsuffix path =
+    case (rev (explode path)) of
+      | #w :: #s :: #. ::rest -> implode (rev rest)
+      | _ -> path
+\end{spec}
+
+Maybe this belongs in Evaluate/Generate.sw and applied to
+in all cases where a Generate term is evaluated rather
+than only at toplevel invocations?
 
 \begin{spec}
-  op compileSpecwareURIenv : String * Option String * State
-                            -> (SpecCalc.Result Value) * State
-  def compileSpecwareURIenv (path,targetfile,specwareState) = 
-    let run = {
-      currentURI <- pathToCanonicalURI ".";
-      setCurrentURI currentURI;
-      uri <- pathToRelativeURI path; 
-      evaluateAndLispCompile (uri, targetfile)
-    } in
-    catch run toplevelHandler specwareState
-
-  op evaluateAndLispCompile: RelativeURI * Option String -> SpecCalc.Env Value
-  def evaluateAndLispCompile (uri, targetfile) =
-    {spcInfo <- evaluateTermInfo(URI uri,pos0);
-     (value,_,_) <- evaluateLispCompile(spcInfo,(URI uri,pos0), targetfile);
-     return value}
+  op maybeAddSuffix : String -> String -> String
+  def maybeAddSuffix path suffix =
+    if (List.member (#., explode path)) then
+      path
+    else
+      path ^ suffix
 \end{spec}
 
 Eventually, this will be a read/eval/print loop for Specware.
-At present we are using the Lisp interface.
+At present we are using the Lisp interface and the following is
+not used.
 
 \begin{spec}
   op toplevelLoop : SpecCalc.Env ()
@@ -150,8 +162,12 @@ now, this handles all exceptions, For all exceptions except Fail, it
 constructs and prints a message.  For Fail exceptions, it calls fail to
 enter the Lisp debugger as this indicates an internal (Specware) error.
 
+Note that the toplevel handler is now monomorphic. All toplevel
+functions have unit type (within the monad). It seems to make
+sense that no toplevel functions return anything.
+
 \begin{spec}
-  op toplevelHandler : fa (a) Exception -> SpecCalc.Env a
+  op toplevelHandler : Exception -> SpecCalc.Env ()
   def toplevelHandler except =
     {cleanupGlobalContext;		% Remove InProcess entries
      saveSpecwareState;			% So work done before error is not lost
@@ -164,7 +180,7 @@ enter the Lisp debugger as this indicates an internal (Specware) error.
              ^ " at "
              ^ (showPosition position)
          | ParserError fileName ->
-               "Syntax error in file "
+               "Syntax error: file "
              ^ fileName
          | CircularDefinition uri ->
                "Circular definition: " ^ showURI uri
@@ -172,7 +188,7 @@ enter the Lisp debugger as this indicates an internal (Specware) error.
                "Syntax error: "
              ^ msg
          | URINotFound (position,uri) ->
-               "Could not find unit: "
+               "Unknown unit error: "
              ^ (showRelativeURI uri)
              ^ (if position = pos0 then
                   ""
@@ -181,8 +197,10 @@ enter the Lisp debugger as this indicates an internal (Specware) error.
          | TypeCheck (position,str) ->
                "Type error: "
              ^ str
-             ^ " at "
-             ^ (showPosition position)
+             ^ (if position = pos0 then
+                  ""
+                else
+                  (" referenced from " ^ (showPosition position)))
          %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
          | OldTypeCheck str ->
                "Type errors:\n"
@@ -194,11 +212,17 @@ enter the Lisp debugger as this indicates an internal (Specware) error.
              ^ (showPosition position)
          | _ -> "Unknown exception")
      in
-       mFail message}
+       if specwareWizard? then
+         fail message
+       else
+         print message}
 \end{spec}
 
-This handwritten functions save and set the state in the lisp environment
-so that the successful work you have done before the error is kept.
+These are hooks to handwritten function that save and restore the
+Specware state in a lisp environment Successive invocations of the
+evaluate functions above retrieve the save state, do some work and then
+save it. In this way, the work done to load, elaborate and store specs
+in the Specware environment, is saved.
 
 \begin{spec}
   op saveSpecwareState: SpecCalc.Env ()
