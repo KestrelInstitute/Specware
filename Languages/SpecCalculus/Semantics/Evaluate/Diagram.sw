@@ -37,6 +37,7 @@ shape of diagrams. We use ppString, but really should be ppNodeId.
   def Vertex.ppElem = ppString
   def Edge.ppElem = ppString
 
+  op SpecCalc.vertexName : Vertex.Elem -> String
   def SpecCalc.vertexName v = v  % used by colimit
 
 \end{spec}

@@ -33,5 +33,19 @@ SpecCalc qualifying spec {
 
   op getURI : SCTerm -> SpecCalc.Env URI
   op coerceToSpec : Value -> Value
+
+  %% Hooks to create an environment in which monad can be run
+  op Specware.ignoredState : State
+  op Specware.toplevelHandler : Exception -> SpecCalc.Monad Boolean % SpecCalc.Monad = SpecCalc.Env, but type checker gets confused if we use Env
+
+  %% These are hooks to handwritten function that save and restore the
+  %% Specware state in a lisp environment Successive invocations of the
+  %% evaluate functions above retrieve the save state, do some work and then
+  %% save it. In this way, the work done to load, elaborate and store specs
+  %% in the Specware environment, is saved.
+
+  op Specware.saveSpecwareState: SpecCalc.Env ()
+  op Specware.restoreSavedSpecwareState: SpecCalc.Env ()
+
 }
 \end{spec}

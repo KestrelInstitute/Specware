@@ -13,6 +13,8 @@ Specware qualifying spec {
   % import ../../MetaSlang/Specs/PosSpec    
   import ../../MetaSlang/Specs/Position     
   import ../AbstractSyntax/Printer % for showUI
+  import /Languages/MetaSlang/Specs/Categories/Colimit % for specColimit
+
 \end{spec}
 
 The following is what starts Specware. It initializes the state and
@@ -199,7 +201,7 @@ state again in the lisp variable.
       | (Ok val,_) -> toScreen "Initializing Specware state ..."
       | (Exception _,_) -> fail "initializeSavedSpecwareState failed"
 
-  op ignoredState : State
+  % op ignoredState : State % see Signature.sw
   def ignoredState = initialSpecwareState
 \end{spec}
 
@@ -248,76 +250,70 @@ functions have unit type (within the monad). It seems to make
 sense that no toplevel functions return anything.
 
 \begin{spec}
-  op toplevelHandler : Exception -> SpecCalc.Env Boolean
+  % op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean % See Signature.sw
   def toplevelHandler except =
     {cleanupGlobalContext;		% Remove InProcess entries
      saveSpecwareState;			% So work done before error is not lost
-     message <- % "Uncaught exception: " ++
-       return (case except of
-
-         | Fail str -> "Fail: " ^ str
-
-         | SyntaxError msg ->
-               "Syntax error: " ^ msg
-
-         | ParserError fileName ->
-               "Syntax error for filename: " ^ fileName
-
-         | Unsupported (position,str) ->
-               "Unsupported operation: " ^ str
-             ^ "\n  found at " ^ (printAll position)
-
-         | URINotFound (position, uri) ->
-               "Unknown unit " ^ (showRelativeURI uri) 
-             ^ "\n  referenced from " ^ (printAll position)
-
-         | FileNotFound (position, uri) ->
-               "Unknown unit " ^ (showRelativeURI uri) 
-             ^ "\n  referenced from " ^ (printAll position)
-
-         | SpecError (position,msg) ->
-               "Error in specification: " ^ msg 
-             ^ "\n  found at " ^ (printAll position)
-
-         | DiagError (position,msg) ->
-               "Diagram error: " ^ msg 
-             ^ "\n  found at " ^ (printAll position)
-
-         | TypeCheck (position, msg) ->
-               "Type error: " ^ msg 
-             ^ "\n  found at " ^ (printAll position)
-
-         | Proof (position, msg) ->
-               "Proof error: " ^ msg 
-             ^ "\n  found at " ^ (printAll position)
-
-         | CircularDefinition uri ->
-               "Circular definition: " ^ showURI uri
-
-         %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
-         | OldTypeCheck str ->
-               "Type errors:\n" ^ str
-
-         | _ -> 
-               "Unknown exception: " 
-             ^ (System.toString except));
-
+     message <- return (printException except);
      if specwareWizard? then
        fail message
      else
        print message;
      return false}
-\end{spec}
 
-These are hooks to handwritten function that save and restore the
-Specware state in a lisp environment Successive invocations of the
-evaluate functions above retrieve the save state, do some work and then
-save it. In this way, the work done to load, elaborate and store specs
-in the Specware environment, is saved.
+  op printException : Exception -> String
+  def printException except =
+    case except of
 
-\begin{spec}
-  op saveSpecwareState: SpecCalc.Env ()
-  op restoreSavedSpecwareState: SpecCalc.Env ()
+      | Fail str -> 
+		"Fail: " ^ str
+
+      | SyntaxError msg ->  
+                "Syntax error: " ^ msg
+
+      | ParserError fileName -> 
+		"Syntax error for filename: " ^ fileName
+
+      | Unsupported (position,str) ->
+		"Unsupported operation: " ^ str
+	      ^ "\n  found at " ^ (printAll position)
+
+      | URINotFound (position, uri) ->
+		"Unknown unit " ^ (showRelativeURI uri) 
+              ^ "\n  referenced from " ^ (printAll position)
+
+      | FileNotFound (position, uri) ->
+		"Unknown unit " ^ (showRelativeURI uri) 
+              ^ "\n  referenced from " ^ (printAll position)
+
+      | SpecError (position,msg) ->
+		"Error in specification: " ^ msg 
+              ^ "\n  found at " ^ (printAll position)
+
+      | DiagError (position,msg) ->
+		"Diagram error: " ^ msg 
+              ^ "\n  found at " ^ (printAll position)
+
+      | TypeCheck (position, msg) ->
+		"Type error: " ^ msg 
+              ^ "\n  found at " ^ (printAll position)
+
+      | Proof (position, msg) ->
+		"Proof error: " ^ msg 
+              ^ "\n  found at " ^ (printAll position)
+
+      | CircularDefinition uri ->
+		"Circular definition: " ^ showURI uri
+
+      %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position
+      | OldTypeCheck str ->
+		"Type errors:\n" ^ str
+
+      | _ -> 
+		"Unknown exception: " 
+              ^ (System.toString except)
+
+
 \end{spec}
 
 getBaseSpec is a bit of a hack used by colimit to avoid some bootstrapping 
@@ -329,6 +325,7 @@ and typing issues.
         {restoreSavedSpecwareState;
 	 base_URI               <- pathToRelativeURI "/Library/Base";
 	 (Spec base_spec, _, _) <- SpecCalc.evaluateURI (Internal "base") base_URI;
+	 saveSpecwareState;
 	 return base_spec} 
     in
     let def myHandler except = {toplevelHandler except; return emptySpec} 
