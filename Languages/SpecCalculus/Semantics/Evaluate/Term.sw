@@ -17,6 +17,7 @@ SpecCalc qualifying spec {
  import Snark
  import Translate      
  import Obligations
+ import Substitute      
  import Print      
 \end{spec}
 

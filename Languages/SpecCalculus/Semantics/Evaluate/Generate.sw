@@ -1,44 +1,34 @@
 \subsection{Generation from Specs}
 
-Synchronized with r1.6 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalCompile.sl
-
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature  
   import ../SpecPath
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
 
-  %% Hopefully these will be unnecessary in the final system
-
-  % sort Env a = SpecCalc.Env a
-  %sort Spec = MetaSlang.Spec
-
   %% Need to add error detection code
-  def SpecCalc.evaluateLispCompile(valueInfo as (Spec spc,_,_), cterm, optFileNm) =
-    {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
-     cURI <- SpecCalc.getURI(cterm);
-     lispFileName <- URItoLispFile (cURI, optFileNm);
+  def SpecCalc.evaluateLispCompile(valueInfo as (Spec spc,_,_), cterm, optFileName) =
+    {cURI <- SpecCalc.getURI cterm;
+     lispFileName <- URItoLispFile (cURI, optFileName);
      let _ = ensureDirectoriesExist lispFileName in
-     let _ = toLispFile(spc, lispFileName,[]) in
-     {print("Compiled");
-      return valueInfo}}
+     let _ = toLispFile (spc, lispFileName,[]) in
+     return valueInfo}
 \end{spec}
 
 Make a lisp file name for a URI.
 
 \begin{spec}
   op URItoLispFile: URI * Option String -> SpecCalc.Env String
-  def URItoLispFile ((uri as {path,hashSuffix}), optFileNm) =
-    case optFileNm
-      of Some filNam -> return filNam
-       | _ ->
-    {prefix <- removeLastElem path;
-     mainName <- lastElem path;
-     let filNm = (uriToPath {path=prefix,hashSuffix=None})
-        ^ "/lisp/" ^ mainName ^ ".lisp"
-     in
-     {print(";;; Generating lisp file " ^ filNm ^ "\n");
-      return filNm}}
+  def URItoLispFile ((uri as {path,hashSuffix}), optFileName) =
+    case optFileName of
+      | Some fileName -> return fileName
+      | _ -> {
+         prefix <- removeLastElem path;
+         mainName <- lastElem path;
+         fileName <- return ((uriToPath {path=prefix,hashSuffix=None})
+                             ^ "/lisp/" ^ mainName ^ ".lisp");
+         print (";;; Generating lisp file " ^ fileName ^ "\n");
+         return fileName}
 \end{spec}
 
 Recursively compile imports. If there is a URI for the import then
