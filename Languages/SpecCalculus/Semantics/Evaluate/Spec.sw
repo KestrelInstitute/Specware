@@ -96,7 +96,7 @@ axioms, etc.
       spec_c <- return (setSorts (spec_b, sorts_b));
       ops_c <- foldOverQualifierMap mergeOpStep spec_c.ops imported_spec.ops;
       spec_d <- return (setOps (spec_c, ops_c));
-      spec_e <- return (setProperties (spec_d, listUnion (spec_d.properties,imported_spec.properties)));
+      spec_e <- return (setProperties (spec_d, listUnion (imported_spec.properties,spec_d.properties)));
       return spec_e
     }
 \end{spec}

@@ -408,7 +408,7 @@ AnnSpec qualifying spec
   setImports    (spc, cons ((specCalcTerm, imported_spec), spc.importInfo.imports))
 
  def addProperty (new_property, spc) =
-  setProperties (spc, cons (new_property, spc.properties))
+  setProperties (spc, spc.properties ++ [new_property])
 
  def addAxiom       ((name, type_vars, formula), spc) =
   addProperty ((Axiom      : PropertyType, name, type_vars, formula), spc) 
@@ -526,7 +526,7 @@ AnnSpec qualifying spec
 
  def subtractSpec x y = {
      importInfo = x.importInfo,
-     properties = foldl (fn (x,l) ->
+     properties = foldr (fn (x,l) ->
            if member (x,y.properties) then
              l
            else
