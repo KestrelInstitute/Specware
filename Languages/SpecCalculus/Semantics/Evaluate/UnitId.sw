@@ -307,29 +307,29 @@ Used so toplevel UI functions can find out whether a unitId has up-to-date versi
 
 validateCache takes a UnitId (absolute) and checks that it and all its
 dependents are up-to-date, returning false if they are not. Those that
-are not are removed from the environment.
+aren't are removed from the environment.
 
 \begin{spec}
   op validateCache : UnitId -> Env TimeStamp
   def validateCache unitId =
-    {validated? <- validatedUID? unitId;
-     if validated?
-       then return 0
-     else
-       {optValue <- lookupInGlobalContext unitId;
-	case optValue of
-	  | None -> return futureTimeStamp
-	  | Some (_,timeStamp,depUIDs) ->
+    {optValue <- lookupInGlobalContext unitId;
+     case optValue of
+       | None -> return futureTimeStamp   % Not in cache
+       | Some (_,timeStamp,depUIDs) ->
+         {validated? <- validatedUID? unitId;   % True if already validated
+	  if validated?
+	    then return timeStamp
+	  else
 	    %% the foldM finds the max of the timeStamps of the dependents and its own
 	    %% "infinity" if invalid
 	    {rVal <- foldM (fn val -> (fn depUID -> {dVal <- validateCache depUID;
 						     return (max(val, dVal))}))
-		       timeStamp depUIDs;
+	     timeStamp depUIDs;
 	     if timeStamp >= rVal & upToDate?(unitId,rVal)
-	      then {setValidatedUID unitId;
-		    return rVal}
-	      else {removeFromGlobalContext unitId;
-		    return futureTimeStamp}}}}
+	       then {setValidatedUID unitId;  % Remember that this unitId has been validated
+		     return rVal}
+	     else {removeFromGlobalContext unitId;
+		   return futureTimeStamp}}}}
 
   op upToDate?: UnitId * TimeStamp -> Boolean
   def upToDate?(unitId,timeStamp) =
