@@ -5,9 +5,13 @@ XML qualifying spec
   import Infix
   import Utilities
   import PosSpecToSpec
+  import SortDescriptor
 
   op TypeChecker.resolveMetaTyVar : MS.Sort -> MS.Sort
   op TypeChecker.checkSort        : LocalEnv * MS.Sort                    -> MS.Sort
+
+  %% This is a magic hack to transform special applications to acquire an extra
+  %% final arg depicting the original sort of the application.
 
   op addSortAsLastTerm : LocalEnv * MS.Term * MS.Term * MS.Sort -> MS.Term
   def addSortAsLastTerm (env, pre_trm, post_trm, term_sort) =
@@ -29,7 +33,8 @@ XML qualifying spec
     let pos             = Internal "sort_descriptor" in
     let sort_descriptor = Base (Qualified("XML",    "SortDescriptor"), [],         pos) in 
     let ssort           = Base (Qualified("STRING", "STRING"),         [],         pos) in 
-    let list_of_sd      = Base (Qualified("XML",    "junk"),           [],         pos) in  % TODO: make real:  list sort_descriptor
+    let junk_sort       = Base (Qualified("XML",    "junk"),           [],         pos) in  % TODO: eliminate this
+    let list_of_sd      = junk_sort                                                     in  % TODO: make real:  list sort_descriptor
     let mynil           = Fun  (TwoNames ("List", "nil", Nonfix),      list_of_sd, pos) in 
     let 
        def mkrecord args =
@@ -52,6 +57,21 @@ XML qualifying spec
 		  arg],
 		 pos)
 	 
+       def mkembed (id, srt) =
+	 Fun (Embed (id, false), 
+	      sort_descriptor,  % correct?
+	      pos)
+
+       def mk_app_embed (id, srt, arg) =
+	 ApplyN ([Fun (Embed (id, true), 
+		       Arrow (list_of_sd, % TODO : put something correct here, even though no one looks at it
+			      sort_descriptor,
+			      pos),
+
+		       pos),
+		  arg],
+		 pos)
+
        def tag str = 
 	 Fun (String str, ssort, pos)
 	 
@@ -78,8 +98,13 @@ XML qualifying spec
 									mkrecord [mkapp ("List", "cons",
 											 mkrecord [tag id,
 												   case opt_srt of
-												     | None     -> mynil
-												     | Some srt -> convert srt]),
+												     | None     -> % mkapp ("Option", "None", mynil)
+                												   mkembed ("None", junk_sort) 
+												                   
+												     | Some srt -> % mkapp ("Option", "Some", convert srt)
+														   mk_app_embed ("Some", 
+																 junk_sort, 
+																 convert srt)]),
 										  result]))
 							        mynil
 								(rev fields)))
@@ -223,29 +248,5 @@ XML qualifying spec
 	    unlinked_sort))
     | s -> s 
   %% ================================================================================
-
-
-  sort IdDescriptor   = String
-  sort QIdDescriptor  = String * String
-  sort TermDescriptor = String
-
-  %% A term of type SortDescriptor will be accessible at runtime as the reflection of a sort
-  %% that was otherwise only present at compile-time.
-  sort SortDescriptor = | Arrow        SortDescriptor * SortDescriptor
-                        | Product      List (IdDescriptor * SortDescriptor)
-                        | CoProduct    List (IdDescriptor * Option SortDescriptor)
-                        | Quotient     SortDescriptor * TermDescriptor              
-                        | Subsort      SortDescriptor * TermDescriptor              
-                        | Base         QIdDescriptor * List SortDescriptor
-                        | TyVar        
-                        | MetaTyVar    
-                        | Bottom
-
-  def MakeArrowSortDescriptor     (x, y)      : SortDescriptor = Arrow      (x, y)
-  def MakeProductSortDescriptor   fields      : SortDescriptor = Product    fields
-  def MakeCoProductSortDescriptor fields      : SortDescriptor = CoProduct  fields
-  def MakeQuotientSortDescriptor  (base, qq)  : SortDescriptor = Quotient   (base, qq)
-  def MakeSubsortSortDescriptor   (base, pp)  : SortDescriptor = Subsort    (base, pp)
-  def MakeBaseSortDescriptor      (q,id,args) : SortDescriptor = Base       ((q,id), args)
 
 endspec
