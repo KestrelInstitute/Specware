@@ -108,11 +108,11 @@ FSeq qualifying spec
   def foralli? p = fn s -> (fa (i:Nat) i < length s => p (i, s @ i))
 
   % some element satisfies predicate:
-  op exists? : fa(a) Predicate a -> Predicate (FSeq a)
+  op exists? : [a] Predicate a -> Predicate (FSeq a)
   def exists? p = fn s -> (ex(i:Nat) i < length s &&  p (s @ i))
 
   % exactly one element satisfies predicate:
-  op exists1? : fa(a) Predicate a -> Predicate (FSeq a)
+  op exists1? : [a] Predicate a -> Predicate (FSeq a)
   def exists1? p = fn s -> (ex1 (fn(i:Nat) -> i < length s && p (s @ i)))
 
   % extract subsequence from `i' (inclusive) of length `n' (if `n = 0',
@@ -217,7 +217,7 @@ FSeq qualifying spec
   def ltail s = removeSuffix (s, 1)
 
   % right tail (i.e. remove first element):
-  op rtail : fa(a) NonEmptyFSeq a -> FSeq a
+  op rtail : [a] NonEmptyFSeq a -> FSeq a
   def rtail s = removePrefix (s, 1)
 
   op noRepetitions? : [a] FSeq a -> Boolean
