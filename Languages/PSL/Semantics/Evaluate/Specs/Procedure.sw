@@ -21,13 +21,16 @@ means that the graph has a single start state but possibly many final
 states.
 
 \begin{spec}
-Proc qualifying spec {
-  import ModeSpec
+Proc qualifying spec
+  import TransSpec
   import Env
+  import EdgeSets
 
   import translate (translate /Languages/BSpecs/Predicative/Coalgebra
     by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
-    by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._}
+    by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._,
+        Vertex._ +-> Vrtx._, Edge._ +-> Edg._,
+        VertexSet._ +-> VrtxSet._, EdgeSet._ +-> EdgSet._}
 
   sort ReturnInfo = Option Op.Ref
 
@@ -35,26 +38,31 @@ Proc qualifying spec {
   def ReturnInfo.make ref = Some ref
 
   sort Procedure = {
-    parameters : List String,
+    parameters : List Op.Ref,
+    varsInScope : List Op.Ref,
     returnInfo : ReturnInfo,
     modeSpec : ModeSpec,
     bSpec : BSpec
   }
 
-  op makeProcedure : List String -> ReturnInfo -> ModeSpec -> BSpec -> Procedure
-  def makeProcedure args returnInfo modeSpec bSpec = {
-    parameters = args,
+  op makeProcedure : List Op.Ref -> List Op.Ref -> ReturnInfo -> ModeSpec -> BSpec -> Procedure
+  def makeProcedure params varsInScope returnInfo modeSpec bSpec = {
+    parameters = params,
+    varsInScope = varsInScope,
     returnInfo = returnInfo,
     modeSpec = modeSpec,
     bSpec = bSpec
   }
 
-  op ProcEnv.makeProcedure : List String -> ReturnInfo -> ModeSpec -> BSpec -> Env Procedure
-  def ProcEnv.makeProcedure args returnInfo modeSpec bSpec =
-    return (makeProcedure args returnInfo modeSpec bSpec)
+  op ProcEnv.makeProcedure : List Op.Ref -> List Op.Ref -> ReturnInfo -> ModeSpec -> BSpec -> Env Procedure
+  def ProcEnv.makeProcedure params varsInScope returnInfo modeSpec bSpec =
+    return (makeProcedure params varsInScope returnInfo modeSpec bSpec)
 
-  op parameters : Procedure -> List String
+  op parameters : Procedure -> List Op.Ref
   def parameters proc = proc.parameters
+
+  op varsInScope : Procedure -> List Op.Ref
+  def varsInScope proc = proc.varsInScope
 
   op bSpec : Procedure -> BSpec
   def bSpec proc = proc.bSpec
@@ -103,6 +111,7 @@ handle name clashes properly.
     let
       procShort =
         makeProcedure (parameters proc)
+                      (varsInScope proc)
                       (returnInfo proc)
                       (subtract (modeSpec proc) ms)
                       (map (bSpec proc) (fn ms -> ModeSpec.subtract ms (modeSpec proc)) (fn x -> x))
@@ -117,5 +126,92 @@ handle name clashes properly.
 
    op show : Procedure -> String 
    def show proc = ppFormat (pp proc)
-}
+\end{spec}
+
+\begin{spec}
+  op ProcEnv.pp : Id.Id -> Procedure -> Env Doc
+  def ProcEnv.pp procId proc = {
+      bs <- return (bSpec proc);
+      (visited,doc) <- ppFrom procId (modeSpec proc) bs (succCoalgebra bs) (initial bs) empty ppNil;
+      return 
+       (ppConcat [
+          pp "proc ",
+          pp procId,
+          pp " params=(",
+          ppSep (pp ",") (map pp (parameters proc)),
+          pp "), returnInfo=",
+          pp (returnInfo proc),
+          pp ", bSpec=",
+          ppConcat [
+            pp "{initial=",
+            pp (initial bs),
+            pp ", final=",
+            pp (final bs),
+            pp ", system=",
+            ppNewline,
+            pp "  ",
+            ppIndent doc
+          ]
+        ])
+    }
+
+  sort Coalg = Vrtx.Vertex -> EdgSet.Set
+
+  op ppEdge :
+        Id.Id
+     -> ModeSpec
+     -> BSpec
+     -> Coalgebra
+     -> (VrtxSet.Set * Doc)
+     -> Edg.Edge
+     -> Env (VrtxSet.Set * Doc)
+  def ppEdge procId procModeSpec bSpec coAlg (visited,doc) edge = {
+      first <- return (GraphMap.eval (source (shape (system bSpec)), edge));
+      last <- return (GraphMap.eval (target (shape (system bSpec)), edge));
+      transSpec <- return (edgeLabel (system bSpec) edge);
+      newDoc <-
+        return (ppConcat [
+                  if doc = ppNil then ppNil else ppCons doc ppBreak, % do what ppSep does. could be cleaner
+                  pp "(",
+                  pp edge,
+                  pp " : ",
+                  pp first,
+                  pp " -> ",
+                  pp last,
+                  pp ") +-> ",
+                  ppBreak,
+                  pp "    ",
+                  ppNest 4 (ppConcat [
+                    pp (subtract (TransSpec.modeSpec transSpec) procModeSpec),
+                    ppBreak,
+                    pp "changed=",
+                    pp (changedVars (backMorph transSpec))
+                  ])
+               ]);
+      if member? (visited,last) then
+        return (visited,newDoc)
+      else
+        ppFrom procId procModeSpec bSpec coAlg last visited newDoc
+    }
+  
+  op ppFrom :
+       Id.Id
+    -> ModeSpec
+    -> BSpec
+    -> Coalgebra
+    -> Vrtx.Vertex
+    -> VrtxSet.Set
+    -> Doc
+    -> Env (VrtxSet.Set * Doc)
+  def ppFrom procId procModeSpec bSpec coAlg src visited doc = {
+      visited <- return (insert (visited, src));
+      successors <- return (coAlg src);
+      % when ((empty? successors) & ~(member? (final bSpec,src))) 
+      %   (raise (SpecError (noPos,"ppFrom: procedure " ^ (show procId) ^ " has empty set of successors")));
+      EdgSetEnv.foldl (ppEdge procId procModeSpec bSpec coAlg) (visited,doc) successors 
+    }
+
+  op SpecCalc.when : Boolean -> Env () -> Env ()
+  % def when p command = if p then (fn s -> (command s)) else return ()
+endspec
 \end{spec}

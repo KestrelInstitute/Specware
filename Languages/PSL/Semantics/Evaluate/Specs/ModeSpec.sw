@@ -35,13 +35,15 @@ operators in each spec constitute the variables that make up the store.
 \begin{spec}
 ModeSpec qualifying spec
   import Spec
-  import Subst
+  import Constraints  % Not needed now .. but maybe later when we generalize substitutions
+  import Subst    
 
   sort ModeSpec 
 
   op specOf : ModeSpec -> Spec.Spec
   op variables : ModeSpec -> OpRefSet.Set
   op invariants : ModeSpec -> ClaimRefSet.Set
+  op withSpec infixl 17 : ModeSpec * Spec.Spec -> ModeSpec  % This is wrong.
 
   op empty : ModeSpec
 
@@ -52,11 +54,15 @@ ModeSpec qualifying spec
   op addOp : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
   op addVariable : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
 
+  (* perhaps hide should take a Op.Ref *)
   op hideOp : ModeSpec -> Op.OpInfo -> Env ModeSpec
-  op hideVariable : ModeSpec -> Op.OpInfo -> Env ModeSpec
+  op hideVariable : ModeSpec -> Op.Ref -> Env ModeSpec
   op hideVariables : ModeSpec -> Subst -> Env ModeSpec
   op addClaim : ModeSpec -> Claim.Claim -> Position -> Env ModeSpec
   op addInvariant : ModeSpec -> Claim.Claim -> Position -> Env ModeSpec
+
+  op withInvariants infixl 18 : ModeSpec * ClaimRefSet.Set -> ModeSpec  % probably bad
+
 
   op findTheOp : ModeSpec -> Id.Id -> Env Op.OpInfo
   op findTheVariable : ModeSpec -> Id.Id -> Env Op.OpInfo
@@ -79,10 +85,14 @@ ModeSpec qualifying spec
   op union : ModeSpec -> ModeSpec -> Env ModeSpec
     
   op applySubst : ModeSpec * Subst -> Env ModeSpec
+  
+  op join : SpecCalc.Term Position -> ModeSpec -> ModeSpec -> Position -> Env ModeSpec
 
   op simplifyVariable : ModeSpec * Op.Ref -> Env ModeSpec
   op simplifyInvariant : ModeSpec * Claim.Ref -> Env ModeSpec
-  op simplifyInvariants : ModeSpec -> Env ModeSpec
+  op simplifyInvariants : ModeSpec -> ModeSpec -> Env ModeSpec
+
+  op ModeSpecEnv.printRules : ModeSpec -> Env ()
 
   op pp : ModeSpec -> Doc
   op show : ModeSpec -> String

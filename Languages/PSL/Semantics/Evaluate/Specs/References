@@ -1,0 +1,80 @@
+\section{Operator and Sort References}
+
+In the concrete syntax, when one wishes to refer to an operator or sort
+one uses its name. The question is: what should these names become during
+elaboration (type checking).
+
+One option is that the name should be elaborated to an \Sort{OpInfo}. In
+other words, operator names in a MetaSlang term become \Sort{OpInfo}'s
+when the spec containing that term is elaborated. The problem is
+that the information associated with an op may change. For instance,
+the operator may get refined. If the \Sort{OpInfo}'s appear in terms,
+then when an op changes, we must traverse the terms that refer to that
+op and change all the \Sort{OpInfo}s.
+
+The bigger problem is that we are limited to constructing only well-founded
+ops and terms in the sense that we cannot construct an op $f$ with a term that
+refers to an op $g$ where the definition of $g$ refers to $f$.
+
+An alternative is to introduce a level of indirection and give each
+\Sort{OpInfo} a unique identifier. When a term is elaborated, a
+reference to an op by name is replaced by that identifier. Changes to
+the \Sort{OpInfo} may not require changes to the terms.
+
+The latter is what happens now. The unique identifier is the 
+name of the operator but fully qualified. However, the former
+approach is also useful (and faster) in some contexts.
+
+To avoid committing one way or the other, we define the sorts \Sort{Op.Ref}, for
+operator references, and \Sort{Sort.Ref}, for sort references.
+
+Each \Sort{Op.Ref} is in one-to-one correspondence with an instances
+of \Sort{OpInfo}. We then provide a pair of functions that witness the
+correspondence. One dereferences an \Sort{OpRef} to an \Sort{OpInfo}. The
+other maps an \Sort{OpInfo} to its \verb{OpRef}.
+
+These sorts and functions can then be refined in the following ways.
+
+To obtain something like the current implementation, \Sort{Op.Ref} becomes a
+\Sort{QualifiedId}. deref becomes a call to \Op{find} (defined above) and the name
+of an operator can be any of the names in the current \Sort{OpInfo} structure.
+(This might not give the identity .. but no matter.)
+
+Downstream, to accommodate full overloading, we might refine \Sort{Op.Ref}
+to something other than \Sort{QualifiedId}, say \Sort{Nat}, Then dereferencing
+might become an array or hash table lookup.
+
+Finally, \Sort{Op.Ref} may refine to \Sort{OpInfo} in which case the two
+witness functions become essentially the identity.
+
+Need to provide a substitution operator on terms. Op substitution becomes
+the identity in the case that we have indirection.
+
+One would like \Sort{Ref} to refine in different ways.  It might refine
+to a pair \Sort{Spec * Nat} where the \Sort{Nat} is relative to a
+spec. Or it might refine to just \verb{Nat} where ids are unique across
+all specs. In the near term, it might refine to just an \Sort{Id}. The
+problem with the first is that as the spec is being formed, having a spec
+in a reference will lead us to non-well-founded structures. So we will
+really need to have a sort \Sort{Spec.Ref} as well. And if we do that,
+then all operations that calculate specs must be monadic.
+
+begin{spec}
+  sort Op.Ref
+  sort Sort.Ref
+
+  op Op.deref : Op.Ref -> OpInfo
+  op Sort.deref : Sort.Ref -> SortInfo
+end{spec}
+
+begin{spec}
+  op Op.refOf : OpInfo -> Op.Ref
+  op Sort.refOf : SortInfo -> Sort.Ref
+
+  axiom op_ref_opInfo_isomorphism is fa (ref,opInfo) Op.deref ref = opInfo <=> Op.refOf opInfo = ref
+  axiom alt1_op_ref_opInfo_isomorphism is fa (ref,opInfo) refOf o Op.deref = id
+  axiom alt2_op_ref_opInfo_isomorphism is fa (ref,opInfo) Op.deref o refOf = id
+
+  axiom sort_ref_sortInfo_isomorphism is fa (ref,sortInfo) Sort.deref ref = sortInfo <=> Sort.refOf sortInfo = ref
+end{spec}
+

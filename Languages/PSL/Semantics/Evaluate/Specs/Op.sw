@@ -23,7 +23,7 @@ Op qualifying spec
   op ids : OpInfo -> IdSet.Set
   op fixity : OpInfo -> Fixity
   op type : OpInfo -> Type
-  op term : OpInfo -> MSlang.Term
+  op term : OpInfo -> Option MSlang.Term
 
   op withId infixl 18 : OpInfo * Id.Id -> OpInfo
   op withIds infixl 18 : OpInfo * IdSet.Set -> OpInfo
@@ -60,11 +60,11 @@ Op qualifying spec
 
   op OpRef.pp : Ref -> Doc
 
-  op deref : Spec.Spec -> Ref -> OpInfo
-  op refOf : Spec.Spec -> OpInfo -> Ref
+  op deref : Spec.Spec * Ref -> OpInfo
+  op refOf : OpInfo -> Ref
 
-  op OpEnv.deref : Spec.Spec -> Ref -> Env OpInfo
-  op OpEnv.refOf : Spec.Spec -> OpInfo -> Env Ref
+  op OpEnv.deref : Spec.Spec * Ref -> Env OpInfo
+  op OpEnv.refOf : OpInfo -> Env Ref
 endspec
 \end{spec}
 

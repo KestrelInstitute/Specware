@@ -7,20 +7,35 @@ SpecCalc qualifying spec {
   import Oscar
   import /Languages/SpecCalculus/Semantics/Evaluate/SpecMorphism
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
-  % import /Languages/PSL/CodeGen/ToC
-  % import /Languages/PSL/CodeGen/Convert
+  import Transformations/PartialEval
+  import ../../CodeGen/ToC
 
-  sort SpecCalc.OtherTerm a = List (OscarSpecElem a)
+  % op Convert.mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
+  def Convert.mapToList map = map
+
+  % op Convert.toList : EdgSet.Set -> List Edg.Edge
+  def Convert.toList set = set
+
   % sort SpecCalc.OtherValue = SpecCalc.PSpec
 
-  def SpecCalc.evaluateOther oscarSpecElems pos = evaluateOscar oscarSpecElems
-
-  def SpecCalc.ppOtherTerm = ppOscarSpecTerm
+  def SpecCalc.evaluateOther other pos = 
+    case other of
+      | OscarDecls oscarSpecElems -> evaluateOscar oscarSpecElems
+      | Specialize (metaSlangTerm,unit) -> {
+          (value,timeStamp,depUnitIds) <- SpecCalc.evaluateTermInfo unit;
+          case value of
+            | Other oscarSpec -> {
+                  (newOscarSpec,newTerm) <- specializeOscar oscarSpec metaSlangTerm;
+                  print (ppFormat (ppATerm newTerm));
+                  return (Other newOscarSpec,timeStamp,depUnitIds)
+                }
+            | _ -> raise (SpecError (positionOf unit, "Specialized unit is not an Oscar spec"))
+          }
 
   def SpecCalc.ppOtherValue = Oscar.pp
 %   def formatOtherValue pSpec = {
 %       pslBaseUnitId <- pathToRelativeUID "/Library/PSL/Base";
-%       (Spec pslBase,_,_) <- SpecCalc.evaluateUnitId (Internal "PSpec base") pslBaseUnitId;
+%       (Spec pslBase,_,_) <- SpecCalc.evaluateUID (Internal "PSpec base") pslBaseUnitId;
 %       fixPSpec <- return {
 %            staticSpec = convertPosSpecToSpec pSpec.staticSpec,
 %            dynamicSpec = convertPosSpecToSpec pSpec.dynamicSpec,
@@ -29,9 +44,21 @@ SpecCalc qualifying spec {
 %       return (ppPSpecLess fixPSpec pslBase)
 %     }
 
+%   def SpecCalc.evaluateOtherPrint oscarSpec pos = {
+%        base <- baseOscarSpec;
+%        oscarDoc <- OscarEnv.pp oscarSpec (modeSpec base);
+%        print (ppFormat oscarDoc)
+%        % print (ppFormat (ppLess oscarSpec (modeSpec base)))
+%     }
+
   def SpecCalc.evaluateOtherPrint oscarSpec pos = {
        base <- baseOscarSpec;
-       print (ppFormat (ppLess oscarSpec (modeSpec base)))
+       oscarString <- OscarEnv.show oscarSpec (modeSpec base);
+       print (oscarString ^ "\n");
+       conv <- convertOscarSpec oscarSpec;
+       convString <- return (OscarStruct.show conv (modeSpec base));
+       print (oscarString ^ "\n structured \n" ^ convString)
+       % print (oscarString ^ "\n")
     }
 
   def SpecCalc.evaluateOtherSpecMorph
@@ -78,22 +105,17 @@ SpecCalc qualifying spec {
 %       | (_,        _) ->
 %            raise (TypeCheck (pos, "(Other) substitution is not a morphism, and is attempted on a non-spec"))
 
-  def SpecCalc.evaluateOtherGenerate (lang,term,optFile) (pSpec,timeStamp,depUnitIds) pos = {
+  def SpecCalc.evaluateOtherGenerate (lang,term,optFile) (oscSpec,timeStamp,depUnitIds) pos = {
       pslBaseUnitId <- pathToRelativeUID "/Library/PSL/Base";
-      (Spec pslBase,_,_) <- SpecCalc.evaluateUnitId (Internal "PSpec base") pslBaseUnitId;
+      (Spec pslBase,_,_) <- SpecCalc.evaluateUID (Internal "Oscar base") pslBaseUnitId;
       case lang of
-        % | "c" ->
-        %      let _ = pSpecToC pSpec pslBase in
-        %      return (Other pSpec,timeStamp,depUnitIds)
+        | "c" -> {
+             CSpec <- oscarToC oscSpec pslBase; 
+             return (Other oscSpec,timeStamp,depUnitIds)
+           }
         | lang -> raise (Unsupported (pos, "no generation for language "
                                          ^ lang
                                          ^ " yet"))
     }
-
-  op unEnv : fa (a,b) (a -> SpecCalc.Env b) -> (a -> b)
-  def unEnv f x =
-    case (f x initialSpecwareState) of
-      | (Ok y, newState) -> y
-      | (Exception except, newState) -> fail (System.toString except)
 }
 \end{spec}

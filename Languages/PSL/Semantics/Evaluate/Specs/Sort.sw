@@ -46,10 +46,10 @@ Sort qualifying spec
   op SortRef.pp : Ref -> Doc
 
   op deref : Spec.Spec -> Ref -> SortInfo
-  op refOf : Spec.Spec -> SortInfo -> Ref
+  op refOf : SortInfo -> Ref
 
   op SortEnv.deref : Spec.Spec -> Ref -> Env SortInfo
-  op SortEnv.refOf : Spec.Spec -> SortInfo -> Env Ref
+  op SortEnv.refOf : SortInfo -> Env Ref
 endspec
 \end{spec}
 

@@ -33,10 +33,15 @@ MSlang qualifying spec
 
   op boolType : Position -> Type
   op natType : Position -> Type
+  op stringType : Position -> Type
+
+  op MSlangEnv.mkApply : Term * Term * Position -> Env Term
+  op mkApply : Term * Term * Position -> Term
 
   op mkApplyN : Term * Term * Position -> Term
+
   op MSlangEnv.mkApplyN : Term * Term * Position -> Env Term
-  def MSlangEnv.mkApplyN args = return (mkApplyN args)
+  def MSlangEnv.mkApplyN (t1,t2,position) = return (mkApplyN (t1,t2, position))
 
   op mkTuple : (List Term) * Position -> Term
   op MSlangEnv.mkTuple : (List Term) * Position -> Env Term
@@ -75,6 +80,8 @@ MSlang qualifying spec
   op disjList : List Term * Position -> Term
 
   op mkNat : Nat * Position -> Term
+  op mkString : String * Position -> Term
+
   op MSNoPos.mkNat : Nat -> Term
   def MSNoPos.mkNat n = mkNat (n, internalPosition)
 
