@@ -151,6 +151,7 @@ spec
     case f of
       | Op(Qualified(qid),_) ->
         member(qid,knownSideEffectFreeQIds)
+      % Not, And, Or, Implies, Iff, Equals, NotEquals -> true
       | _ -> true
       
 
