@@ -2,9 +2,10 @@ Convert qualifying spec
   import /Languages/PSL/AbstractSyntax/Types
   import /Languages/SpecCalculus/Semantics/Monad
   import Struct qualifying GraphAnalysis
-  import ../Semantics/Evaluate/Specs/Oscar
-  import ../Semantics/Evaluate/Specs/MetaSlang
-  import ../Semantics/Evaluate/Specs/MetaSlang/Legacy
+  import ../../Semantics/Evaluate/Specs/Oscar
+  import ../../Semantics/Evaluate/Specs/MetaSlang
+  import ../../Semantics/Evaluate/Specs/MetaSlang/Legacy
+  import ../../../MetaSlang/CodeGen/C/CG
   import translate /Library/Structures/Data/Maps/Finite/Polymorphic/AsAssocList by
      {Map._ +-> FinitePolyMap._}
 
@@ -29,7 +30,7 @@ Convert qualifying spec
   (* Convert the BSpecs in an Oscar spec to graphs ready for subsequent structing *)
   op convertOscarSpec : Oscar.Spec -> Env StructOscarSpec
   def convertOscarSpec oscSpec =
-    let def handler id proc except =
+    let def handler id _(*procedure*) except =
       case except of
         | SpecError (pos, msg) -> {
              print ("convertOscarSpec exception: procId=" ^ (Id.show id) ^ "\n");
@@ -40,9 +41,9 @@ Convert qualifying spec
            }
         | _ -> raise except
     in {
-      procedures <- ProcMapEnv.fold (fn procMap -> fn procId -> fn proc -> {
+      procedures <- ProcMapEnv.fold (fn procMap -> fn procId -> fn procedure -> {
           print ("convertOscarSpec: procId=" ^ (Id.show procId) ^ "\n");
-          structProc <- catch (convertProcedure proc) (handler procId proc);
+          structProc <- catch (convertProcedure procedure) (handler procId procedure);
           return (FinitePolyMap.update (procMap,procId,structProc))
          }) FinitePolyMap.empty (procedures oscSpec);
       return {
@@ -54,20 +55,20 @@ Convert qualifying spec
   (* Structure the graphs in an oscar spec *)
   op structOscarSpec : StructOscarSpec -> Env StructOscarSpec
   def structOscarSpec structSpec =
-    let def handler id proc except =
+    let def handler id _(*procedure*) except =
       case except of
         | SpecError (pos, msg) -> {
              print ("structOscarSpec exception: procId=" ^ (Id.show id) ^ "\n");
              print (msg ^ "\n");
-             % print (ppFormat (pp proc));
+             % print (ppFormat (pp procedure));
              % print "\n";
              raise (SpecError (pos, "except : " ^ msg))
            }
         | _ -> raise except
     in {
-      procedures <- FinitePolyMap.fold (fn procMap -> fn procId -> fn proc -> {
+      procedures <- FinitePolyMap.fold (fn procMap -> fn procId -> fn procedure -> {
           print ("structOscarSpec: procId=" ^ (Id.show procId) ^ "\n");
-          structProc <- catch (structProcedure proc) (handler procId proc);
+          structProc <- catch (structProcedure procedure) (handler procId procedure);
           return (FinitePolyMap.update (procMap,procId,structProc))
          }) FinitePolyMap.empty structSpec.procedures;
       return {
@@ -97,25 +98,25 @@ Convert qualifying spec
     ]
   
   op convertProcedure : Procedure -> Env StructProcedure
-  def convertProcedure proc = {
-    code <- convertBSpec (bSpec proc);
+  def convertProcedure procedure = {
+    code <- convertBSpec (bSpec procedure);
     return {
-        parameters = proc.parameters,
-        return = proc.returnInfo,
-        varsInScope = proc.varsInScope,
-        modeSpec = proc.modeSpec,
+        parameters = procedure.parameters,
+        return = procedure.returnInfo,
+        varsInScope = procedure.varsInScope,
+        modeSpec = procedure.modeSpec,
         code = code
       }
   }
 
   op structProcedure : StructProcedure -> Env StructProcedure
-  def structProcedure proc = {
-    code <- structGraph proc.code;
+  def structProcedure procedure = {
+    code <- structGraph procedure.code;
     return {
-        parameters = proc.parameters,
-        return = proc.return,
-        varsInScope = proc.varsInScope,
-        modeSpec = proc.modeSpec,
+        parameters = procedure.parameters,
+        return = procedure.return,
+        varsInScope = procedure.varsInScope,
+        modeSpec = procedure.modeSpec,
         code = code
       }
   }
@@ -205,7 +206,10 @@ are no longer needed. *)
                    raise (SpecError (noPos, "convertBSpecAux: reached empty set of successors to vertex: " ^ (show (vertex mode))))
 
             (* A single edge leaving the node means that the edge is labelled with a statement.  *)
-            | [transition] -> {
+            | [transition] -> 
+		let spc = specOf (Transition.modeSpec transition) in
+		%let spc = transformSpecForCodeGen base spc in
+		{
                  visited <- return (update (visited,show (vertex mode),n));
                  newTerm <- getTransitionAction transition;
                  (graph,next,visited) <-
@@ -215,10 +219,10 @@ are no longer needed. *)
                      convertBSpecAux bSpec final graph (n+1) (target transition) visited;
                  let graph =
                     if Mode.member? final (target transition) then
-                      update (graph,n,Return newTerm)
+                      update (graph,n,Return (spc,newTerm))
                     else
                       let index = vertexToIndex visited (vertex (target transition)) in
-                      update (graph,n,Block {statements=[Assign newTerm],next=index}) in
+                      update (graph,n,Block {statements=[Assign (spc,newTerm)],next=index}) in
                  return (graph,next,visited)
                }
 
@@ -231,16 +235,19 @@ are no longer needed. *)
               a different semantics where the order of the guards is significant.
              *)
 
-            | [leftTrans,rightTrans] -> {
+            | [leftTrans,rightTrans] -> 
+               let leftspc = specOf (Transition.modeSpec leftTrans) in
+	       %let leftspc = transformSpecForCodeGen base leftspc in
+               {
                  visited <- return (update(visited,show (vertex mode),n)); 
                  leftTerm <- getTransitionAction leftTrans;
-                 rightTerm <- getTransitionAction rightTrans;
+                 %rightTerm <- getTransitionAction rightTrans;
                  (graph,next1,visited) <- convertBSpecAux bSpec final graph (n+1) (target leftTrans) visited; 
                  (graph,next2,visited) <- convertBSpecAux bSpec final graph next1 (target rightTrans) visited;
                  let graph =
                    let leftIndex = vertexToIndex visited (vertex (target leftTrans)) in
                    let rightIndex = vertexToIndex visited (vertex (target rightTrans)) in
-                   update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
+                   update (graph,n,Branch {condition=(leftspc,leftTerm),trueBranch=leftIndex,falseBranch=rightIndex}) in
                  return (graph,next2,visited)
                }
             | transitions -> {
@@ -268,24 +275,30 @@ are no longer needed. *)
     case transitions of
       | [] -> raise (SpecError (noPos, "makeBranches: empty list in make branches"))
       | [x] -> raise (SpecError (noPos, "makeBranches: singleton list in make branches"))
-      | [leftTrans,rightTrans] -> {
+      | [leftTrans,rightTrans] -> 
+         let leftspc = specOf (Transition.modeSpec leftTrans) in
+	 %let leftspc = transformSpecForCodeGen base leftspc in
+         {
            leftTerm <- getTransitionAction leftTrans;
-           rightTerm <- getTransitionAction rightTrans;
+           %rightTerm <- getTransitionAction rightTrans;
            (graph,next1,visited) <- convertBSpecAux bSpec final graph (n+1) (target leftTrans) visited; 
            (graph,next2,visited) <- convertBSpecAux bSpec final graph next1 (target rightTrans) visited;
            let graph =
              let leftIndex = vertexToIndex visited (vertex (target leftTrans)) in
              let rightIndex = vertexToIndex visited (vertex (target rightTrans)) in
-             update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
+             update (graph,n,Branch {condition=(leftspc,leftTerm),trueBranch=leftIndex,falseBranch=rightIndex}) in
            return (graph,next2,visited,n)
          }
-      | leftTrans::transitions -> {
+      | leftTrans::transitions ->
+         let leftspc = specOf (Transition.modeSpec leftTrans) in
+	 %let leftspc = transformSpecForCodeGen base leftspc in
+         {
            leftTerm <- getTransitionAction leftTrans;
            (graph,next1,visited,rightIndex) <- makeBranches bSpec final graph (n+1) transitions visited;
            (graph,next2,visited) <- convertBSpecAux bSpec final graph next1 (target leftTrans) visited; 
            let graph =
              let leftIndex = vertexToIndex visited (vertex (target leftTrans)) in
-             update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
+             update (graph,n,Branch {condition=(leftspc,leftTerm),trueBranch=leftIndex,falseBranch=rightIndex}) in
            return (graph,next2,visited,n)
          }
 
