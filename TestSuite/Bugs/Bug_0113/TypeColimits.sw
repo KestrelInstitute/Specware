@@ -25,7 +25,7 @@ D = diagram
 
 C = colimit D
 
-T_XX_YY_ZZ = translate C by {X +-> X, Y +-> Y, Z +-> Z}
+T_XX_YY_ZZ = translate C by {X +-> XX, Y +-> YY, Z +-> ZZ}
 
 T_XY    = translate C by {X +-> Y}
 T_XZ    = translate C by {X +-> Z}
