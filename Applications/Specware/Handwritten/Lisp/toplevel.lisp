@@ -1,4 +1,5 @@
 (in-package :user)
+(defpackage :SpecCalc)
 
 ;; These are Stephen's toplevel Lisp aliases for Specware
 
@@ -17,16 +18,20 @@
 
 (top-level:alias ("sw0" :case-sensitive) (x) (sw (string x)))
 
-(defvar *specware-environment* environment::initialSpecwareState)
+(defvar *specware-global-context* nil)
+(defun specware-state ()
+  (vector *specware-global-context*
+	  (svref SpecCalc::initialSpecwareState 1)
+	  (svref SpecCalc::initialSpecwareState 2)))
 
 (defun sw-re-init ()
-  (setq *specware-environment* environment::initialSpecwareState))
+  (setq *specware-global-context* nil))
 
 (top-level:alias "sw-init" () (sw-re-init))
 
 (defun sw (x)
-  (let ((result (Specware::runSpecwareURIenv (fix_URI x) *specware-environment*)))
-    (setq *specware-environment* (cdr result))
+  (let ((result (Specware::runSpecwareURIenv (fix_URI x) (specware-state))))
+    (setq *specware-global-context* (svref (cdr result) 0))
     (let ((pV11 (car result))) 
       (block 
 	  nil 
@@ -36,15 +41,15 @@
 	      (return "Specware toplevel handler failed")))
 	(error "Nonexhaustive match failure in Specware.runSpecwareURI")))))
 
-(top-level:alias ("sw" :case-sensitive) (x) (swe (string x)))
+(top-level:alias ("sw" :case-sensitive) (x) (sw (string x)))
 
 (defun swl (x &optional y)
   (let ((result (Specware::compileSpecwareURIenv (fix_URI x)
 						 (if y
 						     (cons :|Some| y)
 						   '(:|None|))
-						 *specware-environment*)))
-    (setq *specware-environment* (cdr result))
+						 (specware-state))))
+    (setq *specware-global-context* (svref (cdr result) 0))
     (let ((pV11 (car result))) 
       (block 
 	  nil 
@@ -54,8 +59,6 @@
 	      (return pV11)))
 	(error "Nonexhaustive match failure in Specware.runSpecwareURI")))))
 
-(top-level:alias ("swl" :case-sensitive) (x &optional y)
-  (swl (string x) (and y (maybe-add-extension (string y) ".lisp"))))
 
 (defpackage "SPECWARE")
 

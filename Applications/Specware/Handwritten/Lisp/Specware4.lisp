@@ -6,6 +6,8 @@
 
 (terpri) ; purely cosmetic
 
+#+allegro(setq excl:*global-gc-behavior* '(10 10.0))
+
 ;;; ---------------
 ;; The following collection have been adapted from the 2000 load.lisp
 ;; file. Perhaps they should be factored into a separate file as they
@@ -72,7 +74,7 @@
   )
 )
 
-(setq Specware4 (sys:getenv "SPECWARE4"))
+(defvar Specware4 (sys:getenv "SPECWARE4"))
 
 (compile-and-load-lisp-file "runtime")
 
