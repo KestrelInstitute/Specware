@@ -534,7 +534,7 @@ MetaSlang qualifying spec {
                                  (mapPattern tsp_maps pat,
                                   mapRec cond, 
                                   mapRec trm))
-                                   match,                         
+                              match,                         
                      a)
 
        | Bind       (bnd, vars, trm, a) -> 
@@ -738,7 +738,7 @@ MetaSlang qualifying spec {
                       a)
 
        | LetRec      (decls, bdy, a) -> 
-             LetRec      (map (fn (id, trm) -> (id, replaceRec trm)) decls,
+         LetRec      (map (fn (id, trm) -> (id, replaceRec trm)) decls,
                       replaceRec bdy,
                       a)
 
@@ -750,7 +750,7 @@ MetaSlang qualifying spec {
          IfThenElse  (replaceRec t1, replaceRec t2, replaceRec t3, a)
 
        | Lambda      (match, a) -> 
-             Lambda      (map (fn (pat, cond, trm)->
+         Lambda      (map (fn (pat, cond, trm)->
                             (replacePattern tsp_maps pat, 
                              replaceRec     cond, 
                              replaceRec     trm))
@@ -937,14 +937,14 @@ MetaSlang qualifying spec {
     pattern_app pat
 
  def appSortOpt tsp_apps opt_sort =
-   case opt_sort of
-     | None     -> ()
-     | Some srt -> appSort tsp_apps srt
+  case opt_sort of
+    | None     -> ()
+    | Some srt -> appSort tsp_apps srt
 
  def appTermOpt tsp_apps opt_term =
-   case opt_term of
-     | None     -> ()
-     | Some trm -> appTerm tsp_apps trm
+  case opt_term of
+    | None     -> ()
+    | Some trm -> appTerm tsp_apps trm
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Misc Base Terms
@@ -955,19 +955,19 @@ MetaSlang qualifying spec {
  op natSort?    : fa(b) ASort b -> Boolean
 
  def boolSort? s =
-   case s of
-     | Base (Qualified ("Boolean", "Boolean"), [], _) -> true
-     | _ -> false
+  case s of
+    | Base (Qualified ("Boolean", "Boolean"), [], _) -> true
+    | _ -> false
 
  def stringSort?(s) = 
-   case s of
-     | Base (Qualified ("String",  "String"),  [], _) -> true
-     | _ -> false
+  case s of
+    | Base (Qualified ("String",  "String"),  [], _) -> true
+    | _ -> false
 
  def natSort?(s) = 
-   case s of
-     | Base (Qualified ("Nat",     "Nat"),     [], _) -> true
-     | _ -> false
+  case s of
+    | Base (Qualified ("Nat",     "Nat"),     [], _) -> true
+    | _ -> false
 
  op mkABase : fa(b) QualifiedId * List (ASort b) * b -> ASort b
  def mkABase (qid, srts, a) = Base (qid, srts, a)
