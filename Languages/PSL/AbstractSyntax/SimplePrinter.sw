@@ -83,6 +83,9 @@ SpecCalc qualifying spec {
             ppString "return ",
             ppATerm term
           ]
+      | Skip -> ppString "skip"
+      | Break -> ppString "break"
+      | Continue -> ppString "continue"
 
   op ppCases : fa(a) List (Case a) -> Pretty
   def ppCases cases =
