@@ -52,20 +52,20 @@ spec {
              (sortGraph cmp l1) ++ [hd] ++ (sortGraph cmp l2)
 
   def printVList l = ppFormat (ppMap V.ppElem (fn n -> ppString (Nat.toString n)) l)
-  def printNCList l = show "\n" (map (fn (x,y) ->
-                                      "("
-                                    ^ (Nat.toString x)
-                                    ^ ","
-                                    ^ (printNodeContent y)
-                                    ^ ")") l)
+  def printNCList l = show "\n" (map (fn (dom,cod) ->
+                        "("
+                      ^ (Nat.toString dom)
+                      ^ ","
+                      ^ (printNodeContent cod)
+                      ^ ")") l) 
 
   op convertBSpec : BSpec -> Spec -> Graph
   def convertBSpec bSpec spc =
     let coAlg = succCoalgebra bSpec in
     let (graph,n,visited) = convertBSpecAux bSpec spc coAlg bSpec.final emptyMap 0 bSpec.initial emptyMap in
     let _ = writeLine (printVList visited) in
-    let _ = writeLine (printNCList graph) in
-    let g = sortGraph (fn ((n,_),(m,_)) -> n < m) graph in
+    let _ = writeLine (printNCList (mapToList graph)) in
+    let g = sortGraph (fn ((n,_),(m,_)) -> n < m) (mapToList graph) in
     let _ = writeLine (printNCList g) in
     let g = graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)) in
     let _ = writeLine (printGraph g) in
