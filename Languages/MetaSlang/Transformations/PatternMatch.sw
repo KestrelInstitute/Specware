@@ -869,8 +869,8 @@ def eliminateTerm context term =
 				  (type_vars, eliminateTerm (mkContext name) term))
 			         defs))
 			spc.ops,
-      properties    = map (fn (pt, name, tyvars, term) -> 
-    		  	      (pt, name, tyvars, eliminateTerm (mkContext name) term)) 
+      properties    = map (fn (pt, pname as Qualified(qname, name), tyvars, term) -> 
+    		  	      (pt, pname, tyvars, eliminateTerm (mkContext name) term)) 
                           spc.properties
      } : Spec
 

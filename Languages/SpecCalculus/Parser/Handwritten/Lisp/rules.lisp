@@ -429,7 +429,7 @@ If we want the precedence to be optional:
 ;;;  TODO: In doc: use "=", not :EQUALS in claim definition
 (define-sw-parser-rule :CLAIM-DEFINITION ()
   ;; :EQUALS would be too confusing. e.g. "axiom x = y" would mean "axiom named x is defined as y"
-  (:tuple (1 :CLAIM-KIND) (2 :LABEL) "is" (3 :CLAIM))
+  (:tuple (1 :CLAIM-KIND) (2 :QUALIFIABLE-CLAIM-NAME) "is" (3 :CLAIM))
   (make-claim-definition 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :CLAIM-KIND ()
@@ -1547,19 +1547,19 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-PROVE ()
-  (:tuple "prove" (1 :CLAIM-NAME) "in" (2 :SC-TERM) 
+  (:tuple "prove" (1 :QUALIFIABLE-CLAIM-NAME) "in" (2 :SC-TERM) 
 	  (:optional (:tuple "with"    (3 :PROVER-NAME)))
 	  (:optional (:tuple "using"   (4 :PROVER-ASSERTIONS)))
 	  (:optional (:tuple "options" (5 :PROVER-OPTIONS))))
   (make-sc-prover 1 2 3 4 5 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PROVER-NAME ()
-  (:anyof "Snark" "PVS"))
+  (:anyof "Snark" "PVS" "FourierM"))
 
 (define-sw-parser-rule :PROVER-ASSERTIONS ()
   (:anyof 
    "ALL"
-   (:repeat+ :CLAIM-NAME ",")))
+   (:repeat+ :QUALIFIABLE-CLAIM-NAME ",")))
 
 (define-sw-parser-rule :PROVER-OPTIONS ()
   (:anyof

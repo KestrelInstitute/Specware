@@ -804,8 +804,8 @@ def toAny     = Term `TranslationBasic.toAny`
 	      insertOpers(opers,qname,spc)
    in
      let 
-       def doProp((pt, pn, tyVar, fmla), spc) =
-         let env = mkEnv(UnQualified, pn) in
+       def doProp((pt, pn as Qualified(qname, name), tyVar, fmla), spc) =
+         let env = mkEnv(qname, name) in
 	 let term = makeVarTerm(fmla) in
 	 let (opers, term) = lambdaLiftTerm(env, term) in
 	 let newProp = (pt, pn, tyVar, term) in

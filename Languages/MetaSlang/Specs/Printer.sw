@@ -797,7 +797,7 @@ AnnSpecPrinter qualifying spec {
   def defIndex      = 2
   def propertyIndex = 3
 
-  def ppProperty context (index,(pt,name,tyVars,term)) = 
+  def ppProperty context (index,(pt,name as Qualified(qualifier, id),tyVars,term)) = 
     let pp : ATermPrinter = context.pp in
     let button1 = if markSubterm?(context) 
                    then PrettyPrint.buttonPretty
@@ -815,7 +815,7 @@ AnnSpecPrinter qualifying spec {
          (0,button2),
          (0,case (pt:PropertyType) 
               of Theorem -> pp.Theorem | Axiom -> pp.Axiom | Conjecture -> pp.Conjecture),
-         (0,pp.ppFormulaDesc (" "^name)),
+         (0,pp.ppFormulaDesc (" "^(if qualifier = UnQualified then "" else qualifier^".")^id)),
          (0,string " "),
          (0,pp.Is),
          (0,if null tyVars then string "" else string " sort"),
@@ -1232,11 +1232,11 @@ AnnSpecPrinter qualifying spec {
      in
      let (counter,properties) = 
          foldl 
-         (fn ((pt,desc,tvs,_),(counter,list)) -> 
+         (fn ((pt,desc as Qualified(qualifier, id),tvs,_),(counter,list)) -> 
              (counter + 1,
               cons(
                 string ("  \\pdfoutline goto num "^Nat.toString counter^
-                        "  {"^desc^"}"),
+                        "  {"^printQualifiedId(desc)^"}"),
                 list))) (1,[]) spc.properties
      in
      let properties = rev properties in

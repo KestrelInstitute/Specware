@@ -90,7 +90,7 @@ def mkExistential (spc, term) =
   let newTerm = mapTerm (fn(trm) -> substVarForOp(trm), fn(s) -> s, fn(p) -> p) term in
   let existTerm = Bind (Exists, newVars, newTerm, noPos) in
   let _ = if specwareDebug? then printTermToTerminal(existTerm) else () in
-    ((Conjecture, "morphismExistential", [], existTerm), newVars)
+    ((Conjecture, mkUnQualifiedId("morphismExistential"), [], existTerm), newVars)
 
 op termOpsInSpec?: MS.Term * Spec -> Boolean
 

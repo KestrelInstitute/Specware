@@ -166,7 +166,7 @@ SpecCalc qualifying spec {
     ppConcat [
       ppPropertyType propType,
       ppString " ",
-      ppString name,
+      ppQualifiedId name,
       ppGroup (ppIndent (ppConcat [
         ppString " is",
         ppBreak,

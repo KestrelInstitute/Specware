@@ -22,7 +22,7 @@ spec
    | LetRec List (Var * MS.Term) 
    | Let List (Pattern * MS.Term)
 
- sort Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * String * NameSupply
+ sort Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * QualifiedId * NameSupply
 
  op  insert       : Var * Gamma -> Gamma
  op  assertCond   : MS.Term * Gamma -> Gamma
@@ -94,7 +94,7 @@ spec
      ()
  
 
- sort TypeCheckCondition  = String * TyVars * MS.Term 
+ sort TypeCheckCondition  = QualifiedId * TyVars * MS.Term 
  sort TypeCheckConditions = List(TypeCheckCondition) * StringSet.Set
 
  op addCondition : TypeCheckConditions * Gamma * MS.Term -> 
@@ -132,11 +132,12 @@ spec
 % def inferType = SpecEnvironment.inferType
 
 
- def addFailure((tcc,claimNames),(_,_,_,_,name,_),description) = 
-     let name = name^" :"^description in
-     (Cons((name,[],mkFalse()),tcc),StringSet.add(claimNames,name))
+ def addFailure((tcc,claimNames),(_,_,_,_,name as Qualified(qid, id),_),description) = 
+     let descName = id^" :"^description in
+     let name = mkQualifiedId(qid, descName) in
+     (Cons((name,[],mkFalse()),tcc),StringSet.add(claimNames,descName))
 
- def makeVerificationCondition((decls,tvs,spc,qid,name,_),term,claimNames) = 
+ def makeVerificationCondition((decls,tvs,spc,qid,name as Qualified(qual, id),_),term,claimNames) = 
      let
 	def insert(decl,formula) = 
 	    case decl
@@ -152,11 +153,11 @@ spec
      let term = foldl insert term decls in
      case simplify spc term of
        | Fun(Bool true,_,_) -> None
-       | claim -> Some(StringUtilities.freshName(name,claimNames),tvs,claim)
+       | claim -> Some(mkQualifiedId(qual, StringUtilities.freshName(id,claimNames)),tvs,claim)
 
  def addCondition(tcc as (tccs,claimNames),gamma,term) =
    case makeVerificationCondition(gamma,term,claimNames) of
-     | Some condn -> (Cons(condn,tccs),StringSet.add(claimNames,condn.1))
+     | Some condn -> let Qualified(_, cname) = condn.1 in (Cons(condn,tccs),StringSet.add(claimNames,cname))
      | None       -> tcc
 
 % Generate a fresh name with respect to all the
@@ -351,8 +352,8 @@ spec
        (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	 in
    let x  = freshName(gamma,"D")			 in
    let vs = [mkVar(x,dom)] 	        	         in
-   let (_,_,spc,_,name,_) = gamma			 in
-   let context = {counter = Ref 0,
+   let (_,_,spc,_,Qualified(_, name),_) = gamma			 in
+   let context:PatternMatch.Context = {counter = Ref 0,
 		  spc = spc,
 		  funName = name,
 		  term = None}				 in
@@ -499,7 +500,7 @@ spec
 
  op  add_WFO_Condition: TypeCheckConditions * Gamma * MS.Term * MS.Term
                        -> TypeCheckConditions
- def add_WFO_Condition((tccs,claimNames),(decls,tvs,spc,qid,name,_),param,recParam) =
+ def add_WFO_Condition((tccs,claimNames),(decls,tvs,spc,qid,name as Qualified(qual, id),_),param,recParam) =
    %% ex(pred) (wfo(pred) & fa(params) context(params) => pred(recParams,params))
    let paramSort = inferType(spc,recParam) in
    let predSort = mkArrow(mkProduct [paramSort,paramSort],boolSort()) in
@@ -523,9 +524,10 @@ spec
 						  mkVar pred),
 					  form])
    in
-   let name = StringUtilities.freshName(name,claimNames) in
+   let sname = StringUtilities.freshName(id,claimNames) in
+   let name = mkQualifiedId(qual, sname) in
    let condn = (name,tvs,form) in
-   (Cons(condn,tccs),StringSet.add(claimNames,name))
+   (Cons(condn,tccs),StringSet.add(claimNames,sname))
 
 %
 % Simplify term obtained from pattern matching compilation
@@ -650,10 +652,24 @@ spec
 		    printSort tau^
 		    " could not be made subsort of "^
 		    printSort sigma)
+        | (Boolean(_), Boolean(_)) -> tcc
+	| (Boolean(_), _) ->
+           addFailure(tcc,
+		    gamma,
+		    printSort tau^
+		    " could not be made subsort of "^
+		    printSort sigma)
+	| (_, Boolean(_)) ->
+           addFailure(tcc,
+		    gamma,
+		    printSort tau^
+		    " could not be made subsort of "^
+		    printSort sigma)
 
  op  equivalenceConjectures: MS.Term * Spec -> List TypeCheckCondition
  def equivalenceConjectures (r,spc) =
    let name = nameFromTerm r in
+   let qual = qualifierFromTerm r in
    let domty = domain(spc,inferType(spc,r)) in
    let elty = hd(productSorts(spc,domty)) in
    let tyVars = freeTyVars elty in
@@ -661,14 +677,14 @@ spec
    let y = ("y",elty) in
    let z = ("z",elty) in
    [%% fa(x,y,z) r(x,y) & r(y,z) => r(x,z)
-    (name^"_transitive",tyVars,
+    (mkQualifiedId(qual, name^"_transitive"),tyVars,
      mkBind(Forall,[x,y,z],mkImplies(MS.mkAnd(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar z])),
 				     mkAppl(r,[mkVar x,mkVar z])))),
     %% fa(x,y) r(x,y) => r(y,x)
-    (name^"_symmetric",tyVars,
+    (mkQualifiedId(qual, name^"_symmetric"),tyVars,
      mkBind(Forall,[x,y],mkImplies(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar x])))),
     %% fa(x) r(x,x)
-    (name^"_reflexive",tyVars,
+    (mkQualifiedId(qual, name^"_reflexive"),tyVars,
      mkBind(Forall,[x],mkAppl(r,[mkVar x,mkVar x])))]
 
  op  nameFromTerm: MS.Term -> String
@@ -677,6 +693,11 @@ spec
      | Fun(Op(Qualified(q,id),_),_,_) -> id
      | _ -> "UnnamedRelation"
 
+ op  qualifierFromTerm: MS.Term -> String
+ def qualifierFromTerm t =
+   case t of
+     | Fun(Op(Qualified(q,id),_),_,_) -> q
+     | _ -> UnQualified
  def checkSpec(spc) = 
      let localOps = spc.importInfo.localOps in
      let names = foldl (fn (Qualified(q,id),m) ->
@@ -694,7 +715,7 @@ spec
 	         foldl (fn ((type_vars, term), tcc) ->
 			 let term = renameTerm (emptyContext()) term in 
 			 (tcc,gamma0 tvs (Some(Qualified(qname,name),(curriedParams term).1))
-			        (name^"_Obligation"))
+			        (mkQualifiedId(qname, (name^"_Obligation"))))
 			      |- term ?? tau)
 		   tcc defs
 	       else 
@@ -703,11 +724,10 @@ spec
      in
      %% Properties (Axioms etc.)
      let baseProperties = (getBaseSpec()).properties in
-     let tcc = foldr (fn (pr as (_,name,tvs,fm),tcc) ->
-		       let _ = if name = "variable_assign_def" then debug("checkSpec") else () in
+     let tcc = foldr (fn (pr as (_,pname as Qualified(qname, name),tvs,fm),tcc) ->
 		       if member(pr,baseProperties) then tcc
 			 else let fm = renameTerm (emptyContext()) fm in
-			      (tcc,gamma0 tvs None (name^"_Obligation"))  |- fm ?? boolSort())
+			      (tcc,gamma0 tvs None (mkQualifiedId(qname, (name^"_Obligation"))))  |- fm ?? boolSort())
                  tcc spc.properties
      in
      %% Quotient relations are equivalence relations

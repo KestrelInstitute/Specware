@@ -199,24 +199,35 @@ def removePatternCase(term) =
 	    let newCondTerm = (hdCaseVars++hdBodyVars, Utilities.mkAnd(hdBodyCond, caseCond), hdBody):CondTerm in
 	    %let _ = writeLine("hdBody = "^printTerm(hdBody)) in
 	    cons(newCondTerm, tlCondTerms) in
-  let def combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars:List(Var), caseCTs, bodyCTs) =
+  let def combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars:List(Var), caseCTs, bodyCTs, negPrevCases) =
         case caseCTs of
 	  | Nil -> []
 	  | (hdCaseVars, hdCaseCond, hdCaseTerm)::tlCaseCTs ->
 	    let patCond = mkPatCond(patTerms, caseTerm) in
-	    let caseCond = Utilities.mkAnd(hdCaseCond, patCond) in
+	    let caseCond = Utilities.mkAnd(negPrevCases, Utilities.mkAnd(hdCaseCond, patCond)) in
 	    let hdCondTerms = recurseDownBodyCondTerms(hdCaseVars++patVars, caseCond, bodyCTs) in
-	    let tlCondTerms = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, bodyCTs, tlCaseCTs) in
+	    let tlCondTerms = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, bodyCTs, tlCaseCTs, negPrevCases) in
 	    hdCondTerms++tlCondTerms in
-  let def removePatternCaseCase(pat, _(* cond *), body) = 
+  let def removePatternCaseCase((pat, _(* cond *), body), negPrevCases) = 
         let bodyCondTerms = removePattern(body) in
 	let patTerms = patternToTerms(pat) in
 	let patVars = foldl(fn(term, res) -> freeVars(term)++res) [] patTerms in
 	%let _ = writeLine("CaseCase: "^printPattern(pat)^", "^printTerm(cond)^", "^printTerm(body)) in
-	let res = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, caseTermCondTerms, bodyCondTerms) in
+	let res = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, caseTermCondTerms, bodyCondTerms, negPrevCases) in
 	%let _ = map (fn (ct) -> writeLine("CaseCaseRes: "^printCondTerm(ct))) res in
 	res in
-  let res = foldl (fn (singleCase, resCondTerms) -> removePatternCaseCase(singleCase)++resCondTerms) [] cases in
+  let def removePatternCaseCases(cases, negPrevCases) =
+        case cases of
+	  | [] -> []
+	  | (hdCase as (pat,_,_))::tlCases ->
+	    let hdCaseCondTerms = removePatternCaseCase(hdCase, negPrevCases) in
+	    let patTerms = patternToTerms(pat) in
+	    let patCond = mkPatCond(patTerms, caseTerm) in
+	    let negNewCases = Utilities.mkAnd(negPrevCases, mkNot(patCond)) in
+	    let tlCaseCondTerms = removePatternCaseCases(tlCases, negNewCases) in
+	    hdCaseCondTerms++tlCaseCondTerms in
+  let res = removePatternCaseCases(cases, mkTrue()) in
+  %let res = foldl (fn (singleCase, resCondTerms) -> removePatternCaseCase(singleCase)++resCondTerms) [] cases in
   %let _ = writeLine("RemovePatternCase: "^printTerm(term)) in
   %let _ = writeLine(natToString(length(cases))^ " cases.") in
   %let _ = map (fn (ct) -> writeLine(printCondTerm(ct))) res in

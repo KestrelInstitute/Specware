@@ -83,7 +83,7 @@ one to override an existing definition.
 \begin{spec}
   sort Name = String
   sort ProverName = Name
-  sort ClaimName = Name
+  sort ClaimName = QualifiedId
 \end{spec}
 
 In a basic Specware image, OtherTerm is unspecified, but in an extension

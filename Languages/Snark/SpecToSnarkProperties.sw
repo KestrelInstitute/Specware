@@ -430,7 +430,7 @@ snark qualifying spec
 
   op snarkPropertiesFromProperty: Context * Spec * Property -> List LispCell
 
-  def snarkPropertiesFromProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
+  def snarkPropertiesFromProperty(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla)) =
     %let _ = if name = "filter_Object$1$_$Object$2_def" then debug("embed_cons prop") else () in
     %let liftedFmlas = proverPattern(fmla) in
     let liftedFmlas = [fmla] in
@@ -441,21 +441,21 @@ snark qualifying spec
   
   op snarkProperty: Context * Spec * Property -> LispCell
 
-  def snarkProperty(context, spc, prop as (ptype, name, tyvars, fmla)) =
+  def snarkProperty(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla)) =
     let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], fmla) in
       Lisp.list [snark_assert, Lisp.quote(snarkFmla),
 		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
 
   op snarkRewrite: Context * Spec * Property -> LispCell
 
-  def snarkRewrite(context, spc, prop as (ptype, name, tyvars, fmla)) =
+  def snarkRewrite(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla)) =
     let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], fmla) in
       Lisp.list [snark_assert_rewrite, Lisp.quote(snarkFmla),
 		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
 
   op snarkConjectureRemovePattern: Context * Spec * Property -> LispCell
 
-  def snarkConjectureRemovePattern(context, spc, prop as (ptype, name, tyvars, fmla)) =
+  def snarkConjectureRemovePattern(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla)) =
     %let liftedFmlas = proverPattern(fmla) in
     let liftedFmlas = [fmla] in
     let liftedConjecture = mkConj(liftedFmlas) in
@@ -465,14 +465,14 @@ snark qualifying spec
 
   op snarkConjecture: Context * Spec * Property -> LispCell
 
-  def snarkConjecture(context, spc, prop as (ptype, name, tyvars, fmla)) =
+  def snarkConjecture(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla)) =
     let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, [], fmla) in
       Lisp.list [snark_prove, Lisp.quote(snarkFmla),
 		 Lisp.symbol("KEYWORD","NAME"), Lisp.symbol("KEYWORD",name)]
 
   op snarkAnswer: Context * Spec * Property * Vars -> LispCell
 
-  def snarkAnswer(context, spc, prop as (ptype, name, tyvars, fmla), ansVars) =
+  def snarkAnswer(context, spc, prop as (ptype, pname as Qualified(qname, name), tyvars, fmla), ansVars) =
     let snarkFmla = mkSnarkFmla(context, spc, "SNARK", StringSet.empty, ansVars, fmla) in
     let snarkAnsVars = map (fn (v) -> snarkVar(v)) ansVars in
     let snarkAnsTerm = Lisp.list ([Lisp.symbol("SNARK","ANS")] ++ snarkAnsVars) in

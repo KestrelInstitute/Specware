@@ -106,7 +106,7 @@ SpecCalc qualifying spec {
     let sorts_msg = printNamesInAQualifierMap should_be_empty_spec.sorts in
     let ops_msg   = printNamesInAQualifierMap should_be_empty_spec.ops   in
     let props_msg = (foldl (fn ((_, prop_name, _, _), str) ->
-			    if str = "" then prop_name else str^", "^prop_name)
+			    if str = "" then printQualifiedId(prop_name) else str^", "^printQualifiedId(prop_name))
 		           ""			 
 			   should_be_empty_spec.properties)
     in

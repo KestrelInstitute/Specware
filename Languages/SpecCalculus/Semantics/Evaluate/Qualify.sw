@@ -92,6 +92,14 @@ Change UnQualified to new_qualifier in all qualified names
             } in
         foldOverQualifierMap qualifyStep emptyAQualifierMap sortMap
   
+      def convertProperties properties =
+        let def qualifyStep (pt, pn, ty_vars, fmla) =
+          %% Translation can cause names to become duplicated, but won't remove duplicates
+          let newName = (translateQualifiedId pn) in
+          let newProp = (pt, newName, ty_vars, fmla) in
+	  newProp in
+        List.map qualifyStep properties
+
       def convertSpec sp =
        let {importInfo = {imports,importedSpec,localOps,localSorts}, sorts, ops, properties}
            = mapSpec (translateOp, translateSort, translatePattern) sp
@@ -99,6 +107,7 @@ Change UnQualified to new_qualifier in all qualified names
        in {
          newSorts <- convertSortMap sorts;
          newOps <- convertOpMap ops;
+         newProperties <- return (convertProperties properties);
          return {
             importInfo = {
               imports = imports,
@@ -108,7 +117,7 @@ Change UnQualified to new_qualifier in all qualified names
             },  
             sorts      = newSorts,
             ops        = newOps,
-            properties = properties
+            properties = newProperties
          }
        }
     in convertSpec spc

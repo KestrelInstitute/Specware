@@ -22,7 +22,7 @@ spec
                   then (Obligations (UnitId (SpecPath_Relative specUId), noPos), noPos)
 		else(UnitId (SpecPath_Relative specUId), noPos) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options) in
-   let proofName = propName ^ "_proof" in
+   let proofName = printQualifiedId(propName) ^ "_proof" in
    let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
@@ -46,7 +46,7 @@ spec
      foldl insert pfDecls1 pfDecls2
 
 
- op generateProofsInSpec: Spec * SCTerm * Boolean * Spec * Boolean * String * ProverOptions * List String * GlobalContext -> List SCDecl
+ op generateProofsInSpec: Spec * SCTerm * Boolean * Spec * Boolean * String * ProverOptions * List ClaimName * GlobalContext -> List SCDecl
  def generateProofsInSpec (spc, scTerm, fromObligations?, baseSpc, multipleFiles, prover_name, prover_options, basePropNames, globalContext) =
    let imports = (spc.importInfo).imports in
    %let _ = debug("import check") in
@@ -73,7 +73,7 @@ spec
    let _ = debug("genprfsinspc") in
    unionProofDecls(localProofDecls, importProofDecls)
 
- op generateLocalProofsInSpec: Spec * SCTerm * Boolean * Boolean * String * ProverOptions * List String * GlobalContext -> List SCDecl
+ op generateLocalProofsInSpec: Spec * SCTerm * Boolean * Boolean * String * ProverOptions * List ClaimName * GlobalContext -> List SCDecl
  def generateLocalProofsInSpec (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext) =
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
    let props = usedSpc.properties in

@@ -273,14 +273,14 @@ SpecCalc qualifying spec {
 
       | Prove (claimName, term, proverName, assertions, proverOptions) ->
 	  ppConcat [
-	    ppString ("prove " ^ claimName ^ " in "),
+	    ppString ("prove " ^ printQualifiedId(claimName) ^ " in "),
 	    ppTerm term,
 	    (case assertions of
 	       | All -> ppNil
 	       | Explicit ([]) -> ppNil
 	       | Explicit (assertions) -> ppConcat [
 					    ppString " using ",
-					    ppSep (ppString ", ") (map ppString assertions)]),
+					    ppSep (ppString ", ") (map ppQualifier assertions)]),
             (case proverOptions of
 	       | OptionString ([option]) -> 
 	                                  if option = string("") then ppNil else

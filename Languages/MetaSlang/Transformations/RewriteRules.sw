@@ -449,7 +449,7 @@ is rewritten to
      case equality context (S,fml)
        of Some(N1,N2) -> 
           Some (freshRule(context,
-		 {name      = desc,   condition = condition,
+		 {name      = printQualifiedId(desc),   condition = condition,
 		  lhs       = N1,     rhs       = N2,
   	          tyVars    = tyVars, freeVars  = freeVars}))
 	| None -> None
@@ -527,13 +527,13 @@ is rewritten to
 		  let c = HigherOrderMatching.dereferenceAll subst0 c in
 		  (case axiomRule context
 		         (Axiom:PropertyType,
-			  "Context-condition: "^printTerm c,tvs,c)
+			  mkUnQualifiedId("Context-condition: "^printTerm c),tvs,c)
 		     of Some rule -> List.cons(rule,rules)
 		      | None ->
 		   let rules
 		        = case axiomRule context
 				(Axiom:PropertyType,
-				 "Context-condition: " ^printTerm c,
+				 mkUnQualifiedId("Context-condition: " ^printTerm c),
 				 tvs, mkEquality(boolSort(),c,mkTrue()))
 			    of Some rule -> List.cons(rule,rules)
 			     | None -> rules
@@ -542,8 +542,8 @@ is rewritten to
 		     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),nc,_) -> 
 		       (case axiomRule context
 			  (Axiom:PropertyType,
-			   "Context-condition: " ^printTerm nc
-			   ^" = false",
+			   mkUnQualifiedId("Context-condition: " ^printTerm nc
+			   ^" = false"),
 			   tvs, mkEquality(boolSort(),nc,mkFalse()))
 			  of 
 			   | Some rule -> List.cons(rule,rules)
@@ -551,8 +551,8 @@ is rewritten to
 		     | Apply(Fun(Not,_,_), nc,_) -> 
 		       (case axiomRule context
 			  (Axiom:PropertyType,
-			   "Context-condition: " ^printTerm nc
-			   ^" = false",
+			   mkUnQualifiedId("Context-condition: " ^printTerm nc
+			   ^" = false"),
 			   tvs, mkEquality(boolSort(),nc,mkFalse()))
 			  of 
 			   | Some rule -> List.cons(rule,rules)
