@@ -4,7 +4,7 @@ surveys Sept 1986 Ryder & Paull Cifuentes UQ website, IEEE "New
 Algorithms for Control-Flow Graph Structuring" Moretti, Chanteperdix,
 Osorio 
 
-Top-level function is graphToStructuredGraph
+Top-level function is nodeListToStructuredGraph
 *)
 
 spec 
@@ -57,11 +57,18 @@ spec
     case nth(g,i) of
       | (_,_,preds) -> preds
 
-  def successors(i,g) =
-    case nodeContent(i,g) of
+  def successors(i,g) = nodeSuccessors(nodeContent(i,g))
+
+  op nodeSuccessors: NodeContent ->  List Index
+  def nodeSuccessors nc =
+    case nc of
       | Block {statements = _, next} -> [next]
       | Branch {condition = _, trueBranch, falseBranch} -> [trueBranch, falseBranch]
       | Return _ -> []
+      | IfThen {condition, trueBranch, continue} -> [trueBranch,continue]
+      | IfThenElse {condition, trueBranch, falseBranch, continue} ->
+        [trueBranch, falseBranch]
+      | Loop {condition, preTest?, body, endLoop, continue} -> [body,continue]
 
   op setNodeContent: Index * NodeContent * Graph -> Graph
   def setNodeContent(i,newNodeContent,g) =
@@ -147,6 +154,10 @@ spec
 		else loop(rNds ++ (predecessors(nd,g)),Cons(nd,found),g)
     in
       loop([nd],limitNds,g)
+
+  op nodeListToStructuredGraph: List NodeContent -> Graph
+  def nodeListToStructuredGraph contentsList =
+    graphToStructuredGraph(addPredecessors contentsList)
   
   op graphToStructuredGraph: Graph -> Graph
   def graphToStructuredGraph (baseG) =
@@ -238,38 +249,48 @@ spec
     in str
 
   def printNode((DFSindex,content,preds),i) =
-    "Node " ^ (Nat.toString i) ^ ": DFS index: " ^ (Nat.toString DFSindex)
-      ^ " Preds: (" ^ (foldl(fn (j,str) -> str ^ (Nat.toString j) ^ " ") "" preds) ^ ")\n  "
+    "Node " ^ (Integer.toString i) ^ ": DFS index: " ^ (Integer.toString DFSindex)
+      ^ " Preds: (" ^ (foldl(fn (j,str) -> str ^ (Integer.toString j) ^ " ") "" preds)
+      ^ ")\n  "
       ^ (case content of
 	  | Branch {condition, trueBranch, falseBranch} ->
 	    "Branch Condn: " ^ (printTerm condition) ^ "\n  "
-	    ^ "True branch: " ^ (Nat.toString trueBranch) ^ "\n  "
-	    ^ "False branch: " ^ (Nat.toString falseBranch)
+	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
+	    ^ "False branch: " ^ (Integer.toString falseBranch)
 	  | Block {statements, next} ->
 	    "Block: " ^ (foldl (fn (st,str) -> str ^ (printStat st) ^ "; ") "" statements)
 	    ^ "\n  "
-	    ^ "Next: " ^ (Nat.toString next)
+	    ^ "Next: " ^ (Integer.toString next)
 	  | Return t ->
 	    "Return: " ^ (printTerm t)
 	  | IfThen {condition, trueBranch, continue} ->
 	    "If: " ^ (printTerm condition) ^ "\n  "
-	    ^ "True branch: " ^ (Nat.toString trueBranch) ^ "\n  "
-	    ^ "Continue: " ^ (Nat.toString continue)
+	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
+	    ^ "Continue: " ^ (Integer.toString continue)
 	  | IfThenElse {condition, trueBranch, falseBranch, continue} ->
 	    "If: " ^ (printTerm condition) ^ "\n  "
-	    ^ "True branch: " ^ (Nat.toString trueBranch) ^ "\n  "
-	    ^ "False branch: " ^ (Nat.toString falseBranch)
-	    ^ "Continue: " ^ (Nat.toString continue)
+	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
+	    ^ "False branch: " ^ (Integer.toString falseBranch)
+	    ^ "Continue: " ^ (Integer.toString continue)
 	  | Loop {condition, preTest?, body, endLoop, continue} ->
 	    (if preTest? then "While: " else "Until: ") ^ (printTerm condition) ^ "\n  "
-	    ^ "Body:: " ^ (Nat.toString body) ^ "\n  "
-	    ^ "End Loop: " ^ (Nat.toString endLoop) ^ "\n  "
-	    ^ "Continue: " ^ (Nat.toString continue))
+	    ^ "Body:: " ^ (Integer.toString body) ^ "\n  "
+	    ^ "End Loop: " ^ (Integer.toString endLoop) ^ "\n  "
+	    ^ "Continue: " ^ (Integer.toString continue))
 
   def printStat st =
     case st of
       | Assign t -> "Assign " ^ (printTerm t)
       | Proc t -> "Proc " ^ (printTerm t)
       | Return t -> "Return " ^ (printTerm t)
-         
+
+  op addPredecessors: List NodeContent -> Graph
+  def addPredecessors contentsList =
+    mapi (fn (i,nc) -> (0,nc,findPredecessors(i,contentsList))) contentsList
+
+  op findPredecessors: Index * List NodeContent -> List Index
+  def findPredecessors(i,contentsList) =
+    filter (fn j -> member(i,nodeSuccessors(nth(contentsList,j))))
+      (enumerate(0,(length contentsList) - 1))
+	    
 end
