@@ -1,12 +1,39 @@
 spec
 
+  (* A proof can be represented as a tree of inference rules. Inference rules
+  that have N judgements as premises have N subtrees; in particular, if N = 0,
+  the inference rule is a leaf.
+
+  A proof of this form can be checked by means of a recursive function that
+  computes a judgement from a tree, the judgement being proved by the
+  tree. For each inference rule, the function recursively computes the
+  judgements proved by the subtrees and then checks whether the rule can be
+  applied to such judgements. If it can, the function computes the judgement
+  resulting from applying the rule. Otherwise, the function indicates a
+  failure; of course, failures are propagated from subtree to supertrees. This
+  function is defined in spec `...'.
+
+  Since not all rules are such that there is a unique conclusion judgement for
+  given premise judgements (e.g. rule `cxTypeDecl' has a different conclusion
+  for every type name and arity), proof trees include additional information
+  to uniquely determine conclusion judgements from premise judgements
+  (e.g. the node for `cxTypeDecl' includes a type name and an arity). All the
+  needed additional information consists of primitives (postulated in spec
+  `Primitives') and positions (defined in spec `Positions'). *)
+
+
   import PrimitivesWithAbbreviations, Positions
+
 
   type Proof  % defined below
 
-  type Proofs = FSeq Proof
-  type Proof? = Option Proof
+
+  % useful abbreviations:
+
+  type Proof?  = Option Proof
+  type Proofs  = FSeq Proof
   type Proof?s = FSeq Proof?
+
 
   type Proof =
     % well-formed contexts:
