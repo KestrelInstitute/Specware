@@ -48,6 +48,14 @@
       ;;
       (let ((location (svref locations i)))
 	;;
+	'(let ((token
+	       (dolist (forward-node (parser-location-post-nodes location))
+		 (when (eq (parser-node-rule forward-node) +token-rule+)
+		   (return (parser-node-semantics forward-node))))))
+	  (format t "~&[~3D : ~30D~% ~S]~%"
+		  i
+		  token
+		  (parser-location-partial-node-data location)))
 	(cond ((or (eq i 0) (not (null (parser-location-partial-node-data location))))
 	       (setq preceding-location-had-no-pending-rules? nil))
 	      (preceding-location-had-no-pending-rules?
@@ -66,34 +74,31 @@
 			  (prior-token-node 
 			   (find-if #'(lambda (node) (parser-token-rule-p (parser-node-rule node)))
 				    (parser-location-post-nodes prior-location))))
-		     (if (null prior-token-node)
-			 (warn-pos "At line ~3D:~2D  No tokens seen, but syntax error  [very strange]" 
-			       prior-line prior-column prior-byte-pos)
-		       (cond ((null prior-token-node)
-			      (warn-pos "At line ~3D:~2D  Peculiar syntax error."
-				    prior-line prior-column prior-byte-pos))
-			     ((eq (first (parser-node-semantics prior-token-node))
-				  :EXTENDED-COMMENT-ERROR)
-			      (let ((comment-text 
-				     ;; trim text of comment down to include at most 2 newlines
-				     (do ((text (second (parser-node-semantics prior-token-node))
-						(subseq text 0 (1- (length text)))))
-					 ((< (count-if #'(lambda (char) (eq char #\newline)) 
-						       text) 
-					     3)
-					  text))))
-				;; trim text of comment down to include at most 20 characters
-				(when (> (length comment-text) 20)
-				  (setq comment-text (format nil "~A ..." (subseq comment-text 0 16))))
-				(warn-pos "At line ~3D:~2D  EOF while scanning for close of extended comment starting with \"~A\""
-				      prior-line prior-column ;; prior-byte-pos
-				      comment-text 
-				      )))
-			     (t
- 			      (warn-pos "At line ~3D:~2D  Syntactic error with \"~A\""
-				    prior-line prior-column ; prior-byte-pos
-				    (second (parser-node-semantics prior-token-node))
-				    )))))))
+		     (cond ((null prior-token-node)
+			    (warn-pos "At line ~3D:~2D  Peculiar syntax error (no tokens seen)."
+				      prior-line prior-column prior-byte-pos))
+			   ((eq (first (parser-node-semantics prior-token-node))
+				:EXTENDED-COMMENT-ERROR)
+			    (let ((comment-text 
+				   ;; trim text of comment down to include at most 2 newlines
+				   (do ((text (second (parser-node-semantics prior-token-node))
+					      (subseq text 0 (1- (length text)))))
+				       ((< (count-if #'(lambda (char) (eq char #\newline)) 
+						     text) 
+					   3)
+					text))))
+			      ;; trim text of comment down to include at most 20 characters
+			      (when (> (length comment-text) 20)
+				(setq comment-text (format nil "~A ..." (subseq comment-text 0 16))))
+			      (warn-pos "At line ~3D:~2D  EOF while scanning for close of extended comment starting with \"~A\""
+					prior-line prior-column ;; prior-byte-pos
+					comment-text 
+					)))
+			   (t
+			    (warn-pos "At line ~3D:~2D  Syntactic error with \"~A\""
+				      prior-line prior-column ; prior-byte-pos
+				      (second (parser-node-semantics prior-token-node))
+				      ))))))
 	       (setq preceding-location-had-no-pending-rules? t)
 	       ))
 	(when-debugging
@@ -103,17 +108,18 @@
 	(dolist (forward-node (parser-location-post-nodes location))
 	  (when (eq (parser-node-rule forward-node) +token-rule+)
 	    (let* ((token (parser-node-semantics forward-node))
-		   ; (column (third (third token)))
+		   ;; (column (third (third token)))
 		   )
 	      ;;
-	      ;; (when (and (zerop (mod i 1000)) (> i 0)) (comment
-	      ;; "[~8D] At token ~6D ~4D ~4D ~4D ~S" (delta-time) i
-	      ;; pos line column xxx ))
+	      ;; (when (and (zerop (mod i 1000)) (> i 0)) (comment "[~8D] At token ~6D ~4D ~4D ~4D ~S" (delta-time) i pos line column xxx ))
 	      ;;
-	      (when ; (and (eq column 1) 
-		  (null (parser-location-partial-node-data location))
-		; )
-		(add-toplevel-node session i))
+	      (when (null (parser-location-partial-node-data location))
+		;; Maybe we finished one toplevel form and are about to parse another.
+		;; But if there were errors, we're probably still inside a buggy form,
+		;;  so don't try to parse toplevel forms until we get back to column 1.
+		(let ((column (third (third token))))
+		  (unless (and (parse-session-error-reported? session) (> column 1))
+		    (add-toplevel-node session i))))
 	      (let* ((tok2 (second token)) 
 		     (specific-keyword-rule (if (stringp tok2)
 						(gethash (second token) ht-string-to-keyword-rules)
