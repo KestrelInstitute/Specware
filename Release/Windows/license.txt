@@ -1,0 +1,27 @@
+"Specware (tm)" is a registered trademark of Kestrel Development Corp.
+
+Notice: This program is protected under international and U.S. copyright laws as an unpublished work, which is confidential and proprietary to Kestrel Institute, Kestrel Development Corporation and Kestrel Technology, LLC.
+
+Its reproduction or disclosure, in whole or in part, or the production of derivative works therefrom without the express signed permission of Kestrel Institute,  Kestrel Development Corporation and Kestrel Technology, LLC is prohibited.
+
+Kestrel  hereby acknowledges that the Franz Programs and related documentation are 'commercial computer software' provided in accordance with FAR 12.212 and DFARS 227.7202 and are, therefore, subject to Contractor's standard licensing terms therefor.
+
+This version of Specware (tm) includes SNARK, which is available under the Mozilla Public License for download at http://www.ai.sri.com/~stickel/snark.tar.gz.  A copy of the License and of files modified by Kestrel can be found on the Specware (tm) distribution CD under the SNARK directory.
+
+Copyright (c) 1988-2004 by Kestrel Institute, Kestrel Development Corporation and Kestrel Technology, LLC. All rights reserved.
+
+Use of a copyright notice is precautionary only and does not imply publication or disclosure.
+
+This material may be reproduced by or for the US Government pursuant to the copyright license under the clause DFARS 252.227-7013 (Nov 1995).
+
+
+Kestrel Institute           
+Kestrel Development Corporation
+Kestrel Technology, LLC
+
+3260 Hillview Ave.          
+2nd Floor                  
+Palo Alto, CA, 94304      
+
+Phone/FAX: (650) 320-8888
+Email: info@kt-llc.com
