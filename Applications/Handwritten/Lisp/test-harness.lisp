@@ -334,17 +334,19 @@ be the option to run each (test ...) form in a fresh image.
 		      (reverse expected-rev) 
 		      (reverse got-rev))))))))
 
-(defun convert-to-lines (str)
-  (let ((lines nil)
-	(local-chars nil))
-    (do ((chars (coerce str 'list) (cdr chars)))
-	((null chars)
-	 (reverse (cons (reverse local-chars) lines)))
-      (let ((char (car chars)))
-	(cond ((equal char #\Newline)
-	       (push (reverse local-chars) lines)
-	       (setq local-chars nil))
-	      (t
-	       (push char local-chars)))))))
+(defun convert-to-lines (text)
+  (if (stringp text)
+      (let ((lines nil)
+	    (local-chars nil))
+	(do ((chars (coerce text 'list) (cdr chars)))
+	    ((null chars)
+	     (reverse (cons (reverse local-chars) lines)))
+	  (let ((char (car chars)))
+	    (cond ((equal char #\Newline)
+		   (push (reverse local-chars) lines)
+		   (setq local-chars nil))
+		  (t
+		   (push char local-chars))))))
+    text))
 
     
