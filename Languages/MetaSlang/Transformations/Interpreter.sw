@@ -151,13 +151,21 @@ spec
   op  evalApplyNonStrict: MS.Term * MS.Term * Subst * Spec * Nat -> Value
   def evalApplyNonStrict(ft,at,sb,spc,depth) =
     case at of
-      | Record([("1",at1),("2",at2)],a) ->
-        let ifTm = case ft of
-	             | Fun(And,_,_)     -> IfThenElse(at1,at2,mkFalse(),a)
-	             | Fun(Or,_,_)      -> IfThenElse(at1,mkTrue(),at2,a)
-	             | Fun(Implies,_,_) -> IfThenElse(at1,at2,mkTrue(),a)
-	in
-        evalRec(ifTm,sb,spc,depth+1)
+      | Record([("1",at1),("2",at2)],_) ->
+        (case evalRec(at1,sb,spc,depth+1) of
+	   | Bool b? ->
+	     (case ft of
+	       | Fun(And,_,_) ->
+	         if b? then evalRec(at2,sb,spc,depth+1)
+		  else Bool false
+	       | Fun(Or,_,_) ->
+		 if b? then Bool true
+		  else evalRec(at2,sb,spc,depth+1)
+	       | Fun(Implies,_,_) ->
+		 if b? then evalRec(at2,sb,spc,depth+1)
+		  else Bool true)
+	   | Unevaluated r_at1 ->
+	     Unevaluated(mkApply(ft,mkTuple([r_at1,at2]))))
       | _ -> evalApplySpecial(ft,evalRec(at,sb,spc,depth+1),sb,spc,depth)
 	   
   op  evalApply: Value * Value * Subst * Spec * Nat -> Value
