@@ -39,6 +39,11 @@ SpecCalc qualifying spec
     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
   }
 
+  def SpecCalc.evaluateOtherProve _ (* claimName, value, valueName, proverName, assertions, possibleOptions, baseOptions, answerVariable *) pos = {
+    unitId <- getCurrentUID;
+    raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
+  }
+
   def SpecCalc.evaluateOtherProofGen _ (* value, term, optFileName, fromObligations? *) pos = {
     unitId <- getCurrentUID;
     raise (TypeCheck (pos, "Qualify: Unexpected OtherTerm at " ^ (uidToString unitId)^ "\n"))
@@ -65,6 +70,13 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.13  2005/02/10 09:53:05  mcdonald
+%% added hook for other obligations
+%%
+%% still unclear what to do for obligations of complex things
+%% that contain many specs, morphisms, etc. -- hard to make it
+%% a single spec
+%%
 %% Revision 1.12  2005/01/28 03:12:51  mcdonald
 %% tweak to avoid compiler warnings
 %%

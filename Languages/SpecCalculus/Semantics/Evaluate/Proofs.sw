@@ -98,9 +98,9 @@ spec
       | pd1::pds ->
           let (pdName1, _) = pd1 in
 	  if pdName = pdName1 then
-            pds
+            pfDecls
           else
-            Cons (pd1, ListUtilities.insert (pd, pds)) in
+            Cons (pd1, insert (pd, pds)) in
      foldl insert pfDecls1 pfDecls2
 
  op generateProofsInSpec: Spec * SCTerm * Boolean * Spec * Boolean * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
@@ -371,6 +371,9 @@ endspec
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.25  2005/03/23 02:13:34  westfold
+%% Major update to include sequence of spec elements in spec.
+%%
 %% Revision 1.24  2004/11/30 20:09:35  westfold
 %% Fix handling of devices in windows for uids and swpath
 %%

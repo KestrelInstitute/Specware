@@ -1,4 +1,4 @@
-SpecCalc qualifying spec {
+SpecCalc qualifying spec 
   import UnitId
   %import SpecUnion
   import /Languages/Snark/SpecToSnark
@@ -6,14 +6,29 @@ SpecCalc qualifying spec {
   import /Languages/MetaSlang/Transformations/ExplicateHiddenAxioms
   import /Languages/MetaSlang/Transformations/RemoveQuotient
   import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+  import /Library/IO/Primitive/IO
   import UnitId/Utilities                                    % for uidToString, if used...
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
   
- def SpecCalc.evaluateProve (claimName, specTerm, proverName, assertions, possibleOptions, baseOptions, answerVariable) pos = {
+ def SpecCalc.evaluateProve (claimName, term, proverName, assertions, possibleOptions, baseOptions, answerVariable) pos =
+   {
+    (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
+
+    value <- return (coerceToSpec value);
+    valueName <- return (SpecTermToSpecName(term));
+    result <- (case value of
+		 | Spec spc -> evaluateSpecProve (claimName, spc, valueName, proverName, assertions, possibleOptions, baseOptions, answerVariable) pos
+		 | Other other -> evaluateOtherProve (claimName, other, valueName, proverName, assertions, possibleOptions, baseOptions, answerVariable) pos
+		 | _ -> raise (Proof (pos, "Argument to prove command is neither coerceable to a spec nor Other.")));
+    return (result, timeStamp, depUIDs)
+   }
+
+  op evaluateSpecProve: ClaimName * Spec * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar -> Position -> SpecCalc.Env Value
+  def evaluateSpecProve (claimName, spc, specName, proverName, assertions, possibleOptions, baseOptions, answerVariable) pos =
+    {
      unitId <- getCurrentUnitId;
      print (";;; Elaborating proof-term at " ^ (uidToString unitId) ^ "\n");
-     (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo specTerm;
      (optBaseUnitId,baseSpec) <- getBase;
      baseProverSpec <- getBaseProverSpec;
      rewriteProverSpec <- getRewriteProverSpec;
@@ -21,12 +36,7 @@ SpecCalc qualifying spec {
      finalSpecFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName, "sw");
      _ <- return (ensureDirectoriesExist proverLogFileName);
      proofName <- return (UIDtoProofName unitId);
-     specName <- return (SpecTermToSpecName(specTerm));
-     userSpec <- (
-		  case coerceToSpec value of
-		    | Spec spc -> return spc %specUnion([spc, baseProverSpec])
-		    | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
-     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec userSpec);
+     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec spc);
      _ <- return (writeLine("    Expanded spec file: " ^ finalSpecFileName));
      _ <- return (writeLine("    Snark Log file: " ^ proverLogFileName));
      _ <- return (printFlatSpecToFile(finalSpecFileName, expandedSpec));
@@ -35,7 +45,7 @@ SpecCalc qualifying spec {
        (case possibleOptions of
 	  | OptionString proverOptions -> return (proverOptions)
 	  | OptionName proverOptionName -> 
-	        proverOptionsFromSpec(proverOptionName, userSpec, specName)
+	        proverOptionsFromSpec(proverOptionName, spc, specName)
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
      includeBase <- return proverUseBase?;
      proved <- (proveInSpec (proofName,
@@ -51,11 +61,9 @@ SpecCalc qualifying spec {
 			     answerVariable,
 			     proverLogFileName,
 			     pos));
-     result <- return (Proof {status = if proved then Proved else Unproved, 
-			      unit   = unitId});
-     return (result, timeStamp, depUIDs)
-   }
-
+     return (Proof {status = if proved then Proved else Unproved, 
+		    unit   = unitId})
+    }
 
   op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
   def transformSpecForFirstOrderProver baseSpc spc =
@@ -183,7 +191,7 @@ SpecCalc qualifying spec {
    let Some hashSuffix = hashSuffix in
     {prefix <- removeLastElem path;
      newSubDir <- lastElem path;
-     mainName <- return hashSuffix;
+     mainName <- return (convertToFileName hashSuffix);
      let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
         ^ "/"^proverName^"/" ^ newSubDir ^ "/" ^ mainName ^ "." ^ suffix
      in
@@ -467,4 +475,6 @@ SpecCalc qualifying spec {
 	  Lisp.++ snarkProverDecls
 		    ]
 
-}
+endspec
+
+

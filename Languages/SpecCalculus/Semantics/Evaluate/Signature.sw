@@ -66,6 +66,7 @@ SpecCalc qualifying spec {
   op evaluateOtherProofGen      : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
   op evaluateOtherProofGenLocal : OtherValue * SCTerm * Option String * Boolean -> Position -> SpecCalc.Env ()
   op evaluateOtherObligations   : OtherValue                                    -> Position -> SpecCalc.Env ValueInfo
+  op evaluateOtherProve         : ClaimName * OtherValue * Option String * ProverName * Assertions * ProverOptions * ProverBaseOptions * AnswerVar -> Position -> SpecCalc.Env Value
 
   %% Lower-level support routines:
 
@@ -83,6 +84,13 @@ SpecCalc qualifying spec {
 %% $Id$
 %%
 %% $Log$
+%% Revision 1.39  2005/02/10 09:53:05  mcdonald
+%% added hook for other obligations
+%%
+%% still unclear what to do for obligations of complex things
+%% that contain many specs, morphisms, etc. -- hard to make it
+%% a single spec
+%%
 %% Revision 1.38  2004/12/21 13:38:47  mcdonald
 %% misc tweaks for Prism
 %%
