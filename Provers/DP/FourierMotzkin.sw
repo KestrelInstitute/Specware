@@ -48,6 +48,11 @@ FM qualifying spec
       | [Constant _] -> true
       | _ -> false
 
+  op mkConstantPoly: Coef -> Poly
+  def mkConstantPoly(c) =
+    if c = 0
+      then zeroPoly
+    else mkPoly1(Constant(c))
 
   sort Ineq = CompPred * Poly
 
@@ -143,11 +148,23 @@ FM qualifying spec
       | Constant c1 -> Constant (c1 div c)
       | Monom (c1, v) -> Monom ((c1 div c), v)
 
+  op coefDivTerm: Coef * Term -> Term
+  def coefDivTerm(c, tm) =
+    case tm of
+      | Constant c1 -> Constant (c div c1)
+      | Monom (c1, v) -> Monom ((c div c1), v)
+
   op termRemCoef: Term * Coef -> Term
   def termRemCoef(tm, c) =
     case tm of
       | Constant c1 -> Constant (c1 rem c)
       | Monom (c1, v) -> Monom ((c1 rem c), v)
+
+  op coefRemTerm: Coef * Term -> Term
+  def coefRemTerm(c, tm) =
+    case tm of
+      | Constant c1 -> Constant (c rem c1)
+      | Monom (c1, v) -> Monom ((c rem c1), v)
 
 (*
   op termPowCoef: Term * Coef -> Term
@@ -172,6 +189,10 @@ FM qualifying spec
   def polyMinusPoly(p1, p2) =
     polyPlusPoly(p1, negateSum(p2))
 
+  op polyTimesConstantPoly: Poly * Poly -> Poly
+  def polyTimesConstantPoly(p1, p2 as [Constant c]) =
+    coefTimesPoly(c, p1)
+  
   op constantPolyTimesPoly: Poly * Poly -> Poly
   def constantPolyTimesPoly(p1 as [Constant c], p2) =
     coefTimesPoly(c, p2)
@@ -183,7 +204,7 @@ FM qualifying spec
   op polyRemConstantPoly: Poly * Poly -> Poly
   def polyRemConstantPoly(p1, p2 as [Constant c]) =
     map (fn (tm) -> termRemCoef(tm, c)) p1
-  
+
 (*
   op polyPowConstantPoly: Poly * Poly -> Poly
   def polyPowConstantPoly(p1, p2 as [Constant c]) =
@@ -424,8 +445,13 @@ FM qualifying spec
 
   op FMRefute?: IneqSet -> Boolean
   def FMRefute?(ineqSet) =
+    let ineqSet = sortIneqSet(ineqSet) in
     let ineqSet = integerPreProcess(ineqSet) in
     let completeIneqs = fourierMotzkin(ineqSet) in
+    let _ = writeLine("FM: input:") in
+    let _ = writeIneqs(ineqSet) in
+    let _ = writeLine("FM: output:") in
+    let _ = writeIneqs(completeIneqs) in
     if member(contradictIneqGt, completeIneqs) or
       member(contradictIneqGtEq, completeIneqs) or
       member(contradictIneqGtZero, completeIneqs)      
@@ -496,6 +522,12 @@ FM qualifying spec
       | ineq::ineqSet ->
       let newIneqs = processIneq1(ineq, ineqSet) in
       processPossibleIneqsAux(ineqSet, newIneqs++res)
+
+  op writeIneqs: List Ineq -> ()
+  def writeIneqs(ineqs) =
+    let _ = map (fn (ineq) -> writeLine(printIneq(ineq))) ineqs in
+    ()
+    
 
   op printIneq: Ineq -> String
   def printIneq(ineq as (comp, poly)) =
