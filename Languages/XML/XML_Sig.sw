@@ -1595,9 +1595,6 @@ XML qualifying spec
   sort EntityValue = {qchar : QuoteChar,
 		      items : List EntityValue_Item}
 
-  %%
-  %%  [9] aux
-  %%
   sort EntityValue_Item = | NonRef UString
                           | PERef  PEReference
                           | Ref    Reference
@@ -1608,9 +1605,6 @@ XML qualifying spec
   sort AttValue = {qchar : QuoteChar,
 		   items : List AttValue_Item}
 
-  %%
-  %%  [10] aux
-  %%
   sort AttValue_Item = | NonRef UString
                        | Ref    Reference
 
@@ -1770,7 +1764,7 @@ XML qualifying spec
   %%
   %%    Parameter-entity references may only appear in the DTD.  
   %%    Comment: This includes both the internal and external subsets!
-  %%    Todo: check att values
+  %%    Comment: This appears to be vacuously true, given the grammar.
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Names                                                                               %%%
