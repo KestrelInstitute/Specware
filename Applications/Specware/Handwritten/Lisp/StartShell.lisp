@@ -1,0 +1,1 @@
+(SWShell::specware-shell nil)
