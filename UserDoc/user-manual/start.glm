@@ -2,8 +2,8 @@
 <title>Getting Started</title>
 
 <para>&Specware; is a development environment that runs on top of
-Lisp.  This chapter describes the &Specware; environment and the basic
-mechanisms for running &Specware;.</para>
+Lisp.  The following sections describe the &Specware; environment and
+the basic mechanisms for running &Specware;.</para>
 
 <section>
 <title>Starting &Specware;</title>
