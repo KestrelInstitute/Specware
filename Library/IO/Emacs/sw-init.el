@@ -60,7 +60,7 @@
 		    )
     (when in-current-dir?
       (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
-			       (concat root-dir ":/")))
+			       (concat (replace-backslash-by-slash root-dir) ":/")))
       (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir)))
     ))
 
@@ -69,6 +69,9 @@
     (if (eq (elt str last) ?/)
 	(substring str 0 last)
       str)))
+
+(defun replace-backslash-by-slash (str)
+  (substitute ?/ ?\\ str))
 
 ;; The following is almost the same as the above. The difference is that
 ;; in the following we execute a Specware application (rather than run Lisp
@@ -159,7 +162,7 @@
 	 (world-name (concat bin-dir "/Specware4.dxl")))
     (run-plain-lisp)
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
-			     (concat root-dir ":/")))
+			     (concat (replace-backslash-by-slash root-dir) ":/")))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir))
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
     (sw:eval-in-lisp "(load \"Specware4.lisp\")")
@@ -168,7 +171,7 @@
     (unless (inferior-lisp-running-p)
       (sleep-for 1))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
-			     (concat root-dir ":/")))
+			     (concat (replace-backslash-by-slash root-dir) ":/")))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir))
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
     (sw:eval-in-lisp "(load \"Specware4.lisp\")")
@@ -192,7 +195,7 @@
     (run-specware4 root-dir)
     (sleep-for 2)
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" root-dir))
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH:/\") %S)" root-dir))
+    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH:/\") %S)" (replace-backslash-by-slash root-dir)))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir))
     (sw:eval-in-lisp "(time (user::boot))")
     (build-specware4 root-dir)))
