@@ -31,6 +31,7 @@ Errors in $TESTDIR/t0103_1.sw
        :sw "Switch"
        :output '((:optional ";;; Elaborating spec at $TESTDIR/Switch#aspec")
 		 (:optional ";;; Elaborating obligator at $TESTDIR/Switch#aspecobs")
+		 (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/WFO")
 		 ";;; Elaborating proof-term at $TESTDIR/Switch#p1"
 		 (:optional ";;; Elaborating spec at $SPECWARE/Library/ProverBase/Top")
 		 (:optional ";;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite")
