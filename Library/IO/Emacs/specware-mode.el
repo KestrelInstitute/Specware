@@ -994,6 +994,10 @@ If anyone has a good algorithm for this..."
 	(delim (if (eq window-system 'mswindows) ?\; ?:))
 	(result ())
 	pos)
+    (when (eq rawpath 'nil)		; SWPATH not set
+      (setq rawpath (sw:eval-in-lisp "(specware::getenv \"SPECWARE4\")"))
+      (when (eq rawpath 'nil)		; SPECWARE4 not set
+	(setq rawpath "")))
     (while (setq pos (position delim rawpath))
       (push (substring rawpath 0 pos) result)
       (setq rawpath (substring rawpath (+ pos 1))))
