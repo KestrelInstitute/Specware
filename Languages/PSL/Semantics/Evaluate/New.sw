@@ -704,23 +704,37 @@ in the application operator is the operator being applied to the remaining
 elements in the list.
 
 \begin{spec}
+  op processLHS : ATerm Position -> QualifiedId * (ATerm Position)
+  def processLHS term =
+    let
+      def firstPass trm l pos =
+        case l of
+          | [] -> trm
+          | x::l -> firstPass (ApplyN ([trm,x],pos)) l pos
+      def secondPass trm =
+        case trm of
+          | ApplyN ([x,y],pos) ->
+              let srt = freshMetaTyVar pos in
+              ApplyN ([ApplyN ([Fun (OneName ("eval",Nonfix),srt,pos), secondPass x],pos),y],pos)
+          | _ -> trm
+    in
+      case term of
+        | Fun (OneName(id,fixity),srt,pos) ->
+           (unQualified id, Fun(OneName(id ^ "'",fixity),srt,pos))
+        | ApplyN ((Fun (OneName(id,fixity),srt,pos))::args,pos) ->
+            let newTerm = secondPass (firstPass (Fun (OneName(id ^ "'",fixity),srt,pos)) args pos) in
+            (unQualified id, newTerm)
+        % | ApplyN ((Fun (TwoNames(id1,id2,fixity),srt,pos))::args,pos) ->
+        %    (Qualified (id1,id2), ApplyN (Cons (Fun(TwoNames(id1,id2 ^ "'",fixity),srt,pos),args),pos))
+        % | Fun (TwoNames(id1,id2,fixity),srt,pos) ->
+        %    (Qualified(id1,id2), Fun(TwoNames(id1,id2 ^ "'",fixity),srt,pos))
+        % | ApplyN ((Fun (Op(id,fixity),srt,pos))::args,pos) ->
+        %    (id, ApplyN (Cons (Fun(Op(makePrimedId id,fixity),srt,pos),args),pos))
+        % | Fun (Op(id,fixity),srt,pos) -> (id, Fun(Op(makePrimedId id,fixity),srt,pos))
+        | _ -> fail "bad lhs"
+
   op makePrimedId : QualifiedId -> QualifiedId
   def makePrimedId (Qualified (qual,id)) = Qualified (qual,id ^ "'")
-
-  op processLHS : ATerm Position -> QualifiedId * (ATerm Position)
-  def processLHS trm =
-    case trm of
-      | Fun (OneName(id,fixity),srt,pos) ->
-         (unQualified id, Fun(OneName(id ^ "'",fixity),srt,pos))
-      | Fun (TwoNames(id1,id2,fixity),srt,pos) ->
-         (Qualified(id1,id2), Fun(TwoNames(id1,id2 ^ "'",fixity),srt,pos))
-      | Fun (Op(id,fixity),srt,pos) -> (id, Fun(Op(makePrimedId id,fixity),srt,pos))
-      | ApplyN ((Fun (OneName(id,fixity),srt,pos))::args,pos) ->
-         (unQualified id, ApplyN (Cons (Fun(OneName(id ^ "'",fixity),srt,pos),args),pos))
-      | ApplyN ((Fun (TwoNames(id1,id2,fixity),srt,pos))::args,pos) ->
-         (Qualified (id1,id2), ApplyN (Cons (Fun(TwoNames(id1,id2 ^ "'",fixity),srt,pos),args),pos))
-      | ApplyN ((Fun (Op(id,fixity),srt,pos))::args,pos) ->
-         (id, ApplyN (Cons (Fun(Op(makePrimedId id,fixity),srt,pos),args),pos))
 \end{spec}
 
 This is a function introduced for DTR but supporting a feature that

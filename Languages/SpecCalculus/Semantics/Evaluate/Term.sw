@@ -19,6 +19,7 @@ SpecCalc qualifying spec {
  import Obligations
  import Substitute      
  import Print      
+ import /Languages/MetaSlang/CodeGen/C/ToC
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.
@@ -70,6 +71,8 @@ This is a monadic interpreter for the Spec Calculus.
 
     | Generate (language, sub_term as (term,position), optFile) -> {
           (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
+          baseURI <- pathToRelativeURI "/Library/Base";
+          (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
           (case value of
             | Spec spc -> 
                 (case language of
@@ -81,6 +84,9 @@ This is a monadic interpreter for the Spec Calculus.
                           print (showValue value);
                           return (value,timeStamp,depURIs)
                         }
+                   | "c" -> 
+                         let _ = specToC (subtractSpec spc baseSpec) in
+                         return (value,timeStamp,depURIs)
                    | lang -> raise (Unsupported ((positionOf sub_term),
                                   "no generation for language "
                                 ^ lang
