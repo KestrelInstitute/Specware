@@ -11,20 +11,20 @@ Claim qualifying spec
   sort Claim.ClaimType = AnnSpec.PropertyType
 
   % op idOf : Claim -> IdSet.Set
-  def Claim.idOf (type as _,name,tyVars as _,term as _) = name  %% ### hack!
+  def Claim.idOf (claim_type as _,name,tyVars as _,term as _) = name  %% ### hack!
   % op ids : Claim -> IdSet.Set
   % op claimType : Claim -> ClaimType
-  def Claim.claimType (type,name as _,tyVars as _,term as _) = type
+  def Claim.claimType (claim_type,name as _,tyVars as _,term as _) = claim_type
   % op typeVars : Claim -> TypeVars
   % op term : Claim -> MSlang.Term
-  def Claim.term (type as _,name as _,tyVars as _,term) = term
+  def Claim.term (claim_type as _,name as _,tyVars as _,term) = term
 
   % op withId infixl 18 : Claim * Id -> Claim
   % op withIds infixl 18 : Claim * IdSet.Set -> Claim
   % op withPropType infixl 18 : Claim * ClaimType -> Claim
   % op withTypeVars infixl 18 : Claim * TypeVars -> Claim
   % op withTerm infixl 18 : Claim * MSlang.Term -> Claim
-  def Claim.withTerm ((type,name,tyVars,term),newTerm) = (type,name,tyVars,newTerm)
+  def Claim.withTerm ((claim_type,name,tyVars,term),newTerm) = (claim_type,name,tyVars,newTerm)
 
   % op make : Id -> ClaimType -> TypeVars -> MSlang.Term -> Claim
   % op PropNoTypeVars.make : Id -> ClaimType -> MSlang.Term -> Claim
@@ -41,7 +41,7 @@ Claim qualifying spec
 
   sort Claim.Ref = String
   def ClaimRef.pp = String.pp
-  def Claim.refOf    (type as _,name,typeVars as _,term as _) = name
-  def ClaimEnv.refOf (type as _,name,typeVars as _,term as _) = return name
+  def Claim.refOf    (claim_type as _,name,typeVars as _,term as _) = name
+  def ClaimEnv.refOf (claim_type as _,name,typeVars as _,term as _) = return name
 endspec
 \end{spec}

@@ -322,12 +322,12 @@ are no longer needed. *)
   def infoToBindings bindings varInfo =
     let
       def mkEquals () =
-        let type = MSlang.freshMetaTyVar noPos in
-        MSlang.mkFun (Equals, type, noPos)
+        let mtv = MSlang.freshMetaTyVar noPos in
+        MSlang.mkFun (Equals, mtv, noPos)
       def mkEquality t0 t1 =
         MSlang.mkApply (mkEquals (), MSlang.mkTuple ([t0,t1], noPos),noPos)
     in
-      let opTerm = mkFun (Op (idOf varInfo,Nonfix), type varInfo, noPos) in
+      let opTerm = mkFun (Op (idOf varInfo,Nonfix), opinfo_type varInfo, noPos) in
       if isPrimedName? (idOf varInfo) then
         case (term varInfo) of
           | None -> return bindings

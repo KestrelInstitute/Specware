@@ -87,7 +87,7 @@ axiom call is exp ((u,5),z',((u,v),(u',v')))
           argProd <- mkProduct (map (fn (name,srt) -> toType srt) (formalArgs procInfo), position); 
           varOps <- return (sortOpInfoList (foldVariables
                (fn varList -> fn (varInfo:Op.OpInfo) -> cons (varInfo,varList)) [] (modeSpec oscarSpec)));
-          storeProd <- mkProduct (map (fn (varInfo:Op.OpInfo) -> type varInfo) varOps, position);
+          storeProd <- mkProduct (map (fn (varInfo:Op.OpInfo) -> opinfo_type varInfo) varOps, position);
           procType <- mkBase (makeId "Proc", [argProd,toType procInfo.returnSort,storeProd], position); 
           procId <- return (makeId procName);
           procOp <- makeOp (procId, procType);
@@ -428,13 +428,13 @@ axiom but we might be better off without an axiom at all.
                 }
             | (None,Some returnRef) -> {
                   returnVar <- deref (specOf (Mode.modeSpec (exit ctxt)), returnRef);
-                  specError ("Procedure has return sort " ^ (show (type returnVar)) ^ " but no return value") position
+                  specError ("Procedure has return sort " ^ (show (opinfo_type returnVar)) ^ " but no return value") position
                 }
             | (Some term, None) ->
                 specError "Procedure with unit sort returns a value" position
             | (Some term, Some returnRef) -> {
                   returnVar <- deref (specOf (Mode.modeSpec (exit ctxt)), returnRef);
-                  lhs <- mkFun (idToNameRef (idOf returnVar), type returnVar, position);
+                  lhs <- mkFun (idToNameRef (idOf returnVar), opinfo_type returnVar, position);
                   saveLast <- return (final ctxt);
                   ctxt <- return (ctxt withFinal (exit ctxt));
                   ctxt <-
@@ -826,13 +826,13 @@ with global variables with the same name.
       apexSpec <- foldM (fn modeSpec -> fn varInfo ->
         ModeSpec.addVariable modeSpec (varInfo Op.withId (makePrimedId (idOf varInfo))) position) (modeSpec ctxt) changedVarsOpInfo;
       varOps <- return (map (fn varRef -> deref (specOf (modeSpec procInfo),varRef)) (varsInScope procInfo));
-      varList <- return (map (fn (varInfo:Op.OpInfo) -> mkFun (idToNameRef (idOf varInfo), type varInfo, position)) varOps);
+      varList <- return (map (fn (varInfo:Op.OpInfo) -> mkFun (idToNameRef (idOf varInfo), opinfo_type varInfo, position)) varOps);
       oldStore <- mkTuple (varList, position);
-      varList <- return (map (fn (varInfo:Op.OpInfo) -> mkFun (idToNameRef (makePrimedId (idOf varInfo)), type varInfo, position)) varOps);
+      varList <- return (map (fn (varInfo:Op.OpInfo) -> mkFun (idToNameRef (makePrimedId (idOf varInfo)), opinfo_type varInfo, position)) varOps);
       newStore <- mkTuple (varList, position);
       storePair <- mkTuple ([oldStore,newStore], position); 
       totalTuple <- mkTuple ([argTerm,leftPrimedTerm,storePair], position); 
-      procOp <- mkFun (idToNameRef procId, type procOpInfo, position);
+      procOp <- mkFun (idToNameRef procId, opinfo_type procOpInfo, position);
       axm <- mkApplyN (procOp, totalTuple, position);
       trm <- makeAxiom (makeId "call") axm; 
       apexSpec <- addInvariant apexSpec trm position;
@@ -874,8 +874,8 @@ and compile the rest between the new and final vertex.
       def mkEquals pos =
         let t1 = freshMetaTyVar pos in
         let t2 = freshMetaTyVar pos in
-        let type = prodToBoolType t1 t2 pos in
-        MSlang.mkFun (Equals, type, pos)
+        let eq_type = prodToBoolType t1 t2 pos in
+        MSlang.mkFun (Equals, eq_type, pos)
       def mkEquality t0 t1 pos =
         MSlang.mkApply (mkEquals pos, MSlang.mkTuple ([t0,t1], pos),pos)
     in case cases of
@@ -1186,9 +1186,9 @@ level, it will be renamed the second time.
                 let newQid = applySubstToQid subst qid in
                 let newTerm = renameTerm usedNames subst term in
                   Def ([newQid],(fxty,schemes,[(tyVars,newTerm)]))
-           | Claim (type,name,tyVars,term) ->
+           | Claim (claim_type,name,tyVars,term) ->
                 let newTerm = renameTerm usedNames subst term in
-                  Claim (type,name,tyVars,newTerm)
+                  Claim (claim_type,name,tyVars,newTerm)
            | Proc (name,procInfo) -> 
                let newName = applySubstToString subst name in
                let newProcInfo = renameProcInfo usedNames subst procInfo in

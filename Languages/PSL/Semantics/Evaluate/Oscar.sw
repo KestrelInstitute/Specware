@@ -107,20 +107,20 @@ They are procedures in context.
             sortInfo <- makeSort id;
             addSort oscarSpec sortInfo position
           }
-      | Sort ([id],(tyVars,[type])) -> {
-            sortInfo <- makeSort id type;
+      | Sort ([id],(tyVars,[si_type])) -> {
+            sortInfo <- makeSort id si_type;
             addSort oscarSpec sortInfo position
           }
-      | Def ([id],(fxty,type,[(_,term)])) -> {
-            opInfo <- makeOp (id,fxty,term,type);
+      | Def ([id],(fxty,oi_type,[(_,term)])) -> {
+            opInfo <- makeOp (id,fxty,term,oi_type);
             addOp oscarSpec opInfo position
           }
-      | Var ([id],(fxty,type,[])) -> {
-            opInfo <- makeOp (id,fxty,type);
+      | Var ([id],(fxty,oi_type,[])) -> {
+            opInfo <- makeOp (id,fxty,oi_type);
             addVariable oscarSpec opInfo position
           }
-      | Op ([id],(fxty,type,[])) -> {
-            opInfo <- makeOp (id,fxty,type);
+      | Op ([id],(fxty,oi_type,[])) -> {
+            opInfo <- makeOp (id,fxty,oi_type);
             addOp oscarSpec opInfo position
           }
       | Claim (Axiom, name, tyVars, term) -> {

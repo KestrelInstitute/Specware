@@ -38,10 +38,10 @@ MSlang qualifying spec
   def Term.show term = printTerm term
 
   % op Type.pp : Type -> Doc
-  def Type.pp type = pp (printSortScheme type)
+  def Type.pp typ = pp (printSortScheme typ)
 
   % op Type.show : Type -> String
-  def Type.show type = printSortScheme type
+  def Type.show typ = printSortScheme typ
 
   % op MSlangEnv.mkApply : Term * Term * Position -> Env Term
   def MSlangEnv.mkApply (t1,t2,position) = return (Apply (t1,t2,position))
@@ -75,7 +75,7 @@ MSlang qualifying spec
         | (_,srt)::types -> cons ((Nat.show n, srt), loop (n + 1, types))
     in
       case types of
-        | [type] -> type
+        | [typ] -> typ
         | _ -> ([], Product (loop(1,types), position))
 
   % op mkBase : Id.Id * List Type * Position -> Type
@@ -85,7 +85,7 @@ MSlang qualifying spec
   def MSlang.mkArrow ((_,srt1),(_,srt2),position) = ([], Arrow (srt1,srt2,position))
 
   % op mkEquals : Type * Position -> Term
-  def MSlang.mkEquals (type, position) = MSlang.mkFun (Equals, type, position)
+  def MSlang.mkEquals (typ, position) = MSlang.mkFun (Equals, typ, position)
    
   (*
    * This differs from the usual in that we don't give the sort for equality
@@ -93,8 +93,8 @@ MSlang qualifying spec
    *)
   % op mkEquality : Term * Term * Position -> Term
   def MSlang.mkEquality (t0,t1,position) = 
-    let type = freshMetaTyVar position in
-    mkApplyN (mkEquals (type,position), mkTuple ([t0,t1], position),position)
+    let mtv = freshMetaTyVar position in
+    mkApplyN (mkEquals (mtv,position), mkTuple ([t0,t1], position),position)
 
   % op mkTrue : Position -> Term
   def MSlang.mkTrue position = mkFun (Bool true, boolType position, position)

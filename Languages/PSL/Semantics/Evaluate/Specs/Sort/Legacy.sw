@@ -20,19 +20,19 @@ Sort qualifying spec
 
   % op ids : SortInfo -> IdSet.Set
 
-  % op Sort.type : SortInfo -> Type
-  def Sort.type (sortNames as _,tyVars as _,srtSchemes) =
+  % op Sort.sortinfo_type : SortInfo -> Type
+  def Sort.sortinfo_type (sortNames as _,tyVars as _,srtSchemes) =
     case srtSchemes of
-      | [] -> fail "Sort.type: sort with empty list of sort schemes"
-      | [type] -> type
-      | _::_ -> fail "Sort.type: sort with more than one sort scheme"
+      | [] -> fail "Sort.sortinfo_type: sort with empty list of sort schemes"
+      | [si_type] -> si_type
+      | _::_ -> fail "Sort.sortinfo_type: sort with more than one sort scheme"
 
   % op withId infixl 18 : SortInfo * Id -> SortInfo
   % op withIds infixl 18 : SortInfo * IdSet.Set -> SortInfo
   % op withType infixl 18 : SortInfo * Type -> SortInfo
 
   % op makeSort : Id -> Type -> SortInfo
-  def Sort.makeSort id (type as (tyVars,_)) = ([id],tyVars,[type])
+  def Sort.makeSort id (si_type as (tyVars,_)) = ([id],tyVars,[si_type])
   def SortNoType.makeSort id = ([id],[],[])
 
   % op join : SortInfo -> SortInfo -> Env SortInfo

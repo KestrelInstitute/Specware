@@ -24,8 +24,8 @@ Op qualifying spec
   % op Op.fixity : OpInfo -> Fixity
   def Op.fixity (names as _,fxty,srtScheme as _,termSchemes as _) = fxty
 
-  % op type : OpInfo -> Type
-  def Op.type (names as _,fxty as _,srtScheme,termSchemes as _) = srtScheme
+  % op opinfo_type : OpInfo -> Type
+  def Op.opinfo_type (names as _,fxty as _,srtScheme,termSchemes as _) = srtScheme
 
   % op term : OpInfo -> Option MS.Term
   def Op.term (names as _,fxty as _,srtScheme as _,termSchemes) =
@@ -46,10 +46,10 @@ Op qualifying spec
   def Op.withTerm ((names,fxty,srtScheme,termSchemes),newTerm) = (names,fxty,srtScheme,[([],newTerm)])
 
   % op makeOp : Id * Fixity * MSlang.Term * Type -> OpInfo
-  def Op.makeOp (id,fixity,term,type as (tyVars,_)) = ([id],fixity,type,[(tyVars,term)])
+  def Op.makeOp (id,fixity,term,oi_type as (tyVars,_)) = ([id],fixity,oi_type,[(tyVars,term)])
 
   % op OpNoTerm.makeOp : Id * Fixity * Type -> OpInfo
-  def OpNoTerm.makeOp (id,fixity,type) = ([id],fixity,type,[])
+  def OpNoTerm.makeOp (id,fixity,oi_type) = ([id],fixity,oi_type,[])
 
   % op join : OpInfo -> OpInfo -> Env OpInfo
 

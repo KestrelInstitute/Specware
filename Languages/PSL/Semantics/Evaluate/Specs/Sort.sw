@@ -19,7 +19,7 @@ Sort qualifying spec
 
   op idOf : SortInfo -> Id.Id
   op ids : SortInfo -> IdSet.Set
-  op type : SortInfo -> Type
+  op sortinfo_type : SortInfo -> Type
 
   op withId infixl 18 : SortInfo * Id.Id -> SortInfo
   op withIds infixl 18 : SortInfo * IdSet.Set -> SortInfo
@@ -28,7 +28,7 @@ Sort qualifying spec
   op makeSort : Id.Id -> Type -> SortInfo
   
   op SortEnv.makeSort : Id.Id -> Type -> Env SortInfo
-  def SortEnv.makeSort id type = return (makeSort id type)
+  def SortEnv.makeSort id si_type = return (makeSort id si_type)
 
   op SortNoType.makeSort : Id.Id -> SortInfo
 

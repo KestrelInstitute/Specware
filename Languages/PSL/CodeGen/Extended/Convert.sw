@@ -485,7 +485,7 @@ are no longer needed. *)
     let
       def mkEquals () =
         % let type = MSlang.freshMetaTyVar noPos in % this will fail -- need a fully elaborated type 
-	let var_type = type varInfo in
+	let var_type = opinfo_type varInfo in
         let var_equality_type = MSlang.mkArrow (MSlang.mkProduct ([var_type, var_type], noPos), 
 						MSlang.boolType noPos,
 						noPos)
@@ -498,7 +498,7 @@ are no longer needed. *)
         case (term varInfo) of
           | None -> return bindings
           | Some trm -> 
-	    let opTerm = mkFun (Op (idOf varInfo,Nonfix), type varInfo, noPos) in
+	    let opTerm = mkFun (Op (idOf varInfo,Nonfix), opinfo_type varInfo, noPos) in
 	    return (cons (mkEquality opTerm trm, bindings))
       else
         return bindings

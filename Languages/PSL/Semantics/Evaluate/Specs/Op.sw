@@ -22,7 +22,7 @@ Op qualifying spec
   op idOf : OpInfo -> Id.Id
   op ids : OpInfo -> IdSet.Set
   op fixity : OpInfo -> Fixity
-  op type : OpInfo -> Type
+  op opinfo_type : OpInfo -> Type
   op term : OpInfo -> Option MSlang.Term
 
   op withId infixl 18 : OpInfo * Id.Id -> OpInfo
@@ -34,13 +34,13 @@ Op qualifying spec
   op makeOp : Id.Id * Fixity * MSlang.Term * Type -> OpInfo 
 
   op OpNoFixity.makeOp : Id.Id * MSlang.Term * Type -> OpInfo 
-  def OpNoFixity.makeOp (id,term,type) = makeOp (id,nonFix,term,type)
+  def OpNoFixity.makeOp (id,term,oi_type) = makeOp (id,nonFix,term,oi_type)
 
   op OpEnv.makeOp : Id.Id * Fixity * MSlang.Term * Type -> Env OpInfo 
   def OpEnv.makeOp args = return (makeOp args)
   
   op OpNoFixityEnv.makeOp : Id.Id * MSlang.Term * Type -> Env OpInfo 
-  def OpNoFixityEnv.makeOp (id,term,type) = return (makeOp (id,nonFix,term,type))
+  def OpNoFixityEnv.makeOp (id,term,oi_type) = return (makeOp (id,nonFix,term,oi_type))
 
   op OpNoTerm.makeOp : Id.Id * Fixity * Type -> OpInfo
 
@@ -48,10 +48,10 @@ Op qualifying spec
   def OpNoTermEnv.makeOp args = return (makeOp args)
   
   op OpNoFixityNoTerm.makeOp : Id.Id * Type -> OpInfo
-  def OpNoFixityNoTerm.makeOp (id,type) = makeOp (id,nonFix,type)
+  def OpNoFixityNoTerm.makeOp (id,oi_type) = makeOp (id,nonFix,oi_type)
 
   op OpNoFixityNoTermEnv.makeOp : Id.Id * Type -> Env OpInfo
-  def OpNoFixityNoTermEnv.makeOp (id,type) = return (makeOp (id,nonFix,type))
+  def OpNoFixityNoTermEnv.makeOp (id,oi_type) = return (makeOp (id,nonFix,oi_type))
 
   op join : OpInfo -> OpInfo -> Env OpInfo
 

@@ -57,8 +57,8 @@ PE qualifying spec
                      let (newTerms,vars,nextVarIdx) = anysToVars terms in
                      case term of
                        | Fun (OneName ("any",_),_,_) -> 
-                            let type = freshMetaTyVar noPos in
-                            let aVar = ("v%" ^ (Nat.toString nextVarIdx),type) in
+                            let mtv = freshMetaTyVar noPos in
+                            let aVar = ("v%" ^ (Nat.toString nextVarIdx),mtv) in
                             let varTerm = Var (aVar,noPos) in
                               (cons (varTerm,newTerms),cons (aVar,vars),nextVarIdx + 1)
                        | _ -> (cons (term,newTerms),vars,nextVarIdx)
@@ -72,8 +72,8 @@ PE qualifying spec
              case returnInfo procInfo of
                | None -> return (mkRecord ([],noPos),freeVars,nextVarIdx)
                | Some _ -> 
-                    let type = freshMetaTyVar noPos in
-                    let aVar = ("v%" ^ (Nat.toString nextVarIdx) ^ "'",type) in
+                    let mtv = freshMetaTyVar noPos in
+                    let aVar = ("v%" ^ (Nat.toString nextVarIdx) ^ "'",mtv) in
                     let varTerm = Var (aVar,noPos) in
                       return (varTerm, cons (aVar,freeVars),nextVarIdx + 1);
 
@@ -112,10 +112,10 @@ PE qualifying spec
                    | [] -> ([],[],freeVars,nextVarIdx)
                    | (aVar::varList) ->
                        let (oldVarList,newVarList,freeVars,nextVarIdx) = makeVars freeVars nextVarIdx varList in
-                       let type = freshMetaTyVar noPos in
-                       let oldVar = ("v%" ^ (Nat.toString nextVarIdx),type) in
+                       let mtv = freshMetaTyVar noPos in
+                       let oldVar = ("v%" ^ (Nat.toString nextVarIdx),mtv) in
                        let oldVarTerm = (Var (oldVar,noPos)) : (ATerm Position) in
-                       let newVar = ("v%" ^ (Nat.toString nextVarIdx) ^ "'",type) in
+                       let newVar = ("v%" ^ (Nat.toString nextVarIdx) ^ "'",mtv) in
                        let newVarTerm = (Var (newVar,noPos)) : (ATerm Position) in
                          (cons (oldVarTerm,oldVarList),
                           cons (newVarTerm,newVarList),
@@ -168,8 +168,8 @@ PE qualifying spec
                def mkEquals ty =
                  % let t1 = freshMetaTyVar noPos in
                  % let t2 = freshMetaTyVar noPos in
-                 let type = prodToBoolType ty ty noPos in
-                 MSlang.mkFun (Equals, type, noPos)
+                 let eq_type = prodToBoolType ty ty noPos in
+                 MSlang.mkFun (Equals, eq_type, noPos)
              in
                MSlang.mkApply (mkEquals ty, MSlang.mkTuple ([t0,t1], noPos),noPos)
 
@@ -247,7 +247,7 @@ PE qualifying spec
                     if (groundTerm? stateArg) then
                       return (cons (varInfo withTerm stateArg,subst),residStateVars,residStateArgs,residStateSorts)
                     else 
-                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (type varInfo, residStateSorts))
+                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (opinfo_type varInfo, residStateSorts))
                  }
              | _ -> fail ("mismatched lists in partitionState"
                     ^ "\n  varsInScope=" ^ (anyToString (varsInScope procInfo))
@@ -278,12 +278,12 @@ PE qualifying spec
                | [] -> return (subOut,termOut)
                | (varInfo::subst) ->
                     if (Op.refOf varInfo) = varRef then {
-                        opTerm <- return (mkFun (Op (makePrimedId (Op.idOf varInfo),Nonfix), type varInfo, noPos));
+                        opTerm <- return (mkFun (Op (makePrimedId (Op.idOf varInfo),Nonfix), opinfo_type varInfo, noPos));
                         varTerm <-
                            case (term varInfo) of
                              | None -> raise (SpecError (noPos, "projectSubst failed with no binding term"))
                              | Some trm -> return trm;
-                        eqTerm <- return (mkEquality opTerm varTerm (type varInfo)); 
+                        eqTerm <- return (mkEquality opTerm varTerm (opinfo_type varInfo)); 
                         return (cons (varInfo, subOut), mkAnd termOut eqTerm)
                       }
                     else
@@ -341,7 +341,7 @@ PE qualifying spec
                                     case (term varInfo) of
                                       | None -> raise (SpecError (noPos, "projectReturn failed with no binding term"))
                                       | Some trm -> return trm;
-                                 eqTerm <- return (mkEquality returnTerm varTerm (type varInfo)); 
+                                 eqTerm <- return (mkEquality returnTerm varTerm (opinfo_type varInfo)); 
                                  return (cons (varInfo, subOut), mkAnd termOut eqTerm)
                                }
                              else
@@ -352,7 +352,7 @@ PE qualifying spec
                       }
                     def prog () = {
                         returnVar <- OpEnv.deref (specOf (modeSpec newFinal), returnRef);
-                        return (Some returnRef, returnTerm, type returnVar,postSubst,bindingTerm)   % Shameful shit!
+                        return (Some returnRef, returnTerm, opinfo_type returnVar,postSubst,bindingTerm)   % Shameful shit!
                       } in
                       catch (prog ()) handler
           }};
@@ -460,7 +460,7 @@ PE qualifying spec
                     if (groundTerm? stateArg) then
                       return (cons (varInfo withTerm stateArg,subst),residStateVars,residStateArgs,residStateSorts)
                     else 
-                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (type varInfo, residStateSorts))
+                      return (subst, cons (stateVar,residStateVars),cons (stateArg,residStateArgs), cons (opinfo_type varInfo, residStateSorts))
                  }
              | _ -> fail ("mismatched lists in partitionState"
                     ^ "\n  varsInScope=" ^ (anyToString (varsInScope procInfo))
