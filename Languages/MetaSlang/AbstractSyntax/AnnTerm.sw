@@ -385,19 +385,19 @@ MetaSlang qualifying spec {
  def unpackSort s =
    case s of
      | Pi (tvs, srt, _) -> (tvs, srt)
-     | And _ -> fail ("unpackSort: Trying to unpack an And of sorts.")
+     | And (tms, _) -> ([], s) %  fail ("unpackSort: Trying to unpack an And of sorts.")
      | _ -> ([], s)
 
  def sortTyVars srt =
    case srt of
      | Pi (tvs, _, _) -> tvs
-     | And _ -> fail ("sortTyVars: Trying to extract type vars from an And of sorts.")
+     | And _ -> [] % fail ("sortTyVars: Trying to extract type vars from an And of sorts.")
      | _ -> []
 
  def sortInnerSort srt =
    case srt of
      | Pi (_, srt, _) -> srt
-     | And _ -> fail ("sortInneSort: Trying to extract inner sort from an And of sorts.")
+     | And _ -> srt % fail ("sortInneSort: Trying to extract inner sort from an And of sorts.")
      | _ -> srt
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
