@@ -18,10 +18,14 @@ in the places they are used at present, no such paths are expected.
 
   op  pathToCanonicalUID : String -> Env UnitId
   def pathToCanonicalUID str =
-    return (pathStringToCanonicalUID str)
+    return (pathStringToCanonicalUID(str,false))
 
-  op  pathStringToCanonicalUID : String -> UnitId
-  def pathStringToCanonicalUID str =
+  op  topPathToCanonicalUID : String -> Env UnitId
+  def topPathToCanonicalUID str =
+    return (pathStringToCanonicalUID(str,true))
+
+  op  pathStringToCanonicalUID : String * Boolean -> UnitId
+  def pathStringToCanonicalUID (str,global?) =
     %% Windows SWPATHs can have \'s                       
     let str = map (fn #\\ -> #/ | c -> c) str in
     let absoluteString =
@@ -30,7 +34,9 @@ in the places they are used at present, no such paths are expected.
         | c :: #: :: r -> (Char.toString(toUpperCase c)) ^ ":" ^ (implode r)
         | _ -> (getCurrentDirectory ()) ++ "/" ++ str
     in
-      {path = addDevice?(splitStringAtChar #/ absoluteString), hashSuffix = None}
+    let relPath = splitStringAtChar #/ absoluteString in
+    {path = if global? then addDevice? relPath else relPath,
+     hashSuffix = None}
 
 (*
 This is like the above except that in this case the path is relative.
@@ -88,13 +94,11 @@ is not valid. A path without an element preceeding the '#' is invalid.
                           hashSuffix = Some (implode hashSuffix)}))
          | _ -> raise (SyntaxError "Unit identifier contains two or more # symbols"))
     }
-\end{spec}
-
+(*
 The following is used to normalize a canonical unitId by removing
 occurrences of ``.'' and ``..''. The function needs to be iterated until
 a fixpoint is reached since there may be sequences of "..".
-
-\begin{spec}
+*)
   op  normalizeUID : UnitId -> UnitId
   def normalizeUID {path,hashSuffix} =
     let
@@ -124,13 +128,11 @@ a fixpoint is reached since there may be sequences of "..".
 	     then path
 	     else Cons("C:",path))
       else path
-\end{spec}
-
+(*
 This converts a canonical UnitId to a filesystem path name. It will
 always be prefixed with a "/". When converting to a path, any
 hash suffix is ignored.
-
-\begin{spec}
+*)
   op  uidToFullPath : UnitId -> String
   def uidToFullPath {path,hashSuffix=_} =
    let device? = deviceString? (hd path) in
@@ -178,11 +180,9 @@ hash suffix is ignored.
     in
     removeCommonPrefix(path,home)
 
-\end{spec}
-
+(*
 This is like the above but accommodates the suffix as well.
-
-\begin{spec}
+*)
   op  uidToString : UnitId -> String
   def uidToString {path,hashSuffix} =
    let path = abbreviatedPath path in
@@ -228,12 +228,10 @@ This is like the above but accommodates the suffix as well.
      | SpecPath_Relative unitId -> uidToString unitId
 
 
-\end{spec}
-
+(*
 Convert a canonical UnitId to one relatived to some base.
 Used by print commands defined in /Languages/SpecCalculus/Semantics/Evaluate/Print.sw
-
-\begin{spec}
+*)
 
   op  relativizeUID : UnitId -> UnitId -> RelativeUID
   def relativizeUID base target =
@@ -258,16 +256,14 @@ Used by print commands defined in /Languages/SpecCalculus/Semantics/Evaluate/Pri
     in
     removeCommonPrefix (base, target) % and add updots
 
-\end{spec}
-
+(*
 This takes a string that is assumed to be punctuated some number of times
 (possibly none) with the specified char. This breaks the string into
 segments with the given char removed. Thus \verb+splitStringAtChar #/ "a/b//c"+
 yields \verb+["a", "b", "c"].
 
 The next function will go away.
-
-\begin{spec}
+*)
   op  splitStringAtChar : Char -> String -> List String
   def splitStringAtChar char str =
     let def parseCharList chars =
@@ -281,9 +277,7 @@ The next function will go away.
              Cons ((implode taken), parseCharList left)
     in
       parseCharList (explode str)
-\end{spec}
 
-\begin{spec}
   op  splitAtChar : Char -> List Char -> List (List Char)
   def splitAtChar char charList =
     let def parseCharList chars =
@@ -297,12 +291,10 @@ The next function will go away.
              Cons (taken, parseCharList left)
     in
       parseCharList charList
-\end{spec}
-
+(*
 This takes a prefix from the list while the given predicate holds. It
 doesn't belong here.
-
-\begin{spec}
+*)
   op  takeWhile : fa (a) (a -> Boolean) -> List a -> (List a) * (List a)
   def takeWhile pred l =
     case l of
@@ -313,11 +305,9 @@ doesn't belong here.
               (Cons (x,take), rest)
           else
             ([], l)
-\end{spec}
-
+(*
 The next two functions will disappear.
-
-\begin{spec}
+*)
   op  removeLastElem : (List String) -> Env (List String)
   def removeLastElem elems =
     case elems of
@@ -334,9 +324,7 @@ The next two functions will disappear.
       | [] -> error "lastElem: encountered empty string list"
       | x::[] -> return x
       | _::rest -> lastElem rest
-\end{spec}
 
-\begin{spec}
   op  removeLast: fa (a) List a -> Env (List a)
   def removeLast elems =
     case elems of
@@ -359,19 +347,17 @@ The next two functions will disappear.
       | [] -> error "last: encountered empty list"
       | x::[] -> return x
       | _::rest -> last rest
-\end{spec}
-
+(*
 Functions for finding definitions in specs in the environment. Used by
 emacs interface functions.
-
-\begin{spec}
+*)
   %% Top-level functions
   op  findDefiningUID : QualifiedId * String * (Option GlobalContext) -> List (String * String)
   def findDefiningUID(qId,uidStr,optGlobalContext) =
     case optGlobalContext of
       | None -> []
       | Some globalContext ->
-          let unitId = pathStringToCanonicalUID uidStr in
+          let unitId = pathStringToCanonicalUID(uidStr,false) in
             case findDefiningUIDforOpInContext(qId,unitId,globalContext,false)
                ++ findDefiningUIDforSortInContext(qId,unitId,globalContext,false) of
               | []     -> removeDuplicates(searchForDefiningUID(qId,optGlobalContext))
@@ -521,5 +507,11 @@ emacs interface functions.
 	       | _ -> [])
       []
       globalContext
+
+  op  absolutePath?: List String -> Boolean
+  def absolutePath? path =
+    case path of
+      | [] -> false
+      | s :: _ -> deviceString? s
 
 endspec

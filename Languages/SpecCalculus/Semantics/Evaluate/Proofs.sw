@@ -268,9 +268,7 @@ spec
 
   op SpecCalc.evaluateProofGen : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean
                                 -> SpecCalc.Env ValueInfo
-
   %% Need to add error detection code
-
   def SpecCalc.evaluateProofGen (valueInfo as (value,_,_), cterm, optFileNm, fromObligations?) =
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cUID <- SpecCalc.getUID(cterm);
@@ -329,7 +327,7 @@ spec
  def UIDtoProofFile ((unitId as {path,hashSuffix}), optFileNm) = 
    case optFileNm
       of Some filNam ->
-	let fileUid = normalizeUID(pathStringToCanonicalUID filNam) in
+	let fileUid = normalizeUID(pathStringToCanonicalUID(filNam,false)) in
 	let filePath = addDevice?(fileUid.path) in
 	let fileUid = {path=butLast filePath, hashSuffix=None} in
 	return (Some fileUid, filNam, false)
