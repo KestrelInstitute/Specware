@@ -9,6 +9,7 @@ spec
   import /Languages/MetaSlang/CodeGen/CodeGenTransforms
   import /Languages/MetaSlang/Transformations/RemoveCurrying
   import /Languages/MetaSlang/Transformations/LambdaLift
+  import /Languages/MetaSlang/Transformations/InstantiateHOFns
 
 % --------------------------------------------------------------------------------
 % interface
@@ -114,12 +115,16 @@ spec
 	      else spc
     in
     let spc = removeCurrying spc in
-    let spc = lambdaToInner spc in
+    %let _ = writeLine(printSpec spc) in
+    let spc = instantiateHOFns spc in
+    %let _ = writeLine(printSpec spc) in
+    %let spc = lambdaToInner spc in
     let spc = poly2mono(spc,false) in
     %let _ = writeLine(printSpec spc) in
     let spc = addEqOpsToSpec spc in
     %let _ = printSpecWithSortsToTerminal spc in
     let spc = lambdaLift spc in
+    %let _ = writeLine(printSpec spc) in
     let (spc,constrOps) = addSortConstructorsToSpec spc in
     let spc = conformOpDecls spc in
     let spc = adjustAppl spc in
