@@ -58,21 +58,21 @@ SWPATH=$SPECWARE4:.
 # All the toplevel routines that activate Specware return a boolean value.
 # They return true if the call to Specware succeeded without activating
 # Specware's toplevel handler. They return false (lisp nil) when the
-# handler is invoked. If, when bootrapping, we the toplevel handler is
+# handler is invoked. If, when bootrapping, the toplevel handler is
 # called, then we abort the bootstrap.
 
 if [ -f bin/linux/Specware4.dxl ]; then
-	echo Bootstrapping from existing Specware image 
-	bin/linux/Specware4-text <<-XXXX
+	echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
+	bin/linux/Specware4-text -batch <<-XXXX
 		(if (sw "/Applications/Specware/Specware4")
 		  (exit 0)
 		  (exit 1))
 	XXXX
 else
 	if [ -f lisp/Specware4.lisp ]; then
-		echo Bootstrapping from previously generated lisp
+		echo "Bootstrapping from previously generated lisp: lisp/Specware4.lisp"
 		cd Handwritten/Lisp
-		$LISP <<-XXXX
+		$LISP -batch <<-XXXX
 			(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 			  (load "Specware4.lisp"))
 			(if (sw "/Applications/Specware/Specware4")
@@ -106,8 +106,9 @@ cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 # lisp file for Specware, we are certain something needs to be compiled.
 # We could do the load and compile up above in the lisp that generated it,
 # but that seems weird to me ...
+
 echo Loading Specware ... (to compile)
-$LISP <<-XXXX
+$LISP -batch <<-XXXX
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (load "Specware4.lisp"))
 XXXX
@@ -115,7 +116,7 @@ XXXX
 # If the load failed (non-zero exit status) then we abort.
 if [ $? ]; then
   echo ""
-  echo "Load failed, exiting ..."
+  echo "First load failed, exiting ..."
   exit 1
 fi
 
@@ -125,16 +126,15 @@ fi
 # I once added a (gc) between the load and the dumplisp, and the dxl
 # file became 10k bigger. Go figure.
 
-# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
-# Do we need it here?
-# This is a hack to prevent Allegro CL from breaking lines within warning
-#  messages prematurely (e.g. at column 80, or 120, or 200, or whatever).
-# Various emacs scripts I (jlm) have that prune noisy warning messsages 
-#  tend to fail (or need to be more complicated) when the lines are 
-#  excessively broken.  So I'd ask it to be left in unless there's a 
-#  reason to remove it.
+# The setting of *DEFAULT-RIGHT-MARGIN* in the following is a hack to
+# prevent Allegro CL from prematurely breaking lines within warning messages
+# (e.g. at column 80, or 120, or 200, or whatever).  Various emacs scripts I
+# (jlm) have that prune noisy warning messsages tend to fail (or need to
+# be more complicated) when the lines are excessively broken.  So I'd ask
+# it to be left in unless there's a reason to remove it.
+
 echo Loading Specware ... (for dumplisp)
-$LISP <<-XXXX
+$LISP -batch <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
 	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
@@ -143,6 +143,6 @@ XXXX
 # If the load failed (non-zero exit status) then we abort.
 if [ $? ]; then
   echo ""
-  echo "Load failed, exiting ..."
+  echo "Second load failed, exiting ..."
   exit 1
 fi
