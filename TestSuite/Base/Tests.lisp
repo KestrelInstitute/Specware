@@ -1,23 +1,31 @@
 (test  ("(~ ( true )) = false" :swe "(~ ( true )) = false" :value '(:|Bool| . T))
        ("(~ ( false )) = true" :swe "(~ ( false )) = true" :value '(:|Bool| . T))
+       ("[true, false, (true), (false)] = [(true), (false), true, false]" :swe "[true, false, (true), (false)] = [(true), (false), true, false]" : value '(:|Bool| . T))
+       ;; Boolean [  2]:  op ~   : Boolean -> Boolean 
+       ("~ true = false"    :swe "~ true = false"    :value '(:|Bool| . T))
+       ("~ false = true"    :swe "~ false = true"    :value '(:|Bool| . T))
+       ("~ (~ true) = true"   :swe "~ (~ true) = true"   :value '(:|Bool| . T))
+       ("~ (~ false) = false" :swe "~ (~ false) = false" :value '(:|Bool| . T))
+       ("[(~)] = [(~)]"     :swe "[(~)] = [(~)]"     :value '(:|Bool| . T))
        ;; Boolean [  2]:  op &   infixr 15 : Boolean * Boolean -> Boolean 
-       ("(& ( false , false )) = false" :swe "(& ( false , false )) = false" :value '(:|Bool| . T))
-       ("let A = id ( false , false ) in (& A) = false" :swe "let A = id ( false , false ) in (& A) = false" :value '(:|Bool| . T))
-       ("(& ( false , true )) = false" :swe "(& ( false , true )) = false" :value '(:|Bool| . T))
-       ("let A = id ( false , true ) in (& A) = false" :swe "let A = id ( false , true ) in (& A) = false" :value '(:|Bool| . T))
-       ("(& ( true , false )) = false" :swe "(& ( true , false )) = false" :value '(:|Bool| . T))
-       ("let A = id ( true , false ) in (& A) = false" :swe "let A = id ( true , false ) in (& A) = false" :value '(:|Bool| . T))
-       ("(& ( true , true )) = true" :swe "(& ( true , true )) = true" :value '(:|Bool| . T))
-       ("let A = id ( true , true ) in (& A) = true" :swe "let A = id ( true , true ) in (& A) = true" :value '(:|Bool| . T))
-       ;; Boolean [  3]:  op or  infixr 14 : Boolean * Boolean -> Boolean 
-       ("(or ( false , false )) = false" :swe "(or ( false , false )) = false" :value '(:|Bool| . T))
-       ("let A = id ( false , false ) in (or A) = false" :swe "let A = id ( false , false ) in (or A) = false" :value '(:|Bool| . T))
-       ("(or ( false , true )) = true" :swe "(or ( false , true )) = true" :value '(:|Bool| . T))
-       ("let A = id ( false , true ) in (or A) = true" :swe "let A = id ( false , true ) in (or A) = true" :value '(:|Bool| . T))
-       ("(or ( true , false )) = true" :swe "(or ( true , false )) = true" :value '(:|Bool| . T))
-       ("let A = id ( true , false ) in (or A) = true" :swe "let A = id ( true , false ) in (or A) = true" :value '(:|Bool| . T))
-       ("(or ( true , true )) = true" :swe "(or ( true , true )) = true" :value '(:|Bool| . T))
-       ("let A = id ( true , true ) in (or A) = true" :swe "let A = id ( true , true ) in (or A) = true" :value '(:|Bool| . T))
+       ("(&& ( false , false )) = false" :swe "(&& ( false , false )) = false" :value '(:|Bool| . T))
+       ("let A = id ( false , false ) in (&& A) = false" :swe "let A = id ( false , false ) in (&& A) = false" :value '(:|Bool| . T))
+       ("(&& ( false , true )) = false" :swe "(&& ( false , true )) = false" :value '(:|Bool| . T))
+       ("let A = id ( false , true ) in (&& A) = false" :swe "let A = id ( false , true ) in (&& A) = false" :value '(:|Bool| . T))
+       ("(&& ( true , false )) = false" :swe "(&& ( true , false )) = false" :value '(:|Bool| . T))
+       ("let A = id ( true , false ) in (&& A) = false" :swe "let A = id ( true , false ) in (&& A) = false" :value '(:|Bool| . T))
+       ("(&& ( true , true )) = true" :swe "(&& ( true , true )) = true" :value '(:|Bool| . T))
+       ("let A = id ( true , true ) in (&& A) = true" :swe "let A = id ( true , true ) in (&& A) = true" :value '(:|Bool| . T))
+       ("[(&&)] = [(&&)]"     :swe "[(&&)] = [(&&)]"     :value '(:|Bool| . T))
+       ;; Boolean [  3]:  op ||  infixr 14 : Boolean * Boolean -> Boolean 
+       ("(|| ( false , false )) = false" :swe "(|| ( false , false )) = false" :value '(:|Bool| . T))
+       ("let A = id ( false , false ) in (|| A) = false" :swe "let A = id ( false , false ) in (|| A) = false" :value '(:|Bool| . T))
+       ("(|| ( false , true )) = true" :swe "(|| ( false , true )) = true" :value '(:|Bool| . T))
+       ("let A = id ( false , true ) in (|| A) = true" :swe "let A = id ( false , true ) in (|| A) = true" :value '(:|Bool| . T))
+       ("(|| ( true , false )) = true" :swe "(|| ( true , false )) = true" :value '(:|Bool| . T))
+       ("let A = id ( true , false ) in (|| A) = true" :swe "let A = id ( true , false ) in (|| A) = true" :value '(:|Bool| . T))
+       ("(|| ( true , true )) = true" :swe "(|| ( true , true )) = true" :value '(:|Bool| . T))
+       ("let A = id ( true , true ) in (|| A) = true" :swe "let A = id ( true , true ) in (|| A) = true" :value '(:|Bool| . T))
        ;; Boolean [  4]:  op =>  infixr 13 : Boolean * Boolean -> Boolean 
        ("(=> ( false , false )) = true" :swe "(=> ( false , false )) = true" :value '(:|Bool| . T))
        ("let A = id ( false , false ) in (=> A) = true" :swe "let A = id ( false , false ) in (=> A) = true" :value '(:|Bool| . T))
@@ -264,7 +272,7 @@
        ("let A = id ( 4 , [3,5,7] ) in (member A) = false" :swe "let A = id ( 4 , [3,5,7] ) in (member A) = false" :value '(:|Bool| . T))
        ("(member ( 5 , [3,5,7] )) = true" :swe "(member ( 5 , [3,5,7] )) = true" :value '(:|Bool| . T))
        ("let A = id ( 5 , [3,5,7] ) in (member A) = true" :swe "let A = id ( 5 , [3,5,7] ) in (member A) = true" :value '(:|Bool| . T))
-       ;; List [ 62]:  op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat | i < j & j <= length l} -> List a
+       ;; List [ 62]:  op sublist         : fa(a)   {(l,i,j) : List a * Nat * Nat | i < j && j <= length l} -> List a
        ("(sublist ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]" :swe "(sublist ( [3,1,4,1,5,9] , 2 , 4 )) = [4,1]" :value '(:|Bool| . T))
        ("let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]" :swe "let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]" :value '(:|Bool| . T))
        ;; List [ 63]:  op map             : fa(a,b) (a -> b) -> List a -> List b
@@ -364,7 +372,7 @@
        ("(Nat.show ( 123 )) = \"123\"" :swe "(Nat.show ( 123 )) = \"123\"" :value '(:|Bool| . T))
        ;; Nat [126]:  op natToString  : Nat -> String
        ("(natToString ( 123 )) = \"123\"" :swe "(natToString ( 123 )) = \"123\"" :value '(:|Bool| . T))
-       ;; Nat [127]:  op stringToNat  : {s : String | length s > 0 & all isNum (explode s)} -> Nat
+       ;; Nat [127]:  op stringToNat  : {s : String | length s > 0 && all isNum (explode s)} -> Nat
 
        ;; Option [ 94]:  op some      : fa(a) a -> Option a
        ("(some ( 1 )) = Some(1)" :swe "(some ( 1 )) = Some(1)" :value '(:|Bool| . T))
@@ -434,7 +442,7 @@
        ;; String [110]:  op sub           : {(s,n) : String * Nat | n < length s} -> Char
        ("(sub ( \"afn\" , 1 )) = #f" :swe "(sub ( \"afn\" , 1 )) = #f" :value '(:|Bool| . T))
        ("let A = id ( \"afn\" , 1 ) in (sub A) = #f" :swe "let A = id ( \"afn\" , 1 ) in (sub A) = #f" :value '(:|Bool| . T))
-       ;; String [111]:  op substring     : {(s,i,j) : String * Nat * Nat | i < j & j <= length s} ->
+       ;; String [111]:  op substring     : {(s,i,j) : String * Nat * Nat | i < j && j <= length s} ->
        ("(substring ( \"twitchy\" , 2, 6 )) = \"itch\"" :swe "(substring ( \"twitchy\" , 2, 6 )) = \"itch\"" :value '(:|Bool| . T))
        ("let A = id ( \"twitchy\" , 2, 6 ) in (substring A) = \"itch\"" :swe "let A = id ( \"twitchy\" , 2, 6 ) in (substring A) = \"itch\"" :value '(:|Bool| . T))
        ;; String [112]:  op concatList    : List String -> String
