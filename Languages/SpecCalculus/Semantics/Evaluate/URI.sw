@@ -93,7 +93,7 @@ These are called only from evaluateURI.
                                 -> Env (ValueInfo * URI)
   def searchFileSystemForURI (position, relURI, pairs, currentURI) =
     case pairs of
-      | [] -> raise (URINotFound (position,relURI))
+      | [] -> raise (FileNotFound (position,relURI))
       | ((uri,fileName)::rest) -> {
             test <- fileExistsAndReadable? fileName;
             if test & ~(inSameFile?(uri,currentURI)) then {
@@ -105,7 +105,8 @@ These are called only from evaluateURI.
               case optValue of
                 | Some (value,timeStamp,_)
                    -> return ((value, timeStamp, [uri]), uri)
-                | None -> searchFileSystemForURI (position, relURI, rest, currentURI)
+                % | None -> searchFileSystemForURI (position, relURI, rest, currentURI)
+                | None -> raise (URINotFound (position,relURI))
             } else
               searchFileSystemForURI (position, relURI, rest, currentURI)
           }

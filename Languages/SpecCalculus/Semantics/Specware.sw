@@ -98,13 +98,28 @@ compiles the resulting specification to lisp.
       path_body <- return (removeSWsuffix path);
       uri <- pathToRelativeURI path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      evaluateURI position uri;
+      catch {
+        evaluateURI position uri;
+        return ()
+      } (fileNameHandler uri);
       saveSpecwareState;
       return true
     } in
     case catch run toplevelHandler ignoredState of
       | (Ok val,_) -> val
       | (Exception _,_) -> fail "Specware toplevel handler failed"
+\end{spec}
+
+\begin{spec}
+  op fileNameHandler : RelativeURI -> Exception -> SpecCalc.Env ()
+  def fileNameHandler unitId except =
+    case except of
+      | URINotFound (position, badUnitId) ->
+         if badUnitId = unitId then
+           return ()
+         else
+           raise except
+      | _ -> raise except
 \end{spec}
 
 \begin{spec}
@@ -138,7 +153,7 @@ The following corresponds to the :show command.
         return (foldMap (fn lst -> fn dom -> fn _ (* cod *) -> Cons (dom, lst)) 
 		        [] 
 			globalContext);
-      print (ppFormat (ppSep ppNewline (map ppURI uriList)));
+      print (ppFormat (ppSep ppNewline (map (fn uri -> ppString (uriToString uri)) uriList)));
       saveSpecwareState;     % shouldn't change anything
       return true
     } in
@@ -253,6 +268,10 @@ sense that no toplevel functions return anything.
              ^ "\n  found at " ^ (printAll position)
 
          | URINotFound (position, uri) ->
+               "Unknown unit " ^ (showRelativeURI uri) 
+             ^ "\n  referenced from " ^ (printAll position)
+
+         | FileNotFound (position, uri) ->
                "Unknown unit " ^ (showRelativeURI uri) 
              ^ "\n  referenced from " ^ (printAll position)
 

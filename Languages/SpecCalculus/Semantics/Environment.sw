@@ -108,6 +108,7 @@ enters something bad. A ParserError is raised when the file parser fails.
 \begin{spec}
   sort Exception =
     | Fail         String 
+    | FileNotFound  Position * RelativeURI
     | URINotFound  Position * RelativeURI
     | TypeCheck    Position * String
     %% OldTypeCheck is a temporary hack to avoid gratuitous 0.0-0.0 for position

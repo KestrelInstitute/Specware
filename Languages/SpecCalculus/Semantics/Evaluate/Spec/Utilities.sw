@@ -110,8 +110,14 @@ SpecCalc qualifying spec {
                  if equalSort?(sNew, sOld) then % Could use a smarter equivalence test
                    return (sort_names, new_type_vars, new_opt_def)
                  else
-                   raise (SpecError (position,
-                       "Merged versions of Sort " ^ qualifier ^ "." ^ id ^ " have different definitions")))
+                   raise (SpecError (position, "Merged versions of Sort "
+                                              ^ qualifier
+                                              ^ "."
+                                              ^ id
+                                              ^ " have different definitions:\n"
+                                              ^ (printSort sNew)
+                                              ^ "\n"
+                                              ^ (printSort sOld))))
     
  op mergeOpInfo :
    fa(a) AOpInfo a
@@ -129,7 +135,14 @@ SpecCalc qualifying spec {
            raise (SpecError (position, "Merged versions of Op "^qualifier^"."^id^" have different fixity"))
          else
            if ~(equalSortScheme?(new_sort_scheme, old_sort_scheme)) then % Could use a smarter equivalence test 
-             raise (SpecError (position, "Merged versions of Op "^qualifier^"."^id^" have different sorts"))
+             raise (SpecError (position, "Merged versions of Op "
+                                       ^ qualifier
+                                       ^ "."
+                                       ^ id
+                                       ^ " have different sorts:\n"
+                                       ^ (printSortScheme new_sort_scheme)
+                                       ^ "\n"
+                                       ^ (printSortScheme old_sort_scheme)))
            else
              let op_names = listUnion(new_op_names,old_op_names) in
              case (new_opt_def, old_opt_def) of
@@ -140,7 +153,14 @@ SpecCalc qualifying spec {
                    if equalTerm?(sNew, sOld) then   % Could use a smarter equivalence test
                      return (op_names, new_fixity, new_sort_scheme, new_opt_def)
                    else
-                     raise (SpecError (position, "Merged versions of Op "^qualifier^"."^id^" have different definitions")))
+                     raise (SpecError (position, "Merged versions of Op "
+                                                ^ qualifier
+                                                ^ "."
+                                                ^ id
+                                                ^ " have different definitions:\n"
+                                                ^ (printTerm sNew)
+                                                ^ "\n"
+                                                ^ (printTerm sOld))))
 
   op foldOverQualifierMap :
     fa(a,b) (Qualifier * Id * a * b -> SpecCalc.Env b)
