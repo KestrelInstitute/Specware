@@ -59,30 +59,26 @@
 (sys:copy-file (in-specware-dir "Library/Base.sw")
 	   (in-distribution-dir "Library/Base.sw"))
 (delete-directory-and-files (in-distribution-dir "Library/Base/CVS/"))
-(delete-file (in-distribution-dir "Library/Base/System.sw"))
 (delete-directory-and-files (in-distribution-dir "Library/Base/Handwritten/CVS/"))
 (delete-directory-and-files (in-distribution-dir "Library/Base/Handwritten/Lisp/CVS/"))
 (delete-file (in-distribution-dir "Library/Base/Handwritten/Lisp/.cvsignore"))
 
-;;; Emacs stuff from acl directory
+;;; Emacs stuff from Library/IO & acl directory
+
+(copy-directory (in-specware-dir "Library/IO/Emacs/")
+		(in-distribution-dir "Library/IO/Emacs/"))
+(delete-directory-and-files (in-distribution-dir "Library/IO/Emacs/ilisp-20020831/"))
+(delete-directory-and-files (in-distribution-dir "Library/IO/Emacs/CVS/"))
+(delete-file (in-distribution-dir "Library/IO/Emacs/.cvsignore"))
 
 (copy-directory (in-lisp-dir "xeli/")
 		(in-distribution-dir "Library/IO/Emacs/xeli/"))
 
-;;; Example specs from Application/Specware/Courses/NSA_Sept_2002
+;;; Matching Example specs from Specware4/UserDoc/tutorial/example
 
-(copy-directory (in-specware-dir "Applications/Specware/Courses/NSA_Sept_2002/")
+(copy-directory (in-specware-dir "UserDoc/tutorial/example")
 		(in-distribution-dir "Examples/"))
 (delete-directory-and-files (in-distribution-dir "Examples/CVS/"))
-(delete-directory-and-files (in-distribution-dir "Examples/Matching/CVS/"))
-(delete-directory-and-files (in-distribution-dir "Examples/simple1/CVS/"))
-(delete-file (in-distribution-dir "Examples/simple1/test.lisp"))
-(delete-directory-and-files (in-distribution-dir "Examples/simple2/CVS/"))
-(delete-file (in-distribution-dir "Examples/simple2/test.lisp"))
-(delete-directory-and-files (in-distribution-dir "Examples/simple2/Refs/CVS/"))
-(delete-directory-and-files (in-distribution-dir "Examples/simple2/Specs/CVS/"))
-(delete-directory-and-files (in-distribution-dir "Examples/simple3/CVS/"))
-(delete-file (in-distribution-dir "Examples/simple3/test.lisp"))
 
 ;;; Documentation pdf's from Specware4/UserDoc/
 
@@ -94,7 +90,6 @@
 (sys:copy-file (in-specware-dir "UserDoc/user-manual/SpecwareUserManual.pdf")
 	   (in-distribution-dir "Documentation/SpecwareUserManual.pdf"))
 
-;;; TODO this doesn't seem to work right now...
 ;;; Current (highest-numbered) patch from Specware4/Release/Patches/
 
 (make-directory (in-distribution-dir "Patches/"))
