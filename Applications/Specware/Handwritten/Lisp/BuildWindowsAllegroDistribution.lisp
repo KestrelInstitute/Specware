@@ -36,7 +36,7 @@
 
   ;; a list of files to copy to the distribution directory
   :application-files
-  (list (in-specware-dir "Release/Specware4.cmd"))
+  (list (in-specware-dir "Release/Windows/Specware4.cmd"))
 
   ;; Possible option instead of excl::delete-directory-and-files call
   ;;  :allow-existing-directory t

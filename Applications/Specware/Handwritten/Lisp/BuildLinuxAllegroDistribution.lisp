@@ -2,22 +2,19 @@
 ;; Namely, a directory containing the Specware4 image, start up script, documentation,
 ;; libraries, and patch file(s) is built by loading this build file.
 
-;; These two definitions might not be needed here
-;; They are in BuildPreamble.lisp where they are needed
-(defvar Specware-version "4.0")
-(defvar Specware-version-name "Specware-4-0")
 (defvar Specware-name "Specware4")	; Name of directory and startup files
 (defvar Specware4-dir (sys:getenv "SPECWARE4"))
 (defun in-specware-dir (file) (concatenate 'string Specware4-dir "/" file))
-
-;; Used in patch detection and about-specware command
-(defvar Major-Version-String "4-0")
 
 ;; This is the sub-directory to receive this particular distribution.
 ;; In particular, this is where generate-application puts all its stuff.
 (defparameter distribution-directory 
   (in-specware-dir  (concatenate 'string "distribution/" Specware-name "/")))
 (defun in-distribution-dir (file) (concatenate 'string distribution-directory file))
+
+(load "BuildPreamble.lisp")
+(load "Specware4.lisp")
+(load "license.lisp")
 
 ;;; Copy needed directories to distribution, deleting CVS/ directories and other
 ;;; stuff that users shouldn't see
@@ -37,7 +34,6 @@
 
 (copy-directory (in-specware-dir "Library/IO/Emacs/")
 		(in-distribution-dir "Library/IO/Emacs/"))
-(delete-directory-and-files (in-distribution-dir "Library/IO/Emacs/ilisp-20020831/"))
 (delete-directory-and-files (in-distribution-dir "Library/IO/Emacs/CVS/"))
 (delete-file (in-distribution-dir "Library/IO/Emacs/.cvsignore"))
 
