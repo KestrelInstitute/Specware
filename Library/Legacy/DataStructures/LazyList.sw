@@ -17,7 +17,7 @@ spec
  op mapEach       : fa(a,b) (List a * a * List a -> LazyList b) -> List a -> LazyList b
  op map           : fa(a,b) (a -> b) -> LazyList a -> LazyList b
  op emptyList     : fa(a)   LazyList a
- op app	          : fa(a)   (a -> ()) -> LazyList a -> (
+ op app	          : fa(a)   (a -> ()) -> LazyList a -> ()
 
  def emptyList = Nil
 
