@@ -5,6 +5,7 @@ import IJavaCodeGen
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
+import /Languages/Java/JavaPrint % ppFormPars
 %import /Languages/SpecCalculus/Semantics/Exception
 import ../../Transformations/LambdaLift
 import ../../Transformations/PatternMatch
@@ -864,6 +865,16 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
 			       (ensureMod(mods,Public),id,fpars,throws,block)) constrs
 	    in
 	    let meths = map (fn((mods,rettype,id,fpars,throws),body) ->
+			     let fpars = (if id = "main" && (member (Public, mods) || member (id, publicOps)) then
+					    %% publicOps is temp hack, still needed by Prism
+					    let new_fpars = [(false, (Name ([], "String"), 1), ("args", 0))] in
+					    let old = PrettyPrint.toString (format (0, ppFormPars fpars)) in
+					    let new = PrettyPrint.toString (format (0, ppFormPars new_fpars)) in
+					    let _ = toScreen("\n;;; Changing public static void main args from (" ^ old ^ ") to (" ^ new ^ ")\n") in
+					    new_fpars
+					  else 
+					    fpars)
+			      in
 			      let mods = if member(id,publicOps) then ensureMod(mods,Public) else mods in
 			      ((mods,rettype,id,fpars,throws),body)) meths
 	    in
