@@ -45,19 +45,15 @@ spec
    case fntm of
      | Lambda ([(VarPat(v as (vn,srt),_),Fun(Bool true, _,_),bod)],_) ->
        % mkLet([(VarPat(v,a),arg)],bod)
-       (case bod of
-	 | Var _ ->
+       if countVarRefs(bod,v) <= 1
+	 then
 	   mapTerm (fn (tm) -> case tm of
 				| Var(v1,_) -> if v1 = v then arg else tm
 				| _ -> tm,
 		    id, id)
 	     bod
-	 | _ ->
-	   %let vn1 = freshName(gamma,vn) in
-%	   if ~(vn1 = vn)
-%	     then mkLetOrApply(mkLambda(mkVarPat(vn1,srt),substitute(bod,[(v,mkVar(vn1,srt))])),arg,gamma)
-%	     else
-	   mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
+         else
+	   mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod))
      | _ -> mkApply(fntm,arg)
 
  def assertCond(cond,gamma as (ds,tvs,spc,qid,name,ty,names)) = 
@@ -308,9 +304,10 @@ spec
 %% This checks that pattern matching is exhaustive.
 %%
         | Lambda(rules,_) ->
-	  let spc = getSpec gamma	       in
-	  let tau2 = inferType(spc,M)  	       in
-	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
+%	  let spc = getSpec gamma	       in
+%	  let tau2 = inferType(spc,M)  	       in
+%% This is redundant because infertype gets type from components and checkLambda passes tau down to components
+%	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
 	  checkLambda(tcc,gamma,rules,tau,None)
 	
         | IfThenElse(t1,t2,t3,_) -> 
@@ -720,6 +717,7 @@ spec
    case t of
      | Fun(Op(Qualified(q,id),_),_,_) -> q
      | _ -> UnQualified
+
  def checkSpec(spc) = 
      let localOps = spc.importInfo.localOps in
      let names = foldl (fn (Qualified(q,id),m) ->

@@ -73,21 +73,25 @@ spec
 	      & (sideEffectFree t3)
 	| _ -> false 
 
+ op  countVarRefs: MS.Term * Var -> Nat
+ def countVarRefs(term,id) =
+   let occ = Ref 0 : Ref Nat in
+   let
+     def occurs(term) = 
+       case term
+	 of Var (id2,_) -> 
+	   (occ := (! occ) + (if id = id2 then 1 else 0); term)
+	  | _ -> term
+   in
+     let _ = mapSubTerms occurs term in
+     ! occ
+
  op  removeUnnecessaryVariable: Spec -> MS.Term -> MS.Term
  def removeUnnecessaryVariable spc term =
      case term
        of Let([(VarPat (id,_),e)],body,_) ->
 	  let noSideEffects =  sideEffectFree(e) in
-	  let occ = Ref 0 : Ref Nat in
-	  let
-	      def occurs(term) = 
-		  case term
-		    of Var (id2,_) -> 
-			(occ := (! occ) + (if id = id2 then 1 else 0); term)
-		     | _ -> term
-	  in
-	  let _ = mapSubTerms occurs body in
-	  (case ! occ
+	  (case countVarRefs(body,id)
 	     of 0 -> if noSideEffects then body else term
 	      | 1 -> if noSideEffects
 	                 or noInterveningSideEffectsBefore?
