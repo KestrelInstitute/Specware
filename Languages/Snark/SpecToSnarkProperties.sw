@@ -197,7 +197,7 @@ snark qualifying spec
       | ("Nat",     "~") -> "-"
       | ("Integer",     "~") -> "-"
       | (_, "hoapply") ->  "HOAPPLY"
-      | _ -> qual^"_"^id
+      | _ -> printQualifiedId(mkQualifiedId(qual, id))
 
   op mkSnarkFmlaApp: Context * Spec * String * StringSet.Set * Fun * Sort * MS.Term -> LispCell
 
@@ -326,12 +326,12 @@ snark qualifying spec
 	  let prodSrt = termSort(arg) in
 	  let userProdSrt = findMatchingUserTypeOption(sp, prodSrt) in
 	  (case userProdSrt of
-	     | None -> Lisp.cons(Lisp.symbol("SNARK",mkSnarkName("","project_"^id)), Lisp.list snarkArgs)
+	     | None -> Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^id)), Lisp.list snarkArgs)
 	     | Some (Base (Qualified(q, prodSrtId),_, _)) ->
-	     Lisp.cons(Lisp.symbol("SNARK",mkSnarkName("","project_"^prodSrtId^"_"^id)), Lisp.list snarkArgs))
+	     Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "project_"^prodSrtId^"_"^id)), Lisp.list snarkArgs))
       | Embed (id, b) -> %let _ = if id = "Cons" then debug("embed_Cons") else () in
 	  let snarkArgs = map(fn (arg) -> mkSnarkTerm(context, sp, dpn, vars, arg)) args in
-	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName("","embed_"^id)), Lisp.list snarkArgs)
+	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(UnQualified, "embed_"^id)), Lisp.list snarkArgs)
       | Restrict -> let [tm] = args in mkSnarkTerm(context, sp, dpn, vars, tm)
 
   op mkSnarkHOTermApp: Context * Spec * String * StringSet.Set * MS.Term * MS.Term -> LispCell
@@ -357,7 +357,7 @@ snark qualifying spec
 		      mkSnarkTerm(context, sp, dpn, vars, e)]
       | Fun (Op(Qualified(qual,id),_),_, _) -> Lisp.symbol("SNARK",mkSnarkName(qual, id))
       | Fun ((Nat nat), Nat, _) -> Lisp.nat(nat)
-      | Fun (Embed(id, _),_,__) -> Lisp.symbol("SNARK",mkSnarkName("","embed_"^id))
+      | Fun (Embed(id, _),_,__) -> Lisp.symbol("SNARK",mkSnarkName(UnQualified,"embed_"^id))
       | Var (v,_) -> snarkVarTerm(v)
       | _ -> mkNewSnarkTerm(context, term) %% Unsupported construct
 

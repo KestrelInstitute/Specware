@@ -1,4 +1,4 @@
-spec
+Prover qualifying spec
  import ../Specs/Environment
  import ../Specs/Utilities
 
@@ -18,9 +18,47 @@ spec
       | _ -> %let _ = writeLine(name^": in axiomFromOpDef NOT def part") in
 	       []
 *)
+  op axiomFromSortDefTop: Spec * Qualifier * Id * SortInfo -> Properties
+  def axiomFromSortDefTop(spc, qname, name, sortDecl) =
+    case sortDecl of
+      | (sortNames, sortTyVars, [(defTyVars, srtDef)]) ->
+          let localSorts = spc.importInfo.localSorts in
+          if memberQualifiedId(qname, name, localSorts) then
+	    let pos = sortAnn(srtDef) in
+	    let sortName = mkQualifiedId(qname, name) in
+	    let axioms = case srtDef of
+	                  | CoProduct _ -> axiomFromCoProductDefTop(spc, sortName, srtDef)
+	                  | _ -> [] in
+               axioms
+	else %let _ = writeLine(name^": in axiomFromSortDef Def part is not local") in
+	  %let _ = debug("not local sort") in
+	     []
+      | _ -> %let _ = writeLine(name^": in axiomFromSortDef NOT def part") in
+	       []
+
   op axiomFromCoProductDefTop: Spec * QualifiedId * Sort -> Properties
   def axiomFromCoProductDefTop(spc, name, srt as CoProduct (fields, b)) =
-    mkDisEqsForFields(spc, srt, name, fields)
+    let disEqAxioms = mkDisEqsForFields(spc, srt, name, fields) in
+    let exhaustAxiom = exhaustAxiom(spc, srt, name, fields) in
+    Cons(exhaustAxiom, disEqAxioms)
+
+  op exhaustAxiom: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Property
+  def exhaustAxiom(spc, srt, name as Qualified(qname, id), fields) =
+    let newVar = (id^"_Var", mkBase(name, [])) in
+    let disjuncts = mkEqFmlasForFields(srt, newVar, fields) in
+    let tm = mkSimpOrs(disjuncts) in
+    let fmla = mkBind(Forall, [newVar], tm) in
+      (Axiom, mkQualifiedId(qname, id^"_def"), [], fmla)
+
+  op mkEqFmlasForFields: Sort * Var * List (Id * Option Sort) -> List MS.Term
+  def mkEqFmlasForFields(srt, var, fields) =
+    case fields of
+      | [] -> []
+      | (id, optSrt):: restFields ->
+        let constrTerm = mkConstructorTerm(srt, id, optSrt) in
+	let eql = mkEquality(srt, mkVar(var), constrTerm) in
+	let restEqls = mkEqFmlasForFields(srt, var, restFields) in
+	Cons(eql, restEqls)
 
   op mkDisEqsForFields: Spec * Sort * QualifiedId * List (Id * Option Sort) -> Properties
   def mkDisEqsForFields(spc, srt, name, fields) =
@@ -46,9 +84,10 @@ spec
     let eql = mkEquality(srt, tm1, tm2) in
     let disEql = mkNot(eql) in
     let vars = freeVars(eql) in
-    let fmla = withAnnT(mkBind(Forall, vars, eql), sortAnn(srt)) in
+    let fmla = withAnnT(mkBind(Forall, vars, disEql), sortAnn(srt)) in
     let Qualified (qual, id) = name in
-    (Axiom, mkQualifiedId(qual, id^"_"^id1^"_notEq_"^id2), [], fmla)
+%    (Axiom, mkQualifiedId(qual, id^"_"^id1^"_notEq_"^id2), [], fmla)
+    (Axiom, mkQualifiedId(qual, id^"_def"), [], fmla)
 
   op mkConstructorTerm: Sort * Id * Option Sort -> MS.Term
   def mkConstructorTerm(srt, id, optSrt) =
