@@ -18,6 +18,12 @@
     (unwind-protect (load "load.lisp")
     (change-directory old-directory))))
 
+(defun make-system (new-directory)
+  (let ((old-directory (cur-directory)))
+    (change-directory new-directory)
+    (unwind-protect (load "system.lisp")
+    (change-directory old-directory))))
+
 (make-sw4 "../SW4")
 
 ;; Turns off global gc until idle for 10 seconds or 10 x normal amount tenured
@@ -28,5 +34,7 @@
 (format t "~%That will run (sw \"/Applications/Specware/Specware4\")~2%")
 
 (defun test ()
+  (make-system "Library/Algorithms/Parsing/Chart/Handwritten/Lisp/")
+  (make-system "Languages/SpecCalculus/Parser/Handwritten/Lisp/")
   (sw "/Applications/Specware/Specware4")
-)
+  )
