@@ -76,7 +76,7 @@ spec {
   let def loop (n, sorts) = 
        case sorts  of
           | []         -> []
-          | srt::sorts -> cons((toString n, srt), loop(n + 1, sorts))
+          | srt::sorts -> cons((Nat.toString n, srt), loop(n + 1, sorts))
   in
     Product(loop(1,sorts), ())
 
@@ -187,7 +187,7 @@ spec {
   let def loop (i,labels) = 
        case labels of
           | []          -> []
-          | label::tail -> cons((toString i,label),loop(i + 1,tail))
+          | label::tail -> cons((Nat.toString i,label),loop(i + 1,tail))
   in
   loop(1,labels)
 
@@ -332,9 +332,9 @@ spec {
  op wildFindUnQualified : fa (a) AQualifierMap a * Id -> List a
  def wildFindUnQualified (qualifier_map, id) =
   StringMap.foldri (fn (qualifier, qmap, results) ->
-                     case StringMap.find (qmap, id) of
+                     (case StringMap.find (qmap, id) of
                       | Some result -> results ++ [result]
-                      | None        -> results)
+                      | None        -> results))
                    []
                    qualifier_map
 }

@@ -135,7 +135,7 @@ AnnSpecPrinter qualifying spec {
     {pp                 = pp,
      printSort          = false,
      markSubterm        = true, 
-     markNumber         = Ref 0,
+     markNumber         = (Ref 0),
      markTable          = Ref NatMap.empty,
      indicesToDisable   = indicesToDisable,
      sosIndicesToEnable = sosIndicesToEnable}
@@ -248,8 +248,8 @@ AnnSpecPrinter qualifying spec {
    let pp : ATermPrinter = context.pp in
    let % Function application is printed taking special cases into account
        def prApply(t1,t2) = 
-         case (t1,t2)
-               of (Lambda (rules as (_ :: _),_),_) ->
+         case (t1,t2) of
+           | (Lambda (rules as (_ :: _),_),_) ->
  % Print lambda abstraction as
  % case pattern matching
                   blockAll(0,
@@ -259,7 +259,7 @@ AnnSpecPrinter qualifying spec {
                          pp.RP])])
  % Print tuple projection using
  % dot notation.
-                | (Fun(Project p,srt1,_),Var((id,srt2),_)) ->
+            | (Fun(Project p,srt1,_),Var((id,srt2),_)) ->
                   if printSort?(context)
                      then prettysNone [ pp.fromString id,
                                         string ":",
@@ -270,7 +270,7 @@ AnnSpecPrinter qualifying spec {
                                         ppSort context ([0,0] ++ path,Top:ParentSort) srt1]
                   else
                   prettysNone [pp.fromString id,string ".",pp.fromString p]
-                | _ -> 
+            | _ -> 
              blockFill(0,
                 [(0,ppTerm context ([0] ++ path,Top:ParentTerm) t1),
                  (1,blockNone(0,
@@ -335,9 +335,9 @@ AnnSpecPrinter qualifying spec {
                                   [ppTerm context ([1,index]++ path,Top:ParentTerm) trm,string " "])]))
            in
            let def ppDs(index,l,separator,decls) = 
-                case decls of
+                (case decls of
                  | [] -> []
-                 | (pat,trm)::decls -> cons(ppD(index,l,separator,pat,trm),ppDs(index + 1,5,pp.And,decls))
+                 | (pat,trm)::decls -> cons(ppD(index,l,separator,pat,trm),ppDs(index + 1,5,pp.And,decls)))
            in
      
                 blockAll (0,
@@ -348,7 +348,7 @@ AnnSpecPrinter qualifying spec {
          | LetRec(decls,body,_) -> 
             let
               def ppD(path,((id,_),trm)) =
-                case trm of
+                (case trm of
                   | Lambda([(pat,Fun(Bool true,_,_),body)],_) -> 
                               blockLinear(0,
                                 [(0,prettysNone
@@ -364,7 +364,7 @@ AnnSpecPrinter qualifying spec {
                                   [pp.Def,
                                    pp.fromString id,
                                    pp.Equals]),
-                                 (4,ppTerm context (path,Top:ParentTerm) trm)])
+                                 (4,ppTerm context (path,Top:ParentTerm) trm)]))
             in
               blockAll(0,
                          [(0,blockNone(0,
@@ -394,7 +394,7 @@ AnnSpecPrinter qualifying spec {
                       (0,blockFill(0,
                        [(0,pp.Else),
                         (0,ppTerm context ([2]++ path,Top:ParentTerm) t3)]))])
-                 | Lambda(match,_) -> 
+         | Lambda(match,_) -> 
                    prettysNone 
                      [pp.LP,
                       printLambda(context,path,pp.Lambda,match),
@@ -465,7 +465,7 @@ AnnSpecPrinter qualifying spec {
   %
   % Infix printing is to be completed.
   %
-              (case (parentTerm,termFixity(trm1):Fixity)
+              (case (parentTerm,(termFixity trm1):Fixity)
                  of (_,Nonfix) -> prApply(trm1,trm2)
                   | (Nonfix,Infix(a,p)) ->
                     prInfix(Nonfix,Nonfix,pp.LP,t1,trm1,t2,pp.RP)
@@ -1113,7 +1113,7 @@ AnnSpecPrinter qualifying spec {
      properties)          
 
   def fa(a) pdfSpecsToPretty specs0 = 
-     let counter = Ref 0 : Ref(Nat) in
+     let counter = (Ref 0) : Ref(Nat) in
      let specs = 
          map 
            (fn (sp:ASpec a) -> 

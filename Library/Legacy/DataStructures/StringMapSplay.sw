@@ -123,9 +123,9 @@ StringMap qualifying spec {
   def union2With f (m1, m2)  =
     StringMap.foldri (
       fn (x, sm2, resm) ->
-        case StringMap.find (resm, x) of
+        (case StringMap.find (resm, x) of
           | None -> StringMap.insert (resm, x, sm2)
-          | Some sm1 -> StringMap.insert (resm, x, StringMap.unionWith f (sm1, sm2)))
+          | Some sm1 -> StringMap.insert (resm, x, StringMap.unionWith f (sm1, sm2))))
        m1 m2
    
   def intersectWith = SplayMap.intersectWith
