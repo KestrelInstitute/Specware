@@ -105,7 +105,13 @@ spec
 					       | v -> v))
 			   | None -> ssb)
 		   (Some sb) decls
-	       of Some sb -> evalRec(body,sb,spc,depth+1)
+	       of Some sb ->
+		  (case evalRec(body,sb,spc,depth+1) of
+		     | Unevaluated t ->
+		       if exists (fn (id,_) -> member(id,ids)) (freeVars t)
+		        then Unevaluated(mkLetRec(decls,t))
+			else Unevaluated t
+		     | v -> v)
 		| None -> Unevaluated t)
 
 	  % ? | Bind()
