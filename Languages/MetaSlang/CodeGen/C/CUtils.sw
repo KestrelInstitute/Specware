@@ -335,7 +335,7 @@ CUtils qualifying spec {
 	     then CPrint.ppHeaderSpec(cspc)
 	     else CPrint.ppSpec(cspc)
     in
-    let txt = PrettyPrint.format(120,pr) in
+    let txt = PrettyPrint.format(80,pr) in
     case X of
       | File -> (String.writeLine("C-File: "^fname);
 		 PrettyPrint.toFile(fname,txt);"")

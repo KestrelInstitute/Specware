@@ -733,9 +733,13 @@ SpecsToI2L qualifying spec {
       | Arrow _ -> true
       | _ -> false
 
+  op getEqOpQid: QualifiedId -> QualifiedId
+  def getEqOpQid(qid as Qualified(q,id)) =
+    Qualified(q,"eq$"^id)
 
   op equalsExpression: CgContext * Spec * Term * Term -> Expr
   def equalsExpression(ctxt,spc,t1,t2) =
+    %let _ = writeLine("t1="^printTermWithSorts(t1)) in
     let
       def t2e(t) = term2expression(ctxt,spc,t)
     in
@@ -747,22 +751,33 @@ SpecsToI2L qualifying spec {
     % analyse, which equal we need; let's hope type checking
     % already made sure, that the types fit, so just look at one
     % of the terms
-    let srt = unfoldStripSort(spc,inferType(spc,t1),false) in
-    case srt of
+    let srt = inferType(spc,t1) in
+    let usrt = unfoldStripSort(spc,srt,false) in
+    case usrt of
       | Base(Qualified(_,"Nat"),[],_) -> primEq()
       | Base(Qualified(_,"Integer"),[],_) -> primEq()
       | Base(Qualified(_,"Char"),[],_) -> primEq()
       | Base(Qualified(_,"Boolean"),[],_) -> primEq()
-      | Base(Qualified(_,"Float"),[],_) -> primEq()
+      %| Base(Qualified(_,"Float"),[],_) -> primEq()
       | Base(Qualified(_,"String"),[],_) -> Builtin(StrEquals(t2e t1,t2e t2))
-      | _ -> primEq()
-      (*
-      | _ -> System.fail("sorry, the current version of the code generator doesn't "
-			 ^"support the equality check for the types of these terms:\n"
-			 ^printTerm(t1)^" = "
-			 ^printTerm(t2))
-      *)
-
+      | _ ->
+        let srt = foldSort(spc,termSort t1) in
+	let errmsg = "sorry, the current version of the code generator doesn't "
+	             ^"support the equality check for sort\n"
+	             ^printSort(srt)
+	in
+	%let _ = writeLine("found srt in Eq: "^printSort(srt)) in
+        case srt of
+	  | Base(qid,_,_) ->
+	    let eqid as Qualified(eq,eid) = getEqOpQid qid in
+	    (case findTheOp(spc,eqid) of
+	       | None -> fail(errmsg)%primEq()
+	       | Some _ ->
+	         let eqfname = (eq,eid) in
+		 FunCall(eqfname,[],[t2e t1,t2e t2])
+		)
+	  | _ -> fail(errmsg) %primEq()
+	         
   op getBuiltinExpr: CgContext * Spec * Term * List(Term) -> Option Expr
   def getBuiltinExpr(ctxt,spc,term,args) =
     let
@@ -1016,6 +1031,8 @@ def foldSort(spc,srt) =
        | None -> (case sortschemes of
 		    | [] -> None
 		    | (tyvars,srt0)::_ ->
+		      %let usrt = unfoldBase(spc,srt) in
+		      %let usrt0 = unfoldBase(spc,srt0) in
 		      if equalSort?(srt,srt0) then
 			let b = sortAnn srt0 in
 			let qid = Qualified(q,id) in

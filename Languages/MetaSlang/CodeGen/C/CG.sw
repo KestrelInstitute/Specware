@@ -17,11 +17,13 @@ spec
     %let _ = writeLine(printSpec spc) in
     %let _ = writeLine("---------------------------------") in
     let useRefTypes = true in
+    let spc = identifyIntSorts spc in
     let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
     let spc = removeCurrying spc in
     let spc = lambdaToInner spc in
-    %let _ = writeLine(printSpec spc) in
     let spc = poly2mono(spc,false) in
+    let spc = addEqOpsToSpec spc in
+    %let _ = printSpecWithSortsToTerminal spc in
     %let _ = writeLine(printSpec spc) in
     let spc = lambdaLift spc in
     let (spc,constrOps) = addSortConstructorsToSpec spc in
