@@ -5,6 +5,7 @@ Nat qualifying spec
   type Nat.Nat  % qualifier required for internal parsing reasons
 
   op zero : Nat
+
   op succ : Nat -> Nat
 
   axiom zero_not_succ is
