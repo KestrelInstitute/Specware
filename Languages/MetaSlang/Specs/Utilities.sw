@@ -1126,6 +1126,7 @@ Utilities qualifying spec
       | ("succ",Fun (Nat i,_,aa)) -> Some(Fun (Nat (succ i), natSort,aa))
 
       | ("length",Fun (String s,_,aa)) -> Some(Fun (Nat(length s),natSort,aa))
+      | ("stringToInt",Fun (String s,_,aa)) -> Some(Fun (Nat (stringToInt s),natSort,aa))
 
       | ("isUpperCase",Fun (Char c,_,aa)) ->
           Some(Fun (Bool(isUpperCase c),boolSort,aa))
