@@ -177,7 +177,7 @@ AnnSpecPrinter qualifying spec {
     | PChoose   _           -> pp.fromString ("choose")
     | Equals                -> pp.Equals
     | OneName   (x, _)      -> pp.fromString x
-    | TwoNames  (x, y, _)   -> pp.fromString (x ^"."^ y)
+    | TwoNames  (x, y, _)   -> pp.fromString (if x = UnQualified then y else x^"."^ y)
  
     | Relax                 -> let p = case srt of Arrow (Subsort (_, p, _), _, _) -> p | _ -> mkTrueA a in
                                prettysFill [pp.fromString "relax", 
