@@ -220,7 +220,9 @@
 
 ;;; Set gc parameters at startup
 #+mcl
-(push  #'(lambda () (ccl::set-lisp-heap-gc-threshold (* 16777216 4)))
+(push  #'(lambda ()
+	   (ccl:set-lisp-heap-gc-threshold (* 16777216 8))
+	   (ccl:egc nil))
        ccl:*lisp-startup-functions*)
 
 #+sbcl
