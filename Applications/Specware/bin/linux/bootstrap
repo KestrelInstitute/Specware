@@ -66,6 +66,7 @@ echo " "
 # when Lisp loads?
 
 SWPATH=$SPECWARE4:.
+EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
 
 # All the toplevel routines that activate Specware return a boolean value.
 # They return true if the call to Specware succeeded without activating
@@ -77,22 +78,11 @@ if [ -f bin/linux/Specware4.dxl ]; then
 	echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
         echo " "
 	bin/linux/Specware4-text -batch <<-XXXX
-		(defun bail-out-on-storage-condition (storage-condition)
-		    (format t "~&Lisp session terminated after storage condition.~%")
-		    (exit 99))
-		(defun bail-out-on-signals (os-exception)
-		  (let ((signal-number (excl::operating-system-signal-number os-exception))
-		        (signal-name   (excl::operating-system-signal-name   os-exception)))
-		    (when (stringp signal-number) (rotatef signal-name signal-number)) ; workaround for Allegro bug 
-		    (format t "~&Lisp session terminated by OS signal ~D: ~A~%" signal-number signal-name)
-		    (exit signal-number)))
-		(handler-bind ((INTERRUPT-SIGNAL  (function bail-out-on-signals))
-			       (STORAGE-CONDITION (function bail-out-on-storage-condition)))		
- 		  (if (sw "/Applications/Specware/Specware4")
+		(load "$EXIT_ON_ERRORS")
+		(exiting-on-errors 
+		  (if (sw "/Applications/Specware/Specware4")
 		    (exit 0)
-		    (if (find-symbol "SW-NOW-RETURNS-STATUS") ; temp hack, will become true always
-			(exit 1)     ; eventually we will always do this if SW returns NIL
-			(exit 0))))  ; temp hack until SW returns true on success
+		    (exit 1)))
 	XXXX
         RC=$?
 else
@@ -101,23 +91,12 @@ else
                 echo " "
 		cd Handwritten/Lisp
 		$LISP -batch <<-XXXX
-			(defun bail-out-on-storage-condition (storage-condition)
-			    (format t "~&Lisp session terminated after storage condition.~%")
-			    (exit 99))
-			(defun bail-out-on-signals (os-exception)
-			  (let ((signal-number (excl::operating-system-signal-number os-exception))
-			        (signal-name   (excl::operating-system-signal-name   os-exception)))
-			    (when (stringp signal-number) (rotatef signal-name signal-number)) ; workaround for Allegro bug 
-			    (format t "~&Lisp session terminated by OS signal ~D: ~A~%" signal-number signal-name)
-			    (exit signal-number)))
-			(handler-bind ((INTERRUPT-SIGNAL  (function bail-out-on-signals))
-				       (STORAGE-CONDITION (function bail-out-on-storage-condition)))		
+			(load "$EXIT_ON_ERRORS")
+			(exiting-on-errors 
 			  (load "Specware4.lisp")
 			  (if (sw "/Applications/Specware/Specware4")
 			    (exit 0)
-			    (if (find-symbol "SW-NOW-RETURNS-STATUS") ; temp hack, will become true always
-				(exit 1)     ; eventually we will always do this if SW returns NIL
-				(exit 0))))  ; temp hack until SW returns true on success
+			    (exit 1)))
 		XXXX
                 RC=$?
 	else
@@ -153,17 +132,8 @@ echo " "
 echo "Loading Specware ... (to compile)"
 echo " "
 $LISP -batch <<-XXXX
-	(defun bail-out-on-storage-condition (storage-condition)
-	    (format t "~&Lisp session terminated after storage condition.~%")
-	    (exit 99))
-	(defun bail-out-on-signals (os-exception)
-	  (let ((signal-number (excl::operating-system-signal-number os-exception))
-	        (signal-name   (excl::operating-system-signal-name   os-exception)))
-	    (when (stringp signal-number) (rotatef signal-name signal-number)) ; workaround for Allegro bug 
-	    (format t "~&Lisp session terminated by OS signal ~D: ~A~%" signal-number signal-name)
-	    (exit signal-number)))
-	(handler-bind ((INTERRUPT-SIGNAL  (function bail-out-on-signals))
-		       (STORAGE-CONDITION (function bail-out-on-storage-condition)))		
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
 	  (load "Specware4.lisp"))
 XXXX
 RC=$?
@@ -188,19 +158,9 @@ echo " "
 echo "Loading Specware ... (for dumplisp)"
 echo " "
 $LISP -batch <<-XXXX
-	(defun bail-out-on-storage-condition (storage-condition)
-	    (format t "~&Lisp session terminated after storage condition.~%")
-	    (exit 99))
-	(defun bail-out-on-signals (os-exception)
-	  (let ((signal-number (excl::operating-system-signal-number os-exception))
-	        (signal-name   (excl::operating-system-signal-name   os-exception)))
-	    (when (stringp signal-number) (rotatef signal-name signal-number)) ; workaround for Allegro bug 
-	    (format t "~&Lisp session terminated by OS signal ~D: ~A~%" signal-number signal-name)
-	    (exit signal-number)))
-	(handler-bind ((INTERRUPT-SIGNAL  (function bail-out-on-signals))
-		       (STORAGE-CONDITION (function bail-out-on-storage-condition)))		
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
 	  (load "Specware4.lisp"))
-	(setq SW-NOW-RETURNS-STATUS t) ; temp hack -- value is irrelevant, just want to intern symbol
 	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX
 RC=$?
