@@ -19,16 +19,13 @@ Prover qualifying spec
     let _ = wildCounter := res+1 in
     res
 
-  op inferTypePP: Spec * Term -> Type
-  def inferTypePP(spc, term) = termSort(term)
-
   op mkDeComposedEquality: Spec * Sort * Term * Term -> Term
   def mkDeComposedEquality(spc, srt, t1, t2) =
     case (t1, t2) of
       | (Record(args1, _), Record(args2, _)) ->
          let srtList = case srt of
 			 | Product (idSrtList, _) -> map (fn (_, srt) -> srt) idSrtList
-	                 | _ -> map (fn (_, term) -> inferTypePP(spc, term)) args1 in
+	                 | _ -> map (fn (_, term) -> inferType(spc, term)) args1 in
          ListPair.foldl ((fn ((srt, (_, a1)), (_, a2), res) ->
 		   let argEq = mkDeComposedEquality(spc, srt, a1, a2) in
 		   Utilities.mkAnd(argEq, res)))
@@ -188,7 +185,7 @@ Prover qualifying spec
 
 def removePatternCase(spc, term) =
   let caseTerm = caseTerm(term) in
-  let caseTermSrt = inferTypePP(spc, caseTerm) in
+  let caseTermSrt = inferType(spc, caseTerm) in
   let caseTermCondTerms = removePattern(spc, caseTerm) in
   let cases = caseCases(term) in
   let def mkPatCond(patTerms, caseTerm) =
@@ -394,7 +391,7 @@ def removePatternCase(spc, term) =
 	      let (tlVars, tlCond) = patternTermsToVarsConds(tlPatTerms, term, srt) in
 	      (hdVars++tlVars, Utilities.mkAnd(hdCond, tlCond)) in
     let def patternAndTermToVarsConds(pat, term) =
-          let srt = inferTypePP(spc, term) in
+          let srt = inferType(spc, term) in
 	  let patTerms = patternToTerms(pat) in
 	  patternTermsToVarsConds(patTerms, term, srt) in
     let def varsCondRecurse(vars, cond) =
