@@ -52,6 +52,9 @@ spec {
   op declare_predicate: LispCell
   def declare_predicate = Lisp.symbol("SNARK","DECLARE-PREDICATE-SYMBOL")
 
+  op declare_proposition_symbol: LispCell
+  def declare_proposition_symbol = Lisp.symbol("SNARK","DECLARE-PROPOSITION-SYMBOL")
+
 %  op snark_assert: LispCell
 %  def snark_assert = Lisp.symbol("SNARK","ASSERT")
 
@@ -190,16 +193,22 @@ spec {
 
   def snarkFunctionNoArityDecl(spc, name, srt) =
     (case srt of
-       Base (Qualified(qual, id), srts, _) ->
-	 Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
-		    Lisp.symbol("KEYWORD","SORT"),
-		    Lisp.quote(Lisp.symbol("SNARK", id))]
-	| _ -> Lisp.nil()) %Lisp.symbol("","FD1")
+       | Base(Qualified( _,"Boolean"),_,_) -> snarkPropositionSymbolDecl(name)
+       | Base (Qualified(qual, id), srts, _) ->
+          Lisp.list [declare_constant, Lisp.quote(Lisp.symbol("SNARK", name)),
+		     Lisp.symbol("KEYWORD","SORT"),
+		     Lisp.quote(snarkBaseSort(srt, true))]
+       | _ -> Lisp.nil()) %Lisp.symbol("","FD1")
+
+  def snarkPropositionSymbolDecl(name) =
+    Lisp.list[declare_proposition_symbol,
+	      Lisp.quote(Lisp.symbol("SNARK", name))]
 
   def snarkBaseSort(s:Sort, rng?):LispCell = 
 	          case s of
 		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
+		    | Base(Qualified("Boolean","Boolean"),_,_) -> Lisp.symbol("SNARK","BOOLEAN")
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
                                                        else Lisp.symbol("SNARK",id)
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
