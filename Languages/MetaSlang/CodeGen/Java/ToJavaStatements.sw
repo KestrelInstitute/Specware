@@ -26,19 +26,21 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
     | Fun (Project (id) , srt, _) -> translateProjectToExpr(tcx, id, argsTerm, k, l, spc)
     | Fun (Embed (id, _) , srt, _) -> translateConstructToExpr(tcx, srtId(termSort(term)), id, argsTerm, k, l, spc)
     | Fun (Op (Qualified (q, id), _), _, _) ->
-    let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
-    let srt = termSort(term) in
-    %%Fixed here
-    let args = applyArgsToTerms(argsTerm) in
-    let dom = map termSort args in
-    let rng = srt in
-    if all (fn (srt) -> baseType?(srt)) dom
-      then
-	if baseType?(rng)
-	  then translateBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
-	else translateBaseArgsApplToExpr(tcx, id, argsTerm, rng, k, l, spc)
-    else
-      translateUserApplToExpr(tcx, id, dom, argsTerm, k, l, spc)
+    (let id = if (id = "~") & ((q = "Integer") or (q = "Nat")) then "-" else id in
+     let srt = termSort(term) in
+     %%Fixed here
+     let args = applyArgsToTerms(argsTerm) in
+     let dom = map termSort args in
+     let rng = srt in
+     if all (fn (srt) -> baseType?(srt)) dom
+       then
+	 if baseType?(rng)
+	   then translateBaseApplToExpr(tcx, id, argsTerm, k, l, spc)
+	 else translateBaseArgsApplToExpr(tcx, id, argsTerm, rng, k, l, spc)
+     else
+       translateUserApplToExpr(tcx, id, dom, argsTerm, k, l, spc))
+    | Var((id,srt),_) -> fail("variables on lhs of application not yet supported....")
+    | _ -> fail("unsupported lhs of application: "^printTerm(opTerm))
 
 op translateRestrictToExpr: TCx * Sort * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
 op translateRelaxToExpr: TCx * Term * Nat * Nat * Spec -> Block * Java.Expr * Nat * Nat
@@ -252,7 +254,7 @@ def termToExpression(tcx, term, k, l, spc) =
     | _ ->
 	 if caseTerm?(term)
 	   then translateCaseToExpr(tcx, term, k, l, spc)
-	 else fail("unsupported term in termToExpression")
+	 else fail("unsupported term in termToExpression"^printTerm(term))
 
 op translateIfThenElseRet: TCx * Term * Nat * Nat * Spec -> Block * Nat * Nat
 op translateCaseRet: TCx * Term * Nat * Nat * Spec -> Block * Nat * Nat

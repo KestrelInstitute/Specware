@@ -58,9 +58,14 @@ op mkPrimOpsClsDecl: ClsDecl
 def mkPrimOpsClsDecl =
   ([], ("Primitive", None, []), emptyClsBody)
 
-op userTypeToClsDecl: Id -> ClsDecl
-def userTypeToClsDecl(id) =
-  ([], (id, None, []), emptyClsBody)
+(**
+ * sort A = B is translated to the empty class A extending B (A and B are user sorts).
+ * class A extends B {}
+ *)
+op userTypeToClsDecl: Id * Id -> ClsDecl
+def userTypeToClsDecl(id,superid) =
+%  ([], (id, None, []), emptyClsBody)
+  ([], (id, Some ([],superid), []), emptyClsBody)
 
 
 op varsToFormalParams: Vars -> List FormPar
@@ -141,13 +146,34 @@ sort TCx = StringMap.Map Java.Expr
 op mts: Block
 def mts = []
 
-op tt: Id -> Java.Type
-def tt(id) =
+def tt = tt_v2
+
+op tt_v2: Id -> Java.Type
+def tt_v2(id) =
   case id of
     | "Boolean" -> (Basic (JBool), 0)
     | "Integer" -> (Basic (JInt), 0)
     | _ -> (Name ([], id), 0)
 
+(**
+ * the new implementation of tt uses type information in order to generate the arrow type (v3)
+ *)
+op tt_v3: Sort -> Java.Type
+def tt_v3(srt) =
+  case srt of
+    | Base(Qualified(_,id),_,_) -> tt_v2(id)
+    | Arrow(srt0,srt1,_) -> mkArrowInterfaceDef(srt0,srt1)
+
+(**
+ * this op generates the java type definition for the arrow type srt0 -> srt1
+ *)
+op mkArrowInterfaceDef: Sort * Sort -> Java.Type
+def mkArrowInterfaceDef(srt0,srt1) = 
+  mkJavaObjectType("Object")
+
+op mkJavaObjectType: Id -> Java.Type
+def mkJavaObjectType(id) =
+  (Name ([],id),0)
 
 op mkJavaNumber: Integer -> Java.Expr
 def mkJavaNumber(i) =

@@ -12,70 +12,93 @@ import ToJavaQuotient
 
 %sort JSpec = CompUnit
 
+sort JcgInfo = {
+		clsDecls   : List ClsDecl
+	       }
+
+sort ArrowType = List Sort * Sort
+
 sort Type = JGen.Type
 
-op clsDeclsFromSorts: Spec -> List ClsDecl
+op clsDeclsFromSorts: Spec -> JcgInfo
 def clsDeclsFromSorts(spc) =
-  cons(mkPrimOpsClsDecl,
-       (foldriAQualifierMap (fn (qualifier, id, sort_info, clsDecls) -> 
-			     let newClsDecls = sortToClsDecls(qualifier, id, sort_info) in
-			     newClsDecls++clsDecls)
-	[] spc.sorts))
+  let initialJcgInfo = {
+		 clsDecls = []
+		}
+  in
+   let primClsDecl = mkPrimOpsClsDecl in
+   let jcginfo =
+   (foldriAQualifierMap (fn (qualifier, id, sort_info, jcginfo) -> 
+			 let newjcginfo = sortToClsDecls(qualifier, id, sort_info, jcginfo) in
+			 concatJcgInfo(newjcginfo,jcginfo))
+    initialJcgInfo spc.sorts)
+   in
+     concatJcgInfo({clsDecls=[primClsDecl]},jcginfo)
 
-op sortToClsDecls: Qualifier * Id * SortInfo -> List ClsDecl
-def sortToClsDecls(qualifier, id, sort_info) =
+op sortToClsDecls: Qualifier * Id * SortInfo * JcgInfo -> JcgInfo
+def sortToClsDecls(qualifier, id, sort_info, jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
   let (_, _, [(_, srtDef)]) = sort_info in
+  let newClsDecls = 
   if baseType?(srtDef)
-    then fail("Unsupported sort definition")
+    then fail("Unsupported sort definition: sort "^id^" = "^printSort(srtDef))
   else
     case srtDef of
       | Product (fields, _) -> [productToClsDecl(id, srtDef)]
       | CoProduct (summands, _) -> coProductToClsDecls(id, srtDef)
       | Quotient (superSort, quotientPred, _) -> [quotientToClsDecl(id, superSort, quotientPred)]
       | Subsort (superSort, pred, _) -> [subSortToClsDecl(id, superSort, pred)]
-      | Base (Qualified (qual, id), [], _) -> [userTypeToClsDecl(id)]
-      | _ -> fail("unsupported sort defintion")
+      | Base (Qualified (qual, id1), [], _) -> [userTypeToClsDecl(id,id1)]
+      | _ -> fail("Unsupported sort definition: sort "^id^" = "^printSort(srtDef))
+  in
+    exchangeClsDecls(jcginfo,newClsDecls)
 
-op addFldDeclToClsDecls: Id * FldDecl * List ClsDecl -> List ClsDecl
-def addFldDeclToClsDecls(srtId, fldDecl, clsDecls) =
-  map (fn (cd as (lm, (cId, sc, si), cb)) -> 
-       if cId = srtId
-	 then
-	   let newCb = setFlds(cb, cons(fldDecl, cb.flds)) in
-	   (lm, (cId, sc, si), newCb)
-	   else cd)
-  clsDecls       
+op addFldDeclToClsDecls: Id * FldDecl * JcgInfo -> JcgInfo
+def addFldDeclToClsDecls(srtId, fldDecl, jcginfo) =
+  let clsDecls = map (fn (cd as (lm, (cId, sc, si), cb)) -> 
+		      if cId = srtId
+			then
+			  let newCb = setFlds(cb, cons(fldDecl, cb.flds)) in
+			  (lm, (cId, sc, si), newCb)
+		      else cd)
+                      jcginfo.clsDecls
+  in
+    exchangeClsDecls(jcginfo,clsDecls)
 
-op addMethDeclToClsDecls: Id * MethDecl * List ClsDecl -> List ClsDecl
-def addMethDeclToClsDecls(srtId, methDecl, clsDecls) =
+op addMethDeclToClsDecls: Id * MethDecl * JcgInfo -> JcgInfo
+def addMethDeclToClsDecls(srtId, methDecl, jcginfo) =
+  let clsDecls =
   map (fn (cd as (lm, (cId, sc, si), cb)) -> 
        if cId = srtId
 	 then
 	   let newCb = setMethods(cb, cons(methDecl, cb.meths)) in
 	   (lm, (cId, sc, si), newCb)
 	   else cd)
-  clsDecls       
+  jcginfo.clsDecls
+  in
+    exchangeClsDecls(jcginfo,clsDecls)
 
-op addMethodFromOpToClsDecls: Spec * Id * Sort * Term * List ClsDecl -> List ClsDecl
-def addMethodFromOpToClsDecls(spc, opId, srt, trm, clsDecls) =
+op addMethodFromOpToClsDecls: Spec * Id * Sort * Term * JcgInfo -> JcgInfo
+def addMethodFromOpToClsDecls(spc, opId, srt, trm, jcginfo) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
   if all (fn (srt) -> baseType?(srt)) dom
     then
       if baseType?(rng)
-	then addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, clsDecls)
-      else addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, clsDecls)
+	then addPrimMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
+      else addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
   else
-    addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, clsDecls)
+    addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo)
 
-op addPrimMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * List ClsDecl -> List ClsDecl
-def addPrimMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _,  _), trm, clsDecls) =
+op addPrimMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
+def addPrimMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _,  _), trm, jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
   let (vars, body) = srtTermDelta(srt, trm) in
   let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
   let methodBody = mkPrimArgsMethodBody(body, spc) in
   let assertStmt = mkAssertFromDom(dom, spc) in
   let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
-  addMethDeclToClsDecls("Primitive", methodDecl, clsDecls)
+  addMethDeclToClsDecls("Primitive", methodDecl, jcginfo)
 
 op mkAssertFromDom: List JGen.Type * Spec -> Block
 def mkAssertFromDom(dom, spc) =
@@ -92,44 +115,47 @@ def mkPrimArgsMethodBody(body, spc) =
   let (b, k, l) = termToExpressionRet(empty, body, 1, 1, spc) in
   b
 
-op addPrimArgsMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * List ClsDecl -> List ClsDecl
-def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, clsDecls) =
+op addPrimArgsMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
+def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
   let (vars, body) = srtTermDelta(srt, trm) in
   let methodDecl = (([Static], Some (tt(rngId)), opId, varsToFormalParams(vars), []), None) in
   let methodBody = mkPrimArgsMethodBody(body, spc) in
   let methodDecl = setMethodBody(methodDecl, methodBody) in
-  addMethDeclToClsDecls(rngId, methodDecl, clsDecls)
+  addMethDeclToClsDecls(rngId, methodDecl, jcginfo)
 
-op addUserMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * List ClsDecl -> List ClsDecl
-def addUserMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, clsDecls) =
+op addUserMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
+def addUserMethodToClsDecls(spc, opId, srt, dom, rng as Base (Qualified (q, rngId), _, _), trm, jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
   let (vars, body) = srtTermDelta(srt, trm) in
   let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
   if caseTerm?(body)
     then 
       case caseTerm(body) of
 	| Var (var,_) -> if equalVar?(varh, var) 
-		       then addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls)
-		     else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls)
-  else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls)
+		       then addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
+		     else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
+  else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
 
-op addCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * List ClsDecl -> List ClsDecl
-def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls) =
+op addCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
+def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
   let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
   let methodDeclA = (([Abstract], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), None) in
   let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), None) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
-  let newClsDecls = addMethDeclToClsDecls(srthId, methodDeclA, clsDecls) in
-  addMethDeclToSummands(spc, srthId, methodDecl, body, newClsDecls)
+  let newJcgInfo = addMethDeclToClsDecls(srthId, methodDeclA, jcginfo) in
+  addMethDeclToSummands(spc, srthId, methodDecl, body, newJcgInfo)
 
-op addNonCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * List ClsDecl -> List ClsDecl
-def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, clsDecls) =
+op addNonCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
+def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
   let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
   let (vh, _) = varh in
   let methodBody = mkNonCaseMethodBody(vh, body, spc) in
   let assertStmt = mkAssertFromDom(dom, spc) in
   let methodDecl = (([], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), Some (assertStmt++methodBody)) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
-  addMethDeclToClsDecls(srthId, methodDecl, clsDecls)
+  addMethDeclToClsDecls(srthId, methodDecl, jcginfo)
 
 op mkNonCaseMethodBody: Id * Term * Spec -> Block
 def mkNonCaseMethodBody(vId, body, spc) =
@@ -138,17 +164,18 @@ def mkNonCaseMethodBody(vId, body, spc) =
   let (b, k, l) = termToExpressionRet(tcx, body, 1, 1, spc) in
   b
 
-op addMethDeclToSummands: Spec * Id * MethDecl * Term * List ClsDecl -> List ClsDecl
-def addMethDeclToSummands(spc, srthId, methodDecl, body, clsDecls) =
+op addMethDeclToSummands: Spec * Id * MethDecl * Term * JcgInfo -> JcgInfo
+def addMethDeclToSummands(spc, srthId, methodDecl, body, jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
   let Some (_, _, [(_,srt)])  = findTheSort(spc, mkUnQualifiedId(srthId)) in 
   let CoProduct (summands, _) = srt in
   let caseTerm = caseTerm(body) in
   let cases = caseCases(body) in
   %% cases = List (pat, cond, body)
-  foldr (fn((pat, _, cb), newClsDecls) -> addSumMethDeclToClsDecls(srthId, caseTerm, pat, cb, methodDecl, newClsDecls, spc)) clsDecls cases
+  foldr (fn((pat, _, cb), newJcgInfo) -> addSumMethDeclToClsDecls(srthId, caseTerm, pat, cb, methodDecl, newJcgInfo, spc)) jcginfo cases
 
-op addSumMethDeclToClsDecls: Id * Term * Pattern * Term * MethDecl * List ClsDecl * Spec -> List ClsDecl
-def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, coSrt, _), body, methodDecl, clsDecls, spc) =
+op addSumMethDeclToClsDecls: Id * Term * Pattern * Term * MethDecl * JcgInfo * Spec -> JcgInfo
+def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, coSrt, _), body, methodDecl, jcginfo, spc) =
   let Var ((vId, vSrt), _) = caseTerm in
   let args = case argsPat of
                | Some (RecordPat (args, _)) -> map (fn (id, (VarPat ((vId,_), _))) -> vId) args
@@ -161,7 +188,7 @@ def addSumMethDeclToClsDecls(srthId, caseTerm, pat as EmbedPat (cons, argsPat, c
   let (b, k, l) = termToExpressionRet(tcx, body, 1, 1, spc) in
   let JBody = b in
   let newMethDecl = setMethodBody(methodDecl, JBody) in
-  addMethDeclToClsDecls(summandId, newMethDecl, clsDecls)
+  addMethDeclToClsDecls(summandId, newMethDecl, jcginfo)
 
 op addArgsToTcx: TCx * List Id -> TCx
 def addArgsToTcx(tcx, args) =
@@ -180,17 +207,19 @@ def addArgsToTcx(tcx, args) =
 %  clsDecls
 
 
-op modifyClsDeclsFromOps: Spec * List ClsDecl -> List ClsDecl
-def modifyClsDeclsFromOps(spc, clsDecls) =
-  foldriAQualifierMap (fn (qualifier, id, op_info, clsDecls) -> 
-		       let newClsDecls = modifyClsDeclsFromOp(spc, qualifier, id, op_info, clsDecls) in
-		       newClsDecls)
-  clsDecls spc.ops
+op modifyClsDeclsFromOps: Spec * JcgInfo -> JcgInfo
+def modifyClsDeclsFromOps(spc, jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
+  foldriAQualifierMap (fn (qualifier, id, op_info, jcginfo) -> 
+		       let newJcgInfo = modifyClsDeclsFromOp(spc, qualifier, id, op_info, jcginfo) in
+		       newJcgInfo)
+  jcginfo spc.ops
 
-op modifyClsDeclsFromOp: Spec * Id * Id * OpInfo * List ClsDecl -> List ClsDecl
-def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]), clsDecls) =
+op modifyClsDeclsFromOp: Spec * Id * Id * OpInfo * JcgInfo -> JcgInfo
+def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]), jcginfo) =
+  let clsDecls = jcginfo.clsDecls in
   case srt of
-    | Arrow _ -> addMethodFromOpToClsDecls(spc, id, srt, trm, clsDecls)
+    | Arrow _ -> addMethodFromOpToClsDecls(spc, id, srt, trm, jcginfo)
     | _ ->
     if baseType?(srt)
       then
@@ -198,18 +227,25 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]),
 	let (_, jE, _, _) = termToExpression(empty, body, 1, 1, spc) in
 	let fldDecl = ([Static], baseSrtToJavaType(srt), ((id, 0), Some (Expr (jE))), []) in
 	%%Fixed here
-	let newClsDecls = addFldDeclToClsDecls("Primitive", fldDecl, clsDecls) in
-	newClsDecls
+	let newJcgInfo = addFldDeclToClsDecls("Primitive", fldDecl, jcginfo) in
+	newJcgInfo
     else
       let Base (Qualified (_, srtId), _, _) = srt in
       let (vars, body) = srtTermDelta(srt, trm) in
       let (_, jE, _, _) = termToExpression(empty, body, 1, 1, spc) in
       let fldDecl = ([Static], tt(srtId), ((id, 0), Some (Expr (jE))), []) in
       %%Fixed here
-      let newClsDecls = addFldDeclToClsDecls(srtId, fldDecl, clsDecls) in
-      newClsDecls
-      
-    
+      let newJcgInfo = addFldDeclToClsDecls(srtId, fldDecl, jcginfo) in
+      newJcgInfo
+
+
+op concatJcgInfo: JcgInfo * JcgInfo -> JcgInfo
+def concatJcgInfo({clsDecls=cd1},{clsDecls=cd2}) =
+  {clsDecls = cd1 ++ cd2}
+
+op exchangeClsDecls: JcgInfo * List ClsDecl -> JcgInfo
+def exchangeClsDecls({clsDecls=_},newClsDecls) =
+  {clsDecls=newClsDecls}
 
 op specToJava : Spec -> JSpec
 
@@ -219,10 +255,11 @@ def specToJava(spc) =
   let _ = writeLine("Renaming Variables") in
   let spc = distinctVariable(spc) in
   let _ = writeLine("Generating Classes") in
-  let clsDecls = clsDeclsFromSorts(spc) in
+  let jcginfo = clsDeclsFromSorts(spc) in
   let _ = writeLine("Adding Bodies") in
-  let clsDecls = modifyClsDeclsFromOps(spc, clsDecls) in
+  let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
   let _ = writeLine("Ready to Write") in
+  let clsDecls = jcginfo.clsDecls in
   let clsOrInterfDecls = map (fn (cd) -> ClsDecl(cd)) clsDecls in
   (None, [], clsOrInterfDecls)
 
