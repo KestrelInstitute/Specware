@@ -14,28 +14,31 @@ spec
 
   sort Index = Integer			% Acually Nat + -1
 
+  % term annotated with its environment spec
+  sort EnvTerm = AnnSpec.Spec * MS.Term
+
   sort Stat =
-    | Assign MS.Term
-    | Proc MS.Term
-    | Return MS.Term
+    | Assign EnvTerm
+    | Proc EnvTerm
+    | Return EnvTerm
 
   sort NodeContent =
     %% First three for pure control flow graphs
-    | Branch { condition   : MS.Term,
+    | Branch { condition   : EnvTerm,
 	       trueBranch  : Index,
 	       falseBranch : Index }
     | Block { statements : List Stat,
 	      next       : Index }
-    | Return MS.Term
+    | Return EnvTerm
     %% Next three are for representing discovered structure in the graph
-    | IfThen { condition  : MS.Term,
+    | IfThen { condition  : EnvTerm,
 	       trueBranch : Index,
 	       cont       : Index }
-    | IfThenElse { condition   : MS.Term,
+    | IfThenElse { condition   : EnvTerm,
 		   trueBranch  : Index,
 		   falseBranch : Index,
 		   cont        : Index }
-    | Loop { condition : MS.Term,
+    | Loop { condition : EnvTerm,
 	     preTest?  : Boolean,
 	     body      : Index,
 %	     endLoop   : Index,
@@ -212,7 +215,7 @@ spec
 	      then (condition, trueBranch, falseBranch,newG)
 	      else % trueBranch should be outside loop
 	    if member(trueBranch,loopExits)
-	      then (negateTerm condition,falseBranch,trueBranch, newG)
+	      then (negateEnvTerm condition,falseBranch,trueBranch, newG)
 	      else fail ("GraphAnalysis: only simple while loops recognized")
 	  %% |   Currently only have loops that start with a loop test
 	    
@@ -235,7 +238,7 @@ spec
 					     cont        = falseBranch},
 				  newG)
 	    else if trueBranch = cont
-	      then setNodeContent(nd,IfThen {condition   = negateTerm condition,
+	      then setNodeContent(nd,IfThen {condition   = negateEnvTerm condition,
 					     trueBranch  = falseBranch,
 					     cont        = trueBranch},
 				  newG)
@@ -271,7 +274,7 @@ spec
   def printNodeContent content =
     case content of
 	  | Branch {condition, trueBranch, falseBranch} ->
-	    "Branch Condn: " ^ (printTerm condition) ^ "\n  "
+	    "Branch Condn: " ^ (printEnvTerm condition) ^ "\n  "
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
 	    ^ "False branch: " ^ (Integer.toString falseBranch)
 	  | Block {statements, next} ->
@@ -279,26 +282,26 @@ spec
 	    ^ "\n  "
 	    ^ "Next: " ^ (Integer.toString next)
 	  | Return t ->
-	    "Return: " ^ (printTerm t)
+	    "Return: " ^ (printEnvTerm t)
 	  | IfThen {condition, trueBranch, cont} ->
-	    "If: " ^ (printTerm condition) ^ "\n  "
+	    "If: " ^ (printEnvTerm condition) ^ "\n  "
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
 	    ^ "Continue: " ^ (Integer.toString cont)
 	  | IfThenElse {condition, trueBranch, falseBranch, cont} ->
-	    "If: " ^ (printTerm condition) ^ "\n  "
+	    "If: " ^ (printEnvTerm condition) ^ "\n  "
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
 	    ^ "False branch: " ^ (Integer.toString falseBranch) ^ "\n  "
 	    ^ "Continue: " ^ (Integer.toString cont)
 	  | Loop {condition, preTest?, body, cont} ->
-	    (if preTest? then "While: " else "Until: ") ^ (printTerm condition) ^ "\n  "
+	    (if preTest? then "While: " else "Until: ") ^ (printEnvTerm condition) ^ "\n  "
 	    ^ "Body:: " ^ (Integer.toString body) ^ "\n  "
 	    ^ "Continue: " ^ (Integer.toString cont)
 
   def printStat st =
     case st of
-      | Assign t -> "Assign " ^ (printTerm t)
-      | Proc t -> "Proc " ^ (printTerm t)
-      | Return t -> "Return " ^ (printTerm t)
+      | Assign t -> "Assign " ^ (printEnvTerm t)
+      | Proc t -> "Proc " ^ (printEnvTerm t)
+      | Return t -> "Return " ^ (printEnvTerm t)
 
   op addPredecessors: List NodeContent -> Graph
   def addPredecessors contentsList =
@@ -308,5 +311,13 @@ spec
   def findPredecessors(i,contentsList) =
     filter (fn j -> member(i,nodeSuccessors(nth(contentsList,j))))
       (enumerate(0,(length contentsList) - 1))
-	    
+
+  % --------------------------------------------------------------------------------
+
+  op negateEnvTerm: EnvTerm -> EnvTerm
+  def negateEnvTerm(spc,term) = (spc,negateTerm term)
+
+  op printEnvTerm: EnvTerm -> String
+  def printEnvTerm(_,term) = printTerm(term)
+
 end

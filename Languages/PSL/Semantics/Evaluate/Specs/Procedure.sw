@@ -58,36 +58,36 @@ Proc qualifying spec
     return (makeProcedure params varsInScope returnInfo modeSpec bSpec)
 
   op parameters : Procedure -> List Op.Ref
-  def parameters proc = proc.parameters
+  def parameters procedure = procedure.parameters
 
   op varsInScope : Procedure -> List Op.Ref
-  def varsInScope proc = proc.varsInScope
+  def varsInScope procedure = procedure.varsInScope
 
   op bSpec : Procedure -> BSpec
-  def bSpec proc = proc.bSpec
+  def bSpec procedure = procedure.bSpec
 
   op withBSpec infixl 17 : Procedure * BSpec -> Procedure
-  def withBSpec (proc,newBSpec) = {
-    parameters = proc.parameters,
-    varsInScope = proc.varsInScope,
-    returnInfo = proc.returnInfo,
-    modeSpec = proc.modeSpec,
+  def withBSpec (procedure,newBSpec) = {
+    parameters = procedure.parameters,
+    varsInScope = procedure.varsInScope,
+    returnInfo = procedure.returnInfo,
+    modeSpec = procedure.modeSpec,
     bSpec = newBSpec
   }
 
   op returnInfo : Procedure -> ReturnInfo
-  def returnInfo proc = proc.returnInfo
+  def returnInfo procedure = procedure.returnInfo
 
   op modeSpec : Procedure -> ModeSpec
-  def modeSpec proc = proc.modeSpec
+  def modeSpec procedure = procedure.modeSpec
 
   op withModeSpec infixl 17 : Procedure * ModeSpec -> Procedure
-  def withModeSpec (proc,newModeSpec) = {
-    parameters = proc.parameters,
-    varsInScope = proc.varsInScope,
-    returnInfo = proc.returnInfo,
+  def withModeSpec (procedure,newModeSpec) = {
+    parameters = procedure.parameters,
+    varsInScope = procedure.varsInScope,
+    returnInfo = procedure.returnInfo,
     modeSpec = newModeSpec,
-    bSpec = proc.bSpec
+    bSpec = procedure.bSpec
   }
 
 \end{spec}
@@ -112,27 +112,27 @@ handle name clashes properly.
 
 begin{spec}
   op pp : Procedure -> Doc
-  def pp proc =
+  def pp procedure =
     ppConcat [
       pp "params=(",
-      ppSep (pp ",") (map pp (parameters proc)),
+      ppSep (pp ",") (map pp (parameters procedure)),
       pp "), returnInfo=",
-      pp (returnInfo proc),
+      pp (returnInfo procedure),
       pp ", bSpec=",
       ppNewline,
       pp "  ",
-      ppIndent (pp (bSpec proc))
+      ppIndent (pp (bSpec procedure))
     ]
 
   op ppLess : Procedure -> ModeSpec -> Doc
-  def ppLess proc ms =
+  def ppLess procedure ms =
     let
       procShort =
-        makeProcedure (parameters proc)
-                      (varsInScope proc)
-                      (returnInfo proc)
-                      (subtract (modeSpec proc) ms)
-                      (map (bSpec proc) (fn ms -> ModeSpec.subtract ms (modeSpec proc)) (fn x -> x))
+        makeProcedure (parameters procedure)
+                      (varsInScope procedure)
+                      (returnInfo procedure)
+                      (subtract (modeSpec procedure) ms)
+                      (map (bSpec procedure) (fn ms -> ModeSpec.subtract ms (modeSpec procedure)) (fn x -> x))
     in
       pp procShort
 
@@ -145,20 +145,20 @@ begin{spec}
 \end{spec}
 
    op show : Procedure -> String 
-   def show proc = ppFormat (pp proc)
+   def show procedure = ppFormat (pp procedure)
 
 \begin{spec}
   op ProcEnv.pp : Id.Id -> Procedure -> Env Doc
-  def ProcEnv.pp procId proc = {
-    doc <- pp proc.bSpec (modeSpec proc);
+  def ProcEnv.pp procId procedure = {
+    doc <- pp procedure.bSpec (modeSpec procedure);
     return 
      (ppConcat [
         String.pp "proc ",
         Id.pp procId,
         String.pp " params=(",
-        ppSep (String.pp ",") (map Id.pp (parameters proc)),
+        ppSep (String.pp ",") (map Id.pp (parameters procedure)),
         String.pp "), returnInfo=",
-        pp (returnInfo proc),
+        pp (returnInfo procedure),
         String.pp ", bSpec=",
         doc
      ])

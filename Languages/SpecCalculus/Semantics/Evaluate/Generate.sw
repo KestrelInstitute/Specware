@@ -5,7 +5,7 @@ SpecCalc qualifying spec
   import Snark
   import Java
   import C
-  import /Languages/MetaSlang/CodeGen/C/ToC
+  %import /Languages/MetaSlang/CodeGen/C/ToC
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
 
   def SpecCalc.evaluateGenerate (language, sub_term as (term,position), optFile) pos = {
@@ -25,9 +25,9 @@ SpecCalc qualifying spec
                         print (showValue cValue);
                         return (cValue,timeStamp,depUIDs)
                       }
-                 | "c_old" -> 
-                       let _ = specToC (subtractSpec spc baseSpec) in
-                       return (cValue,timeStamp,depUIDs)
+                 %| "c_old" -> 
+                 %      let _ = specToC (subtractSpec spc baseSpec) in
+                 %      return (cValue,timeStamp,depUIDs)
 		 | "c" -> evaluateCGen((cValue,timeStamp,depUIDs),optFile)
                  | "Java" ->
 		       evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)

@@ -67,6 +67,10 @@ List qualifying spec
 
   def tl(_::t) = t  % list is non-empty by definition
 
+  %def hd(l) = case l of h::_ -> h | _ -> System.fail("trying to get the head of an empty list.") % list is non-empty by definition
+
+  %def tl(l) = case l of _::tl -> tl | _ -> System.fail("trying to get the tail of an empty list.")  % list is non-empty by definition
+
   def concat (l1,l2) = 
     case l1 of
        | []     -> l2

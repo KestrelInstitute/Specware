@@ -7,6 +7,7 @@ CodeGenTransforms qualifying spec
 
 import /Languages/MetaSlang/Specs/StandardSpec
 import /Languages/MetaSlang/Transformations/InstantiateHOFns
+
 % --------------------------------------------------------------------------------
 
 % --------------------------------------------------------------------------------
@@ -38,9 +39,14 @@ def identifyIntSorts(spc) =
   let
     def identifyIntSort(srt) =
       case srt of
-	| Base(Qualified("Nat","Nat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
-	| Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
-	| Base(Qualified("Integer","NZInteger"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+	| Base(Qualified(_(*"Nat"*),"Nat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+	| Base(Qualified(_(*"Nat"*),"PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+	| Base(Qualified(_(*"Integer"*),"NZInteger"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+        % the following 2 lines actually do not belong here, they "repair" something that happens in PSL:
+        % the qualifier of base types get lost. Thats also the reason why ih the above lines the qualifier
+        % is commented out
+	| Base(Qualified("List","List"),_,b) -> srt
+	| Base(Qualified(s,"List"),tv,b) -> Base(Qualified("List","List"),tv,b)
 	| _ -> srt
   in
   let termid = (fn(t) -> t) in
@@ -224,6 +230,13 @@ def poly2mono(spc,keepPolyMorphic?) =
      (insertAQualifierMap(map,qu,i,(names,fix,nsortscheme,defs)),minfo)
      ) (emptyAOpMap,minfo) ops
   in
+  let (props,minfo) =
+    foldr (fn((ptype,pname,tv,t),(props,minfo)) ->
+	   let (t,minfo) = p2mTerm(spc,t,minfo) in
+	   let nprop = (ptype,pname,tv,t) in
+	   (cons(nprop,props),minfo)
+	   ) ([],minfo) spc.properties
+  in
   let srts = foldr (fn(sinfo as ((Qualified(q,id))::_,_,_),map) -> insertAQualifierMap(map,q,id,sinfo))
             srts minfo.sorts
   in
@@ -247,6 +260,7 @@ def poly2mono(spc,keepPolyMorphic?) =
   in
   let spc = setSorts(spc,srts) in
   let spc = setOps(spc,ops) in
+  let spc = setProperties(spc,props) in
   spc
 
 op p2mSort: Spec * MS.Sort * SortOpInfos -> MS.Sort * SortOpInfos
@@ -450,7 +464,7 @@ def p2mFun(spc,fun,srt,minfo) =
 	| _ -> (fun,srt1,minfo)
 	)
     | Op(qid as Qualified(q,id),fix) ->
-      (case findTheOp(spc,qid) of
+      (case AnnSpec.findTheOp(spc,qid) of
 	| None -> (fun,srt1,minfo)
 	| Some (names,fixi,(mtv,asrt),x as ((tv as (_::_),term)::terms)) -> 
 	  %let _ = writeLine("polymorphic op found: "^printQualifiedId(qid)) in
@@ -579,16 +593,24 @@ def isEmptySortOpInfos?(minfo) =
  * if ignore(qid) evaluates to true, the sort/op will be ignored, i.e. it will *not* be added.
  *)
 op addMissingFromBase: Spec * Spec * (QualifiedId -> Boolean) -> Spec
-def addMissingFromBase(bspc,spc,ignore) =
-  let srts = spc.sorts in
-  let ops = spc.ops in
+def addMissingFromBase(bspc,spc,ignore) = addMissingFromBaseTo(bspc,spc,ignore,spc)
+
+(**
+ * same as addMissingFromBase, only that a spec just containing the missing ops and sorts
+ * is returned.
+ *)
+op getMissingFromBase: Spec * Spec * (QualifiedId -> Boolean) -> Spec
+def getMissingFromBase(bspc,spc,ignore) = addMissingFromBaseTo(bspc,spc,ignore,emptySpec)
+
+op addMissingFromBaseTo: Spec * Spec * (QualifiedId -> Boolean) * Spec -> Spec
+def addMissingFromBaseTo(bspc,spc,ignore,initSpec) =
   let minfo =
     foldriAQualifierMap
     (fn(qu,i,(names,tyvars,defs),minfo) ->
      foldl (fn(def0 as (tv,srt),minfo) ->
 	    let minfo = addMissingFromSort(bspc,spc,ignore,srt,minfo) in
 	    minfo) minfo defs
-     ) emptyMonoInfo srts
+     ) emptyMonoInfo spc.sorts
   in
   let minfo =
     foldriAQualifierMap
@@ -600,19 +622,23 @@ def addMissingFromBase(bspc,spc,ignore) =
      in
      let minfo = addMissingFromSort(bspc,spc,ignore,srt,minfo) in
      minfo
-     ) minfo ops
+     ) minfo spc.ops
   in
-  if isEmptySortOpInfos?(minfo) then spc else
-  %let _ = writeLine("added sorts: "^newline^printSortOpInfos(minfo)) in
+  let minfo =
+    foldr (fn((_,_,_,term),minfo) -> addMissingFromTerm(bspc,spc,ignore,term,minfo)
+	  ) minfo spc.properties
+  in
+  if isEmptySortOpInfos?(minfo) then initSpec else
+  %let _ = writeLine("added sorts & ops: "^newline^printSortOpInfos(minfo)) in
   let srts = foldr (fn(sinfo as ((Qualified(q,id))::_,_,_),map) -> insertAQualifierMap(map,q,id,sinfo))
-            srts minfo.sorts
+            initSpec.sorts minfo.sorts
   in
   let ops = foldr (fn(opinfo as ((Qualified(q,id))::_,_,_,_),map) -> insertAQualifierMap(map,q,id,opinfo))
-            ops minfo.ops
+            initSpec.ops minfo.ops
   in
-  let spc = setSorts(spc,srts) in
-  let spc = setOps(spc,ops) in
-  addMissingFromBase(bspc,spc,ignore)
+  let initSpec = setSorts(initSpec,srts) in
+  let initSpec = setOps(initSpec,ops) in
+  addMissingFromBase(bspc,initSpec,ignore)
 
 
 op addMissingFromSort: Spec * Spec * (QualifiedId -> Boolean) * MS.Sort * SortOpInfos -> SortOpInfos
@@ -630,14 +656,16 @@ def addMissingFromSort(bspc,spc,ignore,srt,minfo) =
       if ignore(qid) then minfo else
       let minfo = foldl (fn(srt,minfo) -> addMissingFromSort(bspc,spc,ignore,srt,minfo)) minfo srts in
       (case findTheSort(spc,qid) of
-	 | Some _ -> minfo
+	 | Some _ -> 
+	   %let _ = writeLine("sort \""^printQualifiedId(qid)^"\" found in spec.") in
+	   minfo
 	 | None -> (case findTheSort(bspc,qid) of
-		      | None -> fail("can't happen: couldn't find sort def for "^printQualifiedId(qid)
+		      | None -> fail("can't happen: couldn't find sort def for "^q^"."^id%printQualifiedId(qid)
 				     %^"\n"^(printSpec bspc)
 				     %^"\n"^(printSpec spc)
 				    )
 		      | Some sinfo ->
-		        %let _ = writeLine("adding sort "^printQualifiedId(qid)^" from base spec.") in
+		        %let _ = writeLine("adding sort \""^printQualifiedId(qid)^"\" from base spec.") in
 		        addSortInfo2SortOpInfos(qid,sinfo,minfo)
 		   )
 	)
@@ -761,7 +789,9 @@ def addSortConstructorsFromSort(spc,qid,(sortnames,tyvars0,sortschemes)) =
 
 op getConstructorOpName: QualifiedId * String -> QualifiedId
 def getConstructorOpName(qid as Qualified(q,id),consid) =
-  let sep = "$" in
+  % the two $'s are important: that how the constructor op names are
+  % distinguished from other opnames (hack)
+  let sep = "$$" in
   Qualified(q,id^sep^consid)
 
 % this is used to distinguish "real" product from "record-products"
@@ -863,11 +893,11 @@ def lambdaToInnerTerm spc t =
     | Lambda([(pat,cond,term)],b) ->
       let fname = "inner" in
       let fsrt = inferType(spc,t) in
-      let var = (fname,fsrt) in
+      let variable = (fname,fsrt) in
       let cond = lambdaToInnerTerm spc cond in
       let term = lambdaToInnerTerm spc term in
       let t = Lambda([(pat,cond,term)],b) in
-      let newt = LetRec([(var,t)],Var(var,b),b) in
+      let newt = LetRec([(variable,t)],Var(variable,b),b) in
       %let _ = writeLine("lambdaToInner("^(printTerm t)^") = "^(printTerm newt)) in
       newt
     | Apply(t1,t2,b) -> Apply(lambdaToInnerTerm spc t1,lambdaToInnerTerm spc t2,b)
@@ -959,10 +989,10 @@ def conformOpDeclsTerm(spc,srt,term,_) =
 		     %let _ = writeLine("checking "^id^"...") in
 		     let argname = "_arg" in
 		     let pnamessrts = zip(plist,fields0) in
-		     let bodyterm = foldr (fn((var,(id,fsrt)),bodyterm) ->
+		     let bodyterm = foldr (fn((variable,(id,fsrt)),bodyterm) ->
 					   let proj = Fun(Project(id),Arrow(srt,fsrt,b),b) in
 					   let pterm = Apply(proj,Var((argname,srt),b),b) in
-					   Let([(VarPat((var,fsrt),b),pterm)],bodyterm,b))
+					   Let([(VarPat((variable,fsrt),b),pterm)],bodyterm,b))
 		                           bodyterm pnamessrts
 		     in
 		     let cond = mkTrue() in
@@ -1175,10 +1205,31 @@ def getEqOpQid(qid as Qualified(q,id)) =
   Qualified(q,"eq$"^id)
 
 % --------------------------------------------------------------------------------
+
+op findTheSort: Spec * QualifiedId -> Option(SortInfo)
+def findTheSort =  findTheOpSort AnnSpec.findTheSort AnnSpec.findAllSorts
+
+op findTheOp: Spec * QualifiedId -> Option(OpInfo)
+def findTheOp = findTheOpSort AnnSpec.findTheOp AnnSpec.findAllOps
+
+op findTheOpSort: fa(a) (Spec * QualifiedId -> Option(a)) -> (Spec * QualifiedId -> List(a)) -> Spec * QualifiedId -> Option(a)
+def findTheOpSort origFindThe origFindAll (spc,qid as Qualified(q,id)) =
+  let res1 = origFindThe(spc,qid) in
+  case res1 of
+    | Some _ -> res1
+    | None ->
+      if q = UnQualified then None
+      else
+	case origFindAll(spc,Qualified(UnQualified,id)) of
+	  | [] -> None
+	  | res::_ -> Some res
+
+% --------------------------------------------------------------------------------
 % debug
 
 op showSorts: Spec -> ()
 def showSorts(spc) =
   appSpec ((fn(_)->()),(fn(srt)->writeLine(printSort(srt))),(fn(_)->())) spc
+
 
 endspec

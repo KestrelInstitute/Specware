@@ -101,9 +101,9 @@ Oscar qualifying spec
   op join : SpecCalc.Term Position -> Spec -> Spec -> Position -> Env Spec
   def join term spc1 spc2 position = {
     newModeSpec <- join term (modeSpec spc1) (modeSpec spc2) position;
-    newProcs <- fold (fn procMap -> fn id -> fn proc ->
+    newProcs <- fold (fn procMap -> fn id -> fn procedure ->
       case evalPartial (procedures spc1, id) of
-        | None -> return (update (procMap, id, proc))
+        | None -> return (update (procMap, id, procedure))
         | Some _ -> raise (SpecError (noPos, "Procedure " ^ (Id.show id) ^ " was redefined")))
       (procedures spc1) (procedures spc2);
     return (make newModeSpec newProcs)
@@ -178,8 +178,8 @@ Oscar qualifying spec
     let def showContents map =
       case takeOne map of
         | None -> return ""
-        | One ((procId,proc),rest) -> {
-           procDoc <- ProcEnv.pp procId proc;
+        | One ((procId,procedure),rest) -> {
+           procDoc <- ProcEnv.pp procId procedure;
            procString <- return (ppFormat procDoc);
            restString <- showContents rest;
            case takeOne rest of
@@ -197,8 +197,8 @@ Oscar qualifying spec
     let def ppContents map =
       case takeOne map of
         | None -> return ppNil
-        | One ((procId,proc),rest) -> {
-           procDoc <- ProcEnv.pp procId proc;
+        | One ((procId,procedure),rest) -> {
+           procDoc <- ProcEnv.pp procId procedure;
            restDoc <- ppContents rest;
            case takeOne rest of
              | None -> return procDoc

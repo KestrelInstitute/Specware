@@ -22,21 +22,29 @@ SpecsToI2L qualifying spec {
   sort Term = MS.Term
 
   sort CgContext = {
-		    specname       : String,
-		    fullspec       : Spec,
-		    isToplevel     : Boolean,
-		    useRefTypes    : Boolean,
-		    constrOps      : List(QualifiedId),
+		    specname       : String, % not (yet) used
+		    isToplevel     : Boolean, % not used
+		    useRefTypes    : Boolean, % always true
+		    constrOps      : List(QualifiedId), % not used, constrOps are distinguished by their name (contain "$$")
 		    currentOpSort  : Option(QualifiedId)
 		   }
 
+  op defaultCgContext: CgContext
+  def defaultCgContext = {
+			 specname = "",
+			 isToplevel = false,
+			 useRefTypes = true,
+			 constrOps = [],
+			 currentOpSort = None
+			}
+
   op unsetToplevel: CgContext -> CgContext
   def unsetToplevel(ctxt) =
-    {specname=ctxt.specname,fullspec=ctxt.fullspec,isToplevel=false,useRefTypes=ctxt.useRefTypes,constrOps=ctxt.constrOps,currentOpSort=ctxt.currentOpSort}
+    {specname=ctxt.specname,isToplevel=false,useRefTypes=ctxt.useRefTypes,constrOps=ctxt.constrOps,currentOpSort=ctxt.currentOpSort}
 
   op setCurrentOpSort: CgContext * QualifiedId -> CgContext
   def setCurrentOpSort(ctxt,qid) =
-    {specname=ctxt.specname,fullspec=ctxt.fullspec,isToplevel=ctxt.isToplevel,
+    {specname=ctxt.specname,isToplevel=ctxt.isToplevel,
      useRefTypes=ctxt.useRefTypes,constrOps=ctxt.constrOps,currentOpSort=Some(qid)}
 
   op mkInOpStr: CgContext -> String
@@ -49,17 +57,24 @@ SpecsToI2L qualifying spec {
   def useConstrCalls(ctxt) =
     case ctxt.currentOpSort of
       | None -> true
-      | Some qid -> ~(member(qid,ctxt.constrOps))
+      | Some (qid as Qualified(q,id)) -> %~(member(qid,ctxt.constrOps))
+        %let _ = writeLine("useConstrCalls, id="^id) in
+        let expl = concat(String.explode q, String.explode id) in
+	let (indl,_) = List.foldl (fn(c,(indl,n)) -> if c = #$ then (cons(n,indl),n+1) else (indl,n+1)) ([],0) expl in
+	case indl of
+	  | [n,m] ->
+	      if n = m+1 then
+		%let _ = writeLine("constructor op: \""^(printQualifiedId qid)^"\"") in
+		false
+	      else false
+          | _ -> true
 
 
-  (**
-   generate C code for the spec given as first argument. The 2. spec is the fullspec, i.e. the spec + the baseSpec
-   *)
 
-  op generateI2LCodeSpec: AnnSpec.Spec * AnnSpec.Spec * Boolean * List(QualifiedId) -> ImpUnit
-  def generateI2LCodeSpec(spc, fullspec, useRefTypes, constrOps) =
-    let _ = writeLine(";;   phase 1: Generating i2l...") in
-    let ctxt = {specname="",fullspec=fullspec, isToplevel=true, useRefTypes=useRefTypes, constrOps=constrOps, currentOpSort=None} in
+  op generateI2LCodeSpec: AnnSpec.Spec * Boolean * List(QualifiedId) -> ImpUnit
+  def generateI2LCodeSpec(spc, useRefTypes, constrOps) =
+    %let _ = writeLine(";;   phase 1: Generating i2l...") in
+    let ctxt = {specname="", isToplevel=true, useRefTypes=useRefTypes, constrOps=constrOps, currentOpSort=None} in
     %let spc = normalizeArrowSortsInSpec(spc) in
     let transformedOps = foldriAQualifierMap
                           (fn(qid,name,opinfo,l1) ->
@@ -70,7 +85,7 @@ SpecsToI2L qualifying spec {
     in
     %let _ = writeLine("ops transformed.") in
     let len = List.length(transformedOps) in
-    let _ = writeLine(";;            "^Integer.toString(len)^" ops have been transformed.") in
+    %let _ = writeLine(";;            "^Integer.toString(len)^" ops have been transformed.") in
 %    let _ = foldriAQualifierMap 
 %	   (fn(qid,name,(sortnames,tyvars,sortschemes),l) -> 
 %	    let _ = writeLine("sort "^printQualifiedId(Qualified(qid,name))) in
@@ -771,12 +786,13 @@ SpecsToI2L qualifying spec {
 	  | Base(qid,_,_) ->
 	    let eqid as Qualified(eq,eid) = getEqOpQid qid in
 	    (case findTheOp(spc,eqid) of
-	       | None -> fail(errmsg)%primEq()
+	       | None -> 
+	         fail(errmsg^"\nReason: eq-op not found in extended spec:\n"^(printSpec spc))
 	       | Some _ ->
 	         let eqfname = (eq,eid) in
 		 FunCall(eqfname,[],[t2e t1,t2e t2])
 		)
-	  | _ -> fail(errmsg) %primEq()
+	  | _ -> fail(errmsg^"\n[term sort must be a base sort]") %primEq()
 	         
   op getBuiltinExpr: CgContext * Spec * Term * List(Term) -> Option Expr
   def getBuiltinExpr(ctxt,spc,term,args) =
@@ -945,7 +961,7 @@ SpecsToI2L qualifying spec {
 	let
           def getTypeForConstructorArgs(srt,id) =
 	    %let srt = unfoldBase(spc,srt) in
-	    let srt = stripSubsorts(ctxt.fullspec,srt) in
+	    let srt = stripSubsorts(spc,srt) in
 	    case srt of
 	      | CoProduct (fields,_) ->
 	        (case List.find (fn(id0,_) -> id0 = id) fields of

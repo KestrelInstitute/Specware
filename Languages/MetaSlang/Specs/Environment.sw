@@ -240,7 +240,7 @@ spec {
      | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
-     | _ -> System.fail "inferType: Non-exhaustive match"
+     | _ -> (System.print(tm);System.fail ("inferType: Non-exhaustive match"))
 
 % def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
 % def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], noPos)

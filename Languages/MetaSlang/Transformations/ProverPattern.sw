@@ -257,7 +257,7 @@ def removePatternCase(term) =
   def patternToTerms(pat) =
     case pat of
       | AliasPat(_) -> aliasPatternToTerms(pat)
-      | VarPat(var, b) -> [mkVar(var)]
+      | VarPat(var0, b) -> [mkVar(var0)]
       | EmbedPat(_) -> embedPatternToTerms(pat)
       | RecordPat(_) -> recordPatternToTerms(pat)
       | StringPat(string, b) -> [mkString(string)]

@@ -92,7 +92,8 @@ CUtils qualifying spec {
      fnDefns = cspc.fnDefns
     }
   op addFn: CSpec * FnDecl -> CSpec
-  def addFn(cspc,X) =
+  def addFn(cspc,X as (fname,_,_)) =
+    %let _ = writeLine("adding fndecl for "^fname^"...") in
     {
      name = cspc.name,
      includes = cspc.includes,
@@ -105,6 +106,24 @@ CUtils qualifying spec {
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
     }
+
+  op delFn: CSpec * String -> CSpec
+  def delFn(cspc,fname) =
+    %let _ = writeLine("deleting fndecl for "^fname^"...") in
+    {
+     name = cspc.name,
+     includes = cspc.includes,
+     defines = cspc.defines,
+     constDefns = cspc.constDefns,
+     vars = cspc.vars,
+     fns = filter (fn(fname0,_,_) -> ~(fname0=fname)) cspc.fns,
+     axioms = cspc.axioms,
+     structUnionTypeDefns = cspc.structUnionTypeDefns,
+     varDefns = cspc.varDefns,
+     fnDefns = cspc.fnDefns
+    }
+
+
   op addAxiom: CSpec * Exp -> CSpec
   def addAxiom(cspc,X) =
     {
@@ -130,7 +149,7 @@ CUtils qualifying spec {
      vars = cspc.vars,
      fns = cspc.fns,
      axioms = cspc.axioms,
-     structUnionTypeDefns = cspc.structUnionTypeDefns @ [TypeDefn X],
+     structUnionTypeDefns = (filter (fn(TypeDefn(tname0,_)) -> ~(tname0=tname)| _ -> true) cspc.structUnionTypeDefns) @ [TypeDefn X],
      varDefns = cspc.varDefns,
      fnDefns = cspc.fnDefns
     }
@@ -176,20 +195,32 @@ CUtils qualifying spec {
      varDefns = cspc.varDefns @ [X],
      fnDefns = cspc.fnDefns
     }
-  op addFnDefn: CSpec * FnDefn -> CSpec
-  def addFnDefn(cspc,X) =
+  op addFnDefnAux: CSpec * FnDefn * Boolean -> CSpec
+  def addFnDefnAux(cspc,fndefn as (fname,params,rtype,body),overwrite) =
     {
      name = cspc.name,
      includes = cspc.includes,
      defines = cspc.defines,
      constDefns = cspc.constDefns,
      vars = cspc.vars,
-     fns = cspc.fns,
+     fns = if overwrite 
+	     then filter (fn(fname0,_,_) -> ~(fname=fname0)) cspc.fns
+	   else cspc.fns,
      axioms = cspc.axioms,
      structUnionTypeDefns = cspc.structUnionTypeDefns,
      varDefns = cspc.varDefns,
-     fnDefns = cspc.fnDefns @ [X]
+     fnDefns = (if overwrite 
+		  then (filter (fn(fname0,_,_,_) -> ~(fname=fname0)) cspc.fnDefns)
+		else cspc.fnDefns) @ [fndefn]
     }
+
+  op addFnDefn: CSpec * FnDefn -> CSpec
+  def addFnDefn(cspc,fndefn) =
+    addFnDefnAux(cspc,fndefn,false)
+
+  op addFnDefnOverwrite: CSpec * FnDefn -> CSpec
+  def addFnDefnOverwrite(cspc,fndefn) =
+    addFnDefnAux(cspc,fndefn,true)
 
   op setStructUnionTypeDefns: CSpec * StructUnionTypeDefns -> CSpec
   def setStructUnionTypeDefns(cspc,X) =
@@ -322,7 +353,9 @@ CUtils qualifying spec {
 	  vars = concatnew(cspc1.vars,cspc2.vars),
 	  fns = concatnew(cspc1.fns,cspc2.fns),
 	  axioms = concatnew(cspc1.axioms,cspc2.axioms),
-	  structUnionTypeDefns = concatnew(cspc1.structUnionTypeDefns,cspc2.structUnionTypeDefns),
+	  structUnionTypeDefns = %concatnew(cspc1.structUnionTypeDefns,cspc2.structUnionTypeDefns),
+	  foldr (fn(x as TypeDefn(tname,_),res) -> (filter (fn(TypeDefn(tname0,_)) -> ~(tname0=tname)| _ -> true) res) @ [x]
+		 | (x,res) -> res @ [x]) cspc2.structUnionTypeDefns cspc1.structUnionTypeDefns,
 	  varDefns = concatnew(cspc1.varDefns,cspc2.varDefns),
 	  fnDefns = concatnew(cspc1.fnDefns,cspc2.fnDefns)
 	 }
@@ -346,6 +379,11 @@ CUtils qualifying spec {
   op printCSpecToFile: CSpec * String -> ()
   op printCSpecToTerminal: CSpec -> ()
   op printCSpecToString: CSpec -> String
+
+  op printCSpecToFileEnv: CSpec * String -> SpecCalc.Env ()
+  def printCSpecToFileEnv(cspc,fname) = 
+    let _ = printCSpecToFile(cspc,fname) in
+    return ()
 
   def printCSpecToFile(cspc,fname) = 
     %let fname = getImplFilename(cspc.name) in
@@ -422,8 +460,9 @@ CUtils qualifying spec {
 	    | _ -> [#_]
     in
     let def substGlyph(carray) =
-       case carray
-	 of c::carray0  -> concat(substGlyphChar(c),substGlyph(carray0))
+       case carray of
+          | [#'] -> [] % special case: last character is a single quote
+	  | c::carray0  -> concat(substGlyphChar(c),substGlyph(carray0))
 	  | []         -> []
     in
       String.implode(substGlyph(String.explode(id)))
@@ -652,9 +691,12 @@ CUtils qualifying spec {
 
   op structUnionTypeDefnGT: CSpec -> (StructUnionTypeDefn * StructUnionTypeDefn) -> Boolean
   def structUnionTypeDefnGT cspc (sut1,sut2) =
-    let deps1 = structUnionTypeDefnDepends(cspc,sut1) in
-    let t2 = structUnionTypeDefnToType(sut2) in
-    List.member(t2,deps1)
+    %let deps1 = structUnionTypeDefnDepends(cspc,sut1) in
+    %let t2 = structUnionTypeDefnToType(sut2) in
+    %List.member(t2,deps1)
+    let deps2 = structUnionTypeDefnDepends(cspc,sut2) in
+    let t1 = structUnionTypeDefnToType(sut1) in
+    ~(List.member(t1,deps2))
 
   op sortStructUnionTypeDefns: CSpec -> CSpec
   def sortStructUnionTypeDefns(cspc) =
@@ -673,7 +715,7 @@ CUtils qualifying spec {
   def structUnionTypeDefnDepends(cspc,sutdef) =
     case sutdef of
       %| TypeDefn (n,Ptr(_)) -> typeDepends(cspc,Base n,[])
-      | TypeDefn (n,Fn(tys,ty)) -> typeDepends(cspc,Base n,[ty])
+      | TypeDefn (n,Fn(tys,ty)) -> typeDepends(cspc,Base n,tys@[ty])
       | TypeDefn (n,t) -> typeDepends(cspc,Base n,[t])
       | Struct (s,fields) -> typeDepends(cspc,Struct s,List.map (fn(_,t) -> t) fields)
       | Union (u,fields) -> typeDepends(cspc,Union u,List.map (fn(_,t) -> t) fields)

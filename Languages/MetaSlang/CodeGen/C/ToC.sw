@@ -1,29 +1,35 @@
+%This is an old version and no longer used.
+
 \section{C Code Generator}
 
 \begin{spec}
 CGen qualifying spec {
   import /Languages/MetaSlang/Specs/AnnSpec
   import /Languages/MetaSlang/Specs/StandardSpec
-  import /Languages/MetaSlang/Specs/Printer
-  import /Languages/C/AbstractSyntax/Types
-  import /Languages/C/AbstractSyntax/Printer
+  %import /Languages/MetaSlang/Specs/Printer
+  %import /Languages/C/AbstractSyntax/Types
+  import C
+  %import /Languages/C/AbstractSyntax/Printer
+  import CPrint
+  import CUtils
 
   op specToC : Spec -> CSpec
   def specToC spc =
-    let cSpec = emptyCSpec in
+    let cSpec = emptyCSpec("oscar") in
     let cSpec = generateCTypes cSpec spc in
     let cSpec = generateCVars cSpec spc in
     let cSpec = generateCFunctions cSpec spc in
     let stmt = Block ([],map (fn (typ,name,tyVars,term) -> termToCStmt term) spc.properties) in
     let cSpec = addFuncDefn cSpec "main" [] Int stmt in
-    let _ = writeLine (PrettyPrint.toString (format (80, ppCSpec cSpec))) in
+    %let _ = writeLine (PrettyPrint.toString (format (80, ppCSpec cSpec))) in
     cSpec
 
-  op termToCStmt : ATerm Position -> Stmt
+  op termToCStmt : ATerm Position -> CStmt
   def termToCStmt trm =
     case trm of
       | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
-          Exp (Apply (Binary Set, [termToCExp lhs, termToCExp rhs]))
+	  %Exp (Apply (Binary Set, [termToCExp lhs, termToCExp rhs]))
+          Exp (Binary(Set,termToCExp lhs,termToCExp rhs))
       | _ -> fail ("termToCStmt: term '"
                   ^ (printTerm trm)
                   ^ "' is not an equality")
@@ -197,7 +203,8 @@ the base types in C. For instance \verb+typedef int Integer+.
       | _ -> 
          let _ = writeLine ("sortToCType: unsupported type: " ^ (printSort srt)) in
          Void
-   
+
+(*   
   op addInclude : CSpec -> String -> CSpec
   def addInclude cSpec inc = {
       includes    = cons (inc, cSpec.includes),
@@ -229,23 +236,13 @@ the base types in C. For instance \verb+typedef int Integer+.
       varDefns    = cSpec.varDefns,
       fnDefns     = cSpec.fnDefns
     }
+*)
 
   op addFuncDefn : CSpec -> String -> VarDecls -> Type -> Stmt -> CSpec
-  def addFuncDefn cSpec name params ftype stmt = {
-      includes    = cSpec.includes,
-      defines     = cSpec.defines,
-      constDefns  = cSpec.constDefns,
-      vars        = cSpec.vars,
-      extVars     = cSpec.extVars,
-      fns         = cSpec.fns,
-      axioms      = cSpec.axioms,
-      typeDefns   = cSpec.typeDefns,
-      structDefns = cSpec.structDefns,
-      unionDefns  = cSpec.unionDefns,
-      varDefns    = cSpec.varDefns,
-      fnDefns     = Cons ((name,params,ftype,stmt),cSpec.fnDefns)
-    }
+  def addFuncDefn cSpec name params ftype stmt = 
+    addFnDefn(cSpec,(name,params,ftype,stmt))
 
+(*
   op addStruct : CSpec -> String -> VarDecls -> CSpec
   def addStruct cSpec name fields = {
       includes    = cSpec.includes,
@@ -277,6 +274,7 @@ the base types in C. For instance \verb+typedef int Integer+.
       varDefns    = cSpec.varDefns,
       fnDefns     = cSpec.fnDefns
     }
+*)
 \end{spec}
 
 \subsubsection*{Code Generation}

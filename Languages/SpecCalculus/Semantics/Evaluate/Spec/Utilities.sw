@@ -855,6 +855,35 @@ def opIdIsDefinedInSpec?(spc,id) =
     | _ -> false
 
 
+% --------------------------------------------------------------------------------
+(**
+ * merges the two given specs into one
+ *)
+
+op mergeSpecs: Spec * Spec -> Spec
+def mergeSpecs(spc1,spc2) =
+  let srts = foldriAQualifierMap
+             (fn(q,id,sinfo,map) -> insertAQualifierMap(map,q,id,sinfo))
+	     spc1.sorts spc2.sorts
+  in
+  let ops = foldriAQualifierMap
+             (fn(q,id,oinfo,map) -> insertAQualifierMap(map,q,id,oinfo))
+	     spc1.ops spc2.ops
+  in
+  let props = foldr (fn(prop as (pname,_,_,_),props) ->
+		     if exists (fn(pname0,_,_,_) -> pname=pname0) props
+		       then props
+		     else cons(prop,props)
+		      ) spc1.properties spc2.properties
+  in
+  let spc = emptySpec in
+  let spc = setSorts(spc,srts) in
+  let spc = setOps(spc,ops) in
+  let spc = setProperties(spc,props) in
+  spc
+
+
+
 endspec
 
 

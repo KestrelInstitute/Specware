@@ -1,53 +1,121 @@
 SpecCalc qualifying spec {
   import Convert
-  import ../../MetaSlang/CodeGen/C/ToC
-  import ../../MetaSlang/CodeGen/CodeGenTransforms
+  %import ../../MetaSlang/CodeGen/C/ToC
+  import ../../MetaSlang/CodeGen/C/CG
+  %import ../../MetaSlang/CodeGen/CodeGenTransforms
   import /Languages/PSL/Semantics/Evaluate/Specs/Op/Legacy
+  import CGenUtils
 
   % sort Spec.Spec = ASpec Position
 
   op oscarToC : Oscar.Spec -> Spec.Spec -> Env CSpec
   def oscarToC oscSpec base =
-    let cSpec = emptyCSpec in
-    let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
-    let envSpec = addMissingFromBase(base,envSpec,builtinSortOp) in
-    let cSpec = generateCTypes cSpec envSpec in
-    let cSpec = generateCVars cSpec envSpec in
-    let cSpec = generateCFunctions cSpec envSpec in {
-      % cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
-      cSpec <- ProcMapEnv.fold generateCProcedure cSpec oscSpec.procedures;
-      print (PrettyPrint.toString (format (80, ppCSpec cSpec)));
-      return cSpec
+    let oscSpec = mapOscarSpec (fn(spc) -> (identifyIntSorts (subtractSpec spc base))) oscSpec in
+    let _ = writeLine("initial envSpec="^(printSpec (specOf oscSpec.modeSpec))) in
+    let missing = foldlSpecsOscarSpec (fn(spc,missing) ->
+				       let spc = transformSpecForCodeGen base spc in
+				       mergeSpecs(spc,missing)
+				      ) emptySpec oscSpec in
+    let _ = writeLine("missing from base: "^(printSpec missing)) in
+    %let oscSpec = mapOscarSpec (fn(spc) -> transformSpecForCodeGen base spc) oscSpec in
+    let cSpec = emptyCSpec("") in
+    %let envSpec = specOf oscSpec.modeSpec in
+    %let _ = writeLine("envSpec="^printSpec(envSpec)) in
+    %let envSpec = subtractSpec (specOf oscSpec.modeSpec) base in
+    %let cSpec = generateCSpecFromTransformedSpec envSpec in
+    {
+      %envSpec <- return (transformSpecForCodeGen base envSpec);
+      oscSpec <- return (mapOscarSpec (fn(spc) -> transformSpecForCodeGen base spc) oscSpec);
+      envSpec <- return (specOf oscSpec.modeSpec);
+      print("envSpec="^(printSpec envSpec));
+      cSpec <- generateCSpecFromTransformedSpecEnv envSpec;
+      cSpec <- ProcMapEnv.fold (generateCProcedure envSpec) cSpec oscSpec.procedures;
+      cSpec <- ProcMapEnv.fold delFnDeclForProc cSpec oscSpec.procedures;
+      printToFileEnv(cSpec,None);
+      %(fail "success"; % useful during development; forces re-elaboration of any example spec
+       return cSpec
+      %)
     }
 
-  op generateCProcedure : CSpec -> Id.Id -> Procedure -> Env CSpec
-  def generateCProcedure cSpec procId (proc as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
+  (**
+   * removes the "internal" entries from the mode spec and keeps the ones that have to be
+   * add to the cspec.
+   *)
+
+  op cleanupModeSpec: Spec.Spec * List Op.Ref -> Spec.Spec
+  def cleanupModeSpec(spc,parameters) =
+    let
+      def filterOut(q,id) =
+	if member(Qualified(q,id),parameters) then true
+	else
+	  let expl = explode(id) in
+	  if hd(rev(expl)) = #' then true
+	    else q = "#return#"
+    in
+    let srts = foldriAQualifierMap
+               (fn(q,id,sinfo,map) ->
+		if filterOut(q,id) then map
+		else insertAQualifierMap(map,q,id,sinfo)
+	       ) emptyASortMap spc.sorts
+    in
+    let ops = foldriAQualifierMap
+               (fn(q,id,sinfo,map) ->
+		if filterOut(q,id) then map
+		else insertAQualifierMap(map,q,id,sinfo)
+	       ) emptyAOpMap spc.ops
+    in
+    let spc = setSorts(spc,srts) in
+    let spc = setOps(spc,ops) in
+    let spc = setProperties(spc,[]) in
+    spc
+
+  op delFnDeclForProc : CSpec -> Id.Id -> Procedure -> Env CSpec
+  def delFnDeclForProc cspc procId procedure =
+    return (delFn(cspc,showQualifiedId procId))
+
+  op generateCProcedure : Spec.Spec -> CSpec -> Id.Id -> Procedure -> Env CSpec
+  def generateCProcedure envSpec cSpec procId (procedure as {parameters,varsInScope,returnInfo,modeSpec,bSpec}) =
+    let mmspc = mergeModeSpecs procedure in
+    %let mmspc = subtractSpec mmspc envSpec in
+    let mmspc = cleanupModeSpec(mmspc,parameters) in
+    %let _ = writeLine("proc "^(printQualifiedId procId)^", merged mode-spec="^(printSpec mmspc)) in
+    let mmspc = transformSpecForCodeGenNoAdd mmspc in
+    let mcspc = generateCSpecFromTransformedSpec(mmspc) in
+    %let cSpec = mergeCSpecs([cSpec,mcspc]) in
+    %let cSpec = delFn(cSpec,showQualifiedId procId) in
     let initSpec = Mode.modeSpec (initial bSpec) in
     let varDecls =
-      List.map (fn argRef -> let (names,fxty,(tyVars,srt),_) = Op.deref (specOf initSpec, argRef) in
-            (OpRef.show argRef, sortToCType srt)) parameters in
+      List.map (fn argRef ->
+		let spc = specOf initSpec in
+		let (names,fxty,(tyVars,srt),_) = Op.deref (spc, argRef) in
+		(OpRef.show argRef, sortToCType cSpec spc srt))
+                parameters
+    in
     let returnType =
       case returnInfo of
         | None -> Void 
         | Some retRef ->
-            let (names,fixity,(tyVars,srt),_) = Op.deref (specOf initSpec, retRef) in
-              sortToCType srt in
-    let def handler id proc except =
+	    let spc = specOf initSpec in
+            let (names,fixity,(tyVars,srt),_) = Op.deref (spc, retRef) in
+	    sortToCType cSpec spc srt
+    in
+    let def handler id procedure except =
       case except of
         | SpecError (pos, msg) -> {
              print ("convertOscarSpec exception:" ^ msg ^ "\n");
-             procDoc <- ProcEnv.pp id proc;
+             procDoc <- ProcEnv.pp id procedure;
              print (ppFormat procDoc);
              print "\n";
              raise (SpecError (pos, "except : " ^ msg))
            }
         | _ -> raise except
     in {
-      print ("\n\nGenerating code for procedure: " ^ (Id.show procId) ^ "\n");
-      graph <- catch (convertBSpec bSpec) (handler procId proc);
-      graph <- catch (structGraph graph) (handler procId proc);
-      procStmt <- return (graphToC graph);
-      return (addFuncDefn cSpec (CGen.showQualifiedId procId) varDecls returnType procStmt)
+      print (";;            procedure: " ^ (Id.show procId) ^ "\n");
+      graph <- catch (convertBSpec bSpec) (handler procId procedure);
+      graph <- catch (structGraph graph) (handler procId procedure);
+      %print(printGraph(graph));
+      procStmt <- return (graphToC envSpec graph);
+      return (addFnDefnOverwrite(cSpec,(showQualifiedId procId,varDecls,returnType,procStmt)))
     }
 
   op nodeContent : Node -> NodeContent
@@ -59,11 +127,12 @@ a C abstract syntax tree. As far as I know, this does not handle breaks and cont
 with a loop or out of a conditional.
 
 \begin{spec}
-  op graphToC : Struct.Graph -> Stmt
-  def graphToC graph =
+  op graphToC : Spec.Spec -> Struct.Graph -> Stmt
+  def graphToC envSpec graph =
+    let cspc = emptyCSpec("") in
     let def consume first last =
       if first = ~1 then
-        VoidReturn
+        ReturnVoid
       else if first = last then
         Nop
       else
@@ -73,27 +142,31 @@ with a loop or out of a conditional.
                 let stmts = map statementToC statements in
                 reduceStmt stmts (consume next last) 
 
-            | Return term -> termToCStmtNew term % Return (termToCExp term)
+            | Return (spc,term) -> termToCStmtNew spc term % Return (termToCExp term)
 
             | IfThen {condition, trueBranch, cont} ->
-                let stmt = IfThen (termToCExp condition, consume trueBranch cont) in
+		let (spc,condition) = condition in
+                let stmt = IfThen (termToCExp cspc spc condition, consume trueBranch cont) in
                 let rest = consume cont last in
                 reduceStmt [stmt] rest
 
             | IfThenElse {condition, trueBranch, falseBranch, cont} ->
+		let (spc,condition) = condition in
                 let trueStmt = consume trueBranch cont in
                 let falseStmt = consume falseBranch cont in
-                let ifStmt = If (termToCExp condition, trueStmt, falseStmt) in
+                let ifStmt = If (termToCExp cspc spc condition, trueStmt, falseStmt) in
                 let rest = consume cont last in
                 reduceStmt [ifStmt] rest
 
             | Loop {condition, preTest?, body, cont} ->
+		let (spc,condition) = condition in
                 let bodyStmt = consume body first in
-                let whileStmt = While (termToCExp condition, bodyStmt) in
+                let whileStmt = While (termToCExp cspc spc condition, bodyStmt) in
                 let rest = consume cont last in
                 reduceStmt [whileStmt] rest
 
             | Branch {condition, trueBranch, falseBranch} ->
+		let (spc,condition) = condition in
                 let _ = writeLine ("ignoring branch") in
                 Nop
 
@@ -105,43 +178,46 @@ with a loop or out of a conditional.
 
       def statementToC stat =
         case stat of
-          | Assign term -> termToCStmtNew term
-          | Proc term -> termToCStmtNew term
-          | Return term -> termToCStmtNew term
+          | Assign (spc,term) -> termToCStmtNew spc term
+          | Proc (spc,term) -> termToCStmtNew spc term
+          | Return (spc,term) -> termToCStmtNew spc term
     in
       if graph = [] then
         Nop
       else
         consume 0 (length graph)
 
-  op termToCStmtNew : MSlang.Term -> CStmt
-  def termToCStmtNew term =
+  op termToCStmtNew : Spec.Spec -> MS.Term -> CStmt
+  def termToCStmtNew spc term =
+    let cspc = emptyCSpec("") in
     case term of
       | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
           (case lhs of
-            | Fun (Op (Qualified (_,"ignore'"),fxty),srt,pos) -> (Exp (termToCExp rhs))
-            | Fun (Op (Qualified ("#return#",var),fxty),srt,pos) -> (Return (termToCExp rhs))
+            | Fun (Op (Qualified (_,"ignore'"),fxty),srt,pos) -> (Exp (termToCExp cspc spc rhs))
+            | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) -> (Return (termToCExp cspc spc rhs))
             | _ ->
               (case rhs of
                 | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),fxty),_,pos), Fun (Op (Qualified (_,"active"),fxty),srt,_),  _), idx,_),expr,_) ->
-                      Exp (Apply (Binary Set, [ArrayRef (Var ("active",sortToCType srt), termToCExp idx),termToCExp expr]))
+                      Exp (Binary(Set,ArrayRef (Var ("active",sortToCType cspc spc srt), termToCExp cspc spc idx),termToCExp cspc spc expr))
                 | Apply (Fun (Op (Qualified (_,"update"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),fxty),_,_)), ("2",Fun (Nat n,_,_)), ("3",expr)],_), _) ->
                     if n = 0 then
-                      Exp (Apply (Binary Set, [Apply (Unary Contents, [Var ("sp",sortToCType srt)]), termToCExp expr]))
+                      Exp (Binary(Set,Unary(Contents,Var ("sp",sortToCType cspc spc srt)),termToCExp cspc spc expr))
                     else
-                      Exp (Apply (Binary Set, [Apply (Unary Contents,
-                          [Apply (Binary Add,[Var ("sp",sortToCType srt), Const (Int (true,n))])]), termToCExp expr]))
-                | _ -> Exp (Apply (Binary Set, [termToCExp lhs, termToCExp rhs]))))
+                      Exp (Binary(Set,Unary(Contents,
+                          Binary(Add,Var ("sp",sortToCType cspc spc srt), Const (Int (true,n)))), termToCExp cspc spc expr))
+                | _ -> Exp (Binary(Set,termToCExp cspc spc lhs, termToCExp cspc spc rhs))))
       | Apply (Fun (Op (procId,fxty),procSort,pos),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
           % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
           (case returnTerm of
             | Record ([],_) ->
-                (Exp (termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
-            | Fun (Op (Qualified ("#return#",var),fxty),srt,pos) ->
-                (Return (termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
-            | _ -> (Exp (Apply (Binary Set, [termToCExp returnTerm, termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))]))))
+                (Exp (termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
+            | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) ->
+                (Return (termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
+            | _ -> (Exp (Binary(Set,termToCExp cspc spc returnTerm,
+				termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))))
       | _ -> % let _ = writeLine ("termToCStmt: ignoring term: " ^ (printTerm term)) in
          Nop
+
 }
 \end{spec}
 

@@ -182,6 +182,9 @@ efficiently, but cmulisp may do better with local functions.
 	  let body as (_,vs) = makeVarTerm(body) in
 	  let vars = diffVs(vs,bound) in
 	  (Bind(binder,bound,body),vars)
+	| SortedTerm(t,srt,a) ->
+	  let (t,vars) = makeVarTerm(t) in
+	  (t,vars)
 	| _ -> System.fail "makeVarTerm"
     %in
 	  %let (_,vars) = res in

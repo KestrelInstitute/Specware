@@ -29,6 +29,12 @@ I2LToC qualifying spec {
 		    currentFunName: Option(String)
 		   }
 
+  op defaultCgContext: CgContext
+  def defaultCgContext = {
+			  useRefTypes = true,
+			  currentFunName = None
+			 }
+
   op setCurrentFunName: CgContext * String -> CgContext
   def setCurrentFunName(ctxt,id) =
     {useRefTypes=ctxt.useRefTypes,currentFunName=Some id}
@@ -762,9 +768,9 @@ I2LToC qualifying spec {
     let decl1 = (xname,ctype,optinit) in
     let assignstmts = List.map 
                        (fn(field,fexpr) ->
-			let var = Var decl in
-			let var = if ctxt.useRefTypes then Unary(Contents,var) else var in
-			let fieldref = StructRef(var,field) in
+			let variable = Var decl in
+			let variable = if ctxt.useRefTypes then Unary(Contents,variable) else variable in
+			let fieldref = StructRef(variable,field) in
 			Exp (getSetExpr(ctxt,fieldref,fexpr))
 		       ) (zip(fieldnames,fexprs))
     in
@@ -968,9 +974,9 @@ I2LToC qualifying spec {
   op getSelAssignStmt: CgContext * String * String * CType -> C.Stmt
   def getSelAssignStmt(ctxt,selstr,varname,vartype) =
     let selstrncpy = Fn("SetConstructor",[Ptr(Char),Ptr(Char)],Void) in
-    let var = Var(varname,vartype) in
-    let var = if ctxt.useRefTypes then Unary(Contents,var) else var in
-    Exp(Apply(selstrncpy,[var,Const(String(selstr))]))
+    let variable = Var(varname,vartype) in
+    let variable = if ctxt.useRefTypes then Unary(Contents,variable) else variable in
+    Exp(Apply(selstrncpy,[variable,Const(String(selstr))]))
 
   op getSelCompareExp: CgContext * CExp * String -> CExp
   def getSelCompareExp(ctxt,expr,selstr) =
@@ -1132,13 +1138,15 @@ I2LToC qualifying spec {
 
   op qname2id: String * String -> String
   def qname2id(qualifier,id) =
-    %let quali = if qualifier = UnQualified or qualifier = "" then "" else qualifier^"_" in
-    %cString (quali^id)
-    cString(id)
+    let quali = if qualifier = UnQualified or qualifier = "" then "" else qualifier^"_" in
+    cString (quali^id)
+    %cString(id)
 
   op getConstructorOpNameFromQName: (String * String) * String -> String
   def getConstructorOpNameFromQName(qname,consid) =
-    let sep = "$" in
+    % the two $'s are important: that how the constructor op names are
+    % distinguished from other opnames (hack)
+    let sep = "$$" in
     let s = qname2id qname in
     s^sep^consid
 
