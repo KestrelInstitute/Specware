@@ -1232,9 +1232,6 @@ MetaSlang qualifying spec {
        | Base      (qid, srts,                 a) ->
          Base      (qid, map replaceRec srts,  a)
 
-       | Base     (qid, srts,                 a) -> 
-         Base     (qid, map replaceRec srts,  a)
-
        | _ -> srt
 
    def replaceRecOpt opt_srt = 
