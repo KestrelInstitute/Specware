@@ -330,6 +330,10 @@ def opDelta(spc, oper) =
     | _ -> let _ = unSupported oper in ([], mkFalse())
 
 
+% srtTermDelta defines the delta function in Alessandros document.
+% (See Sec. 1.5 of DevDoc/java-codegen/v3.pdf)
+% It takes a Lambda term and its sort and
+% returns the list of arguments and the lambda body.
 op srtTermDelta : Sort * Term -> List Var * Term
 def srtTermDelta(srt,term) = srtTermDelta_internal(srt,term,false)
 
