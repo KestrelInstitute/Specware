@@ -53,8 +53,8 @@ SpecCalc qualifying spec
    % this assume that a name used to index into the sort map also appears
    % in the list of names for that sort.
    let 
-     def doSortInfo sortInfo = ppConcat [ppString "type ", ppASortInfo sortInfo]
-     def doOpInfo   opInfo   = ppConcat [ppString "op ",   ppAOpInfo   opInfo]
+     def doSortInfo sortInfo = ppASortInfo sortInfo
+     def doOpInfo   opInfo   = ppAOpInfo   opInfo
    in
     ppConcat [
       ppString "spec {",
@@ -92,23 +92,40 @@ SpecCalc qualifying spec
 	    ppConcat [ppString " (",
 		      ppSep (ppString ",") (map ppString tvs),
 		      ppString ")"]
+      def ppDecl srt =
+	let (tvs, srt) = unpackSort srt in
+	ppConcat [ppString " type ", ppNames, ppTvs tvs]
+
       def ppDef srt =
 	let (tvs, srt) = unpackSort srt in
-	ppConcat ([ppNames, ppTvs tvs]
-		  ++
-		  (case srt of
-		     | Any _   -> []
-		     | _       -> [ppString " = ", ppASort srt]))
+	ppConcat [ppString " type ", ppNames, ppTvs tvs, ppString " = ", ppASort srt]
    in
-     case info.dfn of
-       | And (srts, _) -> ppConcat [ppNewline, 
-				    ppString " (* Warning: Multiple Sort Definitions for following sort *) ",
-				    ppNewline, 
-				    ppSep ppNewline (map ppDef srts)]
-       | srt -> ppDef srt
+   let (decls, defs) = sortInfoDeclsAndDefs info in
+   let ppDecls =
+       case decls of
+	 | []    -> []
+	 | [srt] -> [ppDecl srt]
+	 | _     -> [ppNewline, 
+		     ppString " (* Warning: Multiple declarations for following type *) ",
+		     ppNewline, 
+		     ppSep ppNewline (map ppDecl decls)]
+   in
+   let ppDefs =
+       case defs of
+	 | []    -> []
+	 | [srt] -> [ppDef srt]
+	 | _     -> [ppNewline, 
+		     ppString " (* Warning: Multiple definitions for following type *) ",
+		     ppNewline, 
+		     ppSep ppNewline (map ppDef defs)]
+   in
+     ppConcat (ppDecls ++ ppDefs)
 
   op ppAOpInfo : [a] AOpInfo a -> Pretty
- def ppAOpInfo info = 
+ def ppAOpInfo info = ppAOpInfoAux (" op ", info)
+
+  op ppAOpInfoAux : [a] String * AOpInfo a -> Pretty
+ def ppAOpInfoAux (decl_keyword, info) = 
    let ppNames =
        case info.names of
 	 | [] -> fail "ppAOpInfo: empty name list in sort info"
@@ -130,14 +147,14 @@ SpecCalc qualifying spec
 
      def ppDecl tm =
        let srt = termSort tm in
-       ppGroup (ppConcat [ppString "op ", 
+       ppGroup (ppConcat [ppString decl_keyword, % " op ", " var ", etc.
 			  ppNames, 
 			  ppString " : ", 
 			  ppType srt])
 
      def ppDef tm =
        let (tvs, _, tm) = unpackTerm tm in
-       ppGroup (ppConcat [ppString "def ",
+       ppGroup (ppConcat [ppString " def ",
 			  case tvs of
 			    | [] -> ppNil
 			    | _  -> ppConcat [ppString "[",
@@ -150,9 +167,25 @@ SpecCalc qualifying spec
 			 ])
    in
    let (decls, defs) = opInfoDeclsAndDefs info in
-   let ppDecls = map ppDecl decls in
-   let ppDefs  = map ppDef  defs  in
-   ppConcat (ppDecls ++ ppDefs)
+   let ppDecls =
+       case decls of
+	 | []   -> []
+	 | [tm] -> [ppDecl tm]
+	 | _    -> [ppNewline, 
+		    ppString " (* Warning: Multiple declarations for following op *) ",
+		    ppNewline, 
+		    ppSep ppNewline (map ppDecl decls)]
+   in
+   let ppDefs =
+       case defs of
+	 | []   -> []
+	 | [tm] -> [ppDef tm]
+	 | _    -> [ppNewline, 
+		    ppString " (* Warning: Multiple definitions for following op *) ",
+		    ppNewline, 
+		    ppSep ppNewline (map ppDef defs)]
+   in
+     ppConcat (ppDecls ++ ppDefs)
 
   op ppAProperty : fa (a) AProperty a -> Pretty
  def ppAProperty (propType, name, tvs, term) =
