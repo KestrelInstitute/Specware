@@ -53,7 +53,6 @@
 (compile-and-load-lisp-file "re-legacy")
 
 ;; The following list should be generated automatically!
-;; Perhaps setq is the wrong thing to use. defvar?
 ;; The list is used only in this file.
 ;;; ---------------
 (defvar HandwrittenFiles
@@ -88,6 +87,8 @@
 
 ;; Stephen's toplevel aliases 
 (compile-and-load-lisp-file "toplevel")
+;; Debugging utiities
+(compile-and-load-lisp-file "debug")
 
 ;; Might need this?
 ;;(defun compilelisp::additionaldefinitions ()
@@ -121,8 +122,6 @@
 ;; So there needs to be a rationalization of the parser.
 (make-system (concatenate 'string Specware4 "/../2000/parser1"))
 
-;; We assume for the time being that the SW4 tree is a sibling of
-;; the Specware4 tree.
 (make-system (concatenate 'string
     Specware4 "/../Specware4/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 (make-system (concatenate 'string

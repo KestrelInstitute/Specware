@@ -59,6 +59,8 @@
 	      (return pV11)))
 	(error "Nonexhaustive match failure in Specware.runSpecwareURI")))))
 
+(top-level:alias ("swl" :case-sensitive) (x &optional y)
+  (swl (string x) (and y (maybe-add-extension (string y) ".lisp"))))
 
 (defpackage "SPECWARE")
 
@@ -66,5 +68,5 @@
   (SPECWARE::saveSpecwareState-1 (vector glob loc optUri)))
 
 (defun SPECWARE::saveSpecwareState-1 (State)
-  (setq user::*specware-environment* State)
+  (setq user::*specware-global-context* (svref State 0))
   (cons '(:|Ok|) State))
