@@ -44,10 +44,12 @@ $xemacs -geometry 137x50-50-50 \
 
 /bin/date
 echo "-------------"
-echo "Test results:"
+echo "All test results:"
 
 cat $LOG_FILE
 echo "-------------"
-
+echo "Test failures:"
+egrep -i ";;; Test failed" $LOG_FILE
+echo "-------------"
 
 
