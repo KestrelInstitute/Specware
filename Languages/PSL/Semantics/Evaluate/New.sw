@@ -83,6 +83,10 @@ pass.
 ### and in other cases not. Some times elaborated specs get elaborated again.
 ### Might be a nop.
 
+## The whole issue of when to elaborate specs during compilation needs
+## to be rethought. Right now, the context and procedure environments
+## are not elaborated. But diagrams / systems are labeled with elaborated specs.
+
 \begin{spec}
           dyCtxt <-
              foldM (fn dCtxt -> fn (argName,argSort) ->
@@ -93,7 +97,7 @@ pass.
                              dCtxt (Internal "evaluatePSpecProcElem"))
                          pSpec.dynamicSpec procInfo.args;
 
-% 
+ 
           (dyCtxt,returnInfo : ReturnInfo) <- 
              case procInfo.returnSort of
                | Product ([],_) -> return (dyCtxt, None)
@@ -114,8 +118,10 @@ pass.
              setFinalModes bSpec (V.singleton finalV));
           proc <- return (makeProcedure (map (fn (x,y) -> x) procInfo.args)
                                  returnInfo
-                                 statCtxtElab
-                                 dyCtxtElab
+                                 % statCtxtElab
+                                 pSpec.staticSpec
+                                 % dyCtxtElab
+                                 dyCtxt
                                  bSpec);
           setProcedures pSpec (PolyMap.update pSpec.procedures (unQualified procName) proc)
         }
