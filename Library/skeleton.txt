@@ -17,12 +17,11 @@ GENERAL NOTIONS
 
   Predicates
   * logical operations
-  * comparisons
   * satisfiable
   * uniquely satisfied
-  * finite
   * epsilon
   * iota
+  * comparisons
   * min
   * max
 

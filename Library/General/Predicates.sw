@@ -28,22 +28,6 @@ Predicate qualifying spec
   def IFF (p1,p2) x = (p1 x <=> p2 x)
 
   %%%%%%%%%%%%%%
-  % comparisons:
-  %%%%%%%%%%%%%%
-
-  op <= infixl 20 : [a] Predicate a * Predicate a -> Boolean
-  def <= (p1,p2) = (fa(x) p1 x => p2 x)
-
-  op < infixl 20 : [a] Predicate a * Predicate a -> Boolean
-  def < (p1,p2) = (p1 <= p2 && p1 ~= p2)
-
-  op >= infixl 20 : [a] Predicate a * Predicate a -> Boolean
-  def >= (p1,p2) = (p2 <= p1)
-
-  op > infixl 20 : [a] Predicate a * Predicate a -> Boolean
-  def > (p1,p2) = (p2 < p1)
-
-  %%%%%%%%%%%%%%
   % satisfiable:
   %%%%%%%%%%%%%%
 
@@ -77,18 +61,21 @@ Predicate qualifying spec
   op the : [a] UniquelySatisfiedPredicate a -> a
   def the p = some p  % unique
 
-  %%%%%%%%%
-  % finite:
-  %%%%%%%%%
+  %%%%%%%%%%%%%%
+  % comparisons:
+  %%%%%%%%%%%%%%
 
-  op finite? : [a] Predicate a -> Boolean
-  def [a] finite? p =
-    % there is a surjective function from {i:Nat | i < n} to {x:a | p x}
-    % (which are "pseudo-types" because of the free variables `n' and `p'):
-    (ex (f : Nat -> a, n : Nat)
-      (fa(x) p x => (ex(i:Nat) i < n && f i = x)))
+  op <= infixl 20 : [a] Predicate a * Predicate a -> Boolean
+  def <= (p1,p2) = (fa(x) p1 x => p2 x)
 
-  type FinitePredicate a = (Predicate a | finite?)
+  op < infixl 20 : [a] Predicate a * Predicate a -> Boolean
+  def < (p1,p2) = (p1 <= p2 && p1 ~= p2)
+
+  op >= infixl 20 : [a] Predicate a * Predicate a -> Boolean
+  def >= (p1,p2) = (p2 <= p1)
+
+  op > infixl 20 : [a] Predicate a * Predicate a -> Boolean
+  def > (p1,p2) = (p2 < p1)
 
   %%%%%%%%%%%%%
   % properties:
