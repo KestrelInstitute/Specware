@@ -486,6 +486,10 @@
 		(unitid (first make-args))
 		(cbase (getCFileNameFromUnitid unitid))
 		(user-make-file (concatenate 'string cbase user-make-file-suffix))
+		(hw-src-1 (concatenate 'string cbase "_main.c"))
+		(hw-src-2 (concatenate 'string cbase "_test.c"))
+		(hw-src (if (IO-SPEC::fileExistsAndReadable hw-src-1) hw-src-1
+			  (if (IO-SPEC::fileExistsAndReadable hw-src-2) hw-src-2 nil)))
 		)
 	   (if make-args
 	       (progn
@@ -495,6 +499,8 @@
 		     (format t ";; looking for user-defined make rules in: ~S~%" user-make-file)
 		     (format t ";; using system make rules in:             ~S~%" sw-make-file)
 		     (format t ";; generating local make rules in:         ~S~%" make-file)
+		     (when hw-src
+		       (format t ";; linking with handwritten source:        ~S~%" hw-src))
 		     (format t ";; invoking :swc ~A ~A~%" unitid cbase))
 		   )
 		 (funcall 'swc-internal (string unitid) (string cbase))
@@ -516,10 +522,16 @@
 			 (format mf "# include the existing user make file:~%")
 			 (format mf "include ~A~%" user-make-file))
 		       )
+		     (when hw-src
+		       (format mf "~%")
+		       (format mf "# handwritten source code; derived from unit-id by appending either \"_main.c\" or \"_test.c\":~%")
+		       (format mf "HWSRC = ~A~%" hw-src)
+		       )
 		     (format mf "~%")
 		     (format mf "# dependencies and rule for main target:~%")
-		     (format mf "~A: ~A.o $(USERFILES) $(GCLIB)~%" cbase cbase)
-		     (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(USERFILES) $(LOADLIBES) $(LDLIBS)~%" cbase cbase)
+		     (format mf "~A: ~A.o $(HWSRC) $(USERFILES) $(GCLIB)~%" cbase cbase)
+		     (format mf "	$(CC) -o ~A $(LDFLAGS) $(CPPFLAGS) $(CFLAGS) ~A.o $(HWSRC) $(USERFILES) $(LOADLIBES) $(LDLIBS)~%"
+			     cbase cbase)
 		     ))
 		 (when *make-verbose* (format t ";; invoking make~%"))
 		 (run-cmd (format nil "~A -f ~A" make-command make-file))
