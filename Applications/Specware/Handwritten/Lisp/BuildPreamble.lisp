@@ -68,4 +68,4 @@
 
 ;;; Load base in correct location
 #+allegro
-(push  'SpecCalc::sw-re-init cl-user::*restart-actions*)
+(push  'cl-user::sw-re-init cl-user::*restart-actions*)
