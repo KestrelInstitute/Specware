@@ -10,6 +10,8 @@ SpecCalc qualifying spec {
  import Diagram      
  import Colimit
  import SpecMorphism 
+ import SpecInterp    % tenatitve
+ import SpecPrism     % tenatitve
  import ExtendMorphism 
  import DiagMorphism 
  import Generate      
@@ -36,6 +38,8 @@ This is a monadic interpreter for the Spec Calculus.
     | UnitId      unitId   -> SpecCalc.evaluateUID         (positionOf term) unitId
     | Spec        elems    -> SpecCalc.evaluateSpec        elems pos
     | SpecMorph   fields   -> SpecCalc.evaluateSpecMorph   fields
+    | SpecInterp  fields   -> SpecCalc.evaluateSpecInterp  fields pos % tenatitve
+    | SpecPrism   fields   -> SpecCalc.evaluateSpecPrism   fields pos % tenatitve
     | ExtendMorph term     -> SpecCalc.evaluateExtendMorph term
     | Diag        elems    -> SpecCalc.evaluateDiag        elems
     | Colimit     sub_term -> SpecCalc.evaluateColimit     sub_term
