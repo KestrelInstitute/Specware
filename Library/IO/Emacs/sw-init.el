@@ -66,7 +66,7 @@
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
-    (sit-for 1)
+    (sit-for 1 t)
     (sw:eval-in-lisp-no-value
      (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
     (goto-char (point-max)) 
@@ -152,11 +152,11 @@
 
 (defun ensure-specware-running ()
   (unless (inferior-lisp-running-p)
-    (sit-for 0.5)
+    (sit-for 0.5 t)
     (unless (inferior-lisp-running-p)
       (if *specware-auto-start*
 	  (progn (run-specware4)
-		 (sit-for 0.5))
+		 (sit-for 0.5 t))
 	(error "Specware not running. Do M-x run-specware4")))))
 
 ;; (simulate-input-expression "t")

@@ -1352,7 +1352,7 @@ If anyone has a good algorithm for this..."
 
 ;;; Command for showing error point in specware shell
 (defun show-error-on-new-input (col)
-  (sit-for 0.1)                         ; Allow error message to be printed
+  (sit-for 0.1 t)                         ; Allow error message to be printed
   (goto-char (point-max))
   (previous-input-line)
   (comint-bol nil)
@@ -1500,7 +1500,7 @@ uniquely and concretely describes their application.")
   (interactive "P")
   (unless (inferior-lisp-running-p)
     (run-specware4)
-    (sit-for 1))
+    (sit-for 1 t))
   (simulate-input-expression
    (if non-rec
        (format "(specware-test::run-test-directories %S)"
