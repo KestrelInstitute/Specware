@@ -63,18 +63,19 @@
       (let ((n (length (parse-session-results session))))
 	(cond (*verbose?* 
 	       (comment "~6D resulting toplevel form~:P" n))
-	      ((not (= n 1))
-	       (comment "Used parser ~A (~D rule~:P, package ~A)"
-			(parser-name parser)
-			(parser-total-rule-count parser)
-			(package-name package))
-	       (comment "~6D byte~:P in ~A" 
-			(with-open-file (s file) (file-length s))       
-			file)
-	       (comment "~6D raw tokens" number-of-raw-tokens)
-	       (comment "~6D non-comment token~:P" (1- (length locations)))
-	       (when comment-eof-error?
-		 (comment "     1 unterminated comment that runs to EOF"))
+	      ;; ((not (= n 1))
+	      ((> n 1)
+;;;	       (comment "Used parser ~A (~D rule~:P, package ~A)"
+;;;			(parser-name parser)
+;;;			(parser-total-rule-count parser)
+;;;			(package-name package))
+;;;	       (comment "~6D byte~:P in ~A" 
+;;;			(with-open-file (s file) (file-length s))       
+;;;			file)
+;;;	       (comment "~6D raw tokens" number-of-raw-tokens)
+;;;	       (comment "~6D non-comment token~:P" (1- (length locations)))
+;;;	       (when comment-eof-error?
+;;;		 (comment "     1 unterminated comment that runs to EOF"))
 	       (comment "~6D resulting toplevel form~:P" n))))
       ;;
       session)))
