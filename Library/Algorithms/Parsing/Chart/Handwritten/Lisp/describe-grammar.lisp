@@ -47,11 +47,10 @@
       (write-bnf-in-latex-for-grammar tex-file))
     (when (probe-file log-file)
       (delete-file log-file))
-    ;; (format t "~&~%--------------------------------------------------------------------------------~%")
     (let ((cmd (format nil "cd ~A ; latex parser-main.tex > latex.log ; dvips -q -f parser-main.dvi > grammar.ps"
 		       parser-tex-dir)))
       (excl::run-shell-command cmd :wait t))
-    (format t "~&;;; See ~Agrammar.ps~%" parser-tex-dir)
+    (format t "~&;     See ~Agrammar.ps~%" parser-tex-dir)
     (make-pathname :name "grammar" :type "ps" :defaults parser-tex-dir)))
 
 (defun write-bnf-in-latex-for-grammar (latex-file-or-stream &optional (parser *current-parser*)) 
@@ -335,8 +334,8 @@
 ;;; informative messages for person building parser....
 
 (eval-when (load)
-  (format t "~&; --------------------------------------------------------------------------------~%")
-  (format t "~&; Running (USER::SHOW-GRAMMAR) will create grammar.ps and display using ~A" 
+  (format t "~&;     --------------------------------------------------------------------------------~%")
+  (format t "~&;     Running (USER::SHOW-GRAMMAR) will create grammar.ps and display using ~A" 
 	  (get-ps-viewer))
-  (format t "~&; --------------------------------------------------------------------------------~%"))
+  (format t "~&;     --------------------------------------------------------------------------------~%"))
 

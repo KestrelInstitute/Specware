@@ -83,6 +83,5 @@
     (print (mapcar #'eval (third res1)))))
 
 (progn
-  (format t "~&; To test specware4 parser: (user::test-specware4-parser <file defaulting to test.spec>)~%")
-  (format t "~&; --------------------------------------------------------------------------------~%")
+  (format t "~&;     To test specware4 parser: (user::test-specware4-parser <file defaulting to test.spec>)~%")
   )
