@@ -32,6 +32,10 @@ Integer qualifying spec
   axiom negative_integers is
     fa(i:Integer) ~(natural? i) => (ex(n:PosNat) i = -n)
 
+  % negating a positive integer yields a negative integer:
+  axiom negative is
+    fa(n:PosNat) ~(natural? (- n))
+
   % negating distinct positive integers yield distinct negative ones:
   axiom unary_minus_injective_on_positives is
     fa(n1:PosNat, n2:PosNat) n1 ~= n2 => -n1 ~= -n2
