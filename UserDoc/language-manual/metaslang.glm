@@ -3354,8 +3354,7 @@ that the value of <replaceable>E</replaceable> satisfies predicate
 For example, assuming the `definitions from the Base Library
 for [[Nat]], the `restrict-expression
 [[restrict posNat? (n+1)]] has sort
-[[PosNat]]; its domain of definedness are the
-nonnegative integers (of sort [[Integer]]).
+[[PosNat]].
 The proof obligation here is that, in the context,
 [[(n+1) > 0]].
 </para>
