@@ -713,6 +713,92 @@ SpecCalc qualifying spec
    id1 = id2 & 
    equivSort? spc (s1, s2)
 
+
+% --------------------------------------------------------------------------------
+
+(**
+ * the following "abuses" a spec as an attribute store; it looks for op-defs of the form
+ *      def attrname = attrvalue
+ * where attrvalue is a String.
+ * This is used, for instance, to use a spec to define options for code 
+ * generation (e.g. the Java package name etc.)
+ *)
+op getStringAttributesFromSpec: Spec -> StringMap.Map String
+def getStringAttributesFromSpec(spc) =
+  let ops = opsAsList spc in
+  foldl (fn((_,id,opinfo as (_,_,_,termSchemes)),map) ->
+	 case termSchemes of
+	   | (_,term)::_ ->
+	     (case term of
+		| Fun(String val,_,_) -> StringMap.insert(map,id,val)
+		| _ -> map)
+	   | _ -> map
+	 ) StringMap.empty ops
+
+
+sort AttrValue = | String String | Nat Nat | StringList (List String) | Null
+
+(**
+ * reads an "option" spec and returns the value of the given operator using the AttrValue sort
+ * as result type.
+ *)
+op getAttributeFromSpec: Spec * String -> AttrValue
+def getAttributeFromSpec(spc,aname) =
+  let
+    def extractList(t,list) =
+      case t of
+	| Apply(Fun(Embed(Cons,_),_,_),Record([(_,Fun(String elem,_,_)),(_,t)],_),_) ->
+	  extractList(t,concat(list,[elem]))
+	| _ -> list
+  in
+  let
+    def getAttrFromOps(ops) =
+      case ops of
+	| [] -> Null
+	| (_,id,opinfo as (_,_,_,termSchemes))::ops ->
+          if (id = aname) then
+	    (case termSchemes of
+	       | (_,term)::_ ->
+	         (case term of
+		    | Fun(String val,_,_) -> String val
+		    | Fun(Nat val,_,_) -> Nat val
+		    | Fun(Embed(Nil,_),_,_) -> StringList []
+		    | Apply(Fun(Embed(Cons,_),_,_),Record([(_,Fun(String elem,_,_)),(_,t)],_),_) ->
+		      StringList(extractList(t,[elem]))
+		    | _ -> getAttrFromOps(ops))
+	       | _ -> getAttrFromOps(ops))
+	  else
+	    getAttrFromOps(ops)
+  in
+    getAttrFromOps(opsAsList spc)
+
+(**
+ * returns whether or not id is declared without a definition
+ * as sort in spc
+ *)
+op sortIsUnrefinedInSpec?: Spec * Sort -> Boolean
+def sortIsUnrefinedInSpec?(spc,srt) =
+  case srt of
+    | Base(Qualified(_,id),_,_) ->
+      sortIdIsUnrefinedInSpec?(spc,id)
+    | _ -> false
+
+op sortIdIsUnrefinedInSpec?: Spec * Id -> Boolean
+def sortIdIsUnrefinedInSpec?(spc,id) =
+  let srts = sortsAsList spc in
+  case find (fn(_,id0,sortinfo) -> (id0 = id)) srts of
+     | Some (_,_,(_,_,[])) -> true
+     | _ -> false
+
+op opIdIsDefinedInSpec?: Spec * Id -> Boolean
+def opIdIsDefinedInSpec?(spc,id) =
+  let ops = opsAsList spc in
+  case find (fn(_,id0,opinfo) -> (id0 = id)) ops of
+    | Some (_,_,(_,_,_,_::_)) -> true
+    | _ -> false
+
+
+
 endspec
 
 

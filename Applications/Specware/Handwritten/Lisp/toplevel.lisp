@@ -1,5 +1,6 @@
 (in-package :cl-user)
 (defpackage :SpecCalc)
+(defpackage :JGen)
 
 ;; Toplevel Lisp aliases for Specware
 
@@ -171,11 +172,18 @@
 	  (t
 	   fn))))
 
-;; Not sure if an optional UnitId make sense for swj
+
+;;; --------------------------------------------------------------------------------
+;;;
+;;; Java Gen
+;;;
+;;; --------------------------------------------------------------------------------
+
 (defun swj (x &optional y)
-   (Specware::evaluateJavaGen_fromLisp-2 x (if y (cons :|Some| y)
-					     '(:|None|)))
-   (values))
+      (Specware::evaluateJavaGen_fromLisp-2 x (if y (cons :|Some| y)
+						'(:|None|)))
+      (values))
+
 #+allegro
 (top-level:alias ("swj" :case-sensitive) (&optional &rest args)
    (let ((r-args (if (not (null args))
@@ -188,7 +196,80 @@
 			   (string (second r-args)) nil)))
      (format t "No previous unit evaluated~%"))))
 
-;; Not sure whether ... no I'm not repeating this comment :)
+(defun swj-config-pkg (&optional pkg)
+  (defparameter #+allegro excl::*redefinition-warnings*
+      #+Lispworks lispworks::*redefinition-action*
+      nil)
+  (if (not (null pkg))
+      (defparameter JGEN::packageName (string pkg))
+    ())
+  (format t "~A~%" JGEN::packageName)
+  )
+
+(defun swj-config-dir (&optional dir)
+  (defparameter #+allegro excl::*redefinition-warnings*
+    #+Lispworks lispworks::*redefinition-action*
+    nil)
+  (if (not (null dir))
+      (defparameter JGEN::baseDir (string dir))
+    ())
+  (format t "~A~%" JGEN::baseDir)
+  )
+
+(defun swj-config-make-public (&optional ops)
+  (defparameter #+allegro excl::*redefinition-warnings*
+    #+Lispworks lispworks::*redefinition-action*
+    nil)
+  (if (not (null ops))
+      (defparameter JGEN::publicOps ops)
+    ())
+  (format t "~A~%" JGEN::publicOps)
+  )
+  
+
+(defun swj-config-reset ()
+  (defparameter #+allegro excl::*redefinition-warnings*
+    #+Lispworks lispworks::*redefinition-action*
+    nil)
+  (defparameter JGEN::packageName (string "specware.generated"))
+  (defparameter JGEN::baseDir (string "."))
+  (defparameter JGEN::publicOps nil))
+
+#+allegro
+(top-level:alias ("swj-config-pkg" :case-sensitive) (&optional pkg-name) (swj-config-pkg pkg-name))
+#+allegro
+(top-level:alias ("swj-config-dir" :case-sensitive) (&optional dir-name) (swj-config-dir dir-name))
+#+allegro
+(top-level:alias ("swj-config-make-public" :case-sensitive) (&optional &rest ops) (swj-config-make-public ops))
+#+allegro
+(top-level:alias ("swj-config-reset") () (swj-config-reset))
+
+#+allegro
+(top-level:alias
+ ("swj-config") ()
+ (let* (
+       (pkgname (format nil "~A" JGEN::packageName))
+       (bdir (format nil "~A" JGEN::baseDir))
+       (ops (format nil "~A" JGEN::publicOps))
+       (pops (if (string= ops "")
+		(concatenate 'string "\"" ops "\"")
+	      "none")
+	    )
+       )
+   (progn
+    (format t ";;; package name   [change with :swj-config-pkg]:         \"~A\"~%" pkgname)
+    (format t ";;; base directory [change with :swj-config-dir]:         \"~A\"~%" bdir)
+    (format t ";;; public ops     [change with :swj-config-make-public]: ~A~%" ops)
+    (if (not (string= pkgname "default"))
+	(let* (
+	       (ppath (map 'string #'(lambda(c) (if (eq c #\.) #\/ c)) pkgname))
+	       (dir (concatenate 'string bdir "/" ppath "/"))
+	       )
+	  (format t ";;; Java file(s) will be written into directory \"~A\"~%" dir)
+	  ) ()))))
+
+;;; --------------------------------------------------------------------------------
+
 (defun swc (x &optional y)
    (Specware::evaluateCGen_fromLisp-2 x (if y (cons :|Some| y)
 					  '(:|None|))))

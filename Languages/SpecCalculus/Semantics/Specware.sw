@@ -248,6 +248,8 @@ The following corresponds to the :show command.
     run (catch prog toplevelHandler) 
 \end{spec}
 
+Second argument is interpreted as spec containing options for the code generation.
+
 \begin{spec}
   op evaluateLispCompileLocal_fromLisp : String * Option String -> Boolean
   def evaluateLispCompileLocal_fromLisp (path,targetFile) = 
@@ -261,21 +263,43 @@ The following corresponds to the :show command.
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
       unitId <- pathToRelativeUID path_body;
-      position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      spcInfo <- evaluateUID position unitId;
-      evaluateLispCompileLocal (spcInfo, (UnitId unitId, position), target);
+      pos <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+      spcInfo <- evaluateUID pos unitId;
+      evaluateLispCompileLocal (spcInfo, (UnitId unitId, pos), target);
       return true
     } in
     run (catch prog toplevelHandler)
 \end{spec}
 
+getOptSpec returns Some spc if the given string evaluates to a spec
+\begin{spec}
+%  op getOptSpec: Option String -> Option Spec
+  def getOptSpec(optpath) =
+    case optpath of
+      | None -> None
+      | Some path ->
+      let prg = {
+		  resetGlobals;
+		  currentUID <- pathToCanonicalUID ".";
+		  setCurrentUID currentUID;
+		  path_body <- return (removeSWsuffix path);
+		  unitId <- pathToRelativeUID path_body;
+		  position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
+		  spcInfo:ValueInfo <- evaluateUID position unitId;
+		  res <- return (let (value,_,_) = spcInfo in
+				 case coerceToSpec value of
+				   | Spec spc -> Some spc
+				   | _ -> None);
+		  return res
+		 }
+      in
+      run (catch prg toplevelHandlerOption)
+\end{spec}
+
 \begin{spec}
   op evaluateJavaGen_fromLisp : String * Option String -> Boolean
-  def evaluateJavaGen_fromLisp (path,targetFile) = 
-    let target =
-      case targetFile of
-        | None -> None
-        | Some name -> Some (maybeAddSuffix name ".java") in
+  def evaluateJavaGen_fromLisp (path,optopath) = 
+    %let optspec = getOptSpec optopath in
     let prog = {
       resetGlobals;
       currentUID <- pathToCanonicalUID ".";
@@ -284,7 +308,7 @@ The following corresponds to the :show command.
       unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       spcInfo <- evaluateUID position unitId;
-      evaluateJavaGen (spcInfo, (UnitId unitId, position), target);
+      evaluateJavaGen (spcInfo, (UnitId unitId, position), optopath);
       return true
     } in
     run (catch prog toplevelHandler) 
@@ -389,6 +413,17 @@ sense that no toplevel functions return anything.
      else
        print message;
      return false}
+
+  op toplevelHandlerOption : fa(a) Exception -> SpecCalc.Env (Option a)
+  def toplevelHandlerOption except =
+    {cleanupGlobalContext;		% Remove InProcess entries
+     message <- return (printException except);
+     return (gotoErrorLocation except);
+     if specwareWizard? then
+       fail message
+     else
+       print message;
+     return None}
 
   op gotoErrorLocation: Exception -> ()
   def gotoErrorLocation except = 

@@ -65,5 +65,6 @@ SpecCalc qualifying spec {
   op coerceToSpec : Value -> Value
 
   op Specware.toplevelHandler : Exception -> SpecCalc.Env Boolean
+  op Specware.getOptSpec: Option String -> Option Spec
 }
 \end{spec}

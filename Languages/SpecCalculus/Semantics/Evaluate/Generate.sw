@@ -7,7 +7,6 @@ SpecCalc qualifying spec
   import C
   import /Languages/MetaSlang/CodeGen/C/ToC
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
-  %import /Languages/MetaSlang/CodeGen/Java/ToJava
 
   def SpecCalc.evaluateGenerate (language, sub_term as (term,position), optFile) pos = {
         (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo sub_term;
@@ -29,14 +28,15 @@ SpecCalc qualifying spec
                  | "c_old" -> 
                        let _ = specToC (subtractSpec spc baseSpec) in
                        return (cValue,timeStamp,depUIDs)
-                 | "c" -> evaluateCGen((cValue,timeStamp,depUIDs),optFile)
-                 | "java" -> evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
-                       %let _ = specToJava (subtractSpec spc baseSpec) in
-                       %return (cValue,timeStamp,depUIDs)
+		 | "c" -> evaluateCGen((cValue,timeStamp,depUIDs),optFile)
+                 | "Java" ->
+		       evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
+                 | "java" ->
+		       evaluateJavaGen ((cValue,timeStamp,depUIDs), sub_term,optFile)
                  | lang -> raise (Unsupported ((positionOf sub_term),
                                 "no generation for language "
                               ^ lang
-                              ^ " yet")))
+                              ^ " (yet)")))
 
           | Other value -> evaluateOtherGenerate (language,sub_term,optFile) (value,timeStamp,depUIDs) pos
 

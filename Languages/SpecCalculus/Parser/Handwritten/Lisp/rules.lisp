@@ -1535,8 +1535,18 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-GENERATE ()
-  (:tuple "generate" (1 :NAME) (2 :SC-TERM) (:optional (:tuple "in" (3 :STRING))))
+  (:tuple "generate" (1 :NAME) (2 :SC-TERM) 
+	  (:optional 
+	   (:anyof
+	    (:tuple "in" (3 :STRING))
+	    (:tuple "with" (3 :NAME-AS-STRING))
+	    )
+	   ))
   (make-sc-generate 1 2 3 ':left-lcb ':right-lcb))
+
+(define-sw-parser-rule :NAME-AS-STRING ()
+  (:tuple (1 :NAME))
+  (string 1))
 
 (define-sw-parser-rule :MAPS-TO ()
   (:tuple "+->")

@@ -1009,7 +1009,15 @@ If we want the precedence to be optional:
   (cons (cons :|Generate| (vector target-language sc-term
                                   (if (equal optFilNm :unspecified)
                                       '(:|None|)
-                                    (cons :|Some| optFilNm))))
+				    (let* (
+					   (fname (if (stringp optFilNm)
+						      optFilNm
+						    (string optFilNm)
+						    )
+						  )
+					   )
+				       (cons :|Some| fname)
+				       ))))
         (make-pos l r)))
 
 
