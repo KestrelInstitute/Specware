@@ -147,6 +147,7 @@ Beginning of line; skip prompt." t nil)
   (easy-menu-add specware-interaction-buffer-menu m))
 
 (defun cleanup-fi:lisp-listener-mode ()
+  (setq comint-input-ring-size 100)
   (and fi:lisp-listener-mode-map
        (add-specware-listener-key-bindings fi:lisp-listener-mode-map))
   (and fi:inferior-common-lisp-mode-map

@@ -235,5 +235,8 @@
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 
 (defun cl-user::boot ()
-  (cl-user::swl "/Applications/Specware/Specware4")
+  (let ((val (cl-user::swl "/Applications/Specware/Specware4")))
+    (unless val
+      (emacs::eval-in-emacs "(delete-continuation)"))
+    val)
   )

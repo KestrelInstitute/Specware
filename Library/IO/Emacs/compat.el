@@ -213,6 +213,7 @@
     (easy-menu-add specware-interaction-buffer-menu m))
 
   (defun specware-listener-mode-hook ()
+    (setq comint-input-ring-size 100)
     (and (boundp 'ilisp-mode-map)
 	 ilisp-mode-map
 	 (add-specware-listener-key-bindings ilisp-mode-map))

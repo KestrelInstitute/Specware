@@ -183,6 +183,9 @@
 			'continue-emacs-computation)
   (simulate-input-expression "(cl-user::exit)"))
 
+(defun delete-continuation ()
+  (set-process-sentinel (get-buffer-process *specware-buffer-name*) nil))
+
 (defun build-specware4 (&optional in-current-dir?)
   (interactive "P")
   (let* ((specware4-dir (if in-current-dir?
