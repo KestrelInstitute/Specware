@@ -1424,12 +1424,12 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-SPEC-MORPH ()
-  (:anyof
-    ((:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}")
-     (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb))
-    ((:tuple (1 :SC-TERM) "to" (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}")
-     (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb)))
-  )
+    (:tuple "morphism" (1 :SC-TERM) "->" (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}")
+     (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb)
+)
+;;  (:anyof
+;;    ((:tuple (1 :SC-TERM) "to" (2 :SC-TERM) "{" (3 :SC-SPEC-MORPH-RULES) "}")
+;;     (make-sc-spec-morph 1 2 3 ':left-lcb ':right-lcb)))
 
 (define-sw-parser-rule :SC-SPEC-MORPH-RULES ()
   (:repeat* :SC-SPEC-MORPH-RULE ","))
