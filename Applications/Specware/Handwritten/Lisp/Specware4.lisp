@@ -13,7 +13,7 @@
 #+cmu
 (setq *compile-verbose* nil)
 #+cmu
-(setq *efficiency-note-cost-threshold* 30)
+(setq extensions:*efficiency-note-cost-threshold* 30)
 #+mcl
 (egc t)					; Turn on ephemeral gc
 

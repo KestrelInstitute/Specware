@@ -15,6 +15,7 @@
 ;;; from which it is generated, while the variant that takes n arguments
 ;;; (n > 1) has that name with a "-n" suffix.
 
+;;; The define-compiler-macro definitions are necessary to get efficient arithmetic
 
 (defun ~ (x) 
   (declare (integer x))
@@ -24,8 +25,8 @@
   (declare (integer x y))
   (the integer (+ x y)))
 
-;; (define-compiler-macro +-2 (x y)
-;;   `(+ ,(the-int x) ,(the-int y)))
+(define-compiler-macro +-2 (x y)
+  `(+ (the integer ,x) (the integer ,y)))
 
 (defun |!+| (xy)
   (declare (cons xy))
@@ -35,8 +36,8 @@
   (declare (integer x y))
   (the integer (- x y)))
 
-;; (define-compiler-macro --2 (x y)
-;;   `(- ,(the-int x) ,(the-int y)))
+(define-compiler-macro --2 (x y)
+  `(- (the integer ,x) (the integer ,y)))
 
 (defun |!-| (xy)
   (declare (cons xy))
@@ -46,8 +47,8 @@
   (declare (integer x y))
   (the integer (* x y)))
 
-;; (define-compiler-macro *-2 (x y)
-;;   `(* ,(the-int x) ,(the-int y)))
+(define-compiler-macro *-2 (x y)
+  `(* (the integer ,x) (the integer ,y)))
 
 (defun |!*| (xy)
   (declare (cons xy))
@@ -57,13 +58,19 @@
   (declare (integer x y))
   (the integer (cl::truncate x y)))
 
+(define-compiler-macro div-2 (x y)
+  `(cl:truncate (the integer ,x) (the integer ,y)))
+
 (defun div (xy)
   (declare (cons xy))
-  (the integer (cl::truncate (the integer (car xy)) (the integer (cdr xy)))))
+  (the integer (cl:truncate (the integer (car xy)) (the integer (cdr xy)))))
 
 (defun rem-2 (x y)
   (declare (integer x y))
-  (the integer (cl::rem x y)))
+  (the integer (cl:rem x y)))
+
+(define-compiler-macro rem-2 (x y)
+  `(cl:rem (the integer ,x) (the integer ,y)))
 
 (defun |!rem| (xy)
   (declare (cons xy))
@@ -73,14 +80,35 @@
   (declare (integer x y))
   (the boolean (< x y)))
 
+(define-compiler-macro <-2 (x y)
+  `(< (the integer ,x) (the integer ,y)))
+
 (defun |!<| (xy)
   (declare (cons xy))
-  (the integer (< (the integer (car xy)) (the integer (cdr xy)))))
+  (< (the integer (car xy)) (the integer (cdr xy))))
 
 (defun <=-2 (x y)
   (declare (integer x y))
   (the boolean (<= x y)))
 
+(define-compiler-macro <=-2 (x y)
+  `(<= (the integer ,x) (the integer ,y)))
+
 (defun |!<=| (xy)
   (declare (cons xy))
-  (the integer (<= (the integer (car xy)) (the integer (cdr xy)))))
+  (<= (the integer (car xy)) (the integer (cdr xy))))
+
+(define-compiler-macro >-2 (x y)
+  `(> (the integer ,x) (the integer ,y)))
+
+(define-compiler-macro >=-2 (x y)
+  `(>= (the integer ,x) (the integer ,y)))
+
+(define-compiler-macro max-2 (x y)
+  `(max (the integer ,x) (the integer ,y)))
+
+(define-compiler-macro min-2 (x y)
+  `(min (the integer ,x) (the integer ,y)))
+
+(define-compiler-macro |!abs| (x)
+  `(abs (the integer ,x)))

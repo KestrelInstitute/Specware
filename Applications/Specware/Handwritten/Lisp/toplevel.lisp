@@ -288,7 +288,6 @@
 (defun swj-config-pkg (&optional pkg)
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
-    #+cmu
     nil)
   (if (not (null pkg))
       (defparameter JGEN::packageName (string pkg))
@@ -296,7 +295,7 @@
   (format t "~A~%" JGEN::packageName))
 
 (defun swj-config-dir (&optional dir)
-  #-cmu
+  #+(or allegro lispworks)
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
     nil)
@@ -306,7 +305,7 @@
   (format t "~A~%" JGEN::baseDir))
 
 (defun swj-config-make-public (&optional ops)
-  #-cmu
+  #+(or allegro lispworks)
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
     nil)
@@ -316,7 +315,7 @@
   (format t "~A~%" JGEN::publicOps))
 
 (defun swj-config-reset ()
-  #-cmu
+  #+(or allegro lispworks)
   (defparameter #+allegro excl::*redefinition-warnings*
     #+Lispworks lispworks::*redefinition-action*
     nil)
