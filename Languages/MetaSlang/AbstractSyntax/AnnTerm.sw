@@ -1062,7 +1062,7 @@ MetaSlang qualifying spec {
     | LetRec    (decls, N, _) -> foldl (fn ((_,M),val) -> (foldSubTerms f val M))
 				     (foldSubTerms f newVal N) decls
 
-    | Seq       (Ms,       _) -> foldl f newVal Ms
+    | Seq       (Ms,       _) -> foldl (fn (M,val) -> foldSubTerms f val M) newVal Ms
 
     | IfThenElse(M, N, P,  _) -> foldSubTerms f
 				     (foldSubTerms f (foldSubTerms f newVal M) N)
@@ -1074,7 +1074,7 @@ MetaSlang qualifying spec {
 					    foldSubTerms f (foldSubTerms f val c) M)
 				     newVal rules     
 
-    | ApplyN    (Ms,       _) -> foldl f newVal Ms
+    | ApplyN    (Ms,       _) -> foldl (fn (M,val) -> foldSubTerms f val M) newVal Ms
 
     | SortedTerm(M,   _,   _) -> foldSubTerms f newVal M
  
@@ -1106,7 +1106,8 @@ MetaSlang qualifying spec {
 	| LetRec    (decls,N,_) -> foldl (fn ((_,M),val) -> (foldSubTermsEvalOrder f val M))
 				     (foldSubTermsEvalOrder f val N) decls
 
-	| Seq       (Ms,     _) -> foldl f val Ms
+	| Seq       (Ms,     _) -> foldl (fn (M,val) -> foldSubTermsEvalOrder f val M)
+				     val Ms
 
 	| IfThenElse(M,N,P,  _) -> foldSubTermsEvalOrder f
 				     (foldSubTermsEvalOrder f
