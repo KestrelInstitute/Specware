@@ -62,7 +62,7 @@ cx |- Bool : TYPE
 cx |- tn : TYPE
 
 cx |- T1 : TYPE
-cx |- T2: TYPE
+cx |- T2 : TYPE
 ---[tyArrow]
 cx |- T1->T2 : TYPE
 
