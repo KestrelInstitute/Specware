@@ -573,7 +573,8 @@ MetaSlang qualifying spec {
 	 if newTrm = trm & srt = newSrt then term
 	   else SortedTerm (newTrm, newSrt, a)
    def mapRec term = 
-    term_map (mapT (tsp_maps,term))
+     %% apply map to leaves, then apply map to result
+     term_map (mapT (tsp_maps,term))
   in
     mapRec term
 
@@ -619,7 +620,9 @@ MetaSlang qualifying spec {
     case opt_sort of
       | None     -> None
       | Some srt -> Some (mapRec srt)
-   def mapRec srt = sort_map (mapS (tsp_maps,srt))
+   def mapRec srt = 
+     %% apply map to leaves, then apply map to result
+     sort_map (mapS (tsp_maps,srt))
   in
     mapRec srt
 
@@ -681,7 +684,8 @@ MetaSlang qualifying spec {
        | _ -> pattern
 
    def mapRec (pattern) = 
-    pattern_map (mapP (tsp_maps,pattern))
+     %% apply map to leaves, then apply map to result
+     pattern_map (mapP (tsp_maps, pattern))
 
   in
     mapRec pattern
@@ -793,9 +797,10 @@ MetaSlang qualifying spec {
        | SortedTerm  (trm,            srt,                      a) -> 
          SortedTerm  (replaceRec trm, replaceSort tsp_maps srt, a)
    def replaceRec term = 
-    case term_map term of
-      | None         -> replace term
-      | Some newTerm -> newTerm
+     %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
+     case term_map term of
+       | None         -> replace term
+       | Some newTerm -> newTerm
   in
     replaceRec term
 
@@ -832,7 +837,8 @@ MetaSlang qualifying spec {
        | Some srt -> Some (replaceRec srt)
  
    def replaceRec srt = 
-    case sort_map srt of
+     %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
+     case sort_map srt of
        | None        -> replace srt
        | Some newSrt -> newSrt
   in
@@ -869,7 +875,8 @@ MetaSlang qualifying spec {
        | _ -> pattern
 
    def replaceRec pattern = 
-    case pattern_map pattern of
+     %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
+     case pattern_map pattern of
        | None        -> replace pattern
        | Some newPat -> newPat
   in
@@ -895,7 +902,7 @@ MetaSlang qualifying spec {
 
 
  def appTerm (tsp_apps as (term_app,_,_)) term =
-  let def appT(tsp_apps,term) =
+  let def appT (tsp_apps, term) =
        (case term of
 	  | Fun        (top, srt,     _) -> appSort tsp_apps srt
 	  | Var        ((id, srt),    _) -> appSort tsp_apps srt
@@ -919,12 +926,16 @@ MetaSlang qualifying spec {
 	  | Seq        (terms,        _) -> app appRec terms
 	  | ApplyN     (terms,        _) -> app appRec terms
 	  | SortedTerm (trm, srt,     _) -> (appRec trm; appSort tsp_apps srt))
-      def appRec tm = (appT(tsp_apps, term); term_app term)
+      def appRec term = % term was tm ??
+	%% Post-node traversal: leaves first
+	(appT (tsp_apps, term); term_app term)
   in 
-    term_app term
- 
+    %% TODO: use recursive call
+    term_app term   % not recursive
+    %% appRec term  % recursive
+
  def appSort (tsp_apps as (_, srt_app, _)) srt = 
-  let def appS(tsp_apps,srt) =
+  let def appS (tsp_apps, srt) =
        case srt of
           | CoProduct (row,       _) -> app (fn (id, opt) -> appSortOpt tsp_apps opt) row
           | Product   (row,       _) -> app (fn (id, srt) -> appRec srt) row
@@ -934,13 +945,16 @@ MetaSlang qualifying spec {
           | Base      (qid, srts, _) -> app appRec srts
           | PBase     (qid, srts, _) -> app appRec srts
           | _                        -> ()
-      def appRec srt = (appS(tsp_apps, srt); srt_app srt)
+
+      def appRec srt = 
+	%% Post-node traversal: leaves first
+	(appS (tsp_apps, srt); srt_app srt)
   in
     appRec srt
 
- def appPattern (tsp_apps as (_, _, pattern_app)) pat =
-  let def appP(tsp_apps,pat) =
-	case pat of
+ def appPattern (tsp_apps as (_, _, pattern_app)) pattern =
+  let def appP (tsp_apps, pattern) =
+	case pattern of
        | AliasPat    (p1, p2,            _) -> (appRec p1; appRec p2)
        | EmbedPat    (id, Some pat, srt, _) -> (appRec pat; appSort tsp_apps srt)
        | EmbedPat    (id, None, srt,     _) -> appSort tsp_apps srt
@@ -950,19 +964,23 @@ MetaSlang qualifying spec {
        | WildPat     (srt,               _) -> appSort tsp_apps srt
        | RecordPat   (fields,            _) -> app (fn (id, p) -> appRec p) fields
        | _                                  -> ()
-      def appRec pattern = (appP(tsp_apps, pat); pattern_app pat)
+      def appRec pattern = 
+	%% Post-node traversal: leaves first
+	(appP (tsp_apps, pattern); pattern_app pattern)
   in
-    pattern_app pat
+    %% TODO: use recusive call
+    pattern_app pattern % not recursive
+    %% appRec pattern   % recursive
 
  def appSortOpt tsp_apps opt_sort =
-  case opt_sort of
-    | None     -> ()
-    | Some srt -> appSort tsp_apps srt
+   case opt_sort of
+     | None     -> ()
+     | Some srt -> appSort tsp_apps srt
 
  def appTermOpt tsp_apps opt_term =
-  case opt_term of
-    | None     -> ()
-    | Some trm -> appTerm tsp_apps trm
+   case opt_term of
+     | None     -> ()
+     | Some trm -> appTerm tsp_apps trm
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Misc Base Terms
