@@ -113,23 +113,33 @@
 ;;;  SC-UNIT-ID
 ;;; ========================================================================
 
-(defun make-sc-absolute-unit-id (sc-unit-id-path optional-hash-name l r)
+(defun make-sc-absolute-unit-id (sc-unit-id-path optional-hash-char optional-hash-name l r)
   (let ((uid
 	 (cons :|SpecPath_Relative|
 	       (cons
-		(if (eq :unspecified optional-hash-name)
-		    (cons :|None| nil)
-		  (cons :|Some| optional-hash-name))
+		(cond ((eq optional-hash-char :unspecified)
+		       (cons :|None| nil))
+		      ((eq optional-hash-char #\Space)
+		       (cons :|Some| (format nil "~C" optional-hash-char)))
+		      ((eq optional-hash-char #\Space)
+		       (cons :|Some| optional-hash-name))
+		      (t
+		       (cons :|Some| (format nil "~C~A" optional-hash-char optional-hash-name))))
 		sc-unit-id-path))))
     (speccalc::mkUnitId-2 uid (make-pos l r))))
 
-(defun make-sc-relative-unit-id (sc-unit-id-path optional-hash-name l r)
+(defun make-sc-relative-unit-id (sc-unit-id-path optional-hash-char optional-hash-name l r)
   (let ((uid 
 	 (cons :|UnitId_Relative|
 	       (cons
-		(if (eq :unspecified optional-hash-name)
-		    (cons :|None| nil)
-		  (cons :|Some| optional-hash-name))
+		(cond ((eq optional-hash-char :unspecified)
+		       (cons :|None| nil))
+		      ((eq optional-hash-name :unspecified)
+		       (cons :|Some| (format nil "~C" optional-hash-char)))
+		      ((eq optional-hash-char #\Space)
+		       (cons :|Some| optional-hash-name))
+		      (t
+		       (cons :|Some| (format nil "~C~A" optional-hash-char optional-hash-name))))
 		sc-unit-id-path))))
     (speccalc::mkUnitId-2 uid (make-pos l r))))
 

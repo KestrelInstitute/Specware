@@ -195,12 +195,12 @@
   1)
 
 (define-sw-parser-rule :SC-ABSOLUTE-UNIT-ID ()
-  (:tuple "/" (1 :SC-UNIT-ID-PATH) (:optional (:tuple "#" (2 :NAME))))
-  (make-sc-absolute-unit-id 1 2 ':left-lcb ':right-lcb))
+  (:tuple "/" (1 :SC-UNIT-ID-PATH) (:optional (:tuple (2 :CHARACTER) (:optional (3 :NAME)))))
+  (make-sc-absolute-unit-id 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-RELATIVE-UNIT-ID ()
-  (:tuple (1 :SC-UNIT-ID-PATH) (:optional (:tuple "#" (2 :NAME))))
-  (make-sc-relative-unit-id 1 2 ':left-lcb ':right-lcb))
+  (:tuple (1 :SC-UNIT-ID-PATH) (:optional (:tuple (2 :CHARACTER) (:optional (3 :NAME)))))
+  (make-sc-relative-unit-id 1 2 3 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :SC-UNIT-ID-PATH ()
   (:repeat+ :SC-UNIT-ID-ELEMENT "/"))
