@@ -1,5 +1,5 @@
 
-SpecCalc qualifying spec {
+SpecCalc qualifying spec
   import UnitId
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
   import /Languages/Snark/SpecToSnark
@@ -9,7 +9,8 @@ SpecCalc qualifying spec {
   % sort Env a = SpecCalc.Env a
   %sort Spec = MetaSlang.Spec
 
-  op SpecCalc.evaluateSnarkGen : ValueInfo * (SpecCalc.Term Position) * Option String -> Env ValueInfo
+  op SpecCalc.evaluateSnarkGen : ValueInfo * (SpecCalc.Term Position) * Option String
+                                -> SpecCalc.Env ValueInfo
 
   %% Need to add error detection code
   def SpecCalc.evaluateSnarkGen (valueInfo as (Spec spc,_,_), cterm, optFileNm) =
@@ -36,4 +37,4 @@ SpecCalc qualifying spec {
      {print("Snark file name " ^ filNm ^ "\n");
       return filNm}}
 
-    }
+endspec
