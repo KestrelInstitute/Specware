@@ -76,10 +76,10 @@ This is a monadic interpreter for the Spec Calculus.
           (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
           baseURI <- pathToRelativeURI "/Library/Base";
           (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base") baseURI;
-          (case value of
-            | Spec spc -> 
+          (case coerceToSpec value of
+            | cValue as Spec spc -> 
                 (case language of
-                   | "lisp" -> evaluateLispCompile ((value,timeStamp,depURIs),
+                   | "lisp" -> evaluateLispCompile ((cValue,timeStamp,depURIs),
 						   sub_term,optFile)
                    | "snark" -> evaluateSnarkGen ((value,timeStamp,depURIs),
 						   sub_term,optFile)

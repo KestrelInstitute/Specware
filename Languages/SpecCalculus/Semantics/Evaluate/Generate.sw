@@ -7,12 +7,17 @@ SpecCalc qualifying spec {
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
 
   %% Need to add error detection code
-  def SpecCalc.evaluateLispCompile(valueInfo as (Spec spc,_,_), cterm, optFileName) =
-    {cURI <- SpecCalc.getURI cterm;
-     lispFileName <- URItoLispFile (cURI, optFileName);
-     let _ = ensureDirectoriesExist lispFileName in
-     let _ = toLispFile (spc, lispFileName,[]) in
-     return valueInfo}
+  def SpecCalc.evaluateLispCompile(valueInfo as (value,_,_), cterm, optFileName) =
+    case coerceToSpec value of
+      | Spec spc ->
+        {cURI <- SpecCalc.getURI cterm;
+	 lispFileName <- URItoLispFile (cURI, optFileName);
+	 let _ = ensureDirectoriesExist lispFileName in
+	 let _ = toLispFile (spc, lispFileName,[]) in
+	 return valueInfo}
+      | _ -> raise (TypeCheck ((positionOf cterm),
+			       "attempting to generate code from an object that is not a specification"))
+       
 \end{spec}
 
 Make a lisp file name for a URI.
