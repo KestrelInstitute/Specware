@@ -179,6 +179,7 @@ spec
 	       | None -> t
 	       | Some(vs,defn,defsrt,fnIndices,curried?,recursive?) ->
 		 if ~curried?
+		      & length(termList a) > foldr max 0 fnIndices
 		      & exists (fn i -> constantTerm?(getTupleArg(a,i)))
 		          fnIndices
 		  then makeUnfoldedTerm
