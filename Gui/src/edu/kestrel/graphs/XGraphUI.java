@@ -6,6 +6,7 @@
 
 package edu.kestrel.graphs;
 
+import edu.kestrel.graphs.util.*;
 import com.jgraph.graph.*;
 import com.jgraph.plaf.basic.*;
 import javax.swing.*;
@@ -205,6 +206,12 @@ public class XGraphUI extends BasicGraphUI {
         return new XGraphTransferHandler();
     }
     
+    public CellHandle createHandle(GraphContext context) {
+        if (context != null && !context.isEmpty() && graph.isEnabled())
+            return new XRootHandle(context);
+        return null;
+    }
+    
     
     
     /** overwrites the class in BasicGraphUI to install customized cut/copy actions.
@@ -220,6 +227,119 @@ public class XGraphUI extends BasicGraphUI {
             return NONE;
         }
         
+    }
+    
+    private JFrame _f = null;
+    
+    public class XRootHandle extends RootHandle {
+        
+        private Rectangle contextBounds = null;
+        private Rectangle imageBounds = null;
+        
+        private Image img;
+        private java.util.List cellViews = null;
+        
+        public XRootHandle(GraphContext ctxt) {
+            super(ctxt);
+            contextBounds = getContextBounds();
+            getMoveImage();
+            imageBounds = new Rectangle(contextBounds);
+        }
+        
+        public void overlay(Graphics g) {
+            if (!isMoving) {
+                super.overlay(g);
+                return;
+            }
+            if (contextBounds == null) return;
+            Graphics2D g2d = (Graphics2D)g;
+            Rectangle b = new Rectangle(contextBounds);
+            b.translate(dx,dy);
+            b = context.getGraph().toScreen(b);
+            int bw = 100;
+            ((XGraphDisplay)context.getGraph()).setOutlineBounds(b);
+            ((XGraphDisplay)context.getGraph()).setMoveImage(img,imageBounds);
+            ((XGraphDisplay)context.getGraph()).repaint();//(b.x-bw,b.y-bw,b.width+bw*2,b.height+bw*2);
+            //if (b != null) {
+            //    g2d.setStroke(new BasicStroke(2,BasicStroke.CAP_BUTT,BasicStroke.JOIN_MITER,1,new float[]{5,5},0));
+            //    g2d.draw(b);
+            //}
+        }
+        
+        
+        private void getMoveImage() {
+            try {
+                Dbg.pr("generating move image...");
+                com.jgraph.JGraph graph = context.getGraph();
+                int imgwidth = graph.getWidth();
+                int imgheight = graph.getHeight();
+                img = new java.awt.image.BufferedImage(imgwidth,imgheight,java.awt.image.BufferedImage.TYPE_INT_RGB);
+                Graphics g = img.getGraphics();
+                g.setClip(contextBounds.x, contextBounds.y, contextBounds.width, contextBounds.height);
+                graph.getUI().paint(g,graph);
+            } catch (Exception e) {/*ignore*/}
+            /*
+            if (_f == null) {
+                _f = new JFrame();
+                _f.getContentPane().setLayout(new BorderLayout());
+                _f.setSize(200,200);
+            } else {
+                _f.getContentPane().removeAll();
+            }
+            _f.getContentPane().add(new JButton(new ImageIcon(img)));
+            _f.show();
+             */
+        }
+        
+        private Rectangle getContextBounds() {
+            cellViews = new ArrayList();
+            Object[] cells = context.getCells();
+            Rectangle b = null;
+            for(int i=0;i<cells.length;i++) {
+                CellView cv = context.getMapping(cells[i],true);
+                if (cv != null) {
+                    cellViews.add(cv);
+                    if (b == null)
+                        b = new Rectangle(cv.getBounds());
+                    else
+                        b.add(cv.getBounds());
+                }
+            }
+            if (isMoving) {
+                if (contextViews != null) {
+                    for(int i=0;i<contextViews.length;i++) {
+                        if (b == null)
+                            b = new Rectangle(contextViews[i].getBounds());
+                        else
+                            b.add(contextViews[i].getBounds());
+                    }
+                }
+            }
+            return b;
+        }
+        
+        private Point startPoint;
+        private int dx,dy;
+        
+        public void mousePressed(MouseEvent e) {
+            ((XGraphDisplay)context.getGraph()).setOutlineBounds(null);
+            ((XGraphDisplay)context.getGraph()).setMoveImage(null,null);
+            startPoint = new Point(e.getPoint());
+            super.mousePressed(e);
+        }
+        
+        public void mouseDragged(MouseEvent e) {
+            Point p = e.getPoint();
+            dx = p.x - startPoint.x;
+            dy = p.y - startPoint.y;
+            super.mouseDragged(e);
+        }
+        
+        public void mouseReleased(MouseEvent e) {
+            super.mouseReleased(e);
+            ((XGraphDisplay)context.getGraph()).setMoveImage(null,null);
+            ((XGraphDisplay)context.getGraph()).setOutlineBounds(null);
+        }
     }
     
 }
