@@ -143,7 +143,7 @@
 	      (cl-user::cd argstr))
 	    (values))
 	(dir (cl-user::ls (or argstr "")))
-	(dirr (cl-user::dirr (or argstr "*.sw")))
+	(dirr (cl-user::dirr (or argstr "")))
 	(path (cl-user::swpath argstr))
 	((proc p) (cl-user::sw argstr) (values))
 	(show (cl-user::show argstr) (values))
