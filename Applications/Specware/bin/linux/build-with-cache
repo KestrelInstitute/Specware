@@ -120,7 +120,7 @@ echo " "
 	(exiting-on-errors 
 	  (unless (sw "/Applications/Specware/Specware4")
             (exit 1)))
-	(compact-memory t 3 32000000)
+	(compact-memory t -1 0)
 	(set-gc-parameters-for-use t)
 	(format t "~%Dumping image with cached results of (sw \"/Applications/Specware/Specware4\")...~%")
         (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
