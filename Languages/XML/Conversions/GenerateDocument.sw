@@ -247,13 +247,19 @@ XML qualifying spec
     : Option CharData * Content_Item =
     case sd_pattern of
       | Product sd_fields ->
-        (let item_name = 
+        (let raw_item_name = 
 	     case sd of
 	       | Base ((q,id), []) -> ((if q = "<unqualified>" then "" else q ^ ".") ^ id)
 	       | _ -> "item"
 	 in
+	 let (item_name, show_type?) = 
+	     if xml_prefix? (ustring raw_item_name) then
+	       ("_" ^ raw_item_name, true)
+	     else
+	       (raw_item_name, false)
+	 in
 	   (Some (indentation_chardata (vspacing, indent)),
-	    Element (generate_Element (item_name, datum, sd_pattern, table, vspacing, indent, false))))
+	    Element (generate_Element (item_name, datum, sd, table, vspacing, indent, show_type?))))
 
       | CoProduct sd_options ->
 	let (constructor_name, sub_datum) = Magic.magicConstructorNameAndValue datum in
