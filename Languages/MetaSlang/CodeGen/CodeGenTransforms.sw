@@ -313,12 +313,14 @@ def p2mSort(spc,modifyConstructors?,srt,minfo) =
 			% However, this case is needed for the Snark translator and to ensure
 			% that the resulting spec is a valid metaslang spec.
 			Some (names,tv as _::_,[]) ->
-			let tvsubst = zip(tv,insttv) in
-			%let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
-			let names = cons(qid,(filter (fn(qid_) -> ~(qid_=qid0)) names)) in 
-			let sinfo = (names,[],[]) in
-			let minfo = addSortInfo2SortOpInfos(qid,sinfo,minfo) in
-			minfo
+			if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
+			  let tvsubst = zip(tv,insttv) in
+			  %let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
+			  let names = cons(qid,(filter (fn(qid_) -> ~(qid_=qid0)) names)) in 
+			  let sinfo = (names,[],[]) in
+			  let minfo = addSortInfo2SortOpInfos(qid,sinfo,minfo) in
+			  minfo
+			else minfo
 		      | _ -> minfo)
       in
       (Base(qid,[],b),minfo)
@@ -530,27 +532,29 @@ def p2mFun(spc,modifyConstructors?,fun,srt,minfo) =
 	  in
 	  (nfun,srt1,minfo)
 	| Some (names,fixi,(mtv as (_::_),asrt),x) -> 
-	  %let _ = writeLine("polymorphic op found: "^printQualifiedId(qid)) in
-	  let tvsubst0 = sortMatch(asrt,srt,spc) in
-	  let tvsubst = filter (fn(id,TyVar _) -> false | _ -> true) tvsubst0 in
-	  let ntv = map (fn(id,_) -> id) (filter (fn(id,TyVar _) -> true | _ -> false) tvsubst0) in
-	  if tvsubst = [] then (fun,srt1,minfo) else
-	  let nqid = Qualified(q,id^getSortNameFromTyVarSubst(tvsubst)) in
-	  let names = cons(nqid,(filter (fn(qid0) -> ~(qid0 = qid)) names)) in
-	  %let _ = writeLine("  New op name:"^(printQualifiedId nqid)) in
-	  %let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
-	  let nfun = Op(nqid,fix) in
-	  let minfo = if monoInfosContainOp?(nqid,minfo) then minfo
-		      else
-			% construct the new opinfo
-			let tmp_opinfo = (names,fixi,(mtv,srt1),x) in
-			let minfo = addOpInfo2SortOpInfos(nqid,tmp_opinfo,minfo) in
-			let nopinfo = (names,fixi,(ntv,srt1),x) in
-			%let _ = if id = "empty_seq" then writeLine("adding new opinfo for "^id^" with "^natToString(length(ntv))^" tyvars...") else () in
-			%let _ = if id = "empty_seq" then writeLine(printSortOpInfos minfo) else () in
-			minfo
-	  in
-	  (nfun,srt1,minfo)
+	  if modifyConstructors? then % using modifyConstructors? as synonym for "for snark, but not for codeGen"
+	    %let _ = writeLine("polymorphic op found: "^printQualifiedId(qid)) in
+	    let tvsubst0 = sortMatch(asrt,srt,spc) in
+	    let tvsubst = filter (fn(id,TyVar _) -> false | _ -> true) tvsubst0 in
+	    let ntv = map (fn(id,_) -> id) (filter (fn(id,TyVar _) -> true | _ -> false) tvsubst0) in
+	    if tvsubst = [] then (fun,srt1,minfo) else
+	      let nqid = Qualified(q,id^getSortNameFromTyVarSubst(tvsubst)) in
+	      let names = cons(nqid,(filter (fn(qid0) -> ~(qid0 = qid)) names)) in
+	      %let _ = writeLine("  New op name:"^(printQualifiedId nqid)) in
+	      %let _ = writeLine("  "^(printTyVarSubst tvsubst)) in
+	      let nfun = Op(nqid,fix) in
+	      let minfo = if monoInfosContainOp?(nqid,minfo) then minfo
+			  else
+			    % construct the new opinfo
+			    let tmp_opinfo = (names,fixi,(mtv,srt1),x) in
+			    let minfo = addOpInfo2SortOpInfos(nqid,tmp_opinfo,minfo) in
+			    let nopinfo = (names,fixi,(ntv,srt1),x) in
+			    %let _ = if id = "empty_seq" then writeLine("adding new opinfo for "^id^" with "^natToString(length(ntv))^" tyvars...") else () in
+			    %let _ = if id = "empty_seq" then writeLine(printSortOpInfos minfo) else () in
+			    minfo
+	      in
+		(nfun,srt1,minfo)
+	  else (fun,srt1,minfo)
 	| _ -> (fun,srt1,minfo)
 	 )
    %| Not/And/Or/Implies/Equals/NotEquals are all same as default
