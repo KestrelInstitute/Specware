@@ -62,6 +62,7 @@ FSeq qualifying spec
 
   type NonEmptyFSeq a = (FSeq a | nonEmpty?)
 
+  % sequence with one element:
   op single(*ton*) : [a] a -> FSeq a
   def single x = seq (fn(i:Nat) -> if i = 0 then Some x else None)
 
@@ -153,13 +154,13 @@ FSeq qualifying spec
 
   % fold starting from left end:
   op foldl : [a,b] (b * a -> b) -> b -> FSeq a -> b
-  def [a,b] foldl = the (fn foldl ->
+  def foldl = the (fn foldl ->
     (fa (f,c)     foldl f c empty = c) &&
     (fa (f,c,s,x) foldl f c (s <| x) = f (foldl f c s, x)))
 
   % fold starting from right end:
   op foldr : [a,b] (a * b -> b) -> b -> FSeq a -> b
-  def [a,b] foldr = the (fn foldr ->
+  def foldr = the (fn foldr ->
       (fa (f,c)     foldr f c empty = c) &&
       (fa (f,c,x,s) foldr f c (x |> s) = f (x, foldr f c s)))
 
@@ -193,7 +194,7 @@ FSeq qualifying spec
   def map2 f (s1,s2) = map f (zip (s1, s2))
 
   op filter : [a] (a -> Boolean) -> FSeq a -> FSeq a
-  def [a] filter = the (fn filter ->
+  def filter = the (fn filter ->
     (fa(p)     filter p empty = empty) &&
     (fa(p,x,s) filter p (x |> s) =
                (if p x then x |> filter p s else filter p s)))
@@ -206,7 +207,7 @@ FSeq qualifying spec
     if i < length s then Some (s @ (length s - i - 1)) else None)
 
   op flatten : [a] FSeq (FSeq a) -> FSeq a
-  def [a] flatten = the (fn flatten ->
+  def flatten = the (fn flatten ->
     (flatten empty = empty) &&
     (fa(s,seqOfSeqs) flatten (s |> seqOfSeqs) = s ++ flatten seqOfSeqs))
 
@@ -258,7 +259,7 @@ FSeq qualifying spec
 
   % element at position `i' moves to position `prm @ i':
   op permute : [a] ((FSeq a * Permutation) | equiLong) -> FSeq a
-  def [a] permute(s,prm) = the (fn r ->
+  def permute(s,prm) = the (fn r ->
       r equiLong s &&
       (fa(i:Nat) i < length s => s @ i = r @ (prm@i)))
 
