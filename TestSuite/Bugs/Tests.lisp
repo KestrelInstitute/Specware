@@ -427,6 +427,18 @@ Ambiguous ops:  op i : Nat
  found in $TESTDIR/Bug_0093/IncompatColimit.sw
 13.16-19.0")
 
+ ("Bug 0099 : Extra 'let' in generated proof obligation"
+  :show   "Bug_0099/MinusOb#MinusProof" 
+  :output ";;; Elaborating proof-term at $TESTDIR/Bug_0099/MinusOb#MinusProof
+;;; Elaborating obligator at $TESTDIR/Bug_0099/MinusOb#ONat
+;; ensure-directories-exist: creating $TESTDIR/Bug_0099/Both/MinusOb/MinusProof.log
+;; Directory $TESTDIR/Bug_0099/Both/MinusOb/ does not exist, will create.
+MinusProof: Conjecture minus_def2_Obligation in ONat is Proved! using Snark.
+    Snark Log file: $TESTDIR/Bug_0099/Both/MinusOb/MinusProof.log
+
+
+")
+
  ("Bug 0102 : Extra variable in gnerated proof obligation"
   :show   "Bug_0102/ObligationsOfInteger.sw" 
   :output ";;; Elaborating obligator at $TESTDIR/Bug_0102/ObligationsOfInteger
@@ -453,6 +465,12 @@ spec
     fa(x : Integer, y : NonZeroInteger) natural?(abs x div abs y)
 endspec
 
+")
+
+ ("Bug 0104 : Erroneous code for non-constructive expression."
+  :swl  "Bug_0104/NonConstructive"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0104/NonConstructive
+<some kind of error message>
 ")
 
  ("Bug 0105 A: The new-style type quantifications in claim definitions are ambiguous"
