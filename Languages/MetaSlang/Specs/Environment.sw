@@ -262,7 +262,8 @@ spec
      | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
      | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
-     | SortedTerm (_, srt,               _) -> srt						
+     | SortedTerm (_, srt,               _) -> srt
+     | Any a                                -> Any a
      | mystery -> (System.print(mystery);System.fail ("inferType: Non-exhaustive match"))
 
 % def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
