@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/04/01 02:29:33  weilyn
+ * Added support for diagrams and colimits
+ *
  * Revision 1.9  2003/03/29 03:13:52  weilyn
  * Added support for morphism nodes.
  *
@@ -407,6 +410,24 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
         return createMorphismChildren(element, MetaSlangDataObject.getExplorerFactory() );
     }
     
+    public Node createUnitIDObjectNode(Object object) {
+        UnitIDObjectNode n = new UnitIDObjectNode(object);
+        //TODO: change this to "Go to source" or something....
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(DEFAULT_ACTIONS);
+        return n;
+    }
+
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    public Node createDiagElemNode(DiagElemElement element) {
+        DiagElemElementNode n = new DiagElemElementNode(element, true);
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(DEFAULT_ACTIONS);
+        return n;
+    }
+    
     /** Returns the node asociated with specified element.
      * @return ElementNode
      */
@@ -427,8 +448,8 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
             n.setElementFormat(new ElementFormat(NbBundle.getBundle (MetaSlangElementNodeFactory.class).getString("CTL_Diagram_name_format")));
 
             filter.setOrder (new int[] {
-/*                SpecElementFilter.IMPORT,
-		SpecElementFilter.SORT,
+                DiagramElementFilter.DIAG_ELEM,
+/*		SpecElementFilter.SORT,
 		SpecElementFilter.OP,
                 SpecElementFilter.DEF,
                 SpecElementFilter.CLAIM,*/
@@ -467,11 +488,7 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
             n.setElementFormat(new ElementFormat(NbBundle.getBundle (MetaSlangElementNodeFactory.class).getString("CTL_Colimit_name_format")));
 
             filter.setOrder (new int[] {
-/*                SpecElementFilter.IMPORT,
-		SpecElementFilter.SORT,
-		SpecElementFilter.OP,
-                SpecElementFilter.DEF,
-                SpecElementFilter.CLAIM,*/
+                ColimitElementFilter.DIAGRAM,
             });
             children.setFilter (filter);
         }
@@ -486,6 +503,16 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
     protected Children createColimitChildren( ColimitElement element ) {
         return createColimitChildren(element, MetaSlangDataObject.getExplorerFactory() );
     }
+
+    /** Returns the node asociated with specified element.
+     * @return ElementNode
+     */
+    /*public Node createURINode(URIElement element) {
+        URIElementNode n = new URIElementNode(element, true);
+        n.setDefaultAction(SystemAction.get(EditAction.class));
+        n.setActions(DEFAULT_ACTIONS);
+        return n;
+    }*/
 
     /**
      * This method will try to extract more information than the ordinary Error message.
