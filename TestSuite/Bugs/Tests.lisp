@@ -79,15 +79,29 @@ endspec
 
  ("Bug 0069 : Translate from base"
   :show   "Bug_0069/TranslateFromBase#M" 
-  :output "??")
+  :output ";;; Elaborating spec-translation at $TESTDIR/Bug_0069/TranslateFromBase#M
+;;; Elaborating spec at $TESTDIR/Bug_0069/TranslateFromBase#S
+Errors in $TESTDIR/Bug_0069/TranslateFromBase.sw
+3.21-3.37	: Error in translation: Illegal to translate from base type : Integer
+")
 
  ("Bug 0069 : Translate into base"
   :show   "Bug_0069/TranslateIntoBase#M" 
-  :output "??")
+  :output ;; Got:
+";;; Elaborating spec-translation at $TESTDIR/Bug_0069/TranslateIntoBase#M
+;;; Elaborating spec at $TESTDIR/Bug_0069/TranslateIntoBase#S
+Errors in $TESTDIR/Bug_0069/TranslateIntoBase.sw
+3.20-3.34	: Error in translation: Illegal to translate into base type or op: Char
+")
 
  ("Bug 0069 : Morphism from base"
   :show   "Bug_0069/MorphismFromBase#M" 
-  :output "??")
+  :output ";;; Elaborating spec-morphism at $TESTDIR/Bug_0069/MorphismFromBase#M
+;;; Elaborating spec at $TESTDIR/Bug_0069/MorphismFromBase#S
+;;; Elaborating spec at $TESTDIR/Bug_0069/MorphismFromBase#T
+Errors in $TESTDIR/Bug_0069/MorphismFromBase.sw
+5.21-5.36	: Error in morphism: Illegal to translate from base type: Integer
+")
 
  ("Bug 0083 : Ambiguous op not detected"
   :show   "Bug_0083/Ambop#C" 
