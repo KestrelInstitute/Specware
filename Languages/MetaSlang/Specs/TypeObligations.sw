@@ -509,10 +509,7 @@ spec
 		 tcc)
 	   tcc spc.ops
      in
-     let baseProperties = case getBaseSpec() of
-                           | Some bspc -> bspc.properties
-                           | None -> []
-     in
+     let baseProperties = (getBaseSpec()).properties in
      let tcc = foldr (fn (pr as (_,name,tvs,fm),tcc) ->
 		       if member(pr,baseProperties) then tcc
 			 else (tcc,gamma0 tvs (name^"_Obligation"))  |- fm ?? boolSort)
