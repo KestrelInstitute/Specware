@@ -172,6 +172,14 @@
 #+allegro
 (push 'start-java-connection? excl:*restart-actions*)
 
+;;; Load base in correct location
+#+allegro
+(push  'cl-user::sw-re-init cl-user::*restart-actions*)
+
+;;; Set temporaryDirectory
+#+allegro
+(push  'setTemporaryDirectory cl-user::*restart-actions*)
+
 (format t "~2%To bootstrap, run (boot)~%")
 (format t "~%That will run :sw /Applications/Specware/Specware4~2%")
 

@@ -138,6 +138,13 @@
                                              #+Lispworks SYSTEM::*TEMP-DIRECTORY*
 					     #+(or mcl cmu) "/tmp/"
 					     ))
+(defun temporaryDirectory-0 ()
+  #+allegro      (SYSTEM:temporary-directory)
+  #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
+  #+(or mcl cmu) "/tmp/")
+
+(defun setTemporaryDirectory ()
+  (setq temporaryDirectory (temporaryDirectory-0)))
 
 (defun copy-file (source target)
   #+allegro(sys:copy-file source target)

@@ -66,6 +66,4 @@
 #+allegro
 (setq cl-user::*restart-init-function* 'load-specware-patch-if-present)
 
-;;; Load base in correct location
-#+allegro
-(push  'cl-user::sw-re-init cl-user::*restart-actions*)
+
