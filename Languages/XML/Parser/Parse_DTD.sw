@@ -1,7 +1,8 @@
 
 XML qualifying spec
 
-  import Parse_Character_Strings % parse_WhiteSpace
+  % import Parse_Character_Strings % parse_WhiteSpace
+  import Parse_GenericTag        % parse_PI
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Data_Type_Document                                                                  %%%
@@ -134,6 +135,8 @@ XML qualifying spec
 	error ("DTD doesn't end with '>'", start, nthTail (tail, 10))
        }
 
+  %% ------------------------------------------------------------------------------------------------
+
   def parse_ExternalID (start : UChars) : Possible (WhiteSpace * ExternalID) =
     {
      (w1, tail) <- parse_WhiteSpace start;
@@ -163,20 +166,213 @@ XML qualifying spec
 	   return (None, start)
 	  }	
 	 
-  op parse_markups    : UChars -> Possible (List (| Decl MarkupDecl | Sep DeclSep) * 
-					    WhiteSpace)
+  def parse_SystemLiteral (start : UChars) : Required SystemLiteral =
+    parse_QuotedText start
 
-  op parse_SystemLiteral : UChars -> Required SystemLiteral
+  def parse_PubidLiteral (start : UChars) : Required PubidLiteral =
+    parse_QuotedText start
 
-  op parse_PubidLiteral : UChars -> Required PubidLiteral
+  %% ------------------------------------------------------------------------------------------------
 
-  op parse_MarkupDecl : UChars -> Possible MarkupDecl
+  def parse_markups (start : UChars) : Possible (List (| Decl MarkupDecl | Sep DeclSep) * WhiteSpace) =
+    case start of
+      | 91 (* '[' *) :: tail ->                    % comment to balance ']'
+        (let 
+            def probe (tail, rev_markups) =
+	      case tail of
 
-  op parse_ElementDecl : UChars -> Possible ElementDecl
+		| 93 (* close bracket *) :: tail -> 
+		  {
+		   (w1, scout) <- parse_WhiteSpace tail;
+		   return (Some (rev rev_markups, w1),
+			   tail)
+		   }
 
-  op parse_ContentSpec : UChars -> Required ContentSpec
+		| 60 :: 33 :: 69 :: 76 :: 69 :: 77 :: 69 :: 78 :: 84 (* '<!ELEMENT'    *) :: tail -> 
+		  {
+		   (decl, tail) <- parse_ElementDecl tail;
+		   probe (tail, cons (Decl (Element decl), rev_markups))
+		  }
+		  
+		| 60 :: 33 :: 65 :: 84 :: 84 :: 76 :: 73 :: 83 :: 84 (* '<!ATTLIST'    *) :: tail -> 
+		  {
+		   (decl, tail) <- parse_AttListDecl tail;
+		   probe (tail, cons (Decl (Attributes decl), rev_markups))
+		  }
+		  
+		| 60 :: 33 :: 69 :: 78 :: 84 :: 73 :: 84 :: 89       (* '<!ENTITY'     *) :: tail -> 
+		  {
+		   (decl, tail) <- parse_EntityDecl tail;
+		   probe (tail, cons (Decl (Entity decl), rev_markups))
+		  }
+		  
+		| 60 :: 33 :: 78 :: 79 :: 84 :: 65 :: 84 :: 65 :: 84 :: 73 :: 79 :: 78 (* '<!NOTATATION' *) ::  tail -> 
+		  {
+		   (decl, tail) <- parse_NotationDecl tail;
+		   probe (tail, cons (Decl (Notation decl), rev_markups))
+		  }
+		  
+		| 60 :: 63 (* '<?' *) :: tail ->
+		  {
+		   (decl, tail) <- parse_PI tail;
+		   probe (tail, cons (Decl (PI decl), rev_markups))
+		  }
+		  
+		| 60 :: 45 :: 45 (* '<--' *) :: tail ->
+		  {
+		   (comment, tail) <- parse_Comment tail;
+		   probe (tail, cons (Decl (Comment comment), rev_markups))
+		  }
+		  
+		| 37 (* '%' *) :: tail ->
+		  {
+		   (ref, tail) <- parse_PEReference tail;
+		   probe (tail, cons (Sep (PEReference ref), rev_markups))
+		  }
+		  
+		| char :: _ ->
+		  if white_char? char then
+		    {
+		     (w1, scout) <- parse_WhiteSpace tail;
+		     probe (tail, cons (Sep (WhiteSpace w1), rev_markups))
+		    }
+		  else
+		    error ("Unrecognized markup/declsep", start, tail)
+		    
+		| _ ->
+		    error ("EOF scanning markups in DTD", start, tail)
+	 in
+	   probe (tail, []))
+	
+      | _ -> return (None, start)
 
-  op parse_Mixed : UChars -> Possible Mixed
+  %% ------------------------------------------------------------------------------------------------
+  %% [45]  elementdecl     ::=  '<!ELEMENT' S Name S contentspec S? '>' 
+  %%
+  %%                                                             [VC: Unique Element Type Declaration]
+  %%
+  %% [46]  contentspec     ::=  'EMPTY' | 'ANY' | Mixed | children 
+  %%
+  %% [47]  children        ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%
+  %% [48]  cp              ::=  (Name | choice | seq) ('?' | '*' | '+')? 
+  %%
+  %% [49]  choice          ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
+  %%
+  %%                                                             [VC: Proper Group/PE Nesting] 
+  %%
+  %% [50]  seq             ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
+  %%
+  %%                                                             [VC: Proper Group/PE Nesting]
+  %%
+  %% [51]  Mixed           ::=  '(' S? '#PCDATA' (S? '|' S? Name)* S? ')*' | '(' S? '#PCDATA' S? ')' 
+  %%
+  %%                                                             [VC: Proper Group/PE Nesting] 
+  %%                                                             [VC: No Duplicate Types]
+
+  def parse_ElementDecl (start : UChars) : Required ElementDecl =
+    {
+     (w1,       tail) <- parse_WhiteSpace  start;
+     (name,     tail) <- parse_Name        tail;
+     (w2,       tail) <- parse_WhiteSpace  tail;
+     (contents, tail) <- parse_ContentSpec tail;
+     (w3,       tail) <- parse_WhiteSpace  tail;
+     case tail of
+       | 62 (* '>' *) :: tail ->
+         return ({w1       = w1,
+		  name     = name,
+		  w2       = w2,
+		  contents = contents,
+		  w3       = w3},
+		 start)
+       | _ ->
+         error ("Expected closing '>' for ElementDecl in DTD", start, tail)
+	}
+
+  def parse_ContentSpec (start : UChars) : Required ContentSpec =
+    case start of
+      | 69 :: 77 :: 80 :: 84 :: 89  (* 'EMPTY' *) :: tail ->
+        return (Empty, tail)
+      | 65 :: 78 :: 89              (* 'ANY' *)   :: tail ->
+        return (Any, tail)
+      | _ ->
+        {
+	 (possible_mixed, tail) <- parse_Mixed start;
+	 case possible_mixed of
+	   | Some mixed ->
+	     return (Mixed mixed,
+		     tail)
+	   | _ ->
+	     {
+	      (possible_children, tail) <- parse_Children start;
+	      case possible_children of
+		| Some children ->
+		  return (Children children,
+			  tail)
+		| _ ->
+		  error ("No ContentSpec", start, tail)
+		 }}
+	     
+  def parse_Mixed (start : UChars) : Possible Mixed =
+    case start of
+      | 40  (* '(' *) :: tail ->   % paren balancing comment: ')'
+        {
+	 (w1, tail) <- parse_WhiteSpace tail;
+	 case tail of
+	   | 35 :: 80 :: 67 :: 68 :: 65 :: 84 :: 65 (* '#PCDATA' *) :: tail_0 ->
+	     {
+	      (w2, tail) <- parse_WhiteSpace tail_0;
+	      (case w2 of
+		 | 41 (* close-paren *) :: tail ->
+		   return (Some (NoNames {w1 = w1,
+					  w2 = w2}),
+			   tail)
+		 | _ ->
+		   let
+                     def probe (tail, rev_names) =
+		       {
+			(w3, tail) <- parse_WhiteSpace tail;
+			case tail of
+			  | 124 (* '|' *) :: tail ->
+			    {
+			     (w4,   tail) <- parse_WhiteSpace tail;
+			     (name, tail) <- parse_Name        tail;
+			     probe (tail, cons ((w3, w4, name), rev_names))
+			    }
+			  | 41 :: 42 (* close-paren star *) :: tail ->
+			    return (Some (Names {w1    = w1,
+						 names = rev rev_names,
+						 w2    = w2}),
+				    tail)
+			  | _  ->
+			    {
+			     (when true
+			      (error ("#PCDATA declaration in DTD containing names must end with ')*'",
+				      start, tail)));
+			     return (Some (Names {w1    = w1,
+						  names = rev rev_names,
+						  w2    = w2}),
+				     tail)
+			    }}
+		   in
+		     probe (tail_0, []))
+		}
+	   | _ -> return (None, start)
+	    }
+      | _ -> return (None, start)
+		       
+
+  %% [47]  children        ::=  (choice | seq) ('?' | '*' | '+')? 
+  %%
+  %% [48]  cp              ::=  (Name | choice | seq) ('?' | '*' | '+')? 
+  %%
+  %% [49]  choice          ::=  '(' S? cp ( S? '|' S? cp )+ S? ')' 
+  %%
+  %%                                                             [VC: Proper Group/PE Nesting] 
+  %%
+  %% [50]  seq             ::=  '(' S? cp ( S? ',' S? cp )* S? ')' 
+  %%
+  %%                                                             [VC: Proper Group/PE Nesting]
 
   op parse_Children : UChars -> Possible Children
 
@@ -186,7 +382,9 @@ XML qualifying spec
 
   op parse_Seq : UChars -> Required Seq
 
-  op parse_AttlistDecl : UChars -> Possible AttlistDecl
+  %% ------------------------------------------------------------------------------------------------
+
+  op parse_AttListDecl : UChars -> Required AttlistDecl
 
   op parse_AttDef : UChars -> Possible AttDef
 
@@ -200,7 +398,9 @@ XML qualifying spec
 
   op parse_Enumeration : UChars -> Possible Enumeration
 
-  op parse_EntityDecl : UChars -> Possible EntityDecl
+  %% ------------------------------------------------------------------------------------------------
+
+  op parse_EntityDecl : UChars -> Required EntityDecl
 
   op parse_GEDecl : UChars -> Possible GEDecl
 
@@ -212,7 +412,9 @@ XML qualifying spec
 
   op parse_PEDef : UChars -> Possible PEDef
 
-  op parse_NotationDecl : UChars -> Possible NotationDecl
+  %% ------------------------------------------------------------------------------------------------
+
+  op parse_NotationDecl : UChars -> Required NotationDecl
 
   op parse_PublicID : UChars -> Possible PublicID
 

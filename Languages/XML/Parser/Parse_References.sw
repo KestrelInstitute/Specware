@@ -32,6 +32,7 @@ XML qualifying spec
     %% parse_Reference assumes we're just past the ampersand.
     case start of
       | 35 (* '#' *) :: tail ->
+        %% parse CharRef
         (case tail of
 	   | 120 (* 'x' *) :: tail ->
              %% hex ...
@@ -64,6 +65,7 @@ XML qualifying spec
 		    | _ -> return (None, start))
 	       | _ -> return (None, start))
       | _ ->
+        %% parse EntityRef
 	{
 	 (name, tail) <- parse_Name start;
 	 case tail of
@@ -73,8 +75,18 @@ XML qualifying spec
 	   | _ -> return (None, start)
 	}
 
-    
- def parse_decimal (start : UChars) : Option (Nat * UChars) =
+  def parse_PEReference (start : UChars) : Required PEReference =
+    {
+     (name, tail) <- parse_Name start;
+     case tail of
+       | 59  (* ';' *) :: tail ->
+         return ({name = name},
+		 tail)
+       | _ -> 
+	 error ("Expecting PEReference", start, tail)
+    }
+
+  def parse_decimal (start : UChars) : Option (Nat * UChars) =
    let 
       def probe (tail, n) =
 	case tail of
@@ -96,7 +108,7 @@ XML qualifying spec
    in
      probe (start, 0)
 
- def parse_hex (start : UChars) : Option (Nat * UChars) =
+  def parse_hex (start : UChars) : Option (Nat * UChars) =
    let 
       def probe (tail, n) =
 	case tail of
