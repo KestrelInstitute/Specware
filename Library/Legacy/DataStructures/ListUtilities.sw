@@ -33,6 +33,8 @@ ListUtilities qualifying spec {
   op mapi              : fa (a,b) (Nat * a -> b)  -> List a -> List b
   op appi              : fa (a)   (Nat * a -> ()) -> List a -> ()
 
+  op tailListList: fa (a) List a * List a -> Option (List a)
+
   def ListUtilities.insert (e, l) = 
     case l of
       | [] -> [e]
@@ -201,4 +203,24 @@ ListUtilities qualifying spec {
            loop (i + 1, xs)
     in
       loop (0, xs)
+
+  (**
+   * When l2 is a prefix of l1 return the tail of l1 after the l2 prefix,
+   * otherwise return None.
+   * e.g. tailListList([1, 2, 3], [1, 2]) = Some [3]
+   *      tailListList([1, 2, 3], [1]) = Some [2, 3]
+   *      tailListList([1, 2, 3], [1, 2, 3]) = Some []
+   *      tailListList([1, 2, 3], []) = Some [1, 2, 3]
+   *      tailListList([1, 2, 3], [2]) = None
+   **)
+ 
+  def tailListList(l1, l2) =
+    if null(l2)
+      then Some l1
+    else
+      let l1Head = sublist(l1, 0, length(l2)) in
+      if l1Head = l2 
+	then Some (nthTail(l1, length(l2)-1))
+      else None
+
 }

@@ -4,11 +4,6 @@ spec
  import UnitId
  import Obligations
 
-(* op SCTermTo
-      snarkLogFileName <- UIDtoSnarkLogFile unitId;
-     _ <- return (ensureDirectoriesExist snarkLogFileName);
-*)
-
  sort SCDecl = SpecCalc.Decl Position
  
  op generateProof: Spec * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
@@ -19,13 +14,7 @@ spec
 	else qual^"_"^id^"_proof" in
    let assertions = All in
    let (_, propName, _, _) = prop in
-   let specFullUId = case findUnitIdforUnit(Spec spc, globalContext) of
-                   | Some uid -> uid
-                   | _ -> fail("can't find uid") in
-   let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
-   let scTerm = if fromObligations?
-                  then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
-		else(UnitId (SpecPath_Relative specUId), noPos) in
+   let scTerm = scTermFromScTerm(Spec spc, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, None) in
    let proofName = printProofName(propName) in
    let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
@@ -39,27 +28,46 @@ spec
 	else qual^"_"^id^"_proof" in
    let assertions = All in
    let (_, propName, _, _) = prop in
-   let specFullUId = case findUnitIdforUnit(Morph morph, globalContext) of
-                   | Some uid -> uid
-                   | _ -> fail("can't find uid") in
-   let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
-   let scTerm = if fromObligations?
-                  then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
-		else(UnitId (SpecPath_Relative specUId), noPos) in
+   let scTerm = scTermFromScTerm(Morph morph, scTerm, globalContext, fileUID, swpath, fromObligations?) in
    let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, None) in
    let proofName = printProofName(propName) in
    let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
- op relativeUidToUidAndSWPATH: UnitId * Option UnitId * List UnitId -> UnitId
+ op scTermFromScTerm: Value * SCTerm * GlobalContext * Option UnitId * List UnitId * Boolean -> SCTerm
+ def scTermFromScTerm(v, scTerm, globalContext, fileUID, swpath, fromObligations?) =
+   case findUnitIdforUnit(v, globalContext) of
+     | Some specFullUId ->
+     let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
+     if fromObligations?
+       then (Obligations specUId (* (UnitId (UnitId_Relative specUId), noPos) *), noPos)
+     else specUId %(UnitId (SpecPath_Relative specUId), noPos)
+     | _ ->
+       let (_, pos) = scTerm in
+       if fromObligations?
+	 then (Obligations scTerm, pos)
+       else scTerm
+
+ (* 
+  uid is an absolute path of the spec or morphism for which the proof units are generated.
+  baseUid is an absolute path of the spec for the file for where the proof units are to be written.
+  (This maybe left unspecified.)
+  If baeUid is given then relativeUidToUidAndSWPATH returns a relativeUid that is equivalent to the
+  absoulte UiD, but is relative to baseUid.
+  e.g. if baseUid = /sub1/base.sw, and uid = /sub1/sub2/file.sw, then
+  relativeUidToUidAndSWPATH = sub2/file.sw.
+  If baseUid is None, then relativeUidToUidAndSWPATH returns a Uid that is equivalent to uid, but with respect to SWPATH.
+  *)
+ 
+ op relativeUidToUidAndSWPATH: UnitId * Option UnitId * List UnitId -> SCTerm
  def relativeUidToUidAndSWPATH(uid as {path,hashSuffix}, baseUid, swpath) =
    case baseUid of
-     | None -> relativeUidToSWPATH(uid, swpath)
+     | None -> (UnitId (SpecPath_Relative (relativeUidToSWPATH(uid, swpath))), noPos)
      | Some baseUid ->
      let uIdRelativeToBase = relativeUidToUid(uid, baseUid) in
      case uIdRelativeToBase of
-       | Some newUid -> newUid
-       | _ -> relativeUidToSWPATH(uid, swpath)
+       | Some newUid -> (UnitId (UnitId_Relative newUid), noPos)
+       | _ -> (UnitId (SpecPath_Relative (relativeUidToSWPATH(uid, swpath))), noPos)
 
  op relativeUidToUid: UnitId * UnitId -> Option UnitId
  def relativeUidToUid(uid, baseUid) =
@@ -70,23 +78,11 @@ spec
  
  op relativeUidToSWPATH: UnitId * List UnitId -> UnitId
  def relativeUidToSWPATH(uid, swpath) =
-   let def goodUid(swUid) =
-         let uIdRelativeToSwUid = relativeUidToUid(uid, swUid) in
-	 case uIdRelativeToSwUid of
-	   | Some foundUid -> true
-	   | _ -> false in
-   let foundSwUid = find goodUid swpath in
+   %let _ = String.writeLine("\n relativeUidToSWPATH UID = "^showUID(uid)^"\n swPath = "^(foldr concat "," (map (fn (path) -> (showUID(path)^" ; ")) swpath))) in 
+   let foundSwUid = findOption (fn (swUid) -> relativeUidToUid(uid, swUid)) swpath in
    case foundSwUid of
      | Some res -> res
      | _ -> fail("can't happen")
-
- op tailListList: fa (a) List a * List a -> Option (List a)
- def tailListList(l1, l2) =
-   let l1Head = sublist(l1, 0, length(l2)) in
-   if l1Head = l2 
-     then Some (nthTail(l1, length(l2)-1))
-   else None
-
 
  op baseUnitIdSCTerm?: SCTerm -> Boolean
  def baseUnitIdSCTerm?(scTerm) =
@@ -106,7 +102,6 @@ spec
           else
             Cons (pd1, ListUtilities.insert (pd, pds)) in
      foldl insert pfDecls1 pfDecls2
-
 
  op generateProofsInSpec: Spec * SCTerm * Boolean * Spec * Boolean * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
  def generateProofsInSpec (spc, scTerm, fromObligations?, baseSpc, multipleFiles, prover_name, prover_options, basePropNames, globalContext, swpath, fileUID) =
@@ -333,7 +328,11 @@ spec
  op UIDtoProofFile: UnitId * Option String -> SpecCalc.Env(Option UnitId * String * Boolean)
  def UIDtoProofFile ((unitId as {path,hashSuffix}), optFileNm) = 
    case optFileNm
-      of Some filNam -> return (None, filNam, false)
+      of Some filNam ->
+	let fileUid = normalizeUID(pathStringToCanonicalUID filNam) in
+	let filePath = addDevice?(fileUid.path) in
+	let fileUid = {path=butLast filePath, hashSuffix=None} in
+	return (Some fileUid, filNam, false)
        | _ ->
 	{
    (fileUID, file, bool) <-
