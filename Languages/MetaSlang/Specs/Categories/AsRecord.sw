@@ -79,17 +79,17 @@ SpecCat qualifying spec {
  sort VQidSortMap    = PolyMap.Map (VQid, SortInfo)
  sort VQidOpMap      = PolyMap.Map (VQid, OpInfo)
 
- op colimit                 : SpecDiagram -> SpecInitialCocone
+ op colimit                : SpecDiagram -> SpecInitialCocone
 
- op extractVertexQidSortMap : SpecDiagram -> VQidSortMap
- op computeColimitSortMap   : SpecDiagram -> VQidSortMap -> SortMap 
+ op extractVQidSortMap     : SpecDiagram -> VQidSortMap
+ op computeColimitSortMap  : SpecDiagram -> VQidSortMap -> SortMap 
 
- op extractVertexQidOpMap   : SpecDiagram -> VQidOpMap
- op computeColimitOpMap     : SpecDiagram -> VQidOpMap -> OpMap 
+ op extractVQidOpMap       : SpecDiagram -> VQidOpMap
+ op computeColimitOpMap    : SpecDiagram -> VQidOpMap -> OpMap 
 
- op colimitProperties       : SpecDiagram -> Properties
- op buildCoconeMap          : SpecDiagram * Spec * VQidSortMap * VQidOpMap -> PolyMap.Map (Vertex.Elem, Morphism)
- op makeColimit             : SpecDiagram * Spec * PolyMap.Map (Vertex.Elem, Morphism) -> SpecInitialCocone
+ op colimitProperties      : SpecDiagram -> Properties
+ op buildCoconeMap         : SpecDiagram * Spec * VQidSortMap * VQidOpMap -> PolyMap.Map (Vertex.Elem, Morphism)
+ op makeColimit            : SpecDiagram * Spec * PolyMap.Map (Vertex.Elem, Morphism) -> SpecInitialCocone
 
  %% --------------------------------------------------------------------------------
 
@@ -103,8 +103,8 @@ SpecCat qualifying spec {
   %% First contruct maps providing globally unique names for all the sorts and ops 
   %% accessible via any vertex.  Note that the same sort or op may have multiple
   %% entries in this map if the spec it lives in labels multiple vertices.
-  let vqid_sort_map   = extractVertexQidSortMap dg in
-  let vqid_op_map     = extractVertexQidOpMap   dg in
+  let vqid_sort_map   = extractVQidSortMap dg in
+  let vqid_op_map     = extractVQidOpMap   dg in
 
   %% Iterating over all edges, get the quotient sets of sorts and ops connected 
   %%  via morphisms labelling these edges.  Use the global maps created above 
@@ -123,7 +123,7 @@ SpecCat qualifying spec {
 
  %% --------------------------------------------------------------------------------
 
- def extractVertexQidSortMap dg = 
+ def extractVQidSortMap dg = 
    foldOverVertices (fn vqid_sort_map -> fn vertex -> 
 		     let spc = vertexLabel dg vertex in
                      foldriAQualifierMap (fn (qualifier, id, sort_info, vqid_sort_map) ->
@@ -203,7 +203,7 @@ SpecCat qualifying spec {
 
  %% --------------------------------------------------------------------------------
 
- def extractVertexQidOpMap dg = 
+ def extractVQidOpMap dg = 
    foldOverVertices (fn vqid_op_map -> fn vertex -> 
 		     let spc = vertexLabel dg vertex in
                      foldriAQualifierMap (fn (qualifier, id, op_info, vqid_op_map) ->
