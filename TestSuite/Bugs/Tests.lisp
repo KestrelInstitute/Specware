@@ -23,7 +23,7 @@
 ;;; Elaborating spec at $SPECWARE/Library/ProverBase/System
 ;;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite
 ;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
-ShouldBeProvable: Conjecture change is Proved. using Snark.
+ShouldBeProvable: Conjecture change is Proved! using Snark.
     Snark Log file: $TESTDIR/Bug_0043/Both/Change/ShouldBeProvable.log
 
 
@@ -33,35 +33,41 @@ ShouldBeProvable: Conjecture change is Proved. using Snark.
   :show   "Bug_0045/ToString"
   :output ";;; Elaborating spec at $TESTDIR/Bug_0045/ToString
 
-spec
-  op b : Nat -> String
-  def b = toString
+spec  
+ op b : Nat -> String
+ def b = toString
 endspec
+
 ")
 
 
  ("Bug 0045 : Unambiguous op erroneously declared ambiguous [FlipFlop]"
   :show   "Bug_0045/Flop#FlipFlopImplementation" 
   :output ";;; Elaborating spec-morphism at $TESTDIR/Bug_0045/Flop#FlipFlopImplementation
-;;; Elaborating spec at $TESTDIR/Bug_0045/Flop#Flipflop
+;;; Elaborating spec at $TESTDIR/Bug_0045/Flop#Flip
+;;; Elaborating spec at $TESTDIR/Bug_0045/Flop#Flop
 ;;; Elaborating spec at $TESTDIR/Bug_0045/Flop#FlipFlopImplementation
 
 morphism
     spec  
  type Flip
- op flop : Flip -> Flip
+ op flip : Flip -> Flip
 endspec
 
     ->
     spec  
+ type A
+ type B
+ op A.flop : A -> A
+ op B.flop : B -> B
 endspec
 
     {type Flip
      +->
-     Boolean.Boolean,
-     op flop
+     A,
+     op flip
      +->
-     ~}
+     flop}
 ")
 
  ("Bug 0053 : Strange result is shown for result of spec-substitution"
@@ -81,12 +87,20 @@ endspec
 ")
 
  ("Bug 0067 : Signature constraints in spec morphism are not checked"
-  :show   "Bug_0067/check_signature#M" 
-  :output "??")
+  :show   "Bug_0067/CheckSignature#M" 
+  :output ";;; Elaborating spec-morphism at $TESTDIR/Bug_0067/CheckSignature#M
+;;; Elaborating spec at $TESTDIR/Bug_0067/CheckSignature#S1
+;;; Elaborating spec at $TESTDIR/Bug_0067/CheckSignature#S2
+Error in morphism: Inconsistent signature mapping for f +-> f
+The domain sort A
+  translates to B
+   which is not C
+ found in $TESTDIR/Bug_0067/CheckSignature.sw
+14.13-14.14")
 
  ("Bug 0068 : Even numbers can be refined to odd numbers"
   :show   "Bug_0068/EvenToOdd#O" 
-  :output "??")
+  :output "<some kind of error message>")
 
  ("Bug 0069 : Translate from base"
   :show   "Bug_0069/TranslateFromBase#M" 
@@ -173,6 +187,7 @@ spec
     fa(x : Nat, y : Nat, z : Nat) 
      eq_mod10(x, y) && eq_mod10(y, z) => eq_mod10(x, z)
 endspec
+
 ")
 
  ("Bug 0093 : No check on clashing defs in colimit"
