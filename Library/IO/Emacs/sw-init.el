@@ -357,6 +357,7 @@
     (sw:eval-in-lisp-no-value "#+allegro(sys::set-stack-cushion 10000000)
                                #-allegro()")
     (simulate-input-expression "(cl:time (cl-user::boot))")
+    (sleep-for 5)
     (continue-form-when-ready (`(build-specware4 (, specware4-dir))))))
 
 
