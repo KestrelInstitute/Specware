@@ -112,6 +112,7 @@
     "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
     "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
     "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
+    "Provers/DP/Handwritten/Lisp/Rational.lisp"
     )
   )
 
