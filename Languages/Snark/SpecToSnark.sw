@@ -40,8 +40,8 @@ spec {
   op declare_sort: LispCell
   def declare_sort = Lisp.symbol("SNARK","DECLARE-SORT")
 
-  op declare_sub_sort: LispCell
-  def declare_subsort = Lisp.symbol("SNARK","DECLARE-SUBSORT")
+  op declare_sub_sorts: LispCell
+  def declare_subsorts = Lisp.symbol("SNARK","DECLARE-SUBSORTS")
 
   op declare_function: LispCell
   def declare_function = Lisp.symbol("SNARK","DECLARE-FUNCTION-SYMBOL")
@@ -58,13 +58,17 @@ spec {
   op arithmeticSorts: List LispCell
   def arithmeticSorts = 
       [ 
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "INTEGER"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "NATURAL"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Integer")), Lisp.symbol("KEYWORD", "IFF"), Lisp.quote(Lisp.symbol("SNARK", "INTEGER"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Nat")), Lisp.symbol("KEYWORD", "IFF"), Lisp.quote(Lisp.symbol("SNARK", "NATURAL"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "PosNat"))],
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "LOGICAL"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "CHAR"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "STRING"))],
-	Lisp.list [declare_subsort, Lisp.quote(Lisp.symbol("SNARK", "INTEGER")),
-					       Lisp.quote(Lisp.symbol("SNARK", "NATURAL"))]
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Char"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "String"))],
+	Lisp.list [declare_subsorts, Lisp.quote(Lisp.symbol("SNARK", "Integer")),
+                                    Lisp.quote(Lisp.symbol("SNARK", "Nat")),
+                                    Lisp.quote(Lisp.symbol("SNARK", "PosNat"))],
+	Lisp.list [declare_subsorts, Lisp.quote(Lisp.symbol("SNARK", "Nat")),
+				     Lisp.quote(Lisp.symbol("SNARK", "PosNat"))]
       ]
 
   op arithmeticFunctions: List LispCell
@@ -155,11 +159,13 @@ spec {
 
   def snarkBaseSort(s:Sort, rng?):LispCell = 
 	          case s of
-		     Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
-                                                     else Lisp.symbol("SNARK",id)
-		    | Product _ -> Lisp.bool true
-		    | Arrow _ -> Lisp.bool true
-		    | TyVar _ -> Lisp.bool true
+		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
+		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
+		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
+                                                       else Lisp.symbol("SNARK",id)
+		    | Product _ -> Lisp.symbol("SNARK","TRUE")
+		    | Arrow _ -> Lisp.symbol("SNARK","TRUE")
+		    | TyVar _ -> Lisp.symbol("SNARK","TRUE")
   
   def snarkPredicateDecl(spc, name, srt, dom, arity) =
     case productOpt(spc, dom) of
@@ -235,7 +241,8 @@ spec {
           mapPartial(fn (qname, name, _, srt) -> 
 		           snarkOpDeclPartial(spc, mkSnarkName(qname,name), srt))
                     opsigs in
-      snarkBuiltInOps ++ snarkOpDecls
+%      snarkBuiltInOps ++ snarkOpDecls
+       snarkOpDecls
 
 
   op LISP.PPRINT: LispCell -> LispCell
