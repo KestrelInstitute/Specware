@@ -10,7 +10,7 @@ a functor from the shape into the target category.
 
 \begin{spec}
 spec {
-  import /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic
+  import Functor qualifying ../Functors/FreeDomain/Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Diagram (O,A)
