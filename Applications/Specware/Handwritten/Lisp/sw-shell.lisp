@@ -82,6 +82,7 @@
 	 (cl:*package* (find-package :SWShell))
 	 ch)
     (emacs::eval-in-emacs "(set-comint-prompt)")
+    (setq *emacs-eval-form-after-prompt* nil)
     (format t "Specware Shell~%")
     (unwind-protect
 	(loop

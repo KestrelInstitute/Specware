@@ -78,7 +78,7 @@
   (loop for i from 0 to (- (length str) 1)
         always (let ((ch (elt str i)))
 		 (or (alphanumericp ch)
-		     (member ch '(#\/ #\: #\# #\_ #\- #\~))))))
+		     (member ch '(#\/ #\: #\# #\_ #\- #\~ #\.))))))
 
 (defvar *saved-swpath* nil)
 (defvar *temp-file-in-use?* nil)
@@ -122,8 +122,8 @@
 	       (specware::setenv "SWPATH" new-swpath)
 	       (setq *temp-file-in-use?* t)
 	       (setq *current-temp-file* tmp-sw)
-	       (setq SpecCalc::aliasPaths (list (cons (cdr (pathname-directory (parse-namestring tmp-dir)))
-						      (cdr (pathname-directory (specware::current-directory))))))
+	       (setq SpecCalc::aliasPaths (list (cons (pathname-to-path (parse-namestring tmp-dir))
+						      (pathname-to-path (specware::current-directory)))))
 	       (setq SpecCalc::noElaboratingMessageFiles (cons tmp-full-uid nil))
 	       (setq str tmp-uid)))
 	   str)))
@@ -133,6 +133,13 @@
       (cons (subseq unit-name 0 3)
 	    (subseq unit-name 2))
     (cons (subseq unit-name 0 1) unit-name)))
+
+(defun pathname-to-path (pathname)
+  (let ((dev (pathname-device pathname))
+	(dir (cdr (pathname-directory pathname))))
+    (if (and (stringp dev) (not (equal dev "")))
+	(cons (concatenate 'string dev ":") dir)
+      dir)))
 
 (defvar *running-test-harness?* nil)
 (defvar SWShell::*in-specware-shell?*)

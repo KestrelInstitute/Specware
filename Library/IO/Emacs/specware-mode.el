@@ -1355,6 +1355,8 @@ If anyone has a good algorithm for this..."
   (sit-for 0.1 t)                         ; Allow error message to be printed
   (goto-char (point-max))
   (previous-input-line)
+  (if (eq (current-column) 0)
+      (delete-backward-char 1))
   (comint-bol nil)
   (forward-sexp 1)
   (forward-char col)
