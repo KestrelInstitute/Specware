@@ -30,7 +30,7 @@ For example:
 ]]
 
 takes the spec in file <"SortImpl.sw"> and translates it into the
-C files <"Quicksort.h"> and <"Quicksort.c"></para>
+C files <"Quicksort.h"> and <"Quicksort.c">
 </para>
 
 <!--

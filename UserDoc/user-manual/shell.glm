@@ -116,7 +116,7 @@ then all the expressions in the spec are type-correct.</para>
 
 </section>
 
-<section>
+<section id="resolveUID">
 <title>Resolution of Unit Identifiers</title>
 
 <para>Unit terms may reference units in the form of unit
@@ -413,6 +413,13 @@ argument of the same kind last used for a &SShell; command.
 In other cases, it means: use a default value for the omitted argument.
 Which commands use which convention is detailed below.
 Optional arguments are given between square brackets [[[]] and [[]]].
+</para>
+
+<para>
+Unit identifiers occurring in a unit term used as a command argument are
+resolved as described in <xref linkend="resolveUID">, where relative
+unit identifiers are resolved as they would be if the unit term was a
+single-unit file in the current directory.
 </para>
 
 <para>
