@@ -5,6 +5,14 @@ XML qualifying spec
   import /Languages/MetaSlang/Specs/Elaborate/SortDescriptor
   import Magic
 
+  def ms_name_matches_xml_name? (ms_name : String, xml_name: UString) : Boolean =
+    ms_name = convert_xml_name_to_ms_name xml_name
+
+  def convert_xml_name_to_ms_name (xml_name : UString) : String =
+    %% coordinate with convert_ms_name_to_xml_name in GenerateDocument.sw
+    %% they should be converses
+    string xml_name
+
   %% need to sanitize string before calling stringToInt
   def trim_whitespace (s : String) : String =
     let chars = explode s in

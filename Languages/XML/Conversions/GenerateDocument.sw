@@ -7,6 +7,11 @@ XML qualifying spec
   import Make_XML_Things
   import Magic
 
+  def convert_ms_name_to_xml_name (ms_name : String) : UString =
+    %% coordinate with convert_xml_name_to_ms_name in InternalizeAux.sw
+    %% they should be converses
+    ustring ms_name
+
   def quote_special_chars (uchars : UChars) : UChars =
     case uchars of
       | [] -> []
@@ -87,14 +92,14 @@ XML qualifying spec
 			       show_type? : Boolean)
     : Element =
     let pattern   = expand_SortDescriptor (sd, table) in
-    let uname     = ustring name in
+    let uname     = convert_ms_name_to_xml_name name in
     let attributes = (if show_type? then
 			let value = {qchar = UChar.apostrophe,
 				     items = [NonRef (pp_sort_descriptor_for_xml_attribute sd)],
 				     value = []} % todo
 			in
 			let type_attr : ElementAttribute = {w1    = [UChar.space],
-							    name  = ustring "type",
+							    name  = convert_ms_name_to_xml_name "type",
 							    w2    = null_whitespace,
 							    w3    = null_whitespace,
 							    value = value}
@@ -157,7 +162,7 @@ XML qualifying spec
 	    case possible_sd_sub_pattern of
 	      | None ->
 	        Some {items = [(Some (indentation_chardata (1 (* vspacing*), indent)),
-				Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))],
+				Element (Empty (make_EmptyElemTag (convert_ms_name_to_xml_name constructor_name, [], []))))],
 		      trailer = Some (indentation_chardata (1 (* vspacing *), indent - 2))}
 	      | Some sd_sub_pattern ->
 	        case sd_options of
@@ -253,7 +258,7 @@ XML qualifying spec
 	       | _ -> "item"
 	 in
 	 let (item_name, show_type?) = 
-	     if xml_prefix? (ustring raw_item_name) then
+	     if xml_prefix? (convert_ms_name_to_xml_name raw_item_name) then
 	       ("_" ^ raw_item_name, true)
 	     else
 	       (raw_item_name, false)
@@ -267,14 +272,14 @@ XML qualifying spec
         (case possible_sd_entry of
 	  | None -> (fail ("Should never happen!");
 		     (Some (indentation_chardata (vspacing, indent)),
-		      Element (Empty (make_EmptyElemTag (ustring constructor_name,
+		      Element (Empty (make_EmptyElemTag (convert_ms_name_to_xml_name constructor_name,
 							 [],
 							 [])))))
 	  | Some (sd_constructor_name, possible_sd_sub_pattern) ->
 	    case possible_sd_sub_pattern of
 	      | None ->
 	        (Some (indentation_chardata (vspacing, indent)),
-		 Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))
+		 Element (Empty (make_EmptyElemTag (convert_ms_name_to_xml_name constructor_name, [], []))))
 	      | Some sd_sub_pattern ->
 	        case sd_options of
 		  | [("None", _), ("Some", _)]  ->
@@ -329,7 +334,7 @@ XML qualifying spec
 	     case constructor_name of
 	       | "None" ->
 	         (Some (indentation_chardata (vspacing, indent)),
-		  Element (Empty (make_EmptyElemTag (ustring constructor_name, [], []))))
+		  Element (Empty (make_EmptyElemTag (convert_ms_name_to_xml_name constructor_name, [], []))))
 	       | _ ->
 		 generate_Content_Item (sub_datum,
 					sub_sd,

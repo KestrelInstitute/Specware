@@ -144,7 +144,7 @@ XML qualifying spec
 	     | _ ->
 	       case item of
 		 | Element (Full elt) -> 
-		   if field_name = string elt.stag.name then
+		   if ms_name_matches_xml_name? (field_name, elt.stag.name) then
 		     %%% let _ = toScreen ((level_str level) ^ "Found xml element named " ^ field_name ^ "\n") in
 		     Some elt
 		   else
@@ -155,7 +155,6 @@ XML qualifying spec
 		     None)
           None
 	  element.content.items
-
 
   def fa (X) default_field_value (element    : PossibleElement,
 				  field_sd   : SortDescriptor, 
@@ -187,44 +186,44 @@ XML qualifying spec
 						       sd_options   : List (IdDescriptor * Option SortDescriptor),
 						       table        : SortDescriptorExpansionTable)
     : Option X =
-    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element.stag.name) ^ " as coproduct for " ^ (print_SortDescriptor coproduct_sd) ^ "\n") in
-    (let element_name = string element.stag.name in
-	 case (find (fn sd_option -> 
-		     (case element_type_attribute element of
-			| Some str -> sd_option.1 = str
-			| _ -> false)
-			or
-			(sd_option.1 = element_name))
-	            sd_options)
-	   of
-	   | Some (_, Some matching_sd_option) -> 
-	      (case internalize_PossibleElement (element,
-						 coproduct_sd,
-						 expand_SortDescriptor (matching_sd_option, table),
-						 table)
-		 of
-		 | Some datum -> Some (magicMakeConstructor (element_name, datum))
-		 | _ ->
-		   fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
-           | _ ->
-	     case element.content.items of
-	       | [(_, Element (Full elt))] -> 
-                 %% looking at "<n> <baz> ,,, </baz>  </n>" while expecting a coproduct with possible constructor baz
-   	         %% which can happen while looking at "<foo> <1> ... </1> .... <n> <baz> ,,, </baz> </n> ... </foo>"
-	         %% ? also check for name to be "1" "2" etc.? (or would that make explicitly named products fail?)
-	         (case internalize_PossibleElement (elt, coproduct_sd, coproduct_sd, table) of
-		   | Some datum -> Some (magicMakeConstructor (string elt.stag.name, datum))
-		   | _ ->
-		     fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
-	       | _ -> 
-	         fail ("decoding CoProduct: XML datum named " ^ element_name ^ " doesn't match any of " ^ 
-		       (foldl (fn ((name, _), result) ->
-			       case result of
-				 | "" -> name
-				 | _ -> result ^ ", " ^ name)
-			      ""
-			      sd_options)
-		       ^ " coproduct options"))
+    let element_name = element.stag.name in
+    %%% let _ = toScreen ((level_str level) ^ "Internalizing xml element " ^ (string element_name) ^ " as coproduct for " ^ (print_SortDescriptor coproduct_sd) ^ "\n") in
+    case (find (fn sd_option -> 
+		(case element_type_attribute element of
+		   | Some str -> sd_option.1 = str
+		   | _ -> false)
+		or
+		ms_name_matches_xml_name? (sd_option.1, element_name))
+	       sd_options)
+      of
+       | Some (_, Some matching_sd_option) -> 
+	 (case internalize_PossibleElement (element,
+					    coproduct_sd,
+					    expand_SortDescriptor (matching_sd_option, table),
+					    table)
+	    of
+	     | Some datum -> Some (magicMakeConstructor (convert_xml_name_to_ms_name element_name, datum))
+	     | _ ->
+	       fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
+       | _ ->
+	 case element.content.items of
+	   | [(_, Element (Full elt))] -> 
+	     %% looking at "<n> <baz> ,,, </baz>  </n>" while expecting a coproduct with possible constructor baz
+	     %% which can happen while looking at "<foo> <1> ... </1> .... <n> <baz> ,,, </baz> </n> ... </foo>"
+	     %% ? also check for name to be "1" "2" etc.? (or would that make explicitly named products fail?)
+	     (case internalize_PossibleElement (elt, coproduct_sd, coproduct_sd, table) of
+		| Some datum -> Some (magicMakeConstructor (convert_xml_name_to_ms_name elt.stag.name, datum))
+		| _ ->
+		  fail ("looking for coproduct element: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
+	   | _ -> 
+	     fail ("decoding CoProduct: XML datum named " ^ (string element_name) ^ " doesn't match any of " ^ 
+		   (foldl (fn ((name, _), result) ->
+			   case result of
+			     | "" -> name
+			     | _ -> result ^ ", " ^ name)
+		          ""
+			  sd_options)
+		   ^ " coproduct options")
 
   def fa (X) internalize_PossibleElement_as_base_sort (element : PossibleElement,
 						       base_sd : SortDescriptor,
@@ -396,13 +395,12 @@ XML qualifying spec
 						    table        : SortDescriptorExpansionTable)
     : Option X =
     %%% let _ = toScreen ((level_str level) ^ "Internalizing empty xml element " ^ (string etag.name) ^ " as coproduct for " ^ (print_SortDescriptor coproduct_sd) ^ "\n") in
-    let etag_name = string etag.name in
     case (find (fn sd_option -> 
 		(case etag_type_attribute etag of
 		   | Some str -> sd_option.1 = str
 		   | _ -> false)
 		   or
-		   (sd_option.1 = etag_name))
+		   ms_name_matches_xml_name? (sd_option.1, etag.name))
 	       sd_options)
        of 
         | Some (_, Some matching_sd_option) -> 
@@ -411,7 +409,7 @@ XML qualifying spec
 					  expand_SortDescriptor (matching_sd_option, table),
 					  table) 
 	     of
-	      | Some datum -> Some (magicMakeConstructor (etag_name, datum))
+	      | Some datum -> Some (magicMakeConstructor (convert_xml_name_to_ms_name etag.name, datum))
 	      | _ ->
 	        fail ("looking for coproduct etag: " ^ (print_SortDescriptor coproduct_sd) ^ "\n" ))
 	| _ ->
@@ -514,7 +512,7 @@ XML qualifying spec
     : Attributes =
     map (fn (attr : ElementAttribute) -> 
 	 %% TODO: be smarter about typing -- not everything is CDATA 
-	 (string attr.name, CDATA (string attr.value.value))) 
+	 (convert_xml_name_to_ms_name attr.name, CDATA (string attr.value.value))) 
         tag.attributes
 
 
