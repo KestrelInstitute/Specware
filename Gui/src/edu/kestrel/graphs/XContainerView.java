@@ -71,7 +71,9 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             }
         });
         configureExpandCollapseMenuItem();
-        popupMenu.add(expandCollapseMenuItem,0);
+        if (node != null)
+            if (node.isExpandable())
+                popupMenu.add(expandCollapseMenuItem,0);
         JMenuItem menuItem;
         menuItem = new JMenuItem("update bounds");
         menuItem.addActionListener(new ActionListener() {
@@ -89,7 +91,9 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             }
         });
         menuItem.setEnabled(isEditable);
-        popupMenu.add(menuItem);
+        if (node != null)
+            if (node.isExpandable())
+                popupMenu.add(menuItem);
         if (Dbg.isDebug()) {
             menuItem = new JMenuItem("select inner edges");
             menuItem.addActionListener(new ActionListener() {
@@ -210,6 +214,13 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
                 }
         }
         if (sel.size() > 0) {
+            if (!node.isExpandable()) {
+                if (interactive) {
+                    JOptionPane.showMessageDialog(graph,"You cannot add children to node \""+node+"\".");
+                }
+                adjustGraphAfterResizing();
+                return;
+            }
             graph.repaint();
             XNode[] selNodes = new XNode[sel.size()];
             sel.toArray(selNodes);
@@ -359,6 +370,10 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         XNode[] childnodes = new XNode[newchildren.size()];
         newchildren.toArray(childnodes);
         if (childnodes.length == 0) return null;
+        if (!node.isExpandable()) {
+            adjustGraphAfterResizing();
+            return new XNodeView[]{};
+        }
         if (interactive) {
             int answ = JOptionPane.showConfirmDialog(graph, "Do you want to insert these "+childnodes.length+" node(s) into this node?", "Insert?", JOptionPane.OK_CANCEL_OPTION);
             if (answ != JOptionPane.YES_OPTION) return null;

@@ -67,7 +67,6 @@ public abstract class XContainerNode extends XNode {
         return (detachedChildren != null);
     }
     
-    
     /** overwrites the method in XNode; returns an instance of ModelContainerNode.
      */
     public ModelNode createModelNode() {
@@ -435,6 +434,7 @@ public abstract class XContainerNode extends XNode {
      * should overwrite this method rather than the addChildNode method with the List parameter.
      */
     public XNode[] addChildNodes(XGraphDisplay graph, XNode[] childnodes) {
+        if (!isExpandable()) return new XNode[] {};
         ParentMap pm = new ParentMap();
         for(int i=0;i<childnodes.length;i++) {
             if (!isChild(childnodes[i])) {

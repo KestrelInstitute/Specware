@@ -6,6 +6,7 @@
 
 package edu.kestrel.graphs;
 
+import edu.kestrel.graphs.spec.*;
 import com.jgraph.graph.*;
 import javax.swing.tree.*;
 import java.util.*;
@@ -188,7 +189,8 @@ public class XCloneManager {
             if (obj instanceof XGraphElement) {
                 Object clone = cellMap.get(obj);
                 if (clone instanceof XNode) {
-                    ((XGraphElement)clone).cloneHook(this,obj);
+                    //((XGraphElement)clone).cloneHook(this,obj);
+                    cloneXGraphElement(obj,(XGraphElement)clone);
                 }
             }
         }
@@ -200,7 +202,8 @@ public class XCloneManager {
             if (obj instanceof XEdge) {
                 Object clone = cellMap.get(obj);
                 if (clone instanceof XGraphElement) {
-                    ((XGraphElement)clone).cloneHook(this,obj);
+                    //((XGraphElement)clone).cloneHook(this,obj);
+                    cloneXGraphElement(obj,(XGraphElement)clone);
                 }
             }
         }
@@ -210,15 +213,27 @@ public class XCloneManager {
             Object obj = cellMap.get(allcells[i]);
             if (obj instanceof XNode) {
                 XNode node = (XNode) obj;
-                Dbg.pr("*********** creating new model element for node "+node+"...");
-                if (createNewModelElements)
+                //Dbg.pr("*********** creating new model element for node "+node+"...");
+                if (createNewModelElements) {
                     node.setModelNode(null);
+                    if (allcells[i] instanceof XNode) {
+                        ModelNode mnode0 = ((XNode)allcells[i]).getModelNode();
+                        //node.getModelNode(destGraph).copyHook(mnode0);
+                        copyModelNode(mnode0, node.getModelNode(destGraph));
+                    }
+                }
                 node.getModelNode(destGraph).addRepr(node);
             }
             if (obj instanceof XEdge) {
                 XEdge edge = (XEdge) obj;
-                if (createNewModelElements)
+                if (createNewModelElements) {
                     edge.setModelEdge(null);
+                    if (allcells[i] instanceof XEdge) {
+                        ModelEdge medge0 = ((XEdge)allcells[i]).getModelEdge();
+                        //edge.getModelEdge().copyHook(medge0);
+                        copyModelEdge(medge0,edge.getModelEdge());
+                    }
+                }
                 edge.getModelEdge().addRepr(edge);
             }
         }
@@ -299,6 +314,24 @@ public class XCloneManager {
                 res[j++] = cells[i];
         }
         return res;
+    }
+    
+    /** called when a graph element is copied/cloned; subclasser should always call <code>super.cloneXGraphElement()</code>.
+     */
+    protected void cloneXGraphElement(Object orig, XGraphElement copy) {
+        copy.cloneHook(this,orig);
+    }
+    
+    /** called when model nodes are copied; calls <copy>copy.copyHook(orig)</code> by default.
+     */
+    protected void copyModelNode(ModelNode orig, ModelNode copy) {
+        copy.copyHook(orig);
+    }
+    
+    /** called when model edges are copied; calls <copy>copy.copyHook(orig)</code> by default.
+     */
+    protected void copyModelEdge(ModelEdge orig, ModelEdge copy) {
+        copy.copyHook(orig);
     }
     
 }

@@ -32,7 +32,7 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
     
     protected XEdge edge = null;
     
-    protected JPopupMenu popupMenu;
+    protected XGraphElementPopupMenu popupMenu;
     protected Point popupMenuEventPoint = null;
     protected JMenuItem addRemovePointMenuItem;
     protected JMenuItem collapseLabelMenuItem;
@@ -173,12 +173,7 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
             JMenuItem menuItem = new JMenuItem("edit in new frame");
             menuItem.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    XTextEditorInternalFrame f = new XTextEditorInternalFrame(edge);
-                    f.setFont(getFont());
-                    XGraphApplication appl = ((XGraphDisplay)graph).getApplication();
-                    if (appl != null) {
-                        appl.getDesktop().newInternalFrame(f);
-                    }
+                    editInNewFrame();
                 }
             });
             popupMenu.add(menuItem,2);
@@ -284,6 +279,14 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         graph.startEditingAtCell(getCell());
     }
     
+    public void editInNewFrame() {
+        XTextEditorInternalFrame f = new XTextEditorInternalFrame(edge);
+        f.setFont(getFont());
+        XGraphApplication appl = ((XGraphDisplay)graph).getApplication();
+        if (appl != null) {
+            appl.getDesktop().newInternalFrame(f);
+        }
+    }
     
     
     public void showPopupMenu(Component c, int x, int y) {

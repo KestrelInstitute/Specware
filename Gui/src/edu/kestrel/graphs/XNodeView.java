@@ -18,7 +18,7 @@ public abstract class XNodeView extends VertexView implements XGraphElementView 
     protected CellViewRenderer renderer;
     public ViewOptions viewOptions;
     
-    protected JPopupMenu popupMenu;
+    protected XGraphElementPopupMenu popupMenu;
     
     private Rectangle parentBounds = null;
     protected XNode node = null;

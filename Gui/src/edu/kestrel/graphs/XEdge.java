@@ -363,7 +363,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
      * @param tgraph the graph display that will contain the cloned element
      */
     public void cloneHook(XCloneManager mgr, Object original) {
-        Dbg.pr("cloneHook: edge "+this);
+        Dbg.pr2("cloneHook: edge "+this);
         XGraphDisplay tgraph = mgr.getDestGraph();
         Map cellMap = mgr.getCellMap();
         if (detachedView != null) {
@@ -372,7 +372,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
                 if (cellMap.containsKey(lastParent)) {
                     Object obj = cellMap.get(lastParent);
                     if (obj instanceof XContainerNode) {
-                        Dbg.pr("  exchanging lastParent to be "+obj);
+                        Dbg.pr2("  exchanging lastParent to be "+obj);
                         lastParent = (XContainerNode) obj;
                     } else
                         throw new IllegalArgumentException("cloned parent is not a container node?!");
@@ -387,7 +387,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
                 Object trgp = oedge.getTarget();
                 ConnectionSet cs = new ConnectionSet();
                 if (cellMap.containsKey(srcp)) {
-                    Dbg.pr("   setting new source...");
+                    Dbg.pr2("   setting new source...");
                     srcp = cellMap.get(srcp);
                     if (srcp instanceof Port) {
                         cs.connect(this,(Port)srcp,true);
@@ -396,7 +396,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
                     }
                 }
                 if (cellMap.containsKey(trgp)) {
-                    Dbg.pr("   setting new target...");
+                    Dbg.pr2("   setting new target...");
                     trgp = cellMap.get(trgp);
                     if (trgp instanceof Port) {
                         cs.connect(this,(Port)trgp,false);
@@ -412,13 +412,13 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextE
             if (detachedView instanceof XEdgeView) {
                 ((XEdgeView)detachedView).setSavedPoints();
             }
-            if (Dbg.isDebug()) {
-                Dbg.pr("new attributes of detachedView:");
+            if (Dbg.isDebug2()) {
+                Dbg.pr2("new attributes of detachedView:");
                 XGraphDisplay.showAttributes(detachedView);
                 XNode srcnode = getSourceNode();
                 XNode trgnode = getTargetNode();
-                Dbg.pr("*** source node: "+srcnode);
-                Dbg.pr("*** target node: "+trgnode);
+                Dbg.pr2("*** source node: "+srcnode);
+                Dbg.pr2("*** target node: "+trgnode);
             }
         }
         setGraph(mgr.getDestGraph());

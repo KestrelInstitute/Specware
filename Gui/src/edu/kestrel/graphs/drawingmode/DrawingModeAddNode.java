@@ -131,6 +131,7 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
                 graph.getModel().insert(null,null,pm,null);
             }
             //node = null;
+            ((XGraphDisplay)graph).switchToInitialDrawingMode();
         }
         
         public void mouseDragged(MouseEvent e0) {

@@ -76,6 +76,10 @@ public class XGraphDisplay extends JGraph implements Storable {
      */
     protected Rectangle bounds;
     
+    /** the context menu for this graph display
+     */
+    protected XGraphElementPopupMenu popupMenu;
+    
     /**
      * @param graphSpec the object containing the graph spec
      */
@@ -200,6 +204,74 @@ public class XGraphDisplay extends JGraph implements Storable {
             }});
             setCloneable(false);
     }
+    
+    /** initializes the popup menu for this graph display. Subclasses may overwrite this method to add/remove items.
+     */
+    public XGraphElementPopupMenu getPopupMenu() {
+        if (popupMenu != null) return popupMenu;
+        popupMenu = new XGraphElementPopupMenu(this);
+        JMenuItem menuItem = new JMenuItem("edit");
+        menuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                Object val = JOptionPane.showInputDialog(XGraphDisplay.this,"new value:","edit",JOptionPane.PLAIN_MESSAGE,null,null,getValue());
+                if (val != null)
+                    setValue(val);
+            }
+        });
+        popupMenu.add(menuItem);
+        popupMenu.addSeparator();
+        menuItem =        new JMenuItem("scale to fit [ s f ]");
+        menuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //Dbg.pr("invoking graph.writeToFile()...");
+                //graph.writeToFile();
+                scaleToFit(20,XGraphDisplay.ALWAYS_SCALE);
+            }
+        });
+        popupMenu.add(menuItem);
+        popupMenu.add(new ScaleMenuItem("set scale to 1 [ s 1 ]",1));
+        JMenu zoomMenu = new JMenu("zoom out [ - ]");
+        zoomMenu.add(new ScaleMenuItem("1/2",1/2.0));
+        zoomMenu.add(new ScaleMenuItem("1/4",1/4.0));
+        zoomMenu.add(new ScaleMenuItem("1/8",1/8.0));
+        zoomMenu.add(new ScaleMenuItem("1/16",1/16.0));
+        zoomMenu.add(new ScaleMenuItem("1/32",1/32.0));
+        zoomMenu.add(new ScaleMenuItem("1/64",1/64.0));
+        popupMenu.add(zoomMenu);
+        zoomMenu = new JMenu("zoom in [ + ]");
+        zoomMenu.add(new ScaleMenuItem("2",2));
+        zoomMenu.add(new ScaleMenuItem("4",4));
+        zoomMenu.add(new ScaleMenuItem("8",8));
+        zoomMenu.add(new ScaleMenuItem("16",16));
+        zoomMenu.add(new ScaleMenuItem("32",32));
+        zoomMenu.add(new ScaleMenuItem("64",64));
+        popupMenu.add(zoomMenu);
+        popupMenu.addSeparator();
+        menuItem = new JMenuItem("delete all");
+        menuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                //Dbg.pr("invoking graph.writeToFile()...");
+                //graph.writeToFile();
+                getXGraphView().deleteAll(XGraphDisplay.this,true);
+            }
+        });
+        popupMenu.add(menuItem);
+        return popupMenu;
+    }
+    
+    /** inner class used for scale menu item actions of the graph context menu.
+     */
+    protected class ScaleMenuItem extends JMenuItem {
+        public ScaleMenuItem(String label, final double scaleFactor) {
+            super(label);
+            addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    setScale(scaleFactor);
+                }
+            });
+        }
+    }
+    
     
     /** sets the application for this graph display; an application is the overall control instance of the
      * application; it e.g. registers all instances of graph displays and keeps track of model changes etc.
@@ -405,10 +477,12 @@ public class XGraphDisplay extends JGraph implements Storable {
         }
         if (currentDrawingMode != null) {
             currentDrawingMode.exit(this);
+            currentDrawingMode.setSelected(false);
         }
         Dbg.pr("switching to drawing mode \""+dm+"\"");
         currentDrawingMode = dm;
         currentDrawingMode.enter(this);
+        dm.setSelected(true);
     }
     
     /**
@@ -425,6 +499,12 @@ public class XGraphDisplay extends JGraph implements Storable {
             //throw new NoSuchDrawingModeException(dmStr);
             return;
         }
+    }
+    
+    /** switches to the initial drawing mode.
+     */
+    public void switchToInitialDrawingMode() {
+        switchDrawingMode(graphSpec.getInitialDrawingMode());
     }
     
     /** checks for the class of the object <code>v</code>: if it's an <code>XContainerElement</code> the method
@@ -1360,11 +1440,12 @@ public class XGraphDisplay extends JGraph implements Storable {
                 btn = new JToggleButton(dm.getMenuString(),(dm.equals(graphSpec.getInitialDrawingMode()) ? true : false));
             else
                 btn = new JToggleButton(dm.getImageIcon(),(dm.equals(graphSpec.getInitialDrawingMode()) ? true : false));
-            btn.setMargin(new Insets(0,0,0,0));
-            btn.setToolTipText(dm.getMenuString());
-            btn.addActionListener(new ActionListenerForDrawingModeToolBar(dm));
-            tb.add(btn);
-            grp.add(btn);
+                btn.setMargin(new Insets(0,0,0,0));
+                btn.setToolTipText(dm.getMenuString());
+                btn.addActionListener(new ActionListenerForDrawingModeToolBar(dm));
+                dm.addToggleButton(btn);
+                tb.add(btn);
+                grp.add(btn);
         }
         return tb;
     }

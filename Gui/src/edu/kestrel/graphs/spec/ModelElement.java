@@ -149,7 +149,7 @@ public abstract class ModelElement implements Storable {
     
     /** sets the value field of this model element. */
     public void setValue(Object value) {
-        Dbg.pr("setValue("+value+")");
+        //Dbg.pr("setValue("+value+")");
         this.value = value;
     }
     
@@ -274,6 +274,13 @@ public abstract class ModelElement implements Storable {
         }
         int cnt = reprs.size();
         return res;// + "("+ String.valueOf(cnt) + ")";
+    }
+    
+    
+    /** called when a new copy of the model element is created. Subclasses that introduce new fields can overwrite this method
+     * to make sure that the new fields are copied to the new instance.
+     */
+    public void copyHook(ModelElement original) {
     }
     
 }
