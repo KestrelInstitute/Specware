@@ -21,25 +21,30 @@
 ;; are likely to be used for many of the generated lisp applications?
 
 (defun current-directory ()
-  #+allegro(excl::current-directory)
-  #+Lispworks(hcl:get-working-directory)  ;(current-pathname)
-  #+mcl(ccl::current-directory-name)
-  #+cmu (extensions:default-directory)
+  ;; we need consistency:  all pathnames, or all strings, or all lists of strings, ...
+  #+allegro   (excl::current-directory)      ; pathname
+  #+Lispworks (hcl:get-working-directory)    ; ??       (current-pathname)
+  #+mcl       (ccl::current-directory-name)  ; ??
+  #+cmu       (extensions:default-directory) ; ??
   )
 
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
-  #+allegro(excl::chdir directory)
+  #+allegro   (excl::chdir          directory)
   #+Lispworks (hcl:change-directory directory)
-  #+mcl (ccl::%chdir directory)
-  #+cmu (setf (extensions:default-directory) directory)
-  (setq common-lisp::*default-pathname-defaults*
-	(make-pathname :directory (current-directory))))
+  #+mcl       (ccl::%chdir          directory)
+  #+cmu       (setf (extensions:default-directory) directory)
+  ;; in Allegro CL, at least,
+  ;; if (current-directory) is already a pathname, then
+  ;; (make-pathname (current-directory)) will fail
+  (setq common-lisp::*default-pathname-defaults* (current-directory)))
 
 (defun getenv (varname)
-  #+allegro (sys:getenv varname)
-  #+mcl (ccl::getenv varname)
-  #+cmucl (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*)))
+  #+allegro   (system::getenv varname)
+  #+mcl          (ccl::getenv varname)
+  #+lispworks    (hcl::getenv varname) 	;?
+  #+cmucl (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+  )
 
 #+(or mcl Lispworks)
 (defun make-system (new-directory)
@@ -69,12 +74,6 @@
     (change-directory new-directory)
     (unwind-protect (load "system.lisp")
       (change-directory old-directory))))
-
-(defun getenv (x)
-  #+allegro (system::getenv x)
-  #+mcl (ccl::getenv x)
-  #+lispworks (hcl::getenv x) 		;?
-  )
 
 (defvar *fasl-type*
   #+allegro "fasl"
