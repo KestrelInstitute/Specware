@@ -17,7 +17,7 @@
  <!ENTITY lt "&#60;">
  <!ENTITY gt "&#62;">
  <!ENTITY emdash "--">
- <!ENTITY swpath "[[SWPATH]]">
+ <!ENTITY swpath "<computeroutput>SWPATH</computeroutput>">
 ]>
 
 <book><title>&SpecwareV; User Manual</title>
