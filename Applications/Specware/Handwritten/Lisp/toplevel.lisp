@@ -415,7 +415,7 @@
 ;;;    (probe-file (make-pathname :directory full-dir-list))))
 
 (defun swe (x)
-  (let* ((tmp-dir (format nil "~Aswe/" specware::temporaryDirectory))
+  (let* ((tmp-dir (format nil "~Aswe/" Specware::temporaryDirectory))
 	 (tmp-name (format nil "swe_tmp_~D_~D"
 			   (incf *tmp-counter*) 
 			   (ymd-hms)))
@@ -433,7 +433,7 @@
 	 (input-line-num 2)
 	 parsed-ok?
 	 value)
-    (declare (special SpecCalc::printElaborateSpecMessage?))
+    (declare (special SpecCalc::noElaboratingMessageFiles))
     ;; clear any old values or function definitions:
     (makunbound  'swe::tmp)
     (fmakunbound 'swe::tmp)
