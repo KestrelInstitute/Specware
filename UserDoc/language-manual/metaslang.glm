@@ -1316,7 +1316,7 @@ from elaborating the corresponding `spec-terms and
 ** </section>
 -->
 <!-- ***************************************************************** -->
-<section><title>Generate Terms</title>
+<section><title>Target Code Terms</title>
 <para>
 <<
 ||`target-code-term ::=
