@@ -1,6 +1,6 @@
 AnnSpec qualifying spec 
+
  import Position
-%  import ../AbstractSyntax/AnnTerm   
  import MSTerm
  import QualifierMapAsSTHashTable
  import SpecCalc
@@ -73,24 +73,35 @@ AnnSpec qualifying spec
  op mapSpec    : fa(b) TSP_Maps b -> ASpec b -> ASpec b
 
  def mapSpec tsp_maps {importInfo, sorts, ops, properties} =
-  {
-   importInfo       = importInfo,
-
-   ops              = mapAQualifierMap 
-                       (fn (aliases, fixity, (tvs, srt), defs) -> 
-			   (aliases, fixity, (tvs, mapSort tsp_maps srt), 
-			    mapTermSchemes tsp_maps defs))
-		       ops,
-
-   sorts            = mapAQualifierMap 
-                        (fn (aliases, tvs, defs) -> 
-                            (aliases, tvs, mapSortSchemes tsp_maps defs))
-                        sorts,
-
-   properties       = map (fn (pt, nm, tvs, term) -> 
-                              (pt, nm, tvs, mapTerm tsp_maps term))
-                          properties
+   {
+    importInfo       = importInfo,
+    sorts            = mapSpecSorts      tsp_maps sorts,
+    ops              = mapSpecOps        tsp_maps ops,
+    properties       = mapSpecProperties tsp_maps properties
    }
+
+  op mapSpecSorts: fa(b) TSP_Maps b -> ASortMap b -> ASortMap b 
+ def mapSpecSorts tsp_maps sorts =
+   mapAQualifierMap (fn (aliases, tvs, defs) -> 
+		     (aliases, 
+		      tvs, 
+		      mapSortSchemes tsp_maps defs)) 
+                   sorts
+
+  op mapSpecOps : fa(b) TSP_Maps b -> AOpMap b -> AOpMap b
+ def mapSpecOps tsp_maps ops =
+   mapAQualifierMap (fn (aliases, fixity, (tvs, srt), defs) -> 
+		     (aliases, 
+		      fixity, 
+		      (tvs, mapSort tsp_maps srt), 
+		      mapTermSchemes tsp_maps defs))
+                    ops
+
+  op mapSpecProperties : fa(b) TSP_Maps b -> AProperties b ->  AProperties b 
+ def mapSpecProperties tsp_maps properties =
+   map (fn (pt, nm, tvs, term) -> 
+           (pt, nm, tvs, mapTerm tsp_maps term))
+       properties
 
  op mapTermSchemes : fa(b) TSP_Maps b -> ATermSchemes b -> ATermSchemes b
  op mapSortSchemes : fa(b) TSP_Maps b -> ASortSchemes b -> ASortSchemes b
@@ -106,22 +117,32 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- op appSpec    : fa(a) appTSP a -> ASpec a    -> ()
+  op appSpec    : fa(a) appTSP a -> ASpec a    -> ()
+ def appSpec tsp_apps spc = 
+   (
+    appSpecOps        tsp_apps spc.ops;
+    appSpecSorts      tsp_apps spc.sorts; 
+    appSpecProperties tsp_apps spc.properties
+   )
 
- def appSpec tsp spc = 
-   let appt  = appTerm        tsp in
-   let appts = appTermSchemes tsp in
-   let apps  = appSort        tsp in
-   let appss = appSortSchemes tsp in
-   (appAQualifierMap
-      (fn (op_names, fixity, (tvs,srt), defs) -> (apps srt ; appts defs))
-      spc.ops ;
-    appAQualifierMap
-      (fn (sort_names, tvs, defs) -> appss defs)
-      spc.sorts ;
-    app
-      (fn (_, nm, tvs, term) -> appt term)
-      spc.properties)
+  op appSpecSorts : fa(a) appTSP a -> ASortMap a -> ()
+ def appSpecSorts tsp_apps sorts = 
+   appAQualifierMap (fn (_, _, defs) -> 
+		     appSortSchemes tsp_apps defs)
+                    sorts 
+    
+  op appSpecOps : fa(a) appTSP a -> AOpMap a -> ()
+ def appSpecOps tsp_apps ops =
+   appAQualifierMap (fn (_, _, (_, srt), defs) -> 
+		     (appSort        tsp_apps srt ; 
+		      appTermSchemes tsp_apps defs))
+                    ops
+    
+  op appSpecProperties : fa(a) appTSP a -> AProperties a -> ()
+ def appSpecProperties tsp_apps properties =
+    app (fn (_, _, _, term) -> 
+	 appTerm tsp_apps term)
+        properties
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Sorts, Ops
