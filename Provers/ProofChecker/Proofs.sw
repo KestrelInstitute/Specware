@@ -9,7 +9,7 @@ spec
   type Proof?s = FSeq Proof?
 
   type Proof =
-    % well-formed context:
+    % well-formed contexts:
     | cxEmpty
     | cxTypeDecl    Proof * TypeName * Nat
     | cxOpDecl      Proof * Proof * Operation
@@ -18,9 +18,9 @@ spec
     | cxAxiom       Proof * Proof
     | cxTypeVarDecl Proof * TypeVariable
     | cxVarDecl     Proof * Proof * Variable
-    % well-formed spec:
+    % well-formed specs:
     | spe Proof
-    % well-formed type:
+    % well-formed types:
     | tyBoolean  Proof
     | tyVariable Proof * TypeVariable
     | tyArrow    Proof * Proof
@@ -41,7 +41,7 @@ spec
     | tyEqProductOrder      Proof * FMap(Nat,Nat)
     | tyEqSubPredicate      Proof * Proof * Proof
     | tyEqQuotientPredicate Proof * Proof * Proof
-    % well-typed expression:
+    % well-typed expressions:
     | exVariable             Proof * Variable
     | exTrue                 Proof
     | exFalse                Proof
@@ -77,7 +77,7 @@ spec
     | exAlphaAbstraction     Proof * Variable * Variable
     | exAlphaCase            Proof * Nat * Variable * Variable
     | exAlphaRecursiveLet    Proof * Variable * Variable
-    % well-typed pattern:
+    % well-typed patterns:
     | paVariable        Proof * Variable
     | paEmbedding0      Proof * Constructor
     | paEmbedding1      Proof * Proof * Constructor
@@ -85,7 +85,7 @@ spec
     | paTuple           Proof * Proofs
     | paAlias           Proof * Variable
     | paEquivalentTypes Proof * Proof
-    % theorem:
+    % theorems:
     | thAxiom                       Proof * Proofs * TypeVariables * AxiomName
     | thOpDef                       Proof * Proofs * Operation
     | thSubstitution                Proof * Proof * Position

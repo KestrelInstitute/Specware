@@ -20,13 +20,13 @@ spec
   type Type?    = Option Type
   type Pattern? = Option Pattern
 
-  type BoundVar  = Variable * Type
+  type BoundVariable  = Variable * Type
 
-  type Types       = FSeq Type
-  type Expressions = FSeq Expression
-  type Patterns    = FSeq Pattern
-  type Type?s      = FSeq Type?
-  type BoundVars   = FSeq BoundVar
+  type Types          = FSeq Type
+  type Expressions    = FSeq Expression
+  type Patterns       = FSeq Pattern
+  type Type?s         = FSeq Type?
+  type BoundVariables = FSeq BoundVariable
 
 
   %%%%%%%%
@@ -52,7 +52,7 @@ spec
 
   type SubOrQuotientTypeConstruct =
     | sub
-    | quotien(*t*)
+    | quotienT
 
   type Type =
     | boolean
@@ -84,8 +84,8 @@ spec
 
   type NullaryExprOperator =
     | variable Variable
-    | tru(*e*)
-    | fals(*e*)
+    | truE
+    | falsE
 
   type UnaryExprOperator =
     | recordProjection Field
@@ -122,11 +122,11 @@ spec
     | binary          BinaryExprOperator * Expression * Expression
     | ifThenElse      Expression * Expression * Expression
     | nary            NaryExprOperator * Expressions
-    | binding         BindingExprOperator * BoundVars * Expression
+    | binding         BindingExprOperator * BoundVariables * Expression
     | opInstance      Operation * Types
     | embedder        Type * Constructor
-    | cas(*e*)        Expression * FSeq (Pattern * Expression)
-    | recursiveLet    BoundVars * Expressions * Expression
+    | casE            Expression * Patterns * Expressions
+    | recursiveLet    BoundVariables * Expressions * Expression
     | nonRecursiveLet Pattern * Expression * Expression
 
 
@@ -151,11 +151,11 @@ spec
   pattern. We use `Option' for that. *)
 
   type Pattern =
-    | variable  BoundVar
+    | variable  BoundVariable
     | embedding Type * Constructor * Pattern?
     | record    Fields * Patterns
     | tuple     Patterns
-    | alias     BoundVar * Pattern
+    | alias     BoundVariable * Pattern
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -173,15 +173,16 @@ spec
 
   %%%%% induction base and step for types:
       predT boolean
-   && (fa (tv:TypeVariable) predT (variable tv))
+   && (fa (tv:TypeVariable)
+         predT (variable tv))
    && (fa (t1:Type, t2:Type)
          predT t1 && predT t2
       => predT (arrow (t1, t2)))
    && (fa (cS:Constructors, t?S:Type?s)
-         (fa(t) Some t in? t?S => predT t)
+         forall? (removeNones t?S, predT)
       => predT (sum (cS, t?S)))
    && (fa (tc:NaryTypeConstruct, tS:Types)
-         (fa(t) t in? tS => predT t)
+         forall? (tS, predT)
       => predT (nary (tc, tS)))
    && (fa (tc:SubOrQuotientTypeConstruct, t:Type, e:Expression)
          predT t && predE e
@@ -200,28 +201,28 @@ spec
          predE e0 && predE e1 && predE e2
       => predE (ifThenElse (e0, e1, e2)))
    && (fa (eo:NaryExprOperator, eS:Expressions)
-         (fa(e) e in? eS => predE e)
+         forall? (eS, predE)
       => predE (nary (eo, eS)))
    && (fa (eo:BindingExprOperator, vS:Variables, tS:Types, e:Expression)
          length vS = length tS
-      && (fa(t) t in? tS => predT t)
+      && forall? (tS, predT)
       && predE e
       => predE (binding (eo, zip (vS, tS), e)))
    && (fa (o:Operation, tS:Types)
-         (fa(t) t in? tS => predT t)
+         forall? (tS, predT)
       => predE (opInstance (o, tS)))
    && (fa (t:Type, c:Constructor)
          predT t
       => predE (embedder (t, c)))
    && (fa (e:Expression, pS:Patterns, eS:Expressions)
-         length pS = length eS
-      && (fa(p) p in? pS => predP p)
-      && (fa(e1) e1 in? eS => predE e1)
-      => predE (cas (e, zip (pS, eS))))
+         predE e
+      && forall? (pS, predP)
+      && forall? (eS, predE)
+      => predE (casE (e, pS, eS)))
    && (fa (vS:Variables, tS:Types, eS:Expressions, e:Expression)
          length vS  = length tS
-      && (fa(t) t in? tS => predT t)
-      && (fa(e1) e1 in? eS => predE e1)
+      && forall? (tS, predT)
+      && forall? (eS, predE)
       && predE e
       => predE (recursiveLet (zip (vS, tS), eS, e)))
    && (fa (p:Pattern, e:Expression, e1:Expression)
@@ -233,7 +234,7 @@ spec
   %%%%% induction base and step for patterns:
    && (fa (v:Variable, t:Type)
          predT t
-      => predP (variable (v, t)))
+      => predP (variable (v,t)))
    && (fa (t:Type, c:Constructor)
          predT t
       => predP (embedding (t, c, None)))
@@ -242,15 +243,15 @@ spec
       && predP p
       => predP (embedding (t, c, Some p)))
    && (fa (fS:Fields, pS:Patterns)
-         (fa(p) p in? pS => predP p)
+         forall? (pS, predP)
       => predP (record (fS, pS)))
    && (fa (pS:Patterns)
-         (fa(p) p in? pS => predP p)
+         forall? (pS, predP)
       => predP (tuple pS))
    && (fa (v:Variable, t:Type, p:Pattern)
          predT t
       && predP p
-      => predP (alias ((v, t), p)))
+      => predP (alias ((v,t), p)))
 
   %%%%% induction conclusion:
    => (fa(t) predT t)
@@ -258,36 +259,35 @@ spec
    && (fa(p) predP p)
 
 
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  % more readable meta ops to construct types, expressions, and patterns:
-  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  % more readable types, expressions, and patterns:
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   (* The meta syntax to represent object syntax, as defined above, is not very
   readable. For instance, an equation is represented as `binary (equation, e1,
   e2)'. This readability problem is due to (1) the factoring of types and
-  expressions (which is, on the other hand, convenient to process them; see
-  spec `SyntacticOperations') and (2) prefix notation (vs. infix).
+  expressions (which is, on the other hand, convenient to process them,
+  e.g. to collect free variables from expressions) and (2) prefix notation
+  (vs. infix).
 
   So, we define some meta ops to construct types, expressions, and patterns in
   a more readable way. The names and fixities of these ops are meant to
   resemble object Metaslang syntax as much as possible, e.g. prefix `RELAX'
-  for `relax' and infix `==' for `='. The relative priorities of the infix
-  meta ops are the same as the relative priorities of their object
-  counterparts (with an offset of 10). We also use currying as much as
-  possible, to reduce the number of extra parentheses and commas and thus
-  improve readability. *)
+  for `relax' and infix `==' for `='. The priorities of the infix meta ops are
+  the same as the relative priorities of their object counterparts. We also
+  use currying as much as possible, to reduce the number of extra parentheses
+  and commas and thus improve readability. *)
 
   % types:
 
   op BOOL : Type
-  def BOOL = embed boolean
+  def BOOL = boolean
 
   op TVAR : TypeVariable -> Type
-  def TVAR = embed variable
+  def TVAR = variable
 
-  op --> infixl 30 : Type * Type -> Type
-  def --> = embed arrow
+  op --> infixl 20 : Type * Type -> Type
+  def --> = arrow
 
   op SUM : Constructors -> Type?s -> Type
   def SUM cS t?S = sum (cS, t?S)
@@ -295,8 +295,8 @@ spec
   op TYPE : TypeName -> Types -> Type
   def TYPE tn tS = nary (instance tn, tS)
 
-  op TYPEmt : TypeName -> Type  % for monomorphic types
-  def TYPEmt tn = TYPE tn empty
+  op TYP : TypeName -> Type  % for monomorphic types
+  def TYP tn = TYPE tn empty
 
   op TRECORD : Fields -> Types -> Type
   def TRECORD fS tS = nary (record fS, tS)
@@ -304,12 +304,13 @@ spec
   op PRODUCT : Types -> Type
   def PRODUCT tS = nary (product, tS)
 
-  op \\ infixl 30 : Type * Expression -> Type
-     % can't use `||'
-  def \\ (t,e) = subQuot (embed sub, t, e)
+  op \ infixl 30 : Type * Expression -> Type
+     % can't use `|'
+  def \ (t,e) = subQuot (embed sub, t, e)
+                         % without `embed', type checker complains
 
-  op // infixl 30 : Type * Expression -> Type
-  def // (t,e) = subQuot (quotien, t, e)
+  op / infixl 30 : Type * Expression -> Type
+  def / (t,e) = subQuot (quotienT, t, e)
 
   % expressions:
 
@@ -317,10 +318,10 @@ spec
   def VAR v = nullary (variable v)
 
   op TRUE : Expression
-  def TRUE = nullary tru
+  def TRUE = nullary truE
 
   op FALSE : Expression
-  def FALSE = nullary fals
+  def FALSE = nullary falsE
 
   op DOTr infixl 40 : Expression * Field -> Expression
   def DOTr (e,f) = unary (recordProjection f, e)
@@ -337,17 +338,16 @@ spec
   op ~~ : Expression -> Expression
   def ~~ e = unary (negation, e)
 
-  op __ infixl 40 : Expression * Expression -> Expression
-     % double underscore is incospicuous enough to look almost like blank
-  def __ (e1,e2) = binary (application, e1, e2)
+  op @ infixl 30 : Expression * Expression -> Expression
+  def @ (e1,e2) = binary (application, e1, e2)
 
-  op == infixl 30 : Expression * Expression -> Expression
+  op == infixl 20 : Expression * Expression -> Expression
   def == (e1,e2) = binary (equation, e1, e2)
 
-  op =/= infixl 30 : Expression * Expression -> Expression
-  def =/= (e1,e2) = binary (inequation, e1, e2)
+  op ~== infixl 20 : Expression * Expression -> Expression
+  def ~== (e1,e2) = binary (inequation, e1, e2)
 
-  op <<< infixl 35 : Expression * Expression -> Expression
+  op <<< infixl 25 : Expression * Expression -> Expression
   def <<< (e1,e2) = binary (recordUpdate, e1, e2)
 
   op RESTRICT : Expression -> Expression -> Expression
@@ -356,16 +356,16 @@ spec
   op CHOOSE : Expression -> Expression -> Expression
   def CHOOSE q e = binary (choice, q, e)
 
-  op &&& infixl 25 : Expression * Expression -> Expression
+  op &&& infixl 15 : Expression * Expression -> Expression
   def &&& (e1,e2) = binary (conjunction, e1, e2)
 
-  op ||| infixl 24 : Expression * Expression -> Expression
+  op ||| infixl 14 : Expression * Expression -> Expression
   def ||| (e1,e2) = binary (disjunction, e1, e2)
 
-  op ==> infixl 23 : Expression * Expression -> Expression
+  op ==> infixl 13 : Expression * Expression -> Expression
   def ==> (e1,e2) = binary (implication, e1, e2)
 
-  op <==> infixl 22 : Expression * Expression -> Expression
+  op <==> infixl 12 : Expression * Expression -> Expression
   def <==> (e1,e2) = binary (equivalence, e1, e2)
 
   op IF : Expression -> Expression -> Expression -> Expression
@@ -378,45 +378,45 @@ spec
   def TUPLE eS = nary (tuple, eS)
 
   op PAIR : Expression -> Expression -> Expression
-  def PAIR e1 e2 = TUPLE (e1 |> e2 |> empty)
+  def PAIR e1 e2 = TUPLE (seq2 (e1, e2))
 
-  op FN : BoundVar -> Expression -> Expression
+  op FN : BoundVariable -> Expression -> Expression
   def FN bv e = binding (abstraction, singleton bv, e)
 
-  op FNN : BoundVars -> Expression -> Expression
+  op FNN : BoundVariables -> Expression -> Expression
   def FNN bvS e = binding (abstraction, bvS, e)
 
-  op FA : BoundVar -> Expression -> Expression
+  op FA : BoundVariable -> Expression -> Expression
   def FA bv e = binding (universal, singleton bv, e)
 
-  op FAA : BoundVars -> Expression -> Expression
+  op FAA : BoundVariables -> Expression -> Expression
   def FAA bvS e = binding (universal, bvS, e)
 
-  op EX : BoundVar -> Expression -> Expression
+  op EX : BoundVariable -> Expression -> Expression
   def EX bv e = binding (existential, singleton bv, e)
 
-  op EXX : BoundVars -> Expression -> Expression
+  op EXX : BoundVariables -> Expression -> Expression
   def EXX bvS e = binding (existential, bvS, e)
 
-  op EX1 : BoundVar -> Expression -> Expression
+  op EX1 : BoundVariable -> Expression -> Expression
   def EX1 bv e = binding (existential1, singleton bv, e)
 
-  op EXX1 : BoundVars -> Expression -> Expression
+  op EXX1 : BoundVariables -> Expression -> Expression
   def EXX1 bvS e = binding (existential1, bvS, e)
 
-  op OP : Operation -> Types -> Expression
-  def OP o tS = opInstance(o,tS)
+  op OPP : Operation -> Types -> Expression
+  def OPP o tS = opInstance(o,tS)
 
-  op OPmt : Operation -> Expression  % for monomorphic ops
-  def OPmt o = OP o empty
+  op OP : Operation -> Expression  % for monomorphic ops
+  def OP o = OPP o empty
 
   op EMBED : Type -> Constructor -> Expression
   def EMBED t c = embedder (t, c)
 
-  op CASE : Expression -> FSeq (Pattern * Expression) -> Expression
-  def CASE e branches = cas (e, branches)
+  op CASE : Expression -> Patterns -> Expressions -> Expression
+  def CASE e pS eS = casE (e, pS, eS)
 
-  op LETDEF : BoundVars -> Expressions -> Expression -> Expression
+  op LETDEF : BoundVariables -> Expressions -> Expression -> Expression
   def LETDEF bvS eS e = recursiveLet (bvS, eS, e)
 
   op LET : Pattern -> Expression -> Expression -> Expression
@@ -424,11 +424,11 @@ spec
 
   % patterns:
 
-  op PVAR : BoundVar -> Pattern
+  op PVAR : BoundVariable -> Pattern
   def PVAR = embed variable
 
-  op PEMBED0 : Type -> Constructor -> Pattern
-  def PEMBED0 t c = embedding (t, c, None)
+  op PEMBE : Type -> Constructor -> Pattern
+  def PEMBE t c = embedding (t, c, None)
 
   op PEMBED : Type -> Constructor -> Pattern -> Pattern
   def PEMBED t c p = embedding (t, c, Some p)
@@ -439,7 +439,7 @@ spec
   op PTUPLE : Patterns -> Pattern
   def PTUPLE pS = tuple pS
 
-  op AS infixl 30 : BoundVar * Pattern -> Pattern
+  op AS infixl 30 : BoundVariable * Pattern -> Pattern
   def AS (bv,p) = alias (bv, p)
 
 
@@ -453,13 +453,13 @@ spec
   keeping the syntax simpler. *)
 
   type ContextElement =
-    | typeDeclaration TypeName * Nat
-    | opDeclaration   Operation * TypeVariables * Type
-    | typeDefinition  TypeName * TypeVariables * Type
-    | opDefinition    TypeVariables * Operation * Expression
-    | axio(*m*)       AxiomName * TypeVariables * Expression
-    | tVarDeclaration TypeVariable
-    | varDeclaration  Variable * Type
+    | typeDeclaration    TypeName * Nat
+    | opDeclaration      Operation * TypeVariables * Type
+    | typeDefinition     TypeName * TypeVariables * Type
+    | opDefinition       Operation * TypeVariables * Expression
+    | axioM              AxiomName * TypeVariables * Expression
+    | typeVarDeclaration TypeVariable
+    | varDeclaration     BoundVariable
 
   type Context = FSeq ContextElement
 
@@ -468,13 +468,12 @@ spec
   % specs:
   %%%%%%%%
 
-  % no top-level (type) variable declarations:
-  op noVariables? : Context -> Boolean
-  def noVariables? cx =
-    ~(exists? (cx, embed? tVarDeclaration)) &&
+  op contextWithoutTypeVarOrVarDeclarations? : Context -> Boolean
+  def contextWithoutTypeVarOrVarDeclarations? cx =
+    ~(exists? (cx, embed? typeVarDeclaration)) &&
     ~(exists? (cx, embed? varDeclaration))
 
-  type Spec = (Context | noVariables?)
+  type Spec = (Context | contextWithoutTypeVarOrVarDeclarations?)
 
 
   %%%%%%%%%%%%%
@@ -494,6 +493,6 @@ spec
     | typeEquivalence   Context * Type * Type
     | wellTypedExpr     Context * Expression * Type
     | wellTypedPatt     Context * Pattern    * Type
-    | theore(*m*)       Context * Expression
+    | theoreM           Context * Expression
 
 endspec

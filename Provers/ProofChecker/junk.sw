@@ -4,6 +4,11 @@ again. *)
 
 
 
+%%% case expressions with FSeq (Pattern * Expression)
+
+    | casE            Expression * FSeq (Pattern * Expression)
+
+
 %%% formulation of inference rules as relations over judgements:
 
   op rel : InferenceRule -> (FSeq Judgement * Judgement -> Boolean)
