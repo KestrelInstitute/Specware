@@ -17,7 +17,7 @@ ln -s ../../../SpecCalculus/Semantics/Evaluate/Qualify.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Snark.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Spec.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/SpecMorphism.sw .
-ln -s ../../../SpecCalculus/Semantics/Evaluate/Substitute.sw .
+# ln -s ../../../SpecCalculus/Semantics/Evaluate/Substitute.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/Translate.sw .
 ln -s ../../../SpecCalculus/Semantics/Evaluate/URI.sw .
 # directories...
