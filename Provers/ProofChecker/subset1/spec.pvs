@@ -1,61 +1,62 @@
-% library:
+list_zip [T1 : TYPE, T2 : TYPE] : THEORY BEGIN  % should be in prelude
 
-InfiniteType [T : TYPE] : THEORY
-BEGIN
-  infinite : AXIOM EXISTS (f : [nat -> T]) : injective?(f)
-  nonEmpty : THEOREM EXISTS (x : T) : TRUE
-END InfiniteType
+  zip (l1 : list[T1], l2 : list[T2]) : RECURSIVE list [[T1, T2]] =
+    IF l1 = null OR l2 = null THEN
+      null
+    ELSE
+      cons ((car(l1), car(l2)), zip (cdr(l1), cdr(l2)))
+    ENDIF
+    MEASURE length(l1)
+
+END list_zip
 
 
-% actual spec:
+Primitives : THEORY BEGIN
 
-Primitives : THEORY
-BEGIN
+  % defining primitives as natural numbers is more practical than introducing
+  % abstract types with infinity axioms, e.g. for proof efficiency
 
-  TypeName, Operation, Variable, AxiomName : TYPE+
-  % (without "+", it cannot figure that types are inhabited and issues
-  % a warning that datatype Expression may be empty)
-
-  IMPORTING InfiniteType[TypeName],
-            InfiniteType[Operation],
-            InfiniteType[Variable],
-            InfiniteType[AxiomName]
+  TypeName  : TYPE = nat
+  Operation : TYPE = nat
+  Variable  : TYPE = nat
+  AxiomName : TYPE = nat
 
 END Primitives
 
 
-Syntax : THEORY
-BEGIN
+Syntax : THEORY BEGIN
 
   IMPORTING Primitives
 
   Typee : DATATYPE
   BEGIN
-    boolean : boolean?
-    named (name : TypeName) : named?
+    boolean                       : boolean?
+    named (name : TypeName)       : named?
     arrow (domain, range : Typee) : arrow?
   END Typee
 
   Expression : DATATYPE
   BEGIN
-    varr (varr : Variable) : var?
-    op (op : Operation) : op?
-    app (func, arg : Expression) : app?
-    abs (varr : Variable, typ : Typee, body : Expression) : abs?
-    eq (lhs, rhs : Expression) : eq?
+    varr (varr : Variable)                                 : var?
+    op   (op : Operation)                                  : op?
+    app  (func, arg : Expression)                          : app?
+    abs  (varr : Variable, typ : Typee, body : Expression) : abs?
+    eq   (lhs, rhs : Expression)                           : eq?
   END Expression
 
   ContextElement : DATATYPE
   BEGIN
-    typeDeclaration (typ : TypeName) : typeDeclaration?
-    opDeclaration (op : Operation, typ : Typee) : opDeclaration?
-    typeDefinition (typ : TypeName, def : Typee) : typeDefinition?
-    opDefinition (op : Operation, def : Expression) : opDefinition?
-    axiomm (name : AxiomName, formul : Expression) : axiomm?
-    varDeclaration (varr : Variable, typ : Typee) : varDeclaration?
+    typeDeclaration (typ : TypeName)                      : typeDeclaration?
+    opDeclaration   (op : Operation, typ : Typee)         : opDeclaration?
+    typeDefinition  (typ : TypeName, def : Typee)         : typeDefinition?
+    opDefinition    (op : Operation, def : Expression)    : opDefinition?
+    axiomm          (name : AxiomName, form : Expression) : axiomm?
+    varDeclaration  (varr : Variable, typ : Typee)        : varDeclaration?
   END ContextElement
 
-  Context : TYPE = finseq [ContextElement]
+  Context : TYPE = list [ContextElement]
+  % lists are more practical than finite sequences because they are data types,
+  % equipped with well-founded relation, induction axiom, operations, etc.
 
   contextWithoutVarDeclarations? (cx : Context) : bool =
     NOT (some (varDeclaration?, cx))
@@ -64,46 +65,168 @@ BEGIN
 
   Judgment : DATATYPE
   BEGIN
-    wellFormedContext (context : Context) : wellFormedContext?
-    wellFormedSpec (spec : Spec) : wellFormedSpec?
-    wellFormedType (cx : Context, typ : Typee) : wellFormedType?
-    typeEquivalence (cx : Context, lhs : Typee, rhs : Typee) : typeEquivalence?
-    wellTypedExpr (cx : Context, expr : Expression, typ : Typee) : wellTypedExpr?
-    theoremm (cx : Context, form : Expression) : theoremm?
+    wellFormedContext
+      (context : Context)                            : wellFormedContext?
+    wellFormedSpec
+      (spec : Spec)                                  : wellFormedSpec?
+    wellFormedType
+      (cx : Context, typ : Typee)                    : wellFormedType?
+    typeEquivalence
+      (cx : Context, lhs : Typee, rhs : Typee)       : typeEquivalence?
+    wellTypedExpr
+      (cx : Context, expr : Expression, typ : Typee) : wellTypedExpr?
+    theoremm
+      (cx : Context, form : Expression)              : theoremm?
   END Judgment
 
 END Syntax
 
 
-Positions : THEORY
-BEGIN
-  Position : TYPE = finseq [nat]
+Positions : THEORY BEGIN
+  Position : TYPE = list [nat]
 END Positions
 
 
-SyntaxWithCoreOps : THEORY
-BEGIN
+SyntaxWithCoreOps : THEORY BEGIN
 
   IMPORTING Syntax, Positions
 
-  exprFreeVars (e : Expression) : RECURSIVE finite_set [Variable] =
+  e, d  : VAR Expression
+  ce    : VAR ContextElement
+  cx    : VAR Context
+  v, u  : VAR Variable
+  tn    : VAR TypeName
+  oo    : VAR Operation
+
+  exprFreeVars(e) : RECURSIVE finite_set [Variable] =
     CASES e OF
-      varr(v) : singleton(v),
-      op(oo) : emptyset,
+      varr(v)    : singleton(v),
+      op(oo)     : emptyset,
       app(e1,e2) : union (exprFreeVars(e1), exprFreeVars(e2)),
       abs(v,t,e) : remove (v, exprFreeVars(e)),
-      eq(e1,e2) : union (exprFreeVars(e1), exprFreeVars(e2))
+      eq(e1,e2)  : union (exprFreeVars(e1), exprFreeVars(e2))
     ENDCASES
     MEASURE e BY <<
 
-  exprOps (e : Expression) : RECURSIVE finite_set [Operation] =
+  exprOps(e) : RECURSIVE finite_set [Operation] =
     CASES e OF
-      varr(v) : emptyset,
-      op(oo) : singleton(oo),
+      varr(v)    : emptyset,
+      op(oo)     : singleton(oo),
       app(e1,e2) : union (exprOps(e1), exprOps(e2)),
       abs(v,t,e) : exprOps(e),
-      eq(e1,e2) : union (exprOps(e1), exprOps(e2))
+      eq(e1,e2)  : union (exprOps(e1), exprOps(e2))
     ENDCASES
     MEASURE e BY <<
+
+  contextElementTypes(ce) : finite_set [TypeName] =
+    CASES ce OF
+      typeDeclaration(tn) : singleton(tn)
+      ELSE emptyset
+    ENDCASES
+
+  contextElementOps(ce) : finite_set [Operation] =
+    CASES ce OF
+      opDeclaration(oo,t) : singleton(oo)
+      ELSE emptyset
+    ENDCASES
+
+  contextElementVars(ce) : finite_set [Variable] =
+    CASES ce OF
+      varDeclaration(v,t) : singleton(v)
+      ELSE emptyset
+    ENDCASES
+
+  contextElementAxioms(ce) : finite_set [AxiomName] =
+    CASES ce OF
+      axiomm(an,e) : singleton(an)
+      ELSE emptyset
+    ENDCASES
+
+  % the following recursive definitions are more practical then operation
+  % Union, because their TCCs are automatically discharged
+
+  contextTypes(cx) : RECURSIVE finite_set [TypeName] =
+    CASES cx OF
+      null : emptyset,
+      cons(ce,cx1) : union (contextElementTypes(ce), contextTypes(cx1))
+    ENDCASES
+    MEASURE length(cx)
+
+  contextOps(cx) : RECURSIVE finite_set [Operation] =
+    CASES cx OF
+      null : emptyset,
+      cons(ce,cx1) : union (contextElementOps(ce), contextOps(cx1))
+    ENDCASES
+    MEASURE length(cx)
+
+  contextVars(cx) : RECURSIVE finite_set [Variable] =
+    CASES cx OF
+      null : emptyset,
+      cons(ce,cx1) : union (contextElementVars(ce), contextVars(cx1))
+    ENDCASES
+    MEASURE length(cx)
+
+  contextAxioms(cx) : RECURSIVE finite_set [AxiomName] =
+    CASES cx OF
+      null : emptyset,
+      cons(ce,cx1) : union (contextElementAxioms(ce), contextAxioms(cx1))
+    ENDCASES
+    MEASURE length(cx)
+
+  contextDefinesType?(cx,tn) : bool =
+    EXISTS (t:Typee) : member (typeDefinition(tn,t), cx)
+
+  contextDefinesOp?(cx,oo) : bool =
+    EXISTS (e:Expression) : member (opDefinition(oo,e), cx)
+
+  ExprSubstitution : TYPE = [Variable -> Expression]
+  % functions are more practical than (finite) maps; in addition, the PVS
+  % prelude does not feature maps
+
+  sbs : VAR ExprSubstitution
+
+  % identity substitution:
+  idExprSubstitution : ExprSubstitution = LAMBDA v : varr(v)
+
+  exprSubst(sbs)(e) : RECURSIVE Expression =
+    CASES e OF
+      varr(v)    : sbs(v),
+      op(oo)     : op(oo),
+      app(e1,e2) : app (exprSubst(sbs)(e1), exprSubst(sbs)(e2)),
+      abs(v,t,e) : LET bodySbs:ExprSubstitution = sbs WITH [v := varr(v)] IN
+                       % i.e. we effectively "remove" v from the substitution
+                   abs (v, t, exprSubst(bodySbs)(e)),
+      eq(e1,e2)  : eq (exprSubst(sbs)(e1), exprSubst(sbs)(e2))
+    ENDCASES
+    MEASURE e BY <<
+
+  exprSubst1(v)(d)(e) : Expression =
+    LET sbs:ExprSubstitution = idExprSubstitution WITH [v := d] IN
+    exprSubst (sbs) (e)
+
+  captVars(u)(e) : RECURSIVE finite_set [Variable] =
+    CASES e OF
+      varr(v)    : emptyset,
+      op(oo)     : emptyset,
+      app(e1,e2) : union (captVars(u)(e1), captVars(u)(e2)),
+      abs(v,t,e) : IF member (u, exprFreeVars(e)) AND u /= v THEN
+                     add (v, captVars(v)(e))
+                   ELSE
+                     emptyset
+                   ENDIF,
+      eq(e1,e2)  : union (captVars(u)(e1), captVars(u)(e2))
+    ENDCASES
+    MEASURE e BY <<
+
+  exprSubstOK?(e,sbs) : bool =
+    FORALL v : sbs(v) /= varr(v) IMPLIES
+               disjoint? (exprFreeVars(sbs(v)), captVars(v)(e))
+
+  IMPORTING list_zip [Variable, Typee]
+
+  multiVarDecls
+    (vS : list[Variable], tS : list[Typee] | length(vS) = length(tS))
+    : Context =
+    map (varDeclaration, zip(vS,tS))
 
 END SyntaxWithCoreOps
