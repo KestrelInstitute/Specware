@@ -147,8 +147,8 @@ spec {
 		type_vars_1, 
 		map (fn def_1 -> checkSortScheme (env_2, def_1)) defs_1)
    in
-   let sorts_2 = mapiAQualifierMap elaborate_sort_1 sorts_1 
-   in
+   let sorts_2 = mapiAQualifierMap elaborate_sort_1 sorts_1 in
+   let env_2a = setEnvSorts(env_2,sorts_2) in
 
    %% ---------- OPS   : PASS 1 ----------
    let def elaborate_op_1 poly?
@@ -157,7 +157,7 @@ spec {
         if ~(memberQualifiedId(qualifier,op_name,localOps))
           then opinfo
         else
-        let sort_scheme_2 = checkSortScheme (env_2, sort_scheme_1) in
+        let sort_scheme_2 = checkSortScheme (env_2a, sort_scheme_1) in
         (op_names, 
          fixity, 
          sort_scheme_2,
@@ -165,7 +165,7 @@ spec {
 	      % let _ = System.print term_1 in
 	      let type_vars_1 = sort_scheme_1.1 in
 	      let term_2 = if poly? = ~(type_vars_1 = Nil) then
-	                     elaborateTermTop (env_2, term_1, sort_scheme_2.2)
+	                     elaborateTermTop (env_2a, term_1, sort_scheme_2.2)
 			   else 
 			     term_1 
 	      in
@@ -182,7 +182,7 @@ spec {
    %% ---------- PROPERTIES : PASS 1. ---------- 
    let def elaborate_fm_1 (prop_type, name, type_vars_1, fm_1) = 
         let type_vars_2 = type_vars_1 in
-        let fm_2 = elaborateTermTop (env_2, fm_1, type_bool) in
+        let fm_2 = elaborateTermTop (env_2a, fm_1, type_bool) in
         (prop_type, name, type_vars_2, fm_2)
    in
    let props_2 = map elaborate_fm_1 props_1 in
@@ -195,7 +195,7 @@ spec {
    %% ======================================================================
  
    %% sjw: 7/17/01 Added a second pass so that order is not so important
-   let env_3 = secondPass env_2 in
+   let env_3 = secondPass env_2a in
  
    %% ---------- SORTS : PASS 2 ---------- 
    let def elaborate_sort_2 (qualifier, sortName,
@@ -323,7 +323,7 @@ spec {
     (type_vars, checkSort (env, srt))
 
   %% TODO: convert checkSort to work on sort scheme?
-  def checkSort (env, srt) = 
+  def TypeChecker.checkSort (env, srt) = 
     %% checkSort calls elaborateTerm, which calls checkSort
     case srt
       of TyVar _ -> srt

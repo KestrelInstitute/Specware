@@ -13,7 +13,6 @@ spec
       {importMap  : Environment,
        internal   : Spec,
        errors     : Ref(List (String * Position)),
-      %specName   : String,
        vars       : StringMap MS.Sort,
        firstPass? : Boolean,
        constrs    : StringMap (List SortScheme),
@@ -24,6 +23,7 @@ spec
 
  op addVariable    : LocalEnv * String * Sort -> LocalEnv
  op secondPass     : LocalEnv                 -> LocalEnv
+ op setEnvSorts    : LocalEnv * SortMap       -> LocalEnv
  op unfoldSort     : LocalEnv * Sort          -> Sort
  op findVarOrOps   : LocalEnv * Id * Position -> List MS.Term
 
@@ -109,7 +109,7 @@ spec
       properties       = emptyProperties
      }
 
- def initialEnv ((* spec_name, *) spc, file) = 
+ def initialEnv (spc, file) = 
    let errs : List (String * Position) = [] in
    let {importInfo, sorts, ops, properties} = spc in
    let MetaTyVar(tv,_)  = freshMetaTyVar (Internal "ignored") in
@@ -122,7 +122,6 @@ spec
 	     } : Spec
    in
    let env = {importMap  = StringMap.empty, % importMap,
-             %specName   = spec_name,
               internal   = spc,
               errors     = Ref errs,
               vars       = StringMap.empty,
@@ -142,13 +141,12 @@ spec
             row1
    | _ -> false
 
- def addConstrsEnv({importMap, internal, vars, (* specName, *) errors, firstPass?,
+ def addConstrsEnv({importMap, internal, vars, errors, firstPass?,
                     constrs, file},
                    sp) =
    {importMap  = importMap,
     internal   = sp,
     vars       = vars,
-   %specName   = specName,
     errors     = errors,
     firstPass? = firstPass?,
     constrs    = computeConstrMap(sp), % importMap
@@ -253,28 +251,38 @@ spec
     errors := cons((msg,pos),! errors)
 
 
-  def addVariable({importMap,internal,vars, (* specName, *) errors,
+  def addVariable({importMap,internal,vars,errors,
                    firstPass?,constrs,file},
                   id,
                   srt) = 
     {importMap  = importMap,
      internal   = internal,
      vars       = StringMap.insert(vars,id,srt),
-    %specName   = specName,
      errors     = errors,
      firstPass? = firstPass?,
      constrs    = constrs,
      file       = file
     }
         
-  def secondPass({importMap,internal,vars, (* specName, *) errors,
+  def secondPass({importMap,internal,vars, errors,
                   firstPass?=_,constrs,file}) = 
     {importMap  = importMap,
      internal   = internal,
      vars       = vars,
-    %specName   = specName,
      errors     = errors,
      firstPass? = false,
+     constrs    = constrs,
+     file       = file
+    }
+
+  def setEnvSorts ({importMap,internal,vars,errors,
+		    firstPass?,constrs,file},
+		   newSorts) =
+    {importMap  = importMap,
+     internal   = setSorts(internal,newSorts),
+     vars       = vars,
+     errors     = errors,
+     firstPass? = firstPass?,
      constrs    = constrs,
      file       = file
     }
