@@ -1,58 +1,178 @@
 <chapter id="emacs">
 
 <title>Emacs Usage in Specware</title>
-
+f
+<para>
 There are a number of emacs commands for &Specware usage. We also list
 some useful general-purpose commands. There is a &Specware mode for
 editing specware files.
-
-M-.
+</para>
 
 <section>
 <title>&Specware Mode commands</title>
 
-[[
-||tab		sw:indent-line
-||M-tab		sw:back-to-outer-indent
-||linefeed	newline-and-indent
-||M-C-q		sw:indent-sexp
-||M-C-\		sw:indent-region
-||M-*		sw:switch-to-lisp
-||M-.		sw:meta-point
-||M-,		sw:continue-meta-point
-||M-|		sw:electric-pipe
-||
-||C-c %		extract-sexp
-||C-c ;		comment-region
-||C-c l		sw:switch-to-lisp
-||C-c C-p		sw:process-file
-||C-c !		cd-current-directory
-]]
+These are the commands available when editing [[.sw] files.
+
+<informaltable frame="sides" colsep="1">
+  <tgroup cols="3">
+    <colspec colname="key"      colnum="2" colwidth="40"  rowsep="1"/>
+    <colspec colname="name"     colnum="1" colwidth="85"  rowsep="1"/>
+    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+    <thead>
+      <row>
+	<entry colname="key">&nbsp; Sort</entry>
+	<entry colname="name">&nbsp; Name</entry>
+	<entry colname="descr">&nbsp; Description</entry>
+      </row>
+    </thead>
+    <tbody>
+      <row>
+	<entry colname="key">&nbsp; [[tab]]</entry>
+        <entry colname="name">&nbsp; [[sw:indent-line]]</entry>
+	<entry colname="descr">&nbsp; Indents line based on context</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[linefeed]]</entry>
+        <entry colname="name">&nbsp; [[newline-and-indent]]</entry>
+	<entry colname="descr">&nbsp; Same as [[return]] followed by [[tab]]</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-tab]]</entry>
+        <entry colname="name">&nbsp; [[sw:back-to-outer-indent]]</entry>
+	<entry colname="descr">&nbsp; Indents line for outer expression</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-C-q]]</entry>
+        <entry colname="name">&nbsp; [[sw:indent-sexp]]</entry>
+	<entry colname="descr">&nbsp; Indents parenthesized expression
+	  following point.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-C-\]]</entry>
+        <entry colname="name">&nbsp; [[sw:indent-region]]</entry>
+	<entry colname="descr">&nbsp; Indents region</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-*]]</entry>
+        <entry colname="name">&nbsp; [[sw:switch-to-lisp]]</entry>
+	<entry colname="descr">&nbsp; Switch to *common-lisp* buffer</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-.]]</entry>
+        <entry colname="name">&nbsp; [[sw:meta-point]]</entry>
+	<entry colname="descr">&nbsp; 
+	  Prompts for op or sort name (with default based on symbol at
+	  point), and goes to its definition. Searches only the units
+	  that have been loaded. First searches for definitions
+	  visible from the current unit.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-,]]</entry>
+        <entry colname="name">&nbsp; [[sw:continue-meta-point]]</entry>
+	<entry colname="descr">&nbsp; If previous meta-point command
+	  returned more than one definition, go to the next definition.
+	  Can be repeated.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-|]]</entry>
+        <entry colname="name">&nbsp; [[sw:electric-pipe]]</entry>
+	<entry colname="descr">&nbsp; Adds the skeleton of a new
+	  case to a case statement, properly indented.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-c ;]]</entry>
+        <entry colname="name">&nbsp; [[sw:comment-region]]</entry>
+	<entry colname="descr">&nbsp; Comment out the region using
+	  [[%]] characters. With a negative argument uncomments 
+	  the region.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
+        <entry colname="name">&nbsp; [[sw:process-file]]</entry>
+	<entry colname="descr">&nbsp; Prompts for unitId to process.
+	  Defaults to unitId for the current file. </entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
+        <entry colname="name">&nbsp; [[sw:cd-current-directory]]</entry>
+	<entry colname="descr">&nbsp; Does a :cd in the *common-lisp* 
+	  buffer to the directory of the current file.</entry>
+      </row>
+    </tbody>
+  </tgroup>
+</informaltable>
 
 </section>
 
 <section>
 <title>&Specware Interaction Commands</title>
 
-These are the commands available in the *common-lisp- buffer.
+<para>
+These are the commands available in the *common-lisp* buffer.
+</para>
 
-[[
-||tab		sw:indent-line
-||M-tab		sw:back-to-outer-indent
-||linefeed	newline-and-indent
-||M-C-q		sw:indent-sexp
-||M-C-\		sw:indent-region
-||M-*		sw:switch-to-lisp
-||M-.		sw:meta-point
-||M-,		sw:continue-meta-point
-||M-|		sw:electric-pipe
-||
-||C-c l		sw:switch-to-lisp
-]]
+<informaltable frame="sides" colsep="1">
+  <tgroup cols="3">
+    <colspec colname="key"      colnum="2" colwidth="40"  rowsep="1"/>
+    <colspec colname="name"     colnum="1" colwidth="85"  rowsep="1"/>
+    <colspec colname="descr"    colnum="4" colwidth="160" rowsep="1"/>
+    <thead>
+      <row>
+	<entry colname="key">&nbsp; Sort</entry>
+	<entry colname="name">&nbsp; Name</entry>
+	<entry colname="descr">&nbsp; Description</entry>
+      </row>
+    </thead>
+    <tbody>
+      <row>
+	<entry colname="key">&nbsp; [[M-*]]</entry>
+        <entry colname="name">&nbsp; [[sw:switch-to-lisp]]</entry>
+	<entry colname="descr">&nbsp; When already in the
+	   [[*common-lisp*]] buffer, goes to the previous
+	   source file buffer. </entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[M-.]]</entry>
+        <entry colname="name">&nbsp; [[sw:meta-point]]</entry>
+	<entry colname="descr">&nbsp; 
+	  Prompts for op or sort name (with default based on symbol at
+	  point), and goes to its definition. Searches only the units
+	  that have been loaded.
+	</entry>
+      </row>
+      <row>
+	<entry colname="key">&nbsp; [[C-c C-p]]</entry>
+        <entry colname="name">&nbsp; [[sw:cd-current-directory]]</entry>
+	<entry colname="descr">&nbsp; Does a :cd in the *common-lisp* 
+	  buffer to the directory of the current file.</entry>
+      </row>
+    </tbody>
+  </tgroup>
+</informaltable>
 
+</section>
 
+<section>
+<title>Other Useful Emacs Commands</title>
 
 <para>
+These are a few general Emacs commands which are useful when using &Specware.
 </para>
+
+C-h
+M-/ dabbrev-expand
+C-sh-middle
+M-x igrep-insinuate
+M-x igrep
+M-x igrep-find
+C-x d
+C-x C-f
+M-x viper-mode
+
 </section>
 </chapter>
