@@ -395,7 +395,7 @@ MSToFM qualifying spec
 	(resTerm, newContext)
       | Fun ((Bool true), Boolean(_), _) -> (fmTrue, context)
       | Fun ((Bool false), Boolean(_), _) -> (fmFalse, context)
-      | Fun (Nat (n) ,_,_) -> (Poly (mkConstantPoly(intToRational(n))), context)
+      | Fun (Nat (n) ,_,_) -> (Poly (mkConstantPoly(intToRatl(n))), context)
       | Fun(f, srt, _) -> toFMTermConstant(context, term, f)
       | Var (v, _) -> toFMVar(context, sp, v)
       | _ -> let (newVar, newContext) = toNewFMVar(term, context) in (newVar, newContext) in
