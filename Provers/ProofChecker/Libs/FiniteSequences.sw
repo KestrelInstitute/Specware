@@ -194,6 +194,14 @@ FSeq qualifying spec
                               then Some (s1!i, s2!i)
                               else None)
 
+  op zip3 : [a,b,c] {(s1,s2,s3) : FSeq a * FSeq b * FSeq c |
+                     length s1 = length s2 && length s2 = length s3}
+                    -> FSeq (a * b * c)
+  def zip3(s1,s2,s3) =
+    seqSuchThat (fn(i:Nat) -> if i < length s1 % = length s2 = length s3
+                              then Some (s1!i, s2!i, s3!i)
+                              else None)
+
   op unzip : [a,b] FSeq (a * b) -> FSeq a * FSeq b
   def unzip s =
     (seqSuchThat (fn(i:Nat) -> if i < length s
@@ -201,6 +209,18 @@ FSeq qualifying spec
                                else None),
      seqSuchThat (fn(i:Nat) -> if i < length s
                                then Some (s!i).2
+                               else None))
+
+  op unzip3 : [a,b,c] FSeq (a * b * c) -> FSeq a * FSeq b * FSeq c
+  def unzip3 s =
+    (seqSuchThat (fn(i:Nat) -> if i < length s
+                               then Some (s!i).1
+                               else None),
+     seqSuchThat (fn(i:Nat) -> if i < length s
+                               then Some (s!i).2
+                               else None),
+     seqSuchThat (fn(i:Nat) -> if i < length s
+                               then Some (s!i).3
                                else None))
 
   op flatten : [a] FSeq (FSeq a) -> FSeq a
