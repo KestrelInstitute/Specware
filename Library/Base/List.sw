@@ -1,7 +1,7 @@
 \section{List}
 
 \begin{spec}
-List qualifying spec
+List qualifying spec {
   import Option
   import PrimitiveSorts
   import Nat
@@ -171,5 +171,5 @@ List qualifying spec
        | ([],   []   ) -> Equal
        | ([],   _::_ ) -> Less
        | (_::_, []   ) -> Greater
-end
+}
 \end{spec}

@@ -44,10 +44,10 @@ Should compose take the two arrows as a product or should it be curried? I
 prefer curried.
 
 The following defines both only an abstract sort for categories.
-A concrete product sort is defined in Initial.spec. The separation
-is needed to enable the sort Cat to be refined. In particular, the
-sort for cocomplete category comes with the same operators plus
-one for computing colimits.
+A concrete product sort is defined in Polymorphic/AsRecord.spec. The
+separation is needed to enable the sort Cat to be refined. In particular,
+the sort for cocomplete category comes with the same operators plus one
+for computing colimits.
 
 This way we can define operations on categories also applicable to
 cocomplete categories.
@@ -74,6 +74,7 @@ spec {
 }
 \end{spec}
 
-We have omitted the operator composable?. It seems of little use.
+We have omitted the operator composable?. It seems of little use,
+even with subsorting, without dependent types.
 
 Should we have pretty printing operations here? 

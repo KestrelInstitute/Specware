@@ -1,7 +1,7 @@
 \section{Boolean}
 
 \begin{spec}
-Boolean qualifying spec
+Boolean qualifying spec {
   import PrimitiveSorts
   import Compare
 
@@ -24,5 +24,5 @@ Boolean qualifying spec
   def &   (x,y) = if x then y     else false
   def =>  (x,y) = if x then y     else true
   def <=> (x,y) = if x then y     else ~y 
-end
+}
 \end{spec}

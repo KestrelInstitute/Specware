@@ -1,7 +1,7 @@
 \section{Nat}
 
 \begin{spec}
-Nat qualifying spec
+Nat qualifying spec {
   import PrimitiveSorts
   import Integer
   import Compare
@@ -78,5 +78,5 @@ Nat qualifying spec
 %    if n < m then Less else if n = m then Equal else Greater        
 
   def show n = natToString n
-end
+}
 \end{spec}
