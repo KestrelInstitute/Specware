@@ -41,14 +41,8 @@ Metaslang grammar):
  gen-c [spec-term [filename]]
  make [spec-term]
  gen-java [spec-term [filename]]
- swj-config
- swj-config-dir [dir]
- swj-config-make-public [names]
- swj-config-pkg [pkg]
- swj-config-reset
  punits [spec-term [string-literal]]
  lpunits [spec-term [string-literal]]
- clist  (currently omitted because of dubious usefulness)
  cinit
  ctext [spec-term]
  eval [expression]
@@ -107,7 +101,7 @@ the last processed unit).
 
 * showx [unit-term]
 
-Like command `show' but import-declarations are "expanded"
+Like command `show' but import-declarations are "expanded".
 
 * gen-lisp [spec-term [string-literal]]
 
@@ -135,6 +129,18 @@ Like command `gen-lisp' except that it only generates Lisp code for types and
 ops locally declared in the spec-term. (Typically used for incremental
 development.)
 
+* gen-c [spec-term [filename]]
+
+Generates C code for unit in filename. With no argument uses last processed unit.
+
+* make [spec-term]
+
+Generate C code with makefile and call make on it.
+
+* gen-java [spec-term [filename]]
+
+Generates Java code for unit in filename. With no argument uses last processed unit.
+
 * punits [spec-term [string-literal]]
 
 Without arguments, generates proof unit definitions for all conjectures in the
@@ -159,10 +165,6 @@ string-literal should end in ".sw".
 Like command `punits' except that it only generates proof unit definitions for
 the conjectures locally present in the spec-term (e.g. not from imported
 specs).
-
-* clist
-(currently omitted)
-Displays the current Specware unit cache.
 
 * cinit
 
@@ -191,55 +193,15 @@ Evaluation takes place via the Metaslang interpreter that is part of Specware.
 Like command `eval', except that the expression is compiled to Lisp and then
 evaluated in Lisp.
 
-* gen-lisp [spec-term [filename]]
-                  
-Generates Lisp code for unit in filename. With no argument uses last processed unit.
-
-* lgen-lisp [spec-term [filename]]
-
-Like `gen-lisp' but only generates lisp for local definitions of spec.
-
-* gen-c [spec-term [filename]]
-                  
-Generates C code for unit in filename. With no argument uses last processed unit.
-
-* make [spec-term]  
-
-Generate C code with makefile and call make on it.
-
-* gen-java [spec-term [filename]]
-                  
-Generates Java code for unit in filename. With no argument uses last processed unit.
-
-* swj-config        
-
-Show configuration parameters for Java generation.
-
-* swj-config-dir [dir]
-                  
-Set base directory to be used by gen-java.
-
-* swj-config-make-public [names]
-                  
-Set public names to be used by gen-java.
-
-* swj-config-pkg [pkg]
-
-Set package name to be used by gen-java.
-
-* swj-config-reset  
-
-Restore default configuration parameters for Java generation.
-
-* cf [filename]     
+* cf [filename]
 
 Compile lisp file filename.
 
-* ld [filename]     
+* ld [filename]
 
 Load lisp file filename.
 
-* cl [filename]     
+* cl [filename]
 
 Compile and load lisp file filename.
 
