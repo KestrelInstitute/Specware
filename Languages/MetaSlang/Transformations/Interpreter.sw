@@ -87,11 +87,11 @@ spec
 			    | Some sbr ->
 			      %% The e are evaluated in the outer environment (sb not sbr)
 			      (case patternMatch(pat,evalRec(e,sb,spc,depth+1),sbr) of
-				 | Match s -> Some s
+				 | Match S -> Some S
 				 | _ -> None)
 			    | None -> None)
 		   (Some sb) decls
-	       of Some sb -> evalRec(body,sb,spc,depth+1)
+	       of Some newsb -> maybeMkLetOrSubst(evalRec(body,sb,spc,depth+1),newsb,sb)
 		| None -> Unevaluated t)
 	  | LetRec(decls, body, _) ->
 	    let ids = rev(map (fn ((v,_),_) -> v) decls) in
