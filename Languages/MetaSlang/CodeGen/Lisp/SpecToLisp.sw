@@ -1185,8 +1185,8 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       let spc = translateMatch(spc) in
       let spc = translateRecordMergeInSpec(spc) in
       let spc = arityNormalize(spc) in
-      let spc = lisp(spc) in
-      spc 
+      let lisp_spec = lisp(spc) in
+      lisp_spec 
 
   def toLispFile (spc, file, preamble) =  
       toLispFileEnv (spc, file, preamble) 
