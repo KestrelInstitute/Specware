@@ -8,6 +8,8 @@ spec
  import /Library/Legacy/DataStructures/MergeSort % for combining error messages
  import /Library/Legacy/DataStructures/ListPair  % misc utility
 
+ op SpecCalc.equivTerm?    : Spec -> MS.Term    * MS.Term    -> Boolean % defined in EquivPreds, but importing that would be circular
+
  sort Environment = StringMap Spec
  sort LocalEnv = 
       {importMap  : Environment,
@@ -425,6 +427,7 @@ spec
                   (LocalEnv * a * a *  List (MS.Sort * MS.Sort) * Boolean -> Unification)
 		  -> Unification
  def unifyL (env, srt1, srt2, l1, l2, pairs, ignoreSubsorts?, unify) : Unification = 
+   %% ignoreSubsorts? really should be called ignoreSubsortPreds? 
    case (l1, l2) of
      | ([], []) -> Unify pairs
      | (e1 :: l1, e2 :: l2) -> 
@@ -435,6 +438,7 @@ spec
 
   op unifySorts : LocalEnv -> Boolean -> Sort -> Sort -> Boolean * String
  def unifySorts env ignoreSubsorts? s1 s2 =
+   %% ignoreSubsorts? really should be called ignoreSubsortPreds? 
 
    (* Unify possibly recursive sorts s1 and s2.
       The auxiliary list "pairs" is a list of pairs of 
@@ -460,12 +464,6 @@ spec
       unfoldings are bisimilar.
 
       *)
-
-   %%    let _ = String.writeLine "Unifying"     in
-   %%    let _ = System.print s1 in
-   %%    let _ = System.print s2 in
-   %%    let _ = String.writeLine (printSort s1) in
-   %%    let _ = String.writeLine (printSort s2) in
 
    case unify (env, s1, s2, [], ignoreSubsorts?) of
      | Unify     _       -> (true,  "")
@@ -606,9 +604,10 @@ spec
 
 	% TODO: alpha equivalence...
 	% | (Pi _, Pi _) -> alpha equivalence directly
+        % or convert callers of unify to convert TyVars to MetaTyVars??
 
 	| (Pi _, _) ->
-	  % TODO: perhaps alpha equivalence by converting vars to meta-ty-vars
+	  % TODO: or perhaps alpha equivalence by converting vars to meta-ty-vars here...
 	  unify (env, sortInnerSort srt1, srt2, pairs, ignoreSubsorts?)
 
 	| (_, Pi _) ->
@@ -634,6 +633,11 @@ spec
 	      | _ -> NotUnify (srt1, srt2)
 	  else 
 	    case (srt1, srt2) of
+	      | (Subsort (s1, p1, _), Subsort (s2, p2, _)) ->
+		if equivTerm? env.internal (p1, p2) then
+		  unify (env, s1, s2, pairs, ignoreSubsorts?)
+		else
+		  NotUnify (srt1, srt2)
 	      | (Base _, _) -> 
 	        let  s3 = unfoldSort (env, srt1) in
 		if equalSort? (s1, s3) then 
