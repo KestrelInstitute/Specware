@@ -1092,6 +1092,8 @@ op mapJavaIdent: String -> Ident -> Ident
 def mapJavaIdent sep id =
   let idarray = explode(id) in
   let id = foldr (fn(#?,id) -> sep^"Q"^id
+		  | (#<,id) -> sep^"LT"^id
+		  | (#>,id) -> sep^"GT"^id
 		  | (c,id) -> Char.toString(c)^id) "" idarray
   in
     id
