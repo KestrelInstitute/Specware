@@ -430,6 +430,7 @@ spec
       | Lambda     ([],                   _) -> System.fail "Ill formed lambda abstraction"
       | IfThenElse (_, t2, t3,            _) -> termSortEnv   (sp, t2)
       | Seq        _                         -> mkProduct     []
+      | SortedTerm (_,s,                  _) -> s
       | mystery                              -> System.fail ("In termSortEnv, unrecognized term: " ^ printTerm mystery)
   in
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in

@@ -20,6 +20,10 @@ Prover qualifying spec
                            Sort * MS.Term * List MS.Term -> MS.Term
 
   def mkUncurryEqualityRec (sp, topSrt, topTrm, topFunOp, srt, trm, prevArgs) =
+    case trm of
+      | SortedTerm(t,_,_) ->
+        mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, t, prevArgs)
+      | _ ->
     % case arrowOpt(sp, srt) of
     %  | Some(dom, rng) ->
     case srt of
