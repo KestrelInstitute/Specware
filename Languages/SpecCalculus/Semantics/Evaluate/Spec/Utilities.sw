@@ -4,8 +4,8 @@ SpecCalc qualifying spec {
  import /Languages/MetaSlang/Specs/PosSpec
  import /Library/Legacy/DataStructures/Monadic/SplayMap
 
- op addPSort : (QualifiedId * TyVars * Option PSort) * PosSpec -> Position -> SpecCalc.Env PosSpec
- def addPSort ((name as Qualified(qualifier, id), new_type_vars, new_opt_def), old_spec) position =
+ op addPSort : (List QualifiedId * TyVars * Option PSort) * PosSpec -> Position -> SpecCalc.Env PosSpec
+ def addPSort ((names as (Qualified(qualifier, id))::_, new_type_vars, new_opt_def), old_spec) position =
   %% qualifier could be "<unqualified>" !
   let old_sorts = old_spec.sorts in
   let old_qmap =
@@ -15,7 +15,7 @@ SpecCalc qualifying spec {
   in {
     new_qmap <-  
       case StringMap.find (old_qmap, id) of
-       | None -> return (StringMap.insert (old_qmap, id, ([name], new_type_vars, new_opt_def)))
+       | None -> return (StringMap.insert (old_qmap, id, (names, new_type_vars, new_opt_def)))
        | Some (old_sort_names, old_type_vars, old_opt_def) -> 
           (case (new_opt_def, old_opt_def) of
             | (None,   None)   -> raise (SpecError (position, "Sort " ^ id ^ " has been redeclared"))
@@ -36,11 +36,11 @@ SpecCalc qualifying spec {
             | (Some _, Some _) -> raise (SpecError (position,"Sort " ^ id ^ " has been redefined")));
     let new_sorts = StringMap.insert (old_sorts, qualifier, new_qmap) in 
     let sp = setSorts (old_spec, new_sorts) in
-    return (addLocalSortName (sp, name))
+    return (foldl (fn (name, sp) -> addLocalSortName (sp, name)) sp names)
   }
 
- op addPOp   : (QualifiedId * Fixity * PSortScheme * Option PTerm) * PosSpec -> Position -> SpecCalc.Env PosSpec
- def addPOp ((name as Qualified(qualifier, id), new_fixity, new_sort_scheme, new_opt_def),
+ op addPOp   : (List QualifiedId * Fixity * PSortScheme * Option PTerm) * PosSpec -> Position -> SpecCalc.Env PosSpec
+ def addPOp ((names as (Qualified(qualifier, id))::_, new_fixity, new_sort_scheme, new_opt_def),
              old_spec) position =
   %% qualifier could be "<unqualified>" !
   let old_ops = old_spec.ops in
@@ -52,7 +52,7 @@ SpecCalc qualifying spec {
     new_qmap <-
       case StringMap.find (old_qmap, id) of
        | None -> return (StringMap.insert(old_qmap, id,
-                                  ([name], new_fixity, new_sort_scheme, new_opt_def)))
+                                  (names, new_fixity, new_sort_scheme, new_opt_def)))
        | Some (old_op_names, old_fixity, old_sort_scheme, old_opt_def) -> 
           (case (new_opt_def, old_opt_def) of
             | (None,   Some _) -> %%  def foo (x, y) = baz (x, y)
@@ -69,7 +69,7 @@ SpecCalc qualifying spec {
                 raise (SpecError (position, "Operator "^id^" has been redefined")));
     let new_ops = StringMap.insert (old_ops, qualifier, new_qmap) in
     let sp = setOps (old_spec, new_ops) in
-    return (addLocalOpName (sp, name))
+    return (foldl (fn (name, sp) -> addLocalOpName (sp, name)) sp names)
   }
 
  % ------------------------------------------------------------------------

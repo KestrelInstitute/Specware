@@ -335,7 +335,7 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :OP-DEFINITION ()
   (:tuple "def"
           (:optional (1 :SORT-VARIABLE-BINDER))
-          (2 :QUALIFIABLE-OP-NAME)
+          (2 :QUALIFIABLE-OP-NAMES)
           (:optional (3 :FORMAL-PARAMETERS))
           (:optional (:tuple ":" (4 :SORT)))
           :EQUALS

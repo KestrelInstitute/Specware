@@ -229,10 +229,10 @@ PosSpec qualifying spec {
  % sort PropertyName = String
  sort SpecName     = String
 
- op addPSort : (QualifiedId * TyVars * Option PSort)               * PosSpec -> PosSpec
- op addPOp   : (QualifiedId * Fixity * PSortScheme * Option PTerm) * PosSpec -> PosSpec
+ op addPSort : (List QualifiedId * TyVars * Option PSort)               * PosSpec -> PosSpec
+ op addPOp   : (List QualifiedId * Fixity * PSortScheme * Option PTerm) * PosSpec -> PosSpec
 
- def addPSort ((name as Qualified(qualifier, id), new_type_vars, new_opt_def), old_spec) =
+ def addPSort ((names as (Qualified(qualifier, id))::_, new_type_vars, new_opt_def), old_spec) =
   %% qualifier could be "<unqualified>" !
   let old_sorts = old_spec.sorts in
   let old_qmap = case StringMap.find (old_sorts, qualifier) of
@@ -241,7 +241,7 @@ PosSpec qualifying spec {
   in
   let new_qmap =  
       case StringMap.find (old_qmap, id) of
-       | None -> StringMap.insert (old_qmap, id, ([name], new_type_vars, new_opt_def))
+       | None -> StringMap.insert (old_qmap, id, (names, new_type_vars, new_opt_def))
        | Some (old_sort_names, old_type_vars, old_opt_def) -> 
       (case (new_opt_def, old_opt_def) of
        | (None,   None)   -> System.fail ("Sort "^id^" has been redeclared")
@@ -261,9 +261,9 @@ PosSpec qualifying spec {
   let new_sorts = StringMap.insert (old_sorts, qualifier, new_qmap)
   in 
   let sp = setSorts (old_spec, new_sorts) in
-  addLocalSortName (sp, name)
+  foldl (fn (name, sp) -> addLocalSortName (sp, name)) sp names
 
- def addPOp ((name as Qualified(qualifier, id), new_fixity, new_sort_scheme, new_opt_def),
+ def addPOp ((names as (Qualified(qualifier, id))::_, new_fixity, new_sort_scheme, new_opt_def),
 	     old_spec) : PosSpec =
   %% qualifier could be "<unqualified>" !
   let old_ops = old_spec.ops in
@@ -274,7 +274,7 @@ PosSpec qualifying spec {
   let new_qmap =
       case StringMap.find (old_qmap, id) of
        | None -> StringMap.insert(old_qmap, id,
-				  ([name], new_fixity, new_sort_scheme, new_opt_def))
+				  (names, new_fixity, new_sort_scheme, new_opt_def))
        | Some (old_op_names, old_fixity, old_sort_scheme, old_opt_def) -> 
       (case (new_opt_def, old_opt_def) of
        | (None,   Some _) -> %%  def foo (x, y) = baz (x, y)
@@ -293,7 +293,7 @@ PosSpec qualifying spec {
   let new_ops = StringMap.insert (old_ops, qualifier, new_qmap)
   in
   let sp = setOps (old_spec, new_ops) in
-  addLocalOpName (sp, name)
+  foldl (fn (name, sp) -> addLocalOpName (sp, name)) sp names
 
  % ------------------------------------------------------------------------
 

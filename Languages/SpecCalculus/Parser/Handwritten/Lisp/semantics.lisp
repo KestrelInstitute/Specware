@@ -155,7 +155,7 @@
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
     ;;  (cdr tyVarsSrt) will be ignored.
     ;; TODO: skip the code above and use typeVars1 for typeVars2 below
-    (cons (cons :|Sort| (cons (first qualifiable-sort-names)
+    (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
 			      (cons typeVars2 (cons :|None| nil))))
           (make-pos l r))))
 
@@ -172,7 +172,7 @@
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
     ;;  (cdr tyVarsSrt) will be a copy of sort with (PBase qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for this conversion into the linker.
-    (cons (cons :|Sort| (cons (first qualifiable-sort-names)
+    (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
 			      (cons typeVars2 (cons :|Some| sort2))))
           (make-pos l r))))
 
@@ -182,7 +182,7 @@
 
 (defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
   (let ((fixity (if (equal :unspecified optional-fixity) nil optional-fixity)))
-    (cons (cons :|Op| (cons (first qualifiable-op-names)
+    (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
                             (vector fixity sort-scheme (cons :|None| nil))))
           (make-pos l r))))
 
@@ -213,7 +213,7 @@ If we want the precedence to be optional:
 ;;;  OP-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-definition (tyVars qualifiable-op-name params optional-sort term l r)
+(defun make-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
   (let* ((params     (if (equal :unspecified params) nil params))
          (tyVars     (if (equal :unspecified tyVars) nil tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
@@ -227,9 +227,9 @@ If we want the precedence to be optional:
     ;;    so srtScheme will be tyVars * Mtv -- i.e. Mtv parameterized by tyVars
     ;;  (cdr tyVarsTerm) will be a copy of term with (PBase qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
-    (cons (cons :|Op| (cons qualifiable-op-name
+    (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
                             (vector nil srtScheme (cons :|Some| term))))
-     (make-pos l r))))
+	  (make-pos l r))))
 
 (defun bind-parameters (params term l r)
   (if (null params)

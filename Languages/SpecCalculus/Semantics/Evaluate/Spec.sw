@@ -70,10 +70,10 @@ and then qualify the resulting spec if the spec was given a name.
   def evaluateSpecElem spc (elem, position) =
     case elem of
       | Import term -> return spc
-      | Sort (name,(tyVars,optSort)) ->
-          addPSort ((name, tyVars, optSort), spc) position
-      | Op (name,(fxty,srtScheme,optTerm)) ->
-          addPOp ((name, fxty, srtScheme, optTerm), spc) position
+      | Sort (names,(tyVars,optSort)) ->
+          addPSort ((names, tyVars, optSort), spc) position
+      | Op (names,(fxty,srtScheme,optTerm)) ->
+          addPOp ((names, fxty, srtScheme, optTerm), spc) position
       | Claim (Axiom, name, tyVars, term) ->
           return (addAxiom ((name,tyVars,term), spc)) 
       | Claim (Theorem, name, tyVars, term) ->
