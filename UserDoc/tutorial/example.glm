@@ -796,7 +796,7 @@ name where the code is deposited as a side effect. The following
 command is given in the Lisp shell:</para>
 
 [[L:
-||    :swl generate lisp <specname> in <targetfilename>
+||    :sw generate lisp <specname> in <targetfilename>
 ]]
 
 <para>The above command first processes the named spec and then
@@ -810,8 +810,8 @@ split into multiple lines for typographical reasons, but it should be
 written as just one line in &Specware;):</para>
 
 [[L:
-||    :swl generate lisp MatchingRefinements#FindMatches
-||                  in find-matches
+||    :sw generate lisp MatchingRefinements#FindMatches
+||                 in find-matches
 ]]
 
 <para>Note that if the <".lisp"> suffix is omitted, &Specware; adds it
@@ -912,7 +912,9 @@ it could have been omitted.</para>
 
 <para>Now, instead of generating code from
 [[MatchingRefinements#FindMatches]], we generate code from
-[[MatchingTest#Test]]:</para>
+[[MatchingTest#Test]] (the command below is split into multiple lines
+for typographical reasons, but it should be written as just one line
+in &Specware;):</para>
 
 [[L:
 ||    :sw generate lisp MatchingTest#Test
