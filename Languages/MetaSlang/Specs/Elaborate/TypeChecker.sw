@@ -612,7 +612,7 @@ spec {
        Fun (Embedded id, srt, pos)
       )
     | Fun (PChoose equiv, srt, pos) ->
-	 (* Has sort {f: a -> b | fa(m,n) q(m,n) => f m = f n} -> a \ equiv -> b *)
+	 (* Has sort {f: a -> b | fa(m,n) equiv(m,n) => f m = f n} -> a \ equiv -> b *)
          let a = freshMetaTyVar pos in
          let b = freshMetaTyVar pos in
          let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in

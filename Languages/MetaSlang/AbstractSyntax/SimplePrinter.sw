@@ -313,9 +313,13 @@ infix with brackets. And similarly when we see an \verb+Equals+.
     case fun of
       | Equals -> ppString "="
       | Quotient -> ppString "quotient"
+      | PQuotient _ -> ppString "quotient"
       | Choose -> ppString "choose"
+      | PChoose _ -> ppString "choose"
       | Restrict -> ppString "restrict"
+      | PRestrict _ -> ppString "restrict"
       | Relax -> ppString "relax"
+      | PRelax _ -> ppString "relax"
       | Op (qid,Nonfix) -> ppQualifiedId qid
       | Op (qid,Unspecified) -> ppQualifiedId qid
       | Op (qid,fix) -> 

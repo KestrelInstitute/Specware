@@ -188,6 +188,12 @@ MetaSlang qualifying spec {
  sort AField  b = FieldName * ASort b  % used by products and co-products
  sort FieldName = String
 
+  op  getField: fa(a) List (Id * ATerm a) * Id -> Option(ATerm a)
+  def getField(m,id) =
+    case find (fn (id1,_) -> id = id1) m of
+      | None -> None
+      | Some(_,t) -> Some t
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Annotations
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

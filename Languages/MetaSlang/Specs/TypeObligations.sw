@@ -46,8 +46,10 @@ spec
 	 | _ -> mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
      | _ -> mkApply(fntm,arg)
 
- def assertCond(cond,(ds,tvs,spc,qid,name,names)) = 
-     (cons(Cond cond,ds),tvs,spc,qid,name,names)
+ def assertCond(cond,gamma as (ds,tvs,spc,qid,name,names)) = 
+   case cond of
+     | Fun((Bool true,_,_)) -> gamma
+     | _ -> (cons(Cond cond,ds),tvs,spc,qid,name,names)
  def insert((x,srt),(ds,tvs,spc,qid,name,names))  = 
      let ds = cons(Var(x,srt),ds) in
      let gamma = (ds,tvs,spc,qid,name,names) in
@@ -164,6 +166,11 @@ spec
 	       let tau2 = range(spc,sigma1) 		    	   in
 	       let tcc  = <= (tcc,gamma,M,tau2,tau) 		   in
 	       checkLambda(tcc,gamma,rules,sigma1,Some N2)
+	     | Fun(Restrict,s,_) ->
+	       let (dom,ran) = arrow(spc,s)				   in
+	       let tcc  = (tcc,gamma) |- N2 ?? dom		   in
+	       let tcc  = <= (tcc,gamma,N2,dom,ran) 		   in
+	       tcc
 	     | _ ->
 	   let tcc  = (tcc,gamma) |- N1 ?? sigma1 	           in
 	   case nonStrictAppl(N1,N2) of
@@ -259,6 +266,9 @@ spec
 %% This checks that pattern matching is exhaustive.
 %%
         | Lambda(rules,_) ->
+	  let spc = getSpec gamma	       in
+	  let tau2 = inferType(spc,M)  	       in
+	  let tcc  = <= (tcc,gamma,M,tau2,tau) in
 	  checkLambda(tcc,gamma,rules,tau,None)
 	
         | IfThenElse(t1,t2,t3,_) -> 
@@ -499,7 +509,7 @@ spec
 	      | _ -> Let(decls,trm,noPos))
 	| _ -> trm
 
- def <= (tcc,gamma,M,tau,sigma) = 
+ def <=	 (tcc,gamma,M,tau,sigma) = 
      (%String.writeLine
       %	   (printTerm M^ " : "^
       %         printSort tau^" <= "^
@@ -610,16 +620,16 @@ spec
    let x = ("x",elty) in
    let y = ("y",elty) in
    let z = ("z",elty) in
-   [%% fa(x) r(x,x)
-    (name^"_reflexive",tyVars,
-     mkBind(Forall,[x],mkAppl(r,[mkVar x,mkVar x]))),
+   [%% fa(x,y,z) r(x,y) & r(y,z) => r(x,z)
+    (name^"_transitive",tyVars,
+     mkBind(Forall,[x,y,z],mkImplies(MS.mkAnd(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar z])),
+				     mkAppl(r,[mkVar x,mkVar z])))),
     %% fa(x,y) r(x,y) => r(y,x)
     (name^"_symmetric",tyVars,
      mkBind(Forall,[x,y],mkImplies(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar x])))),
-    %% fa(x,y,z) r(x,y) & r(y,z) => r(x,z)
-    (name^"_transitive",tyVars,
-     mkBind(Forall,[x,y,z],mkImplies(MS.mkAnd(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar z])),
-				     mkAppl(r,[mkVar x,mkVar z]))))]
+    %% fa(x) r(x,x)
+    (name^"_reflexive",tyVars,
+     mkBind(Forall,[x],mkAppl(r,[mkVar x,mkVar x])))]
 
  op  nameFromTerm: MS.Term -> String
  def nameFromTerm t =
@@ -675,7 +685,9 @@ spec
  def wfoSpecTerm = (UnitId(SpecPath_Relative{path = ["Library","Base","WFO"], hashSuffix = None}),noPos)
 
  def makeTypeCheckObligationSpec (spc,specCalcTerm) =
-   let Some wfoSpec = getOptSpec (Some "/Library/Base/WFO") in
+   case getOptSpec (Some "/Library/Base/WFO") of
+     | None -> fail "Error in processing /Library/Base/WFO"
+     | Some wfoSpec ->
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
    let tcSpec = setImports (spc, [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)]) in
