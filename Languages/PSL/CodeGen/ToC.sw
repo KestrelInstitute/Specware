@@ -75,22 +75,22 @@ with a loop or out of a conditional.
 
             | Return term -> termToCStmtNew term % Return (termToCExp term)
 
-            | IfThen {condition, trueBranch, continue} ->
-                let stmt = IfThen (termToCExp condition, consume trueBranch continue) in
-                let rest = consume continue last in
+            | IfThen {condition, trueBranch, cont} ->
+                let stmt = IfThen (termToCExp condition, consume trueBranch cont) in
+                let rest = consume cont last in
                 reduceStmt [stmt] rest
 
-            | IfThenElse {condition, trueBranch, falseBranch, continue} ->
-                let trueStmt = consume trueBranch continue in
-                let falseStmt = consume falseBranch continue in
+            | IfThenElse {condition, trueBranch, falseBranch, cont} ->
+                let trueStmt = consume trueBranch cont in
+                let falseStmt = consume falseBranch cont in
                 let ifStmt = If (termToCExp condition, trueStmt, falseStmt) in
-                let rest = consume continue last in
+                let rest = consume cont last in
                 reduceStmt [ifStmt] rest
 
-            | Loop {condition, preTest?, body, endLoop, continue} ->
+            | Loop {condition, preTest?, body, cont} ->
                 let bodyStmt = consume body first in
                 let whileStmt = While (termToCExp condition, bodyStmt) in
-                let rest = consume continue last in
+                let rest = consume cont last in
                 reduceStmt [whileStmt] rest
 
             | Branch {condition, trueBranch, falseBranch} ->

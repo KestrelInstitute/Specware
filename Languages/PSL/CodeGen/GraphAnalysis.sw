@@ -6,7 +6,7 @@ Osorio
 
 Top-level function is nodeListToStructuredGraph
 *)
-
+Struct qualifying 
 spec 
   import /Languages/MetaSlang/Specs/StandardSpec
   import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex
@@ -30,16 +30,16 @@ spec
     %% Next three are for representing discovered structure in the graph
     | IfThen { condition  : MS.Term,
 	       trueBranch : Index,
-	       continue   : Index }
+	       cont       : Index }
     | IfThenElse { condition   : MS.Term,
 		   trueBranch  : Index,
 		   falseBranch : Index,
-		   continue    : Index }
+		   cont        : Index }
     | Loop { condition : MS.Term,
 	     preTest?  : Boolean,
 	     body      : Index,
-	     endLoop   : Index,
-	     continue  : Index }
+%	     endLoop   : Index,
+	     cont      : Index }
 
   op noContinue: Index			% To represent return destination
   def noContinue = ~ 1
@@ -57,7 +57,8 @@ spec
     case nth(g,i) of
       | (_,_,preds) -> preds
 
-  def successors(i,g) = nodeSuccessors(nodeContent(i,g))
+  def successors(i,g) = if i = noContinue then []
+                         else nodeSuccessors(nodeContent(i,g))
 
   op nodeSuccessors: NodeContent ->  List Index
   def nodeSuccessors nc =
@@ -65,10 +66,10 @@ spec
       | Block {statements = _, next} -> [next]
       | Branch {condition = _, trueBranch, falseBranch} -> [trueBranch, falseBranch]
       | Return _ -> []
-      | IfThen {condition, trueBranch, continue} -> [trueBranch,continue]
-      | IfThenElse {condition, trueBranch, falseBranch, continue} ->
+      | IfThen {condition, trueBranch, cont} -> [trueBranch,cont]
+      | IfThenElse {condition, trueBranch, falseBranch, cont} ->
         [trueBranch, falseBranch]
-      | Loop {condition, preTest?, body, endLoop, continue} -> [body,continue]
+      | Loop {condition, preTest?, body, cont} -> [body,cont]
 
   op setNodeContent: Index * NodeContent * Graph -> Graph
   def setNodeContent(i,newNodeContent,g) =
@@ -108,24 +109,29 @@ spec
 
   op commonSuccessor: Nat * Nat * Graph -> Nat
   def commonSuccessor(i,j,g) =
-    let def breadthFirst(iS,jS,seen,g) =
+    let def breadthFirst(iS,jS,iSeen,jSeen,g) =
           case iS of
 	    | x::riS ->
-	      if member(x,seen) or x = noContinue then x   % LE added ~1 test
+	      if member(x,jSeen) then x   % LE added ~1 test
 		else
-		let newIS = filter (fn x -> ~(member(x,seen) or member(x,riS)))
+		let newIS = filter (fn x -> ~(member(x,iSeen) or member(x,riS)
+					      or x = noContinue))
 		              (successors(x,g))
 		in
 		%% Notice reversal of jS and riS
-		breadthFirst(jS,riS ++ newIS,Cons(x,seen),g)
+		breadthFirst(jS,riS ++ newIS,jSeen,Cons(x,iSeen),g)
 	    | [] ->
 	  case jS of
-	    | x::riS ->
-	      if member(x,seen) or x = noContinue then x   % LE added ~1 test
-		else breadthFirst(riS ++ successors(x,g),iS,Cons(x,seen),g)
+	    | x::rjS ->
+	      if member(x,iSeen) then x   % LE added ~1 test
+		else let newJS = filter (fn x -> ~(member(x,jSeen) or member(x,rjS)
+					             or x = noContinue))
+		                   (successors(x,g))
+		     in
+		     breadthFirst(rjS ++ newJS,iS,Cons(x,jSeen),iSeen,g)
 	    | _ -> noContinue
     in
-      breadthFirst([i],[j],[],g)
+      breadthFirst([i],[j],[],[],g)
 
   op findTopIndex: Graph -> Index
   def findTopIndex(g) = 0
@@ -143,8 +149,8 @@ spec
 	   ++ exits)
       [] nds
 
-  op getAllPredecessorsBackTo: Index * List Index * Graph -> List Index
-  def getAllPredecessorsBackTo(nd,limitNds,g) =
+  op getAllPredecessorsBackTo: List Index * List Index * Graph -> List Index
+  def getAllPredecessorsBackTo(nds,limitNds,g) =
     let def loop(nds,found,g) =
           case nds of
 	    | [] -> found
@@ -153,7 +159,7 @@ spec
 		then loop(rNds,found,g)
 		else loop(rNds ++ (predecessors(nd,g)),Cons(nd,found),g)
     in
-      loop([nd],limitNds,g)
+      loop(nds,limitNds,g)
 
   op nodeListToStructuredGraph: List NodeContent -> Graph
   def nodeListToStructuredGraph contentsList =
@@ -175,26 +181,26 @@ spec
 	else
 	case loopPredecessors(nd,baseG) of
 	  | []  -> buildStraightLine(nd,exits,newG)
-	  | [x] ->
-	    let loopExits = exitNodes(Cons(nd,getAllPredecessorsBackTo(x,[nd],baseG)),
+	  | preds ->
+	    let loopExits = exitNodes(Cons(nd,getAllPredecessorsBackTo(preds,[nd],
+								       baseG)),
 				      baseG) in
-	    buildLoop(nd,x,loopExits,exits,newG)
+	    buildLoop(nd,loopExits,exits,newG)
 	  %% So far only one loop for node
 	  %| x::rs -> buildLoops(n,x,rs,newG)
 
-      def buildLoop(head,endloop,loopExits,exits,newG) =
-        let (cond,body,continue,newG) = loopHead(head,loopExits,newG) in
-	let newG = buildStructuredGraph(continue,exits,newG) in
+      def buildLoop(head,loopExits,exits,newG) =
+        let (cond,body,cont,newG) = loopHead(head,loopExits,newG) in
+	let newG = buildStructuredGraph(cont,exits,newG) in
 	let newG = buildStructuredGraph(body,Cons(head,loopExits),newG) in
 	let newG = setNodeContent(head,
 				  Loop {condition = cond,
 					preTest?  = true,
 					body      = body,
-					endLoop   = endloop,
-					continue  = continue},
+					cont  = cont},
 				  newG)
 	in foldl (fn (x,newG) ->
-		  if x = continue then newG
+		  if x = cont then newG
 		    else buildStructuredGraph(x,exits,newG))
 	     newG loopExits
 
@@ -215,27 +221,27 @@ spec
 	  | Block {statements = _, next} ->
 	    buildStructuredGraph (next,exits,newG)
 	  | Branch {condition, trueBranch, falseBranch} ->
-	    let continue = commonSuccessor(trueBranch,falseBranch,baseG) in
-	    let newG = buildStraightLine(trueBranch, [continue],newG) in
-	    let newG = buildStraightLine(falseBranch,[continue],newG) in
-        % LE added last disjunct below. There may be no common succesor (continue = noContinue)
-	    let newG = if continue = trueBranch or continue = falseBranch or continue = noContinue
+	    let cont = commonSuccessor(trueBranch,falseBranch,baseG) in
+	    let newG = buildStructuredGraph(trueBranch, [cont],newG) in
+	    let newG = buildStructuredGraph(falseBranch,[cont],newG) in
+        % LE added last disjunct below. There may be no common succesor (cont = noContinue)
+	    let newG = if cont = trueBranch or cont = falseBranch or cont = noContinue
 	                then newG
-			else buildStraightLine(continue,exits,newG) in
-	    if falseBranch = continue
+			else buildStructuredGraph(cont,exits,newG) in
+	    if falseBranch = cont
 	      then setNodeContent(nd,IfThen {condition   = condition,
 					     trueBranch  = trueBranch,
-					     continue    = falseBranch},
+					     cont        = falseBranch},
 				  newG)
-	    else if trueBranch = continue
+	    else if trueBranch = cont
 	      then setNodeContent(nd,IfThen {condition   = negateTerm condition,
 					     trueBranch  = falseBranch,
-					     continue    = trueBranch},
+					     cont        = trueBranch},
 				  newG)
 	      else setNodeContent(nd,IfThenElse {condition   = condition,
 						 trueBranch  = trueBranch,
 						 falseBranch = falseBranch,
-						 continue    = continue},
+						 cont        = cont},
 				  newG)
 	   | Return _ -> newG
     in
@@ -273,20 +279,19 @@ spec
 	    ^ "Next: " ^ (Integer.toString next)
 	  | Return t ->
 	    "Return: " ^ (printTerm t)
-	  | IfThen {condition, trueBranch, continue} ->
+	  | IfThen {condition, trueBranch, cont} ->
 	    "If: " ^ (printTerm condition) ^ "\n  "
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
-	    ^ "Continue: " ^ (Integer.toString continue)
-	  | IfThenElse {condition, trueBranch, falseBranch, continue} ->
+	    ^ "Continue: " ^ (Integer.toString cont)
+	  | IfThenElse {condition, trueBranch, falseBranch, cont} ->
 	    "If: " ^ (printTerm condition) ^ "\n  "
 	    ^ "True branch: " ^ (Integer.toString trueBranch) ^ "\n  "
-	    ^ "False branch: " ^ (Integer.toString falseBranch)
-	    ^ "Continue: " ^ (Integer.toString continue)
-	  | Loop {condition, preTest?, body, endLoop, continue} ->
+	    ^ "False branch: " ^ (Integer.toString falseBranch) ^ "\n  "
+	    ^ "Continue: " ^ (Integer.toString cont)
+	  | Loop {condition, preTest?, body, cont} ->
 	    (if preTest? then "While: " else "Until: ") ^ (printTerm condition) ^ "\n  "
 	    ^ "Body:: " ^ (Integer.toString body) ^ "\n  "
-	    ^ "End Loop: " ^ (Integer.toString endLoop) ^ "\n  "
-	    ^ "Continue: " ^ (Integer.toString continue)
+	    ^ "Continue: " ^ (Integer.toString cont)
 
   def printStat st =
     case st of
