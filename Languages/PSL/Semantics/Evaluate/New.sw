@@ -1520,8 +1520,8 @@ Second argument is context .. another spec.
   op elaborateSpec : Spec -> SpecCalc.Env Spec
   def elaborateSpec spc =
     case elaboratePosSpec (spc, "internal") of
-      | Ok elabSpc -> return (convertPosSpecToSpec elabSpc)
-      | Error msg   -> raise  (OldTypeCheck msg)
+      | Spec elabSpc -> return (convertPosSpecToSpec elabSpc)
+      | Errors errors -> raise (TypeCheckErrors errors)
 \end{spec}
 
     let specs = StringMap_listItems (emptyEnv_ms ()) in
