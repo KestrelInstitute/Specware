@@ -38,7 +38,7 @@
       ;; If file doesn't exist then return a future time! (shouldn't normally happen)
       9999999999))
 
-(defun getCurrentDirectory ()
+(defun getCurrentDirectory-0 ()
   (convert-windows-filename (namestring (specware::current-directory))))
 
 (defun convert-windows-filename (filestr)
@@ -98,7 +98,7 @@
 ;;;  op read_unicode_chars_from_file : Filename * Encoding -> Option UChars
 ;;;  op write_unicode_chars_to_file  : UChars * Filename * Encoding -> ()
 
-(defun unicode::read_unicode_chars_from_file (filename decoding)
+(defun unicode::read_unicode_chars_from_file-2 (filename decoding)
   (let ((bytes (readBytesFromFile filename)))
     (case (car bytes)
       (:|None| :|None|)
@@ -106,6 +106,6 @@
 		     (let ((uchars (funcall decoding (cdr bytes))))
 		       uchars))))))
 
-(defun unicode::write_unicode_chars_to_file (uchars filename encoding)
+(defun unicode::write_unicode_chars_to_file-3 (uchars filename encoding)
   (let ((bytes (funcall encoding uchars)))
     (writeBytesToFile bytes filename)))

@@ -123,7 +123,7 @@
   (let ((m (map-as-undo-harray-assure-current m)))
     (hash-table-count (map-as-undo-harray--harray m))))
 
-(defun |!apply| (m x)
+(defun apply-2 (m x)
   ;(incf *map-as-undo-harray-ref-count*)
   (let ((val
 	 (if (map-as-undo-harray-current? m)
@@ -139,16 +139,21 @@
 					  *undefined*)))))))
     (if (eq val *undefined*) *undefined*
       (mkSome val))))
-	
+
+(defun |!apply| (pr)
+  (apply-2 (car pr) (cdr pr)))
 
 ;;; Some y is stored in array, as it is usually accessed more often than set
-(defun update (m x y)
+(defun update-3 (m x y)
   (map-as-undo-harray--update m x y))
 
-(defun |!remove| (m x)
+(defun remove-2 (m x)
   (map-as-undo-harray--update m x *undefined*))
 
-(defun mapi (f m)
+(defun |!remove| (pr)
+  (map-as-undo-harray--update (car pr) (cdr pr) *undefined*))
+
+(defun mapi-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -158,7 +163,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun |!map| (f m)
+(defun map-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -168,7 +173,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun mapiPartial (f m)
+(defun mapiPartial-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -181,7 +186,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun mapPartial (f m)
+(defun mapPartial-2 (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
 	 (table (map-as-undo-harray--harray curr-m))
@@ -194,7 +199,7 @@
 	     table)
     (make-map-as-undo-harray result nil)))
 
-(defun app (f m)
+(defun app-2 (f m)
   (declare (dynamic-extent f))
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
@@ -203,7 +208,7 @@
 	     (map-as-undo-harray--harray m)))
   nil)
 
-(defun appi (f m)
+(defun appi-2 (f m)
   (declare (dynamic-extent f))
   (let ((m (map-as-undo-harray-assure-current m)))
     (maphash #'(lambda (key val)
@@ -230,7 +235,7 @@
        (setf (get '|!map| 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        (setf (get 'mapi 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil)))
 
-(defun foldi (fn result m)
+(defun foldi-3 (fn result m)
   (map-as-undo-harray--map-through-pairs
      #'(lambda (key val)
 	 (let ((args (foldi-vector key val result)))

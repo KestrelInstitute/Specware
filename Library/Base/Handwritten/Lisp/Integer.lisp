@@ -6,48 +6,63 @@
 
 ;;; Added various declarations to quiet down cmucl.
 
-(defun |!+| (x y)
+(defparameter specware::*use-fixnum-arithmetic?* nil)
+
+(defun the-int (n)
+  (if specware::*use-fixnum-arithmetic?*
+      `(the fixnum ,n)
+    `(the integer ,n)))
+
+(defun +-2 (x y)
   (declare (integer x y))
   (the integer (+ x y)))
 
-;;; (defun |!+-1| (x)
-;;;   (+ (car x) (cdr x)))
+(define-compiler-macro +-2 (x y)
+  `(+ ,(the-int x) ,(the-int y)))
 
-(defun |!*| (x y)
+(defun |!+| (x)
+   (+ (car x) (cdr x)))
+
+(defun *-2 (x y)
   (declare (integer x y))
   (the integer (* x y)))
-;;; (defun |!*-1| (x)
-;;;   (* (car x) (cdr x)))
 
-(defun |!-| (x y)
+(define-compiler-macro *-2 (x y)
+  `(* ,(the-int x) ,(the-int y)))
+
+(defun |!*| (x)
+   (* (car x) (cdr x)))
+
+(defun --2 (x y)
   (declare (integer x y))
   (the integer (- x y)))
-;;; (defun |!--1| (x)
-;;;   (- (car x)(cdr x)))
+
+(define-compiler-macro --2 (x y)
+  `(- ,(the-int x) ,(the-int y)))
+
+(defun |!-| (x)
+   (- (car x)(cdr x)))
 
 (defun toString (x)
   (declare (type integer x))
   (the string (princ-to-string x)))
 
-;;; (defun intToString (x)
-;;;   (princ-to-string x))
+(defun intToString (x)
+   (princ-to-string x))
 
-;; Is this ugly or what?
+(defun stringToInt (s)
+  ;; lisp automatically returns the first value as a normal value
+  (read-from-string s))
 
-;(defun stringToInt (s)
-;  (multiple-value-bind
-;      (n ignore) (read-from-string s)
-;    n))
-
-;;; (defun stringToInt (s)
-;;;   ;; lisp automatically returns the first value as a normal value
-;;;;   (read-from-string s))
-
-(defun |!<| (x y)
+(defun <-2 (x y)
   (declare (integer x y))
   (the boolean (< x y)))
-;;; (defun |!<-1| (x)
-;;;   (< (car x) (cdr x)))
+
+(define-compiler-macro <-2 (x y)
+  `(< ,(the-int x) ,(the-int y)))
+
+(defun |!<| (x)
+  (< (car x) (cdr x)))
 
 ;;; (defun |!>| (x y) 
 ;;;  (> x y))
@@ -55,24 +70,33 @@
 ;;; (defun |!>-1| (x) 
 ;;;;  (> (car x) (cdr x)))
 
-(defun |!<=| (x y)
+(defun <=-2 (x y)
   (declare (integer x y))
   (the boolean (<= x y)))
 
-;;; (defun |!<=-1| (x)
-;;;   (<= (car x) (cdr x)))
+(define-compiler-macro <=-2 (x y)
+  `(<= ,(the-int x) ,(the-int y)))
+
+(defun |!<=| (x)
+  (<= (car x) (cdr x)))
+
+(define-compiler-macro >=-2 (x y)
+  `(>= ,(the-int x) ,(the-int y)))
+
+(define-compiler-macro >-2 (x y)
+  `(> ,(the-int x) ,(the-int y)))
 ;;; 
 ;;; (defun |!>=| (x y)
 ;;;   (>= x y))
 ;;; (defun |!>=-1| (x)
 ;;;   (>= (car x) (cdr x)))
-;;; 
-;;; (defun succ (x)
-;;;   (+ 1 x))
 
 (defun ~ (x) 
   (declare (integer x))
   (the integer (- 0 x)))
+
+(define-compiler-macro ~ (x)
+  `(- 0 ,(the-int x)))
 
 ;;; (defun compare (i1 i2) 
 ;;;     (if (< i1 i2)
@@ -91,3 +115,10 @@
 ;;;                                          
 ;;; (defun |!min|-1 (x) (|!min| (car x) (cdr x)))
 ;;;                                              
+
+(define-compiler-macro min-2 (x y)
+  `(min ,(the-int x) ,(the-int y)))
+
+(define-compiler-macro max-2 (x y)
+  `(max ,(the-int x) ,(the-int y)))
+

@@ -195,7 +195,7 @@
 	   (specware::getenv "SWPATH")))
 
 (defpackage "SPECWARE")
-(defun Specware::reportErrorToJava (file line col msg)
+(defun Specware::reportErrorToJava-4 (file line col msg)
   (let* ((filepath (parse-namestring file))
 	 (name (pathname-name filepath))
 	 (filedir (pathname-directory filepath))

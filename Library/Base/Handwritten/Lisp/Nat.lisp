@@ -29,13 +29,6 @@
   (declare (type integer x))
   (the string (princ-to-string x)))
 
-;;; ;; Is this ugly or what?
-;;; 
-;;; ;(defun stringToNat (s)
-;;; ;  (multiple-value-bind
-;;; ;      (n ignore) (read-from-string s)
-;;; ;    n))
-;;; 
 (defun stringToNat (s)
   (declare (type string s))
   ;; lisp automatically returns the first value as a normal value
@@ -65,20 +58,26 @@
 ;;; (defun pred (x)
 ;;;   (- x 1))
 
-(defun |!rem| (x y)
+(defun rem-2 (x y)
   (declare (integer x y))
-  (the integer (cl::rem x y)))
+  (the integer (cl:rem x y)))
 
-;;; (defun |!rem-1| (x)
-;;;   (rem (car x) (cdr x)))
-;;; 
+(define-compiler-macro rem-2 (x y)
+  `(cl:rem ,(integer-spec::the-int x) ,(integer-spec::the-int y)))
 
-(defun div (x y)
+(defun |!rem| (x)
+  (rem (car x) (cdr x)))
+ 
+
+(defun div-2 (x y)
   (declare (integer x y))
-  (the integer (cl::truncate x y)))
+  (the integer (cl:truncate x y)))
 
-;;; (defun div-1 (x)
-;;;   (truncate (car x) (cdr x)))
+(define-compiler-macro div-2 (x y)
+  `(cl:truncate ,(integer-spec::the-int x) ,(integer-spec::the-int y)))
+
+(defun div (x)
+  (cl:truncate (car x) (cdr x)))
 ;;; 
 ;;; 
 ;;; ;; This is not correct for negative values???... FIXME...

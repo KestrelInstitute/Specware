@@ -10,7 +10,7 @@
 ;;         (cons :|None| nil)))
 ;; )
 
-(defun newGlobalVar (name value)
+(defun newGlobalVar-2 (name value)
    (multiple-value-bind (symb found) (intern name "Specware-Global-Variables")
      (if (not found)
        (progn (setf (symbol-value symb) value) t)
@@ -24,7 +24,7 @@
        (cons :|None| nil)))
 )
 
-(defun writeGlobalVar (name value)
+(defun writeGlobalVar-2 (name value)
    (multiple-value-bind (symb ok) (find-symbol name "Specware-Global-Variables")
      (if ok
        (progn (setf (symbol-value symb) value) t)
@@ -38,7 +38,7 @@
 ; readVar written in MetaSlang.
 
 ; The test below should not be necessary because of MetaSlang typechecking.
-(defun writeVar (variable value)
+(defun writeVar-2 (variable value)
    (if (eq (car variable) :|VarRef|)
      (progn (rplacd variable value) t)
      (error "writeVar: argument not a variable"))

@@ -997,8 +997,9 @@ If anyone has a good algorithm for this..."
 					    buffer-file-name))))
   (save-buffer)
   (let ((temp-file-name (concat (temp-directory) "-cl-current-file")))
-    (if (sw:eval-in-lisp "(Specware::evaluateLispCompileLocal_fromLisp %S '(:|Some| . %S))"
-			 unitid temp-file-name)
+    (if (sw:eval-in-lisp
+	   "(Specware::evaluateLispCompileLocal_fromLisp-2 %S '(:|Some| . %S))"
+	   unitid temp-file-name)
 	(sw:eval-in-lisp-no-value
 	   "(let (*redefinition-warnings*)
               (specware::compile-and-load-lisp-file %S))"
@@ -1094,11 +1095,11 @@ If anyone has a good algorithm for this..."
 (defun make-search-form (qualifier sym)
   (if (specware-file-name-p buffer-file-name)
       (format
-       "(SpecCalc::findDefiningURI '(:|Qualified| %S . %S) %S %s)"
+       "(SpecCalc::findDefiningUID-3 '(:|Qualified| %S . %S) %S %s)"
        qualifier sym (substring buffer-file-name 0 (- (length buffer-file-name) 3))
        *specware-context-str*)
     (format
-     "(SpecCalc::searchForDefiningURI '(:|Qualified| %S . %S) %s)"
+     "(SpecCalc::searchForDefiningUID-2 '(:|Qualified| %S . %S) %s)"
      qualifier sym *specware-context-str*)))
 
 ;; (defvar *specware-context-str* "cl-user::*specware-global-context*")

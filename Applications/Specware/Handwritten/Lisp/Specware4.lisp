@@ -89,9 +89,9 @@
 
 #||
 #+allegro
-(progn (setf (get 'LIST-SPEC::|!exists|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+(progn (setf (get 'LIST-SPEC::exists-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        ;(setf (get 'UTILITIES::occursT 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil t))
-       (setf (get 'LIST-SPEC::|!map|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'LIST-SPEC::map-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        (setf (get 'LIST-SPEC::filter-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
        (setf (get 'MAP-SPEC::foldi-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
        ;(setf (get 'LIST-SPEC::foldl-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
@@ -145,7 +145,7 @@
 			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
 ;;; Initialization includes preloading the base spec.
-(Specware::initializeSpecware)
+(Specware::initializeSpecware-0)
 
 #+allegro
 (defun start-java-connection? ()

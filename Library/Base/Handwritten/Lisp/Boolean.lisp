@@ -9,6 +9,9 @@
 (defun toString (x)
   (if x "true" "false"))
 
+(define-compiler-macro ~ (x)
+  `(not ,x))
+
 ;;;  (defun & (x y)
 ;;;    (and x y))
 ;;;  (defun &-1 (x) (& (car x) (cdr x)))

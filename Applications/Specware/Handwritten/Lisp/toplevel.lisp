@@ -19,20 +19,20 @@
 (top-level:alias ("set-base" :case-sensitive) (x) (set-base x))
 
 (defun show-base-unit-id ()
-   (Specware::showBase_fromLisp)
+   (Specware::showBase_fromLisp-0)
    (values))
 #+allegro
 (top-level:alias ("show-base-unit-id" :case-sensitive) () (show-base-unit-id))
 
 (defun sw-re-init ()
-   (Specware::reinitializeSpecware)
+   (Specware::reinitializeSpecware-0)
    (values))
 (defun sw-init ()
    (sw-re-init))
 #+allegro(top-level:alias "sw-init" () (sw-re-init))
 
 (defun list-loaded-units ()
-   (Specware::listLoadedUnits))
+   (Specware::listLoadedUnits-0))
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
 (defun sw (x)
@@ -61,9 +61,8 @@
 
 ;; Not sure if an optional UnitId make sense for swl
 (defun swl (x &optional y)
-   (Specware::evaluateLispCompile_fromLisp x
-                         (if y (cons :|Some| y)
-                               '(:|None|)))
+   (Specware::evaluateLispCompile_fromLisp-2 x (if y (cons :|Some| y)
+						 '(:|None|)))
    (values))
 #+allegro
 (top-level:alias ("swl" :case-sensitive) (&optional &rest args)
@@ -80,7 +79,8 @@
 (defun swll (x &optional y)
    (let ((lisp-file-name (or y (concatenate 'string
 				 specware::temporaryDirectory "cl-current-file"))))
-     (if (Specware::evaluateLispCompileLocal_fromLisp x (cons :|Some| lisp-file-name))
+     (if (Specware::evaluateLispCompileLocal_fromLisp-2
+	    x (cons :|Some| lisp-file-name))
 	 (let (*redefinition-warnings*)
 	   (specware::compile-and-load-lisp-file lisp-file-name))
        "Specware Processing Failed!")))
@@ -100,9 +100,8 @@
 
 ;; Not sure if an optional UnitId make sense for swj
 (defun swj (x &optional y)
-   (Specware::evaluateJavaGen_fromLisp x
-                         (if y (cons :|Some| y)
-                               '(:|None|)))
+   (Specware::evaluateJavaGen_fromLisp-2 x (if y (cons :|Some| y)
+					     '(:|None|)))
    (values))
 #+allegro
 (top-level:alias ("swj" :case-sensitive) (&optional &rest args)
@@ -118,9 +117,8 @@
 
 ;; Not sure whether ... no I'm not repeating this comment :)
 (defun swc (x &optional y)
-   (Specware::evaluateCGen_fromLisp x
-                         (if y (cons :|Some| y)
-                               '(:|None|))))
+   (Specware::evaluateCGen_fromLisp-2 x (if y (cons :|Some| y)
+					  '(:|None|))))
 #+allegro
 (top-level:alias ("swc" :case-sensitive) (&optional &rest args)
    (let ((r-args (if (not (null args))

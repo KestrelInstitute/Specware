@@ -10,30 +10,38 @@
 
 (defun |!length| (x)
   (declare (type cl:simple-base-string x))
-  (the cl:fixnum 
-    (array-dimension x 0)))
+  (the cl:fixnum (cl:length x)))
 
-(defun concat (x y)
+(define-compiler-macro |!length| (x)
+  `(cl:length (the cl:simple-base-string ,x)))
+
+(defun concat-2 (x y)
   (declare (type cl:simple-base-string x y))
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-(defun concat-1 (x)
+(define-compiler-macro concat-2 (x y)
+  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+
+(defun concat (x)
   (declare (cons x))
   (the cl:simple-base-string 
     (concatenate 'string 
 		 (the cl:simple-base-string (car x)) 
 		 (the cl:simple-base-string (cdr x)))))
 
-(defun |!++| (x y)
+(defun ++-2 (x y)
   (declare (type cl:simple-base-string x y))
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
+(define-compiler-macro ++-2 (x y)
+  `(concatenate 'string (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+
 ;;; (defun |!++|-1 (x)
 ;;;    (concatenate 'string (car x) (cdr x)))
 
-(defun ^ (x y)
+(defun ^-2 (x y)
   (declare (type cl:simple-base-string x y))
   (the cl:simple-base-string 
     (concatenate 'string x y)))
@@ -62,7 +70,7 @@
 ;;;    #'(lambda (s) 
 ;;;        (map 'string fn s)))
 
-(defun |!map-1-1| (fn s) 
+(defun map-1-1 (fn s) 
   (map 'string fn s))
 
 ;;; (defun all (fn) 
@@ -71,16 +79,22 @@
 ;;; (defun all-1-1 (fn s) 
 ;;;   (null (find-if (lambda (ch) (not (funcall fn ch))) s)))
 
-(defun sub (s n)
+(defun sub-2 (s n)
   (declare (type cl:simple-base-string s) (type cl:fixnum n))
   (elt s n))
 
-;;; (defun sub-1 (s)
-;;;     (elt (car s) (cdr s)))
+(define-compiler-macro sub-2 (s n)
+  `(elt (the cl:simple-base-string ,s) (the cl:fixnum ,n)))
 
-(defun substring (s start end)
+(defun sub (s)
+  (elt (car s) (cdr s)))
+
+(defun substring-3 (s start end)
   (declare (type cl:simple-base-string s) (type cl:fixnum start end))
   (the cl:simple-base-string (subseq s start end)))
+
+(define-compiler-macro substring-2 (s start end)
+  `(subseq (the cl:simple-base-string ,s) (the cl:fixnum ,start) (the cl:fixnum ,end)))
 
 ;;; (defun substring-1 (x)
 ;;;     (subseq (svref x 0) (svref x 1) (svref x 2)))    
@@ -129,19 +143,25 @@
     (the cl:simple-base-string 
       (apply #'concatenate 'string translated-char-strings))))
 
-(defun leq (s1 s2)
+(defun leq-2 (s1 s2)
   (declare (type cl:simple-base-string s1 s2))
   ;; result is fixnum or nil
   (string<= s1 s2))
 
-(defun leq-1 (x)  (string<= (car x) (cdr x)))
+(define-compiler-macro leq-2 (x y)
+  `(string<= (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
 
-(defun lt (s1 s2)
+(defun leq (x)  (string<= (car x) (cdr x)))
+
+(defun lt-2 (s1 s2)
   (declare (type cl:simple-base-string s1 s2))
   ;; result is fixnum or nil
   (string< s1 s2))
 
-(defun lt-1 (x)  (string< (car x) (cdr x)))
+(define-compiler-macro lt-2 (x y)
+  `(string< (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+
+(defun lt (x)  (string< (car x) (cdr x)))
 ;;; 
 ;;; ;;;(defun compare (s1 s2) 
 ;;; ;;;    (if (string< s1 s2)

@@ -45,7 +45,7 @@
 
 
 ;;; op withRestartHandler : fa (a) String * (() -> ()) * (() -> a) -> a
-(defun withRestartHandler (restart-msg restart-action body-action)
+(defun withRestartHandler-3 (restart-msg restart-action body-action)
   (loop
     (let ((results (multiple-value-list 
 		    (with-simple-restart (abort restart-msg) 
@@ -65,7 +65,7 @@
 ;; Calling (gc nil) and (gc t) both failed to have the desired effect.
 
 ;;; op hackMemory     : ()      -> ()
-(defun hackMemory ()
+(defun hackMemory-0 ()
   ;; (sys::room nil)
   )
 
@@ -81,7 +81,7 @@
     (namestring resolved-pathname)))
 
 ;;; op trueFilePath : List String * Boolean -> List String
-(defun trueFilePath (path relative?)
+(defun trueFilePath-2 (path relative?)
   (let* ((rpath (reverse path))
 	 (name (first rpath))
 	 (dir  (cons (if relative? :relative :absolute)

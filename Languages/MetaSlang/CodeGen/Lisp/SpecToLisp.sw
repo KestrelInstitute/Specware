@@ -160,8 +160,8 @@ def patternNames (pattern:Pattern) =
         then id^"-SPEC"
         else id
       
-  op printPackageId: QualifiedId * String -> String
-  def printPackageId (id:QualifiedId,defPkgNm:String) = 
+  op  printPackageId: QualifiedId * String -> String
+  def printPackageId (id,defPkgNm) = 
       case id
         of Qualified("System","time") -> "time"
          | Qualified(pack,id) ->
@@ -189,22 +189,30 @@ def mkLispTuple valTms =
      | [_,_] -> mkLApply(mkLOp "cons",valTms)
      | _ -> mkLApply(mkLOp "vector",valTms)
      
-op unaryName: String -> String
-def unaryName(nm: String): String = nm ^ "-1"
+op  unaryName: String -> String
+def unaryName(nm: String): String = nm  % ^ "-1"
+
+op  naryName: QualifiedId * Nat * String -> String
+def naryName(Qualified(qid,nm),n,dpn) =
+  printPackageId(Qualified(qid,nm ^ "-" ^ (Nat.toString n)),dpn)
 
 def mkLUnaryFnRef(id: String,arity,vars) =
   if StringSet.member(vars,id) then mkLVar id
   else case arity
          of Some _ -> mkLOp (unaryName id)
-          | _ -> mkLOp id
+          | _      -> mkLOp id
 
-def mkLApplyArity(id:String,arity,vars,args) =
-  let rator = if StringSet.member(vars,id) then mkLVar id
+%op  mkLApplyArity: String * Option Nat *
+def mkLApplyArity(id:QualifiedId,defPkgNm:String,arity,vars,args) =
+  let pid = printPackageId(id,defPkgNm) in
+  let rator = if StringSet.member(vars,pid) then mkLVar pid
                else case arity
-                      of Some _ -> if length(args) = 1
-                                     then mkLOp (unaryName id)
-                                   else mkLOp id
-                       | _ -> mkLOp id
+                      of Some _ ->
+			 if length(args) = 1
+			   then mkLOp (unaryName pid)
+			 else
+			   mkLOp (naryName(id,length(args),defPkgNm))
+                       | _ -> mkLOp pid
   in mkLApply(rator,args)
 
 %
@@ -227,9 +235,9 @@ def mkLEqualityOp(sp,srt) =
                       %| (Base (Local "Integer",_,_)) -> " = "
                       | (Base (Qualified("String","String"),_,_)) -> "string= "
                       | (Base (Qualified("Char","Char"),_,_)) -> "eq"
-                      | _ -> "slang-built-in::slang-term-equals")
-             | _ -> "slang-built-in::slang-term-equals")
-        | _ -> "slang-built-in::slang-term-equals"
+                      | _ -> "slang-built-in::slang-term-equals-2")
+             | _ -> "slang-built-in::slang-term-equals-2")
+        | _ -> "slang-built-in::slang-term-equals-2"
 
 op  mkLTermOp : fa(a) Spec * String * StringSet.Set * (Fun * Sort * a)
                        * Option(MS.Term) -> LispTerm
@@ -305,15 +313,15 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
                                       mkLTerm(sp,dpn,vars,y)])
          | None -> mkLOp(printPackageId(id,dpn)))
    | (Op (id,_),srt,_) -> 
-     let pid = printPackageId(id,dpn) in
      let arity = opArity(sp,id,srt) in
      % let oper = if StringSet.member(vars,pid) then mkLVar pid else mkLOp pid in % unused
      (case optArgs
-        of None -> 
+        of None ->
+	   let pid = printPackageId(id,dpn) in
            if functionSort?(sp,srt)
               then mkLUnaryFnRef(pid,arity,vars)
            else Const(Parameter pid)
-         | Some term -> mkLApplyArity(pid,arity,vars,mkLTermList(sp,dpn,vars,term)))
+         | Some term -> mkLApplyArity(id,dpn,arity,vars,mkLTermList(sp,dpn,vars,term)))
    | (Embed(id,true),srt,_) ->
      let rng = range(sp,srt) in
      (case isConsDataType(sp,rng)
@@ -422,7 +430,7 @@ def fullCurriedApplication(sp,dpn,vars,term) =
         case term
           of Fun(Op (id,_),srt,_) ->
              if i > 1 & i = curryShapeNum(sp,srt)
-               then Some(mkLApply(mkLOp(unCurryName(printPackageId(id,dpn),i)),
+               then Some(mkLApply(mkLOp(unCurryName(id,i,dpn)),
                                  List.map (fn t -> mkLTerm(sp,dpn,vars,t)) args))
               else None
            | Apply(t1,t2,_) -> aux(t1,i+1,cons(t2,args))
@@ -844,8 +852,9 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       of 0 -> ""
        | _ -> s^duplicateString(n - 1,s)
 
-  def unCurryName(name,n) =
-    name^duplicateString(n,"-1")
+  op  unCurryName: QualifiedId * Nat * String -> String
+  def unCurryName(Qualified(qid,name),n,dpn) =
+    printPackageId(Qualified(qid,name^duplicateString(n,"-1")),dpn)
 
   %% fn x -> fn(y1,y2) -> fn z -> bod --> fn(x,y,z) let (y1,y2) = y in bod
   def unCurryDef(term,n) =
@@ -932,48 +941,55 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
         case decl:OpInfo
           of (op_names, fixity, (tyVars,srt), (type_vars, term)::_) -> % TODO: check for other defs?
              let term = lispTerm(spc,defPkgName,term) in
-             let name = printPackageId(Qualified(qname,name),defPkgName) in
+	     let qid = Qualified(qname,name) in
+             let uName = unaryName(printPackageId(qid,defPkgName)) in
              if functionSort?(spc,srt)
                 then
                 (case (curryShapeNum(spc,srt),sortArity(spc,srt))
                    of (1,None) ->
-                      (case term:LispTerm
-                         of Lambda (formals,_,_) -> [(name,term)]
-                          | _ -> [(name,mkLLambda(["!x"], [], mkLApply(term,[mkLVar "!x"])))])
+                      (case term
+                         of Lambda (formals,_,_) -> [(uName,term)]
+                          | _ -> [(uName,mkLLambda(["!x"], [],
+						   mkLApply(term,[mkLVar "!x"])))])
                     | (1,Some (_,arity)) ->
-                      let uName = unaryName name in
-                      (case term:LispTerm
+		      let nName = naryName(qid,arity,defPkgName) in
+                      (case term
                          of Lambda (formals,_,_) ->
                             let n = length formals in
-                            [(name,
+                            [(nName,
                               if n = arity then term
                               else defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
                              (uName,
                               if n = arity
-                                then defUnaryByNary(name,n)    % fn x -> f(x.1,x.2,x.3)
+                                then defUnaryByNary(nName,n)    % fn x -> f(x.1,x.2,x.3)
                               else term)]
                            | _ ->  % Not sure that arity normalization hasn't precluded this case
-                             [(name,defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
-                              (uName, mkLLambda(["!x"], [], mkLApply(term,[mkLVar "!x"])))])
+                             [(nName,defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
+                              (uName, mkLLambda(["!x"], [],
+						mkLApply(term,[mkLVar "!x"])))])
                     | (curryN,None) ->
-                      let ucName = unCurryName(name,curryN) in
+                      let ucName = unCurryName(qid,curryN,defPkgName) in
                       (case unCurryDef(term,curryN)
                          of Some uCDef ->  % fn x -> fn y -> fn z -> f-1-1-1(x,y,z)
-                            [(name,defCurryByUncurry(ucName,curryN)),
+                            [(uName,defCurryByUncurry(ucName,curryN)),
                              (ucName,uCDef)]
-                          | _ -> [(name,term),
-                                  (ucName,
-                                   case renameDef? term
-                                     of Some equivFn -> % fn(x,y,z) -> equivFn-1-1-1( x, y,z)
-                                        defAliasFn(unCurryName(equivFn,curryN),curryN)
-                                      | _ -> % fn(x,y,z) -> f x y z
-                                       defUncurryByUnary(name,curryN))])
+                          | _ ->
+			    [(uName,term),
+			     (ucName,
+			      case renameDef? term
+				of Some equivFn -> % fn(x,y,z) -> equivFn-1-1-1( x, y,z)
+				  %% Questionable call to unCurryName
+				   defAliasFn(unCurryName(Qualified(defPkgName,equivFn),
+							  curryN,defPkgName),
+					      curryN)
+				 | _ -> % fn(x,y,z) -> f x y z
+				  defUncurryByUnary(uName,curryN))])
                     | (curryN,Some (_,arity)) ->
-                      let ucName = unCurryName(name,curryN) in
-                      let uName = unaryName name in
+                      let ucName = unCurryName(qid,curryN,defPkgName) in
+		      let nName = naryName(qid,arity,defPkgName) in
                       (case unCurryDef(term,curryN)
                          of Some uCDef ->
-                            [(name,defNaryByUnary(uName,arity)), %fn(x,y,z) -> f-1(tuple(x,y,z))
+                            [(nName,defNaryByUnary(uName,arity)), %fn(x,y,z) -> f-1(tuple(x,y,z))
                              % fn x -> fn y -> fn z -> f-1-1-1(x,y,z)
                              (uName,defCurryByUncurry(ucName,curryN)),
                              (ucName,uCDef)]
@@ -981,20 +997,21 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
                        (case term:LispTerm
                          of Lambda (formals,_,_) ->
                             let n = length formals in
-                            [(name,
+                            [(nName,
                               if n = arity then term
                               else defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
                              (uName,
                               if n = arity
-                                then defUnaryByNary(name,n)    % fn x -> f(x.1,x.2,x.3)
+                                then defUnaryByNary(nName,n)    % fn x -> f(x.1,x.2,x.3)
                               else term),
                              (ucName,defUncurryByUnary(uName,curryN))]  % fn(x,y,z) -> f-1 x y z
                           | _ ->
-                            [(name,defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
-                             (uName,mkLLambda(["!x"], [], mkLApply(term,[mkLVar "!x"]))),
+                            [(nName,defNaryByUnary(uName,arity)), % fn(x,y,z) -> f-1(tuple(x,y,z))
+                             (uName,mkLLambda(["!x"], [],
+					      mkLApply(term,[mkLVar "!x"]))),
                              (ucName,defUncurryByUnary(uName,curryN))])))
                ++ defs
-             else cons((name,term),defs)
+             else cons((uName,term),defs)
            | _ -> defs
     in
     let defs = foldriAQualifierMap mkLOpDef [] spc.ops in

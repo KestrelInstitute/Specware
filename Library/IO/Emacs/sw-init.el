@@ -52,18 +52,27 @@
       (setq sw:common-lisp-image-file world-name))
     (setq sw:common-lisp-image-arguments
       (if *windows-system-p* '("+cn") nil))
+    (when (getenv "SOCKET_INIT_FILE")
+      (set-socket-init-for-specware))
 
     (let ((log-warning-minimum-level 'error))
       ;; Don't show spurious warning message
       (sw:common-lisp sw:common-lisp-buffer-name
 		      sw:common-lisp-directory
 		      sw:common-lisp-image-name
-		      sw:common-lisp-image-arguments
+		      (if *windows-system-p*
+			  (cons "+cn" sw:common-lisp-image-arguments)
+			sw:common-lisp-image-arguments)
 		      sw:common-lisp-host
 		      sw:common-lisp-image-file
 		      ))
     (goto-char (point-max))
     ))
+
+(defun set-socket-init-for-specware ()
+  (message "set-socket-init-for-specware")
+  (setq sw:common-lisp-image-arguments
+    (list "-L" (getenv "SOCKET_INIT_FILE"))))
 
 ;; The following is almost the same as the above. The difference is that
 ;; in the following we execute a Specware application (rather than run Lisp

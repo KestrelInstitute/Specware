@@ -9,18 +9,18 @@
 (defun |!array-1| (x)
   (make-array (car x) :initial-element (cdr x)))
 
-(defun sub (a i)
+(defun sub-2 (a i)
     (svref a i))
-(defun sub-1 (x)
+(defun sub (x)
     (svref (car x) (cdr x)))
 
-(defun update (a i)
+(defun update-2 (a i)
     #'(lambda (v)
 	(progn
 	  (setf (svref a i) v)
 	  ())))
 
-(defun update-1 (x) (update (car x) (cdr x)))
+(defun update (x) (update-2 (car x) (cdr x)))
 
 (defun update-1-1 (x v)
   (setf (svref (car x) (cdr x)) v)
@@ -32,7 +32,7 @@
 (defun fromList (elements)
   (make-array (length elements) :initial-contents elements))
 
-(defun tabulate (n f)
+(defun tabulate-2 (n f)
     (let ((a (make-array n))
 	  (i 0))
       (loop
@@ -41,6 +41,6 @@
 	    (setf (svref a i) (funcall f i))
 	    (setf i (+ i 1)))))))
 
-(defun tabulate-1 (x)
-  (tabulate (car x) (cdr x)))
+(defun tabulate (x)
+  (tabulate-2 (car x) (cdr x)))
 
