@@ -81,6 +81,10 @@ XML qualifying spec
      (misc1,                 tail) <- parse_MiscList    tail;
      (possible_internal_dtd, tail) <- parse_InternalDTD tail;
      (misc2,                 tail) <- parse_MiscList    tail;
+     %% Note that the grammar does not allow the root element to be 
+     %% obtained via expansion of an entity reference.
+     %% Inside the content of elements, however, entity references
+     %% may expand into text that includes other elements.
      (root_element,          tail) <- parse_Element     (tail, []);
      (misc3,                 tail) <- parse_MiscList    tail;
      return ({xmldecl = xmldecl,

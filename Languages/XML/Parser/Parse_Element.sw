@@ -233,6 +233,15 @@ XML qualifying spec
 			   cons ((char_data, item),
 				 rev_items))
 	    | _ -> 
+	      %% Note:  The valdidator will expand reference items later, which
+	      %%         may introduce new sub-eleemnts, etc.
+	      %%        The replacement text for each such ref must match the
+	      %%         production for "content" (and in fact the replacement 
+              %%         text might be of type Content) so such such results can
+	      %%         essentially be spliced into this content structure, 
+	      %%         with the mild restriction that any resulting adjacent 
+	      %%         CharData's are merged, to maintain the Content structure.
+	      %%         (Or we could allow Content to have adjacent CharData's.)
 	      return ({items   = rev rev_items, 
 		       trailer = char_data},
 		      tail)
@@ -296,6 +305,19 @@ XML qualifying spec
 		      tail)
 	     })
 
+      | 38 :: tail -> 
+        %% '&'
+	{
+	 %% parse_Reference assumes we're just past the ampersand.
+	 (ref, tail) <- parse_Reference start;
+	 %% Note:  The valdidator will expand reference items such as this later,
+	 %%         which may introduce new sub-eleemnts, etc.
+         %%        The replacement text for this ref must match the production 
+         %%         for "content".
+	 return (Some (Reference ref),
+		 tail)
+	}
+
       | [] ->
 	hard_error {kind        = EOF,
 		    requirement = "Each item in the element contents must be one of the options below.",
@@ -310,15 +332,6 @@ XML qualifying spec
 				   ("'&' ...",         "reference")],
 		    but          = "EOF occcurred first",
 		    so_we        = "fail immediately"}
-
-      | 38 :: tail -> 
-        %% '&'
-	{
-	 %% parse_Reference assumes we're just past the ampersand.
-	 (ref, tail) <- parse_Reference start;
-	 return (Some (Reference ref),
-		 tail)
-	}
 
       | _ ->
 	return (None, start)

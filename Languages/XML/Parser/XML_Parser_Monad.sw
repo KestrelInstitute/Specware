@@ -5,6 +5,7 @@ XML qualifying spec
     by {Monad._ +-> Env._}
 
   import XML_Exceptions
+  import ../XML_Sig     % For Name, Content
 
   sort Env a = State -> (Result a) * State
 
@@ -17,8 +18,7 @@ XML qualifying spec
   %%  for the "<-" and ";" in forms such as { y <- f x ; z <- g y ; return z }
   %%  ================================================================================
 
-  % sort Monad a = Env a
-  % op monadBind : fa (a,b) (Env a) * (a -> Env b) -> Env b
+  %op monadBind : fa (a,b) (Env a) * (a -> Env b) -> Env b
   def monadBind (f, g) =
     fn state -> 
       case (f state) of
@@ -40,7 +40,7 @@ XML qualifying spec
         %%  because lhs is Env a and rhs is Env b
 	| (Exception except, newState) -> (Exception except, newState)
 
-  % op monadSeq : fa (a,b) (Env a) * (Env b) -> Env b
+  %op monadSeq : fa (a,b) (Env a) * (Env b) -> Env b
   def monadSeq (f, g) = monadBind (f, (fn _ -> g))
 
   %% ================================================================================
@@ -48,7 +48,7 @@ XML qualifying spec
   %%  so that processing can resume normally after the catch.
   %% ================================================================================
 
-  op catch : fa (a) Env a -> (XML_Exception -> Env a) -> Env a
+   op catch : fa (a) Env a -> (XML_Exception -> Env a) -> Env a
   def catch f handler =
     fn state ->
       (case (f state) of
@@ -71,13 +71,13 @@ XML qualifying spec
 
   %% Normal control flow -- proceed to next application
 
-  % op return : fa (a) a -> Env a
+  %op return : fa (a) a -> Env a
   def return x = fn state -> (Ok x, state)
 
    op when : Boolean -> Env () -> Env ()
   def when p command = if p then (fn s -> (command s)) else return ()
 
-  op foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
+   op foldM : fa (a,b) (a -> b -> Env a) -> a -> List b -> Env a
   def foldM f a l =
     case l of
       | [] -> return a
@@ -85,7 +85,7 @@ XML qualifying spec
             y <- f a x;
             foldM f y xs
           }
-  op mapM : fa (a,b) (a -> Env b) -> (List a) -> Env (List b)
+   op mapM : fa (a,b) (a -> Env b) -> (List a) -> Env (List b)
   def mapM f l =
     case l of
       | [] -> return []
@@ -96,11 +96,65 @@ XML qualifying spec
           }
 
   %% --------------------------------------------------------------------------------
+  %%  State -- record global values for entities
+
+  %% The replacement text for parameter entities is only mildly
+  %% restricted.  You cannot split tags, comments, etc., but you
+  %% could have the first half of an element, or part of an
+  %% attribute value, etc.
+   op define_parameter_entity : Name * UChars -> Env ()
+  def define_parameter_entity (name, value) = 
+    fn state ->
+     (Ok (),
+      {exceptions = state.exceptions,
+       messages   = state.messages,
+       utext      = state.utext,
+       context    = state.context})
+
+  %% The replacement text for general entities must match the
+  %% production for "content", so we can store the result of
+  %% such a parse.
+   op define_general_entity : Name * Content -> Env ()
+  def define_general_entity (name, value) = 
+    fn state ->
+     (Ok (),
+      {exceptions = state.exceptions,
+       messages   = state.messages,
+       utext      = state.utext,
+       context    = state.context})
+
+  %% --------------------------------------------------------------------------------
   %%  Debugging -- normal control flow, but print message as immediate side effect
 
+   op print : String -> Env ()
+  def print str =
+    fn state ->
+      let _ = toScreen str in
+      (Ok (), state)
+
+  %% --------------------------------------------------------------------------------
+  %%  Debugging -- normal control flow, but print message as immediate side effect
+  %%               if tracing flag has been set.
+
+   op start_tracing : () -> Env ()
+  def start_tracing _ =
+    fn state ->
+     (Ok (),
+      {exceptions = state.exceptions,
+       messages   = state.messages,
+       utext      = state.utext,
+       context    = {tracing? = true}})
+
+   op stop_tracing  : () -> Env ()
+  def stop_tracing _ =
+    fn state ->
+     (Ok (),
+       {exceptions = state.exceptions,
+	messages   = state.messages,
+	utext      = state.utext,
+	context    = {tracing? = false}})
 
    op trace : String -> Env ()
-  % def trace str = return ()  % change to print when needed.
   def trace str = 
     fn state ->
       let _ = (if state.context.tracing? then
@@ -109,12 +163,6 @@ XML qualifying spec
 		 ())
       in
 	(Ok (), state)
-
-  op print : String -> Env ()
-  def print str =
-    fn state ->
-      let _ = toScreen str in
-      (Ok (), state)
 
   %% --------------------------------------------------------------------------------
   %%  Error reporting -- normal control flow, up to a point, but record message for
@@ -135,32 +183,7 @@ XML qualifying spec
 	 context    = state.context})
 
   %% --------------------------------------------------------------------------------
-  %%  Error reporting -- normal control flow, up to a point, but record message for
-  %%  delayed processing
-
-  op start_tracing : () -> Env ()
-  def start_tracing _ =
-    fn state ->
-     (Ok (),
-      {exceptions = state.exceptions,
-       messages   = state.messages,
-       utext      = state.utext,
-       context    = {tracing? = true}})
-
-  op stop_tracing  : () -> Env ()
-  def stop_tracing _ =
-    fn state ->
-     (Ok (),
-       {exceptions = state.exceptions,
-	messages   = state.messages,
-	utext      = state.utext,
-	context    = {tracing? = false}})
-
-  %% --------------------------------------------------------------------------------
   %%  Exception handling -- do not process following applications
-
-   op stop_parsing : fa (a) XML_Exception -> Env a
-  def stop_parsing except = raise_now except
 
    op raise_now : fa (a) XML_Exception -> Env a
   def raise_now except = fn state -> 
@@ -172,12 +195,12 @@ XML qualifying spec
     in
       (Exception except, state)
 
+  %% --------------------------------------------------------------------------------
   
   def            error (x : XML_Exception) : Env () = raise_later x
   def fa(a) hard_error (x : XML_Exception) : Env a  = raise_now   x
 
   %% --------------------------------------------------------------------------------
-
 
   def Wizard_Fail_Hard? : Boolean = false
 
