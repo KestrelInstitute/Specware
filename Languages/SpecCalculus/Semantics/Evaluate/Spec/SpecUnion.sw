@@ -45,8 +45,6 @@ SpecUnion qualifying spec {
 %%%        []
 %%%        specs
 
- %% TODO: This quietly ignores multiple infos for the same name
- %% TODO: This doesn't deal with multiple names within an info
  def sortsUnion specs =
   foldM unionSortMaps 
         emptySortMap 
@@ -61,29 +59,48 @@ SpecUnion qualifying spec {
 	            []
 		    specs)
 
-
- % op mergeSortInfo : fa(a) ASortInfo a -> Option (ASortInfo a) -> Qualifier -> Id -> Position -> SpecCalc.Env (ASortInfo a)
  def unionSortMaps old_sort_map new_sort_map =
+   %% Assertion: If new_sort_map at a given name refers to an info, then it will
+   %%            refer to the same info at all the aliases within that info.
    let 
-      def augmentSortMap (qualifier, id, new_info, merged_sort_map) =
-	let opt_old_info = findAQualifierMap (merged_sort_map, qualifier, id) in
-	{merged_info <- mergeSortInfo new_info opt_old_info noPos;
-	 return (insertAQualifierMap (merged_sort_map, qualifier, id, merged_info))}
+      def augmentSortMap (new_qualifier, new_id, new_info, merged_sort_map) =
+        let Qualified (primary_qualifier, primary_id) = hd (new_info.1) in
+        if new_qualifier = primary_qualifier & new_id = primary_id then
+          %% Assertion: We take this branch exactly once per new info.
+          let optional_old_info = findAQualifierMap (merged_sort_map, new_qualifier, new_id) in
+	  {merged_info <- mergeSortInfo new_info optional_old_info noPos;
+	   all_names <- return (merged_info.1);    % new and old names
+	   foldM (fn merged_sort_map -> fn  Qualified(qualifier, id) ->
+		  return (insertAQualifierMap (merged_sort_map, qualifier, id, merged_info)))
+     	         merged_sort_map 
+                 all_names}
+	else
+	  return merged_sort_map
    in
     foldOverQualifierMap augmentSortMap old_sort_map new_sort_map 
 
  def unionOpMaps old_op_map new_op_map =
+   %% Assertion: If new_op_map at a given name refers to an info, then it will
+   %%            refer to the same info at all the aliases within that info.
    let 
-      def augmentOpMap (qualifier, id, new_info, merged_op_map) =
-	let opt_old_info = findAQualifierMap (merged_op_map, qualifier, id) in
-	{merged_info <- mergeOpInfo new_info opt_old_info noPos;
-	 return (insertAQualifierMap (merged_op_map, qualifier, id, merged_info))}
+      def augmentOpMap (new_qualifier, new_id, new_info, merged_op_map) =
+        let Qualified (primary_qualifier, primary_id) = hd (new_info.1) in
+        if new_qualifier = primary_qualifier & new_id = primary_id then
+          %% Assertion: We take this branch exactly once per new info.
+          let optional_old_info = findAQualifierMap (merged_op_map, new_qualifier, new_id) in
+	  {merged_info <- mergeOpInfo new_info optional_old_info noPos;
+	   all_names <- return (merged_info.1);    % new and old
+	   foldM (fn merged_op_map -> fn Qualified(qualifier, id) ->
+		  return (insertAQualifierMap (merged_op_map, qualifier, id, merged_info)))
+     	         merged_op_map 
+                 all_names}
+	else
+	  return merged_op_map
    in
     foldOverQualifierMap augmentOpMap old_op_map new_op_map 
 
-
  %% TODO:  These might refer incorrectly into old specs
- %% TODO:  listUnion assumes = test on elements, we might want something smarter
+ %% TODO:  listUnion assumes = test on elements, we might want something smarter such as equivTerm?
  def propertiesUnion specs =
   return (foldl (fn (spc, props) -> listUnion (spc.properties, props))
 	        []
