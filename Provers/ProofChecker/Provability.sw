@@ -1,6 +1,6 @@
 spec
 
-  import SyntacticOperations
+  import SyntaxWithCoreOps
 
 
   (* It is convenient to define a meta type for rules, so that we can more

@@ -154,5 +154,4 @@ spec
     | thAbbrevExistential1          Proof * Variables
     | thAbbrevNonRecursiveLet       Proof
 
-
 endspec

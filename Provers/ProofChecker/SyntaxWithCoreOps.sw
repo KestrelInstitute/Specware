@@ -1,5 +1,11 @@
 spec
 
+  (* This spec defines various operations on the syntax, which is defined in
+  spec `Syntax'. The ops defined here are tagged as "core" because they are
+  the only ones necessary to define the notion of provability, which is done
+  in spec `Provability'. *)
+
+
   import Syntax, Positions
 
 
