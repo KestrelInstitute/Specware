@@ -1,4 +1,4 @@
-Predicates qualifying spec
+Predicate qualifying spec
 
   type Predicate a = a -> Boolean
 
