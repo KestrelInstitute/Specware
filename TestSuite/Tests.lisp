@@ -58,10 +58,10 @@ spec
  import A
  import /Library/Base/WFO
  conjecture f_Obligation is 
-    fa(y : Integer, x : Integer) x > Integer_.- y => nonNeg?(x + y)
+    fa(y : Integer, x : Integer) x > - y => nonNeg?(x + y)
  conjecture f_Obligation0 is 
     fa(y : Integer, x : Integer) 
-     x > Integer_.- y && nonNeg?(x + y) => natural?(x + y)
+     x > - y && nonNeg?(x + y) => natural?(x + y)
 endspec
 
 "
