@@ -491,8 +491,8 @@ MSToFM qualifying spec
   def fromFMTermPoly(spc, p, context) =
     if zeroPoly?(p) then mkNat(0)
     else case p of
-      | [tm] -> fromFMTermTerm(spc, tm, context)
-      | hdTm::rp -> mkAddition(fromFMTermTerm(spc, hdTm, context),
+      | [tm] -> fromFMTermTerm(tm, context)
+      | hdTm::rp -> mkAddition(fromFMTermTerm(hdTm, context),
 			       fromFMTermPoly(spc, rp, context))
 
   op mkAddition: MS.Term * MS.Term -> MS.Term
@@ -519,8 +519,8 @@ MSToFM qualifying spec
     let compOp = fromFMComp(comp) in
     mkApply(compOp, MSP)
 
-  op fromFMTermTerm: Spec * FM.Term * Context -> MS.Term
-  def fromFMTermTerm(spc, tm, context) =
+  op fromFMTermTerm: FM.Term * Context -> MS.Term
+  def fromFMTermTerm(tm, context) =
     case tm of
       | Constant coef -> mkInt(coef)
       | Monom (coef, var) ->

@@ -17,7 +17,8 @@ SpecCalc qualifying spec {
      (optBaseUnitId,baseSpec) <- getBase;
      baseProverSpec <- getBaseProverSpec;
      rewriteProverSpec <- getRewriteProverSpec;
-     proverLogFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName);
+     proverLogFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName, "log");
+     finalSpecFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName, "sw");
      _ <- return (ensureDirectoriesExist proverLogFileName);
      proofName <- return (UIDtoProofName unitId);
      specName <- return (SpecTermToSpecName(specTerm));
@@ -26,6 +27,9 @@ SpecCalc qualifying spec {
 		    | Spec spc -> return spc %specUnion([spc, baseProverSpec])
 		    | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
      expandedSpec <- return (transformSpecForFirstOrderProver baseSpec userSpec);
+     _ <- return (writeLine("    Expanded spec file: " ^ finalSpecFileName));
+     _ <- return (writeLine("    Snark Log file: " ^ proverLogFileName));
+     _ <- return (printSpecToFile(finalSpecFileName, expandedSpec));
      _ <- return (if specwareDebug? then writeString(printSpec(expandedSpec)) else ());
      proverOptions <- 
        (case possibleOptions of
@@ -156,32 +160,32 @@ SpecCalc qualifying spec {
    return proverOptions
   }
 
- op UIDtoLogFile: UnitId * String -> SpecCalc.Env String
- def UIDtoLogFile (unitId as {path,hashSuffix}, proverName) = {
+ op UIDtoLogFile: UnitId * String * String -> SpecCalc.Env String
+ def UIDtoLogFile (unitId as {path,hashSuffix}, proverName, suffix) = {
    result <-
    case hashSuffix of
-     | None -> UIDtoSingleLogFile(unitId, proverName)
-     | Some _ -> UIDtoMultipleLogFile(unitId, proverName);
+     | None -> UIDtoSingleLogFile(unitId, proverName, suffix)
+     | Some _ -> UIDtoMultipleLogFile(unitId, proverName, suffix);
    return result
  }
 
- op UIDtoSingleLogFile: UnitId * String -> SpecCalc.Env String
- def UIDtoSingleLogFile (unitId as {path,hashSuffix}, proverName) =
+ op UIDtoSingleLogFile: UnitId * String * String -> SpecCalc.Env String
+ def UIDtoSingleLogFile (unitId as {path,hashSuffix}, proverName, suffix) =
     {prefix <- removeLastElem path;
      mainName <- lastElem path;
      let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
-        ^ "/"^proverName^"/" ^ mainName ^ ".log"
+        ^ "/"^proverName^"/" ^ mainName ^ "." ^ suffix
      in
       return filNm}
 
- op UIDtoMultipleLogFile: UnitId * String -> SpecCalc.Env String
- def UIDtoMultipleLogFile (unitId as {path,hashSuffix}, proverName) =
+ op UIDtoMultipleLogFile: UnitId * String * String -> SpecCalc.Env String
+ def UIDtoMultipleLogFile (unitId as {path,hashSuffix}, proverName, suffix) =
    let Some hashSuffix = hashSuffix in
     {prefix <- removeLastElem path;
      newSubDir <- lastElem path;
      mainName <- return hashSuffix;
      let filNm = (uidToFullPath {path=prefix,hashSuffix=None})
-        ^ "/"^proverName^"/" ^ newSubDir ^ "/" ^ mainName ^ ".log"
+        ^ "/"^proverName^"/" ^ newSubDir ^ "/" ^ mainName ^ "." ^ suffix
      in
       return filNm}
 
@@ -252,8 +256,8 @@ SpecCalc qualifying spec {
      | [p] -> printQualifiedId(p)
      | p :: ps -> printQualifiedId(p)^", "^printMissingHypothesis(ps)
 
- op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Boolean * String -> Boolean
- def displayProofResult(proverName, proofName, claimType, claimName, specName, proved, proverLogFileName) =
+ op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Boolean -> Boolean
+ def displayProofResult(proverName, proofName, claimType, claimName, specName, proved) =
    let _ =
    case proofName of
      | None -> 
@@ -265,7 +269,6 @@ SpecCalc qualifying spec {
 	   | None -> displayMultipleAnonymousProofResult(proverName, proofName, claimType, claimName, proved)
 	   | Some specName -> 
 	       displayMultipleProofResult(proverName, proofName, claimType, claimName, specName, proved) in
-   let _ = writeLine("    Snark Log file: " ^ proverLogFileName) in
      proved
 
 
@@ -314,18 +317,14 @@ SpecCalc qualifying spec {
 			 proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
    if proverName = "FourierM"
      then 
-       proveWithHypothesisFM(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-			     rewriteHypothesis, rewriteSpc,
-			     proverName, proverOptions, snarkLogFileName, false)
+       proveWithHypothesisFM(proofName, claim, spc, specName, proverName, false)
    else
      if proverName = "Snark"
        then proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
 				     rewriteHypothesis, rewriteSpc,
 				     proverName, proverOptions, includeBase, answerVariable, snarkLogFileName)
      else
-       let fmRes = proveWithHypothesisFM(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-					 rewriteHypothesis, rewriteSpc,
-					 "FourierM", proverOptions, snarkLogFileName, true) in
+       let fmRes = proveWithHypothesisFM(proofName, claim, spc, specName, "FourierM", true) in
        fmRes ||
        proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
 				rewriteHypothesis, rewriteSpc,
@@ -374,16 +373,12 @@ SpecCalc qualifying spec {
 						   Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
 							      Lisp.nil(),snarkEvalForm]])]) in
      let proved = ":PROOF-FOUND" = anyToString(result) in
-     let _ = displayProofResult(proverName, proofName, claimType, claimName, specName, proved, snarkLogFileName) in
+     let _ = displayProofResult(proverName, proofName, claimType, claimName, specName, proved) in
        proved
 
- op proveWithHypothesisFM: Option String * Property * List Property * Spec * Option String * List Property * Spec *
-                         List Property * Spec *
-                         String * List LispCell * String * Boolean -> Boolean
+ op proveWithHypothesisFM: Option String * Property * Spec * Option String * String * Boolean -> Boolean
 
- def proveWithHypothesisFM(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
-			 rewriteHypothesis, rewriteSpc,
-			 proverName, proverOptions, logFileName, preProof?) =
+ def proveWithHypothesisFM(proofName, claim, spc, specName, proverName, preProof?) =
    let _ = debug("preovWithHyp") in
    let (claimType,claimName,_,_) = claim in
    let def getClaimType(ct) = 
@@ -400,16 +395,16 @@ SpecCalc qualifying spec {
    %let fmConjecture = toFMProperty(context, spc, claim) in
    let proved = proveMSProb(spc, [], claim) in
    let _ = if proved || ~preProof?
-	     then displayProofResult(proverName, proofName, claimType, claimName, specName, proved, logFileName)
+	     then displayProofResult(proverName, proofName, claimType, claimName, specName, proved)
 	   else proved in
    proved
 
  %print-clocks??
  op makeSnarkProveDecls: List LispCell * List LispCell * List LispCell * List LispCell * List LispCell
-                           * List LispCell * LispCell * String -> LispCell
+                           * List LispCell * LispCell -> LispCell
 
  def makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
-			    snarkHypothesis, snarkConjecture, snarkLogFileName) =
+			 snarkHypothesis, snarkConjecture) =
    let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
    let setOfSupportOff = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(true)]) in
    
@@ -445,7 +440,7 @@ SpecCalc qualifying spec {
    %let _ = if specwareDebug? then writeLine(" using: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
    let snarkProverDecls = makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
-					      snarkHypothesis, snarkConjecture, snarkLogFileName) in
+					      snarkHypothesis, snarkConjecture) in
    	 Lisp.list 
 	 [Lisp.symbol("CL-USER","WITH-OPEN-FILE"),
 	  Lisp.list [Lisp.symbol("CL-USER","LOGFILE"),
