@@ -29,8 +29,8 @@ MetaSlang qualifying spec {
  %% the following are invoked by the parser to make qualified names
  def mkUnQualifiedId  id      =  Qualified (UnQualified, id)
  def mkQualifiedId    (q, id) =  Qualified (q,           id)
- def fa (a) mkAUnQualifiedId (id,     x : a) = (Qualified (UnQualified, id), x)
- def fa (a) mkAQualifiedId   (q,  id, x : a) = (Qualified (q,           id), x)
+ def [a] mkAUnQualifiedId (id,     x : a) = (Qualified (UnQualified, id), x)
+ def [a] mkAQualifiedId   (q,  id, x : a) = (Qualified (q,           id), x)
 
  %% These are used by translation, morphism code
  def unqualified_Boolean = mkUnQualifiedId "Boolean"               % used by translate
@@ -117,8 +117,11 @@ MetaSlang qualifying spec {
   | IfThenElse   ATerm b * ATerm b * ATerm b             * b
   | Seq          List (ATerm b)                          * b
   | SortedTerm   ATerm b * ASort b                       * b
- %| Any                                                    b % e.g. "op f : S" has defn:  Any pos
- %| Meet         List (ATerm b)                          * b
+  | Pi           TyVars * ATerm b                        * b  % for now, used only at top level of defn's
+  | And          List (ATerm b)                          * b  % for now, used only by colimit and friends -- meet (or join) not be confused with boolean AFun And 
+                                                              % We might want to record a quotient of consistent terms plus a list of inconsistent pairs,
+                                                              % but then the various mapping functions become much trickier.
+  | Any                                                    b  % e.g. "op f : Nat -> Nat"  has defn:  SortedTerm (Any noPos, Arrow (Nat, Nat, p1), noPos)
  
  sort Binder =
   | Forall
@@ -138,9 +141,11 @@ MetaSlang qualifying spec {
   | Boolean                                            b
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
- %| Any          TyVars                              * b  % e.g. "sort S (a,b,c)" has defn:  Any ([a,b,c], pos)
- %| Pi           TyVars * ASort b                    * b
- %| Meet         List (ASort b)                      * b
+  | Pi           TyVars * ASort b                    * b  % for now, used only at top level of defn's
+  | And          List (ASort b)                      * b  % for now, used only by colimit and friends -- meet (or join)
+                                                          % We might want to record a quotient of consistent sorts plus a list of inconsistent pairs,
+                                                          % but then the various mapping functions become much trickier.
+  | Any                                                b  % e.g. "sort S a b c "  has defn:  Pi ([a,b,c], Any p1, p2)
 
  sort APattern b =
   | AliasPat     APattern b * APattern b             * b
@@ -202,7 +207,7 @@ MetaSlang qualifying spec {
  sort AMetaSortScheme b = AMetaTyVars b * ASort b
 
  %%% Predicates
- op product?: fa(a) ASort a -> Boolean
+ op product?: [a] ASort a -> Boolean
  def product? s =
    case s of
      | Product _ -> true
@@ -230,7 +235,7 @@ MetaSlang qualifying spec {
  sort AField  b = FieldName * ASort b  % used by products and co-products
  sort FieldName = String
 
-  op getField: fa(a) List (Id * ATerm a) * Id -> Option(ATerm a)
+  op getField: [a] List (Id * ATerm a) * Id -> Option(ATerm a)
  def getField (m, id) =
    case find (fn (id1,_) -> id = id1) m of
      | None      -> None
@@ -240,7 +245,7 @@ MetaSlang qualifying spec {
  %%%                Term Annotations
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op termAnn: fa(a) ATerm a -> a
+  op termAnn: [a] ATerm a -> a
  def termAnn tm =
    case tm of
      | Apply      (_,_,   a) -> a
@@ -255,10 +260,11 @@ MetaSlang qualifying spec {
      | IfThenElse (_,_,_, a) -> a
      | Seq        (_,     a) -> a
      | SortedTerm (_,_,   a) -> a
-    %| Any                a  -> a
-    %| Meet       (_,     a) -> a
+     | Pi         (_,_,   a) -> a
+     | And        (_,     a) -> a
+     | Any                a  -> a
 
-  op withAnnT: fa(a) ATerm a * a -> ATerm a
+  op withAnnT: [a] ATerm a * a -> ATerm a
  def withAnnT (tm, a) =
    case tm of
      | Apply      (t1, t2,   b) -> if a = b then tm else Apply      (t1, t2,     a)
@@ -273,10 +279,11 @@ MetaSlang qualifying spec {
      | IfThenElse (t1,t2,t3, b) -> if a = b then tm else IfThenElse (t1, t2, t3, a)
      | Seq        (l,        b) -> if a = b then tm else Seq        (l,          a)
      | SortedTerm (t,s,      b) -> if a = b then tm else SortedTerm (t, s,       a)
-    %| Any                   b  -> if a = b then tm else Any                     a
-    %| Meet       (l,        b) -> if a = b then tm else Meet       (l,          a)
+     | Pi         (tvs, t,   b) -> if a = b then tm else Pi         (tvs, t,     a)
+     | And        (l,        b) -> if a = b then tm else And        (l,          a)
+     | Any                   b  -> if a = b then tm else Any                     a
 
-  op sortAnn: fa(a) ASort a -> a
+  op sortAnn: [a] ASort a -> a
  def sortAnn srt =
    case srt of
      | Arrow     (_,_, a) -> a
@@ -288,11 +295,11 @@ MetaSlang qualifying spec {
      | Boolean         a  -> a
      | TyVar     (_,   a) -> a
      | MetaTyVar (_,   a) -> a
-    %| Any       (_,   a) -> a
-    %| Pi        (_,_, a) -> a
-    %| Meet      (_,   a) -> a
+     | Pi        (_,_, a) -> a
+     | And       (_,   a) -> a
+     | Any             a  -> a
 
-  op patAnn: fa(a) APattern a -> a
+  op patAnn: [a] APattern a -> a
  def patAnn pat =
    case pat of
      | AliasPat    (_,_,   a) -> a
@@ -309,7 +316,7 @@ MetaSlang qualifying spec {
      | SortedPat   (_,_,   a) -> a
 
 
-  op withAnnS: fa(a) ASort a * a -> ASort a
+  op withAnnS: [a] ASort a * a -> ASort a
  def withAnnS (srt, a) =
   % Avoid creating new structure if possible
    case srt of
@@ -322,16 +329,16 @@ MetaSlang qualifying spec {
      | Boolean              b  -> if a = b then srt else Boolean              a
      | TyVar     (tv,       b) -> if a = b then srt else TyVar     (tv,       a)
      | MetaTyVar (mtv,      b) -> if a = b then srt else MetaTyVar (mtv,      a)
-    %| Any                  b  -> if a = b then srt else Any       a
-    %| Pi        (tvs, t,   b) -> if a = b then srt else Pi        (tvs, t,   a)
-    %| Meet      (types,    b) -> if a = b then srt else Meet      (types,    a)
+     | Pi        (tvs, t,   b) -> if a = b then srt else Pi        (tvs, t,   a)
+     | And       (types,    b) -> if a = b then srt else And       (types,    a)
+     | Any                  b  -> if a = b then srt else Any       a
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Sorts
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op termSort    : fa(b) ATerm    b -> ASort b
- op patternSort : fa(b) APattern b -> ASort b
+ op termSort    : [b] ATerm    b -> ASort b
+ op patternSort : [b] APattern b -> ASort b
 
  def termSort term =
    case term of
@@ -355,9 +362,9 @@ MetaSlang qualifying spec {
      | IfThenElse (_,t2,t3, _)              -> termSort t2
      | Seq        (_,       a)              -> Product([],a)
      | SortedTerm (_,s,     _)              -> s
-    %| Any                  a               -> Any a
-    %| Meet       (tms,     a)              -> Meet (map termSort tms,  a)
-     | _ -> System.fail "Non-exhaustive match in termSort"
+     | Pi         (tvs, t,  a)              -> Pi (tvs, termSort t, a) 
+     | And        (tms,     a)              -> And (map termSort tms,  a)
+     | Any                  a               -> Any a
 
  def patternSort pat =
    case pat of
@@ -374,7 +381,7 @@ MetaSlang qualifying spec {
      | QuotientPat (p, t,    a) -> Quotient (patternSort p, t,                     a)
      | SortedPat   (_, srt,  _) -> srt
 
-  op mkAndOp : fa (a) a -> ATerm a
+  op mkAndOp : [a] a -> ATerm a
  def mkAndOp a =
    let bool_sort = Boolean a in
    let binary_bool_sort = Arrow (Product ([("1",bool_sort), ("2",bool_sort)], a),
@@ -387,19 +394,19 @@ MetaSlang qualifying spec {
  %%%                Term Equalities
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op equalTerm?          : fa(a,b) ATerm    a * ATerm    b -> Boolean
- op equalSort?          : fa(a,b) ASort    a * ASort    b -> Boolean
- op equalPattern?       : fa(a,b) APattern a * APattern b -> Boolean
- op equalFun?           : fa(a,b) AFun     a * AFun     b -> Boolean
- op equalVar?           : fa(a,b) AVar     a * AVar     b -> Boolean
+ op equalTerm?          : [a,b] ATerm    a * ATerm    b -> Boolean
+ op equalSort?          : [a,b] ASort    a * ASort    b -> Boolean
+ op equalPattern?       : [a,b] APattern a * APattern b -> Boolean
+ op equalFun?           : [a,b] AFun     a * AFun     b -> Boolean
+ op equalVar?           : [a,b] AVar     a * AVar     b -> Boolean
 
  %% term equality ignoring sorts
- op equalTermStruct?    : fa(a,b) ATerm    a * ATerm    b -> Boolean
- op equalPatternStruct? : fa(a,b) APattern a * APattern b -> Boolean
- op equalFunStruct?     : fa(a,b) AFun     a * AFun     b -> Boolean
- op equalVarStruct?     : fa(a,b) AVar     a * AVar     b -> Boolean
+ op equalTermStruct?    : [a,b] ATerm    a * ATerm    b -> Boolean
+ op equalPatternStruct? : [a,b] APattern a * APattern b -> Boolean
+ op equalFunStruct?     : [a,b] AFun     a * AFun     b -> Boolean
+ op equalVarStruct?     : [a,b] AVar     a * AVar     b -> Boolean
 
-  op equalList? : fa(a,b) List a * List b * (a * b -> Boolean) -> Boolean
+  op equalList? : [a,b] List a * List b * (a * b -> Boolean) -> Boolean
  def equalList? (x, y, eqFn) =
    (length x) = (length y) &&
    (case (x, y) of
@@ -408,7 +415,7 @@ MetaSlang qualifying spec {
                                              equalList? (tail_x, tail_y, eqFn)
       | _ -> false)
 
-  op equalOpt? : fa(a,b) Option a * Option b * (a * b -> Boolean) -> Boolean
+  op equalOpt? : [a,b] Option a * Option b * (a * b -> Boolean) -> Boolean
  def equalOpt? (x, y, eqFn) =
    case (x, y) of
      | (None,    None)    -> true
@@ -474,8 +481,15 @@ MetaSlang qualifying spec {
      | (SortedTerm (x1, s1,      _),
         SortedTerm (x2, s2,      _)) -> equalTerm? (x1, x2) && equalSort? (s1, s2)
 
-    %| Any
-    %| Meet
+     | (Pi         (tvs1, tm1,   _), 
+        Pi         (tvs2, tm2,   _)) -> tvs1 = tvs2 && equalTerm? (tm1, tm2) % TODO: handle alpha equivalence
+
+     | (And        (tms1,        _), 
+        And        (tms2,        _)) -> foldl (fn (t1, t2, eq?) -> eq? && equalTerm? (t1, t2))
+					      true
+					      (tms1, tms2)
+
+     | (Any  _,    Any  _)           -> false  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
 
@@ -539,9 +553,18 @@ MetaSlang qualifying spec {
 	  | Some ls2 -> equalSort? (s1, ls2)
 	  | _ -> false)
 
-    %| Any  ?
-    %| Pi   ?
-    %| Meet ?
+     | (Pi         (tvs1, s1,    _), 
+        Pi         (tvs2, s2,    _)) -> tvs1 = tvs2 && 
+					equalSort? (s1, s2) % TODO: handle alpha equivalence
+
+     | (And        (srts1,       _),  
+        And        (srts2,       _)) -> %% TODO: Handle reordering?
+					foldl (fn (s1, s2, eq?) ->  
+					       eq? && equalSort? (s1, s2))
+					      true
+					      (srts1, srts2)
+
+     | (Any  _,    Any  _)           -> false  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
 
@@ -699,11 +722,17 @@ MetaSlang qualifying spec {
      | (SortedTerm (x1, s1,      _),
         SortedTerm (x2, s2,      _)) -> equalTermStruct? (x1, x2)
 
-    %| Any  ?
-    %| Meet ?
+     | (Pi         (tvs1, t1,    _), 
+        Pi         (tvs2, t2,    _)) -> tvs1 = tvs2 && equalTermStruct? (t1, t2) % TODO: handle alpha equivalence
+
+     | (And        (tms1,        _), 
+        And        (tms2,        _)) -> foldl (fn (t1, t2, eq?) -> eq? && equalTermStruct? (t1, t2))
+					      true
+					      (tms1, tms2)
+
+     | (Any  _,    Any  _)           -> false  % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
-
 
  def equalFunStruct? (f1, f2) =
    case (f1, f2) of
@@ -805,9 +834,9 @@ MetaSlang qualifying spec {
                    (ASort    b -> ASort    b) *
                    (APattern b -> APattern b)
 
- op mapTerm    : fa(b) TSP_Maps b -> ATerm    b -> ATerm    b
- op mapSort    : fa(b) TSP_Maps b -> ASort    b -> ASort    b
- op mapPattern : fa(b) TSP_Maps b -> APattern b -> APattern b
+ op mapTerm    : [b] TSP_Maps b -> ATerm    b -> ATerm    b
+ op mapSort    : [b] TSP_Maps b -> ASort    b -> ASort    b
+ op mapPattern : [b] TSP_Maps b -> APattern b -> APattern b
 
  def mapTerm (tsp as (term_map,_,_)) term =
    %%
@@ -927,8 +956,11 @@ MetaSlang qualifying spec {
 	   else
 	     SortedTerm (newTrm, newSrt, a)
 
-        %| Any  ?
-        %| Meet ?
+         | Pi  (tvs, t, a) -> Pi (tvs, mapRec t,   a) % TODO: what if map alters vars??
+
+         | And (tms, a)    -> And (map mapRec tms, a)
+
+         | Any _           -> term
 
      def mapRec term =
        %% apply map to leaves, then apply map to result
@@ -989,7 +1021,7 @@ MetaSlang qualifying spec {
 	   else
 	     Base (qid, newSrts, a)
 		     
-	 | Boolean a -> srt
+	 | Boolean _ -> srt
 		     
        % | TyVar ??
 		     
@@ -1007,9 +1039,11 @@ MetaSlang qualifying spec {
 				 link     = Some newssrt},
 			    pos))
 
-       % | Any  ?
-       % | Pi   ?
-       % | Meet ?
+         | Pi  (tvs, srt, a) -> Pi (tvs, mapS (tsp, sort_map, srt), a)  % TODO: what if map alters vars?
+
+         | And (srts,     a) -> And (map (fn srt -> mapS (tsp, sort_map, srt)) srts, a)
+
+         | Any  _            -> srt
 
 	 | _ -> srt
 
@@ -1093,11 +1127,6 @@ MetaSlang qualifying spec {
 	   else
 	     WildPat (newSrt, a)
 		     
-       % | BoolPat   ??
-       % | NatPat    ??
-       % | StringPat ??
-       % | CharPat   ??
-	     
 	 | RelaxPat (pat, trm, a) ->
 	   let newPat = mapRec pat in
 	   let newTrm = mapTerm tsp trm in
@@ -1122,6 +1151,11 @@ MetaSlang qualifying spec {
 	   else
 	     SortedPat (newPat, newSrt, a)
 			   
+       % | BoolPat   ??
+       % | NatPat    ??
+       % | StringPat ??
+       % | CharPat   ??
+	     
 	 | _ -> pattern
 
      def mapRec pat =
@@ -1132,7 +1166,7 @@ MetaSlang qualifying spec {
      mapRec pattern
 
  %% Like mapTerm but ignores sorts
-  op mapSubTerms: fa(a) (ATerm a -> ATerm a) -> ATerm a -> ATerm a
+  op mapSubTerms: [a] (ATerm a -> ATerm a) -> ATerm a -> ATerm a
  def mapSubTerms f term =
    let
 
@@ -1222,8 +1256,11 @@ MetaSlang qualifying spec {
 	   else
 	     SortedTerm (newTrm, srt, a)
 			     
-       % | Any  ?
-       % | Meet ?
+         | Pi  (tvs, t, a) -> Pi (tvs, mapRec t, a)  % TODO: what if map alters vars?
+
+         | And (tms, a)    -> And (map mapT tms, a)
+
+         | Any  _ -> term
 			     
      def mapRec term =
        %% apply map to leaves, then apply map to result
@@ -1236,7 +1273,7 @@ MetaSlang qualifying spec {
  %%%                Recursive Term Search
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op existsSubTerm : fa(b) (ATerm b -> Boolean) -> ATerm b -> Boolean
+  op existsSubTerm : [b] (ATerm b -> Boolean) -> ATerm b -> Boolean
  def existsSubTerm pred? term =
    pred? term or
    (case term of
@@ -1272,13 +1309,16 @@ MetaSlang qualifying spec {
 
       | SortedTerm  (M, srt,   _) -> existsSubTerm pred? M
 
-     %| Any  ?
-     %| Meet ?
+      | Pi          (tvs, t,   _) -> existsSubTerm pred? t
+
+      | And         (tms,      _) -> exists (existsSubTerm pred?) tms
+
+      | Any                    _  -> false
       )				    
 
  %% folds function over all the subterms in top-down order
  %% Other orders such as evaluation order would be useful
-  op foldSubTerms : fa(b,r) (ATerm b * r -> r) -> r -> ATerm b -> r
+  op foldSubTerms : [b,r] (ATerm b * r -> r) -> r -> ATerm b -> r
  def foldSubTerms f val term =
    let newVal = f (term, val) in
    case term of
@@ -1317,10 +1357,13 @@ MetaSlang qualifying spec {
 
      | SortedTerm(M,   _,   _) -> foldSubTerms f newVal M
 
-    %| Any  ?
-    %| Meet ?
+     | Pi        (_,   M,   _) -> foldSubTerms f newVal M
 
-  op foldSubTermsEvalOrder : fa(b,r) (ATerm b * r -> r) -> r -> ATerm b -> r
+    %| And       (tms,      _) -> foldl (fn (tm,val) -> foldSubTerms f val tm) newVal tms % really want join/meet of fold results
+
+     | Any                  _  -> newVal
+
+  op foldSubTermsEvalOrder : [b,r] (ATerm b * r -> r) -> r -> ATerm b -> r
  def foldSubTermsEvalOrder f val term =
    let recVal =
        case term of
@@ -1382,8 +1425,11 @@ MetaSlang qualifying spec {
 
 	 | SortedTerm(M,_,    _) -> foldSubTermsEvalOrder f val M
 
-        %| Any  ?
-        %| Meet ?
+         | Pi        (_,  M,  _) -> foldSubTermsEvalOrder f val M
+
+        %| And       (tms,    _) -> foldl (fn (tms, val) -> foldSubTermsEvalOrder f val tm) val tms % really want join/meet of fold results
+
+         | Any                _  -> val
 
    in
      case term of
@@ -1400,9 +1446,9 @@ MetaSlang qualifying spec {
                       (ASort    a -> Option (ASort    a)) *
                       (APattern a -> Option (APattern a))
 
- op replaceTerm    : fa(b) ReplaceSort b -> ATerm    b -> ATerm    b
- op replaceSort    : fa(b) ReplaceSort b -> ASort    b -> ASort    b
- op replacePattern : fa(b) ReplaceSort b -> APattern b -> APattern b
+ op replaceTerm    : [b] ReplaceSort b -> ATerm    b -> ATerm    b
+ op replaceSort    : [b] ReplaceSort b -> ASort    b -> ASort    b
+ op replacePattern : [b] ReplaceSort b -> APattern b -> APattern b
 
 
  def replaceTerm (tsp as (term_map, _, _)) term =
@@ -1459,8 +1505,15 @@ MetaSlang qualifying spec {
 	| SortedTerm  (           trm,                 srt, a) ->
 	  SortedTerm  (replaceRec trm, replaceSort tsp srt, a)
 	  
-       %| Any  ?
-       %| Meet ?
+        | Pi          (tvs,            tm, a) ->  % TODO: can replaceRec alter vars?
+	  Pi          (tvs, replaceRec tm, a)
+
+        | And         (               tms, a) ->
+	  And         (map replaceRec tms, a)
+
+        | Any _ -> term
+
+        | _  -> term  
 
     def replaceRec term =
       %% Pre-Node traversal: possibly replace node before checking if leaves should be replaced
@@ -1494,14 +1547,18 @@ MetaSlang qualifying spec {
 	 | Base      (qid,                srts, a) ->
 	   Base      (qid, map replaceRec srts, a)
 	   
-	 | Boolean a -> srt
+	 | Boolean _ -> srt
 
         %| TyVar     ??
         %| MetaTyVar ??
 
-	%| Any       ?
-        %| Pi        ?
-        %| Meet      ?
+         | Pi        (tvs,            srt, a) -> % TODO: can replaceRec alter vars?
+	   Pi        (tvs, replaceRec srt, a) 
+
+         | And       (               srts, a) ->
+	   And       (map replaceRec srts, a)
+
+	 | Any _ -> srt
 
 	 | _ -> srt
 
@@ -1543,18 +1600,17 @@ MetaSlang qualifying spec {
 	 | WildPat     (                srt, a) ->
 	   WildPat     (replaceSort tsp srt, a)
 
-       % | BoolPat   ??
-       % | NatPat    ??
-       % | StringPat ??
-       % | CharPat   ??
-
 	 | RelaxPat    (           pat,                 trm, a) ->
 	   RelaxPat    (replaceRec pat, replaceTerm tsp trm, a)
 	   
 	 | QuotientPat (           pat,                 trm, a) ->
 	   QuotientPat (replaceRec pat, replaceTerm tsp trm, a)
-	   
+
        % | SortedPat ??
+       % | BoolPat   ??
+       % | NatPat    ??
+       % | StringPat ??
+       % | CharPat   ??
 	   
 	 | _ -> pattern
 
@@ -1584,13 +1640,13 @@ MetaSlang qualifying spec {
  sort ASortSchemes b = List (ASortScheme b)
  sort ATermSchemes b = List (ATermScheme b)
 
- op appTerm        : fa(a) appTSP a -> ATerm        a -> ()
- op appSort        : fa(a) appTSP a -> ASort        a -> ()
- op appPattern     : fa(a) appTSP a -> APattern     a -> ()
- op appTermOpt     : fa(a) appTSP a -> ATermOpt     a -> ()
- op appSortOpt     : fa(a) appTSP a -> ASortOpt     a -> ()
- op appSortSchemes : fa(a) appTSP a -> ASortSchemes a -> ()
- op appTermSchemes : fa(a) appTSP a -> ATermSchemes a -> ()
+ op appTerm        : [a] appTSP a -> ATerm        a -> ()
+ op appSort        : [a] appTSP a -> ASort        a -> ()
+ op appPattern     : [a] appTSP a -> APattern     a -> ()
+ op appTermOpt     : [a] appTSP a -> ATermOpt     a -> ()
+ op appSortOpt     : [a] appTSP a -> ASortOpt     a -> ()
+ op appSortSchemes : [a] appTSP a -> ASortSchemes a -> ()
+ op appTermSchemes : [a] appTSP a -> ATermSchemes a -> ()
 
  def appTerm (tsp as (term_app, _, _)) term =
    let 
@@ -1632,9 +1688,11 @@ MetaSlang qualifying spec {
 
 	 | SortedTerm (trm, srt,     _) -> (appRec trm; appSort tsp srt)
 
-	%| Any       ?
+	 | Pi         (tvs, tm,      _) -> appRec tm
 
-	%| Meet      ?
+	 | And        (tms,          _) -> app appRec tms
+
+	 | Any                       _  -> ()
 
      def appRec term = 
        %% Post-node traversal: leaves first
@@ -1659,10 +1717,11 @@ MetaSlang qualifying spec {
 	%| TyVar     ??
 	%| MetaTyVar ??
 
-	%| Any       ?
-	%| Pi        ?
-	%| Meet      ?
-         | _                        -> ()
+	 | Pi        (tvs, srt, _) -> appRec srt
+	 | And       (srts,     _) -> app appRec srts
+	 | Any                  _  -> ()
+
+         | _                       -> ()
 
      def appRec srt =
        %% Post-node traversal: leaves first
@@ -1683,13 +1742,13 @@ MetaSlang qualifying spec {
 	 | EmbedPat    (id, None, srt,     _) -> appSort tsp srt
 	 | RecordPat   (fields,            _) -> app (fn (id, p) -> appRec p) fields
 	 | WildPat     (srt,               _) -> appSort tsp srt
+	 | RelaxPat    (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
+	 | QuotientPat (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
+        %| SortedPat ??
         %| BoolPat   ??
         %| NatPat    ??
 	%| StringPat ??
         %| CharPat   ??
-	 | RelaxPat    (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
-	 | QuotientPat (pat, trm,          _) -> (appRec pat; appTerm tsp trm)
-        %| SortedPat ??
 	 | _                                  -> ()
 
      def appRec pat = 
@@ -1719,11 +1778,11 @@ MetaSlang qualifying spec {
  %%%                Misc Base Terms
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op boolSort?    : fa(b) ASort b -> Boolean
- op stringSort?  : fa(b) ASort b -> Boolean
- op natSort?     : fa(b) ASort b -> Boolean
- op integerSort? : fa(b) ASort b -> Boolean
- op charSort?    : fa(b) ASort b -> Boolean
+ op boolSort?    : [b] ASort b -> Boolean
+ op stringSort?  : [b] ASort b -> Boolean
+ op natSort?     : [b] ASort b -> Boolean
+ op integerSort? : [b] ASort b -> Boolean
+ op charSort?    : [b] ASort b -> Boolean
 
  def boolSort? s =
    case s of
@@ -1750,11 +1809,11 @@ MetaSlang qualifying spec {
      | Base (Qualified ("Integer",     "Integer"),     [], _) -> true
      | _ -> false
 
-  op mkABase : fa(b) QualifiedId * List (ASort b) * b -> ASort b
+  op mkABase : [b] QualifiedId * List (ASort b) * b -> ASort b
  def mkABase (qid, srts, a) = Base (qid, srts, a)
 
- op mkTrueA  : fa(b) b -> ATerm b
- op mkFalseA : fa(b) b -> ATerm b
+ op mkTrueA  : [b] b -> ATerm b
+ op mkFalseA : [b] b -> ATerm b
 
  def mkTrueA  a = Fun (Bool true,  Boolean a, a)
  def mkFalseA a = Fun (Bool false, Boolean a, a)
