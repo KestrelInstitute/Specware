@@ -1245,10 +1245,13 @@ XML qualifying spec
       | Empty tag ->
         print_EmptyElemTag tag
 
-      | Full  {stag, content, etag} ->
-        (print_STag    stag)    ^
-        (print_Content content) ^
-        (print_ETag    etag)
+      | Full  elt -> 
+	print_FullElement elt
+
+  def print_FullElement {stag, content, etag} =
+    (print_STag    stag)    ^
+    (print_Content content) ^
+    (print_ETag    etag)
 
   %% -------------------------------------------------------------------------------------------------
   %%  [K32]  STag          ::=  ElementTag

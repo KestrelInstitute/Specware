@@ -69,7 +69,7 @@ XML qualifying spec
 			    | Some str -> str
 			    | _ -> "unspecified type")
 	in
-	  %let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ string elt.stag.name ^" of " ^ given_type ^ "\n") in
+	  let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ string elt.stag.name ^" of " ^ given_type ^ "\n") in
 	  internalize_PossibleElement (elt, pattern, table)
       | Empty _ -> fail "empty element"
 
@@ -93,10 +93,10 @@ XML qualifying spec
         %% Note that datum_elements is a heterogenous list,
         %%  hence cannot be properly typed in metaslang,
         %%  hence the "magic" here.
-        %let _ = toScreen ("\nSeeking product\n") in
+        let _ = toScreen ("\nSeeking product\n") in
         let new_fields =
             map (fn (desired_name, desired_sd) ->
-		 %let _ = toScreen ("\nSeeking " ^ desired_name ^ "\n") in
+		 let _ = toScreen ("\nSeeking " ^ desired_name ^ "\n") in
 		 let possible_matching_elt =
 		     foldl (fn ((_, item), result) ->
 			    case result of
@@ -107,20 +107,25 @@ XML qualifying spec
 				    if desired_name = string elt.stag.name then
 				      Some elt
 				    else
-				      None)
+				      None
+				  | Element (Empty etag) -> 
+		                    let _ = toScreen ("\nSaw empty " ^ (string etag.name) ^ "\n") in
+				    None)
+		                    
 		            None
 		            xml_items
 		 in
 		 case possible_matching_elt of
 		   | Some matching_elt ->
-		     (case internalize_PossibleElement (matching_elt,
+		     (let _ = toScreen ("\nInternalizing " ^ (string matching_elt.stag.name) ^ "\n") in
+		      case internalize_PossibleElement (matching_elt,
 							expand_SortDescriptor (desired_sd, table),
 							table) 
 			of
 			| Some x -> x
-			| None -> fail "Could not internalize")
+			| None -> fail ("Could not internalize " ^ (print_SortDescriptor desired_sd) ^ "\n"))
 		   | None -> 
-		     let _ = toScreen ("Could not find field " ^ desired_name) in
+		     let _ = toScreen ("Could not find field " ^ desired_name ^ "\n") in
 		     case desired_sd of
 		       | Base (("Boolean", "Boolean"),       []) -> 
 		         let _ = toScreen ("\nUsing default value of false for " ^ (print_SortDescriptor desired_sd) ^ "\n") in
@@ -131,10 +136,14 @@ XML qualifying spec
 		       | Base (("String", "String"), []) -> 
 		         let _ = toScreen ("\nUsing default value of \"\" for "  ^ (print_SortDescriptor desired_sd) ^ "\n") in
 			 magicCastFromString ""
-		       | _ -> fail "Have defaults for just Boolean, Nat, and String")
-	        sd_fields
+		       | Base (("List", "List"), _) -> 
+			 magicCastFromList []
+		       | Base (("Option", "Option"), _) -> 
+			 magicCastFromOption None
+		       | _ -> fail ("Have defaults for just Boolean, Nat, and String, not " ^ (print_SortDescriptor desired_sd) ^ "\n"))
+	    sd_fields
 	in
-	  %let _ = toScreen ("\nFound product\n") in
+	  let _ = toScreen ("\nFound product\n") in
 	  Some (Magic.magicMakeProduct new_fields)
       | Base (qid, args) ->
 	(case qid of
@@ -173,7 +182,7 @@ XML qualifying spec
 	    let data = rev (foldl (fn ((possible_chardata,item), result) ->
 				   case item of
 				     | Element (Full elt) ->
-				       %let _ = toScreen ("\nSeeking next list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
+				       let _ = toScreen ("\nSeeking next list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
 				       (case internalize_PossibleElement (elt, element_sd, table) of
 					  | Some datum -> cons (datum, result)
 					  | _ -> 
@@ -212,7 +221,31 @@ XML qualifying spec
 			let _ = toScreen ("\nUsing default value of \\Z for Char \n") in
 			#Z))
 
-	  | ("Option" , "Option") -> fail "decoding option"
+	  | ("Option" , "Option") -> 
+	    (let element_sd = expand_SortDescriptor (hd args, table) in
+	    case (foldl (fn ((possible_chardata,item), result) ->
+				   case item of
+				     | Element (Full elt) ->
+				       let _ = toScreen ("\nSeeking option element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
+				       (case internalize_PossibleElement (elt, element_sd, table) of
+					  | Some datum -> cons (datum, result)
+					  | _ -> 
+					    let _ = toScreen ("Warning: failure looking for Option element: " ^ 
+							      (print_SortDescriptor element_sd) ^ "\n" )
+					    in
+					      cons ("[failure looking for " ^ (print_SortDescriptor element_sd) ^ "]", result))
+	                             | _ -> 
+				       case possible_chardata of
+					 | Some ustr -> cons (trim_whitespace (string ustr), result)
+					 | _ -> 
+					   let _ = toScreen ("While looking for option element: " ^ (print_SortDescriptor element_sd) ^ "\n" ^
+							     "Ignoring: " ^ (string (print_Content_Item item)) ^ "\n")
+					   in
+					     result)
+			          []
+				  element.content.items)
+	      of | [data] -> magicCastFromOption (Some data)
+		 | _      -> magicCastFromOption None)
 	  | _ ->
 	     Some (read_ad_hoc_string (sd_pattern, element.content)))
       | CoProduct sd_options ->
