@@ -166,7 +166,7 @@ def translateRestrictToExprM(tcx, srt, argsTerm, k, l) =
 	  | Some (Base(Qualified(q,srtId),_,_)) ->
 	    return (newBlock,mkNewClasInst(srtId,[newArg]), newK, newL)
 	  | None ->
-	    raise(UnsupportedSortInRestrict(printSort srt),sortAnn srt)
+	    raise(UnsupportedSortInRestrict("term: "^(printTerm argsTerm)^", sort: "^(printSort srt)),sortAnn srt)
        }
   }
 
