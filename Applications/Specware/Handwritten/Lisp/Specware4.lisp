@@ -143,6 +143,10 @@
     ;; Functions that are assumed by the MetaSlang to Lisp compiler
     "Applications/Handwritten/Lisp/meta-slang-runtime"
 
+    ;; XML support -- this provides hooks for reading/writing ad hoc structures
+    ;; that are not grounded in normal base specs such as Boolean, Integer, etc.
+    "Languages/XML/Handwritten/Lisp/AdHoc.lisp"
+
     ;; The generated lisp code.  This also initializes the Specware
     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
     "Applications/Specware/lisp/Specware4.lisp"

@@ -531,7 +531,14 @@ sense that no toplevel functions return anything.
       | _ -> reportErrorToJava("",0,0,msg)
 
   op reportErrorToJava: String * Nat * Nat * String -> ()
-  %% defined in /Gui/src/Lisp/init-java-connection.lisp
+  %% redefined in /Gui/src/Lisp/init-java-connection.lisp
+  def reportErrorToJava (file, line, col, msg) =
+    let _ = toScreen ("call to reportErrorToJava, but java connection not initialized: ") in
+    let _ = toScreen (" File:   " ^ file)              in
+    let _ = toScreen (" Line:   " ^ Nat.toString line) in  
+    let _ = toScreen (" Column: " ^ Nat.toString col)  in
+    let _ = toScreen (" Msg:    " ^ msg)               in
+    ()
 \end{spec}
 
 \begin{spec}

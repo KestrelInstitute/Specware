@@ -1462,7 +1462,8 @@ XML qualifying spec
   %%  TODO
   %% -------------------------------------------------------------------------------------------------
 
-  def print_AttValue {qchar, items, value} =
+  %% For now at least, print the component items, as opposed to their composite value.
+  def print_AttValue {qchar, items, value=_} =
     [qchar] ^ (foldl (fn (item, result) -> result ^ (print_AttValue_Item item)) [] items) ^ [qchar]
 
   def print_AttValue_Item x =

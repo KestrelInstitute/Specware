@@ -172,7 +172,7 @@ def removePatternCase(term) =
 	    let hdCondTerms = recurseDownBodyCondTerms(hdCaseVars++patVars, caseCond, bodyCTs) in
 	    let tlCondTerms = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, bodyCTs, tlCaseCTs) in
 	    hdCondTerms++tlCondTerms in
-  let def removePatternCaseCase(pat, cond, body) =
+  let def removePatternCaseCase(pat, _(* cond *), body) = 
         let bodyCondTerms = removePattern(body) in
 	let patTerms = patternToTerms(pat) in
 	let patVars = foldl(fn(term, res) -> freeVars(term)++res) [] patTerms in

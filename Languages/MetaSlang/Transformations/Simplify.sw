@@ -220,11 +220,11 @@ spec
 %		    | _ -> term
 %	  in
 %	     mapTerm(replace,fn x -> x,fn p -> p) body
-	| _ -> case simplifyCase spc term of
+	| _ -> case simplifyCase term of
 	        | Some tm -> tm
 	        | None -> tupleInstantiate spc term
 
-  def simplifyCase spc term =
+  def simplifyCase term =
     case term of
       %% case (a,b,c) of (x,y,z) -> g(x,y,z) -> g(a,b,c)
       | Apply(Lambda([(RecordPat(pats,_),_,body)],_),Record(acts,_),_) ->

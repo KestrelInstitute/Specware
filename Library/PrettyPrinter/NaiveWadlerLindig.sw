@@ -149,17 +149,19 @@ WadlerLindig qualifying spec
   % 
   % let doc = ifthen cond expr1 expr2
   
-  op ppFormatWidth : Integer -> Doc -> String
-% 
-%   def ppFormatWidth w doc =
-%     ppLayout (ppBest w 0 [(0,Flat,DocGroup doc)])
 
-   def ppFormat doc = ppFormatWidth 80 doc
+  % def ppFormat doc = ppFormatWidth 80 doc
+  def ppFormat doc = ppFormatWidth doc
 
+  % op ppFormatWidth : Integer -> Doc -> String
+  op ppFormatWidth : Doc -> String
 
-   def ppFormatWidth w doc =
-     let (indent, strings) = simpleLayout doc [] 0 0 in
-     concatList strings
+  % def ppFormatWidth w  doc =
+  %  ppLayout (ppBest w 0 [(0,Flat,DocGroup doc)])
+
+  def ppFormatWidth doc =
+    let (indent, strings) = simpleLayout doc [] 0 0 in
+    concatList strings
 
   op ppAppend : Doc -> Doc -> Doc
   def ppAppend p1 p2 = ppCons p1 p2
