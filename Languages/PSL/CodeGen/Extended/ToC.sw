@@ -131,7 +131,7 @@ SpecCalc qualifying spec {
            }
         | _ -> raise except
     in {
-      print (";;            procedure: " ^ (Id.show procId) ^ "\n");
+      % print (";;            procedure: " ^ (Id.show procId) ^ "\n");
       graph <- catch (convertBSpec bSpec) (handler procId procedure);
       graph <- catch (structGraph graph) (handler procId procedure);
       %print(printGraph(graph));
@@ -167,7 +167,7 @@ with a loop or out of a conditional.
 		let (cspc,rest) = consume cspc next last in
                 (cspc,reduceStmt stmts rest)
 
-            | Return (spc,term) -> termToCStmtNew cspc spc term % Return (termToCExp term)
+            | Return (spc,term) -> termToCStmtNew cspc spc term true % Return (termToCExp term)
 
             | IfThen {condition, trueBranch, cont} ->
 		let (spc,condition) = condition in
@@ -210,26 +210,26 @@ with a loop or out of a conditional.
 
       def statementToC cspc stat =
         case stat of
-          | Assign (spc,term) -> termToCStmtNew cspc spc term
-          | Proc (spc,term) -> termToCStmtNew cspc spc term
-          | Return (spc,term) -> termToCStmtNew cspc spc term
+          | Assign (spc,term) -> termToCStmtNew cspc spc term false
+          | Proc   (spc,term) -> termToCStmtNew cspc spc term false
+          | Return (spc,term) -> termToCStmtNew cspc spc term false
     in
       if graph = [] then
         (cspc,Nop)
       else
         consume cspc 0 (length graph)
 
-  op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> CSpec * CStmt
-  def termToCStmtNew cspc spc term =
+  op termToCStmtNew : CSpec -> Spec.Spec -> MS.Term -> Boolean -> CSpec * CStmt
+  def termToCStmtNew cspc spc term final? =
     let (cspc,block,stmt) =
     case term of
       | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
-          (case lhs of
-            | Fun (Op (Qualified (_,"ignore'"),fxty),srt,pos) -> 
+          (case (lhs, final?) of
+            | (Fun (Op (Qualified (_,"ignore'"),fxty),srt,pos), _) -> 
 	      let (cspc,block,cexp) = termToCExp cspc spc rhs in
 	      (cspc,block,Exp cexp)
-            | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) ->
-	      let (cspc,block,cexp) = termToCExp cspc spc rhs in
+            | (Fun (Op (Qualified ("#return#",variable),fxty),srt,pos), true) ->
+ 	      let (cspc,block,cexp) = termToCExp cspc spc rhs in
 	      (cspc,block,Return cexp)
             | _ ->
               (case rhs of
