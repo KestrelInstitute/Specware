@@ -1,6 +1,9 @@
 (defpackage "SPECWARE-TEST")
 (in-package "SPECWARE-TEST")
 
+(defparameter *global-test-counter* 0)
+
+
 #|
 Top-level functions
 (specware-test::run-test-directories "dir1" "dir2" ...)
@@ -181,6 +184,7 @@ be the option to run each (test ...) form in a fresh image.
 	    (specware::copy-directory source target nil)))))
 
 (defmacro test (&body test-forms)
+  ; (setq *global-test-counter* 0)
   `(progn ,@(loop for fm in test-forms collect `(test-1 ,@fm))))
 
 (defun test-0 (&rest args)
@@ -217,8 +221,10 @@ be the option to run each (test ...) form in a fresh image.
 			 (value-predicate 'equal)
 			 file-goto-error
 			 error files)
-  (let ((msg (format nil "Running test: ~A" name)))
-    (emacs::eval-in-emacs (format nil "(message ~S)" msg)))
+  (let ((msg (format nil "Running test ~4D : ~A" (incf *global-test-counter*) name)))
+    ;; Incrementing fi:lisp-evalserver-number-reads keeps us one step ahead of
+    ;; a timeout problem where pending command-line -eval's give up.
+    (emacs::eval-in-emacs (format nil "(progn (incf fi:lisp-evalserver-number-reads) (message ~S))" msg)))
   (let (val error-type (error-messages ())
 	(emacs::*goto-file-position-store?* t)
 	(emacs::*goto-file-position-stored* nil)
