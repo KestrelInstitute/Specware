@@ -284,8 +284,10 @@ spec
     let instantiateTyVars = fn s -> instantiateTyVars(s,tyVarSubst) in
     let defbody = mapTerm (id,instantiateTyVars,id) defbody in
     let localDefbody = mapSubTerms foldRecursiveCall defbody in
-    let localDef = mkLambda(mapPattern (id,instantiateTyVars,id) (mkTuplePat(remainingParams)),
-			    substitute(localDefbody,vSubst))
+    let localDef = substitute(mkLambda(mapPattern (id,instantiateTyVars,id)
+				         (mkTuplePat(remainingParams)),
+				       localDefbody),
+			      vSubst)
     in
     simplifyTerm(mkLetRec([(localFn,localDef)],
 			  mkApply(mkVar localFn,newArgTerm)))
