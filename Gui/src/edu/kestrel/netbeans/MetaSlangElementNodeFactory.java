@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2003/04/23 00:43:19  weilyn
+ * Added UnitID object support and diagram element node support
+ *
  * Revision 1.10  2003/04/01 02:29:33  weilyn
  * Added support for diagrams and colimits
  *
@@ -58,8 +61,7 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.SystemAction;
 import org.openide.*;
 
-import edu.kestrel.netbeans.actions.ProcessUnitAction;
-import edu.kestrel.netbeans.actions.ProveClaimAction;
+import edu.kestrel.netbeans.actions.*;
 import edu.kestrel.netbeans.model.*;
 import edu.kestrel.netbeans.nodes.*;
 import edu.kestrel.netbeans.parser.MetaSlangParser;
@@ -202,6 +204,10 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	//SystemAction.get(PropertiesAction.class)
     };
 
+    private static final SystemAction[] UNIT_ID_ACTIONS = new SystemAction[] {
+	SystemAction.get(GoToUnitDefinitionAction.class),
+    };
+    
     private static final SystemAction[] CONTAINER_ACTIONS
 	= new SystemAction[] {SystemAction.get(CutAction.class),
 			      SystemAction.get(CopyAction.class),
@@ -412,9 +418,8 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
     
     public Node createUnitIDObjectNode(Object object) {
         UnitIDObjectNode n = new UnitIDObjectNode(object);
-        //TODO: change this to "Go to source" or something....
-        n.setDefaultAction(SystemAction.get(EditAction.class));
-        n.setActions(DEFAULT_ACTIONS);
+        n.setDefaultAction(SystemAction.get(GoToUnitDefinitionAction.class));
+        n.setActions(UNIT_ID_ACTIONS);
         return n;
     }
 
