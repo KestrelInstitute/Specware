@@ -429,7 +429,8 @@
     (:file   (cons :|File|     (vector (second *parser-source*) left right)))
     (:string (cons :|String|   (vector (second *parser-source*) left right)))
     (t       (when (< (incf *make-source-warnings-seen*) 10)
-	       (warn "In MAKE-REGION: What are we parsing? : ~S" *parser-source*))
+	       (unless (equalp *parser-source* '(:INTERNAL "parser initialization"))
+		 (warn "In MAKE-REGION: What are we parsing? : ~S" *parser-source*)))
 	     (cons :|Internal| (second *parser-source*)))))
 
 ;;; ===== performance hacks ===
