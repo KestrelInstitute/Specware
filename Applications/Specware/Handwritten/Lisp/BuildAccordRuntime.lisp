@@ -42,9 +42,6 @@
   :application-files
   (list ;;; (in-accord-dir "/Library/")
 	;;; (in-accord-dir "/Applications/Accord/Courses/")
-   (in-specware-dir "Release/Windows/Specware4.cmd")
-   (in-specware-dir "Release/Windows/Specware4 Shell.cmd")
-   (in-specware-dir "Release/Windows/Specware-Accord.cmd")
    (in-specware-dir "Applications/Specware/Handwritten/Lisp/StartShell.lisp"))
 
   ;; Possible option instead of excl::delete-directory-and-files call
@@ -57,6 +54,12 @@
   ;; which runtime? the other option is :dynamic which includes the compiler
   :runtime :standard
   )
+
+;;; Command files
+(specware::copy-file (in-specware-dir "Release/Windows/Specware-Accord.cmd")
+		     (in-distribution-dir "Specware XEmacs.cmd"))
+(specware::copy-file (in-specware-dir "Release/Windows/Specware-Accord-Shell.cmd")
+		     (in-distribution-dir "Specware.cmd"))
 
 (load (in-specware-dir "Applications/Specware/Handwritten/Lisp/copy-files-for-distribution.lisp"))
 
