@@ -3,29 +3,34 @@ SpecCalc qualifying spec {
   import ../SpecPath
   import /Languages/Snark/SpecToSnark
   
- def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, option) pos = {
-     (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
-     (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
-                     (SpecPath_Relative {path = ["Library","Base"],
-                                         hashSuffix = None});
-     URI <- getCurrentURI;
-     snarkLogFileName <- URItoSnarkLogFile (URI);
-     proof_name <- return (URItoProofName (URI));
-     spec_name <- return (SpecTermToSpecName(spec_term));
+ def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
+     (value, timeStamp, depURIs) <- SpecCalc.evaluateTermInfo spec_term;
+     (Spec baseSpec, _, _) <- SpecCalc.evaluateURI (Internal "base")
+						   (SpecPath_Relative {path       = ["Library","Base"],
+								       hashSuffix = None});
+     URI              <- getCurrentURI;
+     snarkLogFileName <- URItoSnarkLogFile URI;
+     proof_name       <- return (URItoProofName URI);
+     spec_name        <- return (SpecTermToSpecName spec_term);
+     options <- 
+       (case possible_options of
+	  | Options options  -> return (options)
+	  | Error   (msg, str) -> raise  (SyntaxError (msg ^ str)));
      proved:Boolean <-
-     (case value of
-	| Spec spc -> (proveInSpec (proof_name,
-				    claim_name, 
-				    subtractSpec spc baseSpec,
-				    spec_name,
-				    prover_name, 
-				    assertions, 
-				    option,
-				    snarkLogFileName,
-				    pos))
-	| _ -> raise (Proof (pos, "Argument to prove command is not a spec.")));
-     result <-  return (Proof (if proved then {status = Proved, unit = URI} else {status = Unproved, unit = URI}));
-     return (result,timeStamp,depURIs)
+       (case value of
+	  | Spec spc -> (proveInSpec (proof_name,
+				      claim_name, 
+				      subtractSpec spc baseSpec,
+				      spec_name,
+				      prover_name, 
+				      assertions, 
+				      options,
+				      snarkLogFileName,
+				      pos))
+	  | _ -> raise (Proof (pos, "Argument to prove command is not a spec.")));
+     result <- return (Proof {status = if proved then Proved else Unproved, 
+			      unit   = URI});
+     return (result, timeStamp, depURIs)
    }
 
  op URItoSnarkLogFile: URI -> SpecCalc.Monad String
@@ -71,7 +76,7 @@ SpecCalc qualifying spec {
  op proveInSpec: Option String * ClaimName * Spec * Option String * String * 
                  Assertions * List LispCell * String * Position -> SpecCalc.Monad Boolean
  def proveInSpec (proof_name, claim_name, spc, spec_name, prover_name,
-		  assertions, option, snarkLogFileName, pos) = {
+		  assertions, options, snarkLogFileName, pos) = {
    result <-
    let findClaimInSpec = firstUpTo (fn (_, propertyName, _, _) -> claim_name = propertyName)
                                    spc.properties in
@@ -81,7 +86,7 @@ SpecCalc qualifying spec {
 	 let actualHypothesis = actualHypothesis(validHypothesis, assertions, pos) in
 	   if (case assertions of All -> true | Explicit possibilities -> length actualHypothesis = length possibilities)
 	     then return (proveWithHypothesis(proof_name, claim, actualHypothesis, spc, spec_name, 
-				     prover_name, option, snarkLogFileName))
+				     prover_name, options, snarkLogFileName))
 	   else raise (Proof (pos, "assertion not in spec."));
    return result}
 
@@ -135,7 +140,7 @@ SpecCalc qualifying spec {
                          List LispCell * String -> Boolean
 
  def proveWithHypothesis(proof_name, claim, hypothesis, spc, spec_name, prover_name,
-			 option, snarkLogFileName) =
+			 options, snarkLogFileName) =
    let (claim_type,claim_name,_,_) = claim in
    let def claimType(ct) = 
          case ct of
@@ -147,7 +152,7 @@ SpecCalc qualifying spec {
    let snarkOpDecls = snarkOpDecls(spc) in
    let snarkHypothesis = map (fn (prop) -> snarkProperty(spc, prop)) hypothesis in
    let snarkConjecture = snarkConjecture(spc, claim) in
-   let snarkEvalForm = makeSnarkProveEvalForm(option, snarkSortDecls, snarkOpDecls, snarkHypothesis, snarkConjecture, snarkLogFileName) in
+   let snarkEvalForm = makeSnarkProveEvalForm(options, snarkSortDecls, snarkOpDecls, snarkHypothesis, snarkConjecture, snarkLogFileName) in
 %     let _ = writeLine("Calling Snark by evaluating: ") in
 %     let _ = LISP.PPRINT(snarkEvalForm) in
      let result = Lisp.apply(Lisp.symbol("LISP","FUNCALL"),
@@ -157,7 +162,7 @@ SpecCalc qualifying spec {
        proved
 
  op makeSnarkProveEvalForm: List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * Lisp.LispCell * String -> Lisp.LispCell
- def makeSnarkProveEvalForm(option, snarkSortDecl, snarkOpDecls, snarkHypothesis, snarkConjecture, snarkLogFileName) =
+ def makeSnarkProveEvalForm(options, snarkSortDecl, snarkOpDecls, snarkHypothesis, snarkConjecture, snarkLogFileName) =
    let _ = ensureDirectoriesExist snarkLogFileName in
 %   let _ = toScreen("Proving snark fmla: ") in
 %   let _ = LISP.PPRINT(snarkConjecture) in

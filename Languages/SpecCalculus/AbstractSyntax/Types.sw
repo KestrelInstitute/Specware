@@ -256,10 +256,9 @@ them to be presented in any order.
   sort Assertions = | All
                     | Explicit List ClaimName
 
-  sort ProverOptions = List LispCell
-
+  sort ProverOptions = | Options (List LispCell)
+                       | Error   (String * String)  % error msg, problematic string
 \end{spec}
-
 A \verb+NatTranComp+ element is a component in a natural transformation
 between diagrams. The components are indexed by vertices in the shape.
 The term in the component must evaluate to a morphism.

@@ -187,7 +187,9 @@
    (:repeat* :CLAIM-NAME)))
 
 (define-sw-parser-rule :PROVER-OPTIONS ()
-  (:anyof "Snark" "PVS"))
+  (:tuple (1 :STRING)) 
+  ;; returns (:|Sexps| <sexpressions>) or (:|Error| msg string)
+  (read-list-of-s-expressions-from-string 1))
 
 
 ;;; ========================================================================
@@ -468,7 +470,7 @@ If we want the precedence to be optional:
    :CHARACTER
    "true" "false" "fa" "ex"
    "module" "spec" "import" "sort" "def" "op" "end"
-   "fn" "case" "of" "let" "if" "then" "else" "in"
+   "fn" "case" "of" "let" "if" "then" "else" "in" "with" "using" "options"
    "project" "relax" "restrict" "quotient" "choose" "embed" "embed?"
    "select" "as" "infixl" "infixr"
    "axiom" "theorem" "conjecture"

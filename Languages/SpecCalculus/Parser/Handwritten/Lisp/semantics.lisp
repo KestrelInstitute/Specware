@@ -130,6 +130,50 @@
     (cons (cons :|Prove| (vector claim-name spec-term prover-name assertions options))
 	  (make-pos l r))))
 
+;; Hopefully not Allegro specific.
+(defun read-list-of-s-expressions-from-string (string)
+  (let ((done? nil)
+	(whitespaces '(#\space #\tab #\newline)))
+    (let* ((trimmed-string (string-trim whitespaces string))
+	   (index 0)
+	   (result 
+	    (catch 'problem
+	      (prog1
+		  (handler-bind ((error #'(lambda (signal) 
+					    (throw 'problem (list signal index)))))
+		    (let ((s-expressions '())
+			  (n (length trimmed-string)))
+		      (loop
+			(multiple-value-setq (sexp index)
+			  ;; bug in Allegro?  
+			  ;; Setting eof-error-p to nil won't
+			  ;; suppress eof error unless there is no 
+			  ;; text at all to parse.
+			  ;; At any rate, other kinds of errors are
+			  ;; also possible.
+			  (read-from-string trimmed-string nil nil 
+					    :start               index 
+					    :preserve-whitespace t))
+			(push sexp s-expressions)
+			(when (>= index n)
+			  (return (reverse s-expressions))))))
+		;; if there were no problems, done? will become true,
+		;; but we will return the value from the handler-bind 
+		;; above from the prog1
+		(setq done? t)))))
+      (if done?
+	  (cons :|Options| result)
+	;; cause parser error?
+	(let ((signal (first result))
+	      (index  (second result)))
+	  (let ((error-msg 
+		 (format nil "~A at position ~D" 
+			 (if (eq (type-of signal) 'lisp::end-of-file)
+			     "Premature EOF for expression starting"
+			   signal)
+			 index)))
+	    (cons :|Error| (cons error-msg string))))))))
+
 ;;; ========================================================================
 ;;;  SC-URI
 ;;; ========================================================================
