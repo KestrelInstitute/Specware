@@ -132,7 +132,10 @@ information on how to send the mail."
   (define-key m "\er" 'fi:re-search-backward-input)
   (define-key m "\es" 'fi:re-search-forward-input)
   (define-key m "\e." 'sw:meta-point)
-  (define-key m "\e*" 'sw:switch-to-lisp))
+  (define-key m "\e*" 'sw:switch-to-lisp)
+  (setq comint-prompt-regexp
+    "^\\(\\(\\[[0-9]+i?c?\\] \\|\\[step\\] \\)?\\(<?[-A-Za-z]* ?[0-9]*?>\\|[-A-Za-z0-9]+([0-9]+):\\) \\)+")
+  (define-key m "\C-a" 'comint-bol))
 
 (defun cleanup-fi:lisp-listener-mode ()
   (and fi:lisp-listener-mode-map
