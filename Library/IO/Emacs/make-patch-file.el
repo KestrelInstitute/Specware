@@ -16,6 +16,9 @@
 	      (patch-file-buffer (find-file-noselect file)))
 	  (goto-char (point-min) new-buffer)
 	  (goto-char (point-max patch-file-buffer) patch-file-buffer)
+	  (with-current-buffer patch-file-buffer
+	    (insert (format "\n;;;; Patch definitions from %s relative to %s\n\n"
+			    (buffer-name new-buffer) (buffer-name old-buffer))))
 	  ;; Add in-package form to buffer. May not be correct of more than one in file.
 	  (save-excursion
 	    (if (search-forward "(in-package " nil t nil new-buffer)
