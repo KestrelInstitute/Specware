@@ -1,0 +1,135 @@
+Monadic Support in Specware.
+
+Specware 4 has (hitherto) undocumented syntactic support to simplify
+writing functions that use monads. The syntax and semantics resembles
+that used in Haskell.
+
+In addition, there is a general spec for monads in the Specware library
+(/Library/Structures/Data/Monad.sw) and refinements of that spec for
+state, IO and exceptions. (resp .../Monad/State.sw, .../Monad.sw/IO.sw
+and .../Monad/Except.sw) These refined specs are accompanied by
+implementations with Lisp runtime support.
+
+Syntax and Semantics
+--------------------
+
+The general form of a MetaSlang monadic expresion is as follows:
+
+  {
+    <monadic-stmt> ;
+    ...
+    <monadic-stmt>
+  }
+
+A <monadic-stmt> is either a MetaSlang expression or a monadic binding
+expression. The syntax for the latter is:
+
+    <pattern> <- <expression>
+
+The meaning of a monadic expression is given by translation into
+a nested application in core MetaSlang. At present, this translation
+is done in the parser. Ideally, the monadic form should be carried through
+to the abstract syntax. This would yield more meaningful error messages.
+
+The translation rules are largely the same as for Haskell. We assume the
+two monadic sequencing operators "monadSeq" and "monadBind" are defined.
+Let t be a MetaSlang term, p be pattern and stmts be a sequence of
+statements. The translation implements the following equalities:
+
+  {t} = t
+  {t ; stmts} = monadSeq (t, {stmts})
+  {p <- t ; stmts} = monadBind (t, (fn p -> {stmts}))
+
+Usage
+-----
+
+As mentioned above, the translation intoduces references to the operators
+monadBind and monadSeq.  The easiest way to introduce these names is to
+import /Library/Structures/Data/Monad. That spec is defined as follows:
+
+  Monad qualifying spec
+    sort Monad a
+
+    op monadBind : fa (a,b) (Monad a) * (a -> Monad b) -> Monad b
+    op monadSeq : fa (a,b) (Monad a) * (Monad b) -> Monad b
+    op return : fa (a) a -> Monad a
+
+    axiom left_unit is
+      sort fa (a,b) fa (f:a -> Monad b,x:a) monadBind (return x,f) = f x
+
+    axiom right_unit is sort fa (a) fa (m:Monad a) monadBind (m,return) = m
+
+    axiom associativity is
+      sort fa (a,b,c) fa (m:Monad a, f:a -> Monad b, h:b->Monad c)
+        monadBind (m,(fn x -> monadBind (f x, h))) = monadBind (monadBind (m,f), h)
+
+    axiom non_binding_sequence is
+       sort fa (a) fa (f:Monad a,g:Monad a) monadSeq (f,g) = monadBind (f,fn _ -> g)
+  endspec
+
+The signature together with the translation given above serves to define the
+typing of the statements in a monadic expression. 
+
+Note that the translation introduces references to monadSeq and monadBind
+without qualifiers. This means that one can import two or more instances
+of the Monad spec (each having distinguished qualifiers) and then,
+by virture of the overloading in Specware, use the monadic syntax for
+different monadic types.  For instance, one might have a parsing monad
+and state monad in the same spec.
+
+As an example, of the use of monads, we illustrate a simple application
+that reads a filename from the standard input, and then prints the contents
+of that file to the standard output. 
+
+The application uses some monadic control flow operators found in
+.../Monad/Control.sw. Amongst other things, this defines the following:
+
+  op If : fa(a) Monad Boolean -> Monad a -> Monad a -> Monad a
+  def If Test Then Else = {
+      b <- Test;
+      if b then
+        Then
+      else
+        Else
+    }
+
+  op When : Monad Boolean -> Monad () -> Monad ()
+  def When Test Then = If Test Then (return ())
+
+  op While : Monad Boolean -> Monad () -> Monad ()
+  def While Test Body =  When Test {Body; While Test Body}
+
+The application also uses some of the primitive IO operations defined
+in .../Monad/IO. These primitives include:
+
+  op openFile : FilePath -> OpenMode -> Monad Stream
+  op closeFile : Stream -> Monad ()
+  op readLine : Stream -> Monad String
+  op readString : Stream -> Monad String
+  op writeString : Stream -> String -> Monad ()
+  op atEOF? : Stream -> Monad Boolean
+
+Note that readLine strips the trailing newline (if there is one) while
+readString leaves it intact.
+
+Now the application can be written as follows:
+
+  Echo qualifying spec
+    import /Library/Structures/Data/Monad/IO
+    import /Library/Structures/Data/Monad/Control
+  
+    op echo : Monad ()
+    def echo = {
+      fileName <- readLine stdin;
+      strm <- openFile fileName Read;
+      While (Not (atEOF? strm)) {
+        line <- readString strm;
+        writeString stdout line
+      };
+      closeFile strm
+    }
+  endspec
+
+Note that this is not enough for the application to be executable. In particular,
+the monad remains abstract. An implementation must choose a concrete representation
+of the monadic type including the type for exceptions.
