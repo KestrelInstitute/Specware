@@ -317,7 +317,7 @@ aren't are removed from the environment.
        | None -> return futureTimeStamp   % Not in cache
        | Some (_,timeStamp,depUIDs) ->
          if member (unitId, depUIDs) then
-	   fail ("\nCircular dependency for " ^ (anyToString unitId) ^ "\n")
+	   raise (CircularDefinition unitId)
 	 else      
 	   {
 	    validated? <- validatedUID? unitId;   % True if already validated
