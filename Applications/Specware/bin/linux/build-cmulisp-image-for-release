@@ -135,6 +135,7 @@ $LISP <<-XXXX
 
 	(ext:save-lisp "$SPECWARE4/Applications/Specware/bin/linux/Specware4.cmuimage")
 XXXX
+RC=$?
 # If the load failed (non-zero exit status) then we abort.
 if [ $RC -ne 0 ]; then
   echo ""
