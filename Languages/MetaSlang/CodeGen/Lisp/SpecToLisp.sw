@@ -716,6 +716,11 @@ def mkLTerm (sp,dpn,vars,term : Term) =
          | _ -> false
       
   
+  def pV? var_name =
+   case explode var_name of
+     | #p :: #V :: digits -> all isNum digits % lexer gets upset if no space between "::#"
+     | _ -> false
+
   def reduceTerm(term:LispTerm) = 
       case term
         of Apply(Lambda(xs,_,body),args) -> reduceTerm(Let(xs,args,body))
@@ -736,7 +741,23 @@ def mkLTerm (sp,dpn,vars,term : Term) =
 %           in
                mkLApply (term,terms)
            
-         | Lambda(vars,decls,body) -> mkLLambda(vars,decls,reduceTerm body)
+         | Lambda(vars,decls,body) -> 
+           let reduced_body = reduceTerm body in
+           let unused_pv_vars = 
+               List.foldr (fn (var_name, unused_vars) ->
+                           if (pV? var_name) &
+                              (countOccurrence2 (var_name, 0, [reduced_body]) = 0)
+			     then cons (var_name, unused_vars)
+                             else unused_vars)
+                          []      
+                          vars
+           in
+           let augmented_decls = 
+	       (case unused_pv_vars of
+		  | [] -> decls
+		  | _  -> cons(Ignore unused_pv_vars, decls))
+	   in
+	     mkLLambda (vars, augmented_decls, reduced_body)
 %
 % Optimized by deleting pure arguments that do not
 % occur in the body at all.
@@ -833,11 +854,11 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   %% fn x -> fn(y1,y2) -> fn z -> bod --> fn(x,y,z) let (y1,y2) = y in bod
   def unCurryDef(term,n) =
     let def auxUnCurryDef(term,i,params,let_binds) =
-          if i > n then (Some(mkLLambda(params,
-					[],
-					foldl (fn((vars,vals),bod) ->
-					       mkLLet(vars,vals,bod))
-                                              term let_binds))) : (Option LispTerm)
+          if i > n then (Some (reduceTerm (mkLLambda(params,
+						     [],
+						     foldl (fn((vars,vals),bod) ->
+							    mkLLet(vars,vals,bod))
+						     term let_binds)))) : (Option LispTerm)
           else
             case term
               of Lambda (formals,_,body) ->
@@ -858,37 +879,37 @@ def mkLTerm (sp,dpn,vars,term : Term) =
   % fn(x,y,z) -> f-1(tuple(x,y,z))
   def defNaryByUnary(name,n) =
     let vnames = genNNames n in
-    mkLLambda(vnames,
-	      [],
-	      mkLApply(mkLOp(name), [mkLispTuple(List.map mkLVar vnames)]))
+    reduceTerm (mkLLambda(vnames,
+			  [],
+			  mkLApply(mkLOp(name), [mkLispTuple(List.map mkLVar vnames)])))
 
   % fn(x,y,z) -> f-1(tuple(x,y,z))
   def defAliasFn(name,n) =
     let vnames = genNNames n in
-    mkLLambda(vnames,
-	      [],
-	      mkLApply(mkLOp(name), List.map mkLVar vnames))
+    reduceTerm (mkLLambda(vnames,
+			  [],
+			  mkLApply(mkLOp(name), List.map mkLVar vnames)))
 
   % fn x -> f(x.1,x.2,x.3)
   def defUnaryByNary(name,n) =
-    mkLLambda([if n = 0 then "ignore" else "x"],
-	      if n = 0 then [Ignore ["ignore"]] else [],
-	      mkLApply(mkLOp name, nTupleDerefs(n,mkLVar "x")))
+    reduceTerm (mkLLambda([if n = 0 then "ignore" else "x"],
+			  if n = 0 then [Ignore ["ignore"]] else [],
+			  mkLApply(mkLOp name, nTupleDerefs(n,mkLVar "x"))))
 
   % fn x1 -> fn ... -> fn xn -> name(x1,...,xn)
   def defCurryByUncurry(name,n) =
     let def auxRec(i,args) =
           if i > n then mkLApply(mkLOp(name), args)
             else let vn = "x"^(Nat.toString i) in
-                 mkLLambda([vn],
-			   [],
-			   auxRec(i+1,args++[mkLVar vn]))
+	         reduceTerm (mkLLambda([vn],
+				       [],
+				       auxRec(i+1,args++[mkLVar vn])))
     in auxRec(1,[])
 
   % fn(x1,...,xn) -> f x1 ... xn
   def defUncurryByUnary(name,n) =
     let def auxRec(i,args,bod) =
-          if i > n then mkLLambda(args,[],bod)
+          if i > n then reduceTerm (mkLLambda(args,[],bod))
             else let vn = "x"^(Nat.toString i) in
                  auxRec(i+1,args++[vn],mkLApply(bod,[mkLVar vn]))
     in auxRec(1,[],mkLOp name)
