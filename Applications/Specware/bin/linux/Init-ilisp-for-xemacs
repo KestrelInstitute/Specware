@@ -34,6 +34,10 @@ fi
 if [ ! -e ilisp-pkg.x86f ]; then
   DOIT=YES
 fi
+if [ ! -f /usr/local/bin/cmucl ]; then
+  echo "Oops.  Do not have /usr/local/bin/cmucl"
+  DOIT=CANNOT
+fi
 
 if [ "$DOIT" == "YES" ]; then
   echo "About to run ilisp-compile-inits within xemacs, to compile ilisp-pkg.lisp, cmulisp.lisp, cl-ilisp.lisp"
@@ -42,10 +46,13 @@ if [ "$DOIT" == "YES" ]; then
   xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
          -l "$SPECWARE4"/Library/IO/Emacs/compile-misc-ilisp-files \
          -geometry =150x60+20+20 
-  echo "Done compiling."
+  echo "With luck, xemacs is now done compiling."
   echo "Should now see three or more x86f files:"
-else
+else if [ "$DOIT" == "NO" ]; then
   echo "No need to run ilisp-compile-inits within xemacs, since the following files already exist:"
+else
+  echo " "
+fi
 fi
 echo ""
 ls -sltr *.x86f
