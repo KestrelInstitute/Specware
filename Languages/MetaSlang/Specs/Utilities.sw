@@ -1136,7 +1136,7 @@ Utilities qualifying spec
  op  attemptEval1: String * MS.Term -> Option MS.Term
  def attemptEval1(opName,arg) =
    case (opName,arg) of
-      | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (~i), natSort,aa))
+      | ("~", Fun (Nat i,_,aa)) -> Some(Fun (Nat (Integer.~ i), natSort,aa))
       | ("~", Fun (Bool b,_,aa)) -> Some(Fun (Bool (~b), boolSort,aa))
       | ("pred", Fun (Nat i,_,aa)) -> Some(Fun (Nat (pred i), natSort,aa))
       | ("toString", Fun (Nat i,_,aa)) -> Some (Fun (String (toString i), stringSort,aa))
