@@ -162,7 +162,7 @@ been installed, you will return to the &Specware; installer wizard.
 <step>
 <para>
 Select the directory where you would like &Specware; to be installed
-(the default is <"C:\Program Files\Specware">), and click [[L:Next]] to
+(the default is <"C:\Program Files\Specware4.1">), and click [[L:Next]] to
 complete the installation.  A shortcut to &Specware; will be placed on
 your Desktop as well as in the Program Files folder in the Start menu.  
 Documentation, libraries and example code will be placed in the

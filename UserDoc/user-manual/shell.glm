@@ -820,8 +820,9 @@ added to the spec.
 <title>Auxiliary Commands for Lisp</title>
 
 <para>
-When developing a &Specware; application you generate code for your
-application, compile, load and test it. Then if you make a
+When developing a &Specware; application you generate Lisp code for your
+application, and then load and test it in the same image in which
+the &Specware; system is running. Then if you make a
 modification to a single spec you can use the [[lgen-lisp]] command
 to just generate the generated code for the modification.
 This command is also useful when you just want to see the
@@ -829,20 +830,24 @@ generated code for a particular spec.
 </para>
 
 <para>
-To load and compile Lisp files from the &SShell;, the following commands
+To load Lisp files from the &SShell;, the following commands
 can be used:
 [[
 ||    ld [$lisp-filename$]
 ]]
-to load a Lisp file,
+</para>
+
+<para>
+The generated Lisp files can also be compiled from the &SShell;, but of
+course only if the running Lisp system has compiling enabled:
 [[
 ||    cf [$lisp-filename$]
 ]]
-(for Compile File) to compile a Lisp file, and
+(for Compile File) will compile a Lisp file, and
 [[
 ||    cl [$lisp-filename$]
 ]]
-to load and compile it.
+compiles and loads it.
 </para>
 	
 </section>
