@@ -133,10 +133,10 @@ MetaSlang qualifying spec {
       ppPropertyType propType,
       ppString " ",
       ppString name,
-      ppGroup (ppConcat [
-        ppString " is ",
+      ppGroup (ppIndent (ppConcat [
+        ppString " is",
         ppBreak,
-        ppGroup (ppIndent (ppConcat [
+        ppGroup (ppConcat [
           (case tyVars of
              | [] -> ppNil
              | _ -> 
@@ -147,8 +147,8 @@ MetaSlang qualifying spec {
                 ]),
           ppString " ",
           ppATerm term
-        ]))
-      ])
+        ])
+      ]))
     ]
 
   op ppPropertyType : PropertyType -> Pretty
