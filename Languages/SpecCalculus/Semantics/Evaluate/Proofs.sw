@@ -31,6 +31,26 @@ spec
    let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
    (proofName, ProveTerm_A)
 
+ op generateProofMorphism: Morphism * SCTerm * Property * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> SCDecl
+ def generateProofMorphism (morph, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
+   let def printProofName(qid as Qualified (qual, id)) =
+        if qual = UnQualified then
+	  id^"_proof"
+	else qual^"_"^id^"_proof" in
+   let assertions = All in
+   let (_, propName, _, _) = prop in
+   let specFullUId = case findUnitIdforUnit(Morph morph, globalContext) of
+                   | Some uid -> uid
+                   | _ -> fail("can't find uid") in
+   let specUId = relativeUidToUidAndSWPATH(specFullUId, fileUID, swpath) in
+   let scTerm = if fromObligations?
+                  then (Obligations (UnitId (UnitId_Relative specUId), noPos), noPos)
+		else(UnitId (SpecPath_Relative specUId), noPos) in
+   let proveTerm = Prove (propName, scTerm, prover_name, assertions, prover_options, None) in
+   let proofName = printProofName(propName) in
+   let ProveTerm_A: (SpecCalc.Term Position) = (proveTerm, noPos) in
+   (proofName, ProveTerm_A)
+
  op relativeUidToUidAndSWPATH: UnitId * Option UnitId * List UnitId -> UnitId
  def relativeUidToUidAndSWPATH(uid as {path,hashSuffix}, baseUid, swpath) =
    case baseUid of
@@ -115,6 +135,34 @@ spec
    let _ = debug("genprfsinspc") in
    unionProofDecls(localProofDecls, importProofDecls)
 
+ op generateProofsInMorph: Morphism * SCTerm * Boolean * Spec * Boolean * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ def generateProofsInMorph (morph, scTerm, fromObligations?, baseSpc, multipleFiles, prover_name, prover_options, basePropNames, globalContext, swpath, fileUID) =
+   let spc = morphismObligations(morph, globalContext, noPos) in
+   let imports = (spc.importInfo).imports in
+   %let _ = debug("import check") in
+   let importProofDecls =
+   foldr (fn (imprt, res) -> 
+	  let (importSCTerm, importSpc) = imprt in
+	  let importProofs =
+	    if baseUnitIdSCTerm?(importSCTerm)
+	      then []
+	    else generateProofsInSpec(importSpc, importSCTerm, fromObligations?, baseSpc, multipleFiles, prover_name, prover_options, basePropNames, globalContext, swpath, fileUID) in
+	  unionProofDecls(importProofs, res))
+         []
+	 imports in
+   let importPropNames =
+   map (fn (proofDecl) ->
+	let (prfName, prfTerm) = proofDecl in
+	let (Prove (claimName, _, _, _, _, _), _) = prfTerm in
+	claimName)
+       importProofDecls in
+   let localProofDecls =
+   generateLocalProofsInMorph(morph, scTerm, multipleFiles,
+			      fromObligations?, prover_name, prover_options,
+			      importPropNames++basePropNames, globalContext, swpath, fileUID) in
+   let _ = debug("genprfsinspc") in
+   unionProofDecls(localProofDecls, importProofDecls)
+
  op generateLocalProofsInSpec: Spec * SCTerm * Boolean * Boolean * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
  def generateLocalProofsInSpec (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext, swpath, fileUID) =
    let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
@@ -123,6 +171,15 @@ spec
 			                  ~(member(propName, previousPropNames))
 			                  & ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
+
+ op generateLocalProofsInMorph: Morphism * SCTerm * Boolean * Boolean * String * ProverOptions * List ClaimName * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ def generateLocalProofsInMorph (morph, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, previousPropNames, globalContext, swpath, fileUID) =
+   let usedSpc = morphismObligations(morph, globalContext, noPos) in 
+   let props = usedSpc.properties in
+   let localProps = filter (fn (prop) -> let (propType, propName, _, _) = prop in 
+			                  ~(member(propName, previousPropNames))
+			                  & ~(propType = Axiom)) props in
+   map (fn (prop) -> generateProofMorphism(morph, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
  % The difference between generateProofsInSpecLocal and generateLocalProofsInSpec is that generateProofsInSpecLocal is used by the
  % lpunits commands to only generate local proofs, while generateLocalProofsInSpec is the original code used as part of the full punits command.
@@ -139,6 +196,19 @@ spec
 			                  (member(propName, localPropNames))
 			                  & ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
+
+ op generateProofsInMorphLocal: Morphism * SCTerm * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ def generateProofsInMorphLocal (morph, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
+   let usedSpc = morphismObligations(morph, globalContext, noPos) in 
+   let props = usedSpc.properties in
+   let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
+   let localPropNames = if fromObligations?
+			  then ((usedSpc.importInfo).localProperties)
+			else (usedSpc.importInfo).localProperties in
+   let localProps = filter (fn (prop) -> let (propType, propName, _, _) = prop in 
+			                  (member(propName, localPropNames))
+			                  & ~(propType = Axiom)) props in
+   map (fn (prop) -> generateProofMorphism(morph, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
 % op ppProof: SCDecl -> WadlerLindig.Pretty
 
@@ -165,7 +235,6 @@ spec
 *)
 
  op toProofFileEnv: Spec * SCTerm * Boolean * Boolean * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String -> ()
-
  def toProofFileEnv (spc, spcTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
    %let _ = writeLine("Writing Proof file "^file) in
    let basePropNames = map (fn (_, pn, _, _) -> pn) baseSpc.properties in
@@ -175,11 +244,23 @@ spec
      else generateProofsInSpec(spc, spcTerm, fromObligations?, baseSpc, multipleFiles, "Snark", OptionString ([string ("")]), basePropNames, globalContext, swpath, fileUID) in
    ppProofsToFile(proofDecls, file)
 
-  op toProofFile    : Spec * SCTerm * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String * Boolean * Boolean -> ()
+ op toProofFileMorphEnv: Morphism * SCTerm * Boolean * Boolean * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String -> ()
+ def toProofFileMorphEnv (morph, morphTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
+   %let _ = writeLine("Writing Proof file "^file) in
+   let basePropNames = map (fn (_, pn, _, _) -> pn) baseSpc.properties in
+   let proofDecls =
+     if local?
+       then generateProofsInMorphLocal(morph, morphTerm, multipleFiles, fromObligations?, "Snark", OptionString ([string ("")]), globalContext, swpath, fileUID)
+     else generateProofsInMorph(morph, morphTerm, fromObligations?, baseSpc, multipleFiles, "Snark", OptionString ([string ("")]), basePropNames, globalContext, swpath, fileUID) in
+   ppProofsToFile(proofDecls, file)
 
+  op toProofFile    : Spec * SCTerm * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String * Boolean * Boolean -> ()
   def toProofFile (spc, spcTerm, baseSpc, multipleFiles, globalContext, swpath, fileUID, file, fromObligations?, local?) =  
       toProofFileEnv (spc, spcTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) 
 
+  op toProofFileMorph    : Morphism * SCTerm * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String * Boolean * Boolean -> ()
+  def toProofFileMorph (morph, morphTerm, baseSpc, multipleFiles, globalContext, swpath, fileUID, file, fromObligations?, local?) =  
+      toProofFileMorphEnv (morph, morphTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) 
 
 (*
  op localThmsToProofFile: Spec * SCTerm * Boolean * Spec * Boolean * Option fileUID * String -> ()
@@ -213,18 +294,18 @@ spec
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cUID <- SpecCalc.getUID(cterm);
      globalContext <- getGlobalContext;
-     spc <- case value of
-              | Spec spc -> return spc
-              | Morph sm -> return (morphismObligations(sm, globalContext, positionOf(cterm)))
-              | _ -> raise (Unsupported ((positionOf cterm),
-                               "Can generate proofs only for Specs and Morphisms."));
+
      (proofFileUID, proofFileName, multipleFiles) <-  UIDtoProofFile(cUID, optFileNm);
      (optBaseUnitId,baseSpec) <- getBase;
      swpath <- getSpecPath;
      %let _ = printSpecToTerminal(baseSpec) inI should 
      print (";;; Generating proof file " ^ proofFileName ^ "\n");
-     let _ = ensureDirectoriesExist proofFileName in
-     let _ = toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false) in
+     return (ensureDirectoriesExist proofFileName);
+     case value of
+       | Spec spc -> return (toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false))
+       | Morph morph -> return (toProofFileMorph (morph, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false))
+       | _ -> raise (Unsupported ((positionOf cterm),
+				  "Can generate proofs only for Specs and Morphisms."));
 %     let _ = System.fail ("evaluateProofGen ") in
      {print("Generated Proof file.");
       return valueInfo}}
