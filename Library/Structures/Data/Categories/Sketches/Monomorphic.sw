@@ -89,9 +89,9 @@ these functions follows that for the fold on sets.
   def ppSketch graph = 
      let def ppPair (x,y) = 
        ppConcat [
-         ppElem_e x,
+         Edge.ppElem x,
          ppString "|->",
-         ppElem_v y
+         Vertex.ppElem y
      ] in
      ppConcat [
        ppString "Vertices = {",
