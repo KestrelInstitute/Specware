@@ -239,7 +239,7 @@ snark qualifying spec
     case fmla
       of Bind(bndr, bndVars, term, _) ->
 	let snarkBndList = snarkBndVars(sp, bndVars, globalVars) in
-	let newVars = map(fn (var, srt) -> specId(var))
+	let newVars = map(fn (var, srt) -> specId(var,""))
 	                 bndVars in
 	let bndVarsPred:MS.Term = (foldl (fn ((var:Id, srt), res) -> Utilities.mkAnd(srtPred(sp, srt, (var, srt)), res)) (mkTrue()) (bndVars:(List Var))):MS.Term in
 	let newTerm = case bndr of

@@ -9,6 +9,8 @@ SpecToLisp qualifying spec {
 
  op lisp : Spec -> LispSpec
 
+ def generateCaseSensitiveLisp? = false
+
  def lispStrings =
      StringSet.fromList 
        ["NIL","T","CONS","NULL","CAR","CDR","LIST","LISP",
@@ -123,14 +125,17 @@ def hasConsEmbed(sp,srt) =
        | _ -> System.fail ("SpecToLisp.patternNames " ^ printPattern pattern)
 
 
-  def userStrings : Ref(StringSet.Set) = Ref(StringSet.empty)
-  def userUpper   : Ref(StringSet.Set) = Ref(StringSet.empty)
+  %% Domain is qualification. First set is strings as given, second is upper case version
+  op  userStringMap: Ref(StringMap.Map ((Ref StringSet.Set) * (Ref StringSet.Set)))
+  def userStringMap = Ref(StringMap.empty)
   def initializeSpecId() =
-      (userStrings := StringSet.empty;
-       userUpper := StringSet.empty)
+      (userStringMap := StringMap.empty)
        
-  def lookupSpecId(id,ID) = 
-      if StringSet.member(! userUpper,ID)
+  op  lookupSpecId: String * String * String -> String
+  def lookupSpecId(id,ID,pkg) =
+    case StringMap.find(! userStringMap,pkg) of
+      | Some (userStrings,userUpper) ->
+        if StringSet.member(! userUpper,ID)
          then if StringSet.member(! userStrings,id)
               then id
               else "|!"^id^"|"
@@ -138,13 +143,18 @@ def hasConsEmbed(sp,srt) =
          (userUpper := StringSet.add(! userUpper,ID);
           userStrings := StringSet.add(! userStrings,id);
           id)
+      | None -> (userStringMap := StringMap.insert(! userStringMap,pkg,
+						   (Ref (StringSet.add(empty,id)),
+						    Ref (StringSet.add(empty,ID))));
+		 id)
 
-  def specId id = 
+  def specId (id,pkg) = 
       % TODO:  Optimize this to avoid needless consing for normal cases?
       let id = translate (fn #| -> "\\|" | #` -> "\\`" | #\\ -> "\\\\" |
                              ch -> Char.toString ch) id
       in
-      let ID = String.map Char.toUpperCase id in
+      let ID = if generateCaseSensitiveLisp? then id
+                else String.map Char.toUpperCase id in
       if isLispString(ID) 
            or sub(id,0) = #!
         then "|!"^id^"|"
@@ -152,14 +162,17 @@ def hasConsEmbed(sp,srt) =
       if exists (fn ch -> ch = #:) 
            (explode id)
         then "|"^id^"|"
-      else lookupSpecId(id,ID)
+      else lookupSpecId(id,ID,pkg)
 
-  def defaultSpecwarePackage = "SW-USER"
+  def defaultSpecwarePackage = if generateCaseSensitiveLisp?
+                                then "SW-User"
+				else "SW-USER"
 
   def mkLPackageId id = 
       if id = UnQualified then defaultSpecwarePackage
       else
-      let id = String.map Char.toUpperCase id in
+      let id = if generateCaseSensitiveLisp? then id
+                else String.map Char.toUpperCase id in
       if isLispString(id)
         then id^"-SPEC"
         else id
@@ -167,13 +180,13 @@ def hasConsEmbed(sp,srt) =
   op  printPackageId: QualifiedId * String -> String
   def printPackageId (id,defPkgNm) = 
       case id
-        of Qualified("System","time") -> "time"
+        of Qualified("System","time") -> "TIME"
          | Qualified(pack,id) ->
            let pkg = mkLPackageId pack in
            if pkg = defPkgNm
-             then specId id % !!!
+             then specId(id,"") % !!!
              else
-               (pkg ^ "::" ^ specId id)
+               (pkg ^ "::" ^ specId(id,pkg))
       
   def opArity(sp,idf,srt) =
     case sortArity(sp,srt)
@@ -420,7 +433,7 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
         | Let(decls,body,_) -> 
            let (pats,terms) = ListPair.unzip decls in
           let  names = List.map patternName pats  in
-          let  names = List.map specId names      in
+          let  names = List.map (fn id -> specId(id,"")) names      in
           mkLLet(names,
             List.map (fn t -> mkLTerm(sp,dpn,vars,t)) terms,
             blockAtom(sp,dpn,StringSet.addList(vars,names),body))   
@@ -485,13 +498,13 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
     (case term
       of Fun termOp -> mkLTermOp(sp,dpn,vars,termOp,None)
        | Var((id,srt),_) -> 
-         let id = specId id in
+         let id = specId (id,"") in
          if StringSet.member(vars,id)
             then Var id else Op id
        | Let(decls,body,_) ->
          let (pats,terms) = ListPair.unzip decls in
          let  names = List.map patternName pats  in
-         let  names = List.map specId names      in
+         let  names = List.map (fn id -> specId(id,"")) names      in
          mkLLet(names,
             List.map (fn t -> mkLTerm(sp,dpn,vars,t)) terms,
             mkLTerm(sp,dpn,StringSet.addList(vars,names),body))   
@@ -505,7 +518,7 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
                     
            in
            let (names,terms) = unfold(decls,[],[]) in
-           let names = List.map (fn (id,_)-> specId id) names in
+           let names = List.map (fn (id,_)-> specId(id,"")) names in
            let vars  = StringSet.difference
                             (vars,StringSet.fromList(names))
            in
@@ -559,7 +572,7 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
             of Fun termOp -> 
                mkLTermOp(sp,dpn,vars,termOp,Some term2)
              | Var((id,srt),_) ->
-               let id = specId id in
+               let id = specId(id,"") in
                if StringSet.member(vars,id)
                   then mkLApply(mkLTerm(sp,dpn,vars,term1),
                                 [mkLTerm(sp,dpn,vars,term2)])
@@ -574,7 +587,7 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
                  mkLTerm(sp,dpn,vars,t3))
        | Lambda([(pat,cond,trm)],_) ->
             let names = patternNames pat in 
-            let names = List.map specId names    in
+            let names = List.map (fn id -> specId(id,"")) names    in
                 mkLLambda(names,
 			  [],
 			  mkLTerm(sp,dpn,StringSet.addList(vars,names),trm))
