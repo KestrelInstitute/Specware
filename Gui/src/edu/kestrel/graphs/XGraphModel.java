@@ -6,6 +6,7 @@
 
 package edu.kestrel.graphs;
 
+import edu.kestrel.graphs.spec.*;
 import com.jgraph.graph.*;
 import java.io.*;
 import java.util.*;
@@ -144,10 +145,16 @@ public class XGraphModel extends DefaultGraphModel {
         super.edit(cs,propertyMap, pm, e);
     }
     
-    
-    /** removes all cells from the model.
+    /** removes all elements in the graph; throws a VetoException, if an element cannot be removed.
      */
-    public void removeAll() {
+    public void removeAll() throws VetoException {
+        removeAll(false);
+    }
+    
+    /** removes all cells from the model, if ignoreVetos is true, no check is made, whether the elements
+     * in the graph can be removed.
+     */
+    public void removeAll(boolean ignoreVetos) throws VetoException {
         int cnt = getRootCount();
         ArrayList rem = new ArrayList();
         ArrayList rlist = new ArrayList();
@@ -161,27 +168,57 @@ public class XGraphModel extends DefaultGraphModel {
             }
         }
         remove(rem.toArray());
+        removeNodes(rlist.toArray(),ignoreVetos);
+        /*
+        remove(rem.toArray());
         Iterator iter = rlist.iterator();
         while (iter.hasNext()) {
-            ((XGraphElement)iter.next()).remove(this);
+            XGraphElement elem = (XGraphElement)iter.next();
+            Dbg.pr("trying to remove "+elem+"...");
+            elem.remove(this);
         }
+         */
     }
     
     /** removes the cells from the model; if instances of XGraphElements are among the cells, the remove method
-     * of the element is called instead of directly removing the cell.
+     * of the element is called instead of directly removing the cell. It throws a veto exception, if an element
+     * cannot be removed.
      */
-    public void removeNodes(Object[] cells) {
+    public void removeNodes(Object[] cells) throws VetoException {
+        removeNodes(cells,false);
+    }
+    
+    /** removes the cells from the model; if instances of XGraphElements are among the cells, the remove method
+     * of the element is called instead of directly removing the cell. It only throws a veto exception in case an
+     * element cannot be removed, if the ignoreVetos parameter is false.
+     */
+    public void removeNodes(Object[] cells, boolean ignoreVetos_) throws VetoException {
+        boolean ignoreVetos = true;
         int cnt = cells.length;
+        Dbg.pr("removing "+cnt+" cells...");
+        boolean couldnotRemoveSome = false;
+        boolean somethingRemoved = false;
         ArrayList rem = new ArrayList();
         for(int i=0;i<cnt;i++) {
             Object obj = cells[i];
             if (obj instanceof XGraphElement) {
-                ((XGraphElement)obj).remove(this);
+                XGraphElement elem = (XGraphElement)obj;
+                if (ignoreVetos || elem.removeOk(false)) {
+                    elem.remove(this);
+                    somethingRemoved = true;
+                } else {
+                    Dbg.pr("can not remove "+elem);
+                    couldnotRemoveSome = true;
+                }
             } else {
                 rem.add(obj);
             }
         }
         remove(rem.toArray());
+        if ((!ignoreVetos) && couldnotRemoveSome) {
+            String s = (somethingRemoved?"some elements":"anything");
+            throw new VetoException("Could not remove "+s+".");
+        }
     }
     
     /** returns all "toplevel" cells of the model; this method takes care of "inner edges" which are also root cells for
@@ -208,25 +245,6 @@ public class XGraphModel extends DefaultGraphModel {
         int cnt = getRootCount();
         //Dbg.pr("root count="+cnt);
         return cnt == 0;
-    }
-    
-    public String dump() {
-        StringBuffer res = new StringBuffer();
-        int rootCnt = getRootCount();
-        for(int i=0;i<rootCnt;i++) {
-            Object obj = getRootAt(i);
-            String classname = obj.getClass().getName();
-            res.append("<"+classname+" ");
-            res.append("name=\""+obj+"\"");
-            if (obj instanceof XContainerNode) {
-                res.append(">\n");
-                // dump container children
-                res.append("</"+classname+">");
-            }
-            else
-                res.append("/>\n");
-        }
-        return res.toString();
     }
     
 }
