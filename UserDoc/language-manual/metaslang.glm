@@ -4097,7 +4097,7 @@ list as the `expression [[Cons
 ($E$, Nil)]], and a
 multi-element `list-display
 [[[$E<subscript>1</subscript>$, $E<subscript>2</subscript>$,]]
-... [[,]] [[$E\<subscript>n\</subscript>$]]]
+... [[,]] [[$E<subscript>n</subscript>$]]]
 denotes the same list as the `expression [[Cons
 ($E<subscript>1</subscript>$,
 [$E<subscript>2</subscript>$,]]
