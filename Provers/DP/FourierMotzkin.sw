@@ -397,7 +397,7 @@ FM qualifying spec
     let hdV2 = termVar(hdT2) in
     let hdC1 = termCoef(hdT1) in
     let hdC2 = termCoef(hdT2) in
-    if hdV1 = hdV2 & hdC1 * hdC2 < zero
+    if comp1 ~= Neq && comp2 ~= Neq & hdV1 = hdV2 & hdC1 * hdC2 < zero
       then
 	let coefGcd = gcd(hdC1, hdC2) in
 	let p1Mult = abs(hdC2 div coefGcd) in
