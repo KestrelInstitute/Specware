@@ -65,4 +65,6 @@
 (top-level:alias ("swpath" :case-sensitive) (&optional str)
   (if (null str)
       (princ (sys:getenv "SWPATH"))
-    (princ (setf (sys:getenv "SWPATH") (string str)))))
+    (let ((str (string str)))
+      (speccalc::checkSpecPathsExistence str)
+      (princ (setf (sys:getenv "SWPATH") (string str))))))
