@@ -3,11 +3,12 @@
 ;; argument to Xemacs. This spawns a Lisp process.
 (defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
-  (let* ((root-dir (if in-current-dir?
-		       (if (stringp in-current-dir?)
-			   in-current-dir?
-			 default-directory)
-		     (concat (getenv "SPECWARE4"))))
+  (let* ((root-dir (strip-final-slash
+		    (if in-current-dir?
+			(if (stringp in-current-dir?)
+			    in-current-dir?
+			  default-directory)
+		      (concat (getenv "SPECWARE4")))))
 	 (bin-dir (concat root-dir
 			  "/Applications/Specware/bin/"
 			  (if (memq system-type '(ms-dos windows-nt windows-95
@@ -57,7 +58,17 @@
 		    fi:common-lisp-host
 		    fi:common-lisp-image-file
 		    )
+    (when in-current-dir?
+      (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
+			       (concat root-dir ":/")))
+      (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir)))
     ))
+
+(defun strip-final-slash (str)
+  (let ((last (- (length str) 1)))
+    (if (eq (elt str last) ?/)
+	(substring str 0 last)
+      str)))
 
 ;; The following is almost the same as the above. The difference is that
 ;; in the following we execute a Specware application (rather than run Lisp
@@ -147,7 +158,8 @@
 			       (symbol-name system-type))))
 	 (world-name (concat bin-dir "/Specware4.dxl")))
     (run-plain-lisp)
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH:/\") %S)" root-dir))
+    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
+			     (concat root-dir ":/")))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir))
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
     (sw:eval-in-lisp "(load \"Specware4.lisp\")")
@@ -155,7 +167,8 @@
     (run-plain-lisp)
     (unless (inferior-lisp-running-p)
       (sleep-for 1))
-    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH:/\") %S)" root-dir))
+    (sw:eval-in-lisp (format "(setf (sys:getenv \"SWPATH\") %S)"
+			     (concat root-dir ":/")))
     (sw:eval-in-lisp (format "(setf (sys:getenv \"SPECWARE4\") %S)" root-dir))
     (sw:eval-in-lisp (format "(top-level::do-command :cd %S)" dir))
     (sw:eval-in-lisp "(load \"Specware4.lisp\")")

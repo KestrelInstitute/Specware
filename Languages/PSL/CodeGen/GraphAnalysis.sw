@@ -2,16 +2,19 @@
 discover structure in a control-flow graph.  Refs acm computing
 surveys Sept 1986 Ryder & Paull Cifuentes UQ website, IEEE "New
 Algorithms for Control-Flow Graph Structuring" Moretti, Chanteperdix,
-Osorio *)
+Osorio 
+
+Top-level function is graphToStructuredGraph
+*)
 
 spec 
   import /Languages/MetaSlang/Specs/StandardSpec
-  import /Library/Legacy/DataStructures/ListUtilities
+  import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex
 
   sort Index = Nat
 
   sort Stat =
-    | Assign Term * Term
+    | Assign Term
     | Proc Term
     | Return Term
 
@@ -56,8 +59,34 @@ spec
       | Branch {condition = _, trueBranch, falseBranch} -> [trueBranch, falseBranch]
       | Return _ -> []
 
+  op setNodeContent: Index * NodeContent * Graph -> Graph
+  def setNodeContent(i,newNodeContent,g) =
+    case nth(g,i) of
+      | (index,_,preds) ->
+	replaceNth(index,g,(i,newNodeContent,preds))
+	    
+  op setDFSIndex: Index * Nat * Graph -> Graph
+  def setDFSIndex(i,newDFSI,g) =
+    case nth(g,i) of
+      | (_,content,preds) ->
+	replaceNth(i,g,(newDFSI,content,preds))
+
   op depthFirstIndex: Index * Graph -> Nat
   def depthFirstIndex(i,g) = (nth(g,i)).1
+
+  op insertDFSIndices: Graph * Index -> Graph
+  def insertDFSIndices (g,topIndex) =
+    let
+      def DFS(i,st as (count,seen,g)) =
+	if member(i,seen)
+	  then st
+	  else
+	    let (count,seen,g) = DFSlist(successors(i,g),count,Cons(i,seen),g) in
+	    (count + 1, seen, setDFSIndex(i,count,g))
+      def DFSlist(ilst,count,seen,g) =
+	foldl DFS (count,seen,g) ilst
+    in
+      (DFS(topIndex,(1,[],g))).3
 
   op descendantIndex?: Index * Index * Graph -> Boolean
   def descendantIndex?(i,j,g) = depthFirstIndex(i,g) < depthFirstIndex(j,g)
@@ -113,13 +142,11 @@ spec
     %% with structured nodes replacing simple nodes.
     %% This makes it easier to use indices as references before the whole
     %% graph is computed.
+    let topIndex = findTopIndex(baseG) in
+    let baseG = insertDFSIndices (baseG,topIndex) in
+    %% DFS indices tell which nodes are higher in the graph and are used to
+    %% to determine which links are looping links
     let
-      def replaceNode(i,newNodeContent,g) =
-	%% Store node in graph
-	case nth(g,i) of
-	  | (index,_,preds) ->
-	    replaceNth(index,g,(i,newNodeContent,preds))
-	    
       def buildStructuredGraph(nd:Index,exits,newG) =
 	case loopPredecessors(nd,baseG) of
 	  | []  -> buildStraightLine(nd,exits,newG)
@@ -134,13 +161,13 @@ spec
         let (cond,body,continue,newG) = loopHead(head,loopExits,newG) in
 	let newG = buildStraightLine(continue,exits,newG) in
 	let newG = buildStraightLine(body,Cons(head,loopExits),newG) in
-	let newG = replaceNode(head,
-			       Loop {condition = cond,
-				     preTest?  = true,
-				     body      = body,
-				     endLoop   = endloop,
-				     continue  = continue},
-			       newG)
+	let newG = setNodeContent(head,
+				  Loop {condition = cond,
+					preTest?  = true,
+					body      = body,
+					endLoop   = endloop,
+					continue  = continue},
+				  newG)
 	in foldl (fn (x,newG) -> buildStraightLine(x,exits,newG))
 	     newG loopExits
 
@@ -167,24 +194,33 @@ spec
 	    let newG = buildStraightLine(falseBranch,[continue],newG) in
 	    let newG = buildStraightLine(continue,   exits,     newG) in
 	    if falseBranch = continue
-	      then replaceNode(nd,IfThen {condition   = condition,
-					  trueBranch  = trueBranch,
-					  continue    = falseBranch},
-			      newG)
+	      then setNodeContent(nd,IfThen {condition   = condition,
+					     trueBranch  = trueBranch,
+					     continue    = falseBranch},
+				  newG)
 	    else if trueBranch = continue
-	      then replaceNode(nd,IfThen {condition   = negateTerm condition,
-					  trueBranch  = falseBranch,
-					  continue    = trueBranch},
-			      newG)
-	      else replaceNode(nd,IfThenElse {condition   = condition,
-					      trueBranch  = trueBranch,
-					      falseBranch = falseBranch,
-					      continue    = continue},
-			       newG)
+	      then setNodeContent(nd,IfThen {condition   = negateTerm condition,
+					     trueBranch  = falseBranch,
+					     continue    = trueBranch},
+				  newG)
+	      else setNodeContent(nd,IfThenElse {condition   = condition,
+						 trueBranch  = trueBranch,
+						 falseBranch = falseBranch,
+						 continue    = continue},
+				  newG)
     in
     case baseG of
       | [] -> []
       %% Assumes first node of baseG is the head of the graph
-      | _::_ -> buildStructuredGraph(1,[],baseG)
+      | _::_ ->
+        buildStructuredGraph (topIndex, [], baseG)
+
+  op findTopIndex: Graph -> Index
+  def findTopIndex(g) =
+    % Index of node with no predecessors
+    case findOptionIndex
+           (fn (nd,i) -> if nd.3 = [] then Some () else None)
+	   g
+      of Some (topIndex,_) -> topIndex
 
 end
