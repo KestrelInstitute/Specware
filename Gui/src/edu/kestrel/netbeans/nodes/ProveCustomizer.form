@@ -3,7 +3,7 @@
 <Form version="1.0" type="org.netbeans.modules.form.forminfo.JPanelFormInfo">
   <Properties>
     <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-      <Dimension value="[300, 120]"/>
+      <Dimension value="[300, 200]"/>
     </Property>
   </Properties>
 
@@ -12,7 +12,7 @@
     <Container class="javax.swing.JPanel" name="jPanel1">
       <Properties>
         <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[75, 120]"/>
+          <Dimension value="[125, 200]"/>
         </Property>
       </Properties>
       <Constraints>
@@ -24,7 +24,7 @@
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
         <Property name="columns" type="int" value="1"/>
         <Property name="horizontalGap" type="int" value="10"/>
-        <Property name="rows" type="int" value="3"/>
+        <Property name="rows" type="int" value="5"/>
         <Property name="verticalGap" type="int" value="10"/>
       </Layout>
       <SubComponents>
@@ -40,7 +40,17 @@
         </Component>
         <Component class="javax.swing.JLabel" name="optionsLabel">
           <Properties>
-            <Property name="text" type="java.lang.String" value="Options"/>
+            <Property name="text" type="java.lang.String" value="Options:"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="resolutionLabel">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="     Use Resolution"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JLabel" name="jLabel1">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="     Time Limit"/>
           </Properties>
         </Component>
       </SubComponents>
@@ -48,7 +58,7 @@
     <Container class="javax.swing.JPanel" name="jPanel2">
       <Properties>
         <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
-          <Dimension value="[200, 120]"/>
+          <Dimension value="[150, 200]"/>
         </Property>
       </Properties>
       <Constraints>
@@ -60,7 +70,7 @@
       <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
         <Property name="columns" type="int" value="1"/>
         <Property name="horizontalGap" type="int" value="10"/>
-        <Property name="rows" type="int" value="3"/>
+        <Property name="rows" type="int" value="5"/>
         <Property name="verticalGap" type="int" value="10"/>
       </Layout>
       <SubComponents>
@@ -71,8 +81,38 @@
         </Component>
         <Component class="javax.swing.JComboBox" name="usingComboBox">
         </Component>
-        <Component class="javax.swing.JComboBox" name="optionsComboBox">
+        <Container class="javax.swing.JPanel" name="jPanel3">
+
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignFlowLayout"/>
+        </Container>
+        <Component class="javax.swing.JComboBox" name="useResolutionComboBox">
         </Component>
+        <Container class="javax.swing.JPanel" name="jPanel4">
+
+          <Layout class="org.netbeans.modules.form.compat2.layouts.DesignGridLayout">
+            <Property name="columns" type="int" value="0"/>
+            <Property name="horizontalGap" type="int" value="10"/>
+            <Property name="rows" type="int" value="1"/>
+          </Layout>
+          <SubComponents>
+            <Component class="javax.swing.JTextField" name="timeLimitTextField">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="0"/>
+                <Property name="maximumSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                  <Dimension value="[10, 20]"/>
+                </Property>
+                <Property name="preferredSize" type="java.awt.Dimension" editor="org.netbeans.beaninfo.editors.DimensionEditor">
+                  <Dimension value="[10, 20]"/>
+                </Property>
+              </Properties>
+            </Component>
+            <Component class="javax.swing.JLabel" name="jLabel2">
+              <Properties>
+                <Property name="text" type="java.lang.String" value="     Seconds"/>
+              </Properties>
+            </Component>
+          </SubComponents>
+        </Container>
       </SubComponents>
     </Container>
   </SubComponents>
