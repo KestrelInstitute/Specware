@@ -1,0 +1,304 @@
+/*
+ * SourceOptions.java
+ *
+ * $Id$
+ *
+ *
+ *
+ * $Log$
+ *
+ *
+ */
+
+package edu.kestrel.netbeans.nodes;
+
+import java.util.ResourceBundle;
+
+import org.openide.src.SourceException;
+import org.openide.options.SystemOption;
+import org.openide.util.HelpCtx;
+import org.openide.util.NbBundle;
+
+import edu.kestrel.netbeans.model.*;
+import edu.kestrel.netbeans.codegen.ElementFormat;
+
+/*
+* TODO:
+* <UL>
+*  <LI> weak listeners for listening on format changes - all element nodes should react on it.
+* </UL>
+*/
+/** Display options for the hierarchy of source elements.
+* These options determine the display name format
+* of each kind of element.
+* <p>Also included are read-only properties for the "long formats",
+* which are in practice used for {@link ElementNode#getHintElementFormat}.
+* <p>Changes to settings will fire property change events.
+*
+*/
+public final class SourceOptions extends SystemOption {
+    private static final int lastCompatibleVersionTag = 1;
+    private static final int currentVersionTag = 1;
+    
+    /** Resource bundle. */
+    private static ResourceBundle bundle;
+
+    /** Kinds of the format. */
+    private static final byte T_SPEC = 0;
+    private static final byte T_SORT = 1;
+    private static final byte T_OP = 2;
+
+
+    /** Names of all properties. */
+    static final String[] PROP_NAMES = {
+        "specElementFormat", // NOI18N
+        "sortElementFormat", // NOI18N
+        "opElementFormat",
+    };
+    
+    static Element[] TEST_ELEMENTS;
+
+    /** default values for the formats - short form. */
+    private static final ElementFormat[] DEFAULT_FORMATS_SHORT = new ElementFormat[PROP_NAMES.length];
+
+    /** default values for the formats - long form. */
+    private static final ElementFormat[] DEFAULT_FORMATS_LONG = new ElementFormat[PROP_NAMES.length];
+
+    /**
+     * Current format for individual element types, or null if the format is
+     * not yet specified by the user.
+     */
+    private ElementFormat[] formats = new ElementFormat[PROP_NAMES.length];
+    
+    /**
+     * Version tag to use;
+     */
+    private int version;
+    
+    private static synchronized void loadBundle() {
+        if (bundle != null)
+            return;
+        bundle = NbBundle.getBundle(SourceOptions.class);
+    }
+    
+    private static void loadDefaultFormats() {
+        if (DEFAULT_FORMATS_SHORT[0] != null)
+            return;
+        synchronized (SourceOptions.class) {
+            if (DEFAULT_FORMATS_SHORT[0] != null)
+                return;
+            loadBundle();
+            for (int i = 0; i < PROP_NAMES.length; i++) {
+                DEFAULT_FORMATS_SHORT[i] = new ElementFormat(bundle.getString("SHORT_"+PROP_NAMES[i]));
+                DEFAULT_FORMATS_LONG[i] = new ElementFormat(bundle.getString("LONG_"+PROP_NAMES[i]));
+            }
+        }
+    }
+    
+    /**
+     * Resets all element formats to their default values.
+     */
+    private void clearElementFormats() {
+        formats = new ElementFormat[PROP_NAMES.length];
+    }
+
+    /** Property name of the sort display format. */
+    public static final String PROP_SORT_FORMAT = PROP_NAMES[T_SORT];
+
+    /** Property name of the op display format. */
+    public static final String PROP_OP_FORMAT = PROP_NAMES[T_OP];
+
+    /** Property name of the spec display format. */
+    public static final String PROP_SPEC_FORMAT = PROP_NAMES[T_SPEC];
+
+    /** Property name of the 'categories usage' property. */
+    public static final String PROP_CATEGORIES_USAGE = "categoriesUsage"; // NOI18N
+
+    /** CategoriesUsage property current value */
+    private static boolean categories = true;
+
+    static final long serialVersionUID =-2120623049071035434L;
+
+    /** @return display name
+    */
+    public String displayName () {
+        loadBundle();
+        return bundle.getString("MSG_sourceOptions");
+    }
+
+    public HelpCtx getHelpCtx () {
+        return new HelpCtx (SourceOptions.class);
+    }
+
+    // ============= public methods ===================
+
+    /** Set the spec format.
+    * @param format the new format
+    */
+    public void setSpecElementFormat(ElementFormat format) {
+        setElementFormat(T_SPEC, format);
+    }
+
+    /** Get the spec format.
+    * @return the current format
+    */
+    public ElementFormat getSpecElementFormat() {
+        return getElementFormat(T_SPEC);
+    }
+
+    /** Set the sort format.
+    * @param format the new format
+    */
+    public void setSortElementFormat(ElementFormat format) {
+        setElementFormat(T_SORT, format);
+    }
+    
+    private ElementFormat getElementFormat(int type) {
+        synchronized (this) {
+            if (formats[type] != null)
+                return formats[type];
+            // if writing the option to the disk, return a default == null value.
+            if (isWriteExternal())
+                return null;
+        }
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_SHORT[type];
+    }
+
+    /** Get the sort format.
+    * @return the current format
+    */
+    public ElementFormat getSortElementFormat() {
+        return getElementFormat(T_SORT);
+    }
+
+    /** Set the op format.
+    * @param format the new format
+    */
+    public void setOpElementFormat(ElementFormat format) {
+        setElementFormat(T_OP, format);
+    }
+
+    /** Get the op format.
+    * @return the current format
+    */
+    public ElementFormat getOpElementFormat() {
+        return getElementFormat(T_OP);
+    }
+
+    // ============= getters for long form of formats =================
+
+    /** Get the spec format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getSpecElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_SPEC];
+    }
+
+    /** Get the sort format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getSortElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_SORT];
+    }
+
+    /** Get the op format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getOpElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_OP];
+    }
+
+    // ============= categories of elements usage ===================
+
+    /** Set the property whether categories under spec elements should be used or not.
+    * @param cat if <CODE>true</CODE> the elements under spec elements are divided into
+    *     categories: sorts, ops. Otherwise (<CODE>false</CODE>) all elements
+    *     are placed directly under spec element.
+    */
+    public void setCategoriesUsage(boolean cat) {
+        categories = cat;
+    }
+
+    /** Test whether categiries under spec elements are used or not.
+    * @return <CODE>true</CODE> if the elements under spec elements are divided into
+    *     categories: sorts, ops. Otherwise <CODE>false</CODE> (all elements
+    *     are placed directly under spec element).
+    */
+    public boolean getCategoriesUsage() {
+        return categories;
+    }
+
+    // ============= private methods ===================
+    
+    private synchronized static Element getTestElement(int index) {
+        if (TEST_ELEMENTS == null) {
+            Element[] els = new Element[PROP_NAMES.length];
+            
+            try {
+                String id = "foo"; // NOI18N
+
+                SpecElement mm = new SpecElement();
+                mm.setName(id);
+                els[T_SPEC] = mm;
+                TEST_ELEMENTS = els;
+
+                SortElement f = new SortElement();
+                f.setName(id); // NOI18N
+                els[T_SORT] = f;
+
+                OpElement m = new OpElement();
+                m.setName(id);
+                m.setSort(id);
+                els[T_OP] = m;
+
+            } catch (SourceException ex) {
+                // cannot happen.
+            }
+        }
+        return TEST_ELEMENTS[index];
+    }
+        
+    /** Sets the format for the given index.
+    * @param index One of the constants T_XXX
+    * @param format the new format for the specific type.
+    */
+    private void setElementFormat(byte index, ElementFormat format) {
+        ElementFormat old = formats[index];
+        if (format != null) {
+            // check whether the format is valid for the element type:
+            Element el = getTestElement(index);
+            try {
+                format.format(el);
+            } catch (IllegalArgumentException iae) {
+                throw (IllegalArgumentException)
+                    org.openide.ErrorManager.getDefault().annotate(
+                        iae, org.openide.ErrorManager.USER, null,
+                        bundle.getString("MSG_IllegalElementFormat"), // NOI18N
+                        null, null);
+            }
+        }
+        formats[index] = format;
+        firePropertyChange (PROP_NAMES[index], old, formats[index]);
+    }
+    
+    public void writeExternal(java.io.ObjectOutput out) throws java.io.IOException {
+        super.writeExternal(out);
+        out.writeInt(version);
+    }
+    
+    public void readExternal (java.io.ObjectInput in)
+    throws java.io.IOException, ClassNotFoundException {
+        super.readExternal(in);
+        if (in.available() > 0) {
+	    version = in.readInt();
+        }
+        if (version < lastCompatibleVersionTag) {
+            clearElementFormats();
+            version = currentVersionTag;
+        }
+    }
+}

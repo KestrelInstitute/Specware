@@ -1,0 +1,13 @@
+Manifest-Version: 1.0
+OpenIDE-Module: edu.kestrel.specware
+OpenIDE-Module-Specification-Version: 1.0
+OpenIDE-Module-Layer: edu/kestrel/resources/layer.xml
+OpenIDE-Module-Name: Specware
+OpenIDE-Module-Short-Description: Specware IDE
+OpenIDE-Module-Localizing-Bundle: edu/kestrel/resources/Bundle.properties
+OpenIDE-Module-Module-Dependencies: org.netbeans.modules.editor/1, org.netbeans.modules.java/1
+Class-Path: antlr.jar "../lib/jgraph.jar" "../lib/jlinker.jar" 
+
+Name: edu/kestrel/netbeans/MetaSlangDataLoader.class
+OpenIDE-Module-Class: Loader
+

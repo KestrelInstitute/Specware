@@ -1,0 +1,62 @@
+// $ANTLR 2.7.1: "MetaSlangGrammar.g" -> "MetaSlangLexerFromAntlr.java"$
+
+package edu.kestrel.netbeans.parser;
+
+public interface MetaSlangParserFromAntlrTokenTypes {
+	int EOF = 1;
+	int NULL_TREE_LOOKAHEAD = 3;
+	int LITERAL_spec = 4;
+	int LITERAL_endspec = 5;
+	int LITERAL_import = 6;
+	int LITERAL_sort = 7;
+	int LBRACE = 8;
+	int COMMA = 9;
+	int RBRACE = 10;
+	int DOT = 11;
+	int IDENTIFIER = 12;
+	int LPAREN = 13;
+	int RPAREN = 14;
+	int LITERAL_op = 15;
+	int UBAR = 16;
+	int LBRACKET = 17;
+	int RBRACKET = 18;
+	int NAT_LITERAL = 19;
+	int CHAR_LITERAL = 20;
+	int STRING_LITERAL = 21;
+	int LITERAL_true = 22;
+	int LITERAL_false = 23;
+	int LITERAL_as = 24;
+	int LITERAL_case = 25;
+	int LITERAL_choose = 26;
+	int LITERAL_else = 27;
+	int LITERAL_embed = 28;
+	// "embed?" = 29
+	int LITERAL_ex = 30;
+	int LITERAL_fa = 31;
+	int LITERAL_fn = 32;
+	int LITERAL_if = 33;
+	int LITERAL_in = 34;
+	int LITERAL_let = 35;
+	int LITERAL_def = 36;
+	int LITERAL_of = 37;
+	int LITERAL_project = 38;
+	int LITERAL_quotient = 39;
+	int LITERAL_relax = 40;
+	int LITERAL_restrict = 41;
+	int LITERAL_then = 42;
+	int LITERAL_where = 43;
+	int LITERAL_is = 44;
+	int VOCAB = 45;
+	int WHITESPACE = 46;
+	int LINE_COMMENT = 47;
+	int BLOCK_COMMENT = 48;
+	int SEMICOLON = 49;
+	int DOTDOT = 50;
+	int POUND = 51;
+	int LETTER = 52;
+	int DIGIT = 53;
+	int ESC = 54;
+	int WORD_SYMBOL = 55;
+	int NON_WORD_SYMBOL = 56;
+	int NON_WORD_MARK = 57;
+}
