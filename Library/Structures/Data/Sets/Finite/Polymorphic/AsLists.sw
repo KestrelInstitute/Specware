@@ -9,6 +9,8 @@ spec
 
   def difference (s1,s2) = foldl (fn (x,s) -> delete (s,x)) s1 s2
   def union (s1,s2) = foldl (fn (x,s) -> insert (s,x)) s1 s2
+  def intersect (s1,s2) = foldl (fn (x,s) ->
+    if member? (s1,x) then cons (x,s) else s) [] s2
    
   def member? (l,x) =
     case l of
