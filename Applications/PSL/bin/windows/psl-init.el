@@ -62,9 +62,9 @@
     (goto-char (point-max))
     ))
 
-(defun build-psl ()
-  (interactive)
-  (let* ((root-dir (getenv "SPECWARE4"))
+(defun build-psl (&optional root-dir)
+  (interactive "P")
+  (let* ((root-dir (or root-dir (getenv "SPECWARE4")))
 	 (dir (concat root-dir "/Applications/PSL/Handwritten/Lisp"))
 	 (bin-dir (concat root-dir
 			     "/Applications/PSL/bin/"
