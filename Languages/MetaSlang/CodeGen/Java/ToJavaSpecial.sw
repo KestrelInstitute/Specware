@@ -3,7 +3,7 @@
  * to java.lang method (String utilities)
  *)
 
-%JGen qualifying
+JGen qualifying
 spec
 
   import ToJavaBase
@@ -36,6 +36,10 @@ spec
 	Some ((s,expr,k,l),col)
     in
     let
+      def stringPrefix(s,size) =
+	if (length s) < size then s else substring(s,0,size)
+    in
+    let
       def check4StaticOrNew(classid,opid,allargs) =
 	if (classid = UnQualified) then None
 	else
@@ -43,7 +47,7 @@ spec
 	  translateTermsToExpressions(tcx,allargs,k,l,spc) in
 	  % check, whether prefix of op is "new"; in this special case,
 	  % the constructor of the class is invoked
-	  let expr = if substring(opid,0,3) = "new"
+	  let expr = if stringPrefix(opid,3) = "new"
 		       then
 			 % invoke the constructor
 			 (CondExp (Un (Prim (NewClsInst(ForCls(([],classid), argexprs, None)))), None))
