@@ -138,6 +138,10 @@
   #+cmu     "x86f"
   #+sbcl    sb-fasl:*fasl-file-type*)
 
+#+cmu
+(setq lisp::*load-lp-object-types* (remove "FASL" lisp::*load-lp-object-types* :test 'string=)
+      lisp::*load-object-types* (remove "fasl" lisp::*load-object-types* :test 'string=))
+
 (unless (fboundp 'compile-file-if-needed)
   ;; Conditional because of an app/usr/lib/sbcl/arent Allegro bug in generate-application
   ;; where excl::compile-file-if-needed compiles even if not needed
@@ -197,7 +201,7 @@
 				     :show-window :hide))) 
     (do ((ch (read-char str nil nil) (read-char str nil nil))) 
 	((null ch) (close str) (sys:os-wait)) (write-char ch)))
-  #+cmu  (ext:run-program command-str :output t)
+  #+cmu  (ext:run-program command-str nil :output t)
   #+mcl  (ccl:run-program command-str :output t)
   #+sbcl (sb-ext:run-program (format nil "command -p ~A" command-str) :output t)
   #-(or cmu mcl sbcl allegro) (format nil "Not yet implemented"))

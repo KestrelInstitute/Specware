@@ -13,7 +13,7 @@
 				:symbol-package  symbol-package)))
     (setq *current-parser* new-parser)
     (when (null (pathname-type file))
-      (let ((fasl-file (make-pathname :type "fasl" :defaults file))
+      (let ((fasl-file (make-pathname :type specware::*fasl-default-type* :defaults file))
 	    (lisp-file (make-pathname :type "lisp" :defaults file)))
 	(unless (null lisp-file)
 	  (when (<= (or (file-write-date fasl-file) 0)

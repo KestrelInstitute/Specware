@@ -169,6 +169,9 @@
   (declare (type cl:simple-base-string s1 s2))
   (if (string< s1 s2) t nil))
 
+(define-compiler-macro <-2 (x y)
+  `(string< (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+
 (defun |!<| (s1s2)
   (if (string< (the cl:simple-base-string (car s1s2))
                (the cl:simple-base-string (cdr s1s2)))
@@ -179,7 +182,7 @@
   (if (string<= s1 s2) t nil))
 
 (define-compiler-macro <=-2 (x y)
-  `(<= (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+  `(string<= (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
 
 (defun |!<=| (s1s2)
   (if (string<= (the cl:simple-base-string (car s1s2))
@@ -187,10 +190,12 @@
    t nil))
 
 (define-compiler-macro >-2 (x y)
-  `(> (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+  `(let ((x ,x) (y ,y))
+     (string< (the cl:simple-base-string y) (the cl:simple-base-string x))))
 
 (define-compiler-macro >=-2 (x y)
-  `(>= (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+  `(let ((x ,x) (y ,y))
+     (string<= (the cl:simple-base-string y) (the cl:simple-base-string x))))
 
 (defparameter newline
   (format nil "~c" #\newline))
