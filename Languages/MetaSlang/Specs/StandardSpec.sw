@@ -42,6 +42,7 @@ StandardSpec qualifying spec {
 
  sort OpSignature  = AOpSignature    StandardAnnotation
  sort SortScheme   = ASortScheme     StandardAnnotation
+ sort TermScheme   = ATermScheme     StandardAnnotation
 
  % sort QualifierMap = AQualifierMap   StandardAnnotation
 
