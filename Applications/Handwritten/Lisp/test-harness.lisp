@@ -174,8 +174,6 @@ be the option to run each (test ...) form in a fresh image.
     "/"
     file))
 
-(defvar cl-user::*running-test-harness?* nil)
-
 (defun test-1 (name &key sw swe swe-spec swl swll lisp show
 			 output (output-predicate 'equal)
 			 (value "--NotAValue--")
