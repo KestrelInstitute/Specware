@@ -1,10 +1,5 @@
-\section{System}
-The following is a hack. The problem is that certain functions for
-data structures use fail. Until they are fixed, we need the following.
-
-\begin{spec}
 System qualifying spec 
-  import PrimitiveSorts
+  import String
   import List
   import Option
 
@@ -23,10 +18,8 @@ System qualifying spec
 (*
   The following retrieves a UNIX / Windows environment variable. Other
   operators listed in this file have corresponding implementations in
-  handwritten/system-base.lisp. However, MetaSlang outer specs / modules
-  correspond to Lisp packages so such definitions have the effect of
-  extending / overwriting the Lisp System package. This is a bit crufty,
-  but on the other hand somewhat fortunate. It means that to access the
+  handwritten/system-base.lisp.  So such definitions have the effect of
+  extending / overwriting the Lisp System package. To access the
   Lisp SYSTEM:getenv we need only extend this signature.
 *)
   op getEnv : String -> Option String
@@ -34,8 +27,8 @@ System qualifying spec
   op msWindowsSystem?: Boolean
 
 (*
- The following holds the name of the temporary directory on the
- current platform.  Under Unix, this is "/tmp". On Windows, there a number
+ The following holds the name of the temporary directory on the current
+ platform.  Under Unix, this is "/tmp". On Windows, there are a number
  of possibilities.  In handwritten/system-base.lisp, this is bound to 
  SYSTEM:*temporary-directory*. See the the Allegro documentation for
  further details.
@@ -50,7 +43,6 @@ System qualifying spec
 
   op trueFilename : String -> String
   op trueFilePath : List String * Boolean -> List String
-
 
 (* 
  The following allows you wrap the main body you wish to execute [arg 3]
@@ -71,4 +63,3 @@ System qualifying spec
   op garbageCollect : Boolean -> ()
   op hackMemory     : ()      -> ()
 endspec
-\end{spec}

@@ -42,8 +42,8 @@ StandardSpec qualifying spec {
        | Some name -> name
        | None -> 
          let number    = ! context.counter   in
-         let increment = number Nat.div 5           in
-         let parity    = number Nat.rem 5           in
+         let increment = number Integer.div 5           in
+         let parity    = number Integer.rem 5           in
          let prefix = 
              (case parity
                 of 0 -> "a" | 1 -> "b" | 2 -> "c" | 3 -> "d" | 4 -> "e")
