@@ -380,6 +380,30 @@ MetaSlang qualifying spec {
      | And       (types,    b) -> if a = b then srt else And       (types,    a)
      | Any                  b  -> if a = b then srt else Any       a
 
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  These are utilities to help process sort and term definitions.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ op unpackSort : [b] ASort b -> TyVars * ASort b
+ op unpackTerm : [b] ATerm b -> TyVars * Option (ASort b) * ATerm b
+
+ def unpackSort s =
+   case s of
+     | Pi (tvs, srt, _) -> (tvs, srt)
+     | And _ -> fail ("unpackSort: Trying to unpack an And of sorts.")
+     | _ -> ([], s)
+
+ def unpackTerm t =
+   let (tvs, tm) = 
+       case t of
+	 | Pi (tvs, tm, _) -> (tvs, tm)
+	 | And _ -> fail ("unpackTerm: Trying to unpack an And of terms.")
+	 | _ -> ([], t)
+   in
+   case tm of
+     | SortedTerm (tm, srt, _) -> (tvs, Some srt, tm) 
+     | _ -> (tvs, None, tm)
+
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Sorts
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
