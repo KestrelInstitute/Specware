@@ -56,9 +56,11 @@
     
 ;;; Normalization utilities
 (defun subst-home (path)
-  (if (and (stringp path) (>= (length path) 2) (equal (subseq path 0 2) "~/"))
-      (concatenate 'string (specware::getenv "HOME") (subseq path 1))
-    path))
+  (when (stringp path)
+    (when (and (>= (length path) 2) (equal (subseq path 0 2) "~/"))
+      (setq path (concatenate 'string (specware::getenv "HOME") (subseq path 1))))
+    (setq path (string-subst path " ~/" (concatenate 'string " " (specware::getenv "HOME") "/"))))
+    path)
 
 (defun strip-extraneous (str)
   (let ((len (length str)))
