@@ -15,9 +15,10 @@
     (when (null (pathname-type file))
       (let ((fasl-file (make-pathname :type "fasl" :defaults file))
 	    (lisp-file (make-pathname :type "lisp" :defaults file)))
-	(when (<= (or (file-write-date fasl-file) 0)
-		  (file-write-date lisp-file))
-	  (compile-file lisp-file))))
+	(unless (null lisp-file)
+	  (when (<= (or (file-write-date fasl-file) 0)
+		    (file-write-date lisp-file))
+	    (compile-file lisp-file)))))
     (load file)				; see parse-add-rules.lisp  
     (setf (parser-keywords-are-keywords-only? new-parser) t)
     (seal-parser new-parser)
