@@ -12,6 +12,10 @@ SpecUnion qualifying spec {
  op opsUnion        : List Spec -> Env OpMap
  op propertiesUnion : List Spec -> Env Properties
 
+ %% specUnion is called by specColimit to create apex spec, 
+ %% and also by applySpecMorphismSubstitution to stich together 
+ %% the translated and non-translated portions of the subject spec.
+
  def specUnion specs =
   let merged_imports     = importsUnion    specs in
   %% let merged_local_ops   = localOpsUnion   specs in
