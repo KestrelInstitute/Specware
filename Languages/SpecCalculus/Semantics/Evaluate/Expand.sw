@@ -15,15 +15,7 @@ SpecCalc qualifying spec
 	     case coerceToSpec value of
 	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
                | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
-     noHOSpec <- return(subtractSpecProperties(instantiateHOFns(uspc), baseSpec));
-     liftedNoHOSpec <- return(subtractSpecProperties(lambdaLift(noHOSpec), baseSpec));
-     %liftedNoHOSpec <- return(lambdaLift(noHOSpec));
-     _ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
-     expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
-(*     noHOSpec <- return(instantiateHOFns(uspc));
-     liftedNoHOSpec <- return(lambdaLift(noHOSpec));
-     expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
-*)
+     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec uspc);
      return (Spec expandedSpec, timeStamp, depUIDs)
    }
 

@@ -36,9 +36,9 @@ SpecCalc qualifying spec {
      %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
      %expandedSpec <- return (transformSpecForFirstOrderProver baseSpec subSpec);
      expandedSpec <- return (transformSpecForFirstOrderProver baseSpec uspc);
-     _ <- return (writeLine("    Expanded spec file: " ^ finalSpecFileName));
+     %_ <- return (writeLine("    Expanded spec file: " ^ finalSpecFileName));
      _ <- return (writeLine("    Snark Log file: " ^ proverLogFileName));
-     _ <- return (printSpecToFile(finalSpecFileName, expandedSpec));
+     %_ <- return (printSpecToFile(finalSpecFileName, expandedSpec));
      %_ <- return (if specwareDebug? then writeString(printSpec(liftedNoHOSpec)) else ());
      %expandedSpec:Spec <- return(explicateHiddenAxioms(liftedNoHOSpec));
      %expandedSpec:Spec <- return(explicateHiddenAxioms(uspc));
