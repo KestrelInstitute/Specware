@@ -86,6 +86,8 @@ easy reference.
 ||   | `infile-unit-definition { `infile-unit-definition }*
 ||  
 ||  `infile-unit-definition ::= `fragment-identifier = `unit-term
+||  
+||  `fragment-identifier ::= `word-symbol
 >>
 </para>
 </formalpara>
@@ -97,7 +99,7 @@ easy reference.
 ||  
 ||  `swpath-based-path ::= / `relative-path
 ||  
-||  `relative-path ::= { `path-element / }* `path-element [ # `path-element ]
+||  `relative-path ::= { `path-element / }* `path-element [ # `fragment-identifier ]
 ||  
 ||  `path-element ::= `word-symbol
 >>
