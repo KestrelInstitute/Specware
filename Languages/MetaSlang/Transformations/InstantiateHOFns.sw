@@ -251,7 +251,7 @@ spec
                               remainingParams in
 
       let (remainingParams, remainingArgs) = 
-          adjustBindingsToAvoidCapture (remainingParams, remainingArgs, vs, args, defbody)
+          adjustBindingsToAvoidCapture (remainingParams, remainingArgs, (* vs, *) args, defbody)
       in
 
       let newTm = makeLet(remainingParams,remainingArgs,defbody) in
@@ -259,7 +259,7 @@ spec
       unfoldInTerm(simplifyTerm(newTm),unfoldMap,simplifyTerm,spc)
 
 
-  def adjustBindingsToAvoidCapture (remainingParams, remainingArgs, params, args, defbody) =
+  def adjustBindingsToAvoidCapture (remainingParams, remainingArgs, (* params, *) args, defbody) =
 
     %% If a parameter var could capture a free var in an arg, introduce temp vars to 
     %% avoid the capture:
