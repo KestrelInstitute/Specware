@@ -66,7 +66,7 @@
   (the cl:simple-base-string 
     (concatenate 'string x y)))
 
-(defun |!^| (xy)
+(defun ^ (xy)
   (declare (cons xy))
   (the cl:simple-base-string 
     (concatenate 'string 
