@@ -208,14 +208,18 @@ spec
                                 -> SpecCalc.Env ValueInfo
 
   %% Need to add error detection code
+
   def SpecCalc.evaluateProofGen (valueInfo as (value,_,_), cterm, optFileNm, fromObligations?) =
-    case coerceToSpec value of
-      | Spec spc ->
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cUID <- SpecCalc.getUID(cterm);
+     globalContext <- getGlobalContext;
+     spc <- case value of
+              | Spec spc -> return spc
+              | Morph sm -> return (morphismObligations(sm, globalContext, positionOf(cterm)))
+              | _ -> raise (Unsupported ((positionOf cterm),
+                               "Can generate proofs only for Specs and Morphisms."));
      (proofFileUID, proofFileName, multipleFiles) <-  UIDtoProofFile(cUID, optFileNm);
      (optBaseUnitId,baseSpec) <- getBase;
-     globalContext <- getGlobalContext;
      swpath <- getSpecPath;
      %let _ = printSpecToTerminal(baseSpec) inI should 
      print (";;; Generating proof file " ^ proofFileName ^ "\n");
@@ -224,29 +228,26 @@ spec
 %     let _ = System.fail ("evaluateProofGen ") in
      {print("Generated Proof file.");
       return valueInfo}}
-      | _ -> raise (Unsupported ((positionOf cterm),
-                               "attempting to generate proofs from an object that is not a specification."))
 
   op SpecCalc.evaluateProofGenLocal : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean
                                 -> SpecCalc.Env ValueInfo
 
   def SpecCalc.evaluateProofGenLocal(valueInfo as (value,_,_), cterm, optFileName, fromObligations?) =
-    case coerceToSpec value of
-      | Spec spc ->
-        {cUID <- SpecCalc.getUID cterm;
-         (proofFileUID, proofFileName, multipleFiles) <- UIDtoProofFile (cUID, optFileName);
-	 (optBaseUnitId,baseSpec) <- getBase;
-	 globalContext <- getGlobalContext;
-	 swpath <- getSpecPath;
-         print (";;; Generating proof file " ^ proofFileName ^ "\n");
-         let _ = ensureDirectoriesExist proofFileName in
-         let _ = toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true) in
-	 {print("Generated Proof file.");
-         return valueInfo}}
-      | _ -> raise (Unsupported ((positionOf cterm),
-                               "attempting to generate proofs from an object that is not a specification."))
-
-
+    {cUID <- SpecCalc.getUID cterm;
+     globalContext <- getGlobalContext;
+     spc <- case value of
+              | Spec spc -> return spc
+              | Morph sm -> return (morphismObligations(sm, globalContext, positionOf(cterm)))
+              | _ -> raise (Unsupported ((positionOf cterm),
+					 "Can generate proofs only for Specs and Morphisms."));
+     (proofFileUID, proofFileName, multipleFiles) <- UIDtoProofFile (cUID, optFileName);
+     (optBaseUnitId,baseSpec) <- getBase;
+     swpath <- getSpecPath;
+     print (";;; Generating proof file " ^ proofFileName ^ "\n");
+     let _ = ensureDirectoriesExist proofFileName in
+     let _ = toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true) in
+     {print("Generated Proof file.");
+      return valueInfo}}
 
 (*
   op UIDtoProofFile: UnitId * Option String -> SpecCalc.Env String
