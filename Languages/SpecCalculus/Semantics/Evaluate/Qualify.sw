@@ -57,7 +57,8 @@ Change UnQualified to new_qualifier in all qualified names
   
       def convertOpMap opMap =
         let def qualifyStep (qualifier, id, (aliases, x, y, optional_def),newMap) =
-          let newOpInfo = (map translateQualifiedId aliases, x, y, optional_def) in
+	  let aliases = rev (removeDuplicates (map translateQualifiedId aliases)) in
+          let newOpInfo = (aliases, x, y, optional_def) in
           let newQualifier =
             if qualifier = UnQualified then
               new_qualifier
@@ -72,7 +73,8 @@ Change UnQualified to new_qualifier in all qualified names
   
       def convertSortMap sortMap =
         let def qualifyStep (qualifier, id, (aliases, ty_vars, optional_def), newMap) =
-          let newSortInfo = (map translateQualifiedId aliases, ty_vars, optional_def) in
+	  let aliases = rev (removeDuplicates (map translateQualifiedId aliases)) in
+          let newSortInfo = (aliases, ty_vars, optional_def) in
           let newQualifier =
             if qualifier = UnQualified then
               new_qualifier
