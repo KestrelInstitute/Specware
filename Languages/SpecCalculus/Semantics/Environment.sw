@@ -87,6 +87,16 @@ UnitId_Dependency.
   op setBase : ((Option RelativeUnitId) * Spec) -> Env ()
   def setBase baseInfo = writeGlobalVar ("BaseInfo", baseInfo)
 
+  op  getBaseSpec : () -> Option Spec
+  def getBaseSpec() =
+    let prog =
+        {(optBaseUnitId,baseSpec) <- getBase;
+	 case optBaseUnitId of
+	   | None -> return None
+	   | Some _ -> return (Some baseSpec)}
+    in
+    run prog
+
   op showGlobalContext : Env String
   def showGlobalContext = {
       globalContext <- readGlobalVar "GlobalContext";

@@ -200,13 +200,6 @@ $\beta$ contraction.
 	      | DontKnow -> None)
 	| _ :: rules -> None
 
-op findField: Id * List(Id * MS.Term)-> MS.Term
-def findField(id,fields) = 
-  case fields
-    of [] -> System.fail ("Field identifier "^id^" was not found")
-     | (id2,tm)::fields -> 
-       if id = id2 then tm else findField(id,fields)
-
  sort MatchResult = | Match (List (Var * MS.Term)) | NoMatch | DontKnow
 
  op  patternMatch : Pattern * MS.Term * List (Var * MS.Term) -> MatchResult 

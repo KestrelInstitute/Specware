@@ -184,6 +184,13 @@ MS qualifying spec
       1 fields)
    > 0
 
+ op findField: Id * List(Id * Term)-> Term
+ def findField(id,fields) = 
+   case fields
+     of [] -> System.fail ("Field identifier "^id^" was not found")
+      | (id2,tm)::fields -> 
+	if id = id2 then tm else findField(id,fields)
+
  %% Applications...
 
  op mkNot         : Term                        -> Term

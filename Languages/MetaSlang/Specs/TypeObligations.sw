@@ -3,7 +3,8 @@ spec
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/Specs/Environment
   import /Languages/MetaSlang/Transformations/PatternMatch
-
+  import /Languages/MetaSlang/Transformations/Simplify
+  import /Languages/SpecCalculus/Semantics/Environment
  op makeTypeCheckObligationSpec: Spec * (SpecCalc.Term Position) -> Spec
  op checkSpec : Spec -> TypeCheckConditions
 
@@ -34,13 +35,16 @@ spec
 
  def mkLetOrApply(fntm,arg) =
    case fntm of
-     | Lambda ([(VarPat(v,_),Fun(Bool true, _,_),bod)],_) ->
+     | Lambda ([(VarPat(v as (_,srt),_),Fun(Bool true, _,_),bod)],_) ->
        % mkLet([(VarPat(v,a),arg)],bod)
-       mapTerm (fn (tm) -> case tm of
-	                    | Var(v1,_) -> if v1 = v then arg else tm
-			    | _ -> tm,
-	        id, id)
-         bod
+       (case bod of
+	 | Var _ ->
+	   mapTerm (fn (tm) -> case tm of
+				| Var(v1,_) -> if v1 = v then arg else tm
+				| _ -> tm,
+		    id, id)
+	     bod
+	 | _ -> mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
      | _ -> Apply(fntm,arg,noPos)
 
  def assertCond(cond,(ds,tvs,spc,name,names)) = 
@@ -130,7 +134,7 @@ spec
 	       | LetRec decls -> LetRec(decls,formula,noPos)
      in
      let term = foldl insert term decls in
-     (name,tvs,term)
+     (name,tvs,simplify spc term)
 
  def addCondition(tcc,gamma,term) = 
      cons(makeVerificationCondition(gamma,term),tcc)
@@ -303,6 +307,7 @@ spec
 	  returnPatternRec(pairs,gamma,M,tau1,sigma2)
 	| _ -> (gamma,M)
  
+ op  returnPattern: Gamma * MS.Term * Sort * Sort  -> Gamma * MS.Term
  def returnPattern(gamma,t,tau1,tau2) = 
      returnPatternRec([],gamma,t,tau1,tau2)
 
@@ -498,12 +503,20 @@ spec
 	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
 	     if member(Qualified(qname, name),localOps) then
 		 foldl (fn ((type_vars, term), tcc) ->
-			(tcc,gamma0 tvs name) |- term ?? tau)
-		       tcc
-		       defs
+			 (tcc,gamma0 tvs name) |- term ?? tau)
+		   tcc defs
 	       else 
 		 tcc)
 	   tcc spc.ops
+     in
+     let baseProperties = case getBaseSpec() of
+                           | Some bspc -> bspc.properties
+                           | None -> []
+     in
+     let tcc = foldr (fn (pr as (_,name,tvs,fm),tcc) ->
+		       if member(pr,baseProperties) then tcc
+			 else (tcc,gamma0 tvs (name^"_Obligation"))  |- fm ?? boolSort)
+                 tcc spc.properties
      in
      tcc
 
