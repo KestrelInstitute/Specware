@@ -34,18 +34,8 @@ Errors in $TESTDIR/MorphismFromBase.sw
 ;;; Elaborating spec at $TESTDIR/MorphismToBase#S
 ;;; Elaborating spec at $TESTDIR/MorphismToBase#T
 
-morphism
-    spec  
- type SS
-endspec
-
-    ->
-    spec  
-endspec
-
-    {type SS
-     +->
-     Char}
+morphism S -> T
+ {type SS +-> Char}
 ")
 
  )

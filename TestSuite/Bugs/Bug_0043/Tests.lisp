@@ -20,12 +20,12 @@
 ;;; Elaborating spec at $SPECWARE/Library/ProverBase/String
 ;;; Elaborating spec at $SPECWARE/Library/ProverBase/System
 ;;; Elaborating spec at $SPECWARE/Library/Base/ProverRewrite
-;; ensure-directories-exist: creating $TESTDIR/Both/Change/ShouldBeProvable.log
-;; Directory $TESTDIR/Both/ does not exist, will create.
-;; Directory $TESTDIR/Both/Change/ does not exist, will create.
+;; ensure-directories-exist: creating $TESTDIR/Snark/Change/ShouldBeProvable.log
+;; Directory $TESTDIR/Snark/ does not exist, will create.
+;; Directory $TESTDIR/Snark/Change/ does not exist, will create.
 ;;; Elaborating spec at $SPECWARE/Library/Base/ProverBase
 ShouldBeProvable: Conjecture change is Proved! using Snark.
-    Snark Log file: $TESTDIR/Both/Change/ShouldBeProvable.log
+    Snark Log file: $TESTDIR/Snark/Change/ShouldBeProvable.log
 
 
 ")

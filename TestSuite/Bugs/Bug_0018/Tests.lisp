@@ -8,6 +8,8 @@
 ;;; Elaborating diagram-term at $TESTDIR/BBcol#K
 ;;; Elaborating spec at $TESTDIR/BBcol#A
 ;;; Generating lisp file $TESTDIR/lisp/BBcol.lisp
+;; ensure-directories-exist: creating $TESTDIR/lisp/BBcol.lisp
+;; Directory $TESTDIR/lisp/ does not exist, will create.
 ")
 
  )

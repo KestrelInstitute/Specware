@@ -26,17 +26,17 @@ spec
 endspec
 
 ;;; Elaborating proof-term at $TESTDIR/NeedWFO#P
-;; ensure-directories-exist: creating $TESTDIR/Both/NeedWFO/P.log
-;; Directory $TESTDIR/Both/ does not exist, will create.
-;; Directory $TESTDIR/Both/NeedWFO/ does not exist, will create.
+;; ensure-directories-exist: creating $TESTDIR/Snark/NeedWFO/P.log
+;; Directory $TESTDIR/Snark/ does not exist, will create.
+;; Directory $TESTDIR/Snark/NeedWFO/ does not exist, will create.
 P: Conjecture f_Obligation in O is Proved! using simple inequality reasoning.
-    Snark Log file: $TESTDIR/Both/NeedWFO/P.log
+    Snark Log file: $TESTDIR/Snark/NeedWFO/P.log
 ;;; Elaborating proof-term at $TESTDIR/NeedWFO#P0
 P0: Conjecture f_Obligation0 in O is NOT proved using Snark.
-    Snark Log file: $TESTDIR/Both/NeedWFO/P0.log
+    Snark Log file: $TESTDIR/Snark/NeedWFO/P0.log
 ;;; Elaborating proof-term at $TESTDIR/NeedWFO#P1
 P1: Conjecture f_Obligation1 in O is NOT proved using Snark.
-    Snark Log file: $TESTDIR/Both/NeedWFO/P1.log
+    Snark Log file: $TESTDIR/Snark/NeedWFO/P1.log
 ")
 
  )
