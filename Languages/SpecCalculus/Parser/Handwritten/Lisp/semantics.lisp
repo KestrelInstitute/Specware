@@ -257,14 +257,16 @@
 ;;; ------------------------------------------------------------------------
 
 (defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
-  (let ((fixity (if (equal :unspecified optional-fixity) nil optional-fixity)))
+  (let ((fixity (if (equal :unspecified optional-fixity) 
+		    unspecified-fixity
+		  optional-fixity)))
     (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
                             (vector fixity sort-scheme ())))
           (make-pos l r))))
 
 (defun make-fixity (associativity priority l r)
   (declare (ignore l r))
-  (cons (cons associativity nil) priority))
+  (cons :|Infix| (cons (cons associativity nil) priority)))
 
 #||
 If we want the precedence to be optional:
@@ -303,7 +305,7 @@ If we want the precedence to be optional:
     ;;  (cdr tyVarsTerm) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
     (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector nil srtScheme (list (cons tyVars term))))) 
+                            (vector unspecified-fixity srtScheme (list (cons tyVars term))))) 
 	  (make-pos l r))))
 
 (defun bind-parameters (params term l r)

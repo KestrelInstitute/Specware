@@ -146,7 +146,7 @@ MetaSlang qualifying spec {
   | OneName        Id * Fixity         % Before elaborateSpec
   | TwoNames       Id * Id * Fixity    % Before elaborateSpec
 
- sort Fixity        = | Nonfix | Infix Associativity * Precedence
+ sort Fixity        = | Nonfix | Infix Associativity * Precedence | Unspecified
  sort Associativity = | Left | Right
  sort Precedence    = Nat
 
