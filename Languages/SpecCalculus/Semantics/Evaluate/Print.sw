@@ -167,7 +167,7 @@ SpecCalc qualifying spec {
 		(abbrevMap map)
     in
     ppGroup (ppConcat
-	     (case (ppAbbrevMap "sort " sortMap) ++ (ppAbbrevMap "op " opMap) of
+	     (case (ppAbbrevMap "type " sortMap) ++ (ppAbbrevMap "op " opMap) of
 		| []         -> [ppBreak, 
 				 ppString "{}"]
 		| abbrev_map -> [ppBreak,

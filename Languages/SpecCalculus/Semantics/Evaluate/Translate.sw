@@ -43,13 +43,13 @@ If the following, assume we are given the rule "<lhs> +-> <rhs>"
 
 We lookup <lhs> in the domain spec to find a domain item, raising an exception
 if nothing can be found.  The rules are intended to be the same as those used
-when linking names in formulas within a spec, but the keywords "sort" and "op" 
+when linking names in formulas within a spec, but the keywords "type" and "op" 
 are allowed here to disambiguate an otherwise missing context:
 
 \begin{verbatim}
-  "sort [A.]X"   will look at sorts only
+  "type [A.]X"   will look at types only
   "op   [A.]X"   will look at ops   only
-  "[A.]X"        will look at sorts and ops, raising an exception if there are both
+  "[A.]X"        will look at types and ops, raising an exception if there are both
   "[A.]f : B.X"  will lookup [A.]f of type [B.]X
   "X"            will find unqualified "X" in preference to "A.X" if both exist.
 \end{verbatim}
@@ -64,7 +64,7 @@ caveats:
       properties (e.g. types or definitions) must be mergable or an exception 
       is raised.
 
-\item Given sorts A and B, plus ops (f : A) and (f : B), if A and B are both
+\item Given types A and B, plus ops (f : A) and (f : B), if A and B are both
       mapped to the same C, then (f : A) and (f : B) will implicitly map to 
       the same rhs item (unless they are explicitly mapped elsewhere).
 
@@ -233,7 +233,7 @@ Note: The code below does not yet match the documentation above, but should.
 			 return (insertAQualifierMap (translation_sort_map, sort_q, sort_id, (new_cod_qid, [new_cod_qid])))
 		       | _ -> 
 			 {
-			  raise_later (TranslationError ("Multiple (wild) rules for source sort "^
+			  raise_later (TranslationError ("Multiple (wild) rules for source type "^
 							 (explicitPrintQualifiedId (mkQualifiedId (sort_q, sort_id))),
 							 rule_pos));
 			  return translation_sort_map
@@ -435,8 +435,8 @@ Note: The code below does not yet match the documentation above, but should.
       | Base (qid, srts, pos) ->
 	(let new_qid = translateSortQualifiedId sort_id_map qid in
 	 case new_qid of
-	   | Qualified ("Boolean", id) -> fail ("translateSort: Cannot use Boolean as a qualifier in 'Boolean." ^ id ^ "' at " ^ (printAll pos))
-	   | Qualified (q, "Boolean")  -> fail ("translateSort: Cannot translate another sort into '" ^ q ^ ".Boolean' at " ^ (printAll pos))
+	   | Qualified ("Boolean", id) -> fail ("translateType: Cannot use Boolean as a qualifier in 'Boolean." ^ id ^ "' at " ^ (printAll pos))
+	   | Qualified (q, "Boolean")  -> fail ("translateType: Cannot translate another type into '" ^ q ^ ".Boolean' at " ^ (printAll pos))
 	   | _ ->
 	     if new_qid = qid then sort_term else Base (new_qid, srts, pos))
       | _ -> sort_term

@@ -44,7 +44,7 @@ SpecCalc qualifying spec
               | (false, false) ->
                 %%  Old: Sort S    [or S(A,B), etc.]
                 %%  New: Sort S    [or S(X,Y), etc.]
-                raise (SpecError (pos, "Sort "^(printAliases new_names)^" has been redeclared."))
+                raise (SpecError (pos, "Type "^(printAliases new_names)^" has been redeclared."))
               | (false,  true) ->
                 %%  Old: Sort S (A,B)
                 %%  New: Sort S (X,Y) = T(X,Y)
@@ -68,14 +68,14 @@ SpecCalc qualifying spec
                 %%  Old: Sort S (X,Y) = T(X,Y)
                 %%  New: Sort S (A,B) = W(A,B)
                 raise (SpecError (pos, 
-                                  "Sort "^(printAliases new_names)^" has been redefined"
+                                  "Type "^(printAliases new_names)^" has been redefined"
                                   ^ "\n from "^ (printSort old_dfn)
                                   ^ "\n   to "^ (printSort new_dfn))))
          else
            %%  Old: Sort S (a)
            %%  New: Sort S (x,y)
            raise (SpecError (pos, 
-                           "Sort "^(printAliases new_names)^" has been redeclared or redefined"
+                           "Type "^(printAliases new_names)^" has been redeclared or redefined"
                            ^"\n with new type variables "^(printTyVars new_tvs)
                            ^"\n    differing from prior "^(printTyVars old_tvs)))
        | _ ->
