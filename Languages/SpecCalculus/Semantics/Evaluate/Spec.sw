@@ -32,7 +32,11 @@ and then qualify the resulting spec if the spec was given a name.
   %%      let _ = toScreen ("\nAdding import of Base\n") in
   %%      cons(base_import, spec_elements)
   %% in
-  {
+  { %% -------------------------------------------
+    %% next two lines are optional:
+    uri <- getCurrentURI;
+    print (";;; Processing spec at "^(uriToString uri)^"\n");
+    %% -------------------------------------------
     (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     return (Spec elaborated_spec,TS,depURIs)
@@ -124,16 +128,6 @@ such time as the current one can made monadic.
    { uri      <- getCurrentURI;
      filename <- return ((uriToPath uri) ^ ".sw");
      hackMemory ();
-     %% -------------------------------------------
-     %% next line is optional:
-     print (";;; Processing spec "
-			^ (case uri.hashSuffix of
-			     | Some nm -> nm ^ " "
-			     | _ -> "")
-			^ "in "
-            ^ filename
-            ^ "\n");
-     %% -------------------------------------------
      case elaboratePosSpec (spc, filename) of
        | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
        | Error msg   -> raise  (OldTypeCheck msg)

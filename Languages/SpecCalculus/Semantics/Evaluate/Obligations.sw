@@ -14,7 +14,12 @@ SpecCalc qualifying spec
   import URI/Utilities  % should work for both Specware and PSL
 
   def SpecCalc.evaluateObligations term =
-    { (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
+    {%% -------------------------------------------
+     %% next two lines are optional:
+     uri <- getCurrentURI;
+     print (";;; Processing obligations at "^(uriToString uri)^"\n");
+     %% -------------------------------------------
+     (value, time_stamp, dep_URIs) <- evaluateTermInfo term;
       case value of
 
 	| Spec  spc -> {ob_spec <- return (specObligations (spc,term));

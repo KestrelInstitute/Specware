@@ -4,10 +4,10 @@ Much extended from r1.3 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalDiagra
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import URI/Utilities                                    % for uriToPath, if used...
   import Signature
   import /Languages/MetaSlang/Specs/Categories/AsRecord
   import /Library/Legacy/DataStructures/ListUtilities     % for listUnion
+  import URI/Utilities                                    % for uriToString, if used...
 \end{spec}
 
 When constructing the semantic representation of a diagram, what are
@@ -16,20 +16,13 @@ Lots of proof obligations. Needs thought.
 
 \begin{spec}
   def SpecCalc.evaluateDiag elems = {
+    %% -------------------------------------------
+    %% next two lines are optional:
+    uri <- getCurrentURI;
+    print (";;; Processing spec diagram at "^(uriToString uri)^"\n");
+    %% -------------------------------------------
     (dgm : SpecDiagram, timeStamp, depURIs) <-
          foldM evaluateDiagElem ((emptyDiagram (specCat ())),0,[]) elems;
-    %% -------------------------------------------
-    %% next three lines are optional:
-    uri      <- getCurrentURI;
-    filename <- return ((uriToPath uri) ^ ".sw");
-    print (";;; Processing spec diagram "
-	   ^ (case uri.hashSuffix of
-		| Some nm -> nm ^ " "
-		| _ -> "")
-	   ^ "in "
-	   ^ filename
-	   ^ "\n");
-    %% -------------------------------------------
     return (Diag dgm,timeStamp,depURIs)
     }
 \end{spec}

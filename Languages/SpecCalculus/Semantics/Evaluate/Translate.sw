@@ -4,6 +4,7 @@
 SpecCalc qualifying spec {
   import Signature 
   import Spec/Utilities
+  import URI/Utilities                                % for uriToString, if used...
 \end{spec}
 
 Perhaps evaluating a translation should yield a morphism rather than just 
@@ -12,14 +13,19 @@ Perhaps the calculus is getting too complicated.
 
 \begin{spec}
   def SpecCalc.evaluateTranslate term translation = {
-      (value,timeStamp,depURIs) <- evaluateTermInfo term;
-      case coerceToSpec value of
-        | Spec spc -> {
-              spcTrans <- translateSpec spc translation;
-              return (Spec spcTrans,timeStamp,depURIs)
-            }
-        | _ -> raise (TypeCheck (positionOf term,
-                         "translating a term that is not a specification"))
+    %% -------------------------------------------
+    %% next two lines are optional:
+    uri <- getCurrentURI;
+    print (";;; Processing translation at "^(uriToString uri)^"\n");
+    %% -------------------------------------------
+    (value,timeStamp,depURIs) <- evaluateTermInfo term;
+    case coerceToSpec value of
+      | Spec spc -> {
+            spcTrans <- translateSpec spc translation;
+            return (Spec spcTrans,timeStamp,depURIs)
+		    }
+      | _ -> raise (TypeCheck (positionOf term,
+			       "translating a term that is not a specification"))
     }
 \end{spec}
 

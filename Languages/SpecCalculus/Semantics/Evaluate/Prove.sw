@@ -3,9 +3,15 @@ SpecCalc qualifying spec {
   import Spec/SpecUnion
   import ../SpecPath
   import /Languages/Snark/SpecToSnark
+  import URI/Utilities                                    % for uriToString, if used...
   
  def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options) pos = {
-     (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
+     %% -------------------------------------------
+     %% next two lines are optional:
+     uri <- getCurrentURI;
+     print (";;; Processing prove at "^(uriToString uri)^"\n");
+     %% -------------------------------------------
+          (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo spec_term;
      (Spec baseSpec,_,_) <- SpecCalc.evaluateURI (Internal "base")
                                                  (SpecPath_Relative {path = ["Library","Base"],
 								     hashSuffix = None});

@@ -8,8 +8,14 @@ SpecCalc qualifying spec {
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
   import Translate                                    % for auxTranslateSpec
   import Spec/SpecUnion                               % for specUnion
+  import URI/Utilities                                % for uriToString, if used...
 
   def SpecCalc.evaluateSubstitute (spec_tm, sm_tm) term_pos = {
+    %% -------------------------------------------
+    %% next two lines are optional:
+    uri <- getCurrentURI;
+    print (";;; Processing substitution at "^(uriToString uri)^"\n");
+    %% -------------------------------------------
     (spec_value, spec_timestamp, spec_dep_URIs) <- evaluateTermInfo spec_tm;
     (  sm_value,   sm_timestamp,   sm_dep_URIs) <- evaluateTermInfo   sm_tm;
     case (coerceToSpec spec_value, sm_value) of % TODO: coerceToMorphism sm_value ??

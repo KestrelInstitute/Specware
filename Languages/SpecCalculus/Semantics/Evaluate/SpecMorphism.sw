@@ -5,9 +5,9 @@ Synchronized with r1.4 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalSpecMor
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
-  import URI/Utilities                                % for uriToPath, if used...
   import Spec/Utilities                               % for coerceToSpec
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+  import URI/Utilities                                % for uriToString, if used...
 \end{spec}
 
 For morphisms, evaluate the domain and codomain terms, and check
@@ -16,16 +16,9 @@ coherence conditions of the morphism elements.
 \begin{spec}
   def SpecCalc.evaluateSpecMorph (domTerm,codTerm,morphRules) = {
     %% -------------------------------------------
-    %% next three lines are optional:
-    uri      <- getCurrentURI;
-    filename <- return ((uriToPath uri) ^ ".sw");
-    print (";;; Processing spec morphism "
-	   ^ (case uri.hashSuffix of
-		| Some nm -> nm ^ " "
-		| _ -> "")
-	   ^ "in "
-	   ^ filename
-	   ^ "\n");
+    %% next two lines are optional:
+    uri <- getCurrentURI;
+    print (";;; Processing spec morphism at "^(uriToString uri)^"\n");
     %% -------------------------------------------
     (domValue,domTimeStamp,domDepURIs) <- evaluateTermInfo domTerm;
     (codValue,codTimeStamp,codDepURIs) <- evaluateTermInfo codTerm;
