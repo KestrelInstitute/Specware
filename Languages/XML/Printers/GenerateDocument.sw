@@ -1,7 +1,7 @@
 
 XML qualifying spec
 
-  import XML_SortDescriptors
+  import /Languages/MetaSlang/Specs/Elaborate/SortDescriptor
   import ../XML_Sig
   import ../Utilities/XML_Unicode
   import Make_XML_Things
