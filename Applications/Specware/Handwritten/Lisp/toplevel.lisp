@@ -933,6 +933,19 @@
   (if b? (princ (setq System-spec::specwareDebug? b))
     (princ System-spec::specwareDebug?)))
 
+(defun swprb (&optional (b nil b?))
+  (if b? 
+      (princ (setq System-spec::proverUseBase?
+	       (and b (if (member b '("nil" "NIL" "off") :test 'string=)
+			  nil t))))
+    (princ System-spec::proverUseBase?))
+  (values))
+
+#+allegro
+(top-level:alias ("swprb" :case-sensitive) (&optional (b nil b?))
+  (if b? (princ (setq System-spec::proverUseBase? b))
+    (princ System-spec::proverUseBase?)))
+
 (defun swpath  (&optional str)
   (setq str (subst-home (strip-extraneous str)))
   (if (or (null str) (equal str ""))
