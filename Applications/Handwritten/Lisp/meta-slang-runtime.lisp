@@ -48,49 +48,88 @@
 
 |#
 
+;;;  (defun slang-term-equals (t1 t2)
+;;;     (or 
+;;;      (eq t1 t2)
+;;;      (cond
+;;;        ((null t1) (null t2))
+;;;        ((stringp t1) (string= t1 t2))
+;;;        ((symbolp t1) (eql t1 t2))
+;;;        ((numberp t1) (eq t1 t2))
+;;;        ((characterp t1) (eql t1 t2))
+;;;  #| 
+;;;     Determine equality by calling the quotient 
+;;;     operator in the second position 
+;;;     |#
+;;;        ((and (quotient? t1)
+;;;  	    (quotient? t2))
+;;;         (funcall 
+;;;  	(quotient-relation t1)
+;;;  	(quotient-element t1) 
+;;;  	(quotient-element t2)))
+;;;       
+;;;  #|
+;;;     Cons cells are equal if their elements are equal too.
+;;;  |#
+;;;        ((consp t1) 	 
+;;;             (and 
+;;;  	    (consp t2) 
+;;;  	    (slang-term-equals (car t1) (car t2))
+;;;  	    (slang-term-equals (cdr t1) (cdr t2))))
+;;;  #|
+;;;     Two vectors (corresponding to tuple types)
+;;;     are equal if all their elements are equal.
+;;;  |#
+;;;        ((vectorp t1)
+;;;             (and 
+;;;  	    (vectorp t2)
+;;;  	    (let ((dim (array-dimension t1 0)))
+;;;  	      (do ((i 0 (+ i 1))
+;;;  		   (v-equal t (slang-term-equals (svref t1 i)  (svref t2 i))))
+;;;  		  ((or (= i dim) (not v-equal)) v-equal)))))
+;;;        (t (progn (format t "Ill formed terms~%") nil))
+;;;        )
+;;;      )
+;;;     )
+
+;;; This is twice as fast as the version above...
 (defun slang-term-equals (t1 t2)
-   (or 
-    (eq t1 t2)
-    (cond
-      ((null t1) (null t2))
-      ((stringp t1) (string= t1 t2))
-      ((symbolp t1) (eql t1 t2))
-      ((numberp t1) (eq t1 t2))
-      ((characterp t1) (eql t1 t2))
-#| 
-   Determine equality by calling the quotient 
-   operator in the second position 
-   |#
-      ((and (quotient? t1)
-	    (quotient? t2))
-       (funcall 
-	(quotient-relation t1)
-	(quotient-element t1) 
-	(quotient-element t2)))
-     
-#|
-   Cons cells are equal if their elements are equal too.
-|#
-      ((consp t1) 	 
-           (and 
-	    (consp t2) 
-	    (slang-term-equals (car t1) (car t2))
-	    (slang-term-equals (cdr t1) (cdr t2))))
-#|
-   Two vectors (corresponding to tuple types)
-   are equal if all their elements are equal.
-|#
-      ((vectorp t1)
-           (and 
-	    (vectorp t2)
-	    (let ((dim (array-dimension t1 0)))
-	      (do ((i 0 (+ i 1))
-		   (v-equal t (slang-term-equals (svref t1 i)  (svref t2 i))))
-		  ((or (= i dim) (not v-equal)) v-equal)))))
-      (t (progn (format t "Ill formed terms~%") nil))
-      )
-    )
-   )
+  (or (eq t1 t2)
+      (typecase t1
+	(null      (null    t2))
+	(string    (string= t1 t2))
+	(symbol    (eq      t1 t2))
+	(number    (eq      t1 t2))
+	(character (eq      t1 t2))
+	(cons      (and (consp t2) 
+			;;   Cons cells are equal if their elements are equal too.
+			(slang-term-equals (car t1) (car t2))
+			(slang-term-equals (cdr t1) (cdr t2))))
+        (vector    (cond ((and   
+			   ;; (quotient? t1) 
+			   ;; (quotient? t2)
+			   (eq (svref t1 0) quotient-tag)
+			   (vectorp t2)
+			   (eq (svref t2 0) quotient-tag)
+			   )
+			  ;; Determine equality by calling the quotient 
+			  ;; operator in the second position 
+			  (funcall (svref t1 1) ; (quotient-relation t1)
+				   (svref t1 2) ; (quotient-element t1) 
+				   (svref t2 2) ; (quotient-element t2)
+				   ))
+			 (t
+			  (and
+			   ;; Two vectors (corresponding to tuple types)
+			   ;; are equal if all their elements are equal.
+			   (vectorp t2)
+			   (let ((dim (array-dimension t1 0)))
+			     (do ((i 0 (+ i 1))
+				  (v-equal t (slang-term-equals (svref t1 i)  (svref t2 i))))
+				 ((or (= i dim) (not v-equal)) v-equal)))))))
+	(t (progn 
+	     (format t "Ill formed terms~%") 
+	     nil)))))
 
 (defun slang-term-equals-1 (x) (slang-term-equals (car x) (cdr x)))
 
