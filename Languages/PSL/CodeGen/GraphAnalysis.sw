@@ -10,6 +10,7 @@ Top-level function is graphToStructuredGraph
 spec 
   import /Languages/MetaSlang/Specs/StandardSpec
   import /Library/Legacy/DataStructures/ListUtilities % For replaceNth findOptionIndex
+  import /Languages/MetaSlang/Specs/Printer
 
   sort Index = Integer			% Acually Nat + -1
 
@@ -227,5 +228,48 @@ spec
       | _::_ ->
         buildStructuredGraph (topIndex, [], baseG)
 
+  op printGraph: Graph -> String
+  op printNode : Node * Index -> String
+  op printStat : Stat  -> String
 
+  def printGraph(g) =
+    let (str,_) = foldl (fn (nd,(str,i)) -> (str ^ "\n" ^ printNode (nd,i),i+1))
+                    ("",0) g
+    in str
+
+  def printNode((DFSindex,content,preds),i) =
+    "Node " ^ (Nat.toString i) ^ ": DFS index: " ^ (Nat.toString DFSindex)
+      ^ " Preds: (" ^ (foldl(fn (j,str) -> str ^ (Nat.toString j) ^ " ") "" preds) ^ ")\n  "
+      ^ (case content of
+	  | Branch {condition, trueBranch, falseBranch} ->
+	    "Branch Condn: " ^ (printTerm condition) ^ "\n  "
+	    ^ "True branch: " ^ (Nat.toString trueBranch) ^ "\n  "
+	    ^ "False branch: " ^ (Nat.toString falseBranch)
+	  | Block {statements, next} ->
+	    "Block: " ^ (foldl (fn (st,str) -> str ^ (printStat st) ^ "; ") "" statements)
+	    ^ "\n  "
+	    ^ "Next: " ^ (Nat.toString next)
+	  | Return t ->
+	    "Return: " ^ (printTerm t)
+	  | IfThen {condition, trueBranch, continue} ->
+	    "If: " ^ (printTerm condition) ^ "\n  "
+	    ^ "True branch: " ^ (Nat.toString trueBranch) ^ "\n  "
+	    ^ "Continue: " ^ (Nat.toString continue)
+	  | IfThenElse {condition, trueBranch, falseBranch, continue} ->
+	    "If: " ^ (printTerm condition) ^ "\n  "
+	    ^ "True branch: " ^ (Nat.toString trueBranch) ^ "\n  "
+	    ^ "False branch: " ^ (Nat.toString falseBranch)
+	    ^ "Continue: " ^ (Nat.toString continue)
+	  | Loop {condition, preTest?, body, endLoop, continue} ->
+	    (if preTest? then "While: " else "Until: ") ^ (printTerm condition) ^ "\n  "
+	    ^ "Body:: " ^ (Nat.toString body) ^ "\n  "
+	    ^ "End Loop: " ^ (Nat.toString endLoop) ^ "\n  "
+	    ^ "Continue: " ^ (Nat.toString continue))
+
+  def printStat st =
+    case st of
+      | Assign t -> "Assign " ^ (printTerm t)
+      | Proc t -> "Proc " ^ (printTerm t)
+      | Return t -> "Return " ^ (printTerm t)
+         
 end
