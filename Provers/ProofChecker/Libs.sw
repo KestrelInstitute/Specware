@@ -5,7 +5,8 @@ spec
   directory) that would not otherwise import any other spec, which guarantees
   the library specs to be available in every spec. *)
 
-  import Libs/Logic,
+  import Libs/Predicates,
+         Libs/Assertions,
          Libs/PartialFunctions,
          Libs/Sets,
          Libs/FiniteSets,
