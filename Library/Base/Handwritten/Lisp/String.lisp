@@ -92,7 +92,8 @@
 	 (ses (mapcar #'(lambda (ch) (string (funcall f ch))) se)))
     (apply #'concatenate (cons 'string ses))))
 
-;;; (defun leq (s1 s2)  (string<= s1 s2))
+(defun leq (s1 s2)  (string<= s1 s2))
+
 ;;; (defun leq-1 (x)  (string<= (car x) (cdr x)))
 
 (defun lt (s1 s2)  (string< s1 s2))
