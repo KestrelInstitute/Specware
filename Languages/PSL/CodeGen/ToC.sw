@@ -146,14 +146,14 @@ with a loop or out of a conditional.
                    Record ([("1",Fun (String primedVarName,_,_)), ("2",rhs)],_),_) ->
                       Exp (Apply (Binary Set, [Var (removePrime primedVarName,sortToCType srt), metaExpToExp rhs]))
                 | _ -> Exp (Apply (Binary Set, [metaExpToExp lhs, metaExpToExp rhs]))))
-      | Apply (Fun (Op (procId,fxty),procSort,pos),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
+      | Apply (Fun (Op (procId,fxty),procSort,pos_a),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
           % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
           (case returnTerm of
             | Record ([],_) ->
-                (Exp (metaExpToExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
+                (Exp (metaExpToExp (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos))))
             | Fun (Op (Qualified ("#return#",var),fxty),srt,pos) ->
-                (Return (termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))))
-            | _ -> (Exp (Apply (Binary Set, [metaExpToExp returnTerm, metaExpToExp (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos))]))))
+                (Return (termToCExp (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos))))
+            | _ -> (Exp (Apply (Binary Set, [metaExpToExp returnTerm, metaExpToExp (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos))]))))
       | _ -> let _ = writeLine ("termToCStmt: ignoring term: " ^ (printTerm term)) in
          Nop
 }

@@ -310,11 +310,11 @@ later to unfold sort definitions.
           % StructRef (Apply (Unary Contents, [cStruct]),id)
       | Apply (Fun (Op (Qualified (_,"active"),fxty),srt,pos), idx,_) ->
           ArrayRef (Var ("active",sortToCType srt),termToCExp idx)
-      | Apply (Fun (Op (Qualified ("CStore","eval"),fxty),srt,pos),
-         Record ([("1",Fun (Op (Qualified (_,mapName),fxty),_,_)), ("2",Fun (String mapIdx,_,_))],_), _) ->
+      | Apply (Fun (Op (Qualified ("CStore","eval"),_),srt,pos),
+         Record ([("1",Fun (Op (Qualified (_,mapName),_),_,_)), ("2",Fun (String mapIdx,_,_))],_), _) ->
           Var (mapName++mapIdx,sortToCType srt)
-      | Apply (Fun (Op (Qualified (_,"eval"),fxty),srt,pos),
-         Record ([("1",Fun (Op (Qualified (_,"env"),fxty),srt,pos)),("2",Fun (Nat n,_,_))],_),_) ->
+      | Apply (Fun (Op (Qualified (_,"eval"),_),e_srt,e_pos),
+	       Record ([("1",Fun (Op (Qualified (_,"env"),_),srt,pos)),("2",Fun (Nat n,_,_))],_),_) ->
           if n = 0 then
             Apply (Unary Contents, [Var ("sp",sortToCType srt)])
           else
@@ -336,7 +336,7 @@ later to unfold sort definitions.
       | Apply (Fun (Op (Qualified ("Double","abs"),fxty),srt,pos), arg,_) ->
           Apply (Var ("fabs",Fn ([Double],Double)), [termToCExp arg])
       | Apply (Fun (Op (Qualified ("Functions","id"),fxty),srt,pos), arg,_) -> termToCExp arg 
-      | Apply (Apply (Fun (Op (Qualified ("Struct","proj"),fxty),srt,pos), Fun (Op (qid,fxty),_,_),_), structTerm,_) ->
+      | Apply (Apply (Fun (Op (Qualified ("Struct","proj"),_),srt,pos), Fun (Op (qid,_),_,_),_), structTerm,_) ->
           let cStruct = termToCExp structTerm in
           StructRef (cStruct, showQualifiedId (removePrime qid))
       | Apply (Apply (Fun (Op (Qualified ("Struct","proj"),fxty),srt,pos), projTerm,_), structTerm,_) ->

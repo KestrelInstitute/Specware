@@ -655,18 +655,18 @@ z a b -> ((z a) b) -> (Y.eval (X.eval z a) b)
       case term of
         | Fun (OneName(id,fixity),srt,pos) ->
             return (makeId id, Fun(OneName(id ^ "'",fixity),srt,pos))
-        | ApplyN ((Fun (OneName(id,fixity),srt,pos))::args,pos) ->
+        | ApplyN ((Fun (OneName(id,fixity),srt,pos_a))::args,pos) ->
             % let newTerm = secondPass (firstPass (Fun (OneName(id ^ "'",fixity),srt,pos)) args pos) in
-            let newArgs = cons (Fun (OneName(id ^ "'",fixity),srt,pos),args) in
+            let newArgs = cons (Fun (OneName(id ^ "'",fixity),srt,pos_a),args) in
             return (makeId id, ApplyN (newArgs,pos))
-        | ApplyN ((Fun (TwoNames(id1,id2,fixity),srt,pos))::args,pos) ->
-            let newArgs = cons (Fun (TwoNames(id1,id2 ^ "'",fixity),srt,pos),args) in
+        | ApplyN ((Fun (TwoNames(id1,id2,fixity),srt,pos_a))::args,pos) ->
+            let newArgs = cons (Fun (TwoNames(id1,id2 ^ "'",fixity),srt,pos_a),args) in
             return (makeId id1 id2, ApplyN (newArgs,pos))
         | Fun (TwoNames(id1,id2,fixity),srt,pos) ->
             let newTerm = Fun (TwoNames(id1,id2 ^ "'",fixity),srt,pos) in
             return (makeId id1 id2, newTerm)
-        % | ApplyN ((Fun (Op(id,fixity),srt,pos))::args,pos) ->
-        %    (id, ApplyN (Cons (Fun(Op(makePrimedId id,fixity),srt,pos),args),pos))
+        % | ApplyN ((Fun (Op(id,fixity),srt,pos_a))::args,pos) ->
+        %    (id, ApplyN (Cons (Fun(Op(makePrimedId id,fixity),srt,pos_a),args),pos))
         % | Fun (Op(id,fixity),srt,pos) -> (id, Fun(Op(makePrimedId id,fixity),srt,pos))
         | _ -> specError "Left side of assignment is neither a variable nor an assignment" position
 \end{spec}

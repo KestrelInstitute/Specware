@@ -307,12 +307,12 @@ with a loop or out of a conditional.
 		   (cspc,block,Return cexp))
             | _ ->
               (case rhs of
-                | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),fxty),_,pos), Fun (Op (Qualified (_,"active"),fxty),srt,_),  _), idx,_),expr,_) ->
+                | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),_),_,pos), Fun (Op (Qualified (_,"active"),_),srt,_),  _), idx,_),expr,_) ->
 		  let (cspc,ctype) = sortToCType cspc spc srt in
 		  let (cspc,block,cexp1) = termToCExp cspc spc idx in
 		  let (cspc,block,cexp2) = termToCExpB cspc spc block expr in
 		  (cspc,block,Exp (Binary(Set,ArrayRef (Var ("active",ctype),cexp1),cexp2)))
-                | Apply (Fun (Op (Qualified (_,"update"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),fxty),_,_)), ("2",Fun (Nat n,_,_)), ("3",expr)],_), _) ->
+                | Apply (Fun (Op (Qualified (_,"update"),_),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),_),_,_)), ("2",Fun (Nat n,_,_)), ("3",expr)],_), _) ->
 		  let (cspc,ctype) = sortToCType cspc spc srt in
 		  let (cspc,block,cexp) = termToCExp cspc spc expr in
 		  (cspc,block,
@@ -325,21 +325,21 @@ with a loop or out of a conditional.
 		  let (cspc,block,cexp1) = termToCExp cspc spc lhs in
 		  let (cspc,block,cexp2) = termToCExpB cspc spc block rhs in
 		  (cspc,block,Exp (Binary(Set,cexp1, cexp2)))))
-      | Apply (Fun (Op (procId,fxty),procSort,pos),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
+      | Apply (Fun (Op (procId,fxty),procSort,pos_a),(Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)),pos) ->
           % let (Record ([(_,argTerm),(_,returnTerm),(_,storeTerm)],_)) = callArg in
           (case returnTerm of
             | Record ([],_) ->
-	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
 	      (cspc,block,Exp cexp)
             | Fun (Op (Qualified ("#return#",variable),fxty),srt,pos) ->
-	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
 	      (cspc,block,Return cexp)
             | Fun (Op (Qualified ("<unqualified>","ignore'"),fxty),srt,pos) ->
-	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      let (cspc,block,cexp) = termToCExp cspc spc (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
 	      (cspc,block,Exp cexp)
             | _ ->
 	      let (cspc,block,cexp1) = termToCExp cspc spc returnTerm in
-	      let (cspc,block,cexp2) = termToCExpB cspc spc block (Apply (Fun (Op (procId,fxty),procSort,pos),argTerm,pos)) in
+	      let (cspc,block,cexp2) = termToCExpB cspc spc block (Apply (Fun (Op (procId,fxty),procSort,pos_a),argTerm,pos)) in
 	      (cspc,block,Exp (Binary(Set,cexp1,cexp2)))
 	     )
       | _ -> % let _ = writeLine ("termToCStmt: ignoring term: " ^ (printTerm term)) in
