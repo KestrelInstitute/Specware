@@ -246,6 +246,24 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
     | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
     | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (AProperty a)
+
+
+ %% These are used by the parser to create SpecElem's
+ %% They can be changed to adapt to new structures for SpecElem's
+ %% without altering the parser code in semantics.lisp
+
+  op mkSortSpecElem : [a] SortNames * TyVars * List (ASort a) * a -> SpecElem a
+ def [a] mkSortSpecElem (names, tvs, defs, pos) =
+   let dfn = map (fn srt : ASort a -> (tvs, srt)) defs in
+   (Sort (names, (tvs, dfn)), pos)
+
+  op mkOpSpecElem : [a] OpNames * Fixity * TyVars * ASort a * List (ATerm a) * a -> SpecElem a
+ def [a] mkOpSpecElem (names, fixity, tvs, srt, defs, pos) =
+   let sig = (tvs, srt) in
+   let dfn = map (fn trm : ATerm a -> (tvs, trm)) defs in
+   (Op (names, (fixity, sig, dfn)), pos)
+
+
 \end{spec}
 
 A diagram is defined by a list of elements. An element may be a labeled
