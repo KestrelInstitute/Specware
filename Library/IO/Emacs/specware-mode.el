@@ -1086,12 +1086,15 @@ If anyone has a good algorithm for this..."
 (defun sw:generate-lisp (compile-and-load?)
   (interactive "P")
   (save-buffer)
-  (let* ((filename (sw::file-to-specware-unit-id buffer-file-name))
-	 (dir default-directory)
-	 (unitname (substring filename (length dir))))
+  (let* ((buf-name buffer-file-name)
+	 (filename (sw::file-to-specware-unit-id buf-name))
+	 (dir default-directory))
     (lisp-or-specware-command ":swl " "gen-lisp " filename)
     (when compile-and-load?
-      (lisp-or-specware-command ":cl " "cl " dir "lisp/" unitname))))
+      (sit-for 1 t)
+      (lisp-or-specware-command ":cl " "cl " dir "lisp/"
+				(substring buf-name (length dir) -3)
+				".lisp"))))
 
 (defun sw:gcl-current-file ()
   (interactive)
