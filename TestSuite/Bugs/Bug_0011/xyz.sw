@@ -1,0 +1,3 @@
+spec
+  type S
+endspec

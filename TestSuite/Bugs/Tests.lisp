@@ -4,6 +4,24 @@
 
 (test 
 
+ ("Bug 0003 : Some inconsistencies with using :sw command and with the # notation"
+  :sw "Bug_0003/ABC"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0003/ABC#A
+;;; Elaborating spec at $TESTDIR/Bug_0003/ABC#B
+;;; Elaborating spec at $TESTDIR/Bug_0003/ABC#C
+")
+
+ ("Bug_0011 : Consider abbreviating printed path names."
+  :show "Bug_0011/abc"
+  :output ";;; Elaborating spec at $TESTDIR/Bug_0011/abc
+;;; Elaborating spec at $TESTDIR/Bug_0011/xyz
+
+spec  
+ import xyz
+endspec
+
+")
+
  ("Bug 0043 : Snark doesn't like Booleans"
   :show "Bug_0043/Change#ShouldBeProvable" 
   :output ";;; Elaborating proof-term at $TESTDIR/Bug_0043/Change#ShouldBeProvable
