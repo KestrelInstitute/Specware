@@ -180,8 +180,7 @@ Rational qualifying spec
   type Range = {rs : Set Rational | ex(r1,r2)
     r1 <= r2 && rs = rangeCC (r1, r2) ||
     r1 <  r2 &&
-      (rs = rangeCC (r1, r2) ||
-       rs = rangeOO (r1, r2) ||
+      (rs = rangeOO (r1, r2) ||
        rs = rangeCO (r1, r2) ||
        rs = rangeOC (r1, r2))}
 
