@@ -37,8 +37,8 @@ def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
 	 | Some (newV) -> ((mts, newV, k, l),nothingCollected)
 	 | _ -> ((mts, mkVarJavaExpr(id), k, l),nothingCollected))
       | Fun (Op (Qualified (q, id), _), srt, _) -> 
-	 if baseType?(srt) 
-	   then ((mts, mkQualJavaExpr("Primitive", id), k, l),nothingCollected)
+	 if baseType?(spc,srt) 
+	   then ((mts, mkQualJavaExpr(primitiveClassName, id), k, l),nothingCollected)
 	 else
 	   (case srt of
 	      | Base (Qualified (q, srtId), _, _) -> ((mts, mkQualJavaExpr(srtId, id), k, l),nothingCollected)
@@ -69,7 +69,7 @@ def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
 def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
   let
     def opvarcase(id) =
-      let srt = termSort(term) in
+      let srt = inferType(spc,term) in
       %%Fixed here
       let args = applyArgsToTerms(argsTerm) in
       % use the sort of the operator for the domain, if possible; this
@@ -78,7 +78,7 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
       let dom = case opTerm of
 		  | Fun(Op(_),opsrt,_) -> srtDom(opsrt)
 		  | _ -> map (fn(arg) ->
-			      let srt = termSort(arg) in
+			      let srt = inferType(spc,arg) in
 			      %findMatchingUserType(spc,srt)
 			      srt
 			     ) args
@@ -87,13 +87,13 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
       let argsTerm = exchangeArgTerms(argsTerm,args) in
       let rng = srt in
       if all (fn (srt) ->
-	      notAUserType?(srt) %or baseTypeAlias?(spc,srt)
+	      notAUserType?(spc,srt) %or baseTypeAlias?(spc,srt)
 	     ) dom
 	then
 	  %let _ = writeLine("no user type in "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
-	  if notAUserType?(rng)
+	  if notAUserType?(spc,rng)
 	    then
-	      case utlist_internal (fn(srt) -> userType?(srt) & ~(baseTypeAlias?(spc,srt))) (concat(dom,[srt])) of
+	      case utlist_internal (fn(srt) -> userType?(spc,srt) & ~(baseTypeAlias?(spc,srt))) (concat(dom,[srt])) of
 		| Some s ->
 		  %let _ = writeLine(" ut found user type "^printSort(s)) in
 		  let (sid,col1) = srtId s in
@@ -113,7 +113,7 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
     | Fun (Equals , srt, _) -> translateEqualsToExpr(tcx, argsTerm, k, l, spc)
     | Fun (Project (id) , srt, _) -> translateProjectToExpr(tcx, id, argsTerm, k, l, spc)
     | Fun (Embed (id, _) , srt, _) ->
-      let (sid,col1) = srtId(termSort(term)) in
+      let (sid,col1) = srtId(inferType(spc,term)) in
       let (res,col2) = translateConstructToExpr(tcx, sid, id, argsTerm, k, l, spc) in
       (res,concatCollected(col1,col2))
     | Fun (Op (Qualified (q, id), _), _, _) ->
@@ -160,7 +160,7 @@ op translateEqualsToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * 
 def translateEqualsToExpr(tcx, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
   let ((newBlock, [jE1, jE2], newK, newL),col1) = translateTermsToExpressions(tcx, args, k, l, spc) in
-  let (sid,col2) = srtId(termSort(hd(args))) in
+  let (sid,col2) = srtId(inferType(spc,hd(args))) in
   let col = concatCollected(col1,col2) in
   ((newBlock, mkJavaEq(jE1, jE2, sid), newK, newL),col)
 
@@ -178,7 +178,7 @@ def translateConstructToExpr(tcx, srtId, opId, argsTerm, k, l, spc) =
 
 op translatePrimBaseApplToExpr: TCx * Id * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translatePrimBaseApplToExpr(tcx, opId, argsTerm, k, l, spc) =
-  translateBaseApplToExpr(tcx,opId,argsTerm,k,l,"Primitive",spc)
+  translateBaseApplToExpr(tcx,opId,argsTerm,k,l,primitiveClassName,spc)
 
 op translateBaseApplToExpr: TCx * Id * Term * Nat * Nat * Id * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateBaseApplToExpr(tcx, opId, argsTerm, k, l, clsId, spc) =
@@ -209,7 +209,7 @@ def translateBaseArgsApplToExpr(tcx, opId, argsTerm, rng, k, l, spc) =
 op translateUserApplToExpr: TCx * Id * List JGen.Type * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
   let args = applyArgsToTerms(argsTerm) in
-  case findIndex (fn(srt) -> userType?(srt)) dom of
+  case findIndex (fn(srt) -> userType?(spc,srt)) dom of
     | Some(h, _) -> 
       let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, args, k, l, spc) in
       if javaBaseOp?(opId) then % this might occur if the term is a relax/choose
@@ -224,7 +224,7 @@ def translateUserApplToExpr(tcx, opId, dom, argsTerm, k, l, spc) =
 
 def translateRecordToExpr(tcx, term as Record (fields, _), k, l, spc) =
   let recordTerms = recordFieldsToTerms(fields) in
-  let recordSrt = termSort(term) in
+  let recordSrt = inferType(spc,term) in
   let ((newBlock, javaArgs, newK, newL),col) = translateTermsToExpressions(tcx, recordTerms, k, l, spc) in
   let srts = sortsAsList(spc) in
   let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(recordSrt, srt)) srts in
@@ -250,7 +250,7 @@ def translateIfThenElseToStatement(tcx, term as IfThenElse(t0, t1, t2, _), k, l,
   let v = mkIfRes(k) in
   let ((b1, k1, l1),col2) = termToExpressionAsgV(v, tcx, t1, k0, l0, spc) in  
   let ((b2, k2, l2),col3) = termToExpressionAsgV(v, tcx, t2, k1, l1, spc) in  
-  let (sid,col4) = srtId(termSort(t2)) in
+  let (sid,col4) = srtId(inferType(spc,t2)) in
   let col = concatCollected(col1,concatCollected(col2,concatCollected(col3,col4))) in
   let vDecl = mkVarDecl(v, sid) in
 %  let vAss1 = mkVarAssn(v, jT1) in
@@ -284,7 +284,7 @@ def translateLetRet(tcx, term as Let (letBindings, letBody, _), k, l, spc) =
 
 
 def translateCaseToExpr(tcx, term, k, l, spc) =
-  let caseType = termSort(term) in
+  let caseType = inferType(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -293,7 +293,7 @@ def translateCaseToExpr(tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col0) = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col0) = srtId(inferType(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col0,col1) in
@@ -367,7 +367,7 @@ def relaxChooseTerm(spc,t) =
     | Apply(Fun(Restrict,_,_),_,_) -> t
     | Apply(Fun(Choose,_,_),_,_) -> t
     | _ -> 
-    let srt0 = termSort(t) in
+    let srt0 = inferType(spc,t) in
     let srt = unfoldBase(spc,srt0) in
     case srt of
       | Subsort(ssrt,_,b) ->
@@ -400,13 +400,15 @@ def termToExpressionRet(tcx, term, k, l, spc) =
       | IfThenElse _ -> translateIfThenElseRet(tcx, term, k, l, spc)
       | Let _ -> translateLetRet(tcx,term,k,l,spc)
       | Record ([],_) -> (([Stmt(Return None)],k,l),nothingCollected)
-      | Seq(terms,_) ->
-	let ((s,exprs,k,l),col) = translateTermsToExpressions(tcx,terms,k,l,spc) in
-	let stmts = map (fn(expr) -> Stmt(Expr(expr))) exprs in
-	((s++stmts,k,l),col)
+      | Seq([t],_) -> termToExpressionRet(tcx,t,k,l,spc)
+      | Seq(t1::terms,b) ->
+	let ((s1,expr,k,l),col1) = termToExpression(tcx,t1,k,l,spc) in
+	let s2 = [Stmt(Expr(expr))] in
+	let ((s3,k,l),col2) = termToExpressionRet(tcx,Seq(terms,b),k,l,spc) in
+	((s1++s2++s3,k,l),concatCollected(col1,col2))
       | _ ->
         let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
-	let stmts = if isVoid?(spc,termSort(term))
+	let stmts = if isVoid?(spc,inferType(spc,term))
 		      then [Stmt(Expr jE),Stmt(Return None)]
 		    else [Stmt(Return(Some(jE)))]
 	in
@@ -422,7 +424,7 @@ def translateIfThenElseRet(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
     ((b0++[ifStmt], k2, l2),col)
 
 def translateCaseRet(tcx, term, k, l, spc) =
-  let caseType_ = termSort(term) in
+  let caseType_ = inferType(spc,term) in
   let (caseTypeId,col0) = srtId(caseType_) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -431,7 +433,7 @@ def translateCaseRet(tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col0) = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col0) = srtId(inferType(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col1) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col0,col1) in
@@ -509,7 +511,7 @@ def translateIfThenElseAsgNV(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _),
     (([varDecl]++b0++[ifStmt], k2, l2),col)
 
 def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
-  let caseType = termSort(term) in
+  let caseType = inferType(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -518,7 +520,7 @@ def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col1) = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col1) = srtId(inferType(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col1,col2) in
@@ -596,7 +598,7 @@ def translateIfThenElseAsgV(vId, tcx, term as IfThenElse(t0, t1, t2, _), k, l, s
 
 %def translateCaseAsgV(vId, tcx, term, k, l, spc) =
 def translateCaseAsgV(vId, tcx, term, k, l, spc) =
-  let caseType = termSort(term) in
+  let caseType = inferType(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -605,7 +607,7 @@ def translateCaseAsgV(vId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col1) = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col1) = srtId(inferType(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col1,col2) in
@@ -681,7 +683,7 @@ def translateIfThenElseAsgF(cId, fId, tcx, term as IfThenElse(t0, t1, t2, _), k,
 
 %def translateCaseAsgF(cId, tcx, term, k, l, spc) =
 def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
-  let caseType = termSort(term) in
+  let caseType = inferType(spc,term) in
   let (caseTypeId,col0) = srtId(caseType) in
   let caseTerm = caseTerm(term) in
   let cases  = caseCases(term) in
@@ -690,7 +692,7 @@ def translateCaseAsgF(cId, fId, tcx, term, k, l, spc) =
     case caseTerm of
       | Var _ ->  termToExpression(tcx, caseTerm, k, l+1, spc)
       | _ ->
-        let (caseTermSrt,col1) = srtId(termSort(caseTerm)) in
+        let (caseTermSrt,col1) = srtId(inferType(spc,caseTerm)) in
 	let tgt = mkTgt(l) in
         let ((caseTermBlock, k0, l0),col2) = termToExpressionAsgNV(caseTermSrt, tgt, tcx, caseTerm, k, l+1, spc) in
 	let col = concatCollected(col1,col2) in

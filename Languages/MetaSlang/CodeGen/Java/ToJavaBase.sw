@@ -3,6 +3,7 @@ JGen qualifying spec
 import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
+import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
@@ -20,7 +21,13 @@ def baseSrtToJavaType(srt) =
     else
       if charSort?(srt)
 	then tt("Char")
-      else tt("Integer")
+      else
+	if integerSort?(srt)
+	  then tt("Integer")
+	else
+	  if natSort?(srt)
+	    then tt("Integer")
+	  else tt((srtId srt).1)
 
 op emptyJSpec: JSpec
 def emptyJSpec = (None, [], [])
@@ -74,7 +81,7 @@ def appendMethodBody(m as (methHdr,methBody),b) =
 
 op mkPrimOpsClsDecl: ClsDecl
 def mkPrimOpsClsDecl =
-  ([], ("Primitive", None, []), emptyClsBody)
+  ([], (primitiveClassName, None, []), emptyClsBody)
 
 (**
  * sort A = B is translated to the empty class A extending B (A and B are user sorts).
@@ -666,6 +673,50 @@ def mkParamsFromPattern(pat) =
     | RecordPat(patl,_) -> patlist(map (fn(_,p)->p) patl,1)
     | _ -> fail(errmsg_unsupported(pat))
 
+
+(**
+ * ensures that "public" is part of the modifier list of the class or interface
+ *)
+op mkPublic: ClsOrInterfDecl -> ClsOrInterfDecl
+def mkPublic(cidecl) =
+  case cidecl of
+    | ClsDecl (mods,hdr,body) -> ClsDecl(ensureMod(mods,Public),hdr,body)
+    | InterfDecl (mods,hdr,body) -> InterfDecl (ensureMod(mods,Public),hdr,body)
+
+op ensureMod : List Mod * Mod -> List Mod
+def ensureMod(mods,mod) =
+  if member(mod,mods) then mods
+  else cons(mod,mods)
+
+op makeConstructorsAndMethodsPublic: JSpec * List Id -> JSpec
+def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
+  let cidecls =
+  map (fn | ClsDecl(mods,hdr,body as {staticInits,flds,constrs,meths,clss,interfs}) ->
+            let constrs = map (fn(mods,id,fpars,throws,block) -> 
+			       (ensureMod(mods,Public),id,fpars,throws,block)) constrs
+	    in
+	    let meths = map (fn((mods,rettype,id,fpars,throws),body) ->
+			      let mods = if member(id,publicOps) then ensureMod(mods,Public) else mods in
+			      ((mods,rettype,id,fpars,throws),body)) meths
+	    in
+	    ClsDecl(mods,hdr,{staticInits=staticInits,
+			      flds=flds,constrs=constrs,
+			      meths=meths,clss=clss,
+			      interfs=interfs})
+	  | InterfDecl(mods,hdr,body as {flds,meths,clss,interfs}) ->
+	    let meths = map (fn(mods,rettype,id,fpars,throws) ->
+			      let mods = if member(id,publicOps) then ensureMod(mods,Public) else mods in
+			      (mods,rettype,id,fpars,throws)) meths
+	    in
+	    InterfDecl(mods,hdr,{flds=flds,
+				 meths=meths,
+				 clss=clss,
+				 interfs=interfs})
+	   ) cidecls
+  in
+    (pkg,imp,cidecls)
+
+
 (**
  * looks in the spec for a user type matching the given sort; if a matching
  * user type exists, the corresponding sort will be returned, otherwise the sort
@@ -675,7 +726,7 @@ op findMatchingUserType: Spec * Sort -> Sort
 def findMatchingUserType(spc,srtdef) =
   let srts = sortsAsList(spc) in
   let srtPos = sortAnn srtdef in
-  let foundSrt = find (fn (qualifier, id, (_, _, [(_,srt)])) -> equalSort?(srtdef, srt)) srts in
+  let foundSrt = find (fn |(qualifier, id, (_, _, [(_,srt)])) -> equalSort?(srtdef, srt)|_ -> false) srts in
   case foundSrt of
     | Some (q, classId, _) -> 
       %let _ = writeLine("matching user type found: sort "^classId^" = "^printSort(srtdef)) in
@@ -696,7 +747,7 @@ def findMatchingRestritionType(spc,srt) =
       if equalSort?(X0,X1) then
 	(let srts = sortsAsList(spc) in
 	 let srtPos = sortAnn ssrt in
-	 let foundSrt = find (fn(qualifier,id,(_,_,[(_,srt)])) -> equalSort?(ssrt,srt)) srts in
+	 let foundSrt = find (fn|(qualifier,id,(_,_,[(_,srt)])) -> equalSort?(ssrt,srt)| _ -> false) srts in
 	 case foundSrt of
 	   | Some (q,subsortid,_) -> Some(Base(mkUnQualifiedId(subsortid),[],srtPos))
 	   | None -> None
@@ -716,7 +767,7 @@ def insertRestricts(spc,dom,args) =
       let domsrt = unfoldBase(spc,domsrt) in
       case domsrt of
 	| Subsort(srt,pred,_) ->
-	  let tsrt = termSort(argterm) in
+	  let tsrt = inferType(spc,argterm) in
 	  let b = termAnn(argterm) in
 	  if equalSort??(srt,tsrt) then
 	    let rsrt = Arrow(tsrt,domsrt,b) in
@@ -800,12 +851,33 @@ def nothingCollected = {
 			arrowclasses = []
 		       }
 
+op packageNameToPath: String -> String
+def packageNameToPath(s) =
+  map (fn | #. -> #/ |c -> c) s
+
+op packageNameToJavaName: String -> Java.Name
+def packageNameToJavaName(s) =
+  let l = rev(splitStringAtChar #. s) in
+  case l of
+    | [] -> ([],"")
+    | l::path -> (rev(path),l)
+
+  
+
 %--------------------------------------------------------------------------------
 %
 % constants
 %
 % --------------------------------------------------------------------------------
 
-def primitiveClassName : Id = "Primitive"
+op primitiveClassName : Id
+op publicOps : List Id
+op packageName : Id
+op baseDir : Id
+
+def primitiveClassName = "Primitive"
+def publicOps: List Id = []
+def packageName : Id = "specware.generated"
+def baseDir : Id = "."
 
 endspec

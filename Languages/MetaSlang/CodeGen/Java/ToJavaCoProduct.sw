@@ -49,11 +49,14 @@ def mkSumConstructBody(id, n) =
   let args = if n = 0 then [] else mkArgs(1) in
   [Stmt (Return (Some (CondExp(Un (Prim (NewClsInst (ForCls (([], id), args, None)))), None))))]
 
-op mkSumConstrDecl: Id * List (Id * Sort) -> ConstrDecl
-def mkSumConstrDecl(id, fields) =
+op mkSumConstrDecl: Id * Id * Id * List (Id * Sort) -> ConstrDecl
+def mkSumConstrDecl(id, mainSumClassId, tagId, fields) =
+  let tagfield = FldAcc(ViaPrim(This None,"tag")) in
+  let constrConstant = mkFldAccViaClass(mainSumClassId,tagId) in
+  let assignTagExpr = Ass(tagfield,Assgn,constrConstant):Java.Expr in
   let formParams = map (fn(fieldProj, Base (Qualified (q, fieldType), [], _)) -> fieldToFormalParam(mkArgProj(fieldProj), fieldType)) fields in
   let sumConstrBody = mkSumConstBody(length(formParams)) in
-  ([], id, formParams, [], sumConstrBody)
+  ([], id, formParams, [], [Stmt(Expr(assignTagExpr))] ++ sumConstrBody)
 
 op mkSumConstBody: Nat -> Block
 def mkSumConstBody(n) =
@@ -72,7 +75,7 @@ def sumToClsDecl(id, c, args) =
   let eqMethDecl = mkEqualityMethDecl(id) in
   let (eqMethBody,col) = mkSumEqMethBody(id, c, summandId, args) in
   let eqMethDecl = setMethodBody(eqMethDecl, eqMethBody) in
-  let constrDecl = mkSumConstrDecl(mkSummandId(id, c), args) in
+  let constrDecl = mkSumConstrDecl(mkSummandId(id, c), id, mkTagCId(c), args) in
   (([], (summandId, Some ([], id), []), setConstrs(setMethods(setFlds(emptyClsBody, fldDecls), [eqMethDecl]), [constrDecl])),col)
 %  map (fn (a, _) -> sumArgToClsDecl(id, c)) args
 

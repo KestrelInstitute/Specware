@@ -11,44 +11,55 @@ sort Env a = SpecCalc.Env a
 sort Op = QualifiedId
 
 sort Type = Sort
-sort BaseType = (Sort | baseType?)
+%sort BaseType = (Sort | baseType?)
 
 sort OpDef = Op * List Sort * Sort * List Var * Term
 
 op unSupported: Op -> String
 
-op baseType?: Sort -> Boolean
-
-def baseType?(type) =
-  boolSort?(type) or integerSort?(type) or natSort?(type) or stringSort?(type) or charSort?(type)
+(**
+ * a base type wrt. code generation are the builtin base types Boolean,Nat,Integer,Char,String
+ * and also those types that do *not* have a definition in the spec, i.e. those which
+ * are just declared.
+ *)
+op baseType?: Spec * Sort -> Boolean
+def baseType?(spc,type) =
+  if boolSort?(type) or integerSort?(type) or natSort?(type) or stringSort?(type) or charSort?(type)
+    then true
+  else sortIsUnrefinedInSpec?(spc,type)
 
 
 op baseTypeAlias?: Spec * Sort -> Boolean
 def baseTypeAlias?(spc,srt) =
-  if baseType? srt then true
+  if baseType?(spc,srt) then true
   else
     let usrt = unfoldBase(spc,srt) in
     case usrt of
       | Subsort(srt,_,_) -> baseTypeAlias?(spc,srt)
       | Quotient(srt,_,_) -> baseTypeAlias?(spc,srt)
-      | _ -> baseType? usrt
+      | _ -> baseType?(spc,usrt)
 
 
 
-op baseTypeId?: Id -> Boolean
-
-def baseTypeId?(id) =
+op builtinBaseTypeId?: Id -> Boolean
+def builtinBaseTypeId?(id) =
   id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char"
 
 
-op userType?: Sort -> Boolean
+op baseTypeId?: Spec * Id -> Boolean
+
+def baseTypeId?(spc,id) =
+  id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char" or sortIdIsUnrefinedInSpec?(spc,id)
+
+
+op userType?: Spec * Sort -> Boolean
 
 (**
  * extended the definition of userType? to not only check whether it's not a base type, because it's also not a user
  * type, if it's something different then a name of a type identifier, e.g., an arrow type
  *)
-def userType?(srt) =
-  if baseType?(srt) then false
+def userType?(spc,srt) =
+  if baseType?(spc,srt) then false
   else
     (case srt of
        | Base(qid,_,_) -> true
@@ -57,38 +68,43 @@ def userType?(srt) =
        | _ -> false
       )
 
-def notAUserType?(srt) = ~(userType?(srt))
+def notAUserType?(spc,srt) = ~(userType?(spc,srt))
 
 (**
  * implementation of the ut function as defined in v3:p38
- * returns the first user type occuring in the type srt from left to right, where the constituents of
- * each srt are also considered in case srt is an arrow type
+ * returns the first user type occuring in the type srt from left to right, where the constituent of
+ * each srt is also considered in case srt is an arrow type
  *)
-op ut: Sort -> Option Sort
-def ut(srt) = ut_internal userType? srt
+op ut: Spec * Sort -> Option Sort
+def ut(spc,srt) =
+  ut_internal (fn(s) -> userType?(spc,s)) srt
 
 op ut_internal: (Sort -> Boolean) -> Sort -> Option Sort
 def ut_internal isUserType? srt =
   let
-    def utlist(srts) =
+    def utlist0(srts) =
       case srts of
 	| [] -> None
 	| srt::srts -> 
-	  (case ut(srt) of
+	  (case ut_internal isUserType? srt of
 	     | Some s -> Some s
-	     | None -> utlist(srts)
+	     | None -> utlist0(srts)
 	    )
   in
   if isUserType?(srt) then Some srt
   else
     let domsrts = srtDom(srt) in
-    case utlist(domsrts) of
+    case utlist0(domsrts) of
       | Some s -> Some s
       | None -> 
         (case srt of
-	   | Arrow(_,rng,_) -> ut(rng)
+	   | Arrow(_,rng,_) -> ut_internal isUserType? rng
 	   | _ -> None
 	  )
+
+op utlist: Spec * List Sort -> Option Sort
+def utlist(spc,srts) = 
+  utlist_internal (fn(srt) -> userType?(spc,srt)) srts
 
 op utlist_internal: (Sort -> Boolean) -> List Sort -> Option Sort
 def utlist_internal isUserType? srts =
@@ -100,28 +116,26 @@ def utlist_internal isUserType? srts =
 	 | None -> utlist_internal isUserType? srts
 	)
 
-op utlist: List Sort -> Option Sort
-def utlist(srt) = utlist_internal userType? srt
 
 (** 
  * returns whether or not the given sort is "flat" meaning that it
-is a simple identifier, not an arrow sort, for instance.
-*)
+ * is a simple identifier, not an arrow sort, for instance.
+ *)
 op flatType?: Sort -> Boolean
 def flatType?(srt) =
   case srt of
     | Base(qid,_,_) -> true
     | _ -> false
 
-op baseVar?: Var -> Boolean
-op userVar?: Var -> Boolean
+op baseVar?: Spec * Var -> Boolean
+op userVar?: Spec * Var -> Boolean
 
-def baseVar?(var) =
+def baseVar?(spc,var) =
   let (id, srt) = var in
-  baseType?(srt)
+  baseType?(spc,srt)
 
-def userVar?(var) =
-  ~ (baseVar?(var))
+def userVar?(spc,var) =
+  ~ (baseVar?(spc,var))
 
 (**
   * disabled this op def, the new srtId op is in ToJavaBase; it also handles other kinds of types.
@@ -393,10 +407,10 @@ def liftCases(oper, terms, k) =
     let (restTerms, restK, restOds) = liftCases(oper, terms, newK) in
     (cons(newTerm, restTerms), restK, newOds++restOds)
 
-op lift: Op * (List Var * Term) -> Term * List OpDef
+op lift: Spec * Op * (List Var * Term) -> Term * List OpDef
 
-def lift(oper, (formals, body)) =
-  let firstUserVar = find userVar? formals in
+def lift(spc,oper, (formals, body)) =
+  let firstUserVar = find (fn(v) -> userVar?(spc,v)) formals in
   case firstUserVar of
     | Some firstUserVar ->
     if caseTerm?(body)
@@ -427,7 +441,7 @@ def liftPattern(spc) =
        result) ->
    let origOp = mkQualifiedId(qualifier, name) in
    let (origOpVars, origOpBody) = srtTermDelta(srt, term) in
-   let (newTerm, newOds) = lift(origOp, (origOpVars, origOpBody)) in
+   let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
    let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
    let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
    cons(origOpNewDef, newOds++result))

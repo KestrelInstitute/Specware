@@ -366,7 +366,7 @@ Java qualifying spec
          | _ -> 
              prettysAll 
                [prettysNone [hd, toPretty " {"],
-                ppBlock bk, 
+                prettysNone [toPretty "  ", ppBlock bk], 
                 toPretty "}"]
 
 %%%% block

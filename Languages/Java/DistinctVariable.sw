@@ -189,14 +189,17 @@ op distinctVariable: Spec -> Spec
 def distinctVariable(spc) =
   let newOpDefs
   = foldriAQualifierMap 
-  (fn (qualifier, name, (op_names, fixity, (tyVars, srt), [(_, term)]),
+  (fn 
+    |(qualifier, name, (op_names, fixity, (tyVars, srt), [(_, term)]),
        result) ->
    let origOp = mkQualifiedId(qualifier, name) in
    let (formals, body) = srtTermDelta(srt, term) in
    let ids = map (fn (id, srt) -> id) formals in
    let (newTerm, newIds) = distinctVar(body, ids) in
    let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), formals, newTerm) in
-   cons(origOpNewDef, result))
+   cons(origOpNewDef, result)
+    |(qualifier,name,opinfo,result) -> result
+  )
   []
   spc.ops in
   let result = emptySpec in

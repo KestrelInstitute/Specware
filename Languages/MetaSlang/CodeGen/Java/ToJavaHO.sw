@@ -54,7 +54,7 @@ spec
     *)
    op translateLambdaTerm: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
    def translateLambdaTerm(tcx,term as Lambda((pat,cond,body)::_,_),k,l,spc) =
-     let termSrt = termSort(term) in
+     let termSrt = inferType(spc,term) in
      let freeVars = freeVars(term) in
      let (block,tcx0,col0) = foldl (fn((wi,wisrt),(block0,tcx0,col0)) -> 
 			       let initExpr = case StringMap.find(tcx,wi) of
@@ -122,10 +122,10 @@ spec
        let (atdom,col3) = mapSortCol(srtId,dom) in
        let (atran,col4) = srtId rng in
        let (res,col5) =
-       if all (fn(srt) -> notAUserType?(srt)) dom 
+       if all (fn(srt) -> notAUserType?(spc,srt)) dom 
 	 then
-	   if notAUserType?(rng) then
-	     case ut(srt) of
+	   if notAUserType?(spc,rng) then
+	     case ut(spc,srt) of
 	       | Some s -> % v3:p46:r4: no user toplevel user type found, but user type nested in some of the args
 	         let (sid,col1) = srtId s in
 		 let rexp = mkMethInv(sid,id,mkNArgsExpr(dom,None)) in
@@ -141,7 +141,7 @@ spec
        else
 	 % found a user type in the domain:
 	 % v3:p46:r2
-	 let split = splitList(fn(srt) -> userType?(srt)) dom in
+	 let split = splitList(fn(srt) -> userType?(spc,srt)) dom in
 	 case split of
 	   | Some(vars1,varh,vars2) ->
 	     let h = length(vars1)+1 in

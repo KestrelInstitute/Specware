@@ -8,8 +8,8 @@ def mkSubSortTypeClsDecl(id, subSortFieldDecls, subSortMethodDecls, subSortConst
   ([], (id, None, []), setConstrs(setMethods(setFlds(emptyClsBody, subSortFieldDecls), subSortMethodDecls), subSortConstrDecls))
 
 
-op subSortToClsDecls: Id * Sort * Term -> List ClsDecl * Collected
-def subSortToClsDecls(id, superSort, pred) =
+op subSortToClsDecls: Id * Sort * Term * Spec -> List ClsDecl * Collected
+def subSortToClsDecls(id, superSort, pred, spc) =
   case superSort of
     | Base (Qualified (q, superSortId), _, _) ->
     (case pred of
@@ -20,31 +20,31 @@ def subSortToClsDecls(id, superSort, pred) =
        let eqargRelax = mkQualJavaExpr("eqarg", "relax") in
        let subSortMethodBody = [Stmt (Return (Some (mkJavaEq(thisRelax, eqargRelax, superSortId))))] in
        let subSortMethodDecl = setMethodBody(subSortMethodDecl, subSortMethodBody) in
-       let (subSortConstrDecl,col) = mkSubSortConstrDecl(id, superSortId, superSort, predId) in
+       let (subSortConstrDecl,col) = mkSubSortConstrDecl(id, superSortId, superSort, predId,spc) in
        ([mkSubSortTypeClsDecl(id, [relaxFieldDecl], [subSortMethodDecl], [subSortConstrDecl])],col)
        | _ -> fail("unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.")
       )
     | _ -> fail("unsupported restriction term for subsort: '"^printTerm(pred)^"'; only operator names are supported.")
 
-op mkSubSortConstrDecl: Id  * Id * Sort * Id -> ConstrDecl * Collected
-def mkSubSortConstrDecl(id, superSortId, superSort, predId) =
+op mkSubSortConstrDecl: Id  * Id * Sort * Id * Spec -> ConstrDecl * Collected
+def mkSubSortConstrDecl(id, superSortId, superSort, predId,spc) =
   let formParams = [fieldToFormalParam("relax", superSortId)] in
-  let (subSortConstrBody,col) = mkSubSortConstBody(superSortId, superSort, predId) in
+  let (subSortConstrBody,col) = mkSubSortConstBody(superSortId, superSort, predId,spc) in
   (([], id, formParams, [], subSortConstrBody),col)
 
-op mkSubSortConstBody: Id * Sort * Id  -> Block * Collected
-def mkSubSortConstBody(superSrtId,superSrt,pred) =
+op mkSubSortConstBody: Id * Sort * Id * Spec -> Block * Collected
+def mkSubSortConstBody(superSrtId,superSrt,pred,spc) =
   let thisName = (["this"], "relax") in
   let argName = ([], "relax") in
   let assn = mkNameAssn(thisName, argName) in
   let (assertExp,col) =
-    if baseTypeId?(superSrtId)
+    if baseTypeId?(spc,superSrtId)
       then 
-	case ut(superSrt) of
+	case ut(spc,superSrt) of
 	  | Some s -> 
 	    let (sid,col) = srtId s in
 	    (mkMethInv(sid, pred, [mkVarJavaExpr("relax")]),col)
-	  | _ -> (mkMethInv("Primitive", pred, [mkVarJavaExpr("relax")]),nothingCollected)
+	  | _ -> (mkMethInv(primitiveClassName, pred, [mkVarJavaExpr("relax")]),nothingCollected)
     else (mkMethInv("relax", pred, []),nothingCollected)
   in
     ([Stmt(Expr(mkMethInvName(([],"assert"), [assertExp]))), assn],col)

@@ -5,6 +5,7 @@
 
 spec
 
+sort JavaFile = (*filename*) String * CompUnit
 
 sort CompUnit = Option Name * List Name * List ClsOrInterfDecl
 %% Name is for package
