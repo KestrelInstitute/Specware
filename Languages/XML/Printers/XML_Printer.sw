@@ -292,12 +292,12 @@ XML qualifying spec
 
   def print_MarkupDecl mdecl = 
     case mdecl of
-      | Element      decl -> print_ElementDecl  decl
-      | Attributes   decl -> print_AttlistDecl  decl
-      | Entity       decl -> print_EntityDecl   decl
-      | Notation     decl -> print_NotationDecl decl
-      | Instructions decl -> print_PI           decl
-      | Comment      decl -> print_Comment      decl
+      | Element    decl -> print_ElementDecl  decl
+      | Attributes decl -> print_AttlistDecl  decl
+      | Entity     decl -> print_EntityDecl   decl
+      | Notation   decl -> print_NotationDecl decl
+      | PI         decl -> print_PI           decl
+      | Comment    decl -> print_Comment      decl
 
 
   def print_ElementDecl {w1, name, w2,contents, w3} : UString =

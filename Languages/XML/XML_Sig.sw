@@ -509,7 +509,7 @@ XML qualifying spec
                     | Attributes   AttlistDecl
                     | Entity       EntityDecl
                     | Notation     NotationDecl
-                    | Instructions PI
+                    | PI           PI
                     | Comment      Comment
 
   sort ElementDecl = {w1       : WhiteSpace,
