@@ -35,9 +35,10 @@ AnnSpec qualifying spec
 		    localSorts      : SortNames,
 		    localProperties : PropertyNames}
 
- type Aliases = List QualifiedId 
+ type QualifiedIds = List QualifiedId 
+ type Aliases = QualifiedIds
 
-   op someAliasIsLocal? : Aliases * List QualifiedId -> Boolean
+   op someAliasIsLocal? : Aliases * QualifiedIds -> Boolean
   def someAliasIsLocal? (aliases, local_names) =
     exists (fn qid -> member (qid, local_names)) aliases 
     
@@ -76,27 +77,27 @@ AnnSpec qualifying spec
 
  op mapSpec    : fa(b) TSP_Maps b -> ASpec b -> ASpec b
 
- def mapSpec tsp_maps {importInfo, sorts, ops, properties} =
+ def mapSpec tsp {importInfo, sorts, ops, properties} =
    {
     importInfo       = importInfo,
-    sorts            = mapSpecSorts      tsp_maps sorts,
-    ops              = mapSpecOps        tsp_maps ops,
-    properties       = mapSpecProperties tsp_maps properties
+    sorts            = mapSpecSorts      tsp sorts,
+    ops              = mapSpecOps        tsp ops,
+    properties       = mapSpecProperties tsp properties
    }
 
   op mapSpecSorts: fa(b) TSP_Maps b -> ASortMap b -> ASortMap b 
- def mapSpecSorts tsp_maps sorts =
+ def mapSpecSorts tsp sorts =
    mapSortInfos (fn (aliases, tvs, defs) ->
-		 (aliases, tvs, mapSortSchemes tsp_maps defs))
+		 (aliases, tvs, mapSortSchemes tsp defs))
                 sorts
 
   op mapSpecOps : fa(b) TSP_Maps b -> AOpMap b -> AOpMap b
- def mapSpecOps tsp_maps ops =
+ def mapSpecOps tsp ops =
    mapOpInfos (fn (aliases, fixity, (tvs, srt), defs) ->
-	       (aliases, 
+	       (aliases,
 		fixity, 
-		(tvs, mapSort tsp_maps srt), 
-		mapTermSchemes tsp_maps defs))
+		(tvs, mapSort tsp srt), 
+		mapTermSchemes tsp defs))
               ops
 
  %% mapSortInfos and mapOpInfos apply the provided function
@@ -221,19 +222,19 @@ AnnSpec qualifying spec
 
 
   op mapSpecProperties : fa(b) TSP_Maps b -> AProperties b ->  AProperties b 
- def mapSpecProperties tsp_maps properties =
+ def mapSpecProperties tsp properties =
    map (fn (pt, nm, tvs, term) -> 
-           (pt, nm, tvs, mapTerm tsp_maps term))
+           (pt, nm, tvs, mapTerm tsp term))
        properties
 
  op mapTermSchemes : fa(b) TSP_Maps b -> ATermSchemes b -> ATermSchemes b
  op mapSortSchemes : fa(b) TSP_Maps b -> ASortSchemes b -> ASortSchemes b
 
- def mapTermSchemes tsp_maps term_schemes = 
-  map (fn (type_vars, term) -> (type_vars, mapTerm tsp_maps term)) term_schemes
+ def mapTermSchemes tsp term_schemes = 
+  map (fn (tvs, term) -> (tvs, mapTerm tsp term)) term_schemes
 
- def mapSortSchemes tsp_maps sort_schemes =
-  map (fn (type_vars, srt) -> (type_vars, mapSort tsp_maps srt)) sort_schemes
+ def mapSortSchemes tsp sort_schemes =
+  map (fn (tvs, srt) -> (tvs, mapSort tsp srt)) sort_schemes
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
@@ -275,15 +276,15 @@ AnnSpec qualifying spec
  op specOps   : fa(b) ASpec b -> List (AOpSignature b)
 
  def specSorts (spc) = 
-   foldriAQualifierMap (fn (q, id, (sort_names, tyVars, opt_def), 
+   foldriAQualifierMap (fn (q, id, (names, tvs, defs), 
 			    result) -> 
-			cons ((q, id, tyVars), result)) 
+			cons ((q, id, tvs), result)) 
                        [] spc.sorts 
 
  def specOps (spc) = 
-   foldriAQualifierMap (fn (q, id, (op_names, fixity, (tyVars, srt), opt_def),
+   foldriAQualifierMap (fn (q, id, (names, fixity, (tvs, srt), defs),
 			    result) -> 
-			cons ((q, id, tyVars, srt), result))
+			cons ((q, id, tvs, srt), result))
                        [] spc.ops 
 
  % --------------------------------------------------------------------------------
@@ -327,16 +328,16 @@ AnnSpec qualifying spec
                        [] spc.ops
 
   op equalSortInfo?: fa(a) ASortInfo a * ASortInfo a -> Boolean
- def equalSortInfo? ((sortNames1, tyvs1, defs1), 
-		     (sortNames2, tyvs2, defs2)) 
+ def equalSortInfo? ((sortNames1, tvs1, defs1), 
+		     (sortNames2, tvs2, defs2)) 
    =
    sortNames1 = sortNames2
-   & tyvs1 = tyvs2
-   %% Could take into account substitution of tyvs
-   & all (fn def1 -> 
-	  exists (fn def2 -> equalSortScheme? (def1, def2)) 
-	         defs2) 
-         defs1
+   && tvs1 = tvs2
+   %% Could take into account substitution of tvs
+   && all (fn def1 -> 
+	   exists (fn def2 -> equalSortScheme? (def1, def2)) 
+	          defs2) 
+          defs1
 
 
   op equalOpInfo?: fa(a) AOpInfo a * AOpInfo a -> Boolean
@@ -344,28 +345,28 @@ AnnSpec qualifying spec
 		   (opNames2, fixity2, sortsch2, defs2)) 
    =
    opNames1 = opNames2
-   & fixity1 = fixity2
-   & equalSortScheme? (sortsch1, sortsch2)
-   & all (fn def1 -> 
-	  exists (fn def2 -> equalTermScheme? (def1, def2)) 
-	         defs2) 
-         defs1
+   && fixity1 = fixity2
+   && equalSortScheme? (sortsch1, sortsch2)
+   && all (fn def1 -> 
+	   exists (fn def2 -> equalTermScheme? (def1, def2)) 
+	          defs2) 
+          defs1
 
   op equalSortScheme?: fa(a) ASortScheme a * ASortScheme a -> Boolean
- def equalSortScheme? ((tyvs1, s1), (tyvs2, s2)) =
-   %% TODO: take into account substitution of tyvs
-   tyvs1 = tyvs2 & equalSort? (s1, s2)
+ def equalSortScheme? ((tvs1, s1), (tvs2, s2)) =
+   %% TODO: take into account substitution of tvs
+   tvs1 = tvs2 && equalSort? (s1, s2)
 
   op equalTermScheme?: fa(a) ATermScheme a * ATermScheme a -> Boolean
- def equalTermScheme? ((tyvs1, t1), (tyvs2, t2)) =
-   %% TODO: take into account substitution of tyvs
-   tyvs1 = tyvs2 & equalTerm? (t1, t2)
+ def equalTermScheme? ((tvs1, t1), (tvs2, t2)) =
+   %% TODO: take into account substitution of tvs
+   tvs1 = tvs2 && equalTerm? (t1, t2)
 
   op equalProperty?: fa(a) AProperty a * AProperty a -> Boolean
- def equalProperty? ((propType1, propName1, tyVars1, term1), 
-		     (propType2, propName2, tyVars2, term2))
+ def equalProperty? ((propType1, propName1, tvs1, fm1), 
+		     (propType2, propName2, tvs2, fm2))
    =
-   propType1 = propType2 & equalTerm? (term1, term2) & equalTyVars? (tyVars1, tyVars2)
+   propType1 = propType2 && equalTerm? (fm1, fm2) && equalTyVars? (tvs1, tvs2)
 
 
  % --------------------------------------------------------------------------------
@@ -384,7 +385,7 @@ AnnSpec qualifying spec
 
   op memberQualifiedId : Qualifier * Id * List QualifiedId -> Boolean
  def memberQualifiedId (q, id, qids) =
-   exists (fn (Qualified (qq, ii)) -> q = qq & id = ii) qids
+   exists (fn (Qualified (qq, ii)) -> q = qq && id = ii) qids
 
   op addToNames : QualifiedId * List QualifiedId -> List QualifiedId 
  def addToNames (qid, qids) = cons (qid, qids)
@@ -480,12 +481,12 @@ AnnSpec qualifying spec
    let spc = setProperties (spc, spc.properties ++ [new_property]) in
    addLocalPropertyName(spc,propertyName new_property)
 
- def addAxiom       ((name, type_vars, formula), spc) = addProperty ((Axiom      : PropertyType, name, type_vars, formula), spc) 
- def addConjecture  ((name, type_vars, formula), spc) = addProperty ((Conjecture : PropertyType, name, type_vars, formula), spc) 
- def addTheorem     ((name, type_vars, formula), spc) = addProperty ((Theorem    : PropertyType, name, type_vars, formula), spc) 
+ def addAxiom       ((name, tvs, formula), spc) = addProperty ((Axiom      : PropertyType, name, tvs, formula), spc) 
+ def addConjecture  ((name, tvs, formula), spc) = addProperty ((Conjecture : PropertyType, name, tvs, formula), spc) 
+ def addTheorem     ((name, tvs, formula), spc) = addProperty ((Theorem    : PropertyType, name, tvs, formula), spc) 
 
- def addTheoremLast ((name, type_vars, formula), spc) =  
-   setProperties (spc, spc.properties ++ [(Theorem : PropertyType, name, type_vars, formula)])
+ def addTheoremLast ((name, tvs, formula), spc) =  
+   setProperties (spc, spc.properties ++ [(Theorem : PropertyType, name, tvs, formula)])
 
  def addConjectures (conjectures, spc) = foldl addConjecture spc conjectures
  def addTheorems    (theorems,    spc) = foldl addTheorem    spc theorems

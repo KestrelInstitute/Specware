@@ -95,14 +95,14 @@ SpecsToI2L qualifying spec {
     let len = List.length(transformedOps) in
     %let _ = writeLine(";;            "^Integer.toString(len)^" ops have been transformed.") in
 %    let _ = foldriAQualifierMap 
-%	   (fn(qid,name,(sortnames,tyvars,sortschemes),l) -> 
+%	   (fn(qid,name,(aliases,tvs,defs),l) -> 
 %	    let _ = writeLine("sort "^printQualifiedId(Qualified(qid,name))) in
-%	    let _ = writeLine("  typeVars: "^(List.foldl(fn(tv,s)->s^tv^" ") "" tyvars)) in
-%	    let _ = writeLine("  aliases:     "^(List.foldl (fn(qid0,s) -> s^(printQualifiedId(qid0))^" ") "" sortnames)) in
-%	    let _ = writeLine("  sortschemes: ") in
-%	    let _ = List.app(fn(tyvars,srt) -> 
-%			     let _ = writeLine("   typeVars: "^(List.foldl(fn(tv,s)->s^tv^" ") "" tyvars)) in
-%			     writeLine("   "^printSort(srt))) sortschemes in
+%	    let _ = writeLine("  typeVars: "^(List.foldl(fn(tv,s)->s^tv^" ") "" tvs)) in
+%	    let _ = writeLine("  aliases:     "^(List.foldl (fn(qid0,s) -> s^(printQualifiedId(qid0))^" ") "" aliases)) in
+%	    let _ = writeLine("  defs: ") in
+%	    let _ = List.app(fn(tvs,srt) -> 
+%			     let _ = writeLine("   typeVars: "^(List.foldl(fn(tv,s)->s^tv^" ") "" tvs)) in
+%			     writeLine("   "^printSort(srt))) defs in
 %	    l)
 %	   [] spc.sorts
 %    in
@@ -150,20 +150,20 @@ SpecsToI2L qualifying spec {
    is the unqualified name, the qualifier is ignored.
    *)
   op sortinfo2typedef: CgContext * Spec * QualifiedId * SortInfo -> Option TypeDefinition
-  def sortinfo2typedef(ctxt,spc,qid,(sortnames,tyvars,sortschemes)) =
+  def sortinfo2typedef(ctxt,spc,qid,(aliases,tvs,defs)) =
     let def qid2typedefId(qid) =
           case qid of
 	    | Qualified(spcname,name) -> (spcname,name)
 %	    | Local(name) -> ("",name)
     in
     let typename = qid2typedefId(qid) in
-    let res = case sortschemes of
+    let res = case defs of
                  | [] -> None % Some (typename,Any) %None 
-                 | (tyvars,srt)::_ -> Some (typename,sort2type(ctxt,spc,tyvars,srt))
+                 | (tvs,srt)::_ -> Some (typename,sort2type(ctxt,spc,tvs,srt))
     in
     res
 
-  def sort2type(ctxt,spc,tyvars,srt) =
+  def sort2type(ctxt,spc,tvs,srt) =
     let def qid2typedefId(qid) =
     case qid of
       | Qualified(spcname,name) -> (spcname,name)
@@ -174,25 +174,25 @@ SpecsToI2L qualifying spec {
     case usrt of
       % primitives ----------------------------------------------
       | Boolean _  -> Primitive "Boolean"
-      | Base(Qualified(_,"Nat"),[],_) -> Primitive "Nat"
+      | Base(Qualified(_,"Nat"),    [],_) -> Primitive "Nat"
       | Base(Qualified(_,"Integer"),[],_) -> Primitive "Integer"
-      | Base(Qualified(_,"Char"),[],_) -> Primitive "Char"
-      | Base(Qualified(_,"String"),[],_) -> Primitive "String"
-      %| Base(Qualified(_,"Float"),[],_) -> Primitive "Float"
+      | Base(Qualified(_,"Char"),   [],_) -> Primitive "Char"
+      | Base(Qualified(_,"String"), [],_) -> Primitive "String"
+     %| Base(Qualified(_,"Float"),[],_) -> Primitive "Float"
 
-      % reference type
-      %| Base(Qualified("ESpecPrimitives","Ref"),[srt],_) -> Ref(sort2type(ctxt,spc,tyvars,srt))
+     % reference type
+     %| Base(Qualified("ESpecPrimitives","Ref"),[srt],_) -> Ref(sort2type(ctxt,spc,tvs,srt))
 
-      %| Base(Qualified(_,"List"),[psrt],_) ->
-      %    let ptype = sort2type(ctxt,spc,tyvars,psrt) in
-      %	  List(ptype)
+     %| Base(Qualified(_,"List"),[psrt],_) ->
+     %    let ptype = sort2type(ctxt,spc,tvs,psrt) in
+     %	  List(ptype)
 
-      %| Base(Qualified(_,"List"),[psrt],_) ->
-               %System.fail("sorry, this version of the code generator doesn't support lists.")
-      %         
-	  %     System.fail("if using List sort, please add a term restricting "^
-		%	   "the length of the list\n       "^
-		%	   "(e.g. \"{l:List("^printSort(psrt)^")| length(l) <= 32}\")")
+     %| Base(Qualified(_,"List"),[psrt],_) ->
+     %  System.fail("sorry, this version of the code generator doesn't support lists.")
+     %         
+     %     System.fail("if using List sort, please add a term restricting "^
+     %	   "the length of the list\n       "^
+     %	   "(e.g. \"{l:List("^printSort(psrt)^")| length(l) <= 32}\")")
 		
 
       | Subsort(Base(Qualified(_,"Nat"),[],_),
@@ -209,7 +209,7 @@ SpecsToI2L qualifying spec {
       % where N must be a constant term evaluating to a positive Nat
       % lenght(X) <= N, N > length(X), N >= length(X), N = length(X) can also be used
       | Subsort(Base(Qualified(_,"List"),[psrt],_),term,_) ->
-	       let ptype = sort2type(unsetToplevel(ctxt),spc,tyvars,psrt) in
+	       let ptype = sort2type(unsetToplevel(ctxt),spc,tvs,psrt) in
 	       (let err = ("wrong form of restriction term for list length") in
 		case term of
 		  | Lambda ([(VarPat((X,_),_),t1,t2)],_) -> 
@@ -262,22 +262,22 @@ SpecsToI2L qualifying spec {
 	     | Product(fields,_) ->
 	        let types = List.map (fn(_,srt) -> 
 				      let srt = unfoldToSpecials(spc,srt) in
-				      sort2type(unsetToplevel ctxt,spc,tyvars,srt)) fields in
-		let typ = sort2type(unsetToplevel ctxt,spc,tyvars,srt2) in
+				      sort2type(unsetToplevel ctxt,spc,tvs,srt)) fields in
+		let typ = sort2type(unsetToplevel ctxt,spc,tvs,srt2) in
 		FunOrMap(types,typ)
-	     | _ -> FunOrMap([sort2type(unsetToplevel ctxt,spc,tyvars,srt1)],
-			     sort2type(unsetToplevel ctxt,spc,tyvars,srt2))
+	     | _ -> FunOrMap([sort2type(unsetToplevel ctxt,spc,tvs,srt1)],
+			     sort2type(unsetToplevel ctxt,spc,tvs,srt2))
 	  )
 
       % ----------------------------------------------------------------------
 
       | Product(fields,_) ->
 	  if fieldsAreNumbered(fields) then
-	    let types = List.map (fn(_,srt) -> sort2type(unsetToplevel ctxt,spc,tyvars,srt)) fields in
+	    let types = List.map (fn(_,srt) -> sort2type(unsetToplevel ctxt,spc,tvs,srt)) fields in
 	    if types = nil then Void else Tuple(types)
 	  else
 	    let structfields = List.map 
-	                       (fn(id,srt) -> (id,sort2type(unsetToplevel ctxt,spc,tyvars,srt))) fields
+	                       (fn(id,srt) -> (id,sort2type(unsetToplevel ctxt,spc,tvs,srt))) fields
 	    in
 	    if structfields = nil then Void else Struct(structfields)
 
@@ -286,7 +286,7 @@ SpecsToI2L qualifying spec {
       | CoProduct(fields,_) ->
 	    let unionfields = List.map
 	                      (fn |(id,None) -> (id,Void)
-			          |(id,Some srt) -> (id,sort2type(unsetToplevel ctxt,spc,tyvars,srt)))
+			          |(id,Some srt) -> (id,sort2type(unsetToplevel ctxt,spc,tvs,srt)))
 			      fields
 	    in
 	    Union unionfields
@@ -304,7 +304,7 @@ SpecsToI2L qualifying spec {
       | Base(qid,_,_) -> Base (qid2typedefId qid)
 
       | Subsort(srt,trm,_) -> % ignore the term...
-	sort2type(ctxt,spc,tyvars,srt)
+	sort2type(ctxt,spc,tvs,srt)
 
       | _ -> %let _ = System.print(usrt) in
 	       System.fail("sorry, code generation doesn't support the use of this sort:\n       "
@@ -414,15 +414,15 @@ SpecsToI2L qualifying spec {
 
  op unfoldBaseKeepPrimitives  : Spec * Sort -> Sort 
  def unfoldBaseKeepPrimitives (sp:Spec, srt) = 
-  case srt
-    of Base (qid, srts, a) ->
+  case srt of
+    | Base (qid, srts, a) ->
        (case findTheSort(sp,qid)
           of None -> srt
-           | Some(_, _, [])      -> srt
-           | Some(_, _, (type_vars, srt2)::_) ->
+           | Some(_, _, []) -> srt
+           | Some(_, _, (tvs, srt2)::_) ->
              let
                def continue() =
-		 let ssrt = substSort(zip(type_vars,srts), srt2) in
+		 let ssrt = substSort (zip (tvs, srts), srt2) in
 		 unfoldBaseKeepPrimitives (sp, ssrt)
 	     in
 	       (case srt of
@@ -470,7 +470,7 @@ SpecsToI2L qualifying spec {
 
   op opinfo2declOrDefn: CgContext * Spec * QualifiedId * OpInfo * Option(List String) -> opInfoResult
   
-  def opinfo2declOrDefn(ctxt,spc,qid,(opnames,fixity,(tyvars,srt),opterms),optParNames) =
+  def opinfo2declOrDefn(ctxt,spc,qid,(opnames,fixity,(tvs,srt),opterms),optParNames) =
     let def qid2declid(qid) =
           case qid of
             | Qualified(spcname,name) -> (spcname,name)
@@ -500,7 +500,7 @@ SpecsToI2L qualifying spec {
     %let _ = writeLine("translating op "^lid^"...") in
     let srt = unfoldToArrow(spc,srt) in
     %let _ = writeLine("srt: "^printSort(srt)) in
-    let typ = sort2type(unsetToplevel ctxt,spc,tyvars,srt) in
+    let typ = sort2type(unsetToplevel ctxt,spc,tvs,srt) in
     let ctxt = setCurrentOpSort(ctxt,qid) in
     let res = 
       case typ of 
@@ -821,12 +821,12 @@ SpecsToI2L qualifying spec {
     let srt = inferType(spc,t1) in
     let usrt = unfoldStripSort(spc,srt,false) in
     case usrt of
-      | Boolean _ -> primEq()
-      | Base(Qualified(_,"Nat"),[],_) -> primEq()
-      | Base(Qualified(_,"Integer"),[],_) -> primEq()
-      | Base(Qualified(_,"Char"),[],_) -> primEq()
-     %| Base(Qualified(_,"Float"),[],_) -> primEq()
-      | Base(Qualified(_,"String"),[],_) -> Builtin(StrEquals(t2e t1,t2e t2))
+      | Boolean                            _  -> primEq()
+      | Base    (Qualified(_,"Nat"),    [],_) -> primEq()
+      | Base    (Qualified(_,"Integer"),[],_) -> primEq()
+      | Base    (Qualified(_,"Char"),   [],_) -> primEq()
+     %| Base    (Qualified(_,"Float"),  [],_) -> primEq()
+      | Base    (Qualified(_,"String"), [],_) -> Builtin(StrEquals(t2e t1,t2e t2))
       | _ ->
         let srt = foldSort(spc,termSort t1) in
 	let errmsg = "sorry, the current version of the code generator doesn't "
@@ -855,7 +855,7 @@ SpecsToI2L qualifying spec {
     foldr (fn((fid,fsrt),body) ->
 	   let b = sortAnn(osrt) in
 	   let projsrt = Arrow(osrt,fsrt,b) in
-	   let eqsort = Arrow(Product([("1",fsrt),("2",fsrt)],b),Boolean b,b) in
+	   let eqsort  = Arrow(Product([("1",fsrt),("2",fsrt)],b),Boolean b,b) in
 	   let proj = Fun(Project(fid),projsrt,b) in
 	   let t1 = Apply(proj,varx,b) in
 	   let t2 = Apply(proj,vary,b) in
@@ -1127,19 +1127,19 @@ op foldSort : Spec * Sort -> Sort
 def foldSort(spc,srt) =
   let optsrt =
     foldriAQualifierMap
-    (fn(q,id,sortinfo as (sortnames,tyvars,sortschemes),optsrt) ->
+    (fn(q,id,sortinfo as (aliases,tvs,defs),optsrt) ->
      case optsrt of
        | Some srt -> Some srt
-       | None -> (case sortschemes of
+       | None -> (case defs of
 		    | [] -> None
-		    | (tyvars,srt0)::_ ->
+		    | (tvs,srt0)::_ ->
 		      %let usrt = unfoldBase(spc,srt) in
 		      %let usrt0 = unfoldBase(spc,srt0) in
 		      if equalSort?(srt,srt0) then
 			let b = sortAnn srt0 in
 			let qid = Qualified(q,id) in
-			let tyvars = map (fn(tv) -> TyVar(tv,b)) tyvars in
-			Some(Base(qid,tyvars,b))
+			let tvs = map (fn(tv) -> TyVar(tv,b)) tvs in
+			Some(Base(qid,tvs,b))
 		      else None
 		       )
     )
