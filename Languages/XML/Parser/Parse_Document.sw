@@ -52,18 +52,46 @@ XML qualifying spec
 	       | XMLDecl    _ -> 
 		 {
 		  (when (total > 0)
-		   (error (WFC {description = "XML decl is not the first form in an XML document"})));
+		   (error {kind        = WFC,
+			   requirement = "Any xml header decl should be right at the start of the document.",
+			   problem     = "An XML decl is not the first form in an XML document.",
+			   expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+			   start       = start,
+			   tail        = tail,
+			   peek        = 0,
+			   action      = "Proceed anyway"}));
 		  (when (docs > 0)
-		   (error (WFC {description = "XML decl follows Doctypedecl"})));
+		   (error {kind        = WFC,
+			   requirement = "Any xml header decl should be right at the start of the document.",
+			   problem     = "An xml header decl follows DTD.",
+			   expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+			   start       = start,
+			   tail        = tail,
+			   peek        = 0,
+			   action      = "Proceed anyway"}));
 		  (when (elts > 0)
-		   (error (WFC {description = "XML decl follows Element"})));
+		   (error {kind        = WFC,
+			   requirement = "Any xml header decl should be right at the start of the document.",
+			   problem     = "An xml header decl follows Element",
+			   expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+			   start       = start,
+			   tail        = tail,
+			   peek        = 0,
+			   action      = "Proceed anyway"}));
 		  return (total + 1, xmls + 1, docs, elts)
 		 }
 
 	       | DTD        _ -> 
 		 {
 		  (when (elts > 0)
-		   (error (WFC {description = "Doctypedecl (DTD) follows Element"})));
+		   (error {kind        = WFC,
+			   requirement = "Any DTD decl must be second (after xml header decl)",
+			   problem     = "DTD decl follows Element",
+			   expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+			   start       = start,
+			   tail        = tail,
+			   peek        = 0,
+			   action      = "Proceed anyway"}));
 		  return (total + 1, xmls, docs + 1, elts)
 		 }
 	       | Element    _ -> 
@@ -73,19 +101,54 @@ XML qualifying spec
 	    items);
 
      (when (xmls = 0)
-      (error (VC {description = "No 'xml' decl"})));
+      (error {kind        = VC,
+	      requirement = "Each XML document should begin with an xml header decl.",
+	      problem     = "No 'xml' decl",
+	      expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+	      start       = start,
+	      tail        = tail,
+	      peek        = 0,
+	      action      = "Proceed anyway"}));
 
      (when (xmls > 1)
-      (error (WFC {description = "Multiple 'xml' decls"})));
+      (error {kind        = VC,
+	      requirement = "Each XML document should begin with an xml header decl.",
+	      problem     = "Multiple 'xml' decls",
+	      expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+	      start       = start,
+	      tail        = tail,
+	      peek        = 0,
+	      action      = "Proceed anyway"}));
 
      (when (docs > 1)
-      (error (WFC {description = "Multiple DTD's (doctypedecl's)"})));
+      (error {kind        = WFC,
+	      requirement = "Each XML document may have at most one DTD.",
+	      problem     = "Multiple DTD's (doctypedecl's)",
+	      expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+	      start       = start,
+	      tail        = tail,
+	      peek        = 0,
+	      action      = "Proceed anyway"}));
 
      (when (elts = 0)
-      (error (WFC {description = "No Element in document"})));
+      (error {kind        = WFC,
+	      requirement = "Each XML document must have exactly one top-level element.",
+	      problem     = "No element in document.",
+	      expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+	      start       = start,
+	      tail        = tail,
+	      peek        = 0,
+	      action      = "Proceed anyway"}));
 
-     (when (docs > 1)
-      (error (WFC {description = "Multiple top-level Element's"})));
+     (when (elts > 1)
+      (error {kind        = WFC,
+	      requirement = "Each XML document must have exactly one top-level element.",
+	      problem     = "Multiple top-level Element's.",
+	      expected    = [("xml dtd? element", "xml decl first, optional DTD second, main element last")],
+	      start       = start,
+	      tail        = tail,
+	      peek        = 0,
+	      action      = "Proceed anyway"}));
 
      let doc : Document = {items = items} in
      return (doc,
@@ -159,22 +222,24 @@ XML qualifying spec
       %% Element
       | 60 (* '<' *) :: scout ->
 	{
-	 (possible_element, tail) <- parse_Element start;
+	 (possible_element, tail) <- parse_Element (start, []);
 	 case possible_element of
 	   | Some element ->
 	     return (Element element,
 		     tail)
 	   | _ ->
-	     hard_error (Surprise {context  = "After a '<' while looking for top-level doc-item",
-				   expected = [("'<?xml'",     "initial xml decl"),
-					       ("'<?'",        "PI"),
-					       ("'<!--'",      "Comment"),
-					       ("'<!DOCTYPE'", "DTD"), 
-					       ("'<'",         "Element")],
-				   action   = "immediate failure",
-				   start    = start, 
-				   tail     = scout,
-				   peek     = 10})
+	     hard_error {kind        = Syntax,
+			 requirement = "There should be one top-level element in an XML Document.",
+			 problem     = "No Element was found.",
+			 expected    = [("'<?xml'",     "initial xml decl"),
+					("'<?'",        "PI"),
+					("'<!--'",      "Comment"),
+					("'<!DOCTYPE'", "DTD"), 
+					("'<'",         "Element")],
+			 start       = start, 
+			 tail        = scout,
+			 peek        = 10,
+			 action      = "immediate failure"}
 	    }
 
       %% Whitespace
@@ -186,19 +251,32 @@ XML qualifying spec
 		   tail)
 	   }
 	else
-	  hard_error (Surprise {context  = "Looking for top-level doc-item",
-				expected = [("'<?xml'",           "initial xml decl"),
-					    ("'<?'",              "PI"),
-					    ("'<!--'",            "Comment"),
-					    ("#x9 #xA #xD #x20",  "WhiteSpace"),
-					    ("'<!DOCTYPE'",       "DTD"), 
-					    ("'<'",               "Element")],
-				action   = "immediate failure",
-				start    = start, 
-				tail     = tail,
-				peek     = 10})
+	  hard_error {kind        = Syntax,
+		      requirement = "Each top-level item in an XML Document should be one of the options below.",
+		      problem     = (describe_char char) ^ " was unexpected.",
+		      expected    = [("'<?xml'",           "initial xml decl"),
+				     ("'<?'",              "PI"),
+				     ("'<!--'",            "Comment"),
+				     ("#x9 #xA #xD #x20",  "WhiteSpace"),
+				     ("'<!DOCTYPE'",       "DTD"), 
+				     ("'<'",               "Element")],
+		      start       = start, 
+		      tail        = tail,
+		      peek        = 10,
+		      action      = "immediate failure"}
       | _ ->
-	  hard_error (EOF {context = "Parsing top-level document items",
-			   start   = start})
+	  hard_error {kind        = EOF,
+		      requirement = "Each top-level item in an XML Document should be one of the options below.",
+		      problem     = "EOF occurred first.",
+		      expected    = [("'<?xml'",           "initial xml decl"),
+				     ("'<?'",              "PI"),
+				     ("'<!--'",            "Comment"),
+				     ("#x9 #xA #xD #x20",  "WhiteSpace"),
+				     ("'<!DOCTYPE'",       "DTD"), 
+				     ("'<'",               "Element")],
+		      start       = start,
+		      tail        = [],
+		      peek        = 0,
+		      action      = "immediate failure"}
 
 endspec

@@ -27,12 +27,16 @@ XML qualifying spec
       | first_char :: tail ->
         {
 	 (when (~ (name_start_char? first_char))
-	  (error (Surprise {context  = "Parsing name",
-			    action   = "Pretending character is legal start of name",
-			    expected = [("[A-Z][a-z]_:", "Initial character of name")],
-			    start    = start,
-			    tail     = tail,
-			    peek     = 10})));
+	  (error {kind        = Syntax,
+		  requirement = "Names must start with letters, underbar, or colon",
+		  problem     = (describe_char first_char) ^ " is not legal as the first character of a name",
+		  expected    = [("[A-Z][a-z]", "Letter"),
+				 ("[_:]",       "special name char"),
+				 ("<see doc>",  "unicode basechar or ideograph")],
+		  start       = start,
+		  tail        = tail,
+		  peek        = 10,
+		  action      = "Pretending character is legal start of name"}));
 	 let def aux (tail, name_chars) =
               case tail of
 		| char :: scout ->
@@ -41,14 +45,22 @@ XML qualifying spec
 		   else
 		     return (cons (first_char, rev name_chars), tail))
 		| _ ->
-		  hard_error (EOF {context = "While parsing name.", 
-				   start   = start})
+		  return (cons (first_char, rev name_chars), [])
+		      
 	 in
 	   aux (tail, [])
 	   }
       | _ ->
-	hard_error (EOF {context = "While parsing name.", 
-			 start   = start})
+	hard_error {kind        = EOF,
+		    requirement = "A name was required",
+		    problem     = "EOF occurred first",
+		    expected    = [("[A-Z][a-z]", "Letter"),
+				   ("[_:]",       "special name char"),
+				   ("<see doc>",  "unicode basechar or ideograph")],
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    action      = "Immediate failure"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -66,18 +78,52 @@ XML qualifying spec
   %% -------------------------------------------------------------------------------------------------
 
   def parse_NmToken (start : UChars) : Required Name =
-    let def aux (tail, name_chars) =
-         case tail of
-	   | char :: scout ->
-	     (if name_char? char then
-		aux (scout, cons (char, name_chars))
-	      else
-		return (rev name_chars, tail))
-	   | _ ->
-		hard_error (EOF {context = "While parsing NmToken.", 
-				 start   = start})
-    in
-      aux (start, [])
+    case start of
+      | first_char :: tail ->
+        {
+	 (when (~ (name_char? first_char))
+	  (error {kind        = Syntax,
+		  requirement = "The first character of a NmToken is restricted to letters, digits, etc.",
+		  problem     = (describe_char first_char) ^ "is not legal as the first character of a NmToken",
+		  expected    = [("[A-Z][a-z]", "Letter"),
+				 ("[0-9]",      "Digit"),
+				 ("[_:-.]",     "special name char"),
+				 ("<see doc>",  "unicode basechar or ideograph"),
+				 ("<see doc>",  "unicode digit"),
+				 ("<see doc>",  "unicode combining char"),
+				 ("<see doc>",  "unicode extender  char")],
+		  start       = start,
+		  tail        = tail,
+		  peek        = 10,
+		  action      = "Pretending character is legal start of NmToken"}));
+	 let def aux (tail, name_chars) =
+              case tail of
+		| char :: scout ->
+		  (if name_char? char then
+		     aux (scout, cons (char, name_chars))
+		   else
+		     return (cons (first_char, rev name_chars), tail))
+		| _ ->
+		  return (cons (first_char, rev name_chars), [])
+		      
+	 in
+	   aux (tail, [])
+	   }
+      | _ ->
+	hard_error {kind        = EOF,
+		    requirement = "An NmToken was expected",
+		    problem     = "EOF occurred first",
+		    expected    = [("[A-Z][a-z]", "Letter"),
+				   ("[0-9]",      "Digit"),
+				   ("[_:-.]",     "special name char"),
+				   ("<see doc>",  "unicode basechar or ideograph"),
+				   ("<see doc>",  "unicode digit"),
+				   ("<see doc>",  "unicode combining char"),
+				   ("<see doc>",  "unicode extender  char")],
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    action      = "Immediate failure"}
 
   %% -------------------------------------------------------------------------------------------------
   %%

@@ -38,21 +38,6 @@ XML qualifying spec
        def probe (tail, rev_char_data, rev_items, qchar) =
 	 case tail of
 
-	   | 60  (* '<' *)   :: tail -> 
-	     {
-	      error (Surprise {context  = "'<' is not allowed in an entity value", 
-			       expected = [("[^%&]", "Something other than percent, ampersand, or quote")], 
-			       action   = "Treating '<' as normal character",
-			       start    = start,
-			       tail     = tail,
-			       peek     = 10});
-	      probe (tail,
-		     [60], 
-		     cons (NonRef (rev rev_char_data),
-			   rev_items),
-		     qchar)
-	     }
-
 	   | 38  (* '&' *)   :: tail -> 
 	     {
 	      %% parse_Reference assumes we're just past the ampersand.
@@ -87,19 +72,37 @@ XML qualifying spec
 		      rev_items,
 		      qchar)
 	   | _ ->
-	     hard_error (EOF {context = "Parsing EntityValue", 
-			      start   = start})
+	     hard_error {kind        = EOF,
+			 requirement = "A quoted expression was being parsed as the value for an Entity declaration.",
+			 problem     = "EOF occurred before it terminated.",
+			 expected    = [("[" ^ (string [qchar]) ^ "] ", 
+					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
+			 start       = start,
+			 tail        = start,
+			 peek        = 0,
+			 action      = "Immediate error"}
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], [], 39)
+        | char :: _ ->
+	  hard_error {kind        = Syntax,
+		      requirement = "A quoted expression is needed for the value of an Entity declaration.",
+		      problem     = (describe_char char) ^ " was seen instead.",
+		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")],   % silly comment to appease emacs: ")
+		      start       = start,
+		      tail        = start,
+		      peek        = 10,
+		      action      = "Immediate error"}
         | _ ->
-	  hard_error (Surprise {context = "About to parse quoted text while scanning EntityValue", 
-				expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")],
-				action   = "Immediate error",
-				start    = start,
-				tail     = start,
-				peek     = 10})
+	  hard_error {kind        = Syntax,
+		      requirement = "A quoted expression is needed for the value of an Entity declaration.",
+		      problem     = "EOF occurred first.",
+		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")],   % silly comment to appease emacs: ")
+		      start       = start,
+		      tail        = start,
+		      peek        = 10,
+		      action      = "Immediate error"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -114,12 +117,14 @@ XML qualifying spec
 
 	   | 60  (* '<' *)   :: _ -> 
 	     {
-	      error (Surprise {context  = "'<' is not allowed in an attribute value", 
-			       expected = [("[^<&]", "Something other than open-angle, ampersand, or quote")], 
-			       action   = "Treating '<' as normal character",
-			       start    = start,
-			       tail     = tail,
-			       peek     = 10});
+	      error {kind        = Syntax,
+		     requirement = "'<', '&', and '\"' are not allowed in an attribute value.",            % silly comment to appease emacs: ")
+		     problem     = "'<' was seen",
+		     expected    = [("[^<&\"]", "Something other than open-angle, ampersand, or quote")],  % silly comment to appease emacs: ")
+		     start       = start,
+		     tail        = tail,
+		     peek        = 10,
+		     action      = "Treating '<' as normal character"};
 	      probe (tail,
 		     [60], 
 		     cons (NonRef (rev rev_char_data),
@@ -152,8 +157,15 @@ XML qualifying spec
 		      rev_items,
 		      qchar)
 	   | _ ->
-	     hard_error (EOF {context = "Parsing attribute value", 
-			      start   = start})
+	     hard_error {kind        = EOF,
+			 requirement = "An attribute value was expected.", 
+			 problem     = "EOF occurred first.",
+			 expected    = [("[" ^ (string [qchar]) ^ "] ", 
+					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
+			 start       = start,
+			 tail        = tail,
+			 peek        = 10,
+			 action      = "Immediate failure"}
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], [], 34)
@@ -203,18 +215,36 @@ XML qualifying spec
 		      cons (char, rev_text),
 		      qchar)
 	   | _ ->
-	     hard_error (EOF {context = "scanning quoted text", 
-			      start   = start})
+	     hard_error {kind        = EOF,
+			 requirement = "Quoted text was required.",
+			 problem     = "EOF occurred first.",
+			 expected    = [("[" ^ (string [qchar]) ^ "] ", 
+					 (if qchar = 39 then "apostrophe" else "double-quote") ^ "to terminate quoted text")],
+			 start       = start,
+			 tail        = tail,
+			 peek        = 10,
+			 action      = "Immediate failure"}
     in
       case start of
 	| 34 (* double-quote *) :: tail -> probe (tail, [], 34)
 	| 39 (* apostrophe   *) :: tail -> probe (tail, [], 39)
+        | char :: _ ->
+	  hard_error {kind        = Syntax,
+		      requirement = "Quoted text was required.",
+		      problem     = (describe_char char) ^ " was seen instead.",
+		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")], % silly comment to appease emacs: ")
+		      start       = start,
+		      tail        = start,
+		      peek        = 10,
+		      action      = "Immediate error"}
         | _ ->
-	  hard_error (Surprise {context  = "About to parse quoted text",
-				expected = [("['\"] ", "apostrophe or double-quote to begin quoted text")],
-				action   = "Immediate error",
-				start    = start,
-				tail     = start,
-				peek     = 10})
+	  hard_error {kind        = Syntax,
+		      requirement = "Quoted text was required.",
+		      problem     = "EOF occurred first.",
+		      expected    = [("['\"] ", "apostrophe or double-quote to begin quoted text")], % silly comment to appease emacs: ")
+		      start       = start,
+		      tail        = start,
+		      peek        = 10,
+		      action      = "Immediate error"}
 
 endspec

@@ -70,21 +70,33 @@ XML qualifying spec
 		      w3          = wx,
 		      markups     = markups},
 		     tail)
-	   | _ ->
+	   | char :: _ ->
 	     {
-	      error (Surprise {context  = "ending parse of DTD",
-			       expected = [("'>'", "to terminate DTD")],
-			       action   = "Pretend '>' was seen",
-			       start    = start,
-			       tail     = tail,
-			       peek     = 10});
+	      error {kind         = Syntax,
+		     requirement  = "DTD must terminate with '>'.",
+		     problem      = (describe_char char) ^ " was unexpected.",
+		     expected     = [("'>'", "to terminate DTD")],
+		     start        = start,
+		     tail         = tail,
+		     peek         = 10,
+		     action       = "Pretend '>' was seen"};
 	      return ({w1          = w1,
 		       name        = name,
 		       external_id = None,
 		       w3          = wx,
 		       markups     = markups},
 		      tail)
-	     }}
+	      }
+	   | _ ->
+	     hard_error {kind         = Syntax,
+			 requirement  = "DTD must terminate with '>'.",
+			 problem      = "EOF occurred first.",
+			 expected     = [("'>'", "to terminate DTD")],
+			 start        = start,
+			 tail         = tail,
+			 peek         = 10,
+			 action       = "Pretend '>' was seen"}
+	    }
       | _ ->
 	{
 	 (external_id, tail) <- parse_ExternalID tail;
@@ -98,21 +110,33 @@ XML qualifying spec
 		      w3          = w3,
 		      markups     = markups},
 		     tail)
-	   | _ ->
+	   | char :: _ ->
 	     {
-	      error (Surprise {context  = "ending parse of DTD",
-			       expected = [("'>'", "to terminate DTD")],
-			       action   = "Pretend '>' was seen",
-			       start    = start,
-			       tail     = tail,
-			       peek     = 10});
+	      error {kind        = Syntax,
+		     requirement = "DTD must terminate with '>'.",
+		     problem     = (describe_char char) ^ " was unexpected.",
+		     expected    = [("'>'", "to terminate DTD")],
+		     start       = start,
+		     tail        = tail,
+		     peek        = 10,
+		     action      = "Pretend '>' was seen"};
 	      return ({w1          = w1,
 		       name        = name,
 		       external_id = Some (wx, external_id),
 		       w3          = w3,
 		       markups     = markups},
 		      tail)
-	     }}}
+	      }
+	   | _ ->
+	      hard_error {kind        = Syntax,
+		     requirement  = "DTD must terminate with '>'.",
+		     problem      = "EOF occurred first.",
+		     expected    = [("'>'", "to terminate DTD")],
+		     start       = start,
+		     tail        = [],
+		     peek        = 0,
+		     action      = "Pretend '>' was seen"}
+	      }}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -206,16 +230,37 @@ XML qualifying spec
 		     probe (tail, cons (Sep (WhiteSpace w1), rev_markups))
 		    }
 		  else
-		    hard_error (Surprise {context  = "Unrecognized markup/declsep in DTD",
-					  expected = [("misc options", "various decls")],
-					  action   = "Immediate failure",
-					  start    = start,
-					  tail     = tail,
-					  peek     = 10})
-		    
+		    hard_error {kind        = Syntax,
+				requirement = "markup or declsep in DTD must be one of those indicated below.",
+				problem     = (describe_char char) ^ " was unexpected.",
+				expected    = [("'<!ELEMENT'",            "element decl"),
+					       ("'<!ATTLIST'",            "attribute list decl"),
+					       ("'<!ENTITY'",             "entity decl"),					       
+					       ("'<!NOTATION'",           "notation decl"),					       
+					       ("'<--'",                  "comment"),
+					       ("'%'",                    "PE Reference"),
+					       ("( #9 | #A | #D | #20 )", "whitespace"),
+					       ("']'",                    "end of markups in DTD")],
+				start       = start,
+				tail        = tail,
+				peek        = 10,
+				action      = "Immediate failure"}
 		| _ ->
-		    hard_error (EOF {context = "parsing markups in DTD",
-				     start   = start})
+		    hard_error {kind        = EOF,
+				requirement = "markup or declsep in DTD must be one of those indicated below.",
+				problem     = "EOF occurred first.",
+				expected    = [("'<!ELEMENT'",            "element decl"),
+					       ("'<!ATTLIST'",            "attribute list decl"),
+					       ("'<!ENTITY'",             "entity decl"),					       
+					       ("'<!NOTATION'",           "notation decl"),					       
+					       ("'<--'",                  "comment"),
+					       ("'%'",                    "PE Reference"),
+					       ("( #9 | #A | #D | #20 )", "whitespace"),
+					       ("']'",                    "end of markups in DTD")],
+				start       = start,
+				tail        = [],
+				peek        = 0,
+				action      = "immediate failure"}
 	 in
 	   probe (tail, []))
 	
@@ -227,12 +272,15 @@ XML qualifying spec
     {
      (id, tail) <- parse_GenericID start;
      (when (~ (external_id? id))
-      (error (Surprise {context = "Parsing external ID",
-			expected = [("external id", "external id")],
-			action   = "Pretend it's ok",
-			start    = start,
-			tail = tail,
-			peek = 10})));
+      (error {kind        = Syntax,
+	      requirement = "external ID must contain a system literal.",
+	      problem     = "external ID does not contain system literal.",
+	      expected    = [("'SYSTEM \"...\"'",         "id with system literal"),
+			     ("'PUBLIC \"...\" \"...\"'", "id with public literal and system literal")],
+	      start       = start,
+	      tail        = tail,
+	      peek        = 10,
+	      action      = "Pretend it's ok"}));
      return (id, tail)
     }
 

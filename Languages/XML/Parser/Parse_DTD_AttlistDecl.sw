@@ -77,20 +77,33 @@ XML qualifying spec
 			    defs = rev rev_att_defs,
 			    w2   = w2},
 			   tail)
-		 | _ ->
+		 | char :: _ ->
 		   {
-		    error (Surprise {context = "parsing attribute list decl in DTD",
-				     expected = [("'>'", "to terminate decl")], 
-				     action   = "Pretend '>' was seen",
-				     start    = start,
-				     tail     = tail,
-				     peek     = 10});
+		    error {kind        = Syntax,
+			   requirement = "ATTLIST decl in DTD must terminate with '>'.",
+			   problem     = (describe_char char) ^ " was unexpected.",
+			   expected    = [("'>'", "to terminate decl")], 
+			   start       = start,
+			   tail        = tail,
+			   peek        = 10,
+			   action      = "Pretend '>' was seen"};
 		    return ({w1   = w1,
 			     name = name,
 			     defs = rev rev_att_defs,
 			     w2   = w2},
 			    tail)
-		    }}}
+		    }
+		 | _ ->
+		   hard_error {kind        = EOF,
+			       requirement = "ATTLIST decl in DTD must terminate with '>'.",
+			       problem     = "EOF occurred first.",
+			       expected    = [("'>'", "to terminate decl")], 
+			       start       = start,
+			       tail        = [],
+			       peek        = 0,
+			       action      = "Immediate failure"}
+		   }}
+
      in
        probe (tail, [])
       }
@@ -183,14 +196,26 @@ XML qualifying spec
 	parse_NotationType tail
       | 40 (* open-paren *) :: tail ->
         parse_Enumeration tail
+      | char :: _ -> 
+	hard_error {kind        = Syntax,
+		    requirement = "EnumeratedType ::= NotationType | Enumeration",
+		    problem     = (describe_char char) ^ " was unexpected.",
+		    expected    = [("'NOTATION'", "to start notationtype"),
+				   ("'('",        "to start enumeration")],
+		    start       = start,
+		    tail        = start,
+		    peek        = 10,
+		    action      = "Immediate failure"}
       | _ -> 
-	hard_error (Surprise {context = "Parsing DTD",
-			      expected = [("'NOTATION'", "to start notationtype"),
-					  ("'('",        "to start enumeration")],
-			      action   = "Immediate failure",
-			      start    = start,
-			      tail     = start,
-			      peek     = 10})
+	hard_error {kind        = EOF,
+		    requirement = "EnumeratedType ::= NotationType | Enumeration",
+		    problem     = "EOF occurred first.",
+		    expected    = [("'NOTATION'", "to start notationtype"),
+				   ("'('",        "to start enumeration")],
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    action      = "Immediate failure"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -236,25 +261,48 @@ XML qualifying spec
 				     others = rev rev_names,
 				     w3     = w3},
 			   tail)
+		 | char :: _ ->
+		   hard_error {kind        = Syntax,
+			       requirement = "NOTATION decl uses '|' to separate options.",
+			       problem     = (describe_char char) ^ " was unexpected.",
+			       expected    = [("'|'", "to add more options"),
+					      ("')'", "to close decl")],
+			       start       = start,
+			       tail        = tail,
+			       peek        = 10,
+			       action      = "Immediate failure"}
 		 | _ ->
-		   hard_error (Surprise {context = "Parsing Enumerated type",
-					 expected = [("'|'", "to add more options"),
-						     ("')'", "to close decl")],
-					 action   = "Immediate failure",
-					 start    = start,
-					 tail     = tail,
-					 peek     = 10})
+		   hard_error {kind        = EOF,
+			       requirement = "NOTATION decl uses '|' to separate options.",
+			       problem     = "EOF occurred first.",
+			       expected    = [("'|'", "to add more options"),
+					      ("')'", "to close decl")],
+			       start       = start,
+			       tail        = tail,
+			       peek        = 10,
+			       action      = "Immediate failure"}
 		  }
 	  in
 	    probe (tail, [])
 	   }
+       | char :: _ -> 
+	   hard_error {kind        = Syntax,
+		       requirement = "NOTATION decl in DTD used '(' to initiate options.",
+		       problem     = (describe_char char) ^ " was unexpected.",
+		       expected    = [("'('", "to begin enumeration")],
+		       start       = start,
+		       tail        = tail,
+		       peek        = 10,
+		       action      = "Immediate failure"}
        | _ -> 
-	   hard_error (Surprise {context = "Parsing NOTATION decl in DTD",
-				 expected = [("'('", "to begin enumeration")],
-				 action   = "Immediate failure",
-				 start    = start,
-				 tail     = tail,
-				 peek     = 10})
+	   hard_error {kind        = EOF,
+		       requirement = "NOTATION decl in DTD used '(' to initiate options.",
+		       problem     = "EOF occurred first.",
+		       expected    = [("'('", "to begin enumeration")],
+		       start       = start,
+		       tail        = [],
+		       peek        = 0,
+		       action      = "Immediate failure"}
 	  }
 
   %% -------------------------------------------------------------------------------------------------
@@ -292,15 +340,27 @@ XML qualifying spec
 				   others = rev rev_names,
 				   w2     = w2},
 		      tail)
+	    | char :: _ ->
+	      hard_error {kind        = Syntax,
+			  requirement = "Enumeration decl in DTD requires '|' to separate options.",
+			  problem     = (describe_char char) ^ " was unexpected.",
+			  expected    = [("'|'", "to continue enumerating"),
+					 ("')'", "to terminate enumeration decl")],
+			  start       = start,
+			  tail        = tail,
+			  peek        = 10,
+			  action      = "Immediate failure"}
 	    | _ ->
-	      hard_error (Surprise {context = "parsing Enumeration decl in DTD",
-				    expected = [("'|'", "to continue enumerating"),
-						("')'", "to terminate enumeration decl")],
-				    action   = "Immediate failure",
-				    start    = start,
-				    tail     = tail,
-				    peek     = 10})
-	     }
+	      hard_error {kind        = Syntax,
+			  requirement = "Enumeration decl in DTD requires '|' to separate options.",
+			  problem     = "EOF occurred first.",
+			  expected    = [("'|'", "to continue enumerating"),
+					 ("')'", "to terminate enumeration decl")],
+			  start       = start,
+			  tail        = tail,
+			  peek        = 10,
+			  action      = "Immediate failure"}
+	      }
      in
        probe (tail, [])
       }

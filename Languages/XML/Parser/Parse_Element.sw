@@ -66,7 +66,7 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_Element (start : UChars) : Possible Element =
+  def parse_Element (start : UChars, pending_open_tags : List (ElementTag)) : Possible Element =
     {
      (possible_open_tag, tail) <- parse_OpenTag start;
      case possible_open_tag of
@@ -77,10 +77,8 @@ XML qualifying spec
 		    tail)
 	  else
 	    {
-	     (content, tail) <- parse_Content tail;
-	     (etag,    tail) <- parse_ETag    tail;
-	     (when (~ (open_tag.name = etag.name))
-	      (error (WFC {description = "Mismatch: \n   Open: " ^ (string open_tag.name) ^ "\n  Close: " ^ (string etag.name)})));
+	     (content, tail) <- parse_Content (tail, cons (open_tag, pending_open_tags));
+	     (etag,    tail) <- parse_ETag    (tail, cons (open_tag, pending_open_tags));
 	     return (Some (Full {stag    = open_tag, 
 				 content = content, 
 				 etag    = etag}),
@@ -109,10 +107,20 @@ XML qualifying spec
       case possible_tag of
 	| Some tag ->
 	  {
-	   (when (end_tag? tag)
-	    (error (WFC {description = "Expected an STag or EmptyElemTag, but saw closing tag: " ^ (string tag.name)})));
 	   (when (~ ((start_tag? tag) or (empty_tag? tag)))
-	    (error (WFC {description = "Expected an STag or EmptyElemTag, but saw unrecognized tag: " ^ (string tag.name)})));
+	    (error {kind        = WFC,
+		    requirement = "Each element must begin with a start tag or be an empty element tag",
+		    problem     = ("Unexpected "
+				   ^ (if end_tag? tag then "closing" else "unrecognized") 
+				   ^ " tag: '</" 
+				   ^ (string tag.name)
+				   ^ ">'"),
+		    expected    = [(" ", "Start Tag"),
+				   (" ", "Empty Element Tag")],
+		    start       = start,
+		    tail        = tail,
+		    peek        = 10,
+		    action      = "Proceed as if it were a start tag"}));
 	   return (possible_tag, tail)}
 	| _ -> return (None, start)
      }
@@ -123,12 +131,12 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_Content (start : UChars) : Required Content =
+  def parse_Content (start : UChars, pending_open_tags : List (ElementTag)) : Required Content =
     let 
        def parse_items (tail, rev_items) =
 	 let (char_data, tail) = parse_CharData tail in
 	 {
-	  (possible_item, scout) <- parse_Content_Item tail;
+	  (possible_item, scout) <- parse_Content_Item (tail, pending_open_tags);
 	  case possible_item of
 	    | Some item ->
 	      parse_items (scout,
@@ -148,7 +156,7 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_Content_Item (start : UChars) : Possible Content_Item =
+  def parse_Content_Item (start : UChars, pending_open_tags : List (ElementTag)) : Possible Content_Item =
     %% All the options are readily distinguishable:
     %%
     %% Reference  -- "&" ...
@@ -184,7 +192,7 @@ XML qualifying spec
 	     return (None, start)
 	   | 63 (* '?' *) :: _ -> 
 	     %% "<?"
-	     %% pase_PI assumes we're past '<?'
+	     %% parse_PI assumes we're past '<?'
 	     {
 	      (pi, tail) <-  parse_PI tail;
 	      return (Some (PI pi),
@@ -193,7 +201,7 @@ XML qualifying spec
 	   | _ ->
 	     {
 	      %% parse_Element assumes we're back at the original "<"
-	      (possible_element, tail) <- parse_Element start; 
+	      (possible_element, tail) <- parse_Element (start, pending_open_tags); 
 	      case possible_element of
 		| Some element ->
 		  return (Some (Element element),
@@ -202,8 +210,19 @@ XML qualifying spec
 		  return (None, start)
 	      })
       | [] ->
-	hard_error (EOF {context = "parsing content of element",
-			 start   = start})
+	hard_error {kind        = EOF,
+		    requirement = "Each item in the element contents must be one of the options below.",
+		    problem     = "EOF occcurred first.",
+		    expected    = [("'<!--' ...",      "comment"),
+				   ("'<![CDATA[' ...", "unparsed character data"),				   
+				   ("'</' ...",        "end tag"),				   
+				   ("'<?' ...",        "PI"),
+				   ("'<' Name ...",    "start tag or empty element tag"),				   
+				   ("'&' ...",         "reference")],
+		    start       = start,
+		    tail        = [],
+		    peek        = 0,
+		    action      = "immediate failure"}
       | 38  (* '&' *)   :: tail -> 
 	{
 	 %% parse_Reference assumes we're just past the ampersand.
@@ -223,27 +242,50 @@ XML qualifying spec
   %%
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_ETag (start : UChars) : Required ETag =
+  def parse_ETag (start : UChars, pending_open_tags : List (STag)) : Required ETag =
+    let stag = hd pending_open_tags in
+    let name = string stag.name     in
     { (possible_tag, tail) <- parse_Option_ElementTag start;
       case possible_tag of
-	| Some tag ->
+	| Some etag ->
 	  {
-	   (when (~ (end_tag? tag))
-	    (error (Surprise {context = "parsing ETag",
-			      expected = [("</ ...>", "an ending tag")],
-			      action   = "Pretend tag is an end tag",
-			      start    = start,
-			      tail     = tail,
-			      peek     = 10})));
-	   return (tag,tail)
-	   }
+	   (when (~ (end_tag? etag))
+	    (error {kind        = Syntax,
+		    requirement = "An element must terminate with an end tag",
+		    problem     = "tag named " ^ (string etag.name) ^  " was not an end tag",
+		    expected    = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
+		    start       = start,
+		    tail        = tail,
+		    peek        = 10,
+		    action      = "Pretend tag is an end tag"}));
+	   if stag.name = etag.name then
+	     return (etag, tail)
+	   else
+	     {
+	      error {kind        = WFC,
+		     requirement = "Element Type Match : The Name in an element's end-tag must match the element type in the start-tag.",
+		     problem     = "Unexpected end tag: '</" ^ (string etag.name) ^ ">'",
+		     expected    = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
+		     start       = start,
+		     tail        = tail,
+		     peek        = 0,
+		     action      = "Interpolate missing close tag for " ^ name};
+	      return ({prefix     = [47],
+		       name       = stag.name,
+		       attributes = [],
+		       whitespace = [],
+		       postfix    = []},
+		      start)
+	     }}
 	| _ -> 
-	  hard_error (Surprise {context = "parsing ETag",
-				expected = [("< ...>", "some kind of element tag")],
-				action   = "Immediate failure",
-				start    = start,
-				tail     = tail,
-				peek     = 10})
+	  hard_error {kind        = Syntax,
+		      requirement = "An element must terminate with an end tag.",
+		      problem     = "Element content terminated, but no end tag followed.", 
+		      expected    = [("'</" ^ name ^ ">'", "ETag to close earlier STag with that name")],
+		      start       = start,
+		      tail        = tail,
+		      peek        = 10,
+		      action      = "Immediate failure"}
 	 }
 
 endspec

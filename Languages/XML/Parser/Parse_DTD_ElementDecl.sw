@@ -69,12 +69,14 @@ XML qualifying spec
 		 tail)
        | _ ->
 	 {
-	  error (Surprise {context  = "Near close of elementdecl in dtd",
-			   expected = [("'>'", "close of ElementDecl in DTD")],
-			   action   = "Pretend '>' was seen",
-			   start    = start,
-			   tail     = tail,
-			   peek     = 10});
+	  error {kind        = Syntax,
+		 requirement = "An ElementDecl in a DTD must end with '>'",
+		 problem     = "Some ElementDecl doesn't end with '>'",
+		 expected    = [("'>'", "end of ElementDecl in DTD")],
+		 start       = start,
+		 tail        = tail,
+		 peek        = 10,
+		 action      = "Pretend '>' was seen"};
 	  return ({w1       = w1,
 		   name     = name,
 		   w2       = w2,
@@ -120,13 +122,24 @@ XML qualifying spec
       %% test for open-paren to rule out Name option in cp production
       | 60 (* open-paren *) :: tail ->
         parse_CP start
+      | char :: _ ->
+	hard_error {kind        = Syntax,
+		    requirement = "A children clause in an ElementDecl in a DTD should begin with '(' for a choice or seq.",
+		    problem     = "A children clause begins with " ^ (describe_char char) ^ " instead.",
+		    expected    = [("'('", "To start description of a choice or sequence")],
+		    start       = start,
+		    tail        = start,
+		    peek        = 10,
+		    action      = "Immediate failure"}
       | _ ->
-	hard_error (Surprise {context  = "Parsing children in elementdecl in DTD",
-			      expected = [("'('", "To start description of a choice or sequence")],
-			      action   = "Immediate failure",
-			      start    = start,
-			      tail     = start,
-			      peek     = 10})
+	hard_error {kind        = Syntax,
+		    requirement = "A children clause in an ElementDecl in a DTD should begin with '(' for a choice or seq.",
+		    problem     = "EOF occurred first.",
+		    expected    = [("'('", "To start description of a choice or sequence")],
+		    start       = start,
+		    tail        = start,
+		    peek        = 10,
+		    action      = "Immediate failure"}
 
   %% -------------------------------------------------------------------------------------------------
   %%
@@ -215,15 +228,28 @@ XML qualifying spec
 	     return (Seq {items = [(w1, cp, w2)]},
 		     tail)
 
+	   | char :: _ ->
+	     hard_error {kind        = Syntax,
+			 requirement = "A choice or sequence in an elementdecl in DTD should continue with '|' or ',', or end with ')'.",
+			 problem     = "Parsing description of choice or sequence in elementdecl in DTD",
+			 expected    = [("'|'", "indication of choice"),
+					("','", "indication of sequence"),
+					("')'", "termination of choise or sequence")],
+			 start    = start,
+			 tail     = tail,
+			 peek     = 10,
+			 action   = "Immediate failure"}
 	   | _ ->
-	     hard_error (Surprise {context  = "Parsing description of choice or sequence in elementdecl in DTD",
-				   expected = [("'|'", "indication of choice"),
-					       ("','", "indication of sequence"),
-					       ("')'", "termination of choise or sequence")],
-				   action   = "Immediate failure",
-				   start    = start,
-				   tail     = tail,
-				   peek     = 10})
+	     hard_error {kind        = Syntax,
+			 requirement = "A choice or sequence in an elementdecl in DTD should continue with '|' or ',', or end with ')'.",
+			 problem     = "Parsing description of choice or sequence in elementdecl in DTD",
+			 expected    = [("'|'", "indication of choice"),
+					("','", "indication of sequence"),
+					("')'", "termination of choise or sequence")],
+			 start    = start,
+			 tail     = tail,
+			 peek     = 10,
+			 action   = "Immediate failure"}
 	    }
 
       | _ ->
@@ -273,20 +299,35 @@ XML qualifying spec
 						 names = rev rev_names,
 						 w2    = w2}),
 				    tail)
-			  | _  ->
+			  | char :: _ ->
 			    {
-			     (when true
-			      (error (Surprise {context  = "Parsing Mixed construction in elementdecl in DTD", % comment to balance parens: '('
-						expected = [("')'", "to terminate #PCDATA declaration")],
-						action   = "Pretending ')' was seen",
-						start    = start,
-						tail     = tail,
-						peek     = 10})));
+			     error {kind        = Syntax,
+				    requirement = "Mixed construction in elementdecl in DTD requires '|' or ')'.",
+				    problem     = (describe_char char) ^ "was unexpected",
+				    expected    = [("'|'",  "to indicate a new alternative"),
+						   ("')*'", "to terminate declaration")],
+				    start       = start,
+				    tail        = tail,
+				    peek        = 10,
+				    action      = "Pretend ')*' was seen"};
 			     return (Some (Names {w1    = w1,
 						  names = rev rev_names,
 						  w2    = w2}),
-				     tail)
-			    }}
+				     (case tail of
+					| 41 :: tail -> tail  % skip past close paren
+					| _ -> tail))
+			    }
+			  | _  ->
+			    hard_error {kind        = EOF,
+					requirement = "Mixed construction in elementdecl in DTD requires '|' or ')'.",
+					problem     = "EOF occurred first",
+					expected    = [("'|'",  "to indicate a new alternative"),
+						       ("')*'", "to terminate declaration")],
+					start       = start,
+					tail        = [],
+					peek        = 0,
+					action      = "Immediate failure"}
+			   }
 		   in
 		     probe (tail_0, []))
 		}

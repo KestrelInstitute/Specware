@@ -57,76 +57,96 @@ XML qualifying spec
         (case tail of
 	   | 120 (* 'x' *) :: tail ->
              %% hex ...
-             (case parse_hex tail of
-		| Some (char, tail) ->
-		  (case tail of
-		     | 59  (* ';' *) :: tail ->
-		       {
-		        (when (~ (char? char))
-			 (error (Surprise {context  = "Illegal (hex) character reference",
-					   action   = "Passing bogus character along",
-					   expected = [("hex digits", "legal Unicode character")],
-					   start    = start,
-					   tail     = tail,
-					   peek     = 0})));
-		        return (Char {style = Hex,
-				      char  = char},
-				tail)
-			}
-		     | _ -> 
-		       {error (Surprise {context  = "Illegal (hex) character reference ",
-					 action   = "Pretending ';' was seen",
-					 expected = [(";", "termination of hex character reference")],
-					 start    = start,
-					 tail     = tail,
-					 peek     = 10});
-		        return (Char {style = Hex,
-				      char  = char},
-				tail)
-			})
+	     {
+	      (char, tail) <- parse_hex tail;
+	      (when (~ (char? char))
+	       (error {kind        = Syntax,
+		       requirement = "Not all numbers are legal Unicode characters.",
+		       problem     = (describe_char char) ^ "is not a legal Unicode character.",
+		       expected    = [("<see doc>", "hex code for legal Unicode character")],
+		       start       = start,
+		       tail        = tail,
+		       peek        = 0,
+		       action      = "Will pass bogus character along"}));
+	      case tail of
+		| 59  (* ';' *) :: tail ->
+		  return (Char {style = Hex,
+				char  = char},
+			  tail)
+		| char :: _ ->
+		  {
+		   error {kind        = Syntax,
+			  requirement = "Hex character references must terminate with ';'.",
+			  problem     = (describe_char char) ^ " occurred first",
+			  expected    = [("';'", "termination of hex character reference")],
+			  start       = start,
+			  tail        = tail,
+			  peek        = 10,
+			  action      = "Will pretend interpolated ';' was seen."};
+		   return (Char {style = Hex,
+				 char  = char},
+			   tail)
+		  }
+		    
 		| _ -> 
-		     hard_error (Surprise {context  = "Illegal (hex) character reference ",
-					   action   = "Immediate failure",
-					   expected = [("[0-9A-Fa-f", "hex digit")],
-					   start    = start,
-					   tail     = tail,
-					   peek     = 10}))
+		  {
+		   error {kind        = EOF,
+			  requirement = "Hex character references must terminate with ';'.",
+			  problem     = "EOF occurred first.",
+			  expected    = [("';'", "termination of hex character reference")],
+			  start       = start,
+			  tail        = tail,
+			  peek        = 10,
+			  action      = "Will pretend interpolated ';' was seen"};
+		   return (Char {style = Hex,
+				 char  = char},
+			   tail)
+		  }}
 	   | _ ->
-	     case parse_decimal tail of
-	       | Some (char, tail) ->
-		 (case tail of
-		    | 59  (* ';' *) :: tail ->
-		      {
-		       (when (~ (char? char))
-			 (error (Surprise {context  = "Illegal (decimal) character reference ",
-					   action   = "Passing bogus character along",
-					   expected = [("decimal digits", "legal Unicode character")],
-					   start    = start,
-					   tail     = tail,
-					   peek     = 0})));
-		       return (Char {style = Decimal,
-				     char  = char},
-			       tail)
-		       }
-		    | _ -> 
-		      {
-		       error (Surprise {context  = "Illegal (decimal) character reference ",
-					action   = "Pretending ';' was seen",
-					expected = [(";", "termination of decimal character reference")],
-					start    = start,
-					tail     = tail,
-					peek     = 10});
-		       return (Char {style = Decimal,
-				     char  = char},
-			       tail)
-		       })
-	       | _ -> 
-		    hard_error (Surprise {context  = "Illegal (decimal) character reference ",
-					  action   = "Immediate failure",
-					  expected = [("[0-9", "decimal digit")],
-					  start    = start,
-					  tail     = tail,
-					  peek     = 10}))
+	     {
+	      (char, tail) <- parse_decimal tail;
+	      (when (~ (char? char))
+	       (error {kind        = Syntax,
+		       requirement = "Not all numbers are legal Unicode characters.",
+		       problem     = (describe_char char) ^ " is not a legal Unicode character.",
+		       expected    = [("<see doc>", "decimal code for legal Unicode character")],
+		       start       = start,
+		       tail        = tail,
+		       peek        = 0,
+		       action      = "Will pass bogus character along"}));
+	      case tail of
+		| 59  (* ';' *) :: tail ->
+		  return (Char {style = Decimal,
+				char  = char},
+			  tail)
+		| char :: _ -> 
+		  {
+		   error {kind        = Syntax,
+			  requirement = "Character references must terminate with ';'.",
+			  problem     = (describe_char char) ^ " occurred first",
+			  expected    = [("';'", "termination of decimal character reference")],
+			  start       = start,
+			  tail        = tail,
+			  peek        = 10,
+			  action      = "Will pretend interpolated ';' was seen."};
+		   return (Char {style = Hex,
+				 char  = char},
+			   tail)
+		  }
+		| _ ->
+		  {
+		   error {kind        = EOF,
+			  requirement = "Hex character references must terminate with ';'.",
+			  problem     = "EOF occurred first.",
+			  expected    = [("';'", "termination of decimal character reference")],
+			  start       = start,
+			  tail        = tail,
+			  peek        = 10,
+			  action      = "Will pretend interpolated ';' was seen"};
+		   return (Char {style = Hex,
+				 char  = char},
+			   tail)
+		  }})
       | _ ->
 	%% parse EntityRef
 	{
@@ -135,13 +155,29 @@ XML qualifying spec
 	   | 59  (* ';' *) :: tail ->
 	     return (Entity {name = name},
 		     tail)
+	   | char :: _ -> 
+	     {
+	      error {kind        = Syntax,
+		     requirement = "Entity references must terminate with ';'.",
+		     problem     = (describe_char char) ^ " occurred first.",
+		     expected    = [("';'", "termination of entity reference")],
+		     start       = start,
+		     tail        = tail,
+		     peek        = 10,
+		     action      = "Will pretend interpolated ';' was seen"};
+	      return (Entity {name = name},
+		      tail)
+	     }
 	   | _ -> 
-	     {error (Surprise {context  = "Illegal entity reference",
-			       action   = "Pretending ';' was seen",
-			       expected = [(";", "termination of entity reference")],
-			       start    = start,
-			       tail     = tail,
-			       peek     = 10});
+	     {
+	      error {kind        = EOF,
+		     requirement = "Entity references must terminate with ';'.",
+		     problem     = "EOF occurred first.",
+		     expected    = [("';'", "termination of entity reference")],
+		     start       = start,
+		     tail        = tail,
+		     peek        = 10,
+		     action      = "Will pretend interpolated ';' was seen"};
 	      return (Entity {name = name},
 		      tail)
 	     }}
@@ -169,20 +205,36 @@ XML qualifying spec
        | 59  (* ';' *) :: tail ->
          return ({name = name},
 		 tail)
+       | char :: _ -> 
+	 {
+	  error {kind        = Syntax,
+		 requirement = "PEReferences must with ';'.",
+		 problem     = (describe_char char) ^ " occurred first.",
+		 expected    = [("';'", "termination of PEReference")],
+		 start       = start,
+		 tail        = tail,
+		 peek        = 10,
+		 action      = "Will pretend interpolated ';' was seen"};
+	  return ({name = name},
+		  tail)
+	 }
        | _ -> 
-	 {error (Surprise {context  = "Expecting PEReference",
-			   action   = "Pretending ';' was seen",
-			   expected = [(";", "termination of PE Reference")],
-			   start    = start,
-			   tail     = tail,
-			   peek     = 10});
+	 {
+	  error {kind        = Syntax,
+		 requirement = "PEReferences must with ';'.",
+		 problem     = "EOF occurred first.",
+		 expected    = [("';'", "termination of PEReference")],
+		 start       = start,
+		 tail        = tail,
+		 peek        = 10,
+		 action      = "Will pretend interpolated ';' was seen"};
 	  return ({name = name},
 		  tail)
 	 }}
 
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_decimal (start : UChars) : Option (Nat * UChars) =
+  def parse_decimal (start : UChars) : Required UChar =
    let 
       def probe (tail, n) =
 	case tail of
@@ -198,15 +250,25 @@ XML qualifying spec
 	  |  57 (* '9' *) :: tail -> probe (tail, 10 * n + 9)
 	  | _ ->
 	    if start = tail then
-	      Some (n, tail)
+	      {
+	       error {kind        = Syntax,
+		      requirement = "A decimal number is required.",
+		      problem     = "No decimal digits were seen.",
+		      expected    = [("[0-9]+", "decimal digits")],
+		      start       = start,
+		      tail        = tail,
+		      peek        = 10,
+		      action      = "Will pretend '88' (the encoding of 'X') was seen"};
+	       return (88, tail)
+	       }
 	    else
-	      None
+	       return (n, tail)
    in
      probe (start, 0)
 
   %% -------------------------------------------------------------------------------------------------
 
-  def parse_hex (start : UChars) : Option (Nat * UChars) =
+  def parse_hex (start : UChars) : Required UChar =
    let 
       def probe (tail, n) =
 	case tail of
@@ -236,9 +298,19 @@ XML qualifying spec
 	  | 102 (* 'f' *) :: tail -> probe (tail, 10 * n + 15)
 	  | _ ->
 	    if start = tail then
-	      Some (n, tail)
+	      {
+	       error {kind        = Syntax,
+		      requirement = "A hex number is required.",
+		      problem     = "No hex digits were seen.",
+		      expected    = [("[0-9A-Fa-f]+", "hex digits")],
+		      start       = start,
+		      tail        = tail,
+		      peek        = 10,
+		      action      = "Will pretend '58' (the hex encoding of 'X') was seen"};
+	       return (88, tail) (* = hex 58 *)
+	      }
 	    else
-	      None
+	       return (n, tail)
    in
      probe (start, 0)
 

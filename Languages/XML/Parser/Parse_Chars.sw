@@ -167,18 +167,26 @@ XML qualifying spec
     case start of
       | 61 (* '=' *) :: tail -> 
         return (61, tail)
-      | _ :: tail ->
+      | char :: tail ->
 	{
-	 error (Surprise {context  = "Expecting an equal sign ", 
-			  action   = "Inserting implicit '='",
-			  expected = [("=", "equal sign")],
-			  start = start,
-			  tail  = tail,
-			  peek = 10});
+	 error {kind        = Syntax,
+		requirement = "An equal sign must follow an attribute name.",
+		problem     = (describe_char char) ^ " was seen instead",
+		expected    = [("'='", "equal sign")],
+		start       = start,
+		tail        = tail,
+		peek        = 10,
+		action      = "Inserting implicit '='"};
 	 return (61, tail)
 	 }
       | _ ->
-	 hard_error (EOF {context = "Expecting an equal sign ", 
-			  start   = start})
+	 hard_error {kind        = EOF,
+		     requirement = "An equal sign must follow an attribute name.",
+		     problem     = "EOF occurred first",
+		     expected    = [("'='", "equal sign")],
+		     start       = start,
+		     tail        = [],
+		     peek        = 0,
+		     action      = "immediate failure"}
 
 endspec

@@ -38,8 +38,14 @@ XML qualifying spec
 	  | char :: tail ->
 	    probe (tail, cons (char, rev_result))
 	  | _ ->
-	    hard_error (EOF {context = "parsing PI",
-			     start   = start})
+	    hard_error {kind        = EOF,
+			requirement = "PI must terminate with '?>'.",
+			problem     = "EOF occurred first.",
+			expected    = [("'?>'", "termination of PI")],
+			start       = start,
+			tail        = tail,
+			peek        = 10,
+			action      = "immediate failure"}
     in
       {
        %%
@@ -47,13 +53,14 @@ XML qualifying spec
        %%
        (target, tail_0) <- parse_NmToken start;
        (when (~ (pi_target? target))
-	(error (Surprise {context = "Parsing PI",
-			  expected = [("Name - 'xml' variants", "legal PI target name")], 
-			  action   = "Pretend name is acceptable",
-			  start    = start,
-			  tail     = tail_0,
-			  peek     = 10})));
-
+	(error {kind        = Syntax,
+		requirement = "PI name must be normal name not starting with 'xml'.",
+		problem     = "Illegal name for PI",
+		expected    = [("Name - 'xml' variants", "legal PI target name")], 
+		start       = start,
+		tail        = tail_0,
+		peek        = 10,
+		action      = "Pretend name is acceptable"}));
        (whitespace_and_value, tail) <- probe (tail_0, []);
 
        %% TODO -- cleaner approach?
@@ -70,12 +77,14 @@ XML qualifying spec
 	   else
 	     {
 	      (when true
-	       (error (Surprise {context = "Parsing PI value",
-				 expected = [(" ", "whitespace")],
-				 action   = "Pretend whitespace was seen",
-				 start    = start,
-				 tail     = tail,
-				 peek     = 10})));
+	       (error {kind        = Syntax,
+		       requirement = "PI requires whitespace between name and value.",
+		       problem     = "No whitespace seen.",
+		       expected    = [("( #x9 | #xA | #xD | #x20 )", "at least one character of whitespace")],
+		       start       = start,
+		       tail        = tail,
+		       peek        = 10,
+		       action      = "Pretend vacuous whitespace was seen"}));
 	      return ({target = target,
 		       value  = Some ([], whitespace_and_value)},
 		      tail)

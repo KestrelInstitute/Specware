@@ -173,8 +173,8 @@ XML qualifying spec
       (Exception except, state)
 
   
-  def error x : Env () = raise_later x
-  def fa(a) hard_error x : Env a  = raise_now   x
+  def            error (x : XML_Exception) : Env () = raise_later x
+  def fa(a) hard_error (x : XML_Exception) : Env a  = raise_now   x
 
   %% --------------------------------------------------------------------------------
 

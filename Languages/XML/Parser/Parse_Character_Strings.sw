@@ -87,17 +87,25 @@ XML qualifying spec
 			  tail)
 		| _ ->
 		  {
-		   error (Surprise {context  = "Double dash inside comment",
-				    expected = [("'>'", "Finish '-->' to end comment")],
-				    action   = "Allow bogus contents",
-				    start    = start,
-				    tail     = tail,
-				    peek     = 10});
+		   error {kind        = Syntax,
+			  requirement = "'--' may not appear in a comment.",
+			  problem     = "'--' appears inside a comment.",
+			  expected    = [("'>'",   "remainder of '-->', to end comment")],
+			  start       = start,
+			  tail        = tail,
+			  peek        = 10,
+			  action      = "Leave bogus '--' in comment"};
 		   probe (tl tail, cons (45, cons (45, rev_comment)))
 		   })
 	   | [] ->
-	     hard_error (EOF {context = "scanning comment",
-			      start   = start})
+	     hard_error {kind        = EOF,
+			 requirement = "A comment must terminate with '-->'.",
+			 problem     = "EOF occured first.",
+			 expected    = [("'-->'",   "end of comment")],
+			 start       = start,
+			 tail        = start,
+			 peek        = 0,
+			 action      = "immediate failure"}
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
     in
@@ -121,8 +129,14 @@ XML qualifying spec
 	     return ({cdata = rev rev_comment}, 
 		     tail)
 	   | [] ->
-	     hard_error (EOF {context = "scanning CDSect", 
-			      start   = start})
+	     hard_error {kind        = EOF,
+			 requirement = "A CDSect must terminate with ']]>'.",
+			 problem     = "EOF occurred first",
+			 expected    = [("']]>'",   "end of CDSect")],
+			 start       = start,
+			 tail        = start,
+			 peek        = 0,
+			 action      = "immediate failure"}
 	   | char :: tail ->
 	     probe (tail, cons (char, rev_comment))
     in
