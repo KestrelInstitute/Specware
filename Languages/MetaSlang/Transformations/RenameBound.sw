@@ -140,7 +140,7 @@ spec
        | Var((id, srt), a) ->
          (case lookup c id
             of Some id -> Var((id, srt), a)
-             | None    -> System.fail ("renameTerm: Found free variable " ^ id))
+             | None    -> term)
 
        | Fun (f, srt,_) -> term
 

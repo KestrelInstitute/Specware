@@ -22,7 +22,7 @@ spec
    | LetRec List (Var * MS.Term) 
    | Let List (Pattern * MS.Term)
 
- sort Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * String * StringSet.Set
+ sort Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * String * NameSupply
 
  op  insert       : Var * Gamma -> Gamma
  op  assertCond   : MS.Term * Gamma -> Gamma
@@ -39,7 +39,8 @@ spec
         | _ -> gamma
 
  op  mkLetOrApply: MS.Term * MS.Term * Gamma -> MS.Term
- def mkLetOrApply(fntm,arg,gamma) =
+ def mkLetOrApply(fntm,arg,(ds,tvs,spc,qid,name,names)) =
+   let fntm = renameTerm (names,emptyEnv()) fntm in
    case fntm of
      | Lambda ([(VarPat(v as (vn,srt),_),Fun(Bool true, _,_),bod)],_) ->
        % mkLet([(VarPat(v,a),arg)],bod)
@@ -51,27 +52,29 @@ spec
 		    id, id)
 	     bod
 	 | _ ->
-	   let vn1 = freshName(gamma,vn) in
-	   if ~(vn1 = vn)
-	     then mkLetOrApply(mkLambda(mkVarPat(vn1,srt),substitute(bod,[(v,mkVar(vn1,srt))])),arg,gamma)
-	     else mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
+	   %let vn1 = freshName(gamma,vn) in
+%	   if ~(vn1 = vn)
+%	     then mkLetOrApply(mkLambda(mkVarPat(vn1,srt),substitute(bod,[(v,mkVar(vn1,srt))])),arg,gamma)
+%	     else
+	   mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
      | _ -> mkApply(fntm,arg)
 
  def assertCond(cond,gamma as (ds,tvs,spc,qid,name,names)) = 
    case cond of
      | Fun((Bool true,_,_)) -> gamma
      | _ -> (cons(Cond cond,ds),tvs,spc,qid,name,names)
- def insert((x,srt),(ds,tvs,spc,qid,name,names))  = 
+ def insert((x,srt),gamma as (ds,tvs,spc,qid,name,names))  = 
      let ds = cons(Var(x,srt),ds) in
-     let gamma = (ds,tvs,spc,qid,name,StringSet.add(names,x)) in
+     let _ = names := StringMap.insert(!names,x,0) in
+     let gamma = (ds,tvs,spc,qid,name,names) in
      let gamma = assertSubtypeCond(mkVar(x,srt),srt,gamma) in
      gamma
 % Subsort conditions:
  def insertLet(decls,(ds,tvs,spc,qid,name,names)) = 
      (cons(Let decls,ds),tvs,spc,qid,name,names)
- def insertLetRec(decls,(ds,tvs,spc,qid,name,names)) = 
-     (cons(LetRec decls,ds),tvs,spc,qid,name,
-      StringSet.addList(names,List.map (fn((x,_),_)-> x) decls))
+ def insertLetRec(decls,(ds,tvs,spc,qid,name,names)) =
+   let _ = app (fn((x,_),_)-> names := StringMap.insert(!names,x,0)) decls in
+   (cons(LetRec decls,ds),tvs,spc,qid,name,names)
 
  def printDecl(d:Decl) = 
      case d
@@ -160,16 +163,15 @@ spec
 % names previously used in spec (as ops) and
 % for the bound variables.
 %
- def freshName((decls,_,_,_,opName,names),name) = 
-     let name = StringUtilities.freshName(name,names) in
-     name
+ def freshName((_,_,_,_,_,names),name) =
+   fresh names name
 
  op  freshVar: Id * Sort * Gamma -> MS.Term * Gamma
  def freshVar(name0,sigma1,gamma) =
    let x = freshName(gamma,name0) in
    let xVar   = Var((x,sigma1),noPos) in
-   let gamma1 = insert((x,sigma1),gamma) in
-   (xVar,gamma1)
+   %let gamma1 = insert((x,sigma1),gamma) in
+   (xVar,gamma)
 
  %%% If sigma1 is a product produce a product of new vars
  op  freshVars: Id * Sort * Gamma -> MS.Term * Gamma
@@ -670,8 +672,12 @@ spec
 
  def checkSpec(spc) = 
      let localOps = spc.importInfo.localOps in
-     let names = StringSet.fromList (map (fn Qualified(q,id) -> id) localOps) in
-     let gamma0 = fn tvs -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, names) in
+     let names = foldl (fn (Qualified(q,id),m) ->
+			if q = UnQualified then m
+			  else StringMap.insert(m,id,0))
+                   empty localOps
+     in
+     let gamma0 = fn tvs -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, Ref names) in
      let tcc = ([],empty) in
      %% Definitions of ops
      let tcc = 
@@ -691,6 +697,7 @@ spec
      %% Properties (Axioms etc.)
      let baseProperties = (getBaseSpec()).properties in
      let tcc = foldr (fn (pr as (_,name,tvs,fm),tcc) ->
+		       let _ = if name = "variable_assign_def" then debug("checkSpec") else () in
 		       if member(pr,baseProperties) then tcc
 			 else let fm = renameTerm (emptyContext()) fm in
 			      (tcc,gamma0 tvs None (name^"_Obligation"))  |- fm ?? boolSort)
