@@ -63,46 +63,69 @@ Note: The code below does not yet match the documentation above, but should.
 \begin{spec}
   op translateSpec : Spec -> TranslateExpr Position -> Env Spec
   def translateSpec spc expr = {
-      transMaps <- makeTranslationMaps spc expr;
-      auxTranslateSpec spc transMaps (positionOf expr)
+      translation_maps <- makeTranslationMaps spc expr;
+      auxTranslateSpec spc translation_maps (positionOf expr)
     } 
     
   op makeTranslationMaps :
         Spec
      -> TranslateExpr Position
      -> SpecCalc.Env (AQualifierMap QualifiedId * AQualifierMap QualifiedId)
-  def makeTranslationMaps dom_spec (translation_pairs, position) =
-    let def insert (translation_opmap, translation_sortmap) 
-                   ((dom_qid as Qualified (dom_qualifier, dom_id), cod_qid as Qualified (target_qualifier, target_id)), 
-		    pos) 
-          =
-          %% TODO:  What if dom_qid names both an op and a sort ??  Right now, we translate the op but not the sort.
-          case findAllOps (dom_spec, dom_qid) of
-            | _::other_opinfos ->
-                if other_opinfos = [] then % or qualifier_from_op_info = UnQualified then 
-                  return (insertAQualifierMap (translation_opmap, dom_qualifier, dom_id, cod_qid),
-%%% 					       Qualified (if target_qualifier = UnQualified
-%%% 							    then dom_qualifier
-%%% 							  else target_qualifier,
-%%% 							 target_id),
-                          translation_sortmap)
-                else
-                  raise (SpecError (position, "translate: Ambiguous source op name: "^ dom_id))
-             | _ ->
-                (case findAllSorts (dom_spec, dom_qid) of
-                   | _::other_sortinfos ->
-                     if other_sortinfos = [] then % or qualifier_from_sort_info = UnQualified then 
-		       return (translation_opmap,
-			       insertAQualifierMap (translation_sortmap, dom_qualifier, dom_id, cod_qid))
-%%%						    Qualified (if target_qualifier = UnQualified
-%%%								 then dom_qualifier
-%%%							       else target_qualifier,
-%%%							       target_id)))
-		     else
-		       raise (SpecError (position, "translate: Ambiguous source sort name: "^dom_id))
-                   | _ -> raise (SpecError (position, "translate: Identifier \""^dom_qualifier^"."^dom_id^ "\" not found.")))
+  def makeTranslationMaps dom_spec (translation_rules, position) =
+    %% Similar to code in SpecMorphism.sw, but this is monadic, 
+    %% and types are factored as Foo a = (Foo_ a) * a
+    %% TODO:  Detect multiple rules for same dom item.
+    let def insert (translation_op_map, translation_sort_map) (translation_rule, rule_pos) =
+      case translation_rule of
+
+	| Sort (dom_qid as Qualified (dom_qualifier, dom_id), cod_qid) -> 
+	  (case findAllSorts (dom_spec, dom_qid) of
+	     | ((Qualified (found_qualifier, _))::_,_,_)::rs  ->
+	       (if rs = [] or found_qualifier = UnQualified then
+		  return (translation_op_map, 
+			  insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, cod_qid))
+		else 
+		  raise (SpecError (rule_pos, "translate: Ambiguous source sort name: "^   (printQualifiedId dom_qid)))) % should be same as dom_id
+	     | _ -> 
+		  raise (SpecError (rule_pos, "translate: Unrecognized source sort name: "^(printQualifiedId dom_qid))))
+
+	| Op ((dom_qid as Qualified(dom_qualifier, dom_id), dom_sort), (cod_qid, cod_sort)) -> 
+	  %% TODO:  Currently ignores sort information.
+	  (case findAllOps (dom_spec, dom_qid) of
+	     | ((Qualified (found_qualifier, _))::_,_,_,_)::rs  ->
+	       (if rs = [] or found_qualifier = UnQualified then
+		  return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, cod_qid),
+			  translation_sort_map)
+		else 
+		  raise (SpecError (rule_pos, "translate: Ambiguous source op name: "^   (printQualifiedId dom_qid)))) % should be same as dom_id
+	     | _ -> 
+		  raise (SpecError (rule_pos, "translate: Unrecognized source op name: "^(printQualifiedId dom_qid))))
+
+	| Ambiguous (dom_qid as Qualified(dom_qualifier, dom_id), cod_qid) -> 
+          (let dom_sorts = findAllSorts (dom_spec, dom_qid) in
+	   let dom_ops   = findAllOps   (dom_spec, dom_qid) in
+	   case (dom_sorts, dom_ops) of
+	     | ([], []) ->
+	       raise (SpecError (rule_pos, "translate: Unrecognized source sort/op name: "^(printQualifiedId dom_qid)))
+
+	     | (((Qualified (found_qualifier, _))::_,_,_)::rs, [])  ->
+	       if rs = [] or found_qualifier = UnQualified then
+		 return (translation_op_map, 
+			 insertAQualifierMap (translation_sort_map, dom_qualifier, dom_id, cod_qid))
+	       else 
+		 raise (SpecError (rule_pos, "translate: Ambiguous source sort name: "^(printQualifiedId dom_qid))) % should be same as dom_id
+
+	     | ([], ((Qualified (found_qualifier, _))::_,_,_,_)::rs) ->
+	       if rs = [] or found_qualifier = UnQualified then
+		 return (insertAQualifierMap (translation_op_map, dom_qualifier, dom_id, cod_qid),
+			 translation_sort_map)
+	       else
+		 raise (SpecError (rule_pos, "translate: Ambiguous source op name: "^(printQualifiedId dom_qid))) % should be same as dom_id
+
+	     | (_, _) ->
+	       raise (SpecError (rule_pos, "translate: Ambiguous source sort/op name: "^(printQualifiedId dom_qid))))
     in
-       foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_pairs
+      foldM insert (emptyAQualifierMap, emptyAQualifierMap) translation_rules
 
   op auxTranslateSpec :
         Spec 
@@ -110,7 +133,8 @@ Note: The code below does not yet match the documentation above, but should.
      -> Position
      -> SpecCalc.Env Spec
   def auxTranslateSpec spc (op_id_map, sort_id_map) position =
-    %% Change UnQualified to new_qualifier in all qualified names
+    %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
+    %% TODO: ?? Change UnQualified to new_qualifier in all qualified names ??
     let
       def translateQualifiedId (id_map, qid as Qualified (qualifier, id)) =
         case findAQualifierMap (id_map, qualifier,id) of
@@ -140,10 +164,10 @@ Note: The code below does not yet match the documentation above, but should.
 				fixity, 
 				sort_scheme, 
 				optional_def),
-			       new_opmap)
+			       new_op_map)
 	    =
 	    if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
-	      (return new_opmap)
+	      (return new_op_map)
 	    else
               let new_aliases = rev (foldl (fn (old_alias, new_aliases) -> 
 					    let new_alias = translateQualifiedId (op_id_map, old_alias) in
@@ -157,14 +181,14 @@ Note: The code below does not yet match the documentation above, but should.
 	      { first_opinfo  <- return (new_aliases, fixity, sort_scheme, optional_def);
 	        merged_opinfo <- foldM (fn merged_opinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
 					  mergeOpInfo merged_opinfo 
-					              (findAQualifierMap (new_opmap, new_qualifier, new_id))
+					              (findAQualifierMap (new_op_map, new_qualifier, new_id))
 						      new_qualifier 
 						      new_id position)
 		                       first_opinfo
 				       new_aliases;
-	        foldM (fn new_opmap -> fn (Qualified (new_qualifier, new_id)) ->
-		       return (insertAQualifierMap (new_opmap, new_qualifier, new_id, merged_opinfo)))
-		      new_opmap  
+	        foldM (fn new_op_map -> fn (Qualified (new_qualifier, new_id)) ->
+		       return (insertAQualifierMap (new_op_map, new_qualifier, new_id, merged_opinfo)))
+		      new_op_map  
 		      new_aliases }
 	in
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_ops 
@@ -175,9 +199,9 @@ Note: The code below does not yet match the documentation above, but should.
 			       (old_aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_, 
 				ty_vars, 
 				optional_def), 
-			       new_sortmap) = 
+			       new_sort_map) = 
 	    if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
-	      (return new_sortmap)
+	      (return new_sort_map)
 	    else
               let new_aliases = rev (foldl (fn (old_alias, new_aliases) -> 
 					    let new_alias = translateQualifiedId (sort_id_map, old_alias) in
@@ -191,14 +215,14 @@ Note: The code below does not yet match the documentation above, but should.
 	      { first_sortinfo  <- return (new_aliases, ty_vars, optional_def);
 	        merged_sortinfo <- foldM (fn merged_sortinfo -> fn (new_alias as Qualified (new_qualifier, new_id)) ->
 					  mergeSortInfo merged_sortinfo 
-					                (findAQualifierMap (new_sortmap, new_qualifier, new_id))
+					                (findAQualifierMap (new_sort_map, new_qualifier, new_id))
 						        new_qualifier 
 						        new_id position)
 		                         first_sortinfo
 				         new_aliases;
-	        foldM (fn new_sortmap -> fn (Qualified (new_qualifier, new_id)) ->
-		       return (insertAQualifierMap (new_sortmap, new_qualifier, new_id, merged_sortinfo)))
-		      new_sortmap  
+	        foldM (fn new_sort_map -> fn (Qualified (new_qualifier, new_id)) ->
+		       return (insertAQualifierMap (new_sort_map, new_qualifier, new_id, merged_sortinfo)))
+		      new_sort_map  
 		      new_aliases }
 	in
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 

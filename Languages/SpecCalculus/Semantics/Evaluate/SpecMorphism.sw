@@ -40,75 +40,77 @@ coherence conditions of the morphism elements.
   op makeResolvedMapping : Spec * Spec * List (SpecMorphRule Position) -> AQualifierMap(QualifiedId) * AQualifierMap(QualifiedId)
 
   def makeResolvedMapping (dom_spec, cod_spec, sm_rules) =
-    %% TODO: change fail to raise
+    %% Similar to code in Translate.sw, but this is NOT monadic, 
+    %% and types are NOT factored as Foo a = (Foo_ a) * a,
+    %% but rather are of the form    Foo a = | ... * a | ... * a | ... ... | ... * a  
+    %% TODO: change this to be more like Translate.sw -- in particular, change fail to raise
+    %% TODO: need to detect multiple maps for same domain item
     let 
 
-        def findCodOp (qid as Qualified (qualifier, id)) =
+        def findCodOp (qid) =
           case findAllOps (cod_spec, qid) of
 	    | ((found_qid as Qualified(found_qualifier,_))::_,_,_,_)::rs ->
 	      (if rs = [] or (found_qualifier = UnQualified) 
 		 then ()
-	         else fail("morphism: Ambiguous target  op name "^id);
+	         else fail("morphism: Ambiguous target op name "^(printQualifiedId qid));
 	       found_qid)
-	    | _ -> fail ("morphism: Target op " ^ qualifier^"."^id^"  not found.")
+	    | _ -> fail ("morphism: Unrecognized target op name: "^(printQualifiedId qid))
 
-        def findCodSort  (qid as Qualified (qualifier, id)) =
+        def findCodSort (qid) =
           case findAllSorts (cod_spec, qid) of
 	    | ((found_qid as Qualified (found_qualifier,_))::_,_,_)::rs ->
 	      (if rs = [] or found_qualifier = UnQualified 
 		 then ()
-		 else fail("morphism: Ambiguous target  sort name "^id);
+		 else fail("morphism: Ambiguous target sort name "^(printQualifiedId qid));
 	       found_qid)
-	    | _ -> fail ("morphism: Target sort "^qualifier^"."^id^" not found.")
+	    | _ -> fail ("morphism: Unrecognized target sort name: "^(printQualifiedId qid))
 
         def insert (sm_rule, (op_map,sort_map)) =
           case sm_rule of
-	    | Sort (dom_qid as Qualified (dom_qualifier, dom_id), cod_qid, pos) ->
+	    | Sort (dom_qid, cod_qid, pos) ->
 	      (case findAllSorts (dom_spec, dom_qid) of
 		 | ((Qualified (found_qualifier, found_id))::_,_,_)::rs  ->
 		   (if rs = [] or found_qualifier = UnQualified 
 		      then ()
-		      else fail("morphism: Ambiguous source sort name "^ dom_id);
+		      else fail("morphism: Ambiguous source sort name "^(printQualifiedId dom_qid));
 		    (op_map, 
 		     insertAQualifierMap (sort_map, found_qualifier, found_id, findCodSort cod_qid)))
-		 | _ -> fail ("morphism: source sort identifier "^dom_qualifier^"."^dom_id^ " not found."))
+		 | _ -> fail ("morphism: Unrecognized source sort name: "^(printQualifiedId dom_qid)))
 
-	    | Op ((dom_qid as Qualified (dom_qualifier, dom_id), opt_dom_sort), 
-		  (cod_qid, opt_cod_sort), 
-		  pos)
-	      ->
+	    | Op ((dom_qid, opt_dom_sort), (cod_qid, opt_cod_sort), pos) ->
+              %% TODO:  Currently ignores sort information.
               (case findAllOps (dom_spec, dom_qid) of
 		 | ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs ->
 		   (if rs = [] or found_qualifier = UnQualified 
 		      then ()
-		      else fail("morphism: Ambiguous source op name "^dom_id);
+		      else fail("morphism: Ambiguous source op name "^(printQualifiedId dom_qid));
 		    (insertAQualifierMap (op_map, found_qualifier, found_id, findCodOp cod_qid),
 		     sort_map))
-		 | _ -> fail ("morphism: source op identifier "^dom_qualifier^"."^dom_id^ " not found."))
+		 | _ -> fail ("morphism: Unrecognized source op name: "^(printQualifiedId dom_qid)))
 
-	    | Ambiguous (dom_qid as Qualified(dom_qualifier, dom_id), cod_qid, pos) ->
+	    | Ambiguous (dom_qid, cod_qid, pos) ->
               (let dom_sorts = findAllSorts (dom_spec, dom_qid) in
 	       let dom_ops   = findAllOps   (dom_spec, dom_qid) in
 	       case (dom_sorts, dom_ops) of
 		 | ([], []) ->
-		   fail ("morphism: Source sort/op identifier "^dom_qualifier^"."^dom_id^ " not found.")
+		   fail ("morphism: Unrecognized source sort/op identifier "^(printQualifiedId dom_qid))
 
 		 | (((Qualified (found_qualifier, found_id))::_,_,_)::rs, [])  ->
 		   (if rs = [] or found_qualifier = UnQualified 
 		      then ()
-		      else fail("morphism: Ambiguous source sort name "^ dom_id);
+		      else fail("morphism: Ambiguous source sort name "^(printQualifiedId dom_qid));
 		    (op_map, 
 		     insertAQualifierMap (sort_map, found_qualifier, found_id, findCodSort cod_qid)))
 
 		 | ([], ((Qualified (found_qualifier, found_id))::_,_,_,_)::rs) ->
 		   (if rs = [] or found_qualifier = UnQualified 
 		      then ()
-		      else fail("morphism: Ambiguous source op name "^dom_id);
+		      else fail("morphism: Ambiguous source op name "^(printQualifiedId dom_qid));
 		    (insertAQualifierMap (op_map, found_qualifier, found_id, findCodOp cod_qid),
 		     sort_map))
 
 		 | (_, _) ->
-		   fail ("morphism: Ambiguous source sort/op identifier "^dom_qualifier^"."^dom_id))
+		   fail ("morphism: Ambiguous source sort/op identifier "^(printQualifiedId dom_qid)))
     in
        List.foldr insert (emptyAQualifierMap,emptyAQualifierMap) sm_rules
 

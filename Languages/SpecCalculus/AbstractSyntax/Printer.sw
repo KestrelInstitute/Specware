@@ -97,15 +97,30 @@ SpecCalc qualifying spec {
             ppTerm term
           ]
       | Translate (term, (translation,_)) ->
-          let def ppTranslatePair ((left,right),pos) =
-            ppConcat [
-              ppQualifier left,
-              ppString " -> ",
-              ppQualifier right
-            ] in
-          ppConcat [
+          let def ppTranslateRule (rule,pos) =
+	       case rule of
+		 | Sort (left_qid, right_qid) ->
+  		   ppConcat [
+			     ppQualifier left_qid,
+			     ppString " -> ",
+			     ppQualifier right_qid
+			    ] 
+		 | Op ((left_qid,_), (right_qid,_)) ->
+		   ppConcat [
+			     ppQualifier left_qid,
+			     ppString " -> ",
+			     ppQualifier right_qid
+			    ] 
+		 | Ambiguous (left_qid, right_qid) ->
+		   ppConcat [
+			     ppQualifier left_qid,
+			     ppString " -> ",
+			     ppQualifier right_qid
+			    ] 
+	  in
+	    ppConcat [
             ppString "{",
-            ppSep (ppString ", ") (map ppTranslatePair translation),
+            ppSep (ppString ", ") (map ppTranslateRule translation),
             ppString "}",
             ppString " translating ",
             ppTerm term

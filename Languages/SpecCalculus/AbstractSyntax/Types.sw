@@ -162,8 +162,12 @@ mapping from names to names.
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
 \begin{spec}
-  sort TranslateExpr a = List (TranslateMap a) * a
-  sort TranslateMap a = ((QualifiedId * QualifiedId) * a)
+  sort TranslateExpr  a = List (TranslateRule a) * a
+  sort TranslateRule  a = (TranslateRule_ a) * a
+  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId
+                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
+                          | Ambiguous  QualifiedId                 * QualifiedId                 
+
 \end{spec}
 
 A \verb+NamesExpr+ denotes list of names and operators. They are used in
