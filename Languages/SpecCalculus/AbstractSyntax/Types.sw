@@ -77,13 +77,12 @@ one to override an existing definition.
 The following is the sort given to us by the parser.
 
 \begin{spec}
-
   sort Term a = (Term_ a) * a
   sort Term_ a = 
     | Print (Term a)
     | URI RelativeURI
     | Spec List (SpecElem a)
-    | Diag (List (DiagElem a))
+    | Diag List (DiagElem a)
     | Colimit (Term a)
 \end{spec}
 
@@ -167,7 +166,6 @@ Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
   sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId
                           | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
                           | Ambiguous  QualifiedId                 * QualifiedId                 
-
 \end{spec}
 
 A \verb+NamesExpr+ denotes list of names and operators. They are used in
