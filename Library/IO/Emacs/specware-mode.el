@@ -998,12 +998,20 @@ If anyone has a good algorithm for this..."
 (defun name-relative-to-swpath (filename)
   (let ((swpath (get-swpath)))
     (loop for dir in swpath
-	  do (if (string-equal dir (substring filename 0 (length dir)))
+	  do (if (string-equal dir (substring filename 0 (min (length dir)
+							      (length filename))))
 		 (let ((rel-filename (substring filename (length dir))))
 		   (return (if (eq (elt rel-filename 0) ?/)
 			       rel-filename
 			     (concat "/" rel-filename)))))
-	  finally (return filename))))
+	  finally (let ((oldpath (sw:eval-in-lisp "(specware::getenv \"SWPATH\")")))
+		    (simulate-input-expression
+		     (concat ":swpath " oldpath
+			     (if (eq window-system 'mswindows) ";" ":")
+			     (if (eq (elt filename 0) ?/) "/"
+			       (substring filename 0 3))))
+		    (sleep-for 0.1)	; Just to avoid confusing output
+		    (return filename)))))
 
 (defun sw:process-unit (unitid)
   (interactive (list (read-from-minibuffer "Process Unit: "

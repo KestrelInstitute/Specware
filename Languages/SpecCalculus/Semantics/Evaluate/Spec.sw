@@ -19,7 +19,10 @@ and then qualify the resulting spec if the spec was given a name.
     unitId <- getCurrentUID;
     print (";;; Processing spec at " ^ (uidToString unitId) ^ "\n");
     (optBaseUnitId,baseSpec) <- getBase;
-    (pos_spec,TS,depUIDs) <- evaluateSpecElems baseSpec spec_elements;
+    (pos_spec,TS,depUIDs) <- evaluateSpecElems (if anyImports? spec_elements
+						  then emptySpec
+						  else baseSpec)
+		               spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
 %    full_spec <- explicateHiddenAxiomsM compressed_spec;
@@ -54,6 +57,10 @@ axioms, etc.
               | _ -> raise (Fail ("Import not a spec")))
           }
       | _ -> return val
+
+  op  anyImports?: List (SpecElem Position) -> Boolean
+  def anyImports? specElems =
+    exists (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
 
   op evaluateSpecElem : ASpec Position
                           -> SpecElem Position

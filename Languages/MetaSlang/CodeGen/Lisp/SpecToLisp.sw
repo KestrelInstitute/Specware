@@ -1,60 +1,60 @@
 % Synchronized with version 1.3 of SW4/Languages/MetaSlang/ToLisp/SpecToLisp.sl
 
 SpecToLisp qualifying spec { 
-  import ../../Transformations/PatternMatch
-  import ../../Transformations/InstantiateHOFns
-  import Lisp
-  import ../../Specs/StandardSpec
-  
-  op lisp : Spec -> LispSpec
-  
-  def lispStrings =
-      StringSet.fromList 
-        ["NIL","T","CONS","NULL","CAR","CDR","LIST","LISP",
-         "APPEND","REVAPPEND","REVERSE","COMPILE","REDUCE",
-         "SUBSTITUTE","COUNT","ENCLOSE","EVAL","ERROR","FIRST","LAST",
-         "SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH",
-         "SEVENTH", "EIGHTH", "NINTH", "TENTH",
-         "UNION", "INTERSECTION", "SET", "SETQ","SOME",
-         "ARRAY","POP","PUSH","TOP","REMOVE","GET",
-         "REPLACE","PI","DELETE","IDENTITY","REM",
-         "NTH","EQ","EQL","EQUAL","ZEROP","ODDP","EVENP",
-         "SEARCH","COMPILE","MERGE","RETURN",
-         "VECTOR","SVREF","FORALL","EXISTS","SETF","LOOP",
-         "OR","AND","NOT","LENGTH","MAP","MEMBER","TIME",
-         "CHAR","STRING","SYMBOL","NAT","MAKE-STRING",
-         "CONST","IF","APPLY","QUOTE","MIN","GO",
-         "PRINT", "READ", "WRITE","LOAD","..",
-         "BLOCK","FORMAT","BREAK","SUBST","FIND","CLASS",
-         "+","++","**","-","*",">","<","<=",">= ","\\=",
-         "BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN",
-         %% Added because of Xanalys packages, but prudent anyway
-         "SYSTEM", "IO", "BOOTSTRAP",
-	 %% Added for cmulisp compatibility
-	 "HASHTABLE"]
+ import ../../Transformations/PatternMatch
+ import ../../Transformations/InstantiateHOFns
+ import Lisp
+ import ../../Specs/StandardSpec
 
-  def notReallyLispStrings =
-        ["C","D","I","M","N","P","S","V","X","Y","Z","KEY","NAME","VALUE","PATTERN"]
-  
-  def isLispString(id) = StringSet.member(lispStrings,id) or
-  %% The above is only necessary for packages. They should be done differently in next release.
-                         (Lisp.uncell(Lisp.apply(Lisp.symbol("CL","FIND-SYMBOL"),
-						 [Lisp.string(id),
-						  Lisp.string("CL")]))
-			  & (~(member(id,notReallyLispStrings))))
-  
-  
-  op  ith : fa(a) Nat * String * List(String * a) -> Nat
-  def ith(n,id,ids) = 
-      case ids
-        of [] -> System.fail ("No such index " String.++ id)
-         | (id2,_)::ids -> 
-           if id = id2 then n else ith(n + 1,id,ids)
-  
-  def projectionIndex(sp,id,srt) = 
-      let (dom,_) = arrow(sp,srt) in
-      let row = product(sp,dom)   in
-      ith(0,id,row)
+ op lisp : Spec -> LispSpec
+
+ def lispStrings =
+     StringSet.fromList 
+       ["NIL","T","CONS","NULL","CAR","CDR","LIST","LISP",
+	"APPEND","REVAPPEND","REVERSE","COMPILE","REDUCE",
+	"SUBSTITUTE","COUNT","ENCLOSE","EVAL","ERROR","FIRST","LAST",
+	"SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH",
+	"SEVENTH", "EIGHTH", "NINTH", "TENTH",
+	"UNION", "INTERSECTION", "SET", "SETQ","SOME",
+	"ARRAY","POP","PUSH","TOP","REMOVE","GET",
+	"REPLACE","PI","DELETE","IDENTITY","REM",
+	"NTH","EQ","EQL","EQUAL","ZEROP","ODDP","EVENP",
+	"SEARCH","COMPILE","MERGE","RETURN",
+	"VECTOR","SVREF","FORALL","EXISTS","SETF","LOOP",
+	"OR","AND","NOT","LENGTH","MAP","MEMBER","TIME",
+	"CHAR","STRING","SYMBOL","NAT","MAKE-STRING",
+	"CONST","IF","APPLY","QUOTE","MIN","GO",
+	"PRINT", "READ", "WRITE","LOAD","..",
+	"BLOCK","FORMAT","BREAK","SUBST","FIND","CLASS",
+	"+","++","**","-","*",">","<","<=",">= ","\\=",
+	"BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN",
+	%% Added because of Xanalys packages, but prudent anyway
+	"SYSTEM", "IO", "BOOTSTRAP",
+	%% Added for cmulisp compatibility
+	"HASHTABLE"]
+
+ def notReallyLispStrings =
+       ["C","D","I","M","N","P","S","V","X","Y","Z","KEY","NAME","VALUE","PATTERN"]
+
+ def isLispString(id) = StringSet.member(lispStrings,id) or
+ %% The above is only necessary for packages. They should be done differently in next release.
+			(Lisp.uncell(Lisp.apply(Lisp.symbol("CL","FIND-SYMBOL"),
+						[Lisp.string(id),
+						 Lisp.string("CL")]))
+			 & (~(member(id,notReallyLispStrings))))
+
+
+ op  ith : fa(a) Nat * String * List(String * a) -> Nat
+ def ith(n,id,ids) = 
+     case ids
+       of [] -> System.fail ("No such index " String.++ id)
+	| (id2,_)::ids -> 
+	  if id = id2 then n else ith(n + 1,id,ids)
+
+ def projectionIndex(sp,id,srt) = 
+     let (dom,_) = arrow(sp,srt) in
+     let row = product(sp,dom)   in
+     ith(0,id,row)
 
  def isSpecialProjection(sp,srt,id):Option(String) = 
      case stripSubsorts(sp,srt)
@@ -96,12 +96,12 @@ def hasConsEmbed(sp,srt) =
              | None -> false)
        | _ -> false
 
-def isConsIdentifier(sp,id,srt):Option(String) = 
+  def isConsIdentifier(sp,id,srt):Option(String) = 
     case isConsDataType(sp,srt)
       of Some(i1,i2) -> Some(if id = i1 then "null" else "consp")
        | None -> None
 
-def hasConsDomain(sp,id,srt):Option(String) = 
+  def hasConsDomain(sp,id,srt):Option(String) = 
     case stripSubsorts(sp,srt)
       of Arrow(dom,_,_) -> 
          (case isConsDataType(sp,dom)
@@ -110,12 +110,12 @@ def hasConsDomain(sp,id,srt):Option(String) =
        | _ -> None
     
 
-def patternName (pattern:Pattern) = 
+  def patternName (pattern:Pattern) = 
     case pattern 
       of VarPat((id,_),_) -> id 
        | _ -> System.fail ("SpecToLisp.patternName " ^ printPattern pattern)
 
-def patternNames (pattern:Pattern) = 
+  def patternNames (pattern:Pattern) = 
     case pattern 
       of VarPat((id,_),_) -> [id] 
        | RecordPat(fields,_) -> List.map (fn (_,p)-> patternName p) fields
@@ -132,8 +132,8 @@ def patternNames (pattern:Pattern) =
       if StringSet.member(! userUpper,ID)
          then if StringSet.member(! userStrings,id)
               then id
-         else "|!"^id^"|"
-      else 
+              else "|!"^id^"|"
+         else 
          (userUpper := StringSet.add(! userUpper,ID);
           userStrings := StringSet.add(! userStrings,id);
           id)
@@ -438,15 +438,20 @@ def mkLTermOp (sp,dpn,vars,termOp,optArgs) =
 
 % DIE HARD if the above cases are not exhaustive
 
+op  sortOfOp: Spec * QualifiedId -> Sort
+def sortOfOp(sp,id) =
+  case findTheOp(sp,id) of
+    | Some (_,_,(_,srt),_) -> srt
+
 op fullCurriedApplication : AnnSpec.Spec * String * StringSet.Set * MS.Term
                         -> Option LispTerm
 def fullCurriedApplication(sp,dpn,vars,term) =
   let def aux(term,i,args) =
         case term
           of Fun(Op (id,_),srt,_) ->
-             if i > 1 & i = curryShapeNum(sp,srt)
+             if i > 1 & i = curryShapeNum(sp,sortOfOp(sp,id))
                then Some(mkLApply(mkLOp(unCurryName(id,i,dpn)),
-                                 List.map (fn t -> mkLTerm(sp,dpn,vars,t)) args))
+				  List.map (fn t -> mkLTerm(sp,dpn,vars,t)) args))
               else None
 	   | Fun(Choose,_,_) ->
 	     if i = 2
