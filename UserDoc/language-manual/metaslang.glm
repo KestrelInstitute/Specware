@@ -3131,7 +3131,8 @@ be a different `name.
 <para>
 `Quantifications are non-constructive, even when the domain
 sort is finitely enumerable.
-The main use is in `claims.
+The main uses are in `sort-restrictions and `sort-comprehensions,
+and `claims.
 The sort of a `quantification is [[Boolean]].
 There are two kinds of quantifications:
 [[fa]]-`quantifications (or <quote>universal
