@@ -2192,8 +2192,6 @@ as in
 ]]
 This restriction prevents ambiguities between `claims with and without
 `type-variable-binders.
-then it identifies the textually most recent introduction.
-Otherwise, the `simple-name is a `type-name.
 </para>
 <!-- ================================================================= -->
 <para>
