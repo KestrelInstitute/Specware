@@ -16,7 +16,7 @@
     (":sw-help" . "Help for specware commands")
     (":sw-init" . "Clear Spec cache")
 ;;; Comment out undocumented commands
-;;;    (":swc" . "Generate C code for unit")
+;;; (":swc" . "Generate C code for unit") 
     (":swe" . "Evaluate specware term")
     (":swe-spec" . "Set spec context for :swe command")
 ;;;    (":swj" . "Generate Java code for unit")
@@ -470,9 +470,8 @@
 
 (defvar *last-make-args* nil)
 (defvar *make-verbose* t)
-#+allegro
-(top-level:alias
- ("make" :case-sensitive) (&optional &rest args)
+
+(defun make (&optional args)
  (let* (
 	(make-args (if (not (null args)) args *last-make-args*))
 	(make-command (if (sys:getenv "SPECWARE4_MAKE") (sys:getenv "SPECWARE4_MAKE") "make"))
@@ -553,6 +552,10 @@
        )
  )
  
+
+#+allegro
+(top-level:alias ("make" :case-sensitive :string) (&optional args)
+  (make args))
 
 ;; returns the name of the cfile from the given unitid
 ;; by substituting #' with underscores
