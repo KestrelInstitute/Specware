@@ -64,14 +64,13 @@
 
 (defun strip-extraneous (str)
   (let ((len (length str)))
-    (when (> len 0)
-      (when (member (elt str 0) '(#\space))
-	(setq str (strip-extraneous (subseq str 1 len))))
-      (when (member (elt str (- len 1)) '( #\space))
-	(setq str (strip-extraneous (subseq str 0 (- len 1)))))
-      (when (and (> len 1) (eq (elt str 0) #\") (eq (elt str (- len 1)) #\"))
-	(setq str (strip-extraneous (subseq str 1 (- len 1))))))
-    str))
+    (if (> len 0)
+	(if (member (elt str 0) '(#\" #\space))
+	    (strip-extraneous (subseq str 1 len))
+	  (if (member (elt str (- len 1)) '(#\" #\space))
+	      (strip-extraneous (subseq str 0 (- len 1)))
+	    str))
+      str)))
 
 ;;; Code for handling specalc terms as well as just unitid strings
 (defun unitIdString? (str)
@@ -806,14 +805,10 @@
 					  :output       *standard-output* 
 					  :error-output :output 
 					  :wait t) 
-	   #+MSWINDOWS (let ((str (run-shell-command cmd 
+	   #+MSWINDOWS (run-shell-command cmd 
 					  ;; :output       *standard-output* ; mysterious problems under windows
 					  ;; :error-output :output           ; mysterious problems under windows
-					  :output :stream
-					  :wait nil
-					  :show-window :hide)))
-			 (do ((ch (read-char str nil nil) (read-char str nil nil))) 
-			     ((null ch) (close str) (sys:os-wait)) (write-char ch)))
+					  :wait t)
 	   #-(OR UNIX MSWINDOWS) (progn (warn "ignoring non-[UNIX/MSWINDOWS] ALLEGRO RUN-CMD : ~A" cmd) 1)))
       (unless (equal rc 0)
 	(warn "Return code from run-shell-command was non-zero: ~S" rc))))
