@@ -147,14 +147,18 @@ spec
   def axiomFromOpDefTop(spc,qname,name,decl) =
     case decl:OpInfo of
       | (op_names, fixity, (srtTyVars,srt), [(termTyVars, term)]) ->
-        let pos = termAnn(term) in
-	let opName = mkQualifiedId(qname, name) in
-	let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
-%	let _ = writeLine(name^": in axiomFromOpDef Def part") in
-          [ax]
+        let localOps = spc.importInfo.localOps in
+	if memberQualifiedId(qname, name, localOps) then
+	  let pos = termAnn(term) in
+	  let opName = mkQualifiedId(qname, name) in
+	  let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
+	  %	let _ = writeLine(name^": in axiomFromOpDef Def part") in
+            [ax]
+	else []
       | _ -> %let _ = writeLine(name^": in axiomFromOpDef NOT def part") in
 	       []
 	
+
   op explicateHiddenAxioms: PosSpec -> Spec
   def explicateHiddenAxioms spc =
     let def axiomFromOpDef(qname,name,decl,defs) = defs ++ axiomFromOpDefTop(spc,qname,name,decl) in

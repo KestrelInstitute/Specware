@@ -180,7 +180,7 @@ of there are explicit imports or the spec is in a directory that ends in
   
   op explicateHiddenAxiomsM: PosSpec -> Env Spec
   def explicateHiddenAxiomsM spc =
-    return (explicateHiddenAxioms spc)
+    return spc % (explicateHiddenAxioms spc)
 
 }
 
