@@ -258,19 +258,20 @@ spec
       && exprFreeVars r = empty
       => pj (wellFormedType (cx, t \ r)))
     | tyQuot ->
-      (fa (cx:Context, v:Variable, v1:Variable, v2:Variable, t:Type, q:Expression)
+      (fa (cx:Context, v:Variable, v1:Variable, v2:Variable,
+           u1:Variable, u2:Variable, u3:Variable, t:Type, q:Expression)
          pj (theoreM (cx, FA v t (q @ PAIR (VAR v) (VAR v))))
-      && pj (theoreM (cx, FAA (seq2(v,v1)) (seq2(t,t))
-                              (q @ PAIR (VAR v) (VAR v1)
+      && pj (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t,t))
+                              (q @ PAIR (VAR v1) (VAR v2)
                                ==>
-                               q @ PAIR (VAR v1) (VAR v))))
-      && pj (theoreM (cx, FAA (seq3(v,v1,v2)) (seq3(t,t,t))
-                              (q @ PAIR (VAR v)  (VAR v1)
+                               q @ PAIR (VAR v2) (VAR v1))))
+      && pj (theoreM (cx, FAA (seq3(u1,u2,u3)) (seq3(t,t,t))
+                              (q @ PAIR (VAR u1) (VAR u2)
                                &&&
-                               q @ PAIR (VAR v1) (VAR v2)
+                               q @ PAIR (VAR u2) (VAR u3)
                                ==>
-                               q @ PAIR (VAR v)  (VAR v2))))
-      && v ~= v1 && v1 ~= v2 && v2 ~= v
+                               q @ PAIR (VAR u1) (VAR u3))))
+      && v1 ~= v2 && u1 ~= u2 && u2 ~= u3 && u1 ~= u3
       && exprFreeVars q = empty
       => pj (wellFormedType (cx, t / q)))
 

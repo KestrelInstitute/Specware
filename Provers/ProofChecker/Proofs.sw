@@ -19,7 +19,8 @@ spec
   to uniquely determine conclusion judgements from premise judgements
   (e.g. the node for `cxTypeDecl' includes a type name and an arity). All the
   needed additional information consists of primitives (postulated in spec
-  `Primitives') and positions (defined in spec `Positions'). *)
+  `Primitives') and positions (defined in spec `Positions'); in particular,
+  there is no need to use types, expressions, or other syntactic entities. *)
 
 
   import PrimitivesWithAbbreviations, Positions
