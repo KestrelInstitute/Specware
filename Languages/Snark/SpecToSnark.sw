@@ -94,10 +94,10 @@ snark qualifying spec {
 		  Lisp.quote(Lisp.symbol("SNARK", "embed_Nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))],
 	Lisp.list[declare_constant,
 		  Lisp.quote(Lisp.symbol("SNARK", "nil")), Lisp.symbol("KEYWORD","SORT"),  Lisp.quote(Lisp.symbol("SNARK","List"))],
-	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "length")), Lisp.nat(1),
-		   Lisp.symbol("KEYWORD","SORT"),
-		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "NUMBER"),
-					 Lisp.symbol("SNARK", "List")])],
+%	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "length")), Lisp.nat(1),
+%		   Lisp.symbol("KEYWORD","SORT"),
+%		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "NUMBER"),
+%					 Lisp.symbol("SNARK", "List")])],
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "embed_Cons")), Lisp.nat(2),
 		   Lisp.symbol("KEYWORD","SORT"),
 		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "List"),
@@ -322,6 +322,7 @@ snark qualifying spec {
 				      else 
 					 Lisp.symbol ("SNARK", snarkSortId id))
       | Subsort(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
+      | Quotient(supSrt, _, _) -> snarkBaseSort(spc, supSrt, rng?)
       | Product _ -> Lisp.symbol("SNARK", "TRUE")
       | Arrow   _ -> Lisp.symbol("SNARK", "TRUE")
       | TyVar   _ -> Lisp.symbol("SNARK", "TRUE")
@@ -353,6 +354,7 @@ snark qualifying spec {
 	             (let (_, srt) = unpackSort dfn in
 	              case srt of
 			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))
+			| Quotient (supSrt, _, _) -> Lisp.symbol("SNARK",snarkSortId(id))
 			| _ -> snarkBaseSort(spc, srt, rng?))
 	           | _ -> Lisp.symbol("SNARK",snarkSortId(id))))
       | _ -> Lisp.symbol("SNARK",snarkSortId(id))
