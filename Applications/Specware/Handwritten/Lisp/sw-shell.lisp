@@ -167,7 +167,9 @@
       (gen-lisp (cl-user::swl argstr) (values))
       (lgen-lisp (cl-user::swll argstr) (values))
       (gen-c (cl-user::swc argstr) (values))
-      (make (cl-user::make argstr))
+      (make (if (null argstr)
+		(cl-user::make)
+	      (cl-user::make argstr)))
       (gen-java (cl-user::swj argstr) (values))
 ; obsolete
 ;      (j-config (cl-user::swj-config))
@@ -232,7 +234,8 @@
 			 (funcall command)
 		       (funcall command com-argstr)))
 		 (format t "Unknown command: ~a." command)))))
-      (t (format t "Unknown command ~a. Type `help' to see available commands." command)
+      (t (format t "Unknown command `~a'. Type `help' to see available commands."
+		 (string-downcase command))
 	 (values)))))
 
 ;;; Add commands for entering shell from Lisp shell

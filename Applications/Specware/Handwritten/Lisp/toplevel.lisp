@@ -106,12 +106,15 @@
 		    (tmp-name (format nil "sw_tmp_~D_~D"
 				      (incf *tmp-counter*) 
 				      (ymd-hms)))
-		    (tmp-uid (format nil "/~A"     tmp-name))
+		    (tmp-full-name (format nil "~A~A" tmp-dir tmp-name))
+		    (tmp-device-uid-pr (split-device tmp-full-name))
+		    (tmp-uid (cdr tmp-device-uid-pr))
+		    (tmp-device (car tmp-device-uid-pr))
 		    (tmp-full-uid (format nil "~A~A"  tmp-dir tmp-name))
-		    (tmp-sw  (format nil "~A~A.sw" tmp-dir tmp-name))
+		    (tmp-sw (format nil "~A~A.sw" tmp-dir tmp-name))
 		    (old-swpath (or *saved-swpath* (specware::getEnv "SWPATH")))
 		    (new-swpath (format nil #-mswindows "~Asw/:~A" #+mswindows "~A/sw/;~A"
-					Specware::temporaryDirectory old-swpath)))
+					tmp-device old-swpath)))
 	       (ensure-directories-exist tmp-dir)
 	       (with-open-file (s tmp-sw :direction :output :if-exists :supersede)
 		 (format s "~A" str))
@@ -124,6 +127,12 @@
 	       (setq SpecCalc::noElaboratingMessageFiles (cons tmp-full-uid nil))
 	       (setq str tmp-uid)))
 	   str)))
+
+(defun split-device (unit-name)
+  (if (and (> (length unit-name) 2) (eq (aref unit-name 1) #\:))
+      (cons (subseq unit-name 0 3)
+	    (subseq unit-name 2))
+    (cons (subseq unit-name 0 1) unit-name)))
 
 (defvar *running-test-harness?* nil)
 (defvar SWShell::*in-specware-shell?*)
@@ -350,7 +359,7 @@
 		    args
 		  *last-swl-args*)))
     (if r-args
-	(progn (setq *last-swl-args* args)
+	(progn (setq *last-swl-args* r-args)
 	       (funcall 'swll-internal (string (first r-args))
 			(if (not (null (second r-args)))
 			    (string (second r-args)) nil)))
@@ -576,7 +585,7 @@
 ;;;
 ;;; --------------------------------------------------------------------------------
 
-(defun swj (x &optional y)
+(defun swj-internal (x &optional y)
   (let ((emacs::*goto-file-position-store?* t)
 	(emacs::*goto-file-position-stored* nil))
     (Specware::evaluateJavaGen_fromLisp-2 (norm-unitid-str x) 
@@ -588,17 +597,20 @@
 
 (defvar *last-swj-args* nil)
 
-#+allegro
-(top-level:alias ("swj" :case-sensitive) (&optional &rest args)
+(defun swj (&optional args)
   (let ((r-args (if (not (null args))
-		    args
+		    (extract-final-file-name args)
 		  *last-swj-args*)))
     (if r-args
-	(progn (setq *last-swj-args* args)
-	       (funcall 'swj (string (first r-args))
-			(if (not (null (second r-args)))
-			    (string (second r-args)) nil)))
+	(progn (setq *last-swj-args* r-args)
+	       (swj-internal (string (first r-args))
+			     (if (not (null (second r-args)))
+				 (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
+
+#+allegro
+(top-level:alias ("swj" :case-sensitive) (&optional &rest args)
+  (swj args))
 
 (defun swj-config-pkg (&optional pkg)
   #+(or allegro lispworks)
@@ -732,8 +744,7 @@
 	 (sw-make-file "$(SPECWARE4)/Languages/MetaSlang/CodeGen/C/Clib/Makerules")
 	 (make-file "swcmake.mk"))
     (setq *last-make-args* make-args)
-    ;;(format t "make-args=~A~%" make-args)
-    (if  make-args
+    (if make-args
 	(let* ((unitid (first make-args))
 	       (cbase (getCFileNameFromUnitid unitid))
 	       (user-make-file (concatenate 'string cbase user-make-file-suffix))
