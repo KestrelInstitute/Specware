@@ -113,7 +113,6 @@
   (setq SpecCalc::aliasPaths nil)
   (if (null str) str
     (progn (setq str (strip-extraneous str))
-	   (setq str (subst-home str))
 	   (let ((len (length str)))
 	     (when (and (> len 3)
 			(string= (subseq str (- len 3)) ".sw"))
