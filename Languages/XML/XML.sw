@@ -4,18 +4,20 @@ XML qualifying spec
   import /Library/IO/Unicode/UnicodeSig
   import XML_Sig
   import Parser/XML_Parser
-  import Printers/GenerateDocument
   import Printers/XML_Printer
+  import Conversions/GenerateDocument
+  import Conversions/InternalizeDocument
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INTERFACE
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% These are all very tricky -- actual handwritten function takes extra arg depicting X
-  op parseXML        : fa (X) String  -> X     % Tricky, TODO
-  op parseUnicodeXML : fa (X) UString -> X     % Tricky, TODO
-  op printXML        : fa (X) X -> String      % Tricky, see Languages/XML/Handwritten/Lisp/Support.lisp
-  op printUnicodeXML : fa (X) X -> UString     % Tricky, TODO
+  op parseXML             : fa (X) String  -> X          % Tricky, TODO
+  op parseUnicodeXML      : fa (X) UString -> X          % Tricky, TODO
+  op printXML             : fa (X) X -> String           % Tricky, see Languages/XML/Handwritten/Lisp/Support.lisp
+  op printUnicodeXML      : fa (X) X -> UString          % Tricky, TODO
+  op internalize_Document : fa (X) Document -> Option X  % Tricky, see Languages/XML/Handwritten/Lisp/Support.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INPUT
