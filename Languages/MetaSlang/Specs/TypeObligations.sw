@@ -34,7 +34,7 @@ spec
 
  def mkLetOrApply(fntm,arg) =
    case fntm of
-     | Lambda ([(VarPat(v as (_,srt),_),Fun(Bool true, _,_),bod)],_) ->
+     | Lambda ([(VarPat(v as (vn,srt),_),Fun(Bool true, _,_),bod)],_) ->
        % mkLet([(VarPat(v,a),arg)],bod)
        (case bod of
 	 | Var _ ->
@@ -43,7 +43,11 @@ spec
 				| _ -> tm,
 		    id, id)
 	     bod
-	 | _ -> mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
+	 | _ ->
+	   if exists(fn (vn1,_) -> vn = vn1) (freeVars arg)    % Name clash
+	     then let vn1 = vn^"1" in
+	          mkLetOrApply(mkLambda(mkVarPat(vn1,srt),substitute(bod,[(v,mkVar(vn1,srt))])),arg)
+	     else mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
      | _ -> mkApply(fntm,arg)
 
  def assertCond(cond,gamma as (ds,tvs,spc,qid,name,names)) = 
