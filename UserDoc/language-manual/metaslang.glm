@@ -2149,7 +2149,7 @@ Otherwise, the `spec is ill formed.
 <section id="Claim-definitions"><title>Claim-definitions</title>
 <para>
 <<
-||`claim-definition ::= `claim-kind `claim-name `equals `claim
+||`claim-definition ::= `claim-kind `claim-name is `claim
 ||
 ||`claim-kind ::= axiom | theorem | conjecture
 ||
@@ -2216,7 +2216,7 @@ to dealing with them.
 <para>
 Remark.
 It is a common mistake to omit the part <quote>`claim-name
-`equals</quote> from a `claim-definition.
+is</quote> from a `claim-definition.
 A defensive style against this mistake is to have the `claim always
 start on a new text line.
 This is additionally recommended because it may become required in
