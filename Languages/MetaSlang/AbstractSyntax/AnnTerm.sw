@@ -851,7 +851,7 @@ MetaSlang qualifying spec {
 					      true
 					      (tms1, tms2)
 
-     | (Any  _,    Any  _)           -> false  % TODO: Tricky -- should this be some kind of lisp EQ test?
+     | (Any  _,    Any  _)           -> true % TODO: Tricky -- should this be some kind of lisp EQ test?
 
      | _ -> false
 
