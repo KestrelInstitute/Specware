@@ -351,7 +351,7 @@ easy reference.
 <formalpara><title>Claim-definitions</title>
 <para>
 <<
-||  `claim-definition ::= `claim-kind `claim-name `equals `claim
+||  `claim-definition ::= `claim-kind `claim-name is `claim
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
@@ -521,7 +521,7 @@ easy reference.
 ||  
 ||  `inbuilt-prefix-op ::=  ~
 ||  
-||  `inbuilt-infix-op ::=  =>  |  <=>  |  '|'|  |  &&  |  =  |  ~=  |  <<
+||  `inbuilt-infix-op ::=  <=>  |  =>  |  '|'|  |  &&  |  =  |  ~=  |  <<
 >>
 </para>
 </formalpara>

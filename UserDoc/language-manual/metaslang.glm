@@ -2178,8 +2178,22 @@ The type of the `claim must be [[Boolean]].
 </para>
 <!-- ================================================================= -->
 <para>
-When a `type-quantification is present, the `claim is polymorphic.
-The `claim may be thought of as standing for an infinite family
+Restriction.
+A `claim must not be an `expression whose first symbol is [[[]].
+In order to use such an `expression as a `claim, it can be parenthesized,
+as in
+[[
+||    axiom nil_fits_nil is ([] fits [])
+]]
+This restriction prevents ambiguities between `claims with and without
+`type-variable-binders.
+then it identifies the textually most recent introduction.
+Otherwise, the `simple-name is a `type-name.
+</para>
+<!-- ================================================================= -->
+<para>
+When a `type-variable-binder is present, the `claim is polymorphic.
+A polymorphic `claim may be thought of as standing for an infinite family
 of monomorphic `claims, one for each possible assignment of
 types to the `local-type-variables.
 </para>
@@ -2361,13 +2375,8 @@ they were `ops, but note the Restriction specified under
 </para>
 <!-- ================================================================= -->
 <para>
-For a `type-sum
-$T$ with
-`type-summand
-$C$ $S$,
-in which
-$C$ is a `constructor and
-$S$ a `type-descriptor,
+For a `type-sum $T$ with `type-summand $C$ $S$, in which
+$C$ is a `constructor and $S$ a `type-descriptor,
 the corresponding pseudo-`op introduced is typed as follows:
 [[
 ||    op $C$ : $S$ -> $T$
@@ -2402,26 +2411,15 @@ and jointly <emphasis>surjective</emphasis>.
 <!-- ================================================================= -->
 <para>
 This means, first, that for any pair of `constructors
-$C1$ and
-$C2$ of
+$C1$ and $C2$ of
 <emphasis>any</emphasis> `type-sum, and for any pair
-of values
-$v1$ and
-$v2$
+of values $v1$ and $v2$
 of the appropriate type
 (to be omitted for parameter-less `constructors),
-the value of
-$C1$ $v1$
-is only equal to
-$C2$ $v2$
-when
-$C1$
-and
-$C2$
+the value of $C1$ $v1$ is only equal to
+$C2$ $v2$ when $C1$ and $C2$
 are the same `constructor of the <emphasis>same</emphasis>
-sum type, and
-$v1$ and
-$v2$
+sum type, and $v1$ and $v2$
 (which then are either both absent, or else must have the
 same type) are both absent or are the same value.
 In other words, whenever the `constructors are different, or are from
@@ -2438,10 +2436,7 @@ type, there is a `constructor $C$ of
 that sum type and a value
 $v$ of the appropriate type
 (to be omitted for parameter-less `constructors),
-such that the value of
-$C$ $v$
-is
-$u$.
+such that the value of $C$ $v$ is $u$.
 In other words, all values of a sum type can be constructed
 with an `embedder.
 </para>
@@ -2948,7 +2943,7 @@ has three inhabitants.
 ||
 ||`inbuilt-prefix-op ::=  ~
 ||
-||`inbuilt-infix-op ::=  =>  |  <=>  |  '|'|  |  &&  |  =  |  ~=  |  <<
+||`inbuilt-infix-op ::=  <=>  |  =>  |  '|'|  |  &&  |  =  |  ~=  |  <<
 >>
 (The distinctions `tight- and `closed- for `expressions lack
 semantic significance, and merely serve the purpose of avoiding
@@ -3392,13 +3387,14 @@ For the application of this disambiguation rule, the `inbuilt-ops
 have `fixity as suggested by the following
 pseudo-`op-declarations:
 [[
-||op =>  infixr 13 : Boolean * Boolean -> Boolean 
-||op ||  infixr 14 : Boolean * Boolean -> Boolean 
-||op &&  infixr 15 : Boolean * Boolean -> Boolean 
-||op =   infixr 20 : [a]   a * a       -> Boolean 
-||op ~=  infixr 20 : [a]   a * a       -> Boolean 
-||op <<  infixl 25 : {$x$:$A$, ... , $y$:$B$, ...} * {$x$:$A$, ... , $z$:$C$, ...}
-||                -> {$x$:$A$, ... , $y$:$B$, ... , $z$:$C$, ...}
+||op <=>  infixr 12 : Boolean * Boolean -> Boolean 
+||op =>   infixr 13 : Boolean * Boolean -> Boolean 
+||op ||   infixr 14 : Boolean * Boolean -> Boolean 
+||op &&   infixr 15 : Boolean * Boolean -> Boolean 
+||op =    infixr 20 : [a]   a * a       -> Boolean 
+||op ~=   infixr 20 : [a]   a * a       -> Boolean 
+||op <<   infixl 25 : {$x$:$A$, ... , $y$:$B$, ...} * {$x$:$A$, ... , $z$:$C$, ...}
+||                 -> {$x$:$A$, ... , $y$:$B$, ... , $z$:$C$, ...}
 ]]
 </para>
 <!-- ================================================================= -->
