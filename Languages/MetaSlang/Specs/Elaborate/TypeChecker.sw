@@ -1151,7 +1151,7 @@ spec
   def elaborateSortForTerm (env, term, givenSort, expectedSort) = 
    %% unifySorts has side effect of modifying metaTyVar links
    let (success, msg) = unifySorts env true givenSort expectedSort in
-   ((if success then
+   ((if success or env.firstPass? then
        ()
      else
        let pos        = termAnn   term in

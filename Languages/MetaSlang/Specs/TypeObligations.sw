@@ -13,16 +13,17 @@ spec
  op checkSpec : Spec -> TypeCheckConditions
 
 % Auxiliary variable environment.
-% Gamma maps local variables to their sorts, 
+% Gamma maps local variables to their types, 
 % and also accumulates local context assertions.
 
- sort Decl  = 
+ type Decl  = 
    | Var Var 
    | Cond MS.Term                 
    | LetRec List (Var * MS.Term) 
    | Let List (Pattern * MS.Term)
 
- sort Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * QualifiedId * NameSupply
+ type Gamma = List Decl * TyVars * Spec * Option (QualifiedId * List Pattern) * QualifiedId
+                * Option Sort * NameSupply
 
  op  insert       : Var * Gamma -> Gamma
  op  assertCond   : MS.Term * Gamma -> Gamma
@@ -33,13 +34,13 @@ spec
  def assertSubtypeCond(term,srt,gamma) = 
      case srt
        of Subsort(srt,pred,_) ->
-          let (ds,tvs,spc,qid,name,names) = gamma in
+          let (ds,tvs,spc,qid,name,ty,names) = gamma in
           assertSubtypeCond(term,srt,(cons(Cond(mkLetOrApply(pred,term,gamma)),ds),
-				      tvs,spc,qid,name,names))
+				      tvs,spc,qid,name,ty,names))
         | _ -> gamma
 
  op  mkLetOrApply: MS.Term * MS.Term * Gamma -> MS.Term
- def mkLetOrApply(fntm,arg,(ds,tvs,spc,qid,name,names)) =
+ def mkLetOrApply(fntm,arg,(ds,tvs,spc,qid,name,ty,names)) =
    let fntm = renameTerm (names,emptyEnv()) fntm in
    case fntm of
      | Lambda ([(VarPat(v as (vn,srt),_),Fun(Bool true, _,_),bod)],_) ->
@@ -59,22 +60,22 @@ spec
 	   mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod)))
      | _ -> mkApply(fntm,arg)
 
- def assertCond(cond,gamma as (ds,tvs,spc,qid,name,names)) = 
+ def assertCond(cond,gamma as (ds,tvs,spc,qid,name,ty,names)) = 
    case cond of
      | Fun((Bool true,_,_)) -> gamma
-     | _ -> (cons(Cond cond,ds),tvs,spc,qid,name,names)
- def insert((x,srt),gamma as (ds,tvs,spc,qid,name,names))  = 
+     | _ -> (cons(Cond cond,ds),tvs,spc,qid,name,ty,names)
+ def insert((x,srt),gamma as (ds,tvs,spc,qid,name,ty,names))  = 
      let ds = cons(Var(x,srt),ds) in
      let _ = names := StringMap.insert(!names,x,0) in
-     let gamma = (ds,tvs,spc,qid,name,names) in
+     let gamma = (ds,tvs,spc,qid,name,ty,names) in
      let gamma = assertSubtypeCond(mkVar(x,srt),srt,gamma) in
      gamma
 % Subsort conditions:
- def insertLet(decls,(ds,tvs,spc,qid,name,names)) = 
-     (cons(Let decls,ds),tvs,spc,qid,name,names)
- def insertLetRec(decls,(ds,tvs,spc,qid,name,names)) =
+ def insertLet(decls,(ds,tvs,spc,qid,name,ty,names)) = 
+     (cons(Let decls,ds),tvs,spc,qid,name,ty,names)
+ def insertLetRec(decls,(ds,tvs,spc,qid,name,ty,names)) =
    let _ = app (fn((x,_),_)-> names := StringMap.insert(!names,x,0)) decls in
-   (cons(LetRec decls,ds),tvs,spc,qid,name,names)
+   (cons(LetRec decls,ds),tvs,spc,qid,name,ty,names)
 
  def printDecl(d:Decl) = 
      case d
@@ -84,7 +85,7 @@ spec
 	| Let decls -> printTerm (Let(decls,Record([],noPos),noPos))
 
  op printGamma: Gamma -> ()
- def printGamma(decls,_,_,_,_,_) = 
+ def printGamma(decls,_,_,_,_,_,_) = 
      let _ = app (fn decl -> 
 		(String.toScreen (printDecl decl);
  		 String.toScreen "; "))
@@ -121,9 +122,9 @@ spec
 % op range      : Spec * Sort -> Sort
  op unfoldBase : Gamma * Sort -> Sort
 
- def getSpec (_,_,e,_,_,_) = e
+ def getSpec (_,_,e,_,_,_,_) = e
 
- def unfoldBase((_,_,spc,_,_,_),tau) = 
+ def unfoldBase((_,_,spc,_,_,_,_),tau) = 
      SpecEnvironment.unfoldBase(spc,tau)
 
 % def arrow = SpecEnvironment.arrow
@@ -132,12 +133,12 @@ spec
 % def inferType = SpecEnvironment.inferType
 
 
- def addFailure((tcc,claimNames),(_,_,_,_,name as Qualified(qid, id),_),description) = 
+ def addFailure((tcc,claimNames),(_,_,_,_,name as Qualified(qid, id),_,_),description) = 
      let descName = id^" :"^description in
      let name = mkQualifiedId(qid, descName) in
      (Cons((name,[],mkFalse()),tcc),StringSet.add(claimNames,descName))
 
- def makeVerificationCondition((decls,tvs,spc,qid,name as Qualified(qual, id),_),term,claimNames) = 
+ def makeVerificationCondition((decls,tvs,spc,qid,name as Qualified(qual, id),_,_),term,claimNames) = 
      let
 	def insert(decl,formula) = 
 	    case decl
@@ -164,7 +165,7 @@ spec
 % names previously used in spec (as ops) and
 % for the bound variables.
 %
- def freshName((_,_,_,_,_,names),name) =
+ def freshName((_,_,_,_,_,_,names),name) =
    fresh names name
 
  op  freshVar: Id * Sort * Gamma -> MS.Term * Gamma
@@ -330,7 +331,7 @@ spec
  op  nonStrictAppl: MS.Term * MS.Term -> Option (MS.Term * MS.Term * Boolean)
  def nonStrictAppl(rator,args) =
    case (rator, args) of
-     | (Fun(And,     _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p & q  -- can assume  p in q
+     | (Fun(And,     _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p && q  -- can assume  p in q
      | (Fun(Or,      _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,false)  % p or q -- can assume ~p in q
      | (Fun(Implies, _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p => q -- can assume  p in q
      | _ -> None
@@ -345,7 +346,7 @@ spec
        (List.map (fn(p,c,b) -> ([p],c,mkTrue())) rules)	 in
    let x  = freshName(gamma,"D")			 in
    let vs = [mkVar(x,dom)] 	        	         in
-   let (_,_,spc,_,Qualified(_, name),_) = gamma			 in
+   let (_,_,spc,_,Qualified(_, name),_,_) = gamma			 in
    let context:PatternMatch.Context = {counter = Ref 0,
 		  spc = spc,
 		  funName = name,
@@ -373,9 +374,9 @@ spec
      let tcc = (tcc,gamma2) |- body ?? rng 			in
      tcc
 
-
-
- op bindPattern : Gamma * Pattern * Sort  -> Gamma * MS.Term
+ op  returnPattern: Gamma * MS.Term * Sort * Sort  -> Gamma * MS.Term
+ def returnPattern(gamma,t,tau1,tau2) = 
+     returnPatternRec([],gamma,t,tau1,tau2)
 
  def returnPatternRec(pairs,gamma,M,tau,sigma) =
      if equalSort?(tau,sigma) or 
@@ -398,12 +399,8 @@ spec
 	  let gamma = assertCond(mkLetOrApply(pred,M,gamma),gamma) in
 	  returnPatternRec(pairs,gamma,M,tau1,sigma2)
 	| _ -> (gamma,M)
- 
- op  returnPattern: Gamma * MS.Term * Sort * Sort  -> Gamma * MS.Term
- def returnPattern(gamma,t,tau1,tau2) = 
-     returnPatternRec([],gamma,t,tau1,tau2)
 
-     
+ op  bindPattern : Gamma * Pattern * Sort  -> Gamma * MS.Term
  def bindPattern(gamma,pat,tau) = 
    case pat
      of AliasPat(p1,p2,_) -> 
@@ -460,41 +457,52 @@ spec
 %% Well-foundedness condition
 
  op  checkRecursiveCall: TypeCheckConditions * Gamma * MS.Term * MS.Term * MS.Term -> TypeCheckConditions
+ (* Don't need to generate obligation if arguments of call are independent of parameters. Normally, if an 
+    obligation is generated, it should be trivial to find a WFO because the "recursive" call is made with 
+    constant arguments, but if type of call is different from type of def then don't generate condition
+    because it would give a type error. *)
  def checkRecursiveCall(tcc,gamma,term,n1,n2) =
    case CurryUtils.getCurryArgs term of
      | Some(f,args) ->
        (case f of
-	  | Fun(Op(lqid,_),_,_) ->
+	  | Fun(Op(lqid,_),oty,_) ->
 	    (case gamma of
-	       | (_,_,_,Some(qid,vs),_,_) ->
-		 if qid = lqid & length args = length vs
+	       | (_,_,spc,Some(qid,vs),_,Some ty,_) ->
+		 if qid = lqid && length args = length vs
 		   %% Should be able to deal with length args < length vs
 		   then
 		     %let vs = map (fn (VarPat(v,_)) -> v) vs in
-		     if vs = [] then tcc
-		       else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),mkTuple args)
+		     if vs = [] 
+		       || ~(equalSort?(unfoldStripSort(spc,oty,false),ty))  % If different then not really recursive
+		       then tcc
+		       else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) ->
+								     let tm::_ = patternToTerms(pat) in tm) vs),
+					      mkTuple args)
 		   else tcc
 	       | _ -> tcc)
 	  | _ -> tcc)
      | _ ->
    case n1 of
-     | Fun(Op(lqid,_),_,_) ->
+     | Fun(Op(lqid,_),oty,_) ->
        (case gamma of
-	 | (_,_,_,Some(qid,[p]),_,_) ->
+	 | (_,_,spc,Some(qid,[p]),_,Some ty,_) ->
 	   if qid = lqid
-	     then
-	       %let vs = map (fn (VarPat(v,_)) -> v) (getParams p) in
-	       let vs = (getParams p) in
-	       if vs = [] then tcc
-	       else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),n2)	       
-	     else tcc
+	    then
+	    %let vs = map (fn (VarPat(v,_)) -> v) (getParams p) in
+	    let vs = (getParams p) in
+	    if vs = []
+	      || ~(equalSort?(unfoldStripSort(spc,oty,false),ty))   % If different then not really recursive
+	      then tcc
+	    else add_WFO_Condition(tcc,gamma,mkTuple(map (fn (pat) -> let tm::_ = patternToTerms(pat) in tm) vs),
+				   n2)	       
+	   else tcc
 	 | _ -> tcc)
      | _ -> tcc
 
  op  add_WFO_Condition: TypeCheckConditions * Gamma * MS.Term * MS.Term
                        -> TypeCheckConditions
- def add_WFO_Condition((tccs,claimNames),(decls,tvs,spc,qid,name as Qualified(qual, id),_),param,recParam) =
-   %% ex(pred) (wfo(pred) & fa(params) context(params) => pred(recParams,params))
+ def add_WFO_Condition((tccs,claimNames),(decls,tvs,spc,qid,name as Qualified(qual, id),_,_),param,recParam) =
+   %% ex(pred) (wfo(pred) && fa(params) context(params) => pred(recParams,params))
    let paramSort = inferType(spc,recParam) in
    let predSort = mkArrow(mkProduct [paramSort,paramSort],boolSort) in
    let pred = ("pred",predSort) in
@@ -539,6 +547,11 @@ spec
 	  let t1 = simplifyMatch(t1) in
 	  let t2 = simplifyMatch(t2) in
 	  Utilities.mkOr(t1,t2)
+	| Apply(Fun(And,_,_),
+		Record([(_,t1),(_,t2)],_),_) -> 
+	  let t1 = simplifyMatch(t1) in
+	  let t2 = simplifyMatch(t2) in
+	  Utilities.mkAnd(t1,t2)
 	| Let(decls,body,_) -> 
 	  let trm = simplifyMatch(body) in
 	  (case trm
@@ -669,7 +682,7 @@ spec
    let x = ("x",elty) in
    let y = ("y",elty) in
    let z = ("z",elty) in
-   [%% fa(x,y,z) r(x,y) & r(y,z) => r(x,z)
+   [%% fa(x,y,z) r(x,y) && r(y,z) => r(x,z)
     (mkQualifiedId(qual, name^"_transitive"),tyVars,
      mkBind(Forall,[x,y,z],mkImplies(MS.mkAnd(mkAppl(r,[mkVar x,mkVar y]),mkAppl(r,[mkVar y,mkVar z])),
 				     mkAppl(r,[mkVar x,mkVar z])))),
@@ -698,7 +711,7 @@ spec
 			  else StringMap.insert(m,id,0))
                    empty localOps
      in
-     let gamma0 = fn tvs -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, Ref names) in
+     let gamma0 = fn tvs -> fn tau -> fn qid -> fn nm -> ([], tvs, spc, qid, nm, tau,Ref names) in
      let tcc = ([],empty) in
      %% Definitions of ops
      let tcc = 
@@ -707,7 +720,8 @@ spec
 	     if member(Qualified(qname, name),localOps) then
 	         foldl (fn ((type_vars, term), tcc) ->
 			 let term = renameTerm (emptyContext()) term in 
-			 (tcc,gamma0 tvs (Some(Qualified(qname,name),(curriedParams term).1))
+			 (tcc,gamma0 tvs (Some (unfoldStripSort(spc,tau,false)))
+			        (Some(Qualified(qname,name),(curriedParams term).1))
 			        (mkQualifiedId(qname, (name^"_Obligation"))))
 			      |- term ?? tau)
 		   tcc defs
@@ -720,7 +734,8 @@ spec
      let tcc = foldr (fn (pr as (_,pname as Qualified(qname, name),tvs,fm),tcc) ->
 		       if member(pr,baseProperties) then tcc
 			 else let fm = renameTerm (emptyContext()) fm in
-			      (tcc,gamma0 tvs None (mkQualifiedId(qname, (name^"_Obligation"))))  |- fm ?? boolSort)
+			      (tcc,gamma0 tvs None None (mkQualifiedId(qname, (name^"_Obligation"))))
+		               |- fm ?? boolSort)
                  tcc spc.properties
      in
      %% Quotient relations are equivalence relations
@@ -751,7 +766,11 @@ spec
      | Some wfoSpec ->
    %% if you only do an addImport to the emptyspec you miss all the substance of the
    %% original spec, thus we do an setImports to spc.
-   let tcSpec = setImports (spc, [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)]) in
+   let tcSpec = spc << {importInfo = {imports      = [(specCalcTerm,spc),(wfoSpecTerm,wfoSpec)],
+				      importedSpec = Some (addDisjointImport(spc,wfoSpec)),
+				      localOps     = emptyOpNames,
+				      localSorts   = emptySortNames}}
+   in
    let tcSpec = addDisjointImport(tcSpec,wfoSpec) in
    addConjectures (rev (checkSpec spc).1,tcSpec)
 

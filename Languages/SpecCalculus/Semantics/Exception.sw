@@ -88,7 +88,7 @@ SpecCalc qualifying spec
   def numberOfTypeErrorsToPrint = 10
 
   op  numberOfExceptionsToPrint: Nat
-  def numberOfExceptionsToPrint = 20
+  def numberOfExceptionsToPrint = 12
 
   op printTypeErrors : List(String * Position) -> String
   def printTypeErrors errs =
@@ -99,7 +99,7 @@ SpecCalc qualifying spec
 			    | _ -> "")
           in (result
 	      ^ (if filename = lastfilename then
-		   "  " ^ print pos 
+		   print pos 
 		 else
 		   "Errors in " ^ (printAll pos))
 	      ^ "\t: " ^ msg ^ "\n",

@@ -181,11 +181,46 @@ spec
    %% let _ = appSpec (fn x -> (), fn s -> addSort([],s,sorts, constrMap), fn p -> ()) spc
    in ! constrMap
 
- op  checkErrors : LocalEnv -> List(String * Position)
+ op  String.search: String * String -> Option Nat
+ %% Find position of first occurrence of s1 in s2 or None
+ def String.search(s1,s2) =
+   let sz1 = length s1 in
+   let sz2 = length s2 in
+   let def loop(i) =
+        if i+sz1 > sz2 then None
+	else
+	if testSubseqEqual?(s1,s2,0,i)
+	 then Some i
+	 else loop(i+1)
+   in loop 0
 
+ op  testSubseqEqual?: String * String * Nat * Nat -> Boolean
+ def testSubseqEqual?(s1,s2,i1,i2) =
+   let sz1 = length s1 in
+   let def loop(i) =
+        if i1+i >= sz1 then true
+	 else sub(s1,i1+i) = sub(s2,i2+i) && loop(i+1)
+   in loop 0
+
+ op  checkErrors : LocalEnv -> List(String * Position)
  def checkErrors(env:LocalEnv) = 
    let errors = env.errors in
-   let def compare ((msg_1, pos_1), (msg_2, pos_2)) =
+   let def compare (em1 as (msg_1, pos_1), em2 as (msg_2, pos_2)) =
+         case (pos_1, pos_2) of
+	   | (File (file_1, left_1, right_1),
+	      File (file_2, left_2, right_2)) ->
+	     (if file_1 = file_2 & left_1.1 = left_2.1
+	       then % If messages are on same line then prefer unidentified name error
+		 let unid1 = search("could not be identified",msg_1) in
+		 let unid2 = search("could not be identified",msg_2) in
+		 case (unid1,unid2) of
+		   | (None,None) -> compare1 (em1,em2)
+		   | (Some _,None) -> Less
+		   | (None,Some _) -> Greater
+		   | (Some _,Some _) -> compare1 (em1,em2)
+	       else compare1 (em1,em2))
+	   | _ -> compare1 (em1,em2)
+       def compare1 ((msg_1, pos_1), (msg_2, pos_2)) =
          case Position.compare (pos_1, pos_2) of
            | Equal -> String.compare (msg_1, msg_2)     
            | c -> c     
