@@ -1,0 +1,99 @@
+#!/bin/sh
+
+## Hack by Jim McDonald, Fri Apr 18, 2003
+## Once per installation xemacs/allegro ilisp interface
+## See $SPECWARE4/Library/IO/Emacs/compile-misc-ilisp-files-for-acl.el
+
+## This script establishes Emacs/ilisp as a directory and runs ilisp-compile-inits
+## This eliminates some startup complaints from acl that would require 
+## (once per user per installation) manual intervention to eliminate.
+
+## Running this multiple times should be harmless.
+
+cd ${SPECWARE4}/Library/IO/Emacs/
+if [ ! -e ilisp ]; then
+  ln -s ilisp-20020831 ilisp
+fi
+
+echo ""
+echo "At `pwd`"
+echo "ilisp/ should be a directory (or a link to one) containing many files, including ilisp.el"
+echo ""
+ls -sltd ilisp
+ls -sltd ilisp/ilisp.el
+echo ""
+
+cd ilisp
+
+DOIT=NO
+if [ ! -e cl-ilisp.fasl ]; then
+  DOIT=YES
+fi
+if [ ! -e allegro.fasl ]; then
+  DOIT=YES
+fi
+if [ ! -e ilisp-pkg.fasl ]; then
+  DOIT=YES
+fi
+
+if [ "$DOIT" == "NO" ]; then
+
+  echo "No need to run ilisp-compile-inits within xemacs, since the following files already exist:"
+
+else 
+
+  ALLEGRO=""
+  for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp; do
+    if [ -x "$L" ]; then
+      ALLEGRO="$L"; break
+    fi
+  done
+
+  if [ -z "$ALLEGRO" ]; then
+    echo "Oops.  Do not have cmucl among the following:"
+    echo " "
+    echo "  /usr/local/acl/acl62/alisp"
+    echo "  /usr/local/acl/acl61/alisp"
+    echo " "
+    echo "Hence, cannot run ilisp-compile-inits within xemacs"
+  else
+    echo "About to run ilisp-compile-inits within xemacs, to compile ilisp-pkg.lisp, allegro.lisp, cl-ilisp.lisp"
+    # This is magic mumbo-jumbo -- more straightforward attempts to compile the files seem to fail in obscure ways.
+    # See the note in compile-misc-ilisp-files.el
+    export LISP_DIRECTORY=`pwd`
+    export LISP_EXECUTABLE=$ALLEGRO
+    # because of a bug in xemacs, this cannot be run in batch mode...
+    xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
+           -l "$SPECWARE4"/Library/IO/Emacs/compile-misc-ilisp-files-for-acl \
+           -geometry =100x20-0+80
+    echo "With luck, xemacs is now done compiling."
+    echo " "
+    echo "Should now see three or more fasl files, including:"
+    echo " "
+    echo "  cl-ilisp.fasl"
+    echo "  cmulisp.fasl" 
+    echo "  ilisp-pkg.fasl"
+  fi
+fi
+
+echo ""
+echo "Status of ilisp at `pwd`/"
+echo ""
+ls -sltr *.fasl
+echo ""
+
+RC=0
+if [ ! -e cl-ilisp.fasl ]; then
+  echo "Oops...  Missing cl-ilisp.fasl"
+  RC=1
+fi
+if [ ! -e allegro.fasl ]; then
+  echo "Oops...  Missing cmulisp.fasl"
+  RC=1
+fi
+if [ ! -e ilisp-pkg.fasl ]; then
+  echo "Oops...  Missing ilisp-pkg.fasl"
+  RC=1
+fi
+
+exit $RC

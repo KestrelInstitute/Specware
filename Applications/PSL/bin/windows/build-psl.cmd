@@ -14,4 +14,4 @@ set LISP_HEAP_IMAGE=%SPECWARE_BIN%\Specware4.dxl
 set LISP_DIRECTORY=%Specware4%/
 cd "%Specware4%"
 
-%XEMACS%\i586-pc-win32\xemacs.exe -debug-init -l "%ALLEGRO%/xeli/fi-site-init" -l "%SPECWARE4%/Library/IO/Emacs/load"  -l "%SPECWARE4%/Applications/PSL/bin/windows/psl-init" -f "build-psl" &
+%XEMACS%\i586-pc-win32\xemacs.exe -debug-init -l "%SPECWARE4%/Library/IO/Emacs/load-ilisp"  -l "%SPECWARE4%/Applications/PSL/bin/windows/psl-init" -f "build-psl" &

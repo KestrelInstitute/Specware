@@ -1,100 +1,14 @@
 #!/bin/sh
 
-## Hack by Jim McDonald, Fri Apr 18, 2003
-## Once per installation xemacs/cmucl ilisp interface
-## See $SPECWARE4/Library/IO/Emacs/compile-misc-ilisp-files.el
+HERE=`dirname $0`
+$HERE/Init-ilisp-for-xemacs-cmucl
+RC1=$?
 
-## This script establishes Emacs/ilisp as a directory and runs ilisp-compile-inits
-## This eliminates some startup complaints from cmucl that would require 
-## (once per user per installation) manual intervention to eliminate.
+$HERE/Init-ilisp-for-xemacs-acl
+RC2=$?
 
-## Running this multiple times should be harmless.
-
-cd ${SPECWARE4}/Library/IO/Emacs/
-if [ ! -e ilisp ]; then
-  ln -s ilisp-20020831 ilisp
+if [ $RC1 = 0 ]; then
+  exit $RC2
+else
+  exit $RC1
 fi
-
-echo ""
-echo "At `pwd`"
-echo "ilisp/ should be a directory (or a link to one) containing many files, including ilisp.el"
-echo ""
-ls -sltd ilisp
-ls -sltd ilisp/ilisp.el
-echo ""
-
-cd ilisp
-
-DOIT=NO
-if [ ! -e cl-ilisp.x86f ]; then
-  DOIT=YES
-fi
-if [ ! -e cmulisp.x86f ]; then
-  DOIT=YES
-fi
-if [ ! -e ilisp-pkg.x86f ]; then
-  DOIT=YES
-fi
-
-if [ "$DOIT" == "NO" ]; then
-
-  echo "No need to run ilisp-compile-inits within xemacs, since the following files already exist:"
-
-else 
-
-  CMULISP=""
-  for L in "$HOME"/cmucl/bin/lisp /usr/share/cmulisp/bin/lisp /usr/local/bin/cmucl /bin/lisp; do
-    if [ -x "$L" ]; then
-      CMULISP="$L"; break
-    fi
-  done
-
-  if [ -z "$CMULISP" ]; then
-    echo "Oops.  Do not have cmucl among the following:"
-    echo " "
-    echo "  $HOME/cmucl/bin/lisp"
-    echo "  /usr/share/cmulisp/bin/lisp"
-    echo "  /usr/local/bin/cmucl"
-    echo " "
-    echo "Hence, cannot run ilisp-compile-inits within xemacs"
-  else
-    echo "About to run ilisp-compile-inits within xemacs, to compile ilisp-pkg.lisp, cmulisp.lisp, cl-ilisp.lisp"
-    # This is magic mumbo-jumbo -- more straightforward attempts to compile the files seem to fail in obscure ways.
-    # See the note in compile-misc-ilisp-files.el
-    export LISP_DIRECTORY=`pwd`
-    export LISP_EXECUTABLE=$CMULISP
-    # because of a bug in xemacs, this cannot be run in batch mode...
-    xemacs -l "$SPECWARE4"/Library/IO/Emacs/load-ilisp \
-           -l "$SPECWARE4"/Library/IO/Emacs/compile-misc-ilisp-files \
-           -geometry =100x20-0+80
-    echo "With luck, xemacs is now done compiling."
-    echo " "
-    echo "Should now see three or more x86f files, including:"
-    echo " "
-    echo "  cl-ilisp.x86f"
-    echo "  cmulisp.x86f" 
-    echo "  ilisp-pkg.x86f"
-  fi
-fi
-
-echo ""
-echo "Status of ilisp at `pwd`/"
-echo ""
-ls -sltr *.x86f
-echo ""
-
-RC=0
-if [ ! -e cl-ilisp.x86f ]; then
-  echo "Oops...  Missing cl-ilisp.x86f"
-  RC=1
-fi
-if [ ! -e cmulisp.x86f ]; then
-  echo "Oops...  Missing cmulisp.x86f"
-  RC=1
-fi
-if [ ! -e ilisp-pkg.x86f ]; then
-  echo "Oops...  Missing ilisp-pkg.x86f"
-  RC=1
-fi
-
-exit $RC
