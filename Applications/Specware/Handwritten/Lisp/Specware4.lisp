@@ -34,9 +34,13 @@
 
 ;; The following uses make-system from load-utilities above.
 ;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
-(make-system "../../UI/Emacs/Handwritten/Lisp") 
+(make-system (concatenate 'string Specware4 "/Applications/Specware/UI/Emacs/Handwritten/Lisp"))
 
-;; The following list should be generated automatically!
+;; The following list should be generated automatically. That is, the
+;; files listed below define functions that are declared in specs
+;; used by Specware. Specware should generate the list of runtime files
+;; needed by specs referenced in an application.
+;;
 ;; The list is used only in this file.
 ;;; ---------------
 (defvar HandwrittenFiles
@@ -57,28 +61,41 @@
     )
   )
 
-;; This loads functions that are assumed by the MetaSlang to Lisp compiler
-(compile-and-load-lisp-file (concatenate 'string
-  Specware4 "/Applications/Handwritten/Lisp/meta-slang-runtime"))
-
 (map 'list #'(lambda (file)
   (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
   HandwrittenFiles
 )
 
-;; Define functions for saving/restoring the
-;; Specware state to/from the lisp environment
-(compile-and-load-lisp-file "specware-state")
+;; The following are specific to Specware and languages that
+;; extend Specware. The order is significant: specware-state
+;; must be loaded before the generated lisp file.
+;;
+;; The list below is used only in this file.
 
-;; Now load the generated lisp code.  This also initializes the Specware
-;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
-(compile-and-load-lisp-file "../../lisp/Specware4.lisp")
+(defvar SpecwareRuntime
+  '(
+     ;; Functions that are assumed by the MetaSlang to Lisp compiler
+     "Applications/Handwritten/Lisp/meta-slang-runtime"
 
-;; Stephen's Toplevel aliases 
-(compile-and-load-lisp-file "toplevel")
+     ;; Functions for saving/restoring the Specware state to/from the lisp environment
+     "Applications/Specware/Handwritten/Lisp/specware-state"
 
-;; Debugging utilities
-(compile-and-load-lisp-file "debug")
+     ;; The generated lisp code.  This also initializes the Specware
+     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
+     "Applications/Specware/lisp/Specware4.lisp"
+
+     ;; Toplevel aliases 
+     "Applications/Specware/Handwritten/Lisp/toplevel"
+
+     ;; Debugging utilities
+     "Applications/Specware/Handwritten/Lisp/debug"
+   )
+)
+
+(map 'list #'(lambda (file)
+  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+  SpecwareRuntime
+)
 
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string

@@ -29,47 +29,21 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 # set -v
 
 # Test whether SPECWARE4 has been set
-
 if [ -z "$SPECWARE4" ]; then
     echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
     exit 1
 fi
 
 # Test whether SPECWARE4 is a directory
-
 if [ ! -d "$SPECWARE4" ]; then
    echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
    exit 1
 fi
 
 # Ensure SPECWARE4 is set to full pathname:
-
-case "$SPECWARE" in
+case "$SPECWARE4" in
     /*) : ok;;
-    *)  SPECWARE="`pwd`/$SPECWARE";;
-esac
-
-echo "\$SPECWARE4=$SPECWARE4"
-
-# Test whether SPECWARE4 has been set
-
-if [ -z "$SPECWARE4" ]; then
-    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
-    exit 1
-fi
-
-# Test whether SPECWARE4 is a directory
-
-if [ ! -d "$SPECWARE4" ]; then
-   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
-   exit 1
-fi
-
-# Ensure SPECWARE4 is set to full pathname:
-
-case "$SPECWARE" in
-    /*) : ok;;
-    *)  SPECWARE="`pwd`/$SPECWARE";;
+    *)  SPECWARE="`pwd`/$SPECWARE4";;
 esac
 
 if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
@@ -86,7 +60,7 @@ cd $SPECWARE4/Applications/Specware
 if [ -z "$LISP" ]; then
    for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
       if [ -x "$L" ]; then
-         LISP="$L"; break
+         export LISP="$L"; break
       fi
    done
 fi
@@ -100,8 +74,6 @@ if [ ! -x "$LISP" ]; then
    echo "Failed to $act, $LISP is not executable" 2>&1
    exit 1
 fi
-
-export LISP
 
 echo " "
 if [ -f lisp/Specware4.lisp ]; then

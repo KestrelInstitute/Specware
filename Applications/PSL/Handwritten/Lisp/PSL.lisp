@@ -1,8 +1,17 @@
 (defpackage "SPECWARE")
-(defpackage "SPECCAT")
 (in-package "SPECWARE")
 
+(setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+
 (defvar Specware4 (sys:getenv "SPECWARE4"))
+
+;; Used in printing out the license and about-specware command
+(defvar user::Specware-version "4.0")
+(defvar user::Specware-version-name "Specware-4-0")
+(defvar user::Specware-patch-level "1")
+
+;; Used in patch detection and about-specware command
+(defvar Major-Version-String "4-0")
 
 ;; The following defines functions such as:
 ;;    compile-and-load-lisp-file
@@ -11,11 +20,27 @@
 ;;    change-directory
 ;;    current-directory
 (load (make-pathname
-  :defaults
-    (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
-  :type "lisp"))
+       :defaults (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
+       :type     "lisp"))
 
-;; The following list should be generated automatically!
+(load (make-pathname
+       :defaults (concatenate 'string Specware4 "/Provers/Snark/Handwritten/Lisp/snark-system")
+       :type     "lisp"))
+
+(snark:make-snark-system t)
+
+;; Snark puts us in another package .. so we go back
+(in-package "SPECWARE")
+
+;; The following uses make-system from load-utilities above.
+;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
+(make-system (concatenate 'string Specware4 "/Applications/Specware/UI/Emacs/Handwritten/Lisp"))
+
+;; The following list should be generated automatically. That is, the
+;; files listed below define functions that are declared in specs
+;; used by Specware. Specware should generate the list of runtime files
+;; needed by specs referenced in an application.
+;;
 ;; The list is used only in this file.
 ;;; ---------------
 (defvar HandwrittenFiles
@@ -33,48 +58,57 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
+    )
   )
-)
-
-;; This loads functions that are assumed by the MetaSlang to Lisp compiler
-(compile-and-load-lisp-file (concatenate 'string
-  Specware4 "/Applications/Handwritten/Lisp/meta-slang-runtime"))
 
 (map 'list #'(lambda (file)
   (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
   HandwrittenFiles
 )
 
-;; Define functions for saving/restoring the
-;; Specware state to/from the lisp environment
-(compile-and-load-lisp-file (concatenate 'string
-  Specware4 "/Applications/Specware/Handwritten/Lisp/specware-state"))
+;; The following are specific to Specware and languages that
+;; extend Specware. The order is significant: specware-state
+;; must be loaded before the generated lisp file.
+;;
+;; The list below is used only in this file.
 
-(defun SPECCAT::colimit-1 (x) (x))
+(defvar SpecwareRuntime
+  '(
+     ;; Functions that are assumed by the MetaSlang to Lisp compiler
+     "Applications/Handwritten/Lisp/meta-slang-runtime"
 
-;; Now load the generated lisp code.  
-(compile-and-load-lisp-file "../../lisp/PSL.lisp")
+     ;; Functions for saving/restoring the Specware state to/from the lisp environment
+     "Applications/Specware/Handwritten/Lisp/specware-state"
 
-;; Stephen's toplevel aliases 
-(compile-and-load-lisp-file (concatenate 'string
-  Specware4 "/Applications/Specware/Handwritten/Lisp/toplevel"))
+     ;; The generated lisp code.  This also initializes the Specware
+     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
+     "Applications/PSL/lisp/PSL.lisp"
 
-;; Debugging utilities
-(compile-and-load-lisp-file (concatenate 'string
-  Specware4 "/Applications/Specware/Handwritten/Lisp/debug"))
+     ;; Toplevel aliases 
+     "Applications/Specware/Handwritten/Lisp/toplevel"
 
+     ;; Debugging utilities
+     "Applications/Specware/Handwritten/Lisp/debug"
+   )
+)
+
+(map 'list #'(lambda (file)
+  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+  SpecwareRuntime
+)
+
+;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
-    Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
 (make-system (concatenate 'string
-    Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
+			  Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
-(make-system "../../../Specware/UI/Emacs/Handwritten/Lisp")
-
+;;; Preload the base specs
 (user::sw "/Library/Base")
 
 (format t "~2%To bootstrap, run (boot)~%")
-(format t "~%That will run :sw /Applications/PSL/PSL (but it probably won't work)~2%")
- 
+(format t "~%That will run :sw /Applications/Specware/Specware4~2%")
+
 (defun user::boot ()
-  (user::sw "/Applications/PSL/PSL")
-)
+  (user::sw "/Applications/Specware/Specware4")
+  )
