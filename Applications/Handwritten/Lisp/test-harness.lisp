@@ -305,7 +305,16 @@ be the option to run each (test ...) form in a fresh image.
 	(format s "~&;;; <  ...~%"))
       (dolist (line expected)
 	(cond ((consp line)
-	       (format s "~&;;; ?  ~A   [optional]~%" (cdr line)))
+	       (case (car line) 
+		 (:optional  
+		  (format s "~&;;; ?  ~A   [optional]~%" (cdr line)))
+		 (:alternatives
+		  (let ((n 0))
+		    (dolist (alt (cdr line))
+		      (format s "~&;;; ?  ~A   [alt ~D]~%" 
+			      alt (incf n)))))
+		 (t 
+		  (format s "~&;;; ?  ~A   [???]~%" (cdr line)))))
 	      (t
 	       (format s "~&;;; <  ~A~%" line))))
       (when partial-match-at-end?
