@@ -47,12 +47,13 @@
 (setq *specware4-parser* (load-parser "rules" :name 'SPECWARE4-PARSER :case-sensitive? t))
   
 (progn
-  ;;(comment "=======================================================================================================================")
+  ;;(comment "===================================================================================")
   ;; (comment " ")
   ;; (comment "Printing grammar as .ps file")
-  (print-grammar-ps-file)
+;; sjw: This dies on windows build, and why is this done at build time
+;;  (print-grammar-ps-file)
   ;; (comment " ")
-  ;;(comment "=======================================================================================================================")
+  ;;(comment "===================================================================================")
   )
 
 (defun user::test-specware4-parser (&optional (file "Languages/SpecCalculus/Parser/test.spec"))
