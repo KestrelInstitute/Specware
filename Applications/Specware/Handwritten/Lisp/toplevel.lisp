@@ -220,12 +220,27 @@
 		  result
 		(cons arg-string result)))))
 
+;;; This is heuristic. It could be made more accurate by improving filestring? to check for chars that
+;;; can't appear in file names but might appear in the final token of a spec term
+(defun extract-final-file-name (arg-string)
+  (let ((pos (position #\  arg-string :from-end t)))
+    (if (null pos)
+	(list arg-string nil)
+      (let ((lastitem (subseq arg-string (1+ pos))))
+	(if (filestring? lastitem)
+	    (list (subseq arg-string 0 pos) lastitem)
+	  (list arg-string nil))))))
+
+(defun filestring? (str)
+  (or (find #\/ str)
+      (not (or (member str '("end-spec" "endspec") :test 'string=)
+	       (not (find #\} str))))))
 
 (defvar *last-swl-args* nil)
 
 (defun swl (&optional args)
   (let ((r-args (if (not (null args))
-		    (toplevel-parse-args args)
+		    (extract-final-file-name args)
 		  *last-swl-args*)))
     (if r-args
 	(progn (setq *last-swl-args* r-args)
@@ -233,6 +248,7 @@
 			     (if (not (null (second r-args)))
 				 (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
+
 
 #+allegro
 (top-level:alias ("swl" :case-sensitive) (&optional &rest args)
@@ -263,7 +279,7 @@
 
 (defun swll (&optional args)
   (let ((r-args (if (not (null args))
-		    (toplevel-parse-args args)
+		    (extract-final-file-name args)
 		  *last-swl-args*)))
     (if r-args
 	(progn (setq *last-swl-args* r-args)
