@@ -1,11 +1,16 @@
-
 SpecCalc qualifying spec {
  import ../../Environment
- import /Languages/MetaSlang/Specs/PosSpec
+ import /Languages/MetaSlang/Specs/AnnSpec
  import /Library/Legacy/DataStructures/Monadic/SplayMap
 
- op addPSort : (List QualifiedId * TyVars * Option PSort) * PosSpec -> Position -> SpecCalc.Env PosSpec
- def addPSort ((names as (Qualified(qualifier, id))::_, new_type_vars, new_opt_def), old_spec) position =
+ op addSort :
+   fa (a) List QualifiedId
+       -> TyVars
+       -> Option (ASort a)
+       -> ASpec a
+       -> Position
+       -> SpecCalc.Env (ASpec a)
+ def addSort (names as (Qualified(qualifier, id))::_) new_type_vars  new_opt_def old_spec position =
   %% qualifier could be "<unqualified>" !
   let old_sorts = old_spec.sorts in
   let old_qmap =
@@ -39,9 +44,15 @@ SpecCalc qualifying spec {
     return (foldl (fn (name, sp) -> addLocalSortName (sp, name)) sp names)
   }
 
- op addPOp   : (List QualifiedId * Fixity * PSortScheme * Option PTerm) * PosSpec -> Position -> SpecCalc.Env PosSpec
- def addPOp ((names as (Qualified(qualifier, id))::_, new_fixity, new_sort_scheme, new_opt_def),
-             old_spec) position =
+ op addOp :
+    fa (a) List QualifiedId
+        -> Fixity
+        -> ASortScheme a 
+        -> Option (ATerm a)
+        -> ASpec a
+        -> Position
+        -> SpecCalc.Env (ASpec a)
+ def addOp (names as (Qualified(qualifier, id))::_) new_fixity new_sort_scheme new_opt_def old_spec position =
   %% qualifier could be "<unqualified>" !
   let old_ops = old_spec.ops in
   let old_qmap =
@@ -74,11 +85,14 @@ SpecCalc qualifying spec {
 
  % ------------------------------------------------------------------------
 
- op mergePSortInfo :
-      PSortInfo * Option PSortInfo * Qualifier * Id
-   -> Position
-   -> SpecCalc.Env PSortInfo
- def mergePSortInfo (newPSortInfo,optOldPSortInfo,qualifier,id) position =
+ op mergeSortInfo :
+   fa(a) ASortInfo a
+      -> Option (ASortInfo a)
+      -> Qualifier 
+      -> Id
+      -> Position
+      -> SpecCalc.Env (ASortInfo a)
+ def mergeSortInfo newPSortInfo optOldPSortInfo qualifier id position =
    case (newPSortInfo,optOldPSortInfo) of
      | (_,None) -> return newPSortInfo
      | ((new_sort_names, new_type_vars, new_opt_def),
@@ -99,11 +113,14 @@ SpecCalc qualifying spec {
                    raise (SpecError (position,
                        "Merged versions of Sort " ^ qualifier ^ "." ^ id ^ " have different definitions")))
     
- op mergePOpInfo :
-      POpInfo * Option POpInfo * Qualifier * Id
-   -> Position
-   -> SpecCalc.Env POpInfo
- def mergePOpInfo (newPOpInfo,optOldPOpInfo,qualifier,id) position =
+ op mergeOpInfo :
+   fa(a) AOpInfo a
+      -> Option (AOpInfo a)
+      -> Qualifier
+      -> Id
+      -> Position
+      -> SpecCalc.Env (AOpInfo a)
+ def mergeOpInfo newPOpInfo optOldPOpInfo qualifier id position =
    case (newPOpInfo,optOldPOpInfo) of
      | (_,None) -> return newPOpInfo
      | ((new_op_names, new_fixity, new_sort_scheme, new_opt_def),

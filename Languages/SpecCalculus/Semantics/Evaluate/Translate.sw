@@ -1,11 +1,10 @@
 \subsection{Spec Translation}
 
-Synchronized with r1.4 Languages/SpecCalculus/Semantics/Evaluate/EvalSpecMorphism.sl
-
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
   import ../../../MetaSlang/Specs/StandardSpec
+  import Spec/Utilities
 \end{spec}
 
 Perhaps evaluating a translation should yield a morphism rather than just 
@@ -35,103 +34,107 @@ the same names.
 
 \begin{spec}
   op translateSpec : Spec -> TranslateExpr Position -> Env Spec
-  def translateSpec spc expr = 
-      return (auxTranslateSpec(spc,makeTranslationMaps(spc,expr)))
+  def translateSpec spc expr = {
+      transMaps <- makeTranslationMaps spc expr;
+      auxTranslateSpec spc transMaps (positionOf expr)
+    } 
     
   op makeTranslationMaps :
-    Spec * (TranslateExpr Position)
-      -> AQualifierMap(QualifiedId) * AQualifierMap(QualifiedId)
-  %% Need to change fail to raise
- def makeTranslationMaps(spc,(transPairs,_)) =
-    let def insert(((n as Qualified(qualifier_n,id_n),Qualified(qualifier_m,id_m)),pos),
-		   (opMap,sortMap)) =
-	  case findAllOps(spc,n)
-	    of ((Qualified(qualifierN,idN))::_,_,_,_)::rs ->
-	       (if rs = [] or qualifierN = UnQualified then ()
-		 else fail("translate: Ambiguous source op name: "^id_n);
-	        (insertAQualifierMap(opMap,qualifierN,idN,
-				     Qualified(if qualifier_m = UnQualified
-					        then qualifierN
-						else qualifier_m,
-					       id_m)),
-		 sortMap))
-	     | _ ->
-	  (case findAllSorts(spc,n)
-	    of ((Qualified(qualifierN,idN))::_,_,_)::rs  ->
-	       (if rs = [] or qualifierN = UnQualified then ()
-		 else fail("translate: Ambiguous source sort name: "^id_n);
-		(opMap,insertAQualifierMap(sortMap,qualifierN,idN,
-					   Qualified(if qualifier_m = UnQualified
-						        then qualifierN
-						       else qualifier_m,
-						     id_m))))
-	     | _ -> fail ("Translate: Identifier \""^qualifier_n^"."^id_m^ "\" not found."))
+        Spec
+     -> TranslateExpr Position
+     -> SpecCalc.Env (AQualifierMap QualifiedId * AQualifierMap QualifiedId)
+  def makeTranslationMaps spc (transPairs,position) =
+    let def insert (opMap,sortMap) ((n as Qualified(qualifier_n,id_n),Qualified(qualifier_m,id_m)),pos) =
+          case findAllOps(spc,n) of
+            | ((Qualified(qualifierN,idN))::_,_,_,_)::rs ->
+                if rs = [] or qualifierN = UnQualified then 
+                  return (insertAQualifierMap(opMap,qualifierN,idN,
+                                     Qualified(if qualifier_m = UnQualified
+                                                then qualifierN
+                                                else qualifier_m,
+                                               id_m)),
+                  sortMap)
+                else
+                  raise (SpecError (position, "translate: Ambiguous source op name: "^id_n))
+             | _ ->
+                (case findAllSorts(spc,n) of
+                   | ((Qualified(qualifierN,idN))::_,_,_)::rs  ->
+                       if rs = [] or qualifierN = UnQualified then
+                         return (opMap,insertAQualifierMap(sortMap,qualifierN,idN,
+                                           Qualified(if qualifier_m = UnQualified
+                                                        then qualifierN
+                                                       else qualifier_m,
+                                                     id_m)))
+                       else
+                         raise (SpecError (position, "translate: Ambiguous source sort name: "^id_n))
+                   | _ -> raise (SpecError (position, "translate: Identifier \""^qualifier_n^"."^id_m^ "\" not found.")))
     in
-       List.foldr insert (emptyAQualifierMap,emptyAQualifierMap) transPairs
+       foldM insert (emptyAQualifierMap,emptyAQualifierMap) transPairs
 
- % Make a monad when debugged
- op auxTranslateSpec : Spec * (AQualifierMap(QualifiedId) * AQualifierMap(QualifiedId))
-                     -> Spec
- def auxTranslateSpec (spc, (opMap,sortMap)) =
-  %% Change UnQualified to new_qualifier in all qualified names
-  let
-    def translateQualifiedId (idMap,qid as Qualified (qualifier, id)) =
-      case findAQualifierMap(idMap,qualifier,id)
-        of Some nQId -> nQId
-         | None -> qid
+  op auxTranslateSpec :
+        Spec 
+     -> (AQualifierMap QualifiedId * AQualifierMap QualifiedId)
+     -> Position
+     -> SpecCalc.Env Spec
+  def auxTranslateSpec spc (opMap,sortMap) position =
+    %% Change UnQualified to new_qualifier in all qualified names
+    let
+      def translateQualifiedId (idMap,qid as Qualified (qualifier, id)) =
+        case findAQualifierMap (idMap,qualifier,id) of
+          | Some nQId -> nQId
+          | None -> qid
+  
+      def translateOp op_term =
+        case op_term of
+          | Fun (Op (qid, fixity), srt, a) ->
+            let new_qid = translateQualifiedId (opMap,qid) in
+            if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
+          | _ -> op_term
 
-    def translateOp op_term =
-      case op_term of
-       | Fun (Op (qid, fixity), srt, a) ->
-         let new_qid = translateQualifiedId (opMap,qid) in
-         if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
-       | _ -> op_term
+      def translateSort sort_term =
+        case sort_term of
+          | Base (qid, srts, a) ->
+             let new_qid = translateQualifiedId (sortMap,qid) in
+             if new_qid = qid then sort_term else Base (new_qid, srts, a)
+          | _ -> sort_term
 
-    def translateSort sort_term =
-      case sort_term of
-       | Base (qid, srts, a) ->
-         let new_qid = translateQualifiedId (sortMap,qid) in
-         if new_qid = qid then sort_term else Base (new_qid, srts, a)
-       | _ -> sort_term
+      def translatePattern pat = pat
 
-    def translatePattern pat = pat
+      def translateOpMap ops =
+        let def translateStep (qualifier, id, (aliases, x, y, optional_def),newMap) =
+          let qual as Qualified (new_qualifier,new_id)
+               = translateQualifiedId (opMap,Qualified (qualifier, id)) in
+          let newOpInfo = ([qual], x, y, optional_def) in
+          let oldOpInfo = findAQualifierMap (newMap, new_qualifier, new_id) in {
+              opInfo <- mergeOpInfo newOpInfo oldOpInfo new_qualifier new_id position;
+              return (insertAQualifierMap (newMap, new_qualifier, new_id, opInfo))
+            } in
+        foldOverQualifierMap translateStep emptyAQualifierMap ops 
 
-    def translateOpMap ops =
-      foldriAQualifierMap
-        (fn (qualifier, id, (aliases, x, y, optional_def),newMap) ->
-	   let qual as Qualified(new_qualifier,new_id)
-	      = translateQualifiedId(opMap,Qualified (qualifier, id))
-	   in
-	   let newOpInfo = ([qual], x, y, optional_def) in
-	   let oldOpInfo = findAQualifierMap(newMap, new_qualifier, new_id) in
-	   insertAQualifierMap
-	     (newMap, new_qualifier, new_id,
-	      mergeOpInfo(newOpInfo, oldOpInfo, new_qualifier, new_id)))
-        emptyAQualifierMap ops
+      def translateSortMap sorts =
+        let def translateStep (qualifier, id, (aliases, ty_vars, optional_def), newMap) =
+           let qual as Qualified(new_qualifier,new_id)
+              = translateQualifiedId(sortMap,Qualified (qualifier, id)) in
+           let newSortInfo = ([qual], ty_vars, optional_def) in
+           let oldSortInfo = findAQualifierMap(newMap, new_qualifier, new_id) in {
+               sortInfo <- mergeSortInfo newSortInfo oldSortInfo new_qualifier new_id position;
+               return (insertAQualifierMap (newMap, new_qualifier, new_id, sortInfo))
+             } in
+        foldOverQualifierMap translateStep emptyAQualifierMap sorts 
 
-    def translateSortMap sorts =
-      foldriAQualifierMap
-        (fn (qualifier, id, (aliases, ty_vars, optional_def),
-	     newMap) ->
-	 let qual as Qualified(new_qualifier,new_id)
-	    = translateQualifiedId(sortMap,Qualified (qualifier, id))
-	 in
-	 let newSortInfo = ([qual], ty_vars, optional_def) in
-	   let oldSortInfo = findAQualifierMap(newMap, new_qualifier, new_id) in
-	   insertAQualifierMap
-	   (newMap, new_qualifier, new_id,
-	    mergeSortInfo(newSortInfo, oldSortInfo, new_qualifier, new_id)))
-        emptyAQualifierMap sorts
-
-  in
-  let {importInfo = _, sorts, ops, properties}
+    in
+    let {importInfo = _, sorts, ops, properties}
          = mapSpec (translateOp, translateSort, translatePattern) spc
      %%         importedSpecs    = mapImports translateSpec importedSpecs
-  in
-    {importInfo   = emptyImportInfo,	% Could change if we get smarter
-     sorts        = translateSortMap sorts,
-     ops          = translateOpMap   ops,
-     properties   = properties}
-
+    in {
+      newSorts <- translateSortMap sorts;
+      newOps <- translateOpMap ops;
+      return {
+          importInfo = emptyImportInfo,        % Could change if we get smarter
+          sorts      = newSorts,
+          ops        = newOps,
+          properties = properties
+        }
+    }
 }
 \end{spec}

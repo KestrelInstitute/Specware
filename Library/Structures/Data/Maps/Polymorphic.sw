@@ -1,5 +1,8 @@
 \section{Polymorphic Maps}
-A rather inflated signature for maps. This was distilled from the
+A rather inflated signature for maps. These are maps that are polymorphic
+in both their domain and codomain.
+
+This was distilled from the
 signature for splay maps. Some thought should go into pruning this
 down.
 
@@ -31,6 +34,7 @@ spec {
 The next constructs the list elements from the range of the map
 in ``order of appearance'' (with duplications). Order of appearance is 
 meaningless unless an implementation is assumed.
+
 \begin{spec}
   op image : fa (key,a) Map (key,a) -> Set a
   op imageToList : fa(key,a) Map (key,a) -> List a

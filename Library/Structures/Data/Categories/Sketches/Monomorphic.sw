@@ -85,6 +85,14 @@ these functions follows that for the fold on sets.
   op foldEdges : (b -> Edge.Elem -> b) -> b -> Sketch -> b
 \end{verbatim}
 
+The following should probably be eliminated. In any event, it is wrong
+as it does not accommmodate equations. This implies that in the above, we
+should add another constuctor function for adding equations to the sketch.
+
+\begin{spec}
+  op makeSketch : Vertex.Set -> Edge.Set -> Map -> Map -> Sketch
+\end{spec}
+
 \begin{spec}
   def ppSketch graph = 
      let def ppPair (x,y) = 

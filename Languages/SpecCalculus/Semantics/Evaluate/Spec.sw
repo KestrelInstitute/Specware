@@ -71,9 +71,9 @@ and then qualify the resulting spec if the spec was given a name.
     case elem of
       | Import term -> return spc
       | Sort (names,(tyVars,optSort)) ->
-          addPSort ((names, tyVars, optSort), spc) position
+          addSort names tyVars optSort spc position
       | Op (names,(fxty,srtScheme,optTerm)) ->
-          addPOp ((names, fxty, srtScheme, optTerm), spc) position
+          addOp names fxty srtScheme optTerm spc position
       | Claim (Axiom, name, tyVars, term) ->
           return (addAxiom ((name,tyVars,term), spc)) 
       | Claim (Theorem, name, tyVars, term) ->
@@ -86,7 +86,7 @@ and then qualify the resulting spec if the spec was given a name.
     let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_psorts) =
       let newPSortInfo = convertSortInfoToPSortInfo imported_sort_info in
       let oldPSortInfo = findAQualifierMap (combined_psorts,imported_qualifier, imported_id) in {
-          mergedSorts <- SpecCalc.mergePSortInfo (newPSortInfo,oldPSortInfo, imported_qualifier,imported_id) position;
+          mergedSorts <- SpecCalc.mergeSortInfo newPSortInfo oldPSortInfo imported_qualifier imported_id position;
           return (insertAQualifierMap (combined_psorts,
                                        imported_qualifier,
                                        imported_id,
@@ -95,7 +95,7 @@ and then qualify the resulting spec if the spec was given a name.
     let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_pops) =
       let newPOpInfo = convertOpInfoToPOpInfo imported_op_info in
       let oldPOpInfo = findAQualifierMap (combined_pops,imported_qualifier, imported_id) in {
-           mergedOps <- SpecCalc.mergePOpInfo (newPOpInfo,oldPOpInfo, imported_qualifier,imported_id) position;
+           mergedOps <- SpecCalc.mergeOpInfo newPOpInfo oldPOpInfo imported_qualifier imported_id position;
            return (insertAQualifierMap (combined_pops,
                                         imported_qualifier,
                                         imported_id,
@@ -119,12 +119,13 @@ such time as the current one can made monadic.
  def elaborateSpecM spc =
    { uri      <- getCurrentURI;
      filename <- return ((uriToPath uri) ^ ".sw");
-     let _ = writeLine (";;; Processing spec "
+     print (";;; Processing spec "
 			^ (case uri.hashSuffix of
 			     | Some nm -> nm ^ " "
 			     | _ -> "")
-			^ "in " ^ filename)
-     in
+			^ "in "
+            ^ filename
+            ^ "\n");
      case elaboratePosSpec (spc, filename) of
        | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
        | Error msg   -> raise  (OldTypeCheck msg)
