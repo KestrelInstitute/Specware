@@ -150,6 +150,7 @@ else
 			(enlarge-stack)
 			(exiting-on-errors 
 			  (load "Specware4.lisp")
+			  (Specware::initializeSpecware-0) 
 			  (if (sw "/Applications/Specware/Specware4")
 			    (exit 0)
 			    (exit 22)))
@@ -179,6 +180,7 @@ else
 			    (enlarge-stack)
 			    (exiting-on-errors 
 			      (load "Specware4.lisp")
+			      (Specware::initializeSpecware-0) 
 			      (if (sw "/Applications/Specware/Specware4")
 				(exit 0)
 			        (exit 33)))

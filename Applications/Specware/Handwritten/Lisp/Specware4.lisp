@@ -178,7 +178,7 @@
 			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
 ;;; Initialization includes preloading the base spec.
-(Specware::initializeSpecware-0) ; Now happens in startup actions
+;;; (Specware::initializeSpecware-0) ; Now happens in startup actions (see bootstrap script)
 
 #+allegro
 (defun start-java-connection? ()
