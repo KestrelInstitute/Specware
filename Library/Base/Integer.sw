@@ -19,7 +19,7 @@ Integer qualifying spec
  %op <=  infixl 20 : Integer * Integer -> Boolean
 
   axiom subtraction_def is
-    fa (x,y : Integer) (x - y) = x + (~y)
+    fa (x,y : Integer) (x - y) = x + (Integer.~ y)
 
   axiom multiplication_def is
     fa (x,y : Integer) 0 * y = 0
@@ -58,7 +58,7 @@ Integer qualifying spec
 
   def >= (x,y) = y <= x
 
-  def abs x = if x >= 0 then x else ~x
+  def abs x = if x >= 0 then x else Integer.~ x
 
   def min(x,y) = if x < y then x else y
 
