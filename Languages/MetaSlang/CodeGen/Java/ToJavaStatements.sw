@@ -34,12 +34,14 @@ def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
 			      srt
 			     ) args
       in
+      let args = insertRestricts(spc,dom,args) in
+      let argsTerm = exchangeArgTerms(argsTerm,args) in
       let rng = srt in
       if all (fn (srt) ->
 	      notAUserType?(srt) %or baseTypeAlias?(spc,srt)
 	     ) dom
 	then
-	  let _ = writeLine("no user type in "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
+	  %let _ = writeLine("no user type in "^(foldl (fn(srt,s) -> " "^printSort(srt)) "" dom)) in
 	  if notAUserType?(rng)
 	    then
 	      case utlist_internal (fn(srt) -> userType?(srt) & ~(baseTypeAlias?(spc,srt))) (concat(dom,[srt])) of

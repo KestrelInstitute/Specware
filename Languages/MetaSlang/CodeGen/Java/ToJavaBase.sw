@@ -673,6 +673,61 @@ def findMatchingRestritionType(spc,srt) =
     | _ -> None
 
 (**
+ * inserts "restrict" structs, if there's a mismatch between the domain sorts and 
+ * the sorts of the args
+ *)
+op insertRestricts: Spec * List Sort * List Term -> List Term
+def insertRestricts(spc,dom,args) =
+  let
+    def insertRestrict(domsrt,argterm) =
+      %let _ = writeLine("insertRestrict: domsrt="^printSort(domsrt)^", argterm="^printTermWithSorts(argterm)) in
+      let domsrt = unfoldBase(spc,domsrt) in
+      case domsrt of
+	| Subsort(srt,pred,_) ->
+	  let tsrt = termSort(argterm) in
+	  let b = termAnn(argterm) in
+	  if equalSort??(srt,tsrt) then
+	    let rsrt = Arrow(tsrt,domsrt,b) in
+	    let newarg = Apply(Fun(Restrict,rsrt,b),argterm,b) in
+	    %let _ = writeLine("restrict "^printTerm(argterm)^" to "^printTerm(newarg)) in
+	    newarg
+	  else
+	    argterm
+	| _ -> argterm
+  in
+  let
+    def insertRestrictsRec(dom,args) =
+      case (dom,args) of
+	| ([],[]) -> Some ([])
+	| (srt::dom,arg::args) ->
+	  (let newarg = insertRestrict(srt,arg) in
+	   case insertRestrictsRec(dom,args) of
+	     | Some args -> Some (cons(newarg,args))
+	     | None -> None)
+	| _ -> None % avoid failing
+  in
+  case insertRestrictsRec(dom,args) of
+    | Some newargs -> newargs
+    | None -> args
+
+(**
+ * special version of sort equality, which identifies the sorts Integer, Nat, and PosNat
+ *)
+op equalSort??: Sort * Sort -> Boolean
+def equalSort??(srt0,srt1) =
+  let
+    def equalizeIntSort(srt) =
+      case srt of
+	| Base(Qualified("Nat","Nat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+	| Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+	| _ -> srt
+  in
+  let srt0 = equalizeIntSort(srt0) in
+  let srt1 = equalizeIntSort(srt1) in
+  equalSort?(srt0,srt1)
+
+
+(**
  * compares the summand sort with the match and returns the list of constructor ids
  * that are not present in the match.
  *)

@@ -173,6 +173,24 @@ def applyArgsToTerms(args) =
     | Record (fields,_) -> recordFieldsToTerms(fields)
     | term -> [term]
 
+(**
+ * this is the reverse of "applyArgsToTerms": it takes a term and a list of terms and
+ * exchanges the terms in argTerm by the terms in args. If argTerm is not a Record, then
+ * args must be a one-elementary list of terms, otherwise, the #elems in the Record fields
+ * and the #elems in the args list must be the same.
+ *) 
+op exchangeArgTerms: Term * List Term -> Term
+def exchangeArgTerms(argTerm,args) =
+  case argTerm of
+    | Record(fields,b) ->
+      let zip = zip(fields,args) in
+      let fields = map (fn((id,_),t) -> (id,t)) zip in
+      Record(fields,b)
+    | _ -> (case args of
+	      | [t] -> t
+	      | _ -> argTerm % should not happen
+	   )
+
 op opDom: Spec * Op -> List Sort
 op opRange: Spec * Op -> Sort
 

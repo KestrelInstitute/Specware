@@ -82,6 +82,8 @@ def addMethDeclToClsDecls(opId, srtId, methDecl, jcginfo) =
   in
     exchangeClsDecls(jcginfo,clsDecls)
 
+% --------------------------------------------------------------------------------
+
 (**
  * this op is responsible for adding the method that correspond to a given op to the right
  * classes.
@@ -114,7 +116,7 @@ def addMethodFromOpToClsDecls(spc, opId, srt, trm, jcginfo) =
 
 op addStaticMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * Id * JcgInfo -> JcgInfo
 def addStaticMethodToClsDecls(spc, opId, srt, dom, rng (*as Base (Qualified (q, rngId), _,  _)*), trm, classId, jcginfo) =
-  let _ = writeLine(opId^": StaticMethod") in
+  %let _ = writeLine(opId^": StaticMethod") in
   let clsDecls = jcginfo.clsDecls in
   let (vars, body) = srtTermDelta(srt, trm) in
   let (rngid,col0) = tt_v3(rng) in
@@ -167,15 +169,16 @@ def mkPrimArgsMethodBody(body, spc) =
 
 op addPrimArgsMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
 def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
-  let _ = writeLine(opId^": PrimArgsMethod") in
-  case rng of
-    | Base (Qualified (q, rngId), _, _) -> 
+  %let _ = writeLine(opId^": PrimArgsMethod") in
+  %case rng of
+  %  | Base (Qualified (q, rngId), _, _) -> 
+      let (rngId,col2) = srtId(rng) in
       let clsDecls = jcginfo.clsDecls in
       let (vars, body) = srtTermDelta(srt, trm) in
       let (fpars,col0) = varsToFormalParams(vars) in
       let methodDecl = (([Static], Some (tt(rngId)), opId, fpars, []), None) in
       let (methodBody,col1) = mkPrimArgsMethodBody(body, spc) in
-      let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,col1)) in
+      let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,concatCollected(col0,concatCollected(col1,col2)))) in
       %%% add the assertion method
       let asrtOpId = mkAssertOp(opId) in
       let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
@@ -192,45 +195,48 @@ def addPrimArgsMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
       %%
       let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
       addMethDeclToClsDecls(opId, rngId, methodDecl, jcginfo)
-    | _ -> let _ = warnNoCode(opId,None) in
-      jcginfo
+    %| _ -> let _ = warnNoCode(opId,None) in
+    %  jcginfo
 
 op addUserMethodToClsDecls: Spec * Id * JGen.Type * List JGen.Type * JGen.Type * Term * JcgInfo -> JcgInfo
 def addUserMethodToClsDecls(spc, opId, srt, dom, rng, trm, jcginfo) =
-  let _ = writeLine(opId^": UserMethod") in
-  case rng of
-    | Base (Qualified (q, rngId), _, _) ->
-      (let clsDecls = jcginfo.clsDecls in
-       let (vars, body) = srtTermDelta_internal(srt,trm,true) in
-       let split = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
-       case split of
-	 | Some(vars1,varh,vars2) ->
-	 (if caseTerm?(body)
-	    then 
-	      case caseTerm(body) of
-		| Var (var,_) -> if equalVar?(varh, var) 
-				   then addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
-				 else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
-	  else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
-	   )
-	| _ -> let _ = warnNoCode(opId,Some("cannot find user type in arguments of op "^opId)) in
-            jcginfo
-      )
-    | _ -> let _ = warnNoCode(opId,Some("opId doesn't have a flat type: "^printSort(rng))) in
+  %let _ = writeLine(opId^": UserMethod") in
+  %let (rngId,col0) = tt_v3(rng) in
+  %let jcginfo = addCollectedToJcgInfo(jcginfo,col0) in
+  %case rng of
+  %  | Base (Qualified (q, rngId), _, _) ->
+  (let clsDecls = jcginfo.clsDecls in
+   let (vars, body) = srtTermDelta_internal(srt,trm,true) in
+   let split = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
+   case split of
+     | Some(vars1,varh,vars2) ->
+     (if caseTerm?(body)
+	then 
+	  case caseTerm(body) of
+	    | Var (var,_) -> if equalVar?(varh, var) 
+			       then addCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
+			     else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
+      else addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo)
+       )
+     | _ -> let _ = warnNoCode(opId,Some("cannot find user type in arguments of op "^opId)) in
 	jcginfo
+       )
+    %| _ -> let _ = warnNoCode(opId,Some("opId doesn't have a flat type: "^printSort(rng))) in
+    %	jcginfo
 
-op addCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
-def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
-  let _ = writeLine(opId^": CaseMethods") in
+op addCaseMethodsToClsDecls: Spec * Id * List Type * Type * List Var * Term * JcgInfo -> JcgInfo
+def addCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo) =
+  %let _ = writeLine(opId^": CaseMethods") in
   let clsDecls = jcginfo.clsDecls in
+  let (rngId,col0) = srtId(rng) in
   let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(srt)) vars in
   %let methodDeclA = (([Abstract], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), None) in
-  let (defaultMethodDecl,col1) = mkDefaultMethodForCase(spc,opId,dom,rng,rngId,vars1++vars2,body) in
+  let (defaultMethodDecl,col1) = mkDefaultMethodForCase(spc,opId,dom,rng,vars1++vars2,body) in
   let (fpars,col2) = varsToFormalParams(vars1++vars2) in
   let methodDecl = (([], Some (tt(rngId)), opId, fpars , []), None) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
   let newJcgInfo = addMethDeclToClsDecls(opId, srthId, defaultMethodDecl, jcginfo) in
-  let jcginfo = addCollectedToJcgInfo(newJcgInfo,concatCollected(col1,col2)) in
+  let jcginfo = addCollectedToJcgInfo(newJcgInfo,concatCollected(col0,concatCollected(col1,col2))) in
   %% add the assertion method
   let asrtOpId = mkAssertOp(opId) in
   let assertStmt = mkAsrtStmt(asrtOpId,fpars) in
@@ -249,16 +255,17 @@ def addCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
   let methodDecl = setMethodBody(methodDecl,assertStmt) in
   addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo)
   
-op addNonCaseMethodsToClsDecls: Spec * Id * List Type * Type * Id * List Var * Term * JcgInfo -> JcgInfo
-def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo) =
-  let _ = writeLine(opId^": NonCaseMethods") in
+op addNonCaseMethodsToClsDecls: Spec * Id * List Type * Type * List Var * Term * JcgInfo -> JcgInfo
+def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, vars, body, jcginfo) =
+  %let _ = writeLine(opId^": NonCaseMethods") in
+  let (rngId,col0) = srtId(rng) in
   case splitList (fn(v as (id, srt)) -> userType?(srt)) vars of
     | Some (vars1, varh, vars2) ->
       (let (vh, _) = varh in
        let (methodBody,col1) = mkNonCaseMethodBody(vh, body, spc) in
        let (assertStmt,col2) = mkAssertFromDom(dom, spc) in
        let (fpars,col3) = varsToFormalParams(vars1++vars2) in
-       let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col1,concatCollected(col2,col3))) in
+       let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,concatCollected(col1,concatCollected(col2,col3)))) in
        case varh of
 	 | (_, Base (Qualified(q, srthId), _, _)) ->
 	 %% add the assertion method
@@ -287,9 +294,10 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, rng, rngId, vars, body, jcginfo)
  * this op generates the "default" method in the summand super class. If the list of cases contains a wild pattern the corresponding
  * case will be the body of the default method; otherwise the method is abstract.
  *)
-op mkDefaultMethodForCase: Spec * Id * List Type * Type * Id * List Var * Term -> MethDecl * Collected
-def mkDefaultMethodForCase(spc,opId,dom,rng,rngId,vars,body) =
+op mkDefaultMethodForCase: Spec * Id * List Type * Type * List Var * Term -> MethDecl * Collected
+def mkDefaultMethodForCase(spc,opId,dom,rng,vars,body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
+  let (rngId,col0) = srtId(rng) in
   let (mods,opt_mbody,col1) =
     let caseTerm = caseTerm(body) in
     let cases = caseCases(body) in
@@ -300,7 +308,7 @@ def mkDefaultMethodForCase(spc,opId,dom,rng,rngId,vars,body) =
       | _ -> ([Abstract],None,nothingCollected)
   in
   let (fpars,col2) = varsToFormalParams(vars) in
-  let col = concatCollected(col1,col2) in
+  let col = concatCollected(col0,concatCollected(col1,col2)) in
   (((mods, Some (tt(rngId)), opId, fpars, []), opt_mbody),col)
 
 op mkNonCaseMethodBody: Id * Term * Spec -> Block * Collected
@@ -388,7 +396,7 @@ op modifyClsDeclsFromOp: Spec * Id * Id * OpInfo * JcgInfo -> JcgInfo
 def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, srt), [(_, trm)]), jcginfo) =
   let clsDecls = jcginfo.clsDecls in
   let srt = termSort(trm) in
-  let _ = writeLine("op "^id^" = "^printSort srt) in
+  %let _ = writeLine("op "^id^" = "^printSort srt) in
   case srt of
     | Arrow _ -> addMethodFromOpToClsDecls(spc, id, srt, trm, jcginfo)
     | _ ->
@@ -423,20 +431,34 @@ def exchangeClsDecls({clsDecls=_,collected=col},newClsDecls) =
 
 % --------------------------------------------------------------------------------
 
+op identifyIntSorts: Spec -> Spec
+def identifyIntSorts(spc) =
+  let
+    def identifyIntSort(srt) =
+      case srt of
+	| Base(Qualified("Nat","Nat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+	| Base(Qualified("Nat","PosNat"),[],b) -> Base(Qualified("Integer","Integer"),[],b)
+	| _ -> srt
+  in
+  let termid = (fn(t) -> t) in
+  let pattid = (fn(p) -> p) in
+  mapSpec (termid,identifyIntSort,pattid) spc
+
 % --------------------------------------------------------------------------------
 
 
 op specToJava : Spec -> JSpec
 
 def specToJava(spc) =
+  let spc = identifyIntSorts spc in
+  let _ = writeLine(printSpec spc) in
   %let _ = writeLine("Lifting Patterns") in
   %let spc = liftPattern(spc) in
-  let _ = writeLine(";;; Renaming Variables") in
+  %let _ = writeLine(";;; Renaming Variables") in
   let spc = distinctVariable(spc) in
-  let _ = writeLine(";;; Generating Classes") in
-  %let _ = writeLine(printSpec spc) in
+  %let _ = writeLine(";;; Generating Classes") in
   let jcginfo = clsDeclsFromSorts(spc) in
-  let _ = writeLine(";;; Adding Bodies") in
+  %let _ = writeLine(";;; Adding Bodies") in
   let jcginfo = modifyClsDeclsFromOps(spc, jcginfo) in
   let _ = writeLine(";;; Writing Java file") in
   let clsDecls = jcginfo.clsDecls in
