@@ -101,8 +101,8 @@ spec
     | thRecordUpdate1               Proof * Proof * Field
     | thRecordUpdate2               Proof * Proof * Field
     | thEmbedderSurjective          Proof * Variable * Variable
-    | thEmbeddersDistinct           Proof * Constructor * Constructor
-                                          * Variable * Variable
+    | thEmbeddersDistinct           Proof *
+                                    Constructor * Constructor * Variable * Variable
     | thEmbedderInjective           Proof * Constructor * Variable * Variable
     | thRelaxatorSatisfiesPredicate Proof * Variable
     | thRelaxatorInjective          Proof * Variable * Variable
