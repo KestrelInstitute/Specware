@@ -26,6 +26,10 @@ XML qualifying spec
 
   def fa (a) non_null? (xx : List a) = ~ (List.null xx)
 
-  op sublist? : fa (a) List a * List a -> Boolean  % TODO
+  op sublist? : fa (a) List a * List a -> Boolean 
+  def sublist? (aa, bb) =
+    case locationOf (aa, bb) of 
+      | None -> false
+      | _    -> true
 
 endspec
