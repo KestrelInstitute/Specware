@@ -524,7 +524,7 @@ spec
              negCxS elem i =
              singleton (axio (empty, conjoinAll conjuncts))))
       && (fa(i:Nat) i < n =>
-            pj (wellTypedExpr (cx ++ (posCxS elem i) ++ (negCxS elem i),
+            pj (wellTypedExpr (cx ++ (negCxS elem i) ++ (posCxS elem i),
                                eS elem i,
                                t1)))
       => pj (wellTypedExpr (cx, CASE e (zip (pS, eS)), t1)))
@@ -733,7 +733,6 @@ spec
          noRepetitions? (v |> vS)
       && length vS = length tS
       && pj (wellFormedType (cx, TRECORD fS tS))
-      && toSet (v |> vS) /\ contextVars cx = empty
       => pj (theore (cx, FA (v, TRECORD fS tS)
                             (EXX1 (zip (vS, tS))
                                   (VAR v == RECORD fS (map (VAR, vS)))))))
@@ -742,7 +741,6 @@ spec
          noRepetitions? (v |> vS)
       && length vS = length tS
       && pj (wellFormedType (cx, PRODUCT tS))
-      && toSet (v |> vS) /\ contextVars cx = empty
       => pj (theore (cx, FA (v, PRODUCT tS)
                             (EXX1 (zip (vS, tS))
                                   (VAR v == TUPLE (map (VAR, vS)))))))
@@ -757,60 +755,232 @@ spec
          i < length eS
       && pj (wellTypedExpr (cx, TUPLE eS, PRODUCT tS))
       => pj (theore (cx, (TUPLE eS) DOTt (i + 1) == (eS elem i))))
-(*
-    | thRecordUpdate1
-      (fa (cx:Context, 
-    | thRecordUpdate2
-      (fa (cx:Context, 
-    | thEmbedderSurjective
-      (fa (cx:Context, 
-    | thEmbeddersDistinct
-      (fa (cx:Context, 
-    | thEmbedderInjective
-      (fa (cx:Context, 
-    | thRelaxatorSatisfiesPredicate
-      (fa (cx:Context, 
-    | thRelaxatorInjective
-      (fa (cx:Context, 
-    | thRelexatorSurjective
-      (fa (cx:Context, 
-    | thRestriction
-      (fa (cx:Context, 
-    | thQuotienterSurjective
-      (fa (cx:Context, 
-    | thQuotienterConstancy
-      (fa (cx:Context, 
-    | thChoice
-      (fa (cx:Context, 
-    | thCase
-      (fa (cx:Context, 
-    | thRecursiveLet
-      (fa (cx:Context, 
-    | thAbbrevTrue
-      (fa (cx:Context, 
-    | thAbbrevFalse
-      (fa (cx:Context, 
-    | thAbbrevNegation
-      (fa (cx:Context, 
-    | thAbbrevInequation
-      (fa (cx:Context, 
-    | thAbbrevConjunction
-      (fa (cx:Context, 
-    | thAbbrevDisjunction
-      (fa (cx:Context, 
-    | thAbbrevImplication
-      (fa (cx:Context, 
-    | thAbbrevEquivalence
-      (fa (cx:Context, 
-    | thAbbrevUniversal % if empty, TRUE
-      (fa (cx:Context, 
-    | thAbbrevExistential % if empty, FALSE
-      (fa (cx:Context, 
-    | thAbbrevExistential1 % if empty, FALSE
-      (fa (cx:Context, 
-    | thAbbrevNonRecursiveLet
-      (fa (cx:Context, 
-*)
+    | thRecordUpdate1 ->
+      (fa (cx:Context, fS1:Fields, fS2:Fields, tS1:Types, tS2:Types,
+           eS1:Expressions, eS2:Expressions, i:Nat)
+         i < length fS1
+      && i < length eS1
+      && pj (wellTypedExpr (cx, RECORD fS1 eS1, TRECORD fS1 tS1))
+      && pj (wellTypedExpr (cx, RECORD fS2 eS2, TRECORD fS2 tS2))
+      && ~((fS1 elem i) in? fS2)
+      && pj (theore (cx,
+                     ((RECORD fS1 eS1) <<< (RECORD fS2 eS2)) DOTr (fS1 elem i)
+                     == (eS1 elem i))))
+    | thRecordUpdate2 ->
+      (fa (cx:Context, fS1:Fields, fS2:Fields, tS1:Types, tS2:Types,
+           eS1:Expressions, eS2:Expressions, i:Nat)
+         i < length fS2
+      && i < length eS2
+      && pj (wellTypedExpr (cx, RECORD fS1 eS1, TRECORD fS1 tS1))
+      && pj (wellTypedExpr (cx, RECORD fS2 eS2, TRECORD fS2 tS2))
+      && pj (theore (cx,
+                     ((RECORD fS1 eS1) <<< (RECORD fS2 eS2)) DOTr (fS2 elem i)
+                     == (eS2 elem i))))
+    | thEmbedderSurjective ->
+      (fa (cx:Context, cS:Constructors, t?S:Type?s, v:Variable, v1:Variable,
+           disjuncts:Expressions)
+         pj (wellFormedType (cx, SUM cS t?S))
+      && v ~= v1
+      && length cS = length t?S
+      && length disjuncts = length cS
+      && (fa(i:Nat) i < length disjuncts =>
+            disjuncts elem i =
+            (case (t?S elem i) of
+               | Some t -> EX (v1, t)
+                              (VAR v ==
+                               (EMBED (SUM cS t?S) (cS elem i)) __ VAR v1)
+               | None -> VAR v == EMBED (SUM cS t?S) (cS elem i)))
+      => pj (theore (cx, FA (v, SUM cS t?S) (disjoinAll disjuncts))))
+    | thEmbeddersDistinct ->
+      (fa (cx:Context, cS:Constructors, t?S:Type?s, i:Nat, j:Nat,
+           vi:Variable, vj:Variable, conclusion:Expression)
+         pj (wellFormedType (cx, SUM cS t?S))
+      && i < length cS
+      && j < length cS
+      && i < length t?S
+      && j < length t?S
+      && i ~= j
+      && vi ~= vj
+      && conclusion =
+         (case (t?S elem i, t?S elem j) of
+            | (Some ti, Some tj) ->
+              FAA (seq2 ((vi, ti), (vj, tj)))
+                  (EMBED (SUM cS t?S) (cS elem i) __ VAR vi =/=
+                   EMBED (SUM cS t?S) (cS elem i) __ VAR vj)
+            | (Some ti, None) ->
+              FA (vi, ti) (EMBED (SUM cS t?S) (cS elem i) __ VAR vi =/=
+                           EMBED (SUM cS t?S) (cS elem j))
+            | (None, Some tj) ->
+              FA (vj, tj) (EMBED (SUM cS t?S) (cS elem i) =/=
+                           EMBED (SUM cS t?S) (cS elem j) __ VAR vj)
+            | (None, None) ->
+              EMBED (SUM cS t?S) (cS elem i) =/= EMBED (SUM cS t?S) (cS elem j))
+      => pj (theore (cx, conclusion)))
+    | thEmbedderInjective ->
+      (fa (cx:Context, cS:Constructors, t?S:Type?s, v1:Variable, v2:Variable,
+           i:Nat, ti:Type)
+         i < length cS
+      && i < length t?S
+      && t?S elem i = Some ti
+      && pj (wellFormedType (cx, SUM cS t?S))
+      && v1 ~= v2
+      => pj (theore (cx, FAA (seq2 ((v1,ti), (v2,ti)))
+                             (VAR v1 =/= VAR v2 ==>
+                              EMBED (SUM cS t?S) (cS elem i) __ VAR v1 =/=
+                              EMBED (SUM cS t?S) (cS elem i) __ VAR v2))))
+    | thRelaxatorSatisfiesPredicate ->
+      (fa (cx:Context, t:Type, r:Expression, v:Variable)
+         pj (wellFormedType (cx, t \\ r))
+      => pj (theore (cx, FA (v, t \\ r)
+                            (r __ (RELAX r __ (VAR v))))))
+    | thRelaxatorInjective ->
+      (fa (cx:Context, t:Type, r:Expression, v1:Variable, v2:Variable)
+         pj (wellFormedType (cx, t \\ r))
+      && v1 ~= v2
+      => pj (theore (cx, FAA (seq2 ((v1, t \\ r), (v2, t \\ r)))
+                             (VAR v1 =/= VAR v2 ==>
+                              RELAX r __ (VAR v1) =/= RELAX r __ (VAR v2)))))
+    | thRelexatorSurjective ->
+      (fa (cx:Context, t:Type, r:Expression, v:Variable, v1:Variable)
+         pj (wellFormedType (cx, t \\ r))
+      && v ~= v1
+      => pj (theore (cx, FA (v, t)
+                            (r __ (VAR v) ==>
+                             EX (v1, t \\ r) (VAR v == RELAX r __ (VAR v1))))))
+    | thRestriction ->
+      (fa (cx:Context, t:Type, r:Expression, v:Variable)
+         pj (wellFormedType (cx, t \\ r))
+      => pj (theore (cx, FA (v, t \\ r)
+                            (RESTRICT r (RELAX r __ (VAR v)) == VAR v))))
+    | thQuotienterSurjective ->
+      (fa (cx:Context, t:Type, q:Expression, v:Variable, v1:Variable)
+         pj (wellFormedType (cx, t // q))
+      && v ~= v1
+      => pj (theore (cx, FA (v, t // q)
+                            (EX (v1, t) (QUOTIENT q __ (VAR v1) == VAR v)))))
+    | thQuotienterConstancy ->
+      (fa (cx:Context, t:Type, q:Expression, v1:Variable, v2:Variable)
+         pj (wellFormedType (cx, t // q))
+      && v1 ~= v2
+      => pj (theore (cx, FAA (seq2 ((v1, t), (v2, t)))
+                             (q __ PAIR (VAR v1) (VAR v2) <==>
+                              QUOTIENT q __ VAR v1 == QUOTIENT q __ VAR v2))))
+    | thChoice ->
+      (fa (cx:Context, t:Type, t1:Type, q:Expression, e:Expression, v:Variable)
+         pj (wellTypedExpr (cx, CHOOSE q e, t // q --> t1))
+      && ~(v in? exprFreeVars e)
+      => pj (theore (cx, FA (v, t)
+                            (CHOOSE q e __ (QUOTIENT q __ VAR v) ==
+                             e __ (VAR v)))))
+    | thCase ->
+      (fa (cx:Context, e:Expression, n:Nat, pS:Patterns, eS:Expressions,
+           t:Type, posCxS:FSeq Context, negCxS:FSeq Context, e1:Expression)
+         length pS = n
+      && length eS = n
+      && length posCxS = n
+      && length negCxS = n
+      && pj (wellTypedExpr (cx, CASE e (zip (pS, eS)), t))
+      && (fa(i:Nat) i < n =>
+            posCxS elem i =
+            multiVarDecls (pattBoundVars (pS elem i))
+              <| axio (empty, pattAssumptions (pS elem i, e)))
+      && (fa(i:Nat) i < n =>
+            (let conjuncts:Expressions = the (fn conjuncts ->
+                 length conjuncts = i &&
+                 (fa(j:Nat) j < i =>
+                    conjuncts elem j =
+                    FAA (pattBoundVars (pS elem i))
+                        (pattAssumptions (pS elem i, e)))) in
+             negCxS elem i =
+             singleton (axio (empty, conjoinAll conjuncts))))
+      && (fa(i:Nat) i < n =>
+            pj (theore (cx ++ (negCxS elem i) ++ (posCxS elem i),
+                        (eS elem i) == e1)))
+      && (fa(i:Nat) i < n =>
+            exprFreeVars e1 /\ pattVars (pS elem i) = empty)
+      => pj (theore (cx, CASE e (zip (pS, eS)) == e1)))
+    | thRecursiveLet ->
+      (fa (cx:Context, vS:Variables, tS:Types, bvS:BoundVars, eS:Expressions,
+           n:Nat, e:Expression, t:Type, e1:Expression, conjuncts:Expressions)
+         length vS = n
+      && length tS = n
+      && length eS = n
+      && length conjuncts = n
+      && bvS = zip (vS, tS)
+      && pj (wellTypedExpr (cx, LETDEF bvS eS e, t))
+      && (fa(i:Nat) i < n =>
+            conjuncts elem i =
+            VAR (vS elem i) == (eS elem i))
+      && pj (theore (cx ++ multiVarDecls bvS
+                        <| axio (empty, conjoinAll conjuncts),
+                     e == e1))
+      && toSet vS /\ exprFreeVars e1 = empty
+      => pj (theore (cx, LETDEF bvS eS e == e1)))
+    | thAbbrevTrue ->
+      (fa (cx:Context, v:Variable)
+         pj (wellFormedContext cx)
+      && pj (theore (cx, TRUE ==
+                         (FN (v, BOOL) (VAR v) == FN (v, BOOL) (VAR v)))))
+    | thAbbrevFalse ->
+      (fa (cx:Context, v:Variable)
+         pj (wellFormedContext cx)
+      && pj (theore (cx, FALSE ==
+                         (FN (v, BOOL) (VAR v) == FN (v, BOOL) TRUE))))
+    | thAbbrevNegation ->
+      (fa (cx:Context, e:Expression)
+         pj (wellTypedExpr (cx, ~~ e, BOOL))
+      => pj (theore (cx, ~~ e == IF e FALSE TRUE)))
+    | thAbbrevInequation ->
+      (fa (cx:Context, e1:Expression, e2:Expression)
+         pj (wellTypedExpr (cx, e1 =/= e2, BOOL))
+      => pj (theore (cx, (e1 =/= e2) == ~~ (e1 == e2))))
+    | thAbbrevConjunction ->
+      (fa (cx:Context, e1:Expression, e2:Expression)
+         pj (wellTypedExpr (cx, e1 &&& e2, BOOL))
+      => pj (theore (cx, (e1 &&& e2) == IF e1 e2 FALSE)))
+    | thAbbrevDisjunction ->
+      (fa (cx:Context, e1:Expression, e2:Expression)
+         pj (wellTypedExpr (cx, e1 ||| e2, BOOL))
+      => pj (theore (cx, (e1 ||| e2) == IF e1 TRUE e2)))
+    | thAbbrevImplication ->
+      (fa (cx:Context, e1:Expression, e2:Expression)
+         pj (wellTypedExpr (cx, e1 ==> e2, BOOL))
+      => pj (theore (cx, (e1 ==> e2) == IF e1 e2 FALSE)))
+    | thAbbrevEquivalence ->
+      (fa (cx:Context, e1:Expression, e2:Expression)
+         pj (wellTypedExpr (cx, e1 <==> e2, BOOL))
+      => pj (theore (cx, (e1 <==> e2) == (e1 == e2))))
+    | thAbbrevUniversal ->
+      (fa (cx:Context, bvS:BoundVars, e:Expression)
+         pj (wellTypedExpr (cx, FAA bvS e, BOOL))
+      && pj (theore (cx, FAA bvS e ==
+                         (FNN bvS e == FNN bvS TRUE))))
+    | thAbbrevExistential ->
+      (fa (cx:Context, bvS:BoundVars, e:Expression)
+         pj (wellTypedExpr (cx, EXX bvS e, BOOL))
+      => pj (theore (cx, EXX bvS e == ~~ (FAA bvS (~~ e)))))
+    | thAbbrevExistential1 ->
+      (fa (cx:Context, vS:Variables, tS:Types, bvS:BoundVars, e:Expression,
+           vS1:Variables, bvS1:BoundVars, esbs:ExpressionSubstitution)
+         length vS = length tS
+      && length vS1 = length vS
+      && bvS = zip (vS, tS)
+      && bvS1 = zip (vS1, tS)
+      && noRepetitions? vS
+      && esbs = FMap.fromSequences (vS, map (VAR, vS1))
+      && toSet vS /\ toSet vS1 = empty
+      && exprSubstOK? (e, esbs)
+      && pj (wellTypedExpr (cx, EXX bvS e, BOOL))
+      => pj (theore (cx, EXX bvS
+                             e &&& (FAA bvS1
+                                        (exprSubst esbs e ==>
+                                         TUPLE (map (VAR, vS)) ==
+                                         TUPLE (map (VAR, vS1)))))))
+    | thAbbrevNonRecursiveLet ->
+      (fa (cx:Context, p:Pattern, e:Expression, e1:Expression, t:Type)
+         pj (wellTypedExpr (cx, LET p e e1, t))
+      => pj (theore (cx, LET p e e1 == CASE e (singleton (p, e1)))))
+
 
   op provable? : Predicate Judgement
   def provable? = min (fn provable? ->
