@@ -44,8 +44,65 @@ reflected in the type for the elements of the set. The sort
 mut be able to encode the types of the
 
 \begin{spec}
-spec {
-  import Functor qualifying ../Functors/FreeDomain/Polymorphic
+% translate
+System 
+% by {
+%   Sketch.Sketch +-> Shape.Sketch,
+%   Sketch.Path +-> Shape.Path,
+%   Sketch.Dom +-> Shape.Dom,
+%   Sketch.Cod +-> Shape.Cod,
+%   Sketch.update +-> Shape.update,
+%   Sketch.unionWith +-> Shape.unionWith,
+%   Sketch.remove +-> Shape.remove,
+%   Sketch.ppSketch +-> Shape.ppShape,
+%   Sketch.ppMap +-> Shape.ppMap,
+%   Sketch.ppDom +-> Shape.ppDom,
+%   Sketch.ppCod +-> Shape.ppCod,
+%   Sketch.mapToList +-> Shape.mapToList,
+%   Sketch.insertVertex +-> Shape.insertVertex,
+%   Sketch.insertEdge +-> Shape.insertEdge,
+%   Sketch.inDomain? +-> Shape.inDomain?,
+%   Sketch.imageToList +-> Shape.imageToList,
+%   Sketch.foldMap +-> Shape.foldMap,
+%   Sketch.exists +-> Shape.exists,
+%   Sketch.eval +-> Shape.eval,
+%   Sketch.domainToList +-> Shape.domainToList,
+%   Sketch.all +-> Shape.all,
+%   Vertex.delete +-> V.delete,
+%   Vertex.difference +-> V.difference,
+%   Vertex.Elem +-> V.Elem,
+%   Vertex.empty +-> V.empty,
+%   Vertex.empty? +-> V.empty?,
+%   Vertex.fold +-> V.fold,
+%   Vertex.insert +-> V.insert,
+%   Vertex.intersection +-> V.intersection,
+%   Vertex.map +-> V.map,
+%   Vertex.member? +-> V.member?,
+%   Vertex.ppElem +-> V.ppElem,
+%   Vertex.ppSet +-> V.ppSet,
+%   Vertex.singleton +-> V.singleton,
+%   Vertex.toList +-> V.toList,
+%   Vertex.union +-> V.union,
+%   Edge.delete +-> E.delete,
+%   Edge.difference +-> E.difference,
+%   Edge.Elem +-> E.Elem,
+%   Edge.empty +-> E.empty,
+%   Edge.empty? +-> E.empty?,
+%   Edge.fold +-> E.fold,
+%   Edge.insert +-> E.insert,
+%   Edge.intersection +-> E.intersection,
+%   Edge.map +-> E.map,
+%   Edge.member? +-> E.member?,
+%   Edge.ppElem +-> E.ppElem,
+%   Edge.ppSet +-> E.ppSet,
+%   Edge.singleton +-> E.singleton,
+%   % Edge.toList +-> E.toList, this breaks! Why??? where is the op????
+%   Edge.union +-> E.union
+% }
+where {
+System = spec {
+  % import Functor qualifying ../Functors/FreeDomain/Polymorphic
+  import Functor
   import /Library/PrettyPrinter/WadlerLindig
 
   sort System (O,A)
@@ -66,15 +123,15 @@ an empty system we must give fix the target category.
 
 \begin{spec}
   op emptySystem : fa (O,A) Cat (O,A) -> System (O,A)
-  op addVertex : fa (O,A) System (O,A) -> Vertex.Elem -> System (O,A)
+  op addVertex : fa (O,A) System (O,A) -> V.Elem -> System (O,A)
   op addEdge : fa (O,A) System (O,A)
-    -> Edge.Elem -> Vertex.Elem -> Vertex.Elem -> System (O,A)
+    -> E.Elem -> V.Elem -> V.Elem -> System (O,A)
 
-  op vertexInSystem? : fa (O,A) System (O,A) -> Vertex.Elem -> Boolean
-  op edgeInSystem? : fa (O,A) System (O,A) -> Edge.Elem -> Boolean
+  op vertexInSystem? : fa (O,A) System (O,A) -> V.Elem -> Boolean
+  op edgeInSystem? : fa (O,A) System (O,A) -> E.Elem -> Boolean
 
-  op labelVertex : fa (O,A) System (O,A) -> Vertex.Elem -> O -> System (O,A)
-  op labelEdge : fa (O,A) System (O,A) -> Edge.Elem -> O -> A -> A -> System (O,A)
+  op labelVertex : fa (O,A) System (O,A) -> V.Elem -> O -> System (O,A)
+  op labelEdge : fa (O,A) System (O,A) -> E.Elem -> O -> A -> A -> System (O,A)
 \end{spec}
 
 The following fold a function over the vertices and edges of a system and
@@ -86,7 +143,7 @@ argument is the system. For example, the function f:
 
 \begin{verbatim}
   sort S
-  op f : fa (O,A) System (O,A) -> x -> Edge.Vertex -> x
+  op f : fa (O,A) System (O,A) -> x -> E.Vertex -> x
   op unit : S
 \end{verbatim}
 
@@ -97,11 +154,11 @@ can be folded over a system sys with:
 \end{verbatim}
 
 \begin{spec}
-  op edgeLabel : fa (O,A) System (O,A) -> Edge.Elem -> (A * O * A)
-  op vertexLabel : fa (O,A) System (O,A) -> Vertex.Elem -> O
+  op edgeLabel : fa (O,A) System (O,A) -> E.Elem -> (A * O * A)
+  op vertexLabel : fa (O,A) System (O,A) -> V.Elem -> O
 
-  op foldOverEdges : fa (x,O,A) (x -> Edge.Elem -> x) -> x -> System (O,A) -> x
-  op foldOverVertices : fa (x,O,A) (x -> Vertex.Elem -> x) -> x -> System (O,A) -> x
+  op foldOverEdges : fa (x,O,A) (x -> E.Elem -> x) -> x -> System (O,A) -> x
+  op foldOverVertices : fa (x,O,A) (x -> V.Elem -> x) -> x -> System (O,A) -> x
 \end{spec}
 
 While they are distinguished in the signatures above, the sorts of edges
@@ -144,26 +201,26 @@ It would be better if they were identified by a colimit so that there
 is only one sort.
 
 \begin{spec}
-  sort Vertex.Set = Edge.Set  % Without this things don't typecheck??
+  sort V.Set = E.Set  % Without this things don't typecheck??
 
-  sort Vertex.Elem = TaggedElem
-  sort Edge.Elem = TaggedElem
+  sort V.Elem = TaggedElem
+  sort E.Elem = TaggedElem
 
-  % op Vertex.ppElem : Vertex.Elem -> Pretty
-  % op Edge.ppElem : Edge.Elem -> Pretty
+  % op V.ppElem : V.Elem -> Pretty
+  % op E.ppElem : E.Elem -> Pretty
 
-  def Vertex.ppElem = ppTaggedElem 
-  def Edge.ppElem = ppTaggedElem
+  def V.ppElem = ppTaggedElem 
+  def E.ppElem = ppTaggedElem
 \end{spec}
 
 Next we define the coproduct operation. This is not used at runtime.
 
 \begin{spec}
-  op coprod : Vertex.Set -> Vertex.Set -> Vertex.Set
+  op coprod : V.Set -> V.Set -> V.Set
   def coprod s1 s2 =
-    let s1p = Vertex.map (fn (x : TaggedElem) -> Tag (0,x)) s1 in
-    let s2p = Vertex.map (fn x -> Tag (1,x)) s2 in
-    Vertex.union s1p s2p
+    let s1p = V.map (fn (x : TaggedElem) -> Tag (0,x)) s1 in
+    let s2p = V.map (fn x -> Tag (1,x)) s2 in
+    V.union s1p s2p
 \end{spec}
 
 Next we fix the sorts for the maps between graphs. Again these are
@@ -177,8 +234,8 @@ someway. This should be redundant.
   op ppDom : Dom -> Pretty
   op ppCod : Cod -> Pretty
 
-  def ppDom = Edge.ppElem
-  def ppCod = Vertex.ppElem
+  def ppDom = E.ppElem
+  def ppCod = V.ppElem
 \end{spec}
 
 Next we define the twist operation on (non-reflexive) graphs. Reflexive
@@ -192,25 +249,25 @@ This is where there is a small problem. Below, we define the
 twist. The assumption made below is that the we use the same sorts for
 both sketches. The underlying sets may have different representations.
 This is wrong. Also, there shouldn't be a call to makeSketch.  It should
-be done incrementally with addVertex and addEdge.
+be done incrementally with addVertex and addE.
 
 \begin{spec}
   op twist : Sketch -> Sketch
   def twist sketch =
     let vs = coprod (vertices sketch) (edges sketch) in
     let es = coprod (edges sketch) (edges sketch) in
-    let def upd_src map e = Sketch.update map e
+    let def upd_src map e = Shape.update map e
       (case e of
         | (Tag (0,e)) -> Tag (0, eval (src sketch) e)
         | (Tag (1,e)) -> Tag (0, eval (target sketch) e)
         | _ -> fail "badly formed graph") in
-    let def upd_target map e = Sketch.update map e
+    let def upd_target map e = Shape.update map e
       (case e of
         | (Tag (0,e)) -> Tag (1,e)
         | (Tag (1,e)) -> Tag (1,e)
         | _ -> fail "badly formed graph") in
-    let src = Edge.fold upd_src emptyMap es in
-    let target = Edge.fold upd_target emptyMap es in
+    let src = E.fold upd_src emptyMap es in
+    let target = E.fold upd_target emptyMap es in
     makeSketch vs es src target % No Equations yet!!
 \end{spec}
 
@@ -242,5 +299,5 @@ of the system. In a concrete representation, the apparent redundancy
 can be eliminated.
 
 \begin{spec}
-}
+}}
 \end{spec}

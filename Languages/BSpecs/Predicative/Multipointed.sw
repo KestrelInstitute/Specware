@@ -64,19 +64,87 @@ Importing the category of specs includes also the sorts for the abstract
 syntax of MetaSlang and spec morphisms.
 
 \begin{spec}
-spec {
-  import /Library/Structures/Data/Categories/Systems/Polymorphic
+% translate
+BSpecs
+% by {
+%   Sketch.Path +-> Shape.Path,
+%   Sketch.Dom +-> Shape.Dom,
+%   Sketch.Cod +-> Shape.Cod,
+%   Sketch.update +-> Shape.update,
+%   Sketch.unionWith +-> Shape.unionWith,
+%   Sketch.remove +-> Shape.remove,
+%   Sketch.ppSketch +-> Shape.ppShape,
+%   Sketch.ppMap +-> Shape.ppMap,
+%   Sketch.ppDom +-> Shape.ppDom,
+%   Sketch.ppCod +-> Shape.ppCod,
+%   Sketch.mapToList +-> Shape.mapToList,
+%   Sketch.insertVertex +-> Shape.insertVertex,
+%   Sketch.insertEdge +-> Shape.insertEdge,
+%   Sketch.inDomain? +-> Shape.inDomain?,
+%   Sketch.imageToList +-> Shape.imageToList,
+%   Sketch.foldMap +-> Shape.foldMap,
+%   Sketch.exists +-> Shape.exists,
+%   Sketch.eval +-> Shape.eval,
+%   Sketch.domainToList +-> Shape.domainToList,
+%   Sketch.all +-> Shape.all,
+%   Vertex.delete +-> Mode.delete,
+%   Vertex.difference +-> Mode.difference,
+%   Vertex.Elem +-> Mode.Elem,
+%   Vertex.empty +-> Mode.empty,
+%   Vertex.empty? +-> Mode.empty?,
+%   Vertex.fold +-> Mode.fold,
+%   Vertex.insert +-> Mode.insert,
+%   Vertex.intersection +-> Mode.intersection,
+%   Vertex.map +-> Mode.map,
+%   Vertex.member? +-> Mode.member?,
+%   Vertex.ppElem +-> Mode.ppElem,
+%   Vertex.ppSet +-> Mode.ppSet,
+%   Vertex.singleton +-> Mode.singleton,
+%   Vertex.toList +-> Mode.toList,
+%   Vertex.union +-> Mode.union,
+%   Edge.delete +-> Trans.delete,
+%   Edge.difference +-> Trans.difference,
+%   Edge.Elem +-> Trans.Elem,
+%   Edge.empty +-> Trans.empty,
+%   Edge.empty? +-> Trans.empty?,
+%   Edge.fold +-> Trans.fold,
+%   Edge.insert +-> Trans.insert,
+%   Edge.intersection +-> Trans.intersection,
+%   Edge.map +-> Trans.map,
+%   Edge.member? +-> Trans.member?,
+%   Edge.ppElem +-> Trans.ppElem,
+%   Edge.ppSet +-> Trans.ppSet,
+%   Edge.singleton +-> Trans.singleton,
+%   % Edge.toList +-> Trans.toList, this breaks! Why??? where is the op????
+%   Edge.union +-> Trans.union
+% } 
+where {
+  BSpecs = spec {
+  import Systems qualifying /Library/Structures/Data/Categories/Systems/Polymorphic
   import /Languages/MetaSlang/Specs/Categories/Specs
 
   sort BSpec = {
-    initial : Vertex.Elem,
-    final : Vertex.Set,
+    initial : V.Elem,
+    final : V.Set,
     system : System (Spec, Morphism)
   }
 
-  op initial : BSpec -> Vertex.Elem
-  op final : BSpec -> Vertex.Set
+  op initial : BSpec -> V.Elem
+  op final : BSpec -> V.Set
   op system : BSpec -> System (Spec, Morphism)
+
+  op newSystem : V.Elem -> Spec -> BSpec
+  op addMode : BSpec -> V.Elem -> Spec -> BSpec
+  op addTrans :
+       BSpec 
+    -> V.Elem
+    -> V.Elem
+    -> E.Elem
+    -> Spec
+    -> Morphism
+    -> Morphism
+    -> BSpec
+  op setFinalModes : BSpec -> V.Set -> BSpec
 \end{spec}
 
 The first function retrieves the spec associated with a transition. Bear in
@@ -87,7 +155,7 @@ Because of the twist, the desired spec is in the image of the vertex map
 rather than the edge map. 
 
 \begin{spec}
-  op transitionSpec : BSpec -> Edge.Elem -> Spec
+  op transitionSpec : BSpec -> E.Elem -> Spec
   def transitionSpec bspec edge = 
       PolyMap.eval (vertexMap (functor (system bspec))) (Tag (1,edge))
 \end{spec}
@@ -95,7 +163,7 @@ rather than the edge map.
 The next function retrieves the spec associated with a state or mode.
 
 \begin{spec}
-  op modeSpec : BSpec -> Vertex.Elem -> Spec
+  op modeSpec : BSpec -> V.Elem -> Spec
   def modeSpec bspec vertex =
     PolyMap.eval (vertexMap (functor (system bspec))) (Tag (0,vertex))
 \end{spec}
@@ -187,9 +255,9 @@ Naive pretty printing of \BSpecs
     ppConcat [
       ppString "{",
       ppString "initial = ",
-      Vertex.ppElem initial,
+      V.ppElem initial,
       ppString ", final = ",
-      Vertex.ppSet final,
+      V.ppSet final,
       ppNewline,
       ppString "system = ",
       ppNewline,
@@ -198,5 +266,5 @@ Naive pretty printing of \BSpecs
       ppNewline,
       ppString "}"
     ]
-}
+}}
 \end{spec}

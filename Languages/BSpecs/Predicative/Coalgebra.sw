@@ -6,9 +6,9 @@ around a \BSpec\ program.
 
 \begin{spec}
 spec {
+  import /Library/Structures/Data/Categories/Cocomplete/Polymorphic
   import Multipointed
   import PolySet qualifying /Library/Structures/Data/Sets/Polymorphic
-
 \end{spec}
 
 It is convenient, when traversing an algorithm representing a diagram,

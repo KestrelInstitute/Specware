@@ -1,12 +1,20 @@
 \subsection{Evalution of a PSL Spec}
 
+The prefix "P" is problematic here. In other place it refers
+to PSort etc for "position" and other people think of
+the P as parameterized spec.
+
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
   import /Languages/MetaSlang/Specs/PosSpec
+  import Spec
   import Spec/Utilities
+  import URI/Utilities
   import ../Utilities
+  import New
+  import Util
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -20,28 +28,38 @@ They are procedures in context.
 
 \begin{spec}
  op SpecCalc.evaluatePSpec :
-   List (PSpecElem Position)
-       -> SpecCalc.Env ValueInfo
+         List (PSpecElem Position)
+      -> SpecCalc.Env ValueInfo
  def SpecCalc.evaluatePSpec pSpecElements = {
     base <- basePSpec;
     (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
     return (PSpec pSpec,timeStamp,depURIs)
   }
 \end{spec}
+
 \begin{spec}
-  op evaluatePSpecElems :
-           PSpec Position
-        -> List (PSpecElem Position)
-        -> Env (PSpec Position * TimeStamp * URI_Dependency)
+%   op evaluatePSpecElems :
+%            PSpec Position
+%         -> List (PSpecElem Position)
+%         -> Env (PSpec Position * TimeStamp * URI_Dependency)
 
   def evaluatePSpecElems initialPSpec pSpecElems = {
       (pSpecWithImports,timeStamp,depURIs)
-          <- foldM evaluatePSpecImport (initialPSpec,0,[]) pSpecElems;
-      fullPSpec <- foldM evaluatePSpecElem pSpecWithImports pSpecElems;
-      return (fullPSpec,timeStamp,depURIs)
+          <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
+      pSpec <- foldM evaluatePSpecStaticContextElem pSpecWithImports pSpecElems;
+      static <- staticSpec pSpec;
+      dynamic <- dynamicSpec pSpec;
+      staticElab <- elaborateSpec static;
+      uri <- pathToRelativeURI "Static";
+      dynamic <- mergeImport (URI uri,internalPosition) staticElab dynamic internalPosition;
+      pSpec <- setDynamicSpec pSpec dynamic;
+      pSpec <- foldM evaluatePSpecDynamicContextElem pSpec pSpecElems;
+      dynamicElab <- elaborateSpec dynamic; 
+      pSpec <- foldM evaluatePSpecProcElem pSpec pSpecElems;
+      return (pSpec,timeStamp,depURIs)
     }
 
-  op evaluatePSpecImport :
+  op evaluatePSpecImportElem :
            (PSpec Position * TimeStamp * URI_Dependency)
         -> PSpecElem Position
         -> Env (PSpec Position * TimeStamp * URI_Dependency)
@@ -59,13 +77,17 @@ They are procedures in context.
 %           }
 %       | _ -> return val
 
-  op evaluatePSpecElem :
+  op evaluatePSpecProcElem :
            PSpec Position
         -> PSpecElem Position
         -> Env (PSpec Position)
-  def evaluatePSpecElem pSpec (elem, position) =
+
+  op evaluatePSpecStaticContextElem :
+           PSpec Position
+        -> PSpecElem Position
+        -> Env (PSpec Position)
+  def evaluatePSpecStaticContextElem pSpec (elem, position) =
     case elem of
-      | Import term -> return pSpec
       | Sort (names,(tyVars,optSort)) -> {
             static <- staticSpec pSpec;
             static <- addSort names tyVars optSort static position;
@@ -77,27 +99,35 @@ They are procedures in context.
             setStaticSpec pSpec x
           }
       | Claim (Axiom, name, tyVars, term) -> {
-            axioms <- axiomSpec pSpec;
-            axioms <- return (addAxiom ((name,tyVars,term), axioms));
-            setAxiomSpec pSpec axioms
+            static <- staticSpec pSpec;
+            static <- return (addAxiom ((name,tyVars,term), static));
+            setStaticSpec pSpec static
           }
       | Claim (Theorem, name, tyVars, term) -> {
-            axioms <- axiomSpec pSpec;
-            axioms <- return (addTheorem ((name,tyVars,term), axioms));
-            setAxiomSpec pSpec axioms
+            static <- staticSpec pSpec;
+            static <- return (addTheorem ((name,tyVars,term), static));
+            setStaticSpec pSpec static
           }
       | Claim (Conjecture, name, tyVars, term) -> {
-            axioms <- axiomSpec pSpec;
-            axioms <- return (addConjecture ((name,tyVars,term), axioms));
-            setAxiomSpec pSpec axioms
+            static <- staticSpec pSpec;
+            static <- return (addConjecture ((name,tyVars,term), static));
+            setStaticSpec pSpec static
           }
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
+      | _ -> return pSpec
 
+  op evaluatePSpecDynamicContextElem :
+           PSpec Position
+        -> PSpecElem Position
+        -> Env (PSpec Position)
+  def evaluatePSpecDynamicContextElem pSpec (elem, position) =
+    case elem of
       | Var (names,(fxty,srtScheme,optTerm)) -> {
             dynamic <- dynamicSpec pSpec;
             dynamic <- addOp names fxty srtScheme optTerm dynamic position;
             setStaticSpec pSpec dynamic
           }
+      | _ -> return pSpec
 \end{spec}
 
 So how do we reconcile these things?
@@ -105,9 +135,6 @@ We construct a Spec with position, and then we start construction the diagram fo
 body of some procedure. Don't we want to elaborate as we go along?
 
 \begin{spec}
-  op unQual : String -> QualifiedId
-  def unQual id = Qualified (UnQualified, id)
-
   op PosSpec.mkTyVar : String -> ASort Position
   def PosSpec.mkTyVar name = TyVar (name, internalPosition)
 
@@ -119,27 +146,17 @@ body of some procedure. Don't we want to elaborate as we go along?
                    (PosSpec.mkProduct [
                       PosSpec.mkTyVar "args",
                       PosSpec.mkTyVar "rtn",
-                      PosSpec.mkPBase (unQual "Delta", [PosSpec.mkTyVar "store"])],
+                      PosSpec.mkPBase (unQualified "Delta", [PosSpec.mkTyVar "store"])],
                     PosSpec.boolPSort)));
-    staticSpec <- addSort [unQual "Delta"] ["a"] deltaSort emptySpec internalPosition;
-    staticSpec <- addSort [unQual "Proc"]  ["args","rtn","store"] procSort staticSpec internalPosition;
-    staticSpec <- elaborateSpec staticSpec;
+    staticSpec <- addSort [unQualified "Delta"] ["a"] deltaSort emptySpec internalPosition;
+    staticSpec <- addSort [unQualified "Proc"]  ["args","rtn","store"] procSort staticSpec internalPosition;
     dynamicSpec <- return emptySpec;
     % let dynamic = addImport ("Static", dynamic)
-    axiomSpec <- return emptySpec;
-    % let axiomSpec = addImport ("Static", axmSpec)
     return {
         staticSpec = staticSpec,
         dynamicSpec = dynamicSpec,
-        axiomSpec = axiomSpec,
         procedures = PolyMap.emptyMap
       }
   }
-
- op elaborateSpec : PosSpec -> Env Spec
- def elaborateSpec spc =
-   case elaboratePosSpec (spc, "internal") of
-       | Ok pos_spec -> return pos_spec % (convertPosSpecToSpec pos_spec)
-       | Error msg   -> raise  (OldTypeCheck msg)
 }
 \end{spec}

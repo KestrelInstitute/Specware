@@ -10,12 +10,12 @@ are described monolithically ... everything appears below. Ugh!
 
 \begin{spec}
 SpecCalc qualifying spec {
+  import /Languages/MetaSlang/Specs/Categories/AsRecord	
   import Context
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/SimplePrinter
   import /Library/IO/Primitive/IO
   import /Library/Structures/Data/Monad/Base
-  import /Languages/MetaSlang/Specs/Categories/AsRecord	
 \end{spec}
 
 The Monad/Base spec supplies declarations of

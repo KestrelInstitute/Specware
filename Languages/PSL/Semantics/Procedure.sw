@@ -9,16 +9,17 @@ corresponding to initial and final states.
 
 \begin{spec}
 spec {
-  import /Languages/BSpecs/Predicative/Multipointed
+  import BSpecs qualifying /Languages/BSpecs/Predicative/Multipointed
 
-  sort Procedure a = {
+  sort Procedure = {
     parameters : List String,
     return : Option String,
-    staticSpec : ASpec a,   % why are these here?
-    dynamicSpec : ASpec a,
-    axiomSpec : ASpec a,
+    staticSpec : ASpec (),   % why are these here?
+    dynamicSpec : ASpec (),
     code : BSpec
   }
+
+  op makeProcedure : List String -> Option String -> ASpec () -> ASpec () -> BSpec -> Procedure
 \end{spec}
 
 The field \verb+paramaters+ lists the names of the formal parameters
@@ -58,7 +59,7 @@ This isn't the final answer since it doesn't allow us to introduce new
 ops and axioms along a transition \ldots only when we introduce procedures.
 
 \begin{spec}
-  op ppProcedure : fa (a) Procedure a -> Pretty
+  op ppProcedure : Procedure -> Pretty
   def ppProcedure proc =
     ppConcat [
       ppString "params=(",
@@ -79,7 +80,7 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppIndent (ppBSpec proc.code)
     ]
 
-  op showProcedure : fa (a) Procedure a -> String
+  op showProcedure : Procedure -> String
   def showProcedure proc =
       "params=("
       ^ (List.show "," proc.parameters)   %%% Why do we need the qualifier?

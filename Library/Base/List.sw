@@ -41,8 +41,8 @@ List qualifying spec {
   def cons(a,l) = Cons(a,l)
 
   def null l = case l of Nil -> true | _ -> false 
-  def hd l   = case l of Cons(h,_) -> h 
-  def tl l   = case l of Cons(_,t) -> t
+  def hd l   = case l of Cons (h,_) -> h 
+  def tl l   = case l of Cons (_,t) -> t
 
   def app f s = 
     case s of
@@ -75,12 +75,12 @@ List qualifying spec {
   def exists p s = 
     case s of
       | [] -> false
-      | hd::tl -> if p(hd) then true else (exists p tl)
+      | hd::tl -> if (p hd) then true else (exists p tl)
 
   def all p s = 
     case s of
       | [] -> true
-      | hd::tl -> if p(hd) then all p tl else false
+      | hd::tl -> if (p hd) then all p tl else false
 
   def insert (hd,tl) = Cons (hd,tl)
 
