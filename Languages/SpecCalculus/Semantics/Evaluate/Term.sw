@@ -18,6 +18,7 @@ SpecCalc qualifying spec {
  import Substitute      
  import Print      
  import Prove
+ import Reduce
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.
@@ -72,6 +73,8 @@ This is a monadic interpreter for the Spec Calculus.
     | Prove args -> SpecCalc.evaluateProve args pos
 
     | Generate args -> SpecCalc.evaluateGenerate args pos
+
+    | Reduce (msTerm,scTerm) -> SpecCalc.reduce msTerm scTerm pos
 
     | Other args -> SpecCalc.evaluateOther args pos  % used for extensions to Specware
 }
