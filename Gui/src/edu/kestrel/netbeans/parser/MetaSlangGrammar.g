@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/02/10 15:38:36  gilham
+ * Allow non-word symbols only as op names, not as sort names or unit ids.
+ *
  * Revision 1.7  2003/02/08 01:26:59  weilyn
  * Added rules to recognize claims and sort definitions
  *
@@ -160,7 +163,7 @@ private declaration returns[ElementFactory.Item item]
     : importDeclaration
     | item=sortDeclarationOrDefinition
     | item=opDeclaration
-    | definition
+    | item=definition
     ;
 
 //---------------------------------------------------------------------------
@@ -310,9 +313,12 @@ private sort returns[String sort]
     ;
 
 //---------------------------------------------------------------------------
-private definition
+private definition returns[ElementFactory.Item item]
+{
+    item=null;
+}
     : opDefinition
-    | claimDefinition
+    | item=claimDefinition
     ;
 
 private opDefinition
@@ -326,19 +332,30 @@ private opDefinition
       expression
     ;
 
-private claimDefinition
+private claimDefinition returns[ElementFactory.Item claim]
 {
+    claim = null;
     String name = null;
+    String kind = null;
+    Token begin = null;
 }
-    : claimKind name=idName
+    : kind=claimKind       {begin = LT(0);}
+      name=idName
       equals
       expression
+                           {claim = builder.createClaim(name, kind);
+                            ParserUtil.setBounds(builder, claim, begin, LT(0));
+                           }
+
     ;
 
-private claimKind
-    : "theorem"
-    | "axiom"
-    | "conjecture"
+private claimKind returns[String kind]
+{
+    kind = null;
+}
+    : "theorem"            {kind = "theorem";}
+    | "axiom"              {kind = "axiom";}
+    | "conjecture"         {kind = "conjecture";}
     ;
 
 private expression
