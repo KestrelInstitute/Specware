@@ -35,6 +35,19 @@ Position qualifying spec {
        let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
        printPos left ^ "-" ^ printPos right
 
+% temporary hack .. some places need the filename and some places don't
+% this one includes the filename.
+ op printAll : Position -> String
+ def printAll position =
+  case position of
+    | Internal msg -> msg
+    | String (string, left, right) ->
+       let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+       printPos left ^ "-" ^ printPos right ^ " in " ^ string
+    | File (filename, left, right) ->
+       let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
+       filename ^ ": " ^ printPos left ^ "-" ^ printPos right
+
  % ------------------------------------------------------------------------
 
  def chooseNonZeroPos (p1: Position, p2: Position) : Position =

@@ -262,24 +262,27 @@ AnnSpec qualifying spec {
  op addImport           : fa(a) Import * ASpec a -> ASpec a
 
  %% old style...
- op addSort             : fa(a) (Qualifier * Id * 
-                                 TyVars * Option(ASort a)) * 
-                                 ASpec a -> ASpec a
+%%% The following havebeen replaced with monadic versions in
+%%% SpecCalculus/Semantics/Evaluate/Spec/Utilitites
 
- %% new style...
- op addAliasedSort      : fa(a) (Qualifier * Id * 
-                                  SortNames * TyVars * Option (ASort a)) * 
-                                ASpec a -> ASpec a
-
- %% old style...
- op addOp               : fa(a) (Qualifier * Id * 
-                                 Fixity * ASortScheme a * Option (ATerm a)) * 
-                                ASpec a -> ASpec a
-
- %% new style...
- op addAliasedOp        : fa(a) (Qualifier * Id * 
-                                 OpNames * Fixity * ASortScheme a * Option (ATerm a)) * 
-                                ASpec a -> ASpec a
+%%% op addSort             : fa(a) (Qualifier * Id * 
+%%%                                 TyVars * Option(ASort a)) * 
+%%%                                 ASpec a -> ASpec a
+%%%
+%%% %% new style...
+%%% op addAliasedSort      : fa(a) (Qualifier * Id * 
+%%%                                  SortNames * TyVars * Option (ASort a)) * 
+%%%                                ASpec a -> ASpec a
+%%%
+%%% %% old style...
+%%% op addOp               : fa(a) (Qualifier * Id * 
+%%%                                 Fixity * ASortScheme a * Option (ATerm a)) * 
+%%%                                ASpec a -> ASpec a
+%%%
+%%% %% new style...
+%%% op addAliasedOp        : fa(a) (Qualifier * Id * 
+%%%                                 OpNames * Fixity * ASortScheme a * Option (ATerm a)) * 
+%%%                                ASpec a -> ASpec a
 
 
  op addProperty         : fa(a) (AProperty a)                          * ASpec a -> ASpec a
