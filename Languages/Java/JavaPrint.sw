@@ -300,7 +300,7 @@ Java qualifying spec
            | _ -> 
                prettysAll 
                  [prettysNone [ppMethHeader mh, toPretty " {"],
-                  ppBlock bk,
+                  prettysNone [toPretty "  ", ppBlock bk],
                   toPretty "}"])
 
 %%%% method header
@@ -406,29 +406,47 @@ Java qualifying spec
 
 %%%% statement 
 
-  def ppStmt (st : Stmt) : Pretty = 
+  def ppStmt(st:Stmt) = ppStmt_internal(st,false)
+  def ppStmtOmitBrackets(st:Stmt) = ppStmt_internal(st,true)
+
+  def ppStmt_internal (st : Stmt, omitBrackets? : Boolean) : Pretty = 
       case st of 
         Block bk ->
           (case bk of 
              [] -> 
                toPretty "{ }"
            | _ -> 
-               prettysNone 
-                 [toPretty "{ ", ppBlock bk, toPretty " }"])
+	       let (pre,post) = if omitBrackets? then ([],[]) else ([toPretty "{ "],[toPretty " }"]) in
+               prettysNone(pre++[ppBlock bk]++post))
+
       | Labeled (id,st) ->
           prettysNone 
             [toPretty (String.concat (id," : ")), ppStmt st]
-      | If (e,st,opst) -> 
-          prettysAll 
-            (List.cons
-               (prettysNone 
-                  [toPretty "if (",
-                   ppExpr e,
-                   toPretty ") ",
-                   ppStmt st],
-                case opst of 
-                  None     -> []
-                | Some st1 -> [toPretty "else ", ppStmt st1]))
+      | If (e,st,None) -> 
+	prettysAll [
+		    prettysNone 
+		    [toPretty "if (",
+		     ppExprOmitBrackets e,
+		     toPretty ") {"],
+		    prettysNone
+		    [toPretty "  ",
+		     ppStmtOmitBrackets st],
+		    prettysNone
+		    [toPretty "}"]
+		   ]
+      | If (e,st,Some st1) -> 
+        prettysAll [
+		    prettysNone 
+		    [toPretty "if (", ppExprOmitBrackets e, toPretty ") {"],
+		    prettysNone
+		    [toPretty "  ", ppStmtOmitBrackets st],
+		    prettysNone
+		    [toPretty "} else {"],
+		    prettysNone
+		    [toPretty "  ",ppStmtOmitBrackets st1],
+		    prettysNone
+		    [toPretty "}"]
+		   ]
       | For (opfi,ope,opfu,st) ->
           prettysAll 
             [prettysNone 
@@ -489,11 +507,17 @@ Java qualifying spec
             (List.flatten
                [try,cat,fin, [toPretty "}"]])
       | Switch (e,sbk) ->
-          prettysNone
-            [toPretty "switch (",
-             ppExpr e,
-             toPretty " ) ",
-             ppSwitchBlock sbk]
+	    prettysAll [
+			prettysNone
+			[toPretty "switch (",
+			 ppExpr e,
+			 toPretty " ) {"],
+			prettysNone
+			[toPretty "  ",
+			 ppSwitchBlock sbk],
+			prettysNone
+			[toPretty "}"]
+		       ]
       | Synchronized (e,bk) ->
           let hd = 
               prettysNone 
@@ -516,7 +540,7 @@ Java qualifying spec
              case ope of
                None -> emptyPretty ()
              | Some e -> 
-                  prettysNone [toPretty " ( ", ppExpr e, toPretty " ) "],
+                  prettysNone [toPretty " ", ppExprOmitBrackets e],
              toPretty ";"]
       | Throw e  -> 
           prettysNone
@@ -566,17 +590,18 @@ Java qualifying spec
   def ppSwitchBlock (swbk : SwitchBlock) : Pretty =
       prettysAll
          [prettysNone
-            [toPretty "{ ",
-             prettysNone (List.map ppSwitchLabStmtPa swbk)],
-          toPretty "}"]
+            [%toPretty "{ ",
+             prettysAll (List.map ppSwitchLabStmtPa swbk)]
+          %toPretty "}"
+	 ]
 
 %%%% switch label-statement pair
 
   def ppSwitchLabStmtPa (slabs : List SwitchLab, 
                          bksts : List BlockStmt) : Pretty = 
-      prettysNone [prettysNone (List.map  ppSwitchLab slabs),
-                   toPretty " ",
-                   prettysAll (List.map ppBlockStmt bksts)]
+      prettysAll [
+		  prettysNone (List.map  ppSwitchLab slabs),
+		  prettysNone[toPretty "  ",prettysAll (List.map ppBlockStmt bksts)]]
 
 %%%% switch label
 
@@ -597,10 +622,13 @@ Java qualifying spec
 
 %%%% expression 
 
-  def ppExpr (e : Expr) : Pretty = 
+  def ppExpr (e : Expr) = ppExpr_internal(e,false)
+  def ppExprOmitBrackets(e : Expr) = ppExpr_internal(e,true)
+
+  def ppExpr_internal (e : Expr, omitBrackets? : Boolean) : Pretty = 
       case e of 
         Ass ass     -> ppAss ass
-     |  CondExp ce -> ppCondExp ce
+     |  CondExp(be,opt) -> ppCondExp(be,opt,omitBrackets?)
 
 %%%% assignment
 
@@ -659,40 +687,40 @@ Java qualifying spec
 
 %%%% conditional expression
 
-  def ppCondExp (be : BinExp, rest : Option (Expr * CondExp))
+  def ppCondExp (be : BinExp, rest : Option (Expr * CondExp), omitBrackets? : Boolean)
                                                      : Pretty =
       prettysNone
-        [ppBinExp be,
+        [ppBinExp(be,omitBrackets?),
          case rest of 
             None        -> emptyPretty ()
-          | Some (e,ce) -> 
+          | Some (e,(ce1,ce2)) -> 
               prettysNone
                 [toPretty " ? ",
                  ppExpr e,
                  toPretty " : ",
-                 ppCondExp ce]]
+                 ppCondExp (ce1,ce2,false)]]
 
 %%%% binary expression 
 
-  def ppBinExp (be : BinExp) : Pretty =
+  def ppBinExp (be : BinExp, omitBrackets? : Boolean) : Pretty =
       case be of 
         Bin (o,be1,be2) 
            -> prettysNone
-                [toPretty "( ",
-                 ppBinExp be1,
+                [if omitBrackets? then emptyPretty() else toPretty "(",
+                 ppBinExp(be1,false),
                  toPretty " ",
                  ppBinOp o,
                  toPretty " ",
-                 ppBinExp be2,
-                 toPretty " )"]
+                 ppBinExp(be2,false),
+                 if omitBrackets? then emptyPretty() else toPretty ")"]
       | InstOf (be,t)
            -> prettysNone
-                [toPretty "( ",
-                 ppBinExp be,
+                [if omitBrackets? then emptyPretty() else toPretty "(",
+                 ppBinExp(be,false),
                  toPretty " instanceof ",
                  ppType t,
-                 toPretty " )"]
-      | Un ue -> ppUnExp ue
+                 if omitBrackets? then emptyPretty() else toPretty ")"]
+      | Un ue -> ppUnExp(ue,omitBrackets?)
 
 %%%% binary operator
 
@@ -701,18 +729,18 @@ Java qualifying spec
 
 %%%% unary expression
 
-  def ppUnExp (ue : UnExp) : Pretty =
+  def ppUnExp (ue : UnExp, omitBrackets? : Boolean) : Pretty =
       case ue of
-        Un (o,ue)  -> prettysNone [toPretty "( ",
+        Un (o,ue)  -> prettysNone [if omitBrackets? then emptyPretty() else toPretty "( ",
                                      ppUnOp o,
                                      toPretty " ",
-                                     ppUnExp ue,
-                                     toPretty " )"]
+                                     ppUnExp(ue,false),
+                                     if omitBrackets? then emptyPretty() else toPretty " )"]
       | Cast (t,ue)   -> prettysNone [toPretty "(",
                                       ppType t,
                                       toPretty ")",
-                                      ppUnExp ue]
-      | PostUn (ue,o) -> prettysNone [ppUnExp ue, 
+                                      ppUnExp(ue,false)]
+      | PostUn (ue,o) -> prettysNone [ppUnExp(ue,false), 
                                       ppPostUnOp o]
       | Prim pm       -> ppPrim pm
 
@@ -761,22 +789,34 @@ Java qualifying spec
 %%%% new class instance creation
 
   def ppNewClsInst (nw : NewClsInst) : Pretty = 
-      case nw of 
-        ForCls (nm,es,opcb) 
+    case nw of 
+      | ForCls (nm,es,None) 
           -> prettysNone
-               [toPretty "new ",
-                ppName nm,
-                toPretty "(",
-                prettysNone
-                    (addPrettys (List.map ppExpr es,
-                                 toPretty ",")),
-                toPretty ")",
-                case opcb of
-                     None    -> emptyPretty()
-                   | Some cb -> prettysAll
-                                  [toPretty "{", 
-                                   ppClsBody cb,
-                                   toPretty "}"]]
+	    [toPretty "new ",
+	     ppName nm,
+	     toPretty "(",
+	     prettysNone
+	     (addPrettys (List.map ppExpr es,
+			  toPretty ",")),
+	     toPretty ")"]
+      | ForCls (nm,es,Some cb) 
+          -> prettysAll [
+			 prettysNone
+			 [toPretty "new ",
+			  ppName nm,
+			  toPretty "(",
+			  prettysNone
+			  (addPrettys (List.map ppExpr es,
+				       toPretty ",")),
+			  toPretty ") {"],
+			 prettysNone
+			 [toPretty "  ",
+			  ppClsBody cb],
+			 prettysNone
+			 [toPretty "}"]
+			]
+
+
       | ForInnCls (pm,id,es,opcb)
           -> prettysNone
                [toPretty "new ",
@@ -860,7 +900,9 @@ Java qualifying spec
         | JInt    -> "int"
         | Long    -> "int"
         | JFloat  -> "float"
-        | Double  -> "double")
+        | Double  -> "double"
+        | Void  -> "void"
+	   )
 
 %%%% name
 

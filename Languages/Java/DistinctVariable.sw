@@ -96,6 +96,10 @@ def distinctVar(term, ids) =
 		  %TODO: catch lambda terms
     | LetRec _ -> fail("inner function definitions not yet supported.")
     %(term,ids)
+    | SortedTerm(t,_,_) -> distinctVar(t,ids)
+    | Seq(terms,b) -> foldl (fn(term,(Seq(terms,b),ids0)) ->
+			     let (t,ids) = distinctVar(term,ids0) in
+			     (Seq(concat(terms,[t]),b),ids)) (Seq([],b),ids) terms
     | _ -> fail ("unsupported term format (in distinctVar)"^printTerm(term))
 
 def distinctVars(terms, ids) =

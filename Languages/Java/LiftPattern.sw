@@ -20,7 +20,7 @@ op unSupported: Op -> String
 op baseType?: Sort -> Boolean
 
 def baseType?(type) =
-  boolSort?(type) or integerSort?(type) or natSort?(type)
+  boolSort?(type) or integerSort?(type) or natSort?(type) or stringSort?(type) or charSort?(type)
 
 
 op baseTypeAlias?: Spec * Sort -> Boolean
@@ -38,7 +38,7 @@ def baseTypeAlias?(spc,srt) =
 op baseTypeId?: Id -> Boolean
 
 def baseTypeId?(id) =
-  id = "Boolean" or id = "Integer" or id = "Nat"
+  id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char"
 
 
 op userType?: Sort -> Boolean

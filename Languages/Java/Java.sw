@@ -135,18 +135,18 @@ sort AssOp =
 
 def assOpToString (o : AssOp) : String = 
     case o of
-           Assgn      ->  " = "
-         | Mul        -> "* = "
-         | Div        -> "/ = "
-         | Rem        -> "% = "
-         | Plus       -> "+ = "
-         | Minus      -> "- = "
-         | LShift     -> "<<= "
-         | RShift     -> ">>= "
-         | LShiftSpec -> ">>>= "
-         | BitAnd     -> "& = "
-         | BitExclOr  -> "^ = "
-         | BitInclOr  -> "| = "
+           Assgn      ->  "="
+         | Mul        -> "*="
+         | Div        -> "/="
+         | Rem        -> "%="
+         | Plus       -> "+="
+         | Minus      -> "-="
+         | LShift     -> "<<="
+         | RShift     -> ">>="
+         | LShiftSpec -> ">>>="
+         | BitAnd     -> "&="
+         | BitExclOr  -> "^="
+         | BitInclOr  -> "|="
 
 
 sort CondExp = BinExp * Option (Expr * CondExp)
@@ -169,12 +169,12 @@ def binOpToString (o : BinOp) : String =
          | InclOr -> "|"
          | ExclOr -> "^"
          | And    -> "&"
-         | Eq     -> " == "
-         | NotEq  -> "! = "
+         | Eq     -> "=="
+         | NotEq  -> "!= "
          | Gt     -> ">"
          | Lt     -> "<"
-         | Ge     -> ">= "
-         | Le     -> "<= "
+         | Ge     -> ">="
+         | Le     -> "<="
          | LShft  -> "<<"
          | RShft  -> ">>"
          | RShftSp -> ">>>"
@@ -314,7 +314,7 @@ sort Type = BasicOrName * Integer
 sort BasicOrName = | Basic Basic | Name Name 
 
 sort Basic = 
-  | JBool | Byte | Short | Char | JInt | Long | JFloat | Double
+  | JBool | Byte | Short | Char | JInt | Long | JFloat | Double | Void
 
 sort RetType = Option Type
 

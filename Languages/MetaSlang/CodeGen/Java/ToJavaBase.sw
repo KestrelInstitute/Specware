@@ -14,7 +14,13 @@ op baseSrtToJavaType: Sort -> Java.Type
 def baseSrtToJavaType(srt) =
   if boolSort?(srt)
     then tt("Boolean")
-  else tt("Integer")
+  else
+    if stringSort?(srt)
+      then tt("String")
+    else
+      if charSort?(srt)
+	then tt("Char")
+      else tt("Integer")
 
 op emptyJSpec: JSpec
 def emptyJSpec = (None, [], [])
@@ -217,7 +223,20 @@ def tt_v2(id) =
     | "Integer" -> (Basic (JInt), 0)
     | "Nat" -> (Basic (JInt), 0)
     | "Char" -> (Basic (Char), 0)
+    | "String" -> mkJavaObjectType("String")
     | _ -> (Name ([], id), 0)
+
+
+(**
+ * returns whether or not the given type is the void type, i.e. the product type
+ * with an empty field list
+ *)
+op isVoid?: Spec * Sort -> Boolean
+def isVoid?(spc,srt) =
+  let srt = unfoldBase(spc,srt) in
+  case srt of
+    | Product([],_) -> true
+    | _ -> false
 
 (**
  * the new implementation of tt uses type information in order to generate the arrow type (v3)
@@ -229,11 +248,16 @@ def tt_v3(srt) =
     | Arrow(srt0,srt1,_) -> 
       let (sid,col) = srtId(srt) in
       (mkJavaObjectType(sid),col)
+    | Product([],_) -> (JVoid,nothingCollected)
+    | _ -> fail("tt_v3 can't handle sort "^printSort(srt))
 
 op tt_id: Sort -> Id * Collected
 def tt_id(srt) = 
   let (ty,col) = tt_v3(srt) in
   (getJavaTypeId(ty),col)
+
+op JVoid: Java.Type
+def JVoid = (Basic Void,0)
 
 (**
  * srtId returns for a given type the string representation accorinding the rules
@@ -248,6 +272,7 @@ op srtId_internal: Sort -> List Java.Type * String * Collected
 def srtId_internal(srt) =
   case srt of
     | Base (Qualified (q, id), _, _) -> ([tt_v2 id],id,nothingCollected)
+    | Product([],_) -> ([JVoid],"void",nothingCollected)
     | Product(fields,_) -> foldl (fn((_,fsrt),(types,str,col)) ->
 				  let (str0,col0) = srtId(fsrt) in
 				  let str = str ^ (if str = "" then "" else "$$") ^ str0 in
@@ -281,6 +306,7 @@ def getJavaTypeId(jt) =
 		    | Basic Long -> "long"
 		    | Basic JFloat -> "float"
 		    | Basic Double -> "double"
+		    | Basic Void -> "void"
 		    | Name (_,id) -> id
 		 )
     | _ -> fail("can't handle non-scalar types in getJavaTypeId")
@@ -308,6 +334,12 @@ def mkJavaNumber(i) =
 
 def mkJavaBool(b) =
   CondExp (Un (Prim (Bool (b))), None)
+
+def mkJavaString(s) =
+  CondExp (Un (Prim (String (s))), None)
+
+def mkJavaChar(c) =
+  CondExp (Un (Prim (Char (c))), None)
 
 op mkVarJavaExpr: Id -> Java.Expr
 def mkVarJavaExpr(id) = CondExp (Un (Prim (Name ([], id))), None)

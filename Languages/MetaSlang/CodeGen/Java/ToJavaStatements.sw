@@ -16,6 +16,55 @@ op translateIfThenElseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Exp
 op translateLetToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 op translateCaseToExpr: TCx * Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
 op translateLambdaToExpr: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
+op specialTermToExpression: TCx * JGen.Term * Nat * Nat * Spec -> Option ((Block * Java.Expr * Nat * Nat) * Collected)
+
+(**
+ * toplevel entry point for translating a meta-slang term to a java expression 
+ * (in general preceded by statements)
+ *) 
+def termToExpression(tcx, term, k, l, spc) =
+  termToExpression_internal(tcx,term,k,l,spc,true)
+
+def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
+  %let _ = writeLine("termToExpression: "^printTerm(term)) in
+  case specialTermToExpression(tcx,term,k,l,spc) of
+    | Some result -> result
+    | None -> 
+    let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
+    case term of
+      | Var ((id, srt), _) ->
+      (case StringMap.find(tcx, id) of
+	 | Some (newV) -> ((mts, newV, k, l),nothingCollected)
+	 | _ -> ((mts, mkVarJavaExpr(id), k, l),nothingCollected))
+      | Fun (Op (Qualified (q, id), _), srt, _) -> 
+	 if baseType?(srt) 
+	   then ((mts, mkQualJavaExpr("Primitive", id), k, l),nothingCollected)
+	 else
+	   (case srt of
+	      | Base (Qualified (q, srtId), _, _) -> ((mts, mkQualJavaExpr(srtId, id), k, l),nothingCollected)
+	      | Arrow(dom,rng,_) -> translateLambdaToExpr(tcx,term,k,l,spc)
+	      | _ -> fail("unsupported term in termToExpression: "^printTerm(term)))
+      | Fun (Nat (n),_,__) -> ((mts, mkJavaNumber(n), k, l),nothingCollected)
+      | Fun (Bool (b),_,_) -> ((mts, mkJavaBool(b), k, l),nothingCollected)
+      | Fun (String(s),_,_) -> ((mts, mkJavaString(s), k, l),nothingCollected)
+      | Fun (Char(c),_,_) -> ((mts, mkJavaChar(c), k, l),nothingCollected)
+      | Fun (Embed (c, _), srt, _) -> 
+	      if flatType? srt then
+		let (sid,col) = srtId(srt) in
+		((mts, mkMethInv(sid, c, []), k, l),col)
+	      else
+		translateLambdaToExpr(tcx,term,k,l,spc)
+      | Apply (opTerm, argsTerm, _) -> translateApplyToExpr(tcx, term, k, l, spc)
+      | Record _ -> translateRecordToExpr(tcx, term, k, l, spc)
+      | IfThenElse _ -> translateIfThenElseToExpr(tcx, term, k, l, spc)
+      | Let _ -> translateLetToExpr(tcx, term, k, l, spc)
+      | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*)translateLambdaToExpr(tcx,term,k,l,spc)
+      | _ ->
+	     if caseTerm?(term)
+	       then translateCaseToExpr(tcx, term, k, l, spc)
+	     else fail("unsupported term in termToExpression: "^printTerm(term))
+
+
 
 def translateApplyToExpr(tcx, term as Apply (opTerm, argsTerm, _), k, l, spc) =
   let
@@ -340,47 +389,6 @@ def translateTermsToExpressions(tcx, terms, k, l, spc) =
     let col = concatCollected(col1,col2) in
     ((newBody++restBody, cons(jTerm, restJTerms), restK, restL),col)
 
-(**
- * toplevel entry point for translating a meta-slang term to a java expression 
- * (in general preceded by statements)
- *) 
-def termToExpression(tcx, term, k, l, spc) =
-  termToExpression_internal(tcx,term,k,l,spc,true)
-
-def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
-  %let _ = writeLine("termToExpression: "^printTerm(term)) in
-  let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
-  case term of
-    | Var ((id, srt), _) ->
-    (case StringMap.find(tcx, id) of
-       | Some (newV) -> ((mts, newV, k, l),nothingCollected)
-       | _ -> ((mts, mkVarJavaExpr(id), k, l),nothingCollected))
-    | Fun (Op (Qualified (q, id), _), srt, _) -> 
-       if baseType?(srt) 
-	 then ((mts, mkQualJavaExpr("Primitive", id), k, l),nothingCollected)
-       else
-	 (case srt of
-	    | Base (Qualified (q, srtId), _, _) -> ((mts, mkQualJavaExpr(srtId, id), k, l),nothingCollected)
-	    | Arrow(dom,rng,_) -> translateLambdaToExpr(tcx,term,k,l,spc)
-	    | _ -> fail("unsupported term in termToExpression: "^printTerm(term)))
-    | Fun (Nat (n),_,__) -> ((mts, mkJavaNumber(n), k, l),nothingCollected)
-    | Fun (Bool (b),_,_) -> ((mts, mkJavaBool(b), k, l),nothingCollected)
-    | Fun (Embed (c, _), srt, _) -> 
-      if flatType? srt then
-	let (sid,col) = srtId(srt) in
-	((mts, mkMethInv(sid, c, []), k, l),col)
-      else
-	translateLambdaToExpr(tcx,term,k,l,spc)
-    | Apply (opTerm, argsTerm, _) -> translateApplyToExpr(tcx, term, k, l, spc)
-    | Record _ -> translateRecordToExpr(tcx, term, k, l, spc)
-    | IfThenElse _ -> translateIfThenElseToExpr(tcx, term, k, l, spc)
-    | Let _ -> translateLetToExpr(tcx, term, k, l, spc)
-    | Lambda((pat,cond,body)::_,_) -> (*ToJavaHO*)translateLambdaToExpr(tcx,term,k,l,spc)
-    | _ ->
-	 if caseTerm?(term)
-	   then translateCaseToExpr(tcx, term, k, l, spc)
-	 else fail("unsupported term in termToExpression"^printTerm(term))
-
 op translateIfThenElseRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
 op translateCaseRet: TCx * Term * Nat * Nat * Spec -> (Block * Nat * Nat) * Collected
 
@@ -391,10 +399,19 @@ def termToExpressionRet(tcx, term, k, l, spc) =
     case term of
       | IfThenElse _ -> translateIfThenElseRet(tcx, term, k, l, spc)
       | Let _ -> translateLetRet(tcx,term,k,l,spc)
+      | Record ([],_) -> (([Stmt(Return None)],k,l),nothingCollected)
+      | Seq(terms,_) ->
+	let ((s,exprs,k,l),col) = translateTermsToExpressions(tcx,terms,k,l,spc) in
+	let stmts = map (fn(expr) -> Stmt(Expr(expr))) exprs in
+	((s++stmts,k,l),col)
       | _ ->
         let ((b, jE, newK, newL),col) = termToExpression(tcx, term, k, l, spc) in
-	let retStmt = Stmt (Return (Some (jE))) in
-	((b++[retStmt], newK, newL),col)
+	let stmts = if isVoid?(spc,termSort(term))
+		      then [Stmt(Expr jE),Stmt(Return None)]
+		    else [Stmt(Return(Some(jE)))]
+	in
+	%let retStmt = Stmt (Return (Some (jE))) in
+	((b++stmts, newK, newL),col)
 
 def translateIfThenElseRet(tcx, term as IfThenElse(t0, t1, t2, _), k, l, spc) =
   let ((b0, jT0, k0, l0),col1) = termToExpression(tcx, t0, k, l, spc) in
@@ -491,7 +508,6 @@ def translateIfThenElseAsgNV(srtId, vId, tcx, term as IfThenElse(t0, t1, t2, _),
   let ifStmt = mkIfStmt(jT0, b1, b2) in
     (([varDecl]++b0++[ifStmt], k2, l2),col)
 
-%def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
 def translateCaseAsgNV(vSrtId, vId, tcx, term, k, l, spc) =
   let caseType = termSort(term) in
   let (caseTypeId,col0) = srtId(caseType) in
