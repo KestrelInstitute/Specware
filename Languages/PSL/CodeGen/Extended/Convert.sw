@@ -250,6 +250,7 @@ are no longer needed. *)
     let spc = specOf (Transition.modeSpec transition) in
     %let spc = transformSpecForCodeGen base spc in
     {
+     print ("\nConverting 1, Getting Guard and Actions...\n");
      (opt_guard_term, actions) <- getTransitionGuardAndActions transition;
      (graph,next,visited) <- 
        if Mode.member? final_modes (target transition) then
@@ -323,9 +324,14 @@ are no longer needed. *)
     let right_spec= specOf (Transition.modeSpec right_trans) in
     %let left_spec = transformSpecForCodeGen base left_spec in
     {
-     (Some left_guard,  left_actions)  <- getTransitionGuardAndActions left_trans;
-     (Some right_guard, right_actions) <- getTransitionGuardAndActions right_trans;
+
+     print ("\nConverting 2, Getting left Guard and Actions...\n");
+     (opt_left_guard, left_actions) <- getTransitionGuardAndActions left_trans;
+     print ("\nConverting 2, Getting right Guard and Actions...\n");
+     (opt_right_guard, right_actions) <- getTransitionGuardAndActions right_trans;
+     print ("\nConverting 2 => 1 for left..\n");
      (g1, n1, visited) <- convertBSpecAux bSpec final_modes graph (n+1) (target left_trans)  visited; 
+     print ("\nConverting 2 => 1 for right..\n");
      (g2, n2, visited) <- convertBSpecAux bSpec final_modes g1    n1    (target right_trans) visited;
      %% At this point, we've processed everything reachable from here (with frontier at next).
      %% Now we need to attach some semantics to this node (at n).
@@ -359,6 +365,7 @@ are no longer needed. *)
 	      n3 + 1,
 	      n3)
      in
+     let Some left_guard = opt_left_guard in
      let g5 =
          my_update ("2-B",
 		    g4, n, 
@@ -395,8 +402,11 @@ are no longer needed. *)
         let left_spec = specOf (Transition.modeSpec left_trans) in
 	%let left_spec = transformSpecForCodeGen base left_spec  in
         {
-	 (Some left_guard, left_actions) <- getTransitionGuardAndActions left_trans;
+	 print ("\nFor N, Getting Left guard and actions...\n");
+	 (opt_left_guard, left_actions) <- getTransitionGuardAndActions left_trans;
+	 print ("\nFor N, Right N-1...\n");
 	 (g1, n1, visited, right_index) <- convertBSpecAux_N bSpec final_modes graph (n+1) right_transitions   visited;
+	 print ("\nFor N, Left 1...\n");
 	 (g2, n2, visited)              <- convertBSpecAux   bSpec final_modes g1    n1    (target left_trans) visited; 
 	 original_left_index            <- return (vertexToIndex visited (vertex (target left_trans)));
 	 (g3, n3, revised_left_index) <-
@@ -406,6 +416,7 @@ are no longer needed. *)
 	       | _ ->
                  {(g, next, v) <- convertBSpecAux_1 bSpec final_modes g2 n2 visited left_trans;
 		  return (g, next, n2)};
+	 let Some left_guard = opt_left_guard in
 	 let g4 =
 	     my_update ("N-B",
 			g3, n,
@@ -425,6 +436,10 @@ are no longer needed. *)
       | None -> ~1
       | Some index -> index
 
+  op ppTerms : List MS.Term -> String
+  def ppTerms terms =
+    ppFormat (ppIndent (ppSep ppNewline (map ppATerm terms)))
+
   op getTransitionGuardAndActions : Transition -> Env (Option MSlang.Term * List MSlang.Term)
   def getTransitionGuardAndActions transition = 
     let ms = modeSpec (transSpec transition) in
@@ -432,6 +447,9 @@ are no longer needed. *)
      %% foldVariants  maps over spec properties (i.e. axioms, theorems, etc.) 
      %%   looking for those listed as invariants in the modespec
      %% foldVariables maps over spec ops
+     print (case (edge transition) of
+	      | Nat (_, qid) -> "\n------\nStep: " ^ (printQualifiedId qid) ^ "\n"
+	      | _ -> print ("\n ?? \n"));
      print ("\nInvariants: " ^ (anyToString (invariants ms)) ^ "\n");
      (guard_terms, aux_action_terms)  <- foldVariants (fn (guards, actions) -> fn claim -> 
 						       if claim.2 = "Guard" then
@@ -443,10 +461,10 @@ are no longer needed. *)
                                                       ([], [])
 						      ms;
      action_terms <- foldVariables infoToBindings [] ms;
-     print ("Aux    terms: " ^ (anyToString aux_action_terms) ^ "\n");
-     print ("Action terms: " ^ (anyToString action_terms)     ^ "\n");
+     print ("Aux    terms: " ^ (ppTerms aux_action_terms) ^ "\n");
+     print ("Action terms: " ^ (ppTerms action_terms)     ^ "\n");
      action_terms <- return (aux_action_terms ++ (rev action_terms));
-     print ("Guard  terms: " ^ (anyToString guard_terms)  ^ "\n");
+     print ("Guard  terms: " ^ (ppTerms guard_terms)  ^ "\n");
      case guard_terms of
        | [] ->
          return (None, action_terms)
