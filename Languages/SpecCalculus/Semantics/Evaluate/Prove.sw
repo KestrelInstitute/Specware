@@ -196,22 +196,21 @@ SpecCalc qualifying spec {
    let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
    let snarkConjecture = snarkConjecture(context, spc, claim) in
    let snarkEvalForm = makeSnarkProveEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
-%     let _ = writeLine("Calling Snark by evaluating: ") in
-%     let _ = LISP.PPRINT(snarkEvalForm) in
+     let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
+     let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
      let result = Lisp.apply(Lisp.symbol("LISP","FUNCALL"),
 			[Lisp.list [Lisp.symbol("SNARK","LAMBDA"),Lisp.nil(),snarkEvalForm]]) in
-     let proved = ":PROOF-FOUND" = toString(result) in
+     let proved = ":PROOF-FOUND" = System.toString(result) in
      let _ = displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
        proved
 
  op makeSnarkProveEvalForm: List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * Lisp.LispCell * String -> Lisp.LispCell
 
  def makeSnarkProveEvalForm(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
-%   let _ = toScreen("Proving snark fmla: ") in
-%   let _ = LISP.PPRINT(snarkConjecture) in
-%   let _ = writeLine(" using: ") in
-%   let _ = LISP.PPRINT(Lisp.list(snarkHypothesis)) in
-%    let _ = printSortToTerminal srt in
+   %%let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
+   %%let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
+   %%let _ = if specwareDebug? then writeLine(" using: ") else () in
+   %%let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
 
    	 Lisp.list 
 	 [Lisp.symbol("CL-USER","WITH-OPEN-FILE"),

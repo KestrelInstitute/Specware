@@ -157,7 +157,8 @@
    (1 :SC-EXPORT)
    (1 :SC-GENERATE)
    (1 :SC-OBLIGATIONS)
-   (1 :SC-PROVE))
+   (1 :SC-PROVE)
+   (1 :SC-EXTEND))
   1)
 
 ;;; ========================================================================
@@ -1454,6 +1455,14 @@ If we want the precedence to be optional:
    ;; Otherwise, it's probably ambiguous (semantic routine will notice that "=" must be an op):
    ((:tuple        (1 :SC-AMBIGUOUS-REF)    :MAPS-TO (2 :SC-AMBIGUOUS-REF))     (make-sm-ambiguous-rule 1 2 ':left-lcb ':right-lcb))
    ))
+
+;;; ========================================================================
+;;;  SC-EXTEND
+;;; ========================================================================
+
+(define-sw-parser-rule :SC-EXTEND ()
+  (:tuple "extendMorph" (1 :SC-TERM))
+  (make-sc-extend 1 ':left-lcb ':right-lcb))
 
 ;;; ========================================================================
 ;;;  SC-SHAPE

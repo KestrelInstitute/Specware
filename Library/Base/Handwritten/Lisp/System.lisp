@@ -1,7 +1,9 @@
 (defpackage "SYSTEM-SPEC")
 (in-package "SYSTEM-SPEC")
 
-;;; op fail     : fa(a) String -> a
+(defvar System-spec::specwareDebug? nil)
+
+ ;;; op fail     : fa(a) String -> a
 (defun fail (s) (error "~a" s))
 
 ;;; op debug     : fa(a) String -> a

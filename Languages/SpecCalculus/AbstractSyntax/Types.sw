@@ -93,7 +93,7 @@ The following is the sort given to us by the parser.
   sort Term a = (Term_ a) * a
   sort Term_ a = 
     | Print   (Term a)
-    | Prove   ClaimName * Term Position * ProverName * Assertions * ProverOptions
+    | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions
     | URI     RelativeURI
     | Spec    List (SpecElem a)
     | Diag    List (DiagElem a)
@@ -110,6 +110,7 @@ to the domain and codomain of the morphisms.
 \begin{spec}
     | SpecMorph (Term a) * (Term a) * (List (SpecMorphRule a))
     | DiagMorph (Term a) * (Term a) * (List (DiagMorphRule a))
+    | ExtendMorph  (Term a)
 \end{spec}
 
 \begin{spec}

@@ -10,6 +10,7 @@ SpecCalc qualifying spec {
  import Diagram      
  import Colimit
  import SpecMorphism 
+ import ExtendMorphism 
  import DiagMorphism 
  import Generate      
  import Translate      
@@ -36,6 +37,8 @@ This is a monadic interpreter for the Spec Calculus.
     | Spec elems -> SpecCalc.evaluateSpec elems pos
 
     | SpecMorph fields -> SpecCalc.evaluateSpecMorph fields
+
+    | ExtendMorph term -> SpecCalc.evaluateExtendMorph term
 
     | Diag elems -> SpecCalc.evaluateDiag elems
 

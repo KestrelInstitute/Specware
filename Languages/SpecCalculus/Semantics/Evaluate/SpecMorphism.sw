@@ -194,7 +194,7 @@ Should we check to see if qid is in cod_map??
            %% Otherwise, if the identity map works, use that
            case findAQualifierMap (cod_map, qualifier, id) of
              | Some _ -> return (update new_map (Qualified (qualifier,id)) (Qualified (qualifier,id))) % identity
-             | _ -> raise (MorphError (position, "No mapping for " ^ qualifier ^ "." ^ id))
+             | _ -> raise (MorphError (position, "No mapping for " ^ qualifier ^ "." ^ id)) %return new_map
     in
       foldOverQualifierMap compl emptyMap dom_map
 }
