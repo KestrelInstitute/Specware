@@ -80,8 +80,8 @@ spec
   def renameInSpec s =
     let c = emptyContext () in
     let {importInfo, sorts, ops, properties} = s in
-    let ops      = mapAQualifierMap (renameOp c) ops in
-    let properties   = map (renameFormula c) properties in
+    let ops        = mapOpMap (renameOp c) ops in
+    let properties = map (renameFormula c) properties in
     {importInfo = importInfo,
      sorts      = sorts,
      ops        = ops,
@@ -90,11 +90,11 @@ spec
   def renameFormula c (pt,name, tyvars, term) =
     (pt,name, tyvars, renameTerm c term)
 
-  def renameOp c (op_names, fixity, sortScheme, termSchemes) =
-    (op_names, 
+  def renameOp c (aliases, fixity, sortScheme, defs) =
+    (aliases,
      fixity,
      sortScheme,
-     map (fn (tvs,term) -> (tvs,renameTerm c term)) termSchemes)
+     map (fn (tvs,term) -> (tvs, renameTerm c term)) defs)
 
   def renameClosedTerm c term =
     savingEnvContext c (fn () ->
