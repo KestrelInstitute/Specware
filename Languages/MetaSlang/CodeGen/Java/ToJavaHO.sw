@@ -24,8 +24,18 @@ spec
     *)
    op translateStandAloneOpToExpr: TCx * (QualifiedId * Sort) * Nat * Nat * Spec -> Block * Java.Expr * Nat *Nat
    def translateStandAloneOpToExpr(tcx,(qid,srt),k,l,spc) =
-     let Qualified(q,id) = qid in
-     fail("stand alone op: "^q^"."^id)
+     let Qualified(spcname,id) = qid in
+     if (id = "+" or id = "-" or id = "*" or id = "div" or id = "mod") &
+       (spcname = "Integer" or spcname = "Nat" or spcname = "PosNat")
+       then
+	 %v3:p44:r11
+	 let rexp = mkBinExp(id,[mkVarJavaExpr("arg1"),mkVarJavaExpr("arg2")]) in
+	 let s = mkReturnStmt(rexp) in
+	 let meth = mkMethDecl("apply",["int","int"],"int","arg",s) in
+	 let clsname = mkArrowSrtId(["Integer","Integer"],"Integer") in
+	 let exp = mkNewAnonymousClasInstOneMethod(clsname,[],meth) in
+	 (mts,exp,k,l)
+     else fail("not yet implemented: stand-alone op "^id)
 
 
 endspec

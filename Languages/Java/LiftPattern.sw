@@ -177,7 +177,7 @@ def opDelta(spc, oper) =
 
 
 op srtTermDelta : Sort * Term -> List Var * Term
-def srtTermDelta(srt,term) = srtTermDelta_internal(srt,term,true)
+def srtTermDelta(srt,term) = srtTermDelta_internal(srt,term,false)
 
 op srtTermDelta_internal: Sort * Term * Boolean-> List Var * Term
 def srtTermDelta_internal(srt, term, fail?) =

@@ -168,6 +168,7 @@ def tt_v2(id) =
     | "Boolean" -> (Basic (JBool), 0)
     | "Integer" -> (Basic (JInt), 0)
     | "Nat" -> (Basic (JInt), 0)
+    | "Char" -> (Basic (Char), 0)
     | _ -> (Name ([], id), 0)
 
 (**
@@ -177,14 +178,7 @@ op tt_v3: Sort -> Java.Type
 def tt_v3(srt) =
   case srt of
     | Base(Qualified(_,id),_,_) -> tt_v2(id)
-    | Arrow(srt0,srt1,_) -> mkArrowClassDef(srt0,srt1)
-
-(**
- * this op generates the java type definition for the arrow type srt0 -> srt1
- *)
-op mkArrowClassDef: Sort * Sort -> Java.Type
-def mkArrowClassDef(srt0,srt1) = 
-  mkJavaObjectType("Object")
+    | Arrow(srt0,srt1,_) -> mkJavaObjectType(srtId(srt))
 
 (**
  * srtId returns for a given type the string representation accorinding the rules
@@ -200,6 +194,19 @@ def srtId(srt) =
     let dsrtid = srtId dsrt in
     dsrtid^"$To$"^rsrtid
     | _ -> fail("don't know how to transform sort \""^printSort(srt)^"\"")
+
+(**
+ * generates a string representation of the type id1*id2*...*idn -> id
+ * the ids are MetaSlang sort ids 
+ *)
+op mkArrowSrtId: List Id * Id -> String
+def mkArrowSrtId(domidlist,ranid) =
+  let p = Internal "" in
+  let ran = Base(mkUnQualifiedId(ranid),[],p) in
+  let fields = map (fn(id) -> ("x",Base(mkUnQualifiedId(id),[],p):Sort)) domidlist in
+  let dom = Product(fields,p) in
+  let srt = Arrow(dom,ran,p) in
+  srtId(srt)
 
 op mkJavaObjectType: Id -> Java.Type
 def mkJavaObjectType(id) =
@@ -258,7 +265,6 @@ def javaBaseOp?(id) =
     %%| "-" -> true
     | "~" -> true
     | _ -> false
-    
 
 op mkBinExp: Id * List Java.Expr -> Java.Expr
 def mkBinExp(opId, javaArgs) =
@@ -303,8 +309,76 @@ op mkMethExprInv: Java.Expr * Id * List Java.Expr -> Java.Expr
 def mkMethExprInv(topJArg, opId, javaArgs) =
   CondExp (Un (Prim (MethInv (ViaPrim (Paren (topJArg), opId, javaArgs)))), None)
 
+(**
+  * returns the Java type for the given id, checks for basic names like "int" "boolean" etc.
+  *)
+op getJavaTypeFromTypeId: Id -> Java.Type
+def getJavaTypeFromTypeId(id) =
+  if id = "int" then (Basic JInt,0)
+  else
+  if id = "boolean" then (Basic JBool,0)
+  else
+  if id = "byte" then (Basic Byte,0)
+  else
+  if id = "short" then (Basic Short,0)
+  else
+  if id = "char" then (Basic Char,0)
+  else
+  if id = "long" then (Basic Long,0)
+  else
+  if id = "double" then (Basic Double,0)
+  else
+  mkJavaObjectType(id)    
+
+
+(**
+ * creates a method declaration from the following parameters:
+ * @param methodName
+ * @param argTypeNames the list of argument type names
+ * @param retTypeName the name of the return type
+ * @param argNameBase the basename of the arguments; actual arguments are created by appending 1,2,3, etc to this name
+ * @param the statement representing the body of the method; usually a return statement
+ *)
+op mkMethDecl: Id * List Id * Id * Id * Java.Stmt -> MethDecl
+def mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,bodyStmt) =
+  let body = [Stmt bodyStmt] in
+  let (pars,_) = foldl (fn(argType,(types,nmb)) -> 
+		    let type = getJavaTypeFromTypeId(argType) in
+		    let argname = argNameBase^Integer.toString(nmb) in
+		    (concat(types,[(false,type,(argname,0))]),nmb+1))
+                   ([],1) argTypeNames
+  in
+  let retType = Some (getJavaTypeFromTypeId(retTypeName)) in
+  let modifiers = [] in
+  let throws = [] in
+  let header = (modifiers,retType,methodName,pars:FormPars,throws) in
+  (header,Some body)
+
+(**
+  * creates a method decl with just one return statement as body,
+  * see mkMethDecl for the other parameters
+  *)
+op mkMethDeclJustReturn: Id * List Id * Id * Id * Java.Expr -> MethDecl
+def mkMethDeclJustReturn(methodName,argTypeNames,retTypeName,argNameBase,retExpr) =
+  let retStmt = mkReturnStmt(retExpr) in
+  mkMethDecl(methodName,argTypeNames,retTypeName,argNameBase,retStmt)
+
 def mkNewClasInst(id, javaArgs) =
   CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, None)))), None)
+
+(**
+ * creates a "new" expression for an anonymous class with the given "local" class body
+ *)
+def mkNewAnonymousClasInst(id, javaArgs,clsBody:ClsBody) =
+  CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None)
+
+(**
+ * creates a "new" expression for an anonymous class with the given method declaration as
+ * only element of the "local" class body
+ *)
+def mkNewAnonymousClasInstOneMethod(id, javaArgs,methDecl) =
+  let clsBody = {staticInits=[],flds=[],constrs=[],meths=[methDecl],clss=[],interfs=[]} in
+  CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None)
 
 op mkVarDecl: Id * Id -> BlockStmt
 def mkVarDecl(v, srtId) =
@@ -325,6 +399,10 @@ def mkVarInit(vId, srtId, jInit) =
 op mkIfStmt: Java.Expr * Block * Block -> BlockStmt
 def mkIfStmt(jT0, b1, b2) =
   Stmt (If (jT0, Block (b1), Some (Block (b2))))
+
+op mkReturnStmt: Java.Expr -> Stmt
+def mkReturnStmt(expr) =
+  Return(Some expr)
 
 
 endspec

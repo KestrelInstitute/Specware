@@ -1,29 +1,15 @@
-\section{Java Abstract Syntax}
 (*
    Java spec defines an abstract syntax for Java programs using MetaSlang.
 *)
 
-\begin{spec}
 
 spec
 
-\end{spec}
- 
-\subsection{Program structuring syntax}
-%%%%%%%%%%%%%% Program structuring syntax %%%%%%%%%%%%%%%%%
-
-\begin{spec} 
 
 sort CompUnit = Option Name * List Name * List ClsOrInterfDecl
 %% Name is for package
 %% List Name for imports
 
-\end{spec}
-
-\subsection{Declaration}
-%%%%%%%%% Declaration %%%%%%%%%
-
-\begin{spec}
 sort ClsOrInterfDecl = 
   | ClsDecl     ClsDecl
   | InterfDecl  InterfDecl 
@@ -88,11 +74,7 @@ sort FormPar = Boolean * Type * VarDeclId
 sort FormPars = List FormPar
 
 sort Throws = List Name
-\end{spec}
 
-\subsection{Statement}
-%%%%%%%%%%%%%% Statement %%%%%%%%%%%%%%
-\begin{spec}
 sort Block = List BlockStmt
 
 sort BlockStmt = 
@@ -132,13 +114,6 @@ sort SwitchBlock = List (List SwitchLab * List BlockStmt)
 sort SwitchLab = 
   | JCase     Expr
   | Default
-
-\end{spec}
-
-\subsection{Expression}
-%%%%%%%%%%%%%%% Expression %%%%%%%%%%%%%%
-
-\begin{spec}
 
 sort Expr = 
   | CondExp CondExp
@@ -332,12 +307,6 @@ sort ArrAcc =
   | ViaName        Name * Expr
   | ViaNoNewArray  Prim * Expr
 
-\end{spec}
-
-\subsection{Type}
-%%%%%%%%%%%% Type %%%%%%%%%%%%
-
-\begin{spec}
 
 sort Type = BasicOrName * Integer
 %% Integer is for dimension, 0 means that it is not an array.
@@ -349,12 +318,6 @@ sort Basic =
 
 sort RetType = Option Type
 
-\end{spec}
-
-\subsection{Name and identifier}
-%%%%%%%%%%%%% Name and identifier %%%%%%%%%%%%%%%%%%
-
-\begin{spec}
 
 sort Name = List Ident * Ident
 %% Package, method, type, expression names are all qualified identifiers.
@@ -363,4 +326,3 @@ sort Ident = String
 
 endspec
 
-\end{spec}
