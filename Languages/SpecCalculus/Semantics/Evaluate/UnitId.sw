@@ -186,10 +186,15 @@ it easy to experiment with different UnitId path resolution strategies..
       | SpecPath_Relative {path, hashSuffix} ->
         {
 	 roots <- getSpecPath;
-	 return (map (fn root ->
-		      normalizeUID {path       = root.path ++ path,
-				    hashSuffix = hashSuffix})
-		     roots)
+	 foldM (fn uids -> fn root ->
+		return (uids 
+			++
+			map (fn shadow_root ->
+			     normalizeUID {path       = shadow_root ++ path, 
+					   hashSuffix = hashSuffix})
+			    (pathShadows root.path)))
+	       []
+	       roots
         }
       | UnitId_Relative {path, hashSuffix} ->
         {
