@@ -221,10 +221,22 @@ be the option to run each (test ...) form in a fresh image.
 			 (value-predicate 'equal)
 			 file-goto-error
 			 error files)
-  (let ((msg (format nil "Running test ~4D : ~A" (incf *global-test-counter*) name)))
-    ;; Incrementing fi:lisp-evalserver-number-reads keeps us one step ahead of
-    ;; a timeout problem where pending command-line -eval's give up.
-    (emacs::eval-in-emacs (format nil "(progn (incf fi:lisp-evalserver-number-reads) (message ~S))" msg)))
+  (let ((msg (format nil "~4D Testing : ~A" (incf *global-test-counter*) name)))
+    ;;
+    ;; Note:  The xemacs variable fi:lisp-evalserver-number-reads needs to be bound
+    ;;        to a value larger than the total number of calls that will be made 
+    ;;        here to eval-in-emacs (which equals the number of tests to be run). 
+    ;;        Otherwise, subsequent -eval forms in the script "time out" and fail 
+    ;;        to execute, so the final exit-lisp and kill-emacs forms don't
+    ;;        execute, so the script hangs forever.
+    ;;
+    ;;        The default value for fi:lisp-evalserver-number-reads is just 200, 
+    ;;        so current test scripts (e.g. Test_Specware4_ACL) set it to 100000.
+    ;;
+    ;;        Incrementing fi:lisp-evalserver-number-reads here would be a better
+    ;;        solution except that it doesn't seem to work.
+    ;;
+    (emacs::eval-in-emacs (format nil "(message ~S)" msg)))
   (let (val error-type (error-messages ())
 	(emacs::*goto-file-position-store?* t)
 	(emacs::*goto-file-position-stored* nil)
