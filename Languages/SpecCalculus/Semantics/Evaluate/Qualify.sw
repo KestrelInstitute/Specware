@@ -20,7 +20,7 @@ Change UnQualified to new_qualifier in all qualified names
 \begin{spec} 
   def SpecCalc.evaluateQualify term new_qualifier = {
        (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
-        case value of
+        case coerceToSpec value of
           | Spec spc -> {
                 qualified_spec <- qualifySpec spc new_qualifier (positionOf term);
                 return (Spec qualified_spec,timeStamp,depURIs)

@@ -10,8 +10,9 @@ SpecCalc qualifying spec {
       (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
       case value of
         | Diag dgm -> 
-            let univCocone = (colimit (cod (functor (dgm)))) dgm in
-            return (Spec (apex (cocone univCocone)),timeStamp,depURIs)
+            let initial_cocone = (colimit (cod (functor (dgm)))) dgm in
+            % return (Spec (apex (cocone univCocone)),timeStamp,depURIs)
+            return (Colimit initial_cocone, timeStamp, depURIs)
         | _ -> raise (TypeCheck (positionOf term, "argument of colimit is not a diagram"))
     }
 }

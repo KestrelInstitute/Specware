@@ -13,7 +13,7 @@ Perhaps the calculus is getting too complicated.
 \begin{spec}
   def SpecCalc.evaluateTranslate term translation = {
       (value,timeStamp,depURIs) <- evaluateTermInfo term;
-      case value of
+      case coerceToSpec value of
         | Spec spc -> {
               spcTrans <- translateSpec spc translation;
               return (Spec spcTrans,timeStamp,depURIs)

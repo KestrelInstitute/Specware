@@ -7,9 +7,12 @@ SpecCalc qualifying spec {
 
   sort SCTerm = SpecCalc.Term Position
 
-  op evaluateTerm        : SCTerm                                             -> Env Value
+  %% Generic mechanism:
 
+  op evaluateTerm        : SCTerm                                             -> Env Value
   op evaluateLet         : List (Decl Position) -> SCTerm                     -> Env ValueInfo
+
+  %% Specific kinds of terms:
 
   op evaluateURI         : Position -> RelativeURI                            -> Env ValueInfo
   op evaluateSpec        : List (SpecElem Position)                           -> Env ValueInfo
@@ -25,7 +28,9 @@ SpecCalc qualifying spec {
   op evaluateSubstitute  : SCTerm * SCTerm                       -> Position  -> Env ValueInfo
   op evaluateObligations : SCTerm                                             -> Env ValueInfo
 
-  op getURI : SCTerm -> Env URI
+  %% Lower-level support routines:
 
+  op getURI : SCTerm -> Env URI
+  op coerceToSpec : Value -> Value
 }
 \end{spec}

@@ -60,7 +60,7 @@ The conditions for a diagram expression to be valid include:
     case (valueOf elem) of
       | Node (nodeId,term) -> {
            (termValue,termTime,termDeps) <- evaluateTermInfo term;
-           case termValue of
+           case coerceToSpec termValue of
              | Spec spc -> {
                     newDgm <- addLabelledVertex dgm nodeId spc (positionOf term);
                     return (newDgm, max (timeStamp,termTime), listUnion (depURIs, termDeps))

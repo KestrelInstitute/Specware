@@ -10,6 +10,23 @@ SpecCalc qualifying spec {
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
   import Spec/Utilities
   import /Library/Legacy/DataStructures/ListUtilities % for listUnion
+
+\end{spec}
+
+To simplify the syntax for users, when a spec is expected, 
+coerce a morphism to its codomain spec or a colimit to its apex spec.
+If there is no obvious coercion, simply return the given value, unchanged.
+
+\begin{spec}
+
+  %% For some obscure reason, we need to make the type of coerceToSpec explicit here.
+  def coerceToSpec (value : Value) : Value =  
+    case value of
+      | Morph   sm  -> Spec (cod sm)
+      | Colimit col -> Spec (apex (cocone col))
+      | _           -> value
+
+
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -56,7 +73,7 @@ and then qualify the resulting spec if the spec was given a name.
     case elem of
       | Import term -> {
             (value,iTS,depURIs) <- evaluateTermInfo term;
-            (case value of
+            (case coerceToSpec value of
               | Spec impSpec -> {
                     newSpc <- mergeImport term impSpec spc position;
                     return (newSpc, max(cTS,iTS), listUnion(cDepURIs,depURIs))

@@ -49,6 +49,7 @@ SpecCalc qualifying spec {
   op ppMorphism : Morphism -> Doc
   def ppMorphism {dom=_, cod=_, sortMap, opMap} = 
     ppConcat [
+      ppNewline,
       ppString "Sort map=",
       ppNewline,
       ppNest 2 (ppMap ppQualifiedId ppQualifiedId
@@ -57,6 +58,7 @@ SpecCalc qualifying spec {
             newMap
           else
             update newMap d c) emptyMap sortMap)),
+      ppNewline,
       ppString "Op map=",
       ppNewline,
       ppNest 2 (ppMap ppQualifiedId ppQualifiedId
@@ -64,7 +66,8 @@ SpecCalc qualifying spec {
           if d = c then
             newMap
           else
-            update newMap d c) emptyMap opMap))
+            update newMap d c) emptyMap opMap)),
+      ppNewline
     ]
 
   def dom     morph = morph.dom
@@ -113,6 +116,12 @@ SpecCalc qualifying spec {
   {diagram  = dg,
    apex     = apex_spec,
    natTrans = cc_nt}
+
+ op ppColimit : SpecInitialCocone -> Doc
+ def ppColimit {cocone, universal=_} =
+    ppConcat [ppString "colimit ",
+	      ppNewline,
+	      ppDiagram (diagram cocone)]
 
 }
 \end{spec}
