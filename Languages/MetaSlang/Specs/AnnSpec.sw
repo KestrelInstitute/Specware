@@ -603,13 +603,16 @@ AnnSpec qualifying spec
      found
  
  def findAllOps (spc, Qualified (q, id)) =
+   let found = (case findAQualifierMap (spc.ops, q, id) of
+		  | Some info -> [info]
+		  | None           -> [])
+   in
    if q = UnQualified then
-     wildFindUnQualified (spc.ops, id)
+     found ++ filter (fn info -> ~(member (info, found)))
+                     (wildFindUnQualified (spc.ops, id))
    else
-     case findAQualifierMap (spc.ops, q, id) of
-       | Some info -> [info]
-       | None         -> []
-		
+     found
+
  %%  find all the matches to id in every second level map
   op wildFindUnQualified : [a] AQualifierMap a * Id -> List a
  def wildFindUnQualified (qualifier_map, id) =
