@@ -34,7 +34,15 @@ CurryUtils qualifying spec
         def unCurryArrowAux(rng,accumDomSrts) =
 	  (case stripSubsorts(spc,rng) of
 	    | Arrow(dom, restRng, _) ->
-	      (true,(unCurryArrowAux(restRng,accumDomSrts ++ [dom])).2)
+	      let expandedDomSrts = 
+                  foldl (fn (dom_srt, dom_srts) ->
+			 case productOpt (spc, dom_srt) of
+			   | Some fields -> dom_srts ++ (map (fn (_,s) -> s) fields)
+			   | _ -> dom_srts ++ [dom_srt])
+		        []
+		        accumDomSrts
+	      in
+	      (true,(unCurryArrowAux(restRng,expandedDomSrts ++ [dom])).2)
 	    | _ ->
 	      let (changed?,nRng) = unCurryRec rng in
 	      let (changed?,nDomSrts) = foldrPred unCurryRec changed? accumDomSrts
