@@ -3,12 +3,12 @@ spec
   import TypesExpressionsPatterns
 
   type ContextElement =
-    | typeDeclaration Name * Nat
-    | opDeclaration   Name * FSeqNR Name * Type
-    | typeDefinition  Name * FSeqNR Name * Type
-    | opdefinition    FSeqNR Name * Name * Expression
-    | axio(*m*)       FSeqNR Name * Expression
-    | tVarDeclaration Name
+    | typeDeclaration TypeName * Nat
+    | opDeclaration   Operation * FSeqNR TypeVariable * Type
+    | typeDefinition  TypeName * FSeqNR TypeVariable * Type
+    | opdefinition    FSeqNR TypeVariable * Operation * Expression
+    | axio(*m*)       FSeqNR TypeVariable * Expression
+    | tVarDeclaration TypeVariable
     | varDeclaration  TypedVar
 
   type Context = FSeq ContextElement

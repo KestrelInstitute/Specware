@@ -9,9 +9,9 @@ spec
   % variables introduced by pattern:
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op pattVars : Pattern -> FSet Name
+  op pattVars : Pattern -> FSet Variable
 
-  op pattSeqVars : FSeq Pattern -> FSet Name
+  op pattSeqVars : FSeq Pattern -> FSet Variable
   def pattSeqVars patts =
     unionAll (map (pattVars, patts))
 
@@ -31,9 +31,9 @@ spec
   force such predicates to have no free variables. However, here it is easier
   to consider them because of the way we have factored expressions. *)
 
-  op exprFreeVars : Expression -> FSet Name
+  op exprFreeVars : Expression -> FSet Variable
 
-  op exprSeqFreeVars : FSeq Expression -> FSet Name
+  op exprSeqFreeVars : FSeq Expression -> FSet Variable
   def exprSeqFreeVars exprs =
     unionAll (toSet (map (exprFreeVars, exprs)))
 
@@ -56,7 +56,7 @@ spec
                                                    pattVars     (patts elem i))
                                         else None) in
                                   let def branchVars
-                                          (e:Expression, p:Pattern) : FSet Name =
+                                          (e:Expression, p:Pattern) : FSet Variable =
                                           exprFreeVars e -- pattVars p in
                                   unionAll (map2 (branchVars, exprs, patts))
                                   \/ exprFreeVars e
@@ -72,10 +72,10 @@ spec
   % types, ops, type variables, and variables declared in context:
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op contextElementTypes    : ContextElement -> FSet Name
-  op contextElementOps      : ContextElement -> FSet Name
-  op contextElementTypeVars : ContextElement -> FSet Name
-  op contextElementVars     : ContextElement -> FSet Name
+  op contextElementTypes    : ContextElement -> FSet TypeName
+  op contextElementOps      : ContextElement -> FSet Operation
+  op contextElementTypeVars : ContextElement -> FSet TypeVariable
+  op contextElementVars     : ContextElement -> FSet Variable
 
   def contextElementTypes = fn
     | typeDeclaration(t,_) -> singleton t
@@ -93,18 +93,14 @@ spec
     | varDeclaration(v,_) -> singleton v
     | _                   -> empty
 
-  op collectFromContext : Context * (ContextElement -> FSet Name) -> FSet Name
-  def collectFromContext (cx, collectFunc) =
-    unionAll (map (collectFunc, cx))
+  op contextTypes    : Context -> FSet TypeName
+  op contextOps      : Context -> FSet Operation
+  op contextTypeVars : Context -> FSet TypeVariable
+  op contextVars     : Context -> FSet Variable
 
-  op contextTypes    : Context -> FSet Name
-  op contextOps      : Context -> FSet Name
-  op contextTypeVars : Context -> FSet Name
-  op contextVars     : Context -> FSet Name
-
-  def contextTypes    cx = collectFromContext (cx, contextElementTypes)
-  def contextOps      cx = collectFromContext (cx, contextElementOps)
-  def contextTypeVars cx = collectFromContext (cx, contextElementTypeVars)
-  def contextVars     cx = collectFromContext (cx, contextElementVars)
+  def contextTypes    cx = unionAll (map (contextElementTypes,    cx))
+  def contextOps      cx = unionAll (map (contextElementOps,      cx))
+  def contextTypeVars cx = unionAll (map (contextElementTypeVars, cx))
+  def contextVars     cx = unionAll (map (contextElementVars,     cx))
 
 endspec

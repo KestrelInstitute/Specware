@@ -1,6 +1,6 @@
 spec
 
-  import Names
+  import Primitives
 
   (* Since expressions are defined in terms of types and patterns, we declare
   a (meta) type for types and patterns, which are defined in specs `Types' and
@@ -23,15 +23,15 @@ spec
   an embedder to be a sum type. *)
 
   % useful notion (frequently used):
-  type TypedVar = Name * Type
+  type TypedVar = Variable * Type
 
   type NullaryExprOperator =
-    | variable Name
+    | variable Variable
     | tru(*e*)
     | fals(*e*)
 
   type UnaryExprOperator =
-    | recordProjection Name
+    | recordProjection Field
     | tupleProjection  Nat
     | relaxator
     | quotienter
@@ -50,7 +50,7 @@ spec
     | equivalence
 
   type NaryExprOperator =
-    | record FSeq Name
+    | record FSeq Field
     | tuple
 
   type BindingExprOperator =
@@ -69,8 +69,8 @@ spec
     | nary            NaryExprOperator * FSeq Expression
     | binding         BindingExprOperator * TypedVar * Expression
     | multiBinding    MultiBindingExprOperator * FSeqNE TypedVar * Expression
-    | opInstance      Name * FSeq Type
-    | embedder        Type * Name
+    | opInstance      Operation * FSeq Type
+    | embedder        Type * Constructor
     | cas(*e*)        Expression * FSeqNE (Pattern * Expression)
     | recursiveLet    FSeqNE (TypedVar * Expression) * Expression
     | nonRecursiveLet Pattern * Expression * Expression

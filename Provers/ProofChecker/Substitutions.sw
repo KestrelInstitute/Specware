@@ -9,9 +9,9 @@ spec
 
   (* While in LD substitutions are describes by a sequence of type variables
   and a sequence of types of the same length, here we use finite maps from
-  type variables (i.e. names) to types. *)
+  type variables to types. *)
 
-  type TypeSubstitution = FMap(Name,Type)
+  type TypeSubstitution = FMap(TypeVariable,Type)
 
   op typeSubstInType : TypeSubstitution -> Type       -> Type
   op typeSubstInExpr : TypeSubstitution -> Expression -> Expression
@@ -104,7 +104,7 @@ spec
   variables. Here it is easier to perform the substitution in those
   predicates, because of the way we have factored expressions. *)
 
-  type ExpressionSubstitution = FMap(Name,Expression)
+  type ExpressionSubstitution = FMap(Variable,Expression)
 
   op exprSubst : ExpressionSubstitution -> Expression -> Expression
   def exprSubst sbs = fn
@@ -166,7 +166,7 @@ spec
 
 
   % captured variables at free occurrences of given variable:
-  op captVars : Name -> Expression -> FSet Name
+  op captVars : Variable -> Expression -> FSet Variable
   def captVars u = fn
     | unary(_,e)               -> captVars u e
     | binary(_,e1,e2)          -> captVars u e1 \/ captVars u e2
@@ -224,7 +224,7 @@ spec
   % pattern substitutions:
   %%%%%%%%%%%%%%%%%%%%%%%%
 
-  type PatternSubstitution = Name * Name
+  type PatternSubstitution = Variable * Variable
 
   op pattSubst : PatternSubstitution -> Pattern -> Pattern
   def pattSubst (old,new) = fn
@@ -270,7 +270,7 @@ spec
                     typ (arrow(t1,newT2))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         i:Nat, constrs:FSeqNE Name, types?:FSeqNE(Option Type),
+         i:Nat, constrs:FSeqNE Constructor, types?:FSeqNE(Option Type),
          ti:Type, newTi:Type)
        i < length types? &&
        types? elem i = Some ti &&
@@ -342,19 +342,19 @@ spec
                     expr (nary(neo,update(exprs,i,newEi)))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         beo:BindingExprOperator, v:Name, t:Type, e:Expression, newT:Type)
+         beo:BindingExprOperator, v:Variable, t:Type, e:Expression, newT:Type)
        typeSubstAt (typ t, old, new, pos, typ newT) =>
        typeSubstAt (expr (binding(beo,(v,t),e)), old, new, 0 |> pos,
                     expr (binding(beo,(v,newT),e))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         beo:BindingExprOperator, v:Name, t:Type, e:Expression, newE:Expression)
+         beo:BindingExprOperator, v:Variable, t:Type, e:Expression, newE:Expression)
        typeSubstAt (expr e, old, new, pos, expr newE) =>
        typeSubstAt (expr (binding(beo,(v,t),e)), old, new, 1 |> pos,
                     expr (binding(beo,(v,t),newE))))
     &&
     (fa (old:Type, new:Type, pos:Position, meo:MultiBindingExprOperator,
-         i:Nat, vars:FSeqNE Name, types:FSeqNE Type, e:Expression, newTi:Type)
+         i:Nat, vars:FSeqNE Variable, types:FSeqNE Type, e:Expression, newTi:Type)
        i < length vars &&
        length vars = length types &&
        typeSubstAt (typ (types elem i), old, new, pos, typ newTi) =>
@@ -365,13 +365,13 @@ spec
                                         e))))
     &&
     (fa (old:Type, new:Type, pos:Position, meo:MultiBindingExprOperator,
-         binds:FSeqNE(Name*Type), e:Expression, newE:Expression)
+         binds:FSeqNE(Variable*Type), e:Expression, newE:Expression)
        typeSubstAt (expr e, old, new, pos, expr newE) =>
        typeSubstAt (expr (multiBinding (meo, binds, e)), old, new, 0 |> pos,
                     expr (multiBinding (meo, binds, newE))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         i:Nat, opp:Name, types:FSeq Type, newTi:Type)
+         i:Nat, opp:Operation, types:FSeq Type, newTi:Type)
        i < length types &&
        typeSubstAt (typ (types elem i), old, new, pos, typ newTi) =>
        typeSubstAt (expr (opInstance(opp,types)), old, new, (i+1) |> pos,
@@ -382,7 +382,7 @@ spec
     that decorates the embedder, as opposed to i to indicate the i-th type
     component as in LD. *)
     (fa (old:Type, new:Type, pos:Position,
-         t:Type, constr:Name, newT:Type)
+         t:Type, constr:Constructor, newT:Type)
        typeSubstAt (typ t, old, new, pos, typ newT) =>
        typeSubstAt (expr (embedder(t,constr)), old, new, 0 |> pos,
                     expr (embedder(t,constr))))
@@ -412,7 +412,7 @@ spec
                     expr (cas (e, (zip (patts, update(exprs,i,newEi)))))))
     &&
     (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
-         vars:FSeqNE Name, types:FSeqNE Type, exprs:FSeqNE Expression,
+         vars:FSeqNE Variable, types:FSeqNE Type, exprs:FSeqNE Expression,
          e:Expression, newTi:Type)
        i < length vars &&
        length vars = length types &&
@@ -424,7 +424,7 @@ spec
                            (zip (zip (vars, update(types,i,newTi)), exprs), e))))
     &&
     (fa (old:Type, new:Type, pos:Position, i:Nat, e:Expression,
-         vars:FSeqNE Name, types:FSeqNE Type, exprs:FSeqNE Expression,
+         vars:FSeqNE Variable, types:FSeqNE Type, exprs:FSeqNE Expression,
          e:Expression, newEi:Expression)
        i < length vars &&
        length vars = length types &&
@@ -460,25 +460,25 @@ spec
                     expr (nonRecursiveLet(p,e,newE1))))
   %%%%% patterns:
     &&
-    (fa (old:Type, new:Type, pos:Position, v:Name, t:Type, newT:Type)
+    (fa (old:Type, new:Type, pos:Position, v:Variable, t:Type, newT:Type)
        typeSubstAt (typ t, old, new, pos, typ newT) =>
        typeSubstAt (patt (variable(v,t)), old, new, 0 |> pos,
                     patt (variable(v,newT))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         t:Type, constr:Name, p:Pattern, newT:Type)
+         t:Type, constr:Constructor, p:Pattern, newT:Type)
        typeSubstAt (typ t, old, new, pos, typ newT) =>
        typeSubstAt (patt (embedding(t,constr,p)), old, new, 0 |> pos,
                     patt (embedding(newT,constr,p))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         t:Type, constr:Name, p:Pattern, newP:Pattern)
+         t:Type, constr:Constructor, p:Pattern, newP:Pattern)
        typeSubstAt (patt p, old, new, pos, patt newP) =>
        typeSubstAt (patt (embedding(t,constr,p)), old, new, 1 |> pos,
                     patt (embedding(t,constr,newP))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         i:Nat, fields:FSeq Name, patts:FSeq Pattern, newPi:Pattern)
+         i:Nat, fields:FSeq Field, patts:FSeq Pattern, newPi:Pattern)
        i < length fields &&
        length fields = length patts &&
        typeSubstAt (patt (patts elem i), old, new, pos, patt newPi) =>
@@ -486,13 +486,13 @@ spec
                     patt (record (zip (fields, update(patts,i,newPi))))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         v:Name, t:Type, p:Pattern, newT:Type)
+         v:Variable, t:Type, p:Pattern, newT:Type)
        typeSubstAt (typ t, old, new, pos, typ newT) =>
        typeSubstAt (patt (alias((v,t),p)), old, new, 0 |> pos,
                     patt (alias((v,newT),p))))
     &&
     (fa (old:Type, new:Type, pos:Position,
-         v:Name, t:Type, p:Pattern, newP:Pattern)
+         v:Variable, t:Type, p:Pattern, newP:Pattern)
        typeSubstAt (patt p, old, new, pos, patt newP) =>
        typeSubstAt (patt (alias((v,t),p)), old, new, 1 |> pos,
                     patt (alias((v,t),newP)))))
@@ -627,7 +627,7 @@ spec
        exprSubstAt (e, old, new, pos, newE))
 
   % variables captured at position:
-  op captVarsAt : ((Position * Expression) | positionInExpr?) -> FSet Name
+  op captVarsAt : ((Position * Expression) | positionInExpr?) -> FSet Variable
   def captVarsAt(pos,e) =
     if pos = empty then empty
     else let i = first pos in

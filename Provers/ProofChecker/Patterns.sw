@@ -1,6 +1,6 @@
 spec
 
-  import Names
+  import Primitives
 
   (* Since patterns are defined in terms of types, we declare a (meta) type
   for types, which are defined in spec `Types'. When this spec and spec
@@ -18,12 +18,12 @@ spec
   type of an embedding pattern to be a sum type. *)
 
   % useful notion (frequently used):
-  type TypedVar = Name * Type
+  type TypedVar = Variable * Type
 
   type Pattern =
     | variable  TypedVar
-    | embedding Type * Name * Pattern
-    | record    FSeq (Name * Pattern)
+    | embedding Type * Constructor * Pattern
+    | record    FSeq (Field * Pattern)
     | alias     TypedVar * Pattern
 
 endspec

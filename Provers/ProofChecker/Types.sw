@@ -1,6 +1,6 @@
 spec
 
-  import Names
+  import Primitives
 
   (* Since types are defined in terms of expressions, we declare a type for
   expressions, which is defined in spec `Expressions'. When this spec and spec
@@ -9,10 +9,8 @@ spec
 
   type Expression
 
-  (* Unlike LD, me model product types directly, instead of viewing them as
-  abbreviations of record types with particular names set aside for the
-  fields. In fact, unlike LD, names are not required to include projection
-  names.
+  (* Unlike LD, me model product types directly; see explanation in spec
+  `Primitives'.
 
   Another difference with LD is that we do not require fields of record types
   and constructors of sum types to be distinct and we do not require their
@@ -25,8 +23,8 @@ spec
   empty record type as in LD. *)
 
   type NaryTypeConstruct =
-    | instance Name
-    | record   FSeq Name
+    | instance TypeName
+    | record   FSeq Field
     | product
 
   type SubOrQuotientTypeConstruct =
@@ -35,9 +33,9 @@ spec
 
   type Type =
     | boolean
-    | variable Name
+    | variable TypeVariable
     | arrow    Type * Type
-    | sum      FSeqNE Name * FSeqNE (Option Type)
+    | sum      FSeqNE Constructor * FSeqNE (Option Type)
     | nary     NaryTypeConstruct * FSeq Type
     | subQuot  SubOrQuotientTypeConstruct * Type * Expression
 
