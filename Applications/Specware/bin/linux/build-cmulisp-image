@@ -1,0 +1,131 @@
+#!/bin/bash --noprofile
+
+# This script creates a Specware4 image (.dxl file). It does not
+# do a bootstrap. That is, it does not generate a new Specware4.lisp.
+
+# The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
+# files. See man bash for details. The 'set -v' turns on echoing of
+# lines read. this will be removed later.
+
+act='build image'
+
+PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
+
+set -v
+
+# Test whether SPECWARE4 has been set
+
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE";;
+esac
+
+# Try to find lisp executable:
+
+if [ -z "$LISP" ]; then
+   for L in /usr/local/bin/cmucl; do
+      if [ -x "$L" ]; then
+         LISP="$L"; break
+      fi
+   done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
+
+if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/Applications/Specware" 2>&1
+   exit 1
+fi
+
+cd "$SPECWARE4"/Applications/Specware
+
+export SWPATH; SWPATH="$SPECWARE4":.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+
+if [ -f lisp ]; then
+   echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
+   exit 1
+fi
+
+
+if [ ! -f lisp/Specware4.lisp -a ! -f Specware4-base.lisp ] ; then
+   echo "Failed to $act: could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp
+   or $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+   exit 1
+fi
+
+if [ ! -f lisp/Specware4.lisp ]; then
+    echo "Could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp,
+    using cvs saved lisp, $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    if [ ! -d lisp ]; then
+	echo "mkdir lisp"
+	mkdir lisp
+    fi
+    echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+    cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+fi
+
+if [ Specware4-base.lisp -nt lisp/Specware4.lisp ]; then
+    echo "$SPECWARE4/Applications/Specware/lisp/Specware4.lisp is older than
+    cvs saved lisp, $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    echo "Using $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    if [ ! -d lisp ]; then
+	echo "mkdir lisp"
+	mkdir lisp
+    fi
+    echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+    cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+fi
+
+cp -f bin/linux/Specware4.cmuimage bin/linux/Specware4-save.cmuimage
+
+cd Handwritten/Lisp
+
+# We load the new Specware4.lisp twice, each in a fresh lisp session. The
+# first time compiles everything.  This may not be necessary but it is
+# easier just to load it twice rather than to try to figure out if something
+# needs to be compiled.
+$LISP <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
+	(quit)
+XXXX
+
+# The second time is just to do the dumplisp. If we do it in one go,
+# and something needs compiling, the generated dxl file is almost 4
+# times larger.
+
+
+echo " "
+echo "Loading Specware ... (for dumplisp)"
+echo " "
+$LISP <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
+	(ext:save-lisp "$SPECWARE4/Applications/Specware/bin/linux/Specware4.cmuimage")
+XXXX

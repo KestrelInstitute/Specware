@@ -5,6 +5,7 @@
 ;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
 
 (setq *load-verbose* nil)		; Don't print loaded file messages
+(setq *compile-verbose* nil)		; or lisp compilation
 
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
@@ -14,8 +15,6 @@
 (setq extensions:*bytes-consed-between-gcs* (* 2 50331648))
 #+sbcl
 (setf (sb-ext:bytes-consed-between-gcs) 50331648)
-#+(or cmu sbcl)
-(setq *compile-verbose* nil)
 #+cmu
 (setq extensions:*efficiency-note-cost-threshold* 30)
 #+sbcl
@@ -179,7 +178,7 @@
 			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
 ;;; Initialization includes preloading the base spec.
-(Specware::initializeSpecware-0)
+;;(Specware::initializeSpecware-0) ; Now happens in startup actions
 
 #+allegro
 (defun start-java-connection? ()
@@ -194,13 +193,13 @@
 
 ;;; Load base in correct location
 #+allegro
-(push  'cl-user::sw-re-init cl-user::*restart-actions*)
+(push  'Specware::initializeSpecware-0 cl-user::*restart-actions*)
 #+cmu
-(push  'cl-user::sw-re-init ext:*after-save-initializations*)
+(push  'Specware::initializeSpecware-0 ext:*after-save-initializations*)
 #+mcl
-(push  'cl-user::sw-re-init ccl:*lisp-startup-functions*)
+(push  'Specware::initializeSpecware-0 ccl:*lisp-startup-functions*)
 #+sbcl
-(push  'cl-user::sw-re-init sb-int:*after-save-initializations*)
+(push  'Specware::initializeSpecware-0 sb-int:*after-save-initializations*)
 
 ;;; Set gc parameters at startup
 #+mcl

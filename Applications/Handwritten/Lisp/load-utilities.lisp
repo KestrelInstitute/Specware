@@ -204,7 +204,7 @@
     #+mcl     (ccl:run-program "mkdir" (list dir))
     #+sbcl    (sb-ext:run-program "/bin/mkdir" (list dir))))
 
-(defun copy-directory (source target)
+(defun copy-directory (source target &optional (recursive? t))
   #+allegro(sys::copy-directory source target)
   #-allegro
   (let ((source-dirpath (if (stringp source)
@@ -216,7 +216,7 @@
     (unless (probe-file target-dirpath)
       (make-directory target-dirpath))
     (loop for dir-item in (directory source-dirpath)
-      do (if (directory? dir-item)
+      do (if (and recursive? (directory? dir-item))
 	     (copy-directory dir-item (extend-directory target-dirpath dir-item))
 	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))
 

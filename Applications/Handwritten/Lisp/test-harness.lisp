@@ -144,7 +144,7 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames dirpath *test-directory*))
 	       (target (merge-pathnames dirpath *test-temporary-directory*)))
 	  ;(ensure-directories-exist target)
-	  (specware::copy-directory source target))))
+	  (specware::copy-directory source target nil))))
 
 (defmacro test (&body test-forms)
   `(progn ,@(loop for fm in test-forms collect `(test-1 ,@fm))))
@@ -156,7 +156,10 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun swe-test (swe-str swe-spec)
   (let ((cl-user::*swe-return-value?* t)
-	(cl-user::*current-swe-spec* (if swe-spec
+	(cl-user::*current-swe-spec* (if (and swe-spec
+					      (not (eql (aref swe-spec 0) #\/))
+					      (> (length swe-spec) 1)
+					      (not (eql (aref swe-spec 1) #\:)))
 					 (in-current-dir swe-spec)
 				       swe-spec)))
     (cl-user::swe swe-str)))
@@ -169,7 +172,7 @@ be the option to run each (test ...) form in a fresh image.
     "/"
     file))
 
-(defun test-1 (name &key sw swe swe-spec swl swll
+(defun test-1 (name &key sw swe swe-spec swl swll lisp
 			 output (output-predicate 'equal)
 			 (value "--NotAValue--")
 			 (value-predicate 'equal)
@@ -182,13 +185,15 @@ be the option to run each (test ...) form in a fresh image.
 			 (multiple-value-setq (val error-type)
 			   (ignore-errors
 			    (if (not (null sw))
-				(cl-user::sw sw)
+				(cl-user::sw (normalize-input sw))
 			      (if (not (null swll))
-				  (cl-user::swll swll)
+				  (cl-user::swll (normalize-input swll))
 				(if (not (null swe))
-				  (swe-test swe swe-spec)
+				  (swe-test swe (normalize-input swe-spec))
 				  (if (not (null swl))
-				      (cl-user::swl swl))))))))))
+				      (cl-user::swl (normalize-input swl))
+				    (if (not (null lisp))
+					(eval (read-from-string (normalize-input lisp)))))))))))))
       (setq test-output (normalize-output test-output))
       (when emacs::*goto-file-position-stored*
 	(setf (car emacs::*goto-file-position-stored*)
@@ -197,7 +202,7 @@ be the option to run each (test ...) form in a fresh image.
 	(push (format nil "~a" error-type) error-messages))
       (when (and (not error-type) error)
 	(push "Expected Error did not occur"  error-messages))
-      (when (and (not (eq value "--NotAValue--")) (not error-type)
+      (when (and (not (equal value "--NotAValue--")) (not error-type)
 		 (not (funcall value-predicate val value)))
 	(push (format nil "Expected:~%~S~%;; Got: ~%~S" value val) error-messages))
       (when (and output (not error-type)
@@ -211,7 +216,7 @@ be the option to run each (test ...) form in a fresh image.
 	      error-messages))
       (when files
 	(loop for file in files
-	   unless (probe-file (merge-pathnames (parse-namestring file)
+	   unless (probe-file (merge-pathnames (parse-namestring (normalize-input file))
 					       *test-temporary-directory*))
 	   do (push (format nil "File not created: ~a" file)
 		    error-messages)))
@@ -224,8 +229,14 @@ be the option to run each (test ...) form in a fresh image.
 
 (defun normalize-output (str)
   (if (stringp str)
-      (replace-string str (directory-namestring *test-temporary-directory*) "$TESTDIR/")
+      (let ((str (replace-string str (directory-namestring *test-temporary-directory*) "$TESTDIR/")))
+	(setq str (replace-string str "~" (specware::getenv "HOME")))
+	(replace-string str specware::specware4 "$SPECWARE"))
     str))
+
+(defun normalize-input (str)
+  (setq str (replace-string str "$TESTDIR/" (directory-namestring *test-temporary-directory*)))
+  (replace-string str "$SPECWARE" specware::specware4))
 
 ;; There must be a better way of doing this
 (defun replace-string (str old new)

@@ -210,14 +210,18 @@ SpecCalc qualifying spec {
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
      let result = Lisp.apply(Lisp.symbol("CL","FUNCALL"),
-			[Lisp.list [Lisp.symbol("SNARK","LAMBDA"),Lisp.nil(),snarkEvalForm]]) in
+			     [Lisp.eval(Lisp.list [Lisp.symbol("CL","FUNCTION"),
+						   Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
+							      Lisp.nil(),snarkEvalForm]])]) in
      let proved = ":PROOF-FOUND" = System.toString(result) in
      let _ = displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
        proved
 
- op makeSnarkProveEvalForm: List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * List Lisp.LispCell * Lisp.LispCell * String -> Lisp.LispCell
+ op makeSnarkProveEvalForm: List LispCell * List LispCell * List LispCell * List LispCell
+                           * List LispCell * LispCell * String -> LispCell
 
- def makeSnarkProveEvalForm(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) =
+ def makeSnarkProveEvalForm(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis,
+			    snarkHypothesis, snarkConjecture, snarkLogFileName) =
    let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
    let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
    let _ = if specwareDebug? then writeLine(" using: ") else () in
