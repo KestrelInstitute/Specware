@@ -5,10 +5,10 @@ coalgebras.  For some applications, these simplify the task of navigating
 around a \BSpec\ program.
 
 \begin{spec}
-spec {
-  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic
+spec
+  % import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic
   import Multipointed
-  import PolySet qualifying /Library/Structures/Data/Sets/Polymorphic
+  import translate /Library/Structures/Data/Maps/Finite/Polymorphic by {Map._ +-> FinitePolyMap._}
 \end{spec}
 
 It is convenient, when traversing an algorithm representing a diagram,
@@ -18,8 +18,8 @@ can be updated. We define sorts for each of the two representations
 of coalgebras.
 
 \begin{spec}
-  sort Coalgebra = V.Elem -> PolySet.Set (V.Elem * V.Elem)
-  sort CoalgebraMap = PolyMap.Map (V.Elem, PolySet.Set (V.Elem * V.Elem))
+  sort Coalgebra = Vertex.Vertex -> EdgeSet.Set
+  sort CoalgebraMap = FinitePolyMap.Map (Vertex.Vertex, EdgeSet.Set)
 \end{spec}
 
 A better scheme might be to start with just the Map version and then
@@ -44,8 +44,9 @@ that state.
 We begin by constructing a map that takes every vertex to an emptySet.
 
 \begin{spec}
-    let initMap = V.fold (fn map -> fn vertex -> PolyMap.update map vertex PolySet.empty)
-                         PolyMap.emptyMap (vertices shape) in
+    let initMap =
+      fold (fn (map,vertex) ->
+        FinitePolyMap.update (map,vertex,empty), FinitePolyMap.empty, vertices shape) in
 \end{spec}
 
 Next we fold over the edges in the graph. Given an edge $e$ with source
@@ -53,12 +54,12 @@ $v$, we update the map at $v$ by adding $(e, \mathit{target} e)$ to the
 set. This could be made much much more efficient.
 
 \begin{spec}
-    let def upd_map map edge =
-      let vertex = eval (src shape) edge in
-      let set = PolyMap.eval map vertex in
-        PolyMap.update map vertex (PolySet.insert set (edge, eval (target shape) edge))
+    let def upd_map (map,edge) =
+      let vertex = eval (source shape, edge) in
+      let set = FinitePolyMap.eval (map,vertex) in
+        FinitePolyMap.update (map,vertex,insert (set,edge))
     in
-      E.fold upd_map initMap (edges shape)
+      fold (upd_map,initMap,edges shape)
 \end{spec}
 
 Then we hide the map inside a function. It might be better to return the
@@ -66,7 +67,7 @@ map rather than the function. Needs thought.
 
 \begin{spec}
   op succCoalgebra : BSpec -> Coalgebra
-  def succCoalgebra prg = fn vertex -> PolyMap.eval (succCoalgebraMap prg) vertex
+  def succCoalgebra prg = fn vertex -> FinitePolyMap.eval (succCoalgebraMap prg, vertex)
 \end{spec}
 
 The following is in a sense dual to the above. Given an algorithm it
@@ -76,18 +77,19 @@ that state.
 
 \begin{spec}
   op predCoalgebra : BSpec -> Coalgebra
-  def predCoalgebra prg = fn vertex -> PolyMap.eval (predCoalgebraMap prg) vertex
+  def predCoalgebra prg = fn vertex -> FinitePolyMap.eval (predCoalgebraMap prg, vertex)
 
   op predCoalgebraMap : BSpec -> CoalgebraMap
   def predCoalgebraMap prg =
     let shape = shape (system prg) in
-    let initMap = V.fold (fn map -> fn vertex -> PolyMap.update map vertex PolySet.empty)
-                         PolyMap.emptyMap (vertices shape) in
-    let def upd_map map edge =
-      let vertex = eval (target shape) edge in
-      let set = PolyMap.eval map vertex in
-        PolyMap.update map vertex (PolySet.insert set (edge, eval (src shape) edge))
+    let initMap =
+      fold (fn (map, vertex) ->
+        FinitePolyMap.update (map,vertex, empty), FinitePolyMap.empty,vertices shape) in
+    let def upd_map (map,edge) =
+      let vertex = eval (target shape, edge) in
+      let set = FinitePolyMap.eval (map,vertex) in
+        FinitePolyMap.update (map,vertex, insert (set,edge))
     in
-      E.fold upd_map initMap (edges shape)
-}
+      EdgeSet.fold (upd_map,initMap,edges shape)
+endspec
 \end{spec}

@@ -43,9 +43,13 @@ BSpec qualifying spec {
   def addMode bSpec vertex spc =
     bSpec withSystem (labelVertex (addVertex (system bSpec) vertex) vertex spc)
 
-  % op mapBSpec : BSpec -> (Object -> Object) -> (Arrow -> Arrow) -> BSpec
-  % def mapBSpec bSpec objMap arrMap =
-  %   bSpec withSystem (mapSystem (system bSpec) objMap arrMap)
+  op addFinalMode : BSpec -> Vertex.Vertex -> Object -> BSpec
+  def addFinalMode bSpec vertex spc =
+    (bSpec withSystem (labelVertex (addVertex (system bSpec) vertex) vertex spc))
+           withFinal (insert (final bSpec, vertex))
+
+  op map : BSpec -> (Object -> Object) -> (Arrow -> Arrow) -> BSpec
+  def map bSpec objMap arrMap = bSpec withSystem (map (system bSpec) objMap arrMap)
 
   op addTrans :
        BSpec 
@@ -80,14 +84,14 @@ map rather than the edge map.
 
 \begin{spec}
   op transitionSpec : BSpec -> Edge.Edge -> Object
-  def transitionSpec bSpec edge = eval (vertexMap (system bSpec)) (Edge edge)
+  def transitionSpec bSpec edge = eval (vertexMap (system bSpec), Edge edge)
 \end{spec}
 
 The next function retrieves the spec associated with a state or mode.
 
 \begin{spec}
   op modeSpec : BSpec -> Vertex.Vertex -> Object
-  def modeSpec bSpec vertex = eval (vertexMap (system bSpec)) (Vertex vertex)
+  def modeSpec bSpec vertex = eval (vertexMap (system bSpec), Vertex vertex)
 \end{spec}
 
 Naive pretty printing of \BSpecs
@@ -100,12 +104,10 @@ Naive pretty printing of \BSpecs
       pp (initial bSpec),
       pp ", final = ",
       pp (final bSpec),
-      ppNewline,
-      pp "system = ",
+      pp ", system = ",
       ppNewline,
       pp "  ",
       ppIndent (pp (system bSpec)),
-      ppNewline,
       pp "}"
     ]
 }

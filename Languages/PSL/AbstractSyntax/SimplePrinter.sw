@@ -78,7 +78,8 @@ SpecCalc qualifying spec {
            ppString "|>"
          ]
       | Exec term -> ppATerm term
-      | Return term ->
+      | Return None -> ppString "return"
+      | Return (Some term) ->
           ppConcat [
             ppString "return ",
             ppATerm term
@@ -152,13 +153,13 @@ SpecCalc qualifying spec {
   def ppProcInfo procInfo =
     ppConcat [
       ppString "(",
-      ppSep (ppString ",") (map ppAVar procInfo.args),
+      ppSep (ppString ",") (map ppAVar (formalArgs procInfo)),
       ppString "):",
-      ppASort procInfo.returnSort,
+      ppASort (returnSort procInfo),
       ppString " {",
       ppNewline,
       ppString "  ",
-      ppIndent (ppCommand procInfo.command),
+      ppIndent (ppCommand (command procInfo)),
       ppNewline,
       ppString "}"
     ]

@@ -21,11 +21,8 @@ by \Qualifier{Id}.
 
 \begin{spec}
 let
-  Set = translate (translate MonadicSets by {Elem.Elem +-> Id.Id}) by {
-      Elem._ +-> Id._,
-      MonadFold._ +-> IdSetEnv._,
-      _ +-> IdSet._
-    }
+  Set = translate (translate MonadicSets by {Elem.Elem +-> Id.Id})
+    by {Elem._ +-> Id._, MonadFold._ +-> IdSetEnv._, _ +-> IdSet._}
 
   Id = spec
     import Set 

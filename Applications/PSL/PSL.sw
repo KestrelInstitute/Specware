@@ -16,10 +16,17 @@ let PSL = spec {
     /Library/Structures/Data/Categories/Diagrams/Polymorphic/AsRecord
   import Sketch qualifying
     /Library/Structures/Data/Categories/Sketches/Monomorphic/AsRecord
-  import Vertex qualifying
-    /Library/Structures/Data/Sets/Monomorphic/AsLists
-  import Edge qualifying
-    /Library/Structures/Data/Sets/Monomorphic/AsLists
+
+  % The next two must agree with /Library/Structures/Data/Graphs.sw
+  import translate (Vertex qualifying /Library/Structures/Data/Sets/Monomorphic/AsLists)
+    by {Elem.Elem +-> Vertex.Elem,
+        Elem.pp +-> Vertex.ppElem,
+        Vertex.pp +-> Vertex.ppSet}
+  import translate (Edge qualifying /Library/Structures/Data/Sets/Monomorphic/AsLists)
+    by {Elem.Elem +-> Edge.Elem,
+        Elem.pp +-> Edge.ppElem,
+        Edge.pp +-> Edge.ppSet}
+
   import Sketch qualifying 
     /Library/Structures/Data/Maps/Monomorphic/AsLists
   import NatTrans qualifying
@@ -30,26 +37,26 @@ let PSL = spec {
   % with the incorrect sort. so insertEdge refers to Vertex.Elem rather than V.Elem
   % import Shape qualifying
   %   translate /Library/Structures/Data/Categories/Sketches/Monomorphic/AsRecord
-  import Shape qualifying
-    /Library/Structures/Data/Maps/Monomorphic/AsLists
-  import E qualifying
-    /Library/Structures/Data/Sets/Monomorphic/AsLists
+  % import Shape qualifying
+  %   /Library/Structures/Data/Maps/Monomorphic/AsLists
+  % import E qualifying
+  %   /Library/Structures/Data/Sets/Monomorphic/AsLists
   % import V qualifying
-   %  /Library/Structures/Data/Sets/Monomorphic/AsLists
+  %   /Library/Structures/Data/Sets/Monomorphic/AsLists
   % why doesn't the above work
-  def V.singleton = E.singleton
-  def V.empty = E.empty
-  def V.insert = E.insert
-  def V.fold = E.fold
-  def V.map = E.map
-  def V.union = E.union
-  def V.member? = E.member?
+  % def V.singleton = E.singleton
+  % def V.empty = E.empty
+  % def V.insert = E.insert
+  % def V.fold = E.fold
+  % def V.map = E.map
+  % def V.union = E.union
+  % def V.member? = E.member?
 
   % sort Systems.Elem = ATerm Position
 % These shouldn't be here.
-  def Systems.ppElem term = SpecCalc.ppATerm term
-  def Shape.ppDom = ppTaggedElem
-  def Shape.ppCod = ppTaggedElem
+  % def Systems.ppElem term = SpecCalc.ppATerm term
+  % def Shape.ppDom = ppTaggedElem
+  % def Shape.ppCod = ppTaggedElem
 \end{spec}
 
 Now we repeat some of the definitions appearing in
@@ -61,6 +68,5 @@ sets but then the names wouldn't have gone through elsewhere.
   sort Cod = TaggedElem
 
 \begin{spec}
-} in
-  generate lisp PSL
+} in generate lisp PSL
 \end{spec}

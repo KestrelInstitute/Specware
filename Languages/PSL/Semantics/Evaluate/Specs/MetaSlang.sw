@@ -12,11 +12,13 @@ or \Qualifier{MS} but both are taken.
 \begin{spec}
 MSlang qualifying spec
   import /Library/Structures/Data/Pretty
+  import Position
   import Id
   import Env
 
-  sort Position.Position
-  sort Term
+  sort MetaSlang.ATerm b
+
+  sort Term = MetaSlang.ATerm Position
   sort Type
   sort Fun
   sort TypeVars
@@ -30,40 +32,53 @@ MSlang qualifying spec
   op noTypeVars : TypeVars
 
   op boolType : Position -> Type
+  op natType : Position -> Type
 
-  op mkApplyN : Term -> Term -> Position -> Term
-  op mkTuple : List Term -> Position -> Term
-  op mkRecord : List (Id.Id * Term) -> Position -> Term
+  op mkApplyN : Term * Term * Position -> Term
+  op MSlangEnv.mkApplyN : Term * Term * Position -> Env Term
+  def MSlangEnv.mkApplyN args = return (mkApplyN args)
 
-  % op mkProduct : List Type -> Type
-  % op Env.mkProduct : List Type -> Env Type
-  % def Env.mkProduct types = return (mkProduct types)
+  op mkTuple : (List Term) * Position -> Term
+  op MSlangEnv.mkTuple : (List Term) * Position -> Env Term
+  def MSlangEnv.mkTuple args = return (mkTuple args)
 
-  op MSPos.mkProduct : List Type -> Position -> Type
-  op MSlangEnv.mkProduct : List Type -> Position -> Env Type
-  def MSlangEnv.mkProduct types position = return (mkProduct types position)
+  op mkRecord : List (Id.Id * Term) * Position -> Term
 
-  op mkBase : Id -> List Type -> Position -> Type
-  op MSlangEnv.mkBase : Id -> List Type -> Position -> Env Type
-  def MSlangEnv.mkBase id types position = return (mkBase id types position)
+  op mkArrow : Type * Type * Position -> Type
 
-  op mkEquals : Type -> Position -> Term
+  op mkProduct : List Type * Position -> Type
 
-  op mkEquality : Term -> Term -> Position -> Term
-  op MSlangEnv.mkEquality : Term -> Term -> Position -> Env Term
-  def MSlangEnv.mkEquality term1 term2 position =
-    return (mkEquality term1 term2 position)
+  op MSlangEnv.mkProduct : List Type * Position -> Env Type
+  def MSlangEnv.mkProduct args = return (mkProduct args)
+
+  op mkBase : Id.Id * List Type * Position -> Type
+  op MSlangEnv.mkBase : Id.Id * List Type * Position -> Env Type
+  def MSlangEnv.mkBase args = return (mkBase args)
+
+  op mkEquals : Type * Position -> Term
+
+  op mkEquality : Term * Term * Position -> Term
+  op MSlangEnv.mkEquality : Term * Term * Position -> Env Term
+  def MSlangEnv.mkEquality args = return (mkEquality args)
 
   op mkTrue : Position -> Term
   op MSPosEnv.mkTrue : Position -> Env Term
   
-  op mkNot : Term -> Position -> Term
-  op mkFun : Fun -> Type -> Position -> Term
-  op mkOp : Id -> Type -> Position -> Term
-  op mkOr : Term -> Term -> Position -> Term
-  op disjList : List Term -> Position -> Term
+  op mkNot : Term * Position -> Term
 
-  op mkNat : Nat -> Term
+  op mkFun : Fun * Type * Position -> Term
+  op MSlangEnv.mkFun : Fun * Type * Position -> Env Term
+  def MSlangEnv.mkFun args = return (mkFun args)
+
+  op mkOp : Id.Id * Type * Position -> Term
+  op mkOr : Term * Term * Position -> Term
+  op disjList : List Term * Position -> Term
+
+  op mkNat : Nat * Position -> Term
+  op MSNoPos.mkNat : Nat -> Term
+  def MSNoPos.mkNat n = mkNat (n, internalPosition)
+
+  op idToNameRef : Id.Id -> Fun
 
   op freshMetaTyVar : Position -> Type
 endspec

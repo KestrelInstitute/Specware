@@ -1,13 +1,16 @@
 (defpackage "SPECWARE")
 (in-package "SPECWARE")
 
+(declaim (optimize (speed 3) (debug 2) (safety 1)))
+
 #+allegro
 (setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
-
-(defvar Specware4 #+allegro(sys:getenv "SPECWARE4")
-                  #+mcl(ccl::getenv "SPECWARE4")
-                  #+cmu (cdr (assoc :SPECWARE4 ext:*environment-list*))
-          )
+#+cmu
+(setq ext:*gc-verbose* nil)
+#+cmu
+(setq extensions:*bytes-consed-between-gcs* 10000000)
+#+mcl
+(egc t)                 ; Turn on ephemeral gc
 
 ;; Used in printing out the license and about-specware command
 (defvar cl-user::Specware-version "4.0")
@@ -24,14 +27,19 @@
 ;;    change-directory
 ;;    current-directory
 (load (make-pathname
-       :defaults (concatenate 'string Specware4 "/Applications/Handwritten/Lisp/load-utilities")
+       :defaults "../../../Handwritten/Lisp/load-utilities"
        :type     "lisp"))
 
+(defvar Specware4 (specware::getenv "SPECWARE4"))
+
 (load (make-pathname
-       :defaults (concatenate 'string Specware4 "/Provers/Snark/Handwritten/Lisp/snark-system")
+       :defaults (concatenate 'string Specware4
+                              "/Provers/Snark/Handwritten/Lisp/snark-system")
        :type     "lisp"))
 
 (snark:make-snark-system t)
+
+(declaim (optimize (speed 3) (debug 2) (safety 1)))
 
 ;; Snark puts us in another package .. so we go back
 (in-package "SPECWARE")
@@ -62,13 +70,32 @@
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
+    "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
     )
   )
 
 (map 'list #'(lambda (file)
-  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-  HandwrittenFiles
-)
+           (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+     HandwrittenFiles
+     )
+
+(defpackage "UTILITIES")
+(defpackage "MAP-SPEC")
+(defpackage "ANNSPEC")
+(defpackage "METASLANG")
+
+#||
+#+allegro
+(progn (setf (get 'LIST-SPEC::|!exists|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       ;(setf (get 'UTILITIES::occursT 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil t))
+       (setf (get 'LIST-SPEC::|!map|-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'LIST-SPEC::filter-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'MAP-SPEC::foldi-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
+       ;(setf (get 'LIST-SPEC::foldl-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
+       (setf (get 'ANNSPEC::foldriAQualifierMap-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE)
+     '(t nil nil))
+       (setf (get 'METASLANG::equallist? 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil nil t)))
+||#
 
 ;; The following are specific to Specware and languages that
 ;; extend Specware. The order is significant: specware-state
@@ -78,34 +105,41 @@
 
 (defvar SpecwareRuntime
   '(
-     ;; Functions that are assumed by the MetaSlang to Lisp compiler
-     "Applications/Handwritten/Lisp/meta-slang-runtime"
+    ;; Functions that are assumed by the MetaSlang to Lisp compiler
+    "Applications/Handwritten/Lisp/meta-slang-runtime"
 
-     ;; Functions for saving/restoring the Specware state to/from the lisp environment
-     "Applications/Specware/Handwritten/Lisp/specware-state"
+    ;; Functions for saving/restoring the Specware state to/from the lisp environment
+    "Applications/Specware/Handwritten/Lisp/specware-state"
 
-     ;; The generated lisp code.  This also initializes the Specware
-     ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
-     "Applications/PSL/lisp/PSL.lisp"
+    ;; The generated lisp code.  This also initializes the Specware
+    ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
+    "Applications/PSL/lisp/PSL.lisp"
 
-     ;; Toplevel aliases 
-     "Applications/Specware/Handwritten/Lisp/toplevel"
+    ;; Toplevel aliases 
+    "Applications/Specware/Handwritten/Lisp/toplevel"
 
-     ;; Debugging utilities
-     "Applications/Specware/Handwritten/Lisp/debug"
-   )
-)
+    ;; Debugging utilities
+    "Applications/Specware/Handwritten/Lisp/debug"
+
+    ;; Test harness
+    "Applications/Handwritten/Lisp/test-harness"
+    )
+  )
+
+(defpackage "SNARK")
 
 (map 'list #'(lambda (file)
-  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-  SpecwareRuntime
-)
+           (list 33 file)
+           (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+     SpecwareRuntime
+     )
 
 ;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
-			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+              Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+
 (make-system (concatenate 'string
-			  Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
+              Specware4 "/Languages/PSL/Parser/Handwritten/Lisp"))
 
 ;;; Preload the base specs
 (cl-user::sw "/Library/Base")

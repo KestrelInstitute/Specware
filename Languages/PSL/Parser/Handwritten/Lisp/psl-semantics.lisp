@@ -1,6 +1,6 @@
-;;; ======================================================================
-;;; The next portion of the file deals with terms in the procedural
+;;; This file deals with terms in the procedural
 ;;; specification language (PSL).
+(defpackage "OscarAbsSyn")
 
 (defun make-procspec (decls l r) 
   :comment "A specification" 
@@ -15,21 +15,20 @@
 
 (defun make-psl-proc-def (procName args returnSort commands l r)
   (let* ((args1 (if (eq :unspecified args) nil args))
-         (commands1 (if (eq :unspecified commands) nil commands)))
-        (cons (cons :|Proc|
-                    (cons procName
-                         (vector args1
-                                    (make-psl-seq commands1 l r) returnSort))) 
-              (make-pos l r))))
+         (commands1 (if (eq :unspecified commands) nil commands))
+         (position (make-pos l r))
+         (commandSeq (OscarAbsSyn::mkSeq commands1 position))
+         (procInfo (OscarAbsSyn::mkProcInfo args returnSort commandSeq)))
+         (OscarAbsSyn::mkProc procName procInfo position)))
 
 (defun make-psl-relation (term l r)
   (cons (cons :|Relation| term) (make-pos l r)))
 
 (defun make-psl-seq (commands l r)
-  (cons (cons :|Seq| commands) (make-pos l r)))
+  (OscarAbsSyn::mkSeq commands (make-pos l r)))
 
 (defun make-psl-if (alternatives l r)
-  (cons (cons :|If| alternatives) (make-pos l r)))
+  (OscarAbsSyn::mkIf alternatives (make-pos l r)))
 
 (defun make-psl-do (alternatives l r)
   (cons (cons :|Do| alternatives) (make-pos l r)))
@@ -84,7 +83,7 @@
          (tyVars     (if (equal :unspecified tyVars) nil tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
          (term       (bind-parameters params term l r))
-         (tyVarsTerm (PosSpec::abstractTerm #'namedTypeVar tyVars term))
+         (tyVarsTerm (StandardSpec::abstractTerm #'namedTypeVar tyVars term))
          (term       (cdr tyVarsTerm))
          (tyVars     (car tyVarsTerm))
          (srtScheme  (cons tyVars (freshMetaTypeVar l r))))

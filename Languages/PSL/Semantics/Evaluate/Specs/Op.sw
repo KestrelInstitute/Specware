@@ -19,36 +19,36 @@ Op qualifying spec
 
   op nonFix : Fixity
 
-  op idOf : OpInfo -> Id
+  op idOf : OpInfo -> Id.Id
   op ids : OpInfo -> IdSet.Set
   op fixity : OpInfo -> Fixity
   op type : OpInfo -> Type
   op term : OpInfo -> MSlang.Term
 
-  op withId infixl 18 : OpInfo * Id -> OpInfo
+  op withId infixl 18 : OpInfo * Id.Id -> OpInfo
   op withIds infixl 18 : OpInfo * IdSet.Set -> OpInfo
   op withFixity infixl 18 : OpInfo * Fixity -> OpInfo
   op withType infixl 18 : OpInfo * Type -> OpInfo
   op withTerm infixl 18 : OpInfo * MSlang.Term -> OpInfo
 
-  op makeOp : Id -> Fixity -> MSlang.Term -> Type -> OpInfo 
+  op makeOp : Id.Id * Fixity * MSlang.Term * Type -> OpInfo 
 
-  op OpNoFixity.makeOp : Id -> MSlang.Term -> Type -> OpInfo 
-  def OpNoFixity.makeOp id term type = makeOp id nonFix term type
+  op OpNoFixity.makeOp : Id.Id * MSlang.Term * Type -> OpInfo 
+  def OpNoFixity.makeOp (id,term,type) = makeOp (id,nonFix,term,type)
 
-  op OpEnv.makeOp : Id -> Fixity -> MSlang.Term -> Type -> Env OpInfo 
-  def OpEnv.makeOp id fxty term type = return (makeOp id fxty term type)
+  op OpEnv.makeOp : Id.Id * Fixity * MSlang.Term * Type -> Env OpInfo 
+  def OpEnv.makeOp args = return (makeOp args)
   
-  op OpNoFixityEnv.makeOp : Id -> MSlang.Term -> Type -> Env OpInfo 
-  def OpNoFixityEnv.makeOp id term type = return (makeOp id nonFix term type)
+  op OpNoFixityEnv.makeOp : Id.Id * MSlang.Term * Type -> Env OpInfo 
+  def OpNoFixityEnv.makeOp (id,term,type) = return (makeOp (id,nonFix,term,type))
 
-  op OpNoTerm.makeOp : Id -> Fixity -> Type -> OpInfo
+  op OpNoTerm.makeOp : Id.Id * Fixity * Type -> OpInfo
 
-  op OpNoTermEnv.makeOp : Id -> Fixity -> Type -> Env OpInfo
-  def OpNoTermEnv.makeOp id fixity type = return (makeOp id fixity type)
+  op OpNoTermEnv.makeOp : Id.Id * Fixity * Type -> Env OpInfo
+  def OpNoTermEnv.makeOp args = return (makeOp args)
   
-  op OpNoFixityNoTermEnv.makeOp : Id -> Type -> Env OpInfo
-  def OpNoFixityNoTermEnv.makeOp id type = return (makeOp id nonFix type)
+  op OpNoFixityNoTermEnv.makeOp : Id.Id * Type -> Env OpInfo
+  def OpNoFixityNoTermEnv.makeOp (id,type) = return (makeOp (id,nonFix,type))
 
   op join : OpInfo -> OpInfo -> Env OpInfo
 

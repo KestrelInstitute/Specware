@@ -107,11 +107,11 @@
   (make-psl-op-definition 1 2 3 4 5 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-IF ()
-  (:tuple "if" "{" (1 (:repeat :PSL-ALTERNATIVE "|")) "}")
+  (:tuple "if" "{" (:optional "|") (1 (:repeat :PSL-ALTERNATIVE "|")) "}")
   (make-psl-if (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-DO ()
-  (:tuple "do" "{" (1 (:repeat :PSL-ALTERNATIVE "|")) "}")
+  (:tuple "do" "{" (:optional "|") (1 (:repeat :PSL-ALTERNATIVE "|")) "}")
   (make-psl-do (list . 1) ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PSL-CASE ()

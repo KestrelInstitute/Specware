@@ -1,7 +1,7 @@
 \section{Spec Calculus Abstract Syntax}
 
 \begin{spec}
-OscarAbstractSyntax qualifying spec {
+OscarAbsSyn qualifying spec
   import ../../MetaSlang/Specs/StandardSpec % For Position
   import ../../MetaSlang/AbstractSyntax/AnnTerm % For PSL, but not Specware4
   import ../../SpecCalculus/AbstractSyntax/Types
@@ -58,6 +58,13 @@ defining term.
 
   op mkSort : List QualifiedId * TyVars * List (ASortScheme Position) * Position -> OscarSpecElem Position
   def mkSort (ids,tyVars,sortSchemes,position) = (Sort (ids, (tyVars,sortSchemes)),position) 
+
+  op mkProc : Ident * (ProcInfo Position) * Position -> OscarSpecElem Position
+  def mkProc (ident,procInfo,position) = (Proc (ident,procInfo),position)
+
+  op mkProcInfo : List (AVar Position) * (ASort Position) * Command Position -> ProcInfo Position
+  def mkProcInfo (formalArgs,returnSort,command) =
+    {formalArgs = formalArgs, returnSort = returnSort, command = command}
 \end{spec}
 
 The abstract syntax for commands is modeled after Dijkstra's guarded
@@ -91,6 +98,14 @@ needs some thought.
     | Skip
 \end{spec}
 
+\begin{spec}
+  op mkIf : List (Alternative Position) * Position -> Command Position
+  def mkIf (alts,position) = (If alts,position)
+
+  op mkSeq : List (Command Position) * Position -> Command Position
+  def mkSeq (commands,position) = (Seq commands, position)
+\end{spec}
+
 An \emph{alternative} is a guarded command in the sense of Dijkstra.
 A \emph{case} is a pattern, a boolean valued guard, and a command.
 In the near term, there is no support for the guard. In the longer term,
@@ -104,6 +119,9 @@ Perhaps the guard term in the case should be made \verb+Option+al.
   sort Alternative_ a = (ATerm a) * (Command a)
   sort Case a = (Case_ a) * a
   sort Case_ a = (APattern a) * (ATerm a) * (Command a)
+
+  op mkAlternative : (ATerm Position) * (Command Position) * Position -> Alternative Position
+  def mkAlternative (term,command,position) = ((term,command),position)
 \end{spec}
 
 One could argue that the lists above should be sets.
@@ -133,5 +151,5 @@ between procedures and functions is also resolved in a nice way in both
 Idealized Algol and Forsythe.
 
 \begin{spec}
-}
+endspec
 \end{spec}

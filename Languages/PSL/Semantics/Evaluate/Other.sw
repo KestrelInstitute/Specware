@@ -3,6 +3,7 @@
 \begin{spec}
 SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
+  import ../../AbstractSyntax/SimplePrinter
   import Oscar
   import /Languages/SpecCalculus/Semantics/Evaluate/SpecMorphism
   import /Languages/SpecCalculus/Semantics/Evaluate/Substitute
@@ -14,7 +15,9 @@ SpecCalc qualifying spec {
 
   def SpecCalc.evaluateOther oscarSpecElems pos = evaluateOscar oscarSpecElems
 
-  op formatOtherValue : Oscar.Spec -> SpecCalc.Env Doc
+  def SpecCalc.ppOtherTerm = ppOscarSpecTerm
+
+  def SpecCalc.ppOtherValue = Oscar.pp
 %   def formatOtherValue pSpec = {
 %       pslBaseURI <- pathToRelativeURI "/Library/PSL/Base";
 %       (Spec pslBase,_,_) <- SpecCalc.evaluateURI (Internal "PSpec base") pslBaseURI;
@@ -27,8 +30,8 @@ SpecCalc qualifying spec {
 %     }
 
   def SpecCalc.evaluateOtherPrint oscarSpec pos = {
-       doc <- formatOtherValue oscarSpec;
-       print (ppFormat doc)
+       base <- baseOscarSpec;
+       print (ppFormat (ppLess oscarSpec (modeSpec base)))
     }
 
   def SpecCalc.evaluateOtherSpecMorph

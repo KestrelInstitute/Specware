@@ -25,15 +25,14 @@ Proc qualifying spec {
   import ModeSpec
   import Env
 
-  import translate (translate /Languages/BSpecs/Predicative/Multipointed by {
-      Cat.Object +-> ModeSpec.ModeSpec,
-      Cat.Arrow +-> SpecMorph.Morphism
-    }) by {Cat._ +-> ModeSpec._}
+  import translate (translate /Languages/BSpecs/Predicative/Coalgebra
+    by {Cat.Object +-> ModeSpec.ModeSpec, Cat.Arrow +-> SpecMorph.Morphism})
+    by {CatObject._ +-> ModeSpec._, CatArrow._ +-> SpecMorph._, Cat._ +-> ModeSpecCat._}
 
-  sort ReturnInfo = Option {returnId : Id, returnType : Type}
+  sort ReturnInfo = Option Op.Ref
 
-  op ReturnInfo.make : Id -> Type -> ReturnInfo
-  def ReturnInfo.make id type = Some {returnId = id, returnType = type}
+  op ReturnInfo.make : Op.Ref -> ReturnInfo
+  def ReturnInfo.make ref = Some ref
 
   sort Procedure = {
     parameters : List String,
@@ -91,27 +90,30 @@ handle name clashes properly.
     ppConcat [
       pp "params=(",
       ppSep (pp ",") (map pp (parameters proc)),
-      pp "), returnInfo=[",
+      pp "), returnInfo=",
       pp (returnInfo proc),
-      pp "]",
-      ppNewline,
-      pp "bSpec=",
+      pp ", bSpec=",
       ppNewline,
       pp "  ",
       ppIndent (pp (bSpec proc))
     ]
 
+  op ppLess : Procedure -> ModeSpec -> Doc
+  def ppLess proc ms =
+    let
+      procShort =
+        makeProcedure (parameters proc)
+                      (returnInfo proc)
+                      (subtract (modeSpec proc) ms)
+                      (map (bSpec proc) (fn ms -> ModeSpec.subtract ms (modeSpec proc)) (fn x -> x))
+    in
+      pp procShort
+
   op ReturnInfo.pp : ReturnInfo -> Doc
   def ReturnInfo.pp info =
     case info of
       | None -> pp "None"
-      | Some {returnId,returnType} ->
-          ppConcat [
-            pp "returnId=",
-            pp returnId,
-            pp " returnType=",
-            pp returnType
-          ]
+      | Some ref -> pp ref
 
    op show : Procedure -> String 
    def show proc = ppFormat (pp proc)

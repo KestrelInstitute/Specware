@@ -4,7 +4,7 @@
 Spec qualifying spec
   import SortSets
   import OpSets
-  import Property
+  import ClaimSets
 \end{spec}
 
 Intuitively, a spec consists of a set of sorts, operators and axioms
@@ -30,7 +30,7 @@ the \Op{fold}s are shared and uniformly requalified with \Qualifier{Env}.
 
 The translate also instantiates the element type in each monomorphic instance of \UnitId{Sets}.
 
-Should we get make OpInfo into Op?
+Should we get make Op.OpInfo into Op?
 
 Here \Qualifier{OpSetEnv} is the qualifier for the monadic fold. The fold
 has a single polymorphic variable. The other type is monomorphic and
@@ -66,45 +66,45 @@ What about updating the ops en-masse?
 
 \begin{spec}
   op ops : Spec -> OpSet.Set
-  op withOps infixl 17 : Spec * OpSet.Set -> Spec
+  % op withOps infixl 17 : Spec * OpSet.Set -> Spec
 
   op sorts : Spec -> SortSet.Set
-  op withSorts infixl 17 : Spec * SortSet.Set -> Spec
+  % op withSorts infixl 17 : Spec * SortSet.Set -> Spec
 
-  op properties : Spec -> List Property
+  op properties : Spec -> List Claim
 \end{spec}
 
-  op findOp : Spec -> Id -> Option OpInfo
-  op findSort : Spec -> Id -> Option SortInfo
+  op findOp : Spec -> Id.Id -> Option Op.OpInfo
+  op findSort : Spec -> Id.Id -> Option Sort.SortInfo
 
 \begin{spec}
-  op SpecEnv.findOp : Spec -> Id -> Env OpSet.Set
-  op SpecEnv.findSort : Spec -> Id -> Env SortSet.Set
+  op SpecEnv.findOp : Spec -> Id.Id -> Env OpSet.Set
+  op SpecEnv.findSort : Spec -> Id.Id -> Env SortSet.Set
 
-  op findTheOp : Spec -> Id.Id -> Env OpInfo
-  def findTheOp spc id = {
-      opInfoSet <- findOp spc id;
-      case (size opInfoSet) of
-        | 0 -> fatalError ("findTheOp: id does not exist: " ^ (show id))
-        | 1 -> return (theSingleton opInfoSet)
-        | _ -> fatalError ("findTheOp id is ambiguous : " ^ (show id))
-    }
+  op SpecEnv.findTheOp : Spec -> Id.Id -> Env Op.OpInfo
+%   def findTheOp spc id = {
+%       opInfoSet <- findOp spc id;
+%       case (size opInfoSet) of
+%         | 0 -> fatalError ("findTheOp: id does not exist: " ^ (show id))
+%         | 1 -> return (theSingleton opInfoSet)
+%         | _ -> fatalError ("findTheOp id is ambiguous : " ^ (show id))
+%     }
 
-  op findTheSort : Spec -> Id.Id -> Env SortInfo
-  def findTheSort spc id = {
-      sortInfoSet <- findSort spc id;
-      case (size sortInfoSet) of
-        | 0 -> fatalError ("findTheSort: id does not exist: " ^ (show id))
-        | 1 -> return (theSingleton sortInfoSet)
-        | _ -> fatalError ("findTheSort id is ambiguous : " ^ (show id))
-    }
+  op SpecEnv.findTheSort : Spec -> Id.Id -> Env Sort.SortInfo
+%   def findTheSort spc id = {
+%       sortInfoSet <- findSort spc id;
+%       case (size sortInfoSet) of
+%         | 0 -> fatalError ("findTheSort: id does not exist: " ^ (show id))
+%         | 1 -> return (theSingleton sortInfoSet)
+%         | _ -> fatalError ("findTheSort id is ambiguous : " ^ (show id))
+%     }
 \end{spec}
 
 Later might need the following. Or they could return a TakeResult.
 
 \begin{verbatim}
-  op Op.findOp : Spec -> Id -> Op.Set
-  op Sort.findSort : Spec -> Id -> Sort.Set
+  op Op.findOp : Spec -> Id.Id -> Op.Set
+  op Sort.findSort : Spec -> Id.Id -> Sort.Set
 \end{verbatim}
 
 Note that the find operation takes a qualified id. In the current code
@@ -126,10 +126,10 @@ from imports. This is useful for typechecking and seems like a great idea.
 
 \begin{spec}
   op Op.local : Spec -> OpSet.Set
-  op Op.isLocal? : Spec -> OpInfo -> Boolean
+  op Op.isLocal? : Spec -> Op.OpInfo -> Boolean
 
   op Sort.local : Spec -> SortSet.Set
-  op Sort.isLocal? : Spec -> SortInfo -> Boolean
+  op Sort.isLocal? : Spec -> Sort.SortInfo -> Boolean
 \end{spec}
 
 Perhaps there needs to be two fold operations. The most common fold
@@ -141,11 +141,11 @@ be monadic. The name \Op{hide} is a keyword so we munge it until it
 becomes allowed as a op name.
 
 \begin{spec}
-  op Op.hyde : Spec -> OpInfo -> Env Spec
-  op Op.isHidden? : Spec -> OpInfo -> Boolean
+  op Op.hyde : Spec -> Op.OpInfo -> Env Spec
+  op Op.isHidden? : Spec -> Op.OpInfo -> Boolean
 
-  op Sort.hyde : Spec -> SortInfo -> Env Spec
-  op Sort.isHidden? : Spec -> SortInfo -> Boolean
+  op Sort.hyde : Spec -> Sort.SortInfo -> Env Spec
+  op Sort.isHidden? : Spec -> Sort.SortInfo -> Boolean
 \end{spec}
 
 Typechecking.
@@ -179,18 +179,18 @@ many instances when the user will have to provide type information. Maybe
 the latter is the better way.
 
 \begin{verbatim}
-  op Spec.addOp : Spec -> OpInfo -> Spec
-  op Spec.addSort : Spec -> SortInfo -> Spec
-  op Spec.addProperty : Spec -> Property -> Spec
+  op Spec.addOp : Spec -> Op.OpInfo -> Spec
+  op Spec.addSort : Spec -> Sort.SortInfo -> Spec
+  op Spec.addClaim : Spec -> Claim.Claim -> Spec
 \end{verbatim}
 
 There needs to be monadic versions of these to handle the case
 where exceptions are raised.
 
 \begin{spec}
-  op SpecEnv.addOp : Spec -> OpInfo -> Position -> Env Spec
-  op SpecEnv.addSort : Spec -> SortInfo -> Position -> Env Spec
-  op SpecEnv.addProperty : Spec -> Property -> Position -> Env Spec
+  op SpecEnv.addOp : Spec -> Op.OpInfo -> Position -> Env Spec
+  op SpecEnv.addSort : Spec -> Sort.SortInfo -> Position -> Env Spec
+  op SpecEnv.addClaim : Spec -> Claim.Claim -> Position -> Env Spec
 \end{spec}
 
 The following functions fold an operation over the sorts or ops of
@@ -200,10 +200,10 @@ the arguments are passed, there should be uniformity with \Op{fold} in
 \UnitId{Sets}.
 
 \begin{spec}
-  op Spec.foldOps : fa(a) (a -> OpInfo -> a) -> a -> Spec -> a
+  op Spec.foldOps : fa(a) (a -> Op.OpInfo -> a) -> a -> Spec -> a
   % def Spec.foldOps f unit spc = OpSet.fold f unit (ops spc)
 
-  op Spec.foldSorts : fa(a) (a -> SortInfo -> a) -> a -> Spec -> a
+  op Spec.foldSorts : fa(a) (a -> Sort.SortInfo -> a) -> a -> Spec -> a
   % def Spec.foldSorts f unit spc = fold f unit (sorts spc)
 \end{spec}
 
@@ -217,10 +217,10 @@ intermediate data structure.
 The same points can be made about the next two.
 
 \begin{spec}
-  op SpecEnv.foldOps : fa(a) (a -> OpInfo -> Env a) -> a -> Spec -> Env a
+  op SpecEnv.foldOps : fa(a) (a -> Op.OpInfo -> Env a) -> a -> Spec -> Env a
   % def SpecEnv.foldOps f unit spc = OpSetEnv.fold f unit (ops spc)
 
-  op SpecEnv.foldSorts : fa(a) (a -> SortInfo -> Env a) -> a -> Spec -> Env a
+  op SpecEnv.foldSorts : fa(a) (a -> Sort.SortInfo -> Env a) -> a -> Spec -> Env a
   % def SpecEnv.foldSorts f unit spc = SortSetEnv.fold f unit (sorts spc)
 \end{spec}
 
@@ -228,10 +228,10 @@ Map operations. These are are monomorphic and hence less general than
 one might like as they map only from op to op or sort to sort.
 
 \begin{verbatim}
-  op SpecEnv.mapOps : (OpInfo -> Env OpInfo) -> Spec -> Env Spec
+  op SpecEnv.mapOps : (Op.OpInfo -> Env Op.OpInfo) -> Spec -> Env Spec
   def SpecEnv.mapOps f spc = OpSetEnv.map f (ops spc)
 
-  op SpecEnv.mapSorts : (SortInfo -> Env SortInfo) -> Spec -> Env Spec
+  op SpecEnv.mapSorts : (Sort.SortInfo -> Env Sort.SortInfo) -> Spec -> Env Spec
   def SpecEnv.mapSorts f spc = SortSetEnv.map f (sorts spc)
 \end{verbatim}
 
@@ -257,6 +257,31 @@ we need to pass an argument to any \Op{newRef} operator.
 
   op show : Spec -> String
   def show spc = ppFormat (pp spc)
+\end{spec}
+
+\begin{spec}
+  op subtract : Spec -> Spec -> Spec
+  op union : Spec -> Spec -> Env Spec
+\end{spec}
+
+The next few operations are only monadic. It is likely that they
+will need state to control there operation.
+
+\begin{spec}
+  op simplifyOp : Spec -> Op.Ref -> Env Spec
+  op simplifySort : Spec -> Sort.Ref -> Env Spec
+  op simplifyClaim : Spec -> Claim.Ref -> Env Spec
+\end{spec}
+
+What does it mean to simplify a sort? Perhaps there should be different
+Id sorts for ops, sorts and axioms. Op.Id, Sort.Id etc.
+Perhaps the above belong in the op, sort claim specs respectively.
+
+The next operation is speculative. The assumption is that some or all terms
+might be assigned an identifier (even if only visible internally).
+
+\begin{spec}
+  op simplifyTerm : Spec -> Id.Id -> Env Spec
 \end{spec}
 
 \begin{spec}

@@ -1,5 +1,3 @@
-What is the static vs dynamic rule.
-
 Those names that are dynamic are localOps in the dynamic spec. All other
 names in the dynamic spec are static. So why do we need the static spec at all?
 
