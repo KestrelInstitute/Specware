@@ -55,6 +55,25 @@ spec
 	     bod
          else
 	   mkBind(Forall,[v],mkImplies(mkEquality(srt,mkVar v,arg),bod))
+     | Lambda ([(RecordPat([("1",VarPat(v1 as (vn1,srt1),_)),("2",VarPat(v2 as (vn2,srt2),_))],_),
+		 Fun(Bool true, _,_),bod)],_)
+       ->
+       if (embed? Record arg) && countVarRefs(bod,v1) <= 1 && countVarRefs(bod,v2) <= 1 
+	 then
+	   let Record([("1",arg1),("2",arg2)],_) = arg in
+	   mapTerm (fn (tm) -> case tm of
+				| Var(vr,_) -> if vr = v1 then arg1
+					       else if vr = v2 then arg2
+					       else tm
+				| _ -> tm,
+		    id, id)
+	     bod
+         else
+	   mkBind(Forall,[v1,v2],mkImplies(mkEquality(mkProduct[srt1,srt2],
+						      mkTuple[mkVar v1,mkVar v2],
+						      arg),
+					   bod))
+       
      | _ -> mkApply(fntm,arg)
 
  def assertCond(cond,gamma as (ds,tvs,spc,qid,name,ty,names)) = 

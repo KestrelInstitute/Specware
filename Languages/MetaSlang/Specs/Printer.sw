@@ -200,12 +200,20 @@ AnnSpecPrinter qualifying spec
      | Project     s           -> pp.fromString ("project("^s^")")
      | RecordMerge             -> pp.fromString "<<"
      | Embedded    s           -> pp.fromString ("embed?("^s^")")
-     | Quotient                -> let p = case srt of Arrow(_, Quotient(_,p,_),_) -> p | _ -> mkAEquals (srt,a) in
+     | Quotient                -> let p = case srt
+					   of Arrow(_, Quotient(_,p,_),_) -> p
+					    %% Need spec to get correct value
+                                            | _ -> mkAEquals (srt,a)
+				  in
                                   prettysFill [pp.fromString "quotient", 
 					       string " ",
 					       ppTerm context ([], Top : ParentTerm) p, 
 					       string " "]
-     | Choose                  -> let p = case srt of Arrow(_, Quotient(_,p,_),_) -> p | _ -> mkAEquals (srt,a) in
+     | Choose                  -> let p = case srt
+					   of Arrow(_, Quotient(_,p,_),_) -> p
+					    %% Need spec to get correct value
+					    | _ -> mkAEquals (srt,a)
+				  in
                                   prettysFill [pp.fromString "choose",
 					       string " ",
 					       ppTerm context ([], Top : ParentTerm) p, 

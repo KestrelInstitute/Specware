@@ -49,6 +49,12 @@ Position qualifying spec {
        let printPos = fn (line,column,byte) -> (Nat.toString line)^"."^(Nat.toString column) in
        (*"in " ^*) filename ^ "\n" ^  printPos left ^ "-" ^ printPos right 
 
+ op  printIfExternal : Position -> String
+ def printIfExternal position =
+  case position of
+    | Internal msg -> ""
+    | _ -> printAll position
+
  % ------------------------------------------------------------------------
 
  def chooseNonZeroPos (p1: Position, p2: Position) : Position =
