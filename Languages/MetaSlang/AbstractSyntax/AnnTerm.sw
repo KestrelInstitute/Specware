@@ -51,7 +51,15 @@ MetaSlang qualifying spec {
    else
      false
 	
+ %% This is useful in some error messages, where you want to be very explicit:
+ op explicitPrintQualifiedId : QualifiedId -> String
+ def explicitPrintQualifiedId (Qualified (qualifier, id)) =
+  if qualifier = UnQualified then
+    id
+  else 
+    qualifier^"."^id
 
+ %% This is useful for most normal messages, where you want to be terse:
  op printQualifiedId : QualifiedId -> String
  def printQualifiedId (Qualified (qualifier, id)) =
   if qualifier = UnQualified then
