@@ -125,9 +125,10 @@ These are called only from evaluateUID.
 			       {setCurrentUID unitId;
 				bindInGlobalContext unitId (InProcess,0,[]);
 				(value,rTimeStamp,depUIDs) <- SpecCalc.evaluateTermInfo term;
-				let val = (value,max(timeStamp,rTimeStamp),depUIDs) in
+				let timeStamp = max(timeStamp,rTimeStamp) in
+				let val = (value,timeStamp,depUIDs) in
 				{bindInGlobalContext unitId val;
-				 return (Some(val,unitId))}}
+				 return (Some((value,timeStamp,[unitId]),unitId))}}
 			     | _ -> return (Some((value, timeStamp, [unitId]), unitId)))
 		     | None -> return None}
 	      in
