@@ -28,8 +28,12 @@ String qualifying spec
                      String
   op concatList    : List String -> String
   op translate     : (Char -> String) -> String -> String
-  op lt  infixl 20 : String * String -> Boolean
-  op leq infixl 20 : String * String -> Boolean
+  op lt  infixl 20 : String * String -> Boolean	    % deprecated
+  op leq infixl 20 : String * String -> Boolean     % deprecated
+  op <=  infixl 20 : String * String -> Boolean
+  op <   infixl 20 : String * String -> Boolean
+  op >=  infixl 20 : String * String -> Boolean
+  op >   infixl 20 : String * String -> Boolean
   op newline       : String
   op toScreen      : String -> ()  % deprecated
   op writeLine     : String -> ()  % deprecated
@@ -84,10 +88,10 @@ String qualifying spec
        translate subst s = concatList(map subst (explode s))
 
   axiom lt_def is
-    fa (s1 : String, s2 : String) s1 lt s2 <=> compare(s1,s2) = Less
+    fa (s1 : String, s2 : String) s1 < s2 <=> compare(s1,s2) = Less
 
   axiom leq_def is
-    fa (s1 : String, s2 : String)  s1 leq s2  <=>  s1 lt s2  || s1 = s2
+    fa (s1 : String, s2 : String)  s1 <= s2  <=>  s1 < s2  || s1 = s2
 
   axiom newline_def is
     newline = "\n"
@@ -98,8 +102,12 @@ String qualifying spec
   theorem writeLine_def is
     fa (s : String) writeLine s = ()
 
-  def compare(s1,s2) = if s1 lt s2 then Less
-                  else if s2 lt s1 then Greater
+  def >= (x,y) = y <= x
+
+  def > (x,y) = y <  x
+
+  def compare(s1,s2) = if s1 < s2 then Less
+                  else if s2 < s1 then Greater
                   else (* s1 = s2 *)    Equal
 
   % ops with different qualifiers:

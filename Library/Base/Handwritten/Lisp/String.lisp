@@ -165,6 +165,33 @@
                 (the cl:simple-base-string (cdr s1s2)))
    t nil))
 
+(defun <-2 (s1 s2)
+  (declare (type cl:simple-base-string s1 s2))
+  (if (string< s1 s2) t nil))
+
+(defun |!<| (s1s2)
+  (if (string< (the cl:simple-base-string (car s1s2))
+               (the cl:simple-base-string (cdr s1s2)))
+   t nil))
+
+(defun <=-2 (s1 s2)
+  (declare (type cl:simple-base-string s1 s2))
+  (if (string<= s1 s2) t nil))
+
+(define-compiler-macro <=-2 (x y)
+  `(<= (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+
+(defun |!<=| (s1s2)
+  (if (string<= (the cl:simple-base-string (car s1s2))
+                (the cl:simple-base-string (cdr s1s2)))
+   t nil))
+
+(define-compiler-macro >-2 (x y)
+  `(> (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+
+(define-compiler-macro >=-2 (x y)
+  `(>= (the cl:simple-base-string ,x) (the cl:simple-base-string ,y)))
+
 (defparameter newline
   (format nil "~c" #\newline))
 

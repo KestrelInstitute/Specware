@@ -192,7 +192,7 @@ spec
 	  then (case a
 		  of RecordVal(fields) ->
 		     (if (all (fn (_,tm) -> evalConstant?(tm)) fields) % or spName = "Boolean"
-		       then attemptEvaln(opName,fields,ft)
+		       then attemptEvaln(spName,opName,fields,ft)
 		       else Unevaluated(mkApply(ft,valueToTerm a)))
 		    | _ -> (if evalConstant? a
 			     then attemptEval1(opName,a,ft)
@@ -516,16 +516,20 @@ spec
 
        | _                      -> default()
 
-  op  attemptEvaln: String * List(Id * Value) * MS.Term -> Value
-  def attemptEvaln(opName,fields,f) =
+  op  attemptEvaln: String * String * List(Id * Value) * MS.Term -> Value
+  def attemptEvaln(spName,opName,fields,f) =
     let def default() = Unevaluated(mkApply(f,valueToTerm(RecordVal fields))) in
     case opName of
        %% Int operations
        | "+"   -> Int(+(intVals fields))
-       | "*"   -> Int( *(intVals fields))
+       | "*"   -> Int( *(intVals fields))    % Space before * is needed so parser doesn't see a comment!
        | "-"   -> Int(-(intVals fields))
-       | "<"   -> Bool(<( intVals fields))
-       | "<="  -> Bool(<=(intVals fields))
+       | "<"   -> if spName = "String"
+                    then Bool(<(stringVals fields))
+		    else Bool(<(intVals fields))
+       | "<="  -> if spName = "String"
+                    then Bool(<=(stringVals fields))
+		    else Bool(<=(intVals fields))
        %% Following have definitions
        %| ">"   -> Bool(>(intVals fields))
        %| ">="  -> Bool(>=(intVals fields))
