@@ -458,15 +458,15 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-unqualified-op-ref (name l r)
-  (make-fun (cond ((equal name "~")   (cons :|Not|       (make-pos l r)))
-		  ((equal name "&")   (cons :|And|       (make-pos l r))) ; soon to be deprecated ...
-		  ((equal name "&&")  (cons :|And|       (make-pos l r)))
-		  ((equal name "or")  (cons :|Or|        (make-pos l r))) ; soon to be deprecated ...
-		  ((equal name "||")  (cons :|Or|        (make-pos l r)))
-		  ((equal name "=>")  (cons :|Implies|   (make-pos l r)))
-		  ((equal name "<=>") (cons :|Iff|       (make-pos l r)))
-		  ((equal name "=")   (cons :|Equals|    (make-pos l r)))
-		  ((equal name "~=")  (cons :|NotEquals| (make-pos l r)))
+  (make-fun (cond ((equal name "~")   '(:|Not|))
+		  ((equal name "&")   '(:|And|))      ; deprecated
+		  ((equal name "&&")  '(:|And|))
+		  ((equal name "or")  '(:|Or|))       ; deprecated
+		  ((equal name "||")  '(:|Or|))
+		  ((equal name "=>")  '(:|Implies|))
+		  ((equal name "<=>") '(:|Iff|))
+		  ((equal name "=")   '(:|Equals|))
+		  ((equal name "~=")  '(:|NotEquals|))
 		  (t
 		   (cons :|OneName| (cons name unspecified-fixity))))
             (freshMetaTypeVar l r)
@@ -476,19 +476,24 @@ If we want the precedence to be optional:
 ;;;   TWO-NAME-EXPRESSION
 ;;; ------------------------------------------------------------------------
 
+;;; (defun make-two-name-expression (name-1 name-2 l r)
+;;;   (make-fun (cond ((equal name-1 "Boolean")  ; Deprecate "Boolean" as qualifier?
+;;; 		   (cond ((equal name-2 "~")   '(:|Not|))
+;;; 			 ((equal name-2 "&")   '(:|And|)) ; deprecated
+;;; 			 ((equal name-2 "&&")  '(:|And|))
+;;; 			 ((equal name-2 "or")  '(:|Or|))  ; deprecated
+;;; 			 ((equal name-2 "||")  '(:|Or|))
+;;; 			 ((equal name-2 "=>")  '(:|Implies|))
+;;; 			 ((equal name-2 "<=>") '(:|Iff|))
+;;; 			 (t 
+;;; 			  (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity)))))
+;;; 		  (t 
+;;; 		   (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity))))
+;;;             (freshMetaTypeVar l r)
+;;;             l r))
+
 (defun make-two-name-expression (name-1 name-2 l r)
-  (make-fun (cond ((equal name-1 "Boolean")  ; Deprecate "Boolean" as qualifier?
-		   (cond ((equal name-2 "~")   (cons :|Not|     (make-pos l r)))
-			 ((equal name-2 "&")   (cons :|And|     (make-pos l r))) ; soon to be deprecated ...
-			 ((equal name-2 "&&")  (cons :|And|     (make-pos l r)))
-			 ((equal name-2 "or")  (cons :|Or|      (make-pos l r))) ; soon to be deprecated ...
-			 ((equal name-2 "||")  (cons :|Or|      (make-pos l r)))
-			 ((equal name-2 "=>")  (cons :|Implies| (make-pos l r)))
-			 ((equal name-2 "<=>") (cons :|Iff|     (make-pos l r)))
-			 (t 
-			  (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity)))))
-		  (t 
-		   (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity))))
+  (make-fun (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity))
             (freshMetaTypeVar l r)
             l r))
 
@@ -704,13 +709,12 @@ If we want the precedence to be optional:
 					      '(:|Nonfix|))))
 			 (new-v (vector new-f (svref v 1) (svref v 2))))
 		    (cons :|Fun| new-v)))
-
 		 ((member (car f) '(:|And| :|Or| :|Implies| :|Iff|))
-		  (ms::mkUnaryBooleanFn (car f)))
+		  (ms::mkBinaryBooleanFn f))
 		 ((eq (car f) :|Not|)
-		  (ms::mkBinaryBooleanFn (car f)))
+		  (ms::mkUnaryBooleanFn f))
 		 ((member (car f) '(:|Equals| :|NotEquals|))
-		  (ms::mkBinaryPolyBooleanFn (car f)))
+		  (ms::mkBinaryPolyBooleanFn f))
 
 		 (t
 		  x))))

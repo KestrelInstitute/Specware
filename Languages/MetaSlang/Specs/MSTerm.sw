@@ -304,12 +304,12 @@ MS qualifying spec
  def mkBinaryBooleanFn f =
    let pos = Internal "mkBinaryBooleanFn" in
    let pattern = RecordPat ([("1", VarPat(("x", Boolean pos), pos)),
-			     ("2", VarPat(("x", Boolean pos), pos))],
+			     ("2", VarPat(("y", Boolean pos), pos))],
 			    pos)
    in
    let f       = Fun (f, binaryBoolSort, pos) in
    let arg     = Record ([("1", Var(("x", Boolean pos), pos)),
-			  ("2", Var(("x", Boolean pos), pos))],
+			  ("2", Var(("y", Boolean pos), pos))],
 			 pos)
    in
    let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
@@ -319,12 +319,12 @@ MS qualifying spec
  def mkBinaryPolyBooleanFn f =
    let pos = Internal "mkBinaryPolyBooleanFn" in
    let pattern = RecordPat ([("1", VarPat(("x", TyVar ("a", pos)), pos)),
-			     ("2", VarPat(("x", TyVar ("a", pos)), pos))],
+			     ("2", VarPat(("y", TyVar ("a", pos)), pos))],
 			    pos)
    in
    let f       = Fun (f, binaryBoolSort, pos) in
    let arg     = Record ([("1", Var(("x", TyVar ("a", pos)), pos)),
-			  ("2", Var(("x", TyVar ("a", pos)), pos))],
+			  ("2", Var(("y", TyVar ("a", pos)), pos))],
 			 pos)
    in
    let branch  = (pattern, mkTrue(), Apply(f,arg,pos)) in
