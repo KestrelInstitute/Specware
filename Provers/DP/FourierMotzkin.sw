@@ -121,15 +121,15 @@ FM qualifying spec
     normalizePoly(newP)
   
   op gcd: Integer * Integer -> Integer
-
-(*  def gcd(i, j) =
+  def gcd(i, j) =
+    let def gcdAux(i,j) =
     if i > j
       then gcd(i rem j, j)
     else
       if i < j
 	then gcd(i, j rem i)
-      else i
-*)
+      else i in
+    gcdAux(abs(i), abs(j))
 
   op lcm: Integer * Integer -> Integer
 
