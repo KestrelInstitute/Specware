@@ -229,7 +229,7 @@ case, a unit definition is searched in the file, whose identifier (at
 the left of ``='') is the same as the identifier that follows ``#'' in
 the original unit reference. If no such unit definition is found, the
 unit reference cannot be resolved and an error is signaled by
-&Specware. If instead such a unit definition is found, its defining
+&Specware;. If instead such a unit definition is found, its defining
 text (at the right of ``='') is the final result of
 resolution.</para></listitem>
 
@@ -565,6 +565,8 @@ via the following command:</para>
 <para>As already explained, the string must be a colon-separated list
 of absolute directory paths of the underlying operating system,
 surrounded by double quotes.</para>
+
+</section>
 
 </section>  <!-- auxiliary commands -->
 
