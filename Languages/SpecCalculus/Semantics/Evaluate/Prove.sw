@@ -9,46 +9,44 @@ SpecCalc qualifying spec {
   import UnitId/Utilities                                    % for uidToString, if used...
 
  op PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING: String -> ProverOptions
-
- %op explicateHiddenAxioms:AnnSpec.Spec -> AnnSpec.Spec
   
- def SpecCalc.evaluateProve (claim_name, spec_term, prover_name, assertions, possible_options, answer_var) pos = {
+ def SpecCalc.evaluateProve (claimName, specTerm, proverName, assertions, possibleOptions, baseOptions, answerVariable) pos = {
      unitId <- getCurrentUnitId;
      print (";;; Elaborating proof-term at " ^ (uidToString unitId) ^ "\n");
-     (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo spec_term;
+     (value,timeStamp,depUIDs) <- SpecCalc.evaluateTermInfo specTerm;
      (optBaseUnitId,baseSpec) <- getBase;
      baseProverSpec <- getBaseProverSpec;
      rewriteProverSpec <- getRewriteProverSpec;
-     %proverBaseUnitId <- pathToRelativeUID "/Library/Base/ProverBase";
-     %(Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase") proverBaseUnitId;
-     proverLogFileName <- UIDtoLogFile(unitId, if prover_name = "Both" then "Snark" else prover_name);
+     proverLogFileName <- UIDtoLogFile(unitId, if proverName = "Both" then "Snark" else proverName);
      _ <- return (ensureDirectoriesExist proverLogFileName);
-     proof_name <- return (UIDtoProofName unitId);
-     spec_name <- return (SpecTermToSpecName(spec_term));
-     uspc <- (
-	     case coerceToSpec value of
-	       | Spec spc -> return spc %specUnion([spc, baseProverSpec])
-               | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
-     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec uspc);
+     proofName <- return (UIDtoProofName unitId);
+     specName <- return (SpecTermToSpecName(specTerm));
+     userSpec <- (
+		  case coerceToSpec value of
+		    | Spec spc -> return spc %specUnion([spc, baseProverSpec])
+		    | _ -> raise (Proof (pos, "Argument to prove command is not coerceable to a spec.")));
+     expandedSpec <- return (transformSpecForFirstOrderProver baseSpec userSpec);
      _ <- return (if specwareDebug? then writeString(printSpec(expandedSpec)) else ());
-     prover_options <- 
-       (case possible_options of
-	  | OptionString prover_options -> return (prover_options)
-	  | OptionName prover_option_name -> 
-	        proverOptionsFromSpec(prover_option_name, uspc, spec_name)
+     proverOptions <- 
+       (case possibleOptions of
+	  | OptionString proverOptions -> return (proverOptions)
+	  | OptionName proverOptionName -> 
+	        proverOptionsFromSpec(proverOptionName, userSpec, specName)
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
-     proved:Boolean <- (proveInSpec (proof_name,
-				     claim_name, 
-				     expandedSpec,
-				     spec_name,
-				     baseProverSpec,
-				     rewriteProverSpec,
-				     prover_name, 
-				     assertions, 
-				     prover_options,
-				     answer_var,
-				     proverLogFileName,
-				     pos));
+     includeBase <- return proverUseBase?;
+     proved <- (proveInSpec (proofName,
+			     claimName, 
+			     expandedSpec,
+			     specName,
+			     baseProverSpec,
+			     rewriteProverSpec,
+			     proverName, 
+			     assertions, 
+			     proverOptions,
+			     includeBase,
+			     answerVariable,
+			     proverLogFileName,
+			     pos));
      result <- return (Proof {status = if proved then Proved else Unproved, 
 			      unit   = unitId});
      return (result, timeStamp, depUIDs)
@@ -56,14 +54,19 @@ SpecCalc qualifying spec {
 
 
   op transformSpecForFirstOrderProver: AnnSpec.Spec -> AnnSpec.Spec -> AnnSpec.Spec
-  def transformSpecForFirstOrderProver basespc spc =
-    let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
-    let xspc = transformSpecForFirstOrderProverInt spc in
-    if proverUseBase? then let _ = writeLine("PRB") in xspc else
-      let xBaseSpec = transformSpecForFirstOrderProverInt basespc in
+  def transformSpecForFirstOrderProver baseSpc spc =
+    let spc = addMissingFromBase(baseSpc,spc,builtinSortOp) in
+    let xSpc = transformSpecForFirstOrderProverInt spc in
+(*
+    if proverUseBase?
+      then let _ = writeLine("Including the Base Spec") in 
+	    xSpc
+    else
+*)
+      let xBaseSpec = transformSpecForFirstOrderProverInt baseSpc in
       %let xBaseSpec = basespc in
       %let res = subtractSpec xspc xBaseSpec in
-      let res = subtractSpecProperties(xspc, xBaseSpec) in
+      let res = subtractSpecProperties(xSpc, xBaseSpec) in
       res
 
   op transformSpecForFirstOrderProverInt: AnnSpec.Spec -> AnnSpec.Spec
@@ -124,33 +127,33 @@ SpecCalc qualifying spec {
      return (subtractSpecProperties(rewriteProverSpec, baseSpec))
     }
 
- def proverOptionsFromSpec (name, spc, spec_name) = {
-   possible_options_op <- return(AnnSpec.findTheOp (spc, name));
-   options_def <-
-      (case possible_options_op of
+ def proverOptionsFromSpec (name, spc, specName) = {
+   possibleOptionsOp <- return(AnnSpec.findTheOp (spc, name));
+   optionsDef <-
+      (case possibleOptionsOp of
 	 | Some info ->
 	   if definedOpInfo? info then
 	     let opTerm = firstOpDefInnerTerm info in
 	     return opTerm
 	   else
 	     raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^
-				 (case spec_name of
-				    | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
+				 (case specName of
+				    | Some specName -> ", in Spec, " ^ specName ^ "."
 				    | _ -> ".")))
 	 | _ -> raise (SyntaxError ("Cannot find prover option definition, " ^ printQualifiedId name ^
-				    (case spec_name of
-				       | Some spec_name -> ", in Spec, " ^ spec_name ^ "."
+				    (case specName of
+				       | Some specName -> ", in Spec, " ^ specName ^ "."
 				       | _ -> "."))));
-   options_string <-
-      (case options_def of
+   optionsString <-
+      (case optionsDef of
 	 | Fun (String (opString),_,_) -> return (opString)
 	 | _ -> raise (SyntaxError ("Prover option definition, " ^ printQualifiedId(name) ^ 
 		                    ", is not a string.")));
-   possible_options <- return(PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING(options_string));
-   prover_options <- (case possible_options of
-	  | OptionString (prover_options) -> return (prover_options)
+   possibleOptions <- return(PARSER4.READ_LIST_OF_S_EXPRESSIONS_FROM_STRING(optionsString));
+   proverOptions <- (case possibleOptions of
+	  | OptionString (proverOptions) -> return (proverOptions)
 	  | Error   (msg, str)     -> raise  (SyntaxError (msg ^ str)));
-   return prover_options
+   return proverOptions
   }
 
  op UIDtoLogFile: UnitId * String -> SpecCalc.Env String
@@ -200,16 +203,16 @@ SpecCalc qualifying spec {
    if cq = UnQualified
      then pid = cid
    else cq = pq & cid = pid
- 
+
  op proveInSpec: Option String * ClaimName * Spec * Option String * Spec * Spec * String * 
-                 Assertions * List LispCell * AnswerVar * String * Position -> SpecCalc.Env Boolean
- def proveInSpec (proof_name, claim_name, spc, spec_name, base_spc, rewrite_spc, prover_name,
-		  assertions, prover_options, answer_var, proverLogFileName, pos) = {
+                 Assertions * List LispCell * Boolean * AnswerVar * String * Position -> SpecCalc.Env Boolean
+ def proveInSpec (proofName, claimName, spc, specName, baseSpc, rewriteSpc, proverName,
+		  assertions, proverOptions, includeBase, answerVariable, proverLogFileName, pos) = {
    result <-
-   let baseHypothesis = base_spc.properties in
-   let rewriteHypothesis = rewrite_spc.properties in
+   let baseHypothesis = baseSpc.properties in
+   let rewriteHypothesis = rewriteSpc.properties in
    let _ = debug("pinspec") in
-   let findClaimInSpec = firstUpTo (fn (_, propertyName, _, _) -> claimNameMatch(claim_name, propertyName))
+   let findClaimInSpec = firstUpTo (fn (_, propertyName, _, _) -> claimNameMatch(claimName, propertyName))
                                    spc.properties in
    case findClaimInSpec of
      | None -> raise (Proof (pos, "Claim name is not in spec."))
@@ -217,10 +220,11 @@ SpecCalc qualifying spec {
 	 let actualHypothesis = actualHypothesis(validHypothesis, assertions, pos) in
 	 let missingHypothesis = missingHypothesis(actualHypothesis, assertions) in
 	   case missingHypothesis of 
-		 | [] -> return (proveWithHypothesis(proof_name, claim, actualHypothesis, spc, spec_name, baseHypothesis, base_spc,
-						     rewriteHypothesis, rewrite_spc,
-						     prover_name, prover_options, answer_var, proverLogFileName))
-		 | _ -> raise (Proof (pos, "assertions: "^printMissingHypothesis(missingHypothesis)^" not in spec."));
+		 | [] -> return (proveWithHypothesis(proofName, claim, actualHypothesis, spc, specName, baseHypothesis, baseSpc,
+						     rewriteHypothesis, rewriteSpc,
+						     proverName, proverOptions, includeBase, answerVariable, proverLogFileName))
+		 | _ -> raise (Proof (pos, "assertions: "^printMissingHypothesis(missingHypothesis)^" not in spec.\n
+				      Asserions in spec: "^printMissingHypothesis(map (fn((_,pn,_,_)) -> pn)actualHypothesis)));
    return result}
 
  op actualHypothesis: List Property * Assertions * Position -> List Property
@@ -243,47 +247,50 @@ SpecCalc qualifying spec {
 
  op printMissingHypothesis: List ClaimName -> String
  def printMissingHypothesis(cns) =
-   foldl (fn (cn, s) -> printQualifiedId(cn)^s) "" cns
+   case cns of
+     | []  -> ""
+     | [p] -> printQualifiedId(p)
+     | p :: ps -> printQualifiedId(p)^", "^printMissingHypothesis(ps)
 
  op displayProofResult: String * (Option String) * String * ClaimName * (Option String) * Boolean * String -> Boolean
- def displayProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved, proverLogFileName) =
+ def displayProofResult(proverName, proofName, claimType, claimName, specName, proved, proverLogFileName) =
    let _ =
-   case proof_name of
+   case proofName of
      | None -> 
-         (case spec_name of
-	   | None -> displaySingleAnonymousProofResult(prover_name, claim_type, claim_name, proved)
-	   | Some spec_name -> displaySingleProofResult(prover_name, claim_type, claim_name, spec_name, proved))
-     | Some proof_name ->
-	 case spec_name of
-	   | None -> displayMultipleAnonymousProofResult(prover_name, proof_name, claim_type, claim_name, proved)
-	   | Some spec_name -> 
-	       displayMultipleProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved) in
+         (case specName of
+	   | None -> displaySingleAnonymousProofResult(proverName, claimType, claimName, proved)
+	   | Some specName -> displaySingleProofResult(proverName, claimType, claimName, specName, proved))
+     | Some proofName ->
+	 case specName of
+	   | None -> displayMultipleAnonymousProofResult(proverName, proofName, claimType, claimName, proved)
+	   | Some specName -> 
+	       displayMultipleProofResult(proverName, proofName, claimType, claimName, specName, proved) in
    let _ = writeLine("    Snark Log file: " ^ proverLogFileName) in
      proved
 
 
-  def displaySingleAnonymousProofResult(prover_name, claim_type, claim_name, proved) =
+  def displaySingleAnonymousProofResult(proverName, claimType, claimName, proved) =
     let provedString = provedString(proved) in
-    let proverString = proverString(prover_name) in
-    let _ = writeLine(claim_type^" "^printQualifiedId(claim_name)^" "^provedString^" "^proverString) in
+    let proverString = proverString(proverName) in
+    let _ = writeLine(claimType^" "^printQualifiedId(claimName)^" "^provedString^" "^proverString) in
       proved
 
-  def displaySingleProofResult(prover_name, claim_type, claim_name, spec_name, proved) =
+  def displaySingleProofResult(proverName, claimType, claimName, specName, proved) =
     let provedString = provedString(proved) in
-    let proverString = proverString(prover_name) in
-    let _ = writeLine(claim_type^" "^printQualifiedId(claim_name)^" in "^spec_name^" "^provedString^" "^proverString) in
+    let proverString = proverString(proverName) in
+    let _ = writeLine(claimType^" "^printQualifiedId(claimName)^" in "^specName^" "^provedString^" "^proverString) in
       proved
 
-  def displayMultipleAnonymousProofResult(prover_name, proof_name, claim_type, claim_name, proved) =
+  def displayMultipleAnonymousProofResult(proverName, proofName, claimType, claimName, proved) =
     let provedString = provedString(proved) in
-    let proverString = proverString(prover_name) in
-    let _ = writeLine(proof_name^": "^claim_type^" "^printQualifiedId(claim_name)^" "^provedString^" "^proverString) in
+    let proverString = proverString(proverName) in
+    let _ = writeLine(proofName^": "^claimType^" "^printQualifiedId(claimName)^" "^provedString^" "^proverString) in
       proved
 
-  def displayMultipleProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved) =
+  def displayMultipleProofResult(proverName, proofName, claimType, claimName, specName, proved) =
     let provedString = if proved then "is Proved!" else "is NOT proved" in
-    let proverString = proverString(prover_name) in
-    let _ = writeLine(proof_name^": "^claim_type^" "^printQualifiedId(claim_name)^" in "^spec_name^" "^provedString^" "^proverString) in
+    let proverString = proverString(proverName) in
+    let _ = writeLine(proofName^": "^claimType^" "^printQualifiedId(claimName)^" in "^specName^" "^provedString^" "^proverString) in
       proved
 
  op provedString: Boolean -> String
@@ -293,71 +300,72 @@ SpecCalc qualifying spec {
    else "is NOT proved."
 
  op proverString: String -> String
- def proverString(prover_name) =
-   case prover_name of
+ def proverString(proverName) =
+   case proverName of
      | "FourierM" -> "using simple inequality reasoning."
      | "Snark" -> "using Snark."
 
  op proveWithHypothesis: Option String * Property * List Property * Spec * Option String * List Property * Spec *
                          List Property * Spec *
-                         String * List LispCell * AnswerVar * String -> Boolean
+                         String * List LispCell * Boolean * AnswerVar * String -> Boolean
 
- def proveWithHypothesis(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-			 rewrite_hypothesis, rewrite_spc,
-			 prover_name, prover_options, answer_var, snarkLogFileName) =
-   if prover_name = "FourierM"
+ def proveWithHypothesis(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
+			 rewriteHypothesis, rewriteSpc,
+			 proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
+   if proverName = "FourierM"
      then 
-       proveWithHypothesisFM(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-			     rewrite_hypothesis, rewrite_spc,
-			     prover_name, prover_options, snarkLogFileName, false)
+       proveWithHypothesisFM(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
+			     rewriteHypothesis, rewriteSpc,
+			     proverName, proverOptions, snarkLogFileName, false)
    else
-     if prover_name = "Snark"
-       then proveWithHypothesisSnark(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-				     rewrite_hypothesis, rewrite_spc,
-				     prover_name, prover_options, answer_var, snarkLogFileName)
+     if proverName = "Snark"
+       then proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
+				     rewriteHypothesis, rewriteSpc,
+				     proverName, proverOptions, includeBase, answerVariable, snarkLogFileName)
      else
-       let fmRes = proveWithHypothesisFM(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-					 rewrite_hypothesis, rewrite_spc,
-					 "FourierM", prover_options, snarkLogFileName, true) in
+       let fmRes = proveWithHypothesisFM(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
+					 rewriteHypothesis, rewriteSpc,
+					 "FourierM", proverOptions, snarkLogFileName, true) in
        fmRes ||
-       proveWithHypothesisSnark(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-				rewrite_hypothesis, rewrite_spc,
-				"Snark", prover_options, answer_var, snarkLogFileName)
+       proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
+				rewriteHypothesis, rewriteSpc,
+				"Snark", proverOptions, includeBase, answerVariable, snarkLogFileName)
 
 
  op proveWithHypothesisSnark: Option String * Property * List Property * Spec * Option String * List Property * Spec *
                          List Property * Spec *
-                         String * List LispCell * AnswerVar * String -> Boolean
+                         String * List LispCell * Boolean * AnswerVar * String -> Boolean
 
- def proveWithHypothesisSnark(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-			 rewrite_hypothesis, rewrite_spc,
-			 prover_name, prover_options, answer_var, snarkLogFileName) =
+ def proveWithHypothesisSnark(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
+			 rewriteHypothesis, rewriteSpc,
+			 proverName, proverOptions, includeBase, answerVariable, snarkLogFileName) =
    let _ = debug("preovWithHyp") in
-   let _ = if ~(prover_name = "Snark") then writeLine(prover_name ^ " is not supported; using Snark instead.") else () in
-   let (claim_type,claim_name,_,_) = claim in
-   let def claimType(ct) = 
+   let _ = if ~(proverName = "Snark") then writeLine(proverName ^ " is not supported; using Snark instead.") else () in
+   let (claimType,claimName,_,_) = claim in
+   let def getClaimType(ct) = 
          case ct of
 	   | Conjecture -> "Conjecture" 
 	   | Theorem -> "Theorem" 
 	   | Axiom -> "Axiom" in
-   let claim_type = claimType(claim_type) in
+   let claimType = getClaimType(claimType) in
    let snarkSortDecls = snarkSorts(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
-   let snarkBaseHypothesis = map (fn (prop) -> snarkProperty(context, base_spc, prop))
-                                 base_hypothesis in
-   %let snarkBaseHypothesis = [] in
-   let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewrite_spc, prop))
-                                     rewrite_hypothesis in
+   let snarkBaseHypothesis = if includeBase
+			       then  map (fn (prop) -> snarkProperty(context, baseSpc, prop))
+				     baseHypothesis
+			     else [] in
+   let snarkRewriteHypothesis = map (fn (prop) -> snarkRewrite(context, rewriteSpc, prop))
+                                     rewriteHypothesis in
    %let snarkHypothesis = map (fn (prop) -> snarkProperty(context, spc, prop)) hypothesis in
    let snarkSubsortHypothesis = snarkSubsortProperties(context, spc) in
    let snarkPropertyHypothesis = foldr (fn (prop, list) -> snarkPropertiesFromProperty(context, spc, prop)++list) [] hypothesis in
    let snarkHypothesis = snarkSubsortHypothesis ++ snarkPropertyHypothesis in
    let snarkConjecture =
-     case answer_var of
+     case answerVariable of
        | None -> snarkConjectureRemovePattern(context, spc, claim)
        | Some var -> snarkAnswer(context, spc, claim, [var]) in
-   let snarkEvalForm = makeSnarkProveEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
+   let snarkEvalForm = makeSnarkProveEvalForm(proverOptions, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
 					      snarkHypothesis, snarkConjecture, snarkLogFileName) in
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
@@ -366,24 +374,24 @@ SpecCalc qualifying spec {
 						   Lisp.list [Lisp.symbol("SNARK","LAMBDA"),
 							      Lisp.nil(),snarkEvalForm]])]) in
      let proved = ":PROOF-FOUND" = anyToString(result) in
-     let _ = displayProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
+     let _ = displayProofResult(proverName, proofName, claimType, claimName, specName, proved, snarkLogFileName) in
        proved
 
  op proveWithHypothesisFM: Option String * Property * List Property * Spec * Option String * List Property * Spec *
                          List Property * Spec *
                          String * List LispCell * String * Boolean -> Boolean
 
- def proveWithHypothesisFM(proof_name, claim, hypothesis, spc, spec_name, base_hypothesis, base_spc,
-			 rewrite_hypothesis, rewrite_spc,
-			 prover_name, prover_options, logFileName, preProof?) =
+ def proveWithHypothesisFM(proofName, claim, hypothesis, spc, specName, baseHypothesis, baseSpc,
+			 rewriteHypothesis, rewriteSpc,
+			 proverName, proverOptions, logFileName, preProof?) =
    let _ = debug("preovWithHyp") in
-   let (claim_type,claim_name,_,_) = claim in
-   let def claimType(ct) = 
+   let (claimType,claimName,_,_) = claim in
+   let def getClaimType(ct) = 
          case ct of
 	   | Conjecture -> "Conjecture" 
 	   | Theorem -> "Theorem" 
 	   | Axiom -> "Axiom" in
-   let claim_type = claimType(claim_type) in
+   let claimType = getClaimType(claimType) in
    let context = emptyToFMContext in
    %let fmSubsortHypothesis = fmSubsortProperties(context, spc) in
    %let fmSubsortHypothesis = [] in
@@ -392,23 +400,52 @@ SpecCalc qualifying spec {
    %let fmConjecture = toFMProperty(context, spc, claim) in
    let proved = proveMSProb(spc, [], claim) in
    let _ = if proved || ~preProof?
-	     then displayProofResult(prover_name, proof_name, claim_type, claim_name, spec_name, proved, logFileName)
+	     then displayProofResult(proverName, proofName, claimType, claimName, specName, proved, logFileName)
 	   else proved in
    proved
 
  %print-clocks??
+ op makeSnarkProveDecls: List LispCell * List LispCell * List LispCell * List LispCell * List LispCell
+                           * List LispCell * LispCell * String -> LispCell
+
+ def makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
+			    snarkHypothesis, snarkConjecture, snarkLogFileName) =
+   let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
+   let setOfSupportOff = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(true)]) in
+   
+   Lisp.list
+   [Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
+    Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(20)]),
+    Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
+    Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])]
+   Lisp.++ (Lisp.list snarkSortDecl)
+   Lisp.++ (Lisp.list snarkOpDecls)
+   Lisp.++ (Lisp.list proverOptions)
+   Lisp.++ (Lisp.list [setOfSupportOn])
+   Lisp.++ (Lisp.list snarkBaseHypothesis)
+   Lisp.++ (Lisp.list snarkRewriteHypothesis)
+   Lisp.++ (Lisp.list [setOfSupportOff])
+   Lisp.++ (Lisp.list proverOptions)
+   Lisp.++ (Lisp.list baseAxioms)
+   Lisp.++ (Lisp.list snarkHypothesis)
+   Lisp.++ (Lisp.list [snarkConjecture])
+
  op makeSnarkProveEvalForm: List LispCell * List LispCell * List LispCell * List LispCell * List LispCell
                            * List LispCell * LispCell * String -> LispCell
 
- def makeSnarkProveEvalForm(prover_options, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
+ def makeSnarkProveEvalForm(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
 			    snarkHypothesis, snarkConjecture, snarkLogFileName) =
    %let _ = if specwareDebug? then toScreen("Proving snark fmla: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(snarkConjecture) else Lisp.list [] in
    %let _ = if specwareDebug? then writeLine(" using: ") else () in
    %let _ = if specwareDebug? then LISP.PPRINT(Lisp.list(snarkHypothesis)) else Lisp.list [] in
-   let setOfSupportOn = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]) in
-   let setOfSupportOff = Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(true)]) in
-
+   let snarkProverDecls = makeSnarkProveDecls(proverOptions, snarkSortDecl, snarkOpDecls, snarkBaseHypothesis, snarkRewriteHypothesis,
+					      snarkHypothesis, snarkConjecture, snarkLogFileName) in
    	 Lisp.list 
 	 [Lisp.symbol("CL-USER","WITH-OPEN-FILE"),
 	  Lisp.list [Lisp.symbol("CL-USER","LOGFILE"),
@@ -424,26 +461,11 @@ SpecCalc qualifying spec {
 				 Lisp.symbol("CL-USER","LOGFILE")],
 		      Lisp.list [Lisp.symbol("CL-USER","*STANDARD-OUTPUT*"),
 				 Lisp.symbol("CL-USER","LOGFILE")]],
-	   Lisp.list([Lisp.symbol("SNARK","INITIALIZE")]),
-	   Lisp.list([Lisp.symbol("SNARK","RUN-TIME-LIMIT"), Lisp.nat(20)]),
-           Lisp.list([Lisp.symbol("SNARK","ASSERT-SUPPORTED"), Lisp.bool(false)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-LISP-TYPES-AS-SORTS"), Lisp.bool(true)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-CODE-FOR-NUMBERS"), Lisp.bool(true)]),
-           Lisp.list([Lisp.symbol("SNARK","USE-NUMBERS-AS-CONSTRUCTORS"), Lisp.bool(true)]),
-	   Lisp.list([Lisp.symbol("SNARK","USE-RESOLUTION"), Lisp.bool(true)]),
-	   Lisp.list([Lisp.symbol("SNARK","USE-CONDITIONAL-ANSWER-CREATION"), Lisp.bool(true)]),
-	   Lisp.list([Lisp.symbol("SNARK","USE-WELL-SORTING"), Lisp.bool(false)])
+	   Lisp.list([Lisp.symbol("CL","WRITE-LINE"), Lisp.string("Snark is invoked by evaluating:")]),
+	   Lisp.list([Lisp.symbol("CL","PPRINT"),
+		      Lisp.quote(Lisp.list[Lisp.symbol("CL","LET"), Lisp.list []] Lisp.++ snarkProverDecls)])
 	  ]
-	  Lisp.++ (Lisp.list snarkSortDecl)
-	  Lisp.++ (Lisp.list snarkOpDecls)
-	  Lisp.++ (Lisp.list prover_options)
-	  Lisp.++ (Lisp.list [setOfSupportOn])
-	  Lisp.++ (Lisp.list snarkBaseHypothesis)
-	  Lisp.++ (Lisp.list snarkRewriteHypothesis)
-	  Lisp.++ (Lisp.list [setOfSupportOff])
-	  Lisp.++ (Lisp.list baseAxioms)
-	  Lisp.++ (Lisp.list snarkHypothesis)
-	  Lisp.++ (Lisp.list [snarkConjecture])]
-
+	  Lisp.++ snarkProverDecls
+		    ]
 
 }

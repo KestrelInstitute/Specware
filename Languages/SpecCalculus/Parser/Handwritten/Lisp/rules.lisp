@@ -91,6 +91,7 @@
    ((:tuple "print")       "print")	; so we can use print as a op-name
    ((:tuple "with")        "with")	; so we can use with as a op-name
    ((:tuple "Snark")       "Snark")	; so we can use Snark as a unit-identifier
+   ((:tuple "answerVar")       "answerVar")	; so we can use answerVar a unit-identifier
    ((:tuple (1 :NON-KEYWORD-NAME)) 1)
    ))
 
@@ -464,7 +465,8 @@ If we want the precedence to be optional:
    :CHARACTER
    "true" "false" "fa" "ex"
    "module" "spec" "import" "sort" "def" "op" "end"
-   "fn" "case" "of" "let" "if" "then" "else" "in" "with" "using" "options"
+   "fn" "case" "of" "let" "if" "then" "else"
+   "in" "with" "using" "options" "answerVar"
    "project" "relax" "restrict" "quotient" "choose" "embed" "embed?"
    "as" "infixl" "infixr"
    "axiom" "theorem" "conjecture"
@@ -1626,8 +1628,8 @@ If we want the precedence to be optional:
 	  (:optional (:tuple "with"    (3 :PROVER-NAME)))
 	  (:optional (:tuple "using"   (4 :PROVER-ASSERTIONS)))
 	  (:optional (:tuple "options" (5 :PROVER-OPTIONS)))
-	  (:optional (:tuple "answerVar"  (6 :ANSWER-VARIABLE))))
-  (make-sc-prover 1 2 3 4 5 6 ':left-lcb ':right-lcb))
+	  (:optional (:tuple "answerVar"  (7 :ANSWER-VARIABLE))))
+  (make-sc-prover 1 2 3 4 5 7 ':left-lcb ':right-lcb))
 
 (define-sw-parser-rule :PROVER-NAME ()
   (:anyof "Snark" "PVS" "FourierM"))
@@ -1644,9 +1646,12 @@ If we want the precedence to be optional:
   ;; returns (:|OptionString| <sexpressions>) or (:|Error| msg string) or (:|OptionName| op)
   (make-sc-prover-options 1))
 
+(define-sw-parser-rule :PROVER-BASE-OPTIONS ()
+  (:anyof "NONE" "BASE")
+   )
+
 (define-sw-parser-rule :ANSWER-VARIABLE ()
    (:tuple (1 :ANNOTATED-VARIABLE))
-  ;; returns (:|OptionString| <sexpressions>) or (:|Error| msg string) or (:|OptionName| op)
   (make-sc-answerVar 1))
 
 

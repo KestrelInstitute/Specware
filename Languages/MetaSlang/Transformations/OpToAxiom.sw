@@ -1,6 +1,5 @@
 Prover qualifying spec
  import ../Specs/Environment
- import ProverPattern
  import CurryUtils
  import ArityNormalize
  import Simplify
@@ -9,13 +8,13 @@ Prover qualifying spec
 
 
   op proverNatSort: () -> Sort
-  
+
   def proverNatSort() =
     let baseProverSpec = run getBaseProverSpec in
     let optSrt = findTheSort(baseProverSpec, mkUnQualifiedId("ProverNat")) in
     let Some info = optSrt in
     firstSortDefInnerSort info 
-  
+
   op getBaseProverSpec : Env Spec
   def getBaseProverSpec = 
     {
@@ -54,7 +53,7 @@ Prover qualifying spec
 	      | _ -> topPred)
 	 | _ -> topPred)
       | _ -> topPred
-     
+
   op opSubsortAxiom: Spec * QualifiedId * Sort -> MS.Term
 
   def opSubsortAxiom(spc, opname, srt) =

@@ -79,22 +79,22 @@ MS qualifying spec
  op mkIfThenElse  : Term * Term * Term            -> Term
 
  def mkRecord     fields          = Record     (fields,                  noPos)
- def mkLet        (decls, term)   = Let        (decls, term,             noPos)
- def mkLetRec     (decls, term)   = LetRec     (decls, term,             noPos)
- def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], noPos)
- def mkBind       (b, vars, term) = Bind       (b, vars, term,           noPos)
+ def mkLet        (decls, term)   = Let        (decls, term,             termAnn(term))
+ def mkLetRec     (decls, term)   = LetRec     (decls, term,             termAnn(term))
+ def mkLambda     (pat,   term)   = Lambda     ([(pat, mkTrue(), term)], termAnn(term))
+ def mkBind       (b, vars, term) = Bind       (b, vars, term,           termAnn(term))
 
  def mkVar        v               = Var        (v,                       noPos)
  def mkFun        (constant, srt) = Fun        (constant, srt,           noPos) 
- def mkApply      (t1, t2)        = Apply      (t1, t2,                  noPos)
- def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         noPos)  
+ def mkApply      (t1, t2)        = Apply      (t1, t2,                  termAnn(t2))
+ def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         termAnn(t1))  
  def mkApplication(t1, tms)       = 
    let pos = termAnn(t1) in
    case tms of
      | [] -> mkApply(t1,Record([],pos))
      | [t2] -> mkApply(t1, t2)
      | trm::rest -> mkAppl(t1, tms)
- def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              noPos)
+ def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              termAnn(t1))
 
  %% Fun's
 

@@ -49,6 +49,11 @@ Prover qualifying spec
     let fmla = condTermToFmla(condTerm) in
     "CT: "^printTerm(fmla)
 
+  op condTermToFmlaWithPos: CondTerm * Position -> Term
+  def condTermToFmlaWithPos(condTerm, pos) =
+    let fmla = condTermToFmla(condTerm) in
+    withAnnT(fmla, pos)
+
   op condTermToFmla: CondTerm -> Term
   def condTermToFmla(condTerm) =
     let (vars, cond, term) = condTerm in
@@ -58,12 +63,13 @@ Prover qualifying spec
                 | _ -> mkBind(Forall, vars, body) in
     res
 
-  op proverPattern: Spec * Term -> List Term
-  def proverPattern(spc, term) =
+  op removePatternTop: Spec * Term -> List Term
+  def removePatternTop(spc, term) =
     %let _ = writeLine("PP: "^printTerm(term)) in
+    let pos = termAnn(term) in
     let _ = initWildCounter() in
-    let condTerms = removePattern(spc, term) in
-    let res = map condTermToFmla condTerms in
+    let condTerms = removePatternTerm(spc, term) in
+    let res = map (fn(ct) -> condTermToFmlaWithPos(ct, pos)) condTerms in
     %let _ = map (fn (r) -> writeLine("PPRes: "^printTerm(r))) res in
     res
 
@@ -166,9 +172,9 @@ Prover qualifying spec
       | [condTerms] -> condTerms
       | hdCondTerms::tlCondTerms-> mkFinalCondTerms(generateCasesRec(hdCondTerms, generateCases(tlCondTerms)))
 *)
-  op removePattern: Spec * Term -> CondTerms
+  op removePatternTerm: Spec * Term -> CondTerms
 
-  def removePattern(spc, term) =
+  def removePatternTerm(spc, term) =
     if caseTerm?(term) then removePatternCase(spc, term) else
     case term of
       | Apply(_) -> removePatternApply(spc, term)
@@ -186,7 +192,7 @@ Prover qualifying spec
 def removePatternCase(spc, term) =
   let caseTerm = caseTerm(term) in
   let caseTermSrt = inferType(spc, caseTerm) in
-  let caseTermCondTerms = removePattern(spc, caseTerm) in
+  let caseTermCondTerms = removePatternTerm(spc, caseTerm) in
   let cases = caseCases(term) in
   let def mkPatCond(patTerms, caseTerm) =
         case patTerms of
@@ -212,7 +218,7 @@ def removePatternCase(spc, term) =
 	    let tlCondTerms = combinePatTermsBodyCondTermsCaseCondTerms(patTerms, patVars, bodyCTs, tlCaseCTs, negPrevCases) in
 	    hdCondTerms++tlCondTerms in
   let def removePatternCaseCase((pat, _(* cond *), body), negPrevCases) = 
-        let bodyCondTerms = removePattern(spc, body) in
+        let bodyCondTerms = removePatternTerm(spc, body) in
 	let patTerms = patternToTerms(pat) in
 	let patVars = foldl(fn(term, res) -> freeVars(term)++res) [] patTerms in
 	%let _ = writeLine("CaseCase: "^printPattern(pat)^", "^printTerm(cond)^", "^printTerm(body)) in
@@ -238,8 +244,8 @@ def removePatternCase(spc, term) =
 
   op removePatternApply: Spec * Term -> CondTerms
   def removePatternApply(spc, term as Apply(t1, t2, b)) =
-    let res1 = removePattern(spc, t1) in
-    let res2 = removePattern(spc, t2) in
+    let res1 = removePatternTerm(spc, t1) in
+    let res2 = removePatternTerm(spc, t2) in
     let def mkLeafCase(funCase:CondTerm, argCase:CondTerm) =
           let (funVars, funCond, funTerm) = funCase in
           let (argVars, argCond, argTerm) = argCase in
@@ -261,7 +267,7 @@ def removePatternCase(spc, term) =
   op removePatternRecord: Spec * Term -> CondTerms
 
   def removePatternRecord(spc, term as Record(fields, b)) =
-    let condFieldTermsList:List(CondTerms) = map (fn (id, term) -> removePattern(spc, term)) fields in
+    let condFieldTermsList:List(CondTerms) = map (fn (id, term) -> removePatternTerm(spc, term)) fields in
     let fieldIds = map (fn(id, term) -> id) fields in
     let def mkLeafCase(terms:List(Term)) =
           mkRecord(zip(fieldIds, terms)) in
@@ -296,7 +302,7 @@ def removePatternCase(spc, term) =
     %let _ = if printT = "fa(n : NN) p n = fa(n1 : NN) (~(lte(n1, n)) => lte(n, n1))"
     %           then debug("rpb!")
     %        else () in
-    let bodyConds = removePattern(spc, body) in
+    let bodyConds = removePatternTerm(spc, body) in
     let def mkLeafCase(condTerm) =
           let (newVars, newCond, newBody) = condTerm in
 	  %let r = (varUnion(bndVars,newVars), newCond, newBody) in
@@ -380,7 +386,7 @@ def removePatternCase(spc, term) =
 
   op removePatternLet: Spec * Term -> CondTerms
   def removePatternLet(spc, term as Let(patternTermList, body, b)) =
-    let newBodyCondTerms = removePattern(spc, body) in
+    let newBodyCondTerms = removePatternTerm(spc, body) in
     let def patternTermsToVarsConds(patTerms, term, srt) =
           case patTerms of
 	  %  | Nil -> []
@@ -395,7 +401,7 @@ def removePatternCase(spc, term) =
 	  let patTerms = patternToTerms(pat) in
 	  patternTermsToVarsConds(patTerms, term, srt) in
     let def varsCondRecurse(vars, cond) =
-          let condTermsForCond = removePattern(spc, cond) in
+          let condTermsForCond = removePatternTerm(spc, cond) in
 	  map (fn (vs, c, t) -> (vars++vs, Utilities.mkAnd(c, t))) condTermsForCond in
     let def patternTermListToVarsConds(patternTermList) =
           %let _ = debug("patternTermList") in
@@ -430,9 +436,9 @@ def removePatternCase(spc, term) =
 
   op removePatternIfThenElse: Spec * Term -> CondTerms
   def removePatternIfThenElse(spc, term as IfThenElse(condTerm, thenTerm, elseTerm, b)) =
-    let condCondTerms = removePattern(spc, condTerm) in
-    let thenCondTerms = removePattern(spc, thenTerm) in
-    let elseCondTerms = removePattern(spc, elseTerm) in
+    let condCondTerms = removePatternTerm(spc, condTerm) in
+    let thenCondTerms = removePatternTerm(spc, thenTerm) in
+    let elseCondTerms = removePatternTerm(spc, elseTerm) in
     let def recurseDownBranchCondTerms(branchVars, branchCond, branchCondTerms) =
           case branchCondTerms of
 	    | Nil -> []
@@ -458,9 +464,48 @@ def removePatternCase(spc, term) =
   op removePatternSeq: Spec * List Term -> CondTerms
   def removePatternSeq(spc, trmlst) =
     let lastTerm = last(trmlst) in
-    removePattern(spc, lastTerm)
+    removePatternTerm(spc, lastTerm)
 
   op removePatternLetRec: Term -> CondTerms
   def removePatternLetRec(term) = [([], mkTrue(), term)]
+
+(*  op removePattern: Spec -> Spec
+  def removePattern spc =
+    let usedNames = StringSet.fromList(qualifierIds spc.ops) in
+    setOps (spc, 
+            mapOpInfos (fn info -> 
+			let pos = termAnn info.dfn in
+			let (old_decls, old_defs) = opInfoDeclsAndDefs info in
+			let new_axioms =
+			    axiomFromOpDefTop(spc, q, id, info)
+			    foldl
+			    (fn dfn ->
+			     let pos = termAnn dfn in
+			     let (tvs, srt, term) = unpackTerm dfn in
+			     let usedNames = addLocalVars (term, usedNames) in
+			     let tm = 
+			     normalizeArityTopLevel (spc, [], usedNames,
+						     etaExpand (spc, usedNames, srt, term))
+			     in
+			       maybePiTerm (tvs, SortedTerm (tm, srt, pos)))
+			        old_defs
+			in
+			let new_dfn = maybeAndTerm (old_decls ++ new_defs, pos) in
+			info << {dfn = new_dfn})
+	               spc.ops)
+*)
+(****
+         | WildPat  _ -> result
+ (* These cases do not appear after pattern match compilation, 
+   but are listed for independence of possible pattern matching *)
+        | AliasPat(p1,p2) -> 
+          insertPattern(p1,insertPattern(p2,result))
+        | EmbedPat(_,Some p,_) -> insertPattern(p,result)
+        | RelaxPat(p,t) -> insertPattern(p,result)
+        | QuotientPat(p,t) -> insertPattern(p,result)
+        | _ -> result
+
+ ****)
+
 
 endspec

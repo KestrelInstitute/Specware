@@ -741,7 +741,8 @@ def toAny     = Term `TranslationBasic.toAny`
      let new_sort = mkArrow (patternSort newPattern, 
 			     termSortEnv (getSpecEnv (env), body)) 
      in
-     let new_term = mkLambda (newPattern, body) in
+     let pos = termAnn(body) in
+     let new_term = withAnnT(mkLambda (newPattern, body), pos) in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
       dfn    = SortedTerm (new_term, new_sort, termAnn body)}
@@ -782,7 +783,7 @@ def toAny     = Term `TranslationBasic.toAny`
      let new_sort = mkArrow (patternSort newPattern, 
 			     termSortEnv (getSpecEnv env, body))
      in
-     let new_term = mkLambda (newPattern, newBody) in
+     let new_term = withAnnT(mkLambda (newPattern, newBody), termAnn body) in
      {names  = [], % TODO: Real names
       fixity = Nonfix, 
       dfn    = SortedTerm (new_term, new_sort, termAnn body)}
@@ -856,7 +857,8 @@ def toAny     = Term `TranslationBasic.toAny`
 
      def doProp ((pt, pn as Qualified (qname, name), tvs, fmla), spc) =
        let env = mkEnv (qname, name) in
-       let fmla = termInnerTerm fmla in
+       let pos = termAnn(fmla) in
+       let fmla = withAnnT(termInnerTerm fmla, pos) in
        let term = makeVarTerm fmla in
        let (opers, term) = lambdaLiftTerm (env, term) in
        let newProp = (pt, pn, tvs, term) in

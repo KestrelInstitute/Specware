@@ -85,7 +85,7 @@ SpecCalc qualifying spec
     let opName = Qualified (q, id) in
     let srt = termSortEnv(spc,term) in
     let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
-    let liftedFmlas = proverPattern(spc, initialFmla) in
+    let liftedFmlas = removePatternTop(spc, initialFmla) in
     %let simplifiedLiftedFmlas = map (fn (fmla) -> simplify(spc, fmla)) liftedFmlas in
     map (fn(fmla) -> (Conjecture, Qualified (q, id ^ "_def"), [], fmla)) liftedFmlas
 

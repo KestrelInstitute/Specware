@@ -258,7 +258,7 @@ SpecCalc qualifying spec
 		  ppString " in ",
 		  ppTerm scTerm]
 
-      | Prove (claimName, term, proverName, assertions, proverOptions, answer_var) ->
+      | Prove (claimName, term, proverName, assertions, proverOptions, proverBaseOptions, answer_var) ->
 	  ppConcat [
 	    ppString ("prove " ^ printQualifiedId(claimName) ^ " in "),
 	    ppTerm term,
