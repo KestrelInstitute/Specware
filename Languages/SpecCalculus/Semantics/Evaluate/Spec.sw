@@ -28,9 +28,10 @@ and then qualify the resulting spec if the spec was given a name.
     (optBaseUnitId,baseSpec) <- getBase;
     (pos_spec,TS,depUIDs) <-
       evaluateSpecElems
-	(if anyImports? spec_elements
-	   then emptySpec % some import will include baseSpec
-	  else importOfSpec(optBaseUnitId,baseSpec))
+	(markUnQualified % even the empty spec!
+	 (if anyImports? spec_elements
+	    then emptySpec % some import will include baseSpec
+	  else importOfSpec(optBaseUnitId,baseSpec)))
 	spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
     compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
