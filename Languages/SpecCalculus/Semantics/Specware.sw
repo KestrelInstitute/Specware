@@ -394,8 +394,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
       path_body <- return (removeSWsuffix path);
       unitId <- pathToRelativeUID path_body;
       position <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
-      cValue <- evaluateUID position unitId;
-      evaluateCGen(cValue,target);
+      evaluateGenerate ("c", (UnitId unitId, position), target) position;
       return true
     } in
     runSpecCommand (catch prog toplevelHandler)
