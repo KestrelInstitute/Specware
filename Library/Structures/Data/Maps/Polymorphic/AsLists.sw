@@ -53,7 +53,13 @@ meaningless unless an implementation is assumed.
 
 \begin{spec}
   % op image : fa (key,a) Map (key,a) -> Set a
+
   % op imageToList : fa(key,a) Map (key,a) -> List a
+  def imageToList map =
+   foldMap (fn values -> fn _ -> fn value -> Cons (value, values))
+           []
+           map      
+
 \end{spec}
 
 List the key/range pairs in order of appearance.
