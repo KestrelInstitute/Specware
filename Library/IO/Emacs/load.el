@@ -34,3 +34,20 @@
   (require 'mode-motion+)
   (set-mode-motion-handler 'dired-mode 'highlight-vline)
   (global-set-key '(control shift button2) 'mode-motion-copy))
+
+(autoload 'grep "igrep"
+   "*Run `grep` PROGRAM to match EXPRESSION in FILES..." t)
+(autoload 'egrep "igrep"
+   "*Run `egrep`..." t)
+(autoload 'fgrep "igrep"
+   "*Run `fgrep`..." t)
+(autoload 'agrep "igrep"
+   "*Run `agrep`..." t)
+(autoload 'grep-find "igrep"
+   "*Run `grep` via `find`..." t)
+(autoload 'egrep-find "igrep"
+   "*Run `egrep` via `find`..." t)
+(autoload 'fgrep-find "igrep"
+   "*Run `fgrep` via `find`..." t)
+(autoload 'agrep-find "igrep"
+   "*Run `agrep` via `find`..." t)

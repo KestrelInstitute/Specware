@@ -135,7 +135,9 @@ information on how to send the mail."
   (define-key m "\e*" 'sw:switch-to-lisp)
   (setq comint-prompt-regexp
     "^\\(\\(\\[[0-9]+i?c?\\] \\|\\[step\\] \\)?\\(<?[-A-Za-z]* ?[0-9]*?>\\|[-A-Za-z0-9]+([0-9]+):\\) \\)+")
-  (define-key m "\C-a" 'comint-bol))
+  (define-key m "\C-a" 'comint-bol)
+  (autoload 'comint-bol "comint" "\
+Beginning of line; skip prompt." t nil))
 
 (defun cleanup-fi:lisp-listener-mode ()
   (and fi:lisp-listener-mode-map
