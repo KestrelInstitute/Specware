@@ -28,12 +28,12 @@ spec
   In order to impose the infinity requirement on the meta types we postulate,
   we use the library spec for infinite types. *)
 
-  import translate Libs/Type#Infinite by {X +-> TypeName}
-  import translate Libs/Type#Infinite by {X +-> Operation}
-  import translate Libs/Type#Infinite by {X +-> TypeVariable}
-  import translate Libs/Type#Infinite by {X +-> Variable}
-  import translate Libs/Type#Infinite by {X +-> Field}
-  import translate Libs/Type#Infinite by {X +-> Constructor}
-  import translate Libs/Type#Infinite by {X +-> AxiomName}
+  import translate /Library/General/Type#Infinite by {X +-> TypeName}
+  import translate /Library/General/Type#Infinite by {X +-> Operation}
+  import translate /Library/General/Type#Infinite by {X +-> TypeVariable}
+  import translate /Library/General/Type#Infinite by {X +-> Variable}
+  import translate /Library/General/Type#Infinite by {X +-> Field}
+  import translate /Library/General/Type#Infinite by {X +-> Constructor}
+  import translate /Library/General/Type#Infinite by {X +-> AxiomName}
 
 endspec
