@@ -306,6 +306,8 @@ later to unfold sort definitions.
           let cStruct = termToCExp term in
           StructRef (cStruct,id)
           % StructRef (Apply (Unary Contents, [cStruct]),id)
+      | Apply (Fun (Op (Qualified (_,"active"),fxty),srt,pos), idx,_) ->
+          ArrayRef (Var ("active",sortToCType srt),termToCExp idx)
       | Apply (Fun (Op (Qualified (_,"eval"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),fxty),srt,pos)),("2",Fun (Nat n,_,_))],_),_) ->
           if n = 0 then
             Apply (Unary Contents, [Var ("sp",sortToCType srt)])

@@ -116,9 +116,12 @@ with a loop or out of a conditional.
     case term of
       | Apply (Fun (Equals,srt,_), Record ([("1",lhs), ("2",rhs)],_), _) ->
           (case lhs of
+            | Fun (Op (Qualified (_,"ignore'"),fxty),srt,pos) -> (Exp (termToCExp rhs))
             | Fun (Op (Qualified ("#return#",var),fxty),srt,pos) -> (Return (termToCExp rhs))
             | _ ->
               (case rhs of
+                | Apply(Apply (Apply (Fun (Op (Qualified (_,"update"),fxty),_,pos), Fun (Op (Qualified (_,"active"),fxty),srt,_),  _), idx,_),expr,_) ->
+                      Exp (Apply (Binary Set, [ArrayRef (Var ("active",sortToCType srt), termToCExp idx),termToCExp expr]))
                 | Apply (Fun (Op (Qualified (_,"update"),fxty),srt,pos), Record ([("1",Fun (Op (Qualified (_,"env"),fxty),_,_)), ("2",Fun (Nat n,_,_)), ("3",expr)],_), _) ->
                     if n = 0 then
                       Exp (Apply (Binary Set, [Apply (Unary Contents, [Var ("sp",sortToCType srt)]), termToCExp expr]))
