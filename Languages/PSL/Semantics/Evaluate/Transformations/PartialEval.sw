@@ -271,8 +271,7 @@ PE qualifying spec
          print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n") else return ();
        (newReturnInfo : ReturnInfo, newReturnTerm, newReturnSort,postcondition,bindingTerm) <-
          let
-           def andOp () = MSlang.mkFun (Op (Qualified ("Boolean","&"),Infix (Right,15)), binaryBoolType noPos, noPos)
-           def mkAnd t0 t1 = MSlang.mkApply (andOp (), MSlang.mkTuple ([t0,t1], noPos), noPos)
+           def mkAnd t0 t1 = MSlang.mkApply (mkAndOp noPos, MSlang.mkTuple ([t0,t1], noPos), noPos)
            def projectSub subIn subOut termOut varRef =
              case subIn of
                | [] -> return (subOut,termOut)

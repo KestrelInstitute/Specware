@@ -870,8 +870,7 @@ and compile the rest between the new and final vertex.
   op compileCases : CompCtxt -> MSlang.Term -> List (Case Position) -> Env CompCtxt
   def compileCases ctxt caseTerm cases =
     let
-      def andOp pos = MSlang.mkFun (Op (Qualified ("Boolean","&"),Infix (Right,15)), binaryBoolType pos, pos)
-      def mkAnd t0 t1 pos = MSlang.mkApply (andOp pos, MSlang.mkTuple ([t0,t1], pos), pos)
+      def mkAnd t0 t1 pos = MSlang.mkApply (mkAndOp pos, MSlang.mkTuple ([t0,t1], pos), pos)
       def prodToBoolType t1 t2 position = mkArrow (mkProduct ([t1, t2], position), boolType position, position)
       def mkEquals pos =
         let t1 = freshMetaTyVar pos in

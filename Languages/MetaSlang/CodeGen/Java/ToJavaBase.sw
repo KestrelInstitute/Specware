@@ -610,11 +610,9 @@ def mkAsrtExpr(spc,vars,dompreds) =
 			     | None -> appl
 			     | Some t -> 
 			       let b = termAnn(t) in
-			       let boolSort:Sort = Base(Qualified("Boolean","Boolean"),[],b) in
-			       let andsrt = Arrow(Product([("1",boolSort),("2",boolSort)],b),boolSort,b) in
-			       let opterm = Fun(Op(Qualified("Boolean","&"),Nonfix),andsrt,b) in
-			       let argsterm:Term = Record([("1",t),("2",t0)],b) in
-			       Some (Apply(opterm,argsterm,b))
+			       Some (Apply(mkAndOp b,
+					   Record([("1",t),("2",t0)],b),
+					   b))
 			      )
 	     | None -> optterm
 	    )

@@ -58,7 +58,7 @@ MS qualifying spec
  def natSort        = mkBase  (Qualified("Nat",     "Nat"),     []) 
  def charSort       = mkBase  (Qualified("Char",    "Char"),    [])
  def stringSort     = mkBase  (Qualified("String",  "String"),  [])
- def boolSort       = mkBase  (Qualified("Boolean", "Boolean"), [])
+ def boolSort       = mkBoolSort noPos
 
  def unaryBoolSort  = mkArrow (boolSort,                       boolSort)
  def binaryBoolSort = mkArrow (mkProduct [boolSort, boolSort], boolSort)
@@ -136,6 +136,8 @@ MS qualifying spec
  def mkInfixOp (qid, fixity, srt) = mkFun (Op (qid, fixity), srt)
 
  %% Op's (particular Fun's)
+
+ def usingNewBooleans? : Boolean = false
 
  op notOp : Term 
  op andOp : Term 

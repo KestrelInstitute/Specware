@@ -301,7 +301,7 @@ MetaSlang qualifying spec {
            | Arrow(dom,rng,_) -> rng
            | _ -> System.fail ("Cannot extract sort of application "
                                                   ^ anyToString term))
-     | Bind       (_,_,_,   a) -> mkABase (Qualified ("Boolean", "Boolean"), [], a)
+     | Bind       (_,_,_,   a) -> mkBoolSort a
      | Record     (fields,  a) -> Product(List.map (fn (id,t) -> (id,termSort t)) fields, 
                                           a)
      | Let        (_,term,  _) -> termSort term
@@ -324,12 +324,31 @@ MetaSlang qualifying spec {
      | RecordPat   (fields,  a) -> Product(map (fn(id,p) -> (id,patternSort p)) fields, a)
      | StringPat   (_,       a) -> mkABase  (Qualified ("String",  "String"),  [], a)
      | NatPat      (n,       a) -> mkABase  (Qualified ("Nat",     "Nat"),     [], a)
-     | BoolPat     (_,       a) -> mkABase  (Qualified ("Boolean", "Boolean"), [], a)
+     | BoolPat     (_,       a) -> mkBoolSort a
      | CharPat     (_,       a) -> mkABase  (Qualified ("Char",    "Char"),    [], a)
      | RelaxPat    (p, pred, a) -> Subsort  (patternSort p, pred,                  a)
      | QuotientPat (p, t,    a) -> Quotient (patternSort p, t,                     a)
      | SortedPat   (_, srt,  _) -> srt
 
+  op MS.usingNewBooleans? : Boolean
+
+ def mkBoolSort a =
+   if MS.usingNewBooleans? then
+     Boolean a
+   else
+     mkABase  (Qualified ("Boolean",    "Boolean"), [], a)
+
+ def mkAndOp a =
+   let and_sort = Arrow(Product([("1",mkBoolSort a),("2",mkBoolSort a)],a),
+			mkBoolSort a,
+			a) 
+   in
+   let and_fun = if usingNewBooleans? then
+                   And
+		 else
+		   Op(Qualified("Boolean","&"), Infix(Right,15))
+   in
+     Fun (and_fun, and_sort, a)
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Term Equalities
@@ -444,6 +463,10 @@ MetaSlang qualifying spec {
      | (Base      (q1, xs1, _), 
         Base      (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
      | (Boolean _, Boolean _) -> true
+
+     | (Boolean _, Base      (Qualified("Boolean", "Boolean"), [], _)) -> true % transition
+     | (Base      (Qualified("Boolean", "Boolean"), [], _), Boolean _) -> true % transition
+
      | (TyVar     (v1,      _), 
         TyVar     (v2,      _)) -> v1 = v2
 
@@ -1461,7 +1484,7 @@ MetaSlang qualifying spec {
  def mkABase (qid, srts, a) = Base (qid, srts, a)
 
  op boolASort : fa(b) b -> ASort b
- def boolASort a = mkABase (Qualified ("Boolean", "Boolean"), [], a)
+ def boolASort a = mkBoolSort a
 
  op mkTrueA  : fa(b) b -> ATerm b
  op mkFalseA : fa(b) b -> ATerm b

@@ -25,7 +25,7 @@ MSlang qualifying spec
   % op boolType : Position -> Type
   % op natType : Position -> Type
   def MSlang.natType position = mkBase (makeId "Nat" "Nat", [], position)
-  def MSlang.boolType position = mkBase (makeId "Boolean" "Boolean", [], position)
+  def MSlang.boolType position = ([], mkBoolSort position)
   def MSlang.stringType position = mkBase (makeId "String" "String", [], position)
 
   % op Term.pp : Term -> Doc
@@ -116,13 +116,28 @@ MSlang qualifying spec
     mkArrow (mkProduct ([boolType position, boolType position], position), boolType position, position)
 
   op notOp : Position -> MSlang.Term
-  def notOp position = mkFun (mkNameRef ["Boolean","~"], unaryBoolType position, position)
+  def notOp position = mkFun (if usingNewBooleans? then
+				Not
+			      else
+				mkNameRef ["Boolean","~"],
+			      unaryBoolType position, 
+			      position)
 
   op orOp : Position -> MSlang.Term
-  def orOp position = mkFun (mkNameRef ["Boolean","or"], binaryBoolType position, position)
+  def orOp position = mkFun (if usingNewBooleans? then
+				Or
+			      else
+				mkNameRef ["Boolean","or"],
+			     binaryBoolType position, 
+			     position)
 
   op andOp : Position -> MSlang.Term
-  def andOp position = mkFun (mkNameRef ["Boolean","&"], binaryBoolType position, position)
+  def andOp position = mkFun (if usingNewBooleans? then
+				And
+			      else
+				mkNameRef ["Boolean","&"],
+			      binaryBoolType position, 
+			      position)
 
   op mkNameRef : List String -> MSlang.Fun
   def mkNameRef names =

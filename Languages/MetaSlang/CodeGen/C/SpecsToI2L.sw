@@ -851,10 +851,8 @@ SpecsToI2L qualifying spec {
 	   let t = Apply(Fun(Equals,eqsort,b),Record([("1",t1),("2",t2)],b),b) in
 	   if body = mkTrue() then t
 	   else
-	     let andqid = Qualified("Boolean","&") in
-	     let andSrt = Arrow(Product([("1",boolASort b),("2",boolASort b)],b),boolASort b,b) in
-	     let andTerm = Fun(Op(andqid,Infix(Right,15)),andSrt,b) in
-	     Apply(andTerm,Record([("1",t),("2",body)],b),b)
+	     Apply(mkAndOp b,
+		   Record([("1",t),("2",body)],b),b)
 	     %IfThenElse(t,body,mkFalse(),b)
 	    )
     (mkTrue()) fields

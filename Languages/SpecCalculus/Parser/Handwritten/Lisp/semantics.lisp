@@ -15,6 +15,7 @@
 (defvar *varcounter*            -1)  ; used only in this file (starts at -1 merely for backwards cosmetic compatibility)
 
 (defvar *show-results?* nil)
+(defvar ms::|usingNewBooleans?| nil)
 
 ;;; ========================================================================
 ;;;  Misc utilities
@@ -393,10 +394,14 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-sort-ref (qualifiable-sort-name l r)
-  (let ((sort-args nil))
-    (cons :|Base|
-          (vector qualifiable-sort-name sort-args
-                  (make-pos l r)))))
+  (if (and ms::|usingNewBooleans?|
+	   (or (equal qualifiable-sort-name '(:|Qualified| "<unqualified>" . "Boolean"))
+	       (equal qualifiable-sort-name '(:|Qualified| "Boolean" . "Boolean"))))
+      (cons :|Boolean| (make-pos l r))
+    (let ((sort-args nil))
+      (cons :|Base|
+	    (vector qualifiable-sort-name sort-args
+		    (make-pos l r))))))
 
 ;;; ------------------------------------------------------------------------
 ;;;   SORT-RECORD
@@ -456,9 +461,23 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-unqualified-op-ref (name l r)
-  (make-fun (if (equal name "=")
-                (cons :|Equals| nil)
-              (cons :|OneName| (cons name unspecified-fixity)))
+  
+  (make-fun (if ms::|usingNewBooleans?|
+		(case name 
+		  ("not" (cons :|Not| nil))
+		  ("&"   (cons :|And| nil))
+		  ("or"  (cons :|Or| nil))
+		  ;("&&"  (cons :|And| nil))
+		  ;("||"  (cons :|Or| nil))
+		  ("=>"  (cons :|Implies| nil))
+		  ("<=>" (cons :|Iff| nil))
+		  ("="   (cons :|Equals| nil))
+		  ("~="  (cons :|NotEquals| nil))
+		  (t
+		   (cons :|OneName| (cons name unspecified-fixity))))
+		(if (equal name "=")
+		    (cons :|Equals| nil)
+		  (cons :|OneName| (cons name unspecified-fixity))))	      
             (freshMetaTypeVar l r)
             l r))
 
