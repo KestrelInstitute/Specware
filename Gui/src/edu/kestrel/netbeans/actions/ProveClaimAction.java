@@ -101,15 +101,17 @@ public class ProveClaimAction extends NodeAction {
         
         Element el = (Element)node.getCookie(Element.class);
         LispProcessManager.writeToOutput("element is "+el.getClass());
+        ClaimElement claimElement = null;
         SpecElement parentSpecElement = null;
         if (el instanceof ClaimElement) {
-            parentSpecElement = (SpecElement)((ClaimElement)el).getParent();
+            claimElement = (ClaimElement)el;
+            parentSpecElement = (SpecElement)claimElement.getParent();
         }
         /*Prove*/SpecElement newProveElem = new SpecElement();
         try {
             newProveElem.setName("newProof");
         } catch (SourceException exc) {}
-        ProveCustomizer cust = new ProveCustomizer(newProveElem, parentSpecElement);
+        ProveCustomizer cust = new ProveCustomizer(newProveElem, parentSpecElement, claimElement);
 	NotifyDescriptor descriptor = new NotifyDescriptor(
 							  cust,
 							  "Create new proof",
@@ -120,11 +122,11 @@ public class ProveClaimAction extends NodeAction {
 	Object ret = TopManager.getDefault().notify(descriptor);
 
         if ((ret == NotifyDescriptor.OK_OPTION) && cust.isOK()) {
-            createProofFile(newProveElem, node, cust.getSelectedUsingClaim());
+            createProofFile(newProveElem, node, cust);
         }
     }
 
-    private void createProofFile(/*Prove*/SpecElement e, Node node, String usingClaim) {
+    private void createProofFile(/*Prove*/SpecElement e, Node node, ProveCustomizer cust) {
         String qualifiedSpecName;
         String specName = node.getParentNode().getParentNode().getName();
         if (specName.equals("")) {
@@ -137,7 +139,27 @@ public class ProveClaimAction extends NodeAction {
         proveCommand += e.getName();
         proveCommand += " = prove " + node.getName();
         proveCommand += " in " + qualifiedSpecName;
-        //proveCommand += " using " + usingClaim;
+        
+        String usingClaim = cust.getSelectedUsingClaim();
+        String useResolution = cust.getSelectedUseResolution();
+        String timeLimit = cust.getTimeLimit();
+        if (!usingClaim.equals(ProveCustomizer.USE_ALL_CLAIMS) &&
+            !usingClaim.equals(ProveCustomizer.USE_NO_CLAIMS)) {
+            proveCommand += " using " + cust.getSelectedUsingClaim();
+        }
+        if (!(useResolution.equals(ProveCustomizer.USE_RESOLUTION_DEFAULT) &&
+              timeLimit.equals("0"))) {
+              proveCommand += " options \"";
+              if (useResolution.equals(ProveCustomizer.USE_RESOLUTION_YES)) {
+                  proveCommand += "(USE-RESOLUTION T)";
+              } else if (useResolution.equals(ProveCustomizer.USE_RESOLUTION_NO)) {
+                  proveCommand += "(USE-RESOLUTION NIL)";
+              }
+              if (!timeLimit.equals("0")) {
+                  proveCommand += "(RUN-TIME-LIMIT " + timeLimit + ")";
+              }
+              proveCommand += "\"";
+        }
 
         FileObject folder = Repository.getDefault().find("Demo_Examples", null, null);
         FileObject proofFile = null;
@@ -152,7 +174,6 @@ public class ProveClaimAction extends NodeAction {
                 out.write(proveCommand.getBytes());
                 out.flush();
                 out.close();
-                proofFile.delete(lock);
             } catch (java.io.IOException exc) {}
 
             // Process (TODO: proof command or ) new foo-proofs.sw file
