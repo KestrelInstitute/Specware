@@ -66,14 +66,14 @@
 (defun split-dir-components (str)
   (split-components str '(#\/ #\\)))
 
-(defun dir-to-path (directory)
+(defun dir-to-path (directory &optional default-dir)
   (if (pathnamep directory) directory
     (multiple-value-bind (dev dir)
 	(parse-device-directory directory)
       (if (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\)))
 	  (setq dir (cons #+gcl :root #-gcl :absolute (split-dir-components dir)))
 	(setq dir (concatenate 'list
-			       (pathname-directory (current-directory))
+			       (pathname-directory (or default-dir (current-directory)))
 			       (split-dir-components directory))))
       (make-pathname :directory dir
 		     :device dev))))
@@ -89,6 +89,7 @@
 	  #+mcl       (ccl::%chdir          directory)
 	  #+gcl       (si:chdir         directory)
 	  #+cmu       (setf (extensions:default-directory) directory)
+	  #+cmu       (unix:unix-chdir directory)
 	  #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
 					;#+gcl       
 	  ;; in Allegro CL, at least,
