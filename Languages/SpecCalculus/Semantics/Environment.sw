@@ -37,9 +37,9 @@ diagram, morphism etc.  We combine them with a coproduct.
   op ppValue : Value -> Doc
   def ppValue value =
     case value of
-      | Spec  spc -> ppString (printSpec spc)
-      | Morph m -> ppString "morphism"
-      | Diag  d -> ppString "diagram"
+      | Spec spc -> ppString (printSpec spc)
+      | Morph morph -> ppMorphism morph
+      | Diag dgm -> ppDiagram dgm
       | InProcess -> ppString "InProcess"
 \end{spec}
 
