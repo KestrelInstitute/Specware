@@ -10,6 +10,7 @@ Specware qualifying spec {
   import SpecPath
   import ../../MetaSlang/Specs/Position     
   import ../AbstractSyntax/Printer % for showUI
+  import /Languages/XML/XML        % for XML I/O
 \end{spec}
 
 The following is what starts Specware. It initializes the state and

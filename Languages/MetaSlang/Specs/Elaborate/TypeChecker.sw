@@ -25,6 +25,7 @@ spec {
   import Infix
   import Utilities
   import PosSpecToSpec
+  import SortToTerm    % XML hacks
 
   %% ========================================================================
 
@@ -42,7 +43,7 @@ spec {
   op unlinkRec                : MS.Sort -> MS.Sort
   op undeterminedSort?        : MS.Sort -> Boolean
 
-  op checkSort                : LocalEnv * MS.Sort                    -> MS.Sort
+%  op checkSort                : LocalEnv * MS.Sort                    -> MS.Sort
   op checkSortScheme          : LocalEnv * (TyVars   * MS.Sort)       -> (TyVars * MS.Sort)
   op elaborateSort            : LocalEnv * MS.Sort    * MS.Sort         -> MS.Sort
   op elaborateCheckSortForTerm: LocalEnv * MS.Term    * MS.Sort * MS.Sort -> MS.Sort 
@@ -454,8 +455,8 @@ spec {
   %% ---- called inside CheckSort 
   % ========================================================================
 
-  op resolveMetaTyVar: Sort -> Sort
-  def resolveMetaTyVar srt =
+  % op resolveMetaTyVar: MS.Sort -> MS.Sort % see SortToTerm
+  def resolveMetaTyVar (srt : MS.Sort) : MS.Sort =
     case srt of
       | MetaTyVar(tv,_) -> 
         let {name=_,uniqueId=_,link} = ! tv in
@@ -825,10 +826,20 @@ spec {
           let ty    = Arrow (alpha, term_sort, pos) in
           let t1    = elaborateTerm (env, t1, ty) in
           let t2    = elaborateTerm (env, t2, alpha) in
-          let t1    = (if ~(env.firstPass?) & f1 = Equals
-                         then adjustEqualitySort (env, s1, t1, t2)
-                       else t1) in
-          ApplyN ([t1, t2], pos)
+	  %% This is same effect as old code, but restructured
+	  %% so it's easier to intercept the XML references
+          if env.firstPass? then
+	    ApplyN ([t1, t2], pos)
+	  else if f1 = Equals then
+	    let t1 = adjustEqualitySort (env, s1, t1, t2) in
+	    ApplyN ([t1, t2], pos)
+	  else if sortCognizantOperator? f1 then
+	    addSortAsLastTerm (env, 
+			       trm,
+			       ApplyN ([t1, t2], pos),
+			       term_sort)
+	  else
+	    ApplyN ([t1, t2], pos)
 
     | ApplyN ([t1, t2], pos) ->
           let alpha = freshMetaTyVar pos in
@@ -864,6 +875,23 @@ spec {
 
     | term -> (%System.print term;
                term)
+
+  % ========================================================================
+
+  def sortCognizantOperator? (f1 : MS.Fun) : Boolean = 
+    case f1 of
+      | TwoNames (id1, id2, _) ->
+        (id1 = UnQualified or 
+	 id1 = "XML") 
+	& 
+	(case id2 of
+	   | "parseXML"        -> true
+	   | "printXML"        -> true
+	   | "parseUnicodeXML" -> true
+	   | "printUnicodeXML" -> true
+	   | _ -> false)
+      | _ -> false
+
 
   % ========================================================================
 

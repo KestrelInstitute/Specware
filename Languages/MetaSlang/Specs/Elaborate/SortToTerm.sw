@@ -1,3 +1,5 @@
+%% what's the proper qualifier for this??
+%% right now, just XML uses this
 XML qualifying spec
 
   import Infix
