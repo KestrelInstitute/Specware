@@ -325,15 +325,16 @@ aren't are removed from the environment.
 	    {rVal <- foldM (fn val -> (fn depUID -> {dVal <- validateCache depUID;
 						     return (max(val, dVal))}))
 	     timeStamp depUIDs;
-	     if timeStamp >= rVal & upToDate?(unitId,rVal)
+	     if timeStamp >= rVal & upToDateOrNotPresent?(unitId,rVal)
 	       then {setValidatedUID unitId;  % Remember that this unitId has been validated
 		     return rVal}
 	     else {removeFromGlobalContext unitId;
 		   return futureTimeStamp}}}}
 
-  op upToDate?: UnitId * TimeStamp -> Boolean
-  def upToDate?(unitId,timeStamp) =
+  op  upToDateOrNotPresent?: UnitId * TimeStamp -> Boolean
+  def upToDateOrNotPresent?(unitId,timeStamp) =
     let fileName = (uidToFullPath unitId) ^ ".sw" in
-    (fileWriteTime fileName) <= timeStamp
+    let writeTime = fileWriteTime fileName in
+    writeTime <= timeStamp or writeTime = 9999999999
 endspec
 \end{spec}
