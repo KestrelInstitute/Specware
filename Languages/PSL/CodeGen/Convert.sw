@@ -322,7 +322,7 @@ are no longer needed. *)
   def infoToBindings bindings varInfo =
     let
       def mkEquals () =
-        let mtv = MSlang.freshMetaTyVar noPos in
+        let mtv = MSlang.freshMetaTyVar ("mkEquals_aa", noPos) in
         MSlang.mkFun (Equals, mtv, noPos)
       def mkEquality t0 t1 =
         MSlang.mkApply (mkEquals (), MSlang.mkTuple ([t0,t1], noPos),noPos)

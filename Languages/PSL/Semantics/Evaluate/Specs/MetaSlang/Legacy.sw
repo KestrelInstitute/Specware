@@ -93,7 +93,7 @@ MSlang qualifying spec
    *)
   % op mkEquality : Term * Term * Position -> Term
   def MSlang.mkEquality (t0,t1,position) = 
-    let mtv = freshMetaTyVar position in
+    let mtv = freshMetaTyVar ("mkEquality", position) in
     mkApplyN (mkEquals (mtv,position), mkTuple ([t0,t1], position),position)
 
   % op mkTrue : Position -> Term
@@ -152,8 +152,8 @@ MSlang qualifying spec
 
   def MSlang.mkString (str, position) = mkFun (String str, stringType position, position)
 
-  % op freshMetaTyVar : Position -> Type
-  def MSlang.freshMetaTyVar position = ([],Utilities.freshMetaTyVar position)
+  % op freshMetaTyVar : String * Position -> Type
+  def MSlang.freshMetaTyVar (prefix, position) = ([],Utilities.freshMetaTyVar (prefix, position))
 
   % op idToNameRef : Id.Id -> MSlang.Fun
   def MSlang.idToNameRef (Qualified (qual,id)) =

@@ -260,7 +260,7 @@ spec
 % List [ 57]:  op ++ infixl 25    : fa(a)   List a * List a -> List a
     tester ("(++ ( [3] , [4] )) = [3,4]", (++ ( [3] , [4] )) = [3,4]);
     tester ("let A = id ( [3] , [4] ) in (++ A) = [3,4]", let A = id ( [3] , [4] ) in (++ A) = [3,4]);
-% List [ 58]:  op @  infixl 11    : fa(a)   List a * List a -> List a
+% List [ 58]:  op @  infixl 25    : fa(a)   List a * List a -> List a
 %    tester ("(@ ( [3] , [4] )) = [3,4]", (@ ( [3] , [4] )) = [3,4]);
 %    tester ("let A = id ( [3] , [4] ) in (@ A) = [3,4]", let A = id ( [3] , [4] ) in (@ A) = [3,4]);
 % List [ 59]:  op nth             : fa(a)   {(l,i) : List a * Nat | i < length l} -> a
@@ -428,10 +428,10 @@ spec
 % String [104]:  op concat        : String * String -> String
     tester ("(concat ( \"now\" , \"here\" )) = \"nowhere\"", (concat ( "now" , "here" )) = "nowhere");
     tester ("let A = id ( \"now\" , \"here\" ) in (concat A) = \"nowhere\"", let A = id ( "now" , "here" ) in (concat A) = "nowhere");
-% String [105]:  op ++ infixl 11  : String * String -> String
+% String [105]:  op ++ infixl 25  : String * String -> String
     tester ("(++ ( \"now\" , \"here\" )) = \"nowhere\"", (++ ( "now" , "here" )) = "nowhere");
     tester ("let A = id ( \"now\" , \"here\" ) in (++ A) = \"nowhere\"", let A = id ( "now" , "here" ) in (++ A) = "nowhere");
-% String [106]:  op ^  infixl 11  : String * String -> String
+% String [106]:  op ^  infixl 25  : String * String -> String
     tester ("(^ ( \"now\" , \"here\" )) = \"nowhere\"", (^ ( "now" , "here" )) = "nowhere");
     tester ("let A = id ( \"now\" , \"here\" ) in (^ A) = \"nowhere\"", let A = id ( "now" , "here" ) in (^ A) = "nowhere");
 % String [107]:  op map           : (Char -> Char) -> String -> String

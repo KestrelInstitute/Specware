@@ -24,7 +24,7 @@ SpecCalc qualifying spec
           ctxt <- return (makeContext spc);
           rules <- return (specRules ctxt spc);
           tempOpName <- return (mkQualifiedId ("Reduce", "#reduce#"));
-          newSpc <- addOp [tempOpName] Nonfix ([],Utilities.freshMetaTyVar pos) [([],ms_term)] spc pos;
+          newSpc <- addOp [tempOpName] Nonfix ([],Utilities.freshMetaTyVar ("reduce", pos)) [([],ms_term)] spc pos;
           elabSpc <- elaborateSpecM newSpc;
           elabTerm <-
             case findTheOp (elabSpc,tempOpName) of

@@ -32,12 +32,28 @@ spec
  (* Auxiliary functions: *)
 
  % Generate a fresh type variable at a given position.
- op freshMetaTyVar : Position -> MS.Sort
- def counter = (Ref 0) : Ref Nat
- def freshMetaTyVar pos = 
-   (counter := 1 + (! counter);
-    MetaTyVar (Ref {link = None,uniqueId = ! counter,name = "#fresh"}, pos))
- def initializeMetaTyVar() = counter := 0
+ op freshMetaTyVar : String * Position -> MS.Sort
+ def metaTyVarPrefix  = (Ref "init") : Ref String
+ def metaTyVarCounter = (Ref 0) : Ref Nat
+
+% def freshMetaTyVar pos = 
+%   let new_counter = 1 + (! metaTyVarCounter) in
+%   (metaTyVarCounter := new_counter;
+%    MetaTyVar (Ref {link = None,
+%		    name     = ! metaTyVarPrefix, 
+%		    uniqueId = new_counter},
+%	       pos))
+
+ def freshMetaTyVar (name, pos) = 
+   let new_counter = 1 + (! metaTyVarCounter) in
+   (metaTyVarCounter := new_counter;
+    MetaTyVar (Ref {link = None,
+		    name     = name,
+		    uniqueId = new_counter},
+	       pos))
+ def initializeMetaTyVar (prefix, counter) = 
+   let _ = metaTyVarPrefix := prefix in
+   metaTyVarCounter := counter
 
  op copySort : SortScheme -> MetaSortScheme
 
@@ -62,7 +78,7 @@ spec
      ([],srt)
    else
      let mtvar_position = Internal "copySort" in
-     let tyVarMap = List.map (fn tv -> (tv, freshMetaTyVar mtvar_position)) tyVars in
+     let tyVarMap = List.map (fn tv -> (tv, freshMetaTyVar ("copy", mtvar_position))) tyVars in
      let
         def mapTyVar (tv, tvs, pos) : MS.Sort = 
             case tvs
@@ -84,7 +100,7 @@ spec
  def initialEnv (spc, file) = 
    let errs : List (String * Position) = [] in
    let {importInfo, sorts, ops, properties} = spc in
-   let MetaTyVar(tv,_)  = freshMetaTyVar (Internal "ignored") in
+   let MetaTyVar(tv,_)  = freshMetaTyVar ("initialEnv", Internal "ignored") in
    %% importedSpecs is the subset of external used
    %% let importMap = importedSpecs in
    let spc = {importInfo   = importInfo,

@@ -57,7 +57,7 @@ PE qualifying spec
                      let (newTerms,vars,nextVarIdx) = anysToVars terms in
                      case term of
                        | Fun (OneName ("any",_),_,_) -> 
-                            let mtv = freshMetaTyVar noPos in
+                            let mtv = freshMetaTyVar ("oscar_any", noPos) in
                             let aVar = ("v%" ^ (Nat.toString nextVarIdx),mtv) in
                             let varTerm = Var (aVar,noPos) in
                               (cons (varTerm,newTerms),cons (aVar,vars),nextVarIdx + 1)
@@ -72,7 +72,7 @@ PE qualifying spec
              case returnInfo procInfo of
                | None -> return (mkRecord ([],noPos),freeVars,nextVarIdx)
                | Some _ -> 
-                    let mtv = freshMetaTyVar noPos in
+                    let mtv = freshMetaTyVar ("oscar_return", noPos) in
                     let aVar = ("v%" ^ (Nat.toString nextVarIdx) ^ "'",mtv) in
                     let varTerm = Var (aVar,noPos) in
                       return (varTerm, cons (aVar,freeVars),nextVarIdx + 1);
@@ -112,7 +112,7 @@ PE qualifying spec
                    | [] -> ([],[],freeVars,nextVarIdx)
                    | (aVar::varList) ->
                        let (oldVarList,newVarList,freeVars,nextVarIdx) = makeVars freeVars nextVarIdx varList in
-                       let mtv = freshMetaTyVar noPos in
+                       let mtv = freshMetaTyVar ("oscar_vars", noPos) in
                        let oldVar = ("v%" ^ (Nat.toString nextVarIdx),mtv) in
                        let oldVarTerm = (Var (oldVar,noPos)) : (ATerm Position) in
                        let newVar = ("v%" ^ (Nat.toString nextVarIdx) ^ "'",mtv) in
@@ -136,11 +136,11 @@ PE qualifying spec
           newStore <- mkTuple (newStoreList, noPos);
           storePair <- mkTuple ([oldStore,newStore], noPos);
           totalTuple <- mkTuple ([argTerm,returnTerm,storePair], noPos);
-          procOpRef <- mkFun (idToNameRef procId, freshMetaTyVar noPos, noPos);
+          procOpRef <- mkFun (idToNameRef procId, freshMetaTyVar ("oscar_proc", noPos), noPos);
           callTerm <- mkApplyN (procOpRef, totalTuple, noPos);
           formula <- return (Bind (Forall, freeVars, callTerm, noPos));
           tempOpName <- return (makeId ("var%" ^ (Nat.toString (nextVarIdx + 1))));
-          tempOp <- makeOp (tempOpName, formula, freshMetaTyVar noPos);
+          tempOp <- makeOp (tempOpName, formula, freshMetaTyVar ("oscar_temp", noPos));
           modeSpec <- addVariable (modeSpec oscSpec) tempOp noPos;
           print ("var to be specialized before elaboration: " ^ (show tempOp) ^ "\n");
           elabModeSpec <- elaborate modeSpec;
@@ -166,8 +166,8 @@ PE qualifying spec
                def prodToBoolType t1 t2 position =
                  mkArrow (mkProduct ([t1, t2], position), boolType position, position)
                def mkEquals ty =
-                 % let t1 = freshMetaTyVar noPos in
-                 % let t2 = freshMetaTyVar noPos in
+                 % let t1 = freshMetaTyVar ("oscar_mkEquals_a", noPos) in
+                 % let t2 = freshMetaTyVar ("oscar_mkEquals_b", noPos) in
                  let eq_type = prodToBoolType ty ty noPos in
                  MSlang.mkFun (Equals, eq_type, noPos)
              in
@@ -371,7 +371,7 @@ PE qualifying spec
        newProcRef <- mkFun (Op (newProcId,Nonfix), newProcType, noPos);
        newTerm <- MSlangEnv.mkApply (newProcRef, totalTuple, noPos);
        rhs <- return (MS.mkAnd (newTerm,bindingTerm));
-       % equalTerm <- MSlangEnv.mkApply (mkEquals (freshMetaTyVar noPos,noPos), mkTuple ([callTerm,rhs], noPos),noPos);
+       % equalTerm <- MSlangEnv.mkApply (mkEquals (freshMetaTyVar ("oscar_equal", noPos),noPos), mkTuple ([callTerm,rhs], noPos),noPos);
        equalTerm <- return (mkEquality callTerm rhs (boolType noPos));
        newOscSpec <- newOscSpec Env.withModeSpec newModeSpec;
        newProc <- return (Proc.makeProcedure residParams residStateVars

@@ -106,7 +106,7 @@ SpecCalc qualifying spec
 	      filename)
     in
     (foldl printErr ("","") (firstN(errs,numberOfTypeErrorsToPrint))).1
-     ++ (if (length errs) <= numberOfTypeErrorsToPrint then
+     ^ (if (length errs) <= numberOfTypeErrorsToPrint then
 	   ""
 	 else 
 	   "...  (" ^ Nat.toString(length errs - numberOfTypeErrorsToPrint) ^ " additional type errors)")
@@ -140,7 +140,7 @@ SpecCalc qualifying spec
 		    (msg, Some filename))
       in
 	(foldl print_exception ("",None) (firstN (rev exceptions, numberOfExceptionsToPrint))).1
-	++ 
+	^ 
 	(if (length exceptions) <= numberOfExceptionsToPrint then
 	   ""
 	 else 

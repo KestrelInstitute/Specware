@@ -65,7 +65,8 @@ UnitId_Dependency.
   def ppValueInfo (value,timeStamp,depUIDs) =
     ppConcat([ppValue value,
               ppString (Nat.toString timeStamp)]
-             ++ map ppUID depUIDs)
+             ++
+	     (map ppUID depUIDs))
 \end{spec}
 
 \begin{spec}

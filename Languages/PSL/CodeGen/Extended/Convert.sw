@@ -485,7 +485,7 @@ are no longer needed. *)
   def infoToBindings bindings varInfo =
     let
       def mkEquals () =
-        % let type = MSlang.freshMetaTyVar noPos in % this will fail -- need a fully elaborated type 
+        % let type = MSlang.freshMetaTyVar ("psl_mkEquals_z", noPos) in % this will fail -- need a fully elaborated type 
 	let var_type = opinfo_type varInfo in
         let var_equality_type = MSlang.mkArrow (MSlang.mkProduct ([var_type, var_type], noPos), 
 						MSlang.boolType noPos,

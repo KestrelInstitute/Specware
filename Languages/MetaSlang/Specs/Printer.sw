@@ -646,7 +646,7 @@ AnnSpecPrinter qualifying spec {
   def fa(a) TyVarString(mtv: AMetaTyVar a) : String =
    let {link,uniqueId,name} = State.! mtv in
    case link of
-    | None -> "mtv%"^Nat.toString uniqueId
+    | None -> "mtv%"^name^"%"^(Nat.toString uniqueId)
     | Some srt -> printSort srt
 
   %% More elaborate version

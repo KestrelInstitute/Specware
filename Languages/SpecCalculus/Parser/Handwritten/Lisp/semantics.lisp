@@ -12,7 +12,6 @@
 (defvar *current-module-name*   nil) ; used only in this file
 (defvar *collected-symbols*     nil) ; used in this file and in meta-slang-parser-semantics-espec.lisp
 (defvar *collected-definitions* nil) ; used in this file and in load.lisp
-(defvar *varcounter*            -1)  ; used only in this file (starts at -1 merely for backwards cosmetic compatibility)
 
 (defvar *show-results?* nil)
 
@@ -20,41 +19,13 @@
 ;;;  Misc utilities
 ;;; ========================================================================
 
-;;;; now in Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-semantics.lisp as make-region
-;;;;
-;;;; (defvar *make-pos-warnings-seen* 0)
-;;;; 
-;;;; (defun make-pos (left right) 
-;;;;   (declare (special *parser-source*)) ; bound in parser-interface.lisp
-;;;;   (when (consp left)
-;;;;     (when (< (incf *make-pos-warnings-seen*) 10)
-;;;;       (warn "In MAKE-POS: Bogus left position: ~S" left))
-;;;;     (let* ((line   (car left))
-;;;; 	   (column (cdr left))
-;;;; 	   (byte   0))
-;;;;       (setq left (vector line column byte))))
-;;;;   (when (consp right)
-;;;;     (when (< (incf *make-pos-warnings-seen*) 10)
-;;;;       (warn "In MAKE-POS: Bogus right position: ~S" right))
-;;;;     (let* ((line   (car right))
-;;;; 	   (column (cdr right))
-;;;; 	   (byte   0))
-;;;;       (setq right (vector line column byte))))
-;;;;   (case (first *parser-source*)
-;;;;     (:file   (cons :|File|     (vector (second *parser-source*) left right)))
-;;;;     (:string (cons :|String|   (vector (second *parser-source*) left right)))
-;;;;     (t       (when (< (incf *make-pos-warnings-seen*) 10)
-;;;; 	       (warn "In MAKE-POS: What are we parsing? : ~S" *parser-source*))
-;;;; 	     (cons :|Internal| (second *parser-source*)))))
 
-(defun make-pos (x y) (make-region x y))
+(defun make-pos (x y) 
+  ;; make-region defined in Library/Algorithms/Parsing/Chart/Handwritten/Lisp/parse-semantics.lisp 
+  (make-region x y))
 
 (defun freshMetaTypeVar (left right)
-  ;; distinct from freshMetaTyVar in ~/Work/Generic/Specware4/Languages/MetaSlang/Specs/Elaborate/Utilities.sw
-  ;; that uses "#fresh", this uses "#intern" ...
-  (cons :|MetaTyVar|
-        (cons (cons :|Ref| (vector (cons :|None| nil) "#parser" (incf *varcounter*)))
-              (make-pos left right))))
+  (Utilities::freshMetaTyVar-2 "parser" (make-pos left right)))
 
 (defun make-equality-fun (op l r)
   (let ((tyvar (freshMetaTypeVar l r))
@@ -73,10 +44,7 @@
 		pos)))
 
 (defun namedTypeVar (name)
-  name
-  ;;(cons :|TyVar| name)
-  ;;(cons :|ref| (vector (cons :|None| nil) name (incf *varcounter*)))
-  )
+  name)
 
 ;;; (defun mkQualifiedId (qualifier id) 
 ;;;   (MetaSlang::mkQualifiedId qualifier id))
@@ -195,11 +163,8 @@
 
 (defparameter unspecified-fixity '(:|Unspecified|))
 
-;; The counter here is for freshMetaTypeVar. Perhaps it should be moved
-;; out of the parser. Needs thought.
 (defun make-spec-definition (optional-qualifier declaration-sequence l r)
   :comment "A specification"
-  (setq *varcounter* 0)
   (let* ((spec_def (speccalc::mkSpec-2 declaration-sequence (make-pos l r))))
     (if (eq :unspecified optional-qualifier)
         spec_def

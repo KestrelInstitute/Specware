@@ -647,7 +647,7 @@ z a b -> ((z a) b) -> (Y.eval (X.eval z a) b)
       def secondPass trm =
         case trm of
           | ApplyN ([x,y],pos) ->
-              let srt = freshMetaTyVar pos in
+              let srt = freshMetaTyVar ("psl_LHS", pos) in
               ApplyN ([ApplyN ([Fun (OneName ("eval",Nonfix),srt,pos), secondPass x],pos),y],pos)
               % ApplyN ([ApplyN (Fun (OneName ("eval",Nonfix),srt,pos) (secondPass x) pos),y],pos)
           | _ -> trm
@@ -873,8 +873,8 @@ and compile the rest between the new and final vertex.
       def mkAnd t0 t1 pos = MSlang.mkApply (mkAndOp pos, MSlang.mkTuple ([t0,t1], pos), pos)
       def prodToBoolType t1 t2 position = mkArrow (mkProduct ([t1, t2], position), boolType position, position)
       def mkEquals pos =
-        let t1 = freshMetaTyVar pos in
-        let t2 = freshMetaTyVar pos in
+        let t1 = freshMetaTyVar ("psl_mkEquals_a", pos) in
+        let t2 = freshMetaTyVar ("psl_mkEquals_b", pos) in
         let eq_type = prodToBoolType t1 t2 pos in
         MSlang.mkFun (Equals, eq_type, pos)
       def mkEquality t0 t1 pos =
@@ -884,7 +884,7 @@ and compile the rest between the new and final vertex.
       | ((vars,pat,guard,cmd),pos)::cases -> {
           (newBSpec,aMode) <- return (newMode (bSpec ctxt) (modeSpec ctxt));
           ctxt <- ctxt withBSpec newBSpec;
-          trm <- return (mkApplyN (Lambda ([(pat,MSlang.mkTrue pos,MSlang.mkTrue pos), (WildPat (freshMetaTyVar pos,pos), MSlang.mkTrue pos,mkFalse pos)],pos), caseTerm, pos));
+          trm <- return (mkApplyN (Lambda ([(pat,MSlang.mkTrue pos,MSlang.mkTrue pos), (WildPat (freshMetaTyVar ("psl_WildPat", pos),pos), MSlang.mkTrue pos,mkFalse pos)],pos), caseTerm, pos));
           prop <- makeAxiom ((makeId "guard"):Id.Id) trm;
           apexSpec <- addInvariant (modeSpec ctxt) prop pos;
           ctxt <- connectVertices ctxt (initial ctxt) aMode apexSpec OpRefSet.empty;
@@ -913,7 +913,7 @@ and compile the rest between the new and final vertex.
           ctxt <- compileCommand (ctxt withInitial bMode) cmd;
     
           ctxt <- ctxt withModeSpec saveModeSpec;
-          trm <- return (mkApplyN (Lambda ([(pat,mkTrue pos,mkFalse pos), (WildPat (freshMetaTyVar pos,pos), mkTrue pos,mkTrue pos)],pos), caseTerm, pos));
+          trm <- return (mkApplyN (Lambda ([(pat,mkTrue pos,mkFalse pos), (WildPat (freshMetaTyVar ("psl_WildPat", pos),pos), mkTrue pos,mkTrue pos)],pos), caseTerm, pos));
           prop <- makeAxiom ((makeId "guard"):Id.Id) trm;
           apexSpec <- addInvariant (modeSpec ctxt) prop pos;
           if cases = [] then

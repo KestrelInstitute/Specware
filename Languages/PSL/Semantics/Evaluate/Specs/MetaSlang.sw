@@ -90,6 +90,6 @@ MSlang qualifying spec
 
   op idToNameRef : Id.Id -> Fun
 
-  op freshMetaTyVar : Position -> Type
+  op freshMetaTyVar : String * Position -> Type
 endspec
 \end{spec}

@@ -44,7 +44,7 @@ spec {
   % one place.
   op mkEqualityAt : ATerm Position -> ATerm Position -> Position -> ATerm Position
   def mkEqualityAt t0 t1 position = 
-    let srt = freshMetaTyVar position in
+    let srt = freshMetaTyVar ("psl_mkEqualityAt", position) in
     % let srt = mkArrowAt (mkProductAt [dom_sort,dom_sort] position) (boolSort ()) position in
     mkApplyNAt (mkEqualsAt srt position) (mkTupleAt [t0,t1] position) position
   

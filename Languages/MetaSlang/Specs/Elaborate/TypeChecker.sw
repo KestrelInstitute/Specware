@@ -86,7 +86,7 @@ spec
   %%    ...
 
   def elaboratePosSpec (given_spec, filename) = 
-    let _ = initializeMetaTyVar () in
+    let _ = initializeMetaTyVar ("tc", 0) in
 
     %% ======================================================================
     %%                           PASS ZERO  [ 0 => 1 ]
@@ -654,8 +654,8 @@ spec
       )
     | Fun (PChoose equiv, srt, pos) ->
 	 (* Has sort {f: a -> b | fa(m,n) equiv(m,n) => f m = f n} -> a \ equiv -> b *)
-         let a = freshMetaTyVar pos in
-         let b = freshMetaTyVar pos in
+         let a = freshMetaTyVar ("PChoose_a", pos) in
+         let b = freshMetaTyVar ("PChoose_b", pos) in
          let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          let equiv = elaborateTerm (env, equiv, ty1)                   in 
          let ty2 = Arrow (Quotient (a, equiv, pos), b, pos) in
@@ -673,7 +673,7 @@ spec
           Fun (PChoose equiv, ty4, pos))
 
     | Fun (PQuotient equiv, srt, pos) ->  % Has sort a -> Quotient(a, equiv)
-         let a = freshMetaTyVar pos in
+         let a = freshMetaTyVar ("PQuotient", pos) in
          let ty1 = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          let equiv = elaborateTerm (env, equiv, ty1) in 
          let ty2 = Arrow (a, Quotient (a, equiv, pos), pos) in
@@ -702,7 +702,7 @@ spec
           Fun (Char ch, srt, pos))
 
     | Fun (PRelax pred, srt, pos) -> % Has sort Subsort(a, pred) -> a
-         let a = freshMetaTyVar pos in
+         let a = freshMetaTyVar ("PRelax", pos) in
          let ty1 = Arrow (a, type_bool, pos) in
          let pred = elaborateTerm (env, pred, ty1) in
          let ty2 = Arrow (Subsort (a, pred, pos), a, pos) in
@@ -715,7 +715,7 @@ spec
     %%          (Fun (PRelax, srt), pos)
 
     | Fun (PRestrict pred, srt, pos) -> % Has sort a -> Subsort(a, pred)
-         let a = freshMetaTyVar pos in
+         let a = freshMetaTyVar ("PRestrict", pos) in
          let ty1 = Arrow (a, type_bool, pos) in
          let pred = elaborateTerm (env, pred, ty1) in
          let ty2 = Arrow (a, Subsort (a, pred, pos), pos) in
@@ -748,7 +748,7 @@ spec
     | Let (decls, body, pos) -> 
       (  let env0 = env in
          let def doDeclaration ((pat, bdy), (decls, env)) = 
-               let alpha = freshMetaTyVar pos in
+               let alpha = freshMetaTyVar ("Let", pos) in
                (* In case the pattern is has a sort constraint, move
                   this to the body such that the sort constraint is 
                   attatched to alpha.
@@ -784,7 +784,7 @@ spec
                        ();
                      rows)
                   | MetaTyVar (mtv, _) ->
-                    let row = map (fn (id, _)-> (id, freshMetaTyVar pos)) row 
+                    let row = map (fn (id, _)-> (id, freshMetaTyVar ("Record", pos))) row 
 		    in
                       (linkMetaTyVar mtv ((Product (row, pos)));
                        row)
@@ -797,7 +797,7 @@ spec
                                   sv, 
                                   printTerm trm^" is constrained to be of an incompatible sort "^newline^ printSort term_sort, 
                                   pos);
-                       map (fn (id, _)-> (id, freshMetaTyVar pos)) row))
+                       map (fn (id, _)-> (id, freshMetaTyVar ("Record_incompatible", pos))) row))
 	 in
          let tyrows = unfoldConstraint (term_sort) in
          let trow = ListPair.zip (row, tyrows) in
@@ -813,8 +813,8 @@ spec
          Record (row, pos)
 
     | Lambda (rules, pos) -> 
-	let alpha = freshMetaTyVar pos in
-	let beta  = freshMetaTyVar pos in
+	let alpha = freshMetaTyVar ("Lambda_a", pos) in
+	let beta  = freshMetaTyVar ("Lambda_b", pos) in
 	let ty    = (Arrow (alpha, beta, pos)) in
 	let _     = elaborateSort (env, ty, term_sort) in 
 	Lambda 
@@ -851,28 +851,28 @@ spec
 	      | [] -> []
 	      | [t] -> [elaborateTerm (env, t, term_sort)]
 	      | (t::ts) -> 
-	        let alpha = freshMetaTyVar pos in
+	        let alpha = freshMetaTyVar ("Seq", pos) in
 		let t = elaborateTerm (env, t, alpha) in
 		cons (t, elab ts))
        in
 	 Seq (elab terms, pos))
 
     | ApplyN ([t1 as Fun (Embedded _, _, _), t2], pos) -> 
-          let alpha = freshMetaTyVar pos in
+          let alpha = freshMetaTyVar ("ApplyN_Embedded", pos) in
           let ty    = Arrow (alpha, term_sort, pos) in
           let t2    = elaborateTerm (env, t2, alpha) in
           let t1    = elaborateTerm (env, t1, ty) in
           ApplyN ([t1, t2], pos)
 
     | ApplyN ([t1 as Fun (Project _, _, _), t2], pos) -> 
-          let alpha = freshMetaTyVar pos in
+          let alpha = freshMetaTyVar ("ApplyN_Project", pos) in
           let ty    = Arrow (alpha, term_sort, pos) in
           let t2    = elaborateTerm (env, t2, alpha) in
           let t1    = elaborateTerm (env, t1, ty) in
           ApplyN ([t1, t2], pos)
 
     | ApplyN ([t1 as Fun (f1, s1, _), t2], pos) -> 
-      (let alpha = freshMetaTyVar pos in
+      (let alpha = freshMetaTyVar ("ApplyN_Fun", pos) in
        let ty    = Arrow (alpha, term_sort, pos) in
        let t1    = elaborateTermHead(env,t1,ty,trm) in
        let t2    = elaborateTerm (env, t2, alpha) in
@@ -903,7 +903,7 @@ spec
 	 ApplyN ([t1, t2], pos))
 
     | ApplyN ([t1, t2], pos) ->
-      (let alpha = freshMetaTyVar pos in
+      (let alpha = freshMetaTyVar ("ApplyN_2", pos) in
        let ty    = Arrow (alpha, term_sort, pos) in
        let t2    = elaborateTerm (env, t2, alpha) in
        let t1    = elaborateTerm (env, t1, ty) in
@@ -986,9 +986,9 @@ spec
 	 Fun (NotEquals, srt, pos))
 
       | Fun (RecordMerge, srt, pos) ->
-	(let a = freshMetaTyVar pos in
-	 let b = freshMetaTyVar pos in
-	 let c = freshMetaTyVar pos in
+	(let a = freshMetaTyVar ("RecordMerge_a", pos) in
+	 let b = freshMetaTyVar ("RecordMerge_b", pos) in
+	 let c = freshMetaTyVar ("RecordMerge_c", pos) in
 	 let fresh_merge_type = Arrow(Product ([("1", a), ("2", b)], pos), c, pos) in
 	 (elaborateSortForTerm(env, trm, srt, fresh_merge_type);
 	  elaborateSortForTerm(env, trm, fresh_merge_type, ty);
@@ -1500,7 +1500,7 @@ spec
 	       = case pattern of
 		   | None -> (env,None, seenVars)
 		   | Some pat ->
-	             let alpha = freshMetaTyVar pos in
+	             let alpha = freshMetaTyVar ("EmbedPat_a", pos) in
 		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, alpha, seenVars) in
 		     (env, Some pat, seenVars)
 	    in
@@ -1521,7 +1521,7 @@ spec
 			     ^ printSort sort1, pos);
 		      (env, None, seenVars))
 		   | (None, Some pat) -> 
-		     let alpha = freshMetaTyVar pos in
+		     let alpha = freshMetaTyVar ("EmbedPat_b", pos) in
 		     let (pat, env, seenVars) = elaboratePatternRec (env, pat, alpha, seenVars)
 		     in
 		     (error (env, "Sort for constructor "
@@ -1543,7 +1543,7 @@ spec
 	    in
 	      (EmbedPat (embedId, pat, sort1, pos), env, seenVars)
       | RecordPat (row, pos) ->
-	let r = map (fn (id, srt)-> (id, freshMetaTyVar pos)) row in
+	let r = map (fn (id, srt)-> (id, freshMetaTyVar ("RecordPat", pos))) row in
 	let _ = elaborateSort (env, (Product (r, pos)), sort1) in
 	let r = ListPair.zip (r, row) in
 	let (r, env, seenVars) = 
@@ -1560,7 +1560,7 @@ spec
 	let (pat, env, seenVars) = elaboratePatternRec (env, pat, sort2, seenVars) in
 	(RelaxPat (pat, term, pos), env, seenVars)
       | QuotientPat (pat, term, pos) ->
-	let v = freshMetaTyVar pos in
+	let v = freshMetaTyVar ("QuotientPat", pos) in
 	let sort2 = (Quotient (v, term, pos)) in
 	let _ = elaborateSort (env, sort2, sort1) in
 	let term = elaborateTerm (env, term, 
