@@ -1,7 +1,7 @@
 \section{Char}
 
 \begin{spec}
-Char qualifying spec
+Char qualifying spec {
   import PrimitiveSorts
   import Nat
   import Compare
@@ -23,5 +23,5 @@ Char qualifying spec
   op chr         : Nat  -> Char
 
   op compare     : Char * Char -> Comparison
-end
+}
 \end{spec}

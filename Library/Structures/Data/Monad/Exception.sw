@@ -9,6 +9,9 @@ spec {
 
   sort Exception
 
+  op raise : fa (a) Exception -> Monad a
   op throw : fa (a) Exception -> Monad a
   op catch : fa (a) Monad a -> (Exception -> Monad a) -> Monad a
+
+  axiom throw_and_raise is throw = raise
 }
