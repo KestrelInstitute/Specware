@@ -1,4 +1,5 @@
-all: pdf htm zip
+all: pdf 
+xall: pdf htm zip
 
 SLM= SpecwareLanguageManual
 SLMDIR= $(SLM).htm-dir
@@ -32,6 +33,7 @@ ADJUSTFONTHTML= bin/adjustFontHTML
 ANCHORHTML= bin/anchorHTML
 REANCHORGRAMMARHTML= bin/reAnchorGrammarHTML
 NAVLINKHTML= bin/navLinkHTML
+PUSHOUTKLUDGE= bin/pushoutKludge
 
 PDFDBK= bookinfo.dbk \
         disclaimer.dbk \
@@ -163,6 +165,7 @@ metaslang-htm.dbk: Makefile metaslang.glm
 	 then /bin/mv -f metaslang-htm.dbk metaslang-htm.dbk.old; \
 	 fi
 	$(GLM2DBKMS) -htm metaslang.glm > metaslang-htm.dbk
+	$(PUSHOUTKLUDGE) metaslang-htm.dbk
 
 usage-htm.dbk: Makefile usage.glm
 	@if test -r usage-htm.dbk; \

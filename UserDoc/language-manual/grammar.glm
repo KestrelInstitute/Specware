@@ -91,18 +91,20 @@ easy reference.
 <formalpara><title>Units</title>
 <para>
 <<
-||  `specware-file ::=
-||     `unit
-||   | `unit-definition { `unit-definition }*
+||  `unit-definition ::= `unit-identifier = `unit-term
 ||  
-||  `unit-definition ::= `unit-identifier = `unit
-||  
-||  `unit ::=
+||  `unit-term ::=
 ||     `spec-term
 ||   | `morphism-term
 ||   | `diagram-term
 ||   | `generate-term
 ||   | `proof-term
+||  
+||  `specware-file-contents ::=
+||     `unit-term
+||   | `short-unit-definition { `short-unit-definition }*
+||  
+||  `short-unit-definition ::= `fragment-identifier = `unit-term
 >>
 </para>
 </formalpara>
@@ -110,17 +112,15 @@ easy reference.
 <formalpara><title>Unit Identifiers</title>
 <para>
 <<
-||  `unit-identifier ::=
-||     `specpath-relative-path
-||   | `relative-path
+||  `unit-identifier ::= `swpath-based-path | `relative-path
 ||  
-||  `specpath-relative-path ::= / `relative-path
+||  `swpath-based-path ::= / `relative-path
 ||  
-||  `relative-path ::=
-||    | `name [ # `name ]
-||    | `path-element  / `relative-path
+||  `relative-path ::= { `folder-name / }* `name [ # `fragment-identifier ]
 ||  
-||  `path-element ::= `name | .. | .
+||  `folder-name ::= `name | .. | .
+||  
+||  `fragment-identifier ::= `word-symbol
 >>
 </para>
 </formalpara>
@@ -230,7 +230,7 @@ easy reference.
 <formalpara><title>Generate Terms</title>
 <para>
 <<
-||  `generate-term ::= generate `language-name `spec-term [ in `string ]
+||  `generate-term ::= generate `language-name `spec-term [ in `string-literal ]
 ||  
 ||  `language-name ::= lisp
 >>
@@ -241,15 +241,16 @@ easy reference.
 <para>
 <<
 ||  `proof-term ::=
-||  prove `qualifiable-claim-name in `spec-term { `proof-particular }*
-||  
-||  `proof-particular ::=
-||      with `prover-name [ `prover-options ]
-||    | using '{ `claim-list '}
+||  prove `claim-name in `spec-term
+||                  [ with `prover-name ]
+||                  [ using '{ `claim-sequence '} ]
+||                  [ options `prover-options ]
 ||  
 ||  `prover-name ::= snark
 ||  
-||  `claim-list ::= `qualifiable-claim-name { , `qualifiable-claim-name }*
+||  `claim-sequence ::= `claim-name { `claim-name }*
+||  
+||  `prover-options ::= `string-literal
 >>
 </para>
 </formalpara>
@@ -345,11 +346,11 @@ easy reference.
 <formalpara><title>Claim-definitions</title>
 <para>
 <<
-||  `claim-definition ::= `claim-kind `qualifiable-claim-name `equals `claim
+||  `claim-definition ::= `claim-kind `claim-name `equals `claim
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
-||  `qualifiable-claim-name ::= [ `qualifier . ] name
+||  `claim-name ::= name
 ||  
 ||  `claim ::= [ `sort-quantification ] `expression
 ||  
@@ -425,9 +426,9 @@ easy reference.
 <<
 ||  `sort-instantiation ::= `sort-name `actual-sort-parameters
 ||  
-||  `actual-sort-parameters ::= `closed-sort | `proper-sort-list
+||  `actual-sort-parameters ::= `closed-sort | ( `proper-sort-list )
 ||  
-||  `proper-sort-list ::= ( `sort , `sort { , `sort }* )
+||  `proper-sort-list ::= `sort , `sort { , `sort }*
 ||  
 >>
 </para>
@@ -545,7 +546,7 @@ easy reference.
 ||  `rec-let-binding ::=
 ||    def `name `formal-parameter-sequence [ : `sort ] `equals `expression
 ||  
-||  `formal-parameter-sequence ::= { `formal-parameter }* `formal-parameter
+||  `formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
 </para>
 </formalpara>

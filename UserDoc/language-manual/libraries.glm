@@ -794,7 +794,7 @@
 			<entry  colname="name">&nbsp; [[compare]]</entry>
 			<entry  colname="prio">&nbsp; </entry>
 			<entry  colname="sig">&nbsp; [[fa(a) (a * a -> Comparison) -> List a * List a  -> Comparison]]</entry>
-			<entry  colname="descr">&nbsp; compares two list using the comparision function given as first argument</entry>
+			<entry  colname="descr">&nbsp; compares two list using the comparison function given as first argument</entry>
 		      </row>
 		      <row>
 			<entry colname="name">&nbsp; [[insert]]</entry>

@@ -477,19 +477,19 @@ Restriction.
 In general, `names can be chosen freely.
 However, the following <emphasis>reserved words</emphasis> have a
 special meaning and must not be used for `names:
-\<!-- !! (echo COLUMNIZE; cat reservedWords; echo ZeEnd) | abc -w meta -->
+<!-- !! (echo COLUMNIZE; cat reservedWords; echo ZeEnd) | abc -w meta -->
 [[
-||    as            endspec       infixr        restrict
-||    axiom         ex            is            sort
-||    case          fa            let           spec
-||    choose        false         morphism      then
-||    colimit       fn            of            theorem
-||    conjecture    from          op            translate
-||    def           generate      project       true
-||    diagram       if            prove         where
-||    else          import        qualifying
-||    embed         in            quotient
-||    embed?        infixl        relax
+||    as            endspec       infixr        relax
+||    axiom         ex            is            restrict
+||    case          fa            let           sort
+||    choose        false         morphism      spec
+||    colimit       fn            obligations   then
+||    conjecture    from          of            theorem
+||    def           generate      op            translate
+||    diagram       if            project       true
+||    else          import        prove         where
+||    embed         in            qualifying
+||    embed?        infixl        quotient
 ]]
 They each count as a single `symbol, and no whitespace is
 allowed inside any reserved word.
@@ -608,36 +608,59 @@ in `literals (which may not contain whitespace, including
 <!-- ***************************************************************** -->
 <section id="Units"><title>Units</title>
 <para>
+A ``unit'' is an identifiable `unit-term, where
+``identifiable'' means that the `unit-term can be referred
+to by a `unit-identifier.
+`Unit-terms can be ``elaborated'', resulting in `specs,
+mprhisms, diagrams or other entities.
+The effect of elaborating a `unit-definition is that its
+`unit-term is elaborated and becomes associated with its
+`unit-identifier.
+</para>
+<para>
+A &Specware; project consists of a collection of
+&Metaslang; `unit-definitions.
+They can be recorded in one or more 
+&Specware; files.
+There are basically two styles for recording
+`unit-definitions using &Specware; files.
+In the single-unit style, the file, when processed by
+&Specware;, contributes a single
+`unit-definition to the project.
+In the multiple-unit style, the file may contribute several
+`unit-definitions.
+The two styles may be freely mixed in a project (but not in
+the same &Specware; file).
+This is explained in more detail in what follows.
+</para>
+<para>
 <<
-||`specware-file ::=
-||     `unit
-||   | `unit-definition { `unit-definition }*
+||`unit-definition ::= `unit-identifier = `unit-term
 ||
-||`unit-definition ::= `unit-identifier = `unit
-||
-||`unit ::=
+||`unit-term ::=
 ||     `spec-term
 ||   | `morphism-term
 ||   | `diagram-term
 ||   | `generate-term
 ||   | `proof-term
+||
+||`specware-file-contents ::=
+||     `unit-term
+||   | `short-unit-definition { `short-unit-definition }*
+||
+||`short-unit-definition ::= `fragment-identifier = `unit-term
 >>
 <!--
 ** ||     | `let-term
 ** ||     | `where-term
 -->
-Restriction.
-The `unit-identifier in each `unit-definition of a `specware-file
-must be a `name that is a `word-symbol.
 </para>
 <para>
-A &Specware; project consists of a collection of
-&Metaslang; `unit-definitions.
 `Unit-definitions may use other
 `unit-definitions, including standard
 libraries, which in &SpecwareV; are supposed to be part of
 each project.
-However, the dependencies between `units must not form a
+However, the dependencies between units must not form a
 cycle; it must always be possible to arrange the
 `unit-definitions in an order in which later
 `unit-definitions only depend on earlier ones.
@@ -645,62 +668,63 @@ How `unit-definitions are processed by &Specware; is further
 dealt with in the &Specware; User Manual.
 </para>
 <para>
-`Unit-definitions are collected in `specware-files, which in
+As mentioned above,
+`unit-definitions are collected in &Specware; files, which in
 &SpecwareV; must have an [[.sw]] extension.
-The `specware-files do not directly contain the
+The &Specware; files do not directly contain the
 `unit-definitions that form the project.
-These are instead determined from the `specware-files using
-certain rules.
+These are instead determined from the contents of the
+&Specware; files using certain rules.
 There are two possibilities here.
-The first is that the `specware-file contains a
-single unit.
+The first is that the `specware-file-contents consists of a
+single `unit-term.
 If
 <replaceable>P</replaceable>[[/]]<replaceable>N</replaceable>is
 the full `path for the
-`specware-file but without the [[.sw]] extension, the `unit
+&Specware; file but without the [[.sw]] extension, the unit
 being defined has as its full `unit-identifier
 <replaceable>P</replaceable>/<replaceable>N</replaceable>.
 For example, if file <"/units/Layout/Fixture.sw"> contains a
-single `unit <replaceable>U</replaceable>, the full `unit-identifier is
+single `unit-term <replaceable>U</replaceable>, the full `unit-identifier is
 [[/units/Layout/Fixture]], and the `unit-definition it
 contributes to the project is
 [[
 ||  /units/Layout/Fixture = \<replaceable>U\</replaceable>
 ]]
-(Note that this is not allowed as a `unit-definition in a
-`specware-file, since the `unit-identifier is not a `name.)
+(Note that this is not allowed as a `short-unit-definition in a
+`specware-file-contents, since the `unit-identifier is not a
+`fragment-identifier.)
 </para>
 <para>
-The second possibility is that the `specware-file contains one or more
+The second possibility is that the &Specware; file contains one or more
 `unit-definitions.
-If <replaceable>N</replaceable> is that `name, and
+If <replaceable>N</replaceable> is the `name of such a
+`unit-definition, and
 <replaceable>P</replaceable> is the full `path for the
-`specware-file but without the [[.sw]] extension, the `unit
+&Specware; file but without the [[.sw]] extension, the unit
 being defined has as its full `unit-identifier
 <replaceable>P</replaceable>#<replaceable>N</replaceable>.
-For example, if file <"/units/Layout/Moveable.sw"> contains a
-`unit-definition [[Pos = \<replaceable>U\</replaceable>]], the
-and the `unit-definition it
-contributes to the project is
+For example, if file <"/units/Layout/Movable.sw"> contains a
+`unit-definition [[Pos = \<replaceable>U\</replaceable>]],
+the full `unit-identifier is [[/units/Layout/Movable#Pos]],
+and the `unit-definition it contributes to the project is
 [[
-||  /units/Layout/Moveable#Pos = \<replaceable>U\</replaceable>
+||  /units/Layout/Movable#Pos = \<replaceable>U\</replaceable>
 ]]
 </para>
 <!-- ***************************************************************** -->
 <section><title>Unit Identifiers</title>
 <para>
 <<
-||`unit-identifier ::=
-||     `specpath-relative-path
-||   | `relative-path
+||`unit-identifier ::= `swpath-based-path | `relative-path
 ||
-||`specpath-relative-path ::= / `relative-path
+||`swpath-based-path ::= / `relative-path
 ||
-||`relative-path ::=
-||    | `name [ # `name ]
-||    | `path-element  / `relative-path
+||`relative-path ::= { `folder-name / }* `name [ # `fragment-identifier ]
 ||
-||`path-element ::= `name | .. | .
+||`folder-name ::= `name | .. | .
+||
+||`fragment-identifier ::= `word-symbol
 >>
 </para>
 <formalpara id="Warning0"><title>Warning</title> <para>
@@ -708,29 +732,41 @@ Note that `unit-identifiers are processed by the tokenizer like
 everything else. This means that whitespace is removed and
 marks not allowed in `names, even if otherwise permitted in
 filenames, cannot appear in `unit-identifiers. For this reason,
-some care must be taken when naming `units. 
+some care must be taken when naming units.
 </para> </formalpara>
 <para>
-`Unit-identifiers are used to identify `units.
+`Unit-identifiers are used to identify `unit-terms.
 Typically, only a final part of the full `unit-identifier is
-used.  When &Specware bis started with environment variable
+used.  When &Specware is started with environment variable
 <"SWPATH"> set to a colon-separated list of pathnames for files or
-directories, the `specware-files are searched for relative
+directories, the &Specware; files are searched for relative
 to these pathnames; for example, if <"SWPATH"> is set to
 <"/units/Layout:.">, then
 [[/units/Layout/Fixture]] may be shortened to [[/Fixture]],
-and [[/units/Layout/Moveable#Pos]] to [[/Moveable#Pos]].
+and [[/units/Layout/Movable#Pos]] to [[/Movable#Pos]].
 As usual, the filename ``<".">'' stands for the current
-directory; and allows &Specware; to look there for
+folder (directory) and allows &Specware; to look there for
 `unit-definitions.
+Likewise, the filename ``<"..">'' refers to the parent
+folder.
 How `unit-definitions are processed by &Specware; is further
 dealt with in the &Specware; User Manual.
 </para>
 <para>
-The `unit-identifier must determine a `unit-definition as
+Further, `unit-identifiers can be relative to the directory
+containing the &Specware; file in which they occur.
+So, for example, both in file <"/units/Layout/Fixture.sw">
+and in file <"/units/Layout/Movable.sw">, `unit-identifier
+[[Tools/Pivot]] refers to the `unit-term contained in
+file <"/units/Layout/Tools/Pivot.sw">,
+while [[Props#SDF]] refers to a `unit-term defined by [[SDF = ...]]
+in file  <"/units/Layout/Props.sw">.
+</para>
+<para>
+The `unit-identifier must identify a `unit-definition as
 described above; the elaboration of the `unit-identifier is
-then the result of elaborating the corresponding `unit,
-yielding a `spec, spec morphism, or diagram.
+then the result of elaborating the corresponding `unit-term,
+yielding a `spec, morphism, diagram, or other entity.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -767,6 +803,12 @@ The elaboration of a `spec-term, if defined, yields a
 Restriction.
 `Spec-forms must be sort-correct.
 </para>
+<para>
+Example `spec-forms:
+[[
+||    spec import Measures import Valuta endspec
+]]
+</para>
 <!-- ================================================================= -->
 <para>
 A <emphasis>closed</emphasis> `spec-form is a `spec-form
@@ -799,6 +841,13 @@ Chapter.
 ||
 ||`annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
 >>
+Example `spec-qualification:
+[[
+||    Weight qualifying /Units#Weights
+Example `spec-translation:
+[[
+||    translate A by {Counter +-> Nat}
+]]
 Let <replaceable>R</replaceable> be the result of
 elaborating `spec-term <replaceable>S</replaceable>.
 Then the elaboration of [[\<replaceable>Q\</replaceable>
@@ -827,6 +876,9 @@ results in:
 ||    axiom LargeSize is Buffer.size >= 1024
 ||  endspec
 ]]
+Note that the `claim-name [[LargeSize]] is unchanged.
+In later versions of &Specware; this may change, so that
+also unqualified `claim-names get qualified.
 </para>
 <para>
 Further, the elaboration of [[translate
@@ -867,6 +919,11 @@ results in:
 <<
 ||`spec-substitution ::= `spec-term '[ `morphism-term ']
 >>
+Example `spec-substitution:
+[[
+||    Routing#Basis[morphism /Coll/Lattice ->
+||                  /Coll/LatticeWithTop {} ]
+]]
 </para>
 <para>
 The elaboration of
@@ -905,7 +962,6 @@ Informally,
 is to <replaceable>R</replaceable> as
 <replaceable>C</replaceable> is to
 <replaceable>D</replaceable>.
-See also the &Specware; Tutorial.
 </para>
 <para>
 <replaceable>T</replaceable>
@@ -926,6 +982,41 @@ the names in <replaceable>T</replaceable> are names from
 <replaceable>D</replaceable> not repeated in
 <replaceable>C</replaceable> are not repeated here either.
 </para>
+<para>
+For example, assume we have:
+[[
+||  A = spec
+||    sort Counter
+||    op reset: Counter
+||    op tick : Counter -> Counter
+||    axiom Effect is
+||      fa (c : Counter) ~(tick c = c)
+||  endspec
+||  
+||  B = spec
+||    def reset = 0
+||    def tick c = c+1
+||  endspec
+||
+||  M = morphism A -> B {Counter +-> Nat}
+||  
+||  AA = spec
+||    import A
+||    sort Interval = {start: Counter, stop: Counter}
+||    op isEmptyInterval? : Interval -> Bool
+||    def isEmptyInterval? {start: x, stop: y} = (x = y)
+||  endspec
+]]
+Then the result of [[AA [M]]] is the same as that of this `spec:
+[[
+||  spec
+||    import B
+||    sort Interval = {start: Nat, stop: Nat}
+||    op isEmptyInterval? : Interval -> Bool
+||    def isEmptyInterval? {start: x, stop: y} = (x = y)
+||  endspec
+]]
+</para>
 </section>
 <!-- ***************************************************************** -->
 <section><title>Diagram Colimits</title>
@@ -937,6 +1028,7 @@ The result of elaborating a `diagram-colimit is the `spec
 which is the apex of the cocone forming the
 colimit in the category of `specs and `spec-morphisms.
 See further the &Specware; Tutorial.
+<!-- TODO: weird names -->
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -996,7 +1088,7 @@ are known as the <emphasis>proof obligations</emphasis>
 engendered by the morphism.
 They are the formal expression of the requirement that the step from
 <replaceable>S'</replaceable> to
-<replaceable>T</replaceable> is a proper refinement.
+<replaceable>T'</replaceable> is a proper refinement.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -1037,9 +1129,41 @@ When used as a `diagram-term, the elaboration of a
 `unit-identifier must yield a diagram.
 </para>
 <para>
+Restriction.
+In a `diagram, the first `name of each `diagram-node and
+`diagram-edge must be unique (i.e., not be used more than
+once in that `diagram).  Further, for each `diagram-edge
+[[\<replaceable>E\</replaceable> :
+\<replaceable>ND\</replaceable> ->
+\<replaceable>NC\</replaceable> +->
+\<replaceable>M\</replaceable>]], there must be `diagram-nodes
+[[\<replaceable>ND\</replaceable> +->
+\<replaceable>D\</replaceable>]] and
+[[\<replaceable>NC\</replaceable> +->
+\<replaceable>C\</replaceable>]] of the `diagram such that,
+after elaboration, [[\<replaceable>M\</replaceable>]] is a
+morphism from [[\<replaceable>D\</replaceable>]] to
+[[\<replaceable>C\</replaceable>]].
+</para>
+<para>
+Example `diagram:
+[[
+||    diagram {
+||       A          +-> /Coll/Lattice,
+||       B          +-> /Coll/LatticeWithTop,
+||       m : A -> B +-> /Coll/AddTop,
+||       C          +-> Routing#Basis,
+||       i : A -> C +-> morphism /Coll/Lattice ->
+||                                   Routing#Basis {}
+||    }
+]]
+</para>
+<para>
 The result of elaborating a `diagram-form is the categorical
-diagram whose nodes are labeled with `specs and
-whose edges are labeled with `spec-morphisms.
+diagram whose nodes are labeled with the `specs and
+whose edges are labeled with the morphisms that result
+from elaborating the corresponding `spec-terms and
+`morphism-terms.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -1047,11 +1171,11 @@ whose edges are labeled with `spec-morphisms.
 ** <section><title>Let and Where Expressions</title>
 ** <para>
 ** <<
-** ||`let-term ::= let `local-bindings in `unit
+** ||`let-term ::= let `local-bindings in `unit-term
 ** ||
-** ||`where-term ::= `unit where `local-bindings end
+** ||`where-term ::= `unit-term where `local-bindings end
 ** ||
-** ||`local-bindings ::= `name = `unit { `name = `unit }*
+** ||`local-bindings ::= `name = `unit-term { `name = `unit-term }*
 ** >>
 ** </para>
 ** </section>
@@ -1060,10 +1184,15 @@ whose edges are labeled with `spec-morphisms.
 <section><title>Generate Terms</title>
 <para>
 <<
-||`generate-term ::= generate `language-name `spec-term [ in `string ]
+||`generate-term ::= generate `language-name `spec-term [ in `string-literal ]
 ||
 ||`language-name ::= lisp
 >>
+Example `generate-term:
+[[
+||    generate lisp /Vessel#Contour
+||                      in "C:/Projects/Vessel/Contour.lisp"
+]]
 The elaboration of a `generate-term for a correct `spec-term
 generates code in the language suggested by the
 `language-name (currently only Common Lisp); see further the
@@ -1075,22 +1204,39 @@ generates code in the language suggested by the
 <para>
 <<
 ||`proof-term ::=
-||  prove `qualifiable-claim-name in `spec-term { `proof-particular }*
-||
-||`proof-particular ::=
-||      with `prover-name [ `prover-options ]
-||    | using '{ `claim-list '}
+||  prove `claim-name in `spec-term
+||                  [ with `prover-name ]
+||                  [ using '{ `claim-sequence '} ]
+||                  [ options `prover-options ]
 ||
 ||`prover-name ::= snark
 ||
-||`claim-list ::= `qualifiable-claim-name { , `qualifiable-claim-name }*
+||`claim-sequence ::= `claim-name { `claim-name }*
+||
+||`prover-options ::= `string-literal
 >>
-The elaboration of a `proof-term BLABLA
-using the prover suggested by the
-`prover-name (currently only SNARK).
+</para>
+<para>
+Restriction.
+The `claim-names must occur as `claim-names in the `spec
+that results from elaborating the `spec-term.
+</para>
+<para>
+Example `proof-term:
+[[
+||    prove Effect in translate A by {Counter +-> Nat}
+||                                 options "(use-paramodulation t)"
+]]
+</para>
+<para>
+The elaboration of a `proof-term invokes the prover suggested
+by the `prover-name (currently only SNARK).
+The property to be proved is the `claim of the first
+`claim-name; the hypotheses (assumptions) that may be used
+in the proof
 The `prover-options are prover-specific and are not
-defined here; see further the
-&Specware; User Manual.
+further defined here.
+For details, see the &Specware; User Manual.
 </para>
 </section>
 </section>
@@ -1134,8 +1280,8 @@ Example `import-declarations
 </para>
 <!-- ================================================================= -->
 <para>
-An `import-declaration is contained in some `unit, and 
-to elaborate that `unit the `spec-term of
+An `import-declaration is contained in some `spec-form, and 
+to elaborate that `spec-form the `spec-term of
 the `import-declaration is elaborated first, giving some
 `spec <replaceable>S</replaceable>.
 The `import-declaration has then the effect as if the
@@ -1718,11 +1864,11 @@ Otherwise, the `spec is incorrect.
 <section id="Claim-definitions"><title>Claim-definitions</title>
 <para>
 <<
-||`claim-definition ::= `claim-kind `qualifiable-claim-name `equals `claim
+||`claim-definition ::= `claim-kind `claim-name `equals `claim
 ||
 ||`claim-kind ::= axiom | theorem | conjecture
 ||
-||`qualifiable-claim-name ::= [ `qualifier . ] name
+||`claim-name ::= name
 ||
 ||`claim ::= [ `sort-quantification ] `expression
 ||
@@ -1771,7 +1917,7 @@ Like theorems, they can be used by provers.
 </para>
 <!-- ================================================================= -->
 <para>
-The &Specware; system passes on the `qualifiable-claim-name of the
+The &Specware; system passes on the `claim-name of the
 `claim-definition with the `claim for purposes of
 identification.
 Both may be transformed to fit the requirements of the prover,
@@ -1783,7 +1929,7 @@ to dealing with them.
 <!-- ================================================================= -->
 <para>
 Remark.
-It is a common mistake to omit the part <quote>`qualifiable-claim-name
+It is a common mistake to omit the part <quote>`claim-name
 `equals</quote> from a `claim-definition.
 A defensive style against this mistake is to have the `claim always
 start on a new text line.
@@ -2152,9 +2298,9 @@ Values of a product sort can be constructed with
 <<
 ||`sort-instantiation ::= `sort-name `actual-sort-parameters
 ||
-||`actual-sort-parameters ::= `closed-sort | `proper-sort-list
+||`actual-sort-parameters ::= `closed-sort | ( `proper-sort-list )
 ||
-||`proper-sort-list ::= ( `sort , `sort { , `sort }* )
+||`proper-sort-list ::= `sort , `sort { , `sort }*
 ||
 >>
 Example `sort-instantiation:
@@ -2271,7 +2417,7 @@ The `field-names of that record sort are the `field-names
 <replaceable>F</replaceable><subscript>1</subscript>,
 ... ,
 <replaceable>F<subscript>n</subscript></replaceable>,
-and, given the lexicographical ordering,
+and, given the lexicographic ordering,
 `field-name 
 <replaceable>F<subscript>i</subscript></replaceable>
 <emphasis>selects</emphasis>
@@ -2683,7 +2829,7 @@ the `application
 ||`rec-let-binding ::=
 ||    def `name `formal-parameter-sequence [ : `sort ] `equals `expression
 ||
-||`formal-parameter-sequence ::= { `formal-parameter }* `formal-parameter
+||`formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
 Example `let-expressions:
 [[

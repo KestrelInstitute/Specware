@@ -250,7 +250,7 @@ rather than one. Both choices are available.</para>
 <title>Refining your specifications to constructive specifications</title>
 
 <para>You combine specifications to extend the refinement
-iteratively. The goal is to create an refinement between the
+iteratively. The goal is to create a refinement between the
 abstract specification of your problem domain and a concrete
 implementation of the problem solution in terms of sorts and
 operations that ultimately are defined in the Specware
