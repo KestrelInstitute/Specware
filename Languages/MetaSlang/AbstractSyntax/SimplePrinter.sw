@@ -296,6 +296,7 @@ infix with brackets. And similarly when we see an \verb+Equals+.
             ppATerm term,
             ppString ")"
           ]
+      | SortedPat (pat,srt,_) -> ppAPattern pat
       | any ->
            fail ("No match in ppAPattern with: '"
               ^ (System.toString any)

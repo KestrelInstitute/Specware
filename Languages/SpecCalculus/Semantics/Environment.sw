@@ -78,6 +78,7 @@ UnitId_Dependency.
       newGlobalVar ("LocalContext", PolyMap.emptyMap);
       newGlobalVar ("CurrentUnitId", Some {path=["/"], hashSuffix=None} : Option.Option UnitId);
       newGlobalVar ("ValidatedUnitIds",[]);
+      newGlobalVar ("CommandInProgress?",false);
       return ()
     }
 
@@ -138,13 +139,17 @@ UnitId_Dependency.
 
   op cleanupGlobalContext : Env ()
   def cleanupGlobalContext =
-    { gCtxt <- getGlobalContext;
-      setGlobalContext (mapPartial (fn x as (val,_,_) ->
-				     case val of
-				      | InProcess -> None
-				      | _ -> Some x)
-		          gCtxt)
-     }
+    {lastCommandAborted? <- readGlobalVar "CommandInProgress?";
+     if ~ lastCommandAborted? then return ()
+     else
+       { gCtxt <- getGlobalContext;
+	 setGlobalContext (mapPartial (fn x as (val,_,_) ->
+				       case val of
+					 | InProcess -> None
+					 | _ -> Some x)
+		           gCtxt)
+       };
+     writeGlobalVar("CommandInProgress?",true)}
 \end{spec}
 
 The local context is where "let" bindings are deposied

@@ -66,8 +66,7 @@ exists with a non-zero status and hence the bootstrap fails.
   op runSpecwareUID : String -> Boolean
   def runSpecwareUID path = 
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -76,7 +75,7 @@ exists with a non-zero status and hence the bootstrap fails.
       evaluateUID position unitId;
       return true
     } in
-    run (catch prog toplevelHandler)
+    runSpecCommand (catch prog toplevelHandler)
 \end{spec}
 
 evaluateUnitId is designed to be called from application programs to
@@ -96,8 +95,7 @@ get a unit from a unit id string.
         return (None : Option SpecCalc.Value)
     in
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -106,17 +104,20 @@ get a unit from a unit id string.
       (val,_,_) <- evaluateUID position unitId;
       return (Some val)
     } in
-    run (catch prog handler)
+    runSpecCommand (catch prog handler)
 \end{spec}
 
 \begin{spec}
   op intializeSpecware : () -> Boolean
   def initializeSpecware () =
-    let prog = {
-      emptyGlobalContext;
-      setBaseToPath "/Library/Base";
-      return true
-    } in
+    let prog = { (optBaseUnitId,_) <- getBase;
+		 case optBaseUnitId of
+		   | None   -> 
+		     { emptyGlobalContext;
+		       setBaseToPath "/Library/Base";
+		       return true }
+		   | Some _ -> return false }
+    in
     run (catch prog toplevelHandler)
 \end{spec}
 
@@ -134,14 +135,13 @@ get a unit from a unit id string.
 \begin{spec}
   op  unitIDCurrentInCache? : String -> Boolean
   def unitIDCurrentInCache? path =
-    let prog = { resetGlobals;
-		 cleanupGlobalContext;
+    let prog = { cleanEnv;
 		 currentUID <- pathToCanonicalUID ".";
 		 setCurrentUID currentUID;
 		 path_body <- return (removeSWsuffix path);
 		 unitId <- pathToRelativeUID path_body;
 		 checkInCache? unitId }
-    in run (catch prog toplevelHandler)
+    in runSpecCommand (catch prog toplevelHandler)
 \end{spec}
 
 
@@ -155,8 +155,7 @@ compiles the resulting specification to lisp.
   op evaluateUID_fromLisp : String -> Boolean
   def evaluateUID_fromLisp path = 
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -168,7 +167,7 @@ compiles the resulting specification to lisp.
       } (fileNameHandler unitId);
       return true
     } in
-    run (catch prog toplevelHandler)
+    runSpecCommand (catch prog toplevelHandler)
 \end{spec}
 
 \begin{spec}
@@ -194,8 +193,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
   op setBase_fromLisp : String -> Boolean
   def setBase_fromLisp path =
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       unitId <- pathToCanonicalUID ".";
       setCurrentUnitId unitId;
       path_body <- return (removeSWsuffix path);
@@ -203,7 +201,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
       setBaseToRelativeUnitId relativeUnitId;
       return true
     } in
-    run (catch prog toplevelHandler) 
+    runSpecCommand (catch prog toplevelHandler) 
 
   op showBase_fromLisp : () -> Boolean
   def showBase_fromLisp () =
@@ -222,8 +220,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
   op evaluatePrint_fromLisp : String -> Boolean
   def evaluatePrint_fromLisp path = 
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -232,7 +229,7 @@ then unless they have "/" in there SWPATH, the canonical UnitId may not be found
       evaluatePrint (UnitId unitId, position);
       return true
     } in
-    run (catch prog toplevelHandler) 
+    runSpecCommand (catch prog toplevelHandler) 
 \end{spec}
 
 The following corresponds to the :show command.
@@ -260,8 +257,7 @@ The following corresponds to the :show command.
         | None -> None
         | Some name -> Some (maybeAddSuffix name ".lisp") in
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -271,7 +267,7 @@ The following corresponds to the :show command.
       evaluateLispCompile (spcInfo, (UnitId unitId, position), target);
       return true
     } in
-    run (catch prog toplevelHandler) 
+    runSpecCommand (catch prog toplevelHandler) 
 \end{spec}
 
 Second argument is interpreted as spec containing options for the code generation.
@@ -284,8 +280,7 @@ Second argument is interpreted as spec containing options for the code generatio
         | None -> None
         | Some name -> Some (maybeAddSuffix name ".lisp") in
     let prog = {
-      resetGlobals;
-      %cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -295,7 +290,7 @@ Second argument is interpreted as spec containing options for the code generatio
       evaluateLispCompileLocal (spcInfo, (UnitId unitId, pos), target);
       return true
     } in
-    run (catch prog toplevelHandler)
+    runSpecCommand (catch prog toplevelHandler)
 \end{spec}
 
 getOptSpec returns Some spc if the given string evaluates to a spec
@@ -320,7 +315,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 		  return res
 		 }
       in
-      run (catch prg toplevelHandlerOption)
+      runSpecCommand (catch prg toplevelHandlerOption)
 \end{spec}
 
 \begin{spec}
@@ -328,8 +323,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
   def evaluateJavaGen_fromLisp (path,optopath) = 
     %let optspec = getOptSpec optopath in
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -339,15 +333,14 @@ getOptSpec returns Some spc if the given string evaluates to a spec
       evaluateJavaGen (spcInfo, (UnitId unitId, position), optopath);
       return true
     } in
-    run (catch prog toplevelHandler) 
+    runSpecCommand (catch prog toplevelHandler) 
 \end{spec}
 
 \begin{spec}
   op evaluateUID_fromJava : String -> Boolean
   def evaluateUID_fromJava path = 
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -359,7 +352,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
       } (fileNameHandler unitId);
       return true
     } in
-    run (catch prog toplevelHandlerForJava)
+    runSpecCommand (catch prog toplevelHandlerForJava)
 \end{spec}
 
 \begin{spec}
@@ -370,8 +363,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
         | None -> None
         | Some name -> Some (maybeAddSuffix name ".c") in
     let prog = {
-      resetGlobals;
-      cleanupGlobalContext;
+      cleanEnv;
       currentUID <- pathToCanonicalUID ".";
       setCurrentUID currentUID;
       path_body <- return (removeSWsuffix path);
@@ -381,7 +373,7 @@ getOptSpec returns Some spc if the given string evaluates to a spec
       evaluateCGen(cValue,target);
       return true
     } in
-    run (catch prog toplevelHandler)
+    runSpecCommand (catch prog toplevelHandler)
 \end{spec}
 
 removeSWsuffix could be generalized to extractUIDpath
@@ -539,6 +531,28 @@ sense that no toplevel functions return anything.
     let _ = toScreen (" Column: " ^ Nat.toString col)  in
     let _ = toScreen (" Msg:    " ^ msg)               in
     ()
+ 
+  %% Ensure everything is clean at beginning of command processing
+  op  cleanEnv: SpecCalc.Env ()
+  def cleanEnv =
+    {resetGlobals;
+     ensureBase;
+     cleanupGlobalContext}
+     
+  op  ensureBase: SpecCalc.Env ()
+  def ensureBase =
+    {(optBaseUnitId,_) <- getBase;
+     (case optBaseUnitId of
+	| None   -> setBaseToPath "/Library/Base"
+	| Some _ -> return ())}
+
+  op  runSpecCommand: fa(a) SpecCalc.Env a -> a
+  def runSpecCommand f =
+    let val = run f in
+    %% CommandInProgress? is used to detect (by cleanupGlobalContext currently) whether command aborted
+    let _ = MonadicStateInternal.writeGlobalVar("CommandInProgress?",false) in
+    val
+
 \end{spec}
 
 \begin{spec}
