@@ -280,17 +280,24 @@ PrettyPrint qualifying spec {
 		       fn ((_,string), ()) -> streamWriter(stream,string),
 		       (),
 		       fn (n,()) -> streamWriter(stream,newlineAndBlanks n)))
-%% This is much less efficient
+%% This is much less efficient (n**2 instead of n) 
 %       toStream (text, 
 %                 fn ((_,s1),s2) -> s2 ^ s1, 
 %                 "",
 %                 fn (n,s) -> s ^ newlineAndBlanks n)
 
    def toLatexString (text : Text) : String = 
-       toStream (text, 
-                 fn ((_,s1),s2) -> s2 ^ s1,
-                 "",
-                 fn (n,s) -> s ^ latexNewlineAndBlanks n)
+       IO.withOutputToString
+         (fn stream ->
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> streamWriter(stream,latexNewlineAndBlanks n)))
+%% This is much less efficient (n**2 instead of n)
+%       toStream (text, 
+%                 fn ((_,s1),s2) -> s2 ^ s1,
+%                 "",
+%                 fn (n,s) -> s ^ latexNewlineAndBlanks n)
 
    def toTerminal (text : Text) : () = 
        toStreamT (text, 
