@@ -7,6 +7,7 @@ the P as parameterized spec.
 \begin{spec}
 SpecCalc qualifying spec {
   import New
+  import /Library/Legacy/DataStructures/ListUtilities
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -22,11 +23,11 @@ They are procedures in context.
  % op SpecCalc.evaluatePSpec :
  %         List (PSpecElem Position)
  %      -> SpecCalc.Env ValueInfo
- def SpecCalc.evaluatePSpec pSpecElements = {
-    base <- basePSpec;
-    (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
-    return (PSpec pSpec,timeStamp,depURIs)
-  }
+  def SpecCalc.evaluatePSpec pSpecElements = {
+     base <- basePSpec;
+     (pSpec,timeStamp,depURIs) <- evaluatePSpecElems base pSpecElements;
+     return (PSpec pSpec,timeStamp,depURIs)
+   }
 \end{spec}
 
 \begin{spec}
@@ -40,7 +41,13 @@ They are procedures in context.
           <- foldM evaluatePSpecImportElem (initialPSpec,0,[]) pSpecElems;
       pSpec <- foldM evaluatePSpecContextElem pSpecWithImports pSpecElems;
       pSpec <- foldM evaluatePSpecProcElem pSpec pSpecElems;
-      return (pSpec,timeStamp,depURIs)
+      dyCtxt <- dynamicSpec pSpec;
+      statCtxt <- staticSpec pSpec;
+      statCtxtElab <- elaborateSpec statCtxt; 
+      dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
+      newPSpec <- setDynamicSpec pSpec dyCtxtElab;
+      newPSpec <- setStaticSpec newPSpec statCtxtElab;
+      return (newPSpec,timeStamp,depURIs)
     }
   
   op baseSpec : SpecCalc.Env Spec
@@ -67,12 +74,12 @@ They are procedures in context.
                     newPSpec <- setProcedures newPSpec (foldMap
                             (fn newMap -> fn d -> fn c -> PolyMap.update newMap d c)
                                   newPSpec.procedures impPSpec.procedures);
-                    return (newPSpec, max (currentTimeStamp,importTimeStamp), currentDeps ++ depURIs)
+                    return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depURIs))
                   }
               | Spec impSpec -> {
                     newStatic <- mergeImport term impSpec pSpec.staticSpec position;
                     newPSpec <- setStaticSpec pSpec newStatic;
-                    return (newPSpec, max (currentTimeStamp,importTimeStamp), currentDeps ++ depURIs)
+                    return (newPSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depURIs))
                   }
               | _ -> raise (Fail ("Import not a spec")))
           }

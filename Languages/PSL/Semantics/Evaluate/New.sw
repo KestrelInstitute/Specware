@@ -1219,7 +1219,7 @@ of the specs for \verb+Nat+, \verb+Integer+, \emph{etc}.
 Second argument is context .. another spec.
 
 \begin{spec}
-  op elaborateInContext : Spec -> Spec-> SpecCalc.Env Spec
+  op elaborateInContext : Spec -> Spec -> SpecCalc.Env Spec
   def elaborateInContext spc static = {
       staticElab <- elaborateSpec static;
       uri <- pathToRelativeURI "Static";
