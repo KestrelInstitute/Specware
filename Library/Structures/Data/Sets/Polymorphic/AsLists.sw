@@ -1,18 +1,10 @@
 \section{Sets as Lists}
 This is a hopelessly naive implementation of Sets as Lists.
 
-Note that the value of this file is not a spec, but function that returns
-a spec. The argument to the function is a string used to suffix the sorts
-and operators in the spec. 
-
-This inconsistency where some files evaluate to a spec and other evaluate
-to a function needs to be addessed. It may be enough to choose a name for
-this file to reflect that it is a function that suffixes the spec.
-
 \begin{spec}
 spec {
+  import ../Polymorphic
   import /Library/PrettyPrinter/WadlerLindig
-  import Sets
 
   sort Set a = List a
 
@@ -53,7 +45,7 @@ spec {
   def find pred s =
     case s of
 	  | [] -> None
-	  | h::t -> if pred(h) then Some h else find pred t
+	  | h::t -> if (pred h) then Some h else find pred t
     
   def singleton x = Cons(x,[])
 

@@ -1264,7 +1264,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-DIAG ()
-  (:tuple "diag" "{" (1 (:repeat :SC-DIAG-ELEM nil)) "}")
+  (:tuple "diagram" "{" (1 (:repeat :SC-DIAG-ELEM nil)) "}")
   (make-sc-diag (list . 1) ':left-lc ':right-lc))
 
 (define-sw-parser-rule :SC-DIAG-ELEM ()
@@ -1286,7 +1286,7 @@ If we want the precedence to be optional:
 ;;; ========================================================================
 
 (define-sw-parser-rule :SC-COLIMIT ()
-  (:tuple "colim" (1 :SC-TERM))
+  (:tuple "colimit" (1 :SC-TERM))
   (make-sc-colimit 1 ':left-lc ':right-lc))
 
 ;;; ========================================================================

@@ -4,7 +4,6 @@ Basic spec for polymorphic sets. Again, there are no axioms at this point.
 
 \begin{spec}
 spec
-  import /Library/Base
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Set a
@@ -38,7 +37,7 @@ spec
 
   % op takeTwo : fa (a) Set a -> MaybeTwo a
 
-  % op ppSet : fa(a) (a -> Pretty) -> Set a -> Pretty
+  op ppSet : fa(a) (a -> Pretty) -> Set a -> Pretty
 \end{spec}
 
 The operator \verb+take+ will remove an arbitrary element

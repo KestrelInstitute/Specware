@@ -5,7 +5,7 @@ Even the obvious redundancy whereby the shape is repeated in the domain
 of the functor has not been eliminated.
 
 Note that importing this has the effect of refining the functor sort into a
-record.
+record. This should change.
 
 \begin{spec}
 spec {

@@ -3,12 +3,6 @@
 This is a hopelessly naive implementation of Maps as association Lists.
 The eval is embarassing.
 
-Note that the value of this file is a function rather than a spec.
-The function takes a string and returns a spec. The string is used
-to suffix the names of the sorts and operators. 
-
-See the comment for monomorphic sets.
-
 \begin{spec}
 spec {
   import /Library/PrettyPrinter/WadlerLindig
@@ -105,6 +99,5 @@ List the key/range pairs in order of appearance.
           | (Some item_) -> update m key item_
     in
       foldMap g emptyMap m
-
 }
 \end{spec}
