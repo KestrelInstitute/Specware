@@ -497,8 +497,8 @@ Utilities qualifying spec {
 
  def removeDefinitions spc =
    {importInfo       = spc.importInfo,
-    ops              = StringMap.map (fn m -> StringMap.map (fn (op_names, fixity, srt, optTerm) -> 
-							        (op_names, fixity, srt, None : Option Term))
+    ops              = StringMap.map (fn m -> StringMap.map (fn (op_names, fixity, srt, _) -> 
+							        (op_names, fixity, srt, []))
 				                            m)
                                      spc.ops,
     sorts            = spc.sorts,
@@ -514,11 +514,11 @@ Utilities qualifying spec {
      let revised_ops =
          StringMap.map
 	   (fn m -> StringMap.map
-	              (fn(op_names,fixity,srt,defn) ->
+	              (fn(op_names,fixity,srt,defs) ->
 		       (idx := !idx - 1;
 		        if IntegerSet.member(indices,!idx)
-			 then (op_names,fixity,srt,None)
-			 else (op_names,fixity,srt,defn)))
+			 then (op_names,fixity,srt,[])
+			 else (op_names,fixity,srt,defs)))
 		      m)
 	   spc.ops
      % let (_,ops) =
@@ -686,22 +686,22 @@ Utilities qualifying spec {
       | _            -> fun
 
  op modifyNamesSortInfo: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * SortInfo -> SortInfo
- def modifyNamesSortInfo(mSrt,mOp,(sort_names, tyvars, opt_def)) =
+ def modifyNamesSortInfo(mSrt,mOp,(sort_names, tyvars, defs)) =
    (rev (foldl (fn (sort_name, new_names) -> cons(mSrt sort_name, new_names)) nil sort_names),
     tyvars,
-    case opt_def
-      of Some(s) -> Some(modifyNamesSort(mSrt, mOp, s))
-       | None    -> None
-  )
+    map (fn (type_vars, srt) -> 
+	 (type_vars, modifyNamesSort(mSrt, mOp, srt))) 
+        defs)
+
 
  op modifyNamesOpInfo: (QualifiedId -> QualifiedId) * (QualifiedId -> QualifiedId) * OpInfo -> OpInfo
- def modifyNamesOpInfo(mSrt, mOp, (op_names, fixity, (tyvars, srt), opt_def)) =
+ def modifyNamesOpInfo(mSrt, mOp, (op_names, fixity, (tyvars, srt), defs)) =
    (rev (foldl (fn (op_name, new_names) -> cons(mOp op_name, new_names)) nil op_names),
     fixity,
     (tyvars, modifyNamesSort(mSrt,mOp,srt)),
-    case opt_def
-      of Some term -> Some(modifyNamesTerm(mSrt,mOp,term))
-       | None      -> None)
+    map (fn (type_vars, term) ->
+	 (type_vars, modifyNamesTerm(mSrt,mOp,term)))
+        defs)
 
 (*
  %% TODO: ??? FIX THIS
@@ -870,21 +870,21 @@ Utilities qualifying spec {
  def letRecToLetTermFun fun = fun
 
  op letRecToLetTermSortInfo: SortInfo -> SortInfo
- def letRecToLetTermSortInfo ((sort_names, tyvars, opt_def)) =
+ def letRecToLetTermSortInfo ((sort_names, tyvars, defs)) =
    (sort_names,
     tyvars,
-    case opt_def
-      of Some srt -> Some(letRecToLetTermSort srt)
-       | None     -> None)
+    map (fn (type_vars, srt) ->
+	 (type_vars, letRecToLetTermSort srt))
+        defs)
 
  op letRecToLetTermOpInfo: OpInfo -> OpInfo
- def letRecToLetTermOpInfo((op_names, fixity, (tyvars, srt), opt_def)) =
+ def letRecToLetTermOpInfo((op_names, fixity, (tyvars, srt), defs)) =
    (op_names, 
     fixity, 
     (tyvars, letRecToLetTermSort srt),
-    case opt_def
-      of Some term -> Some(letRecToLetTermTerm term)
-       | None      -> None)
+    map (fn (type_vars, term) ->
+	 (type_vars, letRecToLetTermTerm term))
+        defs)
 
  op letRecToLetTermSpec: Spec -> Spec
  def letRecToLetTermSpec(spc) =

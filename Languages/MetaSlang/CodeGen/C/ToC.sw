@@ -60,10 +60,10 @@ spec {
                       ^ " is not a lambda : '"
                       ^ (printTerm trm)
                       ^ "'")
-      def doOp (qual, id, (aliases, fixity, (tyVars,srt), optTerm), cSpec) =
-        case optTerm of
-          | None -> cSpec
-          | Some trm -> toCFunc cSpec (showQualifiedId (Qualified (qual,id))) trm srt
+      def doOp (qual, id, (aliases, fixity, (tyVars,srt), defs), cSpec) =
+        case defs of
+          | []         -> cSpec
+          | (_,trm)::_ -> toCFunc cSpec (showQualifiedId (Qualified (qual,id))) trm srt
     in
       foldriAQualifierMap doOp cSpec spc.ops
 
@@ -74,15 +74,15 @@ spec {
           (case findTheSort (spc,qid) of
             | None -> srt %
             % | None -> fail ("derefSort: failed to find sort: " ^ (showQualifiedId qid))
-            | Some (aliases,tyVars,None) -> srt
-            | Some (aliases,tyVars,Some srt) -> derefSort spc srt)
+            | Some (aliases,tyVars,[]) -> srt
+            | Some (aliases,tyVars,(_,srt)::_) -> derefSort spc srt)
       | _ -> srt
 
   op generateCVars : CSpec -> Spec -> CSpec
   def generateCVars cSpec spc =
-    let def doOp (qual, id, (aliases, fixity, (tyVars,srt), optTerm), cSpec) =
-      case optTerm of
-        | None -> addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (sortToCType srt)
+    let def doOp (qual, id, (aliases, fixity, (tyVars,srt), defs), cSpec) =
+      case defs of
+        | [] -> addVarDecl cSpec (showQualifiedId (Qualified (qual,id))) (sortToCType srt)
 %             (case (srt : ASort Position) of
 %               | Base (qid,srts,_) ->
 %                  (case (derefSort spc srt) of
@@ -101,7 +101,7 @@ spec {
 %                           ^ (showQualifiedId (Qualified (qual,id)))
 %                           ^ " has an unnamed sort: "
 %                           ^ (printSort srt)))
-        | Some _ -> cSpec
+        | _ -> cSpec
     in
       foldriAQualifierMap doOp cSpec spc.ops
 
@@ -121,10 +121,10 @@ spec {
           | TyVar _ -> fail "generateCTypes: found type variable"
           | MetaTyVar _ -> fail "generateCTypes: found meta-type variable"
           | _ -> fail ("generateCTypes: unsupported sort: " ^ (printSort srt))
-      def doSort (qual, id, (aliases, tyVars, optSrt), cSpec) =
-        case optSrt of
-          | None -> cSpec
-          | Some srt -> makeCType cSpec (showQualifiedId (Qualified (qual,id))) srt
+      def doSort (qual, id, (aliases, tyVars, defs), cSpec) =
+        case defs of
+          | []          -> cSpec
+          | (_, srt)::_ -> makeCType cSpec (showQualifiedId (Qualified (qual,id))) srt
     in
       addTypeDefn (foldriAQualifierMap doSort cSpec spc.sorts) "bool" Int
 

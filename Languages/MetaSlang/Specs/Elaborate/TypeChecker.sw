@@ -43,6 +43,7 @@ spec {
   op undeterminedSort?          : PSort -> Boolean
 
   op checkSort                  : LocalEnv * PSort                    -> PSort
+  op checkSortScheme            : LocalEnv * (TyVars   * PSort)       -> (TyVars * PSort)
   op elaborateSort              : LocalEnv * PSort    * PSort         -> PSort
   op elaborateCheckSortForTerm  : LocalEnv * PTerm    * PSort * PSort -> PSort 
   op elaborateSortForTerm       : LocalEnv * PTerm    * PSort * PSort -> PSort
@@ -101,17 +102,15 @@ spec {
  
    %% ---------- SORTS : PASS 0 ----------
    %let _ = String.writeLine "Elaborating sorts" in
-   let def elaborate_sort_0
-             (qualifier,sortName,
-              sortInfo as (sort_names, type_vars_0, opt_def_0)) = 
+   let def elaborate_sort_0 (qualifier,
+			     sortName,
+			     sortInfo as (sort_names, type_vars_0, defs_0)) = 
         %% Sanity check on sort
         if ~(memberQualifiedId(qualifier,sortName,localSorts))
           then sortInfo
           else (sort_names, 
                 type_vars_0,          
-                case opt_def_0 of
-                  | None       -> None
-                  | Some srt_0 -> Some (checkSort (env_1, srt_0)))
+                map (fn def_0 -> checkSortScheme (env_1, def_0)) defs_0)
    in
    %% sorts is a map to a map to sort_info
    let sorts_1 = mapiAQualifierMap elaborate_sort_0 sorts_0 in
@@ -156,24 +155,25 @@ spec {
    %% ---------- OPS   : PASS 1 ----------
    let def elaborate_op_1 poly?
              (qualifier, op_name,
-              opinfo as (op_names, fixity, (type_vars_1, srt_1), opt_def_1)) = 
+              opinfo as (op_names, fixity, sort_scheme_1, defs_1)) = 
         if ~(memberQualifiedId(qualifier,op_name,localOps))
           then opinfo
         else
-        let srt_2 = checkSort (env_2, srt_1) in
+        let sort_scheme_2 = checkSortScheme (env_2, sort_scheme_1) in
         (op_names, 
          fixity, 
-         (type_vars_1, srt_2), 
-         case opt_def_1 of
-           None ->  None
-           | Some term_1 -> 
-            % let _ = System.print term_1 in
-            let term_2 = if poly? = ~(type_vars_1 = Nil)
-                          then elaborateTerm (env_2, term_1, srt_2)
-                         else term_1 
-            in
-             % TODO: Check that op sort is an instance of def sort
-             Some term_2)
+         sort_scheme_2,
+         map (fn (_,term_1) ->
+	      % let _ = System.print term_1 in
+	      let type_vars_1 = sort_scheme_1.1 in
+	      let term_2 = if poly? = ~(type_vars_1 = Nil) then
+	                     elaborateTerm (env_2, term_1, sort_scheme_2.2)
+			   else 
+			     term_1 
+	      in
+	      % TODO: Check that op sort is an instance of def sort
+	      (type_vars_1, term_2))
+	     defs_1)
    in
    %% Do polymorphic definitions first
    let ops_2_a = mapiAQualifierMap (elaborate_op_1 true)  ops_1   in
@@ -202,36 +202,31 @@ spec {
    %% ---------- SORTS : PASS 2 ---------- 
    % let _ = String.writeLine "Elaborating sorts" in
    let def elaborate_sort_2 (qualifier, sortName,
-                             sortInfo as (sort_names, type_vars_2, opt_def_2)) = 
+                             sortInfo as (sort_names, type_vars_2, defs_2)) = 
         (sort_names, 
          type_vars_2, 
-         case opt_def_2 of
-          | None       -> None
-          | Some srt_2 -> Some (checkSort (env_3, srt_2)))
+	 map (fn def_2 -> checkSortScheme (env_3, def_2)) defs_2)
    in
    let sorts_3 = mapiAQualifierMap elaborate_sort_2 sorts_2 
    in
  
    %% ---------- OPS : PASS 2 ---------- 
    let def elaborate_op_2 (qualifier, op_name,
-                           opinfo as (op_names, fixity, (type_vars_2, srt_2), opt_def_2)) =
+                           opinfo as (op_names, fixity, sort_scheme_2, defs_2)) =
         if ~(memberQualifiedId(qualifier,op_name,localOps))
           then opinfo
         else
-        let type_vars_3 = type_vars_2 in
-        let srt_3 = checkSort (env_3, srt_2) in
+        let sort_scheme_3 as (type_vars_3, srt_3) = checkSortScheme (env_3, sort_scheme_2) in
+	let all_different? = checkDifferent (type_vars_3, StringSet.empty)  in
         %let _ (* pos *) = sortAnn srt in
         (op_names, 
          fixity, 
-         (type_vars_3, srt_3), 
-         case opt_def_2 of
-         | None -> None
-          | Some term_2 -> 
-            let pos    = termAnn term_2 in
-            let term_3 = elaborateTerm (env_3, term_2, srt_3)  in
-            let all_different? = checkDifferent (type_vars_3, StringSet.empty)  in
-            %%  ---
-            let tvpe_vars_used  =
+         sort_scheme_3,
+         map (fn (type_vars_2, term_2) ->
+	      let pos    = termAnn term_2 in
+	      let term_3 = elaborateTerm (env_3, term_2, srt_3)  in
+	      %%  ---
+	      let type_vars_used  =
                 (let tv_cell = Ref [] : Ref TyVars in
                  let def insert tv = tv_cell := ListUtilities.insert (tv, ! tv_cell) in
                  let def record_type_vars_used (aSrt : PSort) = 
@@ -258,26 +253,28 @@ spec {
                  in                        
                  let _ = record_type_vars_used srt_3 in
                  ! tv_cell)
-            in
-            let type_vars_3_b = if null type_vars_3 then
-                                 tvpe_vars_used % Function was polymorphic, but not declared so.
-                                else if length tvpe_vars_used = length type_vars_3
-				       then tvpe_vars_used (* Probably correct ;-*)
-                                else 
-                                 let scheme =  (type_vars_3, srt_3)   in
-                                 let scheme = printSortScheme (scheme) in
-                                 (error (env_3, 
-                                         "mismatch between bound and free variables "^scheme, 
-                                         pos);
-                                  type_vars_3)
-            in                                 
-            ((if all_different? then
-                ()
-              else 
-                let scheme = (type_vars_3_b, srt_3)   in
-                let scheme = printSortScheme(scheme) in
-                error(env_3, "Repeated sort variables contained in "^scheme, pos));
-             Some term_3))
+	      in
+	      let type_vars_3_b = if null type_vars_3 then
+	                           type_vars_used % Function was polymorphic, but not declared so.
+	                          else if length type_vars_used = length type_vars_3
+					 then type_vars_3 (* Probably correct ;-*)
+				       else 
+					 let scheme =  (type_vars_3, srt_3)   in
+					 let scheme = printSortScheme (scheme) in
+					 (error (env_3, 
+						 "mismatch between bound and free variables "^scheme, 
+						 pos);
+				          type_vars_3)
+	      in
+	      ((if all_different? then
+		  ()
+		else 
+		  let scheme = (type_vars_3_b, srt_3) in
+		  error(env_3, 
+			"Repeated sort variables contained in "^(printSortScheme scheme),
+			pos));
+	       (type_vars_3_b, term_3)))
+	 defs_2)
    in
    let ops_3 = mapiAQualifierMap elaborate_op_2 ops_2 
    in
@@ -316,8 +313,12 @@ spec {
   %% ---- called inside SORTS : PASS 0  -----
   % ========================================================================
  
+  def checkSortScheme (env, (type_vars, srt)) = 
+    (type_vars, checkSort (env, srt))
+
+  %% TODO: convert checkSort to work on sort scheme?
   def checkSort (env, srt) = 
- %% checkSort calls elaborateTerm, which calls checkSort
+    %% checkSort calls elaborateTerm, which calls checkSort
     case srt
       of TyVar _ -> srt
 
@@ -406,7 +407,6 @@ spec {
       | Arrow (t1, t2, pos) ->
         Arrow (checkSort (env, t1), checkSort (env, t2), pos)
 
-
   % ========================================================================
   %% ---- called inside OPS : PASS 0  -----
   % ========================================================================
@@ -430,6 +430,7 @@ spec {
   %% which calls unifySorts, 
   %%  which side-effects links for metaTyVar's via 
 
+  %% TODO: convert elaborateTerm args to work on term scheme and sort scheme?
   def elaborateTerm (env, trm, term_sort : PSort) = aux_elaborateTerm (env, trm, term_sort)
 
   def aux_elaborateTerm (env, trm, term_sort : PSort) = 

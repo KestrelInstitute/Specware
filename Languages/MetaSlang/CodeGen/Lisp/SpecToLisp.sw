@@ -925,7 +925,7 @@ def mkLTerm (sp,dpn,vars,term : Term) =
     let
       def mkLOpDef(qname,name,decl,defs) = % ???
         case decl:OpInfo
-          of (op_names, fixity, (tyVars,srt), Some term) -> 
+          of (op_names, fixity, (tyVars,srt), (type_vars, term)::_) -> % TODO: check for other defs?
              let term = lispTerm(spc,defPkgName,term) in
              let name = printPackageId(Qualified(qname,name),defPkgName) in
              if functionSort?(spc,srt)

@@ -66,7 +66,7 @@ SpecUnion qualifying spec {
    let 
       def augmentSortMap (qualifier, id, new_info, merged_sort_map) =
 	let opt_old_info = findAQualifierMap (merged_sort_map, qualifier, id) in
-	{merged_info <- mergeSortInfo new_info opt_old_info qualifier id noPos;
+	{merged_info <- mergeSortInfo new_info opt_old_info noPos;
 	 return (insertAQualifierMap (merged_sort_map, qualifier, id, merged_info))}
    in
     foldOverQualifierMap augmentSortMap old_sort_map new_sort_map 
@@ -75,7 +75,7 @@ SpecUnion qualifying spec {
    let 
       def augmentOpMap (qualifier, id, new_info, merged_op_map) =
 	let opt_old_info = findAQualifierMap (merged_op_map, qualifier, id) in
-	{merged_info <- mergeOpInfo new_info opt_old_info qualifier id noPos;
+	{merged_info <- mergeOpInfo new_info opt_old_info noPos;
 	 return (insertAQualifierMap (merged_op_map, qualifier, id, merged_info))}
    in
     foldOverQualifierMap augmentOpMap old_op_map new_op_map 

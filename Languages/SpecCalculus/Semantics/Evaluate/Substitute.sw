@@ -77,15 +77,16 @@ SpecCalc qualifying spec {
 			    
   op applyMorphism : Morphism -> Spec -> Position -> Env Spec 
   def applyMorphism sm spc position =
-   %% The opMap and sortMap in sm are PolyMap's, but auxTranslateSpec wants AQualifierMap's,
+   %% The opMap and sortMap in sm are PolyMap's  :  dom_qid -> cod_qid
+   %% but auxTranslateSpec wants AQualifierMap's :  dom_qid -> (cod_qid, cod_aliases)
    %%  so we first convert formats...
    let op_id_map = foldMap (fn op_id_map -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
-			    insertAQualifierMap (op_id_map, dom_qualifier, dom_id, cod_qid))
+			    insertAQualifierMap (op_id_map, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
                            emptyAQualifierMap
 			   (opMap sm)
    in
    let sort_id_map = foldMap (fn sort_id_map -> fn (Qualified (dom_qualifier, dom_id)) -> fn cod_qid ->
-			      insertAQualifierMap (sort_id_map, dom_qualifier, dom_id, cod_qid))
+			      insertAQualifierMap (sort_id_map, dom_qualifier, dom_id, (cod_qid, [cod_qid])))
                              emptyAQualifierMap
 			     (sortMap sm)
    in

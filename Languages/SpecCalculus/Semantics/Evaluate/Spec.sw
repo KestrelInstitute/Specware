@@ -72,10 +72,10 @@ and then qualify the resulting spec if the spec was given a name.
   def evaluateSpecElem spc (elem, position) =
     case elem of
       | Import term -> return spc
-      | Sort (names,(tyVars,optSort)) ->
-          addSort names tyVars optSort spc position
-      | Op (names,(fxty,srtScheme,optTerm)) ->
-          addOp names fxty srtScheme optTerm spc position
+      | Sort (names,(tyVars,defs)) ->
+          addSort names tyVars defs spc position
+      | Op (names,(fxty,srtScheme,defs)) ->
+          addOp names fxty srtScheme defs spc position
       | Claim (Axiom, name, tyVars, term) ->
           return (addAxiom ((name,tyVars,term), spc)) 
       | Claim (Theorem, name, tyVars, term) ->
@@ -88,7 +88,7 @@ and then qualify the resulting spec if the spec was given a name.
     let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_psorts) =
       let newPSortInfo = convertSortInfoToPSortInfo imported_sort_info in
       let oldPSortInfo = findAQualifierMap (combined_psorts,imported_qualifier, imported_id) in {
-          mergedSorts <- SpecCalc.mergeSortInfo newPSortInfo oldPSortInfo imported_qualifier imported_id position;
+          mergedSorts <- SpecCalc.mergeSortInfo newPSortInfo oldPSortInfo position;
           return (insertAQualifierMap (combined_psorts,
                                        imported_qualifier,
                                        imported_id,
@@ -97,7 +97,7 @@ and then qualify the resulting spec if the spec was given a name.
     let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_pops) =
       let newPOpInfo = convertOpInfoToPOpInfo imported_op_info in
       let oldPOpInfo = findAQualifierMap (combined_pops,imported_qualifier, imported_id) in {
-           mergedOps <- SpecCalc.mergeOpInfo newPOpInfo oldPOpInfo imported_qualifier imported_id position;
+           mergedOps <- SpecCalc.mergeOpInfo newPOpInfo oldPOpInfo position;
            return (insertAQualifierMap (combined_pops,
                                         imported_qualifier,
                                         imported_id,

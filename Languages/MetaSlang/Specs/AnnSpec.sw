@@ -50,17 +50,19 @@ AnnSpec qualifying spec
 		    localOps     : OpNames,
 		    localSorts   : SortNames}
 
+ sort Aliases = List QualifiedId 
+
  sort Imports = List Import
  sort Import  = SpecRef * Spec
 
  sort ASortMap  b = AQualifierMap (ASortInfo b) % Qualifier -> Id -> info
  sort AOpMap    b = AQualifierMap (AOpInfo   b) % Qualifier -> Id -> info
 
- sort ASortInfo b = SortNames * TyVars * Option (ASort b) 
- sort SortNames   = List QualifiedId 
+ sort ASortInfo b = SortNames * TyVars * ASortSchemes b 
+ sort SortNames   = Aliases
 
- sort AOpInfo   b = OpNames * Fixity * ASortScheme b * Option (ATerm b) 
- sort OpNames     = List QualifiedId 
+ sort AOpInfo   b = OpNames * Fixity * ASortScheme b * ATermSchemes b 
+ sort OpNames     = Aliases
 
  sort AProperties   b  = List (AProperty b) 
  sort AProperty     b  = PropertyType * PropertyName * TyVars * ATerm b
@@ -73,8 +75,6 @@ AnnSpec qualifying spec
 
  sort AOpSignature  b = String * String * TyVars * ASort b
  sort SortSignature   = String * String * TyVars 
-
- sort ASortScheme   b = TyVars * ASort b
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                AQualifierMap
@@ -126,14 +126,14 @@ AnnSpec qualifying spec
    importInfo       = importInfo,
 
    ops              = mapAQualifierMap 
-                       (fn (aliases, fixity, (tvs, srt), opt_def) -> 
+                       (fn (aliases, fixity, (tvs, srt), defs) -> 
 			   (aliases, fixity, (tvs, mapSort tsp_maps srt), 
-			    mapTermOpt tsp_maps opt_def))
+			    mapTermSchemes tsp_maps defs))
 		       ops,
 
    sorts            = mapAQualifierMap 
-                        (fn (aliases, tvs, opt_def) -> 
-                            (aliases, tvs, mapSortOpt tsp_maps opt_def))
+                        (fn (aliases, tvs, defs) -> 
+                            (aliases, tvs, mapSortSchemes tsp_maps defs))
                         sorts,
 
    properties       = map (fn (pt, nm, tvs, term) -> 
@@ -142,17 +142,13 @@ AnnSpec qualifying spec
    }
 
 
- op mapTermOpt    : fa(b) TSP_Maps b -> Option (ATerm b) -> Option (ATerm b)
- def mapTermOpt tsp_maps opt_term = 
-  case opt_term
-    of None      -> None
-     | Some term -> Some (mapTerm tsp_maps term)
+ op mapTermSchemes : fa(b) TSP_Maps b -> ATermSchemes b -> ATermSchemes b
+ def mapTermSchemes tsp_maps term_schemes = 
+  map (fn (type_vars, term) -> (type_vars, mapTerm tsp_maps term)) term_schemes
 
- op mapSortOpt    : fa(b) TSP_Maps b -> Option (ASort b) -> Option (ASort b)
- def mapSortOpt tsp_maps opt_sort =
-  case opt_sort
-    of None     -> None
-     | Some srt -> Some (mapSort tsp_maps srt)
+ op mapSortSchemes : fa(b) TSP_Maps b -> ASortSchemes b -> ASortSchemes b
+ def mapSortSchemes tsp_maps sort_schemes =
+  map (fn (type_vars, srt) -> (type_vars, mapSort tsp_maps srt)) sort_schemes
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Recursive TSP application over Specs
@@ -162,15 +158,15 @@ AnnSpec qualifying spec
  op appSpec    : fa(a) appTSP a -> ASpec a    -> ()
 
  def appSpec tsp spc = 
-  let appt  = appTerm    tsp in
-  let appto = appTermOpt tsp in
-  let apps  = appSort    tsp in
-  let appso = appSortOpt tsp in
+  let appt  = appTerm        tsp in
+  let appts = appTermSchemes tsp in
+  let apps  = appSort        tsp in
+  let appss = appSortSchemes tsp in
   (appAQualifierMap
-     (fn (op_names, fixity, (tvs,srt), opt_def) -> (apps srt ; appto opt_def))
+     (fn (op_names, fixity, (tvs,srt), defs) -> (apps srt ; appts defs))
      spc.ops ;
    appAQualifierMap
-     (fn (sort_names, tvs, opt_def) -> appso opt_def)
+     (fn (sort_names, tvs, defs) -> appss defs)
      spc.sorts ;
    app
      (fn (_, nm, tvs, term) -> appt term)
@@ -232,26 +228,36 @@ AnnSpec qualifying spec
                       [] spc.ops
 
  op equalSortInfo?: fa(a) ASortInfo a * ASortInfo a -> Boolean
- def equalSortInfo?((sortNames1,tyvs1,optDef1),(sortNames2,tyvs2,optDef2)) =
+ def equalSortInfo?((sortNames1,tyvs1,defs1),(sortNames2,tyvs2,defs2)) =
    sortNames1 = sortNames2
      & tyvs1 = tyvs2
      %% Could take into account substitution of tyvs
-     & equalOpt?(optDef1,optDef2,equalSort?)
+     & all (fn def1 -> 
+	    exists (fn def2 -> equalSortScheme? (def1, def2)) 
+	           defs2) 
+           defs1
+
 
  op equalOpInfo?: fa(a) AOpInfo a * AOpInfo a -> Boolean
- def equalOpInfo?((opNames1,fixity1,sortsch1,optDef1),
-		  (opNames2,fixity2,sortsch2,optDef2)) =
+ def equalOpInfo?((opNames1,fixity1,sortsch1,defs1),
+		  (opNames2,fixity2,sortsch2,defs2)) =
    opNames1 = opNames2
      & fixity1 = fixity2
      & equalSortScheme?(sortsch1,sortsch2)
-     & equalOpt?(optDef1,optDef2,equalTerm?)
+     & all (fn def1 -> 
+	    exists (fn def2 -> equalTermScheme? (def1, def2)) 
+	           defs2) 
+           defs1
 
  op equalSortScheme?: fa(a) ASortScheme a * ASortScheme a -> Boolean
- def equalSortScheme?((tyvs1,def1),(tyvs2,def2)) =
-   tyvs1 = tyvs2
-     %% Could take into account substitution of tyvs
-     & equalSort?(def1,def2)
+ def equalSortScheme? ((tyvs1, s1), (tyvs2, s2)) =
+   %% TODO: take into account substitution of tyvs
+   tyvs1 = tyvs2 & equalSort? (s1, s2)
 
+ op equalTermScheme?: fa(a) ATermScheme a * ATermScheme a -> Boolean
+ def equalTermScheme? ((tyvs1, t1), (tyvs2, t2)) =
+   %% TODO: take into account substitution of tyvs
+   tyvs1 = tyvs2 & equalTerm? (t1, t2)
 
  % --------------------------------------------------------------------------------
  % get the sort/op names as list of strings
@@ -359,7 +365,7 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
  def emptyImports            = []
- def fa (b) emptyAProperties = []
+ def fa (a) emptyAProperties = []
  def emptyASortMap           = emptyAQualifierMap
  def emptyAOpMap             = emptyAQualifierMap
  def emptyImportInfo         = {imports      = emptyImports,

@@ -918,18 +918,25 @@ MetaSlang qualifying spec {
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- sort appTSP a = (ATerm a    -> ()) *
-                 (ASort a    -> ()) *
+ sort appTSP a = (ATerm    a -> ()) *
+                 (ASort    a -> ()) *
                  (APattern a -> ())
 
  sort ATermOpt a = Option(ATerm a)
  sort ASortOpt a = Option(ASort a)
 
- op appTerm    : fa(a) appTSP a -> ATerm a    -> ()
- op appSort    : fa(a) appTSP a -> ASort a    -> ()
- op appPattern : fa(a) appTSP a -> APattern a -> ()
- op appTermOpt : fa(a) appTSP a -> ATermOpt a -> ()
- op appSortOpt : fa(a) appTSP a -> ASortOpt a -> ()
+ sort ASortScheme  b = TyVars * ASort b
+ sort ATermScheme  b = TyVars * ATerm b
+ sort ASortSchemes b = List (ASortScheme b)
+ sort ATermSchemes b = List (ATermScheme b)
+
+ op appTerm        : fa(a) appTSP a -> ATerm        a -> ()
+ op appSort        : fa(a) appTSP a -> ASort        a -> ()
+ op appPattern     : fa(a) appTSP a -> APattern     a -> ()
+ op appTermOpt     : fa(a) appTSP a -> ATermOpt     a -> ()
+ op appSortOpt     : fa(a) appTSP a -> ASortOpt     a -> ()
+ op appSortSchemes : fa(a) appTSP a -> ASortSchemes a -> ()
+ op appTermSchemes : fa(a) appTSP a -> ATermSchemes a -> ()
 
 
  def appTerm (tsp_apps as (term_app,_,_)) term =
@@ -1006,6 +1013,12 @@ MetaSlang qualifying spec {
    case opt_term of
      | None     -> ()
      | Some trm -> appTerm tsp_apps trm
+
+ def appSortSchemes tsp_apps sort_schemes =
+   app (fn (_,srt) -> appSort tsp_apps srt) sort_schemes
+
+ def appTermSchemes tsp_apps term_schemes =
+   app (fn (_,term) -> appTerm tsp_apps term) term_schemes
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                Misc Base Terms

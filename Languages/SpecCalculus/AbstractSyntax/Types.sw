@@ -168,9 +168,9 @@ Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 \begin{spec}
   sort TranslateExpr  a = List (TranslateRule a) * a
   sort TranslateRule  a = (TranslateRule_ a) * a
-  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId
-                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) 
-                          | Ambiguous  QualifiedId                 * QualifiedId                 
+  sort TranslateRule_ a = | Sort       QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases
+                          | Op         (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
+                          | Ambiguous  QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
 \end{spec}
 
 A \verb+NamesExpr+ denotes list of names and operators. They are used in
@@ -198,8 +198,8 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
 
   sort SpecElem_ a =
     | Import Term a
-    | Sort   List QualifiedId * (TyVars * Option (ASort a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
+    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (AProperty a)
 \end{spec}
 

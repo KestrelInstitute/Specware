@@ -21,18 +21,22 @@ differs from the identity.
 
 \begin{spec}
 SpecCalc qualifying spec {
-  import /Languages/MetaSlang/Specs/SimplePrinter
-  import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
-  import Colimit
-  import ../Printer
+ import /Languages/MetaSlang/Specs/SimplePrinter
+ import Cat qualifying /Library/Structures/Data/Categories/Cocomplete/Polymorphic/AsRecord
+ import ../Printer
 
-  sort Morphism = {
+ sort QualifiedIdMap  = PolyMap.Map (QualifiedId, QualifiedId)
+ sort MorphismSortMap = QualifiedIdMap
+ sort MorphismOpMap   = QualifiedIdMap
+
+ sort Morphism = {
     dom     : Spec,
     cod     : Spec,
     sortMap : MorphismSortMap,
     opMap   : MorphismOpMap
   }
 
+  op makeMorphism : Spec * Spec * MorphismSortMap * MorphismOpMap -> Morphism
   def makeMorphism (dom_spec, cod_spec, sort_map, op_map) =
    {dom     = dom_spec,
     cod     = cod_spec,
@@ -79,6 +83,11 @@ SpecCalc qualifying spec {
       ppMorphMap opMap
     ])
 
+  op dom     : Morphism -> Spec
+  op cod     : Morphism -> Spec
+  op opMap   : Morphism -> MorphismOpMap
+  op sortMap : Morphism -> MorphismSortMap
+
   def dom     morph = morph.dom
   def cod     morph = morph.cod
   def opMap   morph = morph.opMap
@@ -92,6 +101,14 @@ SpecCalc qualifying spec {
      opMap   = PolyMap.compose mor1.opMap mor2.opMap
    }
 
+  %% We could have named InitialCocone (and SpecInitialCocone, etc.) 
+  %%  as Colimit (and SpecColimit, etc.), but InitialCocone is a bit more explicit
+  sort SpecDiagram        = Cat.Diagram       (Spec, Morphism)
+  sort SpecCocone         = Cat.Cocone        (Spec, Morphism) 
+  sort SpecInitialCocone  = Cat.InitialCocone (Spec, Morphism) 
+  op specColimit : SpecDiagram -> SpecInitialCocone
+
+  op specCat : () -> Cat.Cat (Spec, Morphism)
   def specCat () = {
     dom = fn {dom = dom, cod = _,   sortMap = _, opMap = _} -> dom,
     cod = fn {dom = _,   cod = cod, sortMap = _, opMap = _} -> cod,
@@ -113,12 +130,14 @@ SpecCalc qualifying spec {
   }
 
  %% Used by colimit to actually build the initialCocone
+ op makeSpecInitialCocone : SpecDiagram -> Spec -> PolyMap.Map (Vertex.Elem,Morphism) -> SpecInitialCocone
  def makeSpecInitialCocone dg apex_spec cc_map =
   let cat = cod (functor dg) in {
    cocone    = makeSpecCocone dg apex_spec cc_map,
-   universal = fn cocone -> ident cat (initialObject cat) % TODO: Fix
+   universal = fn other_cocone -> ident cat (initialObject cat) % TODO: Fix
   }
 
+ op makeSpecCocone : SpecDiagram -> Spec -> PolyMap.Map (Vertex.Elem,Morphism) -> SpecCocone
  def makeSpecCocone dg apex_spec cc_map =
   let apex_functor = functor dg in  % TODO: FIX
   let cc_nt = build (functor dg) apex_functor cc_map in
