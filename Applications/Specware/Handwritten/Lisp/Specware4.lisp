@@ -59,13 +59,9 @@
 ;;; ---------------
 (defvar HandwrittenFiles
   '(
-    "Library/Base/Handwritten/Lisp/Boolean.lisp"
     "Library/Base/Handwritten/Lisp/Integer.lisp"
-    "Library/Base/Handwritten/Lisp/Nat.lisp"
     "Library/Base/Handwritten/Lisp/Char.lisp"
-    "Library/Base/Handwritten/Lisp/List.lisp"
     "Library/Base/Handwritten/Lisp/String.lisp"
-    "Library/Base/Handwritten/Lisp/Option.lisp"
     "Library/Base/Handwritten/Lisp/System.lisp"
     "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
