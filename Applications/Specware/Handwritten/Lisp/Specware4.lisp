@@ -119,6 +119,9 @@
 
     ;; Debugging utilities
     "Applications/Specware/Handwritten/Lisp/debug"
+
+    ;; Test harness
+    "Applications/Handwritten/Lisp/test-harness"
     )
   )
 

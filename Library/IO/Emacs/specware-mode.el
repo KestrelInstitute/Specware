@@ -1385,6 +1385,17 @@ uniquely and concretely describes their application.")
     (about-specware-finish-buffer)
     (goto-line 2)))
 
+;;; Run test harness
+(defun sw:run-test-harness (non-rec)
+  ;; Prefix arg means don't recur on sub-directories
+  (interactive "P")
+  (simulate-input-expression
+   (if non-rec
+       (format "(specware-test::run-test-directories %S)"
+	       default-directory)
+     (format "(specware-test::run-test-directories-rec %S)"
+	     default-directory))))
+
 ;;; & do the user's customisation
 
 (add-hook 'specware-load-hook 'specware-mode-version t)
