@@ -277,9 +277,29 @@ Should we check to see if qid is in cod_map??
 
   op  verifySignatureMappings : Spec -> Spec -> Morphism -> Position -> Env ()
   def verifySignatureMappings dom_spec cod_spec sm pos =
-    %% TODO:  bug 67 !!
     let {dom, cod, sortMap, opMap, sm_tm=_} = sm in
     let 
+      def verify_sort_def (dom_q, dom_id, dom_info : SortInfo, _) = 
+	let dom_qid = Qualified(dom_q, dom_id) in
+	let (_,dom_sort) = unpackFirstSortDef dom_info in
+	{
+	 translated_sort <- return (translateSortViaSM (dom_sort, sortMap, opMap));
+	 Some cod_qid <- return (evalPartial sortMap dom_qid);
+	 (Some cod_info) <- return (findTheSort (cod_spec, cod_qid));
+	 (_,cod_sort)  <- return (unpackFirstSortDef cod_info);
+	 if equalSort? (translated_sort, cod_sort) then
+	   return ()
+	 else if equivSort? cod_spec (translated_sort, cod_sort) then
+	   return ()
+	 else
+	   let msg = "Inconsistent type def mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+	             "\nThe domain sort " ^ (printSort dom_sort) ^
+		     "\n  translates to " ^ (printSort translated_sort) ^
+		     "\n   which is not " ^ (printSort cod_sort)
+	   in
+	   raise (MorphError (pos, msg))
+	    }
+
       def verify_op_type (dom_q, dom_id, dom_info : OpInfo, _) = 
 	let dom_qid = Qualified(dom_q, dom_id) in
 	let (_,dom_sort,_) = unpackFirstOpDef dom_info in
@@ -293,7 +313,7 @@ Should we check to see if qid is in cod_map??
 	 else if equivSort? cod_spec (translated_sort, cod_sort) then
 	   return ()
 	 else
-	   let msg = "Inconsistent signature mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
+	   let msg = "Inconsistent op type mapping for " ^ (printQualifiedId dom_qid) ^ " +-> " ^ (printQualifiedId cod_qid) ^ 
 	             "\nThe domain sort " ^ (printSort dom_sort) ^
 		     "\n  translates to " ^ (printSort translated_sort) ^
 		     "\n   which is not " ^ (printSort cod_sort)
@@ -301,7 +321,11 @@ Should we check to see if qid is in cod_map??
 	   raise (MorphError (pos, msg))
 	    }
     in
-      foldOverQualifierMap verify_op_type () dom_spec.ops
+      {
+       foldOverQualifierMap verify_sort_def () dom_spec.sorts;
+       foldOverQualifierMap verify_op_type  () dom_spec.ops;
+       return ()
+       }
 
   op translateSortViaSM : MS.Sort * MorphismSortMap * MorphismOpMap -> MS.Sort
   def translateSortViaSM (srt, sortMap, opMap) =
