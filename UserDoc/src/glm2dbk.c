@@ -692,7 +692,7 @@ trace("\nquote:: ");
 	outtext("<quote>");
 
 	do {
-		if (atEOT || aheadtext("''")) {
+		if (atEOT || seetext("''")) {
 			outtext("</quote>");
 			succeed;
 		}

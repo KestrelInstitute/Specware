@@ -372,6 +372,7 @@ trace3("P%d%c\n", bufp,thischar());
 		try(terminal);
 
 		try(ent);
+		try(quote);
 		other();
 	}
 }
@@ -594,6 +595,23 @@ trace("\nent:: ");
 		succeed;
 	}
 	fail;
+}
+
+bool quote() {
+
+	if (inProgramOrSyntax) fail;
+trace("\nquote:: ");
+	if (!seetext("<quote>")) fail;
+
+	outtext("``");
+
+	do {
+		if (atEOT || seetext("</quote>")) {
+			outtext("''");
+			succeed;
+		}
+		outchar(getchar());
+	} while (True);
 }
 
 bool other() {
