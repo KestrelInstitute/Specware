@@ -10,9 +10,9 @@
 spec  
  
  op  f : Nat -> Integer
- def f x = x + y
+ def f x1 = x1 + x
  
- op  y : Nat
+ op  x : Nat
 endspec
 
 ")
