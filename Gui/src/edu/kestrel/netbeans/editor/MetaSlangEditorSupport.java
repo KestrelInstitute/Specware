@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/17 07:01:59  weilyn
+ * Made scURI an Item, and added more rules for scProve.
+ *
  * Revision 1.1  2003/01/30 02:01:47  gilham
  * Initial version.
  *
@@ -242,7 +245,7 @@ public class MetaSlangEditorSupport extends DataEditorSupport implements EditorC
 		public void taskFinished(Task t2) {
 		    t2.removeTaskListener(this);
 		    notifyParsingDone();
-		    if (req.getErrConsumer()!=null) {
+		    if (req.annotatedErrors !=0) {
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
 				    if (isDocumentLoaded())

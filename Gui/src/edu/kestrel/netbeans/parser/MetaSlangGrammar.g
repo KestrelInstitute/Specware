@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.17  2003/03/12 03:01:56  weilyn
+ * no message
+ *
  * Revision 1.16  2003/03/07 23:44:24  weilyn
  * Added most top level terms
  *
@@ -68,8 +71,6 @@ package edu.kestrel.netbeans.parser;
 
 {
 import java.util.*;
-
-import org.netbeans.modules.java.ErrConsumer;
 
 import edu.kestrel.netbeans.model.*;
 import edu.kestrel.netbeans.parser.ElementFactory;
@@ -988,14 +989,15 @@ BLOCK_COMMENT
 	 | '\n'			{newline();}
 	 | ~('*'|'\n'|'\r')
       )*
-      "*)"                  {_ttype = Token.SKIP;}
+      "*)"                      {_ttype = Token.SKIP;}
     ;
 
+// Latex comments -- ignored
 LATEX_COMMENT
-    : ("\\section{"
-       | "\\subsection{"
-       | "\\document{"
-       | "\\end{spec}"
+    : "\\end{spec}"
+    | ( "\\section{"
+      | "\\subsection{"
+      | "\\document{"
       )
       (// '\r' '\n' can be matched in one alternative or by matching
        // '\r' in one iteration and '\n' in another.  The language
@@ -1003,13 +1005,13 @@ LATEX_COMMENT
        // newlines is ambiguous.  Consequently, the resulting grammar
        // must be ambiguous.  This warning is shut off.
        options {generateAmbigWarnings=false;}
-       : { LA(2)!=')' }? '*'
+       : { LA(2)!='b' || LA(3)!='e' || LA(4) !='g' || LA(5) !='i' || LA(6) !='n' || LA(7) != '{' || LA(8) != 's' || LA(9) != 'p' || LA(10) != 'e' || LA(11) != 'c' || LA(12) != '}'}? '\\'
 	 | '\r' '\n'		{newline();}
 	 | '\r'			{newline();}
 	 | '\n'			{newline();}
-	 | ~('\n'|'\r')
-      )*
-      "\\begin{spec}"                  {_ttype = Token.SKIP;}
+	 | ~('\\'|'\n'|'\r')
+         )*
+      "\\begin{spec}"           {_ttype = Token.SKIP;}
     ;
 
 //-----------------------------

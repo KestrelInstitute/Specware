@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:20  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -16,11 +19,12 @@ import java.io.IOException;
 import java.io.Reader;
 
 import org.openide.filesystems.FileObject;
-import org.netbeans.modules.java.ErrConsumer;
 
 import antlr.RecognitionException;
 import antlr.SemanticException;
 import antlr.TokenStreamException;
+import antlr.TokenStreamException;
+import antlr.TokenStreamRecognitionException;
 
 import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.ParserEngine;
@@ -72,7 +76,7 @@ public class MetaSlangParserEngine implements ParserEngine{
 	if (DEBUG) edu.kestrel.netbeans.Util.trace("*** MetaSlangParserEngine.process()");
 	// Create a scanner that reads from the input stream
 	Reader reader = r.getSourceReader();
-	MetaSlangLexerFromAntlr lexer = new MetaSlangLexerFromAntlr(reader);
+	MetaSlangLexerFromAntlr lexer = new MetaSlangLexerFromAntlr(reader, r);
 
 	// Create a parser that reads from the scanner
 	MetaSlangParserFromAntlr parser = new MetaSlangParserFromAntlr(lexer, r);
@@ -85,14 +89,14 @@ public class MetaSlangParserEngine implements ParserEngine{
 	    // handled by MetaSlangParserFromAntlr
 	}
 	catch (TokenStreamException e) {
-	    edu.kestrel.netbeans.Util.trace("LEXER ERROR - "+e.getClass());
-	    //e.printStackTrace();
-	    // TODO: Better handling of parse errors
-	    r.setSyntaxErrors(1);
-	    ErrConsumer errConsumer = r.getErrConsumer();
-	    if (errConsumer != null) {
-		errConsumer.pushError(null, 0, 0, e.getMessage(), "");
-            }
+	    // TODO: Better handling of token stream errors
+	    edu.kestrel.netbeans.Util.trace("*** MetaSlangParserEngine.process(): caught "+e.getClass()+" in file "+r.getSourceFile());
+	    if (e instanceof TokenStreamRecognitionException) {
+		RecognitionException ex = ((TokenStreamRecognitionException) e).recog;
+		r.pushError(ex.getLine(), ex.getColumn(), ex.getMessage());
+	    } else {
+		r.pushError(0, 0, e.getMessage());
+	    }
 	}
 	r.notifyComplete();
     }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 07:02:04  weilyn
+ * Made scURI an Item, and added more rules for scProve.
+ *
  * Revision 1.3  2003/02/14 16:58:56  weilyn
  * Added support for prove term.
  *
@@ -55,7 +58,8 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int IDENTIFIER_ID         = WHITESPACE_ID + 1;
     public static final int LINE_COMMENT_ID       = IDENTIFIER_ID + 1;
     public static final int BLOCK_COMMENT_ID      = LINE_COMMENT_ID + 1;
-    public static final int CHAR_LITERAL_ID       = BLOCK_COMMENT_ID + 1;
+    public static final int LATEX_COMMENT_ID      = BLOCK_COMMENT_ID + 1;
+    public static final int CHAR_LITERAL_ID       = LATEX_COMMENT_ID + 1;
     public static final int STRING_LITERAL_ID     = CHAR_LITERAL_ID + 1;
     public static final int INT_LITERAL_ID        = STRING_LITERAL_ID + 1;
 
@@ -76,11 +80,14 @@ public class MetaSlangTokenContext extends TokenContext {
     // Keywords numeric-ids - do not modify //GEN-BEGIN
     public static final int AS_ID = RBRACE_ID + 1;
     public static final int AXIOM_ID = AS_ID + 1;
-    public static final int CASE_ID = AXIOM_ID + 1;
+    public static final int BY_ID = AXIOM_ID + 1;
+    public static final int CASE_ID = BY_ID + 1;
     public static final int CHOOSE_ID = CASE_ID + 1;
-    public static final int CONJECTURE_ID = CHOOSE_ID + 1;
+    public static final int COLIMIT_ID = CHOOSE_ID + 1;
+    public static final int CONJECTURE_ID = COLIMIT_ID + 1;
     public static final int DEF_ID = CONJECTURE_ID + 1;
-    public static final int ELSE_ID = DEF_ID + 1;
+    public static final int DIAGRAM_ID = DEF_ID + 1;
+    public static final int ELSE_ID = DIAGRAM_ID + 1;
     public static final int EMBED_ID = ELSE_ID + 1;
     public static final int EMBEDP_ID = EMBED_ID + 1;
     public static final int ENDSPEC_ID = EMBEDP_ID + 1;
@@ -88,24 +95,32 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final int FA_ID = EX_ID + 1;
     public static final int FALSE_ID = FA_ID + 1;
     public static final int FN_ID = FALSE_ID + 1;
-    public static final int IF_ID = FN_ID + 1;
+    public static final int GENERATE_ID = FN_ID + 1;
+    public static final int IF_ID = GENERATE_ID + 1;
     public static final int IMPORT_ID = IF_ID + 1;
     public static final int IN_ID = IMPORT_ID + 1;
-    public static final int IS_ID = IN_ID + 1;
+    public static final int INFIXL_ID = IN_ID + 1;
+    public static final int INFIXR_ID = INFIXL_ID + 1;
+    public static final int IS_ID = INFIXR_ID + 1;
     public static final int LET_ID = IS_ID + 1;
-    public static final int OF_ID = LET_ID + 1;
+    public static final int MORPHISM_ID = LET_ID + 1;
+    public static final int OBLIGATIONS_ID = MORPHISM_ID + 1;
+    public static final int OF_ID = OBLIGATIONS_ID + 1;
     public static final int OP_ID = OF_ID + 1;
     public static final int OPTIONS_ID = OP_ID + 1;
-    public static final int PROJECT_ID = OPTIONS_ID + 1;
+    public static final int PRINT_ID = OPTIONS_ID + 1;
+    public static final int PROJECT_ID = PRINT_ID + 1;
     public static final int PROVE_ID = PROJECT_ID + 1;
-    public static final int QUOTIENT_ID = PROVE_ID + 1;
+    public static final int QUALIFYING_ID = PROVE_ID + 1;
+    public static final int QUOTIENT_ID = QUALIFYING_ID + 1;
     public static final int RELAX_ID = QUOTIENT_ID + 1;
     public static final int RESTRICT_ID = RELAX_ID + 1;
     public static final int SORT_ID = RESTRICT_ID + 1;
     public static final int SPEC_ID = SORT_ID + 1;
     public static final int THEN_ID = SPEC_ID + 1;
     public static final int THEOREM_ID = THEN_ID + 1;
-    public static final int TRUE_ID = THEOREM_ID + 1;
+    public static final int TRANSLATE_ID = THEOREM_ID + 1;
+    public static final int TRUE_ID = TRANSLATE_ID + 1;
     public static final int USING_ID = TRUE_ID + 1;
     public static final int WHERE_ID = USING_ID + 1;
     // End of Keywords numeric-ids //GEN-END
@@ -142,6 +157,9 @@ public class MetaSlangTokenContext extends TokenContext {
     /** Block comment */
     public static final BaseTokenID BLOCK_COMMENT = new BaseTokenID("block-comment", BLOCK_COMMENT_ID);
 
+    /** Latex comment */
+    public static final BaseTokenID LATEX_COMMENT = new BaseTokenID("latex-comment", LATEX_COMMENT_ID);
+
     /** Character literal e.g. 'c' */
     public static final BaseTokenID CHAR_LITERAL = new BaseTokenID("char-literal", CHAR_LITERAL_ID);
 
@@ -168,10 +186,13 @@ public class MetaSlangTokenContext extends TokenContext {
     // Keyword token-ids - do not modify //GEN-BEGIN
     public static final BaseImageTokenID AS = new BaseImageTokenID("as", AS_ID, KEYWORDS);
     public static final BaseImageTokenID AXIOM = new BaseImageTokenID("axiom", AXIOM_ID, KEYWORDS);
+    public static final BaseImageTokenID BY = new BaseImageTokenID("by", BY_ID, KEYWORDS);
     public static final BaseImageTokenID CASE = new BaseImageTokenID("case", CASE_ID, KEYWORDS);
     public static final BaseImageTokenID CHOOSE = new BaseImageTokenID("choose", CHOOSE_ID, KEYWORDS);
+    public static final BaseImageTokenID COLIMIT = new BaseImageTokenID("colimit", COLIMIT_ID, KEYWORDS);
     public static final BaseImageTokenID CONJECTURE = new BaseImageTokenID("conjecture", CONJECTURE_ID, KEYWORDS);
     public static final BaseImageTokenID DEF = new BaseImageTokenID("def", DEF_ID, KEYWORDS);
+    public static final BaseImageTokenID DIAGRAM = new BaseImageTokenID("diagram", DIAGRAM_ID, KEYWORDS);
     public static final BaseImageTokenID ELSE = new BaseImageTokenID("else", ELSE_ID, KEYWORDS);
     public static final BaseImageTokenID EMBED = new BaseImageTokenID("embed", EMBED_ID, KEYWORDS);
     public static final BaseImageTokenID EMBEDP = new BaseImageTokenID("embed?", EMBEDP_ID, KEYWORDS);
@@ -180,16 +201,23 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID FA = new BaseImageTokenID("fa", FA_ID, KEYWORDS);
     public static final BaseImageTokenID FALSE = new BaseImageTokenID("false", FALSE_ID, KEYWORDS);
     public static final BaseImageTokenID FN = new BaseImageTokenID("fn", FN_ID, KEYWORDS);
+    public static final BaseImageTokenID GENERATE = new BaseImageTokenID("generate", GENERATE_ID, KEYWORDS);
     public static final BaseImageTokenID IF = new BaseImageTokenID("if", IF_ID, KEYWORDS);
     public static final BaseImageTokenID IMPORT = new BaseImageTokenID("import", IMPORT_ID, KEYWORDS);
     public static final BaseImageTokenID IN = new BaseImageTokenID("in", IN_ID, KEYWORDS);
+    public static final BaseImageTokenID INFIXL = new BaseImageTokenID("infixl", INFIXL_ID, KEYWORDS);
+    public static final BaseImageTokenID INFIXR = new BaseImageTokenID("infixr", INFIXR_ID, KEYWORDS);
     public static final BaseImageTokenID IS = new BaseImageTokenID("is", IS_ID, KEYWORDS);
     public static final BaseImageTokenID LET = new BaseImageTokenID("let", LET_ID, KEYWORDS);
+    public static final BaseImageTokenID MORPHISM = new BaseImageTokenID("morphism", MORPHISM_ID, KEYWORDS);
+    public static final BaseImageTokenID OBLIGATIONS = new BaseImageTokenID("obligations", OBLIGATIONS_ID, KEYWORDS);
     public static final BaseImageTokenID OF = new BaseImageTokenID("of", OF_ID, KEYWORDS);
     public static final BaseImageTokenID OP = new BaseImageTokenID("op", OP_ID, KEYWORDS);
     public static final BaseImageTokenID OPTIONS = new BaseImageTokenID("options", OPTIONS_ID, KEYWORDS);
+    public static final BaseImageTokenID PRINT = new BaseImageTokenID("print", PRINT_ID, KEYWORDS);
     public static final BaseImageTokenID PROJECT = new BaseImageTokenID("project", PROJECT_ID, KEYWORDS);
     public static final BaseImageTokenID PROVE = new BaseImageTokenID("prove", PROVE_ID, KEYWORDS);
+    public static final BaseImageTokenID QUALIFYING = new BaseImageTokenID("qualifying", QUALIFYING_ID, KEYWORDS);
     public static final BaseImageTokenID QUOTIENT = new BaseImageTokenID("quotient", QUOTIENT_ID, KEYWORDS);
     public static final BaseImageTokenID RELAX = new BaseImageTokenID("relax", RELAX_ID, KEYWORDS);
     public static final BaseImageTokenID RESTRICT = new BaseImageTokenID("restrict", RESTRICT_ID, KEYWORDS);
@@ -197,6 +225,7 @@ public class MetaSlangTokenContext extends TokenContext {
     public static final BaseImageTokenID SPEC = new BaseImageTokenID("spec", SPEC_ID, KEYWORDS);
     public static final BaseImageTokenID THEN = new BaseImageTokenID("then", THEN_ID, KEYWORDS);
     public static final BaseImageTokenID THEOREM = new BaseImageTokenID("theorem", THEOREM_ID, KEYWORDS);
+    public static final BaseImageTokenID TRANSLATE = new BaseImageTokenID("translate", TRANSLATE_ID, KEYWORDS);
     public static final BaseImageTokenID TRUE = new BaseImageTokenID("true", TRUE_ID, KEYWORDS);
     public static final BaseImageTokenID USING = new BaseImageTokenID("using", USING_ID, KEYWORDS);
     public static final BaseImageTokenID WHERE = new BaseImageTokenID("where", WHERE_ID, KEYWORDS);
@@ -218,10 +247,12 @@ public class MetaSlangTokenContext extends TokenContext {
 
     static {
         BaseImageTokenID[] kwds = new BaseImageTokenID[] {//GEN-BEGIN
-            AS, AXIOM, CASE, CHOOSE, CONJECTURE, DEF, ELSE, EMBED, 
-            EMBEDP, ENDSPEC, EX, FA, FALSE, FN, IF, IMPORT, IN, IS, LET, 
-            OF, OP, OPTIONS, PROJECT, PROVE, QUOTIENT, RELAX, RESTRICT, 
-            SORT, SPEC, THEN, THEOREM, TRUE, USING, WHERE
+            AS, AXIOM, BY, CASE, CHOOSE, COLIMIT, CONJECTURE, DEF, 
+            DIAGRAM, ELSE, EMBED, EMBEDP, ENDSPEC, EX, FA, FALSE, FN, 
+            GENERATE, IF, IMPORT, IN, INFIXL, INFIXR, IS, LET, MORPHISM, 
+            OBLIGATIONS, OF, OP, OPTIONS, PRINT, PROJECT, PROVE, 
+            QUALIFYING, QUOTIENT, RELAX, RESTRICT, SORT, SPEC, THEN, 
+            THEOREM, TRANSLATE, TRUE, USING, WHERE
         };//GEN-END
 
         for (int i = kwds.length - 1; i >= 0; i--) {

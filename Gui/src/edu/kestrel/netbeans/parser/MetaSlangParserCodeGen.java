@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/01/31 17:38:34  gilham
+ * Removed token recording code.
+ *
  * Revision 1.1  2003/01/30 02:02:20  gilham
  * Initial version.
  *
@@ -47,6 +50,7 @@ public class MetaSlangParserCodeGen {
 
     private static final String[] OPTION_LIST = { IGNORE_CASE, USE_STRING };
 
+    private static final String LEXER_FILE_NAME = "MetaSlangLexerFromAntlr.java";
     private static final String PARSER_FILE_NAME = "MetaSlangParserFromAntlr.java";
     private static final String TOKENS_TYPE_FILE_NAME = "MetaSlangParserFromAntlrTokenTypes.txt";
     private static final String TOKEN_CONTEXT_FILE_NAME = "MetaSlangTokenContext.java";
@@ -176,6 +180,33 @@ public class MetaSlangParserCodeGen {
 	} 
     }
 
+    private void fixLexer(File file) {
+	try {
+	    String code = new String(readFile(file));
+	    int pos = 0;
+	    int len = code.length();
+	    pos = code.indexOf('{');
+	    if (pos >= 0) {
+		pos = code.indexOf("\n", pos);
+		if (pos >= 0) {
+		    String newCode = (code.substring(0, pos + 1) +
+			    "\n    ParseObjectRequest request;" + 
+			    "\n    public void reportError(RecognitionException ex) {" + 
+			    "\n        request.pushError(ex.getLine(), ex.getColumn(), ex.getMessage());" + 
+			    "\n    }\n" +
+			    "\n    public MetaSlangLexerFromAntlr(Reader in, ParseObjectRequest request) {" + 
+			    "\n        this(in);" + 
+			    "\n        this.request = request;" + 
+			    "\n    }\n" + 
+			    code.substring(pos + 1, len));
+		    writeFile(file, newCode);			
+		}
+	    }
+	} catch (IOException e) {
+	    System.err.println("*** Failed to fix generated lexer: "+e);
+	} 
+    }
+
     private void fixParser(File file) {
 	try {
 	    String code = new String(readFile(file));
@@ -190,11 +221,7 @@ public class MetaSlangParserCodeGen {
 			    "\n    ElementFactory builder;" + 
 			    "\n    Set processedUnitNames = new HashSet();\n" + 
 			    "\n    public void reportError(RecognitionException ex) {" + 
-			    "\n        request.setSyntaxErrors(request.getSyntaxErrors() + 1);" + 
-			    "\n        ErrConsumer errConsumer = request.getErrConsumer();" +
-			    "\n        if (errConsumer != null) {" + 
-			    "\n            errConsumer.pushError(null, ex.getLine(), ex.getColumn(), ex.getMessage(), \"\");" +
-			    "\n        }" + 
+			    "\n        request.pushError(ex.getLine(), ex.getColumn(), ex.getMessage());" + 
 			    "\n    }\n" +
 			    "\n    public MetaSlangParserFromAntlr(TokenStream lexer, ParseObjectRequest request) {" + 
 			    "\n        this(lexer);" + 
@@ -514,9 +541,15 @@ public class MetaSlangParserCodeGen {
         // read token file
         List tokenDescrs = new LinkedList();
 	String parserDir = args[argIndex];
+	File lexerFile = new File(parserDir, LEXER_FILE_NAME);
 	File parserFile = new File(parserDir, PARSER_FILE_NAME);
 	File tokenTypesFile = new File(parserDir, TOKENS_TYPE_FILE_NAME);
         try {
+            if (!lexerFile.exists()) {
+                System.err.println("Non-existent file " + lexerFile); // NOI18N
+                return;
+            }
+
             if (!parserFile.exists()) {
                 System.err.println("Non-existent file " + parserFile); // NOI18N
                 return;
@@ -560,6 +593,7 @@ public class MetaSlangParserCodeGen {
         }
 
         // generate
+	generator.fixLexer(lexerFile);
 	generator.fixParser(parserFile);
         generator.parseTokens(tokenDescrs);
 	generator.generateTokenContext(tokenContextFile);

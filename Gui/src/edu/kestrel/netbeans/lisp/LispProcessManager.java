@@ -130,7 +130,7 @@ public class LispProcessManager {
         if (fileObj != null) {
             // SLIGHT HACK: ParseSourceRequest is the same class used for the netbeans parsing stuff...
             // should probably create different class for the Specware processing stuff
-            ParseSourceRequest.pushProcessUnitError(fileObj, lineNum, colNum, errorMsg, "");
+            ParseSourceRequest.pushProcessUnitError(fileObj, lineNum, colNum, errorMsg);
         }
     }
     

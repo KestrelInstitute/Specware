@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:01:50  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -157,6 +160,7 @@ public class MetaSlangSettingsDefaults extends ExtSettingsDefaults {
 
                     case MetaSlangTokenContext.LINE_COMMENT_ID:
                     case MetaSlangTokenContext.BLOCK_COMMENT_ID:
+                    case MetaSlangTokenContext.LATEX_COMMENT_ID:
                         return commentColoring;
 
                     case MetaSlangTokenContext.CHAR_LITERAL_ID:

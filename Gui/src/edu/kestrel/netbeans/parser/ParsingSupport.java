@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.1  2003/01/30 02:02:26  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -37,7 +40,6 @@ import org.openide.util.Task;
 import org.openide.util.TaskListener;
 import org.openide.util.RequestProcessor;
 import org.openide.src.SourceException;
-import org.netbeans.modules.java.ErrConsumer;
 import org.netbeans.modules.java.model.CommitListener;
 
 import edu.kestrel.netbeans.Util;
@@ -795,12 +797,16 @@ public class ParsingSupport implements MetaSlangParser {
 	    return request.getSourceReader();
 	}
 
+	public FileObject getSourceFile(){
+	    return request.getSourceFile();
+	}
+
         public Object getParserType() {
             return request.getParserType();
         }
 
-        public ErrConsumer getErrConsumer() {
-            return request.getErrConsumer();
+        public void pushError(int line, int column, String message) {
+            request.pushError(line, column, message);
         }
         
         public String getSourceName() {
