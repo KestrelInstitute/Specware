@@ -1,6 +1,7 @@
 JGen qualifying spec
 
-import Java qualifying /Languages/Java/Java
+import IJavaCodeGen
+%import Java qualifying /Languages/Java/Java
 import /Languages/Java/DistinctVariable
 import /Languages/MetaSlang/CodeGen/CodeGenTransforms
 import /Languages/SpecCalculus/Semantics/Evaluate/UnitId/Utilities
@@ -187,7 +188,7 @@ def mkDefaultCase(_(* cases *), _(* spc *)) =
   let stmt = mkThrowMalf() in
   [(swlabel,[Stmt stmt])]
 
-sort JSpec = CompUnit
+%sort JSpec = CompUnit
 
 op mkIfRes: Nat -> Id
 def mkIfRes(k) =
