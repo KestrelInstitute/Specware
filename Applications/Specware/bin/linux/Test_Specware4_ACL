@@ -47,7 +47,8 @@ echo "-------------"
 echo "All test results:"
 
 cat $LOG_FILE
-echo "-------------"
+echo "========================================================================"
+echo "New Status for Specware:"
 echo "Test failures:"
 egrep -i ";;; Test failed" $LOG_FILE
 echo "-------------"
