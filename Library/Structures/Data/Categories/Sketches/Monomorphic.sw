@@ -39,6 +39,8 @@ spec {
 
   sort Dom = Edge.Elem   % does this actually refine the sorts in Maps
   sort Cod = Vertex.Elem   % perhaps this would be better if qualified
+  def ppDom = Edge.ppElem
+  def ppCod = Vertex.ppElem
 
   sort Sketch
 

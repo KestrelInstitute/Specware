@@ -41,6 +41,12 @@ spec {
   op edgeMap : fa (O,A) Functor (O,A) -> PolyMap.Map (Edge.Elem,A)
 
   op emptyFunctor : fa (O,A) Cat (O,A) -> Functor (O,A)
+  op makeFunctor :
+   fa (O,A) Sketch
+         -> Cat (O,A)
+         -> PolyMap.Map (Vertex.Elem,O)
+         -> PolyMap.Map (Edge.Elem,A)
+         -> Functor (O,A)
 \end{spec}
 
 When pretty printing a functor, we don't print the domain or codomain. 

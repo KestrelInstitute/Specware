@@ -16,11 +16,14 @@ spec {
   def vertexMap functor = functor.vertexMap
   def edgeMap functor = functor.edgeMap
 
-  def emptyFunctor targetCat = {
-      dom = emptySketch,
-      cod = targetCat,
-      vertexMap = PolyMap.emptyMap,
-      edgeMap = PolyMap.emptyMap
+  def makeFunctor sketch cat vertexMap edgeMap = {
+      dom = sketch,
+      cod = cat,
+      vertexMap = vertexMap,
+      edgeMap = edgeMap
     }
+
+  def emptyFunctor targetCat =
+   makeFunctor emptySketch targetCat emptyMap emptyMap
 }
 \end{spec}
