@@ -100,7 +100,7 @@ List qualifying spec
   def length s =
     case s of
       | [] -> 0
-      | _::l -> 1 Nat.+ (length l)
+      | _::l -> 1 + (length l)
 
   def diff (s1,s2) = 
     case s1 of
@@ -165,66 +165,11 @@ List qualifying spec
    def compare comp (l1,l2) = 
      case (l1,l2) of
        | (t1::t1s, t2::t2s) -> 
-           (case comp(t1,t2) of
-              | EQUAL  -> compare comp (t1s,t2s)
+           (case comp (t1,t2) of
+              | Equal  -> compare comp (t1s,t2s)
               | result -> result)
-       | ([],   []   ) -> EQUAL
-       | ([],   _::_ ) -> LESS
-       | (_::_, []   ) -> GREATER
+       | ([],   []   ) -> Equal
+       | ([],   _::_ ) -> Less
+       | (_::_, []   ) -> Greater
 end
 \end{spec}
-
-Version of Lists.spec From (mobies) specware4 tree:
-Basic operations on Lists.
-
-=begin{spec}
-spec
-  % import USx(/Library/Base/PrettyPrinter)
-=end{spec}
-
-This may be contentious. These are curried versions of list
-folds. Arguably these are more standard. Note that the order to the
-arguments to foldl have changed with respect to the current Specware.
-
-=begin{spec}
-  op foldl : fa (a,b) (b -> a -> b) -> b -> List a -> b
-  op foldr : fa (a,b) (a -> b -> b) -> b -> List a -> b
-
-  def foldr f base s = 
-    case s of
-       Nil -> base
-     | Cons (hd,tl) -> f hd (foldr f base tl)
-
-  def foldl f base s = 
-    case s of
-       Nil -> base
-     | Cons (hd,tl) -> foldl f (f base hd) tl
-=end{spec}
-
-This pretty prints a list. One must provide the separator (a string) for the
-elements of the list.  There are no opening and closing brackets. The
-first argument is the method for pretty printing each element of the list.
-
-=begin{spec}
- % op print : fa (a) (a -> Pretty) -> String -> List a -> Pretty
- % def print f sep l = ppBlockLinear (addSeparator (string sep) (List.map f l))
-=end{spec}
-
-Same as the above with delimiters.
-
-=begin{spec}
-%  op printDelim : fa (a) (a -> Pretty)
-%           -> String
-%           -> String
-%           -> String
-%           -> List a
-%           -> Pretty
-% 
-%  def printDelim f left sep right l =
-%    ppBlockLinear [
-%       (string left),
-%       ppBlockNone (addSeparator (string sep) (List.map f l)),
-%       (string right)]
-
-end
-=end{spec}

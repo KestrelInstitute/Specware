@@ -3,6 +3,7 @@
 
 Integer qualifying spec
   import PrimitiveSorts
+  import Compare
 
   op + infixl 25 : Integer * Integer -> Integer
   op * infixl 27 : Integer * Integer -> Integer
@@ -16,32 +17,34 @@ Integer qualifying spec
   op min : Integer * Integer -> Integer
   op max : Integer * Integer -> Integer
 
-  %% toString is the same as natToString.
+  %% toString is the same as intToString.
+  %% show is the same as intToString.
+  %% toString and natToString to be deprecated.
 
   op toString    : Integer -> String
+  op show        : Integer -> String
   op intToString : Integer -> String
   op stringToInt : String -> Integer
 
   % axiom less-or-equal is fa(x,y) (x <= y)  <=>  ((x < y) or (x = y)  )
 
-  def min(x,y) = if x <= y then x else y
-  def max(x,y) = if x <= y then y else x
+  def min (x,y) = if x <= y then x else y
+  def max (x,y) = if x <= y then y else x
 
   def >  (x,y) = y <  x
   def >= (x,y) = y <= x
 
-  op compare : Integer -> Integer -> | LESS | EQUAL | GREATER
+  op compare : Integer -> Integer -> Comparison
 
   def compare n m  =
     if n < m then
-      LESS
+      Less
     else
       if n = m then
-        EQUAL
+        Equal
       else
-        GREATER        
+        Greater        
 
- %  op ppInteger : Integer -> Pretty  
- %  def ppInteger int = PrettyPrinter.ppString (toString int)
+  def show n = toString n
 end
 \end{spec}

@@ -14,6 +14,9 @@ Boolean qualifying spec
   op ~ : Boolean -> Boolean
 
   op toString : Boolean -> String
+  op show : Boolean -> String
+  def show b = toString b
+
   op compare  : Boolean * Boolean -> Comparison
 
   def ~   x     = if x then false else true
@@ -21,6 +24,5 @@ Boolean qualifying spec
   def &   (x,y) = if x then y     else false
   def =>  (x,y) = if x then y     else true
   def <=> (x,y) = if x then y     else ~y 
-
 end
 \end{spec}

@@ -1,4 +1,3 @@
-% On second thought this should be PrimitiveSorts.
 spec
   sort Integer.Integer
   sort Boolean.Boolean

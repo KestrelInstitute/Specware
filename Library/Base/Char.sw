@@ -6,7 +6,9 @@ Char qualifying spec
   import Nat
   import Compare
 
-  op toString    : Char -> String
+  op toString : Char -> String
+  op show : Char -> String
+  def show c = toString c
 
   op isUpperCase : Char -> Boolean
   op isLowerCase : Char -> Boolean

@@ -37,9 +37,8 @@ String qualifying spec
 
   op compare : String * String -> Comparison
 
-  def compare(n,m) =
-    if n lt m then LESS else if n = m then EQUAL else GREATER        
-
+  def compare (n,m) =
+    if n lt m then Less else if n = m then Equal else Greater        
 end
 \end{spec}
 

@@ -31,9 +31,12 @@ Nat qualifying spec
   op div infixl 26 : Nat * PosNat -> Nat
 
   %% toString is the same as natToString.
+  %% show is the same as natToString
+  %% toString and natToString to be deprecated
 
   op toString    : Nat -> String
   op natToString : Nat -> String
+  op show        : Nat -> String
   op stringToNat : String -> Nat
 
   % coercion functions.
@@ -72,6 +75,8 @@ Nat qualifying spec
 
   op compare : Nat * Nat -> Comparison
   def compare (n,m) =
-    if n Nat.< m then LESS else if n = m then EQUAL else GREATER        
+    if n Nat.< m then Less else if n = m then Equal else Greater        
+
+  def show n = natToString n
 end
 \end{spec}
