@@ -10,10 +10,7 @@ MM = morphism AA -> BB {A +-> B}
 
 NN = morphism AA -> CC {A +-> C}
 
-DD = diagram {A +-> AA, 
-	      B +-> BB, 
-	      C +-> CC, 
-	      M : A -> B +-> MM,
+DD = diagram {M : A -> B +-> MM,
 	      N : A -> C +-> NN}
 
 XX = colimit DD
