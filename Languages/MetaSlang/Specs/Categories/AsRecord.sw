@@ -105,12 +105,17 @@ SpecCat qualifying spec {
  op computeColimitOpMap    : SpecDiagram -> VQidOpMap -> OpMap 
 
  op colimitProperties      : SpecDiagram -> Properties
+
  op buildCoconeMap         : SpecDiagram * Spec * VQidSortMap * VQidOpMap -> PolyMap.Map (Vertex.Elem, Morphism)
  op makeColimit            : SpecDiagram * Spec * PolyMap.Map (Vertex.Elem, Morphism) -> SpecInitialCocone
 
  %% --------------------------------------------------------------------------------
 
  def colimit dg =
+  %% TODO:  Make this smarter about choosing primary names.
+  %%        (E.g. prefer names that are in cod spec of a morphism over those in dom spec.)        
+  %%        Also, restrict printing of sorts and ops to primary name, 
+  %%        but then need to rename references in axioms etc.
   let apex_import_info : ImportInfo = {imports      = [],
 				       importedSpec = None,
 				       localOps     = [],
@@ -129,7 +134,7 @@ SpecCat qualifying spec {
   let apex_sort_map   = computeColimitSortMap dg vqid_sort_map in
   let apex_op_map     = computeColimitOpMap   dg vqid_op_map   in
 
-  let apex_properties = [] in
+  let apex_properties = colimitProperties dg in
   let apex : Spec = {importInfo = apex_import_info,
 		     sorts      = apex_sort_map,
 		     ops        = apex_op_map,
@@ -316,7 +321,16 @@ SpecCat qualifying spec {
 
  %% --------------------------------------------------------------------------------
 
- def colimitProperties dg = []
+ def colimitProperties dg = 
+   %% TODO:  Make this smarter about names
+   foldOverVertices (fn properties -> fn vertex -> 
+		     let spc = vertexLabel dg vertex in
+                     foldl (fn (property, properties) -> Cons(property, properties))
+                           properties
+                           spc.properties)
+		    []
+		    dg
+
 
  %% --------------------------------------------------------------------------------
 
