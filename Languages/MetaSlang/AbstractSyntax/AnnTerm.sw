@@ -1228,6 +1228,7 @@ MetaSlang qualifying spec {
  op stringSort? : fa(b) ASort b -> Boolean
  op natSort?    : fa(b) ASort b -> Boolean
  op integerSort?    : fa(b) ASort b -> Boolean
+ op charSort? : fa(b) ASort b -> Boolean
 
  def boolSort? s =
   case s of
@@ -1237,6 +1238,11 @@ MetaSlang qualifying spec {
  def stringSort?(s) = 
   case s of
     | Base (Qualified ("String",  "String"),  [], _) -> true
+    | _ -> false
+
+ def charSort?(s) = 
+  case s of
+    | Base (Qualified ("Char",  "Char"),  [], _) -> true
     | _ -> false
 
  def natSort?(s) = 
