@@ -86,11 +86,6 @@ PatternMatch qualifying spec {
 	   true
 	 | _ -> false
 
-  def isTrue(term:MS.Term) = 
-      case term
-	of Fun(Bool true,_,_) -> true
-	 | _ -> false
-
 (*
    The function failWith implements exception handling.
    It unfolds to the primitive:
@@ -564,19 +559,6 @@ PatternMatch qualifying spec {
       (match(context,cons(t1,terms),rules,break,break))
       default 	
 
-
- def simplePattern pattern = 
-      case pattern:Pattern
-	of VarPat _ -> true
-	 | _ -> false
- 
- def simpleAbstraction(rules:Match) = 
-     case rules
-       of [(RecordPat(fields,_),cond,_)] -> 
-	  isTrue cond & all (fn(_,p)-> simplePattern p) fields
-        | [(pat,cond,_)] -> simplePattern pat & isTrue cond
-	| _ -> false
-
  %% fn (x as pat) -> bod  -->  fn x -> let pat = x in bod
  %% Without this other normalizations such as arity normalization break
  def normalizeSimpleAlias(rules:Match): Match =
@@ -644,7 +626,7 @@ def eliminatePattern context pat =
 def eliminateSort context srt =
     case srt
       of Arrow(s1,s2,a) -> Arrow(eliminateSort context s1,
-			       eliminateSort context s2,a)
+				 eliminateSort context s2,a)
        | Product(fields,a) -> 
 	 Product(map (fn (i,s) -> (i,eliminateSort context s)) fields,a)
        | CoProduct(fields,a) -> 
@@ -653,9 +635,11 @@ def eliminateSort context srt =
 			      | (i,None) -> 
 				(i,None)) fields,a)
        | Quotient(s,t,a) -> Quotient(eliminateSort context s,
-				   eliminateTerm context t,a)
+				     eliminateTerm context t,a)
        | Subsort(s,t,a) -> Subsort(eliminateSort context s,
-				eliminateTerm context t,a)
+				   %% Subsort predicates aren't used in code generation
+				   t,   % eliminateTerm context t,
+				   a)
        | Base(qid,sorts,a) -> Base(qid,map (eliminateSort context) sorts,a)
        | Boolean _ -> srt
        | TyVar _ -> srt

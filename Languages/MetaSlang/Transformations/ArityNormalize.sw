@@ -264,9 +264,11 @@ ArityNormalize qualifying spec {
       (case fields
         of (*[_] -> term                        % Singleton products don't get changed
          | *) _ ->
-      (case term
-        of Lambda([_],_) -> term
-         | _ -> 
+      (if (case term
+	     of Lambda(rules,_) -> simpleAbstraction rules
+	      | _ -> false)
+	  then term
+	 else
            let (names,_) = freshNames("x",fields,usedNames) in
            let vars = ListPair.map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
            let trm:MS.Term  = Lambda 
@@ -277,6 +279,23 @@ ArityNormalize qualifying spec {
                                             (l,(Var(v,noPos)):MS.Term)) vars),noPos),noPos))],noPos)
            in
            trm)))
+
+ def simplePattern pattern = 
+      case pattern:Pattern
+	of VarPat _ -> true
+	 | _ -> false
+ 
+ def simpleAbstraction(rules:Match) = 
+     case rules
+       of [(RecordPat(fields,_),cond,_)] -> 
+	  isTrue cond & all (fn(_,p)-> simplePattern p) fields
+        | [(pat,cond,_)] -> simplePattern pat & isTrue cond
+	| _ -> false
+
+  def isTrue(term:MS.Term) = 
+      case term
+	of Fun(Bool true,_,_) -> true
+	 | _ -> false
 
  def normalizeArityTopLevel(sp,gamma,usedNames,term:MS.Term):MS.Term = 
      case term

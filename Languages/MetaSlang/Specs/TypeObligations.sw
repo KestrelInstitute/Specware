@@ -735,6 +735,8 @@ spec
 	   (fn (qname, name, (names, fixity, (tvs,tau), defs), tcc) ->
 	     if member(Qualified(qname, name),localOps) then
 	         foldl (fn ((type_vars, term), tcc) ->
+			 let usedNames = addLocalVars(term,StringSet.empty) in
+			 let term = etaExpand(spc, usedNames, tau, term) in
 			 let term = renameTerm (emptyContext()) term in 
 			 (tcc,gamma0 tvs (Some (unfoldStripSort(spc,tau,false)))
 			        (Some(Qualified(qname,name),(curriedParams term).1))
