@@ -1119,17 +1119,17 @@ For example, assume we have:
 ||  AA = spec
 ||    import A
 ||    sort Interval = {start: Counter, stop: Counter}
-||    op isEmptyInterval? : Interval -> Bool
-||    def isEmptyInterval? {start: x, stop: y} = (x = y)
+||    op isEmptyInterval? : Interval -> Boolean
+||    def isEmptyInterval? {start = x, stop = y} = (x = y)
 ||  endspec
 ]]
-Then the result of [[AA [M]]] is the same as that of this `spec:
+Then the result of [[AA[M]]] is the same as that of this `spec:
 [[
 ||  spec
 ||    import B
 ||    sort Interval = {start: Nat, stop: Nat}
-||    op isEmptyInterval? : Interval -> Bool
-||    def isEmptyInterval? {start: x, stop: y} = (x = y)
+||    op isEmptyInterval? : Interval -> Boolean
+||    def isEmptyInterval? {start = x, stop = y} = (x = y)
 ||  endspec
 ]]
 </para>

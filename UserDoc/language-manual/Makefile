@@ -1,20 +1,15 @@
-all: pdf htm zip
+all: pdf htm-zip
 
 SLM= SpecwareLanguageManual
-SLMDIR= $(SLM).htm-dir
-SLMTAR= $(SLMDIR).tar
-SLMTARBOL= $(SLMTAR).gz
+HTMDIR= $(SLM).htm-dir
 
 pdf: $(SLM).pdf
 
-htm: $(SLMDIR)
+htm: $(HTMDIR)
 
-htmbol: htm
-	tar cf - $(SLMDIR) | gzip > $(SLMTARBOL)
-
-zip: pdf htm
-	rm -f $(SLM).zip
-	zip -r $(SLM).zip $(SLMDIR) Makefile $(SLM).dbk bookinfo.glm disclaimer.glm intro.glm metaslang.glm grammar.glm libraries.glm
+htm-zip: htm
+	rm -f $(HTMDIR).zip
+	zip -r $(HTMDIR).zip $(HTMDIR)
 
 ARCH= i586
 #ARCH= sparc
@@ -54,7 +49,7 @@ HTMDBK= bookinfo-htm.dbk \
         grammar-htm.dbk \
         libraries-htm.dbk
 
-$(SLMDIR): Makefile $(SLM)-htm.dbk $(HTMDBK) \
+$(HTMDIR): Makefile $(SLM)-htm.dbk $(HTMDBK) \
     $(ADJUSTFONTHTML) $(ANCHORHTML) $(NAVLINKHTML) $(REANCHORGRAMMARHTML)
 	($(DB2HTML) $(SLM)-htm.dbk 2>&1) | grep -v 'is not a function name'
 	/usr/bin/find db2html-dir -name '*.html' \
@@ -65,11 +60,11 @@ $(SLMDIR): Makefile $(SLM)-htm.dbk $(HTMDBK) \
 		-exec $(NAVLINKHTML) {} \;
 	$(REANCHORGRAMMARHTML) db2html-dir/grammar.html
 	/bin/mv db2html-dir/book1.html db2html-dir/$(SLM).html
-	@/bin/rm -rf $(SLMDIR).old
-	@if test -r $(SLMDIR); \
-	 then /bin/mv -f $(SLMDIR) $(SLMDIR).old; \
+	@/bin/rm -rf $(HTMDIR).old
+	@if test -r $(HTMDIR); \
+	 then /bin/mv -f $(HTMDIR) $(HTMDIR).old; \
 	 fi
-	/bin/mv db2html-dir $(SLMDIR)
+	/bin/mv db2html-dir $(HTMDIR)
 
 $(SLM).dbk:
 
@@ -78,7 +73,6 @@ $(SLM)-htm.dbk: Makefile $(SLM).dbk
 	 then /bin/mv -f $(SLM)-htm.dbk $(SLM)-htm.dbk.old; \
 	 fi
 	sed 's/.dbk/-htm.dbk/g' $(SLM).dbk > $(SLM)-htm.dbk
-
 
 bookinfo.dbk: Makefile bookinfo.glm
 	@if test -r bookinfo.dbk; \
@@ -212,7 +206,6 @@ grammar.glm: Makefile metaslang.glm grammar.preamble \
 clean:
 	rm -rf $(PDFDBK) $(SLM).tex $(SLM).aux $(SLM).log \
 	       $(SLM)-htm.dbk $(HTMDBK) *.old db2html-dir \
-	       $(SLMDIR) $(SLMTAR)
+	       $(HTMDIR)
 
 pristine: clean
-	rm -rf $(SLMTARBOL)
