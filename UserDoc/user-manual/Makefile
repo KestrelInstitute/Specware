@@ -107,7 +107,8 @@ DB2HTML= ../bin/db2html -E9999
 ADJUSTFONTHTML= bin/adjustFontHTML
 
 HTMDBK= debug-htm.dbk defining-htm.dbk emacs-htm.dbk generatedlisp-htm.dbk \
-  install-htm.dbk model-htm.dbk process-htm.dbk prove-htm.dbk start-htm.dbk
+  install-htm.dbk model-htm.dbk process-htm.dbk prove-htm.dbk start-htm.dbk \
+  javacodegen-htm.dbk ccodegen-htm.dbk
 
 $(HTMDIR): Makefile $(SUM)-htm.dbk $(HTMDBK) $(ADJUSTFONTHTML)
 	($(DB2HTML) $(SUM)-htm.dbk 2>&1) | grep -v 'is not a function name'

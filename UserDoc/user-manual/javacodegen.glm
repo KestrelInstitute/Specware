@@ -293,7 +293,7 @@ Java Classes --
 
   <para>Note, that a definition term must not be given for foo.
   Limitation: using foo as a function symbol in higher-order context will not yield the
-  expected result.<para>
+  expected result.</para>
 </listitem>
 <listitem>
 <para>
@@ -348,18 +348,18 @@ be accessed in the MetaSlang spec, it is a good idea to structure them using the
 || Vector qualifying spec 
 ||       sort Vector
 ||       op new: () -> Vector
-||       op add: fa(a) Vector * a -> Vector
+||       op add: [a] Vector * a -> Vector
 ||       op size: Vector -> Nat
 || endspec
 ||
-||   Math qualifying spec
-||         op max: Integer * Integer -> Integer
-||         op min: Integer * Integer -> Integer
-||         ....
-||   endspec
+|| Math qualifying spec
+||       op max: Integer * Integer -> Integer
+||       op min: Integer * Integer -> Integer
+||       ....
+|| endspec
 ]]
 
-<para>and then importing the specs into the application spec that uses it. Future version of the
+<para>and then importing the specs into the application spec that uses it. Future versions of the
 Specware system will provide a utility to convert a given Java class into a spec following
 the above conventions.</para>
 </listitem>
@@ -416,7 +416,7 @@ when accessing Java methods from MetaSlang</para>
    </row>
   </tbody>
  </tgroup>
-<informaltable>
+</informaltable>
 
 </section>
 </section>

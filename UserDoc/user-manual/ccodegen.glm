@@ -108,7 +108,8 @@ it invokes the "gen-c" command on the given unit-id and uses the name
              stand-alone application. </para>
      </entry>
     </row>
-   <tgroup>
+    </tbody>
+   </tgroup>
   </informaltable>
 
   <para>Other make variables that are used in the generated/predefined rules
@@ -123,7 +124,7 @@ it invokes the "gen-c" command on the given unit-id and uses the name
   environment variable SPECWARE4_MAKE can be used to overwrite this
   default behaviour: if SPECWARE4_MAKE is set, the value of it is used
   as make command.
-<para>
+</para>
 </listitem>
 </itemizedlist>
 </section>
