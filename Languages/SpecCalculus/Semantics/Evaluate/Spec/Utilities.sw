@@ -409,11 +409,14 @@ SpecCalc qualifying spec
       in
       %% Print short version first, in case printing of (possibly enormous) spec fails
       %% while preparing full message.
-      let _ = toScreen ("\n" ^ sort_msg ^ op_msg ^ "\n")                                       in
-      let _ = toScreen ("\nThe full error message should follow, but it may take several\n")   in
-      let _ = toScreen ("\nminutes or more to print it if the spec in question is large:\n\n") in
-      let spc_msg = "\n in following spec: \n" ^ (printSpec spc) in
-      raise (SpecError (position, "\n" ^ sort_msg ^ op_msg ^ spc_msg))
+      let terse_msg = "\n" ^ sort_msg ^ op_msg ^ "\n" in
+      let error_filename = "ErrorMsg_" ^ (toString (currentTime())) in
+      let _ = toScreen terse_msg in
+      let _ = toScreen ("\nThe full error message will be printed to file: " ^ error_filename ^ "\n") in
+      let _ = toScreen ("but this may take several minutes if the spec is large.\n\n") in
+      let error_msg = terse_msg ^ " in the following spec:\n\n" ^ (printSpec spc) in
+      let _ = writeStringToFile (error_msg, error_filename) in
+      raise (SpecError (position, terse_msg))
 
   op compressDefs : Spec -> Spec
   def compressDefs spc =
