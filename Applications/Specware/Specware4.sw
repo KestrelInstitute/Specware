@@ -4,6 +4,7 @@ let
       % import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
       % import /Library/Structures/Data/Categories/Diagrams/Polymorphic/AsRecord
       import /Languages/SpecCalculus/Semantics/Specware
+      import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic/AsLists
     } 
   % S = printF Specware4
 in
