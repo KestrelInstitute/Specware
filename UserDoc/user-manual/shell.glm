@@ -426,6 +426,7 @@ single-unit file in the current directory.
 A command entered by the user should be typed all on one line.
 The Return/Enter at the end of the line signals to the &SShell;
 that the command must be executed.
+The Tab key can be used for filename completion.
 </para>
 
 </section>
