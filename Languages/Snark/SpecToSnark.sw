@@ -80,7 +80,9 @@ snark qualifying spec {
   def baseSorts = 
       [ 
 	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Option"))],
-	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "List"))]
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "List"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "logical"))],
+	Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", "Comparison"))]
       ]
 
   op snarkBaseDecls: List LispCell
@@ -95,7 +97,11 @@ snark qualifying spec {
 	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "length")), Lisp.nat(1),
 		   Lisp.symbol("KEYWORD","SORT"),
 		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "NUMBER"),
-					 Lisp.symbol("SNARK", "List")])]
+					 Lisp.symbol("SNARK", "List")])],
+	Lisp.list [declare_function, Lisp.quote(Lisp.symbol("SNARK", "HOLDS")), Lisp.nat(1),
+		   Lisp.symbol("KEYWORD","SORT"),
+		   Lisp.quote(Lisp.list [Lisp.symbol("SNARK", "BOOLEAN"),
+					 Lisp.symbol("SNARK", "logical")])]
 
        ]
 						    
@@ -250,6 +256,7 @@ snark qualifying spec {
 	      Lisp.quote(Lisp.symbol("SNARK", name))]
 
   def snarkBaseSort(spc, s:Sort, rng?):LispCell = 
+    let s = unfoldBase(spc, s) in
 	          case s of
 		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
