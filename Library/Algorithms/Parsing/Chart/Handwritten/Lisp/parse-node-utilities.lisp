@@ -70,7 +70,7 @@
 			(prior-position (parser-location-position prior-location)))
 		   (let* ((prior-byte-pos (first  prior-position))
 			  (prior-line     (second prior-position))
-			  (prior-column   (1- (third  prior-position)))
+			  (prior-column   (third  prior-position))
 			  (prior-token-node 
 			   (find-if #'(lambda (node) (parser-token-rule-p (parser-node-rule node)))
 				    (parser-location-post-nodes prior-location))))
@@ -218,7 +218,7 @@
 	 (comment "Adding top-level node for index ~D at line ~D, column ~D, byte ~D"
 		  index
 		  (second position)
-		  (1- (third  position))
+		  (third  position)
 		  (first  position)))))
     (augment-location-partial-node-data location new-toplevel-node 0) 
     (augment-location-desired-bv        location handles-bv)
@@ -295,10 +295,10 @@
 	(parser-location-partial-node-data location)))
 
 (defun augment-location-desired-bv (location additional-desired-bv)
-  (when-debugging
-   (when *verbose?* 
-     ;; (comment "At loc ~6D, turn on bits ~S" (parser-location-index location) additional-desired-bv)
-     ))
+  ;; (when-debugging
+  ;;   (when *verbose?* 
+  ;;      (comment "At loc ~6D, turn on bits ~S" (parser-location-index location) additional-desired-bv)
+  ;;     ))
   (unless (null additional-desired-bv) 
     (bit-ior (parser-location-desired-bv location)
 	     additional-desired-bv
@@ -458,15 +458,13 @@
 	(if (eq (sbit desired-bv parent-bv-index) 1)
 	    (let ((child-index (reduction-child-index reduction)))
 	      (add-partial-node session parent-rule this-node child-index))
-	  (when-debugging
-	   (when *verbose?* 
-	     (comment "Reduction from ~D not plausible : ~S ~S (bit ~D) at ~D" 
-		      (parser-node-number this-node)
-		      (structure-type-of  parent-rule)
-		      (parser-rule-name   parent-rule)
-		      parent-bv-index
-		      (reduction-child-index reduction))
-	     )))))))
+	  (debugging-comment "Reduction from ~D not plausible : ~S ~S (bit ~D) at ~D" 
+			     (parser-node-number this-node)
+			     (structure-type-of  parent-rule)
+			     (parser-rule-name   parent-rule)
+			     parent-bv-index
+			     (reduction-child-index reduction)
+			     ))))))
 
 ;; ======================================================================
 
@@ -548,11 +546,9 @@
 	  (adopt-child node children child-index candidate-child)
 	  ;; number of children is fixed...
 	  (cond (cannibalizing?
-		 (when-debugging
-		  (when *verbose?*
-		    (comment "Cannibalized ~D.  Last node now ~D"
-			     (parser-node-number node)
-			     (parser-node-number candidate-child))))
+		 (debugging-comment "Cannibalized ~D.  Last node now ~D"
+				    (parser-node-number node)
+				    (parser-node-number candidate-child))
 		 (revise-cannibalized-node node candidate-child))
 		(all-other-required-children-present?
 		 (install-completed-node session node candidate-child))
@@ -665,8 +661,8 @@
   (declare (fixnum child-index))
   (let ((new-node (copy-parser-node old-node)))
     ;;
-    #+DEBUG-PARSER
-    (setf (parser-node-number new-node) (incf *parser-node-number*))
+    (when-debugging
+     (setf (parser-node-number new-node) (incf *parser-node-number*)))
     ;;
     (let* ((old-children (parser-node-children old-node))
 	   (new-children (make-array (length old-children))))
@@ -676,11 +672,10 @@
 	(setf (svref new-children i) (svref old-children i)))
       (setf (parser-node-children new-node) new-children))
     ;;
-    #+DEBUG-PARSER
-    (progn
-      (when *verbose?* 
-	(show-node new-node (format nil "~6D =>" (parser-node-number old-node))))
-      (push new-node *all-nodes*))
+    (when-debugging
+     (when *verbose?* 
+       (show-node new-node (format nil "~6D =>" (parser-node-number old-node))))
+     (push new-node *all-nodes*))
     ;;
     new-node))
 ;; ======================================================================

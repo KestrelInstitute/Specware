@@ -87,11 +87,9 @@
     (bypass-children-id-rules parser rule)))
 
 (defun bypass-children-id-rules (parser rule)
-  (when-debugging
-   (when *verbose?* 
-     (comment "Replacing any id rules in ~20A ~S" 
-	      (structure-type-of rule) 
-	      (parser-rule-name rule))))
+  (debugging-comment "Replacing any id rules in ~20A ~S" 
+		     (structure-type-of rule) 
+		     (parser-rule-name rule))
   (do-parser-rule-items (item rule)
     (unless (null item)
       (bypass-any-id-rule-in-item parser item))))
@@ -108,9 +106,7 @@
       (loop while (parser-id-rule-p child-rule) do
 	(setq child-rule-name (parser-id-rule-subrule child-rule))
 	(setq child-rule (find-parser-rule parser child-rule-name)))
-      (when-debugging
-       (when *verbose?* 
-	 (comment "    Replacing ~S by ~S" original-name child-rule-name))) 
+      (debugging-comment "    Replacing ~S by ~S" original-name child-rule-name)
       (setf (parser-rule-item-rule item) child-rule-name))))
 
 ;;; ====================
@@ -201,39 +197,31 @@
 			     (possible-start-of-reduction? child-rule reduction))
 			 reductions)))
     (cond ((null head-reductions)
-	   (when-debugging 
-	    (when *verbose?*
-	      (comment "~50S no head reductions" child-name)))
+	   (debugging-comment "~50S no head reductions" child-name)
 	   nil)
 	  ((keyword-triggered-rule? parser child-name)
-	   (when-debugging 
-	    (when *verbose?*
-	      (comment "~50S -- Keyword triggered rule, head for reductions: ~:{~S.~D ~}" 
-		       child-name
-		       (mapcar #'(lambda (reduction)
-				   (list (parser-rule-name (reduction-parent-rule reduction))
-					 (reduction-child-index reduction)))
-			       head-reductions))))
+	   (debugging-comment "~50S -- Keyword triggered rule, head for reductions: ~:{~S.~D ~}" 
+			      child-name
+			      (mapcar #'(lambda (reduction)
+					  (list (parser-rule-name (reduction-parent-rule reduction))
+						(reduction-child-index reduction)))
+				      head-reductions))
 	   (dolist (reduction head-reductions)
 	     (push reduction (parser-rule-reductions child-rule))))
 	  ((null (rest head-reductions))
 	   (let ((only-head-reduction (first head-reductions)))
-	     (when-debugging
-	      (when *verbose?*
-		(comment "~50S -- Head for just one reduction: ~S.~D)" 
-			 child-name 
-			 (parser-rule-name (reduction-parent-rule only-head-reduction))
-			 (reduction-child-index only-head-reduction))))
+	     (debugging-comment "~50S -- Head for just one reduction: ~S.~D)" 
+				child-name 
+				(parser-rule-name (reduction-parent-rule only-head-reduction))
+				(reduction-child-index only-head-reduction))
 	     (push only-head-reduction
 		   (parser-rule-reductions child-rule))))
 	  (t 
-	   (when-debugging
-	    (when *verbose?*
-	      (comment "~50S -- Head for multiple reductions: ~:{~S.~D ~}" child-name
-		       (mapcar #'(lambda (reduction)
-				   (list (parser-rule-name (reduction-parent-rule reduction))
-					 (reduction-child-index reduction)))
-			       head-reductions))))
+	   (debugging-comment "~50S -- Head for multiple reductions: ~:{~S.~D ~}" child-name
+			      (mapcar #'(lambda (reduction)
+					  (list (parser-rule-name (reduction-parent-rule reduction))
+						(reduction-child-index reduction)))
+				      head-reductions))
 	   (dolist (reduction head-reductions)
 	     (push reduction (parser-rule-reductions child-rule)))
 	   ))))
@@ -858,21 +846,15 @@
 
     
 (defun propagate-optionals (&optional (parser *current-parser*))
-  (when-debugging
-   (when *verbose?*
-     (comment "========================================")
-     (comment "First round: look for optional rules.")))
+  (debugging-comment "========================================")
+  (debugging-comment "First round: look for optional rules.")
   (loop 
     ;; iterate to fixpoint   
     (unless (propagate-optional-one-round parser)
       (return nil))
-    (when-debugging
-     (when *verbose?*
-       (comment "========================================")
-       (comment "New round: look for more optional rules."))))
-  (when-debugging
-   (when *verbose?*
-     (comment "========================================"))))
+    (debugging-comment "========================================")
+    (debugging-comment "New round: look for more optional rules."))
+  (debugging-comment "========================================"))
 
 (defun propagate-optional-one-round (parser)
   (let ((ht-name-to-rule (parser-ht-name-to-rule parser))
@@ -908,11 +890,9 @@
 			     (setf (parser-rule-default-semantics rule)
 			       (eval (sublis-result semantic-alist semantic-pattern))))))
 		       ;; (when (parser-repeat-rule-p rule) (setf (parser-rule-default-semantics rule) '()))
-		       (when-debugging
-			(when *verbose?*
-			  (comment "Rule ~S is now optional with semantics ~S." 
-				   rule
-				   (parser-rule-default-semantics rule))))
+		       (debugging-comment "Rule ~S is now optional with semantics ~S." 
+					  rule
+					  (parser-rule-default-semantics rule))
 		       ))))
 	     ht-name-to-rule)
     ;;
@@ -932,11 +912,9 @@
 			       (setq changed? t)
 			       (setf (parser-rule-item-optional? item) t)
 			       (setf (parser-rule-item-default-semantics item) (parser-rule-default-semantics item-rule))
-			       (when-debugging
-				(when *verbose?*
-				  (comment "In rule ~30S, item ~D (~S) is now optional with semantics ~S."
-					   rule i item-rule-name
-					   (parser-rule-item-default-semantics item))))))))))))
+			       (debugging-comment "In rule ~30S, item ~D (~S) is now optional with semantics ~S."
+						  rule i item-rule-name
+						  (parser-rule-item-default-semantics item))))))))))
 	     ht-name-to-rule)
     ;; changed? will be NIL once we reach a fixpoint (probably about 2 rounds)
     changed?))

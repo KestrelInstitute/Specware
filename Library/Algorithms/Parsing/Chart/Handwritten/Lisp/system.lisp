@@ -42,7 +42,9 @@
   )
 
 (defmacro parser4::debugging-comment (&body body) 
-  `(parser4::when-debugging (parser4::comment ,@body)))
+  `(parser4::when-debugging 
+    (when parser4::*verbose?*
+      (parser4::comment ,@body))))
 
 #+allegro 
 (progn

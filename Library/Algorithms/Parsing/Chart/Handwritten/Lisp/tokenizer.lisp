@@ -487,14 +487,14 @@
 	       (look-for-ad-hoc-tokens (char-var char-code-var)
 		 `(unless (eq (svref ad-hoc-table ,char-code-var) 0)
 		    (dolist (ad-hoc-string ad-hoc-strings)
-		      (when-debugging (when *verbose?* (comment "Looking for ad-hoc-string ~S starting with ~S" ad-hoc-string ,char-var)))
+		      (debugging-comment "Looking for ad-hoc-string ~S starting with ~S" ad-hoc-string ,char-var)
 		      (when (eq (schar ad-hoc-string 0) ,char-var)
 			(let ((found-ad-hoc-string? 
 			       (dotimes (i (1- (length ad-hoc-string)) t)
 				 (let ((local-char (ps-read-char ps-stream)))
-				   (when-debugging (when *verbose?* (comment "Looking for ad-hoc-string ~S, now at ~S" ad-hoc-string local-char)))
+				   (debugging-comment "Looking for ad-hoc-string ~S, now at ~S" ad-hoc-string local-char)
 				   (when (eq ,char-var +tokenizer-eof+) 
-				     (when-debugging (when *verbose?* (comment "Saw EOF")))
+				     (debugging-comment "Saw EOF")
 				     (return nil)) ; from dotimes
 				   ;; Note: ad-hoc tokens take
 				   ;; precedence over open extended
@@ -503,9 +503,9 @@
 				   ;; starting.
 				   (let ((current-string-index (+ i 1)))
 				     (cond ((eq local-char (schar ad-hoc-string current-string-index))
-					    (when-debugging (when *verbose?* (comment "  extending match."))))
+					    (debugging-comment "  extending match."))
 					   (t
-					    (when-debugging (when *verbose?* (comment "  match to ~S failed." ad-hoc-string)))
+					    (debugging-comment "  match to ~S failed." ad-hoc-string)
 					    ;; put back the char that doesn't match
 					    (ps-unread-char local-char ps-stream)
 					    ;; put back all but the first char
@@ -530,7 +530,7 @@
 					(ps-unread-char (schar ad-hoc-string (- n i))
 							ps-stream)))
 				    (return nil)))))
-			    (when-debugging (when *verbose?* (comment "Found match to ~S." ad-hoc-string)))
+			    (debugging-comment "Found match to ~S." ad-hoc-string)
 			    ;; char-var was seen via local-read-char, so the current position is already 
 			    ;; set  to point at it
 			    (set-first-positions) 
@@ -1211,20 +1211,23 @@
 			    token-start-byte) )
 	  do (push (pop comments) pre-comments))
 	(setf (parser-location-pre-comments pre-location) pre-comments)
-	(when-debugging (when *verbose?* (unless (null pre-comments) (comment "Pre-Comemnts for ~6D: ~S" pre-index pre-comments))))
+	(when-debugging 
+	 (when *verbose?*
+	   (unless (null pre-comments) 
+	     (comment "Pre-Comemnts for ~6D: ~S" pre-index pre-comments))))
 	(setq pre-index    post-index)
 	(setq pre-location (make-parser-location
 			    :index          post-index
 			    :post-nodes     nil))
 	(setf (svref locations pre-index) pre-location)))
-    (when-debugging (when *verbose?* (comment "Pre-Comments for ~6D (eof): ~S" pre-index comments)))
+    (debugging-comment "Pre-Comments for ~6D (eof): ~S" pre-index comments)
     (let ((eof-location pre-location))
       (setf (parser-location-pre-comments eof-location) comments)
       (let* ((last-token (if (null comments)
 			     (parser-node-semantics last-node)
 			   (first (last comments))))
 	     (last-pos   (fourth last-token)))
-	(when-debugging (when *verbose?* (comment "Last token: ~S" last-token)))
+	(debugging-comment "Last token: ~S" last-token)
 	(setf (parser-location-position eof-location) last-pos)))
     locations))
 

@@ -24,10 +24,8 @@
 ;;; ============================================================================
 
 (defun add-parser-main-rule (parser name parent-names pattern semantics precedence documentation)
-  (when-debugging
-   (when *verbose?*
-     (comment "--------------------------------------------------------------------------------")
-     (comment "Adding rule ~S" name)))
+  (debugging-comment "--------------------------------------------------------------------------------")
+  (debugging-comment "Adding rule ~S" name)
   (let ((rule-name
 	 (cond ((null pattern)
 		(let ((newrule (make-parser-atomic-rule :name name)))
@@ -65,11 +63,7 @@
 	   (parser-rule-name newrule)))))
 
 (defun build-parser-rule-aux (parser name pattern)
-  (when-debugging
-   (when *verbose?*
-     (comment "Build rule ~30S  from  ~A" 
-	      name 
-	      (format nil "~S" pattern))))
+  (debugging-comment "Build rule ~30S  from  ~A" name (format nil "~S" pattern))
   (etypecase pattern ; cannot use (ecase (type-of pattern) ...) since 'STRING won't match '(SIMPLE-ARRAY CHARACTER (3)) ,etc.
     (string (build-parser-keyword-rule parser pattern)) ; ignore name
     (symbol (build-parser-id-rule name pattern))
@@ -87,9 +81,7 @@
 						    (if (eq '1 :unspecified) '() (list . 1)))
 						   )))
 			     (rule (gethash rulename (parser-ht-name-to-rule parser))))
-			(when-debugging
-			 (when *verbose?*
-			   (comment "Rule ~S is now optional: ~S." rulename rule)))
+			(debugging-comment "Rule ~S is now optional: ~S." rulename rule)
 			(setf (parser-rule-optional? rule) t)
 			(setf (parser-rule-default-semantics rule) '())
 			rulename))
@@ -305,36 +297,26 @@
 ;;; ============================================================================
 
 (defun add-parser-rule-semantics (rule semantics)
-  (when-debugging
-   (when *verbose?*
-     (comment "Set semantics of ~S to ~S" (parser-rule-name rule) semantics)))
+  (debugging-comment "Set semantics of ~S to ~S" (parser-rule-name rule) semantics)
   (setf (parser-rule-semantics rule) semantics))
 
 ;;; ============================================================================
 
 (defun add-parser-rule-precedence (rule precedence)
-  (when-debugging
-   (when *verbose?*
-     (comment "Set precedence of ~S to ~S" (parser-rule-name rule) precedence)))
+  (debugging-comment "Set precedence of ~S to ~S" (parser-rule-name rule) precedence)
   (setf (parser-rule-precedence rule) precedence))
 
 ;;; ============================================================================
 
 (defun add-parser-rule-documentation (rule doc)
-  (when-debugging
-   (when *verbose?*
-     (comment "Set documentation of ~S to ~S" (parser-rule-name rule) doc)))
+  (debugging-comment "Set documentation of ~S to ~S" (parser-rule-name rule) doc)
   (setf (parser-rule-documentation rule) doc))
 
 ;;; ============================================================================
 
 (defun extend-anyof-rule (parser parent-rule-name child-rule-name)
   (let ((parent-rule (find-parser-rule parser parent-rule-name)))
-    (when-debugging
-     (when *verbose?*
-       (comment "Adding ~S to alternatives for ~S" 
-		child-rule-name
-		parent-rule-name)))
+    (debugging-comment "Adding ~S to alternatives for ~S" child-rule-name parent-rule-name)
     (when (not (parser-anyof-rule-p parent-rule))
       (error "Problem adding ~S to ~S" 
 	     child-rule-name
