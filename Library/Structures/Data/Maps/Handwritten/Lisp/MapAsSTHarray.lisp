@@ -37,11 +37,14 @@
 (defmacro map-as-undo-harray--mark-non-current (m)
    `(setf (svref ,m 1) nil))
 
+(defun make-hash-table-same-size (table)
+  (make-hash-table :test 'equal
+		   :size (hash-table-count table)
+		   :rehash-size
+		   *map-as-undo-harray--rehash-size*))
+
 (defun copy-hash-table (table)
-  (let ((result (make-hash-table :test 'equal
-				 :size (hash-table-count table)
-				 :rehash-size
-				 *map-as-undo-harray--rehash-size*)))
+  (let ((result (make-hash-table-same-size table)))
     (maphash #'(lambda (key val) (setf (gethash key result) val))
 	     table)
     result))
@@ -143,27 +146,23 @@
 (defun mapi (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
-	 (table (map-as-undo-harray--harray m))
-	 (result (if (eq curr-m m)
-		     (copy-hash-table table)
-		   table)))
+	 (table (map-as-undo-harray--harray curr-m))
+	 (result (make-hash-table-same-size table)))
     (maphash #'(lambda (key val)
 		 (setf (gethash key result)
 		       (mkSome (funcall f (cons key (cdr val))))))
-	     result)
+	     table)
     (make-map-as-undo-harray result nil)))
 
 (defun |!map| (f m)
   (declare (dynamic-extent f))
   (let* ((curr-m (map-as-undo-harray-assure-current m))
-	 (table (map-as-undo-harray--harray m))
-	 (result (if (eq curr-m m)
-		     (copy-hash-table table)
-		   table)))
+	 (table (map-as-undo-harray--harray curr-m))
+	 (result (make-hash-table-same-size table)))
     (maphash #'(lambda (key val)
 		 (setf (gethash key result)
 		       (mkSome (funcall f (cdr val)))))
-	     result)
+	     table)
     (make-map-as-undo-harray result nil)))
 
 (defun app (f m)
