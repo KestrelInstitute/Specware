@@ -7,8 +7,8 @@ import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.lisp.LispProcessManager;
 import edu.kestrel.netbeans.model.Element;
 import edu.kestrel.netbeans.model.MemberElement;
-import edu.kestrel.netbeans.model.SpecElement;
 import edu.kestrel.netbeans.model.SourceElement;
+import edu.kestrel.netbeans.model.SpecElement;
 import edu.kestrel.netbeans.nodes.MemberElementNode;
 
 import java.io.FileNotFoundException;
@@ -22,7 +22,6 @@ import org.openide.filesystems.FileStateInvalidException;
 import org.openide.filesystems.Repository;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystem;
-import org.openide.filesystems.Repository;
 import org.openide.loaders.DataObject;
 import org.openide.loaders.DataObjectNotFoundException;
 import org.openide.nodes.Children;
@@ -100,6 +99,7 @@ public class GoToUnitDefinitionAction extends NodeAction {
             }
             MemberElementNode node = dereference(nodes[i].getName(), packageName, currFileName);
         }
+        TopManager.getDefault ().setStatusText (""); // NOI18N
     }
     
     /**
