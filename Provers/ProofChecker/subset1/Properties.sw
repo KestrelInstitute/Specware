@@ -95,6 +95,32 @@ spec
     fa(cx1,cx2,cx3,e,t)
       wtEx (cx1++cx3) e t && wfCx (cx1++cx2++cx3) => wtEx (cx1++cx2++cx3) e t
 
+  conjecture wellTypedVarIsInContext is  % OK
+    fa(cx,v,t)
+      wtEx cx (VAR v) t => varDeclaration(v,t) in? cx
+                        || (ex(t1) varDeclaration(v,t1) in? cx && tyEq cx t1 t)
+
+  conjecture wellTypedOpIsInContext is  % OK
+    fa(cx,o,t)
+      wtEx cx (OP o) t => opDeclaration(o,t) in? cx
+                       || (ex(t1) opDeclaration(o,t1) in? cx && tyEq cx t1 t)
+
+  conjecture wellTypedSubstitution is
+    fa(cx:Context, vS:InjectiveFSeq Variable, tS:FSeq Type,
+       e:Expression, t:Type, eS:FSeq Expression, sbs:ExprSubstitution)
+      vS equiLong tS
+   && wtEx (cx ++ multiVarDecls(vS,tS)) e t
+   && eS equiLong tS
+   && (fa(i:Nat) i < length eS => wtEx cx (eS@i) (tS@i))
+   && sbs = fromSeqs(vS,eS)
+   && exprSubstOK? (e, sbs)
+   && wtEx cx (exprSubst sbs e) t
+
+  conjecture wellTypedApplicationHasWellTypedComponents is
+    fa(cx,e1,e2,t) wtEx cx (e1 @ e2) t =>
+                   (ex(t1) wtEx cx e1 (t1 --> t)
+                        && wtEx cx e2 t1)
+
   conjecture theoremWellTyped is
     fa(cx,e) theo cx e => wtEx cx e BOOL
 
