@@ -477,14 +477,25 @@
 				 (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
 
+(defun ucase (x)
+  (if (keywordp x)
+      (intern (read-from-string (string x)) 'keyword)
+    (read-from-string (string x))))
+
 #+allegro
 (top-level:alias ("swpu" :case-sensitive) (&optional &rest args)
   (let ((r-args (if (not (null args))
-		    args
+		    (if (keywordp (cadr args))
+			(cons (car args)
+			      (cons nil (cdr args)))
+		      args)
 		  *last-swpf-args*)))
     (if r-args
 	(progn (setq *last-swpf-args* args)
-	       (apply 'swpf-internal r-args))
+	       (apply 'swpf-internal
+		      (cons (car r-args) (cons (cadr r-args)
+			    (mapcar #'(lambda (x) (ucase x))
+			      (cddr r-args))))))
       (format t "No previous unit evaluated~%"))))
 
 ;		      (string (first r-args))
