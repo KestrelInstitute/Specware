@@ -1,9 +1,7 @@
-;;;-*- Mode: fi:common-lisp ; Package: USER ; Base: 10; Syntax: common-lisp  -*-
 ;;;-------------------------------------------------------------------------
 ;;;               Copyright (C) 2003 by Kestrel Technology
 ;;;                          All Rights Reserved
 ;;;-------------------------------------------------------------------------
-xd
 
 (in-package :user)
 
