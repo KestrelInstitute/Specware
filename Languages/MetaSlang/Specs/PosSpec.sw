@@ -3,7 +3,7 @@
 
 spec {
  import AnnSpec
- import ../Legacy/DataStructures/NatMap  % for metaTyVars
+ import /Library/Legacy/DataStructures/NatMap  % for metaTyVars
 
  sort Position = (Nat * Nat) * (Nat * Nat)
 

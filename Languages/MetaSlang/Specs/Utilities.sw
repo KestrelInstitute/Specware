@@ -2,11 +2,11 @@
 
 spec { 
  import StandardSpec    % defines sorts Spec, Term, etc.
- import ../Legacy/DataStructures/IntegerSet
- import ../Legacy/DataStructures/ListPair 
- import ../Legact/DataStructures/ListUtilities
- import ../Legacy/DataStructures/StringUtilities 
- import TypeCheckUtilities
+ import /Library/Legacy/DataStructures/IntegerSet
+ import /Library/Legacy/DataStructures/ListPair 
+ import /Library/Legacy/DataStructures/ListUtilities
+ import /Library/Legacy/DataStructures/StringUtilities 
+ import Elaborate/Utilities
 
  sort Vars = List Var
 

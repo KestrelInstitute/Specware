@@ -2,7 +2,7 @@
 
 spec {
  import StandardSpec
- import ../Legacy/DataStructures/ListUtilities
+ import /Library/Legacy/DataStructures/ListUtilities
 
  op specUnion       : List Spec       -> Spec
  op importsUnion    : List Imports    -> Imports
