@@ -45,15 +45,15 @@ def baseSrtToJavaTypeM(srt) =
 op emptyJSpec: JSpec
 def emptyJSpec = (None, [], [])
 
-op emptyClsBody: ClsBody
-def emptyClsBody =
-  { handwritten = [],
-    staticInits = [],
-    flds        = [],
-    constrs     = [], 
-    meths       = [],
-    clss        = [],
-    interfs     = [] }
+%op emptyClsBody: ClsBody
+%def emptyClsBody =
+%  { handwritten = [],
+%    staticInits = [],
+%    flds        = [],
+%    constrs     = [], 
+%    meths       = [],
+%    clss        = [],
+%    interfs     = [] }
 
 op setFlds: ClsBody * List FldDecl -> ClsBody
 def setFlds(clsBody, fldDecls) =

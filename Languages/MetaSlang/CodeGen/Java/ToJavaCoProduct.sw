@@ -28,7 +28,7 @@ def mkEqualityBodyForSum(fields) =
 op sumTypeToClsDecl: Id * List FldDecl * List MethDecl -> ClsDecl
 def sumTypeToClsDecl(id, fldDecls, sumConstructorMethDecls) =
   let sumEqMethod = mkAbstractEqualityMethDecl(id) in
-  ([Abstract], (id, None, []), setFlds(setMethods(emptyClsBody, cons(sumEqMethod, sumConstructorMethDecls)), fldDecls))
+  ([Abstract], (id, None, []), setFlds(setMethods(Java.emptyClsBody, cons(sumEqMethod, sumConstructorMethDecls)), fldDecls))
 
 op mkSummandId: Id * Id -> Id
 def mkSummandId(ty, c) =

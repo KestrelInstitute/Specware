@@ -22,17 +22,17 @@ sort JGenError =
 op errToString: JGenError -> String
 def errToString err =
   case err of
-    | UnsupportedLambdaTerm termstr -> "not yet supported: stand-alone lambda terms: '"^termstr^"'"
+    | UnsupportedLambdaTerm termstr -> "not yet supported: stand-alone lambda terms: \""^termstr^"\""
     | NoUserTypeInApplArgList termstr -> "no user type found in argument list of application "^termstr
     | UnsupportedSortInRestrict srtstr -> "unsupported sort in restrict term: "^srtstr
-    | UnsupportTermInCase termstr -> "term format not supported for toplevel case term: '"^termstr^"'"
-    | UnsupportedPattern patstr -> "pattern format not supported: '"^(patstr)^"'"
-    | UnsupportedSubsort termstr -> "unsupported term for subsort: '"^termstr^"'; only operator names are supported."
-    | UnsupportedQuotient termstr -> "unsupported term for quotient sort: '"^termstr^"'; only operator names are supported."
+    | UnsupportTermInCase termstr -> "term format not supported for toplevel case term: \""^termstr^"\""
+    | UnsupportedPattern patstr -> "pattern format not supported: \""^(patstr)^"\""
+    | UnsupportedSubsort termstr -> "unsupported term for subsort: \""^termstr^"\"; only operator names are supported."
+    | UnsupportedQuotient termstr -> "unsupported term for quotient sort: \""^termstr^"\"; only operator names are supported."
     | NotSupported s -> "Feature not supported: "^s
     | Fail msg -> msg
     | UnsupportedSubsortTerm srt -> "this format of subsorts/quotients is currently not supported: "^srt
-    | UnsupportedTermFormat termstr -> "term format not supported: '"^termstr^"'"
+    | UnsupportedTermFormat termstr -> "term format not supported: \""^termstr^"\""
 
 % --------------------------------------------------------------------------------
 % Error api

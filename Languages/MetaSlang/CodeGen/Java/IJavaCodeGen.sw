@@ -52,6 +52,9 @@ spec
    *)
   op metaSlangTypeToJavaType: Sort -> JGenEnv Java.Type
 
+
+  op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (Block * Java.Expr)
+
   (**
    * reads the optional option spec, which contains user-supplied
    * information concerning the target directory of the code generation,

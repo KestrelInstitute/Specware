@@ -18,6 +18,18 @@ type ArrowType = List Sort * Sort
 
 type Type = JGen.Type
 
+% --------------------------------------------------------------------------------
+
+%op metaSlangTermToJavaExpr: MS.Term -> JGenEnv (Block * Java.Expr)
+def JGen.metaSlangTermToJavaExpr term =
+  {
+   (block,expr,_,_) <- termToExpressionM(empty,term,0,0);
+   return (block,expr)
+  }
+
+
+% --------------------------------------------------------------------------------
+
 op clsDeclsFromSorts: Spec -> JGenEnv ()
 def clsDeclsFromSorts spc =
   {
@@ -667,8 +679,8 @@ def insertClsDeclsForCollectedProductSorts =
 	 mapM (fn srt -> insertSort srt) psrts;
 	 psrts1 <- getProductSorts;
 	 %println("#psrts1 ="^(Integer.toString(length psrts1)));
-	 ifM ((length psrts1) > (length psrts0))
-	    insertClsDeclsForCollectedProductSorts;
+	 %ifM ((length psrts1) > (length psrts0))
+	 %   insertClsDeclsForCollectedProductSorts;
 	 return ()
 	}
      }

@@ -80,6 +80,11 @@ def setImports imports =
   fn state ->
   (Ok (), state << { imports = imports })
 
+op addImports: List Name -> JGenEnv ()
+def addImports imports =
+  fn state ->
+  (Ok (), state << { imports = state.imports ++ imports })
+
 op getImports: JGenEnv (List Name)
 def getImports =
   fn state ->

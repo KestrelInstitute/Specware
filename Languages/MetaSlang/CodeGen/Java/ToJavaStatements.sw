@@ -1,4 +1,4 @@
-%JGen qualifying
+JGen qualifying
 spec
 
 import ToJavaBase
@@ -32,6 +32,7 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
      | None -> 
        %let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
        case term of
+	 | SortedTerm(t,_,_) -> termToExpressionM(tcx,t,k,l)
 	 | Var ((id, srt), _) ->
 	   (case StringMap.find(tcx, id) of
 	      | Some (newV) -> return (mts, newV, k, l)
@@ -44,7 +45,9 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 		| Base (Qualified (q, srtId), _, _) -> return (mts, mkQualJavaExpr(srtId, id), k, l)
 		| Boolean _                         -> return (mts, mkQualJavaExpr("Boolean", id), k, l)
 		| Arrow(dom,rng,_) -> translateLambdaToExprM(tcx,term,k,l)
-		| _ -> raise(UnsupportedTermFormat((printTerm term)^" [2]"),termAnn term)
+		| _ -> 
+                  let _ = print term in
+		  raise(UnsupportedTermFormat((printTerm term)^" [2]"),termAnn term)
 	      )
 	 | Fun (Nat (n),_,__) -> return(mts, mkJavaNumber(n), k, l)
 	 | Fun (Bool (b),_,_) -> return(mts, mkJavaBool(b), k, l)
@@ -69,7 +72,8 @@ def termToExpression_internalM(tcx, term, k, l, _ (*addRelaxChoose?*)) =
 	     translateCaseToExprM(tcx, term, k, l)
 	   else
 	       %unsupportedInTerm(term,k,l,"term not supported by Java code generator(2): "^(printTerm term))
-	       raise(UnsupportedTermFormat((printTerm term)^" [1]"),termAnn term)
+	     let _ = print term in
+	     raise(UnsupportedTermFormat((printTerm term)^" [1]"),termAnn term)
   }
 
 % --------------------------------------------------------------------------------
