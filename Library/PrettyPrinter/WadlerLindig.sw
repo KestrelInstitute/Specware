@@ -74,7 +74,7 @@ WadlerLindig qualifying spec
 %            in
 %              "\n" ++ (replicate indent " ") ++ (ppLayout d)
   
-  op ppFits : Integer -> List (Integer * Mode * Doc) -> Boolean
+  op ppFits : Integer -> List (Integer * BreakMode * Doc) -> Boolean
   def ppFits w x =
     (w >= 0) &
     (case x of
@@ -88,11 +88,11 @@ WadlerLindig qualifying spec
        | (i,Break,DocBreak _) :: z -> true % impossible 
        | (i,m,DocGroup(x)) :: z -> ppFits w (Cons((i,Flat,x),z)))
   
-  sort Mode =
+  sort BreakMode =
     | Flat
     | Break
   
-  op ppBest : Integer -> Integer -> List (Integer * Mode * Doc) -> SDoc
+  op ppBest : Integer -> Integer -> List (Integer * BreakMode * Doc) -> SDoc
   def ppBest w k x = 
     case x of
       | [] -> SNil
