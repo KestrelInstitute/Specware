@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:14:03  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:39:29  weilyn
  * Added support for claims.
  *
@@ -45,5 +48,6 @@ public interface ElementProperties {
     public static final String PROP_VALID = "valid"; // NOI18N
     
     public static final String PROP_CLAIM_KIND = "claim_kind"; // NOI18N    
-    
+
+    public static final String PROP_EXPRESSION = "expression"; // NOI18N        
 }

@@ -1634,6 +1634,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		def = null;
 		String name = null;
 		String[] params = null;
+		String expr = null;
 		
 		
 		try {      // for error handling
@@ -1661,9 +1662,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			}
 			}
-			expression();
+			expr=expression();
 			if ( inputState.guessing==0 ) {
-				def = builder.createDef(name, params);
+				def = builder.createDef(name, params, expr);
 				ParserUtil.setBounds(builder, def, begin, LT(0));
 				
 			}
@@ -1688,6 +1689,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		String name = null;
 		String kind = null;
 		Token begin = null;
+		String expr = null;
 		
 		
 		try {      // for error handling
@@ -1697,9 +1699,9 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			}
 			name=idName();
 			equals();
-			expression();
+			expr=expression();
 			if ( inputState.guessing==0 ) {
-				claim = builder.createClaim(name, kind);
+				claim = builder.createClaim(name, kind, expr);
 				ParserUtil.setBounds(builder, claim, begin, LT(0));
 				
 			}
@@ -1801,10 +1803,12 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 		return params;
 	}
 	
-	private final void expression() throws RecognitionException, TokenStreamException {
+	private final String  expression() throws RecognitionException, TokenStreamException {
+		String expr;
 		
 		
-		String ignore = null;
+		expr = "";
+		String item = null;
 		
 		
 		try {      // for error handling
@@ -1816,7 +1820,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case IDENTIFIER:
 				case NON_WORD_SYMBOL:
 				{
-					ignore=qualifiableRef();
+					item=qualifiableRef();
+					if ( inputState.guessing==0 ) {
+						expr = expr + item + " ";
+					}
 					break;
 				}
 				case NAT_LITERAL:
@@ -1825,7 +1832,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_true:
 				case LITERAL_false:
 				{
-					ignore=literal();
+					item=literal();
+					if ( inputState.guessing==0 ) {
+						expr = expr + item + " ";
+					}
 					break;
 				}
 				case LBRACE:
@@ -1837,7 +1847,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LBRACKET:
 				case RBRACKET:
 				{
-					ignore=specialSymbol();
+					item=specialSymbol();
+					if ( inputState.guessing==0 ) {
+						expr = expr + item + " ";
+					}
 					break;
 				}
 				case LITERAL_as:
@@ -1860,7 +1873,10 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 				case LITERAL_then:
 				case LITERAL_where:
 				{
-					ignore=expressionKeyword();
+					item=expressionKeyword();
+					if ( inputState.guessing==0 ) {
+						expr = expr + item + " ";
+					}
 					break;
 				}
 				default:
@@ -1881,6 +1897,7 @@ public MetaSlangParserFromAntlr(ParserSharedInputState state) {
 			  throw ex;
 			}
 		}
+		return expr;
 	}
 	
 	private final String  claimKind() throws RecognitionException, TokenStreamException {

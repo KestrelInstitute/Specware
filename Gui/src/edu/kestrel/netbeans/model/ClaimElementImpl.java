@@ -14,17 +14,19 @@ import org.openide.src.SourceException;
  *
  * @author  weilyn
  */
-public class ClaimElementImpl extends MemberElementImpl implements ClaimElement.Impl {
+public class ClaimElementImpl extends MemberElementImpl implements ClaimElement.Impl { 
     private static final long serialVersionUID = 6799964214013985830L;
     
     /** Kind of the claim.
      */
     private String claimKind;
+    private String expression;
 
     /** Creates a new instance of ClaimElementImpl */
     public ClaimElementImpl(DefaultLangModel model) {
         super(model);
         claimKind = null;
+        expression = null;
     }
     
     /** Creates a suitable binding for the element. The binding is created with the
@@ -40,6 +42,7 @@ public class ClaimElementImpl extends MemberElementImpl implements ClaimElement.
         super.createFromModel(el);
         ClaimElement element = (ClaimElement)el;
         setClaimKind(element.getClaimKind());
+        setExpression(element.getExpression());
     }
     
     public Object readResolve() {
@@ -79,6 +82,40 @@ public class ClaimElementImpl extends MemberElementImpl implements ClaimElement.
         }        
     }
 
+    /** Get the value expression of the Claim.
+     * @return the expression
+     *
+     */
+    public String getExpression() {
+        return this.expression;
+    }
+    
+    /** Set the value expression of the Claim.
+     * @param expression the expression
+     * @throws SourceException if impossible
+     *
+     */
+    public void setExpression(String expression) throws SourceException {
+        Object token = takeLock();
+        try {
+            PropertyChangeEvent evt;
+            if (!isCreated()) {
+                if (expression == this.expression)
+                    return;
+                evt = new PropertyChangeEvent(getElement(), PROP_EXPRESSION, this.expression, expression);
+                // no constraings on the Initializer... only check vetoable listeners.
+                checkVetoablePropertyChange(evt);
+                getClaimBinding().changeExpression(expression);
+                addPropertyChange(evt);
+            }
+            this.expression = expression;
+            commit();
+        } finally {
+            releaseLock(token);
+        }        
+    }
+    
+    
     // Utility methods.
     //////////////////////////////////////////////////////////////////////////////////
     
@@ -97,4 +134,5 @@ public class ClaimElementImpl extends MemberElementImpl implements ClaimElement.
     protected Element cloneSelf() {
         return (Element)((ClaimElement)getElement()).clone();
     }    
+    
 }

@@ -41,6 +41,7 @@ class DefB extends Member implements Binding.Def {
         try {
             target.setName(my.getName());
             target.setParameters(my.getParameters());
+            target.setExpression(my.getExpression());
         } catch (SourceException ex) {
             // should NOT happen
         }
@@ -63,6 +64,16 @@ class DefB extends Member implements Binding.Def {
             return;
         DefElement el = (DefElement)cloneElement();
         el.setParameters(params);
+        regenerateHeader(el);
+    }
+    
+    /** Changes expression for the def.
+     */
+    public void changeExpression(String expression) throws SourceException {
+        if (!source.isGeneratorEnabled())
+            return;
+        DefElement el = (DefElement)cloneElement();
+        el.setExpression(expression);
         regenerateHeader(el);
     }
     

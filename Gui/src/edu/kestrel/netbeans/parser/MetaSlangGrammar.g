@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.11  2003/02/16 02:16:03  weilyn
+ * Added support for defs.
+ *
  * Revision 1.10  2003/02/14 17:00:38  weilyn
  * Added prove term to grammar.
  *
@@ -345,12 +348,13 @@ private opDefinition returns[ElementFactory.Item def]
     def = null;
     String name = null;
     String[] params = null;
+    String expr = null;
 }
     : begin:"def"
       name=qualifiableOpNames
       ((formalOpParameters equals) => params=formalOpParameters equals
        | equals) 
-      expression            {def = builder.createDef(name, params);
+      expr=expression            {def = builder.createDef(name, params, expr);
                              ParserUtil.setBounds(builder, def, begin, LT(0));
                             }
     ;
@@ -361,12 +365,13 @@ private claimDefinition returns[ElementFactory.Item claim]
     String name = null;
     String kind = null;
     Token begin = null;
+    String expr = null;
 }
     : kind=claimKind       {begin = LT(0);}
       name=idName
       equals
-      expression
-                           {claim = builder.createClaim(name, kind);
+      expr=expression
+                           {claim = builder.createClaim(name, kind, expr);
                             ParserUtil.setBounds(builder, claim, begin, LT(0));
                            }
 
@@ -381,14 +386,15 @@ private claimKind returns[String kind]
     | "conjecture"         {kind = "conjecture";}
     ;
 
-private expression
+private expression returns[String expr]
 {
-    String ignore = null;
+    expr = "";
+    String item = null;
 }
-    : (  ignore=qualifiableRef
-       | ignore=literal
-       | ignore=specialSymbol
-       | ignore=expressionKeyword
+    : (  item=qualifiableRef    {expr = expr + item + " ";}
+       | item=literal           {expr = expr + item + " ";}
+       | item=specialSymbol     {expr = expr + item + " ";}
+       | item=expressionKeyword {expr = expr + item + " ";}
       )+
     ;
 

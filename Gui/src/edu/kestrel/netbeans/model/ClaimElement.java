@@ -22,7 +22,8 @@ public final class ClaimElement extends MemberElement {
     /** Format for the code generator */
     private static final ElementFormat CLAIM_FORMAT =
         
-        new ElementFormat("{c} {n}"); // NOI18N
+        // TODO change 'x' to "{e}": why doesn't {e} work??
+        new ElementFormat("{c} {n} is {e}"); // NOI18N
     
     /** Create a new Claim element represented in memory.
      */
@@ -69,6 +70,25 @@ public final class ClaimElement extends MemberElement {
         getClaimImpl().setClaimKind(claimKind);
     }
     
+    /** Get the value expression of the Claim.
+     * @return the expression for the claim
+     */
+    public String getExpression() {
+        return getClaimImpl().getExpression();
+    }
+
+    /** Set the value expression of the Claim.
+     * @param expression the expression
+     * @throws SourceException if impossible
+     */
+    public void setExpression(String expression) throws SourceException {
+        // sanity check:
+        if (expression == null) {
+	    throwSourceException(NbBundle.getMessage(ClaimElement.class, "ERR_NullExpression"));
+        }
+        getClaimImpl().setExpression(expression);
+    }
+    
     /** Print this element (and all its subelements) into an element printer.
      * @param printer the element printer
      * @exception ElementPrinterInterruptException if the printer canceled the printing
@@ -99,13 +119,25 @@ public final class ClaimElement extends MemberElement {
          */
         public void setClaimKind(String claimKind) throws SourceException;
 
+        /** Get the value expression of the Claim.
+         * @return the expression
+         */
+        public String getExpression();
+
+        /** Set the value expression of the Claim.
+         * @param expression the expression
+         * @throws SourceException if impossible
+         */
+        public void setExpression(String expression) throws SourceException;
     }
  
     static class Memory extends MemberElement.Memory implements Impl {
         private String claimKind;
+        private String expression;
 
         Memory() {
             claimKind = null;
+            expression = null;
         }
 
         /** Copy constructor.
@@ -114,6 +146,7 @@ public final class ClaimElement extends MemberElement {
         Memory (ClaimElement claim) {
             super (claim);
             claimKind = claim.getClaimKind();
+            expression = claim.getExpression();
         }
 
         /** Get the value claimKind of the Claim.
@@ -133,6 +166,25 @@ public final class ClaimElement extends MemberElement {
             String old = this.claimKind;
             this.claimKind = claimKind;
             firePropertyChange (PROP_CLAIM_KIND, old, claimKind);
+        }
+
+        /** Get the value expression of the Claim.
+         * @return the expression
+         *
+         */
+        public String getExpression() {
+            return expression;
+        }
+        
+        /** Set the value expression of the Claim.
+         * @param expression the expression
+         * @throws SourceException if impossible
+         *
+         */
+        public void setExpression(String expression) {
+            String old = this.expression;
+            this.expression = expression;
+            firePropertyChange (PROP_EXPRESSION, old, expression);
         }
         
     }    

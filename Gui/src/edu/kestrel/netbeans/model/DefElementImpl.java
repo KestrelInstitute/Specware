@@ -25,10 +25,13 @@ final class DefElementImpl extends MemberElementImpl implements DefElement.Impl 
     /** Parameters of the def.
      */
     private String[] parameters;
+    
+    private String expression;
 
     DefElementImpl(DefaultLangModel model) {
         super(model);
         parameters = null;
+        expression = null;
     }
     
     protected Binding createBinding(Element el) {
@@ -39,6 +42,7 @@ final class DefElementImpl extends MemberElementImpl implements DefElement.Impl 
         super.createFromModel(el);
         DefElement element = (DefElement)el;
         setParameters(element.getParameters());
+        setExpression(element.getExpression());
     }
 
     public Object readResolve() {
@@ -69,6 +73,36 @@ final class DefElementImpl extends MemberElementImpl implements DefElement.Impl 
                 addPropertyChange(evt);
             }
             this.parameters = parameters;
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+    
+    /** Getter for the initial value.
+    * @return initial value for the variable or empty string if it is not initialized
+    */
+    public String getExpression() {
+        return this.expression;
+    }
+
+    /** Setter for the initial value.
+    * @param value initial value for the variable
+    */
+    public void setExpression(String expression) throws SourceException {
+        Object token = takeLock();
+        try {
+            PropertyChangeEvent evt;
+            if (!isCreated()) {
+                if (expression == this.expression)
+                    return;
+                evt = new PropertyChangeEvent(getElement(), PROP_EXPRESSION, this.expression, expression);
+                // no constraings on the Initializer... only check vetoable listeners.
+                checkVetoablePropertyChange(evt);
+                getDefBinding().changeExpression(expression);
+                addPropertyChange(evt);
+            }
+            this.expression = expression;
             commit();
         } finally {
             releaseLock(token);

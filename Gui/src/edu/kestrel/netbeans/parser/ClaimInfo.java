@@ -20,11 +20,13 @@ import edu.kestrel.netbeans.codegen.TextBinding;
  */
 public class ClaimInfo extends BaseElementInfo {
     String   claimKind;
+    String   expression;
     
     /** Creates a new instance of ClaimInfo */
-    public ClaimInfo(String name, String claimKind) {
+    public ClaimInfo(String name, String claimKind, String expression) {
         super(name);
 	this.claimKind = claimKind;
+        this.expression = expression;
     }
     
     protected Element createModelImpl(LangModel.Updater model, Element parent) {
@@ -38,9 +40,10 @@ public class ClaimInfo extends BaseElementInfo {
         
         ClaimElement element = (ClaimElement)target;
         element.setClaimKind(claimKind);
+        element.setExpression(expression);
     }
 
     public String toString() {
-	return claimKind+" "+name;
+	return claimKind+" "+name+" is "+expression;
     }
 }

@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:16:03  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:45:53  weilyn
  * Added support for claims.
  *
@@ -53,13 +56,14 @@ public interface ElementFactory {
 	@param name Name of the def
 	@param params Formal parameters of the def
     */
-    public Item createDef(String name, String[] params);
+    public Item createDef(String name, String[] params, String expression);
     
     /** Creates an element for a claim.
 	@param name Name of the claim
         @param claimKind Kind of the claim
+        @param expression Expression of the claim
     */
-    public Item createClaim(String name, String claimKind);    
+    public Item createClaim(String name, String claimKind, String expression);    
     
     public void setParent(Collection children, Item parent);
 

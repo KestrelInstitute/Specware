@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/02/16 02:15:05  weilyn
+ * Added support for defs.
+ *
  * Revision 1.2  2003/02/13 19:42:09  weilyn
  * Added support for claims.
  *
@@ -322,6 +325,7 @@ public final class SourceOptions extends SystemOption {
                 ClaimElement c = new ClaimElement();
                 c.setName(id);
                 c.setClaimKind(id);
+                c.setExpression(id);
                 els[T_CLAIM] = c;
 
             } catch (SourceException ex) {
