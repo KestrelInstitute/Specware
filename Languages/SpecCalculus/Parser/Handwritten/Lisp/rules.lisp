@@ -272,11 +272,11 @@
 
 (define-sw-parser-rule :UNQUALIFIED-SORT-NAME ()
   (1 :SORT-NAME)
-  (make-unqualified-sort-name 1 ':left-lcb ':right-lcb))
+  (MetaSlang::mkUnQualifiedId 1))
 
 (define-sw-parser-rule :QUALIFIED-SORT-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :SORT-NAME))
-  (make-qualified-sort-name 1 2 ':left-lcb ':right-lcb))
+  (MetaSlang::mkQualifiedId-2 1 2))
 
 (define-sw-parser-rule :QUALIFIER ()
   (1 :NAME)
@@ -296,11 +296,11 @@
 
 (define-sw-parser-rule :UNQUALIFIED-OP-NAME ()
   (1 :OP-NAME)
-  (make-unqualified-op-name 1 ':left-lcb ':right-lcb))
+  (MetaSlang::mkUnQualifiedId 1))
 
 (define-sw-parser-rule :QUALIFIED-OP-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :OP-NAME))
-  (make-qualified-op-name 1 2 ':left-lcb ':right-lcb))
+  (MetaSlang::mkQualifiedId-2 1 2))
 
 (define-sw-parser-rule :OP-NAME ()
   (1 :NAME)
@@ -315,11 +315,11 @@
 
 (define-sw-parser-rule :UNQUALIFIED-CLAIM-NAME ()
   (1 :CLAIM-NAME)
-  (make-unqualified-claim-name 1 ':left-lcb ':right-lcb))
+  (MetaSlang::mkUnQualifiedId 1))
 
 (define-sw-parser-rule :QUALIFIED-CLAIM-NAME ()
   (:tuple (1 :QUALIFIER) "." (2 :CLAIM-NAME))
-  (make-qualified-claim-name 1 2 ':left-lcb ':right-lcb))
+  (MetaSlang::mkQualifiedId-2 1 2))
 
 (define-sw-parser-rule :CLAIM-NAME ()
   (1 :NAME)
@@ -1358,14 +1358,14 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :UNQUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
-   ((:tuple (1 :NAME)) (make-unqualified-ambiguous-name 1   ':left-lcb ':right-lcb))
-   ((:tuple "_")       (make-unqualified-ambiguous-name "_" ':left-lcb ':right-lcb))
+   ((:tuple (1 :NAME)) (MetaSlang::mkUnQualifiedId 1))
+   ((:tuple "_")       (MetaSlang::mkUnQualifiedId "_"))
    ))
 
 (define-sw-parser-rule :QUALIFIED-AMBIGUOUS-NAME ()
   (:anyof
-   ((:tuple (1 :QUALIFIER) "." (2 :NAME))    (make-qualified-ambiguous-name 1 2   ':left-lcb ':right-lcb))
-   ((:tuple (1 :QUALIFIER) "." "_")          (make-qualified-ambiguous-name 1 "_" ':left-lcb ':right-lcb))
+   ((:tuple (1 :QUALIFIER) "." (2 :NAME)) (MetaSlang::mkQualifiedId-2 1 2))
+   ((:tuple (1 :QUALIFIER) "." "_")       (MetaSlang::mkQualifiedId-2 1 "_"))
    ))
 
 ;;; ========================================================================

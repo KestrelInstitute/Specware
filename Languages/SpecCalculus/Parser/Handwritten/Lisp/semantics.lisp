@@ -61,39 +61,39 @@
 ;;;
 ;;; (defun mkUnQualifiedId (id) 
 ;;;   (MetaSlang::mkUnQualifiedId id))
-
-(defun make-unqualified-sort-name (id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkUnQualifiedId id))
-
-(defun make-qualified-sort-name (qualifier id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkQualifiedId-2 qualifier id))
-
-(defun make-unqualified-op-name (id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkUnQualifiedId id))
-
-(defun make-qualified-op-name (qualifier id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkQualifiedId-2 qualifier id))
-
-(defun make-unqualified-claim-name (id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkUnQualifiedId id))
-
-(defun make-qualified-claim-name (qualifier id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkQualifiedId-2 qualifier id))
-
-(defun make-unqualified-ambiguous-name (id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkUnQualifiedId id))
-
-(defun make-qualified-ambiguous-name (qualifier id left right)
-  (declare (ignore left right))
-  (MetaSlang::mkQualifiedId-2 qualifier id))
-
+;;; 
+;;; (defun make-unqualified-sort-name (id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkUnQualifiedId id))
+;;; 
+;;; (defun make-qualified-sort-name (qualifier id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkQualifiedId-2 qualifier id))
+;;; 
+;;; (defun make-unqualified-op-name (id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkUnQualifiedId id))
+;;; 
+;;; (defun make-qualified-op-name (qualifier id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkQualifiedId-2 qualifier id))
+;;; 
+;;; (defun make-unqualified-claim-name (id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkUnQualifiedId id))
+;;; 
+;;; (defun make-qualified-claim-name (qualifier id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkQualifiedId-2 qualifier id))
+;;; 
+;;; (defun make-unqualified-ambiguous-name (id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkUnQualifiedId id))
+;;; 
+;;; (defun make-qualified-ambiguous-name (qualifier id left right)
+;;;   (declare (ignore left right))
+;;;   (MetaSlang::mkQualifiedId-2 qualifier id))
+;;; 
 ;;; ========================================================================
 ;;;  Primitives
 ;;; ========================================================================
@@ -157,7 +157,7 @@
 (defparameter internal-parser-position (cons :|Internal| "built-in from parser"))
 (defun make-internal-sort (name)
   (cons :|Base| 
-	(vector (make-qualified-sort-name name name internal-parser-position internal-parser-position)
+	(vector (MetaSlang::mkQualifiedId-2 name name)
 		nil 
 		internal-parser-position)))
 
