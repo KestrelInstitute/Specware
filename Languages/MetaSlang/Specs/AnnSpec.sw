@@ -25,6 +25,8 @@ AnnSpec qualifying spec
  %%%                ASpec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+ type ASpecs b = List (ASpec b)
+
  type ASpec b = {importInfo   : ImportInfo,	% importInfo is ignored by equality test on specs
 		 sorts        : ASortMap    b,
 		 ops          : AOpMap      b,
@@ -60,19 +62,21 @@ AnnSpec qualifying spec
  type PropertyName     = QualifiedId
  type PropertyNames    = List PropertyName  
 
- op  propertyName: fa(b) AProperty b -> PropertyName
+ op  propertyName: [b] AProperty b -> PropertyName
  def propertyName p = p.2
  
- %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ %%%  These are utilities to help process sort and term definitions.
+ %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op packSortDef   : [b] List (TyVars * ASort b) * b -> ASort b
- op unpackSortDef : [b] ASort b -> List (TyVars * ASort b)
+ op joinSorts  : [b] List (TyVars * ASort b) * b -> ASort b
+ op splitSort  : [b] ASort b -> List (TyVars * ASort b)
 
- op packOpDef     : [b] List (TyVars * ASort b * ATerm b) * b -> ATerm b
- op unpackOpDef   : [b] ATerm b -> List (TyVars * ASort b * ATerm b)
+ op joinTerms  : [b] List (TyVars * ASort b * ATerm b) * b -> ATerm b
+ op splitTerm  : [b] ATerm b -> List (TyVars * ASort b * ATerm b)
 
 
- def packSortDef (pairs, pos) =
+ def joinSorts (pairs, pos) =
    let srts =
        map (fn (tvs, srt) ->
 	    case tvs of
@@ -85,7 +89,7 @@ AnnSpec qualifying spec
        | [srt] -> srt
        | _  -> And (srts, pos)
 
- def unpackSortDef srt =
+ def splitSort srt =
    let 
      def aux srt =
        case srt of
@@ -96,7 +100,7 @@ AnnSpec qualifying spec
        | And (srts, _) -> map aux srts
        | _ -> [aux srt]
 
- def packOpDef (triples, pos)  =
+ def joinTerms (triples, pos)  =
    let tms = 
        map (fn (tvs, srt, tm) ->
 	    let a = termAnn tm in
@@ -110,7 +114,7 @@ AnnSpec qualifying spec
        | [tm] -> tm
        | _ -> And (tms, pos)
 
- def unpackOpDef tm =
+ def splitTerm tm =
    let
      def aux tm =
        case tm of
@@ -123,8 +127,6 @@ AnnSpec qualifying spec
        
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- type ASpecs b = List (ASpec b)
-
  type AOpSignature  b = String * String * TyVars * ASort b
  type SortSignature   = String * String * TyVars 
 
@@ -133,7 +135,7 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
- op mapSpec    : fa(b) TSP_Maps b -> ASpec b -> ASpec b
+ op mapSpec    : [b] TSP_Maps b -> ASpec b -> ASpec b
 
  def mapSpec tsp {importInfo, sorts, ops, properties} =
    {
@@ -143,13 +145,13 @@ AnnSpec qualifying spec
     properties       = mapSpecProperties tsp properties
    }
 
-  op mapSpecSorts: fa(b) TSP_Maps b -> ASortMap b -> ASortMap b 
+  op mapSpecSorts: [b] TSP_Maps b -> ASortMap b -> ASortMap b 
  def mapSpecSorts tsp sorts =
    mapSortInfos (fn (aliases, tvs, defs) ->
 		 (aliases, tvs, mapSortSchemes tsp defs))
                 sorts
 
-  op mapSpecOps : fa(b) TSP_Maps b -> AOpMap b -> AOpMap b
+  op mapSpecOps : [b] TSP_Maps b -> AOpMap b -> AOpMap b
  def mapSpecOps tsp ops =
    mapOpInfos (fn (aliases, fixity, (tvs, srt), defs) ->
 	       (aliases,
@@ -162,7 +164,7 @@ AnnSpec qualifying spec
  %% just once to an info, even if it has multiple aliases,
  %% then arrange for each alias to index that same new info.
 
-  op mapSortInfos : fa(b) (ASortInfo b -> ASortInfo b) -> ASortMap b -> ASortMap b 
+  op mapSortInfos : [b] (ASortInfo b -> ASortInfo b) -> ASortMap b -> ASortMap b 
  def mapSortInfos sortinfo_map sorts =
    foldriAQualifierMap 
      (fn (index_q, index_id, sort_info as (aliases,_,_), new_map) ->
@@ -182,7 +184,7 @@ AnnSpec qualifying spec
      emptyAQualifierMap
      sorts
 
-  op mapOpInfos : fa(b) (AOpInfo b -> AOpInfo b) -> AOpMap b -> AOpMap b 
+  op mapOpInfos : [b] (AOpInfo b -> AOpInfo b) -> AOpMap b -> AOpMap b 
  def mapOpInfos opinfo_map ops =
    foldriAQualifierMap 
      (fn (index_q, index_id, op_info as (aliases,_,_,_), new_map) ->
@@ -202,7 +204,7 @@ AnnSpec qualifying spec
      emptyAQualifierMap
      ops
 
-  op filterSortMap : fa(b) (ASortInfo b -> Boolean) -> ASortMap b -> ASortMap b 
+  op filterSortMap : [b] (ASortInfo b -> Boolean) -> ASortMap b -> ASortMap b 
  def filterSortMap keep? sorts =
    foldriAQualifierMap 
      (fn (index_q, index_id, info as (aliases,_,_), new_map) ->
@@ -217,7 +219,7 @@ AnnSpec qualifying spec
      emptyAQualifierMap
      sorts
 
-  op filterOpMap : fa(b) (AOpInfo b -> Boolean) -> AOpMap b -> AOpMap b 
+  op filterOpMap : [b] (AOpInfo b -> Boolean) -> AOpMap b -> AOpMap b 
  def filterOpMap keep? ops =
    foldriAQualifierMap 
      (fn (index_q, index_id, info as (aliases,_,_,_), new_map) ->
@@ -232,7 +234,7 @@ AnnSpec qualifying spec
      emptyAQualifierMap
      ops
 
-  op foldSortInfos : fa(a,b) (ASortInfo a * b -> b) -> b -> ASortMap a -> b
+  op foldSortInfos : [a,b] (ASortInfo a * b -> b) -> b -> ASortMap a -> b
  def foldSortInfos f init sorts =
    foldriAQualifierMap 
      (fn (index_q, index_id, info as (aliases,_,_), result) ->
@@ -244,7 +246,7 @@ AnnSpec qualifying spec
      init
      sorts
 
-  op foldOpInfos : fa(a,b) (AOpInfo a * b -> b) -> b -> AOpMap a -> b
+  op foldOpInfos : [a,b] (AOpInfo a * b -> b) -> b -> AOpMap a -> b
  def foldOpInfos f init ops =
    foldriAQualifierMap 
      (fn (index_q, index_id, info as (aliases,_,_,_), result) ->
@@ -256,7 +258,7 @@ AnnSpec qualifying spec
      init
      ops
 
-  op appSortInfos : fa(b) (ASortInfo b -> ()) -> ASortMap b -> ()
+  op appSortInfos : [b] (ASortInfo b -> ()) -> ASortMap b -> ()
  def appSortInfos f sorts =
    appiAQualifierMap 
      (fn (index_q, index_id, info as (aliases,_,_)) ->
@@ -267,7 +269,7 @@ AnnSpec qualifying spec
 	())
      sorts
 
-  op appOpInfos : fa(b) (AOpInfo b -> ()) -> AOpMap b -> ()
+  op appOpInfos : [b] (AOpInfo b -> ()) -> AOpMap b -> ()
  def appOpInfos f ops =
    appiAQualifierMap 
      (fn (index_q, index_id, info as (aliases,_,_,_)) ->
@@ -279,14 +281,14 @@ AnnSpec qualifying spec
      ops
 
 
-  op mapSpecProperties : fa(b) TSP_Maps b -> AProperties b ->  AProperties b 
+  op mapSpecProperties : [b] TSP_Maps b -> AProperties b ->  AProperties b 
  def mapSpecProperties tsp properties =
    map (fn (pt, nm, tvs, term) -> 
            (pt, nm, tvs, mapTerm tsp term))
        properties
 
- op mapTermSchemes : fa(b) TSP_Maps b -> ATermSchemes b -> ATermSchemes b
- op mapSortSchemes : fa(b) TSP_Maps b -> ASortSchemes b -> ASortSchemes b
+ op mapTermSchemes : [b] TSP_Maps b -> ATermSchemes b -> ATermSchemes b
+ op mapSortSchemes : [b] TSP_Maps b -> ASortSchemes b -> ASortSchemes b
 
  def mapTermSchemes tsp term_schemes = 
   map (fn (tvs, term) -> (tvs, mapTerm tsp term)) term_schemes
@@ -299,7 +301,7 @@ AnnSpec qualifying spec
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%% "TSP" means "Term, Sort, Pattern"
 
-  op appSpec    : fa(a) appTSP a -> ASpec a    -> ()
+  op appSpec    : [a] appTSP a -> ASpec a    -> ()
  def appSpec tsp_apps spc = 
    (
     appSpecOps        tsp_apps spc.ops;
@@ -307,20 +309,20 @@ AnnSpec qualifying spec
     appSpecProperties tsp_apps spc.properties
    )
 
-  op appSpecSorts : fa(a) appTSP a -> ASortMap a -> ()
+  op appSpecSorts : [a] appTSP a -> ASortMap a -> ()
  def appSpecSorts tsp_apps sorts = 
    appAQualifierMap (fn (_, _, defs) -> 
 		     appSortSchemes tsp_apps defs)
                     sorts 
     
-  op appSpecOps : fa(a) appTSP a -> AOpMap a -> ()
+  op appSpecOps : [a] appTSP a -> AOpMap a -> ()
  def appSpecOps tsp_apps ops =
    appAQualifierMap (fn (_, _, (_, srt), defs) -> 
 		     (appSort        tsp_apps srt ; 
 		      appTermSchemes tsp_apps defs))
                     ops
     
-  op appSpecProperties : fa(a) appTSP a -> AProperties a -> ()
+  op appSpecProperties : [a] appTSP a -> AProperties a -> ()
  def appSpecProperties tsp_apps properties =
     app (fn (_, _, _, term) -> 
 	 appTerm tsp_apps term)
@@ -330,8 +332,8 @@ AnnSpec qualifying spec
  %%%                Sorts, Ops
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op specSorts : fa(b) ASpec b -> List SortSignature
- op specOps   : fa(b) ASpec b -> List (AOpSignature b)
+ op specSorts : [b] ASpec b -> List SortSignature
+ op specOps   : [b] ASpec b -> List (AOpSignature b)
 
  def specSorts (spc) = 
    foldriAQualifierMap (fn (q, id, (names, tvs, defs), 
@@ -348,10 +350,10 @@ AnnSpec qualifying spec
  % --------------------------------------------------------------------------------
  % return sorts/ops as list with entries of the form (qualifier, id, info)
 
- op sortsAsList     : fa(b) ASpec b -> List (Qualifier * Id * ASortInfo b)
- op opsAsList       : fa(b) ASpec b -> List (Qualifier * Id * AOpInfo   b)
- op sortInfosAsList : fa(b) ASpec b -> List (ASortInfo b)
- op opInfosAsList   : fa(b) ASpec b -> List (AOpInfo   b)
+ op sortsAsList     : [b] ASpec b -> List (Qualifier * Id * ASortInfo b)
+ op opsAsList       : [b] ASpec b -> List (Qualifier * Id * AOpInfo   b)
+ op sortInfosAsList : [b] ASpec b -> List (ASortInfo b)
+ op opInfosAsList   : [b] ASpec b -> List (AOpInfo   b)
 
  def sortsAsList(spc) =
    foldriAQualifierMap (fn (q, id, sort_info, new_list) -> 
@@ -385,7 +387,7 @@ AnnSpec qualifying spec
 			  new_list)
                        [] spc.ops
 
-  op equalSortInfo?: fa(a) ASortInfo a * ASortInfo a -> Boolean
+  op equalSortInfo?: [a] ASortInfo a * ASortInfo a -> Boolean
  def equalSortInfo? ((sortNames1, tvs1, defs1), 
 		     (sortNames2, tvs2, defs2)) 
    =
@@ -398,7 +400,7 @@ AnnSpec qualifying spec
           defs1
 
 
-  op equalOpInfo?: fa(a) AOpInfo a * AOpInfo a -> Boolean
+  op equalOpInfo?: [a] AOpInfo a * AOpInfo a -> Boolean
  def equalOpInfo? ((opNames1, fixity1, sortsch1, defs1),
 		   (opNames2, fixity2, sortsch2, defs2)) 
    =
@@ -410,17 +412,17 @@ AnnSpec qualifying spec
 	          defs2) 
           defs1
 
-  op equalSortScheme?: fa(a) ASortScheme a * ASortScheme a -> Boolean
+  op equalSortScheme?: [a] ASortScheme a * ASortScheme a -> Boolean
  def equalSortScheme? ((tvs1, s1), (tvs2, s2)) =
    %% TODO: take into account substitution of tvs
    tvs1 = tvs2 && equalSort? (s1, s2)
 
-  op equalTermScheme?: fa(a) ATermScheme a * ATermScheme a -> Boolean
+  op equalTermScheme?: [a] ATermScheme a * ATermScheme a -> Boolean
  def equalTermScheme? ((tvs1, t1), (tvs2, t2)) =
    %% TODO: take into account substitution of tvs
    tvs1 = tvs2 && equalTerm? (t1, t2)
 
-  op equalProperty?: fa(a) AProperty a * AProperty a -> Boolean
+  op equalProperty?: [a] AProperty a * AProperty a -> Boolean
  def equalProperty? ((propType1, propName1, tvs1, fm1), 
 		     (propType2, propName2, tvs2, fm2))
    =
@@ -452,61 +454,61 @@ AnnSpec qualifying spec
  %%%                Spec Consructors
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- op emptySpec           : fa(a) ASpec         a
+ op emptySpec           : [a] ASpec         a
  op emptyImports        : Imports
- op emptyAProperties    : fa(a) AProperties   a
- op emptyASortMap       : fa(a) AQualifierMap a
- op emptyAOpMap         : fa(a) AQualifierMap a
- op initialSpecInCat    : fa(a) ASpec         a
+ op emptyAProperties    : [a] AProperties   a
+ op emptyASortMap       : [a] AQualifierMap a
+ op emptyAOpMap         : [a] AQualifierMap a
+ op initialSpecInCat    : [a] ASpec         a
 
  %% Create new spec with altered name, imports, sorts, ops, properties, etc.
 
- op setImportInfo       : fa(a) ASpec a * ImportInfo       -> ASpec a
- op setImports          : fa(a) ASpec a * Imports          -> ASpec a
- op setLocalOps         : fa(a) ASpec a * OpNames          -> ASpec a
- op setLocalSorts       : fa(a) ASpec a * SortNames        -> ASpec a
- op setLocalProperties  : fa(a) ASpec a * PropertyNames    -> ASpec a
- op setSorts            : fa(a) ASpec a * ASortMap    a    -> ASpec a
- op setOps              : fa(a) ASpec a * AOpMap      a    -> ASpec a
- op setProperties       : fa(a) ASpec a * AProperties a    -> ASpec a
+ op setImportInfo       : [a] ASpec a * ImportInfo       -> ASpec a
+ op setImports          : [a] ASpec a * Imports          -> ASpec a
+ op setLocalOps         : [a] ASpec a * OpNames          -> ASpec a
+ op setLocalSorts       : [a] ASpec a * SortNames        -> ASpec a
+ op setLocalProperties  : [a] ASpec a * PropertyNames    -> ASpec a
+ op setSorts            : [a] ASpec a * ASortMap    a    -> ASpec a
+ op setOps              : [a] ASpec a * AOpMap      a    -> ASpec a
+ op setProperties       : [a] ASpec a * AProperties a    -> ASpec a
 
  % substract the ops and sorts in the second argument from those
  % appearing in the first.
- op subtractSpec        : fa (a) ASpec a -> ASpec a -> ASpec a
+ op subtractSpec        : [a] ASpec a -> ASpec a -> ASpec a
 
  %% Create new spec with added sort, op, property, import, etc.
 
- op addImport           : fa(a) Import                                 * ASpec a -> ASpec a
- op addProperty         : fa(a) (AProperty a)                          * ASpec a -> ASpec a
- op addAxiom            : fa(a) (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addConjecture       : fa(a) (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addTheorem          : fa(a) (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addTheoremLast      : fa(a) (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
- op addConjectures      : fa(a) List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
- op addTheorems         : fa(a) List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
+ op addImport           : [a] Import                                 * ASpec a -> ASpec a
+ op addProperty         : [a] (AProperty a)                          * ASpec a -> ASpec a
+ op addAxiom            : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
+ op addConjecture       : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
+ op addTheorem          : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
+ op addTheoremLast      : [a] (PropertyName * TyVars * ATerm a)      * ASpec a -> ASpec a
+ op addConjectures      : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
+ op addTheorems         : [a] List (PropertyName * TyVars * ATerm a) * ASpec a -> ASpec a
 
- op addLocalSortName    : fa(a) ASpec a * QualifiedId -> ASpec a
- op addLocalOpName      : fa(a) ASpec a * QualifiedId -> ASpec a
- op addLocalPropertyName: fa(a) ASpec a * QualifiedId -> ASpec a
+ op addLocalSortName    : [a] ASpec a * QualifiedId -> ASpec a
+ op addLocalOpName      : [a] ASpec a * QualifiedId -> ASpec a
+ op addLocalPropertyName: [a] ASpec a * QualifiedId -> ASpec a
 
- op localOp?            : fa(a) QualifiedId * ASpec a -> Boolean
- op localSort?          : fa(a) QualifiedId * ASpec a -> Boolean
- op localProperty?      : fa(a) QualifiedId * ASpec a -> Boolean
+ op localOp?            : [a] QualifiedId * ASpec a -> Boolean
+ op localSort?          : [a] QualifiedId * ASpec a -> Boolean
+ op localProperty?      : [a] QualifiedId * ASpec a -> Boolean
 
- op localProperties     : fa(a) ASpec a -> AProperties a
+ op localProperties     : [a] ASpec a -> AProperties a
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  %%%                ImportedSpecs operations 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
- def emptyImports            = []
- def fa (a) emptyAProperties = []
- def emptyASortMap           = emptyAQualifierMap
- def emptyAOpMap             = emptyAQualifierMap
- def emptyImportInfo         = {imports      = emptyImports,
-                                localOps     = emptyOpNames,
-                                localSorts   = emptySortNames,
-			        localProperties = emptyPropertyNames}
+ def emptyImports         = []
+ def [a] emptyAProperties = []
+ def emptyASortMap        = emptyAQualifierMap
+ def emptyAOpMap          = emptyAQualifierMap
+ def emptyImportInfo      = {imports      = emptyImports,
+                             localOps     = emptyOpNames,
+                             localSorts   = emptySortNames,
+			     localProperties = emptyPropertyNames}
 
  def emptySpec = 
   {importInfo       = emptyImportInfo,
@@ -577,11 +579,11 @@ AnnSpec qualifying spec
  def localProperties spc =
    filter (fn p -> localProperty? (propertyName p, spc)) spc.properties
 
- op findTheSort  : fa(a) ASpec a * QualifiedId -> Option (ASortInfo a)  
- op findTheOp    : fa(a) ASpec a * QualifiedId -> Option (AOpInfo   a)
+ op findTheSort  : [a] ASpec a * QualifiedId -> Option (ASortInfo a)  
+ op findTheOp    : [a] ASpec a * QualifiedId -> Option (AOpInfo   a)
 
- op findAllSorts : fa(a) ASpec a * QualifiedId -> List (ASortInfo a)
- op findAllOps   : fa(a) ASpec a * QualifiedId -> List (AOpInfo   a)
+ op findAllSorts : [a] ASpec a * QualifiedId -> List (ASortInfo a)
+ op findAllOps   : [a] ASpec a * QualifiedId -> List (AOpInfo   a)
 
  def findTheSort (spc, Qualified (q, id)) =
    %% We're looking for precisely one sort,
@@ -622,7 +624,7 @@ AnnSpec qualifying spec
        | None         -> []
 		
  %%  find all the matches to id in every second level map
-  op wildFindUnQualified : fa (a) AQualifierMap a * Id -> List a
+  op wildFindUnQualified : [a] AQualifierMap a * Id -> List a
  def wildFindUnQualified (qualifier_map, id) =
    foldriAQualifierMap (fn (_, ii, val, results) ->
 			if id = ii then
@@ -634,7 +636,7 @@ AnnSpec qualifying spec
 
  % this next one is use only in substract spec. it cannot be defined inside
  % the scope of subtractSpec as there is no let-polymorphism in Specware
-  op mapDiffOps : fa (a) AOpMap a -> AOpMap a -> AOpMap a
+  op mapDiffOps : [a] AOpMap a -> AOpMap a -> AOpMap a
  def mapDiffOps xMap yMap =
    foldriAQualifierMap (fn (q, id, x_info, newMap) ->
 			case findAQualifierMap (yMap, q, id) of
@@ -665,7 +667,7 @@ AnnSpec qualifying spec
                        emptyAQualifierMap 
                        xMap
 
-  op mapDiffSorts : fa (a) ASortMap a -> ASortMap a -> ASortMap a
+  op mapDiffSorts : [a] ASortMap a -> ASortMap a -> ASortMap a
  def mapDiffSorts xMap yMap =
    foldriAQualifierMap (fn (q, id, x_info, newMap) ->
 			case findAQualifierMap (yMap, q, id) of
@@ -733,8 +735,8 @@ AnnSpec qualifying spec
  %% % get the sort/op names as list of strings
  %% % unused?
  %%
- %%  op sortNames : fa(b) ASpec b -> List String
- %%  op opNames   : fa(b) ASpec b -> List String
+ %%  op sortNames : [b] ASpec b -> List String
+ %%  op opNames   : [b] ASpec b -> List String
  %% 
  %%  def sortNames spc =
  %%   foldriAQualifierMap (fn (_, sort_name, _, new_list) -> 
@@ -751,22 +753,22 @@ AnnSpec qualifying spec
  %% The following havebeen replaced with monadic versions in
  %% SpecCalculus/Semantics/Evaluate/Spec/Utilitites
 
- %% op addSort             : fa(a) (Qualifier * Id * 
+ %% op addSort             : [a] (Qualifier * Id * 
  %%                                 TyVars * Option(ASort a)) * 
  %%                                 ASpec a -> ASpec a
  %%
  %% %% new style...
- %% op addAliasedSort      : fa(a) (Qualifier * Id * 
+ %% op addAliasedSort      : [a] (Qualifier * Id * 
  %%                                  SortNames * TyVars * Option (ASort a)) * 
  %%                                ASpec a -> ASpec a
  %%
  %% %% old style...
- %% op addOp               : fa(a) (Qualifier * Id * 
+ %% op addOp               : [a] (Qualifier * Id * 
  %%                                 Fixity * ASortScheme a * Option (ATerm a)) * 
  %%                                ASpec a -> ASpec a
  %%
  %% %% new style...
- %% op addAliasedOp        : fa(a) (Qualifier * Id * 
+ %% op addAliasedOp        : [a] (Qualifier * Id * 
  %%                                 OpNames * Fixity * ASortScheme a * Option (ATerm a)) * 
  %%                                ASpec a -> ASpec a
  %%%%%%%%%%%%%%%%%%%%%%%%%%
