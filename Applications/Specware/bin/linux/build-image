@@ -139,10 +139,10 @@ $LISP -I ${BIG_ALISP} -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
 	(load "$MEMORY_MANAGEMENT") 
 	(compact-memory t 0 32000000)
-	(set-gc-parameters-for-build t)
+	(set-gc-parameters-for-build nil)
 	(exiting-on-errors 
 	  (load "Specware4.lisp"))
 	(compact-memory t -1 0)
-	(set-gc-parameters-for-use t)
+	(set-gc-parameters-for-use nil)
 	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX

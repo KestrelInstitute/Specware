@@ -8,7 +8,7 @@
 (defun save-this-lisp-image (name)
   ;; Save this image.
   (compact-memory t -1 0)
-  (set-gc-parameters-for-use t)
+  (set-gc-parameters-for-use nil)
   (excl::dumplisp :name name))
 
 #+Allegro 
@@ -17,7 +17,7 @@
   ;; Build a fresh image with desired properties.
   ;; (This should be a completely new image, not simply a clone of this image!)
   (compact-memory t -1 0)
-  (set-gc-parameters-for-use t)
+  (set-gc-parameters-for-use nil)
   (generate-application 
 
     ;; name of application

@@ -116,12 +116,12 @@ echo " "
 	;; (load "$EXIT_ON_ERRORS")    ; already loaded
 	;; (load "$MEMORY_MANAGEMENT") ; already loaded
 	(compact-memory t 0 64000000)
-	(set-gc-parameters-for-build t)
+	(set-gc-parameters-for-build nil)
 	(exiting-on-errors 
 	  (unless (sw "/Applications/Specware/Specware4")
             (exit 1)))
 	(compact-memory t -1 0)
-	(set-gc-parameters-for-use t)
+	(set-gc-parameters-for-use nil)
 	(format t "~%Dumping image with cached results of (sw \"/Applications/Specware/Specware4\")...~%")
         (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX

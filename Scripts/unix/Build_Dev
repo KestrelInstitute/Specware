@@ -78,7 +78,7 @@ $BATCH_LISP <<-XXXX
 	(load "$MEMORY_MANAGEMENT") 
 	(load "$SAVE_IMAGE") 
 	#+Allegro (compact-memory t 0 32000000) 
-	#+Allegro (set-gc-parameters-for-build t) 
+	#+Allegro (set-gc-parameters-for-build nil) 
 	(exiting-on-errors 
 	  (load "$MAIN_BUILD_FILE"))
         (format t "Writing ~A~%" "${BIN_DIR}/$IMAGE")
