@@ -302,6 +302,7 @@ bool inSyntax= False;
 bool inDisplay= False;
 bool inTerminal= False;
 bool inFilename= False;
+bool inQuote= False;
 
 outchar(c) char c; {
 trace(" ");
@@ -412,6 +413,7 @@ trace3("P%d%c\n", bufp,thischar());
 
 		try(ent);
 		try(quote);
+		try(outQuote);
 		other();
 	}
 }
@@ -690,22 +692,36 @@ trace("\nquote:: ");
 	if (!seetext("``")) fail;
 
 	outtext("<quote>");
+	inQuote= True;
+	succeed;
 
-	do {
-		if (atEOT || aheadtext("''")) {
-			outtext("</quote>");
-			succeed;
-		}
-		if (aheadtext("</")) {
-			outtext("</quote>\n</");
-			succeed;
-		}
-		if (aheadtext("<para>")) {
-			outtext("</quote>\n<para>");
-			succeed;
-		}
-		outchar(getchar());
-	} while (True);
+}
+
+doOutQuote() {
+	outtext("</quote>");
+	inQuote= False;
+}
+
+bool outQuote() {
+
+	if (!inQuote) fail;
+trace("\noutQuote:: ");
+
+	if (seetext("''")) {
+		doOutQuote();
+		succeed;
+	}
+	if (seetext("</para>")) {
+		doOutQuote();
+		outtext("</para>");
+		succeed;
+	}
+	if (seetext("<para>")) {
+		doOutQuote();
+		outtext("<para>");
+		succeed;
+	}
+	fail;
 }
 
 bool other() {

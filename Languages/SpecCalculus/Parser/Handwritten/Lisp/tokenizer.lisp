@@ -1,7 +1,7 @@
 (in-package :PARSER4)
 
 (defparameter *specware4-tokenizer-parameters*
-  (parser::create-tokenizer-parameters 
+  (create-tokenizer-parameters 
    ;;
    :name                        'meta-slang
    ;;
@@ -26,8 +26,8 @@
 				  #\. #\, #\;              ; dot, comma, semi
 				  ;; #\'                   ; apostrophe
 				  )
-   :ad-hoc-keywords             '("end-spec" "end-module" "_" "..")
-   :ad-hoc-names                '("__")
+   :ad-hoc-keywords             '("end-spec" "_" ".." "reduce") ; "using" "options" 
+   :ad-hoc-symbols              '("__" "reduce")                ; "using" "options" 
    :ad-hoc-numbers              '()
    ;;
    :comment-to-eol-chars        "%"
@@ -45,6 +45,6 @@
 
 
 (defun extract-specware4-tokens-from-file (file)
-  (parser::extract-tokens-from-file file *specware4-tokenizer-parameters*))
+  (extract-tokens-from-file file *specware4-tokenizer-parameters*))
 
 

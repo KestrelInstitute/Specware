@@ -53,6 +53,7 @@ public final class ColimitElement extends MemberElement {
 	    this.source = (SourceElement) parent;
 	    this.topLevel = true;
 	} else {
+            this.source = null;
 	    this.topLevel = false;
 	}
     }
@@ -87,71 +88,69 @@ public final class ColimitElement extends MemberElement {
         this.source = source;
     }
     
-    //================== TODO: ADD THESE METHODS FOR EACH SUB-ELEMENT ===============================
+//================== Diagrams ===============================
 
-    /** Add a new import to the spec.
-     *  @param el the import to add
+    /** Add a new diagram to the colimit.
+     *  @param el the diagram to add
      * @throws SourceException if impossible
      */
-/*    public void addImport(ImportElement el) throws SourceException {
-        if (getImport(el.getName()) != null)
-            throwAddException("FMT_EXC_AddImport", el); // NOI18N
-        getSpecImpl().changeImports(new ImportElement[] { el }, Impl.ADD);
+    public void addDiagram(DiagramElement el) throws SourceException {
+        if (getDiagram(el.getName()) != null)
+            throwAddException("FMT_EXC_AddDiagram", el); // NOI18N
+        getColimitImpl().changeDiagrams(new DiagramElement[] { el }, Impl.ADD);
     }
-*/
-    /** Add some new imports to the spec.
-     *  @param els the imports to add
+
+    /** Add some new diagrams to the colimit.
+     *  @param els the diagrams to add
      * @throws SourceException if impossible
      */
-/*    public void addImports(final ImportElement[] els) throws SourceException {
+    public void addDiagrams(final DiagramElement[] els) throws SourceException {
         for (int i = 0; i < els.length; i++)
-            if (getImport(els[i].getName()) != null)
-                throwAddException("FMT_EXC_AddImport", els[i]); // NOI18N
-        getSpecImpl().changeImports(els, Impl.ADD);
+            if (getDiagram(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddDiagram", els[i]); // NOI18N
+        getColimitImpl().changeDiagrams(els, Impl.ADD);
     }
-*/
-    /** Remove a import from the spec.
-     *  @param el the import to remove
+
+    /** Remove a diagram from the colimit.
+     *  @param el the diagram to remove
      * @throws SourceException if impossible
      */
-/*    public void removeImport(ImportElement el) throws SourceException {
-        getSpecImpl().changeImports(
-						 new ImportElement[] { el }, Impl.REMOVE
-						 );
+    public void removeDiagram(DiagramElement el) throws SourceException {
+        getColimitImpl().changeDiagrams(new DiagramElement[] { el }, Impl.REMOVE);
     }
-*/
-    /** Remove some imports from the spec.
-     *  @param els the imports to remove
+
+    /** Remove some diagrams from the colimit.
+     *  @param els the diagrams to remove
      * @throws SourceException if impossible
      */
-/*    public void removeImports(final ImportElement[] els) throws SourceException {
-        getSpecImpl().changeImports(els, Impl.REMOVE);
+    public void removeDiagrams(final DiagramElement[] els) throws SourceException {
+        getColimitImpl().changeDiagrams(els, Impl.REMOVE);
     }
-*/
-    /** Set the imports for this spec.
-     * Previous imports are removed.
-     * @param els the new imports
+
+    /** Set the diagrams for this colimit.
+     * Previous diagrams are removed.
+     * @param els the new diagrams
      * @throws SourceException if impossible
      */
-/*    public void setImports(ImportElement[] els) throws SourceException {
-        getSpecImpl().changeImports(els, Impl.SET);
+    public void setDiagrams(DiagramElement[] els) throws SourceException {
+        getColimitImpl().changeDiagrams(els, Impl.SET);
     }
-*/
-    /** Get all imports in this spec.
-     * @return the imports
+
+    /** Get all diagrams in this colimit.
+     * @return the diagrams
      */
-/*    public ImportElement[] getImports() {
-        return getSpecImpl().getImports();
+    public DiagramElement[] getDiagrams() {
+        return getColimitImpl().getDiagrams();
     }
-*/
-    /** Find a import by name.
-     * @param name the name of the import to look for
+
+    /** Find a diagram by name.
+     * @param name the name of the diagram to look for
      * @return the element or <code>null</code> if not found
      */
-/*    public ImportElement getImport(String name) {
-        return getSpecImpl().getImport(name);
+    public DiagramElement getDiagram(String name) {
+        return getColimitImpl().getDiagram(name);
     }
-*/
+
 
     // ================ printing =========================================
 
@@ -175,11 +174,11 @@ public final class ColimitElement extends MemberElement {
         printer.markColimit(this, printer.BODY_BEGIN); // BODY begin
         printer.println(""); // NOI18N
 
-/*        if (print(getImports(), printer)) {
+        if (print(getDiagrams(), printer)) {
             printer.println(""); // NOI18N
             printer.println(""); // NOI18N
         }
-*/
+
         printer.println(""); // NOI18N
         printer.markColimit(this, printer.BODY_END); // BODY end
 //        printer.print("endspec"); // NOI18N
@@ -258,31 +257,25 @@ public final class ColimitElement extends MemberElement {
      * @see ColimitElement
      */
     public static interface Impl extends MemberElement.Impl {
-        /** Add some items. */
-        public static final int ADD = SpecElement.Impl.ADD;//1;
-        /** Remove some items. */
-        public static final int REMOVE = SpecElement.Impl.REMOVE;//-1;
-        /** Set some items, replacing the old ones. */
-        public static final int SET = SpecElement.Impl.SET;//0;
 
-        //==============TODO======================
-        /** Change the set of imports.
-         * @param elems the new imports
+        //============== Diagrams ======================
+        /** Change the set of diagrams.
+         * @param elems the new diagrams
          * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
          * @exception SourceException if impossible
          */
-        //public void changeImports(ImportElement[] elems, int action) throws SourceException;
+        public void changeDiagrams(DiagramElement[] elems, int action) throws SourceException;
 
-        /** Get all imports.
-         * @return the imports
+        /** Get all diagrams.
+         * @return the diagrams
          */
-        //public ImportElement[] getImports();
+        public DiagramElement[] getDiagrams();
 
-        /** Find a import by signature.
+        /** Find a diagram by signature.
          * @param arguments the argument types to look for
-         * @return the import, or <code>null</code> if it does not exist
+         * @return the diagram, or <code>null</code> if it does not exist
          */
-        //public ImportElement getImport(String name);
+        public DiagramElement getDiagram(String name);
 
     }
         
@@ -290,8 +283,8 @@ public final class ColimitElement extends MemberElement {
     /** Memory based implementation of the element factory.
      */
     static final class Memory extends MemberElement.Memory implements Impl {
-        /** collection of imports */
-//        private MemoryCollection.Import imports;       
+        /** collection of diagrams */
+        private MemoryCollection.Diagram diagrams;       
 
         public Memory() {
         }
@@ -306,7 +299,7 @@ public final class ColimitElement extends MemberElement {
         /** Late initialization of initialization of copy elements.
         */
         public void copyFrom (ColimitElement copyFrom) {
-//            changeImports (copyFrom.getImports (), SET);
+            changeDiagrams (copyFrom.getDiagrams (), SET);
         }
 
         /** Changes set of elements.
@@ -314,42 +307,41 @@ public final class ColimitElement extends MemberElement {
 	 * @param action the action to do(ADD, REMOVE, SET)
 	 * @exception SourceException if the action cannot be handled
 	 */
-/*        public synchronized void changeImports(ImportElement[] elems, int action) {
-            initImports();
-            imports.change(elems, action);
+        public synchronized void changeDiagrams(DiagramElement[] elems, int action) {
+            initDiagrams();
+            diagrams.change(elems, action);
         }
 
-        public synchronized ImportElement[] getImports() {
-            initImports();
-            return(ImportElement[])imports.toArray();
+        public synchronized DiagramElement[] getDiagrams() {
+            initDiagrams();
+            return(DiagramElement[])diagrams.toArray();
         }
-*/
-        /** Finds a import with given name and argument types.
+
+        /** Finds a diagram with given name and argument types.
 	 * @param source the name of source mode
 	 * @param target the name of target mode
-	 * @return the element or null if such import does not exist
+	 * @return the element or null if such diagram does not exist
 	 */
-/*        public synchronized ImportElement getImport(String name) {
-            initImports();
-            return(ImportElement)imports.find(name);
+        public synchronized DiagramElement getDiagram(String name) {
+            initDiagrams();
+            return(DiagramElement)diagrams.find(name);
         }
 
-        void initImports() {
-            if (imports == null) {
-                imports = new MemoryCollection.Import(this);
+        void initDiagrams() {
+            if (diagrams == null) {
+                diagrams = new MemoryCollection.Diagram(this);
             }
         }
-*/
 
         void markCurrent(Element marker, boolean after) {
             MemoryCollection col = null;
       
-/*            if (marker instanceof ImportElement) {
-                col = imports;
+            if (marker instanceof DiagramElement) {
+                col = diagrams;
             } else {
                 throw new IllegalArgumentException();
             }
-*/          if (col != null) 
+          if (col != null) 
                 col.markCurrent(marker, after);
         }
 

@@ -6,6 +6,7 @@
 
 package edu.kestrel.graphs;
 
+import com.jgraph.event.*;
 import com.jgraph.graph.*;
 import javax.swing.*;
 import java.util.*;
@@ -17,8 +18,9 @@ import java.util.*;
 public class XGraphView extends GraphView {
     
     /** Creates a new instance of XGraphView */
-    public XGraphView(XGraphModel m, CellViewFactory fac) {
-        super(m, fac);
+    public XGraphView(XGraphModel m, XGraphDisplay graph) {
+        super(m,graph);
+        addObserver(graph);
     }
     
     /** calls super.getPorts() and throws away all <code>null</code> port views
@@ -44,13 +46,13 @@ public class XGraphView extends GraphView {
      */
     
     public void startGroupTranslate() {
-        Dbg.pr("starting group translate...");
+        Dbg.pr2("starting group translate...");
         inGroupTranslate = true;
         edgesToBeUpdated = new ArrayList();
     }
+
     /** see {@link #translateViewsInGroup(CellView[],int,int)}
      */
-    
     public void endGroupTranslate() {
         Dbg.pr2("ending group translate...");
         inGroupTranslate = false;
@@ -63,7 +65,7 @@ public class XGraphView extends GraphView {
                 if (!processed.contains(obj)) {
                     processed.add(obj);
                     if (obj instanceof XEdgeView) {
-                        Dbg.pr2("*** updating edge "+((XEdgeView)obj).getCell()+"...");
+                        Dbg.pr("*** updating edge "+((XEdgeView)obj).getCell()+"...");
                         ((XEdgeView)obj).update();
                     }
                 }
@@ -90,9 +92,10 @@ public class XGraphView extends GraphView {
      */
     public void translateViewsInGroup(CellView[] views, int dx, int dy) {
         GraphView.translateViews(views,dx,dy);
-        if (Dbg.isDebug2()) {
+        if (Dbg.isDebug()) {
             for (int i=0;i<views.length;i++) {
                 Dbg.pr("translating view of "+views[i].getCell()+": ("+dx+","+dy+")");
+                Dbg.pr("  bounds after translation: "+views[i].getBounds());
             }
         }
         if (inGroupTranslate) {
@@ -158,18 +161,51 @@ public class XGraphView extends GraphView {
         return res;
     }
     
-    /** deletes all elements in the graph.
+    /** returns all selected XNodeView instances.
      */
-    
-    public void deleteAll(XGraphDisplay graph, boolean interactive) {
-        if (interactive) {
-            int anws = JOptionPane.showConfirmDialog(graph, "Do you really want to clear this graph display?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
-            if (anws != JOptionPane.YES_OPTION) return;
+    public XNodeView[] getSelectedNodeViews(XGraphDisplay graph) {
+        XNode[] snodes = graph.getSelectedNodes();
+        CellView[] views = getMapping(snodes);
+        ArrayList nv = new ArrayList();
+        for(int i=0;i<views.length;i++) {
+            if (views[i] instanceof XNodeView) {
+                nv.add(views[i]);
+            }
         }
-        ((XGraphModel)getModel()).removeAll();
+        XNodeView[] res = new XNodeView[nv.size()];
+        nv.toArray(res);
+        return res;
+    }
+
+    /** returns the most toplevel views of the given cells, i.e. it filters out inner nodes, if the container is part
+     * of cells.
+     */
+    public CellView[] getToplevelViews(Object[] cells) {
+        Object[] fcells = XCloneManager.makeCellsUnique(cells);
+        return getMapping(fcells);
+    }
+    
+    public CellView[] getVisibleRoots() {
+        CellView[] views = getRoots();
+        ArrayList list = new ArrayList();
+        for(int i=0;i<views.length;i++) {
+            if (GraphConstants.isVisible(views[i].getAttributes())) {
+                list.add(views[i]);
+            }
+        }
+        CellView[] res = new CellView[list.size()];
+        list.toArray(res);
+        return res;
     }
     
     public void updateAllPorts() {
         super.updatePorts();
     }
+    
+    
+    public void graphChanged(GraphModelEvent.GraphModelChange event) {
+        super.graphChanged(event);
+        //Dbg.pr("in XGraphView: graphChanged.");
+    }
+    
 }

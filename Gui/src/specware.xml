@@ -46,7 +46,7 @@
          srcdir=".">
     <classpath>
      <!-- <pathelement location="${moduledir}/jlinker.jar"/> -->
-     <pathelement location="${libdir}/jgraph.jar"/>
+     <!-- <pathelement location="${libdir}/jgraph.jar"/> -->
      <pathelement location="${libdir}/antlr.jar"/> 
      <pathelement path="${netbeans.library.path}"/>
      <pathelement path="${netbeans.filesystems.path}"/>   
@@ -75,11 +75,85 @@
     <nbinstaller action="reinstall" module="specware.jar"/> 
 </target>
 
+<target depends="check-parser" name="trace-parser">
+  <java classname="antlr.Tool"
+	fork="true"
+	failonerror="true"
+	maxmemory="128m">
+    <arg value="-traceParser"/>
+    <arg value="-o"/>
+    <arg path="${parserdir}"/>
+    <arg file="${parserdir}/MetaSlangGrammar.g"/>
+    <classpath>
+     <pathelement location="${libdir}/antlrall.jar"/> 
+    </classpath>
+  </java>
+  <java classname="edu.kestrel.netbeans.parser.MetaSlangParserCodeGen"
+	fork="true"
+	failonerror="true"
+	maxmemory="128m">
+    <arg file="${parserdir}"/>
+    <arg file="${editordir}"/>
+    <classpath>
+     <pathelement location="${moduledir}"/> 
+    </classpath>
+  </java>
+</target>
+
+<target name="fix-parser">
+  <java classname="edu.kestrel.netbeans.parser.MetaSlangParserCodeGen"
+	fork="true"
+	failonerror="true"
+	maxmemory="128m">
+    <arg file="${parserdir}"/>
+    <arg file="${editordir}"/>
+    <classpath>
+     <pathelement location="${moduledir}"/> 
+    </classpath>
+  </java>
+</target>
+
+<target depends="trace-parser" name="trace-compile">
+  <javac debug="true"
+         deprecation="true"
+         destdir="."
+         srcdir=".">
+    <classpath>
+     <!-- <pathelement location="${moduledir}/jlinker.jar"/> -->
+     <!-- <pathelement location="${libdir}/jgraph.jar"/> -->
+     <pathelement location="${libdir}/antlr.jar"/> 
+     <pathelement path="${netbeans.library.path}"/>
+     <pathelement path="${netbeans.filesystems.path}"/>   
+    </classpath>
+    </javac>
+</target>
+
+<target depends="trace-compile" name="trace-package">
+    <delete file="specware.jar"/> 
+    <jar jarfile="specware.jar" manifest="${moduledir}/manifest.mf">
+        <fileset dir="${basedir}">
+            <patternset>
+                <include name="edu/kestrel/**/*.class"/> 
+                <include name="edu/kestrel/**/*.gif"/> 
+                <include name="edu/kestrel/**/*.xml"/>
+                <include name="edu/kestrel/**/*.html"/>
+                <include name="edu/kestrel/**/*.template"/>
+                <include name="edu/kestrel/**/*.properties"/>  
+                <include name="edu/kestrel/**/*.settings"/>                             
+            </patternset>
+        </fileset>
+    </jar>
+ </target>
+ 
+<target depends="trace-compile, trace-package" name="trace-install">
+    <nbinstaller action="reinstall" module="specware.jar"/> 
+</target>
+
 <target name="clean">
   <delete file="specware.jar"/> 
   <delete> 
   <fileset dir="." includes="edu/**/*.class"/>
   </delete>
-  </target>
+</target>
 
 </project>

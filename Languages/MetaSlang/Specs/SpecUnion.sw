@@ -1,8 +1,9 @@
-% derived from SW4/Languages/MetaSlang/ADT/Specs/SpecUnion.sl, v1.3
+% This is no longer used nor supported. Monadic versions of functions like
+% those below appear under the SpecCalculus tree.
 
-spec {
+SpecUnion qualifying spec {
  import StandardSpec
- import ../Legacy/DataStructures/ListUtilities
+ import /Library/Legacy/DataStructures/ListUtilities
 
  op specUnion       : List Spec       -> Spec
  op importsUnion    : List Imports    -> Imports
@@ -11,26 +12,30 @@ spec {
  op propertiesUnion : List Properties -> Properties
 
  def specUnion specs =
-  {imports       = importsUnion    (List.foldl (fn (spc, imports_list) ->
-                                          cons (spc.imports, imports_list))
-                                          []
-                                          specs),
-   importedSpec  = None, % We're building an imported spec, so we don't have one.
+  {importInfo = {imports = importsUnion (List.foldl (fn (spc, imports_list) ->
+						     cons (spc.importInfo.imports,
+							   imports_list))
+				          []
+					  specs),
+		 %% We're building an imported spec, so we don't  need this information
+		 importedSpec  = None,
+		 localOps      = emptyOpNames,
+		 localSorts    = emptySortNames},
    sorts         = sortsUnion      (List.foldl (fn (spc, sorts_list) ->
-                                          cons (spc.sorts, sorts_list))
-                                          []
-                                          specs),
+					   cons (spc.sorts, sorts_list))
+				          []
+					  specs),
    ops           = opsUnion        (List.foldl (fn (spc, ops_list)  ->
-                                          cons (spc.ops, ops_list))
-                                          []
-                                          specs),
+					   cons (spc.ops, ops_list))
+				          []
+					  specs),
    properties    = propertiesUnion (List.foldl (fn (spc, properties_list) ->
-                                           cons (spc.properties, properties_list))
-                                          []
-                                          specs)
+					   cons (spc.properties, properties_list))
+				          []
+					  specs)
   }
 
- %% TODO: The terms for the imports might not remain in a meaningful URI context
+ %% TODO: The terms for the imports might not remain in a meaningful UnitId context
  def importsUnion imports_list =
   List.foldl List.concat [] imports_list
 

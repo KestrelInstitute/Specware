@@ -64,8 +64,8 @@ public class ModelNode extends ModelElement implements MutableTreeNode {
     
     /** removes a representation elements and fires a model change.
      */
-    public void removeRepr(XGraphElement repr) {
-        super.removeRepr(repr);
+    public void removeRepr(XGraphDisplay graph, XGraphElement repr) {
+        super.removeRepr(graph,repr);
         fireModelChange(new XTreeModelEvent(XTreeModelEvent.NODES_REMOVED,this));
     }
     
@@ -317,7 +317,7 @@ public class ModelNode extends ModelElement implements MutableTreeNode {
     }
     
     /** selects the connected edges that must be inserted into the graph in the context of an insertIntoGraph operation.
-     */
+     
     public void insertEdgesIntoGraph(XGraphDisplay graph, XNode node, Map elemReprMap) {
         Enumeration iter0 = outgoingEdges.elements();
         while(iter0.hasMoreElements()) {
@@ -347,7 +347,7 @@ public class ModelNode extends ModelElement implements MutableTreeNode {
                 }
             }
         }
-    }
+    }*/
     
     protected static String OutgoingEdge = "OutgoingEdge";
     protected static String IncomingEdge = "IncomingEdge";

@@ -16,7 +16,7 @@ import java.awt.*;
  *
  * @author  ma
  */
-public class XTextEditorInternalFrame extends JInternalFrame {
+public class XTextEditorInternalFrame extends JInternalFrame implements XElementEditorFrame {
     
     protected XElementEditor editorPane;
     protected Thread resizeThread = null;
@@ -70,21 +70,19 @@ public class XTextEditorInternalFrame extends JInternalFrame {
         JButton okbtn = new JButton("ok");
         okbtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                editorPane.apply();
-                closeFrame();
+                okAction();
             }
         });
         JButton cancelbtn = new JButton("cancel");
         cancelbtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                closeFrame();
+                cancelAction();
             }
         });
         JButton applybtn = new JButton("apply");
         applybtn.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {
-                editorPane.apply();
-                setTitle();
+                applyAction();
             }
         });
         cmdp.add(okbtn);
@@ -99,6 +97,7 @@ public class XTextEditorInternalFrame extends JInternalFrame {
                 resizeThread = new Thread(new ResizeThread());
                 resizeThread.start();
             }
+            editorPane.setFrame(this);
         }
     }
     
@@ -110,6 +109,20 @@ public class XTextEditorInternalFrame extends JInternalFrame {
             initSize.height = Math.max(150,psize.height + 100);
         }
         setSize(initSize);
+    }
+    
+    public void applyAction() {
+        editorPane.apply();
+        setTitle();
+    }
+    
+    public void cancelAction() {
+        closeFrame();
+    }
+    
+    public void okAction() {
+        editorPane.apply();
+        closeFrame();
     }
     
     protected class ResizeThread implements Runnable {

@@ -1,64 +1,79 @@
 #!/bin/bash --noprofile
 
-# This script bootstraps Specware4.
-# That is,
-#  - it saves the old generated Specware4.lisp and Specware4.dxl (ie world)
-#  - it starts Specware4 
-#      - it first tries to run a lisp session with an existing dxl image
-#      - if that fails it tries to load Specware from previously generated lisp
-#  - applies Specware to itself (sw "/Applications/Specware/Specware4")
-#     to generate a new Specware4.lisp,
-#  - starts a fresh lisp session
-#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
-#    (this compiles everything)
-#  - starts a fresh lisp session again
-#  - loads the new Specware (under Handwritten/Lisp, (load "Specware4.lisp"))
-#  - dumps a world into the bin directory
-
-# Perhaps there should be a different script for bootstrapping from lisp
-# (bootstrap-from-lisp?).
+# This script bootstraps PSL.
 
 # The --noprofile inhibits loading of ~/.bash_profile and ~/.profile
 # files. See "man bash" for details. The 'set -v' turns on echoing of
 # lines read. This will be removed later.
 
-# set -v
-
-# We assume SPECWARE4 has been set.
-if [ -z $SPECWARE4 ]; then
-    echo "Failed to bootstrap, SPECWARE4 environment variable not set"
-    exit 1
-fi
-
-echo \$SPECWARE4=$SPECWARE4
+act='bootstrap'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
-LISP=${LISP:-/usr/local/acl/acl61/alisp}
+# set -v
 
-if [ ! -f $SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl ]; then
-  echo "No Specware4.dxl"
-  exit 1
+# Test whether SPECWARE4 has been set
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
+
+# Test whether SPECWARE4 is a directory
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+case "$SPECWARE4" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE4";;
+esac
+
+if [ ! -d "$SPECWARE4"/Applications/PSL ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/Applications/PSL" 2>&1
+   exit 1
 fi
 
 echo cd $SPECWARE4/Applications/PSL
 cd $SPECWARE4/Applications/PSL
 
+# Try to find lisp executable:
+
+if [ -z "$LISP" ]; then
+   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+      if [ -x "$L" ]; then
+         export LISP="$L"; break
+      fi
+   done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
+
 echo " "
 if [ -f lisp/PSL.lisp ]; then
-  echo "Saving previous PSL.lisp file ..."
-  echo "cp -f lisp/PSL.lisp lisp/PSL-save.lisp"
-  cp -f lisp/PSL.lisp lisp/PSL-save.lisp
+  echo "Saving previous specware lisp file ..."
+  echo "cp -p -f lisp/PSL.lisp lisp/PSL-save.lisp"
+  cp -p -f lisp/PSL.lisp lisp/PSL-save.lisp
 else
-  echo "Note: No previous PSL lisp file."
+  echo "Note: No previous specware lisp file."
 fi
 echo " "
 if [ -f bin/linux/PSL.dxl ]; then
-  echo "Saving previous PSL image ..."
-  echo "cp -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl"
-  cp -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl
+  echo "Saving previous specware image ..."
+  echo "cp -p -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl"
+  cp -p -f bin/linux/PSL.dxl bin/linux/PSL-save.dxl
 else
-  echo "Note: No previous PSL image."
+  echo "Note: No previous specware image."
 fi
 echo " "
 
@@ -70,8 +85,11 @@ echo " "
 # Is there a way to inhibit all the warnings (eg unused variable)
 # when Lisp loads?
 
-SWPATH=$SPECWARE4:.
-EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
+export SWPATH=$SPECWARE4:.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+
+echo "\$SWPATH=$SWPATH"
 
 # All the toplevel routines that activate Specware return a boolean value.
 # They return true if the call to Specware succeeded without activating
@@ -79,21 +97,27 @@ EXIT_ON_ERRORS=$SPECWARE4/Applications/Specware/bin/linux/exit-on-errors
 # handler is invoked. If, when bootrapping, the toplevel handler is
 # called, then we abort the bootstrap.
 
-echo "Bootstrapping from existing Specware image: bin/linux/Specware4.dxl"
-echo " "
-cd $SPECWARE4/Applications/Specware
-bin/linux/Specware4-text -batch <<-XXXX
+if [ -f lisp ]; then
+   echo "Failed to $act, $SPECWARE4/Applications/PSL/lisp is not a directory" 2>&1
+   exit 1
+fi
+
+$SPECWARE4/Applications/Specware/bin/linux/Specware4-text -batch <<-XXXX
+	:swpath
 	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT") 
+	(enlarge-stack)
 	(exiting-on-errors 
 	  (if (sw "/Applications/PSL/PSL")
 	    (exit 0)
 	    (exit 1)))
-	XXXX
+XXXX
 RC=$?
+
 # If the bootstrap failed (non-zero exit status) then we abort.
 if [ $RC -ne 0 ]; then
   echo ""
-  echo "Bootstrap of PSL failed with code $RC, exiting ..."
+  echo "Bootstrap failed with code $RC, exiting ..."
   exit $RC
 fi
 
@@ -120,7 +144,7 @@ RC=$?
 # If the load failed (non-zero exit status) then we abort.
 if [ $RC -ne 0 ]; then
   echo ""
-  echo "First load of PSL failed with code $RC, exiting ..."
+  echo "First load failed with code $RC, exiting ..."
   exit $RC
 fi
 
@@ -133,13 +157,25 @@ fi
 # People who want to avoid lots of line breaks can set *DEFAULT-RIGHT-MARGIN* 
 # in their lisp init.
 
+# big-alisp.dxl will have a larger lisp heap than the default alisp image.
+# Rebuild it each time.  A bit redundant, but ensures compatibility with 6.1/6.2/etc.
+BIG_ALISP="${SPECWARE4}/Applications/PSL/bin/linux/big-alisp.dxl"
+$LISP -batch <<-XXXX
+	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x100)
+XXXX
+
 echo " "
 echo "Loading PSL ... (for dumplisp)"
 echo " "
-$LISP -batch <<-XXXX
+$LISP -I ${BIG_ALISP} -batch <<-XXXX
 	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT") 
+	(compact-memory t)
+	(set-gc-parameters-for-build t)
 	(exiting-on-errors 
 	  (load "PSL.lisp"))
+	(compact-memory t 2 32000000)
+	(set-gc-parameters-for-use t)
 	(excl::dumplisp :name "$SPECWARE4/Applications/PSL/bin/linux/PSL.dxl")
 XXXX
 RC=$?
@@ -147,6 +183,6 @@ RC=$?
 # If the load failed (non-zero exit status) then we abort.
 if [ $RC -ne 0 ]; then
   echo ""
-  echo "Second load of PSL failed with code $RC, exiting ..."
+  echo "Second load failed with code $RC, exiting ..."
   exit $RC
 fi

@@ -96,7 +96,7 @@
 (defmacro make-row (&rest args)
   (let ((args0 nil) args0-last
         (plist nil) plist-last
-        (v (make-symbol "V")))
+        (v (gensym)))
     (do ((l args (cddr l)))
         ((endp l))
       (cond
@@ -267,7 +267,7 @@
 (defun row-ancestry (row)
   (let ((result nil) result-last)
     (prog->
-     (map-sparse-vector-values (row-ancestry-rowset (list row)) ->* row)
+     (map-sparse-vector (row-ancestry-rowset (list row)) ->* row)
      (collect row result))
     result))
 
@@ -292,7 +292,7 @@
   (when rowset
     (let ((result nil) result-last)
       (prog->
-       (map-sparse-vector-values rowset :min min :max max :reverse reverse ->* row)
+       (map-sparse-vector rowset :min min :max max :reverse reverse ->* row)
        (when (implies test (funcall test row))
          (ncollect (funcall cc row) result)))
       result)))
@@ -300,9 +300,9 @@
 (defun map-rows (cc &key min max reverse test (rowset *rows*))
   (when rowset
     (if (null test)
-        (map-sparse-vector-values cc rowset :min min :max max :reverse reverse)
+        (map-sparse-vector cc rowset :min min :max max :reverse reverse)
         (prog->
-          (map-sparse-vector-values rowset :min min :max max :reverse reverse ->* row)
+          (map-sparse-vector rowset :min min :max max :reverse reverse ->* row)
           (when (funcall test row)
             (funcall cc row))))))
 
@@ -310,15 +310,13 @@
   (when rowset
     (let ((result nil) result-last)
       (prog->
-       (map-sparse-vector-values rowset :min min :max max :reverse reverse ->* row)
+       (map-sparse-vector rowset :min min :max max :reverse reverse ->* row)
        (when (implies test (funcall test row))
          (collect (if collect (funcall collect row) row) result)))
       result)))
 
 (defun last-row ()
-  (prog->
-    (map-sparse-vector-values *rows* :reverse t ->* row)
-    (return-from prog-> row)))
+  (last-sparef *rows*))
 
 (defun set-row-number (row number)
   (cl:assert (null (row-number row)))

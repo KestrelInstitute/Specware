@@ -6,6 +6,39 @@
  *
  *
  * $Log$
+ * Revision 1.11  2003/07/05 07:46:39  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.10  2003/06/23 18:00:18  weilyn
+ * internal release version
+ *
+ * Revision 1.9  2003/04/23 01:16:24  weilyn
+ * DiagElemInfo.java
+ *
+ * Revision 1.8  2003/04/01 02:29:41  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.7  2003/03/29 03:14:00  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.6  2003/03/14 04:15:31  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.5  2003/02/18 18:10:12  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.4  2003/02/17 04:35:23  weilyn
+ * Added support for expressions.
+ *
+ * Revision 1.3  2003/02/16 02:16:03  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:45:53  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:17  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -38,11 +71,62 @@ public interface ElementFactory {
     public Item createSort(String name, String[] params);
     
     /** Creates an element for an op.
-	@param op Name of the op
+	@param name Name of the op
 	@param sort Sort of the op
     */
     public Item createOp(String name, String sort);
     
+    /** Creates an element for a def.
+	@param name Name of the def
+	@param params Formal parameters of the def
+    */
+    public Item createDef(String name, String[] params, String expression);
+    
+    /** Creates an element for a claim.
+	@param name Name of the claim
+        @param claimKind Kind of the claim
+        @param expression Expression of the claim
+    */
+    public Item createClaim(String name, String claimKind, String expression);    
+    
+    /** Creates an element for an import.
+	@param name Name of the import
+    */
+    public Item createImport(String name, ElementFactory.Item item);
+    
+    /** Creates an element for a proof.
+	@param name Name of the proof.
+    */
+    public Item createProof(String name, String proofString);
+    
+    /** Creates an element for a morphism.
+     *	@param name Name of the morphism.
+     *  @param sourceUnit source unit of the morphism.
+     *  @param targetUnit target unit of the morphism.
+    */
+    public Item createMorphism(String name, String sourceUnit, String targetUnit);
+
+    /** Creates an element for a diagElem.
+	@param name Name of the diagElem
+    */
+    public Item createDiagElem(String name);
+    
+    /** Creates an element for a diagram.
+	@param name Name of the diagram.
+    */
+    public Item createDiagram(String name);
+
+    /** Creates an element for a colimit.
+	@param name Name of the colimit.
+    */
+    public Item createColimit(String name);
+    
+    /** Creates an element for a unitId.
+	@param name Name of the unitId
+	@param path string path of the unitId
+    */
+    //public Item createUID(String name, String path);    
+
     public void setParent(Collection children, Item parent);
 
     /** Binds two Items together in a parent-child relationship.

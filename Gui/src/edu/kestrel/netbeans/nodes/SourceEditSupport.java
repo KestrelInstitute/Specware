@@ -6,6 +6,36 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/07/05 07:46:39  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.9  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
+ * Revision 1.8  2003/04/01 02:29:40  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.7  2003/03/29 03:13:59  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.6  2003/03/14 04:14:22  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.5  2003/02/18 18:06:42  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.4  2003/02/17 04:33:56  weilyn
+ * Created claim customizer.
+ *
+ * Revision 1.3  2003/02/16 02:15:04  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:12  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -45,9 +75,28 @@ class SourceEditSupport {
     static final ResourceBundle bundle = NbBundle.getBundle(SourceEditSupport.class);
 
     static final String[] SPEC_MENU_NAMES = {
+        bundle.getString("MENU_CREATE_IMPORT"),
 	bundle.getString("MENU_CREATE_SORT"),
-	bundle.getString("MENU_CREATE_OP")
+	bundle.getString("MENU_CREATE_OP"),
+	bundle.getString("MENU_CREATE_DEF"),
+        bundle.getString("MENU_CREATE_CLAIM")
     };
+
+    static final String[] PROOF_MENU_NAMES = {
+    
+    };
+        
+    static final String[] MORPHISM_MENU_NAMES = {
+    
+    };
+    
+    static final String[] DIAGRAM_MENU_NAMES = {
+        bundle.getString("MENU_CREATE_DIAG_ELEM"),
+    };
+    
+    static final String[] COLIMIT_MENU_NAMES = {
+        //bundle.getString("MENU_CREATE_DIAGRAM"),    
+    };    
 
     /* Get the new types that can be created in this node.
      * For example, a node representing a Java package will permit classes to be added.
@@ -56,10 +105,69 @@ class SourceEditSupport {
     public static NewType[] createNewTypes(SpecElement element) {
 	return new NewType[] {
 	    new SpecElementNewType(element, (byte) 0),
-		new SpecElementNewType(element, (byte) 1),
-		};
+            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),
+        };
     }
 
+    /* Get the new types that can be created in this node.
+     * For example, a node representing a Java package will permit classes to be added.
+     * @return array of new type operations that are allowed
+     */
+    public static NewType[] createNewTypes(ProofElement element) {
+	return new NewType[] {
+/*	    new SpecElementNewType(element, (byte) 0),
+            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),*/
+        };
+    }
+    
+    /* Get the new types that can be created in this node.
+     * For example, a node representing a Java package will permit classes to be added.
+     * @return array of new type operations that are allowed
+     */
+    public static NewType[] createNewTypes(MorphismElement element) {
+	return new NewType[] {
+/*	    new SpecElementNewType(element, (byte) 0),
+            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),*/
+        };
+    }
+
+    /* Get the new types that can be created in this node.
+     * For example, a node representing a Java package will permit classes to be added.
+     * @return array of new type operations that are allowed
+     */
+    public static NewType[] createNewTypes(DiagramElement element) {
+	return new NewType[] {
+	    new DiagramElementNewType(element, (byte) 0),
+/*            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),*/
+        };
+    }
+
+    /* Get the new types that can be created in this node.
+     * For example, a node representing a Java package will permit classes to be added.
+     * @return array of new type operations that are allowed
+     */
+    public static NewType[] createNewTypes(ColimitElement element) {
+	return new NewType[] {
+/*	    new ColimitElementNewType(element, (byte) 0),
+            new SpecElementNewType(element, (byte) 1),
+            new SpecElementNewType(element, (byte) 2),
+            new SpecElementNewType(element, (byte) 3),
+            new SpecElementNewType(element, (byte) 4),*/
+        };
+    }
+    
     /** New types for spec element */
     static class SpecElementNewType extends NewType {
 	/** Spec element where to create new element */
@@ -99,6 +207,16 @@ class SourceEditSupport {
 		switch (kind) {
 		case 0:
 		    {
+			// Adding import
+			ImportElement e = new ImportElement();
+			e.setName("<name of unit to import>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Import");
+			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		case 1:
+		    {
 			// Adding sort
 			SortElement e = new SortElement();
 			e.setName("newSort");
@@ -107,17 +225,38 @@ class SourceEditSupport {
 			    newElement = e;
 			break;
 		    }
-		case 1:
+		case 2:
 		    {
 			// Adding op
 			OpElement e = new OpElement();
-			e.setName("newOp()"); // NOI18N
+			e.setName("newOp"); // NOI18N
 			OpCustomizer cust = new OpCustomizer(e);
 			if (openCustomizer(cust, "TIT_NewOp") && cust.isOK()) // NOI18N
 			    newElement = e;
 			break;
 		    }
+		case 3:
+		    {
+			// Adding def
+			DefElement e = new DefElement();
+			e.setName("newDef");
+			DefCustomizer cust = new DefCustomizer(e);
+			if (openCustomizer(cust, "TIT_NewDef") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		case 4:
+		    {
+			// Adding claim
+			ClaimElement e = new ClaimElement();
+			e.setName("newClaim"); // NOI18N
+                        ClaimCustomizer cust = new ClaimCustomizer(e);
+			if (openCustomizer(cust, "TIT_NewClaim") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
 		}
+                
 	    }
 	    catch (SourceException exc) {
 		// shouldn't happen - memory implementation
@@ -132,12 +271,310 @@ class SourceEditSupport {
 		    public void run() throws SourceException {
 			switch (kind) {
 			case 0:
-			    ((SpecElement)element).addSort((SortElement)addingElement);
+			    ((SpecElement)element).addImport((ImportElement)addingElement);
 			    return;
 			case 1:
+			    ((SpecElement)element).addSort((SortElement)addingElement);
+			    return;
+			case 2:
 			    ((SpecElement)element).addOp((OpElement)addingElement);
 			    return;
+			case 3:
+			    ((SpecElement)element).addDef((DefElement)addingElement);
+			    return;
+			case 4:
+			    ((SpecElement)element).addClaim((ClaimElement)addingElement);
+			    return;
 			}
+                        
+		    }
+		});
+	}
+	}
+
+    /** New types for proof element */
+    static class ProofElementNewType extends NewType {
+	/** Proof element where to create new element */
+        ProofElement element;
+
+	/** The kind of element to create */
+	byte kind;
+        
+	/** Creates new type
+	 * @param element Where to create new element.
+	 * @param kind The kind of the element to create
+	 */
+	public ProofElementNewType(ProofElement element, byte kind) {
+	    this.element = element;
+	    this.kind = kind;
+	}
+
+	/** Get the name of the new type.
+	 * @return localized name.
+	 */
+	public String getName() {
+	    return PROOF_MENU_NAMES[kind];
+	}
+
+	/** Help context */
+	public org.openide.util.HelpCtx getHelpCtx() {
+	    return new org.openide.util.HelpCtx (SourceEditSupport.class.getName () + ".newElement" + kind); // NOI18N
+	}
+
+	/** Creates new element */
+	public void create () throws IOException {
+	    final String name = element.getName();
+
+	    Element newElement = null;
+
+/*	    try {
+		switch (kind) {
+		case 0:
+		    {
+			// Adding import
+			ImportElement e = new ImportElement();
+			e.setName("<name of unit to import>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Import");
+			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		}
+                
+	    }
+	    catch (SourceException exc) {
+		// shouldn't happen - memory implementation
+		// is not based on java source.
+	    }*/
+
+	    if (newElement == null)
+		return;
+
+	    final Element addingElement = newElement;
+	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
+		    public void run() throws SourceException {
+			switch (kind) {
+/*			case 0:
+			    ((SpecElement)element).addImport((ImportElement)addingElement);
+			    return;*/
+			}
+                        
+		    }
+		});
+	}
+	}
+    
+    /** New types for morphism element */
+    static class MorphismElementNewType extends NewType {
+	/** Morphism element where to create new element */
+        MorphismElement element;
+
+	/** The kind of element to create */
+	byte kind;
+        
+	/** Creates new type
+	 * @param element Where to create new element.
+	 * @param kind The kind of the element to create
+	 */
+	public MorphismElementNewType(MorphismElement element, byte kind) {
+	    this.element = element;
+	    this.kind = kind;
+	}
+
+	/** Get the name of the new type.
+	 * @return localized name.
+	 */
+	public String getName() {
+	    return MORPHISM_MENU_NAMES[kind];
+	}
+
+	/** Help context */
+	public org.openide.util.HelpCtx getHelpCtx() {
+	    return new org.openide.util.HelpCtx (SourceEditSupport.class.getName () + ".newElement" + kind); // NOI18N
+	}
+
+	/** Creates new element */
+	public void create () throws IOException {
+	    final String name = element.getName();
+
+	    Element newElement = null;
+
+/*	    try {
+		switch (kind) {
+		case 0:
+		    {
+			// Adding import
+			ImportElement e = new ImportElement();
+			e.setName("<name of unit to import>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Import");
+			if (openCustomizer(cust, "TIT_NewImport") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		}
+                
+	    }
+	    catch (SourceException exc) {
+		// shouldn't happen - memory implementation
+		// is not based on java source.
+	    }*/
+
+	    if (newElement == null)
+		return;
+
+	    final Element addingElement = newElement;
+	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
+		    public void run() throws SourceException {
+			switch (kind) {
+/*			case 0:
+			    ((SpecElement)element).addImport((ImportElement)addingElement);
+			    return;*/
+			}
+                        
+		    }
+		});
+	}
+	}
+
+    /** New types for diagram element */
+    static class DiagramElementNewType extends NewType {
+	/** Diagram element where to create new element */
+        DiagramElement element;
+
+	/** The kind of element to create */
+	byte kind;
+        
+	/** Creates new type
+	 * @param element Where to create new element.
+	 * @param kind The kind of the element to create
+	 */
+	public DiagramElementNewType(DiagramElement element, byte kind) {
+	    this.element = element;
+	    this.kind = kind;
+	}
+
+	/** Get the name of the new type.
+	 * @return localized name.
+	 */
+	public String getName() {
+	    return DIAGRAM_MENU_NAMES[kind];
+	}
+
+	/** Help context */
+	public org.openide.util.HelpCtx getHelpCtx() {
+	    return new org.openide.util.HelpCtx (SourceEditSupport.class.getName () + ".newElement" + kind); // NOI18N
+	}
+
+	/** Creates new element */
+	public void create () throws IOException {
+	    final String name = element.getName();
+
+	    Element newElement = null;
+
+	    try {
+		switch (kind) {
+		case 0:
+		    {
+			// Adding diagElem
+			DiagElemElement e = new DiagElemElement();
+			e.setName("<new diagram element>");
+			MemberCustomizer cust = new MemberCustomizer(e, "Diagram Element");
+			if (openCustomizer(cust, "TIT_NewDiagElem") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		}
+                
+	    }
+	    catch (SourceException exc) {
+		// shouldn't happen - memory implementation
+		// is not based on java source.
+	    }
+
+	    if (newElement == null)
+		return;
+
+	    final Element addingElement = newElement;
+	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
+		    public void run() throws SourceException {
+			switch (kind) {
+			case 0:
+			    ((DiagramElement)element).addDiagElem((DiagElemElement)addingElement);
+			    return;
+			}
+                        
+		    }
+		});
+	}
+	}
+
+    /** New types for colimit element */
+    static class ColimitElementNewType extends NewType {
+	/** Colimit element where to create new element */
+        ColimitElement element;
+
+	/** The kind of element to create */
+	byte kind;
+        
+	/** Creates new type
+	 * @param element Where to create new element.
+	 * @param kind The kind of the element to create
+	 */
+	public ColimitElementNewType(ColimitElement element, byte kind) {
+	    this.element = element;
+	    this.kind = kind;
+	}
+
+	/** Get the name of the new type.
+	 * @return localized name.
+	 */
+	public String getName() {
+	    return COLIMIT_MENU_NAMES[kind];
+	}
+
+	/** Help context */
+	public org.openide.util.HelpCtx getHelpCtx() {
+	    return new org.openide.util.HelpCtx (SourceEditSupport.class.getName () + ".newElement" + kind); // NOI18N
+	}
+
+	/** Creates new element */
+	public void create () throws IOException {
+	    final String name = element.getName();
+
+	    Element newElement = null;
+
+	    try {
+		switch (kind) {
+		case 0:
+		    {
+			// Adding diagram
+			DiagramElement e = new DiagramElement();
+			e.setName("newDiagram");
+			MemberCustomizer cust = new MemberCustomizer(e, "Diagram");
+			if (openCustomizer(cust, "TIT_NewDiagram") && cust.isOK()) // NOI18N
+			    newElement = e;
+			break;
+		    }
+		}
+                
+	    }
+	    catch (SourceException exc) {
+		// shouldn't happen - memory implementation
+		// is not based on java source.
+	    }
+
+	    if (newElement == null)
+		return;
+
+	    final Element addingElement = newElement;
+	    SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
+		    public void run() throws SourceException {
+			switch (kind) {
+			case 0:
+			    ((ColimitElement)element).addDiagram((DiagramElement)addingElement);
+			    return;
+			}
+                        
 		    }
 		});
 	}
@@ -253,15 +690,42 @@ class SourceEditSupport {
 		return findSource(mm.getParent());
 	    }
 	}
-	if (element instanceof MemberElement) {
+        if (element instanceof DiagramElement) {
+            DiagramElement mm = (DiagramElement) element;
+ 	    SourceElement source = mm.getSource();
+	    if (source != null) {
+		return source;
+	    } else {
+		return findSource(mm.getParent());
+	    }           
+        }
+        if (element instanceof MorphismElement) {
+            MorphismElement mm = (MorphismElement) element;
+ 	    SourceElement source = mm.getSource();
+	    if (source != null) {
+		return source;
+	    } else {
+		return findSource(mm.getParent());
+	    }           
+        }
+/*	if (element instanceof UIDElement) {
+	    UIDElement mm = (UIDElement) element;
+	    SourceElement source = mm.getSource();
+	    if (source != null) {
+		return source;
+	    } else {
+		return findSource(mm.getParent());
+	    }
+	}*/
+        if (element instanceof MemberElement) {
 	    return findSource(((MemberElement) element).getParent());
 	}
 	return null;
     }
     
-    static void createMetaSlangFile(SpecElement spec, FileObject target) throws SourceException, IOException {
+    static void createMetaSlangFile(MemberElement elem, FileObject target) throws SourceException, IOException {
 	DataObject targetObject;
-	String name = spec.getName();
+	String name = elem.getName();
 	FileObject newFile;
 	String newName;
         
@@ -287,7 +751,15 @@ class SourceEditSupport {
 								      bundle.getString("EXC_CREATE_SOURCE_FILE")
 								      );
 	}
-	cookie.getSource().addSpec(spec);
+        if (elem instanceof SpecElement) {
+            cookie.getSource().addSpec((SpecElement)elem);
+        } else if (elem instanceof DiagramElement) {
+            cookie.getSource().addDiagram((DiagramElement)elem);
+        } else if (elem instanceof MorphismElement) {
+            cookie.getSource().addMorphism((MorphismElement)elem);
+        } else if (elem instanceof ColimitElement) {
+            cookie.getSource().addColimit((ColimitElement)elem);            
+        }
 	
     }
     
@@ -302,6 +774,61 @@ class SourceEditSupport {
 	src.removeSpec(spec);
     }
 
+    static void removeProof(ProofElement proof) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(proof);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeProof(proof);
+    }
+    
+    static void removeMorphism(MorphismElement morphism) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(morphism);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeMorphism(morphism);
+    }
+
+    static void removeDiagram(DiagramElement diagram) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(diagram);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeDiagram(diagram);
+    }
+
+    static void removeColimit(ColimitElement colimit) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(colimit);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeColimit(colimit);
+    }
+
+/*    static void removeUID(UIDElement unitId) throws SourceException {
+	SourceElement src = SourceEditSupport.findSource(unitId);
+	if (src == null) {
+	    throw (SourceException)ErrorManager.getDefault().annotate(
+								      new SourceException("Element has no source"), // NOI18N
+								      bundle.getString("EXC_NO_SOURCE")
+								      );
+	}
+	src.removeUID(unitId);
+    }*/
+    
     /* default */static class PackagePaste implements NodeTransfer.Paste {
 	private static PasteType[] EMPTY_TYPES = new PasteType[0];                         
 	/** True, if the paste should remove the original class element.
@@ -310,14 +837,41 @@ class SourceEditSupport {
 
 	/** Spec element to paste.
 	 */        
-	private SpecElement element;
+	//private SpecElement element;
+        
+        private MemberElement element;
         
 	PackagePaste(SpecElement element, boolean deleteSelf) {
 	    this.deleteSelf = deleteSelf;
 	    this.element = element;
 	}
         
-	public PasteType[] types(Node target) {
+        PackagePaste(ProofElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+        
+        PackagePaste(MorphismElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+
+        PackagePaste(DiagramElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+        
+        PackagePaste(ColimitElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+
+/*        PackagePaste(UIDElement element, boolean deleteSelf) {
+	    this.deleteSelf = deleteSelf;
+	    this.element = element;
+	}
+*/
+        public PasteType[] types(Node target) {
 	    DataObject obj = (DataObject)target.getCookie(DataObject.class);
 	    if (element == null || obj == null) 
 		return EMPTY_TYPES;
@@ -348,11 +902,11 @@ class SourceEditSupport {
 	    }
 
 	    public Transferable paste() throws IOException {
-		final SpecElement spec = PackagePaste.this.element;
+		final MemberElement elem = PackagePaste.this.element;
 		final boolean del = PackagePaste.this.deleteSelf;
 
 		try {                
-		    createMetaSlangFile(spec, target);
+		    createMetaSlangFile(elem, target);
 		} catch (SourceException ex) {
 		    IOException x = new IOException(ex.getMessage());
 		    ErrorManager.getDefault().annotate(x, ex);
@@ -360,11 +914,23 @@ class SourceEditSupport {
 		}
 		if (del) {
 		    final SourceException ex[] = { null };
-		    SourceEditSupport.invokeAtomicAsUser(spec, new SourceEditSupport.ExceptionalRunnable() {
+		    SourceEditSupport.invokeAtomicAsUser(elem, new SourceEditSupport.ExceptionalRunnable() {
 			    public void run() throws SourceException {
 				try {
-				    removeSpec(spec);
-				} catch (SourceException e) {
+                                    if (elem instanceof SpecElement) {
+                                        removeSpec((SpecElement)elem);
+                                    } else if (elem instanceof ProofElement) {
+                                        removeProof((ProofElement)elem);
+                                    } else if (elem instanceof MorphismElement) {
+                                        removeMorphism((MorphismElement)elem);
+                                    } else if (elem instanceof DiagramElement) {
+                                        removeDiagram((DiagramElement)elem);
+                                    } else if (elem instanceof ColimitElement) {
+                                        removeColimit((ColimitElement)elem);
+                                    } /*else if (elem instanceof UIDElement) {
+                                        removeUID((UIDElement)elem);
+                                    }*/
+ 				} catch (SourceException e) {
 				    ex[0] = e;
 				} 
 			    }
@@ -405,4 +971,92 @@ class SourceEditSupport {
 	}
     }
 
+    static class ProofMultiPasteType extends PasteType {
+	ProofElementNode target;
+	Collection members;
+	boolean delete;
+
+	ProofMultiPasteType(ProofElementNode target, Collection members, boolean delete) {
+	    this.target = target;
+	    this.members = members;
+	    this.delete = delete;
+	}
+
+	public Transferable paste() throws IOException {
+	    for (Iterator it = members.iterator(); it.hasNext(); ) {
+		target.pasteElement((Element)it.next(), delete);
+	    }
+	    if (delete) 
+		return ExTransferable.EMPTY;
+	    else
+		return null;
+	}
+    }    
+
+    static class MorphismMultiPasteType extends PasteType {
+	MorphismElementNode target;
+	Collection members;
+	boolean delete;
+
+	MorphismMultiPasteType(MorphismElementNode target, Collection members, boolean delete) {
+	    this.target = target;
+	    this.members = members;
+	    this.delete = delete;
+	}
+
+	public Transferable paste() throws IOException {
+	    for (Iterator it = members.iterator(); it.hasNext(); ) {
+		target.pasteElement((Element)it.next(), delete);
+	    }
+	    if (delete) 
+		return ExTransferable.EMPTY;
+	    else
+		return null;
+	}
+    }    
+
+    static class DiagramMultiPasteType extends PasteType {
+	DiagramElementNode target;
+	Collection members;
+	boolean delete;
+
+	DiagramMultiPasteType(DiagramElementNode target, Collection members, boolean delete) {
+	    this.target = target;
+	    this.members = members;
+	    this.delete = delete;
+	}
+
+	public Transferable paste() throws IOException {
+	    for (Iterator it = members.iterator(); it.hasNext(); ) {
+		target.pasteElement((Element)it.next(), delete);
+	    }
+	    if (delete) 
+		return ExTransferable.EMPTY;
+	    else
+		return null;
+	}
+    }    
+
+    static class ColimitMultiPasteType extends PasteType {
+	ColimitElementNode target;
+	Collection members;
+	boolean delete;
+
+	ColimitMultiPasteType(ColimitElementNode target, Collection members, boolean delete) {
+	    this.target = target;
+	    this.members = members;
+	    this.delete = delete;
+	}
+
+	public Transferable paste() throws IOException {
+	    for (Iterator it = members.iterator(); it.hasNext(); ) {
+		target.pasteElement((Element)it.next(), delete);
+	    }
+	    if (delete) 
+		return ExTransferable.EMPTY;
+	    else
+		return null;
+	}
+    }    
+    
 }

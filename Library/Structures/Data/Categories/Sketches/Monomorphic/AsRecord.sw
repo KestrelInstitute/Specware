@@ -48,11 +48,11 @@ identity of a vertex, how do we specify the source and target of an edge.
 When we add an edge, we also add the src and target of the edge.
 
 \begin{spec}
-  def insertEdge graph edge src target = {
-    vertices = Vertex.insert (Vertex.insert (vertices graph) src) target,
+  def insertEdge graph edge dom cod = {
+    vertices = Vertex.insert (Vertex.insert (vertices graph) dom) cod,
     edges = Edge.insert (edges graph) edge,
-    src = update (src graph) edge src,
-    target = update (target graph) edge target
+    src = update (src graph) edge dom,
+    target = update (target graph) edge cod
   }
 }
 \end{spec}

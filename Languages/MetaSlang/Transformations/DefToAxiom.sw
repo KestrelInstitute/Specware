@@ -1,18 +1,20 @@
-spec
+Prover qualifying spec
  import ../Specs/Environment
+ import ProverPattern
 
-  op unCurry: StandardSpec.Term * Nat -> Option ((List Id) * StandardSpec.Term)
+  sort Term = MS.Term
+  op unCurry: MS.Term * Nat -> Option ((List Id) * MS.Term)
 
   op unCurrySort: Sort * Nat -> Sort
 
-  op mkUncurryEquality: Spec * Sort * QualifiedId * StandardSpec.Term -> StandardSpec.Term
+  op mkUncurryEquality: Spec * Sort * QualifiedId * MS.Term -> MS.Term
 
   def mkUncurryEquality(sp, srt, qid, trm) =
     let funOp = mkOp(qid, srt) in
       mkUncurryEqualityRec(sp, srt, trm, funOp, srt, trm, [])
 
-  op mkUncurryEqualityRec: Spec * Sort * StandardSpec.Term * StandardSpec.Term *
-                           Sort * StandardSpec.Term * List StandardSpec.Term -> StandardSpec.Term
+  op mkUncurryEqualityRec: Spec * Sort * MS.Term * MS.Term *
+                           Sort * MS.Term * List MS.Term -> MS.Term
 
   def mkUncurryEqualityRec(sp, topSrt, topTrm, topFunOp, srt, trm, prevArgs) =
     case srt of
@@ -40,9 +42,9 @@ spec
 	      | Lambda ([(pat, cond, body)],_) ->  mkEquality(topSrt, topFunOp, topTrm)
 	      | _ -> mkEquality(srt, mkAppl(topFunOp, prevArgs), trm))
       
-(*  op mkUncurryEqualityRec: Spec * Sort * StandardSpec.Term *
+(*  op mkUncurryEqualityRec: Spec * Sort * MS.Term *
                            Sort * QualifiedId * Pattern *
-			   Sort * StandardSpec.Term * Nat -> StandardSpec.Term
+			   Sort * MS.Term * Nat -> MS.Term
 
   def mkUncurryEqualityRec(sp, srt, trm, dom, qid, pat, rng, body, curryN) =
     let argNames = patternNames(pat) in
@@ -61,7 +63,7 @@ spec
       mkEquality(srt, funOp, trm)
 *)
 
-  op mkDefEquality: Sort * QualifiedId * StandardSpec.Term -> StandardSpec.Term
+  op mkDefEquality: Sort * QualifiedId * MS.Term -> MS.Term
 
   def mkDefEquality(srt, qid, trm) =
     mkEquality(srt, mkOp(qid, srt), trm)
@@ -76,7 +78,7 @@ spec
         of Arrow _ -> true
          | Subsort(s,_,_) -> functionSort?(sp,s)
          | _ -> false
-
+(*
  op patternNameOpt : Pattern       -> Option Id
  op patternNamesOpt: Pattern       -> Option (List Id)
 
@@ -98,17 +100,19 @@ spec
 		       | _-> None)
 	            (Some ([])) fields
      | _ -> None
-
+*)
   op curryShapeNum: Spec * Sort -> Nat
   def curryShapeNum(sp,srt) =
     case arrowOpt(sp,srt)
       of Some (dom,rng) -> 1 + curryShapeNum(sp,rng)
        | _ -> 0
 
-  op unLambdaDef: Spec * Sort * QualifiedId * StandardSpec.Term -> List StandardSpec.Term
+  op unLambdaDef: Spec * Sort * QualifiedId * MS.Term -> List MS.Term
 
   def unLambdaDef(spc, srt, name, term) =
     let new_equality = mkUncurryEquality(spc, srt, name, term) in
+    let faVars = freeVars(new_equality) in
+    let new_equality = mkBind(Forall, faVars, new_equality) in
     let eqltyWithPos = withAnnT(new_equality, termAnn(term)) in
       [eqltyWithPos]
 
@@ -147,15 +151,24 @@ spec
   def axiomFromOpDefTop(spc,qname,name,decl) =
     case decl:OpInfo of
       | (op_names, fixity, (srtTyVars,srt), [(termTyVars, term)]) ->
-        let pos = termAnn(term) in
-	let opName = mkQualifiedId(qname, name) in
-	let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
-%	let _ = writeLine(name^": in axiomFromOpDef Def part") in
-          [ax]
+        let localOps = spc.importInfo.localOps in
+	if memberQualifiedId(qname, name, localOps) then
+	  let pos = termAnn(term) in
+	  let opName = mkQualifiedId(qname, name) in
+	  let initialFmla = hd (unLambdaDef(spc, srt, opName, term)) in
+	  let liftedFmlas = proverPattern(initialFmla) in
+	  let axioms = map (fn(fmla:Term) -> (Axiom, name^"_def", [], withAnnT(fmla, pos))) liftedFmlas in
+	  %%let ax:Property = (Axiom, name^"_def", [], hd (unLambdaDef(spc, srt, opName, term))) in
+	  	%let _ = writeLine(name^": in axiomFromOpDef Def part") in
+            axioms
+	else %let _ = writeLine(name^": in axiomFromOpDef Def part is not local") in
+	  %let _ = debug("not local op") in
+	     []
       | _ -> %let _ = writeLine(name^": in axiomFromOpDef NOT def part") in
 	       []
 	
-  op explicateHiddenAxioms: PosSpec -> Spec
+
+  op explicateHiddenAxioms: Spec -> Spec
   def explicateHiddenAxioms spc =
     let def axiomFromOpDef(qname,name,decl,defs) = defs ++ axiomFromOpDefTop(spc,qname,name,decl) in
     let norm_spc = spc in

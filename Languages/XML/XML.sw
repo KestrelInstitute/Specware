@@ -1,66 +1,119 @@
 
 XML qualifying spec
 
+  import /Library/IO/Unicode/UnicodeSig
   import XML_Sig
   import Parser/XML_Parser
   import Printers/XML_Printer
+  import Conversions/GenerateDocument
+  import Conversions/InternalizeDocument
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INTERFACE
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op parseXML        : fa (X) String  -> X     % Very tricky -- actual handwritten function takes extra arg depicting X
-  op parseUnicodeXML : fa (X) UString -> X     % Very tricky -- actual handwritten function takes extra arg depicting X
-  op printXML        : fa (X) X -> String      % Very tricky -- actual handwritten function takes extra arg depicting X
-  op printUnicodeXML : fa (X) X -> UString     % Very tricky -- actual handwritten function takes extra arg depicting X
+  %% WARNING: These are not normal metaslang functions.
+  %%
+  %%          The typechecker adds an extra argument when generating calls to 
+  %%           these specially recognized functions.  See sortCognizantOperator? 
+  %%           defined in /Languages/MetaSlang/Specs/Elaborate/TypeChecker.sw
+  %%
+  %%          The actual handwritten (Lisp/C/Java/...) definitions are written
+  %%           using that extra arg.  [For now, only Lisp version exists.]
+  %%
+  %%          See Languages/XML/Handwritten/Lisp/Support.lisp
+  %%
+  %%          An alternative scheme would be to add a reflection operation to
+  %%           metaslang, e.g. DescribeSort S, mapping a sort to a normal term
+  %%           describing that sort, to make the extra arg apparent.
+  %%
+  op readXMLFile          : fa (X) Filename -> X         % Tricky -- see Support.lisp
+  op parseXML             : fa (X) String  -> X          % Tricky -- see Support.lisp
+  op parseUnicodeXML      : fa (X) UString -> X          % Tricky -- see Support.lisp
+  op internalize_Document : fa (X) Document -> Option X  % Tricky -- see Support.lisp
+
+  op writeXMLFile         : fa (X) X * Filename -> ()    % Tricky -- see Support.lisp
+  op printXML             : fa (X) X -> String           % Tricky -- see Support.lisp
+  op printUnicodeXML      : fa (X) X -> UString          % Tricky -- see Support.lisp
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%                 INPUT
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  sort Filename = String
+  % sort Filename = String
 
-  op read_unicode_chars_from_file : Filename -> Option UChars
+  % op unicode.read_unicode_chars_from_file : Filename * Decoding -> Option UChars
 
   def read_Document_from_file (filename : Filename) : Option Document =
-    let possible_uchars = read_unicode_chars_from_file filename in % handwritten lisp
+    let possible_uchars = read_unicode_chars_from_file (filename, null_decoding) in % handwritten lisp
     case possible_uchars of
       | Some uchars ->
-        run_document_monad {
+        run_document_monad uchars
+	                   {
 			    (document, uchars) <- parse_Document uchars;
 			    return (Some document)
 			   }
       | _ -> None
 
   def read_Document_from_String (str : String) : Option Document =
-    run_document_monad {
-			(document, uchars) <- parse_Document (ustring str);
-			return (Some document)
-		       }
-
-  def read_Document_from_UString (uchars : UChars) : Option Document =
-    run_document_monad {
+    let uchars = ustring str in
+    run_document_monad uchars
+                       {
 			(document, uchars) <- parse_Document uchars;
 			return (Some document)
 		       }
 
-  def run_document_monad (run : Env (Option Document)) =
-    case catch run XML_Handler initialState  of
-      | (Ok         possible_doc, newstate) -> 
-        let _ = map (fn exception -> toScreen (print_XML_Exception exception))
-	            newstate.exceptions
-	in
-	  possible_doc
+  def read_Document_from_UString (uchars : UChars) : Option Document =
+    run_document_monad uchars
+                       {
+			(document, uchars) <- parse_Document uchars;
+			return (Some document)
+		       }
 
-      | (Exception  exception,    newstate) -> 
-        let _ = map (fn exception -> toScreen (print_XML_Exception exception))
-	            newstate.exceptions
-	in
-	  let _ = toScreen (print_XML_Exception exception) in
+  def run_document_monad (uchars : UChars) (run : Env (Option Document)) =
+    let (result, newstate) = catch run XML_Handler (initialState uchars) in
+    case (result, newstate.exceptions) of
+
+      | (Ok possible_document, []) ->
+        possible_document
+
+      | _ ->
+	let _ = toScreen (print_pending_XML_Exceptions newstate) in
 	None
 
-  def XML_Handler (except) : Env (Option Document) = 
-    let _ = toScreen (print_XML_Exception except) in
+  def XML_Handler _ : Env (Option Document) =
+    %% let _ = toScreen (print_XML_Exception except) in %% catch inserts exception into state
+    return None
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %%%  special hacks for reading just a .dtd file
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  def read_external_dtd_from_file (filename : Filename) : Option ExternalDTD =
+    let possible_uchars = read_unicode_chars_from_file (filename, null_decoding) in % handwritten lisp
+    case possible_uchars of
+      | Some uchars ->
+        run_external_dtd_monad uchars
+	                       {
+				external_dtd <- parse_external_dtd uchars;
+				return external_dtd
+			       }
+      | _ -> None
+
+
+  def run_external_dtd_monad (uchars : UChars) (run : Env (Option ExternalDTD)) =
+    let (result, newstate) = catch run XML_DTD_Handler (initialState uchars) in
+    case (result, newstate.exceptions) of
+
+      | (Ok external_dtd, []) ->
+        external_dtd
+
+      | _ ->
+	let _ = toScreen (print_pending_XML_Exceptions newstate) in
+	None
+
+  def XML_DTD_Handler _ : Env (Option ExternalDTD) =
+    %% let _ = toScreen (print_XML_Exception except) in %% catch inserts exception into state
     return None
 
 %%% from Specware.sw :
@@ -75,17 +128,16 @@ XML qualifying spec
 %%%     return false}
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%                 OUTPUT 
+  %%%                 OUTPUT
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-  op write_unicode_chars_to_file : UChars * Filename -> ()
+  % op write_unicode_chars_to_file : UChars * Filename * Encoding -> ()
 
   def print_Document_to_String (doc : Document) : String =
     string (print_Document_to_UString doc)
 
   def print_Document_to_file (doc : Document, filename : Filename) =
     let ustr = print_Document_to_UString doc in
-    write_unicode_chars_to_file (ustr, filename) % handwritten lisp
-
+    write_unicode_chars_to_file (ustr, filename, null_encoding) % handwritten lisp
 
 endspec

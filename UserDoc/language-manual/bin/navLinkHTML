@@ -25,7 +25,7 @@ echo extra nav-linking "$F"
 B=`basename $F`
 
 ed - "$F" <<!r0tAn1mReT
-g|^>Home</A$|-t$
+g|^>Home</A$|?HREF?t$
 g|^HREF=|-s|^|:)|
 g|^></HTML|+s|^|(:|
 g|^(::)|+s|^|;)|

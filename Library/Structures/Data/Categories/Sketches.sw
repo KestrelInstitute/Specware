@@ -1,7 +1,5 @@
 \section{Monomorphic Sketches}
 
-This is to be deprecated in favour of ../Sketches.sw
-
 A sketch is a finitary presentation of a category. Put another way,
 a sketch generates a category. A common ingredient in a sketch is
 a graph. On top of that there are many varieties of sketches. An
@@ -20,7 +18,7 @@ For now, we omit the equations, cones and cocones and allow only
 graphs as sketches.
 
 \begin{spec}
-spec {
+spec
   import translate ../Graphs/Finite by {Graph +-> Sketch} 
 \end{spec}
 
@@ -32,8 +30,5 @@ We define a sort for paths though they aren't used yet.
     path : List Edge,
     last : Vertex
   } 
-\end{spec}
-
-\begin{spec}
-}
+endspec
 \end{spec}

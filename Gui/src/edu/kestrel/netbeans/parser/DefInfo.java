@@ -20,10 +20,12 @@ import edu.kestrel.netbeans.codegen.TextBinding;
  */
 public class DefInfo extends BaseElementInfo {
     String[]      parameters;
+    String        expression;
 
-    public DefInfo(String name, String[] parameters) {
+    public DefInfo(String name, String[] parameters, String expression) {
         super(name);
 	this.parameters = parameters;
+        this.expression = expression;
     }
     
     protected Element createModelImpl(LangModel.Updater model, Element parent) {
@@ -41,10 +43,11 @@ public class DefInfo extends BaseElementInfo {
         
         DefElement element = (DefElement)target;
         element.setParameters(parameters);
+        element.setExpression(expression);
         // PENDING: update binding with def link information.
     }
 
     public String toString() {
-	return "def " + name + ((parameters == null) ? "" : Util.print(parameters, true));
+	return "def " + name + ((parameters == null) ? "" : Util.print(parameters, true)) + " = " + expression;
     }
 }

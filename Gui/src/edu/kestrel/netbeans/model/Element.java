@@ -6,6 +6,15 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/04/23 02:15:03  weilyn
+ * Made Impl interface public
+ *
+ * Revision 1.2  2003/04/23 01:14:38  weilyn
+ * BindingFactory.java
+ *
+ * Revision 1.1  2003/01/30 02:01:54  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -217,6 +226,13 @@ public abstract class Element extends Object
      * @see Element#Element
      */
     public interface Impl extends Serializable {
+        /** Add some items. */
+        public static final int ADD = 1;
+        /** Remove some items. */
+        public static final int REMOVE = -1;
+        /** Set some items, replacing the old ones. */
+        public static final int SET = 0;
+        
         /** @deprecated Only public by accident. */
         /* public static final */ long serialVersionUID = -3246061193296761293L;
         /** Called to attach the implementation to a specific

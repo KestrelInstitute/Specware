@@ -6,6 +6,15 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/13 01:23:59  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
+ * Revision 1.1  2003/01/30 02:02:24  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -171,22 +180,21 @@ public final class ParserDisplayer extends Object implements ActionListener {
     * and whether succesfully or not. */
     public void parsingFinished(FileObject file, boolean successful, boolean uptodate) {
 	if (DEBUG) Util.log("*** ParserDisplayer.parsingFinished(): file="+file+", successful="+successful+", uptodate="+uptodate);
-        boolean always_print = true;
-        if ( successful && parserIO.isClosed() )
-            always_print = false;
 
 	//initialize();
 	MessageFormat msg = successful ? parseSuccess : parseUnsuccess;
 	Object[] args = fileToArgs(file);
 	String fimsg = msg.format(args);
 	setStatusText(fimsg);
-	if (always_print) {
-	    ensureVisible();
-	    if (uptodate) {
-		println(NbBundle.getBundle(ParserDisplayer.class).getString("MSG_UpToDate"));
-	    }
-	    println(fimsg);
+
+	//if (!successful || !parserIO.isClosed())
+	ensureVisible();
+
+	if (uptodate) {
+	    println(NbBundle.getBundle(ParserDisplayer.class).getString("MSG_UpToDate"));
 	}
+
+	println(fimsg);
 	AnnotationImpl impl = AnnotationImpl.getAnnotation();
 	impl.detach(null);
 	/*

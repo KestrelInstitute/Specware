@@ -93,21 +93,20 @@ The latter has not been implemented yet.
 Naive pretty printing of \BSpecs
 
 \begin{spec}
-  op pp : BSpec -> WadlerLindig.Pretty
-  def pp {initial,final,system} =
+  op pp : BSpec -> Doc
+  def pp bSpec =
     ppConcat [
-      ppString "{",
-      ppString "initial = ",
-      V.ppElem initial,
-      ppString ", final = ",
-      V.pp final,
+      pp "{initial = ",
+      pp (initial bSpec),
+      pp ", final = ",
+      pp final,
       ppNewline,
-      ppString "system = ",
+      pp "system = ",
       ppNewline,
-      ppString "  ",
-      ppIndent (ppSystem system),
+      pp "  ",
+      ppIndent (pp (system bSpec)),
       ppNewline,
-      ppString "}"
+      pp "}"
     ]
 }
 \end{spec}

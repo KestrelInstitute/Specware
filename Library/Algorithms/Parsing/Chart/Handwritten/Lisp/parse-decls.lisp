@@ -66,16 +66,18 @@
 			     &key 
 			     (case-sensitive? nil)
 			     (rule-package    (find-package "KEYWORD"))
-			     (symbol-package  lisp::*package*))
-  (terpri)
-  (comment "Note:  These values are determined by keyword args in the call to new-parser:")
-  (comment " ")
-  (comment "  Parser will ~Abe case sensitive." (if case-sensitive? "" "not "))
-  (comment "  Auxiliary parser rules will be interned in the ~A package." 
-	   (package-name rule-package))
-  (comment "  Symbols generated when parsing will be interned in the ~A package." 
-	   (package-name symbol-package))
-  (terpri)
+			     (symbol-package  common-lisp::*package*))
+  #+DEBUG-PARSER 
+  (progn
+    (terpri)
+    (comment "Note:  These values are determined by keyword args in the call to new-parser:")
+    (comment " ")
+    (comment "  Parser will ~Abe case sensitive." (if case-sensitive? "" "not "))
+    (comment "  Auxiliary parser rules will be interned in the ~A package." 
+	     (package-name rule-package))
+    (comment "  Symbols generated when parsing will be interned in the ~A package." 
+	     (package-name symbol-package))
+    (terpri))
   (let ((parser
 	 (make-parser 
 	  :name                      name
@@ -178,11 +180,13 @@
   ;;                                    such that this node will be the second child, i.e.
   ;;                                    such that the parent node will start at some earlier location 
   (precedence +default-precedence+) ; fixed precedence 
-  bvi            ; bit-vector index
-  semantics      ; e.g., the actual string for a symbol
-  p2bvi-map      ; alist:   precedence => bvi
-  items          ; the sub-rules of this rule
-  main-rule?     ; was this entered by the user as a top-level rule?
+  bvi                               ; bit-vector index
+  semantics                         ; e.g., the actual string for a symbol
+  p2bvi-map                         ; alist:   precedence => bvi
+  items                             ; the sub-rules of this rule
+  main-rule?                        ; was this entered by the user as a top-level rule?
+  optional?                         ; is every item optional?
+  (default-semantics :unspecified)  ; what to return if the rule is processed as optional
   documentation 
   )
 
@@ -259,13 +263,19 @@
   (let ((rule-var (gensym)))
     `(let* ((,rule-var ,rule))
        ;; if both of these are nil, the rule will be bypassed...
-       (and (eq (structure-type-of ,rule-var) 'parser-anyof-rule)
-	    (null (parser-rule-precedence ,rule-var))
-	    (null (parser-rule-semantics  ,rule-var))
-	    (do-parser-rule-items (item ,rule-var t) 
-	      (when (not (null (parser-rule-item-semantic-index item)))
-		(return nil)))
-	    ))))
+       (let ((superfluous?
+	      (and (eq (structure-type-of ,rule-var) 'parser-anyof-rule)
+		   (null (parser-rule-precedence ,rule-var))
+		   (null (parser-rule-semantics  ,rule-var))
+		   (do-parser-rule-items (item ,rule-var t) 
+ 		     (when (not (null (parser-rule-item-semantic-index item)))
+		       (return nil)))
+		   )))
+	 (when-debugging
+	  (when *verbose?*
+	    (when superfluous?
+	      (format t "~&Superfluous ANYOF rule: ~S~%" ,rule-var))))
+	 superfluous?))))
     
 (defun find-parser-rule (parser name)
   (or (maybe-find-parser-rule parser name)
@@ -298,10 +308,11 @@
   rule                 
   precedence
   ;; rule & precedence => possible-children-bv
-  possible-children-bv ; allows quick match on multiple rules...
+  possible-children-bv              ; allows quick match on multiple rules...
   ;; closure routine maps possible-children-bv => possible-handles-bv
-  possible-handles-bv  ; was desired-bv
+  possible-handles-bv               
   semantic-index 
+  (default-semantics :unspecified)  ; what to return if the rule is processed as optional
   )
   
 ;;; ========================================
@@ -354,6 +365,12 @@
      new-node)
   )
 
+#+DEBUG-PARSER 
+(defmacro fixnum? (x)
+  `(#+Allegro excl::fixnump 
+    #+CMU     extensions::fixnump
+    ,x))
+    
 #+OPTIMIZE-PARSER
 (defmacro structure-type-of (structure)
   `(caar (excl::structure-ref ,structure 0)))
@@ -402,45 +419,6 @@
 		     (cons (local-sublis alist (car pattern))
 			   (local-sublis alist (cdr pattern)))))))
      (local-sublis ,alist ,pattern)))
-
-;;; ===== TEMP HERE ====
-
-(defvar *position-keys* '(:LEFT-POS  :LEFT-LINE  :LEFT-COLUMN  :LEFT-LC     
-			  :RIGHT-POS :RIGHT-LINE :RIGHT-COLUMN :RIGHT-LC))
-
-(defun compute-pprint-alist (pattern value)
-  (catch 'mismatch
-    (let ((alist nil))
-      (labels ((collect (pattern value)
-		 (cond ((#+allegro excl:fixnump
-			 #+Lispworks cl-user::fixnump
-			 pattern)
-			;;(comment "New pair: ~S ~S" pattern value)
-			(push (cons pattern value) alist))
-		       ((eql pattern value)
-			;;(comment "Quiet match: ~S ~S" pattern value)
-			nil)
-		       ((atom pattern)
-			(cond ((member pattern *position-keys*)
-			       ;;(comment "New pair: ~S ~S" pattern value)
-			       (push (cons pattern value) alist))
-			      (t
-			       ;;(comment "Throw out on pattern ~S" pattern)
-			       (throw 'mismatch :no-match))))
-		       ((atom value)
-			;;(comment "Throw out on value ~S" value)
-			(throw 'mismatch  :no-match))
-		       (t
-			;;(comment "Recur on ~S ~S" pattern value)
-			(collect (car pattern) (car value))
-			(collect (cdr pattern) (cdr value))))))
-	(collect pattern value)
-	alist))))
-
-(defun sub-alist? (x y)
-  (dolist (pair x t)
-    (unless (eq (cdr (assoc (car pair) y)) (cdr pair))
-      (return nil))))
 
 ;;; ===== performance hacks ===
 

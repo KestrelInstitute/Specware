@@ -1,4 +1,4 @@
-;;;; Emacs utilities for meta-slang...
+;;;; Emacs utilities for Specware...
 
 ;;; Changed Specware's default directory within Emacs to be the current
 ;;; directory rather than the root directory for Specware itself. That way,
@@ -8,6 +8,7 @@
 ;;; changes directory. 
 ;;; (defvar default-directory-name (concatenate 'string *specware* "/"))
 
+(require 'dired)			; For (default-directory)
 (defvar default-directory-name (default-directory)) ; moved to top of file to avoid warning msg
 
 ;; (verify-emacs-version)
@@ -49,13 +50,13 @@
 (defun goto-file-position (file line col)
   (let ((full-file (expand-file-name file
 				     (save-excursion
-				       (set-buffer fi:common-lisp-buffer-name)
+				       (set-buffer sw:common-lisp-buffer-name)
 				       default-directory))))
     (unless (equal (buffer-file-name) full-file)
       (find-file-other-window full-file))
     (goto-line line)
     (when (> col 0)
-      (forward-char (- col 1)))))
+      (forward-char col))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Mouse sensitive interfacing.
@@ -133,7 +134,7 @@
     (let ((bdrs (* borders 2))
 	  (left (+ left borders))
 	  (top (+ top borders)))
-      (select-frame-if-active (get-frame-for-buffer (get-buffer-create fi:common-lisp-buffer-name)))
+      (select-frame-if-active (get-frame-for-buffer (get-buffer-create sw:common-lisp-buffer-name)))
       (let* ((frame (selected-frame))
 	     (int-bdrs (frame-property frame 'scrollbar-width))
 	     (int-h-bdrs (+ int-bdrs
@@ -374,12 +375,14 @@
 (defun apply-refinement-from-library-taxonomy ()
   (interactive)
   (send-message-to-lisp
-   "(SpecwareUI::applyRefinementFromLibraryTaxonomy SpecwareUI::specware-ui-current-defining-diagram)"))
+   "(SpecwareUI::applyRefinementFromLibraryTaxonomy
+       SpecwareUI::specware-ui-current-defining-diagram)"))
 
 (defun apply-refinement-from-library-diagram ()
   (interactive)
   (send-message-to-lisp
-   "(SpecwareUI::applyRefinementFromLibraryDiagram SpecwareUI::specware-ui-current-defining-diagram)"))
+   "(SpecwareUI::applyRefinementFromLibraryDiagram
+       SpecwareUI::specware-ui-current-defining-diagram)"))
 
 (defun context-dependent-simplify-tactic ()
   (interactive)
@@ -417,9 +420,10 @@
   (if (null sw:*current-specware-process*)
       ()
     (progn
-      (fi:eval-in-lisp
+      (sw:eval-in-lisp
        (format 
-	"(mp::process-kill (MP:PROCESS-NAME-TO-PROCESS \"%s\"))" sw:*current-specware-process*))
+	"(mp::process-kill (MP:PROCESS-NAME-TO-PROCESS \"%s\"))"
+	sw:*current-specware-process*))
       (setq sw:*current-specware-process* nil))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -551,7 +555,9 @@
   (select-frame (make-frame (`((left (,@ 400)) 
                                (top (,@ 400)) 
                                (width (,@ 80)) 
-                               (height (,@ 8)))))) 
+                               (height (,@ 8))
+			       (has-modeline-p nil)
+			       (minibuffer . none))))) 
   (switch-to-buffer (get-buffer-create "*Choose an alternative*")) 
   (setq buffer-read-only nil) 
   (erase-buffer)
@@ -562,15 +568,15 @@
   (add-choices choices)
 ) 
  
-(defun return-choice-from-buffer (choice) 
+(defun return-choice-from-buffer (choice event) 
   (interactive) 
   (send-preemptive-message-to-lisp (format "(emacs::choiceItem %S)" choice)) 
-  (delete-frame)) 
+  (delete-frame (event-frame event))) 
  
-(defun cancel-choice-from-buffer () 
-  (interactive) 
+(defun cancel-choice-from-buffer (event) 
+  (interactive "e") 
   (send-preemptive-message-to-lisp "(emacs::choiceItem -1)") 
-  (delete-frame)) 
+  (delete-frame (event-frame event))) 
 
 (defvar *numbered-choices*)
 
@@ -578,7 +584,9 @@
   (interactive) 
   (let* (
 	 (counter 0)
-	 (numbered-choices (mapcar (lambda (ch) (progn (setq counter (1+ counter)) (cons ch counter))) choices))
+	 (numbered-choices (mapcar (lambda (ch) (progn (setq counter (1+ counter))
+						       (cons ch counter)))
+				   choices))
 	 (item-choices (mapcar (lambda(ch) (list 'item ch)) choices))
 	 )
     (make-local-variable '*numbered-choices*)
@@ -586,16 +594,19 @@
     (apply 'widget-create
 	   (list*
 	    'radio-button-choice  
-	    :value (car choices) 
-	    :notify (lambda (widget &rest ignore) 
-		      (let* ((value (widget-value widget))
-			     (numbered-choices *numbered-choices*)
-			     (int-value (cdr (find-if (lambda(ch) (string= (car ch) value)) numbered-choices))))
-			(return-choice-from-buffer int-value)))
-		      
+	    :value nil 
+	    :notify 'choice-notify		      
 	    item-choices))
     (message "Choose an entry")))
- 
+
+(defun choice-notify (widget ignore event)
+  (let* ((value (widget-value widget))
+	 (numbered-choices *numbered-choices*)
+	 (int-value (cdr (find-if (lambda(ch)
+				    (string= (car ch) value))
+				  numbered-choices))))
+    (return-choice-from-buffer int-value event)))
+
 
 (defun testchoices() 
    (open-choice-window '("Choice 1" "Choice 2" "Choice 3")))

@@ -77,9 +77,9 @@ ArityNormalizeCGen qualifying spec {
  sort UsedNames = StringSet.Set
  sort Gamma 	= List(String * Option(Sort * Nat))
 
- op normalizeArity : Spec * Gamma * UsedNames * Term -> Term
+ op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
  
- op termArity : Spec * Gamma * Term    -> Option(Sort * Nat)
+ op termArity : Spec * Gamma * MS.Term    -> Option(Sort * Nat)
  op sortArity : Spec * Sort            -> Option(Sort * Nat)
  op opArity   : Spec * QualifiedId -> Option(Sort * Nat)
 
@@ -163,11 +163,11 @@ ArityNormalizeCGen qualifying spec {
 		| Base(qid,srts,_) ->
 		  let def newtypevars(srts,n) =
 		          case srts of [] -> []
-			    | _::srts -> cons(TyVar("alpha"^toString(n),()),
+			    | _::srts -> cons(TyVar("alpha"^toString(n),noPos),
 						   newtypevars(srts,n+1))
 		  in
 		  let srts = newtypevars(srts,0) in
-		  let srt = Base(qid,srts,()) in
+		  let srt = Base(qid,srts,noPos) in
 		  %let _ = writeLine("unfolding "^MetaSlangPrint.printSort(srt)^"...") in
 		  let usrt = SpecEnvironment.unfoldBase(sp,srt) in
 		  if usrt = srt then None
@@ -195,7 +195,7 @@ ArityNormalizeCGen qualifying spec {
  as many arguments as possible.
  *)
   
- def termArity(sp,gamma,term:Term) = 
+ def termArity(sp,gamma,term:MS.Term) = 
    %let _ = writeLine("(termArity: "^MetaSlangPrint.printTerm(term)) in
      case term
        of Apply _ -> None
@@ -296,7 +296,7 @@ ArityNormalizeCGen qualifying spec {
 
 
 
-  op  etaExpand : Spec * UsedNames * Sort * Term -> Term
+  op  etaExpand : Spec * UsedNames * Sort * MS.Term -> MS.Term
 
   def etaExpand(sp,usedNames,srt,term) =
     let def etaExpandAux(dom,term) =
@@ -309,15 +309,15 @@ ArityNormalizeCGen qualifying spec {
 	       else
 		 %let _ = writeLine("  is record...") in
 		 % foo({a,b}) = t --> foo(x) = let {a,b} = x in t
-		 let res = Lambda([((VarPat(x,())),cond,
-				    Let([(pat,Var(x,()))],term,()))],a) in
+		 let res = Lambda([((VarPat(x,noPos)),cond,
+				    Let([(pat,Var(x,noPos))],term,noPos))],a) in
 		 %let _ = writeLine("res: "^MetaSlangPrint.printTerm(res)) in
 		 res
 
 	      | Lambda _ -> term
 	      | _ -> 
-		 let res = Lambda([(VarPat(x,()),mkTrue(),
-				    Apply(term,Var(x,()),()))],()) in
+		 let res = Lambda([(VarPat(x,noPos),mkTrue(),
+				    Apply(term,Var(x,noPos),noPos))],noPos) in
 	         res)
       in
       case SpecEnvironment.arrowOpt(sp,srt)
@@ -338,11 +338,11 @@ ArityNormalizeCGen qualifying spec {
 	   let (names,_) = freshNames("x",fields,usedNames) in
 	   let vars = ListPair.map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
 	   let trm = Lambda 
-	               ([(RecordPat(List.map (fn (l,v) -> (l,VarPat(v,()))) vars,()),
+	               ([(RecordPat(List.map (fn (l,v) -> (l,VarPat(v,noPos))) vars,noPos),
 			  mkTrue(),
 			  Apply(term,Record (List.map 
 					     (fn (l,v) -> 
-					      (l,Var(v,()):Term)) vars,()),()))],())
+					      (l,Var(v,noPos):MS.Term)) vars,noPos),noPos))],noPos)
 	   in
 	   trm
       in
@@ -350,7 +350,7 @@ ArityNormalizeCGen qualifying spec {
 	of Lambda([(RecordPat fields,_,_)],_) -> term
 	 | _ -> etaExpandAux2(term)
 
- def normalizeArityTopLevel(sp,gamma,usedNames,term:Term):Term = 
+ def normalizeArityTopLevel(sp,gamma,usedNames,term:MS.Term):MS.Term = 
      case term
        of Lambda(rules,a) -> 
 	  Lambda 
@@ -368,7 +368,7 @@ ArityNormalizeCGen qualifying spec {
 
  def normalizeArity(sp,gamma,usedNames,term) = 
      let
-	def normalizeRecordArguments(t:Term):Term * Boolean = 
+	def normalizeRecordArguments(t:MS.Term):MS.Term * Boolean = 
 	    case t
 	      of Record(fields,_) -> 
 		 let fields = 
@@ -462,7 +462,7 @@ ArityNormalizeCGen qualifying spec {
 	| Fun _ -> convertToArity1(sp,gamma,usedNames,term)
 
 
-  def convertToArity1(sp,gamma,usedNames,term):Term = 
+  def convertToArity1(sp,gamma,usedNames,term):MS.Term = 
     %let _ = toScreen("convertToArity1: termArity "^MetaSlangPrint.printTerm(term) ^"-> ") in
       case termArity(sp,gamma,term)
 	of None -> %let _ = writeLine("None") in 
@@ -471,8 +471,8 @@ ArityNormalizeCGen qualifying spec {
 	   let (name,usedNames) = freshName("xx",usedNames) in
 	   %let _ = writeLine("var "^name^":"^MetaSlangPrint.printSort(dom)) in
 	   let x = (name,dom) in
-	   (Lambda([((VarPat(x,())),mkTrue(),
-		     mkArityApply(sp,dom,term,mkVar x,usedNames))],()))
+	   (Lambda([((VarPat(x,noPos)),mkTrue(),
+		     mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
 
  
 

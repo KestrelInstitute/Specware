@@ -29,7 +29,7 @@
 ;;; for theories implemented here, the main functions are
 ;;;  declare-rcc8-relations
 ;;;  declare-time-relations
-;;; these declare the appropriate predicate symbols
+;;; these declare the appropriate relation symbols
 ;;; (determined by the values of rcc8-jepd-relation-names, rcc8-more-relation-names, etc.)
 ;;; and declare procedural attachments for composing and intersecting disjunctions of
 ;;; jepd binary relations
@@ -345,7 +345,7 @@
 
 (defun declare-jepd-relation (relname sort names more-names invert)
   (let ((use-special-unification (and invert (not (test-option17?)))))
-    (declare-predicate-symbol
+    (declare-relation
      relname 3
      :sort sort
      :equal-code (and use-special-unification
@@ -369,7 +369,7 @@
 (defun declare-jepd-relation-input (relname names more-names n reverse)
   (let ((i 0))
     (dolist (name names)
-      (declare-predicate-symbol
+      (declare-relation
        name :any
        :input-function (let ((i i))
                          (lambda (head args polarity)
@@ -379,7 +379,7 @@
   (do ((l more-names (cddr l)))
       ((endp l)
        )
-    (declare-predicate-symbol
+    (declare-relation
      (first l) :any
      :input-function (let ((i (second l)))
                        (lambda (head args polarity)
@@ -396,7 +396,7 @@
 
 (defun declare-jepd-relation-intersection (relname rel sort invert)
   (let ((intersection (intern (concatenate 'string (symbol-name relname) "-INTERSECTION") :snark)))
-    (declare-predicate-symbol
+    (declare-relation
      intersection 4
      :rewrite-code (list
                     (lambda (atom subst)
@@ -427,7 +427,7 @@
     (declare-jepd-relation-intersection relname rel sort invert)
     (let ((table composition)
           (composition (intern (concatenate 'string (symbol-name relname) "-COMPOSITION") :snark)))
-      (declare-predicate-symbol
+      (declare-relation
        composition 5
        :rewrite-code (list
                       (lambda (atom subst)
@@ -547,7 +547,7 @@
         (declare-jepd-relation-intersection relname rel sort nil)
         ;;; PI * II -> PI composition
         (let ((composition (intern (concatenate 'string (symbol-name relname) "-II-COMPOSITION") :snark)))
-          (declare-predicate-symbol
+          (declare-relation
            composition 5
            :rewrite-code (let ((table (or *time-pii-composition-table*
                                           (setf *time-pii-composition-table* (make-composition-table
@@ -571,7 +571,7 @@
                   :supported nil))
         ;;; PP * PI -> PI composition
         (let ((composition (intern (concatenate 'string (symbol-name relname) "-PP-COMPOSITION") :snark)))
-          (declare-predicate-symbol
+          (declare-relation
            composition 5
            :rewrite-code (let ((table (or *time-ppi-composition-table*
                                           (setf *time-ppi-composition-table* (make-composition-table
@@ -595,9 +595,9 @@
                   :supported nil))
         ;;; PI * IP -> PP composition
         (let ((composition (intern (concatenate 'string (symbol-name relname) "-PI-COMPOSITION1") :snark)))
-          (declare-predicate-symbol
+          (declare-relation
            composition 5
-           :rewrite-code (let ((rel (input-predicate-symbol (time-pp-main-relation-name?) 3))
+           :rewrite-code (let ((rel (input-relation-symbol (time-pp-main-relation-name?) 3))
                                (table (or *time-pip-composition-table*
                                           (setf *time-pip-composition-table* (make-composition-table
                                                                               $time-pip-composition-table
@@ -620,9 +620,9 @@
                   :supported nil))
         ;;; IP * PI -> II composition
         (let ((composition (intern (concatenate 'string (symbol-name relname) "-PI-COMPOSITION2") :snark)))
-          (declare-predicate-symbol
+          (declare-relation
            composition 5
-           :rewrite-code (let ((rel (input-predicate-symbol (time-ii-main-relation-name?) 3))
+           :rewrite-code (let ((rel (input-relation-symbol (time-ii-main-relation-name?) 3))
                                (table (or *time-ipi-composition-table*
                                           (setf *time-ipi-composition-table* (make-composition-table
                                                                               $time-ipi-composition-table

@@ -1,134 +1,200 @@
-#+Lispworks
-(setq *default-package-use-list* '("CL"))
+(defpackage "SPECWARE")
+(in-package "SPECWARE")
 
-(defpackage "Specware")
-(in-package "Specware")
+(declaim (optimize (speed 3) (debug 2) (safety 1) #+cmu(c::brevity 3)))
+;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
 
-(terpri) ; purely cosmetic
+(setq *load-verbose* nil)		; Don't print loaded file messages
 
-;;; ---------------
-;; The following collection have been adapted from the 2000 load.lisp
-;; file. Perhaps they should be factored into a separate file as they
-;; are likely to be used for many of the generated lisp applications?
+#+allegro
+(setq comp:*cltl1-compile-file-toplevel-compatibility-p* t) ; default is WARN, which would be very noisy
+#+cmu
+(setq ext:*gc-verbose* nil)
+#+cmu
+(setq extensions:*bytes-consed-between-gcs* 40000000)
+#+cmu
+(setq *compile-verbose* nil)
+#+cmu
+(setq extensions:*efficiency-note-cost-threshold* 30)
+#+cmu
+(setq c::*compile-print* nil)
+;#+mcl
+;(egc t)					; Turn on ephemeral gc
+#+mcl
+(ccl::set-lisp-heap-gc-threshold (* 16777216 4))
 
-(defun current-directory ()
-  #+allegro(excl::current-directory)
-  #+Lispworks(hcl:get-working-directory)  ;(current-pathname)
-  )
+;; Used in printing out the license and about-specware command
+(defvar cl-user::Specware-version "4.0")
+(defvar cl-user::Specware-version-name "Specware-4-0")
+(defvar cl-user::Specware-patch-level "1")
 
-(defun change-directory (directory)
-  ;; (lisp::format t "Changing to: ~A~%" directory)
-  #+allegro(excl::chdir directory)
-  #+Lispworks (hcl:change-directory directory)
-  (setq lisp::*default-pathname-defaults* (current-directory)))
+;; Used in patch detection and about-specware command
+(defvar Major-Version-String "4-0")
 
-#+Lispworks
-(defun make-system (new-directory)
-  (let ((*default-pathname-defaults*
-     (make-pathname :name (concatenate 'string new-directory "/")
-            :defaults
-            system::*current-working-pathname*))
-    (old-directory (current-directory)))
-    (change-directory new-directory)
-    (unwind-protect (load "system.lisp")
-      (change-directory old-directory))))
+;; The following defines functions such as:
+;;    compile-and-load-lisp-file
+;;    load-lisp-file
+;;    make-system
+;;    change-directory
+;;    current-directory
+(load (make-pathname
+       :defaults "../../../Handwritten/Lisp/load-utilities"
+       :type     "lisp"))
 
-#-Lispworks
-(defun make-system (new-directory)
-  (let ((old-directory (current-directory)))
-    (change-directory new-directory)
-    (unwind-protect (load "system.lisp")
-      (change-directory old-directory))))
+(defvar Specware4 (specware::getenv "SPECWARE4"))
 
-(defun compile-and-load-lisp-file (file)
-   (#+allegro excl::compile-file-if-needed
-    #+Lispworks hcl:compile-file-if-needed
-    (make-pathname :defaults file :type "lisp"))
-   (load (make-pathname :defaults file :type nil)))
+(defun ignore-warning (condition)
+   (declare (ignore condition))
+   (muffle-warning))
 
-;; The following list should be generated automatically!
-;; Perhaps setq is the wrong thing to use. defvar?
+(defpackage "SNARK")
+
+(handler-bind ((warning #'ignore-warning))
+  (load (make-pathname
+	 :defaults (concatenate 'string Specware4
+				"/Provers/Snark/Handwritten/Lisp/snark-system")
+	 :type     "lisp")))
+
+(handler-bind ((warning #'ignore-warning))
+  (snark:make-snark-system t))
+
+(declaim (optimize (speed 3) (debug 2) (safety 1)))
+;; (declaim (optimize (speed 0) (debug 3) (safety 3)))
+
+;; Snark puts us in another package .. so we go back
+(in-package "SPECWARE")
+
+;; The following uses make-system from load-utilities above.
+;; It defines goto-file-position, used by IO.lisp (and some chart-parsing code) below.
+(make-system (concatenate 'string Specware4 "/Applications/Specware/UI/Emacs/Handwritten/Lisp"))
+
+;; The following list should be generated automatically. That is, the
+;; files listed below define functions that are declared in specs
+;; used by Specware. Specware should generate the list of runtime files
+;; needed by specs referenced in an application.
+;;
 ;; The list is used only in this file.
 ;;; ---------------
-(setq HandwrittenFiles
+(defvar HandwrittenFiles
   '(
     "Library/Base/Handwritten/Lisp/Boolean.lisp"
     "Library/Base/Handwritten/Lisp/Integer.lisp"
-    "Library/Base/Handwritten/Lisp/Nat.lisp"
     "Library/Base/Handwritten/Lisp/Char.lisp"
-    "Library/Base/Handwritten/Lisp/List.lisp"
     "Library/Base/Handwritten/Lisp/String.lisp"
-    "Library/Base/Handwritten/Lisp/Option.lisp"
+    "Library/Base/Handwritten/Lisp/System.lisp"
     "Library/IO/Primitive/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/State.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp"
     "Library/Legacy/Utilities/Handwritten/Lisp/Lisp.lisp"
     "Library/Legacy/DataStructures/Handwritten/Lisp/HashTable.lisp"
+    "Library/Structures/Data/Maps/Handwritten/Lisp/MapAsSTHarray.lisp"
+    "Library/Structures/Data/Monad/Handwritten/Lisp/State.lisp"
+    "Languages/XML/Handwritten/Lisp/Chars.lisp"  ; unicode predicates for XML
+    "Languages/XML/Handwritten/Lisp/Magic.lisp"  ; escapes from metaslang type system
+    )
   )
-)
-
-(setq Specware4 (sys:getenv "SPECWARE4"))
-
-(compile-and-load-lisp-file "runtime")
 
 (map 'list #'(lambda (file)
-  (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
-  HandwrittenFiles
-)
+	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+     HandwrittenFiles
+     )
+(defpackage "UTILITIES")
+(defpackage "MAP-SPEC")
+(defpackage "ANNSPEC")
+(defpackage "METASLANG")
 
-;; Now load the generated lisp code.
-(compile-and-load-lisp-file "../../lisp/Specware4.lisp")
+#||
+#+allegro
+(progn (setf (get 'LIST-SPEC::exists-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       ;(setf (get 'UTILITIES::occursT 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil t))
+       (setf (get 'LIST-SPEC::map-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'LIST-SPEC::filter-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil))
+       (setf (get 'MAP-SPEC::foldi-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
+       ;(setf (get 'LIST-SPEC::foldl-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(t nil nil))
+       (setf (get 'ANNSPEC::foldriAQualifierMap-1-1-1 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE)
+	 '(t nil nil))
+       (setf (get 'METASLANG::equallist? 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE) '(nil nil t)))
+||#
 
-;; Stephen's toplevel aliases 
-(compile-and-load-lisp-file "toplevel")
+;; The following are specific to Specware and languages that
+;; extend Specware. 
+;;
+;; The list below is used only in this file.
 
-;; Might need this?
-;;(defun compilelisp::additionaldefinitions ()
-;;  (if (boundp 'parser4::*collected-definitions*) 
-;;      (symbol-value 'parser4::*collected-definitions*)
-;;    nil))
+(defvar SpecwareRuntime
+  '(
+    ;; Functions that are assumed by the MetaSlang to Lisp compiler
+    "Applications/Handwritten/Lisp/meta-slang-runtime"
 
-;; This defines the RE package .. this will go away when the bootstrap
-;; is complete.
-(compile-and-load-lisp-file "re-legacy")
+    ;; The generated lisp code.  This also initializes the Specware
+    ;; state in the lisp environment. See SpecCalculus/Semantics/Specware.sw.
+    "Applications/Specware/lisp/Specware4.lisp"
 
-;; The following are temporary until the parser migrates under the Specware4
-;; tree. The following are referred to in semantics.lisp but the qualifiers
-;; have changed in the move to Specware 4. 
-;; Can we remove this dependency? It would be nice if the parser didn't
-;; refer to MetaSlang specs.
-(defpackage :ATERM)
+    ;; XML support -- this calls code generated in Specware4.lisp for various XML definitions
+    ;; maybe interface would be a better name
+    "Languages/XML/Handwritten/Lisp/Support.lisp"
 
-(defun ATerm::mkQualifiedId (qualifier id) 
-  (MetaSlang::mkQualifiedId qualifier id))
+    ;; Toplevel aliases 
+    "Applications/Specware/Handwritten/Lisp/toplevel"
 
-(defun ATerm::mkQualifiedId-1 (x) 
-  (MetaSlang::mkQualifiedId (car x) (cdr x)))
-                                             
-(defun ATerm::mkUnQualifiedId (id) 
-  (MetaSlang::mkUnQualifiedId id))
+    ;; Debugging utilities
+    "Applications/Specware/Handwritten/Lisp/debug"
 
-;; Does this belong here? Why not in the parser?
-(defpackage "PARSER")
+    ;; Test harness
+    "Applications/Handwritten/Lisp/test-harness"
+    )
+  )
 
-;; This is also temporary. The SW4 tokenizer.lisp file refers to
-;;   parser::create-tokenizer-parameters
-;;   parser::extract-tokens-from file.
-;; And yet it has its own version of basic parser library in parser4.
-;; So there needs to be a rationalization of the parser.
-(make-system (concatenate 'string Specware4 "/../2000/parser1"))
 
-;; We assume for the time being that the SW4 tree is a sibling of
-;; the Specware4 tree.
+;(handler-bind ((warning #'ignore-warning))
+  (map 'list #'(lambda (file)
+	       (list 33 file)
+	       (compile-and-load-lisp-file (concatenate 'string Specware4 "/" file)))
+     SpecwareRuntime
+     );)
+
+;; Load the parser library and the language specific parser files (grammar etc.)
 (make-system (concatenate 'string
-    Specware4 "/../SW4/Languages/MetaSlang/Parser/Handwritten"))
+			  Specware4 "/Library/Algorithms/Parsing/Chart/Handwritten/Lisp"))
+
 (make-system (concatenate 'string
-    Specware4 "/../SW4/Languages/SpecCalculus/Parser/Handwritten"))
+			  Specware4 "/Languages/SpecCalculus/Parser/Handwritten/Lisp"))
 
-(format t "~2%To test, run (test)~%")
-(format t "~%That will run (sw \"/Applications/Specware/Specware4\")~2%")
+;;; Initialization includes preloading the base spec.
+(Specware::initializeSpecware-0)
 
-(defun user::test ()
-  (user::sw "/Applications/Specware/Specware4")
-)
+#+allegro
+(defun start-java-connection? ()
+  (format t "Checking  command-line arguments: ~a~%" (system:command-line-arguments))
+  (when (member "socket" (system:command-line-arguments)
+		:test 'equal)
+    (load (concatenate 'string
+	    Specware4 "/Gui/src/Lisp/specware-socket-init"))))
 
+#+allegro
+(push 'start-java-connection? excl:*restart-actions*)
+
+;;; Load base in correct location
+#+allegro
+(push  'cl-user::sw-re-init cl-user::*restart-actions*)
+#+cmu
+(push  'cl-user::sw-re-init ext:*after-save-initializations*)
+#+mcl
+(push  'cl-user::sw-re-init ccl:*lisp-startup-functions*)
+
+;;; Set gc parameters
+#+mcl
+(push  #'(lambda () (ccl::set-lisp-heap-gc-threshold (* 16777216 4)))
+       ccl:*lisp-startup-functions*)
+
+
+;;; Set temporaryDirectory
+#+allegro
+(push  'setTemporaryDirectory cl-user::*restart-actions*)
+
+(format t "~2%To bootstrap, run (boot)~%")
+(format t "~%That will run :sw /Applications/Specware/Specware4~2%")
+
+(defun cl-user::boot ()
+  (cl-user::sw "/Applications/Specware/Specware4")
+  )

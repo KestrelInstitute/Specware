@@ -6,6 +6,18 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:06:51  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:15:05  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:14  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -44,13 +56,19 @@ public class SpecElementNode extends MemberElementNode {
     };
 
     /** Menu labels */
+    private static final String MENU_CREATE_IMPORT;
     private static final String MENU_CREATE_SORT;
     private static final String MENU_CREATE_OP;
+    private static final String MENU_CREATE_DEF;
+    private static final String MENU_CREATE_CLAIM;
 
     static {
         ResourceBundle bundle = NbBundle.getBundle(SpecElementNode.class);
+        MENU_CREATE_IMPORT = bundle.getString("MENU_CREATE_IMPORT");
         MENU_CREATE_SORT = bundle.getString("MENU_CREATE_SORT");
         MENU_CREATE_OP = bundle.getString("MENU_CREATE_OP");
+        MENU_CREATE_DEF = bundle.getString("MENU_CREATE_DEF");
+        MENU_CREATE_CLAIM = bundle.getString("MENU_CREATE_CLAIM");
     }
 
     /** Create a new spec node.
@@ -264,12 +282,20 @@ public class SpecElementNode extends MemberElementNode {
         SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
 		public void run() throws SourceException {
 		    SpecElement spec = (SpecElement) element;
-		    if (addingElement instanceof SortElement) {
+		    if (addingElement instanceof ImportElement) {
+			spec.addImport((ImportElement)addingElement);
+                    } else if (addingElement instanceof SortElement) {
 			spec.addSort((SortElement)addingElement);
 		    } else if (addingElement instanceof OpElement) {
 			OpElement me = (OpElement) addingElement;
 			me  = (OpElement) me.clone();
 			spec.addOp(me);
+                    } else if (addingElement instanceof DefElement) {
+			spec.addDef((DefElement)addingElement);
+		    } else if (addingElement instanceof ClaimElement) {
+			ClaimElement me = (ClaimElement) addingElement;
+			me  = (ClaimElement) me.clone();
+			spec.addClaim(me);
 		    }
 		}
 	    });
@@ -292,10 +318,16 @@ public class SpecElementNode extends MemberElementNode {
 		    public void run() throws SourceException {
 			if (addingElement instanceof MemberElement) {
 			    if (origSpec != null) {
-				if (addingElement instanceof SortElement) {
+                                if (addingElement instanceof ImportElement) {
+				    origSpec.removeImport((ImportElement)addingElement);
+				} else if (addingElement instanceof SortElement) {
 				    origSpec.removeSort((SortElement)addingElement);
 				} else if (addingElement instanceof OpElement) {
 				    origSpec.removeOp((OpElement)addingElement);
+                                } else if (addingElement instanceof DefElement) {
+				    origSpec.removeDef((DefElement)addingElement);
+				} else if (addingElement instanceof ClaimElement) {
+				    origSpec.removeClaim((ClaimElement)addingElement);
 				}
 	                    } else if ((addingElement instanceof SpecElement) &&
 				       specSource != null) {
@@ -348,4 +380,4 @@ public class SpecElementNode extends MemberElementNode {
 	    super.propertyChange(evt);
 	}
     }
-    }
+}

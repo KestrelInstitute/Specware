@@ -12,11 +12,17 @@ discarded.
 We use \verb+show+ functions to render terms as strings. We
 use \verb+pp+ functions to render terms as "Pretty".
 
+Note that the spec calculus "print" command is implemented via 
+SpecCalc.evaluatePrint, which is defined in 
+/Languages/SpecCalculus/Semantics/Evaluate/Print.sw,
+and which uses an alternative strategy of printing the value
+that results from evaluating a term, as opposed the term itself
+as done here.
+
 \begin{spec}
 SpecCalc qualifying spec {
   import Types
-  import ../../MetaSlang/AbstractSyntax/Printer 
-  import ../../MetaSlang/Specs/Printer
+  import ../../MetaSlang/Specs/SimplePrinter 
   import /Library/PrettyPrinter/WadlerLindig
 
   op showSpecFile : fa (a) SpecFile a -> String
@@ -25,51 +31,69 @@ SpecCalc qualifying spec {
   op showTerm : fa (a) SpecCalc.Term a -> String
   def showTerm term = ppFormat (ppTerm term)
 
-  op showURI : URI -> String
-  def showURI uri = ppFormat (ppURI uri)
+  op showUID : UnitId -> String
+  def showUID unitId = ppFormat (ppUID unitId)
 
-  op ppURI : URI -> Doc
-  def ppURI uri = 
-    let def ppElem elem =
-      ppConcat [
-          ppString "\"",
-          ppString elem,
-          ppString "\""
-        ]
-    in
-      ppConcat [
-          ppString "[",
-          ppSep (ppString " ") (map ppElem uri),
-          ppString "]"
-        ]
+%   op ppUID : UnitId -> Doc
+%   def ppUID {path,hashSuffix}  = 
+%     let def ppElem elem =
+%       ppConcat [
+%           ppString "\"",
+%           ppString elem,
+%           ppString "\""
+%         ]
+%     in
+%       ppConcat [
+%           ppString "[",
+%           ppSep (ppString " ") (map ppElem path),
+%           (case hashSuffix of
+%             | None -> ppNil
+%             | Some suffix -> ppString (" # " ^ suffix)),
+%           ppString "]"
+%         ]
 
-  op showRelativeURI : RelativeURI -> String
-  def showRelativeURI uri = ppFormat (ppRelativeURI uri)
+  op ppUID : UnitId -> Doc
+  def ppUID unitId = ppAppend (ppString "/") (ppUIDlocal unitId)
+
+  op ppUIDlocal : UnitId -> Doc
+  def ppUIDlocal {path,hashSuffix} =
+    let prefix = ppSep (ppString "/") (map ppString path) in
+    case hashSuffix of
+      | None -> prefix
+      | Some suffix -> ppAppend prefix (ppString ("#" ^ suffix))
+
+  op ppRelativeUID : RelativeUID -> Doc
+  def ppRelativeUID relUID =
+    case relUID of
+        | SpecPath_Relative unitId -> ppAppend (ppString "/") (ppUIDlocal unitId)
+        | UnitId_Relative unitId -> ppUIDlocal unitId
+
+  op showRelativeUID : RelativeUID -> String
+  def showRelativeUID unitId = ppFormat (ppRelativeUID unitId)
 
   op ppSpecFile : fa (a) SpecFile a -> Doc
-  def ppSpecFile (specFile as (term,position)) =
+  def ppSpecFile (specFile as (term,_ (* position *))) =
     case term of
       | Term term -> ppTerm term
       | Decls decls -> ppDecls decls
 
   op ppTerm : fa (a) SpecCalc.Term a -> Doc
-  def ppTerm (term,position) =
+  def ppTerm (term, _(* position *)) =
     case term of
       | Print t ->
           ppConcat [
             ppString "print ",
             ppTerm t
           ]
-      | URI uri -> ppRelativeURI uri
+      | UnitId unitId -> ppRelativeUID unitId
       | Spec specElems -> 
           ppConcat [
-            ppString "spec {",
-            %% case optName of None -> ppNil | Some name -> ppString name,
+            ppString "spec",
             ppNewline,
             ppString "  ",
-            ppNest (Integer.fromNat 2) (ppSpecElems specElems),
+            ppNest 2 (ppSpecElems specElems),
             ppNewline,
-            ppString "}"
+            ppString "endspec"
           ]
       | Qualify (term, qualifier) ->
           ppConcat [
@@ -77,32 +101,45 @@ SpecCalc qualifying spec {
             ppString " qualifying ",
             ppTerm term
           ]
-(*
-      | Translate (term, translation) ->
-          let def ppTranslatePair ((left,right),pos) =
+      | Translate (term, (translation,_)) ->
+          let def ppTranslateRule (rule, _(* position *)) = 
+               case rule of          
+                 | Sort (left_qid, right_qid, aliases) ->
+                     ppConcat [
+                             ppQualifier left_qid,
+                             ppString " +-> ",
+                             ppQualifier right_qid
+                            ] 
+                 | Op ((left_qid,_), (right_qid,_), aliases) ->
+                   ppConcat [
+                             ppQualifier left_qid,
+                             ppString " +-> ",
+                             ppQualifier right_qid
+                            ] 
+                 | Ambiguous (left_qid, right_qid, aliases) ->
+                   ppConcat [
+                             ppQualifier left_qid,
+                             ppString " +-> ",
+                             ppQualifier right_qid
+                            ] 
+          in
             ppConcat [
-              ppTerm left,
-              ppString " |-> ",
-              ppTerm right
-            ] in
-          ppConcat [
-            ppString "{",
-            ppSep (ppString ", ") (map ppTranslatePair translation),
-            ppString "}",
-            ppString " translating ",
-            ppTerm term
+            ppString "translate (",
+            ppTerm term,
+            ppString ") by {",
+            ppSep (ppString ", ") (map ppTranslateRule translation),
+            ppString "}"
           ]
-*)
       | Let (decls, term) ->
           ppConcat [
-            ppString "let {",
+            ppString "let",
             ppNewline,
             ppString "  ",
-            ppNest (Integer.fromNat 2) (ppDecls decls),
+            ppNest 2 (ppDecls decls),
             ppNewline,
-            ppString "} in",
+            ppString "in",
             ppNewline,
-            ppNest (Integer.fromNat 2) (ppTerm term)
+            ppNest 2 (ppTerm term)
           ]
       | Where (decls, term) ->
           ppConcat [
@@ -112,7 +149,7 @@ SpecCalc qualifying spec {
             ppString "where {",
             ppNewline,
             ppString "    ",
-            ppNest (Integer.fromNat 4) (ppDecls decls),
+            ppNest 4 (ppDecls decls),
             ppNewline,
             ppString "}"
           ]
@@ -121,36 +158,93 @@ SpecCalc qualifying spec {
             ppString "diag {",    % with apologies to stephen
             ppNewline,
             ppString "  ",
-            ppNest (Integer.fromNat 2) (ppSep ppNewline (map ppDiagElem elems)),
+            ppNest 2 (ppSep ppNewline (map ppDiagElem elems)),
             ppNewline,
-            ppString "end"
+            ppString "}"
           ]
-(*
-      | SpecMorph (dom,cod,elems) ->
-          let def ppSpecMorphElem ((id,term),pos) =
-            ppConcat [
-              ppIdInfo id,
-              ppString " |-> ",
-              ppATerm term
-            ] in
+      | Colimit term ->
           ppConcat [
-            ppString "morph {",
-            ppNewline,
-            ppString "  ",
-            ppNest (Integer.fromNat 2) (ppSep ppNewline (map ppSpecMorphElem elems)),
-            ppNewline,
-            ppString "} : ",
-            ppTerm dom,
-            ppString " -> ",
-            ppTerm cod
-          ]
-      | Hide (nameExpr,term) ->
-          ppConcat [
-            ppString "hide {",
-            ppSep (ppString ",") (map ppIdInfo nameExpr),
-            ppString "} in",
+            ppString "colim ",
             ppTerm term
           ]
+      | Subst (specTerm,morphTerm) ->
+          ppConcat [
+            ppTerm specTerm,
+            ppString " [",
+            ppTerm morphTerm,
+            ppString "]"
+          ]
+      | SpecMorph (dom,cod,elems) ->
+          let def ppSpecMorphRule (rule, _(* position *)) = 
+               case rule of          
+                 | Sort (left_qid, right_qid) ->
+                     ppConcat [
+                             ppQualifier left_qid,
+                             ppString " +-> ",
+                             ppQualifier right_qid
+                            ] 
+                 | Op ((left_qid,_), (right_qid,_)) ->
+                   ppConcat [
+                             ppQualifier left_qid,
+                             ppString " +-> ",
+                             ppQualifier right_qid
+                            ] 
+                 | Ambiguous (left_qid, right_qid) ->
+                   ppConcat [
+                             ppQualifier left_qid,
+                             ppString " +-> ",
+                             ppQualifier right_qid
+                            ] 
+            in
+          ppConcat [
+            ppString "morphism ",
+            ppTerm dom,
+            ppString " -> ",
+            ppTerm cod,
+            ppNewline,
+            ppString "  {",
+            ppIndent (ppSep ppNewline (map ppSpecMorphRule elems)),
+            ppNewline,
+            ppString "} : "
+          ]
+      | Hide (nameExprs,term) ->
+          let def ppNameExpr expr = 
+               case expr of          
+                 | Sort qid ->
+                     ppConcat [
+                       ppString "sort ",
+                       ppQualifier qid
+                     ]
+                 | Op (qid,optSort) ->
+                     ppConcat [
+                       ppString "op ",
+                       ppQualifier qid
+                     ] 
+                 | Axiom qid ->
+                     ppConcat [
+                       ppString "axiom ",
+                       ppQualifier qid
+                     ]
+                 | Theorem qid ->
+                     ppConcat [
+                       ppString "theorem ",
+                       ppQualifier qid
+                     ]
+                 | Conjecture qid ->
+                     ppConcat [
+                       ppString "conjecture ",
+                       ppQualifier qid
+                     ]
+                 | Ambiguous qid ->
+                     ppQualifier qid
+          in
+            ppConcat [
+              ppString "hide {",
+              ppSep (ppString ",") (map ppNameExpr nameExprs),
+              ppString "} in",
+              ppTerm term
+            ]
+(*
       | Export (nameExpr,term) ->
           ppConcat [
             ppString "export {",
@@ -159,14 +253,32 @@ SpecCalc qualifying spec {
             ppTerm term
           ]
 *)
-      | Generate (target,term) ->
+
+      | Generate (target,term,optFileNm) ->
           ppConcat [
             ppString ("generate " ^ target ^ " "),
-            ppTerm term
+            ppTerm term,
+            (case optFileNm of
+                   | Some filNm -> ppString(" in " ^ filNm)
+               | _ -> ppNil)
           ]
 
+      | Reduce (msTerm,scTerm) ->
+          ppConcat [
+            ppString "reduce ",
+            ppATerm msTerm,
+            ppString " in ",
+            ppTerm scTerm
+          ]
+
+      | Other other_term -> ppOtherTerm other_term
+
+  def ppQualifier (Qualified (Qualifier,Id))  =
+    if Qualifier = UnQualified then ppString Id
+      else ppString (Qualifier ^ "." ^ Id)
+
   op ppDiagElem : fa (a) DiagElem a -> Doc
-  def ppDiagElem (elem,position) =
+  def ppDiagElem (elem, _ (* position *)) =
     case elem of
       | Node (nodeId,term) ->
           ppConcat [
@@ -184,13 +296,6 @@ SpecCalc qualifying spec {
             ppString " |-> ",
             ppTerm term
           ]
-
-  op ppRelativeURI : RelativeURI -> Doc
-  def ppRelativeURI uri =
-    case uri of
-        | SpecPath_Relative elems ->
-            ppAppend (ppString "/") (ppSep (ppString "/") (map ppString elems))
-        | URI_Relative elems -> ppSep (ppString "/") (map ppString elems)
 
   op ppDecls : fa (a) List (Decl a) -> Doc
   def ppDecls decls =
@@ -214,116 +319,116 @@ SpecCalc qualifying spec {
             ppString "import ",
             ppTerm term
           ]
-(*
-      | Sort (qid, sortInfo) -> 
-          ppConcat [
-            ppString "sort ",
-            ppIdInfo qid,
-            ppASortInfo sortInfo
-          ]
-      | Op (qid, opInfo) ->
-          ppConcat [
-            ppString "op ",
-            ppIdInfo qid,
-            ppAOpInfo opInfo
-          ]
-*)
-      | Claim property -> ppAProperty property
+      | Sort (aliases, sortInfo) -> myppASortInfo (aliases, sortInfo)
+      | Op   (aliases, opInfo)   -> myppAOpInfo   (aliases, opInfo)
+      | Claim property           -> ppAProperty property
 
-  op ppIdInfo : List Id -> Doc
-(*
-  def ppIdInfo ids = ppSep (ppString ".") (map ppString ids)
-*)
+  op ppIdInfo : List QualifiedId -> Doc
+  def ppIdInfo qids = ppSep (ppString ",") (map ppString (map printQualifiedId qids))
    
-  op ppASortInfo : fa (a) TyVars * Option (ASort a) -> Doc
-  def ppASortInfo sortInfo =
+  op myppASortInfo : fa (a) List QualifiedId * (TyVars * List (ASortScheme a)) -> Doc
+  def myppASortInfo (aliases, sortInfo) =
+    let prefix = ppConcat [ppString "sort ", ppIdInfo aliases] in
     case sortInfo of
-       | ([],None) -> ppNil
-       | ([],Some srt) -> ppAppend (ppString " = ") (ppASort srt)
-       | (tyVars,Some srt) -> 
-           ppConcat [
-             ppString " (",
-             ppSep (ppString ",") (map ppString tyVars),
-             ppString ") = ",
-             ppASort srt
-           ]
+      | ([],[]) ->  prefix
+      | (_,[(type_vars, srt)]) ->
+        ppConcat [prefix,
+                  ppTyVars type_vars,
+                  ppAppend (ppString " = ") (ppASort srt)]
+      | (tyVars,defs) -> 
+        ppConcat [ppNewline,
+                  ppString " (* Warning: Multiple definitions for following sort: *) ",
+                  ppNewline,
+                  ppSep ppNewline (map (fn (type_vars,srt) ->
+                                        ppConcat [prefix,
+                                                  ppTyVars type_vars,
+                                                  ppAppend (ppString " = ") (ppASort srt)])
+                                       defs)]
 
-  op ppAOpInfo : fa (a)  Fixity * ASortScheme a * Option (ATerm a) -> Doc
-  def ppAOpInfo (fixity,(tyVars,srt),optTerm) =
-    ppConcat [
-      ppFixity fixity,
-      ppString " : ",
-      (case tyVars of
-        | [] -> ppNil
-        | _ -> 
-           ppConcat [
-             ppString "fa (",
-             ppSep (ppString ",") (map ppString tyVars),
-             ppString ") "
-           ]),
-      ppASort srt,
-      (case optTerm of
-        | None -> ppNil
-        | Some term ->
-            ppConcat [
-              ppString " = ",
-              ppATerm term
-            ])
-    ]
+  op ppTyVars : TyVars -> Doc
+  def ppTyVars type_vars =
+    case type_vars of
+      | [] -> ppNil
+      | _  -> ppConcat [ppString " (",
+                        ppSep (ppString ",") (map ppString type_vars),
+                        ppString ") "]
 
-  op ppAProperty : fa (a) AProperty a -> Doc
-  def ppAProperty (propType, name, tyVars, term) =
-    ppConcat [
-      ppPropertyType propType,
-      ppString " ",
-      ppString name,
-      ppString " ",
-      (case tyVars of
-        | [] -> ppNil
-        | _ -> 
-           ppConcat [
-             ppString "fa (",
-             ppSep (ppString ",") (map ppString tyVars),
-             ppString ") "
-           ]),
-      ppString " ",
-      ppATerm term
-    ]
 
-  op ppPropertyType : PropertyType -> Doc
-  def ppPropertyType propType =
-    case propType of
-      | Axiom -> ppString "axiom"
-      | Theorem -> ppString "theorem"
-      | Conjecture -> ppString "conjecture"
+  op myppAOpInfo : fa (a)  (List QualifiedId) * (Fixity * ASortScheme a * List (List String * ATerm a)) -> Doc
+  def myppAOpInfo (aliases, (fixity, sort_scheme, defs)) =
+    case defs of
+     | [] -> ppAOpDecl (aliases, fixity, sort_scheme)
+     | _  -> ppAOpDefs (aliases, defs)
+
+  op ppAOpDecl : fa (a)  (List QualifiedId) * Fixity * ASortScheme a -> Doc
+  def ppAOpDecl (aliases, fixity, (type_vars, srt)) =
+    ppConcat [ppString "op ",
+              ppIdInfo aliases,
+              ppString " : ",
+              (case type_vars of
+                 | [] -> ppNil
+                 | _ -> 
+                   ppConcat [ppString "fa (",
+                             ppSep (ppString ",") (map ppString type_vars),
+                             ppString ") "
+                            ]),
+              ppASort srt]
+
+  op ppAOpDefs : fa (a)  (List QualifiedId) * List (List String * ATerm a) -> Doc
+  def ppAOpDefs (aliases, defs) =
+    let prefix = ppConcat [ppString "def ", ppIdInfo aliases] in
+    let def pp_def (type_vars, term) =
+        ppConcat [prefix,
+                  (case type_vars of
+                     | [] -> ppNil
+                     | _ -> 
+                       ppConcat [ppString "fa (",
+                                 ppSep (ppString ",") (map ppString type_vars),
+                                 ppString ")"
+                                ]),
+                  ppString " = ",
+                  ppATerm term]
+    in
+    case defs of
+      | [scheme] -> pp_def scheme
+      | _ ->
+        ppConcat [ppNewline,
+                  ppString " (* Warning: Multiple definitions for following sort: *) ",
+                  ppNewline,
+                  ppSep ppNewline (map pp_def defs)]
+
+
+%   op ppAProperty : fa (a) AProperty a -> Doc
+%   def ppAProperty (propType, name, tyVars, term) =
+%     ppConcat [
+%       ppPropertyType propType,
+%       ppString " ",
+%       ppString name,
+%       ppString " ",
+%       (case tyVars of
+%         | [] -> ppNil
+%         | _ -> 
+%            ppConcat [
+%              ppString "fa (",
+%              ppSep (ppString ",") (map ppString tyVars),
+%              ppString ") "
+%            ]),
+%       ppString " ",
+%       ppATerm term
+%     ]
+% 
+%   op ppPropertyType : PropertyType -> Doc
+%   def ppPropertyType propType =
+%     case propType of
+%       | Axiom -> ppString "axiom"
+%       | Theorem -> ppString "theorem"
+%       | Conjecture -> ppString "conjecture"
 %       | any ->
 %            fail ("No match in ppPropertyType with: '"
 %               ^ (Lisp_toString any)
 %               ^ "'")
 
-  op ppFixity : Fixity -> Doc
-  def ppFixity fix =
-    case fix of
-      | Infix (Left,n) ->
-          ppConcat [
-            ppString "infixl ",
-            ppString (Nat.toString n)
-          ]
-      | Infix (Right,n) ->
-          ppConcat [
-            ppString "infixr ",
-            ppString (Nat.toString n)
-          ]
-      | Nonfix -> ppNil % ppString "Nonfix"
-%       | any ->
-%            fail ("No match in ppFixity with: '"
-%               ^ (Lisp_toString any)
-%               ^ "'")
+  op ppOtherTerm : fa (a) OtherTerm a -> Doc % Used for extensions to Specware
 
-  op ppASort : fa (a) ASort a -> Doc
-  def ppASort srt = ppString (printSort srt)
-
-  op ppATerm : fa (a) ATerm a -> Doc
-  def ppATerm term = ppString (printTerm term)
 }
 \end{spec}

@@ -5,7 +5,7 @@
 # The --noprofile and --norc inhibit the loading of all user "." files.
 
 # The following turns on echoing of all shell commands
-set -v
+#set -v
 
 # There are two ways this might work. We could oblige the user to set
 # SPECWARE4 .. or we can assume that the user wants to work in the
@@ -37,25 +37,29 @@ cd $SPECWARE4
 # we get it over the net with cvs.
 
 if [ -d CVS ] ; then
+  echo Updating Specware4.
   cvs -q update -d
+  echo Update of Specware4 finished.
 else
-  if [ -d /specware/cvs ]; then
-    CVSROOT=/specware/cvs
+  if [ -d /cvs ]; then
+    CVSROOT=/cvs
   else
-    if [ -d /net/flycatcher/specware/cvs ]; then
-      CVSROOT=/net/flycatcher/specware/cvs
+    if [ -d /net/flycatcher/cvs ]; then
+      CVSROOT=/net/flycatcher/cvs
     else
       echo The CVS repository for Specware is not locally accessible.
       echo An attempt will be made to retrieve Specware over the net
       echo using ssh.
-      CVSROOT=`logname`@crake.kestrel.edu:/specware/cvs
+      CVSROOT=`logname`@crake.kestrel.edu:/cvs
       CVS_RSH=ssh
     fi
   fi
   cd ..
+  echo Checking out Specware4.
   cvs -d $REPOSITORY checkout Specware4
   if [ -d Specware4 ]; then
     cd Specware4
+    echo Checkout of Specware4 finished.
   else
     echo Checkout of Specware4 failed.
     exit 1

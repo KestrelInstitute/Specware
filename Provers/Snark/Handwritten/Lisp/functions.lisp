@@ -19,6 +19,8 @@
 
 (in-package :snark)
 
+(declaim (special *subsuming*))
+
 (defvar *name*)
 
 (eval-when (:compile-toplevel :load-toplevel)
@@ -36,8 +38,8 @@
               (input-function nil)
               (to-lisp-code nil)
               (weight-code nil)
-              (satisfy-code nil)	;LISP functions for making atoms headed by this predicate true
-              (falsify-code nil)	;LISP functions for making atoms headed by this predicate false
+              (satisfy-code nil)	;LISP functions for making atoms headed by this relation true
+              (falsify-code nil)	;LISP functions for making atoms headed by this relation false
               (paramodulate-code nil)	;LISP functions for paramodulating terms headed by this function
               (rewrite-code nil)	;LISP functions for rewriting terms headed by this function
               (equal-code nil)
@@ -78,7 +80,7 @@
    ((function-logical-symbol-p function)
     "logical symbol")
    ((function-boolean-valued-p function)
-    "predicate")
+    "relation")
    (t
     "function")))
 
@@ -229,39 +231,39 @@
     (associative-function-sort symbol))	;checks that sort is well formed
   symbol)
 
-(defun declare-predicate-symbol0 (symbol
-                                  &key
-                                  alias
-                                  documentation
-                                  author
-                                  source
-                                  sort
-                                  (weight nil weight-supplied)
-                                  (allowed-in-answer nil allowed-in-answer-supplied)
-                                  (ordering-status nil ordering-status-supplied)
-                                  (to-lisp-code nil to-lisp-code-supplied)
-                                  (weight-code nil weight-code-supplied)
-                                  (rewrite-code nil rewrite-code-supplied)
-                                  (satisfy-code nil satisfy-code-supplied)
-                                  (falsify-code nil falsify-code-supplied)
-                                  (equal-code nil equal-code-supplied)
-                                  (variant-code nil variant-code-supplied)
-                                  (unify-code nil unify-code-supplied)
-                                  (associative nil associative-supplied)	;only for connectives
-                                  (commutative nil commutative-supplied)
-                                  
-                                  (knuth-bendix-ordering-index nil knuth-bendix-ordering-index-supplied)
-                                  (knuth-bendix-ordering-weight nil knuth-bendix-ordering-weight-supplied)
-                                  (complement nil complement-supplied)
-                                  (magic t magic-supplied)
-                                  (polarity-map nil polarity-map-supplied)
-                                  (input-function nil input-function-supplied)
-                                  (make-compound-function nil make-compound-function-supplied)
-                                  (make-compound*-function nil make-compound*-function-supplied)
-                                  (permutations nil permutations-supplied)
-                                  (constraint-theory nil constraint-theory-supplied)
-                                  (index-type nil index-type-supplied)
-                                  )
+(defun declare-relation-symbol0 (symbol
+                                 &key
+                                 alias
+                                 documentation
+                                 author
+                                 source
+                                 sort
+                                 (weight nil weight-supplied)
+                                 (allowed-in-answer nil allowed-in-answer-supplied)
+                                 (ordering-status nil ordering-status-supplied)
+                                 (to-lisp-code nil to-lisp-code-supplied)
+                                 (weight-code nil weight-code-supplied)
+                                 (rewrite-code nil rewrite-code-supplied)
+                                 (satisfy-code nil satisfy-code-supplied)
+                                 (falsify-code nil falsify-code-supplied)
+                                 (equal-code nil equal-code-supplied)
+                                 (variant-code nil variant-code-supplied)
+                                 (unify-code nil unify-code-supplied)
+                                 (associative nil associative-supplied)	;only for connectives
+                                 (commutative nil commutative-supplied)
+                                 
+                                 (knuth-bendix-ordering-index nil knuth-bendix-ordering-index-supplied)
+                                 (knuth-bendix-ordering-weight nil knuth-bendix-ordering-weight-supplied)
+                                 (complement nil complement-supplied)
+                                 (magic t magic-supplied)
+                                 (polarity-map nil polarity-map-supplied)
+                                 (input-function nil input-function-supplied)
+                                 (make-compound-function nil make-compound-function-supplied)
+                                 (make-compound*-function nil make-compound*-function-supplied)
+                                 (permutations nil permutations-supplied)
+                                 (constraint-theory nil constraint-theory-supplied)
+                                 (index-type nil index-type-supplied)
+                                 )
   ;; doesn't do anything if no keywords are supplied
   (when alias
     (create-aliases-for-symbol alias symbol))
@@ -311,12 +313,12 @@
    ((null keys-and-values)
     symbol)
    ((function-boolean-valued-p symbol)
-    (apply #'declare-predicate-symbol0 symbol keys-and-values))
+    (apply #'declare-relation-symbol0 symbol keys-and-values))
    (t
     (apply #'declare-function-symbol0 symbol keys-and-values))))
 
 (defun declare-function-symbol2 (symbol keys-and-values)
-  ;; for new function and predicate symbols
+  ;; for new function and relation symbols
   (case (function-arity symbol)
     (:plist
      (setf (function-input-function symbol) 'input-plist-args)	;input/output as plists
@@ -340,13 +342,13 @@
     (warn "Declaring function symbol ~S, which is already in use." (function-name symbol)))
   (declare-function-symbol1 symbol keys-and-values))
 
-(defun declare-predicate-symbol* (symbol &rest keys-and-values)
+(defun declare-relation-symbol* (symbol &rest keys-and-values)
   (declare (dynamic-extent keys-and-values))
   (cl:assert (and (function-symbol-p symbol)
                   (function-boolean-valued-p symbol)
                   (not (function-logical-symbol-p symbol))))
   (when keys-and-values
-    (warn "Declaring predicate symbol ~S, which is already in use." (function-name symbol)))
+    (warn "Declaring relation symbol ~S, which is already in use." (function-name symbol)))
   (declare-function-symbol1 symbol keys-and-values))
 
 (defun allow-redeclaration-of-symbol-slots? ()
@@ -363,7 +365,24 @@
            (function-in-use symbol)
            (constant-in-use symbol))))
 
-(defun declare-function-symbol (name arity &rest keys-and-values)
+(defun remf2 (l property-name)
+  (cond
+   ((endp l)
+    l)
+   ((eql property-name (first l))
+    (remf2 (rest (rest l)) property-name))
+   (t
+    (let* ((r (rest (rest l)))
+           (r* (remf2 r property-name)))
+      (if (eq r r*)
+          l
+          (list* (first l) (second l) r*))))))
+
+(defun declare-function-symbol (&rest args)
+  (declare (dynamic-extent args))
+  (apply 'declare-function args))
+
+(defun declare-function (name arity &rest keys-and-values)
   (declare (dynamic-extent keys-and-values))
   (mvlet (((:values symbol new) (input-function-symbol name arity)))
     (cond
@@ -374,25 +393,29 @@
         (warn "Declaring function symbol ~S, which is already in use." name))
       (declare-function-symbol1 symbol keys-and-values)))))
 
-(defun declare-relation-symbol (name arity &rest keys-and-values)
-  (declare (dynamic-extent keys-and-values))
-  (apply #'declare-predicate-symbol name arity keys-and-values))
+(defun declare-predicate-symbol (&rest args)
+  (declare (dynamic-extent args))
+  (apply 'declare-relation args))
 
-(defun declare-predicate-symbol (name arity &rest keys-and-values)
+(defun declare-relation-symbol (&rest args)
+  (declare (dynamic-extent args))
+  (apply 'declare-relation args))
+
+(defun declare-relation (name arity &rest keys-and-values)
   (declare (dynamic-extent keys-and-values))
-  (mvlet (((:values symbol new) (input-predicate-symbol name arity)))
+  (mvlet (((:values symbol new) (input-relation-symbol name arity)))
     (cond
      (new
       (declare-function-symbol2 symbol keys-and-values))
      (t
       (cl:assert (not (function-logical-symbol-p symbol)))
       (when (print-symbol-in-use-warning? symbol keys-and-values)
-        (warn "Declaring predicate symbol ~S, which is already in use." name))
+        (warn "Declaring relation symbol ~S, which is already in use." name))
       (declare-function-symbol1 symbol keys-and-values)))))
 
 (defun declare-logical-symbol (name &rest keys-and-values)
   (declare (dynamic-extent keys-and-values))
-  (mvlet (((:values symbol new) (input-predicate-symbol name :any)))
+  (mvlet (((:values symbol new) (input-relation-symbol name :any)))
     (cond
      (new
       (setf (function-logical-symbol-p symbol) name)
@@ -495,13 +518,13 @@
 
 (defun declare-function-rewrite-code (x)
   (mvlet (((:list* name arity rewrite-code more-options) x))
-    (apply #'declare-function-symbol name arity
+    (apply 'declare-function name arity
            :rewrite-code rewrite-code
            more-options)))
 
-(defun declare-predicate-rewrite-code (x)
+(defun declare-relation-rewrite-code (x)
   (mvlet (((:list* name arity rewrite-code more-options) x))
-    (apply #'declare-predicate-symbol name arity
+    (apply 'declare-relation name arity
            :rewrite-code rewrite-code
            :MAGIC NIL
            more-options)))

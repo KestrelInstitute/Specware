@@ -26,7 +26,7 @@ Notes:
   #+allegro
   (when lep::*connection*
     (lep::eval-in-emacs string))
-  #+Lispworks (eval string))		;Probably not right
+  #-allegro (format t "~a" string))
 
 
 (defvar *select-term-number-in-spec*)
@@ -40,15 +40,17 @@ Notes:
 (defun emacs::mspe-object-selected (n)
    (setq *select-term-number-in-spec* n))
 
-(defun re::mspe-object-selected (n)
-  (setq *select-term-number-in-spec* n))
   ;;; JUNK to be deleted?
   ;;  (setq ri::*selected-msp-object*
   ;;    (object-for-mspe-number n))
   
+(defvar *goto-file-position-store?* nil)
+(defvar *goto-file-position-stored* nil)
 (defun goto-file-position (file line col)
   (unless (equal file "")
-    (eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)" file line col))))
+    (if *goto-file-position-store?*
+	(setq *goto-file-position-stored* (list file line col))
+      (eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)" file line col)))))
 
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -57,6 +59,7 @@ Notes:
 (defun looking-for-mspe-object(string)
   (eval-in-emacs (format nil "(looking-for-mspe-object ~S)" string)))
 
+#+allegro
 (defun select-term-in-spec ()
   (setq *select-term-number-in-spec* nil)
   (unwind-protect
@@ -100,6 +103,7 @@ Notes:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defvar *input-term-from-window*)
 
+#+allegro
 (defun open-input-window ()
   (eval-in-emacs "(open-input-window)")
   (setq *input-term-from-window* nil)
@@ -153,6 +157,7 @@ Notes:
 
 (defvar *input-choice-from-window*)
 
+#+allegro
 (defun open-multiple-choice-window (choices)
   (eval-in-emacs (format nil "(open-choice-window '~S)" choices))
   (setq *input-choice-from-window* nil)

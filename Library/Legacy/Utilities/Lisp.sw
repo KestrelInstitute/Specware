@@ -13,6 +13,7 @@ Lisp qualifying spec {
   op char         : Char                      -> LispCell
   op bool         : Boolean                   -> LispCell
   op string       : String                    -> LispCell
+  op LispString   : LispCell                  -> String
 
   op symbol       : String * String           -> LispCell
 

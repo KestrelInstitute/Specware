@@ -1,5 +1,7 @@
 #!/bin/sh
 
+# Takes one argument: the socket number chosen for communication
+
 act='launch Specware'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
@@ -78,4 +80,4 @@ fi
 
 LISP_HEAP_IMAGE="$SPECWARE_BIN"/Specware4.dxl
 
-gnome-terminal -x "$LISP" -I "$LISP_HEAP_IMAGE" -L "$SPECWARE4"/Gui/src/Lisp/specware-socket-init.lisp
+gnome-terminal -x "$LISP" -I "$LISP_HEAP_IMAGE" -- socket "$1"

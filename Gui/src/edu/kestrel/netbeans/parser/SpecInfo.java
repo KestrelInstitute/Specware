@@ -6,6 +6,21 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/06/23 18:00:20  weilyn
+ * internal release version
+ *
+ * Revision 1.4  2003/02/18 18:10:24  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:16:04  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:45:53  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:28  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -28,8 +43,14 @@ import edu.kestrel.netbeans.codegen.TextBinding;
  *
  */
 public class SpecInfo extends BaseElementInfo {
+    
+    private static final boolean DEBUG = false;    
+    
     public static final int SORT = 0;
     public static final int OP = 1;
+    public static final int DEF = 2;
+    public static final int CLAIM = 3;
+    public static final int IMPORT = 4;
 
     Collection           allMembers;
     ChildCollection[]    memberLists;
@@ -43,19 +64,40 @@ public class SpecInfo extends BaseElementInfo {
         new TextPositionMatch(), new NameFinder()
     };
 
+    static final ElementMatch.Finder[] DEFAULT_DEF_FINDERS = {
+        new TextPositionMatch(), new NameFinder()
+    };
+
+    static final ElementMatch.Finder[] DEFAULT_CLAIM_FINDERS = {
+        new TextPositionMatch(), new NameFinder()
+    };
+
+    static final ElementMatch.Finder[] DEFAULT_IMPORT_FINDERS = {
+        new TextPositionMatch(), new NameFinder()
+    };
+
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
         DEFAULT_SORT_FINDERS,
         DEFAULT_OP_FINDERS,
+        DEFAULT_DEF_FINDERS,
+        DEFAULT_CLAIM_FINDERS,
+        DEFAULT_IMPORT_FINDERS,
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
         ElementProperties.PROP_SORTS,
-        ElementProperties.PROP_OPS
+        ElementProperties.PROP_OPS,
+        ElementProperties.PROP_DEFS,
+        ElementProperties.PROP_CLAIMS,
+        ElementProperties.PROP_IMPORTS,
     };
     
     private static final Class[] CHILDREN_TYPES = {
 	SortElement.class,
-        OpElement.class
+        OpElement.class,
+        DefElement.class,
+        ClaimElement.class,
+        ImportElement.class,
     };
     
     public SpecInfo(String name) {
@@ -77,18 +119,22 @@ public class SpecInfo extends BaseElementInfo {
     }
     
     public void updateElement(LangModel.Updater model, Element target) throws SourceException {
-        Util.log("SpecInfo.updateElement this = "+this+" target "+target);
+        if (DEBUG) {
+            Util.log("SpecInfo.updateElement this = "+this+" target "+target);
+        }
         super.updateElement(model, target);
         super.updateBase(target);
         
         SpecElement spec = (SpecElement)target;
 
-        //Util.log("Updating spec properties of " + name); // NOI18N
+        if (DEBUG) {
+            Util.log("Updating spec properties of " + name); // NOI18N
+        }
         
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
         
-        for (int kind = SORT; kind <= OP; kind++) {
+        for (int kind = SORT; kind <= IMPORT; kind++) {
             Element[] curMembers;
             switch (kind) {
 	    case SORT:
@@ -97,7 +143,16 @@ public class SpecInfo extends BaseElementInfo {
 	    case OP:
 		curMembers = spec.getOps();
 		break;
-	    default:
+	    case DEF:
+		curMembers = spec.getDefs();
+		break;
+            case CLAIM:
+                curMembers = spec.getClaims();
+                break;
+            case IMPORT:
+                curMembers = spec.getImports();
+                break;
+            default:
 		throw new InternalError("Illegal member type"); // NOI18N
             }
 
@@ -124,13 +179,17 @@ public class SpecInfo extends BaseElementInfo {
     public Element createModelImpl(LangModel.Updater model, Element parent) {
         ElementImpl impl;
 
-        //Util.log("*** SpecInfo.createModelImpl: Creating a spec " + name); // NOI18N
+        if (DEBUG) {
+            Util.log("*** SpecInfo.createModelImpl: Creating a spec " + name); // NOI18N
+        }
 	impl = model.createSpec(parent);
         return impl.getElement();
     }
     
     public void addMember(int kind, BaseElementInfo member) {
-        //Util.log("*** SpecInfo.addMember: " + member.name); // NOI18N
+        if (DEBUG) {
+            Util.log("*** SpecInfo.addMember: " + member.name); // NOI18N
+        }
         member.parent = this;
         int index = allMembers.size();
         allMembers.add(member);

@@ -60,10 +60,8 @@
          (v (- i d)))
   (values v (max v (counter-previous-peak-value counter)) i d)))
 
-(defvar *show-count-values* '(1000000 100000 10000 1000 100 10 1))
-
 (defun show-count-p (n)
-  (dolist (v *show-count-values*)
+  (dolist (v '(1000000 100000 10000 1000 100 10 1))
     (when (>= n v)
       (return (eql 0 (rem n v))))))
 

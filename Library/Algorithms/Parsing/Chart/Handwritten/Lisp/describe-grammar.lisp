@@ -5,49 +5,56 @@
 
 (defparameter *MAX-BNF-WIDTH* 40)
 
-(defun user::show-grammar (&optional just-rerun-latex?)
+#+allegro				; Fix for other dialects later
+(defun cl-user::show-grammar (&optional just-rerun-latex?)
   (let ((parser-ps-file (print-grammar-ps-file just-rerun-latex?)))
     (format t "~&~%--------------------------------------------------------------------------------~%")
     (format t "~&Type QUIT to exit from gs ~2%")
     (let* ((ps-viewer (get-ps-viewer))
 	   (cmd (format nil "~A ~A" ps-viewer parser-ps-file)))
-      (re::run-shell-command cmd :wait t)
+      (excl::run-shell-command cmd :wait t)
       (format t "~&~%You might want to run ~A manually from a shell...~%" ps-viewer)
       (format t "~&~A~%" cmd)
       (values))))
 
+#+allegro				; Fix for other dialects later
 (defun get-ps-viewer ()
   (dolist (program '("ghostview" "gs")
 	    (progn
 	      (warn "Could not find a viewer for postscript! -- Defaulting to (non-existant?) ghostview.")
 	      "ghostview"))
-    (when (equal (excl::shell (format nil "which ~A" program)) 0)
+    (when (equal (excl::shell (format nil "which ~A > /dev/null" program)) 0)
       (return program))))
 
 ;; The following is called from Languages/SpecCalculus/Parser/Handwritten/Lisp/system.lisp
 ;; to print a postscript version of the bnf for the grammar each time the system is built.
+#+allegro				; Fix for other dialects later
 (defun print-grammar-ps-file (&optional just-rerun-latex?)
-  (let* ((parser-lisp-dir (sys::current-directory))
-	 (parser-tex-dir  (make-pathname :directory (append (pathname-directory parser-lisp-dir) '("TeX"))))
-	 ((*default-pathname-defaults* parser-tex-dir))
+  (let* ((parser-lisp-dir (specware::current-directory))
+	 (parser-tex-dir  (make-pathname :directory (append (reverse (cdr (reverse (pathname-directory parser-lisp-dir))))
+							    '("TeX"))))
+	 (*default-pathname-defaults* parser-tex-dir)
 	 (tex-file (make-pathname :name "metaslang.tex" :defaults parser-tex-dir)) ; metaslang.tex is the name expected by parser-main.tex
-	 (ps-file  (make-pathname :name "grammar.ps"    :defaults parser-tex-dir)))
+	 (ps-file  (make-pathname :name "grammar.ps"    :defaults parser-tex-dir))
+	 (log-file (make-pathname :name "latex.log"     :defaults parser-tex-dir))
+	 )
     (unless just-rerun-latex?
       (when (probe-file tex-file)
 	(let ((old-tex-file (make-pathname :name "old-metaslang.tex" :defaults parser-tex-dir)))
-	  (format t "~&Renaming ~A~&      to ~A~%" tex-file old-tex-file)
+	  ; (format t "~&;;; Renaming ~A~&;;;       to ~A~%" tex-file old-tex-file)
 	  (rename-file tex-file old-tex-file)))
       (when (probe-file ps-file)
 	(let ((old-ps-file  (make-pathname :name "old-grammar.ps"    :defaults parser-tex-dir)))
-	  (format t "~&Renaming ~A~&      to ~A~%" ps-file old-ps-file)
+	  ; (format t "~&;;; Renaming ~A~&;;;       to ~A~%" ps-file old-ps-file)
 	  (rename-file ps-file old-ps-file)))
       (write-bnf-in-latex-for-grammar tex-file))
-    (format t "~&~%--------------------------------------------------------------------------------~%")
-    (let ((cmd (format nil "cd ~A ; latex parser-main.tex ; dvips -f parser-main.dvi > grammar.ps"
+    (when (probe-file log-file)
+      (delete-file log-file))
+    (let ((cmd (format nil "cd ~A ; latex parser-main.tex > latex.log ; dvips -q -f parser-main.dvi > grammar.ps"
 		       parser-tex-dir)))
-      (re::run-shell-command cmd :wait t))
-    (format t "~&See ~A/grammar.ps~%" parser-tex-dir)
-    (make-pathname :name "grammar" :extension "ps" :defaults parser-tex-dir)))
+      (excl::run-shell-command cmd :wait t))
+    (format t "~&;     See ~Agrammar.ps~%" parser-tex-dir)
+    (make-pathname :name "grammar" :type "ps" :defaults parser-tex-dir)))
 
 (defun write-bnf-in-latex-for-grammar (latex-file-or-stream &optional (parser *current-parser*)) 
   (if (not (streamp latex-file-or-stream))
@@ -59,7 +66,8 @@
 				     parser
 				     nil
 				     nil)
-	(format t "~&ATOMIC RULES: ~S" atomic-rules)
+	#-DEBUG-PARSER (declare (ignore atomic-rules))
+        #+DEBUG-PARSER (format t "~&ATOMIC RULES: ~S" atomic-rules)
 	(format latex-stream "~&~%")
 	(format latex-stream "~&\\newcommand{\\bnf}[1]           {{#1}}~%")
 	(format latex-stream "~&\\newcommand{\\bnfoptionalopen}  {{\\bnf{$\\big[$}    }}~%")
@@ -328,9 +336,8 @@
 
 ;;; informative messages for person building parser....
 
+#+allegro				; Fix for other dialects later
 (eval-when (load)
-  (format t "~&--------------------------------------------------------------------------------~%")
-  (format t "~&Running (USER::SHOW-GRAMMAR) will create grammar.ps and display using ~A" 
-	  (get-ps-viewer))
-  (format t "~&--------------------------------------------------------------------------------~%"))
+  (format t "~&;     To create grammar.ps and display using ghostview or gs: (cl-user::show-grammar)~%"))
+
 

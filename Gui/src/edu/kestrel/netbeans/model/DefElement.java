@@ -20,7 +20,7 @@ import org.openide.src.SourceException;
 public final class DefElement extends MemberElement {
     /** Format for the code generator */
     private static final ElementFormat DEF_FORMAT =
-        new ElementFormat("def {n}{p,\"(\",\")\"}"); // NOI18N
+        new ElementFormat("def {n}{p,\"(\",\")\"} = {e}"); // NOI18N
    
     /** Create a new def element represented in memory.
      */
@@ -71,6 +71,21 @@ public final class DefElement extends MemberElement {
         getDefImpl().setParameters(parameters);
     }
 
+    /** Get the value expression of the Def.
+     * @return the expression
+     */
+    public String getExpression() {
+        return getDefImpl().getExpression();
+    }
+
+    /** Set the value expression of the Def.
+     * @param expression the expression
+     * @throws SourceException if impossible
+     */
+    public void setExpression(String expression) throws SourceException {
+        getDefImpl().setExpression(expression);
+    }
+    
     /* Prints the element into the element printer.
      * @param printer The element printer where to print to
      * @exception ElementPrinterInterruptException if printer cancel the printing
@@ -100,13 +115,26 @@ public final class DefElement extends MemberElement {
          */
         public void setParameters(String[] parameters) throws SourceException;
 
+        /** Get the value expression of the Def.
+         * @return the expression
+         */
+        public String getExpression();
+
+        /** Set the value expression of the Def.
+         * @param expression the expression
+         * @throws SourceException if impossible
+         */
+        public void setExpression(String expression) throws SourceException;
+        
     }
 
     static class Memory extends MemberElement.Memory implements Impl {
         private String[] parameters;
+        private String expression;
 
         Memory() {
             parameters = null;
+            expression = null;
         }
 
         /** Copy constructor.
@@ -115,6 +143,7 @@ public final class DefElement extends MemberElement {
         Memory (DefElement def) {
             super (def);
             parameters = def.getParameters();
+            expression = def.getExpression();
         }
 
         /** Parameters of the variable.
@@ -131,6 +160,22 @@ public final class DefElement extends MemberElement {
             String[] old = this.parameters;
             this.parameters = parameters;
             firePropertyChange (PROP_PARAMETERS, old, parameters);
+        }
+
+        /** Expression of the variable.
+	 * @return the expression
+	 */
+        public String getExpression() {
+            return expression;
+        }
+
+        /** Setter for expression of the variable.
+	 * @param expression the variable expression
+	 */
+        public void setExpression(String expression) {
+            String old = this.expression;
+            this.expression = expression;
+            firePropertyChange (PROP_EXPRESSION, old, expression);
         }
 
     }

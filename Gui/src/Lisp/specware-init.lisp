@@ -11,6 +11,12 @@
 ;;;
 ;;;
 ;;; $Log$
+;;; Revision 1.2  2003/03/04 07:08:56  westfold
+;;; Changes for openmcl compatibility
+;;;
+;;; Revision 1.1  2003/02/14 21:28:40  weilyn
+;;; Initial version
+;;;
 ;;; Revision 1.2  2003/02/06 18:04:48  becker
 ;;; Added actions to start lisp process explicitly from the user interface.
 ;;; Modified code generation and schedule execution actions.
@@ -30,7 +36,7 @@
 ;;;
 ;;;
 
-(in-package :user)
+(in-package :cl-user)
 
 (setq *specware-home* (or (sys::getenv "SPECWARE4") "c:/Progra~1/Specware4"))
 (setf (sys::getenv "SWPATH") (format nil "~A/" (sys::getenv "SPECWARE4")))
@@ -53,4 +59,4 @@
 
 (load (compile-file "specware:lisp-ui;init-java-connection"))
 (excl::chdir "specware:java-ui;")
-(user::init-java-listener)
+(cl-user::init-java-listener)

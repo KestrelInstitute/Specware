@@ -21,14 +21,14 @@
 
 (defun reflexivity-satisfier (cc atom subst)
   ;; example: this is called when trying to resolve away (not (rel a b)) after
-  ;; doing (declare-predicate-symbol 'rel 2 :satisfy-code 'reflexivity-satisfier)
+  ;; doing (declare-relation 'rel 2 :satisfy-code 'reflexivity-satisfier)
   ;; (rel a b) -> true after unifying a and b
   (mvlet (((:list a b) (args atom)))
     (unify cc a b subst)))			;call cc with substitution
 
 (defun irreflexivity-falsifier (cc atom subst)
   ;; example: this is called when trying to resolve away (rel a b) after
-  ;; doing (declare-predicate-symbol 'rel 2 :falsify-code 'irreflexivity-falsifier)
+  ;; doing (declare-relation 'rel 2 :falsify-code 'irreflexivity-falsifier)
   ;; (rel a b) -> false after unifying a and b
   (mvlet (((:list a b) (args atom)))
     (unify cc a b subst)))			;call cc with substitution
@@ -77,7 +77,7 @@
          (use-hyperresolution t))
         (3
          (use-negative-hyperresolution t)))
-      (declare-predicate-symbol 'mother 2 :satisfy-code #'mother-satisfier)
+      (declare-relation 'mother 2 :satisfy-code #'mother-satisfier)
       (prove '(mother betty ?x) :answer '(values ?x) :name 'who-is-bettys-child?)
       (loop
         (when (eq :agenda-empty (closure))

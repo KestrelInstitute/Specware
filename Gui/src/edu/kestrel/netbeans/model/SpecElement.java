@@ -6,6 +6,27 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/06/23 18:00:16  weilyn
+ * internal release version
+ *
+ * Revision 1.6  2003/04/23 01:14:40  weilyn
+ * BindingFactory.java
+ *
+ * Revision 1.5  2003/02/18 18:13:04  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.4  2003/02/17 07:03:03  weilyn
+ * Removed the {n} tag in the ElementFormat because it gave parsing errors.
+ *
+ * Revision 1.3  2003/02/16 02:14:04  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:39:30  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:05  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -41,7 +62,7 @@ import edu.kestrel.netbeans.codegen.ElementPrinter;
 public final class SpecElement extends MemberElement {
     /** Formats for the header - used in code generator */
     private static final ElementFormat HEADER_FORMAT = 
-        new ElementFormat("spec {n}"); // NOI18N
+        new ElementFormat("spec"); // NOI18N
 
     /** source element we are attached to */
     private SourceElement source;
@@ -65,6 +86,7 @@ public final class SpecElement extends MemberElement {
 	    this.source = (SourceElement) parent;
 	    this.topLevel = true;
 	} else {
+            this.source = null;
 	    this.topLevel = false;
 	}
     }
@@ -99,6 +121,71 @@ public final class SpecElement extends MemberElement {
         this.source = source;
     }
     
+    //================== Imports ===============================
+
+    /** Add a new import to the spec.
+     *  @param el the import to add
+     * @throws SourceException if impossible
+     */
+    public void addImport(ImportElement el) throws SourceException {
+        if (getImport(el.getName()) != null)
+            throwAddException("FMT_EXC_AddImport", el); // NOI18N
+        getSpecImpl().changeImports(new ImportElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new imports to the spec.
+     *  @param els the imports to add
+     * @throws SourceException if impossible
+     */
+    public void addImports(final ImportElement[] els) throws SourceException {
+        for (int i = 0; i < els.length; i++)
+            if (getImport(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddImport", els[i]); // NOI18N
+        getSpecImpl().changeImports(els, Impl.ADD);
+    }
+
+    /** Remove a import from the spec.
+     *  @param el the import to remove
+     * @throws SourceException if impossible
+     */
+    public void removeImport(ImportElement el) throws SourceException {
+        getSpecImpl().changeImports(
+						 new ImportElement[] { el }, Impl.REMOVE
+						 );
+    }
+
+    /** Remove some imports from the spec.
+     *  @param els the imports to remove
+     * @throws SourceException if impossible
+     */
+    public void removeImports(final ImportElement[] els) throws SourceException {
+        getSpecImpl().changeImports(els, Impl.REMOVE);
+    }
+
+    /** Set the imports for this spec.
+     * Previous imports are removed.
+     * @param els the new imports
+     * @throws SourceException if impossible
+     */
+    public void setImports(ImportElement[] els) throws SourceException {
+        getSpecImpl().changeImports(els, Impl.SET);
+    }
+
+    /** Get all imports in this spec.
+     * @return the imports
+     */
+    public ImportElement[] getImports() {
+        return getSpecImpl().getImports();
+    }
+
+    /** Find a import by name.
+     * @param name the name of the import to look for
+     * @return the element or <code>null</code> if not found
+     */
+    public ImportElement getImport(String name) {
+        return getSpecImpl().getImport(name);
+    }
+
     //================== Sorts ===============================
 
     /** Add a new sort to the spec.
@@ -229,6 +316,135 @@ public final class SpecElement extends MemberElement {
         return getSpecImpl().getOp(name);
     }
 
+    //================== Defs ===============================
+
+    /** Add a new def to the spec.
+     *  @param el the def to add
+     * @throws SourceException if impossible
+     */
+    public void addDef(DefElement el) throws SourceException {
+        if (getDef(el.getName()) != null)
+            throwAddException("FMT_EXC_AddDef", el); // NOI18N
+        getSpecImpl().changeDefs(new DefElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new defs to the spec.
+     *  @param els the defs to add
+     * @throws SourceException if impossible
+     */
+    public void addDefs(final DefElement[] els) throws SourceException {
+        for (int i = 0; i < els.length; i++)
+            if (getDef(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddDef", els[i]); // NOI18N
+        getSpecImpl().changeDefs(els, Impl.ADD);
+    }
+
+    /** Remove a def from the spec.
+     *  @param el the def to remove
+     * @throws SourceException if impossible
+     */
+    public void removeDef(DefElement el) throws SourceException {
+        getSpecImpl().changeDefs(new DefElement[] { el }, Impl.REMOVE);
+    }
+
+    /** Remove some defs from the spec.
+     *  @param els the defs to remove
+     * @throws SourceException if impossible
+     */
+    public void removeDefs(final DefElement[] els) throws SourceException {
+        getSpecImpl().changeDefs(els, Impl.REMOVE);
+    }
+
+    /** Set the defs for this spec.
+     * Previous defs are removed.
+     * @param els the new defs
+     * @throws SourceException if impossible
+     */
+    public void setDefs(DefElement[] els) throws SourceException {
+        getSpecImpl().changeDefs(els, Impl.SET);
+    }
+
+    /** Get all defs in this spec.
+     * @return the defs
+     */
+    public DefElement[] getDefs() {
+        return getSpecImpl().getDefs();
+    }
+
+    /** Find a def by name.
+     * @param name the name of the def to look for
+     * @return the element or <code>null</code> if not found
+     */
+    public DefElement getDef(String name) {
+        return getSpecImpl().getDef(name);
+    }
+
+    //================== Claims ===============================
+
+    /** Add a new claim to the spec.
+     *  @param el the claim to add
+     * @throws SourceException if impossible
+     */
+    public void addClaim(ClaimElement el) throws SourceException {
+        if (getClaim(el.getName()) != null)
+            throwAddException("FMT_EXC_AddClaim", el); // NOI18N
+        getSpecImpl().changeClaims(new ClaimElement[] { el }, Impl.ADD);
+    }
+
+    /** Add some new claims to the spec.
+     *  @param els the claims to add
+     * @throws SourceException if impossible
+     */
+    public void addClaims(final ClaimElement[] els) throws SourceException {
+        for (int i = 0; i < els.length; i++)
+            if (getClaim(els[i].getName()) != null)
+                throwAddException("FMT_EXC_AddClaim", els[i]); // NOI18N
+        getSpecImpl().changeClaims(els, Impl.ADD);
+    }
+
+    /** Remove a claim from the spec.
+     *  @param el the claim to remove
+     * @throws SourceException if impossible
+     */
+    public void removeClaim(ClaimElement el) throws SourceException {
+        getSpecImpl().changeClaims(
+						 new ClaimElement[] { el }, Impl.REMOVE
+						 );
+    }
+
+    /** Remove some claims from the spec.
+     *  @param els the claims to remove
+     * @throws SourceException if impossible
+     */
+    public void removeClaims(final ClaimElement[] els) throws SourceException {
+        getSpecImpl().changeClaims(els, Impl.REMOVE);
+    }
+
+    /** Set the claims for this spec.
+     * Previous claims are removed.
+     * @param els the new claims
+     * @throws SourceException if impossible
+     */
+    public void setClaims(ClaimElement[] els) throws SourceException {
+        getSpecImpl().changeClaims(els, Impl.SET);
+    }
+
+    /** Get all claims in this spec.
+     * @return the claims
+     */
+    public ClaimElement[] getClaims() {
+        return getSpecImpl().getClaims();
+    }
+
+    /** Find a claim by name.
+     * @param name the name of the claim to look for
+     * @return the element or <code>null</code> if not found
+     */
+    public ClaimElement getClaim(String name) {
+        return getSpecImpl().getClaim(name);
+    }
+
+
     // ================ printing =========================================
 
     /* Print this element to an element printer.
@@ -242,7 +458,7 @@ public final class SpecElement extends MemberElement {
 
         printer.markSpec(this, printer.HEADER_BEGIN); // HEADER begin
         if (topLevel) {
-	    printer.println(getName()+" =");
+	    printer.print(getName()+" = ");
 	}
 	printer.print(HEADER_FORMAT.format(this));
 
@@ -250,6 +466,11 @@ public final class SpecElement extends MemberElement {
 
         printer.markSpec(this, printer.BODY_BEGIN); // BODY begin
         printer.println(""); // NOI18N
+
+        if (print(getImports(), printer)) {
+            printer.println(""); // NOI18N
+            printer.println(""); // NOI18N
+        }
 
         if (print(getSorts(), printer)) {
             printer.println(""); // NOI18N
@@ -260,13 +481,22 @@ public final class SpecElement extends MemberElement {
             printer.println(""); // NOI18N
             printer.println(""); // NOI18N
         }
+        
+        if (print(getDefs(), printer)) {
+            printer.println(""); // NOI18N
+            printer.println(""); // NOI18N
+        }
+        
+        if (print(getClaims(), printer)) {
+            printer.println(""); // NOI18N
+            printer.println(""); // NOI18N            
+        }
 
         printer.println(""); // NOI18N
         printer.markSpec(this, printer.BODY_END); // BODY end
         printer.print("endspec"); // NOI18N
 
         if (topLevel) {
-	    printer.println("");
 	    printer.println("");
 	}
 
@@ -339,12 +569,24 @@ public final class SpecElement extends MemberElement {
      * @see SpecElement
      */
     public static interface Impl extends MemberElement.Impl {
-        /** Add some items. */
-        public static final int ADD = 1;
-        /** Remove some items. */
-        public static final int REMOVE = -1;
-        /** Set some items, replacing the old ones. */
-        public static final int SET = 0;
+
+        /** Change the set of imports.
+         * @param elems the new imports
+         * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+         * @exception SourceException if impossible
+         */
+        public void changeImports(ImportElement[] elems, int action) throws SourceException;
+
+        /** Get all imports.
+         * @return the imports
+         */
+        public ImportElement[] getImports();
+
+        /** Find a import by signature.
+         * @param arguments the argument types to look for
+         * @return the import, or <code>null</code> if it does not exist
+         */
+        public ImportElement getImport(String name);
 
         /** Change the set of sorts.
 	 * @param elems the new sorts
@@ -381,15 +623,58 @@ public final class SpecElement extends MemberElement {
 	 * @return the op, or <code>null</code> if it does not exist
 	 */
         public OpElement getOp(String name);
+        
+        /** Change the set of defs.
+	 * @param elems the new defs
+	 * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+	 * @exception SourceException if impossible
+	 */
+        public void changeDefs(DefElement[] elems, int action) throws SourceException;
+
+        /** Get all defs.
+	 * @return the defs
+	 */
+        public DefElement[] getDefs();
+
+        /** Find a def by signature.
+	 * @param arguments the argument types to look for
+	 * @return the def, or <code>null</code> if it does not exist
+	 */
+        public DefElement getDef(String name);
+
+         /** Change the set of claims.
+	 * @param elems the new claims
+	 * @param action {@link #ADD}, {@link #REMOVE}, or {@link #SET}
+	 * @exception SourceException if impossible
+	 */
+        public void changeClaims(ClaimElement[] elems, int action) throws SourceException;
+
+        /** Get all claims.
+	 * @return the claims
+	 */
+        public ClaimElement[] getClaims();
+
+        /** Find a claim by signature.
+	 * @param arguments the argument types to look for
+	 * @return the claim, or <code>null</code> if it does not exist
+	 */
+        public ClaimElement getClaim(String name);
     }
+        
 
     /** Memory based implementation of the element factory.
      */
     static final class Memory extends MemberElement.Memory implements Impl {
+        /** collection of imports */
+        private MemoryCollection.Import imports;       
         /** collection of sorts */
         private MemoryCollection.Sort sorts;
         /** collection of ops */
         private MemoryCollection.Op ops;
+        /** collection of defs */
+        private MemoryCollection.Def defs;
+        /** collection of claims */
+        private MemoryCollection.Claim claims;
 
         public Memory() {
         }
@@ -404,8 +689,42 @@ public final class SpecElement extends MemberElement {
         /** Late initialization of initialization of copy elements.
         */
         public void copyFrom (SpecElement copyFrom) {
+            changeImports (copyFrom.getImports (), SET);
             changeSorts (copyFrom.getSorts (), SET);
             changeOps (copyFrom.getOps (), SET);
+            changeDefs (copyFrom.getDefs (), SET);
+            changeClaims(copyFrom.getClaims (), SET);
+        }
+
+        /** Changes set of elements.
+	 * @param elems elements to change
+	 * @param action the action to do(ADD, REMOVE, SET)
+	 * @exception SourceException if the action cannot be handled
+	 */
+        public synchronized void changeImports(ImportElement[] elems, int action) {
+            initImports();
+            imports.change(elems, action);
+        }
+
+        public synchronized ImportElement[] getImports() {
+            initImports();
+            return(ImportElement[])imports.toArray();
+        }
+
+        /** Finds a import with given name and argument types.
+	 * @param source the name of source mode
+	 * @param target the name of target mode
+	 * @return the element or null if such import does not exist
+	 */
+        public synchronized ImportElement getImport(String name) {
+            initImports();
+            return(ImportElement)imports.find(name);
+        }
+
+        void initImports() {
+            if (imports == null) {
+                imports = new MemoryCollection.Import(this);
+            }
         }
 
         /** Changes set of elements.
@@ -465,13 +784,76 @@ public final class SpecElement extends MemberElement {
             }
         }
 
+        /** Changes set of elements.
+	 * @param elems elements to change
+	 * @param action the action to do(ADD, REMOVE, SET)
+	 * @exception SourceException if the action cannot be handled
+	 */
+        public synchronized void changeDefs(DefElement[] elems, int action) {
+            initDefs();
+            defs.change(elems, action);
+        }
+
+        public synchronized DefElement[] getDefs() {
+            initDefs();
+            return(DefElement[])defs.toArray();
+        }
+
+        /** Finds a def with given name and argument types.
+	 * @param source the name of source mode
+	 * @param target the name of target mode
+	 * @return the element or null if such def does not exist
+	 */
+        public synchronized DefElement getDef(String name) {
+            initDefs();
+            return(DefElement)defs.find(name);
+        }
+
+        void initDefs() {
+            if (defs == null) {
+                defs = new MemoryCollection.Def(this);
+            }
+        }
+
+        /** Changes set of elements.
+	 * @param elems elements to change
+	 * @param action the action to do(ADD, REMOVE, SET)
+	 * @exception SourceException if the action cannot be handled
+	 */
+        public synchronized void changeClaims(ClaimElement[] elems, int action) {
+            initClaims();
+            claims.change(elems, action);
+        }
+
+        public synchronized ClaimElement[] getClaims() {
+            initClaims();
+            return(ClaimElement[])claims.toArray();
+        }
+
+        public synchronized ClaimElement getClaim(String name) {
+            initClaims();
+            return(ClaimElement)claims.find(name);
+        }
+
+        void initClaims() {
+            if (claims == null) {
+                claims = new MemoryCollection.Claim(this);
+            }
+        }
+
         void markCurrent(Element marker, boolean after) {
             MemoryCollection col;
       
-            if (marker instanceof SortElement) {
+            if (marker instanceof ImportElement) {
+                col = imports;
+            } else if (marker instanceof SortElement) {
                 col = sorts;
 	    } else if (marker instanceof OpElement) {
                 col = ops;
+	    } else if (marker instanceof DefElement) {
+                col = defs;
+            } else if (marker instanceof ClaimElement) {
+                col = claims;
             } else {
                 throw new IllegalArgumentException();
             }

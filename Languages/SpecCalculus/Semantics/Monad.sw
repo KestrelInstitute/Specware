@@ -44,8 +44,9 @@ This runs a monadic program and lifts the result out of the monad.
   op run : fa (a) Env a -> a
   def run f = 
     case f () of
-      | (Ok x,_) -> x
-      | (Exception _,_) -> fail "run: uncaught exception"
+      | (Ok x, _) -> x
+      | (Exception exception, _) -> 
+        fail ("run: uncaught exception:\n  " ^ (printException exception))
 \end{spec}
 
 Next we define the monad sequencing operators.  The names of the operators
@@ -78,7 +79,7 @@ The unit of the monad.
 Raise an exception. Should this be called throw?
 
 \begin{spec}
-  op specwareWizard? : Boolean
+  def specwareWizard? : Boolean = false  
 
   % op raise : fa (a) Exception -> Env a
   def SpecCalc.raise except = fn state -> 

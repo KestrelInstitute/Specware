@@ -169,22 +169,28 @@
   (ctxt-map-as-harray-assure-current m)
   (hash-table-count (ctxt-map-as-harray--harray m)))
 
-(defun |!apply| (m x)
+(defun apply-2 (m x)
   ;; (incf *ctxt-map-as-harray-ref-count*)
   (if (eq (numItems m) 0)
       *undefined*
     (progn (ctxt-map-as-harray-assure-current m)
 	   (gethash x (ctxt-map-as-harray--harray m)
 		    *undefined*))))
+(defun |!apply| (pr)
+  (apply-2 (car pr) (cdr pr)))
+
 
 ;;; Some y is stored in array, as it is usually accessed more often than set
-(defun update (m x y)
+(defun update-3 (m x y)
   (ctxt-map-as-harray--update m x (mkSome y)))
 
-(defun |!remove| (m x)
+(defun remove-2 (m x)
   (ctxt-map-as-harray--update m x *undefined*))
 
-(defun mapi (f table)
+(defun |!remove| (pr)
+  (ctxt-map-as-harray--update (car pr) (cdr pr) *undefined*))
+
+(defun mapi-2 (f table)
   (declare (dynamic-extent f))
   (let ((sz (numItems table)))
     (declare (fixnum sz))
@@ -201,7 +207,7 @@
 			(ctxt-map-as-harray--harray table))
 	       (ctxt-map-as-harray--harray-map result))))))
 
-(defun |!map| (f table)
+(defun map-2 (f table)
   (declare (dynamic-extent f))
   (let ((sz (numItems table)))
     (declare (fixnum sz))
@@ -218,7 +224,45 @@
 			(ctxt-map-as-harray--harray table))
 	       (ctxt-map-as-harray--harray-map result))))))
 
-(defun app (f table)
+(defun mapiPartial-2 (f table)
+  (declare (dynamic-extent f))
+  (let ((sz (numItems table)))
+    (declare (fixnum sz))
+    (if (= sz 0)
+      emptyMap
+      (progn
+	(ctxt-map-as-harray-assure-current table)
+	(let ((result (make-hash-table :test 'equal
+				       :size *ctxt-map-as-harray--initial-harray-size*
+				       :rehash-size
+				       *ctxt-map-as-harray--rehash-size*)))
+	  (maphash #'(lambda (key val)
+		       (let ((val (funcall f (cdr val))))
+			 (unless (equal val *undefined*)
+			   (setf (gethash key result) val))))
+		   (ctxt-map-as-harray--harray table))
+	  (ctxt-map-as-harray--harray-map result))))))
+
+(defun mapPartial-2 (f table)
+  (declare (dynamic-extent f))
+  (let ((sz (numItems table)))
+    (declare (fixnum sz))
+    (if (= sz 0)
+      emptyMap
+      (progn
+	(ctxt-map-as-harray-assure-current table)
+	(let ((result (make-hash-table :test 'equal
+				       :size *ctxt-map-as-harray--initial-harray-size*
+				       :rehash-size
+				       *ctxt-map-as-harray--rehash-size*)))
+	  (maphash #'(lambda (key val)
+		       (let ((val (funcall f (cdr val))))
+			 (unless (equal val *undefined*)
+			   (setf (gethash key result) val))))
+		   (ctxt-map-as-harray--harray table))
+	  (ctxt-map-as-harray--harray-map result))))))
+
+(defun app-2 (f table)
   (declare (dynamic-extent f))
   (when (> (the fixnum (numItems table)) 0)
     (ctxt-map-as-harray-assure-current table)
@@ -228,7 +272,7 @@
 	     (ctxt-map-as-harray--harray table)))
   nil)
 
-(defun appi (f table)
+(defun appi-2 (f table)
   (declare (dynamic-extent f))
   (when (> (the fixnum (numItems table)) 0)
     (ctxt-map-as-harray-assure-current table)
@@ -259,7 +303,7 @@
 (setf (get 'ctxt-map-as-harray--map-through-pairs 'EXCL::DYNAMIC-EXTENT-ARG-TEMPLATE)
   (list t nil))
 
-(defun foldi (fn result table)
+(defun foldi-3 (fn result table)
   (declare (dynamic-extent fn) (optimize (speed 3) (safety 0) (debug 0)))
   (ctxt-map-as-harray--map-through-pairs
      #'(lambda (key val)

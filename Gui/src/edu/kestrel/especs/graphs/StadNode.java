@@ -20,16 +20,38 @@ public class StadNode extends XContainerNode {
     /** Creates a new instance of XStadNode */
     public StadNode() {
         super((String)null);
+        initStadNode();
     }
     
     public StadNode(String name) {
         super(name);
+        initStadNode();
+    }
+    
+    private void initStadNode() {
+        boolean isDerived = isDerived();
+        setIsExpandable(isDerived);
+        setIsEditable(!isDerived);
     }
     
     public ModelNode createModelNode() {
         return new StadModelNode();
     }
     
+    /** returns whether this node is derived from some other stad node. This information is stored
+     * in the StadModelNode associated with this node.
+     */
+    public boolean isDerived() {
+        return ((StadModelNode)getModelNode()).isDerived();
+    }
+    
+    public boolean isExpandable() {
+        return isDerived();
+    }
+    
+    public boolean isEditable() {
+        return !isDerived();
+    }
     
     /*
     public StadNode(ModelNode mnode) {
@@ -66,6 +88,8 @@ public class StadNode extends XContainerNode {
         v.viewOptionsCollapsed.setBorderWidth(1);
         v.viewOptionsCollapsed.setUseGradientPaint(true);
         v.viewOptionsCollapsed.setGradientPaintTopLeftColor(bgColor);
+        v.viewOptionsCollapsed.setTextDisplayOption(v.viewOptions.BOUNDS_ARE_ADJUSTED_TO_TEXT);
+        v.viewOptionsCollapsed.setBoundsAreAdjustedExactlyToText(false);
         // expanded
         v.viewOptionsExpanded.setUseBorder(true);
         v.viewOptionsExpanded.setBorderWidth(1);

@@ -1,230 +1,11 @@
 \section{Spec Calculus Abstract Syntax}
 
 \begin{spec}
-SpecCalc qualifying spec {
-  import ../../MetaSlang/Specs/PosSpec  % For Position
-  import ../../MetaSlang/AbstractSyntax/AnnTerm
+OscarAbsSyn qualifying spec
+  import ../../MetaSlang/Specs/StandardSpec % For Position
+  import ../../MetaSlang/AbstractSyntax/AnnTerm % For PSL, but not Specware4
+  import ../../SpecCalculus/AbstractSyntax/Types
 \end{spec}
-
-All the objects in the abstract syntax are polymorphic and defined at
-two levels.  The first level pairs the sort the type paramerter. The
-second level defines the constructors for the sort. In this way, every
-sort is annotated. The annotation is typically information about the
-position of the term in the file. It is not clear that there is any
-benefit in making this polymorphic. Might might be enough to pair it
-with the \verb+Position+ sort and then refine that sort.  Using two
-levels ensures that for all objects in the abstract syntax tree, the
-position information is always the second component.
-
-\begin{spec}
-  op positionOf : fa (a) a * Position -> Position
-  def positionOf (x,position) = position
-
-  op valueOf : fa (a) a * Position -> a
-  def valueOf (x,position) = x
-\end{spec}
-
-The following is the toplevel returned by the parser. I don't like
-the name of this sort. A file may contain a list of $\mathit{name} =
-\mathit{term}$ or contain a single term. This should not be polymorphic.
-The type parameter should be instantiated with the type \verb+Position+.
-
-\begin{spec}
-  sort SpecFile  a = (SpecFile_ a) * a
-  sort SpecFile_ a =
-    | Term  (Term a)
-    | Decls (List (Decl a))
-\end{spec}
-
-The support for URI's is somewhat simplistic but hopefully sufficient
-for now.  A user may specify a uri that is relative to the current uri
-(ie relative to the object making the reference) or relative to a path
-in the \verb+SPECPATH+ environment variable. In the current syntax, the
-latter are indicated by an opening "/". In additon, each uri evaluates
-to a full canonical system path. The latter cannot be directly entered
-by the user. My apologies for the long constructor names. A relative URI
-resolves to a canonical URI. The latter in turn resolves to an absolute
-path in the file system. Recall that file may contain a single anonymous
-term or a list of bindings. Thus a canonical URI may resolve to two
-possible path names. Later we may want to have URIs with network addresses.
-
-\begin{spec}
-  sort URI = {
-      path : List String,
-      hashSuffix : Option String
-   }
-
-  sort RelativeURI =
-    | URI_Relative URI
-    | SpecPath_Relative URI
-\end{spec}
-
-The sort \verb+Name+ is used everywhere that one can expect a
-non-structured identifier.  This includes for instance, the names of
-vertices and edges in the shape of a diagram. It also includes the
-qualifiers on op and sort names.
-
-In the near term, it also includes the identifiers bound by declarations.
-These are either \verb+let+ bound or bound by specs listed in a
-file. Later, we might allow bound identifiers to be URIs thus enabling
-one to override an existing definition.
-
-\begin{spec}
-  sort Name = String
-\end{spec}
-
-The following is the sort given to us by the parser.
-
-\begin{spec}
-  sort Term a = (Term_ a) * a
-  sort Term_ a = 
-    | Print (Term a)
-    | URI RelativeURI
-    | Spec List (SpecElem a)
-    | PSL  List (PSL_Elem a)
-    | Diag List (DiagElem a)
-    | Colimit (Term a)
-\end{spec}
-
-The calculus supports two types of morphisms: morphisms between specs and
-morphisms between diagrams.  Right now spec morphism are distinguished
-from diagram morphisms in both the concrete and abstract syntax.
-The first two elements in the morphism products are terms that evaluate
-to the domain and codomain of the morphisms.
-
-\begin{spec}
-    | SpecMorph (Term a) * (Term a) * (List (SpecMorphElem a))
-    | DiagMorph (Term a) * (Term a) * (List (DiagMorphElem a))
-\end{spec}
-
-\begin{spec}
-    | Qualify (Term a) * Name
-    | Translate (Term a) * (TranslateExpr a)
-\end{spec}
-
-The intention is that \verb+let+ \emph{decls} \verb+in+ \emph{term}
-is the same as \emph{term} \verb+where+ \emph{decls}. The \verb+where+
-construct is experimental.
-
-\begin{spec}
-    | Let   (List (Decl a)) * (Term a)
-    | Where (List (Decl a)) * (Term a)
-\end{spec}
-
-The next two control the visibilty of names outside a spec.
-
-\begin{spec}
-    | Hide   (NameExpr a) * (Term a)
-    | Export (NameExpr a) * (Term a)
-\end{spec}
-
-This is an initial attempt at code generation. The first string is the
-name of the target language. Perhaps it should be a constructor.
-Also perhaps we should say where to put the output. The idea is that
-is should go in the file with the same root name as the URI calling
-compiler (but with a .lisp suffix) .. but the term may not have a URI.
-The third argument is an optional file name to store the result.
-
-\begin{spec}
-    | Generate (String * (Term a) * Option String)
-\end{spec}
-
-The following are declarations that appear in a file or listed
-within a \verb+let+. As noted above, at present the identifiers
-bound by a let or listed in a file are unstructured.
-
-\begin{spec}
-  sort Decl a = Name * (Term a)
-\end{spec}
-
-A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
-spec. Presumably, in the longer term there will a pattern matching syntax
-to simplify the task of uniformly renaming a collection of operators
-and sorts or for requalifying things. For now, a translation is just a
-mapping from names to names.
-
-Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
-
-\begin{spec}
-  sort TranslateExpr a = List (TranslateMap a) * a
-  sort TranslateMap a = ((QualifiedId * QualifiedId) * a)
-\end{spec}
-
-A \verb+NameExpr+ denotes list of names and operators. They are used in
-\verb+hide+ and \verb+export+ terms to either exclude names from being
-export or dually, to specify exactly what names are to be exported.
-Presumably the syntax will borrow ideas from the syntax used for
-qualifiying names. In particular we might want to allow patterns with
-wildcards to stand for a collection of names. For now, one must explicitly
-list them.
-
-\begin{spec}
-  sort NameExpr a = List QualifiedId
-\end{spec}
-
-A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
-
-\begin{spec}
-  sort SpecElem a = (SpecElem_ a) * a
-
-  sort SpecElem_ a =
-    | Import Term a
-    | Sort   List QualifiedId * (TyVars * Option (ASort a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
-    | Claim  (AProperty a)
-\end{spec}
-
-A diagram is defined by a list of elements. An element may be a labeled
-vertex or edge.
-
-In the current form, the names of vertices and edges are simply
-\verb{Name}s. This may change in the future. In particular, one can
-construct limits and colimits of diagram in which case, vertices and
-edges in the resulting shape may be tuples and equivalence classes. It
-remains to be seen whether we need a concrete syntax for this.
-
-\begin{spec}
-  sort DiagElem a = (DiagElem_ a) * a
-  sort DiagElem_ a =
-    | Node NodeId * (Term a)
-    | Edge EdgeId * NodeId * NodeId * (Term a)
-  sort NodeId = Name
-  sort EdgeId = Name
-\end{spec}
-
-Note that the term associated with a node must evaluate to a spec
-or diagram. The term for an edge must evaluate to a spec morphism or
-diagram morphism.
-
-The syntax for spec morphisms accommodates mapping names to terms but
-the interpreter handles only name to name maps for now.
-
-The tagging in the sorts below may be excessive given the \verb+ATerm+
-is already tagged.
-
-\begin{spec}
-  sort SpecMorphElem a = QualifiedId * QualifiedId * a
-\end{spec}
-
-The current syntax allows one to write morphisms mapping names to terms
-but only name/name mappings will be handled by the interpreter in the
-near term.
-
-A diagram morphism has two types of elements: components of the shape map
-and components of the natural transformation. The current syntax allows
-them to be presented in any order. 
-
-\begin{spec}
-  sort DiagMorphElem a = (DiagMorphElem_ a) * a
-  sort DiagMorphElem_ a =
-    | ShapeMap Name * Name
-    | NatTranComp Name * (Term a) 
-\end{spec}
-
-A \verb+NatTranComp+ element is a component in a natural transformation
-between diagrams. The components are indexed by vertices in the shape.
-The term in the component must evaluate to a morphism.
-
 
 This defines the abstract syntax of a simple procedural specification
 language. It is built on top of MetaSlang. We import the spec defining the
@@ -242,23 +23,68 @@ Declarations are MetaSlang \verb+sort+, \verb+op+, \verb+def+, and
 syntax appear as \verb+op+s in the abstract syntax with an associated
 defining term.
 
+### The name of the procedure should be a qualified id.
+
 \begin{spec}
-  sort PSL_Elem a = (PSL_Elem_ a) * a
+  sort OscarSpecElem a = (OscarSpecElem_ a) * a
 
   sort Ident = String
-  sort PSL_Elem_ a =
-    | Import (Term a)
-    | Sort   List QualifiedId * (TyVars * Option (ASort a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
-    | Claim  (AProperty a)
-    | Var    List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+  sort OscarSpecElem_ a =
+    | Import (SpecCalc.Term a)
+    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
+    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
+    | Claim  (Claim a)
+    | Var    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
+    | Def    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Proc   Ident * (ProcInfo a)
 
+  sort Claim a = ClaimType * PropertyName * TyVars * ATerm a
+  sort ClaimType = | Axiom | Theorem | Invariant | Conjecture
+
   sort ProcInfo a = {
-    args : List (AVar a),
+    formalArgs : List (AVar a),
     returnSort : ASort a,
     command : Command a
   }
+
+  op formalArgs : fa(a) ProcInfo a -> List (AVar a)
+  def formalArgs procInfo = procInfo.formalArgs
+
+  op returnSort : fa(a) ProcInfo a -> ASort a
+  def returnSort procInfo = procInfo.returnSort
+
+  op command : fa(a) ProcInfo a -> Command a
+  def command procInfo = procInfo.command
+\end{spec}
+
+\begin{spec}
+  op mkImport : SpecCalc.Term Position * Position -> OscarSpecElem Position
+  def mkImport (term,position) = (Import term, position)
+
+  op mkSort : List QualifiedId * TyVars * List (ASortScheme Position) * Position -> OscarSpecElem Position
+  def mkSort (ids,tyVars,sortSchemes,position) = (Sort (ids, (tyVars,sortSchemes)),position) 
+
+  op mkProc : Ident * (ProcInfo Position) * Position -> OscarSpecElem Position
+  def mkProc (ident,procInfo,position) = (Proc (ident,procInfo),position)
+
+  op mkProcInfo : List (AVar Position) * (ASort Position) * Command Position -> ProcInfo Position
+  def mkProcInfo (formalArgs,returnSort,command) =
+    {formalArgs = formalArgs, returnSort = returnSort, command = command}
+
+  op mkVar : (List QualifiedId) * (ASortScheme Position) * Position -> OscarSpecElem Position
+  def mkVar (ids,sortScheme,position) = (Var (ids, (Nonfix,sortScheme,[])),position)
+
+  op mkDef : (List QualifiedId) * (Option Fixity) * (ASortScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
+  def mkDef (ids,optFixity,sortScheme,termSchemes,position) = 
+    case optFixity of
+      | None -> (Def (ids, (Nonfix,sortScheme,termSchemes)),position)
+      | Some fixity -> (Def (ids, (fixity,sortScheme,termSchemes)),position)
+
+  op mkOp : (List QualifiedId) * (Option Fixity) * (ASortScheme Position) * List (ATermScheme Position) * Position -> OscarSpecElem Position
+  def mkOp (ids,optFixity,sortScheme,termSchemes,position) = 
+    case optFixity of
+      | None -> (Op (ids, (Nonfix,sortScheme,termSchemes)),position)
+      | Some fixity -> (Op (ids, (fixity,sortScheme,termSchemes)),position)
 \end{spec}
 
 The abstract syntax for commands is modeled after Dijkstra's guarded
@@ -282,14 +108,49 @@ needs some thought.
     | Case       (ATerm a) * (List (Case a))
     | Do         List (Alternative a)
     | Assign     (ATerm a) * (ATerm a)
-    | Let        List (PSL_Elem a) * (Command a)
-    | Call       Ident * List (ATerm a)
-    | AssignCall (ATerm a) * Ident * List (ATerm a)
+    | Let        List (OscarSpecElem a) * (Command a)
     | Seq        List (Command a)
     | Relation   (ATerm a)
-    | Return     ATerm a
-    | Exec       ATerm a
+    | Return     Option (ATerm a)
+    | Continue   
+    | Break
+    | Exec       (ATerm a)
     | Skip
+\end{spec}
+
+\begin{spec}
+  op mkIf : List (Alternative Position) * Position -> Command Position
+  def mkIf (alts,position) = (If alts,position)
+
+  op mkSeq : List (Command Position) * Position -> Command Position
+  def mkSeq (commands,position) = (Seq commands, position)
+
+  op mkDo : List (Alternative Position) * Position -> Command Position
+  def mkDo (alts,position) = (Do alts,position)
+
+  op mkAssign : ATerm Position * ATerm Position * Position -> Command Position
+  def mkAssign (lhs,rhs,position) = (Assign (lhs,rhs),position)
+
+  op mkLet : List (OscarSpecElem Position) * (Command Position) * Position -> Command Position
+  def mkLet (decls,body,position) = (Let (decls,body),position)
+
+  op mkReturn : Option (ATerm Position) * Position -> Command Position
+  def mkReturn (optTerm,position) = (Return optTerm,position)
+
+  op mkRelation : (ATerm Position) * Position -> Command Position
+  def mkRelation (term,position) = (Relation term,position)
+
+  op mkExec : (ATerm Position) * Position -> Command Position
+  def mkExec (term,position) = (Exec term,position)
+
+  op mkSkip : Position -> Command Position
+  def mkSkip position = (Skip, position)
+
+  op mkBreak : Position -> Command Position
+  def mkBreak position = (Break, position)
+
+  op mkContinue : Position -> Command Position
+  def mkContinue position = (Continue, position)
 \end{spec}
 
 An \emph{alternative} is a guarded command in the sense of Dijkstra.
@@ -305,6 +166,9 @@ Perhaps the guard term in the case should be made \verb+Option+al.
   sort Alternative_ a = (ATerm a) * (Command a)
   sort Case a = (Case_ a) * a
   sort Case_ a = (APattern a) * (ATerm a) * (Command a)
+
+  op mkAlternative : (ATerm Position) * (Command Position) * Position -> Alternative Position
+  def mkAlternative (term,command,position) = ((term,command),position)
 \end{spec}
 
 One could argue that the lists above should be sets.
@@ -334,5 +198,23 @@ between procedures and functions is also resolved in a nice way in both
 Idealized Algol and Forsythe.
 
 \begin{spec}
-}
+  sort SpecCalc.OtherTerm a =
+    | Specialize MS.Term * SpecCalc.Term a
+    | Inline String * SpecCalc.Term a
+    | OscarDecls List (OscarSpecElem a)
+
+  op mkSpecialize : MS.Term * (SpecCalc.Term Position) * Position -> SpecCalc.Term Position
+  def mkSpecialize (metaSlangTerm,unit,position) =
+    mkOther (Specialize (metaSlangTerm,unit),position)
+
+  op mkInline : String * (SpecCalc.Term Position) * Position -> SpecCalc.Term Position
+  def mkInline (name,unit,position) =
+    mkOther (Inline (name,unit),position)
+
+  op mkDecls : List (OscarSpecElem Position) * Position -> SpecCalc.Term Position
+  def mkDecls (specElems,position) = mkOther (OscarDecls specElems, position)
+\end{spec}
+
+\begin{spec}
+endspec
 \end{spec}

@@ -20,15 +20,14 @@
 (in-package :snark)
 
 (defvar *atom-hash-code*)
-(defvar *default-term-by-hash-array-size* 50000)
 (defvar *term-by-hash-array*)
 (defvar *hash-term-uses-variable-numbers* t)
 (defvar *hash-term-only-computes-code* nil)
 (defvar *hash-term-not-found-action* :add)
 
-(defun initialize-term-hash (&key (size *default-term-by-hash-array-size*))
+(defun initialize-term-hash ()
   (setf *atom-hash-code* 0)
-  (setf *term-by-hash-array* (make-array size :initial-element nil))
+  (setf *term-by-hash-array* (make-sparse-vector))
   nil)
 
 (defun make-atom-hash-code ()
@@ -39,8 +38,7 @@
 
 (defun find-term-by-hash (x hash)
   (let* ((term-by-hash-array *term-by-hash-array*)
-	 (k (mod hash (array-dimension term-by-hash-array 0)))
-	 (terms (svref term-by-hash-array k)))
+	 (terms (sparef term-by-hash-array hash)))
     (when terms
       (dolist (term terms)
 	(when (eq term x)
@@ -50,7 +48,7 @@
 	  (return-from find-term-by-hash term))))
     (ecase *hash-term-not-found-action*
       (:add
-	(setf (svref term-by-hash-array k) (cons x terms))
+	(setf (sparef term-by-hash-array hash) (cons x terms))
 	x)
       (:throw
 	(throw 'hash-term-not-found none))
@@ -58,14 +56,14 @@
 	(error "No hash-term for ~S." x)))))
 
 (defun term-by-hash-array-terms (&optional delete-variants)
-  (let ((term-by-hash-array *term-by-hash-array*)
-        (terms nil) terms-last)
-    (dotimes (k (array-dimension term-by-hash-array 0))
-      (let ((l (copy-list (svref term-by-hash-array k))))
-        (ncollect (if (and delete-variants (not *hash-term-uses-variable-numbers*))
-                      (delete-duplicates l :test #'variant-p)
-                      l)
-                  terms)))
+  (let ((terms nil) terms-last)
+    (prog->
+      (map-sparse-vector *term-by-hash-array* ->* l)
+      (copy-list l -> l)
+      (ncollect (if (and delete-variants (not *hash-term-uses-variable-numbers*))
+                    (delete-duplicates l :test #'variant-p)
+                    l)
+                terms))
     (if (and delete-variants *hash-term-uses-variable-numbers*)
         (delete-duplicates terms :test #'variant-p)
         terms)))
@@ -179,38 +177,32 @@
                    hash)))))))
 
 (defun print-term-hash (&key terms)
-  (let ((*print-pretty* nil) (*print-radix* nil) (*print-base* 10.)
-        (size 5) (term-by-hash-array-size (array-dimension *term-by-hash-array* 0)))
-    (let ((a (make-array size :initial-element 0)) (npositions 0) (nterms 0))
-;;    (terpri-comment-indent)
-;;    (format t "Term-hash-array has ~D positions." term-by-hash-array-size)
-      (dotimes (position term-by-hash-array-size)
-	(let ((len (length (svref *term-by-hash-array* position))))
-	  (unless (eql 0 len)
-	    (incf npositions)
-	    (incf nterms len)
-	    (incf (svref a (1- (min size len)))))))
+  (let ((a (make-sparse-vector :default-value 0))
+        (nterms 0))
+    (prog->
+      (map-sparse-vector *term-by-hash-array* ->* l)
+      (length l -> len)
+      (incf nterms len)
+      (incf (sparef a len)))
+    (terpri-comment-indent)
+    (format t "Term-hash-array has ~D positions filled with ~D term~:P in all."
+            (sparse-vector-count *term-by-hash-array*) nterms)
+    (prog->
+      (map-sparse-vector-with-indexes a ->* n len)
       (terpri-comment-indent)
-      (format t "Term-hash-array has ~D positions filled with ~D term~:P in all." npositions nterms)
-      (dotimes (len-1 size)
-	(let ((n (svref a len-1)))
-	  (when (> n 0)
-	    (let ((len (1+ len-1)))
-	      (terpri-comment-indent)
-	      (if (eql len size)
-		  (format t "Term-hash-array has ~D position~:P filled with ~D terms or more each." n len)
-		  (format t "Term-hash-array has ~D position~:P filled with ~D term~:P each." n len)))))))
-    (when terms
-      (dotimes (position term-by-hash-array-size)
-	(let ((l (svref *term-by-hash-array* position)))
-	  (when (if (numberp terms) (>= (length l) (max terms 1)) l)
-	    (terpri-comment-indent)
-	    (format t "~6D: " position)
-	    (print-term (first l))
-	    (dolist (term (rest l))
-	      (terpri-comment-indent)
-	      (princ "        ")
-	      (print-term term))))))))
+      (format t "Term-hash-array has ~D position~:P filled with ~D term~:P each." n len)))
+  (when terms
+    (prog->
+      (quote nil -> *print-pretty*)
+      (map-sparse-vector-with-indexes *term-by-hash-array* ->* l position)
+      (when (implies (and (numberp terms) (< 1 terms)) (>= (length l) terms))
+        (terpri-comment-indent)
+        (format t "~6D: " position)
+        (print-term (first l))
+        (dolist (term (rest l))
+          (terpri-comment-indent)
+          (princ "        ")
+          (print-term term))))))
 
 (defvar *default-hash-term-set-count-down-to-hashing* 10)	;can insert this many before hashing
 

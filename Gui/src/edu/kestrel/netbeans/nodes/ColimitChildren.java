@@ -45,11 +45,7 @@ public class ColimitChildren extends Children.Keys implements FilterCookie {
 
     static {
         propToFilter = new HashMap ();
-/*        propToFilter.put (ElementProperties.PROP_IMPORTS, new Integer (SpecElementFilter.IMPORT));        
-        propToFilter.put (ElementProperties.PROP_SORTS, new Integer (SpecElementFilter.SORT));
-        propToFilter.put (ElementProperties.PROP_OPS, new Integer (SpecElementFilter.OP));
-        propToFilter.put (ElementProperties.PROP_DEFS, new Integer (SpecElementFilter.DEF));
-        propToFilter.put (ElementProperties.PROP_CLAIMS, new Integer (SpecElementFilter.CLAIM));*/
+        propToFilter.put (ElementProperties.PROP_DIAGRAMS, new Integer (ColimitElementFilter.DIAGRAM));        
     }
 
     /** The colimit element whose subelements are represented. */
@@ -150,21 +146,9 @@ public class ColimitChildren extends Children.Keys implements FilterCookie {
     * The node is created using node factory.
     */
     protected Node[] createNodes (final Object key) {
-/*        if (key instanceof ImportElement) {
-            return new Node[] { hookNodeName(factory.createImportNode((ImportElement)key)) };
+        if (key instanceof DiagramElement) {
+            return new Node[] { hookNodeName(factory.createDiagramNode((DiagramElement)key)) };
         }
-        if (key instanceof SortElement) {
-            return new Node[] { hookNodeName(factory.createSortNode((SortElement)key)) };
-        }
-        if (key instanceof OpElement) {
-            return new Node[] { hookNodeName(factory.createOpNode((OpElement)key)) };
-        }
-        if (key instanceof DefElement) {
-            return new Node[] { hookNodeName(factory.createDefNode((DefElement)key)) };
-        }
-        if (key instanceof ClaimElement) {
-            return new Node[] { hookNodeName(factory.createClaimNode((ClaimElement)key)) };
-        }*/
         // ?? unknown type
         return new Node[0];
     }
@@ -204,21 +188,9 @@ public class ColimitChildren extends Children.Keys implements FilterCookie {
     */
     protected Collection getKeysOfType (final int elementType) {
         LinkedList keys = new LinkedList();
-/*        if ((elementType & SpecElementFilter.IMPORT) != 0) {
-            keys.addAll(Arrays.asList(element.getImports()));
+        if ((elementType & ColimitElementFilter.DIAGRAM) != 0) {
+            keys.addAll(Arrays.asList(element.getDiagrams()));
         }
-        if ((elementType & SpecElementFilter.SORT) != 0) {
-            keys.addAll(Arrays.asList(element.getSorts()));
-        }
-        if ((elementType & SpecElementFilter.OP) != 0) {
-            keys.addAll(Arrays.asList(element.getOps()));
-        }
-        if ((elementType & SpecElementFilter.DEF) != 0) {
-            keys.addAll(Arrays.asList(element.getDefs()));
-        }
-        if ((elementType & SpecElementFilter.CLAIM) != 0) {
-            keys.addAll(Arrays.asList(element.getClaims()));
-        }*/
         if ((filter == null) || filter.isSorted ())
             Collections.sort(keys, comparator);
         return keys;
@@ -248,16 +220,8 @@ public class ColimitChildren extends Children.Keys implements FilterCookie {
             if (src != element) {
                 if (src instanceof MemberElement &&
                     (propName == null || ElementProperties.PROP_NAME == propName)) {
-/*                    if (src instanceof ImportElement) 
-                        filter = SpecElementFilter.IMPORT;
-                    else if (src instanceof SortElement) 
-                        filter = SpecElementFilter.SORT;
-                    else if (src instanceof OpElement) 
-                        filter = SpecElementFilter.OP;
-                    else if (src instanceof DefElement) 
-                        filter = SpecElementFilter.DEF;
-                    else if (src instanceof ClaimElement) 
-                        filter = SpecElementFilter.CLAIM;*/
+                    if (src instanceof DiagramElement) 
+                        filter = ColimitElementFilter.DIAGRAM;
                 } else
                     return;
             } else {

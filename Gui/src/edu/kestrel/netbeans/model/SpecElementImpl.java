@@ -6,6 +6,21 @@
  *
  *
  * $Log$
+ * Revision 1.5  2003/04/23 01:14:40  weilyn
+ * BindingFactory.java
+ *
+ * Revision 1.4  2003/02/18 18:13:06  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:14:04  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:39:30  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:05  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -30,9 +45,15 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
      */
     private SourceElementImpl       sourceImpl;
     
+    private ImportCollection     imports;
+
     private SortCollection    sorts;
     
     private OpCollection    ops;
+    
+    private DefCollection   defs;
+    
+    private ClaimCollection     claims;
 
     private MemberCollection        members;
 
@@ -61,8 +82,11 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         super.createFromModel(model);
 
         // member elements need the Element already.
-        changeSorts(element.getSorts(), SpecElement.Impl.ADD);
-        changeOps(element.getOps(), SpecElement.Impl.ADD);
+        changeImports(element.getImports(), ADD);
+        changeSorts(element.getSorts(), ADD);
+        changeOps(element.getOps(), ADD);
+        changeDefs(element.getDefs(), ADD);
+        changeClaims(element.getClaims(), ADD);
     }
     
     public final void setParent(ElementImpl impl) {
@@ -81,6 +105,30 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
     // Member management methods
     // - will delegate to collection helpers.
     ///////////////////////////////////////////////////////////////////////////////////
+    public ImportElement[] getImports() {
+        if (imports == null)
+            return ImportCollection.EMPTY;
+        return (ImportElement[])imports.getElements().clone();
+    }
+    
+    public ImportElement getImport(String name) {
+        if (imports == null)
+            return null;
+        return imports.getImport(name);
+    }
+    
+    public void changeImports(ImportElement[] elements, int operation) 
+        throws SourceException {
+        initializeImports();
+        Object token = takeMasterLock();
+        try {
+            imports.changeMembers(elements, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+    
     public SortElement[] getSorts() {
         if (sorts == null)
             return SortCollection.EMPTY;
@@ -129,6 +177,54 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         }
     }
 
+    public DefElement[] getDefs() {
+        if (defs == null)
+            return DefCollection.EMPTY;
+        return (DefElement[])defs.getElements().clone();
+    }
+    
+    public DefElement getDef(String name) {
+        if (defs == null)
+            return null;
+        return defs.getDef(name);
+    }
+    
+    public void changeDefs(DefElement[] elements, int operation) 
+        throws SourceException {
+        initializeDefs();
+        Object token = takeMasterLock();
+        try {
+            defs.changeMembers(elements, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+
+    public ClaimElement[] getClaims() {
+        if (claims == null)
+            return ClaimCollection.EMPTY;
+        return (ClaimElement[])claims.getElements().clone();
+    }
+    
+    public ClaimElement getClaim(String name) {
+        if (claims == null)
+            return null;
+        return claims.getClaim(name);
+    }
+    
+    public void changeClaims(ClaimElement[] elements, int operation) 
+        throws SourceException {
+        initializeClaims();
+        Object token = takeMasterLock();
+        try {
+            claims.changeMembers(elements, operation);
+            commit();
+        } finally {
+            releaseLock(token);
+        }
+    }
+
     // Utility methods
     ///////////////////////////////////////////////////////////////////////////////////
     
@@ -145,13 +241,22 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
     
     public void updateMembers(String propName, Element[] els, int[] indices,
         int[] optMap) {
-        if (propName == ElementProperties.PROP_SORTS) {
+        if (propName == ElementProperties.PROP_IMPORTS) {
+	    initializeImports();
+            imports.updateMembers(els, indices, optMap);
+        } else if (propName == ElementProperties.PROP_SORTS) {
             initializeSorts();
             sorts.updateMembers(els, indices, optMap);
         } else if (propName == ElementProperties.PROP_OPS) {
 	    initializeOps();
             ops.updateMembers(els, indices, optMap);
-        }
+        } else if (propName == ElementProperties.PROP_DEFS) {
+	    initializeDefs();
+            defs.updateMembers(els, indices, optMap);
+        } else if (propName == ElementProperties.PROP_CLAIMS) {
+	    initializeClaims();
+            claims.updateMembers(els, indices, optMap);
+        } 
 	//Util.log("SpecElementimpl.updateMembers after PartialCollection.updateMembers members = "+members);
 	//Util.log("SpecElementimpl.updateMembers after PartialCollection.updateMembers indices = "+Util.print(indices)
 	//				 +" optMap = "+Util.print(optMap));
@@ -162,6 +267,16 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         members.updateOrder(ordered);
     }
     
+    private void initializeImports() {
+        if (imports != null)
+            return;
+        synchronized (this) {
+            if (imports == null) {
+                imports = new ImportCollection(this, getModelImpl(), members);
+            }
+        }
+    }
+
     private void initializeSorts() {
         if (sorts != null)
             return;
@@ -178,6 +293,26 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         synchronized (this) {
             if (ops == null) {
                 ops = new OpCollection(this, getModelImpl(), members);
+            }
+        }
+    }
+
+    private void initializeDefs() {
+        if (defs != null)
+            return;
+        synchronized (this) {
+            if (defs == null) {
+                defs = new DefCollection(this, getModelImpl(), members);
+            }
+        }
+    }
+
+    private void initializeClaims() {
+        if (claims != null)
+            return;
+        synchronized (this) {
+            if (claims == null) {
+                claims = new ClaimCollection(this, getModelImpl(), members);
             }
         }
     }
@@ -266,10 +401,16 @@ class SpecElementImpl extends MemberElementImpl implements SpecElement.Impl, Ele
         }
         super.notifyCreate();
         members.sanityCheck();
+        if (imports != null)
+            imports.sanityCheck();
         if (sorts != null)
             sorts.sanityCheck();
         if (ops != null)
             ops.sanityCheck();
+        if (defs != null)
+            defs.sanityCheck();
+        if (claims != null)
+            claims.sanityCheck();
     }
     
     public Element[] getElements() {

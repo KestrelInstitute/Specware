@@ -37,6 +37,10 @@ public class ObjectNode extends AbstractNode implements IconStrings {
         setDisplayName(object.toString());
     }
 
+    public String getName() {
+        return object.toString();
+    }
+    
     /** Get the currently appropriate icon base.
     * Subclasses should make this sensitive to the state of the object--for example,
     * a private variable may have a different icon than a public one.

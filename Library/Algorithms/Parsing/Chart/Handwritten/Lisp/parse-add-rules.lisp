@@ -4,7 +4,7 @@
 
 ;;; ============================================================================
 
-(defconstant +token-rule+  (make-parser-token-rule :name :TOKEN))
+(defparameter +token-rule+  (make-parser-token-rule :name :TOKEN))
 
 ;;; ============================================================================
 
@@ -24,19 +24,23 @@
 ;;; ============================================================================
 
 (defun add-parser-main-rule (parser name parent-names pattern semantics precedence documentation)
-  (when-debugging
-   (when *verbose?*
-     (comment "--------------------------------------------------------------------------------")
-     (comment "Adding rule ~S" name)))
+  (debugging-comment "--------------------------------------------------------------------------------")
+  (debugging-comment "Adding rule ~S" name)
   (let ((rule-name
 	 (cond ((null pattern)
 		(let ((newrule (make-parser-atomic-rule :name name)))
 		  (install-parser-rule parser newrule)
 		  name))
-	       ((and (consp pattern) (numberp (first pattern)))
+	       ((and (consp pattern) (or (numberp (first pattern))
+					 (eq (first pattern) :optional)))
 		(build-parser-rule parser name `(:TUPLE ,pattern)))
 	       (t
 		(build-parser-rule parser name pattern)))))
+    (when (null rule-name)
+      (warn "Ignoring rule ~S, because pattern begins with :optional: ~S"
+	    name 
+	    pattern)
+      (return-from add-parser-main-rule nil))
     (let ((rule (maybe-find-parser-rule parser rule-name)))
       (unless (null rule)
 	(setf (parser-rule-main-rule? rule) t)
@@ -59,11 +63,7 @@
 	   (parser-rule-name newrule)))))
 
 (defun build-parser-rule-aux (parser name pattern)
-  (when-debugging
-   (when *verbose?*
-     (comment "Build rule ~30S  from  ~A" 
-	      name 
-	      (format nil "~S" pattern))))
+  (debugging-comment "Build rule ~30S  from  ~A" name (format nil "~S" pattern))
   (etypecase pattern ; cannot use (ecase (type-of pattern) ...) since 'STRING won't match '(SIMPLE-ARRAY CHARACTER (3)) ,etc.
     (string (build-parser-keyword-rule parser pattern)) ; ignore name
     (symbol (build-parser-id-rule name pattern))
@@ -74,6 +74,31 @@
 	   (:TUPLE    (build-parser-tuple-rule  parser name (rest pattern)))
 	   (:PIECES   (build-parser-pieces-rule parser name (rest pattern)))
 	   (:REPEAT   (build-parser-repeat-rule parser name (rest pattern)))
+	   (:REPEAT*  (let* ((rulename 
+			      (build-parser-rule parser name 
+						 `(:anyof 
+						   ((:tuple (1 (:optional (:REPEAT ,@(rest pattern))))) 
+						    (if (eq '1 :unspecified) '() (list . 1)))
+						   )))
+			     (rule (gethash rulename (parser-ht-name-to-rule parser))))
+			(debugging-comment "Rule ~S is now optional: ~S." rulename rule)
+			(setf (parser-rule-optional? rule) t)
+			(setf (parser-rule-default-semantics rule) '())
+			rulename))
+           (:REPEAT+  (build-parser-rule parser name 
+					 `(:anyof
+					   ((:tuple (1 (:REPEAT ,@(rest pattern))))
+					    (list . 1)))))
+	   (:REPEAT++ (build-parser-rule parser name 
+					 (let ((elt (second pattern))
+					       (sep (third  pattern)))
+					   (if (null sep)
+					       `(:anyof
+						 ((:tuple (1 ,elt) (2 (:REPEAT ,@(rest pattern))))
+						  (list 1 . 2)))
+					     `(:anyof
+					       ((:tuple (1 ,elt) ,sep (2 (:REPEAT ,@(rest pattern))))
+						(list 1 . 2)))))))
 	   )
        (let* ((new-rule (build-parser-rule-aux parser name (first pattern)))
 	      (semantics     (second pattern))
@@ -110,7 +135,7 @@
 (defun build-parser-anyof-rule (parser name alternative-patterns)
   (let* ((patterns        alternative-patterns)
 	 (number-of-items (length patterns))
-	 (items           (make-array number-of-items)))
+	 (items           (make-array number-of-items :initial-element nil)))
     (dotimes (item-number number-of-items)
       (let ((pattern        (pop patterns))
 	    (semantic-index nil)
@@ -143,7 +168,7 @@
 (defun build-parser-tuple-rule (parser name element-patterns)
   (let* ((patterns        element-patterns)
 	 (number-of-items (length patterns))
-	 (items           (make-array number-of-items)))
+	 (items           (make-array number-of-items :initial-element nil)))
     (dotimes (item-number number-of-items)
       (let ((pattern        (pop patterns))
 	    (optional?      nil)
@@ -176,7 +201,7 @@
 (defun build-parser-pieces-rule (parser name field-patterns)
   (let* ((patterns        field-patterns)
 	 (number-of-items (length patterns))
-	 (items           (make-array number-of-items)))
+	 (items           (make-array number-of-items :initial-element nil)))
     (dotimes (item-number number-of-items)
       (let ((pattern        (pop patterns))
 	    (semantic-index nil)
@@ -214,7 +239,7 @@
 		(precedence     nil))
 	    (loop while (consp element-pattern) do
 	      (cond ((eq (first element-pattern) :OPTIONAL)
-		     (warn "In repeat rule ~S, element may not be :optionalt: ~S"
+		     (warn "In repeat rule ~S, element may not be :optional: ~S"
 			   name 
 			   pattern)
 		     (setq element-pattern (second element-pattern)))
@@ -239,7 +264,7 @@
 		  (precedence     nil))
 	      (loop while (consp separator-pattern) do
 		(cond ((eq (first separator-pattern) :OPTIONAL)
-		       (warn "In repeat rule ~S, separator may not be :optionalt: ~S"
+		       (warn "In repeat rule ~S, separator may not be :optional: ~S"
 			     name 
 			     pattern)
 		       (setq separator-pattern (second separator-pattern)))
@@ -272,36 +297,26 @@
 ;;; ============================================================================
 
 (defun add-parser-rule-semantics (rule semantics)
-  (when-debugging
-   (when *verbose?*
-     (comment "Set semantics of ~S to ~S" (parser-rule-name rule) semantics)))
+  (debugging-comment "Set semantics of ~S to ~S" (parser-rule-name rule) semantics)
   (setf (parser-rule-semantics rule) semantics))
 
 ;;; ============================================================================
 
 (defun add-parser-rule-precedence (rule precedence)
-  (when-debugging
-   (when *verbose?*
-     (comment "Set precedence of ~S to ~S" (parser-rule-name rule) precedence)))
+  (debugging-comment "Set precedence of ~S to ~S" (parser-rule-name rule) precedence)
   (setf (parser-rule-precedence rule) precedence))
 
 ;;; ============================================================================
 
 (defun add-parser-rule-documentation (rule doc)
-  (when-debugging
-   (when *verbose?*
-     (comment "Set documentation of ~S to ~S" (parser-rule-name rule) doc)))
+  (debugging-comment "Set documentation of ~S to ~S" (parser-rule-name rule) doc)
   (setf (parser-rule-documentation rule) doc))
 
 ;;; ============================================================================
 
 (defun extend-anyof-rule (parser parent-rule-name child-rule-name)
   (let ((parent-rule (find-parser-rule parser parent-rule-name)))
-    (when-debugging
-     (when *verbose?*
-       (comment "Adding ~S to alternatives for ~S" 
-		child-rule-name
-		parent-rule-name)))
+    (debugging-comment "Adding ~S to alternatives for ~S" child-rule-name parent-rule-name)
     (when (not (parser-anyof-rule-p parent-rule))
       (error "Problem adding ~S to ~S" 
 	     child-rule-name

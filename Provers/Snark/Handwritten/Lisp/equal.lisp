@@ -19,7 +19,7 @@
 
 (in-package :snark)
 
-;;; EQ suffices to compare function, predicate, and variable symbols
+;;; EQ suffices to compare function, relation, and variable symbols
 ;;; EQL suffices to compare constant symbols
 ;;;  string constants must be term-hashed to be EQ
 

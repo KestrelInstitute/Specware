@@ -3,39 +3,153 @@ spec
 import /Languages/MetaSlang/Specs/Utilities
 import /Languages/MetaSlang/Specs/Environment
 import /Languages/SpecCalculus/Semantics/Environment
-import /Languages/SpecCalculus/Semantics/Evaluate/Spec
+import /Languages/SpecCalculus/Semantics/Evaluate/Spec/Utilities
+%import /Languages/SpecCalculus/Semantics/Evaluate/Spec
 
-sort Term = StandardSpec.Term
-sort Env a = SpecCalc.Env a
+sort Term = MS.Term
+%sort Env a = SpecCalc.Env a
 
 sort Op = QualifiedId
 
 sort Type = Sort
-sort BaseType = (Type | baseType?)
+%sort BaseType = (Sort | baseType?)
 
-sort OpDef = Op * List Type * Type * List Var * Term
+sort OpDef = Op * List Sort * Sort * List Var * Term
+% the Boolean flag is used to distinguish the case of a function with no arguments
+% from a constant: if the flag is true, then it's a constant
+sort OpDef2 = Op * List Sort * Sort * List Var * Term * Boolean (* constant or function *)
 
 op unSupported: Op -> String
+def unSupported x =
+  let msg = "\nWarning: unsupported op: " ^ (printQualifiedId x) ^ "\n" in
+  let _ = toScreen msg in
+  msg
 
-op baseType?: Type -> Boolean
+(**
+ * a base type wrt. code generation are the builtin base types Boolean,Nat,Integer,Char,String
+ * and also those types that do *not* have a definition in the spec, i.e. those which
+ * are just declared.
+ *)
+op baseType?: Spec * Sort -> Boolean
+def baseType?(spc,type) =
+  if boolSort?(type) or integerSort?(type) or natSort?(type) or stringSort?(type) or charSort?(type)
+    then true
+  else sortIsUnrefinedInSpec?(spc,type)
 
-def baseType?(type) =
-  boolSort?(type) or integerSort?(type)
 
-op userType?: Type -> Boolean
+op baseTypeAlias?: Spec * Sort -> Boolean
+def baseTypeAlias?(spc,srt) =
+  if baseType?(spc,srt) then true
+  else
+    let usrt = unfoldBase(spc,srt) in
+    case usrt of
+      | Subsort(srt,_,_) -> baseTypeAlias?(spc,srt)
+      | Quotient(srt,_,_) -> baseTypeAlias?(spc,srt)
+      | _ -> baseType?(spc,usrt)
 
-def userType?(type) =
-  ~ (baseType?(type))
 
-op baseVar?: Var -> Boolean
-op userVar?: Var -> Boolean
 
-def baseVar?(var) =
+op builtinBaseTypeId?: Id -> Boolean
+def builtinBaseTypeId?(id) =
+  id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char"
+
+
+op baseTypeId?: Spec * Id -> Boolean
+
+def baseTypeId?(spc,id) =
+  id = "Boolean" or id = "Integer" or id = "Nat" or id = "String" or id = "Char" or sortIdIsUnrefinedInSpec?(spc,id)
+
+
+op userType?: Spec * Sort -> Boolean
+
+(**
+ * extended the definition of userType? to not only check whether it's not a base type, because it's also not a user
+ * type, if it's something different then a name of a type identifier, e.g., an arrow type
+ *)
+def userType?(spc,srt) =
+  if baseType?(spc,srt) then false
+  else
+    (case srt of
+       | Base(qid,_,_) -> true
+       %| Subsort(srt,_,_) -> userType?(srt)
+       %| Quotient(srt,_,_) -> userType?(srt)
+       | _ -> false
+      )
+
+def notAUserType?(spc,srt) = ~(userType?(spc,srt))
+
+(**
+ * implementation of the ut function as defined in v3:p38
+ * returns the first user type occuring in the type srt from left to right, where the constituent of
+ * each srt is also considered in case srt is an arrow type
+ *)
+op ut: Spec * Sort -> Option Sort
+def ut(spc,srt) =
+  ut_internal (fn(s) -> userType?(spc,s)) srt
+
+op ut_internal: (Sort -> Boolean) -> Sort -> Option Sort
+def ut_internal isUserType? srt =
+  let
+    def utlist0(srts) =
+      case srts of
+	| [] -> None
+	| srt::srts -> 
+	  (case ut_internal isUserType? srt of
+	     | Some s -> Some s
+	     | None -> utlist0(srts)
+	    )
+  in
+  if isUserType?(srt) then Some srt
+  else
+    let domsrts = srtDom(srt) in
+    case utlist0(domsrts) of
+      | Some s -> Some s
+      | None -> 
+        (case srt of
+	   | Arrow(_,rng,_) -> ut_internal isUserType? rng
+	   | _ -> None
+	  )
+
+op utlist: Spec * List Sort -> Option Sort
+def utlist(spc,srts) = 
+  utlist_internal (fn(srt) -> userType?(spc,srt)) srts
+
+op utlist_internal: (Sort -> Boolean) -> List Sort -> Option Sort
+def utlist_internal isUserType? srts =
+  case srts of
+    | [] -> None
+    | srt::srts ->
+      (case ut_internal isUserType? srt of
+	 | Some s -> Some s
+	 | None -> utlist_internal isUserType? srts
+	)
+
+
+(** 
+ * returns whether or not the given sort is "flat" meaning that it
+ * is a simple identifier, not an arrow sort, for instance.
+ *)
+op flatType?: Sort -> Boolean
+def flatType?(srt) =
+  case srt of
+    | Base(qid,_,_) -> true
+    | _ -> false
+
+op baseVar?: Spec * Var -> Boolean
+op userVar?: Spec * Var -> Boolean
+
+def baseVar?(spc,var) =
   let (id, srt) = var in
-  baseType?(srt)
+  baseType?(spc,srt)
 
-def userVar?(var) =
-  ~ (baseVar?(var))
+def userVar?(spc,var) =
+  ~ (baseVar?(spc,var))
+
+(**
+  * disabled this op def, the new srtId op is in ToJavaBase; it also handles other kinds of types.
+  *)
+op srtId_v2: Sort -> Id 
+def srtId_v2(srt as Base (Qualified (q, id), _, _)) = id
 
 op mkNewOp: Op * Nat -> Op
 
@@ -43,7 +157,7 @@ def mkNewOp(oper, k) =
   let Qualified (qual, id) = oper in
   mkQualifiedId(qual, id ^ natToString(k))
 
-op mkNewVar: Op * Nat * Type -> Var
+op mkNewVar: Op * Nat * Sort -> Var
 
 def mkNewVar(oper, k, t) =
   let Qualified (qual, id) = oper in
@@ -63,6 +177,9 @@ def caseTerm(term) =
     trm
 
 op caseCases: (Term | caseTerm?) -> Match
+def caseCases(trm) =
+  let  Apply (Lambda (match, _), trm, _) = trm in
+    match
 
 op recordFieldsToTerms: List (Id * Term) -> List Term
 
@@ -78,30 +195,64 @@ def applyArgsToTerms(args) =
     | Record (fields,_) -> recordFieldsToTerms(fields)
     | term -> [term]
 
-op opDom: Spec * Op -> List Type
-op opRange: Spec * Op -> Type
+(**
+ * this is the reverse of "applyArgsToTerms": it takes a term and a list of terms and
+ * exchanges the terms in argTerm by the terms in args. If argTerm is not a Record, then
+ * args must be a one-elementary list of terms, otherwise, the #elems in the Record fields
+ * and the #elems in the args list must be the same.
+ *) 
+op exchangeArgTerms: Term * List Term -> Term
+def exchangeArgTerms(argTerm,args) =
+  case argTerm of
+    | Record(fields,b) ->
+      let zip = zip(fields,args) in
+      let fields = map (fn((id,_),t) -> (id,t)) zip in
+      Record(fields,b)
+    | _ -> (case args of
+	      | [t] -> t
+	      | _ -> argTerm % should not happen
+	   )
+
+op opDom: Spec * Op -> List Sort
+op opRange: Spec * Op -> Sort
 
 def opDom(spc, oper) =
-  let opinfo = findTheOp(spc, oper) in
+  let opinfo = findAllOps(spc, oper) in
   case opinfo of
-    | Some (_,_,(_,srt),_) -> srtDom(srt)
+    | (_,_,(_,srt),_)::_ -> srtDom(srt)
     | _ -> let _ = unSupported(oper) in []
 
 def opRange(spc, oper) =
-  let opinfo = findTheOp(spc, oper) in
+  let opinfo = findAllOps(spc, oper) in
   case opinfo of
-    | Some (_,_,(_,srt),_) -> srtRange(srt)
+    | (_,_,(_,srt),_)::_ -> srtRange(srt)
     | _ -> let _ = unSupported(oper) in boolSort
 
-op srtDom: Type -> List Type
-op srtRange: Type -> Type
+op srtDom: Sort -> List Sort
+op srtRange: Sort -> Sort
 
 def srtDom(srt) =
+  let def domSrtDom(dom) =
+       (case dom of
+	  | Product (fields, _) -> map (fn (_,srt) -> srt) fields
+	  | Subsort (subSrt, _, _) -> domSrtDom(subSrt)
+	  | _ -> [dom]) in
   case srt of
     | Arrow (dom, rng, _) ->
-    (let argSorts = (case dom of
-		       | Product (fields, _) -> map (fn (_,srt) -> srt) fields
-		       | _ -> [dom]) in
+    (let argSorts = domSrtDom(dom) in
+     argSorts)
+    | _ -> []
+
+op srtDomKeepSubsorts: Sort -> List Sort
+def srtDomKeepSubsorts(srt) =
+  let def domSrtDom(dom) =
+       (case dom of
+	  | Product (fields, _) -> map (fn (_,srt) -> srt) fields
+	  %| Subsort (subSrt, _, _) -> domSrtDom(subSrt)
+	  | _ -> [dom]) in
+  case srt of
+    | Arrow (dom, rng, _) ->
+    (let argSorts = domSrtDom(dom) in
      argSorts)
     | _ -> []
 
@@ -109,6 +260,21 @@ def srtRange(srt) =
   case srt of
     | Arrow (dom, rng, _) -> rng
     | _ -> srt
+
+op srtDomPreds: Sort -> List(Option Term)
+def srtDomPreds(srt) =
+  %let _ = writeLine("srtDomPreds "^printSort(srt)) in
+  let def srtPred(srt) : Option Term =
+        case srt of
+	  | Subsort(_,pred,_) -> 
+	    %let _ = writeLine("collecting restriction term "^printTerm(pred)) in
+	    Some pred
+	  | _ -> None
+  in
+    case srt of
+      | Arrow(Product(fields,_),_,_) -> map (fn(_,srt) -> srtPred(srt)) fields
+      | Arrow(srt,_,_) -> [srtPred(srt)]
+      | _ -> []
 
  op patternNameOpt : Pattern       -> Option Id
  op patternNamesOpt: Pattern       -> Option (List Id)
@@ -137,9 +303,9 @@ op opDelta: Spec * Op -> List Var * Term
 def opDelta(spc, oper) =
   let opDom = opDom(spc, oper) in
   let opRng = opRange(spc, oper) in
-  let opinfo = findTheOp(spc, oper) in
+  let opinfo = findAllOps(spc, oper) in
   case opinfo of
-    | Some (_,_,_,[(_,trm)]) ->
+    | (_,_,_,[(_,trm)])::_ ->
     (case trm of
        | Lambda ([(pat, cond, body)],_) ->
        let argNames = patternNamesOpt(pat) in
@@ -157,36 +323,53 @@ def opDelta(spc, oper) =
        | _ -> ([], trm))
      | _ -> let _ = unSupported(oper) in ([], mkFalse())
 
-op srtTermDelta: Type * Term -> List Var * Term
 
-def srtTermdelta(srt, term) =
+op srtTermDelta : Sort * Term -> List Var * Term
+def srtTermDelta(srt,term) = srtTermDelta_internal(srt,term,false)
+
+op srtTermDelta_internal: Sort * Term * Boolean-> List Var * Term
+def srtTermDelta_internal(srt, term, fail?) =
   let opDom = srtDom(srt) in
   let opRng = srtRange(srt) in
+  let
+    def arityMismatchError(pat,args1,term,args2) = 
+      "unsupported: pattern "^printPattern(pat)^" has "^Integer.toString(args1)^" args, but "
+      ^printTerm(term)^" has "^Integer.toString(args2)^" args."
+  in
   case term of
     | Lambda ([(pat, cond, body)],_) ->
     let argNames = patternNamesOpt(pat) in
+    let arity = length(opDom) in
     (case argNames of
        | Some argNames ->
-       let numArgs = length argNames in
-       let arity = length(opDom) in
-       if arity = numArgs
-	 then 
-	   let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
-	   (newArgs, body)
-       else
-	 fail("type Mismatch in delta")
-	 | _ -> fail("type Mismatch in delta"))
+         (let numArgs = length argNames in
+	  if arity = numArgs
+	    then 
+	      let newArgs = map (fn(id, srt) -> (id,srt)) (argNames, opDom) in
+	      (newArgs, body)
+	  else
+	    if fail? then
+	      fail(arityMismatchError(pat,numArgs,term,arity))
+	    else ([],term)
+	 )
+       | _ -> 
+	 if fail? then
+	   fail(arityMismatchError(pat,0,term,arity))
+	 else ([],term)
+     )
     | _ -> ([], term)
 
 op liftCaseTopCase: Op * (Term | caseTerm?) * Nat -> Term * Nat * List OpDef
 
 def liftCaseTopCase(oper, body, k) =
+  let b = termAnn(body) in
   let caseTerm = caseTerm(body) in
   let cases = caseCases(body) in
   let caseBodys = map (fn (pat, cond, patBody) -> patBody) cases in
   let (newCaseBodys, newK, newOds) = liftCases(oper, caseBodys, k) in
   let newCases = ListPair.map (fn ((pat, cond, _), (newPatBody)) -> (pat, cond, newPatBody)) (cases, newCaseBodys) in
-  let newTerm = mkApply(Lambda (newCases, noPos), caseTerm) in
+  let newTerm = mkApply(Lambda (newCases, b), caseTerm) in
+  let newTerm = withAnnT(newTerm,b) in
   (newTerm, newK, newOds)
   
 
@@ -201,6 +384,7 @@ def liftCase(oper, term, k) =
   if caseTerm?(term) then liftCaseCase(oper, term, k) else
   case term of
     | Var _ -> (term, k, [])
+    | Fun _ -> (term, k, [])
     | Apply (opTerm, argsTerm, _) -> liftCaseApply(oper, term, k)
     | Record _ -> liftCaseRecord(oper, term, k)
     | IfThenElse _ -> liftCaseIfThenElse(oper, term, k)
@@ -210,28 +394,30 @@ def liftCase(oper, term, k) =
 def liftCaseApply(oper, term as Apply (opTerm, argsTerm, _), k) =
   let args = applyArgsToTerms(argsTerm) in
   let (newArgs, newK, newOds) = liftCases(oper, args, k) in
-    (mkApplication(opTerm, newArgs), newK, newOds)
+  (withAnnT(mkApplication(opTerm, newArgs),termAnn(term)), newK, newOds)
+
 
 def liftCaseRecord(oper, term as Record (fields,_), k) =
   let recordTerms = recordFieldsToTerms(fields) in
   let (newTerms, newK, newOds) = liftCases(oper, recordTerms, k) in
   let newFields = map (fn ((id, _), newTerm) -> (id, newTerm)) (fields, newTerms) in
-    (mkRecord(newFields), newK, newOds)
+    (withAnnT(mkRecord(newFields),termAnn(term)), newK, newOds)
 
 def liftCaseIfThenElse(oper, term as IfThenElse(t1, t2, t3, _), k) =
   let args = [t1, t2, t3] in
   let ([newT1, newT2, newT3], newK, newOds) = liftCases(oper, args, k) in
-    (StandardSpec.mkIfThenElse(newT1, newT2, newT3), newK, newOds)
+    (withAnnT(MS.mkIfThenElse(newT1, newT2, newT3),termAnn(term)), newK, newOds)
 
 def liftCaseLet(oper, term as Let (letBindings, letBody, _), k) =
   case letBindings of
     | [(VarPat (v, _), letTerm)] ->
     let args = [letTerm, letBody] in
     let ([newLetTerm, newLetBody], newK, newOds) = liftCases(oper, args, k) in
-    (mkLet([(mkVarPat(v), newLetTerm)], newLetBody), newK, newOds)
+    (withAnnT(mkLet([(mkVarPat(v), newLetTerm)], newLetBody),termAnn(term)), newK, newOds)
     | _ -> let _ = unSupported(oper) in (term, k, [])
 
 def liftCaseCase(oper, term, k) =
+  let b = termAnn(term) in
   let ttermSort = termSort(term) in
   let caseTerm = caseTerm(term) in
   let caseTermSort = termSort(caseTerm) in
@@ -244,14 +430,13 @@ def liftCaseCase(oper, term, k) =
   let freeVars = uniqueSort (fn ((id1, _), (id2, _)) -> compare(id1, id2)) freeVarsCases in
   let freeVarsSorts = map (fn(id, srt) -> srt) freeVars in
   let newOp = mkNewOp(oper, k) in
-  let newOpSrt = mkArrow(mkProduct(cons(caseTermSort, freeVarsSorts)), ttermSort) in
+  let newOpSrt = withAnnS(mkArrow(mkProduct(cons(caseTermSort, freeVarsSorts)), ttermSort),b) in
   let newVar = mkNewVar(oper, k, caseTermSort) in
-  let newOpTerm = mkApply(Lambda (newCases, noPos), mkVar(newVar)) in
+  let newOpTerm = withAnnT(mkApply(Lambda (newCases, b), mkVar(newVar)),b) in
   let newOpDef = (newOp, cons(caseTermSort,freeVarsSorts), ttermSort, cons(newVar, freeVars), newOpTerm) in
-  let newTerm = mkApplication(mkOp(newOp, newOpSrt), cons(newCaseTerm, map mkVar freeVars)) in
+  let newTerm = withAnnT(mkApplication(mkOp(newOp, newOpSrt), cons(newCaseTerm, map mkVar freeVars)),b) in
   (newTerm, finalK, newOds1++newOds2++[newOpDef])
   
-
 op liftCases: Op * List Term * Nat -> List Term * Nat * List OpDef
 
 def liftCases(oper, terms, k) =
@@ -262,10 +447,10 @@ def liftCases(oper, terms, k) =
     let (restTerms, restK, restOds) = liftCases(oper, terms, newK) in
     (cons(newTerm, restTerms), restK, newOds++restOds)
 
-op lift: Op * (List Var * Term) -> Term * List OpDef
+op lift: Spec * Op * (List Var * Term) -> Term * List OpDef
 
-def lift(oper, (formals, body)) =
-  let firstUserVar = find userVar? formals in
+def lift(spc,oper, (formals, body)) =
+  let firstUserVar = find (fn(v) -> userVar?(spc,v)) formals in
   case firstUserVar of
     | Some firstUserVar ->
     if caseTerm?(body)
@@ -295,49 +480,39 @@ def liftPattern(spc) =
   (fn (qualifier, name, (op_names, fixity, (tyVars, srt), [(_, term)]),
        result) ->
    let origOp = mkQualifiedId(qualifier, name) in
-   let (newTerm, newOds) = lift(origOp, srtTermDelta(srt, term)) in
+   let (origOpVars, origOpBody) = srtTermDelta(srt, term) in
+   let (newTerm, newOds) = lift(spc,origOp, (origOpVars, origOpBody)) in
    let (origOpNewVars, origOpNewTerm) = srtTermDelta(srt, newTerm) in
-   let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpNewVars, origOpNewTerm) in
+   let isConstantOp? = case srt of Arrow _ -> false | _ -> true in
+   let origOpNewDef = (origOp, srtDom(srt), srtRange(srt), origOpVars, newTerm) in
    cons(origOpNewDef, newOds++result))
   []
   spc.ops in
   let result = emptySpec in
   let result = setSorts(result, spc.sorts) in
-  let result = foldr addOdToSpec result newOpDefs in
+  let result = foldr addOpToSpec result newOpDefs in
    result
 
-op addOdToSpec: OpDef * Spec -> Spec
-
-def addOdToSpec((oper:Op, dom:(List Type), rng:Type, formals:List Var, body:Term), spc:Spec) =
-  let srt = case dom of | [] -> rng | [dom] -> mkArrow(dom, rng) | _ -> mkArrow(mkProduct(dom), rng) in
-  let varPatterns = map mkVarPat formals in
-  let term = mkLambda(mkTuplePat(varPatterns), body) in
-  case run_monad(optAddOp(oper, srt, term, spc)) of
-    | Some newSpec -> newSpec
-    | _ -> fail("internal monad error")
+op addOpToSpec: OpDef * Spec -> Spec
+def addOpToSpec((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term), spc:Spec) =
+  addOpToSpec2((oper,dom,rng,formals,body,false),spc)
    
- def localHandler except = {Specware.toplevelHandler except; return None}
-
- def run_monad (monad : Env (Option Spec)) : Option Spec =
-   %% This is a bit of a hack to let us run monadic code in a
-   %% non-monadic environment.  We don't need the monadic features
-   %% since we have no I/O and produce no exceptions (we hope!),
-   %% but it would be painful to produce and maintain non-monadic
-   %% versions of the monadic functions translateSpec and specUnion.
-   %%
-   %% HACK: The calls to restoreSavedSpecwareState below revive the 
-   %%       global monad state saved by SpecCalc.evaluateColimit in 
-   %%       /Languages/SpecCalculus/Semantics/Evaluate/Colimit.sw
-   %%       
-   case catch monad localHandler ignoredState  of
-     | (Ok spc, _)     -> spc
-     | (Exception _,_) -> fail "Specware toplevel handler failed within colimit!"
-     
- def optAddOp(oper, srt, term, spc) : Env (Option Spec) =
-   {%% start by replacing the ignoredState with global context saved by
-    %% SpecCalc.evaluateColimit in /Languages/SpecCalculus/Semantics/Evaluate/Colimit.sw
-    restoreSavedSpecwareState; 
-    spc <- addOp [oper] Nonfix ([], srt) [([], term)] spc noPos;
-    return (Some spc)}
-
+op addOpToSpec2: OpDef2 * Spec -> Spec
+def addOpToSpec2((oper:Op, dom:(List Sort), rng:Sort, formals:List Var, body:Term, isConstantOp?: Boolean), spc:Spec) =
+  let srt = case dom of 
+	      | [] -> if isConstantOp? then rng else mkArrow(mkProduct([]),rng)
+	      | [dom] -> withAnnS(mkArrow(dom, rng),sortAnn(dom))
+	      | _ -> mkArrow(mkProduct(dom), rng)
+  in
+  let varPatterns = map mkVarPat formals in
+  let term = case varPatterns of
+               | [] -> if isConstantOp? then body else mkLambda(mkTuplePat(varPatterns),body)
+               | _ -> mkLambda(mkTuplePat(varPatterns), body)
+  in
+  let (f, t) = srtTermDelta(srt, term) in
+  run (addOp (oper, srt, term, spc))
+   
+def addOp (oper, srt, term, spc) : SpecCalc.Env Spec =
+  let b = termAnn(term) in
+  addOp [oper] Nonfix ([], srt) [([], term)] spc b
 endspec

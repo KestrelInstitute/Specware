@@ -18,6 +18,7 @@ import edu.kestrel.netbeans.MetaSlangDataObject;
 import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.model.SourceElement;
 import edu.kestrel.netbeans.lisp.LispProcessManager;
+import edu.kestrel.netbeans.lisp.LispSocketManager;
 import org.openide.filesystems.FileStateInvalidException;
 
 /**
@@ -65,11 +66,10 @@ public class StartLispAction extends NodeAction {
     */
     void startLisp () {
         TopManager.getDefault ().setStatusText (message ());
-	LispProcessManager.destroyLispProcess();
-        if (LispProcessManager.connectToLisp()) {
-            TopManager.getDefault ().setStatusText (NbBundle.getMessage(StartLispAction.class, "CTL_NoConnectionToLisp"));
+        if (LispSocketManager.connectToLisp()) {
+            TopManager.getDefault ().setStatusText (NbBundle.getMessage(StartLispAction.class, "CTL_ConnectedToLisp"));
         } else {
-        TopManager.getDefault ().setStatusText (NbBundle.getMessage(StartLispAction.class, "CTL_ConnectedToLisp"));
+            TopManager.getDefault ().setStatusText (NbBundle.getMessage(StartLispAction.class, "CTL_NoConnectionToLisp"));    
         }
     }
     

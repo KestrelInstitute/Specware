@@ -279,33 +279,33 @@ spec
     tester ("let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]", let A = id ( [3,1,4,1,5,9] , 2 , 4 ) in (sublist A) = [4,1]);
 % List [ 63]:  op map             : fa(a,b) (a -> b) -> List a -> List b
     tester ("(map ( succ ) ( [3,4,5] )) = [4,5,6]", (map ( succ ) ( [3,4,5] )) = [4,5,6]);
-    tester ("let F = map ( succ ) in (F ( [3,4,5] )) = [4,5,6]", let F = map ( succ ) in (F ( [3,4,5] )) = [4,5,6]);
+    tester ("let F = id ( map ( succ )) in (F ( [3,4,5] )) = [4,5,6]", let F = id ( map ( succ )) in (F ( [3,4,5] )) = [4,5,6]);
 % List [ 64]:  op mapPartial      : fa(a,b) (a -> Option b) -> List a -> List b
     tester ("(mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]", (mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) ( [5,0,2] )) = [4,1]);
-    tester ("let F = mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) in (F ( [5,0,2] )) = [4,1]", let F = mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) ) in (F ( [5,0,2] )) = [4,1]);
+    tester ("let F = id ( mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) )) in (F ( [5,0,2] )) = [4,1]", let F = id ( mapPartial ( fn(n)->if(n<1)then(None)else(Some(pred(n))) )) in (F ( [5,0,2] )) = [4,1]);
 % List [ 65]:  op foldl           : fa(a,b) (a * b -> b) -> b -> List a -> b
     tester ("(foldl ( fn(m,n)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13", (foldl ( fn(m,n)->(m)rem(n) ) ( 20 ) ( [77,47] )) = 13);
-    tester ("let F = foldl ( fn(m,n)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13", let F = foldl ( fn(m,n)->(m)rem(n) ) in (F ( 20 ) ( [77,47] )) = 13);
+    tester ("let F = id ( foldl ( fn(m,n)->(m)rem(n) )) in (F ( 20 ) ( [77,47] )) = 13", let F = id ( foldl ( fn(m,n)->(m)rem(n) )) in (F ( 20 ) ( [77,47] )) = 13);
 % List [ 66]:  op foldr           : fa(a,b) (a * b -> b) -> b -> List a -> b
     tester ("(foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13", (foldr ( fn(m,n)->(m)rem(n) ) ( 77 ) ( [27,91] )) = 13);
-    tester ("let F = foldr ( fn(m,n)->(m)rem(n) ) in (F ( 77 ) ( [27,91] )) = 13", let F = foldr ( fn(m,n)->(m)rem(n) ) in (F ( 77 ) ( [27,91] )) = 13);
+    tester ("let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13", let F = id ( foldr ( fn(m,n)->(m)rem(n) )) in (F ( 77 ) ( [27,91] )) = 13);
 % List [ 67]:  op exists          : fa(a)   (a -> Boolean) -> List a -> Boolean
     tester ("(exists ( posNat? ) ( [] )) = false", (exists ( posNat? ) ( [] )) = false);
-    tester ("let F = exists ( posNat? ) in (F ( [] )) = false", let F = exists ( posNat? ) in (F ( [] )) = false);
+    tester ("let F = id ( exists ( posNat? )) in (F ( [] )) = false", let F = id ( exists ( posNat? )) in (F ( [] )) = false);
     tester ("(exists ( posNat? ) ( [0,0,0] )) = false", (exists ( posNat? ) ( [0,0,0] )) = false);
-    tester ("let F = exists ( posNat? ) in (F ( [0,0,0] )) = false", let F = exists ( posNat? ) in (F ( [0,0,0] )) = false);
+    tester ("let F = id ( exists ( posNat? )) in (F ( [0,0,0] )) = false", let F = id ( exists ( posNat? )) in (F ( [0,0,0] )) = false);
     tester ("(exists ( posNat? ) ( [0,1,0] )) = true", (exists ( posNat? ) ( [0,1,0] )) = true);
-    tester ("let F = exists ( posNat? ) in (F ( [0,1,0] )) = true", let F = exists ( posNat? ) in (F ( [0,1,0] )) = true);
+    tester ("let F = id ( exists ( posNat? )) in (F ( [0,1,0] )) = true", let F = id ( exists ( posNat? )) in (F ( [0,1,0] )) = true);
 % List [ 68]:  op all             : fa(a)   (a -> Boolean) -> List a -> Boolean
     tester ("(all ( posNat? ) ( [] )) = true", (all ( posNat? ) ( [] )) = true);
-    tester ("let F = all ( posNat? ) in (F ( [] )) = true", let F = all ( posNat? ) in (F ( [] )) = true);
+    tester ("let F = id ( all ( posNat? )) in (F ( [] )) = true", let F = id ( all ( posNat? )) in (F ( [] )) = true);
     tester ("(all ( posNat? ) ( [1,1,1] )) = true", (all ( posNat? ) ( [1,1,1] )) = true);
-    tester ("let F = all ( posNat? ) in (F ( [1,1,1] )) = true", let F = all ( posNat? ) in (F ( [1,1,1] )) = true);
+    tester ("let F = id ( all ( posNat? )) in (F ( [1,1,1] )) = true", let F = id ( all ( posNat? )) in (F ( [1,1,1] )) = true);
     tester ("(all ( posNat? ) ( [1,0,1] )) = false", (all ( posNat? ) ( [1,0,1] )) = false);
-    tester ("let F = all ( posNat? ) in (F ( [1,0,1] )) = false", let F = all ( posNat? ) in (F ( [1,0,1] )) = false);
+    tester ("let F = id ( all ( posNat? )) in (F ( [1,0,1] )) = false", let F = id ( all ( posNat? )) in (F ( [1,0,1] )) = false);
 % List [ 69]:  op filter          : fa(a)   (a -> Boolean) -> List a -> List a
     tester ("(filter ( posNat? ) ( [5,0,2] )) = [5,2]", (filter ( posNat? ) ( [5,0,2] )) = [5,2]);
-    tester ("let F = filter ( posNat? ) in (F ( [5,0,2] )) = [5,2]", let F = filter ( posNat? ) in (F ( [5,0,2] )) = [5,2]);
+    tester ("let F = id ( filter ( posNat? )) in (F ( [5,0,2] )) = [5,2]", let F = id ( filter ( posNat? )) in (F ( [5,0,2] )) = [5,2]);
 % List [ 70]:  op diff            : fa(a)   List a * List a -> List a
     tester ("(diff ( [3,1,4,1,5,9] , [5,9,2,1] )) = [3,4]", (diff ( [3,1,4,1,5,9] , [5,9,2,1] )) = [3,4]);
     tester ("let A = id ( [3,1,4,1,5,9] , [5,9,2,1] ) in (diff A) = [3,4]", let A = id ( [3,1,4,1,5,9] , [5,9,2,1] ) in (diff A) = [3,4]);
@@ -318,22 +318,22 @@ spec
     tester ("(flatten ( [[3,1],[4,1],[5,9]] )) = [3,1,4,1,5,9]", (flatten ( [[3,1],[4,1],[5,9]] )) = [3,1,4,1,5,9]);
 % List [ 74]:  op find            : fa(a)   (a -> Boolean) -> List a -> Option(a)
     tester ("(find ( posNat? ) ( [0,0,0] )) = None", (find ( posNat? ) ( [0,0,0] )) = None);
-    tester ("let F = find ( posNat? ) in (F ( [0,0,0] )) = None", let F = find ( posNat? ) in (F ( [0,0,0] )) = None);
+    tester ("let F = id ( find ( posNat? )) in (F ( [0,0,0] )) = None", let F = id ( find ( posNat? )) in (F ( [0,0,0] )) = None);
     tester ("(find ( posNat? ) ( [0,1,0] )) = Some(1)", (find ( posNat? ) ( [0,1,0] )) = Some(1));
-    tester ("let F = find ( posNat? ) in (F ( [0,1,0] )) = Some(1)", let F = find ( posNat? ) in (F ( [0,1,0] )) = Some(1));
+    tester ("let F = id ( find ( posNat? )) in (F ( [0,1,0] )) = Some(1)", let F = id ( find ( posNat? )) in (F ( [0,1,0] )) = Some(1));
 % List [ 75]:  op tabulate        : fa(a)   Nat * (Nat -> a) -> List a
     tester ("(tabulate ( 3 , succ )) = [1,2,3]", (tabulate ( 3 , succ )) = [1,2,3]);
     tester ("let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]", let A = id ( 3 , succ ) in (tabulate A) = [1,2,3]);
 % List [ 76]:  op firstUpTo       : fa(a)   (a -> Boolean) -> List a -> Option (a * List a)
     tester ("(firstUpTo ( null ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])", (firstUpTo ( null ) ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]]));
-    tester ("let F = firstUpTo ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])", let F = firstUpTo ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]]));
+    tester ("let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]])", let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([],[[1],[2,3]]));
     tester ("(firstUpTo ( null ) ( [[1],[2,3],[4]] )) = None", (firstUpTo ( null ) ( [[1],[2,3],[4]] )) = None);
-    tester ("let F = firstUpTo ( null ) in (F ( [[1],[2,3],[4]] )) = None", let F = firstUpTo ( null ) in (F ( [[1],[2,3],[4]] )) = None);
+    tester ("let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[4]] )) = None", let F = id ( firstUpTo ( null )) in (F ( [[1],[2,3],[4]] )) = None);
 % List [ 78]:  op splitList       : fa(a)  (a -> Boolean) -> List a -> Option(List a * a * List a)
     tester ("(splitList ( null ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])", (splitList ( null ) ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]]));
-    tester ("let F = splitList ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])", let F = splitList ( null ) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]]));
+    tester ("let F = id ( splitList ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]])", let F = id ( splitList ( null )) in (F ( [[1],[2,3],[],[4]] )) = Some([[1],[2,3]],[],[[4]]));
     tester ("(splitList ( null ) ( [[1],[2,3],[4]] )) = None", (splitList ( null ) ( [[1],[2,3],[4]] )) = None);
-    tester ("let F = splitList ( null ) in (F ( [[1],[2,3],[4]] )) = None", let F = splitList ( null ) in (F ( [[1],[2,3],[4]] )) = None);
+    tester ("let F = id ( splitList ( null )) in (F ( [[1],[2,3],[4]] )) = None", let F = id ( splitList ( null )) in (F ( [[1],[2,3],[4]] )) = None);
 % List [ 80]:  op locationOf      : fa(a)  List a * List a -> Option(Nat * List a)
     tester ("(locationOf ( [] , [3,1,4,1,5] )) = Some(0,[3,1,4,1,5])", (locationOf ( [] , [3,1,4,1,5] )) = Some(0,[3,1,4,1,5]));
     tester ("let A = id ( [] , [3,1,4,1,5] ) in (locationOf A) = Some(0,[3,1,4,1,5])", let A = id ( [] , [3,1,4,1,5] ) in (locationOf A) = Some(0,[3,1,4,1,5]));
@@ -343,17 +343,17 @@ spec
     tester ("let A = id ( [1,3] , [3,1,4,1,5] ) in (locationOf A) = None", let A = id ( [1,3] , [3,1,4,1,5] ) in (locationOf A) = None);
 % List [ 81]:  op compare         : fa(a)  (a * a -> Comparison) -> List a * List a -> Comparison
     tester ("(compare ( Integer.compare ) ( [] , [1] )) = Less", (compare ( Integer.compare ) ( [] , [1] )) = Less);
-    tester ("let F = compare ( Integer.compare ) in (F ( [] , [1] )) = Less", let F = compare ( Integer.compare ) in (F ( [] , [1] )) = Less);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( [] , [1] )) = Less", let F = id ( compare ( Integer.compare )) in (F ( [] , [1] )) = Less);
     tester ("(compare ( Integer.compare ) ( [0,9] , [1] )) = Less", (compare ( Integer.compare ) ( [0,9] , [1] )) = Less);
-    tester ("let F = compare ( Integer.compare ) in (F ( [0,9] , [1] )) = Less", let F = compare ( Integer.compare ) in (F ( [0,9] , [1] )) = Less);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( [0,9] , [1] )) = Less", let F = id ( compare ( Integer.compare )) in (F ( [0,9] , [1] )) = Less);
     tester ("(compare ( Integer.compare ) ( [1] , [1] )) = Equal", (compare ( Integer.compare ) ( [1] , [1] )) = Equal);
-    tester ("let F = compare ( Integer.compare ) in (F ( [1] , [1] )) = Equal", let F = compare ( Integer.compare ) in (F ( [1] , [1] )) = Equal);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( [1] , [1] )) = Equal", let F = id ( compare ( Integer.compare )) in (F ( [1] , [1] )) = Equal);
     tester ("(compare ( Integer.compare ) ( [1,0] , [1] )) = Greater", (compare ( Integer.compare ) ( [1,0] , [1] )) = Greater);
-    tester ("let F = compare ( Integer.compare ) in (F ( [1,0] , [1] )) = Greater", let F = compare ( Integer.compare ) in (F ( [1,0] , [1] )) = Greater);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( [1,0] , [1] )) = Greater", let F = id ( compare ( Integer.compare )) in (F ( [1,0] , [1] )) = Greater);
 % List [ 82]:  op app             : fa(a)  (a -> ()) -> List a -> ()  % deprecated
 % List [134]:  op show    : String -> List String -> String
     tester ("(show ( \"ns\" ) ( [\"no\",\"e\",\"e\"] )) = \"nonsense\"", (show ( "ns" ) ( ["no","e","e"] )) = "nonsense");
-    tester ("let F = show ( \"ns\" ) in (F ( [\"no\",\"e\",\"e\"] )) = \"nonsense\"", let F = show ( "ns" ) in (F ( ["no","e","e"] )) = "nonsense");
+    tester ("let F = id ( show ( \"ns\" )) in (F ( [\"no\",\"e\",\"e\"] )) = \"nonsense\"", let F = id ( show ( "ns" )) in (F ( ["no","e","e"] )) = "nonsense");
 
 % Nat [ 84]:  op succ    : Nat -> Nat
     tester ("(succ ( 6 )) = 7", (succ ( 6 )) = 7);
@@ -374,7 +374,13 @@ spec
     tester ("(Nat.show ( 123 )) = \"123\"", (Nat.show ( 123 )) = "123");
 % Nat [126]:  op natToString  : Nat -> String
     tester ("(natToString ( 123 )) = \"123\"", (natToString ( 123 )) = "123");
-% Nat [127]:  op stringToNat  : {s : String | length s > 0 & all isNum (explode s)} -> Nat
+% Nat [126.5]:  op natConvertible : String -> Boolean
+    tester ("(natConvertible ( \"123\" )) = true", (natConvertible ( "123" )) = true);
+    tester ("(natConvertible ( \"-123\" )) = false", (natConvertible ( "-123" )) = false);
+    tester ("(natConvertible ( \"000\" )) = true", (natConvertible ( "000" )) = true);
+    tester ("(natConvertible ( \"\" )) = false", (natConvertible ( "" )) = false);
+    tester ("(natConvertible ( \"123.00\" )) = false", (natConvertible ( "123.00" )) = false);
+% Nat [127]:  op stringToNat  : (String | natConvertible) -> Nat
 
 % Option [ 94]:  op some      : fa(a) a -> Option a
     tester ("(some ( 1 )) = Some(1)", (some ( 1 )) = Some(1));
@@ -388,27 +394,27 @@ spec
     tester ("(none? ( Some(1) )) = false", (none? ( Some(1) )) = false);
 % Option [ 98]:  op compare   : fa(a) (a * a -> Comparison) -> Option a * Option a -> Comparison
     tester ("(compare ( Integer.compare ) ( None , None )) = Equal", (compare ( Integer.compare ) ( None , None )) = Equal);
-    tester ("let F = compare ( Integer.compare ) in (F ( None , None )) = Equal", let F = compare ( Integer.compare ) in (F ( None , None )) = Equal);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( None , None )) = Equal", let F = id ( compare ( Integer.compare )) in (F ( None , None )) = Equal);
     tester ("(compare ( Integer.compare ) ( None , Some(1) )) = Less", (compare ( Integer.compare ) ( None , Some(1) )) = Less);
-    tester ("let F = compare ( Integer.compare ) in (F ( None , Some(1) )) = Less", let F = compare ( Integer.compare ) in (F ( None , Some(1) )) = Less);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( None , Some(1) )) = Less", let F = id ( compare ( Integer.compare )) in (F ( None , Some(1) )) = Less);
     tester ("(compare ( Integer.compare ) ( Some(1) , None )) = Greater", (compare ( Integer.compare ) ( Some(1) , None )) = Greater);
-    tester ("let F = compare ( Integer.compare ) in (F ( Some(1) , None )) = Greater", let F = compare ( Integer.compare ) in (F ( Some(1) , None )) = Greater);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( Some(1) , None )) = Greater", let F = id ( compare ( Integer.compare )) in (F ( Some(1) , None )) = Greater);
     tester ("(compare ( Integer.compare ) ( Some(0) , Some(1) )) = Less", (compare ( Integer.compare ) ( Some(0) , Some(1) )) = Less);
-    tester ("let F = compare ( Integer.compare ) in (F ( Some(0) , Some(1) )) = Less", let F = compare ( Integer.compare ) in (F ( Some(0) , Some(1) )) = Less);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( Some(0) , Some(1) )) = Less", let F = id ( compare ( Integer.compare )) in (F ( Some(0) , Some(1) )) = Less);
     tester ("(compare ( Integer.compare ) ( Some(1) , Some(1) )) = Equal", (compare ( Integer.compare ) ( Some(1) , Some(1) )) = Equal);
-    tester ("let F = compare ( Integer.compare ) in (F ( Some(1) , Some(1) )) = Equal", let F = compare ( Integer.compare ) in (F ( Some(1) , Some(1) )) = Equal);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( Some(1) , Some(1) )) = Equal", let F = id ( compare ( Integer.compare )) in (F ( Some(1) , Some(1) )) = Equal);
     tester ("(compare ( Integer.compare ) ( Some(2) , Some(1) )) = Greater", (compare ( Integer.compare ) ( Some(2) , Some(1) )) = Greater);
-    tester ("let F = compare ( Integer.compare ) in (F ( Some(2) , Some(1) )) = Greater", let F = compare ( Integer.compare ) in (F ( Some(2) , Some(1) )) = Greater);
+    tester ("let F = id ( compare ( Integer.compare )) in (F ( Some(2) , Some(1) )) = Greater", let F = id ( compare ( Integer.compare )) in (F ( Some(2) , Some(1) )) = Greater);
 % Option [ 99]:  op mapOption : fa(a,b) (a -> b) -> Option a -> Option b
     tester ("(mapOption ( succ ) ( None )) = None", (mapOption ( succ ) ( None )) = None);
-    tester ("let F = mapOption ( succ ) in (F ( None )) = None", let F = mapOption ( succ ) in (F ( None )) = None);
+    tester ("let F = id ( mapOption ( succ )) in (F ( None )) = None", let F = id ( mapOption ( succ )) in (F ( None )) = None);
     tester ("(mapOption ( succ ) ( Some(0) )) = Some(1)", (mapOption ( succ ) ( Some(0) )) = Some(1));
-    tester ("let F = mapOption ( succ ) in (F ( Some(0) )) = Some(1)", let F = mapOption ( succ ) in (F ( Some(0) )) = Some(1));
+    tester ("let F = id ( mapOption ( succ )) in (F ( Some(0) )) = Some(1)", let F = id ( mapOption ( succ )) in (F ( Some(0) )) = Some(1));
 % Option [131]:  op show  : fa(a) (a -> String) -> Option a -> String
     tester ("(show ( natToString ) ( None )) = \"None\"", (show ( natToString ) ( None )) = "None");
-    tester ("let F = show ( natToString ) in (F ( None )) = \"None\"", let F = show ( natToString ) in (F ( None )) = "None");
+    tester ("let F = id ( show ( natToString )) in (F ( None )) = \"None\"", let F = id ( show ( natToString )) in (F ( None )) = "None");
     tester ("(show ( natToString ) ( Some(1) )) = \"(Some\\s1)\"", (show ( natToString ) ( Some(1) )) = "(Some\s1)");
-    tester ("let F = show ( natToString ) in (F ( Some(1) )) = \"(Some\\s1)\"", let F = show ( natToString ) in (F ( Some(1) )) = "(Some\s1)");
+    tester ("let F = id ( show ( natToString )) in (F ( Some(1) )) = \"(Some\\s1)\"", let F = id ( show ( natToString )) in (F ( Some(1) )) = "(Some\s1)");
 
 % String [100]:  op explode : String -> List Char
     tester ("(explode ( \"\" )) = []", (explode ( "" )) = []);
@@ -430,17 +436,17 @@ spec
     tester ("let A = id ( \"now\" , \"here\" ) in (^ A) = \"nowhere\"", let A = id ( "now" , "here" ) in (^ A) = "nowhere");
 % String [107]:  op map           : (Char -> Char) -> String -> String
     tester ("(map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( \"terra\" )) = \"green\"", (map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) ( "terra" )) = "green");
-    tester ("let F = map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) in (F ( \"terra\" )) = \"green\"", let F = map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) ) in (F ( "terra" )) = "green");
+    tester ("let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) )) in (F ( \"terra\" )) = \"green\"", let F = id ( map ( fn(c)->chr(96+(let(v)=(ord(c)-96)in((v+13)rem(26)))) )) in (F ( "terra" )) = "green");
 % String [108]:  op exists        : (Char -> Boolean) -> String -> Boolean
     tester ("(exists ( isNum ) ( \"\" )) = false", (exists ( isNum ) ( "" )) = false);
-    tester ("let F = exists ( isNum ) in (F ( \"\" )) = false", let F = exists ( isNum ) in (F ( "" )) = false);
+    tester ("let F = id ( exists ( isNum )) in (F ( \"\" )) = false", let F = id ( exists ( isNum )) in (F ( "" )) = false);
     tester ("(exists ( isNum ) ( \"c3po\" )) = true", (exists ( isNum ) ( "c3po" )) = true);
-    tester ("let F = exists ( isNum ) in (F ( \"c3po\" )) = true", let F = exists ( isNum ) in (F ( "c3po" )) = true);
+    tester ("let F = id ( exists ( isNum )) in (F ( \"c3po\" )) = true", let F = id ( exists ( isNum )) in (F ( "c3po" )) = true);
 % String [109]:  op all           : (Char -> Boolean) -> String -> Boolean
     tester ("(all ( isAlpha ) ( \"\" )) = true", (all ( isAlpha ) ( "" )) = true);
-    tester ("let F = all ( isAlpha ) in (F ( \"\" )) = true", let F = all ( isAlpha ) in (F ( "" )) = true);
+    tester ("let F = id ( all ( isAlpha )) in (F ( \"\" )) = true", let F = id ( all ( isAlpha )) in (F ( "" )) = true);
     tester ("(all ( isAlpha ) ( \"c3po\" )) = false", (all ( isAlpha ) ( "c3po" )) = false);
-    tester ("let F = all ( isAlpha ) in (F ( \"c3po\" )) = false", let F = all ( isAlpha ) in (F ( "c3po" )) = false);
+    tester ("let F = id ( all ( isAlpha )) in (F ( \"c3po\" )) = false", let F = id ( all ( isAlpha )) in (F ( "c3po" )) = false);
 % String [110]:  op sub           : {(s,n) : String * Nat | n < length s} -> Char
     tester ("(sub ( \"afn\" , 1 )) = #f", (sub ( "afn" , 1 )) = #f);
     tester ("let A = id ( \"afn\" , 1 ) in (sub A) = #f", let A = id ( "afn" , 1 ) in (sub A) = #f);
@@ -452,7 +458,7 @@ spec
     tester ("(concatList ( [\"now\",\"here\"] )) = \"nowhere\"", (concatList ( ["now","here"] )) = "nowhere");
 % String [113]:  op translate     : (Char -> String) -> String -> String
     tester ("(translate ( fn(c)->implode[c,c] ) ( \"2B\" )) = \"22BB\"", (translate ( fn(c)->implode[c,c] ) ( "2B" )) = "22BB");
-    tester ("let F = translate ( fn(c)->implode[c,c] ) in (F ( \"2B\" )) = \"22BB\"", let F = translate ( fn(c)->implode[c,c] ) in (F ( "2B" )) = "22BB");
+    tester ("let F = id ( translate ( fn(c)->implode[c,c] )) in (F ( \"2B\" )) = \"22BB\"", let F = id ( translate ( fn(c)->implode[c,c] )) in (F ( "2B" )) = "22BB");
 % String [114]:  op lt  infixl 20 : String * String -> Boolean
     tester ("(lt ( \"\" , \"\" )) = false", (lt ( "" , "" )) = false);
     tester ("let A = id ( \"\" , \"\" ) in (lt A) = false", let A = id ( "" , "" ) in (lt A) = false);

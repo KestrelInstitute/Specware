@@ -9,9 +9,12 @@ then ARCH=`/bin/uname -p`
 fi
 if [ "$ARCH" = unknown -a -x /bin/arch ]
 then ARCH=`/bin/arch -p`
-elif [ -x /usr/local/bin/arch ]
+fi
+if [ "$ARCH" = unknown -a -x /usr/local/bin/arch ]
 then ARCH=`/usr/local/bin/arch -p`
-else echo "$self: no uname/arch program found" >&2
+fi
+if [ "$ARCH" = unknown ]
+then echo "$self: no uname/arch program found" >&2
      exit 1
 fi
 abc=$LBIN/$ARCH/abc-bin

@@ -6,6 +6,15 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/07/05 07:46:40  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.2  2003/02/07 20:06:21  gilham
+ * Added opDefinition and scUnitId to MetaSlangGrammar.
+ *
+ * Revision 1.1  2003/01/30 02:02:25  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -16,10 +25,9 @@ import antlr.Token;
 
 import edu.kestrel.netbeans.Util;
 
-/**
- *
- */
 public class ParserUtil {
+
+    public static boolean DEBUG = false;
 
     public static void setBounds(ElementFactory builder, ElementFactory.Item item, Token begin, Token end) {
 	builder.setBounds(item,
@@ -28,7 +36,7 @@ public class ParserUtil {
     }
 
     public static void setBodyBounds(ElementFactory builder, ElementFactory.Item item, Token begin, Token end) {
-	Util.log("ParserUtil.setBodyBounds: builder="+builder+" item="+item+" begin="+begin+" end="+end);
+	if (DEBUG) Util.log("ParserUtil.setBodyBounds: builder="+builder+" item="+item+" begin="+begin+" end="+end);
 	builder.setBodyBounds(item,
 			      begin.getLine(), begin.getColumn(),
 			      end.getLine(), end.getColumn() + end.getText().length());

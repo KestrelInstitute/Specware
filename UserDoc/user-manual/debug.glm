@@ -2,11 +2,11 @@
 <title>Debugging Generated Lisp Files</title>
 
 <section>
-<title>Section 1:  Tracing</title>
+<title>Tracing</title>
 
 <para>
-If you need to debug(!) your application, there a number of
-useful lisp facilities you should be aware of.  The simplest
+If you need to debug your application, there a number of
+useful Lisp facilities you should be aware of.  The simplest
 trick is to trace some functions you care about to see what
 they are doing.
 </para>
@@ -22,7 +22,7 @@ they are doing.
 
 </section>
 <section>
-<title>Section 2:  Breaking</title>
+<title>Breaking</title>
 
 <para>
 If you need a more detail view of runtime behavior, you might
@@ -37,7 +37,8 @@ want to BREAK some functions you care about.
 ]]
 
 <para>
-Once you arrive in the debugger, the following commands are most useful:
+Once you arrive in the debugger, the following commands are 
+most useful:
 </para>
 
 [[
@@ -45,44 +46,50 @@ Once you arrive in the debugger, the following commands are most useful:
 || :up <n>      Move to a higher frame  <n> is optional
 || :zoom <n>    Display n frames        <n> is optional
 ||
-|| :pri         Enter a dialog that lets you set printer control
-||              variables.  For example, setting depth to 5 and length 
-||              to 10 will let you see the top level structure of
-||              expressions, while suppressing deep expressions and
-||              the tails of long expressions.  
-||              Note that you'll need to specify values for many
-||              contexts, but just hitting return leaves a value
-||              unchanged.  You'll likely want to modify the trace, 
-||              debugger, and current values.  
+|| :pri         Enter a dialog that lets you set printer 
+||              control variables.  For example, setting depth
+||              to 5 and length to 10 will let you see the
+||              top level structure of expressions, while 
+||              suppressing deep expressions and the tails of
+||              long expressions.  Note that you'll need to 
+||              specify values for many contexts, but just 
+||              hitting return leaves a value unchanged.  You
+||              will likely want to modify the trace, debugger,
+||              and current values.  
 ||
-|| (pprint *)   Pretty print the expression for the current frame.
-||              Note that this only works immediately after arriving
-||              at a frame, e.g. via :down 0 if necessary.
+|| (pprint *)   Pretty print the expression for the current
+||              frame.  Note that this only works immediately
+||              after arriving at a frame, e.g. via :down 0
+||              if necessary.
 ||
 || :cont        Continue as if nothing happened.
 || :restart     Resume execution at this frame.
-|| :reset       Return to lisp top level.  (E.g., bail out to try again.)
-|| :exit        Exit from lisp to operating system -- ends session.
+|| :reset       Return to Lisp top level.  (E.g., bail out
+||              to try again.)
+|| :exit        Exit from Lisp to operating system -- ends
+||              session.
 ||
 || :help        Online documentation.
 ||
-|| (misc ...)   The debugger is is a read/eval/print loop, so 
-||              arbitrary lisp forms will be evaluated (in the 
+|| (misc ...)   The debugger is is a read/eval/print loop, so
+||              arbitrary Lisp forms will be evaluated (in the
 ||              current dynamic context).
 ||
 || (untrace foo)  Stop entering debugger when foo is called.
-||                Note that you may still enter the debugger for
-||                each exit from calls to foo already recursively
-||                in progress.
+||                Note that you may still enter the debugger
+||                for each exit from calls to foo already 
+||                recursively in progress.
 ]]
 
 </section>
+
 <section>
-<title>Section 3:  Timing</title>
+<title>Timing</title>
 
 <para>
-If you are curious about the overall performance of your application,
-the TIME macro will provide some quick information:
+If you are curious about the overall performance of your
+application, the [[L:time]] macro will provide some quick 
+information:
 </para>
 
 [[
@@ -100,58 +107,28 @@ the TIME macro will provide some quick information:
 ]]
 
 <para>
-Note that TIME it transparent, i.e., it returns whatever its argument 
-would return, including multiple values, etc., so it is safe to 
-intersperse it nearly anywhere.
+Note that [[L:time]] is transparent, i.e., it returns whatever its
+argument would return, including multiple values, etc., so
+it is safe to intersperse it nearly anywhere.
 </para>
 
 <para>
-Common Lisp has more facilities for rolling your own timers:  see the
-generic Common Lisp documentation, or contact Kestrel Technologies.
+Common Lisp has more facilities for rolling your own timers:
+see the generic Common Lisp documentation, or contact Kestrel
+Technologies.
 </para>
 </section>
 
 <section>
-<title>Section 4:  Profiling</title>
+<title>Interrupting</title>
 
 <para>
-The following code, specific to Allegro Common Lisp, will produce a 
-detailed analysis of the time and space used by each function invoked. 
-The time usage is done by polling at 20 msec intervals, so this is not 
-particularly useful for very short-lived calls.  See the Allegro 
-documentation for many variations on this theme.
-</para>
-
-[[
-||(progn
-|| (prof::with-profiling (:verbose t) (foo nil))
-|| (prof::show-flat-profile)
-|| (prof::show-call-graph)
-|| )
-]]
-
-<para> 
-Note that the report for the call graph may look confusing at first
-glance, but after a small learning effort, it is actually quite
-informative and easy to read once you understand the format.
-If you have any questions, contact Kestrel Technologies.
-</para> 
-</section>
-
-<section>
-<title>Section 5:  Interrupting</title>
-
-<para>
-Finally, note that a useful trick in lisp is to start your application,
-e.g.  (foo nil), then at an appropriate time hit control-C.  This will
-interrupt your application and put your into the debugger.  From there
-you can enter the command :zoom to see the top of the stack.  That can
-often be quite revealing.  
-
-
-<para>
-Again, see the Allegro documentation for voluminous details, or contact
-Kestrel Technologies.
+Finally, note that a useful trick in Lisp is to start your
+application, e.g. [[L:(foo nil)]], then at an appropriate time
+hit Cntrl-C.  This will interrupt your application and put
+your into the debugger.  From there you can enter the command
+[[L::zoom]] to see the top of the stack.  That can often be quite
+revealing.  
 </para>
 
 </section>

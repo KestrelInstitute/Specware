@@ -9,6 +9,8 @@ spec
 
   def difference (s1,s2) = foldl (fn (x,s) -> delete (s,x)) s1 s2
   def union (s1,s2) = foldl (fn (x,s) -> insert (s,x)) s1 s2
+  def intersect (s1,s2) = foldl (fn (x,s) ->
+    if member? (s1,x) then cons (x,s) else s) [] s2
    
   def member? (l,x) =
     case l of
@@ -39,8 +41,11 @@ spec
   def theSingleton x =
     case x of
       | [] -> fail "theSingleton: applied to empty list"
-      | x::[] -> x
+      | [x] -> x
       | _::_ -> fail "theSingleton: applied to non-singleton list"
 
-  def size = length
+  def size x =
+    case x of
+      | [] -> 0
+      | x::l -> 1 + (size l)
 endspec

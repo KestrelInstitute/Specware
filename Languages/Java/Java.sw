@@ -1,29 +1,16 @@
-\section{Java Abstract Syntax}
 (*
    Java spec defines an abstract syntax for Java programs using MetaSlang.
 *)
 
-\begin{spec}
 
 spec
 
-\end{spec}
- 
-\subsection{Program structuring syntax}
-%%%%%%%%%%%%%% Program structuring syntax %%%%%%%%%%%%%%%%%
-
-\begin{spec} 
+sort JavaFile = (*filename*) String * CompUnit
 
 sort CompUnit = Option Name * List Name * List ClsOrInterfDecl
 %% Name is for package
 %% List Name for imports
 
-\end{spec}
-
-\subsection{Declaration}
-%%%%%%%%% Declaration %%%%%%%%%
-
-\begin{spec}
 sort ClsOrInterfDecl = 
   | ClsDecl     ClsDecl
   | InterfDecl  InterfDecl 
@@ -88,11 +75,7 @@ sort FormPar = Boolean * Type * VarDeclId
 sort FormPars = List FormPar
 
 sort Throws = List Name
-\end{spec}
 
-\subsection{Statement}
-%%%%%%%%%%%%%% Statement %%%%%%%%%%%%%%
-\begin{spec}
 sort Block = List BlockStmt
 
 sort BlockStmt = 
@@ -133,13 +116,6 @@ sort SwitchLab =
   | JCase     Expr
   | Default
 
-\end{spec}
-
-\subsection{Expression}
-%%%%%%%%%%%%%%% Expression %%%%%%%%%%%%%%
-
-\begin{spec}
-
 sort Expr = 
   | CondExp CondExp
   | Ass     LHS * AssOp * Expr
@@ -160,18 +136,18 @@ sort AssOp =
 
 def assOpToString (o : AssOp) : String = 
     case o of
-           Assgn      ->  " = "
-         | Mul        -> "* = "
-         | Div        -> "/ = "
-         | Rem        -> "% = "
-         | Plus       -> "+ = "
-         | Minus      -> "- = "
-         | LShift     -> "<<= "
-         | RShift     -> ">>= "
-         | LShiftSpec -> ">>>= "
-         | BitAnd     -> "& = "
-         | BitExclOr  -> "^ = "
-         | BitInclOr  -> "| = "
+           Assgn      ->  "="
+         | Mul        -> "*="
+         | Div        -> "/="
+         | Rem        -> "%="
+         | Plus       -> "+="
+         | Minus      -> "-="
+         | LShift     -> "<<="
+         | RShift     -> ">>="
+         | LShiftSpec -> ">>>="
+         | BitAnd     -> "&="
+         | BitExclOr  -> "^="
+         | BitInclOr  -> "|="
 
 
 sort CondExp = BinExp * Option (Expr * CondExp)
@@ -194,12 +170,12 @@ def binOpToString (o : BinOp) : String =
          | InclOr -> "|"
          | ExclOr -> "^"
          | And    -> "&"
-         | Eq     -> " = = "
-         | NotEq  -> "! = "
+         | Eq     -> "=="
+         | NotEq  -> "!= "
          | Gt     -> ">"
          | Lt     -> "<"
-         | Ge     -> ">= "
-         | Le     -> "<= "
+         | Ge     -> ">="
+         | Le     -> "<="
          | LShft  -> "<<"
          | RShft  -> ">>"
          | RShftSp -> ">>>"
@@ -332,12 +308,6 @@ sort ArrAcc =
   | ViaName        Name * Expr
   | ViaNoNewArray  Prim * Expr
 
-\end{spec}
-
-\subsection{Type}
-%%%%%%%%%%%% Type %%%%%%%%%%%%
-
-\begin{spec}
 
 sort Type = BasicOrName * Integer
 %% Integer is for dimension, 0 means that it is not an array.
@@ -345,22 +315,308 @@ sort Type = BasicOrName * Integer
 sort BasicOrName = | Basic Basic | Name Name 
 
 sort Basic = 
-  | JBool | Byte | Short | Char | JInt | Long | JFloat | Double
+  | JBool | Byte | Short | Char | JInt | Long | JFloat | Double | Void
 
 sort RetType = Option Type
 
-\end{spec}
-
-\subsection{Name and identifier}
-%%%%%%%%%%%%% Name and identifier %%%%%%%%%%%%%%%%%%
-
-\begin{spec}
 
 sort Name = List Ident * Ident
 %% Package, method, type, expression names are all qualified identifiers.
 
 sort Ident = String
 
+% --------------------------------------------------------------------------------
+
+op mapJName: (Ident -> Ident) -> CompUnit -> CompUnit
+def mapJName ii (optpkg,ifnames,cis) =
+  (case optpkg of
+     | Some pkg -> Some (mapNameName ii pkg)
+     | None -> None,
+   map (mapNameName ii)  ifnames,
+   map (fn | ClsDecl cld -> ClsDecl(mapNameClsDecl ii cld)
+	   | InterfDecl ifd -> InterfDecl(mapNameInterfDecl ii ifd)
+       ) cis)
+
+op mapNameName: (Ident -> Ident) -> Name -> Name
+def mapNameName ii (clsids,id) =
+  (map ii clsids,ii id)
+
+op mapNameClsDecl: (Ident -> Ident) -> ClsDecl -> ClsDecl
+def mapNameClsDecl ii (mods,hdr as (id,supercls,superifs),bdy) =
+  let hdr = (ii id,mapOption (mapNameName ii) supercls,map (mapNameName ii) superifs) in
+  let bdy = mapNameClsBody ii bdy in
+  (mods,hdr,bdy)
+
+op mapNameClsBody: (Ident -> Ident) -> ClsBody -> ClsBody
+def mapNameClsBody ii bdy =
+  {
+   staticInits = map (mapNameBlock ii) bdy.staticInits,
+   flds = map (mapNameFldDecl ii) bdy.flds,
+   constrs = map (mapNameConstrDecl ii) bdy.constrs,
+   meths = map (mapNameMethDecl ii) bdy.meths,
+   clss = map (mapNameClsDecl ii) bdy.clss,
+   interfs = map (mapNameInterfDecl ii) bdy.interfs
+  }
+
+op mapNameInterfDecl: (Ident -> Ident) -> InterfDecl -> InterfDecl
+def mapNameInterfDecl ii (mods,hdr as (id,superifs),bdy) =
+  let hdr = (ii id,map (mapNameName ii) superifs) in
+  let bdy = {
+	     flds = map (mapNameFldDecl ii) bdy.flds,
+	     meths = map (mapNameMethHeader ii) bdy.meths,
+	     clss = map (mapNameClsDecl ii) bdy.clss,
+	     interfs = map (mapNameInterfDecl ii) bdy.interfs
+	    }
+  in
+  (mods,hdr,bdy)
+
+
+op mapNameFldDecl: (Ident -> Ident) -> FldDecl -> FldDecl
+def mapNameFldDecl ii (mods,type,vdecl,vdecls) =
+  let type = mapNameType ii type in
+  let vdecl = mapNameVarDecl ii vdecl in
+  let vdecls = map (mapNameVarDecl ii) vdecls in
+  (mods,type,vdecl,vdecls)
+
+op mapNameConstrDecl: (Ident -> Ident) -> ConstrDecl -> ConstrDecl
+def mapNameConstrDecl ii (mods,id,fpars,throws,block) =
+  let id = ii id in
+  let fpars = map (mapNameFormPar ii) fpars in
+  let throws = map (mapNameName ii) throws in
+  let block = mapNameBlock ii block in
+  (mods,id,fpars,throws,block)
+
+op mapNameMethDecl: (Ident -> Ident) -> MethDecl -> MethDecl
+def mapNameMethDecl ii (hdr,optblock) =
+  (mapNameMethHeader ii hdr, mapOption (mapNameBlock ii) optblock)
+
+op mapNameMethHeader: (Ident -> Ident) -> MethHeader -> MethHeader
+def mapNameMethHeader ii (mods,rettype,id,fpars,throws) =
+  let rettype = mapOption (mapNameType ii) rettype in
+  let id = ii id in
+  let fpars = map (mapNameFormPar ii) fpars in
+  let throws = map (mapNameName ii) throws in
+  (mods,rettype,id,fpars,throws)
+
+op mapNameVarDecl: (Ident -> Ident) -> VarDecl -> VarDecl
+def mapNameVarDecl ii (vdeclid,varinit) =
+  let vdeclid = mapNameVarDeclId ii vdeclid in
+  let varinit = mapOption (mapNameVarInit ii) varinit in
+  (vdeclid,varinit)
+
+op mapNameVarDeclId: (Ident -> Ident) -> VarDeclId -> VarDeclId
+def mapNameVarDeclId ii (id,index) =
+  (ii id,index)
+
+op mapNameVarInit: (Ident -> Ident) -> VarInit -> VarInit
+def mapNameVarInit ii varinit =
+  case varinit of
+    | Expr e -> Expr(mapNameExpr ii e)
+    | ArrInit arrinit -> ArrInit(map (mapOption (mapNameVarInit ii)) arrinit)
+
+op mapNameFormPar: (Ident -> Ident) -> FormPar -> FormPar
+def mapNameFormPar ii (isfinal,type,vdeclid) =
+  let vdeclid = mapNameVarDeclId ii vdeclid in
+  let type = mapNameType ii type in
+  (isfinal,type,vdeclid)
+
+op mapNameExpr: (Ident -> Ident) -> Expr -> Expr
+def mapNameExpr ii expr =
+  case expr of
+    | CondExp ce -> CondExp(mapNameCondExp ii ce)
+    | Ass(lhs,assop,e) -> Ass(mapNameLHS ii lhs,assop,mapNameExpr ii e)
+
+op mapNameCondExp: (Ident -> Ident) -> CondExp -> CondExp
+def mapNameCondExp ii (binexp,opte) =
+  (mapNameBinExp ii binexp,mapOption (fn(e,ce) -> (mapNameExpr ii e,mapNameCondExp ii ce)) opte)
+
+op mapNameLHS: (Ident -> Ident) -> LHS -> LHS
+def mapNameLHS ii lhs =
+  case lhs of
+    | Name n -> Name(mapNameName ii n)
+    | FldAcc facc -> FldAcc(mapNameFldAcc ii facc)
+    | ArrAcc arracc -> ArrAcc(mapNameArrAcc ii arracc)
+
+op mapNameFldAcc: (Ident -> Ident) -> FldAcc -> FldAcc
+def mapNameFldAcc ii facc =
+  case facc of
+    | ViaPrim (p,id) -> ViaPrim(mapNamePrim ii p,ii id)
+    | ViaSuper id -> ViaSuper (ii id)
+    | ViaCls(n,id) -> ViaCls(mapNameName ii n,ii id)
+
+op mapNameArrAcc: (Ident -> Ident) -> ArrAcc -> ArrAcc
+def mapNameArrAcc ii arracc =
+  case arracc of
+    | ViaName(n,e) -> ViaName(mapNameName ii n,mapNameExpr ii e)
+    | ViaNoNewArray(p,e) -> ViaNoNewArray(mapNamePrim ii p,mapNameExpr ii e)
+
+op mapNameType: (Ident -> Ident) -> Type -> Type
+def mapNameType ii (bname,ind) =
+  (mapNameBasicOrName ii bname,ind)
+
+op mapNameBasicOrName: (Ident -> Ident) -> BasicOrName -> BasicOrName
+def mapNameBasicOrName ii bname =
+  case bname of
+    | Basic _ -> bname
+    | Name n -> Name(mapNameName ii n)
+
+op mapNameBlock: (Ident -> Ident) -> Block -> Block
+def mapNameBlock ii block =
+  map (fn LocVarDecl (isfinal,t,vdecl,vdecls) ->
+          LocVarDecl(isfinal,mapNameType ii t,mapNameVarDecl ii vdecl,map (mapNameVarDecl ii) vdecls)
+	| ClsDecl cld -> ClsDecl(mapNameClsDecl ii cld)
+	| Stmt stmt -> Stmt(mapNameStmt ii stmt)
+	 ) block
+
+op mapNameStmt: (Ident -> Ident) -> Stmt -> Stmt
+def mapNameStmt ii stmt =
+  case stmt of
+    | Block block -> Block(mapNameBlock ii block)
+    | Labeled(id,stmt) -> Labeled(ii id,mapNameStmt ii stmt)
+    | If(e,stmt,optstmt) -> If(mapNameExpr ii e,mapNameStmt ii stmt, mapOption (mapNameStmt ii) optstmt)
+    | For(optfinit,optexpr,optfupd,stmt) ->
+      For(mapOption (mapNameForInit ii) optfinit,
+	  mapOption (mapNameExpr ii) optexpr,
+	  mapOption (mapNameForUpdate ii) optfupd,
+	  mapNameStmt ii stmt)
+    | While(e,stmt) -> While(mapNameExpr ii e,mapNameStmt ii stmt)
+    | Do(stmt,e) -> Do(mapNameStmt ii stmt,mapNameExpr ii e)
+    | Try(block,fparsblocks,optblock) ->
+      Try(mapNameBlock ii block,map (fn(fpar,block) -> (mapNameFormPar ii fpar,mapNameBlock ii block)) fparsblocks,
+	  mapOption (mapNameBlock ii) optblock)
+    | Switch(e,swblock) -> Switch(mapNameExpr ii e,mapNameSwitchBlock ii swblock)
+    | Synchronized(e,block) -> Synchronized(mapNameExpr ii e,mapNameBlock ii block)
+    | Return(opte) -> Return(mapOption (mapNameExpr ii) opte)
+    | Throw(e) -> Throw(mapNameExpr ii e)
+    | Break(optid) -> Break(mapOption ii optid)
+    | Continue(optid) -> Continue(mapOption ii optid)
+    | Expr e -> Expr(mapNameExpr ii e)
+    | Empty -> Empty
+
+
+op mapNameForInit: (Ident -> Ident) -> ForInit -> ForInit
+def mapNameForInit ii finit =
+  case finit of
+    | LocVarDecl(isfinal,t,vdecl,vdecls) ->
+      LocVarDecl(isfinal,mapNameType ii t,mapNameVarDecl ii vdecl,map (mapNameVarDecl ii) vdecls)
+    | StmtExprs(e,el) -> StmtExprs(mapNameExpr ii e,map (mapNameExpr ii) el)
+
+op mapNameForUpdate: (Ident -> Ident) -> ForUpdate -> ForUpdate
+def mapNameForUpdate ii (e,el) =
+  (mapNameExpr ii e,map (mapNameExpr ii) el)
+
+op mapNameSwitchBlock: (Ident -> Ident) -> SwitchBlock -> SwitchBlock
+def mapNameSwitchBlock ii swblock =
+  map (fn(labels,block) ->
+       let labels = map (fn(lbl) ->
+			 case lbl of
+			   | JCase e -> JCase(mapNameExpr ii e)
+			   | Default -> Default) labels
+       in
+       (labels,mapNameBlock ii block)) swblock
+
+
+op mapNameBinExp: (Ident -> Ident) -> BinExp -> BinExp
+def mapNameBinExp ii binexp =
+  case binexp of
+    | Bin(binop,binexp1,binexp2) -> Bin(binop,mapNameBinExp ii binexp1,mapNameBinExp ii binexp2)
+    | InstOf(binexp,type) -> InstOf(mapNameBinExp ii binexp,mapNameType ii type)
+    | Un(unexp) -> Un(mapNameUnExp ii unexp)
+
+op mapNameUnExp: (Ident -> Ident) -> UnExp -> UnExp
+def mapNameUnExp ii unexp =
+  case unexp of
+    | Un(unop,unexp) -> Un(unop,mapNameUnExp ii unexp)
+    | Cast(type,unexp) -> Cast(mapNameType ii type,mapNameUnExp ii unexp)
+    | PostUn(unexp,pop) -> PostUn(mapNameUnExp ii unexp,pop)
+    | Prim p -> Prim(mapNamePrim ii p)
+
+op mapNamePrim: (Ident -> Ident) -> Prim -> Prim
+def mapNamePrim ii p =
+  case p of
+    | Name n -> Name(mapNameName ii n)
+    | ClsInst opttype -> ClsInst(mapOption (mapNameType ii) opttype)
+    | This optname -> This(mapOption (mapNameName ii) optname)
+    | Paren e -> Paren(mapNameExpr ii e)
+    | NewClsInst newclsinst -> NewClsInst(mapNameNewClsInst ii newclsinst)
+    | NewArr narr -> NewArr(mapNameNewArr ii narr)
+    | FldAcc facc -> FldAcc(mapNameFldAcc ii facc)
+    | MethInv minv -> MethInv(mapNameMethInv ii minv)
+    | ArrAcc arracc -> ArrAcc(mapNameArrAcc ii arracc)
+    | _ -> p
+    
+op mapNameNewClsInst: (Ident -> Ident) -> NewClsInst -> NewClsInst
+def mapNameNewClsInst ii newclsinst =
+  case newclsinst of
+    | ForCls(n,el,optbody) -> ForCls(mapNameName ii n,map (mapNameExpr ii) el,mapOption (mapNameClsBody ii) optbody)
+    | ForInnCls(p,id,el,optbody) -> ForInnCls(mapNamePrim ii p,ii id,map (mapNameExpr ii) el,
+					      mapOption (mapNameClsBody ii) optbody)
+
+op mapNameNewArr: (Ident -> Ident) -> NewArr -> NewArr
+def mapNameNewArr ii newarr =
+  case newarr of
+    | Arr(n,el,nmb) -> Arr(mapNameName ii n,map (mapNameExpr ii) el,nmb)
+    | ArrWInit(n,nmb,arrinit) -> ArrWInit(mapNameName ii n,nmb,map (mapOption (mapNameVarInit ii)) arrinit)
+
+op mapNameMethInv: (Ident -> Ident) -> MethInv -> MethInv
+def mapNameMethInv ii minv =
+  case minv of
+    | ViaName(n,el) -> ViaName(mapNameName ii n,map (mapNameExpr ii) el)
+    | ViaPrim(p,id,el) -> ViaPrim(mapNamePrim ii p,ii id,map (mapNameExpr ii) el)
+    | ViaSuper(id,el) -> ViaSuper(ii id,map (mapNameExpr ii) el)
+    | ViaClsSuper(n,id,el) -> ViaClsSuper(mapNameName ii n,ii id,map (mapNameExpr ii) el)
+
+
+op javaKeyword?: Ident -> Boolean
+def javaKeyword?(id) =
+  id="abstract" or
+  id="double" or
+  id="int" or
+  id="strictfp" or
+  id="boolean" or
+  id="else" or
+  id="interface" or
+  id="super" or
+  id="break" or
+  id="extends" or
+  id="long" or
+  id="switch" or
+  id="byte" or
+  id="final" or
+  id="native" or
+  id="synchronized" or
+  id="case" or
+  id="finally" or
+  id="new" or
+  id="this" or
+  id="catch" or
+  id="float" or
+  id="package" or
+  id="throw" or
+  id="char" or
+  id="for" or
+  id="private" or
+  id="throws" or
+  id="class" or
+  id="protected" or
+  id="transient" or
+  id="const" or
+  id="if" or
+  id="goto" or
+  id="public" or
+  id="try" or
+  id="continue" or
+  id="implements" or
+  id="return" or
+  id="void" or
+  id="default" or
+  id="import" or
+  id="short" or
+  id="volatile" or
+  id="do" or
+  id="instanceof" or
+  id="static" or
+  id="while"
+
 endspec
 
-\end{spec}

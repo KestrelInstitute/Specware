@@ -10,12 +10,13 @@ import edu.kestrel.graphs.*;
 import edu.kestrel.graphs.event.*;
 import edu.kestrel.graphs.io.*;
 import java.util.*;
+import java.awt.datatransfer.*;
 
 /**
  * Superclass for ModelNode and ModelEdge.
  * @author  ma
  */
-public abstract class ModelElement implements Storable {
+public abstract class ModelElement implements Storable, Transferable {
     
     /** counter for model elements; mainly used for debugging purposes.
      */
@@ -34,13 +35,23 @@ public abstract class ModelElement implements Storable {
      */
     protected Vector reprs;
     
-    /** the representation exemplar that is kept if no actual representation element exists.
-     */
-    protected XGraphElement reprExemplar;
-    
     /** the value of the node/edge; this is the only "builtin" property for all model elements.
      */
     protected Object value;
+    
+    /** this is a graph display which is used as backup store in case this model element cannot be removed and
+     * the user removes the last representation object.
+     */
+    protected XGraphDisplay backupStore;
+    
+    /** the backup representation stored in the backup store.
+     */
+    protected XGraphElement backupRepr;
+    
+    /** interface use in doForallReprs */
+    protected interface ReprAction {
+        public void execute(XGraphElement elem);
+    }
     
     public ModelElement() {
         this.value = null;
@@ -50,6 +61,8 @@ public abstract class ModelElement implements Storable {
     protected void initModelElement() {
         reprs = new Vector();
         id = elementCnt++;
+        backupStore = null;
+        backupRepr = null;
         Dbg.pr("initModelElement: new model element \""+this+"\" created");
     }
     
@@ -58,7 +71,7 @@ public abstract class ModelElement implements Storable {
      * of this model element is removed: if this method returns true, it will exist without having a representation;
      * if it returns false, the node/edge will be removed, if no representation element for it exists.
      */
-    protected boolean existsWithoutRepresentation() {
+    public boolean existsWithoutRepresentation() {
         return false;
     }
     
@@ -75,13 +88,54 @@ public abstract class ModelElement implements Storable {
      */
     public void addRepr(XGraphElement repr) {
         if (!reprs.contains(repr)) {
+            //clearBackupStore();
             reprs.add(repr);
-            if (reprExemplar == null) {
-                reprExemplar = repr;
-            }
             Dbg.pr("new representation node added to "+value);
         }
         else Dbg.pr("'new' representation already exists for element "+this);
+    }
+    
+    
+    /** returns the number of representation objects for this model element.
+     */
+    public int getReprCnt() {
+        if (reprs == null) return 0;
+        return reprs.size();
+    }
+    
+    /** returns the "accessible" representations of this model element, i.e. those elements that are
+     * not in the graph's clipboard.
+     */
+    public int getAccessibleReprCnt(XGraphDisplay graph) {
+        if (graph == null) return getReprCnt();
+        int cnt = 0;
+        XGraphDisplay clipboard = graph.getClipboard();
+        if (clipboard == null) return getReprCnt();
+        Enumeration iter = reprs.elements();
+        while(iter.hasMoreElements()) {
+            Object obj = iter.nextElement();
+            if (obj instanceof XGraphElement) {
+                XGraphElement elem = (XGraphElement)obj;
+                if (!clipboard.equals(elem.getGraph())) {
+                    cnt++;
+                }
+            }
+        }
+        Dbg.pr("ModelElement "+this+" has "+cnt+" accessible representation objects.");
+        return cnt;
+    }
+    
+    /** iterates over all representation elements and performs the given action.
+     */
+    public void doForallReprs(ReprAction action) {
+        if (reprs == null) return;
+        Enumeration iter = reprs.elements();
+        while(iter.hasMoreElements()) {
+            Object obj = iter.nextElement();
+            if (obj instanceof XGraphElement) {
+                action.execute((XGraphElement)obj);
+            }
+        }
     }
     
     /** sets this element as model element of all representations.
@@ -91,14 +145,21 @@ public abstract class ModelElement implements Storable {
     
     /** removes the given representation element from the list of representations.
      */
-    public void removeRepr(XGraphElement repr) {
+    public void removeRepr(XGraphDisplay graph, XGraphElement repr) {
         reprs.remove(repr);
         Dbg.pr("repr of "+this+" removed.");
-        if (!existsWithoutRepresentation()) {
-            // throw away if no representation element is left
-            if (reprs.size() == 0) {
-                Dbg.pr("removing model element \""+this+"\", because the last representation object has been removed...");
-                removeModelElement();
+        if (reprs.size() == 0) {
+            if (!existsWithoutRepresentation()) {
+                // throw away if no representation element is left
+                try {
+                    if (removeOk(false)) {
+                        Dbg.pr("removing model element \""+this+"\", because the last representation object has been removed...");
+                        removeModelElement();
+                    } else {
+                        Dbg.pr("model element "+this+" will not be removed.");
+                        //saveReprToBackupStore(graph,repr);
+                    }
+                } catch (VetoException ve) {/*ignore*/}
             }
         }
     }
@@ -112,18 +173,94 @@ public abstract class ModelElement implements Storable {
     protected Enumeration getReprs() {
         if (reprs.size()>0)
             return reprs.elements();
-        if (reprExemplar == null) return null;
-        Vector v = new Vector();
-        v.add(reprExemplar);
-        return v.elements();
+        return null;
+    }
+    
+    /** returns a representation object or null.
+     */
+    public XGraphElement getARepr() {
+        if (reprs != null) {
+            if (reprs.size() > 0) {
+                return (XGraphElement) reprs.elementAt(0);
+            }
+        }
+        return null;
     }
     
     /** returns the saved representation exemplar. */
-    public XGraphElement getReprExemplar() {
-        return reprExemplar;
+    public XGraphElement getBackupRepr() {
+        return backupRepr;
+    }
+    
+    /** creates an instance of XGraphDisplay for storing the "last" representation object in case the user deletes it.
+     */
+    protected XGraphDisplay createXGraphDisplayForBackupStore() {
+        XGraphDisplay res = new XGraphDisplay();
+        return res;
+    }
+    
+    /** returns the backupStore XGraphDisplay, which is initially created using createXgraphDisplayForBackupStore().
+     */
+    protected XGraphDisplay getBackupStore() {
+        if (backupStore == null) {
+            backupStore = createXGraphDisplayForBackupStore();
+        }
+        return backupStore;
+    }
+    
+    /** this saves the representation object elem which is displayed in graph into the backup store of the model element.
+     * Before this is done, the backup store is cleared.
+     */
+    public void saveReprToBackupStore(XGraphDisplay graph, XGraphElement elem) {
+        clearBackupStore();
+        XGraphDisplay bgraph = getBackupStore();
+        bgraph.setIsClipboard(true);
+        if (graph != null) {
+            Dbg.pr("cloning representation object of model element "+this+" into its backStore...");
+            Map cellMap = graph.cloneCells(new Object[]{elem},bgraph);
+            if (cellMap.containsKey(elem)) {
+                Object obj = cellMap.get(elem);
+                if (obj instanceof XGraphElement) {
+                    Dbg.pr("setting backup Repr of model element "+this+"...");
+                    backupRepr = (XGraphElement)obj;
+                }
+            }
+        }
+    }
+    
+    public void saveReprToBackupStore() {
+        XGraphElement elem = getARepr();
+        if (elem != null) {
+            saveReprToBackupStore(elem.getGraph(),elem);
+        }
+    }
+    
+    /** clears the backup store.
+     */
+    public void clearBackupStore() {
+        backupRepr = null;
+        if (backupStore == null) return;
+        Dbg.pr("clearing the backup store of model element "+this+"...");
+        backupStore.clear();
     }
     
     public abstract void removeModelElement();
+    
+    /** method used to give the model element a chance to veto its removal.
+     * $param throwVetoException if set to true, it will throw a VetoException explaining the reason
+     * why the remove operation is not ok; if set to false, a boolean value is returned in any case.
+     */
+    public boolean removeOk(boolean throwVetoException) throws VetoException {
+        return true;
+    }
+    
+    /** method used to give the model element a chance to veto its renaming.
+     * $param throwVetoException if set to true, it will throw a VetoException explaining the reason
+     * why the rename operation is not ok; if set to false, a boolean value is returned in any case.
+     */
+    public boolean renameOk(boolean throwVetoException) throws VetoException {
+        return true;
+    }
     
     /** removes the model element and all representations in all graph displays of the application.
      */
@@ -142,6 +279,15 @@ public abstract class ModelElement implements Storable {
         }
     }
     
+    /** for those applications which use drag and drop, this can be used to signal whether this model element
+     * is ok for dragging and dropping.
+     */
+    public boolean dragAndDropOk() {
+        return false;
+    }
+    
+    
+    
     /** returns the value field of this model element. */
     public Object getValue() {
         return value;
@@ -152,6 +298,19 @@ public abstract class ModelElement implements Storable {
         //Dbg.pr("setValue("+value+")");
         this.value = value;
     }
+    
+    /** returns a short representation of the element's value as string to be used in popup windows etc.
+     */
+    public String getShortName() {
+        if (getValue() == null) return "";
+        String name = getValue().toString();
+        if (name.length() > XGraphConstants.maxShortNameLength) {
+            name = name.substring(0,XGraphConstants.maxShortNameLength) + "...";
+        }
+        return name;
+    }
+    
+    
     
     /** inserts a freshly created representation element into the given graph.
      * @paran elem the graph element that is used as representation element
@@ -173,17 +332,17 @@ public abstract class ModelElement implements Storable {
     /** insert the model element into the graph using a copy of reprExemplar as representation object; elemReprMap contains
      * mappings from ModelElements to XGraphElement in the context of a insertion operation.
      */
-    public XGraphElement insertIntoGraph(XGraphDisplay graph, Map elemReprMap) {
-        XGraphElement repr = reprExemplar.cloneGraphElement();
-        return insertIntoGraph(graph,repr,elemReprMap);
-    }
+    //public XGraphElement insertIntoGraph(XGraphDisplay graph, Map elemReprMap) {
+    //XGraphElement repr = reprExemplar.cloneGraphElement();
+    //return insertIntoGraph(graph,repr,elemReprMap);
+    //}
     
     /** inserts the model element into the graph using a copy of reprExemplar as representation object.
      */
-    public XGraphElement insertIntoGraph(XGraphDisplay graph) {
-        XGraphElement repr = reprExemplar.cloneGraphElement();
-        return insertIntoGraph(graph,repr);
-    }
+    //public XGraphElement insertIntoGraph(XGraphDisplay graph) {
+    //    XGraphElement repr = reprExemplar.cloneGraphElement();
+    //    return insertIntoGraph(graph,repr);
+    //}
     
     /** synchronize this model element with all its representation objects by updating the representation objects
      * according to changed properties.
@@ -193,6 +352,7 @@ public abstract class ModelElement implements Storable {
         while(iter.hasMoreElements()) {
             XGraphElement n = (XGraphElement) iter.nextElement();
             sync(n);
+            n.repaintGraph();
         }
     }
     
@@ -205,7 +365,7 @@ public abstract class ModelElement implements Storable {
      * list of representations.
      */
     protected void sync(XGraphElement n) {
-        n.setUserObject(getValue());
+        n.setFullUserObject(getValue());
     }
     
     protected static String Representation = "Representation";
@@ -261,5 +421,48 @@ public abstract class ModelElement implements Storable {
         int cnt = reprs.size();
         return res;// + "("+ String.valueOf(cnt) + ")";
     }
+    
+    
+    /** called when a new copy of the model element is created. Subclasses that introduce new fields can overwrite this method
+     * to make sure that the new fields are copied to the new instance. This is called during a copy operation.
+     */
+    public void copyHook(ModelElement original) {
+    }
+    
+    /** called after completion of a copy operation in order to let the model element perform tasks to update certain structure.
+     * For instance, if A and B are copied to A' and B' respectively, and A and B have some relation R, this method can be used
+     * to establish this relation also for A' and B'
+     */
+    public void postCopyAction(Map modelElementMap, ModelElement original) {
+    }
+    
+    // methods implementing the transferable interface needed for dnd
+    
+    final public static DataFlavor MODEL_ELEMENT_FLAVOR =
+    new DataFlavor(ModelElement.class, "Model Element");
+    
+    static DataFlavor flavors[] = {MODEL_ELEMENT_FLAVOR};
+    
+    
+    
+    public boolean isDataFlavorSupported(DataFlavor df) {
+        return df.equals(MODEL_ELEMENT_FLAVOR);
+    }
+    
+    /** implements Transferable interface */
+    public Object getTransferData(DataFlavor df)
+    throws UnsupportedFlavorException, java.io.IOException {
+        if (df.equals(MODEL_ELEMENT_FLAVOR)) {
+            return this;
+        }
+        else throw new UnsupportedFlavorException(df);
+    }
+    
+    /** implements Transferable interface */
+    public DataFlavor[] getTransferDataFlavors() {
+        return flavors;
+    }
+    
+    
     
 }

@@ -19,13 +19,14 @@
 
 (in-package :mes)
 
-#+(or MCL CMU)
+#+(or (and mcl (not openmcl)))
 (defmacro monitor-form (form 
                         &optional (nested :exclusive) (threshold mon:*default-threshold*)
                         (key :percent-time))
   `(unwind-protect
      (progn
        (mon:monitor-all :mes)
+       (mon:monitor-all :mes-sparse-array)
        (mon:monitor-all :snark)
        (mon:reset-all-monitoring)
        (prog1
@@ -34,7 +35,7 @@
            (mon:report-monitoring :all ,nested ,threshold ,key :ignore-no-calls))))
      (mon:unmonitor)))
 
-#+(or MCL CMU)
+#+(or (and mcl (not openmcl)) CMU)
 (defmacro profile (form)
   `(monitor-form ,form))
 

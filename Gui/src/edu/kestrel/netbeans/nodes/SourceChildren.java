@@ -6,6 +6,24 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/07/05 07:46:39  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.5  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
+ * Revision 1.4  2003/04/01 02:29:40  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.3  2003/03/29 03:13:59  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.2  2003/03/14 04:14:21  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.1  2003/01/30 02:02:11  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -161,6 +179,21 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     if (key instanceof SpecElement) {
       return new Node[] { factory.createSpecNode((SpecElement)key) };
     }
+    if (key instanceof ProofElement) {
+        return new Node[] { factory.createProofNode((ProofElement)key) };
+    }
+    if (key instanceof MorphismElement) {
+        return new Node[] { factory.createMorphismNode((MorphismElement)key) };
+    }
+    if (key instanceof DiagramElement) {
+        return new Node[] { factory.createDiagramNode((DiagramElement)key) };
+    }
+    if (key instanceof ColimitElement) {
+        return new Node[] { factory.createColimitNode((ColimitElement)key) };
+    }
+    /*if (key instanceof UnitIdElement) {
+        return new Node[] { factory.createUnitIdNode((UnitIdElement)key) };
+    }*/
     if (NOT_KEY.equals(key))
       return new Node[] { factory.createWaitNode() };
     // never should get here
@@ -293,6 +326,21 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
 	if ((elementType & SourceElementFilter.SPEC) != 0) {
 	    keys.addAll(Arrays.asList(element.getSpecs()));
 	}
+        if ((elementType & SourceElementFilter.PROOF) != 0) {
+            keys.addAll(Arrays.asList(element.getProofs()));
+        }
+        if ((elementType & SourceElementFilter.MORPHISM) != 0) {
+            keys.addAll(Arrays.asList(element.getMorphisms()));
+        }
+        if ((elementType & SourceElementFilter.DIAGRAM) != 0) {
+            keys.addAll(Arrays.asList(element.getDiagrams()));
+        }
+        if ((elementType & SourceElementFilter.COLIMIT) != 0) {
+            keys.addAll(Arrays.asList(element.getColimits()));
+        }
+        /*if ((elementType & SourceElementFilter.UnitId) != 0) {
+            keys.addAll(Arrays.asList(element.getUnitIds()));
+        }*/
     }
 
 
@@ -303,7 +351,12 @@ public class SourceChildren extends Children.Keys implements FilterCookie {
     private final class ElementListener implements PropertyChangeListener {
         public void propertyChange (PropertyChangeEvent evt) {
             String propName = evt.getPropertyName();
-            boolean refresh = propName.equals(ElementProperties.PROP_SPECS);
+            boolean refresh = (propName.equals(ElementProperties.PROP_SPECS) ||
+                               propName.equals(ElementProperties.PROP_PROOFS) ||
+                               propName.equals(ElementProperties.PROP_MORPHISMS) ||
+                               propName.equals(ElementProperties.PROP_DIAGRAMS) ||
+                               propName.equals(ElementProperties.PROP_COLIMITS)/* ||
+                               propName.equals(ElementProperties.PROP_UnitIdS)*/);
 			       
             if (!refresh && ElementProperties.PROP_STATUS.equals(evt.getPropertyName())) {
                 Integer val = (Integer) evt.getNewValue();

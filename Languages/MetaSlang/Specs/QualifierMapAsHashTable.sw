@@ -23,7 +23,7 @@ spec
       [] m
 
  %% Temporary to get stuff working
- op foldL: fa(a,b) (a * b -> Monad b) -> b -> List a -> Monad b
+ op foldL: fa(a,b) (a * b -> SpecCalc.Env b) -> b -> List a -> SpecCalc.Env b
  def foldL f e l =
    case l of
      | [] -> return e

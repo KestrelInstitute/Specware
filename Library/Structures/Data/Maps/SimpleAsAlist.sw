@@ -139,6 +139,15 @@ meaningless unless an implementation is assumed.
     in
       foldi g emptyMap m
 
+  def mapiPartial f m = 
+    let
+      def g (key,item,m) = 
+        case f (key,item) of
+          | None -> m
+          | (Some item_) -> update (m, key, item_)
+    in
+      foldi g emptyMap m
+
   % op fromList : fa (a,b) List (a * b) -> Map (a, b)
   % op subset? : fa (a,b) Map (a,b) -> Map (a,b) -> Boolean
   % op all : fa (a,b) (a -> b -> Boolean) -> Map (a,b) -> Boolean

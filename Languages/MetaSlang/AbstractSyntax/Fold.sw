@@ -29,9 +29,9 @@ spec {
            foldTerm tsp_folds (foldl (fn ((id,srt),acc) -> foldSort tsp_folds acc srt) acc vars) trm
        | Apply (t1, t2,  a) -> foldTerm tsp_folds (foldTerm tsp_folds acc t1) t2
        | Seq (terms, a) -> 
-           foldl (fn (trm,acc) -> foldTerm tsp_folds acc term) acc terms
+           foldl (fn (trm,acc) -> foldTerm tsp_folds acc trm) acc terms
        | ApplyN (terms, a) -> 
-           foldl (fn (trm,acc) -> foldTerm tsp_folds acc term) acc terms
+           foldl (fn (trm,acc) -> foldTerm tsp_folds acc trm) acc terms
        | SortedTerm (trm, srt, a) -> 
            foldTerm tsp_folds (foldSort tsp_folds acc srt) trm
    in
@@ -50,7 +50,7 @@ spec {
        | Subsort (srt, trm, a) -> foldSort tsp_folds (foldTerm tsp_folds acc trm) srt
      % | Subset (ssrt, trm, a) -> 
        | Base (qid, srts, a) -> foldl (fn (srt,acc) -> foldSort tsp_folds acc srt) acc srts
-       | PBase (qid, srts, a) -> foldl (fn (srt,acc) -> foldSort tsp_folds acc srt) acc srts
+%       | Base (qid, srts, a) -> foldl (fn (srt,acc) -> foldSort tsp_folds acc srt) acc srts
        | _ -> acc
    in
      sortFold foldOfChildren srt

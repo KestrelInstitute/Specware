@@ -3,6 +3,7 @@ package edu.kestrel.netbeans.parser;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.Iterator;
 
 import org.openide.src.SourceException;
 
@@ -16,8 +17,8 @@ import edu.kestrel.netbeans.codegen.TextBinding;
  *
  */
 public class DiagramInfo extends BaseElementInfo {
-/*    public static final int SORT = 0;
-    public static final int OP = 1;
+    public static final int DIAG_ELEM = 0;
+/*    public static final int OP = 1;
     public static final int DEF = 2;
     public static final int CLAIM = 3;
     public static final int IMPORT = 4;
@@ -26,11 +27,11 @@ public class DiagramInfo extends BaseElementInfo {
     ChildCollection[]    memberLists;
     Element[]            allElements;
     
-/*    static final ElementMatch.Finder[] DEFAULT_SORT_FINDERS = {
+    static final ElementMatch.Finder[] DEFAULT_DIAG_ELEM_FINDERS = {
         new TextPositionMatch(), new NameFinder()
     };
     
-    static final ElementMatch.Finder[] DEFAULT_OP_FINDERS = {
+/*    static final ElementMatch.Finder[] DEFAULT_OP_FINDERS = {
         new TextPositionMatch(), new NameFinder()
     };
 
@@ -47,24 +48,24 @@ public class DiagramInfo extends BaseElementInfo {
     };
 */
     private static final ElementMatch.Finder[][] FINDER_CLUSTERS = {
-/*        DEFAULT_SORT_FINDERS,
-        DEFAULT_OP_FINDERS,
+        DEFAULT_DIAG_ELEM_FINDERS,
+/*        DEFAULT_OP_FINDERS,
         DEFAULT_DEF_FINDERS,
         DEFAULT_CLAIM_FINDERS,
         DEFAULT_IMPORT_FINDERS,*/
     };
     
     private static final String[] CHILDREN_PROPERTIES = {
-/*        ElementProperties.PROP_SORTS,
-        ElementProperties.PROP_OPS,
+        ElementProperties.PROP_DIAG_ELEMS,
+/*        ElementProperties.PROP_OPS,
         ElementProperties.PROP_DEFS,
         ElementProperties.PROP_CLAIMS,
         ElementProperties.PROP_IMPORTS,*/
     };
     
     private static final Class[] CHILDREN_TYPES = {
-/*	SortElement.class,
-        OpElement.class,
+	DiagElemElement.class,
+/*        OpElement.class,
         DefElement.class,
         ClaimElement.class,
         ImportElement.class,*/
@@ -89,24 +90,21 @@ public class DiagramInfo extends BaseElementInfo {
     }
     
     public void updateElement(LangModel.Updater model, Element target) throws SourceException {
-        Util.log("DiagramInfo.updateElement this = "+this+" target "+target);
         super.updateElement(model, target);
         super.updateBase(target);
         
         DiagramElement diagram = (DiagramElement)target;
-
-        //Util.log("Updating diagram properties of " + name); // NOI18N
         
         Element[] whole = new Element[allMembers.size()];
         Element[] newEls;
         
-/*        for (int kind = SORT; kind <= IMPORT; kind++) {
+        for (int kind = DIAG_ELEM; kind <= DIAG_ELEM; kind++) {
             Element[] curMembers;
             switch (kind) {
-	    case SORT:
-		curMembers = spec.getSorts();
+	    case DIAG_ELEM:
+		curMembers = diagram.getDiagElems();
 		break;
-	    case OP:
+/*	    case OP:
 		curMembers = spec.getOps();
 		break;
 	    case DEF:
@@ -117,7 +115,7 @@ public class DiagramInfo extends BaseElementInfo {
                 break;
             case IMPORT:
                 curMembers = spec.getImports();
-                break;
+                break;*/
             default:
 		throw new InternalError("Illegal member type"); // NOI18N
             }
@@ -132,14 +130,14 @@ public class DiagramInfo extends BaseElementInfo {
                 map = IDs = null;
             } else {
                 IDs = col.getIDs();
-                newEls = col.updateChildren(spec, model, curMembers);
+                newEls = col.updateChildren(diagram, model, curMembers);
                 map = col.getResultMap();
             }
-            model.updateMembers(spec, CHILDREN_PROPERTIES[kind], newEls, IDs, map);
+            model.updateMembers(diagram, CHILDREN_PROPERTIES[kind], newEls, IDs, map);
             if (col != null)
                 col.mapChildren(newEls, whole);
         }
-*/        model.updateMemberOrder(diagram, ElementProperties.PROP_MEMBERS, whole);
+        model.updateMemberOrder(diagram, ElementProperties.PROP_MEMBERS, whole);
     }
     
     public Element createModelImpl(LangModel.Updater model, Element parent) {
@@ -161,7 +159,17 @@ public class DiagramInfo extends BaseElementInfo {
     }
 
     public String toString() {
-	return "diagram "+name;
+        String str = "";
+        if (!(name.equals(""))) {
+	    str = name + " = ";
+        }
+	str = str + "diagram " + "{";
+        for (Iterator i=allMembers.iterator(); i.hasNext(); ) {
+            BaseElementInfo info = (BaseElementInfo)(i.next());
+            str = str + info.toString() + ", ";
+        }
+        str = str + "}";
+	return str;
     }
 
 }

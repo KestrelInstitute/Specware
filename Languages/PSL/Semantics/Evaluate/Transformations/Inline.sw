@@ -161,29 +161,40 @@ copies fills in the calling arguments.
               connect newBSpec src newDst edge transSpec
             }
         | (Some procInfo, None, _) -> {   % if well formed then no return value returnTerm = ().
+              % when (~(procInfo.argList = []))
+              %   (raise (SpecError (noPos, "inlineEdge: cannot inline procedures with parameters: " ^ (show procInfo.procId))));
               when (~(procInfo.argList = []))
-                (raise (SpecError (noPos, "inlineEdge: cannot inline procedures with parameters")));
+                (print ("inlineEdge: cannot inline procedures with parameters: " ^ (Id.show procInfo.procId) ^ "\n"));
+              newLHSRef <-
+                case procInfo.returnTerm of
+                  | (Fun (Op(qid,fxty),_,_)) -> return (Some qid)
+                  | _ -> return None; % raise (SpecError (noPos, "bad return term: " ^ (show procInfo.returnTerm)));
               proc <-
                 case evalPartial (procs, procInfo.procId) of
                   | None -> raise (SpecError (noPos, "inlineEdge: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
               newCoAlg <- return (succCoalgebra (bSpec proc));
-              fold (inlineEdge procs src newDst (bSpec proc) newCoAlg (returnInfo proc) optLHSRef)
+              print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
+              fold (inlineEdge procs src newDst (bSpec proc) newCoAlg (returnInfo proc) newLHSRef)
                 newBSpec (newCoAlg (initial (bSpec proc)))
             }
         | (Some procInfo, Some returnRef, Some lhsRef) -> {
               newLHSRef <-
                 case procInfo.returnTerm of
                   | (Fun (Op(qid,fxty),_,_)) -> return (Some qid)
-                  | _ -> raise (SpecError (noPos, "bad return term: " ^ (show procInfo.returnTerm)));
+                  | _ -> return None; % raise (SpecError (noPos, "bad return term: " ^ (show procInfo.returnTerm)));
               proc <-
                 case evalPartial (procs, procInfo.procId) of
                   | None -> raise (SpecError (noPos, "inlineEdge: procedure " ^ (Id.show procInfo.procId) ^ " is not defined"))
                   | Some proc -> return proc;
               newCoAlg <- return (succCoalgebra (bSpec proc));
+              print ("Inlining: " ^ (Id.show procInfo.procId) ^ "\n");
               EdgSetEnv.fold (inlineEdge procs src newDst (bSpec proc) newCoAlg (returnInfo proc) newLHSRef)
                   newBSpec (newCoAlg (initial (bSpec proc)))
-            };
+            }
+        | _ -> fail ("inlineEdge: called=" ^ (System.toString called)
+                                           ^ "\noptReturnRef=" ^ (System.toString optReturnRef)
+                                           ^ "\noptLHSRef=" ^ (System.toString optLHSRef));
     fold (inlineEdge procs newDst endPoint oldBSpec coAlg optReturnRef optLHSRef) newBSpec successors
   }
 

@@ -6,6 +6,12 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/13 19:02:57  weilyn
+ * Fixed 'specwareware' type
+ *
+ * Revision 1.1  2003/01/30 02:01:38  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -43,7 +49,7 @@ public class Util {
     
     public static void log(String msg) {
 	msg = Thread.currentThread().toString() + msg;
-	OutputWriter out = TopManager.getDefault().getIO("specwareware", false).getOut();
+	OutputWriter out = TopManager.getDefault().getIO("specware", false).getOut();
 	out.println(msg);
 	System.err.println(msg); //ErrorManager.getDefault().log(msg);
     }

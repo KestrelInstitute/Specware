@@ -72,17 +72,21 @@ be the option to run each (test ...) form in a fresh image.
 			    (make-pathname :directory dir)
 			  dir)))
 	  (loop for dir-item in (directory dirpath)
-		do (let ((subdir (make-pathname :directory (namestring dir-item))))
-		     (when (probe-file subdir)
-		       (run-test-directories-rec-fn (list subdir))))))))
+		unless (equal (pathname-name dir-item) "CVS")
+		do ;; Work around allegro bug in directory
+		   #+allegro (setq dir-item (make-pathname :directory (namestring dir-item))) 
+		   (when (specware::directory? dir-item)
+		     (run-test-directories-rec-fn (list dir-item)))))))
 
 (defun run-test-directories-fn (dirs)
   (loop for dir in dirs
      do (let* ((dirpath (if (stringp dir)
-			    (make-pathname :directory dir)
+			    (parse-namestring (specware::ensure-final-slash dir))
 			  dir))
-	       (filepath (merge-pathnames *test-driver-file-name* dirpath)))
-	  (process-test-file filepath))))
+	       (filepath (merge-pathnames (make-pathname :name *test-driver-file-name*)
+					  dirpath)))
+	  (when (probe-file filepath)
+	    (process-test-file filepath)))))
 
 (defun get-temporary-directory ()
   (get-temporary-directory-i 0))
@@ -94,10 +98,10 @@ be the option to run each (test ...) form in a fresh image.
     ;; The ~2,,,'0@a format directives ensure that the field takes up two spaces with a
     ;; leading 0 if necessary
     (let ((dir (merge-pathnames (parse-namestring
-				 (format nil "~a/~a-~2,,,'0@a-~2,,,'0@a-~2,,,'0@a~2,,,'0@a-~a/"
+				 (format nil "~a/~a~2,,,'0@a~2,,,'0@a~2,,,'0@a~2,,,'0@a~a/"
 					 *test-temporary-directory-name*
 					 year month day hour min i))
-				(sys:temporary-directory))))
+				specware::temporaryDirectory)))
       (if (probe-file dir)
 	  (get-temporary-directory-i (+ i 1))
 	dir))))
@@ -129,18 +133,18 @@ be the option to run each (test ...) form in a fresh image.
 	       (source (merge-pathnames filepath *test-directory*))
 	       (target (merge-pathnames filepath *test-temporary-directory*)))
 	  (ensure-directories-exist target)
-	  (sys:copy-file source target))))
+	  (specware::copy-file source target))))
 
 (defmacro test-directories (&body dirs)
   `(test-directories-fn '(,@dirs)))
 
 (defun test-directories-fn (dirs)
   (loop for dir in dirs
-     do (let* ((dirpath (make-pathname :directory dir))
+     do (let* ((dirpath (make-pathname :directory (if (equal dir ".") nil dir)))
 	       (source (merge-pathnames dirpath *test-directory*))
 	       (target (merge-pathnames dirpath *test-temporary-directory*)))
 	  ;(ensure-directories-exist target)
-	  (cl-user::copy-directory source target))))
+	  (specware::copy-directory source target))))
 
 (defmacro test (&body test-forms)
   `(progn ,@(loop for fm in test-forms collect `(test-1 ,@fm))))
@@ -150,26 +154,60 @@ be the option to run each (test ...) form in a fresh image.
       ()
     (apply 'test-1 args)))
 
-(defun test-1 (name &key sw swe
+(defun swe-test (swe-str swe-spec)
+  (let ((cl-user::*swe-return-value?* t)
+	(cl-user::*current-swe-spec* (if swe-spec
+					 (in-current-dir swe-spec)
+				       swe-spec)))
+    (cl-user::swe swe-str)))
+
+(defun in-current-dir (file)
+  (concatenate 'string
+    (apply #'concatenate 'string
+	   (loop for d in (cdr (pathname-directory *test-temporary-directory*))
+	       nconcing (list "/" d)))
+    "/"
+    file))
+
+(defun test-1 (name &key sw swe swe-spec swl swll
 			 output (output-predicate 'equal)
-			 value (value-predicate 'equal)
+			 (value "--NotAValue--")
+			 (value-predicate 'equal)
+			 file-goto-error
 			 error files)
-  (declare (ignore swe))		; NYI
-  (let (val error-type (error-messages ()))
+  (let (val error-type (error-messages ())
+	(emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
     (let ((test-output (with-output-to-string (*standard-output*)
 			 (multiple-value-setq (val error-type)
-			   (ignore-errors (top-level:do-command "sw" sw))))))
+			   (ignore-errors
+			    (if (not (null sw))
+				(cl-user::sw sw)
+			      (if (not (null swll))
+				  (cl-user::swll swll)
+				(if (not (null swe))
+				  (swe-test swe swe-spec)
+				  (if (not (null swl))
+				  (cl-user::swl swl))))))))))
       (setq test-output (normalize-output test-output))
+      (when emacs::*goto-file-position-stored*
+	(setf (car emacs::*goto-file-position-stored*)
+	  (normalize-output (car emacs::*goto-file-position-stored*))))
       (when (and error-type (not error))
 	(push (format nil "~a" error-type) error-messages))
       (when (and (not error-type) error)
 	(push "Expected Error did not occur"  error-messages))
-      (when (and value (not error-type)
+      (when (and (not (eq value "--NotAValue--")) (not error-type)
 		 (not (funcall value-predicate val value)))
-	(push (format nil "Expected:~%~a~%;; Got: ~%a" value val) error-messages))
+	(push (format nil "Expected:~%~a~%;; Got: ~%~a" value val) error-messages))
       (when (and output (not error-type)
 		 (not (funcall output-predicate test-output output)))
 	(push (format nil "Expected output: ~%~a~%;; Got:~%~a" output test-output)
+	      error-messages))
+      (when (and file-goto-error
+		 (not (equal file-goto-error emacs::*goto-file-position-stored*)))
+	(push (format nil "Expected error location: ~%~a~%;; Got:~%~a" file-goto-error
+		      emacs::*goto-file-position-stored*)
 	      error-messages))
       (when files
 	(loop for file in files

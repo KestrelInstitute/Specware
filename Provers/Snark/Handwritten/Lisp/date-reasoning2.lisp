@@ -155,32 +155,32 @@
 
 (defun declare-date-functions (&key intervals points)
   (when points
-    (declare-function-symbol
+    (declare-function
      (date-point-function-name?) :any
      :input-function 'input-date-point)
-    (declare-function-symbol
+    (declare-function
      (utime-point-function-name?) 1
      :sort (list (time-point-sort-name?))
      :to-lisp-code 'utime-point-term-to-lisp))
   (when intervals
-    (declare-function-symbol
+    (declare-function
      (date-interval-function-name?) :any
      :input-function 'input-date-interval)
-    (declare-function-symbol
+    (declare-function
      (utime-interval-function-name?) 2
      :sort (list (time-interval-sort-name?))
      :to-lisp-code 'utime-interval-term-to-lisp))
   (let-options ((print-symbol-in-use-warnings nil))
     (when points
-      (declare-predicate-symbol
+      (declare-relation
        (time-pp-main-relation-name?) 3
        :rewrite-code 'time-pp-atom-rewriter-for-dates))
     (when intervals
-      (declare-predicate-symbol
+      (declare-relation
        (time-ii-main-relation-name?) 3
        :rewrite-code 'time-ii-atom-rewriter-for-dates))
     (when (and points intervals)
-      (declare-predicate-symbol
+      (declare-relation
        (time-pi-main-relation-name?) 3
        :rewrite-code 'time-pi-atom-rewriter-for-dates)))
   nil)

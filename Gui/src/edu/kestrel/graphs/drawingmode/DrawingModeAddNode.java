@@ -13,6 +13,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.util.*;
 
+
 /**
  * The default drawing mode for adding nodes.
  * @author  ma
@@ -54,15 +55,25 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
     
     protected class MarqueeHandler extends XMarqueeHandler implements java.io.Serializable {
         
-        XNode node;
-        XContainerView possibleParentView;
+        protected XNode node;
+        protected XContainerView possibleParentView;
+        protected int initialWidth;
+        protected int initialHeight;
         
         public MarqueeHandler(XGraphDisplay graph) {
             super(graph);
             node = null;
             possibleParentView = null;
+            initialWidth = initialHeight = 40;
         }
         
+        public void setInitialWidth(int width) {
+            this.initialWidth = width;
+        }
+        
+        public void setInitialHeight(int height) {
+            this.initialHeight = height;
+        }
         
         public boolean isForceMarqueeEvent(MouseEvent e) {
             return (getMouseButton(e) == 1);
@@ -78,6 +89,7 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
                 super.mousePressed(e0);
                 return;
             }
+            node = null;
             if (cv != null) {
                 if (cv instanceof XContainerView) {
                     possibleParentView = (XContainerView) cv;
@@ -96,16 +108,18 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
             }
             node = createXNode(graph);
             startPoint = new Point(e.getX(),e.getY());
-            graph.insertNode(node, new Rectangle(e.getX(),e.getY(),40,40));
-
-            if (possibleParentView != null) {
-                Map viewMap = new Hashtable();
-                ParentMap pm = new ParentMap();
-                pm.addEntry(node,possibleParentView.getCell());
-                graph.getModel().insert(null,null,pm,null);
-                possibleParentView = null;
+            //graph.insertNode(node, new Rectangle(e.getX(),e.getY(),40,40));
+            if (node != null) {
+                graph.insertNode(node, new Rectangle(e.getX(),e.getY(),initialWidth,initialHeight));
+                
+                if (possibleParentView != null) {
+                    Map viewMap = new Hashtable();
+                    ParentMap pm = new ParentMap();
+                    pm.addEntry(node,possibleParentView.getCell());
+                    graph.getModel().insert(null,null,pm,null);
+                    possibleParentView = null;
+                }
             }
-        
         }
         
         public void mouseReleased(MouseEvent e0) {
@@ -117,16 +131,22 @@ public abstract class DrawingModeAddNode extends DrawingModeWithMarqueeHandler {
                 pm.addEntry(node,possibleParentView.getCell());
                 graph.getModel().insert(null,null,pm,null);
             }
+            //node = null;
+            ((XGraphDisplay)graph).switchToInitialDrawingMode();
         }
         
         public void mouseDragged(MouseEvent e0) {
+            if (getMouseButton(e0) == 3) {
+                super.mouseDragged(e0);
+                return;
+            }
             MouseEvent e = fromScreenSnap(e0);
             currentPoint = new Point(e.getX(),e.getY());
             int x = currentPoint.x;
             int y = currentPoint.y;
             if (node != null) {
-                int w = Math.max(Math.abs(x-startPoint.x),40);
-                int h = Math.max(Math.abs(y-startPoint.y),40);
+                int w = Math.max(Math.abs(x-startPoint.x),initialWidth);
+                int h = Math.max(Math.abs(y-startPoint.y),initialHeight);
                 int x0 = Math.min(x,startPoint.x);
                 int y0 = Math.min(y,startPoint.y);
                 graph.setBoundsOfGraphElement(node, new Rectangle(x0,y0,w,h));

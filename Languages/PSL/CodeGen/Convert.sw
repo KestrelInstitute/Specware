@@ -1,37 +1,123 @@
-spec {
-  import /Languages/BSpecs/Predicative/Coalgebra
+Convert qualifying spec
+  import /Languages/PSL/AbstractSyntax/Types
+  import /Languages/SpecCalculus/Semantics/Monad
   import Struct qualifying GraphAnalysis
-  import ../Semantics/PSpec
-  % import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
+  import ../Semantics/Evaluate/Specs/Oscar
+  import ../Semantics/Evaluate/Specs/MetaSlang
+  import ../Semantics/Evaluate/Specs/MetaSlang/Legacy
+  import translate /Library/Structures/Data/Maps/Finite/Polymorphic/AsAssocList by
+     {Map._ +-> FinitePolyMap._}
 
-  sort StructPSpec = {
-    staticSpec : Spec,
-    dynamicSpec : Spec,
-    procedures : PolyMap.Map (QualifiedId,StructProcedure)
+  % Doesn't belong here. Really need to fix up this curry / uncurry mess.
+  def FinitePolyMap.fold f unit map =
+    foldM (fn x -> fn (dom,cod) -> f x dom cod) unit map
+
+  op OscarStruct.show : StructOscarSpec -> ModeSpec -> String
+  def OscarStruct.show oscarSpec ms =
+    let procStrings =
+       map (fn (id,prc) -> (Id.show id) ^ " = " ^ (ppFormat (StructProcedure.pp prc)))
+         (mapToList oscarSpec.procedures) in
+    let procs = List.show "\n\n" procStrings in
+    let modeSpecString = ppFormat (ModeSpec.pp (subtract oscarSpec.modeSpec ms)) in
+      ("modeSpec=\n" ^ modeSpecString ^ "\nprocedures=\n" ^ procs)
+
+  sort StructOscarSpec = {
+    modeSpec : ModeSpec,
+    procedures : FinitePolyMap.Map (QualifiedId,StructProcedure)
   }
 
-  op convertPSpec : PSpec -> StructPSpec
-  def convertPSpec pSpec = {
-    staticSpec = pSpec.staticSpec,
-    dynamicSpec = pSpec.dynamicSpec,
-    procedures = mapMap convertProcedure pSpec.procedures
+  (* Convert the BSpecs in an Oscar spec to graphs ready for subsequent structing *)
+  op convertOscarSpec : Oscar.Spec -> Env StructOscarSpec
+  def convertOscarSpec oscSpec =
+    let def handler id proc except =
+      case except of
+        | SpecError (pos, msg) -> {
+             print ("convertOscarSpec exception: procId=" ^ (Id.show id) ^ "\n");
+             print (msg ^ "\n");
+             % print (ppFormat (pp proc));
+             % print "\n";
+             raise (SpecError (pos, "except : " ^ msg))
+           }
+        | _ -> raise except
+    in {
+      procedures <- ProcMapEnv.fold (fn procMap -> fn procId -> fn proc -> {
+          print ("convertOscarSpec: procId=" ^ (Id.show procId) ^ "\n");
+          structProc <- catch (convertProcedure proc) (handler procId proc);
+          return (FinitePolyMap.update (procMap,procId,structProc))
+         }) FinitePolyMap.empty (procedures oscSpec);
+      return {
+        modeSpec = modeSpec oscSpec,
+        procedures = procedures
+      }
+  }
+
+  (* Structure the graphs in an oscar spec *)
+  op structOscarSpec : StructOscarSpec -> Env StructOscarSpec
+  def structOscarSpec structSpec =
+    let def handler id proc except =
+      case except of
+        | SpecError (pos, msg) -> {
+             print ("structOscarSpec exception: procId=" ^ (Id.show id) ^ "\n");
+             print (msg ^ "\n");
+             % print (ppFormat (pp proc));
+             % print "\n";
+             raise (SpecError (pos, "except : " ^ msg))
+           }
+        | _ -> raise except
+    in {
+      procedures <- FinitePolyMap.fold (fn procMap -> fn procId -> fn proc -> {
+          print ("structOscarSpec: procId=" ^ (Id.show procId) ^ "\n");
+          structProc <- catch (structProcedure proc) (handler procId proc);
+          return (FinitePolyMap.update (procMap,procId,structProc))
+         }) FinitePolyMap.empty structSpec.procedures;
+      return {
+        modeSpec = structSpec.modeSpec,
+        procedures = procedures
+      }
   }
 
   sort StructProcedure = {
-    parameters : List String,
-    return : Option String,
-    staticSpec : Spec,
-    dynamicSpec : Spec,
+    parameters : List Op.Ref,
+    varsInScope : List Op.Ref,
+    return : Option Op.Ref,
+    modeSpec : ModeSpec,
     code : Struct.Graph
   }
 
-  op convertProcedure : Procedure -> StructProcedure
+  op StructProcedure.pp : StructProcedure -> Doc
+  def StructProcedure.pp prc =
+    ppConcat [
+      ppString "params=(",
+      ppSep (ppString ",") (map OpRef.pp prc.parameters),
+      case prc.return of
+        | None -> ppString ") return=()"
+        | Some name -> ppString (") return " ^ (OpRef.show name)),
+      ppString "  ",
+      ppIndent (ppString (printGraph prc.code))
+    ]
+  
+  op convertProcedure : Procedure -> Env StructProcedure
   def convertProcedure proc = {
-    parameters = proc.parameters,
-    return = proc.return,
-    staticSpec = proc.staticSpec,
-    dynamicSpec = proc.dynamicSpec,
-    code = convertBSpec proc.code
+    code <- convertBSpec (bSpec proc);
+    return {
+        parameters = proc.parameters,
+        return = proc.returnInfo,
+        varsInScope = proc.varsInScope,
+        modeSpec = proc.modeSpec,
+        code = code
+      }
+  }
+
+  op structProcedure : StructProcedure -> Env StructProcedure
+  def structProcedure proc = {
+    code <- structGraph proc.code;
+    return {
+        parameters = proc.parameters,
+        return = proc.return,
+        varsInScope = proc.varsInScope,
+        modeSpec = proc.modeSpec,
+        code = code
+      }
   }
 
   op sortGraph : fa (a) (a * a -> Boolean) -> List a -> List a
@@ -51,67 +137,211 @@ spec {
           let (l1,l2) = partitionList hd tl in
              (sortGraph cmp l1) ++ [hd] ++ (sortGraph cmp l2)
 
-  op printNodeContent : NodeContent -> String
-  op printStructuredGraph : Struct.Graph -> String
-  op addPredecessors : List NodeContent -> Graph
+  op printVList : List (String * Index) -> String
+  % op printVList : List (Vrtx.Vertex * Index) -> String
+  def printVList l = show "\n" (map (fn (vrtx,idx) ->
+                        "("
+                      % ^ (Vrtx.show vrtx)
+                      ^ vrtx
+                      ^ "|->"
+                      ^ (Nat.show idx)
+                      ^ ")") l) 
 
-  op convertBSpec : BSpec -> Graph
+  op printNCList : List (Nat * NodeContent) -> String
+  def printNCList l = show "\n" (map (fn (dom,cod) ->
+                        "("
+                      ^ (Nat.toString dom)
+                      ^ "|->"
+                      ^ (printNodeContent cod)
+                      ^ ")") l) 
+
+  op mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
+  op toList : EdgSet.Set -> List Edg.Edge
+
+  op structGraph : Graph -> Env Graph
+  def structGraph graph =
+      % return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) graph)))
+      return (graphToStructuredGraph graph)
+
+  op convertBSpec : BSpec -> Env Graph
   def convertBSpec bSpec =
-    let coAlg = succCoalgebra bSpec in
-    let (graph,n,visited) = convertBSpecAux bSpec coAlg emptyMap 0 bSpec.initial emptyMap in
-    let g = sortGraph (fn ((n,_),(m,_)) -> n < m) graph in
-    let _ = writeLine (show " " (map (fn (x,y) ->
-                                      "("
-                                    ^ (Nat.toString x)
-                                    ^ ","
-                                    ^ (printNodeContent y)
-                                    ^ ")") g)) in
-    let g = graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) graph)) in
-    let _ = writeLine (printStructuredGraph g) in
-    g
+    if EdgSet.empty? (edges (shape (system bSpec))) then
+      return []
+    else {
+        coAlg <- return (succCoalgebra bSpec);
+        (graph,n,visited) <- convertBSpecAux bSpec coAlg (final bSpec) FinitePolyMap.empty 0 (initial bSpec) FinitePolyMap.empty;
+        print "convertBSpec VList =\n";
+        print (printVList (mapToList visited));
+        g <- return (sortGraph (fn ((n,_),(m,_)) -> n < m) (mapToList graph));
+        g <- return (addPredecessors (map (fn (x,y) -> y) g));
+        % print "\nconvertBSpec NCList after sort\n";
+        % print (printNCList g);
+        % print "\n\n";
+        % g <- return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)));
+        % print (printGraph g);
+        return g
+    }
 
   op convertBSpecAux :
         BSpec
      -> Coalgebra
-     -> PolyMap.Map (Index,NodeContent)
+     -> VrtxSet.Set
+     -> FinitePolyMap.Map (Index,NodeContent)
      -> Index
-     -> V.Elem
-     -> PolyMap.Map (V.Elem,Index)
-     -> (PolyMap.Map (Index, NodeContent) * Index * PolyMap.Map (V.Elem,Index))
+     -> Vrtx.Vertex
+     % -> FinitePolyMap.Map (Vrtx.Vertex,Index)
+     -> FinitePolyMap.Map (String,Index)
+     % -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (Vrtx.Vertex,Index))
+     -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (String,Index))
 
-  def convertBSpecAux bSpec coAlg graph n vertex visited =
-    case (evalPartial visited vertex) of
-      | Some index -> (graph,n,visited)
+(* The first test to see if the vertex is a final one is needed since the BSpec might be a loop in which case
+there is branching from a state and one of the branches takes you to a final state. Perhaps the other tests
+are no longer needed. *)
+
+  def convertBSpecAux bSpec coAlg final graph n vertex visited =
+    case evalPartial (visited,show vertex) of
+      | Some index -> return (graph,n,visited)
       | None ->
          (case (toList (coAlg vertex)) of
-            | [] -> (graph,n,visited)
+            | [] -> 
+                 if member? (final,vertex) then
+                   return (graph,n,visited)
+                 else
+                   raise (SpecError (noPos, "convertBSpecAux: reached empty set of successors to vertex: " ^ (show vertex)))
 
-            | [(edge,node)] ->
-               let visited = update visited vertex n in
-               let (graph,n,visited) = convertBSpecAux bSpec coAlg graph (n+1) node visited in 
-               let trans = transitionSpec bSpec edge in
-               (case trans.properties of
-                 | [] -> fail "no axiom"
-                 | [(Axiom,name,tyVars,term)] ->
-                     let index = eval visited node in
-                     let graph = update graph n (Block {statements=[Assign term],next=index}) in
-                     (graph,n,visited)
-                 | _ -> fail "bad property")
+            (* A single edge leaving the node means that the edge is labelled with a statement.  *)
+            | [edge] -> {
+                 visited <- return (update (visited,show vertex,n));
+                 (node,newTerm) <- getEdgeTargetAndAction bSpec edge;
+                 (graph,next,visited) <-
+                   if member? (final,node) then
+                     return (graph,n+1,visited)
+                   else
+                     convertBSpecAux bSpec coAlg final graph (n+1) node visited;
+                 let graph =
+                    if member? (final,node) then
+                      update (graph,n,Return newTerm)
+                    else
+                      let index = vertexToIndex visited node in
+                      update (graph,n,Block {statements=[Assign newTerm],next=index}) in
+                 return (graph,next,visited)
+               }
 
-            | [(leftEdge,leftNode),(rightEdge,rightNode)] ->
-               let visited = update visited vertex n in
-               let (graph,n,visited) = convertBSpecAux bSpec coAlg graph (n+1) leftNode visited in
-               let (graph,n,visited) = convertBSpecAux bSpec coAlg graph n rightNode visited in
-               let leftTrans = transitionSpec bSpec leftEdge in
-               let rightTrans = transitionSpec bSpec rightEdge in
-               (case (leftTrans.properties,rightTrans.properties) of
-                 | ([],_) -> fail "no left axiom"
-                 | (_,[]) -> fail "no right axiom"
-                 | ([(Axiom,leftName,leftTyVars,leftTerm)], [(Axiom,rightName,rightTyVars,rightTerm)]) ->
-                     let leftIndex = eval visited leftNode in
-                     let rightIndex = eval visited rightNode in
-                     let graph = update graph n (Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
-                     (graph,n,visited)
-                 | _ -> fail "bad property")
-            | _ -> fail "more than two successors?")
-}
+            (*
+              If there are two edges leaving the node, then we we are dealing with a conditional.
+              At present we do not handle the case where there are more than two branches. Nor
+              do we make any effort to prove that the guard on one branch is equivalent to the
+              negation of the other branch. This should be done. More generally, we need to
+              prove, or have the user provide a proof, that the branches are disjoint or adopt
+              a different semantics where the order of the guards is significant.
+             *)
+
+            | [leftEdge,rightEdge] -> {
+                 visited <- return (update(visited,show vertex,n)); 
+                 (leftNode,leftTerm) <- getEdgeTargetAndAction bSpec leftEdge;
+                 (rightNode,rightTerm) <- getEdgeTargetAndAction bSpec rightEdge;
+                 (graph,next1,visited) <- convertBSpecAux bSpec coAlg final graph (n+1) leftNode visited; 
+                 (graph,next2,visited) <- convertBSpecAux bSpec coAlg final graph next1 rightNode visited;
+                 let graph =
+                   let leftIndex = vertexToIndex visited leftNode in
+                   let rightIndex = vertexToIndex visited rightNode in
+                   update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
+                 return (graph,next2,visited)
+               }
+            | edges -> {
+                  visited <- return (update(visited,show vertex,n)); 
+                  (graph,next,visited,idx) <- makeBranches bSpec coAlg final graph n edges visited;
+                  return (graph,next,visited)
+                })
+                
+%             | succs -> {               % raise (SpecError (noPos, "more than two successors?")))
+%                  print "convertBSpecAux: more than two successors: {";
+%                  print (ppFormat (ppSep (ppString ",") (map Edg.pp succs)));
+%                  print "}\n";
+%                  return (graph,n,visited)
+%                })
+
+  op makeBranches :
+        BSpec
+     -> Coalgebra
+     -> VrtxSet.Set
+     -> FinitePolyMap.Map (Index,NodeContent)
+     -> Index
+     -> List Edg.Edge
+     -> FinitePolyMap.Map (String,Index)
+     % -> FinitePolyMap.Map (Vrtx.Vertex,Index)
+     % -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (Vrtx.Vertex,Index) * Index)
+     -> Env (FinitePolyMap.Map (Index, NodeContent) * Index * FinitePolyMap.Map (String,Index) * Index)
+  def makeBranches bSpec coAlg final graph n edges visited =
+    case edges of
+      | [] -> raise (SpecError (noPos, "makeBranches: empty list in make branches"))
+      | [x] -> raise (SpecError (noPos, "makeBranches: singleton list in make branches"))
+      | [leftEdge,rightEdge] -> {
+           (leftNode,leftTerm) <- getEdgeTargetAndAction bSpec leftEdge;
+           (rightNode,rightTerm) <- getEdgeTargetAndAction bSpec rightEdge;
+           (graph,next1,visited) <- convertBSpecAux bSpec coAlg final graph (n+1) leftNode visited; 
+           (graph,next2,visited) <- convertBSpecAux bSpec coAlg final graph next1 rightNode visited;
+           let graph =
+             let leftIndex = vertexToIndex visited leftNode in
+             let rightIndex = vertexToIndex visited rightNode in
+             update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
+           return (graph,next2,visited,n)
+         }
+      | leftEdge::edges -> {
+           (leftNode,leftTerm) <- getEdgeTargetAndAction bSpec leftEdge;
+           (graph,next1,visited,rightIndex) <- makeBranches bSpec coAlg final graph (n+1) edges visited;
+           (graph,next2,visited) <- convertBSpecAux bSpec coAlg final graph next1 leftNode visited; 
+           let graph =
+             let leftIndex = vertexToIndex visited leftNode in
+             update (graph,n,Branch {condition=leftTerm,trueBranch=leftIndex,falseBranch=rightIndex}) in
+           return (graph,next2,visited,n)
+         }
+
+  (* This shouldn't be needed. We should always visit the target and we should never get None. *)
+  % op vertexToIndex : FinitePolyMap.Map (Vrtx.Vertex,Index) -> Vrtx.Vertex -> Index
+  op vertexToIndex : FinitePolyMap.Map (String,Index) -> Vrtx.Vertex -> Index
+  def vertexToIndex visited vrtx =
+    case evalPartial (visited,show vrtx) of
+      | None -> ~1
+      | Some index -> index
+
+  op getEdgeTargetAndAction : BSpec -> Edg.Edge -> Env (Vrtx.Vertex * MSlang.Term)
+  def getEdgeTargetAndAction bSpec edge = {
+      node <- return (GraphMap.eval (target (shape (system bSpec)), edge));
+      spc <- return (edgeLabel (system bSpec) edge);
+      invars <- foldVariants (fn l -> fn claim -> return (cons (term claim,l))) [] (modeSpec spc);
+      invars <- foldVariables infoToBindings invars (modeSpec spc);
+      term <- case invars of
+        | [] -> {
+             print ("convertBSpecAux: no axiom for edge" ^ (Edg.show edge) ^ "\n");
+             MSlangEnv.mkTuple ([],noPos)
+           }
+        | [term] -> return term
+        | _ -> raise (SpecError (noPos, ppFormat (ppConcat [
+                        ppString ("Something wrong with spec properties for edge " ^ (Edg.show edge) ^ "\n"),
+                        ppBreak,
+                        ppSep ppBreak (map pp invars)
+                      ])));
+      return (node,term)
+    }
+
+  op infoToBindings : List MSlang.Term -> Op.OpInfo -> Env (List MSlang.Term)
+  def infoToBindings bindings varInfo =
+    let
+      def mkEquals () =
+        let type = MSlang.freshMetaTyVar noPos in
+        MSlang.mkFun (Equals, type, noPos)
+      def mkEquality t0 t1 =
+        MSlang.mkApply (mkEquals (), MSlang.mkTuple ([t0,t1], noPos),noPos)
+    in
+      let opTerm = mkFun (Op (idOf varInfo,Nonfix), type varInfo, noPos) in
+      if isPrimedName? (idOf varInfo) then
+        case (term varInfo) of
+          | None -> return bindings
+          | Some trm -> return (cons (mkEquality opTerm trm, bindings))
+      else
+        return bindings
+
+  op isPrimedName? : QualifiedId -> Boolean
+  def isPrimedName? (qualId as (Qualified (qual,id))) = hd (rev (explode id)) = #'
+endspec

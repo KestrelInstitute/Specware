@@ -41,6 +41,7 @@ class ClaimB extends Member implements Binding.Claim {
         try {
             target.setName(my.getName());
             target.setClaimKind(my.getClaimKind());
+            target.setExpression(my.getExpression());
         } catch (SourceException ex) {
             // should NOT happen
         }
@@ -65,4 +66,14 @@ class ClaimB extends Member implements Binding.Claim {
         el.setClaimKind(claimKind);
         regenerateHeader(el);
     }
+    
+    /** Changes expression for the claim.
+     */
+    public void changeExpression(String expression) throws SourceException {
+        if (!source.isGeneratorEnabled())
+            return;
+        ClaimElement el = (ClaimElement)cloneElement();
+        el.setExpression(expression);
+        regenerateHeader(el);
+    }    
 }

@@ -1,28 +1,28 @@
 IntegerSet qualifying spec {
   import SplaySet
 
-  sort Set = SplaySet.Set Integer
+  sort IntegerSet.Set = SplaySet.Set Integer
 
-  op empty         : Set
-  op difference    : Set * Set -> Set
-  op add           : Set * Integer -> Set
-  op addList       : Set * List Integer -> Set
-  op member        : Set * Integer -> Boolean
-  op fromList      : List Integer -> Set
-  op isEmpty       : Set -> Boolean
-  op listItems     : Set -> List Integer
-  op union         : Set * Set -> Set
-  op delete        : Set * Integer -> Set
-  op intersection  : Set * Set -> Set
-  op numItems      : Set -> Nat
-  op map           : (Integer -> Integer) -> Set -> Set
-  op app           : (Integer -> ()) -> Set -> ()
-  op foldr         : (Integer * Set -> Set) -> Set -> Set -> Set
-  op foldl         : (Integer * Set -> Set) -> Set -> Set -> Set
-  op filter        : (Integer -> Boolean) -> Set -> Set
-  op exists        : (Integer -> Boolean) -> Set -> Boolean
-  op find          : (Integer -> Boolean) -> Set -> Option Integer
-  op equal         : Set * Set -> Boolean
+  op empty         : IntegerSet.Set
+  op difference    : IntegerSet.Set * IntegerSet.Set -> IntegerSet.Set
+  op add           : IntegerSet.Set * Integer -> IntegerSet.Set
+  op addList       : IntegerSet.Set * List Integer -> IntegerSet.Set
+  op member        : IntegerSet.Set * Integer -> Boolean
+  op fromList      : List Integer -> IntegerSet.Set
+  op isEmpty       : IntegerSet.Set -> Boolean
+  op listItems     : IntegerSet.Set -> List Integer
+  op union         : IntegerSet.Set * IntegerSet.Set -> IntegerSet.Set
+  op delete        : IntegerSet.Set * Integer -> IntegerSet.Set
+  op intersection  : IntegerSet.Set * IntegerSet.Set -> IntegerSet.Set
+  op numItems      : IntegerSet.Set -> Nat
+  op map           : (Integer -> Integer) -> IntegerSet.Set -> IntegerSet.Set
+  op app           : (Integer -> ()) -> IntegerSet.Set -> ()
+  op foldr         : (Integer * IntegerSet.Set -> IntegerSet.Set) -> IntegerSet.Set -> IntegerSet.Set -> IntegerSet.Set
+  op foldl         : (Integer * IntegerSet.Set -> IntegerSet.Set) -> IntegerSet.Set -> IntegerSet.Set -> IntegerSet.Set
+  op filter        : (Integer -> Boolean) -> IntegerSet.Set -> IntegerSet.Set
+  op exists        : (Integer -> Boolean) -> IntegerSet.Set -> Boolean
+  op find          : (Integer -> Boolean) -> IntegerSet.Set -> Option Integer
+  op equal         : IntegerSet.Set * IntegerSet.Set -> Boolean
 
   def empty          = SplaySet.empty Integer.compare
   def difference     = SplaySet.difference

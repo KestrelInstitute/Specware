@@ -1,17 +1,22 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/Environment.sl v1.4
+% Some names have had to be introduced qualified with SpecEnvironment
+% to avoid clashes with others qualified with MetaSlang
 
 (*
  * SpecEnvironment builds an association map of sort identifiers 
  * to their definitional unfolding. 
  *) 
  
+SpecEnvironment qualifying
 spec {
- import TypeChecker
- %% Try to avoid importing Primitives0
- %import Primitives0   % ../built-in/primitives0.sl
+ import StandardSpec
+ import Printer
+ import /Library/Legacy/DataStructures/ListPair
+ %% importing TypecChecker is overkill
+ %import Elaborate/TypeChecker
 
  sort SpecEnvironment = StringMap Spec
- sort Env             = SpecName * SpecEnvironment
+ % sort Env             = SpecName * SpecEnvironment
 
  op makeEnv     : List Spec              -> SpecEnvironment
  op empty       : ()                     -> SpecEnvironment
@@ -19,90 +24,7 @@ spec {
  op add_        : Spec * SpecEnvironment -> SpecEnvironment 
  op unfoldBase  : Spec * Sort -> Sort 
  op unfoldBaseV : Spec * Sort * Boolean -> Sort 
- op inferType   : Spec * Term -> Sort
-
- op makeSpec            : Specs * PosSpec -> Spec
- op makeSpecReportError : Specs * PosSpec * Environment * String
-                          -> ErrorMonad.Result Spec
-
- op primitiveSpecNames : List String
- def primitiveSpecNames = ["Nat",
-                           "Integer",
-                           "String",
-                           "Char",
-                           "Boolean",
-                           "General",
-                           "List",
-                           "TranslationBuiltIn"]
-
-% op primitiveSpecs : List Spec
-% def primitiveSpecs = []
-% def primitiveSpecs = [Primitives0.primNat,
-%                       Primitives0.primInteger,
-%                       Primitives0.primString,
-%                       Primitives0.primChar,
-%                       Primitives0.primBoolean,
-%                       Primitives0.primGeneral,
-%                       Primitives0.primList,
-%                       Primitives0.primTranslationBuiltIn]
-
-% op emptyEnv : Ref SpecEnvironment
-
-% def emptyEnv = Ref (makeEnv primitiveSpecs)
-
-% def empty () =
-%  ! emptyEnv
-
-
-% def empty4C () =
-%  ! emptyEnv
-
-% def makeEnv =
-%  foldr add_ StringMap.empty  
-
-% %% updateEmpty is used when building the primitive specs, to
-% %% control what environment "spec ... end-spec" constants import.
-% %% We should replace empty by a ref cell instead.
-
-% op updateEmpty : List Spec -> ()
-
-% def updateEmpty specs = 
-%  emptyEnv := makeEnv specs
-
- (*
-    let _ =
-      Lisp.apply(Lisp.symbol("LISP","SET"),
-         [Lisp.symbol("SPECENVIRONMENT","EMPTY"),
-          Lisp.cell(SpecEnvironment.mkEmpty specs)]) in
-    ()
-  *)
-
-% def add (specEnv, spc : Spec) =  
-%  StringMap.insert (specEnv, spc.name, spc)
-
-% def add_ (spc, env) = add (env, spc)
-
- %% makeSpec is called only from meta-slang-parser-semantics.lisp
- %% makeSpecV is called from some espec code
-% def makeSpec (specs, spc) = makeSpecV (specs, spc, true)
-% def makeSpecV (specs, spc, verbose) =
-%  let specs2 = StringMap.listItems (empty ()) in
-%  let spc = elaboratePosSpec (spc,"",verbose) in
-%  let spc = convertPosSpecToSpec spc in
-%  let primitive_specs = (mapPartial (fn nm -> StringMap.find (!emptyEnv, nm))
-%                                    primitiveSpecNames) in
-%  let visible_specs = specs ++ primitive_specs in
-%  %% The following just installs a mapping from spec names to specs.
-%  %% It does not affect the fields for sorts, ops, axioms, etc.
-%  %% It works by recursively finding specs among the visible_specs 
-%  %% whose names are given in the import list of the original or some
-%  %% imported spec.  
-%  %% Note: If visible_specs were null, this would create a null map, 
-%  %%       no matter how many spec names were in spc.imports.
-%  let spc = addImportedSpecs (spc, visible_specs) in
-%  % let spcimports = StringMap.toList(spc.importedSpecs) in
-%  % let spc = mergeImports(specs,spc) in
-%  spc
+ op inferType   : Spec * MS.Term -> Sort
 
 % %% makeSpecReportError is called only from ui::loadFile
 % %%  (and from some mysterious GlueFront routines)
@@ -132,14 +54,14 @@ spec {
           | (id, srt) ::S -> if name = id then srt else find (name, S, a) 
   in 
   let def substRec srt =  
-       case srt 
-         of Base (id,             srts,                   a) ->  
-            Base (id,             List.map substRec srts, a) 
+       case srt of
+          | Base (id,                   srts, a) ->  
+            Base (id, List.map substRec srts, a) 
 
-          | Arrow (s1,          s2,           a) ->  
+          | Arrow (         s1,          s2,  a) ->  
             Arrow (substRec s1, substRec s2,  a) 
 
-          | Product (fields,                                       a) ->  
+          | Product (                                      fields, a) ->  
             Product (List.map (fn(id,s)-> (id,substRec s)) fields, a) 
 
           | CoProduct (fields, a) ->  
@@ -151,10 +73,10 @@ spec {
                                 fields,
                        a) 
 
-          | Quotient (srt,          term, a) -> % No substitution for quotientsorts
+          | Quotient (         srt, term, a) -> % No substitution for quotientsorts
             Quotient (substRec srt, term, a) 
 
-          | Subsort  (srt,          term, a) -> % No substitution for subsorts
+          | Subsort  (         srt, term, a) -> % No substitution for subsorts
             Subsort  (substRec srt, term, a) 
 
           | TyVar (name, a) -> find (name, S, a)
@@ -169,9 +91,9 @@ spec {
     of Base (qid, srts, a) ->
        (case findTheSort(sp,qid)
           of None -> srt
-           | Some(_, _,      None)      -> srt
-           | Some(_, tyVars, Some srt2) ->
-             let ssrt = substSort(zip(tyVars,srts), srt2) in
+           | Some(_, _, [])      -> srt
+           | Some(_, _, (type_vars, srt2)::_) ->
+             let ssrt = substSort(zip(type_vars,srts), srt2) in
              unfoldBaseV (sp, ssrt, verbose))
      | _ -> srt
 
@@ -233,6 +155,15 @@ spec {
     of Product (fields, _) -> fields
      | _ -> System.fail ("Could not extract product sort "^printSort srt)
 
+ op  productSorts: Spec * Sort -> List Sort
+ def productSorts (sp, srt) =
+   case stripSubsorts (sp, srt)
+    of Product (fields, _) ->
+       if tupleFields? fields
+	 then map (fn (_,x) -> x) fields
+	 else [srt]
+     | _ -> [srt]
+
  def coproduct (sp : Spec, srt : Sort) = 
   case stripSubsorts (sp, srt)
     of CoProduct (fields, _) -> fields
@@ -243,6 +174,12 @@ spec {
  
  def range (sp, srt) = 
   let (_, rng) = arrow (sp, srt) in rng
+
+ op  arrow?     : Spec * Sort -> Boolean
+ def arrow? (sp, srt) =
+   case stripSubsorts (sp, srt)
+    of Arrow _ -> true
+     | _ -> false
 
  op  arrowOpt     : Spec * Sort -> Option (Sort * Sort)
  op  rangeOpt     : Spec * Sort -> Option (Sort)
@@ -278,7 +215,7 @@ spec {
     of CoProduct (fields, _) -> Some fields
      | _ -> None
 
- def inferType (sp, tm : Term) = 
+ def inferType (sp, tm : MS.Term) = 
   case tm
     of Apply      (t1, t2,               _) -> (case rangeOpt(sp,inferType(sp,t1))
                                                   of Some rng -> rng
@@ -287,9 +224,9 @@ spec {
                                                      ("Could not extract type for "^
                                                       printTermWithSorts tm))
      | Bind       _                         -> boolSort
-     | Record     (fields,               a) -> Product(List.map (fn (id, t) -> 
-                                                                 (id, inferType (sp, t)))
-                                                                fields,
+     | Record     (fields,               a) -> Product(map (fn (id, t) -> 
+							    (id, inferType (sp, t)))
+						         fields,
                                                        a)
      | Let        (_, term,              _) -> inferType (sp, term)
      | LetRec     (_, term,              _) -> inferType (sp, term)
@@ -300,42 +237,43 @@ spec {
      | Lambda     ([],                   _) -> System.fail 
                                                 "inferType: Ill formed lambda abstraction"
      | IfThenElse (_, t2, t3,            _) -> inferType (sp, t2)
-     | Seq        ([],                   _) -> Product ([], ())
+     | Seq        ([],                   _) -> Product ([], noPos)
      | Seq        ([M],                  _) -> inferType (sp, M)
-     | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, ()))
+     | Seq        (M::Ms,                _) -> inferType (sp, Seq(Ms, noPos))
      | _ -> System.fail "inferType: Non-exhaustive match"
 
- def stringSort  : Sort = Base (Qualified ("String",  "String"),  [], ())
- def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], ())
- def charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], ())
- def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], ())
+% def SpecEnvironment.stringSort  : Sort = Base (Qualified ("String",  "String"),  [], noPos)
+% def booleanSort : Sort = Base (Qualified ("Boolean", "Boolean"), [], noPos)
+% def SpecEnvironment.charSort    : Sort = Base (Qualified ("Char",    "Char"),    [], noPos)
+% def integerSort : Sort = Base (Qualified ("Integer", "Integer"), [], noPos)
 
- op patternSort : Pattern -> Sort
- def patternSort = fn
-   | AliasPat   (pat1, _,       _) -> patternSort pat1
-   | VarPat     ((_,srt),       _) -> srt
-   | EmbedPat   (_,_,srt,       _) -> srt
-   | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
-                                                             (id, patternSort pat)) 
-                                                            idpatternlist in
-                                      Product (fields, ())
-   | WildPat     (srt,          _) -> srt
-   | StringPat   _                 -> stringSort
-   | BoolPat     _                 -> booleanSort
-   | CharPat     _                 -> charSort
-   | NatPat      _                 -> integerSort
-   | RelaxPat    (pat, _,       _) -> patternSort pat
-   | QuotientPat (pat, _,       _) -> patternSort pat
+%% This is no different than MetaSlang.patternSort 
+% op SpecEnvironment.patternSort : Pattern -> Sort
+% def SpecEnvironment.patternSort = fn
+%   | AliasPat   (pat1, _,       _) -> SpecEnvironment.patternSort pat1
+%   | VarPat     ((_,srt),       _) -> srt
+%   | EmbedPat   (_,_,srt,       _) -> srt
+%   | RecordPat  (idpatternlist, _) -> let fields = List.map (fn (id, pat) -> 
+%                                                             (id, SpecEnvironment.patternSort pat)) 
+%                                                            idpatternlist in
+%                                      Product (fields, noPos)
+%   | WildPat     (srt,          _) -> srt
+%   | StringPat   _                 -> SpecEnvironment.stringSort
+%   | BoolPat     _                 -> booleanSort
+%   | CharPat     _                 -> SpecEnvironment.charSort
+%   | NatPat      _                 -> integerSort
+%   | RelaxPat    (pat, _,       _) -> SpecEnvironment.patternSort pat
+%   | QuotientPat (pat, _,       _) -> SpecEnvironment.patternSort pat
 
 
- op mkRestrict    : Spec * {pred : Term, term : Term} -> Term
- op mkProjectTerm : Spec * Id * Term                  -> Term
- op mkSelectTerm  : Spec * Id * Term                  -> Term
+ op mkRestrict    : Spec * {pred : MS.Term, term : MS.Term} -> MS.Term
+ op mkProjectTerm : Spec * Id * MS.Term                  -> MS.Term
+ op mkSelectTerm  : Spec * Id * MS.Term                  -> MS.Term
 
  def mkRestrict (sp, {pred, term}) = 
   let srt = inferType (sp, term) in
   let srt = mkArrow (srt, mkSubsort (srt, pred)) in
-  mkApply ((Fun (Restrict, srt, ())), 
+  mkApply ((Fun (Restrict, srt, noPos)), 
            term)
  
  def mkProjectTerm (sp, id, term) = 
@@ -343,7 +281,7 @@ spec {
   let fields = product (sp, srt) in
     (case List.find (fn (id2, s)-> id = id2) fields
        of Some (_, s) -> 
-          mkApply(Fun (Project id, mkArrow(srt,s), ()),
+          mkApply(Fun (Project id, mkArrow(srt,s), noPos),
                   term)
         | _ -> System.fail "Projection index not found in product")
 
@@ -351,7 +289,7 @@ spec {
   let srt    = inferType (sp, term) in
   let fields = coproduct (sp, srt)  in
   case List.find (fn (id2, s)-> id = id2) fields
-    of Some (_,Some s) -> mkApply (Fun (Select id, mkArrow (srt, s), ()),
+    of Some (_,Some s) -> mkApply (Fun (Select id, mkArrow (srt, s), noPos),
                                    term)
      | _ -> System.fail "Selection index not found in product"
 
@@ -359,14 +297,16 @@ spec {
  % Assuming that op names are unambiguous in a spec
  % one can obtain the sort of ops given the name and spec only.
 
+(* ### unused
  op  getSortOfOp : Spec * String * String -> TyVars * Sort
  def getSortOfOp (spc, qid, opName) =
   % sjw: (4/02) Not sure if should check imports
-  case find2 (spc.ops, qid, opName)
+  case findAQualifierMap (spc.ops, qid, opName)
     of None -> (printSpecToTerminal spc;
                 System.fail ("Operator "^qid^"."^opName^" has not been declared"
                              ))
      | Some (op_names, fixity, (tyVars, srt), opt_def) -> (tyVars, srt)
+*)
 
  %- ----------------------------------------------------------------
  %- get dependencies transitively
@@ -430,6 +370,7 @@ spec {
  %- --------------------------------------------------------------------------
  %- search for a spec with a given name
 
+(* ### unused
  op lookupSpec : SpecEnvironment * String -> Option Spec
  def lookupSpec (env, spcname) =
   StringMap.foldli (fn (_,     _,   Some spc) -> Some spc
@@ -438,12 +379,14 @@ spec {
                                                  else None)
                    None 
                    (env : StringMap Spec)
+*)
 
  %- --------------------------------------------------------------------------------
  (**
   unfold to an arrow sort; if it doesn't unfold to an arrow, leave it unchanged.
   *)
 
+(* ### unused #NO! **)
  op unfoldToArrow: Spec * Sort -> Sort
  def unfoldToArrow (sp, srt) =
   let 
@@ -456,18 +399,17 @@ spec {
     of Arrow _ -> usrt
      | _       -> srt
 
-
  %- --------------------------------------------------------------------------------
  (**
    determine the sort of a term including unfolding of base sorts.
   *)
 
- op termSortEnv : Spec * Term -> Sort
+ op termSortEnv : Spec * MS.Term -> Sort
  def termSortEnv(sp,term) = 
   let res =
    case term 
      of Apply      (t1, t2,               _) -> 
-        (case termSortEnv (sp, t1)
+        (case stripSubsorts(sp,termSortEnv (sp, t1))
            of Arrow (dom, rng, _)            -> rng
             | _ -> System.fail ("Cannot extract sort of application "^
                                 System.toString term))
@@ -475,7 +417,7 @@ spec {
       | Record     (fields,               _) -> Product(map (fn (id, t)-> 
                                                              (id, termSortEnv (sp, t)))
                                                             fields,
-                                                        ())
+                                                        noPos)
       | Let        (_, term,              _) -> termSortEnv   (sp, term)
       | LetRec     (_, term,              _) -> termSortEnv   (sp, term)
       | Var        ((id, srt),            _) -> unfoldToArrow (sp, srt)
@@ -489,4 +431,5 @@ spec {
   in
   %let _ = writeLine("termSortEnv: "^printTerm(term)^"="^printSort(res)) in
   res
+
 }

@@ -10,6 +10,7 @@ import org.openide.text.PositionRef;
 import org.openide.src.SourceException;
 import org.openide.src.MultiPropertyChangeEvent;
 
+import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.model.*;
 
 /**
@@ -50,6 +51,7 @@ class ProofB extends Member implements Binding.Proof, TextBinding.Container {
         try {
             x.setName(my.getName());
             x.setSource(my.getSource());
+            x.setProofString(my.getProofString());
         } catch (SourceException ex) {
             // should NOT happen.
         }
@@ -105,6 +107,17 @@ class ProofB extends Member implements Binding.Proof, TextBinding.Container {
         }
         container.changeMembers(evt);
     }
+    
+    /** Changes proofString for the proof.
+     */
+    public void changeProofString(String proofString) throws SourceException {
+        Util.log("ProofB.changeProofString called with "+proofString);
+        if (!source.isGeneratorEnabled())
+            return;
+        ProofElement el = (ProofElement)cloneElement();
+        el.setProofString(proofString);
+        regenerateHeader(el);
+    }    
     
     /**
      * Initializes a new binding for the element so the element is stored after the

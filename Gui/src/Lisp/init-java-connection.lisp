@@ -3,7 +3,7 @@
 ;;;                          All Rights Reserved
 ;;;-------------------------------------------------------------------------
 
-(in-package :user)
+(in-package :cl-user)
 
 
 (eval-when (compile load)
@@ -31,9 +31,6 @@
 (defun init-java-listener () 
   (when (and (not (javatools.jlinker::jlinker-query))
 	     (not (java-listener-running-p)))
-    ;(excl::current-directory "planware:java-ui;")
-    ;(excl::set-current-working-directory  "planware:java-ui;")
-    ;(setq *default-pathname-defaults* "planware:java-ui;")
     (load (concatenate 'string specware::Specware4 "/Gui/src/Lisp/jl-config.cl")) 
     (jlinker-listen :process-function #'print-result
 		    :init-args '(:lisp-file nil
@@ -41,22 +38,87 @@
 				 :lisp-port 4321
 				 :verbose t))))
 
+(defvar *current-path-name*)
+
 (defun process-unit (path-name file-name)
   (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
+  (setq *current-path-name* path-name)
   (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
-	 (file-name-uri (concatenate 'string "/Gui/src/" file-name))
-	 (full-path-name (user::path-namestring full-file-name)))
-    (format t "~% FULL FILE NAME ~S  ~% URI ~S ~% PATH-NAME ~S " full-file-name file-name-uri full-path-name)
+	 (file-name-unitId (concatenate 'string "/Gui/src/" file-name))
+	 (full-path-name (cl-user::path-namestring full-file-name)))
+    (format t "~% FULL FILE NAME ~S  ~% UnitId ~S ~% PATH-NAME ~S "
+	    full-file-name file-name-unitId full-path-name)
     (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
     (excl::chdir  full-path-name)
     (setq *default-pathname-defaults* (excl::current-directory))
-    (specware-process-unit file-name-uri)
+    (specware-process-unit file-name-unitId)
     (format t "~%~% FINISHED")))
 
 (defun specware-process-unit (file-name)
   (format t "~% PROCESSING FILE ~S" file-name)
-  (user::sw  file-name))
+  (let ((output-str (with-output-to-string (str)
+		      (let ((*standard-output* str))
+			(Specware::evaluateUID_fromJava  file-name)))))
+    (jstatic "setProcessUnitResults" "edu.kestrel.netbeans.lisp.LispProcessManager" output-str)))
 
+(defun generate-lisp (path-name file-name)
+  (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
+  (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
+	 (file-name-unitId (concatenate 'string "/Gui/src/" file-name))
+	 (full-path-name (cl-user::path-namestring full-file-name)))
+    (format t "~% FULL FILE NAME ~S  ~% UnitId ~S ~% PATH-NAME ~S " full-file-name file-name-unitId full-path-name)
+    (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
+    (excl::chdir  full-path-name)
+    (setq *default-pathname-defaults* (excl::current-directory))
 
-;(excl::chdir "planware:java-ui;")
-;(init-java-listener)
+    (format t "~% GENERATING LISP FOR ~S" file-name-unitId)
+    (let ((output-str (with-output-to-string (str)
+		      (let ((*standard-output* str))
+			(cl-user::swl file-name-unitId)))))
+    (jstatic "setGenerateLispResults" "edu.kestrel.netbeans.lisp.LispProcessManager" path-name file-name output-str))
+
+    (format t "~%~% FINISHED")))
+
+(defun generate-java (path-name file-name)
+  (format t "~%PATH NAME ~S ~%FILE NAME ~S" path-name file-name)
+  (let* ((full-file-name (namestring (pathname (concatenate 'string path-name "/" file-name))))
+	 (file-name-unitId (concatenate 'string "/Gui/src/" file-name))
+	 (full-path-name (cl-user::path-namestring full-file-name)))
+    (format t "~% FULL FILE NAME ~S  ~% UnitId ~S ~% PATH-NAME ~S " full-file-name file-name-unitId full-path-name)
+    (format t "~% CURRENT DIRECTORY ~S" (excl::current-directory))
+    (excl::chdir  full-path-name)
+    (setq *default-pathname-defaults* (excl::current-directory))
+
+    (format t "~% GENERATING JAVA FOR ~S" file-name-unitId)
+    (let ((output-str (with-output-to-string (str)
+		      (let ((*standard-output* str))
+			(cl-user::swj file-name-unitId)))))
+    (jstatic "setGenerateJavaResults" "edu.kestrel.netbeans.lisp.LispProcessManager" path-name file-name output-str))
+
+    (format t "~%~% FINISHED")))
+
+(defpackage "SPECWARE")
+(defun Specware::reportErrorToJava-4 (file line col msg)
+  (let* ((filepath (parse-namestring file))
+	 (name (pathname-name filepath))
+	 (filedir (pathname-directory filepath))
+	 (path (pathname-directory (parse-namestring (concatenate 'string *current-path-name* "/"))))
+	 (rel-path (remove-common-prefix path filedir))
+	 (rel-dir (concat-with-dots rel-path)))
+    (jstatic "setProcessUnitResults" "edu.kestrel.netbeans.lisp.LispProcessManager"
+	   rel-dir name line col msg)))
+
+(defun remove-common-prefix (p1 p2)
+  (if (and (consp p1) (consp p2))
+      (if (or (equal (car p1) (car p2))
+              (and (member (car p1) '("Progra~1" "Program Files") :test 'equal)
+                   (member (car p2) '("Progra~1" "Program Files") :test 'equal)))
+	  (remove-common-prefix (cdr p1) (cdr p2))
+        p2)
+    p2))
+
+(defun concat-with-dots (l)
+  (if (null l) ""
+    (if (null (cdr l))
+	(car l)
+      (format nil "~a.~a" (car l) (concat-with-dots (cdr l))))))

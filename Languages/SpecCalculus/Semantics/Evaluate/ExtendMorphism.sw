@@ -1,8 +1,8 @@
 spec
 
-import Signature 
+import UnitId
 import Spec/Utilities                               % for coerceToSpec
-import URI/Utilities                                % for uriToString, if used...
+import UnitId/Utilities                                % for uidToString, if used...
 import /Languages/MetaSlang/Specs/Categories/AsRecord
 import /Languages/Snark/SpecToSnark
 import /Library/Legacy/DataStructures/ListPair
@@ -20,19 +20,16 @@ def answerVarsFromSnark () =
     answerStrings
 
 def SpecCalc.evaluateExtendMorph term = {
-  uri <- getCurrentURI;
-  print (";;; Extending Morphisms for "^(uriToString uri)^"\n");
-  (value, time_stamp, dep_URIs) <- SpecCalc.evaluateTermInfo term;
-   base_URI                      <- pathToRelativeURI "/Library/Base";
-   (Spec base_spec, _, _)        <- SpecCalc.evaluateURI (Internal "base") base_URI;
-   (case value of
-      | Morph   sm  -> {newMorph <- return (extendMorphism(sm,base_spec));
-			return (Morph newMorph, time_stamp, dep_URIs)}
-      | _ -> raise (Unsupported (positionOf term,
-				 "Can only extend Morphisms")))
+  unitId <- getCurrentUnitId;
+  print (";;; Extending Morphisms for " ^ (uidToString unitId) ^ "\n");
+  (value, time_stamp, depUnitIds) <- SpecCalc.evaluateTermInfo term;
+  (optBaseUnitId,baseSpec) <- getBase;
+  case value of
+      | Morph sm -> {
+          newMorph <- return (extendMorphism (sm,baseSpec));
+          return (Morph newMorph, time_stamp, depUnitIds)}
+      | _ -> raise (Unsupported (positionOf term, "Can only extend morphisms"))
    }
-
-
 
 op extendMorphism: Morphism * Spec -> Morphism
 
@@ -46,7 +43,7 @@ def extendMorphism(morph, base_spc) =
   let axiomFmlas = map (fn (_,_,_,fmla) -> fmla) axioms in
   let newAxiomFmlas = map (fn (fmla) -> substOpMap(opMap, fmla)) axiomFmlas in
   let incompleteAxioms = filter (fn (fmla) -> termOpsInSpec?(fmla, dom)) newAxiomFmlas in
-  let _ = if specwareDebug? then map (fn (f:StandardSpec.Term) -> printTermToTerminal(f)) incompleteAxioms else [()] in
+  let _ = if specwareDebug? then map (fn (f:MS.Term) -> printTermToTerminal(f)) incompleteAxioms else [()] in
   let testAxiom = hd incompleteAxioms in
   let _ = if specwareDebug? then printTermToTerminal(testAxiom) else () in
   let (existentialTest, ansVars) = mkExistential(dom, testAxiom) in
@@ -71,7 +68,7 @@ def extendMorphismWithAnswer(morph, domVars) =
   %%let _ = if specwareDebug? then printMapToTerminal(newOpMap) else () in
     makeMorphism(dom, cod, srtMap, newOpMap)
 
-op mkExistential: Spec * StandardSpec.Term -> Property * Vars
+op mkExistential: Spec * MS.Term -> Property * Vars
 
 def mkExistential (spc, term) =
   let opsToQuantify = termOpsInSpec(term, spc) in
@@ -95,7 +92,7 @@ def mkExistential (spc, term) =
   let _ = if specwareDebug? then printTermToTerminal(existTerm) else () in
     ((Conjecture, "morphismExistential", [], existTerm), newVars)
 
-op termOpsInSpec?: StandardSpec.Term * Spec -> Boolean
+op termOpsInSpec?: MS.Term * Spec -> Boolean
 
 def termOpsInSpec?(term, spc) =
   let 
@@ -157,7 +154,7 @@ def termOpsInSpec?(term, spc) =
   in
     mapRec term
 
-op termOpsInSpec: StandardSpec.Term * Spec -> List StandardSpec.Term
+op termOpsInSpec: MS.Term * Spec -> List MS.Term
 
 def termOpsInSpec(term, spc) =
   let 
@@ -219,7 +216,7 @@ def termOpsInSpec(term, spc) =
   in
     mapRec term
 
-op substOpMap: MorphismOpMap * StandardSpec.Term -> StandardSpec.Term
+op substOpMap: MorphismOpMap * MS.Term -> MS.Term
 
 def substOpMap (opMap, term) =
   %%
@@ -311,7 +308,7 @@ def substOpMap (opMap, term) =
 
 
 (*
- (Spec baseProverSpec,_,_) <- SpecCalc.evaluateURI (Internal "ProverBase")
+ (Spec baseProverSpec,_,_) <- SpecCalc.evaluateUID (Internal "ProverBase")
                                                        (SpecPath_Relative {path = ["Library","Base","ProverBase"],
 									   hashSuffix = None});
 *)
@@ -319,13 +316,13 @@ def substOpMap (opMap, term) =
  op proveForAns: Vars * Property * Spec * List Property * Spec * List LispCell * String -> Boolean
 
  def proveForAns(ansVars, claim, spc, base_hypothesis, base_spc, prover_options, snarkLogFileName) =
-   let (claim_type,claim_name,_,_) = claim in
-   let def claimType(ct) = 
-         case ct of
-	   | Conjecture -> "Conjecture" 
-	   | Theorem -> "Theorem" 
-	   | Axiom -> "Axiom" in
-   let claim_type = claimType(claim_type) in
+   let (_ (* claim_type *),claim_name,_,_) = claim in
+   %% let def claimType(ct) = 
+   %%       case ct of
+   %%	     | Conjecture -> "Conjecture" 
+   %%	     | Theorem -> "Theorem" 
+   %%	     | Axiom -> "Axiom" in
+   %% let claim_type = claimType(claim_type) in
    let snarkSortDecls = snarkSorts(spc) in
    let snarkOpDecls = snarkOpDecls(spc) in
    let context = newContext in
@@ -337,7 +334,7 @@ def substOpMap (opMap, term) =
    let snarkEvalForm = makeSnarkAnsEvalForm(prover_options, snarkSortDecls, snarkOpDecls, snarkBaseHypothesis, snarkHypothesis, snarkConjecture, snarkLogFileName) in
      let _ = if specwareDebug? then writeLine("Calling Snark by evaluating: ") else () in
      let _ = if specwareDebug? then LISP.PPRINT(snarkEvalForm) else Lisp.list [] in
-     let result = Lisp.apply(Lisp.symbol("LISP","FUNCALL"),
+     let result = Lisp.apply(Lisp.symbol("CL","FUNCALL"),
 			[Lisp.list [Lisp.symbol("SNARK","LAMBDA"),Lisp.nil(),snarkEvalForm]]) in
      let proved = ":PROOF-FOUND" = System.toString(result) in
      %%let _ = displayProofResult(proof_name, claim_type, claim_name, spec_name, proved, snarkLogFileName) in
@@ -361,7 +358,7 @@ def substOpMap (opMap, term) =
 		     Lisp.symbol("KEYWORD","SUPERSEDE")],
 	  Lisp.list
 	  [
-	   Lisp.symbol("LISP","LET"),
+	   Lisp.symbol("CL","LET"),
 	   Lisp.list [
 		      %%Lisp.list [Lisp.symbol("CL-USER","*ERROR-OUTPUT*"),
 			%%	 Lisp.symbol("CL-USER","LOGFILE")],

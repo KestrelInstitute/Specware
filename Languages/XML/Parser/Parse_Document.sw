@@ -1,121 +1,152 @@
 
 XML qualifying spec
 
-  import Parse_Misc
-  import Parse_XML_Decl
+  import Parse_XMLDecl
   import Parse_DTD
   import Parse_Element
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-  %%%          XML Document                                                                        %%%
+  %%%          Document entity                                                                     %%%
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%
-  %%  [1]  document  ::=  prolog element Misc*
+  %%  4.3.2 Well-Formed Parsed Entities:
   %%
-  %% [22]  prolog    ::=  XMLDecl? Misc* (doctypedecl  Misc*)?
+  %%  The document entity is well-formed if it matches the production labeled 'document'.
   %%
-  %% [27]  Misc      ::=  Comment | PI | S
+  %%  [Definition: The document entity serves as the root of the entity tree and a starting-point
+  %%   for an XML processor.]
   %%
-  %%  [1] transforms as follows:
+  %%  This [W3] specification does not specify how the document entity is to be located by an XML
+  %%  processor; unlike other entities, the document entity has no name and might well appear on
+  %%  a processor input stream without any identification at all.
   %%
-  %%       document  ::=  XMLDecl? Misc* (doctypedecl  Misc*)? element Misc*
-  %%       document  ::=  XMLDecl? Misc*  doctypedecl? Misc*   element Misc*
+  %%  [Definition: XML documents should begin with an XML declaration which specifies the version
+  %%   of XML being used.]
   %%
-  %%  so we can recast it as:
+  %%  [Definition: There is exactly one element, called the root, or document element, no part of
+  %%   which appears in the content of any other element.]
   %%
-  %% [K1]  document  ::=  Misc*
-  %%                                                             [WFC: at most one doctypedecl]
-  %%                                                             [WFC: exactly one element]
-  %%                                                             [WFC: doctypedecl preceeds eleement]
+  %%  For all other elements, if the start-tag is in the content of another element, the end-tag
+  %%  is in the content of the same element. More simply stated, the elements, delimited by start-
+  %%  and end-tags, nest properly within each other.
   %%
-  %% [K2]  Misc      ::=  XMLDecl | Comment | PI | S | doctypedecl | element
-  %% ----------------------------------------------------------------------------------------------------
+  %%  [Definition: As a consequence of this, for each non-root element C in the document, there is
+  %%   one other element P in the document such that C is in the content of P, but is not in the
+  %%   content of any other element that is in the content of P. P is referred to as the parent of C,
+  %%   and C as a child of P.]
+  %%
+  %%  *[1]  document  ::=  prolog element Misc*
+  %% *[22]  prolog    ::=  XMLDecl? Misc* (doctypedecl  Misc*)?
+  %%
+  %%   ==>
+  %%
+  %%  [K1]  document  ::=  XMLDecl? MiscList doctypedecl? MiscList element MiscList
+  %%
+  %%                                                             [VC:   Root Element Type]
+  %%                                                             [KVC:  Valid DTD]
+  %%                                                             [KVC:  Valid Root Element]
+  %%                                                             [KVC:  Element Valid]
+  %%
+  %%  [K2]  MiscList  ::=  Misc*
+  %%
+  %%  [27]  Misc      ::=  Comment | PI | S
+  %%
+  %%  [Definition: Markup takes the form of start-tags, end-tags, empty-element tags, entity
+  %%   references, character references, comments, CDATA section delimiters, document type
+  %%   declarations, processing instructions, XML declarations, text declarations, and any white
+  %%   space that is at the top level of the document entity (that is, outside the document
+  %%   element and not inside any other markup).]
+  %%
+  %%  [Definition: All text that is not markup constitutes the character data of the document.]
+  %%
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% -------------------------------------------------------------------------------------------------
+  %%  [K1]  document  ::=  XMLDecl? MiscList doctypedecl? MiscList element MiscList
+  %% -------------------------------------------------------------------------------------------------
 
   def parse_Document (start  : UChars) : Required Document =
     {
-     (items, tail) <- parse_DocItems start;
-     (total, xmls, docs, elts) <-
-     (foldM (fn (total, xmls, docs, elts) -> fn item ->
-	     case item of
-	       | Comment    _ -> return (total + 1, xmls, docs, elts)
-	       | PI         _ -> return (total + 1, xmls, docs, elts)
-	       | WhiteSpace _ -> return (total + 1, xmls, docs, elts)
-	       | XMLDecl    _ -> 
-		 {
-		  (when (total > 0)
-		   (error ("WFC: XML decl is not the first form in an XML document", start, tail)));
-		  (when (docs > 0)
-		   (error ("WFC: XML decl follows Doctypedecl", start, tail)));
-		  (when (elts > 0)
-		   (error ("WFC: XML decl follows Element", start, tail)));
-		  return (total + 1, xmls + 1, docs, elts)
-		 }
-
-	       | DTD        _ -> 
-		 {
-		  (when (elts > 0)
-		   (error ("WFC: Doctypedecl (DTD) follows Element", start, tail)));
-		  return (total + 1, xmls, docs + 1, elts)
-		 }
-	       | Element    _ -> 
-		 return (total + 1, xmls, docs, elts + 1)
-		 )
-            (0, 0, 0, 0)
-	    items);
-
-     (when (xmls = 0)
-      (error ("VC: No XML decl", start, tail)));
-
-     (when (xmls > 1)
-      (error ("WFC: Multiple XML decls", start, tail)));
-
-     (when (docs > 1)
-      (error ("WFC: Multiple Doctypedecl's (DTD's)", start, tail)));
-
-     (when (elts = 0)
-      (error ("WFC: No Element", start, tail)));
-
-     (when (docs > 1)
-      (error ("WFC: Multiple top-level Element's", start, tail)));
-
-     let doc : Document = {items = items} in
-     return (doc,
+     (xmldecl,      tail) <- parse_XMLDecl     start;
+     (misc1,        tail) <- parse_MiscList    tail;
+     (dtd,          tail) <- parse_DTD         tail;
+     (misc2,        tail) <- parse_MiscList    tail;
+     %% Note that the grammar does not allow the root element to be
+     %% obtained via expansion of an entity reference.
+     %% Inside the content of elements, however, entity references
+     %% may expand into text that includes other elements.
+     (root_element, tail) <- parse_Element     (tail, []);
+     (misc3,        tail) <- parse_MiscList    tail;
+     return ({xmldecl = xmldecl,
+	      misc1   = misc1,
+	      dtd     = dtd,
+	      misc2   = misc2,
+	      element = root_element,
+	      misc3   = misc3},
 	     tail)
      }
 
-  def parse_DocItems (start : UChars) : Required DocItems =
-    let 
-       def probe (tail, rev_items) =
+  %% -------------------------------------------------------------------------------------------------
+  %%  [K2]  MiscList  ::=  Misc*
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_MiscList (start : UChars) : Required MiscList =
+    let
+       def probe (tail, rev_miscs) =
 	 case tail of
-	   | [] -> return (rev rev_items, [])
+	   | [] -> return (rev rev_miscs, [])
 	   | _ ->
 	     {
-	      (item, tail) <- parse_DocItem tail;
-	      (probe (tail, cons (item, rev_items)))
+	      (possible_misc, scout) <- parse_Misc tail;
+	      case possible_misc of
+		| Some misc ->
+		  probe (scout, cons (misc, rev_miscs))
+		| _ ->
+		  return (rev rev_miscs, tail)
 	      }
     in
       probe (start, [])
 
-  def parse_DocItem (start : UChars) : Required DocItem =
+  %% -------------------------------------------------------------------------------------------------
+  %%  [27]  Misc      ::=  Comment | PI | S
+  %% -------------------------------------------------------------------------------------------------
+
+  def parse_Misc (start : UChars) : Possible Misc =
     %% Comment | PI | S | doctypedecl | element
     case start of
 
       %% Comment
-      | 60 :: 33 :: 45 :: 45 (* '<!--' *) :: tail ->
+      | 60 :: 33 :: 45 :: 45 :: tail ->
+        %% '<!--'
         {
 	 (comment, tail) <- parse_Comment tail;
-	 return (Comment comment,
+	 return (Some (Comment comment),
 		 tail)
 	}
 
-      | 60 :: 63 (* '<?' *) :: tail -> 
+      %% XML/PI
+      | 60 :: 63 :: tail ->
+        %% '<?'
         (case tail of
 
 	  %% XML
-	  | 120 :: 109 :: 108 (* 'xml' *) :: _ ->
+	  | 120 :: 109 :: 108 :: _ ->
+            %% 'xml'
 	    {
-	     (xml, tail) <- parse_XMLDecl start;
-	     return (XMLDecl xml,
+	     error {kind        = EOF,
+		    requirement = "After the initial xmldecl, there should be no other xml decls in an XML Document",
+		    start       = start,
+		    tail        = tail,
+		    peek        = 10,
+		    we_expected = [("'<?'",              "PI"),
+				   ("'<!--'",            "Comment"),
+				   ("#x9 #xA #xD #x20",  "WhiteSpace"),
+				   ("'<!DOCTYPE'",       "DTD"),
+				   ("'<'",               "Element")],
+		    but         = "we saw '<?xml'",
+		    so_we       = "pretend its a PI"};
+	     (pi, tail) <- parse_PI start;
+	     return (Some (PI pi),
 		     tail)
 	    }
 
@@ -123,42 +154,34 @@ XML qualifying spec
 	  | _ ->
 	    {
 	     (pi, tail) <- parse_PI start;
-	     return (PI pi, 
+	     return (Some (PI pi),
 		     tail)
 	    })
-
-      %% DTD
-      | 60 :: 33 :: 68 :: 79 :: 67 :: 84 :: 89 :: 80 :: 69 (* '<!DOCTYPE' *) :: tail ->
-	{
-	 (dtd, tail) <- parse_DocTypeDecl start;
-	 return (DTD dtd,
-		 tail)
-	}
-
-      %% Element
-      | 60 (* '<' *) :: _ ->
-	{
-	 (possible_element, tail) <- parse_Element start;
-	 case possible_element of
-	   | Some element ->
-	     return (Element element,
-		     tail)
-	   | _ ->
-	     error ("Expected Whitespace, '<!--' (Comment), '<?' (PI), '<DOCTYPE' (DTD), or '<' (Element)",
-		    start, tail)
-
-	}
 
       %% Whitespace
       | char :: tail ->
 	if white_char? char then
 	  {
 	   (whitespace, tail) <- parse_WhiteSpace start;
-	   return (WhiteSpace whitespace,
+	   return (Some (WhiteSpace whitespace),
 		   tail)
 	   }
 	else
-	  error ("Expected Whitespace, '<!--' (Comment), '<?' (PI), '<DOCTYPE' (DTD), or '<' (Element)",
-		 start, tail)
+	  return (None, start)
+
+      | _ ->
+	  hard_error {kind        = EOF,
+		      requirement = "Each top-level item in an XML Document should be one of the options below.",
+		      start       = start,
+		      tail        = [],
+		      peek        = 0,
+		      we_expected = [("'<?xml'",           "initial xml decl"),
+				     ("'<?'",              "PI"),
+				     ("'<!--'",            "Comment"),
+				     ("#x9 #xA #xD #x20",  "WhiteSpace"),
+				     ("'<!DOCTYPE'",       "DTD"),
+				     ("'<'",               "Element")],
+		      but         = "EOF occurred first",
+		      so_we       = "fail immediately"}
 
 endspec

@@ -1,8 +1,5 @@
 spec
   import /Library/PrettyPrinter/WadlerLindig
-  sort Type
-  sort TypeVars
-
   op String.pp : String -> Doc
   def String.pp = ppString  % legacy
 

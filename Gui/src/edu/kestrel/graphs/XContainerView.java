@@ -71,7 +71,9 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             }
         });
         configureExpandCollapseMenuItem();
-        popupMenu.add(expandCollapseMenuItem,0);
+        if (node != null)
+            if (node.isExpandable())
+                popupMenu.add(expandCollapseMenuItem,0);
         JMenuItem menuItem;
         menuItem = new JMenuItem("update bounds");
         menuItem.addActionListener(new ActionListener() {
@@ -82,15 +84,17 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         });
         menuItem.setEnabled(isEditable);
         popupMenu.add(menuItem);
-        menuItem = new JMenuItem("add contained nodes as children");
-        menuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                addContainedNodes(false);
-            }
-        });
-        menuItem.setEnabled(isEditable);
-        popupMenu.add(menuItem);
         if (Dbg.isDebug()) {
+            menuItem = new JMenuItem("add contained nodes as children");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    addContainedNodes(false);
+                }
+            });
+            menuItem.setEnabled(isEditable);
+            if (node != null)
+                if (node.isExpandable())
+                    popupMenu.add(menuItem);
             menuItem = new JMenuItem("select inner edges");
             menuItem.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
@@ -124,7 +128,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             menuItem = new JMenuItem("detach all children");
             menuItem.addActionListener(new ActionListener() {
                 public void actionPerformed(ActionEvent e) {
-                    node.detachChildren((XGraphDisplay)graph);
+                    node.detachChildren((XGraphDisplay)graph,getBounds());
                 }
             });
             menuItem.setEnabled(false);
@@ -174,7 +178,9 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         for(int i=0;i<edges.length;i++) {
             CellView cv = graph.getView().getMapping(edges[i],false);
             if (cv instanceof XEdgeView) {
-                res.add(cv);
+                //if (((XEdgeView)cv).isTemporaryView()==isTemporaryView()) {
+                    res.add(cv);
+                //}
             }
         }
         XEdgeView[] edgeViews = new XEdgeView[res.size()];
@@ -210,6 +216,13 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
                 }
         }
         if (sel.size() > 0) {
+            if (!node.isExpandable()) {
+                if (interactive) {
+                    JOptionPane.showMessageDialog(graph,"You cannot add children to node \""+node+"\".");
+                }
+                adjustGraphAfterResizing();
+                return;
+            }
             graph.repaint();
             XNode[] selNodes = new XNode[sel.size()];
             sel.toArray(selNodes);
@@ -217,7 +230,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         }
         isAddingContainedNodes = false;
     }
-    /** returns the views of the inner edges returned by <code>getInnerEdge</code> from the corresponding model element.
+    /** returns the views of the inner edges returned by <code>XNode.getInnerEdge</code> from the corresponding model element.
      */
     public XEdgeView[] getInnerEdgeViews() {
         if (node == null) return new XEdgeView[]{};
@@ -225,10 +238,19 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         return getEdgeViewArrayFromEdgeArray(edges);
     }
     
+    /** returns the views of the edges that are returned by <code>XNode.getInnerConnToOuterEdges()</code>.
+     */
     public XEdgeView[] getInnerConnToOuterEdgeViews() {
         if (node == null) return new XEdgeView[]{};
         XEdge[] edges = node.getInnerConnToOuterEdges();
         return getEdgeViewArrayFromEdgeArray(edges);
+    }
+    
+    /** brings all inner edge views to front.
+     */
+    public void innerEdgeViewsToFront() {
+        XEdgeView[] eviews = getInnerEdgeViews();
+        graph.getView().toFront(eviews);
     }
     
     /** deletes the container node and the entire contents of it. */
@@ -326,6 +348,13 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         return res;
     }
     
+    public CellView[] getChildElementViewsAsArray(boolean recurse) {
+        java.util.List l = getChildElementViews(recurse);
+        CellView[] res = new CellView[l.size()];
+        l.toArray(res);
+        return res;
+    }
+    
     /** adds the nodes as children to the associated container node.
      * @return the XNodeViews of the nodes, for which the adding as child has succeeded.
      */
@@ -343,11 +372,15 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         XNode[] childnodes = new XNode[newchildren.size()];
         newchildren.toArray(childnodes);
         if (childnodes.length == 0) return null;
+        if (!node.isExpandable()) {
+            adjustGraphAfterResizing();
+            return new XNodeView[]{};
+        }
         if (interactive) {
             int answ = JOptionPane.showConfirmDialog(graph, "Do you want to insert these "+childnodes.length+" node(s) into this node?", "Insert?", JOptionPane.OK_CANCEL_OPTION);
             if (answ != JOptionPane.YES_OPTION) return null;
         }
-        expand();
+        expand(false);
         XNode[] adopted = node.addChildNodes((XGraphDisplay)graph, childnodes);
         graph.setSelectionCell(node);
         ArrayList res = new ArrayList();
@@ -379,10 +412,15 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
     
     /** expands the node, that means that inner nodes and edges will be shown */
     public void expand() {
+        expand(true);
+    }
+    
+    public void expand(boolean doAdjustment) {
         if (!node.isExpandable()) return;
         if (isExpanded()) return;
         ((XGraphDisplay)graph).busy();
         Dbg.pr("expanding "+node+" in graph "+(((XGraphDisplay)graph).getValue())+"...");
+        prepareResizing();
         isSwitchingState = true;
         ((XGraphDisplay)graph).getXGraphView().updateAllPorts();
         collapsedBounds = new Rectangle(getBounds());
@@ -400,6 +438,10 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         //alignToCenterOf(collapsedBounds);
         setBoundsToChildrenBounds();
         ((XGraphDisplay)graph).getXGraphView().updateAllPorts();
+        if (doAdjustment) {
+            adjustGraphAfterResizing();
+        }
+        innerEdgeViewsToFront();
         ((XGraphDisplay)graph).done();
         node.setSavedIsExpanded(true);
     }
@@ -409,20 +451,29 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         if (!isExpanded()) return;
         ((XGraphDisplay)graph).busy();
         Dbg.pr("collapsing "+node+", bounds="+getBounds()+"...");
-        Rectangle b = getBounds();
+        prepareResizing();
+        Rectangle b = new Rectangle(getBounds());
         isSwitchingState = true;
         node.liftEdgesFromChildren((XGraphDisplay)graph);
-        node.detachChildren((XGraphDisplay)graph);
+        node.detachChildren((XGraphDisplay)graph,b);
         expanded = false;
         configureExpandCollapseMenuItem();
-        setSizeable(true);
-        if (collapsedBounds != null) {
-            Rectangle b0 = (new Rectangle(b.x,b.y,collapsedBounds.width,collapsedBounds.height));
-            exportBounds(b0);
+        boolean keepSize = viewOptionsExpanded.keepBoundsWhenCollapsing;
+        if (keepSize) {
+            exportBounds(b);
+        } else {
+            setSizeable(true);
+            if (collapsedBounds != null) {
+                Dbg.pr("b=("+b.x+","+b.y+")");
+                Rectangle b0 = (new Rectangle(b.x,b.y,collapsedBounds.width,collapsedBounds.height));
+                exportBounds(b0);
+                bounds = b0;
+            }
         }
         isSwitchingState = false;
         //alignToCenterOf(b);
         ((XGraphDisplay)graph).getXGraphView().updateAllPorts();
+        undoResizeChanges();
         ((XGraphDisplay)graph).done();
         node.setSavedIsExpanded(false);
     }
@@ -464,49 +515,33 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         return false;
     }
     
-    protected void restoreChildrensBounds_(int dx, int dy) {
-        if (savedChildrensBounds == null) return;
-        Dbg.pr("restoring children's bounds...");
-        Set keys = savedChildrensBounds.keySet();
-        Iterator iter = keys.iterator();
-        Map viewMap = new Hashtable();
-        while(iter.hasNext()) {
-            CellView cview = (CellView) iter.next();
-            if (Dbg.isDebug()) {
-                if (!isChildView(cview))
-                    Dbg.pr("restoring bounds of view that's not a child view!??");
-            }
-            Rectangle b = (Rectangle) savedChildrensBounds.get(cview);
-            //Map map = GraphConstants.createMap();
-            //GraphConstants.setBounds(map,b);
-            if (cview instanceof AbstractCellView) {
-                AbstractCellView acview = (AbstractCellView) cview;
-                acview.setBounds(b);
-            }
-            graph.getView().translateViews(new CellView[]{cview},dx,dy);
-        }
-        //graph.getModel().edit(null,viewMap,null,null);
-    }
+    private boolean runningGetBounds = false;
+    
+    private Rectangle cachedChildrenBounds = null;
     
     public Rectangle getBounds() {
         //Dbg.pr("getBounds() for node "+node+" ("+node.getClass().getName()+")");
         Rectangle bounds = GraphConstants.getBounds(getAttributes());
         Rectangle cbounds = bounds;//super.getBounds();
-        //if (!isExpanded()) {
-        //    collapsedBounds = bounds;
-        //}
-        //makeChildrenFit(bounds, true);
-        //System.out.println("  new: "+cbounds);
-        //savedBounds = cbounds;
-        //Rectangle cbounds = bounds;
         if (!isLeaf()) {
-            //int bw = 10;
-            //cbounds = AbstractCellView.getBounds(getChildViews());
-            //cbounds = new Rectangle(cbounds.x-bw,cbounds.y-bw,cbounds.width+2*bw,cbounds.height+2*bw);
-            cbounds = getChildrenBounds(getChildViews(),null);
+            if (/*!runningGetBounds &&*/ !isTemporaryView()) {
+                runningGetBounds = true;
+                cbounds = getChildrenBounds();//(getChildElementViewsAsArray(false),null);
+            } else {
+                cbounds = getChildrenBounds();//getChildViews(),null);
+            }
         }
-        if (isExpanded()) bounds.add(cbounds);
-        if (collapsedBounds == null) {
+        if (isExpanded()) {
+            bounds.add(cbounds);
+            if (XContainerNode.autoUpdateBounds) {
+                bounds.width = cbounds.width;
+                bounds.height = cbounds.height;
+                bounds.x = cbounds.x;
+                bounds.y = cbounds.y;
+            }
+            //bounds = cbounds;
+        }
+        if (collapsedBounds == null && node != null) {
             collapsedBounds = new Rectangle(bounds);
             node.setSavedCollapsedBounds(collapsedBounds);
         }
@@ -517,7 +552,10 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
                 node.setSavedCollapsedBounds(new Rectangle(bounds));
             }
         }
-        node.setSavedIsExpanded(isExpanded());
+        if (node != null) {
+            node.setSavedIsExpanded(isExpanded());
+        }
+        runningGetBounds = false;
         return bounds;
     }
     
@@ -603,7 +641,12 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             } else {
                 viewOptions = viewOptionsCollapsed;
             }
-            super.paint(g);
+            if (isTemporaryView()) {
+                Rectangle b = getBounds();
+                g.drawRect(0,0,b.width-2,b.height-2);
+            } else {
+                super.paint(g);
+            }
         }
         
     }

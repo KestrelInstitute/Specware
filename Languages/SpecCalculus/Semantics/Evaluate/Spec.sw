@@ -1,11 +1,13 @@
-\subsection{Evalution of a Spec term in the Spec Calculus}
+\subsection{Evalution of a Spec form in the Spec Calculus}
 
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 
-  import URI/Utilities
-  % import ../../../MetaSlang/Specs/Elaborate/TypeChecker
+  import UnitId/Utilities
   import /Languages/MetaSlang/Specs/Elaborate/TypeChecker
+  import /Languages/MetaSlang/Transformations/DefToAxiom
+  import Spec/Utilities
+  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
 \end{spec}
 
 To evaluate a spec we deposit the declarations in a new spec
@@ -13,109 +15,116 @@ To evaluate a spec we deposit the declarations in a new spec
 and then qualify the resulting spec if the spec was given a name.
 
 \begin{spec}
- def SpecCalc.evaluateSpec spec_elements = 
-  %% TODO:  Figure out rules for adding import of Base.
-  %%        For example, it should not be imported by specs that it imports.
-  %%        And the user might want to suppress auto-import of it.
-  %% let spec_elements = 
-  %%     if dont_import_base? then
-  %%      spec_elements
-  %%     else
-  %%      let base_path = ["Library","Base","Base"]    in
-  %%      let base_uri    : SpecCalc.Term     Position = (URI (SpecPath_Relative base_path), pos0) in
-  %%      let base_import : SpecCalc.SpecElem Position = (Import base_uri,                   pos0) in
-  %%      let _ = toScreen ("\nAdding import of Base\n") in
-  %%      cons(base_import, spec_elements)
-  %% in
-  {
-    (pos_spec,TS,depURIs) <- evaluateSpecElems emptySpec spec_elements;
+ def SpecCalc.evaluateSpec spec_elements position = {
+    unitId <- getCurrentUID;
+    print (";;; Elaborating spec at " ^ (uidToString unitId) ^ "\n");
+    (optBaseUnitId,baseSpec) <- getBase;
+    (pos_spec,TS,depUIDs) <- evaluateSpecElems (if anyImports? spec_elements
+						  then emptySpec
+						  else baseSpec)
+		               spec_elements;
     elaborated_spec <- elaborateSpecM pos_spec;
-    return (Spec elaborated_spec,TS,depURIs)
+    compressed_spec <- complainIfAmbiguous (compressDefs elaborated_spec) position;
+%    full_spec <- explicateHiddenAxiomsM compressed_spec;
+    return (Spec compressed_spec,TS,depUIDs)
   }
 \end{spec}
 
+We first evaluate the imports and then the locally declared ops, sorts
+axioms, etc.
+
 \begin{spec}
   op evaluateSpecElems : ASpec Position -> List (SpecElem Position)
-                           -> Env (ASpec Position * TimeStamp * URI_Dependency)
-  def evaluateSpecElems initialSpec specElems =
-     foldM evaluateSpecElem (initialSpec,0,[]) specElems
+                           -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
+  def evaluateSpecElems initialSpec specElems = {
+      (spcWithImports,TS,depUIDs) <- foldM evaluateSpecImport (initialSpec,0,[]) specElems;
+      fullSpec <- foldM evaluateSpecElem spcWithImports specElems;
+      return (fullSpec,TS,depUIDs)
+    }
 
-  op evaluateSpecElem : (ASpec Position * TimeStamp * URI_Dependency)
+  op evaluateSpecImport : (ASpec Position * TimeStamp * UnitId_Dependency)
                           -> SpecElem Position
-                          -> Env (ASpec Position * TimeStamp * URI_Dependency)
-  def evaluateSpecElem (spc,cTS,cDepURIs) (elem, _(* position *)) =
+                          -> SpecCalc.Env (ASpec Position * TimeStamp * UnitId_Dependency)
+  def evaluateSpecImport (val as (spc,cTS,cDepUIDs)) (elem, position) =
     case elem of
       | Import term -> {
-            (value,iTS,depURIs) <- evaluateTermInfo term;
-            (case value of
-              | Spec impSpec ->
-                 return (mergeImport ((term, impSpec), spc),
-                         max(cTS,iTS), cDepURIs ++ depURIs)
-                  %% return (extendImports spc impSpec) 
-              | _ -> raise(Fail("Import not a spec")))
+            (value,iTS,depUIDs) <- evaluateTermInfo term;
+            (case coerceToSpec value of
+              | Spec impSpec -> {
+                    newSpc <- mergeImport term impSpec spc position;
+                    return (newSpc, max(cTS,iTS), listUnion(cDepUIDs,depUIDs))
+                  }
+              | _ -> raise (Fail ("Import not a spec")))
           }
-      | Sort (name,(tyVars,optSort)) ->
-          (case name of
-            | Qualified (qualifier, id) ->
-              return (addPSort ((qualifier, id, tyVars, optSort), 
-                                spc),
-                      cTS,cDepURIs))
-      | Op (name,(fxty,srtScheme,optTerm)) ->
-          (case name of
-            | Qualified (qualifier, id) ->
-              return (addPOp ((qualifier, id, fxty, srtScheme, optTerm), 
-                              spc),
-                      cTS,cDepURIs))
+      | _ -> return val
+
+  op  anyImports?: List (SpecElem Position) -> Boolean
+  def anyImports? specElems =
+    exists (fn (elem,_) -> case elem of Import _ -> true | _ -> false) specElems
+
+  op evaluateSpecElem : ASpec Position
+                          -> SpecElem Position
+                          -> SpecCalc.Env (ASpec Position)
+  def evaluateSpecElem spc (elem, position) =
+    case elem of
+      | Import term -> return spc
+      | Sort (names,(tyVars,defs)) ->
+          addSort names tyVars defs spc position
+      | Op (names,(fxty,srtScheme,defs)) ->
+          addOp names fxty srtScheme defs spc position
       | Claim (Axiom, name, tyVars, term) ->
-          return (addAxiom ((name,tyVars,term), spc),
-                  cTS,cDepURIs)
+          return (addAxiom ((name,tyVars,term), spc)) 
+      | Claim (Theorem, name, tyVars, term) ->
+          return (addTheorem ((name,tyVars,term), spc))
+      | Claim (Conjecture, name, tyVars, term) ->
+          return (addConjecture ((name,tyVars,term), spc))
       | Claim _ -> error "evaluateSpecElem: unsupported claim type"
 
- def mergeImport ((spec_term, imported_spec), spec_a) =
-   let spec_b = addImport ((showTerm spec_term, imported_spec), spec_a) in
-   let spec_c = setSorts (spec_b,
-     foldriAQualifierMap
-       (fn (imported_qualifier, 
-            imported_id, 
-            imported_sort_info, 
-            combined_psorts) ->
-              insertAQualifierMap (combined_psorts,
-                                   imported_qualifier,
-                                   imported_id,
-                                   convertSortInfoToPSortInfo imported_sort_info))
-     spec_b.sorts
-     imported_spec.sorts)
-   in
-   let spec_d = setOps (spec_c,
-     foldriAQualifierMap
-       (fn (imported_qualifier, 
-            imported_id, 
-            imported_op_info, 
-            combined_pops) ->
-              insertAQualifierMap (combined_pops,
-                                   imported_qualifier,
-                                   imported_id,
-                                   convertOpInfoToPOpInfo imported_op_info))
-       spec_c.ops
-       imported_spec.ops)
-   in
-     spec_d
+  def mergeImport spec_term imported_spec spec_a position =
+    let def mergeSortStep (imported_qualifier, imported_id, imported_sort_info, combined_sorts) =
+      let oldSortInfo = findAQualifierMap (combined_sorts,imported_qualifier, imported_id) in {
+          mergedSorts <- SpecCalc.mergeSortInfo imported_sort_info oldSortInfo position;
+          return (insertAQualifierMap (combined_sorts,
+                                       imported_qualifier,
+                                       imported_id,
+                                       mergedSorts))
+        } in
+    let def mergeOpStep (imported_qualifier, imported_id, imported_op_info, combined_ops) =
+      let oldOpInfo = findAQualifierMap (combined_ops,imported_qualifier, imported_id) in {
+           mergedOps <- SpecCalc.mergeOpInfo imported_op_info oldOpInfo position;
+           return (insertAQualifierMap (combined_ops,
+                                        imported_qualifier,
+                                        imported_id,
+                                        mergedOps))
+        } in
+    {
+      spec_b <- return (addImport ((spec_term, imported_spec), spec_a)); 
+      sorts_b <- foldOverQualifierMap mergeSortStep spec_b.sorts imported_spec.sorts;
+      spec_c <- return (setSorts (spec_b, sorts_b));
+      ops_c <- foldOverQualifierMap mergeOpStep spec_c.ops imported_spec.ops;
+      spec_d <- return (setOps (spec_c, ops_c));
+      spec_e <- return (setProperties (spec_d, listUnion (imported_spec.properties,spec_d.properties)));
+      return spec_e
+    }
 \end{spec}
 
 The following wraps the existing \verb+elaborateSpec+ in a monad until
 such time as the current one can made monadic.
 
 \begin{spec}
- op elaborateSpecM : PosSpec -> Env Spec
+ op elaborateSpecM : Spec -> SpecCalc.Env Spec
  def elaborateSpecM spc =
-   {
-     uri <- getCurrentURI;
-     case elaboratePosSpec (spc, (uriToPath uri) ^ ".sw", true) of
-       | Ok pos_spec -> return (convertPosSpecToSpec pos_spec)
-       | Error msg   -> raise  (OldTypeCheck msg)
+   { unitId      <- getCurrentUID;
+     filename <- return ((uidToFullPath unitId) ^ ".sw");
+     case elaboratePosSpec (spc, filename) of
+       | Spec spc    -> return spc
+       | Errors msgs -> raise (TypeCheckErrors msgs)
    }
 \end{spec}
 
 \begin{spec}
+  op explicateHiddenAxiomsM: Spec -> SpecCalc.Env Spec
+  def explicateHiddenAxiomsM spc =
+    return spc % (explicateHiddenAxioms spc)
 }
 \end{spec}

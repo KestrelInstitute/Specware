@@ -7,7 +7,8 @@
 package edu.kestrel.graphs.drawingmode;
 
 import edu.kestrel.graphs.*;
-import javax.swing.ImageIcon;
+import javax.swing.*;
+import java.util.*;
 
 /**
  * A drawing mode describes a mode of the XGraphDisplay. The mode determines, for instance,
@@ -48,6 +49,28 @@ public abstract class DrawingMode implements java.io.Serializable {
      * @param graph the XGraphDisplay that exits the this mode
      */
     public abstract void exit(XGraphDisplay graph);
+    
+    protected Vector toggleButtons;
+    
+    /** adds a JToggleButton to the list of button representing this drawing mode.
+     */
+    public void addToggleButton(JToggleButton btn) {
+        if (toggleButtons == null) {
+            toggleButtons = new Vector();
+        }
+        toggleButtons.add(btn);
+    }
+    
+    /** set the selection state of all registered JToggleButtons.
+     */
+    public void setSelected(boolean b) {
+        if (toggleButtons == null) return;
+        Enumeration iter = toggleButtons.elements();
+        while(iter.hasMoreElements()) {
+            JToggleButton tb = (JToggleButton)iter.nextElement();
+            tb.setSelected(b);
+        }
+    }
     
     /**
      * two drawing modes are equal, if they have the same id. If the argument is a String, it

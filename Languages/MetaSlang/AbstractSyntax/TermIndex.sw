@@ -44,19 +44,19 @@ spec
  sort index = TermDiscNet.disc_net
 
  op TermIndex.empty : index
- op indexTerm       : index * Term * Nat -> index
- op generalizations : index * Term -> List Nat
+ op indexTerm       : index * MS.Term * Nat -> index
+ op generalizations : index * MS.Term -> List Nat
 
  def  TermIndex.empty = TermDiscNet.EmptyDiscNet
 
- sort sym_entry = | Star | S Nat
+ sort sym_entry = | Star | SymS Nat
 
  op printPath: List Key -> ()
  def printPath path = 
      (app (fn i -> String.toScreen(Integer.toString i^" ")) path;
       String.writeLine "")
 
- def getApplys(M: Term,Ms) = 
+ def getApplys(M: MS.Term,Ms) = 
      case M
        of Apply (Fun(Op(Qualified (UnQualified,"%Flex"),_),_,_),Fun(Nat n,_,_),_) -> 
 	  (cons(M,Ms),true)
@@ -65,8 +65,8 @@ spec
 
 
  def getFunIndex = 
-     fn (Fun(Op(qid,fixity),_,_):Term) -> 
-	Lisp.uncell(Lisp.apply(Lisp.symbol("LISP","SXHASH"),[Lisp.cell qid]))
+     fn (Fun(Op(qid,fixity),_,_)) -> 
+	Lisp.uncell(Lisp.apply(Lisp.symbol("CL","SXHASH"),[Lisp.cell qid]))
       | _ -> 0
 
  def subterms = 
@@ -109,7 +109,7 @@ spec
     def makePath(p,entry: sym_entry) = 
 	case entry
 	  of Star -> p ++ [Integer.~ 1]
-	   | S x  -> p ++ [x]
+	   | SymS x  -> p ++ [x]
 
     op  getTerms : TermDiscNet.disc_net * List Integer * sym_entry -> IntegerSet.Set
 
@@ -120,7 +120,7 @@ spec
 
     def generalizations (index,term) = 
 	let
-	    def get(p,M:Term) = 
+	    def get(p,M) = 
 		let (M::Ms,isFlex?) = getApplys(M,[]) in
 		if isFlex?
 		   then getTerms(index,p,Star)
@@ -131,7 +131,7 @@ spec
 		let set1     = getTerms(index,p,Star)	in
 		let set2 = 
 			if arity = 0 
-			    then getTerms(index,p,S(indexT))
+			    then getTerms(index,p,SymS(indexT))
 			else 
 			    getList(p ++ [indexT],1,subTerms)
 		in

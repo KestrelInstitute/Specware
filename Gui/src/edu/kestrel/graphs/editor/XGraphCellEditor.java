@@ -16,7 +16,7 @@ import java.awt.event.*;
 import java.awt.*;
 
 /**
- * This implements a multi-line editor
+ * This implements a multi-line in-place editor for graph cells
  * @author  ma
  */
 public class XGraphCellEditor implements GraphCellEditor, java.io.Serializable {
@@ -112,6 +112,7 @@ public class XGraphCellEditor implements GraphCellEditor, java.io.Serializable {
             if (elem instanceof XTextNode) {
                 ((XTextNode)elem).collapse();
                 collapseAfterEdit = false;
+                ((XTextNode)elem).resetDontSetExpandedFlag();
             }
         }
     }

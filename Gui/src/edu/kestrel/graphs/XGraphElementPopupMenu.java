@@ -11,6 +11,7 @@ import com.jgraph.JGraph;
 import javax.swing.*;
 import java.util.Map;
 import java.awt.event.*;
+import java.awt.*;
 
 /**
  * This class implements a popup menu containing the items common to all nodes and edge in a graph
@@ -35,6 +36,11 @@ public class XGraphElementPopupMenu extends JPopupMenu {
     
     public XGraphElementPopupMenu(JGraph graph, XGraphElementView elementView) {
         this(graph,elementView,true);
+    }
+    
+    public XGraphElementPopupMenu(XGraphDisplay graph) {
+        super();
+        this.graph = graph;
     }
     
     protected void addDefaultItems() {
@@ -88,6 +94,25 @@ public class XGraphElementPopupMenu extends JPopupMenu {
             });
             add(menuItem);
         }
+    }
+    
+    public JMenuItem getMenuItem(String label) {
+        int cnt = getComponentCount();
+        for(int i=0;i<cnt;i++) {
+            Component c = getComponent(i);
+            if (c instanceof JMenuItem) {
+                JMenuItem item = (JMenuItem)c;
+                if (item.getText().equals(label)) {
+                    return item;
+                }
+            }
+        }
+        return null;
+    }
+    
+    public void removeMenuItem(String label) {
+        JMenuItem item = getMenuItem(label);
+        remove(item);
     }
     
 }

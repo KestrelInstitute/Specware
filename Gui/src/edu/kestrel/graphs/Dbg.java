@@ -17,29 +17,41 @@ public class Dbg {
     
     static int DEBUG_LEVEL = 0;
     
+    static int msgcnt = 0;
+    
+    static private void pr_(String s) {
+        System.out.println("["+(msgcnt++)+"] "+s);
+    }
+    
     static public void pr(String s) {
-        if (DEBUG_LEVEL > 0)
-            System.out.println(s);
+        if (DEBUG_LEVEL == 1)
+            pr_(s);
     }
-
+    
     static public void pr2(String s) {
-        if (DEBUG_LEVEL > 1)
-            System.out.println(s);
+        if (DEBUG_LEVEL >= 2)
+            pr_(s);
     }
- 
+    
+    static public void pr3(String s) {
+        if (DEBUG_LEVEL >= 3)
+            pr_(s);
+    }
+    
     static public void setDebugLevel(int lvl) {
         DEBUG_LEVEL = lvl;
-        if (lvl > 1) {
-            Runtime.getRuntime().traceMethodCalls(true);
-        }
     }
     
     static public boolean isDebug() {
-        return DEBUG_LEVEL > 0;
+        return DEBUG_LEVEL == 1;
     }
     
     static public boolean isDebug2() {
-        return DEBUG_LEVEL > 1;
+        return DEBUG_LEVEL == 2;
+    }
+
+    static public boolean isDebug(int lvl) {
+        return DEBUG_LEVEL == lvl;
     }
     
     static public void showPoint(Graphics g, Point p, Color color) {

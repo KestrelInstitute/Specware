@@ -71,4 +71,7 @@ public class XTextEditor extends JEditorPane implements XElementEditor {
         return false;
     }
     
+    public void setFrame(XElementEditorFrame f) {
+    }
+    
 }

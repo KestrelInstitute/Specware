@@ -62,13 +62,8 @@ public class XGraphApplication {
     public XGraphApplication() {
         registeredGraphs = new Vector();
         clipboard = createXGraphDisplay("Clipboard");
-        clipboard.setRemoveAllOnClosing(false);
-        //clipboard.setTitleString("Clipboard");
         clipboard.setApplication(this);
-        if (Dbg.isDebug()) {
-            //setCurrentFilename("/tmp/test.xml");
-            setCurrentFilename(null);
-        }
+        clipboard.setIsClipboard(true);
         setCurrentFilename(null);
         classExemplars = new Hashtable();
         getToplevelTreeNode();
@@ -132,12 +127,12 @@ public class XGraphApplication {
     /** clears the application's clipboard.
      */
     public void clearClipboard() {
-        getClipboard().getXGraphModel().removeAll();
+        getClipboard().clear();
     }
     
     /** inserts the given model elements into the given graph; the elemReprMap determines which XGraphElement is
      * the representation that is used for inserting the ModelElement.
-     */
+     
     public void insertModelElementsIntoGraph(XGraphDisplay graph, ModelElement[] elems, Map elemReprMap) {
         graph.disableListener();
         Map map = elemReprMap;
@@ -178,13 +173,13 @@ public class XGraphApplication {
             }
         }
         graph.enableListener();
-    }
+    }*/
     
     /** inserts the given model elements into the given graph; the reprExemplar fields of the model elements are
      * used as representation XGraphElements.
      */
     public void insertModelElementsIntoGraph(XGraphDisplay graph, ModelElement[] elements) {
-        insertModelElementsIntoGraph(graph,elements,null);
+        //insertModelElementsIntoGraph(graph,elements,null);
     }
     
     /** creates a new graph display; this method should also be overwritten by sub-classers to return
@@ -604,6 +599,7 @@ public class XGraphApplication {
         protected String ShowModelTree = "ShowModelTree";
         protected String ModelTree = "ModelTree";
         protected String RegisteredGraph = "RegisteredGraph";
+        protected String FrameSize = "FrameSize";
         
         public ElementProperties getElementProperties(ReadWriteOperation rwop) {
             ElementProperties props = super.getElementProperties(rwop);
@@ -617,8 +613,13 @@ public class XGraphApplication {
                 XGraphDisplay graph = (XGraphDisplay)iter.nextElement();
                 props.addChildObjectAsReference(RegisteredGraph,graph);
             }
+            JFrame f = getDesktop().getFrame();
+            if (f != null) {
+                props.setDimensionProperty(FrameSize,f.getSize());
+            }
             return props;
         }
+        
         public void initFromElementProperties(ReadWriteOperation rwop, ElementProperties props) {
             super.initFromElementProperties(rwop,props);
             if (props.getBooleanProperty(ShowModelTree)) {
@@ -631,6 +632,12 @@ public class XGraphApplication {
                 Storable obj = rwop.getObjectForId(id);
                 if (obj instanceof XGraphDisplay) {
                     registerGraph((XGraphDisplay)obj);
+                }
+            }
+            Dimension d = props.getDimenstionProperty(FrameSize);
+            if (d != null) {
+                if (d.width > 100 && d.height > 100) {
+                    getDesktop().getFrame().setSize(d);
                 }
             }
             //reloadTreeModel();
@@ -703,11 +710,14 @@ public class XGraphApplication {
             if (args[i].equals("-d0")) {
                 Dbg.setDebugLevel(0);
             }
-            else if (args[i].equals("-d1")) {
-                Dbg.setDebugLevel(1);
-            }
-            else if (args[i].equals("-d2")) {
-                Dbg.setDebugLevel(2);
+            else if (args[i].startsWith("-d")) {
+                String nstr = args[i].substring(2,args[i].length());
+                try {
+                    int n = (new Integer(nstr)).intValue();
+                    Dbg.setDebugLevel(n);
+                } catch (NumberFormatException e) {
+                    System.err.println("illegal -d<number> option; cannot convert \""+nstr+"\" to an integer number.");
+                }
             }
             else {
                 loadfile = args[i];
@@ -734,9 +744,8 @@ public class XGraphApplication {
         dt.setFrame(frame);
         processCommandLineArgs(args,dt);
         frame.getContentPane().add(new JScrollPane(dt));
-        frame.setSize(750,750);
+        frame.setSize(850,750);
         frame.show();
-        
     }
     
     public static void main(String[] args) {

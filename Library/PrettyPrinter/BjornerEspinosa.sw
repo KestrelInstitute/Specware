@@ -39,9 +39,9 @@ or a file.
 
 **)
    
-BjornerEspinosa qualifying spec {
+PrettyPrint qualifying spec {
 
-  import /Library/Legacy/IO
+  import /Library/Legacy/Utilities/IO
   import /Library/Legacy/DataStructures/StringUtilities
   % import List
 
@@ -84,8 +84,8 @@ BjornerEspinosa qualifying spec {
 
   def extend (length : Nat, string : String, text : Text) : Text = 
       case text
-	of [] -> [(0, [(length,string)])]
-	 | Cons ((indent, strings), text) ->
+        of [] -> [(0, [(length,string)])]
+         | Cons ((indent, strings), text) ->
            Cons ((indent, Cons ((length,string), strings)), text)
       
 
@@ -101,9 +101,10 @@ BjornerEspinosa qualifying spec {
     
 
   def blankLines (n : Nat, text : Text) : Text =
-    if n <= 0
-    then text
-    else Cons ((0, []), blankLines (n - 1, text))
+    if n <= 0 then
+      text
+    else
+      Cons ((0, []), blankLines (n - 1, text))
 
   def addBreak (indent : Nat, newlines : Nat, text : Text) : Text =
       Cons ((indent, []), blankLines (newlines, text))
@@ -127,8 +128,7 @@ BjornerEspinosa qualifying spec {
     formatPretty (columns, p, emptyText ())
 
   op widthLine : Line -> Nat
-  def widthLine (indent, pretty) = 
-      indent + widthPretty (pretty)
+  def widthLine (indent, pretty) = indent + widthPretty (pretty)
 
   def widthLines (lines : Lines) : Nat = 
       foldr (fn (line, num) -> widthLine line + num) 0 lines
@@ -142,7 +142,7 @@ BjornerEspinosa qualifying spec {
     case lines
       of [] -> text
        | Cons ((indent, pretty), lines) -> 
-	 formatRestLines (lines, break (indent, pretty, text))
+         formatRestLines (lines, break (indent, pretty, text))
     
 %  measure length lines
   in
@@ -154,7 +154,6 @@ BjornerEspinosa qualifying spec {
 
   def fits? (columns : Nat, width : Nat, text : Text) : Boolean =
      lengthLast text + width <= columns
-
 
   def lengthString(l,s) = 
     pretty
@@ -208,11 +207,12 @@ BjornerEspinosa qualifying spec {
 
 
   %%% Text output
-
-  def blanks (n : Nat) : String = 
-    case n
-      of 0 -> ""
-       | _ -> String.concat (" ", blanks (n - 1))
+  op blanks: Nat -> String
+%% Defined in /Library/Legacy/Utilities/Handwritten/Lisp/IO.lisp  to avoid n-squared behavior
+%  def blanks (n : Nat) : String = 
+%    case n of
+%      | 0 -> ""
+%      | _ -> String.concat (" ", blanks (n - 1))
     
 
   def newlineString () : String = Char.toString (Char.chr 10)
@@ -228,59 +228,98 @@ BjornerEspinosa qualifying spec {
       "\\\\[0.3em]" ^ newlineString() ^ latexBlanks(n)
 
   op  toStream : fa(a) Text * 
-		     ((Nat * String) * a  -> a) * a * 
-		     (Nat * a -> a) -> a
+                     ((Nat * String) * a  -> a) * a * 
+                     (Nat * a -> a) -> a
 
-  def toStream (text, cont, base, newlineAndBlanks) = 
+  def toStream (text, cont, base, newlineIndent) = 
       let def loop (text : Text, indent) = 
         case text
           of [] -> cont ((indent,blanks indent), base)
+	   | (_, [(0,_)]) :: rest -> 
+	     %% Empty line so ignore indent
+             let head = loop (rest, 0) in
+             let head = newlineIndent(indent,head) in
+             head
            | (indent2, strings) :: rest -> 
              let head = loop (rest, indent2) in
              let head = foldr cont head strings in
-             let head = newlineAndBlanks(indent,head) in
+             let head = newlineIndent(indent,head) in
              head
         
       in
         case text
-	  of [] -> base
-	   | (indent, strings) :: rest -> 
-	     let head = loop (rest, indent) in
-	     let head = foldr cont head strings in
-	     head
-	
+          of [] -> base
+           | (indent, strings) :: rest -> 
+             let head = loop (rest, indent) in
+             let head = foldr cont head strings in
+             head
+        
+  %% A tail recursive version of toStream that processes text in the reverse order
+  %% Shouldn't need two versions, but some calls would need to be rewritten to
+  %% to handle the order reversal
+  def toStreamT (text, cont, base, newlineIndent) = 
+      case rev text
+	of [] -> base
+	 | (_, strings) :: rest ->	% Indentation of first line ignored!
+	   let _ = foldr cont () strings in
+	   let _ = app (fn textel ->
+			case textel of 
+			  | (_, [(0,_)]) -> 
+			    %% Empty line so ignore indent
+			    newlineIndent(0,())
+			  | (indent2, strings) -> 
+			  let _ = newlineIndent(indent2,()) in
+			  foldr cont () strings)
+		      rest
+	   in cont ((0,blanks 0), base)
 
-   def toString (text : Text) : String = 
-       toStream (text, 
-		 fn ((_,s1),s2) -> s2 ^ s1, 
-		 "",
-		 fn (n,s) -> s ^ newlineAndBlanks n)
+   def toString (text : Text) : String =
+       IO.withOutputToString
+         (fn stream ->
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> (streamWriter(stream,newlineString());
+		                     streamWriter(stream,blanks n))))
+%% This is much less efficient (n**2 instead of n) 
+%       toStream (text, 
+%                 fn ((_,s1),s2) -> s2 ^ s1, 
+%                 "",
+%                 fn (n,s) -> s ^ newlineAndBlanks n)
 
    def toLatexString (text : Text) : String = 
-       toStream (text, 
-		 fn ((_,s1),s2) -> s2 ^ s1,
-		 "",
-		 fn (n,s) -> s ^ latexNewlineAndBlanks n)
+       IO.withOutputToString
+         (fn stream ->
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> streamWriter(stream,latexNewlineAndBlanks n)))
+%% This is much less efficient (n**2 instead of n)
+%       toStream (text, 
+%                 fn ((_,s1),s2) -> s2 ^ s1,
+%                 "",
+%                 fn (n,s) -> s ^ latexNewlineAndBlanks n)
 
    def toTerminal (text : Text) : () = 
-       toStream (text, 
-		 fn ((_,s), ()) -> toScreen s, 
-		 (),
-		 fn (n,()) -> toScreen (newlineAndBlanks n))
+       toStreamT (text, 
+		  fn ((_,s), ()) -> toScreen s, 
+		  (),
+		  fn (n,()) -> (toScreen (newlineString());
+				toScreen (blanks n)))
 
    def streamWriter (stream, string) =
      IO.format1 (stream, "~A", string)
 
    op  toFileWithNewline : String * Text * (Nat -> String) -> ()
 
-   def toFileWithNewline (fileName, text, newlineAndBlanks) =
+   def toFileWithNewline (fileName, text, newlineIndent) =
      IO.withOpenFileForWrite
        (fileName,
         fn stream ->
-	    toStream (text,
-		      fn ((_,string), ()) -> streamWriter(stream,string),
-                      (),
-		      fn (n,()) -> streamWriter(stream,newlineAndBlanks n)))
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> streamWriter(stream,newlineIndent n)))
 
 %
 % Pretty printer for accumulating path indexing.
@@ -294,17 +333,17 @@ BjornerEspinosa qualifying spec {
    op markPretty : Nat * Pretty -> Pretty
    def markPretty(uniqueId,p) = 
        prettysNone ([lengthString(0,"%("),
-		     lengthString(0,Nat.toString uniqueId),
-		     p,
-		     lengthString(0,"%)")])
+                     lengthString(0,Nat.toString uniqueId),
+                     p,
+                     lengthString(0,"%)")])
 
    op markLines : Nat * Lines -> Lines
    def markLines(uniqueId,p) = 
        [(0,lengthString(0,"%(")),
         (0,lengthString(0,Nat.toString uniqueId))] List.@
-	p
-	List.@
-	[(0,lengthString(0,"%)"))]
+        p
+        List.@
+        [(0,lengthString(0,"%)"))]
 
     def printInt(i:Integer) = Integer.toString i
 
@@ -314,8 +353,10 @@ BjornerEspinosa qualifying spec {
        prettysNone ([lengthString(0,"%["),lengthString(0,string),p])
 
 
-   def shift(id,pos1,stack) = List.cons((id,pos1,0,false,[]),stack)
-   def insertElem(elem,(id,pos1,pos2,closed,elems)) = 
+   op shift : String * Nat * PathStack -> PathStack
+   def shift (id,pos1,stack) = List.cons((id,pos1,0,false,[]),stack)
+
+   def insertElem (elem,(id,pos1,pos2,closed,elems)) = 
        (id,pos1,pos2,closed,List.cons(elem,elems))
 
    % Make the top-most element of the stack a child of the 
@@ -324,87 +365,87 @@ BjornerEspinosa qualifying spec {
    % is also closed.
    def reduce(pos2,stack:PathStack) = 
        case stack
-	 of (id1,pos1,_,_,elems1)::elem2::stack -> 
-	    let elem = (id1,pos1,pos2,true,elems1) in
-	    let (_,_,_,closed,_) = elem2 in
-	    if ~closed
-		then List.cons(insertElem(elem,elem2),stack)
-	    else List.cons(elem,List.cons(elem2,stack))
-	  | [(id,pos1,_,_,elems)] -> [(id,pos1,pos2,true,elems)]
-	  | _ -> stack
+         of (id1,pos1,_,_,elems1)::elem2::stack -> 
+            let elem = (id1,pos1,pos2,true,elems1) in
+            let (_,_,_,closed,_) = elem2 in
+            if ~closed
+                then List.cons(insertElem(elem,elem2),stack)
+            else List.cons(elem,List.cons(elem2,stack))
+          | [(id,pos1,_,_,elems)] -> [(id,pos1,pos2,true,elems)]
+          | _ -> stack
 
 
    def toStringWithPathIndexing (text : Text) : String = 
        let
-	   def appendString(length,s,{charPos,stack,readId?,axiom?,string}) = 
-	       if readId?
-		  then 
-		  if axiom?
-		     then
+           def appendString(length,s,{charPos,stack,readId?,axiom?,string}) = 
+               if readId?
+                  then 
+                  if axiom?
+                     then
                      let [enabled,value,sos?] = 
-			 StringUtilities.tokens
-			   (fn #: -> true | _ -> false) s
-		     in
-	             let enabled = 
+                         StringUtilities.tokens
+                           (fn #: -> true | _ -> false) s
+                     in
+                     let enabled = 
                          case enabled of "true" -> "t" | _ -> "nil"
-		     in
-		     let sos? = 
+                     in
+                     let sos? = 
                          case sos? of "true" -> "t" | _ -> "nil"
-		     in
-		     {charPos = charPos,
-		      stack = stack,
-		      readId? = false,
-		      axiom? = false,
-		      string = string^
+                     in
+                     {charPos = charPos,
+                      stack = stack,
+                      readId? = false,
+                      axiom? = false,
+                      string = string^
         "\\\") (theorem-widget "^value^" "^enabled^" "^sos?^")"^
-	"(widget-insert \\\""
-		}
-		  else
-		  {charPos = 0,
-		   stack   = shift(s,charPos,stack),
-		   readId? = false,
-		   axiom? = false,
-		   string = string}
-	       else
-	       case s
-		 of "%(" -> 
-		    {charPos = charPos,
-		     stack   = stack,
-		     readId? = true,
-		     axiom? = false,
-		     string = string}
-		  | "%)" -> 
-		    {charPos = 0,
-		     stack   = reduce(charPos,stack),
-		     readId? = false,
-		     axiom? = false,
-		     string = string}
-		  | "%[" -> 
-		    {charPos = charPos  + 1 ,
-	             stack = stack,
-		     readId? = true,
-		     axiom? = true,
-		     string = string}
-		  | _ -> 
-		    ({charPos = charPos + length,
-		      stack = stack,
-		      axiom? = false,
-		      readId? = false,
-		      string = string^
-			       (String.translate (fn #" -> "\\\\\\\"" | ch -> Char.toString ch) s)})
+        "(widget-insert \\\""
+                }
+                  else
+                  {charPos = 0,
+                   stack   = shift(s,charPos,stack),
+                   readId? = false,
+                   axiom? = false,
+                   string = string}
+               else
+               case s
+                 of "%(" -> 
+                    {charPos = charPos,
+                     stack   = stack,
+                     readId? = true,
+                     axiom? = false,
+                     string = string}
+                  | "%)" -> 
+                    {charPos = 0,
+                     stack   = reduce(charPos,stack),
+                     readId? = false,
+                     axiom? = false,
+                     string = string}
+                  | "%[" -> 
+                    {charPos = charPos  + 1 ,
+                     stack = stack,
+                     readId? = true,
+                     axiom? = true,
+                     string = string}
+                  | _ -> 
+                    ({charPos = charPos + length,
+                      stack = stack,
+                      axiom? = false,
+                      readId? = false,
+                      string = string^
+                               (String.translate (fn #" -> "\\\\\\\"" | ch -> Char.toString ch) s)})
        in
        let {charPos,stack,readId?,axiom?,string} =
-		  toStream (text,
-		      fn ((length,string),context) ->
-			appendString(length,string,context),
+                  toStream (text,
+                      fn ((length,string),context) ->
+                        appendString(length,string,context),
                       {charPos = 0,stack = [],readId? = false,
-		       axiom? = false,string = ""},
-		      fn (n,{charPos,stack,axiom?,readId?,string}) -> 
-			({charPos = charPos + n + 1,
-			  stack = stack,
-			  readId? = readId?,
-			  axiom? = axiom?,
-			  string = string ^newlineAndBlanks n}))
+                       axiom? = false,string = ""},
+                      fn (n,{charPos,stack,axiom?,readId?,string}) -> 
+                        ({charPos = charPos + n + 1,
+                          stack = stack,
+                          readId? = readId?,
+                          axiom? = axiom?,
+                          string = string ^newlineAndBlanks n}))
        in
        let tree = "(mspe-add-extents '(" ^ treesToString stack ^ "))" in
        "(insert-mouse-sensitive-spec \"(progn (let ((pt (point))) (widget-insert \\\""^string^" \\\") (goto-char pt)) "^ tree^ ")\")"
@@ -412,56 +453,56 @@ BjornerEspinosa qualifying spec {
 
    def toFileWithPathIndexing (fileName : String, text : Text) : PathStack = 
        let
-	   def appendString(stream,length,s,{charPos,stack,axiom?,readId?}) = 
-	       if readId?
-		  then 
-		 if axiom?
-		    then
-		    {charPos = charPos,
-		     stack = stack,
-		     readId? = false,
-		     axiom? = false}
-		 else
-		  {charPos = 0,
-		   stack   = shift(s,charPos,stack),
-		   axiom? = false,
-		   readId? = false}
-	       else
-	       case s
-		 of "%(" -> 
-		    {charPos = charPos,
-		     stack   = stack,
-		     axiom? = false,
-		     readId? = true}
-		  | "%)" -> 
-		    {charPos = 0,
-		     stack   = reduce(charPos,stack),
-		     axiom? = false,
-		     readId? = false}
-		  | "%[" -> 
-		    {charPos = charPos,
-		     stack = stack,
-		     axiom? = true,
-		     readId? = true}
-		  | _ -> 
-		    (streamWriter(stream,s);
-		     {charPos = charPos + length,
-		      stack = stack,
-		      axiom? = false,
-		      readId? = false})
+           def appendString(stream,length,s,{charPos,stack,axiom?,readId?}) = 
+               if readId?
+                  then 
+                 if axiom?
+                    then
+                    {charPos = charPos,
+                     stack = stack,
+                     readId? = false,
+                     axiom? = false}
+                 else
+                  {charPos = 0,
+                   stack   = shift(s,charPos,stack),
+                   axiom? = false,
+                   readId? = false}
+               else
+               case s
+                 of "%(" -> 
+                    {charPos = charPos,
+                     stack   = stack,
+                     axiom? = false,
+                     readId? = true}
+                  | "%)" -> 
+                    {charPos = 0,
+                     stack   = reduce(charPos,stack),
+                     axiom? = false,
+                     readId? = false}
+                  | "%[" -> 
+                    {charPos = charPos,
+                     stack = stack,
+                     axiom? = true,
+                     readId? = true}
+                  | _ -> 
+                    (streamWriter(stream,s);
+                     {charPos = charPos + length,
+                      stack = stack,
+                      axiom? = false,
+                      readId? = false})
        in
        let
-	  def writeFun stream =
-		  toStream (text,
-		      fn ((length,string),context) ->
-			appendString(stream,length,string,context),
+          def writeFun stream =
+                  toStream (text,
+                      fn ((length,string),context) ->
+                        appendString(stream,length,string,context),
                       {charPos = 0,stack = [],axiom? = false,readId? = false},
-		      fn (n,{charPos,stack,axiom?,readId?}) -> 
-			(streamWriter(stream,newlineAndBlanks n);
-			 {charPos = charPos + n + 1,
-			  stack = stack,
-			  axiom? = axiom?,
-			  readId? = readId?}))
+                      fn (n,{charPos,stack,axiom?,readId?}) -> 
+                        (streamWriter(stream,newlineAndBlanks n);
+                         {charPos = charPos + n + 1,
+                          stack = stack,
+                          axiom? = axiom?,
+                          readId? = readId?}))
        in
        let {charPos,stack,readId?,axiom?} =
            IO.withOpenFileForWrite (fileName, writeFun) in
@@ -475,26 +516,26 @@ BjornerEspinosa qualifying spec {
        " " ^ Nat.toString endPos ^ ")"
    def treesToString(trees) = 
        case trees 
-	 of [] -> ""
-	  | tree::trees -> treesToString(trees) ^ " " ^ treeToString(tree)
+         of [] -> ""
+          | tree::trees -> treesToString(trees) ^ " " ^ treeToString(tree)
 
-	  
+          
 
    def toPathFiles(fileName : String,pathFileName: String, text : Text) : () = 
        let trees = toFileWithPathIndexing(fileName,text) in
        let 
-	   def writeFun stream = 
-	   streamWriter(stream,"(mspe-add-extents '(" ^ treesToString trees ^ "))")
+           def writeFun stream = 
+           streamWriter(stream,"(mspe-add-extents '(" ^ treesToString trees ^ "))")
        in
        let _ = IO.withOpenFileForWrite (pathFileName, writeFun) in
        ()      
 
-   def appendFileWithNewline (fileName : String, text : Text, newlineAndBlanks : Nat -> String) : () =
+   def appendFileWithNewline (fileName : String, text : Text, newlineIndent : Nat -> String) : () =
        let def writeFun stream =
-	    toStream (text,
-		      fn ((_,string), ()) -> streamWriter(stream,string),
-                      (),
-		      fn (n,()) -> streamWriter(stream,newlineAndBlanks n)) in
+            toStreamT (text,
+		       fn ((_,string), ()) -> streamWriter(stream,string),
+		       (),
+		       fn (n,()) -> streamWriter(stream,newlineIndent n)) in
        let _ = IO.withOpenFileForAppend (fileName, writeFun) in
        ()
 
@@ -562,7 +603,7 @@ BjornerEspinosa qualifying spec {
       of []  -> []
        | [p] -> [p]
        | p :: ps -> 
-	 List.cons(prettysNone [p, sep], addSeparator sep ps)
+         List.cons(prettysNone [p, sep], addSeparator sep ps)
     
 
   op prettysBlockDelim
@@ -588,8 +629,8 @@ BjornerEspinosa qualifying spec {
     prettysBlockDelim prettysFill delims ps
 
   op ppList : fa(T) (T -> Pretty) -> 
-		 (String * String * String) -> 
-		 List T -> Pretty
+                 (String * String * String) -> 
+                 List T -> Pretty
 
   def ppList f (left, sep, right) ts =
     prettysLinearDelim (left, sep, right) (List.map f ts)
@@ -602,18 +643,18 @@ BjornerEspinosa qualifying spec {
 
   def ppList ppfun (left,sep,right) list = 
       case list
-	of [] -> strings [left,right]
+        of [] -> strings [left,right]
 
-	 | Cons(e,es) -> 
-	   blockLinear(0,
-	   [(0,string left),
-	    (0,ppfun e)] List.++
-	   (List.foldr (fn (e,l) ->
-		 Cons((0,string sep),
-		 Cons((1,ppfun e),l)))
-		 [(0,string right)]
-		 es))	 
-       	
+         | Cons(e,es) -> 
+           blockLinear(0,
+           [(0,string left),
+            (0,ppfun e)] List.++
+           (List.foldr (fn (e,l) ->
+                 Cons((0,string sep),
+                 Cons((1,ppfun e),l)))
+                 [(0,string right)]
+                 es))         
+               
   *)
 }
 
@@ -685,8 +726,8 @@ layouts like
   AAA BBB
       BBB
       BBB CCC
-	  CCC
-	  CCC
+          CCC
+          CCC
 
 instead of
 

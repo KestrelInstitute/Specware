@@ -1,8 +1,8 @@
 #! /bin/sh
 
-DB_STYLESHEET=/usr/lib/sgml/stylesheets/cygnus-both.dsl
-HTML_STYLESHEET=/usr/lib/sgml/stylesheets/nwalsh-modular/test/docbook.css
-ADMON_GRAPHICS=/usr/lib/sgml/stylesheets/nwalsh-modular/images/*.gif
+DB_STYLESHEET=`pwd`/../docbook/cygnus-both.dsl
+HTML_STYLESHEET=`pwd`/../docbook/docbook.css
+ADMON_GRAPHICS=`pwd`/../docbook/images/*.gif
 
 output=db2html-dir
 TMPDIR=DBTOHTML_OUTPUT_DIR$$
@@ -59,7 +59,7 @@ if [ $# -eq 1 ]
 then
   if [ -d ${output}.junk ]
   then
-    /bin//bin/rm -rf ${output}.junk
+    /bin/rm -rf ${output}.junk
   fi
   if [ -d ${output} ]
   then

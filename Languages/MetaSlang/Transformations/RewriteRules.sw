@@ -19,15 +19,16 @@ spec RewriteRules
  import HigherOrderMatching
 
  sort Context = HigherOrderMatching.Context
+ sort Gamma = TypeObligations.Gamma
 
  sort RewriteRule = 
    { 
 	name      : String,
-	lhs       : Term,
-	rhs       : Term, 
+	lhs       : MS.Term,
+	rhs       : MS.Term, 
 	tyVars    : List String,
 	freeVars  : List (Nat * Sort),
-	condition : Option Term
+	condition : Option MS.Term
    } 
 
 %%
@@ -95,7 +96,7 @@ spec RewriteRules
 	 freeVars	
      in
      let
-	 def doTerm(term:Term):Term = 
+	 def doTerm(term:MS.Term):MS.Term = 
 	     case isFlexVar?(term)
 	       of Some n -> 
 		  (case NatMap.find(varMap,n)
@@ -127,10 +128,10 @@ Extract rewrite rules from function definition.
 
 \begin{spec}
 
- def defRule (context, q, id, (op_names, fixity, (tyVars, srt), optTerm) : OpInfo) = 
-     case optTerm
-       of None -> []
-	| Some term -> 
+ def defRule (context, q, id, (op_names, fixity, (tyVars, srt), terms) : OpInfo) = 
+     case terms
+       of [] -> []
+	| (_,term) :: _ -> 
      let rule:RewriteRule = 
 	 { name      = id,
 	   lhs       = Fun(Op(Qualified (q,id),fixity), srt, noPos),
@@ -183,17 +184,17 @@ Extract rewrite rules from function definition.
           deleteMatches(context,matches,
 			rule,cons(rule1,rules),old)
 
- def addToCondition(condition : Option Term,cond:Term):Option Term = 
+ def addToCondition(condition : Option MS.Term,cond:MS.Term):Option MS.Term = 
      case (condition,cond)
        of (_,Fun(Bool true,_,_)) -> condition
         | (None,_) -> Some cond
 	| (Some cond1,_) -> Some (Utilities.mkAnd(cond1,cond))
 
  sort PatternToTermOut = 
-      Option (Term * List (Nat * Sort) * List (Var * Term))
+      Option (MS.Term * List (Nat * Sort) * List (Var * MS.Term))
 
  op patternToTerm : 
-    Context * Pattern * List (Nat * Sort) * List (Var * Term) -> 
+    Context * Pattern * List (Nat * Sort) * List (Var * MS.Term) -> 
        PatternToTermOut
 
  def patternToTerm(context,pat,vars,S) = 
@@ -329,7 +330,7 @@ is rewritten to
 %% rewrite rules that obviously lead to diverging behaviour.
 %%    
 
-  def isFlexibleTerm(term:Term) = 
+  def isFlexibleTerm(term:MS.Term) = 
       case isFlexVar?(term)
         of Some m -> true
 	 | None -> 
@@ -338,7 +339,7 @@ is rewritten to
 	 | Record(fields, _) -> List.all (fn (_,M) -> isFlexibleTerm M) fields
 	 | _ -> false
 
-  def deleteFlexTail(term:Term) = 
+  def deleteFlexTail(term:MS.Term) = 
       case term 
         of Apply(M,N,_) -> 
 	   if isFlexibleTerm N
@@ -362,14 +363,14 @@ is rewritten to
 
 
 
- op bound : Binder * Nat * Term * List (Nat * Sort) * List (Var * Term) -> 
-		List (Nat * Sort) * Nat * List (Var * Term) * Term
+ op bound : Binder * Nat * MS.Term * List (Nat * Sort) * List (Var * MS.Term) -> 
+		List (Nat * Sort) * Nat * List (Var * MS.Term) * MS.Term
 
  %% If term is a qf binder then Introduce a number for each Var and return
  %% a list of the numbers paired with the sort
  %% A substitution mapping old Var to new flex var with that number
  %% The body of the binder (handles nested binders of the same type)
- def bound(qf,n,term:Term,freeVars,S) = 
+ def bound(qf,n,term:MS.Term,freeVars,S) = 
      case term
        of Bind(binder,vars,body,_) -> 
 	  if qf = binder
@@ -388,7 +389,7 @@ is rewritten to
 % Disambiguate between HigerOrderMatchingMetaSlang and MetaSlang
  def mkVar = HigherOrderMatching.mkVar     
 
-  op equality : Context -> List (Var * Term) * Term -> Option (Term * Term)
+  op equality : Context -> List (Var * MS.Term) * MS.Term -> Option (MS.Term * MS.Term)
 
   def equality context (S,N)  = 
       case N
@@ -397,7 +398,7 @@ is rewritten to
 	 | Bind(Forall,vars,N,_) -> 
 	   let S1 = 
 	       List.map 
-		(fn (v,s) -> ((v,s),Var((freshBoundVar(context,s)),noPos):Term))
+		(fn (v,s) -> ((v,s),Var((freshBoundVar(context,s)),noPos):MS.Term))
 		  vars 
 	  in
 	  let N = substitute(N,S1) in
@@ -431,7 +432,7 @@ is rewritten to
 	  case formula  
             of Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
 		Record([(_,M),(_,N)], _),_) -> 
-		(Some (substitute(M,S)): Option Term,N)
+		(Some (substitute(M,S)): Option MS.Term,N)
 	     | _ -> (None,formula)
      in
      case equality context (S,fml)
@@ -481,7 +482,7 @@ is rewritten to
 		(y,srt)))
 	      else (x,srt)
 
-	  def doTerm(term:Term):Term = 
+	  def doTerm(term:MS.Term):MS.Term = 
 	      case term
 		of Var(v,a) -> Var(doVar v,a)
 		 | Bind(qf,vars,body,a) -> 
@@ -509,7 +510,7 @@ is rewritten to
      let (ds,tvs,env,name,names) = gamma in
      let subst0 = HigherOrderMatching.emptySubstitution in
      let
-	 def loop(d:Decl,rules) = 
+	 def loop(d,rules) = 
 	     case d
 	       of Cond c -> 
 		  let c = HigherOrderMatching.dereferenceAll subst0 c in

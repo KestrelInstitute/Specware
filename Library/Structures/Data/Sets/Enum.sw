@@ -1,8 +1,4 @@
 spec
+  import translate ../Collections/Enum by {Collection +-> Set}
   import ../Sets
-  import translate ../Enum by {
-    Enum.Collection +-> Set,
-    Enum.TakeResult +-> TakeResult,
-    Enum.takeOne +-> takeOne
-  }
 endspec

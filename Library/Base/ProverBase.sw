@@ -19,7 +19,7 @@ spec {
 
   axiom lt_to_le is fa (i, j: Integer) (i < j => i <= j-1)
 
-  axiom le_to_ge is fa (i, j:Integer) (i <= j => j >= i)
+  axiom le_to_ge is fa (i, j:Integer) (i >= j <=> j <= i)
 
   axiom minus_zero is fa (i: Integer) (i - i = 0)
 

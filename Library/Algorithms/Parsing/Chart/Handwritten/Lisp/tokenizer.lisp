@@ -75,6 +75,7 @@
     (assign-tokenizer-codes whitespace-table non-word-symbol-continue-chars +non-word-symbol-continue-code+)
     (assign-tokenizer-codes whitespace-table number-continue-chars          +number-continue-code+)
     ;; codes that are legal after whitespace is started:
+    (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes whitespace-table word-symbol-start-chars        +word-symbol-start-code+)
     (assign-tokenizer-codes whitespace-table non-word-symbol-start-chars    +non-word-symbol-start-code+)
     (assign-tokenizer-codes whitespace-table number-start-chars             +number-start-code+)
@@ -82,11 +83,11 @@
     (assign-tokenizer-codes whitespace-table comment-to-eol-chars           +comment-to-eol-code+)
     (assign-tokenizer-codes whitespace-table whitespace-chars               +whitespace-code+)
     (assign-tokenizer-codes whitespace-table separator-chars                +separator-code+)
-    (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+)
     ;;
     ;;  word-symbol-table 
     ;;
     ;; codes that are illegal after a word symbol is started:
+    ;; (assign-tokenizer-code  whitespace-table #\#                            +char-literal-start-code+) ; first, so it can be overridden
     (assign-tokenizer-codes word-symbol-table word-symbol-start-chars        +word-symbol-start-code+) 
     (assign-tokenizer-codes word-symbol-table number-continue-chars          +number-continue-code+)
     (assign-tokenizer-codes word-symbol-table non-word-symbol-continue-chars +non-word-symbol-continue-code+)
@@ -290,6 +291,7 @@
 	(comment-tokens     '())
 	(non-comment-tokens '())
 	(comment-eof-error? nil))
+    ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
     (incf-timing-data 'tokenize-file)
     (dolist (token all-tokens)
       (cond ((member (first token) '(:COMMENT-TO-EOL :EXTENDED-COMMENT))
@@ -322,12 +324,13 @@
 	(ad-hoc-table              (tokenizer-parameters-ad-hoc-table              tokenizer-parameters))
 	(ad-hoc-strings            (tokenizer-parameters-ad-hoc-strings            tokenizer-parameters)))
     (let ((tokens nil))
+      ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
       (with-open-file (stream file) 
 	(let ((ps-stream (make-pseudo-stream :unread-chars nil :stream stream))
-	      ;; The upper-left corner of the file is considered 1:0 (line 1, column 0)
-	      ;; so the character one to the left of that is 1:-1 (line 1, column -1).
+	      ;; The upper-left corner of the file is considered 1:0:1 (line 1, column 0, byte 1)
+	      ;; so the character one to the left of that is 1:-1:0 (line 1, column -1, byte 0).
 	      ;; So we are at 1:-1 before we read the first character.
-	      (pre-byte 0) (pre-line 1) (pre-column -1))
+	      (pre-line 1) (pre-column -1) (pre-byte 0))
 	  (loop do
 	    (multiple-value-bind (type value 
 				       first-byte first-line first-column
@@ -345,17 +348,33 @@
 						  comment-quads
 						  ad-hoc-table
 						  ad-hoc-strings)
-	      (when (eq type :EOF)
-		(return nil))
-	      (push (list (or (and (or (eq type :AD-HOC) 
-				       (eq type :WORD-SYMBOL)
-				       (eq type :NON-WORD-SYMBOL))
-				   (gethash value ht-ad-hoc-types))
-			      type)
-			  value 
-			  (list first-byte first-line first-column) 
-			  (list last-byte  last-line  last-column)) 
-		    tokens)
+	      (cond ((eq type :EOF)
+		     (return nil))
+		    ((eq type :WORD-SYMBOL-TERMINATED-BY-HASH) ; new hack for # inside UnitId's...
+		     (push (list (or (gethash value ht-ad-hoc-types)
+				     :WORD-SYMBOL)
+				 value 
+				 (list first-byte first-line first-column) 
+				 (list last-byte  last-line  last-column)) 
+			   tokens)
+		     (incf last-byte)
+		     (incf last-column)
+		     (push (list (or (gethash :NON-WORD-SYMBOL ht-ad-hoc-types)
+				     :NON-WORD-SYMBOL)
+				 "#"
+				 (list last-byte  last-line  last-column)
+				 (list last-byte  last-line  last-column))
+			   tokens))
+		    (t
+		     (push (list (or (and (or (eq type :AD-HOC) 
+					      (eq type :WORD-SYMBOL)
+					      (eq type :NON-WORD-SYMBOL))
+					  (gethash value ht-ad-hoc-types))
+				     type)
+				 value 
+				 (list first-byte first-line first-column) 
+				 (list last-byte  last-line  last-column)) 
+			   tokens)))
 	      (setq pre-byte   last-byte 
 		    pre-line   last-line 
 		    pre-column last-column)))))
@@ -376,6 +395,7 @@
 					 extended-comment-quads
 					 ad-hoc-table
 					 ad-hoc-strings)
+  ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
   (when digits-may-start-symbols?
     (error "The option digits-may-start-symbols? is currently diabled."))
 
@@ -416,6 +436,7 @@
 			(cond ((eq ,char-var #\newline)
 			       ;; we proceed to line+1 : -1, so that the next character read 
 			       ;;  (which will be the leftmost on the line) will be at line+1 : 0
+			       ;; current-byte was incremented above, so we don't need to touch that here
 			       (incf current-line)
 			       (setq current-column -1)
 			       ,newline-action)
@@ -435,6 +456,7 @@
 		 `(progn
 		    (ps-unread-char ,char-var ps-stream)
 		    ;; ??  If we do this repeatedly, unreading newlines, can we end up at a column left of -1 ??
+		    ;; If that happens, we could decrement the line, but then what should the column be??
 		    (decf current-byte)
 		    (decf current-column)
 		    ))
@@ -469,14 +491,14 @@
 	       (look-for-ad-hoc-tokens (char-var char-code-var)
 		 `(unless (eq (svref ad-hoc-table ,char-code-var) 0)
 		    (dolist (ad-hoc-string ad-hoc-strings)
-		      (when-debugging (when *verbose?* (comment "Looking for ad-hoc-string ~S starting with ~S" ad-hoc-string ,char-var)))
+		      (debugging-comment "Looking for ad-hoc-string ~S starting with ~S" ad-hoc-string ,char-var)
 		      (when (eq (schar ad-hoc-string 0) ,char-var)
 			(let ((found-ad-hoc-string? 
 			       (dotimes (i (1- (length ad-hoc-string)) t)
 				 (let ((local-char (ps-read-char ps-stream)))
-				   (when-debugging (when *verbose?* (comment "Looking for ad-hoc-string ~S, now at ~S" ad-hoc-string local-char)))
+				   (debugging-comment "Looking for ad-hoc-string ~S, now at ~S" ad-hoc-string local-char)
 				   (when (eq ,char-var +tokenizer-eof+) 
-				     (when-debugging (when *verbose?* (comment "Saw EOF")))
+				     (debugging-comment "Saw EOF")
 				     (return nil)) ; from dotimes
 				   ;; Note: ad-hoc tokens take
 				   ;; precedence over open extended
@@ -485,9 +507,9 @@
 				   ;; starting.
 				   (let ((current-string-index (+ i 1)))
 				     (cond ((eq local-char (schar ad-hoc-string current-string-index))
-					    (when-debugging (when *verbose?* (comment "  extending match."))))
+					    (debugging-comment "  extending match."))
 					   (t
-					    (when-debugging (when *verbose?* (comment "  match to ~S failed." ad-hoc-string)))
+					    (debugging-comment "  match to ~S failed." ad-hoc-string)
 					    ;; put back the char that doesn't match
 					    (ps-unread-char local-char ps-stream)
 					    ;; put back all but the first char
@@ -495,24 +517,32 @@
 					      (ps-unread-char (schar ad-hoc-string (- current-string-index 1 j))
 							      ps-stream))
 					    (return nil))))))))
+			  (debugging-comment "Found? ~S" found-ad-hoc-string?)
 			  (when found-ad-hoc-string?
-			    ;; If an as-hoc-token is found, make sure it is not the start of a longer token
-			    (let ((following-char (ps-read-char ps-stream)))
-                              (unless (eq following-char +tokenizer-eof+) 
-				(let* ((following-char-code (char-code following-char))
-				       (dispatch-code (svref word-symbol-table following-char-code)))
-				  ;; in all cases (except eof, of course) , put back the following char 
-				  (ps-unread-char following-char ps-stream)
+			    ;; If an ad-hoc-token is found, make sure it is not the start of a longer token
+			    (let ((next-char (ps-read-char ps-stream)))
+                              (unless (eq next-char +tokenizer-eof+) 
+				(let* ((this-char-dispatch-code (svref word-symbol-table ,char-code-var))
+				       (next-char-code (char-code next-char))
+				       (next-char-dispatch-code (svref word-symbol-table next-char-code)))
+				  ;; in all cases (except eof, of course) , put back the next char 
+				  (ps-unread-char next-char ps-stream)
 				  ;; then see if ad-hoc string should go back...
-				  (when (or (eq dispatch-code #.+word-symbol-start-code+)
-					    (eq dispatch-code #.+word-symbol-continue-code+))
+				  (when (or (and (or (eq this-char-dispatch-code #.+word-symbol-start-code+)
+						     (eq this-char-dispatch-code #.+word-symbol-continue-code+))
+						 (or (eq next-char-dispatch-code #.+word-symbol-start-code+)
+						     (eq next-char-dispatch-code #.+word-symbol-continue-code+)))
+					    (and (or (eq this-char-dispatch-code #.+non-word-symbol-start-code+)
+						     (eq this-char-dispatch-code #.+non-word-symbol-continue-code+))
+						 (or (eq next-char-dispatch-code #.+non-word-symbol-start-code+)
+						     (eq next-char-dispatch-code #.+non-word-symbol-continue-code+))))
 				    ;; put back all but the first char of the ad-hoc-string
 				    (let ((n (1- (length ad-hoc-string))))
 				      (dotimes (i n)
 					(ps-unread-char (schar ad-hoc-string (- n i))
 							ps-stream)))
 				    (return nil)))))
-			    (when-debugging (when *verbose?* (comment "Found match to ~S." ad-hoc-string)))
+			    (debugging-comment "Found match to ~S." ad-hoc-string)
 			    ;; char-var was seen via local-read-char, so the current position is already 
 			    ;; set  to point at it
 			    (set-first-positions) 
@@ -522,6 +552,7 @@
 				(cond ((eq temp-char #\newline)
 				       ;; we proceed to line+1 : -1, so that the next character read 
 				       ;;  (which will be the leftmost on the line) will be at line+1 : 0
+				       ;; current-byte was incremented above, so we don't need to touch that here
 				       (incf current-line)
 				       (setq current-column -1))
 				      (t
@@ -548,7 +579,6 @@
 			 (return-values :EOF nil) 
 			 () 
 			 (go start-extended-comment))
-	;;
 	(look-for-ad-hoc-tokens char char-code)
 	;; 
 	(case (svref whitespace-table char-code)
@@ -653,12 +683,15 @@
 	  (#.+word-symbol-start-code+        (go terminate-word-symbol-with-start-word-symbol))
 	  (#.+number-start-code+             (go terminate-word-symbol-with-start-number))
 	  (#.+string-quote-code+             (go terminate-word-symbol-with-start-string))
+          (#.+char-literal-start-code+       (go terminate-word-symbol-with-start-char-literal)) ; for now at least, can't happen
 	  ;; weird
 	  (#.+non-word-symbol-continue-code+ (go terminate-word-symbol-with-continue-non-word-symbol))
 	  (#.+number-continue-code+          (go terminate-word-symbol-with-continue-number)) 
 	  (otherwise                         (go unrecognized-char-while-scanning-word-symbol)))
 
        unrecognized-char-while-scanning-word-symbol
+	(when (eq char #\#) ; new hack for # inside UnitId's...
+	  (return-values-using-prior-last :WORD-SYMBOL-TERMINATED-BY-HASH (coerce (nreverse token-chars) 'string)))
 	(termination-warning char char-code "word symbol" "" ", which is unrecognized")
 	(go terminate-word-symbol)
 	;;
@@ -667,7 +700,7 @@
 	(return-values-using-prior-last :WORD-SYMBOL (coerce (nreverse token-chars) 'string))
 	;;
        terminate-word-symbol-with-continue-non-word-symbol ; weird
-	(termination-warning char char-code "word symbol" "" ", whichcan continue but not start a non-word symbol")
+	(termination-warning char char-code "word symbol" "" ", which can continue but not start a non-word symbol")
 	(go terminate-word-symbol)
 	;;
        terminate-word-symbol-with-start-word-symbol
@@ -681,6 +714,7 @@
        terminate-word-symbol-with-start-non-word-symbol
        terminate-word-symbol-with-start-separator
        terminate-word-symbol-with-start-string
+       terminate-word-symbol-with-start-char-literal
        terminate-word-symbol-with-start-comment-to-eol
        terminate-word-symbol-with-whitespace
        terminate-word-symbol-with-extended-comment
@@ -689,8 +723,8 @@
 	;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
 	;; Char is the first character past that position.  
 	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and the char we're pushing here
-	;; increments them when it is popped then.
+	;; Those become the initial values in the next call here, and they are 
+	;; incremented when the char we're pushing here is then popped.
 	(local-unread-char char)
 	;;
        terminate-word-symbol-with-eof
@@ -727,6 +761,7 @@
 	  (#.+non-word-symbol-start-code+    (go terminate-non-word-symbol-with-start-non-word-symbol))
 	  (#.+number-start-code+             (go terminate-non-word-symbol-with-start-number))
 	  (#.+string-quote-code+             (go terminate-non-word-symbol-with-start-string))
+          (#.+char-literal-start-code+       (go terminate-non-word-symbol-with-start-char-literal))
 	  ;; weird
 	  (#.+word-symbol-continue-code+     (go terminate-non-word-symbol-with-continue-word-symbol))
 	  (#.+number-continue-code+          (go terminate-non-word-symbol-with-continue-number)) 
@@ -758,6 +793,7 @@
        terminate-non-word-symbol-with-start-word-symbol
        terminate-non-word-symbol-with-start-separator
        terminate-non-word-symbol-with-start-string
+       terminate-non-word-symbol-with-start-char-literal
        terminate-non-word-symbol-with-start-comment-to-eol
        terminate-non-word-symbol-with-whitespace
        terminate-non-word-symbol-with-extended-comment
@@ -766,8 +802,8 @@
 	;; Last-byte, last-line, last-column all refer to the last character of the symbol we've been scanning.
 	;; Char is the first character past that position.  
 	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and the char we're pushing here
-	;; increments them when it is popped then.
+	;; Those become the initial values in the next call here, and they are 
+	;; incremented when the char we're pushing here is then popped.
 	(local-unread-char char)
 	;;
        terminate-non-word-symbol-with-eof
@@ -795,14 +831,14 @@
 		char char-code
 		(termination-warning char char-code "partial non-word character literal" "#\\" ", which is eof")
 		(termination-warning char char-code "partial non-word character literal" "#\\" "")
-		(termination-warning char char-code "partial non-word character literal" "#\\" ", which starts of an extended comment")
+		(termination-warning char char-code "partial non-word character literal" "#\\" ", which starts an extended comment")
 		)
 	       (case char
-		 (#\a (return-values :CHARACTER #\bel       ))
+		 (#\a (return-values :CHARACTER #-mcl #\bel  #+mcl #\bell ))
 		 (#\b (return-values :CHARACTER #\backspace ))
 		 (#\t (return-values :CHARACTER #\tab       ))
 		 (#\n (return-values :CHARACTER #\newline   ))
-		 (#\v (return-values :CHARACTER #\vt        ))
+		 #-mcl (#\v (return-values :CHARACTER #\vt        ))
 		 (#\f (return-values :CHARACTER #\page      ))
 		 (#\r (return-values :CHARACTER #\return    ))
 		 (#\s (return-values :CHARACTER #\space     ))
@@ -821,7 +857,7 @@
 			 hex-char-2 hex-char-code-2
                 	 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which is eof")
 			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) "")
-			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", whch starts an extended comment")
+			 (termination-warning hex-char-2 hex-char-code-2 "partial hex character literal" (format nil "#\\x~A" hex-char-1) ", which starts an extended comment")
 			 )
 			(let ((high-nibble (convert-hex-char-to-number hex-char-1))
 			      (low-nibble  (convert-hex-char-to-number hex-char-2)))
@@ -879,6 +915,8 @@
 	  ;; unlikely
 	  (#.+number-start-code+             (go terminate-number-with-start-number))
 	  (#.+string-quote-code+             (go terminate-number-with-start-string))
+          (#.+char-literal-start-code+       (go terminate-number-with-start-char-literal))
+	  ;;
 	  (otherwise                         (go unrecognized-char-while-scanning-number)))
 	;;
        unrecognized-char-while-scanning-number
@@ -904,6 +942,7 @@
        terminate-number-with-start-non-word-symbol ;; e.g. +, -, =, etc.
        terminate-number-with-start-separator
        terminate-number-with-start-string
+       terminate-number-with-start-char-literal
        terminate-number-with-start-comment-to-eol
        terminate-number-with-whitespace
        terminate-number-with-extended-comment
@@ -911,8 +950,8 @@
 	;; Last-byte, last-line, last-column all refer to the last character of the number we've been scanning.
 	;; Char is the first character past that position.  
 	;; We put char back into the stream, and tell our caller the last-xxx values.
-	;; Those become the initial values in the next call here, and the char we're pushing here
-	;; increments them when it is popped then.
+	;; Those become the initial values in the next call here, and they are 
+	;; incremented when the char we're pushing here is then popped.
 	(local-unread-char char)
 	;;
        terminate-number-with-eof
@@ -935,11 +974,11 @@
 	 ()
 	 ())
         (case char
-	  (#\a (push #\bel       token-chars)) 
+	  (#\a (push #-mcl #\bel  #+mcl #\bell       token-chars)) 
 	  (#\b (push #\backspace token-chars)) 
 	  (#\t (push #\tab       token-chars)) 
 	  (#\n (push #\newline   token-chars)) 
-	  (#\v (push #\vt        token-chars)) 
+	  #-mcl (#\v (push #\vt        token-chars)) 
 	  (#\f (push #\page      token-chars)) 
 	  (#\r (push #\return    token-chars)) 
 	  (#\s (push #\space     token-chars)) 
@@ -1152,6 +1191,7 @@
 ;;; ========================================================================
 
 (defun install-tokens (session tokens comments)
+  ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
   (when (null +token-rule+) (break "???"))
   (let ((locations (make-array (1+ (length tokens))))
 	(pre-index 0)
@@ -1173,6 +1213,8 @@
 				       :parents        nil
 				       :children       nil
 				       )))
+;	(format t "install-tokens ~%")
+;	(describe node)
 	(setq last-node node)
 	(push node (parser-location-post-nodes pre-location))
 	(when-debugging (when *verbose?* (show-node node "Created  ")))
@@ -1184,20 +1226,26 @@
 			    token-start-byte) )
 	  do (push (pop comments) pre-comments))
 	(setf (parser-location-pre-comments pre-location) pre-comments)
-	(when-debugging (when *verbose?* (unless (null pre-comments) (comment "Pre-Comemnts for ~6D: ~S" pre-index pre-comments))))
+	(when-debugging 
+	 (when *verbose?*
+	   (unless (null pre-comments) 
+	     (comment "Pre-Comemnts for ~6D: ~S" pre-index pre-comments))))
 	(setq pre-index    post-index)
 	(setq pre-location (make-parser-location
 			    :index          post-index
 			    :post-nodes     nil))
 	(setf (svref locations pre-index) pre-location)))
-    (when-debugging (when *verbose?* (comment "Pre-Comments for ~6D (eof): ~S" pre-index comments)))
+    (debugging-comment "Pre-Comments for ~6D (eof): ~S" pre-index comments)
     (let ((eof-location pre-location))
       (setf (parser-location-pre-comments eof-location) comments)
-      (let* ((last-token (if (null comments)
-			     (parser-node-semantics last-node)
-			   (first (last comments))))
-	     (last-pos   (fourth last-token)))
-	(when-debugging (when *verbose?* (comment "Last token: ~S" last-token)))
-	(setf (parser-location-position eof-location) last-pos)))
+      (if (null last-node)		
+	  (debugging-comment "No tokens")
+	(let* ((last-token (if (null comments)
+			       (parser-node-semantics last-node)
+			     (first (last comments))))
+	       ;; each token looks like: (:kind <semantics> (start-byte start-line start-column) (end-byte end-line end-column))
+	       (last-pos   (fourth last-token)))
+	  (debugging-comment "Last token: ~S" last-token)
+	  (setf (parser-location-position eof-location) last-pos))))
     locations))
 

@@ -7,7 +7,5 @@ XML qualifying spec
   sort Possible X = Env (Option X * UChars)
   sort Required X = Env (       X * UChars)
 
-  def bad_name  msg : Env () = raise (Name  msg)
-  def bad_value msg : Env () = raise (Value msg)
 
 endspec

@@ -6,6 +6,33 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/07/05 07:46:37  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.8  2003/04/23 01:14:39  weilyn
+ * BindingFactory.java
+ *
+ * Revision 1.7  2003/04/01 02:29:37  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.6  2003/03/29 03:13:56  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.5  2003/03/14 04:14:01  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.4  2003/02/18 18:13:01  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:14:03  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:39:29  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:01:59  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -95,13 +122,13 @@ abstract class MemoryCollection extends Object implements Serializable {
         Collection data;
         
         switch (action) {
-            case SpecElement.Impl.ADD:
+            case Element.Impl.ADD:
                 data = cloneElements(arr);
                 break;
-            case SpecElement.Impl.REMOVE:
+            case Element.Impl.REMOVE:
                 data = Arrays.asList(arr);
                 break;
-            case SpecElement.Impl.SET:
+            case Element.Impl.SET:
                 data = makeClones(arr);
                 break;
             default:
@@ -116,7 +143,7 @@ abstract class MemoryCollection extends Object implements Serializable {
     protected void change (Collection c, int action) {
         boolean anChange;
         switch (action) {
-        case SpecElement.Impl.ADD:
+        case Element.Impl.ADD:
             anChange = c.size () > 0;
             if (array != null) {
                 if (insertionMark != null) {
@@ -134,13 +161,13 @@ abstract class MemoryCollection extends Object implements Serializable {
                 break;
             }
             // fall thru to initialize the array
-        case SpecElement.Impl.SET:
+        case Element.Impl.SET:
             // PENDING: better change detection; currently any SET operation will fire change.
             anChange = c.size () > 0 || (array != null && array.size () > 0);
             array = new LinkedList (c);
             insertionMark = null;
             break;
-        case SpecElement.Impl.REMOVE:
+        case Element.Impl.REMOVE:
         {
             Element newMark = null;
             if (insertionMark != null && c.contains(insertionMark)) {
@@ -242,6 +269,50 @@ abstract class MemoryCollection extends Object implements Serializable {
         }
 
     }
+   
+    static final class Import extends Member {
+        private static final ImportElement[] EMPTY = new ImportElement[0];
+
+        static final long serialVersionUID =5715072242254795093L;
+        /**
+        * @param memory memory element to fire changes to
+        * @param propertyName name of property to fire when array changes
+        * @param emptyArray emptyArray instance that provides the type of arrays
+        *   that should be returned by toArray method
+        */
+        public Import (SpecElement.Memory memory) {
+            super (memory,
+		   ElementProperties.PROP_IMPORTS,
+		   EMPTY);
+        }
+
+        protected Object clone(Object el) {
+            return new ImportElement(new ImportElement.Memory((ImportElement)el), 
+					((SpecElement.Memory)memory).getSpecElement());
+        }
+    }
+    
+    static final class DiagElem extends Member {
+        private static final DiagElemElement[] EMPTY = new DiagElemElement[0];
+
+        static final long serialVersionUID =5715072242254795093L;
+        /**
+        * @param memory memory element to fire changes to
+        * @param propertyName name of property to fire when array changes
+        * @param emptyArray emptyArray instance that provides the type of arrays
+        *   that should be returned by toArray method
+        */
+        public DiagElem (DiagramElement.Memory memory) {
+            super (memory,
+		   ElementProperties.PROP_DIAG_ELEMS,
+		   EMPTY);
+        }
+
+        protected Object clone(Object el) {
+            return new DiagElemElement(new DiagElemElement.Memory((DiagElemElement)el), 
+					((DiagramElement.Memory)memory).getDiagramElement());
+        }
+    }
 
     static final class Sort extends Member {
         private static final SortElement[] EMPTY = new SortElement[0];
@@ -306,6 +377,71 @@ abstract class MemoryCollection extends Object implements Serializable {
 
     }
 
+    static final class Def extends Member {
+        private static final DefElement[] EMPTY = new DefElement[0];
+
+        static final long serialVersionUID =5715072242254795093L;
+        /**
+        * @param memory memory element to fire changes to
+        * @param propertyName name of property to fire when array changes
+        * @param emptyArray emptyArray instance that provides the type of arrays
+        *   that should be returned by toArray method
+        */
+        public Def (SpecElement.Memory memory) {
+            super (memory,
+		   ElementProperties.PROP_DEFS,
+		   EMPTY);
+        }
+
+        protected Object clone(Object el) {
+            return new DefElement(new DefElement.Memory((DefElement)el), 
+					((SpecElement.Memory)memory).getSpecElement());
+        }
+    }
+
+    /** Collection of claims.
+    */
+    static class Claim extends Member {
+        private static final ClaimElement[] EMPTY = new ClaimElement[0];
+
+        static final long serialVersionUID =5715072242254795093L;
+        
+        /** @param ce class element memory impl to work in
+        */
+        public Claim (SpecElement.Memory ce) {
+            super (ce,
+		   ElementProperties.PROP_CLAIMS,
+		   EMPTY);
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+            return new ClaimElement (new ClaimElement.Memory ((ClaimElement)obj),
+				  ((SpecElement.Memory)memory).getSpecElement ());
+        }
+
+        public ClaimElement find (String id, String claimKind) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                ClaimElement claim = (ClaimElement)it.next ();
+                if (id.equals(claim.getName()) && claimKind.equals(claim.getClaimKind())) {
+		    return claim;
+		}
+	    }
+            // nothing found
+            return null;
+        }
+
+
+    }
+
+
     /** Collection of specs.
     */
     static class Spec extends Member {
@@ -348,4 +484,224 @@ abstract class MemoryCollection extends Object implements Serializable {
         }
     }
 
+    /** Collection of proofs.
+    */
+    static class Proof extends Member {
+        private static final ProofElement[] EMPTY = new ProofElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce proof element memory impl to work in
+        */
+        public Proof (ProofElement.Memory memory) {
+            super (memory, ElementProperties.PROP_PROOFS, EMPTY);
+        }
+        
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                ProofElement element = (ProofElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    ProofElement proof = (ProofElement) obj;
+            ProofElement.Memory mem = new ProofElement.Memory (proof);
+            ProofElement newProof = new ProofElement(mem, proof.getSource());
+            mem.copyFrom(proof);
+            return newProof;
+        }
+    }    
+    
+    /** Collection of morphisms.
+    */
+    static class Morphism extends Member {
+        private static final MorphismElement[] EMPTY = new MorphismElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce morphism element memory impl to work in
+        */
+        public Morphism (MorphismElement.Memory memory) {
+            super (memory, ElementProperties.PROP_PROOFS, EMPTY);
+        }
+        
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                MorphismElement element = (MorphismElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    MorphismElement morphism = (MorphismElement) obj;
+            MorphismElement.Memory mem = new MorphismElement.Memory (morphism);
+            MorphismElement newMorphism = new MorphismElement(mem, morphism.getSource());
+            mem.copyFrom(morphism);
+            return newMorphism;
+        }
+    }        
+
+    /** Collection of diagrams.
+    */
+    static class Diagram extends Member {
+        private static final DiagramElement[] EMPTY = new DiagramElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce diagram element memory impl to work in
+        */
+        public Diagram (DiagramElement.Memory memory) {
+            super (memory, ElementProperties.PROP_DIAGRAMS, EMPTY);
+        }
+        
+        public Diagram (ColimitElement.Memory memory) {
+            super (memory, ElementProperties.PROP_DIAGRAMS, EMPTY);
+        }
+
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                DiagramElement element = (DiagramElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    DiagramElement diagram = (DiagramElement) obj;
+            DiagramElement.Memory mem = new DiagramElement.Memory (diagram);
+            
+            //WLP: will this work?
+            DiagramElement newDiagram;
+            if (diagram.getSource() != null) {
+                newDiagram = new DiagramElement(mem, diagram.getSource());
+                mem.copyFrom(diagram);
+            } else {
+                newDiagram = new DiagramElement(mem, ((ColimitElement.Memory)memory).getColimitElement());
+            }
+            return newDiagram;
+        }
+        
+    }    
+
+    /** Collection of colimits.
+    */
+    static class Colimit extends Member {
+        private static final ColimitElement[] EMPTY = new ColimitElement[0];
+
+        static final long serialVersionUID =3206093459760846163L;
+
+        /** @param ce colimit element memory impl to work in
+        */
+        public Colimit (ColimitElement.Memory memory) {
+            super (memory, ElementProperties.PROP_DIAGRAMS, EMPTY);
+        }
+        
+        public MemberElement find(String name) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                ColimitElement element = (ColimitElement)it.next ();
+                String ename = element.getName();
+                if (name.equals(ename)) {
+                    return element;
+                }
+            }
+            // nothing found
+            return null;
+        }
+
+        /** Clones the object.
+        * @param obj object to clone
+        * @return cloned object
+        */
+        protected Object clone (Object obj) {
+	    ColimitElement colimit = (ColimitElement) obj;
+            ColimitElement.Memory mem = new ColimitElement.Memory (colimit);
+            ColimitElement newColimit = new ColimitElement(mem, colimit.getSource());
+            mem.copyFrom(colimit);
+            return newColimit;
+        }
+    }
+    
+   /* static final class UnitId extends Member {
+        private static final UIDElement[] EMPTY = new UIDElement[0];
+
+        static final long serialVersionUID =5715072242254795093L;
+     
+        public UnitId (UIDElement.Memory memory) {
+            super (memory,
+		   ElementProperties.PROP_UIDS,
+		   EMPTY);
+        }
+
+        protected Object clone(Object el) {
+	    UIDElement unitId = (UIDElement) el;
+            UIDElement.Memory mem = new UIDElement.Memory (unitId);
+            
+            //WLP: will this work?
+            UIDElement newUID = null;
+            if (memory instanceof MorphismElement.Memory) {
+                newUID = new UIDElement(mem, ((MorphismElement.Memory)memory).getMorphismElement());
+            }
+            return newUID;
+        }
+        
+        public UIDElement find (String id, String path) {
+            if (array == null)
+                return null;
+
+            Iterator it = array.iterator ();
+            while (it.hasNext ()) {
+                UIDElement unitId = (UIDElement)it.next ();
+                if (id.equals(unitId.getName()) && path.equals(unitId.getPath())) {
+		    return unitId;
+		}
+	    }
+            // nothing found
+            return null;
+        }
+        
+    }    
+    */
 }

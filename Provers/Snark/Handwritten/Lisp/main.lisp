@@ -67,9 +67,6 @@
     *symbols-in-symbol-table*
     *knuth-bendix-ordering-minimum-constant-weight*
     *skolem-function-alist*
-    skfnnum
-    wpfnnum
-    CRFNNUM
     ))
 
 (defvar recursive-unstore nil)
@@ -1942,15 +1939,15 @@
 ;;	(WHEN (AND (SET-DIFFERENCE VARS1 VARS2)
 ;;		   (SET-DIFFERENCE VARS2 VARS1))
 ;;	  (LET* ((VARS (INTERSECTION VARS1 VARS2))
-;;		 (FN (DECLARE-FUNCTION-SYMBOL (NEWCRFN) (LENGTH VARS)))
+;;		 (FN (DECLARE-FUNCTION (NEWSYM) (LENGTH VARS)))
 ;;		 (VAL (MAKE-COMPOUND* FN VARS)))
 	  (when (and vars1 vars2 (null (intersection vars1 vars2)))	;create only constants
 	    (let* ((vars nil)
-		   (fn (declare-constant-symbol (newcrfn)))
+		   (fn (declare-constant (newsym)))
 		   (val fn))
 	      (IF VARS
-		  (SETF (FUNCTION-CREATED-P FN) CRFNNUM)
-		  (SETF (CONSTANT-CREATED-P FN) CRFNNUM))
+		  (SETF (FUNCTION-CREATED-P FN) T)
+		  (SETF (CONSTANT-CREATED-P FN) T))
 	      (WHEN (EQ :RECURSIVE-PATH (USE-TERM-ORDERING?))
 		(RPO-ADD-CREATED-FUNCTION-SYMBOL FN))
 	      (SETF (ROW-WFF ROW) (SETQ WFF (CONJOIN

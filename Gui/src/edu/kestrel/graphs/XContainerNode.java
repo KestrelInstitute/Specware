@@ -31,6 +31,11 @@ public abstract class XContainerNode extends XNode {
     
     protected boolean savedIsExpanded;
     
+    /** this flag controls, whether the bounds of an expanded container node is automatically adjusted
+     * to its children's bounds or not.
+     */
+    static public boolean autoUpdateBounds = true;//false;
+    
     /** Creates a new instance of XContainerNode */
     public XContainerNode() {
         super((String)null);
@@ -62,7 +67,6 @@ public abstract class XContainerNode extends XNode {
         return (detachedChildren != null);
     }
     
-    
     /** overwrites the method in XNode; returns an instance of ModelContainerNode.
      */
     public ModelNode createModelNode() {
@@ -76,7 +80,7 @@ public abstract class XContainerNode extends XNode {
     
     /** returns the child node which has the given ModelNode as its model element; if no such node is found,
      * a copy of the model node's representation exemplar is returned.
-     */
+     
     public XNode getChildNodeWithModelNode(ModelNode mnode) {
         XNode[] cnodes = getChildNodes();
         for(int i=0;i<cnodes.length;i++) {
@@ -87,7 +91,7 @@ public abstract class XContainerNode extends XNode {
         }
         Dbg.pr("XNode "+this+": no child node found with model node "+mnode+".");
         return (XNode) mnode.getReprExemplar().cloneGraphElement();
-    }
+    }*/
     
     /** creates the view of the container, see {@link edu.kestrel.graphs.XContainerBoxNode#createContainerView(edu.kestrel.graphs.XGraphDisplay, com.jgraph.graph.CellMapper)}
      * for an example implementation of this method.  */
@@ -129,6 +133,16 @@ public abstract class XContainerNode extends XNode {
      * </ul>
      */
     public XEdge[] getInnerEdges(XContainerNode parent, int whichones, boolean recursive) {
+        XNodeEdgePair[] nodeEdgePairs = getInnerEdges_internal(parent,whichones,recursive);
+        XEdge[] res = new XEdge[nodeEdgePairs.length];
+        for(int i=0;i<nodeEdgePairs.length;i++) {
+            res[i] = nodeEdgePairs[i].edge;
+        }
+        return res;
+    }
+    /** same as getInnerEdges; the returned array also contains the inner node that is connected to the inner edge.
+     */
+    protected XNodeEdgePair[] getInnerEdges_internal(XContainerNode parent, int whichones, boolean recursive) {
         ArrayList res = new ArrayList();
         Enumeration childIterator = children();
         while(childIterator.hasMoreElements()) {
@@ -139,19 +153,19 @@ public abstract class XContainerNode extends XNode {
                 for(int i=0;i<allEdges.length;i++) {
                     XNode otherEnd = allEdges[i].getConnectedNode(node);
                     if (otherEnd == null) {
-                        res.add(allEdges[i]);
+                        res.add(new XNodeEdgePair(node,allEdges[i]));
                     }
                     else if (whichones == CONNECTED_TO_INNER) {
                         if (!otherEnd.equals(parent))
                             if (parent.isNodeDescendant(otherEnd)) {
                                 if (!res.contains(allEdges[i]))
-                                    res.add(allEdges[i]);
+                                    res.add(new XNodeEdgePair(node,allEdges[i]));
                             }
                     }
                     else if (whichones == CONNECTED_TO_OUTER) {
                         if (!parent.isNodeDescendant(otherEnd)) {
                             if (!res.contains(allEdges[i]))
-                                res.add(allEdges[i]);
+                                res.add(new XNodeEdgePair(node,allEdges[i]));
                         }
                     }
                 }
@@ -159,14 +173,14 @@ public abstract class XContainerNode extends XNode {
                 if (recursive)
                     if (child instanceof XContainerNode) {
                         XContainerNode chnode = (XContainerNode)child;
-                        XEdge[] inneredges = chnode.getInnerEdges(parent,whichones,recursive);
+                        XNodeEdgePair[] inneredges = chnode.getInnerEdges_internal(parent,whichones,recursive);
                         for(int i=0;i<inneredges.length;i++)
                             if (!res.contains(inneredges[i]))
                                 res.add(inneredges[i]);
                     }
             }
         }
-        XEdge[] edges = new XEdge[res.size()];
+        XNodeEdgePair[] edges = new XNodeEdgePair[res.size()];
         res.toArray(edges);
         return edges;
     }
@@ -242,17 +256,43 @@ public abstract class XContainerNode extends XNode {
     }
     
     /** returns all edges that start/end at an inner node an end/start at an outer node
-     * using the given childIterator
      */
     public XEdge[] getInnerConnToOuterEdges() {
         return getInnerEdges(this,CONNECTED_TO_OUTER,true);
     }
     
+    public XNodeEdgePair[] getInnerConnToOuterEdges_internal() {
+        return getInnerEdges_internal(this,CONNECTED_TO_OUTER,true);
+    }
+    
+    /** returns the array of incoming and outgoing edges. This method can be used to
+     * retrieve all edges leaving the node, either from inside the node or from the node itself.
+     */
+    public XEdge[] getConnectedEdges() {
+        XEdge[] edges1 = super.getConnectedEdges();
+        XEdge[] edges2 = getInnerConnToOuterEdges();
+        XEdge[] edges = new XEdge[edges1.length+edges2.length];
+        System.arraycopy(edges1,0,edges,0,edges1.length);
+        System.arraycopy(edges2,0,edges,edges1.length,edges2.length);
+        return edges;
+    }
+    
+    protected XNodeEdgePair[] getConnectedEdges_internal() {
+        XNodeEdgePair[] edges1 = super.getConnectedEdges_internal();
+        XNodeEdgePair[] edges2 = getInnerConnToOuterEdges_internal();
+        XNodeEdgePair[] edges = new XNodeEdgePair[edges1.length+edges2.length];
+        System.arraycopy(edges1,0,edges,0,edges1.length);
+        System.arraycopy(edges2,0,edges,edges1.length,edges2.length);
+        return edges;
+    }
+    
+    
+    
     /** detached the direct children from the container node, so that this node has no children
      * after this method is being executed. Returns the array of detached children and sets the field
      * <code>detachedChildren</code> to the same value.
      */
-    public java.util.List detachChildren(XGraphDisplay graph) {
+    public java.util.List detachChildren(XGraphDisplay graph, Rectangle parentBounds) {
         int cnt = getChildCount();
         if (cnt == 0) return null;
         XEdge[] edges = getInnerEdges();
@@ -265,7 +305,7 @@ public abstract class XContainerNode extends XNode {
             }
         }
         for(int i=0;i<detachedChildren.size();i++) {
-            ((XNode)detachedChildren.get(i)).detachFromParent(graph,this);
+            ((XNode)detachedChildren.get(i)).detachFromParent(graph,this,parentBounds);
         }
         // detach inner edges from view
         for(int i=0;i<edges.length;i++) {
@@ -394,6 +434,7 @@ public abstract class XContainerNode extends XNode {
      * should overwrite this method rather than the addChildNode method with the List parameter.
      */
     public XNode[] addChildNodes(XGraphDisplay graph, XNode[] childnodes) {
+        if (!isExpandable()) return new XNode[] {};
         ParentMap pm = new ParentMap();
         for(int i=0;i<childnodes.length;i++) {
             if (!isChild(childnodes[i])) {
@@ -405,7 +446,7 @@ public abstract class XContainerNode extends XNode {
             if (graph != null) {
                 XContainerView cv = getXContainerView(graph.getView(),true);
                 if (cv != null) {
-                    cv.expand();
+                    cv.expand(false);
                 }
             }
         }
@@ -460,7 +501,8 @@ public abstract class XContainerNode extends XNode {
         return false;
     }
     
-    /** expand the container node is the given graph display
+    /** 
+     the container node is the given graph display
      */
     public void expand(XGraphDisplay graph) {
         if (!isExpandable()) return;

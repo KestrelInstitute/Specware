@@ -19,12 +19,12 @@
 
 ;;; the main purpose of this code is to recognize axioms
 ;;; for commutativity, associativity, etc. so that the
-;;; appropriate function or predicate symbol declarations can be
+;;; appropriate function or relation symbol declarations can be
 ;;; made when running TPTP problems, where stupid and inconvenient
 ;;; rules do not allow any problem-specific input other than the axioms
 ;;;
 ;;; in general, using assertion-analysis to automatically declare
-;;; special properties of predicates and functions is NOT encouraged
+;;; special properties of relations and functions is NOT encouraged
 
 (in-package :snark)
 
@@ -34,7 +34,7 @@
 
 (defvar *assertion-analysis-patterns*)
 (defvar *assertion-analysis-function-info*)
-(defvar *assertion-analysis-predicate-info*)
+(defvar *assertion-analysis-relation-info*)
 
 (defstruct aa-function
   function
@@ -44,10 +44,10 @@
   (right-inverses nil)
   (commutative nil)
   (associative nil)
-  (closure-predicates nil))
+  (closure-relations nil))
 
-(defstruct aa-predicate
-  predicate
+(defstruct aa-relation
+  relation
   (left-identities nil)
   (right-identities nil)
   (left-inverses nil)
@@ -66,13 +66,13 @@
 	  (setf (sparef *assertion-analysis-function-info* f#)
 	        (make-aa-function :function f))))))
 
-(defun aa-predicate (p)
+(defun aa-relation (p)
   (let ((p# (funcall *standard-eql-numbering* :lookup p)))
-    (or (sparef *assertion-analysis-predicate-info* p#)
+    (or (sparef *assertion-analysis-relation-info* p#)
         (progn
 	  (cl:assert (function-symbol-p p))
-	  (setf (sparef *assertion-analysis-predicate-info* p#)
-	        (make-aa-predicate :predicate p))))))
+	  (setf (sparef *assertion-analysis-relation-info* p#)
+	        (make-aa-relation :relation p))))))
 
 (defun print-assertion-analysis-note (name)
   (let ((*print-pretty* nil) (*print-radix* nil) (*print-base* 10.))
@@ -112,51 +112,51 @@
     (print-assertion-analysis-note "possible right inverse"))
   (pushnew (list g e) (aa-function-right-inverses (aa-function f)) :test #'equal))
 
-(defun note-predicate-assoc1 (p)
+(defun note-relation-assoc1 (p)
   (when (print-assertion-analysis-notes?)
     (print-assertion-analysis-note "possible associativity"))
-  (setf (aa-predicate-assoc1-p (aa-predicate p)) t))
+  (setf (aa-relation-assoc1-p (aa-relation p)) t))
 
-(defun note-predicate-assoc2 (p)
+(defun note-relation-assoc2 (p)
   (when (print-assertion-analysis-notes?)
     (print-assertion-analysis-note "possible associativity"))
-  (setf (aa-predicate-assoc2-p (aa-predicate p)) t))
+  (setf (aa-relation-assoc2-p (aa-relation p)) t))
 
-(defun note-predicate-commutative (p)
+(defun note-relation-commutative (p)
   (when (print-assertion-analysis-notes?)
     (print-assertion-analysis-note "commutativity"))
-  (setf (aa-predicate-commutative (aa-predicate p)) t))
+  (setf (aa-relation-commutative (aa-relation p)) t))
 
-(defun note-predicate-left-identity (p e)
+(defun note-relation-left-identity (p e)
   (when (print-assertion-analysis-notes?)
     (print-assertion-analysis-note "possible left identity"))
-  (pushnew e (aa-predicate-left-identities (aa-predicate p))))
+  (pushnew e (aa-relation-left-identities (aa-relation p))))
 
-(defun note-predicate-right-identity (p e)
+(defun note-relation-right-identity (p e)
   (when (print-assertion-analysis-notes?)
     (print-assertion-analysis-note "possible right identity"))
-  (pushnew e (aa-predicate-right-identities (aa-predicate p))))
+  (pushnew e (aa-relation-right-identities (aa-relation p))))
 
-(defun note-predicate-left-inverse (p g e)
+(defun note-relation-left-inverse (p g e)
   (when (print-assertion-analysis-notes?)
     (print-assertion-analysis-note "possible left inverse"))
-  (pushnew (list g e) (aa-predicate-left-inverses (aa-predicate p)) :test #'equal))
+  (pushnew (list g e) (aa-relation-left-inverses (aa-relation p)) :test #'equal))
 
-(defun note-predicate-right-inverse (p g e)
+(defun note-relation-right-inverse (p g e)
   (when (print-assertion-analysis-notes?)
     (print-assertion-analysis-note "possible right inverse"))
-  (pushnew (list g e) (aa-predicate-right-inverses (aa-predicate p)) :test #'equal))
+  (pushnew (list g e) (aa-relation-right-inverses (aa-relation p)) :test #'equal))
 
-(defun note-predicate-functional (p)
+(defun note-relation-functional (p)
   (when (print-assertion-analysis-notes?)
-    (print-assertion-analysis-note "predicate functionality"))
-  (setf (aa-predicate-functional-p (aa-predicate p)) t))
+    (print-assertion-analysis-note "relation functionality"))
+  (setf (aa-relation-functional-p (aa-relation p)) t))
 
-(defun note-predicate-closure (p f)
+(defun note-relation-closure (p f)
   (when (print-assertion-analysis-notes?)
-    (print-assertion-analysis-note "predicate function"))
-  (pushnew f (aa-predicate-closure-functions (aa-predicate p)))
-  (pushnew p (aa-function-closure-predicates (aa-function f))))
+    (print-assertion-analysis-note "relation function"))
+  (pushnew f (aa-relation-closure-functions (aa-relation p)))
+  (pushnew p (aa-function-closure-relations (aa-function f))))
 
 (defun function-associativity-tests ()
   (let ((f (make-function-symbol (gensym) 2))
@@ -202,7 +202,7 @@
       (list (make-equality0 (make-compound f x (make-compound g x)) e)
 	    (list 'note-function-right-inverse f g e)))))
 
-(defun predicate-associativity-tests ()
+(defun relation-associativity-tests ()
   (let ((p (make-function-symbol (gensym) 3))
 	(x (make-variable))
 	(y (make-variable))
@@ -221,26 +221,26 @@
 			    (make-compound *not* b)
 			    (make-compound *not* c)
 			    d)
-	     (list 'note-predicate-assoc1 p))
+	     (list 'note-relation-assoc1 p))
        ;; (implies (and (p x y u) (p y z v) (p u z w)) (p x v w))
        (list (make-compound *implies*
 			    (make-compound *and* a b c)
 			    d)
-	     (list 'note-predicate-assoc1 p))
+	     (list 'note-relation-assoc1 p))
        ;; (or (not (p x y u)) (not (p y z v)) (not (p x v w)) (p u z w))
        (list (make-compound *or*
 			    (make-compound *not* a)
 			    (make-compound *not* b)
 			    (make-compound *not* d)
 			    c)
-	     (list 'note-predicate-assoc2 p))
+	     (list 'note-relation-assoc2 p))
        ;; (implies (and (p x y u) (p y z v) (p x v w)) (p u z w))
        (list (make-compound *implies*
 			    (make-compound *and* a b d)
 			    c)
-	     (list 'note-predicate-assoc2 p))))))
+	     (list 'note-relation-assoc2 p))))))
 
-(defun predicate-commutativity-tests ()
+(defun relation-commutativity-tests ()
   (let ((p (make-function-symbol (gensym) 3))
 	(x (make-variable))
 	(y (make-variable))
@@ -250,24 +250,24 @@
 	  nconc (list
 		  ;; (or (not (p x y)) (p x y))  and  (or (not (p x y z)) (p y x z))
 		  (list (make-compound *or* (make-compound *not* a) b)
-			(list 'note-predicate-commutative p))
+			(list 'note-relation-commutative p))
 		  ;; (implies (p x y) (p y x))   and  (implies (p x y z) (p y x z))
 		  (list (make-compound *implies* a b)
-			(list 'note-predicate-commutative p))))))
+			(list 'note-relation-commutative p))))))
 
-(defun predicate-identity-tests ()
+(defun relation-identity-tests ()
   (let ((p (make-function-symbol (gensym) 3))
 	(e (gensym))
 	(x (make-variable)))
     (list
       ;; (p e x x)
       (list (make-compound p e x x)
-	    (list 'note-predicate-left-identity p e))
+	    (list 'note-relation-left-identity p e))
       ;; (p x e x)
       (list (make-compound p x e x)
-	    (list 'note-predicate-right-identity p e)))))
+	    (list 'note-relation-right-identity p e)))))
 
-(defun predicate-inverse-tests ()
+(defun relation-inverse-tests ()
   (let ((p (make-function-symbol (gensym) 3))
 	(g (make-function-symbol (gensym) 1))
 	(e (gensym))
@@ -275,12 +275,12 @@
     (list
       ;; (p (g x) x e)
       (list (make-compound p (make-compound g x) x e)
-	    (list 'note-predicate-left-inverse p g e))
+	    (list 'note-relation-left-inverse p g e))
       ;; (p x (g x) e)
       (list (make-compound p x (make-compound g x) e)
-	    (list 'note-predicate-right-inverse p g e)))))
+	    (list 'note-relation-right-inverse p g e)))))
 
-(defun predicate-functionality-tests ()
+(defun relation-functionality-tests ()
   (let ((p (make-function-symbol (gensym) 3))
 	(x (make-variable))
 	(y (make-variable))
@@ -296,15 +296,15 @@
 			    (make-compound *not* a)
 			    (make-compound *not* b)
 			    c)
-	  (list 'note-predicate-functional p))
+	  (list 'note-relation-functional p))
 	;; (implies (and (p x y z1) (p x y z2)) (= z1 z2))
 	(list
 	  (make-compound *implies*
 			    (make-compound *and* a b)
 			    c)
-	  (list 'note-predicate-functional p))))))
+	  (list 'note-relation-functional p))))))
 
-(defun predicate-closure-tests ()
+(defun relation-closure-tests ()
   (let ((p (make-function-symbol (gensym) 3))
 	(f (make-function-symbol (gensym) 2))
 	(x (make-variable))
@@ -312,22 +312,22 @@
     (list
       (list
 	(make-compound p x y (make-compound f x y))
-	(list 'note-predicate-closure p f)))))
+	(list 'note-relation-closure p f)))))
 
 (defun initialize-assertion-analysis ()
   (setq *assertion-analysis-function-info* (make-sparse-vector))
-  (setq *assertion-analysis-predicate-info* (make-sparse-vector))
+  (setq *assertion-analysis-relation-info* (make-sparse-vector))
   (setq *assertion-analysis-patterns*
 	(nconc (function-associativity-tests)
 	       (function-commutativity-tests)
 	       (function-identity-tests)
 	       (function-inverse-tests)
-	       (predicate-associativity-tests)
-	       (predicate-commutativity-tests)
-	       (predicate-identity-tests)
-	       (predicate-inverse-tests)
-	       (predicate-functionality-tests)
-	       (predicate-closure-tests)
+	       (relation-associativity-tests)
+	       (relation-commutativity-tests)
+	       (relation-identity-tests)
+	       (relation-inverse-tests)
+	       (relation-functionality-tests)
+	       (relation-closure-tests)
 	       ))
   nil)
 
@@ -352,29 +352,29 @@
   (unless (function-commutative f)
     (declare-function-commutative f t)))
 
-(defun aa-predicate-associative (p)
-  (if (or (aa-predicate-commutative p)
-	  (function-commutative (aa-predicate-predicate p)))
-      (or (aa-predicate-assoc1-p p) (aa-predicate-assoc2-p p))
-      (and (aa-predicate-assoc1-p p) (aa-predicate-assoc2-p p))))
+(defun aa-relation-associative (p)
+  (if (or (aa-relation-commutative p)
+	  (function-commutative (aa-relation-relation p)))
+      (or (aa-relation-assoc1-p p) (aa-relation-assoc2-p p))
+      (and (aa-relation-assoc1-p p) (aa-relation-assoc2-p p))))
 
 (defun complete-assertion-analysis ()
   (prog->
-    (map-sparse-vector-values *assertion-analysis-function-info* ->* f)
+    (map-sparse-vector *assertion-analysis-function-info* ->* f)
     (when (aa-function-commutative f)
       (maybe-declare-function-commutative (aa-function-function f)))
     (when (aa-function-associative f)
       (maybe-declare-function-associative (aa-function-function f))))
   (prog-> 
-    (map-sparse-vector-values *assertion-analysis-predicate-info* ->* p)
-    (when (aa-predicate-commutative p)
-      (maybe-declare-function-commutative (aa-predicate-predicate p))
-      (when (aa-predicate-functional-p p)
-	(dolist (f (aa-predicate-closure-functions p))
+    (map-sparse-vector *assertion-analysis-relation-info* ->* p)
+    (when (aa-relation-commutative p)
+      (maybe-declare-function-commutative (aa-relation-relation p))
+      (when (aa-relation-functional-p p)
+	(dolist (f (aa-relation-closure-functions p))
 	  (maybe-declare-function-commutative f))))
-    (when (aa-predicate-associative p)
-      (when (aa-predicate-functional-p p)
-	(dolist (f (aa-predicate-closure-functions p))
+    (when (aa-relation-associative p)
+      (when (aa-relation-functional-p p)
+	(dolist (f (aa-relation-closure-functions p))
 	  (maybe-declare-function-associative f))))))
 
 ;;; assertion-analysis.lisp EOF

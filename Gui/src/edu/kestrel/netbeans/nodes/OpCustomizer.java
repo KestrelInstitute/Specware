@@ -6,6 +6,12 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/17 04:31:22  weilyn
+ * Fixed null pointer exception bug.
+ *
+ * Revision 1.1  2003/01/30 02:02:09  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -174,7 +180,7 @@ public class OpCustomizer extends JPanel {
         if (selItem != null) {
             try {
                 final String newValue = selItem.toString();
-                if (!oldValue.equals(newValue)) {
+                if (oldValue == null || !oldValue.equals(newValue)) {
                     try {
                         SourceEditSupport.runAsUser(element, new ExceptionalRunnable() {
                             public void run() throws SourceException {
@@ -212,7 +218,7 @@ public class OpCustomizer extends JPanel {
         Exception x = null;
 
         if (MetaSlangSyntax.isMetaSlangIdentifier(newName)) {
-            if (!oldName.equals(newName)) {
+            if (oldName == null || !oldName.equals(newName)) {
                 try {
                     SourceEditSupport.runAsUser(element, new ExceptionalRunnable() {
                         public void run() throws SourceException {

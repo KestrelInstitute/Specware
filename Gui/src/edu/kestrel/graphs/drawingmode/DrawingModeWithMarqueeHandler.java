@@ -55,6 +55,13 @@ public abstract class DrawingModeWithMarqueeHandler extends DrawingMode {
             modeLocalMarqueeHandler.put(graph,localmh);
         }
         graph.setMarqueeHandler(localmh);
+        try {
+            EventListener[] listener = graph.getListeners(Class.forName("java.awt.event.KeyListener"));
+            for(int i=0;i<listener.length;i++) {
+                graph.removeKeyListener((KeyListener)listener[i]);
+            }
+        } catch (Exception ee) {}
+        graph.addKeyListener(localmh);
     }
     
     /** exists this mode in the graph display. Restores the marquee handler saved for this
@@ -67,5 +74,5 @@ public abstract class DrawingModeWithMarqueeHandler extends DrawingMode {
         }
         this.graph = null;
     }
-   
+    
 }

@@ -1,8 +1,22 @@
 spec
+  import translate ../Collections/Finite by {Collection +-> Set}
   import ../Sets
-  import translate ../Finite by {
-    Finite.Collection +-> Set,
-    Finite.pp +-> pp,
-    Finite.fold +-> fold
-  }
+
+  def pp set =
+    let def ppContents set =
+      case takeOne set of
+        | None -> ppNil
+        | One (value,rest) ->
+           (case takeOne rest of
+             | None -> pp value
+             | One (_,_) ->
+                 ppGroup (ppConcat [
+                   pp value,
+                   pp ",",
+                   ppBreak,
+                   ppContents rest
+                 ]))
+     in
+       ppConcat [pp "{", ppContents set, pp "}"]
+ 
 endspec

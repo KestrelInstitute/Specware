@@ -31,7 +31,7 @@
             (char-string-to-list 1 char-string-to-list-term-rewriter :sort list)
             (char-list-to-string 1 char-list-to-string-term-rewriter :sort string)
             ))
-    (mapc #'declare-predicate-rewrite-code
+    (mapc 'declare-relation-rewrite-code
           '((character 1 character-atom-rewriter)
             (string 1 string-atom-rewriter)
             )))))
@@ -52,7 +52,7 @@
   (when-using-code-for-characters
     (let ((x (arg1 term)))
       (if (dereference x subst :if-constant (characterp x))
-          (declare-constant-symbol (char-code x))
+          (declare-constant (char-code x))
           none))))
 
 (defun code-char-term-rewriter (term subst)
@@ -60,7 +60,7 @@
   (when-using-code-for-characters
     (let ((x (arg1 term)))
       (if (dereference x subst :if-constant (naturalp x))
-          (declare-constant-symbol (code-char x))
+          (declare-constant (code-char x))
           none))))
 
 (defun char-string-to-list-term-rewriter (term subst)
@@ -71,7 +71,7 @@
        x subst
        :if-variable none       
        :if-constant (if (stringp x)
-                        (mapc #'declare-constant-symbol (coerce x 'list))
+                        (mapc #'declare-constant (coerce x 'list))
                         none)
        :if-compound none))))
 
@@ -83,10 +83,10 @@
        x subst
        :if-variable none
        :if-constant (if (null x)
-                        (declare-constant-symbol "")
+                        (declare-constant "")
                         none)
        :if-compound-cons (if (char-list-p x subst)
-                             (declare-constant-symbol (coerce (instantiate x subst) 'string))
+                             (declare-constant (coerce (instantiate x subst) 'string))
                              none)
        :if-compound-appl none))))
 

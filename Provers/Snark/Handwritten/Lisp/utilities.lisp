@@ -329,6 +329,10 @@
     (terpri)
     result))
 
+(defun problem-name-from-file-name (filename)
+  (let ((s (string (if (pathnamep filename) (pathname-name filename) filename))))
+    (intern (subseq s 0 (or (search ".out" s) (length s))))))
+
 (defun summarize-output-file (filename)
   (with-open-file (stream filename :direction :input :if-does-not-exist nil)
     (let ((refutation-p nil)
@@ -345,11 +349,7 @@
 	(setq line (if stream (read-line stream nil :eof) :eof))
 	(when (eq :eof line)
 	  (return (make-snark-result
-                   :problem-name (let ((s (string (if (pathnamep filename)
-                                                      (pathname-name filename)
-                                                      filename))))
-                                   (intern (subseq s 0 (or (search ".out" s)
-                                                           (length s)))))
+                   :problem-name (problem-name-from-file-name filename)
                    :outcome (cond
                              ((null stream)
                               'no-file)
@@ -407,7 +407,7 @@
     (when (member (first form) problems)
       (list form))))
 
-(defun SCORE-TPTP-RESULTS (&optional
+(defun score-tptp-results (&optional
                            (results-file "nori:research:snark:private:tptp-results.lisp")
                            (problems-file "nori:research:snark:private:tptp-problems.lisp"))
   (score-tptp-results* (read-file results-file) (read-file problems-file)))
@@ -475,8 +475,10 @@
     (dolist (x1 l1)
       (let ((x2 (assoc (first x1) l2)))
         (when x2
-          (unless (equal (list* (second x1) (third x1) (cddddr x1))
-                         (list* (second x2) (third x2) (cddddr x2)))
+          (unless (or (and (eq (third x1) (third x2))
+                           (member (third x1) '(timeout depth prstack trstack)))
+                      (equal (list* (second x1) (third x1) (cddddr x1))
+                             (list* (second x2) (third x2) (cddddr x2))))
             (print x1)
             (print x2)
             (terpri)))))))

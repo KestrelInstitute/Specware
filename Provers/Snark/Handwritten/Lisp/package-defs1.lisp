@@ -26,7 +26,7 @@
 (in-package :common-lisp-user)
 
 (defpackage :mes
-  (:use :common-lisp)
+  (:use :common-lisp :mes-sparse-array)
   #+genera (:import-from :future-common-lisp
 	    future-common-lisp:declaim
 	    future-common-lisp:constantly)
@@ -79,24 +79,11 @@
     "COLLECT" "NCOLLECT"
     "PUSHNEW-UNLESS-NIL"
 
-    ;; defined in sparse-array.lisp
-    "SPAREF"
-    "SPARSE-VECTOR" "SPARSE-MATRIX"
-    "MAKE-SPARSE-VECTOR" "MAKE-SPARSE-MATRIX"
-    "SPARSE-VECTOR-P" "SPARSE-MATRIX-P"
-    "SPARSE-VECTOR-COUNT" "SPARSE-MATRIX-COUNT"
-    "SPARSE-MATRIX-ROW" "SPARSE-MATRIX-COLUMN" "SPARSE-MATRIX-ROWS" "SPARSE-MATRIX-COLUMNS"
-    "MAP-SPARSE-VECTOR" "MAP-SPARSE-VECTOR-INDEXES" "MAP-SPARSE-VECTOR-VALUES"
-    "MAP-SPARSE-MATRIX" "MAP-SPARSE-MATRIX-INDEXES" "MAP-SPARSE-MATRIX-VALUES"
-    "WITH-SPARSE-VECTOR-ITERATOR"
-    "FIRST-SPAREF" "LAST-SPAREF"
-    "POP-FIRST-SPAREF" "POP-LAST-SPAREF"
-
     ;; defined in sparse-vector-expression.lisp
     "SPARSE-VECTOR-EXPRESSION-P"
     "MAP-SPARSE-VECTOR-EXPRESSION"
-    "MAP-SPARSE-VECTOR-EXPRESSION-INDEXES"
-    "MAP-SPARSE-VECTOR-EXPRESSION-VALUES"
+    "MAP-SPARSE-VECTOR-EXPRESSION-WITH-INDEXES"
+    "MAP-SPARSE-VECTOR-EXPRESSION-INDEXES-ONLY"
     "OPTIMIZE-SPARSE-VECTOR-EXPRESSION"
     "UNIOND"
 
@@ -168,5 +155,8 @@
     "CSP-VARIABLE-NAME" "CSP-VARIABLE-VALUE"
 
     ))
+
+(do-external-symbols (symbol :mes-sparse-array)
+  (export (list symbol) :mes))
 
 ;;; package-defs1.lisp EOF

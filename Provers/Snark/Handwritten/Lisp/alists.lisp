@@ -19,7 +19,7 @@
 
 (in-package :snark)
 
-;;; a function or predicate whose arity is declared to be :alist
+;;; a function or relation whose arity is declared to be :alist
 ;;; takes as arguments keys (SNARK constants) and values (SNARK terms)
 ;;; in pairs
 ;;;
@@ -43,7 +43,7 @@
 (defun can-be-alist-key-name-p (x)
   (and (symbolp x)
        (not (null x))
-       (neq t x)					;used in function/predicate sort declarations
+       (neq t x)					;used in function/relation sort declarations
        (can-be-constant-name-p x)))
 
 (defun assert-can-be-alist-key-name-p (x)
@@ -274,8 +274,8 @@
   (print-options-when-starting nil)
   (print-summary-when-finished nil)
   (use-resolution)
-  (declare-predicate-symbol 'p :alist)
-  (declare-predicate-symbol 'values :any)
+  (declare-relation 'p :alist)
+  (declare-relation 'values :any)
   (assert '(p (a . 1) (b . 2) (c . 3)))
   (when (implies case (eql 1 case))
     (new-row-context)
@@ -314,7 +314,7 @@
   (declare-sort 'cat)
   (declare-sort 'dog)
   (declare-sort 'fish)
-  (declare-predicate-symbol 'p :alist :sort '((:a cat) (:b dog) (t fish)))
+  (declare-relation 'p :alist :sort '((:a cat) (:b dog) (t fish)))
   (assert '(p (:b . ?y) (:c . ?z) (:a . ?x) (:d . ?dog)))
   (closure)
   (cl:assert (equal '(p (:b . ?dog) (:c . ?fish) (:a . ?cat) (:d . ?dog&fish))

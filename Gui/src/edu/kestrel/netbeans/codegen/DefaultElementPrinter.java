@@ -6,6 +6,33 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/07/05 07:46:35  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.8  2003/04/23 00:44:58  weilyn
+ * added diagram element support
+ *
+ * Revision 1.7  2003/04/01 02:29:34  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.6  2003/03/29 03:13:53  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.5  2003/03/14 04:12:30  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.4  2003/02/18 17:59:31  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:12:13  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:37:43  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:01:40  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -80,4 +107,86 @@ public class DefaultElementPrinter implements ElementPrinter {
 	throws ElementPrinterInterruptException {
     }
 
+    /** Mark a notable point in a def element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markDef(DefElement element, int what)
+	throws ElementPrinterInterruptException {
+    }
+
+    /** Mark a notable point in a claim element.
+     * @param element the element
+     * @param what which point
+     * @exception ElementPrinterInterruptException - see class description
+     *
+     */
+    public void markClaim(ClaimElement element, int what) 
+        throws ElementPrinterInterruptException {
+    }    
+    
+    /** Mark a notable point in an import element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markImport(ImportElement element, int what)
+	throws ElementPrinterInterruptException {
+    }
+
+    /** Mark a notable point in a class element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markProof(ProofElement element, int what)
+	throws ElementPrinterInterruptException {
+    }
+ 
+    /** Mark a notable point in a class element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markMorphism(MorphismElement element, int what)
+	throws ElementPrinterInterruptException {
+    }   
+    
+    /** Mark a notable point in a diagElem element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markDiagElem(DiagElemElement element, int what)
+	throws ElementPrinterInterruptException {
+    }
+
+    /** Mark a notable point in a class element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markDiagram(DiagramElement element, int what)
+	throws ElementPrinterInterruptException {
+    }    
+
+    /** Mark a notable point in a class element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+    public void markColimit(ColimitElement element, int what)
+	throws ElementPrinterInterruptException {
+    }
+
+    /** Mark a notable point in a unitId element.
+    * @param element the element
+    * @param what which point
+    * @exception ElementPrinterInterruptException - see class description
+    */
+/*    public void markUID(UIDElement element, int what)
+	throws ElementPrinterInterruptException {
+    }*/
+    
 }

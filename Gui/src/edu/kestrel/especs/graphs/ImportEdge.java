@@ -21,6 +21,7 @@ public class ImportEdge extends XBezierEdge {
     /** Creates a new instance of StepEdge */
     public ImportEdge() {
         super();
+        setUserObject("import");
     }
 
     public ModelEdge createModelEdge() {
@@ -33,7 +34,7 @@ public class ImportEdge extends XBezierEdge {
         Map viewMap = new Hashtable();
         Map map = GraphConstants.createMap();
         GraphConstants.setEditable(map,false);
-        GraphConstants.setValue(map,"import");
+        //GraphConstants.setValue(map,"import");
         GraphConstants.setDisconnectable(map,false);
         GraphConstants.setFontStyle(map,Font.BOLD);
         GraphConstants.setLineWidth(map,1);
@@ -42,6 +43,11 @@ public class ImportEdge extends XBezierEdge {
         GraphConstants.setEndFill(map, true);
         viewMap.put(this, map);
         model.edit(null,viewMap,null,null);
+    }
+    
+    public void cloneHook(XCloneManager mgr, Object orig) {
+        super.cloneHook(mgr,orig);
+        setUserObject("import");
     }
     
 }

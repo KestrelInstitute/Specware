@@ -14,6 +14,12 @@ spec
   op MapSTHashtable.mapi : fa(key,a,b) (key * a -> b) * Map (key,a) -> Map (key,b)
   op MapSTHashtable.map  : fa(key,a,b) (a -> b) * Map (key,a) -> Map (key,b)
 
+  op MapSTHashtable.mapPartial  : fa(key,a,b) (a -> Option b) * Map (key,a)
+                                             -> Map (key,b)
+  op MapSTHashtable.mapiPartial : fa(key,a,b) (key * a -> Option b) * Map (key,a)
+                                             -> Map (key,b)
+
+
   op MapSTHashtable.app   : fa(key,a) (a -> ()) * Map (key,a) -> ()
   op MapSTHashtable.appi  : fa(key,a) (key * a -> ()) * Map (key,a) -> ()
 
@@ -31,7 +37,7 @@ spec
     case MapSTHashtable.apply(m,x) of
       | Some v -> v
       | None -> fail "inside eval"   % shame shame
-  def update = MapSTHashtable.update
+  def update(x,y,z) = MapSTHashtable.update(x,y,z)
   def remove = MapSTHashtable.remove
   def inDomain? (m, x) =
     case apply (m, x) of
@@ -40,6 +46,8 @@ spec
 
   def mapi f m = MapSTHashtable.mapi(f,m)
   def map  f m = MapSTHashtable.map (f,m)
+  def mapiPartial f m = MapSTHashtable.mapiPartial(f,m)
+  def mapPartial  f m = MapSTHashtable.mapPartial (f,m)
 
   def app  f m = MapSTHashtable.app (f,m)
   def appi f m = MapSTHashtable.appi(f,m)

@@ -234,20 +234,18 @@ PE qualifying spec
      else {
        print ("specializing bSpec for " ^ (Id.show procId) ^ " with " ^ (show extendedSubst) ^ "\n");
        (newOscSpec,newBSpec) <- specializeBSpec oldOscSpec (bSpec procInfo) extendedSubst newOscSpec;
-       % newBSpec <- removeNilTransitions newBSpec;
+       newBSpec <- removeNilTransitions newBSpec;
        newProcId <- makeNewProcId procId subst;
        print ("Creating new procedure: " ^ (Id.show newProcId) ^ "\n");
-       when ((size (final newBSpec)) = 0)
-         (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
-                     ^ " by " ^ (show subst) ^ " has no final states.")));
-       when ((size (final newBSpec)) > 1)
-         (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))));
        (newReturnInfo : ReturnInfo, newReturnTerm, newReturnSort,postcondition,bindingTerm) <-
          let
-           def andOp () = MSlang.mkFun (Op (Qualified ("Boolean","&"),Nonfix), binaryBoolType noPos, noPos)
+           def andOp () = MSlang.mkFun (Op (Qualified ("Boolean","&"),Infix (Right,15)), binaryBoolType noPos, noPos)
            def mkAnd t0 t1 = MSlang.mkApply (andOp (), MSlang.mkTuple ([t0,t1], noPos), noPos)
+           def prodToBoolType t1 t2 position = mkArrow (mkProduct ([t1, t2], position), boolType position, position)
            def mkEquals () =
-             let type = freshMetaTyVar noPos in
+             let t1 = freshMetaTyVar noPos in
+             let t2 = freshMetaTyVar noPos in
+             let type = prodToBoolType t1 t2 noPos in
              MSlang.mkFun (Equals, type, noPos)
            def mkEquality t0 t1 =
              MSlang.mkApply (mkEquals (), MSlang.mkTuple ([t0,t1], noPos),noPos)
@@ -257,7 +255,7 @@ PE qualifying spec
                | [] -> return (subOut,termOut)
                | (varInfo::subst) ->
                     if (Op.refOf varInfo) = varRef then {
-                        opTerm <- return (mkFun (Op (idOf varInfo,Nonfix), type varInfo, noPos));
+                        opTerm <- return (mkFun (Op (makePrimedId (idOf varInfo),Nonfix), type varInfo, noPos));
                         varTerm <-
                            case (term varInfo) of
                              | None -> raise (SpecError (noPos, "projectSubst failed with no binding term"))
@@ -268,13 +266,22 @@ PE qualifying spec
                     else
                       projectSub subst subOut termOut varRef
           in {
-            print ((Nat.show (size (final newBSpec))) ^ "\n");
-            print ((ppFormat (pp (final newBSpec))) ^ "\n");
-            if (size (final newBSpec)) = 0 then
-              raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states."))
+            print ("number of final states = " ^ (Nat.show (size (final newBSpec))) ^ "\n");
+            print ("final states = " ^ (ppFormat (pp (final newBSpec))) ^ "\n");
+%             when ((size (final newBSpec)) = 0) 
+%               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states.")));
+%             when ((size (final newBSpec)) > 1) 
+%               (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
+%                                       ^ " by " ^ (show subst)
+%                                       ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))));
+            if ((size (final newBSpec)) = 0) then
+              (raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has no final states.")))
             else
-              if (size (final newBSpec)) > 1 then
-                raise (SpecError (noPos, "specialization of " ^ (Id.show procId) ^ " by " ^ (show subst) ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec)))))
+              if ((size (final newBSpec)) > 1)  then
+                (raise (SpecError (noPos, "specialization of " ^ (Id.show procId)
+                                      ^ " by " ^ (show subst)
+                                      ^ " has multiple final states: " ^ (System.toString (final newBSpec)))))
+                                      % ^ " has multiple final states: " ^ (ppFormat (pp (final newBSpec))))))
               else {
             newFinal <- return (theSingleton (final newBSpec));
             postcondition <-
@@ -312,11 +319,12 @@ PE qualifying spec
                                }
                              else
                                projectReturn subst subOut termOut varRef
-                    def handler except =
-                      return (None, mkTuple ([], noPos), mkProduct ([],noPos),postSubst,bindingTerm)
+                    def handler except = {
+                        (postSubst,bindingTerm) <- projectReturn postcondition postSubst bindingTerm returnRef;
+                        return (None, mkTuple ([], noPos), mkProduct ([],noPos),postSubst,bindingTerm)
+                      }
                     def prog () = {
                         returnVar <- OpEnv.deref (specOf (modeSpec newBSpec newFinal), returnRef);
-                        (postSubst,bindingTerm) <- projectReturn postcondition postSubst bindingTerm returnRef;
                         return (Some returnRef, returnTerm, type returnVar,postSubst,bindingTerm)   % Shameful shit!
                       } in
                       catch (prog ()) handler

@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Package: Parser; Base: 10; Syntax: Common-Lisp -*-
+;;; -*- Mode: LISP; Package: Parser4; Base: 10; Syntax: Common-Lisp -*-
 
 (in-package "PARSER4") 
 
@@ -6,7 +6,7 @@
 			 (name (intern (gensym "PARSER-") "KEYWORD"))
 			 (case-sensitive? nil)
 			 (rule-package    (find-package "KEYWORD"))
-			 (symbol-package  lisp::*package*))
+			 (symbol-package  common-lisp::*package*))
   (let ((new-parser (new-parser name 
 				:case-sensitive? case-sensitive?
 				:rule-package    rule-package
@@ -21,7 +21,8 @@
     (load file)				; see parse-add-rules.lisp  
     (setf (parser-keywords-are-keywords-only? new-parser) t)
     (seal-parser new-parser)
-    (comment "New parser is also in PARSER4::*CURRENT-PARSER*")
+    (when-debugging
+     (comment "New parser is also in PARSER4::*CURRENT-PARSER*"))
     new-parser))
 
 (defun seal-parser (parser)
@@ -37,6 +38,7 @@
      (verify-all-parser-rule-references parser))
 
     (install-rules                  parser) ; sets parser-rules
+    (bypass-superfluous-anyof-rules parser) 
     (bypass-id-rules                parser) 
     (install-reductions             parser) ; sets parser-ht-name-to-reductions
     (install-parents                parser) ; sets parser-rule-reductions
@@ -48,6 +50,7 @@
     (install-default-semantic-alist parser) ; sets parser-default-semantic-alist
     (install-special-rules          parser) ; finds toplevel, symbol, number, string, etc.
     ;;
+    (propagate-optionals            parser) ; items referencing optional rules become optional themselves
     (install-pprinters              parser) ; sets parser-ht-expr-to-pprint, 
                                             ;   parser-ht-type-to-pprint,
                                             ;   parser-ht-car-to-pprint
@@ -85,15 +88,12 @@
     (bypass-children-id-rules parser rule)))
 
 (defun bypass-children-id-rules (parser rule)
-  (when-debugging
-   (when *verbose?* 
-     (comment "Replacing any id rules in ~20A ~S" 
-	      (structure-type-of rule) 
-	      (parser-rule-name rule))))
+  (debugging-comment "Replacing any id rules in ~20A ~S" 
+		     (structure-type-of rule) 
+		     (parser-rule-name rule))
   (do-parser-rule-items (item rule)
     (unless (null item)
       (bypass-any-id-rule-in-item parser item))))
-
 
 (defun bypass-any-id-rule-in-item (parser item)
   (when-debugging
@@ -106,10 +106,59 @@
       (loop while (parser-id-rule-p child-rule) do
 	(setq child-rule-name (parser-id-rule-subrule child-rule))
 	(setq child-rule (find-parser-rule parser child-rule-name)))
-      (when-debugging
-       (when *verbose?* 
-	 (comment "    Replacing ~S by ~S" original-name child-rule-name))) 
+      (debugging-comment "    Replacing ~S by ~S" original-name child-rule-name)
       (setf (parser-rule-item-rule item) child-rule-name))))
+
+;;; ====================
+
+(defun bypass-superfluous-anyof-rules (parser &optional (round 0))
+  (when-debugging
+   (comment "=================================")
+   (comment "Bypassing superfluous anyof rules, round ~D" round)
+   (comment "- - - - - - - - - - - - - - - - -"))
+  (let ((revised? nil))
+    (dolist (rule (parser-rules parser))
+      (when (bypass-children-superfluous-anyof-rules parser rule)
+	(setq revised? t)))
+    (when revised?
+      (bypass-superfluous-anyof-rules parser (1+ round)))))
+    
+(defun bypass-children-superfluous-anyof-rules (parser rule)
+  (when (parser-anyof-rule-p rule)
+    (debugging-comment "Replacing any superfluous anyof rules in ~20A ~S" 
+		       (structure-type-of rule) 
+		       (parser-rule-name rule))
+    (let ((new-items nil)
+	  (revised?  nil))
+      (do-parser-rule-items (item rule)
+	;; why distinguish (t nil) from (nil ...) ?
+	;; is it merely because the former is an error?
+	(multiple-value-bind (expanded? revised-items)
+	    (expand-anyof-rule-in-item parser item)
+	  (when expanded?
+	    (setq revised? t))
+	  (setq new-items
+	    (if expanded?
+		(progn
+		  (when (null revised-items)
+		    (warn "Null revised items for ~A when bypassing superfluous anyof rules for ~A"
+			  (parser-rule-item-rule item)
+			  (parser-rule-name rule)))
+		  (append revised-items new-items))
+	      (cons item new-items)))))
+      (when revised?
+	(setf (parser-rule-items rule) 
+	  (coerce new-items 'vector)))
+      revised?)))
+
+(defun expand-anyof-rule-in-item (parser item)
+  (let* ((child-rule-name (parser-rule-item-rule item))
+	 (child-rule (find-parser-rule parser child-rule-name)))
+    ;; maybe this should just be a list?
+    (if (superfluous-anyof-rule? child-rule)
+	(values t (coerce (parser-rule-items child-rule) 'list))
+      nil)))
+
 
 ;;; ====================
 
@@ -199,30 +248,31 @@
 			     (possible-start-of-reduction? child-rule reduction))
 			 reductions)))
     (cond ((null head-reductions)
-	   (when-debugging 
-	    (when *verbose?*
-	      (comment "~50S no head reductions" child-name)))
+	   (debugging-comment "~50S no head reductions" child-name)
 	   nil)
 	  ((keyword-triggered-rule? parser child-name)
-	   (when-debugging 
-	    (when *verbose?*
-	      (comment "~50S -- Keyword triggered rule." child-name)))
+	   (debugging-comment "~50S -- Keyword triggered rule, head for reductions: ~:{~S.~D ~}" 
+			      child-name
+			      (mapcar #'(lambda (reduction)
+					  (list (parser-rule-name (reduction-parent-rule reduction))
+						(reduction-child-index reduction)))
+				      head-reductions))
 	   (dolist (reduction head-reductions)
 	     (push reduction (parser-rule-reductions child-rule))))
 	  ((null (rest head-reductions))
 	   (let ((only-head-reduction (first head-reductions)))
-	     (when-debugging
-	      (when *verbose?*
-		(comment "~50S -- Just one head reduction: ~S)" 
-			 child-name 
-			 (parser-rule-name (reduction-parent-rule only-head-reduction))
-			 (reduction-child-index only-head-reduction))))
+	     (debugging-comment "~50S -- Head for just one reduction: ~S.~D)" 
+				child-name 
+				(parser-rule-name (reduction-parent-rule only-head-reduction))
+				(reduction-child-index only-head-reduction))
 	     (push only-head-reduction
 		   (parser-rule-reductions child-rule))))
 	  (t 
-	   (when-debugging
-	    (when *verbose?*
-	      (comment "~50S -- Multiple reductions at 0." child-name)))
+	   (debugging-comment "~50S -- Head for multiple reductions: ~:{~S.~D ~}" child-name
+			      (mapcar #'(lambda (reduction)
+					  (list (parser-rule-name (reduction-parent-rule reduction))
+						(reduction-child-index reduction)))
+				      head-reductions))
 	   (dolist (reduction head-reductions)
 	     (push reduction (parser-rule-reductions child-rule)))
 	   ))))
@@ -447,10 +497,18 @@
   ;; Create the mapping (rule . precedence) => bit-vector of handles
   (initialize-ht-rnp-to-handles-bv  parser)
   (compute-closures-for-handles-bvs parser)
-  (install-rule-item-bvs            parser)
-  (install-possible-children-bvs    parser)
-  (install-composite-handles-bvs    parser)
+  (combine-handles parser 0)
   )
+
+(defun combine-handles (parser level)
+  (let* ((again1? (install-rule-item-bvs         parser))
+	 (again2? (install-possible-children-bvs parser))
+	 (again3? (install-composite-handles-bvs parser)))
+    (when (or again1?  again2? again3?)
+      (if (> level 300)
+	  (warn "Ooops -- problem installing handle vectors: ~S ~S ~S "
+		again1?  again2? again3?)
+	(combine-handles parser (1+ level))))))
 
 ;;; ===
 
@@ -672,7 +730,8 @@
 
 (defun install-rule-item-bvs (parser)
   (let ((ht-rnp-to-handles-bv (parser-ht-rnp-to-handles-bv parser))
-	(bv-size              (parser-bv-size              parser)))
+	(bv-size              (parser-bv-size              parser))
+	(again? nil))
     ;;
     (dolist (rule (parser-rules parser))
       (do-parser-rule-items (item rule)
@@ -684,7 +743,7 @@
 		 (children-bv       (make-array bv-size 
 						:element-type    'bit
 						:initial-element 0))
-		 (handles-bv 
+		 (item-rnp 
 		  (let ((max-allowed-precedence-seen nil)) 
 		    (dolist (p2bvi-pair child-p2bvi-alist)
 		      (let ((child-possible-precedence (car p2bvi-pair))
@@ -700,42 +759,73 @@
 					    max-allowed-precedence-seen))
 				 (setq max-allowed-precedence-seen
 				   child-possible-precedence))))))
-		    (let* ((effective-item-precedence (if (null item-precedence) 
-							  item-precedence
-							max-allowed-precedence-seen))
-			   (item-rnp (cons item-rule-name effective-item-precedence)))
-		      (gethash item-rnp ht-rnp-to-handles-bv)))))
-	    (setf (parser-rule-item-possible-children-bv item) children-bv)
-	    (setf (parser-rule-item-possible-handles-bv  item) (bit-ior handles-bv children-bv))))))))
-
+		    (let ((effective-item-precedence (if (null item-precedence) 
+							 item-precedence
+						       max-allowed-precedence-seen)))
+		      (cons item-rule-name effective-item-precedence))))
+		 (handles-bv 
+		  (gethash item-rnp ht-rnp-to-handles-bv)))
+	    (case (structure-type-of child-rule) ; faster than etypecase since we are doing exact matches
+	      (parser-anyof-rule 
+	       (let ((new (parser-anyof-rule-possible-handles-bv child-rule)))
+		 (unless (null new)
+		   (setq handles-bv (bit-ior handles-bv new)))))
+	      (parser-pieces-rule 
+	       (let ((new (parser-pieces-rule-possible-handles-bv child-rule)))
+		 (unless (null new)
+		   (setq handles-bv (bit-ior handles-bv new)))))
+	      (t
+	       (do-parser-rule-items (head-item child-rule)
+		 ;; repeat for each item that can start child production     (dotimes (i (length items))
+		 (let* ((item-handles-bv (parser-rule-item-POSSIBLE-HANDLES-BV head-item)))
+		   (unless (null item-handles-bv)
+		     (setq handles-bv (bit-ior handles-bv item-handles-bv)))
+		   (unless (parser-rule-item-optional? head-item)
+		     (return nil))))))
+	    (unless (or (and (equalp (parser-zero-bv parser) children-bv)
+			     (not (null (parser-rule-item-possible-children-bv item))))
+			(equalp (parser-rule-item-possible-children-bv item) children-bv))
+	      (setq again? 1)
+	      (setf (parser-rule-item-possible-children-bv item) children-bv))
+	    (let ((new (bit-ior handles-bv children-bv)))
+	      (unless (equalp (parser-rule-item-possible-handles-bv  item) new)
+		(setq again? 2)
+		(setf (parser-rule-item-possible-handles-bv  item) new)))))))
+    again?))
 
 (defun install-possible-children-bvs (parser)
   ;; don't just look at parser-rule-reductions -- 
   ;;  those only include the reductions for which rule is a handle
-  (maphash #'(lambda (rule-name reductions)
-	       (let ((child-rule (find-parser-rule parser rule-name)))
-		 (when (not (superfluous-anyof-rule? child-rule)) 
-		   (let ((child-rule-bvi (parser-rule-bvi child-rule))
-			 (child-rule-precedence (parser-rule-precedence child-rule)))
-		     (dolist (reduction reductions)
-		       (let* ((parent-rule (reduction-parent-rule reduction))
-			      (child-index (reduction-child-index reduction))
-			      (item (svref (parser-rule-items parent-rule) child-index))
-			      (item-precedence (parser-rule-item-precedence item))
-			      (children-bv (parser-rule-item-possible-children-bv item))
-			      (handles-bv  (parser-rule-item-possible-handles-bv  item)))
-			 (when (or (null item-precedence)
-				   (null child-rule-precedence)
-				   (<= child-rule-precedence item-precedence))
-			   (setf (sbit children-bv child-rule-bvi) 1)
-			   (setf (sbit handles-bv  child-rule-bvi) 1)
-			   )))))))
-	   (parser-ht-name-to-reductions parser)))
+  (let ((again? nil))
+    (maphash #'(lambda (rule-name reductions)
+		 (let ((child-rule (find-parser-rule parser rule-name)))
+		   (when (not (superfluous-anyof-rule? child-rule)) 
+		     (let ((child-rule-bvi (parser-rule-bvi child-rule))
+			   (child-rule-precedence (parser-rule-precedence child-rule)))
+		       (dolist (reduction reductions)
+			 (let* ((parent-rule (reduction-parent-rule reduction))
+				(child-index (reduction-child-index reduction))
+				(item (svref (parser-rule-items parent-rule) child-index))
+				(item-precedence (parser-rule-item-precedence item))
+				(children-bv (parser-rule-item-possible-children-bv item))
+				(handles-bv  (parser-rule-item-possible-handles-bv  item)))
+			   (when (or (null item-precedence)
+				     (null child-rule-precedence)
+				     (<= child-rule-precedence item-precedence))
+			     (unless (and (eq (sbit children-bv child-rule-bvi) 1)
+					  (eq (sbit handles-bv  child-rule-bvi) 1))
+			       (setq again? 3)
+			       (setf (sbit children-bv child-rule-bvi) 1)
+			       (setf (sbit handles-bv  child-rule-bvi) 1)
+			       ))))))))
+	     (parser-ht-name-to-reductions parser))
+    again?))
 
 ;;; ===
 
 (defun install-composite-handles-bvs (parser)
-  (let ((bv-size (parser-bv-size parser)))
+  (let ((bv-size (parser-bv-size parser))
+	(again? nil))
     (dolist (rule (parser-rules parser))
       (case (structure-type-of rule) ; faster than etypecase since we are doing exact matches
 	(parser-anyof-rule 
@@ -748,6 +838,8 @@
 	     (let* ((item-handles-bv (parser-rule-item-possible-handles-bv item)))
 	       (unless (null item-handles-bv)
 		 (bit-ior composite-handles-bv item-handles-bv composite-handles-bv))))
+	   (unless (equalp (parser-anyof-rule-possible-handles-bv rule) composite-handles-bv)
+	     (setq again? 4))
 	   (setf (parser-anyof-rule-possible-handles-bv rule) composite-handles-bv)))
 	(parser-pieces-rule
 	 (let ((composite-handles-bv (make-array bv-size 
@@ -758,8 +850,11 @@
 	     (let* ((item-handles-bv (parser-rule-item-possible-handles-bv item)))
 	       (unless (null item-handles-bv)
 		 (bit-ior composite-handles-bv item-handles-bv composite-handles-bv))))
+	   (unless (equalp (parser-pieces-rule-possible-handles-bv rule) composite-handles-bv)
+	     (setq again? 5))
 	   (setf (parser-pieces-rule-possible-handles-bv rule) composite-handles-bv)))
-	))))
+	))
+    again?))
 
 
 ;;; ====================
@@ -846,3 +941,87 @@
 ;;; ============================================================================
 
     
+(defun propagate-optionals (&optional (parser *current-parser*))
+  (debugging-comment "========================================")
+  (debugging-comment "First round: look for optional rules.")
+  (loop 
+    ;; iterate to fixpoint   
+    (unless (propagate-optional-one-round parser)
+      (return nil))
+    (debugging-comment "========================================")
+    (debugging-comment "New round: look for more optional rules."))
+  (debugging-comment "========================================"))
+
+(defun propagate-optional-one-round (parser)
+  (let ((ht-name-to-rule (parser-ht-name-to-rule parser))
+	(changed? nil)) 
+    ;;
+    ;; make rules optional if all their items are optional
+    ;;
+    (maphash #'(lambda (rule-name rule)
+		 (declare (ignore rule-name))
+		 (let* ((items (parser-rule-items rule))
+			(n (length items))
+			(all-optional? 
+			 (and (> n 0)
+			      (dotimes (i n t)
+				(let ((item (svref items i)))
+				  (unless (null item)
+				    (when (not (parser-rule-item-optional? item))
+				      (return nil))))))))
+		   (when all-optional?
+		     (unless (parser-rule-optional? rule)
+		       (setq changed? t)
+		       (setf (parser-rule-optional? rule) t)
+		       (let ((semantic-pattern (parser-rule-semantics rule)))
+			 (when (not (null semantic-pattern))
+			   (let ((semantic-alist nil)
+				 (items (parser-rule-items rule)))
+			     (dotimes (i n)
+			       (let ((item (svref items i)))
+				 (unless (null item)
+				   (let ((index (parser-rule-item-semantic-index item)))
+				     (unless (null index)
+				       (push (cons index (parser-rule-item-default-semantics item))
+					     semantic-alist))))))
+			     (setf (parser-rule-default-semantics rule)
+			       (eval (sanitize-sexpression (sublis-result semantic-alist semantic-pattern)))))))
+		       ;; (when (parser-repeat-rule-p rule) (setf (parser-rule-default-semantics rule) '()))
+		       (debugging-comment "Rule ~S is now optional with semantics ~S." 
+					  rule
+					  (parser-rule-default-semantics rule))
+		       ))))
+	     ht-name-to-rule)
+    ;;
+    ;; make items optional if they invoke an optional rule 
+    ;;
+    (maphash #'(lambda (rule-name rule)
+		 (declare (ignore rule-name))
+		 (let* ((items (parser-rule-items rule))
+			(n (length items)))
+		   (dotimes (i n t)
+		     (let ((item (svref items i)))
+		       (unless (null item)
+			 (let* ((item-rule-name (parser-rule-item-rule item))
+				(item-rule (gethash item-rule-name ht-name-to-rule)))
+			   (when (parser-rule-optional? item-rule)
+			     (unless (parser-rule-item-optional? item)
+			       (setq changed? t)
+			       (setf (parser-rule-item-optional? item) t)
+			       (setf (parser-rule-item-default-semantics item) (parser-rule-default-semantics item-rule))
+			       (debugging-comment "In rule ~30S, item ~D (~S) is now optional with semantics ~S."
+						  rule i item-rule-name
+						  (parser-rule-item-default-semantics item))))))))))
+	     ht-name-to-rule)
+    ;; changed? will be NIL once we reach a fixpoint (probably about 2 rounds)
+    changed?))
+
+(defun sanitize-sexpression (s)
+  (cond ((atom s) s)
+	((and (eq (car s) 'list)
+	      (atom (cdr s))
+	      (not (null (cdr s))))
+	 :ILLEGAL-SEXPRESSION)
+	(t (mapcar #'sanitize-sexpression s))))
+    
+

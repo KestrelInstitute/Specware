@@ -6,6 +6,18 @@
  *
  *
  * $Log$
+ * Revision 1.3  2003/03/13 01:23:59  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
+ * Revision 1.2  2003/02/19 18:56:37  weilyn
+ * Added temporary static method to allow Specware error messages to be displayed in the parser output window.
+ *
+ * Revision 1.1  2003/01/30 02:02:23  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -23,13 +35,12 @@ import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileSystemCapability;
 import org.openide.text.CloneableEditorSupport;
 import org.openide.text.DataEditorSupport;
-import org.netbeans.modules.java.ErrConsumer;
 
 import edu.kestrel.netbeans.Util;
 import edu.kestrel.netbeans.editor.MetaSlangEditorSupport;
 import edu.kestrel.netbeans.settings.MetaSlangSettings;
 
-public class ParseSourceRequest implements ParsableObjectRequest, ErrConsumer {
+public class ParseSourceRequest implements ParsableObjectRequest {
     public static final int     STATE_WAITING = 0;
     public static final int     STATE_READING = 1;
     public static final int     STATE_CANCELLED = 2;
@@ -49,7 +60,7 @@ public class ParseSourceRequest implements ParsableObjectRequest, ErrConsumer {
     int                     syntaxErrors;
     ElementFactory          builder;
     CloneableEditorSupport  editSupp;
-    private int             annotatedErrors=0;
+    public  int             annotatedErrors=0;
     private Map             annotations=null;
     private String          sourceName=null;
     private Collection      sources;
@@ -219,6 +230,10 @@ public class ParseSourceRequest implements ParsableObjectRequest, ErrConsumer {
 	return environment.getSourceText();
     }
 
+    public FileObject getSourceFile() {
+	return environment.getSourceFile();
+    }
+
     /**
      * Returns true, IF the request was not invalidated by the ParserSupport,
      * or because of change in the document while parsing.
@@ -235,7 +250,7 @@ public class ParseSourceRequest implements ParsableObjectRequest, ErrConsumer {
     public void notifyStart() {
 	invokeLater(new Runnable() {
 		public void run() {
-		    parserDisplayer.parsingStarted(environment.getSourceFile());
+		    parserDisplayer.parsingStarted(getSourceFile());
 		}
 	    });
     }
@@ -247,7 +262,7 @@ public class ParseSourceRequest implements ParsableObjectRequest, ErrConsumer {
             annotations=new HashMap();
 	invokeLater(new Runnable() {
 		public void run() {
-		    parserDisplayer.parsingFinished(environment.getSourceFile(), (syntaxErrors == 0), false);
+		    parserDisplayer.parsingFinished(getSourceFile(), (syntaxErrors == 0), false);
 		}
 	    });
     }
@@ -258,40 +273,55 @@ public class ParseSourceRequest implements ParsableObjectRequest, ErrConsumer {
         return MetaSlangParser.SHALLOW_PARSER;
     }
     
-    public ErrConsumer getErrConsumer() {
-        if (annotatedErrors!=0)
-            return this;
-        return null;
+    public void pushError(int line, int column, String message) {
+	pushError(null, line, column, message);
+    }
+
+    public void pushError(FileObject errorFile, final int line, final int column, final String message) {
+        setSyntaxErrors(getSyntaxErrors() + 1);
+	if (annotatedErrors!=0) {
+	    if (DEBUG) {
+		Util.log("*** ParseSourceRequest.pushError: file="+errorFile+" line="+line+" column="+column+" message="+message);
+	    }
+	    Integer lineInt;
+	    ParserAnnotation oldAnn,newAnn;
+        
+	    if (errorFile!=null && !errorFile.getNameExt().equals(sourceName)) 
+		return;             // error in different file
+	    if (line<=0) 
+		return;             // no line number available    
+	    if (annotations==null)
+		annotations=new HashMap();
+	    lineInt=new Integer(line);
+	    newAnn=new ParserAnnotation(line,column,message);
+	    oldAnn=(ParserAnnotation)annotations.get(lineInt);
+	    if (oldAnn!=null)
+		oldAnn.chain(newAnn);
+	    else if (annotations.size()<annotatedErrors)
+		annotations.put(lineInt,newAnn);
+
+	    invokeLater(new Runnable() {
+		    public void run() {
+			parserDisplayer.reportError(getSourceFile(), line, column, message);
+		    }
+		});
+	}
     }
     
-    public void pushError(FileObject errorFile, final int line, final int column, final String message, String referenceText) {
-	if (DEBUG) {
-	    Util.log("*** ParseSourceRequest.pushError: file="+errorFile+" line="+line+" column="+column+" message="+message+" referenceText="+referenceText);
-	}
-        Integer lineInt;
-        ParserAnnotation oldAnn,newAnn;
-        
-        if (errorFile!=null && !errorFile.getNameExt().equals(sourceName)) 
-            return;             // error in different file
+    // This method displays Specware's error messages in the parser output window.
+    // TODO: Create a separate class to do this because the Netbeans parser shouldn't be displaying Specware errors.
+    public static void pushProcessUnitError(final FileObject errorFile, final int line, final int column, final String message) {
+
         if (line<=0) 
             return;             // no line number available    
-        if (annotations==null)
-            annotations=new HashMap();
-        lineInt=new Integer(line);
-        newAnn=new ParserAnnotation(line,column,message);
-        oldAnn=(ParserAnnotation)annotations.get(lineInt);
-        if (oldAnn!=null)
-            oldAnn.chain(newAnn);
-        else if (annotations.size()<annotatedErrors)
-            annotations.put(lineInt,newAnn);
 
 	invokeLater(new Runnable() {
 		public void run() {
-		    parserDisplayer.reportError(environment.getSourceFile(), line, column, message);
+		    parserDisplayer.reportError(errorFile, line, column, message);
 		}
 	    });
-    }
-    
+    }   
+   
     /** Getter for property annotations.
      * @return Value of property annotations.
      */

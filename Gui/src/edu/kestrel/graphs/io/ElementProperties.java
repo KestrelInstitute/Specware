@@ -199,6 +199,12 @@ public class ElementProperties implements java.io.Serializable {
         return 0;
     }
     
+    /** convenience method for setting an integer property.
+     */
+    public void setIntProperty(String name, int n) {
+        setProperty(name,String.valueOf(n));
+    }
+    
     /** convenience method for setting a boolean property.
      */
     public void setBooleanProperty(String name, boolean b) {
@@ -308,6 +314,19 @@ public class ElementProperties implements java.io.Serializable {
         return v.elements();
     }
     
+    /** returns the first child object with the given tag; this method should only be used,
+     * if only one child with the given tag can exist.
+     */
+    public Storable getChildObject(String childTag) {
+        Enumeration iter = getChildObjectEnumeration(childTag);
+        if (iter.hasMoreElements()) {
+            Object obj = iter.nextElement();
+            if (obj instanceof Storable)
+                return (Storable) obj;
+        }
+        return null;
+    }
+
     /** returns the first child object reference id with the given tag; this method should only be used,
      * if only one child with the given tag can exist.
      */
@@ -319,6 +338,41 @@ public class ElementProperties implements java.io.Serializable {
                 return (String) obj;
         }
         return null;
+    }
+    
+    private String getListSizeTag(String tag) {
+        return tag + "_size";
+    }
+    
+    private String getListIndexTag(String tag, int index) {
+        return tag + "_" + String.valueOf(index);
+    }
+    
+    /** stores a complete list of Storables as properties. */
+    public void setStorableListProperty(String tag, java.util.List list) {
+        if (list == null) return;
+        int size = list.size();
+        setIntProperty(getListSizeTag(tag),size);
+        for(int i=0;i<size;i++) {
+            Object obj = list.get(i);
+            if (obj instanceof Storable) {
+                Storable s = (Storable)obj;
+                addChildObjectAsReference(getListIndexTag(tag,i),s);
+            }
+        }
+    }
+    
+    /** returns the list of storable that have been stored using setStorableListProperty() .
+     */
+    public java.util.List getStorableListProperty(String tag) {
+        int size = getIntProperty(getListSizeTag(tag));
+        ArrayList list = new ArrayList();
+        for(int i=0;i<size;i++) {
+            String id = getChildObjectAsReference(getListIndexTag(tag,i));
+            Storable s = rwop.getObjectForId(id);
+            list.add(s);
+        }
+        return list;
     }
     
     /** the string representing the line separator as returned by <code>System.getProperty("line.separator")</code>

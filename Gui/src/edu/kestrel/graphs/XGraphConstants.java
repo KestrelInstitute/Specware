@@ -1049,6 +1049,7 @@ public class XGraphConstants {
     
     public static ImageIcon text24Icon = new ImageIcon(text24Data);
     
+    public static final int maxShortNameLength = 20;    
     
     
 }

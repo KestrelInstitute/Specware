@@ -1,6 +1,6 @@
 spec {
   import ../SplayMap
-  import /Library/Structures/Data/Monad/Base
+  import /Library/Structures/Data/Monad
 
   % The first is derived from foldriAp. I suspect this should not
   % be exported.

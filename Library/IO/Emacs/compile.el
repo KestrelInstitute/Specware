@@ -6,14 +6,6 @@
 
 (defconst *specware-emacs* (concatenate 'string *specware* "/Library/IO/Emacs/"))
 
-
-;; Can't seem to find this in Emacs Lisp!
-
-(defun sw:foreach (f l)
-  (while (not (null l))
-    (funcall f (car l))
-    (setq l (cdr l))))
-
 (defun sw:load-specware-emacs-file (name)
   (load (concatenate 'string *specware-emacs* name)))
 
@@ -26,5 +18,5 @@
 
 (sw:load-specware-emacs-file "files")
 
-(sw:foreach 'sw:compile-and-load-specware-emacs-file sw:specware-emacs-files)
+(mapc 'sw:compile-and-load-specware-emacs-file sw:specware-emacs-files)
 

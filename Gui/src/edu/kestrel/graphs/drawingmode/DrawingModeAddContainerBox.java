@@ -48,8 +48,20 @@ public class DrawingModeAddContainerBox extends DrawingModeAddNode {
     
     public class MarqueeHandler extends DrawingModeAddNode.MarqueeHandler implements java.io.Serializable {
         
+        protected int collapsedBoundsWidth;
+        protected int collapsedBoundsHeight;
+        
         public MarqueeHandler(XGraphDisplay graph) {
             super(graph);
+            collapsedBoundsWidth = collapsedBoundsHeight = 40;
+        }
+        
+        public void setCollapsedBoundsWidth(int width) {
+            this.collapsedBoundsWidth = width;
+        }
+        
+        public void setCollapsedBoundsHeight(int height) {
+            this.collapsedBoundsHeight = height;
         }
         
         public void mouseDragged(MouseEvent e0) {
@@ -74,7 +86,7 @@ public class DrawingModeAddContainerBox extends DrawingModeAddNode {
             if (contview != null) {
                 contview.addContainedNodes(true);
                 contview.enableAddingOfContainedNodes(true);
-                contview.setCollapsedBounds(new Rectangle(0,0,40,40));
+                contview.setCollapsedBounds(new Rectangle(0,0,collapsedBoundsWidth,collapsedBoundsHeight));
                 contview.addContainedNodes(true);
             }
         }

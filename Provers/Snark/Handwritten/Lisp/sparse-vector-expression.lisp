@@ -24,8 +24,8 @@
 (eval-when (:compile-toplevel :load-toplevel)
   (export '(sparse-vector-expression-p
             map-sparse-vector-expression
-            map-sparse-vector-expression-indexes
-            map-sparse-vector-expression-values
+            map-sparse-vector-expression-with-indexes
+            map-sparse-vector-expression-indexes-only
             optimize-sparse-vector-expression))
   (export '(uniond)))
 
@@ -112,67 +112,58 @@
 ;;; when mapped (e.g., before checking membership in rest of intersection)
 ;;; in order to ignore unwanted elements quickly
 
+(defun map-sparse-vector-expression-with-indexes0 (function expr reverse filter)
+  (map-sparse-vector-expression-macro
+   (if (null filter)
+       (map-sparse-vector-with-indexes function expr :reverse reverse)
+       (prog->
+         (map-sparse-vector-with-indexes expr :reverse reverse ->* v k)
+         (when (funcall filter v k)
+           (funcall function v k))))
+   (map-sparse-vector-expression-with-indexes0 e1 reverse filter ->* v k)
+   (funcall function v k)))
+
+(defun map-sparse-vector-expression-indexes-only0 (function expr reverse filter)
+  (map-sparse-vector-expression-macro
+   (if (null filter)
+       (map-sparse-vector-indexes-only function expr :reverse reverse)
+       (prog->
+         (map-sparse-vector-indexes-only expr :reverse reverse ->* k)
+         (when (funcall filter k)
+           (funcall function k))))
+   (map-sparse-vector-expression-indexes-only0 e1 reverse filter ->* k)
+   (funcall function k)))
+
 (defun map-sparse-vector-expression0 (function expr reverse filter)
   (map-sparse-vector-expression-macro
    (if (null filter)
        (map-sparse-vector function expr :reverse reverse)
        (prog->
-         (map-sparse-vector expr :reverse reverse ->* k v)
-         (when (funcall filter k v)
-           (funcall function k v))))
-   (map-sparse-vector-expression0 e1 reverse filter ->* k v)
-   (funcall function k v)))
-
-(defun map-sparse-vector-expression-indexes0 (function expr reverse filter)
-  (map-sparse-vector-expression-macro
-   (if (null filter)
-       (map-sparse-vector-indexes function expr :reverse reverse)
-       (prog->
-         (map-sparse-vector-indexes expr :reverse reverse ->* k)
-         (when (funcall filter k)
-           (funcall function k))))
-   (map-sparse-vector-expression-indexes0 e1 reverse filter ->* k)
-   (funcall function k)))
-
-(defun map-sparse-vector-expression-values0 (function expr reverse filter)
-  (map-sparse-vector-expression-macro
-   (if (null filter)
-       (map-sparse-vector-values function expr :reverse reverse)
-       (prog->
-         (map-sparse-vector-values expr :reverse reverse ->* v)
+         (map-sparse-vector expr :reverse reverse ->* v)
          (when (funcall filter v)
            (funcall function v))))
-   (map-sparse-vector-expression-values2 e1 reverse filter ->* k v)
+   (map-sparse-vector-expression-values2 e1 reverse filter ->* v k)
    (funcall function v)))
 
 (defun map-sparse-vector-expression-values2 (function expr reverse filter)
   (map-sparse-vector-expression-macro
    (if (null filter)
-       (map-sparse-vector function expr :reverse reverse)
+       (map-sparse-vector-with-indexes function expr :reverse reverse)
        (prog->
-         (map-sparse-vector expr :reverse reverse ->* k v)
+         (map-sparse-vector-with-indexes expr :reverse reverse ->* v k)
          (when (funcall filter v)
-           (funcall function k v))))
-   (map-sparse-vector-expression-values2 e1 reverse filter ->* k v)
-   (funcall function k v)))
+           (funcall function v k))))
+   (map-sparse-vector-expression-values2 e1 reverse filter ->* v k)
+   (funcall function v k)))
 
-(defun map-sparse-vector-expression (function expr &key reverse filter)
+(definline map-sparse-vector-expression (function expr &key reverse filter)
   (map-sparse-vector-expression0 function expr reverse filter))
 
-(defun map-sparse-vector-expression-indexes (function expr &key reverse filter)
-  (map-sparse-vector-expression-indexes0 function expr reverse filter))
+(definline map-sparse-vector-expression-with-indexes (function expr &key reverse filter)
+  (map-sparse-vector-expression-with-indexes0 function expr reverse filter))
 
-(defun map-sparse-vector-expression-values (function expr &key reverse filter)
-  (map-sparse-vector-expression-values0 function expr reverse filter))
-
-(define-compiler-macro map-sparse-vector-expression (function expr &key reverse filter)
-  `(map-sparse-vector-expression0 ,function ,expr ,reverse ,filter))
-
-(define-compiler-macro map-sparse-vector-expression-indexes (function expr &key reverse filter)
-  `(map-sparse-vector-expression-indexes0 ,function ,expr ,reverse ,filter))
-
-(define-compiler-macro map-sparse-vector-expression-values (function expr &key reverse filter)
-  `(map-sparse-vector-expression-values0 ,function ,expr ,reverse ,filter))
+(definline map-sparse-vector-expression-indexes-only (function expr &key reverse filter)
+  (map-sparse-vector-expression-indexes-only0 function expr reverse filter))
 
 (defun sparse-vector-expression-maxcount (expr)
   ;; upper bound on count for expression

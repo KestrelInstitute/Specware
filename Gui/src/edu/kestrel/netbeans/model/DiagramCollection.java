@@ -31,7 +31,12 @@ class DiagramCollection extends PartialCollection { //implements Positioner.Acce
   }
 
   public ElementImpl createElement(Element parent) {
-    DiagramElementImpl cimpl = creator.createDiagram((SourceElement)parent);
+    DiagramElementImpl cimpl = null;
+    if (parent instanceof SourceElement) {
+        cimpl = creator.createDiagram((SourceElement)parent);
+    } else if (parent instanceof ColimitElement) {
+        cimpl = creator.createDiagram((ColimitElement)parent);
+    }
     return cimpl;
   }
 

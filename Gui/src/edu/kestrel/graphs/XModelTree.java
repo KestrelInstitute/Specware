@@ -15,17 +15,29 @@ import javax.swing.*;
 import java.io.*;
 import java.awt.event.*;
 import java.util.*;
+import java.awt.datatransfer.*;
+import java.awt.dnd.*;
+import java.awt.*;
 
 /**
  * The class implements a tree view panels for ModelContainerNodes.
  * @author  ma
  */
-public class XModelTree extends JTree implements TreeModelListener, XGraphDisplayValueListener, MouseListener {
+public class XModelTree extends JTree implements
+TreeModelListener, XGraphDisplayValueListener, MouseListener,
+DragGestureListener, DragSourceListener {
     
     protected TreeModel tm = null;
     protected XGraphApplication appl;
     
     protected TreePath[] savedExpandedPaths;
+    
+    protected TransferHandler transferHandler;
+    
+    /** Variables needed for DnD */
+    private DragSource dragSource = null;
+    private DragSourceContext dragSourceContext = null;
+    
     
     /** Creates a new instance of XModelTree */
     public XModelTree(XGraphApplication appl, TreeModel tm) {
@@ -36,18 +48,27 @@ public class XModelTree extends JTree implements TreeModelListener, XGraphDispla
         setEditable(true);
         setShowsRootHandles(true);
         //appl.registerGraph(appl.getClipboard());
+        //setDragEnabled(true);
+        initDragAndDrop();
+    }
+    
+    private void initDragAndDrop() {
+        dragSource = DragSource.getDefaultDragSource() ;
+        DragGestureRecognizer dgr = dragSource.createDefaultDragGestureRecognizer(this,DnDConstants.ACTION_COPY_OR_MOVE,this);
+        dgr.setSourceActions(dgr.getSourceActions() & ~InputEvent.BUTTON3_MASK);
     }
     
     public String convertValueToText(Object value, boolean selected, boolean expanded, boolean leaf, int row, boolean hasFocus) {
         if (value instanceof ModelNode) {
             ModelNode mnode = (ModelNode)value;
-            XGraphElement elem = mnode.getReprExemplar();
-            if (elem instanceof XTextNode) {
-                XTextNode tnode = (XTextNode)elem;
-                if (!tnode.isCollapsed()) {
-                    return tnode.getCollapsedValue().toString();
-                }
-            }
+            return mnode.getShortName();
+            //XGraphElement elem = mnode.getReprExemplar();
+            //if (elem instanceof XTextNode) {
+            //    XTextNode tnode = (XTextNode)elem;
+                //if (!tnode.isCollapsed()) {
+            //    return tnode.getCollapsedValue().toString();
+                //}
+            //}
         }
         return super.convertValueToText(value, selected, expanded, leaf, row, hasFocus);
     }
@@ -222,11 +243,18 @@ public class XModelTree extends JTree implements TreeModelListener, XGraphDispla
                         item = new JMenuItem("remove model element");
                         item.addActionListener(new ActionListener() {
                             public void actionPerformed(ActionEvent e) {
-                                String msg = "Do you really want to remove the model element \""+melem+"\"? ";
-                                //msg += "Note, that all descendant of the node and all representations will be removed as well.";
-                                int answ = JOptionPane.showConfirmDialog(XModelTree.this,msg,"remove model element",JOptionPane.YES_NO_OPTION);
-                                if (answ == JOptionPane.YES_OPTION) {
-                                    melem.removeModelElement(appl);
+                                try {
+                                    boolean throwException = false;
+                                    melem.removeOk(throwException);
+                                    String msg = "Do you really want to remove the model element \""+melem+"\"? ";
+                                    //msg += "Note, that all descendant of the node and all representations will be removed as well.";
+                                    int answ = JOptionPane.showConfirmDialog(XModelTree.this,msg,"remove model element",JOptionPane.YES_NO_OPTION);
+                                    if (answ == JOptionPane.YES_OPTION) {
+                                        melem.removeModelElement(appl);
+                                    }
+                                } catch (VetoException ve) {
+                                    String msg = ve.getMessage();
+                                    JOptionPane.showMessageDialog(XModelTree.this,msg);
                                 }
                                 //folder.addSubfolder(subfolder);
                             }
@@ -335,7 +363,7 @@ public class XModelTree extends JTree implements TreeModelListener, XGraphDispla
         int x = e.getX(), y = e.getY();
         TreePath p = getClosestPathForLocation(x,y);
         Object obj = p.getLastPathComponent();
-        Dbg.pr("clicked at object of class "+obj.getClass().getName());
+        //Dbg.pr("clicked at object of class "+obj.getClass().getName());
         if (SwingUtilities.isRightMouseButton(e) || e.isControlDown()) {
             JPopupMenu m = getPopupMenu(obj,p);
             if (m != null) {
@@ -348,6 +376,133 @@ public class XModelTree extends JTree implements TreeModelListener, XGraphDispla
      *
      */
     public void mouseReleased(MouseEvent e) {
+    }
+    
+    public void startEditingAtPath(TreePath p) {
+        try {
+            Object obj = p.getLastPathComponent();
+            if (obj instanceof ModelElement) {
+                ModelElement elem = (ModelElement)obj;
+                elem.renameOk(true);
+            }
+            super.startEditingAtPath(p);
+        } catch(VetoException ve) {
+            String msg = ve.getMessage();
+            JOptionPane.showMessageDialog(this,msg);
+        }
+    }
+    
+    /** This method is invoked to signify that the Drag and Drop
+     * operation is complete. The getDropSuccess() method of
+     * the <code>DragSourceDropEvent</code> can be used to
+     * determine the termination state. The getDropAction() method
+     * returns the operation that the drop site selected
+     * to apply to the Drop operation. Once this method is complete, the
+     * current <code>DragSourceContext</code> and
+     * associated resources become invalid.
+     *
+     * @param dsde the <code>DragSourceDropEvent</code>
+     *
+     */
+    public void dragDropEnd(DragSourceDropEvent dsde) {
+        if (dsde.getDropSuccess()) {
+            Dbg.pr("drop was successful.");
+        }
+    }
+    
+    /** Called as the cursor's hotspot enters a platform-dependent drop site.
+     * This method is invoked when all the following conditions are true:
+     * <UL>
+     * <LI>The cursor's hotspot enters the operable part of a platform-
+     * dependent drop site.
+     * <LI>The drop site is active.
+     * <LI>The drop site accepts the drag.
+     * </UL>
+     *
+     * @param dsde the <code>DragSourceDragEvent</code>
+     *
+     */
+    public void dragEnter(DragSourceDragEvent dsde) {
+        Dbg.pr("dragEnter in XModelTree");
+    }
+    
+    /** Called as the cursor's hotspot exits a platform-dependent drop site.
+     * This method is invoked when any of the following conditions are true:
+     * <UL>
+     * <LI>The cursor's hotspot no longer intersects the operable part
+     * of the drop site associated with the previous dragEnter() invocation.
+     * </UL>
+     * OR
+     * <UL>
+     * <LI>The drop site associated with the previous dragEnter() invocation
+     * is no longer active.
+     * </UL>
+     * OR
+     * <UL>
+     * <LI> The current drop site has rejected the drag.
+     * </UL>
+     *
+     * @param dse the <code>DragSourceEvent</code>
+     *
+     */
+    public void dragExit(DragSourceEvent dse) {
+    }
+    
+    /** A <code>DragGestureRecognizer</code> has detected
+     * a platform-dependent drag initiating gesture and
+     * is notifying this listener
+     * in order for it to initiate the action for the user.
+     * <P>
+     * @param dge the <code>DragGestureEvent</code> describing
+     * the gesture that has just occurred
+     *
+     */
+    public void dragGestureRecognized(DragGestureEvent dge) {
+        TreePath p = getSelectionPath();
+        if (p == null) return;
+        Object obj = p.getLastPathComponent();
+        if (!(obj instanceof Transferable)) return;
+        Transferable t = (Transferable)obj;
+        int action = dge.getDragAction();
+        if (action == DnDConstants.ACTION_COPY) {
+            Dbg.pr("copy action");
+        } else if (action == DnDConstants.ACTION_MOVE) {
+            Dbg.pr("move action");
+        }
+        //Cursor cursor = getToolkit().createCustomCursor(IconImageData.box24Icon.getImage(),new Point(0,0), "");
+        try {
+            dragSource.startDrag(dge,null,t,this);
+        } catch (Exception ee) {
+            Dbg.pr("could not start drag:"+ee.getMessage());
+        }
+    }
+    
+    /** Called as the cursor's hotspot moves over a platform-dependent drop site.
+     * This method is invoked when all the following conditions are true:
+     * <UL>
+     * <LI>The cursor's hotspot has moved, but still intersects the
+     * operable part of the drop site associated with the previous
+     * dragEnter() invocation.
+     * <LI>The drop site is still active.
+     * <LI>The drop site accepts the drag.
+     * </UL>
+     *
+     * @param dsde the <code>DragSourceDragEvent</code>
+     *
+     */
+    public void dragOver(DragSourceDragEvent dsde) {
+    }
+    
+    /** Called when the user has modified the drop gesture.
+     * This method is invoked when the state of the input
+     * device(s) that the user is interacting with changes.
+     * Such devices are typically the mouse buttons or keyboard
+     * modifiers that the user is interacting with.
+     *
+     * @param dsde the <code>DragSourceDragEvent</code>
+     *
+     */
+    public void dropActionChanged(DragSourceDragEvent dsde) {
     }
     
 }

@@ -6,7 +6,10 @@
 
 package edu.kestrel.netbeans.actions;
 
+import java.io.IOException;
+
 import org.openide.TopManager;
+import org.openide.cookies.EditorCookie;
 import org.openide.filesystems.FileObject;
 import org.openide.filesystems.FileStateInvalidException;
 import org.openide.loaders.DataObject;
@@ -16,9 +19,12 @@ import org.openide.util.NbBundle;
 import org.openide.util.actions.NodeAction;
 
 import edu.kestrel.netbeans.MetaSlangDataObject;
+import edu.kestrel.netbeans.editor.MetaSlangEditorSupport;
 import edu.kestrel.netbeans.lisp.LispProcessManager;
+import edu.kestrel.netbeans.lisp.LispSocketManager;
 import edu.kestrel.netbeans.model.SourceElement;
 
+import edu.kestrel.netbeans.Util;
 
 /**
  *
@@ -82,11 +88,21 @@ public class ProcessUnitAction extends NodeAction {
     */
     void processUnitForNode (Node node) {
 	MetaSlangDataObject dataObj = (MetaSlangDataObject) node.getCookie(DataObject.class);
+        if (dataObj.isModified()) {
+            MetaSlangEditorSupport editor = (MetaSlangEditorSupport)node.getCookie(EditorCookie.class);
+            try {
+                editor.saveDocument();
+            } catch (IOException ioe) {
+                Util.log("ProcessUnitAction.processUnitForNode got IOException: "+ioe.getMessage());
+            }
+        }
 	FileObject fileObj = dataObj.getPrimaryFile();
+        String pathName = "";
+        try {
+            pathName = fileObj.getFileSystem().getSystemName();
+        } catch (FileStateInvalidException e) {}
         String fileName = fileObj.getPackageName('/'); 
-        //SourceElement source = dataObj.getSource();
-        System.out.println("In processUnitForNode, fileName is "+fileName);
-        LispProcessManager.processUnit(fileName);
+        LispSocketManager.processUnit(pathName, fileName);
     }
 
     /* Help context where to find more about the action.

@@ -18,6 +18,9 @@ IO qualifying spec {
   op withOpenFileForWrite  : fa(A) FileString * (Stream -> A) -> A
   op withOpenFileForAppend : fa(A) FileString * (Stream -> A) -> A
 
+  op withOutputToString : fa(A) (Stream -> A) -> String
+
+
   op deleteFile      : String -> ()
   op fileExists?     : String -> Boolean
 
@@ -47,7 +50,7 @@ IO qualifying spec {
   %% Application:
   %%   fileOlder? ("foo.sl", "foo.lisp")
   %% means that we *don't* need to recompile.
-
+ 
   op fileOlder? : FileString * FileString -> Boolean
   op ensureDirectoriesExist : FileString -> ()
 
@@ -64,7 +67,9 @@ IO qualifying spec {
   op FileNameInSpecwareHome: FileString -> FileString
 
   op gotoFilePosition: FileString * Nat * Nat -> ()
+  op emacsEval: String -> {}
 
+  op chooseMenu: List String -> Integer
   %% No defs here -- see ...
 }
 \end{spec}

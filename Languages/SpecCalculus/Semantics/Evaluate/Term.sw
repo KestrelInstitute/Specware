@@ -2,15 +2,23 @@
 
 \begin{spec}
 SpecCalc qualifying spec {
- import Signature          
- import URI          
+ % import Signature          
+ import UnitId          
  import Spec         
  import Let         
  import Qualify         
- import SpecMorphism 
  import Diagram      
+ import Colimit
+ import SpecMorphism 
+ import ExtendMorphism 
+ import DiagMorphism 
  import Generate      
  import Translate      
+ import Obligations
+ import Substitute      
+ import Print      
+ import Prove
+ import Reduce
 \end{spec}
 
 This is a monadic interpreter for the Spec Calculus.
@@ -21,33 +29,27 @@ This is a monadic interpreter for the Spec Calculus.
     return value}
 
  def SpecCalc.evaluateTermInfo term =
+   let pos = positionOf term in
    case (valueOf term) of
-    | Print term -> {
-          (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo term;
-          print (showValue value);
-          return (value,timeStamp,depURIs)
-        }
+    | Print term -> SpecCalc.evaluatePrint term
 
-    | URI uri -> SpecCalc.evaluateURI (positionOf term) uri
+    | UnitId unitId -> SpecCalc.evaluateUID (positionOf term) unitId
 
-    | Spec elems -> SpecCalc.evaluateSpec elems
+    | Spec elems -> SpecCalc.evaluateSpec elems pos
 
     | SpecMorph fields -> SpecCalc.evaluateSpecMorph fields
 
+    | ExtendMorph term -> SpecCalc.evaluateExtendMorph term
+
     | Diag elems -> SpecCalc.evaluateDiag elems
+
+    | Colimit sub_term -> SpecCalc.evaluateColimit sub_term
+
+    | Subst args   -> SpecCalc.evaluateSubstitute  args pos
 
     | DiagMorph fields -> SpecCalc.evaluateDiagMorph fields
 
-    | Qualify (sub_term, qualifier) -> {
-          (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
-          case value of
-            | Spec spc -> {
-                  qualified_spec <- qualifySpec spc qualifier;
-                          return (Spec qualified_spec,timeStamp,depURIs)
-                }
-            | _ -> raise (TypeCheck ((positionOf term),
-                            "qualifying a term that is not a specification"))
-        }
+    | Qualify (sub_term, qualifier) -> SpecCalc.evaluateQualify sub_term qualifier
 
     | Let (decls, sub_term) -> SpecCalc.evaluateLet decls sub_term
 
@@ -66,25 +68,14 @@ This is a monadic interpreter for the Spec Calculus.
     | Translate (sub_term, translation) ->
         SpecCalc.evaluateTranslate sub_term translation
 
-    | Generate (language, sub_term as (term,position)) -> {
-          (value,timeStamp,depURIs) <- SpecCalc.evaluateTermInfo sub_term;
-          (case value of
-            | Spec spc -> 
-                (case language of
-                   | "lisp" -> evaluateLispCompile ((value,timeStamp,depURIs),sub_term)
-                   | "spec" -> {
-                          print (showValue value);
-                          return (value,timeStamp,depURIs)
-                        }
-                   | lang -> raise (Unsupported ((positionOf sub_term),
-                                  "no generation for language "
-                                ^ lang
-                                ^ "yet")))
-            | _ -> raise (TypeCheck ((positionOf sub_term),
-                        "compiling a term that is not a specification")))
-        }
-\end{spec}
+    | Obligations(sub_term) -> SpecCalc.evaluateObligations sub_term
 
-\begin{spec}
+    | Prove args -> SpecCalc.evaluateProve args pos
+
+    | Generate args -> SpecCalc.evaluateGenerate args pos
+
+    | Reduce (msTerm,scTerm) -> SpecCalc.reduce msTerm scTerm pos
+
+    | Other args -> SpecCalc.evaluateOther args pos  % used for extensions to Specware
 }
 \end{spec}

@@ -1,5 +1,13 @@
-Symbols_Ref_Oblig = obligations Symbols_Ref
+SymbolMatching_Oblig = obligations MatchingSpecs#SymbolMatching
 
-WordMatching_Ref0_Oblig = obligations WordMatching_Ref0
+WordMatching_Oblig = obligations MatchingSpecs#WordMatching
 
-FindMatches_Ref0_Oblig = obligations FindMatches_Ref0
+Symbols_Ref_Oblig = obligations MatchingRefinements#Symbols_Ref
+
+WordMatching0_Oblig = obligations MatchingRefinements#WordMatching0
+
+WordMatching_Ref0_Oblig = obligations MatchingRefinements#WordMatching_Ref0
+
+FindMatches0_Oblig = obligations MatchingRefinements#FindMatches0
+
+FindMatches_Ref0_Oblig = obligations MatchingRefinements#FindMatches_Ref0

@@ -26,6 +26,7 @@ public class ProofInfo extends BaseElementInfo {
     ChildCollection[]    memberLists;
     Element[]            allElements;
     
+    String proofString; 
 /*    static final ElementMatch.Finder[] DEFAULT_SORT_FINDERS = {
         new TextPositionMatch(), new NameFinder()
     };
@@ -70,10 +71,11 @@ public class ProofInfo extends BaseElementInfo {
         ImportElement.class,*/
     };
     
-    public ProofInfo(String name) {
+    public ProofInfo(String name, String proofString) {
         super(name);
         allMembers = new LinkedList();
         memberLists = new ChildCollection[CHILDREN_PROPERTIES.length];
+        this.proofString = proofString;
     }
     
     private void initializeChildren(int kind) {
@@ -95,6 +97,8 @@ public class ProofInfo extends BaseElementInfo {
         
         ProofElement proof = (ProofElement)target;
 
+        proof.setProofString(proofString);
+        
         //Util.log("Updating proof properties of " + name); // NOI18N
         
         Element[] whole = new Element[allMembers.size()];
@@ -140,6 +144,7 @@ public class ProofInfo extends BaseElementInfo {
                 col.mapChildren(newEls, whole);
         }
 */        model.updateMemberOrder(proof, ElementProperties.PROP_MEMBERS, whole);
+
     }
     
     public Element createModelImpl(LangModel.Updater model, Element parent) {

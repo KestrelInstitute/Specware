@@ -29,7 +29,7 @@ spec {
 
  op initMergeUnionMap    : fa (a, b) Map(a, b) -> MergeUnionMap(a,b)
  op merge                : fa (a,b) MergeUnionMap (a,b) * MergeUnionNode (a,b) * MergeUnionNode (a,b) -> MergeUnionMap (a,b)
- op extractQuotientLists : fa (a,b) MergeUnionMap (a,b) -> List (a * List (MergeUnionNode (a,b)))
+ op extractQuotientLists : fa (a,b) MergeUnionMap (a,b) -> List (List (MergeUnionNode (a,b)))
 
  def initMergeUnionMap key_value_map =
   foldMap (fn new_mu_map -> fn key -> fn value ->
@@ -80,10 +80,11 @@ spec {
 	      value  = root_b.value}
 
  def fa (a,b) extractQuotientLists (mu_map : MergeUnionMap (a,b)) =
-  let root_map =
-      %% a map from root keys to lists of nodes
-      foldMap (fn root_map -> fn key -> fn mu_node ->
-                let root = findRoot (mu_map, mu_node) in
+  %% First, build a map from root keys to lists of nodes.
+  let root_map = 
+      foldMap (fn root_map -> fn _ (* key *) -> fn mu_node -> 
+	        %% ignore mu_node's key, since we only care about root's key
+                let root = findRoot (mu_map, mu_node) in 
 		update root_map 
 		       root.key 
 		       (Cons (mu_node,
@@ -93,14 +94,22 @@ spec {
              (emptyMap : Map (a, List (MergeUnionNode (a,b))))
    	     mu_map
   in
-  foldMap (fn result -> fn key -> fn mu_node_list -> Cons ((key, mu_node_list), result))
+  %% Then extract a list of lists from that map.
+  %% (The root keys are no longer of any interest.)
+  foldMap (fn result -> fn _ (* root_key *) -> fn mu_node_list ->  
+	   Cons (mu_node_list, result))
           []
           root_map
 
  def findRoot (mu_map, mu_node) =
   case mu_node.parent of
    | None        -> mu_node
-   | Some parent -> findRoot (mu_map, eval mu_map parent.key)
+   | Some parent -> 
+     let parent_node = eval mu_map parent.key in
+     if parent_node = mu_node then
+       mu_node
+     else
+       findRoot (mu_map, parent_node)
 
 } 
 

@@ -105,33 +105,38 @@ spec {
   in
   let (mu_map, root_a) = find_root_node mu_map mu_node_a in
   let (mu_map, root_b) = find_root_node mu_map mu_node_b in
-  let rank_a = root_a.rank in
-  let rank_b = root_b.rank in
-     
-  let root_value_b  = root_b.value in
-  if rank_a > rank_b then
-    updateMFSetMap mu_map 
-                   root_value_b 
-		   {rank   = root_b.rank,
-		    parent = Some root_a,
-		    value  = root_value_b}
-  else 
-    let root_value_a = root_a.value in
-    let map_with_new_a =
-        updateMFSetMap mu_map 
+  if root_a = root_b then
+    mu_map
+  else
+    let rank_a = root_a.rank in
+    let rank_b = root_b.rank in
+    let root_value_b  = root_b.value in
+    if rank_a > rank_b then
+      updateMFSetMap mu_map 
+                     root_value_b 
+		     {rank   = root_b.rank,
+		      parent = Some root_a,
+		      value  = root_value_b}
+    else 
+      let root_value_a = root_a.value in
+      if rank_a < rank_b then
+	updateMFSetMap mu_map 
                        root_value_a
 		       {rank   = root_a.rank,
 			parent = Some root_b,
 			value  = root_value_a}
-    in
-    if rank_a < rank_b then
-      map_with_new_a
-    else      
-      updateMFSetMap map_with_new_a 
-                     root_value_b 
-		     {rank   = root_b.rank + 1,
-		      parent = None,
-		      value  = root_value_b}
+      else      
+	let new_root_node = {rank   = root_b.rank + 1,
+			     parent = None,
+			     value  = root_value_b}
+	in
+    	updateMFSetMap (updateMFSetMap mu_map
+			               root_value_b 
+				       new_root_node)		       
+                       root_value_a
+		       {rank   = root_a.rank,
+			parent = Some new_root_node,
+			value  = root_value_a}
 
  %%  ========================================================================
 

@@ -1,4 +1,4 @@
-;;; -*- Mode: LISP; Package: Parser; Base: 10; Syntax: Common-Lisp -*-
+;;; -*- Mode: LISP; Package: Parser4; Base: 10; Syntax: Common-Lisp -*-
 
 (in-package "PARSER4")
 
@@ -7,23 +7,25 @@
 	 (max-index        (length locations))
 	 (index            0)
 	 (prior-post-index 0)
-	 (new-reported-gap? nil)
-	 (reported-gap?     nil))
+	 ;; (new-reported-gap? nil)
+	 ;; (reported-gap?     nil)
+	 )
     (loop while (< -1 index max-index) do
-	  (multiple-value-setq (index prior-post-index new-reported-gap?)
+	  (multiple-value-setq (index prior-post-index) ;  new-reported-gap?
 	    (aux-parser-get-values session
 				   (svref locations index) 
 				   min-size
 				   prior-post-index))
-	  (when new-reported-gap?
-	    (setq reported-gap? t)))
+	  ;; (when new-reported-gap? (setq reported-gap? t))
+	  )
     (unless (>= prior-post-index (1- max-index))
-      (when (report-gap session prior-post-index max-index)
-	(setq reported-gap? t)))
+      ;; (when 
+      (report-gap session prior-post-index max-index)
+      ;; (setq reported-gap? t)
+      )
     (setf (parse-session-results session)
 	  (nreverse (parse-session-results session)))
-    (when reported-gap? 
-      (comment "============================================================================"))
+    ;; (when reported-gap? (comment "============================================================================"))
     session))
       
 (defun aux-parser-get-values (session loc min-size prior-post-index)
@@ -33,7 +35,8 @@
 	(toplevel-count   0)
 	(toplevel-rule  (parser-toplevel-rule (parse-session-parser session)))
 	(locations      (parse-session-locations session))
-	(reported-gap?  nil))
+	;; (reported-gap?  nil)
+	)
     (dolist (node (parser-location-post-nodes loc))
       (let ((post-index (parser-node-post-index node)))
 	(cond ((> post-index max-index)
@@ -41,11 +44,13 @@
 	       (setq max-index post-index))
 	      ((= post-index max-index)
 	       (push node max-nodes)))))
-    (when (> max-index (+ pre-index min-size))
+    (when (>= max-index (+ pre-index min-size))
       ;;
       (unless (= prior-post-index pre-index) 
-	(when (report-gap session prior-post-index pre-index)
-	  (setq reported-gap? t)))
+	;; (when 
+	(report-gap session prior-post-index pre-index)
+	;; (setq reported-gap? t)
+	)
       (setq prior-post-index max-index)
       ;;
       (let ((alternative-results nil))
@@ -61,7 +66,7 @@
 	    (report-ambiguity session pre-index max-index alternative-results)))
 	(setf (parse-session-results session)
 	  (append alternative-results (parse-session-results session)))))
-    (values max-index prior-post-index reported-gap?)))
+    (values max-index prior-post-index))) ;  reported-gap?
 
 (defun report-gap (session start end)
   (let ((locations (parse-session-locations session))
@@ -76,35 +81,37 @@
     (push tokens (parse-session-gaps session))
     (when (or (parse-session-report-gaps? session)
 	      (null (parse-session-error-reported? session)))
-      (comment "============================================================================")
+      ;; (comment "============================================================================")
       (let* ((first-pos (third (first tokens)))
 	     (first-byte (first  first-pos))
 	     (first-line (second first-pos))
-	     (first-char (1- (third  first-pos)))
-	     (last-line 0))
-	(comment "Pending or unparsed text at line ~4D, column ~2D   (byte ~D)" first-line first-char first-byte)
-	(let ((line-count 0))
-	  (dolist (token tokens)
-	    (let ((this-line (second (third token))))
-	      (unless (eq this-line last-line)
-		(unless (= last-line 0)
-		  (incf line-count)
-		  (unless (> line-count 1)
-		    (terpri)))
-		(setq last-line this-line)))
-	    (unless (> line-count 1)
-	      (format t (if (eq (first token) :STRING) "~S " "~A ") (second token))))
-	  (when (> line-count 1)
-	    (comment " ... ~D more lines ..." (1- line-count)))))
-      t)))
+	     (first-char (third  first-pos))
+	     ;; (last-line 0)
+	     )
+	(warn-pos "Pending or unparsed text at line ~4D, column ~2D   (byte ~D)" first-line first-char first-byte)
+	;; (let ((line-count 0))
+	;;   (dolist (token tokens)
+	;;     (let ((this-line (second (third token))))
+	;;       (unless (eq this-line last-line)
+	;; 	(unless (= last-line 0)
+	;; 	  (incf line-count)
+	;; 	  (unless (> line-count 1)
+	;; 	    (terpri)))
+	;; 	(setq last-line this-line)))
+	;;     (unless (> line-count 1)
+	;;       (format t (if (eq (first token) :STRING) "~S " "~A ") (second token))))
+	;;   (when (> line-count 1)
+	;;     (comment " ... ~D more lines ..." (1- line-count))))
+	))
+    t))
       
 
 (defun report-ambiguity (session start end alternative-results)
   (push alternative-results (parse-session-ambiguities session))
-  (comment "============================================================================")
-  (comment "There are ~D results for the text from ~D to ~D"
-	   (length alternative-results) start end)
-  (comment "============================================================================")
+  ;; (comment "============================================================================")
+  (warn-pos "There are ~D results for the text from ~D to ~D"
+	    (length alternative-results) start end)
+  ;; (comment "============================================================================")
   )
 
 (defun eval-node (session node)
@@ -126,6 +133,7 @@
 	       (first-line           (second first-plc))
 	       (first-column         (third  first-plc))
 	       (first-lc             (cons first-line first-column))
+	       (first-lcb            (vector first-line first-column first-byte-position))
 	       ;;
 	       (rightmost-token-node (rightmost-descendent session node))
 	       (token                (parser-node-semantics rightmost-token-node))
@@ -134,26 +142,71 @@
 	       (last-line            (second last-plc))
 	       (last-column          (third  last-plc))
 	       (last-lc              (cons last-line last-column))
-	       (full-alist           (append (list 
-					      ;;
-					      (cons :left-pos     first-byte-position)
-					      (cons :left-line    first-line)
-					      (cons :left-column  first-column)
-					      (cons :left-lc      first-lc)
-					      ;;
-					      (cons :right-pos    last-byte-position)
-					      (cons :right-line   last-line)
-					      (cons :right-column last-column)
-					      (cons :right-lc     last-lc)
-					      )
-					     (children-alist session rule children) 
-					     default-alist))
-	       (result                (sublis-result full-alist rule-semantics)))
+	       (last-lcb             (vector last-line last-column last-byte-position))
+	       (full-alist           (list* 
+				       ;;
+				       (cons :left-pos     first-byte-position)
+				       (cons :left-line    first-line)
+				       (cons :left-column  first-column)
+				       (cons :left-lc      first-lc)
+				       (cons :left-lcb     first-lcb)
+				       ;;
+				       (cons :right-pos    last-byte-position)
+				       (cons :right-line   last-line)
+				       (cons :right-column last-column)
+				       (cons :right-lc     last-lc)
+				       (cons :right-lcb    last-lcb)
+				       (append 
+					(children-alist session rule children) 
+					default-alist)))
+		 (result             (sublis-result full-alist rule-semantics)))
 	  (when-debugging
 	   (let ((reconstructed-alist (compute-pprint-alist rule-semantics result)))
 	     (unless (sub-alist? reconstructed-alist full-alist)
 	       (warn "Jim may care: Alists differ: ~S ~S ~S" reconstructed-alist full-alist result))))
 	  result)))))
+
+;;; ===== TEMP HERE ====
+
+#+DEBUG-PARSER
+(defvar *position-keys* 
+  ;; should match keys mentioned above in eval-node
+  '(:LEFT-POS  :LEFT-LINE  :LEFT-COLUMN  :LEFT-LC  :LEFT-LCB     
+    :RIGHT-POS :RIGHT-LINE :RIGHT-COLUMN :RIGHT-LC :RIGHT-LCB))
+
+#+DEBUG-PARSER
+(defun compute-pprint-alist (pattern value)
+  (catch 'mismatch
+    (let ((alist nil))
+      (labels ((collect (pattern value)
+		 (cond ((fixnum? pattern)
+			;;(comment "New pair: ~S ~S" pattern value)
+			(push (cons pattern value) alist))
+		       ((eql pattern value)
+			;;(comment "Quiet match: ~S ~S" pattern value)
+			nil)
+		       ((atom pattern)
+			(cond ((member pattern *position-keys*)
+			       ;;(comment "New pair: ~S ~S" pattern value)
+			       (push (cons pattern value) alist))
+			      (t
+			       ;;(comment "Throw out on pattern ~S" pattern)
+			       (throw 'mismatch :no-match))))
+		       ((atom value)
+			;;(comment "Throw out on value ~S" value)
+			(throw 'mismatch  :no-match))
+		       (t
+			;;(comment "Recur on ~S ~S" pattern value)
+			(collect (car pattern) (car value))
+			(collect (cdr pattern) (cdr value))))))
+	(collect pattern value)
+	alist))))
+
+#+DEBUG-PARSER
+(defun sub-alist? (x y)
+  (dolist (pair x t)
+    (unless (eq (cdr (assoc (car pair) y)) (cdr pair))
+      (return nil))))
 
 (defun rightmost-descendent (session node)
   (let* ((post-index (parser-node-post-index node))
@@ -163,9 +216,10 @@
 	(return node)))))
 
 (defun eval-children-nodes (session rule children node-semantics)
-  (declare (simple-vector children))
+  ;(declare (simple-vector children))
+  ;(format t "eval-children-nodes: 1 ~A~%" children)
   (ecase (structure-type-of rule) ; faster than etypecase, since matches are exact here
-    (parser-atomic-rule
+    (parser-atomic-rule ;(format t "eval-children-nodes: 2~%")
      (eval-node session (svref children 0)))
     (parser-keyword-rule
      (parser-keyword-rule-keyword rule)
@@ -235,7 +289,8 @@
 	(if (null child)
 	    (if (null index) 
 		nil 
-	      (push (cons index :unspecified) alist))
+	      (push (cons index (parser-rule-item-default-semantics item)) ; was :unspecified 
+		    alist))
 	  (multiple-value-bind (child-value child-alist)
 	      (eval-node session child)
 	    (cond ((null index)
@@ -262,15 +317,16 @@
 	(unless (null child)
 	  (let* (;; (child-rule-name (parser-rule-name (parser-node-rule child)))
 		 (items (parser-rule-items rule))
-		 (index 
-		  (dotimes (i (length items))
-		    (let ((item (svref items i)))
-		      (when (parser-rule-item-matches? item child)
-			(return (parser-rule-item-semantic-index item)))))))
+		 (item  (dotimes (i (length items))
+			  (let ((item (svref items i)))
+			    (when (parser-rule-item-matches? item child)
+			      (return item)))))
+		 (index (if (null item) nil (parser-rule-item-semantic-index item))))
 	    (if (null child)
 		(if (null index) 
 		    nil 
-		  (push (cons index :unspecified) alist))
+		  (push (cons index (parser-rule-item-default-semantics item)) ; was :unspecified
+			alist))
 	      (multiple-value-bind (child-value child-alist)
 		  (eval-node session child)
 		(cond ((null index)

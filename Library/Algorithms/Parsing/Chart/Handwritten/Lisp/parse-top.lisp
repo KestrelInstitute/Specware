@@ -18,12 +18,15 @@
   (when-debugging
    (setq *current-parser-session* nil)
    (reset-parser-debug-vars))
-  (sys::gc) 
+  ;; call garbageCollect if it looks plausible
+  (let ((gc (find-symbol "GARBAGECOLLECT" "SYSTEM-SPEC")))
+    (when (fboundp gc)
+      (funcall gc nil)))
   ;;
   (incf-timing-data 'initial-gc)
   (let* ((package (or package 
 		      (parser-symbol-package parser)
-		      lisp::*package*))
+		      common-lisp::*package*))
 	 (session (make-parse-session 
 		   :file                 file
 		   :parser               parser
@@ -39,6 +42,7 @@
     ;;
     (multiple-value-bind (locations number-of-raw-tokens comment-eof-error?) 
 	(tokenize-file session file tokenizer)
+      (declare (ignore comment-eof-error?))
       ;;
       (setf (parse-session-locations session) locations)
       ;;
@@ -63,18 +67,19 @@
       (let ((n (length (parse-session-results session))))
 	(cond (*verbose?* 
 	       (comment "~6D resulting toplevel form~:P" n))
-	      ((not (= n 1))
-	       (comment "Used parser ~A (~D rule~:P, package ~A)"
-			(parser-name parser)
-			(parser-total-rule-count parser)
-			(package-name package))
-	       (comment "~6D byte~:P in ~A" 
-			(with-open-file (s file) (file-length s))       
-			file)
-	       (comment "~6D raw tokens" number-of-raw-tokens)
-	       (comment "~6D non-comment token~:P" (1- (length locations)))
-	       (when comment-eof-error?
-		 (comment "     1 unterminated comment that runs to EOF"))
+	      ;; ((not (= n 1))
+	      ((> n 1)
+;;;	       (comment "Used parser ~A (~D rule~:P, package ~A)"
+;;;			(parser-name parser)
+;;;			(parser-total-rule-count parser)
+;;;			(package-name package))
+;;;	       (comment "~6D byte~:P in ~A" 
+;;;			(with-open-file (s file) (file-length s))       
+;;;			file)
+;;;	       (comment "~6D raw tokens" number-of-raw-tokens)
+;;;	       (comment "~6D non-comment token~:P" (1- (length locations)))
+;;;	       (when comment-eof-error?
+;;;		 (comment "     1 unterminated comment that runs to EOF"))
 	       (comment "~6D resulting toplevel form~:P" n))))
       ;;
       session)))

@@ -16,10 +16,14 @@ Also a pretty printer can benefit from state (recording context and
 layout information). There might be a win in placing the pretty printer
 in the state monad.
 
+### This needs fixing. The qualifier should be generic and
+not WadlerLindig.
+
 \begin{spec}
-Pretty qualifying spec
+WadlerLindig qualifying spec
   sort Doc
 
+  op ppString : String -> Doc
   op ppNewline : Doc
   op ppBreak : Doc
   op ppConcat : List Doc -> Doc
@@ -32,6 +36,7 @@ Pretty qualifying spec
   op ppFormat : Doc -> String
 
   op String.pp : String -> Doc
+  def String.pp = ppString
 
   op Nat.pp : Nat -> Doc
   def Nat.pp n = pp (Nat.toString n)

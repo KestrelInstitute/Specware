@@ -6,6 +6,39 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/07/05 07:46:36  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.9  2003/06/23 18:00:14  weilyn
+ * internal release version
+ *
+ * Revision 1.8  2003/03/19 21:34:36  gilham
+ * Fixed parseToken()  to handle  comment blocks not ended with  "\begin{spec}".
+ *
+ * Revision 1.7  2003/03/19 19:21:26  weilyn
+ * Added ISI_LATEX_COMMENT as a last buffer state
+ *
+ * Revision 1.6  2003/03/13 21:51:36  weilyn
+ * Made "\end{spec}" part of ProcessLatexCommentStart
+ *
+ * Revision 1.5  2003/03/13 01:23:54  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
+ * Revision 1.4  2003/02/17 07:02:02  weilyn
+ * Made scUnitId an Item, and added more rules for scProve.
+ *
+ * Revision 1.3  2003/02/14 16:58:56  weilyn
+ * Added support for prove term.
+ *
+ * Revision 1.2  2003/02/10 15:38:36  gilham
+ * Allow non-word symbols only as op names, not as sort names or unit ids.
+ *
+ * Revision 1.1  2003/01/30 02:01:52  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -28,15 +61,20 @@ public class MetaSlangSyntax extends Syntax {
     private static final int ISI_WHITESPACE = 2; // inside white space
     private static final int ISI_LINE_COMMENT = ISI_WHITESPACE + 1; // inside line comment //
     private static final int ISI_BLOCK_COMMENT = ISI_LINE_COMMENT + 1; // inside block comment (* ... *)
-    private static final int ISI_STRING = ISI_BLOCK_COMMENT + 1; // inside string constant
+    private static final int ISI_LATEX_COMMENT = ISI_BLOCK_COMMENT + 1; // inside block comment (* ... *)
+    private static final int ISI_STRING = ISI_LATEX_COMMENT + 1; // inside string constant
     private static final int ISI_STRING_A_BSLASH = ISI_STRING + 1; // inside string constant after backslash
     private static final int ISI_CHAR = ISI_STRING_A_BSLASH + 1; // inside char constant
     private static final int ISI_CHAR_A_BSLASH = ISI_CHAR + 1; // inside char constant after backslash
     private static final int ISI_WORD_SYMBOL = ISI_CHAR_A_BSLASH + 1; // inside word symbol
     private static final int ISI_NON_WORD_SYMBOL = ISI_WORD_SYMBOL + 1; // inside non word symbol
     private static final int ISA_STAR_I_BLOCK_COMMENT = ISI_NON_WORD_SYMBOL + 1; // after '*'
-    private static final int ISI_INT = ISA_STAR_I_BLOCK_COMMENT + 1; // integer number
+    private static final int ISA_BSLASH_I_LATEX_COMMENT = ISA_STAR_I_BLOCK_COMMENT + 1; // after '*'
+    private static final int ISI_INT = ISA_BSLASH_I_LATEX_COMMENT + 1; // integer number
     private static final int ISA_LPAREN = ISI_INT + 1; // after '('
+    private static final int ISA_BSLASH = ISA_LPAREN + 1; // after '\'
+
+    private static final boolean DEBUG = false;
 
     public MetaSlangSyntax() {
         tokenContextPath = MetaSlangTokenContext.contextPath;
@@ -47,6 +85,7 @@ public class MetaSlangSyntax extends Syntax {
 
         while(offset < stopOffset) {
             actChar = buffer[offset];
+	    if (DEBUG) Util.log("*** parseToken: char="+actChar+" state="+getStateName(state));
 
             switch (state) {
             case INIT:
@@ -60,12 +99,12 @@ public class MetaSlangSyntax extends Syntax {
                 case '%':
                     state = ISI_LINE_COMMENT;
                     break;
-                case '_':
-                    offset++;
-                    return MetaSlangTokenContext.UBAR;
+                case '\\':
+                    state = ISA_BSLASH;
+		    break;
                 case '(':
                     state = ISA_LPAREN;
-		    break;
+                    break;
                 case ')':
                     offset++;
                     return MetaSlangTokenContext.RPAREN;
@@ -90,6 +129,9 @@ public class MetaSlangSyntax extends Syntax {
                 case '.':
                     offset++;
                     return MetaSlangTokenContext.DOT;
+                case '_':
+                    offset++;
+                    return MetaSlangTokenContext.UBAR;
 
                 default:
                     // Check for whitespace
@@ -228,6 +270,36 @@ public class MetaSlangSyntax extends Syntax {
                 }
                 break;
                
+            case ISA_BSLASH:
+                int newOffset = processLatexCommentStart(buffer, offset);
+                if (DEBUG) Util.log("*** processLatexCommentStart(): offset="+offset+" return "+newOffset);
+                if (newOffset != -1) {
+                    offset = newOffset;
+                    state = ISI_LATEX_COMMENT;
+                } else {
+                    state = ISI_NON_WORD_SYMBOL;
+                }
+                break;
+               
+            case ISI_LATEX_COMMENT:
+		switch (actChar) {
+		case '\\':
+		    state = ISA_BSLASH_I_LATEX_COMMENT;
+		    break;
+		}
+		break;
+               
+            case ISA_BSLASH_I_LATEX_COMMENT:
+		newOffset = processLatexCommentEnd(buffer, offset);
+		if (DEBUG) Util.log("*** processLatexCommentEnd(): offset="+offset+" return "+newOffset);
+		if (newOffset != -1) {
+		    offset = newOffset;
+		    state = INIT;
+		    return MetaSlangTokenContext.LATEX_COMMENT;
+		}
+		state = ISI_LATEX_COMMENT;
+		break;
+               
             case ISA_STAR_I_BLOCK_COMMENT:
                 switch (actChar) {
                 case ')':
@@ -287,7 +359,9 @@ public class MetaSlangSyntax extends Syntax {
 	    case ISA_LPAREN:
 		state = INIT;
 		return MetaSlangTokenContext.LPAREN;
-	    }
+            case ISI_LATEX_COMMENT:
+                return MetaSlangTokenContext.LATEX_COMMENT;
+            }
 	}
 
 	/* At this stage there's no more text in the scanned buffer, but
@@ -313,6 +387,8 @@ public class MetaSlangSyntax extends Syntax {
             return "ISI_LINE_COMMENT"; // NOI18N
         case ISI_BLOCK_COMMENT:
             return "ISI_BLOCK_COMMENT"; // NOI18N
+        case ISI_LATEX_COMMENT:
+            return "ISI_LATEX_COMMENT"; // NOI18N
         case ISI_STRING:
             return "ISI_STRING"; // NOI18N
         case ISI_STRING_A_BSLASH:
@@ -327,10 +403,14 @@ public class MetaSlangSyntax extends Syntax {
             return "ISI_NON_WORD_SYMBOL"; // NOI18N
         case ISA_STAR_I_BLOCK_COMMENT:
             return "ISA_STAR_I_BLOCK_COMMENT"; // NOI18N
-        case ISI_INT:
+        case ISA_BSLASH_I_LATEX_COMMENT:
+            return "ISA_BSLASH_I_LATEX_COMMENT"; // NOI18N
+	case ISI_INT:
             return "ISI_INT"; // NOI18N
         case ISA_LPAREN:
             return "ISA_LPAREN"; // NOI18N
+        case ISA_BSLASH:
+            return "ISA_BSLASH"; // NOI18N
 
         default:
             return super.getStateName(stateNumber);
@@ -391,17 +471,110 @@ public class MetaSlangSyntax extends Syntax {
 	return false;
     }
 
+    public static int processLatexCommentStart(char[] buffer, int offset) {
+	int n = buffer.length - offset;
+        if (n < 8)
+            return -1;
+        switch (buffer[offset++]) {
+            case 'e':
+                return (n >= 9
+		&& buffer[offset++] == 'n'
+		&& buffer[offset++] == 'd'
+		&& buffer[offset++] == '{'
+		&& buffer[offset++] == 's'
+		&& buffer[offset++] == 'p'
+		&& buffer[offset++] == 'e'
+		&& buffer[offset++] == 'c'
+		&& buffer[offset++] == '}')
+                ? offset - 1: -1;
+            case 'd':
+		return (n >= 9
+			&& buffer[offset++] == 'o'
+			&& buffer[offset++] == 'c'
+			&& buffer[offset++] == 'u'
+			&& buffer[offset++] == 'm'
+			&& buffer[offset++] == 'e'
+			&& buffer[offset++] == 'n'
+			&& buffer[offset++] == 't'
+			&& buffer[offset++] == '{')
+                        ? offset - 1 : -1;
+            case 's':
+                switch (buffer[offset++]) {
+                    case 'e':
+			return (buffer[offset++] == 'c'
+				&& buffer[offset++] == 't'
+				&& buffer[offset++] == 'i'
+				&& buffer[offset++] == 'o'
+				&& buffer[offset++] == 'n'
+				&& buffer[offset++] == '{')
+                                ? offset - 1: -1;
+                    case 'u':
+                        return (n >= 11
+				&& buffer[offset++] == 'b'
+				&& buffer[offset++] == 's'
+				&& buffer[offset++] == 'e'
+				&& buffer[offset++] == 'c'
+				&& buffer[offset++] == 't'
+				&& buffer[offset++] == 'i'
+				&& buffer[offset++] == 'o'
+				&& buffer[offset++] == 'n'
+				&& buffer[offset++] == '{')
+                                ? offset - 1: -1;
+                }
+	}
+	return -1;
+    }
+
+    public static int processLatexCommentEnd(char[] buffer, int offset) {
+	int n = buffer.length - offset;
+	return (n >= 11
+		&& buffer[offset++] == 'b'
+		&& buffer[offset++] == 'e'
+		&& buffer[offset++] == 'g'
+		&& buffer[offset++] == 'i'
+		&& buffer[offset++] == 'n'
+		&& buffer[offset++] == '{'
+		&& buffer[offset++] == 's'
+		&& buffer[offset++] == 'p'
+		&& buffer[offset++] == 'e'
+		&& buffer[offset++] == 'c'
+		&& buffer[offset++] == '}')
+                ? offset - 1: -1;
+    }
+
+
     // Generated code for matchKeyword - do not modify //GEN-BEGIN
     public static TokenID matchKeyword(char[] buffer, int offset, int len) {
-        if (len > 8)
+        if (len > 11)
             return null;
         if (len <= 1)
             return null;
         switch (buffer[offset++]) {
+            case 'S':
+                return (len == 5
+                    && buffer[offset++] == 'n'
+                    && buffer[offset++] == 'a'
+                    && buffer[offset++] == 'r'
+                    && buffer[offset++] == 'k')
+                        ? MetaSlangTokenContext.SNARK : null;
             case 'a':
+                switch (buffer[offset++]) {
+                    case 's':
+                        return (len == 2)
+                                ? MetaSlangTokenContext.AS : null;
+                    case 'x':
+                        return (len == 5
+                            && buffer[offset++] == 'i'
+                            && buffer[offset++] == 'o'
+                            && buffer[offset++] == 'm')
+                                ? MetaSlangTokenContext.AXIOM : null;
+                    default:
+                        return null;
+                }
+            case 'b':
                 return (len == 2
-                    && buffer[offset++] == 's')
-                        ? MetaSlangTokenContext.AS : null;
+                    && buffer[offset++] == 'y')
+                        ? MetaSlangTokenContext.BY : null;
             case 'c':
                 if (len <= 3)
                     return null;
@@ -418,14 +591,52 @@ public class MetaSlangSyntax extends Syntax {
                             && buffer[offset++] == 's'
                             && buffer[offset++] == 'e')
                                 ? MetaSlangTokenContext.CHOOSE : null;
+                    case 'o':
+                        if (len <= 6)
+                            return null;
+                        switch (buffer[offset++]) {
+                            case 'l':
+                                return (len == 7
+                                    && buffer[offset++] == 'i'
+                                    && buffer[offset++] == 'm'
+                                    && buffer[offset++] == 'i'
+                                    && buffer[offset++] == 't')
+                                        ? MetaSlangTokenContext.COLIMIT : null;
+                            case 'n':
+                                return (len == 10
+                                    && buffer[offset++] == 'j'
+                                    && buffer[offset++] == 'e'
+                                    && buffer[offset++] == 'c'
+                                    && buffer[offset++] == 't'
+                                    && buffer[offset++] == 'u'
+                                    && buffer[offset++] == 'r'
+                                    && buffer[offset++] == 'e')
+                                        ? MetaSlangTokenContext.CONJECTURE : null;
+                            default:
+                                return null;
+                        }
                     default:
                         return null;
                 }
             case 'd':
-                return (len == 3
-                    && buffer[offset++] == 'e'
-                    && buffer[offset++] == 'f')
-                        ? MetaSlangTokenContext.DEF : null;
+                if (len <= 2)
+                    return null;
+                switch (buffer[offset++]) {
+                    case 'e':
+                        return (len == 3
+                            && buffer[offset++] == 'f')
+                                ? MetaSlangTokenContext.DEF : null;
+                    case 'i':
+                        return (len == 7
+                            && buffer[offset++] == 'a'
+                            && buffer[offset++] == 'g'
+                            && buffer[offset++] == 'r'
+                            && buffer[offset++] == 'a'
+                            && buffer[offset++] == 'm')
+                                ? MetaSlangTokenContext.DIAGRAM : null;
+                    default:
+                        return null;
+                }
             case 'e':
                 switch (buffer[offset++]) {
                     case 'l':
@@ -481,6 +692,16 @@ public class MetaSlangSyntax extends Syntax {
                     default:
                         return null;
                 }
+            case 'g':
+                return (len == 8
+                    && buffer[offset++] == 'e'
+                    && buffer[offset++] == 'n'
+                    && buffer[offset++] == 'e'
+                    && buffer[offset++] == 'r'
+                    && buffer[offset++] == 'a'
+                    && buffer[offset++] == 't'
+                    && buffer[offset++] == 'e')
+                        ? MetaSlangTokenContext.GENERATE : null;
             case 'i':
                 switch (buffer[offset++]) {
                     case 'f':
@@ -494,8 +715,28 @@ public class MetaSlangSyntax extends Syntax {
                             && buffer[offset++] == 't')
                                 ? MetaSlangTokenContext.IMPORT : null;
                     case 'n':
-                        return (len == 2)
-                                ? MetaSlangTokenContext.IN : null;
+                        if (len == 2)
+                            return MetaSlangTokenContext.IN;
+                        switch (buffer[offset++]) {
+                            case 'f':
+                                if (len <= 5)
+                                    return null;
+                                if (buffer[offset++] != 'i'
+                                    || buffer[offset++] != 'x')
+                                        return null;
+                                switch (buffer[offset++]) {
+                                    case 'l':
+                                        return (len == 6)
+                                                ? MetaSlangTokenContext.INFIXL : null;
+                                    case 'r':
+                                        return (len == 6)
+                                                ? MetaSlangTokenContext.INFIXR : null;
+                                    default:
+                                        return null;
+                                }
+                            default:
+                                return null;
+                        }
                     case 's':
                         return (len == 2)
                                 ? MetaSlangTokenContext.IS : null;
@@ -507,36 +748,106 @@ public class MetaSlangSyntax extends Syntax {
                     && buffer[offset++] == 'e'
                     && buffer[offset++] == 't')
                         ? MetaSlangTokenContext.LET : null;
+            case 'm':
+                return (len == 8
+                    && buffer[offset++] == 'o'
+                    && buffer[offset++] == 'r'
+                    && buffer[offset++] == 'p'
+                    && buffer[offset++] == 'h'
+                    && buffer[offset++] == 'i'
+                    && buffer[offset++] == 's'
+                    && buffer[offset++] == 'm')
+                        ? MetaSlangTokenContext.MORPHISM : null;
             case 'o':
                 switch (buffer[offset++]) {
+                    case 'b':
+                        return (len == 11
+                            && buffer[offset++] == 'l'
+                            && buffer[offset++] == 'i'
+                            && buffer[offset++] == 'g'
+                            && buffer[offset++] == 'a'
+                            && buffer[offset++] == 't'
+                            && buffer[offset++] == 'i'
+                            && buffer[offset++] == 'o'
+                            && buffer[offset++] == 'n'
+                            && buffer[offset++] == 's')
+                                ? MetaSlangTokenContext.OBLIGATIONS : null;
                     case 'f':
                         return (len == 2)
                                 ? MetaSlangTokenContext.OF : null;
                     case 'p':
-                        return (len == 2)
-                                ? MetaSlangTokenContext.OP : null;
+                        if (len == 2)
+                            return MetaSlangTokenContext.OP;
+                        switch (buffer[offset++]) {
+                            case 't':
+                                return (len == 7
+                                    && buffer[offset++] == 'i'
+                                    && buffer[offset++] == 'o'
+                                    && buffer[offset++] == 'n'
+                                    && buffer[offset++] == 's')
+                                        ? MetaSlangTokenContext.OPTIONS : null;
+                            default:
+                                return null;
+                        }
                     default:
                         return null;
                 }
             case 'p':
-                return (len == 7
-                    && buffer[offset++] == 'r'
-                    && buffer[offset++] == 'o'
-                    && buffer[offset++] == 'j'
-                    && buffer[offset++] == 'e'
-                    && buffer[offset++] == 'c'
-                    && buffer[offset++] == 't')
-                        ? MetaSlangTokenContext.PROJECT : null;
+                if (len <= 4)
+                    return null;
+                if (buffer[offset++] != 'r')
+                        return null;
+                switch (buffer[offset++]) {
+                    case 'i':
+                        return (len == 5
+                            && buffer[offset++] == 'n'
+                            && buffer[offset++] == 't')
+                                ? MetaSlangTokenContext.PRINT : null;
+                    case 'o':
+                        switch (buffer[offset++]) {
+                            case 'j':
+                                return (len == 7
+                                    && buffer[offset++] == 'e'
+                                    && buffer[offset++] == 'c'
+                                    && buffer[offset++] == 't')
+                                        ? MetaSlangTokenContext.PROJECT : null;
+                            case 'v':
+                                return (len == 5
+                                    && buffer[offset++] == 'e')
+                                        ? MetaSlangTokenContext.PROVE : null;
+                            default:
+                                return null;
+                        }
+                    default:
+                        return null;
+                }
             case 'q':
-                return (len == 8
-                    && buffer[offset++] == 'u'
-                    && buffer[offset++] == 'o'
-                    && buffer[offset++] == 't'
-                    && buffer[offset++] == 'i'
-                    && buffer[offset++] == 'e'
-                    && buffer[offset++] == 'n'
-                    && buffer[offset++] == 't')
-                        ? MetaSlangTokenContext.QUOTIENT : null;
+                if (len <= 7)
+                    return null;
+                if (buffer[offset++] != 'u')
+                        return null;
+                switch (buffer[offset++]) {
+                    case 'a':
+                        return (len == 10
+                            && buffer[offset++] == 'l'
+                            && buffer[offset++] == 'i'
+                            && buffer[offset++] == 'f'
+                            && buffer[offset++] == 'y'
+                            && buffer[offset++] == 'i'
+                            && buffer[offset++] == 'n'
+                            && buffer[offset++] == 'g')
+                                ? MetaSlangTokenContext.QUALIFYING : null;
+                    case 'o':
+                        return (len == 8
+                            && buffer[offset++] == 't'
+                            && buffer[offset++] == 'i'
+                            && buffer[offset++] == 'e'
+                            && buffer[offset++] == 'n'
+                            && buffer[offset++] == 't')
+                                ? MetaSlangTokenContext.QUOTIENT : null;
+                    default:
+                        return null;
+                }
             case 'r':
                 if (len <= 4)
                     return null;
@@ -581,18 +892,49 @@ public class MetaSlangSyntax extends Syntax {
                     return null;
                 switch (buffer[offset++]) {
                     case 'h':
-                        return (len == 4
-                            && buffer[offset++] == 'e'
-                            && buffer[offset++] == 'n')
-                                ? MetaSlangTokenContext.THEN : null;
+                        if (buffer[offset++] != 'e')
+                                return null;
+                        switch (buffer[offset++]) {
+                            case 'n':
+                                return (len == 4)
+                                        ? MetaSlangTokenContext.THEN : null;
+                            case 'o':
+                                return (len == 7
+                                    && buffer[offset++] == 'r'
+                                    && buffer[offset++] == 'e'
+                                    && buffer[offset++] == 'm')
+                                        ? MetaSlangTokenContext.THEOREM : null;
+                            default:
+                                return null;
+                        }
                     case 'r':
-                        return (len == 4
-                            && buffer[offset++] == 'u'
-                            && buffer[offset++] == 'e')
-                                ? MetaSlangTokenContext.TRUE : null;
+                        switch (buffer[offset++]) {
+                            case 'a':
+                                return (len == 9
+                                    && buffer[offset++] == 'n'
+                                    && buffer[offset++] == 's'
+                                    && buffer[offset++] == 'l'
+                                    && buffer[offset++] == 'a'
+                                    && buffer[offset++] == 't'
+                                    && buffer[offset++] == 'e')
+                                        ? MetaSlangTokenContext.TRANSLATE : null;
+                            case 'u':
+                                return (len == 4
+                                    && buffer[offset++] == 'e')
+                                        ? MetaSlangTokenContext.TRUE : null;
+                            default:
+                                return null;
+                        }
                     default:
                         return null;
                 }
+            case 'u':
+                return (len == 5
+                    && buffer[offset++] == 's'
+                    && buffer[offset++] == 'i'
+                    && buffer[offset++] == 'n'
+                    && buffer[offset++] == 'g')
+                        ? MetaSlangTokenContext.USING : null;
             case 'w':
                 return (len == 5
                     && buffer[offset++] == 'h'

@@ -82,6 +82,16 @@ public class DrawingModeDebug extends DrawingModeWithMarqueeHandler {
             e0.consume();
             MouseEvent e = fromScreenSnap(e0);
             
+            /*
+            JFrame f = ((XGraphDisplay)graph).getApplication().getDesktop().getFrame();
+            Dbg.pr("desktop size: "+f.getSize());
+            int answ1 = JOptionPane.showConfirmDialog(null,"Resize Desktop to (500,500)?","Resize?",JOptionPane.YES_NO_OPTION);
+            if (answ1 == JOptionPane.YES_OPTION) {
+                Dbg.pr("ok.");
+                f.setSize(500,500);
+            }
+            */
+            
             //Dbg.pr("children are selectable? "+graph.getSelectionModel().isChildrenSelectable());
             
             CellView[] roots = view.getRoots();
@@ -151,7 +161,7 @@ public class DrawingModeDebug extends DrawingModeWithMarqueeHandler {
             for(int i=0;i<cvs.length;i++) {
                 CellView cv = cvs[i];
                 if (cv != null) {
-                    view.toBack(new CellView[] {cv});
+                    view.toFront(new CellView[] {cv});
                 }
             }
         }

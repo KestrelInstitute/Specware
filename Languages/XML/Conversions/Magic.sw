@@ -3,6 +3,10 @@ Magic qualifying spec
 
   %% see /Languages/XML/Handwritten/Lisp/Magic.lisp for definitions of all of these
 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %% Product 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
   %% MetaSlang => XML
   %% This creates a heterogenous list from the fields of a product
   %% Such a beast is not even well formed for metaslang, so it must
@@ -17,12 +21,28 @@ Magic qualifying spec
 
   op Magic.magicMakeProduct   : fa (X,Y) X -> Y                      % see /Languages/XML/Handwritten/Lisp/Magic.lisp
 
-  %% ??
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %% CoProduct 
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  %% MetaSlang => XML
   %% This extracts the name of the constructor from the runtime datum
   %% The value (Y) is actually a reasonable metaslang construction,
   %% but we don't know it's type.
 
   op Magic.magicConstructorNameAndValue : fa (X,Y) X -> String * Y   % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+
+  %% XML => MetaSlang 
+  %% This creates a tagged coproduct from a constructor name (a string),
+  %% and an arbitrary piece of data.
+  %% The arguments and the result are all well formed in metaslang, 
+  %% but the actual operation cannot be expressed in metaslang.
+
+  op Magic.magicMakeConstructor : fa (X,Y) String * X -> Y           % see /Languages/XML/Handwritten/Lisp/Magic.lisp
+
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+  %% Misc Casts
+  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
   %% These are just identities that type cast their args, so that the result
   %% is pleasing to Specware for further processing.

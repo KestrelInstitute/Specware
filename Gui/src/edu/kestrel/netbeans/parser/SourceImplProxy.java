@@ -6,6 +6,24 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/07/05 07:46:41  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.5  2003/04/23 01:16:26  weilyn
+ * DiagElemInfo.java
+ *
+ * Revision 1.4  2003/04/01 02:29:44  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.3  2003/03/29 03:14:03  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.2  2003/03/14 04:15:33  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.1  2003/01/30 02:02:27  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -40,6 +58,11 @@ public class SourceImplProxy implements SourceElement.Impl, Node.Cookie,
 PropertyChangeListener {
     
     private static final SpecElement[] NO_SPECS = new SpecElement[0];
+    private static final ProofElement[] NO_PROOFS = new ProofElement[0];
+    private static final MorphismElement[] NO_MORPHISMS = new MorphismElement[0];
+    private static final DiagramElement[] NO_DIAGRAMS = new DiagramElement[0];
+    private static final ColimitElement[] NO_COLIMITS = new ColimitElement[0];
+    //private static final UIDElement[] NO_UIDS = new UIDElement[0];
     
     /**
      * PropertyChangeListeners attached to the SourceElement.
@@ -138,6 +161,110 @@ PropertyChangeListener {
         return null;
     }
     
+    public void changeProofs(ProofElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeProofs(elems, action);
+    }
+    
+    public ProofElement[] getProofs() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getProofs(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getProofs(): specs="+impl.getProofs());
+            return impl.getProofs();
+        }
+        return NO_PROOFS;
+    }
+    
+    public ProofElement getProof(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getProof(name);
+        return null;
+    }
+    
+    public void changeMorphisms(MorphismElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeMorphisms(elems, action);
+    }
+    
+    public MorphismElement[] getMorphisms() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getMorphisms(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getMorphisms(): specs="+impl.getMorphisms());
+            return impl.getMorphisms();
+        }
+        return NO_MORPHISMS;
+    }
+    
+    public MorphismElement getMorphism(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getMorphism(name);
+        return null;
+    }
+
+    public void changeDiagrams(DiagramElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeDiagrams(elems, action);
+    }
+    
+    public DiagramElement[] getDiagrams() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getDiagrams(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getDiagrams(): specs="+impl.getDiagrams());
+            return impl.getDiagrams();
+        }
+        return NO_DIAGRAMS;
+    }
+    
+    public DiagramElement getDiagram(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getDiagram(name);
+        return null;
+    }
+
+    public void changeColimits(ColimitElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeColimits(elems, action);
+    }
+    
+    public ColimitElement[] getColimits() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getColimits(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getColimits(): specs="+impl.getColimits());
+            return impl.getColimits();
+        }
+        return NO_COLIMITS;
+    }
+    
+    public ColimitElement getColimit(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getColimit(name);
+        return null;
+    }
+
+   /* public void changeUIDs(UIDElement[] elems, int action) throws SourceException {
+        findModelDelegate().changeUIDs(elems, action);
+    }
+    
+    public UIDElement[] getUIDs() {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null) {
+	    System.err.println("*** SourceImplProxy.getUIDs(): impl="+impl);
+	    System.err.println("*** SourceImplProxy.getUIDs(): specs="+impl.getUIDs());
+            return impl.getUIDs();
+        }
+        return NO_UIDS;
+    }
+    
+    public UIDElement getUID(String name) {
+        SourceElement.Impl impl = safeFindModelDelegate();
+        if (impl != null)
+            return impl.getUID(name);
+        return null;
+    }*/
     
     public Collection getPropertyChangeListeners() {
         SourceElement.Impl impl = safeFindModelDelegate();

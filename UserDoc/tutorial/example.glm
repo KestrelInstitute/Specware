@@ -1,4 +1,4 @@
-<chapter>
+<chapter id="example">
 <title>Example</title>
 
 <para>This chapter presents a step-by-step example of a small
@@ -6,14 +6,16 @@ application developed with &Specware;. Despite its small size, the
 example illustrates the general methodology to develop software with
 &Specware;. Furthermore, the description of the example includes
 concrete explanations to run the example through &Specware;, thus
-serving as a usage tutorial.</para>
+serving as a usage tutorial. The code for this example may be found
+in the <"Examples\Matching\"> folder in your installation directory
+(e.g. <"C:\Program Files\Specware\">).</para>
 
 <section>
 <title>The Problem</title>
 
 <para>The problem solved by this simple application is the
 following. A message is given, consisting of a sequence of characters,
-some of which are <quote>obscured</quote>, i.e., it may look something
+some of which are ``obscured'', i.e., it may look something
 like:</para>
 
 [[
@@ -80,24 +82,23 @@ simplest ones up to the spec for the application.</para>
 
 <para>MetaSlang provides strings of characters among the built-in
 sorts, ops, and axioms. We could define messages and words as strings
-satisfying certain properties, e.g., that the character
-[[*]] can appear in messages but not in words,
-etc.</para>
+satisfying certain properties, e.g., that the character [[*]] can
+appear in messages but not in words, etc.</para>
 
 <para>However, it is generally better to specify things as abstractly
 as possible. It is clear that the problem as stated above does not
-depend on obscured characters being represented as
-[[*]] and on non-obscured characters being uppercase
-letters only, or letters and numbers, or other. The abstract notion is
-that there are characters that form words, and messages are made of
-those characters but some characters may be obscured.</para>
+depend on obscured characters being represented as [[*]] and on
+non-obscured characters being uppercase letters only, or letters and
+numbers, or other. The abstract notion is that there are characters
+that form words, and messages are made of those characters but some
+characters may be obscured.</para>
 
 <para>So, we start with a spec for symbols (i.e., characters):</para>
 
 [[
 ||    Symbols = spec
 ||      sort Symbol
-||    end
+||    endspec
 ]]
 
 <para>This is a very simple spec: it just consists of one sort. This
@@ -107,33 +108,33 @@ MetaSlang for every sort). Any further constraint on symbols would
 just make the spec unnecessarily less general.</para>
 
 <para>The text above is MetaSlang syntax: it not only introduces a
-spec consisting of the sort [[Symbol]], but also
-assigns a name to it, [[Symbols]]. This spec can thus
-be referred to by its name, as shown shortly. The exact way in which
-the text above is supplied to &Specware; is explained later.</para>
+spec consisting of the sort [[Symbol]], but also assigns a name to it,
+[[Symbols]]. This spec can thus be referred to by its name, as shown
+shortly. The exact way in which the text above is supplied to
+&Specware; is explained later.</para>
 
 <para>Now that we have the concept of symbols, we can introduce the
 concept of word as a sequence of characters. MetaSlang provides lists,
-built-in.  The polymorphic sort [[List a]] is used to
-define words:</para>
+built-in.  The polymorphic sort [[List a]] is used to define
+words:</para>
 
 [[
 ||    Words = spec
 ||      import Symbols
 ||      sort Word = List Symbol
-||    end
+||    endspec
 ]]
 
 <para>The name of the spec is [[Words]]. The spec imports [[Symbols]]
 defined above, and extends it with a new sort [[Word]], defined to be
-[[List Symbol]]. This sort is obtained as an instantiation of
-[[List a]] by replacing the sort parameter [[a]] with [[Symbol]].</para>
+[[List Symbol]]. This sort is obtained as an instantiation of [[List
+a]] by replacing the sort parameter [[a]] with [[Symbol]].</para>
 
 <para>A message is a sequence of symbols some of which may be
 obscured. This can be specified by lists whose elements are either
-symbols or a special extra value that stands for an <quote>obscured
-symbol</quote> (the <quote>[[*]]</quote> in the
-problem description given earlier).</para>
+symbols or a special extra value that stands for an ``obscured
+symbol'' (the ``[[*]]'' in the problem description given
+earlier).</para>
 
 <para>MetaSlang provides, built-in, a polymorphic sort [[Option a]]
 that adds an extra element to a sort.  More precisely, it is defined
@@ -147,7 +148,7 @@ singleton sort consisting of the constant [[None]].</para>
 ||    Messages = spec
 ||      import Symbols
 ||      sort Message = List (Option Symbol)
-||    end
+||    endspec
 ]]
 
 <para>At this point, we can define the notion of symbol matching: a
@@ -162,7 +163,7 @@ spec:</para>
 ||      op symb_matches? : Symbol * Option Symbol -> Boolean
 ||      def symb_matches?(s,os) = case os of Some s1 -> s = s1
 ||                                         | None    -> true
-||    end
+||    endspec
 ]]
 
 <para>The spec imports [[Symbols]] and extends it with an op
@@ -172,19 +173,18 @@ symbol. This op can be viewed as a binary predicate. The op is defined
 by pattern matching on the second argument, in a straightforward
 way. Note that [[s = s1]] is a term of type [[Boolean]].</para>
 
-<para>The definition is given as a [[def]], which means
-that code can be eventually generated directly, without any need to
-refine it. This is one of those cases where the simplest and most
-abstract definition of an op happens to be directly executable.</para>
+<para>The definition is given as a [[def]], which means that code can
+be eventually generated directly, without any need to refine it. This
+is one of those cases where the simplest and most abstract definition
+of an op happens to be directly executable.</para>
 
 <para>Having the notion of symbol matching, now we define the notion
 of word matching, i.e., when a word matches a message. We could define
-an op (predicate) of type [[Word * Message ->
-Boolean]]. However, since the application involves offsets for
-matching words, it is better to declare the op to have type
-[[Word * Message * Nat -> Boolean]]: the predicate
-is true if the given word matches the given message at the given
-position.  Here is the spec:</para>
+an op (predicate) of type [[Word * Message -> Boolean]]. However,
+since the application involves offsets for matching words, it is
+better to declare the op to have type [[Word * Message * Nat ->
+Boolean]]: the predicate is true if the given word matches the given
+message at the given position.  Here is the spec:</para>
 
 [[
 ||    WordMatching = spec
@@ -202,16 +202,14 @@ position.  Here is the spec:</para>
 ||                     symb_matches?(nth(wrd, i),
 ||                                   nth(msg, pos + i)))
 ||    
-||    end
+||    endspec
 ]]
 
 <para>First, the spec imports the specs for words, messages, and
-symbol matching.  Then it introduces the op
-[[word_matches_at?]], with the type explained
-above. The axiom (whose name is [[word_matching]])
+symbol matching.  Then it introduces the op [[word_matches_at?]], with
+the type explained above. The axiom (whose name is [[word_matching]])
 defines the predicate. It says that the predicate holds on a triple
-[[(wrd,msg,pos)]] if and only if two conditions are
-satisfied:</para>
+[[(wrd,msg,pos)]] if and only if two conditions are satisfied:</para>
 
 <orderedlist>
 
@@ -229,19 +227,18 @@ i]].</para>
 
 </orderedlist>
 
-<para>Note the use of [[symb_matches?]] previously
-defined.  The ops [[length]] and [[nth]]
-are built-in, polymorphic ops over lists: the former returns the
-length of a list, while the latter returns the n-th element of a list
-(n is numbered starting from 0).</para>
+<para>Note the use of [[symb_matches?]] previously defined.  The ops
+[[length]] and [[nth]] are built-in, polymorphic ops over lists: the
+former returns the length of a list, while the latter returns the n-th
+element of a list (n is numbered starting from 0).</para>
 
 <para>Unlike [[symb_matches?]] above, the definition of
-[[word_matches_at?]] is not executable. This means that
-it must be eventually refined. An executable definition of this op
-involves some kind of loop through the message: so, it would not be as
-simple and abstract as it is now. The general rule is that, at the
-specification level, things should be expressed as simply, clearly,
-and declaratively as possible.</para>
+[[word_matches_at?]] is not executable. This means that it must be
+eventually refined. An executable definition of this op involves some
+kind of loop through the message: so, it would not be as simple and
+abstract as it is now. The general rule is that, at the specification
+level, things should be expressed as simply, clearly, and
+declaratively as possible.</para>
 
 <para>Having all the above concepts in hand, we are ready to define
 how a message and a list of words are processed by the application to
@@ -255,13 +252,12 @@ the concept of a match, as a pair consisting of a word and a position
 ||    Matches = spec
 ||      import Words
 ||      sort Match = {word : Word, position : Nat}
-||    end
+||    endspec
 ]]
 
-<para>The sort [[Match]] is defined to be a record with
-two components, named [[word]] and
-[[position]]. A record is like a cartesian product, but
-the components have user-chosen names.</para>
+<para>The sort [[Match]] is defined to be a record with two
+components, named [[word]] and [[position]]. A record is like a
+cartesian product, but the components have user-chosen names.</para>
 
 <para>Finally, the spec for the whole application is the
 following:</para>
@@ -281,20 +277,18 @@ following:</para>
 ||              (fa(pos) word_matches_at?(mtch.word,msg,pos) =>
 ||                       pos >= mtch.position)
 ||    
-||    end
+||    endspec
 ]]
 
-<para>The spec imports [[WordMatching]] and
-[[Matches]], and declares an op
-[[find_matches]] that, given a message and a list of
-words, returns a list of matches. This op captures the processing
-performed by the application. The axiom states the required
-properties.  The built-in polymorphic op [[member]] is
-a predicate that says whether an element belongs to a list or not. So,
-the required property for [[find_matches]] is the
-following: given a message [[msg]] and a list of words
-[[wrds]], a match [[mtch]] belongs to
-the result of [[find_words]] if and only if:</para>
+<para>The spec imports [[WordMatching]] and [[Matches]], and declares
+an op [[find_matches]] that, given a message and a list of words,
+returns a list of matches. This op captures the processing performed
+by the application. The axiom states the required properties.  The
+built-in polymorphic op [[member]] is a predicate that says whether an
+element belongs to a list or not. So, the required property for
+[[find_matches]] is the following: given a message [[msg]] and a list
+of words [[wrds]], a match [[mtch]] belongs to the result of
+[[find_words]] if and only if:</para>
 
 <orderedlist>
 
@@ -318,22 +312,23 @@ matches.</para>
 <para>Note how the specification of this word matching application is
 simple and abstract. No commitments have been made to particular data
 structures or algorithms. These commitments are made during the
-refinement process. Note also that the op
-[[find_matches]] is not completely defined by the
-axiom: the order of the resulting matches is not specified (the axiom
-only says what the members of the resulting list are, but not their
-order).  This under-specification is consistent with the informal
-problem description given above. Of course, it is possible to change
-the axiom to require a particular order (e.g., the same as in the
-input list), if desired.</para>
+refinement process. Note also that the op [[find_matches]] is not
+completely defined by the axiom: the order of the resulting matches is
+not specified (the axiom only says what the members of the resulting
+list are, but not their order). The axiom does not prohibit duplicate
+elements in the output list; a suitable conjunct could be added to
+enforce uniqueness, if desired.  This under-specification is
+consistent with the informal problem description given above. Of
+course, it is possible to change the axiom to require a particular
+order (e.g., the same as in the input list), if desired.</para>
 
 </section>  <!-- construction -->
 
 <section>
 <title>Processing by &Specware;</title>
 
-<para>How do we actually enter the above text into &Specware; and how do
-we have &Specware; process it?</para>
+<para>How do we actually enter the above text into &Specware; and how
+do we have &Specware; process it?</para>
 
 <para>The current version of &Specware; works more or less like a
 compiler: it processes one or more files producing results. The files
@@ -343,96 +338,71 @@ generation of other files (e.g., containing code generated by
 &Specware;).</para>
 
 <para>The files processed by &Specware; are text files with extension
-<".sw"> (the <quote>s</quote> and <quote>w</quote> come
-from the first and fifth letter of <quote>&Specware;</quote>). A
-<".sw"> file contains a sequence of definitions of specs, morphisms,
-etc.</para>
+<".sw"> (the ``s'' and ``w'' come from the first and fifth letter of
+``&Specware;''). A <".sw"> file contains a sequence of definitions of
+specs, morphisms, etc.</para>
 
 <para>For the word matching application constructed above, it is
 sensible to put all the specs above inside a file
-[[MatchingSpecs.sw]]:</para>
+<"MatchingSpecs.sw">:</para>
 
 [[
 ||    Symbols = spec
 ||      sort Symbols
-||    end
+||    endspec
 ||    
 ||    ...
 ||    
 ||    FindMatches = spec
 ||     ...
-||    end
+||    endspec
 ]]
 
-<para>Unlike a traditional compiler, the interaction with &Specware; is
-within a Lisp shell.  When &Specware; is started, a Lisp shell is
-available for interaction with &Specware; (&Specware; is part of the Lisp
-image). In the Lisp shell, the user can move to any desired directory
-of the file system by means of the [[:cd]] command,
-followed by the name of the directory, e.g., [[:cd
-~/mydir]].  Usually, the <".sw"> files that
-form an application are put inside a directory, and from the Lisp
-shell the user moves to that directory.</para>
+<para>Unlike a traditional compiler, the interaction with &Specware;
+is within a Lisp shell.  When &Specware; is started, a Lisp shell is
+available for interaction with &Specware; (&Specware; is part of the
+Lisp image). In the Lisp shell, the user can move to any desired
+directory of the file system by means of the [[:cd]] command, followed
+by the name of the directory, e.g., [[:cd ~/mydir]].  Usually, the
+<".sw"> files that form an application are put inside a directory, and
+from the Lisp shell the user moves to that directory.</para>
 
-<para>In order to have &Specware; process a spec (or morpshim, etc.)
-contained in a <".sw"> file in the current directory,
-the user provides the following command in the Lisp shell:</para>
-
-[[L:
-||    (sw "<filename>#<specname>")
-]]
-
-<para>The <quote>top-level</quote> Lisp function of &Specware; is
-[[sw]], which is called by the above command. The
-[[<filename>]] portion of the argument string is
-a place holder for the file name (without the [[.sw]]
-extension); the [[<specname>]] portion is a place
-holder for the spec (or morphism, etc.) name.</para>
-
-<para>The effect of the above command is that &Specware; processes the
-indicated spec (or morphism, etc.) in the indicated file, recursively
-processing other specs, morphisms, etc. that are referenced by the
-indicated spec.</para>
-
-<para>To have &Specware; process the spec of the word matching
-application, the command is:</para>
-
-[[L:
-||    (sw "MatchingSpecs#FindMatches")
-]]
-
-<para>This has the effect of processing the spec named
-[[FindMatches]] in file
-[[MatchingSpecs.sw]]. Since this spec imports specs
-[[WordMatching]] and [[Matches]], these
-are processed first, and so are the specs imported by them,
-recursively. Thus, all the specs in
-[[MatchingSpecs.sw]] are processed.
-[[FindMatches]] is the top-level spec in the
-file.</para>
-
-<para>&Specware; finds the specs [[WordMatching]] and
-[[Matches]], imported by
-[[FindMatches]], because they are contained in the same
-file. As it will be explained shortly, it is possible to refer from
-one file to specs defined in different files.</para>
-
-<para> There is a slightly more concise syntax for having &Specware;
-process a spec (or morphism etc.):</para>
+<para>In order to have &Specware; process a spec (or morphism, etc.)
+contained in a <".sw"> file in the current directory, the user
+provides the following command in the Lisp shell:</para>
 
 [[L:
 ||    :sw <filename>#<specname>
 ]]
 
-<para>For the word matching spec, the command is:</para>
+<para>The [[<filename>]] portion of the argument string is a place
+holder for the file name (without the <".sw"> extension); the
+[[<specname>]] portion is a place holder for the spec (or morphism,
+etc.) name as it appears inside the file.</para>
+
+<para>The effect of the above command is to have &Specware; process
+the indicated spec (or morphism, etc.) in the indicated file,
+recursively processing other specs, morphisms, etc. that are
+referenced by the indicated spec.</para>
+
+<para>To have &Specware; process the spec of the word matching
+application, the command is:</para>
 
 [[L:
 ||    :sw MatchingSpecs#FindMatches
 ]]
 
-<para>The differences with the slightly more verbose syntax are that
-there are no parentheses and no double quotes, but there is a colon
-at the beginning.</para>
+<para>This has the effect of processing the spec named [[FindMatches]]
+in file <"MatchingSpecs.sw">. Since this spec imports specs
+[[WordMatching]] and [[Matches]], these are processed first, and so
+are the specs imported by them, recursively. Thus, all the specs in
+<"MatchingSpecs.sw"> are processed.  [[FindMatches]] is the top-level
+spec in the file.</para>
+
+<para>&Specware; finds the specs [[WordMatching]] and [[Matches]],
+imported by [[FindMatches]], because they are contained in the same
+file. As it will be explained shortly, it is possible to refer from
+one file to specs defined in different files.</para>
 
 </section>  <!-- specware processing -->
 
@@ -446,10 +416,9 @@ at the beginning.</para>
 
 <para>We now refine the application specified above in order to obtain
 a running program that implements the specified functionality.  We do
-that by defining the specs below inside a file
-[[MatchingRefinements.sw]], in the same directory as
-[[MatchingSpecs.sw]].
-</para>
+that by defining the specs and morphisms below inside a file
+<"MatchingRefinements.sw">, in the same directory as
+<"MatchingSpecs.sw">.</para>
 
 <para>In order to obtain an executable program, we need to choose a
 concrete representation for the symbols composing words and
@@ -458,35 +427,29 @@ messages. For example, we can choose uppercase characters:</para>
 [[
 ||    Symbols = spec
 ||      sort Symbol = (Char | isUpperCase)
-||    end
+||    endspec
 ]]
 
-<para>The built-in sort [[Char]] is the sort for
-characters. The built-in op [[isUpperCase]] is a
-predicate on characters that says whether a character is an uppercase
-letter or not. The subsort construct <quote>[[|]]</quote> is used
-to define the sort [[Symbol]] as a subsort of
-[[Char]].</para>
+<para>The built-in sort [[Char]] is the sort for characters. The
+built-in op [[isUpperCase]] is a predicate on characters that says
+whether a character is an uppercase letter or not. The subsort
+construct ``[[|]]'' is used to define the sort [[Symbol]] as a subsort
+of [[Char]].</para>
 
-<para>Note that the above spec has the same name
-([[Symbols]]) as its corresponding abstract spec. This
-is allowed and it is a feature of &Specware;: [[.sw]]
-files define separate name spaces. The file
-[[MatchingSpecs.sw]] creates a name space, and the file
-[[MatchingRefinements.sw]] creates a separate name
-space. The full name of the spec [[Symbols]] in
-[[MatchingSpecs.sw]] is
-[[MatchingSpecs#Symbols]], while the full name of the
-spec [[Symbols]] in
-[[MatchingRefinements.sw]] is
-[[MatchingRefinements#Symbols]]. Indeed, when &Specware;
-is invoked to process a spec (or morphism, etc.), the full name is
-supplied, as in [[:sw MatchingSpecs#FindMatches]].
-</para>
+<para>Note that the above spec has the same name ([[Symbols]]) as its
+corresponding abstract spec. This is allowed and it is a feature of
+&Specware;: <".sw"> files define separate name spaces. The file
+<"MatchingSpecs.sw"> creates a name space, and the file
+<"MatchingRefinements.sw"> creates a separate name space. The full
+name of the spec [[Symbols]] in <"MatchingSpecs.sw"> is
+[[MatchingSpecs#Symbols]], while the full name of the spec [[Symbols]]
+in <"MatchingRefinements.sw"> is
+[[MatchingRefinements#Symbols]]. Indeed, when &Specware; is invoked to
+process a spec (or morphism, etc.), the full name is supplied, as in
+[[L::sw MatchingSpecs#FindMatches]].  </para>
 
-<para>
-The fact that spec [[MatchingRefinements#Symbols]] is a refinement
-of [[MatchingSpecs#Symbols]] is expressed by the following
+<para> The fact that spec [[MatchingRefinements#Symbols]] is a
+refinement of [[MatchingSpecs#Symbols]] is expressed by the following
 morphism:</para>
 
 [[
@@ -499,15 +462,12 @@ morphism:</para>
 and where the sort [[Symbol]] in [[MatchingSpecs#Symbols]] is mapped
 to the sort [[Symbol]] in [[MatchingRefinements#Symbols]].</para>
 
-<para>The specs [[Words]], [[Messages]],
-and [[SymbolMatching]] (in
-[[MatchingSpecs.sw]]) need not be refined, because they
-constructively define their sorts and ops. But the op
-[[word_matches_at?]] in [[WordMatching]]
-needs to be refined. We do that by constructing a spec that imports
-the same specs imported by [[WordMatching]] and that
-defines op [[word_matches_at?]] in an executable
-way:</para>
+<para>The specs [[Words]], [[Messages]], and [[SymbolMatching]] (in
+<"MatchingSpecs.sw">) need not be refined, because they constructively
+define their sorts and ops. But the op [[word_matches_at?]] in
+[[WordMatching]] needs to be refined. We do that by constructing a
+spec that imports the same specs imported by [[WordMatching]] and that
+defines op [[word_matches_at?]] in an executable way:</para>
 
 [[
 ||    WordMatching0 = spec
@@ -535,29 +495,26 @@ way:</para>
 ||                      then word_matches_aux?(wrd1,msg1)
 ||                      else false
 ||    
-||    end
+||    endspec
 ]]
 
 <para>Since the imported specs are not in the file
-[[MatchingRefinements.sw]], their full names are used
-after [[import]].</para>
+<"MatchingRefinements.sw">, their full names are used after
+[[import]].</para>
 
-<para>The definition of [[word_matches_at?]] makes use
-of an auxiliary op [[word_matches_aux?]], which takes
-as input a word and a message such that the length of the word is not
-greater than that of the message. This constraint is expressed as a
-subsort of the cartesian product [[Word * Message]]. Op
-[[word_matches_aux?]] returns a boolean if the word
-matches the message, at the start of the message. It is defined
-recursively, by pattern matching on the word.  Note the use of
-[[let]] to decompose the msg into the initial symbol
-and the rest. This is always possible because of the subsort
-constraint on the word and the message. So,
-[[word_matches_at?]] simply calls
-[[word_matches_aux?]] with the word and the tail of the
-message obtained by eliminating the first [[pos]]
-symbols, by means of the built-in op [[nthTail]] over
-lists.</para>
+<para>The definition of [[word_matches_at?]] makes use of an auxiliary
+op [[word_matches_aux?]], which takes as input a word and a message
+such that the length of the word is not greater than that of the
+message. This constraint is expressed as a subsort of the cartesian
+product [[Word * Message]]. Op [[word_matches_aux?]] returns a boolean
+if the word matches the message, at the start of the message. It is
+defined recursively, by pattern matching on the word.  Note the use of
+[[let]] to decompose the msg into the initial symbol and the
+rest. This is always possible because of the subsort constraint on the
+word and the message. So, [[word_matches_at?]] simply calls
+[[word_matches_aux?]] with the word and the tail of the message
+obtained by eliminating the first [[pos]] symbols, by means of the
+built-in op [[nthTail]] over lists.</para>
 
 <para>The fact that [[WordMatching0]] is a refinement of
 [[MatchingSpecs#WordMatching]] is expressed by the following
@@ -568,47 +525,17 @@ morphism:</para>
 ||                                 WordMatching0 {}
 ]]
 
-<para>The fact that it is a legal morphism follows from the fact that
-the axiom about [[word_matches_at?]] in
-[[MatchingSpecs#WordMatching]] is a theorem in
-[[WordMatching0]], i.e., it follows from the
-executable definition of [[word_matches_at?]].</para>
-
-<para>Currently, &Specware; does not provide commands to call external
-theorem provers to discharge the proof obligations attached to
-morphisms. This functionality will be provided in future versions of
-the system.</para>
-
-<!--
 <para>The refinement for word matching can be composed with the
-refinement for symbols constructed earlier. This is achieved by
-putting together (via [[import]]) the spec just defined
-with the spec [[Symbols]] defined earlier.</para>
+refinement for symbols constructed earlier. This is achieved by means
+of &Specware;'s substitution operator:</para>
 
 [[
-||    WordMatching = spec
-||      import WordMatching0
-||      import Symbols
-||    end
-]]
--->
-
-<para>The refinement for word matching can be composed with the
-refinement for symbols constructed earlier. This is achieved by taking
-the pushout of [[MatchingRefinements#Symbols]] and [[WordMatching0]]
-sharing [[MatchingSpecs#Symbols]].</para>
-
-[[
-||    WordMatching = colimit diagram {
-||      ab : a -> b +-> Symbols_Ref,
-||      ac : a -> c +-> morphism MatchingSpecs#Symbols ->
-||                               WordMatching0 {}
-||    }
+||    WordMatching = WordMatching0[Symbols_Ref]
 ]]
 
-<para>The resulting spec is like [[WordMatching0]], but
-in addition the sort [[Symbol]] is defined to consist
-of uppercase characters.</para>
+<para>The resulting spec is like [[WordMatching0]], but in addition
+the sort [[Symbol]] is defined to consist of uppercase
+characters.</para>
 
 <para>The fact that [[MatchingRefinements#WordMatching]] is a
 refinement of [[MatchingSpecs#WordMatching]] is expressed by
@@ -620,17 +547,11 @@ the following morphism:</para>
 ||                MatchingRefinements#WordMatching {}
 ]]
 
-<para>The validity of this morphism follows from the validity of
-[[WordMatching_Ref0]] and from the validity of the cocone morphism
-implicitly computed by the pushout above. Their composition is in fact
-the morphism [[WordMatching_Ref]].</para>
-
-<para>Now we proceed to refine op [[find_matches]]. We
-do that in two steps, analogously to word matching above. First, we
-build a spec [[FindMatches0]] that imports the same
-specs imported by [[MatchingSpecs#FindMatches]] and
-that defines op [[find_matches]] in an executable
-way:</para>
+<para>Now we proceed to refine op [[find_matches]]. We do that in two
+steps, analogously to word matching above. First, we build a spec
+[[FindMatches0]] that imports the same specs imported by
+[[MatchingSpecs#FindMatches]] and that defines op [[find_matches]] in
+an executable way:</para>
 
 [[
 ||    FindMatches0 = spec
@@ -657,49 +578,38 @@ way:</para>
 ||               then Some pos
 ||               else find_matches_aux(msg, wrd, pos + 1)
 ||    
-||    end
+||    endspec
 ]]
 
 <para>Op [[find_matches]] makes use of the auxiliary op
-[[find_matches_aux]], which takes as input a message
-[[msg]], a word [[wrd]], and a position
-[[pos]]. It returns either a natural number (a position
-where the match starts) or [[None]] if there is no
-match. Op [[find_matches_aux]] first checks if
-[[msg]] is long enough to possibly contain a match for
-[[wrd]] starting at [[pos]]. If that is
-not the case, [[None]] is returned. Otherwise,
-[[word_matches_at?]] is called: if it returns
-[[true]], then the position [[pos]] is
-returned (wrapped by [[Some]]). Otherwise,
-[[find_matches_aux]] is recursively called,
-incrementing the position by 1. So, when
-[[find_matches_aux]] is called with 0 as its third
-argument, it iterates through the message to find the first match, if
-any.  The position of the first match is returned, otherwise
-[[None]].</para>
+[[find_matches_aux]], which takes as input a message [[msg]], a word
+[[wrd]], and a position [[pos]]. It returns either a natural number (a
+position where the match starts) or [[None]] if there is no match. Op
+[[find_matches_aux]] first checks if [[msg]] is long enough to
+possibly contain a match for [[wrd]] starting at [[pos]]. If that is
+not the case, [[None]] is returned. Otherwise, [[word_matches_at?]] is
+called: if it returns [[true]], then the position [[pos]] is returned
+(wrapped by [[Some]]). Otherwise, [[find_matches_aux]] is recursively
+called, incrementing the position by 1. So, when [[find_matches_aux]]
+is called with 0 as its third argument, it iterates through the
+message to find the first match, if any.  The position of the first
+match is returned, otherwise [[None]].</para>
 
-<para>The op [[find_matches]] iterates through the
-words of the list constructing a list of matches. The iteration is
-performed by means of the built-in op [[foldl]] for
-lists. For each word, [[find_matches_aux]] is called,
-with 0 as its third argument.  Then, a pattern matching on the result
-is done: if the result is a position, a match is added to the output
-list; otherwise, the list is left unmodified.</para>
+<para>The op [[find_matches]] iterates through the words of the list
+constructing a list of matches. The iteration is performed by means of
+the built-in op [[foldl]] for lists. For each word,
+[[find_matches_aux]] is called, with 0 as its third argument.  Then, a
+pattern matching on the result is done: if the result is a position, a
+match is added to the output list; otherwise, the list is left
+unmodified.</para>
 
-<para>The following morphism expresses that
-[[FindMatches0]] is a refinement of
-[[MatchingSpecs#FindMatches]]:</para>
+<para>The following morphism expresses that [[FindMatches0]] is a
+refinement of [[MatchingSpecs#FindMatches]]:</para>
 
 [[
 ||    FindMatches_Ref0 = morphism MatchingSpecs#FindMatches ->
 ||                                FindMatches0 {}
 ]]
-
-<para>The axiom about [[find_matches]] in spec
-[[MatchingSpecs#FindMatches]] is a theorem in spec
-[[FindMatches0]], i.e., it follows from the
-executable definition of [[find_matches]].</para>
 
 <para>This refinement for [[MatchingSpecs#FindMatches]] can be
 composed with the one for [[MatchingSpecs#WordMatching]] built
@@ -707,16 +617,12 @@ earlier. The composition is analogous to the one for
 [[MatchingSpecs#WordMatching]]:</para>
 
 [[
-||    FindMatches = colimit diagram {
-||      ab : a -> b +-> WordMatching_Ref,
-||      ac : a -> c +-> morphism MatchingSpecs#WordMatching ->
-||                               FindMatches0 {}
-||    }
+||    FindMatches = FindMatches0[WordMatching_Ref]
 ]]
 
 <para>The resulting spec includes the refinement for op
-[[find_matches]] as well as the refinement for op
-[[word_matches_at?]] and for symbols.</para>
+[[find_matches]] as well as the refinement for op [[word_matches_at?]]
+and for symbols.</para>
 
 <para>The fact that [[MatchingRefinements#FindMatches]] is a
 refinement of [[MatchingSpecs#FindMatches]] is expressed by the
@@ -728,13 +634,131 @@ following morphism:</para>
 ||               MatchingRefinements#FindMatches {}
 ]]
 
-<para>Analogously to [[WordMatching_Ref]], [[FindMatches_Ref]] is the
-composition of [[FindMatches_Ref0]] with the cocone morphism implicitly
-computed by the pushout above.</para>
+<para>All the specs and morphisms of the file
+<"MatchingRefinements.sw"> can be processed by means of the
+following command:</para>
 
-<para>This concludes the refinement of the application.</para>
+[[L:
+||    :sw MatchingRefinements#FindMatches_Ref
+]]
 
 </section>  <!-- construction -->
+
+<section>
+<title>Proof Obligations</title>
+
+<para>In general, a morphism has proof obligations associated to it:
+all the axioms in the source spec must be mapped to theorems in the
+target spec. These proof obligations are expressed in the form of a
+spec obtained by extending the target spec of the morphism with the
+axioms of the source spec (translated along the morphism) as
+conjectures. The user can then attempt to prove these conjectures
+using theorem provers linked to &Specware;.</para>
+
+<para>We collect the proof obligations of the morphisms defined above
+in a file <"MatchingObligations.sw">, in the same directory as
+<"MatchingSpecs.sw"> and <"MatchingRefinements.sw">. The file contains
+the following definitions:</para>
+
+[[
+||    SymbolMatching_Oblig = 
+||      obligations MatchingSpecs#SymbolMatching
+||
+||    Symbols_Ref_Oblig =
+||      obligations MatchingRefinements#Symbols_Ref
+||
+||    WordMatching_Ref0_Oblig =
+||      obligations MatchingRefinements#WordMatching_Ref0
+||
+||    FindMatches_Ref0_Oblig =
+||      obligations MatchingRefinements#FindMatches_Ref0
+]]
+
+<para>[[SymbolMatching_Oblig]] is a spec that expresses the proof
+obligations that arise as a result of typechecking the spec
+[[SymbolMatching]]. [[Symbols_Ref_Oblig]], [[WordMatching_Ref0_Oblig]],
+and [[FindMatches_Ref0_Oblig]] are specs that express the proof
+obligations of the associated morphisms as conjectures. &Specware;
+provides the capability to display (i.e., print) any spec, morphism,
+etc., via the [[:show]] command. This command can be used to see the
+proof obligations associated to the morphisms, by displaying the specs
+expressing such obligations.</para>
+
+<para>For instance, the proof obligations associated to the morphism
+[[Symbols_Ref]] can be displayed by using the following
+command:</para>
+
+[[
+||    :show MatchingObligations#Symbols_Ref_Oblig
+]]
+
+<para>The absence of conjectures indicates that no proof obligations
+need to be discharged in order to establish the validity of the
+morphism [[Symbols_Ref]]. In fact, this morphism is very simple: its
+source [[MatchingSpecs#Symbols]] has no axioms, just an abstract sort
+[[Symbol]] that the morphism maps to the concretely defined sort
+[[Symbol]] in [[MatchingRefinements#Symbols]].</para>
+
+<para>Unlike [[Symbols_Ref]], [[WordMatching_Ref0]] has a non-trivial
+proof obligation that needs to be discharged in order to establish the
+validity of the morphism. Inspection (via [[:show]]) of the spec
+[[WordMatching_Ref0_Oblig]] reveals a conjecture. The conjecture is
+the axiom about [[word_matches_at?]] in
+[[MatchingSpecs#WordMatching]], which is indeed provable from the
+executable definition of [[word_matches_at?]].</para>
+
+<para>Also [[FindMatches_Ref0]] has a non-trivial proof obligation,
+consisting of the axiom about [[find_matches]] in
+[[MatchingSpecs#FindMatches]]. This obligation is indeed provable from
+the executable definition of [[find_matches]].</para>
+
+<para>The validity of the morphisms [[WordMatching_Ref]] and
+[[FindMatches_Ref]] follows from the validity of the morphisms
+[[Symbols_Ref]], [[WordMatching_Ref0]], and [[FindMatches_Ref0]]. The
+reason is that sequential composition of morphisms always yields a
+morphism and that substitution always produces a spec and (implicitly)
+two morphisms.</para>
+
+<para>[[WordMatching_Ref]] is the sequential composition of
+[[WordMatching_Ref0]] with the morphism from [[WordMatching0]] to
+[[MatchingRefinements#WordMatching]] that is implicitly computed by
+the substitution operator used to define
+[[MatchingRefinements#WordMatching]]. Similarly, [[FindMatches_Ref]]
+is the sequential composition of [[FindMatches_Ref0]] with the
+morphism from [[FindMatches0]] to [[MatchingRefinements#FindMatches]]
+that is implicitly computed by the substitution operator used to
+define [[MatchingRefinements#FindMatches]].</para>
+
+<para>&Specware; provides the capability to invoke external theorem
+provers in order to attempt proofs of conjectures. Concretely, this is
+carried out by creating proof objects. Each proof object is associated
+with a certain conjecture in a certain spec; it also indicates the
+prover to use and some directives on how to perform the proof.
+Processing of the proof object invokes the indicated prover with the
+given directives. Currently, the only available prover is Snark; more
+provers will be added in the future.</para>
+
+<para>For example, the user can attempt to discharge the proof
+obligation for [[MatchingSpecs#SymbolMatching]] by writing the
+following command in a file named <"MatchingProof.sw">, located in the
+same directory as <"MatchingObligations.sw">:
+
+[[
+||    prove symb_matches? in
+||      MatchingObligations#SymbolMatching_Oblig
+]]
+
+Then at the Lisp prompt, issue this command to discharge the proof:
+
+[[L:
+||    :sw MatchingProof
+]]
+
+The obligation is translated to the Snark theorem prover and
+automatically proven based primarily on the knowledge of &Specware;'s
+[[Option]] sort that we automatically send to Snark.</para>
+
+</section> <!-- proof obligations -->
 
 </section>  <!-- refinement -->
 
@@ -748,18 +772,17 @@ is certainly not the only one possible.</para>
 have refined them to be all letters (uppercase or lowercase) and
 numbers, or to be natural numbers. It is worth noting that the
 refinement for symbols is encapsulated in spec
-[[MatchingRefinements#Symbols]]. If we want to change
-the refinement for symbols, we just need to change that spec, while
-the other specs remain unaltered.</para>
+[[MatchingRefinements#Symbols]]. If we want to change the refinement
+for symbols, we just need to change that spec, while the other specs
+remain unaltered.</para>
 
 <para>As another example, we could have chosen a more efficient
-refinement for op [[find_matches]], using some fast
-substring search algorithm.  In particular, while we have refined op
-[[word_matches_at?]] first, and then composed its
-refinement with one for [[find_matches]], we could have
-refined [[find_matches]] <quote>directly</quote>, without using
-[[word_matches_at?]], so that it would have been
-unnecessary to refine [[word_matches_at?]].</para>
+refinement for op [[find_matches]], using some fast substring search
+algorithm.  In particular, while we have refined op
+[[word_matches_at?]] first, and then composed its refinement with one
+for [[find_matches]], we could have refined [[find_matches]]
+``directly'', without using [[word_matches_at?]], so that it would
+have been unnecessary to refine [[word_matches_at?]].</para>
 
 <para>The latter example illustrates an important principle concerning
 refinement. In general, it is not necessary to refine all ops present
@@ -770,7 +793,7 @@ auxiliary role in specifying abstractly the ops that are meant to be
 eventually refined.</para>
 
 <para>Currently, &Specware; provides no support to indicate explicitly
-which ops are meant to be <quote>exported</quote> by a spec. In future versions
+which ops are meant to be ``exported'' by a spec. In future versions
 of the system, some functionality like this may be included.</para>
 
 </section>  <!-- alternatives -->
@@ -782,49 +805,43 @@ of the system, some functionality like this may be included.</para>
 <title>Code Generation</title>
 
 <para>Now that our simple word matching application has been refined
-to be executable, we can generate code from it. In order to have
-&Specware; generate (Lisp) code from a spec, the following command is
-given in the Lisp shell:</para>
+to be executable, we can generate code from it. This is concretely
+achieved by creating a (Lisp) program from a spec, indicating a file
+name where the code is deposited as a side effect. The following
+command is given in the Lisp shell:</para>
 
 [[L:
-||    (swl "<fullspecname>" "<targetfilename>")
+||    :swl <specname> <targetfilename>
 ]]
 
-<para>The Lisp function [[swl]] (where the <quote>l</quote> comes
-from <quote>Lisp</quote>) first processes the spec given as first argument (as
-explained earlier) and then generates Lisp code from it, writing the
-code in the file whose name is given as second argument (the file is
-created if it does not exist; if it exists, it is overwritten).</para>
+<para>The above command first processes the named spec and then
+generates Lisp code from it, writing the code into the indicated file.
+The file is created if it does not exist; if it exists, it is
+overwritten.</para>
 
 <para>For instance, we can generate Lisp code for the word matching
 application by means of the following command:</para>
 
 [[L:
-||    (swl "MatchingRefinements#FindMatches" "find-matches.lisp")
+||    :swl MatchingRefinements#FindMatches find-matches
 ]]
 
-<para>Similarly to the [[sw]] function, a slightly
-shorter syntax for the above command is:</para>
-
-[[L:
-||    :swl MatchingRefinements#FindMatches find-matches.lisp
-]]
+<para>Note that if the <".lisp"> suffix is omitted, &Specware; adds it
+to the file name.</para>
 
 <para>After we generate the code, we can then try to run it by calling
-the Lisp function produced from op
-[[find_matches]]. Since messages and words are
-represented as lists of characters (plus [[None]] for
+the Lisp function produced from op [[find_matches]]. Since messages
+and words are represented as lists of characters (plus [[None]] for
 messages), it would be slightly inconvenient to enter and read lists
 of characters. It would be better to enter strings with letters and
-[[*]]'s, as shown in the informal problem description
-at the beginning of this chapter.</para>
+[[*]]'s, as shown in the informal problem description at the beginning
+of this chapter.</para>
 
 <para>In order to do that, we define translations between strings and
-messages and words, and we wrap [[find_matches]] in
-order to translate from and to strings. We do that inside a spec
-called [[Test]] in a file
-[[MatchingTest.sw]] in the same directory as the other
-two [[.sw]] files:</para>
+messages and words, and we wrap [[find_matches]] in order to translate
+from and to strings. We do that inside a spec called [[Test]] in a
+file <"MatchingTest.sw"> in the same directory as the other two
+<".sw"> files:</para>
 
 [[
 ||    Test = spec
@@ -873,52 +890,44 @@ two [[.sw]] files:</para>
 ||              (find_matches(string2message mstr,
 ||                            map string2word wstrs))
 ||    
-||    end
+||    endspec
 ]]
 
 <para>Since the translation is not defined on all strings, we
-introduce two subsorts of the built-in sort [[String]]:
-the sort [[WordString]] consists of all strings whose
-characters are uppercase letters; the sort
-[[MessageString]] consists of all strings whose
-characters are uppercase letters or [[*]]. The built-in
-op [[all]] over strings is used to define the subsorts,
-using the ops (predicates) [[word_char?]] and
-[[msg_char?]].</para>
+introduce two subsorts of the built-in sort [[String]]: the sort
+[[WordString]] consists of all strings whose characters are uppercase
+letters; the sort [[MessageString]] consists of all strings whose
+characters are uppercase letters or [[*]]. The built-in op [[all]]
+over strings is used to define the subsorts, using the ops
+(predicates) [[word_char?]] and [[msg_char?]].</para>
 
-<para>The op [[word2string]] translates a word to a
-word string, by means of the built-in op
-[[implode]]. The op [[string2word]]
-performs the opposite translation, using the built-in op
-[[explode]]. The ops [[message2string]]
-and [[string2message]] translate between messages and
-string messages. Besides the use of [[implode]] and
-[[explode]], they need to map [[Some
-ch]] from/to [[ch]] (where
-[[ch]] is an uppercase letter) and
-[[None]] from/to [[*]].</para>
+<para>The op [[word2string]] translates a word to a word string, by
+means of the built-in op [[implode]]. The op [[string2word]] performs
+the opposite translation, using the built-in op [[explode]]. The ops
+[[message2string]] and [[string2message]] translate between messages
+and string messages. Besides the use of [[implode]] and [[explode]],
+they need to map [[Some ch]] from/to [[ch]] (where [[ch]] is an
+uppercase letter) and [[None]] from/to [[*]].</para>
 
-<para>Since [[find_matches]] returns a match, i.e., a
-pair consisting of a word and a position, we define a sort
-[[MatchString]] consisting of a word string and a
-position, together with an op [[match2string]] that
-translates from a match to a string match.</para>
+<para>Since [[find_matches]] returns a match, i.e., a pair consisting
+of a word and a position, we define a sort [[MatchString]] consisting
+of a word string and a position, together with an op [[match2string]]
+that translates from a match to a string match.</para>
 
-<para>Finally, we define an op [[test_find_matches]] to
-take a message string and a list of word strings as input, and to
-return a list of string matches as output. The message string and word
-strings are first translated to a message and list of words, then
-[[find_matches]] is called, and then the resulting
-matches are translated to string matches.  Note that the op
-[[message2string]] is never used. In fact, it could
-have been omitted.</para>
+<para>Finally, we define an op [[test_find_matches]] to take a message
+string and a list of word strings as input, and to return a list of
+string matches as output. The message string and word strings are
+first translated to a message and list of words, then [[find_matches]]
+is called, and then the resulting matches are translated to string
+matches.  Note that the op [[message2string]] is never used. In fact,
+it could have been omitted.</para>
 
 <para>Now, instead of generating code from
-[[MatchingRefinements#FindMatches]], we generate code
-from [[MatchingTest#Test]]:</para>
+[[MatchingRefinements#FindMatches]], we generate code from
+[[MatchingTest#Test]]:</para>
 
 [[L:
-||    (swl "MatchingTest#Test" "find-matches-test.lisp")
+||    :swl MatchingTest#Test find-matches-test.lisp
 ]]
 
 <section>
@@ -929,25 +938,32 @@ generated Lisp file into the Lisp environment. We do that from the
 Lisp shell, by means of the following command:</para>
 
 [[L:
-||    (load "find-matches-test")
+||    :ld find-matches-test
 ]]
 
 <para>In Lisp, entities like functions, constants, etc. are defined
 inside packages. When &Specware; generates code, it puts it inside a
-package whose name is the name of the spec from which code has been
-generated (in this case, [[Test]]. This can
-be seen from the package declaration at the beginning of file
-<"find-matches-test.lisp"> (note that Lisp is
-case-insensitive).</para>
+package named [[SW-USER]]. This can be seen from the package
+declaration at the beginning of file <"find-matches-test.lisp"> (note
+that Lisp is case-insensitive).</para>
 
 <para>So, in order to call the functions defined in that file (after
 it has been loaded), it is necessary either to prepend the package
 name to them, or to move to that package and then call them without
-package qualification.  To follow the first approach, we write
-[[test::test_find_matches]] to call the function. To
-follow the second approach, we change package by means of the Lisp
-command [[:pa test]] and then we just write
-[[test_find_matches]] to call the function.</para>
+package qualification.  To follow the first approach, we would write
+[[L:(sw-user::test_find_matches-2 <arg1> <arg2>)]] to call the function.
+(The <quote>[[-2]]</quote> appended to the function name is
+for the two-argument version of the Lisp function; see the
+Section on Arity and Currying Normalization in the User
+Manual.  Alternatively, we can supply a single argument by
+consing [[<arg1>]] and [[<arg2>]], thus:
+[[L:(sw-user::test_find_matches (cons <arg1> <arg2>))]].)
+</para>
+
+<para>
+To follow the second approach, we would first change package by means
+of the Lisp command [[:pa sw-user]], and then we can just write 
+[[(test_find_matches-2 <arg1> <arg2>)]] to call the function.</para>
 
 <para>In order to test the program on the example input and output
 given at the beginning of the chapter, we proceed as follows. First,
@@ -966,11 +982,10 @@ we define a variable containing the message:</para>
 ||                  "SPECIES" "VESTIGE" "WALNUT" "YOGURT"))
 ]]
 
-<para>Finally, we call (assuming to be in package
-[[test]]):</para>
+<para>Finally, we call (assuming to be in package [[sw-user]]):</para>
 
 [[L:
-||    (test_find_matches msg words)
+||    (test_find_matches-2 msg words)
 ]]
 
 <para>The following result is then displayed:</para>
@@ -980,7 +995,8 @@ we define a variable containing the message:</para>
 ||     (0 . "REVEAL") (8 . "DECREE") (10 . "CHESS"))
 ]]
 
-<para>The result is a list of pairs, each of which represents a match.</para>
+<para>The result is a list of pairs, each of which represents a
+match.</para>
 
 </section>  <!-- testing -->
 

@@ -153,10 +153,11 @@
        (setf (path-index-internal-node1-variable-child-node parent) nil))
       (t
        (let ((table (path-index-internal-node1-constant-indexed-child-nodes parent)))
-         (map-sparse-vector (lambda (key value)
-                              (when (eq node value)
-                                (setf (sparef table key) nil)))
-                            table))))
+         (map-sparse-vector-with-indexes
+          (lambda (value key)
+            (when (eq node value)
+              (setf (sparef table key) nil)))
+          table))))
     (decrement-counter (path-index-node-counter path-index))))
 
 (defvar *path-index-insert-entry*)
@@ -456,7 +457,7 @@
 
 (defmacro map-leaf0 (leaf x &optional y)
   `(prog->
-     (map-sparse-vector-values (path-index-leaf-node-entries ,leaf) ->* entry)
+     (map-sparse-vector (path-index-leaf-node-entries ,leaf) ->* entry)
      (cond
       ((eq query-id (path-index-entry-mark entry))
        )
@@ -501,24 +502,26 @@
     (cond
      ((test-option14?)
       (when (sparse-vector-expression-p query)
-        (setf query (optimize-sparse-vector-expression query))
+        (setf query (if (trace-optimize-sparse-vector-expression?)
+                        (mes::traced-optimize-sparse-vector-expression query)
+                        (optimize-sparse-vector-expression query)))
         (if test
             (let (test-value)
               (flet ((filter (entry) (setf test-value (funcall test entry))))
                 (declare (dynamic-extent #'filter))
                 (if retrieve-entries
                     (prog->
-                      (map-sparse-vector-expression-values query :reverse t :filter #'filter ->* entry)
+                      (map-sparse-vector-expression query :reverse t :filter #'filter ->* entry)
                       (funcall cc entry test-value))
                     (prog->
-                      (map-sparse-vector-expression-values query :reverse t :filter #'filter ->* entry)
+                      (map-sparse-vector-expression query :reverse t :filter #'filter ->* entry)
                       (funcall cc (path-index-entry-term entry) test-value)))))
             (if retrieve-entries
                 (prog->
-                  (map-sparse-vector-expression-values query :reverse t ->* entry)
+                  (map-sparse-vector-expression query :reverse t ->* entry)
                   (funcall cc entry))
                 (prog->
-                  (map-sparse-vector-expression-values query :reverse t ->* entry)
+                  (map-sparse-vector-expression query :reverse t ->* entry)
                   (funcall cc (path-index-entry-term entry)))))
         (return-from map-path-index-by-query))))
     (unless query-id
@@ -536,7 +539,7 @@
                 (t
                  (when (path-index-internal-node2-p query)
                    (setq query (path-index-internal-node2-query query)))
-                 (map-sparse-vector-values
+                 (map-sparse-vector
                   (lambda (v) (map-leaf v))
                   (path-index-internal-node1-constant-indexed-child-nodes query)
                   :reverse t)
@@ -544,7 +547,7 @@
                    (when var-leaf
                      (map-leaf var-leaf)))
                  (let ((q nil))
-                   (map-sparse-vector-values
+                   (map-sparse-vector
                     (lambda (v)
                       (when q
                         (map-path-index-by-query* q queries))
@@ -651,13 +654,13 @@
 	      (incf total-size (sparse-vector-count (path-index-leaf-node-entries var-leaf)))
 	      (when (>= total-size bound)
 		(return-from retrieval-size bound))))
-          (map-sparse-vector-values
+          (map-sparse-vector
            (lambda (v)
              (incf total-size (sparse-vector-count (path-index-leaf-node-entries v)))
              (when (>= total-size bound)
                (return-from retrieval-size bound)))
            (path-index-internal-node1-constant-indexed-child-nodes query))
-          (map-sparse-vector-values
+          (map-sparse-vector
            (lambda (v)
              (incf total-size (retrieval-size v (- bound total-size)))
              (when (>= total-size bound)
@@ -769,14 +772,16 @@
       (let ((v (path-index-internal-node1-variable-child-node node)))
         (when v
           (print-path-index* v (cons "variable" revpath) print-terms)))
-      (map-sparse-vector (lambda (k v)
-                   (print-path-index* v (cons (constant-numbered k) revpath) print-terms))
-                 (path-index-internal-node1-constant-indexed-child-nodes node)
-                 :reverse t)
-      (map-sparse-vector (lambda (k v)
-                   (print-path-index* v (cons (function-numbered k) revpath) print-terms))
-                 (path-index-internal-node1-function-indexed-child-nodes node)
-                 :reverse t))
+      (map-sparse-vector-with-indexes
+       (lambda (v k)
+         (print-path-index* v (cons (constant-numbered k) revpath) print-terms))
+       (path-index-internal-node1-constant-indexed-child-nodes node)
+       :reverse t)
+      (map-sparse-vector-with-indexes
+       (lambda (v k)
+         (print-path-index* v (cons (function-numbered k) revpath) print-terms))
+       (path-index-internal-node1-function-indexed-child-nodes node)
+       :reverse t))
     (path-index-internal-node2
       (let ((iinodes (path-index-internal-node2-integer-indexed-child-nodes node)))
 	(dotimes (i (array-dimension iinodes 0))
@@ -792,7 +797,7 @@
       (princ " entries.")
       (when print-terms
 	(prog->
-	  (map-sparse-vector-values (path-index-leaf-node-entries node) ->* entry)
+	  (map-sparse-vector (path-index-leaf-node-entries node) ->* entry)
 	  (terpri-comment-indent)
 	  (princ "   ")
 	  (print-term (path-index-entry-term entry)))))))
@@ -817,8 +822,8 @@
   (princ "]"))
 
 (defun path-index-key-for-value (value table)
-  (map-sparse-vector
-   (lambda (k v)
+  (map-sparse-vector-with-indexes
+   (lambda (v k)
      (when (eq value v)
        (return-from path-index-key-for-value (symbol-numbered k))))
    table))

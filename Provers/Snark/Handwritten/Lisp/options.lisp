@@ -88,11 +88,8 @@
      (defun ,default-snark-option-function-name (&optional (value t))
        (setq ,default-snark-option-variable-name value))	;affects only future runs
      
-     (defun ,snark-option-access-function-name ()
+     (definline ,snark-option-access-function-name ()
        ,snark-option-variable-name)
-     
-     (define-compiler-macro ,snark-option-access-function-name ()
-       (quote ,snark-option-variable-name))
      
      (defgeneric ,name (&optional value)
        (:method (&optional (value t))
@@ -256,6 +253,7 @@
 (declare-snark-option2 trace-unify-bag-bindings nil)
 (declare-snark-option2 trace-dp-refute nil)
 (declare-snark-option2 trace-rewrite nil)
+(declare-snark-option2 trace-optimize-sparse-vector-expression nil)
 
 (declare-snark-option test-option1 nil nil)	;kif-declare-sort
 (declare-snark-option test-option2 nil nil)	;simplification-ordering-compare-equality-arguments
@@ -344,7 +342,7 @@
     options)
    forms))
 
-#+mcl (progn (pushnew '(let-options  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
+#+(and mcl (not openmcl)) (progn (pushnew '(let-options  . 1) ccl:*fred-special-indent-alist* :test #'equal) nil)
 
 (defun print-options (&optional all)
   (terpri-comment)

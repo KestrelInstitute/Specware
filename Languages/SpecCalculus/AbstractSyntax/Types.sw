@@ -1,8 +1,18 @@
 \section{Spec Calculus Abstract Syntax}
 
 \begin{spec}
-SpecCalc qualifying spec {
-  import ../../MetaSlang/Specs/PosSpec % For Position
+SpecCalc qualifying spec
+\end{spec}
+
+We import PosSpec for Position, QualifiedId, ASortScheme etc.  This is a
+bit of a shame as AnnSpec would like to import this spec so as to insert
+a spec calculus term in the import of a spec. This would create a cyclic
+dependency between specs. At present, this is addressed in AnnSpec by
+defining an abstract sort SpecCalc.Term a, which is refined below.
+
+\begin{spec}
+  import ../../MetaSlang/Specs/StandardSpec 
+  import /Library/Legacy/Utilities/Lisp % for LispCell
 \end{spec}
 
 All the objects in the abstract syntax are polymorphic and defined at
@@ -16,12 +26,11 @@ levels ensures that for all objects in the abstract syntax tree, the
 position information is always the second component.
 
 \begin{spec}
-  % sort Position = position % see ast/ast.sl
+  op valueOf    : fa (a) a * Position -> a
   op positionOf : fa (a) a * Position -> Position
-  def positionOf (x,position) = position
 
-  op valueOf : fa (a) a * Position -> a
-  def valueOf (x,position) = x
+  def valueOf    (value, _       ) = value
+  def positionOf (_,     position) = position
 \end{spec}
 
 The following is the toplevel returned by the parser. I don't like
@@ -36,24 +45,29 @@ The type parameter should be instantiated with the type \verb+Position+.
     | Decls (List (Decl a))
 \end{spec}
 
-The support for URI's is somewhat simplistic but hopefully sufficient
-for now.  A user may specify a uri that is relative to the current uri
+The support for UnitId's is somewhat simplistic but hopefully sufficient
+for now.  A user may specify a unitId that is relative to the current unitId
 (ie relative to the object making the reference) or relative to a path
 in the \verb+SPECPATH+ environment variable. In the current syntax, the
-latter are indicated by an opening "/". In additon, each uri evaluates
+latter are indicated by an opening "/". In additon, each unitId evaluates
 to a full canonical system path. The latter cannot be directly entered
-by the user. My apologies for the long constructor names. A relative URI
-resolves to a canonical URI. The latter in turn resolves to an absolute
+by the user. My apologies for the long constructor names. A relative UnitId
+resolves to a canonical UnitId. The latter in turn resolves to an absolute
 path in the file system. Recall that file may contain a single anonymous
-term or a list of bindings. Thus a canonical URI may resolve to two
-possible path names. Later we may want to have URIs with network addresses.
+term or a list of bindings. Thus a canonical UnitId may resolve to two
+possible path names. Later we may want to have UIDs with network addresses.
 
 \begin{spec}
-  sort URI = List String
+  sort UnitId = {
+      path : List String,
+      hashSuffix : Option String
+   }
 
-  sort RelativeURI =
-    | URI_Relative  (List String)
-    | SpecPath_Relative (List String)
+  sort RelativeUID =
+    | UnitId_Relative UnitId
+    | SpecPath_Relative UnitId
+
+  sort RelativeUnitId = RelativeUID
 \end{spec}
 
 The sort \verb+Name+ is used everywhere that one can expect a
@@ -63,11 +77,21 @@ qualifiers on op and sort names.
 
 In the near term, it also includes the identifiers bound by declarations.
 These are either \verb+let+ bound or bound by specs listed in a
-file. Later, we might allow bound identifiers to be URIs thus enabling
+file. Later, we might allow bound identifiers to be UIDs thus enabling
 one to override an existing definition.
 
 \begin{spec}
   sort Name = String
+  sort ProverName = Name
+  sort ClaimName = Name
+\end{spec}
+
+In a basic Specware image, OtherTerm is unspecified, but in an extension
+such as PSL or Planware, it might be refined to an application-specific 
+term, or a coproduct of such terms.
+
+\begin{spec}
+  sort OtherTerm a  % hook for extensions
 \end{spec}
 
 The following is the sort given to us by the parser.
@@ -75,10 +99,12 @@ The following is the sort given to us by the parser.
 \begin{spec}
   sort Term a = (Term_ a) * a
   sort Term_ a = 
-    | Print (Term a)
-    | URI RelativeURI
-    | Spec List (SpecElem a)
-    | Diag (List (DiagElem a))
+    | Print   (Term a)
+    | Prove   ClaimName * Term a * ProverName * Assertions * ProverOptions
+    | UnitId     RelativeUID
+    | Spec    List (SpecElem a)
+    | Diag    List (DiagElem a)
+    | Colimit (Term a)
 \end{spec}
 
 The calculus supports two types of morphisms: morphisms between specs and
@@ -88,12 +114,13 @@ The first two elements in the morphism products are terms that evaluate
 to the domain and codomain of the morphisms.
 
 \begin{spec}
-    | SpecMorph (Term a) * (Term a) * (List (SpecMorphElem a))
-    | DiagMorph (Term a) * (Term a) * (List (DiagMorphElem a))
+    | SpecMorph (Term a) * (Term a) * (List (SpecMorphRule a))
+    | DiagMorph (Term a) * (Term a) * (List (DiagMorphRule a))
+    | ExtendMorph  (Term a)
 \end{spec}
 
 \begin{spec}
-    | Qualify (Term a) * Name
+    | Qualify   (Term a) * Name
     | Translate (Term a) * (TranslateExpr a)
 \end{spec}
 
@@ -109,18 +136,49 @@ construct is experimental.
 The next two control the visibilty of names outside a spec.
 
 \begin{spec}
-    | Hide   (NameExpr a) * (Term a)
-    | Export (NameExpr a) * (Term a)
+    | Hide   (List (NameExpr a)) * (Term a)
+    | Export (List (NameExpr a)) * (Term a)
 \end{spec}
 
 This is an initial attempt at code generation. The first string is the
 name of the target language. Perhaps it should be a constructor.
 Also perhaps we should say where to put the output. The idea is that
-is should go in the file with the same root name as the URI calling
-compiler (but with a .lisp suffix) .. but the term may not have a URI.
+is should go in the file with the same root name as the UnitId calling
+compiler (but with a .lisp suffix) .. but the term may not have a UnitId.
+The third argument is an optional file name to store the result.
 
 \begin{spec}
-    | Generate (String * (Term a))
+    | Generate (String * (Term a) * Option String)
+\end{spec}
+
+Subsitution. The first term should be spec valued and the second should
+be morphism valued. Remains to be seen what will happen if/when we
+have diagrams.
+
+\begin{spec}
+    | Subst (Term a) * (Term a)
+\end{spec}
+
+Obligations takes a spec or a a morphism and returns a spec including
+the proof obligations as conjectures.
+
+\begin{spec}
+    | Obligations (Term a)
+\end{spec}
+
+Reduce will rewrite the given term in the context of the given spec
+using the definitions and axioms of the spec as rules.
+
+\begin{spec}
+    | Reduce (ATerm a * Term a)
+\end{spec}
+
+The following is a hook for creating applications that are 
+extensions to Specware.  If more than one new term is needed,
+you can make OtherTerm a coproduct of the desired terms.
+
+\begin{spec}
+    | Other (OtherTerm a)
 \end{spec}
 
 The following are declarations that appear in a file or listed
@@ -135,25 +193,38 @@ A \verb+TranslateExpr+ denotes a mapping on the op and sort names in a
 spec. Presumably, in the longer term there will a pattern matching syntax
 to simplify the task of uniformly renaming a collection of operators
 and sorts or for requalifying things. For now, a translation is just a
-mapping from names to names.
+mapping from names to names, annotated with the full list of aliases
+to be used in the target info.
 
 Recall the sort \verb+IdInfo+ is just a list of identifiers (names).
 
 \begin{spec}
-  sort TranslateExpr a = List (TranslateMap a)
-  sort TranslateMap a = ((QualifiedId * QualifiedId) * a)
+  sort TranslateExpr  a = List (TranslateRule a) * a
+  sort TranslateRule  a = (TranslateRule_ a) * a
+  sort TranslateRule_ a =
+    | Sort      QualifiedId                 * QualifiedId                 * SortNames % last field is all aliases
+    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort) * OpNames   % last field is all aliases
+    | Ambiguous QualifiedId                 * QualifiedId                 * Aliases   % last field is all aliases
 \end{spec}
 
-A \verb+NameExpr+ denotes list of names and operators. They are used in
-\verb+hide+ and \verb+export+ terms to either exclude names from being
-export or dually, to specify exactly what names are to be exported.
-Presumably the syntax will borrow ideas from the syntax used for
-qualifiying names. In particular we might want to allow patterns with
-wildcards to stand for a collection of names. For now, one must explicitly
-list them.
+A \verb+NameExpr+ denote the name of an op, sort or claim. Lists of such
+expressions are used in \verb+hide+ and \verb+export+ terms to either
+exclude names from being export or dually, to specify exactly what names
+are to be exported.  Presumably the syntax will borrow ideas from the
+syntax used for qualifiying names. In particular we might want to allow
+patterns with wildcards to stand for a collection of names. For now,
+one must explicitly list them.
+
+There is some inconsistency here as NameExpr is not annotated with 
+a position as in TranslateExpr above.
 
 \begin{spec}
-  sort NameExpr a = List QualifiedId
+  sort NameExpr a = | Sort       QualifiedId
+                    | Op         QualifiedId * Option Sort
+                    | Axiom      QualifiedId
+                    | Theorem    QualifiedId
+                    | Conjecture QualifiedId
+                    | Ambiguous  QualifiedId
 \end{spec}
 
 A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
@@ -163,8 +234,8 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
 
   sort SpecElem_ a =
     | Import Term a
-    | Sort   QualifiedId * (TyVars * Option (ASort a))
-    | Op     QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
+    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (AProperty a)
 \end{spec}
 
@@ -197,8 +268,11 @@ The tagging in the sorts below may be excessive given the \verb+ATerm+
 is already tagged.
 
 \begin{spec}
-  sort SpecMorphElem a = (SpecMorphElem_ a) * a
-  sort SpecMorphElem_ a = QualifiedId * (ATerm a)
+  sort SpecMorphRule a = (SpecMorphRule_ a) * a
+  sort SpecMorphRule_ a = 
+    | Sort      QualifiedId * QualifiedId
+    | Op        (QualifiedId * Option Sort) * (QualifiedId * Option Sort)
+    | Ambiguous QualifiedId * QualifiedId 
 \end{spec}
 
 The current syntax allows one to write morphisms mapping names to terms
@@ -209,17 +283,30 @@ A diagram morphism has two types of elements: components of the shape map
 and components of the natural transformation. The current syntax allows
 them to be presented in any order. 
 
-\begin{spec}
-  sort DiagMorphElem a = (DiagMorphElem_ a) * a
-  sort DiagMorphElem_ a =
-    | ShapeMap Name * Name
-    | NatTranComp Name * (Term a) 
-\end{spec}
-
 A \verb+NatTranComp+ element is a component in a natural transformation
 between diagrams. The components are indexed by vertices in the shape.
 The term in the component must evaluate to a morphism.
 
 \begin{spec}
-}
+  sort DiagMorphRule a = (DiagMorphRule_ a) * a
+  sort DiagMorphRule_ a =
+    | ShapeMap    Name * Name
+    | NatTranComp Name * (Term a) 
+\end{spec}
+
+\begin{spec}
+  sort Assertions = | All
+                    | Explicit List ClaimName
+
+  sort ProverOptions = | OptionString (List LispCell)
+                       | OptionName QualifiedId
+                       | Error   (String * String)  % error msg, problematic string
+\end{spec}
+
+The next is callable from the parser.
+
+\begin{spec}
+  op mkOther : fa (a) (OtherTerm a) * a -> Term a
+  def mkOther (other,position) = (Other other, position)
+endspec
 \end{spec}

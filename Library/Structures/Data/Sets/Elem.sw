@@ -1,11 +1,14 @@
 \section{Set Parameter}
-This is the sort parameter to all monomorphic sets.
+
+This spec to be deprecated. See ../Elem.sw instead.
+
+This is the sort parameter to monomorphic sets.
 
 \begin{spec}
-spec
+Elem qualifying spec
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Elem
-  op ppElem : Elem -> Pretty
+  op pp : Elem -> Pretty
 end
 \end{spec}

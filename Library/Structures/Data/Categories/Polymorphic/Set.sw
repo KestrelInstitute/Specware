@@ -3,12 +3,11 @@ An internal category of finite polymorphic sets.
 \begin{spec}
 let Cats = Initial in
 let Elements = Finite qualifying /Library/Structures/Data/Sets/Polymorphic in
-let Maps = Poly qualifying /Library/Structures/Data/Maps/Polymorphic/ in
+let Maps = Poly qualifying /Library/Structures/Data/Maps/Polymorphic in
 spec
   import Cats
   import Maps
   import Elements
-  import Lift
 
   sort Morphism a = {
     dom : Finite.Set a,

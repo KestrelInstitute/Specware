@@ -157,8 +157,10 @@ public abstract class DrawingModeAddEdge extends DrawingModeWithMarqueeHandler {
                     //System.out.println("straightening edge...");
                     ((XEdgeView) ev).straightenEdge();
                     //System.out.println("straightening edge done.");
+                    edge.initialConnectHook((XEdgeView)ev);
                 }
             }
+            ((XGraphDisplay)graph).switchToInitialDrawingMode();
         }
         
         /** method called when the drawing of the edge is canceled, i.e. either the user has clicked with the right mouse
@@ -170,6 +172,7 @@ public abstract class DrawingModeAddEdge extends DrawingModeWithMarqueeHandler {
                 edge = null;
                 Dbg.pr("drawing edge canceled.");
             }
+            ((XGraphDisplay)graph).switchToInitialDrawingMode();
         }
         
         public void mouseDragged(MouseEvent e0) {

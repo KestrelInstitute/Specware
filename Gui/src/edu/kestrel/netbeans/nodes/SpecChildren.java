@@ -6,6 +6,18 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/18 18:06:47  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:15:05  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:13  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -57,8 +69,11 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
 
     static {
         propToFilter = new HashMap ();
+        propToFilter.put (ElementProperties.PROP_IMPORTS, new Integer (SpecElementFilter.IMPORT));        
         propToFilter.put (ElementProperties.PROP_SORTS, new Integer (SpecElementFilter.SORT));
         propToFilter.put (ElementProperties.PROP_OPS, new Integer (SpecElementFilter.OP));
+        propToFilter.put (ElementProperties.PROP_DEFS, new Integer (SpecElementFilter.DEF));
+        propToFilter.put (ElementProperties.PROP_CLAIMS, new Integer (SpecElementFilter.CLAIM));
     }
 
     /** The spec element whose subelements are represented. */
@@ -160,11 +175,20 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
     * The node is created using node factory.
     */
     protected Node[] createNodes (final Object key) {
+        if (key instanceof ImportElement) {
+            return new Node[] { hookNodeName(factory.createImportNode((ImportElement)key)) };
+        }
         if (key instanceof SortElement) {
             return new Node[] { hookNodeName(factory.createSortNode((SortElement)key)) };
         }
         if (key instanceof OpElement) {
             return new Node[] { hookNodeName(factory.createOpNode((OpElement)key)) };
+        }
+        if (key instanceof DefElement) {
+            return new Node[] { hookNodeName(factory.createDefNode((DefElement)key)) };
+        }
+        if (key instanceof ClaimElement) {
+            return new Node[] { hookNodeName(factory.createClaimNode((ClaimElement)key)) };
         }
         // ?? unknown type
         return new Node[0];
@@ -205,11 +229,20 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
     */
     protected Collection getKeysOfType (final int elementType) {
         LinkedList keys = new LinkedList();
+        if ((elementType & SpecElementFilter.IMPORT) != 0) {
+            keys.addAll(Arrays.asList(element.getImports()));
+        }
         if ((elementType & SpecElementFilter.SORT) != 0) {
             keys.addAll(Arrays.asList(element.getSorts()));
         }
         if ((elementType & SpecElementFilter.OP) != 0) {
             keys.addAll(Arrays.asList(element.getOps()));
+        }
+        if ((elementType & SpecElementFilter.DEF) != 0) {
+            keys.addAll(Arrays.asList(element.getDefs()));
+        }
+        if ((elementType & SpecElementFilter.CLAIM) != 0) {
+            keys.addAll(Arrays.asList(element.getClaims()));
         }
         if ((filter == null) || filter.isSorted ())
             Collections.sort(keys, comparator);
@@ -240,10 +273,16 @@ public class SpecChildren extends Children.Keys implements FilterCookie {
             if (src != element) {
                 if (src instanceof MemberElement &&
                     (propName == null || ElementProperties.PROP_NAME == propName)) {
-                    if (src instanceof SortElement) 
+                    if (src instanceof ImportElement) 
+                        filter = SpecElementFilter.IMPORT;
+                    else if (src instanceof SortElement) 
                         filter = SpecElementFilter.SORT;
                     else if (src instanceof OpElement) 
                         filter = SpecElementFilter.OP;
+                    else if (src instanceof DefElement) 
+                        filter = SpecElementFilter.DEF;
+                    else if (src instanceof ClaimElement) 
+                        filter = SpecElementFilter.CLAIM;
                 } else
                     return;
             } else {

@@ -6,6 +6,24 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/07/05 07:46:39  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.5  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
+ * Revision 1.4  2003/04/01 02:29:40  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.3  2003/03/29 03:13:59  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.2  2003/03/14 04:14:22  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.1  2003/01/30 02:02:12  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -27,12 +45,17 @@ import java.beans.PropertyChangeListener;
 public class SourceElementFilter {
 
     public static final int       SPEC = 1;
-    public static final int       ALL = SPEC;
+    public static final int       PROOF = 2;
+    public static final int       MORPHISM = 4;
+    public static final int       DIAGRAM = 8;
+    public static final int       COLIMIT = 16;
+    //public static final int       UnitId = 32;
+    public static final int       ALL = SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT;
     /** Default order of the top-level element types in the hierarchy.
     * A list, each of whose elements is a bitwise disjunction of element types.
     * By default, only classes and interfaces are listed, and these together.
     */
-    public static final int[]     DEFAULT_ORDER = { SPEC };
+    public static final int[]     DEFAULT_ORDER = { SPEC | PROOF | MORPHISM | DIAGRAM | COLIMIT };
 
     /** stores property value */
     private int[]                 order = null;

@@ -21,60 +21,52 @@ in the generating graph, since as a rule, whereas the number of edges
 in the generating graph may be finite, there may not be a finite number
 of paths in the free category.
 
-Note that import Maps are qualified with "Poly". This is to distinguish
+Note that import Maps are qualified with "PolyMap". This is to distinguish
 it from the monomorphic maps used elsewhere. See the file NameSpaces
 for more on this.
 
 The names of some of these operators clash with Cats and Graphs.
 
 \begin{spec}
-let Sketches =
-  /Library/Structures/Data/Categories/Sketches/Monomorphic/Sketches in
-let Cats = /Library/Structures/Data/Categories/Polymorphic/Cats in
-let Maps = Poly qualifying /Library/Structures/Data/Maps/Polymorphic in
-spec
-  import /Library/PrettyPrinter/WadlerLindig
-  import Sketches
-  import Cats
-  import Maps
+spec {
+  import Sketch qualifying /Library/Structures/Data/Categories/Sketches/Monomorphic
+  import Cat qualifying /Library/Structures/Data/Categories/Polymorphic
+  import PolyMap qualifying /Library/Structures/Data/Maps/Polymorphic
 
-%   sort Functor (O,A) = {
-% 	  dom : Sketch,
-%     cod : Cat (O,A),
-%     vertexMap : Poly.Map (Elem_v,O),
-%     edgeMap : Poly.Map (Elem_e,A)
-%   }
-\end{spec}
-
-\begin{spec}
   sort Functor (O,A)
-  op dom : fa(O,A) Functor (O,A) -> Sketch
-  op cod : fa(O,A) Functor (O,A) -> Cat (O,A)
-  op vertexMap : fa(O,A) Functor (O,A) -> Poly.Map (Vertex.Elem,O)
-  op edgeMap : fa(O,A) Functor (O,A) -> Poly.Map (Edge.Elem,A)
 
-  % def vertexMap functor = functor.vertexMap
-  % def edgeMap functor = functor.edgeMap
+  op dom : fa (O,A) Functor (O,A) -> Sketch
+  op cod : fa (O,A) Functor (O,A) -> Cat (O,A)
+  op vertexMap : fa (O,A) Functor (O,A) -> PolyMap.Map (Vertex.Elem,O)
+  op edgeMap : fa (O,A) Functor (O,A) -> PolyMap.Map (Edge.Elem,A)
+
+  op emptyFunctor : fa (O,A) Cat (O,A) -> Functor (O,A)
+  op makeFunctor :
+   fa (O,A) Sketch
+         -> Cat (O,A)
+         -> PolyMap.Map (Vertex.Elem,O)
+         -> PolyMap.Map (Edge.Elem,A)
+         -> Functor (O,A)
 \end{spec}
 
 When pretty printing a functor, we don't print the domain or codomain. 
 Printing the domain (generator) is not unreasonable.
 
 \begin{spec}
-%   op ppFunctor : fa (O,A) Functor (O,A) -> Pretty
-%   def ppFunctor functor = 
-%     ppConcat [
-%       ppString "Vertex Map =",
-%       ppNewline,
-%       ppString "  ",
-%       ppIndent (ppMap_p ppElem_v (ppObj functor.cod) functor.vertexMap),
-%       ppNewline,
-%       ppString "Edge Map =",
-%       ppNewline,
-%       ppString "  ",
-%       ppIndent (ppMap_p ppElem_e (ppArr functor.cod) functor.edgeMap)
-%    ]
-end
+  op ppFunctor : fa (O,A) Functor (O,A) -> Pretty
+  def ppFunctor functor = 
+    ppConcat [
+      ppString "Vertex Map =",
+      ppNewline,
+      ppString "  ",
+      ppIndent (PolyMap.ppMap Vertex.ppElem (ppObj (cod functor)) (vertexMap functor)),
+      ppNewline,
+      ppString "Edge Map =",
+      ppNewline,
+      ppString "  ",
+      ppIndent (PolyMap.ppMap Edge.ppElem (ppArr (cod functor)) (edgeMap functor))
+   ]
+}
 \end{spec}
 
 The above should import and refine the general polymorphic Functors spec

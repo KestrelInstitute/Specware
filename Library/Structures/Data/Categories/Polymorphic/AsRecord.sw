@@ -4,7 +4,7 @@ Here we define an explicit sort for categories. This is
 a refinement of Cats where a category is represented by a record. 
 
 \begin{spec}
-spec
+spec {
   import /Library/Structures/Data/Categories/Polymorphic
 
   sort Cat (O,A) = {
@@ -24,7 +24,7 @@ spec
   def compose cat = cat.compose
   def ppObj cat = cat.ppObj
   def ppArr cat = cat.ppArr
-end
+}
 \end{spec}
 
 Should we add ppObj and ppArrow to the record for pretty printing

@@ -11,6 +11,12 @@
 ;;;
 ;;;
 ;;; $Log$
+;;; Revision 1.2  2003/06/19 18:16:59  weilyn
+;;; Fixed stuff for netbeans release
+;;;
+;;; Revision 1.1  2003/06/17 22:27:18  westfold
+;;; New socket interface to java
+;;;
 ;;; Revision 1.2  2003/03/04 07:08:56  westfold
 ;;; Changes for openmcl compatibility
 ;;;
@@ -52,6 +58,6 @@
     ))
 
 
-(load (compile-file "specware:lisp-ui;init-java-connection"))
-(specware::change-directory "specware:java-ui;")
+(load (compile-file "specware:lisp-ui;init-java-socket-connection"))
+;?(specware::change-directory "specware:java-ui;")
 (cl-user::init-java-listener)

@@ -1,6 +1,7 @@
 Unifier qualifying
 spec
  import /Languages/MetaSlang/Specs/StandardSpec
+ sort Term = MS.Term
  sort Subst = List (Var * Term)
  sort Vars = List Var
 

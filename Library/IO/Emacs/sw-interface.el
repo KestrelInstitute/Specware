@@ -14,6 +14,7 @@
 	((eq system-type 'usg-unix-v)    30)
 	((eq system-type 'windows-nt)    30)
 	((eq system-type 'linux)         30)
+	((eq system-type 'darwin)        30)
 	(t (error "unknown operating system type")))
   "Signal number to tell lisp that a message is comming.")
 
@@ -25,6 +26,7 @@
 	((eq system-type 'usg-unix-v)    31)
 	((eq system-type 'windows-nt)    31)
 	((eq system-type 'linux)         31)
+	((eq system-type 'darwin)        31)
 	(t (error "unknown operating system type")))
   "Signal number to tell lisp that a preemptive message is comming.")
 
@@ -45,11 +47,11 @@
  *lisp-message-interrupt-signal-number* to the lisp process, whose
  handler should make sure Lisp is ready to deal with an incoming message."
 ;  (send-signal-to-lisp *lisp-message-interrupt-signal-number*)
-  (sw:eval-in-lisp (format "(emacs::make-process '%s)" string)))
+  (sw:eval-in-lisp (format "(io-spec::makeProcess '%s)" string)))
 
 (defun sw:eval-interruptable-in-lisp (string)
   (setq sw:*current-specware-process* 
-	(sw:eval-in-lisp (format "(emacs::make-process '%s)" string))))
+	(sw:eval-in-lisp (format "(IO-spec::makeProcess '%s)" string))))
 
 
 (defun send-preemptive-message-to-lisp (string)

@@ -19,8 +19,8 @@
 
 (in-package :snark)
 
-;;; a function-sort-declaration is a single sort declaration for a function or predicate
-;;; fsd-result-sort returns the sort of the result (top-sort in the case of predicates)
+;;; a function-sort-declaration is a single sort declaration for a function or relation
+;;; fsd-result-sort returns the sort of the result (top-sort in the case of relations)
 ;;; fsd-argument-sort-alist returns an alist of argument-ids and argument-sorts like
 ;;;   ((2 . arg2-sort) (1 . arg1-sort) (t . default-arg-sort)) and
 ;;;   ((:length . positive) (:width . positive) (t . real)) for :alist/:plist arity
@@ -48,7 +48,7 @@
 
 (defun fsd-arg-sort (fsd argid)
   ;; find in (fsd-argument-sort-alist fsd) the sort restriction for argument argid
-  ;; argid is an argument number or a key in the case of alist/plist functions/predicates
+  ;; argid is an argument number or a key in the case of alist/plist functions/relations
   (dolist (p (fsd-argument-sort-alist fsd) top-sort)
     (let ((key (car p)))
       (when (or (eql argid key) (eq t key))

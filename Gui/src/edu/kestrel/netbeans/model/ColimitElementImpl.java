@@ -18,7 +18,7 @@ class ColimitElementImpl extends MemberElementImpl implements ColimitElement.Imp
      */
     private SourceElementImpl       sourceImpl;
     
-//    private ImportCollection     imports;
+    private DiagramCollection       diagrams;
 
     private MemberCollection        members;
 
@@ -47,7 +47,7 @@ class ColimitElementImpl extends MemberElementImpl implements ColimitElement.Imp
         super.createFromModel(model);
 
         // member elements need the Element already.
-//        changeImports(element.getImports(), SpecElement.Impl.ADD);
+        changeDiagrams(element.getDiagrams(), ADD);
     }
     
     public final void setParent(ElementImpl impl) {
@@ -66,30 +66,30 @@ class ColimitElementImpl extends MemberElementImpl implements ColimitElement.Imp
     // Member management methods
     // - will delegate to collection helpers.
     ///////////////////////////////////////////////////////////////////////////////////
-/*    public ImportElement[] getImports() {
-        if (imports == null)
-            return ImportCollection.EMPTY;
-        return (ImportElement[])imports.getElements().clone();
+    public DiagramElement[] getDiagrams() {
+        if (diagrams == null)
+            return DiagramCollection.EMPTY;
+        return (DiagramElement[])diagrams.getElements().clone();
     }
     
-    public ImportElement getImport(String name) {
-        if (imports == null)
+    public DiagramElement getDiagram(String name) {
+        if (diagrams == null)
             return null;
-        return imports.getImport(name);
+        return diagrams.getDiagram(name);
     }
     
-    public void changeImports(ImportElement[] elements, int operation) 
+    public void changeDiagrams(DiagramElement[] elements, int operation) 
         throws SourceException {
-        initializeImports();
+        initializeDiagrams();
         Object token = takeMasterLock();
         try {
-            imports.changeMembers(elements, operation);
+            diagrams.changeMembers(elements, operation);
             commit();
         } finally {
             releaseLock(token);
         }
     }
-*/
+
 
     // Utility methods
     ///////////////////////////////////////////////////////////////////////////////////
@@ -107,11 +107,11 @@ class ColimitElementImpl extends MemberElementImpl implements ColimitElement.Imp
     
     public void updateMembers(String propName, Element[] els, int[] indices,
         int[] optMap) {
-/*        if (propName == ElementProperties.PROP_IMPORTS) {
-	    initializeImports();
-            imports.updateMembers(els, indices, optMap);
+        if (propName == ElementProperties.PROP_DIAGRAMS) {
+	    initializeDiagrams();
+            diagrams.updateMembers(els, indices, optMap);
         }
-*/	//Util.log("ColimitElementimpl.updateMembers after PartialCollection.updateMembers members = "+members);
+	//Util.log("ColimitElementimpl.updateMembers after PartialCollection.updateMembers members = "+members);
 	//Util.log("ColimitElementimpl.updateMembers after PartialCollection.updateMembers indices = "+Util.print(indices)
 	//				 +" optMap = "+Util.print(optMap));
 
@@ -121,16 +121,16 @@ class ColimitElementImpl extends MemberElementImpl implements ColimitElement.Imp
         members.updateOrder(ordered);
     }
     
-/*    private void initializeImports() {
-        if (imports != null)
+    private void initializeDiagrams() {
+        if (diagrams != null)
             return;
         synchronized (this) {
-            if (imports == null) {
-                imports = new ImportCollection(this, getModelImpl(), members);
+            if (diagrams == null) {
+                diagrams = new DiagramCollection(this, getModelImpl(), members);
             }
         }
     }
-*/
+
 
     protected final Binding createBinding(Element el) {
         return getModelImpl().getBindingFactory().bindColimit((ColimitElement)el);
@@ -216,8 +216,8 @@ class ColimitElementImpl extends MemberElementImpl implements ColimitElement.Imp
         }
         super.notifyCreate();
         members.sanityCheck();
-//        if (imports != null)
-//            imports.sanityCheck();
+        if (diagrams != null)
+            diagrams.sanityCheck();
     }
     
     public Element[] getElements() {

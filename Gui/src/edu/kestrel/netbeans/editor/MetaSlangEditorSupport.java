@@ -6,6 +6,30 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/07/05 07:46:36  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.6  2003/04/01 02:29:35  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.5  2003/03/29 03:13:54  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.4  2003/03/14 04:13:22  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.3  2003/03/13 01:23:53  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
+ * Revision 1.2  2003/02/17 07:01:59  weilyn
+ * Made scUID an Item, and added more rules for scProve.
+ *
+ * Revision 1.1  2003/01/30 02:01:47  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -239,7 +263,7 @@ public class MetaSlangEditorSupport extends DataEditorSupport implements EditorC
 		public void taskFinished(Task t2) {
 		    t2.removeTaskListener(this);
 		    notifyParsingDone();
-		    if (req.getErrConsumer()!=null) {
+		    if (req.annotatedErrors !=0) {
 			SwingUtilities.invokeLater(new Runnable() {
 				public void run() {
 				    if (isDocumentLoaded())
@@ -550,6 +574,24 @@ public class MetaSlangEditorSupport extends DataEditorSupport implements EditorC
             else if (element instanceof OpElement) {
                 n = factory.createOpNode((OpElement)element);
             }
+            else if (element instanceof DefElement) {
+                n = factory.createDefNode((DefElement)element);
+            }
+            else if (element instanceof ClaimElement) {
+                n = factory.createClaimNode((ClaimElement)element);
+            } 
+            else if (element instanceof ProofElement) {
+                n = factory.createProofNode((ProofElement)element);
+            } 
+            else if (element instanceof MorphismElement) {
+                n = factory.createMorphismNode((MorphismElement)element);
+            } 
+            else if (element instanceof DiagramElement) {
+                n = factory.createDiagramNode((DiagramElement)element);
+            } 
+            else if (element instanceof ColimitElement) {
+                n = factory.createColimitNode((ColimitElement)element);
+            } 
             else if (element instanceof SourceElement) {
                 n = support.getDataObject().getNodeDelegate();
             }

@@ -32,19 +32,11 @@ public class ColimitElementNode extends MemberElementNode {
     };
 
     /** Menu labels */
-/*    private static final String MENU_CREATE_IMPORT;
-    private static final String MENU_CREATE_SORT;
-    private static final String MENU_CREATE_OP;
-    private static final String MENU_CREATE_DEF;
-    private static final String MENU_CREATE_CLAIM;*/
+    private static final String MENU_CREATE_DIAGRAM;
 
     static {
         ResourceBundle bundle = NbBundle.getBundle(ColimitElementNode.class);
-/*        MENU_CREATE_IMPORT = bundle.getString("MENU_CREATE_IMPORT");
-        MENU_CREATE_SORT = bundle.getString("MENU_CREATE_SORT");
-        MENU_CREATE_OP = bundle.getString("MENU_CREATE_OP");
-        MENU_CREATE_DEF = bundle.getString("MENU_CREATE_DEF");
-        MENU_CREATE_CLAIM = bundle.getString("MENU_CREATE_CLAIM");*/
+        MENU_CREATE_DIAGRAM = bundle.getString("MENU_CREATE_DIAGRAM");
     }
 
     /** Create a new colimit node.
@@ -258,21 +250,9 @@ public class ColimitElementNode extends MemberElementNode {
         SourceEditSupport.invokeAtomicAsUser(element, new SourceEditSupport.ExceptionalRunnable() {
 		public void run() throws SourceException {
 		    ColimitElement colimit = (ColimitElement) element;
-/*		    if (addingElement instanceof ImportElement) {
-			colimit.addImport((ImportElement)addingElement);
-                    } else if (addingElement instanceof SortElement) {
-			spec.addSort((SortElement)addingElement);
-		    } else if (addingElement instanceof OpElement) {
-			OpElement me = (OpElement) addingElement;
-			me  = (OpElement) me.clone();
-			spec.addOp(me);
-                    } else if (addingElement instanceof DefElement) {
-			spec.addDef((DefElement)addingElement);
-		    } else if (addingElement instanceof ClaimElement) {
-			ClaimElement me = (ClaimElement) addingElement;
-			me  = (ClaimElement) me.clone();
-			spec.addClaim(me);
-		    }*/
+		    if (addingElement instanceof DiagramElement) {
+			colimit.addDiagram((DiagramElement)addingElement);
+                    } 
 		}
 	    });
         if (delete && (!cancelled[0])) {
@@ -294,17 +274,9 @@ public class ColimitElementNode extends MemberElementNode {
 		    public void run() throws SourceException {
 			if (addingElement instanceof MemberElement) {
 			    if (origColimit != null) {
-/*                                if (addingElement instanceof ImportElement) {
-				    origColimit.removeImport((ImportElement)addingElement);
-				} else if (addingElement instanceof SortElement) {
-				    origSpec.removeSort((SortElement)addingElement);
-				} else if (addingElement instanceof OpElement) {
-				    origSpec.removeOp((OpElement)addingElement);
-                                } else if (addingElement instanceof DefElement) {
-				    origSpec.removeDef((DefElement)addingElement);
-				} else if (addingElement instanceof ClaimElement) {
-				    origSpec.removeClaim((ClaimElement)addingElement);
-				}*/
+                                if (addingElement instanceof DiagramElement) {
+				    origColimit.removeDiagram((DiagramElement)addingElement);
+				}
 	                    } else if ((addingElement instanceof ColimitElement) &&
 				       colimitSource != null) {
 				colimitSource.removeColimit((ColimitElement)addingElement);

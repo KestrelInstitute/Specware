@@ -8,6 +8,12 @@ PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 # Test whether SPECWARE4 has been set
 
 if [ -z "$SPECWARE4" ]; then
+    echo 'SPECWARE4 environment variable not set, trying /specware/Specware4'
+    SPECWARE4=/specware/Specware4
+    export SPECWARE4
+fi
+
+if [ -z "$SPECWARE4" ]; then
     echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
     exit 1
 fi
@@ -60,7 +66,7 @@ SPECWARE_BIN="$SPECWARE4"/Applications/Specware/bin/darwin
 # Try to find lisp executable:
 
 if [ -z "$LISP" ]; then
-   for L in /Users/westfold/ccl/dppccl /Users/westfold/Desktop/Download/ccl/dppccl /Users/westfold/ccl-13/dppccl /Users/westfold/ccl-0.14/dppccl; do
+   for L in /openmcl_files/ccl/dppccl /Users/westfold/ccl/dppccl /Users/westfold/Desktop/Download/ccl/dppccl /Users/westfold/ccl-13/dppccl /Users/westfold/ccl-0.14/dppccl; do
       if [ -x "$L" ]; then
          LISP="$L"; break
       fi

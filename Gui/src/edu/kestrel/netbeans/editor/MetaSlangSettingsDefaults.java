@@ -6,6 +6,15 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/13 01:23:54  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
+ * Revision 1.1  2003/01/30 02:01:50  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -157,6 +166,7 @@ public class MetaSlangSettingsDefaults extends ExtSettingsDefaults {
 
                     case MetaSlangTokenContext.LINE_COMMENT_ID:
                     case MetaSlangTokenContext.BLOCK_COMMENT_ID:
+                    case MetaSlangTokenContext.LATEX_COMMENT_ID:
                         return commentColoring;
 
                     case MetaSlangTokenContext.CHAR_LITERAL_ID:

@@ -6,6 +6,39 @@
  *
  *
  * $Log$
+ * Revision 1.11  2003/07/05 07:46:39  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.10  2003/06/23 18:00:18  weilyn
+ * internal release version
+ *
+ * Revision 1.9  2003/04/23 01:16:24  weilyn
+ * DiagElemInfo.java
+ *
+ * Revision 1.8  2003/04/01 02:29:41  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.7  2003/03/29 03:14:00  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.6  2003/03/14 04:15:31  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.5  2003/02/18 18:10:09  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.4  2003/02/17 04:35:21  weilyn
+ * Added support for expressions.
+ *
+ * Revision 1.3  2003/02/16 02:16:02  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:45:52  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:16  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -77,6 +110,109 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 	}
 	return info;
     }
+    
+    /** Creates an element for a def.
+	@param str The def string.
+    */
+    public Item	createDef(String name, String[] params, String expression) {
+	DefInfo info = new DefInfo(name, params, expression);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createDef(): "+info);
+	}
+	return info;
+    }
+  
+    /** Creates an element for a claim.
+	@param parameter Name of the parameter to be assigned value.
+	@param value Value to be assigned to the parameter.
+    */
+    public Item	createClaim(String name, String claimKind, String expression) {
+	ClaimInfo info = new ClaimInfo(name, claimKind, expression);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createClaim(): "+info);
+	}
+	return info;
+    }
+    
+    /** Creates an element for an import.
+	@param str The import string.
+    */
+    public Item	createImport(String name, ElementFactory.Item item) {
+	ImportInfo info = new ImportInfo(name);
+        if (item != null) {
+            //TODO: do something
+        }
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createImport(): "+info);
+	}
+	return info;
+    }
+ 
+    /** Creates an element for a proof.
+	@param name Name of the proof.
+    */
+    public Item createProof(String name, String proofString) {
+	ProofInfo info = new ProofInfo(name, proofString);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createProof(): "+info);
+	}
+	return info;
+    }
+    
+    /** Creates an element for a morphism.
+	@param name Name of the morphism.
+    */
+    public Item createMorphism(String name, String sourceUnitID, String targetUnitID) {
+	MorphismInfo info = new MorphismInfo(name, sourceUnitID, targetUnitID);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createMorphism(): "+info);
+	}
+	return info;
+    }
+
+    /** Creates an element for a diagElem.
+	@param str The diagElem string.
+    */
+    public Item	createDiagElem(String name) {
+	DiagElemInfo info = new DiagElemInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createDiagElem(): "+info);
+	}
+	return info;
+    }
+    
+    /** Creates an element for a diagram.
+	@param name Name of the diagram.
+    */
+    public Item createDiagram(String name) {
+	DiagramInfo info = new DiagramInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createDiagram(): "+info);
+	}
+	return info;
+    }
+
+    /** Creates an element for a colimit.
+	@param name Name of the colimit.
+    */
+    public Item createColimit(String name) {
+	ColimitInfo info = new ColimitInfo(name);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createColimit(): "+info);
+	}
+	return info;
+    }
+    
+    /** Creates an element for a unitId.
+	@param str The unitId string.
+    */
+    /*public Item	createUID(String name, String path) {
+	UIDInfo info = new UIDInfo(name, path);
+	if (DEBUG) {
+	    Util.log("*** DocumentModelBuilder.createUID(): "+info);
+	}
+	return info;
+    }*/
     
     /** Sets bounds for the whole element. Begin is offset of first character of the element,
 	end is the offset of the last one.
@@ -224,23 +360,52 @@ public class DocumentModelBuilder extends SourceInfo implements ElementFactory {
 
 	BaseElementInfo childInfo = (BaseElementInfo) child;
 	childInfo.parent = parent;
-        
-	//Util.log("DocumentModelBuilder.setParent Parent = "+parent);
+        if (DEBUG) {
+            Util.log("DocumentModelBuilder.setParent Parent = "+parent);
+        }
 	if (parent == null) {
 	    // must be a top-level class:
-	    //addSpec((SpecInfo)child);
 	    if (child instanceof SpecInfo) {
-	      //Util.log("DocumentModelBuilder.setParent child is an instance of specInfo = "+child);
-	      addMember(SourceInfo.SPEC, childInfo);
-	    } 
+	       addMember(SourceInfo.SPEC, childInfo);
+	    } else if (child instanceof ProofInfo) {
+               addMember(SourceInfo.PROOF, childInfo); 
+            } else if (child instanceof MorphismInfo) {
+               addMember(SourceInfo.MORPHISM, childInfo); 
+            } else if (child instanceof DiagramInfo) {
+               addMember(SourceInfo.DIAGRAM, childInfo); 
+            } else if (child instanceof ColimitInfo) {
+               addMember(SourceInfo.COLIMIT, childInfo); 
+            } /*else if (child instanceof UIDInfo) {
+               addMember(SourceInfo.UnitId, childInfo);
+            }*/
 	} else if (parent instanceof SpecInfo) {
 	    SpecInfo parentInfo = (SpecInfo)parent;
 	    if (child instanceof SortInfo) {
 		parentInfo.addMember(SpecInfo.SORT, childInfo);
 	    } else if (child instanceof OpInfo) {
 		parentInfo.addMember(SpecInfo.OP, childInfo);
-	    }
-	} 
+	    } else if (child instanceof DefInfo) {
+		parentInfo.addMember(SpecInfo.DEF, childInfo);
+	    } else if (child instanceof ClaimInfo) {
+		parentInfo.addMember(SpecInfo.CLAIM, childInfo);
+	    } else if (child instanceof ImportInfo) {
+                parentInfo.addMember(SpecInfo.IMPORT, childInfo);
+            }
+	} else if (parent instanceof ProofInfo) {
+            ProofInfo parentInfo = (ProofInfo)parent;
+        } else if (parent instanceof MorphismInfo) {
+            MorphismInfo parentInfo = (MorphismInfo)parent;
+        } else if (parent instanceof DiagramInfo) {
+            DiagramInfo parentInfo = (DiagramInfo)parent;
+            if (child instanceof DiagElemInfo) {
+                parentInfo.addMember(DiagramInfo.DIAG_ELEM, childInfo);
+            }
+        } else if (parent instanceof ColimitInfo) {
+            ColimitInfo parentInfo = (ColimitInfo)parent;
+            if (child instanceof DiagramInfo) {
+                parentInfo.addMember(ColimitInfo.DIAGRAM, childInfo);
+            }
+        } //TODO: import info
     }
     
     public void markError(Item item) {

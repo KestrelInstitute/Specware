@@ -1,21 +1,21 @@
 StringSet qualifying spec { 
   import SplaySet   
 
-  sort Set = SplaySet.Set String
+  sort StringSet.Set = SplaySet.Set String
 
-  op empty         : Set
-  op difference    : Set * Set -> Set
-  op add           : Set * String -> Set
-  op addList       : Set * List String -> Set
-  op member        : Set * String -> Boolean
-  op fromList      : List String -> Set
-  op toList        : Set -> List String
-  op isEmpty       : Set -> Boolean
-  op listItems     : Set -> List String
-  op union         : Set * Set -> Set
-  op intersection  : Set * Set -> Set
-  op map           : (String -> String) -> Set -> Set
-  op app           : (String -> ()) -> Set -> ()
+  op empty         : StringSet.Set
+  op difference    : StringSet.Set * StringSet.Set -> StringSet.Set
+  op add           : StringSet.Set * String -> StringSet.Set
+  op addList       : StringSet.Set * List String -> StringSet.Set
+  op member        : StringSet.Set * String -> Boolean
+  op fromList      : List String -> StringSet.Set
+  op toList        : StringSet.Set -> List String
+  op isEmpty       : StringSet.Set -> Boolean
+  op listItems     : StringSet.Set -> List String
+  op union         : StringSet.Set * StringSet.Set -> StringSet.Set
+  op intersection  : StringSet.Set * StringSet.Set -> StringSet.Set
+  op map           : (String -> String) -> StringSet.Set -> StringSet.Set
+  op app           : (String -> ()) -> StringSet.Set -> ()
 
   def empty          = SplaySet.empty String.compare
   def difference     = SplaySet.difference

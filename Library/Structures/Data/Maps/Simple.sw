@@ -80,7 +80,8 @@ List the key/range pairs in order of appearance.
 \end{spec}
 
 \begin{spec}
-  op mapPartial : fa(key,a,b) (a -> Option b) -> Map (key,a) -> Map (key,b)
+  op mapPartial  : fa(key,a,b) (a -> Option b) -> Map (key,a) -> Map (key,b)
+  op mapiPartial : fa(key,a,b) (key * a -> Option b) -> Map (key,a) -> Map (key,b)
   op compare : fa(a,key) (a * a -> Comparison)
        -> Map (key,a) -> Map (key,a) -> Comparison
 \end{spec}

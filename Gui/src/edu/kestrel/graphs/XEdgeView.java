@@ -7,6 +7,7 @@
 package edu.kestrel.graphs;
 
 import edu.kestrel.graphs.editor.*;
+import edu.kestrel.graphs.spec.*;
 import com.jgraph.graph.*;
 import com.jgraph.*;
 import javax.swing.undo.*;
@@ -32,9 +33,10 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
     
     protected XEdge edge = null;
     
-    protected JPopupMenu popupMenu;
+    protected XGraphElementPopupMenu popupMenu;
     protected Point popupMenuEventPoint = null;
     protected JMenuItem addRemovePointMenuItem;
+    protected JMenuItem collapseLabelMenuItem;
     
     protected boolean useMultiLineEditor = false;
     protected boolean showMultiLineLabel = false;
@@ -52,7 +54,10 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         initPopupMenu();
         this.xcellEditor = null; // will be initialized on first use
         //setFont(new Font("Courier",Font.PLAIN,12));
-        //System.out.println("XedgeView created.");
+        //Dbg.pr("XEdgeView created, edge="+(edge==null?"NULL":edge.toString()+" (not null)"));
+        if (edge != null) {
+            savedPoints = edge.getSavedViewPoints();
+        }
         //straightenEdge();
         setRenderer(new XEdgeRenderer(this));
     }
@@ -118,6 +123,7 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
      */
     public void setShowMultiLineLabel(boolean showit) {
         showMultiLineLabel = showit;
+        initPopupMenu();
     }
     
     /** returns whether or not the label should be displayed as multi-line object. If not, the label is
@@ -153,6 +159,26 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
             }}
         );
         popupMenu.add(addRemovePointMenuItem,0);
+        if (isShowMultiLineLabel()) {
+            collapseLabelMenuItem = new JMenuItem("collapse label text");
+            collapseLabelMenuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    if (popupMenuEventPoint != null) {
+                        toggleCollapseLabel();
+                    }
+                }}
+            );
+            popupMenu.add(collapseLabelMenuItem);
+            configureCollapseLabelMenuItem();
+            
+            JMenuItem menuItem = new JMenuItem("edit in new frame");
+            menuItem.addActionListener(new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    editInNewFrame();
+                }
+            });
+            popupMenu.add(menuItem,2);
+        }
         if (Dbg.isDebug()) {
             // debug entries
             JMenuItem menuItem = new JMenuItem("select source node");
@@ -202,20 +228,73 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         return viewFont;
     }
     
+    /** returns the view of the source node of this edge; null if the source node doesn't exist or isn't an instance of XNodeView.
+     */
+    public XNodeView getSourceNodeView() {
+        if (edge == null) return null;
+        XNode n = edge.getSourceNode();
+        if (n == null) return null;
+        CellView cv = graph.getView().getMapping(n,false);
+        if (cv instanceof XNodeView) {
+            return (XNodeView)cv;
+        }
+        return null;
+    }
     
+    /** returns the view of the target node of this edge; null if the target node doesn't exist or isn't an instance of XNodeView.
+     */
+    public XNodeView getTargetNodeView() {
+        if (edge == null) return null;
+        XNode n = edge.getTargetNode();
+        if (n == null) return null;
+        CellView cv = graph.getView().getMapping(n,false);
+        if (cv instanceof XNodeView) {
+            return (XNodeView)cv;
+        }
+        return null;
+    }
+    
+    /** returns true, iff source and/or target of this edge are temporary views.
+     */
+    public boolean hasTemporarySourceOrTargetView() {
+        XNodeView srcv = getSourceNodeView();
+        XNodeView trgv = getTargetNodeView();
+        boolean tmpsrc = false;
+        boolean tmptrg = false;
+        if (srcv != null)
+            tmpsrc = srcv.hasTemporaryViewAncestor();
+        if (trgv != null)
+            tmptrg = trgv.hasTemporaryViewAncestor();
+        return (tmpsrc||tmptrg);
+    }
     
     public void delete(boolean interactive) {
-        if (interactive) {
-            int anws = JOptionPane.showConfirmDialog(graph, "Do you really want to delete this edge?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
-            if (anws != JOptionPane.YES_OPTION) return;
+        try {
+            boolean throwException = false;
+            edge.removeOk(throwException);
+            if (interactive) {
+                int anws = JOptionPane.showConfirmDialog(graph, "Do you really want to delete this edge?", "Delete?", JOptionPane.OK_CANCEL_OPTION);
+                if (anws != JOptionPane.YES_OPTION) return;
+            }
+            edge.remove(graph.getModel());
+        } catch (VetoException ve) {
+            String msg = ve.getMessage();
+            JOptionPane.showMessageDialog(graph,msg);
         }
-        edge.remove(graph.getModel());
     }
     
     public void edit() {
         graph.startEditingAtCell(getCell());
     }
     
+    public void editInNewFrame() {
+        XTextEditorInternalFrame f = new XTextEditorInternalFrame(edge);
+        f.setFont(getFont());
+        XGraphApplication appl = ((XGraphDisplay)graph).getApplication();
+        if (appl != null) {
+            appl.getDesktop().newInternalFrame(f);
+        }
+    }
     
     
     public void showPopupMenu(Component c, int x, int y) {
@@ -231,10 +310,14 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
     /** adds a new point to the edge at point p, which is assumed to be in screen coordinates.
      **/
     public void addPoint(Point p0) {
+        graph.fromScreen(p0);
         int s = graph.getSnapSize();
         int x = p0.x, y = p0.y;
         int index = NO_INDEX;
-        Rectangle rect = graph.fromScreen(new Rectangle(x-s, y-s, 2*s, 2*s));
+        Rectangle rect = /*graph.fromScreen*/(new Rectangle(x-s, y-s, 2*s, 2*s));
+        if (Dbg.isDebug()) {
+            graph.getGraphics().fillRect(rect.x, rect.y, rect.width, rect.height);
+        }
         if (intersects(graph.getGraphics(), rect)) {
             Point point = graph.snap(new Point(p0));
             double min = Double.MAX_VALUE, dist = 0;
@@ -252,11 +335,14 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
                 ((XGraphDisplay)graph).setPointsOfEdge(edge, points);
                 //reloadPoints(edge);
                 //paint(graph.getGraphics());
+            } else {
+                Dbg.pr("no point added!?");
             }
         }
     }
     
     public void removePoint(Point p0) {
+        Point point = graph.snap(graph.fromScreen(new Point(p0)));
         int index = getPointIndexAt(p0);
         if (index != NO_INDEX) {
             removePoint(index);
@@ -267,7 +353,8 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
     /** returns the index of the edge corner point that corresponds to the point on screen.
      * @return index of edge corner point or <code>NO_INDEX</code>, if pointOnScreen is not over an edge corner point.
      */
-    public int getPointIndexAt(Point pointOnScreen) {
+    public int getPointIndexAt(Point p) {
+        Point pointOnScreen = graph.fromScreen(new Point(p));
         int s = graph.getSnapSize();
         int x = pointOnScreen.x, y = pointOnScreen.y;
         int index = NO_INDEX;
@@ -335,12 +422,12 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
     }
     
     public void update() {
+        //Dbg.pr("updating edge view: "+this);
         super.update();
         if (edge != null) {
             //Dbg.pr2("updating edge "+edge+", isDetached()="+edge.isDetached()+"...");
             if (!edge.isDetached()) {
                 moveInnerPointsAfterUpdate();
-                //straightenEdge();
                 setSavedPoints();
             }
             //else System.out.println("skipping moving inner point, because edge is detached.");
@@ -349,6 +436,31 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
             edge.updateViewData(this);
     }
     
+    /** this is called when a change is detected either in this view or in the context of this view.
+     */
+    public void viewChanged(java.util.List changedViews, java.util.List contextViews) {
+        XNodeView srcv = getSourceNodeView();
+        if (srcv == null) {
+            return;
+        }
+        XNodeView trgv = getTargetNodeView();
+        if (trgv == null) {
+            return;
+        }
+        if (changedViews.contains(this)) {
+            //Dbg.pr3("in viewChanged of XEdgeView: nothing to do, this view has been changed itself.");
+            setSavedPoints();
+            return;
+        }
+        boolean b1,b2 = false;
+        if ((b1 = changedViews.contains(srcv)) && (b2 = changedViews.contains(trgv))) {
+            Dbg.pr("**** Edge needs to be updated!");
+            moveInnerPointsAfterUpdate();
+        }
+        if (b1 || b2) {
+            setSavedPoints();
+        }
+    }
     
     /** calls the super method and <code>setSavePoints()</code>.
      */
@@ -362,7 +474,10 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
      */
     public void setSavedPoints() {
         savedPoints = portViewsToPoints(points);
-        Dbg.pr2("setSavedPoints("+edge+"): "+savedPoints);
+        if (edge != null) {
+            edge.setSavedViewPoints(portViewsToPoints(points));
+        }
+        //Dbg.pr("setSavedPoints("+edge+"): "+savedPoints);
     }
     
     /** moves the inner points of the edge, if the source PortView and the target PortView have been
@@ -379,17 +494,32 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
             return;
         if (lenOld < 2) return;
         Dbg.pr2("checking whether inner points must be moved...");
-        if (innerPointsHaveChanged()) {
+        if (innerPointsHaveChanged(savedPoints)) {
+            Dbg.pr2("inner points have changed:");
             if (Dbg.isDebug2()) {
                 java.util.List oldp = portViewsToPoints(savedPoints);
                 java.util.List newp = portViewsToPoints(points);
-                //Dbg.pr2("  old: "+oldp);
-                //Dbg.pr2("  new: "+newp);
+                Dbg.pr2("  old: "+oldp);
+                Dbg.pr2("  new: "+newp);
                 Dbg.showPoints(graph.getGraphics(),oldp,Color.gray);
                 Dbg.showPoints(graph.getGraphics(),newp,Color.green);
             }
             return;
         }
+        /*
+        XNodeView srcv = getSourceNodeView();
+        XNodeView trgv = getTargetNodeView();
+        if (srcv == null || trgv == null) {
+            Dbg.pr("source and/or target view of edge couldn't be found, nothing done.");
+            return;
+        }
+        Rectangle srcbounds = new Rectangle(srcv.getBounds());
+        Rectangle trgbounds = new Rectangle(trgv.getBounds());
+        int dxStart = srcbounds.x - savedSrcBounds.x;
+        int dyStart = srcbounds.y - savedSrcBounds.y;
+        int dxEnd = trgbounds.x - savedTrgBounds.x;
+        int dyEnd = trgbounds.y - savedTrgBounds.y;
+         */
         // first and last points must be PortViews before and after
         Point[] pointsOld = new Point[] {(Point)savedPoints.get(0),(Point)savedPoints.get(lenOld-1)};
         Object[] objNew = new Object[] {points.get(0),points.get(lenNew-1)};
@@ -397,7 +527,10 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         for(int i=0;i<2;i++) {
             if (objNew[i] instanceof PortView) {
                 pointsNew[i] = portViewToPoint((PortView) objNew[i]);
-            } else return;
+            } else {
+                Dbg.pr2("end point is not a port view: "+objNew[i]);
+                return;
+            }
         }
         Dbg.pr2("  checking move distance...");
         // check whether the start and end points have moved the same distance in x and y direction
@@ -407,30 +540,34 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         int dyEnd = pointsNew[1].y - pointsOld[1].y;
         Dbg.pr2("  dxStart="+dxStart+", dxEnd="+dxEnd+", dyStart="+dyStart+", dyEnd="+dyEnd);
         if (dxStart == dxEnd && dyStart == dyEnd && ((dxStart != 0) || (dyStart != 0))) {
-            Dbg.pr2("inner point(s) of edge "+edge+" will be moved...");
+            Dbg.pr2("inner point(s) of edge "+edge+" will be moved: ("+dxStart+","+dyStart+")");
             // translate the edge points (only inner points will be translated)
             translate(dxStart, dyStart);
             translateTextBounds(dxStart,dyStart);
         }
-        else if (dxStart != 0 || dyStart != 0) {
-            if (Dbg.isDebug2()) {
-                Graphics g = graph.getGraphics();
-                Dbg.showPoint(g,graph.toScreen(pointsOld[0]),Color.gray);
-                Dbg.showPoint(g,graph.toScreen(pointsOld[1]),Color.gray);
-                Dbg.showPoint(g,graph.toScreen(pointsNew[0]),Color.green);
-                Dbg.showPoint(g,graph.toScreen(pointsNew[1]),Color.green);
-                BufferedReader bs = new BufferedReader(new InputStreamReader(System.in));
-                //try {
-                //    Dbg.pr2("press enter");
-                //    System.in.read();
-                //} catch (IOException ee) {}
+        else {
+            Dbg.pr2("nothing done, connected nodes have moved differently or haven't moved.");
+            if (dxStart != 0 || dyStart != 0) {
+                if (Dbg.isDebug2()) {
+                    Graphics g = graph.getGraphics();
+                    Dbg.showPoint(g,graph.toScreen(pointsOld[0]),Color.gray);
+                    Dbg.showPoint(g,graph.toScreen(pointsOld[1]),Color.gray);
+                    Dbg.showPoint(g,graph.toScreen(pointsNew[0]),Color.green);
+                    Dbg.showPoint(g,graph.toScreen(pointsNew[1]),Color.green);
+                    //BufferedReader bs = new BufferedReader(new InputStreamReader(System.in));
+                    //try {
+                    //    Dbg.pr2("press enter");
+                    //    System.in.read();
+                    //} catch (IOException ee) {}
+                }
             }
         }
-        
     }
     
+    private Point[] dbgpnt;
+    
     /** checks whether the inner points of the saved and the current points have changed */
-    private boolean innerPointsHaveChanged() {
+    private boolean innerPointsHaveChanged(java.util.List savedPoints) {
         int lenOld = savedPoints.size();
         int lenNew = points.size();
         if (lenOld != lenNew) return true;
@@ -628,6 +765,50 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         return res;
     }
     
+    /** returns the label that is currently displayed. The parameter is the full label which will be returned
+     * by default. Only if the current collapsedLabel flag is set, a short version of the label is returned.
+     */
+    protected String getDisplayLabel(String label) {
+        if (isCollapseLabel()) {
+            return edge.getCollapsedLabel(label);
+        }
+        return label;
+    }
+    
+    /** returns whether or not the label of the edge should be displayed as a shortened one-line string
+     */
+    protected boolean isCollapseLabel() {
+        if (edge != null) {
+            return edge.isCollapseLabel();
+        }
+        return false;
+    }
+    
+    protected void setCollapseLabel(boolean b) {
+        if (edge != null) {
+            edge.setCollapseLabel(b);
+        }
+        configureCollapseLabelMenuItem();
+    }
+    
+    public void configureCollapseLabelMenuItem() {
+        if (collapseLabelMenuItem == null) return;
+        if (isCollapseLabel()) {
+            collapseLabelMenuItem.setText("expand label text");
+        } else {
+            collapseLabelMenuItem.setText("collapse label text");
+        }
+    }
+    
+    protected void toggleCollapseLabel() {
+        boolean b = true;
+        if (edge != null) {
+            b = !edge.isCollapseLabel();
+        }
+        setCollapseLabel(b);
+        graph.repaint();
+    }
+    
     protected class XEdgeRenderer extends EdgeRenderer implements CellViewRenderer {
         protected XEdgeView view;
         
@@ -670,7 +851,8 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         /** specialized version of <code>paintLabel</code> for painting multi-line labels, if the flag
          * <code>setMultiLineUserObject</code> has been set for the view.
          */
-        protected void paintLabel(Graphics g, String label) {
+        protected void paintLabel(Graphics g, String label0) {
+            String label = getDisplayLabel(label0);
             if (!view.isShowMultiLineLabel()) {
                 super.paintLabel(g,label);
                 return;
@@ -717,6 +899,20 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         
         public void paint(Graphics g) {
             super.paint(g);
+            if (hasTemporarySourceOrTargetView()) {
+                Dbg.pr("edge temporary View -----------------------------");
+            }
+            /*
+            if (savedPoints != null) {
+                Dbg.showPoints(g,savedPoints,Color.green);
+                Iterator iter = savedPoints.iterator();
+                Dbg.pr("saved points:");
+                while(iter.hasNext()) {
+                    Point p = (Point)iter.next();
+                    Dbg.pr("  ("+p.x+","+p.y+")");
+                }
+            }
+             */
             //Rectangle b = new Rectangle(getBounds());
             //g.setColor(Color.cyan);
             //b.grow(-1,-1);

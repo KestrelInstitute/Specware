@@ -66,7 +66,7 @@
                    (setf (sparef invtable number) not-there)
                    number)))
               (:map
-               (map-sparse-vector arg invtable))
+               (map-sparse-vector-with-indexes arg invtable))
               (:inverse
                (let ((object (sparef invtable arg)))
                  (if (eq not-there object) (error "No object numbered ~D." arg) object))))))

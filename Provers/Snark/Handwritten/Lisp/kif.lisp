@@ -66,10 +66,10 @@
 
 (defun initialize-kif ()
   (when (use-kif-rewrites?)
-    (declare-predicate-symbol 'instance-of 2 :rewrite-code 'instance-of-rewriter
+    (declare-relation 'instance-of 2 :rewrite-code 'instance-of-rewriter
 ;;                              :satisfy-code 'instance-of-satisfier
                               )
-    (declare-predicate-symbol 'subclass-of 2 :rewrite-code 'subclass-of-rewriter)))
+    (declare-relation 'subclass-of 2 :rewrite-code 'subclass-of-rewriter)))
 
 (defun kif-variable-list-p (x)
   (and (listp x)
@@ -134,7 +134,7 @@
            x))))
 
 (defun kif-declare-constant-symbol (name &rest declare-constant-symbol-options)
-  (apply 'declare-constant-symbol
+  (apply 'declare-constant
          name
          (append declare-constant-symbol-options
                  (list :documentation *form-documentation*
@@ -142,7 +142,7 @@
                        :source *form-source*))))
 
 (defun kif-declare-function-symbol (name arity &rest declare-function-symbol-options)
-  (let ((fn (apply 'declare-function-symbol
+  (let ((fn (apply 'declare-function
                    name
                    arity
                    (append declare-function-symbol-options
@@ -167,11 +167,11 @@
                         (make-compound*
                          (let ((*%print-symbol-table-warnings%* nil))
                            (if fsd
-                               (declare-predicate-symbol
+                               (declare-relation
                                 name (1+ arity)
                                 :sort (mapcar (lambda (x) (list (car x) (cdr x)))
                                               (ACONS (1+ ARITY) RESULT-SORT SORT-ALIST)))
-                               (declare-predicate-symbol
+                               (declare-relation
                                 name (1+ arity))))
                          (append args (list value)))
                         (make-compound
@@ -182,9 +182,8 @@
     fn))
 
 (defun kif-declare-predicate-symbol (name arity &rest declare-predicate-symbol-options)
-  (apply 'declare-predicate-symbol
-         name
-         arity
+  (apply 'declare-relation
+         name arity
          (append declare-predicate-symbol-options
                  (list :documentation *form-documentation*
                        :author *form-author*
@@ -373,7 +372,7 @@
   (let ((c (second sentence))
         (s (third sentence)))
     (cond
-     ((can-be-predicate-name-p c)
+     ((can-be-relation-name-p c)
       (when (implies *load-kif-file-phase* (eq :wffs *load-kif-file-phase*))
         (case s
           (anti-symmetric-binary-predicate
@@ -393,10 +392,10 @@
     (cond
      ((and (can-be-free-variable-name-p c) (can-be-sort-name-p s 'warn))
       (when (implies *load-kif-file-phase* (eq :symbols *load-kif-file-phase*))
-        (declare-variable-symbol c :sort s)))
+        (declare-variable c :sort s)))
      ((and (can-be-constant-name-p c) (can-be-sort-name-p s 'warn))
       (when (implies *load-kif-file-phase* (eq :symbols *load-kif-file-phase*))
-        (declare-constant-symbol c :sort s)))
+        (declare-constant c :sort s)))
      (t
       (call-next-method)))))
 
@@ -404,7 +403,7 @@
   (let ((c (second sentence))
         (s (third sentence)))
     (cond
-     ((can-be-predicate-name-p c)
+     ((can-be-relation-name-p c)
       (when (implies *load-kif-file-phase* (eq :wffs *load-kif-file-phase*))
         (case s
           (anti-symmetric-binary-predicate
@@ -446,15 +445,15 @@
     (cond
      ((and (can-be-sort-name-p class 'warn) (can-be-function-name-p slot))
       (when (implies *load-kif-file-phase* (eq :symbols *load-kif-file-phase*))
-        (declare-predicate-symbol slot 2)
+        (declare-relation slot 2)
         (declare-sort class)
         (let ((v (intern (concatenate 'string "?" (symbol-name class)) :snark)))
-          (declare-variable-symbol v :sort class)
+          (declare-variable v :sort class)
           (kif-assert `(,slot ,v ,value)))
         (let* ((ss (subclass-of-sort-name class))
                (v (intern (concatenate 'string "?" (symbol-name ss)) :snark)))
           (declare-sort ss)
-          (declare-variable-symbol v :sort ss)
+          (declare-variable v :sort ss)
           (kif-assert `(template-slot-value ,slot ,v ,value)))))
      (t
       (call-next-method)))))
@@ -465,8 +464,8 @@
   (when (implies *load-kif-file-phase* (eq :wffs *load-kif-file-phase*))
     (let* ((r1 (second sentence))
            (r2 (third sentence))
-           (v1 (can-be-predicate-name-p r1 'warn))
-           (v2 (can-be-predicate-name-p r2 'warn)))
+           (v1 (can-be-relation-name-p r1 'warn))
+           (v2 (can-be-relation-name-p r2 'warn)))
       (when (and v1 v2)
         (kif-assert `(implies (,r1 ?x ?y) (,r2 ?x ?y)))))))	;only for binary predicates
 
@@ -476,8 +475,8 @@
   (when (implies *load-kif-file-phase* (eq :wffs *load-kif-file-phase*))
     (let* ((r1 (second sentence))
            (r2 (third sentence))
-           (v1 (can-be-predicate-name-p r1 'warn))
-           (v2 (can-be-predicate-name-p r2 'warn)))
+           (v1 (can-be-relation-name-p r1 'warn))
+           (v2 (can-be-relation-name-p r2 'warn)))
       (when (and v1 v2)
         (kif-assert `(implies (,r1 ?x ?y) (,r2 ?y ?x)))))))	;only for binary predicates
 
@@ -487,8 +486,8 @@
   (when (implies *load-kif-file-phase* (eq :wffs *load-kif-file-phase*))
     (let* ((r1 (second sentence))
            (r2 (third sentence))
-           (v1 (can-be-predicate-name-p r1 'warn))
-           (v2 (can-be-predicate-name-p r2 'warn)))
+           (v1 (can-be-relation-name-p r1 'warn))
+           (v2 (can-be-relation-name-p r2 'warn)))
       (when (and v1 v2)
         (kif-assert `(iff (,r1 ?x ?y) (,r2 ?y ?x)))))))		;use assert-rewrite instead?
 
@@ -1227,7 +1226,7 @@
 
 (defun kif-test1 ()
   (initialize)
-  (trace kif-defobject declare-constant-symbol assert)
+  (trace kif-defobject declare-constant assert)
   (defobject c1 "c1" := c)
   (defobject c1      := c)
   (defobject c2 "c2" :conservative-axiom (= c2 c))
@@ -1242,7 +1241,7 @@
 
 (defun kif-test2 ()
   (initialize)
-  (trace kif-deffunction declare-function-symbol assert)
+  (trace kif-deffunction declare-function assert)
   (deffunction f1 (?x) "f1" := (g ?x))
   (deffunction f1 (?x)      := (g ?x))
   (deffunction f2 (?x) "f2" :-> ?y :=> (p ?x ?y))
@@ -1257,7 +1256,7 @@
 
 (defun kif-test3 ()
   (initialize)
-  (trace kif-defrelation declare-predicate-symbol assert)
+  (trace kif-defrelation declare-relation assert)
   (defrelation r1 (?x) "r1" := (s ?x))
   (defrelation r1 (?x)      := (s ?x))
   (defrelation r2 (?x) "r2" :<= (s ?x))

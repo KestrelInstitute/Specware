@@ -16,7 +16,7 @@ import java.awt.*;
  * representing the "owner" of the marquee handler.
  * @author  ma
  */
-public abstract class XBasicMarqueeHandler extends BasicMarqueeHandler implements java.io.Serializable {
+public abstract class XBasicMarqueeHandler extends BasicMarqueeHandler implements java.io.Serializable, KeyListener {
     
     protected XGraphDisplay graph;
     
@@ -100,6 +100,57 @@ public abstract class XBasicMarqueeHandler extends BasicMarqueeHandler implement
     
     public void mouseReleased(MouseEvent e0) {
         super.mouseReleased(e0);
+    }
+    
+    // --------------------------------------------------------------------
+    
+    private boolean nextKeyScaleCode = false;
+    
+    public void keyPressed(KeyEvent e) {
+        //Dbg.pr("key pressed.");
+        boolean ctrl = e.isControlDown();
+        int d = 1 * (ctrl?100:1);
+        if (e.getKeyCode() == KeyEvent.VK_UP) {
+            graph.translateSelection(0,-d);
+        }
+        else if (e.getKeyCode() == KeyEvent.VK_DOWN) {
+            graph.translateSelection(0,d);
+        }
+        else if (e.getKeyCode() == KeyEvent.VK_RIGHT) {
+            graph.translateSelection(d,0);
+        }
+        else if (e.getKeyCode() == KeyEvent.VK_LEFT) {
+            graph.translateSelection(-d,0);
+        }
+        else if (e.getKeyChar() == '+') {
+            graph.zoomIn();
+        }
+        else if (e.getKeyChar() == '-') {
+            graph.zoomOut();
+        }
+        else if (e.getKeyCode() == KeyEvent.VK_S) {
+            nextKeyScaleCode = true;
+            return;
+        }
+        if (nextKeyScaleCode) {
+            if (e.getKeyCode() == KeyEvent.VK_1) {
+                graph.setScale(1.0);
+                Dbg.pr("scale action: scale set to 1");
+            }
+            else if (e.getKeyCode() == KeyEvent.VK_F) {
+                graph.scaleToFit(20,XGraphDisplay.ALWAYS_SCALE);
+                Dbg.pr("scale action: scaleToFit");
+            }
+            nextKeyScaleCode = false;
+        }
+    }
+    
+    public void keyReleased(KeyEvent e) {
+        //Dbg.pr("key released.");
+    }
+    
+    public void keyTyped(KeyEvent e) {
+        //Dbg.pr("key typed.");
     }
     
 }

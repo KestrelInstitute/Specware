@@ -17,6 +17,8 @@ import org.openide.src.SourceException;
  */
 class ImportElementImpl extends MemberElementImpl implements ImportElement.Impl {
     
+    private MemberElement unitImported;
+    
     private static final long serialVersionUID = 6799964214013985830L;
     
     ImportElementImpl(DefaultLangModel model) {
@@ -30,9 +32,33 @@ class ImportElementImpl extends MemberElementImpl implements ImportElement.Impl 
     protected void createFromModel(Element el) throws SourceException {
         super.createFromModel(el);
         ImportElement element = (ImportElement)el;
+        setUnitImported(element.getUnitImported());
 	//edu.kestrel.netbeans.Util.log("ImportElementImpl.createFromModel: name="+element.getName());
     }
 
+    public MemberElement getUnitImported() {
+        return this.unitImported;
+    }
+    
+    public void setUnitImported(MemberElement unit) throws SourceException {
+        Object token = takeLock();
+        try {
+            PropertyChangeEvent evt;
+            if (!isCreated()) {
+                if (unit == this.unitImported)
+                    return;
+                evt = new PropertyChangeEvent(getElement(), PROP_UNIT_IMPORTED, this.unitImported, unit);
+                // no constraings on the Initializer... only check vetoable listeners.
+                checkVetoablePropertyChange(evt);
+                addPropertyChange(evt);
+            }
+	    this.unitImported = unit;
+            commit();
+        } finally {
+            releaseLock(token);
+        }        
+    }    
+    
     public Object readResolve() {
         return null;
     }
@@ -54,5 +80,6 @@ class ImportElementImpl extends MemberElementImpl implements ImportElement.Impl 
     
     protected Element cloneSelf() {
         return (Element)((ImportElement)getElement()).clone();
-    }
+    } 
+    
 }

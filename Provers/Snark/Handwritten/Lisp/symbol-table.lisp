@@ -52,7 +52,7 @@
 (defun find-symbol-table-entry (name arity-code)
   (prog->
     (find-symbol-table-entries name ->nonnil entries)
-    (map-sparse-vector entries ->* type# symbol)
+    (map-sparse-vector-with-indexes entries ->* symbol type#)
     (funcall *standard-eql-numbering* :inverse type# -> type)
     (when (arity-code-match arity-code type symbol)
       (return-from find-symbol-table-entry symbol)))
@@ -68,7 +68,7 @@
       (t
        (prog->
          (find-symbol-table-entries name ->nonnil entries)
-         (map-sparse-vector-indexes entries ->* arity-code2#)
+         (map-sparse-vector-indexes-only entries ->* arity-code2#)
          (funcall *standard-eql-numbering* :inverse arity-code2# -> arity-code2)
          (cond
           ((and (integerp arity-code)
@@ -123,7 +123,7 @@
     (dolist (alias (mklist aliases))
       (if functionp
           (if booleanp
-              (assert-can-be-predicate-name-p alias)
+              (assert-can-be-relation-name-p alias)
               (assert-can-be-function-name-p alias))
           (if booleanp
               (assert-can-be-proposition-name-p alias)
@@ -152,7 +152,7 @@
     (let ((found nil))
       (prog->
         (find-symbol-table-entries name ->nonnil entries)
-        (map-sparse-vector entries ->* type# symbol)
+        (map-sparse-vector-with-indexes entries ->* symbol type#)
         (funcall *standard-eql-numbering* :inverse type# -> type)
         (cond
          ((or (eq :sort type) (eq :variable type))
@@ -184,7 +184,7 @@
   (let ((found nil))
     (prog->
       (find-symbol-table-entries name ->nonnil entries)
-      (map-sparse-vector entries ->* type# symbol)
+      (map-sparse-vector-with-indexes entries ->* symbol type#)
       (funcall *standard-eql-numbering* :inverse type# -> type)
       (cond
        ((not (funcall arity-test type symbol))
@@ -230,17 +230,17 @@
                            (positive-integer-p type))
                          nil))))
 
-(defun input-relation-symbol (name &optional arity no-logical-symbols)
-  (input-predicate-symbol name arity no-logical-symbols))
-
 (defun input-predicate-symbol (name &optional arity no-logical-symbols)
+  (input-relation-symbol name arity no-logical-symbols))
+
+(defun input-relation-symbol (name &optional arity no-logical-symbols)
   ;; find or create a relation symbol with the right name and arity
   ;; if arity is not provided, try to find a relation symbol with the right name
   ;; if there isn't exactly one symbol with the right name, return nil
-  (assert-can-be-predicate-name-p name)
-  (input-predicate-symbol* name arity no-logical-symbols))
+  (assert-can-be-relation-name-p name)
+  (input-relation-symbol* name arity no-logical-symbols))
 
-(defun input-predicate-symbol* (name &optional arity no-logical-symbols)
+(defun input-relation-symbol* (name &optional arity no-logical-symbols)
   (mvlet (((:values symbol new)
            (let ((arity-code (function-arity-p arity t)))
              (if arity-code
@@ -391,9 +391,9 @@
 
 (defun map-symbol-table (cc &key numbers characters strings)
   (prog->
-    (map-sparse-vector (sparse-matrix-rows *symbol-table*) ->* name# row)
+    (map-sparse-vector-with-indexes (sparse-matrix-rows *symbol-table*) ->* row name#)
     (funcall *standard-eql-numbering* :inverse name# -> name)
-    (map-sparse-vector row ->* arity-code# symbol)
+    (map-sparse-vector-with-indexes row ->* symbol arity-code#)
     (funcall *standard-eql-numbering* :inverse arity-code# -> arity-code)
     (funcall cc name arity-code symbol))
   ;; numbers, characters, and strings aren't in *symbol-table*
@@ -531,7 +531,7 @@
         (prin1 symbol))))
   nil)
 
-(declaim (special *skolem-function-alist* skfnnum wpfnnum crfnnum))
+(declaim (special *skolem-function-alist*))
 
 (defvar *all-both-polarity*)
 
@@ -547,22 +547,19 @@
 		(allow-keyword-relation-symbols t))
     (setq *knuth-bendix-ordering-minimum-constant-weight* 1000000)
     (setq *skolem-function-alist* nil)
-    (setq skfnnum 0)
-    (setq wpfnnum 0)
-    (setq crfnnum 0)
     (make-symbol-table)
-    (declare-proposition-symbol false)
-    (declare-proposition-symbol true)
-    (declare-constant-symbol nil :constructor t)
-    (setq *cons* (declare-function-symbol 'cons 2 :constructor t))
-    (declare-function-symbol 'list  :any :input-function #'input-listof)
-    (declare-function-symbol 'list* :any :input-function #'input-listof*)
-    (declare-function-symbol 'alist :alist)
-    (declare-function-symbol 'plist :plist)
-    (declare-function-symbol 'quote :any :input-function #'input-quotation)
-    (declare-function-symbol 'term-to-list 1 :rewrite-code 'term-to-list-rewriter :unify-code 'dont-unify)
-    (declare-function-symbol 'list-to-term 1 :rewrite-code 'list-to-term-rewriter :unify-code 'dont-unify)
-    (declare-relation-symbol 'list-to-atom 1 :rewrite-code 'list-to-atom-rewriter :unify-code 'dont-unify)
+    (declare-proposition false)
+    (declare-proposition true)
+    (declare-constant nil :constructor t)
+    (setq *cons* (declare-function 'cons 2 :constructor t))
+    (declare-function 'list :any :input-function #'input-listof)
+    (declare-function 'list* :any :input-function #'input-listof*)
+    (declare-function 'alist :alist)
+    (declare-function 'plist :plist)
+    (declare-function 'quote :any :input-function #'input-quotation)
+    (declare-function 'term-to-list 1 :rewrite-code 'term-to-list-rewriter :unify-code 'dont-unify)
+    (declare-function 'list-to-term 1 :rewrite-code 'list-to-term-rewriter :unify-code 'dont-unify)
+    (declare-relation 'list-to-atom 1 :rewrite-code 'list-to-atom-rewriter :unify-code 'dont-unify)
     (setq *not*
 	  (declare-logical-symbol
 	   'not
@@ -612,7 +609,8 @@
 	   :input-function #'input-equivalence
 	   :polarity-map *all-both-polarity*
 	   :associative (use-ac-connectives?)
-	   :commutative (use-ac-connectives?)))
+	   :commutative (use-ac-connectives?)
+           :alias '<=>))
     (setq *xor*
 	  (declare-logical-symbol
 	   'xor
@@ -637,26 +635,27 @@
     (setq *forall* (declare-logical-symbol 'forall :input-function #'input-quantification))
     (setq *exists* (declare-logical-symbol 'exists :input-function #'input-quantification))
     (setq *=*
-	  (declare-relation-symbol
+	  (declare-relation
 	   '= :any
            :input-function #'input-equality
 	   :rewrite-code (if (use-code-for-equality?) '(equality-rewriter) nil)
 	   :satisfy-code (if (use-code-for-equality?) '(equality-satisfier) nil)
 	   :commutative (if (test-option22?) nil t)
-           :MAGIC NIL))
+           :MAGIC NIL
+           :alias 'equal))
     #+ignore
-    (declare-relation-symbol
+    (declare-relation
      'nonvariable 1
      :rewrite-code 'nonvariable-rewriter
      :satisfy-code 'nonvariable-satisfier
      :unify-code 'dont-unify)
     #+ignore
-    (declare-function-symbol 'the 2 :rewrite-code 'the-term-rewriter)
+    (declare-function 'the 2 :rewrite-code 'the-term-rewriter)
     (declare-logical-symbol '=>        :input-function #'input-kif-forward-implication)
     (declare-logical-symbol '<=        :input-function #'input-kif-backward-implication)
     (declare-logical-symbol 'nand      :input-function #'input-nand)
     (declare-logical-symbol 'nor       :input-function #'input-nor)
-    (declare-relation-symbol '/= :any :input-function #'input-disequality)
+    (declare-relation '/= :any :input-function #'input-disequality)
     (setf (function-boolean-valued-p *=*) '=)
     (setf (function-logical-symbol-dual *and*) *or*)
     (setf (function-logical-symbol-dual *or*) *and*)
@@ -685,7 +684,7 @@
     (declare-sort-intersection 'negative-integer    'negative    'integer)
     (declare-sort-intersection 'nonnegative-integer 'nonnegative 'integer)
     (declare-sort              'nonnegative-integer :alias 'natural)
-    (declare-function-symbol 'the-nonnegative-integer 1 :alias 'the-natural)
+    (declare-function 'the-nonnegative-integer 1 :alias 'the-natural)
     (declare-constant-sort nil 'null)
     (declare-function-sort *cons* 'cons)
     )))
@@ -781,7 +780,8 @@
   ;; returns none otherwise
   ;; slow linear search
   (prog->
-    (map-sparse-matrix-values *symbol-table* ->* symbol)
+    (map-sparse-vector (sparse-matrix-rows *symbol-table*) ->* row)
+    (map-sparse-vector row ->* symbol)
     (when (and (function-symbol-p symbol) (eql n (function-number symbol)))
       (return-from function-numbered symbol)))
   none)

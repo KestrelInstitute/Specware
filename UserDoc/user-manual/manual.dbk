@@ -1,5 +1,13 @@
 <!DOCTYPE book PUBLIC "-//OASIS//DTD DocBook XML V4.1.2//EN" [
  <!ENTITY install SYSTEM "install.dbk">
+ <!ENTITY start SYSTEM "start.dbk">
+ <!ENTITY model SYSTEM "model.dbk">
+ <!ENTITY defining SYSTEM "defining.dbk">
+ <!ENTITY process SYSTEM "process.dbk">
+ <!ENTITY prove SYSTEM "prove.dbk">
+ <!ENTITY generatedlisp SYSTEM "generatedlisp.dbk">
+ <!ENTITY debug SYSTEM "debug.dbk">
+ <!ENTITY emacs SYSTEM "emacs.dbk">
 
  <!ENTITY Specware "<productname>Specware</productname>">
  <!ENTITY V "4.0">
@@ -10,18 +18,19 @@
  <!ENTITY lt "&#60;">
  <!ENTITY gt "&#62;">
  <!ENTITY emdash "--">
+ <!ENTITY swpath "<computeroutput>SWPATH</computeroutput>">
 ]>
 
 <book><title>&SpecwareV; User Manual</title>
 
 <bookinfo>
   <copyright>
-     <year>2002</year>
+     <year>2001, 2002</year>
      <holder>Kestrel Development Corporation</holder>
   </copyright>
   <copyright>
-     <year>2002</year>
-     <holder>Kestrel Technology</holder>
+     <year>2001, 2002</year>
+     <holder>Kestrel Technology LLC</holder>
   </copyright>
 
   <abstract>
@@ -32,5 +41,12 @@
 </bookinfo>
 
 &install;
+&start;
+&model;
+&defining;
+&process; <!-- includes &prove; -->
+&generatedlisp;
+&debug;
+&emacs;
 
 </book>

@@ -6,10 +6,16 @@
 (defmacro warn-pos (&rest args)
   `(warn-pos-fn session ,@args))
 
+(defvar *suppress-warnings?* nil)
+(defvar *warnings*   '())
+
 (defun warn-pos-fn (session &rest args)
-  (emacs::goto-file-position (parse-session-file session)
-			     (second args) (third args))
-  (apply 'warn args))
+  (cond (*suppress-warnings?*
+	 (push (apply 'format nil args) *warnings*))
+	(t
+	 (emacs::goto-file-position (namestring (parse-session-file session))
+				    (second args) (third args))
+	 (apply 'warn args))))
 
 (defun parser-attach-rules (session)
   ;;
@@ -48,6 +54,14 @@
       ;;
       (let ((location (svref locations i)))
 	;;
+	'(let ((token
+	       (dolist (forward-node (parser-location-post-nodes location))
+		 (when (eq (parser-node-rule forward-node) +token-rule+)
+		   (return (parser-node-semantics forward-node))))))
+	  (format t "~&[~3D : ~30D~% ~S]~%"
+		  i
+		  token
+		  (parser-location-partial-node-data location)))
 	(cond ((or (eq i 0) (not (null (parser-location-partial-node-data location))))
 	       (setq preceding-location-had-no-pending-rules? nil))
 	      (preceding-location-had-no-pending-rules?
@@ -62,38 +76,35 @@
 			(prior-position (parser-location-position prior-location)))
 		   (let* ((prior-byte-pos (first  prior-position))
 			  (prior-line     (second prior-position))
-			  (prior-column   (1- (third  prior-position)))
+			  (prior-column   (third  prior-position))
 			  (prior-token-node 
 			   (find-if #'(lambda (node) (parser-token-rule-p (parser-node-rule node)))
 				    (parser-location-post-nodes prior-location))))
-		     (if (null prior-token-node)
-			 (warn-pos "At line ~3D:~2D  No tokens seen, but syntax error  [very strange]" 
-			       prior-line prior-column prior-byte-pos)
-		       (cond ((null prior-token-node)
-			      (warn-pos "At line ~3D:~2D  Peculiar syntax error."
-				    prior-line prior-column prior-byte-pos))
-			     ((eq (first (parser-node-semantics prior-token-node))
-				  :EXTENDED-COMMENT-ERROR)
-			      (let ((comment-text 
-				     ;; trim text of comment down to include at most 2 newlines
-				     (do ((text (second (parser-node-semantics prior-token-node))
-						(subseq text 0 (1- (length text)))))
-					 ((< (count-if #'(lambda (char) (eq char #\newline)) 
-						       text) 
-					     3)
-					  text))))
-				;; trim text of comment down to include at most 20 characters
-				(when (> (length comment-text) 20)
-				  (setq comment-text (format nil "~A ..." (subseq comment-text 0 16))))
-				(warn-pos "At line ~3D:~2D  EOF while scanning for close of extended comment starting with \"~A\""
-				      prior-line prior-column ;; prior-byte-pos
-				      comment-text 
-				      )))
-			     (t
- 			      (warn-pos "At line ~3D:~2D  Syntactic error with \"~A\""
-				    prior-line prior-column ; prior-byte-pos
-				    (second (parser-node-semantics prior-token-node))
-				    )))))))
+		     (cond ((null prior-token-node)
+			    (warn-pos "At line ~3D:~2D  Peculiar syntax error (no tokens seen)."
+				      prior-line prior-column prior-byte-pos))
+			   ((eq (first (parser-node-semantics prior-token-node))
+				:EXTENDED-COMMENT-ERROR)
+			    (let ((comment-text 
+				   ;; trim text of comment down to include at most 2 newlines
+				   (do ((text (second (parser-node-semantics prior-token-node))
+					      (subseq text 0 (1- (length text)))))
+				       ((< (count-if #'(lambda (char) (eq char #\newline)) 
+						     text) 
+					   3)
+					text))))
+			      ;; trim text of comment down to include at most 20 characters
+			      (when (> (length comment-text) 20)
+				(setq comment-text (format nil "~A ..." (subseq comment-text 0 16))))
+			      (warn-pos "At line ~3D:~2D  EOF while scanning for close of extended comment starting with \"~A\""
+					prior-line prior-column ;; prior-byte-pos
+					comment-text 
+					)))
+			   (t
+			    (warn-pos "At line ~3D:~2D  Syntactic error with \"~A\""
+				      prior-line prior-column ; prior-byte-pos
+				      (second (parser-node-semantics prior-token-node))
+				      ))))))
 	       (setq preceding-location-had-no-pending-rules? t)
 	       ))
 	(when-debugging
@@ -103,17 +114,18 @@
 	(dolist (forward-node (parser-location-post-nodes location))
 	  (when (eq (parser-node-rule forward-node) +token-rule+)
 	    (let* ((token (parser-node-semantics forward-node))
-		   ; (column (third (third token)))
+		   ;; (column (third (third token)))
 		   )
 	      ;;
-	      ;; (when (and (zerop (mod i 1000)) (> i 0)) (comment
-	      ;; "[~8D] At token ~6D ~4D ~4D ~4D ~S" (delta-time) i
-	      ;; pos line column xxx ))
+	      ;; (when (and (zerop (mod i 1000)) (> i 0)) (comment "[~8D] At token ~6D ~4D ~4D ~4D ~S" (delta-time) i pos line column xxx ))
 	      ;;
-	      (when ; (and (eq column 1) 
-		  (null (parser-location-partial-node-data location))
-		; )
-		(add-toplevel-node session i))
+	      (when (null (parser-location-partial-node-data location))
+		;; Maybe we finished one toplevel form and are about to parse another.
+		;; But if there were errors, we're probably still inside a buggy form,
+		;;  so don't try to parse toplevel forms until we get back to column 1.
+		(let ((column (third (third token))))
+		  (unless (and (parse-session-error-reported? session) (> column 1))
+		    (add-toplevel-node session i))))
 	      (let* ((tok2 (second token)) 
 		     (specific-keyword-rule (if (stringp tok2)
 						(gethash (second token) ht-string-to-keyword-rules)
@@ -204,7 +216,7 @@
 	 (new-toplevel-node
 	  (create-parser-node  :rule      toplevel-rule
 			       :pre-index index
-			       :children  (make-array 1)))
+			       :children  (make-array 1 :initial-element nil)))
 	 (handles-bv (parser-anyof-rule-possible-handles-bv toplevel-rule)))
     (when-debugging
      (when *verbose?*
@@ -212,7 +224,7 @@
 	 (comment "Adding top-level node for index ~D at line ~D, column ~D, byte ~D"
 		  index
 		  (second position)
-		  (1- (third  position))
+		  (third  position)
 		  (first  position)))))
     (augment-location-partial-node-data location new-toplevel-node 0) 
     (augment-location-desired-bv        location handles-bv)
@@ -289,10 +301,10 @@
 	(parser-location-partial-node-data location)))
 
 (defun augment-location-desired-bv (location additional-desired-bv)
-  (when-debugging
-   (when *verbose?* 
-     ;; (comment "At loc ~6D, turn on bits ~S" (parser-location-index location) additional-desired-bv)
-     ))
+  ;; (when-debugging
+  ;;   (when *verbose?* 
+  ;;      (comment "At loc ~6D, turn on bits ~S" (parser-location-index location) additional-desired-bv)
+  ;;     ))
   (unless (null additional-desired-bv) 
     (bit-ior (parser-location-desired-bv location)
 	     additional-desired-bv
@@ -305,7 +317,7 @@
 	   (pattern (parser-rule-items rule))
 	   (pattern-size (length pattern))
 	   (next-child-index (1+ child-index))
-	   (children (make-array pattern-size)))
+	   (children (make-array pattern-size :initial-element nil)))
       (declare (simple-vector children))
       (let ((new-node
 	     (create-parser-node  :rule       rule
@@ -364,7 +376,7 @@
 	 (child-post-index (parser-node-post-index child-node))
 	 (child-post-location  (svref (parse-session-locations session)
 				      child-post-index))
-	 (children (make-array (length (parser-rule-items rule))))
+	 (children (make-array (length (parser-rule-items rule)) :initial-element nil))
 	 (new-node 
 	  (create-parser-node  :rule      rule
 			       :bvi       (parser-rule-bvi rule) 
@@ -387,7 +399,7 @@
 	 (child-post-index    (parser-node-post-index child-node))
 	 (child-post-location (svref (parse-session-locations session)
 				     child-post-index))
-	 (children  (make-array 6))
+	 (children  (make-array 6 :initial-element nil))
 	 (new-node  (create-parser-node  :rule      rule
 					 :bvi       (parser-rule-bvi rule) 
 					 :pre-index child-pre-index
@@ -452,15 +464,13 @@
 	(if (eq (sbit desired-bv parent-bv-index) 1)
 	    (let ((child-index (reduction-child-index reduction)))
 	      (add-partial-node session parent-rule this-node child-index))
-	  (when-debugging
-	   (when *verbose?* 
-	     (comment "Reduction from ~D not plausible : ~S ~S (bit ~D) at ~D" 
-		      (parser-node-number this-node)
-		      (structure-type-of  parent-rule)
-		      (parser-rule-name   parent-rule)
-		      parent-bv-index
-		      (reduction-child-index reduction))
-	     )))))))
+	  (debugging-comment "Reduction from ~D not plausible : ~S ~S (bit ~D) at ~D" 
+			     (parser-node-number this-node)
+			     (structure-type-of  parent-rule)
+			     (parser-rule-name   parent-rule)
+			     parent-bv-index
+			     (reduction-child-index reduction)
+			     ))))))
 
 ;; ======================================================================
 
@@ -541,14 +551,14 @@
 	  ;;
 	  (adopt-child node children child-index candidate-child)
 	  ;; number of children is fixed...
-	  (cond (cannibalizing?
-		 (when-debugging
-		  (when *verbose?*
-		    (comment "Cannibalized ~D.  Last node now ~D"
-			     (parser-node-number node)
-			     (parser-node-number candidate-child))))
-		 (revise-cannibalized-node node candidate-child))
-		(all-other-required-children-present?
+	  (when cannibalizing?
+	    (debugging-comment "Cannibalized ~D.  Last node now ~D"
+			       (parser-node-number node)
+			       (parser-node-number candidate-child))
+	    (revise-cannibalized-node node candidate-child))
+	  ;; whether or not we're cannibalizing, see if we're done 
+	  ;; (revision 7/31/03 for forges parsers)
+	  (cond (all-other-required-children-present?
 		 (install-completed-node session node candidate-child))
 		(t
 		 (when-debugging
@@ -618,10 +628,10 @@
 	  (setq children (parser-node-children node)))
 	;; number of children is indefinite, so we may need to extend vector
 	(when (>= child-index children-size)
-	  (let ((new-children (make-array (* child-index 2))))
+	  (let ((new-children (make-array (* child-index 2) :initial-element nil)))
 	    (dotimes (i children-size)
 	      (setf (svref new-children i) (svref children i)))
-	    (setf (parser-node-children node) new-children)
+      	    (setf (parser-node-children node) new-children)
 	    (setf children new-children)))
 	;;
 	(adopt-child node children child-index candidate-child)
@@ -659,22 +669,21 @@
   (declare (fixnum child-index))
   (let ((new-node (copy-parser-node old-node)))
     ;;
-    #+DEBUG-PARSER
-    (setf (parser-node-number new-node) (incf *parser-node-number*))
+    (when-debugging
+     (setf (parser-node-number new-node) (incf *parser-node-number*)))
     ;;
     (let* ((old-children (parser-node-children old-node))
-	   (new-children (make-array (length old-children))))
+	   (new-children (make-array (length old-children) :initial-element nil)))
       (declare (simple-vector old-children) 
 	       (simple-vector new-children))
       (dotimes (i child-index)
 	(setf (svref new-children i) (svref old-children i)))
       (setf (parser-node-children new-node) new-children))
     ;;
-    #+DEBUG-PARSER
-    (progn
-      (when *verbose?* 
-	(show-node new-node (format nil "~6D =>" (parser-node-number old-node))))
-      (push new-node *all-nodes*))
+    (when-debugging
+     (when *verbose?* 
+       (show-node new-node (format nil "~6D =>" (parser-node-number old-node))))
+     (push new-node *all-nodes*))
     ;;
     new-node))
 ;; ======================================================================

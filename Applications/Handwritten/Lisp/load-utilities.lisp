@@ -6,7 +6,14 @@
 
 (terpri) ; purely cosmetic
 
-#+allegro(setq excl:*global-gc-behavior* '(10 10.0))
+#+allegro(setq excl:*global-gc-behavior* '(10 2.0))
+
+;; The following flag disables the collection of xref information when a lisp
+;; file is compiled and loaded. When true, it collects such information,
+;; but it seems that for monadic code (with lots of closures), compiling
+;; such information is very slow (ie. minutes). Other than changing the
+;; load time, there is no change to the behaviour of a program.
+#+allegro(setq xref::*record-xref-info* nil)
 
 ;;; ---------------
 ;; The following collection have been adapted from the 2000 load.lisp
@@ -14,39 +21,185 @@
 ;; are likely to be used for many of the generated lisp applications?
 
 (defun current-directory ()
-  #+allegro(excl::current-directory)
-  #+Lispworks(hcl:get-working-directory)  ;(current-pathname)
+  ;; we need consistency:  all pathnames, or all strings, or all lists of strings, ...
+  #+allegro   (excl::current-directory)      ; pathname
+  #+Lispworks (hcl:get-working-directory)    ; ??       (current-pathname)
+  #+mcl       (ccl::current-directory-name)  ; ??
+  #+cmu       (extensions:default-directory) ; pathname
   )
+
+(defun parse-device-directory (str)
+  (let ((found-index (position #\: str)))
+    (if found-index
+	(values (subseq str 0 found-index)
+		(subseq str (1+ found-index)))
+      (values nil str))))
 
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
-  #+allegro(excl::chdir directory)
-  #+Lispworks (hcl:change-directory directory)
-  (setq lisp::*default-pathname-defaults* (current-directory)))
+  (let ((dirpath (if (pathnamep directory) directory
+		   (multiple-value-bind (dev dir)
+		       (parse-device-directory directory)
+		     (make-pathname :directory dir
+				    :device dev)))))
+    #+allegro   (excl::chdir          directory)
+    #+Lispworks (hcl:change-directory directory)
+    #+mcl       (ccl::%chdir          directory)
+    #+cmu       (setf (extensions:default-directory) directory)
+    ;; in Allegro CL, at least,
+    ;; if (current-directory) is already a pathname, then
+    ;; (make-pathname (current-directory)) will fail
+    (setq common-lisp::*default-pathname-defaults* dirpath)))
 
-#+Lispworks
+#+mcl					; doesn't have setenv built=in
+(defvar *environment-shadow* nil)
+
+(defun getenv (varname)
+  #+allegro   (system::getenv varname)
+  #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+		  (ccl::getenv varname))
+  #+lispworks (hcl::getenv varname) 	;?
+  #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
+  )
+
+(defun setenv (varname newvalue)
+  #+allegro   (setf (system::getenv varname) newvalue)
+  #+mcl       (let ((pr (assoc (intern varname "KEYWORD") *environment-shadow*)))
+		(if pr (setf (cdr pr) newvalue)
+		  (push (cons (intern varname "KEYWORD") newvalue)
+			*environment-shadow*)))
+  #+lispworks (setf (hcl::getenv varname) newvalue) 
+  #+cmu       (let ((pr (assoc (intern varname "KEYWORD") ext:*environment-list*)))
+		(if pr (setf (cdr pr) newvalue)
+		  (push (cons (intern varname "KEYWORD") newvalue)
+			ext:*environment-list*)))
+  )
+
+#+(or mcl Lispworks)
 (defun make-system (new-directory)
   (let ((*default-pathname-defaults*
-     (make-pathname :name (concatenate 'string new-directory "/")
-            :defaults
-            system::*current-working-pathname*))
-    (old-directory (current-directory)))
+	 (make-pathname :name (concatenate 'string new-directory "/")
+			:defaults
+			#+Lispworks system::*current-working-pathname*
+			#-Lispworks *default-pathname-defaults*))
+	(old-directory (current-directory)))
     (change-directory new-directory)
     (unwind-protect (load "system.lisp")
       (change-directory old-directory))))
 
-#-Lispworks
+#-(or mcl Lispworks)
 (defun make-system (new-directory)
-  (let ((old-directory (current-directory)))
+  (let ((old-directory (current-directory))
+	(*default-pathname-defaults* *default-pathname-defaults*))
     (change-directory new-directory)
     (unwind-protect (load "system.lisp")
       (change-directory old-directory))))
+
+
+(defvar *fasl-type*
+  #+allegro "fasl"
+  #+mcl     "dfsl"
+  #+cmu     "x86f")
+
+(unless (fboundp 'compile-file-if-needed)
+  ;; Conditional because of an apparent Allegro bug in generate-application
+  ;; where excl::compile-file-if-needed compiles even if not needed
+  (defun compile-file-if-needed (file)
+    #+allegro (excl::compile-file-if-needed file)
+    #+Lispworks (hcl:compile-file-if-needed file)
+    #+(or cmu mcl) (when (> (file-write-date file)
+			    (or (file-write-date (make-pathname :defaults file
+								:type *fasl-type*))
+				0)) 
+		     (compile-file file))))
 
 (defun compile-and-load-lisp-file (file)
-   (#+allegro excl::compile-file-if-needed
-    #+Lispworks hcl:compile-file-if-needed
-    (make-pathname :defaults file :type "lisp"))
-   (load (make-pathname :defaults file :type nil)))
+   (let ((filep (make-pathname :defaults file :type "lisp")))
+     ;(format t "C: ~a~%" filep)
+     ;(compile-file filep)
+     ;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
+     (compile-file-if-needed filep)
+     (load (make-pathname :defaults filep :type nil)))
+   )
 
 (defun load-lisp-file (file &rest ignore)
+  (declare (ignore ignore))
   (load (make-pathname :defaults file :type "lisp")))
+
+#+mcl					; Patch openmcl bug
+(let ((ccl::*warn-if-redefine-kernel* nil))
+(defun ccl::overwrite-dialog (filename prompt)
+  (if ccl::*overwrite-dialog-hook*
+    (funcall ccl::*overwrite-dialog-hook* filename prompt)
+    filename))
+)
+
+(defparameter temporaryDirectory (namestring #+allegro   (SYSTEM:temporary-directory)
+                                             #+Lispworks SYSTEM::*TEMP-DIRECTORY*
+					     #+(or mcl cmu) "/tmp/"
+					     ))
+(defun temporaryDirectory-0 ()
+  (namestring 
+   #+allegro      (SYSTEM:temporary-directory)
+   #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
+   #+(or mcl cmu) "/tmp/"))
+
+(defun setTemporaryDirectory ()
+  (setq temporaryDirectory (temporaryDirectory-0)))
+
+#-mcl
+(defun copy-file (source target)
+  #+allegro(sys:copy-file source target)
+  #+cmu(ext:run-program "cp" (list (namestring source)
+				   (namestring target)))
+  #-(or allegro cmu)
+  (with-open-file (istream source :direction :input)
+    (with-open-file (ostream target :direction :output :if-does-not-exist :create)
+      (loop
+	(let ((char (read-char istream nil :eof)))
+	  (cond
+	   ((eq :eof char)
+	    (return))
+	   ((eq #\Page char)
+	    )
+	   (t
+	    (princ char ostream))))))))
+
+(defun ensure-final-slash (dirname)
+  (if (member (elt dirname (- (length dirname) 1))
+	      '(#\/ #\\))
+      dirname
+    (concatenate 'string dirname "/")))
+
+(defun directory? (pathname)
+  (and (null (pathname-name pathname))
+       (probe-file pathname)))
+
+(defun extend-directory (dir ext-dir)
+  (make-pathname :directory
+		 (concatenate 'list
+			      (pathname-directory dir)
+			      (last (pathname-directory ext-dir)))))
+
+(defun make-directory (dir)
+  #+allegro (sys::make-directory dir)
+  #+cmu (unix:unix-mkdir (if (pathnamep dir)
+			     (namestring dir)
+			   dir)
+			 #o755))
+
+(defun copy-directory (source target)
+  #+allegro(sys::copy-directory source target)
+  #-allegro
+  (let ((source-dirpath (if (stringp source)
+			    (parse-namestring (ensure-final-slash source))
+			  source))
+	(target-dirpath (if (stringp target)
+			    (parse-namestring (ensure-final-slash target))
+			  target)))
+    (unless (probe-file target-dirpath)
+      (make-directory target-dirpath))
+    (loop for dir-item in (directory source-dirpath)
+      do (if (directory? dir-item)
+	     (copy-directory dir-item (extend-directory target-dirpath dir-item))
+	   (copy-file dir-item (merge-pathnames target-dirpath dir-item))))))

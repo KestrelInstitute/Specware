@@ -31,4 +31,58 @@ XML qualifying spec
   def MakeSubsortSortDescriptor   (base, pp)  : SortDescriptor = Subsort    (base, pp)
   def MakeBaseSortDescriptor      (q,id,args) : SortDescriptor = Base       ((q,id), args)
 
+  %% Does this belong here (for use by apps) or elsewhere (for use by just Specware itself) ?
+
+  sort SortDescriptorExpansionTable = List (SortDescriptor * SortDescriptor)
+
+  def expand_SortDescriptor (sd : SortDescriptor, table : SortDescriptorExpansionTable) =
+   let
+      def aux sd =
+	let possible_entry = find (fn (x,_) -> x = sd) table in
+	case possible_entry of
+	  | None -> sd
+	  | Some (_, expansion) ->
+	    case expansion of
+	      | Base     _      -> aux expansion
+	      | Subsort  (x, _) -> aux x
+	      | Quotient (x, _) -> aux x
+	      | _               -> expansion
+   in
+     aux sd
+
+  def print_SortDescriptor (sd : SortDescriptor) =
+    case sd of
+      | Arrow        (x,y) -> (print_SortDescriptor x) ^ " -> " ^ (print_SortDescriptor y)
+      | Product      fields -> "{" ^ (foldl (fn ((id, sd), result) -> 
+					     let this = id ^ ": " ^ (print_SortDescriptor sd) in
+					     case result of
+					       | "" -> this
+					       | _ -> result ^ ", " ^ this)
+				            ""
+					    fields) ^ "}"
+      | CoProduct    fields -> (foldl (fn ((id, possible_sd), result) -> 
+				       "| " ^ id ^ 
+				       (case possible_sd of
+					 | None -> " "
+					 | Some sd -> print_SortDescriptor sd))
+				      ""
+				      fields)
+      | Quotient     (sd,tm) -> (print_SortDescriptor sd) ^ "\\" ^ "???"
+      | Subsort      (sd,tm) -> (print_SortDescriptor sd) ^ "|" ^ "???"
+      | Base         ((q,id), parms) -> ((if q = "<unqualified>" then "" else q ^ ".") ^
+					 id ^
+					 (case parms of
+					   | [] -> ""
+					   | _ -> "(" ^ (foldl (fn (sd, result) -> 
+								let this = print_SortDescriptor sd in
+								case result of
+								  | "" -> this
+								  | _ -> result ^ ", " ^ this)
+							       ""
+							       parms) ^ 
+					    ")"))
+      | TyVar         -> "type var"
+      | MetaTyVar     -> "meta type var"
+      | Bottom        -> "<bottom>"
+
 endspec

@@ -1,11 +1,22 @@
 ;;; -*- Mode: LISP; Package: User; Base: 10; Syntax: Common-Lisp -*-
 
-(in-package "USER")
+(in-package "CL-USER")
 
-(re::load-lisp-file "parser-package" :compiled? nil)
+(defun local-file (filename) 
+  (make-pathname :name filename :defaults *LOAD-PATHNAME*))
 
-(setq *features* (remove :DEBUG-PARSER    *features*))
-(setq *features* (remove :OPTIMIZE-PARSER *features*))
+(defun load-local-file (filename) 
+  (specware::load-lisp-file (local-file filename) :compiled? nil))
+
+(defun compile-and-load-local-file (filename) 
+  (specware::compile-and-load-lisp-file (local-file filename)))
+
+(load-local-file "parser-package") 
+
+;; Setting the count to 1 means you can push :DEBUG-PARSER twice onto
+;;  *features* prior to loading this file and one occurrence will survive.
+(setq *features* (remove :DEBUG-PARSER    *features* :count 1))
+(setq *features* (remove :OPTIMIZE-PARSER *features* :count 1))
 
 ;; Choose either or neither (both is ok, but would be peculiar)
 ;(pushnew :DEBUG-PARSER *features*)
@@ -31,73 +42,30 @@
   )
 
 (defmacro parser4::debugging-comment (&body body) 
-  `(parser4::when-debugging (parser4::comment ,@body)))
+  `(parser4::when-debugging 
+    (when parser4::*verbose?*
+      (parser4::comment ,@body))))
 
-#+allegro 
-(progn
-  ; (proclaim '(:explain :types :calls :boxing :variables))
-  (proclaim '(:explain :notypes :nocalls :noboxing :novariables))
+(compile-and-load-local-file "comment-hack")
+(compile-and-load-local-file "parse-decls")
 
-  ;; Increase initial freespace by factor of 16, to reduce frequency of GC's 
-  ;;  (setting it too large, e.g. another facto of 16,  tends to cause many page faults during gc's)
-  (setf (sys::gsgc-parameter :free-bytes-new-other) #x200000) ; default is #x20000
+#+DEBUG-PARSER (compile-and-load-local-file "parse-debug-1")
 
-  ;; The next three settings cause new/old space to grow more aggressively than
-  ;;  the defaults settings.
-  ;; This setting will tend to make free space grow more aggressively, since each scavange 
-  ;; must this percentage free to avoid expansion...
-  (setf (sys::gsgc-parameter :free-percent-new) 30) ; default is 25
-  ;;  These two indicate the per cent of new/old space that must be free 
-  ;; after gc to avoid expanding new/old space.
-  (setf (sys::gsgc-parameter :expansion-free-percent-new) 50) ; default is 35
-  (setf (sys::gsgc-parameter :expansion-free-percent-old) 50) ; default is 35
-)
+(compile-and-load-local-file "parse-add-rules")
+(compile-and-load-local-file "seal-parser")
 
-;;; Remove quote to enable gc messages...
-#+allegro
-'(progn
-  (setf (sys::gsgc-parameter :print)   t) ; default is nil
-  (setf (sys::gsgc-parameter :stats)   t) ; default is nil
-  (setf (sys::gsgc-parameter :verbose) t) ; default is nil
-  )
+(compile-and-load-local-file "parse-node-utilities")
 
-;(sys::resize-areas :new #x6000000) ; big! (hmm... too big...)
+(compile-and-load-local-file "tokenizer-decls")
+(compile-and-load-local-file "tokenizer")
 
-(re::compile-and-load-lisp-file "comment-hack")
-(re::compile-and-load-lisp-file "parse-decls")
+(compile-and-load-local-file "parse-semantics")
+;;   (compile-and-load-local-file  "pprint") ; will be here soon 
 
-#+DEBUG-PARSER (re::compile-and-load-lisp-file "parse-debug-1")
+(compile-and-load-local-file "parse-top")
 
-(re::compile-and-load-lisp-file "parse-add-rules")
-(re::compile-and-load-lisp-file "seal-parser")
+#+DEBUG-PARSER (compile-and-load-local-file "parse-debug-2")
 
-(re::compile-and-load-lisp-file "parse-node-utilities")
-
-(re::compile-and-load-lisp-file "tokenizer-decls")
-(re::compile-and-load-lisp-file "tokenizer")
-
-(re::compile-and-load-lisp-file "parse-semantics")
-;;   (re::compile-and-load-lisp-file  "pprint") ; will be here soon 
-
-(re::compile-and-load-lisp-file "parse-top")
-
-#+DEBUG-PARSER (re::compile-and-load-lisp-file "parse-debug-2")
-
-(re::compile-and-load-lisp-file "describe-grammar")
-
-;(parser4::load-slang-parser "/usr/local/specware/parser/sw-ops") ; object, arrow, span, pullback, etc.
-
-;(gc)
-;(setf (sys::gsgc-parameter :generation-spread) 0) ; default is 4 -- this triggers immediate tenuring
-;(gc)
-;(gc)
-;(gc)
-;(gc)
+(compile-and-load-local-file "describe-grammar")
 
 
-;; Making generation-spread larger avoids having temp structures being 
-;;  promoted into old space.  With this setting they need to survive 
-;; 20 gc's for that to happen.  (Legal range is 4-26)  Downside: they get
-;; copied back and forth more.
-#+allegro
-(setf (sys::gsgc-parameter :generation-spread) 12) ; default is 4

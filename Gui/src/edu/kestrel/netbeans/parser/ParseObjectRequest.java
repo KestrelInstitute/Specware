@@ -6,6 +6,15 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/03/13 01:23:59  gilham
+ * Handle Latex comments.
+ * Report Lexer errors.
+ * Always display parser messages (not displayed before if the parsing succeeded
+ * and the parser output window is not open).
+ *
+ * Revision 1.1  2003/01/30 02:02:23  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -17,7 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collection;
 
-import org.netbeans.modules.java.ErrConsumer;
+import org.openide.filesystems.FileObject;
 
 /**
  * Request for parsing the Meta Slang source. This interface defines interactions
@@ -55,6 +64,8 @@ public interface ParseObjectRequest {
     */
     public char[] getSource() throws IOException;
 
+    public FileObject getSourceFile();
+
     /** 
      * Called to obtain reader for the data to be parsed. 
      * @throws IOException if the reader can't be returned.
@@ -85,7 +96,7 @@ public interface ParseObjectRequest {
     
     public Object getParserType();
     
-    public ErrConsumer getErrConsumer();
+    public void pushError (int line, int column, String message);
     
     public String getSourceName();
     

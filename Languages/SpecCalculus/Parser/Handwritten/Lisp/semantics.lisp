@@ -1,8 +1,11 @@
 ;;; -*- Mode: LISP;  Base: 10; Syntax: Common-Lisp -*-
 
-(in-package :PARSER4)
+(in-package "PARSER4")
 
-(defpackage "POSSPEC")
+;; (defpackage "METASLANG")
+(defpackage "STANDARDSPEC")
+(defpackage "MS")
+(defpackage "POSITION")
 
 ;;; variables associated with new definition tables (circa May 8, 2002)
 (defvar *current-module-name*   nil) ; used only in this file
@@ -16,19 +19,79 @@
 ;;;  Misc utilities
 ;;; ========================================================================
 
-(defun make-pos (l r) (cons l r))
-(defparameter position0 (cons (make-pos 0 0) (make-pos 0 0)))
+(defvar *make-pos-warnings-seen* 0)
 
-(defun freshMetaTypeVar (l r)
+(defun make-pos (left right) 
+  (declare (special *parser-source*)) ; bound in parser-interface.lisp
+  (when (consp left)
+    (when (< (incf *make-pos-warnings-seen*) 10)
+      (warn "In MAKE-POS: Bogus left position: ~S" left))
+    (let* ((line   (car left))
+	   (column (cdr left))
+	   (byte   0))
+      (setq left (vector line column byte))))
+  (when (consp right)
+    (when (< (incf *make-pos-warnings-seen*) 10)
+      (warn "In MAKE-POS: Bogus right position: ~S" right))
+    (let* ((line   (car right))
+	   (column (cdr right))
+	   (byte   0))
+      (setq right (vector line column byte))))
+  (case (first *parser-source*)
+    (:file   (cons :|File|     (vector (second *parser-source*) left right)))
+    (:string (cons :|String|   (vector (second *parser-source*) left right)))
+    (t       (when (< (incf *make-pos-warnings-seen*) 10)
+	       (warn "In MAKE-POS: What are we parsing? : ~S" *parser-source*))
+	     (cons :|Internal| (second *parser-source*)))))
+
+(defun freshMetaTypeVar (left right)
   (cons :|MetaTyVar|
         (cons (cons :|Ref| (vector (cons :|None| nil) "#intern" (incf *varcounter*)))
-              (make-pos l r))))
+              (make-pos left right))))
 
 (defun namedTypeVar (name)
   name
   ;;(cons :|TyVar| name)
   ;;(cons :|ref| (vector (cons :|None| nil) name (incf *varcounter*)))
   )
+
+;;; (defun mkQualifiedId (qualifier id) 
+;;;   (MetaSlang::mkQualifiedId qualifier id))
+;;;
+;;; (defun mkUnQualifiedId (id) 
+;;;   (MetaSlang::mkUnQualifiedId id))
+
+(defun make-unqualified-sort-name (id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-sort-name (qualifier id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkQualifiedId-2 qualifier id))
+
+(defun make-unqualified-op-name (id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-op-name (qualifier id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkQualifiedId-2 qualifier id))
+
+(defun make-unqualified-claim-name (id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-claim-name (qualifier id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkQualifiedId-2 qualifier id))
+
+(defun make-unqualified-ambiguous-name (id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkUnQualifiedId id))
+
+(defun make-qualified-ambiguous-name (qualifier id left right)
+  (declare (ignore left right))
+  (MetaSlang::mkQualifiedId-2 qualifier id))
 
 ;;; ========================================================================
 ;;;  Primitives
@@ -59,62 +122,65 @@
     (make-pos l r)))
 
 ;;; ========================================================================
-;;;  SC-URI
+;;;  SC-UNIT-ID
 ;;; ========================================================================
 
-(defun make-sc-absolute-uri (sc-uri-path optional-hash-name l r)
-  (cons (cons :|URI|
+(defun make-sc-absolute-unit-id (sc-unit-id-path optional-hash-name l r)
+  (cons (cons :|UnitId|
               (cons :|SpecPath_Relative|
                     (cons
                        (if (eq :unspecified optional-hash-name)
                           (cons :|None| nil)
                           (cons :|Some| optional-hash-name))
-                       sc-uri-path)))
+                       sc-unit-id-path)))
 	    (make-pos l r)))
 
-(defun make-sc-relative-uri (sc-uri-path optional-hash-name l r)
-  (cons (cons :|URI|
-              (cons :|URI_Relative|
+(defun make-sc-relative-unit-id (sc-unit-id-path optional-hash-name l r)
+  (cons (cons :|UnitId|
+              (cons :|UnitId_Relative|
                     (cons
                        (if (eq :unspecified optional-hash-name)
                           (cons :|None| nil)
                           (cons :|Some| optional-hash-name))
-                       sc-uri-path)))
+                       sc-unit-id-path)))
 	    (make-pos l r)))
 
-;;;(defun make-sc-specpath-uri (sc-uri-path l r)
-;;;  (cons (cons :|URI| (cons :|SpecPath| sc-uri-path))
+;;;(defun make-sc-specpath-unit-id (sc-unit-id-path l r)
+;;;  (cons (cons :|UnitId| (cons :|SpecPath| sc-unit-id-path))
 ;;;        (make-pos l r)))
 ;;;
 
 
 ;;; ========================================================================
-;;;  SPEC-DEFINITION
+;;;  SC-SPEC-DEFINITION
 ;;;  http://www.specware.org/manual/html/modules.html
 ;;;  TODO: In doc: Change references to modules
 ;;; ========================================================================
 
-(defparameter char-sort   (cons :|PBase| (vector (ATerm::mkQualifiedId "Char"    "Char")    nil position0)))
-(defparameter bool-sort   (cons :|PBase| (vector (ATerm::mkQualifiedId "Boolean" "Boolean") nil position0)))
-(defparameter string-sort (cons :|PBase| (vector (ATerm::mkQualifiedId "String"  "String")  nil position0)))
-(defparameter int-sort    (cons :|PBase| (vector (ATerm::mkQualifiedId "Integer" "Integer") nil position0)))
-(defparameter nat-sort    (cons :|PBase| (vector (ATerm::mkQualifiedId "Nat"     "Nat")     nil position0)))
+(defparameter internal-parser-position (cons :|Internal| "built-in from parser"))
+(defun make-internal-sort (name)
+  (cons :|Base| 
+	(vector (make-qualified-sort-name name name internal-parser-position internal-parser-position)
+		nil 
+		internal-parser-position)))
+
+(defparameter char-sort   (make-internal-sort "Char"    ))
+(defparameter bool-sort   (make-internal-sort "Boolean" ))
+(defparameter string-sort (make-internal-sort "String"  ))
+(defparameter int-sort    (make-internal-sort "Integer" ))
+(defparameter nat-sort    (make-internal-sort "Nat"     ))
 
 (defparameter forall-op   (cons :|Forall| nil))
 (defparameter exists-op   (cons :|Exists| nil))
 
-(defparameter nonfix nil  ;:|Nonfix|
-              )
+(defparameter unspecified-fixity '(:|Unspecified|))
 
 ;; The counter here is for freshMetaTypeVar. Perhaps it should be moved
 ;; out of the parser. Needs thought.
-(defun make-spec-definition (optional-qualifier optional-declaration-sequence l r)
+(defun make-spec-definition (optional-qualifier declaration-sequence l r)
   :comment "A specification"
   (setq *varcounter* 0)
-  (let* ((declaration-sequence (if (eq :unspecified optional-declaration-sequence)
-                                   nil
-                                 optional-declaration-sequence))
-         (spec_def (cons (cons :|Spec| declaration-sequence)
+  (let* ((spec_def (cons (cons :|Spec| declaration-sequence)
                          (make-pos l r))))
     (if (eq :unspecified optional-qualifier)
         spec_def
@@ -139,48 +205,52 @@
 
 
 ;; To factor the parser further, perhaps we should think about removing
-;; the reference to PosSpec from the semantic rules.
-(defun make-sort-declaration (qualifiable-sort-name formal-sort-parameters l r)
+;; the reference to StandardSpec from the semantic rules.
+(defun make-sort-declaration (qualifiable-sort-names formal-sort-parameters l r)
   (let*  ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
           (sort      nat-sort) ; hack -- conversion by abstractSort will be ignored
-          (tyVarsSrt (PosSpec::abstractSort #'namedTypeVar typeVars1 sort))
+          (tyVarsSrt (StandardSpec::abstractSort-3 #'namedTypeVar typeVars1 sort))
           (typeVars2 (car tyVarsSrt)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
     ;;  (cdr tyVarsSrt) will be ignored.
     ;; TODO: skip the code above and use typeVars1 for typeVars2 below
-    (cons (cons :|Sort| (cons qualifiable-sort-name (cons typeVars2 (cons :|None| nil))))
+    (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
+			      (cons typeVars2 ())))
           (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
 ;;;  SORT-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-sort-definition (qualifiable-sort-name formal-sort-parameters sort l r)
+(defun make-sort-definition (qualifiable-sort-names formal-sort-parameters sort l r)
   (let* ((typeVars1 (if (eq :unspecified formal-sort-parameters) nil formal-sort-parameters))
-         (tyVarsSrt (PosSpec::abstractSort #'namedTypeVar typeVars1 sort))
+         (tyVarsSrt (StandardSpec::abstractSort-3 #'namedTypeVar typeVars1 sort))
          (typeVars2 (car tyVarsSrt))
          (sort2     (cdr tyVarsSrt)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car tyVarsSrt) will just be a copy of typeVars1,
-    ;;  (cdr tyVarsSrt) will be a copy of sort with (PBase qid) replaced by (TyVar id) where appropriate.
+    ;;  (cdr tyVarsSrt) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for this conversion into the linker.
-    (cons (cons :|Sort| (cons qualifiable-sort-name (cons typeVars2 (cons :|Some| sort2))))
+    (cons (cons :|Sort| (cons (remove-duplicates qualifiable-sort-names :test 'equal :from-end t)
+			      (cons typeVars2 (list (cons typeVars2 sort2)))))
           (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DECLARATION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-declaration (qualifiable-op-name optional-fixity sort-scheme l r)
-  (let ((fixity (if (equal :unspecified optional-fixity) nil optional-fixity)))
-    (cons (cons :|Op| (cons qualifiable-op-name
-                            (vector fixity sort-scheme (cons :|None| nil))))
+(defun make-op-declaration (qualifiable-op-names optional-fixity sort-scheme l r)
+  (let ((fixity (if (equal :unspecified optional-fixity) 
+		    unspecified-fixity
+		  optional-fixity)))
+    (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
+                            (vector fixity sort-scheme ())))
           (make-pos l r))))
 
 (defun make-fixity (associativity priority l r)
   (declare (ignore l r))
-  (cons (cons associativity nil) priority))
+  (cons :|Infix| (cons (cons associativity nil) priority)))
 
 #||
 If we want the precedence to be optional:
@@ -193,41 +263,40 @@ If we want the precedence to be optional:
 (defun make-sort-scheme (optional-sort-variable-binder sort l r)
   (declare (ignore l r))
   (let ((vars (if (equal :unspecified optional-sort-variable-binder)
-                  '()
+                  ()
                 optional-sort-variable-binder)))
     ;; Since namedTypeVar is the identity function,
     ;;  (car <result>) will just be a copy of vars
-    ;;  (cdr <result>) will be a copy of sort with (PBase qid) replaced by (TyVar id) where appropriate.
+    ;;  (cdr <result>) will be a copy of sort with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for that conversion into the linker.
-    (PosSpec::abstractSort #'namedTypeVar vars sort)))
+    (StandardSpec::abstractSort-3 #'namedTypeVar vars sort)))
 
 ;;; ------------------------------------------------------------------------
 ;;;  OP-DEFINITION
 ;;; ------------------------------------------------------------------------
 
-(defun make-op-definition (tyVars qualifiable-op-name params optional-sort term l r)
-  (let* ((params     (if (equal :unspecified params) nil params))
-         (tyVars     (if (equal :unspecified tyVars) nil tyVars))
+(defun make-op-definition (tyVars qualifiable-op-names params optional-sort term l r)
+  (let* ((tyVars     (if (equal :unspecified tyVars) () tyVars))
          (term       (if (equal :unspecified optional-sort) term (make-sorted-term term optional-sort l r)))
          (term       (bind-parameters params term l r))
-         (tyVarsTerm (PosSpec::abstractTerm #'namedTypeVar tyVars term))
+         (tyVarsTerm (StandardSpec::abstractTerm-3 #'namedTypeVar tyVars term))
          (term       (cdr tyVarsTerm))
          (tyVars     (car tyVarsTerm))
          (srtScheme  (cons tyVars (freshMetaTypeVar l r))))
     ;; Since namedTypeVar is the identity function,
     ;;  (car tyVarsTerm) will just be a copy of tyVars
     ;;    so srtScheme will be tyVars * Mtv -- i.e. Mtv parameterized by tyVars
-    ;;  (cdr tyVarsTerm) will be a copy of term with (PBase qid) replaced by (TyVar id) where appropriate.
+    ;;  (cdr tyVarsTerm) will be a copy of term with (Base qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
-    (cons (cons :|Op| (cons qualifiable-op-name
-                            (vector nil srtScheme (cons :|Some| term))))
-     (make-pos l r))))
+    (cons (cons :|Op| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
+                            (vector unspecified-fixity srtScheme (list (cons tyVars term))))) 
+	  (make-pos l r))))
 
 (defun bind-parameters (params term l r)
   (if (null params)
       term
     (cons :|Lambda|
-          (cons (list (vector (car params) (PosSpec::mkTrue)
+          (cons (list (vector (car params) (MS::mkTrue-0)
                               (bind-parameters (cdr params) term l r)))
                 (make-pos l r)))))
 
@@ -240,12 +309,12 @@ If we want the precedence to be optional:
   (let ((optional-sort-quantification (car claim))
         (expression                   (cdr claim)))
     (let* ((typevars     (if (equal :unspecified optional-sort-quantification) nil optional-sort-quantification))
-           (typeVarsTerm (PosSpec::abstractTerm #'namedTypeVar typevars expression))
+           (typeVarsTerm (StandardSpec::abstractTerm-3 #'namedTypeVar typevars expression))
            (typevars     (car typeVarsTerm))
            (term         (cdr typeVarsTerm)))
       ;; Since namedTypeVar is the identity function,
       ;;  (car typeVarsTerm) will just be a copy of the original typevars
-      ;;  (cdr typeVarsTerm) will be a copy of expression with (PBase qid) replaced by (TyVar id) where appropriate.
+      ;;  (cdr typeVarsTerm) will be a copy of expression with (Base qid) replaced by (TyVar id) where appropriate.
       ;; TODO: Move the responsibility for all this conversion into the linker.
       (cons (cons :|Claim| (vector (list claim-kind) label typevars term))
             (make-pos l r)))))
@@ -305,7 +374,7 @@ If we want the precedence to be optional:
 
 (defun make-product (fields l r)
   (cons :|Product|
-        (cons (PosSpec::tagTuple fields)
+        (cons (MS::tagTuple fields)
               (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
@@ -313,7 +382,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-sort-instantiation (qualifiable-sort-name actual-sort-parameters l r)
-  (cons :|PBase|
+  (cons :|Base|
         (vector qualifiable-sort-name actual-sort-parameters
                 (make-pos l r))))
 
@@ -323,7 +392,7 @@ If we want the precedence to be optional:
 
 (defun make-sort-ref (qualifiable-sort-name l r)
   (let ((sort-args nil))
-    (cons :|PBase|
+    (cons :|Base|
           (vector qualifiable-sort-name sort-args
                   (make-pos l r)))))
 
@@ -384,13 +453,10 @@ If we want the precedence to be optional:
 ;;;   UNQUALIFIED-OP-REF
 ;;; ------------------------------------------------------------------------
 
-(defparameter *unqualified-equal*
-    (ATerm::mkUnQualifiedId "="))
-
 (defun make-unqualified-op-ref (name l r)
   (make-fun (if (equal name "=")
                 (cons :|Equals| nil)
-              (cons :|OneName| (cons name nonfix)))
+              (cons :|OneName| (cons name unspecified-fixity)))
             (freshMetaTypeVar l r)
             l r))
 
@@ -399,7 +465,7 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-two-name-expression (name-1 name-2 l r)
-  (make-fun (cons :|TwoNames| (vector name-1 name-2 nonfix))
+  (make-fun (cons :|TwoNames| (vector name-1 name-2 unspecified-fixity))
             (freshMetaTypeVar l r)
             l r))
 
@@ -452,7 +518,7 @@ If we want the precedence to be optional:
       term
     (cons :|Lambda|
           (cons (list (vector (car params)
-                              (PosSpec::mkTrue)
+                              (MS::mkTrue-0)
                               (bindParams (cdr params) term l r)))
                 (make-pos l r)))))
 
@@ -524,19 +590,21 @@ If we want the precedence to be optional:
 			     (freshMetaTypeVar l r) 
 			     l r))
 
-(defun make-nat-selector        (number     l r) (make-projector (format t "~D" number) l r))
-(defun make-field-name-selector (field-name l r) (make-projector field-name             l r))
+(defun make-nat-selector        (number     l r) (make-projector (format nil "~D" number) l r))
+(defun make-field-name-selector (field-name l r) (make-projector field-name               l r))
 
 ;;; ------------------------------------------------------------------------
 ;;;  TUPLE-DISPLAY
 ;;; ------------------------------------------------------------------------
 
 (defun make-tuple-display (optional-tuple-display-body l r)
+  ;; :unspecified for 0, otherwise length of optional-tuple-display-body will be at least 2
+  ;;  I.e., length of terms will be 0 or 2-or-more, but will never be 1.
   (let ((terms (if (equal optional-tuple-display-body :unspecified)
-                   '()
+                   ()
                  optional-tuple-display-body)))
     (cons ':|Record|
-          (cons (PosSpec::tagTuple terms)
+          (cons (MS::tagTuple terms)
                 (make-pos l r)))))
 
 ;;; ------------------------------------------------------------------------
@@ -568,9 +636,9 @@ If we want the precedence to be optional:
 ;;; ------------------------------------------------------------------------
 
 (defun make-list-display (expressions l r)
-  (PosSpec::mkList expressions
-                   (make-pos l r)
-                   (freshMetaTypeVar l r)))
+  (StandardSpec::mkList-3 expressions
+			  (make-pos l r)
+			  (freshMetaTypeVar l r)))
 
 ;;; ------------------------------------------------------------------------
 ;;;  STRUCTOR
@@ -588,6 +656,31 @@ If we want the precedence to be optional:
   (cons :|Fun|
         (vector f s
                 (make-pos l r))))
+
+(defun make-nonfix (x)
+  (cond ((and (consp x) (eq (car x) :|Fun|) (simple-vector-p (cdr x)))
+	 (let* ((v (cdr x))
+		(f (svref v 0)))
+	   (cond ((not (consp f))
+		  x)
+		 ((eq (car f) :|OneName|)
+		  (let* ((new-f (cons :|OneName| 
+				      (cons (cadr f)    ; id
+					    '(:|Nonfix|))))
+			 (new-v (vector new-f (svref v 1) (svref v 2))))
+		    (cons :|Fun| new-v)))
+		 ((eq (car f) :|TwoNames|)
+		  (let* ((z (cdr f))
+			 (new-f (cons :|TwoNames| 
+				      (vector (svref z 0) ; id
+					      (svref z 1) ; id
+					      '(:|Nonfix|))))
+			 (new-v (vector new-f (svref v 1) (svref v 2))))
+		    (cons :|Fun| new-v)))
+		 (t
+		  x))))
+	(t
+	 x)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   MONAD-EXPRESSION
@@ -655,7 +748,7 @@ If we want the precedence to be optional:
 
 (defun make-branch (pattern expression l r)
   (declare (ignore l r))
-  (vector pattern (PosSpec::mkTrue) expression))
+  (vector pattern (MS::mkTrue-0) expression))
 
 ;;; ========================================================================
 ;;;  PATTERN
@@ -674,13 +767,13 @@ If we want the precedence to be optional:
 (defun make-char-pattern             (char             l r) (cons :|CharPat|     (cons   char                                               (make-pos l r))))
 (defun make-string-pattern           (str              l r) (cons :|StringPat|   (cons   str                                                (make-pos l r))))
 
-(defun make-cons-pattern             (pattern patterns l r) (PosSpec::mkConsPattern pattern patterns (make-pos l r) (freshMetaTypeVar l r)))
-(defun make-list-pattern             (patterns         l r) (PosSpec::mkListPattern patterns         (make-pos l r) (freshMetaTypeVar l r)))
+(defun make-cons-pattern             (pattern patterns l r) (StandardSpec::mkConsPattern-4 pattern patterns (make-pos l r) (freshMetaTypeVar l r)))
+(defun make-list-pattern             (patterns         l r) (StandardSpec::mkListPattern-3 patterns         (make-pos l r) (freshMetaTypeVar l r)))
 
 (defun make-tuple-pattern            (patterns         l r)
   (if (= (length patterns) 1)
       (car patterns)
-    (cons :|RecordPat| (cons (PosSpec::tagTuple patterns) (make-pos l r)))))
+    (cons :|RecordPat| (cons (MS::tagTuple patterns) (make-pos l r)))))
 
 (defun make-record-pattern          (fields            l r)
   (let ((alphabetized-fields (sort fields #'(lambda (x y) (string< (car x) (car y))))))
@@ -720,13 +813,37 @@ If we want the precedence to be optional:
 ;;;  SC-EXPORT
 ;;; ========================================================================
 
-(defun make-sc-hide (sc-name-expr sc-term l r)
-  (cons (cons :|Hide| (cons sc-name-expr sc-term))
-        (make-pos l r)))
+(defun make-sc-hide (name-list sc-term l r)
+  (cons (cons :|Hide| (cons name-list sc-term))
+	(make-pos l r)))
 
-(defun make-sc-export (sc-name-expr sc-term l r)
-  (cons (cons :|Export| (cons sc-name-expr sc-term))
-        (make-pos l r)))
+(defun make-sc-export (name-list sc-term l r)
+  (cons (cons :|Export| (cons name-list sc-term))
+	(make-pos l r)))
+
+(defun make-sc-sort-ref      (sort-ref             l r)  
+  (declare (ignore l r))
+  (cons :|Sort|      sort-ref))
+
+(defun make-sc-op-ref        (op-ref               l r)  
+  (declare (ignore l r))
+  (cons :|Op|        op-ref))
+
+(defun make-sc-claim-ref     (claim-type claim-ref l r)  
+  (declare (ignore l r))
+  (cons claim-type   claim-ref))
+
+(defun make-sc-ambiguous-ref (ambiguous-ref        l r)  
+  (declare (ignore l r))
+  (cons :|Ambiguous| ambiguous-ref))
+
+(defun make-unannotated-op-ref (op-ref      l r)
+  (declare (ignore l r))
+  (cons op-ref '(:|None|)))
+
+(defun make-annotated-op-ref   (op-ref sort l r)
+  (declare (ignore l r))
+  (cons op-ref (cons :|Some| sort)))
 
 ;;; ========================================================================
 ;;;  SC-TRANSLATE
@@ -736,12 +853,29 @@ If we want the precedence to be optional:
   (cons (cons :|Translate| (cons sc-term sc-translate-expr))
         (make-pos l r)))
 
-(defun make-sc-translate-expr (sc-renaming-maps l r)
-  (cons sc-renaming-maps
+(defun make-sc-translate-expr (rules l r)
+  (cons rules
         (make-pos l r)))
 
-(defun make-sc-translate-map (left-qualifiable-name right-qualifiable-name l r)
-  (cons (cons left-qualifiable-name right-qualifiable-name)
+;;; (defun make-sc-translate-rules (rules)
+;;;   (if (equal rules :unspecified)
+;;;      ()
+;;;    rules))
+
+;;; (defun make-sc-translate-rule (left-qualifiable-name right-qualifiable-name l r)
+;;;   (cons (cons left-qualifiable-name right-qualifiable-name)
+;;;        (make-pos l r)))
+
+(defun make-sc-sort-rule (left-sort-ref right-sort-ref l r)
+  (cons (cons :|Sort| (vector left-sort-ref right-sort-ref (list right-sort-ref)))
+        (make-pos l r)))
+
+(defun make-sc-op-rule (left-op-ref right-op-ref l r)
+  (cons (cons :|Op| (vector left-op-ref right-op-ref (list (car right-op-ref))))
+        (make-pos l r)))
+
+(defun make-sc-ambiguous-rule (left-ref right-ref l r)
+  (cons (cons :|Ambiguous| (vector left-ref right-ref (list right-ref)))
         (make-pos l r)))
 
 ;;; ------------------------------------------------------------------------
@@ -752,13 +886,25 @@ If we want the precedence to be optional:
 ;;;  SC-SPEC-MORPH
 ;;; ========================================================================
 
-(defun make-sc-spec-morph (dom-sc-term cod-sc-term sc-spec-morph-elems l r)
-  (cons (cons :|SpecMorph| (vector dom-sc-term cod-sc-term sc-spec-morph-elems))
-        (make-pos l r)))
+(defun make-sc-spec-morph (dom-sc-term cod-sc-term rules l r)
+  ;; (let ((rules (if (eq rules :unspecified) nil rules))) ...)
+  (cons (cons :|SpecMorph| (vector dom-sc-term cod-sc-term rules))
+	    (make-pos l r)))
 
-(defun make-sc-spec-morph-elem (qualifiable-name expression l r)
-  (cons (cons qualifiable-name expression)
-        (make-pos l r)))
+;;; (defun make-sc-spec-morph-rule (qualifiable-name-dom qualifiable-name-cod l r)
+;;;  (vector qualifiable-name-dom qualifiable-name-cod (make-pos l r)))
+
+(defun make-sm-sort-rule (left-sort-ref right-sort-ref l r)
+  (cons (cons :|Sort| (cons left-sort-ref right-sort-ref))
+		(make-pos l r)))
+
+(defun make-sm-op-rule (left-op-ref right-op-ref l r)
+  (cons (cons :|Op| (cons left-op-ref right-op-ref))
+		(make-pos l r)))
+
+(defun make-sm-ambiguous-rule (left-ref right-ref l r)
+  (cons (cons :|Ambiguous| (cons left-ref right-ref))
+		(make-pos l r)))
 
 ;;; ========================================================================
 ;;;  SC-SHAPE
@@ -782,6 +928,22 @@ If we want the precedence to be optional:
         (make-pos l r)))
 
 ;;; ========================================================================
+;;;  SC-COLIMIT
+;;; ========================================================================
+
+(defun make-sc-colimit (diag l r)
+  (cons (cons :|Colimit| diag)
+        (make-pos l r)))
+
+;;; ========================================================================
+;;;  SC-SUBSTITUTE
+;;; ========================================================================
+
+(defun make-sc-substitute (spec-term morph-term l r)
+  (cons (cons :|Subst| (cons spec-term morph-term))
+        (make-pos l r)))
+
+;;; ========================================================================
 ;;;  SC-DIAG-MORPH
 ;;; ========================================================================
 
@@ -792,7 +954,6 @@ If we want the precedence to be optional:
 
 ;;; ========================================================================
 ;;;  SC-LIMIT
-;;;  SC-COLIMIT
 ;;;  SC-APEX
 ;;; ========================================================================
 
@@ -804,6 +965,55 @@ If we want the precedence to be optional:
   (cons (cons :|Generate| (vector target-language sc-term
                                   (if (equal optFilNm :unspecified)
                                       '(:|None|)
-                                    (cons :|Some| optFilNm))))
+				    (let* (
+					   (fname (if (stringp optFilNm)
+						      optFilNm
+						    (string optFilNm)
+						    )
+						  )
+					   )
+				       (cons :|Some| fname)
+				       ))))
         (make-pos l r)))
+
+
+;; ========================================================================
+;;;  SC-OBLIGATIONS
+;;; ========================================================================
+
+(defun make-sc-obligations (term l r)
+  (cons (cons :|Obligations| term)
+    (make-pos l r)))
+
+;;; ========================================================================
+;;;  SC-PROVE
+;;; ========================================================================
+
+(defun make-sc-prover (claim-name spec-term prover-name assertions options l r)
+  (let ((prover-name (if (eq prover-name :unspecified) "Snark" prover-name))
+	(assertions  (if (eq assertions  :unspecified) (cons :|All| nil) (cons :|Explicit| assertions)))
+	(options     (if (eq options     :unspecified) (cons :|OptionString| nil) options)))
+    (cons (cons :|Prove| (vector claim-name spec-term prover-name assertions options))
+	  (make-pos l r))))
+
+(defun make-sc-prover-options (name_or_string)
+  (cond ((stringp name_or_string) 
+	 (read_list_of_s_expressions_from_string name_or_string))
+	(t (cons :|OptionName| name_or_string))))
+
+;;; ========================================================================
+;;;  SC-REDUCE
+;;; ========================================================================
+
+(defun make-sc-reduce (ms-term sc-term l r)
+  (cons (cons :|Reduce| (cons ms-term sc-term))
+    (make-pos l r)))
+
+;;; ========================================================================
+;;;  SC-EXTEND
+;;; ========================================================================
+
+(defun make-sc-extend (term l r)
+  (cons (cons :|ExtendMorph| term)
+    (make-pos l r)))
 

@@ -6,6 +6,36 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/07/05 07:46:39  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.9  2003/04/23 01:15:44  weilyn
+ * ClaimCustomizer.java
+ *
+ * Revision 1.8  2003/04/01 02:29:41  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.7  2003/03/29 03:13:59  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.6  2003/03/14 04:14:22  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.5  2003/02/18 18:06:45  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.4  2003/02/17 04:32:11  weilyn
+ * Added support for expressions.
+ *
+ * Revision 1.3  2003/02/16 02:15:05  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:42:09  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:02:13  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -45,15 +75,32 @@ public final class SourceOptions extends SystemOption {
 
     /** Kinds of the format. */
     private static final byte T_SPEC = 0;
-    private static final byte T_SORT = 1;
-    private static final byte T_OP = 2;
-
+    private static final byte T_IMPORT = 1;
+    private static final byte T_SORT = 2;
+    private static final byte T_OP = 3;
+    private static final byte T_DEF = 4;
+    private static final byte T_CLAIM = 5;
+    private static final byte T_PROOF = 6;
+    private static final byte T_MORPHISM = 7;
+    private static final byte T_DIAGRAM = 8;
+    private static final byte T_COLIMIT = 9;
+    //private static final byte T_UID = 10;
+    private static final byte T_DIAG_ELEM = 11;
 
     /** Names of all properties. */
     static final String[] PROP_NAMES = {
         "specElementFormat", // NOI18N
+        "importElementFormat", //NOI18N
         "sortElementFormat", // NOI18N
-        "opElementFormat",
+        "opElementFormat",   //NOI18N
+        "defElementFormat",   //NOI18N
+        "claimElementFormat", // NOI18N
+        "proofElementFormat", // N0I18N
+        "morphismElementFormat", // N0I18N
+        "diagramElementFormat", // N0I18N
+        "colimitElementFormat", // N0I18N
+        "uidElementFormat", //NOI18N
+        "diagElemElementFormat", // NOI18N
     };
     
     static Element[] TEST_ELEMENTS;
@@ -102,14 +149,41 @@ public final class SourceOptions extends SystemOption {
         formats = new ElementFormat[PROP_NAMES.length];
     }
 
+    /** Property name of the import display format. */
+    public static final String PROP_IMPORT_FORMAT = PROP_NAMES[T_IMPORT];
+
     /** Property name of the sort display format. */
     public static final String PROP_SORT_FORMAT = PROP_NAMES[T_SORT];
 
     /** Property name of the op display format. */
     public static final String PROP_OP_FORMAT = PROP_NAMES[T_OP];
 
+    /** Property name of the op display format. */
+    public static final String PROP_DEF_FORMAT = PROP_NAMES[T_DEF];
+
+    /** Property name of the op display format. */
+    public static final String PROP_CLAIM_FORMAT = PROP_NAMES[T_CLAIM];
+
     /** Property name of the spec display format. */
     public static final String PROP_SPEC_FORMAT = PROP_NAMES[T_SPEC];
+
+    /** Property name of the proof display format. */
+    public static final String PROP_PROOF_FORMAT = PROP_NAMES[T_PROOF];
+    
+    /** Property name of the morphism display format. */
+    public static final String PROP_MORPHISM_FORMAT = PROP_NAMES[T_MORPHISM];
+
+    /** Property name of the diagElem display format. */
+    public static final String PROP_DIAG_ELEM_FORMAT = PROP_NAMES[T_DIAG_ELEM];
+    
+    /** Property name of the diagram display format. */
+    public static final String PROP_DIAGRAM_FORMAT = PROP_NAMES[T_DIAGRAM];
+    
+    /** Property name of the colimit display format. */
+    public static final String PROP_COLIMIT_FORMAT = PROP_NAMES[T_COLIMIT];
+
+    /** Property name of the unitId display format. */
+   // public static final String PROP_uid_FORMAT = PROP_NAMES[T_UID];
 
     /** Property name of the 'categories usage' property. */
     public static final String PROP_CATEGORIES_USAGE = "categoriesUsage"; // NOI18N
@@ -146,13 +220,6 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_SPEC);
     }
 
-    /** Set the sort format.
-    * @param format the new format
-    */
-    public void setSortElementFormat(ElementFormat format) {
-        setElementFormat(T_SORT, format);
-    }
-    
     private ElementFormat getElementFormat(int type) {
         synchronized (this) {
             if (formats[type] != null)
@@ -165,6 +232,28 @@ public final class SourceOptions extends SystemOption {
         return DEFAULT_FORMATS_SHORT[type];
     }
 
+    /** Set the import format.
+    * @param format the new format
+    */
+    public void setImportElementFormat(ElementFormat format) {
+        setElementFormat(T_IMPORT, format);
+    }
+    
+    /** Get the import format.
+    * @return the current format
+    */
+    public ElementFormat getImportElementFormat() {
+        return getElementFormat(T_IMPORT);
+    }
+
+
+    /** Set the sort format.
+    * @param format the new format
+    */
+    public void setSortElementFormat(ElementFormat format) {
+        setElementFormat(T_SORT, format);
+    }
+    
     /** Get the sort format.
     * @return the current format
     */
@@ -186,6 +275,118 @@ public final class SourceOptions extends SystemOption {
         return getElementFormat(T_OP);
     }
 
+    /** Set the def format.
+    * @param format the new format
+    */
+    public void setDefElementFormat(ElementFormat format) {
+        setElementFormat(T_DEF, format);
+    }
+
+    /** Get the def format.
+    * @return the current format
+    */
+    public ElementFormat getDefElementFormat() {
+        return getElementFormat(T_DEF);
+    }
+
+    /** Set the claim format.
+    * @param format the new format
+    */
+    public void setClaimElementFormat(ElementFormat format) {
+        setElementFormat(T_CLAIM, format);
+    }
+
+    /** Get the claim format.
+    * @return the current format
+    */
+    public ElementFormat getClaimElementFormat() {
+        return getElementFormat(T_CLAIM);
+    }
+
+    /** Set the proof format.
+    * @param format the new format
+    */
+    public void setProofElementFormat(ElementFormat format) {
+        setElementFormat(T_PROOF, format);
+    }
+
+    /** Get the proof format.
+    * @return the current format
+    */
+    public ElementFormat getProofElementFormat() {
+        return getElementFormat(T_PROOF);
+    }
+    
+    /** Set the morphism format.
+    * @param format the new format
+    */
+    public void setMorphismElementFormat(ElementFormat format) {
+        setElementFormat(T_MORPHISM, format);
+    }
+
+    /** Get the morphism format.
+    * @return the current format
+    */
+    public ElementFormat getMorphismElementFormat() {
+        return getElementFormat(T_MORPHISM);
+    }
+
+    /** Set the diagElem format.
+    * @param format the new format
+    */
+    public void setDiagElemElementFormat(ElementFormat format) {
+        setElementFormat(T_DIAG_ELEM, format);
+    }
+    
+    /** Get the diagElem format.
+    * @return the current format
+    */
+    public ElementFormat getDiagElemElementFormat() {
+        return getElementFormat(T_DIAG_ELEM);
+    }
+
+    /** Set the diagram format.
+    * @param format the new format
+    */
+    public void setDiagramElementFormat(ElementFormat format) {
+        setElementFormat(T_DIAGRAM, format);
+    }
+
+    /** Get the diagram format.
+    * @return the current format
+    */
+    public ElementFormat getDiagramElementFormat() {
+        return getElementFormat(T_DIAGRAM);
+    }
+
+    /** Set the colimit format.
+    * @param format the new format
+    */
+    public void setColimitElementFormat(ElementFormat format) {
+        setElementFormat(T_COLIMIT, format);
+    }
+
+    /** Get the colimit format.
+    * @return the current format
+    */
+    public ElementFormat getColimitElementFormat() {
+        return getElementFormat(T_COLIMIT);
+    }
+
+    /** Set the unitId format.
+    * @param format the new format
+    */
+   /* public void setUIDElementFormat(ElementFormat format) {
+        setElementFormat(T_UID, format);
+    }*/
+    
+    /** Get the unitId format.
+    * @return the current format
+    */
+    /*public ElementFormat getUIDElementFormat() {
+        return getElementFormat(T_UID);
+    }*/
+
     // ============= getters for long form of formats =================
 
     /** Get the spec format for longer hints.
@@ -194,6 +395,14 @@ public final class SourceOptions extends SystemOption {
     public ElementFormat getSpecElementLongFormat() {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_SPEC];
+    }
+
+    /** Get the import format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getImportElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_IMPORT];
     }
 
     /** Get the sort format for longer hints.
@@ -211,6 +420,70 @@ public final class SourceOptions extends SystemOption {
         loadDefaultFormats();
         return DEFAULT_FORMATS_LONG[T_OP];
     }
+
+    /** Get the def format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getDefElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_DEF];
+    }
+
+    /** Get the claim format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getClaimElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_CLAIM];
+    }
+
+    /** Get the proof format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getProofElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_PROOF];
+    }
+
+    /** Get the morphism format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getMorphismElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_MORPHISM];
+    }
+
+    /** Get the diagElem format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getDiagElemElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_DIAG_ELEM];
+    }
+
+    /** Get the diagram format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getDiagramElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_DIAGRAM];
+    }
+
+    /** Get the colimit format for longer hints.
+    * @return the current format
+    */
+    public ElementFormat getColimitElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_COLIMIT];
+    }
+
+    /** Get the unitId format for longer hints.
+    * @return the current format
+    */
+    /*public ElementFormat getUIDElementLongFormat() {
+        loadDefaultFormats();
+        return DEFAULT_FORMATS_LONG[T_UID];
+    }*/
 
     // ============= categories of elements usage ===================
 
@@ -246,6 +519,10 @@ public final class SourceOptions extends SystemOption {
                 els[T_SPEC] = mm;
                 TEST_ELEMENTS = els;
 
+                ImportElement i = new ImportElement();
+                i.setName(id); // NOI18N
+                els[T_IMPORT] = i;
+
                 SortElement f = new SortElement();
                 f.setName(id); // NOI18N
                 els[T_SORT] = f;
@@ -254,6 +531,16 @@ public final class SourceOptions extends SystemOption {
                 m.setName(id);
                 m.setSort(id);
                 els[T_OP] = m;
+
+                DefElement w = new DefElement();
+                w.setName(id); // NOI18N
+                els[T_DEF] = w;
+
+                ClaimElement c = new ClaimElement();
+                c.setName(id);
+                c.setClaimKind(id);
+                c.setExpression(id);
+                els[T_CLAIM] = c;
 
             } catch (SourceException ex) {
                 // cannot happen.

@@ -38,7 +38,12 @@ public class ImportInfo extends BaseElementInfo {
         super.updateBase(target);
         
         ImportElement element = (ImportElement)target;
-       // PENDING: update binding with import link information.
+        // TODO:handle things other than infile references
+        SourceElement src = element.findSource();
+	SpecElement unitImported = src.getSpec(name);
+        if (unitImported != null) {
+            element.setUnitImported((MemberElement)unitImported);
+        }
     }
 
     public String toString() {

@@ -17,10 +17,13 @@
   (let ((file (concat *specware* "/Library/IO/Emacs/ilisp/" file ".x86f")))
     (while (not (file-exists-p file))
       (message "waiting for cmucl to compile %s" file)
-      (sleep-for .5))))
+      (sleep-for 1))))
 
 (wait-for-file-to-compile "ilisp-pkg")
 (wait-for-file-to-compile "cmulisp")
 (wait-for-file-to-compile "cl-ilisp")
+
+;; cmulisp.x86f often seems truncated -- give it time to complete
+(sleep-for 5) 
 
 (kill-emacs t)

@@ -6,6 +6,27 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/07/09 01:35:14  weilyn
+ * specware.jar
+ *
+ * Revision 1.6  2003/06/21 00:57:10  weilyn
+ * specware.jar
+ *
+ * Revision 1.5  2003/05/07 21:18:59  weilyn
+ * UpdateSWPathAction
+ *
+ * Revision 1.4  2003/02/17 04:28:13  weilyn
+ * Cleaned up active context menu actions.
+ *
+ * Revision 1.3  2003/02/14 21:36:24  weilyn
+ * Added Start Lisp action.
+ *
+ * Revision 1.2  2003/02/14 16:56:42  weilyn
+ * Added support for process unit action.
+ *
+ * Revision 1.1  2003/01/30 02:01:33  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -77,12 +98,19 @@ public class MetaSlangDataLoader extends UniFileLoader {
     protected SystemAction[] defaultActions() {
         return new SystemAction[] {
             SystemAction.get(EditAction.class),
-	    SystemAction.get(OpenAction.class),
+	    //SystemAction.get(OpenAction.class),
 	    // SystemAction.get (CustomizeBeanAction.class),
-	    SystemAction.get(FileSystemAction.class),
+	    //SystemAction.get(FileSystemAction.class),
 	    null,
-	    //SystemAction.get(CompileAction.class),
+            SystemAction.get(ProcessUnitAction.class),
 	    SystemAction.get(GenerateCodeAction.class),
+            null,
+            SystemAction.get(UpdateSWPathAction.class),
+            null,
+            //SystemAction.get(CompileAction.class),
+            SystemAction.get(StartLispAction.class),
+            SystemAction.get(KillLispAction.class),
+            null,
 	    /*
 	    SystemAction.get(BuildAction.class),
 	    null,
@@ -95,11 +123,11 @@ public class MetaSlangDataLoader extends UniFileLoader {
 	    SystemAction.get(NewAction.class),
 	    SystemAction.get(DeleteAction.class),
 	    SystemAction.get(RenameAction.class),
-	    null,
-	    SystemAction.get(SaveAsTemplateAction.class),
-	    null,
-	    SystemAction.get(ToolsAction.class),
-	    SystemAction.get(PropertiesAction.class),
+	    //null,
+	    //SystemAction.get(SaveAsTemplateAction.class),
+	    //null,
+	    //SystemAction.get(ToolsAction.class),
+	    //SystemAction.get(PropertiesAction.class),
 	    };
     }
     

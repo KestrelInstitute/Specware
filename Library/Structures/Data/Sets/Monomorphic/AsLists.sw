@@ -20,4 +20,5 @@ spec {
   def singleton = PolySet.singleton
   def union = PolySet.union
   def toList = PolySet.toList
+  % def takeOne = PolySet.takeOne
 } 

@@ -1,91 +1,138 @@
 StringMap qualifying spec {
   import SplayMap   
-  sort Map a = SplayMap.Map (String,a)
+
+  sort StringMap.Map a = SplayMap.Map (String,a)
 
   %% Alias so importers can avoid qualification
 
   sort StringMap a = SplayMap.Map (String, a)
 
-  op empty          : fa(a)   Map a
-  op insert         : fa(a)   Map a * String * a -> Map a
-  op insert2        : fa(a)   Map(Map a) * String * String * a -> Map(Map a)
-  op remove         : fa(a)   Map a * String  -> Map a
-  op find           : fa(a)   Map a * String -> Option a 
-  op find2          : fa(a)   Map(Map a) * String * String -> Option a 
-  op map            : fa(a,b) (a -> b) -> Map a -> Map b
-  op mapDouble      : fa(a,b) (a -> b) -> Map(Map a) -> Map(Map b)
-  op mapi           : fa(a,b) (String * a -> b) -> Map a -> Map b
-  op mapiDouble     : fa(a,b) (String * String * a -> b) -> Map(Map a) -> Map(Map b)
-  op app            : fa(a)   (a -> ()) -> Map a -> ()
-  op appDouble      : fa(a)   (a -> ()) -> Map (Map a) -> ()
-  op appi           : fa(a)   (String * a -> ()) -> Map a -> ()
-  op appiDouble     : fa(a)   (String * String * a -> ()) -> Map (Map a) -> ()
-  op foldri         : fa(a,b) (String * a * b -> b) -> b ->  Map a -> b
-  op foldli         : fa(a,b) (String * a * b -> b) -> b ->  Map a -> b
-  op foldriDouble   : fa(a,b) (String * String * a * b -> b) -> b -> Map (Map a) -> b
-  op compose        : fa(a)   Map(String) * Map a -> Map a
+  op empty : fa(a) StringMap.Map a
 
-  op unionWith      : fa(a)   (a * a -> a) -> Map a * Map a -> Map a  
-  op union2With     : fa(a)   (a * a -> a) -> Map(Map a) * Map(Map a) -> Map(Map a)  
-  op intersectWith  : fa(a)   (a * a -> a) -> Map a * Map a -> Map a  
-  op listDomain     : fa(a)   Map a -> List String
-  op filter         : fa(a)   (a -> Boolean) -> Map a -> Map a
-  op listItems      : fa(a)   Map a -> List (a)
-  op listItemsi     : fa(a)   Map a -> List (String * a)
-  op inDomain       : fa(a)   Map a * String -> Boolean
- 
-  op toList         : fa(a)   Map a -> List (String * a)
-  op fromList       : fa(a)   List (String * a) -> Map a
-  op numItems       : fa(a)   Map a -> Nat
- 
-  op mapPartial     : fa(a,b) (a          -> Option b) -> Map a -> Map b
-  op mapPartiali    : fa(a,b) (String * a -> Option b) -> Map a -> Map b
- 
-  op subset?        : fa(a)   Map a * Map a -> Boolean
+  op StringMap.insert : fa(a) StringMap.Map a * String * a -> StringMap.Map a
+  op insert2 :
+    fa(a) StringMap.Map(StringMap.Map a)
+        * String
+        * String
+        * a -> StringMap.Map(StringMap.Map a)
 
-  %% ========================================================================
+  op remove : fa(a) StringMap.Map a * String  -> StringMap.Map a
+  op StringMap.find : fa(a) StringMap.Map a * String -> Option a 
+  op find2 : fa(a) StringMap.Map(StringMap.Map a) * String * String -> Option a 
+
+  op StringMap.map : fa(a,b) (a -> b) -> StringMap.Map a -> StringMap.Map b
+  op mapDouble :
+    fa(a,b) (a -> b)
+         -> StringMap.Map(StringMap.Map a)
+         -> StringMap.Map(StringMap.Map b)
+  op StringMap.mapi : fa(a,b) (String * a -> b) -> StringMap.Map a -> StringMap.Map b
+  op mapiDouble :
+    fa(a,b) (String * String * a -> b)
+          -> StringMap.Map(StringMap.Map a)
+          -> StringMap.Map(StringMap.Map b)
+  op mapiPartialDouble :
+    fa(a,b) (String * String * a -> Option b)
+          -> StringMap.Map(StringMap.Map a)
+          -> StringMap.Map(StringMap.Map b)
+
+  op StringMap.app : fa(a) (a -> ()) -> StringMap.Map a -> ()
+  op appDouble : fa(a) (a -> ()) -> StringMap.Map (StringMap.Map a) -> ()
+  op StringMap.appi : fa(a) (String * a -> ()) -> StringMap.Map a -> ()
+  op appiDouble :
+    fa(a) (String * String * a -> ())
+        -> StringMap.Map (StringMap.Map a)
+        -> ()
+
+  op StringMap.foldri : fa(a,b) (String * a * b -> b) -> b ->  StringMap.Map a -> b
+  op foldli : fa(a,b) (String * a * b -> b) -> b ->  StringMap.Map a -> b
+  op foldriDouble :
+    fa(a,b) (String * String * a * b -> b)
+          -> b
+          -> StringMap.Map (StringMap.Map a) -> b
+
+  op compose : fa(a) StringMap.Map String * StringMap.Map a -> StringMap.Map a
+
+  op StringMap.unionWith :
+    fa(a) (a * a -> a)
+        -> StringMap.Map a
+         * StringMap.Map a
+        -> StringMap.Map a  
+  op union2With :
+     fa(a) (a * a -> a)
+         -> StringMap.Map (StringMap.Map a) 
+          * StringMap.Map (StringMap.Map a)
+         -> StringMap.Map(StringMap.Map a)  
+
+  op intersectWith :
+    fa(a) (a * a -> a)
+        -> StringMap.Map a
+         * StringMap.Map a
+        -> StringMap.Map a  
+
+  op listDomain : fa(a) StringMap.Map a -> List String
+  op filter : fa(a) (a -> Boolean) -> StringMap.Map a -> StringMap.Map a
+  op listItems : fa(a) StringMap.Map a -> List a
+  op listItemsi : fa(a) StringMap.Map a -> List (String * a)
+  op inDomain : fa(a) StringMap.Map a * String -> Boolean
+ 
+  op toList : fa(a) StringMap.Map a -> List (String * a)
+  op fromList : fa(a) List (String * a) -> StringMap.Map a
+  op numItems : fa(a) StringMap.Map a -> Nat
+ 
+  op mapPartial : fa(a,b) (a -> Option b) -> StringMap.Map a -> StringMap.Map b
+  op mapPartiali :
+    fa(a,b) (String * a -> Option b)
+          -> StringMap.Map a
+          -> StringMap.Map b
+ 
+  op subset? : fa(a) StringMap.Map a * StringMap.Map a -> Boolean
 
   def empty  = SplayMap.empty String.compare
-  def insert = SplayMap.insert
+  def StringMap.insert = SplayMap.insert
  
   def insert2 (m, x, y, v) =
-   insert (m, x, insert(case find (m, x) of
+   StringMap.insert (m, x, StringMap.insert(case StringMap.find (m, x) of
                          | Some sm -> sm
                          | _ -> empty,
                         y, v))
 
   def remove = SplayMap.remove
-  def find   = SplayMap.find
+  def StringMap.find = SplayMap.find
  
   def find2 (m, x, y) =
-   case find (m, x) of
-    | None   -> None
-    | Some m2 -> find (m2, y)
+    case StringMap.find (m, x) of
+      | None -> None
+      | Some m2 -> StringMap.find (m2, y)
      
-  def map             = SplayMap.map
-  def mapDouble f m   = map(fn sm -> map f sm) m
-  def mapi            = SplayMap.mapi
-  def mapiDouble f m  = mapi(fn (x,sm) -> mapi (fn(y,z) -> f(x,y,z)) sm) m
-  def mapPartial      = SplayMap.mapPartial
-  def mapPartiali     = SplayMap.mapPartiali
-  def app             = SplayMap.app
-  def appDouble f m   = app(fn sm -> app f sm) m
-  def appi            = SplayMap.appi
-  def appiDouble f m  = appi(fn (x,sm) -> appi (fn(y,z) -> f(x,y,z)) sm) m
+  def StringMap.map = SplayMap.map
+  def mapDouble f m = StringMap.map (fn sm -> StringMap.map f sm) m
+  def StringMap.mapi  = SplayMap.mapi
+  def mapiDouble f m =
+    StringMap.mapi (fn (x,sm) -> StringMap.mapi (fn(y,z) -> f(x,y,z)) sm) m
+  def mapiPartialDouble f m =
+    StringMap.mapi (fn (x,sm) -> mapPartiali (fn(y,z) -> f(x,y,z)) sm) m
+  def mapPartial = SplayMap.mapPartial
+  def mapPartiali = SplayMap.mapPartiali
+  def StringMap.app = SplayMap.app
+  def appDouble f m = StringMap.app (fn sm -> StringMap.app f sm) m
+  def StringMap.appi = SplayMap.appi
+  def appiDouble f m =
+    StringMap.appi (fn (x,sm) -> StringMap.appi (fn(y,z) -> f(x,y,z)) sm) m
  
-  def foldri          = SplayMap.foldri
-  def foldli          = SplayMap.foldli
-  def foldriDouble    = SplayMap.foldriDouble
-  def compose         = SplayMap.compose
+  def StringMap.foldri = SplayMap.foldri
+  def foldli = SplayMap.foldli
+  def foldriDouble = SplayMap.foldriDouble
+  def compose = SplayMap.compose
      
-  def unionWith   = SplayMap.unionWith
+  def StringMap.unionWith = SplayMap.unionWith
   %% Unions two-level maps wih preference function f
   def union2With f (m1, m2)  =
-   foldri (fn (x, sm2, resm) ->
-            case find (resm, x) of
-             | None     -> insert (resm, x, sm2)
-             | Some sm1 -> insert (resm, x, unionWith f (sm1, sm2)))
-          m1 m2
+    StringMap.foldri (
+      fn (x, sm2, resm) ->
+        (case StringMap.find (resm, x) of
+          | None -> StringMap.insert (resm, x, sm2)
+          | Some sm1 -> StringMap.insert (resm, x, StringMap.unionWith f (sm1, sm2))))
+       m1 m2
    
   def intersectWith = SplayMap.intersectWith
   def listDomain    = SplayMap.listDomain

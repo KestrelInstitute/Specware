@@ -965,7 +965,7 @@
   (use-unify-bag-constant-abstraction unify-bag-constant-abstraction)
   (test-option8 test-option8)
   (meter-unify-bag)
-  (declare-function-symbol 'o 2 :associative t :commutative t)
+  (declare-function 'o 2 :associative t :commutative t)
   (unify-p
    (arg1 (input-wff '(p (o ?u ?u  c (n (o ?u  c (n  c)))))))
    (arg1 (input-wff '(p (o ?x ?y ?z (n (o ?x ?y (n ?z)))))))))
@@ -975,7 +975,7 @@
   (use-unify-bag-constant-abstraction unify-bag-constant-abstraction)
   (test-option8 test-option8)
   (meter-unify-bag)
-  (declare-function-symbol 'o 2 :associative t :commutative t)
+  (declare-function 'o :associative t :commutative t)
   (unify-p
    (arg1 (input-wff '(p (o ?u ?v c (n (o ?u (n (o c ?v ?v))))))))
    (arg1 (input-wff '(p (o ?x ?y (n (o (n (o ?x ?y)) ?y (n ?x)))))))))

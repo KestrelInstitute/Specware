@@ -19,7 +19,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      */
     protected ModelNode modelNode = null;
     
-    protected int defaultNumberOfPortsPerDimension = 6;
+    protected int defaultNumberOfPortsPerDimension = 2;
     
     protected XGraphDisplay graph;
     
@@ -38,13 +38,24 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      * the "lost" parent.
      */
     protected XContainerNode lostParentAfterCloning = null;
-
+    
     protected Dimension offsetToLastParent = null;
-
+    
     protected boolean isEditable = true;
     
     protected Rectangle savedBounds;
     protected boolean saveViewData = true;
+    
+    /** inner class used as return type
+     */
+    protected class XNodeEdgePair {
+        public XNode node;
+        public XEdge edge;
+        public XNodeEdgePair(XNode node, XEdge edge) {
+            this.node = node;
+            this.edge = edge;
+        }
+    }
     
     public XNode() {
         this(null);
@@ -74,6 +85,12 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     }
     
     
+    public void repaintGraph() {
+        if (graph != null) {
+            graph.repaint();
+        }
+    }
+    
     
     protected void init() {
         Dbg.pr("init node "+this+"...");
@@ -96,10 +113,20 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     }
     
     public boolean isEditable() {
-        return isEditable;
+        if (isEditable) {
+            try {
+                return getModelNode().renameOk(false);
+            } catch (VetoException ve) {}
+        }
+        return false;
     }
     
-    
+    /** returns true, if the node may be renamed, returns false or throws a VetoException otherwise
+     * depending on the throwVetoException parameter.
+     */
+    public boolean renameOk(boolean throwVetoException) throws VetoException {
+        return getModelNode().renameOk(throwVetoException);
+    }
     
     public void setID(int n) {
         ID = n;
@@ -126,7 +153,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     /** sets some initial node value using a counter variable.
      */
     protected void setInitialValue() {
-        setUserObject("N_"+(nodeCnt++));
+        setUserObject("node_"+(nodeCnt++));
     }
     
     /** returns the Model Node of this node; creates a new model node, if this hasn't done before.
@@ -169,12 +196,25 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      * to return instances of sub-classes of ModelNode.
      */
     public ModelNode createModelNode() {
-        return new ModelNode();
+        ModelNode mnode = new ModelNode();
+        mnode.setValue(getUserObject());
+        return mnode;
     }
+    
+    /** returns true, if the node may be removed, returns false or throws a VetoException otherwise
+     * depending on the throwVetoException parameter.
+     */
+    public boolean removeOk(boolean throwVetoException) throws VetoException {
+        if (getModelNode().getAccessibleReprCnt(getGraph()) <= 1 && (!getModelNode().existsWithoutRepresentation())) {
+            return getModelNode().removeOk(throwVetoException);
+        }
+        return true;
+    }
+    
     
     /** returns the XEdge object that is connected to this node and has the given ModelEdge as its model element;
      * if no such edge is found, a copy of the reprExemplar of the given ModelEdge is returned.
-     */
+     
     public XEdge getConnectedEdgeWithModelEdge(ModelEdge medge) {
         XEdge[] edges = getEdges(INCOMING_AND_OUTGOING);
         for(int i=0;i<edges.length;i++) {
@@ -186,7 +226,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         }
         Dbg.pr("XNode "+this+": no connected edge with ModelEdge "+medge+" found.");
         return (XEdge) medge.getReprExemplar().cloneGraphElement();
-    }
+    }*/
     
     /** only used in Debug mode. */
     public void setUserObject() {
@@ -203,6 +243,30 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         if (modelNode != null)
             modelNode.setValue(obj);
     }
+    
+    /** this method may be called from sub-classes to prevent the propagation of the user object to the model node.
+     * This should be done only in exceptional cases to prevent undesired effect, when, for instance, setting collapsed values
+     * of text nodes as user objects.
+     */
+    protected void setUserObjectNoModelUpdate(Object obj) {
+        super.setUserObject(obj);
+    }
+    
+    public void setFullUserObject(Object val) {
+        setUserObject(val);
+    }
+    
+    /** returns a short representation of the node's name to be used in popup windows etc.
+     */
+    public String getShortName() {
+        if (getUserObject() == null) return "";
+        String name = getUserObject().toString();
+        if (name.length() > XGraphConstants.maxShortNameLength) {
+            name = name.substring(0,XGraphConstants.maxShortNameLength) + "...";
+        }
+        return name;
+    }
+    
     
     /** returns the y-values for the given x value; this method implements the equation of the node
      * shape. For example, for a rectangular shape the result of getYValues(x) would be y0 and y1,
@@ -270,7 +334,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         add(new DefaultPort());
         addPorts(m);
     }
-
+    
     public void setBoundsHook(XGraphDisplay graph, XGraphElementView viewObject, Rectangle bounds) {
     }
     
@@ -338,10 +402,14 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         }
         model.remove(removees.toArray());
         if (modelNode != null)
-            modelNode.removeRepr(this);
+            modelNode.removeRepr(getGraph(),this);
         setGraph(null);
     }
     
+    /** returns the sibling nodes of this node, i.e. the nodes that are on the same level as this one. This are either
+     * other root node of the graph, if this node is a root node, or the other direct child nodes of the node's parent container
+     * node.
+     */
     public XNode[] getSiblings(GraphModel model) {
         ArrayList siblAL = new ArrayList();
         TreeNode parent = getParent();
@@ -435,7 +503,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
      * @param becomeRoot if set to true, the view of the node will be a new root node in the graph, if set to false
      * then the object is added to some "invisible" node, making it itself invisible.
      */
-    public XContainerNode detachFromParent(XGraphDisplay graph, XContainerNode parent, boolean becomeRoot, boolean storeLastParent) {
+    public XContainerNode detachFromParent(XGraphDisplay graph, XContainerNode parent, Rectangle parentBounds, boolean becomeRoot, boolean storeLastParent) {
         XContainerNode currentParent = getParentNode();
         if (currentParent != null)
             if (!currentParent.equals(parent)) {
@@ -451,6 +519,9 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         if (storeLastParent && pcv != null) {
             //lastParentsBounds = new Rectangle(cv.getBounds());
         }
+        if (pcv != null && parentBounds == null) {
+            parentBounds = pcv.getBounds();
+        }
         ParentMap pm = new ParentMap();
         pm.addEntry(this,newParent);
         graph.getModel().edit(null,null,pm,null);
@@ -459,7 +530,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
             if (cv != null) {
                 if (storeLastParent && (pcv != null)) {
                     Rectangle childBounds = cv.getBounds();
-                    Rectangle parentBounds = pcv.getBounds();
+                    //Rectangle parentBounds = pcv.getBounds();
                     offsetToLastParent = new Dimension(childBounds.x-parentBounds.x, childBounds.y-parentBounds.y);
                 }
                 Map viewMap = new Hashtable();
@@ -477,28 +548,29 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
     
     /** calls <code>detachFromParent(graph,false)</code>
      */
-    public void detachFromParent(XGraphDisplay graph, XContainerNode parent) {
-        detachFromParent(graph,parent,false,true);
+    public void detachFromParent(XGraphDisplay graph, XContainerNode parent, Rectangle parentBounds) {
+        detachFromParent(graph,parent,parentBounds,false,true);
     }
     
     /** detached the node from its current parent; become either a root object or invisible.
      */
     public void detachFromParent(XGraphDisplay graph, boolean becomeRoot) {
-        detachFromParent(graph,getParentNode(),becomeRoot,true);
+        XContainerNode parent = getParentNode();
+        detachFromParent(graph,parent,null,becomeRoot,true);
     }
     
     /** detached the node from its current parent.
      */
-    public void detachFromParent(XGraphDisplay graph) {
+    public void detachFromParent(XGraphDisplay graph, Rectangle parentBounds) {
         XContainerNode parent = getParentNode();
-        detachFromParent(graph,parent);
+        detachFromParent(graph,parent,parentBounds);
     }
     
     /** inserts the node as root object without storing its last parent.
      */
     public void insertAsRootObject(XGraphDisplay graph) {
         XContainerNode parent = getParentNode();
-        detachFromParent(graph,parent,true,false);
+        detachFromParent(graph,parent,null,true,false);
     }
     
     /** reattaches the node to the parent node it has been detached from with <code>detachFromParent</code>.
@@ -534,6 +606,7 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
             int dx = newx - currentBounds.x;
             int dy = newy - currentBounds.y;
             if (dx != 0 || dy != 0) {
+                Dbg.pr3("translating node "+this+": ("+dx+","+dy+")");
                 graph.getXGraphView().translateViewsInGroup(new CellView[]{thisview},dx,dy);
             }
         }
@@ -615,6 +688,89 @@ public abstract class XNode extends DefaultGraphCell implements XGraphElement {
         return edges;
     }
     
+    /** returns the array of incoming and outgoing edges. This method is overwritten in XContainerNode and can be used as a way to
+     * retrieve all edges leaving the node, either from inside the node or from the node itself.
+     */
+    public XEdge[] getConnectedEdges() {
+        return getEdges(INCOMING_AND_OUTGOING);
+    }
+    
+    protected XNodeEdgePair[] getConnectedEdges_internal() {
+        XEdge[] edges = getConnectedEdges();
+        XNodeEdgePair[] res = new XNodeEdgePair[edges.length];
+        for(int i=0;i<edges.length;i++) {
+            res[i] = new XNodeEdgePair(this,edges[i]);
+        }
+        return res;
+    }
+    
+    /** returns the siblings of this node with have an edge connecting to either this node itself or one of the inner nodes, if this is a container node.
+     */
+    public XNode[] getConnectedSiblings() {
+        XNodeEdgePair[] nodeEdgePairs = getConnectedEdges_internal();
+        ArrayList list = new ArrayList();
+        for(int i=0;i<nodeEdgePairs.length;i++) {
+            XNode node = nodeEdgePairs[i].node;
+            XEdge edge = nodeEdgePairs[i].edge;
+            XNode connectedNode = edge.getConnectedNode(node);
+            while (connectedNode != null && !isSiblingOf(connectedNode)) {
+                connectedNode = connectedNode.getParentNode();
+            }
+            if (connectedNode != null) {
+                if (!list.contains(connectedNode)) {
+                    list.add(connectedNode);
+                }
+            }
+        }
+        XNode[] res = new XNode[list.size()];
+        list.toArray(res);
+        return res;
+    }
+    
+    /** returns all siblings that are connected directly or indirectly to this node.
+     */
+    public XNode[] getConnectedSiblingsClosure() {
+        ArrayList processed = new ArrayList();
+        ArrayList sibnodes = getConnectedSiblingsClosure_internal(processed);
+        sibnodes.remove(this);
+        XNode[] res = new XNode[sibnodes.size()];
+        sibnodes.toArray(res);
+        return res;
+    }
+    
+    private ArrayList getConnectedSiblingsClosure_internal(ArrayList processed) {
+        processed.add(this);
+        ArrayList res = new ArrayList();
+        XNode[] dnodes = getConnectedSiblings();
+        for(int i=0;i<dnodes.length;i++) {
+            if (!res.contains(dnodes[i])) {
+                res.add(dnodes[i]);
+            }
+            if (!processed.contains(dnodes[i])) {
+                ArrayList subres = dnodes[i].getConnectedSiblingsClosure_internal(processed);
+                Iterator iter = subres.iterator();
+                while(iter.hasNext()) {
+                    XNode n = (XNode)iter.next();
+                    if (!res.contains(n)) {
+                        res.add(n);
+                    }
+                }
+            }
+        }
+        return res;
+    }
+    
+    /** return whether or not this node is a sibling of anotherNode.
+     */
+    public boolean isSiblingOf(XNode anotherNode) {
+        if (anotherNode == null) return false;
+        XContainerNode parent = getParentNode();
+        XContainerNode parentOfAnotherNode = anotherNode.getParentNode();
+        if (parent == null) {
+            return parentOfAnotherNode == null;
+        }
+        return parent.equals(parentOfAnotherNode);
+    }
     
     /** returns the Least Common Ancestor of this node and the node given as argument; if they don't share a common ancestor,
      * null is returned. */

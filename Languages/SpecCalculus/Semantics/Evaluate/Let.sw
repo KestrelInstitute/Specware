@@ -1,5 +1,7 @@
 \section{Evaluation of Let and Where}
 
+Synchronized with from r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
+
 When evaluating a let, the let bindings (declarations) are in scope only
 within the body of the let. So we retrieve and save the current binding
 context, add the local bindings, evaluate the term and then restore
@@ -11,7 +13,7 @@ SpecCalc qualifying spec {
 \end{spec}
 
 \begin{spec}
-  def evaluateLet decls term = {
+  def SpecCalc.evaluateLet decls term = {
       context <- getLocalContext;
       evaluateLocalDecls decls;
       valueInfo <- evaluateTermInfo term;
@@ -27,14 +29,15 @@ evaluating a list of declarations in a file.
 The list must be sorted in dependence order. Recursion is not allowed.
 
 \begin{spec}
+  op evaluateLocalDecls : List (Decl Position) -> Env ()
   def evaluateLocalDecls decls =
     let def evaluateLocalDecl ((name,term)) = {
         valueInfo <- evaluateTermInfo term;
-        bindInLocalContext (URI_Relative [name]) valueInfo;
+        bindInLocalContext (UnitId_Relative {path=[name], hashSuffix=None}) valueInfo;
         return ()
       } in
-      foldM (fn () -> fn decl -> evaluateLocalDecl(decl))
-        () decls
+      foldM (fn _ -> fn decl -> evaluateLocalDecl decl)
+            () 
+            decls
 }
 \end{spec}
- op evaluateLocalDecls : List (Decl Position) -> Env ()

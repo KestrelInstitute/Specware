@@ -4,15 +4,13 @@ XML qualifying spec
 
   % TODO: add Nat.toHex for specware
 
-  op toHex : Nat -> String
-
   def toHex (n : Nat) : String =
     let
        def aux (n, digits) =
 	 let digit = rem (n, 16) in
 	 let n = div(n, 16) in
 	 if n = 0 then
-	   implode (map (fn digit -> 
+	   implode (map (fn digit ->
 			 chr (if digit <= 9 then
 				48 + digit
 			      else
@@ -28,6 +26,10 @@ XML qualifying spec
 
   def fa (a) non_null? (xx : List a) = ~ (List.null xx)
 
-  op sublist? : fa (a) List a * List a -> Boolean
+  op sublist? : fa (a) List a * List a -> Boolean 
+  def sublist? (aa, bb) =
+    case locationOf (aa, bb) of 
+      | None -> false
+      | _    -> true
 
 endspec

@@ -8,7 +8,7 @@ import javax.swing.tree.*;
 import java.util.*;
 import java.awt.*;
 
-public abstract class XEdge extends DefaultEdge implements XGraphElement {
+public abstract class XEdge extends DefaultEdge implements XGraphElement, XTextEditorEditable {
     
     //protected XNode source;
     //protected XNode target;
@@ -18,6 +18,8 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     protected boolean viewWasVisible;
     protected XContainerNode lastParent = null;
     //private Rectangle lastParentsBounds = null;
+    
+    private java.util.List savedViewPoints = null;
     
     protected Dimension offsetToLastParent = null;
     
@@ -34,7 +36,10 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     
     protected Rectangle savedBounds;
     
+    protected boolean collapseLabel = false;
+    
     static int xedgeCnt = 0;
+    
     protected int ID;
     
     public XEdge() {
@@ -60,6 +65,12 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         return graph;
     }
     
+    public void repaintGraph() {
+        if (graph != null) {
+            graph.repaint();
+        }
+    }
+    
     
     protected void init() {
         detachedView = null;
@@ -80,6 +91,40 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         super.setUserObject(obj);
         getModelEdge().setValue(obj);
     }
+    
+    public void setFullUserObject(Object val) {
+        setUserObject(val);
+    }
+    
+    /** returns a short representation of the edge's name to be used in popup windows etc.
+     */
+    public String getShortName() {
+        if (getUserObject() == null) return "";
+        String name = getUserObject().toString();
+        if (name.length() > XGraphConstants.maxShortNameLength) {
+            name = name.substring(0,XGraphConstants.maxShortNameLength) + "...";
+        }
+        return name;
+    }
+    
+    /** returns true, if the edge may be removed, returns false or throws a VetoException otherwise
+     * depending on the throwVetoException parameter.
+     */
+    public boolean removeOk(boolean throwVetoException) throws VetoException {
+        if (getModelEdge().getAccessibleReprCnt(getGraph()) <= 1 && (!getModelEdge().existsWithoutRepresentation())) {
+            return getModelEdge().removeOk(throwVetoException);
+        }
+        return true;
+    }
+    
+    public void setSavedViewPoints(java.util.List points) {
+        savedViewPoints = points;
+    }
+    
+    public java.util.List getSavedViewPoints() {
+        return savedViewPoints;
+    }
+    
     
     public void setModelEdge(ModelEdge e) {
         modelEdge = e;
@@ -134,9 +179,14 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     
     public abstract void insertHook(XGraphDisplay graph, XGraphElementView viewObject);
     
+    /** this method is call when the edge is initially connected to its source and target node
+     */
+    public void initialConnectHook(XEdgeView ev) {
+    }
+    
     public void setBoundsHook(XGraphDisplay graph, XGraphElementView viewObject, Rectangle bounds) {
     }
-
+    
     
     public XGraphElementView createView(XGraphDisplay graph, CellMapper cm) {
         XEdgeView res = new XEdgeView(this,graph,cm);
@@ -145,11 +195,12 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     
     public void remove(GraphModel model) {
         java.util.List children = getChildren();
+        //System.out.println("in XEdge:remove, children are "+children);
         ArrayList removees = new ArrayList();
         removees.add(this);
         model.remove(removees.toArray());
         if (modelEdge != null)
-            modelEdge.removeRepr(this);
+            modelEdge.removeRepr(getGraph(),this);
         setGraph(null);
     }
     
@@ -264,9 +315,10 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         Dbg.pr("reattaching edge "+this+"...");
         Map viewMap = new Hashtable();
         Map map = GraphConstants.createMap();
-        GraphConstants.setVisible(map,viewWasVisible);
+        GraphConstants.setVisible(map,true);//viewWasVisible);
         viewMap.put(detachedView,map);
         graph.getView().edit(viewMap);
+        //Dbg.pr3("*** offset to last parent: "+offsetToLastParent);
         //CellView cv = graph.getView().getMapping(lastParent,false);
         //Rectangle lastParentsNewBounds = null;
         //if (cv != null)
@@ -296,21 +348,10 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         return (detachedView != null);
     }
     
-    public Object clone_() {
-        //Dbg.pr("cloning XEdge...");
-        Object obj = super.clone();
-        if (Dbg.isDebug2()) {
-            if (obj instanceof XEdge) {
-                ((XEdge)obj).setUserObject();
-            }
-        }
-        return obj;
-    }
-    
     /** creates a clone of this edge; calls init() for initializing the cloned edge.
      */
     public XEdge cloneEdge() {
-        Dbg.pr("cloning XEdge "+this+"...");
+        //Dbg.pr("cloning XEdge "+this+"...");
         XEdge edge = (XEdge) clone();
         edge.init();
         return edge;
@@ -333,7 +374,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
      * @param tgraph the graph display that will contain the cloned element
      */
     public void cloneHook(XCloneManager mgr, Object original) {
-        Dbg.pr("cloneHook: edge "+this);
+        Dbg.pr3("cloneHook: edge "+this);
         XGraphDisplay tgraph = mgr.getDestGraph();
         Map cellMap = mgr.getCellMap();
         if (detachedView != null) {
@@ -342,14 +383,12 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
                 if (cellMap.containsKey(lastParent)) {
                     Object obj = cellMap.get(lastParent);
                     if (obj instanceof XContainerNode) {
-                        Dbg.pr("  exchanging lastParent to be "+obj);
+                        Dbg.pr3("  exchanging lastParent to be "+obj);
                         lastParent = (XContainerNode) obj;
                     } else
                         throw new IllegalArgumentException("cloned parent is not a container node?!");
                 }
             }
-            //detachedView = graph.getXGraphUI().cloneCellViews(original,this);
-            //detachedView = graph.getView().getMapping(this,true);
             // reconnect edges
             if (original instanceof Edge) {
                 Edge oedge = (Edge) original;
@@ -357,7 +396,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
                 Object trgp = oedge.getTarget();
                 ConnectionSet cs = new ConnectionSet();
                 if (cellMap.containsKey(srcp)) {
-                    Dbg.pr("   setting new source...");
+                    Dbg.pr2("   setting new source...");
                     srcp = cellMap.get(srcp);
                     if (srcp instanceof Port) {
                         cs.connect(this,(Port)srcp,true);
@@ -366,7 +405,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
                     }
                 }
                 if (cellMap.containsKey(trgp)) {
-                    Dbg.pr("   setting new target...");
+                    Dbg.pr2("   setting new target...");
                     trgp = cellMap.get(trgp);
                     if (trgp instanceof Port) {
                         cs.connect(this,(Port)trgp,false);
@@ -374,7 +413,6 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
                         ((Port)trgp).add(this);
                     }
                 }
-                //graph.getModel().edit(cs,null,null,null);
                 tgraph.getModel().edit(cs,null,null,null);
             }
             offsetToLastParent = new Dimension(offsetToLastParent);
@@ -382,17 +420,33 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
             if (detachedView instanceof XEdgeView) {
                 ((XEdgeView)detachedView).setSavedPoints();
             }
-            if (Dbg.isDebug()) {
-                Dbg.pr("new attributes of detachedView:");
+            if (Dbg.isDebug(3)) {
+                Dbg.pr3("new attributes of detachedView:");
                 XGraphDisplay.showAttributes(detachedView);
                 XNode srcnode = getSourceNode();
                 XNode trgnode = getTargetNode();
-                Dbg.pr("*** source node: "+srcnode);
-                Dbg.pr("*** target node: "+trgnode);
+                Dbg.pr3("*** source node: "+srcnode);
+                Dbg.pr3("*** target node: "+trgnode);
+                Dbg.pr3("*** offset to last parent: "+offsetToLastParent);
             }
         }
         setGraph(mgr.getDestGraph());
         //graph.getXGraphUI().cloneCellViews(original,this);
+    }
+    
+    public void setCollapseLabel(boolean b) {
+        collapseLabel = b;
+    }
+    
+    public boolean isCollapseLabel() {
+        return collapseLabel;
+    }
+    
+    /** this method computes the short form of the given text string and is used to computer the collapsed
+     * label in case the edge supports expanding/collapsing of its label text.
+     */
+    public String getCollapsedLabel(String fullLabel) {
+        return XTextNode.getCollapsedString(fullLabel);
     }
     
     /** method to update the relevant data stored in the view object in this object. This method is called by the
@@ -492,6 +546,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     static protected String TargetNode = "TargetNode";
     static protected String PointPrefix = "Point";
     static protected String LabelPosition = "LabelPosition";
+    static protected String CollapseLabel = "CollapseLabel";
     
     /** returns the element properties object in the context of a write operation.
      */
@@ -542,6 +597,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         if (trgnode != null) {
             props.addChildObjectAsReference(TargetNode,trgnode);
         }
+        props.setBooleanProperty(CollapseLabel,collapseLabel);
         return props;
     }
     
@@ -551,6 +607,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     public void initFromElementProperties(ReadWriteOperation rwop, ElementProperties props) {
         setUserObject(props.getValueProperty());  //
         Dbg.pr("{ initFromElementPropterties for XEdge "+this+"...");
+        collapseLabel = props.getBooleanProperty(CollapseLabel);
         // source node
         XNode srcnode = null;
         String srcnodeid = props.getChildObjectAsReference(SourceNode);
@@ -610,6 +667,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
                 if (props.hasPointProperty(LabelPosition)) {
                     getGraph().setLabelPositionOfEdge(this,props.getPointProperty(LabelPosition));
                 }
+                ev.configureCollapseLabelMenuItem();
             }
             getGraph().enableListener();
             Dbg.pr("}");
@@ -617,5 +675,25 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         Dbg.pr("}");
     }
     
+    
+    
+    // interface XTextEditorEditable methods:
+    
+    public String getText() {
+        return getUserObject().toString();
+    }
+    
+    public String getTitleText() {
+        return XTextNode.getCollapsedString(getText());
+    }
+    
+    public void setText(String t) {
+        setUserObject(t.trim());
+        getModelEdge().sync();
+    }
+    
+    public XElementEditor createEditorPane() {
+        return new XTextEditor(this);
+    }
     
 }

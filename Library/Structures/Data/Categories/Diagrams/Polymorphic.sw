@@ -1,47 +1,101 @@
 \section{Diagrams in a Polymorphic Category}
 
-Polymorphic diagrams. Shapes are sketches though at present sketches
-are just graphs.
+A category of diagrams has a fixed universe of shapes (ie sketches)
+but is parameterized on the target category.
 
 Note that the functors appearing here are those whose domain is freely
 generated from the shape.
 
-\begin{spec}
-let Sketches =
- /Library/Structures/Data/Categories/Sketches/Monomorphic/Sketches in
-let Functors =
-  /Library/Structures/Data/Categories/Functors/FreeDomain/Polymorphic
-in
-spec
-  import Functors
-  import Sketches
-  import /Library/PrettyPrinter/WadlerLindig
+Formally, a diagram is a pair consisting of a shape and
+a functor from the shape into the target category.
 
-%   sort Diagram (O,A) = {
-%     shape : Sketch,
-%     functor : Functor (O,A)
-%   }
+\begin{spec}
+spec {
+  import Functor qualifying ../Functors/FreeDomain/Polymorphic
+  import /Library/PrettyPrinter/WadlerLindig
 
   sort Diagram (O,A)
   op shape : fa (O,A) Diagram (O,A) -> Sketch
   op functor : fa (O,A) Diagram (O,A) -> Functor (O,A)
-
-%   op ppDiagram : fa (O,A) Diagram (O,A) -> Pretty
-%   def ppDiagram diag =
-%     ppBlockAll [
-%       ppString "Shape=",
-%       ppIndent 2 (ppSketch (shape diag)),
-%       ppString "Functor=",
-%       ppIndent 2 (ppFunctor (functor diag))
-%     ]
-end
 \end{spec}
 
-The pretty printing functions need a rethink.  Perhaps the pretty printer
-should be made part of the sort above.
+The operations for adding vertices and edges yield a diagram that is not
+well-formed. In particular, the new vertex or edge is unlabeled. It might
+be better to make the addition of an edge or vertex and the labeling an
+atomic operation. Perhaps later.
 
-What is omitted from this is the requirement that the domain of the functor
-is same as the shape of the diagram.
+Also we assume that when an edge gets labeled, labeling of the start and
+end vertices are consistent with the domain and codomain of the morphism.
 
-So the sort above should be subsorted by the following:
-(shape diag) = dom (functor diag).
+Since diagrams are parameterized on the target category, when we construct
+an empty diagram we must give fix the target category.
+
+\begin{spec}
+  op emptyDiagram : fa (O,A) Cat(O,A) -> Diagram (O,A)
+  op addVertex : fa (O,A) Diagram (O,A) -> Vertex.Elem -> Diagram (O,A)
+  op addEdge : fa (O,A) Diagram (O,A)
+    -> Edge.Elem -> Vertex.Elem -> Vertex.Elem -> Diagram (O,A)
+
+  op vertexInDiagram? : fa (O,A) Diagram (O,A) -> Vertex.Elem -> Boolean
+  op edgeInDiagram? : fa (O,A) Diagram (O,A) -> Edge.Elem -> Boolean
+
+  op labelVertex : fa (O,A) Diagram (O,A) -> Vertex.Elem -> O -> Diagram (O,A)
+  op labelEdge : fa (O,A) Diagram (O,A) -> Edge.Elem -> A -> Diagram (O,A)
+\end{spec}
+
+The following fold a function over the vertices and edges of a diagram and
+retrieve the labels on the vertices and edges.
+
+Should the function being folded be given the diagram as well? Probably not.
+If necessary, the function being folded can be curried where its first
+argument is the diagram. For example, the function f:
+
+\begin{verbatim}
+  sort S
+  op f : fa (O,A) Diagram (O,A) -> x -> Edge.Vertex -> x
+  op unit : S
+\end{verbatim}
+
+can be folded over a diagram dgm with:
+
+\begin{verbatim}
+  foldOverEdges (f dgm) unit dgm
+\end{verbatim}
+
+\begin{spec}
+  op edgeLabel : fa (O,A) Diagram (O,A) -> Edge.Elem -> A
+  op vertexLabel : fa (O,A) Diagram (O,A) -> Vertex.Elem -> O
+
+  op foldOverEdges : fa (x,O,A) (x -> Edge.Elem -> x) -> x -> Diagram (O,A) -> x
+  op foldOverVertices : fa (x,O,A) (x -> Vertex.Elem -> x) -> x -> Diagram (O,A) -> x
+
+  % Would like to have more polymorphism .... but unfortunately we have
+  % a problem since the Diagram includes an explicit category for the
+  % codomain. The maps provided on the objects and arrows can't change
+  % that category. Thus, one would need to provide a cat as an argument.
+  op mapDiagram : fa (O,A) Diagram (O,A) -> (O -> O) -> (A -> A) -> Diagram (O,A)
+\end{spec}
+
+\begin{spec}
+  op ppDiagram : fa (O,A) Diagram (O,A) -> Pretty
+  def ppDiagram dgm =
+    ppConcat [
+      ppString "Shape=",
+      ppNewline,
+      ppString "  ",
+      ppIndent (ppSketch (shape dgm)),
+      ppNewline,
+      ppString "  ",
+      ppString "Functor=",
+      ppIndent (ppFunctor (functor dgm))
+    ]
+\end{spec}
+
+A functor has a domain and this must be the same as the shape
+of the diagram. In a concrete representation, the apparent redundancy
+can be eliminated.
+
+\begin{spec}
+  axiom diagram_domain is fa (dgm) (shape dgm) = dom (functor dgm)
+}
+\end{spec}

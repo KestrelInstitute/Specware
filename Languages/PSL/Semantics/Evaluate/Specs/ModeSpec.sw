@@ -2,22 +2,27 @@
 
 This is still under development.
 
-The issue is as follows. As in ASMs we had previously distinguished
-static and dynamic specs. Static specs contain names whose meaning is
-fixed in all worlds.  Dynamic spec reflects things that can change.
-The ops in the dynamic spec are variables. The static spec
-is imported into the dynamic spec. Thus static operators cannot
-refer to dynamic variables.
+As in ASMs we had previously distinguished static and dynamic
+specs. Static specs contain names whose meaning is fixed in all worlds.
+Dynamic spec reflects things that can change.  The ops in the dynamic spec
+are variables. The static spec is imported into the dynamic spec. Thus
+static operators cannot refer to dynamic variables.
 
-This is problematic as one might start, for example, with sets
-in the static spec (a functional data structure), and then refine it
-to something that, while still functional, is implemented, for example,
+This is problematic as one might start, for example, with sets in
+the static spec (a functional data structure), and then refine it to
+something that, while still functional, is implemented, for example,
 with linked lists.  The latter is defined only in the dynamic spec.
 
+If the above separation is adhered to, then such a refinement is not
+possible as ops in the static spec cannot be defined in terms of names
+in the dynamic spec.
+
 Also, one might want to define auxilliary functions that have a fixed
-meaning but defined in terms of the dynamic variables. Thus the
-functions cannot appear on the left side, but nevertheless, they are
-dynamic.
+meaning but defined in terms of the dynamic variables. An invariant on
+a heap might be one example. Such a function would by dynamic as it is
+defined in terms of variables and yet it makes no sense to call it a
+variable and it makes no sense that such a function appear on the left
+side of an assignment.
 
 The alternative is to make a different distinction. There is only one spec
 plus additional information that describes whether something is assignable
@@ -28,66 +33,82 @@ BSpecs labelled with conventional specs and information describing what
 operators in each spec constitute the variables that make up the store.
 
 \begin{spec}
-spec {
-  import translate Spec by {
-      Monad.Monad +-> SpecCalc.Env
-    }
+ModeSpec qualifying spec
+  import Spec
+  import Constraints  % Not needed now .. but maybe later when we generalize substitutions
+  import Subst    
 
-  sort Morphism
+  sort ModeSpec 
 
-  sort ModeSpec = {
-      spc : Spec,
-      variables : Id.Set
-    }
+  op specOf : ModeSpec -> Spec.Spec
+  op variables : ModeSpec -> OpRefSet.Set
+  op invariants : ModeSpec -> ClaimRefSet.Set
+  op withSpec infixl 17 : ModeSpec * Spec.Spec -> ModeSpec  % This is wrong.
 
-  sort BSpec.Object = ModeSpec
+  op empty : ModeSpec
 
-  op specOf : ModeSpec -> Spec
-  def specOf modeSpec = modeSpec.spc
+  op make : Spec.Spec -> OpRefSet.Set -> ClaimRefSet.Set -> ModeSpec
 
-  op variables : ModeSpec -> Id.Set
-  def variables modeSpec = modeSpec.variables
+  op addSort : ModeSpec -> Sort.SortInfo -> Position -> Env ModeSpec
 
-  op make : Spec -> Id.Set -> ModeSpec
-  def make spc variables = {
-      spc = spc,
-      variables = variables
-    }
+  op addOp : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
+  op addVariable : ModeSpec -> Op.OpInfo -> Position -> Env ModeSpec
 
-  op withVariables infixl 18 : ModeSpec * Id.Set -> ModeSpec
-  def withVariables (modeSpec,variables) = {
-      spc = specOf modeSpec,
-      variables = variables
-    }
+  (* perhaps hide should take a Op.Ref *)
+  op hideOp : ModeSpec -> Op.OpInfo -> Env ModeSpec
+  op hideVariable : ModeSpec -> Op.Ref -> Env ModeSpec
+  op hideVariables : ModeSpec -> Subst -> Env ModeSpec
+  op addClaim : ModeSpec -> Claim.Claim -> Position -> Env ModeSpec
+  op addInvariant : ModeSpec -> Claim.Claim -> Position -> Env ModeSpec
 
-  op withSpec infixl 18 : ModeSpec * Spec -> ModeSpec
-  def withSpec (modeSpec,spc) = {
-      spc = spc,
-      variables = variables modeSpec
-    }
+  op withInvariants infixl 18 : ModeSpec * ClaimRefSet.Set -> ModeSpec  % probably bad
 
-  sort BSpec.Arrow = Morphism
 
-  op addConstant : ModeSpec -> OpInfo -> SpecCalc.Env ModeSpec
-  def addConstant modeSpec opInfo = {
-      newSpec <- insert (specOf modeSpec) opInfo;
-      return (modeSpec withSpec newSpec)
-    }
+  op findTheOp : ModeSpec -> Id.Id -> Env Op.OpInfo
+  op findTheVariable : ModeSpec -> Id.Id -> Env Op.OpInfo
 
-  op addVariable : ModeSpec -> OpInfo -> SpecCalc.Env ModeSpec
-  def addVariable modeSpec opInfo = {
-      newSpec <- insert (specOf modeSpec) opInfo;
-      return (make newSpec (Id.insert (variables modeSpec) (name opInfo)))
-    }
+  op ModeSpecEnv.foldOps : fa(a) (a -> Op.OpInfo -> Env a) -> a -> ModeSpec -> Env a
+  op ModeSpec.foldVariables : fa(a) (a -> Op.OpInfo -> a) -> a -> ModeSpec -> a
+  op ModeSpecEnv.foldVariables : fa(a) (a -> Op.OpInfo -> Env a) -> a -> ModeSpec -> Env a
 
-  op addProperty : ModeSpec -> Property -> SpecCalc.Env ModeSpec
-  def addProperty modeSpec property =
-    return (modeSpec withSpec (insert (specOf modeSpec) property))
+  op ModeSpecEnv.foldVariants : fa(a) (a -> Claim -> Env a) -> a -> ModeSpec -> Env a
 
-  op elaborate : ModeSpec -> SpecCalc.Env ModeSpec
-  def elaborate modeSpec = {
-      elabSpec <- Spec.elaborate (specOf modeSpec);
-      return (modeSpec withSpec elabSpec)
-    }
-}
+  % op ModeSpecEnv.mapOps : ModeSpec -> (Op.OpInfo -> Env Op.OpInfo) -> Env ModeSpec
+  % op ModeSpecEnv.mapVariables : ModeSpec -> (Op.OpInfo -> Env Op.OpInfo) -> Env ModeSpec
+
+  % op ModeSpecEnv.mapClaim : ModeSpec -> (Claim.Claim -> Env Claim.Claim) -> Env ModeSpec
+  % op ModeSpecEnv.mapInvariant : ModeSpec -> (Claim.Claim -> Env Claim.Claim) -> Env ModeSpec
+
+  op elaborate : ModeSpec -> Env ModeSpec
+
+  op subtract : ModeSpec -> ModeSpec -> ModeSpec
+  op union : ModeSpec -> ModeSpec -> Env ModeSpec
+    
+  op applySubst : ModeSpec * Subst -> Env ModeSpec
+  
+  op join : SpecCalc.Term Position -> ModeSpec -> ModeSpec -> Position -> Env ModeSpec
+
+  op simplifyVariable : ModeSpec * Op.Ref -> Env ModeSpec
+  op simplifyInvariant : ModeSpec * Claim.Ref -> Env ModeSpec
+  op simplifyInvariants : ModeSpec -> ModeSpec -> Env ModeSpec
+
+  op ModeSpecEnv.printRules : ModeSpec -> Env ()
+
+  op pp : ModeSpec -> Doc
+  op show : ModeSpec -> String
+endspec
 \end{spec}
+
+Does it make sense to do a map over the variables or ops? What is the
+constraint on the opInfo function that ensures that the final spec is
+well formed.
+
+I suppose you toss one op out but put another op in. But what happens
+to references to terms that refer to ops that get tossed.
+
+Perhaps require that the map operation doesn't change the name.
+
+Same issue applies to map over set.
+
+Need some rationale for deciding when the parameter should be an
+op or an opInfo? For example hyde is wrong.

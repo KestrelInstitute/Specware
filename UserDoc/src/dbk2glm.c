@@ -257,6 +257,7 @@ bool inSyntax= False;
 #define inProgramOrSyntax (inProgram || inSyntax)
 bool inDisplay= False;
 bool inFilename= False;
+bool inQuote= False;
 
 outchar(c) char c; {
 trace(" ");
@@ -372,6 +373,8 @@ trace3("P%d%c\n", bufp,thischar());
 		try(terminal);
 
 		try(ent);
+		try(quote);
+		try(outQuote);
 		other();
 	}
 }
@@ -591,6 +594,35 @@ trace("\nent:: ");
 	}
 	if (seetext(">")) {
 		outtext(">");
+		succeed;
+	}
+	fail;
+}
+
+bool quote() {
+
+	if (inProgramOrSyntax) fail;
+trace("\nquote:: ");
+	if (!seetext("<quote>")) fail;
+
+	outtext("``");
+	inQuote= True;
+	succeed;
+
+}
+
+doOutQuote() {
+	outtext("''");
+	inQuote= False;
+}
+
+bool outQuote() {
+
+	if (!inQuote) fail;
+trace("\noutQuote:: ");
+
+	if (seetext("</quote>")) {
+		outtext("''");
 		succeed;
 	}
 	fail;

@@ -10,6 +10,8 @@ spec
   import FoldLeft
   import FoldRight
   
+  op size : Collection -> Nat
+
   op pp : Collection -> Doc
   op show : Collection -> String
 endspec

@@ -42,9 +42,9 @@
     (cond
      ((not (function-symbol-p symbol2))
       '>)
-     ((and (equality-predicate-symbol-p symbol1) (not (equality-predicate-symbol-p symbol2)))
+     ((and (equality-relation-symbol-p symbol1) (not (equality-relation-symbol-p symbol2)))
       '<)
-     ((and (not (equality-predicate-symbol-p symbol1)) (equality-predicate-symbol-p symbol2))
+     ((and (not (equality-relation-symbol-p symbol1)) (equality-relation-symbol-p symbol2))
       '>)
      (t
       (let ((arity1 (if (function-associative symbol1) 2 (function-arity symbol1)))
@@ -90,11 +90,11 @@
     ((symbol-boolean-valued-p x)
      (if (symbol-boolean-valued-p y)
 	 (declare-poset-greaterp *symbol-ordering* (symbol-number x) (symbol-number y))
-	 (warn "Ignoring ordering declaration between predicate ~A and nonpredicate ~A." x y)))
+	 (warn "Ignoring ordering declaration between relation ~A and nonrelation ~A." x y)))
     (t
      (if (not (symbol-boolean-valued-p y))
 	 (declare-poset-greaterp *symbol-ordering* (symbol-number x) (symbol-number y))
-	 (warn "Ignoring ordering declaration between nonpredicate ~A and predicate ~A." x y)))))
+	 (warn "Ignoring ordering declaration between nonrelation ~A and relation ~A." x y)))))
 
 (defun symbol-ordering-compare (symbol1 symbol2)
   (cond
@@ -150,9 +150,9 @@
                    (list symbol-or-symbols))))
         (l nil))
     (prog->
-      (map-sparse-vector (sparse-matrix-rows *symbol-ordering*) ->* x# row)
+      (map-sparse-vector-with-indexes (sparse-matrix-rows *symbol-ordering*) ->* row x#)
       (symbol-numbered x# -> x)
-      (map-sparse-vector-indexes row ->* y#)
+      (map-sparse-vector row ->* y#)
       (symbol-numbered y# -> y)
       (when (implies (neq none symbols) (member (symbol-to-lisp x) symbols))
         (or (assoc x l) (first (push (list x nil nil) l)) -> v)

@@ -26,24 +26,8 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
     }
     
     protected void initPopupMenu() {
-        popupMenu = new JPopupMenu();
-        JMenuItem menuItem = new JMenuItem("edit");
-        menuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                Object val = JOptionPane.showInternalInputDialog(graph,"new value:","edit",JOptionPane.PLAIN_MESSAGE,null,null,graph.getValue());
-                if (val != null)
-                    graph.setValue(val);
-            }
-        });
-        popupMenu.add(menuItem);menuItem = new JMenuItem("delete all");
-        menuItem.addActionListener(new ActionListener() {
-            public void actionPerformed(ActionEvent e) {
-                //Dbg.pr("invoking graph.writeToFile()...");
-                //graph.writeToFile();
-                graph.getXGraphView().deleteAll(graph,true);
-            }
-        });
-        popupMenu.add(menuItem);
+        if (graph != null)
+            popupMenu = graph.getPopupMenu();
     }
     
     public boolean isForceMarqueeEvent(MouseEvent e) {
@@ -53,6 +37,7 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
             return true;
         if (e.isControlDown())
             return true;
+        //return true;
         return super.isForceMarqueeEvent(e);
     }
     
@@ -68,7 +53,7 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
     }
     
     public void mousePressed(MouseEvent e0) {
-        Dbg.pr("mouse pressed in XMarqueeHandler...");
+        //Dbg.pr("mouse pressed in XMarqueeHandler...");
         if (!e0.isConsumed()) {
             MouseEvent e = fromScreenSnap(e0);
             int x = e.getX(), y = e.getY();
@@ -90,11 +75,19 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
                     if (cv instanceof XGraphElementView) {
                         //System.out.println("showing popup menu...");
                         ((XGraphElementView)cv).showPopupMenu(e0.getComponent(),e0.getX(),e0.getY());
+                        e0.consume();
                     }
                 } else {
                     popupMenu.show(e0.getComponent(),e0.getX(),e0.getY());
                     e0.consume();
                     return;
+                }
+            }
+            else {
+                Object cell = graph.getFirstCellForLocation(x,y);
+                if (cell instanceof XGraphElement) {
+                    XGraphElement elem = (XGraphElement)cell;
+                    Dbg.pr("mouse pressed at graph element "+elem);
                 }
             }
         }
@@ -109,6 +102,7 @@ public class XMarqueeHandler extends XBasicMarqueeHandler {
     }
     
     protected void overlay(Graphics graphics) {
+        //Dbg.pr("XMarqueeHandler.overlay()...");
         super.overlay(graphics);
     }
     

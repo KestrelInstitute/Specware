@@ -9,7 +9,9 @@ The following sections give the grammar rules and meaning
 for each &Metaslang; language construct.
 </para>
 <!-- ================================================================= -->
-<formalpara id="GrammarDescriptionFormalism"><title>The grammar description formalism</title>
+<section id="Preliminaries"><title>Preliminaries</title>
+<!-- ================================================================= -->
+<section id="GrammarDescriptionFormalism"><title>The grammar description formalism</title>
 <para>
 The grammar rules used to describe the &Metaslang; language
 use the conventions of (extended) BNF.
@@ -33,7 +35,6 @@ times.
 All other signs stand for themselves, like the `symbol [[+]]
 in the example rule above.
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 In the grammar rules terminal `symbols appear in a bold font.
@@ -64,15 +65,16 @@ but also as:
 Some of the actual grammar rules allow ambiguities; the
 accompanying text will indicate how they are to be resolved.
 </para>
+</section>
 <!-- ================================================================= -->
-<formalpara id="Models"><title>Models</title>
+<section id="Models"><title>Models</title>
 <para>
 <<
 ||    `spec ::= `spec-form
 ||
 ||    `op ::= `op-name
 >>
-The term `spec is used as short for `spec-form
+The term `spec is used as short for `spec-form.
 The <emphasis>semantics</emphasis> of &Metaslang; `specs is given
 in terms of classes of <emphasis>models</emphasis>.
 A model is an assignment of sorts (sets of values) to all the
@@ -115,13 +117,12 @@ For example, given this `spec:
 ||      op next : Even -> Even
 ||      axiom nextEffect is
 ||        fa(x : Even) ~(next x = x)
-||    end
+||    endspec
 ]]
 one possible model (out of many!) is the assignment of
 the even integers to [[Even]], and of the function that
 increments an even number by 2 to [[next]].
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 Each model has to <emphasis>respect sorting</emphasis>; for
@@ -193,8 +194,9 @@ the value of [[z]] is [["let-x"]] (`op [[x]]
 <emphasis>is</emphasis> hidden by the
 `local-variable [[x]] of the `let-binding).
 </para>
+</section>
 <!-- ================================================================= -->
-<formalpara id="Sort-correctness"><title>Sort-correctness</title>
+<section id="Sort-correctness"><title>Sort-correctness</title>
 <para>
 If no sort-respecting combinations of assignments exist for a given
 `spec, it is considered
@@ -206,7 +208,6 @@ Sort-incorrectness differs from inconsistency in that the
 meaning of the axioms does not come into play, and the
 question whether an incorrect `spec is consistent is moot.
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 To be precise, there are subtle and less subtle differences
@@ -218,7 +219,7 @@ models:
 ||    spec
 ||      sort Empty = | Just Empty
 ||      op IdoNotExist : Empty
-||    end
+||    endspec
 ]]
 The explanation is that the `sort-definition for [[Empty]]
 generates an <emphasis>implicit</emphasis> axiom that all
@@ -239,7 +240,7 @@ combinations of assignments:
 ||      sort Outcome = | Positive | Negative
 ||      sort Sign = | Positive | Zero | Negative
 ||      def whatAmI = Positive
-||    end
+||    endspec
 ]]
 Here there are two constructors [[Positive]]
 of different sorts, the sort [[Outcome]] and the sort
@@ -267,7 +268,7 @@ of the following ways:
 ]]
 Also, if the `spec elsewhere contains something along the lines of:
 [[
-||      op signToNat (s : Sign) : Nat
+||      op signToNat : Sign -> Nat
 ||      def sw = signToNat whatAmI
 ]]
 that is sufficient to establish that [[whatAmI]] has sort [[Sign]]
@@ -276,8 +277,9 @@ See further under
 <link linkend="Op-definitions"><emphasis>Op-definitions</emphasis></link>
 and <link linkend="Structors"><emphasis>Structors</emphasis></link>.
 </para>
+</section>
 <!-- ================================================================= -->
-<formalpara id="Constructive"><title>Constructive</title>
+<section id="Constructive"><title>Constructive</title>
 <para>
 When code is generated for a `spec, complete
 <quote>self-contained</quote> code is only
@@ -296,28 +298,25 @@ The built-in polymorphic equality predicate [[=]] is only
 constructive for <emphasis>discrete sorts</emphasis> (see
 below).
 </para>
-</formalpara>
 <!-- ================================================================= -->
 <para>
 A sort is called discrete if the equality predicate [[=]]
 for that sort is constructive.
 The built-in sorts [[Integer]], [[Nat]], [[Boolean]],
 [[Char]] and [[String]] are all discrete.
-Sort [[List]] <replaceable>S</replaceable> is discrete when
+Sort [[List ]]<replaceable>S</replaceable> is discrete when
 <replaceable>S</replaceable> is.
 All function sorts are non-discrete (even when the domain
 sort is the unit sort).
 Sum sorts, product sorts and record sorts are discrete
 whenever all component sorts are.
 Subsort
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] is discrete when
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] is discrete when
 supersort <replaceable>S</replaceable> is.
 (Predicate <replaceable>P</replaceable> need not be
 constructive: the equality test is that of the supersort.)
 Quotient sort
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable> is discrete when
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable> is discrete when
 predicate <replaceable>Q</replaceable> is
 constructive.
 (Sort <replaceable>S</replaceable> need not be discrete:
@@ -325,6 +324,8 @@ the equality test on the quotient sort is just the predicate
 <replaceable>Q</replaceable> applied to pairs of members of the
 <replaceable>Q</replaceable>-equivalence classes.)
 </para>
+</section>
+</section>
 <!-- ***************************************************************** -->
 <section id="LexicalConventions"><title>Lexical conventions</title>
 <para>
@@ -387,7 +388,7 @@ as described under
 <para>
 Other than that, whitespace -- or the lack of it -- has no significance.
 Whitespace can be used to lay-out the text for readability, but
-as far as only the meaning is concerned, the two following
+as far as only the meaning is concerned, the following two
 presentations of the same `spec are entirely equivalent:
 [[
 ||    spec
@@ -395,10 +396,10 @@ presentations of the same `spec are entirely equivalent:
 ||      op next : Even -> Even
 ||      axiom nextEffect is
 ||        fa(x : Even) ~(next x = x)
-||    end
+||    endspec
 ||
 ||    spec sort   Even op   next : Even -> Even axiom nextEffect
-||    is fa(x : Even)~(next     x            = x)end
+||    is fa(x : Even)~(next     x            = x)endspec
 ]]
 </para>
 <!-- ***************************************************************** -->
@@ -406,14 +407,6 @@ presentations of the same `spec are entirely equivalent:
 <para>
 <<
 ||`symbol ::= `name | `literal | `special-symbol
-||
-||`qualifiable-name ::= `unqualified-name | `qualified-name
-||
-||`unqualified-name ::= `name
-||
-||`qualified-name ::= `qualifier . `name
-||
-||`qualifier ::= `word-symbol
 ||
 ||`name ::= `word-symbol | `non-word-symbol
 ||
@@ -440,14 +433,7 @@ presentations of the same `spec are entirely equivalent:
 ||
 ||`special-symbol ::= _ | ( | ) | '[ | '] | '{ | '} | ; | , | .
 >>
-Example `qualifiable-names:
-[[
-||    Key
-||    $
-||    Calendar.Date
-||    Monoid.<*>
-]]
-Example `names:
+Sample `names:
 [[
 ||    Date                    $$            ?!
 ||    yymmdd2date             <*>           :=:
@@ -474,24 +460,30 @@ Restriction.
 In general, `names can be chosen freely.
 However, the following <emphasis>reserved words</emphasis> have a
 special meaning and must not be used for `names:
-\<!-- !! (echo COLUMNIZE; cat reservedWords; echo ZeEnd) | abc -w meta -->
+<!-- !! (echo COLUMNIZE; cat reservedWords; echo ZeEnd) | abc -w meta -->
 [[
-||    as            embed?        infixl        relax
-||    axiom         end           infixr        restrict
-||    case          end-spec      is            select
-||    choose        ex            let           sort
-||    colimit       fa            morphism      spec
-||    conjecture    false         of            then
-||    def           fn            op            theorem
-||    diagram       if            project       translate
-||    else          import        qualifying    true
-||    embed         in            quotient
+||    as            endspec       infixr        relax
+||    axiom         ex            is            restrict
+||    case          fa            let           sort
+||    choose        false         morphism      spec
+||    colimit       fn            obligations   then
+||    conjecture    from          of            theorem
+||    def           generate      op            translate
+||    diagram       if            project       true
+||    else          import        prove         where
+||    embed         in            qualifying
+||    embed?        infixl        quotient
 ]]
 They each count as a single `symbol, and no whitespace is
 allowed inside any reserved word.
-Further, a stand-alone colon mark [[:]], a stuttered colon mark
-[[::]] and a stand-alone vertical-bar mark [[|]] may not be used
-as `names.
+</para>
+<para>
+Likewise, the following <emphasis>reserved non-words</emphasis>
+must not be used for `names:
+[[
+||    :       ::      |
+||    <-      ->      +->
+]]
 In addition, several `names -- for example [[=]] -- are
 pre-defined in built-in libraries.
 While strictly speaking not reserved, they must not be
@@ -510,7 +502,7 @@ non-alphabetic marks.
 <para>
 Some &Metaslang; users follow the convention of using
 `names that start with a capital letter for
-`spec- and `sort-names and for `constructors,
+`unit-identifiers and `sort-names and for `constructors,
 while `word-symbols chosen for `op-names and `field-names start with a
 lower-case `letter.
 Both plain `local-variables and `local-sort-variables are often chosen
@@ -518,36 +510,13 @@ to be single lower-case `letters: [[x]], [[y]], [[z]],
 [[a]], [[b]], [[c]], with the start of the alphabet
 preferred for `local-sort-variables.
 `Op-names of predicates (that is, having some sort
-<replaceable>S</replaceable> [[-> Boolean]]) often end with
+<replaceable>S</replaceable>[[ -> Boolean]]) often end with
 the mark [[?]].
 These are just conventions that users are free to follow or
 ignore, but in particular some convention distinguishing 
 `constructors from `op-names and `local-variables is
 recommended.
 </para>
-<!-- ===================== OBSOLETE  =================================
-<formalpara id="Warning1"><title>Warning</title>
-<para>
-Note that [[Nat->Boolean]], [[n-1]] and [[x=0]], for instance,
-are single `names.
-If the similar formula is meant, whitespace must be used, as in
-[[Nat -> Boolean]], [[n - 1]] and [[x = 0]].
-Users are well-advised to use the defensive tactic of surrounding
-all <quote>operators</quote> with whitespace.
-</para>
-</formalpara>
-<formalpara id="Warning2"><title>Warning</title>
-<para>
-The liberal naming policy of &Metaslang; may change in the
-future.
-To develop <quote>future-proof</quote> `specs,
-the safe approach is to use either alphanumeric `names,
-starting with a `letter and further using only `letters and
-`decimal-digits, or all non-alpha `names, like [[<+>]] or
-[[>=>]].
-</para>
-</formalpara>
-     ===================== ETELOSBO ================================== -->
 </section>
 <!-- ***************************************************************** -->
 <section id="Comments"><title>Comments</title>
@@ -565,7 +534,7 @@ starting with a `letter and further using only `letters and
 ||`block-comment-body ::=
 ||    `any-text-including-newlines-and-nested-block-comments
 >>
-Example `comments:
+Sample `comments:
 [[
 ||    % keys must be unique
 ||    (* op yymmdd2Date : String -> Date *)
@@ -604,142 +573,173 @@ in `literals (which may not contain whitespace, including
 <!-- ***************************************************************** -->
 <section id="Units"><title>Units</title>
 <para>
+A ``unit'' is an identifiable `unit-term, where
+``identifiable'' means that the `unit-term can be referred
+to by a `unit-identifier.
+`Unit-terms can be ``elaborated'', resulting in `specs,
+mprhisms, diagrams or other entities.
+The effect of elaborating a `unit-definition is that its
+`unit-term is elaborated and becomes associated with its
+`unit-identifier.
+</para>
+<para>
+A &Specware; project consists of a collection of
+&Metaslang; `unit-definitions.
+They can be recorded in one or more 
+&Specware; files.
+There are basically two styles for recording
+`unit-definitions using &Specware; files.
+In the single-unit style, the file, when processed by
+&Specware;, contributes a single
+`unit-definition to the project.
+In the multiple-unit style, the file may contribute several
+`unit-definitions.
+The two styles may be freely mixed in a project (but not in
+the same &Specware; file).
+This is explained in more detail in what follows.
+</para>
+<para>
 <<
-||  `project ::= `unit-definition*
+||`unit-definition ::= `unit-identifier = `unit-term
 ||
-||  `specware-file ::=
-||       `unit
-||     | `unit-definition { `unit-definition }*
+||`unit-term ::=
+||     `spec-term
+||   | `morphism-term
+||   | `diagram-term
+||   | `target-code-term
+||   | `proof-term
 ||
-||  `unit-definition ::= `unit-identifier = `unit
+||`specware-file-contents ::=
+||     `unit-term
+||   | `infile-unit-definition { `infile-unit-definition }*
 ||
-||  `unit ::=
-||       `spec-term
-||     | `morphism-term
-||     | `diagram-term
-||     | `generate-term
+||`infile-unit-definition ::= `fragment-identifier = `unit-term
 >>
 <!--
 ** ||     | `let-term
 ** ||     | `where-term
 -->
-Restriction.
-The `unit-identifier in each `unit-definition of a `specware-file
-must be a `name that is a `word-symbol.
 </para>
 <para>
-A `project consists of a collection of `unit-definitions.
-`Unit-definitions of a `project may use other
-`unit-definitions in the `project, including standard
-libraries which in &SpecwareVVV; are supposed to be part of
-each `project.
-However, the dependencies between `units must not form a
+`Unit-definitions may use other
+`unit-definitions, including standard
+libraries, which in &SpecwareV; are supposed to be part of
+each project.
+However, the dependencies between units must not form a
 cycle; it must always be possible to arrange the
 `unit-definitions in an order in which later
 `unit-definitions only depend on earlier ones.
 How `unit-definitions are processed by &Specware; is further
-dealt with in the &Specware; User Guide.
+dealt with in the &Specware; User Manual.
 </para>
 <para>
-`Unit-definitions are collected in `specware-files, which in
-&SpecwareVVV; must have an [[.sw]] extension.
-The `specware-files do not directly contain the
-`unit-definitions that form the `project.
-These are instead determined from the `specware-files using
-certain rules.
+As mentioned above,
+`unit-definitions are collected in &Specware; files, which in
+&SpecwareV; must have an [[.sw]] extension.
+The &Specware; files do not directly contain the
+`unit-definitions that form the project.
+In fact, a user never writes `unit-definition explicitly.
+These are instead determined from the contents of the
+&Specware; files using the following rules.
 There are two possibilities here.
-The first is that the `specware-file contains a
-single unit.
+The first is that the `specware-file-contents consists of a
+single `unit-term.
 If
-<replaceable>P</replaceable>[[/]]<replaceable>N</replaceable>is
-the full `path for the
-`specware-file but without the [[.sw]] extension, the `unit
-being defined has as its full `unit-identifier
-<replaceable>P</replaceable>/<replaceable>N</replaceable>.
-For example, if file <"/units/Layout/Fixture.sw"> contains a
-single `unit <replaceable>U</replaceable>, the full `unit-identifier is
+<"<replaceable>P</replaceable>.sw"> is
+the path for the &Specware; file, the unit
+being defined has as its `unit-identifier
+<replaceable>P</replaceable>.
+For example, if file <"C:/units/Layout/Fixture.sw"> contains a
+single `unit-term <replaceable>U</replaceable>, the `unit-identifier is
 [[/units/Layout/Fixture]], and the `unit-definition it
 contributes to the project is
 [[
 ||  /units/Layout/Fixture = \<replaceable>U\</replaceable>
 ]]
-(Note that this is not allowed as a `unit-definition in a
-`specware-file, since the `unit-identifier is not a `name.)
+(Note that this is not allowed as an `infile-unit-definition in a
+`specware-file-contents, since the `unit-identifier is not a
+`fragment-identifier.)
 </para>
 <para>
-The second possibility is that the `specware-file contains one or more
-`unit-definitions.
-If <replaceable>N</replaceable> is that `name, and
-<replaceable>P</replaceable> is the full `path for the
-`specware-file but without the [[.sw]] extension, the `unit
-being defined has as its full `unit-identifier
-<replaceable>P</replaceable>#<replaceable>N</replaceable>.
-For example, if file <"/units/Layout/Moveable.sw"> contains a
-`unit-definition [[Pos = \<replaceable>U\</replaceable>]], the
-and the `unit-definition it
-contributes to the project is
+The second possibility is that the &Specware; file contains one or more
+`infile-unit-definitions.
+If <replaceable>I</replaceable> is the `fragment-identifier
+of such an `infile-unit-definition, and
+<"<replaceable>P</replaceable>.sw"> is the path for the
+&Specware; file, the unit
+being defined has as its `unit-identifier
+<replaceable>P</replaceable>#<replaceable>I</replaceable>.
+For example, if file <"C:/units/Layout/Cart.sw"> contains an
+`infile-unit-definition [[Pos = \<replaceable>U\</replaceable>]],
+the `unit-identifier is [[/units/Layout/Cart#Pos]],
+and the `unit-definition it contributes to the project is
 [[
-||  /units/Layout/Moveable#Pos = \<replaceable>U\</replaceable>
+||  /units/Layout/Cart#Pos = \<replaceable>U\</replaceable>
 ]]
 </para>
 <!-- ***************************************************************** -->
 <section><title>Unit Identifiers</title>
 <para>
 <<
-||  `unit-identifier ::=
-||       `specpath-relative-path
-||     | `relative-path
+||`unit-identifier ::= `swpath-based-path | `relative-path
 ||
-||  `specpath-relative-path ::= / relative-path
+||`swpath-based-path ::= / `relative-path
 ||
-||  `relative-path ::=
-||      | `name [ # `name ]
-||      | `path-element  / `relative-path
+||`relative-path ::= { `path-element / }* `path-element [ # `path-element ]
 ||
-||  `path-element ::= `name | .. | .
+||`path-element ::= `word-symbol
 >>
 </para>
 <formalpara id="Warning0"><title>Warning</title> <para>
 Note that `unit-identifiers are processed by the tokenizer like
 everything else. This means that whitespace is removed and
 marks not allowed in `names, even if otherwise permitted in
-filenames, cannot appear in `unit-identifiers. For this reason,
-some care must be taken when naming `units. 
+filenames (such as <".">), cannot appear in `unit-identifiers.
+For this reason, some care must be taken when naming units.
 </para> </formalpara>
 <para>
-`Unit-identifiers are used to identify `units in the current
-`project.
+`Unit-identifiers are used to identify `unit-terms.
 Typically, only a final part of the full `unit-identifier is
-used.  When &Specware bis started with environment variable
-<"SWPATH"> set to a colon-separated list of pathnames for files or
-directories, the `specware-files are searched for relative
-to these pathnames; for example, if <"SWPATH"> is set to
-<"/units/Layout:.">, then
-[[/units/Layout/Fixture]] may be shortened to [[/Fixture]],
-and [[/units/Layout/Moveable#Pos]] to [[/Moveable#Pos]].
-As usual, the filename ``<".">'' stands for the current
-directory; and allows &Specware; to look there for
-`unit-definitions.
+used.  When &Specware is started with environment variable
+<"SWPATH"> set to a semicolon-separated list of pathnames for
+directories, the &Specware; files are searched for
+relative to these pathnames; for example, if <"SWPATH"> is set
+to <"C:/units/Layout;C:/units/Layout/Cart">, then
+<"C:/units/Layout/Fixture.sw"> may be shortened to [[/Fixture]],
+and <"C:/units/Layout/Cart.sw"> to [[/Cart]].
 How `unit-definitions are processed by &Specware; is further
-dealt with in the &Specware; User Guide.
+dealt with in the &Specware; User Manual.
 </para>
 <para>
-The `unit-identifier must determine a `unit-definition as
+Further, `unit-identifiers can be relative to the directory
+containing the &Specware; file in which they occur.
+So, for example, both in file <"C:/units/Layout/Fixture.sw">
+and in file <"C:/units/Layout/Cart.sw">, `unit-identifier
+[[Tools/Pivot]] refers to the `unit-term contained in
+file <"C:/units/Layout/Tools/Pivot.sw">,
+while [[Props#SDF]] refers to the `unit-term of
+`infile-unit-definition [[SDF = ...]] contained
+in file  <"C:/units/Layout/Props.sw">.
+</para>
+<para>
+The `unit-identifier must identify a `unit-definition as
 described above; the elaboration of the `unit-identifier is
-then the result of elaborating the corresponding `unit,
-yielding a `spec, spec morphism, or diagram.
+then the result of elaborating the corresponding `unit-term,
+yielding a `spec, morphism, diagram, or other entity.
 </para>
 </section>
 <!-- ***************************************************************** -->
 <section><title>Specs</title>
 <para>
 <<
-||  `spec-term ::=
-||       `unit-identifier
-||       `spec-form
-||     | `spec-qualification
-||     | `spec-translation
-||     | `diagram-colimit
+||`spec-term ::=
+||     `unit-identifier
+||   | `spec-form
+||   | `spec-qualification
+||   | `spec-translation
+||   | `spec-substitution
+||   | `diagram-colimit
+||   | `obligator
 ||
 >>
 <!--
@@ -757,14 +757,20 @@ The elaboration of a `spec-term, if defined, yields a
 <section><title>Spec Forms</title>
 <para>
 <<
-||  `spec-form ::= spec `declaration-sequence end
+||`spec-form ::= spec { `declaration }* endspec
 >>
 Restriction.
 `Spec-forms must be sort-correct.
 </para>
+<para>
+Sample `spec-forms:
+[[
+||    spec import Measures import Valuta endspec
+]]
+</para>
 <!-- ================================================================= -->
 <para>
-A <emphasis>closed</emphasis>`spec-form is a `spec-form
+A <emphasis>closed</emphasis> `spec-form is a `spec-form
 containing no `import-declarations.
 </para>
 <para>
@@ -776,20 +782,167 @@ Chapter.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section><title>Translations</title>
+<section><title>Qualifications</title>
+<!--====================================================================-->
+<para>
+Names of sorts and `ops may be <emphasis>unqualified</emphasis>
+or <emphasis>qualified</emphasis>.
+The difference is that `unqualified-names do not contain a
+dot sign ``[[.]]'', while `qualified-names are prefixed with
+a ```qualifier'' followed by a dot.  Examples of unqualified
+names are [[Date]], [[today]] and [[<*>]].
+Examples of `qualified-names are 
+[[Calendar.Date]], [[Calendar.today]] and [[Monoid.<*>]].
+</para>
+
+<para>
+`Qualifiers can be used to disambiguate.  For example, there
+may be reason to use two different `ops called [[union]] in
+the same context: one for set union, and one for bag
+(multiset) union.  They could then more fully be
+called [[Set.union]] and [[Bag.union]], respectively.
+Unlike in earlier versions of Specware, there is no rigid
+relationship between `qualifiers and the `unit-identifiers
+identifying `specs.
+The author of a collection of `specs may use the `qualifier
+deemed most appropriate for any `sort-name or `op-name.
+For example, there could be a single `spec dubbed
+[[SetsAndBags]] that introduces two new `ops, one called
+[[Set.union]] and one called [[Bag.union]].
+Generally, sorts and `ops that ``belong together''
+should receive the same `qualifier.
+It is up to the author of the `specs to determine what
+belongs together.
+</para>
+
+<para>
+`Sort-names and `op-names are <emphasis>introduced</emphasis> in a
+`declaration or `definition, and may then be
+<emphasis>employed</emphasis> elsewhere in the same `spec.
+Thus, all occurrences of a `sort-name or `op-name can be divided
+into ``introductions'' and ``employs''.
+The name as introduced in an introduction is the 
+<emphasis>full name</emphasis> of the sort or `op.
+If that name is unqualified, the full name is unqualified.
+If the name as introduced is qualified, then so is the full
+name.
+</para>
+
+<para>
+For employs the rules are slightly different.  First, if the
+name employed
+occurs just like that in an introduction, then it is the
+full name.
+Also, if the name employed is qualified, it is the full name.
+Otherwise, the name as employed may be unqualified
+shorthand for a qualified full name.
+For example, given an employ of the unqualified `sort-name
+[[Date]], possible qualified full names for it are
+[[Calendar.Date]], [[DateAndTime.Date]],
+[[Diary.Date]], and so on.  But, of course, the full name
+must be one that is introduced in the `spec.
+If there is precisely one `qualified-name introduced whose last part is
+the same as the `unqualified-name employed, then that name is the full name.
+Otherwise, sort information may be employed to disambiguate
+(``resolve overloading'').
+</para>
+
+<para>
+Here is an illustration of the various possibilities:
+
+[[
+||  spec
+||    sort Apple
+||    sort Fruit.Apple
+||    sort Fruit.Pear
+||    sort Fruit.Date
+||    sort Calendar.Date
+||    sort Fruit.Basket = Apple * Pear * Date
+||  endspec
+]]
+
+In the definition of sort [[Fruit.Basket]] we have three
+unqualified employs of `sort-names, viz. [[Apple]], [[Pear]] and
+[[Date]].
+The name [[Apple]] is introduced like that, so the employ
+[[Apple]] already uses the full name; it does not refer to
+[[Fruit.Apple]].
+The name [[Pear]] is nowhere introduced just like that, so the employ
+must be shorthand for some qualified full name.  There is
+only one applicable introduction, namely [[Fruit.Pear]].
+Finally, for [[Date]] there are two candidates:
+[[Fruit.Date]] and [[Calendar.Date]].  This is ambiguous,
+and in fact an error.
+To correct the error, the employ of [[Date]] should be
+changed into either [[Fruit.Date]] or [[Calendar.Date]],
+depending on the intention.
+</para>
+
+<para>
+It is possible to give a qualification in one go to all
+`unqualified-names introduced in a `spec.
+If <replaceable>Q</replaceable> is a `qualifier, and
+<replaceable>S</replaceable> is a term denoting a `spec, then
+the term [[\<replaceable>Q\</replaceable> qualifying
+\<replaceable>S\</replaceable>]] denotes the same `spec as
+<replaceable>S</replaceable>, except that each introduction
+of an `unqualified-name <replaceable>N</replaceable> is
+replaced by an introduction of the `qualified-name
+[[\<replaceable>Q\</replaceable>.\<replaceable>N\</replaceable>]].
+Employs that before referred to the unqualified introduction
+are also accordingly qualified, so that they now refer to
+the qualified introduction.
+
+For example, the value of
+
+[[
+||  Company qualifying spec
+||    sort Apple
+||    sort Fruit.Apple
+||    sort Fruit.Pear
+||    sort Fruit.Basket = Apple * Pear
+||  endspec
+]]
+
+is the same as that of
+
+[[
+||  spec
+||    sort Company.Apple
+||    sort Fruit.Apple
+||    sort Fruit.Pear
+||    sort Fruit.Basket = Company.Apple * Fruit.Pear
+||  endspec
+]]
+</para>
+
+<!--====================================================================-->
 <para>
 <<
-||  `spec-qualification ::=  `qualifier qualifying `spec-term
+||`spec-qualification ::=  `qualifier qualifying `spec-term
 ||
-||  `spec-translation ::= translate `spec-term by `name-map
+||`qualifier ::= `word-symbol
 ||
-||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
+||`qualifiable-name ::= `unqualified-name | `qualified-name
 ||
-||  `name-map-item :: `qualifiable-name +-> `qualifiable-name
+||`unqualified-name ::= `name
+||
+||`qualified-name ::= `qualifier . `name
 >>
+Sample `spec-qualification:
+[[
+||    Weight qualifying /Units#Weights
+]]
+Sample `qualifiable-names:
+[[
+||    Key
+||    $
+||    Calendar.Date
+||    Monoid.<*>
+]]
 Let <replaceable>R</replaceable> be the result of
 elaborating `spec-term <replaceable>S</replaceable>.
-Then the elaboration of [[\<replaceable>Q\</replaceable>
+Then the elaboration of `qualification [[\<replaceable>Q\</replaceable>
 qualifying \<replaceable>S\</replaceable>]], where
 <replaceable>Q</replaceable> is a `qualifier, is
 <replaceable>R</replaceable> with each unqualified
@@ -803,21 +956,47 @@ The same replacement applies to all uses of
 <para>
 For example, the elaboration of
 [[
-||  Buffer qualifying spec {
+||  Buffer qualifying spec
 ||    op size : Nat
 ||    axiom LargeSize is size >= 1024
-||  }
+||  endspec
 ]]
 results in:
 [[
-||  spec {
+||  spec
 ||    op Buffer.size : Nat
 ||    axiom LargeSize is Buffer.size >= 1024
-||  } by Buffer
+||  endspec
 ]]
+Note that the `claim-name [[LargeSize]] is unchanged.
+In later versions of &Specware; this may change, so that
+also unqualified `claim-names get qualified.
 </para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Translations</title>
 <para>
-Further, the elaboration of [[translate
+<<
+||`spec-translation ::= translate `spec-term by `name-map
+||
+||`name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
+||
+||`name-map-item ::= `sort-name-map-item | `op-name-map-item
+||
+||`sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
+||
+||`op-name-map-item ::=
+||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
+||
+||`annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
+>>
+Sample `spec-translation:
+[[
+||    translate A by {Counter +-> Nat}
+]]
+Let <replaceable>R</replaceable> be the result of
+elaborating `spec-term <replaceable>S</replaceable>.
+Then the elaboration of [[translate
 \<replaceable>S\</replaceable> by {
 \<replaceable>M\</replaceable>\<subscript>1\</subscript> +->
 \<replaceable>N\</replaceable>\<subscript>1\</subscript>, ...
@@ -832,33 +1011,162 @@ replaced by
 <para>
 For example, the elaboration of
 [[
-||  translate spec {
+||  translate spec
 ||    sort E
 ||    op i : E
-||  } by {
-||    E +-> Counter
+||  endspec by {
+||    E +-> Counter,
 ||    i +-> zero
 ||  }
 ]]
 results in:
 [[
-||  spec {
+||  spec
 ||    sort Counter
 ||    op zero : Counter
-||  } by {
+||  endspec
 ]]
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section><title>Diagram Colimit</title>
+<section><title>Substitutions</title>
 <para>
 <<
-||  `diagram-colimit ::= colimit `diagram-term
+||`spec-substitution ::= `spec-term '[ `morphism-term ']
+>>
+Sample `spec-substitution:
+[[
+||    Routing#Basis[morphism /Coll/Lattice ->
+||                           /Coll/LatticeWithTop {} ]
+]]
+</para>
+<para>
+The elaboration of `spec-substitution
+[[\<replaceable>S\</replaceable>[\<replaceable>M\</replaceable>]]]
+yields the `spec
+<replaceable>T</replaceable> obtained as follows.
+Let `spec <replaceable>R</replaceable> be the result of
+elaborating <replaceable>S</replaceable>,
+and morphism <replaceable>N</replaceable> that of
+<replaceable>M</replaceable>.
+Let `specs <replaceable>D</replaceable> and
+<replaceable>C</replaceable> be the domain and codomain of
+<replaceable>N</replaceable>.
+First, remove from <replaceable>R</replaceable> all
+`declarations of <replaceable>D</replaceable>, and subject
+the result to the effect of <replaceable>N</replaceable>,
+meaning that all name translations of
+<replaceable>N</replaceable> and all extensions with
+`declarations are performed.
+Then add the `declarations of <replaceable>C</replaceable>,
+but without duplications, i.e., as if
+<replaceable>C</replaceable> is imported.
+The result obtained is <replaceable>T</replaceable>.
+</para>
+<para>
+Restriction.
+`Spec <replaceable>C</replaceable> must be
+a ``sub-spec'' of `spec <replaceable>R</replaceable>,
+meaning that each `declaration of
+<replaceable>C</replaceable> is also a
+`declaration of <replaceable>R</replaceable>.
+</para>
+<para>
+Informally,
+<replaceable>T</replaceable>
+is to <replaceable>R</replaceable> as
+<replaceable>C</replaceable> is to
+<replaceable>D</replaceable>.
+</para>
+<para>
+Except when <replaceable>R</replaceable> introduces, next
+to the `sort-names and `op-names it has in common with
+<replaceable>D</replaceable>, new `sort-names or `op-names
+that also occur in <replaceable>C</replaceable>,
+the result `spec <replaceable>T</replaceable>
+is a categorical colimit of this pushout diagram:
+[[
+||              \<replaceable>D\</replaceable> ---------> \<replaceable>R\</replaceable>
+||              |            |
+||              |            |
+||              |            |
+||              v            v
+||              \<replaceable>C\</replaceable> ---------> \<replaceable>T\</replaceable>
+]]
+Although isomorphic to the result that would be obtained 
+by using a `diagram-colimit, <replaceable>T</replaceable>
+is more ``user-oriented'' in two ways:
+the names in <replaceable>T</replaceable> are names from
+<replaceable>C</replaceable>, and axioms of
+<replaceable>D</replaceable> not repeated in
+<replaceable>C</replaceable> are not repeated here either.
+</para>
+<para>
+For example, assume we have:
+[[
+||  A = spec
+||    sort Counter
+||    op reset: Counter
+||    op tick : Counter -> Counter
+||    axiom Effect is
+||      fa (c : Counter) ~(tick c = c)
+||  endspec
+||  
+||  B = spec
+||    def reset = 0
+||    def tick c = c+1
+||  endspec
+||
+||  M = morphism A -> B {Counter +-> Nat}
+||  
+||  AA = spec
+||    import A
+||    sort Interval = {start: Counter, stop: Counter}
+||    op isEmptyInterval? : Interval -> Boolean
+||    def isEmptyInterval? {start = x, stop = y} = (x = y)
+||  endspec
+]]
+Then the result of [[AA[M]]] is the same as that of this `spec:
+[[
+||  spec
+||    import B
+||    sort Interval = {start: Nat, stop: Nat}
+||    op isEmptyInterval? : Interval -> Boolean
+||    def isEmptyInterval? {start = x, stop = y} = (x = y)
+||  endspec
+]]
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Diagram Colimits</title>
+<para>
+<<
+||`diagram-colimit ::= colimit `diagram-term
 >>
 The result of elaborating a `diagram-colimit is the `spec
 which is the apex of the cocone forming the
 colimit in the category of `specs and `spec-morphisms.
-See further the &Specware; User Guide.
+See further the &Specware; Tutorial.
+<!-- TODO: weird names -->
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Obligators</title>
+<para>
+<<
+||`obligator ::= obligations `unit-term
+>>
+Restriction.
+The `unit-term of an `obligator must either be a `spec-term
+or a `morphism-term.
+</para>
+<para>
+The result of elaborating an `obligator is a `spec
+containing the proof obligations engendered by the `spec or morphism
+resulting from elaborating its `unit-term.
+These proof obligations are expressed as `conjectures;
+they can be discharged by proving them, using `proof-terms.
+See further the &Specware; User Manual.
 </para>
 </section>
 </section>
@@ -866,11 +1174,11 @@ See further the &Specware; User Guide.
 <section><title>Morphisms</title>
 <para>
 <<
-||  `morphism-term ::=
-||       `unit-identifier
-||     | `spec-morphism
+||`morphism-term ::=
+||     `unit-identifier
+||   | `spec-morphism
 ||
-||  `spec-morphism ::= morphism `spec-term -> `spec-term '{ `name-map '}
+||`spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
 A morphism is a formal mapping between two closed `specs
 that
@@ -883,66 +1191,103 @@ When used as a `morphism-term, the elaboration of a
 `unit-identifier must yield a spec morphism.
 </para>
 <para>
-Restriction.
+Restriction (``proof obligations'').
 Given `spec-morphism [[morphism \<replaceable>S\</replaceable> ->
-\<replaceable>T\</replaceable> {
+\<replaceable>T\</replaceable> { \<replaceable>M\</replaceable> }]],
+let <replaceable>S'</replaceable> be the result of elaborating
+[[translate \<replaceable>S\</replaceable> by {
 \<replaceable>M\</replaceable> }]],
-let <replaceable>S'</replaceable> be the result of
-elaborating [[translate \<replaceable>S\</replaceable> by {
-<replaceable>M</replaceable> }]], and let
-<replaceable>T'</replaceable> be the result of elaborating
+and let <replaceable>T'</replaceable> be the result of elaborating
 <replaceable>T</replaceable>.
 Then, first, each `sort-name or `op-name introduced in
 <replaceable>S'</replaceable> must also be introduced in
 <replaceable>T'</replaceable>.
 Further, no `sort-name or `op-name originating from a
 library `spec may have been subject to translation.
-Finally, each `axiom in
+Finally, each axiom in
 <replaceable>S'</replaceable> must be a theorem that follows
-from the `axioms of <replaceable>T'</replaceable>.
+from the axioms of <replaceable>T'</replaceable>.
+Collectively, the axioms in <replaceable>S'</replaceable>
+are known as the <emphasis>proof obligations</emphasis>
+engendered by the morphism.
+They are the formal expression of the requirement that the step from
+<replaceable>S'</replaceable> to
+<replaceable>T'</replaceable> is a proper refinement.
 </para>
 </section>
 <!-- ***************************************************************** -->
 <!--
-<section><title>Spec sort and operator visibility</title>
-<para>
-<<
-||  `spec-visibility ::=
-||       hide `name-list in `spec-term
-||     | export `name-list from `spec-term
-||
-||  `name-list ::= '{ `name { , `name }* '}
->>
-</para>
-</section>
+** <section><title>Spec sort and operator visibility</title>
+** <para>
+** <<
+** ||`spec-visibility ::=
+** ||     hide `name-list in `spec-term
+** ||   | export `name-list from `spec-term
+** ||
+** ||`name-list ::= '{ `name { , `name }* '}
+** >>
+** </para>
+** </section>
 -->
 <!-- ***************************************************************** -->
 <section><title>Diagrams</title>
 <para>
 <<
-||  `diagram-term ::=
-||       `unit-identifier
-||     | `diagram-form
+||`diagram-term ::=
+||     `unit-identifier
+||   | `diagram-form
 ||
-||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
+||`diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||
-||  `diagram-elem ::
-||       `diagram-node
-||     | `diagram-edge
+||`diagram-element ::=
+||     `diagram-node
+||   | `diagram-edge
 ||
-||  `diagram-node ::= `name +-> `spec-term
+||`diagram-node ::= `name +-> `spec-term
 ||
-||  `diagram-edge ::= `name : `name -> `name +-> `morphism-term
-||       
+||`diagram-edge ::= `name : `name -> `name +-> `morphism-term
+||     
 >>
 Restriction.
 When used as a `diagram-term, the elaboration of a
 `unit-identifier must yield a diagram.
 </para>
 <para>
+Restriction.
+In a `diagram, the first `name of each `diagram-node and
+`diagram-edge must be unique (i.e., not be used more than
+once in that `diagram).  Further, for each `diagram-edge
+[[\<replaceable>E\</replaceable> :
+\<replaceable>ND\</replaceable> ->
+\<replaceable>NC\</replaceable> +->
+\<replaceable>M\</replaceable>]], there must be `diagram-nodes
+[[\<replaceable>ND\</replaceable> +->
+\<replaceable>D\</replaceable>]] and
+[[\<replaceable>NC\</replaceable> +->
+\<replaceable>C\</replaceable>]] of the `diagram such that,
+after elaboration, [[\<replaceable>M\</replaceable>]] is a
+morphism from [[\<replaceable>D\</replaceable>]] to
+[[\<replaceable>C\</replaceable>]].
+</para>
+<para>
+Sample `diagram:
+[[
+||    diagram {
+||       A          +-> /Coll/Lattice,
+||       B          +-> /Coll/LatticeWithTop,
+||       m : A -> B +-> /Coll/AddTop,
+||       C          +-> Routing#Basis,
+||       i : A -> C +-> morphism /Coll/Lattice ->
+||                                   Routing#Basis {}
+||    }
+]]
+</para>
+<para>
 The result of elaborating a `diagram-form is the categorical
-diagram whose nodes are labelled with `specs and
-whose edges are labelled with `spec-morphisms.
+diagram whose nodes are labeled with the `specs and
+whose edges are labeled with the morphisms that result
+from elaborating the corresponding `spec-terms and
+`morphism-terms.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -950,11 +1295,11 @@ whose edges are labelled with `spec-morphisms.
 ** <section><title>Let and Where Expressions</title>
 ** <para>
 ** <<
-** ||  `let-term ::= let `local-bindings in `unit
+** ||`let-term ::= let `local-bindings in `unit-term
 ** ||
-** ||  `where-term ::= `unit where `local-bindings end
+** ||`where-term ::= `unit-term where `local-bindings end
 ** ||
-** ||  `local-bindings ::= `name = `unit { `name = `unit }*
+** ||`local-bindings ::= `name = `unit-term { `name = `unit-term }*
 ** >>
 ** </para>
 ** </section>
@@ -963,10 +1308,60 @@ whose edges are labelled with `spec-morphisms.
 <section><title>Generate Terms</title>
 <para>
 <<
-||  `generate-term :: generate `string `spec-term [ in `string ]
+||`target-code-term ::=
+||      generate `target-language-name `spec-term [ in `string-literal ]
+||
+||`target-language-name ::= lisp
 >>
-The elaboration of a `generate-term for a correct `spec-term
-generates code; see further the &Specware; User Guide.
+Sample `target-code-term:
+[[
+||    generate lisp /Vessel#Contour
+||                      in "C:/Projects/Vessel/Contour.lisp"
+]]
+The elaboration of a `target-code-term for a correct `spec-term
+generates code in the language suggested by the
+`target-language-name (currently only Common Lisp); see further the
+&Specware; User Manual.
+</para>
+</section>
+<!-- ***************************************************************** -->
+<section><title>Proof Terms</title>
+<para>
+<<
+||`proof-term ::=
+||      prove `claim-name in `spec-term
+||                      [ with `prover-name ]
+||                      [ using '{ `claim-list '} ]
+||                      [ options `prover-options ]
+||
+||`prover-name ::= snark
+||
+||`claim-list ::= `claim-name { , `claim-name }*
+||
+||`prover-options ::= `string-literal
+>>
+</para>
+<para>
+Restriction.
+The `claim-names must occur as `claim-names in the `spec
+that results from elaborating the `spec-term.
+</para>
+<para>
+Sample `proof-term:
+[[
+||    prove Effect in translate A by {Counter +-> Nat}
+||                         options "(use-paramodulation t)"
+]]
+</para>
+<para>
+The elaboration of a `proof-term invokes the prover suggested
+by the `prover-name (currently only SNARK).
+The property to be proved is the `claim of the first
+`claim-name; the `claim-list lists the hypotheses (assumptions)
+that may be used in the proof.
+The `prover-options are prover-specific and are not
+further described here.
+For details, see the &Specware; User Manual.
 </para>
 </section>
 </section>
@@ -987,32 +1382,124 @@ generates code; see further the &Specware; User Guide.
 ||
 ||`equals ::= is | =
 >>
-Example `declarations:
+Sample `declarations:
 [[
 ||    import Lookup
 ||    sort Key
 ||    op present : Database * Key -> Boolean
 ||    sort Key = String
 ||    def present(db, k) = embed? Some (lookup (db, k))
-||    axiom norm-idempotent is fa(x) norm (norm x) = norm x
+||    axiom norm_idempotent is fa(x) norm (norm x) = norm x
 ]]
 </para>
 <!-- ***************************************************************** -->
 <section id="Import-declarations"><title>Import-declarations</title>
+<!--====================================================================-->
+<para>
+A `spec may contain one or more `import-declarations.
+On elaboration, these are ``expanded''.
+The effect is as if the bodies of these imported `specs (themselves
+in elaborated form, which means that all `import-declarations
+have been expanded, all translations performed and all
+shorthand employs of names have been resolved to full names,
+after which only declarations or definitions of sorts, `ops
+and axioms are left)
+is inserted in place in the receiving `spec.
+</para>
+
+<para>
+For example, the result of
+
+[[
+||  spec
+||    import spec
+||             sort A.Z
+||             op b : Nat -> Z
+||           end
+||    sort A.Z = String
+||    def b = toString
+||  endspec
+]]
+
+is this ``expanded'' `spec:
+
+[[
+||  spec
+||    sort A.Z
+||    op b : Nat -> A.Z
+||    sort A.Z = String
+||    def b = toString
+||  endspec
+]]
+</para>
+
+<para>
+For this to be correct, the imported `specs must be correct
+by themselves; in addition, the result of expanding them in
+place must result in a correct `spec.
+</para>
+
+<para>
+There are a few restrictions, which are meant to catch
+unintentional naming mistakes.
+First, if two different imported `specs each introduce a
+sort or `op
+with the same (full) name, the introductions must be
+identical declarations or definitions, or one may be a
+declaration and the other a ``compatible'' definition.
+For example, given
+
+[[
+||  S1 = spec op e : Int end
+||  S2 = spec op e : Char end
+||  S3 = spec def e = 0 end
+]]
+
+the `specs [[S1]] and [[S3]] can be imported together, but
+all other combinations of two or more co-imported `specs
+are incorrect.
+This restriction is in fact a special case of the general
+requirement that import expansion must result in a correct
+`spec.
+
+Secondly, a `sort-name introduced in any of the imported
+`specs cannot be re-introduced in the receiving `spec except
+for the case of an ``imported'' declaration together with a
+definition in the receiving `spec.
+Similarly for `op-names, with the addition that an
+`op-definition in the receiving `spec
+must be compatible with an `op-declaration for the same name
+in an imported `spec.
+The latter is again a special case of the general requirement that
+import expansion must result in a correct `spec.
+</para>
+
+<para>
+What is specifically excluded by the above, is giving a
+definition of a sort or `op in some `spec, import it, and then
+redefining or declaring that sort or `op with the same full
+name in the receiving `spec.
+</para>
+
+<!--====================================================================-->
 <para>
 <<
-||`import-declaration ::= import `spec-name
+||`import-declaration ::= import `spec-term
 >>
-Example `import-declarations
+Sample `import-declarations
 [[
 ||    import Lookup
 ]]
 </para>
 <!-- ================================================================= -->
 <para>
-An `import-declaration has the effect as
-if the `declarations of the imported `spec are expanded in
-place.
+An `import-declaration is contained in some `spec-form, and 
+to elaborate that `spec-form the `spec-term of
+the `import-declaration is elaborated first, giving some
+`spec <replaceable>S</replaceable>.
+The `import-declaration has then the effect as if the
+`declarations of the imported `spec
+<replaceable>S</replaceable> are expanded in place.
 This cascades: if `spec <replaceable>A</replaceable> imports
 <replaceable>B</replaceable>, and `spec
 <replaceable>B</replaceable> imports
@@ -1020,20 +1507,25 @@ This cascades: if `spec <replaceable>A</replaceable> imports
 <replaceable>A</replaceable> also imports
 <replaceable>C</replaceable>.
 An important difference with earlier versions of &Specware;
+than version 4
 is that multiple imports of the same `spec have the same
 effect as a single import.
 </para>
 <!-- ================================================================= -->
 <para>
-If `spec <replaceable>A</replaceable> imports
+If `spec <replaceable>A</replaceable> is imported by
 <replaceable>B</replaceable>, each model of
-<replaceable>A</replaceable> is necessarily a model of
-<replaceable>B</replaceable> (after <quote>forgetting</quote>
-any `names newly introduced by <replaceable>A</replaceable>).
-So <replaceable>A</replaceable> is then a refinement of
+<replaceable>B</replaceable> is necessarily a model of
+<replaceable>A</replaceable> (after <quote>forgetting</quote>
+any `names newly introduced by <replaceable>B</replaceable>).
+So <replaceable>A</replaceable> is then refined by
 <replaceable>B</replaceable>, and the morphism from
-<replaceable>B</replaceable> to <replaceable>A</replaceable> is
+<replaceable>A</replaceable> to <replaceable>B</replaceable> is
 known as the <quote>import morphism</quote>.
+As it does not involve translation of `sort-names or
+`op-names,
+it can be denoted by [[morphism \<replaceable>A\</replaceable>
+-> \<replaceable>B\</replaceable> {}]].
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -1055,7 +1547,7 @@ be a different `name.
 </para>
 <!-- ================================================================= -->
 <para>
-Example `sort-declarations:
+Sample `sort-declarations:
 [[
 ||    sort Date
 ||    sort Array a
@@ -1094,7 +1586,7 @@ different, as long as the model respects sorting.
 <<
 ||`sort-definition ::= sort `sort-name [ `formal-sort-parameters ] `equals `sort
 >>
-Example `sort-definitions:
+Sample `sort-definitions:
 [[
 ||    sort Date = {year : Nat, month : Nat, day : Nat}
 ||    sort Array a = List a
@@ -1180,10 +1672,10 @@ fixpoint of a recursive domain equation.
 ||
 ||`sort-scheme ::= [ `sort-variable-binder ] `sort
 ||
-||`sort-variable-binder ::= fa `local-sort-variable-list
+||`sort-variable-binder ::= fa ( `local-sort-variable-list )
 ||
 >>
-Example `op-declarations:
+Sample `op-declarations:
 [[
 ||    op usage : String
 ||
@@ -1260,10 +1752,8 @@ Given a sort <replaceable>S</replaceable>, the sort
 super(<replaceable>S</replaceable>) is defined to be
 <replaceable>S</replaceable> if <replaceable>S</replaceable>
 is not a subsort.
-For a subsort [[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]],
-super([[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]]) is the sort
+For a subsort [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]],
+super([[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]]) is the sort
 super(<replaceable>S</replaceable>).
 For example, super([[(Nat | even)]]) is [[Integer]].
 </para>
@@ -1272,17 +1762,14 @@ For example, super([[(Nat | even)]]) is [[Integer]].
 The source sorts of an `op are the set of sorts determined
 as follows.
 If the sort of the `op is some monomorphic function sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>, the source sorts are the
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source sorts are the
 singleton set {super(<replaceable>S</replaceable>)}.
 If the sort of the `op is a polymorphic function sort
 corresponding to some `sort-scheme
-[[fa(]]<replaceable>V</replaceable>[[)]] <replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>, the source sorts are the
+[[fa(]]<replaceable>V</replaceable>[[) ]]<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, the source sorts are the
 set of all sorts super(<replaceable>S'</replaceable>)
 for the sorts
-<replaceable>S'</replaceable> [[->]]
-<replaceable>T'</replaceable> of the indexed family of
+<replaceable>S'</replaceable>[[ -> ]]<replaceable>T'</replaceable> of the indexed family of
 values,
 obtainable by the substitution of sorts for
 the `local-sort-variables in
@@ -1305,9 +1792,7 @@ the singleton set {[[()]]}, containing just the unit sort.
 <!-- ================================================================= -->
 <para>
 Only binary `ops (those having some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>T</replaceable> [[->]]
-<replaceable>U</replaceable>)
+<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[ -> ]]<replaceable>U</replaceable>)
 may be declared with a `fixity.
 When declared with a `fixity, the `op-name may be used in infix
 notation, and then it is called an <emphasis>infix operator</emphasis>.
@@ -1317,7 +1802,7 @@ If the `associativity is [[infixl]], the infix operator is
 called <emphasis>left-associative</emphasis>; otherwise,
 if the `associativity is [[infixr]], it is
 called <emphasis>right-associative</emphasis>.
-If the `priority is [[priority]] <replaceable>N</replaceable>,
+If the `priority is [[priority ]]<replaceable>N</replaceable>,
 the operator is said to have
 <emphasis>priority</emphasis> <replaceable>N</replaceable>.
 The `nat-literal <replaceable>N</replaceable> stands for a
@@ -1374,7 +1859,7 @@ operator.
 </para>
 <para>
      ====================== TEY TON ================================== -->
-Example `op-definitions:
+Sample `op-definitions:
 [[
 ||    def usage = "Usage: Lookup key [database]"
 ||
@@ -1402,9 +1887,7 @@ The ambiguity is resolved in favor of the reading
 as a `formal-infix-application, and then the
 `formal-infix-application <replaceable>M N P</replaceable>
 is equivalent to the `formal-prefix-application
-<replaceable>N</replaceable>
-[[(]]<replaceable>M</replaceable>[[,]]
-<replaceable>P</replaceable>[[)]].
+<replaceable>N</replaceable>[[ (]]<replaceable>M</replaceable>[[, ]]<replaceable>P</replaceable>[[)]].
 For example, for infix operator [[o]],
 [[
 ||    def f o g = fn x -> f(g x)
@@ -1589,38 +2072,29 @@ Otherwise, the `spec is incorrect.
 <section id="Claim-definitions"><title>Claim-definitions</title>
 <para>
 <<
-||`claim-definition ::= `claim-kind `label `equals `claim
+||`claim-definition ::= `claim-kind `claim-name `equals `claim
 ||
 ||`claim-kind ::= axiom | theorem | conjecture
 ||
-||`label ::= `any-text-up-to-equals
+||`claim-name ::= `name
 ||
 ||`claim ::= [ `sort-quantification ] `expression
 ||
 ||`sort-quantification ::= sort `sort-variable-binder
 >>
-Example `claim-definitions:
+Sample `claim-definitions:
 [[
-||    axiom norm-idempotent is
+||    axiom norm_idempotent is
 ||      norm o norm = norm
 ||
-||    theorem o-assoc is
+||    theorem o_assoc is
 ||      sort fa(a,b,c,d) fa(f : c -> d, g : b -> c, h : a -> b)
 ||        f o (g o h) = (f o g) o h
 ||
-||    conjecture pivot<->hold is
+||    conjecture pivot_hold is
 ||      let p = pivot hold in
 ||        fa (n : {n : Nat | n < p}) ~(hold n = hold p)
 ]]
-Restriction.
-The `label must be a <emphasis>non-empty</emphasis>
-sequence of `symbols, none of which is
-a presentation of `equals (i.e., [[is]] or [[=]]).
-The rule about whitespace being required to separate `symbols
-is relaxed <emphasis>inside</emphasis> `labels, but the the
-first and last `symbols of the `label must be properly
-separated from the `claim-kind preceding and `equals following
-the `label.
 </para>
 <!-- ================================================================= -->
 <para>
@@ -1651,7 +2125,7 @@ Like theorems, they can be used by provers.
 </para>
 <!-- ================================================================= -->
 <para>
-The &Specware; system passes on the `label of the
+The &Specware; system passes on the `claim-name of the
 `claim-definition with the `claim for purposes of
 identification.
 Both may be transformed to fit the requirements of the prover,
@@ -1663,7 +2137,7 @@ to dealing with them.
 <!-- ================================================================= -->
 <para>
 Remark.
-It is a common mistake to omit the part <quote>`label
+It is a common mistake to omit the part <quote>`claim-name
 `equals</quote> from a `claim-definition.
 A defensive style against this mistake is to have the `claim always
 start on a new text line.
@@ -1707,7 +2181,7 @@ need for parenthesizing in order to avoid grammatical ambiguities.)
 </para>
 <!-- ================================================================= -->
 <para>
-Example `sorts:
+Sample `sorts:
 [[
 ||    | Point XYpos | Line XYpos * XYpos
 ||    List String * Nat -> Option String
@@ -1770,7 +2244,7 @@ Textually, it has a scope just like a plain `local-variable.
 ||`constructor ::= `name
 ||
 >>
-Example `sort-sum:
+Sample `sort-sum:
 [[
 ||    | Point XYpos | Line XYpos * XYpos
 ]]
@@ -1941,7 +2415,7 @@ second of which is a function sort:
 ||`arrow-source ::= `sort-sum | `slack-sort
 ||
 >>
-Example `sort-arrow:
+Sample `sort-arrow:
 [[
 ||    (a -> b) * b -> List a -> List b
 ]]
@@ -1950,12 +2424,12 @@ In this example, the `arrow-source is [[(a -> b) * b]], and the (target)
 </para>
 <!-- ================================================================= -->
 <para>
-The <emphasis>function sort</emphasis> <replaceable>S</replaceable> [[->]] <replaceable>T</replaceable> is inhabited by
+The <emphasis>function sort</emphasis> <replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> is inhabited by
 precisely all <emphasis>partial or total</emphasis> functions from
 <replaceable>S</replaceable>
 to <replaceable>T</replaceable>.
 That is, function <replaceable>f</replaceable> has sort
-<replaceable>S</replaceable> [[->]] <replaceable>T</replaceable> if, and only if,
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> if, and only if,
 for each value <replaceable>x</replaceable> of sort
 <replaceable>S</replaceable> such that the value of
 <replaceable>f</replaceable> <replaceable>x</replaceable> is
@@ -1980,7 +2454,7 @@ semantics of &Metaslang;.
 ||`sort-product ::= `tight-sort * `tight-sort { * `tight-sort }*
 ||
 >>
-Example `sort-product:
+Sample `sort-product:
 [[
 ||    (a -> b) * b * List a
 ]]
@@ -1996,23 +2470,16 @@ The ordering of the component sorts is significant: unless
 <replaceable>S</replaceable>
 and <replaceable>T</replaceable> are the same sort,
 the product sort
-<replaceable>S</replaceable> [[*]] <replaceable>T</replaceable> is different from the sort
-<replaceable>T</replaceable> [[*]] <replaceable>S</replaceable>.
+<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable> is different from the sort
+<replaceable>T</replaceable>[[ * ]]<replaceable>S</replaceable>.
 Further, the three sorts
-[[(]]<replaceable>S</replaceable> [[*]]
-<replaceable>T</replaceable>[[)]] [[*]]
-<replaceable>U</replaceable>,
-<replaceable>S</replaceable>
-[[*]] [[(]]<replaceable>T</replaceable> [[*]]
-<replaceable>U</replaceable>[[)]] and
-<replaceable>S</replaceable> [[*]]
-<replaceable>T</replaceable> [[*]]
-<replaceable>U</replaceable> are all different; the first
+[[(]]<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[)]] [[* ]]<replaceable>U</replaceable>,
+<replaceable>S</replaceable>[[ *]] [[(]]<replaceable>T</replaceable>[[ * ]]<replaceable>U</replaceable>[[)]] and
+<replaceable>S</replaceable>[[ * ]]<replaceable>T</replaceable>[[ * ]]<replaceable>U</replaceable> are all different; the first
 two have two component sorts, while the last one has three.
 The inhabitants of the product sort
-<replaceable>S</replaceable><subscript>1</subscript> [[*]]
-<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
-[[*]] <replaceable>S<subscript>n</subscript></replaceable>
+<replaceable>S</replaceable><subscript>1</subscript> [[* ]]<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
+[[* ]]<replaceable>S<subscript>n</subscript></replaceable>
 are precisely all <replaceable>n</replaceable>-tuples
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
@@ -2032,12 +2499,12 @@ Values of a product sort can be constructed with
 <<
 ||`sort-instantiation ::= `sort-name `actual-sort-parameters
 ||
-||`actual-sort-parameters ::= `closed-sort | `proper-sort-list
+||`actual-sort-parameters ::= `closed-sort | ( `proper-sort-list )
 ||
-||`proper-sort-list ::= ( `sort , `sort { , `sort }* )
+||`proper-sort-list ::= `sort , `sort { , `sort }*
 ||
 >>
-Example `sort-instantiation:
+Sample `sort-instantiation:
 [[
 ||    Map (Nat, Boolean)
 ]]
@@ -2062,7 +2529,7 @@ in the indexed family of sorts for the `sort-name of the
 <<
 ||`sort-name ::= `qualifiable-name
 >>
-Example `sort-names:
+Sample `sort-names:
 [[
 ||    Key
 ||    Calendar.Date
@@ -2073,7 +2540,7 @@ there is a `sort-declaration and/or
 `sort-definition for it in the current `spec or in some `spec
 that is imported (directly or indirectly) in the current `spec.
 If there is a unique `qualified-name for a given
-`unqualified-ending, the qualification may be omitted for a
+unqualified ending, the qualification may be omitted for a
 `sort-name used as a `sort.
 </para>
 <!-- ================================================================= -->
@@ -2097,7 +2564,7 @@ original assignment.)
 ||`field-name ::= `name
 ||
 >>
-Example `sort-record:
+Sample `sort-record:
 [[
 ||    {center : XYpos, radius : Length}
 ]]
@@ -2129,16 +2596,10 @@ Then each field of a record sort with
 <replaceable>n</replaceable>.
 The inhabitants of the record sort
 [[{]]<replaceable>F</replaceable><subscript>1</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>1</subscript>[[,]]
-<replaceable>F</replaceable><subscript>2</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>2</subscript>[[,]]
+[[: ]]<replaceable>S</replaceable><subscript>1</subscript>[[, ]]<replaceable>F</replaceable><subscript>2</subscript>
+[[: ]]<replaceable>S</replaceable><subscript>2</subscript>[[,]]
 ...
-[[,]]
-<replaceable>F<subscript>n</subscript></replaceable>
-[[:]]
-<replaceable>S<subscript>n</subscript></replaceable>[[}]]
+[[, ]]<replaceable>F<subscript>n</subscript></replaceable>[[ : ]]<replaceable>S<subscript>n</subscript></replaceable>[[}]]
 are precisely all <replaceable>n</replaceable>-tuples
 (<replaceable>v<subscript>1</subscript></replaceable>,
 <replaceable>v<subscript>2</subscript></replaceable>, ... ,
@@ -2151,7 +2612,7 @@ The `field-names of that record sort are the `field-names
 <replaceable>F</replaceable><subscript>1</subscript>,
 ... ,
 <replaceable>F<subscript>n</subscript></replaceable>,
-and, given the lexicographical ordering,
+and, given the lexicographic ordering,
 `field-name 
 <replaceable>F<subscript>i</subscript></replaceable>
 <emphasis>selects</emphasis>
@@ -2184,32 +2645,29 @@ a product and a record sort.
 ||`sort-restriction ::= ( `slack-sort '| `expression )
 ||
 >>
-Example `sort-restriction:
+Sample `sort-restriction:
 [[
 ||    (Nat | even)
 ]]
 Restriction.
 In a `sort-restriction
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]], the `expression
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]], the `expression
 <replaceable>P</replaceable> must be a predicate on
 the sort
 <replaceable>S</replaceable>, that is,
 <replaceable>P</replaceable> must be a function of sort
-<replaceable>S</replaceable> [[-> Boolean]].
+<replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!-- ================================================================= -->
 <para>
 Note that the parentheses in
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] are mandatory.
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] are mandatory.
 </para>
 <!-- ================================================================= -->
 <para>
 The inhabitants of
 `sort-restriction
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] are precisely the
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] are precisely the
 inhabitants of
 sort
 <replaceable>S</replaceable> that satisfy the
@@ -2226,34 +2684,45 @@ If
 <replaceable>P1</replaceable> and
 <replaceable>P2</replaceable> are the same 
 function, then
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P1</replaceable>[[)]] and
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P2</replaceable>[[)]] are equivalent, that is,
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P1</replaceable>[[)]] and
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P2</replaceable>[[)]] are equivalent, that is,
 they denote the same sort.
 </para>
 <!-- ================================================================= -->
 <para>
 The sort 
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] is called a
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] is called a
 <emphasis>subsort</emphasis> of
 <emphasis>supersort</emphasis> <replaceable>S</replaceable>.
 Values can be shuttled between a subsort and its supersort
 and vice versa with
-`relaxators and `restrictors; see also <link
-linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
+`relaxators and `restrictors; see also
+<link linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
 Metaslang does not require the explicit use of a `relaxator to relax
 an `expression from a subsort to its supersort if the
 context requires the latter.
-Implicit relaxation will take place when needed,
+Implicit relaxation will take place when needed.
 For example, in the `expression [[~1]] the `nat-literal [[1]]
 of sort [[Nat]] is implicitly relaxed to sort [[Integer]] to
 accommodate the unary negation operator [[~]], which has sort
 [[Integer -> Integer]].
+</para>
+<!--====================================================================-->
+<para>
+Likewise, Metaslang does not require the explicit use of a `restrictor
+to restrict
+an `expression from a sort to a subsort if the
+context requires the latter.
+Implicit restriction will take place when needed.
+For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
+of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
+a subsort of [[Nat]], to accommodate the division operator
+[[div]], whose second argument has sort [[PosNat]].
+But note that implicit restriction engenders the same proof
+obligation as results when using an explicit `restrictor.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -2263,15 +2732,13 @@ accommodate the unary negation operator [[~]], which has sort
 ||`sort-comprehension ::= '{ `annotated-pattern '| `expression '}
 ||
 >>
-Example `sort-comprehension:
+Sample `sort-comprehension:
 [[
 ||    {n : Nat | even n}
 ]]
 Restriction.
 In a `sort-comprehension
-[[{]]<replaceable>P</replaceable> [[:]]
-<replaceable>S</replaceable> [[|]]
-<replaceable>E</replaceable>[[}]],
+[[{]]<replaceable>P</replaceable>[[ : ]]<replaceable>S</replaceable>[[ | ]]<replaceable>E</replaceable>[[}]],
 the `expression
 <replaceable>E</replaceable> must
 have sort [[Boolean]].
@@ -2283,13 +2750,10 @@ have sort [[Boolean]].
 to the common mathematical notation for set comprehensions.
 The meaning of
 `sort-comprehension
-[[{]]<replaceable>P</replaceable> [[:]]
-<replaceable>S</replaceable> [[|]]
-<replaceable>E</replaceable>[[}]]
+[[{]]<replaceable>P</replaceable>[[ : ]]<replaceable>S</replaceable>[[ | ]]<replaceable>E</replaceable>[[}]]
 is the same as that of the `sort-restriction
-[[(]]<replaceable>S</replaceable> [[|
-fn]] <replaceable>P</replaceable> [[->]]
-<replaceable>E</replaceable>[[)]].
+[[(]]<replaceable>S</replaceable>[[ |
+fn ]]<replaceable>P</replaceable>[[ -> ]]<replaceable>E</replaceable>[[)]].
 So the meaning of the example `sort-comprehension above is
 [[(Nat | fn n -> even n)]].
 </para>
@@ -2298,19 +2762,17 @@ So the meaning of the example `sort-comprehension above is
 <section id="Sort-quotients"><title>Sort-quotients</title>
 <para>
 <<
-||`sort-quotient ::= `closed-sort / `expression
+||`sort-quotient ::= `closed-sort / `closed-expression
 >>
-Example `sort-quotient:
+Sample `sort-quotient:
 [[
 ||     Nat / (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 Restriction.
 In a `sort-quotient
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable>, the `expression
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>, the `expression
 <replaceable>Q</replaceable> must be a (binary) predicate on
-the sort <replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> that is an equivalence relation,
+the sort <replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable> that is an equivalence relation,
 as explained below.
 </para>
 <!-- ================================================================= -->
@@ -2361,7 +2823,7 @@ These equivalence classes will be called
 <para>
 The inhabitants of the <emphasis>quotient
 sort</emphasis>
-<replaceable>S</replaceable> [[/]] <replaceable>Q</replaceable>
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>
 are precisely the <replaceable>Q</replaceable>-equivalence classes
 into which the inhabitants of
 <replaceable>S</replaceable> are partitioned by
@@ -2413,7 +2875,7 @@ grammatical ambiguities.)
 </para>
 <!--====================================================================-->
 <para>
-Example `expressions:
+Sample `expressions:
 [[
 ||    fn (s : String) -> s ^ "."
 ||    case z of {re = x, im = y} -> {re = x, im = ~y}
@@ -2485,7 +2947,7 @@ assigned to it in the environment.
 ||`lambda-form ::= fn `match
 ||
 >>
-Example `lambda-form:
+Sample `lambda-form:
 [[
 ||    fn (s : String) -> s ^ "."
 ]]
@@ -2495,14 +2957,14 @@ below is not a total function, the context must enforce
 that the function can not be applied to values for which it
 is undefined.
 Otherwise, the `spec is incorrect.
-The &Specware; system does not attempt to detect this condition.
+&SpecwareV; does not attempt to generate proof obligations for
+establishing this.
 </para>
 <!-- ================================================================= -->
 <para>
 The sort of a `lambda-form is that of its `match.
 The meaning of a given `lambda-form of sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable> is
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> is
 the function <replaceable>f</replaceable> mapping each
 inhabitant <replaceable>x</replaceable> of
 <replaceable>S</replaceable> to a value
@@ -2532,7 +2994,7 @@ total, but undefined for <replaceable>x</replaceable>.
 <<
 ||`case-expression ::= case `expression of `match
 >>
-Example `case-expressions:
+Sample `case-expressions:
 [[
 ||    case z of {re = x, im = y} -> {re = x, im = ~y}
 ||
@@ -2541,10 +3003,9 @@ Example `case-expressions:
 ||       | Push {top = _, pop = rest} -> hasBottom? rest
 ]]
 The value of a `case-expression
-[[case]] <replaceable>E</replaceable> [[of]]
-<replaceable>M</replaceable> is the same as that of
+[[case ]]<replaceable>E</replaceable>[[ of ]]<replaceable>M</replaceable> is the same as that of
 the `application
-[[(fn]] <replaceable>M</replaceable>[[)
+[[(fn ]]<replaceable>M</replaceable>[[)
 (]]<replaceable>E</replaceable>[[)]].
 </para>
 </section>
@@ -2563,21 +3024,18 @@ the `application
 ||`rec-let-binding ::=
 ||    def `name `formal-parameter-sequence [ : `sort ] `equals `expression
 ||
-||`formal-parameter-sequence ::= { `formal-parameter }* `formal-parameter
+||`formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
-Example `let-expressions:
+Sample `let-expressions:
 [[
 ||    let x = x + e in f(x, x)
 ||    let def f x = x + e in f (f x)
 ]]
 In the case of a `recless-let-binding (recless =
 recursion-less), the value of the `let-expression
-[[let]] <replaceable>P</replaceable> [[=]]
-<replaceable>A</replaceable> [[in]]
-<replaceable>E</replaceable> is the same as that of the
+[[let ]]<replaceable>P</replaceable>[[ = ]]<replaceable>A</replaceable>[[ in ]]<replaceable>E</replaceable> is the same as that of the
 `application
-[[(fn]] <replaceable>P</replaceable> [[->]]
-<replaceable>E</replaceable>[[)]]
+[[(fn ]]<replaceable>P</replaceable>[[ -> ]]<replaceable>E</replaceable>[[)]]
 [[(]]<replaceable>A</replaceable>[[)]].
 For the first example above, this amounts to [[f(x + e, x + e)]].
 Note that [[x = x + e]] is not interpreted as a recursive
@@ -2630,16 +3088,14 @@ changed to:
 ||`if-expression ::= if `expression then `expression else `expression
 ||
 >>
-Example `if-expression:
+Sample `if-expression:
 [[
 ||    if x <= y then x else y
 ]]
 The value of an `if-expression
-[[if]] <replaceable>B</replaceable> [[then]]
-<replaceable>T</replaceable> [[else]]
-<replaceable>F</replaceable> is the same as that of the
+[[if ]]<replaceable>B</replaceable>[[ then ]]<replaceable>T</replaceable>[[ else ]]<replaceable>F</replaceable> is the same as that of the
 `case-expression
-[[case]] <replaceable>B</replaceable> [[of true ->
+[[case ]]<replaceable>B</replaceable>[[ of true ->
 (]]<replaceable>T</replaceable>[[) | false ->
 (]]<replaceable>F</replaceable>[[)]].
 </para>
@@ -2652,14 +3108,14 @@ The value of an `if-expression
 ||
 ||`quantifier ::= fa | ex
 ||
-||`local-variable-list ::= `annotatable-variable { , `annotatable-variable }*
+||`local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||
-||`annotatable-variable ::= `local-variable [ : `sort ]
+||`annotable-variable ::= `local-variable [ : `sort ]
 ||
 ||`local-variable ::= `name
 ||
 >>
-Example `quantifications:
+Sample `quantifications:
 [[
 ||    fa(x) norm (norm x) = norm x
 ||    ex(e : M) fa(x : M) x <*> e = x & e <*> x = x
@@ -2675,7 +3131,8 @@ be a different `name.
 <para>
 `Quantifications are non-constructive, even when the domain
 sort is finitely enumerable.
-The main use is in `claims.
+The main uses are in `sort-restrictions and `sort-comprehensions,
+and `claims.
 The sort of a `quantification is [[Boolean]].
 There are two kinds of quantifications:
 [[fa]]-`quantifications (or <quote>universal
@@ -2686,14 +3143,14 @@ quantifications</quote>; ex = there exists).
 <!-- ================================================================= -->
 <para>
 The value of a [[fa]]-`quantification
-[[fa]] <replaceable>V</replaceable>
+[[fa ]]<replaceable>V</replaceable>
 <replaceable>E</replaceable>, in which
 <replaceable>V</replaceable> is a `local-variable-list and
 <replaceable>E</replaceable> is an `expression,
 is determined as
 follows.
 Let <replaceable>M</replaceable> be the `match
-<replaceable>V</replaceable> [[->]] <replaceable>E</replaceable>.
+<replaceable>V</replaceable>[[ -> ]]<replaceable>E</replaceable>.
 If <replaceable>M</replaceable> has return value [[true]] for each
 value <replaceable>x</replaceable> in its domain (note that
 rejection cannot happen here), the value of the
@@ -2702,11 +3159,10 @@ rejection cannot happen here), the value of the
 <!-- ================================================================= -->
 <para>
 The value of an [[ex]]-`quantification
-[[ex]] <replaceable>V</replaceable>
+[[ex ]]<replaceable>V</replaceable>
 <replaceable>E</replaceable> is the same as that of the
 [[fa]]-`quantification
-[[~(fa]] <replaceable>V</replaceable>
-[[~(]]<replaceable>E</replaceable>[[))]].
+[[~(fa ]]<replaceable>V</replaceable>[[ ~(]]<replaceable>E</replaceable>[[))]].
 </para>
 <!-- ================================================================= -->
 <para>
@@ -2729,7 +3185,7 @@ So [[fa x (x = x)]], for example, is ungrammatical.
 ||
 ||`infix-application ::= `actual-parameter `op-name `actual-parameter
 >>
-Example `applications:
+Sample `applications:
 [[
 ||    f (x, x)
 ||    f x (g y)
@@ -2746,9 +3202,7 @@ The ambiguity is resolved in favor of the reading
 as an `infix-application, and then the
 `infix-application <replaceable>P N Q</replaceable>
 is equivalent to the `prefix-application
-<replaceable>N</replaceable>
-[[(]]<replaceable>P</replaceable>[[,]]
-<replaceable>Q</replaceable>[[)]].
+<replaceable>N</replaceable>[[ (]]<replaceable>P</replaceable>[[, ]]<replaceable>Q</replaceable>[[)]].
 For example, in the second example `application
 [[f x (g y)]] given above,
 if [[x]] is an infix operator,
@@ -2776,20 +3230,20 @@ An `infix-application
 <replaceable>M</replaceable> and
 <replaceable>N</replaceable> are infix operators,
 is interpreted as either
-[[(]]<replaceable>P M Q</replaceable>[[)]] <replaceable>N
+[[(]]<replaceable>P M Q</replaceable>[[) ]]<replaceable>N
 R</replaceable> or
-<replaceable>P M</replaceable> [[(]]<replaceable>Q N
+<replaceable>P M</replaceable>[[ (]]<replaceable>Q N
 R</replaceable>[[)]].
 The choice is made as follows.
 If <replaceable>M</replaceable> has higher priority than
 <replaceable>N</replaceable>, or the priorities are the same
 but <replaceable>M</replaceable> is left-associative,
 the interpretation is
-[[(]]<replaceable>P M Q</replaceable>[[)]] <replaceable>N
+[[(]]<replaceable>P M Q</replaceable>[[) ]]<replaceable>N
 R</replaceable>.
 In all other cases
 the interpretation is
-<replaceable>P M</replaceable> [[(]]<replaceable>Q N
+<replaceable>P M</replaceable>[[ (]]<replaceable>Q N
 R</replaceable>[[)]].
 For example, given
 [[
@@ -2817,7 +3271,7 @@ In an `application <replaceable>H</replaceable>
 and <replaceable>P</replaceable> an `actual-parameter,
 the sort of <replaceable>P</replaceable>
 must be some function sort
-<replaceable>S</replaceable> [[->]] <replaceable>T</replaceable>, and then
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>, and then
 <replaceable>H</replaceable> must have the domain sort
 <replaceable>S</replaceable>.
 The sort of the whole `application is then
@@ -2844,29 +3298,26 @@ equivalently as
 >>
 Restriction.
 In an `annotated-expression
-<replaceable>E</replaceable> [[:]]
-<replaceable>S</replaceable>, the `expression
+<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable>, the `expression
 <replaceable>E</replaceable> must have sort
 <replaceable>S</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
-Example `annotated-expression:
+Sample `annotated-expression:
 [[
 ||    [] : List Arg
 ||    Positive : Sign
 ]]
 The value of an `annotated-expression
-<replaceable>E</replaceable> [[:]]
-<replaceable>S</replaceable> is the value of
+<replaceable>E</replaceable>[[ : ]]<replaceable>S</replaceable> is the value of
 <replaceable>E</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
 The sort of some `expressions is polymorphic.  For example,
 for any sort <replaceable>T</replaceable>,
-[[[]]] denotes the empty list of sort [[List]]
-<replaceable>T</replaceable>.
+[[[]]] denotes the empty list of sort [[List ]]<replaceable>T</replaceable>.
 Likewise, `constructors of parameterized sum sorts can be
 polymorphic, as the constructor [[None]] of
 [[
@@ -2887,24 +3338,22 @@ increase clarity.
 <<
 ||`op-name ::= `qualifiable-name
 >>
-Example `op-names:
+Sample `op-names:
 [[
 ||    length
 ||    >=
 ||    DB_LOOKUP.Lookup
 ]]
 Restriction.
-An `op-name may only be used if
-there is an `op-declaration and/or
-`op-definition for it in the current `spec or in some `spec
-that is imported (directly or indirectly) in the current `spec.
-If there is a unique `qualified-name for a given
-`unqualified-ending that is sort-correct in the context,
-the qualification may be omitted for an
-`op-name used as an `expression.
-So overloaded `ops
-may only be used as such when their sort can be
-disambiguated in the context.
+An `op-name may only be used if there is an `op-declaration
+and/or `op-definition for it in the current `spec or in some
+`spec that is imported (directly or indirectly) in the current
+`spec.
+If there is a unique `qualified-name for a given unqualified
+ending that is sort-correct in the context, the qualification
+may be omitted for an `op-name used as an `expression.
+So overloaded `ops may only be used as such when their sort can
+be disambiguated in the context.
 </para>
 <!-- ================================================================= -->
 <!-- ====================== NOT YET ==================================
@@ -2954,7 +3403,7 @@ original assignment.)
 ||    | `string-literal
 ||
 >>
-Example `literals:
+Sample `literals:
 [[
 ||    true
 ||    3260
@@ -2989,7 +3438,7 @@ negates an integer, or use the built-in infix operator
 ||`boolean-literal ::= true | false
 ||
 >>
-Example `boolean-literals:
+Sample `boolean-literals:
 [[
 ||    true
 ||    false
@@ -3009,7 +3458,7 @@ So [[embed true]] is ungrammatical.
 <<
 ||`nat-literal ::= `decimal-digit { `decimal-digit }*
 >>
-Example `nat-literals:
+Sample `nat-literals:
 [[
 ||    3260
 ||    007
@@ -3052,7 +3501,7 @@ both [[007]] and [[7]] denote the number 7.
 </para>
 <!--====================================================================-->
 <para>
-Example `char-literals:
+Sample `char-literals:
 [[
 ||   #z
 ||   #\x7a
@@ -3155,7 +3604,7 @@ whitespace suggested by the name (`space, `tab or `newline).
 </para>
 <!--====================================================================-->
 <para>
-Example `string-literals:
+Sample `string-literals:
 [[
 ||    ""
 ||    "see page"
@@ -3236,7 +3685,7 @@ with a `projector.)
 </para>
 <!--====================================================================-->
 <para>
-Example `field-selections:
+Sample `field-selections:
 [[
 ||    triple.2
 ||    z.re
@@ -3261,7 +3710,7 @@ Example `field-selections:
 A `field-selection
 <replaceable>E</replaceable>[[.]]<replaceable>F</replaceable>
 is a convenient notation for the equivalent `expression
-[[(project]] <replaceable>F</replaceable>
+[[(project ]]<replaceable>F</replaceable>
 <replaceable>E</replaceable>[[)]].
 (See under <link linkend="Projectors"><emphasis>Projectors</emphasis></link>.)
 </para>
@@ -3275,7 +3724,7 @@ is a convenient notation for the equivalent `expression
 ||`tuple-display-body ::= [ `expression , `expression { , `expression }* ]
 ||
 >>
-Example `tuple-display:
+Sample `tuple-display:
 [[
 ||    ("George", Poodle : Dog, 10)
 ]]
@@ -3310,7 +3759,7 @@ there is no need to ever annotate it with a `sort.)
 ||`field-filler ::= `field-name `equals `expression
 ||
 >>
-Example `record-display:
+Sample `record-display:
 [[
 ||    {name = "George", kind = Poodle : Dog, age = 10}
 ]]
@@ -3342,20 +3791,16 @@ inhabitant of the unit sort [[()]].
 ||
 ||`sequential-tail ::= `expression | `open-sequential-expression
 >>
-Example `sequential-expression:
+Sample `sequential-expression:
 [[
 ||    (writeLine "key not found"; embed Missing)
 ]]
 A `sequential-expression
-[[(]]<replaceable>V</replaceable>[[;]]
-<replaceable>T</replaceable>[[)]] is equivalent to the
-`let-expression [[let _ =]] <replaceable>V</replaceable>
-[[in]] [[(]]<replaceable>T</replaceable>[[)]].
+[[(]]<replaceable>V</replaceable>[[; ]]<replaceable>T</replaceable>[[)]] is equivalent to the
+`let-expression [[let _ = ]]<replaceable>V</replaceable>[[ in]] [[(]]<replaceable>T</replaceable>[[)]].
 So the value of a `sequential-expression
 [[(]]<replaceable>V</replaceable><subscript>1</subscript>[[;]]
-... [[;]]
-<replaceable>V</replaceable><subscript>n</subscript>[[;]]
-<replaceable>E</replaceable>[[)]]
+... [[; ]]<replaceable>V</replaceable><subscript>n</subscript>[[; ]]<replaceable>E</replaceable>[[)]]
 is the value of its
 last constituent `expression <replaceable>E</replaceable>.
 </para>
@@ -3388,7 +3833,7 @@ discarded.
 ||`list-display-body ::= [ `expression { , `expression }* ]
 ||
 >>
-Example `list-display:
+Sample `list-display:
 [[
 ||    ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
 ]]
@@ -3468,7 +3913,7 @@ any of the sort annotations is omitted:
 ||    spec
 ||      def fa(a) p2 = project 2 : String *  a  ->  a
 ||      def       q2 = project 2 : String * Nat -> Nat
-||    end
+||    endspec
 ]]
 </para>
 <!-- ***************************************************************** -->
@@ -3477,7 +3922,7 @@ any of the sort annotations is omitted:
 <<
 ||`projector ::= project `field-selector
 >>
-Example `projectors:
+Sample `projectors:
 [[
 ||    project 2
 ||    project re
@@ -3488,11 +3933,8 @@ When the `field-selector is some `nat-literal with value
 The sort of the
 `projector is a function sort (whose domain sort is a product
 sort) of the form
-<replaceable>S</replaceable><subscript>1</subscript> [[*]]
-<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
-[[*]] <replaceable>S<subscript>n</subscript></replaceable>
-[[->]]
-<replaceable>S<subscript>i</subscript></replaceable>,
+<replaceable>S</replaceable><subscript>1</subscript> [[* ]]<replaceable>S</replaceable><subscript>2</subscript> [[*]] ...
+[[* ]]<replaceable>S<subscript>n</subscript></replaceable>[[ -> ]]<replaceable>S<subscript>i</subscript></replaceable>,
 where <replaceable>n</replaceable> is at least
 <replaceable>i</replaceable>,
 and the value of the `projector is the function that maps
@@ -3513,18 +3955,11 @@ the sort of the
 `projector is a function sort (whose domain sort is a record
 sort) of the form
 [[{]]<replaceable>F</replaceable><subscript>1</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>1</subscript>[[,]]
-<replaceable>F</replaceable><subscript>2</subscript>
-[[:]]
-<replaceable>S</replaceable><subscript>2</subscript>[[,]]
+[[: ]]<replaceable>S</replaceable><subscript>1</subscript>[[, ]]<replaceable>F</replaceable><subscript>2</subscript>
+[[: ]]<replaceable>S</replaceable><subscript>2</subscript>[[,]]
 ...
-[[,]]
-<replaceable>F<subscript>n</subscript></replaceable>
-[[:]]
-<replaceable>S<subscript>n</subscript></replaceable>[[}]]
-[[->]]
-<replaceable>S<subscript>i</subscript></replaceable>,
+[[, ]]<replaceable>F<subscript>n</subscript></replaceable>[[ : ]]<replaceable>S<subscript>n</subscript></replaceable>[[}]]
+[[-> ]]<replaceable>S<subscript>i</subscript></replaceable>,
 where <replaceable>F</replaceable> is the same `field-name
 as
 <replaceable>F<subscript>i</subscript></replaceable>
@@ -3550,26 +3985,23 @@ to its <replaceable>i</replaceable>th component
 <<
 ||`relaxator ::= relax `closed-expression
 >>
-Example `relaxator:
+Sample `relaxator:
 [[
 ||    relax even
 ]]
 Restriction.
 The `closed-expression of a `relaxator must have some function
-sort <replaceable>S</replaceable> [[-> Boolean]].
+sort <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--====================================================================-->
 <para>
-The sort of `relaxator [[relax]] <replaceable>P</replaceable>,
+The sort of `relaxator [[relax ]]<replaceable>P</replaceable>,
 where <replaceable>P</replaceable> has sort
-<replaceable>S</replaceable> [[-> Boolean]], is the function
-sort (whose domain is a subsort) [[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] [[->]]
-<replaceable>S</replaceable>.
+<replaceable>S</replaceable>[[ -> Boolean]], is the function
+sort (whose domain is a subsort) [[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] [[-> ]]<replaceable>S</replaceable>.
 The value of the `relaxator is the function that maps each
 inhabitant of subsort
-[[(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]] to the same value --
+[[(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]] to the same value --
 apart from the sort information -- inhabiting supersort
 <replaceable>S</replaceable>.
 </para>
@@ -3588,6 +4020,17 @@ into the supersort of [[Even]].
 </para>
 <!--====================================================================-->
 <para>
+Metaslang does not require the explicit use of a `relaxator to relax
+an `expression from a subsort to its supersort if the
+context requires the latter.
+Implicit relaxation will take place when needed.
+For example, in the `expression [[~1]] the `nat-literal [[1]]
+of sort [[Nat]] is implicitly relaxed to sort [[Integer]] to
+accommodate the unary negation operator [[~]], which has sort
+[[Integer -> Integer]].
+</para>
+<!--====================================================================-->
+<para>
 Note the remarks about equivalence of `sort-restrictions in
 the corresponding section.
 </para>
@@ -3598,23 +4041,21 @@ the corresponding section.
 <<
 ||`restrictor ::= restrict `closed-expression
 >>
-Example `restrictor:
+Sample `restrictor:
 [[
 ||    restrict even
 ]]
 Restriction.
 The `closed-expression of a `restrictor must have some function
-sort <replaceable>S</replaceable> [[-> Boolean]].
+sort <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--====================================================================-->
 <para>
 A `restrictor
-[[restrict]] <replaceable>P</replaceable> is a convenient
+[[restrict ]]<replaceable>P</replaceable> is a convenient
 notation for the `lambda-form
-[[fn]] <replaceable>X</replaceable> [[->
-let relax]] <replaceable>P</replaceable> <replaceable>V</replaceable> [[=]]
-<replaceable>X</replaceable> [[in]]
-<replaceable>V</replaceable>, where
+[[fn ]]<replaceable>X</replaceable>[[ ->
+let relax ]]<replaceable>P</replaceable> <replaceable>V</replaceable>[[ = ]]<replaceable>X</replaceable>[[ in ]]<replaceable>V</replaceable>, where
 <replaceable>V</replaceable> is some unique fresh `name, that
 is, it is any `name that does not already occur in the
 `spec, directly or indirectly through an import.
@@ -3622,13 +4063,11 @@ is, it is any `name that does not already occur in the
 <!--====================================================================-->
 <para>
 The sort of a `restrictor is of the form
-<replaceable>S</replaceable> [[->
-(]]<replaceable>S</replaceable> [[|]]
-<replaceable>P</replaceable>[[)]], that is, it goes from a
+<replaceable>S</replaceable>[[ ->
+(]]<replaceable>S</replaceable>[[ | ]]<replaceable>P</replaceable>[[)]], that is, it goes from a
 supersort to a subsort.
 In general its value is a partial function, defined only on
-the range of the function [[relax]]
-<replaceable>P</replaceable>.
+the range of the function [[relax ]]<replaceable>P</replaceable>.
 The use of this partial function engenders a proof obligation
 that the arguments to which it is applied satisfy predicate
 <replaceable>P</replaceable>.
@@ -3650,9 +4089,22 @@ the context guarantees that integer [[i]], where it is subjected
 to the `restrictor, satisfies the nonnegativity
 restriction on natural numbers, and will be accepted and
 achieve [[Nat]]-hood.
-Formally, the proof obligation here is [[((i < 0) =
-false) => ((i >= 0) = true)]].
+Formally, the proof obligation here is [[~(i < 0) => (i >= 0)]].
 This is a theorem from the Theory of Integers.
+</para>
+<!--====================================================================-->
+<para>
+Metaslang does not require the explicit use of a `restrictor
+to restrict
+an `expression from a sort to a subsort if the
+context requires the latter.
+Implicit restriction will take place when needed.
+For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
+of sort [[Nat]] is implicitly restricted to sort [[PosNat]],
+a subsort of [[Nat]], to accommodate the division operator
+[[div]], whose second argument has sort [[PosNat]].
+But note that implicit restriction engenders the same proof
+obligation as results when using an explicit `restrictor.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3661,32 +4113,27 @@ This is a theorem from the Theory of Integers.
 <<
 ||`quotienter ::= quotient `closed-expression
 >>
-Example `quotienter:
+Sample `quotienter:
 [[
 ||     quotient (fn (m, n) -> m rem 3 = n rem 3)
 ]]
 Restriction.
 The `closed-expression of a `quotienter must have some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> [[-> Boolean]];
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
 linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
 </para>
 <!--====================================================================-->
 <para>
-The sort of `quotienter [[quotient]] <replaceable>Q</replaceable>,
+The sort of `quotienter [[quotient ]]<replaceable>Q</replaceable>,
 where <replaceable>Q</replaceable> has sort
-<replaceable>S</replaceable> [[*]] <replaceable>S</replaceable>
-[[-> Boolean]], is the function sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable>, that is, it goes from some
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is the function sort
+<replaceable>S</replaceable>[[ -> ]]<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>, that is, it goes from some
 sort to one of its quotient sorts.
 The value of the `quotienter is the function that maps each
 inhabitant of sort <replaceable>S</replaceable> to the
-<replaceable>Q</replaceable>-equivalence class inhabiting <replaceable>S</replaceable>
-[[/]] 
+<replaceable>Q</replaceable>-equivalence class inhabiting <replaceable>S</replaceable>[[ /]] 
 <replaceable>Q</replaceable> of which it is a member.
 </para>
 <!--====================================================================-->
@@ -3713,36 +4160,29 @@ inhabitants of [[Z3]].
 <<
 ||`chooser ::= choose `closed-expression
 >>
-Example `chooser:
+Sample `chooser:
 [[
 ||    choose congMod3
 ]]
 Restriction.
 The `closed-expression of a `chooser must have some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> [[-> Boolean]], and
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], and
 must be an equivalence relation (see under
 <link linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>).
 </para>
 <!--====================================================================-->
 <para>
-The sort of a `chooser [[choose]] <replaceable>Q</replaceable>,
+The sort of a `chooser [[choose ]]<replaceable>Q</replaceable>,
 where <replaceable>Q</replaceable> has sort
-<replaceable>S</replaceable> [[*]] <replaceable>S</replaceable>
-[[-> Boolean]], is a function sort of the form
-[[(]]<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>[[)]] [[->]]
-[[(]]<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable> [[->]]
-<replaceable>T</replaceable>[[)]].
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]], is a function sort of the form
+[[(]]<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>[[)]] [[->]]
+[[(]]<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>[[ -> ]]<replaceable>T</replaceable>[[)]].
 The value of the `chooser is the (in general partial)
 function mapping each <replaceable>Q</replaceable>-constant
 (explained below) function <replaceable>f</replaceable> inhabiting sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable> to the function that maps 
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable> to the function that maps 
 each inhabitant <replaceable>C</replaceable> of
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable> to <replaceable>f</replaceable>
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable> to <replaceable>f</replaceable>
 <replaceable>x</replaceable>, where
 <replaceable>x</replaceable> is any member of
 <replaceable>C</replaceable>.
@@ -3762,8 +4202,7 @@ Function <replaceable>f</replaceable> is
 <replaceable>Q</replaceable>-constant if,
 for each <replaceable>Q</replaceable>-equivalence class
 <replaceable>C</replaceable> inhabiting
-<replaceable>S</replaceable> [[/]]
-<replaceable>Q</replaceable>,
+<replaceable>S</replaceable>[[ / ]]<replaceable>Q</replaceable>,
 <replaceable>f</replaceable> <replaceable>x</replaceable>
 equals <replaceable>f</replaceable>
 <replaceable>y</replaceable> for any two values
@@ -3786,10 +4225,19 @@ So [[choose congMod3 (fn n -> n*n rem 3)]] maps the inhabitant
 <para>
 The most discriminating
 <replaceable>Q</replaceable>-constant function is
-[[quotient]] <replaceable>Q</replaceable>, and
-[[choose]] <replaceable>Q</replaceable> [[quotient]]
-<replaceable>Q</replaceable> is the identity function on the
+[[quotient ]]<replaceable>Q</replaceable>, and
+[[choose ]]<replaceable>Q</replaceable>[[ quotient ]]<replaceable>Q</replaceable> is the identity function on the
 quotient sort for <replaceable>Q</replaceable>.
+</para>
+<!--====================================================================-->
+<para>
+The meaning of [[choose ]]<replaceable>Q</replaceable>[[ (fn x -> ]]<replaceable>E</replaceable>[[) ]]<replaceable>A</replaceable>
+is the same as that of the `let-expression
+[[let quotient ]]<replaceable>Q</replaceable>[[ x = ]]<replaceable>A</replaceable>[[ in ]]<replaceable>E</replaceable>.
+Indeed, often a `quotient-pattern offers a more convenient 
+way of expressing the intention of a `chooser.
+Note, however, the remarks on the proof obligations for
+`quotient-patterns.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -3798,7 +4246,7 @@ quotient sort for <replaceable>Q</replaceable>.
 <<
 ||`embedder ::= [ embed ] `constructor
 >>
-Example `embedders:
+Sample `embedders:
 [[
 ||    Nil
 ||    embed Nil
@@ -3848,21 +4296,19 @@ above).
 <<
 ||`embedding-test ::= embed? `constructor
 >>
-Example `embedding-test:
+Sample `embedding-test:
 [[
 ||    embed? Cons
 ]]
 Restriction.
-The sort of an `embedding-test [[embed?]]
-<replaceable>C</replaceable> must be of the form
-<replaceable>SS</replaceable> [[-> Boolean]], where
+The sort of an `embedding-test [[embed? ]]<replaceable>C</replaceable> must be of the form
+<replaceable>SS</replaceable>[[ -> Boolean]], where
 <replaceable>SS</replaceable> is a sum sort that has a
 `constructor <replaceable>C</replaceable>.
 </para>
 <!-- ================================================================= -->
 <para>
-The value of `embedding-test [[embed?]]
-<replaceable>C</replaceable> is the predicate that returns
+The value of `embedding-test [[embed? ]]<replaceable>C</replaceable> is the predicate that returns
 [[true]] if the argument value -- which, as inhabitant of a
 sum sort, is tagged -- has tag <replaceable>C</replaceable>,
 and otherwise [[false]].
@@ -3877,7 +4323,7 @@ where the wildcard [[_]] in the first `branch is omitted when
 </para>
 <!-- ================================================================= -->
 <para>
-In plain words, [[embed?]] <replaceable>C</replaceable>
+In plain words, [[embed? ]]<replaceable>C</replaceable>
 tests whether its sum-sorted argument has been constructed with the
 `constructor <replaceable>C</replaceable>.
 It is an error when <replaceable>C</replaceable> is not a
@@ -3906,7 +4352,7 @@ constructor of the sum sort.
 ||`branch ::= `pattern -> `expression
 ||
 >>
-Example `matches:
+Sample `matches:
 [[
 ||    {re = x, im = y} -> {re = x, im = ~y}
 ||
@@ -3922,8 +4368,7 @@ unique sort <replaceable>S</replaceable> to which the `pattern
 of each `branch conforms, and a unique sort
 <replaceable>T</replaceable> to which the `expression of each
 `branch conforms, and then the `match has sort
-<replaceable>S</replaceable> [[->]]
-<replaceable>T</replaceable>.
+<replaceable>S</replaceable>[[ -> ]]<replaceable>T</replaceable>.
 The `pattern of each `branch then has
 sort <replaceable>S</replaceable>.
 </para>
@@ -3977,8 +4422,7 @@ Then <replaceable>y</replaceable> is the return value of
 <para>
 Acceptance and return value <replaceable>y</replaceable>, if
 any, of a value <replaceable>x</replaceable> for a `branch
-<replaceable>P</replaceable> [[->]]
-<replaceable>E</replaceable> in an environment
+<replaceable>P</replaceable>[[ -> ]]<replaceable>E</replaceable> in an environment
 <replaceable>C</replaceable> are determined as follows.
 If `pattern <replaceable>P</replaceable> rejects
 <replaceable>x</replaceable>, the `branch rejects
@@ -4045,7 +4489,7 @@ avoid grammatical ambiguities.)
 ||
 ||`cons-pattern ::= `closed-pattern :: `tight-pattern
 ||
-||`embed-pattern ::= `constructor `closed-pattern
+||`embed-pattern ::= `constructor [ `closed-pattern ]
 ||
 ||`quotient-pattern ::= quotient `closed-expression `tight-pattern
 ||
@@ -4071,7 +4515,7 @@ avoid grammatical ambiguities.)
 ||
 ||`field-patterner ::= `field-name [ `equals `pattern ]
 >>
-Example `patterns:
+Sample `patterns:
 [[
 ||    (i, p) : Integer * Boolean
 ||    z as {re = x, im = y}
@@ -4094,6 +4538,13 @@ inferred.
 </para>
 <!--====================================================================-->
 <para>
+Disambiguation.
+A single `name used as a `pattern is an `embed-pattern
+if it is a `constructor of the sort of the `pattern.
+Otherwise, the `name is a `variable-pattern.
+</para>
+<!--====================================================================-->
+<para>
 Restriction.
 Each `local-variable in a `pattern must be a different
 `name, disregarding any `local-variables introduced in
@@ -4107,8 +4558,7 @@ the `sort-comprehension in which it occurs.)
 <para>
 Restriction.
 The `closed-expression of a `quotient-pattern must have some sort
-<replaceable>S</replaceable> [[*]]
-<replaceable>S</replaceable> [[-> Boolean]];
+<replaceable>S</replaceable>[[ * ]]<replaceable>S</replaceable>[[ -> Boolean]];
 in addition, it must be an equivalence relation, as explained
 under <link
 linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
@@ -4116,8 +4566,17 @@ linkend="Sort-quotients"><emphasis>Sort-quotients</emphasis></link>.
 <!--  ================================================================= -->
 <para>
 Restriction.
+`Quotient-patterns may only be used in a `definition or
+`claim if the result is insensitive to the choice of representative
+from the equivalence class.
+&SpecwareV; does not attempt to generate proof obligations for
+establishing this.
+</para>
+<!--  ================================================================= -->
+<para>
+Restriction.
 The `closed-expression of a `relax-pattern must have some function
-sort <replaceable>S</replaceable> [[-> Boolean]].
+sort <replaceable>S</replaceable>[[ -> Boolean]].
 </para>
 <!--  ================================================================= -->
 <para>
@@ -4152,23 +4611,21 @@ is actually immaterial).
 Step 1.  From `pattern <replaceable>P</replaceable>, form some
 <emphasis>tame variant</emphasis>
 <replaceable>P<subscript>t</subscript></replaceable> by
-first replacing each `field-patterner consisting of a single
+replacing each `field-patterner consisting of a single
 `field-name <replaceable>F</replaceable> by the
-`field-patterner <replaceable>F</replaceable> [[=]] [[_]], and
-next
-replacing each `wildcard-pattern [[_]] in
-<replaceable>P</replaceable>, thus modified, by a
-unique fresh `name, that
-is, any `name that does not already occur in the
-`spec, directly or indirectly through an import.
-For example, assuming that the `names [[v7944]] and [[v7945]]
-are fresh, a tame variant of
+`field-patterner <replaceable>F</replaceable>[[ = ]]<replaceable>F</replaceable>
+and replacing each `wildcard-pattern [[_]] in
+<replaceable>P</replaceable> by a unique fresh `name, that is,
+any `name that does not already occur in the `spec, directly or
+indirectly through an import.
+For example, assuming that the `name [[v7944]]
+is fresh, a tame variant of
 [[
 ||    s0 as _ :: s1 as (Push {top, pop = rest}) :: ss
 ]]
 is
 [[
-||    s0 as v7944 :: s1 as (Push {top = v7945, pop = rest}) :: ss
+||    s0 as v7944 :: s1 as (Push {top = top, pop = rest}) :: ss
 ]]
 </para>
 <!--  ================================================================= -->
@@ -4178,15 +4635,14 @@ Step 2.  Next, from
 (tamed) <emphasis>construed version</emphasis>
 <replaceable>P<subscript>tc</subscript></replaceable> by
 replacing each constituent `cons-pattern
-<replaceable>H</replaceable> [[::]] <replaceable>T</replaceable>
+<replaceable>H</replaceable>[[ :: ]]<replaceable>T</replaceable>
 by the `embed-pattern [[Cons
-(]]<replaceable>H</replaceable>[[,]]
-<replaceable>T</replaceable>[[)]], where [[Cons]] denotes the
+(]]<replaceable>H</replaceable>[[, ]]<replaceable>T</replaceable>[[)]], where [[Cons]] denotes the
 `constructor of the parameterized sort [[List]].
 For the example, the construed version is:
 [[
 ||    s0 as Cons (v7944,
-||                s1 as Cons (Push {top = v7945, pop = rest}, ss))
+||                s1 as Cons (Push {top = top, pop = rest}, ss))
 ]]
 </para>
 <!--  ================================================================= -->
@@ -4200,8 +4656,7 @@ the set <replaceable>ED<subscript>P</subscript></replaceable> of
 expressive descendant
 if <replaceable>E</replaceable>
 can be obtained by repeatedly replacing some constituent
-`aliased-pattern <replaceable>L</replaceable> [[as]]
-<replaceable>R</replaceable>
+`aliased-pattern <replaceable>L</replaceable>[[ as ]]<replaceable>R</replaceable>
 of <replaceable>P<subscript>tc</subscript></replaceable>
 by one of the two `patterns
 <replaceable>L</replaceable> and
@@ -4212,7 +4667,7 @@ are the three `expressions:
 [[
 ||    s0
 ||    Cons (v7944, s1)
-||    Cons (v7944, Cons (Push {top = v7945, pop = rest}, ss))
+||    Cons (v7944, Cons (Push {top = top, pop = rest}, ss))
 ]]
 </para>
 <!--  ================================================================= -->
@@ -4261,8 +4716,8 @@ on</emphasis> the accepting `local-variables of
 <para>
 For the example, the accepting `local-variables of
 <replaceable>P<subscript>t</subscript></replaceable> are the
-six `local-variables [[s0]], [[s1]], [[ss]], [[rest]], [[v7944]] and
-[[v7945]].
+six `local-variables [[s0]], [[s1]], [[ss]], [[rest]] and
+[[v7944]].
 In general, they are the accepting `local-variables of the
 original `pattern together with any fresh `names used for
 taming.
@@ -4276,9 +4731,9 @@ Under the accepting binding
 ||    s0 = Cons (Empty, Cons (Push {top = 200, pop = Empty}, Nil))
 ||    s1 = Cons (Push {top = 200, pop = Empty}, Nil)
 ||    ss = Nil
+||    top = 200
 ||    rest = Empty
 ||    v7944 = Empty
-||    v7945 = 200
 ]]
 the value of each <replaceable>E</replaceable> in
 <replaceable>ED<subscript>P</subscript></replaceable>
@@ -4289,10 +4744,11 @@ original `pattern, with acceptance binding
 ||    s0 = Cons (Empty, Cons (Push {top = 200, pop = Empty}, Nil))
 ||    s1 = Cons (Push {top = 200, pop = Empty}, Nil)
 ||    ss = Nil
+||    top = 200
 ||    rest = Empty
 ]]
-obtained by <quote>forgetting</quote> the fresh `names
-[[v7944]] and [[v7945]].
+obtained by <quote>forgetting</quote> the fresh `name
+[[v7944]].
 </para>
 </section>
 </section>

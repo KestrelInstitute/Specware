@@ -19,7 +19,7 @@
 
 (in-package :snark)
 
-;;; a function or predicate whose arity is declared to be :plist
+;;; a function or relation whose arity is declared to be :plist
 ;;; takes as arguments keys (SNARK constants) and values (SNARK terms)
 ;;; in alternating order
 ;;;
@@ -44,7 +44,7 @@
 (defun can-be-plist-key-name-p (x)
   (and (symbolp x)
        (not (null x))
-       (neq t x)					;used in function/predicate sort declarations
+       (neq t x)					;used in function/relation sort declarations
        (can-be-constant-name-p x)))
 
 (defun assert-can-be-plist-key-name-p (x)
@@ -94,8 +94,8 @@
   (print-options-when-starting nil)
   (print-summary-when-finished nil)
   (use-resolution)
-  (declare-predicate-symbol 'p :plist)
-  (declare-predicate-symbol 'values :any)
+  (declare-relation 'p :plist)
+  (declare-relation 'values :any)
   (assert '(p a 1 b 2 c 3))
   (when (implies case (eql 1 case))
     (new-row-context)

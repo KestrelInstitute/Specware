@@ -6,6 +6,33 @@
  *
  *
  * $Log$
+ * Revision 1.9  2003/07/05 07:46:36  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.8  2003/04/23 01:10:06  weilyn
+ * Added diagram elment support
+ *
+ * Revision 1.7  2003/04/01 02:29:35  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.6  2003/03/29 03:13:54  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.5  2003/03/14 04:12:31  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.4  2003/02/18 17:59:38  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:12:14  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:37:44  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:01:45  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -288,6 +315,51 @@ public class SourceText implements DocumentBinding {
         return b;
     }
     
+    public Binding.Def bindDef(DefElement impl) {
+        DefB b = new DefB(impl, this);
+        return b;
+    }
+    
+    public Binding.Claim bindClaim(ClaimElement impl) {
+        ClaimB b = new ClaimB(impl, this);
+        return b;
+    }
+
+    public Binding.Import bindImport(ImportElement impl) {
+        ImportB b = new ImportB(impl, this);
+        return b;
+    }
+    
+    public Binding.Proof bindProof(ProofElement impl) {
+        ProofB b = new ProofB(impl, this);
+        return b;
+    }
+
+    public Binding.Morphism bindMorphism(MorphismElement impl) {
+        MorphismB b = new MorphismB(impl, this);
+        return b;
+    }
+    
+    public Binding.DiagElem bindDiagElem(DiagElemElement impl) {
+        DiagElemB b = new DiagElemB(impl, this);
+        return b;
+    }
+
+    public Binding.Diagram bindDiagram(DiagramElement impl) {
+        DiagramB b = new DiagramB(impl, this);
+        return b;
+    }
+
+    public Binding.Colimit bindColimit(ColimitElement impl) {
+        ColimitB b = new ColimitB(impl, this);
+        return b;
+    }
+    
+/*    public Binding.UnitId bindUID(UIDElement impl) {
+        UIDB b = new UIDB(impl, this);
+        return b;
+    }   
+*/
     public void dumpDocument() {
         System.err.println("Document dump:"); // NOI18N
         final StyledDocument doc = getEditorSupport().getDocument();

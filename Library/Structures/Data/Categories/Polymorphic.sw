@@ -1,7 +1,7 @@
 \section{Polymorphic Categories}
 
 The spec below defines a sort for representing categories.  See also the
-spec CatsWithMaps for a different, and in some ways better, representation.
+spec WithMaps for a different, and in some ways better, representation.
 
 The sort is polymorphic in the sense that the same sort can be used at
 runtime to represent different categories. For instance, categories of
@@ -11,7 +11,7 @@ In most cases, the polymorphism appearing here is not needed and one
 is better to use a monomorphic sort. Also, often, one does not need a
 sort for category at all but rather just a spec.  Note that the spec
 below is roughly what you get from a naive internalization of the spec
-MathStructures/Categories/Cat. There is another such internalization
+Structures/Math/Categories/Cat. There is another such internalization
 without the polymorphism.
 
 This sort of internalization yields definitions closest to Burstall
@@ -44,10 +44,10 @@ Should compose take the two arrows as a product or should it be curried? I
 prefer curried.
 
 The following defines both only an abstract sort for categories.
-A concrete product sort is defined in Initial.spec. The separation
-is needed to enable the sort Cat to be refined. In particular, the
-sort for cocomplete category comes with the same operators plus
-one for computing colimits.
+A concrete product sort is defined in Polymorphic/AsRecord.spec. The
+separation is needed to enable the sort Cat to be refined. In particular,
+the sort for cocomplete category comes with the same operators plus one
+for computing colimits.
 
 This way we can define operations on categories also applicable to
 cocomplete categories.
@@ -58,7 +58,7 @@ categories and cocomplete categories. In this case the extra
 level of abstraction helps none.
 
 \begin{spec}
-spec
+Cat qualifying spec {
   import /Library/PrettyPrinter/WadlerLindig
 
   sort Cat (O,A)
@@ -71,9 +71,10 @@ spec
 
   op ppObj : fa (O,A) Cat (O,A) -> O -> Pretty
   op ppArr : fa (O,A) Cat (O,A) -> A -> Pretty
-end
+}
 \end{spec}
 
-We have omitted the operator composable?. It seems of little use.
+We have omitted the operator composable?. It seems of little use,
+even with subsorting, without dependent types.
 
 Should we have pretty printing operations here? 

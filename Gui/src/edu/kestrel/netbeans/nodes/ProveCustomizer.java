@@ -29,25 +29,41 @@ public class ProveCustomizer extends javax.swing.JPanel {
     /** Source of the localized human presentable strings. */
     static ResourceBundle bundle = NbBundle.getBundle(ProveCustomizer.class);
     
+    public static final String USE_ALL_CLAIMS = "--- All Claims ---";
+    public static final String USE_NO_CLAIMS = "--- NONE ---";
+    public static final String USE_RESOLUTION_YES = "Yes";
+    public static final String USE_RESOLUTION_NO = "No";
+    public static final String USE_RESOLUTION_DEFAULT = "Use default";
+    
     /*Prove*/SpecElement element;
     
     boolean isOK = true;
         
     /** Creates new customizer ProveCustomizer */
-    public ProveCustomizer(/*Prove*/SpecElement newProveElem, SpecElement specElem) {
+    public ProveCustomizer(/*Prove*/SpecElement newProveElem, SpecElement parentSpecElem, ClaimElement claimElement) {
         initComponents();
 
         this.element = newProveElem;
         
         if (this.element != null) {
 	    nameTextField.setText(element.getName());
-            ClaimElement[] allClaims = specElem.getClaims();
+            ClaimElement[] allClaims = parentSpecElem.getClaims();
             //String[] allClaimNames = new String[allClaims.length];
+            if (allClaims.length > 1) {
+                usingComboBox.addItem(USE_ALL_CLAIMS);
+            } else {
+                usingComboBox.addItem(USE_NO_CLAIMS);
+            }
             for (int i=0; i<allClaims.length; i++) {
-                usingComboBox.addItem(allClaims[i].getName());
+                if (!allClaims[i].getName().equals(claimElement.getName())) {
+                    usingComboBox.addItem(allClaims[i].getName());
+                }
                 //allClaimNames[i] = allClaims[i].getName();
             }
             //usingList.setListData(allClaimNames);
+            useResolutionComboBox.addItem(USE_RESOLUTION_DEFAULT);
+            useResolutionComboBox.addItem(USE_RESOLUTION_YES);
+            useResolutionComboBox.addItem(USE_RESOLUTION_NO);
 	}
         
         //borders
@@ -67,37 +83,63 @@ public class ProveCustomizer extends javax.swing.JPanel {
         nameLabel = new javax.swing.JLabel();
         usingLabel = new javax.swing.JLabel();
         optionsLabel = new javax.swing.JLabel();
+        resolutionLabel = new javax.swing.JLabel();
+        jLabel1 = new javax.swing.JLabel();
         jPanel2 = new javax.swing.JPanel();
         nameTextField = new javax.swing.JTextField();
         usingComboBox = new javax.swing.JComboBox();
-        optionsComboBox = new javax.swing.JComboBox();
+        jPanel3 = new javax.swing.JPanel();
+        useResolutionComboBox = new javax.swing.JComboBox();
+        jPanel4 = new javax.swing.JPanel();
+        timeLimitTextField = new javax.swing.JTextField();
+        jLabel2 = new javax.swing.JLabel();
 
         setLayout(new java.awt.BorderLayout());
 
-        setPreferredSize(new java.awt.Dimension(300, 120));
-        jPanel1.setLayout(new java.awt.GridLayout(3, 1, 10, 10));
+        setPreferredSize(new java.awt.Dimension(300, 200));
+        jPanel1.setLayout(new java.awt.GridLayout(5, 1, 10, 10));
 
-        jPanel1.setPreferredSize(new java.awt.Dimension(75, 120));
+        jPanel1.setPreferredSize(new java.awt.Dimension(125, 200));
         nameLabel.setText("Name");
         jPanel1.add(nameLabel);
 
         usingLabel.setText("Prove Using");
         jPanel1.add(usingLabel);
 
-        optionsLabel.setText("Options");
+        optionsLabel.setText("Options:");
         jPanel1.add(optionsLabel);
+
+        resolutionLabel.setText("     Use Resolution");
+        jPanel1.add(resolutionLabel);
+
+        jLabel1.setText("     Time Limit");
+        jPanel1.add(jLabel1);
 
         add(jPanel1, java.awt.BorderLayout.WEST);
 
-        jPanel2.setLayout(new java.awt.GridLayout(3, 1, 10, 10));
+        jPanel2.setLayout(new java.awt.GridLayout(5, 1, 10, 10));
 
-        jPanel2.setPreferredSize(new java.awt.Dimension(200, 120));
+        jPanel2.setPreferredSize(new java.awt.Dimension(150, 200));
         nameTextField.setText("newProof");
         jPanel2.add(nameTextField);
 
         jPanel2.add(usingComboBox);
 
-        jPanel2.add(optionsComboBox);
+        jPanel2.add(jPanel3);
+
+        jPanel2.add(useResolutionComboBox);
+
+        jPanel4.setLayout(new java.awt.GridLayout(1, 0, 10, 0));
+
+        timeLimitTextField.setText("0");
+        timeLimitTextField.setMaximumSize(new java.awt.Dimension(10, 20));
+        timeLimitTextField.setPreferredSize(new java.awt.Dimension(10, 20));
+        jPanel4.add(timeLimitTextField);
+
+        jLabel2.setText("     Seconds");
+        jPanel4.add(jLabel2);
+
+        jPanel2.add(jPanel4);
 
         add(jPanel2, java.awt.BorderLayout.EAST);
 
@@ -144,15 +186,29 @@ public class ProveCustomizer extends javax.swing.JPanel {
         return (String)usingComboBox.getSelectedItem();
     }
     
+    public String getSelectedUseResolution() {
+        return (String)useResolutionComboBox.getSelectedItem();
+    }
+    
+    public String getTimeLimit() {
+        return (String)timeLimitTextField.getText();
+    }
+    
     // Variables declaration - do not modify//GEN-BEGIN:variables
-    private javax.swing.JComboBox optionsComboBox;
-    private javax.swing.JComboBox usingComboBox;
-    private javax.swing.JLabel nameLabel;
-    private javax.swing.JLabel optionsLabel;
-    private javax.swing.JPanel jPanel2;
-    private javax.swing.JLabel usingLabel;
+    private javax.swing.JLabel jLabel1;
+    private javax.swing.JLabel jLabel2;
     private javax.swing.JPanel jPanel1;
+    private javax.swing.JPanel jPanel2;
+    private javax.swing.JPanel jPanel3;
+    private javax.swing.JPanel jPanel4;
+    private javax.swing.JLabel nameLabel;
     private javax.swing.JTextField nameTextField;
+    private javax.swing.JLabel optionsLabel;
+    private javax.swing.JLabel resolutionLabel;
+    private javax.swing.JTextField timeLimitTextField;
+    private javax.swing.JComboBox useResolutionComboBox;
+    private javax.swing.JComboBox usingComboBox;
+    private javax.swing.JLabel usingLabel;
     // End of variables declaration//GEN-END:variables
     
 }

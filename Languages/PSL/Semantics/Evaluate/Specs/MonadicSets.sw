@@ -1,13 +1,16 @@
 \section{Monadic Sets}
 
-The point of all this is just to instantiate the sort
-for the monadic fold operations. We have to translate the monad
-names in the same way as in \UnitId{Env}
+This is an instance of monomorphic sets extended with monadic fold operation
+over the set.
+
+The monadic sorts and ops are all qualified with \Qualifier{SpecCalc}.
 
 \begin{spec}
 let Monad = /Library/Structures/Data/Monad/Fold in
 spec
-  import translate (translate Monad by {Collection +-> Set, Monad.Monad +-> Env.Env}) by {Monad._ +-> Env._}
+  import translate (translate Monad
+    by {Collection +-> Set, Monad.Monad +-> SpecCalc.Env})
+    by {Monad._ +-> SpecCalc._}
   import /Library/Structures/Data/Sets/Finite
 endspec
 \end{spec}

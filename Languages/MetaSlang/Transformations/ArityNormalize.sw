@@ -35,7 +35,7 @@
 
  *)
 
-ArityNormalize4 qualifying spec { 
+ArityNormalize qualifying spec { 
  import ../Specs/Environment
  % import StringUtilities          % imported by SpecEnvironment
  % import MetaSlang               % imported by SpecEnvironment
@@ -61,6 +61,7 @@ ArityNormalize4 qualifying spec {
                  if num = length(pats)
                     then mA(match,num)
                  else 1
+               | Cons((WildPat(_,_),_,_),match) -> mA(match,num)
                | _ -> 1
             
      in
@@ -77,9 +78,9 @@ ArityNormalize4 qualifying spec {
  sort UsedNames = StringSet.Set
  sort Gamma         = List(String * Option(Sort * Nat))
 
- op normalizeArity : Spec * Gamma * UsedNames * Term -> Term
+ op normalizeArity : Spec * Gamma * UsedNames * MS.Term -> MS.Term
  
- op termArity : Spec * Gamma * Term    -> Option(Sort * Nat)
+ op termArity : Spec * Gamma * MS.Term    -> Option(Sort * Nat)
  op sortArity : Spec * Sort            -> Option(Sort * Nat)
 % op opArity   : Spec * String * String -> Option(Sort * Nat)
 
@@ -136,7 +137,7 @@ ArityNormalize4 qualifying spec {
  as many arguments as possible.
  *)
   
- def termArity(sp,gamma,term:Term) = 
+ def termArity(sp,gamma,term:MS.Term) = 
      case term
        of Apply _ -> None
         | Var((id,_),_) -> 
@@ -158,7 +159,7 @@ ArityNormalize4 qualifying spec {
           if mArity = 1
              then None
           else Some(case match
-                      of (pat,_,_)::_ -> SpecEnvironment4.patternSort pat
+                      of (pat,_,_)::_ -> patternSort pat
                        | _ -> System.fail "Unexpected empty match",mArity)
         | IfThenElse _ -> None
         | Record _ -> None
@@ -193,7 +194,7 @@ ArityNormalize4 qualifying spec {
                  let fields = 
                      map 
                       (fn (name,label,srt)->
-                      let trm = mkApply((Fun(Project label,mkArrow(dom,srt),())),v) in
+                      let trm = mkApply((Fun(Project label,mkArrow(dom,srt),noPos)),v) in
                       (label,trm))
                        names
                  in
@@ -221,21 +222,25 @@ ArityNormalize4 qualifying spec {
        of VarPat((v as (id,srt)),_) -> 
           (StringSet.add(usedNames,id),(cons((id,None),gamma)):Gamma)
         | RecordPat(fields,_) -> 
-          foldr 
-             (fn ((_,p),result) -> insertPattern(p,result)) 
-                result
-                   fields
+          foldr (fn ((_,p),result) -> insertPattern(p,result)) 
+	    result fields
 
  def insertVars(vars,(usedNames,gamma)) =
-     foldr 
-        (fn (v as (id,srt),(usedNames,gamma)) -> 
-            (StringSet.add(usedNames,id),(cons((id,None),gamma)):Gamma))
-                (usedNames,gamma) 
-                    vars
+     foldr (fn (v as (id,srt),(usedNames,gamma)) -> 
+	     (StringSet.add(usedNames,id),(cons((id,None),gamma))))
+       (usedNames,gamma) 
+       vars
 
+  op  addLocalVars: MS.Term * UsedNames -> UsedNames
+  def addLocalVars(t,usedNames) =
+    let used = Ref usedNames in
+    let _ = mapTerm (id,id,fn (p as VarPat((qid,_),_))
+		                -> (used := StringSet.add(!used,qid); p)
+	                    | p -> p)
+              t
+    in !used
 
-
-  op  etaExpand : Spec * UsedNames * Sort * Term -> Term
+  op  etaExpand : Spec * UsedNames * Sort * MS.Term -> MS.Term
 
   def etaExpand(sp,usedNames,srt,term) = 
       case arrowOpt(sp,srt)
@@ -247,7 +252,7 @@ ArityNormalize4 qualifying spec {
                        | _ -> 
                         let (name,_) = freshName("x",usedNames) in
                         let x = (name,dom) in
-                        Lambda([((VarPat(x,())),mkTrue(),Apply(term,Var(x,()),()))],()))
+                        Lambda([((VarPat(x,noPos)),mkTrue(),Apply(term,Var(x,noPos),noPos))],noPos))
          | Some fields ->
       (case fields
         of (*[_] -> term                        % Singleton products don't get changed
@@ -257,16 +262,16 @@ ArityNormalize4 qualifying spec {
          | _ -> 
            let (names,_) = freshNames("x",fields,usedNames) in
            let vars = ListPair.map (fn (name,(label,srt)) -> (label,(name,srt))) (names,fields) in
-           let trm:Term  = Lambda 
-                              ([(RecordPat(map (fn (l,v) -> (l,VarPat(v,()))) vars,()),
+           let trm:MS.Term  = Lambda 
+                              ([(RecordPat(map (fn (l,v) -> (l,VarPat(v,noPos))) vars,noPos),
                                     mkTrue(),
                                     Apply(term,Record((map 
                                         (fn (l,v) -> 
-                                            (l,(Var(v,())):Term)) vars),()),()))],())
+                                            (l,(Var(v,noPos)):MS.Term)) vars),noPos),noPos))],noPos)
            in
            trm)))
 
- def normalizeArityTopLevel(sp,gamma,usedNames,term:Term):Term = 
+ def normalizeArityTopLevel(sp,gamma,usedNames,term:MS.Term):MS.Term = 
      case term
        of Lambda(rules,a) -> 
           Lambda 
@@ -284,7 +289,7 @@ ArityNormalize4 qualifying spec {
 
  def normalizeArity(sp,gamma,usedNames,term) = 
      let
-        def normalizeRecordArguments(t:Term):Term * Boolean = 
+        def normalizeRecordArguments(t:MS.Term):MS.Term * Boolean = 
             case t
               of Record(fields,_) -> 
                  let fields = 
@@ -348,7 +353,7 @@ ArityNormalize4 qualifying spec {
               foldr
               (fn((pat,t1),(decls,usedNames,gamma)) ->
                   let t2 = normalizeArity(sp,gamma,usedNames,t1)                 in
-                  let (usedNames,gamma) = insertPattern(pat,(usedNames,gamma))         in
+                  let (usedNames,gamma) = insertPattern(pat,(usedNames,gamma))   in
                   (cons((pat,t2),decls),usedNames,gamma)) 
                         ([],usedNames,gamma)
                              decls 
@@ -359,8 +364,8 @@ ArityNormalize4 qualifying spec {
           let (usedNames,gamma) = 
               foldr 
                 (fn((v,term),(usedNames,gamma)) ->
-                   let (id,_) = v                                                 in
-                   let usedNames = StringSet.add(usedNames,id)                         in
+                   let (id,_) = v                                                in
+                   let usedNames = StringSet.add(usedNames,id)                   in
                    let gamma = cons((id,termArity(sp,gamma,term)),gamma)         in
                    (usedNames,gamma))
                            (usedNames,gamma)
@@ -368,7 +373,7 @@ ArityNormalize4 qualifying spec {
           in
           let decls = 
               map 
-              (fn(var,trm) -> (var,normalizeArityTopLevel(sp,gamma,usedNames,trm)))
+              (fn(v,trm) -> (v,normalizeArityTopLevel(sp,gamma,usedNames,trm)))
               decls in
           let term =  normalizeArity(sp,gamma,usedNames,term) in
           mkLetRec(decls,term)
@@ -385,14 +390,18 @@ ArityNormalize4 qualifying spec {
         | Fun _ -> convertToArity1(sp,gamma,usedNames,term)
 
 
-  def convertToArity1(sp,gamma,usedNames,term):Term = 
+  def convertToArity1(sp,gamma,usedNames,term):MS.Term = 
       case termArity(sp,gamma,term)
         of None -> term
          | Some (dom,num) ->
-           let (name,usedNames) = freshName("x",usedNames) in
+	   %% by using "pV" as the prefix, 
+	   %% we pass the pV? test in reduceTerm,
+	   %% which allows use to include an ignore decl
+           %% if the var is not used in the body
+           let (name,usedNames) = freshName("pV",usedNames) in
            let x = (name,dom) in
-           (Lambda([(VarPat(x,()),mkTrue(),
-                     mkArityApply(sp,dom,term,mkVar x,usedNames))],()))
+           (Lambda([(VarPat(x,noPos),mkTrue(),
+                     mkArityApply(sp,dom,term,mkVar x,usedNames))],noPos))
 
  
 
@@ -400,18 +409,20 @@ ArityNormalize4 qualifying spec {
 % This one ignores arity normalization in sorts, axioms and theorems.
 %     
 
-  def arityNormalize (spc) = 
-    let usedNames = StringSet.fromList(StringMap.listDomain(spc.ops)) in
+  def arityNormalize (spc) =
+    let usedNames = StringSet.fromList(qualifierIds spc.ops) in
     setOps (spc, 
-            mapAQualifierMap (fn (op_names, fixity, (tyVars, srt), old_opt_def)->
-                              let new_opt_def =
-                                  mapOption (fn term -> 
-                                             normalizeArityTopLevel
-                                             (spc, [], usedNames,
-                                              etaExpand(spc, usedNames, srt, term)))
-                                            old_opt_def
-                              in (op_names, fixity, (tyVars, srt), new_opt_def))
-                             spc.ops)
+            mapAQualifierMap
+	      (fn (op_names, fixity, (tyVars, srt), old_defs)->
+	       let new_defs =
+	           map (fn (type_vars, term) ->
+			let usedNames = addLocalVars(term,usedNames) in
+			(type_vars,
+			 normalizeArityTopLevel (spc, [], usedNames,
+						 etaExpand(spc, usedNames, srt, term))))
+		     old_defs
+	       in (op_names, fixity, (tyVars, srt), new_defs))
+	      spc.ops)
 
 }
 

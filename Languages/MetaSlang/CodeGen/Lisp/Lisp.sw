@@ -7,6 +7,7 @@ ListADT qualifying spec {
   import /Library/Legacy/DataStructures/StringSetSplay
   % import System  	% ../utilities/system-base.sl
   import /Library/Legacy/DataStructures/TopSort
+  import /Library/Legacy/DataStructures/MergeSort
   import /Library/PrettyPrinter/BjornerEspinosa
 
   sort LispSpec =
@@ -72,13 +73,16 @@ ListADT qualifying spec {
     | Op      String
     | Var     String
     | Set     String   * LispTerm
-    | Lambda  Strings  * LispTerm
+    | Lambda  Strings  * LispDecls * LispTerm
     | Apply   LispTerm * LispTerms
     | If      LispTerm * LispTerm  * LispTerm
     | IfThen  LispTerm * LispTerm 
     | Let     Strings  * LispTerms * LispTerm
     | Letrec  Strings  * LispTerms * LispTerm
     | Seq     LispTerms
+
+  sort LispDecl =
+    | Ignore  Strings
 
   sort Val =
     | Boolean   Boolean
@@ -92,6 +96,7 @@ ListADT qualifying spec {
   sort LispSpecs   = List LispSpec
   sort Strings     = List String
   sort LispTerms   = List LispTerm
+  sort LispDecls   = List LispDecl
   sort Definitions = List Definition
 
   op emptySpec : LispSpec
@@ -103,6 +108,7 @@ ListADT qualifying spec {
       axioms  = [],
       opDefns = [] }
 
+  op  ops: LispTerm * StringSet.Set -> StringSet.Set
   def ops(term:LispTerm,names) =
       case term 
         of Const(Parameter name) -> StringSet.add(names,name)
@@ -110,21 +116,23 @@ ListADT qualifying spec {
          | Op      name -> StringSet.add(names,name)
          | Var     _ -> names
          | Set     (_,term) -> ops(term,names)
-         | Lambda  (_,term) -> ops(term,names)
-         | Apply   (term,terms) -> List.foldr ops (ops(term,names)) terms
+         | Lambda  (_,_,term) -> ops(term,names)
+         | Apply   (term,terms) -> List.foldl ops (ops(term,names)) terms
          | If      (t1,t2,t3) -> ops(t1,ops(t2,ops(t3,names)))
          | IfThen  (t1,t2) -> ops(t1,ops(t2,names))
-         | Let     (_,terms,body) -> List.foldr ops (ops(body,names)) terms
-         | Letrec  (_,terms,body) -> List.foldr ops (ops(body,names)) terms
+         | Let     (_,terms,body) -> List.foldl ops (ops(body,names)) terms
+         | Letrec  (_,terms,body) -> List.foldl ops (ops(body,names)) terms
          | Seq     terms -> List.foldr ops names terms
 
+  op  sortDefs: Definitions -> Definitions
   def sortDefs(defs) = 
+      let defs = sortGT (fn ((nm1,_),(nm2,_)) -> nm2 leq nm1) defs in
       let defMap = 
-	  List.foldr (fn((name,term),map)-> StringMap.insert(map,name,(name,term)))
+	  List.foldl (fn((name,term),map)-> StringMap.insert(map,name,(name,term)))
 	  StringMap.empty defs
       in
       let map = 
-	  List.foldr
+	  List.foldl
 	    (fn((name,term),map) -> 
 		let opers = ops(term,StringSet.empty) in
 		let opers = StringSet.listItems opers in
@@ -137,6 +145,11 @@ ListADT qualifying spec {
        defs
 
   %% Printing of characters is temporarily wrong due to bug in lexer.
+
+  def ppDecl (decl : LispDecl) : Pretty =
+     case decl of
+       | Ignore names -> prettysLinearDelim ("(declare (ignore ", " ", ")) ")
+                                            (List.map string names)
 
   def ppTerm (t : LispTerm) : Pretty =
     case t
@@ -161,12 +174,13 @@ ListADT qualifying spec {
          (0, [(0, strings ["(setq ", s, " "]),
               (2, prettysNone [ppTerm t, string ")"])])
 
-       | Lambda (ss, t) ->
+       | Lambda (ss, decls, t) ->
          blockFill
          (0, [(0, prettysLinearDelim
                     ("#'(lambda (", " ", ") ")
                     (List.map string ss)),
-              (3, prettysNone [ppTerm t, string ")"])])
+	      (3, prettysAll ((List.map ppDecl decls) @ 
+			      [prettysNone [ppTerm t, string ")"]]))])
        | Apply (Op "list", [Const(Parameter v)]) ->
 	 % (list :foo) -> '(:foo)   optimization for nullary constructors
 	 if sub(v,0) = #:
@@ -210,14 +224,15 @@ ListADT qualifying spec {
               (2, prettysAllDelim
                   ("(", "", ") ")
                   (ListPair.map
-                    (fn (s, Lambda (args, body)) ->
+                    (fn (s, Lambda (args, decls, body)) ->
                       prettysFillDelim
                         ("(", " ", ")")
                         [string s,
                          prettysLinearDelim
                            ("(", " ", ")")
                            (List.map string args),
-                         ppTerm body])
+			 prettysAll ((List.map ppDecl decls) @ [prettysNone [ppTerm body]])
+			])
                     (ss, ts))),
               (2, prettysNone [ppTerm t, string ")"])])
 
@@ -228,15 +243,16 @@ ListADT qualifying spec {
 
   def ppOpDefn(s : String,term:LispTerm) : Pretty = 
       case term
-	of Lambda (args, body) -> 
+	of Lambda (args, decls, body) -> 
 	    blockFill
 	      (0, [(0, string "(defun "),
 	           (0, string s),
 	           (0, prettysLinearDelim
 	                 (" (", " ", ") ")
 	                 (List.map string args)),
-	           (2, prettysNone [ppTerm body, string ")"]),
-	           (0, PrettyPrint.newline ())])
+		   (2, prettysAll ((List.map ppDecl decls) @ 
+				   [prettysNone [ppTerm body, string ")"]])),
+		   (0, PrettyPrint.newline ())])
 	 | _ -> 
 	    blockFill
 	      (0, [(0, string "(defparameter "),
@@ -249,6 +265,36 @@ ListADT qualifying spec {
     (Cons (emptyPretty (),
       Cons (string title,
         Cons (emptyPretty (), ps)))) : Prettys
+
+  op ppDefToStream: Definition * Stream -> ()
+  def ppDefToStream(ldef,stream) =
+    let p = ppOpDefn ldef in
+    let t = format (80, p) in
+    (toStreamT (t,
+	       fn ((_,string), ()) -> streamWriter(stream,string),
+	       (),
+	       fn (n,()) -> streamWriter(stream,newlineAndBlanks n));
+     streamWriter(stream,"\n"))
+
+  op ppSpecToFile : LispSpec * String * String -> ()
+
+  def ppSpecToFile (spc, file, _ (* preamble *)) =
+    %% Rewritten to not use ppSpec which requires a lot of space for large specs
+    let defs = sortDefs(spc.opDefns) 	in
+    let name = spc.name 		in
+    IO.withOpenFileForWrite
+      (file,
+       fn stream ->
+	(%streamWriter(stream,preamble);
+	 streamWriter(stream,";;; Lisp spec\n\n");
+	 app (fn pkgName -> streamWriter (stream,
+					  "(defpackage \"" ^ pkgName ^ "\")\n"))
+	  (sortGT (fn (x,y) -> y leq x) spc.extraPackages);
+	streamWriter(stream,"\n(defpackage \"" ^ name ^ "\")");
+	streamWriter(stream,"\n(in-package \"" ^ name ^ "\")\n\n");
+
+	streamWriter(stream,";;; Definitions\n\n");
+	app (fn ldef -> ppDefToStream(ldef,stream)) defs))
 
   def ppSpec (s : LispSpec) : Pretty =
       let defs = sortDefs(s.opDefns) 	in
@@ -268,17 +314,10 @@ ListADT qualifying spec {
 %     List.++ [string "||#", emptyPretty ()]
     )
 
-  op ppSpecToFile : LispSpec * String * Text -> ()
-
-  def ppSpecToFile (spc, file, preamble) =
-    let p = System.time (ppSpec spc) in
-    let t = format (80, p) in
-    toFile (file, t ++ preamble)
-
   op ppSpecToTerminal : LispSpec -> ()
 
   def ppSpecToTerminal spc =
-    let p = System.time (ppSpec spc) in
+    let p = ppSpec spc in
     let t = format (80, p) in
     toTerminal t
 
@@ -296,7 +335,7 @@ ListADT qualifying spec {
 
 op  mkLVar : String -> LispTerm
 op  mkLOp : String -> LispTerm
-op  mkLLambda : Strings * LispTerm -> LispTerm
+op  mkLLambda : Strings * LispDecls * LispTerm -> LispTerm
 op  mkLApply  : LispTerm * List(LispTerm) -> LispTerm
 op  mkLIf : LispTerm * LispTerm * LispTerm -> LispTerm
 op  mkLLet : Strings * List(LispTerm) * LispTerm -> LispTerm
@@ -311,8 +350,8 @@ op  mkLIntern : String -> LispTerm
 
 def mkLOp s = Op s
 def mkLVar s = Var s
-def mkLLambda(args,body):LispTerm = 
-    Lambda(args,body)
+def mkLLambda(args,decls,body):LispTerm = 
+    Lambda(args,decls,body)
 def mkLApply(f,terms) = Apply(f,terms)
 def mkLIf(t1,t2,t3) = If(t1,t2,t3)
 def mkLLet(vars,terms,term) = 
@@ -323,9 +362,9 @@ def mkLSeq(terms) = Seq(terms)
 def mkLQuote id = mkLOp ("'" ^ id) 
 
 def mkLNat n = Const(Nat n)
-def mkLInt n = if n >= (Integer.fromNat 0)
-		then mkLNat (Nat.toNat n)
-	      else mkLApply(mkLOp "-",[mkLNat (Nat.toNat (Integer.~ n))])
+def mkLInt n = if n >= 0
+		then mkLNat n
+	      else mkLApply(mkLOp "-",[mkLNat (Integer.~ n)])
 def mkLChar ch = Const(Char ch)
 def mkLBool b = Const(Boolean b)
 

@@ -6,6 +6,36 @@
  *
  *
  * $Log$
+ * Revision 1.10  2003/07/05 07:46:37  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.9  2003/06/23 18:00:15  weilyn
+ * internal release version
+ *
+ * Revision 1.8  2003/04/23 01:14:38  weilyn
+ * BindingFactory.java
+ *
+ * Revision 1.7  2003/04/01 02:29:36  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.6  2003/03/29 03:13:55  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.5  2003/03/14 04:14:00  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.4  2003/02/18 18:12:54  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:14:03  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:39:29  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:01:54  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -151,10 +181,73 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         return impl;
     }
     
+    public DefElementImpl createDef(SpecElement parent) {
+        DefElementImpl impl = new DefElementImpl(this);
+        getWrapper().wrapDef(impl, parent);
+        impl.setParent(parent);
+        return impl;
+    }
+    
+    public ClaimElementImpl createClaim(SpecElement parent) {
+        ClaimElementImpl impl = new ClaimElementImpl(this);
+        getWrapper().wrapClaim(impl, parent);
+        impl.setParent(parent);
+        return impl;
+    }    
+    
+    public ImportElementImpl createImport(SpecElement parent) {
+        ImportElementImpl impl = new ImportElementImpl(this);
+        getWrapper().wrapImport(impl, parent);
+        impl.setParent(parent);
+        return impl;
+    }
+    
+    public DiagElemElementImpl createDiagElem(DiagramElement parent) {
+        DiagElemElementImpl impl = new DiagElemElementImpl(this);
+        getWrapper().wrapDiagElem(impl, parent);
+        impl.setParent(parent);
+        return impl;
+    }
+
+    public ProofElementImpl createProof(Element src) {
+        ProofElementImpl c = new ProofElementImpl(this);
+        getWrapper().wrapProof(c, src);
+        c.setParent(src);
+        return c;
+    }
+    
+    public MorphismElementImpl createMorphism(Element src) {
+        MorphismElementImpl c = new MorphismElementImpl(this);
+        getWrapper().wrapMorphism(c, src);
+        c.setParent(src);
+        return c;
+    }
+
+    public DiagramElementImpl createDiagram(Element src) {
+        DiagramElementImpl c = new DiagramElementImpl(this);
+        getWrapper().wrapDiagram(c, src);
+        c.setParent(src);
+        return c;
+    }
+
+    public ColimitElementImpl createColimit(Element src) {
+        ColimitElementImpl c = new ColimitElementImpl(this);
+        getWrapper().wrapColimit(c, src);
+        c.setParent(src);
+        return c;
+    }    
+
+    /*public UIDElementImpl createUID(Element src) {
+        UIDElementImpl c = new UIDElementImpl(this);
+        getWrapper().wrapUID(c, src);
+        c.setParent(src);
+        return c;
+    }*/
+
     public SourceElementImpl createSource() {
         return new SourceElementImpl(this);
     }
-    
+        
     public void addPreCommitListener(CommitListener l) {
         synchronized (this) {
             if (preCommitListeners == null)
@@ -602,11 +695,23 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
         if (target instanceof SpecElement) {
             SpecElementImpl impl = (SpecElementImpl)getElementImpl(target);
             impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof ProofElement) {
+            ProofElementImpl impl = (ProofElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof MorphismElement) {
+            MorphismElementImpl impl = (MorphismElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof DiagramElement) {
+            DiagramElementImpl impl = (DiagramElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
+        } else if (target instanceof ColimitElement) {
+            ColimitElementImpl impl = (ColimitElementImpl)getElementImpl(target);
+            impl.updateMembers(propertyName, els, orderIndices, optMap);
         } else {
-	    Util.log("DefaultLangModel.updateMembers() : "+propertyName+" els = "+els.length);
-	    Util.log("DefaultLangModel.updateMembers() orderIndices = "+Util.print(orderIndices)+" optMap = "+Util.print(optMap));
+	    //Util.log("DefaultLangModel.updateMembers() : "+propertyName+" els = "+els.length);
+	    //Util.log("DefaultLangModel.updateMembers() orderIndices = "+Util.print(orderIndices)+" optMap = "+Util.print(optMap));
             SourceElementImpl impl = (SourceElementImpl)getElementImpl(target);
-	    Util.log("DefaultLangModel.updateMembers() impl = "+impl);
+	    //Util.log("DefaultLangModel.updateMembers() impl = "+impl);
             impl.updateMembers(propertyName, els, orderIndices, optMap);
         }
     }
@@ -619,7 +724,19 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
 	} else if (target instanceof SpecElement) {
 	    SpecElementImpl impl = (SpecElementImpl)getElementImpl(target);
 	    impl.updateMemberOrder(orderedMembers);
-	}
+	} else if (target instanceof ProofElement) {
+            ProofElementImpl impl = (ProofElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        } else if (target instanceof MorphismElement) {
+            MorphismElementImpl impl = (MorphismElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        } else if (target instanceof DiagramElement) {
+            DiagramElementImpl impl = (DiagramElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        } else if (target instanceof ColimitElement) {
+            ColimitElementImpl impl = (ColimitElementImpl)getElementImpl(target);
+            impl.updateMemberOrder(orderedMembers);
+        }
     }
     
     public void activate(Element target) {
@@ -667,4 +784,5 @@ public class DefaultLangModel implements LangModel, LangModel.Updater, Runnable 
             }
         }
     }
+    
 }

@@ -1,92 +1,91 @@
 XML qualifying spec
 
+  import ../Utilities/XML_Base
   import ../Utilities/XML_Unicode
+  import EntityMaps
 
   sort State = {exceptions : List XML_Exception, % for deferred processing
 		messages   : List String,
 		utext      : UString,
+		ge_defs    : GE_Map,
+		pe_defs    : PE_Map,
 		context    : Processing_Environment}
 
   def initialState (uchars : UChars) : State =
-    {exceptions = [], 
-     messages   = [], 
+    {exceptions = [],
+     messages   = [],
      utext      = uchars,
+     ge_defs    = empty_map,
+     pe_defs    = empty_map,
      context    = default_processing_environment}
-
 
   sort Processing_Environment = {tracing? : Boolean} % could add verbosity, etc.
 
-  def default_processing_environment : Processing_Environment = 
+  def default_processing_environment : Processing_Environment =
     {tracing? = Trace_XML_Parser?}
 
   def Trace_XML_Parser? : Boolean = false
 
-  sort XML_Exception =
-    | EOF         EOF_Error
-    | Surprise    Surprise_Error
-    | WFC         WFC_Error        % well-formedness condition
-    | VC          VC_Error         % validity condition
-    | KC          KC_Error         % kestrel well-formedness condition
+  sort XML_Exception = {kind        : XML_Exception_Type,
+			requirement : String,
+			start       : UChars,
+			tail        : UChars,
+			peek        : Nat,
+			we_expected : List (String * String),
+			but         : String,
+			so_we       : String}
+
+  sort XML_Exception_Type = | EOF
+                            | Syntax
+                            | WFC
+                            | VC
+                            | KC
 
   def print_pending_XML_Exceptions (state : State) : String =
     %% maybe be sensitive to context ?
     case state.exceptions of
       | [] -> ""
       | exceptions ->
-        "\nXML Errors:\n " ^
-	(foldl (fn (exception, result) -> result ^ (print_one_XML_Exception (exception, state.utext))) "" exceptions) ^
-	"\n"
+        "\nXML Errors:\n" ^
+	(foldl (fn (exception, result) -> result ^ (print_one_XML_Exception (exception, state.utext))) "" (rev exceptions)) ^
+	"\n\n"
 
-  def print_one_XML_Exception (exception : XML_Exception, utext : UChars) : String =
-    "\n" ^
-    (case exception of
-       | EOF      x -> print_EOF_Error      (x, utext)
-       | Surprise x -> print_Surprise_Error (x, utext)
-       | WFC      x -> print_WFC_Error      x
-       | VC       x -> print_VC_Error       x
-       | KC       x -> print_KC_Error       x
-       ) ^ "\n"
-       
-  %% --------------------------------------------------------------------------------
-
-  sort EOF_Error = {context : String,
-		    start   : UChars}
-
-  def print_EOF_Error (x : EOF_Error, utext : UChars) : String =
+  def print_one_XML_Exception (x : XML_Exception, utext : UChars) : String =
     let (line, column, byte) = location_of (x.start, utext) in
     let location = (Nat.toString line) ^ ":" ^ (Nat.toString column) ^ " (byte " ^ (Nat.toString byte) ^ ")" in
-    "EOF error " ^ x.context ^ ", starting at " ^ location
+
+      "\n At " ^ location
+    ^ "\n " ^ (case x.kind of
+		 | EOF       -> "EOF: "
+		 | Syntax    -> "Syntax error: "
+		 | WFC       -> "WFC (Well-Formedness Condition): "
+		 | VC        -> "VC  (Validity Condition): "
+		 | KC        -> "KC  (Kestrel-specific well-formedness condition): ")
+    ^ x.requirement
+    ^ "\n Viewing ["    ^ (string (prefix_to_tail (x.start, x.tail))) ^ "]"
+    ^ " with pending [" ^ (string (prefix_for_n   (x.tail,  x.peek))) ^ "],"
+    ^ (case x.we_expected of
+	 | []  -> "\n <we had no expectations?> \n"
+	 | [_] -> "\n we expected: \n"
+	 | _   -> "\n we expected one of: \n")
+    ^ (let max_length = foldl (fn ((s1, _), max_length) -> max (max_length, length s1)) 0 x.we_expected in
+       let
+         def pad n =
+	   if n >= max_length then
+	     ""
+	   else
+	     " " ^ pad (n + 1)
+       in
+	 foldl (fn ((s1, s2), result) ->
+		result ^ "\n    " ^ s1 ^ (pad (length s1)) ^ " -- " ^ s2)
+	       ""
+	       x.we_expected)
+    ^ "\n\n but " ^ x.but ^ ","
+    ^ "\n so we " ^ x.so_we
+    ^ "\n"
 
   %% --------------------------------------------------------------------------------
 
-  sort Surprise_Error = {context  : String,
-			 action   : String,
-			 expected : List (String * String),
-			 start    : UChars,
-			 tail     : UChars,
-			 peek     : Nat}
-
-  def print_Surprise_Error (surprise, utext) : String =
-    let max_length = foldl (fn ((s1, _), max_length) -> max (max_length, length s1)) 0 surprise.expected in
-    let (line, column, byte) = location_of (surprise.start, utext) in
-    let location = (Nat.toString line) ^ ":" ^ (Nat.toString column) ^ " (byte " ^ (Nat.toString byte) ^ ")" in
-    let 
-       def pad n =
-	 if n >= max_length then
-	   ""
-	 else
-	   " " ^ pad (n + 1)
-    in
-      "\n "                ^ surprise.context 
-    ^ "\n at "             ^ location 
-    ^ "\n having viewed [" ^ (string (prefix_to_tail (surprise.start, surprise.tail))) ^ "]"
-    ^ "\n  with pending [" ^ (string (prefix_for_n   (surprise.tail,  surprise.peek))) ^ "]"
-    ^ "\n expected one of: " 
-    ^ (foldl (fn ((s1, s2), result) -> 
-		result ^ "\n    " ^ s1 ^ (pad (length s1)) ^ " for " ^ s2) 
-	       "" 
-	       surprise.expected) 
-      ^ "\n so took action: " ^ surprise.action
 
   def location_of (target : UChars, utext : UChars) : Nat * Nat * Nat =
     let
@@ -96,7 +95,7 @@ XML qualifying spec
 	else
 	  case tail of
 	    | [] -> (line, column, byte)
-	    | char :: tail -> 
+	    | char :: tail ->
 	      case char of
 		| 10 -> aux (tail, line + 1, 0,          byte + 1)
 		| _  -> aux (tail, line,     column + 1, byte + 1)
@@ -127,20 +126,7 @@ XML qualifying spec
     in
       aux (start, 0, [])
 
-  %% --------------------------------------------------------------------------------
-
-  sort WFC_Error  = {description : String}
-  def print_WFC_Error x : String =
-       "WFC (Well-Formedness Condition): " ^ x.description
-
-  sort VC_Error   = {description : String}
-  def print_VC_Error x : String =
-       "VC (Validity Condition): " ^ x.description
-
-  sort KC_Error   = {description : String}
-  def print_KC_Error x : String =
-       "KC (Kestrel-specific well-formedness condition): " ^ x.description
-
-  %% --------------------------------------------------------------------------------
+  def describe_char char =
+    "'" ^ (string [char]) ^ "' (= #x" ^ (toHex char) ^ "; = #" ^ (Nat.toString char) ^ ";)"
 
 endspec

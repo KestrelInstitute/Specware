@@ -6,6 +6,30 @@
  *
  *
  * $Log$
+ * Revision 1.8  2003/04/23 00:45:52  weilyn
+ * Added diagram element support
+ *
+ * Revision 1.7  2003/04/01 02:29:34  weilyn
+ * Added support for diagrams and colimits
+ *
+ * Revision 1.6  2003/03/29 03:13:53  weilyn
+ * Added support for morphism nodes.
+ *
+ * Revision 1.5  2003/03/14 04:12:30  weilyn
+ * Added support for proof terms
+ *
+ * Revision 1.4  2003/02/18 17:59:33  weilyn
+ * Added support for imports.
+ *
+ * Revision 1.3  2003/02/16 02:12:13  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:37:43  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:01:41  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -532,7 +556,6 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
             PositionRef posEnd = editor.createPositionRef(end, Position.Bias.Forward);
             return new PositionBounds(posBegin, posEnd);
         }
-
     }
     
     public String toString() {
@@ -679,5 +702,42 @@ public abstract class ElementBinding implements TextBinding, ElementProperties {
         public void markOp(OpElement element, int what) throws ElementPrinterInterruptException {
             mark(element, what);
         }
+        
+        public void markDef(DefElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
+        public void markClaim(ClaimElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+        
+        public void markImport(ImportElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
+        public void markProof(ProofElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
+        public void markMorphism(MorphismElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
+        public void markDiagElem(DiagElemElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+        
+        public void markDiagram(DiagramElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
+        public void markColimit(ColimitElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }
+
+        /*public void markURI(URIElement element, int what) throws ElementPrinterInterruptException {
+            mark(element, what);
+        }*/
+        
     }
 }

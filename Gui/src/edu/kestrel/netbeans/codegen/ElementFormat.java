@@ -6,6 +6,27 @@
  *
  *
  * $Log$
+ * Revision 1.7  2003/07/05 07:46:35  lambert
+ * *** empty log message ***
+ *
+ * Revision 1.6  2003/06/23 18:00:14  weilyn
+ * internal release version
+ *
+ * Revision 1.5  2003/04/23 01:08:08  weilyn
+ * Added morphism target/source
+ *
+ * Revision 1.4  2003/02/17 04:29:16  weilyn
+ * Added support for expressions.
+ *
+ * Revision 1.3  2003/02/16 02:12:14  weilyn
+ * Added support for defs.
+ *
+ * Revision 1.2  2003/02/13 19:37:44  weilyn
+ * Added support for claims.
+ *
+ * Revision 1.1  2003/01/30 02:01:42  gilham
+ * Initial version.
+ *
  *
  *
  */
@@ -44,6 +65,8 @@ import edu.kestrel.netbeans.model.*;
 * <LI> <code>{n}</code> Name
 * <LI> <code>{t}</code> Sort
 * <LI> <code>{p}</code> Parameters
+* <LI> <code>{c}</code> Claim-Kind
+* <LI> <code>{e}</code> Expression
 * </UL>
 * 
 * <P>
@@ -52,11 +75,14 @@ import edu.kestrel.netbeans.model.*;
 * the code may be used, a hyphen means it cannot:
 * 
 * <p><CODE><PRE>
-* character   | n  s  p
+* character   | n  s  p  c  e
 * ----------------------------------------------------
-* Spec        | *  -  -
-* sort        | *  -  *
-* op          | *  *  -
+* Spec        | *  -  -  -  -
+* sort        | *  -  *  -  -
+* op          | *  *  -  -  -
+* def         | *  -  *  -  *
+* claim       | *  -  -  *  *
+*
 * </PRE></CODE>
 *
 * <p>The grammar for expressions:
@@ -114,15 +140,21 @@ public final class ElementFormat extends Format {
     /** Magic characters for all kinds of the formating tags.
     * The position of the characters is used as index to the following array.
     */
-    private static final String PROPERTIES_NAMES_INDEX = "nsp"; // NOI18N
+    private static final String PROPERTIES_NAMES_INDEX = "nspceurti"; // NOI18N
 
     /** Array of names of all kinds properties which could be included
     * in the pattern string.
     */
     private static final String[] PROPERTIES_NAMES = {
-        ElementProperties.PROP_NAME,          //n
-        ElementProperties.PROP_SORT,          //s
-        ElementProperties.PROP_PARAMETERS     //p
+        ElementProperties.PROP_NAME,                //n
+        ElementProperties.PROP_SORT,                //s
+        ElementProperties.PROP_PARAMETERS,          //p
+        ElementProperties.PROP_CLAIM_KIND,          //c
+        ElementProperties.PROP_EXPRESSION,          //e
+        ElementProperties.PROP_PATH,                //u for unitId
+        ElementProperties.PROP_SOURCE_UNIT_ID,      //r
+        ElementProperties.PROP_TARGET_UNIT_ID,      //t
+        ElementProperties.PROP_PROOFSTRING,         //i for "prove ... _in_" (running out of letters..!)
     };
 
     /** Status constants for the parser. */
@@ -279,7 +311,7 @@ public final class ElementFormat extends Format {
                 params = parseParams(s.substring(2));
             }
 
-            if ("ntcsrv".indexOf(c) != -1) { // NOI18N
+            if ("nsceurti".indexOf(c) != -1) { // NOI18N
                 switch (params.length) {
                 case 0: return new Tag(c, "", ""); // NOI18N
                 case 2: return new Tag(c, params[0], params[1]);
@@ -395,7 +427,31 @@ public final class ElementFormat extends Format {
                 case 's':
                     buf.append(((OpElement)element).getSort());
                     break;
-		}
+                    
+                case 'c':
+                    buf.append(((ClaimElement)element).getClaimKind());
+                    break;
+                    
+                case 'e':
+                    if (element instanceof DefElement) {
+                        buf.append(((DefElement)element).getExpression());
+                    } else if (element instanceof ClaimElement) {
+                        buf.append(((ClaimElement)element).getExpression());
+                    }
+                    break;
+               /* case 'u':
+                    buf.append(((UIDElement)element).getPath());
+                    break;*/
+                case 'r':
+                    buf.append(((MorphismElement)element).getSourceUnitID());
+                    break;
+                case 't':
+                    buf.append(((MorphismElement)element).getTargetUnitID());
+                    break;
+                case 'i':
+                    buf.append(((ProofElement)element).getProofString());
+                    break;
+                }
 
                 if (buf.length() > mark + prefix.length()) {
                     buf.append(suffix);
@@ -434,7 +490,12 @@ public final class ElementFormat extends Format {
 
                 switch (kind) {
                 case 'p':
-		    String[] params = ((SortElement)element).getParameters();
+                    String[] params = null;
+                    if (element instanceof SortElement) {
+                        params = ((SortElement)element).getParameters();
+                    } else if (element instanceof DefElement) {
+                        params = ((DefElement)element).getParameters();
+                    }
 		    if (params != null) {
 			for (int i = 0; i < params.length; i++) {
 			    if (i > 0) {

@@ -5,17 +5,17 @@ spec
   import /Library/Legacy/DataStructures/NatMapSplay
   import TermIndex 
 
-    sort demod a = 
+    sort Demod a = 
 	 {index : TermIndex.index,
 	  idMap : NatMap.Map a }
 
-    op empty     : fa(a) demod a
-    op isEmpty   : fa(a) demod a -> Boolean
+    op empty     : fa(a) Demod a
+    op isEmpty   : fa(a) Demod a -> Boolean
 
-    op listRules : fa(a) demod a -> List a
-    op addRule   : fa(a) Term * a * demod a -> demod a
-    op addRules  : fa(a) List (Term * a) * demod a -> demod a
-    op getRules  : fa(a) demod a * Term -> List a
+    op listRules : fa(a) Demod a -> List a
+    op addRule   : fa(a) MS.Term * a * Demod a -> Demod a
+    op addRules  : fa(a) List (MS.Term * a) * Demod a -> Demod a
+    op getRules  : fa(a) Demod a * MS.Term -> List a
  
 \end{spec}
   Demodulation structure for maintaining rewrite rules and 

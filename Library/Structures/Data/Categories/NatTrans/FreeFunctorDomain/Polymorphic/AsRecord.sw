@@ -19,5 +19,11 @@ spec {
       cod = codFunc,
       components = components
     }
+
+  def emptyNatTrans targetCat = {
+      dom = emptyFunctor targetCat,
+      cod = emptyFunctor targetCat,
+      components = PolyMap.emptyMap
+    }
 }
 \end{spec}

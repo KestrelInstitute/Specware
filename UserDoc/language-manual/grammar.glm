@@ -8,18 +8,31 @@ They are brought together here, without additional text, for
 easy reference.
 </para>
 <!-- ***************************************************************** -->
+<formalpara><title>The grammar description formalism</title>
+<para>
+<<
+||    `wiffle ::= `waffle [ `waffle-tail ] | `piffle { + `piffle }*
+>>
+<<
+||    `piffle ::= 1 | M { `piffle }*
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Models</title>
+<para>
+<<
+||    `spec ::= `spec-form
+||  
+||    `op ::= `op-name
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
 <formalpara><title>Symbols and Names</title>
 <para>
 <<
 ||  `symbol ::= `name | `literal | `special-symbol
-||  
-||  `qualifiable-name ::= `unqualified-name | `qualified-name
-||  
-||  `unqualified-name ::= `name
-||  
-||  `qualified-name ::= `qualifier . `name
-||  
-||  `qualifier ::= `word-symbol
 ||  
 ||  `name ::= `word-symbol | `non-word-symbol
 ||  
@@ -70,19 +83,20 @@ easy reference.
 <formalpara><title>Units</title>
 <para>
 <<
-||  `project ::= `unit-definition*
+||  `unit-definition ::= `unit-identifier = `unit-term
 ||  
-||  `specware-file ::=
-||       `unit
-||     | `unit-definition { `unit-definition }*
+||  `unit-term ::=
+||     `spec-term
+||   | `morphism-term
+||   | `diagram-term
+||   | `target-code-term
+||   | `proof-term
 ||  
-||  `unit-definition ::= `unit-identifier = `unit
+||  `specware-file-contents ::=
+||     `unit-term
+||   | `infile-unit-definition { `infile-unit-definition }*
 ||  
-||  `unit ::=
-||       `spec-term
-||     | `morphism-term
-||     | `diagram-term
-||     | `generate-term
+||  `infile-unit-definition ::= `fragment-identifier = `unit-term
 >>
 </para>
 </formalpara>
@@ -90,17 +104,13 @@ easy reference.
 <formalpara><title>Unit Identifiers</title>
 <para>
 <<
-||  `unit-identifier ::=
-||       `specpath-relative-path
-||     | `relative-path
+||  `unit-identifier ::= `swpath-based-path | `relative-path
 ||  
-||  `specpath-relative-path ::= / relative-path
+||  `swpath-based-path ::= / `relative-path
 ||  
-||  `relative-path ::=
-||      | `name [ # `name ]
-||      | `path-element  / `relative-path
+||  `relative-path ::= { `path-element / }* `path-element [ # `path-element ]
 ||  
-||  `path-element ::= `name | .. | .
+||  `path-element ::= `word-symbol
 >>
 </para>
 </formalpara>
@@ -109,11 +119,13 @@ easy reference.
 <para>
 <<
 ||  `spec-term ::=
-||       `unit-identifier
-||       `spec-form
-||     | `spec-qualification
-||     | `spec-translation
-||     | `diagram-colimit
+||     `unit-identifier
+||   | `spec-form
+||   | `spec-qualification
+||   | `spec-translation
+||   | `spec-substitution
+||   | `diagram-colimit
+||   | `obligator
 ||  
 >>
 </para>
@@ -122,7 +134,23 @@ easy reference.
 <formalpara><title>Spec Forms</title>
 <para>
 <<
-||  `spec-form ::= spec `declaration-sequence end
+||  `spec-form ::= spec { `declaration }* endspec
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Qualifications</title>
+<para>
+<<
+||  `spec-qualification ::=  `qualifier qualifying `spec-term
+||  
+||  `qualifier ::= `word-symbol
+||  
+||  `qualifiable-name ::= `unqualified-name | `qualified-name
+||  
+||  `unqualified-name ::= `name
+||  
+||  `qualified-name ::= `qualifier . `name
 >>
 </para>
 </formalpara>
@@ -130,21 +158,42 @@ easy reference.
 <formalpara><title>Translations</title>
 <para>
 <<
-||  `spec-qualification ::=  `qualifier qualifying `spec-term
-||  
 ||  `spec-translation ::= translate `spec-term by `name-map
 ||  
 ||  `name-map ::= '{ [ `name-map-item { , `name-map-item }* ] '}
 ||  
-||  `name-map-item :: `qualifiable-name +-> `qualifiable-name
+||  `name-map-item ::= `sort-name-map-item | `op-name-map-item
+||  
+||  `sort-name-map-item ::= [ sort ] `qualifiable-name +-> `qualifiable-name
+||  
+||  `op-name-map-item ::=
+||      [ op ] `annotable-qualifiable-name +-> `annotable-qualifiable-name
+||  
+||  `annotable-qualifiable-name ::= `qualifiable-name [ : `sort ]
 >>
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Diagram Colimit</title>
+<formalpara><title>Substitutions</title>
+<para>
+<<
+||  `spec-substitution ::= `spec-term '[ `morphism-term ']
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Diagram Colimits</title>
 <para>
 <<
 ||  `diagram-colimit ::= colimit `diagram-term
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Obligators</title>
+<para>
+<<
+||  `obligator ::= obligations `unit-term
 >>
 </para>
 </formalpara>
@@ -153,22 +202,10 @@ easy reference.
 <para>
 <<
 ||  `morphism-term ::=
-||       `unit-identifier
-||     | `spec-morphism
+||     `unit-identifier
+||   | `spec-morphism
 ||  
-||  `spec-morphism ::= morphism `spec-term -> `spec-term '{ `name-map '}
->>
-</para>
-</formalpara>
-<!-- ***************************************************************** -->
-<formalpara><title>Spec sort and operator visibility</title>
-<para>
-<<
-||  `spec-visibility ::=
-||       hide `name-list in `spec-term
-||     | export `name-list from `spec-term
-||  
-||  `name-list ::= '{ `name { , `name }* '}
+||  `spec-morphism ::= morphism `spec-term -> `spec-term `name-map
 >>
 </para>
 </formalpara>
@@ -177,19 +214,19 @@ easy reference.
 <para>
 <<
 ||  `diagram-term ::=
-||       `unit-identifier
-||     | `diagram-form
+||     `unit-identifier
+||   | `diagram-form
 ||  
 ||  `diagram-form ::= diagram '{ `diagram-element { , `diagram-element }* '}
 ||  
-||  `diagram-elem ::
-||       `diagram-node
-||     | `diagram-edge
+||  `diagram-element ::=
+||     `diagram-node
+||   | `diagram-edge
 ||  
 ||  `diagram-node ::= `name +-> `spec-term
 ||  
 ||  `diagram-edge ::= `name : `name -> `name +-> `morphism-term
-||       
+||     
 >>
 </para>
 </formalpara>
@@ -197,7 +234,28 @@ easy reference.
 <formalpara><title>Generate Terms</title>
 <para>
 <<
-||  `generate-term :: generate `string `spec-term [ in `string ]
+||  `target-code-term ::=
+||      generate `target-language-name `spec-term [ in `string-literal ]
+||  
+||  `target-language-name ::= lisp
+>>
+</para>
+</formalpara>
+<!-- ***************************************************************** -->
+<formalpara><title>Proof Terms</title>
+<para>
+<<
+||  `proof-term ::=
+||      prove `claim-name in `spec-term
+||                      [ with `prover-name ]
+||                      [ using '{ `claim-list '} ]
+||                      [ options `prover-options ]
+||  
+||  `prover-name ::= snark
+||  
+||  `claim-list ::= `claim-name { , `claim-name }*
+||  
+||  `prover-options ::= `string-literal
 >>
 </para>
 </formalpara>
@@ -224,7 +282,7 @@ easy reference.
 <formalpara><title>Import-declarations</title>
 <para>
 <<
-||  `import-declaration ::= import `spec-name
+||  `import-declaration ::= import `spec-term
 >>
 </para>
 </formalpara>
@@ -265,7 +323,7 @@ easy reference.
 ||  
 ||  `sort-scheme ::= [ `sort-variable-binder ] `sort
 ||  
-||  `sort-variable-binder ::= fa `local-sort-variable-list
+||  `sort-variable-binder ::= fa ( `local-sort-variable-list )
 ||  
 >>
 </para>
@@ -293,11 +351,11 @@ easy reference.
 <formalpara><title>Claim-definitions</title>
 <para>
 <<
-||  `claim-definition ::= `claim-kind `label `equals `claim
+||  `claim-definition ::= `claim-kind `claim-name `equals `claim
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
-||  `label ::= `any-text-up-to-equals
+||  `claim-name ::= `name
 ||  
 ||  `claim ::= [ `sort-quantification ] `expression
 ||  
@@ -373,9 +431,9 @@ easy reference.
 <<
 ||  `sort-instantiation ::= `sort-name `actual-sort-parameters
 ||  
-||  `actual-sort-parameters ::= `closed-sort | `proper-sort-list
+||  `actual-sort-parameters ::= `closed-sort | ( `proper-sort-list )
 ||  
-||  `proper-sort-list ::= ( `sort , `sort { , `sort }* )
+||  `proper-sort-list ::= `sort , `sort { , `sort }*
 ||  
 >>
 </para>
@@ -425,7 +483,7 @@ easy reference.
 <formalpara><title>Sort-quotients</title>
 <para>
 <<
-||  `sort-quotient ::= `closed-sort / `expression
+||  `sort-quotient ::= `closed-sort / `closed-expression
 >>
 </para>
 </formalpara>
@@ -493,7 +551,7 @@ easy reference.
 ||  `rec-let-binding ::=
 ||    def `name `formal-parameter-sequence [ : `sort ] `equals `expression
 ||  
-||  `formal-parameter-sequence ::= { `formal-parameter }* `formal-parameter
+||  `formal-parameter-sequence ::= `formal-parameter { `formal-parameter }*
 >>
 </para>
 </formalpara>
@@ -514,9 +572,9 @@ easy reference.
 ||  
 ||  `quantifier ::= fa | ex
 ||  
-||  `local-variable-list ::= `annotatable-variable { , `annotatable-variable }*
+||  `local-variable-list ::= `annotable-variable { , `annotable-variable }*
 ||  
-||  `annotatable-variable ::= `local-variable [ : `sort ]
+||  `annotable-variable ::= `local-variable [ : `sort ]
 ||  
 ||  `local-variable ::= `name
 ||  
@@ -766,7 +824,7 @@ easy reference.
 ||  
 ||  `cons-pattern ::= `closed-pattern :: `tight-pattern
 ||  
-||  `embed-pattern ::= `constructor `closed-pattern
+||  `embed-pattern ::= `constructor [ `closed-pattern ]
 ||  
 ||  `quotient-pattern ::= quotient `closed-expression `tight-pattern
 ||  

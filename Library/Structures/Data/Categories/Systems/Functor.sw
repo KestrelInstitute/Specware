@@ -35,12 +35,34 @@ spec {
 
   sort Functor (O,A)
 
+% the record refinement should appear elsewhere.
+  sort Functor (O,A) = {
+    dom : Sketch,
+    cod : Cat (O,A),
+    vertexMap : PolyMap.Map (V.Elem,O),
+    edgeMap :  PolyMap.Map (E.Elem,A)
+  }
+
   op dom : fa (O,A) Functor (O,A) -> Sketch
+  def dom func = func.dom
+
   op cod : fa (O,A) Functor (O,A) -> Cat (O,A)
+  def cod func = func.cod
+
   op vertexMap : fa (O,A) Functor (O,A) -> PolyMap.Map (V.Elem,O)
+  def vertexMap func = func.vertexMap
+
   op edgeMap : fa (O,A) Functor (O,A) -> PolyMap.Map (E.Elem,A)
+  def edgeMap func = func.edgeMap
 
   op emptyFunctor : fa (O,A) Cat (O,A) -> Functor (O,A)
+  def emptyFunctor cat = {
+    dom = emptySketch,
+    cod = cat,
+    vertexMap = PolyMap.emptyMap,
+    edgeMap = PolyMap.emptyMap
+  }
+    
 \end{spec}
 
 When pretty printing a functor, we don't print the domain or codomain. 

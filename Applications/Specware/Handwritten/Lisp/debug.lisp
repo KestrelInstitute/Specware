@@ -1,5 +1,12 @@
 ;;; Utilities for help in debugging MetaSlang programs in Lisp
-(in-package "USER")
+(in-package "CL-USER")
+
+;; When the following boolean is true, then all exceptions (not just Fail)
+;; take the user into the Lisp debugger.
+;; specwareWizard? has a def in ./Languages/SpecCalculus/Semantics/Monad.sw,
+;; which induces a defparameter in ./Applications/Specware/lisp/Specware4.lisp,
+;; so this defvar would be redundant:
+;; (defvar SpecCalc::specwareWizard? nil)
 
 #+allegro
 (defun quiet-do-command (&rest args)
@@ -50,11 +57,11 @@
 
 ;;; redefines a refine utility
 (defun break-fn (fn-name)
-  (eval `(lisp:trace (,fn-name ;:condition (not *dont-break-next-call*)
-			       :break-before
-			       (if *dont-break-next-call*
-				   (setq *dont-break-next-call* nil)
-				 t)))))
+  (eval `(common-lisp:trace (,fn-name	;:condition (not *dont-break-next-call*)
+			     :break-before
+			     (if *dont-break-next-call*
+				 (setq *dont-break-next-call* nil)
+			       t)))))
 
 
 (defun unbreak-functions (fns)
@@ -102,7 +109,7 @@
 			  (*curry-trace-depth* (+ 1 *curry-trace-depth*)))
 		      (break "~a: ~a~a~a" (- *curry-trace-depth* 1) ',fn
 			     #+allegro excl:arglist
-			     #+Lispworks ()
+			     #+(or mcl Lispworks) ()
 			     args))
 		    (let ((val (let ((*curry-trace-depth* (+ 1 *curry-trace-depth*)))
 				 (apply curry-fn args))))
@@ -141,7 +148,7 @@
 			  (*print-length* *trace-print-length*))
 		      (format t "Call ~a: ~a~a~a~%" *curry-trace-depth* ',fn
 			      #+allegro excl:arglist 
-			      #+Lispworks ()
+			      #+(or mcl Lispworks) ()
 			      args))
 		    (let ((val (let ((*curry-trace-depth* (+ 1 *curry-trace-depth*)))
 				 (apply curry-fn args)))

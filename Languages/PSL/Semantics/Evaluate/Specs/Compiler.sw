@@ -142,7 +142,7 @@ to the initial and final states.
           finalSpecElab <- elaborate finalSpec; 
 
           bSpec <- return (
-             let (initial,final) = (mkNatVertex 0, mkNatVertex 1) in
+             let (initial,final) = (mkNatVertex 0 procId, mkNatVertex 1 procId) in
              let bSpec = addMode (BSpec.make initial finalSpecElab) final finalSpecElab in
              bSpec withFinal (VrtxSet.singleton final));
           proc <- return (makeProcedure (map refOf argVars) varsInScope
@@ -173,10 +173,6 @@ The initial and final states here must agree with those used above
 when the initial bSpec was constructed. Perhaps they shouldn't be
 hard coded.
 
-### A problem here is that the dynamic field in ctxt gets an elaborated
-### spec when initialized? This means it will be elaborated again as we
-### compile the command for the procedure and assemble the bSpec.
-
 After compiling the procedure, we replace the procedure entry in the
 oscarSpec computed in the first pass in the oscarSpec with a new one containing
 the full bSpec.
@@ -186,8 +182,9 @@ the full bSpec.
   def evaluateProcElemPassThree oscarSpec (elem,position) =
     case elem of
       | Proc (procName,procInfo) -> {
-           procValue <- return (eval (procedures oscarSpec, (makeId procName) :Id.Id));
-           (initial,final) <- return (mkNatVertex 0, mkNatVertex 1);
+           procId <- return (makeId procName);
+           procValue <- return (eval (procedures oscarSpec, procId));
+           (initial,final) <- return (mkNatVertex 0 procId, mkNatVertex 1 procId);
            newModeSpec <- union (modeSpec (bSpec procValue) initial) (modeSpec oscarSpec);
            ctxt : CompCtxt <-
                 return {
@@ -201,15 +198,17 @@ the full bSpec.
                   break = None,
                   continue = None,
                   bSpec = bSpec procValue,
+                  procId = procId,
                   returnInfo = returnInfo procValue
                 };
       
            ctxt <- compileCommand ctxt procInfo.command;
-           proc <- makeProcedure (parameters procValue) (varsInScope procValue)
-                                         (returnInfo procValue)
-                                         (modeSpec procValue)
-                                         (bSpec ctxt);
-           oscarSpec <- addProcedure oscarSpec (makeId procName) proc;
+           proc <- makeProcedure (parameters procValue)
+                                 (varsInScope procValue)
+                                 (returnInfo procValue)
+                                 (modeSpec procValue)
+                                 (bSpec ctxt);
+           oscarSpec <- addProcedure oscarSpec procId proc;
            return oscarSpec
          }
       | _ -> return oscarSpec
@@ -269,78 +268,13 @@ functions to compile commands. The counter is used generate unique
   sort Systems.Elem = ATerm Position
 \end{spec}
 
-The argument context is used to generate the specs labeling nodes and
-edges. Both the static and the dynamic context should be included. However,
-for efficiency reasons, and since there is no integrity checking, we
-just use the dynamic context.
-
 Even if bipointed \BSpecs\ have one starting node and a set of ending nodes,
 compilation always produces singleton sets of ending nodes. The partial
-evaluator may generate sets with more than one node, though: that is the
+evaluator may generate sets with more than one node, that is the
 reason for having a set of ending nodes.
 
-The current version includes in the morphism, only those
-things where the map differs from the canonical injection.
-
-The next function should be defined inside the scope of the second
-however, Specware does not have let-polymorphism.
-
-This constructs a new Map to be used n a spec morphism. It does so by
-converting an association list (which is easy to give as an argument)
-into a map (which is also implemented as an association list (duh!)). The
-indirection is silly at this point but may help us later when the maps
-are not implemented by association lists.
-
-Note that the generated map gives only where the morphism differ from
-the identity.  However it checks that everything in the domain is mapped
-to something that exists in the codomain, or if it is not mapped, then
-the name in the domain appears unchanged in the codomain.
-
-Would prefer if we had a syntax for map comprehensions. It would
-make much of the following unnecessary.
-
-The following is incomplete. The generated map should be used to
-prefix the identity.
-
-Note also that when we create the morphism, we don't need the maps.
-They can be derived from the specs involved. The morphism should
-be constructed lazily.
-
-\begin{spec}
-%   op makeOpMap : Spec.Spec -> Spec.Spec -> List (Id.Id * Id.Id) -> Env OpMap.Map
-%   def makeOpMap dom cod mapping =
-%     let
-%       def listToMap opMap (domId,codId) = {
-%           domInfo <- findTheOp dom domId;
-%           codInfo <- findTheOp cod codId;
-%           case evalPartial (opMap, domInfo) of
-%             | None -> return (update (opMap, domInfo, codInfo))
-%             | Some prevCodInfo -> 
-%                 if ~(prevCodInfo = codInfo) then
-%                   fatalError ("Domain id mapped twice: " ^ (show domId))
-%                 else
-%                   return opMap
-%         }
-%     in
-%       fold listToMap empty mapping
-
-%   op mkMorph :
-%        ModeSpec
-%     -> ModeSpec
-%     -> List Id.Id 
-%     -> Env Morphism
-%   def mkMorph dom cod opModifiers = {
-%      opMap <- makeOpMap (specOf dom) (specOf cod) opModifiers;
-%      return (makeMorphism (specOf dom) (specOf cod) identSortMap opMap)
-%    }
-\end{spec}
-
-We compile a command with respect to a procedure context. The context records, amongst
-other things, the current static and dynamic specs. These give, respectively, the
-constants and variables currently in scope. Also in the context is a so-called BSpec.
-This is the flow-graph currently being constructed.
-
-The context also includes the identities of the vertices in the BSpec
+We compile a command with respect to a compilation context.
+The context includes the identities of the vertices in the BSpec
 to be connected by the command. That is, the endpoints of a command are already
 part of the BSpec by the time we compile the command. 
 
@@ -353,7 +287,13 @@ part of the BSpec by the time we compile the command.
     case cmd of
       | Seq cmds -> compileSeq ctxt cmds
       | If [] -> specError "compileCommand: If: empty list of alternatives" position
-      | If alts -> compileAlternatives ctxt alts
+      | If alts -> {
+          ctxt <- compileAlternatives ctxt alts;
+          axm <- return (mkNot (disjList (map (fn ((guard,term),_) -> guard) alts, position), position));
+          prop <- makeAxiom (makeId "guard") axm;
+          apexSpec <- addInvariant (modeSpec ctxt) prop position;
+          connectVertices ctxt (initial ctxt) (final ctxt) apexSpec OpRefSet.empty
+        }
 \end{spec}
 
 To compile a loop, we compile the alternatives in the body in such a
@@ -530,6 +470,16 @@ axiom but we might be better off without an axiom at all.
 \begin{spec}
 	  | Exec trm ->
           (case trm of
+            | Fun(OneName("return",fixity),srt,position) ->
+                compileCommand ctxt (Return None,position)
+            | ApplyN ([Fun(OneName("return",fixity),srt,position)],_) ->
+                compileCommand ctxt (Return None,position)
+            | ApplyN ((Fun(OneName("return",fixity),srt,position)) :: exprs,_) ->
+                compileCommand ctxt (Return (Some (ApplyN (exprs,position))),position)
+            | ApplyN ([lhs,Fun(OneName(":=",fixity),srt,position),rhs],_) ->
+                compileCommand ctxt (Assign (lhs,rhs),position)
+            | ApplyN (lhs :: (Fun(OneName(":=",fixity),srt,position)) :: rhs,_) ->
+                compileCommand ctxt (Assign (lhs,ApplyN (rhs,position)),position)
             | ApplyN ([Fun(OneName(id,fixity),srt,position),argTerm],_) ->
                 if ~((evalPartial (procedures ctxt, (makeId id):Id.Id)) = None) then
                   compileProcCall ctxt None (makeId id) argTerm position
@@ -541,7 +491,7 @@ axiom but we might be better off without an axiom at all.
                 else
                   specError ("call to undefined procedure: " ^ id1 ^ "." ^ id2) position
             | _ ->
-               specError "invalid procedure call or relation statement" position)
+               specError ("invalid procedure call or relation statement: " ^ (show trm)) position)
 \end{spec}
 
 
@@ -596,34 +546,6 @@ This should be an invariant. Must check.
           | SpecError (pos,str) -> specError ("Variable '" ^ (show leftId) ^ "' is undefined") position
           | _ -> raise except);
     apexSpec <- addVariable (modeSpec ctxt) (varInfo withId (makePrimedId leftId)) position; 
-\end{spec}
- 
-The next clause may seem puzzling. The point is that, from the time
-the spec is assigned to the first state until we handle the subsequent
-assignment, a new variable may have been created. Introducing the variable
-(via a \verb+let+) does not give require a transition.  So by the time
-we get here, the dynamic context may have grown beyond what appears
-at the initial state. If the operator is absent from the start state,
-then it cannot appear on the right side and hence should be discarded
-from the spec at the apex. While it may make some sense semantically,
-it may lead to a misleading error message at elaboration time. If the
-variable just declared appears on the right, then using the code below
-gives rise to an error where the operator is undeclared. In fact, the
-user has simply used an unitialized variable.  Nevertheless, for the
-time being, I've chosen to remove it.
-
-                 let spc = ctxt.dynamic in
-                 let mSpec = modeSpec_ms bspec initial in
-                 (case StringMap_find (mSpec.ops,leftId) of
-                     None -> {name = spc.name,
-                              sorts = spc.sorts,
-                              ops = StringMap_remove (spc.ops,leftId),
-                              properties = spc.properties,
-                              imports = spc.imports}
-                   | Some _ -> ctxt.dynamic) in
-          % let apexSpec =
-              % addOp_ast((primedId,fixity,(tyVarsOf srt,srt),None),apexSpec) in
-\begin{spec}
     axm <- mkEquality (leftPrimedTerm,rhs,position);
 \end{spec}
 
@@ -960,21 +882,23 @@ from a natural number.
 
 \begin{spec}
   sort Vrtx.Vertex =
-    | Nat Nat
+    | Nat (Nat * Id.Id)
     | Pair (Vrtx.Vertex * Subst)
 
   op Vrtx.eq? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
   def Vrtx.eq? = Vrtx.equalVertex?
+  % def Vrtx.eq? (v1,v2) = (show v1) = (show v2)
 
   op Vrtx.equalVertex? : Vrtx.Vertex * Vrtx.Vertex -> Boolean 
   def Vrtx.equalVertex? (v1,v2) =
     case (v1,v2) of
       | (Nat n1, Nat n2) -> n1 = n2
       | (Pair (v1,s1), Pair (v2,s2)) -> equalVertex? (v1,v2) & equalSubst? (s1,s2)
+      | _ -> false
 
   def Vrtx.pp vertex =
     case vertex of
-      | Nat n -> String.pp (Nat.toString n)
+      | Nat (n,id) -> String.pp ("(" ^ (Nat.toString n) ^ "," ^ (show id) ^ ")")
       | Pair (vertex,subst) ->
          ppConcat [
            String.pp "(",
@@ -985,23 +909,23 @@ from a natural number.
          ]
   def Vrtx.show vertex = ppFormat (pp vertex)
 
-  op mkNatVertex : Nat -> Vrtx.Vertex
-  def mkNatVertex n = Nat n
+  op mkNatVertex : Nat -> Id.Id -> Vrtx.Vertex
+  def mkNatVertex n id = Nat (n, id)
 
   op newVertex : CompCtxt -> Env (Vrtx.Vertex * CompCtxt)
   def newVertex ctxt =
-    return (mkNatVertex (graphCounter ctxt),
+    return (mkNatVertex (graphCounter ctxt) (procId ctxt),
      ctxt withGraphCounter ((graphCounter ctxt) + 1))
 \end{spec}
 
 \begin{spec}
   sort Edg.Edge =
-    | Nat Nat
+    | Nat (Nat * Id.Id)
     | Triple (Edg.Edge * Subst * Subst)
 
   def Edg.pp edge = 
     case edge of
-      | Nat n -> String.pp (Nat.toString n)
+      | Nat (n,id) -> String.pp ("(" ^ (Nat.toString n) ^ "," ^ (show id) ^ ")")
       | Triple (edge,pre,post) ->
           ppConcat [
             String.pp "(",
@@ -1021,15 +945,16 @@ from a natural number.
     case (e1,e2) of
       | (Nat n1, Nat n2) -> n1 = n2
       | (Triple (e1,s1,t1), Triple (e2,s2,t2)) -> equalEdge? (e1,e2) & equalSubst? (s1,s2) & equalSubst? (t1,t2)
+      | _ -> false
 
   def Edg.show edge = ppFormat (pp edge)
 
-  op mkNatEdge : Nat -> Edg.Edge
-  def mkNatEdge n = Nat n
+  op mkNatEdge : Nat -> Id.Id -> Edg.Edge
+  def mkNatEdge n id = Nat (n,id)
 
   op newEdge : CompCtxt -> Env (Edg.Edge * CompCtxt)
   def newEdge ctxt =
-    return (mkNatEdge (graphCounter ctxt),
+    return (mkNatEdge (graphCounter ctxt) (procId ctxt),
       ctxt withGraphCounter ((graphCounter ctxt) + 1))
 \end{spec}
 

@@ -8,6 +8,7 @@ package edu.kestrel.graphs;
 
 import edu.kestrel.graphs.io.*;
 import javax.swing.filechooser.FileFilter;
+import javax.swing.event.*;
 import javax.swing.tree.*;
 import javax.swing.*;
 import java.io.*;
@@ -24,6 +25,9 @@ public class XGraphDesktop extends JPanel {
     protected JMenuBar menuBar;
     protected JToolBar toolBar;
     protected JDesktopPane desktopPane;
+    protected JPanel leftPane;
+    protected JPanel bottomPane;
+    protected JSplitPane splitPane;
     
     protected XGraphApplication appl;
     
@@ -45,13 +49,32 @@ public class XGraphDesktop extends JPanel {
         appl.setDesktop(this);
         //desktopPane.setBackground(new Color(237,235,218));
         setLayout(new BorderLayout());
-        add(desktopPane,"Center");
+        //add(desktopPane,"Center");
         initMenuBar();
         JPanel topPanel = new JPanel();
         topPanel.setLayout(new GridLayout(2,1));
         topPanel.add(menuBar);
         topPanel.add(toolBar);
-        add(topPanel,"North");
+        add(topPanel,BorderLayout.NORTH);
+        leftPane = new JPanel();
+        leftPane.setLayout(new BorderLayout());
+        bottomPane = new JPanel();
+        bottomPane.setLayout(new BorderLayout());
+        //add(leftPane,BorderLayout.WEST);
+        splitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,leftPane,desktopPane) {
+            public void resetToPreferredSizes() {
+                super.resetToPreferredSizes();
+                int threshold = 10;
+                if (getDividerLocation() < threshold) {
+                    splitPane.setDividerSize(0);
+                } else {
+                    setDividerSize(6);
+                }
+            }
+        };
+        add(splitPane,BorderLayout.CENTER);
+        splitPane.setContinuousLayout(true);
+        splitPane.resetToPreferredSizes();
     }
     
     protected void initMenuBar() {
@@ -309,6 +332,13 @@ public class XGraphDesktop extends JPanel {
         XGraphDisplay graph = appl.newGraphAction();
         XGraphDisplayInternalFrame f = new XGraphDisplayInternalFrame(graph);
         //f.setSize(300,300);
+        newInternalFrame(f);
+        //f.setVisible(true);
+        //desktopPane.add(f);
+        //desktopPane.moveToFront(f);
+    }
+    
+    public void newInternalFrame(JInternalFrame f) {
         f.setVisible(true);
         desktopPane.add(f);
         desktopPane.moveToFront(f);
@@ -383,7 +413,24 @@ public class XGraphDesktop extends JPanel {
     public void showModelTree(Rectangle bounds) {
         removeModelFrame();
         XModelTree modelTree = getModelTree();
-        modelFrame = new JInternalFrame("Model",true,true,false,false);
+        modelFrame = new JInternalFrame("Model",true,true,true) {
+            public void setPreferredSize(Dimension dim) {
+                Dbg.pr("set preferred size...");
+                super.setPreferredSize(dim);
+            }
+        };
+        modelFrame.addInternalFrameListener(new InternalFrameAdapter() {
+            public void internalFrameClosed(InternalFrameEvent e) {
+                //Dbg.pr("internal frame closing...");
+                /*
+                JInternalFrame dummy = new JInternalFrame();
+                newInternalFrame(dummy);
+                desktopPane.remove(dummy);
+                desktopPane.repaint();
+                 */
+                splitPane.resetToPreferredSizes();
+            }
+        });
         modelFrame.getContentPane().setLayout(new BorderLayout());
         modelFrame.getContentPane().add(new JScrollPane(modelTree));
         if (bounds == null) {
@@ -393,18 +440,45 @@ public class XGraphDesktop extends JPanel {
             modelFrame.setSize(bounds.width,bounds.height);
         }
         modelFrame.setVisible(true);
-        desktopPane.add(modelFrame);
-        desktopPane.moveToFront(modelFrame);
+        JDesktopPane dt = getDesktopPaneForModelTree();
+        leftPane.add(modelFrame);
+        splitPane.resetToPreferredSizes();
+    }
+    
+    /** displays the model tree frame containing the application's graph displays and model nodes.
+     */
+    public void showModelTree_(Rectangle bounds) {
+        removeModelFrame();
+        leftPane.removeAll();
+        XModelTree modelTree = getModelTree();
+        leftPane.add(new JScrollPane(modelTree));
+    }
+    
+    /** returns the desktop pane where the model tree shall be put into.
+     */
+    protected JDesktopPane getDesktopPaneForModelTree() {
+        return desktopPane;
+    }
+    
+    /** returns true, if the model tree window is currently displayed on the desktop.
+     */
+    public boolean displaysModelTree_() {
+        if (modelFrame == null) return false;
+        JInternalFrame[] frames = getDesktopPaneForModelTree().getAllFrames();
+        if (frames == null) return false;
+        for(int i=0;i<frames.length;i++) {
+            if (modelFrame.equals(frames[i]))
+                return true;
+        }
+        return false;
     }
     
     /** returns true, if the model tree window is currently displayed on the desktop.
      */
     public boolean displaysModelTree() {
         if (modelFrame == null) return false;
-        JInternalFrame[] frames = desktopPane.getAllFrames();
-        if (frames == null) return false;
-        for(int i=0;i<frames.length;i++) {
-            if (modelFrame.equals(frames[i]))
+        for(int i=0;i<leftPane.getComponentCount();i++) {
+            if (modelFrame.equals(leftPane.getComponent(i)))
                 return true;
         }
         return false;
@@ -423,8 +497,10 @@ public class XGraphDesktop extends JPanel {
      */
     public void removeModelFrame() {
         if (modelFrame != null) {
-            desktopPane.remove(modelFrame);
-            desktopPane.repaint();
+            //desktopPane.remove(modelFrame);
+            //desktopPane.repaint();
+            leftPane.remove(modelFrame);
+            splitPane.resetToPreferredSizes();
         }
     }
     
@@ -524,6 +600,7 @@ public class XGraphDesktop extends JPanel {
                 showClipboardAction();
             }
         });
+        //if (Dbg.isDebug())
         //tb.add(btn);
         //grp.add(btn);
         return tb;

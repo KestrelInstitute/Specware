@@ -7,36 +7,142 @@
 # files. See man bash for details. The 'set -v' turns on echoing of
 # lines read. this will be removed later.
 
-set -v
-
-# We assume SPECWARE4 has been set.
-
-if [ -z $SPECWARE4 ]; then
-	echo "Failed to build image, SPECWARE4 environment variable not set"
-	exit 1
-fi
+act='build image'
 
 PATH=/bin:/usr/bin:/etc:/sbin:/usr/sbin
 
-LISP=${LISP:-/usr/local/acl/acl61/alisp}
+set -v
 
-cd $SPECWARE4/Applications/Specware
+# Test whether SPECWARE4 has been set
 
-SWPATH=$SPECWARE4:.
+if [ -z "$SPECWARE4" ]; then
+    echo "Failed to $act, SPECWARE4 environment variable not set" 2>&1
+    exit 1
+fi
 
-if [ ! -f lisp/Specware4.lisp ] ; then
-	echo "Failed to build image: could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp"
-	exit 1
+# Test whether SPECWARE4 is a directory
+
+if [ ! -d "$SPECWARE4" ]; then
+   echo "Failed to $act, $SPECWARE4 is not a directory" 2>&1
+   exit 1
+fi
+
+# Ensure SPECWARE4 is set to full pathname:
+
+case "$SPECWARE" in
+    /*) : ok;;
+    *)  SPECWARE="`pwd`/$SPECWARE";;
+esac
+
+# Try to find lisp executable:
+
+if [ -z "$LISP" ]; then
+   for L in /usr/local/acl/acl62/alisp /usr/local/acl/acl61/alisp /usr/local/acl/acl501/lisp; do
+      if [ -x "$L" ]; then
+         LISP="$L"; break
+      fi
+   done
+fi
+
+if [ -z "$LISP" ]; then
+   echo "Failed to $act, no LISP executable found" 2>&1
+   exit 1
+fi
+
+if [ ! -x "$LISP" ]; then
+   echo "Failed to $act, $LISP is not executable" 2>&1
+   exit 1
+fi
+
+if [ ! -d "$SPECWARE4"/Applications/Specware ]; then
+   echo "Failed to $act: could not find directory
+   $SPECWARE4/Applications/Specware" 2>&1
+   exit 1
+fi
+
+cd "$SPECWARE4"/Applications/Specware
+
+export SWPATH; SWPATH="$SPECWARE4":.
+EXIT_ON_ERRORS="$SPECWARE4"/Applications/Handwritten/Lisp/exit-on-errors
+MEMORY_MANAGEMENT="$SPECWARE4"/Applications/Handwritten/Lisp/memory-management
+
+if [ -f lisp ]; then
+   echo "Failed to $act, $SPECWARE4/Applications/Specware/lisp is not a directory" 2>&1
+   exit 1
+fi
+
+
+if [ ! -f lisp/Specware4.lisp -a ! -f Specware4-base.lisp ] ; then
+   echo "Failed to $act: could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp
+   or $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+   exit 1
+fi
+
+if [ ! -f lisp/Specware4.lisp ]; then
+    echo "Could not find $SPECWARE4/Applications/Specware/lisp/Specware4.lisp,
+    using cvs saved lisp, $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    if [ ! -d lisp ]; then
+	echo "mkdir lisp"
+	mkdir lisp
+    fi
+    echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+    cp -p -f Specware4-base.lisp lisp/Specware4.lisp
+fi
+
+if [ Specware4-base.lisp -nt lisp/Specware4.lisp ]; then
+    echo "$SPECWARE4/Applications/Specware/lisp/Specware4.lisp is older than
+    cvs saved lisp, $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    echo "Using $SPECWARE4/Applications/Specware/Specware4-base.lisp" 2>&1
+    if [ ! -d lisp ]; then
+	echo "mkdir lisp"
+	mkdir lisp
+    fi
+    echo "cp -p -f Specware4-base.lisp lisp/Specware4.lisp"
+    cp -p -f Specware4-base.lisp lisp/Specware4.lisp
 fi
 
 cp -f bin/linux/Specware4.dxl bin/linux/Specware4-save.dxl
 
 cd Handwritten/Lisp
 
-# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
-
+# We load the new Specware4.lisp twice, each in a fresh lisp session. The
+# first time compiles everything.  This may not be necessary but it is
+# easier just to load it twice rather than to try to figure out if something
+# needs to be compiled.
 $LISP <<-XXXX
-	(load "Specware4.lisp")
-	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
-	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
+	(load "$EXIT_ON_ERRORS")
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
+XXXX
+
+# The second time is just to do the dumplisp. If we do it in one go,
+# and something needs compiling, the generated dxl file is almost 4
+# times larger.
+#
+# I once added a (gc) between the load and the dumplisp, and the dxl
+# file became 10k bigger. Go figure.
+#
+# I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
+# Do we need it here?
+
+# big-alisp.dxl will have a larger lisp heap than the default alisp image.
+# Rebuild it each time.  A bit redundant, but ensures compatibility with 6.1/6.2/etc.
+BIG_ALISP="${SPECWARE4}/Applications/Specware/bin/linux/big-alisp.dxl"
+$LISP -batch <<-XXXX
+	(build-lisp-image "$BIG_ALISP" :lisp-heap-start #x48000000 :oldspace #x100)
+XXXX
+
+echo " "
+echo "Loading Specware ... (for dumplisp)"
+echo " "
+$LISP -I ${BIG_ALISP} -batch <<-XXXX
+	(load "$EXIT_ON_ERRORS")
+	(load "$MEMORY_MANAGEMENT") 
+	(compact-memory t 0 32000000)
+	(set-gc-parameters-for-build t)
+	(exiting-on-errors 
+	  (load "Specware4.lisp"))
+	(compact-memory t -1 0)
+	(set-gc-parameters-for-use t)
+	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl")
 XXXX

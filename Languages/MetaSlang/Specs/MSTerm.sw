@@ -1,4 +1,4 @@
-MS qualifying spec {
+MS qualifying spec
  import ../AbstractSyntax/AnnTerm
  import /Library/Legacy/DataStructures/ListUtilities % for listUnion
  import Position
@@ -34,12 +34,15 @@ MS qualifying spec {
  def mkQuotientSort (srt, rel)  = Quotient (srt, rel,   noPos)
 
  def mkProduct sorts =
-  let def loop (n, sorts) = 
-       case sorts  of
-          | []         -> []
-          | srt::sorts -> cons((Nat.toString n, srt), loop(n + 1, sorts))
-  in
-    Product(loop(1,sorts), noPos)
+  case sorts of
+    | [s] -> s
+    | _ ->
+      let def loop (n, sorts) = 
+	   case sorts  of
+	      | []         -> []
+	      | srt::sorts -> cons((Nat.toString n, srt), loop(n + 1, sorts))
+      in
+	Product(loop(1,sorts), noPos)
 
  def mkCoProduct fields = CoProduct (fields, noPos)
 
@@ -85,7 +88,9 @@ MS qualifying spec {
  def mkApply      (t1, t2)        = Apply      (t1, t2,                  noPos)
  def mkAppl       (t1, tms)       = Apply      (t1, mkTuple tms,         noPos)  
  def mkApplication(t1, tms)       = 
+   let pos = termAnn(t1) in
    case tms of
+     | [] -> mkApply(t1,Record([],pos))
      | [t2] -> mkApply(t1, t2)
      | trm::rest -> mkAppl(t1, tms)
  def mkIfThenElse (t1, t2, t3)    = IfThenElse (t1, t2, t3,              noPos)
@@ -162,6 +167,30 @@ MS qualifying spec {
      | [x] -> x
      | _   -> mkRecord (tagTuple terms)
 
+ op  termToList: fa(a) ATerm a -> List(ATerm a)
+ def termToList t =
+    case t of
+      | Record (fields,_) ->
+        if tupleFields? fields
+	  then map (fn (_,x) -> x) fields
+	 else [t]
+      | _ -> [t]
+
+ op  tupleFields?: fa(a) List (Id * a) -> Boolean
+ def tupleFields? fields =
+   (foldl (fn ((id,_),i) ->
+	   if i < 0 then i
+	     else if id = Nat.toString i then i + 1 else ~1)
+      1 fields)
+   > 0
+
+ op findField: Id * List(Id * Term)-> Term
+ def findField(id,fields) = 
+   case fields
+     of [] -> System.fail ("Field identifier "^id^" was not found")
+      | (id2,tm)::fields -> 
+	if id = id2 then tm else findField(id,fields)
+
  %% Applications...
 
  op mkNot         : Term                        -> Term
@@ -235,23 +264,6 @@ MS qualifying spec {
       | _ -> System.fail ("CoProduct sort expected for mkSelectTerm "^
                            System.toString  srt)
 
- %% Patterns ...
-
- op mkVarPat    : Var           -> Pattern
- op mkNatPat    : Nat           -> Pattern
- op mkCharPat   : Char          -> Pattern
- op mkBoolPat   : Boolean       -> Pattern
- op mkStringPat : String        -> Pattern
- op mkTuplePat  : List Pattern  -> Pattern
- op mkWildPat   : Sort          -> Pattern
-
- def mkNatPat    n    = NatPat    (n,              noPos)
- def mkBoolPat   b    = BoolPat   (b,              noPos)
- def mkCharPat   c    = CharPat   (c,              noPos)
- def mkStringPat s    = StringPat (s,              noPos)
- def mkVarPat    v    = VarPat    (v,              noPos)
- def mkWildPat   s    = WildPat   (s,              noPos)
- def mkTuplePat  pats = RecordPat (tagTuple(pats), noPos)
 
  op negateTerm: Term -> Term
  %% Gets the negated version of term. 
@@ -260,4 +272,34 @@ MS qualifying spec {
      | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),negTm,_) -> negTm
      | _ -> mkApply(notOp,tm)
 
-}
+ %% Patterns ...
+
+ op mkVarPat    : Var           -> Pattern
+ op mkNatPat    : Nat           -> Pattern
+ op mkCharPat   : Char          -> Pattern
+ op mkBoolPat   : Boolean       -> Pattern
+ op mkStringPat : String        -> Pattern
+ op mkRecordPat : List(Id * Pattern) -> Pattern
+ op mkTuplePat  : List Pattern  -> Pattern
+ op mkWildPat   : Sort          -> Pattern
+ op patternToList: fa(a) APattern a -> List(APattern a)
+
+ def mkNatPat    n    = NatPat    (n,              noPos)
+ def mkBoolPat   b    = BoolPat   (b,              noPos)
+ def mkCharPat   c    = CharPat   (c,              noPos)
+ def mkStringPat s    = StringPat (s,              noPos)
+ def mkVarPat    v    = VarPat    (v,              noPos)
+ def mkWildPat   s    = WildPat   (s,              noPos)
+ def mkRecordPat pats = RecordPat (pats, noPos)
+ def mkTuplePat  pats =
+   case pats of
+     | [p] -> p
+     | _ -> RecordPat (tagTuple(pats), noPos)
+ def patternToList t =
+    case t of
+      | RecordPat (fields,_) ->
+        if tupleFields? fields
+	  then map (fn (_,x) -> x) fields
+	 else [t]
+      | _ -> [t]
+endspec

@@ -2,7 +2,7 @@
 
 \begin{spec}
 WadlerLindig qualifying spec
-  import /Library/Base/Base
+  import /Library/Base
 
   sort Pretty = Doc
 
@@ -15,7 +15,13 @@ WadlerLindig qualifying spec
     | DocGroup Doc
   
   op ppCons : Doc -> Doc -> Doc
-  def ppCons x y = DocCons (x,y)
+  % def ppCons x y = DocCons (x,y)  % original
+  def ppCons x y = 
+    case (x,y) of
+      | (DocNil,DocNil) -> DocNil
+      | (DocNil,x) -> x
+      | (x,DocNil) -> x
+      | _ -> DocCons (x,y)
   
   op ppNil : Doc
   def ppNil = DocNil
@@ -40,21 +46,19 @@ WadlerLindig qualifying spec
     | SText (String * SDoc)
     | SLine (Integer * SDoc)   (* newline + spaces *)
   
-  op concatList : List String -> String
-
   op ppLayout : SDoc -> String
   def ppLayout doc =
-    let def replicate cnt str =
+    let def replicate (cnt:Integer) str =
       if cnt = 0 then
         [""]
       else
-        Cons(str, replicate (cnt - 1) str) in
+        Cons (str, replicate (cnt - 1) str) in
     let def makeStringList doc =
       case doc of
-          SNil -> [""]
-        | SText (s,d) -> Cons(s,(makeStringList d))
+        | SNil -> [""]
+        | SText (s,d) -> Cons (s,(makeStringList d))
         | SLine (indent,d) ->
-               Cons (concatList(Cons("\n", replicate indent " ")),
+               Cons (concatList (Cons ("\n", replicate indent " ")),
                     (makeStringList d)) in
     concatList (makeStringList doc)
   
@@ -70,7 +74,7 @@ WadlerLindig qualifying spec
 %            in
 %              "\n" ++ (replicate indent " ") ++ (ppLayout d)
   
-  op ppFits : Integer -> List (Integer * Mode * Doc) -> Boolean
+  op ppFits : Integer -> List (Integer * BreakMode * Doc) -> Boolean
   def ppFits w x =
     (w >= 0) &
     (case x of
@@ -79,15 +83,16 @@ WadlerLindig qualifying spec
        | (i,m,DocCons(x,y)) :: z -> ppFits w (Cons((i,m,x),Cons((i,m,y),z)))
        | (i,m,DocNest(j,x)) :: z -> ppFits w (Cons ((i+j,m,x),z))
        | (i,m,DocText(s)) :: z -> ppFits (w - (length s)) z
-       | (i,Flat,DocBreak s) :: z -> false % ppFits (w - (length s)) z
+       | (i,Flat,DocBreak s) :: z -> ppFits (w - (length s)) z
+       % | (i,Flat,DocBreak s) :: z -> false % ppFits (w - (length s)) z
        | (i,Break,DocBreak _) :: z -> true % impossible 
        | (i,m,DocGroup(x)) :: z -> ppFits w (Cons((i,Flat,x),z)))
   
-  sort Mode =
+  sort BreakMode =
     | Flat
     | Break
   
-  op ppBest : Integer -> Integer -> List (Integer * Mode * Doc) -> SDoc
+  op ppBest : Integer -> Integer -> List (Integer * BreakMode * Doc) -> SDoc
   def ppBest w k x = 
     case x of
       | [] -> SNil
@@ -95,7 +100,8 @@ WadlerLindig qualifying spec
       | (i,m,DocCons(x,y)) :: z -> ppBest w k (Cons((i,m,x),Cons((i,m,y),z)))
       | (i,m,DocNest(j,x)) :: z -> ppBest w k (Cons((i+j,m,x),z))
       | (i,m,DocText s) :: z -> SText(s,ppBest w (k + (length s)) z)
-      | (i,Flat,DocBreak s) :: z -> SText(s,ppBest w (k + (length s)) z)
+      | (i,Flat,DocBreak s) :: z ->
+          SText(s,ppBest w (k + (length s)) z)
       | (i,Break,DocBreak s) :: z -> SLine(i,ppBest w i z)
       | (i,m,DocGroup(x)) :: z ->
           if ppFits (w-k) (Cons((i,Flat,x),z)) then
@@ -123,7 +129,8 @@ WadlerLindig qualifying spec
   
   op ppFormatWidth : Integer -> Doc -> String
 
-  def ppFormatWidth w doc = ppLayout (ppBest w 0 [(0,Flat,DocGroup doc)])
+  def ppFormatWidth w doc =
+    ppLayout (ppBest w 0 [(0,Flat,DocGroup doc)])
   def ppFormat doc = ppFormatWidth 80 doc
 
   op ppAppend : Doc -> Doc -> Doc
@@ -135,18 +142,22 @@ WadlerLindig qualifying spec
   op ppConcat : List Doc -> Doc
   def ppConcat l =
     case l of
-        Nil ->  ppNil
+      | Nil ->  ppNil
       | (s::ss) -> ppCons s (ppConcat ss)
 
   op ppNewline : Doc
   def ppNewline = ppBreak
 
-  op ppSep : Doc ->  List Doc -> Doc
+  op ppSep : Doc -> List Doc -> Doc
   def ppSep sep l = 
     case l of
-        Nil -> ppNil
-      | s::Nil -> s
-      | s::ss -> ppCons s (ppCons sep (ppSep sep ss))
+      | [] -> ppNil
+      | s::ss -> 
+         let rest = ppSep sep ss in
+         if rest = DocNil then
+           s
+         else
+           ppCons s (ppCons sep rest)
 
 %  let pretty w doc =
 %    let sdoc = ppBest w 0 [0,Flat,DocGroup doc] in
