@@ -69,9 +69,7 @@ XML qualifying spec
 			    | Some str -> str
 			    | _ -> "unspecified type")
 	in
-	let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ string elt.stag.name ^ 
-			  " of " ^ given_type ^ "\n") 
-	in
+	  %let _ = toScreen ("\nSeeking " ^ desired ^ " from " ^ string elt.stag.name ^" of " ^ given_type ^ "\n") in
 	  internalize_PossibleElement (elt, pattern, table)
       | Empty _ -> fail "empty element"
 
@@ -95,10 +93,10 @@ XML qualifying spec
         %% Note that datum_elements is a heterogenous list,
         %%  hence cannot be properly typed in metaslang,
         %%  hence the "magic" here.
-        let _ = toScreen ("\nSeeking product\n") in
+        %let _ = toScreen ("\nSeeking product\n") in
         let new_fields =
             map (fn (desired_name, desired_sd) ->
-		 let _ = toScreen ("\nSeeking " ^ desired_name ^ "\n") in
+		 %let _ = toScreen ("\nSeeking " ^ desired_name ^ "\n") in
 		 let possible_matching_elt =
 		     foldl (fn ((_, item), result) ->
 			    case result of
@@ -136,7 +134,7 @@ XML qualifying spec
 		       | _ -> fail "Have defaults for just Boolean, Nat, and String")
 	        sd_fields
 	in
-        let _ = toScreen ("\nFound product\n") in
+	  %let _ = toScreen ("\nFound product\n") in
 	  Some (Magic.magicMakeProduct new_fields)
       | Base (qid, args) ->
 	(case qid of
@@ -175,7 +173,7 @@ XML qualifying spec
 	    let data = rev (foldl (fn ((_,item), result) ->
 				   case item of
 				     | Element (Full elt) ->
-				       let _ = toScreen ("\nSeeking next list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
+				       %let _ = toScreen ("\nSeeking next list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
 				       (case internalize_PossibleElement (elt, element_sd, table) of
 					  | Some datum -> cons (datum, result)
 					  | _ -> 
