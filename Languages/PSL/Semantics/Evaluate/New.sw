@@ -332,7 +332,7 @@ under the assumption that they are never used. Needs thought.
           morph2 <- mkMorph (modeSpec bSpec last) apexElab [] [];
           newEdge <- return (mkNatVertexEdge cnt);
           bSpec <- return (addTrans bSpec first last newEdge apexElab morph1 morph2);
-          return (bSpec, cnt, pSpec)
+          return (bSpec, cnt+1, pSpec)
         }
 \end{spec}
 
