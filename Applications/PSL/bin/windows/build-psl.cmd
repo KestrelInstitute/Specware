@@ -4,8 +4,8 @@ set SWPATH=/Progra~1/Specware4;/
 set XEMACS=C:\Progra~1\XEmacs\XEmacs-21.4.10
 rem set XEMACS=C:\Progra~1\XEmacs\XEmacs-21.4.6
 rem Set allegro to the version you have
-set ALLEGRO=C:\Progra~1\acl62
-rem set ALLEGRO=C:\Progra~1\acl61
+rem set ALLEGRO=C:\Progra~1\acl62
+set ALLEGRO=C:\Progra~1\acl61
 
 set SPECWARE_BIN=%SPECWARE4%\Applications\Specware\bin\windows
 
