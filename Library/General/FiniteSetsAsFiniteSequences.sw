@@ -1,0 +1,158 @@
+FSet qualifying spec
+
+  import /Library/General/FiniteSequences
+
+  % sets as equivalence classes of sequences without repeated elements:
+  type FSet a = (InjectiveFSeq a) / permutationOf
+
+  op toFSet : [a] Bijection (FiniteSet a, FSet a)
+  def toFSet finiteSet =  % not executable
+    the (fn set -> choose permutationOf
+                          (fn seq -> finiteSet = (fn x -> x in? seq))
+                          set)
+
+  op fromFSet : [a] FSet a -> FiniteSet a
+  def fromFSet set =
+    fn x -> choose permutationOf
+                   (fn seq -> x in? seq)
+                   set
+
+  op in? infixl 20 : [a] a * FSet a -> Boolean
+  def in? (x,set) = choose permutationOf
+                           (fn seq -> x in? seq)
+                           set
+
+  op nin? infixl 20 : [a] a * FSet a -> Boolean
+  def nin? (x,s) = ~(x in? s)
+
+  op <= infixl 20 : [a] FSet a * FSet a -> Boolean
+  def <= (set1,set2) =
+    choose permutationOf (fn seq1 ->
+    choose permutationOf (fn seq2 ->
+    forall? (fn x -> x in? seq2) seq1
+    ) set2
+    ) set1
+
+  op < infixl 20 : [a] FSet a * FSet a -> Boolean
+  def < (s1,s2) = (s1 <= s2 && s1 ~= s2)
+
+  op >= infixl 20 : [a] FSet a * FSet a -> Boolean
+  def >= (s1,s2) = (s2 <= s1)
+
+  op > infixl 20 : [a] FSet a * FSet a -> Boolean
+  def > (s1,s2) = (s2 < s1)
+
+  op /\ infixr 25 : [a] FSet a * FSet a -> FSet a
+  def /\ (set1,set2) =
+    choose permutationOf (fn seq1 ->
+    choose permutationOf (fn seq2 ->
+    quotient permutationOf (filter (fn x -> x in? seq2) seq1)
+    ) set2
+    ) set1
+
+  op \/ infixr 24 : [a] FSet a * FSet a -> FSet a
+  def \/ (set1,set2) =
+    choose permutationOf (fn seq1 ->
+    choose permutationOf (fn seq2 ->
+    quotient permutationOf (seq1 ++ filter (fn x -> x nin? seq1) seq2)
+    ) set2
+    ) set1
+
+  op -- infixl 25 : [a] FSet a * FSet a -> FSet a
+  def -- (set1,set2) =
+    choose permutationOf (fn seq1 ->
+    choose permutationOf (fn seq2 ->
+    quotient permutationOf (filter (fn x -> x nin? seq2) seq1)
+    ) set2
+    ) set1
+
+  op empty : [a] FSet a
+  def empty = quotient permutationOf empty
+
+  op empty? : [a] FSet a -> Boolean
+  def empty? s = (s = empty)
+
+  op nonEmpty? : [a] FSet a -> Boolean
+  def nonEmpty? = ~~ empty?
+
+  type NonEmptyFSet a = (FSet a | nonEmpty?)
+
+  op single : [a] a -> FSet a
+  def single x = quotient permutationOf (single x)
+
+  op single? : [a] FSet a -> Boolean
+  def single? set = choose permutationOf
+                           (fn seq -> single? seq)
+                           set
+
+  op onlyMemberOf infixl 20 : [a] a * FSet a -> Boolean
+  def onlyMemberOf (x,s) = (s = single x)
+
+  type SingletonFSet a = (FSet a | single?)
+
+  op theMember : [a] SingletonFSet a -> a
+  def theMember set = choose permutationOf
+                             (fn seq -> first seq)
+                             set
+
+  op <| infixl 25 : [a] FSet a * a -> FSet a
+  def <| (set,x) =
+    choose permutationOf
+           (fn seq ->
+             quotient permutationOf (if x in? seq then seq else seq <| x))
+           set
+
+  op - infixl 25 : [a] FSet a * a -> FSet a
+  def - (set,x) =
+    choose permutationOf
+           (fn seq -> quotient permutationOf (filter (fn y -> y ~= x) seq))
+           set
+
+  op map : [a,b] (a -> b) -> FSet a -> FSet b
+  def map f set =
+    choose permutationOf
+           (fn seq -> quotient permutationOf (map f seq))
+           set
+
+  op size : [a] FSet a -> Nat
+  def size s = choose permutationOf length s
+
+  op foldable? : [a,b] b * (b * a -> b) * FSet a -> Boolean
+  def foldable?(c,f,s) =  % not executable (copied from spec `FiniteSets')
+    foldable? (c, f, fromFSet s)
+
+  op fold : [a,b] ((b * (b * a -> b) * FSet a) | foldable?) -> b
+  def fold(c,f,s) = choose permutationOf (foldl f c) s
+
+  op //\\ : [a] NonEmptyFSet (FSet a) -> FSet a
+  def //\\ setOfSets =
+    choose permutationOf
+           (fn seqOfSets -> foldl (/\) (first seqOfSets) (rtail seqOfSets))
+           setOfSets
+
+  op \\// : [a] FSet (FSet a) -> FSet a
+  def \\// setOfSets =
+    choose permutationOf
+           (fn seqOfSets -> foldl (\/) empty seqOfSets)
+           setOfSets
+
+  op * infixl 27 : [a,b] FSet a * FSet b -> FSet (a * b)
+  def * (s1,s2) =
+    \\// (map (fn x -> map (fn y -> (x,y)) s2) s1)
+
+  op forall? : [a] (a -> Boolean) -> FSet a -> Boolean
+  def forall? p s = choose permutationOf (forall? p) s
+
+  op exists? : [a] (a -> Boolean) -> FSet a -> Boolean
+  def exists? p s = choose permutationOf (exists? p) s
+
+  op exists1? : [a] (a -> Boolean) -> FSet a -> Boolean
+  def exists1? p s = choose permutationOf (exists? p) s
+
+  op filter : [a] (a -> Boolean) -> FSet a -> FSet a
+  def filter p set =
+    choose permutationOf
+           (fn seq -> quotient permutationOf (filter p seq))
+           set
+
+endspec

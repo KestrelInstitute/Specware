@@ -1,0 +1,2 @@
+% substitution:
+FiniteMapsAsFiniteSequences[FiniteSequencesAsListsMorphism]
