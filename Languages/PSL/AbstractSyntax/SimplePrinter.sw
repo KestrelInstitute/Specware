@@ -238,15 +238,15 @@ SpecCalc qualifying spec {
             ppString "import ",
             ppTerm term
           ]
-      | Sort (names,(tyVars,optSort)) -> 
+      | Sort (names,(tyVars,defs)) -> 
           ppConcat [
             ppString "sort ",
-            ppASortInfo (names,tyVars,optSort)
+            ppASortInfo (names,tyVars,defs)
           ]
-      | Op (names,(fxty,srtScheme,optTerm)) ->
+      | Op (names,(fxty,srtScheme,defs)) ->
           ppConcat [
             ppString "op ",
-            ppAOpInfo (names,fxty,srtScheme,optTerm)
+            ppAOpInfo (names,fxty,srtScheme,defs)
           ]
       | Claim property -> ppAProperty property
 
@@ -363,26 +363,26 @@ SpecCalc qualifying spec {
   op ppPSpecElem : fa(a) PSpecElem a -> Pretty
   def ppPSpecElem (decl,_) = 
     case decl of
-      | Sort (names,(tyVars,optSort)) -> 
+      | Sort (names,(tyVars,defs)) -> 
           ppConcat [
             ppString "sort ",
-            ppASortInfo (names,tyVars,optSort)
+            ppASortInfo (names,tyVars,defs)
           ]
-      | Def (names,(fxty,srtScheme,optTerm)) ->
+      | Def (names,(fxty,srtScheme,defs)) ->
           ppConcat [
             ppString "def ",
-            ppAOpInfo (names,fxty,srtScheme,optTerm)
+            ppAOpInfo (names,fxty,srtScheme,defs)
           ]
-      | Op (names,(fxty,srtScheme,optTerm)) ->
+      | Op (names,(fxty,srtScheme,defs)) ->
           ppConcat [
             ppString "op ",
-            ppAOpInfo (names,fxty,srtScheme,optTerm)
+            ppAOpInfo (names,fxty,srtScheme,defs)
           ]
       | Claim property -> ppAProperty property
-      | Var (names,(fxty,srtScheme,optTerm)) ->
+      | Var (names,(fxty,srtScheme,defs)) ->
           ppConcat [
             ppString "var ",
-            ppAOpInfo (names,fxty,srtScheme,optTerm)
+            ppAOpInfo (names,fxty,srtScheme,defs)
           ]
       | Proc (name,procInfo) ->
           ppConcat [

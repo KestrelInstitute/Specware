@@ -200,8 +200,8 @@ A \verb+SpecElem+ is a declaration within a spec, \emph{i.e.} the ops sorts etc.
 
   sort SpecElem_ a =
     | Import Term a
-    | Sort   List QualifiedId * (TyVars * Option (ASort a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
+    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (AProperty a)
 \end{spec}
 
@@ -287,11 +287,11 @@ defining term.
   sort Ident = String
   sort PSpecElem_ a =
     | Import (Term a)
-    | Sort   List QualifiedId * (TyVars * Option (ASort a))
-    | Op     List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+    | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
+    | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (AProperty a)
-    | Var    List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
-    | Def    List QualifiedId * (Fixity * ASortScheme a * Option (ATerm a))
+    | Var    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
+    | Def    List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Proc   Ident * (ProcInfo a)
 
   sort ProcInfo a = {

@@ -68,7 +68,7 @@ This isn't the final answer since it doesn't allow us to introduce new
 ops and axioms along a transition \ldots only when we introduce procedures.
 
 \begin{spec}
-  op ppProcedureLess : Procedure -> Spec -> Pretty
+  op ppProcedureLess : Procedure -> Spec -> WadlerLindig.Pretty
   def ppProcedureLess proc spc =
     ppConcat [
       ppString "params=(",
@@ -89,7 +89,7 @@ ops and axioms along a transition \ldots only when we introduce procedures.
       ppIndent (ppBSpecShort proc.code proc.dynamicSpec)
     ]
 
-  op ppProcedure : Procedure -> Pretty
+  op ppProcedure : Procedure -> WadlerLindig.Pretty
   def ppProcedure proc =
     ppConcat [
       ppString "params=(",

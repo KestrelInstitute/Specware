@@ -10,7 +10,7 @@
 
 (defun make-psl-var-decl (varName sortScheme l r)
   (cons
-    (cons :|Var| (cons varName (vector nil sortScheme (cons :|None| nil))))
+    (cons :|Var| (cons varName (vector nil sortScheme '())))
     (make-pos l r)))
 
 (defun make-psl-proc-def (procName args returnSort commands l r)
@@ -85,6 +85,6 @@
     ;;  (cdr tyVarsTerm) will be a copy of term with (PBase qid) replaced by (TyVar id) where appropriate.
     ;; TODO: Move the responsibility for all this conversion into the linker.
     (cons (cons :|Def| (cons (remove-duplicates qualifiable-op-names :test 'equal :from-end t)
-                            (vector nil srtScheme (cons :|Some| term))))
+                            (vector nil srtScheme (list (cons tyVars term)))))
       (make-pos l r))))
 

@@ -14,7 +14,7 @@ SpecCalc qualifying spec {
   %% Specific kinds of terms:
 
   op evaluateURI         : Position -> RelativeURI                            -> Env ValueInfo
-  op evaluateSpec        : List (SpecElem Position)                           -> Env ValueInfo
+  op evaluateSpec        : List (SpecElem Position)              -> Position  -> Env ValueInfo
   op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))  -> Env ValueInfo
   op evaluateLispCompile : ValueInfo * SCTerm * Option String                 -> Env ValueInfo
   op evaluateDiag        : List (DiagElem Position)                           -> Env ValueInfo

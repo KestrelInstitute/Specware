@@ -128,7 +128,7 @@ never mixed in the specs labeling \BSpecs.
           addOp [unQualified argName]
                 Nonfix
                 (tyVarsOf argSort,argSort)
-                None
+                []
                 dCtxt (Internal "compileProcedure"))
                   saveDyCtxt args;
    dyCtxt <- 
@@ -137,7 +137,7 @@ never mixed in the specs labeling \BSpecs.
         | _ -> addOp [unQualified ("return_" ^ name)]
                      Nonfix
                      (tyVarsOf returnSort,returnSort)
-                     None dyCtxt internalPosition;
+                     [] dyCtxt internalPosition;
    pSpec <- setDynamicSpec pSpec dyCtxt;
    dyCtxtElab <- elaborateInContext dyCtxt statCtxt; 
    statCtxtElab <- elaborateSpec statCtxt; 
