@@ -112,6 +112,7 @@ public class XGraphCellEditor implements GraphCellEditor, java.io.Serializable {
             if (elem instanceof XTextNode) {
                 ((XTextNode)elem).collapse();
                 collapseAfterEdit = false;
+                ((XTextNode)elem).resetDontSetExpandedFlag();
             }
         }
     }
