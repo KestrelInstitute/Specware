@@ -248,12 +248,12 @@ easy reference.
 ||  `proof-term ::=
 ||      prove `claim-name in `spec-term
 ||                      [ with `prover-name ]
-||                      [ using '{ `claim-sequence '} ]
+||                      [ using '{ `claim-list '} ]
 ||                      [ options `prover-options ]
 ||  
 ||  `prover-name ::= snark
 ||  
-||  `claim-sequence ::= `claim-name { `claim-name }*
+||  `claim-list ::= `claim-name { , `claim-name }*
 ||  
 ||  `prover-options ::= `string-literal
 >>

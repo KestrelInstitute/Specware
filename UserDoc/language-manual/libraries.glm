@@ -809,6 +809,12 @@
                       <entry colname="descr">&nbsp; [[diff(l1,l2)]] returns a list containing those elements that are in [[l1]] but not in [[l2]]. The order of the elements in [[l1]] is preserved.</entry>
                     </row>
                     <row>
+                      <entry colname="name">&nbsp; [[length]]</entry>
+                      <entry colname="prio">&nbsp; </entry>
+                      <entry colname="sig">&nbsp; [[List a -> Nat]]</entry>
+                      <entry colname="descr">&nbsp; length of a list</entry>
+                    </row>
+                    <row>
                       <entry colname="name">&nbsp; [[flatten]]</entry>
                       <entry colname="prio">&nbsp; </entry>
                       <entry colname="sig">&nbsp; [[fa(a) List(List(a)) -> List a]]</entry>
