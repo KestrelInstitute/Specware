@@ -117,10 +117,13 @@ of the unit is the name of the file, without <".sw">, prefixed by the
 path from the directory in &swpath; to the file.</para>
 
 <para>For example, suppose that &swpath; includes the directory
-<"c:\users\me\specware"> (in the Windows operating system). The user
-creates a file named <"A.sw"> immediately under the directory
-<"c:\users\me\specware\one\two">, containing the following
-text:</para>
+<"\users\me\specware"> (in the Windows operating system; currently,
+since &swpath; is colon-separated, it is not possible to use drive
+identifiers in directories; &Specware; automatically prefixes
+directories with <"c:">; this restriction will be removed in future
+versions of &Specware;). The user creates a file named <"A.sw">
+immediately under the directory <"\users\me\specware\one\two">,
+containing the following text:</para>
 
 [[
 ||    spec
@@ -129,7 +132,7 @@ text:</para>
 ]]
 
 <para>The absolute path of the file in the file system is
-<"c:\users\me\specware\one\two\A.sw">. The unit is a spec containing
+<"\users\me\specware\one\two\A.sw">. The unit is a spec containing
 just a sort [[X]]. The name of the unit is [[one/two/A]]. Note that
 the path components are separated by forward slashes ``/'', even
 though the underlying file system uses backward slashes ``\''. Unit
@@ -161,9 +164,9 @@ reminiscent of the URI syntax, where subparts of a document are
 identified using the sharp sign.)</para>
 
 <para>Suppose, as in the previous example, that &swpath; includes the
-directory <"c:\users\me\specware">. The user creates a file named
+directory <"\users\me\specware">. The user creates a file named
 <"three.sw"> immediately under the directory
-<"c:\users\me\specware\one\two">, containing the following
+<"\users\me\specware\one\two">, containing the following
 text:</para>
 
 [[

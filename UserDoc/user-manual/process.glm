@@ -11,32 +11,138 @@ system, so it can access the unit definitions contained in <".sw">
 files. The environment variable &swpath; determines which <".sw">
 files are accessed by &Specware; to find unit definitions.</para>
 
-<para>Processing of a certain unit causes processing of the units
-referenced in the defining text of the unit, recursively. For
-instance, if a spec [[A]] extends a spec [[B]] which in turns extends
-a spec [[C]], when [[A]] is processed also [[B]] and [[C]] are
-processed. There must be no circularities in the chain of unit
-dependencies.</para>
+<para>Processing a unit causes processing of the units referenced in
+the defining text of the unit, recursively. For instance, if a spec
+[[A]] extends a spec [[B]] which in turns extends a spec [[C]], when
+[[A]] is processed also [[B]] and [[C]] are processed. There must be
+no circularities in the chain of unit dependencies.</para>
 
 <para>Processing causes progress and/or error messages to be displayed
 on the screen, in the XEmacs buffer containing the Lisp shell (where
 the user also supplies commands to &Specware;). Progress messages
 inform the user that units are processed without error. Error messages
 provide information on the cause of errors, so that the user can fix
-them by editing the unit definitions.</para>
+them by editing the unit definitions. When an error occurs in the
+definition of some unit, &Specware; displays the <".sw"> file
+containing the definition in an XEmacs buffer, with the cursor at the
+point where the erroneous text is.</para>
 
-<para>The processing of certain kinds of units results in the creation
-of new files, as an additional side effect. For instance, Lisp
-programs are a kind of unit, constructed by the [[generate]] operator
-of &Metaslang;. A side effect of processing one such unit is that the
-resulting code is written into a <".lisp"> file.</para>
+<para>The processing of certain kinds of units also results in the
+creation of new files, as an additional side effect. For instance,
+Lisp programs are a kind of unit, constructed by the [[generate]]
+operator of &Metaslang;. A side effect of processing one such unit is
+that the resulting code is written into a <".lisp"> file.</para>
 
-<para>
+<para>When &Specware; processes a unit, it saves the processing
+results into an internal cache, associating the results to the unit's
+name. By using this cache, &Specware; avoid unnecessary
+re-computations: it only re-processes the units whose files have
+changed since they were processed last time. From the point of view of
+the final result, this caching mechanism is completely transparent to
+the user. However, it improves the performance and response time of
+the system.</para>
+
+</section>  <!-- overview -->
+
+<section>
+<title>Resolution of Unit References</title>
+
+<para>References to units may occur in the defining text of units and,
+as described later, in &Specware; commands. A unit reference is
+resolved to the defining text of the unit, which is contained in a
+<".sw"> file. Reference are either absolute or relative; these two
+kinds are syntactically distinguished from each other and they are
+resolved in slightly different ways.</para>
+
+<section>
+<title>Absolute References</title>
+
+<para>An absolute reference starts with ``/'' (forward slash),
+followed by a ``/''-separated sequence of one or more identifiers,
+where the last separator can be ``#'' (sharp). Examples are
+[[/a/b/c]], [[/d]], and [[/e#f]].
+
+<para>&Specware; resolves an absolute reference in the following
+steps:</para>
+
+<orderedlist>
+
+<listitem> If the reference contains ``#'', the ``#'' itself and the
+identifier following it are removed, obtaining a ``/''-separated
+sequence of one or more identifiers, preceded by ``/''. Otherwise, no
+removal takes place. Either way, the result of this first step is a
+``/''-separated sequence of identifiers preceded by ``/''.</listitem>
+
+<listitem>If the underlying operating system is Windows, the ``/''
+signs of the ``/''-separated sequence of identifiers preceded by
+``/'', resulting from the previous step, are turned into ``\''
+(backward slash); in addition, <".sw"> is appended at the
+end. Otherwise, the ``/'' signs are left unchanged and <".sw"> is
+appended at the end. Either way, the result of this second step is a
+(partial) path in the file system.</listitem>
+
+<listitem>The path resulting from the previous step is appended after
+the first directory of &swpath;. If the resulting absolute path
+identifies an existing file, that is the result of this third step.
+Otherwise, the same attempt is made with the second directory of
+&swpath; (if any). Attempts continue until a directory is found in
+&swpath; such that the absolute path obtained by concatenating the
+directory with the result of the previous step identifies an existing
+file; such a file is the result of this step. If no such directory is
+found, the unit reference cannot be resolved and an error is signaled
+by &Specware;.</listitem>
+
+<listitem>There are two alternative steps here, depending on whether
+the original unit reference contains ``#'' or not.</listitem>
+
+<orderedlist>
+
+<listitem>This is the case that the original unit reference does not
+contain ``#''. If the file is a single-unit file, i.e., it contains
+the defining text for a unit, the defining text is the final result of
+resolution. Otherwise, an error is signaled by &Specware;.</listitem>
+
+<listitem>This is the case that the original unit reference contains
+``#''. The file must be a multiple-unit file, i.e., it must contain a
+sequence of one or more unit definitions. If this is not the case, the
+unit reference cannot be resolved and an error is signaled by
+&Specware;. If that is the case, a unit definition is searched in the
+file, whose identifier (at the left of ``='') is the same as the
+identifier that follows ``#'' in the original unit reference. If no
+such unit definition is found, the unit reference cannot be resolved
+and an error is signaled by &Specware. If instead such a unit
+definition is found, its defining text (at the right of ``='') is the
+final result of resolution.</listitem>
+
+</orderedlist>
+
+</orderedlist>
+
+<para>For example, consider a reference [[/a/b/c]]. Since it does not
+contain ``#'', the first step does not do anything. Assuming that the
+underlying operating system is Windows, the result of the second step
+is <"\a\b\c.sw">. Suppose that &swpath; consists of the directories
+<"c:\users\me\specware:
 
 </section>
 
+</section>  <!-- resolution of unit references -->
+
+<section>
+<title>Processing Commands</title>
+
+</section>
+
+<section>
+<title>Unit-Specific Processing</title>
+
+</section>
+
+<section>
+<title>Auxiliary Commands</title>
 
 <!-- command to clear the cache -->
 
+</section>
 
 </chapter>
