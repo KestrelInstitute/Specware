@@ -5,11 +5,12 @@
 ;; argument to Xemacs. This spawns a Lisp process.
 (defun run-specware4 (&optional in-current-dir?)
   (interactive "P")
-  (let* ((specware4-dir (if in-current-dir?
-			    (strip-final-slash (if (stringp in-current-dir?)
-						   in-current-dir?
-						 default-directory))
-			  (concat (getenv "SPECWARE4"))))
+  (let* ((specware4-dir (sw::normalize-filename
+			 (if in-current-dir?
+			     (strip-final-slash (if (stringp in-current-dir?)
+						    in-current-dir?
+						  default-directory))
+			   (concat (getenv "SPECWARE4")))))
 	 (bin-dir (concat specware4-dir
 			  "/Applications/Specware/bin/"
 			  (if *windows-system-p*
@@ -200,11 +201,12 @@
 
 (defun build-specware4 (&optional in-current-dir?)
   (interactive "P")
-  (let* ((specware4-dir (if in-current-dir?
-			    (strip-final-slash (if (stringp in-current-dir?)
-						   in-current-dir?
-						 default-directory))
-			  (getenv "SPECWARE4")))
+  (let* ((specware4-dir (sw::normalize-filename
+			 (if in-current-dir?
+			     (strip-final-slash (if (stringp in-current-dir?)
+						    in-current-dir?
+						  default-directory))
+			   (getenv "SPECWARE4"))))
 	 (build-dir (concat specware4-dir "/Applications/Specware/Handwritten/Lisp"))
 	 (bin-dir (concat specware4-dir
 			     "/Applications/Specware/bin/"
@@ -312,11 +314,12 @@
 
 (defun build-specware4-from-base (in-current-dir?)
   (interactive "P")
-  (let* ((specware4-dir (if in-current-dir?
-			    (strip-final-slash (if (stringp in-current-dir?)
-						   in-current-dir?
-						 default-directory))
-			  (getenv "SPECWARE4")))
+  (let* ((specware4-dir (sw::normalize-filename
+			 (if in-current-dir?
+			     (strip-final-slash (if (stringp in-current-dir?)
+						    in-current-dir?
+						  default-directory))
+			   (getenv "SPECWARE4"))))
 	 (dir (concat specware4-dir "/Applications/Specware/Handwritten/Lisp"))
 	 (bin-dir (concat specware4-dir
 			     "/Applications/Specware/bin/"
@@ -356,8 +359,9 @@
 
 (defun bootstrap-specware4 (&optional in-current-dir?)
   (interactive "P")
-  (let ((specware4-dir (if in-current-dir? (strip-final-slash default-directory)
-			 (concat (getenv "SPECWARE4"))))
+  (let ((specware4-dir (sw::normalize-filename
+			(if in-current-dir? (strip-final-slash default-directory)
+			  (concat (getenv "SPECWARE4")))))
 	(slash-dir "/"))
     (run-specware4 specware4-dir)
     (sit-for .1)
@@ -403,11 +407,12 @@
 
 (defun run-PSL (&optional in-current-dir?)
   (interactive "P")
-  (let* ((specware4-dir (if in-current-dir?
-			    (strip-final-slash (if (stringp in-current-dir?)
-						   in-current-dir?
-						 default-directory))
-			  (concat (getenv "SPECWARE4"))))
+  (let* ((specware4-dir (sw::normalize-filename
+			 (if in-current-dir?
+			     (strip-final-slash (if (stringp in-current-dir?)
+						    in-current-dir?
+						  default-directory))
+			   (concat (getenv "SPECWARE4")))))
 	 (bin-dir (concat specware4-dir
 			  "/Applications/PSL/bin/"
 			  (if *windows-system-p*
