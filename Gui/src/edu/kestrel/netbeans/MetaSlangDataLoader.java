@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.2  2003/02/14 16:56:42  weilyn
+ * Added support for process unit action.
+ *
  * Revision 1.1  2003/01/30 02:01:33  gilham
  * Initial version.
  *
@@ -85,6 +88,7 @@ public class MetaSlangDataLoader extends UniFileLoader {
 	    SystemAction.get(FileSystemAction.class),
 	    null,
 	    //SystemAction.get(CompileAction.class),
+            SystemAction.get(StartLispAction.class),
             SystemAction.get(ProcessUnitAction.class),
 	    SystemAction.get(GenerateCodeAction.class),
             null,
