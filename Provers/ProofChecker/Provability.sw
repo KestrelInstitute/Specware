@@ -111,7 +111,7 @@ spec
     | thEmbedderInjective
     | thRelaxatorSatisfiesPredicate
     | thRelaxatorInjective
-    | thRelexatorSurjective
+    | thRelaxatorSurjective
     | thRestriction
     | thQuotienterSurjective
     | thQuotienterEquivClass
@@ -494,32 +494,28 @@ spec
                (cx, EMBED (SUM cS t?S) (cS!i), t --> SUM cS t?S)))
     | exCase ->
       (fa (cx:Context, e:Expression, n:PosNat, pS:Patterns, eS:Expressions,
-           t:Type, t1:Type, caseMatches:Expressions, posCxS:FSeq Context,
-           negCxS:FSeq Context, posAnS:FSeq AxiomName, negAnS:FSeq AxiomName)
+           t:Type, t1:Type, posCxS:Contexts, negCxS:Contexts,
+           posAnS:AxiomNames, negAnS:AxiomNames)
          pj (wellTypedExpr (cx, e, t))
       && length pS = n
       && (fa(i:Nat) i < n =>
             pj (wellTypedPatt (cx, pS!i, t)))
-      && length caseMatches = n
+      && pj (theoreM (cx, disjoinAll (map (pattAssumptionsQuantified e, pS))))
+      && length negCxS = n
+      && length negAnS = n
       && (fa(i:Nat) i < n =>
-            caseMatches!i =
-            (let (vS,tS) = pattVarsWithTypes (pS!i) in
-             EXX vS tS (pattAssumptions (pS!i, e))))
-      && pj (theoreM (cx, disjoinAll caseMatches))
+            negCxS!i =
+            singleton (axioM
+                        (negAnS!i,
+                         empty,
+                         conjoinAll (map (pattAssumptionsNegatedQuantified e,
+                                     firstN (pS, i))))))
       && length posCxS = n
       && length posAnS = n
       && (fa(i:Nat) i < n =>
             posCxS!i =
             multiVarDecls (pattVarsWithTypes (pS!i))
-              <| axioM (posAnS!i, empty, pattAssumptions (pS!i, e)))
-      && length negCxS = n
-      && length negAnS = n
-      && (fa(i:Nat) i < n =>
-            (let conjuncts:Expressions = the (fn conjuncts ->
-                   length conjuncts = i &&
-                   (fa(j:Nat) j < i => conjuncts!j = ~~ (caseMatches!j))) in
-             negCxS!i =
-             singleton (axioM (negAnS!i, empty, conjoinAll conjuncts))))
+              <| axioM (posAnS!i, empty, pattAssumptions e (pS!i)))
       && length eS = n
       && (fa(i:Nat) i < n =>
             pj (wellTypedExpr (cx ++ (negCxS!i) ++ (posCxS!i), eS!i, t1)))
@@ -693,7 +689,7 @@ spec
       && pj (wellTypedExpr (cx, e2, t --> t1))
       && ~(v in? exprFreeVars e1 \/ exprFreeVars e2)
       => (pj (theoreM (cx, e1 == e2 <==>
-                           FA v t e1 @ VAR v == e2 @ VAR v))))
+                           FA v t (e1 @ VAR v == e2 @ VAR v)))))
     | thAbstraction ->
       (fa (cx:Context, vS:Variables, tS:Types, e:Expression, eS:Expressions,
            t:Type, esbs:ExprSubstitution, an1:AxiomName, an2:AxiomName)
@@ -816,7 +812,7 @@ spec
       => pj (theoreM (cx, FAA (seq2(v1,v2)) (seq2(t\r,t\r))
                               (VAR v1 ~== VAR v2 ==>
                                RELAX r @ VAR v1 ~== RELAX r @ VAR v2))))
-    | thRelexatorSurjective ->
+    | thRelaxatorSurjective ->
       (fa (cx:Context, t:Type, r:Expression, v:Variable, v1:Variable)
          pj (wellFormedType (cx, t \ r))
       && v ~= v1
@@ -846,32 +842,29 @@ spec
       => pj (theoreM (cx, FA v t
                              (CHOOSE q e @ (QUOTIENT q @ VAR v) == e @ VAR v))))
     | thCase ->
-      (fa (cx:Context, e:Expression, n:Nat, pS:Patterns, eS:Expressions,
-           t:Type, posCxS:FSeq Context, negCxS:FSeq Context, e0:Expression,
-           posAnS:FSeq AxiomName, negAnS:FSeq AxiomName)
+      (fa (cx:Context, e:Expression, n:PosNat, pS:Patterns, eS:Expressions,
+           t:Type, posCxS:Contexts, negCxS:Contexts, e0:Expression,
+           posAnS:AxiomNames, negAnS:AxiomNames)
          pj (wellTypedExpr (cx, CASE e pS eS, t))
       && length pS = n
+      && length negCxS = n
+      && length negAnS = n
+      && (fa(i:Nat) i < n =>
+            negCxS!i =
+            singleton (axioM
+                        (negAnS!i,
+                         empty,
+                         conjoinAll (map (pattAssumptionsNegatedQuantified e,
+                                     firstN (pS, i))))))
       && length posCxS = n
       && length posAnS = n
       && (fa(i:Nat) i < n =>
             posCxS!i =
             multiVarDecls (pattVarsWithTypes (pS!i))
-              <| axioM (posAnS!i, empty, pattAssumptions (pS!i, e)))
-      && length negCxS = n
-      && length negAnS = n
-      && (fa(i:Nat) i < n =>
-            (let conjuncts:Expressions = the (fn conjuncts ->
-                 length conjuncts = i &&
-                 (fa(j:Nat) j < i =>
-                    conjuncts!j =
-                    (let (vS,tS) = pattVarsWithTypes (pS!i) in
-                     FAA vS tS (~~(pattAssumptions (pS!i, e)))))) in
-             negCxS!i =
-             singleton (axioM (negAnS!i, empty, conjoinAll conjuncts))))
+              <| axioM (posAnS!i, empty, pattAssumptions e (pS!i)))
       && length eS = n
       && (fa(i:Nat) i < n =>
-            pj (theoreM (cx ++ (negCxS!i) ++ (posCxS!i),
-                         (eS!i) == e0)))
+            pj (theoreM (cx ++ (negCxS!i) ++ (posCxS!i), (eS!i) == e0)))
       && (fa(i:Nat) i < n =>
             exprFreeVars e0 /\ pattVars (pS!i) = empty)
       => pj (theoreM (cx, CASE e pS eS == e0)))

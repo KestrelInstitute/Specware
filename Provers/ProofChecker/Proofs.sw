@@ -114,7 +114,7 @@ spec
     | paAlias           Proof * Variable
     | paEquivalentTypes Proof * Proof
     % theorems:
-    | thAxiom                       Proof * Proofs * TypeVariables * AxiomName
+    | thAxiom                       Proof * Proofs * AxiomName
     | thOpDef                       Proof * Proofs * Operation
     | thSubstitution                Proof * Proof * Position
     | thTypeSubstitution            Proof * Proof * Position
@@ -135,7 +135,7 @@ spec
     | thEmbedderInjective           Proof * Constructor * Variable * Variable
     | thRelaxatorSatisfiesPredicate Proof * Variable
     | thRelaxatorInjective          Proof * Variable * Variable
-    | thRelexatorSurjective         Proof * Variable * Variable
+    | thRelaxatorSurjective         Proof * Variable * Variable
     | thRestriction                 Proof * Variable
     | thQuotienterSurjective        Proof * Variable * Variable
     | thQuotienterEquivClass        Proof * Variable * Variable

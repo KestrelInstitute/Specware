@@ -461,6 +461,8 @@ spec
 
   type Context = FSeq ContextElement
 
+  type Contexts = FSeq Context
+
 
   %%%%%%%%
   % specs:

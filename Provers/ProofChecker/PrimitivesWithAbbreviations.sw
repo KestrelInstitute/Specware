@@ -8,6 +8,7 @@ spec
   type Variables     = FSeq Variable
   type Fields        = FSeq Field
   type Constructors  = FSeq Constructor
+  type AxiomNames    = FSeq AxiomName
 
   type Variable? = Option Variable
 

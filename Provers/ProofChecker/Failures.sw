@@ -1,6 +1,6 @@
 spec
 
-  import Libs/MyBase   % systematically imported (see README.txt)
+  import Libs   % systematically imported
 
   (* The following type is similar to `Option'. It is used to model success
   and failure when checking proofs. We do not use `Option' for clarity and

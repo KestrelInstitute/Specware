@@ -1,6 +1,6 @@
 spec
 
-  import Libs/MyBase   % systematically imported (see README.txt)
+  import Libs   % systematically imported
 
   (* In LD, names are primitive in the sense that they are not defined in
   terms of other concepts; the only requirements are that there are infinite

@@ -55,9 +55,19 @@ spec
     | tuple pS              -> conjoinAll (map (pattAliasAssumptions, pS))
     | alias(v,_,p)          -> VAR v == patt2expr p &&& pattAliasAssumptions p
 
-  op pattAssumptions : Pattern * Expression -> Expression
-  def pattAssumptions(p,e) =
+  op pattAssumptions : Expression -> Pattern -> Expression
+  def pattAssumptions e p =
     e == patt2expr p &&& pattAliasAssumptions p
+
+  op pattAssumptionsQuantified : Expression -> Pattern -> Expression
+  def pattAssumptionsQuantified e p =
+    let (vS,tS) = pattVarsWithTypes p in
+    EXX vS tS (pattAssumptions e p)
+
+  op pattAssumptionsNegatedQuantified : Expression -> Pattern -> Expression
+  def pattAssumptionsNegatedQuantified e p =
+    let (vS,tS) = pattVarsWithTypes p in
+    FAA vS tS (~~ (pattAssumptions e p))
 
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

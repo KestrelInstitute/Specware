@@ -1,6 +1,6 @@
 spec
 
-  import Libs/MyBase   % systematically imported (see README.txt)
+  import Libs   % systematically imported
 
   (* Positions of syntactic entities (e.g. types and expressions) within
   larger syntactic entities can be identified by sequences of natural numbers

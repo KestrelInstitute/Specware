@@ -443,7 +443,7 @@ again. *)
 
 spec
 
-  import Libs/MyBase
+  import Libs
 
   (* As in LD, we leave names abstract because the logic is parameterized
   over them. In addition, this allows us to refine them in different ways,
