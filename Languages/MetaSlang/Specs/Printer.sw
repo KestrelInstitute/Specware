@@ -83,7 +83,7 @@ AnnSpecPrinter qualifying spec {
   op ppProperty                   : fa(a) context -> Nat * AProperty a -> Line
   op ppSpec                       : fa(a) context -> ASpec a -> Pretty  
   op ppSpecR                      : fa(a) context -> ASpec a -> Pretty
-  op ppSpecHidingImportedSortsOps : fa(a) context -> ASpec a -> Pretty
+  op ppSpecHidingImportedStuff    : fa(a) context -> Spec -> ASpec a -> Pretty
   op ppSpecAll                    : fa(a) context -> ASpec a -> Pretty
   op ppSortDecls                  : fa(a) context -> ASortMap a -> Lines
   op ppOpDecls                    : fa(a) context -> AOpMap a -> Lines
@@ -882,7 +882,7 @@ AnnSpecPrinter qualifying spec {
 			(aliases as (primary_name as Qualified (primary_qualifier, primary_id))::_,
 			 tyVars, 
 			 optSort) : ASortInfo a, 
-                       (index, lines)) = 
+			(index, lines)) = 
    if ~ (ref_qualifier = primary_qualifier & ref_id = primary_id) then
      (index, lines)
    else
@@ -965,39 +965,93 @@ AnnSpecPrinter qualifying spec {
                [(0, pp.EndSpec),
                 (0, string "")])
 
-  def ppSpecHidingImportedSortsOps context  {importInfo = {imports, importedSpec=_,localOps,localSorts},
-					     sorts, ops, properties} = 
 
+  def ppSpecHidingImportedStuff context base_spec
+                                {importInfo = {imports, importedSpec,localOps,localSorts},
+				 sorts, ops, properties} =
+      %% Also suppress printing import of base specs
       let pp : ATermPrinter = context.pp in
-      let imports = filter (fn imp -> ~(isBuiltIn? imp)) imports in
+      let imported_sorts  = map (fn (_,spc) -> spc.sorts)        imports in
+      let imported_ops    = map (fn (_,spc) -> spc.ops)          imports in
+      let imported_props  = map (fn (_,spc) -> spc.properties)   imports in
+      let def imported_sort? (qualifier, id) =
+  	    exists (fn sorts -> case findAQualifierMap (sorts, qualifier, id) of 
+				  | Some _ -> true 
+				  | _ -> false)
+	           imported_sorts
+      in
+      let def imported_op? (qualifier, id) =
+  	    exists (fn ops -> case findAQualifierMap (ops, qualifier, id) of
+				  | Some _ -> true 
+				  | _ -> false)
+	           imported_ops
+      in
+      let def imported_prop? (type, name, _, _) =
+  	    exists (fn imp_props -> exists (fn (imp_type, imp_name, _, _) -> 
+                                            %% can't quite do prop = imported_prop 
+					    %% because imported_prop has type  Property
+					    %%     but prop          has type  Aproperty a
+					    type = imp_type & name = imp_name)
+		                           imp_props)
+	           imported_props % list of lists of properties
+      in
       blockAll(0,
                [(0, blockFill(0,
                               [(0, pp.Spec),
                                (0, string " ")]))]
                ++
-               (map (fn (spec_ref, spc) -> (1,prettysFill [pp.Import, string spec_ref])) imports) 
-               ++
-	       (let (index,pps) = foldl (fn (Qualified(qualifier,id), index_and_lines) ->
-					 case findAQualifierMap (sorts, qualifier, id) of
-					   | None -> index_and_lines
-					   | Some sort_info ->
-					     ppSortDecl context (qualifier, id, sort_info, index_and_lines))
-		                        (0,[])
-                                        localSorts
+               (let {importInfo = {imports=base_imports, importedSpec=_, localOps=_, localSorts=_},
+		     sorts=_, ops=_, properties=_} = base_spec
 		in
-		pps)
-               ++
-	       (let (index,pps) = foldl (fn (Qualified(qualifier,id), index_and_lines) ->
-					 case findAQualifierMap (ops, qualifier, id) of
-					   | None -> index_and_lines
-					   | Some op_info ->
-					     ppOpDecl context (qualifier, id, op_info, index_and_lines))
-		                        (0,[])
-                                        localOps
+		let non_base_imports = filter (fn (_,imp_spec) -> 
+					       if imp_spec = base_spec then
+						 false % not not imported, i.e. imported
+					       else
+						 List.foldl (fn ((_,base_imp_spec), not_imported?) ->
+							     if imp_spec = base_imp_spec then
+							       false % not not imported, i.e. imported
+							     else
+							       not_imported?)
+					                   true % begin assuming not imported
+							   base_imports)
+		                              imports
 		in
-		pps)
+		let pps : Lines =
+		  List.map (fn (spec_ref, _) -> (1,prettysFill [pp.Import, string spec_ref])) 
+		           non_base_imports
+		in
+		  pps)
                ++
-               (ListUtilities.mapWithIndex (ppProperty context) properties)
+	       (let (index,pps : Lines) = StringMap.foldriDouble (fn (qualifier, id, sort_info, index_and_pps) ->
+							  if imported_sort? (qualifier, id) then
+							    index_and_pps
+							  else
+							    ppSortDecl context (qualifier, id, sort_info, index_and_pps))
+		                                         (0,[])   
+                                                         sorts
+		in
+		  pps)
+   	       ++
+	       (let (index,pps : Lines) = StringMap.foldriDouble (fn (qualifier, id, op_info, index_and_pps) ->
+							  if imported_op? (qualifier, id) then
+							    index_and_pps
+							  else
+							    ppOpDecl context (qualifier, id, op_info, index_and_pps))
+                                                         (0,[])   
+                                                         ops
+		in
+		  pps)
+               ++
+	       (let pps : Lines =
+		List.foldl (fn (prop, pps) ->
+			    if imported_prop? prop then
+			      pps
+			    else
+			      Cons (ppProperty context (0, prop), pps)) % Ok to keep index at 0?
+		           []   
+			   properties
+		in
+		  pps)
                ++
                [(0, pp.EndSpec),
                 (0, string "")])

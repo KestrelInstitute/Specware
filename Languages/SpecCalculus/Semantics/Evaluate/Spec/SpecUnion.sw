@@ -6,43 +6,60 @@ SpecUnion qualifying spec {
  import /Library/Legacy/DataStructures/ListUtilities
  import Utilities % mergeSortInfo, mergeOpInfo
 
- op specUnion       : List Spec       -> Env Spec
- op importsUnion    : List Imports    -> Env Imports
- op sortsUnion      : List SortMap    -> Env SortMap
- op opsUnion        : List OpMap      -> Env OpMap
- op propertiesUnion : List Properties -> Env Properties
+ op specUnion       : List Spec -> Env Spec
+ op sortsUnion      : List Spec -> Env SortMap
+ op opsUnion        : List Spec -> Env OpMap
+ op propertiesUnion : List Spec -> Env Properties
 
  def specUnion specs =
-  {merged_imports <- importsUnion    (List.foldl (fn (spc, imports_list) -> cons (spc.importInfo.imports, imports_list))
-				                 []
-					         specs);
-   merged_sorts   <- sortsUnion      (List.foldl (fn (spc, sorts_list) -> cons (spc.sorts, sorts_list))
-				                 []
-					         specs);
-   merged_ops     <- opsUnion        (List.foldl (fn (spc, ops_list)  ->  cons (spc.ops, ops_list))
-				                 []
-					         specs);
-   merged_props   <- propertiesUnion (List.foldl (fn (spc, properties_list) -> cons (spc.properties, properties_list))
-				                 []
-					         specs);
+  let merged_imports     = importsUnion    specs in
+  %% let merged_local_ops   = localOpsUnion   specs in
+  %% let merged_local_sorts = localSortsUnion specs in
+  {
+   merged_sorts   <- sortsUnion      specs;
+   merged_ops     <- opsUnion        specs;
+   merged_props   <- propertiesUnion specs;
    return {importInfo = {imports       = merged_imports,
-			 %% We're building an imported spec, so we don't  need this information
-			 importedSpec  = None,
-			 localOps      = emptyOpNames,
-			 localSorts    = emptySortNames},
+			 importedSpec  = None,               % TODO: is this correct?
+			 localOps      = emptyOpNames,    % merged_local_ops
+			 localSorts    = emptySortNames}, % merged_local_sorts
 	   sorts      = merged_sorts,
 	   ops        = merged_ops,
 	   properties = merged_props}
   }
 
- %% TODO: The terms for the imports might not remain in a meaningful URI context
- def importsUnion imports_list =
-  foldM (fn x -> fn y -> return (x ++ y)) [] imports_list
+ %% TODO: The terms for the imports might not remain in a meaningful URI context -- relativize to new context
+ def importsUnion specs =
+  foldl (fn (spc, imports) -> listUnion (spc.importInfo.imports, imports))
+        []
+        specs
+
+%%% def localSortsUnion specs =
+%%%  foldl (fn (spc, local_sorts) -> listUnion (spc.importInfo.localSorts, local_sorts))
+%%%        []
+%%%        specs
+%%%
+%%% def localOpsUnion specs =
+%%%  foldl (fn (spc, local_ops) -> listUnion (spc.importInfo.localOps, local_ops))
+%%%        []
+%%%        specs
 
  %% TODO: This quietly ignores multiple infos for the same name
  %% TODO: This doesn't deal with multiple names within an info
- def sortsUnion sort_maps = foldM unionSortMaps emptySortMap sort_maps
- def opsUnion   op_maps   = foldM unionOpMaps   emptyOpMap   op_maps
+ def sortsUnion specs =
+  foldM unionSortMaps 
+        emptySortMap 
+        (List.foldl (fn (spc, sorts_list) -> cons (spc.sorts, sorts_list))
+	            []
+		    specs)
+
+ def opsUnion specs = 
+  foldM unionOpMaps 
+        emptyOpMap
+        (List.foldl (fn (spc, ops_list) -> cons (spc.ops, ops_list))
+	            []
+		    specs)
+
 
  % op mergeSortInfo : fa(a) ASortInfo a -> Option (ASortInfo a) -> Qualifier -> Id -> Position -> SpecCalc.Env (ASortInfo a)
  def unionSortMaps old_sort_map new_sort_map =
@@ -66,6 +83,9 @@ SpecUnion qualifying spec {
 
  %% TODO:  These might refer incorrectly into old specs
  %% TODO:  listUnion assumes = test on elements, we might want something smarter
- def propertiesUnion properties_list =
-  return (foldl listUnion [] properties_list)
+ def propertiesUnion specs =
+  return (foldl (fn (spc, props) -> listUnion (spc.properties, props))
+	        []
+	        specs)
+
 }

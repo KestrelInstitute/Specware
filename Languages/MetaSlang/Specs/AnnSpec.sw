@@ -297,8 +297,11 @@ AnnSpec qualifying spec {
 
  %% Create new spec with altered name, imports, sorts, ops, properties, etc.
 
+ op setImportInfo       : fa(a) ASpec a * ImportInfo       -> ASpec a
  op setImports          : fa(a) ASpec a * Imports          -> ASpec a
  op setImportedSpec     : fa(a) ASpec a * Spec             -> ASpec a
+ op setLocalOps         : fa(a) ASpec a * OpNames          -> ASpec a
+ op setLocalSorts       : fa(a) ASpec a * SortNames        -> ASpec a
  op setSorts            : fa(a) ASpec a * ASortMap    a    -> ASpec a
  op setOps              : fa(a) ASpec a * AOpMap      a    -> ASpec a
  op setProperties       : fa(a) ASpec a * AProperties a    -> ASpec a
@@ -370,7 +373,14 @@ AnnSpec qualifying spec {
    ops              = emptyAOpMap,
    properties       = emptyAProperties}
 
- def setImports ({importInfo = {imports, importedSpec, localOps, localSorts},
+ def setImportInfo ({importInfo=_, sorts, ops, properties}, 
+		    new_import_info) =
+  {importInfo       = new_import_info,
+   sorts            = sorts,
+   ops              = ops,
+   properties       = properties}
+
+ def setImports ({importInfo = {imports=_, importedSpec, localOps, localSorts},
                   sorts, ops, properties},
                  new_imports) =
   {importInfo       = {imports      = new_imports,
@@ -381,13 +391,35 @@ AnnSpec qualifying spec {
    ops              = ops,
    properties       = properties}
 
- def setImportedSpec ({importInfo = {imports, importedSpec, localOps, localSorts},
+ def setImportedSpec ({importInfo = {imports, importedSpec=_, localOps, localSorts},
                        sorts, ops, properties},
                       new_imported_spec) =
   {importInfo       = {imports      = imports,
                        importedSpec = Some new_imported_spec,
                        localOps     = localOps,
                        localSorts   = localSorts},
+   sorts            = sorts,
+   ops              = ops,
+   properties       = properties}
+
+ def setLocalOps ({importInfo = {imports, importedSpec, localOps=_, localSorts},
+		   sorts, ops, properties},
+		  new_local_ops) =
+  {importInfo       = {imports      = imports,
+                       importedSpec = importedSpec,
+                       localOps     = new_local_ops,
+                       localSorts   = localSorts},
+   sorts            = sorts,
+   ops              = ops,
+   properties       = properties}
+
+ def setLocalSorts ({importInfo = {imports, importedSpec, localOps, localSorts=_},
+		     sorts, ops, properties},
+		    new_local_sorts) =
+  {importInfo       = {imports      = imports,
+                       importedSpec = importedSpec,
+                       localOps     = localOps,
+                       localSorts   = new_local_sorts},
    sorts            = sorts,
    ops              = ops,
    properties       = properties}

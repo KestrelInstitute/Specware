@@ -68,8 +68,9 @@ SpecCalc qualifying spec {
    %% which uses /Library/PrettyPrinter/BjornerEspinosa
    PrettyPrint.toString (format(80, 
 				%% subtractSpec spc base_spec
-				ppSpecHidingImportedSortsOps 
+				ppSpecHidingImportedStuff
 				(initialize(asciiPrinter,false))
+				base_spec
 				spc))
 
  %% ======================================================================
@@ -262,13 +263,18 @@ SpecCalc qualifying spec {
  %% ======================================================================
 
  def printColimit base_spec reverse_context col =
-   %% ppColimit uses /Languages/MetaSlang/Specs/Categories/AsRecord
-   %% which uses /Library/PrettyPrinter/WadlerLindig
-   %% ppFormat  (ppColimit col)
-   let apex_spec = Cat.apex (Cat.cocone col) in
-   %% Note: localSorts and localOps in apex_spec will both be empty,
-   %%       so whether or not it makes sense, we must work around this fact.
-   let trimmed_apex_spec = subtractSpec apex_spec base_spec in
-   AnnSpecPrinter.printSpec trimmed_apex_spec
+   %% Just print the spec at the apex of the colimit.
+   printSpec base_spec reverse_context (Cat.apex (Cat.cocone col))
+
+   %%% was:
+   %%%  %% ppColimit uses /Languages/MetaSlang/Specs/Categories/AsRecord
+   %%%  %% which uses /Library/PrettyPrinter/WadlerLindig
+   %%%  %% ppFormat  (ppColimit col)
+   %%%  let apex_spec = Cat.apex (Cat.cocone col) in
+   %%%  %% Note: localSorts and localOps in apex_spec will both be empty,
+   %%%  %%       so whether or not it makes sense, we must work around this fact.
+   %%%  let trimmed_apex_spec = subtractSpec apex_spec base_spec in
+   %%%  AnnSpecPrinter.printSpec trimmed_apex_spec
+
 
 }

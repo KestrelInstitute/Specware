@@ -152,22 +152,27 @@ Note: The code below does not yet match the documentation above, but should.
     %% TODO: need to avoid capture that occurs for "X +-> Y" in "fa (Y) ...X..."
     %% TODO: ?? Change UnQualified to new_qualifier in all qualified names ??
     let
-      def translateQualifiedId (id_map, qid as Qualified (qualifier, id)) =
-        case findAQualifierMap (id_map, qualifier,id) of
+      def translateOpQualifiedId (qid as Qualified (qualifier, id)) =
+        case findAQualifierMap (op_id_map, qualifier,id) of
+          | Some nQId -> nQId
+          | None -> qid
+  
+      def translateSortQualifiedId (qid as Qualified (qualifier, id)) =
+        case findAQualifierMap (sort_id_map, qualifier,id) of
           | Some nQId -> nQId
           | None -> qid
   
       def translateOp op_term =
         case op_term of
           | Fun (Op (qid, fixity), srt, a) ->
-            let new_qid = translateQualifiedId (op_id_map, qid) in
+            let new_qid = translateOpQualifiedId qid in
             if new_qid = qid then op_term else Fun (Op (new_qid, fixity), srt, a)
           | _ -> op_term
 
       def translateSort sort_term =
         case sort_term of
           | Base (qid, srts, a) ->
-             let new_qid = translateQualifiedId (sort_id_map, qid) in
+             let new_qid = translateSortQualifiedId qid in
              if new_qid = qid then sort_term else Base (new_qid, srts, a)
           | _ -> sort_term
 
@@ -186,7 +191,7 @@ Note: The code below does not yet match the documentation above, but should.
 	      (return new_op_map)
 	    else
               let new_aliases = rev (foldl (fn (old_alias, new_aliases) -> 
-					    let new_alias = translateQualifiedId (op_id_map, old_alias) in
+					    let new_alias = translateOpQualifiedId old_alias in
 					    if  member (new_alias, new_aliases) then
 					      new_aliases
 					    else 
@@ -220,7 +225,7 @@ Note: The code below does not yet match the documentation above, but should.
 	      (return new_sort_map)
 	    else
               let new_aliases = rev (foldl (fn (old_alias, new_aliases) -> 
-					    let new_alias = translateQualifiedId (sort_id_map, old_alias) in
+					    let new_alias = translateSortQualifiedId old_alias in
 					    if  member (new_alias, new_aliases) then
 					      new_aliases
 					    else 
@@ -244,14 +249,18 @@ Note: The code below does not yet match the documentation above, but should.
 	  foldOverQualifierMap translateStep emptyAQualifierMap old_sorts 
 
     in
-    let {importInfo = _, sorts, ops, properties}
+    let {importInfo = {imports,importedSpec,localOps,localSorts}, sorts, ops, properties}
          = mapSpec (translateOp, translateSort, translatePattern) spc
-     %%         importedSpecs    = mapImports translateSpec importedSpecs
     in {
       newSorts <- translateSortMap sorts;
       newOps   <- translateOpMap   ops;
       return {
-	      importInfo = emptyImportInfo,        % Could change if we get smarter
+	      importInfo = {
+			    imports      = [],
+			    importedSpec = None,
+			    localOps     = map translateOpQualifiedId   localOps,
+			    localSorts   = map translateSortQualifiedId localSorts
+			   },  
 	      sorts      = newSorts,
 	      ops        = newOps,
 	      properties = properties
