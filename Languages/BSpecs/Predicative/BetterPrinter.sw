@@ -2,7 +2,7 @@ spec {
   import Coalgebra
   import /Languages/MetaSlang/Specs/SimplePrinter
 
-  op ppBSpecShort : BSpec -> Spec -> Pretty
+  op ppBSpecShort : BSpec -> Spec -> WadlerLindig.Pretty
   def ppBSpecShort bSpec spc =
     let (visited,ppCode) = ppFrom bSpec spc (succCoalgebra bSpec) (initial bSpec) V.empty ppNil in
       ppConcat [
@@ -22,9 +22,9 @@ spec {
     -> Coalgebra
     -> V.Elem
     -> V.Set
-    -> Pretty
+    -> WadlerLindig.Pretty
     -> (E.Elem * V.Elem)
-    -> (V.Set * Pretty)
+    -> (V.Set * WadlerLindig.Pretty)
   def ppEdge bSpec spc coAlg src visited ppBefore (edge,dst) =
     let (forw,apex,back) = edgeLabel (system bSpec) edge in
     let pp =
@@ -55,8 +55,8 @@ spec {
     -> Coalgebra
     -> V.Elem
     -> V.Set
-    -> Pretty
-    -> (V.Set * Pretty)
+    -> WadlerLindig.Pretty
+    -> (V.Set * WadlerLindig.Pretty)
   def ppFrom bSpec spc coAlg src visited ppBefore =
     let visited = V.insert visited src in
     let successors = coAlg src in
