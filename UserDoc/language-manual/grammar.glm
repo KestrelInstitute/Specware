@@ -493,7 +493,7 @@ easy reference.
 ||  `tight-expression ::=
 ||      `application
 ||    | `annotated-expression
-||    | `restricted-expression
+||    | `restrict-expression
 ||    | `closed-expression
 ||  
 ||  `closed-expression ::=
@@ -590,10 +590,10 @@ easy reference.
 </para>
 </formalpara>
 <!-- ***************************************************************** -->
-<formalpara><title>Restricted-expressions</title>
+<formalpara><title>Restrict-expressions</title>
 <para>
 <<
-||  `restricted-expression ::= restrict `closed-expression `closed-expression
+||  `restrict-expression ::= restrict `closed-expression `closed-expression
 >>
 </para>
 </formalpara>

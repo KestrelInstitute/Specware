@@ -2707,7 +2707,7 @@ The sort
 <emphasis>supersort</emphasis> <replaceable>S</replaceable>.
 Values can be shuttled between a subsort and its supersort
 and vice versa with
-`relaxators and `restricted-expressions; see also
+`relaxators and `restrict-expressions; see also
 <link linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
 </para>
 <!--====================================================================-->
@@ -2724,7 +2724,7 @@ accommodate the unary negation operator [[~]], which has sort
 <!--====================================================================-->
 <para>
 Likewise, Metaslang does not require the explicit use of a
-`restricted-expression
+`restrict-expression
 to restrict
 an `expression from a sort to a subsort if the
 context requires the latter.
@@ -2735,7 +2735,7 @@ a subsort of [[Nat]], to accommodate the division operator
 [[div]], whose second argument has sort [[PosNat]].
 But note that implicit restriction engenders the same proof
 obligation as results when using an explicit
-`restricted-expression.
+`restrict-expression.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -2867,7 +2867,7 @@ has three inhabitants.
 ||`tight-expression ::=
 ||      `application
 ||    | `annotated-expression
-||    | `restricted-expression
+||    | `restrict-expression
 ||    | `closed-expression
 ||
 ||`closed-expression ::=
@@ -3305,17 +3305,17 @@ equivalently as
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Restricted-expressions"><title>Restricted-expressions</title>
+<section id="Restrict-expressions"><title>Restrict-expressions</title>
 <para>
 <<
-||`restricted-expression ::= restrict `closed-expression `closed-expression
+||`restrict-expression ::= restrict `closed-expression `closed-expression
 >>
-Sample `restricted-expression:
+Sample `restrict-expression:
 [[
 ||    restrict posNat? (n+1)
 ]]
 Restriction.
-In a `restricted-expression
+In a `restrict-expression
 [[restrict ]]<replaceable>P</replaceable> <replaceable>E</replaceable>
 the `expression <replaceable>P</replaceable> must have function
 sort <replaceable>S</replaceable>[[ -> Boolean]] and the
@@ -3325,7 +3325,7 @@ sort <replaceable>S</replaceable>[[ -> Boolean]] and the
 </para>
 <!--====================================================================-->
 <para>
-The sort of a `restricted-expression
+The sort of a `restrict-expression
 [[restrict ]]<replaceable>P</replaceable>
 <replaceable>E</replaceable>,
 where <replaceable>P</replaceable> has
@@ -3335,7 +3335,7 @@ is the sort
 </para>
 <!--====================================================================-->
 <para>
-A `restricted-expression
+A `restrict-expression
 [[restrict ]]<replaceable>P</replaceable> <replaceable>E</replaceable>
 is a convenient notation for the `let-expression
 [[let relax ]]<replaceable>P</replaceable> <replaceable>V</replaceable>[[ = ]]<replaceable>E</replaceable>[[ in ]]<replaceable>V</replaceable>, where
@@ -3345,14 +3345,14 @@ is, it is any `name that does not already occur in the
 </para>
 <!--====================================================================-->
 <para>
-The use of this `restricted-expression engenders a proof obligation
+The use of this `restrict-expression engenders a proof obligation
 that the value of <replaceable>E</replaceable> satisfies predicate
 <replaceable>P</replaceable>.
 </para>
 <!--====================================================================-->
 <para>
 For example, assuming the `definitions from the Base Library
-for [[Nat]], the `restricted-expression
+for [[Nat]], the `restrict-expression
 [[restrict posNat? (n+1)]] has sort
 [[PosNat]]; its domain of definedness are the
 nonnegative integers (of sort [[Integer]]).
@@ -3361,14 +3361,14 @@ The proof obligation here is that, in the context,
 </para>
 <!--====================================================================-->
 <para>
-The purpose of `restricted-expressions is to make it
+The purpose of `restrict-expressions is to make it
 explicit that an `expression whose a-priori sort is some
 supersort <replaceable>S</replaceable> actually is guaranteed
 (or required) to have subsort
 [[(]]<replaceable>S</replaceable> [[|]]
 <replaceable>P</replaceable>[[)]].
 Note, however, that Metaslang does not require the explicit use of a
-`restricted-expression
+`restrict-expression
 to restrict
 an `expression from a sort to a subsort if the
 context requires the latter.
@@ -3379,7 +3379,7 @@ a subsort of [[Nat]], to accommodate the division operator
 [[div]], whose second argument has sort [[PosNat]].
 But note that implicit restriction engenders the same proof
 obligation as results when using an explicit
-`restricted-expression.
+`restrict-expression.
 </para>
 </section>
 <!-- ***************************************************************** -->
