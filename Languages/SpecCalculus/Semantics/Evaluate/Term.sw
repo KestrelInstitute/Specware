@@ -29,6 +29,7 @@ This is a monadic interpreter for the Spec Calculus.
     return value}
 
  def SpecCalc.evaluateTermInfo term =
+   let pos = positionOf term in
    case (valueOf term) of
     | Print term -> SpecCalc.evaluatePrint term
 
@@ -41,6 +42,8 @@ This is a monadic interpreter for the Spec Calculus.
     | Diag elems -> SpecCalc.evaluateDiag elems
 
     | Colimit sub_term -> SpecCalc.evaluateColimit sub_term
+
+    | Subst args   -> SpecCalc.evaluateSubstitute  args pos
 
     | DiagMorph fields -> SpecCalc.evaluateDiagMorph fields
 

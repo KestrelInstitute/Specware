@@ -5,50 +5,27 @@ SpecCalc qualifying spec {
   import ../../AbstractSyntax/Types
   import ../Environment
 
-  op evaluateURI : Position -> RelativeURI -> Env ValueInfo
+  sort SCTerm = SpecCalc.Term Position
 
-  op getURI : SpecCalc.Term Position -> Env URI
+  op evaluateTerm        : SCTerm                                             -> Env Value
 
-  op evaluateSpec : List (SpecElem Position) -> Env ValueInfo
+  op evaluateLet         : List (Decl Position) -> SCTerm                     -> Env ValueInfo
 
-  op evaluateSpecMorph :
-      (SpecCalc.Term Position) 
-    * (SpecCalc.Term Position)
-    * (List (SpecMorphRule Position))
-    -> Env ValueInfo
+  op evaluateURI         : Position -> RelativeURI                            -> Env ValueInfo
+  op evaluateSpec        : List (SpecElem Position)                           -> Env ValueInfo
+  op evaluateSpecMorph   : SCTerm * SCTerm * (List (SpecMorphRule Position))  -> Env ValueInfo
+  op evaluateLispCompile : ValueInfo * SCTerm * Option String                 -> Env ValueInfo
+  op evaluateDiag        : List (DiagElem Position)                           -> Env ValueInfo
+  op evaluateDiagMorph   : SCTerm * SCTerm * (List (DiagMorphRule Position))  -> Env ValueInfo
+  op evaluateColimit     : SCTerm                                             -> Env ValueInfo
+  op evaluateTermInfo    : SCTerm                                             -> Env ValueInfo
+  op evaluatePrint       : SCTerm                                             -> Env ValueInfo
+  op evaluateQualify     : SCTerm -> Qualifier                                -> Env ValueInfo
+  op evaluateTranslate   : SCTerm -> TranslateExpr Position                   -> Env ValueInfo
+  op evaluateSubstitute  : SCTerm * SCTerm                       -> Position  -> Env ValueInfo
+  op evaluateObligations : SCTerm                                             -> Env ValueInfo
 
-  op evaluateDiag : List (DiagElem Position) -> Env ValueInfo
-
-  op evaluateColimit : SpecCalc.Term Position -> Env ValueInfo
-
-  op evaluateDiagMorph :
-      (SpecCalc.Term Position)
-    * (SpecCalc.Term Position)
-    * (List (DiagMorphRule Position))
-    -> Env ValueInfo
-
-  op evaluateLispCompile : ValueInfo * SpecCalc.Term Position * Option String
-			  -> Env ValueInfo
-
-  op evaluateTerm : SpecCalc.Term Position -> Env Value
-
-  op evaluateTermInfo : SpecCalc.Term Position -> Env ValueInfo
-
-  op evaluatePrint : SpecCalc.Term Position -> Env ValueInfo
-
-  op evaluateLet :
-       List (Decl Position)
-    -> SpecCalc.Term Position
-    -> Env ValueInfo
-
-  op evaluateQualify : SpecCalc.Term Position -> Qualifier -> Env ValueInfo
-
-  op evaluateTranslate : SpecCalc.Term Position -> TranslateExpr Position
-                        -> Env ValueInfo
-
-  op evaluateSubstitute : SpecCalc.Term Position -> SpecCalc.Term Position -> Env ValueInfo
-
-  op evaluateObligations : SpecCalc.Term Position -> Env ValueInfo
+  op getURI : SCTerm -> Env URI
 
 }
 \end{spec}
