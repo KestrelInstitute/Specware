@@ -135,7 +135,6 @@
   (:anyof
    (:tuple "(" (1 :SC-TERM) ")")
    (1 :SC-PRINT)
-   (1 :SC-PRINT)
    (1 :SC-URI)
    (1 :SPEC-DEFINITION)
    (1 :SC-LET)
