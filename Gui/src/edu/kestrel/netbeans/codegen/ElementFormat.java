@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:29:16  weilyn
+ * Added support for expressions.
+ *
  * Revision 1.3  2003/02/16 02:12:14  weilyn
  * Added support for defs.
  *
@@ -128,17 +131,20 @@ public final class ElementFormat extends Format {
     /** Magic characters for all kinds of the formating tags.
     * The position of the characters is used as index to the following array.
     */
-    private static final String PROPERTIES_NAMES_INDEX = "nspce"; // NOI18N
+    private static final String PROPERTIES_NAMES_INDEX = "nspceurt"; // NOI18N
 
     /** Array of names of all kinds properties which could be included
     * in the pattern string.
     */
     private static final String[] PROPERTIES_NAMES = {
-        ElementProperties.PROP_NAME,          //n
-        ElementProperties.PROP_SORT,          //s
-        ElementProperties.PROP_PARAMETERS,    //p
-        ElementProperties.PROP_CLAIM_KIND,    //c
-        ElementProperties.PROP_EXPRESSION     //e
+        ElementProperties.PROP_NAME,                //n
+        ElementProperties.PROP_SORT,                //s
+        ElementProperties.PROP_PARAMETERS,          //p
+        ElementProperties.PROP_CLAIM_KIND,          //c
+        ElementProperties.PROP_EXPRESSION,          //e
+        ElementProperties.PROP_PATH,                //u for uri
+        ElementProperties.PROP_SOURCE_UNIT_ID,      //r
+        ElementProperties.PROP_TARGET_UNIT_ID,      //t
     };
 
     /** Status constants for the parser. */
@@ -295,7 +301,7 @@ public final class ElementFormat extends Format {
                 params = parseParams(s.substring(2));
             }
 
-            if ("nsce".indexOf(c) != -1) { // NOI18N
+            if ("nsceurt".indexOf(c) != -1) { // NOI18N
                 switch (params.length) {
                 case 0: return new Tag(c, "", ""); // NOI18N
                 case 2: return new Tag(c, params[0], params[1]);
@@ -422,6 +428,15 @@ public final class ElementFormat extends Format {
                     } else if (element instanceof ClaimElement) {
                         buf.append(((ClaimElement)element).getExpression());
                     }
+                    break;
+               /* case 'u':
+                    buf.append(((URIElement)element).getPath());
+                    break;*/
+                case 'r':
+                    buf.append(((MorphismElement)element).getSourceUnitID());
+                    break;
+                case 't':
+                    buf.append(((MorphismElement)element).getTargetUnitID());
                     break;
                 }
 
