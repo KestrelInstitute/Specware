@@ -11,7 +11,9 @@ SpecCalc qualifying spec {
   import ../AbstractSyntax/Types   
   import ../AbstractSyntax/Printer
   import /Library/IO/Primitive/IO
-  import translate /Library/Structures/Data/Monad/Base by {Monad +-> Env}
+  import translate (translate /Library/Structures/Data/Monad/Base
+    by {Monad +-> Env})
+    by {Monad._ +-> Env._}
   import Exception
   import Value
 \end{spec}

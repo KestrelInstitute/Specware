@@ -1,7 +1,10 @@
 SpecCalc qualifying spec 
  import ../../Environment
  import /Languages/MetaSlang/Specs/AnnSpec
- import SpecCalc qualifying (translate /Library/Legacy/DataStructures/Monadic/SplayMap by {Monad +-> Env})
+ import SpecCalc qualifying
+   (translate (translate /Library/Legacy/DataStructures/Monadic/SplayMap
+     by {Monad._ +-> SpecCalc._})
+     by {SpecCalc.Monad +-> SpecCalc.Env})
 
  op addSort :
    fa (a) List QualifiedId
