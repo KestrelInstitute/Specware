@@ -29,7 +29,22 @@
   #+mcl       (ccl::current-directory-name)  ; ??
   #+cmu       (extensions:default-directory) ; pathname
   #+sbcl      (sb-unix:posix-getcwd)
+  #+gcl       (system-short-str #+unix "pwd" #-unix "cd")
   )
+
+#+gcl
+(defun system-str (cmd &optional args)
+  (let ((tmp-file (format nil "~a/system_output" (temporaryDirectory-0)))
+	(result ""))
+    (lisp:system (format nil "~a ~a > ~a" cmd (or args "") tmp-file))
+    (file-to-string tmp-file)))
+
+#+gcl
+(defun system-short-str (cmd &optional args)
+  (let ((tmp-file (format nil "~a/system_output" (temporaryDirectory-0)))
+	(result ""))
+    (lisp:system (format nil "~a ~a > ~a" cmd (or args "") tmp-file))
+    (first-line-of-file tmp-file)))
 
 (defun parse-device-directory (str)
   (let ((found-index (position #\: str)))
@@ -55,7 +70,8 @@
   (if (pathnamep directory) directory
     (multiple-value-bind (dev dir)
 	(parse-device-directory directory)
-      (unless (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\)))
+      (if (and (> (length dir) 0) (member (elt dir 0) '(#\/ #\\)))
+	  (setq dir (cons :root (split-dir-components dir)))
 	(setq dir (concatenate 'list
 			       (pathname-directory (current-directory))
 			       (split-dir-components directory))))
@@ -71,20 +87,21 @@
 	  #+allegro   (excl::chdir          directory)
 	  #+Lispworks (hcl:change-directory directory)
 	  #+mcl       (ccl::%chdir          directory)
+	  #+gcl       (si:chdir         directory)
 	  #+cmu       (setf (extensions:default-directory) directory)
 	  #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
 					;#+gcl       
 	  ;; in Allegro CL, at least,
 	  ;; if (current-directory) is already a pathname, then
 	  ;; (make-pathname (current-directory)) will fail
-	  (setq common-lisp::*default-pathname-defaults* dirpath))
+	  (setq cl:*default-pathname-defaults* dirpath))
       (warn "Directory ~a does not exist" directory))))
 
 #+mcl					; doesn't have setenv built=in
 (defvar *environment-shadow* nil)
 
 (defun getenv (varname)
-  #+allegro   (system::getenv varname)
+  #+allegro   (si::getenv varname)
   #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
 		  (ccl::getenv varname))
   #+lispworks (hcl::getenv varname) 	;?
@@ -94,7 +111,7 @@
   )
 
 (defun setenv (varname newvalue)
-  #+allegro   (setf (system::getenv varname) newvalue)
+  #+allegro   (setf (si::getenv varname) newvalue)
   #+mcl       (let ((pr (assoc (intern varname "KEYWORD") *environment-shadow*)))
 		(if pr (setf (cdr pr) newvalue)
 		  (push (cons (intern varname "KEYWORD") newvalue)
@@ -137,7 +154,8 @@
   #+allegro "fasl"
   #+mcl     "dfsl"
   #+cmu     "x86f"
-  #+sbcl    sb-fasl:*fasl-file-type*)
+  #+sbcl    sb-fasl:*fasl-file-type*
+  #+gcl     "o")
 
 #+cmu
 (setq lisp::*load-lp-object-types* (remove "FASL" lisp::*load-lp-object-types* :test 'string=)
@@ -149,7 +167,7 @@
   (defun compile-file-if-needed (file)
     #+allegro (excl::compile-file-if-needed file)
     #+Lispworks (hcl:compile-file-if-needed file)
-    #+(or cmu mcl sbcl)
+    #+(or cmu mcl sbcl gcl)
     (when (> (file-write-date file)
 	     (or (file-write-date (make-pathname :defaults file
 						 :type *fasl-type*))
@@ -163,7 +181,7 @@
      ;(format t "L: ~a~%" (make-pathname :defaults filep :type nil))
      (compile-file-if-needed filep)
      ;; scripts depend upon the following returning true iff successful
-     (load (make-pathname :defaults filep :type nil)))
+     (load (make-pathname :defaults filep :type *fasl-type*)))
    )
 
 (defun load-lisp-file (file &rest ignore)
@@ -187,20 +205,22 @@
 (defparameter temporaryDirectory
   (ensure-final-slash
    (substitute #\/ #\\
-	       (namestring #+allegro (or (getenv "TEMP")
-					 (getenv "TMP")
-					 (SYSTEM:temporary-directory))
+	       (namestring #+(or win32 winnt)
+			   (or (getenv "TEMP") (getenv "TMP")
+			       #+allegro
+			       (SYSTEM:temporary-directory))
 			   #+Lispworks SYSTEM::*TEMP-DIRECTORY*
-			   #+(or mcl cmu sbcl) "/tmp/"
+			   #+(or mcl cmu sbcl unix) "/tmp/"
 			   ))))
 (defun temporaryDirectory-0 ()
   (ensure-final-slash
-   (namestring 
-    #+allegro      (or (getenv "TEMP")
-		       (getenv "TMP")
-		       (SYSTEM:temporary-directory))
-    #+Lispworks    SYSTEM::*TEMP-DIRECTORY*
-    #+(or mcl cmu sbcl) "/tmp/")))
+   (namestring #+(or win32 winnt)
+	       (or (getenv "TEMP") (getenv "TMP")
+		   #+allegro
+		   (SYSTEM:temporary-directory))
+	       #+Lispworks SYSTEM::*TEMP-DIRECTORY*
+	       #+(or mcl cmu sbcl unix) "/tmp/"
+	       )))
 
 (defun setTemporaryDirectory ()
   (setq temporaryDirectory (substitute #\/ #\\ (temporaryDirectory-0))))
@@ -218,7 +238,8 @@
   #+cmu  (ext:run-program command-str nil :output t)
   #+mcl  (ccl:run-program command-str :output t)
   #+sbcl (sb-ext:run-program (format nil "command -p ~A" command-str) :output t)
-  #-(or cmu mcl sbcl allegro) (format nil "Not yet implemented"))
+  #+gcl  (lisp:system command-str)
+  #-(or cmu mcl sbcl allegro gcl) (format nil "Not yet implemented"))
 
 (defun copy-file (source target)
   #+allegro(sys:copy-file source target)
@@ -239,6 +260,23 @@
 	    )
 	   (t
 	    (princ char ostream))))))))
+
+(defun file-to-string (file)
+  (with-open-file (istream file :direction :input)
+    (with-output-to-string (ostream)
+      (loop
+	(let ((char (read-char istream nil :eof)))
+	  (cond
+	   ((eq :eof char)
+	    (return))
+	   ((eq #\Page char)
+	    )
+	   (t
+	    (princ char ostream))))))))
+
+(defun first-line-of-file (file)
+  (with-open-file (istream file :direction :input)
+    (read-line istream)))
 
 (defun concatenate-files (files target)
   (with-open-file (ostream target :direction :output :if-does-not-exist :create)
@@ -272,7 +310,8 @@
     #+allegro (sys::make-directory dir)
     #+cmu     (unix:unix-mkdir dir #o755)
     #+mcl     (ccl:run-program "mkdir" (list dir))
-    #+sbcl    (sb-ext:run-program "/bin/mkdir" (list dir))))
+    #+sbcl    (sb-ext:run-program "/bin/mkdir" (list dir))
+    #+gcl     (lisp:system (format nil "mkdir ~a" dir))))
 
 (defun copy-directory (source target &optional (recursive? t))
   #+allegro(sys::copy-directory source target)
@@ -305,7 +344,8 @@
 	       (specware::delete-directory dir-item contents?)
 	     (delete-file dir-item)))
     #+cmu (unix:unix-rmdir dir)
-    #-cmu nil))				; No general way
+    #+gcl (lisp:system (format nil "rmdir ~a" dir))
+    #-(or cmu gcl) nil))				; No general way
 
 (defun parent-directory (pathname)
   (let ((dir (pathname-directory pathname)))
@@ -318,3 +358,8 @@
   (defmacro cl-user::without-redefinition-warnings (&body body)
     `(let ((cl-user::*redefinition-warnings* nil))
        ,@body)))
+
+(unless (fboundp 'define-compiler-macro)
+  #+gcl
+  (defmacro define-compiler-macro (name vl &rest body)
+    `(si::define-compiler-macro ,name ,vl,@ body)))

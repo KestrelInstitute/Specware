@@ -56,14 +56,14 @@
       ;;
       (let ((location (svref locations i)))
 	;;
-	'(let ((token
-	       (dolist (forward-node (parser-location-post-nodes location))
-		 (when (eq (parser-node-rule forward-node) +token-rule+)
-		   (return (parser-node-semantics forward-node))))))
-	  (format t "~&[~3D : ~30D~% ~S]~%"
-		  i
-		  token
-		  (parser-location-partial-node-data location)))
+;        '(let ((token
+;               (dolist (forward-node (parser-location-post-nodes location))
+;                 (when (eq (parser-node-rule forward-node) +token-rule+)
+;                   (return (parser-node-semantics forward-node))))))
+;          (format t "~&[~3D : ~30D~% ~S]~%"
+;                  i
+;                  token
+;                  (parser-location-partial-node-data location)))
 	(cond ((or (eq i 0) (not (null (parser-location-partial-node-data location))))
 	       (setq preceding-location-had-no-pending-rules? nil))
 	      (preceding-location-had-no-pending-rules?

@@ -24,6 +24,10 @@
       (progn (close (open x :direction :input)) t)
     (file-error (condition) 
       (declare (ignore condition))
+      nil)
+    #+gcl
+    (error (condition) 
+      (declare (ignore condition))
       nil)))
 
 (defvar nullFileWriteTime 9999999999999)   ; eons from now: "Thu May 21 10:46:39 PST 318787"

@@ -81,7 +81,15 @@
       (openmcl "openmcl-image")
       (cmulisp "cmuimage")
       (sbcl "sbclimage")
-      (allegro "dxl")))
+      (allegro "dxl")
+      (gcl "gclimage")))
+  (defvar *fasl-extension*
+    (case *specware-lisp*
+      (allegro "fasl")
+      (mcl     "dfsl")
+      (cmu     "x86f")
+					;(sbcl    sb-fasl:*fasl-file-type*)
+      (gcl     "o")))
   (defun sw:common-lisp (common-lisp-buffer-name
 			 common-lisp-directory
 			 &optional
@@ -111,6 +119,7 @@
 				    (if *windows-system-p*
 					" -e \"(setf (eol-convention *standard-output*) :unix)\""
 				      "")))
+		   (gcl common-lisp-image-file)	; Don't use common-lisp-image-name
 		   (otherwise
 		     (concat common-lisp-image-name " "
 			     common-lisp-image-file)))

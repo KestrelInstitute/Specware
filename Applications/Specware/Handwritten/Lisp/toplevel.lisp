@@ -879,15 +879,12 @@
   (cl:substitute #\_  #\# (string unitid))
   )
 
-(defun SPECWARE::run_cmd (cmd) % non-hypenated name to define corresponding MetaSlang op 
-  (run-cmd cmd))
-
-#-(or allegro cmu mcl sbcl) 
+#-(or allegro cmu mcl sbcl gcl) 
 (defun run-cmd (cmd &rest args)
   (warn "ignoring non-[ALLEGRO/CMU/MCL/SBCL] RUN-CMD : ~A~{ ~A~}" cmd args))
 
 
-#+(or cmu mcl sbcl) 
+#+(or cmu mcl sbcl gcl) 
 (defun run-cmd (cmd &rest args)
   (let ((process
 	 ;; cmu defaults for keywords args to run-program:
@@ -900,7 +897,8 @@
 	 ;;   status-hook
 	 #+cmu  (ext:run-program    cmd args :output *standard-output* :error :output :wait t)
 	 #+mcl  (ccl:run-program    cmd args :output *standard-output* :error :output :wait t)
-	 #+sbcl (sb-ext:run-program cmd args :output *standard-output* :error :output :wait t)))
+	 #+sbcl (sb-ext:run-program cmd args :output *standard-output* :error :output :wait t)
+	 #+gcl  (lisp:system (format nil "~a ~a" cmd args))))
     (let ((rc (process-exit-code process)))
       (unless (equal rc 0)
 	(warn "Return code from run-shell-command was non-zero: ~S" rc))))

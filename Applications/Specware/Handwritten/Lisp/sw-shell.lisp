@@ -21,7 +21,7 @@
     ("cinit" . "Clears Spec unit cache.")    
     ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
     ("showx" . "[unit-term] Like `show' but shows all types and ops including imports.")
-    ("prove" . "[proof arguments] Abbreviation for proc prove [proof arguments]")
+    ("prove" . "[proof arguments] Abbreviation for proc prove ...")
     ("prwb" . "[on] Include the base hypothesis when invokig Snark.")
     ("punits" . "[unit-identifier [filename]] Generates proof unit definitions for all conjectures in the unit and puts
                   them into filename.")

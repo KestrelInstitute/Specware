@@ -72,7 +72,7 @@
      (format "(namestring (specware::change-directory %S))" sw:common-lisp-directory))
     (goto-char (point-max))
     (unless already-running? 
-      (simulate-input-expression ":sw-shell"))
+      (simulate-input-expression "(swshell::specware-shell nil)"))
     ))
 
 (defun wait-for-prompt (&optional timeout)
