@@ -131,13 +131,20 @@
     (let ((new-items nil)
 	  (revised?  nil))
       (do-parser-rule-items (item rule)
+	;; why distinguish (t nil) from (nil ...) ?
+	;; is it merely because the former is an error?
 	(multiple-value-bind (expanded? revised-items)
 	    (expand-anyof-rule-in-item parser item)
 	  (when expanded?
 	    (setq revised? t))
 	  (setq new-items
 	    (if expanded?
-		(append revised-items new-items)
+		(progn
+		  (when (null revised-items)
+		    (warn "Null revised items for ~A when bypassing superfluous anyof rules for ~A"
+			  (parser-rule-item-rule item)
+			  (parser-rule-name rule)))
+		  (append revised-items new-items))
 	      (cons item new-items)))))
       (when revised?
 	(setf (parser-rule-items rule) 
@@ -147,8 +154,9 @@
 (defun expand-anyof-rule-in-item (parser item)
   (let* ((child-rule-name (parser-rule-item-rule item))
 	 (child-rule (find-parser-rule parser child-rule-name)))
+    ;; maybe this should just be a list?
     (if (superfluous-anyof-rule? child-rule)
-	(coerce (parser-rule-items child-rule) 'list)
+	(values t (coerce (parser-rule-items child-rule) 'list))
       nil)))
 
 
