@@ -504,7 +504,6 @@ easy reference.
 ||  
 ||  `tight-expression ::=
 ||      `application
-||    | `restrict-expression
 ||    | `closed-expression
 ||  
 ||  `closed-expression ::=
@@ -618,14 +617,6 @@ easy reference.
 ||  `operand ::= `tight-expression
 ||  
 ||  `infix-operator ::= `op-name | `inbuilt-infix-op
->>
-</para>
-</formalpara>
-<!-- ***************************************************************** -->
-<formalpara><title>Restrict-expressions</title>
-<para>
-<<
-||  `restrict-expression ::= restrict `closed-expression `closed-expression
 >>
 </para>
 </formalpara>
@@ -774,7 +765,6 @@ easy reference.
 <<
 ||  `structor ::=
 ||      `projector
-||    | `relaxator
 ||    | `quotienter
 ||    | `chooser
 ||    | `embedder
@@ -782,9 +772,6 @@ easy reference.
 >>
 <<
 ||  `projector ::= project `field-selector
->>
-<<
-||  `relaxator ::= relax `closed-expression
 >>
 <<
 ||  `quotienter ::= quotient `closed-expression
@@ -823,8 +810,6 @@ easy reference.
 ||      `aliased-pattern
 ||    | `cons-pattern
 ||    | `embed-pattern
-||    | `quotient-pattern
-||    | `relax-pattern
 ||    | `closed-pattern
 ||  
 ||  `closed-pattern ::=
@@ -845,10 +830,6 @@ easy reference.
 ||  `cons-pattern ::= `closed-pattern :: `tight-pattern
 ||  
 ||  `embed-pattern ::= `constructor [ `closed-pattern ]
-||  
-||  `quotient-pattern ::= quotient `closed-expression `tight-pattern
-||  
-||  `relax-pattern ::= relax `closed-expression `tight-pattern
 ||  
 ||  `variable-pattern ::= `local-variable
 ||  

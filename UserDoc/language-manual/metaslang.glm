@@ -40,6 +40,7 @@ in the example rule above.
 In the grammar rules terminal symbols appear in a bold font.
 Some of the terminal symbols used, like [[|]] and [[{]], are
 very similar to the grammar signs like <<|>> and <<{>> as
+<!-- }} for balance -->
 described above.
 They can hopefully be distinguished by their bold appearance.
 </para>
@@ -467,17 +468,16 @@ However, the following <emphasis>reserved symbols</emphasis> have a
 special meaning and must not be used for `simple-names:
 <!-- !! echo RESWORDS | abc -w meta -->
 [[
-||    as              endspec       infixr           relax
-||    axiom           ex            is               restrict
-||    case            fa            let              spec
-||    choose          false         morphism         then
-||    colimit         fn            obligations      theorem
-||    conjecture      from          of               translate
-||    def             generate      op               true
-||    diagram         if            project          type
-||    else            import        prove            where
-||    embed           in            qualifying
-||    embed?          infixl        quotient
+||    as              embed?        in               prove
+||    axiom           endspec       infixl           qualifying
+||    case            ex            infixr           quotient
+||    choose          fa            is               spec
+||    colimit         false         let              then
+||    conjecture      fn            morphism         theorem
+||    def             from          obligations      translate
+||    diagram         generate      of               true
+||    else            if            op               type
+||    embed           import        project          where
 ||
 ||    :         ::        |         =>        ||       &&
 ||    <-        ->        +->       =         ~=       <<
@@ -2766,36 +2766,53 @@ The type
 <emphasis>subtype</emphasis> of
 <emphasis>supertype</emphasis> $T$.
 Values can be shuttled between a subtype and its supertype
-and vice versa with
-`relaxators and `restrict-expressions; see also
-<link linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
-</para>
-<!--====================================================================-->
-<para>
-Metaslang does not require the explicit use of a `relaxator to relax
-an `expression from a subtype to its supertype if the
-context requires the latter.
-Implicit relaxation will take place when needed.
+and vice versa, in the direction from supertype to subtype only
+if the value satisfies predicate $P$.
+<!-- OLD:
+%%%with
+%%%`relaxators and `restrict-expressions; see also
+%%% <link linkend="metaslang-relax-pattern"><emphasis>Relax-patterns</emphasis></link>.
+%%%</para>
+%%%<para>
+%%%Metaslang does not require the explicit use of a `relaxator to relax
+%%%an `expression from a subtype to its supertype if the
+%%%context requires the latter.
+%%%Implicit relaxation will take place when needed.
+  -->
 For example, in the `expression [[-1]] the `nat-literal [[1]]
-of type [[Nat]] is implicitly relaxed to type [[Integer]] to
+of type [[Nat]] is implicitly ``coerced'' to type [[Integer]] to
 accommodate the unary negation operator [[-]], which has type
 [[Integer -> Integer]].
 </para>
 <!--====================================================================-->
 <para>
-Likewise, Metaslang does not require the explicit use of a
-`restrict-expression
-to restrict
-an `expression from a type to a subtype if the
-context requires the latter.
-Implicit restriction will take place when needed.
-For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
-of type [[Nat]] is implicitly restricted to type [[PosNat]],
+Likewise,
+<!-- OLD:
+%%%Metaslang does not require the explicit use of a
+%%%`restrict-expression
+%%%to restrict
+%%%an `expression from a type to a subtype if the
+%%%context requires the latter.
+%%%Implicit restriction will take place when needed.
+%%%For example,
+  -->
+in the `expression [[7 div 2]] the `nat-literal [[2]]
+of type [[Nat]] is implicitly ``coerced'' to type [[PosNat]],
 a subtype of [[Nat]], to accommodate the division operator
 [[div]], whose second argument has type [[PosNat]].
-But note that implicit restriction engenders the same proof
-obligation as results when using an explicit
-`restrict-expression.
+But note that this engenders the proof
+obligation that the value satisfies the predicate of the subtype.
+</para>
+<!--====================================================================-->
+<para>
+These coercions extend to composed types.  For example, an
+`expression of type [[List PosNat]] may be used where a value
+of type [[List Nat]] is required.  Conversely, an `expression
+of type [[List Nat]] may be used in a context requiring [[List
+PosNat]] if the corresponding proof obligation can be
+discharged, namely that the value of the `expression, in its
+context, satisfies the predicate [[all posNat?]]  testing
+whether all elements of a list of naturals are positive.
 </para>
 </section>
 <!-- ***************************************************************** -->
@@ -2926,7 +2943,6 @@ has three inhabitants.
 ||
 ||`tight-expression ::=
 ||      `application
-||    | `restrict-expression
 ||    | `closed-expression
 ||
 ||`closed-expression ::=
@@ -2964,7 +2980,6 @@ Sample `expressions:
 ||    f(x, x)
 ||    [] : List Arg
 ||    abs(x-y)
-||    restrict posNat? (n+1)
 ||    ++
 ||    x
 ||    3260
@@ -3452,7 +3467,7 @@ otherwise.
 $P$ and $Q$ must have the same type, or else have
 types that are subtypes of the same supertype.
 In the latter case, the comparison is the same as for the values
-of the `operands relaxed to the supertype,
+of the `operands coerced to the supertype,
 so, for example, the value of [[(1:Nat)=(1:PosNat)]] is [[true]].
 </para>
 <para>
@@ -3486,82 +3501,84 @@ take precedence over the left-hand side when present in both.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Restrict-expressions"><title>Restrict-expressions</title>
-<para>
-<<
-||`restrict-expression ::= restrict `closed-expression `closed-expression
->>
-Sample `restrict-expression:
-[[
-||    restrict posNat? (n+1)
-]]
-Restriction.
-In a `restrict-expression
-[[restrict $P$]] $E$
-the `expression $P$ must have function
-type [[$T$ -> Boolean]] and the
-`expression $E$ must have type
-$T$ for some
-$T$.
-</para>
-<!--====================================================================-->
-<para>
-The type of a `restrict-expression
-[[restrict $P$]]
-$E$,
-where $P$ has
-type [[$T$ -> Boolean]],
-is the type
-[[($T$]] [[|]] [[$P$)]].
-</para>
-<!--====================================================================-->
-<para>
-A `restrict-expression
-[[restrict $P$]] $E$
-is a convenient notation for the `let-expression
-[[let relax $P$]] [[$V$ = $E$ in $V$]], where
-$V$ is some unique fresh `simple-name, that
-is, it is any `simple-name that does not already occur in the
-`spec, directly or indirectly through an import.
-</para>
-<!--====================================================================-->
-<para>
-The use of this `restrict-expression engenders a proof obligation
-that the value of $E$ satisfies predicate
-$P$.
-</para>
-<!--====================================================================-->
-<para>
-For example, assuming the `definitions from the Base Library
-for [[Nat]], the `restrict-expression
-[[restrict posNat? (n+1)]] has type
-[[PosNat]].
-The proof obligation here is that, in the context,
-[[(n+1) > 0]].
-</para>
-<!--====================================================================-->
-<para>
-The purpose of `restrict-expressions is to make it
-explicit that an `expression whose a-priori type is some
-supertype $T$ actually is guaranteed
-(or required) to have subtype
-[[($T$]] [[|]]
-[[$P$)]].
-Note, however, that Metaslang does not require the explicit use of a
-`restrict-expression
-to restrict
-an `expression from a type to a subtype if the
-context requires the latter.
-Implicit restriction will take place when needed.
-For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
-of type [[Nat]] is implicitly restricted to type [[PosNat]],
-a subtype of [[Nat]], to accommodate the division operator
-[[div]], whose second argument has type [[PosNat]].
-But note that implicit restriction engenders the same proof
-obligation as results when using an explicit
-`restrict-expression.
-</para>
-</section>
+<!-- OLD:
+%%%<section id="Restrict-expressions"><title>Restrict-expressions</title>
+%%%<para>
+%%%<<
+%%%||`restrict-expression ::= restrict `closed-expression `closed-expression
+%%%>>
+%%%Sample `restrict-expression:
+%%%[[
+%%%||    restrict posNat? (n+1)
+%%%]]
+%%%Restriction.
+%%%In a `restrict-expression
+%%%[[restrict $P$]] $E$
+%%%the `expression $P$ must have function
+%%%type [[$T$ -> Boolean]] and the
+%%%`expression $E$ must have type
+%%%$T$ for some
+%%%$T$.
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%The type of a `restrict-expression
+%%%[[restrict $P$]]
+%%%$E$,
+%%%where $P$ has
+%%%type [[$T$ -> Boolean]],
+%%%is the type
+%%%[[($T$]] [[|]] [[$P$)]].
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%A `restrict-expression
+%%%[[restrict $P$]] $E$
+%%%is a convenient notation for the `let-expression
+%%%[[let relax $P$]] [[$V$ = $E$ in $V$]], where
+%%%$V$ is some unique fresh `simple-name, that
+%%%is, it is any `simple-name that does not already occur in the
+%%%`spec, directly or indirectly through an import.
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%The use of this `restrict-expression engenders a proof obligation
+%%%that the value of $E$ satisfies predicate
+%%%$P$.
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%For example, assuming the `definitions from the Base Library
+%%%for [[Nat]], the `restrict-expression
+%%%[[restrict posNat? (n+1)]] has type
+%%%[[PosNat]].
+%%%The proof obligation here is that, in the context,
+%%%[[(n+1) > 0]].
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%The purpose of `restrict-expressions is to make it
+%%%explicit that an `expression whose a-priori type is some
+%%%supertype $T$ actually is guaranteed
+%%%(or required) to have subtype
+%%%[[($T$]] [[|]]
+%%%[[$P$)]].
+%%%Note, however, that Metaslang does not require the explicit use of a
+%%%`restrict-expression
+%%%to restrict
+%%%an `expression from a type to a subtype if the
+%%%context requires the latter.
+%%%Implicit restriction will take place when needed.
+%%%For example, in the `expression [[7 div 2]] the `nat-literal [[2]]
+%%%of type [[Nat]] is implicitly restricted to type [[PosNat]],
+%%%a subtype of [[Nat]], to accommodate the division operator
+%%%[[div]], whose second argument has type [[PosNat]].
+%%%But note that implicit restriction engenders the same proof
+%%%obligation as results when using an explicit
+%%%`restrict-expression.
+%%%</para>
+%%%</section>
+  -->
 <!-- ***************************************************************** -->
 <section id="Op-names"><title>Op-names</title>
 <para>
@@ -4109,7 +4126,6 @@ denotes the same list as the `expression [[Cons
 <<
 ||`structor ::=
 ||      `projector
-||    | `relaxator
 ||    | `quotienter
 ||    | `chooser
 ||    | `embedder
@@ -4208,61 +4224,63 @@ $v<subscript>i</subscript>$.
 </para>
 </section>
 <!-- ***************************************************************** -->
-<section id="Relaxators"><title>Relaxators</title>
-<para>
-<<
-||`relaxator ::= relax `closed-expression
->>
-Sample `relaxator:
-[[
-||    relax even
-]]
-Restriction.
-The `closed-expression of a `relaxator must have some function
-type [[$T$ -> Boolean]].
-</para>
-<!--====================================================================-->
-<para>
-The type of `relaxator [[relax $P$]],
-where $P$ has type
-[[$T$ -> Boolean]], is the function
-type (whose domain is a subtype) [[($T$ | $P$)]] [[-> $T$]].
-The value of the `relaxator is the function that maps each
-inhabitant of subtype
-[[($T$ | $P$)]] to the same value --
-apart from the type information -- inhabiting supertype
-$T$.
-</para>
-<!--====================================================================-->
-<para>
-For example, given
-[[
-||    type Even = (Nat | even)
-]]
-we have the typing
-[[
-||    relax even : Even -> Nat
-]]
-for the function that injects the even natural numbers back
-into the supertype of [[Even]].
-</para>
-<!--====================================================================-->
-<para>
-Metaslang does not require the explicit use of a `relaxator to relax
-an `expression from a subtype to its supertype if the
-context requires the latter.
-Implicit relaxation will take place when needed.
-For example, in the `expression [[-1]] the `nat-literal [[1]]
-of type [[Nat]] is implicitly relaxed to type [[Integer]] to
-accommodate the unary negation operator [[-]], which has type
-[[Integer -> Integer]].
-</para>
-<!--====================================================================-->
-<para>
-Note the remarks about equivalence of `type-restrictions in
-the corresponding section.
-</para>
-</section>
+<!-- OLD:
+%%%<section id="Relaxators"><title>Relaxators</title>
+%%%<para>
+%%%<<
+%%%||`relaxator ::= relax `closed-expression
+%%%>>
+%%%Sample `relaxator:
+%%%[[
+%%%||    relax even
+%%%]]
+%%%Restriction.
+%%%The `closed-expression of a `relaxator must have some function
+%%%type [[$T$ -> Boolean]].
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%The type of `relaxator [[relax $P$]],
+%%%where $P$ has type
+%%%[[$T$ -> Boolean]], is the function
+%%%type (whose domain is a subtype) [[($T$ | $P$)]] [[-> $T$]].
+%%%The value of the `relaxator is the function that maps each
+%%%inhabitant of subtype
+%%%[[($T$ | $P$)]] to the same value %%
+%%%apart from the type information %% inhabiting supertype
+%%%$T$.
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%For example, given
+%%%[[
+%%%||    type Even = (Nat | even)
+%%%]]
+%%%we have the typing
+%%%[[
+%%%||    relax even : Even -> Nat
+%%%]]
+%%%for the function that injects the even natural numbers back
+%%%into the supertype of [[Even]].
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%Metaslang does not require the explicit use of a `relaxator to relax
+%%%an `expression from a subtype to its supertype if the
+%%%context requires the latter.
+%%%Implicit relaxation will take place when needed.
+%%%For example, in the `expression [[-1]] the `nat-literal [[1]]
+%%%of type [[Nat]] is implicitly relaxed to type [[Integer]] to
+%%%accommodate the unary negation operator [[-]], which has type
+%%%[[Integer -> Integer]].
+%%%</para>
+  %%====================================================================%%
+%%%<para>
+%%%Note the remarks about equivalence of `type-restrictions in
+%%%the corresponding section.
+%%%</para>
+%%%</section>
+  -->
 <!-- ***************************************************************** -->
 <section id="Quotienters"><title>Quotienters</title>
 <para>
@@ -4640,8 +4658,6 @@ value with empty acceptance binding (empty since there are no
 ||      `aliased-pattern
 ||    | `cons-pattern
 ||    | `embed-pattern
-||    | `quotient-pattern
-||    | `relax-pattern
 ||    | `closed-pattern
 ||
 ||`closed-pattern ::=
@@ -4665,10 +4681,6 @@ avoid grammatical ambiguities.)
 ||`cons-pattern ::= `closed-pattern :: `tight-pattern
 ||
 ||`embed-pattern ::= `constructor [ `closed-pattern ]
-||
-||`quotient-pattern ::= quotient `closed-expression `tight-pattern
-||
-||`relax-pattern ::= relax `closed-expression `tight-pattern
 ||
 ||`variable-pattern ::= `local-variable
 ||
@@ -4697,8 +4709,6 @@ Sample `patterns:
 ||    hd :: tail
 ||    Push {top, pop = rest}
 ||    embed Empty
-||    quotient congMod3 n
-||    relax even e
 ||    x
 ||    _
 ||    #z
@@ -4730,29 +4740,31 @@ is lawful: the second [[n]] is <quote>shielded</quote> by
 the `type-comprehension in which it occurs.)
 </para>
 <!--  ================================================================= -->
-<para>
-Restriction.
-The `closed-expression of a `quotient-pattern must have some type
-[[$T$ * $T$ -> Boolean]];
-in addition, it must be an equivalence relation, as explained
-under <link
-linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
-</para>
-<!--  ================================================================= -->
-<para>
-Restriction.
-`Quotient-patterns may only be used in a `definition or
-`claim if the result is insensitive to the choice of representative
-from the equivalence class.
-&SpecwareV; does not attempt to generate proof obligations for
-establishing this.
-</para>
-<!--  ================================================================= -->
-<para>
-Restriction.
-The `closed-expression of a `relax-pattern must have some function
-type [[$T$ -> Boolean]].
-</para>
+<!-- OLD:
+%%%<para>
+%%%Restriction.
+%%%The `closed-expression of a `quotient-pattern must have some type
+%%%[[$T$ * $T$ -> Boolean]];
+%%%in addition, it must be an equivalence relation, as explained
+%%%under <link
+%%%linkend="Type-quotients"><emphasis>Type-quotients</emphasis></link>.
+%%%</para>
+%%% ================================================================= %%
+%%%<para>
+%%%Restriction.
+%%%`Quotient-patterns may only be used in a `definition or
+%%%`claim if the result is insensitive to the choice of representative
+%%%from the equivalence class.
+%%%&SpecwareV; does not attempt to generate proof obligations for
+%%%establishing this.
+%%%</para>
+%%% ================================================================= %%
+%%%<para>
+%%%Restriction.
+%%%The `closed-expression of a `relax-pattern must have some function
+%%%type [[$T$ -> Boolean]].
+%%%</para>
+  -->
 <!--  ================================================================= -->
 <para>
 To define acceptance and acceptance binding (if any)
@@ -4881,7 +4893,7 @@ $B$ among the accepting bindings in
 which the type of each assigned value is as
 <quote>restricted</quote> as possible in the subtype-supertype
 hierarchy without violating well-typedness constraints (in
-other words, there are no avoidable implicit relaxations).
+other words, there are no avoidable implicit coercions).
 The acceptance binding is then the binding
 $B$ <emphasis>projected
 on</emphasis> the accepting `local-variables of

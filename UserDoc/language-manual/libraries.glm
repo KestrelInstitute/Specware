@@ -116,6 +116,7 @@ with the &Specware; distribution, for details (e.g. axioms).
 <section><title>Boolean</title>
  <para>
   <variablelist>
+   <varlistentry>
     <term><command>Ops</command></term>
     <listitem>
      <para>
