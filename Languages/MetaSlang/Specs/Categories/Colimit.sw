@@ -92,7 +92,8 @@ spec {
 		     ops        = apex_op_map,
 		     properties = apex_properties}
   in
-
+  %% Add in base spec
+  let apex = addDisjointImport (apex, base_spec) in
   %% Build the cocone morphisms from the vertex specs to the apex spec, and enter
   %% them in the natural transformation mapping vertices to morphisms.
 

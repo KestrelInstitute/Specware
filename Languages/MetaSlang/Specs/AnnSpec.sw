@@ -1,7 +1,7 @@
 % derived from SW4/Languages/MetaSlang/ADT/Specs/ASpec.sl v1.5
 % derived from SW4/Languages/MetaSlang/ADT/Specs/ASpecSig.sl v1.2
 
-AnnSpec qualifying spec {
+AnnSpec qualifying spec 
  import Position
  import ../AbstractSyntax/AnnTerm   
  import /Library/Legacy/DataStructures/StringMapSplay % for qualifier maps
@@ -520,4 +520,28 @@ AnnSpec qualifying spec {
      ops = mapDiff x.ops y.ops,
      sorts = mapDiff x.sorts y.sorts
    }
-}
+
+ op addDisjointImport: Spec * Spec -> Spec
+ def addDisjointImport (spc, imported_spec) =
+   let def mergeSortStep (imported_qualifier, imported_id,
+			  imported_sort_info, combined_psorts) =
+         insertAQualifierMap (combined_psorts,
+			      imported_qualifier,
+			      imported_id,
+			      imported_sort_info)
+       def mergeOpStep (imported_qualifier, imported_id,
+			imported_op_info, combined_pops) =
+	 insertAQualifierMap (combined_pops,
+			      imported_qualifier,
+			      imported_id,
+			      imported_op_info)
+	   
+   in
+   let spc = addImport (("", imported_spec), spc) in
+   let newSorts = foldriAQualifierMap mergeSortStep spc.sorts imported_spec.sorts in
+   let spc = setSorts (spc, newSorts) in
+   let newOps = foldriAQualifierMap mergeOpStep spc.ops imported_spec.ops in
+   let spc = setOps (spc, newOps) in
+   setProperties (spc,  spc.properties ++ imported_spec.properties)
+   
+endspec
