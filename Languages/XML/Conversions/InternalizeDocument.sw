@@ -93,7 +93,7 @@ XML qualifying spec
         %% Note that datum_elements is a heterogenous list,
         %%  hence cannot be properly typed in metaslang,
         %%  hence the "magic" here.
-        let _ = toScreen ("\nBegin product\n") in
+        let _ = toScreen ("\nSeeking product\n") in
         let new_fields =
             map (fn (desired_name, desired_sd) ->
 		 let _ = toScreen ("\nSeeking " ^ desired_name ^ "\n") in
@@ -122,38 +122,74 @@ XML qualifying spec
 		   | None -> 
 		     let _ = toScreen ("Could not find field " ^ desired_name) in
 		     case desired_sd of
-		       | Base (("Nat", "Nat"),       []) -> magicCastFromInteger 0
-		       | Base (("String", "String"), []) -> magicCastFromString ""
-		       | _ -> fail "Have defaults for just nat and string")
+		       | Base (("Boolean", "Boolean"),       []) -> 
+		         let _ = toScreen ("\nUsing default value of false for " ^ (print_SortDescriptor desired_sd) ^ "\n") in
+			 magicCastFromBoolean false
+		       | Base (("Nat", "Nat"),       []) -> 
+		         let _ = toScreen ("\nUsing default value of 0 for "     ^ (print_SortDescriptor desired_sd) ^ "\n") in
+			 magicCastFromInteger 0
+		       | Base (("String", "String"), []) -> 
+		         let _ = toScreen ("\nUsing default value of \"\" for "  ^ (print_SortDescriptor desired_sd) ^ "\n") in
+			 magicCastFromString ""
+		       | _ -> fail "Have defaults for just Boolean, Nat, and String")
 	        sd_fields
 	in
-        let _ = toScreen ("\nEnd product\n") in
+        let _ = toScreen ("\nFound product\n") in
 	  Some (Magic.magicMakeProduct new_fields)
       | Base (qid, args) ->
-	let possible_datum = element.content.trailer in
 	(case qid of
-	  | ("String",  "String") ->
-	     Some (magicCastFromString 
-		   (case possible_datum of
- 		      | Some char_data -> 
-		        %% '<...> "abcd" <...>'  => "abcd", as opposed to " \"abcd\" ",
-		        %% which would print back out as '<...> " "abcd" " <...>'
-		        trim_whitespace_and_quotes (string char_data)
-		      | None -> "<default string>"))
-	  | ("Integer", "Integer") ->
-	    Some (magicCastFromInteger 
-		  (case possible_datum of
-		     | Some char_data -> stringToInt (trim_whitespace (string char_data))
-		     | None -> 0))
-	  | ("List",    "List") -> fail "decoding list"
 	  | ("Boolean", "Boolean") ->
+	    let possible_datum = element.content.trailer in
 	    Some (magicCastFromBoolean 
 		  (case possible_datum of
 		     | Some char_data -> 
 		       (case string char_data of
 			  | "true"  -> true
 			  | "false" -> false)
-		     | None -> false))
+		     | None -> 
+		       let _ = toScreen ("\nUsing default value of false for " ^ (print_SortDescriptor sd_pattern) ^ "\n") in
+		       false))
+	  | ("Integer", "Integer") ->
+	    let possible_datum = element.content.trailer in
+	    Some (magicCastFromInteger 
+		  (case possible_datum of
+		     | Some char_data -> stringToInt (trim_whitespace (string char_data))
+		     | None -> 
+		       let _ = toScreen ("\nUsing default value of 0 for " ^ (print_SortDescriptor sd_pattern) ^ "\n") in
+		       0))
+	  | ("String",  "String") ->
+	     let possible_datum = element.content.trailer in
+	     Some (magicCastFromString 
+		   (case possible_datum of
+ 		      | Some char_data -> 
+		        %% '<...> "abcd" <...>'  => "abcd", as opposed to " \"abcd\" ",
+		        %% which would print back out as '<...> " "abcd" " <...>'
+		        trim_whitespace_and_quotes (string char_data)
+		      | None -> 
+			let _ = toScreen ("\nUsing default value of \"\" for " ^ (print_SortDescriptor sd_pattern) ^ "\n") in
+			""))
+	  | ("List",    "List") ->
+	    let element_sd = expand_SortDescriptor (hd args, table) in
+	    let data = rev (foldl (fn ((_,item), result) ->
+				   case item of
+				     | Element (Full elt) ->
+				       let _ = toScreen ("\nSeeking next list element: " ^ (print_SortDescriptor (hd args)) ^ "\n") in
+				       (case internalize_PossibleElement (elt, element_sd, table) of
+					  | Some datum -> cons (datum, result)
+					  | _ -> 
+					    let _ = toScreen ("Warning: failure looking for list element: " ^ 
+							      (print_SortDescriptor element_sd) ^ "\n" )
+					    in
+					      result)
+	                             | _ -> 
+				       let _ = toScreen ("While looking for list element: " ^ (print_SortDescriptor element_sd) ^ "\n" ^
+							 "Ignoring: " ^ (string (print_Content_Item item)) ^ "\n")
+				       in
+					 result)
+			          []
+				  element.content.items)
+	    in
+	      Some (magicCastFromList data)
 	  | ("Char",    "Char")   -> fail "decoding char"
 	  | ("Option" , "Option") -> fail "decoding option"
 	  | _ -> fail "decoding mystery")
