@@ -23,12 +23,14 @@
 (defun current-directory ()
   #+allegro(excl::current-directory)
   #+Lispworks(hcl:get-working-directory)  ;(current-pathname)
+  #+cmu (extensions:default-directory)
   )
 
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
   #+allegro(excl::chdir directory)
   #+Lispworks (hcl:change-directory directory)
+  #+cmu (setf (extensions:default-directory) directory)
   (setq lisp::*default-pathname-defaults* (current-directory)))
 
 #+Lispworks
@@ -53,13 +55,16 @@
   ;; Conditional because of an apparent Allegro bug in generate-application
   ;; where excl::compile-file-if-needed compiles even if not needed
   (defun compile-file-if-needed (file)
-    (#+allegro excl::compile-file-if-needed
-	       #+Lispworks hcl:compile-file-if-needed
-	       file)))
+    #+allegro (excl::compile-file-if-needed file)
+    #+Lispworks (hcl:compile-file-if-needed file)
+    #+cmu (error "NYI")))
 
 (defun compile-and-load-lisp-file (file)
-   (compile-file-if-needed (make-pathname :defaults file :type "lisp"))
-   (load (make-pathname :defaults file :type nil)))
+   (let ((filep (make-pathname :defaults file :type "lisp")))
+     #-cmu (compile-file-if-needed filep)
+     (load (make-pathname :defaults filep :type nil)
+	   #+cmu :if-source-newer #+cmu :compile))
+   )
 
 (defun load-lisp-file (file &rest ignore)
   (load (make-pathname :defaults file :type "lisp")))
