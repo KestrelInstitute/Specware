@@ -66,10 +66,10 @@ meaningless unless an implementation is assumed.
   % op image : fa (key,a) Map (key,a) -> Set a
 
   % op imageToList : fa(key,a) Map (key,a) -> List a
-  def imageToList map =
-   foldMap (fn values -> fn _ -> fn value -> Cons (value, values))
-           []
-           map      
+  % def imageToList map =
+  %  foldMap (fn values -> fn _ -> fn value -> Cons (value, values))
+  %          []
+  %          map      
 
   % op mapToList : fa(key,a) Map (key,a) -> List (key * a)
   def mapToList l = l
@@ -78,14 +78,13 @@ meaningless unless an implementation is assumed.
   % op domainToList : fa(key,a) Map (key,a) -> List key
 
   % op inDomain? : fa(key,a) Map (key,a) -> key -> Boolean
-  def inDomain? map key =
-    case map of
-        [] -> false
-      | (x,y)::tl -> (x = key) or (inDomain? tl key)
+  % def inDomain? map key =
+  %   case map of
+  %       [] -> false
+  %     | (x,y)::tl -> (x = key) or (inDomain? tl key)
 
   % op numItems : fa(a,key) Map (key,a) -> Nat
   % op mapi : fa(key,a,b) (key -> a -> b) -> Map (key,a) -> Map (key,b)
-
 \end{spec}
 
 List the key/range pairs in order of appearance.
@@ -94,13 +93,13 @@ List the key/range pairs in order of appearance.
   % op mapMap : fa(key,a,b) (a -> b) -> Map (key,a) -> Map (key,b)
   def mapMap f map =
     case map of
-        [] -> []
+      | [] -> []
       | (x,y)::tl -> Cons ((x,f y), (mapMap f tl))
 
   % op foldMap : fa(Dom,Cod,a) (a -> Dom -> Cod -> a) -> a -> Map (Dom,Cod) -> a
   def foldMap f z map =
     case map of
-        [] -> z
+      | [] -> z
       | (x,y)::tl -> foldMap f (f z x y) tl
 
 

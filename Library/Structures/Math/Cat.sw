@@ -5,7 +5,7 @@ spec is a category. It does not include a sort for category.\footnote{Do we
 need dependent types to do this in terms of homsets?}
 
 \begin{spec}
-spec {
+Cat qualifying spec {
   import /Library/Structures/Data/Pretty
 
   sort Object
@@ -17,8 +17,8 @@ spec {
   op ident : Object -> Arrow
   op compose : Composable -> Arrow  
 
-  op ppObject : Object -> Doc
-  op ppArrow : Arrow -> Doc
+  op CatObject.pp : Object -> Doc
+  op CatArrow.pp : Arrow -> Doc
   
   axiom dom_ident is dom o ident = id
   axiom cod_ident is cod o ident = id

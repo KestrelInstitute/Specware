@@ -49,7 +49,7 @@ spec {
     
   def singleton x = Cons(x,[])
 
-  % def union s1 s2 = fold insert s1 s2
+  def union s1 s2 = fold insert s1 s2
 
 %   def takeOne s =
 %     case s of
