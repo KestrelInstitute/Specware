@@ -951,7 +951,7 @@ Utilities qualifying spec
      | Fun(Bool true,_,_)  -> mkOr(t1,t3)
      | Fun(Bool false,_,_) -> mkAnd(mkNot t1,t3)
      | _ ->
-   case t2 of
+   case t3 of
      | Fun(Bool true,_,_)  -> mkOr(mkNot t1,t2)
      | Fun(Bool false,_,_) -> mkAnd(t1,t2)
      | _ ->

@@ -4,16 +4,23 @@ SpecToLisp qualifying spec {
  import ../../Transformations/PatternMatch
  import ../../Transformations/InstantiateHOFns
  import ../../Transformations/LambdaLift
+ import ../../Transformations/RemoveCurrying
  import Lisp
  import ../../Specs/StandardSpec
 
  op lisp : Spec -> LispSpec
 
  def generateCaseSensitiveLisp? = false
+ 
+ def lispPackages = ["LISP", "COMMON-LISP", 
+		     %% Added because of Xanalys packages, but prudent anyway
+		     "SYSTEM", "SI", "IO", "BOOTSTRAP",
+		     %% Added for cmulisp compatibility
+		     "ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
 
  def lispStrings =
      StringSet.fromList 
-       ["NIL","T","CONS","NULL","CAR","CDR","LIST","LISP",
+       (["NIL","T","CONS","NULL","CAR","CDR","LIST","LISP",
 	"APPEND","REVAPPEND","REVERSE","COMPILE","REDUCE",
 	"SUBSTITUTE","COUNT","ENCLOSE","EVAL","ERROR","FIRST","LAST",
 	"SECOND", "THIRD", "FOURTH", "FIFTH", "SIXTH",
@@ -30,11 +37,8 @@ SpecToLisp qualifying spec {
 	"PRINT", "READ", "WRITE","LOAD","..",
 	"BLOCK","FORMAT","BREAK","SUBST","FIND","CLASS",
 	"+","++","**","-","*",">","<","<=",">= ","\\=",
-	"BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN",
-	%% Added because of Xanalys packages, but prudent anyway
-	"SYSTEM", "IO", "BOOTSTRAP",
-	%% Added for cmulisp compatibility
-	"ALIST", "BYTES", "HASH", "HASHTABLE", "SEQ"]
+	"BOOLEAN", "INTEGER", "SHADOW", "TRACE", "WHEN"]
+       ++ lispPackages)
 
  def notReallyLispStrings =
        ["C","D","I","M","N","P","S","V","X","Y","Z","KEY","NAME","VALUE","PATTERN"]
@@ -46,6 +50,12 @@ SpecToLisp qualifying spec {
 						 Lisp.string("CL")]))
 			 & (~(member(id,notReallyLispStrings))))
 
+ op  lispPackage?: String -> Boolean
+ def lispPackage? id =
+   let pkg = Lisp.apply(Lisp.symbol("CL","FIND-PACKAGE"), [Lisp.string(id)]) in
+   Lisp.uncell pkg
+     & List.member(Lisp.uncell(Lisp.apply(Lisp.symbol("CL","PACKAGE-NAME"), [pkg])),
+		   lispPackages)
 
  op  ith : fa(a) Nat * String * List(String * a) -> Nat
  def ith(n,id,ids) = 
@@ -173,7 +183,7 @@ def hasConsEmbed(sp,srt) =
       else
       let id = if generateCaseSensitiveLisp? then id
                 else String.map Char.toUpperCase id in
-      if isLispString(id)
+      if isLispString(id) or lispPackage? id
         then id^"-SPEC"
         else id
       
@@ -1117,14 +1127,20 @@ def mkLTerm (sp,dpn,vars,term : MS.Term) =
       let spc = System.time(lisp(spc))                             in
       spc 
 *)
-  op instantiateHOFns?: Boolean
+  op  instantiateHOFns?: Boolean
   def instantiateHOFns? = true
-  op lambdaLift?: Boolean
+  op  lambdaLift?: Boolean
   def lambdaLift? = false
+  op  removeCurrying?: Boolean
+  def removeCurrying? = false
 
   def toLispEnv (spc) =
       % let _   = writeLine ("Translating " ^ spc.name ^ " to Lisp.") in
       let spc = setProperties(spc,[]) in % axioms are irrelevant for code generation
+      let spc = if removeCurrying?
+                 then removeCurrying spc
+		 else spc 
+      in
       let spc = if instantiateHOFns?
                  then instantiateHOFns spc
 		 else spc 
