@@ -41,6 +41,7 @@ spec
     in
     let
       def check4StaticOrNew(classid,opid,allargs) =
+	%let _ = writeLine("check4StaticOrNew: classid="^classid^", opid="^opid) in
 	if (classid = UnQualified) then None
 	else
 	  let ((s,argexprs,k,l),col) =
@@ -165,12 +166,15 @@ spec
 	let argterms = applyArgsToTerms(argterm) in
 	%if ~(opIdIsDefinedInSpec?(spc,id)) then
 	if (case AnnSpec.findTheOp(spc,qid) of Some _ -> false | _ -> true) then
+	  %let _ = writeLine("    "^(printQualifiedId qid)^" found, #argterms="^(toString(length(argterms)))) in
 	  (case argterms of
 	     | allargs as (t1::argterms) ->
 	       % check whether the first argument has an unrefined sort
-	       %let _ = writeLine("checking for method call: "^printTerm(t1)) in
+	       %let _ = writeLine("  --> checking for method call: "^printTerm(t1)) in
 	       let t1srt = unfoldBase(spc,inferTypeFoldRecords(spc,t1)) in
-	       if ~(sortIsDefinedInSpec?(spc,t1srt)) then
+	       let t1srt = findMatchingUserType(spc,t1srt) in
+	       %let _ = writeLine("  --> t1srt="^(printSort t1srt)) in
+	       if ~(builtinBaseType? t1srt) && ~(sortIsDefinedInSpec?(spc,t1srt)) then
 		 %let _ = writeLine("   found java method call to "^printQualifiedId(qid)) in
 		 let opid = id in
 		 let ((s1,objexpr,k,l),col1) = termToExpression(tcx,t1,k,l,spc) in
@@ -182,6 +186,7 @@ spec
 		 check4StaticOrNew(qual,id,allargs)
 	     | [] -> check4StaticOrNew(qual,id,[]))
 	else
+	  %let _ = writeLine("    "^(printQualifiedId qid)^" *not* found in spec.") in
 	  None
       | _ -> None
 

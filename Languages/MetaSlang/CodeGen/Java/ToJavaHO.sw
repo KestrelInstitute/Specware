@@ -20,30 +20,30 @@ spec
       | Fun(Embed(c,_),srt,_) -> 
 	let dom = srtDom(srt) in
 	let rng = srtRange(srt) in
-	let (apran,col1) = tt_id rng in
+	let (apran,col1) = tt_id spc rng in
         let rexp = mkMethInv(apran,c,mkNArgsExpr(dom,None)) in
-	let (res,col2) = standAloneFromSort(mkReturnStmt(rexp),srt,k,l) in
+	let (res,col2) = standAloneFromSort spc (mkReturnStmt(rexp),srt,k,l) in
 	(res,concatCollected(col1,col2))
       | Fun(Project(id),srt,_) -> 
 	let rexp = mkMethInv("arg1",getFieldName(id),[]) in
-	standAloneFromSort(mkReturnStmt(rexp),srt,k,l)
+	standAloneFromSort spc (mkReturnStmt(rexp),srt,k,l)
       | Fun(Restrict,srt,_) -> 
 	let rng = srtRange(srt) in
-	let (rngid,col1) = tt_id rng in
+	let (rngid,col1) = tt_id spc rng in
 	let rexp = mkNewClasInst(rngid,mkNArgsExpr([0],None)) in
-	let (res,col2) = standAloneFromSort(mkReturnStmt(rexp),srt,k,l) in
+	let (res,col2) = standAloneFromSort spc (mkReturnStmt(rexp),srt,k,l) in
 	(res,concatCollected(col1,col2))
       | Fun(Relax,srt,_) ->
 	let rexp = mkFldAcc(mkVarJavaExpr("arg1"),"relax") in
-	standAloneFromSort(mkReturnStmt(rexp),srt,k,l)
+	standAloneFromSort spc (mkReturnStmt(rexp),srt,k,l)
       | Fun(Choose,srt,_) ->
 	let rexp = mkFldAcc(mkVarJavaExpr("arg1"),"choose") in
-	standAloneFromSort(mkReturnStmt(rexp),srt,k,l)
+	standAloneFromSort spc (mkReturnStmt(rexp),srt,k,l)
       | Fun(Quotient,srt,_) ->
 	let rng = srtRange(srt) in
-	let (rngid,col1) = tt_id rng in
+	let (rngid,col1) = tt_id spc rng in
 	let rexp = mkNewClasInst(rngid,mkNArgsExpr([0],None)) in
-	let (res,col2) = standAloneFromSort(mkReturnStmt(rexp),srt,k,l) in
+	let (res,col2) = standAloneFromSort spc (mkReturnStmt(rexp),srt,k,l) in
 	(res,concatCollected(col1,col2))
       | Lambda((pat,cond,body)::_,_) -> translateLambdaTerm(tcx,term,k,l,spc)
       | _ -> unsupportedInTerm(term,k,l,"not yet supported: stand-alone lambda terms: \""^printTerm(term)^"\"")
@@ -55,7 +55,7 @@ spec
     *)
    op translateLambdaTerm: TCx * JGen.Term * Nat * Nat * Spec -> (Block * Java.Expr * Nat * Nat) * Collected
    def translateLambdaTerm(tcx,term as Lambda((pat,cond,body)::_,_),k,l,spc) =
-     let termSrt = inferType(spc,term) in
+     let termSrt = inferTypeFoldRecords(spc,term) in
      %let _ = writeLine("stand-alone lambda term "^printTerm(term)^" has sort "^printSort(termSrt)) in
      let freeVars = freeVars(term) in
      let (block,tcx0,col0) = foldl (fn((wi,wisrt),(block0,tcx0,col0)) -> 
@@ -68,7 +68,7 @@ spec
 				    %let _ = writeLine("final var: " ^ finwi) in
 				    let finwi_exp = mkVarJavaExpr(finwi) in
 				    let tcx1 = StringMap.insert(tcx0,wi,finwi_exp) in
-				    let (locvdecl,col) = mkFinalVarDecl(finwi,wisrt,initExpr) in
+				    let (locvdecl,col) = mkFinalVarDecl spc (finwi,wisrt,initExpr) in
 				    if isIdentityAssignment?(locvdecl) then (tcx0,[],col) else
 				    %let _ = writeLine("adding final var decl for "^finwi) in
 				    (tcx1,[locvdecl],col)
@@ -78,7 +78,7 @@ spec
      in
      let ((s,_,_),col1) = termToExpressionRet(tcx0,body,1,1,spc) in
      let parNames = mkParamsFromPattern(pat) in
-     let ((_,e,_,_),col2) = standAloneFromSortWithParNames(Block s,termSrt,parNames,k,l) in
+     let ((_,e,_,_),col2) = standAloneFromSortWithParNames spc (Block s,termSrt,parNames,k,l) in
      let col = concatCollected(col0,concatCollected(col1,col2)) in
      ((block,e,k,l),col)
   
@@ -125,8 +125,8 @@ spec
      else
        let dom = srtDom(srt) in
        let rng = srtRange(srt) in
-       let (apdom,col1) = mapSortCol(tt_id,dom) in
-       let (apran,col2) = tt_id rng in
+       let (apdom,col1) = mapSortCol(tt_id spc,dom) in
+       let (apran,col2) = tt_id spc rng in
        let (atdom,col3) = mapSortCol(srtId,dom) in
        let (atran,col4) = srtId rng in
        let (res,col5) =
@@ -185,13 +185,13 @@ def standaloneWithParNames(s,applySig as (apdom,apran),arrowTypeSig as (atdom,at
   let col = addArrowClassToCollected(cldecl,col1) in
   ((mts,exp,k,l),col)
 
-op standAloneFromSort: Java.Stmt * Sort * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
-def standAloneFromSort(s,srt,k,l) =
+op standAloneFromSort: Spec -> Java.Stmt * Sort * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
+def standAloneFromSort spc (s,srt,k,l) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
   %let apdom = map tt_id dom in
-  let (apdom,col1) = mapSortCol(tt_id,dom) in
-  let (apran,col2) = tt_id rng in
+  let (apdom,col1) = mapSortCol(tt_id spc,dom) in
+  let (apran,col2) = tt_id spc rng in
   %let atdom = map srtId dom in
   let (atdom,col3) = mapSortCol(srtId,dom) in
   let (atran,col4) = srtId rng in
@@ -205,13 +205,16 @@ def mapSortCol(srtf,srtl) =
 	 (concat(srtl,[sid]),concatCollected(col,col1))) 
   ([],nothingCollected) srtl
 
-op standAloneFromSortWithParNames: Java.Stmt * Sort * List Id * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
-def standAloneFromSortWithParNames(s,srt,parNames,k,l) =
+op standAloneFromSortWithParNames: Spec -> Java.Stmt * Sort * List Id * Nat * Nat -> (Block * Java.Expr * Nat * Nat) * Collected
+def standAloneFromSortWithParNames spc (s,srt,parNames,k,l) =
   let dom = srtDom(srt) in
   let rng = srtRange(srt) in
-  let (apdom,col1) = mapSortCol(tt_id,dom) in
-  let (apran,col2) = tt_id rng in
+  let (apdom,col1) = mapSortCol(tt_id spc,dom) in
+  let (apran,col2) = tt_id spc rng in
+  %let (atdom,col3) = mapSortCol(tt_id spc,dom) in
   let (atdom,col3) = mapSortCol(srtId,dom) in
+  let rng = findMatchingUserType(spc,rng) in
+  %let _ = writeLine("   rng="^(printSort rng)) in
   let (atran,col4) = srtId rng in
   let (res,col5) = standaloneWithParNames(s,(apdom,apran),(atdom,atran),parNames,k,l) in
   (res,concatCollected(col1,concatCollected(col2,concatCollected(col3,concatCollected(col4,col5)))))

@@ -1,3 +1,4 @@
+%JGen qualifying
 spec
 
 import /Languages/MetaSlang/Specs/Utilities
@@ -43,6 +44,14 @@ def baseType? (spc, typ) =
   (case typ of
      | Base _ -> ~ (sortIsDefinedInSpec? (spc, typ))
      | _ -> false)
+
+ op builtinBaseType?: Sort -> Boolean
+def builtinBaseType? typ =
+  boolSort?    typ || 
+  integerSort? typ || 
+  natSort?     typ || 
+  stringSort?  typ || 
+  charSort?    typ
 
  op baseTypeAlias?: Spec * Sort -> Boolean
 def baseTypeAlias? (spc, srt) =

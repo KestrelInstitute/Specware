@@ -149,7 +149,9 @@ def findMatchingUserTypeOption (spc, srtdef) =
 op findMatchingUserType: Spec * Sort -> Sort
 def findMatchingUserType (spc, srt) =
   case findMatchingUserTypeOption (spc, srt) of
-    | Some s -> s
+    | Some s -> 
+      %let _ = writeLine("matching user type: "^(printSort srt)^" ===> "^(printSort s)) in 
+      s
     | None -> srt
 
 
@@ -207,6 +209,10 @@ def inferTypeFoldRecords (spc, term) =
   %let _ = writeLine ("inferType ("^printTerm (term)^") = "^printSort srt) in
   case srt of
     | Product _ -> 
+      let srt0 = findMatchingUserType (spc, srt) in
+      %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
+      srt0
+    | CoProduct _ -> 
       let srt0 = findMatchingUserType (spc, srt) in
       %let _ = writeLine ("findMatchingUserType ("^printSort srt^") = "^printSort (srt0)) in
       srt0

@@ -102,20 +102,20 @@ def userTypeToClsDecls(id,superid) =
   ([([], (id, Some ([],superid), []), emptyClsBody)],nothingCollected)
 
 
-op varsToFormalParams: Vars -> List FormPar * Collected
-def varsToFormalParams(vars) =
+op varsToFormalParams: Spec -> Vars -> List FormPar * Collected
+def varsToFormalParams spc vars =
 %  map varToFormalParam vars
   foldl (fn(v,(fp,col)) ->
-	 let (fp0,col0) = varToFormalParam(v) in
+	 let (fp0,col0) = varToFormalParam spc v in
 	 (concat(fp,[fp0]),concatCollected(col,col0))) ([],nothingCollected) vars
 
-op varToFormalParam: Var -> FormPar * Collected
+op varToFormalParam: Spec -> Var -> FormPar * Collected
 
 %def varToFormalParam_v2(var as (id, srt as Base (Qualified (q, srtId), _, _))) =
 %  (false, tt(srtId), (id, 0))
 
-def varToFormalParam(variable as (id, srt)) =
-  let (ty,col) = tt_v3(srt) in
+def varToFormalParam spc (variable as (id, srt)) =
+  let (ty,col) = tt_v3 spc srt in
   ((false, ty, (id, 0)),col)
 
 op fieldToFormalParam: Id * Id -> FormPar
@@ -228,9 +228,9 @@ def isFinalVar?(id) =
   else
       false
 
-op mkFinalVarDecl: Id * Sort * Java.Expr -> BlockStmt * Collected
-def mkFinalVarDecl(varid,srt,exp) =
-  let (typ,col) = tt_v3 srt in
+op mkFinalVarDecl: Spec -> Id * Sort * Java.Expr -> BlockStmt * Collected
+def mkFinalVarDecl spc (varid,srt,exp) =
+  let (typ,col) = tt_v3 spc srt in
   let isfinal = true in
   let vdecl = ((varid,0),Some(Expr exp)) in
   (LocVarDecl(isfinal,typ,vdecl,[]),col)
@@ -279,8 +279,8 @@ def isVoid?(spc,srt) =
 (**
  * the new implementation of tt uses type information in order to generate the arrow type (v3)
  *)
-op tt_v3: Sort -> Java.Type * Collected
-def tt_v3(srt) =
+op tt_v3: Spec -> Sort -> Java.Type * Collected
+def tt_v3 spc srt =
   case srt of
     | Base(Qualified(_,id),_,_) -> (tt_v2(id),nothingCollected)
     | Boolean _                 -> (tt_v2("Boolean"),nothingCollected)
@@ -294,14 +294,19 @@ def tt_v3(srt) =
     | TyVar id -> 
       let id = "Object" in
       (mkJavaObjectType(id),nothingCollected)
-    | _ -> (issueUnsupportedError(sortAnn(srt),"unsupported sort "^printSort(srt));
-	    let id = "Object" in
-	    (mkJavaObjectType(id),nothingCollected))
+    | _ ->
+      (case findMatchingUserTypeOption(spc,srt) of
+	 | Some usrt -> tt_v3 spc usrt
+	 | None -> fail("tt_v3 failed for sort "^(printSort srt))
+	)
+%    | _ -> (issueUnsupportedError(sortAnn(srt),"unsupported sort "^printSort(srt));
+%	    let id = "Object" in
+%	    (mkJavaObjectType(id),nothingCollected))
 	    
 
-op tt_id: Sort -> Id * Collected
-def tt_id(srt) = 
-  let (ty,col) = tt_v3(srt) in
+op tt_id: Spec -> Sort -> Id * Collected
+def tt_id spc srt = 
+  let (ty,col) = tt_v3 spc srt in
   (getJavaTypeId(ty),col)
 
 op JVoid: Java.Type
@@ -321,6 +326,7 @@ def srtId(srt) =
 
 op srtId_internal: Sort * Boolean -> List Java.Type * String * Collected
 def srtId_internal(srt,addIds?) =
+  %let _ = writeLine("srtId("^(printSort srt)^")...") in
   case srt of
     | Base (Qualified (q, id), tvs, _) -> 
       let (id,col) = 
@@ -356,6 +362,7 @@ def srtId_internal(srt,addIds?) =
 			       let types = concat(types,[tt_v2(str0)]) in
 			       (types,str,col)) ([],"",nothingCollected) fields
       in
+%      fail("getting sort id from co-product sort: "^str)
       (l,str,col)
     | Arrow(dsrt,rsrt,_) ->
       let (dtypes,dsrtid,col2) = srtId_internal(dsrt,false) in

@@ -138,8 +138,8 @@ def addStaticMethodToClsDecls(spc, opId, srt, dom, dompreds, rng (*as Base (Qual
   %let _ = writeLine(opId^": StaticMethod") in
   let clsDecls = jcginfo.clsDecls in
   let (vars, body) = srtTermDelta(srt, trm) in
-  let (rngid,col0) = tt_v3(rng) in
-  let (fpars,col1) = varsToFormalParams(vars) in
+  let (rngid,col0) = tt_v3 spc rng in
+  let (fpars,col1) = varsToFormalParams spc vars in
   let methodDecl = (([Static], Some (rngid), opId, fpars, []), None) in
   let (methodBody,col2) = mkPrimArgsMethodBody(body, spc) in
   let (assertStmt,col3) = mkAssertFromDom(dom, spc) in
@@ -198,7 +198,7 @@ def addPrimArgsMethodToClsDecls(spc, opId, srt, _(* dom *), dompreds, rng, trm, 
       let (rngId,col2) = srtId(rng) in
       let clsDecls = jcginfo.clsDecls in
       let (vars, body) = srtTermDelta(srt, trm) in
-      let (fpars,col0) = varsToFormalParams(vars) in
+      let (fpars,col0) = varsToFormalParams spc vars in
       let methodDecl = (([Static], Some (tt(rngId)), opId, fpars, []), None) in
       let (methodBody,col1) = mkPrimArgsMethodBody(body, spc) in
       let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,concatCollected(col0,concatCollected(col1,col2)))) in
@@ -261,7 +261,7 @@ def addCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo)
   let Some (vars1, varh, vars2) = splitList (fn(v as (id, srt)) -> userType?(spc,srt)) vars in
   %let methodDeclA = (([Abstract], Some (tt(rngId)), opId, varsToFormalParams(vars1++vars2), []), None) in
   let (defaultMethodDecl,col1) = mkDefaultMethodForCase(spc,opId,dom,dompreds,rng,vars1++vars2,body) in
-  let (fpars,col2) = varsToFormalParams(vars1++vars2) in
+  let (fpars,col2) = varsToFormalParams spc (vars1++vars2) in
   let methodDecl = (([], Some (tt(rngId)), opId, fpars , []), None) in
   let (_, Base (Qualified(q, srthId), _, _)) = varh in
   let newJcgInfo = case defaultMethodDecl of
@@ -299,7 +299,7 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcgin
       (let (vh, _) = varh in
        let (methodBody,col1) = mkNonCaseMethodBody(vh, body, spc) in
        let (assertStmt,col2) = mkAssertFromDom(dom, spc) in
-       let (fpars,col3) = varsToFormalParams(vars1++vars2) in
+       let (fpars,col3) = varsToFormalParams spc (vars1++vars2) in
        let jcginfo = addCollectedToJcgInfo(jcginfo,concatCollected(col0,concatCollected(col1,concatCollected(col2,col3)))) in
        case varh of
 	 | (_, Base (Qualified(q, srthId), _, _)) ->
@@ -334,7 +334,7 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcgin
  *)
 
 op mkDefaultMethodForCase: Spec * Id * List Type * List(Option Term) * Type * List Var * Term -> Option MethDecl * Collected
-def mkDefaultMethodForCase(_(* spc *),opId,_(* dom *),_(* dompreds *),rng,vars,body) =
+def mkDefaultMethodForCase(spc ,opId,_(* dom *),_(* dompreds *),rng,vars,body) =
   %let (mods,opt_mbody) = ([Abstract],None) in
   let (rngId,col0) = srtId(rng) in
   let opt = %(mods,opt_mbody,col1) =
@@ -349,7 +349,7 @@ def mkDefaultMethodForCase(_(* spc *),opId,_(* dom *),_(* dompreds *),rng,vars,b
   case opt of
     | None -> (None,nothingCollected)
     | Some (mods,opt_mbody,col1) ->
-      let (fpars,col2) = varsToFormalParams(vars) in
+      let (fpars,col2) = varsToFormalParams spc (vars) in
       let col = concatCollected(col0,concatCollected(col1,col2)) in
       (Some((mods, Some (tt(rngId)), opId, fpars, []), opt_mbody),col)
 
