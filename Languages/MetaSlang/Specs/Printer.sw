@@ -528,9 +528,14 @@ AnnSpecPrinter qualifying spec
 		   prInfix (Nonfix, Nonfix, pp.LP, t1, trm1, t2, pp.RP))
 	  | ApplyN ([t1, t2], _) -> prApply (t1, t2)
 	  | ApplyN (t1 :: t2 :: ts, a) -> prApply (ApplyN ([t1, t2], a), ApplyN (ts, a))
-	  | SortedTerm (t, s, _) -> prettysNone [ppTerm context ([0]++ path, Top:ParentTerm) t, 
-						 string ":", string " ", 
-						 ppSort context ([1]++ path, Top:ParentSort) s]
+	  | SortedTerm (t, s, _) -> 
+	    (case s of
+	      | MetaTyVar _ ->  
+	        ppTerm context ([0] ++ path, Top:ParentTerm) t
+	      | _ ->
+	        prettysNone [ppTerm context ([0]++ path, Top:ParentTerm) t, 
+			     string ":", string " ", 
+			     ppSort context ([1]++ path, Top:ParentSort) s])
 	  | Pi (tvs, tm, _) ->
 	    let pp1 = ppForallTyVars context.pp tvs in
 	    let pp2 = ppTerm context (path, parentTerm) tm in
@@ -661,6 +666,8 @@ AnnSpecPrinter qualifying spec
       let pp1 = ppForallTyVars context.pp tvs in
       let pp2 = ppSort context (path, parent) srt in
       prettysNone [pp1, string " ", pp2]     
+
+    | Any _ -> string ("<anything>")
 
     | _ -> string ("ignoring bad case for sort: " ^ (anyToString srt))
       
