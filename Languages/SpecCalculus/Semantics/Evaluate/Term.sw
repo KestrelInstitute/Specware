@@ -81,15 +81,15 @@ This is a monadic interpreter for the Spec Calculus.
                 (case language of
                    | "lisp" -> evaluateLispCompile ((cValue,timeStamp,depURIs),
 						   sub_term,optFile)
-                   | "snark" -> evaluateSnarkGen ((value,timeStamp,depURIs),
+                   | "snark" -> evaluateSnarkGen ((cValue,timeStamp,depURIs),
 						   sub_term,optFile)
                    | "spec" -> {
-                          print (showValue value);
-                          return (value,timeStamp,depURIs)
+                          print (showValue cValue);
+                          return (cValue,timeStamp,depURIs)
                         }
                    | "c" -> 
                          let _ = specToC (subtractSpec spc baseSpec) in
-                         return (value,timeStamp,depURIs)
+                         return (cValue,timeStamp,depURIs)
                    | lang -> raise (Unsupported ((positionOf sub_term),
                                   "no generation for language "
                                 ^ lang
