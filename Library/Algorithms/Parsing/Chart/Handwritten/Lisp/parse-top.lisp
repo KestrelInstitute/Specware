@@ -39,6 +39,7 @@
     ;;
     (multiple-value-bind (locations number-of-raw-tokens comment-eof-error?) 
 	(tokenize-file session file tokenizer)
+      (declare (ignore comment-eof-error?))
       ;;
       (setf (parse-session-locations session) locations)
       ;;
