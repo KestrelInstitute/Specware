@@ -50,6 +50,7 @@
     #+mcl       (ccl::%chdir          directory)
     #+cmu       (setf (extensions:default-directory) directory)
     #+sbcl      (sb-unix::int-syscall ("chdir" sb-alien:c-string) directory)
+    ;#+gcl       
     ;; in Allegro CL, at least,
     ;; if (current-directory) is already a pathname, then
     ;; (make-pathname (current-directory)) will fail
@@ -65,6 +66,7 @@
   #+lispworks (hcl::getenv varname) 	;?
   #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
   #+sbcl      (sb-ext:posix-getenv  varname)
+  #+gcl       (si:getenv varname)
   )
 
 (defun setenv (varname newvalue)
@@ -81,6 +83,7 @@
   #+sbcl      (progn (sb-unix::int-syscall ("setenv" sb-alien:c-string sb-alien:c-string sb-alien:int)
 					   varname newvalue 1)
 		     (getenv varname))
+  #+gcl       (si:setenv varname newvalue)
   )
 
 #+(or mcl Lispworks)
