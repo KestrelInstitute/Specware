@@ -59,7 +59,8 @@ else
 		echo Bootstrapping from previously generated lisp
 		cd Handwritten/Lisp
 		$LISP <<-XXXX
-			(load "Specware4.lisp")
+			(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
+			  (load "Specware4.lisp"))
 			(sw "/Applications/Specware/Specware4")
 		XXXX
 	else
@@ -82,7 +83,8 @@ cd $SPECWARE4/Applications/Specware/Handwritten/Lisp
 # We could do the load and compile up above in the lisp that generated it,
 # but that seems weird to me ...
 $LISP <<-XXXX
-	(load "Specware4.lisp")
+	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
+	  (load "Specware4.lisp"))
 XXXX
 
 # The second time is just to do the dumplisp. If we do it in one
@@ -102,5 +104,5 @@ XXXX
 $LISP <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
-	(excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
+	  (excl::dumplisp :name "$SPECWARE4/Applications/Specware/bin/linux/Specware4.dxl"))
 XXXX
