@@ -5,7 +5,7 @@
 
 (defparameter *sw-help-strings*
   '((":dir" . "List files in current directory")
-    (":list" . "List loaded units")
+    (#+allegro ":list" #-allegro ":list-units". "List loaded units")
     (":ls" . "List files in current directory")
     (":set-base" . "Set base library unit id")
     (":show" . "Show unit")
@@ -28,13 +28,14 @@
     (":swpath" . "Query (no arg) or set SWPATH"))
   )
 
-(defun sw-help (command)
+(defun sw-help (&optional command)
   (if command
       (let ((pr (assoc command *sw-help-strings* :test 'equal)))
 	(when pr
 	  (format t "~a~%" (cdr pr))))
     (loop for (com . helpstr) in *sw-help-strings*
-      do (format t "~14a  ~a~%" com helpstr ))))
+      do (format t "~14a  ~a~%" com helpstr )))
+  (values))
 
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
@@ -67,40 +68,68 @@
 #+allegro(top-level:alias "sw-init" () (sw-re-init))
 
 (defun list-loaded-units ()
-  (Specware::listLoadedUnits-0))
+  (Specware::listLoadedUnits-0)
+  (values))
+(defun list-units ()
+  (Specware::listLoadedUnits-0)
+  (values))
 #+allegro(top-level:alias ("list" :case-sensitive) () (list-loaded-units))
 
-(defun sw (x)
-  (Specware::evaluateUID_fromLisp x)
+(defun sw (&optional x)
+  (if x
+      (Specware::evaluateUID_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+    (if *last-unit-Id-_loaded*
+	(Specware::evaluateUID_fromLisp *last-unit-Id-_loaded*)
+      (format t "No previous unit evaluated~%")))
   ;; (values) ; breaks bootstrap!  why suppress result?
   )
 
 #+allegro
 (top-level:alias ("sw" :case-sensitive) (&optional x)
-  (if x
-      (sw (setq *last-unit-Id-_loaded* (string x)))
-    (if *last-unit-Id-_loaded*
-	(sw *last-unit-Id-_loaded*)
-      (format t "No previous unit evaluated~%"))))
+  (sw x))
 
-(defun show (x)
-  (Specware::evaluatePrint_fromLisp x)
+(defun show (&optional x)
+  (if x
+      (Specware::evaluatePrint_fromLisp (setq *last-unit-Id-_loaded* (string x)))
+    (if *last-unit-Id-_loaded*
+	(Specware::evaluatePrint_fromLisp *last-unit-Id-_loaded*)
+      (format t "No previous unit evaluated~%")))
   (values))
 #+allegro
 (top-level:alias ("show" :case-sensitive) (&optional x)
-  (if x
-      (show (setq *last-unit-Id-_loaded* (string x)))
-    (if *last-unit-Id-_loaded*
-	(show *last-unit-Id-_loaded*)
-      (format t "No previous unit evaluated~%"))))
+  (show x))
 
 ;; Not sure if an optional UnitId make sense for swl
-(defun swl (x &optional y)
+(defun swl-internal (x &optional y)
   (Specware::evaluateLispCompile_fromLisp-2 x (if y (cons :|Some| y)
-						'(:|None|)))
-  (values))
+						'(:|None|))))
+
+;;; For non-allegro front-end to handle arguments separated by spaces
+(defun toplevel-parse-args (arg-string)
+  (let ((result ())
+	pos)
+    (loop while (setq pos (position #\  arg-string))
+      do (let ((next-arg (subseq arg-string 0 pos)))
+	   (when (not (equal next-arg ""))
+	     (push next-arg result))
+	   (setq arg-string (subseq arg-string (1+ pos)))))
+    (nreverse (if (equal arg-string "")
+		  result
+		(cons arg-string result)))))
+
 
 (defvar *last-swl-args* nil)
+
+(defun swl (&optional args)
+  (let ((r-args (if (not (null args))
+		    (toplevel-parse-args args)
+		  *last-swl-args*)))
+    (if r-args
+	(progn (setq *last-swl-args* r-args)
+	       (swl-internal (string (first r-args))
+			     (if (not (null (second r-args)))
+				 (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
 
 #+allegro
 (top-level:alias ("swl" :case-sensitive) (&optional &rest args)
@@ -109,12 +138,12 @@
 		  *last-swl-args*)))
     (if r-args
 	(progn (setq *last-swl-args* args)
-	       (funcall 'swl (string (first r-args))
+	       (funcall 'swl-internal (string (first r-args))
 			(if (not (null (second r-args)))
 			    (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
 
-(defun swll (x &optional y)
+(defun swll-internal (x &optional y)
   (let ((lisp-file-name (or y (concatenate 'string
 					   specware::temporaryDirectory
 					   "cl-current-file"))))
@@ -124,6 +153,17 @@
 	  (specware::compile-and-load-lisp-file lisp-file-name))
       "Specware Processing Failed!")))
 
+(defun swll (&optional args)
+  (let ((r-args (if (not (null args))
+		    (toplevel-parse-args args)
+		  *last-swl-args*)))
+    (if r-args
+	(progn (setq *last-swl-args* r-args)
+	       (swll-internal (string (first r-args))
+			      (if (not (null (second r-args)))
+				  (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
+
 #+allegro
 (top-level:alias ("swll" :case-sensitive) (&optional &rest args)
   (let ((r-args (if (not (null args))
@@ -131,7 +171,7 @@
 		  *last-swl-args*)))
     (if r-args
 	(progn (setq *last-swl-args* args)
-	       (funcall 'swll (string (first r-args))
+	       (funcall 'swll-internal (string (first r-args))
 			(if (not (null (second r-args)))
 			    (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
@@ -143,8 +183,9 @@
 (defvar *current-swe-spec-dir* nil)
 (defvar swe::tmp)
 
-#+allegro
-(top-level:alias ("swe-spec" :case-sensitive :string) (x) 
+(defun swe-spec (&optional x)
+  (when (null x)
+    (setq x (car *last-swl-args*)))
   (unless (eq (elt x 0) #\/)
     (format t "~&coercing ~A to /~A~%" x x)
     (setq x (format nil "/~A" x)))
@@ -158,7 +199,12 @@
 	 (format t "~&:swe-spec had no effect.~%" x)
 	 (if *current-swe-spec*
 	     (format t "~&Subsequent :swe commands will still import ~A.~%" *current-swe-spec*)
-	   (format t "~&Subsequent :swe commands will still import just the base spec.~%")))))
+	   (format t "~&Subsequent :swe commands will still import just the base spec.~%"))))
+  (values))
+
+#+allegro
+(top-level:alias ("swe-spec" :case-sensitive :string) (x) 
+  (swe-spec x))
 
 (defvar *swe-print-as-slang?* nil)
 (defvar *swe-return-value?* nil)
@@ -237,7 +283,8 @@
 			       (format t "the compiled function ~A" fn))))
 			 (format t "~&~%"))))
 		    (t
-		     (warn "No value for expression?"))))))
+		     (warn "No value for expression?")))))
+	  (values))
       "Specware Processing Failed!")))
 #+allegro
 (top-level:alias ("swe" :case-sensitive :string) (x) (swe x))
@@ -358,9 +405,22 @@
 
 (defvar *last-swc-args* nil)
 
-(defun swc (x &optional y)
+(defun swc-internal (x &optional y)
    (Specware::evaluateCGen_fromLisp-2 x (if y (cons :|Some| y)
-					  '(:|None|))))
+					  '(:|None|)))
+   (values))
+
+(defun swc (&optional args)
+  (let ((r-args (if (not (null args))
+		    (toplevel-parse-args args)
+		  *last-swc-args*)))
+    (if r-args
+	(progn (setq *last-swc-args* r-args)
+	       (swc-internal (string (first r-args))
+			     (if (not (null (second r-args)))
+				 (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
+
 #+allegro
 (top-level:alias ("swc" :case-sensitive) (&optional &rest args)
   (let ((r-args (if (not (null args))
@@ -368,7 +428,7 @@
 		  *last-swc-args*)))
     (if r-args
 	(progn (setq *last-swc-args* args)
-	       (funcall 'swc (string (first r-args))
+	       (funcall 'swc-internal (string (first r-args))
 			(if (not (null (second r-args)))
 			    (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
@@ -411,13 +471,24 @@
       (speccalc::checkSpecPathsExistence str)
       (princ (setf (sys:getenv "SWPATH") (string str))))))
 
-#+(or cmu openmcl)
+#-allegro
 (defun cd (&optional dir)
-  (specware::change-directory (or dir (specware::getenv "HOME"))))
+  (let ((dir (or dir (specware::getenv "HOME"))))
+    #-cmu (specware::change-directory dir)
+    #+cmu (progn (unix:unix-chdir dir)
+		 (namestring (specware::current-directory)))))
 
-#+(or cmu openmcl)
+#-allegro
+(defun pwd ()
+  (namestring (specware::current-directory)))
+
+#-allegro
 (defun exit ()
   (quit))
+
+#-allegro
+(defun cl (file)
+  (specware::compile-and-load-lisp-file file))
 
 (defun strip-extraneous (str)
   (let ((len (length str)))
@@ -461,6 +532,17 @@
 			       t)))
 	      (return t))))))
   )
+
+#-allegro
+(defun ls (&optional (str ""))
+  (format t "Not yet implemented")
+  (values))
+
+#-allegro
+(defun dir (&optional (str ""))
+  (format t "Not yet implemented")
+  (values))
+
 
 #+allegro
 (top-level:alias ("ls" :string) (&optional (str ""))
