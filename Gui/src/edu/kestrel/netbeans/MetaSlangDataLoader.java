@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.4  2003/02/17 04:28:13  weilyn
+ * Cleaned up active context menu actions.
+ *
  * Revision 1.3  2003/02/14 21:36:24  weilyn
  * Added Start Lisp action.
  *
@@ -92,6 +95,7 @@ public class MetaSlangDataLoader extends UniFileLoader {
 	    null,
 	    //SystemAction.get(CompileAction.class),
             SystemAction.get(StartLispAction.class),
+            SystemAction.get(UpdateSWPathAction.class),
             null,
             SystemAction.get(ProcessUnitAction.class),
 	    SystemAction.get(GenerateCodeAction.class),
