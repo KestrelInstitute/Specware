@@ -582,7 +582,7 @@ with the &Specware; distribution, for details (e.g. axioms).
        <row>
         <entry colname="name">&nbsp; [[substring]]</entry>
         <entry colname="fxty">&nbsp; </entry>
-        <entry colname="sort">&nbsp; [[String * Nat * Nat -> Char]]</entry>
+        <entry colname="sort">&nbsp; [[String * Nat * Nat -> String]]</entry>
         <entry colname="desc">&nbsp; [[substring(]]<replaceable>s</replaceable>[[,
             ]]<replaceable>m</replaceable>[[,
             ]]<replaceable>n</replaceable>[[)]] returns the substring of
