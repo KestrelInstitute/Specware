@@ -14,7 +14,8 @@
 	    "14.21-14.22	: Could not match type constraint"
 	    (:alternatives
 	     "                  [] of type List(mtv%parser%12)"
-	     "                  [] of type List(mtv%parser%18)")
+	     "                  [] of type List(mtv%parser%18)"
+	     "                  [] of type List(mtv%parser%24)")
 	    "          with expected type Bogus"
 	    ""))
 
