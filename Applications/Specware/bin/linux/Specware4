@@ -85,9 +85,9 @@ export LISP_EXECUTABLE
 export LISP_HEAP_IMAGE
 export LISP_DIRECTORY
 
-
 xemacs -l "$LISP_DIR"/xeli/fi-site-init \
        -l "$SPECWARE4"/Library/IO/Emacs/load \
+       $* \
        -eval "(run-specware4)" &
 
 #       -name "Specware" \
