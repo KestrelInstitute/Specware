@@ -16,8 +16,6 @@ SpecCalc qualifying spec {
   % op Convert.toList : EdgSet.Set -> List Edg.Edge
   def Convert.toList set = set
 
-  % sort SpecCalc.OtherValue = SpecCalc.PSpec
-
   def SpecCalc.evaluateOther other pos = 
     case other of
       | OscarDecls oscarSpecElems -> evaluateOscar oscarSpecElems
@@ -54,10 +52,13 @@ SpecCalc qualifying spec {
   def SpecCalc.evaluateOtherPrint oscarSpec pos = {
        base <- baseOscarSpec;
        oscarString <- OscarEnv.show oscarSpec (modeSpec base);
-       % conv <- convertOscarSpec oscarSpec;
-       % convString <- return (OscarStruct.show conv (modeSpec base));
-       % print (oscarString ^ "\n structured \n" ^ convString)
-       print (oscarString ^ "\n")
+       print (oscarString ^ "\n");
+       conv <- convertOscarSpec oscarSpec;
+       convString <- return (OscarStruct.show conv (modeSpec base));
+       print ("converted\n" ^ convString ^ "\n");
+       struct <- structOscarSpec conv;
+       structString <- return (OscarStruct.show struct (modeSpec base));
+       print ("structured\n" ^ structString ^ "\n")
     }
 
   def SpecCalc.evaluateOtherSpecMorph

@@ -8,6 +8,10 @@ Convert qualifying spec
   import translate /Library/Structures/Data/Maps/Finite/Polymorphic/AsAssocList by
      {Map._ +-> FinitePolyMap._}
 
+  % Doesn't belong here. Really need to fix up this curry / uncurry mess.
+  def FinitePolyMap.fold f unit map =
+    foldM (fn x -> fn (dom,cod) -> f x dom cod) unit map
+
   op OscarStruct.show : StructOscarSpec -> ModeSpec -> String
   def OscarStruct.show oscarSpec ms =
     let procStrings =
@@ -22,6 +26,7 @@ Convert qualifying spec
     procedures : FinitePolyMap.Map (QualifiedId,StructProcedure)
   }
 
+  (* Convert the BSpecs in an Oscar spec to graphs ready for subsequent structing *)
   op convertOscarSpec : Oscar.Spec -> Env StructOscarSpec
   def convertOscarSpec oscSpec =
     let def handler id proc except =
@@ -42,6 +47,31 @@ Convert qualifying spec
          }) FinitePolyMap.empty (procedures oscSpec);
       return {
         modeSpec = modeSpec oscSpec,
+        procedures = procedures
+      }
+  }
+
+  (* Structure the graphs in an oscar spec *)
+  op structOscarSpec : StructOscarSpec -> Env StructOscarSpec
+  def structOscarSpec structSpec =
+    let def handler id proc except =
+      case except of
+        | SpecError (pos, msg) -> {
+             print ("structOscarSpec exception: procId=" ^ (Id.show id) ^ "\n");
+             print (msg ^ "\n");
+             print (ppFormat (pp proc));
+             print "\n";
+             raise (SpecError (pos, "except : " ^ msg))
+           }
+        | _ -> raise except
+    in {
+      procedures <- FinitePolyMap.fold (fn procMap -> fn procId -> fn proc -> {
+          print ("structOscarSpec: procId=" ^ (Id.show procId) ^ "\n");
+          structProc <- catch (structProcedure proc) (handler procId proc);
+          return (FinitePolyMap.update (procMap,procId,structProc))
+         }) FinitePolyMap.empty structSpec.procedures;
+      return {
+        modeSpec = structSpec.modeSpec,
         procedures = procedures
       }
   }
@@ -72,6 +102,18 @@ Convert qualifying spec
     return {
         parameters = proc.parameters,
         return = proc.returnInfo,
+        varsInScope = proc.varsInScope,
+        modeSpec = proc.modeSpec,
+        code = code
+      }
+  }
+
+  op structProcedure : StructProcedure -> Env StructProcedure
+  def structProcedure proc = {
+    code <- structGraph proc.code;
+    return {
+        parameters = proc.parameters,
+        return = proc.return,
         varsInScope = proc.varsInScope,
         modeSpec = proc.modeSpec,
         code = code
@@ -116,6 +158,11 @@ Convert qualifying spec
   op mapToList : fa (a,b) FinitePolyMap.Map (a,b) -> List (a * b)
   op toList : EdgSet.Set -> List Edg.Edge
 
+  op structGraph : Graph -> Env Graph
+  def structGraph graph =
+      % return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) graph)))
+      return (graphToStructuredGraph graph)
+
   op convertBSpec : BSpec -> Env Graph
   def convertBSpec bSpec = {
       coAlg <- return (succCoalgebra bSpec);
@@ -123,13 +170,13 @@ Convert qualifying spec
       print "convertBSpec VList =\n";
       print (printVList (mapToList visited));
       g <- return (sortGraph (fn ((n,_),(m,_)) -> n < m) (mapToList graph));
-      print "\nconvertBSpec NCList after sort\n";
-      print (printNCList g);
-      print "\n\n";
-      g <- return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)));
-      print (printGraph g);
+      g <- return (addPredecessors (map (fn (x,y) -> y) g));
+      % print "\nconvertBSpec NCList after sort\n";
+      % print (printNCList g);
+      % print "\n\n";
+      % g <- return (graphToStructuredGraph (addPredecessors (map (fn (x,y) -> y) g)));
+      % print (printGraph g);
       return g
-      % return (addPredecessors (map (fn (x,y) -> y) g))
     }
 
   op convertBSpecAux :
