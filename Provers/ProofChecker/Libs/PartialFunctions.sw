@@ -1,6 +1,6 @@
 PFunctions qualifying spec
 
-  import Predicates
+  import /Library/General/Predicates
 
   (* Functions are always total in Metaslang. Partial functions can be modeled
   using Option:

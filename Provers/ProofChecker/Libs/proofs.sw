@@ -1,4 +1,4 @@
-OP = obligations Predicates
+OP = obligations /Library/General/Predicates
 
 PP1 = prove the_Obligation in OP  % yes
 PP2 = prove min_Obligation in OP  % no

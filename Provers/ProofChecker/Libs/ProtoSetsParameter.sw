@@ -2,7 +2,7 @@ PSet qualifying spec
 
   (* See the explanation in spec `ProtoSets'. *)
 
-  import Predicates
+  import /Library/General/Predicates
 
   op protoSetPredicate? : [a] Predicate a -> Boolean
 

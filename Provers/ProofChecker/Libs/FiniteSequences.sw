@@ -1,6 +1,6 @@
 FSeq qualifying spec
 
-  import Predicates
+  import /Library/General/Predicates
 
   (* A finite sequence can be viewed as a function f having an initial segment
   {i:Nat | i < n} of the naturals as domain; n is the length and f(i) is the
