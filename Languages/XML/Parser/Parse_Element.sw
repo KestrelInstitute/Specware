@@ -1,8 +1,10 @@
 
 XML qualifying spec
 
-  import Parse_GenericTag
-  import Parse_Character_Strings
+  import Parse_References         % parse_Reference   [redundant, given Parse_Character_Strings]
+  import Parse_GenericTag         % parse_Option_GenericTag
+  import Parse_Character_Strings  % parse_Comment, parse_CDSect
+  import Parse_PI                 % parse_PI
 
   %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
   %%%          Element                                                                             %%%
@@ -178,6 +180,14 @@ XML qualifying spec
 	     %% "</"
 	     %% start of an ETag, so not something we're looking for
 	     return (None, start)
+	   | 63 (* '?' *) :: _ -> 
+	     %% "<?"
+	     %% pase_PI assumes we're past '<?'
+	     {
+	      (pi, tail) <-  parse_PI tail;
+	      return (Some (PI pi),
+		      tail)
+	      }
 	   | _ ->
 	     {
 	      %% parse_Element assumes we're back at the original "<"
