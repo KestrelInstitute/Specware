@@ -13,31 +13,69 @@ SpecCalc qualifying spec
   def applySpecMorphismSubstitution sm original_spec sm_tm term_pos =
     let sub_spec             = SpecCalc.dom sm in
     let should_be_empty_spec = subtractSpec sub_spec original_spec in
-    {when (~ (should_be_empty_spec.sorts      = emptyASortMap) or
-           ~ (should_be_empty_spec.ops        = emptyAOpMap)   or
+    {when (~ (should_be_empty_spec.sorts    = emptyASortMap) or
+           ~ (should_be_empty_spec.ops      = emptyAOpMap)   or
            ~ (should_be_empty_spec.elements = emptyAElements))
-          (raise (TypeCheck (term_pos, warnAboutMissingItems should_be_empty_spec)));
+     (let _ = (if should_be_empty_spec.sorts = emptyASortMap then 
+		 () 
+	       else
+		 let _ = toScreen "\nThese sorts are in the domain of the morphism, but not in the subject spec:\n" in
+		 let _ = appSortInfos (fn info -> toScreen (printAliases info.names ^ "\n")) should_be_empty_spec.sorts in
+		 ())
+      in
+      let _ = (if should_be_empty_spec.ops = emptyAOpMap then 
+		 ()
+	       else
+		 let _ = toScreen "\nThese ops are in the domain of the morphism, but not in the subject spec:\n" in
+		 let _ = appOpInfos (fn info -> toScreen (printAliases info.names ^ "\n")) should_be_empty_spec.ops in
+		 ())
+      in
+      let _ = (if should_be_empty_spec.elements = emptyAElements then
+		 ()
+	       else
+		 let _ = toScreen "\nThese elements are in the domain of the morphism, but not in the subject spec:\n" in
+		 let _ = app (fn elt -> toScreen (describeSpecElement elt ^ "\n")) should_be_empty_spec.elements in
+		 ())
+      in
+	raise (TypeCheck (term_pos, warnAboutMissingItems should_be_empty_spec)));
      auxApplySpecMorphismSubstitution sm original_spec sm_tm term_pos}
 
-  def auxApplySpecMorphismSubstitution sm spc sm_tm position = 
-    let 
+ op  describeSpecElement : SpecElement -> String 
+ def describeSpecElement elt =
+   case elt of
+     | Import   (tm, _, _) -> showTerm tm
+     | Op       qid        -> "Op "      ^ printQualifiedId qid
+     | OpDef    qid        -> "OpDef "   ^ printQualifiedId qid
+     | Sort     qid        -> "Sort "    ^ printQualifiedId qid
+     | SortDef  qid        -> "SortDef " ^ printQualifiedId qid
+     | Property property   -> (case property.1 of
+				 | Axiom      -> "Axiom"
+				 | Theorem    -> "Theorem"
+				 | Conjecture -> "Conjecture"
+				 | mystery -> "Mysterious " ^ anyToString mystery)
+                              ^ " " ^
+                              (printQualifiedId (propertyName property))
 
-      def translate_op_names op_names =
-	let op_map = opMap sm in
-	List.map (fn qid -> 
-		  case evalPartial op_map qid of
-		    | Some qid -> qid
-		    | _ -> qid)
-	         op_names
-		 
-      def translate_sort_names sort_names =
-	let sort_map = sortMap sm in
-	List.map (fn qid -> 
-		  case evalPartial sort_map qid of
-		    | Some qid -> qid
-		    | _ -> qid)
-	         sort_names
-    in
+  def auxApplySpecMorphismSubstitution sm spc sm_tm position = 
+
+    %% let 
+    %%   def translate_op_names op_names =
+    %%	   let op_map = opMap sm in
+    %%	   List.map (fn qid -> 
+    %%		  case evalPartial op_map qid of
+    %%		    | Some qid -> qid
+    %%		    | _ -> qid)
+    %%	         op_names
+    %%		 
+    %%  def translate_sort_names sort_names =
+    %%    let sort_map = sortMap sm in
+    %%    List.map (fn qid -> 
+    %%		  case evalPartial sort_map qid of
+    %%		    | Some qid -> qid
+    %%		    | _ -> qid)
+    %%	         sort_names
+    %%    in
+
     %% Warning: this assumes that dom_spec is a subspec of spc
     %%    S' = M(S - dom(M)) U cod(M)
     let dom_spec           = SpecCalc.dom sm            in     % dom(M)
