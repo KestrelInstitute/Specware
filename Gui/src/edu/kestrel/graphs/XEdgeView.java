@@ -35,6 +35,7 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
     protected JPopupMenu popupMenu;
     protected Point popupMenuEventPoint = null;
     protected JMenuItem addRemovePointMenuItem;
+    protected JMenuItem collapseLabelMenuItem;
     
     protected boolean useMultiLineEditor = false;
     protected boolean showMultiLineLabel = false;
@@ -118,6 +119,7 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
      */
     public void setShowMultiLineLabel(boolean showit) {
         showMultiLineLabel = showit;
+        initPopupMenu();
     }
     
     /** returns whether or not the label should be displayed as multi-line object. If not, the label is
@@ -153,6 +155,18 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
             }}
         );
         popupMenu.add(addRemovePointMenuItem,0);
+        if (isShowMultiLineLabel()) {
+        collapseLabelMenuItem = new JMenuItem("collapse label text");
+        collapseLabelMenuItem.addActionListener(new ActionListener() {
+            public void actionPerformed(ActionEvent e) {
+                if (popupMenuEventPoint != null) {
+                    toggleCollapseLabel();
+                }
+            }}
+        );
+        popupMenu.add(collapseLabelMenuItem);
+        configureCollapseLabelMenuItem();
+        }
         if (Dbg.isDebug()) {
             // debug entries
             JMenuItem menuItem = new JMenuItem("select source node");
@@ -628,6 +642,50 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         return res;
     }
     
+    /** returns the label that is currently displayed. The parameter is the full label which will be returned
+     * by default. Only if the current collapsedLabel flag is set, a short version of the label is returned.
+     */
+    protected String getDisplayLabel(String label) {
+        if (isCollapseLabel()) {
+            return XTextNode.getCollapsedString(label);
+        }
+        return label;
+    }
+    
+    /** returns whether or not the label of the edge should be displayed as a shortened one-line string
+     */
+    protected boolean isCollapseLabel() {
+        if (edge != null) {
+            return edge.isCollapseLabel();
+        }
+        return false;
+    }
+    
+    protected void setCollapseLabel(boolean b) {
+        if (edge != null) {
+            edge.setCollapseLabel(b);
+        }
+        configureCollapseLabelMenuItem();
+    }
+    
+    public void configureCollapseLabelMenuItem() {
+        if (collapseLabelMenuItem == null) return;
+        if (isCollapseLabel()) {
+            collapseLabelMenuItem.setText("expand label text");
+        } else {
+            collapseLabelMenuItem.setText("collapse label text");
+        }
+    }
+    
+    protected void toggleCollapseLabel() {
+        boolean b = true;
+        if (edge != null) {
+            b = !edge.isCollapseLabel();
+        }
+        setCollapseLabel(b);
+        graph.repaint();
+    }
+    
     protected class XEdgeRenderer extends EdgeRenderer implements CellViewRenderer {
         protected XEdgeView view;
         
@@ -670,7 +728,8 @@ public class XEdgeView extends EdgeView implements XGraphElementView {
         /** specialized version of <code>paintLabel</code> for painting multi-line labels, if the flag
          * <code>setMultiLineUserObject</code> has been set for the view.
          */
-        protected void paintLabel(Graphics g, String label) {
+        protected void paintLabel(Graphics g, String label0) {
+            String label = getDisplayLabel(label0);
             if (!view.isShowMultiLineLabel()) {
                 super.paintLabel(g,label);
                 return;

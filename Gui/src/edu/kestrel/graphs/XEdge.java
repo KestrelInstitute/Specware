@@ -34,7 +34,10 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     
     protected Rectangle savedBounds;
     
+    protected boolean collapseLabel = false;
+    
     static int xedgeCnt = 0;
+
     protected int ID;
     
     public XEdge() {
@@ -136,7 +139,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     
     public void setBoundsHook(XGraphDisplay graph, XGraphElementView viewObject, Rectangle bounds) {
     }
-
+    
     
     public XGraphElementView createView(XGraphDisplay graph, CellMapper cm) {
         XEdgeView res = new XEdgeView(this,graph,cm);
@@ -394,6 +397,14 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         setGraph(mgr.getDestGraph());
         //graph.getXGraphUI().cloneCellViews(original,this);
     }
+
+    public void setCollapseLabel(boolean b) {
+        collapseLabel = b;
+    }
+    
+    public boolean isCollapseLabel() {
+        return collapseLabel;
+    }
     
     /** method to update the relevant data stored in the view object in this object. This method is called by the
      * view object whenever it is updated.
@@ -492,6 +503,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     static protected String TargetNode = "TargetNode";
     static protected String PointPrefix = "Point";
     static protected String LabelPosition = "LabelPosition";
+    static protected String CollapseLabel = "CollapseLabel";
     
     /** returns the element properties object in the context of a write operation.
      */
@@ -542,6 +554,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
         if (trgnode != null) {
             props.addChildObjectAsReference(TargetNode,trgnode);
         }
+        props.setBooleanProperty(CollapseLabel,collapseLabel);
         return props;
     }
     
@@ -551,6 +564,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
     public void initFromElementProperties(ReadWriteOperation rwop, ElementProperties props) {
         setUserObject(props.getValueProperty());  //
         Dbg.pr("{ initFromElementPropterties for XEdge "+this+"...");
+        collapseLabel = props.getBooleanProperty(CollapseLabel);
         // source node
         XNode srcnode = null;
         String srcnodeid = props.getChildObjectAsReference(SourceNode);
@@ -610,6 +624,7 @@ public abstract class XEdge extends DefaultEdge implements XGraphElement {
                 if (props.hasPointProperty(LabelPosition)) {
                     getGraph().setLabelPositionOfEdge(this,props.getPointProperty(LabelPosition));
                 }
+                ev.configureCollapseLabelMenuItem();
             }
             getGraph().enableListener();
             Dbg.pr("}");

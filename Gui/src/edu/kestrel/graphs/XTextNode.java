@@ -51,7 +51,28 @@ public class XTextNode extends XNode {
         String s = "";
         if (expandedValue != null)
             s = expandedValue.toString();
+        return getCollapsedString(s);
+//        s.trim();
+//        char[] chars = s.toCharArray();
+//        String res = "";
+//        for(int i=0;i<chars.length;i++) {
+//            if (Character.isLetterOrDigit(chars[i])) {
+//                res += String.valueOf(chars[i]);
+//            } else {
+//                return res+"...";
+//            }
+//        }
+//        return res+"...";
+    }
+    
+    /** utility method, also used in XEdgeView.
+     */
+    static public String getCollapsedString(String expandedString) {
+        String s = expandedString;
         s.trim();
+        if (s.length() == 0) {
+            return "";
+        }
         char[] chars = s.toCharArray();
         String res = "";
         for(int i=0;i<chars.length;i++) {

@@ -222,6 +222,12 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
     public XEdgeView[] getInnerEdgeViews() {
         if (node == null) return new XEdgeView[]{};
         XEdge[] edges = node.getInnerEdges();
+        if (Dbg.isDebug() && edges.length>0) {
+            Dbg.pr("Inner Edges of container node "+node+":");
+            for(int i=0;i<edges.length;i++) {
+                Dbg.pr("  edge \""+edges[i]+"\"");
+            }
+        }
         return getEdgeViewArrayFromEdgeArray(edges);
     }
     
@@ -478,22 +484,19 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
         return false;
     }
     
+    private boolean runningGetBounds = false;
+    
     public Rectangle getBounds() {
         //Dbg.pr("getBounds() for node "+node+" ("+node.getClass().getName()+")");
         Rectangle bounds = GraphConstants.getBounds(getAttributes());
         Rectangle cbounds = bounds;//super.getBounds();
-        //if (!isExpanded()) {
-        //    collapsedBounds = bounds;
-        //}
-        //makeChildrenFit(bounds, true);
-        //System.out.println("  new: "+cbounds);
-        //savedBounds = cbounds;
-        //Rectangle cbounds = bounds;
         if (!isLeaf()) {
-            //int bw = 10;
-            //cbounds = AbstractCellView.getBounds(getChildViews());
-            //cbounds = new Rectangle(cbounds.x-bw,cbounds.y-bw,cbounds.width+2*bw,cbounds.height+2*bw);
-            cbounds = getChildrenBounds();//(getChildElementViewsAsArray(false),null);
+            if (!runningGetBounds && !isTemporaryView()) {
+                runningGetBounds = true;
+                cbounds = getChildrenBounds();//(getChildElementViewsAsArray(false),null);
+            } else {
+                cbounds = getChildrenBounds(getChildViews(),null);
+            }
         }
         if (isExpanded()) {
             bounds.add(cbounds);
@@ -517,6 +520,7 @@ public abstract class XContainerView extends XNodeView implements XGraphElementV
             }
         }
         node.setSavedIsExpanded(isExpanded());
+        runningGetBounds = false;
         return bounds;
     }
     
