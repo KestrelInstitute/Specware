@@ -91,6 +91,15 @@ spec
     else FAIL
     else FAIL
 
+  op checkExtraAxiom :
+     Context -> Context -> MayFail (AxiomName * TypeVariables * Expression)
+  def checkExtraAxiom cx1 cx2 =
+    if length cx2 = length cx1 + 1 then
+    case last cx2 of
+      | axioM (an, tvS, e) -> OK (an, tvS, e)
+      | _ -> FAIL
+    else FAIL
+
   op checkTypeDecl : Context -> TypeName -> MayFail Nat
   def checkTypeDecl cx tn =
     if cx = empty then FAIL
@@ -136,11 +145,23 @@ spec
   op checkFieldType : Type -> Field -> MayFail Type
   def checkFieldType t f =
     case t of
-      | (nary (record fS, tS)) ->
+      | nary (record fS, tS) ->
         if noRepetitions? fS then
         let i:Nat = indexOf (fS, f) in
         if i < length tS then
         OK (tS!i)
+        else FAIL
+        else FAIL
+      | _ -> FAIL
+
+  op checkConstructorType? : Type -> Constructor -> MayFail Type?
+  def checkConstructorType? t c =
+    case t of
+      | sum (cS, t?S) ->
+        if noRepetitions? cS then
+        let i:Nat = indexOf (cS, c) in
+        if i < length t?S then
+        OK (t?S ! i)
         else FAIL
         else FAIL
       | _ -> FAIL
@@ -486,6 +507,13 @@ spec
         if tS1 = tS then OK eS else FAIL
       | _ -> FAIL
 
+  op checkPattWithContextAndType : Context -> Type -> Proof -> MayFail Pattern
+  def checkPattWithContextAndType cx t prf =
+    case check prf of
+      | OK (wellTypedPatt (cx1, p, t1)) ->
+        if cx1 = cx && t1 = t then OK p else FAIL
+      | _ -> FAIL
+
   op checkTheorem : Proof -> MayFail (Context * Expression)
   def checkTheorem prf =
     case check prf of
@@ -621,7 +649,12 @@ spec
       | OK (typeEquivalence (cx1, t1, t2)) ->
         if cx1 = cx then OK (t1, t2) else FAIL
       | _ -> FAIL
-
+(*
+  op checkCaseBranchExprs :
+     Context -> Expression -> Patterns -> Proofs -> MayFail Expressions
+  def checkCaseBranchExprs cx e pS prfS =
+    ...
+*)
 
   def check = fn
 
@@ -991,13 +1024,93 @@ spec
       OK (wellTypedExpr (cx0, EXX1 vS tS e, PRODUCT tS --> t))
       | _ -> FAIL)
       | _ -> FAIL)
+    | exIfThenElse (prf0, prf1, prf2) ->
+      (case checkExpr prf0 of OK (cx, e0, boolean) ->
+      (case checkExpr prf1 of OK (cx1, e1, t) ->
+      (case checkExtraAxiom cx cx1 of OK (an1, tvS1, ea1) ->
+      if tvS1 = empty
+      && ea1 = e0 then
+      (case checkExpr prf2 of OK (cx2, e2, t2) ->
+      if t2 = t then
+      (case checkExtraAxiom cx cx2 of OK (an2, tvS2, ea2) ->
+      if tvS2 = empty
+      && ea2 = ~~ e0 then
+      OK (wellTypedExpr (cx, IF e0 e1 e2, t))
+      else   FAIL
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      else   FAIL
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exOpInstance (prfCx, prfTyS, o) ->
+      (case checkContext prfCx of OK cx ->
+      (case checkOpDecl cx o of OK (tvS, t) ->
+      (case checkTypesWithContext cx prfTyS of OK tS ->
+      (case checkTypeSubstitution tvS tS of OK tsbs ->
+      OK (wellTypedExpr (cx, OPP o tS, typeSubstInType tsbs t))
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exEmbedder0 (prf, c) ->
+      (case checkSumType prf of OK (cx, cS, t?S) ->
+      (case checkConstructorType? (SUM cS t?S) c of OK None ->
+      OK (wellTypedExpr (cx, EMBED (SUM cS t?S) c, SUM cS t?S))
+      | _ -> FAIL)
+      | _ -> FAIL)
+    | exEmbedder1 (prf, c) ->
+      (case checkSumType prf of OK (cx, cS, t?S) ->
+      (case checkConstructorType? (SUM cS t?S) c of OK (Some ti) ->
+      OK (wellTypedExpr (cx, EMBED (SUM cS t?S) c, ti --> SUM cS t?S))
+      | _ -> FAIL)
+      | _ -> FAIL)
 
 (*@@@
-    | exIfThenElse           Proof * Proof * Proof
-    | exOpInstance           Proof * Proofs * Operation
-    | exEmbedder0            Proof * Constructor
-    | exEmbedder1            Proof * Constructor
-    | exCase                 Proof * Proofs * Proof * Proofs
+    | exCase (prfTgt, prfPS, prfExh, prfES) ->
+      (case checkExpr prfTgt of OK (cx, e, t) ->
+      (case checkSequence (map (checkPattWithContextAndType cx t, prfPS)) of
+         OK pS ->
+      let n:Nat = length pS in
+      let caseMatches:Expressions =
+        seqSuchThat (fn(i:Nat) ->
+          if i < n then Some (let (vS,tS) = pattVarsWithTypes (pS!i) in
+                              EXX vS tS (pattAssumptions (pS!i, e)))
+          else None) in
+      (case checkTheoremGiven cx (disjoinAll caseMatches) of OK () ->
+
+DEFINING checkCaseBranchExprs...
+
+         pj (wellTypedExpr (cx, e, t))
+      && length pS = n
+      && (fa(i:Nat) i < n =>
+            pj (wellTypedPatt (cx, pS!i, t)))
+      && length caseMatches = n
+      && (fa(i:Nat) i < n =>
+            caseMatches!i =
+            (let (vS,tS) = pattVarsWithTypes (pS!i) in
+             EXX vS tS (pattAssumptions (pS!i, e))))
+      && pj (theoreM (cx, disjoinAll caseMatches))
+      && length posCxS = n
+      && length posAnS = n
+      && (fa(i:Nat) i < n =>
+            posCxS!i =
+            multiVarDecls (pattVarsWithTypes (pS!i))
+              <| axioM (posAnS!i, empty, pattAssumptions (pS!i, e)))
+      && length negCxS = n
+      && length negAnS = n
+      && (fa(i:Nat) i < n =>
+            (let conjuncts:Expressions = the (fn conjuncts ->
+                   length conjuncts = i &&
+                   (fa(j:Nat) j < i => conjuncts!j = ~~ (caseMatches!j))) in
+             negCxS!i =
+             singleton (axioM (negAnS!i, empty, conjoinAll conjuncts))))
+      && length eS = n
+      && (fa(i:Nat) i < n =>
+            pj (wellTypedExpr (cx ++ (negCxS!i) ++ (posCxS!i), eS!i, t1)))
+      => pj (wellTypedExpr (cx, CASE e pS eS, t1)))
+
     | exRecursiveLet         Proof * Proof
     | exNonRecursiveLet      Proof
     | exEquivalentTypes      Proof * Proof
