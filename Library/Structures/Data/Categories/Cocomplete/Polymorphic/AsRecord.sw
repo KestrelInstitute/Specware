@@ -30,7 +30,7 @@ Cat qualifying spec {
 
   def emptyInitialCocone targetCat = {
       cocone = emptyCocone targetCat,
-      universal = fn cocone -> ident targetCat (initialObject targetCat)
+      universal = fn _ (* cocone *) -> ident targetCat (initialObject targetCat)
     }
 
   sort Cat.Cat (O,A) = {

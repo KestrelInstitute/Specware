@@ -139,29 +139,30 @@ of there are explicit imports or the spec is in a directory that ends in
 \begin{spec}
   op maybeAddBaseImport : ASpec Position * ASpec Position -> Env (ASpec Position)
   def maybeAddBaseImport (spc, initialSpec) =
-    if ~(spc = initialSpec) then return spc        % should already include Base
+    if ~(spc = initialSpec) then return spc       % should already include Base
      else
        {uri <- getCurrentURI;
-        if aBaseSpec?(uri, spc) then return spc       % defining base
+        if baseSpecURI? uri then return spc       % used when defining base
         else {(Spec baseSpec,_,_)
                 <- SpecCalc.evaluateURI pos0
                      (SpecPath_Relative {path = ["Library","Base"],
                                          hashSuffix = None});
               return (convertSpecToPosSpec baseSpec)}}
 
- op aBaseSpec? : URI * ASpec Position -> Boolean
- def aBaseSpec?(uri, spc) =
+ % op aBaseSpec? : URI * ASpec Position -> Boolean
+ op baseSpecURI? : URI -> Boolean
+ def baseSpecURI? uri =
    case uri of
-     | {path,hashSuffix = None} -> baseSpecPath? path
+     | {path, hashSuffix = None} -> baseSpecPath? path
      | _ -> false
   
  def baseSpecPath? path =
    case path of
-     | [] -> false
-     | [_] -> false
-     | ["Library","Base"] -> true
-     | [_,_] -> false
+     | []                   -> false
+     | [_]                  -> false
+     | ["Library","Base"]   -> true
+     | [_,_]                -> false
      | ["Library","Base",_] -> true
-     | _::r -> baseSpecPath? r
+     | _::r                 -> baseSpecPath? r
 }
 \end{spec}
