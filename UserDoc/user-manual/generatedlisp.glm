@@ -24,7 +24,7 @@ constructs.
 <para>
 &Specware ops are implemented using lisp defuns if they are functions,
 defparameter otherwise. Their names are uppercased and put in the
-package with the same name as the qualifier, or [[L:SW-SPEC]] if
+package with the same name as the qualifier, or [[L:SW-USER]] if
 unqualified. However, if the name is that of a built-in Lisp symbol,
 the name is prepended with the character "!" and not uppercased. If
 the qualifier of the op is the same as a built-in lisp package then

@@ -98,7 +98,8 @@ them are available in the &Specware menu in the menubar.
         <entry colname="name">&nbsp; [[sw:process-current-file]]</entry>
 	<entry colname="descr">&nbsp; Does :sw on current file. 
 	  Also available in dired where it applies to the file on the
-	  current line.
+	  current line. (This command will only work properly if the
+	  top-level directory for the file is in SWPATH).
 	</entry>
       </row>
       <row>
@@ -182,9 +183,14 @@ These are the commands available in the *common-lisp* buffer.
 <section>
 <title>Other Useful Emacs Commands</title>
 
-<para>
-These are a few general Emacs commands which are useful when using
-Specware. Commands with no key sequences are executed using [[M-x name]].
+<para> 
+These are a few general Emacs commands which are useful when
+using Specware. Commands with no key sequences are executed using
+[[M-x name]].  XEmacs can be customized using the [[Options]]
+menu. For example, to make [[delete]] delete the selected region (like
+in most Word Processing Programs), mouse [[Options]], [[Editing]],
+[[Active Regions]]. To make the changes permanent, mouse [[Options]],
+[[Save Options to Init File]].  
 </para>
 
 <informaltable frame="sides" colsep="1">
