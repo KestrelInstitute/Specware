@@ -4,7 +4,7 @@
 
 ;;; ============================================================================
 
-(defconstant +token-rule+  (make-parser-token-rule :name :TOKEN))
+(defparameter +token-rule+  (make-parser-token-rule :name :TOKEN))
 
 ;;; ============================================================================
 
@@ -135,7 +135,7 @@
 (defun build-parser-anyof-rule (parser name alternative-patterns)
   (let* ((patterns        alternative-patterns)
 	 (number-of-items (length patterns))
-	 (items           (make-array number-of-items)))
+	 (items           (make-array number-of-items :initial-element nil)))
     (dotimes (item-number number-of-items)
       (let ((pattern        (pop patterns))
 	    (semantic-index nil)
@@ -168,7 +168,7 @@
 (defun build-parser-tuple-rule (parser name element-patterns)
   (let* ((patterns        element-patterns)
 	 (number-of-items (length patterns))
-	 (items           (make-array number-of-items)))
+	 (items           (make-array number-of-items :initial-element nil)))
     (dotimes (item-number number-of-items)
       (let ((pattern        (pop patterns))
 	    (optional?      nil)
@@ -201,7 +201,7 @@
 (defun build-parser-pieces-rule (parser name field-patterns)
   (let* ((patterns        field-patterns)
 	 (number-of-items (length patterns))
-	 (items           (make-array number-of-items)))
+	 (items           (make-array number-of-items :initial-element nil)))
     (dotimes (item-number number-of-items)
       (let ((pattern        (pop patterns))
 	    (semantic-index nil)

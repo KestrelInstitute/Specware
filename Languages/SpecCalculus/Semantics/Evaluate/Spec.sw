@@ -131,7 +131,7 @@ such time as the current one can made monadic.
  op elaborateSpecM : PosSpec -> Env Spec
  def elaborateSpecM spc =
    { uri      <- getCurrentURI;
-     filename <- return ((uriToPath uri) ^ ".sw");
+     filename <- return ((uriToFullPath uri) ^ ".sw");
      %% No longer necessary
      %% hackMemory ();
      case elaboratePosSpec (spc, filename) of

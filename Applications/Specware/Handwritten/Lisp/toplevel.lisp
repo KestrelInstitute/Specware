@@ -123,7 +123,7 @@
       (speccalc::checkSpecPathsExistence str)
       (princ (setf (sys:getenv "SWPATH") (string str))))))
 
-#+cmu
+#+(or cmu openmcl)
 (defun cd (&optional dir)
   (specware::change-directory (or dir (specware::getenv "HOME"))))
 
@@ -139,10 +139,9 @@
 
 #+cmu
 (defun cl::commandp (form)
-  (and (symbolp form)
-       (eq (symbol-package form) *keyword-package*)))
+  (keywordp form))
 
-#+cmu
+#+(or cmu mcl)
 (defun cl::invoke-command-interactive (command)
   (let ((fn (intern (symbol-name command)))
 	(ch (read-char-no-hang)))
@@ -155,3 +154,19 @@
       (if (fboundp fn)
 	  (funcall fn)
 	(warn "Unknown command ~s" command)))))
+
+#+mcl
+(let ((ccl::*warn-if-redefine-kernel* nil))
+(defun ccl::check-toplevel-command (form)
+  (let* ((cmd (if (consp form) (car form) form))
+         (args (if (consp form) (cdr form))))
+    (if (keywordp cmd)
+      (dolist (g ccl::*active-toplevel-commands*
+		 (cl::invoke-command-interactive cmd))
+	(when
+	    (let* ((pair (assoc cmd (cdr g))))
+	      (if pair 
+		(progn (apply (cadr pair) args)
+		       t)))
+	  (return t))))))
+)

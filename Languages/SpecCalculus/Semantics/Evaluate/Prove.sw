@@ -84,7 +84,7 @@ SpecCalc qualifying spec {
  def URItoSingleSnarkLogFile (uri as {path,hashSuffix}) =
     {prefix <- removeLastElem path;
      mainName <- lastElem path;
-     let filNm = (uriToPath {path=prefix,hashSuffix=None})
+     let filNm = (uriToFullPath {path=prefix,hashSuffix=None})
         ^ "/snark/" ^ mainName ^ ".log"
      in
       return filNm}
@@ -95,7 +95,7 @@ SpecCalc qualifying spec {
     {prefix <- removeLastElem path;
      newSubDir <- lastElem path;
      mainName <- return hashSuffix;
-     let filNm = (uriToPath {path=prefix,hashSuffix=None})
+     let filNm = (uriToFullPath {path=prefix,hashSuffix=None})
         ^ "/snark/" ^ newSubDir ^ "/" ^ mainName ^ ".log"
      in
       return filNm}

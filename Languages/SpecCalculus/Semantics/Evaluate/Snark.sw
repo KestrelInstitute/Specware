@@ -33,7 +33,7 @@ SpecCalc qualifying spec {
        | _ ->
     {prefix <- removeLastElem path;
      mainName <- lastElem path;
-     let filNm = (uriToPath {path=prefix,hashSuffix=None})
+     let filNm = (uriToFullPath {path=prefix,hashSuffix=None})
         ^ "/snark/" ^ mainName ^ ".lisp"
      in
      {print("Snark file name " ^ filNm ^ "\n");

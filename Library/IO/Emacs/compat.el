@@ -59,10 +59,17 @@
 			 common-lisp-image-file)
     (setq sw:common-lisp-buffer-name common-lisp-buffer-name)
     ;; cmulisp adds the *'s back
-    (cmulisp (subseq common-lisp-buffer-name
+    (funcall *specware-lisp*
+	     (subseq common-lisp-buffer-name
 		     1 (- (length common-lisp-buffer-name) 1))
 	     (if common-lisp-image-file
-		 (concat common-lisp-image-name " -core " common-lisp-image-file)
+		 (case *specware-lisp*
+		   (cmulisp
+		     (concat common-lisp-image-name
+			     " -core " common-lisp-image-file))
+		   (otherwise
+		     (concat common-lisp-image-name " "
+			     common-lisp-image-file)))
 	       common-lisp-image-name)
 ;	     (concat common-lisp-image-name " "
 ;                     (if common-lisp-image-arguments
@@ -78,6 +85,7 @@
 
   (defun install-bridge-for-emacsEval ()
     (require 'bridge)
+    (set-buffer *specware-buffer-name*)
     (install-bridge)
     (setq bridge-source-insert nil)
     (setq bridge-handlers '(("(" . emacs-eval-handler))))
@@ -117,6 +125,10 @@
   (defun sw:eval-in-lisp (str &rest args)
     (car (read-from-string (ilisp-send (apply 'format str args)))))
 
+  (defun sw:eval-in-lisp-no-value (str &rest args)
+    (ilisp-send (apply 'format str args))
+    t)
+
   (define-function 'inferior-lisp-newline 'return-ilisp)
 
   (defun sw:find-unbalanced-parenthesis ()
@@ -128,7 +140,8 @@
   (push 'specware-mode ilisp-modes)
 
   (defun inferior-lisp-running-p ()
-    (and (buffer-live-p (get-buffer *specware-buffer-name*))
+    (and (get-buffer-process *specware-buffer-name*)
+	 (buffer-live-p (get-buffer *specware-buffer-name*))
 	 (with-current-buffer *specware-buffer-name*
 	   (not (equal comint-status " :exit")))))
   

@@ -1204,6 +1204,8 @@
 				       :parents        nil
 				       :children       nil
 				       )))
+;	(format t "install-tokens ~%")
+;	(describe node)
 	(setq last-node node)
 	(push node (parser-location-post-nodes pre-location))
 	(when-debugging (when *verbose?* (show-node node "Created  ")))

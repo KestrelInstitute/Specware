@@ -210,7 +210,7 @@
 	 (new-toplevel-node
 	  (create-parser-node  :rule      toplevel-rule
 			       :pre-index index
-			       :children  (make-array 1)))
+			       :children  (make-array 1 :initial-element nil)))
 	 (handles-bv (parser-anyof-rule-possible-handles-bv toplevel-rule)))
     (when-debugging
      (when *verbose?*
@@ -370,7 +370,7 @@
 	 (child-post-index (parser-node-post-index child-node))
 	 (child-post-location  (svref (parse-session-locations session)
 				      child-post-index))
-	 (children (make-array (length (parser-rule-items rule))))
+	 (children (make-array (length (parser-rule-items rule)) :initial-element nil))
 	 (new-node 
 	  (create-parser-node  :rule      rule
 			       :bvi       (parser-rule-bvi rule) 
@@ -393,7 +393,7 @@
 	 (child-post-index    (parser-node-post-index child-node))
 	 (child-post-location (svref (parse-session-locations session)
 				     child-post-index))
-	 (children  (make-array 6))
+	 (children  (make-array 6 :initial-element nil))
 	 (new-node  (create-parser-node  :rule      rule
 					 :bvi       (parser-rule-bvi rule) 
 					 :pre-index child-pre-index
@@ -620,7 +620,7 @@
 	  (setq children (parser-node-children node)))
 	;; number of children is indefinite, so we may need to extend vector
 	(when (>= child-index children-size)
-	  (let ((new-children (make-array (* child-index 2))))
+	  (let ((new-children (make-array (* child-index 2) :initial-element nil)))
 	    (dotimes (i children-size)
 	      (setf (svref new-children i) (svref children i)))
       	    (setf (parser-node-children node) new-children)
@@ -665,7 +665,7 @@
      (setf (parser-node-number new-node) (incf *parser-node-number*)))
     ;;
     (let* ((old-children (parser-node-children old-node))
-	   (new-children (make-array (length old-children))))
+	   (new-children (make-array (length old-children) :initial-element nil)))
       (declare (simple-vector old-children) 
 	       (simple-vector new-children))
       (dotimes (i child-index)

@@ -30,28 +30,39 @@
 
 (defun change-directory (directory)
   ;; (lisp::format t "Changing to: ~A~%" directory)
-  #+allegro   (excl::chdir          directory)
-  #+Lispworks (hcl:change-directory directory)
-  #+mcl       (ccl::%chdir          directory)
-  #+cmu       (setf (extensions:default-directory) directory)
-  ;; in Allegro CL, at least,
-  ;; if (current-directory) is already a pathname, then
-  ;; (make-pathname (current-directory)) will fail
-  (setq common-lisp::*default-pathname-defaults* (current-directory)))
+  (let ((dirpath (if (pathnamep directory) directory
+		   (make-pathname :directory directory))))
+    #+allegro   (excl::chdir          directory)
+    #+Lispworks (hcl:change-directory directory)
+    #+mcl       (ccl::%chdir          directory)
+    #+cmu       (setf (extensions:default-directory) directory)
+    ;; in Allegro CL, at least,
+    ;; if (current-directory) is already a pathname, then
+    ;; (make-pathname (current-directory)) will fail
+    (setq common-lisp::*default-pathname-defaults* dirpath)))
+
+#+mcl					; doesn't have setenv built=in
+(defvar *environment-shadow* nil)
 
 (defun getenv (varname)
   #+allegro   (system::getenv varname)
-  #+mcl       (ccl::getenv varname)
+  #+mcl       (or (cdr (assoc (intern varname "KEYWORD") *environment-shadow*))
+		  (ccl::getenv varname))
   #+lispworks (hcl::getenv varname) 	;?
   #+cmu       (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
   )
 
 (defun setenv (varname newvalue)
   #+allegro   (setf (system::getenv varname) newvalue)
-  #+mcl       (setf (ccl::getenv varname) newvalue)
+  #+mcl       (let ((pr (assoc (intern varname "KEYWORD") *environment-shadow*)))
+		(if pr (setf (cdr pr) newvalue)
+		  (push (cons (intern varname "KEYWORD") newvalue)
+			*environment-shadow*)))
   #+lispworks (setf (hcl::getenv varname) newvalue) 
-  #+cmu       (setf (cdr (assoc (intern varname "KEYWORD") ext:*environment-list*))
-		newvalue)
+  #+cmu       (let ((pr (assoc (intern varname "KEYWORD") ext:*environment-list*)))
+		(if pr (setf (cdr pr) newvalue)
+		  (push (cons (intern varname "KEYWORD") newvalue)
+			ext:*environment-list*)))
   )
 
 #+(or mcl Lispworks)
@@ -68,20 +79,12 @@
 
 #-(or mcl Lispworks)
 (defun make-system (new-directory)
-  (let ((old-directory (current-directory)))
+  (let ((old-directory (current-directory))
+	(*default-pathname-defaults* *default-pathname-defaults*))
     (change-directory new-directory)
     (unwind-protect (load "system.lisp")
       (change-directory old-directory))))
 
-#+mcl
-(defun make-system (new-directory)
-  (let ((*default-pathname-defaults*
-	 (make-pathname :name (concatenate 'string new-directory "/")
-			:defaults (current-directory)))
-	(old-directory (current-directory)))
-    (change-directory new-directory)
-    (unwind-protect (load "system.lisp")
-      (change-directory old-directory))))
 
 (defvar *fasl-type*
   #+allegro "fasl"
@@ -112,3 +115,11 @@
 (defun load-lisp-file (file &rest ignore)
   (declare (ignore ignore))
   (load (make-pathname :defaults file :type "lisp")))
+
+#+mcl					; Patch openmcl bug
+(let ((ccl::*warn-if-redefine-kernel* nil))
+(defun ccl::overwrite-dialog (filename prompt)
+  (if ccl::*overwrite-dialog-hook*
+    (funcall ccl::*overwrite-dialog-hook* filename prompt)
+    filename))
+)
