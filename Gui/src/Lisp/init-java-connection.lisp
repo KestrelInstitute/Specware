@@ -55,7 +55,10 @@
 
 (defun specware-process-unit (file-name)
   (format t "~% PROCESSING FILE ~S" file-name)
-  (user::sw  file-name))
+  (let ((output-str (with-output-to-string (str)
+		      (let ((*standard-output* str))
+			(user::sw  file-name)))))
+    (jcall (jmethod "LispProcessManager" "setProcessUnitResults") output-str)))
 
 
 ;(excl::chdir "planware:java-ui;")
