@@ -39,8 +39,7 @@
       (load (make-pathname :defaults filep :type nil)))))
 
 
-(loop for fil in '("Base/Handwritten/Lisp/Boolean"
-		   "Base/Handwritten/Lisp/Integer"
+(loop for fil in '("Base/Handwritten/Lisp/Integer"
 		   "Base/Handwritten/Lisp/Char"
 		   "Base/Handwritten/Lisp/String"
 		   "Base/Handwritten/Lisp/System"
