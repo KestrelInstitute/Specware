@@ -332,8 +332,13 @@ are no longer needed. *)
   def infoToBindings bindings varInfo =
     let
       def mkEquals () =
-        let type = MSlang.freshMetaTyVar noPos in
-        MSlang.mkFun (Equals, type, noPos)
+        % let type = MSlang.freshMetaTyVar noPos in % this will fail -- need a fully elaborated type 
+	let var_type = type varInfo in
+        let var_equality_type = MSlang.mkArrow (MSlang.mkProduct ([var_type, var_type], noPos), 
+						MSlang.boolType noPos,
+						noPos)
+	in
+        MSlang.mkFun (Equals, var_equality_type, noPos)
       def mkEquality t0 t1 =
         MSlang.mkApply (mkEquals (), MSlang.mkTuple ([t0,t1], noPos),noPos)
     in
