@@ -172,6 +172,9 @@ glm             dbk
 \n<<\n*>>	\n<programlistinG lang="syntax">\n*</programlistinG>
 <<*>>		<computeroutpuT lang="syntax">*</computeroutpuT>
 
+$$		$
+$*$		<replaceable>*</replaceable>
+
 In program displays / syntax only:
 
 \n||*		\n

@@ -372,6 +372,8 @@ trace3("P%d%c\n", bufp,thischar());
 		try(syntaxOperator);
 		try(terminal);
 
+		try(dollar);
+		try(replaceable);
 		try(ent);
 		try(quote);
 		try(outQuote);
@@ -568,6 +570,30 @@ trace("\nterminal:: ");
 	}
 	if (seechar(']')) {
 		outtext("']");
+		succeed;
+	}
+	fail;
+}
+
+bool dollar() {
+trace("\ndollar:: ");
+	if (seechar('$')) {
+		outtext("$$");
+		succeed;
+	}
+	fail;
+}
+
+bool replaceable() {
+	if (inSyntax) fail;
+trace("\nreplaceable:: ");
+
+	if (seetext("<replaceable>") || seetext("</replaceable>")) {
+		outchar('$');
+
+		while (!seetext("</replaceable>") && !atEOL)
+			outchar(getchar());
+		outchar('$');
 		succeed;
 	}
 	fail;
