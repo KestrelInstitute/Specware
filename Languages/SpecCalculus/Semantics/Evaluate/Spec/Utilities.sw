@@ -225,7 +225,8 @@ SpecCalc qualifying spec
      | (_,None) -> return newPSortInfo
      | ((new_sort_names, new_type_vars, new_defs),
 	Some (old_sort_names, old_type_vars, old_defs)) ->
-       let sort_names = listUnion(new_sort_names,old_sort_names) in
+       let sort_names = listUnion(old_sort_names,new_sort_names) in % YIKES: for now, order of args to ListUnion matters! 
+       %% TODO: Fix code elsewhere to be less sensitive to order of names
        if ~(new_type_vars = old_type_vars) then % TODO: for now at least, this is very literal.
 	 raise (SpecError (position, 
 			   "Merged versions of Sort "^(printAliases sort_names)^" have differing type variables:"
@@ -267,7 +268,8 @@ SpecCalc qualifying spec
      | (_,None) -> return newPOpInfo
      | ((new_op_names, new_fixity, new_sort_scheme, new_defs),
 	Some (old_op_names, old_fixity, old_sort_scheme, old_defs)) ->
-       let op_names = listUnion(new_op_names,old_op_names) in
+       let op_names = listUnion(old_op_names,new_op_names) in % YIKES: for now, order of args to ListUnion matters! 
+       %% TODO: Fix code elsewhere to be less sensitive to order of names
        if ~(new_fixity = old_fixity) then
 	 raise (SpecError (position, "Merged versions of Op "^(printAliases op_names)^" have different fixity"))
        else
@@ -397,7 +399,8 @@ SpecCalc qualifying spec
 		     other_infos) 
 	      ^ "\n"
       in
-	raise (SpecError (position, sort_msg ^ op_msg))
+      let spc_msg = "\n in following spec: \n" ^ (printSpec spc) in
+      raise (SpecError (position, "\n" ^ sort_msg ^ op_msg ^ spc_msg))
 
   op compressDefs : Spec -> Spec
   def compressDefs spc =
