@@ -20,7 +20,7 @@
 (in-package :snark)
 
 (defun table-satisfier (cc atom subst)
-  ;; enables procedural attachment of a table to a predicate
+  ;; enables procedural attachment of a table to a relation
   (let* ((args (args atom))
          (pattern (table-lookup-pattern args subst)))
     (cond
@@ -91,14 +91,17 @@
                (when (variable-p (first p))
                  (push (if (first e)
                            (funcall (first e) (first r))
-                           (declare-constant-symbol (first r)))
+                           (declare-constant (first r)))
                        revvals)))))
         (unless (or (equal (first r) (first p)) (variable-p (first p)))
           (return))))
     nil))
 
 (defun predicate-to-table (p)
-  ;; return table for predicate p (could be filename or some other way to refer to a file),
+  (relation-to-table p))
+
+(defun relation-to-table (p)
+  ;; return table for relation p (could be filename or some other way to refer to a file),
   ;; a mapper function (finds tuples in the table that match the pattern),
   ;; and an export function for each column
   (case p
@@ -109,20 +112,20 @@
                ("lowrance" "stickel")
                ("lowrance" "waldinger"))
              'simple-table-mapper
-             (consn (lambda (x) (declare-constant-symbol x :sort 'person)) nil 2)))
+             (consn (lambda (x) (declare-constant x :sort 'person)) nil 2)))
     ))
 
 (defun test-table-resolver (&optional (test 1))
   (initialize)
   (use-resolution)
   (declare-sort 'person)
-  (declare-predicate-symbol
+  (declare-relation
    'snark-user::supervises 2
    :satisfy-code 'table-satisfier
    :rewrite-code 'table-rewriter)
-  (declare-constant-symbol "lowrance" :sort 'person)
-  (declare-constant-symbol "stickel"  :sort 'person)
-  (declare-constant-symbol 'stickel   :sort 'person)
+  (declare-constant "lowrance" :sort 'person)
+  (declare-constant "stickel"  :sort 'person)
+  (declare-constant 'stickel   :sort 'person)
   (ecase test
     (1
      (prove '(snark-user::supervises "lowrance" "stickel")))

@@ -126,7 +126,7 @@
     #+ignore
     (:fact
      (when (let ((wff (row-wff row)))
-             (dereference wff nil :if-compound (eq fact-predicate (head wff))))
+             (dereference wff nil :if-compound (eq fact-relation (head wff))))
        (with-clock-on printing
          (when (print-time-used?)
            (print-incremental-time-used))
@@ -172,7 +172,7 @@
     #+ignore
     (:fact
      (when (let ((wff (row-wff row)))
-             (dereference wff nil :if-compound (eq fact-predicate (head wff))))
+             (dereference wff nil :if-compound (eq fact-relation (head wff))))
        (with-clock-on printing
          (terpri-comment)
          (format t "     ~A ~A" msg (row-name-or-number row)))))

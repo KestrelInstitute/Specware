@@ -50,18 +50,18 @@
   (add-edge-transitively poset y x))
 
 (defun poset-superiors (poset element)
-  (sparse-matrix-column poset element t))
+  (setf (sparse-matrix-column poset element) t))
 
 (defun poset-inferiors (poset element)
-  (sparse-matrix-row poset element t))
+  (setf (sparse-matrix-row poset element) t))
 
 (defun add-edge-transitively (graph vertex1 vertex2)
   (let ((l1 (list vertex1))
         (l2 (list vertex2)))
     (let ((col (sparse-matrix-column graph vertex1)))
-      (when col (map-sparse-vector-indexes (lambda (vertex) (push vertex l1)) col)))
+      (when col (map-sparse-vector (lambda (vertex) (push vertex l1)) col)))
     (let ((row (sparse-matrix-row graph vertex2)))
-      (when row (map-sparse-vector-indexes (lambda (vertex) (push vertex l2)) row)))
+      (when row (map-sparse-vector (lambda (vertex) (push vertex l2)) row)))
     (dolist (v1 l1)
       (dolist (v2 l2)
         (cond

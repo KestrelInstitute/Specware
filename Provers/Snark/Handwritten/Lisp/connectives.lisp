@@ -104,7 +104,7 @@
                       (clause-p (second args) t))))))))
     (clause-p wff nil)))
 
-(defun equality-predicate-symbol-p (fn)
+(defun equality-relation-symbol-p (fn)
   (eq '= (function-boolean-valued-p fn)))
 
 (defun equality-p (wff)
@@ -113,7 +113,7 @@
     :if-constant      nil
     :if-variable      (not-wff-error wff)
     :if-compound-cons (not-wff-error wff)
-    :if-compound-appl (equality-predicate-symbol-p (heada wff))))
+    :if-compound-appl (equality-relation-symbol-p (heada wff))))
 
 (defun positive-equality-wff-p (wff)
   ;; nothing but strictly positive occurrences of equalities
@@ -319,7 +319,7 @@
 		          ((nil)			;atomic
 		           (cond
 			    ((eliminate-negations?)
-			     (make-compound* (predicate-complementer head) (argsa wff)))
+			     (make-compound* (relation-complementer head) (argsa wff)))
 			    (t
 			     (make-compound *not* wff))))
                           (not
@@ -343,18 +343,18 @@
 					     (negate (second args) subst)
 					     (negate (third args) subst))))))))
 
-(defun predicate-complementer (fn)
+(defun relation-complementer (fn)
   ;; if complement has special properties
   ;; such as associativity, rewrites, etc.,
   ;; these must be declared explicitly by the user
   (or (function-complement fn)
       (setf (function-complement fn)
-            (declare-predicate-symbol (complement-name (function-name fn)) (function-arity fn)))))
+            (declare-relation (complement-name (function-name fn)) (function-arity fn)))))
 
 (defun proposition-complementer (const)
   (or (constant-complement const)
       (setf (constant-complement const)
-            (declare-proposition-symbol (complement-name (constant-name const))))))
+            (declare-proposition (complement-name (constant-name const))))))
 
 (defun complement-name (nm &optional noninterned)
   (let* ((s (symbol-name nm))
@@ -445,15 +445,15 @@
        (t
 	(make-compound connective wff1 wff2 wff3))))))
 
-(defun make-equality0 (term1 term2 &optional (predicate *=*))
-  (make-compound predicate term1 term2))
+(defun make-equality0 (term1 term2 &optional (relation *=*))
+  (make-compound relation term1 term2))
 
-(defun make-equality (term1 term2 &optional subst (predicate *=*))
+(defun make-equality (term1 term2 &optional subst (relation *=*))
   (cond
     ((equal-p term1 term2 subst)
      true)
     (t
-     (make-compound predicate term1 term2))))
+     (make-compound relation term1 term2))))
 
 (defun complement-p (wff1 wff2 &optional subst)
   (let ((appl nil) (neg nil))

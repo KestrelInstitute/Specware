@@ -33,11 +33,11 @@
   (assert-rewrite '(= (/ 1 ?x) (/ ?x))))
 
 (defun declare-inequality-rewrites ()
-  (declare-predicate-symbol '=  2 :rewrite-code 'equality-rewriter)
-  (declare-predicate-symbol '<  2 :rewrite-code '<-atom-rewriter)
-  (declare-predicate-symbol '>  2 :rewrite-code '>-atom-rewriter)
-  (declare-predicate-symbol '=< 2 :rewrite-code '=<-atom-rewriter)
-  (declare-predicate-symbol '>= 2 :rewrite-code '>=-atom-rewriter)
+  (declare-relation '=  2 :rewrite-code 'equality-rewriter)
+  (declare-relation '<  2 :rewrite-code '<-atom-rewriter)
+  (declare-relation '>  2 :rewrite-code '>-atom-rewriter)
+  (declare-relation '=< 2 :rewrite-code '=<-atom-rewriter)
+  (declare-relation '>= 2 :rewrite-code '>=-atom-rewriter)
   (assert '(all (x) (not (< x x))) :name '~X<X)
   (assert '(all (x) (not (> x x))) :name '~X>X)
   (assert '(all (x) (=< x x)) :name 'X=<X)
@@ -55,8 +55,7 @@
     (let ((name (first x))
 	  (arity (second x))
 	  (rewrite-function (third x)))
-      (declare-function-symbol
-       name arity :rewrite-code rewrite-function)))
+      (declare-function name arity :rewrite-code rewrite-function)))
   (dolist (x '((set 1)
 	       (bounded 1)
 	       (empty 1)
@@ -70,8 +69,7 @@
     (let ((name (first x))
 	  (arity (second x))
 	  (rewrite-function (third x)))
-      (declare-predicate-symbol
-       name arity :rewrite-code rewrite-function))))
+      (declare-relation name arity :rewrite-code rewrite-function))))
 
 (defun declare-kif-functions-and-relations ()
   (dolist (x '((value :any)
@@ -81,8 +79,7 @@
     (let ((name (first x))
 	  (arity (second x))
 	  (rewrite-function (third x)))
-      (declare-function-symbol
-       name arity :rewrite-code rewrite-function)))
+      (declare-function name arity :rewrite-code rewrite-function)))
   (dolist (x '((relation 1)
 	       (function 1)
 	       (holds 2)
@@ -99,8 +96,7 @@
     (let ((name (first x))
 	  (arity (second x))
 	  (rewrite-function (third x)))
-      (declare-predicate-symbol
-       name arity :rewrite-code rewrite-function))))
+      (declare-relation name arity :rewrite-code rewrite-function))))
 
 (declaim (special *using-sorts*))
 
@@ -191,7 +187,7 @@
 
 (defun reflexivity-rewriter (atom subst)
   ;; example: this is called when trying to rewrite (rel a b) after
-  ;; doing (declare-predicate-symbol 'rel 2 :rewrite-code 'reflexivity-rewriter)
+  ;; doing (declare-relation 'rel 2 :rewrite-code 'reflexivity-rewriter)
   ;; (rel a b) -> true after unifying a and b
   ;; returns new value (true) or none (no rewriting done)
   (let ((args (args atom)))
@@ -199,7 +195,7 @@
 
 (defun irreflexivity-rewriter (atom subst)
   ;; example: this is called when trying to rewrite (rel a b) after
-  ;; doing (declare-predicate-symbol 'rel 2 :rewrite-code 'irreflexivity-rewriter)
+  ;; doing (declare-relation 'rel 2 :rewrite-code 'irreflexivity-rewriter)
   ;; (rel a b) -> false after unifying a and b
   ;; returns new value (false) or none (no rewriting done)
   (let ((args (args atom)))
@@ -355,12 +351,11 @@
        (t
         none)))))
 
-(defun declare-cancellation-law (equality-predicate-symbol function-symbol identity-symbol)
-  (let ((eq (input-symbol equality-predicate-symbol))
+(defun declare-cancellation-law (equality-relation-symbol function-symbol identity-symbol)
+  (let ((eq (input-symbol equality-relation-symbol))
 	(fn (input-symbol function-symbol))
 	(id (input-symbol identity-symbol)))
-    (declare-predicate-symbol equality-predicate-symbol  2
-			      :rewrite-code (make-cancel eq fn id))))
+    (declare-relation equality-relation-symbol :any :rewrite-code (make-cancel eq fn id))))
 
 (defun distribute (fn1 fn2 term subst)
   ;; (distribute '+ '* '(* (+ a b) c)) = (+ (a c) (b c))
@@ -401,7 +396,7 @@
 (defun declare-distributive-law (fn1 fn2)
   (let ((fn1 (input-symbol fn1))
 	(fn2 (input-symbol fn2)))
-    (declare-function-symbol
+    (declare-function 
      fn2 (function-arity fn2)
      :rewrite-code (lambda (term subst) (distribute fn1 fn2 term subst)))))
 

@@ -64,7 +64,11 @@
   (let ((v (cdr var)))
     (if (consp v) (cdrc v) v)))
 
-(defun declare-variable-symbol (name &key (sort top-sort sort-supplied-p))
+(defun declare-variable-symbol (&rest args)
+  (declare (dynamic-extent args))
+  (apply 'declare-variable args))
+
+(defun declare-variable (name &key (sort top-sort sort-supplied-p))
   ;; return same variable every time for same input free variable
   (assert-can-be-variable-name-p name)
   (when (neq top-sort sort)

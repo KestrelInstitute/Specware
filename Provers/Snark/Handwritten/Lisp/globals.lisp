@@ -81,7 +81,7 @@
           *assert-rewrite-polarity*
 	  *assertion-analysis-function-info*
 	  *assertion-analysis-patterns*
-	  *assertion-analysis-predicate-info*
+	  *assertion-analysis-relation-info*
 	  *atom-hash-code*
 	  *break-snark?*
 	  *check-sorts-nontrivial*
@@ -105,7 +105,6 @@
           *default-path-index-alist-length-limit*
 	  *default-path-index-delete-empty-nodes*
 	  *default-path-index-size*
-	  *default-term-by-hash-array-size*
 	  *dp-sort-intersections*
           *dr-universal-time-function-symbol*
 	  *embedding-variables*
@@ -173,7 +172,6 @@
 	  *variables*
 	  *world-path-function-alist*
 	  clause-subsumption
-	  crfnnum
 	  critique-options
 	  it
           *last-row-number-before-interactive-operation*
@@ -197,10 +195,8 @@
 	  rewrite-strategy
 	  rewrites-initialized
           *simplification-ordering-compare-equality-arguments-hash-table* 
-	  skfnnum
 	  subsumption-mark
 	  time-mark
-	  wpfnnum
 
 
 	  ;LDPP'
@@ -241,7 +237,6 @@
           mes::oset-default-make-element
 	  mes::*prog->*-function-second-forms*
 	  mes::*prog->-special-forms*
-          mes::*show-count-values*
 
           $number-of-variable-blocks
           $number-of-variables-per-block
@@ -281,6 +276,8 @@
           *rpo-cache-numbering*		;bound only by rpo-compare-terms-top
           *ac-rpo-cache*		;bound only by rpo-compare-terms-top
 	  *snark-globals*
+          *snark-load-nonce*
+          *snark-load-time*
 	  *snark-nonsave-globals*
 	  *snark-options*
           *tptp-input-directory*
@@ -329,7 +326,7 @@
 	  true-wff
 	  ))
 
-;;; more than one version of SNARK can be run alternately
+;;; more than one copy of SNARK can be run alternately
 ;;; by using SUSPEND-SNARK and RESUME-SNARK
 ;;;
 ;;; SUSPEND-SNARK re-initializes SNARK so the run can be continued
@@ -337,17 +334,19 @@
 ;;;
 ;;; SUSPEND-SNARK saves the values of SNARK's global variables;
 ;;; RESUME-SNARK restores them
+;;;
+;;; SUSPEND-AND-RESUME-SNARK suspends the current SNARK and resumes
+;;; another without unnecessarily re-initializing
 
-(defun suspend-snark ()
+(defun suspend-snark* ()
   (let ((state (gensym)))
     (setf (symbol-value state)
 	  (mapcar (lambda (var)
                     (cons var
                           (if (boundp var)
                               (symbol-value var)
-                              :unbound)))
+                              '%unbound%)))
 		  *snark-globals*))
-    (initialize)
     state))
 
 (defun resume-snark (state)
@@ -356,7 +355,7 @@
       ((consp l)
        (setf (symbol-value state) nil)
        (mapc (lambda (x)
-               (if (eq :unbound (cdr x))
+               (if (eq '%unbound% (cdr x))
                    (makunbound (car x))
                    (setf (symbol-value (car x)) (cdr x))))
 	     l))
@@ -364,6 +363,16 @@
        (error "Cannot resume SNARK from state ~S." state)))
     nil))
 
+(defun suspend-snark ()
+  (prog1
+    (suspend-snark*)
+    (initialize)))
+
+(defun suspend-and-resume-snark (state)
+  (prog1
+    (suspend-snark*)
+    (resume-snark state)))
+
 (defun audit-snark-globals ()
   ;; used for suspend/resume to make sure all necessary values are saved;
   ;; prints names of symbols that might have been overlooked

@@ -59,7 +59,7 @@
             (realpart    1 realpart-term-rewriter :sort real)
             (imagpart    1 imagpart-term-rewriter :sort real)
             ))
-    (mapc #'declare-predicate-rewrite-code
+    (mapc 'declare-relation-rewrite-code
           '((integer   1 integer-atom-rewriter)
             (real      1 real-atom-rewriter)
             (complex   1 complex-atom-rewriter)
@@ -126,7 +126,7 @@
      (let ((x (arg1 term)))
        (if (and (dereference x subst :if-constant (numberp x))
                 ,cond)
-           (declare-constant-symbol ,result)
+           (declare-constant ,result)
            none))))
 
 (defmacro number*number-term-evaluation (result &optional (cond t))
@@ -135,7 +135,7 @@
        (if (and (dereference x subst :if-constant (numberp x))
                 (dereference y subst :if-constant (numberp y))
                 ,cond)
-           (declare-constant-symbol ,result)
+           (declare-constant ,result)
            none))))
 
 (defmacro number-atom-evaluation (form)
@@ -171,9 +171,9 @@
                 (collect arg nonnumbers)))
             (cond
              ((null nonnumbers)
-              (declare-constant-symbol number))
+              (declare-constant number))
              (t
-              (make-compound* (head term) (declare-constant-symbol number) nonnumbers))))
+              (make-compound* (head term) (declare-constant number) nonnumbers))))
           none))))
 
 (defun times-term-rewriter       (term subst) (numbers-term-evaluation *))

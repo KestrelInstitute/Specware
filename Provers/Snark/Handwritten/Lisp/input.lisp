@@ -20,7 +20,6 @@
 (in-package :snark)
 
 (defvar *skolem-function-alist* nil)
-(defvar skfnnum 0)
 (defvar *var-renaming-subst* nil)		;ttp
 (defvar *input-wff* nil)
 (defvar *input-wff-substitution*)		;alist of (variable-name . variable) or (variable-name . skolem-term) pairs
@@ -84,7 +83,7 @@
   (or (can-be-name1 x (allow-keyword-function-symbols?))
       (and action (funcall action "~S cannot be the name of a function." x))))
 
-(defun can-be-predicate-name-p (x &optional action)
+(defun can-be-relation-name-p (x &optional action)
   (or (can-be-name1 x (allow-keyword-relation-symbols?))
       (and action (funcall action "~S cannot be the name of a relation." x))))
 
@@ -126,8 +125,8 @@
 (defun assert-can-be-function-name-p (x)
   (can-be-function-name-p x 'error))
 
-(defun assert-can-be-predicate-name-p (x)
-  (can-be-predicate-name-p x 'error))
+(defun assert-can-be-relation-name-p (x)
+  (can-be-relation-name-p x 'error))
 
 (defun assert-can-be-sort-name-p (x)
   (can-be-sort-name-p x 'error))
@@ -395,7 +394,7 @@
         (dolist (var-spec var-specs)
           (let ((var (first var-spec)))
             (push (cons var (if (getf (rest var-spec) :global)
-                                (declare-variable-symbol var)
+                                (declare-variable var)
                                 (make-variable-from-var-spec var-spec)))
                   substitution)
             (push (car substitution) *var-renaming-subst*)))
@@ -487,23 +486,23 @@
         (cond
          (sort-unknown
           ;; global variable must be unsorted if nonsort restriction is specified
-          (declare-variable-symbol var :sort top-sort))
+          (declare-variable var :sort top-sort))
          (t
           ;; sort must agree with previous sort declaration for this variable
-          (declare-variable-symbol var :sort sort))))
+          (declare-variable var :sort sort))))
        (t
         (cond
          (sort-unknown
-          (declare-variable-symbol var))
+          (declare-variable var))
          (t
           ;; sort must have been declared
           (input-sort2 sort)
-          (declare-variable-symbol var)))))
+          (declare-variable var)))))
       (append var-spec
               '(:skolem-p t)))
      (t
       (append var-spec 
-              `(:sort ,(sort-name (variable-sort (declare-variable-symbol var))))
+              `(:sort ,(sort-name (variable-sort (declare-variable var))))
               '(:skolem-p t))))))
 
 (defun make-variable-from-var-spec (var-spec)
@@ -543,7 +542,7 @@
 	  (unless (variable-p v)
 	    (setq v nil)))
 	 ((can-be-free-variable-name-p expr)
-	  (setq v (declare-variable-symbol expr))))
+	  (setq v (declare-variable expr))))
        (if (and v (not (assoc expr result)))
 	   (nconc result (list (cons expr v)))
 	   result)))
@@ -573,17 +572,14 @@
     (remf (rest var-spec) :global)
     (cond
       ((null free-vars-in-form)
-       (setq newskfn (apply #'declare-constant-symbol
+       (setq newskfn (apply #'declare-constant
 			    newskfn
 			    (rest var-spec)))
        (when (and (neq top-sort sort) (not sort-unknown))
 	 (declare-constant-sort newskfn (input-sort2 sort)))
        newskfn)
       (t
-       (setq newskfn (apply #'declare-function-symbol
-			    newskfn
-			    (length free-vars-in-form)
-			    (rest var-spec)))
+       (setq newskfn (apply #'declare-function newskfn (length free-vars-in-form) (rest var-spec)))
        (when (and (neq top-sort sort) (not sort-unknown))
 	 (declare-function-sort newskfn (CONS SORT (CONSN TOP-SORT NIL (LENGTH FREE-VARS-IN-FORM)))))
        (make-compound* newskfn (mapcar #'cdr free-vars-in-form))))))
@@ -605,21 +601,20 @@
     (or (cdr (assoc (list var-spec form free-vars-in-form) *skolem-function-alist* :test #'equal))
 	(let* (conc-name
 	       sort
-	       (x (make-symbol			;don't intern skolem symbols
-		   (cond
-		     ((setq conc-name (getf (rest var-spec) :conc-name))
-		      (format nil "~A~D" conc-name (incf skfnnum)))
-                     ((getf (rest var-spec) :sort-unknown)
-                      (format nil "SK~D" (incf skfnnum)))
-		     ((neq top-sort (setq sort (getf (rest var-spec) :sort)))
-		      (format nil "~A-SK~D" sort (incf skfnnum)))
-		     (t
-		      (format nil "SK~D" (incf skfnnum)))))))
+	       (x (newsym
+                   (cond
+                    ((setq conc-name (getf (rest var-spec) :conc-name))
+                     conc-name)
+                    ((and (not (getf (rest var-spec) :sort-unknown))
+                          (neq top-sort (setq sort (getf (rest var-spec) :sort))))
+                     (format nil "~A-~A" sort 'skolem))
+                    (t
+                     'skolem)))))
 	  (push (cons key x) *skolem-function-alist*)
 	  x))))
 
-(defun newcrfn ()
-  (make-symbol (format nil "CR~D" (incf crfnnum))))
+(defun newsym (&optional (name 'newsym))
+  (intern (format nil "~A-~A-~D" name *snark-load-time* (incf *snark-load-nonce*)) :snark-user))
 
 (defun input-form* (head terms polarity)
   (make-compound* head (input-terms terms polarity)))
@@ -651,7 +646,7 @@
 	  (setf (function-in-use head) t))
         (input-form head (rest atom) polarity))))
     ((and *input-proposition-variables* (can-be-free-variable-name-p atom))
-     (declare-variable-symbol atom))
+     (declare-variable atom))
     (t
      (error "Cannot understand ~S as an atomic formula." atom))))
 
@@ -667,7 +662,7 @@
    ((wild-card-p term)
     (if *input-quote-term* term (make-variable)))
    ((can-be-free-variable-name-p term)
-    (if *input-quote-term* term (declare-variable-symbol term)))
+    (if *input-quote-term* term (declare-variable term)))
    ((atom term)
     (let ((symbol (input-constant-symbol term)))
       (when (print-symbol-in-use-warnings?)
@@ -859,7 +854,7 @@
   (input-form* head args polarity))
 
 ;;; the following functions can be used as in
-;;; (declare-relation-symbol 'product :any :input-function 'require-3-arguments)
+;;; (declare-relation 'product :any :input-function 'require-3-arguments)
 ;;; so that that there is only one product relation symbol
 ;;; (not more than one of different arities as is usually allowed)
 ;;; and it always has three arguments

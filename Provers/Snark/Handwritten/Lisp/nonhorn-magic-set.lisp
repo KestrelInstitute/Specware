@@ -32,7 +32,7 @@
                         true
                         (if (eq t v)
                             (setf (constant-magic atom)
-                                  (declare-proposition-symbol
+                                  (declare-proposition
                                    (magic-goal-name atom)
                                    :magic 'goal))
                             v)))
@@ -42,7 +42,7 @@
                         true
                         (make-compound* (if (eq t v)
                                             (setf (function-magic head)
-                                                  (declare-predicate-symbol
+                                                  (declare-relation
                                                    (magic-goal-name (function-name head))
                                                    (function-arity head)
                                                    :magic 'goal))

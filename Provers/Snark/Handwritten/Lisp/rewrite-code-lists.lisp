@@ -39,7 +39,7 @@
             (nth       2 nth-term-rewriter)			;CL style
             (nthrest   2 nthrest-term-rewriter :sort list)	;CL style
             ))
-    (mapc #'declare-predicate-rewrite-code
+    (mapc 'declare-relation-rewrite-code
           '((list    1 listp-atom-rewriter :alias listp)	;KIF uses 'list', a SNARK constructor
             (cons    1 consp-atom-rewriter :alias consp)
             (null    1 null-atom-rewriter)
@@ -274,7 +274,7 @@
 (defun length-term-rewriter (term subst)
   (when-using-code-for-lists
    (let ((n (list-term-length (arg1 term) subst)))
-     (if n (declare-constant-symbol n) none))))
+     (if n (declare-constant n) none))))
 
 (defun list-term-length (x subst)
   (do ((x x (cdr x))
@@ -344,7 +344,7 @@
                                               (make-compound*
                                                (check-usable-head1
                                                 (if to-atom
-                                                    (input-predicate-symbol fn nargs t)
+                                                    (input-relation-symbol fn nargs t)
                                                     (input-function-symbol fn nargs)))
                                                (INSTANTIATE (cdrc x) subst)))))
                              none)))))

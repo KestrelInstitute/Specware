@@ -26,6 +26,7 @@
   `(unwind-protect
      (progn
        (mon:monitor-all :mes)
+       (mon:monitor-all :mes-sparse-array)
        (mon:monitor-all :snark)
        (mon:reset-all-monitoring)
        (prog1

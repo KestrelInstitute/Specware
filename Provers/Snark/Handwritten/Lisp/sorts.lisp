@@ -100,8 +100,8 @@
 
 (defun declare-the-sort-function-symbol (name sort)
   (unless (null (symbol-package name))
-    (declare-function-symbol
-     (intern (concatenate 'string "THE-" (symbol-name name)) :snark) 1
+    (declare-function
+     (intern (concatenate 'string (symbol-name 'the-) (symbol-name name)) :snark-user) 1
      :sort name
      :rewrite-code (lambda (term subst)
                      (let ((x (arg1 term)))
@@ -345,7 +345,7 @@
 			(let ((n1 (sort-name old-sort))
 			      (n2 (sort-name sort))
                               (*can-be-sort-name* t))
-			  (declare-sort (intern (format nil "~A&~A" n1 n2) :snark)
+			  (declare-sort (intern (format nil "~A&~A" n1 n2) :snark-user)
 					:iff `(and ,n1 ,n2)))))))))
     (cond
      ((eq new-sort old-sort)
@@ -362,7 +362,7 @@
          (cond
           ((function-boolean-valued-p function)
            (cl:assert (consp sort-spec))
-           ;; predicate argument sorts can be preceded by boolean result-sort
+           ;; relation argument sorts can be preceded by boolean result-sort
            ;; (this is stylistically undesirable and just for backward compatibility)
            (when (eq 'boolean (car sort-spec))
              (setf sort-spec (rest sort-spec)))
@@ -403,11 +403,11 @@
         )))))
 
 ;;; multiple sort declarations are not allowed for
-;;; :alist, :plist, and :list* predicates and functions
+;;; :alist, :plist, and :list* relations and functions
 ;;;
 ;;; consider the sort declarations
-;;; (declare-predicate-symbol 'p :alist :sort '(true (:a dog) (:b dog)))
-;;; (declare-predicate-symbol 'p :alist :sort '(true (:a cat) (:b cat)))
+;;; (declare-relation 'p :alist :sort '(true (:a dog) (:b dog)))
+;;; (declare-relation 'p :alist :sort '(true (:a cat) (:b cat)))
 ;;; 
 ;;; ((:a . fido) . ?) and ((:b . felix) . ?) are well sorted
 ;;; but their unifier ((:a . fido) (:b . felix) . ?) is not
@@ -416,7 +416,7 @@
 ;;; that well-sortedness is inherited by instances but not all
 ;;; arguments are present when well-sortedness is checked initially
 ;;;
-;;; the situation is even worse for :list* predicates and functions
+;;; the situation is even worse for :list* relations and functions
 ;;; because their argument lists can end in variables other than ?
 ;;; even single sort declarations may be violated when these
 ;;; tail variables are instantiated
@@ -852,6 +852,7 @@
 
 (defun declare-sorts2 (declarations)
   (let ((*bdd* *sort-theory*))
+    (declare (special *bdd*))
     (setq declarations (mapcar (lambda (decl)
                                  (mvlet (((:values max-sort min-sort)
                                           (max-and-min-sorts (rest decl))))

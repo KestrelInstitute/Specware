@@ -19,7 +19,7 @@
 
 (in-package :snark)
 
-(declaim (special *using-sorts*))
+(declaim (special *subsuming* *using-sorts*))
 
 (defvar *unify-special* t)
 

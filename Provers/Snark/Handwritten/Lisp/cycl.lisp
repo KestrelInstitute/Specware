@@ -41,16 +41,16 @@
 ;;; should be the subject of an axiom of the form (#$genls X Y)
 ;;; this is how sorts are recognized when reading CycL input into SNARK
 ;;;
-;;; every CycL symbol X that is used as a predicate or function
+;;; every CycL symbol X that is used as a relation or function
 ;;; should be the subject of an axiom of the form (#$arity X N)
-;;; this is how predicates and functions are recognized when reading CycL input into SNARK
+;;; this is how relations and functions are recognized when reading CycL input into SNARK
 ;;;
 ;;; every Cycl symbol X that is used as a function
 ;;; should be the subject of an axiom of the form (#$resultIsa X Y) or (#$resultGenl X Y)
-;;; this is how functions are distinguished from predicates when reading CycL input into SNARK
+;;; this is how functions are distinguished from relations when reading CycL input into SNARK
 
 ;;; to do:
-;;; nonfixed arity predicates and functions
+;;; nonfixed arity relations and functions
 ;;; handle arg#Genl and resultGenl
 ;;; special case for #$Thing sort; replace #$Thing by top-sort?
 ;;; disjointness or partition information
@@ -116,9 +116,8 @@
     (declare-logical-symbol '#$thereExistsAtLeast
                             :input-function #'input-there-exists-at-least-quantification)
     (declare-disjoint-subsorts '#$Thing '#$SetOrCollection 'number)
-    (declare-function-symbol '#$TheSetOf :any
-                             :input-function #'input-the-set-of)
-    (declare-predicate-symbol '#$elementOf :any)
+    (declare-function '#$TheSetOf :any :input-function #'input-the-set-of)
+    (declare-relation '#$elementOf :any)
     (initialize-cycl-read-action-table))
    (t
     nil)))
@@ -380,9 +379,9 @@
       (declare (ignore key))
       (push symbol symbols))
     (setf symbols (sort symbols #'constant-name-lessp :key #'cycl-symbol-name))
-    (funcall fun '(declare-predicate-symbol 'instance-of 2
-                                            :satisfy-code 'instance-of-satisfier
-                                            :rewrite-code 'instance-of-rewriter))
+    (funcall fun '(declare-relation 'instance-of 2
+                   :satisfy-code 'instance-of-satisfier
+                   :rewrite-code 'instance-of-rewriter))
     (prog->
       (mapc symbols ->* symbol)
       (cycl-symbol-name symbol -> name)
@@ -396,7 +395,7 @@
     (prog->
       (mapc symbols ->* symbol)
       (cycl-symbol-name symbol -> name)
-      (funcall fun `(DECLARE-CONSTANT-SYMBOL ',name
+      (funcall fun `(DECLARE-CONSTANT ',name
                                              :sort ',(cycl-symbol-sort symbol)
                                              :documentation ',(cycl-symbol-documentation symbol))))
     (prog->
@@ -405,19 +404,19 @@
       (cycl-symbol-arity symbol ->nonnil arity)
       (cond
        ((cycl-symbol-function-p symbol)
-        (funcall fun `(DECLARE-FUNCTION-SYMBOL ',name :any
-                                               :input-function ',(require-n-arguments-function arity)
-                                               :sort ',(cycl-symbol-function-sort symbol arity))))
+        (funcall fun `(DECLARE-FUNCTION ',name :any
+                                        :input-function ',(require-n-arguments-function arity)
+                                        :sort ',(cycl-symbol-function-sort symbol arity))))
        (t
-        (funcall fun `(DECLARE-PREDICATE-SYMBOL ',name :any
-                                                :input-function ',(require-n-arguments-function arity)
-                                                :sort ',(cycl-symbol-argument-sorts symbol arity))))))
+        (funcall fun `(DECLARE-RELATION ',name :any
+                                        :input-function ',(require-n-arguments-function arity)
+                                        :sort ',(cycl-symbol-argument-sorts symbol arity))))))
     #+ignore
     (prog->
       (mapc symbols ->* symbol)
       (cycl-symbol-name symbol -> name)
       (when (cycl-symbol-sort-p symbol)
-        (funcall fun `(DECLARE-PREDICATE-SYMBOL ',name :any :input-function 'input-as-instance-of))))
+        (funcall fun `(DECLARE-RELATION ',name :any :input-function 'input-as-instance-of))))
     #+ignore
     (prog->
       (mapc symbols ->* symbol)

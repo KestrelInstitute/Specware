@@ -52,9 +52,11 @@
               #+clisp                        "fas"
 	      )
 
-(load (make-pathname :directory *snark-source-directory*
-		     :name "package-defs1"
-		     :type *snark-source-extension*))
+(dolist (x '("sparse-array-pkg"
+             "package-defs1"))
+  (load (make-pathname :directory *snark-source-directory*
+		       :name x
+		       :type *snark-source-extension*)))
 
 (defpackage :snark
   (:use :common-lisp :mes)
@@ -75,7 +77,8 @@
    "INPUT-FUNCTION"
    "INPUT-CONSTANT-SYMBOL"
    "INPUT-FUNCTION-SYMBOL"
-   "INPUT-PREDICATE-SYMBOL" "INPUT-RELATION-SYMBOL"
+   "INPUT-RELATION-SYMBOL"
+   "INPUT-PREDICATE-SYMBOL"	;old name
    "INPUT-PROPOSITION-SYMBOL"
    "SET-OPTIONS"
    "MAKE-SNARK-SYSTEM"
@@ -155,10 +158,14 @@
    "NONNEGATIVE" "POSITIVE-INTEGER" "NEGATIVE-INTEGER"
    "=<" "==" "=/="
 
+   "DECLARE-CONSTANT" "DECLARE-PROPOSITION"
+   "DECLARE-FUNCTION" "DECLARE-RELATION"
+   "DECLARE-VARIABLE"
+
+   ;; old names
    "DECLARE-CONSTANT-SYMBOL" "DECLARE-PROPOSITION-SYMBOL"
    "DECLARE-FUNCTION-SYMBOL" "DECLARE-PREDICATE-SYMBOL" "DECLARE-RELATION-SYMBOL"
    "DECLARE-VARIABLE-SYMBOL"
-   "LITERAL-ORDERING-A" "LITERAL-ORDERING-N" "LITERAL-ORDERING-P"
 
    "DECLARE-NUMBER" "DECLARE-CHARACTER" "DECLARE-STRING"
 
@@ -169,8 +176,10 @@
    "DECLARE-DISJOINT-SORTS" "DECLARE-DISJOINT-SUBSORTS"
    "DECLARE-SORT-INTERSECTION"
 
+   "LITERAL-ORDERING-A" "LITERAL-ORDERING-N" "LITERAL-ORDERING-P"
+
    "CHECKPOINT-THEORY" "UNCHECKPOINT-THEORY" "RESTORE-THEORY"
-   "SUSPEND-SNARK" "RESUME-SNARK"
+   "SUSPEND-SNARK" "RESUME-SNARK" "SUSPEND-AND-RESUME-SNARK"
 
    "FIFO" "LIFO"
    "ROW-DEPTH" "ROW-SIZE" "ROW-WEIGHT" "ROW-LEVEL"
@@ -245,8 +254,7 @@
                 #-allegro-runtime "profiling"
 		"progc"
 		"queues"
-                "sparse-array4"
-                "sparse-array"
+                "sparse-array-pre" "sparse-vector" "sparse-array"
                 "sparse-vector-expression"
                 "numbering"
 		"posets"
@@ -313,11 +321,11 @@
 		"utilities"
                 "tptp"
                 "backward-compatibility"
-		;; ("examples" "overbeek-test")
-		;; ("examples" "front-last-example")
-		;; ("examples" "steamroller-example")
-		;; ("examples" "reverse-example")
-                ;; ("examples" "hot-drink-example")
+		;("examples" "overbeek-test")
+		;("examples" "front-last-example")
+		;("examples" "steamroller-example")
+		;("examples" "reverse-example")
+                ;("examples" "hot-drink-example")
 		"patches"
 		))
 
@@ -344,6 +352,23 @@
       file
       (first (last file))))
 
+;;; (format nil "~A-~D" *snark-load-time* (incf *snark-load-nconc*))
+;;; is included in created (including skolem) constant and function symbol
+;;; names to give them hopefully unambiguous internable names
+;;; load-time is shortened to 3 letters to make shorter names
+
+(defvar snark::*snark-load-time*)
+(defvar snark::*snark-load-nonce*)
+
+(defun newsym-prefix ()
+  (let ((alphabet (symbol-name 'abcdefghijklmnopqrstuvwxyz))
+        (n (get-universal-time))
+        (l nil))
+    (dotimes (i 3)
+      (push (char alphabet (rem n 26)) l)
+      (setf n (floor n 26)))
+    (coerce l 'string)))
+     
 (defun snark:make-snark-system (&optional compile)
   (pushnew :snark *features*)
   #+cmu (setf extensions::*gc-verbose* nil)
@@ -392,6 +417,8 @@
   
   ;;#-(or symbolics mcl) (load "/home/pacific1/stickel/spice/build.lisp")
   ;;(setf *package* (find-package :snark-user))
+  (setf snark::*snark-load-time* (newsym-prefix))
+  (setf snark::*snark-load-nonce* 0)
   (snark:initialize))
 
 (defun make-snark-system (&optional compile)

@@ -196,7 +196,7 @@
   (initialize)
   (use-lisp-types-as-sorts t)
   (test-option5)
-  (declare-function-symbol '+ 2 :sort '(natural natural natural) :associative t :commutative t)
+  (declare-function '+ 2 :sort '(natural natural natural) :associative t :commutative t)
   (let ((count 0))
     (prog->
       (args (arg1 (input-wff '(forall ((x :sort positive-integer)

@@ -388,7 +388,7 @@
 	   (lambda (e row2s)
              (declare (ignore e))
              (prog->
-               (dolist row2s ->* row2)
+               (map-rows :rowset row2s ->* row2)
                (ecase phase
                  (:only
                   (when (if backward-p

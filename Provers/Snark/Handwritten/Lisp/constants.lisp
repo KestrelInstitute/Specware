@@ -165,7 +165,11 @@
       (apply #'declare-constant-symbol* symbol keys-and-values)
       symbol))
 
-(defun declare-constant-symbol (name &rest keys-and-values)
+(defun declare-constant-symbol (&rest args)
+  (declare (dynamic-extent args))
+  (apply 'declare-constant args))
+
+(defun declare-constant (name &rest keys-and-values)
   (declare (dynamic-extent keys-and-values))
   (mvlet (((:values symbol new) (input-constant-symbol name)))
     (cond
@@ -176,7 +180,11 @@
         (warn "Declaring constant symbol ~S, which is already in use." name))
       (declare-constant-symbol1 symbol keys-and-values)))))
 
-(defun declare-proposition-symbol (name &rest keys-and-values)
+(defun declare-proposition-symbol (&rest args)
+  (declare (dynamic-extent args))
+  (apply 'declare-proposition args))
+
+(defun declare-proposition (name &rest keys-and-values)
   (declare (dynamic-extent keys-and-values))
   (mvlet (((:values symbol new) (input-proposition-symbol name)))
     (cond
