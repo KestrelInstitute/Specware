@@ -1,4 +1,4 @@
-spec
+snark qualifying spec
 
   import /Languages/MetaSlang/Specs/Utilities
   import /Languages/MetaSlang/CodeGen/Lisp/SpecToLisp
