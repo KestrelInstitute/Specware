@@ -29,6 +29,7 @@
 		    common-lisp-image-arguments
 		    common-lisp-host
 		    common-lisp-image-file))
+  (setq *lisp-prompt-regexp* *allegro-prompt-regexp*)
   (defvar *specware-lisp* 'allegro)
   (defvar *lisp-image-extension* "dxl")
   (define-function 'sw:exit-lisp 'fi:exit-lisp)

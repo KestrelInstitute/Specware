@@ -35,11 +35,21 @@
 (defun sw-help (&optional command)
   (if command
       (let ((pr (assoc command *sw-help-strings* :test 'equal)))
-	(when pr
-	  (format t "~a~%" (cdr pr))))
+	(if pr (print-command-doc (car pr) (cdr pr))
+	  (format t "No documentation for command.")))
     (loop for (com . helpstr) in *sw-help-strings*
-      do (format t "~14a  ~a~%" com helpstr )))
+      do (print-command-doc com helpstr)))
   (values))
+
+(defun print-command-doc (com helpstr)
+  (when (eq (elt helpstr 0) #\[)
+    (let ((close (position #\] helpstr :from-end t)))
+      (when close
+	(setq com (concatenate 'string com " " (subseq helpstr 0 (1+ close))))
+	(setq helpstr (subseq helpstr (+ 2 close))))))
+  (if (> (length com) 17)
+      (format t "~a~%~18T~a~%" com helpstr)
+    (format t "~17a ~a~%" com helpstr)))
 
 #+allegro
 (top-level:alias ("sw-help" :string) (&optional com) (sw-help com))
@@ -733,15 +743,16 @@
     (setq dir (subst-home dir)))
   #+allegro 
   (tpl:do-command "cd" dir)
-  #-allegro 
-  (progn 
-    #+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
-    #-cmu (specware::change-directory dir)
-    (let* ((dirpath (specware::current-directory))
-	   (newdir (namestring dirpath)))
+  (let* ((dirpath (specware::current-directory))
+	 (newdir (namestring dirpath)))
+    (emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
+				  (specware::ensure-final-slash newdir)))
+    #-allegro 
+    (progn 
+      #+cmu (unix:unix-chdir (if (equal dir "") (specware::getenv "HOME") dir))
+      #-cmu (specware::change-directory dir)
+    
       #+cmu (setq common-lisp::*default-pathname-defaults* dirpath)
-      (emacs::eval-in-emacs (format nil "(setq default-directory ~s)"
-				    (specware::ensure-final-slash newdir)))
       (when (under-ilisp?)
 	(emacs::eval-in-emacs (format nil "(setq lisp-prev-l/c-dir/file
                                                      (cons default-directory nil))"

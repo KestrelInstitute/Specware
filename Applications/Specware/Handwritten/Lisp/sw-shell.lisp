@@ -12,6 +12,7 @@
 	 (number-of-eofs 0)
 	 (cl:*package* (find-package :SWShell)))
     (setq *in-specware-shell?* t)
+    (emacs::eval-in-emacs "(set-comint-prompt t)")
     (format t "Specware Shell~%")
     (unwind-protect
 	(loop
@@ -43,6 +44,7 @@
 		     (format t "~&Received EOF.~%"))))))
       
       (setq *in-specware-shell?* nil)
+      (emacs::eval-in-emacs "(set-comint-prompt nil)")
       (format t "~%Exiting Specware Shell. :sw-shell to reenter."))))
 
 (defun sw-shell-command (command)
@@ -62,8 +64,8 @@
 	    (princ (namestring (specware::current-directory)))
 	  (cl-user::cd argstr))
 	(values))
-    (dir (cl-user::ls "*.sw"))
-    (ddir (cl-user::ls "-R"))
+    (dir (cl-user::ls (or argstr "*.sw")))
+    (dirr (cl-user::ls "-R"))
     (path (cl-user::swpath argstr))
     (proc (cl-user::sw argstr) (values))
     (show (cl-user::show argstr) (values))
@@ -95,20 +97,25 @@
 
 (defparameter *sw-shell-help-strings*
   '(("help" . "[command] Prints help information for command, or, with no argument, all commands.")
-    ("cd" . "[dir]. Connect to directory. Without an argument, displays the current directory.")
-    ("dir" . "List .sw files in current directory")
-    ("ddir" . "List .sw files in current directory and recursively in subdirectories.")
-    ("path" . "[dirseq]. Sets the current Specware path. Without an argument, displays the current Specware path.")
-    ("proc" . "[unit-term]. Processes the unit. Without an argument, processes the last processed unit.")
-    ("show" . "[unit-term]. Like `proc' but  in addition displays the value of the processed unit-term.")
-    ("cinit" . "Clears Spec unit cache")
-    ("gen-lisp" . "[spec-term [filename]] Generates Lisp code for unit in filename. With no argument uses last processed unit.")
-    ("lgen-lisp" . "[spec-term [filename]] Like gen-lisp, but only generates lisp for local definitions of spec..")
-    ("punits" . "[unit-term [filename]] Generates proof unit definitions for all conjectures in the unit and puts them into filename.")
-    ("lpunits" . "[unit-term [filename]] Like punits but only for local conjectures.")
-    ("ctext" . "[spec-term] Sets the current context for eval commands. With no arguments displays context.")
+    ("cd" . "[dir] Connect to directory. With no argument, displays the current directory.")
+    ("dir" . "List .sw files in current directory.")
+    ("dirr" . "List .sw files in current directory and recursively in subdirectories.")
+    ("path" . "[dirseq] Sets the current Specware path.
+                  With no argument, displays the current Specware path.")
+    ("proc" . "[unit-term] Processes the unit. 
+                  With no argument, processes the last processed unit.")
+    ("show" . "[unit-term] Like `proc' but in addition displays the value of the processed unit-term.")
+    ("cinit" . "Clears Spec unit cache.")
+    ("gen-lisp" . "[spec-term [filename]] Generates Lisp code for unit in filename.
+                  With no argument uses last processed unit.")
+    ("lgen-lisp" . "[spec-term [filename]] Like `gen-lisp' but only generates lisp for local definitions of spec..")
+    ("punits" . "[unit-term [filename]] Generates proof unit definitions for all conjectures in the unit and puts
+                  them into filename.")
+    ("lpunits" . "[unit-term [filename]] Like `punits' but only for local conjectures.")
+    ("ctext" . "[spec-term] Sets the current context for eval commands.
+                  With no arguments displays context.")
     ("eval" . "[expression] Evaluates expression with respect to current context.")
-    ("eval-lisp" . "[expression] Like 'eval' except the expression is translated to Lisp and evaluated in Lisp.")
+    ("eval-lisp" . "[expression] Like `eval' except the expression is translated to Lisp and evaluated in Lisp.")
     ("exit" . "Exits shell.")
     ))
 

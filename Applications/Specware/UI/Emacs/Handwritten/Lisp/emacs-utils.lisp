@@ -20,13 +20,14 @@ Notes:
 ;; Separation of REFINE functions
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-
+(defvar *use-emacs-interface?* t)
 
 (defun eval-in-emacs (string)
-  #+allegro
-  (when lep::*connection*
-    (lep::eval-in-emacs string))
-  #-allegro (format t "~a" string))
+  (when *use-emacs-interface?*
+    #+allegro
+    (when lep::*connection*
+      (lep::eval-in-emacs string))
+    #-allegro (format t "~a" string)))
 
 
 (defvar *select-term-number-in-spec*)
@@ -48,7 +49,7 @@ Notes:
 (defvar *goto-file-position-stored* nil)
 (defun goto-file-position (file line col)
   (unless (equal file "")
-    (if *goto-file-position-store?*
+    (if (or *goto-file-position-store?* (not *use-emacs-interface?*))
 	(setq *goto-file-position-stored* (list file line col))
       (eval-in-emacs (format nil "(goto-file-position ~s ~a ~a)" file line col)))))
 

@@ -1313,6 +1313,18 @@ If anyone has a good algorithm for this..."
 	(if (and up-p (null symbol))
 	    (sw::get-symbol-at-point)))))
 
+;;;; Prompt regexp for specware shell
+(defvar *lisp-prompt-regexp*)		; make buffer local?
+
+(defun set-comint-prompt (sw-shell?)
+  (unless (boundp '*lisp-prompt-regexp*)
+    (setq *lisp-prompt-regexp* comint-prompt-regexp))
+  (if sw-shell?
+      (setq comint-prompt-regexp "^* ")
+    (setq comint-prompt-regexp *lisp-prompt-regexp*))
+  (when (boundp 'fi::prompt-pattern)
+    (setq fi::prompt-pattern comint-prompt-regexp)))
+
 (defvar sw:check-unbalanced-parentheses-when-saving t)
 (defun sw:check-unbalanced-parentheses-when-saving ()
   (if (and sw:check-unbalanced-parentheses-when-saving

@@ -124,6 +124,9 @@ information on how to send the mail."
 ;;;"
 ;;;	  ipc-version fi::required-ipc-version))))
 
+(defvar *allegro-prompt-regexp*
+  "^\\(\\(\\[[0-9]+i?c?\\] \\|\\[step\\] \\)?\\(<?[-A-Za-z]* ?[0-9]*?>\\|[-A-Za-z0-9]+([0-9]+):\\) \\)+")
+
 ;;; Make listener commands bound to same keys as comint
 (defun add-specware-listener-key-bindings (m)
   (define-key m "\en" 'fi:push-input)
@@ -133,8 +136,7 @@ information on how to send the mail."
   (define-key m "\es" 'fi:re-search-forward-input)
   (define-key m "\e." 'sw:meta-point)
   (define-key m "\e*" 'sw:switch-to-lisp)
-  (setq comint-prompt-regexp
-    "^\\(\\(\\[[0-9]+i?c?\\] \\|\\[step\\] \\)?\\(<?[-A-Za-z]* ?[0-9]*?>\\|[-A-Za-z0-9]+([0-9]+):\\) \\)+")
+  (setq comint-prompt-regexp *allegro-prompt-regexp*)
   (define-key m "\C-a" 'comint-bol)
   (autoload 'comint-bol "comint" "\
 Beginning of line; skip prompt." t nil)
