@@ -63,8 +63,13 @@ else
 			(sw "/Applications/Specware/Specware4")
 		XXXX
 	else
+		# This is where you end up if you do cvs checkout and then
+                #  run bootstrap.  Maybe we could get a default version of
+                #  Specware4.lisp from somewhere?
+		echo " "
 		echo "Bootstrap failed"
 		echo "Could not find bin/linux/Specware4.dxl or lisp/Specware4.lisp"
+                echo "under $SPECWARE4/Applications/Specware"
 		exit 1
 	fi
 fi
@@ -85,9 +90,15 @@ XXXX
 #
 # I once added a (gc) between the load and the dumplisp, and the dxl
 # file became 10k bigger. Go figure.
-#
+
 # I don't know what setting *DEFAULT-RIGHT-MARGIN* does. Can someone explain?
 # Do we need it here?
+# This is a hack to prevent Allegro CL from breaking lines within warning
+#  messages prematurely (e.g. at column 80, or 120, or 200, or whatever).
+# Various emacs scripts I (jlm) have that prune noisy warning messsages 
+#  tend to fail (or need to be more complicated) when the lines are 
+#  excessively broken.  So I'd ask it to be left in unless there's a 
+#  reason to remove it.
 $LISP <<-XXXX
 	(load "Specware4.lisp")
 	(let (#+ALLEGRO (EXCL::*DEFAULT-RIGHT-MARGIN* 1000))
