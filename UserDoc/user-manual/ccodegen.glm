@@ -67,9 +67,9 @@ The <"make"> utility must
 reside in a directory on the Windows system path,
 or be referenced by the environment variable <"SPECWARE4_MAKE"> (see below).
 The <"gcc"> utility must likewise reside in a directory on the Windows
-system path, or alternative the definitions of make variables <"CC">
-and <"LD"> in the <"Makerules"> file (see below) are made to refer the
-name or pathname of an installed C compiler.
+system path, or alternatively the definitions of make variables <"CC">
+and <"LD"> in the <"Makerules"> file (see below) must be made to reference
+the name or pathname of an installed C compiler.
 </para>
 
 <para>
