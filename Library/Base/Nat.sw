@@ -8,7 +8,7 @@ Nat qualifying spec
   op succ : Nat -> Nat
 
   axiom zero_not_succ is
-    ~(ex (n : Nat) zero = succ n)
+    ~(ex(n:Nat) zero = succ n)
 
   axiom succ_injective is
     fa (n1:Nat, n2:Nat) succ n1 = succ n2 => n1 = n2
@@ -16,8 +16,8 @@ Nat qualifying spec
   axiom induction is
     fa (p : Nat -> Boolean)
       p zero &&
-      (fa (n:Nat) p n => p (succ n)) =>
-      (fa (n:Nat) p n)
+      (fa(n:Nat) p n => p (succ n)) =>
+      (fa(n:Nat) p n)
 
   % positive natural numbers:
 
@@ -34,13 +34,13 @@ Nat qualifying spec
   op two : Nat
   def two = succ(succ zero)
 
-  op plus  : Nat * Nat -> Nat
+  op plus : Nat * Nat -> Nat
   axiom plus_def1 is
     fa(n:Nat) plus(n,zero) = n
   axiom plus_def2 is
     fa(n:Nat, n0:Nat) plus(n,succ n0) = succ(plus(n,n0))
 
-  op lte   : Nat * Nat -> Boolean
+  op lte : Nat * Nat -> Boolean
   axiom lte_def1 is
     fa(n:Nat) lte(zero,n)
   axiom lte_def2 is
