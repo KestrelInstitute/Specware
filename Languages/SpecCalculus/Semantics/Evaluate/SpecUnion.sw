@@ -8,10 +8,10 @@ SpecUnion qualifying spec
  import Spec/MergeSpecs
  import Spec/CompressSpec
 
- op specUnion       : List Spec -> Env Spec
- op sortsUnion      : Spec -> List Spec -> Env SortMap
- op opsUnion        : Spec -> List Spec -> Env OpMap
- op propertiesUnion : Spec -> List Spec -> Env Properties
+ op specUnion  : List Spec -> Env Spec
+ op sortsUnion : List Spec -> Env SortMap
+ op opsUnion   : List Spec -> Env OpMap
+ op propsUnion : List Spec -> Env Properties
 
  %% specUnion is called by specColimit to create apex spec, 
  %% and also by applySpecMorphismSubstitution to stich together 
@@ -29,18 +29,15 @@ SpecUnion qualifying spec
 			    localSorts      = merged_local_sorts,
 			    localProperties = merged_local_props} 
   in
-  let spec_with_merged_imports = (hd specs) << {importInfo = merged_import_info} in
   {
-   merged_sorts           <- sortsUnion spec_with_merged_imports specs;
-   spec_with_merged_sorts <- return (spec_with_merged_imports << {sorts      = merged_sorts});
-
-   merged_ops             <- opsUnion spec_with_merged_sorts specs;
-   spec_with_merged_ops   <- return (spec_with_merged_sorts   << {ops        = merged_ops});
-
-   merged_props           <- propertiesUnion spec_with_merged_ops specs;
-   final_merged_spec      <- return (spec_with_merged_ops     << {properties = merged_props});
-
-   return (compressDefs final_merged_spec)
+   merged_sorts  <- sortsUnion specs;
+   merged_ops    <- opsUnion   specs;
+   merged_props  <- propsUnion specs;
+   merged_spec   <- return {importInfo = merged_import_info,
+			    sorts      = merged_sorts,
+			    ops        = merged_ops,
+			    properties = merged_props};
+   return (compressDefs merged_spec)
   }
 
  %% TODO: The terms for the imports might not remain in a meaningful URI context -- relativize to new context
@@ -59,23 +56,26 @@ SpecUnion qualifying spec
 %%%        []
 %%%        specs
 
- def sortsUnion context_spec specs =
-  foldM (fn combined_sorts -> fn next_sorts -> 
-	 unionSortMaps context_spec combined_sorts next_sorts)
+ def sortsUnion specs =
+  foldM (fn combined_sorts -> fn next_spec -> 
+	 unionSortMaps combined_sorts next_spec.sorts)
         emptySortMap 
-        (List.foldl (fn (spc, sorts_list) -> cons (spc.sorts, sorts_list))
-	            []
-		    specs)
+	specs
 
- def opsUnion context_spec specs = 
-  foldM (fn combined_ops -> fn next_ops ->
-	 unionOpMaps  context_spec combined_ops next_ops)
+ def opsUnion specs = 
+  foldM (fn combined_ops -> fn next_spec -> 
+	 unionOpMaps combined_ops next_spec.ops)
         emptyOpMap
-        (List.foldl (fn (spc, ops_list) -> cons (spc.ops, ops_list))
-	            []
-		    specs)
+	specs
 
- def unionSortMaps context_spec old_sort_map new_sort_map =
+ def propsUnion specs =
+  foldM (fn combined_props -> fn next_spec -> 
+	 unionProps combined_props next_spec.properties)
+        [] % emptyProps
+	specs
+ 
+
+ def unionSortMaps old_sort_map new_sort_map =
    %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_sort_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
@@ -100,7 +100,7 @@ SpecUnion qualifying spec
    in
     foldOverQualifierMap augmentSortMap old_sort_map new_sort_map 
 
- def unionOpMaps context_spec old_op_map new_op_map =
+ def unionOpMaps old_op_map new_op_map =
    %% Jan 8, 2003: Fix for bug 23
    %% Assertion: If new_op_map at a given name refers to an info, then it will
    %%            refer to the same info at all the aliases within that info.
@@ -125,11 +125,9 @@ SpecUnion qualifying spec
    in
     foldOverQualifierMap augmentOpMap old_op_map new_op_map 
 
- %% TODO:  These might refer incorrectly into old specs
- %% TODO:  listUnion assumes = test on elements, we might want something smarter such as equivTerm?
- def propertiesUnion _(*context_spec*) specs =
-  return (foldl (fn (spc, props) -> listUnion (props, spc.properties))
-	        []
-	        specs)
+ def unionProps old_props new_props =
+   %% TODO:  These might refer incorrectly into old specs
+   %% TODO:  listUnion assumes = test on elements, we might want something smarter such as equivTerm?
+   return (listUnion (old_props, new_props))
 
 }
