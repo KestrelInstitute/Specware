@@ -23,7 +23,7 @@ spec
   necessarily sum types. The inference rules require the decorating type of
   an embedder to be a sum type.
 
-  A fourth difference is that we allow lambda abstractions and unique
+  A fourth difference is that here we allow lambda abstractions and unique
   existentials to bind multiple variables. *)
 
   type BoundVar = Variable * Type
