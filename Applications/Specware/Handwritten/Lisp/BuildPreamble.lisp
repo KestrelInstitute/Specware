@@ -60,7 +60,8 @@
   (let* ((patch-dir (patch-directory))
 	 (files (cl:directory patch-dir))
 	 (highest-patch-number 0)
-	 (highest-patch-file nil))
+	 (highest-patch-file nil)
+	 #+allegro *redefinition-warnings*)
     (loop for file in files
        do (let ((patch-num (patch-number file)))
 	    (when (> patch-num highest-patch-number)
