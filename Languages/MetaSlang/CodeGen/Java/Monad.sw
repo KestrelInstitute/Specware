@@ -31,7 +31,8 @@ type State = {
 	      primitiveClassName : String,
 	      ignoreSubsorts : Boolean,
 	      verbose : Boolean,
-	      sep : String % the string used for Java class name generation, default "$"
+	      sep : String, % the string used for Java class name generation, default "$"
+	      transformSpecFun : Spec -> Spec
 	     }
 
 op initialState : State
@@ -46,7 +47,8 @@ def initialState = {
 		    primitiveClassName = "Primitive",
 		    ignoreSubsorts = false,
 		    verbose = true,
-		    sep = "$"
+		    sep = "$",
+		    transformSpecFun = (fn spc -> spc)
 		   }
 
 
@@ -190,6 +192,16 @@ op setSep: String -> JGenEnv ()
 def setSep sep =
   fn state ->
   (Ok (), state << { sep = sep })
+
+op getTransformSpecFun: JGenEnv (Spec -> Spec)
+def getTransformSpecFun =
+  fn state ->
+  (Ok state.transformSpecFun, state)
+
+op setTransformSpecFun: (Spec -> Spec) -> JGenEnv ()
+def setTransformSpecFun tfun =
+  fn state ->
+  (Ok (), state << { transformSpecFun = tfun })
 
 
 %%  ================================================================================

@@ -15,6 +15,11 @@ import Monad
 
 sort ToExprSort = Block * Java.Expr * Nat * Nat
 
+% --------------------------------------------------------------------------------
+
+%op metaSlangTypeToJavaType: Sort -> JGenEnv Java.Type
+def metaSlangTypeToJavaType = tt_v3M
+
 op baseSrtToJavaTypeM: Sort -> JGenEnv Java.Type
 def baseSrtToJavaTypeM(srt) =
   if boolSort?(srt)

@@ -46,6 +46,13 @@ spec
   op generateJavaCodeFromTransformedSpecM: Spec -> JGenEnv JSpec
 
   (**
+   * returns the java type for the given MetaSlang type.
+   * assumes that the sort and envspec in the monad are
+   * already transformed using the above transform-op
+   *)
+  op metaSlangTypeToJavaType: Sort -> JGenEnv Java.Type
+
+  (**
    * reads the optional option spec, which contains user-supplied
    * information concerning the target directory of the code generation,
    * package name, public methods, etc. (see README.JavaCodeGen for details)

@@ -41,6 +41,8 @@ def identifyIntSorts spc =
 	| Base (Qualified (_ (*"Nat"*),     "Nat"),       [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
 	| Base (Qualified (_ (*"Nat"*),     "PosNat"),    [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
 	| Base (Qualified (_ (*"Integer"*), "NZInteger"), [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Nat"*),     "int"),       [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
+	| Base (Qualified (_ (*"Nat"*),     "long"),       [], b) -> Base (Qualified ("Integer", "Integer"), [], b)
         % the following 6 lines actually do not belong here, they "repair" something that happens in PSL:
         % the qualifier of base types get lost. Thats also the reason why in the above lines the qualifier
         % is commented out
