@@ -295,7 +295,9 @@ part of the BSpec by the time we compile the command.
           apexSpec <- addInvariant (modeSpec ctxt) prop position;
           connectVertices ctxt (initial ctxt) (final ctxt) apexSpec OpRefSet.empty
         }
+      | Case (term,cases) -> compileCases ctxt term cases 
 \end{spec}
+
 
 To compile a loop, we compile the alternatives in the body in such a
 way that all the branches connect the initial point in the current BSpec
@@ -821,8 +823,6 @@ with global variables with the same name.
  op opRefListToSet : List Op.Ref -> OpRefSet.Set
 \end{spec}
 
-
-
 The following compiles a sequence of commands. For each command
 we introduce a new vertex ``between'' the current initial and final
 vertices, compile the first command between the initial and new vertices
@@ -843,6 +843,68 @@ and compile the rest between the new and final vertex.
             ctxt <- compileCommand ((ctxt withFinal newMode) withBSpec bSpec) cmd;
             compileSeq ((ctxt withFinal saveLast) withInitial newMode) rest
           }
+\end{spec}
+
+\begin{spec}
+  op compileCases : CompCtxt -> MSlang.Term -> List (Case Position) -> Env CompCtxt
+  def compileCases ctxt caseTerm cases =
+    let
+      def andOp pos = MSlang.mkFun (Op (Qualified ("Boolean","&"),Infix (Right,15)), binaryBoolType pos, pos)
+      def mkAnd t0 t1 pos = MSlang.mkApply (andOp pos, MSlang.mkTuple ([t0,t1], pos), pos)
+      def prodToBoolType t1 t2 position = mkArrow (mkProduct ([t1, t2], position), boolType position, position)
+      def mkEquals pos =
+        let t1 = freshMetaTyVar pos in
+        let t2 = freshMetaTyVar pos in
+        let type = prodToBoolType t1 t2 pos in
+        MSlang.mkFun (Equals, type, pos)
+      def mkEquality t0 t1 pos =
+        MSlang.mkApply (mkEquals pos, MSlang.mkTuple ([t0,t1], pos),pos)
+    in case cases of
+      | [] -> raise (SpecError (noPos, "compileCases: empty list of cases"))
+      | ((vars,pat,guard,cmd),pos)::cases -> {
+          (newBSpec,aMode) <- return (newMode (bSpec ctxt) (modeSpec ctxt));
+          ctxt <- ctxt withBSpec newBSpec;
+          trm <- return (mkApplyN (Lambda ([(pat,MSlang.mkTrue pos,MSlang.mkTrue pos), (WildPat (freshMetaTyVar pos,pos), MSlang.mkTrue pos,mkFalse pos)],pos), caseTerm, pos));
+          prop <- makeAxiom ((makeId "guard"):Id.Id) trm;
+          apexSpec <- addInvariant (modeSpec ctxt) prop pos;
+          ctxt <- connectVertices ctxt (initial ctxt) aMode apexSpec OpRefSet.empty;
+    
+          saveInitial <- return (initial ctxt);
+          saveModeSpec <- return (modeSpec ctxt);
+          newModeSpec <- foldM (fn modeSpec -> fn (name,srt) ->
+            ModeSpec.addVariable modeSpec (makeOp (makeId name, toType srt)) pos) (modeSpec ctxt) vars;
+    
+          newModeSpec <- elaborate newModeSpec; 
+          ctxt <- ctxt withModeSpec newModeSpec;
+          apexSpec <- foldM (fn modeSpec -> fn (name,srt) ->
+            ModeSpec.addVariable modeSpec (makeOp (makePrimedId (makeId name), toType srt)) pos) (modeSpec ctxt) vars;
+          bindingTerm <- foldM (fn bindingTerm -> fn (name,srt) -> {
+            opTerm <- return (mkFun (Op (makePrimedId (makeId name),Nonfix), toType srt, pos));
+            varTerm <- return (Var ((name,srt),pos));
+            eqTerm <- return (mkEquality opTerm varTerm pos); 
+            return (mkAnd bindingTerm eqTerm pos)}) (MSlang.mkTrue pos) vars;
+    
+          (newBSpec,bMode) <- return (newMode (bSpec ctxt) newModeSpec);
+          ctxt <- return (ctxt withBSpec newBSpec);
+          trm <- return (mkApplyN (Lambda ([(pat,mkTrue pos,bindingTerm)],pos), caseTerm, pos));
+          prop <- makeAxiom ((makeId "assign"):Id.Id) trm;
+          apexSpec <- addInvariant apexSpec prop pos;
+          ctxt <- connectVertices ctxt aMode bMode apexSpec (opRefListToSet (map (fn (name,srt) -> refOf ((makeOp (makeId name, toType srt)):Op.OpInfo)) vars));
+          ctxt <- compileCommand (ctxt withInitial bMode) cmd;
+    
+          ctxt <- ctxt withModeSpec saveModeSpec;
+          trm <- return (mkApplyN (Lambda ([(pat,mkTrue pos,mkFalse pos), (WildPat (freshMetaTyVar pos,pos), mkTrue pos,mkTrue pos)],pos), caseTerm, pos));
+          prop <- makeAxiom ((makeId "guard"):Id.Id) trm;
+          apexSpec <- addInvariant (modeSpec ctxt) prop pos;
+          if cases = [] then
+            connectVertices ctxt saveInitial (final ctxt) apexSpec OpRefSet.empty
+          else {
+            (newBSpec,cMode) <- return (newMode (bSpec ctxt) (modeSpec ctxt));
+            ctxt <- ctxt withBSpec newBSpec;
+            ctxt <- connectVertices ctxt saveInitial cMode apexSpec OpRefSet.empty;
+            compileCases (ctxt withInitial cMode) caseTerm cases
+          }
+    }
 \end{spec}
 
 To compile a collection of alternatives, we compile each alternative
@@ -1165,7 +1227,7 @@ level, it will be renamed the second time.
       | Continue -> (Continue,x)
       | Break -> (Break,x)
       | Skip -> (Skip,x)
-      | Case t -> (Case t,x)
+      | Case (trm,cases) -> (Case (trm,cases),x)
 
   op newProgVar : NamePair * (NameSet * XSubst) -> (NameSet * XSubst)
   def newProgVar (name0 as (qual,id),(usedNames,subst)) = 

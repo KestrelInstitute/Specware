@@ -62,7 +62,7 @@ They are procedures in context.
 
   def SpecCalc.evaluateOscarSpecElems initialOscarSpec oscarSpecElems = {
       (oscarSpecWithImports,timeStamp,depUnitIds)
-          <- foldM evaluateOscarSpecImportElem (initialOscarSpec,0,[]) oscarSpecElems;
+          <- foldM evaluateOscarSpecImportElems (initialOscarSpec,0,[]) oscarSpecElems;
       oscarSpec <- evaluateOscarSpecContextElems oscarSpecWithImports oscarSpecElems;
       oscarSpec <- foldM evaluateProcElemPassOne oscarSpec oscarSpecElems;
       oscarSpec <- foldM evaluateProcElemPassTwo oscarSpec oscarSpecElems;
@@ -83,25 +83,31 @@ They are procedures in context.
       return elab
    }
 
-  op evaluateOscarSpecImportElem :
+  op evaluateOscarSpecImportElems :
            (Oscar.Spec * TimeStamp * UnitId_Dependency)
         -> OscarSpecElem Position
         -> SpecCalc.Env (Oscar.Spec * TimeStamp * UnitId_Dependency)
-  def evaluateOscarSpecImportElem (val as (oscarSpec,currentTimeStamp,currentDeps)) (elem,position) =
+  def evaluateOscarSpecImportElems info (elem,position) =
     case elem of
-      | Import term -> {
-            (value,importTimeStamp,depUnitIds) <- evaluateTermInfo term;
-            newOscarSpec <-
-              case value of
-                | Other impOscarSpec -> join term oscarSpec impOscarSpec position
-                | Spec impSpec -> {
-                    newSpec <- mergeImport term impSpec (specOf (modeSpec oscarSpec)) position;
-                    return (oscarSpec withModeSpec ((modeSpec oscarSpec) withSpec newSpec))
-                  }
-                | _ -> raise (Fail ("Import not a spec"));
+      | Import terms -> foldM evaluateOscarSpecImportElem info terms
+      | _ -> return info
+
+  op evaluateOscarSpecImportElem :
+           (Oscar.Spec * TimeStamp * UnitId_Dependency)
+        -> SpecCalc.Term Position
+        -> SpecCalc.Env (Oscar.Spec * TimeStamp * UnitId_Dependency)
+  def evaluateOscarSpecImportElem (val as (oscarSpec,currentTimeStamp,currentDeps)) term = {
+     (value,importTimeStamp,depUnitIds) <- evaluateTermInfo term;
+     newOscarSpec <-
+       case value of
+         | Other impOscarSpec -> join term oscarSpec impOscarSpec (positionOf term)
+         | Spec impSpec -> {
+               newSpec <- mergeImport term impSpec (specOf (modeSpec oscarSpec)) (positionOf term);
+               return (oscarSpec withModeSpec ((modeSpec oscarSpec) withSpec newSpec))
+             }
+         | _ -> raise (Fail ("Import not a spec"));
             return (newOscarSpec, max (currentTimeStamp,importTimeStamp), listUnion (currentDeps, depUnitIds))
-          }
-      | _ -> return val
+    }
 
   op evaluateOscarSpecContextElem : Oscar.Spec -> OscarSpecElem Position -> SpecCalc.Env Oscar.Spec
   def evaluateOscarSpecContextElem oscarSpec (elem, position) =

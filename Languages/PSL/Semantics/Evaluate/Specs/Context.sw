@@ -168,6 +168,9 @@ CompCtxt qualifying spec
   op CompCtxtEnv.withBSpec infixl 17 : CompCtxt * BSpec -> Env CompCtxt 
   def CompCtxtEnv.withBSpec (ctxt,bSpec) = return (ctxt withBSpec bSpec)
   
+  op CompCtxtEnv.withModeSpec infixl 17 : CompCtxt * ModeSpec -> Env CompCtxt 
+  def CompCtxtEnv.withModeSpec (ctxt,modeSpec) = return (ctxt withModeSpec modeSpec)
+  
   op withExit infixl 17 : CompCtxt * Vrtx.Vertex -> CompCtxt 
   op withReturnInfo infixl 17 : CompCtxt * ReturnInfo -> CompCtxt 
 endspec

@@ -110,8 +110,11 @@ SpecCalc qualifying spec {
 
   op ppCases : fa(a) List (Case a) -> Pretty
   def ppCases cases =
-    let def ppCase ((pat,guard2,cmd),_) =
+    let def ppCase ((vars,pat,guard2,cmd),_) =
       ppConcat [
+        ppString "var (",
+        ppSep (ppString ",") (map ppAVar vars),
+        ppString ") ",
         ppAPattern pat,
         ppString " -> ",
         ppIndent (ppCommand cmd)
@@ -201,8 +204,6 @@ SpecCalc qualifying spec {
            fail ("No match in ppPropertyType with: '"
               ^ (System.toString any)
               ^ "'")
-
-
 
   op ppOscarSpecElems : fa(a) List (OscarSpecElem a) -> Pretty
   def ppOscarSpecElems decls = ppSep ppNewline (map ppOscarSpecElem decls)

@@ -47,6 +47,9 @@ Op qualifying spec
   op OpNoTermEnv.makeOp : Id.Id * Fixity * Type -> Env OpInfo
   def OpNoTermEnv.makeOp args = return (makeOp args)
   
+  op OpNoFixityNoTerm.makeOp : Id.Id * Type -> OpInfo
+  def OpNoFixityNoTerm.makeOp (id,type) = makeOp (id,nonFix,type)
+
   op OpNoFixityNoTermEnv.makeOp : Id.Id * Type -> Env OpInfo
   def OpNoFixityNoTermEnv.makeOp (id,type) = return (makeOp (id,nonFix,type))
 

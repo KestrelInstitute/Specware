@@ -98,6 +98,7 @@ MSlang qualifying spec
 
   % op mkTrue : Position -> Term
   def MSlang.mkTrue position = mkFun (Bool true, boolType position, position)
+  def MSlang.mkFalse position = mkFun (Bool false, boolType position, position)
 
   % op MSPosEnv.mkTrue : Position -> Env Term
   

@@ -30,7 +30,7 @@ defining term.
 
   sort Ident = String
   sort OscarSpecElem_ a =
-    | Import (SpecCalc.Term a)
+    | Import (List (SpecCalc.Term a))
     | Sort   List QualifiedId * (TyVars * List (ASortScheme a))
     | Op     List QualifiedId * (Fixity * ASortScheme a * List (ATermScheme a))
     | Claim  (Claim a)
@@ -58,8 +58,8 @@ defining term.
 \end{spec}
 
 \begin{spec}
-  op mkImport : SpecCalc.Term Position * Position -> OscarSpecElem Position
-  def mkImport (term,position) = (Import term, position)
+  op mkImport : (List (SpecCalc.Term Position)) * Position -> OscarSpecElem Position
+  def mkImport (terms,position) = (Import terms, position)
 
   op mkSort : List QualifiedId * TyVars * List (ASortScheme Position) * Position -> OscarSpecElem Position
   def mkSort (ids,tyVars,sortSchemes,position) = (Sort (ids, (tyVars,sortSchemes)),position) 
@@ -122,6 +122,9 @@ needs some thought.
   op mkIf : List (Alternative Position) * Position -> Command Position
   def mkIf (alts,position) = (If alts,position)
 
+  op mkCase : ATerm Position * List (Case Position) * Position -> Command Position
+  def mkCase (term,branches,position) = (Case (term,branches),position)
+
   op mkSeq : List (Command Position) * Position -> Command Position
   def mkSeq (commands,position) = (Seq commands, position)
 
@@ -165,7 +168,10 @@ Perhaps the guard term in the case should be made \verb+Option+al.
   sort Alternative a = (Alternative_ a) * a
   sort Alternative_ a = (ATerm a) * (Command a)
   sort Case a = (Case_ a) * a
-  sort Case_ a = (APattern a) * (ATerm a) * (Command a)
+  sort Case_ a = (List (AVar a)) * (APattern a) * (ATerm a) * (Command a)
+
+  op mkCaseBranch : (List (AVar Position)) * (APattern Position) * (Command Position) * Position -> Case Position
+  def mkCaseBranch (vars,pat,cmd,pos) = ((vars,pat,mkTrueA pos,cmd),pos)
 
   op mkAlternative : (ATerm Position) * (Command Position) * Position -> Alternative Position
   def mkAlternative (term,command,position) = ((term,command),position)

@@ -24,7 +24,7 @@ spec
             case val of
                 | ((Spec spc,_,_),unitId) -> {
                      print ("\nSetting base to " ^ (uidToString unitId) ^ "\n\n");
-	             setBase (Some relativeUnitId, spc)
+                     setBase (Some relativeUnitId, spc)
                    }
                 | (_,unitId) ->
                    raise (TypeCheck (internalPosition, (showRelativeUID relativeUnitId) ^ " is not a spec"))

@@ -92,7 +92,7 @@
   (:anyof
     (1 :PSL-IF)
     (1 :PSL-DO)
-    ;; (1 :PSL-CASE)
+    (1 :PSL-CASE)
     (1 :PSL-LET)
     ;; (1 :PSL-RETURN)
     (1 :PSL-SKIP)
@@ -170,14 +170,19 @@
   (:tuple (1 :EXPRESSION) "->" (2 :PSL-COMMAND-SEQ))
   (OscarAbsSyn::mkAlternative-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
-;; (define-sw-parser-rule :PSL-CASE ()
-;;   (:tuple "case" (1 :EXPRESSION) "{" (2 (:repeat+ :PSL-CASE-BRANCH "|")) "}")
-;;   (make-psl-case 1 2 ':left-lcb ':right-lcb))
-;; 
-;; (define-sw-parser-rule :PSL-CASE-BRANCH ()
-;;   (:tuple (1 :PATTERN) "->" (2 :PSL-COMMAND-SEQ))
-;;   (make-psl-case-branch 1 2 ':left-lcb ':right-lcb))
+(define-sw-parser-rule :PSL-CASE ()
+  (:tuple "case" (1 :EXPRESSION) "{" (:optional "|") (2 (:repeat+ :PSL-CASE-BRANCH "|")) "}")
+  (OscarAbsSyn::mkCase-3 1 2 (make-pos ':left-lcb ':right-lcb)))
 
+(define-sw-parser-rule :PSL-CASE-BRANCH ()
+  (:tuple (1 :VAR-LIST) (2 :PATTERN) "->" (3 :PSL-COMMAND-SEQ))
+  (OscarAbsSyn::mkCaseBranch-4 1 2 3 (make-pos ':left-lcb ':right-lcb)))
+
+(define-sw-parser-rule :VAR-LIST ()
+  (:optional (:tuple "var" (1 :LOCAL-VARIABLE-LIST)))
+  (let* ((optVarList 1))
+         (if (eq :unspecified optVarList) nil optVarList)))
+    
 (define-sw-parser-rule :CLAIM-KIND ()
   (:anyof ((:tuple "axiom")       :|Axiom|)
           ((:tuple "theorem")     :|Theorem|)

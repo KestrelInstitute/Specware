@@ -1,7 +1,5 @@
 \subsection{Name Qualifing in Specs}
 
-Synchronized with r1.9 SW4/Languages/SpecCalculus/Semantics/Evaluate/EvalTerm.sl
-
 \begin{spec}
 SpecCalc qualifying spec {
   import Signature 

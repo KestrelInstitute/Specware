@@ -68,6 +68,9 @@ MSlang qualifying spec
 
   op mkTrue : Position -> Term
   op MSPosEnv.mkTrue : Position -> Env Term
+
+  op mkFalse : Position -> Term
+  op MSPosEnv.mkFalse : Position -> Env Term
   
   op mkNot : Term * Position -> Term
 
