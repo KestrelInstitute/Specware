@@ -417,8 +417,11 @@ is rewritten to
  	| _ -> 
      let def visitConjunct str formula =
        case formula of
-           Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),
+	 | Apply(Fun(Op(Qualified("Boolean","&"),_),_,_),
 		 Record([(_,M),(_,N)], _),_) -> 
+             (visitConjunct (str ^ " (l)") M)
+               ++ (visitConjunct (str ^ " (r)") N)
+	 | Apply(Fun(And,_,_), Record([(_,M),(_,N)], _),_) -> 
              (visitConjunct (str ^ " (l)") M)
                ++ (visitConjunct (str ^ " (r)") N)
          | _ -> 
@@ -435,11 +438,13 @@ is rewritten to
      let (freeVars,n,S,formula) = 
 	 bound(Forall:Binder,0,formula,freeVars,[]) in
      let (condition,fml) = 
-	  case formula  
-            of Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
+	  case formula of 
+            | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
 		Record([(_,M),(_,N)], _),_) -> 
 		(Some (substitute(M,S)): Option MS.Term,N)
-	     | _ -> (None,formula)
+            | Apply(Fun(Cond,_,_), Record([(_,M),(_,N)], _),_) -> 
+		(Some (substitute(M,S)): Option MS.Term,N)
+	    | _ -> (None,formula)
      in
      case equality context (S,fml)
        of Some(N1,N2) -> 
@@ -532,16 +537,27 @@ is rewritten to
 				 tvs, mkEquality(boolSort,c,mkTrue()))
 			    of Some rule -> List.cons(rule,rules)
 			     | None -> rules
-		   in case c
-		        of Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),nc,_) -> 
-			   (case axiomRule context
-				 (Axiom:PropertyType,
-				  "Context-condition: " ^printTerm nc
-				    ^" = false",
-				  tvs, mkEquality(boolSort,nc,mkFalse()))
-			     of Some rule -> List.cons(rule,rules)
-			      | None -> rules)
-		         | _ -> rules)
+		   in 
+		   case c of
+		     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),nc,_) -> 
+		       (case axiomRule context
+			  (Axiom:PropertyType,
+			   "Context-condition: " ^printTerm nc
+			   ^" = false",
+			   tvs, mkEquality(boolSort,nc,mkFalse()))
+			  of 
+			   | Some rule -> List.cons(rule,rules)
+			   | None -> rules)
+		     | Apply(Fun(Not,_,_), nc,_) -> 
+		       (case axiomRule context
+			  (Axiom:PropertyType,
+			   "Context-condition: " ^printTerm nc
+			   ^" = false",
+			   tvs, mkEquality(boolSort,nc,mkFalse()))
+			  of 
+			   | Some rule -> List.cons(rule,rules)
+			   | None -> rules)
+		     | _ -> rules)
 		| _ -> rules
      in
      let rules = List.foldr loop [] ds in

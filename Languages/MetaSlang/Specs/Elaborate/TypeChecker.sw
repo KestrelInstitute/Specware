@@ -645,12 +645,44 @@ spec {
           elaborateSortForTerm (env, trm, srt, ty2);
           Fun (PQuotient equiv, srt, pos))  
 
+    | Fun (Not, srt, pos) -> 
+         (elaborateSortForTerm (env, trm, unaryBoolSort, term_sort);
+          elaborateSortForTerm (env, trm, srt, unaryBoolSort);
+          Fun (Not, srt, pos))
+
+    | Fun (And, srt, pos) -> 
+         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+          Fun (And, srt, pos))
+
+    | Fun (Or, srt, pos) -> 
+         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+          Fun (Or, srt, pos))
+
+    | Fun (Cond, srt, pos) -> 
+         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+          Fun (Cond, srt, pos))
+
+    | Fun (Iff, srt, pos) -> 
+         (elaborateSortForTerm (env, trm, binaryBoolSort, term_sort);
+          elaborateSortForTerm (env, trm, srt, binaryBoolSort);
+          Fun (Iff, srt, pos))
+
     | Fun (Equals, srt, pos) -> 
          let a = freshMetaTyVar pos in
          let ty = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
          (elaborateSortForTerm (env, trm, ty, term_sort);
           elaborateSortForTerm (env, trm, srt, ty);
           Fun (Equals, srt, pos))
+
+    | Fun (NotEquals, srt, pos) -> 
+         let a = freshMetaTyVar pos in
+         let ty = Arrow (Product ([("1", a), ("2", a)], pos), type_bool, pos) in
+         (elaborateSortForTerm (env, trm, ty, term_sort);
+          elaborateSortForTerm (env, trm, srt, ty);
+          Fun (NotEquals, srt, pos))
 
     | Fun (Bool b, srt, pos) -> 
          (elaborateSortForTerm (env, trm, type_bool, term_sort) ; 
@@ -855,6 +887,9 @@ spec {
 	  else if f1 = Equals then
 	    let t1 = adjustEqualitySort (env, s1, t1, t2) in
 	    ApplyN ([t1, t2], pos)
+	  else if f1 = NotEquals then
+	    let t1 = adjustEqualitySort (env, s1, t1, t2) in
+	    ApplyN ([t1, t2], pos)
 	  else if sortCognizantOperator? f1 then
 	    addSortAsLastTerm (env, 
 			       trm,
@@ -891,7 +926,12 @@ spec {
                       (case findTheOp2 (env, id1, id2) of
                         | Some (_,Infix p,_,_) -> Infix  (term, p)
                         | _                    -> Nonfix term)
-                  | Fun (Equals, _, _) -> Infix (term, (Left, 20))
+                  | Fun (And,       _, _) -> Infix (term, (Left, 12))
+                  | Fun (Or,        _, _) -> Infix (term, (Left, 13))
+                  | Fun (Cond,      _, _) -> Infix (term, (Left, 14))
+                  | Fun (Iff,       _, _) -> Infix (term, (Left, 15))
+                  | Fun (Equals,    _, _) -> Infix (term, (Left, 20))
+                  | Fun (NotEquals, _, _) -> Infix (term, (Left, 20))
                   | _ -> Nonfix term
            in 
            let term = resolveInfixes (tagTermWithInfixInfo, pos, terms) in

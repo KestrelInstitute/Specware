@@ -203,7 +203,13 @@ ArityNormalizeCGen qualifying spec {
 	  (case find (fn (id2,r) -> id = id2) gamma
 	     of Some (w,r) -> r
 	      | None -> None)
-	| Fun(Equals,srt,_) -> sortArity(sp,srt)
+        | Fun(Not,      srt,_) -> sortArity(sp,srt)
+        | Fun(And,      srt,_) -> sortArity(sp,srt)
+        | Fun(Or,       srt,_) -> sortArity(sp,srt)
+        | Fun(Cond,     srt,_) -> sortArity(sp,srt)
+        | Fun(Iff,      srt,_) -> sortArity(sp,srt)
+        | Fun(Equals,   srt,_) -> sortArity(sp,srt)
+        | Fun(NotEquals,srt,_) -> sortArity(sp,srt)
 	| Fun(Op (QId,_),_,_) -> 
 	  opArity(sp,QId)
 	| Fun(Embed(id,true),srt,_) -> 

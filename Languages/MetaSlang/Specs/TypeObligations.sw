@@ -328,16 +328,17 @@ spec
 
  op  nonStrictAppl: MS.Term * MS.Term -> Option (MS.Term * MS.Term * Boolean)
  def nonStrictAppl(rator,args) =
-   case rator of
-     | Fun(Op(Qualified("Boolean",f),_),_,_) ->
-       (case args of
-	  | Record([("1",p),("2",q)],_) ->
-	    (case f of
-	       | "&"  -> Some (p,q,true)   % p & q  -- can assume  p in q
-	       | "or" -> Some (p,q,false)  % p or q -- can assume ~p in q
-	       | "=>" -> Some (p,q,true)   % p => q -- can assume  p in q
-	       | _ -> None)
+   case (rator, args) of
+     | (Fun(Op(Qualified("Boolean",f),_),_,_),
+         Record([("1",p),("2",q)],_)) ->
+       (case f of
+	  | "&"  -> Some (p,q,true)   % p & q  -- can assume  p in q
+	  | "or" -> Some (p,q,false)  % p or q -- can assume ~p in q
+	  | "=>" -> Some (p,q,true)   % p => q -- can assume  p in q
 	  | _ -> None)
+     | (Fun(And,  _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p & q  -- can assume  p in q
+     | (Fun(Or,   _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,false)  % p or q -- can assume ~p in q
+     | (Fun(Cond, _, _), Record([("1",p),("2",q)],_)) -> Some (p,q,true)   % p => q -- can assume  p in q
      | _ -> None
 
  op  checkLambda: TypeCheckConditions * Gamma * Match * Sort * Option MS.Term

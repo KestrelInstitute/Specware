@@ -106,6 +106,7 @@ MetaSlang qualifying spec {
   | Quotient     ASort b * ATerm b                   * b
   | Subsort      ASort b * ATerm b                   * b
   | Base         QualifiedId * List (ASort b)        * b  % Typechecker verifies that QualifiedId refers to some sortInfo 
+  | Boolean                                            b
   | TyVar        TyVar                               * b
   | MetaTyVar    AMetaTyVar b                        * b  % Before elaborateSpec
        
@@ -245,7 +246,8 @@ MetaSlang qualifying spec {
      | CoProduct (_,   a) -> a
      | Quotient  (_,_, a) -> a
      | Subsort   (_,_, a) -> a
-     | Base     (_,_, a) -> a
+     | Base      (_,_, a) -> a
+     | Boolean         a  -> a
      | TyVar     (_,   a) -> a
      | MetaTyVar (_,   a) -> a
 
@@ -276,6 +278,7 @@ MetaSlang qualifying spec {
      | Quotient  (ss,t,     b) -> if a = b then s else Quotient  (ss,t,     a)
      | Subsort   (ss,t,     b) -> if a = b then s else Subsort   (ss,t,     a)
      | Base      (qid,srts, b) -> if a = b then s else Base      (qid,srts, a)
+     | Boolean              b  -> if a = b then s else Boolean              a
      | TyVar     (tv,       b) -> if a = b then s else TyVar     (tv,       a)
      | MetaTyVar (tv,       b) -> if a = b then s else MetaTyVar (tv,       a)
 
@@ -440,6 +443,7 @@ MetaSlang qualifying spec {
         Subsort   (x2, t2,  _)) -> equalSort? (x1, x2) & equalTerm? (t1, t2)
      | (Base      (q1, xs1, _), 
         Base      (q2, xs2, _)) -> q1 = q2 & equalList? (xs1, xs2, equalSort?)
+     | (Boolean _, Boolean _) -> true
      | (TyVar     (v1,      _), 
         TyVar     (v2,      _)) -> v1 = v2
 
@@ -847,6 +851,7 @@ MetaSlang qualifying spec {
 	 let newSrts = mapSLst(tsp_maps,sort_map,srts) in
 	 if newSrts = srts then srt
 	   else Base (qid, newSrts, a)
+       | Boolean a -> Boolean a
        | MetaTyVar(tv,pos) -> 
 	   let {name,uniqueId,link} = ! tv in
 	   (case link
@@ -1253,6 +1258,8 @@ MetaSlang qualifying spec {
        | Base      (qid, srts,                 a) ->
          Base      (qid, map replaceRec srts,  a)
 
+       | Boolean a -> Boolean a
+
        | _ -> srt
 
    def replaceRecOpt opt_srt = 
@@ -1372,6 +1379,7 @@ MetaSlang qualifying spec {
           | Quotient  (srt, trm,  _) -> (appRec srt; appTerm tsp_apps trm)
           | Subsort   (srt, trm,  _) -> (appRec srt; appTerm tsp_apps trm)
           | Base      (qid, srts, _) -> app appRec srts
+	  | Boolean               _  -> ()
           | _                        -> ()
 
       def appRec srt = 
@@ -1426,6 +1434,7 @@ MetaSlang qualifying spec {
  def boolSort? s =
   case s of
     | Base (Qualified ("Boolean", "Boolean"), [], _) -> true
+    | Boolean _ -> true
     | _ -> false
 
  def stringSort?(s) = 

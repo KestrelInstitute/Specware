@@ -64,6 +64,7 @@ snark qualifying spec
 		    | Base(Qualified("Nat","PosNat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL")
+		    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL")
 		    %| Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
                       %let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
                       %let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
@@ -87,13 +88,16 @@ snark qualifying spec
 	    | Base(Qualified("Nat","Nat"),_,_) -> true
 	    | Base(Qualified("Integer","Integer"),_,_) -> true
 	    | Base(Qualified("Boolean","Boolean"),_,_) -> true 
+	    | Boolean _ -> true 
             | _ -> false in
       let
 	def builtinSnarkSort(s) =
 	  case s of 
 	    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NUMBER")
 	    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","NUMBER")
-	    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL") in
+	    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL") 
+	    | Boolean _ -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","LOGICAL") 
+      in
       let builtinScheme = find (fn (_, srt) -> builtinSort?(srt)) schemes in
         (case builtinScheme of
 	  | Some (_, srt) -> builtinSnarkSort(srt)
@@ -129,6 +133,7 @@ snark qualifying spec
   def snarkVar(v as (id, srt)) =
     case srt of
       | Base(Qualified(q,"Boolean"),_,_) -> snarkBoolVarFromId(id)
+      | Boolean _ -> snarkBoolVarFromId(id)
       | _ -> snarkVarFromId(id)
 
   op snarkVarFromId: Id -> LispCell
@@ -144,6 +149,7 @@ snark qualifying spec
   def snarkVarTerm(v as (id, srt)) =
     case srt of
       | Base(Qualified(q,"Boolean"),_,_) -> snarkBoolVarTermFromId(id)
+      | Boolean _ -> snarkBoolVarTermFromId(id)
       | _ -> snarkVarFromId(id)
 
   op snarkVarFmla: Var -> LispCell
@@ -151,6 +157,7 @@ snark qualifying spec
   def snarkVarFmla(v as (id, srt)) =
     case srt of
       | Base(Qualified(q,"Boolean"),_,_) -> snarkBoolVarFmlaFromId(id)
+      | Boolean _ -> snarkBoolVarFmlaFromId(id)
       | _ -> snarkVarFromId(id)
 
   op snarkBoolVarTermFromId: Id -> LispCell
@@ -220,7 +227,9 @@ snark qualifying spec
 	      Lisp.cons(Lisp.symbol("SNARK",mkSnarkName(qual,id)), Lisp.list snarkArgs)
        | Embedded id ->
 	      let def boolArgp(srt) =
-	          case srt of		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
+	          case srt of		    
+		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
+		    | Boolean _ -> true
                     | _ -> false in
 	      let Arrow (dom,rng,_) = srt in
 	      let isfmla = boolArgp(dom) in
@@ -228,10 +237,27 @@ snark qualifying spec
 	                       then mkSnarkFmla(context,sp,dpn,vars,[],arg)
 			     else mkSnarkTerm(context,sp,dpn,vars,arg) in
 		 Lisp.cons(Lisp.symbol("SNARK","embed?"), Lisp.list[Lisp.symbol("SNARK",id),snarkArg])
+
+       | Not ->
+	 let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
+	 Lisp.cons(Lisp.symbol("SNARK", "NOT"), Lisp.list snarkArgs)
+       | And ->
+	 let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
+	 Lisp.cons(Lisp.symbol("SNARK", "AND"), Lisp.list snarkArgs)
+       | Or ->
+	 let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
+	 Lisp.cons(Lisp.symbol("SNARK", "OR"), Lisp.list snarkArgs)
+       | Cond ->
+	 let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
+	 Lisp.cons(Lisp.symbol("SNARK", "IMPLIES"), Lisp.list snarkArgs)
+       | Iff ->
+	 let snarkArgs = map(fn (arg) -> mkSnarkFmla(context, sp, dpn, vars, [], arg)) args in
+	 Lisp.cons(Lisp.symbol("SNARK", "IFF"), Lisp.list snarkArgs)
        | Equals -> 
 	    let def boolArgp(srt) =
 	          case srt of
 		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
+		    | Boolean _ -> true
                     | _ -> false in
 	    let [arg1,arg2] = args in
 	    let Arrow (dom,rng,_) = srt in
@@ -249,7 +275,29 @@ snark qualifying spec
 	      if isfmla 
 		then Lisp.cons(Lisp.symbol("SNARK","IFF"), Lisp.list [snarkArg1, snarkArg2])
 	      else Lisp.cons(Lisp.symbol("SNARK","="), Lisp.list [snarkArg1, snarkArg2])
-
+       | NotEquals -> 
+	    let def boolArgp(srt) =
+	          case srt of
+		    | Base(Qualified(q,id),_,_) -> q = "Boolean" or id = "Boolean"
+		    | Boolean _ -> true
+                    | _ -> false in
+	    let [arg1,arg2] = args in
+	    let Arrow (dom,rng,_) = srt in
+	    let Product(s:List(Id * Sort), _) = dom in
+	    let [(_,s1),(_,s2)] = s in
+	    let isfmla = boolArgp(s1) or boolArgp(s2) in
+	    let snarkArg1 =
+	        if isfmla
+		  then mkSnarkFmla(context, sp, dpn, vars, [], arg1)
+		else mkSnarkTerm(context, sp, dpn, vars, arg1) in
+	    let snarkArg2 =
+	        if isfmla
+		  then mkSnarkFmla(context, sp, dpn, vars, [], arg2)
+		else mkSnarkTerm(context, sp, dpn, vars, arg2) in
+	    Lisp.cons(Lisp.symbol("SNARK", "NOT"), 
+		      Lisp.list [if isfmla 
+				   then Lisp.cons(Lisp.symbol("SNARK","IFF"), Lisp.list [snarkArg1, snarkArg2])
+				 else Lisp.cons(Lisp.symbol("SNARK","="), Lisp.list [snarkArg1, snarkArg2])])
 
 
   op mkSnarkFmla: Context * Spec * String * StringSet.Set * Vars * MS.Term -> LispCell
@@ -274,8 +322,8 @@ snark qualifying spec
 		      mkSnarkFmla(context, sp, dpn, vars, globalVars, c),
 		      mkSnarkFmla(context, sp, dpn, vars, globalVars, t),
 		      mkSnarkFmla(context, sp, dpn, vars, globalVars, e)]
-      | Fun ((Bool true), Boolean, _) -> Lisp.symbol("SNARK","TRUE")
-      | Fun ((Bool false), Boolean, _) -> Lisp.symbol("SNARK","FALSE")
+      | Fun ((Bool true),  _, _) -> Lisp.symbol("SNARK","TRUE")  % sort of Fun was Boolean, but that was a free var in the pattern! 
+      | Fun ((Bool false), _, _) -> Lisp.symbol("SNARK","FALSE") % sort of Fun was Boolean, but that was a free var in the pattern!
       | Var (v, _) -> snarkVarFmla(v)
       | _ -> mkSnarkTerm(context, sp, dpn, vars, fmla)
 

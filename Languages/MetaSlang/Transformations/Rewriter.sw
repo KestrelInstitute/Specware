@@ -90,14 +90,24 @@ spec MetaSlangRewriter
    let (freeVars,n,S,formula) =
      bound(Forall:Binder,0,term,[],[]) in
    let (condition,fml) = 
-	case formula  
-	  of Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
+	case formula of
+	  | Apply(Fun(Op(Qualified("Boolean","=>"),_),_,_),
 		   Record([(_,M),(_,N)], _),_) -> 
 	     (Some (substitute(M,S)),N)
-	   | _ -> (None,formula)
+	  | Apply(Fun(Cond, _,_), Record([(_,M),(_,N)], _),_) -> 
+	     (Some (substitute(M,S)),N)
+	  | _ -> (None,formula)
    in
-   case fml
-     of Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),p,_) ->
+   case fml of
+     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),p,_) ->
+        let rhs = mkFalse() in
+	if p = rhs then []
+	else
+        [freshRule(context,
+		   {name      = desc,   condition = condition,
+		    lhs       = p,      rhs       = mkFalse(),
+		    tyVars    = [],     freeVars  = freeVars})]
+     | Apply(Fun(Not, _,_), p,_) ->
         let rhs = mkFalse() in
 	if p = rhs then []
 	else
@@ -116,12 +126,15 @@ spec MetaSlangRewriter
    
 
  def negate term =
-   case term
-     of Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),p,_) -> p
-      | Apply(Fun(Op(Qualified("Boolean","or"),_),_,_),
-	      Record([(_,M),(_,N)], _),_) ->
-        Utilities.mkAnd(negate M,negate N)
-      | _ -> mkNot term
+   case term of
+     | Apply(Fun(Op(Qualified("Boolean","~"),_),_,_),p,_) -> p
+     | Apply(Fun(Op(Qualified("Boolean","or"),_),_,_),
+	     Record([(_,M),(_,N)], _),_) ->
+       Utilities.mkAnd(negate M,negate N)
+     | Apply(Not,p,_) -> p
+     | Apply(Or, Record([(_,M),(_,N)], _),_) ->
+       Utilities.mkAnd(negate M,negate N)
+     | _ -> mkNot term
 
  (* Unnecessary as equality can be done as a built-in rule
      See spec builtInRewrites
@@ -192,8 +205,45 @@ spec MetaSlangRewriter
 	  (fn () -> rewriteSubTerm(solvers,boundVars,term,rules))
 
  def rewriteSubTerm (solvers as {strategy,rewriter,context},boundVars,term,rules) = 
-     (case term
-        of Apply(Fun(Equals,s,_),Record([(l1,M),(l2,N)], _),b) -> 
+     (case term of
+        %% | Apply(Fun(Not,s,_),arg,b) ->  Apply(Fun(Not,s,b), arg, b) % TODO: what is the proper form here?
+        | Apply(Fun(And,s,_),Record([(l1,M),(l2,N)], _),b) -> 
+	   LazyList.map 
+		(fn (N,a) -> (Apply(Fun(And,s,b),
+				    Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,N,rules)) @@
+	   (fn () -> 
+	   LazyList.map 
+		(fn (M,a) -> (Apply(Fun(And,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,M,rules))) 
+        | Apply(Fun(Or,s,_),Record([(l1,M),(l2,N)], _),b) -> 
+	   LazyList.map 
+		(fn (N,a) -> (Apply(Fun(Or,s,b),
+				    Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,N,rules)) @@
+	   (fn () -> 
+	   LazyList.map 
+		(fn (M,a) -> (Apply(Fun(Or,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,M,rules))) 
+        | Apply(Fun(Cond,s,_),Record([(l1,M),(l2,N)], _),b) -> 
+	   LazyList.map 
+		(fn (N,a) -> (Apply(Fun(Cond,s,b),
+				    Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,N,rules)) @@
+	   (fn () -> 
+	   LazyList.map 
+		(fn (M,a) -> (Apply(Fun(Cond,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,M,rules))) 
+        | Apply(Fun(Iff,s,_),Record([(l1,M),(l2,N)], _),b) -> 
+	   LazyList.map 
+		(fn (N,a) -> (Apply(Fun(Iff,s,b),
+				    Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,N,rules)) @@
+	   (fn () -> 
+	   LazyList.map 
+		(fn (M,a) -> (Apply(Fun(Iff,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,M,rules))) 
+        | Apply(Fun(Equals,s,_),Record([(l1,M),(l2,N)], _),b) -> 
 	   LazyList.map 
 		(fn (N,a) -> (Apply(Fun(Equals,s,b),
 				    Record([(l1,M),(l2,N)],b),b),a)) 
@@ -201,6 +251,15 @@ spec MetaSlangRewriter
 	   (fn () -> 
 	   LazyList.map 
 		(fn (M,a) -> (Apply(Fun(Equals,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,M,rules))) 
+        | Apply(Fun(NotEquals,s,_),Record([(l1,M),(l2,N)], _),b) -> 
+	   LazyList.map 
+		(fn (N,a) -> (Apply(Fun(NotEquals,s,b),
+				    Record([(l1,M),(l2,N)],b),b),a)) 
+		(rewriteTerm(solvers,boundVars,N,rules)) @@
+	   (fn () -> 
+	   LazyList.map 
+		(fn (M,a) -> (Apply(Fun(NotEquals,s,b),Record([(l1,M),(l2,N)],b),b),a)) 
 		(rewriteTerm(solvers,boundVars,M,rules))) 
 	 | Apply(M,N,b) -> 
 	   LazyList.map 

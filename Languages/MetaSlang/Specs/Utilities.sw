@@ -1030,6 +1030,10 @@ Utilities qualifying spec
 	     Record([("1",lhs),("2",rhs)],_),_) ->
         let (rVs,rLhsCjs,rRhs) = forallComponents rhs in
 	(rVs,getConjuncts lhs ++ rLhsCjs,rRhs)
+      | Apply(Fun(Cond, _,_),
+	     Record([("1",lhs),("2",rhs)],_),_) ->
+        let (rVs,rLhsCjs,rRhs) = forallComponents rhs in
+	(rVs,getConjuncts lhs ++ rLhsCjs,rRhs)
       | _ -> ([],[],t)
 
   %% Given an existential quantification return list of quantified variables and conjuncts

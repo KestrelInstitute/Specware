@@ -152,6 +152,7 @@ spec
 
   op  evalApplySpecial: MS.Term * Value * Subst * Spec * Nat -> Value
   def evalApplySpecial(ft,a,sb,spc,depth) =
+    let def default() = Unevaluated(mkApply(ft,valueToTerm a)) in
     case ft of
       | Fun(Embed(id,true),_,_) -> Constructor(id,a)
       | Fun(Op(Qualified(spName,opName),_),_,_) ->
@@ -166,9 +167,70 @@ spec
 			     then attemptEval1(opName,a,ft)
 			     else Unevaluated(mkApply(ft,valueToTerm a))))
 	   else Unevaluated(mkApply(ft,valueToTerm a)))
+      | Fun(And,_,_) ->
+	(case a of
+	   | RecordVal(fields) -> 
+	     (case fields of
+		| [(_,Bool x),(_,Bool y)] -> Bool(x & y)
+		| [(_,Bool false),(_,_)]  -> Bool false
+		| [(_,_),(_,Bool false)]  -> Bool false
+		| [(_,ut),(_,Bool true)]  -> ut
+		| [(_,Bool true),(_,ut)]  -> ut
+		| _  -> default())
+	   | None -> default())
+      | Fun(Or,_,_) ->
+	(case a of
+	   | RecordVal(fields) -> 
+	     (case fields of
+		| [(_,Bool x),(_,Bool y)] -> Bool(x or y)
+		| [(_,Bool true),(_,_)]   -> Bool true
+		| [(_,_),(_,Bool true)]   -> Bool true
+		| [(_,ut),(_,Bool false)] -> ut
+		| [(_,Bool false),(_,ut)] -> ut
+		| [(_,Unevaluated x),(_,Unevaluated y)] ->
+		  (case (x,y) of
+		     | (Apply (Fun (Not,_,_), lhs, _), rhs) ->
+		       if equalTerm? (lhs,rhs) then
+			 Bool true
+		       else
+			 default ()
+		     | (lhs, Apply (Fun (Not,_,_), rhs, _)) ->
+			 if equalTerm? (lhs,rhs) then
+			   Bool true
+			 else
+			   default ()
+		     | _ -> default ())
+		| _  -> default())
+	   | _  -> default())
+      | Fun(Cond,_,_) ->
+	(case a of
+	   | RecordVal(fields) -> 
+	     (case fields of
+		| [(_,Bool x),(_,Bool y)] -> Bool(x => y)
+		| [(_,Bool false),(_,_)]  -> Bool true
+		| [(_,_),(_,Bool true)]   -> Bool true
+		| [(_,Unevaluated t),(_,Bool false)] -> Unevaluated(mkNot(t))
+		| [(_,Bool true),(_,ut)]  -> ut
+		| _  -> default())
+	   | _  -> default())
+      | Fun(Iff,_,_) ->
+	(case a of
+	   | RecordVal(fields) -> 
+	     (case fields of
+		| [(_,Bool x),(_,Bool y)] -> Bool(x <=> y)
+		| [(_,Bool false),(_,Unevaluated t)] -> Unevaluated(mkNot(t))
+		| [(_,Unevaluated t),(_,Bool false)] -> Unevaluated(mkNot(t))
+		| [(_,ut),(_,Bool true)]  -> ut
+		| [(_,Bool true),(_,ut)]  -> ut
+		| _ -> default())
+	   | _ -> default())
       | Fun(Equals,_,_) ->
 	(case checkEquality(a,sb,spc,depth) of
 	  | Some b -> Bool b
+	  | None   -> Unevaluated(mkApply(ft,valueToTerm a)))
+      | Fun(NotEquals,_,_) ->
+	(case checkEquality(a,sb,spc,depth) of
+	  | Some b -> Bool (~ b)
 	  | None   -> Unevaluated(mkApply(ft,valueToTerm a)))
       | Fun(Quotient,srt,_) ->
 	(case stripSubsorts(spc,range(spc,srt)) of
