@@ -39,7 +39,8 @@ def emptyJSpec = (None, [], [])
 
 op emptyClsBody: ClsBody
 def emptyClsBody =
-  { staticInits = [],
+  { handwritten = [],
+    staticInits = [],
     flds        = [],
     constrs     = [], 
     meths       = [],
@@ -48,7 +49,8 @@ def emptyClsBody =
 
 op setFlds: ClsBody * List FldDecl -> ClsBody
 def setFlds(clsBody, fldDecls) =
-  { staticInits = clsBody.staticInits,
+  { handwritten = clsBody.handwritten,
+    staticInits = clsBody.staticInits,
     flds        = fldDecls,
     constrs     = clsBody.constrs, 
     meths       = clsBody.meths,
@@ -57,7 +59,8 @@ def setFlds(clsBody, fldDecls) =
 
 op setMethods: ClsBody * List MethDecl -> ClsBody
 def setMethods(clsBody, methodDecls) =
-  { staticInits = clsBody.staticInits,
+  { handwritten = clsBody.handwritten,
+    staticInits = clsBody.staticInits,
     flds        = clsBody.flds,
     constrs     = clsBody.constrs, 
     meths       = methodDecls,
@@ -66,7 +69,8 @@ def setMethods(clsBody, methodDecls) =
 
 op setConstrs: ClsBody * List ConstrDecl -> ClsBody
 def setConstrs(clsBody, constrDecls) =
-  { staticInits = clsBody.staticInits,
+  { handwritten = clsBody.handwritten,
+    staticInits = clsBody.staticInits,
     flds        = clsBody.flds,
     constrs     = constrDecls, 
     meths       = clsBody.meths,
@@ -426,7 +430,7 @@ def mkThisExpr() =
 op mkBaseJavaBinOp: Id -> Java.BinOp
 def mkBaseJavaBinOp(id) =
   case id of
-    | "and" -> CdAnd
+    | "&&" -> CdAnd
     | "or" -> CdOr
     | "=" -> Eq
     | ">" -> Gt
@@ -448,7 +452,7 @@ def mkBaseJavaUnOp(id) =
 op javaBaseOp?: Id -> Boolean
 def javaBaseOp?(id) =
   case id of
-    | "and" -> true
+    | "&&" -> true
     | "or" -> true
     | "=" -> true
     | ">" -> true
@@ -682,7 +686,7 @@ def mkNewAnonymousClasInst(id, javaArgs,clsBody:ClsBody) =
  * that is used for generating the arrow class interface
  *)
 def mkNewAnonymousClasInstOneMethod(id,javaArgs,methDecl) =
-  let clsBody = {staticInits=[],flds=[],constrs=[],meths=[methDecl],clss=[],interfs=[]} in
+  let clsBody = {handwritten=[],staticInits=[],flds=[],constrs=[],meths=[methDecl],clss=[],interfs=[]} in
   let exp = CondExp (Un (Prim (NewClsInst (ForCls (([], id), javaArgs, Some clsBody)))), None) in
   let cldecl = mkArrowClassDecl(id,methDecl) in
   %let _ = writeLine("generated class decl: "^id) in
@@ -704,7 +708,7 @@ def mkArrowClassDecl(id,methDecl) =
   let equalMethDecl = (eqHdr,Some eqBody) in
   let clmods = [Abstract] in
   let clheader = (id,None,[]) in
-  let clbody = {staticInits=[],flds=[],constrs=[],meths=[absApplyMethDecl,equalMethDecl],clss=[],interfs=[]} in
+  let clbody = {handwritten=[],staticInits=[],flds=[],constrs=[],meths=[absApplyMethDecl,equalMethDecl],clss=[],interfs=[]} in
   let cldecl = (clmods,clheader,clbody) in
   cldecl
 
@@ -781,7 +785,7 @@ def ensureMod(mods,mod) =
 op makeConstructorsAndMethodsPublic: JSpec * List Id -> JSpec
 def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
   let cidecls =
-  map (fn | ClsDecl(mods,hdr,body as {staticInits,flds,constrs,meths,clss,interfs}) ->
+  map (fn | ClsDecl(mods,hdr,body as {handwritten,staticInits,flds,constrs,meths,clss,interfs}) ->
             let constrs = map (fn(mods,id,fpars,throws,block) -> 
 			       (ensureMod(mods,Public),id,fpars,throws,block)) constrs
 	    in
@@ -789,7 +793,8 @@ def makeConstructorsAndMethodsPublic(jspc as (pkg,imp,cidecls), publicOps) =
 			      let mods = if member(id,publicOps) then ensureMod(mods,Public) else mods in
 			      ((mods,rettype,id,fpars,throws),body)) meths
 	    in
-	    ClsDecl(mods,hdr,{staticInits=staticInits,
+	    ClsDecl(mods,hdr,{handwritten=handwritten,
+			      staticInits=staticInits,
 			      flds=flds,constrs=constrs,
 			      meths=meths,clss=clss,
 			      interfs=interfs})

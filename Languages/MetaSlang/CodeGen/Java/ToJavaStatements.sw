@@ -26,12 +26,12 @@ op specialTermToExpression: TCx * JGen.Term * Nat * Nat * Spec -> Option ((Block
 def termToExpression(tcx, term, k, l, spc) =
   termToExpression_internal(tcx,term,k,l,spc,true)
 
-def termToExpression_internal(tcx, term, k, l, spc, addRelaxChoose?) =
+def termToExpression_internal(tcx, term, k, l, spc, _ (*addRelaxChoose?*)) =
   %let _ = writeLine("termToExpression: "^printTerm(term)) in
   case specialTermToExpression(tcx,term,k,l,spc) of
     | Some result -> result
     | None -> 
-    let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
+    %let term = if addRelaxChoose? then relaxChooseTerm(spc,term) else term in
     case term of
       | Var ((id, srt), _) ->
       (case StringMap.find(tcx, id) of

@@ -92,6 +92,12 @@ spec
 	let opid = "substring" in
 	let expr = mkMethExprInv(argexpr1,opid,[argexpr2,argexpr3]) in
 	Some ((s1++s2++s3,expr,k,l),concatCollected(col1,concatCollected(col2,col3)))
+      | Apply(Fun(Op(Qualified("String","sub"),_),_,_),Record([(_,t1),(_,t2)],_),_) ->
+        let ((s1,argexpr1,k,l),col1) = termToExpression(tcx,t1,k,l,spc) in
+        let ((s2,argexpr2,k,l),col2) = termToExpression(tcx,t2,k,l,spc) in
+	let opid = "charAt" in
+	let expr = mkMethExprInv(argexpr1,opid,[argexpr2]) in
+	Some ((s1++s2,expr,k,l),concatCollected(col1,col2))
       | Apply(Fun(Op(Qualified("Nat","toString"),_),_,_),t,_) -> intToString(t)
       | Apply(Fun(Op(Qualified("Nat","natToString"),_),_,_),t,_) -> intToString(t)
       | Apply(Fun(Op(Qualified("Nat","show"),_),_,_),t,_) -> intToString(t)
@@ -113,7 +119,7 @@ spec
 	let res = termToExpression(tcx,t,k,l,spc) in
 	Some res
       | Apply(Fun(Op(Qualified("Char",fun as "isNum"),_),_,_),t,_) -> 
-	let _ = writeLine("isNum used.") in
+	%let _ = writeLine("isNum used.") in
 	charFun(fun,t)
       | Apply(Fun(Op(Qualified("Char",fun as "isAlpha"),_),_,_),t,_) -> charFun(fun,t)
       | Apply(Fun(Op(Qualified("Char",fun as "isAlphaNum"),_),_,_),t,_) -> charFun(fun,t)

@@ -116,9 +116,11 @@ def addMethodFromOpToClsDecls(spc, opId, srt, dompreds, trm, jcginfo) =
 	      %let _ = writeLine("  ut found user type "^printSort(usrt)) in
 	      % v3:p45:r8
 	      let (classId,col) = srtId(usrt) in
+	      %let _ = writeLine(";;; -> static method in class "^classId) in
 	      let jcginfo = addStaticMethodToClsDecls(spc,opId,srt,dom,dompreds,rng,trm,classId,jcginfo) in
 	      addCollectedToJcgInfo(jcginfo,col)
 	    | None ->
+	      %let _ = writeLine(";;; -> static method in class Primitive") in
 	      % v3:p46:r1
 	      addPrimMethodToClsDecls(spc, opId, srt, dom, dompreds, rng, trm, jcginfo)
       else
@@ -212,6 +214,7 @@ def addPrimArgsMethodToClsDecls(spc, opId, srt, _(* dom *), dompreds, rng, trm, 
       in
       %%
       let methodDecl = setMethodBody(methodDecl, assertStmt++methodBody) in
+      %let _ = writeLine(";;; -> method in class "^rngId) in
       addMethDeclToClsDecls(opId, rngId, methodDecl, jcginfo)
     %| _ -> let _ = warnNoCode(opId,None) in
     %  jcginfo
@@ -279,6 +282,7 @@ def addCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcginfo)
   in
   %%
   let methodDecl = setMethodBody(methodDecl,assertStmt) in
+  %let _ = writeLine(";;; -> method in class "^srthId) in
   addMethDeclToSummands(spc, opId, srthId, methodDecl, body, jcginfo)
   
 op addNonCaseMethodsToClsDecls: Spec * Id * List Type * List(Option Term) * Type * List Var * Term * JcgInfo -> JcgInfo
@@ -312,6 +316,7 @@ def addNonCaseMethodsToClsDecls(spc, opId, dom, dompreds, rng, vars, body, jcgin
 	 in
 	 %% 
 	 let methodDecl = (([], Some (tt(rngId)), opId, fpars, []), Some (assertStmt++methodBody)) in
+	 %let _ = writeLine(";;; -> method in class(1) "^srthId) in
 	 addMethDeclToClsDecls(opId, srthId, methodDecl, jcginfo)
 	 | _ ->
 	   (warnNoCode(termAnn(body),opId,Some("can't happen: user type is not flat"));jcginfo)
@@ -495,10 +500,8 @@ def modifyClsDeclsFromOp(spc, qual, id, op_info as (_, _, (_, opsrt), [(_, trm)]
 		          foldr (fn((optvt,srt),body) ->
 				 case (optvt,srt) of
 				   | (Some(Var((id,vsrt),b)),Subsort(ssrt,_,_)) -> 
-				      %let rsrt = Arrow(ssrt,vsrt,b):Sort in
-				      %let relaxterm = Apply(Fun(Relax,rsrt,b),Var((id,vsrt),b),b) in
-				      let relaxterm = Var((id,ssrt),b) in
-				      let body = Let ([(VarPat((id,vsrt),b),relaxterm)],body,b) in
+				      %let relaxterm = Var((id,ssrt),b) in
+				      %let body = Let ([(VarPat((id,vsrt),b),relaxterm)],body,b) in
 				      body
 				   | _ -> body
 			       ) body zip
@@ -690,7 +693,6 @@ op specToJava : Spec * Spec * Option Spec * String -> JSpec
 
 def specToJava(basespc,spc,optspec,filename) =
   %let _ = writeLine(printSpec spc) in
-  %let _ = writeLine(printSpec spc) in
   %let _ = writeLine(";;; Lifting Lambdas") in
   %let spc = lambdaLift(spc) in
   %let _ = writeLine(printSpec spc) in
@@ -698,9 +700,9 @@ def specToJava(basespc,spc,optspec,filename) =
   %let spc = distinctVariable(spc) in
   %let spc = translateMatch spc in
   %let spc = lambdaLift spc in
-  %let _ = writeLine(printSpec spc) in
   let spc = identifyIntSorts spc in
   let spc = addMissingFromBase(basespc,spc,builtinSortOp) in
+  %let _ = writeLine(printSpec spc) in
   %let spc0 = mapSpec (id,(fn(srt) -> case srt of
   %			              | Subsort(srt,_,_) -> srt
   %			              | Quotient(srt,_,_) -> srt
