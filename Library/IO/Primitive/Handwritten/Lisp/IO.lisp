@@ -1,6 +1,8 @@
 (defpackage "IO-SPEC")
 (in-package "IO-SPEC")
 
+(defun io-spec::getenv (x) (system-spec::getenv x)) ; temporary
+
 ;; This returns true if, as the name suggests, the given file
 ;; exists and is readable. Otherwise, it return false.
 (defun fileExistsAndReadable (x)
