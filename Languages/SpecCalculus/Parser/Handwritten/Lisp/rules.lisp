@@ -659,12 +659,13 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :EXPRESSION ()
   (:anyof
-   (1 :LAMBDA-FORM      :documentation "Function definition")
-   (1 :CASE-EXPRESSION  :documentation "Case")
-   (1 :LET-EXPRESSION   :documentation "Let")
-   (1 :IF-EXPRESSION    :documentation "If-then-else")
-   (1 :QUANTIFICATION   :documentation "Quantification (fa/ex)")
-   (1 :TIGHT-EXPRESSION :documentation "Tight expression -- suitable for annotation")
+   (1 :LAMBDA-FORM          :documentation "Function definition")
+   (1 :CASE-EXPRESSION      :documentation "Case")
+   (1 :LET-EXPRESSION       :documentation "Let")
+   (1 :IF-EXPRESSION        :documentation "If-then-else")
+   (1 :QUANTIFICATION       :documentation "Quantification (fa/ex)")
+   (1 :ANNOTATED-EXPRESSION :documentation "Annotated (i.e. typed) expression")
+   (1 :TIGHT-EXPRESSION     :documentation "Tight expression -- suitable for annotation")
    )
   1)
 
@@ -673,6 +674,7 @@ If we want the precedence to be optional:
    (1 :NON-BRANCH-LET-EXPRESSION  :documentation "Let not ending in case or lambda")
    (1 :NON-BRANCH-IF-EXPRESSION   :documentation "If-then-else not ending in case or lambda")
    (1 :NON-BRANCH-QUANTIFICATION  :documentation "Quantification (fa/ex) not ending in case or lambda")
+   (1 :ANNOTATED-EXPRESSION       :documentation "Annotated (i.e. typed) expression")
    (1 :TIGHT-EXPRESSION           :documentation "Tight expression -- suitable for annotation")
    )
   1)
@@ -680,7 +682,6 @@ If we want the precedence to be optional:
 (define-sw-parser-rule :TIGHT-EXPRESSION ()
   (:anyof
    (1 :APPLICATION          :documentation "Application")
-   (1 :ANNOTATED-EXPRESSION :documentation "Annotated (i.e. typed) expression")
    (1 :CLOSED-EXPRESSION    :documentation "Closed expression -- unambiguous termination")
    )
   1)
@@ -835,6 +836,29 @@ If we want the precedence to be optional:
   :NON_KEYWORD_NAME)
 
 ;;; ------------------------------------------------------------------------
+;;;   ANNOTATED-EXPRESSION
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :ANNOTATED-EXPRESSION ()
+  ;;  "P : S1 : S2" is legal,  meaning P is of type S1, which is also of type S2
+  (:tuple (1 :TIGHT-EXPRESSION) ":" (2 :SORT))
+  (make-annotated-expression 1 2 ':left-lcb ':right-lcb)
+  :documentation "Annotated term")
+
+;;; ------------------------------------------------------------------------
+
+(define-sw-parser-rule :QUALIFIABLE-OP-NAMES ()
+  ;; "f"  "A.f"  "{f, A.g, h}" etc.
+  ;; "{f}" is same as "f"
+  (:anyof 
+   ((:tuple (1 :QUALIFIABLE-OP-NAME))
+    (list 1))
+   ((:tuple "{"
+	    (2 (:REPEAT+ :QUALIFIABLE-OP-NAME ","))
+	    "}")
+    2)))
+
+;;; ------------------------------------------------------------------------
 ;;;   APPLICATION
 ;;; ------------------------------------------------------------------------
 
@@ -871,29 +895,6 @@ If we want the precedence to be optional:
 
 (define-sw-parser-rule :CLOSED-EXPRESSIONS ()
   (:repeat+ :CLOSED-EXPRESSION))
-
-;;; ------------------------------------------------------------------------
-;;;   ANNOTATED-EXPRESSION
-;;; ------------------------------------------------------------------------
-
-(define-sw-parser-rule :ANNOTATED-EXPRESSION ()
-  ;;  "P : S1 : S2" is legal,  meaning P is of type S1, which is also of type S2
-  (:tuple (1 :TIGHT-EXPRESSION) ":" (2 :SORT))
-  (make-annotated-expression 1 2 ':left-lcb ':right-lcb)
-  :documentation "Annotated term")
-
-;;; ------------------------------------------------------------------------
-
-(define-sw-parser-rule :QUALIFIABLE-OP-NAMES ()
-  ;; "f"  "A.f"  "{f, A.g, h}" etc.
-  ;; "{f}" is same as "f"
-  (:anyof 
-   ((:tuple (1 :QUALIFIABLE-OP-NAME))
-    (list 1))
-   ((:tuple "{"
-	    (2 (:REPEAT+ :QUALIFIABLE-OP-NAME ","))
-	    "}")
-    2)))
 
 ;;; ------------------------------------------------------------------------
 ;;;   LITERAL

@@ -549,15 +549,6 @@ If we want the precedence to be optional:
     (cons local-variable sort)))
 
 ;;; ------------------------------------------------------------------------
-;;;   APPLICATION
-;;; ------------------------------------------------------------------------
-
-(defun make-application (closed-expression closed-expressions l r)
-  (cons :|ApplyN|
-	(cons (cons closed-expression closed-expressions)
-	      (make-pos l r))))
-
-;;; ------------------------------------------------------------------------
 ;;;   ANNOTATED-EXPRESSION
 ;;; ------------------------------------------------------------------------
 
@@ -568,6 +559,15 @@ If we want the precedence to be optional:
   (cons :|SortedTerm|
         (vector tight-expression sort
                 (make-pos l r))))
+
+;;; ------------------------------------------------------------------------
+;;;   APPLICATION
+;;; ------------------------------------------------------------------------
+
+(defun make-application (closed-expression closed-expressions l r)
+  (cons :|ApplyN|
+	(cons (cons closed-expression closed-expressions)
+	      (make-pos l r))))
 
 ;;; ------------------------------------------------------------------------
 ;;;   LITERAL
