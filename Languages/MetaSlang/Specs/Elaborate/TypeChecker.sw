@@ -920,16 +920,18 @@ TypeChecker qualifying spec
 	new
 
       %% These should only appear as the head of an apply (see one of the ApplyN cases above):
-      | Fun (Not,       srt, pos) -> (error (env, "Can't refer to syntactic operator '~' as an arg -- use '(~)' instead.",     pos); trm)
-      | Fun (And,       srt, pos) -> (error (env, "Can't refer to syntactic operator '&&' as an arg -- use '(&&)' instead.",   pos); trm)
-      | Fun (Or,        srt, pos) -> (error (env, "Can't refer to syntactic operator '||' as an arg -- use '(||)' instead.",   pos); trm)
-      | Fun (Implies,   srt, pos) -> (error (env, "Can't refer to syntactic operator '=>' as an arg -- use '(=>)' instead.",   pos); trm)
-      | Fun (Iff,       srt, pos) -> (error (env, "Can't refer to syntactic operator '<=>' as an arg -- use '(<=>)' instead.", pos); trm)
-      | Fun (Equals,    srt, pos) -> (error (env, "Can't refer to syntactic operator '=' as an arg -- use '(=)' instead.",     pos); trm)
-      | Fun (NotEquals, srt, pos) -> (error (env, "Can't refer to syntactic operator '~=' as an arg -- use '(~=)' instead.",   pos); trm)
+      | Fun (Not,       srt, pos) -> (error (env, cantuse "~",   pos); trm)
+      | Fun (And,       srt, pos) -> (error (env, cantuse "&&",  pos); trm)
+      | Fun (Or,        srt, pos) -> (error (env, cantuse "||",  pos); trm)
+      | Fun (Implies,   srt, pos) -> (error (env, cantuse "=>",  pos); trm)
+      | Fun (Iff,       srt, pos) -> (error (env, cantuse "<=>", pos); trm)
+      | Fun (Equals,    srt, pos) -> (error (env, cantuse "=",   pos); trm)
+      | Fun (NotEquals, srt, pos) -> (error (env, cantuse "~=",  pos); trm)
 	
       | term -> (%System.print term;
 		 term)
+
+  def cantuse inbuilt = "Can't use inbuilt operator '"++inbuilt++"' as an expression -- use '("++inbuilt++")' instead."
 
   def elaborateTermHead(env,t1,ty,trm) =
     case t1 of
