@@ -110,7 +110,7 @@
        ("(isAscii ( #3 )) = true" :swe "(isAscii ( #3 )) = true" :value '(:|Bool| . T))
        ("(isAscii ( #A )) = true" :swe "(isAscii ( #A )) = true" :value '(:|Bool| . T))
        ("(isAscii ( #a )) = true" :swe "(isAscii ( #a )) = true" :value '(:|Bool| . T))
-       ("(isAscii ( #\\xff )) = false" :swe "(isAscii ( #\\xff )) = false" :value '(:|Bool| . T))
+       ("(isAscii ( #\\xff )) = true" :swe "(isAscii ( #\\xff )) = true" :value '(:|Bool| . T))
        ;; Char [ 18]:  op toUpperCase : Char -> Char
        ("(toUpperCase ( #! )) = #!" :swe "(toUpperCase ( #! )) = #!" :value '(:|Bool| . T))
        ("(toUpperCase ( #3 )) = #3" :swe "(toUpperCase ( #3 )) = #3" :value '(:|Bool| . T))
