@@ -1,17 +1,22 @@
 SpecCalc qualifying spec
  import /Languages/MetaSlang/Specs/AnnSpec
+ import /Languages/MetaSlang/Specs/MSTerm            % Term, Sort, Pattern
+ import /Languages/MetaSlang/Specs/StandardSpec      % Spec
  import /Library/Legacy/DataStructures/ListUtilities % listUnion
+ import /Languages/MetaSlang/Specs/Utilities         % patVars
 
- op  removeVarOpCaptures : [a] ASpec    a -> ASpec a
+ op  removeVarOpCaptures : Spec    -> Spec 
 
- op  deconflictTerm      : [a] ATerm    a -> ATerm    a 
- op  deconflictTermRec   : [a] ATerm    a -> ATerm    a * Boolean * QualifiedIds 
+ op  deconflictTerm      : MS.Term    -> MS.Term    
+ op  deconflictTermRec   : MS.Term    -> MS.Term    * Boolean * VarNames
 
- op  deconflictSort      : [a] ASort    a -> ASort    a 
- op  deconflictSortRec   : [a] ASort    a -> ASort    a * Boolean * QualifiedIds 
+ op  deconflictSort      : MS.Sort    -> MS.Sort    
+ op  deconflictSortRec   : MS.Sort    -> MS.Sort    * Boolean * VarNames
 
- op  deconflictPattern   : [a] APattern a -> APattern a 
- op  deconflictPatRec    : [a] APattern a -> APattern a * Boolean * QualifiedIds 
+ op  deconflictPattern   : MS.Pattern -> MS.Pattern 
+ op  deconflictPatRec    : MS.Pattern -> MS.Pattern * Boolean * VarNames
+
+ type VarNames = List Id
 
  %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -100,63 +105,109 @@ SpecCalc qualifying spec
 	  all_op_names)
 
      | Bind (bnd, vars, tm, a) ->
-       let (new_vars, vars_changed?, vars_op_names) = 
-           foldl (fn ((id, srt), (new_vars, vars_changed?, all_op_names)) -> 
+       let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
+       let (new_vars, vars_changed?, vars_op_names, captures) = 
+           foldl (fn ((id, srt), (new_vars, vars_changed?, all_op_names, captures)) -> 
 		  let (new_srt, srt_changed?, op_names) = deconflictSortRec srt in
+		  let new_captures = (if member (id, tm_op_names) then
+					captures ++ [id]
+				      else
+					captures) 
+		  in
 		  (new_vars ++ [(id, new_srt)], 
 		   vars_changed? || srt_changed?,
-		   listUnion (op_names, all_op_names)))
-	         ([],false,[])
+		   listUnion (op_names, all_op_names),
+		   new_captures))
+	         ([],false,[],[])
 		 vars 
        in
-       let (new_tm, tm_changed?, tm_op_names) = deconflictTermRec tm in
        let changed? = vars_changed? || tm_changed? in
-       (if changed? then
-	  Bind (bnd, new_vars, new_tm, a)
-	else
-	  term,
-        changed?,
-	listUnion (vars_op_names, tm_op_names))
+       let new_term = 
+           if changed? then
+	     Bind (bnd, new_vars, new_tm, a)
+	   else
+	     term
+       in
+       let new_term = 
+           case captures of
+	     | [] -> new_term
+	     | _ ->  substitute2(new_term,[],StringSet.addList (empty, tm_op_names))
+       in
+	 (new_term,
+	  changed? || (captures ~= []),
+	  listUnion (vars_op_names, tm_op_names))
 
      | Let (decls, body, a) ->
-       let (new_decls, decls_changed?, decls_op_names) = 
-           foldl (fn (decl as (pat, tm), (new_decls, decls_changed?, decls_op_names)) ->
-		  let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
-		  let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec    tm  in
+       let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
+       let (new_decls, decls_changed?, decls_op_names, captures) = 
+           foldl (fn (decl as (pat, tm), (new_decls, decls_changed?, decls_op_names, captures)) ->
+		  let pvars = patVars pat in
+		  let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec  pat in
+		  let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
+		  let new_captures = (foldl (fn ((id,_), captures) ->
+					     if member (id, body_op_names) then
+					       captures ++ [id]
+					     else
+					       captures)
+				            captures
+					    pvars)
+		  in
 		  (decls ++ [(new_pat, new_tm)],
 		   decls_changed? || pat_changed? || tm_changed?,
-		   listUnion (pat_op_names, listUnion (tm_op_names, decls_op_names))))
-	         ([],false,[])
+		   listUnion (pat_op_names, listUnion (tm_op_names, decls_op_names)),
+		   new_captures))
+	         ([],false,[],[])
 		 decls
        in
-       let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
        let changed? = decls_changed? || body_changed? in
-       (if changed? then
-	  Let (new_decls, new_body, a)
-	else
-	  term,
-	changed?,
-	listUnion (decls_op_names, body_op_names))
+       let new_term =
+           if changed? then
+	     Let (new_decls, new_body, a)
+	   else
+	     term
+       in
+       let new_term =
+           case captures of
+	     | [] -> new_term
+	     | _ ->  substitute2(new_term,[],StringSet.addList (empty, body_op_names))
+       in
+	 (new_term,
+	  changed? || (captures ~= []),
+	  listUnion (decls_op_names, body_op_names))
 
      | LetRec (decls, body, a) ->
-       let (new_decls, decls_changed?, decls_op_names) =
-           foldl (fn (((id, srt), tm), (new_decls, decls_changed?, decls_op_names)) ->
+       let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
+       let (new_decls, decls_changed?, decls_op_names, captures) =
+           foldl (fn (((id, srt), tm), (new_decls, decls_changed?, decls_op_names, captures)) ->
+		  let new_captures = (if member (id, body_op_names) then
+					captures ++ [id]
+				      else
+					captures)
+		  in
 		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
 		  let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec tm  in
 		  (new_decls ++ [((id, new_srt), new_tm)],
 		   decls_changed? || srt_changed? || tm_changed?,
-		   listUnion (srt_op_names, listUnion (tm_op_names, decls_op_names))))
-	         ([],false,[])
+		   listUnion (srt_op_names, listUnion (tm_op_names, decls_op_names)),
+		   new_captures))
+	         ([],false,[],[])
 		 decls
        in
-       let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
        let changed? = decls_changed? || body_changed? in
-       (if changed? then
-	  LetRec (new_decls, new_body, a)
-	else
-	  term,
-        changed?,
-	listUnion (decls_op_names, body_op_names))
+       let new_term =
+           if changed? then
+	     LetRec (new_decls, new_body, a)
+	   else
+	     term
+       in
+       let new_term =
+           case captures of
+	     | [] -> new_term
+	     | _  -> substitute2(new_term,[],StringSet.addList (empty, body_op_names))
+       in
+	 (new_term,
+	  changed? || (captures ~= []),
+	  listUnion (decls_op_names, body_op_names))
 
      | Var ((id, srt), a) ->
        let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
@@ -169,33 +220,58 @@ SpecCalc qualifying spec
 
      | Fun (f, srt, a) ->
        let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let op_names = (case f of
+			 | Op (Qualified(_,id),_) -> srt_op_names ++ [id]
+			 | _ -> srt_op_names)
+       in
        (if srt_changed? then
 	  Fun (f, new_srt, a)
 	else
 	  term,
 	srt_changed?,
-	srt_op_names)
+	op_names)
 
      | Lambda (matches, a) ->
-       let (new_matches, matches_changed?, matches_op_names) = 
-           foldl (fn ((pat, cond, body), (new_matches, matches_changed?, matches_op_names)) ->
-		  let (new_pat,  pat_changed?,  pat_op_names)  = deconflictPatRec pat  in
-		  let (new_cond, cond_changed?, cond_op_names) = deconflictTermRec    cond in
-		  let (new_body, body_changed?, body_op_names) = deconflictTermRec    body in
-		  (new_matches ++ [(new_pat, new_cond, new_body)],
-		   matches_changed? || pat_changed? || cond_changed? || body_changed?,
+       let (new_matches, matches_changed?, matches_op_names, matches_captures) = 
+           foldl (fn ((pat, cond, body), (new_matches, matches_changed?, matches_op_names, matches_captures)) ->
+		  let pvars = patVars pat in
+		  let (new_pat,  pat_changed?,  pat_op_names)  = deconflictPatRec  pat  in
+		  let (new_cond, cond_changed?, cond_op_names) = deconflictTermRec cond in
+		  let (new_body, body_changed?, body_op_names) = deconflictTermRec body in
+		  let captures = foldl (fn ((id,_), captures) ->
+					if member (id, body_op_names) then
+					  captures ++ [id]
+					else
+					  captures)
+		                        matches_captures
+					pvars
+		  in
+		  let match_changed? = pat_changed? || cond_changed? || body_changed? in
+		  let new_match = (new_pat, new_cond, new_body) in
+		  (new_matches ++ [new_match],
+		   matches_changed? || match_changed? || (captures ~= []),
 		   listUnion (pat_op_names,
 			      listUnion (cond_op_names,
 					 listUnion (body_op_names,
-						    matches_op_names)))))
-		 ([],false,[])
+						    matches_op_names))),
+		   captures))
+	         ([],false,[], [])
 		 matches
+       in		 
+       let new_term = 
+           if matches_changed? then
+	     Lambda (new_matches, a)
+	   else
+	     term
        in
-	 (if matches_changed? then
-	    Lambda (new_matches, a)
-	  else
-	    term,
-	  matches_changed?,
+       let new_term =
+           case matches_captures of
+	     | [] -> new_term
+	     | _ -> 
+	       substitute2 (new_term, [], StringSet.addList (empty, matches_op_names))
+       in
+	 (new_term,
+	  matches_changed? || (matches_captures ~= []),
 	  matches_op_names)
 
      | IfThenElse (t1, t2, t3, a) ->
@@ -347,7 +423,7 @@ SpecCalc qualifying spec
         changed?,
 	listUnion (super_op_names, tm_op_names))
 
-     | Base (qid, srts, a) ->
+     | Base (qid as Qualified(_,id), srts, a) ->
        let (new_srts, srts_changed?, srts_op_names) = 
            foldl (fn (srt, (new_srts, srts_changed?, srts_op_names)) ->
 		  let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
@@ -362,7 +438,7 @@ SpecCalc qualifying spec
 	  else
 	    srt,
 	  srts_changed?,
-	  srts_op_names ++ [qid])
+	  srts_op_names)
 		     
      | Boolean _ -> (srt, false, [])
 		     
@@ -429,10 +505,10 @@ SpecCalc qualifying spec
 	  pattern,
 	changed?,
         listUnion (p1_op_names, p2_op_names))
-
 	   
      | VarPat ((v, srt), a) ->
        let (new_srt, srt_changed?, srt_op_names) = deconflictSortRec srt in
+       let clashes = [] in
        (if srt_changed? then
 	  VarPat ((v, new_srt), a)
 	else
@@ -459,9 +535,9 @@ SpecCalc qualifying spec
 	  pattern,
 	srt_changed?,
 	srt_op_names)
-		 
+
      | RecordPat (fields, a) ->
-       let (new_fields, fields_changed?, fields_op_names) = 
+       let (new_fields, fields_changed?, fields_op_names) =
            foldl (fn ((id, pat), (new_fields, fields_changed?, fields_op_names)) ->
 		  let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
 		  (new_fields ++ [(id, new_pat)],
@@ -485,7 +561,7 @@ SpecCalc qualifying spec
 	  pattern,
 	srt_changed?,
 	srt_op_names)
-		     
+
      | RelaxPat (pat, tm, a) ->
        let (new_pat, pat_changed?, pat_op_names) = deconflictPatRec pat in
        let (new_tm,  tm_changed?,  tm_op_names)  = deconflictTermRec    tm  in
