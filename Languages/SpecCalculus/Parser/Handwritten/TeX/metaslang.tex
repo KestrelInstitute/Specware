@@ -159,9 +159,12 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {LAMBDA\char45FORM} \> $::=$ \> \>    \grterminal {fn}\  \grnonterminal {MATCH}
 \\
-\\ \grnonterminal {MATCH} \> $::=$ \> \>    \bnfoptionalopen \grterminal {\char124} \bnfoptionalclose\  \grnonterminal {BRANCH} \bnfrepeatopen \grterminal {\char124} \grnonterminal {BRANCH} \bnfrepeatclose
+\\ \grnonterminal {MATCH} \> $::=$ \> \>    \bnfoptionalopen \grterminal {\char124} \bnfoptionalclose\  \grnonterminal {AUX\char45MATCH}
 \\
-\\ \grnonterminal {BRANCH} \> $::=$ \> \>    \grnonterminal {PATTERN}\  \grterminal {\char45\char62}\  \grnonterminal {EXPRESSION}
+\\ \grnonterminal {AUX\char45MATCH} \> $::=$ \> \>      \grnonterminal {NON\char45MATCH\char45BRANCH}\  \grterminal {\char124}\  \grnonterminal {AUX\char45MATCH} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {BRANCH}
+\\
+\\ \grnonterminal {NON\char45MATCH\char45BRANCH} \> $::=$ \> \>    \grnonterminal {PATTERN}\  \grterminal {\char45\char62}\  \grnonterminal {NON\char45MATCH\char45EXPRESSION}
 \\
 \\ \grnonterminal {PATTERN} \> $::=$ \> \>   \grnonterminal {ANNOTATED\char45PATTERN} 
 \\  \>  \>   \bnfalternative \>  \grnonterminal {TIGHT\char45PATTERN}
@@ -308,10 +311,13 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {RELAX\char45PATTERN} \> $::=$ \> \>    \grterminal {relax}\  \grnonterminal {CLOSED\char45EXPRESSION}\  \grnonterminal {TIGHT\char45PATTERN}
 \\
-\\ \grnonterminal {CASE\char45EXPRESSION} \> $::=$ \> \>    \grterminal {case}\  \grnonterminal {EXPRESSION}\  \grterminal {of}\  \grnonterminal {MATCH}
+\\ \grnonterminal {NON\char45MATCH\char45EXPRESSION} \> $::=$ \> \>   \grnonterminal {NON\char45MATCH\char45LET\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {NON\char45MATCH\char45IF\char45EXPRESSION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {NON\char45MATCH\char45QUANTIFICATION} 
+\\  \>  \>   \bnfalternative \>  \grnonterminal {TIGHT\char45EXPRESSION}
 \\
-\\ \grnonterminal {LET\char45EXPRESSION} \> $::=$ \> \>      \grterminal {let}\  \grnonterminal {RECLESS\char45LET\char45BINDING}\  \grterminal {in}\  \grnonterminal {EXPRESSION} \> \grcomment{Let Binding} 
-\\  \>  \>   \bnfalternative \>    \grterminal {let}  \grnonterminal {REC\char45LET\char45BINDING\char45SEQUENCE}\\  \>  \>  \>\   \grterminal {in}  \grnonterminal {EXPRESSION} \> \grcomment{RecLet Binding}
+\\ \grnonterminal {NON\char45MATCH\char45LET\char45EXPRESSION} \> $::=$ \> \>     \grterminal {let}  \grnonterminal {RECLESS\char45LET\char45BINDING}\\  \>  \>  \>\   \grterminal {in}  \grnonterminal {NON\char45MATCH\char45EXPRESSION} \> \grcomment{Let Binding} 
+\\  \>  \>   \bnfalternative \>    \grterminal {let}  \grnonterminal {REC\char45LET\char45BINDING\char45SEQUENCE}\\  \>  \>  \>\   \grterminal {in}  \grnonterminal {NON\char45MATCH\char45EXPRESSION} \> \grcomment{RecLet Binding}
 \\
 \\ \grnonterminal {RECLESS\char45LET\char45BINDING} \> $::=$ \> \>    \grnonterminal {PATTERN}\  \grnonterminal {EQUALS}\  \grnonterminal {EXPRESSION}
 \\
@@ -324,9 +330,9 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\
 \\ \grnonterminal {FORMAL\char45PARAMETER\char45SEQUENCE} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {CLOSED\char45PATTERN} \bnfrepeatclose
 \\
-\\ \grnonterminal {IF\char45EXPRESSION} \> $::=$ \> \>   \grterminal {if}  \grnonterminal {EXPRESSION}  \grterminal {then}  \grnonterminal {EXPRESSION}\\  \>  \>  \>  \grterminal {else}  \grnonterminal {EXPRESSION}
+\\ \grnonterminal {NON\char45MATCH\char45IF\char45EXPRESSION} \> $::=$ \> \>   \grterminal {if}  \grnonterminal {EXPRESSION}  \grterminal {then}  \grnonterminal {EXPRESSION}\\  \>  \>  \>  \grterminal {else}  \grnonterminal {NON\char45MATCH\char45EXPRESSION}
 \\
-\\ \grnonterminal {QUANTIFICATION} \> $::=$ \> \>   \grnonterminal {QUANTIFIER}  \grnonterminal {LOCAL\char45VARIABLE\char45LIST}\\  \>  \>  \>  \grnonterminal {EXPRESSION}
+\\ \grnonterminal {NON\char45MATCH\char45QUANTIFICATION} \> $::=$ \> \>   \grnonterminal {QUANTIFIER}  \grnonterminal {LOCAL\char45VARIABLE\char45LIST}\\  \>  \>  \>  \grnonterminal {NON\char45MATCH\char45EXPRESSION}
 \\
 \\ \grnonterminal {QUANTIFIER} \> $::=$ \> \>   \grterminal {fa} 
 \\  \>  \>   \bnfalternative \>  \grterminal {ex}
@@ -345,6 +351,17 @@ AAAAAAAAAAAAAAAAAAAAAAAAAA \= $::=$\=  \ \ \ \= AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
 \\ \grnonterminal {CLOSED\char45EXPRESSIONS} \> $::=$ \> \> \bnfrepeatopen  \grnonterminal {CLOSED\char45EXPRESSION} \bnfrepeatclose
 \\
 \\ \grnonterminal {ANNOTATED\char45EXPRESSION} \> $::=$ \> \>    \grnonterminal {TIGHT\char45EXPRESSION}\  \grterminal {\char58}\  \grnonterminal {SORT}
+\\
+\\ \grnonterminal {BRANCH} \> $::=$ \> \>    \grnonterminal {PATTERN}\  \grterminal {\char45\char62}\  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {CASE\char45EXPRESSION} \> $::=$ \> \>    \grterminal {case}\  \grnonterminal {EXPRESSION}\  \grterminal {of}\  \grnonterminal {MATCH}
+\\
+\\ \grnonterminal {LET\char45EXPRESSION} \> $::=$ \> \>      \grterminal {let}\  \grnonterminal {RECLESS\char45LET\char45BINDING}\  \grterminal {in}\  \grnonterminal {EXPRESSION} \> \grcomment{Let Binding} 
+\\  \>  \>   \bnfalternative \>    \grterminal {let}  \grnonterminal {REC\char45LET\char45BINDING\char45SEQUENCE}\\  \>  \>  \>\   \grterminal {in}  \grnonterminal {EXPRESSION} \> \grcomment{RecLet Binding}
+\\
+\\ \grnonterminal {IF\char45EXPRESSION} \> $::=$ \> \>   \grterminal {if}  \grnonterminal {EXPRESSION}  \grterminal {then}  \grnonterminal {EXPRESSION}\\  \>  \>  \>  \grterminal {else}  \grnonterminal {EXPRESSION}
+\\
+\\ \grnonterminal {QUANTIFICATION} \> $::=$ \> \>   \grnonterminal {QUANTIFIER}  \grnonterminal {LOCAL\char45VARIABLE\char45LIST}\\  \>  \>  \>  \grnonterminal {EXPRESSION}
 \\
 \\ \grnonterminal {SORT\char45COMPREHENSION} \> $::=$ \> \>    \grterminal {\{}\  \grnonterminal {ANNOTATED\char45PATTERN}\  \grterminal {\char124}\  \grnonterminal {EXPRESSION}\  \grterminal {\}}
 \\
