@@ -28,7 +28,11 @@ spec
 		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
-		    | Base(Qualified(qual,id),_,_) -> findPBuiltInSort(spc, Qualified(qual,id), rng?)
+		    | Base(Qualified(qual,id),_,_) -> let res = findPBuiltInSort(spc, Qualified(qual,id), rng?) in
+                      let _ = if specwareDebug? then toScreen("findPBuiltInSort: "^printSort(s)^" returns ") else () in
+                      let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
+		      let _ = if specwareDebug? then  writeLine("") else () in
+		      res   %findPBuiltInSort(spc, Qualified(qual,id), rng?)
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
                                                        else Lisp.symbol("SNARK",id)
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
@@ -57,7 +61,10 @@ spec
         (case builtinScheme of
 	  | Some (_, srt) -> builtinSnarkSort(srt)
 	  | _ -> case schemes of
-	           | [(_, srt)] -> snarkPBaseSort(spc, srt, rng?)
+	           | [(_, srt)] -> 
+	              (case srt of
+			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",id)
+			| _ -> snarkPBaseSort(spc, srt, rng?))
 	           | _ -> Lisp.symbol("SNARK",id)))
       | _ -> Lisp.symbol("SNARK",id)
     

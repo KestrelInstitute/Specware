@@ -188,7 +188,21 @@ spec {
              map(fn (qual, id, info) ->
 	            Lisp.list [declare_sort, Lisp.quote(Lisp.symbol("SNARK", id))])	%
                  sorts in
-         snarkBuiltInSorts(false) ++ snarkSorts
+      let snarkSubSorts = mapPartial(fn (qual, id, info) ->
+			      sortInfoToSnarkSubsort(spc, id, info))
+                              sorts in
+         snarkBuiltInSorts(false) ++ snarkSorts ++ snarkSubSorts
+
+  op sortInfoToSnarkSubsort: Spec * Id * SortInfo -> Option LispCell
+  def sortInfoToSnarkSubsort(spc, id, info) =
+    let (_, _, srtScheme) = info in
+    case srtScheme of
+      | Nil -> None
+      | [(_, srt)] ->
+        case srt of
+	  | Subsort (supSrt, pred, _) ->
+	     Some (Lisp.list [declare_subsorts, Lisp.quote(snarkBaseSort(spc, supSrt, false)), Lisp.quote(Lisp.symbol("SNARK", id))])
+	  | _ -> None
 
   op snarkFunctionNoArityDecl: Spec * String * Sort -> LispCell
 
@@ -219,7 +233,11 @@ spec {
 		    | Base(Qualified("Nat","Nat"),_,_) -> Lisp.symbol("SNARK","NATURAL")
 		    | Base(Qualified("Integer","Integer"),_,_) -> Lisp.symbol("SNARK","INTEGER")
 		    | Base(Qualified("Boolean","Boolean"),_,_) -> if rng? then Lisp.symbol("SNARK","BOOLEAN") else Lisp.symbol("SNARK","TRUE")
-		    | Base(Qualified(qual,id),_,_) -> findBuiltInSort(spc, Qualified(qual,id), rng?)
+		    | Base(Qualified(qual,id),_,_) -> let res = findBuiltInSort(spc, Qualified(qual,id), rng?) in
+                      let _ = if specwareDebug? then toScreen("findBuiltInSort: "^printSort(s)^" returns ") else () in
+                      let _ = if specwareDebug? then  LISP.PPRINT(res) else Lisp.list [] in
+		      let _ = if specwareDebug? then  writeLine("") else () in
+		      res   %findBuiltInSort(spc, Qualified(qual,id), rng?)
 		    | Base(Qualified( _,id),_,_) -> if rng? then Lisp.symbol("SNARK",id)
                                                        else Lisp.symbol("SNARK",id)
 		    | Product _ -> Lisp.symbol("SNARK","TRUE")
@@ -248,16 +266,25 @@ spec {
         (case builtinScheme of
 	  | Some (_, srt) -> builtinSnarkSort(srt)
 	  | _ -> case schemes of
-	           | [(_, srt)] -> snarkBaseSort(spc, srt, rng?)
+	           | [(_, srt)] -> 
+	              (case srt of
+			| Subsort (supSrt, _, _) -> Lisp.symbol("SNARK",id)
+			| _ -> snarkBaseSort(spc, srt, rng?))
 	           | _ -> Lisp.symbol("SNARK",id)))
       | _ -> Lisp.symbol("SNARK",id)
     
   
   def snarkPredicateDecl(spc, name, dom, arity) =
     case productOpt(spc, dom) of
-      Some fields -> 
+      | Some fields -> 
 	let domSortList = map(fn (id: Id, srt:Sort) -> snarkBaseSort(spc, srt, false))
 	fields in
+	Lisp.list[declare_predicate,
+		  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
+		  Lisp.symbol("KEYWORD","SORT"),
+		  Lisp.quote(Lisp.cons(Lisp.symbol("SNARK","BOOLEAN"), Lisp.list(domSortList)))]
+      | _ ->
+	let domSortList = [snarkBaseSort(spc, dom, false)] in
 	Lisp.list[declare_predicate,
 		  Lisp.quote(Lisp.symbol("SNARK", name)), Lisp.nat(arity),
 		  Lisp.symbol("KEYWORD","SORT"),
