@@ -323,7 +323,7 @@ easy reference.
 ||  
 ||  `sort-scheme ::= [ `sort-variable-binder ] `sort
 ||  
-||  `sort-variable-binder ::= fa `local-sort-variable-list
+||  `sort-variable-binder ::= fa ( `local-sort-variable-list )
 ||  
 >>
 </para>
@@ -355,7 +355,7 @@ easy reference.
 ||  
 ||  `claim-kind ::= axiom | theorem | conjecture
 ||  
-||  `claim-name ::= name
+||  `claim-name ::= `name
 ||  
 ||  `claim ::= [ `sort-quantification ] `expression
 ||  
