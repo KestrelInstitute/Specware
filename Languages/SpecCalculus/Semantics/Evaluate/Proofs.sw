@@ -124,6 +124,22 @@ spec
 			                  & ~(propType = Axiom)) props in
    map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
 
+ % The difference between generateProofsInSpecLocal and generateLocalProofsInSpec is that generateProofsInSpecLocal is used by the
+ % lpunits commands to only generate local proofs, while generateLocalProofsInSpec is the original code used as part of the full punits command.
+ % Eventually I'll only use generateProofsInSpecLocal.
+ op generateProofsInSpecLocal: Spec * SCTerm * Boolean * Boolean * String * ProverOptions * GlobalContext * List UnitId * Option UnitId -> List SCDecl
+ def generateProofsInSpecLocal (spc, scTerm, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID) =
+   let usedSpc = if fromObligations? then specObligations(spc, scTerm) else spc in 
+   let props = usedSpc.properties in
+   let _ = map (fn (pn) -> writeLine(printQualifiedId(pn))) (usedSpc.importInfo).localProperties in
+   let localPropNames = if fromObligations?
+			  then ((usedSpc.importInfo).localProperties)++(spc.importInfo).localProperties
+			else (usedSpc.importInfo).localProperties in
+   let localProps = filter (fn (prop) -> let (propType, propName, _, _) = prop in 
+			                  (member(propName, localPropNames))
+			                  & ~(propType = Axiom)) props in
+   map (fn (prop) -> generateProof(spc, scTerm, prop, multipleFiles, fromObligations?, prover_name, prover_options, globalContext, swpath, fileUID)) localProps
+
 % op ppProof: SCDecl -> WadlerLindig.Pretty
 
 % def ppProof(proof) =
@@ -148,19 +164,30 @@ spec
      fn stream ->  write(stream, fileContents))
 *)
 
- op toProofFileEnv: Spec * SCTerm * Boolean * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String -> ()
+ op toProofFileEnv: Spec * SCTerm * Boolean * Boolean * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String -> ()
 
- def toProofFileEnv (spc, spcTerm, fromObligations?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
-   let _ = writeLine("Writing Proof file "^file) in
+ def toProofFileEnv (spc, spcTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
+   %let _ = writeLine("Writing Proof file "^file) in
    let basePropNames = map (fn (_, pn, _, _) -> pn) baseSpc.properties in
-   let proofDecls = generateProofsInSpec(spc, spcTerm, fromObligations?, baseSpc, multipleFiles, "Snark", OptionString ([string ("")]), basePropNames, globalContext, swpath, fileUID) in
+   let proofDecls =
+     if local?
+       then generateProofsInSpecLocal(spc, spcTerm, multipleFiles, fromObligations?, "Snark", OptionString ([string ("")]), globalContext, swpath, fileUID)
+     else generateProofsInSpec(spc, spcTerm, fromObligations?, baseSpc, multipleFiles, "Snark", OptionString ([string ("")]), basePropNames, globalContext, swpath, fileUID) in
    ppProofsToFile(proofDecls, file)
 
-  op toProofFile    : Spec * SCTerm * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String * Boolean -> ()
+  op toProofFile    : Spec * SCTerm * Spec * Boolean * GlobalContext * List UnitId * Option UnitId * String * Boolean * Boolean -> ()
 
-  def toProofFile (spc, spcTerm, baseSpc, multipleFiles, globalContext, swpath, fileUID, file, fromObligations?) =  
-      toProofFileEnv (spc, spcTerm, fromObligations?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) 
+  def toProofFile (spc, spcTerm, baseSpc, multipleFiles, globalContext, swpath, fileUID, file, fromObligations?, local?) =  
+      toProofFileEnv (spc, spcTerm, fromObligations?, local?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) 
 
+
+(*
+ op localThmsToProofFile: Spec * SCTerm * Boolean * Spec * Boolean * Option fileUID * String -> ()
+ def localThmsToProofFile (spc, spcTerm, fromObligations?, baseSpc, multipleFiles, globalContext, swpath, fileUID, file) =
+   let basePropNames = map (fn (_, pn, _, _) -> pn) baseSpc.properties in
+   let proofDecls = generateProofsInSpecLocal(spc, spcTerm, fromObligations?, baseSpc, multipleFiles, "Snark", OptionString ([string ("")]), basePropNames, globalContext, swpath, fileUID) in
+   ppProofsToFile(proofDecls, file)
+*)
 
   % Move this and the one from Prove to where subtractSpec is.
   op subtractSpecProperties: Spec * Spec -> Spec
@@ -181,8 +208,8 @@ spec
                                 -> SpecCalc.Env ValueInfo
 
   %% Need to add error detection code
-  def SpecCalc.evaluateProofGen (valueInfo as (spcTerm,_,_), cterm, optFileNm, fromObligations?) =
-    case spcTerm of
+  def SpecCalc.evaluateProofGen (valueInfo as (value,_,_), cterm, optFileNm, fromObligations?) =
+    case coerceToSpec value of
       | Spec spc ->
     {%(preamble,_) <- compileImports(importedSpecsList spc.importedSpecs,[],[spc]);
      cUID <- SpecCalc.getUID(cterm);
@@ -190,28 +217,36 @@ spec
      (optBaseUnitId,baseSpec) <- getBase;
      globalContext <- getGlobalContext;
      swpath <- getSpecPath;
-     %let _ = printSpecToTerminal(baseSpec) in
+     %let _ = printSpecToTerminal(baseSpec) inI should 
+     print (";;; Generating proof file " ^ proofFileName ^ "\n");
      let _ = ensureDirectoriesExist proofFileName in
-     let _ = toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?) in
+     let _ = toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, false) in
 %     let _ = System.fail ("evaluateProofGen ") in
      {print("Generated Proof file.");
       return valueInfo}}
       | _ -> raise (Unsupported ((positionOf cterm),
                                "attempting to generate proofs from an object that is not a specification."))
 
-(*
-  def SpecCalc.evaluateProofGenLocal(valueInfo as (value,_,_), cterm, optFileName) =
+  op SpecCalc.evaluateProofGenLocal : ValueInfo * (SpecCalc.Term Position) * Option String * Boolean
+                                -> SpecCalc.Env ValueInfo
+
+  def SpecCalc.evaluateProofGenLocal(valueInfo as (value,_,_), cterm, optFileName, fromObligations?) =
     case coerceToSpec value of
       | Spec spc ->
         {cUID <- SpecCalc.getUID cterm;
-         (proofFileName, multipleFiles) <- UIDtoProofFile (cUID, optFileName);
+         (proofFileUID, proofFileName, multipleFiles) <- UIDtoProofFile (cUID, optFileName);
+	 (optBaseUnitId,baseSpec) <- getBase;
+	 globalContext <- getGlobalContext;
+	 swpath <- getSpecPath;
          print (";;; Generating proof file " ^ proofFileName ^ "\n");
          let _ = ensureDirectoriesExist proofFileName in
-         let _ = localThmsToProofFile (spc, lispFileName,"") in
-         return valueInfo}
-      | _ -> raise (TypeCheck ((positionOf cterm),
-                               "attempting to generate proofs from an object that is not a specification"))
-*)
+         let _ = toProofFile (spc, cterm, baseSpec, multipleFiles, globalContext, swpath, proofFileUID, proofFileName, fromObligations?, true) in
+	 {print("Generated Proof file.");
+         return valueInfo}}
+      | _ -> raise (Unsupported ((positionOf cterm),
+                               "attempting to generate proofs from an object that is not a specification."))
+
+
 
 (*
   op UIDtoProofFile: UnitId * Option String -> SpecCalc.Env String

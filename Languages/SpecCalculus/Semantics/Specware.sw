@@ -427,8 +427,9 @@ getOptSpec returns Some spc if the given string evaluates to a spec
 Second argument is interpreted as spec containing options for the code generation.
 
 
-  op evaluateProofGenLocal_fromLisp : String * Option String -> Boolean
-  def evaluateProofGenLocal_fromLisp (path,targetFile) = 
+\begin{spec}
+  op evaluateProofGenLocal_fromLisp : String * Option String * Boolean -> Boolean
+  def evaluateProofGenLocal_fromLisp (path,targetFile, fromObligations?) = 
     let target =
       case targetFile of
         | None -> None
@@ -441,11 +442,11 @@ Second argument is interpreted as spec containing options for the code generatio
       unitId <- pathToRelativeUID path_body;
       pos <- return (String (path, startLineColumnByte, endLineColumnByte path_body));
       spcInfo <- evaluateUID pos unitId;
-      evaluateProofGenLocal (spcInfo, (UnitId unitId, pos), target);
+      evaluateProofGenLocal (spcInfo, (UnitId unitId, pos), target, fromObligations?);
       return true
     } in
     runSpecCommand (catch prog toplevelHandler)
-
+\end{spec}
 
 removeSWsuffix could be generalized to extractUIDpath
 and then the code to create the position would use the

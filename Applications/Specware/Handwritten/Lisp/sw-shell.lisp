@@ -176,7 +176,7 @@
 ;      (j-config-pkg (cl-user::swj-config-pkg argstr))
 ;      (j-config-reset (cl-user::swj-config-reset))
       (punits (cl-user::swpf argstr))
-      (lpunits (cl-user::swpf argstr))	; No local version yet
+      (lpunits (cl-user::lswpf argstr))	; No local version yet
       (ctext (if (null argstr)
 		 (progn (if cl-user::*current-swe-spec*
 			    (format t "~&Current context: ~a" cl-user::*current-swe-spec*)

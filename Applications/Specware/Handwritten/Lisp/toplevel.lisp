@@ -858,6 +858,16 @@
       (show-error-position emacs::*goto-file-position-stored* 1)
       val)))
 
+(defun lswpf-internal (x &optional y &key (obligations t))
+  (let ((emacs::*goto-file-position-store?* t)
+	(emacs::*goto-file-position-stored* nil))
+    (let ((val (Specware::evaluateProofGenLocal_fromLisp-3 (norm-unitid-str (string x))
+						      (if y (cons :|Some| (string (subst-home y)))
+							'(:|None|))
+						      obligations)))
+      (show-error-position emacs::*goto-file-position-stored* 1)
+      val)))
+
 (defvar *last-swpf-args* nil)
 
 (defun swpf (&optional args)
@@ -867,6 +877,17 @@
     (if r-args
 	(progn (setq *last-swpf-args* r-args)
 	       (swpf-internal (string (first r-args))
+			     (if (not (null (second r-args)))
+				 (string (second r-args)) nil)))
+      (format t "No previous unit evaluated~%"))))
+
+(defun lswpf (&optional args)
+  (let ((r-args (if (not (null args))
+		    (toplevel-parse-args args)
+		  *last-swpf-args*)))
+    (if r-args
+	(progn (setq *last-swpf-args* r-args)
+	       (lswpf-internal (string (first r-args))
 			     (if (not (null (second r-args)))
 				 (string (second r-args)) nil)))
       (format t "No previous unit evaluated~%"))))
