@@ -145,6 +145,8 @@ accepted in lieu of prompting."
       ["Generate Lisp" sw:generate-lisp t]
       ["Generate & Load Lisp" (sw:generate-lisp t) t]
       ["Generate Local Lisp" sw:cl-current-file t]
+      ["Evaluate Region (:swe)" sw:evaluate-region (mark)]
+      ["Set :swe Spec" sw:set-swe-spec t]
       [":cd to this directory" cd-current-directory t] 
       ["Find Definition" sw:meta-point t]
       ["Find Next Definition" sw:continue-meta-point
@@ -193,6 +195,8 @@ accepted in lieu of prompting."
   (define-key map "\C-c\C-p" 'sw:process-unit)
   (define-key map "\C-c\g"   'sw:generate-lisp)
   (define-key map "\C-c\C-l" 'sw:cl-current-file)
+  (define-key map "\C-c\C-e" 'sw:evaluate-region)
+  (define-key map "\C-c\C-s" 'sw:set-swe-spec)
   (define-key map "\C-c\C-u" 'sw:cl-unit)
   (define-key map "\C-c!"    'cd-current-directory)
   (define-key map "\C-cl"    'sw:switch-to-lisp)
@@ -1034,6 +1038,19 @@ If anyone has a good algorithm for this..."
   (save-buffer)
   (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
     (simulate-input-expression (concat ":swll " filename))))
+
+(defun sw:evaluate-region (beg end)
+  (interactive "r")
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name))
+	(text (buffer-substring beg end)))
+    (simulate-input-expression (concat ":swe-spec " filename))
+    (sleep-for 0.1)
+    (simulate-input-expression (concat ":swe " text))))
+
+(defun sw:set-swe-spec ()
+  (interactive)
+  (let ((filename (sw::file-to-specware-unit-id buffer-file-name)))
+    (simulate-input-expression (concat ":swe-spec " filename))))
 
 (defun sw:cl-unit (unitid)
   (interactive (list (read-from-minibuffer "Compile and Load Unit: "
