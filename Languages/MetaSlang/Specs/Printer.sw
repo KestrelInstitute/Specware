@@ -118,13 +118,13 @@ AnnSpecPrinter qualifying spec {
     | Apply (Fun (Embed("Cons", true), _, _),  Record ([(_, t1), (_, t2)], _), _) -> 
       (case isFiniteList t2 of
         | Some terms -> Some (cons (t1, terms))
-        | None ->  None)
+        | _ ->  None)
     | ApplyN ([Fun (Embed ("Cons", true), _, _), _,
 	       Record ([(_, t1), (_, t2)], _),
 	       _], _) -> 
       (case isFiniteList t2 of
         | Some terms -> Some (cons (t1, terms))
-        | None ->  None)
+        | _  ->  None)
     | _ -> None
 
   def initialize (pp, printSort?) : context = 
