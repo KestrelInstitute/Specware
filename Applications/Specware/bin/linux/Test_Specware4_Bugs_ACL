@@ -31,7 +31,7 @@ $xemacs -geometry 137x50-50-50 \
 	-l "$SPECWARE4"/Library/IO/Emacs/load\
 	-eval "(set-face-background 'default \"lightyellow\")"\
         -eval "(sw:eval-in-lisp \"(load (compile-file \\\"$SPECWARE4/Applications/Handwritten/Lisp/test-harness\\\"))\")" \
-        -eval "(sw:eval-in-lisp \"(defvar specware-test::*quiet-about-dirs?* t)\")" \
+        -eval "(sw:eval-in-lisp \"(setq specware-test::*quiet-about-dirs?* t)\")" \
         -eval "(sw:eval-in-lisp \"(load \\\"$SPECWARE4/Applications/Specware/Tests/test-specware4\\\")\")" \
         -eval "(sw:eval-in-lisp \"(test-specware4-bugs \\\"$LOG_FILE\\\")\")" \
         -eval "(progn (fi:eval-in-lisp-asynchronous \"(exit-from-lisp 0)\") (kill-emacs 0))"
