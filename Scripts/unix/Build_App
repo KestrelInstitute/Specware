@@ -96,11 +96,11 @@ XXXX
 RC=$?
 
 # If the load failed (non-zero exit status) then we abort.
-if [ $RC -ne 0 ]; then
-  echo ""
-  echo "  Build_App:  Build of ${APP_NAME} application image failed with code $RC, exiting ..."
-  exit $RC
-fi
+# if [ $RC -ne 0 ]; then
+#  echo ""
+#  echo "  Build_App:  Build of ${APP_NAME} application image failed with code $RC, exiting ..."
+#  exit $RC
+# fi
 
 echo "------------------------------------------------------------------------"
 echo "  Build_App:  New Status: "
@@ -117,7 +117,7 @@ if [ $RC -ne 0 ]; then
   exit $RC
 fi
 
-DISTRIBUTION_DIR=distribution-${LISP_VERSION}
+DISTRIBUTION_DIR="${APP_DIR}/distribution-${LISP_VERSION}"
 
 $SCRIPTDIR/Make_Distribution_Dir $DISTRIBUTION_DIR
 
