@@ -348,6 +348,12 @@ FM qualifying spec
 	else ineq2
     else ineq2
 
+  op tightenGTInteger: Ineq -> Ineq
+  def tightenGTInteger (ineq as (comp, poly)) =
+    case comp of
+      | Gt -> mkNormIneq(GtEq, polyMinusPoly(poly, mkPoly1(mkConstant(1))))
+      | _ -> ineq
+
   op ineqsChainAbleP: Ineq * Ineq -> Boolean
   def ineqsChainAbleP(ineq1 as (compPred1, poly1), ineq2 as (compPred2, poly2)) =
     let hdT1 = hdTerm(poly1) in
@@ -438,6 +444,7 @@ FM qualifying spec
 	    | hdNeq::restNeqs ->
 	    let tightenedIneqs = tightenNeqBounds(hdNeq, ineqSet) in
 	    tightenAllNeqBounds(restNeqs, tightenedIneqs) in
+    let ineqSet = map tightenGTInteger ineqSet in
     tightenAllNeqBounds(neqs, ineqSet)
     
   
