@@ -6,6 +6,9 @@
  *
  *
  * $Log$
+ * Revision 1.6  2003/02/19 18:48:03  weilyn
+ * Commented out ProcessUnit as a spec action for now because Specware doesn't process on the spec level, just file level.
+ *
  * Revision 1.5  2003/02/18 17:58:48  weilyn
  * Added support for imports.
  *
@@ -44,6 +47,7 @@ import org.openide.util.actions.SystemAction;
 import org.openide.*;
 
 import edu.kestrel.netbeans.actions.ProcessUnitAction;
+import edu.kestrel.netbeans.actions.ProveClaimAction;
 import edu.kestrel.netbeans.model.*;
 import edu.kestrel.netbeans.nodes.*;
 import edu.kestrel.netbeans.parser.MetaSlangParser;
@@ -70,6 +74,22 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
 	//SystemAction.get(PropertiesAction.class)
     };
 
+    private static final SystemAction[] CLAIM_ACTIONS = new SystemAction[] {
+	SystemAction.get(EditAction.class),
+	//SystemAction.get(OpenAction.class),
+	null,
+        SystemAction.get(ProveClaimAction.class),
+        null,
+	SystemAction.get(CutAction.class),
+	SystemAction.get(CopyAction.class),
+	null,
+	SystemAction.get(DeleteAction.class),
+	SystemAction.get(RenameAction.class),
+	//null,
+	//SystemAction.get(ToolsAction.class),
+	//SystemAction.get(PropertiesAction.class)
+    };
+    
     /** Array of the actions of the meta-slang classes. */
     private static final SystemAction[] SPEC_ACTIONS = new SystemAction[] {
 	SystemAction.get(EditAction.class),
@@ -200,7 +220,7 @@ class MetaSlangElementNodeFactory extends DefaultFactory {
     public Node createClaimNode(ClaimElement element) {
         ClaimElementNode n = new ClaimElementNode(element, true);
         n.setDefaultAction(SystemAction.get(EditAction.class));
-        n.setActions(DEFAULT_ACTIONS);
+        n.setActions(CLAIM_ACTIONS);
         return n;
     }
     
